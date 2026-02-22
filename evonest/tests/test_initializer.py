@@ -11,6 +11,15 @@ import pytest
 from evonest.core.initializer import _draft_identity_via_claude, init_project
 
 
+@pytest.fixture(autouse=True)
+def _mock_claude_draft(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Skip actual claude -p call during init tests."""
+    monkeypatch.setattr(
+        "evonest.core.initializer._draft_identity_via_claude",
+        lambda project: None,
+    )
+
+
 def test_init_creates_structure(tmp_path: Path) -> None:
     result = init_project(tmp_path)
     assert "Initialized" in result

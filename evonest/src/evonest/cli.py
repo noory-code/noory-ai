@@ -142,6 +142,21 @@ def cli_main() -> None:
         help="Analysis depth preset: quick (haiku), standard (sonnet), deep (opus)",
     )
 
+    # personas
+    personas_p = sub.add_parser("personas", help="List, enable, or disable personas")
+    personas_p.add_argument(
+        "project", nargs="?", default=None, help="Project path (default: cwd)"
+    )
+    personas_p.add_argument(
+        "--disable", nargs="+", metavar="ID", help="Disable persona/adversarial IDs"
+    )
+    personas_p.add_argument(
+        "--enable", nargs="+", metavar="ID", help="Enable persona/adversarial IDs"
+    )
+    personas_p.add_argument(
+        "--group", default=None, help="Filter by group (biz, tech, quality)"
+    )
+
     # status
     status_p = sub.add_parser("status", help="Show project status")
     status_p.add_argument("project", nargs="?", default=None, help="Project path (default: cwd)")
@@ -359,6 +374,19 @@ def _dispatch(args: argparse.Namespace) -> None:
             )
         )
         print(result)
+
+    elif args.command == "personas":
+        import asyncio as _asyncio
+
+        from evonest.tools.personas import evonest_personas
+
+        project_path = _resolve_project(args.project)
+        if args.disable:
+            print(_asyncio.run(evonest_personas(project_path, action="disable", ids=args.disable)))
+        elif args.enable:
+            print(_asyncio.run(evonest_personas(project_path, action="enable", ids=args.enable)))
+        else:
+            print(_asyncio.run(evonest_personas(project_path, action="list", group=args.group)))
 
     elif args.command == "status":
         from evonest.core.state import ProjectState

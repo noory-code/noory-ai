@@ -25,6 +25,16 @@ def _load_builtin(filename: str) -> list[dict[str, Any]]:
         return []
 
 
+def list_all_personas(state: ProjectState) -> list[dict[str, Any]]:
+    """Return all personas (built-in + dynamic) without any filtering."""
+    return _load_builtin("personas.json") + state.read_dynamic_personas()
+
+
+def list_all_adversarials(state: ProjectState) -> list[dict[str, Any]]:
+    """Return all adversarials (built-in + dynamic) without any filtering."""
+    return _load_builtin("adversarial.json") + state.read_dynamic_adversarials()
+
+
 def load_personas(
     state: ProjectState,
     active_groups: list[str] | None = None,

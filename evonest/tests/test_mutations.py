@@ -6,12 +6,44 @@ import random
 from pathlib import Path
 
 from evonest.core.mutations import (
+    list_all_adversarials,
+    list_all_personas,
     load_adversarials,
     load_personas,
     select_mutation,
     weighted_random_select,
 )
 from evonest.core.state import ProjectState
+
+
+def test_list_all_personas(tmp_project: Path) -> None:
+    state = ProjectState(tmp_project)
+    personas = list_all_personas(state)
+    assert len(personas) >= 15
+    # Should include all groups
+    groups = {p.get("group") for p in personas}
+    assert "tech" in groups
+    assert "biz" in groups
+    assert "quality" in groups
+
+
+def test_list_all_adversarials(tmp_project: Path) -> None:
+    state = ProjectState(tmp_project)
+    adversarials = list_all_adversarials(state)
+    assert len(adversarials) >= 8
+    ids = [a["id"] for a in adversarials]
+    assert "break-interfaces" in ids
+
+
+def test_list_all_includes_dynamic(tmp_project: Path) -> None:
+    state = ProjectState(tmp_project)
+    state.write_dynamic_personas(
+        [{"id": "custom-x", "name": "Custom X", "perspective": "X."}]
+    )
+    personas = list_all_personas(state)
+    ids = [p["id"] for p in personas]
+    assert "custom-x" in ids
+    assert "security-auditor" in ids
 
 
 def test_load_builtin_personas(tmp_project: Path) -> None:

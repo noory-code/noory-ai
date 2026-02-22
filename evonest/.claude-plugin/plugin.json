@@ -9,7 +9,8 @@
     "./commands/analyze.md",
     "./commands/evolve.md",
     "./commands/improve.md",
-    "./commands/identity.md"
+    "./commands/identity.md",
+    "./commands/personas.md"
   ],
   "skills": "./skills/",
   "mcpServers": {
