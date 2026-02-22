@@ -21,7 +21,13 @@ from evonest.core.lock import EvonestLock
 from evonest.core.meta_observe import apply_meta_results, build_meta_prompt, should_run_meta
 from evonest.core.mutations import select_mutation
 from evonest.core.notify import notify
-from evonest.core.phases import _gather_static_context, run_execute, run_observe, run_plan, run_verify
+from evonest.core.phases import (
+    _gather_static_context,
+    run_execute,
+    run_observe,
+    run_plan,
+    run_verify,
+)
 from evonest.core.progress import recalculate_weights, update_progress
 from evonest.core.scout import apply_scout_results, build_scout_prompt, should_run_scout
 from evonest.core.state import ProjectState
@@ -624,7 +630,7 @@ def _git_stash(project: Path) -> None:
     try:
         ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         subprocess.run(
-            ["git", "stash", "push", "-m", f"evonest-checkpoint-{ts}", "--quiet", "--", str(project)],
+            ["git", "stash", "push", "-m", f"evonest-checkpoint-{ts}", "--quiet", "--", "."],
             capture_output=True,
             cwd=str(project),
             timeout=30,
@@ -648,7 +654,7 @@ def _git_stash_drop(project: Path) -> None:
 def _git_commit(project: Path, message: str) -> None:
     try:
         subprocess.run(
-            ["git", "add", "--", str(project)],
+            ["git", "add", "--", "."],
             capture_output=True,
             cwd=str(project),
             timeout=30,
@@ -702,7 +708,7 @@ def _git_commit_pr(
         )
 
         # Commit
-        subprocess.run(["git", "add", "--", str(project)], capture_output=True, cwd=str(project), timeout=30)
+        subprocess.run(["git", "add", "--", "."], capture_output=True, cwd=str(project), timeout=30)
         full_msg = f"{message}\n\nCo-Authored-By: Evonest <noreply@evonest.dev>"
         subprocess.run(
             ["git", "commit", "-m", full_msg, "--quiet"],
@@ -771,7 +777,7 @@ def _git_commit_pr(
 def _git_revert(project: Path) -> None:
     try:
         subprocess.run(
-            ["git", "checkout", "--", str(project)],
+            ["git", "checkout", "--", "."],
             capture_output=True,
             cwd=str(project),
             timeout=30,

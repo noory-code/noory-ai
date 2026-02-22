@@ -15,6 +15,7 @@ import re
 import subprocess
 from dataclasses import dataclass, field
 from importlib import resources
+from pathlib import Path
 from typing import Any
 
 from evonest.core import claude_runner
@@ -96,7 +97,7 @@ def _gather_static_context(project: str, config: EvonestConfig) -> str:
             )
             if result.returncode == 0 and result.stdout.strip():
                 lines = result.stdout.strip().splitlines()
-                test_lines = [l for l in lines if "::" in l][:100]  # cap at 100 test IDs
+                test_lines = [line for line in lines if "::" in line][:100]
                 if test_lines:
                     sections.append(
                         f"### Test Inventory ({len(test_lines)} tests)\n\n"
@@ -642,7 +643,7 @@ def run_verify(
 def _git_diff_stat(project: Path) -> str:
     try:
         result = subprocess.run(
-            ["git", "diff", "--stat", "HEAD", "--", str(project)],
+            ["git", "diff", "--stat", "HEAD", "--", "."],
             capture_output=True,
             text=True,
             cwd=str(project),
@@ -656,7 +657,7 @@ def _git_diff_stat(project: Path) -> str:
 def _git_changed_files(project: Path) -> list[str]:
     try:
         result = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD", "--", str(project)],
+            ["git", "diff", "--name-only", "HEAD", "--", "."],
             capture_output=True,
             text=True,
             cwd=str(project),

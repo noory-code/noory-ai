@@ -16,10 +16,14 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Quality Assurance",
 ]
-
 dependencies = [
     "mcp[cli]>=1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/noory-code/noory-ai/tree/main/evonest"
+Repository = "https://github.com/noory-code/noory-ai"
+Changelog = "https://github.com/noory-code/noory-ai/blob/main/evonest/CHANGELOG.md"
 
 [project.scripts]
 evonest = "evonest:main"

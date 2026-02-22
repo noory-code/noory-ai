@@ -19,14 +19,14 @@ Most AI coding tools give you a single perspective. Evonest sends 19 different s
 
 ### Claude Code Plugin
 
-**1. Add marketplace** (points to https://github.com/wooxist/evonest)
+**1. Add marketplace** (points to https://github.com/noory-code/noory-ai)
 ```
-/plugin marketplace add wooxist/evonest
+/plugin marketplace add noory-code/noory-ai
 ```
 
 **2. Install plugin**
 ```
-/plugin install evonest@wooxist/evonest
+/plugin install evonest@noory-code/noory-ai
 ```
 
 Slash commands (`/evonest:analyze`, `/evonest:improve`, `/evonest:evolve`) become available immediately.

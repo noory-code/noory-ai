@@ -2,6 +2,37 @@
 
 All notable changes to Evonest are documented here.
 
+## [0.3.0] — 2026-02-22
+
+### Mode Redesign
+- **`evonest analyze`** — Observe-only pass that saves ALL improvements as proposals (no code changes)
+- **`evonest improve`** — Execute a single proposal → Verify → commit/PR
+- **`evonest evolve`** — Full autonomous cycle: Observe → Plan → Execute → Verify → commit/PR
+- `--dry-run` deprecated (redirects to `analyze`)
+- `--cautious` flag: pause after Plan phase for human review before executing
+
+### Observe Efficiency
+- `_gather_static_context()`: git log, file tree, test inventory collected once and shared across all personas — eliminates redundant LLM tool calls
+
+### Claude Code Plugin
+- `.claude-plugin/plugin.json` manifest with inline `mcpServers`
+- Slash commands: `/evonest:analyze`, `/evonest:improve`, `/evonest:evolve`, `/evonest:identity`
+- Auto-trigger skill for Claude agent integration
+
+### Monorepo Migration
+- Moved to `noory-ai/` monorepo alongside `distill` package
+- Replaced `Path(__file__)` resource loading with `importlib.resources` in `mutations.py`, `phases.py`, `meta_observe.py`, `scout.py` — fixes plugin cache directory compatibility
+- Added `--` pathspec to all `git ls-files` calls for monorepo file isolation
+- Scoped git helper functions (`stash`, `add`, `commit`, `revert`) to project directory via `cwd` + `.` pathspec
+
+### New MCP Tools
+- `evonest_analyze` — Run analyze mode via MCP
+- `evonest_improve` — Run improve mode via MCP
+
+**329 tests passing**
+
+---
+
 ## [0.2.0] — 2026-02-19
 
 ### Added

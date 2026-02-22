@@ -10,8 +10,12 @@ src/evonest/
 ├── cli.py                # argparse CLI (init, run, status, config, ...)
 │
 ├── tools/                # MCP tool definitions (thin wrappers)
-│   ├── run.py            # evonest_run → core.orchestrator.run_cycles
+│   ├── analyze.py        # evonest_analyze → core.orchestrator.run_analyze
+│   ├── improve.py        # evonest_improve → core.orchestrator.run_improve
+│   ├── evolve.py         # evonest_evolve → core.orchestrator.run_cycles
+│   ├── run.py            # evonest_run (deprecated → evonest_evolve)
 │   ├── init.py           # evonest_init → core.initializer.init_project
+│   ├── proposals.py      # evonest_proposals → core.state.list_proposals
 │   ├── status.py         # evonest_status → core.state.ProjectState.summary
 │   ├── history.py        # evonest_history → core.history.get_recent_history
 │   ├── config.py         # evonest_config → core.config.EvonestConfig
@@ -56,7 +60,7 @@ src/evonest/
 ## Orchestrator Flow
 
 ```
-evonest run
+evonest evolve
   │
   ├─ Load EvonestConfig (3-tier: defaults < .evonest/config.json < runtime args)
   ├─ Create ProjectState (validates .evonest/ exists)
@@ -99,7 +103,7 @@ evonest run
       │   ├─ Save output to .evonest/plan.txt
       │   └─ Check for "no improvements" → stop loop
       │
-      ├─ [dry-run: skip phases 3-4, count as success]
+      ├─ [cautious mode: pause here, await confirmation]
       │
       ├─ Phase 3: EXECUTE
       │   ├─ Git stash checkpoint

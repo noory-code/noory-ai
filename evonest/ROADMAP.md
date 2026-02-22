@@ -34,12 +34,15 @@
 - Shared across all personas — no redundant LLM tool calls
 
 ### Claude Code Plugin
-- `.claude-plugin/plugin.json` — plugin manifest
-- `.mcp.plugin.json` — MCP server config using `${CLAUDE_PLUGIN_ROOT}`
-- `commands/` — `/evonest:analyze`, `/evonest:improve`, `/evonest:evolve`
+- `.claude-plugin/plugin.json` — plugin manifest with inline `mcpServers`
+- `commands/` — `/evonest:analyze`, `/evonest:improve`, `/evonest:evolve`, `/evonest:identity`
 - `skills/evonest/` — auto-trigger skill for Claude
 
-**246 tests passing**
+### Monorepo & Plugin Compatibility
+- `importlib.resources` for all package resource loading (replaces `Path(__file__)`)
+- Git pathspec scoping (`-- .`) for monorepo isolation
+
+**329 tests passing**
 
 ---
 
@@ -54,21 +57,21 @@
 ## Vision
 
 ### Persona Community (community, free)
-퍼소나와 어드버세리얼을 커뮤니티가 자유롭게 공유하는 공간.
-GitHub 기반 레포지토리(`wooxist/evonest-personas`)로 운영.
-누구나 기여하고, 누구나 가져다 쓸 수 있다.
+A space for the community to freely share personas and adversarials.
+Operated as a GitHub-based repository (`noory-code/evonest-personas`).
+Anyone can contribute, anyone can use them.
 
 ```
-wooxist/evonest-personas
-├── startup/        # 스타트업 특화
-├── security/       # 보안 집중
-├── data-science/   # 데이터 사이언스
-└── community/      # 커뮤니티 기여
+noory-code/evonest-personas
+├── startup/        # Startup-focused
+├── security/       # Security-focused
+├── data-science/   # Data science
+└── community/      # Community contributions
 ```
 
-설치: `.evonest/dynamic-personas.json`에 직접 추가하거나, 향후 `evonest_import` 툴로.
+Installation: add directly to `.evonest/dynamic-personas.json`, or via a future `evonest_import` tool.
 
 ### Nest Hierarchy (long-term)
-- **Small nest** (현재): 단일 프로젝트 자율 진화
-- **Medium nest**: 여러 모듈 조율 — 의존성, 순서, 인터페이스 진화
-- **Large nest**: 서비스 아이덴티티 정의 → 모듈 자동 분해 → 각 모듈 진화 → 통합
+- **Small nest** (current): Single-project autonomous evolution
+- **Medium nest**: Multi-module orchestration — dependencies, ordering, interface evolution
+- **Large nest**: Service identity definition → automatic module decomposition → per-module evolution → integration

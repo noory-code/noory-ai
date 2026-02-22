@@ -8,11 +8,11 @@ from pathlib import Path
 def test_version() -> None:
     from evonest import __version__
 
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.2.0"
 
 
 def test_mutations_exist() -> None:
-    mutations_dir = Path(__file__).parent.parent / "mutations"
+    mutations_dir = Path(__file__).parent.parent / "src" / "evonest" / "mutations"
     assert (mutations_dir / "personas.json").exists()
     assert (mutations_dir / "adversarial.json").exists()
 
