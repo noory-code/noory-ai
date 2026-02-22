@@ -1,0 +1,16 @@
+{
+  "name": "noory-ai",
+  "owner": {
+    "name": "noory-code"
+  },
+  "plugins": [
+    {
+      "name": "evonest",
+      "source": {
+        "source": "github",
+        "repo": "wooxist/evonest"
+      },
+      "description": "Autonomous code evolution engine — observe, plan, execute, verify"
+    }
+  ]
+}
