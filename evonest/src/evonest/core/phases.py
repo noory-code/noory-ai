@@ -45,7 +45,7 @@ def _gather_static_context(project: str, config: EvonestConfig) -> str:
     # 1. Recent git log (last 5 commits with stats)
     try:
         result = subprocess.run(
-            ["git", "log", "--stat", "-5", "--oneline"],
+            ["git", "log", "--stat", "-5", "--oneline", "--", project],
             capture_output=True,
             text=True,
             cwd=project,
@@ -641,7 +641,7 @@ def run_verify(
 def _git_diff_stat(project: Path) -> str:
     try:
         result = subprocess.run(
-            ["git", "diff", "--stat", "HEAD"],
+            ["git", "diff", "--stat", "HEAD", "--", str(project)],
             capture_output=True,
             text=True,
             cwd=str(project),
@@ -655,7 +655,7 @@ def _git_diff_stat(project: Path) -> str:
 def _git_changed_files(project: Path) -> list[str]:
     try:
         result = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD"],
+            ["git", "diff", "--name-only", "HEAD", "--", str(project)],
             capture_output=True,
             text=True,
             cwd=str(project),

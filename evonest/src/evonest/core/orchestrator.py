@@ -624,7 +624,7 @@ def _git_stash(project: Path) -> None:
     try:
         ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         subprocess.run(
-            ["git", "stash", "push", "-m", f"evonest-checkpoint-{ts}", "--quiet"],
+            ["git", "stash", "push", "-m", f"evonest-checkpoint-{ts}", "--quiet", "--", str(project)],
             capture_output=True,
             cwd=str(project),
             timeout=30,
@@ -648,7 +648,7 @@ def _git_stash_drop(project: Path) -> None:
 def _git_commit(project: Path, message: str) -> None:
     try:
         subprocess.run(
-            ["git", "add", "-A"],
+            ["git", "add", "--", str(project)],
             capture_output=True,
             cwd=str(project),
             timeout=30,
@@ -702,7 +702,7 @@ def _git_commit_pr(
         )
 
         # Commit
-        subprocess.run(["git", "add", "-A"], capture_output=True, cwd=str(project), timeout=30)
+        subprocess.run(["git", "add", "--", str(project)], capture_output=True, cwd=str(project), timeout=30)
         full_msg = f"{message}\n\nCo-Authored-By: Evonest <noreply@evonest.dev>"
         subprocess.run(
             ["git", "commit", "-m", full_msg, "--quiet"],
@@ -771,7 +771,7 @@ def _git_commit_pr(
 def _git_revert(project: Path) -> None:
     try:
         subprocess.run(
-            ["git", "checkout", "."],
+            ["git", "checkout", "--", str(project)],
             capture_output=True,
             cwd=str(project),
             timeout=30,
