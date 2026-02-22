@@ -1,9 +1,0 @@
-{
-  "plugins": [
-    {
-      "name": "evonest",
-      "description": "Autonomous code evolution engine — observe, plan, execute, verify",
-      "plugin": ".claude-plugin/plugin.json"
-    }
-  ]
-}

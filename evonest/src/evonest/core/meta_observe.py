@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
+from importlib import resources
 from typing import Any
 
 from evonest.core.config import EvonestConfig
@@ -43,8 +43,11 @@ def expire_dynamic_mutations(state: ProjectState, current_cycle: int) -> dict[st
 def build_meta_prompt(state: ProjectState, config: EvonestConfig) -> str:
     """Build the full meta-observe prompt from template + context."""
     # Load the prompt template
-    prompt_path = Path(__file__).resolve().parent.parent / "prompts" / "meta_observe.md"
-    template = prompt_path.read_text(encoding="utf-8") if prompt_path.exists() else ""
+    ref = resources.files("evonest") / "prompts" / "meta_observe.md"
+    try:
+        template = ref.read_text(encoding="utf-8")
+    except (FileNotFoundError, OSError):
+        template = ""
 
     # Current personas/adversarials lists
     personas = load_personas(state)

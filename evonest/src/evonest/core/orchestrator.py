@@ -585,7 +585,7 @@ def _count_source_files(project: str) -> int:
     """
     try:
         result = subprocess.run(
-            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.py"],
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", "*.py"],
             capture_output=True,
             text=True,
             cwd=project,

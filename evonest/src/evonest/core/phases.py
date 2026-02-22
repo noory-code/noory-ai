@@ -14,7 +14,7 @@ import logging
 import re
 import subprocess
 from dataclasses import dataclass, field
-from pathlib import Path
+from importlib import resources
 from typing import Any
 
 from evonest.core import claude_runner
@@ -59,7 +59,7 @@ def _gather_static_context(project: str, config: EvonestConfig) -> str:
     # 2. Source file tree (tracked files, respects .gitignore)
     try:
         result = subprocess.run(
-            ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", "."],
             capture_output=True,
             text=True,
             cwd=project,
@@ -113,10 +113,11 @@ def _gather_static_context(project: str, config: EvonestConfig) -> str:
 
 def _load_prompt(name: str) -> str:
     """Load a prompt template by name."""
-    path = Path(__file__).resolve().parent.parent / "prompts" / f"{name}.md"
-    if path.exists():
-        return path.read_text(encoding="utf-8")
-    return ""
+    ref = resources.files("evonest") / "prompts" / f"{name}.md"
+    try:
+        return ref.read_text(encoding="utf-8")
+    except (FileNotFoundError, OSError):
+        return ""
 
 
 @dataclass

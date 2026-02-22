@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import random
-from pathlib import Path
+from importlib import resources
 from typing import Any
 
 from evonest.core.state import ProjectState
@@ -17,15 +17,12 @@ from evonest.core.state import ProjectState
 
 def _load_builtin(filename: str) -> list[dict[str, Any]]:
     """Load a built-in mutation file from the package."""
-    # Fall back to path-based resolution relative to this file
-    candidates = [
-        Path(__file__).resolve().parent.parent.parent.parent / "mutations" / filename,
-    ]
-    for p in candidates:
-        if p.exists():
-            data: list[dict] = json.loads(p.read_text(encoding="utf-8"))  # type: ignore[type-arg]
-            return data
-    return []
+    ref = resources.files("evonest") / "mutations" / filename
+    try:
+        data: list[dict] = json.loads(ref.read_text(encoding="utf-8"))  # type: ignore[type-arg]
+        return data
+    except (FileNotFoundError, OSError):
+        return []
 
 
 def load_personas(

@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from pathlib import Path
+from importlib import resources
 from typing import Any
 
 from evonest.core.config import EvonestConfig
@@ -32,8 +32,11 @@ def should_run_scout(progress: dict, config: EvonestConfig) -> bool:  # type: ig
 
 def build_scout_prompt(state: ProjectState) -> str:
     """Build the scout prompt from template + project identity."""
-    prompt_path = Path(__file__).resolve().parent.parent / "prompts" / "scout.md"
-    template = prompt_path.read_text(encoding="utf-8") if prompt_path.exists() else ""
+    ref = resources.files("evonest") / "prompts" / "scout.md"
+    try:
+        template = ref.read_text(encoding="utf-8")
+    except (FileNotFoundError, OSError):
+        template = ""
 
     identity = state.read_identity()
 
