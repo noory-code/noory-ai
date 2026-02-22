@@ -217,9 +217,31 @@ def test_proposal_add_creates_file(paths: EvonestPaths, proposal_repo: ProposalR
 def test_proposal_add_filename_pattern(
     paths: EvonestPaths, proposal_repo: ProposalRepository
 ) -> None:
+    # No title: falls back to proposal-{HHMMSS}.md
     path_str = proposal_repo.add("content")
     name = Path(path_str).name
-    assert name.startswith("proposal-0003-")
+    assert name.startswith("proposal-")
+    assert name.endswith(".md")
+
+
+def test_proposal_add_filename_with_title_and_persona(
+    paths: EvonestPaths, proposal_repo: ProposalRepository
+) -> None:
+    # With title + persona: {persona}-{title-slug}-{HHMMSS}.md
+    path_str = proposal_repo.add(
+        "content", title="Shell Injection Risk", persona_id="security-auditor"
+    )
+    name = Path(path_str).name
+    assert name.startswith("security-auditor-shell-injection-risk-")
+    assert name.endswith(".md")
+
+
+def test_proposal_add_filename_with_title_only(
+    paths: EvonestPaths, proposal_repo: ProposalRepository
+) -> None:
+    path_str = proposal_repo.add("content", title="My Improvement")
+    name = Path(path_str).name
+    assert name.startswith("my-improvement-")
     assert name.endswith(".md")
 
 

@@ -211,16 +211,23 @@ class ProposalRepository:
         self._paths = paths
         self._progress = progress
 
-    def add(self, content: str, title: str | None = None) -> str:
-        """Save a proposal file and return its path."""
+    def add(self, content: str, title: str | None = None, persona_id: str | None = None) -> str:
+        """Save a proposal file and return its path.
+
+        Filename format: {persona}-{title-slug}-{HHMMSS}.md
+        Falls back to proposal-{HHMMSS}.md when title is absent.
+        """
         self._paths.proposals_dir.mkdir(parents=True, exist_ok=True)
-        cycle = self._progress.read().get("total_cycles", 0)
+        ts = datetime.now(UTC).strftime("%H%M%S")
         if title:
-            slug = _slugify(title)
-            stem = f"proposal-{cycle:04d}-{slug}"
+            title_slug = _slugify(title)
+            if persona_id:
+                persona_slug = _slugify(persona_id)
+                stem = f"{persona_slug}-{title_slug}-{ts}"
+            else:
+                stem = f"{title_slug}-{ts}"
         else:
-            ts = datetime.now(UTC).strftime("%H%M%S")
-            stem = f"proposal-{cycle:04d}-{ts}"
+            stem = f"proposal-{ts}"
         path = self._paths.proposals_dir / f"{stem}.md"
         # Collision guard
         counter = 2
@@ -234,7 +241,7 @@ class ProposalRepository:
         """Return all pending proposal files sorted by name."""
         if not self._paths.proposals_dir.exists():
             return []
-        return sorted(self._paths.proposals_dir.glob("proposal-*.md"))
+        return sorted(self._paths.proposals_dir.glob("*.md"))
 
     def mark_done(self, filename: str) -> Path:
         """Move a proposal to proposals/done/. Returns destination path.

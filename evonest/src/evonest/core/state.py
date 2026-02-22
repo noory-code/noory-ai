@@ -219,8 +219,10 @@ class ProjectState:
     def clear_pending(self) -> None:
         self.pending.clear()
 
-    def add_proposal(self, content: str, title: str | None = None) -> str:
-        return self.proposals.add(content, title=title)
+    def add_proposal(
+        self, content: str, title: str | None = None, persona_id: str | None = None
+    ) -> str:
+        return self.proposals.add(content, title=title, persona_id=persona_id)
 
     def list_proposals(self) -> list[Path]:
         return self.proposals.list()
