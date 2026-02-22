@@ -44,6 +44,62 @@ uv run python -m distill  # run MCP server
 - All documents, comments, commit messages, and code artifacts must be written in **English**
 - Conversation with the user is in **Korean**
 
+## Core Principles
+
+### SSOT (Single Source of Truth)
+
+- If information already exists elsewhere, link to it — do not duplicate
+- Every piece of data must have one clear canonical location
+
+### MECE (Mutually Exclusive, Collectively Exhaustive)
+
+- New code/categories must not overlap with existing ones — merge if they do
+- Check for missing cases before considering work complete
+
+### SoC (Separation of Concerns)
+
+- Each module has exactly one responsibility
+- Review for splitting when a file exceeds 500 lines
+
+### Atomic Commits
+
+- Each commit must pass build + tests on its own
+- Each commit contains exactly one purpose
+- Commit message explains "what and why", not "how"
+
+### Incremental Progress
+
+- Break work into small, verifiable steps
+- Verify after each step before proceeding
+
+### After Completing Work
+
+- Summarize changes made
+- Ask "Shall I commit?" before committing
+
+### Diagrams
+
+- Use **Mermaid** for all diagrams
+- Never use `1.`, `2.` (number + period) in node labels — causes parser errors
+
+### AI-First Documentation
+
+> Write docs so AI executes user intent **deterministically**
+
+- Use structured formats (YAML if/then/when) over prose
+- Make conditions explicit (file paths, keywords, thresholds)
+- Eliminate ambiguity
+
+**Banned phrases** (these cause AI to make arbitrary judgments):
+
+| Banned | Use Instead |
+|--------|-------------|
+| "as appropriate" | Specify exact threshold or condition |
+| "if needed" | State the explicit trigger condition |
+| "depending on the situation" | List each case with its action |
+| "as you see fit" | Provide `if: condition then: action` |
+| "handle accordingly" | Specify the exact handling logic |
+
 ## Code Conventions
 
 - Python 3.11+, pathlib.Path everywhere (never `os.path`)
