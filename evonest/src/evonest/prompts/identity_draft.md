@@ -17,9 +17,15 @@ You are helping initialize a new Evonest project. Your task is to read the proje
 
 2. Based on what you find, fill in the identity.md template below. Skip any section you cannot find good information for — leave it as the placeholder comment.
 
-3. Output ONLY the identity.md content. No explanation, no preamble, no code fences.
+3. Output ONLY the raw markdown content of identity.md. **CRITICAL rules:**
+   - Do NOT include ANY preamble (e.g. "Here's the draft:", "Perfect.", "Sure!")
+   - Do NOT wrap the output in code fences (``` or ~~~)
+   - Start your output DIRECTLY with `# Project Identity`
+   - End your output DIRECTLY after the last section content
 
 ## identity.md Template
+
+The template below is shown inside code fences for formatting only. Your output must NOT include these fences.
 
 ```
 # Project Identity

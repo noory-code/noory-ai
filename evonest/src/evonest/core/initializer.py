@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import UTC, datetime
 from importlib import resources
 from pathlib import Path
@@ -15,6 +16,25 @@ def _get_template(name: str) -> str:
     """Read a template file from the package."""
     ref = resources.files("evonest") / "templates" / name
     return ref.read_text(encoding="utf-8")
+
+
+def _clean_identity_draft(raw: str) -> str:
+    """Strip LLM preamble and code fences from identity.md draft output."""
+    text = raw.strip()
+
+    # If the output is wrapped in a code fence, extract the content inside
+    fence_match = re.search(
+        r"```(?:markdown|md)?\s*\n(.*?)```", text, re.DOTALL
+    )
+    if fence_match:
+        text = fence_match.group(1).strip()
+
+    # Strip any preamble before the first markdown heading
+    heading_match = re.search(r"^(#\s+.+)$", text, re.MULTILINE)
+    if heading_match:
+        text = text[heading_match.start() :]
+
+    return text.strip()
 
 
 def _draft_identity_via_claude(project: Path) -> str | None:
@@ -35,7 +55,7 @@ def _draft_identity_via_claude(project: Path) -> str | None:
             cwd=str(project),
         )
         if result.success and result.output.strip():
-            return result.output.strip()
+            return _clean_identity_draft(result.output)
     except Exception:
         logger.debug("identity draft via claude failed", exc_info=True)
     return None

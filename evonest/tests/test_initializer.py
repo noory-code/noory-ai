@@ -8,7 +8,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from evonest.core.initializer import _draft_identity_via_claude, init_project
+from evonest.core.initializer import (
+    _clean_identity_draft,
+    _draft_identity_via_claude,
+    init_project,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -157,3 +161,47 @@ def test_draft_identity_returns_none_on_failure(tmp_path: Path) -> None:
         result = _draft_identity_via_claude(tmp_path)
 
     assert result is None
+
+
+# ── _clean_identity_draft tests ──────────────────────────
+
+
+def test_clean_strips_preamble_and_code_fence() -> None:
+    raw = (
+        "Perfect. I have all the information needed. "
+        "Here's the identity.md draft:\n"
+        "```markdown\n"
+        "# Project Identity\n\n## Mission\nDo stuff.\n"
+        "```"
+    )
+    result = _clean_identity_draft(raw)
+    assert result.startswith("# Project Identity")
+    assert "Perfect" not in result
+    assert "```" not in result
+
+
+def test_clean_strips_preamble_without_fence() -> None:
+    raw = "Sure! Here is the identity:\n\n# Project Identity\n\n## Mission\nBuild things."
+    result = _clean_identity_draft(raw)
+    assert result.startswith("# Project Identity")
+    assert "Sure" not in result
+
+
+def test_clean_preserves_clean_output() -> None:
+    raw = "# Project Identity\n\n## Mission\nAlready clean."
+    result = _clean_identity_draft(raw)
+    assert result == raw
+
+
+def test_clean_handles_plain_code_fence() -> None:
+    raw = "```\n# Project Identity\n\n## Mission\nPlain fence.\n```"
+    result = _clean_identity_draft(raw)
+    assert result.startswith("# Project Identity")
+    assert "```" not in result
+
+
+def test_clean_handles_md_fence_tag() -> None:
+    raw = "```md\n# Project Identity\n\n## Mission\nMd fence.\n```"
+    result = _clean_identity_draft(raw)
+    assert result.startswith("# Project Identity")
+    assert "```" not in result
