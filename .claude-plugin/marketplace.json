@@ -6,18 +6,12 @@
   "plugins": [
     {
       "name": "evonest",
-      "source": {
-        "source": "github",
-        "repo": "wooxist/evonest"
-      },
+      "source": "./evonest",
       "description": "Autonomous code evolution engine — observe, plan, execute, verify"
     },
     {
       "name": "distill",
-      "source": {
-        "source": "github",
-        "repo": "wooxist/distill"
-      },
+      "source": "./distill",
       "description": "Extract and recall reusable knowledge from Claude Code conversations"
     }
   ]
