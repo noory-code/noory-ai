@@ -118,8 +118,8 @@ def test_observe_mode_defaults() -> None:
     assert config.deep_cycle_interval == 10
     assert config.observe_turns_quick_ratio == 0.10
     assert config.observe_turns_deep_ratio == 0.50
-    assert config.observe_turns_min_quick == 50
-    assert config.observe_turns_min_deep == 100
+    assert config.observe_turns_min_quick == 15
+    assert config.observe_turns_min_deep == 30
     assert config.max_turns.observe_deep == 100
 
 

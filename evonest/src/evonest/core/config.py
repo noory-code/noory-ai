@@ -94,8 +94,8 @@ class EvonestConfig:
     deep_cycle_interval: int = 10
     observe_turns_quick_ratio: float = 0.10
     observe_turns_deep_ratio: float = 0.50
-    observe_turns_min_quick: int = 50
-    observe_turns_min_deep: int = 100
+    observe_turns_min_quick: int = 15
+    observe_turns_min_deep: int = 30
     verify: VerifyConfig = field(default_factory=VerifyConfig)
     max_turns: MaxTurnsConfig = field(default_factory=MaxTurnsConfig)
     # Language for generated files (proposals, identity, advice). e.g. "korean", "english"
