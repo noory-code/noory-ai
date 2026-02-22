@@ -39,6 +39,11 @@ uv run mcp dev src/evonest/server.py  # MCP inspector
 uv run python -m distill  # run MCP server
 ```
 
+## Language
+
+- All documents, comments, commit messages, and code artifacts must be written in **English**
+- Conversation with the user is in **Korean**
+
 ## Code Conventions
 
 - Python 3.11+, pathlib.Path everywhere (never `os.path`)
