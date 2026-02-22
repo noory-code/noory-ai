@@ -1,0 +1,17 @@
+{
+  "total_cycles": 0,
+  "total_successes": 0,
+  "total_failures": 0,
+  "last_run": null,
+  "last_improvement": null,
+  "last_meta_cycle": 0,
+  "persona_stats": {},
+  "adversarial_stats": {},
+  "area_touch_counts": {},
+  "convergence_flags": {},
+  "activation": {
+    "initialized_at": null,
+    "first_success_at": null,
+    "successful_commits": 0
+  }
+}

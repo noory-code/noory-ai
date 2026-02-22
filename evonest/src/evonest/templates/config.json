@@ -1,0 +1,27 @@
+{
+  "language": "english",
+  "code_output": "commit",
+  "active_level": "standard",
+  "verify": {
+    "build": null,
+    "test": null
+  },
+  "levels": {
+    "quick":    { "model": "haiku",  "observe_mode": "quick" },
+    "standard": { "model": "sonnet", "observe_mode": "auto"  },
+    "deep":     { "model": "opus",   "observe_mode": "deep"  }
+  },
+  "scout_enabled": true,
+  "adversarial_probability": 0.2,
+  "disabled_personas": [],
+  "disabled_adversarials": [],
+  "max_cycles_per_run": 5,
+  "max_turns": {
+    "observe": 25,
+    "observe_deep": 100,
+    "plan": 15,
+    "execute": 25,
+    "meta": 10,
+    "scout": 15
+  }
+}

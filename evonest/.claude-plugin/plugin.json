@@ -1,0 +1,13 @@
+{
+  "name": "evonest",
+  "version": "0.2.0",
+  "description": "Autonomous code evolution engine — observe, plan, execute, verify",
+  "author": {
+    "name": "Evonest Contributors"
+  },
+  "homepage": "https://github.com/wooxist/evonest",
+  "repository": "https://github.com/wooxist/evonest",
+  "license": "MIT",
+  "keywords": ["evolution", "code-quality", "autonomous", "mcp", "claude"],
+  "mcpServers": "./.mcp.plugin.json"
+}

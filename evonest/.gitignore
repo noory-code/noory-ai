@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual env
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.claude/settings.local.json
+
+# Obsidian
+.obsidian/
+
+# OS
+.DS_Store
+
+# Test/coverage
+.coverage
+coverage.json
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Env/secrets
+.env
+*.key
+*.pem
+credentials*
+secrets*
+
+# Evonest evolution data
+.evonest/
+.mcp.json

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "break-interfaces",
+    "name": "Break Public Interfaces",
+    "challenge": "Try to break the project's public interfaces with adversarial inputs. Test: empty strings, null-like values, extremely long strings (10K+ chars), injection attempts in parameters, special characters (unicode, null bytes, newlines in single-line fields), and parameters that are valid types but semantically wrong. Write tests for any crashes you find.",
+    "target": "public API and exported functions"
+  },
+  {
+    "id": "corrupt-state",
+    "name": "Corrupt Storage State",
+    "challenge": "Test what happens when the storage or persistence layer encounters corruption. Consider: missing or truncated data files, schema or format version mismatch, empty data stores, read-only file permissions, data directories that exist but are not writable. Add defensive checks or tests for any gaps found.",
+    "target": "storage and persistence layer"
+  },
+  {
+    "id": "concurrent-access",
+    "name": "Concurrent Access Stress",
+    "challenge": "Analyze concurrent access patterns. What happens when two processes or requests access the same resource simultaneously? Are there race conditions in read-then-write sequences (read state, act on it, but another process changed it in between)? Check for file locking, connection lifecycle, and shared mutable state that is not synchronized.",
+    "target": "shared resources and state management"
+  },
+  {
+    "id": "malicious-input",
+    "name": "Malicious Input Data",
+    "challenge": "Test the data processing pipeline with adversarial content. Consider: prompt injection attempts (if LLM is involved), extremely large inputs, malformed data (truncated, invalid encoding, structurally valid but semantically wrong), and inputs designed to produce zero useful output. Write tests for any edge cases found.",
+    "target": "data ingestion and processing"
+  },
+  {
+    "id": "requirements-shift",
+    "name": "Requirements Earthquake",
+    "challenge": "Imagine the project's requirements change dramatically: a new major input format must be supported, the primary data store needs to be swapped, or the project must run in a completely different environment (serverless, embedded, different OS). How coupled is the codebase to its current assumptions? Identify the top 3 places where such a change would cascade painfully, and suggest abstractions or interface boundaries that would reduce the blast radius.",
+    "target": "."
+  },
+  {
+    "id": "scale-100x",
+    "name": "Scale 100x",
+    "challenge": "Assume the project needs to handle 100x its current workload. Walk through the critical data path and identify every bottleneck: synchronous operations that should be async, in-memory data structures that would exceed RAM, O(n^2) algorithms hiding in loops, single-threaded operations that need parallelism, and configuration values that are hardcoded for small scale. Propose concrete changes, not vague 'add caching'.",
+    "target": "critical data path and hot loops"
+  },
+  {
+    "id": "wrong-abstraction",
+    "name": "Wrong Abstraction Audit",
+    "challenge": "Examine the project's core abstractions. For each major module or class, ask: is this the right abstraction? Is it doing too much (god object) or too little (anemic wrapper)? Are there abstractions that were created speculatively but only have one implementation? Are there places where copy-paste would actually be clearer than the current abstraction? Identify the single worst abstraction in the codebase and propose a concrete replacement.",
+    "target": "core modules and interfaces"
+  },
+  {
+    "id": "dependency-apocalypse",
+    "name": "Dependency Apocalypse",
+    "challenge": "Audit the project's dependency tree. For each external dependency: what happens if it is abandoned or introduces a breaking change? Could it be replaced with a standard library equivalent? Are there dependencies pulled in for a single function? Check for version pinning, lockfile consistency, and whether the project could build and pass tests if any single dependency disappeared. Identify the riskiest dependency.",
+    "target": "package manifests and imports"
+  }
+]
