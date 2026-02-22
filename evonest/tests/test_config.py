@@ -192,3 +192,91 @@ def test_validate_active_level_custom(tmp_project: Path) -> None:
 
     config = EvonestConfig.load(tmp_project)
     assert config.active_level == "ultra"  # no ValidationError
+
+
+# ── personas / adversarials toggle map ────────
+
+
+def test_personas_default_empty_dict() -> None:
+    config = EvonestConfig()
+    assert config.personas == {}
+    assert config.adversarials == {}
+    assert config.disabled_persona_ids == []
+    assert config.disabled_adversarial_ids == []
+
+
+def test_disabled_persona_ids_property() -> None:
+    config = EvonestConfig()
+    config.personas = {"a": True, "b": False, "c": True}
+    assert config.disabled_persona_ids == ["b"]
+
+
+def test_disabled_adversarial_ids_property() -> None:
+    config = EvonestConfig()
+    config.adversarials = {"x": False, "y": True}
+    assert config.disabled_adversarial_ids == ["x"]
+
+
+def test_personas_roundtrip(tmp_project: Path) -> None:
+    config = EvonestConfig.load(tmp_project)
+    config.personas["chaos-engineer"] = False
+    config.adversarials["break-interfaces"] = False
+    config.save()
+
+    reloaded = EvonestConfig.load(tmp_project)
+    assert reloaded.personas["chaos-engineer"] is False
+    assert reloaded.adversarials["break-interfaces"] is False
+    assert reloaded.personas.get("security-auditor") is True  # from template
+
+
+def test_set_dotted_personas(tmp_project: Path) -> None:
+    config = EvonestConfig.load(tmp_project)
+    config.set("personas.chaos-engineer", "false")
+    assert config.personas["chaos-engineer"] is False
+    config.set("personas.chaos-engineer", "true")
+    assert config.personas["chaos-engineer"] is True
+
+
+def test_set_dotted_adversarials(tmp_project: Path) -> None:
+    config = EvonestConfig.load(tmp_project)
+    config.set("adversarials.break-interfaces", "false")
+    assert config.adversarials["break-interfaces"] is False
+
+
+def test_legacy_disabled_personas_migration(tmp_project: Path) -> None:
+    """Old config with disabled_personas is automatically migrated."""
+    cfg_path = tmp_project / ".evonest" / "config.json"
+    data = json.loads(cfg_path.read_text())
+    # Write old format
+    data.pop("personas", None)
+    data.pop("adversarials", None)
+    data["disabled_personas"] = ["chaos-engineer"]
+    data["disabled_adversarials"] = ["break-interfaces"]
+    cfg_path.write_text(json.dumps(data))
+
+    config = EvonestConfig.load(tmp_project)
+    assert config.personas.get("chaos-engineer") is False
+    assert config.adversarials.get("break-interfaces") is False
+    assert config.disabled_persona_ids == ["chaos-engineer"]
+    assert config.disabled_adversarial_ids == ["break-interfaces"]
+
+
+def test_legacy_migration_save_removes_old_keys(tmp_project: Path) -> None:
+    """After migration and save, old keys are gone."""
+    cfg_path = tmp_project / ".evonest" / "config.json"
+    data = json.loads(cfg_path.read_text())
+    data.pop("personas", None)
+    data.pop("adversarials", None)
+    data["disabled_personas"] = ["chaos-engineer"]
+    data["disabled_adversarials"] = []
+    cfg_path.write_text(json.dumps(data))
+
+    config = EvonestConfig.load(tmp_project)
+    config.save()
+
+    saved = json.loads(cfg_path.read_text())
+    assert "disabled_personas" not in saved
+    assert "disabled_adversarials" not in saved
+    assert "personas" in saved
+    assert "adversarials" in saved
+    assert saved["personas"]["chaos-engineer"] is False

@@ -38,7 +38,7 @@ async def test_disable_persona(tmp_project: Path) -> None:
     config = json.loads(
         (tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8")
     )
-    assert "security-auditor" in config["disabled_personas"]
+    assert config["personas"]["security-auditor"] is False
 
 
 @pytest.mark.asyncio
@@ -56,7 +56,7 @@ async def test_enable_persona(tmp_project: Path) -> None:
     config = json.loads(
         (tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8")
     )
-    assert "security-auditor" not in config["disabled_personas"]
+    assert config["personas"]["security-auditor"] is True
 
 
 @pytest.mark.asyncio
@@ -69,7 +69,7 @@ async def test_disable_adversarial(tmp_project: Path) -> None:
     config = json.loads(
         (tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8")
     )
-    assert "break-interfaces" in config["disabled_adversarials"]
+    assert config["adversarials"]["break-interfaces"] is False
 
 
 @pytest.mark.asyncio

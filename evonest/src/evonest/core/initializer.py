@@ -90,12 +90,26 @@ def init_project(path: str | Path, level: str = "standard") -> str:
                 content = draft if draft else _get_template("identity.md")
             else:
                 content = _get_template(template_name)
-            # Inject selected level into config.json
-            if template_name == "config.json" and level != "standard":
+            # Inject selected level and populate full persona toggle maps
+            if template_name == "config.json":
                 try:
                     from evonest.core.config import _strip_jsonc_comments
+                    from evonest.core.mutations import _load_builtin
+
                     cfg_data = json.loads(_strip_jsonc_comments(content))
-                    cfg_data["active_level"] = level
+                    if level != "standard":
+                        cfg_data["active_level"] = level
+                    # Populate full toggle maps from built-in mutations
+                    cfg_data["personas"] = {
+                        p["id"]: True
+                        for p in _load_builtin("personas.json")
+                        if "id" in p
+                    }
+                    cfg_data["adversarials"] = {
+                        a["id"]: True
+                        for a in _load_builtin("adversarial.json")
+                        if "id" in a
+                    }
                     content = json.dumps(cfg_data, indent=2, ensure_ascii=False) + "\n"
                 except (json.JSONDecodeError, ImportError):
                     pass  # Leave as-is if parsing fails

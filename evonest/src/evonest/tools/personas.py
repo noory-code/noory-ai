@@ -8,8 +8,8 @@ from evonest.server import mcp
 def _format_list(
     personas: list[dict],
     adversarials: list[dict],
-    disabled_personas: list[str],
-    disabled_adversarials: list[str],
+    personas_toggle: dict[str, bool],
+    adversarials_toggle: dict[str, bool],
     group_filter: str | None = None,
 ) -> str:
     """Format a readable persona/adversarial listing with enabled/disabled status."""
@@ -35,7 +35,7 @@ def _format_list(
         for p in items:
             pid = p.get("id", "")
             name = p.get("name", "")
-            disabled = pid in disabled_personas
+            disabled = personas_toggle.get(pid, True) is False
             mark = "x" if disabled else "o"
             suffix = " (disabled)" if disabled else ""
             lines.append(f"  [{mark}] {pid} — {name}{suffix}")
@@ -48,14 +48,15 @@ def _format_list(
         for a in sorted(adversarials, key=lambda a: a.get("id", "")):
             aid = a.get("id", "")
             name = a.get("name", "")
-            disabled = aid in disabled_adversarials
+            disabled = adversarials_toggle.get(aid, True) is False
             mark = "x" if disabled else "o"
             suffix = " (disabled)" if disabled else ""
             lines.append(f"  [{mark}] {aid} — {name}{suffix}")
         lines.append("")
 
     # Summary
-    all_disabled = disabled_personas + disabled_adversarials
+    all_disabled = [pid for pid, on in personas_toggle.items() if not on]
+    all_disabled += [aid for aid, on in adversarials_toggle.items() if not on]
     if all_disabled:
         lines.append(f"Disabled: {', '.join(all_disabled)}")
     else:
@@ -97,7 +98,7 @@ async def evonest_personas(
     if action == "list":
         return _format_list(
             personas, adversarials,
-            cfg.disabled_personas, cfg.disabled_adversarials,
+            cfg.personas, cfg.adversarials,
             group_filter=group,
         )
 
@@ -114,26 +115,24 @@ async def evonest_personas(
 
     if action == "disable":
         for i in ids:
-            if i in all_persona_ids and i not in cfg.disabled_personas:
-                cfg.disabled_personas.append(i)
-            elif i in all_adversarial_ids and i not in cfg.disabled_adversarials:
-                cfg.disabled_adversarials.append(i)
+            if i in all_persona_ids:
+                cfg.personas[i] = False
+            elif i in all_adversarial_ids:
+                cfg.adversarials[i] = False
         cfg.save()
         return f"Disabled: {', '.join(ids)}\n\n" + _format_list(
-            personas, adversarials,
-            cfg.disabled_personas, cfg.disabled_adversarials,
+            personas, adversarials, cfg.personas, cfg.adversarials,
         )
 
     if action == "enable":
         for i in ids:
-            if i in cfg.disabled_personas:
-                cfg.disabled_personas.remove(i)
-            if i in cfg.disabled_adversarials:
-                cfg.disabled_adversarials.remove(i)
+            if i in all_persona_ids:
+                cfg.personas[i] = True
+            if i in all_adversarial_ids:
+                cfg.adversarials[i] = True
         cfg.save()
         return f"Enabled: {', '.join(ids)}\n\n" + _format_list(
-            personas, adversarials,
-            cfg.disabled_personas, cfg.disabled_adversarials,
+            personas, adversarials, cfg.personas, cfg.adversarials,
         )
 
     # unreachable — action already validated above

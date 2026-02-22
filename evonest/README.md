@@ -149,9 +149,14 @@ Each persona brings a distinct angle to the codebase:
 ```json
 // .evonest/config.json
 {
-  "active_groups": ["tech"],           // only tech personas
-  "disabled_personas": ["chaos-engineer", "monetization-analyst"],  // skip specific personas
-  "disabled_adversarials": ["break-interfaces"]  // skip specific adversarials
+  "active_groups": ["tech"],
+  "personas": {
+    "chaos-engineer": false,
+    "monetization-analyst": false
+  },
+  "adversarials": {
+    "break-interfaces": false
+  }
 }
 ```
 
@@ -262,8 +267,8 @@ Settings in `.evonest/config.json`. Engine defaults < project config < runtime a
 | `observe_mode` | `"auto"` | `auto`, `quick`, or `deep` |
 | `adversarial_probability` | `0.2` | Chance of adversarial challenge per cycle |
 | `active_groups` | `[]` | Persona group filter (`[]` = all groups) |
-| `disabled_personas` | `[]` | Persona IDs to exclude from selection |
-| `disabled_adversarials` | `[]` | Adversarial IDs to exclude from selection |
+| `personas` | `{all: true}` | Per-persona enable/disable toggle map |
+| `adversarials` | `{all: true}` | Per-adversarial enable/disable toggle map |
 | `scout_enabled` | `true` | Enable external ecosystem scout |
 | `language` | `"english"` | Output language for proposals and reports |
 

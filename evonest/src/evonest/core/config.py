@@ -85,10 +85,10 @@ class EvonestConfig:
     scout_min_relevance_score: int = 6
     # Persona group filter: empty = all groups, ["biz"] = biz only, etc.
     active_groups: list[str] = field(default_factory=list)
-    # Per-ID disable list: personas/adversarials excluded from random selection.
-    # Forced persona_id / adversarial_id overrides these lists.
-    disabled_personas: list[str] = field(default_factory=list)
-    disabled_adversarials: list[str] = field(default_factory=list)
+    # Per-ID toggle map: {persona_id: true/false}. Missing ID = enabled.
+    # Forced persona_id / adversarial_id overrides these maps.
+    personas: dict[str, bool] = field(default_factory=dict)
+    adversarials: dict[str, bool] = field(default_factory=dict)
     # Observe mode: quick (sampled) vs deep (comprehensive)
     observe_mode: str = "auto"  # "auto" | "quick" | "deep"
     deep_cycle_interval: int = 10
@@ -109,6 +109,16 @@ class EvonestConfig:
 
     # Internal: path to the config file for saving
     _config_path: Path | None = field(default=None, repr=False)
+
+    @property
+    def disabled_persona_ids(self) -> list[str]:
+        """Return IDs explicitly set to false in the personas toggle map."""
+        return [pid for pid, enabled in self.personas.items() if not enabled]
+
+    @property
+    def disabled_adversarial_ids(self) -> list[str]:
+        """Return IDs explicitly set to false in the adversarials toggle map."""
+        return [aid for aid, enabled in self.adversarials.items() if not enabled]
 
     @classmethod
     def load(cls, project: str | Path, **overrides: object) -> EvonestConfig:
@@ -183,8 +193,37 @@ class EvonestConfig:
             scout=preset.max_turns.scout,
         )
 
+    def _migrate_legacy_toggles(self, data: dict[str, object]) -> None:
+        """Convert legacy disabled_personas/disabled_adversarials to toggle maps.
+
+        Mutates *data* in place: removes legacy keys and injects new format
+        if the new keys are not already present.
+        """
+        if "disabled_personas" in data and "personas" not in data:
+            old = data.pop("disabled_personas")
+            if isinstance(old, list):
+                merged = dict(self.personas)
+                for pid in old:
+                    merged[pid] = False
+                data["personas"] = merged
+        else:
+            data.pop("disabled_personas", None)
+
+        if "disabled_adversarials" in data and "adversarials" not in data:
+            old = data.pop("disabled_adversarials")
+            if isinstance(old, list):
+                merged = dict(self.adversarials)
+                for aid in old:
+                    merged[aid] = False
+                data["adversarials"] = merged
+        else:
+            data.pop("disabled_adversarials", None)
+
     def _apply_dict(self, data: dict[str, object]) -> None:
         """Apply a dictionary of settings to this config."""
+        data = dict(data)  # shallow copy to avoid mutating caller's dict
+        self._migrate_legacy_toggles(data)
+
         for key, value in data.items():
             if key.startswith("_"):
                 continue
@@ -193,6 +232,10 @@ class EvonestConfig:
                     build=value.get("build", self.verify.build),
                     test=value.get("test", self.verify.test),
                 )
+            elif key == "personas" and isinstance(value, dict):
+                self.personas.update(value)
+            elif key == "adversarials" and isinstance(value, dict):
+                self.adversarials.update(value)
             elif key == "active_groups" and isinstance(value, list):
                 self.active_groups = value
             elif key == "max_turns" and isinstance(value, dict):
@@ -236,6 +279,13 @@ class EvonestConfig:
         """
         if "." in key:
             parts = key.split(".", 1)
+            # Handle toggle maps: personas.<id> and adversarials.<id>
+            if parts[0] in ("personas", "adversarials"):
+                toggle_map: dict[str, bool] = getattr(self, parts[0])
+                if isinstance(value, str):
+                    value = value.lower() in ("true", "1", "yes")
+                toggle_map[parts[1]] = bool(value)
+                return
             parent = getattr(self, parts[0], None)
             if parent is not None and hasattr(parent, parts[1]):
                 current = getattr(parent, parts[1])

@@ -217,8 +217,19 @@ def test_select_mutation_respects_disabled_personas(tmp_project: Path) -> None:
 
     class FakeConfig:
         active_groups: list[str] = []
-        disabled_personas = ["security-auditor", "chaos-engineer"]
-        disabled_adversarials: list[str] = []
+        personas: dict[str, bool] = {
+            "security-auditor": False,
+            "chaos-engineer": False,
+        }
+        adversarials: dict[str, bool] = {}
+
+        @property
+        def disabled_persona_ids(self) -> list[str]:
+            return [pid for pid, on in self.personas.items() if not on]
+
+        @property
+        def disabled_adversarial_ids(self) -> list[str]:
+            return [aid for aid, on in self.adversarials.items() if not on]
 
     random.seed(42)
     for _ in range(20):
@@ -233,8 +244,16 @@ def test_forced_persona_ignores_disabled(tmp_project: Path) -> None:
 
     class FakeConfig:
         active_groups: list[str] = []
-        disabled_personas = ["security-auditor"]
-        disabled_adversarials: list[str] = []
+        personas: dict[str, bool] = {"security-auditor": False}
+        adversarials: dict[str, bool] = {}
+
+        @property
+        def disabled_persona_ids(self) -> list[str]:
+            return [pid for pid, on in self.personas.items() if not on]
+
+        @property
+        def disabled_adversarial_ids(self) -> list[str]:
+            return [aid for aid, on in self.adversarials.items() if not on]
 
     # Even though security-auditor is disabled, forcing it via persona_id works
     mutation = select_mutation(

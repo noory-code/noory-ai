@@ -133,8 +133,15 @@ def select_mutation(
         cfg_groups = getattr(config, "active_groups", None)
         if cfg_groups:
             active_groups = cfg_groups
-    disabled_personas: list[str] = getattr(config, "disabled_personas", None) or []
-    disabled_adversarials: list[str] = getattr(config, "disabled_adversarials", None) or []
+    dp = getattr(config, "disabled_persona_ids", None)
+    if dp is None:
+        dp = getattr(config, "disabled_personas", None) or []
+    disabled_personas: list[str] = dp
+
+    da = getattr(config, "disabled_adversarial_ids", None)
+    if da is None:
+        da = getattr(config, "disabled_adversarials", None) or []
+    disabled_adversarials: list[str] = da
     personas = load_personas(state, active_groups, disabled_personas or None)
     selected_persona = None
     if persona_id:
