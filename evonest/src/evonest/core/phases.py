@@ -227,6 +227,15 @@ def run_observe(
 
     prompt = "\n".join(parts)
 
+    mode_label = "analyze" if analyze_mode else "evolve"
+    depth_label = "deep" if deep else "standard"
+    logger.info(
+        "[Observe] starting (persona=%s, mode=%s, depth=%s)",
+        mutation["persona_id"],
+        mode_label,
+        depth_label,
+    )
+
     result = claude_runner.run(
         prompt,
         model=config.model,
@@ -238,12 +247,18 @@ def run_observe(
     state.write_text(state.observe_path, result.output)
 
     if not result.success:
+        logger.warning(
+            "[Observe] failed (persona=%s, stderr=%s)",
+            mutation["persona_id"],
+            result.stderr[:200] if result.stderr else "(none)",
+        )
         return PhaseResult(
             phase="observe", output=result.output, success=False, stderr=result.stderr
         )
 
     if analyze_mode:
         count = _save_all_as_proposals(state, result.output, mutation["persona_id"], config)
+        logger.info("[Observe] complete — %d proposal(s) saved", count)
         return PhaseResult(
             phase="observe",
             output=result.output,
@@ -253,6 +268,7 @@ def run_observe(
 
     # Save observations to backlog (normal evolve behavior)
     _save_observations_from_output(state, result.output, mutation["persona_id"], config)
+    logger.info("[Observe] complete — observations saved to backlog")
 
     return PhaseResult(phase="observe", output=result.output, success=True)
 
@@ -452,6 +468,8 @@ def run_plan(
 
     prompt = "\n".join(parts)
 
+    logger.info("[Plan] starting")
+
     result = claude_runner.run(
         prompt,
         model=config.model,
@@ -463,10 +481,12 @@ def run_plan(
     state.write_text(state.plan_path, result.output)
 
     if not result.success:
+        logger.warning("[Plan] failed. stderr: %s", result.stderr[:200] if result.stderr else "(none)")
         return PhaseResult(phase="plan", output=result.output, success=False, stderr=result.stderr)
 
     # Check for "no improvements needed"
     if _plan_says_no_improvements(result.output):
+        logger.info("[Plan] complete — no improvements selected")
         return PhaseResult(
             phase="plan",
             output=result.output,
@@ -474,6 +494,7 @@ def run_plan(
             metadata={"no_improvements": True},
         )
 
+    logger.info("[Plan] complete — improvement selected")
     return PhaseResult(phase="plan", output=result.output, success=True)
 
 
@@ -529,6 +550,8 @@ def run_execute(
 
     prompt = "\n".join(parts)
 
+    logger.info("[Execute] starting")
+
     result = claude_runner.run(
         prompt,
         model=config.model,
@@ -538,6 +561,13 @@ def run_execute(
     )
 
     state.write_text(state.execute_path, result.output)
+
+    if result.success:
+        logger.info("[Execute] complete")
+    else:
+        logger.warning(
+            "[Execute] failed. stderr: %s", result.stderr[:200] if result.stderr else "(none)"
+        )
 
     return PhaseResult(
         phase="execute", output=result.output, success=result.success, stderr=result.stderr
