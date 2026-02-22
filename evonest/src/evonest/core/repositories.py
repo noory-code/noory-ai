@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,18 @@ from typing import Any
 from evonest.core.paths import EvonestPaths
 
 logger = logging.getLogger("evonest")
+
+
+def _slugify(title: str, max_len: int = 60) -> str:
+    """Convert a proposal title to a filename-safe slug.
+
+    Example: "Shell injection risk in verify.build" → "shell-injection-risk-in-verify-build"
+    """
+    slug = title.lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)
+    slug = slug.strip("-")
+    return slug[:max_len].rstrip("-")
+
 
 # ---------------------------------------------------------------------------
 # Shared low-level helpers (module-private)
@@ -198,12 +211,22 @@ class ProposalRepository:
         self._paths = paths
         self._progress = progress
 
-    def add(self, content: str) -> str:
+    def add(self, content: str, title: str | None = None) -> str:
         """Save a proposal file and return its path."""
         self._paths.proposals_dir.mkdir(parents=True, exist_ok=True)
-        ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S-%f")
         cycle = self._progress.read().get("total_cycles", 0)
-        path = self._paths.proposals_dir / f"proposal-{cycle:04d}-{ts}.md"
+        if title:
+            slug = _slugify(title)
+            stem = f"proposal-{cycle:04d}-{slug}"
+        else:
+            ts = datetime.now(UTC).strftime("%H%M%S")
+            stem = f"proposal-{cycle:04d}-{ts}"
+        path = self._paths.proposals_dir / f"{stem}.md"
+        # Collision guard
+        counter = 2
+        while path.exists():
+            path = self._paths.proposals_dir / f"{stem}-{counter}.md"
+            counter += 1
         path.write_text(content, encoding="utf-8")
         return str(path)
 

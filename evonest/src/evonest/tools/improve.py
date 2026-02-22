@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+from pathlib import Path
+
 from evonest.server import mcp
 
 
@@ -13,13 +17,27 @@ async def evonest_improve(
     """Execute a proposal: select → Execute → Verify → commit/PR.
 
     No Observe or Plan phases run. The proposal content IS the plan.
+    Runs in the background — returns immediately with PID and log path.
 
     Args:
         project: Absolute path to target project.
         proposal_id: Bare filename of the proposal to execute
-                     (e.g. 'proposal-0004-20260222-103000-123456.md').
+                     (e.g. 'proposal-0000-shell-injection-risk.md').
                      If omitted, auto-selects by priority (high first) then age (oldest first).
     """
-    from evonest.core.improve import run_improve
+    cmd = [sys.executable, "-m", "evonest._runner", "improve", project]
+    if proposal_id:
+        cmd += ["--proposal-id", proposal_id]
 
-    return await run_improve(project=project, proposal_id=proposal_id)
+    log_path = Path(project) / ".evonest" / "logs" / "current.log"
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    return (
+        f"Improve started (PID {proc.pid}).\n"
+        f"Progress log: {log_path}\n"
+        f"A macOS notification will fire when complete."
+    )

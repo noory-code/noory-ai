@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+from pathlib import Path
+
 from evonest.server import mcp
 
 
@@ -22,6 +26,8 @@ async def evonest_evolve(
 ) -> str:
     """Run full evolution: Observe → Plan → Execute → Verify → commit/PR.
 
+    Runs in the background — returns immediately with PID and log path.
+
     Args:
         project: Absolute path to target project.
         cycles: Number of cycles to run (default from config).
@@ -39,19 +45,37 @@ async def evonest_evolve(
         level: Analysis depth preset — "quick" (haiku), "standard" (sonnet), "deep" (opus).
                Overrides active_level from config.
     """
-    from evonest.core.orchestrator import run_cycles
+    cmd = [sys.executable, "-m", "evonest._runner", "evolve", project]
+    if cycles is not None:
+        cmd += ["--cycles", str(cycles)]
+    if no_meta:
+        cmd += ["--no-meta"]
+    if no_scout:
+        cmd += ["--no-scout"]
+    if observe_mode:
+        cmd += ["--observe-mode", observe_mode]
+    if persona_id:
+        cmd += ["--persona-id", persona_id]
+    if adversarial_id:
+        cmd += ["--adversarial-id", adversarial_id]
+    if group:
+        cmd += ["--group", group]
+    if all_personas:
+        cmd += ["--all-personas"]
+    if cautious:
+        cmd += ["--cautious"]
+    if level:
+        cmd += ["--level", level]
 
-    return await run_cycles(
-        project=project,
-        cycles=cycles,
-        no_meta=no_meta,
-        no_scout=no_scout,
-        observe_mode=observe_mode,
-        persona_id=persona_id,
-        adversarial_id=adversarial_id,
-        group=group,
-        all_personas=all_personas,
-        cautious=cautious,
-        resume=resume,
-        level=level,
+    log_path = Path(project) / ".evonest" / "logs" / "current.log"
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    return (
+        f"Evolve started (PID {proc.pid}).\n"
+        f"Progress log: {log_path}\n"
+        f"A macOS notification will fire on each phase and at completion."
     )

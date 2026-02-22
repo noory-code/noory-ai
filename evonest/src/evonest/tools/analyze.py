@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+from pathlib import Path
+
 from evonest.server import mcp
 
 
@@ -18,7 +22,7 @@ async def evonest_analyze(
     """Run Observe phase only, saving ALL identified improvements as proposals.
 
     No code is changed. All improvements regardless of category are saved to
-    .evonest/proposals/ for human review.
+    .evonest/proposals/ for human review. Runs in the background — returns immediately.
 
     Args:
         project: Absolute path to target project.
@@ -30,14 +34,29 @@ async def evonest_analyze(
         level: Analysis depth preset — "quick" (haiku), "standard" (sonnet), "deep" (opus).
                Overrides active_level from config.
     """
-    from evonest.core.orchestrator import run_analyze
+    cmd = [sys.executable, "-m", "evonest._runner", "analyze", project]
+    if persona_id:
+        cmd += ["--persona-id", persona_id]
+    if adversarial_id:
+        cmd += ["--adversarial-id", adversarial_id]
+    if group:
+        cmd += ["--group", group]
+    if all_personas:
+        cmd += ["--all-personas"]
+    if observe_mode:
+        cmd += ["--observe-mode", observe_mode]
+    if level:
+        cmd += ["--level", level]
 
-    return await run_analyze(
-        project=project,
-        persona_id=persona_id,
-        adversarial_id=adversarial_id,
-        group=group,
-        all_personas=all_personas,
-        observe_mode=observe_mode,
-        level=level,
+    log_path = Path(project) / ".evonest" / "logs" / "current.log"
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    return (
+        f"Analyze started (PID {proc.pid}).\n"
+        f"Progress log: {log_path}\n"
+        f"A macOS notification will fire when complete."
     )

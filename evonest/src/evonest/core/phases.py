@@ -411,7 +411,7 @@ def _save_proposal(
         lbl["footer2"],
     ]
 
-    state.add_proposal("\n".join(lines))
+    state.add_proposal("\n".join(lines), title=title)
 
 
 # ── Plan ─────────────────────────────────────────────────
