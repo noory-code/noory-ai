@@ -1,6 +1,6 @@
 {
   "name": "evonest",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Autonomous code evolution engine — observe, plan, execute, verify",
   "author": {
     "name": "noory-code"

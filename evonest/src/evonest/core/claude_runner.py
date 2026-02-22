@@ -107,14 +107,22 @@ def run(
         stderr_thread = threading.Thread(target=_stream_stderr, daemon=True)
         stderr_thread.start()
 
-        # Block until process completes (timeout 600s)
+        # Read stdout directly (stderr is consumed by the thread)
+        assert proc.stdout is not None
         try:
-            stdout_text, _ = proc.communicate(timeout=600)
+            stdout_text = proc.stdout.read()
+        except Exception:
+            stdout_text = ""
+
+        # Wait for process exit with timeout
+        try:
+            proc.wait(timeout=600)
         except subprocess.TimeoutExpired:
             proc.kill()
-            proc.communicate()
+            proc.wait()
             elapsed = (datetime.now() - started_at).total_seconds()
             logger.error("claude -p timed out after %.1fs (limit=600s)", elapsed)
+            stderr_thread.join(timeout=5)
             stderr_text = "\n".join(stderr_lines)
             if _retry and _is_rate_limit(stderr_text):
                 logger.warning("claude -p rate limited — waiting 30s before retry")
