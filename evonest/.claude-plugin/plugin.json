@@ -2,12 +2,40 @@
   "name": "evonest",
   "version": "0.2.0",
   "description": "Autonomous code evolution engine — observe, plan, execute, verify",
-  "author": {
-    "name": "Evonest Contributors"
-  },
-  "homepage": "https://github.com/wooxist/evonest",
-  "repository": "https://github.com/wooxist/evonest",
-  "license": "MIT",
-  "keywords": ["evolution", "code-quality", "autonomous", "mcp", "claude"],
-  "mcpServers": "./.mcp.plugin.json"
+  "author": "Evonest Contributors",
+  "commands": [
+    {
+      "name": "analyze",
+      "description": "Scan the project and save all improvement opportunities as proposals (no code changes)",
+      "path": "commands/analyze.md"
+    },
+    {
+      "name": "evolve",
+      "description": "Full evolution cycle: Observe → Plan → Execute → Verify → commit/PR",
+      "path": "commands/evolve.md"
+    },
+    {
+      "name": "improve",
+      "description": "Pick a proposal and execute it (no Observe/Plan phases)",
+      "path": "commands/improve.md"
+    },
+    {
+      "name": "identity",
+      "description": "Refresh evonest identity.md — re-read the project and propose an updated identity document",
+      "path": "commands/identity.md"
+    }
+  ],
+  "skills": [
+    {
+      "name": "evonest",
+      "path": "skills/evonest/SKILL.md"
+    }
+  ],
+  "mcpServers": {
+    "evonest": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}", "evonest"]
+    }
+  }
 }
