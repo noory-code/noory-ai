@@ -146,7 +146,18 @@ async def run_improve(
         commit_msg = verify.commit_message or _commit_message_from_proposal(proposal_content)
         assert commit_msg, "Commit message must not be None"
 
-        if verify.overall and verify.changed_files:
+        if not verify.changed_files:
+            # No files changed → test failures are pre-existing, not caused by this proposal.
+            # Archive the proposal so it doesn't block the queue.
+            _git_stash_drop(state.project)
+            dest = state.mark_proposal_done(proposal_path.name)
+            state.log(f"  [Improve] Proposal archived (no changes): {dest}")
+            return (
+                f"Improve skipped: Execute produced no file changes.\n"
+                f"Proposal archived: {dest.name}"
+            )
+
+        elif verify.overall:
             state.log(f"  [Improve] PASS: {commit_msg}")
             if config.code_output == "pr":
                 branch = f"evonest/improve-{proposal_path.stem}"
@@ -165,12 +176,6 @@ async def run_improve(
                 f"Proposal archived: {dest.name}\n"
                 f"Duration: {duration}s"
             )
-
-        elif verify.overall and not verify.changed_files:
-            _git_stash_drop(state.project)
-            dest = state.mark_proposal_done(proposal_path.name)
-            state.log(f"  [Improve] Proposal archived (no changes needed): {dest}")
-            return "Improve skipped: Execute succeeded but no files were changed."
 
         else:
             _git_revert(state.project)

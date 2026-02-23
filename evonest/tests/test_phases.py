@@ -488,7 +488,7 @@ def test_save_observations_proposal_content(tmp_project: Path) -> None:
     assert "domain-modeler" in content
     assert "Mix of concerns detected." in content
     assert "src/user.py" in content
-    assert "No code was changed" in content
+    assert "has not been implemented yet" in content
 
 
 def test_save_observations_mixed_proposal_and_regular(tmp_project: Path) -> None:

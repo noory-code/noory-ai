@@ -371,8 +371,8 @@ _PROPOSAL_LABELS: dict[str, dict[str, str]] = {
         "status_value": "검토 대기",
         "description": "설명",
         "files": "관련 파일",
-        "footer1": "*이것은 설계 수준의 제안입니다. 코드는 변경되지 않았습니다.*  ",
-        "footer2": "*팀에서 검토, 거부 또는 실행하세요.*",
+        "footer1": "*이 제안은 분석 단계에서 생성되었습니다. 아직 구현되지 않았습니다.*  ",
+        "footer2": "*improve 명령으로 실행하거나, 팀에서 검토 후 처리하세요.*",
     },
     "english": {
         "heading": "Proposal",
@@ -383,8 +383,14 @@ _PROPOSAL_LABELS: dict[str, dict[str, str]] = {
         "status_value": "pending review",
         "description": "Description",
         "files": "Relevant Files",
-        "footer1": "*This is a design-level proposal. No code was changed.*  ",
-        "footer2": "*Review, reject, or act on this as the team sees fit.*",
+        "footer1": (
+            "*This proposal was generated during analysis."
+            " It has not been implemented yet.*  "
+        ),
+        "footer2": (
+            "*Run improve to execute,"
+            " or review and act on it as the team sees fit.*"
+        ),
     },
 }
 
