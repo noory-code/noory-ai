@@ -39,3 +39,34 @@ def test_lock_creates_parent_dirs(tmp_path: Path) -> None:
     with EvonestLock(lock_path):
         assert lock_path.exists()
     assert not lock_path.exists()
+
+
+def test_stale_lock_auto_cleanup(tmp_path: Path) -> None:
+    """존재하지 않는 PID의 락 파일은 자동으로 정리됩니다."""
+    lock_path = tmp_path / "lock"
+    lock_path.write_text("999999", encoding="utf-8")
+
+    with EvonestLock(lock_path):
+        assert lock_path.exists()
+        assert lock_path.read_text() == str(os.getpid())
+    assert not lock_path.exists()
+
+
+def test_invalid_lock_file_auto_cleanup(tmp_path: Path) -> None:
+    """잘못된 형식의 락 파일은 자동으로 정리됩니다."""
+    lock_path = tmp_path / "lock"
+    lock_path.write_text("not-a-number", encoding="utf-8")
+
+    with EvonestLock(lock_path):
+        assert lock_path.exists()
+        assert lock_path.read_text() == str(os.getpid())
+    assert not lock_path.exists()
+
+
+def test_lock_prevents_concurrent_with_running_process(tmp_path: Path) -> None:
+    """실행 중인 프로세스의 락 파일은 유지되고 오류가 발생합니다."""
+    lock_path = tmp_path / "lock"
+    with EvonestLock(lock_path):
+        with pytest.raises(RuntimeError, match=r"Another evolution.*PID:"):
+            with EvonestLock(lock_path):
+                pass

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio  # noqa: F401 — needed for pytest-asyncio event loop
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -174,9 +175,9 @@ async def test_no_meta_flag(tmp_project: Path) -> None:
 async def test_lock_prevents_concurrent(tmp_project: Path) -> None:
     """Should raise RuntimeError if already locked."""
     state = ProjectState(tmp_project)
-    # Create lock file manually
+    # Create lock file manually with current PID
     state.lock_path.parent.mkdir(parents=True, exist_ok=True)
-    state.lock_path.write_text("12345")
+    state.lock_path.write_text(str(os.getpid()))
 
     with pytest.raises(RuntimeError, match="Another evolution is running"):
         await run_analyze(str(tmp_project))
