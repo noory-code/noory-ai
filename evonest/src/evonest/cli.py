@@ -122,9 +122,7 @@ def cli_main() -> None:
     evolve_p.add_argument(
         "--adversarial", default=None, help="Force adversarial ID, or 'none' to disable"
     )
-    evolve_p.add_argument(
-        "--group", default=None, help="Persona group filter (biz, tech, quality)"
-    )
+    evolve_p.add_argument("--group", default=None, help="Persona group filter (biz, tech, quality)")
     evolve_p.add_argument(
         "--all-personas",
         action="store_true",
@@ -144,18 +142,14 @@ def cli_main() -> None:
 
     # personas
     personas_p = sub.add_parser("personas", help="List, enable, or disable personas")
-    personas_p.add_argument(
-        "project", nargs="?", default=None, help="Project path (default: cwd)"
-    )
+    personas_p.add_argument("project", nargs="?", default=None, help="Project path (default: cwd)")
     personas_p.add_argument(
         "--disable", nargs="+", metavar="ID", help="Disable persona/adversarial IDs"
     )
     personas_p.add_argument(
         "--enable", nargs="+", metavar="ID", help="Enable persona/adversarial IDs"
     )
-    personas_p.add_argument(
-        "--group", default=None, help="Filter by group (biz, tech, quality)"
-    )
+    personas_p.add_argument("--group", default=None, help="Filter by group (biz, tech, quality)")
 
     # status
     status_p = sub.add_parser("status", help="Show project status")
@@ -179,7 +173,11 @@ def cli_main() -> None:
     id_p = sub.add_parser("identity", help="View/update project identity")
     id_p.add_argument("project", nargs="?", default=None, help="Project path (default: cwd)")
     id_p.add_argument("--set", metavar="FILE", help="Replace identity from file")
-    id_p.add_argument("--refresh", action="store_true", help="Re-draft identity.md using Claude (shows diff, prompts for confirmation)")
+    id_p.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Re-draft identity.md using Claude (shows diff, prompts for confirmation)",
+    )
 
     # backlog
     bl_p = sub.add_parser("backlog", help="Manage improvement backlog")
@@ -231,8 +229,7 @@ def _resolve_project(project: str | None) -> str:
         if (parent / ".evonest").is_dir():
             return str(parent)
     raise FileNotFoundError(
-        "No .evonest/ found in current directory or any parent. "
-        "Run: evonest init <path>"
+        "No .evonest/ found in current directory or any parent. Run: evonest init <path>"
     )
 
 

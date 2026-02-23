@@ -130,7 +130,9 @@ def run(
         # claude -p outputs "Error: Reached max turns (N)" to stdout when turns exhausted
         max_turns_hit = output.startswith("Error: Reached max turns")
         if max_turns_hit:
-            logger.warning("claude -p reached max turns limit after %.1fs: %s", elapsed, output[:100])
+            logger.warning(
+                "claude -p reached max turns limit after %.1fs: %s", elapsed, output[:100]
+            )
 
         return ClaudeResult(
             output=output if not max_turns_hit else "",
@@ -141,7 +143,9 @@ def run(
 
     except subprocess.TimeoutExpired as exc:
         raw_stderr = exc.stderr or b""
-        stderr_text = raw_stderr.decode(errors="replace") if isinstance(raw_stderr, bytes) else raw_stderr
+        stderr_text = (
+            raw_stderr.decode(errors="replace") if isinstance(raw_stderr, bytes) else raw_stderr
+        )
         elapsed = (datetime.now() - started_at).total_seconds()
         if _retry and _is_rate_limit(stderr_text):
             logger.warning("claude -p rate limited after %.1fs — waiting 30s before retry", elapsed)

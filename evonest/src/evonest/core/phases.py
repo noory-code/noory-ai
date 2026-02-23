@@ -71,7 +71,8 @@ def _gather_static_context(project: str, config: EvonestConfig) -> str:
             files = [
                 line
                 for line in result.stdout.splitlines()
-                if line.strip() and not any(
+                if line.strip()
+                and not any(
                     pat in line
                     for pat in (".venv/", "node_modules/", "__pycache__/", ".mypy_cache/")
                 )
@@ -482,7 +483,9 @@ def run_plan(
     state.write_text(state.plan_path, result.output)
 
     if not result.success:
-        logger.warning("[Plan] failed. stderr: %s", result.stderr[:200] if result.stderr else "(none)")
+        logger.warning(
+            "[Plan] failed. stderr: %s", result.stderr[:200] if result.stderr else "(none)"
+        )
         return PhaseResult(phase="plan", output=result.output, success=False, stderr=result.stderr)
 
     # Check for "no improvements needed"

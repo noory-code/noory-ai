@@ -115,8 +115,9 @@ def test_cli_identity_set(tmp_project: Path) -> None:
 
 def test_cli_identity_refresh_updates(tmp_project: Path) -> None:
     """evonest identity --refresh with 'y' input should update identity.md."""
-    from evonest.cli import _dispatch
     import argparse
+
+    from evonest.cli import _dispatch
 
     draft_content = "# Refreshed Identity\nNew content."
     with patch("evonest.core.initializer._draft_identity_via_claude", return_value=draft_content):
@@ -130,16 +131,18 @@ def test_cli_identity_refresh_updates(tmp_project: Path) -> None:
             _dispatch(args)
 
     from evonest.core.state import ProjectState
+
     state = ProjectState(tmp_project)
     assert "# Refreshed Identity" in state.read_identity()
 
 
 def test_cli_identity_refresh_cancelled(tmp_project: Path) -> None:
     """evonest identity --refresh with 'n' input should leave identity.md unchanged."""
-    from evonest.cli import _dispatch
     import argparse
 
+    from evonest.cli import _dispatch
     from evonest.core.state import ProjectState
+
     state = ProjectState(tmp_project)
     original = state.read_identity()
 
@@ -181,6 +184,7 @@ def test_cli_backlog_prune(tmp_project: Path) -> None:
 def test_resolve_project_explicit() -> None:
     """_resolve_project returns the explicit path unchanged."""
     from evonest.cli import _resolve_project
+
     assert _resolve_project("/some/path") == "/some/path"
 
 
@@ -188,6 +192,7 @@ def test_resolve_project_env_var(tmp_project: Path) -> None:
     """_resolve_project uses EVONEST_PROJECT env var when no explicit path."""
     import os
     from unittest.mock import patch
+
     from evonest.cli import _resolve_project
 
     with patch.dict(os.environ, {"EVONEST_PROJECT": str(tmp_project)}):
@@ -197,8 +202,8 @@ def test_resolve_project_env_var(tmp_project: Path) -> None:
 
 def test_resolve_project_cwd_walk(tmp_project: Path) -> None:
     """_resolve_project walks up from cwd to find .evonest/."""
-    import os
     from unittest.mock import patch
+
     from evonest.cli import _resolve_project
 
     subdir = tmp_project / "src" / "pkg"
@@ -218,12 +223,14 @@ def test_resolve_project_cwd_walk(tmp_project: Path) -> None:
 def test_resolve_project_not_found(tmp_path: Path) -> None:
     """_resolve_project raises FileNotFoundError when no .evonest/ found."""
     from unittest.mock import patch
+
     from evonest.cli import _resolve_project
 
     with patch("evonest.cli.Path") as mock_path_cls:
         mock_path_cls.cwd.return_value = tmp_path
         # No .evonest/ in tmp_path → should raise
         import pytest
+
         with pytest.raises(FileNotFoundError, match=".evonest"):
             _resolve_project(None)
 

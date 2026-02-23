@@ -50,17 +50,23 @@ def _default_levels() -> dict[str, LevelConfig]:
         "quick": LevelConfig(
             model="haiku",
             observe_mode="quick",
-            max_turns=MaxTurnsConfig(observe=15, observe_deep=40, plan=10, execute=20, meta=8, scout=10),
+            max_turns=MaxTurnsConfig(
+                observe=15, observe_deep=40, plan=10, execute=20, meta=8, scout=10
+            ),
         ),
         "standard": LevelConfig(
             model="sonnet",
             observe_mode="auto",
-            max_turns=MaxTurnsConfig(observe=25, observe_deep=100, plan=15, execute=25, meta=10, scout=15),
+            max_turns=MaxTurnsConfig(
+                observe=25, observe_deep=100, plan=15, execute=25, meta=10, scout=15
+            ),
         ),
         "deep": LevelConfig(
             model="opus",
             observe_mode="deep",
-            max_turns=MaxTurnsConfig(observe=50, observe_deep=150, plan=20, execute=35, meta=15, scout=20),
+            max_turns=MaxTurnsConfig(
+                observe=50, observe_deep=150, plan=20, execute=35, meta=15, scout=20
+            ),
         ),
     }
 
@@ -163,14 +169,11 @@ class EvonestConfig:
                 f"got {self.adversarial_probability}"
             )
         if self.max_cycles_per_run < 1:
-            raise ValueError(
-                f"max_cycles_per_run must be >= 1, got {self.max_cycles_per_run}"
-            )
+            raise ValueError(f"max_cycles_per_run must be >= 1, got {self.max_cycles_per_run}")
         valid_levels = set(self.levels.keys()) | {"quick", "standard", "deep"}
         if self.active_level not in valid_levels:
             raise ValueError(
-                f"active_level must be one of {sorted(valid_levels)}, "
-                f"got '{self.active_level}'"
+                f"active_level must be one of {sorted(valid_levels)}, got '{self.active_level}'"
             )
 
     def _apply_level(self, level: str) -> None:
@@ -256,7 +259,9 @@ class EvonestConfig:
                     if isinstance(mt_data, dict):
                         turns = MaxTurnsConfig(
                             observe=mt_data.get("observe", existing.max_turns.observe),
-                            observe_deep=mt_data.get("observe_deep", existing.max_turns.observe_deep),
+                            observe_deep=mt_data.get(
+                                "observe_deep", existing.max_turns.observe_deep
+                            ),
                             plan=mt_data.get("plan", existing.max_turns.plan),
                             execute=mt_data.get("execute", existing.max_turns.execute),
                             meta=mt_data.get("meta", existing.max_turns.meta),

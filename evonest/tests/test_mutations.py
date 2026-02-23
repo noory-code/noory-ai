@@ -37,9 +37,7 @@ def test_list_all_adversarials(tmp_project: Path) -> None:
 
 def test_list_all_includes_dynamic(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
-    state.write_dynamic_personas(
-        [{"id": "custom-x", "name": "Custom X", "perspective": "X."}]
-    )
+    state.write_dynamic_personas([{"id": "custom-x", "name": "Custom X", "perspective": "X."}])
     personas = list_all_personas(state)
     ids = [p["id"] for p in personas]
     assert "custom-x" in ids
@@ -233,9 +231,7 @@ def test_select_mutation_respects_disabled_personas(tmp_project: Path) -> None:
 
     random.seed(42)
     for _ in range(20):
-        mutation = select_mutation(
-            state, adversarial_probability=0.0, config=FakeConfig()
-        )
+        mutation = select_mutation(state, adversarial_probability=0.0, config=FakeConfig())
         assert mutation["persona_id"] not in ("security-auditor", "chaos-engineer")
 
 

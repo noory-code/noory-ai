@@ -97,8 +97,10 @@ async def evonest_personas(
 
     if action == "list":
         return _format_list(
-            personas, adversarials,
-            cfg.personas, cfg.adversarials,
+            personas,
+            adversarials,
+            cfg.personas,
+            cfg.adversarials,
             group_filter=group,
         )
 
@@ -121,7 +123,10 @@ async def evonest_personas(
                 cfg.adversarials[i] = False
         cfg.save()
         return f"Disabled: {', '.join(ids)}\n\n" + _format_list(
-            personas, adversarials, cfg.personas, cfg.adversarials,
+            personas,
+            adversarials,
+            cfg.personas,
+            cfg.adversarials,
         )
 
     if action == "enable":
@@ -132,7 +137,10 @@ async def evonest_personas(
                 cfg.adversarials[i] = True
         cfg.save()
         return f"Enabled: {', '.join(ids)}\n\n" + _format_list(
-            personas, adversarials, cfg.personas, cfg.adversarials,
+            personas,
+            adversarials,
+            cfg.personas,
+            cfg.adversarials,
         )
 
     # unreachable — action already validated above

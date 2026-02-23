@@ -130,8 +130,11 @@ async def run_analyze(
 
             state.log(f"  [Analyze {i + 1}/{total}] persona={mutation['persona_name']}")
             result = run_observe(
-                state, config, mutation,
-                deep=deep_observe, analyze_mode=True,
+                state,
+                config,
+                mutation,
+                deep=deep_observe,
+                analyze_mode=True,
                 static_context=static_context,
             )
 
@@ -307,7 +310,9 @@ async def run_cycles(
             mode_label = "deep" if deep_observe else "quick"
             state.log(f"  [1/4] Observe ({mode_label}, max_turns={observe_turns})...")
             observe_result = run_observe(
-                state, config, mutation,
+                state,
+                config,
+                mutation,
                 deep=deep_observe,
                 static_context=static_context,
             )

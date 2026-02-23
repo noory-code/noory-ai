@@ -24,10 +24,10 @@ def test_all_tools_registered() -> None:
     tool_names = {t.name for t in mcp._tool_manager.list_tools()}
     expected = {
         "evonest_init",
-        "evonest_run",       # deprecated but kept for backward compat
-        "evonest_analyze",   # new
-        "evonest_improve",   # new
-        "evonest_evolve",    # new
+        "evonest_run",  # deprecated but kept for backward compat
+        "evonest_analyze",  # new
+        "evonest_improve",  # new
+        "evonest_evolve",  # new
         "evonest_status",
         "evonest_history",
         "evonest_config",
@@ -237,8 +237,8 @@ async def test_proposals_empty(tmp_project: Path) -> None:
 @pytest.mark.asyncio
 async def test_proposals_list_shows_title_and_priority(tmp_project: Path) -> None:
     """Proposals list shows title, priority, persona, and filename."""
-    from evonest.tools.proposals import evonest_proposals
     from evonest.core.state import ProjectState
+    from evonest.tools.proposals import evonest_proposals
 
     state = ProjectState(str(tmp_project))
     state.proposals_dir.mkdir(parents=True, exist_ok=True)
@@ -260,8 +260,8 @@ async def test_proposals_list_shows_title_and_priority(tmp_project: Path) -> Non
 @pytest.mark.asyncio
 async def test_proposals_list_sorted_by_priority(tmp_project: Path) -> None:
     """Proposals are sorted high → medium → low."""
-    from evonest.tools.proposals import evonest_proposals
     from evonest.core.state import ProjectState
+    from evonest.tools.proposals import evonest_proposals
 
     state = ProjectState(str(tmp_project))
     state.proposals_dir.mkdir(parents=True, exist_ok=True)

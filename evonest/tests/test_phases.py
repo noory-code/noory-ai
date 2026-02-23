@@ -512,6 +512,7 @@ def test_save_observations_mixed_proposal_and_regular(tmp_project: Path) -> None
     proposals = state.list_proposals()
     assert len(proposals) == 1
 
+
 # ── _gather_static_context ────────────────────────────────
 
 

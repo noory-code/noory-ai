@@ -23,9 +23,7 @@ def _clean_identity_draft(raw: str) -> str:
     text = raw.strip()
 
     # If the output is wrapped in a code fence, extract the content inside
-    fence_match = re.search(
-        r"```(?:markdown|md)?\s*\n(.*?)```", text, re.DOTALL
-    )
+    fence_match = re.search(r"```(?:markdown|md)?\s*\n(.*?)```", text, re.DOTALL)
     if fence_match:
         text = fence_match.group(1).strip()
 
@@ -121,14 +119,10 @@ def init_project(path: str | Path, level: str = "standard") -> str:
                         cfg_data["active_level"] = level
                     # Populate full toggle maps from built-in mutations
                     cfg_data["personas"] = {
-                        p["id"]: True
-                        for p in _load_builtin("personas.json")
-                        if "id" in p
+                        p["id"]: True for p in _load_builtin("personas.json") if "id" in p
                     }
                     cfg_data["adversarials"] = {
-                        a["id"]: True
-                        for a in _load_builtin("adversarial.json")
-                        if "id" in a
+                        a["id"]: True for a in _load_builtin("adversarial.json") if "id" in a
                     }
                     content = json.dumps(cfg_data, indent=2, ensure_ascii=False) + "\n"
                 except (json.JSONDecodeError, ImportError):
@@ -137,9 +131,9 @@ def init_project(path: str | Path, level: str = "standard") -> str:
             if template_name == "progress.json":
                 try:
                     prog_data = json.loads(content)
-                    prog_data.setdefault("activation", {})["initialized_at"] = (
-                        datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-                    )
+                    prog_data.setdefault("activation", {})["initialized_at"] = datetime.now(
+                        UTC
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ")
                     content = json.dumps(prog_data, indent=2, ensure_ascii=False) + "\n"
                 except json.JSONDecodeError:
                     pass
@@ -180,7 +174,7 @@ def init_project(path: str | Path, level: str = "standard") -> str:
             f"  1. Edit {evonest_dir / 'identity.md'} — describe your project",
             f"  2. Edit {evonest_dir / 'config.json'} — set verify commands",
             f"  3. Run first analysis: evonest analyze {project}",
-            f"     or via MCP:        evonest_analyze(project=\"{project}\")",
+            f'     or via MCP:        evonest_analyze(project="{project}")',
         ]
     )
     return "\n".join(lines)

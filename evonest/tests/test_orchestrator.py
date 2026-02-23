@@ -33,8 +33,7 @@ def _mock_observe_output() -> ClaudeResult:
 def _mock_plan_output() -> ClaudeResult:
     return ClaudeResult(
         output=(
-            '{"selected_improvement": {"title": "Fix bug"},'
-            ' "plan": {"commit_message": "fix: bug"}}'
+            '{"selected_improvement": {"title": "Fix bug"}, "plan": {"commit_message": "fix: bug"}}'
         ),
         exit_code=0,
         success=True,

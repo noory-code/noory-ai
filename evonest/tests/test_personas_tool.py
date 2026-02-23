@@ -29,54 +29,38 @@ async def test_list_filter_group(tmp_project: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_disable_persona(tmp_project: Path) -> None:
-    result = await evonest_personas(
-        str(tmp_project), action="disable", ids=["security-auditor"]
-    )
+    result = await evonest_personas(str(tmp_project), action="disable", ids=["security-auditor"])
     assert "Disabled: security-auditor" in result
 
     # Verify config.json was updated
-    config = json.loads(
-        (tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8")
-    )
+    config = json.loads((tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8"))
     assert config["personas"]["security-auditor"] is False
 
 
 @pytest.mark.asyncio
 async def test_enable_persona(tmp_project: Path) -> None:
     # First disable
-    await evonest_personas(
-        str(tmp_project), action="disable", ids=["security-auditor"]
-    )
+    await evonest_personas(str(tmp_project), action="disable", ids=["security-auditor"])
     # Then enable
-    result = await evonest_personas(
-        str(tmp_project), action="enable", ids=["security-auditor"]
-    )
+    result = await evonest_personas(str(tmp_project), action="enable", ids=["security-auditor"])
     assert "Enabled: security-auditor" in result
 
-    config = json.loads(
-        (tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8")
-    )
+    config = json.loads((tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8"))
     assert config["personas"]["security-auditor"] is True
 
 
 @pytest.mark.asyncio
 async def test_disable_adversarial(tmp_project: Path) -> None:
-    result = await evonest_personas(
-        str(tmp_project), action="disable", ids=["break-interfaces"]
-    )
+    result = await evonest_personas(str(tmp_project), action="disable", ids=["break-interfaces"])
     assert "Disabled: break-interfaces" in result
 
-    config = json.loads(
-        (tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8")
-    )
+    config = json.loads((tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8"))
     assert config["adversarials"]["break-interfaces"] is False
 
 
 @pytest.mark.asyncio
 async def test_unknown_id_returns_error(tmp_project: Path) -> None:
-    result = await evonest_personas(
-        str(tmp_project), action="disable", ids=["nonexistent-persona"]
-    )
+    result = await evonest_personas(str(tmp_project), action="disable", ids=["nonexistent-persona"])
     assert "Error: unknown IDs" in result
 
 
