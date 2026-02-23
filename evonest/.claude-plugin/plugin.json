@@ -1,13 +1,13 @@
 {
   "name": "evonest",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Autonomous code evolution engine — observe, plan, execute, verify",
   "author": {
     "name": "noory-code"
   },
   "commands": "./commands/",
   "skills": "./skills/",
-  "hooks": "../hooks/hooks.json",
+  "hooks": "./hooks/hooks.json",
   "mcpServers": {
     "evonest": {
       "command": "uv",
