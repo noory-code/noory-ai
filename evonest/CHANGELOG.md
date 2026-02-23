@@ -2,6 +2,109 @@
 
 All notable changes to Evonest are documented here.
 
+## [0.14.0] — 2026-02-24
+
+### Fixed
+- `improve`: proposals that produce no file changes are now archived to `done/` regardless of test results — prevents design-only proposals from blocking the queue indefinitely
+- `improve`: proposal footer changed from "design-level proposal / no code was changed" to neutral text — prevents Execute phase from misinterpreting all proposals as non-actionable
+- Plugin hooks path fixed: `post-improve.sh` used `CLAUDE_PROJECT_DIR` prefix on an already-absolute path, causing auto-chain to never fire
+- `hooks.json` schema corrected: removed `matcher` field (invalid), switched to `CLAUDE_PLUGIN_ROOT`
+- `__version__` now reads from `importlib.metadata` (SSOT: `pyproject.toml`) instead of hardcoded string
+- `test_version` made dynamic — no longer breaks on every version bump
+
+**354 tests passing**
+
+---
+
+## [0.13.0] — 2026-02-23
+
+### Added
+- **PostToolUse hook** — `hooks/post-improve.sh` auto-notifies Claude when pending proposals remain after improve completes, enabling easy chaining
+
+### Fixed
+- Plugin structure: persona command moved from `commands/` to `skills/` (files in wrong directory caused plugin load failure)
+- Plugin structure: `commands/` now correctly uses directory path instead of single-file path
+
+---
+
+## [0.12.0] — 2026-02-23
+
+### Fixed
+- Commit messages from auto-improve/evolve now written in English (was Korean due to language config bleed)
+- `evonestlock` cleanup on force kill: lock file now removed even when process is SIGKILL'd
+
+### Improved
+- 5 autonomous evolve cycles applied (personas.py type hints, JSON handling, backlog improvements)
+
+---
+
+## [0.11.0] — 2026-02-23
+
+### Fixed
+- `improve`: skipped proposals (Execute succeeded, no files changed) are now properly archived to `done/` instead of staying in the queue
+- `improve`: proposal title logged on selection for easier tracking
+
+### Improved
+- `personas.py`: generic `dict` type parameters added (mypy strict compliance, auto-fixed by improve)
+
+---
+
+## [0.10.0] — 2026-02-23
+
+### Fixed
+- Ruff lint errors resolved: 17 E501/I001 violations across `cli.py`, `claude_runner.py`, `config.py`, `phases.py`, `server.py`
+
+---
+
+## [0.9.0] — 2026-02-23
+
+### Fixed
+- Commands now reject monorepo root as project path — must point to a package directory (`evonest/` or `distill/`)
+- `--dangerously-skip-permissions` flag added to all `claude -p` subprocess calls (required for non-interactive execution)
+
+### Improved
+- Proposal descriptions wrapped at 80 chars for readability
+
+---
+
+## [0.8.0] — 2026-02-23
+
+### Fixed
+- `claude_runner`: reverted to `subprocess.run` — `Popen` with `stdout.read()` caused deadlocks when stderr buffer filled
+- `claude_runner`: intermediate Popen + stderr streaming attempts also reverted (unstable across environments)
+
+---
+
+## [0.7.0] — 2026-02-23
+
+### Added
+- `claude_runner`: stream-json output format with per-turn logging — each assistant turn now logged as it arrives
+
+---
+
+## [0.6.0] — 2026-02-23
+
+### Fixed
+- `observe_turns_min` defaults lowered: quick 50→15, deep 100→30 — previous values caused timeouts in normal runs
+
+---
+
+## [0.5.0] — 2026-02-22
+
+### Same as 0.4.0 tag (intermediate bump, no additional changes)
+
+---
+
+## [0.4.0] — 2026-02-22
+
+### Added
+- `claude_runner`: stream-json per-turn logging foundation
+
+### Fixed
+- `observe_turns_min` defaults aligned with actual LLM behavior
+
+---
+
 ## [0.3.0] — 2026-02-22
 
 ### Mode Redesign
