@@ -1,0 +1,17 @@
+{
+  "description": "Auto-chain improve when a proposal completes successfully",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "mcp__plugin_evonest_evonest__evonest_improve",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/woogis/Workspace/repo/noory-ai/evonest/hooks/post-improve.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

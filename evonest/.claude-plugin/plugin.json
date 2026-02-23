@@ -1,6 +1,6 @@
 {
   "name": "evonest",
-  "version": "0.9.0",
+  "version": "0.12.0",
   "description": "Autonomous code evolution engine — observe, plan, execute, verify",
   "author": {
     "name": "noory-code"
@@ -13,6 +13,7 @@
     "./commands/personas.md"
   ],
   "skills": "./skills/",
+  "hooks": "../hooks/hooks.json",
   "mcpServers": {
     "evonest": {
       "command": "uv",
