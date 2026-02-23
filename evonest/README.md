@@ -7,13 +7,62 @@ Evonest connects directly to Claude Code's tool ecosystem — not as a standalon
 
 Most AI coding tools give you a single perspective. Evonest sends 19 different specialist personas at your codebase — a security auditor, chaos engineer, performance analyst, domain modeler, and more — and lets natural selection determine which approaches work best.
 
+### 왜 19개 페르소나가 필요한가?
+
+단일 AI는 한 번에 하나의 관점만 제공합니다. 실제 프로젝트는 보안, 성능, 유지보수성, 제품 전략이 동시에 중요합니다.
+
+**실제 시나리오:**
+
+1. **security-auditor**가 API 엔드포인트에서 SQL 인젝션 취약점을 발견합니다
+2. **chaos-engineer**가 동일 엔드포인트에 부하 테스트를 실행하고 동시성 버그를 검출합니다
+3. **performance-analyst**가 쿼리 최적화 전략을 제안하고 인덱스를 추가합니다
+4. **test-coverage-analyst**가 세 가지 개선사항 모두를 검증하는 통합 테스트를 작성합니다
+
+**적응형 학습:**
+성공한 페르소나는 가중치가 증가합니다. 보안 개선이 계속 통과하면 security-auditor가 더 자주 실행됩니다. 불필요한 리팩토링을 제안하는 페르소나는 자동으로 우선순위가 낮아집니다.
+
+**다양성이 터널 비전을 방지합니다:**
+Aider/Cursor는 단일 AI로 동작하므로 한 가지 접근만 시도합니다. GitHub Copilot Workspace는 사전 정의된 워크플로에 갇혀 있습니다. Evonest는 19개의 독립적인 관점을 제공하며, 자연 선택이 최적의 조합을 찾아냅니다.
+
 | | Aider / Cursor | GitHub Copilot Workspace | **Evonest** |
 |--|--|--|--|
 | Integration | Standalone CLI / editor | Web UI | **MCP-native — lives inside Claude Code** |
 | Perspectives | Single AI | Predefined workflow | **19 personas + adaptive selection** |
+| Context Continuity | Session-local | Isolated web session | **Shares Claude Code conversation + tools** |
 | Safety | Manual recovery | Manual recovery | **Auto-revert on failed build/test** |
 | Learning | None | None | **Adaptive weights — successful personas run more often** |
 | Output | Local commits | PR (web) | **Commit or PR — your choice** |
+
+### MCP-Native의 이점
+
+**컨텍스트 연속성:**
+Evonest는 Claude Code 세션 내에서 실행되므로, 당신이 Claude와 나눈 대화 히스토리, 열어본 파일, 실행한 명령어가 모두 공유됩니다. Aider는 독립 프로세스로 동작해 이전 작업 내용을 알 수 없습니다. Copilot Workspace는 웹 UI로 격리되어 있습니다.
+
+**네이티브 툴 공유:**
+`/evonest:analyze`를 실행하면 Claude Code의 Read, Glob, Grep, Edit, Write 툴을 그대로 사용합니다. 별도 파일 접근 권한 요청이나 중복된 코드베이스 파싱이 필요 없습니다.
+
+**단일 환경:**
+프로젝트 설정, git 상태, 환경 변수, 의존성이 Claude Code와 동일합니다. Aider는 별도 CLI이므로 환경 불일치가 발생할 수 있습니다. Copilot Workspace는 클라우드 환경에서 동작하므로 로컬 설정을 반영할 수 없습니다.
+
+## 경쟁사가 할 수 없는 것
+
+### Aider / Cursor는 페르소나 전환 불가
+
+Aider와 Cursor는 단일 AI 인스턴스로 동작합니다. "보안 관점으로 분석해줘"라고 요청할 수 있지만, 이는 동일한 모델이 프롬프트를 다르게 해석하는 것일 뿐입니다. 페르소나 간 독립성이 없고, 이전 대화 컨텍스트가 편향을 일으킵니다.
+
+Evonest는 매 사이클마다 **새로운 Claude 프로세스**를 실행합니다. security-auditor와 performance-analyst는 완전히 독립적인 세션입니다. 서로의 제안을 모르므로, 한 페르소나의 접근이 다른 페르소나를 왜곡하지 않습니다.
+
+### GitHub Copilot Workspace는 자율 학습 불가
+
+Copilot Workspace는 "Issue → Plan → Code → PR" 워크플로가 고정되어 있습니다. 어떤 접근이 효과적인지 학습하지 않으며, 프로젝트별 최적화가 없습니다.
+
+Evonest는 매 사이클 후 페르소나 가중치를 재계산합니다. 보안 개선이 계속 성공하면 security-auditor 빈도가 증가합니다. 불필요한 리팩토링을 제안하는 페르소나는 자동으로 우선순위가 낮아집니다. 50 사이클 후, 당신의 프로젝트에 맞춤화된 페르소나 분포가 만들어집니다.
+
+### Aider / Copilot Workspace 모두 다중 관점 협업 불가
+
+Aider는 순차적 대화만 지원합니다. "보안 → 성능 → 테스트" 순서로 요청해야 하며, 각 단계는 이전 단계의 결과에 의존합니다.
+
+Evonest는 **독립적인 관점**을 제공합니다. security-auditor가 API 보안을 분석할 때, chaos-engineer가 동시에 동시성 버그를 찾고, performance-analyst가 쿼리 최적화를 제안합니다. 세 가지 개선사항은 서로 영향받지 않으며, 각각 독립적으로 검증됩니다.
 
 ## Install
 

@@ -1,5 +1,16 @@
 # Evonest Architecture
 
+## 핵심 차별점
+
+### 다중 페르소나 시스템
+단일 AI 도구(Aider, Cursor)는 한 번에 하나의 관점만 제공합니다. Evonest는 19개의 독립적인 페르소나를 실행하며, 각 페르소나는 새로운 Claude 프로세스로 격리됩니다. security-auditor, chaos-engineer, performance-analyst가 서로 영향받지 않고 독립적으로 분석합니다.
+
+### 적응형 학습
+GitHub Copilot Workspace는 고정 워크플로로 동작합니다. Evonest는 매 사이클 후 페르소나 가중치를 재계산하여, 성공하는 페르소나가 더 자주 실행되고 실패하는 페르소나는 우선순위가 낮아집니다.
+
+### MCP-Native 통합
+Aider는 독립 CLI로 동작해 컨텍스트 공유가 불가능합니다. Copilot Workspace는 웹 UI로 격리됩니다. Evonest는 Claude Code 세션 내에서 실행되어, 대화 히스토리, 파일 접근, 툴 공유가 모두 네이티브로 이루어집니다.
+
 ## Module Map
 
 ```
