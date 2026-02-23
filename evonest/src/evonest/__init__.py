@@ -1,6 +1,11 @@
 """Evonest — Autonomous code evolution engine."""
 
-__version__ = "0.2.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("evonest")
+except PackageNotFoundError:
+    __version__ = "unknown"
 
 
 _CLI_COMMANDS = {"init", "run", "status", "history", "progress", "config", "identity", "backlog"}
