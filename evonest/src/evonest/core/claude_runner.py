@@ -7,10 +7,9 @@ Tests can mock `run()` to avoid real subprocess calls.
 from __future__ import annotations
 
 import logging
-import subprocess
-import time
 from dataclasses import dataclass
-from datetime import datetime
+
+from evonest.core.process_manager import ProcessManager
 
 logger = logging.getLogger("evonest")
 
@@ -23,14 +22,6 @@ class ClaudeResult:
     exit_code: int
     success: bool
     stderr: str = ""
-
-
-_RATE_LIMIT_SIGNALS = ("rate limit", "429", "too many requests", "overloaded")
-
-
-def _is_rate_limit(text: str) -> bool:
-    lower = text.lower()
-    return any(sig in lower for sig in _RATE_LIMIT_SIGNALS)
 
 
 OBSERVE_TOOLS = "Read,Glob,Grep,Bash"
@@ -80,87 +71,23 @@ def run(
     ]
 
     logger.info("claude -p starting (model=%s, max-turns=%d, cwd=%s)", model, max_turns, cwd)
-    started_at = datetime.now()
 
-    try:
-        result = subprocess.run(
-            cmd,
-            stdin=subprocess.DEVNULL,  # detached session has no stdin; prevent hang
-            capture_output=True,
-            text=True,
-            cwd=cwd,
-            timeout=600,  # 10 minute timeout
-        )
-        elapsed = (datetime.now() - started_at).total_seconds()
-        output = result.stdout.strip()
-        stderr = result.stderr.strip()
+    # ProcessManager를 통해 subprocess 실행
+    process_manager = ProcessManager(timeout=600.0, retry_on_rate_limit=True, rate_limit_wait=30.0)
+    result = process_manager.run(cmd, cwd=cwd, _retry_attempt=_retry)
 
-        if result.returncode != 0:
-            logger.warning(
-                "claude -p exited with code %d after %.1fs. stderr: %s",
-                result.returncode,
-                elapsed,
-                stderr[:500] if stderr else "(none)",
-            )
-        elif not output:
-            logger.warning(
-                "claude -p exited 0 but produced no output after %.1fs. stderr: %s",
-                elapsed,
-                stderr[:500] if stderr else "(none)",
-            )
-        else:
-            logger.info(
-                "claude -p completed in %.1fs (output=%d chars)",
-                elapsed,
-                len(output),
-            )
-
-        if _is_rate_limit(stderr):
-            logger.warning("claude -p rate limited after %.1fs — waiting 30s before retry", elapsed)
-            time.sleep(30)
-            return run(
-                prompt,
-                model=model,
-                max_turns=max_turns,
-                allowed_tools=allowed_tools,
-                cwd=cwd,
-                _retry=False,
-            )
-
-        # claude -p outputs "Error: Reached max turns (N)" to stdout when turns exhausted
-        max_turns_hit = output.startswith("Error: Reached max turns")
-        if max_turns_hit:
-            logger.warning(
-                "claude -p reached max turns limit after %.1fs: %s", elapsed, output[:100]
-            )
-
-        return ClaudeResult(
-            output=output if not max_turns_hit else "",
-            exit_code=result.returncode,
-            success=result.returncode == 0 and len(output) > 0 and not max_turns_hit,
-            stderr=stderr if not max_turns_hit else output,
+    # claude -p outputs "Error: Reached max turns (N)" to stdout when turns exhausted
+    max_turns_hit = result.output.startswith("Error: Reached max turns")
+    if max_turns_hit:
+        logger.warning(
+            "claude -p reached max turns limit after %.1fs: %s",
+            result.elapsed_seconds,
+            result.output[:100],
         )
 
-    except subprocess.TimeoutExpired as exc:
-        raw_stderr = exc.stderr or b""
-        stderr_text = (
-            raw_stderr.decode(errors="replace") if isinstance(raw_stderr, bytes) else raw_stderr
-        )
-        elapsed = (datetime.now() - started_at).total_seconds()
-        if _retry and _is_rate_limit(stderr_text):
-            logger.warning("claude -p rate limited after %.1fs — waiting 30s before retry", elapsed)
-            time.sleep(30)
-            return run(
-                prompt,
-                model=model,
-                max_turns=max_turns,
-                allowed_tools=allowed_tools,
-                cwd=cwd,
-                _retry=False,
-            )
-        logger.error("claude -p timed out after %.1fs (limit=600s)", elapsed)
-        return ClaudeResult(output="", exit_code=-1, success=False, stderr=stderr_text or "timeout")
-
-    except FileNotFoundError:
-        logger.error("claude command not found. Is Claude Code CLI installed?")
-        return ClaudeResult(output="", exit_code=-1, success=False)
+    return ClaudeResult(
+        output=result.output if not max_turns_hit else "",
+        exit_code=result.exit_code,
+        success=result.success and not max_turns_hit,
+        stderr=result.stderr if not max_turns_hit else result.output,
+    )
