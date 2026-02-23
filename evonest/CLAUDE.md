@@ -44,8 +44,19 @@
 When bumping version:
 1. `pyproject.toml` → update `version`
 2. `.claude-plugin/plugin.json` → update `version` to match
-3. `uv.lock` — always include in the same commit
-4. Commit all three together
+3. `CHANGELOG.md` → add entry for the new version (see format below)
+4. `uv.lock` — always include in the same commit
+5. Commit all four together with `chore(evonest): bump version to X.Y.Z`
+
+CHANGELOG entry format:
+```markdown
+## [X.Y.Z] — YYYY-MM-DD
+
+### Added / Fixed / Changed / Removed
+- Description of what changed and why
+
+**N tests passing**
+```
 
 Do NOT manually edit `~/.claude/plugins/` cache directories — Claude Code regenerates them on reload.
 
