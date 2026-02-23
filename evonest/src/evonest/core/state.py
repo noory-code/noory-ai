@@ -300,10 +300,14 @@ class ProjectState:
 
     def log(self, message: str) -> None:
         """Append a timestamped message to the orchestrator log."""
-        self.paths.log_path.parent.mkdir(parents=True, exist_ok=True)
-        ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
-        with open(self.paths.log_path, "a", encoding="utf-8") as f:
-            f.write(f"{ts}: {message}\n")
+        try:
+            self.paths.log_path.parent.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+            with open(self.paths.log_path, "a", encoding="utf-8") as f:
+                f.write(f"{ts}: {message}\n")
+        except OSError as e:
+            # 로깅 실패는 조용히 처리 (디스크 풀, 권한 문제 등)
+            logger.warning("Failed to write to orchestrator log: %s", e)
         logger.info(message)
 
     def summary(self) -> str:
