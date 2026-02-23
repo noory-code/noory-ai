@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 import subprocess
-import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -52,8 +51,6 @@ def run(
 ) -> ClaudeResult:
     """Run `claude -p` as a subprocess and return the result.
 
-    Uses Popen to stream stderr in real time for progress logging.
-
     Args:
         prompt: The prompt text to send.
         model: Model name (e.g. "sonnet", "opus").
@@ -85,76 +82,29 @@ def run(
     started_at = datetime.now()
 
     try:
-        proc = subprocess.Popen(
+        result = subprocess.run(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             cwd=cwd,
+            timeout=600,  # 10 minute timeout
         )
-
-        stderr_lines: list[str] = []
-
-        def _stream_stderr() -> None:
-            assert proc.stderr is not None
-            for line in proc.stderr:
-                line = line.rstrip()
-                if line:
-                    stderr_lines.append(line)
-                    elapsed = (datetime.now() - started_at).total_seconds()
-                    logger.info("  (%.1fs) %s", elapsed, line)
-
-        stderr_thread = threading.Thread(target=_stream_stderr, daemon=True)
-        stderr_thread.start()
-
-        # Read stdout directly (stderr is consumed by the thread)
-        assert proc.stdout is not None
-        try:
-            stdout_text = proc.stdout.read()
-        except Exception:
-            stdout_text = ""
-
-        # Wait for process exit with timeout
-        try:
-            proc.wait(timeout=600)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
-            elapsed = (datetime.now() - started_at).total_seconds()
-            logger.error("claude -p timed out after %.1fs (limit=600s)", elapsed)
-            stderr_thread.join(timeout=5)
-            stderr_text = "\n".join(stderr_lines)
-            if _retry and _is_rate_limit(stderr_text):
-                logger.warning("claude -p rate limited — waiting 30s before retry")
-                time.sleep(30)
-                return run(
-                    prompt,
-                    model=model,
-                    max_turns=max_turns,
-                    allowed_tools=allowed_tools,
-                    cwd=cwd,
-                    _retry=False,
-                )
-            return ClaudeResult(output="", exit_code=-1, success=False, stderr=stderr_text or "timeout")
-
-        stderr_thread.join(timeout=5)
-
         elapsed = (datetime.now() - started_at).total_seconds()
-        output = stdout_text.strip()
-        stderr_text = "\n".join(stderr_lines).strip()
+        output = result.stdout.strip()
+        stderr = result.stderr.strip()
 
-        if proc.returncode != 0:
+        if result.returncode != 0:
             logger.warning(
                 "claude -p exited with code %d after %.1fs. stderr: %s",
-                proc.returncode,
+                result.returncode,
                 elapsed,
-                stderr_text[:500] if stderr_text else "(none)",
+                stderr[:500] if stderr else "(none)",
             )
         elif not output:
             logger.warning(
                 "claude -p exited 0 but produced no output after %.1fs. stderr: %s",
                 elapsed,
-                stderr_text[:500] if stderr_text else "(none)",
+                stderr[:500] if stderr else "(none)",
             )
         else:
             logger.info(
@@ -163,7 +113,7 @@ def run(
                 len(output),
             )
 
-        if _is_rate_limit(stderr_text):
+        if _is_rate_limit(stderr):
             logger.warning("claude -p rate limited after %.1fs — waiting 30s before retry", elapsed)
             time.sleep(30)
             return run(
@@ -182,10 +132,28 @@ def run(
 
         return ClaudeResult(
             output=output if not max_turns_hit else "",
-            exit_code=proc.returncode,
-            success=proc.returncode == 0 and len(output) > 0 and not max_turns_hit,
-            stderr=stderr_text if not max_turns_hit else output,
+            exit_code=result.returncode,
+            success=result.returncode == 0 and len(output) > 0 and not max_turns_hit,
+            stderr=stderr if not max_turns_hit else output,
         )
+
+    except subprocess.TimeoutExpired as exc:
+        raw_stderr = exc.stderr or b""
+        stderr_text = raw_stderr.decode(errors="replace") if isinstance(raw_stderr, bytes) else raw_stderr
+        elapsed = (datetime.now() - started_at).total_seconds()
+        if _retry and _is_rate_limit(stderr_text):
+            logger.warning("claude -p rate limited after %.1fs — waiting 30s before retry", elapsed)
+            time.sleep(30)
+            return run(
+                prompt,
+                model=model,
+                max_turns=max_turns,
+                allowed_tools=allowed_tools,
+                cwd=cwd,
+                _retry=False,
+            )
+        logger.error("claude -p timed out after %.1fs (limit=600s)", elapsed)
+        return ClaudeResult(output="", exit_code=-1, success=False, stderr=stderr_text or "timeout")
 
     except FileNotFoundError:
         logger.error("claude command not found. Is Claude Code CLI installed?")
