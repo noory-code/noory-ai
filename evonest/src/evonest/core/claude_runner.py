@@ -74,6 +74,7 @@ def run(
         "--allowedTools",
         allowed_tools,
         "--no-session-persistence",  # don't save/load session history
+        "--dangerously-skip-permissions",  # no TTY in detached process; skip permission prompts
         "--setting-sources",
         "user",  # skip project .mcp.json to avoid loading unrelated MCP servers
     ]
@@ -84,6 +85,7 @@ def run(
     try:
         result = subprocess.run(
             cmd,
+            stdin=subprocess.DEVNULL,  # detached session has no stdin; prevent hang
             capture_output=True,
             text=True,
             cwd=cwd,
