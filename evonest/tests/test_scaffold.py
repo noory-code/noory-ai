@@ -6,9 +6,13 @@ from pathlib import Path
 
 
 def test_version() -> None:
+    from importlib.metadata import version
+
     from evonest import __version__
 
-    assert __version__ == "0.14.0"
+    # __version__ must match the installed package metadata (pyproject.toml is SSOT)
+    assert __version__ == version("evonest")
+    assert __version__ != "unknown"
 
 
 def test_mutations_exist() -> None:
