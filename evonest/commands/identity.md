@@ -6,7 +6,7 @@ argument-hint: "[project path]"
 Re-draft the project's `.evonest/identity.md` using the `evonest_identity_refresh` MCP tool.
 
 Steps:
-1. Call `evonest_identity_refresh` with `project` set to the target project path (use cwd if not specified).
+1. Call `evonest_identity_refresh` with `project` set to the target project path (use the `evonest/` package directory if inside the noory-ai monorepo; never use the monorepo root).
 2. The tool returns `{"current": "...", "draft": "..."}` — show both to the user side by side.
 3. Ask the user: "Update identity.md with the new draft? [y/N]"
 4. If yes: call `evonest_identity` with `project` and `content` set to the draft text.

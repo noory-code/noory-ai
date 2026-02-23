@@ -5,7 +5,11 @@ argument-hint: "[project path] [--all-personas] [--observe-mode quick|deep|auto]
 
 Run **evonest analyze** on the target project using the `evonest_analyze` MCP tool.
 
-Use the current working directory as the project path unless the user specifies otherwise.
+Determine the project path:
+- If the user specifies a path, use that.
+- If the user says "evonest" or no path given and cwd is inside the noory-ai monorepo, use the absolute path of the `evonest/` package directory.
+- If the user says "distill", use the absolute path of the `distill/` package directory.
+- Never use the monorepo root as the project path.
 
 Call `evonest_analyze` with:
 - `project`: absolute path to the target project (use the user's specified path, or ask if unclear)
