@@ -5,13 +5,7 @@
   "author": {
     "name": "noory-code"
   },
-  "commands": [
-    "./commands/analyze.md",
-    "./commands/evolve.md",
-    "./commands/improve.md",
-    "./commands/identity.md",
-    "./commands/personas.md"
-  ],
+  "commands": "./commands/",
   "skills": "./skills/",
   "hooks": "../hooks/hooks.json",
   "mcpServers": {
