@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
@@ -612,15 +613,67 @@ def test_run_verify_no_shell_injection(tmp_project: Path) -> None:
     # 중요한 것은 두 번째 명령(touch)이 실행되지 않는 것
 
 
+def test_run_verify_timeout_kills_process(tmp_project: Path) -> None:
+    """verify 타임아웃 발생 시 프로세스가 kill()과 wait()으로 정리되는지 검증."""
+    from unittest.mock import MagicMock
+
+    state = ProjectState(tmp_project)
+    config = EvonestConfig()
+    config.verify.build = "sleep 999"
+
+    # TimeoutExpired 예외를 발생시킬 mock process 생성
+    mock_process = MagicMock()
+    mock_process.communicate.side_effect = subprocess.TimeoutExpired(cmd="sleep 999", timeout=300)
+
+    with (
+        patch("evonest.core.phases._git_diff_stat", return_value="no changes"),
+        patch("evonest.core.phases._git_changed_files", return_value=[]),
+        patch("subprocess.Popen", return_value=mock_process),
+    ):
+        result = run_verify(state, config, cycle_num=1)
+
+    # TimeoutExpired 발생 시 kill()과 wait()이 호출되었는지 검증
+    mock_process.kill.assert_called_once()
+    mock_process.wait.assert_called_once()
+    assert result.build_passed is False
+
+
+def test_run_verify_test_timeout_kills_process(tmp_project: Path) -> None:
+    """verify test 타임아웃 발생 시 프로세스가 정리되는지 검증."""
+    from unittest.mock import MagicMock
+
+    state = ProjectState(tmp_project)
+    config = EvonestConfig()
+    config.verify.test = "sleep 999"
+
+    # TimeoutExpired 예외를 발생시킬 mock process 생성
+    mock_process = MagicMock()
+    mock_process.communicate.side_effect = subprocess.TimeoutExpired(cmd="sleep 999", timeout=300)
+
+    with (
+        patch("evonest.core.phases._git_diff_stat", return_value="no changes"),
+        patch("evonest.core.phases._git_changed_files", return_value=[]),
+        patch("subprocess.Popen", return_value=mock_process),
+    ):
+        result = run_verify(state, config, cycle_num=1)
+
+    # TimeoutExpired 발생 시 kill()과 wait()이 호출되었는지 검증
+    mock_process.kill.assert_called_once()
+    mock_process.wait.assert_called_once()
+    assert result.test_passed is False
+
+
 # ── Adversarial JSON parsing ───────────────────────────────
 
 
 def test_save_observations_large_json(tmp_project: Path) -> None:
     """1MB JSON DoS 경계 검사: graceful failure 검증."""
     state = ProjectState(tmp_project)
-    large_json = '{"improvements": [' + ','.join(
-        f'{{"title": "item{i}", "category": "test"}}' for i in range(10000)
-    ) + ']}'
+    large_json = (
+        '{"improvements": ['
+        + ",".join(f'{{"title": "item{i}", "category": "test"}}' for i in range(10000))
+        + "]}"
+    )
     output = f"```json\n{large_json}\n```"
     _save_observations_from_output(state, output, "test-persona")
     backlog = state.read_backlog()
@@ -630,7 +683,7 @@ def test_save_observations_large_json(tmp_project: Path) -> None:
 def test_save_observations_deeply_nested_json(tmp_project: Path) -> None:
     """100단계 깊이의 중첩 객체: graceful failure 검증."""
     state = ProjectState(tmp_project)
-    nested = '{"a":' * 100 + '{"improvements": []}' + '}' * 100
+    nested = '{"a":' * 100 + '{"improvements": []}' + "}" * 100
     output = f"```json\n{nested}\n```"
     _save_observations_from_output(state, output, "test-persona")
     backlog = state.read_backlog()

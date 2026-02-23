@@ -609,53 +609,61 @@ def run_verify(
 
     # Build check
     if config.verify.build:
+        process = None
         try:
-            proc = subprocess.run(
+            process = subprocess.Popen(
                 shlex.split(config.verify.build),
-                shell=False,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
                 cwd=str(state.project),
-                timeout=300,
             )
-            if proc.returncode == 0:
+            stdout, stderr = process.communicate(timeout=300)
+            if process.returncode == 0:
                 notes_parts.append("build: passed")
                 state.log("    Build: PASSED")
             else:
                 build_passed = False
                 notes_parts.append("build: FAILED")
                 state.log("    Build: FAILED")
-                if proc.stderr:
-                    state.log(f"    Build stderr: {proc.stderr.strip()[-500:]}")
+                if stderr:
+                    state.log(f"    Build stderr: {stderr.strip()[-500:]}")
         except subprocess.TimeoutExpired:
             build_passed = False
             notes_parts.append("build: FAILED (timeout)")
             state.log("    Build: FAILED (timeout)")
+            if process:
+                process.kill()
+                process.wait()
 
     # Test check
     if config.verify.test:
+        process = None
         try:
-            proc = subprocess.run(
+            process = subprocess.Popen(
                 shlex.split(config.verify.test),
-                shell=False,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
                 cwd=str(state.project),
-                timeout=300,
             )
-            if proc.returncode == 0:
+            stdout, stderr = process.communicate(timeout=300)
+            if process.returncode == 0:
                 notes_parts.append("tests: passed")
                 state.log("    Tests: PASSED")
             else:
                 test_passed = False
                 notes_parts.append("tests: FAILED")
                 state.log("    Tests: FAILED")
-                if proc.stderr:
-                    state.log(f"    Tests stderr: {proc.stderr.strip()[-500:]}")
+                if stderr:
+                    state.log(f"    Tests stderr: {stderr.strip()[-500:]}")
         except subprocess.TimeoutExpired:
             test_passed = False
             notes_parts.append("tests: FAILED (timeout)")
             state.log("    Tests: FAILED (timeout)")
+            if process:
+                process.kill()
+                process.wait()
 
     # Git status
     diff_stat = _git_diff_stat(state.project)
