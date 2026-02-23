@@ -115,7 +115,20 @@ async def run_improve(
             return "No pending proposals. Run `evonest analyze` first."
 
         proposal_content = proposal_path.read_text(encoding="utf-8")
+
+        # Extract title and priority for logging
+        _title = "(no title)"
+        _priority = ""
+        for _line in proposal_content.splitlines()[:15]:
+            if _line.startswith("# Proposal:") or _line.startswith("# 제안:"):
+                _title = _line.split(":", 1)[-1].strip()
+            if "priority" in _line.lower() or "우선순위" in _line.lower():
+                for _p in ("critical", "high", "medium", "low"):
+                    if _p in _line.lower():
+                        _priority = _p
+                        break
         state.log(f"  [Improve] Selected proposal: {proposal_path.name}")
+        state.log(f"  [Improve] Title: {_title} [{_priority}]")
 
         # Write proposal content as plan so run_execute() can read it
         state.write_text(state.plan_path, proposal_content)
@@ -154,6 +167,8 @@ async def run_improve(
 
         elif verify.overall and not verify.changed_files:
             _git_stash_drop(state.project)
+            dest = state.mark_proposal_done(proposal_path.name)
+            state.log(f"  [Improve] Proposal archived (no changes needed): {dest}")
             return "Improve skipped: Execute succeeded but no files were changed."
 
         else:
