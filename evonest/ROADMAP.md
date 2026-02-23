@@ -46,6 +46,63 @@
 
 ---
 
+## v0.4.0 — Persona Community
+
+### 목표
+GitHub 기반 페르소나 공유 생태계 구축으로 네트워크 효과 확보. GitHub Copilot의 Microsoft 종속, Aider의 개별 커스터마이징 한계를 넘어 커뮤니티 주도 페르소나 라이브러리로 진입 장벽 형성.
+
+### 핵심 기능
+
+#### 1. `evonest_import` MCP Tool
+```python
+evonest_import(
+    source="noory-code/evonest-personas/security/owasp-expert.json",
+    target_type="persona"  # or "adversarial"
+)
+```
+- GitHub raw URL에서 페르소나/adversarial JSON 직접 다운로드
+- `.evonest/dynamic-personas.json` 또는 `.evonest/dynamic-adversarials.json`에 자동 병합
+- 중복 체크 및 버전 관리
+
+#### 2. 초기 페르소나 팩 공개
+`noory-code/evonest-personas` 저장소 구조:
+```
+noory-code/evonest-personas
+├── startup/
+│   ├── lean-startup-advisor.json
+│   ├── product-market-fit.json
+│   └── growth-hacker.json
+├── security/
+│   ├── owasp-expert.json
+│   ├── threat-modeler.json
+│   └── penetration-tester.json
+├── data-science/
+│   ├── ml-ops-engineer.json
+│   ├── model-optimizer.json
+│   └── data-pipeline-architect.json
+├── community/
+│   └── (커뮤니티 기여 페르소나)
+└── README.md  # 사용법, 기여 가이드
+```
+
+#### 3. 품질 기준 및 기여 가이드라인
+- **페르소나 템플릿**: 필수 필드(name, role, instruction, temperature 등) 정의
+- **검증 자동화**: CI에서 JSON schema validation, instruction 길이 제한 체크
+- **큐레이션 프로세스**: 초기에는 maintainer approval, 이후 community upvote 시스템
+- **라이선스**: MIT (evonest 본체와 동일)
+
+### 로드맵
+1. **Phase 1** (v0.4.0-alpha): `evonest_import` 툴 구현 + 3개 도메인 팩 (startup, security, data-science) 각 3개씩
+2. **Phase 2** (v0.4.0-beta): GitHub 저장소 공개 + 기여 가이드라인 문서 + CI 검증
+3. **Phase 3** (v0.4.0): 커뮤니티 페르소나 수집 캠페인 + 공식 블로그/문서 홍보
+
+### 경쟁 우위
+- **Copilot**: Microsoft 생태계에 종속, 커스터마이징 불가
+- **Aider**: 개별 사용자 커스터마이징만 가능, 공유 메커니즘 없음
+- **Evonest**: 커뮤니티 주도 페르소나 마켓플레이스 → 네트워크 효과 → 진입 장벽
+
+---
+
 ## Next
 
 - **Analysis depth levels** — `quick / standard / deep` presets; selectable at `evonest init`, overridable with `--level`
@@ -55,21 +112,6 @@
 ---
 
 ## Vision
-
-### Persona Community (community, free)
-A space for the community to freely share personas and adversarials.
-Operated as a GitHub-based repository (`noory-code/evonest-personas`).
-Anyone can contribute, anyone can use them.
-
-```
-noory-code/evonest-personas
-├── startup/        # Startup-focused
-├── security/       # Security-focused
-├── data-science/   # Data science
-└── community/      # Community contributions
-```
-
-Installation: add directly to `.evonest/dynamic-personas.json`, or via a future `evonest_import` tool.
 
 ### Nest Hierarchy (long-term)
 - **Small nest** (current): Single-project autonomous evolution

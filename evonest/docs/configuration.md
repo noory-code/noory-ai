@@ -154,6 +154,45 @@ Dynamically scales `max_turns.observe` based on project file count.
 
 ---
 
+## Persona Community (v0.4.0+)
+
+### Importing Community Personas
+
+Via MCP tool:
+```python
+evonest_import(
+    source="noory-code/evonest-personas/security/owasp-expert.json",
+    target_type="persona"
+)
+```
+
+Via CLI (planned):
+```bash
+evonest import persona noory-code/evonest-personas/security/owasp-expert.json
+```
+
+Imported personas are stored in `.evonest/dynamic-personas.json` and automatically loaded on next run.
+
+### Community Repository Structure
+
+```
+noory-code/evonest-personas
+├── startup/        # Lean startup, growth hacking, PMF
+├── security/       # OWASP, threat modeling, pentesting
+├── data-science/   # ML ops, model optimization, data pipelines
+└── community/      # Community contributions
+```
+
+### Contributing Personas
+
+See [noory-code/evonest-personas](https://github.com/noory-code/evonest-personas) for:
+- Persona JSON template
+- Schema validation rules
+- Contribution guidelines
+- Quality standards
+
+---
+
 ## Viewing & Updating Config
 
 ```bash
