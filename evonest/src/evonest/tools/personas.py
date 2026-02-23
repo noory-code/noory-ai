@@ -6,8 +6,8 @@ from evonest.server import mcp
 
 
 def _format_list(
-    personas: list[dict],
-    adversarials: list[dict],
+    personas: list[dict[str, str]],
+    adversarials: list[dict[str, str]],
     personas_toggle: dict[str, bool],
     adversarials_toggle: dict[str, bool],
     group_filter: str | None = None,
@@ -16,7 +16,7 @@ def _format_list(
     lines: list[str] = []
 
     # Group personas
-    groups: dict[str, list[dict]] = {}
+    groups: dict[str, list[dict[str, str]]] = {}
     for p in personas:
         g = p.get("group", "other")
         groups.setdefault(g, []).append(p)
