@@ -117,6 +117,7 @@ class EvonestConfig:
     deep_cycle_interval: int = 10
     observe_turns_quick_ratio: float = 0.10
     observe_turns_deep_ratio: float = 0.50
+    # Defaults must match docs/configuration.md
     observe_turns_min_quick: int = 15
     observe_turns_min_deep: int = 30
     verify: VerifyConfig = field(default_factory=VerifyConfig)

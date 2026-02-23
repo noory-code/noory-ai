@@ -137,8 +137,8 @@ Dynamically scales `max_turns.observe` based on project file count.
 |-------|---------|-------------|
 | `observe_turns_quick_ratio` | `0.10` | quick turns = max(min_quick, files × ratio) |
 | `observe_turns_deep_ratio` | `0.50` | deep turns = max(min_deep, files × ratio) |
-| `observe_turns_min_quick` | `50` | Minimum turns for quick observe |
-| `observe_turns_min_deep` | `100` | Minimum turns for deep observe |
+| `observe_turns_min_quick` | `15` | Minimum turns for quick observe |
+| `observe_turns_min_deep` | `30` | Minimum turns for deep observe |
 | `deep_cycle_interval` | `10` | Run deep observe every N cycles (auto mode) |
 
 ---
