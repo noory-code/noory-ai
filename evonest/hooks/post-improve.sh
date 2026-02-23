@@ -15,8 +15,8 @@ if [[ -z "$project" ]]; then
   exit 0
 fi
 
-# Resolve proposals directory relative to CLAUDE_PROJECT_DIR
-proposals_dir="${CLAUDE_PROJECT_DIR}/${project}/.evonest/proposals"
+# project is already an absolute path
+proposals_dir="${project}/.evonest/proposals"
 
 if [[ ! -d "$proposals_dir" ]]; then
   exit 0
