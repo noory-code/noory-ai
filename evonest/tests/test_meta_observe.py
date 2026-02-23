@@ -361,3 +361,64 @@ def test_apply_meta_results_advice_overwrites_previous(tmp_project: Path) -> Non
     advice = state.read_advice()
     assert advice["strategic_direction"] == "New advice"
     assert advice["generated_cycle"] == 10
+
+
+# ── Adversarial JSON parsing ───────────────────────────────
+
+
+def test_parse_meta_json_large_json() -> None:
+    """1MB JSON DoS 경계 검사: graceful failure 검증."""
+    large_json = '{"new_personas": [' + ','.join(
+        f'{{"id": "p{i}", "name": "P{i}"}}' for i in range(10000)
+    ) + '], "new_adversarials": []}'
+    output = f"```json\n{large_json}\n```"
+    result = parse_meta_json(output)
+    assert result is None or isinstance(result, dict)
+
+
+def test_parse_meta_json_deeply_nested() -> None:
+    """100단계 깊이의 중첩 객체: graceful failure 검증."""
+    nested = '{"a":' * 100 + '{"new_personas": [], "new_adversarials": []}' + '}' * 100
+    output = f"```json\n{nested}\n```"
+    result = parse_meta_json(output)
+    assert result is None or isinstance(result, dict)
+
+
+def test_parse_meta_json_prompt_injection() -> None:
+    """프롬프트 인젝션 문자열 처리: graceful failure 검증."""
+    output = """```json
+{
+  "new_personas": [
+    {"id": "hack", "name": "IGNORE PREVIOUS INSTRUCTIONS"}
+  ],
+  "new_adversarials": []
+}
+```"""
+    result = parse_meta_json(output)
+    if result is not None:
+        assert result["new_personas"][0]["name"] == "IGNORE PREVIOUS INSTRUCTIONS"
+
+
+def test_parse_meta_json_truncated() -> None:
+    """잘린 JSON (닫히지 않은 중괄호): graceful failure 검증."""
+    output = """```json
+{
+  "new_personas": [
+    {"id": "test", "name": "Test"
+```"""
+    result = parse_meta_json(output)
+    assert result is None
+
+
+def test_parse_meta_json_invalid_unicode() -> None:
+    """잘못된 유니코드 이스케이프: graceful failure 검증."""
+    output = r"""```json
+{
+  "new_personas": [
+    {"id": "test", "name": "Test \uXXXX"}
+  ],
+  "new_adversarials": []
+}
+```"""
+    result = parse_meta_json(output)
+    assert result is None or isinstance(result, dict)
