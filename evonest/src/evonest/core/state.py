@@ -277,12 +277,22 @@ class ProjectState:
         try:
             data: dict[str, Any] | list[Any] = json.loads(path.read_text(encoding="utf-8"))
             return data
-        except json.JSONDecodeError:
-            logger.warning("Corrupt JSON file, returning empty dict: %s", path)
+        except json.JSONDecodeError as e:
+            logger.warning("JSON 파싱 실패 (파일: %s, 오류: %s), 빈 dict 반환", path, e)
             return {}
 
     def write_json(self, path: Path, data: dict[str, Any] | list[Any]) -> None:
-        """Write data as pretty-printed JSON."""
+        """Write data as pretty-printed JSON (핵심 파일의 경우 .bak 백업 생성)."""
+        # 핵심 파일의 경우 덮어쓰기 전 백업 생성
+        critical_filenames = {"config.json", "progress.json"}
+        if path.exists() and path.name in critical_filenames:
+            backup_path = path.with_suffix(path.suffix + ".bak")
+            try:
+                backup_path.write_bytes(path.read_bytes())
+                logger.debug("백업 생성: %s", backup_path)
+            except OSError as e:
+                logger.warning("백업 생성 실패 (파일: %s, 오류: %s)", path, e)
+
         content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
         _atomic_write_text(path, content, encoding="utf-8")
 
