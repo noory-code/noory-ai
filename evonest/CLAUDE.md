@@ -44,7 +44,8 @@
 When bumping version:
 1. `pyproject.toml` → update `version`
 2. `.claude-plugin/plugin.json` → update `version` to match
-3. Commit both in the same commit
+3. `uv.lock` — always include in the same commit
+4. Commit all three together
 
 Do NOT manually edit `~/.claude/plugins/` cache directories — Claude Code regenerates them on reload.
 
