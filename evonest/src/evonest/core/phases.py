@@ -13,6 +13,7 @@ import json
 import logging
 import re
 import subprocess
+import textwrap
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
@@ -413,7 +414,7 @@ def _save_proposal(
         "",
         f"## {lbl['description']}",
         "",
-        description,
+        textwrap.fill(description, width=80, break_long_words=False, break_on_hyphens=False),
     ]
     if files:
         lines += ["", f"## {lbl['files']}", ""]
