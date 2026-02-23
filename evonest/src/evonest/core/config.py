@@ -9,6 +9,7 @@ Resolution order:
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -18,6 +19,22 @@ from typing import Any
 def _strip_jsonc_comments(text: str) -> str:
     """Remove // line comments from a JSON string (JSONC support)."""
     return re.sub(r"(?m)\s*//[^\n]*", "", text)
+
+
+def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> None:
+    """파일에 atomic write 수행 (임시 파일 생성 후 rename).
+
+    디스크 풀, 권한 오류 등으로 쓰기 중 실패 시 원본 파일을 보호합니다.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    try:
+        tmp_path.write_text(content, encoding=encoding)
+        os.replace(str(tmp_path), str(path))
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink()
+        raise
 
 
 @dataclass
@@ -318,10 +335,8 @@ class EvonestConfig:
         if self._config_path is None:
             raise RuntimeError("Config path not set — load from a project first")
         data = self.to_dict()
-        self._config_path.write_text(
-            json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
+        content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+        _atomic_write_text(self._config_path, content, encoding="utf-8")
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to a plain dict (excluding internal fields)."""

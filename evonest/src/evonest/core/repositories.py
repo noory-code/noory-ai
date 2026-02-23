@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -45,9 +46,25 @@ def _read_json(path: Path) -> dict[str, Any] | list[Any]:
         return {}
 
 
-def _write_json(path: Path, data: dict[str, Any] | list[Any]) -> None:
+def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> None:
+    """파일에 atomic write 수행 (임시 파일 생성 후 rename).
+
+    디스크 풀, 권한 오류 등으로 쓰기 중 실패 시 원본 파일을 보호합니다.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    try:
+        tmp_path.write_text(content, encoding=encoding)
+        os.replace(str(tmp_path), str(path))
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink()
+        raise
+
+
+def _write_json(path: Path, data: dict[str, Any] | list[Any]) -> None:
+    content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    _atomic_write_text(path, content, encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -65,8 +82,7 @@ class IdentityRepository:
 
     def write(self, content: str) -> None:
         p = self._paths.identity_path
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(content, encoding="utf-8")
+        _atomic_write_text(p, content)
 
 
 # ---------------------------------------------------------------------------
@@ -234,7 +250,7 @@ class ProposalRepository:
         while path.exists():
             path = self._paths.proposals_dir / f"{stem}-{counter}.md"
             counter += 1
-        path.write_text(content, encoding="utf-8")
+        _atomic_write_text(path, content)
         return str(path)
 
     def list(self) -> list[Path]:
@@ -275,7 +291,7 @@ class StimulusRepository:
         self._paths.stimuli_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S-%f")
         path = self._paths.stimuli_dir / f"stimulus-{ts}.md"
-        path.write_text(content, encoding="utf-8")
+        _atomic_write_text(path, content)
         return str(path)
 
     def consume(self) -> list[str]:
@@ -304,7 +320,7 @@ class DecisionRepository:
         self._paths.decisions_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S-%f")
         path = self._paths.decisions_dir / f"decision-{ts}.md"
-        path.write_text(content, encoding="utf-8")
+        _atomic_write_text(path, content)
         return str(path)
 
     def consume(self) -> list[str]:

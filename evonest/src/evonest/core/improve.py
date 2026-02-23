@@ -144,6 +144,7 @@ async def run_improve(
 
         # Prefer Claude's commit message (English) over proposal title (may be Korean)
         commit_msg = verify.commit_message or _commit_message_from_proposal(proposal_content)
+        assert commit_msg, "Commit message must not be None"
 
         if verify.overall and verify.changed_files:
             state.log(f"  [Improve] PASS: {commit_msg}")

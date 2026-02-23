@@ -6,7 +6,9 @@ Never construct .evonest/ paths manually elsewhere.
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -28,6 +30,22 @@ from evonest.core.repositories import (
 )
 
 logger = logging.getLogger("evonest")
+
+
+def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> None:
+    """파일에 atomic write 수행 (임시 파일 생성 후 rename).
+
+    디스크 풀, 권한 오류 등으로 쓰기 중 실패 시 원본 파일을 보호합니다.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    try:
+        tmp_path.write_text(content, encoding=encoding)
+        os.replace(str(tmp_path), str(path))
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink()
+        raise
 
 
 class ProjectState:
@@ -265,10 +283,8 @@ class ProjectState:
 
     def write_json(self, path: Path, data: dict[str, Any] | list[Any]) -> None:
         """Write data as pretty-printed JSON."""
-        import json
-
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+        _atomic_write_text(path, content, encoding="utf-8")
 
     def read_text(self, path: Path) -> str:
         """Read a text file. Returns empty string if missing."""
@@ -278,8 +294,7 @@ class ProjectState:
 
     def write_text(self, path: Path, content: str) -> None:
         """Write text to a file."""
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
+        _atomic_write_text(path, content)
 
     # --- Utilities ---
 
