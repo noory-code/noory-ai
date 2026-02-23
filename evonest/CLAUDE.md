@@ -31,6 +31,23 @@
 - **Tool/Core separation**: `tools/` are thin wrappers. Logic lives in `core/`.
 - **ClaudeRunner**: All `claude -p` subprocess calls go through `core/claude_runner.py`.
 
+## Version Management
+
+**Single source of truth: `pyproject.toml`**
+
+| File | Rule |
+|------|------|
+| `pyproject.toml` | **Only place to change the version** |
+| `src/evonest/__init__.py` | Reads version dynamically via `importlib.metadata` — never hardcode |
+| `.claude-plugin/plugin.json` | Must match `pyproject.toml` version — update together |
+
+When bumping version:
+1. `pyproject.toml` → update `version`
+2. `.claude-plugin/plugin.json` → update `version` to match
+3. Commit both in the same commit
+
+Do NOT manually edit `~/.claude/plugins/` cache directories — Claude Code regenerates them on reload.
+
 ## Conventions
 
 - Python 3.11+, type hints required
