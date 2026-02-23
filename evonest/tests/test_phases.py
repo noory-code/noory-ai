@@ -585,3 +585,28 @@ def test_empty_static_context_not_injected(tmp_project: Path) -> None:
 
     prompt = mock_run.call_args[0][0]
     assert "Pre-gathered Project Signals" not in prompt
+
+
+def test_run_verify_no_shell_injection(tmp_project: Path) -> None:
+    """verify 명령이 shell injection 공격으로부터 안전한지 검증."""
+    state = ProjectState(tmp_project)
+    config = EvonestConfig()
+
+    # 테스트 시나리오: shell=True일 때는 위험한 파일이 생성되지만, shell=False일 때는 생성되지 않음
+    test_file = tmp_project / "injection_test_file.txt"
+    # 악의적인 명령: touch로 파일 생성 시도 (shell operator && 사용)
+    config.verify.build = f"echo test && touch {test_file}"
+
+    with (
+        patch("evonest.core.phases._git_diff_stat", return_value="no changes"),
+        patch("evonest.core.phases._git_changed_files", return_value=[]),
+    ):
+        run_verify(state, config, cycle_num=1)
+
+    # shlex.split으로 파싱되면 "echo"가 명령어, "test", "&&", "touch", "{path}" 가 인수로 전달됨
+    # echo는 "test && touch {path}"를 출력만 하려고 시도하며, touch는 실행되지 않음
+    # 따라서 test_file이 생성되지 않아야 함 (shell injection 방지 성공)
+    assert not test_file.exists(), "shell injection이 방지되지 않았습니다: 파일이 생성됨"
+
+    # echo 명령 자체는 성공할 수 있음 (인수를 그대로 출력)
+    # 중요한 것은 두 번째 명령(touch)이 실행되지 않는 것

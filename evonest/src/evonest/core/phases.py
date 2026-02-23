@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import shlex
 import subprocess
 import textwrap
 from dataclasses import dataclass, field
@@ -384,13 +385,9 @@ _PROPOSAL_LABELS: dict[str, dict[str, str]] = {
         "description": "Description",
         "files": "Relevant Files",
         "footer1": (
-            "*This proposal was generated during analysis."
-            " It has not been implemented yet.*  "
+            "*This proposal was generated during analysis. It has not been implemented yet.*  "
         ),
-        "footer2": (
-            "*Run improve to execute,"
-            " or review and act on it as the team sees fit.*"
-        ),
+        "footer2": ("*Run improve to execute, or review and act on it as the team sees fit.*"),
     },
 }
 
@@ -614,8 +611,8 @@ def run_verify(
     if config.verify.build:
         try:
             proc = subprocess.run(
-                config.verify.build,
-                shell=True,
+                shlex.split(config.verify.build),
+                shell=False,
                 capture_output=True,
                 text=True,
                 cwd=str(state.project),
@@ -639,8 +636,8 @@ def run_verify(
     if config.verify.test:
         try:
             proc = subprocess.run(
-                config.verify.test,
-                shell=True,
+                shlex.split(config.verify.test),
+                shell=False,
                 capture_output=True,
                 text=True,
                 cwd=str(state.project),

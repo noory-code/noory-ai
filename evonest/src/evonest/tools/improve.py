@@ -78,9 +78,8 @@ async def evonest_improve(
                 break
         if not results:
             return "No pending proposals found."
-        return (
-            f"Batch complete: {len(results)} proposal(s) processed.\n\n"
-            + "\n\n---\n\n".join(results)
+        return f"Batch complete: {len(results)} proposal(s) processed.\n\n" + "\n\n---\n\n".join(
+            results
         )
 
     return await _run_one(project, proposal_id)

@@ -130,9 +130,7 @@ class ProcessManager:
                 elapsed_seconds=0.0,
             )
 
-    def _log_result(
-        self, exit_code: int, elapsed: float, output: str, stderr: str
-    ) -> None:
+    def _log_result(self, exit_code: int, elapsed: float, output: str, stderr: str) -> None:
         """실행 결과를 로깅."""
         if exit_code != 0:
             logger.warning(
