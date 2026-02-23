@@ -8,7 +8,7 @@ from pathlib import Path
 def test_version() -> None:
     from evonest import __version__
 
-    assert __version__ == "0.2.0"
+    assert __version__ == "0.14.0"
 
 
 def test_mutations_exist() -> None:
