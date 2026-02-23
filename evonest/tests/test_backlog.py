@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from evonest.core.backlog import (
     build_context,
     manage_backlog,
@@ -161,3 +163,80 @@ def test_manage_backlog_remove(tmp_project: Path) -> None:
 def test_manage_backlog_prune(tmp_project: Path) -> None:
     result = manage_backlog(tmp_project, "prune")
     assert "Pruned" in result
+
+
+# ── adversarial input tests ────────
+
+
+def test_save_observations_none_title(tmp_project: Path) -> None:
+    """None 제목으로 observations 저장 시도 - 'untitled'로 변환됨."""
+    state = ProjectState(tmp_project)
+    improvements = [{"title": None, "category": "test"}]
+    added = save_observations(state, improvements, "test", 1)
+    assert added == 1
+
+    backlog = state.read_backlog()
+    assert backlog["items"][0]["title"] == "untitled"
+
+
+def test_save_observations_very_long_title(tmp_project: Path) -> None:
+    """매우 긴 제목(10K 문자)으로 observations 저장."""
+    state = ProjectState(tmp_project)
+    long_title = "x" * 10000
+    improvements = [{"title": long_title, "category": "test"}]
+    added = save_observations(state, improvements, "test", 1)
+    assert added == 1
+
+    backlog = state.read_backlog()
+    assert backlog["items"][0]["title"] == long_title
+
+
+@pytest.mark.parametrize(
+    "files_input",
+    [
+        "../../sensitive",
+        "../../../etc/passwd",
+        "../../sensitive, normal.py",
+        ["../../sensitive", "normal.py"],
+    ],
+)
+def test_save_observations_path_traversal_files(
+    tmp_project: Path, files_input: str | list[str]
+) -> None:
+    """파일 목록에 path traversal 시도."""
+    state = ProjectState(tmp_project)
+    improvements = [{"title": "Test", "files": files_input}]
+    added = save_observations(state, improvements, "test", 1)
+    assert added == 1
+
+    backlog = state.read_backlog()
+    files_list = backlog["items"][0]["files"]
+    assert isinstance(files_list, list)
+    if isinstance(files_input, str):
+        assert "../../sensitive" in files_list or "../../../etc/passwd" in files_list
+    else:
+        assert "../../sensitive" in files_list
+
+
+@pytest.mark.parametrize(
+    "category,priority",
+    [
+        ("'; DROP TABLE items; --", "high"),
+        ("test", "'; DROP TABLE items; --"),
+        ("<script>alert('xss')</script>", "high"),
+        ("test", "<script>alert('xss')</script>"),
+    ],
+)
+def test_save_observations_injection_values(
+    tmp_project: Path, category: str, priority: str
+) -> None:
+    """category/priority에 주입 값 포함 테스트."""
+    state = ProjectState(tmp_project)
+    improvements = [{"title": "Test", "category": category, "priority": priority}]
+    added = save_observations(state, improvements, "test", 1)
+    assert added == 1
+
+    backlog = state.read_backlog()
+    item = backlog["items"][0]
+    assert item["category"] == category
+    assert item["priority"] == priority

@@ -280,3 +280,40 @@ def test_legacy_migration_save_removes_old_keys(tmp_project: Path) -> None:
     assert "personas" in saved
     assert "adversarials" in saved
     assert saved["personas"]["chaos-engineer"] is False
+
+
+# ── adversarial input tests ────────
+
+
+@pytest.mark.parametrize(
+    "key,value,should_fail",
+    [
+        ("", "value", True),
+        ("model", "x" * 10000, False),
+        ("verify.build", "../../../etc/passwd", False),
+        ("model", "test\x00value", False),
+    ],
+)
+def test_set_adversarial_inputs(tmp_project: Path, key: str, value: str, should_fail: bool) -> None:
+    """설정 키/값에 대한 adversarial 입력 테스트."""
+    config = EvonestConfig.load(tmp_project)
+
+    if should_fail:
+        with pytest.raises((ValueError, KeyError)):
+            config.set(key, value)
+    else:
+        config.set(key, value)
+        if key:
+            parts = key.split(".")
+            obj = config
+            for part in parts[:-1]:
+                obj = getattr(obj, part)
+            result = getattr(obj, parts[-1])
+            assert result == value
+
+
+def test_load_with_path_traversal(tmp_path: Path) -> None:
+    """프로젝트 경로에 path traversal 시도 테스트."""
+    malicious_path = tmp_path / ".." / ".." / ".." / "etc" / "passwd"
+    with pytest.raises(FileNotFoundError):
+        EvonestConfig.load(malicious_path)

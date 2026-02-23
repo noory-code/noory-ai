@@ -281,3 +281,31 @@ async def test_proposals_list_sorted_by_priority(tmp_project: Path) -> None:
     idx_medium = result.index("medium 항목")
     idx_low = result.index("low 항목")
     assert idx_high < idx_medium < idx_low
+
+
+# ── adversarial input tests ────────
+
+
+@pytest.mark.asyncio
+async def test_tool_identity_corrupted_file(tmp_project: Path) -> None:
+    """손상된 identity.md 파일로 identity 도구 테스트."""
+    from evonest.tools.identity import evonest_identity
+
+    identity_path = tmp_project / ".evonest" / "identity.md"
+    identity_path.write_text(
+        "\x00\xff\xfe" + "corrupted content", encoding="utf-8", errors="ignore"
+    )
+
+    result = await evonest_identity(str(tmp_project))
+    assert isinstance(result, str)
+
+
+@pytest.mark.asyncio
+async def test_tool_identity_write_with_null_bytes(tmp_project: Path) -> None:
+    """null 바이트가 포함된 내용으로 identity 업데이트 시도."""
+    from evonest.tools.identity import evonest_identity
+
+    content_with_null = "# Test\x00Project\nContent"
+    await evonest_identity(str(tmp_project), content=content_with_null)
+    result = await evonest_identity(str(tmp_project))
+    assert isinstance(result, str)
