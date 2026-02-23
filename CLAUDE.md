@@ -66,6 +66,7 @@ uv run python -m distill  # run MCP server
 - Each commit must pass build + tests on its own
 - Each commit contains exactly one purpose
 - Commit message explains "what and why", not "how"
+- **Commit messages must be written in English** — this is a global open-source project
 
 ### Incremental Progress
 

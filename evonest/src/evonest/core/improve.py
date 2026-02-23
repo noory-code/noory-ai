@@ -142,8 +142,8 @@ async def run_improve(
 
         verify = run_verify(state, config, cycle_num=0)
 
-        # Use proposal title as commit message if available
-        commit_msg = _commit_message_from_proposal(proposal_content) or verify.commit_message
+        # Prefer Claude's commit message (English) over proposal title (may be Korean)
+        commit_msg = verify.commit_message or _commit_message_from_proposal(proposal_content)
 
         if verify.overall and verify.changed_files:
             state.log(f"  [Improve] PASS: {commit_msg}")
