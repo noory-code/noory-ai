@@ -2,6 +2,26 @@
 
 All notable changes to Evonest are documented here.
 
+## [0.15.0] — 2026-02-27
+
+### Added
+- `evonest_improve` now blocks synchronously until the improve cycle completes — PostToolUse hooks fire at the correct time, enabling auto-chaining
+- `all` parameter on `evonest_improve`: process all pending proposals sequentially until the queue is empty
+
+### Fixed
+- `improve`: shell injection risk in subprocess calls — input paths are now validated before execution (`phases.py`, `process_manager.py`)
+- `improve`: git operation failures now raise explicitly instead of silently succeeding (`orchestrator.py`)
+- JSON/file I/O errors in `repositories.py` and `state.py` now raise instead of returning stale data
+- Rate-limit backoff in `claude_runner.py` uses proper exponential delay; zombie subprocess cleanup added to `process_manager.py`
+- Subprocess zombie processes in `phases.py` cleaned up via `proc.wait()` after timeout
+
+### Tests
+- 40 new tests across `test_backlog.py`, `test_config.py`, `test_server.py`, `test_meta_observe.py`, `test_phases.py`, `test_scout.py`, `test_repositories.py`
+
+**394 tests passing**
+
+---
+
 ## [0.14.0] — 2026-02-24
 
 ### Fixed
