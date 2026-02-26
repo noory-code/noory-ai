@@ -307,9 +307,11 @@ def test_state_scout_empty(tmp_project: Path) -> None:
 
 def test_parse_scout_json_large_json() -> None:
     """1MB JSON DoS 경계 검사: graceful failure 검증."""
-    large_json = '{"keywords_used": ["test"], "findings": [' + ','.join(
-        f'{{"title": "Finding {i}", "relevance_score": 5}}' for i in range(10000)
-    ) + ']}'
+    large_json = (
+        '{"keywords_used": ["test"], "findings": ['
+        + ",".join(f'{{"title": "Finding {i}", "relevance_score": 5}}' for i in range(10000))
+        + "]}"
+    )
     output = f"```json\n{large_json}\n```"
     result = parse_scout_json(output)
     assert result is None or isinstance(result, dict)
@@ -317,7 +319,7 @@ def test_parse_scout_json_large_json() -> None:
 
 def test_parse_scout_json_deeply_nested() -> None:
     """100단계 깊이의 중첩 객체: graceful failure 검증."""
-    nested = '{"a":' * 100 + '{"keywords_used": [], "findings": []}' + '}' * 100
+    nested = '{"a":' * 100 + '{"keywords_used": [], "findings": []}' + "}" * 100
     output = f"```json\n{nested}\n```"
     result = parse_scout_json(output)
     assert result is None or isinstance(result, dict)

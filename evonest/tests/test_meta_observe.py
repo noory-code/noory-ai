@@ -368,9 +368,11 @@ def test_apply_meta_results_advice_overwrites_previous(tmp_project: Path) -> Non
 
 def test_parse_meta_json_large_json() -> None:
     """1MB JSON DoS 경계 검사: graceful failure 검증."""
-    large_json = '{"new_personas": [' + ','.join(
-        f'{{"id": "p{i}", "name": "P{i}"}}' for i in range(10000)
-    ) + '], "new_adversarials": []}'
+    large_json = (
+        '{"new_personas": ['
+        + ",".join(f'{{"id": "p{i}", "name": "P{i}"}}' for i in range(10000))
+        + '], "new_adversarials": []}'
+    )
     output = f"```json\n{large_json}\n```"
     result = parse_meta_json(output)
     assert result is None or isinstance(result, dict)
@@ -378,7 +380,7 @@ def test_parse_meta_json_large_json() -> None:
 
 def test_parse_meta_json_deeply_nested() -> None:
     """100단계 깊이의 중첩 객체: graceful failure 검증."""
-    nested = '{"a":' * 100 + '{"new_personas": [], "new_adversarials": []}' + '}' * 100
+    nested = '{"a":' * 100 + '{"new_personas": [], "new_adversarials": []}' + "}" * 100
     output = f"```json\n{nested}\n```"
     result = parse_meta_json(output)
     assert result is None or isinstance(result, dict)
