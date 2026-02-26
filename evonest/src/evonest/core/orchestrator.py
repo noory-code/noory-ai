@@ -640,8 +640,8 @@ def _git_stash(project: Path) -> None:
             cwd=str(project),
             timeout=30,
         )
-    except (subprocess.SubprocessError, FileNotFoundError):
-        pass
+    except (subprocess.SubprocessError, FileNotFoundError) as e:
+        logger.warning(f"git stash failed: {e}")
 
 
 def _git_stash_drop(project: Path) -> None:
@@ -652,8 +652,8 @@ def _git_stash_drop(project: Path) -> None:
             cwd=str(project),
             timeout=30,
         )
-    except (subprocess.SubprocessError, FileNotFoundError):
-        pass
+    except (subprocess.SubprocessError, FileNotFoundError) as e:
+        logger.warning(f"git stash drop failed: {e}")
 
 
 def _git_commit(project: Path, message: str) -> None:
@@ -793,8 +793,8 @@ def _git_revert(project: Path) -> None:
             cwd=str(project),
             timeout=30,
         )
-    except (subprocess.SubprocessError, FileNotFoundError):
-        pass
+    except (subprocess.SubprocessError, FileNotFoundError) as e:
+        logger.warning(f"git revert failed: {e}")
 
 
 # ── Cautious mode helpers ─────────────────────────────────
