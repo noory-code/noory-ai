@@ -243,6 +243,7 @@ Evonest generates new personas and adversarials based on your project — stored
 | `evonest_stimuli` | Inject external stimulus for the next cycle |
 | `evonest_decide` | Drop a human decision for the next cycle |
 | `evonest_scout` | Run scout phase — search for external developments |
+| `evonest_personas` | List, enable, or disable personas and adversarial challenges |
 | `evonest_run` | *(deprecated — use `evonest_evolve`)* |
 
 All tools take `project` (absolute path) as their first argument.
