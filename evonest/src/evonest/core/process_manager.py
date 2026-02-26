@@ -44,31 +44,34 @@ class ProcessManager:
         timeout: float = 600.0,
         retry_on_rate_limit: bool = True,
         rate_limit_wait: float = 30.0,
+        max_retries: int = 3,
     ) -> None:
         """ProcessManager 초기화.
 
         Args:
             timeout: 프로세스 실행 타임아웃 (초).
             retry_on_rate_limit: rate limit 발생 시 재시도 여부.
-            rate_limit_wait: rate limit 재시도 전 대기 시간 (초).
+            rate_limit_wait: rate limit 초기 대기 시간 (초). exponential backoff 적용.
+            max_retries: rate limit 최대 재시도 횟수.
         """
         self.timeout = timeout
         self.retry_on_rate_limit = retry_on_rate_limit
         self.rate_limit_wait = rate_limit_wait
+        self.max_retries = max_retries
 
     def run(
         self,
         cmd: list[str],
         *,
         cwd: str | None = None,
-        _retry_attempt: bool = True,
+        _retry_attempt: int = 0,
     ) -> ProcessResult:
         """명령어를 subprocess로 실행하고 결과를 반환.
 
         Args:
             cmd: 실행할 명령어 리스트.
             cwd: 작업 디렉토리.
-            _retry_attempt: 내부 사용 - 재시도 허용 여부.
+            _retry_attempt: 내부 사용 - 현재 재시도 횟수 (0부터 시작).
 
         Returns:
             ProcessResult with output, exit_code, success.
@@ -92,8 +95,14 @@ class ProcessManager:
             self._log_result(result.returncode, elapsed, output, stderr)
 
             # rate limit 감지 및 재시도
-            if self.retry_on_rate_limit and _retry_attempt and _is_rate_limit(stderr):
-                return self._retry_after_rate_limit(cmd, cwd, elapsed)
+            # exponential backoff 전략: 30초 → 60초 → 120초 (최대 3회)
+            should_retry = (
+                self.retry_on_rate_limit
+                and _retry_attempt < self.max_retries
+                and _is_rate_limit(stderr)
+            )
+            if should_retry:
+                return self._retry_after_rate_limit(cmd, cwd, elapsed, _retry_attempt)
 
             return ProcessResult(
                 output=output,
@@ -107,9 +116,14 @@ class ProcessManager:
             elapsed = (datetime.now() - started_at).total_seconds()
             stderr_text = self._decode_stderr(exc.stderr)
 
-            # rate limit 재시도
-            if self.retry_on_rate_limit and _retry_attempt and _is_rate_limit(stderr_text):
-                return self._retry_after_rate_limit(cmd, cwd, elapsed)
+            # rate limit 재시도 (timeout 발생 시에도 stderr에서 rate limit 감지)
+            should_retry_timeout = (
+                self.retry_on_rate_limit
+                and _retry_attempt < self.max_retries
+                and _is_rate_limit(stderr_text)
+            )
+            if should_retry_timeout:
+                return self._retry_after_rate_limit(cmd, cwd, elapsed, _retry_attempt)
 
             logger.error("subprocess timed out after %.1fs (limit=%.0fs)", elapsed, self.timeout)
             return ProcessResult(
@@ -153,16 +167,28 @@ class ProcessManager:
             )
 
     def _retry_after_rate_limit(
-        self, cmd: list[str], cwd: str | None, elapsed: float
+        self, cmd: list[str], cwd: str | None, elapsed: float, attempt: int
     ) -> ProcessResult:
-        """rate limit 발생 후 재시도."""
+        """rate limit 발생 후 exponential backoff으로 재시도.
+
+        재시도 전략:
+        - 1회차: 30초 대기
+        - 2회차: 60초 대기
+        - 3회차: 120초 대기
+        """
+        next_attempt = attempt + 1
+        # exponential backoff: base_wait * 2^attempt
+        delay = self.rate_limit_wait * (2**attempt)
+
         logger.warning(
-            "subprocess rate limited after %.1fs — waiting %.0fs before retry",
+            "Rate limited (429). Retry %d/%d after %.0fs (elapsed: %.1fs)",
+            next_attempt,
+            self.max_retries,
+            delay,
             elapsed,
-            self.rate_limit_wait,
         )
-        time.sleep(self.rate_limit_wait)
-        return self.run(cmd, cwd=cwd, _retry_attempt=False)
+        time.sleep(delay)
+        return self.run(cmd, cwd=cwd, _retry_attempt=next_attempt)
 
     @staticmethod
     def _decode_stderr(stderr: bytes | str | None) -> str:

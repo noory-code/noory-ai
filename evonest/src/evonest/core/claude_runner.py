@@ -73,8 +73,10 @@ def run(
     logger.info("claude -p starting (model=%s, max-turns=%d, cwd=%s)", model, max_turns, cwd)
 
     # ProcessManager를 통해 subprocess 실행
-    process_manager = ProcessManager(timeout=600.0, retry_on_rate_limit=True, rate_limit_wait=30.0)
-    result = process_manager.run(cmd, cwd=cwd, _retry_attempt=_retry)
+    process_manager = ProcessManager(
+        timeout=600.0, retry_on_rate_limit=True, rate_limit_wait=30.0, max_retries=3
+    )
+    result = process_manager.run(cmd, cwd=cwd, _retry_attempt=0 if _retry else 999)
 
     # claude -p outputs "Error: Reached max turns (N)" to stdout when turns exhausted
     max_turns_hit = result.output.startswith("Error: Reached max turns")
