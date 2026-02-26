@@ -272,6 +272,22 @@ def test_proposal_mark_done_not_found(
         proposal_repo.mark_done("nonexistent.md")
 
 
+def test_proposal_add_path_traversal_blocked(
+    paths: EvonestPaths, proposal_repo: ProposalRepository
+) -> None:
+    """경로 순회 공격 시도 시 안전한 파일명이 생성되는지 검증."""
+    # 경로 순회 시도가 포함된 제목
+    path_str = proposal_repo.add("content", title="../../../etc/passwd")
+    path = Path(path_str)
+    # 파일이 proposals 디렉토리 내에 생성되었는지 확인
+    assert path.exists()
+    assert path.is_relative_to(paths.proposals_dir)
+    # 파일명에 경로 구분자가 없는지 확인
+    assert ".." not in path.name
+    assert "/" not in path.name
+    assert "\\" not in path.name
+
+
 # ---------------------------------------------------------------------------
 # StimulusRepository
 # ---------------------------------------------------------------------------

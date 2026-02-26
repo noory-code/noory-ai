@@ -23,11 +23,16 @@ def _slugify(title: str, max_len: int = 60) -> str:
     """Convert a proposal title to a filename-safe slug.
 
     Example: "Shell injection risk in verify.build" → "shell-injection-risk-in-verify-build"
+
+    경로 순회 공격 방지: "..", "/", "\\" 문자를 제거합니다.
     """
     slug = title.lower()
     slug = re.sub(r"[^a-z0-9]+", "-", slug)
     slug = slug.strip("-")
-    return slug[:max_len].rstrip("-")
+    slug = slug[:max_len].rstrip("-")
+    # 경로 구분자와 ".." 시퀀스 제거
+    slug = slug.replace("..", "").replace("/", "").replace("\\", "")
+    return slug if slug else "untitled"
 
 
 # ---------------------------------------------------------------------------
@@ -256,6 +261,16 @@ class ProposalRepository:
         else:
             stem = f"proposal-{ts}"
         path = self._paths.proposals_dir / f"{stem}.md"
+        # 경로 순회 방지: 최종 경로가 proposals_dir 내부에 있는지 검증
+        try:
+            resolved_path = path.resolve()
+            resolved_dir = self._paths.proposals_dir.resolve()
+            if not resolved_path.is_relative_to(resolved_dir):
+                logger.warning("경로 순회 시도 차단: %s", path)
+                path = self._paths.proposals_dir / f"proposal-{ts}.md"
+        except (ValueError, OSError):
+            logger.warning("경로 검증 실패, 안전한 기본 경로 사용: %s", path)
+            path = self._paths.proposals_dir / f"proposal-{ts}.md"
         # Collision guard
         counter = 2
         while path.exists():
@@ -302,6 +317,16 @@ class StimulusRepository:
         self._paths.stimuli_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S-%f")
         path = self._paths.stimuli_dir / f"stimulus-{ts}.md"
+        # 경로 순회 방지: 최종 경로가 stimuli_dir 내부에 있는지 검증
+        try:
+            resolved_path = path.resolve()
+            resolved_dir = self._paths.stimuli_dir.resolve()
+            if not resolved_path.is_relative_to(resolved_dir):
+                logger.warning("경로 순회 시도 차단: %s", path)
+                path = self._paths.stimuli_dir / f"stimulus-{ts}.md"
+        except (ValueError, OSError):
+            logger.warning("경로 검증 실패, 안전한 기본 경로 사용: %s", path)
+            path = self._paths.stimuli_dir / f"stimulus-{ts}.md"
         _atomic_write_text(path, content)
         return str(path)
 
