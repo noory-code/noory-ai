@@ -15,7 +15,7 @@ All tools take `project` (absolute path) as their first argument.
 |------|-------------|
 | `evonest_init` | First time setup — creates `.evonest/` in the target project |
 | `evonest_analyze` | Scan and save ALL improvements as proposals (no code changes) |
-| `evonest_improve` | Execute one proposal (no Observe/Plan — uses proposal as the plan) |
+| `evonest_improve` | Execute one proposal (blocks until complete; use `all=True` for batch) |
 | `evonest_evolve` | Full cycle: Observe → Plan → Execute → Verify → commit/PR |
 | `evonest_status` | Show project status summary |
 | `evonest_proposals` | List pending proposals |
@@ -26,6 +26,8 @@ All tools take `project` (absolute path) as their first argument.
 | `evonest_stimuli` | Add a stimulus (external input for the next observe cycle) |
 | `evonest_decide` | Record a human decision (constrains LLM proposals) |
 | `evonest_progress` | Show progress report |
+| `evonest_scout` | Run the scout phase immediately — search for ecosystem changes and inject as stimuli |
+| `evonest_personas` | List, enable, or disable personas and adversarials |
 
 ## Typical Workflows
 
@@ -38,6 +40,11 @@ All tools take `project` (absolute path) as their first argument.
 1. `evonest_analyze(project)` — generates proposals
 2. `evonest_proposals(project)` — show proposals to user
 3. User picks one → `evonest_improve(project, proposal_id=...)` — execute it
+4. After tool returns, hook fires — if proposals remain, ask user whether to continue
+
+### Batch improve (process all proposals)
+1. `evonest_analyze(project)` — generates proposals
+2. `evonest_improve(project, all=True)` — process all pending proposals sequentially
 
 ### Fully autonomous evolution
 1. `evonest_evolve(project, cycles=3)` — run 3 full cycles
@@ -52,6 +59,8 @@ All tools take `project` (absolute path) as their first argument.
 
 - **`analyze` does NOT modify code** — it only saves proposals to `.evonest/proposals/`
 - **`improve` requires existing proposals** — run `analyze` first if none exist
+- **`improve` is synchronous** — it blocks until the full cycle (Execute → Verify → commit) completes
+- **`improve(all=True)` processes every pending proposal** — runs sequentially until the queue is empty
 - **`evolve` is the full pipeline** — combines observe + plan + execute + verify in one call
 - **identity.md matters** — the richer the project identity, the better the proposals
 - The `project` path must be **absolute** (not relative)
