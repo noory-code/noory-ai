@@ -1,6 +1,6 @@
 # ShellRoute
 
-Nested navigation and shared UI (BottomNavigationBar, etc.).
+Nested navigation and shared UI elements such as a BottomNavigationBar.
 
 ## Basic Structure
 
@@ -80,9 +80,9 @@ class MainBottomNav extends StatelessWidget {
 
 ---
 
-## Routes Outside Shell
+## Routes Outside the Shell
 
-Display as full screen without shell:
+Routes declared outside the shell are displayed full-screen without the shell UI:
 
 ```dart
 @TypedGoRoute<HomeRoute>(path: '/')
@@ -101,7 +101,7 @@ Display as full screen without shell:
 
 ## StatefulShellRoute (Preserve Tab State)
 
-Preserve navigation state per tab:
+Preserves each tab's navigation state independently:
 
 ```dart
 @TypedStatefulShellRoute<MainShellRoute>(
@@ -151,7 +151,7 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,  // navigator of the current branch
+      body: navigationShell,  // navigator for the current branch
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: navigationShell.currentIndex,
         onTap: (index) => navigationShell.goBranch(index),

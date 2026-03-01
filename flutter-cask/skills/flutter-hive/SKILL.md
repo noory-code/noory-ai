@@ -33,7 +33,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 void main() async {
   await Hive.initFlutter();
 
-  // register adapters (when using code gen)
+  // register adapters (when using code generation)
   Hive.registerAdapter(UserAdapter());
 
   // open boxes
@@ -67,7 +67,7 @@ box.delete('theme');
 await box.clear();
 ```
 
-### Type Adapter (Code Gen)
+### Type Adapter (Code Generation)
 
 ```dart
 import 'package:hive/hive.dart';
@@ -121,7 +121,7 @@ user.delete();
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// generate/load key
+// generate or load the encryption key
 Future<List<int>> getEncryptionKey() async {
   const storage = FlutterSecureStorage();
   final key = await storage.read(key: 'hive_key');
@@ -132,7 +132,7 @@ Future<List<int>> getEncryptionKey() async {
   return newKey;
 }
 
-// open encrypted box
+// open an encrypted box
 final key = await getEncryptionKey();
 await Hive.openBox('secrets', encryptionCipher: HiveAesCipher(key));
 ```
@@ -153,12 +153,12 @@ ValueListenableBuilder(
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Box not found | Call `Hive.openBox()` first |
-| Duplicate typeId | Use unique typeId per model |
-| Error after adding field | Use `@HiveField(n, defaultValue: ...)` |
-| Not working on web | Use `hive` + IndexedDB config instead of `hive_flutter` |
+| Box not found | Call `Hive.openBox()` before accessing the box |
+| Duplicate typeId | Use a unique typeId for each model |
+| Error after adding a field | Use `@HiveField(n, defaultValue: ...)` for new fields |
+| Not working on web | Use `hive` with IndexedDB config instead of `hive_flutter` |
 | Slow with large data | Use LazyBox: `Hive.openLazyBox()` |
 
 ---
@@ -168,6 +168,6 @@ ValueListenableBuilder(
 ```dart
 final lazyBox = await Hive.openLazyBox<User>('largeData');
 
-// async read (saves memory)
+// async read (reduces memory usage)
 final user = await lazyBox.get('user1');
 ```

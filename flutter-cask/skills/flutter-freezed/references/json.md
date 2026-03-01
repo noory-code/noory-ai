@@ -22,7 +22,7 @@ final json = user.toJson();
 
 ## Union Type JSON
 
-By default, type is distinguished by the `runtimeType` field:
+By default, the type is identified by the `runtimeType` field:
 
 ```dart
 @freezed

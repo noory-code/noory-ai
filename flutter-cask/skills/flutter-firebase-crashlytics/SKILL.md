@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Firebase Crashlytics
 
-Automatic crash collection and reporting. Essential for error root cause analysis.
+Automatic crash collection and reporting. Essential for tracking down the root cause of errors.
 
 ---
 
@@ -77,18 +77,18 @@ await FirebaseCrashlytics.instance.setUserIdentifier('user_123');
 await FirebaseCrashlytics.instance.setCustomKey('role', 'admin');
 await FirebaseCrashlytics.instance.setCustomKey('screen', 'checkout');
 
-// log message (sent together when crash occurs)
+// log message (sent along with the crash report)
 FirebaseCrashlytics.instance.log('Payment process started');
 ```
 
 ### Test Crash
 
 ```dart
-// force crash for testing (development only)
+// force a crash for testing (development only)
 FirebaseCrashlytics.instance.crash();
 ```
 
-### Disable Collection (Development/Debug)
+### Disable Collection in Debug Mode
 
 ```dart
 void main() async {
@@ -155,9 +155,9 @@ Future<void> initCrashlytics() async {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Report not visible | Sent after app restart, wait a few minutes |
-| No dSYM (iOS) | Verify automatic upload after Archive |
-| Obfuscation not resolved | Upload ProGuard mapping |
-| Too many reports | Deduplicate, classify fatal only |
+| Report not visible | Reports are sent after an app restart; wait a few minutes |
+| No dSYM (iOS) | Verify that automatic dSYM upload runs after Archive |
+| Obfuscation not resolved | Upload the ProGuard mapping file |
+| Too many reports | Deduplicate and classify only fatal crashes |

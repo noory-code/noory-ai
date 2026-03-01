@@ -88,7 +88,7 @@ class NotificationStream extends _$NotificationStream {
 
 ---
 
-## Stream -> AsyncValue
+## Stream as AsyncValue
 
 ```dart
 // Streams are automatically wrapped as AsyncValue

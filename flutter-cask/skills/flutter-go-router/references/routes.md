@@ -115,7 +115,7 @@ class DetailRoute extends GoRouteData {
   }
 }
 
-// usage (not included in URL, deep link not possible)
+// usage (not included in URL, deep linking is not possible)
 DetailRoute($extra: myObject).go(context);
 ```
 

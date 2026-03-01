@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Quick Actions
 
-Shortcut menu that appears when long-pressing the app icon on the home screen.
+A shortcut menu that appears when the user long-presses the app icon on the home screen.
 
 ---
 
@@ -35,7 +35,7 @@ final quickActions = QuickActions();
 // initialize at app startup
 void initQuickActions() {
   quickActions.initialize((type) {
-    // type = the type value of the shortcutItem
+    // type is the value of the shortcutItem's type field
     switch (type) {
       case 'action_search':
         navigateToSearch();
@@ -97,7 +97,7 @@ class _MyAppState extends State<MyApp> {
       if (mounted) {
         _handleAction(type);
       } else {
-        _initialAction = type;  // save before app starts
+        _initialAction = type;  // save before the widget tree is ready
       }
     });
   }
@@ -108,7 +108,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    // navigate to appropriate screen if _initialAction is set
+    // navigate to the appropriate screen if _initialAction is set
     return MaterialApp(...);
   }
 }
@@ -117,7 +117,7 @@ class _MyAppState extends State<MyApp> {
 ### Dynamic Updates
 
 ```dart
-// change quick actions after login
+// update quick actions after login
 void updateQuickActionsForUser(User user) {
   quickActions.setShortcutItems([
     ShortcutItem(
@@ -143,9 +143,9 @@ void clearQuickActions() {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
 | Icon not showing | Check iOS Asset Catalog and Android drawable |
-| Cold start ignored | Save action before initialize, then process |
-| Maximum 4 items | Both iOS and Android display up to 4 |
-| Simulator not working | Test on real device |
+| Cold start action ignored | Save the action type before initialize completes, then process it |
+| Maximum 4 items | Both iOS and Android display up to 4 shortcuts |
+| Not working on simulator | Test on a real device |

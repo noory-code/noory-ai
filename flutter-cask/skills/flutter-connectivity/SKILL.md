@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Connectivity Plus
 
-Network connectivity detection. Used for offline/online mode switching.
+Network connectivity detection for offline/online mode switching.
 
 ---
 
@@ -115,8 +115,8 @@ class OfflineBanner extends ConsumerWidget {
 ### Verify Actual Internet Access
 
 ```dart
-// connectivity only checks the network interface
-// actual internet access requires a separate check
+// connectivity_plus only checks the network interface;
+// verifying actual internet access requires a separate DNS lookup
 Future<bool> hasInternetAccess() async {
   try {
     final result = await InternetAddress.lookup('google.com');
@@ -141,7 +141,7 @@ class SyncManager {
   }
 
   Future<void> syncPendingData() async {
-    // send data accumulated while offline to server
+    // send data accumulated while offline to the server
   }
 }
 ```
@@ -150,9 +150,9 @@ class SyncManager {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| WiFi connected but no internet | Use DNS lookup to verify actual connection |
-| State not changing | Check stream subscription and permissions |
-| iOS simulator issue | Test on real device |
-| Battery drain | Monitor only when needed, dispose is required |
+| WiFi connected but no internet | Use a DNS lookup to verify actual connectivity |
+| Status not changing | Check the stream subscription and permissions |
+| iOS simulator issue | Test on a real device |
+| Battery drain | Monitor only when needed and always dispose the subscription |

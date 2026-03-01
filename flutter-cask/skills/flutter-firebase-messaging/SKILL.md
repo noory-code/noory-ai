@@ -26,7 +26,7 @@ flutter pub add flutter_local_notifications  # for foreground notification displ
 
 - Firebase project configured
 - `flutterfire configure` has been run
-- iOS: APNs certificate or key registered
+- iOS: APNs certificate or key registered in Firebase
 
 ---
 
@@ -81,7 +81,7 @@ void setupMessageHandlers() {
   });
 }
 
-// launched from notification tap while app was terminated
+// launched via notification tap while the app was terminated
 Future<void> checkInitialMessage() async {
   final message = await FirebaseMessaging.instance.getInitialMessage();
   if (message != null) {
@@ -161,16 +161,16 @@ FirebaseMessaging.onMessage.listen((message) {
 
 ### Full Initialization Example
 
-→ See [references/fcm-service.md](references/fcm-service.md)
+See [references/fcm-service.md](references/fcm-service.md)
 
 ---
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| No notification on iOS | Check APNs key/certificate registered in Firebase |
+| No notification on iOS | Check that the APNs key/certificate is registered in Firebase |
 | Not showing in foreground | Display using flutter_local_notifications |
-| Token is null | Simulator not supported (test on real device) |
-| Background handler | Must be top-level function + @pragma |
-| Data-only message | No system notification without notification field |
+| Token is null | Simulators are not supported; test on a real device |
+| Background handler not called | Must be a top-level function with @pragma('vm:entry-point') |
+| Data-only message | No system notification appears without a notification field |

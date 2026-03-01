@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Talker
 
-Structured logging library. Color console, error tracking, and UI log viewer.
+A structured logging library with a color console, error tracking, and an in-app log viewer.
 
 ---
 
@@ -130,7 +130,7 @@ runApp(
 ```dart
 import 'package:talker_flutter/talker_flutter.dart';
 
-// as a separate screen
+// navigate to the log viewer screen
 Navigator.push(
   context,
   MaterialPageRoute(
@@ -138,7 +138,7 @@ Navigator.push(
   ),
 );
 
-// or add to developer menu
+// or add it to a developer menu
 ListTile(
   title: Text('View Logs'),
   onTap: () => Navigator.push(
@@ -153,7 +153,7 @@ ListTile(
 ```dart
 final talker = Talker(
   settings: TalkerSettings(
-    enabled: !kReleaseMode,  // disable in release
+    enabled: !kReleaseMode,       // disable in release
     useHistory: !kReleaseMode,
     useConsoleLogs: !kReleaseMode,
   ),
@@ -183,9 +183,9 @@ final talker = Talker(
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Logs not showing | Check settings.enabled |
-| History memory usage | Limit maxHistoryItems, disable in release |
-| Console color broken | Check terminal ANSI support |
-| Logs exposed in release | Disable with kReleaseMode check |
+| Logs not showing | Check that settings.enabled is true |
+| History memory usage | Limit maxHistoryItems and disable in release |
+| Console color broken | Check ANSI support in the terminal |
+| Logs exposed in release | Disable with a kReleaseMode check |

@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Firebase Performance
 
-Monitor performance via app startup time, network requests, and custom traces.
+Monitor app startup time, network requests, and custom traces.
 
 ---
 
@@ -44,7 +44,7 @@ final isEnabled = await performance.isPerformanceCollectionEnabled();
 ### Custom Traces
 
 ```dart
-// measure performance of a specific operation
+// measure the performance of a specific operation
 Future<void> loadData() async {
   final trace = performance.newTrace('load_data');
   await trace.start();
@@ -62,7 +62,7 @@ Future<void> loadData() async {
 ### HTTP Metrics
 
 ```dart
-// measure network request
+// measure a network request
 Future<void> fetchWithMetric(String url) async {
   final metric = performance.newHttpMetric(url, HttpMethod.Get);
   await metric.start();
@@ -181,9 +181,9 @@ void main() async {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Data not visible | Check dashboard after 24 hours |
-| Trace not ending | Must call stop() in finally block |
-| Attribute limit | Maximum 5 custom attributes |
-| Metric limit | Maximum 32 custom metrics |
+| Data not visible | Check the dashboard after 24 hours |
+| Trace not ending | Always call stop() in a finally block |
+| Attribute limit exceeded | Maximum 5 custom attributes per trace |
+| Metric limit exceeded | Maximum 32 custom metrics per trace |

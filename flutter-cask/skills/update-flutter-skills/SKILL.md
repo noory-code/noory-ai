@@ -26,7 +26,7 @@ input:
     - name: action
       type: enum
       values: [update, add, list, check]
-      desc: update (update), add (add new skill), list (list), check (check if latest)
+      desc: "update: update an existing skill | add: add a new skill | list: list all skills | check: check if up to date"
 ```
 
 ## Output

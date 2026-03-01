@@ -11,7 +11,7 @@ metadata:
 
 # Flutter SVG
 
-SVG vector image rendering. Optimal for resolution-independent icons and logos.
+SVG vector image rendering. Ideal for resolution-independent icons and logos.
 
 ---
 
@@ -123,21 +123,21 @@ Future<void> precacheSvgs(BuildContext context) async {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| SVG not showing | Register assets path in pubspec.yaml |
-| Color not changing | Check if fill/stroke attribute in SVG is currentColor |
-| Complex SVG is slow | Use simpler SVG or replace with PNG |
-| Gradient broken | Check flutter_svg support (some limitations) |
-| CORS on web | Same domain or configure CORS |
+| SVG not showing | Register the assets path in pubspec.yaml |
+| Color not changing | Check if the fill/stroke attribute in the SVG uses currentColor |
+| Complex SVG is slow | Simplify the SVG or replace with a PNG |
+| Gradient broken | Some gradients have limited support in flutter_svg |
+| CORS on web | Use the same domain or configure CORS headers |
 
 ---
 
 ## SVG Optimization Tips
 
 ```dart
-// 1. Use 24x24 or 48x48 viewBox for icons
-// 2. Remove unnecessary metadata (use SVGO tool)
-// 3. For monochrome icons, keep only path and set fill="currentColor"
+// 1. Use a 24x24 or 48x48 viewBox for icons
+// 2. Remove unnecessary metadata (use SVGO)
+// 3. For monochrome icons, keep only the path and set fill="currentColor"
 // 4. Consider PNG for complex illustrations
 ```

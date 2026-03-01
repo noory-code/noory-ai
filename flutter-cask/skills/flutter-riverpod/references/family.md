@@ -1,6 +1,6 @@
 # Family Provider
 
-Provider that accepts parameters. In riverpod_generator, handled automatically via function arguments.
+A provider that accepts parameters. With riverpod_generator, parameters are handled automatically through function arguments.
 
 ## Function-based (Simple)
 
@@ -27,7 +27,7 @@ class TodoDetail extends _$TodoDetail {
   Future<void> update(String title) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return await updateTodo(todoId, title);  // todoId accessible
+      return await updateTodo(todoId, title);  // todoId is accessible here
     });
   }
 }
@@ -61,11 +61,11 @@ final posts = ref.watch(
 ## Caching Behavior
 
 ```dart
-// same parameter = same instance (cached)
+// same parameters = same cached instance
 ref.watch(todoDetailProvider('todo-1'));
 ref.watch(todoDetailProvider('todo-1'));  // cache hit
 
-// different parameter = different instance
+// different parameters = separate instances
 ref.watch(todoDetailProvider('todo-1'));
 ref.watch(todoDetailProvider('todo-2'));  // separate instance
 ```

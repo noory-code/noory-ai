@@ -50,7 +50,7 @@ Text(
   style: GoogleFonts.getFont('Noto Sans KR'),
 )
 
-// apply font to existing TextStyle
+// apply font on top of an existing TextStyle
 Text(
   'Hello World',
   style: GoogleFonts.lato(textStyle: existingStyle),
@@ -66,7 +66,7 @@ MaterialApp(
   ),
 )
 
-// apply font only to existing theme
+// apply font while preserving the existing theme's styles
 MaterialApp(
   theme: ThemeData(
     textTheme: GoogleFonts.latoTextTheme(
@@ -83,7 +83,7 @@ MaterialApp(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // preload fonts
+  // preload fonts before the app starts
   await GoogleFonts.pendingFonts([
     GoogleFonts.lato(),
     GoogleFonts.notoSansKr(),
@@ -111,18 +111,18 @@ assets/
     └── NotoSansKR-Regular.otf
 ```
 
-> When included in the app bundle, fonts are available immediately without runtime download
+> When included in the app bundle, fonts are available immediately without a runtime download.
 
 ---
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
 | Font not visible | Check internet connection or use asset bundling |
-| Korean text broken | Use Korean-supporting fonts like `Noto Sans KR` |
+| Korean text broken | Use a Korean-supporting font such as `Noto Sans KR` |
 | Slow first load | Preload with `pendingFonts()` |
-| App size increase | Include only needed weights in assets |
+| App size increase | Include only the needed weights in assets |
 
 ---
 

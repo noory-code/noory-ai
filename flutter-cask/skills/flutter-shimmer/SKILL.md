@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Shimmer
 
-Skeleton animation while loading. Improves data loading UX.
+A skeleton animation for loading states. Improves the UX while data is being fetched.
 
 ---
 
@@ -99,7 +99,7 @@ Widget buildContent({required bool isLoading, required Widget child}) {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
-      child: child,  // same structure as actual layout
+      child: child,  // same structure as the actual layout
     );
   }
   return child;
@@ -167,9 +167,9 @@ Shimmer.fromColors(
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Animation not working | Child widget needs a background color |
-| Performance issues | Limit list item count (5-10) |
-| Different layout | Keep same structure as actual content |
-| Awkward in dark mode | Set baseColor/highlightColor per theme |
+| Animation not working | Child widget must have a background color |
+| Performance issues | Limit the list item count to 5–10 |
+| Layout mismatch | Keep the shimmer structure the same as the actual content |
+| Awkward in dark mode | Set baseColor/highlightColor based on the current theme |

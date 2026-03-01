@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Cached Image
 
-Network image caching and placeholder handling.
+Network image caching with placeholder and error widget support.
 
 ---
 
@@ -87,10 +87,10 @@ Container(
 ```dart
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-// remove specific image from cache
+// remove a specific image from cache
 await DefaultCacheManager().removeFile(imageUrl);
 
-// clear all cache
+// clear all cached images
 await DefaultCacheManager().emptyCache();
 ```
 
@@ -98,12 +98,12 @@ await DefaultCacheManager().emptyCache();
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Image not showing | Verify URL validity, check CORS settings |
-| Not cached | Check Cache-Control header |
+| Image not showing | Verify the URL is valid and check CORS settings |
+| Image not cached | Check the Cache-Control header on the response |
 | Out of memory | Resize with memCacheWidth/Height |
-| Placeholder size | Specify width/height explicitly |
+| Placeholder has wrong size | Specify width/height explicitly |
 
 ---
 
@@ -115,6 +115,6 @@ await DefaultCacheManager().emptyCache();
 | `fadeOutDuration` | Fade-out animation duration |
 | `memCacheWidth` | Memory cache image width |
 | `memCacheHeight` | Memory cache image height |
-| `maxWidthDiskCache` | Disk cache max width |
-| `maxHeightDiskCache` | Disk cache max height |
+| `maxWidthDiskCache` | Disk cache maximum width |
+| `maxHeightDiskCache` | Disk cache maximum height |
 | `cacheManager` | Custom cache manager |

@@ -144,12 +144,12 @@ class HomeBranch extends StatefulShellBranchData {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Route not found | Verify `$appRoutes` is used |
-| Parameter type error | Check `:param` format in path |
+| Route not found | Verify that `$appRoutes` is used in the GoRouter |
+| Parameter type error | Check the `:param` format in the path |
 | Build error | Run `dart run build_runner build` |
-| Deep link not working | Configure AndroidManifest.xml / Info.plist |
+| Deep link not working | Configure AndroidManifest.xml and Info.plist |
 
 ---
 

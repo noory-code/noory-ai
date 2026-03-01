@@ -11,7 +11,7 @@ metadata:
 
 # Flutter WebView
 
-Display web pages inside the app. For external links, terms, and web content rendering.
+Display web pages inside the app. Useful for external links, terms of service, and web content rendering.
 
 ---
 
@@ -150,7 +150,7 @@ controller = WebViewController()
   )
   ..loadRequest(Uri.parse(url));
 
-// call from web
+// call from the web page
 // FlutterChannel.postMessage('Hello from JS');
 ```
 
@@ -187,10 +187,10 @@ Widget build(BuildContext context) {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| JS not working | setJavaScriptMode(unrestricted) |
-| Back exits app | Check canGoBack() then call goBack() |
+| JS not working | Call setJavaScriptMode(JavaScriptMode.unrestricted) |
+| Back button exits app | Check canGoBack(), then call goBack() |
 | HTTPS only | Android: usesCleartextTraffic, iOS: NSAppTransportSecurity |
-| Keyboard covering content | resizeToAvoidBottomInset: true |
+| Keyboard covering content | Set resizeToAvoidBottomInset: true on the Scaffold |
 | Cookies not working | Use WebViewCookieManager |

@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Melos
 
-Flutter/Dart monorepo management tool. Handles inter-package dependencies, shared configuration, and bulk command execution.
+A Flutter/Dart monorepo management tool. Handles inter-package dependencies, shared configuration, and running commands across all packages at once.
 
 ---
 
@@ -95,22 +95,22 @@ dev_dependencies:
 
 | Command | Description |
 |--------|------|
-| `melos bootstrap` | Install dependencies + link packages |
+| `melos bootstrap` | Install dependencies and link packages |
 | `melos clean` | Clean all packages |
-| `melos exec -- <cmd>` | Run command in all packages |
-| `melos run <script>` | Run a script |
+| `melos exec -- <cmd>` | Run a command in all packages |
+| `melos run <script>` | Run a defined script |
 | `melos list` | List packages |
 
 ### exec Options
 
 ```bash
-# sequential execution (for build_runner, etc.)
+# sequential execution (required for build_runner, etc.)
 melos exec -c 1 -- dart run build_runner build
 
 # specific packages only
 melos exec --scope="{project}_entities" -- flutter test
 
-# packages with specific dependency
+# packages with a specific dependency
 melos exec --depends-on="freezed" -- dart run build_runner build
 ```
 
@@ -138,9 +138,9 @@ melos exec --depends-on="freezed" -- dart run build_runner build
 
 | Item | Rule |
 |------|------|
-| **resolution** | `resolution: workspace` required in all packages |
-| **workspace** | List all package paths in root pubspec.yaml |
-| **version sync** | Manage shared dependencies from root |
+| **resolution** | All packages must have `resolution: workspace` |
+| **workspace** | List all package paths in the root pubspec.yaml |
+| **version sync** | Manage shared dependencies from the root |
 | **scripts** | Define repetitive tasks as melos scripts |
 
 ---
@@ -149,10 +149,10 @@ melos exec --depends-on="freezed" -- dart run build_runner build
 
 | Wrong | Correct |
 |---|---|
-| Missing `resolution: workspace` | Add to all packages |
-| `flutter pub get` from root | Use `melos bootstrap` |
-| Add dependency per package | Manage in root pubspec.yaml |
-| build_runner without `-c 1` | `melos exec -c 1` (sequential execution) |
+| Missing `resolution: workspace` | Add it to all packages |
+| Running `flutter pub get` from the root | Use `melos bootstrap` |
+| Adding dependencies per package | Manage shared dependencies in the root pubspec.yaml |
+| Running build_runner without `-c 1` | Use `melos exec -c 1` for sequential execution |
 
 ---
 

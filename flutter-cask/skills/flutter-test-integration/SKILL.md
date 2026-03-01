@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Integration Test
 
-Test complete app E2E flows on real devices/emulators.
+Test complete end-to-end app flows on real devices and emulators.
 
 ---
 
@@ -71,7 +71,7 @@ void main() {
 ```dart
 // lib/main.dart
 ElevatedButton(
-  key: const Key('submit_button'),  // Key for testing
+  key: const Key('submit_button'),  // Key for finding the widget in tests
   onPressed: _submit,
   child: const Text('Submit'),
 )
@@ -136,9 +136,9 @@ popd
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
 | Binding error | Check `IntegrationTestWidgetsFlutterBinding.ensureInitialized()` |
-| Widget not found | Add `Key` and use `pumpAndSettle()` |
-| Web test failure | Check ChromeDriver is running |
+| Widget not found | Add a `Key` and use `pumpAndSettle()` |
+| Web test failure | Check that ChromeDriver is running |
 | CI Linux | Use `xvfb-run` |

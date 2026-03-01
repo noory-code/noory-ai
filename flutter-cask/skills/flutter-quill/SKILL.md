@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Quill
 
-Rich text editor. Supports bold, italic, lists, and image insertion.
+A rich text editor with support for bold, italic, lists, and image insertion.
 
 ---
 
@@ -168,16 +168,16 @@ void initState() {
 
 ### Full Example
 
-→ See [references/post-editor-example.md](references/post-editor-example.md)
+See [references/post-editor-example.md](references/post-editor-example.md)
 
 ---
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Korean input issues | Use latest version, check IME-related issues |
-| Keyboard obstructing | Adjust SingleChildScrollView or padding |
-| Image insertion | Add flutter_quill_extensions package |
-| Delta format | Convert to JSON string when saving to server |
+| Korean input issues | Use the latest version and check for IME-related issues |
+| Keyboard obstructing content | Adjust SingleChildScrollView or padding |
+| Image insertion | Add the flutter_quill_extensions package |
+| Delta format | Convert to a JSON string when saving to the server |
 | Performance issues | Consider pagination for long documents |

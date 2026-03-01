@@ -41,7 +41,7 @@ final analytics = FirebaseAnalytics.instance;
 ### Screen View Tracking
 
 ```dart
-// log on screen transition
+// log on each screen transition
 await analytics.logScreenView(
   screenName: 'home_screen',
   screenClass: 'HomeScreen',
@@ -122,7 +122,7 @@ await analytics.setUserProperty(
   value: 'gold',
 );
 
-// reset (on logout)
+// reset on logout
 await analytics.setUserId(id: null);
 ```
 
@@ -153,9 +153,9 @@ class AnalyticsService {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Event not visible | Use DebugView (-FIRDebugEnabled), wait 24 hours |
-| Missing parameters | Key limit 25 chars, value limit 100 chars |
-| Event name error | Lowercase + underscore, cannot start with number |
-| Not real-time | Only DebugView is real-time; dashboard has delay |
+| Event not visible | Use DebugView (-FIRDebugEnabled); the dashboard has a 24-hour delay |
+| Missing parameters | Key limit is 25 chars; value limit is 100 chars |
+| Event name error | Use lowercase with underscores; cannot start with a number |
+| Data not real-time | Only DebugView is real-time; the main dashboard has a delay |

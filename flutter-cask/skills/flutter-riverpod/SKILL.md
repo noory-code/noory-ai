@@ -49,7 +49,7 @@ part 'example.g.dart';
 @riverpod
 String helloWorld(Ref ref) => 'Hello world';
 
-// Notifier (class - state can be changed)
+// Notifier (class-based, state can be changed)
 @riverpod
 class Counter extends _$Counter {
   @override
@@ -101,10 +101,10 @@ class MyPage extends ConsumerWidget {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Provider not found | Wrap app with `ProviderScope` |
-| State not changing | Use `ref.read(provider.notifier).method()` |
+| Provider not found | Wrap the app with `ProviderScope` |
+| State not updating | Use `ref.read(provider.notifier).method()` |
 | Build error | Run `dart run build_runner build` |
 | Disable autoDispose | Use `@Riverpod(keepAlive: true)` |
 
@@ -117,6 +117,6 @@ class MyPage extends ConsumerWidget {
 | [notifier.md](references/notifier.md) | Notifier pattern, state changes, lifecycle |
 | [async-notifier.md](references/async-notifier.md) | AsyncNotifier, loading/error handling |
 | [widgets.md](references/widgets.md) | ConsumerWidget, ref.watch/read/listen |
-| [family.md](references/family.md) | Provider with parameters, caching |
+| [family.md](references/family.md) | Providers with parameters, caching |
 | [stream.md](references/stream.md) | StreamProvider, Supabase Realtime |
 | [testing.md](references/testing.md) | Provider override, mocking, unit tests |

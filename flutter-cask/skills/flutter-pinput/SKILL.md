@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Pinput
 
-PIN/OTP code input widget. Used for MFA authentication and SMS verification.
+A PIN/OTP code input widget for MFA authentication and SMS verification flows.
 
 ---
 
@@ -168,7 +168,7 @@ Pinput(
     FilteringTextInputFormatter.digitsOnly,  // digits only
   ],
   keyboardType: TextInputType.number,
-  obscureText: true,  // hide like password
+  obscureText: true,  // hide input like a password
   obscuringCharacter: '●',
 )
 ```
@@ -177,16 +177,16 @@ Pinput(
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
 | Keyboard not opening | Call focusNode.requestFocus() |
-| Auto-fill not working | Check SMS format (code at the end) |
-| Paste not working | Supported by default, check length |
-| Style broken | Use copyWith for consistent theme |
-| Missing dispose | Must dispose controller and focusNode |
+| Auto-fill not working | Check that the SMS format has the code at the end |
+| Paste not working | Supported by default; check that the length is correct |
+| Style inconsistency | Use copyWith to maintain a consistent theme |
+| Missing dispose | Always dispose the controller and focusNode |
 
 ---
 
 ## MFA Page Example
 
-→ See [references/mfa-example.md](references/mfa-example.md)
+See [references/mfa-example.md](references/mfa-example.md)

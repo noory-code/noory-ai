@@ -21,7 +21,7 @@ abstract class User with _$User { ... }
 abstract class MutableUser with _$MutableUser {
   factory MutableUser({
     required String name,
-    required final int id,  // final makes it immutable
+    required final int id,  // final makes this field immutable
   }) = _MutableUser;
 }
 

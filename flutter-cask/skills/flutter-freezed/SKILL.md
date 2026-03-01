@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Freezed
 
-Generate immutable data classes and Union Types using the Freezed package.
+Generate immutable data classes and union types using the Freezed package.
 
 ---
 
@@ -75,11 +75,11 @@ switch (state) {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
 | Missing `part` file error | Run `dart run build_runner build` |
-| Changes not reflected | Add `--delete-conflicting-outputs` option |
-| Cannot add methods | Add `const ClassName._();` private constructor |
+| Changes not reflected | Add the `--delete-conflicting-outputs` flag |
+| Cannot add methods | Add a `const ClassName._();` private constructor |
 | Nested copyWith not working | Apply @freezed to nested classes as well |
 
 ---
@@ -89,6 +89,6 @@ switch (state) {
 | File | Description |
 |------|------|
 | [basic-usage.md](references/basic-usage.md) | Basic usage, copyWith, adding methods |
-| [union-types.md](references/union-types.md) | Union Types, pattern matching, shared properties |
+| [union-types.md](references/union-types.md) | Union types, pattern matching, shared properties |
 | [json.md](references/json.md) | JSON serialization, type key customization |
 | [options.md](references/options.md) | @Freezed, @unfreezed, @Default, @Assert |

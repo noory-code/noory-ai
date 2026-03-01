@@ -26,9 +26,9 @@ abstract class User with _$User {
 
 | Feature | Description |
 |------|------|
-| `toString()` | String including all fields |
+| `toString()` | String representation including all fields |
 | `==` / `hashCode` | Value-based equality comparison |
-| `copyWith()` | Copy with partial field changes |
+| `copyWith()` | Copy the object with partial field changes |
 | Immutability | All fields are `final` |
 
 ---
@@ -63,15 +63,15 @@ abstract class Director with _$Director {
   }) = _Director;
 }
 
-// modify nested object
+// modify a nested object
 final newCompany = company.copyWith.director(name: 'New Director');
 ```
 
 ---
 
-## Adding Methods/Getters
+## Adding Methods and Getters
 
-Requires a private constructor:
+Adding custom methods requires a private constructor:
 
 ```dart
 @freezed

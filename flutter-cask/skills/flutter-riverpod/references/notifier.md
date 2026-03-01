@@ -1,6 +1,6 @@
 # Notifier Pattern
 
-Class-based Provider for synchronous state management.
+Class-based provider for synchronous state management.
 
 ## Basic Structure
 
@@ -21,9 +21,9 @@ class Counter extends _$Counter {
 ```
 
 **Key points:**
-- `build()`: returns initial state (replaces constructor)
-- `state`: current state (readable and writable)
-- Methods: state change logic
+- `build()`: returns the initial state (replaces a constructor)
+- `state`: the current state (readable and writable)
+- Methods contain the state-change logic
 
 ---
 
@@ -86,7 +86,7 @@ class TimerNotifier extends _$TimerNotifier {
       (_) => state++,
     );
 
-    // cleanup (dispose)
+    // cleanup on dispose
     ref.onDispose(() {
       timer.cancel();
     });
@@ -101,11 +101,11 @@ class TimerNotifier extends _$TimerNotifier {
 ## keepAlive Option
 
 ```dart
-// default: autoDispose (released automatically when not used)
+// default: autoDispose (released automatically when no longer watched)
 @riverpod
 class Counter extends _$Counter { ... }
 
-// keepAlive: persists for app lifecycle
+// keepAlive: persists for the entire app lifecycle
 @Riverpod(keepAlive: true)
 class AppState extends _$AppState { ... }
 ```

@@ -1,16 +1,16 @@
 # Riverpod Widgets
 
-Widgets for using Providers in Flutter.
+Widgets for using providers in Flutter.
 
 ## ProviderScope
 
-Provides the Provider state store at the top of the app.
+Provides the provider state store at the top of the widget tree.
 
 ```dart
 void main() {
   runApp(
     ProviderScope(
-      // overrides (for testing)
+      // overrides (useful for testing)
       overrides: [
         authRepositoryProvider.overrideWithValue(MockAuthRepository()),
       ],
@@ -24,7 +24,7 @@ void main() {
 
 ## ConsumerWidget
 
-StatelessWidget that uses Providers.
+A StatelessWidget that can read from providers.
 
 ```dart
 class HomePage extends ConsumerWidget {
@@ -41,7 +41,7 @@ class HomePage extends ConsumerWidget {
 
 ## ConsumerStatefulWidget
 
-When state is required.
+Use this when local widget state is also needed.
 
 ```dart
 class HomePage extends ConsumerStatefulWidget {
@@ -69,7 +69,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 ## Consumer
 
-Rebuild only a portion of the widget tree.
+Rebuilds only a specific portion of the widget tree.
 
 ```dart
 class HomePage extends StatelessWidget {
@@ -95,11 +95,11 @@ class HomePage extends StatelessWidget {
 
 ## ref Methods
 
-| Method | Purpose | Rebuild |
+| Method | Purpose | Triggers Rebuild |
 |--------|------|--------|
-| `ref.watch(p)` | Subscribe to value + rebuild on change | Yes |
-| `ref.read(p)` | Read value once (event handlers) | No |
-| `ref.listen(p, cb)` | Execute callback on change | No |
+| `ref.watch(p)` | Subscribe to a value and rebuild on change | Yes |
+| `ref.read(p)` | Read a value once (use in event handlers) | No |
+| `ref.listen(p, cb)` | Execute a callback on change | No |
 
 ### Usage Examples
 
@@ -107,10 +107,10 @@ class HomePage extends StatelessWidget {
 class MyWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // watch: use in build
+    // watch: use inside build
     final count = ref.watch(counterProvider);
 
-    // listen: side effects (snackbar, etc.)
+    // listen: side effects such as showing a snackbar
     ref.listen(errorProvider, (prev, next) {
       if (next != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,7 +120,7 @@ class MyWidget extends ConsumerWidget {
     });
 
     return TextButton(
-      // read: in event handlers
+      // read: use inside event handlers
       onPressed: () => ref.read(counterProvider.notifier).increment(),
       child: Text('Count: $count'),
     );
@@ -132,12 +132,12 @@ class MyWidget extends ConsumerWidget {
 
 ## select (Partial Subscription)
 
-Subscribe to specific fields only to prevent unnecessary rebuilds.
+Subscribe to a specific field only to avoid unnecessary rebuilds.
 
 ```dart
-// full subscription (rebuilds on any user change)
+// full subscription (rebuilds on any change to the user)
 final user = ref.watch(userProvider);
 
-// partial subscription (rebuilds only on name change)
+// partial subscription (rebuilds only when the name changes)
 final name = ref.watch(userProvider.select((u) => u.name));
 ```

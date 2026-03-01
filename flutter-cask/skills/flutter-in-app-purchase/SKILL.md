@@ -11,7 +11,7 @@ metadata:
 
 # Flutter In-App Purchase
 
-In-app purchases on App Store/Play Store. Supports subscriptions, consumables, and non-consumables.
+In-app purchases on the App Store and Play Store. Supports subscriptions, consumables, and non-consumables.
 
 ---
 
@@ -23,8 +23,8 @@ flutter pub add in_app_purchase
 
 ## Prerequisites
 
-- App Store Connect: register in-app products, complete agreements
-- Google Play Console: register in-app products, configure license key
+- App Store Connect: register in-app products and complete agreements
+- Google Play Console: register in-app products and configure the license key
 
 ---
 
@@ -43,13 +43,13 @@ class IAPService {
     final available = await _iap.isAvailable();
     if (!available) return;
 
-    // listen to purchase stream
+    // listen to the purchase stream
     _subscription = _iap.purchaseStream.listen(
       _handlePurchaseUpdates,
       onError: (error) => print('Purchase error: $error'),
     );
 
-    // restore incomplete purchases
+    // restore any incomplete purchases
     await _iap.restorePurchases();
   }
 
@@ -74,7 +74,7 @@ Future<List<ProductDetails>> loadProducts() async {
 }
 ```
 
-### Handle Purchase
+### Initiate a Purchase
 
 ```dart
 Future<void> buyProduct(ProductDetails product) async {
@@ -84,7 +84,7 @@ Future<void> buyProduct(ProductDetails product) async {
     // subscription product
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
   } else {
-    // consumable
+    // consumable product
     await _iap.buyConsumable(purchaseParam: purchaseParam);
   }
 }
@@ -97,12 +97,12 @@ void _handlePurchaseUpdates(List<PurchaseDetails> purchases) {
   for (final purchase in purchases) {
     switch (purchase.status) {
       case PurchaseStatus.pending:
-        // payment in progress UI
+        // show payment-in-progress UI
         break;
 
       case PurchaseStatus.purchased:
       case PurchaseStatus.restored:
-        // verify on server then enable features
+        // verify on the server, then enable features
         _verifyAndDeliver(purchase);
         break;
 
@@ -115,7 +115,7 @@ void _handlePurchaseUpdates(List<PurchaseDetails> purchases) {
         break;
     }
 
-    // complete purchase (required!)
+    // complete the purchase (required!)
     if (purchase.pendingCompletePurchase) {
       _iap.completePurchase(purchase);
     }
@@ -127,7 +127,7 @@ void _handlePurchaseUpdates(List<PurchaseDetails> purchases) {
 
 ```dart
 Future<void> _verifyAndDeliver(PurchaseDetails purchase) async {
-  // verify receipt on server
+  // verify the receipt on your server
   final verified = await verifyOnServer(
     productId: purchase.productID,
     receipt: purchase.verificationData.serverVerificationData,
@@ -146,7 +146,7 @@ Future<void> _verifyAndDeliver(PurchaseDetails purchase) async {
 ```dart
 Future<void> restorePurchases() async {
   await _iap.restorePurchases();
-  // received as restored status in purchaseStream
+  // purchases are delivered via purchaseStream with a restored status
 }
 ```
 
@@ -181,10 +181,10 @@ class SubscriptionPage extends StatelessWidget {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
 | Products not showing | Check store product registration status and review completion |
-| Cannot test | Use sandbox/test accounts |
-| Receipt verification | Must verify on server (do not trust client) |
-| Missing completePurchase | Must call it, otherwise refund will occur |
-| Subscription renewal | Sync status via server webhooks |
+| Cannot test | Use sandbox or test accounts |
+| Receipt verification | Always verify on the server; do not trust the client |
+| Skipping completePurchase | Must be called, otherwise the purchase may be refunded |
+| Subscription renewal | Sync status via server-side webhooks |

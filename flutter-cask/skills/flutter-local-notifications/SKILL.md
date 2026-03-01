@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Local Notifications
 
-Local push notifications. Supports scheduling, repeating, and action buttons.
+Local push notifications with support for scheduling, repeating, and action buttons.
 
 ---
 
@@ -103,7 +103,7 @@ Future<void> showNotification({
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 
-// initialize timezone on startup
+// initialize timezone data at startup
 tz.initializeTimeZones();
 
 Future<void> scheduleNotification({
@@ -157,7 +157,7 @@ tz.TZDateTime _nextInstanceOfTime({required int hour, required int minute}) {
 ### Cancel Notifications
 
 ```dart
-// cancel specific notification
+// cancel a specific notification
 await notifications.cancel(id);
 
 // cancel all notifications
@@ -179,10 +179,10 @@ Future<bool> requestPermission() async {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| iOS permission denied | Call requestPermissions then guide to settings |
-| Android 13+ | Need to request POST_NOTIFICATIONS permission |
-| Schedule not working | Initialize timezone, check SCHEDULE_EXACT_ALARM permission |
-| Disappears after reboot | RECEIVE_BOOT_COMPLETED + BroadcastReceiver |
-| Not working in background | Use foreground service or WorkManager integration |
+| iOS permission denied | Call requestPermissions, then guide the user to Settings |
+| Android 13+ | Must request the POST_NOTIFICATIONS permission at runtime |
+| Schedule not working | Initialize timezone data and check SCHEDULE_EXACT_ALARM permission |
+| Notification disappears after reboot | Add RECEIVE_BOOT_COMPLETED + BroadcastReceiver |
+| Not working in background | Use a foreground service or WorkManager integration |

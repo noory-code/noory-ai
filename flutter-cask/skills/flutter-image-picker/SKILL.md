@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Image Picker
 
-Pick images/videos from gallery or camera. Used for profile images and photo uploads.
+Pick images and videos from the gallery or camera. Commonly used for profile photos and photo uploads.
 
 ---
 
@@ -36,7 +36,7 @@ flutter pub add image_picker
 
 ### Android
 
-Android 13+ supported automatically. No additional setup required.
+Android 13 and above are supported automatically. No additional setup is required.
 
 ---
 
@@ -65,7 +65,7 @@ Future<void> pickFromGallery() async {
   }
 }
 
-// take photo with camera
+// take a photo with the camera
 Future<void> takePhoto() async {
   final XFile? image = await picker.pickImage(
     source: ImageSource.camera,
@@ -135,7 +135,7 @@ Future<String?> uploadToSupabase(XFile image) async {
 }
 ```
 
-### Selection Dialog
+### Source Selection Dialog
 
 ```dart
 Future<void> showImageSourceDialog(BuildContext context) async {
@@ -172,10 +172,10 @@ Future<void> showImageSourceDialog(BuildContext context) async {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| iOS permission denied | Add Usage Description to Info.plist |
-| Image is null | User cancelled (normal behavior) |
-| Out of memory | Set maxWidth/maxHeight/imageQuality |
-| Simulator camera | Test on real device |
+| iOS permission denied | Add the Usage Description keys to Info.plist |
+| Image is null | The user cancelled the picker (expected behavior) |
+| Out of memory | Set maxWidth, maxHeight, and imageQuality |
+| Simulator camera | Test on a real device |
 | HEIC format | Automatically converted to JPEG on iOS |

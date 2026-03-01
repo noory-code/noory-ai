@@ -36,7 +36,7 @@ testWidgets('Shows user name', (tester) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        // value override
+        // override with a fixed value
         userProvider.overrideWithValue(
           User(id: '1', name: 'Test User'),
         ),
@@ -58,7 +58,7 @@ testWidgets('Shows todo list', (tester) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        // override with AsyncValue
+        // override with an AsyncValue
         todoListProvider.overrideWith(() => MockTodoList()),
       ],
       child: MyApp(),

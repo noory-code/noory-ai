@@ -124,9 +124,9 @@ ListTile(
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Different build number | pubspec.yaml version format: 1.0.0+1 |
-| Not working on web | Web not supported, use fallback values |
-| Slow loading | Load once at app startup and cache |
-| Test failure | Use mock or integration test |
+| Unexpected build number | Use pubspec.yaml version format: 1.0.0+1 |
+| Not working on web | Web is not supported; use fallback values |
+| Slow loading | Load once at app startup and cache the result |
+| Test failure | Use a mock or an integration test |

@@ -11,7 +11,7 @@ metadata:
 
 # Flutter FVM
 
-Per-project Flutter SDK version management tool. Ensures the entire team uses the same version.
+Per-project Flutter SDK version management. Ensures the entire team uses the same Flutter version.
 
 ---
 
@@ -34,12 +34,12 @@ dart pub global activate fvm
 
 | Command | Description |
 |--------|------|
-| `fvm install <version>` | Install SDK version |
-| `fvm use <version>` | Set project version |
+| `fvm install <version>` | Install an SDK version |
+| `fvm use <version>` | Set the project version |
 | `fvm list` | List installed versions |
-| `fvm releases` | Available versions |
-| `fvm global <version>` | Set global default version |
-| `fvm doctor` | Diagnose environment |
+| `fvm releases` | List available versions |
+| `fvm global <version>` | Set the global default version |
+| `fvm doctor` | Diagnose the environment |
 
 ### Install and Use a Version
 
@@ -47,10 +47,10 @@ dart pub global activate fvm
 # check available versions
 fvm releases --channel stable
 
-# install specific version
+# install a specific version
 fvm install 3.24.0
 
-# set version for project (creates .fvmrc)
+# set the version for this project (creates .fvmrc)
 fvm use 3.24.0
 
 # run Flutter commands via FVM
@@ -69,11 +69,11 @@ fvm dart --version
 }
 ```
 
-**Include in Git**:
-- `.fvmrc` - commit (share version)
-- `.fvm/` - gitignore (local symbolic link)
+**Git policy:**
+- `.fvmrc` — commit this file to share the version with the team
+- `.fvm/` — add to .gitignore (local symlink only)
 
-**.gitignore**:
+**.gitignore:**
 ```
 .fvm/flutter_sdk
 ```
@@ -95,10 +95,10 @@ fvm dart --version
 
 | Item | Rule |
 |------|------|
-| **Pin version** | Specify project version with `.fvmrc` |
-| **Team sync** | Must commit `.fvmrc` to Git |
-| **IDE setup** | Use `.fvm/flutter_sdk` path |
-| **CI/CD** | `fvm install && fvm flutter build` |
+| **Pin version** | Always specify the project version in `.fvmrc` |
+| **Team sync** | Commit `.fvmrc` to Git |
+| **IDE setup** | Point the IDE to `.fvm/flutter_sdk` |
+| **CI/CD** | Run `fvm install && fvm flutter build` |
 
 ---
 
@@ -107,9 +107,9 @@ fvm dart --version
 | Wrong | Correct |
 |---|---|
 | Run `flutter doctor` directly | `fvm flutter doctor` |
-| Commit entire `.fvm/` | Commit only `.fvmrc` |
-| Use default VSCode SDK | Set `dart.flutterSdkPath` |
-| No version specified | Must run `fvm use <version>` |
+| Commit the entire `.fvm/` directory | Commit only `.fvmrc` |
+| Use the default VSCode SDK path | Set `dart.flutterSdkPath` in settings |
+| No version pinned | Always run `fvm use <version>` |
 
 ---
 

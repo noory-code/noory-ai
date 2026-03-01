@@ -36,7 +36,7 @@ await Share.share('Text to share');
 // with subject
 await Share.share(
   'Text to share',
-  subject: 'Share title',  // used for email subject, etc.
+  subject: 'Share title',  // used as the email subject, etc.
 );
 ```
 
@@ -94,13 +94,13 @@ switch (result.status) {
 ### Specify Position (iPad)
 
 ```dart
-// specify popover position on iPad
+// specify the popover origin on iPad
 await Share.share(
   'Text to share',
   sharePositionOrigin: Rect.fromLTWH(0, 0, 100, 100),
 );
 
-// based on button position
+// based on the button's position
 final box = context.findRenderObject() as RenderBox;
 await Share.share(
   'Text to share',
@@ -127,9 +127,9 @@ IconButton(
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| iPad crash | sharePositionOrigin is required |
+| iPad crash | sharePositionOrigin is required on iPad |
 | File share not working | Check file path permissions and MIME type |
-| Korean text garbled | Check UTF-8 encoding |
-| Result always dismissed | Tracking results on Android is limited (normal) |
+| Text garbled | Check UTF-8 encoding |
+| Result always dismissed | Result tracking on Android is limited; this is expected behavior |

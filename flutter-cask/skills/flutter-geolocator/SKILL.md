@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Geolocator
 
-Get current location, track location, and calculate distances.
+Get the current location, track location changes, and calculate distances.
 
 ---
 
@@ -53,7 +53,7 @@ import 'package:geolocator/geolocator.dart';
 Future<bool> requestPermission() async {
   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
-    return false;  // location service disabled
+    return false;  // location service is disabled
   }
 
   LocationPermission permission = await Geolocator.checkPermission();
@@ -65,7 +65,7 @@ Future<bool> requestPermission() async {
   }
 
   if (permission == LocationPermission.deniedForever) {
-    await Geolocator.openAppSettings();  // go to settings screen
+    await Geolocator.openAppSettings();  // direct the user to Settings
     return false;
   }
 
@@ -108,7 +108,7 @@ void startTracking() {
   _positionStream = Geolocator.getPositionStream(
     locationSettings: LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10,  // update every 10m movement
+      distanceFilter: 10,  // update for every 10m of movement
     ),
   ).listen((position) {
     print('New position: ${position.latitude}, ${position.longitude}');
@@ -123,7 +123,7 @@ void stopTracking() {
 ### Distance Calculation
 
 ```dart
-// distance between two coordinates (meters)
+// distance between two coordinates (in meters)
 final distanceInMeters = Geolocator.distanceBetween(
   37.5665, 126.9780,  // Seoul City Hall
   37.5172, 127.0473,  // Gangnam Station
@@ -155,10 +155,10 @@ Future<Position?> currentPosition(Ref ref) async {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Permission denied | If deniedForever, guide to openAppSettings() |
-| Inaccurate location | Use desiredAccuracy: high |
-| Battery drain | Set distanceFilter, cancel immediately when tracking ends |
+| Permission denied forever | Call openAppSettings() to direct the user to Settings |
+| Inaccurate location | Set desiredAccuracy to high |
+| Battery drain | Use distanceFilter and cancel the stream immediately when tracking ends |
 | Simulator | Set location in Features > Location |
-| Timeout | Set timeLimit parameter |
+| Timeout | Set the timeLimit parameter |

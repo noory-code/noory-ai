@@ -143,16 +143,16 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
 ### Interstitial Ad / Rewarded Ad
 
-→ See [references/ad-types.md](references/ad-types.md)
+See [references/ad-types.md](references/ad-types.md)
 
 ---
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Ad not showing | Use test ID, verify AdMob account approval |
-| Test device | Set addTestDeviceIds() or use test ID |
+| Ad not showing | Use a test ID and verify AdMob account approval |
+| Test device not recognized | Call addTestDeviceIds() or use a test ID |
 | Policy violation | Auto-clicking and excessive ads are prohibited |
-| Not working in release | Replace with real ad ID, activate account |
-| Low revenue | Use higher eCPM ad formats (rewarded > interstitial > banner) |
+| Not working in release | Replace with the real ad ID and activate the account |
+| Low revenue | Use higher-eCPM formats (rewarded > interstitial > banner) |

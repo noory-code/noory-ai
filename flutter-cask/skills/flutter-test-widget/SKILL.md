@@ -18,7 +18,7 @@ Test a single widget's UI and interactions.
 ## Installation
 
 ```yaml
-# pubspec.yaml (included in SDK)
+# pubspec.yaml (included in the Flutter SDK)
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -93,7 +93,7 @@ await tester.pump();
 
 // drag
 await tester.drag(find.byType(ListView), const Offset(0, -300));
-await tester.pumpAndSettle();  // wait for animation to complete
+await tester.pumpAndSettle();  // wait for animations to complete
 
 // scroll
 await tester.scrollUntilVisible(
@@ -108,9 +108,9 @@ await tester.scrollUntilVisible(
 | Method | Purpose |
 |--------|------|
 | `pump()` | Render one frame |
-| `pump(Duration)` | Advance by specified duration |
-| `pumpAndSettle()` | Wait until animations complete |
-| `pumpWidget(widget)` | Build widget |
+| `pump(Duration)` | Advance time by the specified duration |
+| `pumpAndSettle()` | Wait until all animations complete |
+| `pumpWidget(widget)` | Build a widget |
 
 ---
 
@@ -140,7 +140,7 @@ testWidgets('Counter increments', (tester) async {
 # specific file
 flutter test test/widget_test.dart
 
-# all
+# all tests
 flutter test
 ```
 
@@ -148,9 +148,9 @@ flutter test
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Widget not found | Check `pump()` is called after `pumpWidget` |
+| Widget not found | Make sure `pump()` is called after `pumpWidget` |
 | Animation incomplete | Use `pumpAndSettle()` |
-| Overflow error | Wrap in smaller test widget |
+| Overflow error | Wrap in a smaller test widget |
 | Missing MediaQuery | Wrap with `MaterialApp` |

@@ -94,7 +94,7 @@ void main() {
     final result = await fetchData(client);
     expect(result.id, 1);
 
-    // verify call
+    // verify the call was made
     verify(client.get(Uri.parse('https://api.example.com/data'))).called(1);
   });
 }
@@ -116,7 +116,7 @@ flutter test test/counter_test.dart
 # specific group
 flutter test --plain-name "Counter"
 
-# all
+# all tests
 flutter test
 ```
 
@@ -129,16 +129,16 @@ flutter test
 | `equals(value)` | Value comparison |
 | `isNull` / `isNotNull` | Null check |
 | `isA<Type>()` | Type check |
-| `throwsException` | Exception thrown |
-| `throwsA(isA<MyError>())` | Specific exception |
-| `contains(value)` | Collection contains value |
+| `throwsException` | Exception is thrown |
+| `throwsA(isA<MyError>())` | Specific exception type |
+| `contains(value)` | Collection contains a value |
 
 ---
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| No mock class | Run `dart run build_runner build` |
-| Test file not recognized | Check `_test.dart` suffix |
-| Async test failure | Check `await` and `async` keywords |
+| No mock class generated | Run `dart run build_runner build` |
+| Test file not recognized | Check that the file has the `_test.dart` suffix |
+| Async test failure | Check that `await` and `async` are used correctly |

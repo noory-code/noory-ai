@@ -11,7 +11,7 @@ metadata:
 
 # Flutter ScreenUtil
 
-Scale UI responsively based on a design reference size. Enables pixel-perfect Figma designs.
+Scale UI responsively based on a design reference size. Enables pixel-perfect reproduction of Figma designs across devices.
 
 ---
 
@@ -57,27 +57,27 @@ class MyApp extends StatelessWidget {
 ```dart
 // width-based scale (w)
 Container(
-  width: 100.w,   // 100px in design -> scaled to fit screen
+  width: 100.w,   // 100px in the design, scaled to fit the screen
   height: 50.h,  // height-based scale (h)
 )
 
-// radius (r) - circles, rounded corners
+// radius (r) — for circles and rounded corners
 Container(
   decoration: BoxDecoration(
     borderRadius: BorderRadius.circular(8.r),
   ),
 )
 
-// minimum-based (sp) - mainly for fonts
+// scale-independent pixels (sp) — primarily for font sizes
 Text(
   'Hello',
   style: TextStyle(fontSize: 16.sp),
 )
 
-// square (more consistent scaling than sp)
+// use .w for both dimensions when a square is needed
 Container(
   width: 50.w,
-  height: 50.w,  // use w only for squares
+  height: 50.w,
 )
 ```
 
@@ -101,7 +101,7 @@ Text(
 )
 ```
 
-### Margin/Padding
+### Margin and Padding
 
 ```dart
 Padding(
@@ -126,13 +126,13 @@ SizedBox(width: 16.w)
 
 ```dart
 // screen width/height
-final screenWidth = 1.sw;  // 100% width
-final screenHeight = 1.sh;  // 100% height
+final screenWidth = 1.sw;   // 100% of screen width
+final screenHeight = 1.sh;  // 100% of screen height
 
-// half
-Container(width: 0.5.sw)  // 50% of screen width
+// half screen width
+Container(width: 0.5.sw)
 
-// status bar / bottom bar height
+// status bar and bottom bar heights
 final statusBarHeight = ScreenUtil().statusBarHeight;
 final bottomBarHeight = ScreenUtil().bottomBarHeight;
 ```
@@ -147,7 +147,7 @@ if (1.sw > 600) {
   // phone layout
 }
 
-// landscape/portrait mode
+// landscape/portrait
 if (1.sw > 1.sh) {
   // landscape mode
 }
@@ -178,16 +178,16 @@ EdgeInsets.only(
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
-| Used before initialization | Use only inside ScreenUtilInit |
+| Used before initialization | Use size extensions only inside ScreenUtilInit |
 | Text too small | Set minTextAdapt: true |
-| Too large on tablet | Limit maxWidth or use conditional layout |
-| Hot reload broken | Restart app |
+| Too large on tablet | Limit maxWidth or use a conditional layout |
+| Hot reload broken | Restart the app |
 | Split screen broken | Set splitScreenMode: true |
 
 ---
 
 ## Design System Integration
 
-→ See [references/design-system.md](references/design-system.md)
+See [references/design-system.md](references/design-system.md)

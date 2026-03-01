@@ -44,10 +44,10 @@ sealed class Media with _$Media {
   const factory Media.video(String url, Duration length) = MediaVideo;
 }
 
-// url exists in all constructors -> can be accessed directly
+// url exists in all constructors, so it can be accessed directly
 final media = Media.image('http://...', 800);
 print(media.url);  // OK
 
-// width only exists in MediaImage -> cannot be accessed directly
+// width only exists in MediaImage, so it cannot be accessed directly
 // print(media.width);  // compile error
 ```

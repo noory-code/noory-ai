@@ -11,7 +11,7 @@ metadata:
 
 # Flutter Secure Storage
 
-Encrypted storage using iOS Keychain and Android Keystore. For storing sensitive data.
+Encrypted storage backed by iOS Keychain and Android Keystore. Use it to store sensitive data.
 
 ---
 
@@ -28,12 +28,12 @@ flutter pub add flutter_secure_storage
 ```groovy
 android {
     defaultConfig {
-        minSdkVersion 18  // minimum 18 or above
+        minSdkVersion 18  // minimum API 18
     }
 }
 ```
 
-### iOS (ios/Runner/Info.plist) - optional
+### iOS (ios/Runner/Info.plist) — optional
 
 ```xml
 <!-- to preserve data after app deletion -->
@@ -126,7 +126,7 @@ class SecureTokenStorage {
 }
 ```
 
-### Check Existence
+### Check Key Existence
 
 ```dart
 final hasToken = await storage.containsKey(key: 'access_token');
@@ -140,13 +140,13 @@ if (hasToken) {
 
 ## Common Issues
 
-| Situation | Solution |
+| Issue | Fix |
 |------|------|
 | Android minSdk error | Set minSdkVersion to 18 or above |
-| Returns null | Returns null when key doesn't exist (handle defaults) |
-| Data lost after app reinstall | Check iOS accessibility option |
-| Slow performance | Use Hive for large data, store tokens only |
-| Web not supported | Use localStorage fallback or separate handling |
+| Returns null | Returns null when the key does not exist; handle defaults explicitly |
+| Data lost after app reinstall | Check the iOS accessibility option |
+| Slow performance | Use Hive for large data; store tokens only in secure storage |
+| Web not supported | Use a localStorage fallback or separate handling |
 
 ---
 
@@ -156,7 +156,7 @@ if (hasToken) {
 // 1. Store sensitive data only (tokens, API keys)
 // 2. Use Hive + encryption for large data
 // 3. Always call deleteAll() on logout
-// 4. Also store token expiry time
+// 4. Also store the token expiry time
 
 await storage.write(
   key: 'token_expiry',

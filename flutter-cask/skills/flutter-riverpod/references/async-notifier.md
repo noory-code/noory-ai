@@ -1,6 +1,6 @@
 # AsyncNotifier Pattern
 
-Class-based Provider for async state management.
+Class-based provider for async state management.
 
 ## Basic Structure
 
@@ -22,8 +22,8 @@ class TodoList extends _$TodoList {
 
 **Key points:**
 - `build()`: returns `Future<T>`
-- `state`: type is `AsyncValue<T>`
-- Automatically manages loading/error states
+- `state`: typed as `AsyncValue<T>`
+- Loading and error states are managed automatically
 
 ---
 
@@ -41,7 +41,7 @@ class TodoList extends _$TodoList {
     // switch to loading state
     state = const AsyncLoading();
 
-    // execute safely (error handled automatically)
+    // execute safely (errors are handled automatically)
     state = await AsyncValue.guard(() async {
       final newTodo = await _createTodo(title);
       return [...state.value ?? [], newTodo];
@@ -60,7 +60,7 @@ class TodoList extends _$TodoList {
 
 ---
 
-## Usage in Widget
+## Usage in a Widget
 
 ```dart
 class TodoListPage extends ConsumerWidget {
@@ -113,11 +113,11 @@ state.maybeWhen(
 ## Refresh
 
 ```dart
-// from widget
+// from a widget
 ref.invalidate(todoListProvider);  // reload
-ref.refresh(todoListProvider);     // reload + return value
+ref.refresh(todoListProvider);     // reload and return the new value
 
-// from inside Notifier
+// from inside the Notifier
 Future<void> refresh() async {
   state = const AsyncLoading();
   state = await AsyncValue.guard(() => _fetchTodos());
