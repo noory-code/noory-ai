@@ -13,6 +13,16 @@
       "name": "distill",
       "source": "./distill",
       "description": "Extract and recall reusable knowledge from Claude Code conversations"
+    },
+    {
+      "name": "solera",
+      "source": "./solera",
+      "description": "Layered workflow execution — Phase → Goal → Epic → Story → Action Item"
+    },
+    {
+      "name": "flutter-cask",
+      "source": "./flutter-cask",
+      "description": "Flutter package guide skills — 33 packages for mobile development"
     }
   ]
 }
