@@ -1,15 +1,15 @@
 # Evonest Architecture
 
-## 핵심 차별점
+## Key Differentiators
 
-### 다중 페르소나 시스템
-단일 AI 도구(Aider, Cursor)는 한 번에 하나의 관점만 제공합니다. Evonest는 19개의 독립적인 페르소나를 실행하며, 각 페르소나는 새로운 Claude 프로세스로 격리됩니다. security-auditor, chaos-engineer, performance-analyst가 서로 영향받지 않고 독립적으로 분석합니다.
+### Multi-Persona System
+Single-AI tools (Aider, Cursor) offer only one perspective at a time. Evonest picks one persona per cycle, runs it as a fully isolated Claude process, and rotates through 19 built-in perspectives over time. security-auditor, chaos-engineer, and performance-analyst run independently with no shared context between them.
 
-### 적응형 학습
-GitHub Copilot Workspace는 고정 워크플로로 동작합니다. Evonest는 매 사이클 후 페르소나 가중치를 재계산하여, 성공하는 페르소나가 더 자주 실행되고 실패하는 페르소나는 우선순위가 낮아집니다.
+### Adaptive Learning
+GitHub Copilot Workspace uses a fixed workflow. Evonest recalculates persona weights after every cycle — successful personas run more often; underperforming ones are deprioritized. After 50 cycles, the distribution reflects what actually works for your specific project.
 
-### MCP-Native 통합
-Aider는 독립 CLI로 동작해 컨텍스트 공유가 불가능합니다. Copilot Workspace는 웹 UI로 격리됩니다. Evonest는 Claude Code 세션 내에서 실행되어, 대화 히스토리, 파일 접근, 툴 공유가 모두 네이티브로 이루어집니다.
+### MCP-Native Integration
+Aider is a standalone CLI with no context sharing. Copilot Workspace is isolated in a web UI. Evonest runs inside the Claude Code session — sharing conversation history, file access, and tools natively.
 
 ## Module Map
 
@@ -166,6 +166,13 @@ weight = 1.0 + (success_rate * 0.5) - (failure_rate * 0.3) + recency_bonus
 - `failure_rate` = failures / uses
 - `recency_bonus` = 0.3 if unused for 3+ cycles (encourages exploration)
 - Clamped to [0.2, 3.0]
+
+**Why [0.2, 3.0]?**
+- Floor 0.2: prevents any persona from being permanently silenced. Even a poorly performing persona may become relevant again as the codebase evolves.
+- Cap 3.0: prevents a single successful persona from monopolizing every cycle. Diversity is structurally enforced even when one persona dominates.
+
+**Convergence threshold: why 3?**
+1–2 touches of the same directory are normal iteration. At 3+ touches without a clean pass, the pattern suggests the improvement is blocked — either the approach is wrong, or the area requires a prerequisite fix elsewhere. The warning nudges the next cycle to look elsewhere or try a different persona.
 
 ### Backlog lifecycle
 ```

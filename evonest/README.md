@@ -5,29 +5,24 @@ Evonest connects directly to Claude Code's tool ecosystem — not as a standalon
 
 ## Why Evonest?
 
-Most AI coding tools give you a single perspective. Evonest sends 19 different specialist personas at your codebase — a security auditor, chaos engineer, performance analyst, domain modeler, and more — and lets natural selection determine which approaches work best.
+Most AI coding tools give you a single perspective. Evonest rotates through 19 specialist personas — security auditor, chaos engineer, performance analyst, domain modeler, and more — picking one per cycle, weighted by past success, so the perspectives that actually improve your project run more often over time.
 
 ### Why 19 personas?
 
-A single AI can only offer one perspective at a time. Real projects require security, performance, maintainability, and product strategy all at once.
+A single AI can only offer one perspective at a time. Real projects require security, performance, maintainability, and product strategy — often in conflict with each other.
 
-**Example scenario:**
-
-1. **security-auditor** discovers a SQL injection vulnerability in an API endpoint
-2. **chaos-engineer** runs load tests on the same endpoint and detects a concurrency bug
-3. **performance-analyst** proposes query optimizations and adds indexes
-4. **test-coverage-analyst** writes integration tests that verify all three improvements
+Each cycle, Evonest picks **one specialist persona**, runs it as a fully independent Claude process, and lets natural selection determine which perspectives deserve more weight.
 
 **Adaptive learning:**
 Successful personas gain weight. If security improvements keep passing, security-auditor runs more often. Personas that propose unnecessary refactoring are automatically deprioritized.
 
 **Diversity prevents tunnel vision:**
-Aider/Cursor operate as a single AI and try only one approach. GitHub Copilot Workspace is locked into a predefined workflow. Evonest provides 19 independent perspectives, and natural selection finds the optimal combination.
+Aider/Cursor operate as a single AI and try only one approach. GitHub Copilot Workspace is locked into a predefined workflow. Evonest rotates through 19 independent perspectives, and natural selection finds the optimal combination for your specific project.
 
 | | Aider / Cursor | GitHub Copilot Workspace | **Evonest** |
 |--|--|--|--|
 | Integration | Standalone CLI / editor | Web UI | **MCP-native — lives inside Claude Code** |
-| Perspectives | Single AI | Predefined workflow | **19 personas + adaptive selection** |
+| Perspectives | Single AI | Predefined workflow | **19 rotating personas, weighted by success** |
 | Context Continuity | Session-local | Isolated web session | **Shares Claude Code conversation + tools** |
 | Safety | Manual recovery | Manual recovery | **Auto-revert on failed build/test** |
 | Learning | None | None | **Adaptive weights — successful personas run more often** |
@@ -58,11 +53,18 @@ Copilot Workspace locks you into an "Issue → Plan → Code → PR" workflow. I
 
 Evonest recalculates persona weights after every cycle. If security improvements keep succeeding, security-auditor frequency increases. Personas that propose unnecessary refactoring are automatically deprioritized. After 50 cycles, a persona distribution tailored to your project emerges.
 
-### Neither can collaborate across multiple perspectives simultaneously
+## Proven on Evonest itself
 
-Aider supports only sequential conversation — "security → performance → tests" must be requested one at a time, with each step depending on the previous.
+Evonest evolves its own codebase through the same cycle. Here are real findings from self-evolution:
 
-Evonest provides **independent perspectives**: when security-auditor analyzes API security, chaos-engineer simultaneously hunts for concurrency bugs, and performance-analyst proposes query optimizations. All three improvements are produced independently and verified separately.
+| Finding | Persona | Outcome |
+|---------|---------|---------|
+| `subprocess.run(shell=True)` with user config values — shell injection | security-auditor | Fixed: `shlex.split()` + `shell=False` |
+| `TimeoutExpired` handler missing `process.kill()` — zombie processes | chaos-engineer | Fixed: `process.kill()` + `process.wait()` in timeout handler |
+| Bare `except Exception: pass` in 19 locations — silent failures | spec-reviewer | Fixed: module-level logger with `exc_info=True` throughout |
+| Path slugification allows `../../../etc/passwd` traversal | security-auditor | Fixed: validate resolved path is within `.evonest/` |
+
+164 proposals executed to date. 0 regressions (auto-revert caught everything).
 
 ## Install
 
@@ -105,19 +107,17 @@ Add to `~/.claude/mcp.json`:
 ```
 1. evonest_init(project="/path/to/project")
    → creates .evonest/ with identity.md, config.json, proposals/, ...
+   → edit identity.md: mission, core values, boundaries (DO NOT touch list)
 
-2. Edit .evonest/identity.md
-   → describe your project: mission, values, boundaries
-
-3. /evonest:analyze  (or: evonest_analyze(project="..."))
+2. /evonest:analyze  (or: evonest_analyze(project="..."))
    → scans codebase, saves all improvements as proposals (no code changes)
+   → review with: evonest_proposals(project="...")
 
-4. evonest_proposals(project="...")
-   → review pending proposals
-
-5. evonest_improve(project="...", proposal_id="<filename>")
+3. evonest_improve(project="...", proposal_id="<filename>")
    → execute one proposal → verify → commit/PR
 ```
+
+**First time? Start with `analyze`.** It only reads your codebase and saves proposals — no code is changed. You stay in control of what gets executed.
 
 ### .evonest/ layout
 
@@ -154,6 +154,27 @@ Configure verify commands in `.evonest/config.json`:
 ```
 
 Without verify commands, Evonest still reverts on exceptions but cannot check functional correctness.
+
+## Cost
+
+Evonest runs Claude subprocesses — here's what to expect with `claude-sonnet` (default):
+
+| Phase | Typical turns | Estimated cost |
+|-------|--------------|----------------|
+| Observe | ~10 turns | ~$0.05 |
+| Plan | ~5 turns | ~$0.03 |
+| Execute | ~10 turns | ~$0.10 |
+| **Per cycle total** | | **~$0.15–0.25** |
+
+With `max_cycles_per_run: 5` (default), one full run costs roughly **$0.75–1.25**.
+
+**To reduce cost:**
+- Switch to `haiku`: `evonest_config(project="...", key="model", value="haiku")` — 5–7× cheaper
+- Use `observe_mode: "quick"` — shorter observe phase, fewer turns
+- Use `--cautious` — pauses before execute; cancel if the plan doesn't look worth it
+- Use `analyze` mode first — read-only, cheap, lets you review proposals before spending on execution
+
+> Cost estimates are approximate and depend on codebase size and complexity.
 
 ## Modes
 
@@ -256,6 +277,8 @@ Evonest learns from its own history to avoid spinning in circles and to invest m
 
 If Evonest touches the same codebase area (directory) **3 or more times**, that area is flagged as a convergence zone. The next cycle receives an explicit warning: "This area may be stuck — look elsewhere or try a different approach."
 
+The threshold of 3 is empirical: 1–2 touches are normal iteration; 3+ touches without a clean pass suggests the improvement is blocked or the approach needs to change.
+
 Convergence flags are visible in `evonest_status` and `evonest_progress`.
 
 ### Adaptive Persona Weights
@@ -264,7 +287,9 @@ Every persona starts with weight `1.0`. After each cycle:
 
 - **Successful cycle** → persona weight increases (capped at 3.0)
 - **Failed cycle** → persona weight decreases (floor at 0.2)
-- **Recency bonus** → a persona used recently gets a small boost
+- **Recency bonus** → a persona unused for 3+ cycles gets a small boost (encourages exploration)
+
+The floor at 0.2 prevents any persona from being permanently silenced. The cap at 3.0 prevents any single persona from monopolizing all cycles.
 
 Over dozens of cycles, the persona distribution shifts toward what actually works for your project. Run `evonest_progress` to see current weights.
 
