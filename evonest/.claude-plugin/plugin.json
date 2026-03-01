@@ -2,8 +2,13 @@
   "name": "evonest",
   "version": "0.16.0",
   "description": "Autonomous code evolution engine — observe, plan, execute, verify",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/evonest",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "keywords": ["mcp", "code-evolution", "autonomous", "refactoring", "ai-agent"],
   "author": {
-    "name": "noory-code"
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
   },
   "commands": "./commands/",
   "skills": "./skills/",
