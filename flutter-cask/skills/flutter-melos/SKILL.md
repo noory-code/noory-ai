@@ -1,27 +1,27 @@
 ---
 name: flutter-melos
-description: Melos를 사용한 Flutter 모노레포 관리
+description: Flutter monorepo management using Melos
 metadata:
   version: "1.1.0"
   category: flutter-tool
   type: unit
   style: guide
-  triggers: [melos, 모노레포, 멀티 패키지, workspace]
+  triggers: [melos, monorepo, multi-package, workspace]
 ---
 
 # Flutter Melos
 
-Flutter/Dart 모노레포 관리 도구. 패키지 간 의존성, 공유 설정, 일괄 명령 실행.
+Flutter/Dart monorepo management tool. Handles inter-package dependencies, shared configuration, and bulk command execution.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
-# 전역 설치
+# global install
 dart pub global activate melos
 
-# 프로젝트에 추가
+# add to project
 dart pub add melos --dev
 ```
 
@@ -29,7 +29,7 @@ dart pub add melos --dev
 
 ## Quick Reference
 
-### 루트 pubspec.yaml
+### Root pubspec.yaml
 
 ```yaml
 name: my_project
@@ -49,28 +49,28 @@ dev_dependencies:
 
 melos:
   scripts:
-    # 코드 생성
+    # code generation
     generate:
       run: melos exec -c 1 --depends-on build_runner -- dart run build_runner build --delete-conflicting-outputs
       description: Run build_runner in all packages
 
-    # 테스트
+    # tests
     test:
       run: melos exec -- flutter test
       description: Run tests in all packages
 
-    # 포맷
+    # format
     format:
       run: melos exec -- dart format .
       description: Format all packages
 
-    # 분석
+    # analyze
     analyze:
       run: melos exec -- dart analyze
       description: Analyze all packages
 ```
 
-### 패키지 pubspec.yaml
+### Package pubspec.yaml
 
 ```yaml
 name: {project}_entities
@@ -79,7 +79,7 @@ description: Domain entities
 environment:
   sdk: ^3.6.0
 
-resolution: workspace  # 필수!
+resolution: workspace  # required!
 
 dependencies:
   freezed_annotation: ^2.4.0
@@ -91,37 +91,37 @@ dev_dependencies:
 
 ---
 
-## 주요 명령어
+## Key Commands
 
-| 명령어 | 설명 |
+| Command | Description |
 |--------|------|
-| `melos bootstrap` | 의존성 설치 + 패키지 연결 |
-| `melos clean` | 모든 패키지 clean |
-| `melos exec -- <cmd>` | 모든 패키지에서 명령 실행 |
-| `melos run <script>` | 스크립트 실행 |
-| `melos list` | 패키지 목록 |
+| `melos bootstrap` | Install dependencies + link packages |
+| `melos clean` | Clean all packages |
+| `melos exec -- <cmd>` | Run command in all packages |
+| `melos run <script>` | Run a script |
+| `melos list` | List packages |
 
-### exec 옵션
+### exec Options
 
 ```bash
-# 순차 실행 (build_runner 등)
+# sequential execution (for build_runner, etc.)
 melos exec -c 1 -- dart run build_runner build
 
-# 특정 패키지만
+# specific packages only
 melos exec --scope="{project}_entities" -- flutter test
 
-# 의존성 있는 패키지만
+# packages with specific dependency
 melos exec --depends-on="freezed" -- dart run build_runner build
 ```
 
 ---
 
-## 폴더 구조
+## Folder Structure
 
 ```
 {project}/
-├── pubspec.yaml              # 루트 (workspace 정의)
-├── melos.yaml                # (선택) 별도 설정 파일
+├── pubspec.yaml              # root (workspace definition)
+├── melos.yaml                # (optional) separate config file
 ├── {project}_entities/
 │   └── pubspec.yaml          # resolution: workspace
 ├── {project}_core/
@@ -134,29 +134,29 @@ melos exec --depends-on="freezed" -- dart run build_runner build
 
 ---
 
-## 규칙
+## Rules
 
-| 항목 | 규칙 |
+| Item | Rule |
 |------|------|
-| **resolution** | 모든 패키지에 `resolution: workspace` 필수 |
-| **workspace** | 루트 pubspec.yaml에 모든 패키지 경로 명시 |
-| **버전 동기화** | 공유 의존성은 루트에서 관리 |
-| **스크립트** | 반복 작업은 melos scripts로 정의 |
+| **resolution** | `resolution: workspace` required in all packages |
+| **workspace** | List all package paths in root pubspec.yaml |
+| **version sync** | Manage shared dependencies from root |
+| **scripts** | Define repetitive tasks as melos scripts |
 
 ---
 
-## 흔한 실수
+## Common Mistakes
 
-| ❌ | ✅ |
+| Wrong | Correct |
 |---|---|
-| `resolution: workspace` 누락 | 모든 패키지에 추가 |
-| 루트에서 `flutter pub get` | `melos bootstrap` 사용 |
-| 개별 패키지에서 의존성 추가 | 루트 pubspec.yaml에서 관리 |
-| `-c 1` 없이 build_runner | `melos exec -c 1` (순차 실행) |
+| Missing `resolution: workspace` | Add to all packages |
+| `flutter pub get` from root | Use `melos bootstrap` |
+| Add dependency per package | Manage in root pubspec.yaml |
+| build_runner without `-c 1` | `melos exec -c 1` (sequential execution) |
 
 ---
 
-## 참고
+## References
 
-- [Melos 공식 문서](https://melos.invertase.dev/)
+- [Melos Official Docs](https://melos.invertase.dev/)
 - [Getting Started](https://melos.invertase.dev/getting-started)

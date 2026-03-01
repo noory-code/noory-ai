@@ -1,38 +1,38 @@
 ---
 name: flutter-firebase-messaging
-description: Firebase Cloud Messaging (FCM) 푸시 알림
+description: Firebase Cloud Messaging (FCM) push notifications
 metadata:
   version: "1.1.0"
   category: flutter-firebase
   type: unit
   style: guide
-  triggers: [firebase_messaging, FCM, 푸시 알림, remote notification, 원격 알림]
+  triggers: [firebase_messaging, FCM, push notification, remote notification]
 ---
 
 # Flutter Firebase Messaging
 
-Firebase Cloud Messaging으로 원격 푸시 알림 수신.
+Receive remote push notifications via Firebase Cloud Messaging.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add firebase_messaging
-flutter pub add flutter_local_notifications  # 포그라운드 알림 표시용
+flutter pub add flutter_local_notifications  # for foreground notification display
 ```
 
-## 사전 요구사항
+## Prerequisites
 
-- Firebase 프로젝트 설정 완료
-- `flutterfire configure` 실행됨
-- iOS: APNs 인증서 또는 키 등록
+- Firebase project configured
+- `flutterfire configure` has been run
+- iOS: APNs certificate or key registered
 
 ---
 
 ## Quick Reference
 
-### 초기화 및 권한
+### Initialization and Permissions
 
 ```dart
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -40,7 +40,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 Future<void> initFCM() async {
   final messaging = FirebaseMessaging.instance;
 
-  // 권한 요청
+  // request permissions
   final settings = await messaging.requestPermission(
     alert: true,
     badge: true,
@@ -48,40 +48,40 @@ Future<void> initFCM() async {
   );
 
   if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    print('알림 권한 허용됨');
+    print('Notification permission granted');
   }
 
-  // FCM 토큰 가져오기
+  // get FCM token
   final token = await messaging.getToken();
   print('FCM Token: $token');
 
-  // 토큰 갱신 리스너
+  // token refresh listener
   messaging.onTokenRefresh.listen((newToken) {
-    // 서버에 새 토큰 전송
+    // send new token to server
     updateTokenOnServer(newToken);
   });
 }
 ```
 
-### 메시지 핸들러 설정
+### Setting Up Message Handlers
 
 ```dart
 void setupMessageHandlers() {
-  // 포그라운드 메시지
+  // foreground message
   FirebaseMessaging.onMessage.listen((message) {
-    print('포그라운드 메시지: ${message.notification?.title}');
-    // 로컬 알림으로 표시
+    print('Foreground message: ${message.notification?.title}');
+    // display as local notification
     showLocalNotification(message);
   });
 
-  // 백그라운드에서 알림 탭
+  // notification tap from background
   FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    print('알림 탭으로 앱 열림');
+    print('App opened via notification tap');
     handleNotificationTap(message);
   });
 }
 
-// 앱 종료 상태에서 알림 탭으로 실행
+// launched from notification tap while app was terminated
 Future<void> checkInitialMessage() async {
   final message = await FirebaseMessaging.instance.getInitialMessage();
   if (message != null) {
@@ -90,14 +90,14 @@ Future<void> checkInitialMessage() async {
 }
 ```
 
-### 백그라운드 핸들러
+### Background Handler
 
 ```dart
-// main.dart (최상위 함수로 정의)
+// main.dart (must be a top-level function)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print('백그라운드 메시지: ${message.messageId}');
+  print('Background message: ${message.messageId}');
 }
 
 void main() async {
@@ -108,7 +108,7 @@ void main() async {
 }
 ```
 
-### 포그라운드 알림 표시
+### Display Foreground Notification
 
 ```dart
 Future<void> showLocalNotification(RemoteMessage message) async {
@@ -122,7 +122,7 @@ Future<void> showLocalNotification(RemoteMessage message) async {
     NotificationDetails(
       android: AndroidNotificationDetails(
         'fcm_channel',
-        'FCM 알림',
+        'FCM Notifications',
         importance: Importance.high,
       ),
       iOS: DarwinNotificationDetails(),
@@ -132,45 +132,45 @@ Future<void> showLocalNotification(RemoteMessage message) async {
 }
 ```
 
-### 토픽 구독
+### Topic Subscription
 
 ```dart
-// 토픽 구독
+// subscribe to topic
 await FirebaseMessaging.instance.subscribeToTopic('news');
 
-// 토픽 구독 해제
+// unsubscribe from topic
 await FirebaseMessaging.instance.unsubscribeFromTopic('news');
 ```
 
-### 데이터 메시지 처리
+### Handling Data Messages
 
 ```dart
 FirebaseMessaging.onMessage.listen((message) {
-  // notification 필드 (알림 메시지)
+  // notification field (notification message)
   final notification = message.notification;
 
-  // data 필드 (데이터 메시지)
+  // data field (data message)
   final data = message.data;
 
   if (data['type'] == 'chat') {
-    // 채팅 메시지 처리
+    // handle chat message
     navigateToChat(data['chatId']);
   }
 });
 ```
 
-### 전체 초기화 예시
+### Full Initialization Example
 
-→ [references/fcm-service.md](references/fcm-service.md) 참조
+→ See [references/fcm-service.md](references/fcm-service.md)
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| iOS 알림 안옴 | APNs 키/인증서 Firebase 등록 확인 |
-| 포그라운드 안보임 | flutter_local_notifications로 표시 |
-| 토큰 null | 시뮬레이터 미지원 (실기기 테스트) |
-| 백그라운드 핸들러 | 최상위 함수 + @pragma 필수 |
-| 데이터만 메시지 | notification 없으면 시스템 알림 안뜸 |
+| No notification on iOS | Check APNs key/certificate registered in Firebase |
+| Not showing in foreground | Display using flutter_local_notifications |
+| Token is null | Simulator not supported (test on real device) |
+| Background handler | Must be top-level function + @pragma |
+| Data-only message | No system notification without notification field |

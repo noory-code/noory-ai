@@ -1,21 +1,21 @@
 ---
 name: flutter-pinput
-description: PIN/OTP 코드 입력 위젯
+description: PIN/OTP code input widget
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [pinput, PIN 입력, OTP, 인증 코드, 6자리 코드]
+  triggers: [pinput, PIN input, OTP, verification code, 6-digit code]
 ---
 
 # Flutter Pinput
 
-PIN/OTP 코드 입력 위젯. MFA 인증, SMS 인증에 사용.
+PIN/OTP code input widget. Used for MFA authentication and SMS verification.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add pinput
@@ -25,7 +25,7 @@ flutter pub add pinput
 
 ## Quick Reference
 
-### 기본 사용
+### Basic Usage
 
 ```dart
 import 'package:pinput/pinput.dart';
@@ -47,7 +47,7 @@ Pinput(
 )
 ```
 
-### 커스텀 스타일
+### Custom Style
 
 ```dart
 final defaultPinTheme = PinTheme(
@@ -90,12 +90,12 @@ Pinput(
   errorPinTheme: errorPinTheme,
   pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
   validator: (value) {
-    return value == '123456' ? null : '잘못된 코드입니다';
+    return value == '123456' ? null : 'Invalid code';
   },
 )
 ```
 
-### 밑줄 스타일
+### Underline Style
 
 ```dart
 final defaultPinTheme = PinTheme(
@@ -110,7 +110,7 @@ final defaultPinTheme = PinTheme(
 );
 ```
 
-### 원형 스타일
+### Circle Style
 
 ```dart
 final defaultPinTheme = PinTheme(
@@ -124,7 +124,7 @@ final defaultPinTheme = PinTheme(
 );
 ```
 
-### 에러 상태 처리
+### Error State Handling
 
 ```dart
 bool hasError = false;
@@ -139,14 +139,14 @@ Pinput(
     if (!success) {
       setState(() => hasError = true);
       pinController.clear();
-      // 진동 피드백
+      // haptic feedback
       HapticFeedback.heavyImpact();
     }
   },
 )
 ```
 
-### SMS 자동 완성 (Android)
+### SMS Auto-fill (Android)
 
 ```dart
 Pinput(
@@ -158,35 +158,35 @@ Pinput(
 )
 ```
 
-### 입력 제한
+### Input Restrictions
 
 ```dart
 Pinput(
   length: 6,
   controller: pinController,
   inputFormatters: [
-    FilteringTextInputFormatter.digitsOnly,  // 숫자만
+    FilteringTextInputFormatter.digitsOnly,  // digits only
   ],
   keyboardType: TextInputType.number,
-  obscureText: true,  // 비밀번호처럼 숨김
+  obscureText: true,  // hide like password
   obscuringCharacter: '●',
 )
 ```
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 키보드 안열림 | focusNode.requestFocus() 호출 |
-| 자동완성 안됨 | SMS 형식 확인 (마지막에 코드) |
-| 붙여넣기 안됨 | 기본 지원됨, length 확인 |
-| 스타일 깨짐 | copyWith로 일관된 테마 유지 |
-| dispose 누락 | controller, focusNode dispose 필수 |
+| Keyboard not opening | Call focusNode.requestFocus() |
+| Auto-fill not working | Check SMS format (code at the end) |
+| Paste not working | Supported by default, check length |
+| Style broken | Use copyWith for consistent theme |
+| Missing dispose | Must dispose controller and focusNode |
 
 ---
 
-## MFA 페이지 예시
+## MFA Page Example
 
-→ [references/mfa-example.md](references/mfa-example.md) 참조
+→ See [references/mfa-example.md](references/mfa-example.md)

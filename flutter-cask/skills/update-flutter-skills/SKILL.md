@@ -1,18 +1,18 @@
 ---
 name: update-flutter-skills
-description: flutter-cask 플러그인의 Flutter 스킬 전체 업데이트. 최신 문서 반영, 새 스킬 추가, 기존 스킬 개선.
+description: Update all Flutter skills in the flutter-cask plugin. Reflect latest docs, add new skills, improve existing skills.
 metadata:
   version: "1.2.0"
   category: meta
   type: composite
   style: procedural
-  triggers: [flutter 스킬 업데이트, update-flutter-skills, flutter 패키지 가이드 업데이트, 스킬 최신화]
+  triggers: [update flutter skills, update-flutter-skills, flutter package guide update, skill update]
   uses: []
 ---
 
 # Update Flutter Skills
 
-> `flutter-cask` 플러그인의 Flutter 스킬을 최신 상태로 유지한다.
+> Keep Flutter skills in the `flutter-cask` plugin up to date.
 
 ## Input
 
@@ -22,11 +22,11 @@ input:
   optional:
     - name: target
       type: string
-      desc: 특정 스킬명 (예- flutter-freezed). 미지정 시 전체 스킬 대상.
+      desc: Specific skill name (e.g., flutter-freezed). If not specified, all skills are targeted.
     - name: action
       type: enum
       values: [update, add, list, check]
-      desc: update(업데이트), add(새 스킬 추가), list(목록), check(최신 여부 확인)
+      desc: update (update), add (add new skill), list (list), check (check if latest)
 ```
 
 ## Output
@@ -43,14 +43,14 @@ output:
 ```yaml
 actions:
   - action: list
-    do: 스킬 목록 조회
+    do: retrieve skill list
     pseudo: |
       ls noory-ai/flutter-cask/skills/
       for each skill: read SKILL.md metadata (name, version, triggers)
       print summary table
 
   - action: check
-    do: 최신 여부 확인
+    do: check if latest
     pseudo: |
       for each skill in target:
         read SKILL.md version
@@ -59,30 +59,30 @@ actions:
         report outdated skills
 
   - action: update
-    do: 스킬 업데이트
+    do: update skill
     pseudo: |
       for each skill in target:
         fetch latest documentation (context7)
-        update SKILL.md (설치, 사용법, 주의사항)
-        update references/*.md (코드 예시, 패턴)
+        update SKILL.md (installation, usage, common issues)
+        update references/*.md (code examples, patterns)
         bump version if changed
 
   - action: add
-    do: 새 스킬 추가
+    do: add new skill
     pseudo: |
       create noory-ai/flutter-cask/skills/{name}/
       create SKILL.md (frontmatter + guide)
-      create references/ (필요 시)
+      create references/ (if needed)
 ```
 
-## 스킬 구조 규칙
+## Skill Structure Rules
 
 ```yaml
 structure:
   required:
-    - SKILL.md: frontmatter(name, description, version, metadata) + 가이드
+    - SKILL.md: frontmatter(name, description, version, metadata) + guide
   optional:
-    - references/: 상세 코드 예시, 패턴 문서
+    - references/: detailed code examples, pattern docs
 
 frontmatter:
   name: kebab-case
@@ -90,13 +90,13 @@ frontmatter:
     category: flutter | test | infra | ...
     type: unit
     style: guide
-    triggers: [키워드 목록]
+    triggers: [keyword list]
 ```
 
 ## Completion Checklist
 
-- [ ] 대상 스킬 식별 완료
-- [ ] 최신 문서 확인 (context7, pub.dev)
-- [ ] SKILL.md 업데이트 (설치, 사용법)
-- [ ] references/ 업데이트 (코드 예시)
-- [ ] version 범프
+- [ ] Target skill identified
+- [ ] Latest docs verified (context7, pub.dev)
+- [ ] SKILL.md updated (installation, usage)
+- [ ] references/ updated (code examples)
+- [ ] version bumped

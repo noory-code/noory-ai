@@ -1,44 +1,44 @@
-# 네비게이션
+# Navigation
 
-go vs push, redirect, guard 패턴.
+go vs push, redirect, guard patterns.
 
 ## go vs push vs replace
 
-| 메서드 | 동작 | 사용 시점 |
+| Method | Behavior | When to Use |
 |--------|------|----------|
-| `go()` | 스택 교체 (새 경로로 이동) | 탭 전환, 메인 화면 |
-| `push()` | 스택에 추가 | 상세 화면, 모달 |
-| `replace()` | 현재 화면만 교체 | 로그인 후 홈 이동 |
+| `go()` | Replace stack (navigate to new path) | Tab switch, main screen |
+| `push()` | Add to stack | Detail screen, modal |
+| `replace()` | Replace current screen only | Navigate to home after login |
 
 ```dart
-// go: /home → /profile (스택: [/profile])
+// go: /home -> /profile (stack: [/profile])
 const ProfileRoute(userId: 'u1').go(context);
 
-// push: /home → /profile (스택: [/home, /profile])
+// push: /home -> /profile (stack: [/home, /profile])
 const ProfileRoute(userId: 'u1').push(context);
 
-// replace: /login → /home (스택: [/home], 뒤로가기 시 login 없음)
+// replace: /login -> /home (stack: [/home], no login on back navigation)
 const HomeRoute().replace(context);
 ```
 
 ---
 
-## 뒤로가기
+## Back Navigation
 
 ```dart
-// 이전 화면으로
+// go to previous screen
 context.pop();
 
-// 결과값과 함께
+// with result value
 context.pop(result);
 
-// 특정 화면까지 pop
-context.go('/');  // 홈으로 이동 (스택 초기화)
+// pop to specific screen
+context.go('/');  // navigate to home (reset stack)
 ```
 
 ---
 
-## Redirect (리다이렉트)
+## Redirect
 
 ```dart
 final router = GoRouter(
@@ -47,30 +47,30 @@ final router = GoRouter(
     final isLoggedIn = authNotifier.isLoggedIn;
     final isLoginRoute = state.matchedLocation == '/login';
 
-    // 비로그인 + 로그인 페이지 아님 → 로그인으로
+    // not logged in + not on login page -> go to login
     if (!isLoggedIn && !isLoginRoute) {
       return '/login';
     }
 
-    // 로그인 + 로그인 페이지 → 홈으로
+    // logged in + on login page -> go to home
     if (isLoggedIn && isLoginRoute) {
       return '/';
     }
 
-    return null;  // 리다이렉트 없음
+    return null;  // no redirect
   },
 );
 ```
 
 ---
 
-## Refresh (상태 변경 감지)
+## Refresh (Detect State Changes)
 
 ```dart
 final router = GoRouter(
   routes: $appRoutes,
   redirect: (context, state) { ... },
-  refreshListenable: authNotifier,  // 변경 시 redirect 재평가
+  refreshListenable: authNotifier,  // re-evaluate redirect on change
 );
 ```
 
@@ -86,7 +86,7 @@ class AdminRoute extends GoRouteData {
   @override
   String? redirect(BuildContext context, GoRouterState state) {
     final isAdmin = context.read<AuthNotifier>().isAdmin;
-    if (!isAdmin) return '/';  // 관리자 아니면 홈으로
+    if (!isAdmin) return '/';  // redirect to home if not admin
     return null;
   }
 
@@ -99,7 +99,7 @@ class AdminRoute extends GoRouteData {
 
 ---
 
-## 에러 페이지
+## Error Page
 
 ```dart
 final router = GoRouter(
@@ -112,12 +112,12 @@ final router = GoRouter(
 
 ---
 
-## 현재 경로 확인
+## Check Current Path
 
 ```dart
-// 현재 위치
+// current location
 final location = GoRouterState.of(context).matchedLocation;
 
-// 쿼리 파라미터
+// query parameters
 final params = GoRouterState.of(context).uri.queryParameters;
 ```

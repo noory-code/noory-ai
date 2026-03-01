@@ -1,4 +1,4 @@
-# PostEditor 전체 예시
+# PostEditor Full Example
 
 ```dart
 class PostEditor extends StatefulWidget {
@@ -39,7 +39,7 @@ class _PostEditorState extends State<PostEditor> {
       children: [
         QuillSimpleToolbar(controller: _controller),
         Expanded(child: QuillEditor.basic(controller: _controller)),
-        ElevatedButton(onPressed: _save, child: Text('저장')),
+        ElevatedButton(onPressed: _save, child: Text('Save')),
       ],
     );
   }

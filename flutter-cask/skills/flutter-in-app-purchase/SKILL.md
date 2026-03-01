@@ -1,36 +1,36 @@
 ---
 name: flutter-in-app-purchase
-description: 인앱 결제 (구독, 소모품, 비소모품)
+description: In-app purchases (subscriptions, consumables, non-consumables)
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [in_app_purchase, IAP, 인앱 결제, 구독, 구매]
+  triggers: [in_app_purchase, IAP, in-app purchase, subscription, purchase]
 ---
 
 # Flutter In-App Purchase
 
-앱스토어/플레이스토어 인앱 결제. 구독, 소모품, 비소모품 지원.
+In-app purchases on App Store/Play Store. Supports subscriptions, consumables, and non-consumables.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add in_app_purchase
 ```
 
-## 사전 요구사항
+## Prerequisites
 
-- App Store Connect: 인앱 상품 등록, 계약 완료
-- Google Play Console: 인앱 상품 등록, 라이선스 키 설정
+- App Store Connect: register in-app products, complete agreements
+- Google Play Console: register in-app products, configure license key
 
 ---
 
 ## Quick Reference
 
-### 초기화
+### Initialization
 
 ```dart
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -43,13 +43,13 @@ class IAPService {
     final available = await _iap.isAvailable();
     if (!available) return;
 
-    // 구매 스트림 리스닝
+    // listen to purchase stream
     _subscription = _iap.purchaseStream.listen(
       _handlePurchaseUpdates,
-      onError: (error) => print('구매 에러: $error'),
+      onError: (error) => print('Purchase error: $error'),
     );
 
-    // 미완료 구매 복원
+    // restore incomplete purchases
     await _iap.restorePurchases();
   }
 
@@ -59,7 +59,7 @@ class IAPService {
 }
 ```
 
-### 상품 조회
+### Load Products
 
 ```dart
 Future<List<ProductDetails>> loadProducts() async {
@@ -67,42 +67,42 @@ Future<List<ProductDetails>> loadProducts() async {
   final response = await _iap.queryProductDetails(productIds);
 
   if (response.notFoundIDs.isNotEmpty) {
-    print('상품 못찾음: ${response.notFoundIDs}');
+    print('Products not found: ${response.notFoundIDs}');
   }
 
   return response.productDetails;
 }
 ```
 
-### 구매 처리
+### Handle Purchase
 
 ```dart
 Future<void> buyProduct(ProductDetails product) async {
   final purchaseParam = PurchaseParam(productDetails: product);
 
   if (product.id.contains('subscription')) {
-    // 구독 상품
+    // subscription product
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
   } else {
-    // 소모품
+    // consumable
     await _iap.buyConsumable(purchaseParam: purchaseParam);
   }
 }
 ```
 
-### 구매 업데이트 처리
+### Handle Purchase Updates
 
 ```dart
 void _handlePurchaseUpdates(List<PurchaseDetails> purchases) {
   for (final purchase in purchases) {
     switch (purchase.status) {
       case PurchaseStatus.pending:
-        // 결제 진행 중 UI
+        // payment in progress UI
         break;
 
       case PurchaseStatus.purchased:
       case PurchaseStatus.restored:
-        // 서버 검증 후 기능 활성화
+        // verify on server then enable features
         _verifyAndDeliver(purchase);
         break;
 
@@ -111,11 +111,11 @@ void _handlePurchaseUpdates(List<PurchaseDetails> purchases) {
         break;
 
       case PurchaseStatus.canceled:
-        // 사용자 취소
+        // user cancelled
         break;
     }
 
-    // 구매 완료 처리 (필수!)
+    // complete purchase (required!)
     if (purchase.pendingCompletePurchase) {
       _iap.completePurchase(purchase);
     }
@@ -123,11 +123,11 @@ void _handlePurchaseUpdates(List<PurchaseDetails> purchases) {
 }
 ```
 
-### 서버 검증
+### Server Verification
 
 ```dart
 Future<void> _verifyAndDeliver(PurchaseDetails purchase) async {
-  // 서버에서 영수증 검증
+  // verify receipt on server
   final verified = await verifyOnServer(
     productId: purchase.productID,
     receipt: purchase.verificationData.serverVerificationData,
@@ -135,22 +135,22 @@ Future<void> _verifyAndDeliver(PurchaseDetails purchase) async {
   );
 
   if (verified) {
-    // 프리미엄 기능 활성화
+    // enable premium features
     await enablePremium(purchase.productID);
   }
 }
 ```
 
-### 구매 복원
+### Restore Purchases
 
 ```dart
 Future<void> restorePurchases() async {
   await _iap.restorePurchases();
-  // purchaseStream에서 restored 상태로 수신됨
+  // received as restored status in purchaseStream
 }
 ```
 
-### UI 예시
+### UI Example
 
 ```dart
 class SubscriptionPage extends StatelessWidget {
@@ -179,12 +179,12 @@ class SubscriptionPage extends StatelessWidget {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 상품 안나옴 | 스토어 상품 등록 상태, 심사 완료 확인 |
-| 테스트 불가 | 샌드박스/테스트 계정 사용 |
-| 영수증 검증 | 서버에서 검증 필수 (클라이언트 신뢰 X) |
-| completePurchase 누락 | 반드시 호출, 안하면 환불됨 |
-| 구독 갱신 | 서버 웹훅으로 상태 동기화 |
+| Products not showing | Check store product registration status and review completion |
+| Cannot test | Use sandbox/test accounts |
+| Receipt verification | Must verify on server (do not trust client) |
+| Missing completePurchase | Must call it, otherwise refund will occur |
+| Subscription renewal | Sync status via server webhooks |

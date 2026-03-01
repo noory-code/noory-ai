@@ -1,35 +1,35 @@
 ---
 name: flutter-geolocator
-description: GPS 위치 정보 조회 및 추적
+description: GPS location retrieval and tracking
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [geolocator, GPS, 위치, location, 좌표]
+  triggers: [geolocator, GPS, location, coordinates]
 ---
 
 # Flutter Geolocator
 
-현재 위치 조회, 위치 추적, 거리 계산.
+Get current location, track location, and calculate distances.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add geolocator
 ```
 
-## 플랫폼 설정
+## Platform Setup
 
 ### iOS (ios/Runner/Info.plist)
 
 ```xml
 <key>NSLocationWhenInUseUsageDescription</key>
-<string>주변 매장을 찾기 위해 위치 정보가 필요합니다.</string>
+<string>Location access is required to find nearby stores.</string>
 <key>NSLocationAlwaysUsageDescription</key>
-<string>백그라운드 위치 추적을 위해 위치 정보가 필요합니다.</string>
+<string>Location access is required for background location tracking.</string>
 ```
 
 ### Android (android/app/src/main/AndroidManifest.xml)
@@ -37,7 +37,7 @@ flutter pub add geolocator
 ```xml
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-<!-- 백그라운드 위치 (선택) -->
+<!-- background location (optional) -->
 <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 ```
 
@@ -45,7 +45,7 @@ flutter pub add geolocator
 
 ## Quick Reference
 
-### 권한 요청
+### Request Permission
 
 ```dart
 import 'package:geolocator/geolocator.dart';
@@ -53,19 +53,19 @@ import 'package:geolocator/geolocator.dart';
 Future<bool> requestPermission() async {
   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
-    return false;  // 위치 서비스 비활성화
+    return false;  // location service disabled
   }
 
   LocationPermission permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied) {
-      return false;  // 권한 거부
+      return false;  // permission denied
     }
   }
 
   if (permission == LocationPermission.deniedForever) {
-    await Geolocator.openAppSettings();  // 설정 화면으로
+    await Geolocator.openAppSettings();  // go to settings screen
     return false;
   }
 
@@ -73,7 +73,7 @@ Future<bool> requestPermission() async {
 }
 ```
 
-### 현재 위치 조회
+### Get Current Location
 
 ```dart
 Future<Position?> getCurrentLocation() async {
@@ -85,21 +85,21 @@ Future<Position?> getCurrentLocation() async {
   );
 }
 
-// 사용
+// usage
 final position = await getCurrentLocation();
 if (position != null) {
-  print('위도: ${position.latitude}');
-  print('경도: ${position.longitude}');
+  print('Latitude: ${position.latitude}');
+  print('Longitude: ${position.longitude}');
 }
 ```
 
-### 마지막 알려진 위치 (빠름)
+### Last Known Position (faster)
 
 ```dart
 final lastPosition = await Geolocator.getLastKnownPosition();
 ```
 
-### 위치 추적 스트림
+### Location Tracking Stream
 
 ```dart
 StreamSubscription<Position>? _positionStream;
@@ -108,10 +108,10 @@ void startTracking() {
   _positionStream = Geolocator.getPositionStream(
     locationSettings: LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10,  // 10m 이동 시마다 업데이트
+      distanceFilter: 10,  // update every 10m movement
     ),
   ).listen((position) {
-    print('새 위치: ${position.latitude}, ${position.longitude}');
+    print('New position: ${position.latitude}, ${position.longitude}');
   });
 }
 
@@ -120,17 +120,17 @@ void stopTracking() {
 }
 ```
 
-### 거리 계산
+### Distance Calculation
 
 ```dart
-// 두 좌표 간 거리 (미터)
+// distance between two coordinates (meters)
 final distanceInMeters = Geolocator.distanceBetween(
-  37.5665, 126.9780,  // 서울시청
-  37.5172, 127.0473,  // 강남역
+  37.5665, 126.9780,  // Seoul City Hall
+  37.5172, 127.0473,  // Gangnam Station
 );
-print('거리: ${(distanceInMeters / 1000).toStringAsFixed(1)}km');
+print('Distance: ${(distanceInMeters / 1000).toStringAsFixed(1)}km');
 
-// 방위각 계산
+// bearing calculation
 final bearing = Geolocator.bearingBetween(
   37.5665, 126.9780,
   37.5172, 127.0473,
@@ -153,12 +153,12 @@ Future<Position?> currentPosition(Ref ref) async {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 권한 거부 | deniedForever면 openAppSettings() 안내 |
-| 위치 부정확 | desiredAccuracy: high 사용 |
-| 배터리 소모 | distanceFilter 설정, 추적이 끝나면 즉시 cancel |
-| 시뮬레이터 | Features > Location에서 위치 설정 |
-| 타임아웃 | timeLimit 파라미터 설정 |
+| Permission denied | If deniedForever, guide to openAppSettings() |
+| Inaccurate location | Use desiredAccuracy: high |
+| Battery drain | Set distanceFilter, cancel immediately when tracking ends |
+| Simulator | Set location in Features > Location |
+| Timeout | Set timeLimit parameter |

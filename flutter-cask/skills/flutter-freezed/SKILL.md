@@ -1,40 +1,40 @@
 ---
 name: flutter-freezed
-description: Freezed 패키지를 사용한 불변 데이터 클래스 생성
+description: Immutable data class generation using the Freezed package
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [freezed, 불변 클래스, data class, union type, sealed class]
+  triggers: [freezed, immutable class, data class, union type, sealed class]
 ---
 
 # Flutter Freezed
 
-Freezed 패키지를 사용한 불변 데이터 클래스 및 Union Type 생성.
+Generate immutable data classes and Union Types using the Freezed package.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
-# 필수
+# required
 flutter pub add freezed_annotation
 flutter pub add dev:freezed
 flutter pub add dev:build_runner
 
-# JSON 직렬화 시
+# for JSON serialization
 flutter pub add json_annotation
 flutter pub add dev:json_serializable
 ```
 
-## 코드 생성
+## Code Generation
 
 ```bash
-# 일회성 빌드
+# one-time build
 dart run build_runner build --delete-conflicting-outputs
 
-# 감시 모드
+# watch mode
 dart run build_runner watch --delete-conflicting-outputs
 ```
 
@@ -43,7 +43,7 @@ dart run build_runner watch --delete-conflicting-outputs
 ## Quick Reference
 
 ```dart
-// 기본 불변 클래스
+// basic immutable class
 @freezed
 abstract class User with _$User {
   const factory User({required String name}) = _User;
@@ -58,12 +58,12 @@ sealed class State with _$State {
   const factory State.error(Exception e) = StateError;
 }
 
-// 사용
+// usage
 final user = User(name: 'Kim');
 final copy = user.copyWith(name: 'Lee');
 final json = user.toJson();
 
-// 패턴 매칭
+// pattern matching
 switch (state) {
   StateLoading() => print('loading'),
   StateData(:final value) => print(value),
@@ -73,22 +73,22 @@ switch (state) {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| `part` 파일 없음 에러 | `dart run build_runner build` 실행 |
-| 변경 사항 미반영 | `--delete-conflicting-outputs` 옵션 추가 |
-| 메서드 추가 불가 | `const ClassName._();` private 생성자 추가 |
-| 중첩 copyWith 안됨 | 중첩 클래스도 @freezed 적용 필요 |
+| Missing `part` file error | Run `dart run build_runner build` |
+| Changes not reflected | Add `--delete-conflicting-outputs` option |
+| Cannot add methods | Add `const ClassName._();` private constructor |
+| Nested copyWith not working | Apply @freezed to nested classes as well |
 
 ---
 
 ## References
 
-| 파일 | 내용 |
+| File | Description |
 |------|------|
-| [basic-usage.md](references/basic-usage.md) | 기본 사용법, copyWith, 메서드 추가 |
-| [union-types.md](references/union-types.md) | Union Types, 패턴 매칭, 공유 속성 |
-| [json.md](references/json.md) | JSON 직렬화, 타입 키 커스터마이징 |
+| [basic-usage.md](references/basic-usage.md) | Basic usage, copyWith, adding methods |
+| [union-types.md](references/union-types.md) | Union Types, pattern matching, shared properties |
+| [json.md](references/json.md) | JSON serialization, type key customization |
 | [options.md](references/options.md) | @Freezed, @unfreezed, @Default, @Assert |

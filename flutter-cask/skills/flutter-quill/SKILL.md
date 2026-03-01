@@ -1,21 +1,21 @@
 ---
 name: flutter-quill
-description: 리치텍스트 에디터 (WYSIWYG)
+description: Rich text editor (WYSIWYG)
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [flutter_quill, 리치텍스트, 에디터, WYSIWYG, 텍스트 편집기]
+  triggers: [flutter_quill, rich text, editor, WYSIWYG, text editor]
 ---
 
 # Flutter Quill
 
-리치텍스트 에디터. 볼드, 이탤릭, 리스트, 이미지 삽입 지원.
+Rich text editor. Supports bold, italic, lists, and image insertion.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add flutter_quill
@@ -25,7 +25,7 @@ flutter pub add flutter_quill
 
 ## Quick Reference
 
-### 기본 에디터
+### Basic Editor
 
 ```dart
 import 'package:flutter_quill/flutter_quill.dart';
@@ -58,10 +58,10 @@ class _RichTextEditorState extends State<RichTextEditor> {
 }
 ```
 
-### 초기 콘텐츠 로드
+### Load Initial Content
 
 ```dart
-// Delta JSON에서 로드
+// load from Delta JSON
 final json = jsonDecode(savedContent);
 final document = Document.fromJson(json);
 final controller = QuillController(
@@ -69,22 +69,22 @@ final controller = QuillController(
   selection: TextSelection.collapsed(offset: 0),
 );
 
-// 일반 텍스트에서 로드
-final document = Document()..insert(0, '초기 텍스트');
+// load from plain text
+final document = Document()..insert(0, 'Initial text');
 ```
 
-### 콘텐츠 저장
+### Save Content
 
 ```dart
-// Delta JSON으로 저장
+// save as Delta JSON
 final json = jsonEncode(_controller.document.toDelta().toJson());
 await saveToDatabase(json);
 
-// 일반 텍스트로 변환
+// convert to plain text
 final plainText = _controller.document.toPlainText();
 ```
 
-### 커스텀 툴바
+### Custom Toolbar
 
 ```dart
 QuillSimpleToolbar(
@@ -104,7 +104,7 @@ QuillSimpleToolbar(
 )
 ```
 
-### 읽기 전용 모드
+### Read-only Mode
 
 ```dart
 QuillEditor.basic(
@@ -116,18 +116,18 @@ QuillEditor.basic(
 )
 ```
 
-### 플레이스홀더
+### Placeholder
 
 ```dart
 QuillEditor.basic(
   controller: _controller,
   configurations: QuillEditorConfigurations(
-    placeholder: '내용을 입력하세요...',
+    placeholder: 'Enter content...',
   ),
 )
 ```
 
-### 에디터 스타일링
+### Editor Styling
 
 ```dart
 QuillEditor.basic(
@@ -152,7 +152,7 @@ QuillEditor.basic(
 )
 ```
 
-### 변경 감지
+### Change Detection
 
 ```dart
 @override
@@ -166,18 +166,18 @@ void initState() {
 }
 ```
 
-### 전체 예시
+### Full Example
 
-→ [references/post-editor-example.md](references/post-editor-example.md) 참조
+→ See [references/post-editor-example.md](references/post-editor-example.md)
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 한글 입력 이슈 | 최신 버전 사용, IME 관련 이슈 확인 |
-| 키보드 가림 | SingleChildScrollView 또는 padding 조정 |
-| 이미지 삽입 | flutter_quill_extensions 패키지 추가 |
-| Delta 포맷 | 서버 저장 시 JSON 문자열로 변환 |
-| 성능 이슈 | 긴 문서는 페이지네이션 고려 |
+| Korean input issues | Use latest version, check IME-related issues |
+| Keyboard obstructing | Adjust SingleChildScrollView or padding |
+| Image insertion | Add flutter_quill_extensions package |
+| Delta format | Convert to JSON string when saving to server |
+| Performance issues | Consider pagination for long documents |

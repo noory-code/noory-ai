@@ -1,8 +1,8 @@
-# Riverpod 테스트
+# Riverpod Testing
 
-Provider 오버라이드를 활용한 테스트 패턴.
+Testing patterns using Provider overrides.
 
-## 기본 설정
+## Basic Setup
 
 ```dart
 // test/widget_test.dart
@@ -29,14 +29,14 @@ void main() {
 
 ---
 
-## Provider 오버라이드
+## Provider Override
 
 ```dart
 testWidgets('Shows user name', (tester) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        // 값 오버라이드
+        // value override
         userProvider.overrideWithValue(
           User(id: '1', name: 'Test User'),
         ),
@@ -51,14 +51,14 @@ testWidgets('Shows user name', (tester) async {
 
 ---
 
-## AsyncNotifier 오버라이드
+## AsyncNotifier Override
 
 ```dart
 testWidgets('Shows todo list', (tester) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        // AsyncValue로 오버라이드
+        // override with AsyncValue
         todoListProvider.overrideWith(() => MockTodoList()),
       ],
       child: MyApp(),
@@ -78,7 +78,7 @@ class MockTodoList extends _$TodoList {
 
 ---
 
-## Unit 테스트 (Container)
+## Unit Test (Container)
 
 ```dart
 void main() {
@@ -97,10 +97,10 @@ void main() {
 
 ---
 
-## 의존성 모킹
+## Mocking Dependencies
 
 ```dart
-// 원본
+// original
 @riverpod
 class TodoList extends _$TodoList {
   @override
@@ -110,7 +110,7 @@ class TodoList extends _$TodoList {
   }
 }
 
-// 테스트
+// test
 testWidgets('Shows todos', (tester) async {
   final mockRepo = MockTodoRepository();
   when(mockRepo.fetchAll()).thenAnswer((_) async => [
@@ -134,7 +134,7 @@ testWidgets('Shows todos', (tester) async {
 
 ---
 
-## 로딩/에러 상태 테스트
+## Testing Loading/Error States
 
 ```dart
 testWidgets('Shows loading', (tester) async {
@@ -155,7 +155,7 @@ testWidgets('Shows loading', (tester) async {
 class _LoadingTodoList extends _$TodoList {
   @override
   Future<List<Todo>> build() async {
-    await Future.delayed(const Duration(days: 1));  // 영원히 로딩
+    await Future.delayed(const Duration(days: 1));  // loading forever
     return [];
   }
 }

@@ -1,55 +1,55 @@
 ---
 name: flutter-talker
-description: 구조화된 로깅 및 디버그 콘솔
+description: Structured logging and debug console
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [talker, talker_flutter, 로깅, logger, 디버그, 로그]
+  triggers: [talker, talker_flutter, logging, logger, debug, log]
 ---
 
 # Flutter Talker
 
-구조화된 로깅 라이브러리. 컬러 콘솔, 에러 추적, UI 로그 뷰어.
+Structured logging library. Color console, error tracking, and UI log viewer.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add talker
-flutter pub add talker_flutter  # UI 뷰어
-flutter pub add talker_dio_logger  # Dio 인터셉터 (선택)
-flutter pub add talker_riverpod_logger  # Riverpod 옵저버 (선택)
+flutter pub add talker_flutter  # UI viewer
+flutter pub add talker_dio_logger  # Dio interceptor (optional)
+flutter pub add talker_riverpod_logger  # Riverpod observer (optional)
 ```
 
 ---
 
 ## Quick Reference
 
-### 기본 사용
+### Basic Usage
 
 ```dart
 import 'package:talker/talker.dart';
 
 final talker = Talker();
 
-// 로그 레벨별 출력
-talker.debug('디버그 메시지');
-talker.info('정보 메시지');
-talker.warning('경고 메시지');
-talker.error('에러 메시지');
+// log by level
+talker.debug('Debug message');
+talker.info('Info message');
+talker.warning('Warning message');
+talker.error('Error message');
 
-// 에러와 스택트레이스
+// error with stack trace
 try {
-  throw Exception('테스트 에러');
+  throw Exception('Test error');
 } catch (e, st) {
-  talker.handle(e, st, '작업 실패');
+  talker.handle(e, st, 'Operation failed');
 }
 ```
 
-### 전역 인스턴스 설정
+### Global Instance Setup
 
 ```dart
 // talker_instance.dart
@@ -62,12 +62,12 @@ final talker = Talker(
   ),
 );
 
-// 사용
+// usage
 import 'talker_instance.dart';
-talker.info('앱 시작');
+talker.info('App started');
 ```
 
-### 커스텀 로그
+### Custom Log
 
 ```dart
 class ApiLog extends TalkerLog {
@@ -80,11 +80,11 @@ class ApiLog extends TalkerLog {
   AnsiPen get pen => AnsiPen()..cyan();
 }
 
-// 사용
+// usage
 talker.logTyped(ApiLog('GET /users - 200'));
 ```
 
-### Dio 인터셉터
+### Dio Interceptor
 
 ```dart
 import 'package:talker_dio_logger/talker_dio_logger.dart';
@@ -102,7 +102,7 @@ dio.interceptors.add(
 );
 ```
 
-### Riverpod 옵저버
+### Riverpod Observer
 
 ```dart
 import 'package:talker_riverpod_logger/talker_riverpod_logger.dart';
@@ -125,12 +125,12 @@ runApp(
 );
 ```
 
-### UI 로그 뷰어
+### UI Log Viewer
 
 ```dart
 import 'package:talker_flutter/talker_flutter.dart';
 
-// 별도 화면으로
+// as a separate screen
 Navigator.push(
   context,
   MaterialPageRoute(
@@ -138,9 +138,9 @@ Navigator.push(
   ),
 );
 
-// 또는 개발자 메뉴에 추가
+// or add to developer menu
 ListTile(
-  title: Text('로그 보기'),
+  title: Text('View Logs'),
   onTap: () => Navigator.push(
     context,
     MaterialPageRoute(builder: (_) => TalkerScreen(talker: talker)),
@@ -148,19 +148,19 @@ ListTile(
 )
 ```
 
-### 프로덕션 설정
+### Production Settings
 
 ```dart
 final talker = Talker(
   settings: TalkerSettings(
-    enabled: !kReleaseMode,  // 릴리스에서 비활성화
+    enabled: !kReleaseMode,  // disable in release
     useHistory: !kReleaseMode,
     useConsoleLogs: !kReleaseMode,
   ),
 );
 ```
 
-### Crashlytics 연동
+### Crashlytics Integration
 
 ```dart
 class CrashlyticsTalkerObserver extends TalkerObserver {
@@ -181,11 +181,11 @@ final talker = Talker(
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 로그 안보임 | settings.enabled 확인 |
-| 히스토리 메모리 | maxHistoryItems 제한, 릴리스에서 비활성화 |
-| 콘솔 색상 깨짐 | 터미널 ANSI 지원 확인 |
-| 릴리스 로그 노출 | kReleaseMode 체크로 비활성화 |
+| Logs not showing | Check settings.enabled |
+| History memory usage | Limit maxHistoryItems, disable in release |
+| Console color broken | Check terminal ANSI support |
+| Logs exposed in release | Disable with kReleaseMode check |

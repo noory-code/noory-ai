@@ -1,27 +1,27 @@
 ---
 name: flutter-admob
-description: Google AdMob 광고 (배너, 전면, 보상형)
+description: Google AdMob ads (banner, interstitial, rewarded)
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [google_mobile_ads, admob, 광고, 배너 광고, 보상형 광고, 수익화]
+  triggers: [google_mobile_ads, admob, ads, banner ad, rewarded ad, monetization]
 ---
 
 # Flutter AdMob
 
-Google AdMob 모바일 광고. 배너, 전면, 보상형 광고 지원.
+Google AdMob mobile advertising. Supports banner, interstitial, and rewarded ads.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add google_mobile_ads
 ```
 
-## 플랫폼 설정
+## Platform Setup
 
 ### iOS (ios/Runner/Info.plist)
 
@@ -49,7 +49,7 @@ flutter pub add google_mobile_ads
 
 ## Quick Reference
 
-### 초기화
+### Initialization
 
 ```dart
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -61,15 +61,15 @@ void main() async {
 }
 ```
 
-### 테스트 광고 ID
+### Test Ad IDs
 
 ```dart
 class AdHelper {
   static String get bannerAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111';  // 테스트
+      return 'ca-app-pub-3940256099942544/6300978111';  // test
     } else {
-      return 'ca-app-pub-3940256099942544/2934735716';  // 테스트
+      return 'ca-app-pub-3940256099942544/2934735716';  // test
     }
   }
 
@@ -91,7 +91,7 @@ class AdHelper {
 }
 ```
 
-### 배너 광고
+### Banner Ad
 
 ```dart
 class BannerAdWidget extends StatefulWidget {
@@ -117,7 +117,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         onAdLoaded: (_) => setState(() {}),
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
-          print('배너 로드 실패: $error');
+          print('Banner load failed: $error');
         },
       ),
     )..load();
@@ -141,18 +141,18 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 }
 ```
 
-### 전면 광고 / 보상형 광고
+### Interstitial Ad / Rewarded Ad
 
-→ [references/ad-types.md](references/ad-types.md) 참조
+→ See [references/ad-types.md](references/ad-types.md)
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 광고 안나옴 | 테스트 ID 사용, AdMob 계정 승인 확인 |
-| 테스트 기기 | addTestDeviceIds() 설정 또는 테스트 ID |
-| 정책 위반 | 자동 클릭, 과도한 광고 금지 |
-| 릴리스에서 안됨 | 실제 광고 ID로 교체, 계정 활성화 |
-| 수익 낮음 | eCPM 높은 광고 형식 사용 (보상형 > 전면 > 배너) |
+| Ad not showing | Use test ID, verify AdMob account approval |
+| Test device | Set addTestDeviceIds() or use test ID |
+| Policy violation | Auto-clicking and excessive ads are prohibited |
+| Not working in release | Replace with real ad ID, activate account |
+| Low revenue | Use higher eCPM ad formats (rewarded > interstitial > banner) |

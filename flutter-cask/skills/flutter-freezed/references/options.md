@@ -1,38 +1,38 @@
-# 설정 옵션
+# Configuration Options
 
-## @Freezed 어노테이션
+## @Freezed Annotation
 
 ```dart
 @Freezed(
-  copyWith: true,              // copyWith 생성 (기본: true)
-  equal: true,                 // == 연산자 생성 (기본: true)
-  toStringOverride: true,      // toString 생성 (기본: true)
-  makeCollectionsUnmodifiable: true,  // List/Map 불변화 (기본: true)
+  copyWith: true,              // generate copyWith (default: true)
+  equal: true,                 // generate == operator (default: true)
+  toStringOverride: true,      // generate toString (default: true)
+  makeCollectionsUnmodifiable: true,  // make List/Map immutable (default: true)
 )
 abstract class User with _$User { ... }
 ```
 
 ---
 
-## @unfreezed (가변 클래스)
+## @unfreezed (Mutable Class)
 
 ```dart
 @unfreezed
 abstract class MutableUser with _$MutableUser {
   factory MutableUser({
     required String name,
-    required final int id,  // final 붙이면 불변
+    required final int id,  // final makes it immutable
   }) = _MutableUser;
 }
 
 final user = MutableUser(name: 'Kim', id: 1);
-user.name = 'Lee';  // OK (가변)
-// user.id = 2;     // 에러 (불변)
+user.name = 'Lee';  // OK (mutable)
+// user.id = 2;     // error (immutable)
 ```
 
 ---
 
-## @Default (기본값)
+## @Default (Default Values)
 
 ```dart
 @freezed
@@ -48,7 +48,7 @@ final settings = Settings();  // darkMode: false, fontSize: 16
 
 ---
 
-## @Assert (검증)
+## @Assert (Validation)
 
 ```dart
 @freezed

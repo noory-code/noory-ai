@@ -1,6 +1,6 @@
-# JSON 직렬화
+# JSON Serialization
 
-## 단일 클래스
+## Single Class
 
 ```dart
 @freezed
@@ -13,7 +13,7 @@ abstract class User with _$User {
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 }
 
-// 사용
+// usage
 final user = User.fromJson({'id': '1', 'user_name': 'Kim'});
 final json = user.toJson();
 ```
@@ -22,7 +22,7 @@ final json = user.toJson();
 
 ## Union Type JSON
 
-기본적으로 `runtimeType` 필드로 타입 구분:
+By default, type is distinguished by the `runtimeType` field:
 
 ```dart
 @freezed
@@ -33,14 +33,14 @@ sealed class Response with _$Response {
   factory Response.fromJson(Map<String, dynamic> json) => _$ResponseFromJson(json);
 }
 
-// JSON 예시
+// JSON example
 // {"runtimeType": "data", "value": "hello"}
 // {"runtimeType": "error", "message": "failed"}
 ```
 
 ---
 
-## 타입 키 커스터마이징
+## Customizing the Type Key
 
 ```dart
 @Freezed(unionKey: 'type', unionValueCase: FreezedUnionCase.pascal)
@@ -51,6 +51,6 @@ sealed class Response with _$Response {
   factory Response.fromJson(Map<String, dynamic> json) => _$ResponseFromJson(json);
 }
 
-// JSON 예시
+// JSON example
 // {"type": "Data", "value": "hello"}
 ```

@@ -1,8 +1,8 @@
-# Notifier 패턴
+# Notifier Pattern
 
-동기식 상태 관리를 위한 클래스 기반 Provider.
+Class-based Provider for synchronous state management.
 
-## 기본 구조
+## Basic Structure
 
 ```dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -12,7 +12,7 @@ part 'counter.g.dart';
 @riverpod
 class Counter extends _$Counter {
   @override
-  int build() => 0;  // 초기 상태
+  int build() => 0;  // initial state
 
   void increment() => state++;
   void decrement() => state--;
@@ -20,14 +20,14 @@ class Counter extends _$Counter {
 }
 ```
 
-**핵심:**
-- `build()`: 초기 상태 반환 (생성자 대신 사용)
-- `state`: 현재 상태 (읽기/쓰기 가능)
-- 메서드: 상태 변경 로직
+**Key points:**
+- `build()`: returns initial state (replaces constructor)
+- `state`: current state (readable and writable)
+- Methods: state change logic
 
 ---
 
-## 복잡한 상태
+## Complex State
 
 ```dart
 @freezed
@@ -55,14 +55,14 @@ class Auth extends _$Auth {
 
 ---
 
-## 의존성 주입
+## Dependency Injection
 
 ```dart
 @riverpod
 class TodoList extends _$TodoList {
   @override
   List<Todo> build() {
-    // 다른 Provider 의존
+    // depend on other providers
     final filter = ref.watch(filterProvider);
     final todos = ref.watch(allTodosProvider);
 
@@ -73,20 +73,20 @@ class TodoList extends _$TodoList {
 
 ---
 
-## 라이프사이클
+## Lifecycle
 
 ```dart
 @riverpod
 class TimerNotifier extends _$TimerNotifier {
   @override
   int build() {
-    // 리소스 초기화
+    // initialize resources
     final timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) => state++,
     );
 
-    // 정리 (dispose)
+    // cleanup (dispose)
     ref.onDispose(() {
       timer.cancel();
     });
@@ -98,14 +98,14 @@ class TimerNotifier extends _$TimerNotifier {
 
 ---
 
-## keepAlive 옵션
+## keepAlive Option
 
 ```dart
-// 기본: autoDispose (사용 안하면 자동 해제)
+// default: autoDispose (released automatically when not used)
 @riverpod
 class Counter extends _$Counter { ... }
 
-// keepAlive: 앱 생명주기 동안 유지
+// keepAlive: persists for app lifecycle
 @Riverpod(keepAlive: true)
 class AppState extends _$AppState { ... }
 ```

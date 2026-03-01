@@ -1,8 +1,8 @@
 # ShellRoute
 
-중첩 네비게이션과 공통 UI (BottomNavigationBar 등).
+Nested navigation and shared UI (BottomNavigationBar, etc.).
 
-## 기본 구조
+## Basic Structure
 
 ```dart
 @TypedShellRoute<MainShellRoute>(
@@ -37,7 +37,7 @@ class MainShell extends StatelessWidget {
 
 ---
 
-## BottomNavigationBar 연동
+## BottomNavigationBar Integration
 
 ```dart
 class MainBottomNav extends StatelessWidget {
@@ -80,9 +80,9 @@ class MainBottomNav extends StatelessWidget {
 
 ---
 
-## Shell 밖 라우트
+## Routes Outside Shell
 
-Shell 없이 전체 화면으로 표시:
+Display as full screen without shell:
 
 ```dart
 @TypedGoRoute<HomeRoute>(path: '/')
@@ -92,16 +92,16 @@ Shell 없이 전체 화면으로 표시:
     TypedGoRoute<ProfileRoute>(path: '/profile'),
   ],
 )
-// Shell 밖 (전체 화면)
+// outside shell (full screen)
 @TypedGoRoute<LoginRoute>(path: '/login')
 @TypedGoRoute<OnboardingRoute>(path: '/onboarding')
 ```
 
 ---
 
-## StatefulShellRoute (탭별 상태 유지)
+## StatefulShellRoute (Preserve Tab State)
 
-각 탭의 네비게이션 상태를 유지:
+Preserve navigation state per tab:
 
 ```dart
 @TypedStatefulShellRoute<MainShellRoute>(
@@ -141,7 +141,7 @@ class SearchBranch extends StatefulShellBranchData {
 }
 ```
 
-### StatefulNavigationShell 사용
+### Using StatefulNavigationShell
 
 ```dart
 class MainShell extends StatelessWidget {
@@ -151,7 +151,7 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,  // 현재 branch의 navigator
+      body: navigationShell,  // navigator of the current branch
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: navigationShell.currentIndex,
         onTap: (index) => navigationShell.goBranch(index),

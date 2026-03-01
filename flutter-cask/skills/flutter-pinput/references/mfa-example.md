@@ -1,4 +1,4 @@
-# MFA 페이지 예시
+# MFA Page Example
 
 ```dart
 class MfaVerifyPage extends StatefulWidget {
@@ -24,14 +24,14 @@ class _MfaVerifyPageState extends State<MfaVerifyPage> {
       isLoading = true;
       hasError = false;
     });
-    // 검증 로직
+    // verification logic
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text('인증 코드 6자리를 입력하세요'),
+        Text('Enter your 6-digit verification code'),
         SizedBox(height: 24),
         Pinput(
           length: 6,

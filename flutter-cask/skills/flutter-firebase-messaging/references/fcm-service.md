@@ -1,4 +1,4 @@
-# FCM 전체 초기화 예시
+# FCM Full Initialization Example
 
 ```dart
 class FCMService {

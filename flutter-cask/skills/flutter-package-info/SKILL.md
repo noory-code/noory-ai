@@ -1,21 +1,21 @@
 ---
 name: flutter-package-info
-description: 앱 버전, 빌드 번호 등 패키지 정보 조회
+description: Retrieve package info such as app version and build number
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [package_info_plus, 앱 버전, 빌드 번호, 버전 정보, 패키지 정보]
+  triggers: [package_info_plus, app version, build number, version info, package info]
 ---
 
 # Flutter Package Info Plus
 
-앱 버전, 빌드 번호, 패키지명 등 앱 정보 조회.
+Retrieve app information such as version, build number, and package name.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add package_info_plus
@@ -25,22 +25,22 @@ flutter pub add package_info_plus
 
 ## Quick Reference
 
-### 기본 사용
+### Basic Usage
 
 ```dart
 import 'package:package_info_plus/package_info_plus.dart';
 
-// 패키지 정보 가져오기
+// get package info
 final packageInfo = await PackageInfo.fromPlatform();
 
-print(packageInfo.appName);        // 앱 이름
-print(packageInfo.packageName);    // 패키지명 (com.example.app)
-print(packageInfo.version);        // 버전 (1.0.0)
-print(packageInfo.buildNumber);    // 빌드 번호 (1)
-print(packageInfo.buildSignature); // 빌드 서명 (Android만)
+print(packageInfo.appName);        // app name
+print(packageInfo.packageName);    // package name (com.example.app)
+print(packageInfo.version);        // version (1.0.0)
+print(packageInfo.buildNumber);    // build number (1)
+print(packageInfo.buildSignature); // build signature (Android only)
 ```
 
-### 앱 시작 시 캐싱
+### Cache at App Startup
 
 ```dart
 class AppInfo {
@@ -62,11 +62,11 @@ void main() async {
   runApp(MyApp());
 }
 
-// 사용
+// usage
 Text('v${AppInfo.fullVersion}')  // v1.0.0+1
 ```
 
-### 버전 표시 위젯
+### Version Display Widget
 
 ```dart
 class VersionText extends StatelessWidget {
@@ -87,7 +87,7 @@ class VersionText extends StatelessWidget {
 }
 ```
 
-### 업데이트 체크
+### Update Check
 
 ```dart
 Future<bool> needsUpdate(String latestVersion) async {
@@ -103,15 +103,15 @@ Future<bool> needsUpdate(String latestVersion) async {
 }
 ```
 
-### 설정 화면 예시
+### Settings Screen Example
 
 ```dart
 ListTile(
-  title: Text('앱 정보'),
+  title: Text('App Info'),
   subtitle: FutureBuilder<PackageInfo>(
     future: PackageInfo.fromPlatform(),
     builder: (context, snapshot) {
-      if (!snapshot.hasData) return Text('로딩 중...');
+      if (!snapshot.hasData) return Text('Loading...');
       return Text('${snapshot.data!.appName} v${snapshot.data!.version}');
     },
   ),
@@ -122,11 +122,11 @@ ListTile(
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 빌드 번호 다름 | pubspec.yaml version 형식: 1.0.0+1 |
-| Web에서 안됨 | Web 미지원, 폴백 값 사용 |
-| 느린 로딩 | 앱 시작 시 한 번만 로드 후 캐싱 |
-| 테스트 실패 | mock 또는 integration test 사용 |
+| Different build number | pubspec.yaml version format: 1.0.0+1 |
+| Not working on web | Web not supported, use fallback values |
+| Slow loading | Load once at app startup and cache |
+| Test failure | Use mock or integration test |

@@ -1,36 +1,36 @@
 ---
 name: flutter-go-router
-description: go_router + go_router_builder를 사용한 타입 안전 라우팅
+description: Type-safe routing using go_router + go_router_builder
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [go_router, routing, 라우팅, navigation, 네비게이션, deep link]
+  triggers: [go_router, routing, navigation, deep link]
 ---
 
 # Flutter Go Router
 
-go_router_builder를 사용한 코드 생성 기반 타입 안전 라우팅.
+Code-generation-based type-safe routing using go_router_builder.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
-# 필수
+# required
 flutter pub add go_router
 flutter pub add dev:go_router_builder
 flutter pub add dev:build_runner
 ```
 
-## 코드 생성
+## Code Generation
 
 ```bash
-# 일회성 빌드
+# one-time build
 dart run build_runner build --delete-conflicting-outputs
 
-# 감시 모드
+# watch mode
 dart run build_runner watch -d
 ```
 
@@ -43,7 +43,7 @@ import 'package:go_router/go_router.dart';
 
 part 'router.g.dart';
 
-// 라우트 정의
+// route definition
 @TypedGoRoute<HomeRoute>(
   path: '/',
   routes: [
@@ -80,10 +80,10 @@ class SettingsRoute extends GoRouteData {
   }
 }
 
-// GoRouter 설정
+// GoRouter setup
 final router = GoRouter(routes: $appRoutes);
 
-// App 설정
+// App setup
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -92,17 +92,17 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-### 네비게이션
+### Navigation
 
 ```dart
-// 타입 안전 네비게이션
+// type-safe navigation
 const HomeRoute().go(context);
 ProfileRoute(userId: 'user-123').go(context);
 
-// push (스택에 추가)
+// push (add to stack)
 ProfileRoute(userId: 'user-123').push(context);
 
-// replace (현재 화면 교체)
+// replace (replace current screen)
 const SettingsRoute().replace(context);
 ```
 
@@ -142,21 +142,21 @@ class HomeBranch extends StatefulShellBranchData {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 라우트 찾을 수 없음 | `$appRoutes` 사용 확인 |
-| 파라미터 타입 에러 | 경로에 `:param` 형식 확인 |
-| 빌드 에러 | `dart run build_runner build` 실행 |
-| 딥링크 안됨 | AndroidManifest.xml / Info.plist 설정 |
+| Route not found | Verify `$appRoutes` is used |
+| Parameter type error | Check `:param` format in path |
+| Build error | Run `dart run build_runner build` |
+| Deep link not working | Configure AndroidManifest.xml / Info.plist |
 
 ---
 
 ## References
 
-| 파일 | 내용 |
+| File | Description |
 |------|------|
-| [routes.md](references/routes.md) | GoRouteData, 파라미터, 쿼리스트링 |
+| [routes.md](references/routes.md) | GoRouteData, parameters, query strings |
 | [navigation.md](references/navigation.md) | go vs push, redirect, guard |
-| [shell-route.md](references/shell-route.md) | ShellRoute, 중첩 네비게이션 |
+| [shell-route.md](references/shell-route.md) | ShellRoute, nested navigation |

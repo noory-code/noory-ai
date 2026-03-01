@@ -1,21 +1,21 @@
 ---
 name: flutter-svg
-description: SVG 벡터 이미지 렌더링
+description: SVG vector image rendering
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [SVG, flutter_svg, 벡터 이미지, 아이콘, 스케일러블]
+  triggers: [SVG, flutter_svg, vector image, icon, scalable]
 ---
 
 # Flutter SVG
 
-SVG 벡터 이미지 렌더링. 해상도 독립적 아이콘/로고에 최적.
+SVG vector image rendering. Optimal for resolution-independent icons and logos.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add flutter_svg
@@ -25,31 +25,31 @@ flutter pub add flutter_svg
 
 ## Quick Reference
 
-### 기본 사용
+### Basic Usage
 
 ```dart
 import 'package:flutter_svg/flutter_svg.dart';
 
-// Asset에서 로드
+// load from assets
 SvgPicture.asset(
   'assets/icons/logo.svg',
   width: 100,
   height: 100,
 )
 
-// 네트워크에서 로드
+// load from network
 SvgPicture.network(
   'https://example.com/icon.svg',
   placeholderBuilder: (context) => CircularProgressIndicator(),
 )
 
-// 문자열에서 로드
+// load from string
 SvgPicture.string(
   '<svg viewBox="0 0 100 100">...</svg>',
 )
 ```
 
-### 색상 변경
+### Change Color
 
 ```dart
 SvgPicture.asset(
@@ -60,7 +60,7 @@ SvgPicture.asset(
   ),
 )
 
-// 테마 색상 사용
+// use theme color
 SvgPicture.asset(
   'assets/icons/menu.svg',
   colorFilter: ColorFilter.mode(
@@ -70,23 +70,23 @@ SvgPicture.asset(
 )
 ```
 
-### 크기 조절
+### Resize
 
 ```dart
-// 고정 크기
+// fixed size
 SvgPicture.asset(
   'assets/logo.svg',
   width: 200,
   height: 100,
 )
 
-// 부모에 맞춤
+// fit to parent
 SvgPicture.asset(
   'assets/logo.svg',
   fit: BoxFit.contain,  // contain, cover, fill, fitWidth, fitHeight
 )
 
-// 종횡비 유지
+// maintain aspect ratio
 SizedBox(
   width: 100,
   child: SvgPicture.asset(
@@ -96,7 +96,7 @@ SizedBox(
 )
 ```
 
-### Asset 등록 (pubspec.yaml)
+### Register Assets (pubspec.yaml)
 
 ```yaml
 flutter:
@@ -105,10 +105,10 @@ flutter:
     - assets/images/
 ```
 
-### 캐싱 (precache)
+### Caching (precache)
 
 ```dart
-// 앱 시작 시 미리 로드
+// preload at app startup
 Future<void> precacheSvgs(BuildContext context) async {
   await Future.wait([
     precachePicture(
@@ -121,23 +121,23 @@ Future<void> precacheSvgs(BuildContext context) async {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| SVG 안보임 | pubspec.yaml에 assets 경로 등록 |
-| 색상 변경 안됨 | SVG 내 fill/stroke 속성이 currentColor인지 확인 |
-| 복잡한 SVG 느림 | 간단한 SVG 사용 또는 PNG로 대체 |
-| 그라디언트 깨짐 | flutter_svg 지원 확인 (일부 제한) |
-| Web에서 CORS | 같은 도메인 또는 CORS 설정 필요 |
+| SVG not showing | Register assets path in pubspec.yaml |
+| Color not changing | Check if fill/stroke attribute in SVG is currentColor |
+| Complex SVG is slow | Use simpler SVG or replace with PNG |
+| Gradient broken | Check flutter_svg support (some limitations) |
+| CORS on web | Same domain or configure CORS |
 
 ---
 
-## SVG 최적화 팁
+## SVG Optimization Tips
 
 ```dart
-// 1. 아이콘은 24x24 또는 48x48 viewBox 사용
-// 2. 불필요한 메타데이터 제거 (SVGO 도구)
-// 3. 단색 아이콘은 path만 남기고 fill="currentColor"
-// 4. 복잡한 일러스트는 PNG 고려
+// 1. Use 24x24 or 48x48 viewBox for icons
+// 2. Remove unnecessary metadata (use SVGO tool)
+// 3. For monochrome icons, keep only path and set fill="currentColor"
+// 4. Consider PNG for complex illustrations
 ```

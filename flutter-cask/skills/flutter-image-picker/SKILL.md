@@ -1,55 +1,55 @@
 ---
 name: flutter-image-picker
-description: 갤러리/카메라에서 이미지 선택
+description: Pick images from gallery or camera
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [image_picker, 사진 선택, 카메라, 갤러리, 이미지 업로드]
+  triggers: [image_picker, photo picker, camera, gallery, image upload]
 ---
 
 # Flutter Image Picker
 
-갤러리/카메라에서 이미지/비디오 선택. 프로필 이미지, 사진 업로드에 사용.
+Pick images/videos from gallery or camera. Used for profile images and photo uploads.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add image_picker
 ```
 
-## 플랫폼 설정
+## Platform Setup
 
 ### iOS (ios/Runner/Info.plist)
 
 ```xml
 <key>NSPhotoLibraryUsageDescription</key>
-<string>프로필 사진을 선택하기 위해 갤러리 접근이 필요합니다.</string>
+<string>Gallery access is required to select a profile photo.</string>
 <key>NSCameraUsageDescription</key>
-<string>프로필 사진을 촬영하기 위해 카메라 접근이 필요합니다.</string>
+<string>Camera access is required to take a profile photo.</string>
 <key>NSMicrophoneUsageDescription</key>
-<string>비디오 촬영을 위해 마이크 접근이 필요합니다.</string>
+<string>Microphone access is required for video recording.</string>
 ```
 
 ### Android
 
-Android 13+ 자동 지원. 추가 설정 불필요.
+Android 13+ supported automatically. No additional setup required.
 
 ---
 
 ## Quick Reference
 
-### 단일 이미지 선택
+### Single Image Selection
 
 ```dart
 import 'package:image_picker/image_picker.dart';
 
 final picker = ImagePicker();
 
-// 갤러리에서 선택
+// pick from gallery
 Future<void> pickFromGallery() async {
   final XFile? image = await picker.pickImage(
     source: ImageSource.gallery,
@@ -61,20 +61,20 @@ Future<void> pickFromGallery() async {
   if (image != null) {
     final bytes = await image.readAsBytes();
     final path = image.path;
-    // 업로드 또는 표시
+    // upload or display
   }
 }
 
-// 카메라로 촬영
+// take photo with camera
 Future<void> takePhoto() async {
   final XFile? image = await picker.pickImage(
     source: ImageSource.camera,
-    preferredCameraDevice: CameraDevice.front,  // 전면/후면
+    preferredCameraDevice: CameraDevice.front,  // front/rear
   );
 }
 ```
 
-### 다중 이미지 선택
+### Multiple Image Selection
 
 ```dart
 Future<void> pickMultipleImages() async {
@@ -85,12 +85,12 @@ Future<void> pickMultipleImages() async {
   );
 
   for (final image in images) {
-    // 각 이미지 처리
+    // process each image
   }
 }
 ```
 
-### 비디오 선택
+### Video Selection
 
 ```dart
 Future<void> pickVideo() async {
@@ -101,15 +101,15 @@ Future<void> pickVideo() async {
 }
 ```
 
-### 선택한 이미지 표시
+### Display Selected Image
 
 ```dart
 XFile? _selectedImage;
 
-// 선택 후
+// after selection
 setState(() => _selectedImage = image);
 
-// 표시
+// display
 if (_selectedImage != null)
   Image.file(
     File(_selectedImage!.path),
@@ -117,7 +117,7 @@ if (_selectedImage != null)
   )
 ```
 
-### Supabase Storage 업로드
+### Upload to Supabase Storage
 
 ```dart
 Future<String?> uploadToSupabase(XFile image) async {
@@ -135,7 +135,7 @@ Future<String?> uploadToSupabase(XFile image) async {
 }
 ```
 
-### 선택 다이얼로그
+### Selection Dialog
 
 ```dart
 Future<void> showImageSourceDialog(BuildContext context) async {
@@ -147,7 +147,7 @@ Future<void> showImageSourceDialog(BuildContext context) async {
         children: [
           ListTile(
             leading: Icon(Icons.photo_library),
-            title: Text('갤러리에서 선택'),
+            title: Text('Choose from Gallery'),
             onTap: () {
               Navigator.pop(context);
               pickFromGallery();
@@ -155,7 +155,7 @@ Future<void> showImageSourceDialog(BuildContext context) async {
           ),
           ListTile(
             leading: Icon(Icons.camera_alt),
-            title: Text('카메라로 촬영'),
+            title: Text('Take Photo'),
             onTap: () {
               Navigator.pop(context);
               takePhoto();
@@ -170,12 +170,12 @@ Future<void> showImageSourceDialog(BuildContext context) async {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| iOS 권한 거부 | Info.plist에 Usage Description 추가 |
-| 이미지 null | 사용자가 취소한 경우 (정상) |
-| 메모리 부족 | maxWidth/maxHeight/imageQuality 설정 |
-| 시뮬레이터 카메라 | 실제 기기에서 테스트 |
-| HEIC 형식 | iOS에서 자동 JPEG 변환됨 |
+| iOS permission denied | Add Usage Description to Info.plist |
+| Image is null | User cancelled (normal behavior) |
+| Out of memory | Set maxWidth/maxHeight/imageQuality |
+| Simulator camera | Test on real device |
+| HEIC format | Automatically converted to JPEG on iOS |

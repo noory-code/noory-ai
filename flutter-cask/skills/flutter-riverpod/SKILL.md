@@ -1,37 +1,37 @@
 ---
 name: flutter-riverpod
-description: Riverpod + riverpod_generator를 사용한 상태 관리
+description: State management using Riverpod + riverpod_generator
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [riverpod, provider, 상태관리, state management, notifier]
+  triggers: [riverpod, provider, state management, notifier]
 ---
 
 # Flutter Riverpod
 
-riverpod_generator를 사용한 코드 생성 기반 상태 관리.
+Code-generation-based state management using riverpod_generator.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
-# 필수
+# required
 flutter pub add flutter_riverpod
 flutter pub add riverpod_annotation
 flutter pub add dev:riverpod_generator
 flutter pub add dev:build_runner
 ```
 
-## 코드 생성
+## Code Generation
 
 ```bash
-# 일회성 빌드
+# one-time build
 dart run build_runner build --delete-conflicting-outputs
 
-# 감시 모드
+# watch mode
 dart run build_runner watch -d
 ```
 
@@ -45,11 +45,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'example.g.dart';
 
-// 단순 Provider (함수)
+// simple Provider (function)
 @riverpod
 String helloWorld(Ref ref) => 'Hello world';
 
-// Notifier (클래스 - 상태 변경 가능)
+// Notifier (class - state can be changed)
 @riverpod
 class Counter extends _$Counter {
   @override
@@ -59,7 +59,7 @@ class Counter extends _$Counter {
   void decrement() => state--;
 }
 
-// AsyncNotifier (비동기)
+// AsyncNotifier (async)
 @riverpod
 class TodoList extends _$TodoList {
   @override
@@ -77,7 +77,7 @@ class TodoList extends _$TodoList {
 }
 ```
 
-### Widget 사용
+### Widget Usage
 
 ```dart
 void main() {
@@ -99,24 +99,24 @@ class MyPage extends ConsumerWidget {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| Provider 찾을 수 없음 | `ProviderScope`로 앱 감싸기 |
-| 상태 변경 안됨 | `ref.read(provider.notifier).method()` 사용 |
-| 빌드 에러 | `dart run build_runner build` 실행 |
-| autoDispose 비활성화 | `@Riverpod(keepAlive: true)` 사용 |
+| Provider not found | Wrap app with `ProviderScope` |
+| State not changing | Use `ref.read(provider.notifier).method()` |
+| Build error | Run `dart run build_runner build` |
+| Disable autoDispose | Use `@Riverpod(keepAlive: true)` |
 
 ---
 
 ## References
 
-| 파일 | 내용 |
+| File | Description |
 |------|------|
-| [notifier.md](references/notifier.md) | Notifier 패턴, 상태 변경, 라이프사이클 |
-| [async-notifier.md](references/async-notifier.md) | AsyncNotifier, 로딩/에러 처리 |
+| [notifier.md](references/notifier.md) | Notifier pattern, state changes, lifecycle |
+| [async-notifier.md](references/async-notifier.md) | AsyncNotifier, loading/error handling |
 | [widgets.md](references/widgets.md) | ConsumerWidget, ref.watch/read/listen |
-| [family.md](references/family.md) | 파라미터 받는 Provider, 캐싱 |
+| [family.md](references/family.md) | Provider with parameters, caching |
 | [stream.md](references/stream.md) | StreamProvider, Supabase Realtime |
-| [testing.md](references/testing.md) | Provider 오버라이드, 모킹, Unit 테스트 |
+| [testing.md](references/testing.md) | Provider override, mocking, unit tests |

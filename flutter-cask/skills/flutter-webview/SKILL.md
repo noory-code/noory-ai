@@ -1,27 +1,27 @@
 ---
 name: flutter-webview
-description: 앱 내 웹페이지 표시 (WebView)
+description: Display web pages inside the app (WebView)
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [webview_flutter, 웹뷰, 임베디드 웹, 웹페이지, 브라우저]
+  triggers: [webview_flutter, webview, embedded web, webpage, browser]
 ---
 
 # Flutter WebView
 
-앱 내에서 웹페이지 표시. 외부 링크, 약관, 웹 콘텐츠 렌더링.
+Display web pages inside the app. For external links, terms, and web content rendering.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add webview_flutter
 ```
 
-## 플랫폼 설정
+## Platform Setup
 
 ### iOS (ios/Runner/Info.plist)
 
@@ -44,7 +44,7 @@ android {
 
 ## Quick Reference
 
-### 기본 사용
+### Basic Usage
 
 ```dart
 import 'package:webview_flutter/webview_flutter.dart';
@@ -71,14 +71,14 @@ class _WebViewPageState extends State<WebViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('웹뷰')),
+      appBar: AppBar(title: Text('WebView')),
       body: WebViewWidget(controller: controller),
     );
   }
 }
 ```
 
-### 네비게이션 제어
+### Navigation Control
 
 ```dart
 controller = WebViewController()
@@ -94,7 +94,7 @@ controller = WebViewController()
       setState(() => _isLoading = false);
     },
     onNavigationRequest: (request) {
-      // 특정 URL 차단
+      // block specific URLs
       if (request.url.contains('blocked.com')) {
         return NavigationDecision.prevent;
       }
@@ -104,7 +104,7 @@ controller = WebViewController()
   ..loadRequest(Uri.parse(url));
 ```
 
-### 뒤로가기 처리
+### Back Navigation Handling
 
 ```dart
 @override
@@ -124,37 +124,37 @@ Widget build(BuildContext context) {
 }
 ```
 
-### JavaScript 실행
+### Execute JavaScript
 
 ```dart
-// JS 실행
+// run JS
 await controller.runJavaScript('document.title');
 
-// JS 결과 받기
+// get JS result
 final result = await controller.runJavaScriptReturningResult(
   'document.title',
 );
-print('페이지 제목: $result');
+print('Page title: $result');
 ```
 
-### JavaScript → Flutter 통신
+### JavaScript to Flutter Communication
 
 ```dart
 controller = WebViewController()
   ..addJavaScriptChannel(
     'FlutterChannel',
     onMessageReceived: (message) {
-      print('JS에서 받은 메시지: ${message.message}');
-      // 메시지 처리
+      print('Message from JS: ${message.message}');
+      // handle message
     },
   )
   ..loadRequest(Uri.parse(url));
 
-// 웹에서 호출
+// call from web
 // FlutterChannel.postMessage('Hello from JS');
 ```
 
-### HTML 문자열 로드
+### Load HTML String
 
 ```dart
 await controller.loadHtmlString('''
@@ -168,7 +168,7 @@ await controller.loadHtmlString('''
 ''');
 ```
 
-### 로딩 인디케이터
+### Loading Indicator
 
 ```dart
 @override
@@ -185,12 +185,12 @@ Widget build(BuildContext context) {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| JS 안됨 | setJavaScriptMode(unrestricted) |
-| 뒤로가기 앱 종료 | canGoBack() 체크 후 goBack() |
-| HTTPS만 됨 | Android: usesCleartextTraffic, iOS: NSAppTransportSecurity |
-| 키보드 가림 | resizeToAvoidBottomInset: true |
-| 쿠키 안됨 | WebViewCookieManager 사용 |
+| JS not working | setJavaScriptMode(unrestricted) |
+| Back exits app | Check canGoBack() then call goBack() |
+| HTTPS only | Android: usesCleartextTraffic, iOS: NSAppTransportSecurity |
+| Keyboard covering content | resizeToAvoidBottomInset: true |
+| Cookies not working | Use WebViewCookieManager |

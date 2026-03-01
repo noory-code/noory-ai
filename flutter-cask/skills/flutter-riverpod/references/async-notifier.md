@@ -1,8 +1,8 @@
-# AsyncNotifier 패턴
+# AsyncNotifier Pattern
 
-비동기 상태 관리를 위한 클래스 기반 Provider.
+Class-based Provider for async state management.
 
-## 기본 구조
+## Basic Structure
 
 ```dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -13,21 +13,21 @@ part 'todo_list.g.dart';
 class TodoList extends _$TodoList {
   @override
   Future<List<Todo>> build() async {
-    // 초기 데이터 로드
+    // load initial data
     final response = await dio.get('/todos');
     return response.data.map(Todo.fromJson).toList();
   }
 }
 ```
 
-**핵심:**
-- `build()`: `Future<T>` 반환
-- `state`: `AsyncValue<T>` 타입
-- 자동으로 로딩/에러 상태 관리
+**Key points:**
+- `build()`: returns `Future<T>`
+- `state`: type is `AsyncValue<T>`
+- Automatically manages loading/error states
 
 ---
 
-## 상태 변경
+## State Changes
 
 ```dart
 @riverpod
@@ -38,10 +38,10 @@ class TodoList extends _$TodoList {
   }
 
   Future<void> addTodo(String title) async {
-    // 로딩 상태로 전환
+    // switch to loading state
     state = const AsyncLoading();
 
-    // 안전하게 실행 (에러 자동 처리)
+    // execute safely (error handled automatically)
     state = await AsyncValue.guard(() async {
       final newTodo = await _createTodo(title);
       return [...state.value ?? [], newTodo];
@@ -60,7 +60,7 @@ class TodoList extends _$TodoList {
 
 ---
 
-## Widget에서 사용
+## Usage in Widget
 
 ```dart
 class TodoListPage extends ConsumerWidget {
@@ -82,20 +82,20 @@ class TodoListPage extends ConsumerWidget {
 
 ---
 
-## AsyncValue 패턴
+## AsyncValue Patterns
 
 ```dart
-// 상태 확인
+// check state
 if (state.isLoading) { ... }
 if (state.hasError) { ... }
 if (state.hasValue) { ... }
 
-// 값 접근
-state.value           // T? (null 가능)
-state.valueOrNull     // T? (동일)
-state.requireValue    // T (null이면 에러)
+// access value
+state.value           // T? (can be null)
+state.valueOrNull     // T? (same)
+state.requireValue    // T (throws if null)
 
-// 변환
+// transform
 state.when(
   data: (value) => ...,
   loading: () => ...,
@@ -110,14 +110,14 @@ state.maybeWhen(
 
 ---
 
-## 새로고침
+## Refresh
 
 ```dart
-// Widget에서
-ref.invalidate(todoListProvider);  // 다시 로드
-ref.refresh(todoListProvider);     // 다시 로드 + 값 반환
+// from widget
+ref.invalidate(todoListProvider);  // reload
+ref.refresh(todoListProvider);     // reload + return value
 
-// Notifier 내부에서
+// from inside Notifier
 Future<void> refresh() async {
   state = const AsyncLoading();
   state = await AsyncValue.guard(() => _fetchTodos());

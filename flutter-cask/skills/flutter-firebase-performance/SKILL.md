@@ -1,50 +1,50 @@
 ---
 name: flutter-firebase-performance
-description: Firebase Performance 앱 성능 모니터링
+description: Firebase Performance app performance monitoring
 metadata:
   version: "1.1.0"
   category: flutter-firebase
   type: unit
   style: guide
-  triggers: [firebase_performance, performance, 성능 모니터링, 앱 속도, 트레이스]
+  triggers: [firebase_performance, performance, performance monitoring, app speed, trace]
 ---
 
 # Flutter Firebase Performance
 
-앱 시작 시간, 네트워크 요청, 커스텀 트레이스로 성능 모니터링.
+Monitor performance via app startup time, network requests, and custom traces.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add firebase_performance
 ```
 
-## 사전 요구사항
+## Prerequisites
 
-- Firebase 프로젝트 설정 완료
-- `flutterfire configure` 실행됨
+- Firebase project configured
+- `flutterfire configure` has been run
 
 ---
 
 ## Quick Reference
 
-### 초기화
+### Initialization
 
 ```dart
 import 'package:firebase_performance/firebase_performance.dart';
 
 final performance = FirebasePerformance.instance;
 
-// 수집 활성화 확인
+// check if collection is enabled
 final isEnabled = await performance.isPerformanceCollectionEnabled();
 ```
 
-### 커스텀 트레이스
+### Custom Traces
 
 ```dart
-// 특정 작업 성능 측정
+// measure performance of a specific operation
 Future<void> loadData() async {
   final trace = performance.newTrace('load_data');
   await trace.start();
@@ -59,10 +59,10 @@ Future<void> loadData() async {
 }
 ```
 
-### HTTP 메트릭
+### HTTP Metrics
 
 ```dart
-// 네트워크 요청 측정
+// measure network request
 Future<void> fetchWithMetric(String url) async {
   final metric = performance.newHttpMetric(url, HttpMethod.Get);
   await metric.start();
@@ -78,7 +78,7 @@ Future<void> fetchWithMetric(String url) async {
 }
 ```
 
-### Dio 인터셉터
+### Dio Interceptor
 
 ```dart
 class PerformanceInterceptor extends Interceptor {
@@ -122,7 +122,7 @@ class PerformanceInterceptor extends Interceptor {
 }
 ```
 
-### 화면 렌더링 성능
+### Screen Rendering Performance
 
 ```dart
 class ScreenTraceWidget extends StatefulWidget {
@@ -163,7 +163,7 @@ class _ScreenTraceWidgetState extends State<ScreenTraceWidget> {
 }
 ```
 
-### 개발 모드 비활성화
+### Disable in Development Mode
 
 ```dart
 void main() async {
@@ -179,11 +179,11 @@ void main() async {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 데이터 안보임 | 24시간 후 대시보드 확인 |
-| 트레이스 안끝남 | finally에서 stop() 호출 필수 |
-| 속성 제한 | 최대 5개 커스텀 속성 |
-| 메트릭 제한 | 최대 32개 커스텀 메트릭 |
+| Data not visible | Check dashboard after 24 hours |
+| Trace not ending | Must call stop() in finally block |
+| Attribute limit | Maximum 5 custom attributes |
+| Metric limit | Maximum 32 custom metrics |

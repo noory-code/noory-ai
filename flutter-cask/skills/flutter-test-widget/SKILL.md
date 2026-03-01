@@ -1,24 +1,24 @@
 ---
 name: flutter-test-widget
-description: flutter_test를 사용한 Widget 테스트
+description: Widget testing using flutter_test
 metadata:
   version: "1.1.0"
   category: flutter-test
   type: unit
   style: guide
-  triggers: [widget test, 위젯 테스트, testWidgets, WidgetTester]
+  triggers: [widget test, testWidgets, WidgetTester]
 ---
 
 # Flutter Widget Test
 
-단일 위젯의 UI와 상호작용을 테스트.
+Test a single widget's UI and interactions.
 
 ---
 
-## 설치
+## Installation
 
 ```yaml
-# pubspec.yaml (SDK 내장)
+# pubspec.yaml (included in SDK)
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -28,7 +28,7 @@ dev_dependencies:
 
 ## Quick Reference
 
-### 기본 구조
+### Basic Structure
 
 ```dart
 import 'package:flutter/material.dart';
@@ -36,13 +36,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('MyWidget has title', (tester) async {
-    // 1. 위젯 빌드
+    // 1. build widget
     await tester.pumpWidget(const MyWidget(title: 'Hello'));
 
-    // 2. 위젯 찾기
+    // 2. find widget
     final titleFinder = find.text('Hello');
 
-    // 3. 검증
+    // 3. verify
     expect(titleFinder, findsOneWidget);
   });
 }
@@ -51,19 +51,19 @@ void main() {
 ### Finders
 
 ```dart
-// 텍스트로 찾기
+// find by text
 find.text('Hello')
 
-// 타입으로 찾기
+// find by type
 find.byType(ElevatedButton)
 
-// Key로 찾기
+// find by key
 find.byKey(const Key('submit_button'))
 
-// 아이콘으로 찾기
+// find by icon
 find.byIcon(Icons.add)
 
-// 조상/자손 관계
+// ancestor/descendant relationship
 find.descendant(
   of: find.byType(ListTile),
   matching: find.text('Item'),
@@ -73,29 +73,29 @@ find.descendant(
 ### Matchers
 
 ```dart
-expect(finder, findsOneWidget);      // 정확히 1개
-expect(finder, findsNothing);        // 0개
-expect(finder, findsWidgets);        // 1개 이상
-expect(finder, findsNWidgets(3));    // 정확히 N개
-expect(finder, findsAtLeast(2));     // 최소 N개
+expect(finder, findsOneWidget);      // exactly 1
+expect(finder, findsNothing);        // 0
+expect(finder, findsWidgets);        // 1 or more
+expect(finder, findsNWidgets(3));    // exactly N
+expect(finder, findsAtLeast(2));     // at least N
 ```
 
-### 상호작용
+### Interactions
 
 ```dart
-// 탭
+// tap
 await tester.tap(find.byType(ElevatedButton));
-await tester.pump();  // setState 반영
+await tester.pump();  // apply setState
 
-// 텍스트 입력
+// enter text
 await tester.enterText(find.byType(TextField), 'hello');
 await tester.pump();
 
-// 드래그
+// drag
 await tester.drag(find.byType(ListView), const Offset(0, -300));
-await tester.pumpAndSettle();  // 애니메이션 완료 대기
+await tester.pumpAndSettle();  // wait for animation to complete
 
-// 스크롤
+// scroll
 await tester.scrollUntilVisible(
   find.text('Item 50'),
   500.0,
@@ -103,54 +103,54 @@ await tester.scrollUntilVisible(
 );
 ```
 
-### Pump 메서드
+### Pump Methods
 
-| 메서드 | 용도 |
+| Method | Purpose |
 |--------|------|
-| `pump()` | 한 프레임 렌더링 |
-| `pump(Duration)` | 지정 시간만큼 진행 |
-| `pumpAndSettle()` | 애니메이션 완료까지 대기 |
-| `pumpWidget(widget)` | 위젯 빌드 |
+| `pump()` | Render one frame |
+| `pump(Duration)` | Advance by specified duration |
+| `pumpAndSettle()` | Wait until animations complete |
+| `pumpWidget(widget)` | Build widget |
 
 ---
 
-## 예시: 카운터 테스트
+## Example: Counter Test
 
 ```dart
 testWidgets('Counter increments', (tester) async {
   await tester.pumpWidget(const MaterialApp(home: CounterPage()));
 
-  // 초기값 확인
+  // verify initial value
   expect(find.text('0'), findsOneWidget);
 
-  // 버튼 탭
+  // tap button
   await tester.tap(find.byIcon(Icons.add));
   await tester.pump();
 
-  // 증가 확인
+  // verify increment
   expect(find.text('1'), findsOneWidget);
 });
 ```
 
 ---
 
-## 실행
+## Running Tests
 
 ```bash
-# 특정 파일
+# specific file
 flutter test test/widget_test.dart
 
-# 전체
+# all
 flutter test
 ```
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 위젯 못 찾음 | `pumpWidget` 후 `pump()` 호출 확인 |
-| 애니메이션 미완료 | `pumpAndSettle()` 사용 |
-| Overflow 에러 | 테스트용 작은 위젯으로 감싸기 |
-| MediaQuery 없음 | `MaterialApp`으로 감싸기 |
+| Widget not found | Check `pump()` is called after `pumpWidget` |
+| Animation incomplete | Use `pumpAndSettle()` |
+| Overflow error | Wrap in smaller test widget |
+| Missing MediaQuery | Wrap with `MaterialApp` |

@@ -1,8 +1,8 @@
 # Union Types (Sealed Class)
 
-여러 상태를 타입 안전하게 표현.
+Type-safe representation of multiple states.
 
-## 정의
+## Definition
 
 ```dart
 @freezed
@@ -15,10 +15,10 @@ sealed class Result<T> with _$Result<T> {
 
 ---
 
-## 패턴 매칭 (Dart 3+)
+## Pattern Matching (Dart 3+)
 
 ```dart
-// switch 표현식
+// switch expression
 final message = switch (result) {
   ResultSuccess(:final data) => 'Success: $data',
   ResultLoading() => 'Loading...',
@@ -33,9 +33,9 @@ if (result case ResultSuccess(:final data)) {
 
 ---
 
-## 공유 속성
+## Shared Properties
 
-모든 생성자에 동일한 이름의 필드가 있으면 직접 접근 가능:
+Fields with the same name in all constructors can be accessed directly:
 
 ```dart
 @freezed
@@ -44,10 +44,10 @@ sealed class Media with _$Media {
   const factory Media.video(String url, Duration length) = MediaVideo;
 }
 
-// url은 모든 생성자에 있음 -> 직접 접근 가능
+// url exists in all constructors -> can be accessed directly
 final media = Media.image('http://...', 800);
 print(media.url);  // OK
 
-// width는 MediaImage에만 있음 -> 직접 접근 불가
-// print(media.width);  // 컴파일 에러
+// width only exists in MediaImage -> cannot be accessed directly
+// print(media.width);  // compile error
 ```

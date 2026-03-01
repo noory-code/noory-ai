@@ -1,21 +1,21 @@
 ---
 name: flutter-hive
-description: Hive를 사용한 경량 NoSQL 로컬 저장소
+description: Lightweight NoSQL local storage using Hive
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [hive, NoSQL, 로컬 저장소, 박스, 오프라인 캐시]
+  triggers: [hive, NoSQL, local storage, box, offline cache]
 ---
 
 # Flutter Hive
 
-경량 NoSQL 로컬 저장소. SQLite보다 빠르고 간단.
+Lightweight NoSQL local storage. Faster and simpler than SQLite.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add hive
@@ -24,7 +24,7 @@ flutter pub add dev:hive_generator
 flutter pub add dev:build_runner
 ```
 
-## 초기화
+## Initialization
 
 ```dart
 // main.dart
@@ -33,10 +33,10 @@ import 'package:hive_flutter/hive_flutter.dart';
 void main() async {
   await Hive.initFlutter();
 
-  // 어댑터 등록 (코드젠 사용 시)
+  // register adapters (when using code gen)
   Hive.registerAdapter(UserAdapter());
 
-  // 박스 열기
+  // open boxes
   await Hive.openBox('settings');
   await Hive.openBox<User>('users');
 
@@ -48,26 +48,26 @@ void main() async {
 
 ## Quick Reference
 
-### 단순 Key-Value 저장
+### Simple Key-Value Storage
 
 ```dart
 final box = Hive.box('settings');
 
-// 저장
+// write
 box.put('theme', 'dark');
-box.put('language', 'ko');
+box.put('language', 'en');
 
-// 읽기
+// read
 final theme = box.get('theme', defaultValue: 'light');
 
-// 삭제
+// delete
 box.delete('theme');
 
-// 모두 삭제
+// clear all
 await box.clear();
 ```
 
-### 타입 어댑터 (코드젠)
+### Type Adapter (Code Gen)
 
 ```dart
 import 'package:hive/hive.dart';
@@ -91,37 +91,37 @@ class User extends HiveObject {
 dart run build_runner build
 ```
 
-### 타입 박스 사용
+### Using a Typed Box
 
 ```dart
 final userBox = Hive.box<User>('users');
 
-// 저장
+// write
 final user = User()
   ..name = 'Kim'
   ..age = 25;
-userBox.add(user);  // 자동 키
-userBox.put('user1', user);  // 수동 키
+userBox.add(user);  // auto key
+userBox.put('user1', user);  // manual key
 
-// 읽기
+// read
 final allUsers = userBox.values.toList();
 final user1 = userBox.get('user1');
 
-// 업데이트 (HiveObject 상속 시)
+// update (when extending HiveObject)
 user.name = 'Lee';
 user.save();
 
-// 삭제
+// delete
 user.delete();
 ```
 
-### 암호화 박스
+### Encrypted Box
 
 ```dart
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// 키 생성/로드
+// generate/load key
 Future<List<int>> getEncryptionKey() async {
   const storage = FlutterSecureStorage();
   final key = await storage.read(key: 'hive_key');
@@ -132,7 +132,7 @@ Future<List<int>> getEncryptionKey() async {
   return newKey;
 }
 
-// 암호화 박스 열기
+// open encrypted box
 final key = await getEncryptionKey();
 await Hive.openBox('secrets', encryptionCipher: HiveAesCipher(key));
 ```
@@ -151,23 +151,23 @@ ValueListenableBuilder(
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| Box not found | `Hive.openBox()` 먼저 호출 |
-| typeId 중복 | 각 모델마다 고유 typeId 사용 |
-| 필드 추가 후 에러 | `@HiveField(n, defaultValue: ...)` 사용 |
-| 웹에서 안됨 | `hive_flutter` 대신 `hive` + IndexedDB 설정 |
-| 대용량 데이터 느림 | LazyBox 사용: `Hive.openLazyBox()` |
+| Box not found | Call `Hive.openBox()` first |
+| Duplicate typeId | Use unique typeId per model |
+| Error after adding field | Use `@HiveField(n, defaultValue: ...)` |
+| Not working on web | Use `hive` + IndexedDB config instead of `hive_flutter` |
+| Slow with large data | Use LazyBox: `Hive.openLazyBox()` |
 
 ---
 
-## LazyBox (대용량)
+## LazyBox (Large Data)
 
 ```dart
 final lazyBox = await Hive.openLazyBox<User>('largeData');
 
-// 비동기 읽기 (메모리 절약)
+// async read (saves memory)
 final user = await lazyBox.get('user1');
 ```

@@ -1,21 +1,21 @@
 ---
 name: flutter-shimmer
-description: 로딩 스켈레톤 애니메이션
+description: Loading skeleton animation
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [shimmer, 스켈레톤, 로딩 UI, placeholder, 로딩 애니메이션]
+  triggers: [shimmer, skeleton, loading UI, placeholder, loading animation]
 ---
 
 # Flutter Shimmer
 
-로딩 중 스켈레톤 애니메이션. 데이터 로딩 UX 개선.
+Skeleton animation while loading. Improves data loading UX.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add shimmer
@@ -25,7 +25,7 @@ flutter pub add shimmer
 
 ## Quick Reference
 
-### 기본 사용
+### Basic Usage
 
 ```dart
 import 'package:shimmer/shimmer.dart';
@@ -41,7 +41,7 @@ Shimmer.fromColors(
 )
 ```
 
-### 스켈레톤 카드
+### Skeleton Card
 
 ```dart
 Widget buildShimmerCard() {
@@ -54,13 +54,13 @@ Widget buildShimmerCard() {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 아바타
+            // avatar
             CircleAvatar(radius: 24, backgroundColor: Colors.white),
             SizedBox(height: 12),
-            // 제목
+            // title
             Container(width: 150, height: 16, color: Colors.white),
             SizedBox(height: 8),
-            // 설명
+            // description
             Container(width: double.infinity, height: 12, color: Colors.white),
             SizedBox(height: 4),
             Container(width: 200, height: 12, color: Colors.white),
@@ -72,7 +72,7 @@ Widget buildShimmerCard() {
 }
 ```
 
-### 리스트 스켈레톤
+### List Skeleton
 
 ```dart
 Widget buildShimmerList({int itemCount = 5}) {
@@ -91,7 +91,7 @@ Widget buildShimmerList({int itemCount = 5}) {
 }
 ```
 
-### 조건부 Shimmer
+### Conditional Shimmer
 
 ```dart
 Widget buildContent({required bool isLoading, required Widget child}) {
@@ -99,14 +99,14 @@ Widget buildContent({required bool isLoading, required Widget child}) {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
-      child: child,  // 실제 레이아웃과 동일한 구조
+      child: child,  // same structure as actual layout
     );
   }
   return child;
 }
 ```
 
-### 다크 모드 대응
+### Dark Mode Support
 
 ```dart
 Shimmer.fromColors(
@@ -120,7 +120,7 @@ Shimmer.fromColors(
 )
 ```
 
-### 재사용 위젯
+### Reusable Widget
 
 ```dart
 class ShimmerBox extends StatelessWidget {
@@ -147,7 +147,7 @@ class ShimmerBox extends StatelessWidget {
   }
 }
 
-// 사용
+// usage
 Shimmer.fromColors(
   baseColor: Colors.grey[300]!,
   highlightColor: Colors.grey[100]!,
@@ -165,11 +165,11 @@ Shimmer.fromColors(
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 애니메이션 안됨 | child에 배경색 있는 위젯 필요 |
-| 성능 이슈 | 리스트 아이템 수 제한 (5-10개) |
-| 레이아웃 다름 | 실제 콘텐츠와 동일한 구조 유지 |
-| 다크모드 어색함 | baseColor/highlightColor 테마별 설정 |
+| Animation not working | Child widget needs a background color |
+| Performance issues | Limit list item count (5-10) |
+| Different layout | Keep same structure as actual content |
+| Awkward in dark mode | Set baseColor/highlightColor per theme |

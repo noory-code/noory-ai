@@ -1,28 +1,28 @@
 ---
 name: flutter-fvm
-description: FVM을 사용한 Flutter SDK 버전 관리
+description: Flutter SDK version management using FVM
 metadata:
   version: "1.1.0"
   category: flutter-tool
   type: unit
   style: guide
-  triggers: [fvm, Flutter 버전, SDK 버전, 버전 관리]
+  triggers: [fvm, Flutter version, SDK version, version management]
 ---
 
 # Flutter FVM
 
-프로젝트별 Flutter SDK 버전 관리 도구. 팀 전체가 동일한 버전 사용 보장.
+Per-project Flutter SDK version management tool. Ensures the entire team uses the same version.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 # macOS (Homebrew)
 brew tap leoafarias/fvm
 brew install fvm
 
-# 또는 pub global
+# or pub global
 dart pub global activate fvm
 ```
 
@@ -30,37 +30,37 @@ dart pub global activate fvm
 
 ## Quick Reference
 
-### 주요 명령어
+### Key Commands
 
-| 명령어 | 설명 |
+| Command | Description |
 |--------|------|
-| `fvm install <version>` | SDK 버전 설치 |
-| `fvm use <version>` | 프로젝트 버전 설정 |
-| `fvm list` | 설치된 버전 목록 |
-| `fvm releases` | 사용 가능한 버전 |
-| `fvm global <version>` | 전역 기본 버전 설정 |
-| `fvm doctor` | 환경 진단 |
+| `fvm install <version>` | Install SDK version |
+| `fvm use <version>` | Set project version |
+| `fvm list` | List installed versions |
+| `fvm releases` | Available versions |
+| `fvm global <version>` | Set global default version |
+| `fvm doctor` | Diagnose environment |
 
-### 버전 설치 및 사용
+### Install and Use a Version
 
 ```bash
-# 사용 가능한 버전 확인
+# check available versions
 fvm releases --channel stable
 
-# 특정 버전 설치
+# install specific version
 fvm install 3.24.0
 
-# 프로젝트에 버전 설정 (.fvmrc 생성)
+# set version for project (creates .fvmrc)
 fvm use 3.24.0
 
-# Flutter 명령 실행 (FVM 경유)
+# run Flutter commands via FVM
 fvm flutter doctor
 fvm dart --version
 ```
 
 ---
 
-## .fvmrc 설정
+## .fvmrc Configuration
 
 ```json
 {
@@ -69,9 +69,9 @@ fvm dart --version
 }
 ```
 
-**Git에 포함**:
-- `.fvmrc` - 커밋 (버전 공유)
-- `.fvm/` - gitignore (로컬 심볼릭 링크)
+**Include in Git**:
+- `.fvmrc` - commit (share version)
+- `.fvm/` - gitignore (local symbolic link)
 
 **.gitignore**:
 ```
@@ -80,7 +80,7 @@ fvm dart --version
 
 ---
 
-## VSCode 설정
+## VSCode Setup
 
 `.vscode/settings.json`:
 ```json
@@ -91,29 +91,29 @@ fvm dart --version
 
 ---
 
-## 규칙
+## Rules
 
-| 항목 | 규칙 |
+| Item | Rule |
 |------|------|
-| **버전 고정** | `.fvmrc`로 프로젝트 버전 명시 |
-| **팀 동기화** | `.fvmrc` Git 커밋 필수 |
-| **IDE 설정** | `.fvm/flutter_sdk` 경로 사용 |
+| **Pin version** | Specify project version with `.fvmrc` |
+| **Team sync** | Must commit `.fvmrc` to Git |
+| **IDE setup** | Use `.fvm/flutter_sdk` path |
 | **CI/CD** | `fvm install && fvm flutter build` |
 
 ---
 
-## 흔한 실수
+## Common Mistakes
 
-| ❌ | ✅ |
+| Wrong | Correct |
 |---|---|
-| `flutter doctor` 직접 실행 | `fvm flutter doctor` |
-| `.fvm/` 전체 커밋 | `.fvmrc`만 커밋 |
-| VSCode 기본 SDK 사용 | `dart.flutterSdkPath` 설정 |
-| 버전 미명시 | `fvm use <version>` 필수 |
+| Run `flutter doctor` directly | `fvm flutter doctor` |
+| Commit entire `.fvm/` | Commit only `.fvmrc` |
+| Use default VSCode SDK | Set `dart.flutterSdkPath` |
+| No version specified | Must run `fvm use <version>` |
 
 ---
 
-## 참고
+## References
 
-- [FVM 공식 문서](https://fvm.app/)
+- [FVM Official Docs](https://fvm.app/)
 - [Getting Started](https://fvm.app/documentation/getting-started/overview)

@@ -1,4 +1,4 @@
-# 디자인 시스템 통합
+# Design System Integration
 
 ```dart
 // theme/dimensions.dart
@@ -23,7 +23,7 @@ class Dimensions {
   static double get radiusLg => 16.r;
 }
 
-// 사용
+// usage
 Container(
   padding: EdgeInsets.all(Dimensions.md),
   decoration: BoxDecoration(

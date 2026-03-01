@@ -1,8 +1,8 @@
 # StreamProvider
 
-실시간 데이터 스트림 처리.
+Real-time data stream handling.
 
-## 기본 사용
+## Basic Usage
 
 ```dart
 @riverpod
@@ -14,7 +14,7 @@ Stream<int> counter(Ref ref) async* {
   }
 }
 
-// 사용
+// usage
 final counterAsync = ref.watch(counterProvider);
 counterAsync.when(
   data: (count) => Text('$count'),
@@ -25,7 +25,7 @@ counterAsync.when(
 
 ---
 
-## Supabase Realtime 예제
+## Supabase Realtime Example
 
 ```dart
 @riverpod
@@ -40,7 +40,7 @@ Stream<List<Message>> chatMessages(Ref ref, String roomId) {
       .map((data) => data.map(Message.fromJson).toList());
 }
 
-// 사용
+// usage
 class ChatPage extends ConsumerWidget {
   final String roomId;
 
@@ -62,7 +62,7 @@ class ChatPage extends ConsumerWidget {
 
 ---
 
-## StreamController 사용
+## Using StreamController
 
 ```dart
 @riverpod
@@ -88,13 +88,13 @@ class NotificationStream extends _$NotificationStream {
 
 ---
 
-## Stream → AsyncValue
+## Stream -> AsyncValue
 
 ```dart
-// Stream은 자동으로 AsyncValue로 래핑됨
+// Streams are automatically wrapped as AsyncValue
 final streamAsync = ref.watch(counterProvider);
 
-// 타입: AsyncValue<int>
+// type: AsyncValue<int>
 streamAsync.value      // int?
 streamAsync.isLoading  // bool
 streamAsync.hasError   // bool

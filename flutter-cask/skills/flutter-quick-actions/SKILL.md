@@ -1,21 +1,21 @@
 ---
 name: flutter-quick-actions
-description: 홈스크린 Quick Action (3D Touch/Long Press)
+description: Home screen Quick Actions (3D Touch / Long Press)
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [quick_actions, 홈스크린, 3D Touch, 앱 아이콘, 바로가기]
+  triggers: [quick_actions, home screen, 3D Touch, app icon, shortcut]
 ---
 
 # Flutter Quick Actions
 
-홈스크린 앱 아이콘 꾹 누르면 나오는 바로가기 메뉴.
+Shortcut menu that appears when long-pressing the app icon on the home screen.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add quick_actions
@@ -25,17 +25,17 @@ flutter pub add quick_actions
 
 ## Quick Reference
 
-### 기본 설정
+### Basic Setup
 
 ```dart
 import 'package:quick_actions/quick_actions.dart';
 
 final quickActions = QuickActions();
 
-// 앱 시작 시 초기화
+// initialize at app startup
 void initQuickActions() {
   quickActions.initialize((type) {
-    // type = shortcutItem의 type 값
+    // type = the type value of the shortcutItem
     switch (type) {
       case 'action_search':
         navigateToSearch();
@@ -46,23 +46,23 @@ void initQuickActions() {
     }
   });
 
-  // Quick Action 아이템 설정
+  // set quick action items
   quickActions.setShortcutItems([
     ShortcutItem(
       type: 'action_search',
-      localizedTitle: '검색',
-      icon: 'icon_search',  // iOS: Asset명, Android: drawable명
+      localizedTitle: 'Search',
+      icon: 'icon_search',  // iOS: asset name, Android: drawable name
     ),
     ShortcutItem(
       type: 'action_new',
-      localizedTitle: '새로 만들기',
+      localizedTitle: 'Create New',
       icon: 'icon_add',
     ),
   ]);
 }
 ```
 
-### iOS 아이콘 설정
+### iOS Icon Setup
 
 ```
 ios/Runner/Assets.xcassets/
@@ -71,14 +71,14 @@ ios/Runner/Assets.xcassets/
     └── icon_search.png (25x25)
 ```
 
-### Android 아이콘 설정
+### Android Icon Setup
 
 ```
 android/app/src/main/res/drawable/
 └── icon_search.xml (Vector Drawable)
 ```
 
-### 콜드 스타트 처리
+### Cold Start Handling
 
 ```dart
 class MyApp extends StatefulWidget {
@@ -97,27 +97,27 @@ class _MyAppState extends State<MyApp> {
       if (mounted) {
         _handleAction(type);
       } else {
-        _initialAction = type;  // 앱 시작 전이면 저장
+        _initialAction = type;  // save before app starts
       }
     });
   }
 
   void _handleAction(String type) {
-    // 네비게이션 처리
+    // handle navigation
   }
 
   @override
   Widget build(BuildContext context) {
-    // _initialAction이 있으면 해당 화면으로 이동
+    // navigate to appropriate screen if _initialAction is set
     return MaterialApp(...);
   }
 }
 ```
 
-### 동적 업데이트
+### Dynamic Updates
 
 ```dart
-// 로그인 후 Quick Action 변경
+// change quick actions after login
 void updateQuickActionsForUser(User user) {
   quickActions.setShortcutItems([
     ShortcutItem(
@@ -127,13 +127,13 @@ void updateQuickActionsForUser(User user) {
     ),
     ShortcutItem(
       type: 'action_favorites',
-      localizedTitle: '즐겨찾기',
+      localizedTitle: 'Favorites',
       icon: 'icon_star',
     ),
   ]);
 }
 
-// 로그아웃 시 초기화
+// clear on logout
 void clearQuickActions() {
   quickActions.clearShortcutItems();
 }
@@ -141,11 +141,11 @@ void clearQuickActions() {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 아이콘 안보임 | iOS: Asset Catalog, Android: drawable 확인 |
-| 콜드 스타트 무시됨 | initialize 전 액션 저장 후 처리 |
-| 최대 4개 제한 | iOS/Android 모두 4개까지만 표시 |
-| 시뮬레이터 안됨 | 실제 기기에서 테스트 |
+| Icon not showing | Check iOS Asset Catalog and Android drawable |
+| Cold start ignored | Save action before initialize, then process |
+| Maximum 4 items | Both iOS and Android display up to 4 |
+| Simulator not working | Test on real device |

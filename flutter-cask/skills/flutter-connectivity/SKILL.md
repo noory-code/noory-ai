@@ -1,21 +1,21 @@
 ---
 name: flutter-connectivity
-description: 네트워크 연결 상태 감지 및 모니터링
+description: Network connectivity detection and monitoring
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [connectivity_plus, 네트워크 상태, 오프라인, 인터넷 연결, 와이파이]
+  triggers: [connectivity_plus, network status, offline, internet connection, wifi]
 ---
 
 # Flutter Connectivity Plus
 
-네트워크 연결 상태 감지. 오프라인/온라인 모드 전환에 활용.
+Network connectivity detection. Used for offline/online mode switching.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add connectivity_plus
@@ -25,7 +25,7 @@ flutter pub add connectivity_plus
 
 ## Quick Reference
 
-### 현재 상태 확인
+### Check Current Status
 
 ```dart
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -39,18 +39,18 @@ Future<void> checkConnection() async {
   final result = await Connectivity().checkConnectivity();
 
   if (result.contains(ConnectivityResult.wifi)) {
-    print('WiFi 연결');
+    print('WiFi connected');
   } else if (result.contains(ConnectivityResult.mobile)) {
-    print('모바일 데이터');
+    print('Mobile data');
   } else if (result.contains(ConnectivityResult.ethernet)) {
-    print('이더넷');
+    print('Ethernet');
   } else if (result.contains(ConnectivityResult.none)) {
-    print('연결 없음');
+    print('No connection');
   }
 }
 ```
 
-### 연결 상태 스트림
+### Connectivity Stream
 
 ```dart
 class ConnectivityService {
@@ -80,11 +80,11 @@ Stream<bool> connectivity(Ref ref) {
   );
 }
 
-// 사용
+// usage
 final isOnline = ref.watch(connectivityProvider).valueOrNull ?? true;
 ```
 
-### 오프라인 배너
+### Offline Banner
 
 ```dart
 class OfflineBanner extends ConsumerWidget {
@@ -100,7 +100,7 @@ class OfflineBanner extends ConsumerWidget {
               color: Colors.red,
               padding: EdgeInsets.all(8),
               child: Text(
-                '인터넷 연결이 없습니다',
+                'No internet connection',
                 style: TextStyle(color: Colors.white),
                 textAlign: TextAlign.center,
               ),
@@ -112,11 +112,11 @@ class OfflineBanner extends ConsumerWidget {
 }
 ```
 
-### 실제 인터넷 연결 확인
+### Verify Actual Internet Access
 
 ```dart
-// connectivity는 네트워크 인터페이스만 확인
-// 실제 인터넷 연결은 별도 확인 필요
+// connectivity only checks the network interface
+// actual internet access requires a separate check
 Future<bool> hasInternetAccess() async {
   try {
     final result = await InternetAddress.lookup('google.com');
@@ -127,32 +127,32 @@ Future<bool> hasInternetAccess() async {
 }
 ```
 
-### 연결 복구 시 데이터 동기화
+### Sync Data on Reconnection
 
 ```dart
 class SyncManager {
   void init() {
     Connectivity().onConnectivityChanged.listen((result) async {
       if (!result.contains(ConnectivityResult.none)) {
-        // 온라인 복귀 시 동기화
+        // sync when back online
         await syncPendingData();
       }
     });
   }
 
   Future<void> syncPendingData() async {
-    // 오프라인 중 쌓인 데이터 서버 전송
+    // send data accumulated while offline to server
   }
 }
 ```
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| WiFi 연결인데 인터넷 안됨 | DNS lookup으로 실제 연결 확인 |
-| 상태 변경 안됨 | 스트림 구독 확인, 권한 확인 |
-| iOS 시뮬레이터 이슈 | 실제 기기에서 테스트 |
-| 배터리 소모 | 필요할 때만 모니터링, dispose 필수 |
+| WiFi connected but no internet | Use DNS lookup to verify actual connection |
+| State not changing | Check stream subscription and permissions |
+| iOS simulator issue | Test on real device |
+| Battery drain | Monitor only when needed, dispose is required |

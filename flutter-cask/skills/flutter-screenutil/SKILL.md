@@ -1,21 +1,21 @@
 ---
 name: flutter-screenutil
-description: 반응형 UI를 위한 화면 크기 적응형 유틸리티
+description: Screen size adaptive utility for responsive UI
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [screenutil, 반응형, 화면 크기, 적응형 UI, 스케일링]
+  triggers: [screenutil, responsive, screen size, adaptive UI, scaling]
 ---
 
 # Flutter ScreenUtil
 
-디자인 기준 크기로 UI를 반응형으로 스케일링. Figma 디자인 그대로 구현 가능.
+Scale UI responsively based on a design reference size. Enables pixel-perfect Figma designs.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add flutter_screenutil
@@ -25,7 +25,7 @@ flutter pub add flutter_screenutil
 
 ## Quick Reference
 
-### 초기화
+### Initialization
 
 ```dart
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -38,8 +38,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      // Figma 디자인 기준 크기
-      designSize: Size(375, 812),  // iPhone X 기준
+      // Figma design reference size
+      designSize: Size(375, 812),  // based on iPhone X
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
@@ -52,40 +52,40 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-### 크기 단위
+### Size Units
 
 ```dart
-// 너비 기준 스케일 (w)
+// width-based scale (w)
 Container(
-  width: 100.w,   // 디자인에서 100px → 화면에 맞게 스케일
-  height: 50.h,  // 높이 기준 스케일 (h)
+  width: 100.w,   // 100px in design -> scaled to fit screen
+  height: 50.h,  // height-based scale (h)
 )
 
-// 반지름 (r) - 원형, 둥근 모서리
+// radius (r) - circles, rounded corners
 Container(
   decoration: BoxDecoration(
     borderRadius: BorderRadius.circular(8.r),
   ),
 )
 
-// 최소값 기준 (sp) - 폰트에 주로 사용
+// minimum-based (sp) - mainly for fonts
 Text(
   'Hello',
   style: TextStyle(fontSize: 16.sp),
 )
 
-// 정사각형 (sp보다 더 일관된 스케일링)
+// square (more consistent scaling than sp)
 Container(
   width: 50.w,
-  height: 50.w,  // 정사각형은 w만 사용
+  height: 50.w,  // use w only for squares
 )
 ```
 
-### 폰트 스케일링
+### Font Scaling
 
 ```dart
 Text(
-  '제목',
+  'Title',
   style: TextStyle(
     fontSize: 24.sp,
     fontWeight: FontWeight.bold,
@@ -93,7 +93,7 @@ Text(
 )
 
 Text(
-  '본문',
+  'Body',
   style: TextStyle(
     fontSize: 14.sp,
     height: 1.5,
@@ -101,7 +101,7 @@ Text(
 )
 ```
 
-### 여백/패딩
+### Margin/Padding
 
 ```dart
 Padding(
@@ -112,7 +112,7 @@ Padding(
   child: ...,
 )
 
-// 모든 방향 동일
+// same in all directions
 Padding(
   padding: EdgeInsets.all(16.r),
   child: ...,
@@ -122,50 +122,50 @@ SizedBox(height: 24.h)
 SizedBox(width: 16.w)
 ```
 
-### 화면 정보
+### Screen Info
 
 ```dart
-// 화면 너비/높이
-final screenWidth = 1.sw;  // 100% 너비
-final screenHeight = 1.sh;  // 100% 높이
+// screen width/height
+final screenWidth = 1.sw;  // 100% width
+final screenHeight = 1.sh;  // 100% height
 
-// 절반
-Container(width: 0.5.sw)  // 화면 너비의 50%
+// half
+Container(width: 0.5.sw)  // 50% of screen width
 
-// 상태바/하단바 높이
+// status bar / bottom bar height
 final statusBarHeight = ScreenUtil().statusBarHeight;
 final bottomBarHeight = ScreenUtil().bottomBarHeight;
 ```
 
-### 조건부 레이아웃
+### Conditional Layout
 
 ```dart
-// 태블릿 감지
+// detect tablet
 if (1.sw > 600) {
-  // 태블릿 레이아웃
+  // tablet layout
 } else {
-  // 폰 레이아웃
+  // phone layout
 }
 
-// 가로/세로 모드
+// landscape/portrait mode
 if (1.sw > 1.sh) {
-  // 가로 모드
+  // landscape mode
 }
 ```
 
-### Extension 활용
+### Extension Usage
 
 ```dart
-// int, double 모두 지원
+// supports both int and double
 100.w
 100.0.h
 16.sp
 8.r
 
-// EdgeInsets 확장
+// EdgeInsets extension
 EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h)
 
-// 또는 직접 사용
+// or use directly
 EdgeInsets.only(
   left: 16.w,
   right: 16.w,
@@ -176,18 +176,18 @@ EdgeInsets.only(
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 초기화 전 사용 | ScreenUtilInit 내부에서만 사용 |
-| 텍스트 너무 작음 | minTextAdapt: true 설정 |
-| 태블릿에서 너무 큼 | maxWidth 제한 또는 조건부 레이아웃 |
-| 핫 리로드 깨짐 | 앱 재시작 |
-| 분할화면 깨짐 | splitScreenMode: true 설정 |
+| Used before initialization | Use only inside ScreenUtilInit |
+| Text too small | Set minTextAdapt: true |
+| Too large on tablet | Limit maxWidth or use conditional layout |
+| Hot reload broken | Restart app |
+| Split screen broken | Set splitScreenMode: true |
 
 ---
 
-## 디자인 시스템 통합
+## Design System Integration
 
-→ [references/design-system.md](references/design-system.md) 참조
+→ See [references/design-system.md](references/design-system.md)

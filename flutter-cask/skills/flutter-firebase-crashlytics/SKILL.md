@@ -1,36 +1,36 @@
 ---
 name: flutter-firebase-crashlytics
-description: Firebase Crashlytics 크래시 리포팅
+description: Firebase Crashlytics crash reporting
 metadata:
   version: "1.1.0"
   category: flutter-firebase
   type: unit
   style: guide
-  triggers: [firebase_crashlytics, crashlytics, 크래시 리포트, 에러 추적, 앱 충돌]
+  triggers: [firebase_crashlytics, crashlytics, crash report, error tracking, app crash]
 ---
 
 # Flutter Firebase Crashlytics
 
-앱 크래시 자동 수집 및 리포팅. 에러 원인 분석에 필수.
+Automatic crash collection and reporting. Essential for error root cause analysis.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add firebase_crashlytics
 ```
 
-## 사전 요구사항
+## Prerequisites
 
-- Firebase 프로젝트 설정 완료
-- `flutterfire configure` 실행됨
+- Firebase project configured
+- `flutterfire configure` has been run
 
 ---
 
 ## Quick Reference
 
-### 초기화
+### Initialization
 
 ```dart
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -39,10 +39,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  // Flutter 에러 자동 수집
+  // auto-collect Flutter errors
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
 
-  // 비동기 에러 수집
+  // collect async errors
   PlatformDispatcher.instance.onError = (error, stack) {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
@@ -52,7 +52,7 @@ void main() async {
 }
 ```
 
-### 수동 에러 리포트
+### Manual Error Reporting
 
 ```dart
 try {
@@ -61,40 +61,40 @@ try {
   await FirebaseCrashlytics.instance.recordError(
     e,
     stack,
-    reason: 'riskyOperation 실패',
+    reason: 'riskyOperation failed',
     fatal: false,
   );
 }
 ```
 
-### 사용자 정보 추가
+### Adding User Information
 
 ```dart
-// 사용자 식별
+// user identification
 await FirebaseCrashlytics.instance.setUserIdentifier('user_123');
 
-// 커스텀 키
+// custom keys
 await FirebaseCrashlytics.instance.setCustomKey('role', 'admin');
 await FirebaseCrashlytics.instance.setCustomKey('screen', 'checkout');
 
-// 로그 메시지 (크래시 발생 시 함께 전송)
-FirebaseCrashlytics.instance.log('결제 프로세스 시작');
+// log message (sent together when crash occurs)
+FirebaseCrashlytics.instance.log('Payment process started');
 ```
 
-### 테스트 크래시
+### Test Crash
 
 ```dart
-// 테스트용 강제 크래시 (개발 중만 사용)
+// force crash for testing (development only)
 FirebaseCrashlytics.instance.crash();
 ```
 
-### 수집 비활성화 (개발/디버그)
+### Disable Collection (Development/Debug)
 
 ```dart
 void main() async {
   await Firebase.initializeApp();
 
-  // 디버그 모드에서 비활성화
+  // disable in debug mode
   if (kDebugMode) {
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
   }
@@ -131,7 +131,7 @@ runApp(
 );
 ```
 
-### 전체 초기화 예시
+### Full Initialization Example
 
 ```dart
 Future<void> initCrashlytics() async {
@@ -153,11 +153,11 @@ Future<void> initCrashlytics() async {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| 리포트 안보임 | 앱 재시작 후 전송됨, 몇 분 대기 |
-| dSYM 없음 (iOS) | Archive 후 자동 업로드 확인 |
-| 난독화 안풀림 | ProGuard mapping 업로드 |
-| 너무 많은 리포트 | 중복 제거, fatal만 분류 |
+| Report not visible | Sent after app restart, wait a few minutes |
+| No dSYM (iOS) | Verify automatic upload after Archive |
+| Obfuscation not resolved | Upload ProGuard mapping |
+| Too many reports | Deduplicate, classify fatal only |

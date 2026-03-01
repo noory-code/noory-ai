@@ -1,8 +1,8 @@
 # Family Provider
 
-파라미터를 받는 Provider. riverpod_generator에서는 함수 인자로 자동 처리.
+Provider that accepts parameters. In riverpod_generator, handled automatically via function arguments.
 
-## 함수 기반 (단순)
+## Function-based (Simple)
 
 ```dart
 @riverpod
@@ -10,11 +10,11 @@ String greeting(Ref ref, String name) {
   return 'Hello, $name';
 }
 
-// 사용
+// usage
 final msg = ref.watch(greetingProvider('Kim'));
 ```
 
-## Notifier 기반
+## Notifier-based
 
 ```dart
 @riverpod
@@ -27,18 +27,18 @@ class TodoDetail extends _$TodoDetail {
   Future<void> update(String title) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return await updateTodo(todoId, title);  // todoId 접근 가능
+      return await updateTodo(todoId, title);  // todoId accessible
     });
   }
 }
 
-// 사용
+// usage
 final todo = ref.watch(todoDetailProvider('todo-123'));
 ```
 
 ---
 
-## 여러 파라미터
+## Multiple Parameters
 
 ```dart
 @riverpod
@@ -50,7 +50,7 @@ Future<List<Post>> userPosts(
   return await fetchPosts(userId, page: page, limit: limit);
 }
 
-// 사용
+// usage
 final posts = ref.watch(
   userPostsProvider('user-1', page: 2, limit: 10),
 );
@@ -58,14 +58,14 @@ final posts = ref.watch(
 
 ---
 
-## 캐싱 동작
+## Caching Behavior
 
 ```dart
-// 같은 파라미터 = 같은 인스턴스 (캐시됨)
+// same parameter = same instance (cached)
 ref.watch(todoDetailProvider('todo-1'));
-ref.watch(todoDetailProvider('todo-1'));  // 캐시 hit
+ref.watch(todoDetailProvider('todo-1'));  // cache hit
 
-// 다른 파라미터 = 다른 인스턴스
+// different parameter = different instance
 ref.watch(todoDetailProvider('todo-1'));
-ref.watch(todoDetailProvider('todo-2'));  // 별도 인스턴스
+ref.watch(todoDetailProvider('todo-2'));  // separate instance
 ```

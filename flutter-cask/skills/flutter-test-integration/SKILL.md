@@ -1,21 +1,21 @@
 ---
 name: flutter-test-integration
-description: integration_test를 사용한 E2E 테스트
+description: E2E testing using integration_test
 metadata:
   version: "1.1.0"
   category: flutter-test
   type: unit
   style: guide
-  triggers: [integration test, 통합 테스트, E2E, end-to-end]
+  triggers: [integration test, E2E, end-to-end]
 ---
 
 # Flutter Integration Test
 
-전체 앱의 E2E 플로우를 실제 디바이스/에뮬레이터에서 테스트.
+Test complete app E2E flows on real devices/emulators.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
@@ -23,14 +23,14 @@ flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
 
 ---
 
-## 폴더 구조
+## Folder Structure
 
 ```
 lib/
   main.dart
-integration_test/        # test/ 와 별도
+integration_test/        # separate from test/
   app_test.dart
-test_driver/             # 웹 테스트 시 필요
+test_driver/             # required for web testing
   integration_test.dart
 ```
 
@@ -38,7 +38,7 @@ test_driver/             # 웹 테스트 시 필요
 
 ## Quick Reference
 
-### 기본 구조
+### Basic Structure
 
 ```dart
 import 'package:flutter/material.dart';
@@ -51,10 +51,10 @@ void main() {
 
   group('E2E Test', () {
     testWidgets('complete user flow', (tester) async {
-      // 앱 실행
+      // launch app
       await tester.pumpWidget(const MyApp());
 
-      // 테스트 로직
+      // test logic
       expect(find.text('Home'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('login_button')));
@@ -66,18 +66,18 @@ void main() {
 }
 ```
 
-### Key 사용 (필수)
+### Using Keys (Required)
 
 ```dart
 // lib/main.dart
 ElevatedButton(
-  key: const Key('submit_button'),  // 테스트용 Key
+  key: const Key('submit_button'),  // Key for testing
   onPressed: _submit,
   child: const Text('Submit'),
 )
 ```
 
-### 웹 테스트 드라이버
+### Web Test Driver
 
 ```dart
 // test_driver/integration_test.dart
@@ -88,14 +88,14 @@ Future<void> main() => integrationDriver();
 
 ---
 
-## 실행
+## Running Tests
 
 ```bash
-# 모바일/데스크톱
+# mobile/desktop
 flutter test integration_test/app_test.dart
 
-# 웹 (ChromeDriver 필요)
-chromedriver --port=4444  # 별도 터미널
+# web (requires ChromeDriver)
+chromedriver --port=4444  # separate terminal
 
 flutter drive \
   --driver=test_driver/integration_test.dart \
@@ -105,40 +105,40 @@ flutter drive \
 
 ---
 
-## 플랫폼별 실행
+## Platform Commands
 
-| 플랫폼 | 명령어 |
+| Platform | Command |
 |--------|--------|
 | Android | `flutter test integration_test/ -d <device_id>` |
 | iOS | `flutter test integration_test/ -d <device_id>` |
 | macOS | `flutter test integration_test/` |
 | Linux | `xvfb-run flutter test integration_test/` (CI) |
-| Web | `flutter drive` (ChromeDriver 필요) |
+| Web | `flutter drive` (requires ChromeDriver) |
 
 ---
 
 ## Firebase Test Lab
 
 ```bash
-# Android APK 빌드
+# build Android APK
 flutter build apk --debug
 pushd android
 ./gradlew app:assembleAndroidTest
 ./gradlew app:assembleDebug -Ptarget=integration_test/app_test.dart
 popd
 
-# Firebase Console에서 업로드
+# upload in Firebase Console
 # - App APK: build/app/outputs/apk/debug/*.apk
 # - Test APK: build/app/outputs/apk/androidTest/debug/*.apk
 ```
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| Binding 에러 | `IntegrationTestWidgetsFlutterBinding.ensureInitialized()` 확인 |
-| 위젯 못 찾음 | `Key` 추가 및 `pumpAndSettle()` 사용 |
-| 웹 테스트 실패 | ChromeDriver 실행 확인 |
-| CI 리눅스 | `xvfb-run` 사용 |
+| Binding error | Check `IntegrationTestWidgetsFlutterBinding.ensureInitialized()` |
+| Widget not found | Add `Key` and use `pumpAndSettle()` |
+| Web test failure | Check ChromeDriver is running |
+| CI Linux | Use `xvfb-run` |

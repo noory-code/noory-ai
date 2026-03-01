@@ -1,28 +1,28 @@
 ---
 name: flutter-local-notifications
-description: 로컬 푸시 알림 (스케줄, 반복, 커스텀)
+description: Local push notifications (scheduled, repeating, custom)
 metadata:
   version: "1.1.0"
   category: flutter-lib
   type: unit
   style: guide
-  triggers: [flutter_local_notifications, 로컬 알림, 스케줄 알림, notification, 예약 알림]
+  triggers: [flutter_local_notifications, local notification, scheduled notification, notification]
 ---
 
 # Flutter Local Notifications
 
-로컬 푸시 알림. 스케줄, 반복, 액션 버튼 지원.
+Local push notifications. Supports scheduling, repeating, and action buttons.
 
 ---
 
-## 설치
+## Installation
 
 ```bash
 flutter pub add flutter_local_notifications
-flutter pub add timezone  # 스케줄 알림용
+flutter pub add timezone  # for scheduled notifications
 ```
 
-## 플랫폼 설정
+## Platform Setup
 
 ### iOS (ios/Runner/AppDelegate.swift)
 
@@ -44,7 +44,7 @@ if #available(iOS 10.0, *) {
 
 ## Quick Reference
 
-### 초기화
+### Initialization
 
 ```dart
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -62,7 +62,7 @@ Future<void> initNotifications() async {
   await notifications.initialize(
     InitializationSettings(android: androidSettings, iOS: iosSettings),
     onDidReceiveNotificationResponse: (response) {
-      // 알림 탭 처리
+      // handle notification tap
       final payload = response.payload;
       if (payload != null) handleNotificationTap(payload);
     },
@@ -70,7 +70,7 @@ Future<void> initNotifications() async {
 }
 ```
 
-### 즉시 알림
+### Immediate Notification
 
 ```dart
 Future<void> showNotification({
@@ -81,7 +81,7 @@ Future<void> showNotification({
 }) async {
   const androidDetails = AndroidNotificationDetails(
     'default_channel',
-    '기본 알림',
+    'Default Notifications',
     importance: Importance.high,
     priority: Priority.high,
   );
@@ -97,13 +97,13 @@ Future<void> showNotification({
 }
 ```
 
-### 스케줄 알림
+### Scheduled Notification
 
 ```dart
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 
-// 초기화 시 timezone 설정
+// initialize timezone on startup
 tz.initializeTimeZones();
 
 Future<void> scheduleNotification({
@@ -118,7 +118,7 @@ Future<void> scheduleNotification({
     body,
     tz.TZDateTime.from(scheduledTime, tz.local),
     NotificationDetails(
-      android: AndroidNotificationDetails('scheduled', '예약 알림'),
+      android: AndroidNotificationDetails('scheduled', 'Scheduled Notifications'),
       iOS: DarwinNotificationDetails(),
     ),
     androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -128,10 +128,10 @@ Future<void> scheduleNotification({
 }
 ```
 
-### 반복 알림
+### Repeating Notification
 
 ```dart
-// 매일 특정 시간
+// every day at a specific time
 await notifications.zonedSchedule(
   id,
   title,
@@ -141,7 +141,7 @@ await notifications.zonedSchedule(
   androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
   uiLocalNotificationDateInterpretation:
       UILocalNotificationDateInterpretation.absoluteTime,
-  matchDateTimeComponents: DateTimeComponents.time,  // 매일 반복
+  matchDateTimeComponents: DateTimeComponents.time,  // repeat daily
 );
 
 tz.TZDateTime _nextInstanceOfTime({required int hour, required int minute}) {
@@ -154,17 +154,17 @@ tz.TZDateTime _nextInstanceOfTime({required int hour, required int minute}) {
 }
 ```
 
-### 알림 취소
+### Cancel Notifications
 
 ```dart
-// 특정 알림 취소
+// cancel specific notification
 await notifications.cancel(id);
 
-// 모든 알림 취소
+// cancel all notifications
 await notifications.cancelAll();
 ```
 
-### 권한 요청 (iOS)
+### Request Permission (iOS)
 
 ```dart
 Future<bool> requestPermission() async {
@@ -177,12 +177,12 @@ Future<bool> requestPermission() async {
 
 ---
 
-## 주의사항
+## Common Issues
 
-| 상황 | 해결 |
+| Situation | Solution |
 |------|------|
-| iOS 권한 거부 | requestPermissions 호출 후 설정 안내 |
-| Android 13+ | POST_NOTIFICATIONS 권한 요청 필요 |
-| 스케줄 안됨 | timezone 초기화, SCHEDULE_EXACT_ALARM 권한 |
-| 재부팅 후 사라짐 | RECEIVE_BOOT_COMPLETED + BroadcastReceiver |
-| 백그라운드 안됨 | 포그라운드 서비스 또는 WorkManager 연동 |
+| iOS permission denied | Call requestPermissions then guide to settings |
+| Android 13+ | Need to request POST_NOTIFICATIONS permission |
+| Schedule not working | Initialize timezone, check SCHEDULE_EXACT_ALARM permission |
+| Disappears after reboot | RECEIVE_BOOT_COMPLETED + BroadcastReceiver |
+| Not working in background | Use foreground service or WorkManager integration |

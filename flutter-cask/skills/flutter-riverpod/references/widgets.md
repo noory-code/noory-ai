@@ -1,16 +1,16 @@
 # Riverpod Widgets
 
-Flutter에서 Provider 사용을 위한 위젯들.
+Widgets for using Providers in Flutter.
 
 ## ProviderScope
 
-앱 최상위에서 Provider 상태 저장소 제공.
+Provides the Provider state store at the top of the app.
 
 ```dart
 void main() {
   runApp(
     ProviderScope(
-      // 오버라이드 (테스트용)
+      // overrides (for testing)
       overrides: [
         authRepositoryProvider.overrideWithValue(MockAuthRepository()),
       ],
@@ -24,7 +24,7 @@ void main() {
 
 ## ConsumerWidget
 
-Provider를 사용하는 StatelessWidget.
+StatelessWidget that uses Providers.
 
 ```dart
 class HomePage extends ConsumerWidget {
@@ -41,7 +41,7 @@ class HomePage extends ConsumerWidget {
 
 ## ConsumerStatefulWidget
 
-상태가 필요한 경우.
+When state is required.
 
 ```dart
 class HomePage extends ConsumerStatefulWidget {
@@ -53,7 +53,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // ref 사용 가능
+    // ref is available here
     ref.read(analyticsProvider).logPageView('home');
   }
 
@@ -69,7 +69,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 ## Consumer
 
-위젯 트리 일부만 리빌드.
+Rebuild only a portion of the widget tree.
 
 ```dart
 class HomePage extends StatelessWidget {
@@ -77,14 +77,14 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Header(),  // 리빌드 안됨
+        const Header(),  // not rebuilt
         Consumer(
           builder: (context, ref, child) {
             final count = ref.watch(counterProvider);
-            return Text('Count: $count');  // 여기만 리빌드
+            return Text('Count: $count');  // only this rebuilds
           },
         ),
-        const Footer(),  // 리빌드 안됨
+        const Footer(),  // not rebuilt
       ],
     );
   }
@@ -93,24 +93,24 @@ class HomePage extends StatelessWidget {
 
 ---
 
-## ref 메서드
+## ref Methods
 
-| 메서드 | 용도 | 리빌드 |
+| Method | Purpose | Rebuild |
 |--------|------|--------|
-| `ref.watch(p)` | 값 구독 + 변경 시 리빌드 | O |
-| `ref.read(p)` | 값 1회 읽기 (이벤트 핸들러) | X |
-| `ref.listen(p, cb)` | 변경 시 콜백 실행 | X |
+| `ref.watch(p)` | Subscribe to value + rebuild on change | Yes |
+| `ref.read(p)` | Read value once (event handlers) | No |
+| `ref.listen(p, cb)` | Execute callback on change | No |
 
-### 사용 예시
+### Usage Examples
 
 ```dart
 class MyWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // watch: 빌드에서 사용
+    // watch: use in build
     final count = ref.watch(counterProvider);
 
-    // listen: 사이드 이펙트 (스낵바 등)
+    // listen: side effects (snackbar, etc.)
     ref.listen(errorProvider, (prev, next) {
       if (next != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,7 +120,7 @@ class MyWidget extends ConsumerWidget {
     });
 
     return TextButton(
-      // read: 이벤트 핸들러에서
+      // read: in event handlers
       onPressed: () => ref.read(counterProvider.notifier).increment(),
       child: Text('Count: $count'),
     );
@@ -130,14 +130,14 @@ class MyWidget extends ConsumerWidget {
 
 ---
 
-## select (부분 구독)
+## select (Partial Subscription)
 
-특정 필드만 구독하여 불필요한 리빌드 방지.
+Subscribe to specific fields only to prevent unnecessary rebuilds.
 
 ```dart
-// 전체 구독 (user 변경 시마다 리빌드)
+// full subscription (rebuilds on any user change)
 final user = ref.watch(userProvider);
 
-// 부분 구독 (name 변경 시에만 리빌드)
+// partial subscription (rebuilds only on name change)
 final name = ref.watch(userProvider.select((u) => u.name));
 ```

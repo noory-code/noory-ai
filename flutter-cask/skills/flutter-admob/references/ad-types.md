@@ -1,6 +1,6 @@
-# AdMob 광고 유형별 구현
+# AdMob Ad Type Implementations
 
-## 전면 광고
+## Interstitial Ad
 
 ```dart
 class InterstitialAdService {
@@ -12,7 +12,7 @@ class InterstitialAdService {
       request: AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) => _ad = ad,
-        onAdFailedToLoad: (error) => print('전면 광고 로드 실패: $error'),
+        onAdFailedToLoad: (error) => print('Interstitial ad load failed: $error'),
       ),
     );
   }
@@ -24,7 +24,7 @@ class InterstitialAdService {
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         onAdClosed?.call();
-        loadAd();  // 다음 광고 미리 로드
+        loadAd();  // preload next ad
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
@@ -38,7 +38,7 @@ class InterstitialAdService {
 }
 ```
 
-## 보상형 광고
+## Rewarded Ad
 
 ```dart
 class RewardedAdService {
@@ -50,7 +50,7 @@ class RewardedAdService {
       request: AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) => _ad = ad,
-        onAdFailedToLoad: (error) => print('보상형 광고 로드 실패'),
+        onAdFailedToLoad: (error) => print('Rewarded ad load failed'),
       ),
     );
   }

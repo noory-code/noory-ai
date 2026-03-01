@@ -1,8 +1,8 @@
-# 라우트 정의
+# Route Definitions
 
-go_router_builder를 사용한 타입 안전 라우트.
+Type-safe routes using go_router_builder.
 
-## 기본 라우트
+## Basic Route
 
 ```dart
 import 'package:go_router/go_router.dart';
@@ -22,7 +22,7 @@ class HomeRoute extends GoRouteData {
 
 ---
 
-## Path 파라미터
+## Path Parameters
 
 ```dart
 @TypedGoRoute<UserRoute>(path: '/user/:userId')
@@ -37,14 +37,14 @@ class UserRoute extends GoRouteData {
   }
 }
 
-// 사용
+// usage
 UserRoute(userId: 'user-123').go(context);
 // URL: /user/user-123
 ```
 
 ---
 
-## Query 파라미터
+## Query Parameters
 
 ```dart
 @TypedGoRoute<SearchRoute>(path: '/search')
@@ -60,14 +60,14 @@ class SearchRoute extends GoRouteData {
   }
 }
 
-// 사용
+// usage
 SearchRoute(query: 'flutter', page: 2).go(context);
 // URL: /search?query=flutter&page=2
 ```
 
 ---
 
-## 중첩 라우트
+## Nested Routes
 
 ```dart
 @TypedGoRoute<HomeRoute>(
@@ -91,7 +91,7 @@ class ProfileRoute extends GoRouteData {
 
 class ProfileEditRoute extends GoRouteData {
   const ProfileEditRoute({required this.userId});
-  final String userId;  // 부모 파라미터도 필요
+  final String userId;  // parent parameter also required
   ...
 }
 
@@ -100,7 +100,7 @@ class ProfileEditRoute extends GoRouteData {
 
 ---
 
-## Extra 데이터 (비직렬화)
+## Extra Data (Non-serializable)
 
 ```dart
 @TypedGoRoute<DetailRoute>(path: '/detail')
@@ -115,13 +115,13 @@ class DetailRoute extends GoRouteData {
   }
 }
 
-// 사용 (URL에 포함 안됨, 딥링크 불가)
+// usage (not included in URL, deep link not possible)
 DetailRoute($extra: myObject).go(context);
 ```
 
 ---
 
-## Enum 파라미터
+## Enum Parameters
 
 ```dart
 enum Category { all, popular, recent }
