@@ -329,7 +329,7 @@ async def run_cycles(
                 continue
 
             state.log(f"  Observe complete ({len(observe_result.output)} bytes)")
-            notify(f"Evonest [{proj_name}] — Observe ✓", "→ Plan 단계로")
+            notify(f"Evonest [{proj_name}] — Observe ✓", "→ Plan phase")
 
             # --- Phase 2: Plan ---
             state.log("  [2/4] Plan...")
@@ -349,7 +349,7 @@ async def run_cycles(
                 break
 
             state.log(f"  Plan complete ({len(plan_result.output)} bytes)")
-            notify(f"Evonest [{proj_name}] — Plan ✓", "→ Execute 단계로")
+            notify(f"Evonest [{proj_name}] — Plan ✓", "→ Execute phase")
 
             # --- Cautious mode: pause after Plan ---
             if cautious:
@@ -411,7 +411,7 @@ async def run_cycles(
 
             execute_result = run_execute(state, config, mutation.get("decisions_section", ""))
             state.log(f"  Execute complete ({len(execute_result.output)} bytes)")
-            notify(f"Evonest [{proj_name}] — Execute ✓", "→ Verify 단계로")
+            notify(f"Evonest [{proj_name}] — Execute ✓", "→ Verify phase")
 
             # --- Phase 4: Verify ---
             state.log("  [4/4] Verify...")

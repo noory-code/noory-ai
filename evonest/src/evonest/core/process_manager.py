@@ -1,7 +1,7 @@
-"""ProcessManager — subprocess 통신 추상화 레이어.
+"""ProcessManager — abstraction layer for subprocess communication.
 
-subprocess 호출의 복잡성(retry, timeout, stderr 처리)을 캡슐화하여
-테스트 가능성과 안정성을 개선합니다.
+Encapsulates subprocess complexity (retry, timeout, stderr handling)
+to improve testability and reliability.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ logger = logging.getLogger("evonest")
 
 @dataclass
 class ProcessResult:
-    """프로세스 실행 결과."""
+    """Result of a process execution."""
 
     output: str
     exit_code: int
@@ -30,13 +30,13 @@ _RATE_LIMIT_SIGNALS = ("rate limit", "429", "too many requests", "overloaded")
 
 
 def _is_rate_limit(text: str) -> bool:
-    """텍스트에 rate limit 시그널이 포함되어 있는지 확인."""
+    """Check whether the text contains a rate limit signal."""
     lower = text.lower()
     return any(sig in lower for sig in _RATE_LIMIT_SIGNALS)
 
 
 class ProcessManager:
-    """subprocess 실행 및 통신을 관리하는 추상화 레이어."""
+    """Abstraction layer for running and communicating with subprocesses."""
 
     def __init__(
         self,
@@ -46,13 +46,13 @@ class ProcessManager:
         rate_limit_wait: float = 30.0,
         max_retries: int = 3,
     ) -> None:
-        """ProcessManager 초기화.
+        """Initialize ProcessManager.
 
         Args:
-            timeout: 프로세스 실행 타임아웃 (초).
-            retry_on_rate_limit: rate limit 발생 시 재시도 여부.
-            rate_limit_wait: rate limit 초기 대기 시간 (초). exponential backoff 적용.
-            max_retries: rate limit 최대 재시도 횟수.
+            timeout: Process execution timeout in seconds.
+            retry_on_rate_limit: Whether to retry on rate limit errors.
+            rate_limit_wait: Initial wait time in seconds before retrying after a rate limit. Exponential backoff is applied.
+            max_retries: Maximum number of retries on rate limit.
         """
         self.timeout = timeout
         self.retry_on_rate_limit = retry_on_rate_limit
@@ -66,12 +66,12 @@ class ProcessManager:
         cwd: str | None = None,
         _retry_attempt: int = 0,
     ) -> ProcessResult:
-        """명령어를 subprocess로 실행하고 결과를 반환.
+        """Run a command as a subprocess and return the result.
 
         Args:
-            cmd: 실행할 명령어 리스트.
-            cwd: 작업 디렉토리.
-            _retry_attempt: 내부 사용 - 현재 재시도 횟수 (0부터 시작).
+            cmd: Command list to execute.
+            cwd: Working directory.
+            _retry_attempt: Internal use — current retry count (starts at 0).
 
         Returns:
             ProcessResult with output, exit_code, success.
@@ -94,8 +94,8 @@ class ProcessManager:
 
             self._log_result(result.returncode, elapsed, output, stderr)
 
-            # rate limit 감지 및 재시도
-            # exponential backoff 전략: 30초 → 60초 → 120초 (최대 3회)
+            # Detect rate limit and retry
+            # Exponential backoff strategy: 30s → 60s → 120s (up to 3 retries)
             should_retry = (
                 self.retry_on_rate_limit
                 and _retry_attempt < self.max_retries
@@ -116,7 +116,7 @@ class ProcessManager:
             elapsed = (datetime.now() - started_at).total_seconds()
             stderr_text = self._decode_stderr(exc.stderr)
 
-            # rate limit 재시도 (timeout 발생 시에도 stderr에서 rate limit 감지)
+            # Retry on rate limit even when a timeout occurs (rate limit detected in stderr)
             should_retry_timeout = (
                 self.retry_on_rate_limit
                 and _retry_attempt < self.max_retries
@@ -145,7 +145,7 @@ class ProcessManager:
             )
 
     def _log_result(self, exit_code: int, elapsed: float, output: str, stderr: str) -> None:
-        """실행 결과를 로깅."""
+        """Log the execution result."""
         if exit_code != 0:
             logger.warning(
                 "subprocess exited with code %d after %.1fs. stderr: %s",
@@ -169,15 +169,15 @@ class ProcessManager:
     def _retry_after_rate_limit(
         self, cmd: list[str], cwd: str | None, elapsed: float, attempt: int
     ) -> ProcessResult:
-        """rate limit 발생 후 exponential backoff으로 재시도.
+        """Retry with exponential backoff after a rate limit error.
 
-        재시도 전략:
-        - 1회차: 30초 대기
-        - 2회차: 60초 대기
-        - 3회차: 120초 대기
+        Retry schedule:
+        - Attempt 1: wait 30s
+        - Attempt 2: wait 60s
+        - Attempt 3: wait 120s
         """
         next_attempt = attempt + 1
-        # exponential backoff: base_wait * 2^attempt
+        # Exponential backoff: base_wait * 2^attempt
         delay = self.rate_limit_wait * (2**attempt)
 
         logger.warning(
@@ -192,7 +192,7 @@ class ProcessManager:
 
     @staticmethod
     def _decode_stderr(stderr: bytes | str | None) -> str:
-        """stderr를 문자열로 디코딩."""
+        """Decode stderr to a string."""
         if stderr is None:
             return ""
         if isinstance(stderr, bytes):

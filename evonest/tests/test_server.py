@@ -244,13 +244,13 @@ async def test_proposals_list_shows_title_and_priority(tmp_project: Path) -> Non
     state.proposals_dir.mkdir(parents=True, exist_ok=True)
     proposal_file = state.proposals_dir / "proposal-0001-20260101-000000-000001.md"
     proposal_file.write_text(
-        "# 제안: 테스트 개선\n\n**우선순위**: high\n**작성 페르소나**: architect\n\n내용",
+        "# Proposal: Test Improvement\n\n**Priority**: high\n**Author Persona**: architect\n\nContent",
         encoding="utf-8",
     )
 
     result = await evonest_proposals(str(tmp_project))
 
-    assert "테스트 개선" in result
+    assert "Test Improvement" in result
     assert "high" in result
     assert "architect" in result
     assert "proposal-0001-20260101-000000-000001.md" in result
@@ -271,15 +271,15 @@ async def test_proposals_list_sorted_by_priority(tmp_project: Path) -> None:
         ("proposal-0003-20260101-000000-000003.md", "medium"),
     ]:
         (state.proposals_dir / name).write_text(
-            f"# 제안: {priority} 항목\n\n**우선순위**: {priority}\n**작성 페르소나**: test\n",
+            f"# Proposal: {priority} item\n\n**Priority**: {priority}\n**Author Persona**: test\n",
             encoding="utf-8",
         )
 
     result = await evonest_proposals(str(tmp_project))
 
-    idx_high = result.index("high 항목")
-    idx_medium = result.index("medium 항목")
-    idx_low = result.index("low 항목")
+    idx_high = result.index("high item")
+    idx_medium = result.index("medium item")
+    idx_low = result.index("low item")
     assert idx_high < idx_medium < idx_low
 
 
@@ -288,7 +288,7 @@ async def test_proposals_list_sorted_by_priority(tmp_project: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_tool_identity_corrupted_file(tmp_project: Path) -> None:
-    """손상된 identity.md 파일로 identity 도구 테스트."""
+    """Test the identity tool with a corrupted identity.md file."""
     from evonest.tools.identity import evonest_identity
 
     identity_path = tmp_project / ".evonest" / "identity.md"
@@ -302,7 +302,7 @@ async def test_tool_identity_corrupted_file(tmp_project: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_tool_identity_write_with_null_bytes(tmp_project: Path) -> None:
-    """null 바이트가 포함된 내용으로 identity 업데이트 시도."""
+    """Attempt to update identity with content containing null bytes."""
     from evonest.tools.identity import evonest_identity
 
     content_with_null = "# Test\x00Project\nContent"

@@ -367,7 +367,7 @@ def test_apply_meta_results_advice_overwrites_previous(tmp_project: Path) -> Non
 
 
 def test_parse_meta_json_large_json() -> None:
-    """1MB JSON DoS 경계 검사: graceful failure 검증."""
+    """1MB JSON DoS boundary check: verify graceful failure."""
     large_json = (
         '{"new_personas": ['
         + ",".join(f'{{"id": "p{i}", "name": "P{i}"}}' for i in range(10000))
@@ -379,7 +379,7 @@ def test_parse_meta_json_large_json() -> None:
 
 
 def test_parse_meta_json_deeply_nested() -> None:
-    """100단계 깊이의 중첩 객체: graceful failure 검증."""
+    """100-level deep nested object: verify graceful failure."""
     nested = '{"a":' * 100 + '{"new_personas": [], "new_adversarials": []}' + "}" * 100
     output = f"```json\n{nested}\n```"
     result = parse_meta_json(output)
@@ -387,7 +387,7 @@ def test_parse_meta_json_deeply_nested() -> None:
 
 
 def test_parse_meta_json_prompt_injection() -> None:
-    """프롬프트 인젝션 문자열 처리: graceful failure 검증."""
+    """Prompt injection string handling: verify graceful failure."""
     output = """```json
 {
   "new_personas": [
@@ -402,7 +402,7 @@ def test_parse_meta_json_prompt_injection() -> None:
 
 
 def test_parse_meta_json_truncated() -> None:
-    """잘린 JSON (닫히지 않은 중괄호): graceful failure 검증."""
+    """Truncated JSON (unclosed brace): verify graceful failure."""
     output = """```json
 {
   "new_personas": [
@@ -413,7 +413,7 @@ def test_parse_meta_json_truncated() -> None:
 
 
 def test_parse_meta_json_invalid_unicode() -> None:
-    """잘못된 유니코드 이스케이프: graceful failure 검증."""
+    """Invalid unicode escape sequence: verify graceful failure."""
     output = r"""```json
 {
   "new_personas": [

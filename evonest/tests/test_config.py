@@ -295,7 +295,7 @@ def test_legacy_migration_save_removes_old_keys(tmp_project: Path) -> None:
     ],
 )
 def test_set_adversarial_inputs(tmp_project: Path, key: str, value: str, should_fail: bool) -> None:
-    """설정 키/값에 대한 adversarial 입력 테스트."""
+    """Adversarial input test for config key/value."""
     config = EvonestConfig.load(tmp_project)
 
     if should_fail:
@@ -313,7 +313,7 @@ def test_set_adversarial_inputs(tmp_project: Path, key: str, value: str, should_
 
 
 def test_load_with_path_traversal(tmp_path: Path) -> None:
-    """프로젝트 경로에 path traversal 시도 테스트."""
+    """Test path traversal attempt in the project path."""
     malicious_path = tmp_path / ".." / ".." / ".." / "etc" / "passwd"
     with pytest.raises(FileNotFoundError):
         EvonestConfig.load(malicious_path)

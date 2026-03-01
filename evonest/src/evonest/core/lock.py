@@ -21,7 +21,7 @@ class EvonestLock:
         return self
 
     def _check_and_clean_stale_lock(self) -> None:
-        """stale lock 파일 확인 후 자동 정리."""
+        """Check for a stale lock file and automatically clean it up."""
         try:
             pid_str = self.lock_path.read_text(encoding="utf-8").strip()
             pid = int(pid_str)
@@ -37,7 +37,7 @@ class EvonestLock:
             )
 
     def _is_process_running(self, pid: int) -> bool:
-        """프로세스가 실행 중인지 확인."""
+        """Check whether the given process is running."""
         try:
             os.kill(pid, 0)
             return True

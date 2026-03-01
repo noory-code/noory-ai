@@ -33,9 +33,9 @@ logger = logging.getLogger("evonest")
 
 
 def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> None:
-    """파일에 atomic write 수행 (임시 파일 생성 후 rename).
+    """Perform an atomic write to the file using a temp file and rename.
 
-    디스크 풀, 권한 오류 등으로 쓰기 중 실패 시 원본 파일을 보호합니다.
+    Protects the original file if the write fails due to a full disk, permission error, etc.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
@@ -278,20 +278,20 @@ class ProjectState:
             data: dict[str, Any] | list[Any] = json.loads(path.read_text(encoding="utf-8"))
             return data
         except json.JSONDecodeError as e:
-            logger.warning("JSON 파싱 실패 (파일: %s, 오류: %s), 빈 dict 반환", path, e)
+            logger.warning("JSON parse error (file: %s, error: %s), returning empty dict", path, e)
             return {}
 
     def write_json(self, path: Path, data: dict[str, Any] | list[Any]) -> None:
-        """Write data as pretty-printed JSON (핵심 파일의 경우 .bak 백업 생성)."""
-        # 핵심 파일의 경우 덮어쓰기 전 백업 생성
+        """Write data as pretty-printed JSON (creates a .bak backup for critical files)."""
+        # Create backup before overwriting critical files
         critical_filenames = {"config.json", "progress.json"}
         if path.exists() and path.name in critical_filenames:
             backup_path = path.with_suffix(path.suffix + ".bak")
             try:
                 backup_path.write_bytes(path.read_bytes())
-                logger.debug("백업 생성: %s", backup_path)
+                logger.debug("Backup created: %s", backup_path)
             except OSError as e:
-                logger.warning("백업 생성 실패 (파일: %s, 오류: %s)", path, e)
+                logger.warning("Backup failed (file: %s, error: %s)", path, e)
 
         content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
         _atomic_write_text(path, content, encoding="utf-8")
@@ -316,7 +316,7 @@ class ProjectState:
             with open(self.paths.log_path, "a", encoding="utf-8") as f:
                 f.write(f"{ts}: {message}\n")
         except OSError as e:
-            # 로깅 실패는 조용히 처리 (디스크 풀, 권한 문제 등)
+            # Silently handle logging failures (full disk, permission issues, etc.)
             logger.warning("Failed to write to orchestrator log: %s", e)
         logger.info(message)
 

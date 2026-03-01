@@ -24,13 +24,13 @@ def _slugify(title: str, max_len: int = 60) -> str:
 
     Example: "Shell injection risk in verify.build" → "shell-injection-risk-in-verify-build"
 
-    경로 순회 공격 방지: "..", "/", "\\" 문자를 제거합니다.
+    Path traversal prevention: removes "..", "/", and "\\" characters.
     """
     slug = title.lower()
     slug = re.sub(r"[^a-z0-9]+", "-", slug)
     slug = slug.strip("-")
     slug = slug[:max_len].rstrip("-")
-    # 경로 구분자와 ".." 시퀀스 제거
+    # Remove path separators and ".." sequences
     slug = slug.replace("..", "").replace("/", "").replace("\\", "")
     return slug if slug else "untitled"
 
@@ -47,14 +47,14 @@ def _read_json(path: Path) -> dict[str, Any] | list[Any]:
         result: dict[str, Any] | list[Any] = json.loads(path.read_text(encoding="utf-8"))
         return result
     except json.JSONDecodeError as e:
-        logger.warning("JSON 파싱 실패 (파일: %s, 오류: %s), 빈 dict 반환", path, e)
+        logger.warning("JSON parse error (file: %s, error: %s), returning empty dict", path, e)
         return {}
 
 
 def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> None:
-    """파일에 atomic write 수행 (임시 파일 생성 후 rename).
+    """Perform an atomic write to the file using a temp file and rename.
 
-    디스크 풀, 권한 오류 등으로 쓰기 중 실패 시 원본 파일을 보호합니다.
+    Protects the original file if the write fails due to a full disk, permission error, etc.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
@@ -68,16 +68,16 @@ def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> Non
 
 
 def _write_json(path: Path, data: dict[str, Any] | list[Any]) -> None:
-    """JSON 데이터를 파일에 쓰기 (덮어쓰기 전 .bak 백업 생성)."""
-    # 핵심 파일의 경우 덮어쓰기 전 백업 생성
+    """Write JSON data to a file (creates a .bak backup before overwriting)."""
+    # Create backup before overwriting critical files
     critical_filenames = {"config.json", "progress.json"}
     if path.exists() and path.name in critical_filenames:
         backup_path = path.with_suffix(path.suffix + ".bak")
         try:
             backup_path.write_bytes(path.read_bytes())
-            logger.debug("백업 생성: %s", backup_path)
+            logger.debug("Backup created: %s", backup_path)
         except OSError as e:
-            logger.warning("백업 생성 실패 (파일: %s, 오류: %s)", path, e)
+            logger.warning("Backup failed (file: %s, error: %s)", path, e)
 
     content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
     _atomic_write_text(path, content, encoding="utf-8")
@@ -261,15 +261,15 @@ class ProposalRepository:
         else:
             stem = f"proposal-{ts}"
         path = self._paths.proposals_dir / f"{stem}.md"
-        # 경로 순회 방지: 최종 경로가 proposals_dir 내부에 있는지 검증
+        # Path traversal prevention: verify the resolved path is inside proposals_dir
         try:
             resolved_path = path.resolve()
             resolved_dir = self._paths.proposals_dir.resolve()
             if not resolved_path.is_relative_to(resolved_dir):
-                logger.warning("경로 순회 시도 차단: %s", path)
+                logger.warning("Path traversal attempt blocked: %s", path)
                 path = self._paths.proposals_dir / f"proposal-{ts}.md"
         except (ValueError, OSError):
-            logger.warning("경로 검증 실패, 안전한 기본 경로 사용: %s", path)
+            logger.warning("Path validation failed, using safe default path: %s", path)
             path = self._paths.proposals_dir / f"proposal-{ts}.md"
         # Collision guard
         counter = 2
@@ -317,15 +317,15 @@ class StimulusRepository:
         self._paths.stimuli_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S-%f")
         path = self._paths.stimuli_dir / f"stimulus-{ts}.md"
-        # 경로 순회 방지: 최종 경로가 stimuli_dir 내부에 있는지 검증
+        # Path traversal prevention: verify the resolved path is inside stimuli_dir
         try:
             resolved_path = path.resolve()
             resolved_dir = self._paths.stimuli_dir.resolve()
             if not resolved_path.is_relative_to(resolved_dir):
-                logger.warning("경로 순회 시도 차단: %s", path)
+                logger.warning("Path traversal attempt blocked: %s", path)
                 path = self._paths.stimuli_dir / f"stimulus-{ts}.md"
         except (ValueError, OSError):
-            logger.warning("경로 검증 실패, 안전한 기본 경로 사용: %s", path)
+            logger.warning("Path validation failed, using safe default path: %s", path)
             path = self._paths.stimuli_dir / f"stimulus-{ts}.md"
         _atomic_write_text(path, content)
         return str(path)

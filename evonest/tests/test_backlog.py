@@ -169,7 +169,7 @@ def test_manage_backlog_prune(tmp_project: Path) -> None:
 
 
 def test_save_observations_none_title(tmp_project: Path) -> None:
-    """None 제목으로 observations 저장 시도 - 'untitled'로 변환됨."""
+    """Saving observations with a None title — converted to 'untitled'."""
     state = ProjectState(tmp_project)
     improvements = [{"title": None, "category": "test"}]
     added = save_observations(state, improvements, "test", 1)
@@ -180,7 +180,7 @@ def test_save_observations_none_title(tmp_project: Path) -> None:
 
 
 def test_save_observations_very_long_title(tmp_project: Path) -> None:
-    """매우 긴 제목(10K 문자)으로 observations 저장."""
+    """Save observations with a very long title (10K characters)."""
     state = ProjectState(tmp_project)
     long_title = "x" * 10000
     improvements = [{"title": long_title, "category": "test"}]
@@ -203,7 +203,7 @@ def test_save_observations_very_long_title(tmp_project: Path) -> None:
 def test_save_observations_path_traversal_files(
     tmp_project: Path, files_input: str | list[str]
 ) -> None:
-    """파일 목록에 path traversal 시도."""
+    """Path traversal attempt in the files list."""
     state = ProjectState(tmp_project)
     improvements = [{"title": "Test", "files": files_input}]
     added = save_observations(state, improvements, "test", 1)
@@ -230,7 +230,7 @@ def test_save_observations_path_traversal_files(
 def test_save_observations_injection_values(
     tmp_project: Path, category: str, priority: str
 ) -> None:
-    """category/priority에 주입 값 포함 테스트."""
+    """Test injected values in category/priority fields."""
     state = ProjectState(tmp_project)
     improvements = [{"title": "Test", "category": category, "priority": priority}]
     added = save_observations(state, improvements, "test", 1)

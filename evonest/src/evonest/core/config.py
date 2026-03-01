@@ -22,9 +22,9 @@ def _strip_jsonc_comments(text: str) -> str:
 
 
 def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> None:
-    """파일에 atomic write 수행 (임시 파일 생성 후 rename).
+    """Perform an atomic write to the file using a temp file and rename.
 
-    디스크 풀, 권한 오류 등으로 쓰기 중 실패 시 원본 파일을 보호합니다.
+    Protects the original file if the write fails due to a full disk, permission error, etc.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")

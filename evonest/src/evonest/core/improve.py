@@ -62,7 +62,7 @@ def select_proposal(state: ProjectState, proposal_id: str | None = None) -> Path
             text = p.read_text(encoding="utf-8")
             for line in text.splitlines()[:10]:
                 lower = line.lower()
-                if "priority" in lower or "우선순위" in lower:
+                if "priority" in lower:
                     for prio in ("high", "medium", "low"):
                         if prio in lower:
                             return (_PRIORITY_ORDER.get(prio, 1), p.name)
@@ -77,7 +77,7 @@ def select_proposal(state: ProjectState, proposal_id: str | None = None) -> Path
 def _commit_message_from_proposal(proposal_content: str) -> str | None:
     """Extract a commit message from a proposal's title line."""
     for line in proposal_content.splitlines():
-        if line.startswith("# Proposal:") or line.startswith("# 제안:"):
+        if line.startswith("# Proposal:"):
             title = line.split(":", 1)[-1].strip()
             # Convert to lowercase, replace whitespace
             slug = re.sub(r"\s+", " ", title).strip().lower()
@@ -120,9 +120,9 @@ async def run_improve(
         _title = "(no title)"
         _priority = ""
         for _line in proposal_content.splitlines()[:15]:
-            if _line.startswith("# Proposal:") or _line.startswith("# 제안:"):
+            if _line.startswith("# Proposal:"):
                 _title = _line.split(":", 1)[-1].strip()
-            if "priority" in _line.lower() or "우선순위" in _line.lower():
+            if "priority" in _line.lower():
                 for _p in ("critical", "high", "medium", "low"):
                     if _p in _line.lower():
                         _priority = _p

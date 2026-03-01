@@ -364,30 +364,30 @@ def _save_all_as_proposals(
 
 _PROPOSAL_LABELS: dict[str, dict[str, str]] = {
     "korean": {
-        "heading": "제안",
-        "priority": "우선순위",
-        "persona": "작성 페르소나",
-        "cycle": "사이클",
-        "status": "상태",
-        "status_value": "검토 대기",
-        "description": "설명",
-        "files": "관련 파일",
-        "footer1": "*이 제안은 분석 단계에서 생성되었습니다. 아직 구현되지 않았습니다.*  ",
-        "footer2": "*improve 명령으로 실행하거나, 팀에서 검토 후 처리하세요.*",
+        "heading": "Proposal",
+        "priority": "Priority",
+        "persona": "Author Persona",
+        "cycle": "Cycle",
+        "status": "Status",
+        "status_value": "Pending Review",
+        "description": "Description",
+        "files": "Related Files",
+        "footer1": "*This proposal was generated during the analysis phase. It has not been implemented yet.*  ",
+        "footer2": "*Run it with the improve command, or have the team review and action it.*",
     },
     "english": {
         "heading": "Proposal",
         "priority": "Priority",
-        "persona": "From persona",
+        "persona": "Author Persona",
         "cycle": "Cycle",
         "status": "Status",
-        "status_value": "pending review",
+        "status_value": "Pending Review",
         "description": "Description",
-        "files": "Relevant Files",
+        "files": "Related Files",
         "footer1": (
-            "*This proposal was generated during analysis. It has not been implemented yet.*  "
+            "*This proposal was generated during the analysis phase. It has not been implemented yet.*  "
         ),
-        "footer2": ("*Run improve to execute, or review and act on it as the team sees fit.*"),
+        "footer2": ("*Run it with the improve command, or have the team review and action it.*"),
     },
 }
 

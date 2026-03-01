@@ -589,13 +589,13 @@ def test_empty_static_context_not_injected(tmp_project: Path) -> None:
 
 
 def test_run_verify_no_shell_injection(tmp_project: Path) -> None:
-    """verify 명령이 shell injection 공격으로부터 안전한지 검증."""
+    """Verify that the verify command is safe from shell injection attacks."""
     state = ProjectState(tmp_project)
     config = EvonestConfig()
 
-    # 테스트 시나리오: shell=True일 때는 위험한 파일이 생성되지만, shell=False일 때는 생성되지 않음
+    # Test scenario: with shell=True a dangerous file would be created, but with shell=False it is not
     test_file = tmp_project / "injection_test_file.txt"
-    # 악의적인 명령: touch로 파일 생성 시도 (shell operator && 사용)
+    # Malicious command: attempt to create a file via touch using the shell operator &&
     config.verify.build = f"echo test && touch {test_file}"
 
     with (
@@ -604,24 +604,24 @@ def test_run_verify_no_shell_injection(tmp_project: Path) -> None:
     ):
         run_verify(state, config, cycle_num=1)
 
-    # shlex.split으로 파싱되면 "echo"가 명령어, "test", "&&", "touch", "{path}" 가 인수로 전달됨
-    # echo는 "test && touch {path}"를 출력만 하려고 시도하며, touch는 실행되지 않음
-    # 따라서 test_file이 생성되지 않아야 함 (shell injection 방지 성공)
-    assert not test_file.exists(), "shell injection이 방지되지 않았습니다: 파일이 생성됨"
+    # When parsed by shlex.split, "echo" is the command and "test", "&&", "touch", "{path}" are args.
+    # echo only prints "test && touch {path}" as output — the touch command is not executed.
+    # Therefore test_file must not exist (shell injection successfully prevented).
+    assert not test_file.exists(), "Shell injection was not prevented: file was created"
 
-    # echo 명령 자체는 성공할 수 있음 (인수를 그대로 출력)
-    # 중요한 것은 두 번째 명령(touch)이 실행되지 않는 것
+    # The echo command itself may succeed (it prints its arguments as-is).
+    # The important thing is that the second command (touch) is not executed.
 
 
 def test_run_verify_timeout_kills_process(tmp_project: Path) -> None:
-    """verify 타임아웃 발생 시 프로세스가 kill()과 wait()으로 정리되는지 검증."""
+    """Verify that the process is cleaned up with kill() and wait() when a verify timeout occurs."""
     from unittest.mock import MagicMock
 
     state = ProjectState(tmp_project)
     config = EvonestConfig()
     config.verify.build = "sleep 999"
 
-    # TimeoutExpired 예외를 발생시킬 mock process 생성
+    # Create a mock process that raises TimeoutExpired
     mock_process = MagicMock()
     mock_process.communicate.side_effect = subprocess.TimeoutExpired(cmd="sleep 999", timeout=300)
 
@@ -632,21 +632,21 @@ def test_run_verify_timeout_kills_process(tmp_project: Path) -> None:
     ):
         result = run_verify(state, config, cycle_num=1)
 
-    # TimeoutExpired 발생 시 kill()과 wait()이 호출되었는지 검증
+    # Verify that kill() and wait() are called when TimeoutExpired is raised
     mock_process.kill.assert_called_once()
     mock_process.wait.assert_called_once()
     assert result.build_passed is False
 
 
 def test_run_verify_test_timeout_kills_process(tmp_project: Path) -> None:
-    """verify test 타임아웃 발생 시 프로세스가 정리되는지 검증."""
+    """Verify that the process is cleaned up when a verify test timeout occurs."""
     from unittest.mock import MagicMock
 
     state = ProjectState(tmp_project)
     config = EvonestConfig()
     config.verify.test = "sleep 999"
 
-    # TimeoutExpired 예외를 발생시킬 mock process 생성
+    # Create a mock process that raises TimeoutExpired
     mock_process = MagicMock()
     mock_process.communicate.side_effect = subprocess.TimeoutExpired(cmd="sleep 999", timeout=300)
 
@@ -657,7 +657,7 @@ def test_run_verify_test_timeout_kills_process(tmp_project: Path) -> None:
     ):
         result = run_verify(state, config, cycle_num=1)
 
-    # TimeoutExpired 발생 시 kill()과 wait()이 호출되었는지 검증
+    # Verify that kill() and wait() are called when TimeoutExpired is raised
     mock_process.kill.assert_called_once()
     mock_process.wait.assert_called_once()
     assert result.test_passed is False
@@ -667,7 +667,7 @@ def test_run_verify_test_timeout_kills_process(tmp_project: Path) -> None:
 
 
 def test_save_observations_large_json(tmp_project: Path) -> None:
-    """1MB JSON DoS 경계 검사: graceful failure 검증."""
+    """1MB JSON DoS boundary check: verify graceful failure."""
     state = ProjectState(tmp_project)
     large_json = (
         '{"improvements": ['
@@ -681,7 +681,7 @@ def test_save_observations_large_json(tmp_project: Path) -> None:
 
 
 def test_save_observations_deeply_nested_json(tmp_project: Path) -> None:
-    """100단계 깊이의 중첩 객체: graceful failure 검증."""
+    """100-level deep nested object: verify graceful failure."""
     state = ProjectState(tmp_project)
     nested = '{"a":' * 100 + '{"improvements": []}' + "}" * 100
     output = f"```json\n{nested}\n```"
@@ -691,7 +691,7 @@ def test_save_observations_deeply_nested_json(tmp_project: Path) -> None:
 
 
 def test_save_observations_prompt_injection(tmp_project: Path) -> None:
-    """프롬프트 인젝션 문자열 처리: graceful failure 검증."""
+    """Prompt injection string handling: verify graceful failure."""
     state = ProjectState(tmp_project)
     output = """```json
 {
@@ -707,7 +707,7 @@ def test_save_observations_prompt_injection(tmp_project: Path) -> None:
 
 
 def test_save_observations_truncated_json(tmp_project: Path) -> None:
-    """잘린 JSON (닫히지 않은 중괄호): graceful failure 검증."""
+    """Truncated JSON (unclosed brace): verify graceful failure."""
     state = ProjectState(tmp_project)
     output = """```json
 {
@@ -720,7 +720,7 @@ def test_save_observations_truncated_json(tmp_project: Path) -> None:
 
 
 def test_save_observations_invalid_unicode(tmp_project: Path) -> None:
-    """잘못된 유니코드 이스케이프: graceful failure 검증."""
+    """Invalid unicode escape sequence: verify graceful failure."""
     state = ProjectState(tmp_project)
     output = r"""```json
 {

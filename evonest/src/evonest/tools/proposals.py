@@ -49,13 +49,13 @@ async def evonest_proposals(
             text = path.read_text(encoding="utf-8")
             for line in text.splitlines()[:15]:
                 if not title and line.startswith("# "):
-                    title = re.sub(r"^#\s*(제안|Proposal):\s*", "", line[2:]).strip()
+                    title = re.sub(r"^#\s*Proposal:\s*", "", line[2:]).strip()
                 elif not priority:
-                    m = re.search(r"\*\*(?:우선순위|[Pp]riority)\*\*[:\s]+(\w+)", line)
+                    m = re.search(r"\*\*[Pp]riority\*\*[:\s]+(\w+)", line)
                     if m:
                         priority = m.group(1).lower()
                 elif not persona:
-                    m = re.search(r"\*\*(?:작성 페르소나|[Pp]ersona)\*\*[:\s]+([^\s*]+)", line)
+                    m = re.search(r"\*\*(?:Author\s+)?[Pp]ersona\*\*[:\s]+([^\s*]+)", line)
                     if m:
                         persona = m.group(1)
         except OSError:

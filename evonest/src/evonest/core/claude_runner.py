@@ -72,7 +72,7 @@ def run(
 
     logger.info("claude -p starting (model=%s, max-turns=%d, cwd=%s)", model, max_turns, cwd)
 
-    # ProcessManager를 통해 subprocess 실행
+    # Execute subprocess via ProcessManager
     process_manager = ProcessManager(
         timeout=600.0, retry_on_rate_limit=True, rate_limit_wait=30.0, max_retries=3
     )
