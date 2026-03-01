@@ -2,6 +2,23 @@
 
 All notable changes to Evonest are documented here.
 
+## [0.16.0] — 2026-03-01
+
+### Added
+- `evonest_update_docs(project, target, dry_run=True)` — sync Claude Code files
+  (skills, commands, agents, rules, CLAUDE.md) with current MCP tool definitions
+- `dry_run=True` (default): returns JSON diff for review without writing files
+- `dry_run=False`: applies changes to disk directly
+- `target` parameter: filter to `"all"` / `"skills"` / `"commands"` / `"agents"` / `"rules"` / `"claude_md"`
+
+### Tests
+- 17 new tests in `test_update_docs.py` covering `_collect_targets`, `_parse_llm_output`,
+  `apply_doc_changes`, `format_changes_summary`
+
+**411 tests passing**
+
+---
+
 ## [0.15.0] — 2026-02-27
 
 ### Added
