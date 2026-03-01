@@ -5,9 +5,9 @@ Evonest connects directly to Claude Code's tool ecosystem — not as a standalon
 
 ## Why Evonest?
 
-Most AI coding tools give you a single perspective. Evonest rotates through 19 specialist personas — security auditor, chaos engineer, performance analyst, domain modeler, and more — picking one per cycle, weighted by past success, so the perspectives that actually improve your project run more often over time.
+Most AI coding tools give you a single perspective. Evonest rotates through 20 specialist personas — security auditor, chaos engineer, performance analyst, domain modeler, and more — picking one per cycle, weighted by past success, so the perspectives that actually improve your project run more often over time.
 
-### Why 19 personas?
+### Why 20 personas?
 
 A single AI can only offer one perspective at a time. Real projects require security, performance, maintainability, and product strategy — often in conflict with each other.
 
@@ -17,12 +17,12 @@ Each cycle, Evonest picks **one specialist persona**, runs it as a fully indepen
 Successful personas gain weight. If security improvements keep passing, security-auditor runs more often. Personas that propose unnecessary refactoring are automatically deprioritized.
 
 **Diversity prevents tunnel vision:**
-Aider/Cursor operate as a single AI and try only one approach. GitHub Copilot Workspace is locked into a predefined workflow. Evonest rotates through 19 independent perspectives, and natural selection finds the optimal combination for your specific project.
+Aider/Cursor operate as a single AI and try only one approach. GitHub Copilot Workspace is locked into a predefined workflow. Evonest rotates through 20 independent perspectives, and natural selection finds the optimal combination for your specific project.
 
 | | Aider / Cursor | GitHub Copilot Workspace | **Evonest** |
 |--|--|--|--|
 | Integration | Standalone CLI / editor | Web UI | **MCP-native — lives inside Claude Code** |
-| Perspectives | Single AI | Predefined workflow | **19 rotating personas, weighted by success** |
+| Perspectives | Single AI | Predefined workflow | **20 rotating personas, weighted by success** |
 | Context Continuity | Session-local | Isolated web session | **Shares Claude Code conversation + tools** |
 | Safety | Manual recovery | Manual recovery | **Auto-revert on failed build/test** |
 | Learning | None | None | **Adaptive weights — successful personas run more often** |
@@ -113,8 +113,9 @@ Add to `~/.claude/mcp.json`:
    → scans codebase, saves all improvements as proposals (no code changes)
    → review with: evonest_proposals(project="...")
 
-3. evonest_improve(project="...", proposal_id="<filename>")
-   → execute one proposal → verify → commit/PR
+3. evonest_proposals(project="...")
+   → review pending proposals (sorted by priority)
+   → pick one: evonest_improve(project="...", proposal_id="<filename>")
 ```
 
 **First time? Start with `analyze`.** It only reads your codebase and saves proposals — no code is changed. You stay in control of what gets executed.
@@ -202,15 +203,15 @@ evonest evolve  . [--cycles N] [--cautious] [--all-personas]
 
 Every cycle, Evonest picks a **persona** — a specialist perspective — and optionally pairs it with an **adversarial challenge**. This is the core mechanism that prevents single-perspective tunnel vision.
 
-### Personas (19 built-in)
+### Personas (20 built-in)
 
 Each persona brings a distinct angle to the codebase:
 
-| Group | Example Personas |
-|-------|-----------------|
-| **tech** | security-auditor, chaos-engineer, performance-analyst, test-coverage-analyst, api-designer, documentation-writer, ecosystem-scanner, code-archaeologist |
-| **biz** | product-strategist, competitor-analyst, monetization-analyst, domain-modeler |
-| **quality** | spec-reviewer, refactoring-specialist, dependency-auditor, technical-debt-analyst |
+| Group | Personas |
+|-------|----------|
+| **tech** (8) | performance-engineer, new-user, api-designer, architect, future-proofer, contrarian, ecosystem-scanner, domain-modeler |
+| **biz** (8) | product-thinker, product-strategist, spec-reviewer, growth-hacker, monetization-analyst, ux-critic, competitor-analyst, cto-reviewer |
+| **quality** (4) | security-auditor, chaos-engineer, refactoring-expert, observability-advocate |
 
 **Selection is weighted**: after each cycle, successful personas get higher weights. Over time, the personas that actually improve your project run more often.
 
