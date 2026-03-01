@@ -24,6 +24,7 @@ import evonest.tools.run  # noqa: E402, F401
 import evonest.tools.scout  # noqa: E402, F401
 import evonest.tools.status  # noqa: E402, F401
 import evonest.tools.stimuli  # noqa: E402, F401
+import evonest.tools.update_docs  # noqa: E402, F401
 
 
 def serve() -> None:
