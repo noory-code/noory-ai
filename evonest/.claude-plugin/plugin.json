@@ -12,7 +12,6 @@
   },
   "commands": "./commands/",
   "skills": "./skills/",
-  "hooks": "./hooks/hooks.json",
   "mcpServers": {
     "evonest": {
       "command": "uv",
