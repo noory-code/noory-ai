@@ -37,7 +37,7 @@ Evonest evolves its own codebase through the same cycle. Real findings from 164 
 
 ```
 /plugin marketplace add noory-code/noory-ai
-/plugin install evonest@noory-code/noory-ai
+/plugin install evonest
 ```
 
 Slash commands (`/evonest:analyze`, `/evonest:improve`, `/evonest:evolve`) become available immediately.

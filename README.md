@@ -16,7 +16,7 @@ Runs 20 specialist personas against your codebase (security auditor, chaos engin
 **Install:**
 ```
 /plugin marketplace add noory-code/noory-ai
-/plugin install evonest@noory-code/noory-ai
+/plugin install evonest
 ```
 
 ### [Distill](distill/) — Knowledge Distillation
@@ -31,7 +31,7 @@ Extracts reusable patterns, decisions, and lessons from Claude Code conversation
 **Install:**
 ```
 /plugin marketplace add noory-code/noory-ai
-/plugin install distill@noory-code/noory-ai
+/plugin install distill
 ```
 
 ### [Solera](solera/) — Layered Workflow Execution
@@ -45,7 +45,7 @@ Structured project execution framework — Phase → Goal → Epic → Story →
 **Install:**
 ```
 /plugin marketplace add noory-code/noory-ai
-/plugin install solera@noory-code/noory-ai
+/plugin install solera
 ```
 
 ### [Flutter Cask](flutter-cask/) — Flutter Package Guide Skills
@@ -59,7 +59,7 @@ Curated reference skills for Flutter development. Each skill gives Claude instan
 **Install:**
 ```
 /plugin marketplace add noory-code/noory-ai
-/plugin install flutter-cask@noory-code/noory-ai
+/plugin install flutter-cask
 ```
 
 ## Development

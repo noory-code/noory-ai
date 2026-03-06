@@ -27,5 +27,5 @@ Curated reference skills for Flutter development. Each skill gives Claude instan
 
 ```
 /plugin marketplace add noory-code/noory-ai
-/plugin install flutter-cask@noory-code/noory-ai
+/plugin install flutter-cask
 ```
