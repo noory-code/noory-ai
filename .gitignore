@@ -25,6 +25,7 @@ htmlcov/
 
 # MCP / Claude local (local overrides — not committed; plugin .mcp.json is committed)
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # Secrets
 .env
