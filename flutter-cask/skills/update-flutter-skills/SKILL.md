@@ -91,6 +91,18 @@ frontmatter:
     type: unit
     style: guide
     triggers: [keyword list]
+
+references_criteria:
+  # references/ 디렉토리는 다음 중 2개 이상 해당할 때만 생성
+  - major_use_cases: 3개 이상의 독립적인 주요 사용 사례
+  - advanced_patterns: 복잡한 아키텍처 또는 고급 패턴 필요
+  - code_generation: build_runner 기반 코드 생성 + 어노테이션
+  - platform_config: 플랫폼별 복잡한 네이티브 설정
+  - content_size: Quick Reference 섹션이 100줄 초과
+
+  examples:
+    needs_references: [riverpod, go-router, freezed, firebase-messaging]
+    no_references: [package-info, share, connectivity]
 ```
 
 ## Completion Checklist
