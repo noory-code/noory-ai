@@ -161,3 +161,10 @@ Future<void> initCrashlytics() async {
 | No dSYM (iOS) | Verify that automatic dSYM upload runs after Archive |
 | Obfuscation not resolved | Upload the ProGuard mapping file |
 | Too many reports | Deduplicate and classify only fatal crashes |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

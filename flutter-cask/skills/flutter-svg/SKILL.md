@@ -141,3 +141,10 @@ Future<void> precacheSvgs(BuildContext context) async {
 // 3. For monochrome icons, keep only the path and set fill="currentColor"
 // 4. Consider PNG for complex illustrations
 ```
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

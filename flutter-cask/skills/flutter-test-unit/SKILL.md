@@ -142,3 +142,10 @@ flutter test
 | No mock class generated | Run `dart run build_runner build` |
 | Test file not recognized | Check that the file has the `_test.dart` suffix |
 | Async test failure | Check that `await` and `async` are used correctly |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

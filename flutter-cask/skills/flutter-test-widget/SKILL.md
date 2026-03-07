@@ -154,3 +154,10 @@ flutter test
 | Animation incomplete | Use `pumpAndSettle()` |
 | Overflow error | Wrap in a smaller test widget |
 | Missing MediaQuery | Wrap with `MaterialApp` |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

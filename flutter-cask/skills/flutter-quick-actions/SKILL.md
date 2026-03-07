@@ -149,3 +149,10 @@ void clearQuickActions() {
 | Cold start action ignored | Save the action type before initialize completes, then process it |
 | Maximum 4 items | Both iOS and Android display up to 4 shortcuts |
 | Not working on simulator | Test on a real device |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

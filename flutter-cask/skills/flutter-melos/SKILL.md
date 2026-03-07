@@ -160,3 +160,10 @@ melos exec --depends-on="freezed" -- dart run build_runner build
 
 - [Melos Official Docs](https://melos.invertase.dev/)
 - [Getting Started](https://melos.invertase.dev/getting-started)
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

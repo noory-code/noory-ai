@@ -112,3 +112,10 @@ references_criteria:
 - [ ] SKILL.md updated (installation, usage)
 - [ ] references/ updated (code examples)
 - [ ] version bumped
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

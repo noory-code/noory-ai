@@ -186,3 +186,10 @@ Future<bool> requestPermission() async {
 | Schedule not working | Initialize timezone data and check SCHEDULE_EXACT_ALARM permission |
 | Notification disappears after reboot | Add RECEIVE_BOOT_COMPLETED + BroadcastReceiver |
 | Not working in background | Use a foreground service or WorkManager integration |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

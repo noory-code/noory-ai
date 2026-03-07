@@ -92,3 +92,10 @@ switch (state) {
 | [union-types.md](references/union-types.md) | Union types, pattern matching, shared properties |
 | [json.md](references/json.md) | JSON serialization, type key customization |
 | [options.md](references/options.md) | @Freezed, @unfreezed, @Default, @Assert |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

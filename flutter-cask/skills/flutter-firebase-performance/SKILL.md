@@ -187,3 +187,10 @@ void main() async {
 | Trace not ending | Always call stop() in a finally block |
 | Attribute limit exceeded | Maximum 5 custom attributes per trace |
 | Metric limit exceeded | Maximum 32 custom metrics per trace |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

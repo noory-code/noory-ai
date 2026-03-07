@@ -194,3 +194,10 @@ Widget build(BuildContext context) {
 | HTTPS only | Android: usesCleartextTraffic, iOS: NSAppTransportSecurity |
 | Keyboard covering content | Set resizeToAvoidBottomInset: true on the Scaffold |
 | Cookies not working | Use WebViewCookieManager |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

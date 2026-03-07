@@ -142,3 +142,10 @@ popd
 | Widget not found | Add a `Key` and use `pumpAndSettle()` |
 | Web test failure | Check that ChromeDriver is running |
 | CI Linux | Use `xvfb-run` |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

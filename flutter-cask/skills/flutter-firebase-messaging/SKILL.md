@@ -174,3 +174,10 @@ See [references/fcm-service.md](references/fcm-service.md)
 | Token is null | Simulators are not supported; test on a real device |
 | Background handler not called | Must be a top-level function with @pragma('vm:entry-point') |
 | Data-only message | No system notification appears without a notification field |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

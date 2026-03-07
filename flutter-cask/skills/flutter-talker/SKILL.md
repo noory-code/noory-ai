@@ -189,3 +189,10 @@ final talker = Talker(
 | History memory usage | Limit maxHistoryItems and disable in release |
 | Console color broken | Check ANSI support in the terminal |
 | Logs exposed in release | Disable with a kReleaseMode check |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

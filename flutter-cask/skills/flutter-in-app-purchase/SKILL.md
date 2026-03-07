@@ -188,3 +188,10 @@ class SubscriptionPage extends StatelessWidget {
 | Receipt verification | Always verify on the server; do not trust the client |
 | Skipping completePurchase | Must be called, otherwise the purchase may be refunded |
 | Subscription renewal | Sync status via server-side webhooks |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

@@ -130,3 +130,10 @@ ListTile(
 | Not working on web | Web is not supported; use fallback values |
 | Slow loading | Load once at app startup and cache the result |
 | Test failure | Use a mock or an integration test |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

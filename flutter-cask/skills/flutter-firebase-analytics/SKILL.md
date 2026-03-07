@@ -159,3 +159,10 @@ class AnalyticsService {
 | Missing parameters | Key limit is 25 chars; value limit is 100 chars |
 | Event name error | Use lowercase with underscores; cannot start with a number |
 | Data not real-time | Only DebugView is real-time; the main dashboard has a delay |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

@@ -191,3 +191,10 @@ EdgeInsets.only(
 ## Design System Integration
 
 See [references/design-system.md](references/design-system.md)
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

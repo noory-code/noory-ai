@@ -181,3 +181,10 @@ See [references/post-editor-example.md](references/post-editor-example.md)
 | Image insertion | Add the flutter_quill_extensions package |
 | Delta format | Convert to a JSON string when saving to the server |
 | Performance issues | Consider pagination for long documents |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

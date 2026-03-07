@@ -48,3 +48,10 @@ Just describe what you need — no explicit skill invocation required:
 > Write a unit test for the UserRepository class.
 
 > How do I use go_router for deep linking?
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

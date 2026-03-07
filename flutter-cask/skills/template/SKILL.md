@@ -46,3 +46,10 @@ import 'package:{{PACKAGE_NAME}}/{{PACKAGE_NAME}}.dart';
 | File | Description |
 |------|------|
 | [example.md](references/example.md) | 상세 사용법 및 추가 예제 |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

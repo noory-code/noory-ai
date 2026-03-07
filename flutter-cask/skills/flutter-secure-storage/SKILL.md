@@ -163,3 +163,10 @@ await storage.write(
   value: DateTime.now().add(Duration(hours: 1)).toIso8601String(),
 );
 ```
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

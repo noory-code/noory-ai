@@ -117,3 +117,10 @@ fvm dart --version
 
 - [FVM Official Docs](https://fvm.app/)
 - [Getting Started](https://fvm.app/documentation/getting-started/overview)
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

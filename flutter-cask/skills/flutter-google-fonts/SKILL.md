@@ -134,3 +134,10 @@ assets/
 | English heading | Montserrat, Poppins |
 | Korean | Noto Sans KR, Pretendard |
 | Code | Fira Code, JetBrains Mono |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

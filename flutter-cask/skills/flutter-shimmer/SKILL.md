@@ -173,3 +173,10 @@ Shimmer.fromColors(
 | Performance issues | Limit the list item count to 5–10 |
 | Layout mismatch | Keep the shimmer structure the same as the actual content |
 | Awkward in dark mode | Set baseColor/highlightColor based on the current theme |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

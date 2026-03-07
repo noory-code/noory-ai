@@ -156,3 +156,10 @@ See [references/ad-types.md](references/ad-types.md)
 | Policy violation | Auto-clicking and excessive ads are prohibited |
 | Not working in release | Replace with the real ad ID and activate the account |
 | Low revenue | Use higher-eCPM formats (rewarded > interstitial > banner) |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

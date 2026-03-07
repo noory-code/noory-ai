@@ -120,3 +120,10 @@ class MyPage extends ConsumerWidget {
 | [family.md](references/family.md) | Providers with parameters, caching |
 | [stream.md](references/stream.md) | StreamProvider, Supabase Realtime |
 | [testing.md](references/testing.md) | Provider override, mocking, unit tests |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

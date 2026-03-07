@@ -133,3 +133,10 @@ IconButton(
 | File share not working | Check file path permissions and MIME type |
 | Text garbled | Check UTF-8 encoding |
 | Result always dismissed | Result tracking on Android is limited; this is expected behavior |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

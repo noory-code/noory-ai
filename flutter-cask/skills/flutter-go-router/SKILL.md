@@ -160,3 +160,10 @@ class HomeBranch extends StatefulShellBranchData {
 | [routes.md](references/routes.md) | GoRouteData, parameters, query strings |
 | [navigation.md](references/navigation.md) | go vs push, redirect, guard |
 | [shell-route.md](references/shell-route.md) | ShellRoute, nested navigation |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

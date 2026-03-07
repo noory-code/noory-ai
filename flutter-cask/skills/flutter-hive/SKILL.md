@@ -171,3 +171,10 @@ final lazyBox = await Hive.openLazyBox<User>('largeData');
 // async read (reduces memory usage)
 final user = await lazyBox.get('user1');
 ```
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

@@ -118,3 +118,10 @@ await DefaultCacheManager().emptyCache();
 | `maxWidthDiskCache` | Disk cache maximum width |
 | `maxHeightDiskCache` | Disk cache maximum height |
 | `cacheManager` | Custom cache manager |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

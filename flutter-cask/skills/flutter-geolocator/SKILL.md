@@ -162,3 +162,10 @@ Future<Position?> currentPosition(Ref ref) async {
 | Battery drain | Use distanceFilter and cancel the stream immediately when tracking ends |
 | Simulator | Set location in Features > Location |
 | Timeout | Set the timeLimit parameter |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

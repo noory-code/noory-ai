@@ -179,3 +179,10 @@ Future<void> showImageSourceDialog(BuildContext context) async {
 | Out of memory | Set maxWidth, maxHeight, and imageQuality |
 | Simulator camera | Test on a real device |
 | HEIC format | Automatically converted to JPEG on iOS |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스

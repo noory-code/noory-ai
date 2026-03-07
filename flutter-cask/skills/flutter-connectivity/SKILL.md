@@ -156,3 +156,10 @@ class SyncManager {
 | Status not changing | Check the stream subscription and permissions |
 | iOS simulator issue | Test on a real device |
 | Battery drain | Monitor only when needed and always dispose the subscription |
+
+---
+
+## Changelog
+
+### [1.1.0] - 2026-03-01
+- 초기 릴리스
