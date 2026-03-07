@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import sys
 from pathlib import Path
 
 from evonest.server import mcp
+
+logger = logging.getLogger(__name__)
 
 
 def _pending_count(project: str) -> int:
@@ -42,9 +45,18 @@ async def _run_one(project: str, proposal_id: str | None) -> str:
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.DEVNULL,
-        stderr=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.PIPE,
     )
-    await proc.wait()
+    _, stderr = await proc.communicate()
+
+    if proc.returncode != 0:
+        stderr_text = stderr.decode(errors="replace").strip() if stderr else ""
+        logger.error(
+            "improve 프로세스 실패 (exit code %d): %s",
+            proc.returncode,
+            stderr_text or "(stderr 없음)",
+        )
+
     return _extract_result(log_path)
 
 
