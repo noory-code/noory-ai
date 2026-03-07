@@ -593,7 +593,8 @@ def test_run_verify_no_shell_injection(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
     config = EvonestConfig()
 
-    # Test scenario: with shell=True a dangerous file would be created, but with shell=False it is not
+    # Test scenario: with shell=True a dangerous file would be created,
+    # but with shell=False it is not
     test_file = tmp_project / "injection_test_file.txt"
     # Malicious command: attempt to create a file via touch using the shell operator &&
     config.verify.build = f"echo test && touch {test_file}"
@@ -604,7 +605,8 @@ def test_run_verify_no_shell_injection(tmp_project: Path) -> None:
     ):
         run_verify(state, config, cycle_num=1)
 
-    # When parsed by shlex.split, "echo" is the command and "test", "&&", "touch", "{path}" are args.
+    # When parsed by shlex.split, "echo" is the command and "test", "&&",
+    # "touch", "{path}" are args.
     # echo only prints "test && touch {path}" as output — the touch command is not executed.
     # Therefore test_file must not exist (shell injection successfully prevented).
     assert not test_file.exists(), "Shell injection was not prevented: file was created"

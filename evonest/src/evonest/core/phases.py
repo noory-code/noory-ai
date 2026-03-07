@@ -372,7 +372,10 @@ _PROPOSAL_LABELS: dict[str, dict[str, str]] = {
         "status_value": "Pending Review",
         "description": "Description",
         "files": "Related Files",
-        "footer1": "*This proposal was generated during the analysis phase. It has not been implemented yet.*  ",
+        "footer1": (
+            "*This proposal was generated during the analysis phase. "
+            "It has not been implemented yet.*  "
+        ),
         "footer2": "*Run it with the improve command, or have the team review and action it.*",
     },
     "english": {
@@ -385,7 +388,8 @@ _PROPOSAL_LABELS: dict[str, dict[str, str]] = {
         "description": "Description",
         "files": "Related Files",
         "footer1": (
-            "*This proposal was generated during the analysis phase. It has not been implemented yet.*  "
+            "*This proposal was generated during the analysis phase. "
+            "It has not been implemented yet.*  "
         ),
         "footer2": ("*Run it with the improve command, or have the team review and action it.*"),
     },

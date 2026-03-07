@@ -244,7 +244,8 @@ async def test_proposals_list_shows_title_and_priority(tmp_project: Path) -> Non
     state.proposals_dir.mkdir(parents=True, exist_ok=True)
     proposal_file = state.proposals_dir / "proposal-0001-20260101-000000-000001.md"
     proposal_file.write_text(
-        "# Proposal: Test Improvement\n\n**Priority**: high\n**Author Persona**: architect\n\nContent",
+        "# Proposal: Test Improvement\n\n"
+        "**Priority**: high\n**Author Persona**: architect\n\nContent",
         encoding="utf-8",
     )
 
