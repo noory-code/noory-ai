@@ -23,7 +23,16 @@ def _extract_result(log_path: Path) -> str:
     """Extract the last improve result from the log file."""
     try:
         lines = log_path.read_text(errors="replace").splitlines()
-    except OSError:
+    except OSError as e:
+        exists = log_path.exists()
+        readable = log_path.is_file() and bool(log_path.stat().st_mode & 0o400) if exists else False
+        logger.warning(
+            "로그 파일 읽기 실패: path=%s, error=%s, exists=%s, readable=%s",
+            log_path,
+            e,
+            exists,
+            readable,
+        )
         return "Improve complete."
 
     # Find the last "evonest improve completed:" marker and collect lines after it
