@@ -1,6 +1,6 @@
 [project]
 name = "evonest"
-version = "0.17.1"
+version = "0.17.2"
 description = "Autonomous code evolution engine — observe, plan, execute, verify"
 readme = "README.md"
 license = "MIT"

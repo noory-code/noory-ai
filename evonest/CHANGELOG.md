@@ -2,6 +2,21 @@
 
 All notable changes to Evonest are documented here.
 
+## [0.17.2] — 2026-03-07
+
+### Improved
+- `claude_runner.py`: preserve partial output on max turns, add `truncated_reason: max_turns` metadata
+- `process_manager.py`: add unique retry IDs and retry chain logging for rate limit backoff
+- `phases.py`: fix ruff E501 line length violations
+- `_runner.py`, `cli.py`: add configurable logging level, format, and handler settings
+- `__init__.py`, `config.py`: improve error message actionability in stderr output
+- Added diagnostic info (stack trace, command, project path, config) to global exception handler
+- New tests: `test_claude_runner.py`, `test_orchestrator.py`, `test_phases.py` covering error message quality
+
+**421 tests passing**
+
+---
+
 ## [0.17.1] — 2026-03-07
 
 ### Fixed

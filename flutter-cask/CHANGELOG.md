@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.0] — 2026-03-07
+
+### Improved
+- `README.md`: added skill effectiveness metrics guidance and feedback mechanism
+- `README.md`: added automated version staleness detection via CI guidance
+- `update-flutter-skills/SKILL.md`: standardized reference documentation depth criteria
+- Added `## Changelog` section to all 34 skill SKILL.md files for per-skill change tracking
+
+---
+
 ## [1.0.0] - 2026-03-01
 
 ### Added
