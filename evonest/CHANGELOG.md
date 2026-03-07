@@ -2,6 +2,16 @@
 
 All notable changes to Evonest are documented here.
 
+## [0.17.1] — 2026-03-07
+
+### Fixed
+- `PostToolUse` hook now fires only for `evonest_improve` calls instead of every tool use,
+  preventing excessive process spawning visible in Activity Monitor
+
+**411 tests passing**
+
+---
+
 ## [0.16.0] — 2026-03-01
 
 ### Added
