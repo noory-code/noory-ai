@@ -38,6 +38,15 @@ def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> Non
 
 
 @dataclass
+class LoggingConfig:
+    """로깅 구성 설정."""
+
+    level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    format: str = "text"  # "text" | "json"
+    output: str = "stderr"  # "stdout" | "stderr" | file path
+
+
+@dataclass
 class VerifyConfig:
     build: str | None = None
     test: str | None = None
@@ -96,6 +105,7 @@ class EvonestConfig:
     max_cycles_per_run: int = 5
     dry_run: bool = False
     meta_cycle_interval: int = 5
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
     max_dynamic_personas: int = 5
     max_dynamic_adversarials: int = 3
     dynamic_mutation_ttl_cycles: int = 15
@@ -248,7 +258,13 @@ class EvonestConfig:
         for key, value in data.items():
             if key.startswith("_"):
                 continue
-            if key == "verify" and isinstance(value, dict):
+            if key == "logging" and isinstance(value, dict):
+                self.logging = LoggingConfig(
+                    level=value.get("level", self.logging.level),
+                    format=value.get("format", self.logging.format),
+                    output=value.get("output", self.logging.output),
+                )
+            elif key == "verify" and isinstance(value, dict):
                 self.verify = VerifyConfig(
                     build=value.get("build", self.verify.build),
                     test=value.get("test", self.verify.test),
@@ -309,6 +325,7 @@ class EvonestConfig:
                     value = value.lower() in ("true", "1", "yes")
                 toggle_map[parts[1]] = bool(value)
                 return
+            # Handle nested config objects: logging.level, verify.build, max_turns.observe, etc.
             parent = getattr(self, parts[0], None)
             if parent is not None and hasattr(parent, parts[1]):
                 current = getattr(parent, parts[1])
