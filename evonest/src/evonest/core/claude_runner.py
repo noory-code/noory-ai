@@ -22,6 +22,7 @@ class ClaudeResult:
     exit_code: int
     success: bool
     stderr: str = ""
+    truncated_reason: str | None = None
 
 
 OBSERVE_TOOLS = "Read,Glob,Grep,Bash"
@@ -88,8 +89,9 @@ def run(
         )
 
     return ClaudeResult(
-        output=result.output if not max_turns_hit else "",
+        output=result.output,
         exit_code=result.exit_code,
         success=result.success and not max_turns_hit,
-        stderr=result.stderr if not max_turns_hit else result.output,
+        stderr=result.stderr,
+        truncated_reason="max_turns" if max_turns_hit else None,
     )
