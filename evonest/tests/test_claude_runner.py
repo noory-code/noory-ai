@@ -133,3 +133,25 @@ def test_run_stderr_captured() -> None:
 
     assert result.stderr == "warning: something"
     assert result.success is True
+
+
+def test_command_not_found_error_message_contains_command() -> None:
+    """FileNotFoundError 발생 시 에러 메시지에 실행하려던 명령어가 포함되어야 함."""
+    with patch("subprocess.run", side_effect=FileNotFoundError()):
+        result = run("test prompt")
+
+    assert result.success is False
+    assert result.exit_code == -1
+    # stderr에 실행하려던 명령어('claude')가 포함되어야 함
+    assert "claude" in result.stderr.lower()
+
+
+def test_timeout_error_message_contains_duration() -> None:
+    """Timeout 발생 시 에러 메시지에 타임아웃 시간 정보가 포함되어야 함."""
+    with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("claude", 600)):
+        result = run("test prompt")
+
+    assert result.success is False
+    assert result.exit_code == -1
+    # stderr에 타임아웃 시간(600초) 정보가 포함되어야 함
+    assert "600" in result.stderr or "timeout" in result.stderr.lower()

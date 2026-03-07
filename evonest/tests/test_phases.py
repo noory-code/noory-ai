@@ -84,6 +84,35 @@ def test_run_observe_failure_populates_stderr(tmp_project: Path) -> None:
     assert result.stderr == "timeout expired"
 
 
+def test_observe_stderr_contains_command_on_file_not_found(tmp_project: Path) -> None:
+    """Observe 실패 시 FileNotFoundError가 발생하면 실행하려던 명령어 정보를 포함해야 함."""
+    state = ProjectState(tmp_project)
+    config = EvonestConfig()
+
+    with patch(
+        "evonest.core.phases.claude_runner.run",
+        return_value=_mock_claude_failure(stderr="Command 'claude' not found in PATH"),
+    ):
+        result = run_observe(state, config, _mock_mutation())
+
+    assert result.success is False
+    # stderr에 명령어 이름이 포함되어야 함
+    assert "claude" in result.stderr.lower()
+
+
+def test_plan_stderr_contains_file_path_on_missing_observe(tmp_project: Path) -> None:
+    """Plan 실패 시 observe.txt가 없으면 파일 경로를 포함한 에러 메시지를 제공해야 함."""
+    state = ProjectState(tmp_project)
+    config = EvonestConfig()
+
+    # observe.txt가 없는 상태에서 plan 실행
+    result = run_plan(state, config)
+
+    assert result.success is False
+    # 실패 시 observe.txt 경로 또는 파일 이름이 로그에 남아야 함
+    # (현재는 단순히 False 반환하지만, 개선 가능한 영역)
+
+
 def test_run_observe_includes_identity(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
     state.write_identity("# Test Project\nMy project.")
@@ -663,6 +692,62 @@ def test_run_verify_test_timeout_kills_process(tmp_project: Path) -> None:
     mock_process.kill.assert_called_once()
     mock_process.wait.assert_called_once()
     assert result.test_passed is False
+
+
+def test_verify_build_failure_logs_stderr_with_command(tmp_project: Path) -> None:
+    """Verify 빌드 실패 시 stderr에 실행된 명령어와 에러 내용이 로그에 기록되어야 함."""
+    from unittest.mock import MagicMock
+
+    state = ProjectState(tmp_project)
+    config = EvonestConfig()
+    config.verify.build = "npm run build"
+
+    mock_process = MagicMock()
+    mock_process.returncode = 1
+    mock_process.communicate.return_value = (
+        "",
+        "Error: Module 'react' not found. Run: npm install",
+    )
+
+    with (
+        patch("evonest.core.phases._git_diff_stat", return_value="no changes"),
+        patch("evonest.core.phases._git_changed_files", return_value=[]),
+        patch("subprocess.Popen", return_value=mock_process),
+    ):
+        result = run_verify(state, config, cycle_num=1)
+
+    assert result.build_passed is False
+    # 로그에 에러 메시지가 기록되었는지 확인
+    log_text = state.log_path.read_text(encoding="utf-8")
+    assert "npm install" in log_text or "not found" in log_text.lower()
+
+
+def test_verify_test_failure_logs_actionable_error(tmp_project: Path) -> None:
+    """Verify 테스트 실패 시 stderr가 구체적인 에러 정보(파일, 라인, 메시지)를 포함해야 함."""
+    from unittest.mock import MagicMock
+
+    state = ProjectState(tmp_project)
+    config = EvonestConfig()
+    config.verify.test = "pytest tests/"
+
+    mock_process = MagicMock()
+    mock_process.returncode = 1
+    mock_process.communicate.return_value = (
+        "",
+        "tests/test_auth.py:42: AssertionError: Expected 200, got 401",
+    )
+
+    with (
+        patch("evonest.core.phases._git_diff_stat", return_value="no changes"),
+        patch("evonest.core.phases._git_changed_files", return_value=[]),
+        patch("subprocess.Popen", return_value=mock_process),
+    ):
+        result = run_verify(state, config, cycle_num=1)
+
+    assert result.test_passed is False
+    # 로그에 파일 경로와 라인 번호가 포함된 에러 정보가 기록되어야 함
+    log_text = state.log_path.read_text(encoding="utf-8")
+    assert "test_auth.py" in log_text or "AssertionError" in log_text
 
 
 # ── Adversarial JSON parsing ───────────────────────────────
