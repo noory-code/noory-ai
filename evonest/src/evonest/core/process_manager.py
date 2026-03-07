@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import subprocess
 import time
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -51,7 +52,8 @@ class ProcessManager:
         Args:
             timeout: Process execution timeout in seconds.
             retry_on_rate_limit: Whether to retry on rate limit errors.
-            rate_limit_wait: Initial wait time in seconds before retrying after a rate limit. Exponential backoff is applied.
+            rate_limit_wait: Initial wait time in seconds before retrying
+                after a rate limit. Exponential backoff is applied.
             max_retries: Maximum number of retries on rate limit.
         """
         self.timeout = timeout
@@ -65,6 +67,7 @@ class ProcessManager:
         *,
         cwd: str | None = None,
         _retry_attempt: int = 0,
+        _retry_chain_id: str | None = None,
     ) -> ProcessResult:
         """Run a command as a subprocess and return the result.
 
@@ -72,11 +75,23 @@ class ProcessManager:
             cmd: Command list to execute.
             cwd: Working directory.
             _retry_attempt: Internal use — current retry count (starts at 0).
+            _retry_chain_id: Internal use — unique ID linking retries in the same chain.
 
         Returns:
             ProcessResult with output, exit_code, success.
         """
-        logger.info("subprocess starting: %s (cwd=%s)", " ".join(cmd), cwd)
+        # 재시도 체인의 첫 시도인 경우 새로운 chain ID 생성
+        if _retry_chain_id is None:
+            _retry_chain_id = str(uuid.uuid4())[:8]
+
+        log_msg = f"subprocess starting: {' '.join(cmd)} (cwd={cwd})"
+        if _retry_attempt > 0:
+            attempt_info = f"{_retry_attempt + 1}/{self.max_retries + 1}"
+            log_msg += f" [retry_chain={_retry_chain_id}, attempt={attempt_info}]"
+        else:
+            log_msg += f" [retry_chain={_retry_chain_id}]"
+        logger.info(log_msg)
+
         started_at = datetime.now()
 
         try:
@@ -102,7 +117,9 @@ class ProcessManager:
                 and _is_rate_limit(stderr)
             )
             if should_retry:
-                return self._retry_after_rate_limit(cmd, cwd, elapsed, _retry_attempt)
+                return self._retry_after_rate_limit(
+                    cmd, cwd, elapsed, _retry_attempt, _retry_chain_id
+                )
 
             return ProcessResult(
                 output=output,
@@ -123,7 +140,9 @@ class ProcessManager:
                 and _is_rate_limit(stderr_text)
             )
             if should_retry_timeout:
-                return self._retry_after_rate_limit(cmd, cwd, elapsed, _retry_attempt)
+                return self._retry_after_rate_limit(
+                    cmd, cwd, elapsed, _retry_attempt, _retry_chain_id
+                )
 
             logger.error("subprocess timed out after %.1fs (limit=%.0fs)", elapsed, self.timeout)
             return ProcessResult(
@@ -167,7 +186,12 @@ class ProcessManager:
             )
 
     def _retry_after_rate_limit(
-        self, cmd: list[str], cwd: str | None, elapsed: float, attempt: int
+        self,
+        cmd: list[str],
+        cwd: str | None,
+        elapsed: float,
+        attempt: int,
+        retry_chain_id: str,
     ) -> ProcessResult:
         """Retry with exponential backoff after a rate limit error.
 
@@ -181,14 +205,21 @@ class ProcessManager:
         delay = self.rate_limit_wait * (2**attempt)
 
         logger.warning(
-            "Rate limited (429). Retry %d/%d after %.0fs (elapsed: %.1fs)",
+            "Rate limited (429). Retry %d/%d after %.0fs (elapsed: %.1fs) [retry_chain=%s]",
             next_attempt,
             self.max_retries,
             delay,
             elapsed,
+            retry_chain_id,
         )
         time.sleep(delay)
-        return self.run(cmd, cwd=cwd, _retry_attempt=next_attempt)
+
+        logger.info(
+            "Resuming after rate limit backoff [retry_chain=%s, next_attempt=%d]",
+            retry_chain_id,
+            next_attempt + 1,
+        )
+        return self.run(cmd, cwd=cwd, _retry_attempt=next_attempt, _retry_chain_id=retry_chain_id)
 
     @staticmethod
     def _decode_stderr(stderr: bytes | str | None) -> str:
