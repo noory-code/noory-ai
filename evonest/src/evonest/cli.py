@@ -205,7 +205,29 @@ def cli_main() -> None:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
+        import traceback
+
+        # 실행 컨텍스트 수집
+        context_info = [
+            f"명령: {args.command}",
+            f"작업 디렉토리: {os.getcwd()}",
+        ]
+
+        # 명령별 추가 컨텍스트
+        if hasattr(args, "project") and args.project:
+            context_info.append(f"프로젝트 경로: {args.project}")
+        if hasattr(args, "persona") and args.persona:
+            context_info.append(f"페르소나: {args.persona}")
+        if hasattr(args, "level") and args.level:
+            context_info.append(f"분석 레벨: {args.level}")
+
+        # 에러 출력
         print(f"Error: {e}", file=sys.stderr)
+        print("\n실행 컨텍스트:", file=sys.stderr)
+        for info in context_info:
+            print(f"  {info}", file=sys.stderr)
+        print("\n스택 트레이스:", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         sys.exit(1)
 
 

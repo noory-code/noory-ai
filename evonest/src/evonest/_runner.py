@@ -133,7 +133,33 @@ def main() -> None:
         logger.info("evonest %s completed:\n%s", args.command, result)
         notify(f"Evonest [{proj_name}] — {args.command} ✅", result[:100])
     except Exception as exc:
-        logger.error("evonest %s failed: %s", args.command, exc, exc_info=True)
+        # 실행 컨텍스트 수집
+        context_parts = [
+            f"명령: {args.command}",
+            f"프로젝트: {project.absolute()}",
+            f"프로젝트 이름: {proj_name}",
+        ]
+
+        # 명령별 추가 컨텍스트
+        if hasattr(args, "persona_id") and args.persona_id:
+            context_parts.append(f"페르소나 ID: {args.persona_id}")
+        if hasattr(args, "adversarial_id") and args.adversarial_id:
+            context_parts.append(f"적대적 ID: {args.adversarial_id}")
+        if hasattr(args, "group") and args.group:
+            context_parts.append(f"그룹: {args.group}")
+        if hasattr(args, "level") and args.level:
+            context_parts.append(f"분석 레벨: {args.level}")
+        if hasattr(args, "observe_mode") and args.observe_mode:
+            context_parts.append(f"관찰 모드: {args.observe_mode}")
+        if hasattr(args, "cycles") and args.cycles:
+            context_parts.append(f"사이클: {args.cycles}")
+        if hasattr(args, "proposal_id") and args.proposal_id:
+            context_parts.append(f"제안 ID: {args.proposal_id}")
+
+        context_str = "\n  ".join(context_parts)
+        error_msg = f"{exc}\n\n실행 컨텍스트:\n  {context_str}"
+
+        logger.error("evonest %s failed: %s", args.command, error_msg, exc_info=True)
         notify(f"Evonest [{proj_name}] — {args.command} ❌", str(exc)[:100])
         sys.exit(1)
 
