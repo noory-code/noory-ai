@@ -1,0 +1,93 @@
+name: 스킬 버전 체크
+
+on:
+  schedule:
+    # 매주 월요일 오전 9시 (UTC) 실행
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # 수동 실행 가능
+  pull_request:
+    paths:
+      - 'skills/*/SKILL.md'
+      - 'scripts/check-skill-versions.sh'
+      - '.github/workflows/check-skill-versions.yml'
+
+jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 스킬 버전 체크 실행
+        id: version-check
+        continue-on-error: true
+        run: |
+          bash scripts/check-skill-versions.sh
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: 보고서 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-report
+          path: version-report.md
+          retention-days: 30
+
+      - name: PR에 코멘트 추가
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('version-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+      - name: 이슈 생성 (업데이트 필요 시)
+        if: steps.version-check.outputs.exit_code != '0' && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('version-report.md', 'utf8');
+
+            // 기존 이슈 확인
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'version-update',
+              per_page: 1
+            });
+
+            const title = '🔄 Flutter 스킬 버전 업데이트 필요';
+            const body = `${report}\n\n---\n\n이 이슈는 자동으로 생성되었습니다. \`update-flutter-skills\` 스킬을 사용하여 업데이트하세요.`;
+
+            if (issues.data.length === 0) {
+              // 새 이슈 생성
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['version-update', 'maintenance']
+              });
+            } else {
+              // 기존 이슈 업데이트
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body: `## 📅 ${new Date().toISOString().split('T')[0]} 업데이트\n\n${report}`
+              });
+            }
+
+      - name: 결과 출력
+        run: |
+          echo "버전 체크 완료"
+          cat version-report.md

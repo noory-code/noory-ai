@@ -30,6 +30,19 @@ Curated reference skills for Flutter development. Each skill gives Claude instan
 /plugin install flutter-cask
 ```
 
+## Maintenance
+
+### 자동 버전 체크
+
+CI를 통해 매주 자동으로 스킬의 패키지 버전을 체크합니다:
+
+- **스케줄**: 매주 월요일 오전 9시 (UTC)
+- **동작**: pub.dev API를 통해 최신 버전과 문서화된 버전 비교
+- **결과**: 업데이트가 필요한 경우 자동으로 이슈 생성
+- **수동 실행**: GitHub Actions에서 workflow_dispatch로 언제든 실행 가능
+
+버전 체크 스크립트: `scripts/check-skill-versions.sh`
+
 ## Feedback
 
 이 프로젝트를 개선하는 데 도움을 주세요:
