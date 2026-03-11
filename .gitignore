@@ -38,3 +38,6 @@ secrets*
 # Package runtime data (should not be committed from dev machines)
 .evonest/
 .distill/
+
+# Session handoff (local only)
+HANDOFF.md
