@@ -5,13 +5,6 @@ description: >
   Triggers when the user asks to initialize, create a new design guide,
   or set up a new app's design system in Pencil.
 user-invocable: true
-allowed-tools:
-  - Bash
-  - Glob
-  - mcp__pencil__open_document
-  - mcp__pencil__set_variables
-  - mcp__pencil__batch_design
-  - mcp__pencil__get_variables
 ---
 
 # Init — App Design Guide
@@ -19,43 +12,13 @@ allowed-tools:
 앱별 디자인 가이드 `.pen` 파일을 생성한다.
 `material-design-guide.lib.pen`은 공용 라이브러리로 유지하고, 앱마다 별도 파일을 생성한다.
 
-## Step 0 — 저장 위치 결정
+## Step 0 — 정보 수집
 
-### 프로젝트 구조 탐색
+사용자에게 세 가지를 확인한다:
 
-`Glob`으로 현재 작업 디렉토리의 최상위 구조를 파악한다:
-
-```
-Glob("**/pubspec.yaml")        → Flutter 앱 패키지 위치 확인
-Glob("**/melos.yaml")          → 모노레포 여부 확인
-Glob("apps/*/")                → apps/ 패턴 모노레포
-Glob("packages/*/")            → packages/ 패턴 모노레포
-```
-
-### 위치 결정 규칙
-
-| 조건 | 저장 경로 |
-|------|-----------|
-| 모노레포 (`melos.yaml` 존재, `apps/` 또는 `packages/`) | `<app_package>/pencil/` |
-| 단일 Flutter 앱 (`pubspec.yaml` 루트에 존재) | `pencil/` (프로젝트 루트 기준) |
-| 그 외 | 사용자에게 직접 경로 확인 |
-
-### 사용자 확인
-
-탐색 결과를 바탕으로 후보 경로를 제안하고 사용자에게 확인을 받는다:
-
-```
-프로젝트 구조를 분석했습니다.
-저장 위치: <제안 경로>/<appname>-design-guide.pen
-이 경로로 진행할까요?
-```
-
-## Step 1 — 정보 수집
-
-사용자에게 두 가지를 확인한다:
-
-1. **앱 이름** — 파일명에 사용 (예: `myapp` → `myapp-design-guide.pen`)
-2. **시드 컬러 hex** — M3 팔레트 계산 기준색 (예: `#6750A4`)
+1. **저장 경로** — `.pen` 파일을 저장할 디렉토리 (예: `apps/myapp/pencil/`, `pencil/`)
+2. **앱 이름** — 파일명에 사용 (예: `myapp` → `myapp-design-guide.pen`)
+3. **시드 컬러 hex** — M3 팔레트 계산 기준색 (예: `#6750A4`)
 
 ## Step 2 — 새 .pen 파일 생성
 

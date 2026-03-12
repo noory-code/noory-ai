@@ -5,7 +5,6 @@ description: >
   Triggers when the user asks to change the seed color, primary color, brand color,
   or update the color palette/scheme in material-design-guide.lib.pen.
 user-invocable: true
-allowed-tools: ["Bash", "mcp__pencil__get_variables", "mcp__pencil__set_variables"]
 ---
 
 # Change Seed Color

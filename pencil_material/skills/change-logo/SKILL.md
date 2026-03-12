@@ -5,11 +5,6 @@ description: >
   Triggers when the user asks to change, replace, or update the logo,
   app icon, or brand mark in the Pencil design guide.
 user-invocable: true
-allowed-tools:
-  - mcp__pencil__get_editor_state
-  - mcp__pencil__batch_get
-  - mcp__pencil__batch_design
-  - mcp__pencil__get_screenshot
 ---
 
 # Change Logo
