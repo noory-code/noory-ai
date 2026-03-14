@@ -15,20 +15,12 @@ user-invocable: true
 
 ## Step 0 — 환경 검증
 
-다음 4가지를 순서대로 확인한다. 하나라도 실패하면 즉시 중단하고 해결 방법을 안내한다.
+두 그룹으로 나누어 검증한다. **그룹 A**는 파일 작업에 필요하고, **그룹 B**는 Pencil/Dart 작업에 필요하다.
+그룹 A가 실패하면 즉시 중단. 그룹 B는 Step 2 완료 후(Pencil 파일 열기 직전) 검증한다.
 
-### 0-1. Pencil MCP 연결 확인
+### 그룹 A — 파일 작업 전제 (Step 0에서 검증)
 
-```
-mcp__pencil__get_editor_state()
-```
-
-- 응답 성공 → 다음 검증으로
-- 실패 (도구 없음 / 타임아웃) → **중단**:
-  > "Pencil 앱이 실행 중인지, Claude Code에 Pencil MCP가 연결되어 있는지 확인해주세요.
-  > Pencil MCP 설정: Pencil 앱 → Settings → MCP Server"
-
-### 0-2. Python 3.9+ 설치 확인
+#### A-1. Python 3.9+ 설치 확인
 
 ```bash
 python3 --version
@@ -38,7 +30,7 @@ python3 --version
 - 없거나 버전 미달 → **중단**:
   > "Python 3.9 이상이 필요합니다. 설치 후 다시 시도해주세요."
 
-### 0-3. materialyoucolor 패키지 확인
+#### A-2. materialyoucolor 패키지 확인
 
 ```bash
 python3 -c "import materialyoucolor; print('ok')"
@@ -48,18 +40,22 @@ python3 -c "import materialyoucolor; print('ok')"
 - ImportError → **중단**:
   > "pip install materialyoucolor 를 실행한 후 다시 시도해주세요."
 
-### 0-4. Python 스크립트 파일 존재 확인
+#### A-3. Python 스크립트 파일 존재 확인
 
 ```bash
 ls pencil_m3_flutter/pencil/md3calc/hct_palette.py pencil_m3_flutter/pencil/md3calc/gen_dart.py
 ```
 
-- 두 파일 모두 존재 → **검증 완료**
+- 두 파일 모두 존재 → **그룹 A 통과**
 - 없음 → **중단**:
   > "pencil_m3_flutter 디렉토리가 현재 프로젝트에 포함되어 있는지 확인해주세요.
   > (현재 디렉토리: `pwd` 결과)"
 
-모든 검증 통과 시: `✓ 환경 확인 완료. 설정을 시작합니다.` 출력 후 Step 1로 진행.
+그룹 A 통과 시: `✓ 환경 확인 완료. 설정을 시작합니다.` 출력 후 Step 1로 진행.
+
+### 그룹 B — Pencil MCP 연결 (Step 2-2에서 검증)
+
+> Pencil은 파일 복사 이후에만 필요하다. Step 2-2에서 검증한다.
 
 ---
 
@@ -89,21 +85,36 @@ ls pencil_m3_flutter/pencil/md3calc/hct_palette.py pencil_m3_flutter/pencil/md3c
 `material-design-guide.lib.pen`을 복사해서 앱 전용 라이브러리 파일로 만든다.
 빈 파일을 만들면 M3 컴포넌트/변수가 없으므로 반드시 복사 방식을 사용한다.
 
-사용자에게 안내:
+### 2-1. 파일 복사 (Pencil 불필요)
 
-```
-1. Finder(또는 파일 탐색기)에서 아래 파일을 복사한다:
-   pencil_m3_flutter/pencil/material-design-guide.lib.pen
-
-2. 복사한 파일을 <저장 경로>/<appname>-design-guide.lib.pen 으로 이름 변경 후 저장한다.
-
-3. Pencil에서 해당 파일을 열어 확인한다:
-   mcp__pencil__open_document("<저장 경로>/<appname>-design-guide.lib.pen")
+```bash
+cp pencil_m3_flutter/pencil/material-design-guide.lib.pen "<저장 경로>/<appname>-design-guide.lib.pen"
 ```
 
 > 복사 방식을 사용하면 material-design-guide.lib.pen의 166개 M3 컴포넌트와 Color Scheme 변수가 모두 포함된다.
 
-완료 후 보고: `✓ <appname>-design-guide.lib.pen 생성 완료. 다음: 시드 컬러 설정`
+완료 후 보고: `✓ <appname>-design-guide.lib.pen 파일 복사 완료.`
+
+### 2-2. Pencil MCP 연결 확인 (그룹 B 검증)
+
+파일을 열기 전에 Pencil이 실행 중인지 확인한다:
+
+```
+mcp__pencil__get_editor_state()
+```
+
+- 응답 성공 → 2-3 진행
+- 실패 → **중단**:
+  > "Pencil 앱이 실행 중인지, Claude Code에 Pencil MCP가 연결되어 있는지 확인해주세요.
+  > Pencil MCP 설정: Pencil 앱 → Settings → MCP Server"
+
+### 2-3. Pencil에서 파일 열기
+
+```
+mcp__pencil__open_document("<저장 경로>/<appname>-design-guide.lib.pen")
+```
+
+완료 후 보고: `✓ <appname>-design-guide.lib.pen Pencil에서 열림. 다음: 시드 컬러 설정`
 
 ## Step 3 — 시드 컬러 설정 + Dart 코드 생성
 
