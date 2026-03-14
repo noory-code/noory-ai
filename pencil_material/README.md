@@ -1,182 +1,199 @@
-# pencil_material
+# pencil-material
 
-## Introduction
+Claude Code 플러그인 — Flutter Material Design 3 디자인 시스템 자동화.
 
-Material Design 3 디자인 시스템 패키지입니다.
-이 프로젝트는 pencil.dev를 사용하여 고유의 디자인 시스템을 구축하기 위한 시작점으로 활용될 수 있습니다.
-
-`SemanticColorPalette` → `ThemeColors` → `AppTheme` 3-레이어 컬러 아키텍처 +
-Design Tokens(Spacing/Radius/Elevation/Icon/Opacity) + Pencil 가이드.
+[Pencil](https://pencil.ai) 앱과 Claude Code를 연동해 앱별 M3 디자인 라이브러리를 초기화하고,
+시드 컬러 기반 Flutter 테마 코드를 자동 생성하며, 화면 디자인 프롬프트를 만든다.
 
 ---
 
-## 패키지 구조
+## 이 플러그인이 하는 일
+
+```
+/pencil-material:init
+  → 앱별 <appname>-design-guide.lib.pen 생성
+  → 시드 컬러 설정 (Pencil 변수 + Flutter Dart 코드 자동 생성)
+  → 로고 설정
+  → 프로젝트 전용 design 스킬 생성
+
+/pencil-material:design-guide
+  → M3 Expressive 규칙 기반으로 화면 디자인
+  → Claude Code가 Pencil MCP 직접 조작 또는 프롬프트 생성
+
+/pencil-material:change-seed-color
+  → 시드 컬러 변경 → Pencil 변수 + Flutter 코드 동시 업데이트
+
+/pencil-material:change-logo
+  → 로고 컴포넌트 교체 (AI 생성 / 이미지 / 텍스트 이니셜)
+```
+
+---
+
+## 스킬 목록
+
+| 스킬 | 역할 |
+|------|------|
+| `init` | 앱 디자인 시스템 초기화 (원스톱 온보딩) |
+| `design-guide` | M3 화면 디자인 베이스 규칙 + MCP 직접 실행 |
+| `change-seed-color` | 시드 컬러 변경 → Pencil + Flutter 코드 동기화 |
+| `change-logo` | 로고 컴포넌트 교체 |
+
+---
+
+## 환경 요구사항
+
+### 1. Pencil 앱 + MCP 서버
+
+[Pencil](https://pencil.ai) 앱이 실행 중이어야 하고, Claude Code와 MCP로 연결되어 있어야 한다.
+`material-design-guide.lib.pen` 파일이 Pencil에서 열려 있어야 한다.
+
+### 2. Python 3.9+
+
+시드 컬러 팔레트 계산 및 Dart 코드 생성에 Python이 필요하다.
+
+```bash
+# materialyoucolor 설치 (HCT 알고리즘)
+pip install materialyoucolor
+```
+
+### 3. Python 스크립트 위치
+
+```
+pencil_material/pencil/md3calc/
+├── hct_palette.py   # 시드 컬러 → M3 팔레트 JSON 계산
+└── gen_dart.py      # 팔레트 JSON → Flutter Dart 파일 생성
+```
+
+스킬 실행 시 Claude Code가 이 스크립트들을 자동으로 호출한다.
+프로젝트 루트에서 실행되므로 별도 설정 불필요.
+
+---
+
+## 빠른 시작
+
+### 1. 플러그인 설치
+
+이 `pencil_material` 디렉토리를 프로젝트에 포함하거나 경로를 Claude Code에 등록한다.
+
+### 2. 앱 초기화
+
+```
+/pencil-material:init
+```
+
+Claude가 순서대로 안내한다:
+- 저장 경로 및 앱 이름 → `.lib.pen` 파일 생성
+- 시드 컬러 hex → Pencil 변수 + Flutter Dart 코드 자동 생성
+- 로고 설정
+- 프로젝트 전용 `design` 스킬 생성
+
+### 3. 화면 디자인
+
+`init` 완료 후 프로젝트에 생성된 `design` 스킬 사용:
+
+```
+/<appname>:design 로그인 화면 만들어줘
+```
+
+→ Pencil AI 채팅창에 붙여넣을 프롬프트 출력.
+→ 복사해서 Pencil AI에 붙여넣으면 화면 자동 생성.
+
+---
+
+## 스킬 상세
+
+### `init` — 앱 디자인 시스템 초기화
+
+1. `<appname>-design-guide.lib.pen` 생성 (Pencil 라이브러리)
+2. 시드 컬러 설정:
+   - Pencil: Color Scheme 변수 전체 업데이트 (light/dark)
+   - Flutter: `gen_dart.py`로 Dart 파일 4개 자동 생성
+3. 로고 설정
+4. 프로젝트 전용 `design` 스킬 생성 (`.claude-plugin/skills/design/SKILL.md`)
+
+### `design-guide` — M3 화면 디자인 베이스
+
+두 가지 역할:
+- **베이스 레이어**: 프로젝트 `design` 스킬이 이 규칙을 상속
+- **직접 실행**: Claude Code가 Pencil MCP를 통해 화면을 직접 조립
+
+M3 Expressive 규칙, 컴포넌트 ID 레퍼런스, 화면 패턴, 프롬프트 생성 방법론 포함.
+
+### `change-seed-color` — 시드 컬러 변경
+
+1. `hct_palette.py`로 새 팔레트 계산
+2. Pencil `set_variables`로 Color Scheme 업데이트
+3. `gen_dart.py`로 Flutter Dart 파일 재생성
+
+### `change-logo` — 로고 교체
+
+AI 생성 / 이미지 파일 / 텍스트 이니셜 중 선택.
+`Logo` reusable 컴포넌트를 교체하면 모든 인스턴스에 즉시 반영.
+
+---
+
+## 프로젝트 design 스킬
+
+`init` 실행 시 프로젝트에 자동 생성되는 스킬 (`.claude-plugin/skills/design/SKILL.md`).
+
+- `pencil-material:design-guide`의 M3 규칙을 베이스로 상속
+- 프로젝트 고유 컴포넌트, 화면 패턴 추가 정의
+- 사용자 요청 → **Pencil AI 채팅창에 붙여넣을 프롬프트 텍스트 출력**
+
+생성 후 `## 프로젝트 고유 규칙` 섹션을 앱에 맞게 직접 채워야 한다.
+
+---
+
+## lib/src/ — 생성 결과물 참조용 예시
+
+`lib/src/`의 Dart 파일들은 `gen_dart.py`가 생성하는 코드의 **참조 예시**다.
+실제 앱 프로젝트에는 `init` 스킬이 앱 경로에 직접 생성한다.
 
 ```
 lib/src/
-├── semantic_color_palette.dart  # Layer 1 — M3 팔레트 원시값 (78개 상수 + seed)
-├── theme_colors.dart            # Layer 2 — 6개 variant 색상 역할 (ThemeColors)
-├── theme.dart                   # Layer 3 — ThemeData 6개 variant (AppTheme)
-└── tokens.dart                  # Design Tokens (AppSpacing/AppRadius/AppElevation/AppIconSize/AppOpacity)
-
-pencil/
-├── material-design-guide.lib.pen  # Pencil 디자인 라이브러리
-└── guide/                         # 컴포넌트·토큰별 Pencil 프롬프트 + Flutter 사용법
-    ├── _overview.md               # 전체 가이드 사용법 (여기서 시작)
-    ├── _colors.md                 # Color System
-    ├── _typography.md             # Typography
-    ├── _spacing.md / _radius.md / _elevation.md / _icon-size.md / _opacity.md
-    └── buttons.md · cards.md · ... (31개 컴포넌트)
+├── semantic_color_palette.dart  # Layer 1 — 팔레트 원시값 (seed #E91E63 예시)
+├── theme_colors.dart            # Layer 2 — ColorScheme 6개 variant
+├── theme.dart                   # Layer 3 — AppTheme (ThemeData)
+└── tokens.dart                  # Spacing / Radius / Elevation / IconSize / Opacity
 ```
 
----
-
-## 시작하기 (Getting Started)
-
-### 1. 패키지 복사
-
-이 패키지는 오픈소스로 제공되므로, 직접 수정하고 확장해서 사용하는 것을 권장합니다. Melos와 같은 Flutter 모노레포 환경에 `flutter_design` 패키지 디렉토리 전체를 복사하여 사용하세요.
-
-### 2. 의존성 추가
-
-이 패키지를 사용하려는 앱의 `pubspec.yaml` 파일에 아래와 같이 path dependency를 추가합니다.
-
-```yaml
-# pubspec.yaml
-dependencies:
-  flutter_design:
-    path: ../flutter_design # Monorepo 내의 상대 경로에 맞춰 수정
-```
-
----
-
-## 기본 사용법 (Basic Usage)
-
-### 1. MaterialApp 세팅
+### 생성된 코드 사용법
 
 ```dart
-import 'package:flutter_design/flutter_design.dart';
-
+// MaterialApp 세팅
 MaterialApp(
-  theme:                  AppTheme.light,
-  darkTheme:              AppTheme.dark,
-  highContrastTheme:      AppTheme.lightHc,
-  highContrastDarkTheme:  AppTheme.darkHc,
+  theme:     AppTheme.light,
+  darkTheme: AppTheme.dark,
   themeMode: ThemeMode.system,
 )
-```
 
-### 2. 위젯에서 색상 접근
-
-```dart
+// 색상 접근
 final cs = Theme.of(context).colorScheme;
+cs.primary      // 브랜드 컬러
+cs.surface      // 배경
+cs.onSurface    // 텍스트
 
-cs.primary              // 브랜드 컬러
-cs.surface              // 배경 Surface
-cs.onSurface            // Surface 위 텍스트
-cs.surfaceContainerHighest  // Surface Variant
-cs.error                // 오류 색상
-cs.outline              // 테두리
+// 디자인 토큰
+EdgeInsets.all(AppSpacing.base)         // 12dp
+BorderRadius.circular(AppRadius.md)     // 16dp
+AppElevation.level1                     // 1dp
+AppIconSize.md                          // 24dp
 ```
 
-### 3. Design Token 사용
+### 의존성
 
-```dart
-// Spacing
-padding: EdgeInsets.all(AppSpacing.base)                   // 16dp
-padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl)   // 24dp
-SizedBox(height: AppSpacing.sm)                            // 8dp
+생성된 `theme.dart`는 `google_fonts`를 사용한다:
 
-// Radius
-BorderRadius.circular(AppRadius.md)    // 12dp — Card
-BorderRadius.circular(AppRadius.full)  // 28dp — Button, Chip
-
-// Elevation
-Card(elevation: AppElevation.level1)                // 1dp
-FloatingActionButton(elevation: AppElevation.level2) // 3dp
-
-// Icon Size
-Icon(Icons.home, size: AppIconSize.md)  // 24dp (기본값)
-Icon(Icons.inbox, size: AppIconSize.xl) // 48dp (Empty State)
-
-// Opacity (State Layer)
-color.withValues(alpha: AppOpacity.hover)    // 0.08
-color.withValues(alpha: AppOpacity.pressed)  // 0.12
-```
-
-### 4. Typography
-
-```dart
-final tt = Theme.of(context).textTheme;
-
-Text('페이지 제목', style: tt.headlineLarge)   // 32sp, w400
-Text('카드 제목',   style: tt.titleMedium)     // 16sp, w500
-Text('본문',        style: tt.bodyMedium)       // 14sp, w400
-Text('캡션',        style: tt.labelSmall)       // 11sp, w500
+```yaml
+dependencies:
+  google_fonts: ^6.2.1
 ```
 
 ---
 
-## 컬러 스킴 변경하기 (프롬프트 기반 워크플로우)
+## Pencil 가이드
 
-`flutter_design`의 컬러 스킴은 `pencil.dev`와 IDE의 AI 에이전트(Gemini, Claude Code 등) 간의 프롬프트를 통해 완벽하게 동기화됩니다. 수동으로 값을 복사하여 붙여넣을 필요가 없습니다.
-
-### Step 1: `pencil.dev`에서 프롬프트로 색상 팔레트 변경
-
-먼저, `pencil.dev` 환경에서 디자인 시스템의 원본인 `material-design-guide.lib.pen` 파일의 색상을 변경합니다. 아래와 같은 프롬프트를 사용하세요.
-
-> **Pencil.dev 프롬프트 예시:**
-> "In the Material Design Guide, please change the seed color to `blue` and regenerate the entire color palette."
-
-이 명령은 `pencil.dev`가 새로운 시드 색상을 기반으로 전체 Material Color Scheme (Primary, Secondary, Neutral 등)을 다시 계산하고 업데이트하도록 합니다.
-
-### Step 2: IDE에서 프롬프트로 Flutter 코드 동기화
-
-`pencil.dev`에서 색상 변경이 완료되면, 사용 중인 IDE(예: Gemini가 통합된 VSCode)로 돌아와 AI 에이전트에게 다음과 같이 프롬프트를 입력하여 Flutter 코드를 업데이트합니다.
-
-> **IDE (Gemini/Claude) 프롬프트 예시:**
-> "The color scheme in 'material-design-guide.lib.pen' has been updated. Please sync the `packages/flutter_design/lib/src/semantic_color_palette.dart` file with the new values."
-
-이 명령을 받은 AI 에이전트는 `pencil.dev`의 변경된 색상 값들을 가져와 `semantic_color_palette.dart` 파일의 모든 관련 상수들을 자동으로 업데이트하여, 디자인과 코드를 완벽하게 일치시킵니다.
-
----
-
-## 6개 Theme Variant
-
-| Getter | 용도 |
-|--------|------|
-| `AppTheme.light`   | 기본 라이트 |
-| `AppTheme.dark`    | 기본 다크 |
-| `AppTheme.lightMc` | Medium Contrast 라이트 |
-| `AppTheme.darkMc`  | Medium Contrast 다크 |
-| `AppTheme.lightHc` | High Contrast 라이트 (`highContrastTheme`) |
-| `AppTheme.darkHc`  | High Contrast 다크 (`highContrastDarkTheme`) |
-
----
-
-## 3-레이어 컬러 아키텍처
-
-```
-Layer 1 — SemanticColorPalette   (raw hex)
-  primary0~100, secondary, tertiary, neutral, neutralVariant, error
-  → UI에서 직접 사용 금지
-
-       ↓ 역할 부여
-
-Layer 2 — ThemeColors / _ThemeColorSet   (named roles per variant)
-  light.primary = primary40
-  dark.primary  = primary80
-  → ThemeColors.lightScheme, darkScheme, ...
-
-       ↓ 테마 적용
-
-Layer 3 — AppTheme   (ThemeData)
-  MaterialApp(theme: AppTheme.light)
-  → 위젯에서 Theme.of(context).colorScheme.primary
-```
-
----
-
-## Pencil 가이드 사용법
+`pencil/guide/` 폴더에 31개 M3 컴포넌트 + 8개 토큰 시스템 가이드가 있다.
+각 파일에는 컴포넌트 사용 규칙과 Flutter 코드 연동 방법이 포함되어 있다.
 
 `pencil/guide/_overview.md` 참조.

@@ -1,7 +1,7 @@
 {
   "name": "pencil-material",
   "version": "0.1.0",
-  "description": "Flutter Material Design 3 Pencil design library tools",
+  "description": "Flutter Material Design 3 design system automation — init, design, seed color, logo via Pencil MCP",
   "author": { "name": "noory-ai" },
   "skills": "../skills/"
 }

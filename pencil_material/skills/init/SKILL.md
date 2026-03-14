@@ -67,6 +67,7 @@ python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib
 ## Step 6 — 프로젝트 design 스킬 생성
 
 `pencil-material:design-guide`를 베이스로 삼아 이 프로젝트 전용 `design` 스킬 파일을 생성한다.
+이 스킬의 역할: **사용자 요청 → Pencil AI 채팅창에 붙여넣을 프롬프트 텍스트 출력**.
 
 저장 경로: `<프로젝트 루트>/.claude-plugin/skills/design/SKILL.md`
 
@@ -75,34 +76,59 @@ python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib
 ---
 name: design
 description: >
-  Design screens for <appname> using the app design guide library.
+  Generate a Pencil AI prompt for designing screens of <appname>.
   Triggers when the user asks to design a screen, create a UI, or build a layout.
 user-invocable: true
 ---
 
 # Design — <appname>
 
-`pencil-material:design-guide` 스킬을 베이스로 한다.
+`pencil-material:design-guide`의 M3 규칙과 프롬프트 생성 방법론을 베이스로 한다.
 
-## 파일 경로
+## 역할
+
+사용자가 화면 디자인을 요청하면:
+1. `pencil-material:design-guide`의 M3 규칙 + 아래 프로젝트 고유 규칙 적용
+2. **Pencil AI 채팅창에 붙여넣을 프롬프트 텍스트를 출력**
+
+> Claude Code가 직접 Pencil을 조작하지 않는다.
+> 출력된 프롬프트를 복사해서 Pencil AI 채팅창에 붙여넣으면 된다.
+
+## 프로젝트 정보
+
 - Pencil 라이브러리: `<pen_file_path>/<appname>-design-guide.lib.pen`
+- 화면 작업 파일: `<pen_file_path>/<appname>-screens.pen` (또는 사용자 지정)
 - Flutter 테마 코드: `<flutter_lib_path>/`
-  - `semantic_color_palette.dart` — 팔레트 (시드 컬러 변경 시 재생성)
-  - `theme_colors.dart` — ColorScheme
-  - `theme.dart` — AppTheme
-  - `tokens.dart` — Spacing / Radius / Elevation
 
 ## 프로젝트 고유 규칙
 
 > 이 섹션을 프로젝트에 맞게 채워라:
-> - 앱 고유 컴포넌트 및 ID
+> - 앱 고유 컴포넌트 및 ID (<appname>-design-guide.lib.pen 에 정의된 것)
 > - 반복 사용되는 화면 패턴
-> - 브랜드 컬러 사용 규칙
+> - 브랜드 컬러 / 타이포그래피 특이사항
 
-## Workflow
+## 프롬프트 출력 형식
 
-`pencil-material:design-guide` 스킬의 전체 워크플로우를 따른다.
-위 프로젝트 고유 규칙을 추가로 적용한다.
+`pencil-material:design-guide`의 프롬프트 생성 방법론을 따른다.
+아래 템플릿에 화면 내용을 채워 출력한다:
+
+\`\`\`
+<appname>-screens.pen 에 <화면 이름> 화면을 추가해줘.
+
+## 공통 규칙
+- 색상: 절대 하드코딩 금지. $primary, $surface, $onSurface 등 Color Role 변수만 사용
+- 폼팩터: Frame/Mobile/390 (ID: dnJUo)
+- 캔버스 빈 공간에 배치 (간격 100px)
+
+## 레이아웃
+<화면 구조>
+
+## 컴포넌트
+<컴포넌트 목록과 ID>
+
+## 프로젝트 고유 규칙
+<위 섹션의 규칙 적용>
+\`\`\`
 ```
 
 > 생성 후 사용자에게 "프로젝트 고유 규칙 섹션을 채워달라"고 안내한다.
