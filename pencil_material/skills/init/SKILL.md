@@ -13,6 +13,56 @@ user-invocable: true
 `.lib.pen` 확장자를 사용해야 Pencil에서 다른 `.pen` 파일의 라이브러리로 import할 수 있다.
 `material-design-guide.lib.pen`은 공용 라이브러리로 유지하고, 앱마다 별도 파일을 생성한다.
 
+## Step 0 — 환경 검증
+
+다음 4가지를 순서대로 확인한다. 하나라도 실패하면 즉시 중단하고 해결 방법을 안내한다.
+
+### 0-1. Pencil MCP 연결 확인
+
+```
+mcp__pencil__get_editor_state()
+```
+
+- 응답 성공 → 다음 검증으로
+- 실패 (도구 없음 / 타임아웃) → **중단**:
+  > "Pencil 앱이 실행 중인지, Claude Code에 Pencil MCP가 연결되어 있는지 확인해주세요.
+  > Pencil MCP 설정: Pencil 앱 → Settings → MCP Server"
+
+### 0-2. Python 3.9+ 설치 확인
+
+```bash
+python3 --version
+```
+
+- Python 3.9 이상 → 다음 검증으로
+- 없거나 버전 미달 → **중단**:
+  > "Python 3.9 이상이 필요합니다. 설치 후 다시 시도해주세요."
+
+### 0-3. materialyoucolor 패키지 확인
+
+```bash
+python3 -c "import materialyoucolor; print('ok')"
+```
+
+- `ok` 출력 → 다음 검증으로
+- ImportError → **중단**:
+  > "pip install materialyoucolor 를 실행한 후 다시 시도해주세요."
+
+### 0-4. Python 스크립트 파일 존재 확인
+
+```bash
+ls pencil_material/pencil/md3calc/hct_palette.py pencil_material/pencil/md3calc/gen_dart.py
+```
+
+- 두 파일 모두 존재 → **검증 완료**
+- 없음 → **중단**:
+  > "pencil_material 디렉토리가 현재 프로젝트에 포함되어 있는지 확인해주세요.
+  > (현재 디렉토리: `pwd` 결과)"
+
+모든 검증 통과 시: `✓ 환경 확인 완료. 설정을 시작합니다.` 출력 후 Step 1로 진행.
+
+---
+
 ## Step 1 — 정보 수집
 
 사용자에게 두 가지를 확인한다:
