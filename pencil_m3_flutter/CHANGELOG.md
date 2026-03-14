@@ -1,3 +1,13 @@
+## 0.8.0
+
+### Changed
+
+- Rename skills: `init` → `pmf-init`, `change-seed-color` → `pmf-change-seed-color`, `change-logo` → `pmf-change-logo`
+- Set `design-guide` to `user-invocable: false` (base layer for project design skills, not directly callable)
+- Update all internal references and README
+
+---
+
 ## 0.7.0
 
 ### Fixed

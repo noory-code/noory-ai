@@ -4,7 +4,7 @@ description: >
   Base design rules for Material Design 3 screen design using the Pencil library.
   Triggers when the user asks to design a screen, create a UI, or build a layout.
   Also used as the base layer for project-specific design skills.
-user-invocable: true
+user-invocable: false
 ---
 
 # Design Guide — M3 Expressive (Base)
