@@ -7,9 +7,13 @@ Outputs 4 files into the target directory:
   theme.dart                   — AppTheme / ThemeData (Layer 3)
   tokens.dart                  — Spacing / Radius / Elevation / etc.
 
+Optionally outputs a barrel file that re-exports all 4 files:
+  <name>.dart                  — barrel export (e.g. myapp_ui.dart)
+
 Usage:
     python3 gen_dart.py <seed_hex> --out <path>
     python3 gen_dart.py "#6750A4" --out lib/src/design
+    python3 gen_dart.py "#6750A4" --out lib/src/design --barrel myapp_ui
 """
 import argparse
 import sys
@@ -516,10 +520,24 @@ abstract final class AppThickness {
 """
 
 
+def gen_barrel(barrel_name: str) -> str:
+    return (
+        f"// {barrel_name}.dart — generated barrel file\n"
+        "// Re-generate: python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <path> --barrel <name>\n"
+        "//\n"
+        "// Import this single file to access the full design system.\n"
+        "export 'semantic_color_palette.dart';\n"
+        "export 'theme_colors.dart';\n"
+        "export 'theme.dart';\n"
+        "export 'tokens.dart';\n"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate Flutter Dart theme files from a seed color.")
     parser.add_argument("seed", help="Seed color hex, e.g. '#6750A4'")
     parser.add_argument("--out", required=True, help="Output directory path (e.g. lib/src/design)")
+    parser.add_argument("--barrel", metavar="NAME", help="Generate a barrel file NAME.dart that re-exports all 4 files (e.g. --barrel myapp_ui)")
     args = parser.parse_args()
 
     seed_hex = args.seed.strip()
@@ -535,6 +553,9 @@ def main() -> None:
         "theme.dart": THEME_DART,
         "tokens.dart": TOKENS_DART,
     }
+
+    if args.barrel:
+        files[f"{args.barrel}.dart"] = gen_barrel(args.barrel)
 
     for filename, content in files.items():
         path = out_dir / filename

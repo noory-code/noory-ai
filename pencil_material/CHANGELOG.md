@@ -1,3 +1,14 @@
+## 0.3.0
+
+### Fixed
+
+- `init` Step 2: replace empty file creation with copy-from-`material-design-guide.lib.pen` flow — new app library starts with all 166 M3 components and Color Scheme variables
+- `gen_dart.py`: add `--barrel <name>` option to generate a barrel file `<name>.dart` that re-exports all 4 theme files
+- `init` Step 3: pass `--barrel <appname>_ui` when delegating to `change-seed-color`
+- `change-seed-color` Step 5: document `--barrel` option and default path convention (`lib/src/design/`)
+
+---
+
 ## 0.2.0
 
 ### Added

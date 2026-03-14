@@ -191,10 +191,21 @@ python3 hct_palette.py <seed_hex>
 단독/위임 구분 없이 항상 실행한다.
 
 ```bash
+# 기본 (배럴 파일 없이)
 python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib_path>
+
+# 배럴 파일 포함 (권장: lib/src/design, appname 전달 시)
+python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> \
+  --out <flutter_lib_path> \
+  --barrel <appname>_ui
 ```
 
+생성 파일:
+- `semantic_color_palette.dart`, `theme_colors.dart`, `theme.dart`, `tokens.dart`
+- `<appname>_ui.dart` — `--barrel` 지정 시 생성되는 배럴 파일
+
 > `flutter_lib_path`가 컨텍스트로 전달된 경우 그대로 사용한다. 없으면 사용자에게 확인한다.
+> Flutter 컨벤션 기본 경로: `lib/src/design/`
 
 ### Step 6 — 결과 확인
 

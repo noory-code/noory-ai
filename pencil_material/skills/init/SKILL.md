@@ -73,15 +73,24 @@ ls pencil_material/pencil/md3calc/hct_palette.py pencil_material/pencil/md3calc/
 
 > 시드 컬러와 로고는 이후 단계에서 별도로 수집한다.
 
-## Step 2 — 새 .lib.pen 파일 생성
+## Step 2 — 앱 디자인 가이드 파일 생성
+
+`material-design-guide.lib.pen`을 복사해서 앱 전용 라이브러리 파일로 만든다.
+빈 파일을 만들면 M3 컴포넌트/변수가 없으므로 반드시 복사 방식을 사용한다.
+
+사용자에게 안내:
 
 ```
-mcp__pencil__open_document("new")
+1. Finder(또는 파일 탐색기)에서 아래 파일을 복사한다:
+   pencil_material/pencil/material-design-guide.lib.pen
+
+2. 복사한 파일을 <저장 경로>/<appname>-design-guide.lib.pen 으로 이름 변경 후 저장한다.
+
+3. Pencil에서 해당 파일을 열어 확인한다:
+   mcp__pencil__open_document("<저장 경로>/<appname>-design-guide.lib.pen")
 ```
 
-파일 저장 경로: `<Step 1에서 결정한 경로>/<appname>-design-guide.lib.pen`
-
-> Pencil이 파일명을 요청하면 `<appname>-design-guide`로 입력하고, 저장 시 확장자를 `.lib.pen`으로 지정한다.
+> 복사 방식을 사용하면 material-design-guide.lib.pen의 166개 M3 컴포넌트와 Color Scheme 변수가 모두 포함된다.
 
 ## Step 3 — 시드 컬러 설정 + Dart 코드 생성
 
@@ -89,11 +98,13 @@ mcp__pencil__open_document("new")
 대상 파일은 Step 2에서 생성한 `<appname>-design-guide.lib.pen` (현재 에디터에 열려 있음).
 Step 1에서 수집한 `flutter_lib_path`를 컨텍스트로 전달한다.
 
-`change-seed-color`가 Pencil 변수 업데이트 + Dart 파일 생성까지 완료한다:
+`change-seed-color`가 Pencil 변수 업데이트 + Dart 파일 생성까지 완료한다.
+Dart 생성 시 `--barrel <appname>_ui` 옵션을 포함해 배럴 파일도 함께 생성한다:
 - `semantic_color_palette.dart` — 팔레트 원시값
 - `theme_colors.dart` — ColorScheme 6개 variant
 - `theme.dart` — AppTheme (ThemeData)
 - `tokens.dart` — Spacing / Radius / Elevation 등
+- `<appname>_ui.dart` — 배럴 파일 (위 4개를 한 번에 import)
 
 > `theme.dart`는 `google_fonts` 패키지를 사용한다. 프로젝트 `pubspec.yaml`에 추가 필요:
 > ```yaml
