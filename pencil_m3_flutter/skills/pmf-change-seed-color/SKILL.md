@@ -13,7 +13,7 @@ user-invocable: true
 
 ## Target file
 
-- 단독 실행 시: `pencil_m3_flutter/pencil/material-design-guide.lib.pen`
+- 단독 실행 시: `${CLAUDE_PLUGIN_ROOT}/pencil/material-design-guide.lib.pen`
 - `init`에서 위임 실행 시: 새로 생성한 `<appname>-design-guide.lib.pen`
   (init이 열어둔 파일이 현재 에디터에 열려 있으므로 그대로 사용)
 
@@ -25,10 +25,10 @@ user-invocable: true
 
 ### Step 2 — 팔레트 계산
 
-`pencil_m3_flutter/pencil/md3calc/hct_palette.py` 를 사용해 팔레트를 계산한다.
+`${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/hct_palette.py` 를 사용해 팔레트를 계산한다.
 
 ```bash
-cd pencil_m3_flutter/pencil/md3calc
+cd ${CLAUDE_PLUGIN_ROOT}/pencil/md3calc
 python3 hct_palette.py <seed_hex>
 ```
 
@@ -192,14 +192,15 @@ python3 hct_palette.py <seed_hex>
 `.pen` 파일이 컬러의 SSOT이므로 반드시 `.pen` 변수를 기반으로 Dart를 생성한다.
 
 ```
-1. mcp__pencil__get_variables() 실행 → 결과를 vars.json 파일로 저장
-2. python3 pencil_m3_flutter/pencil/md3calc/gen_dart.py \
-     --from-json vars.json \
+1. mcp__pencil__get_variables() 실행 → 결과를 /tmp/pen_vars.json 파일로 저장
+2. python3 ${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/gen_dart.py \
+     --from-json /tmp/pen_vars.json \
      --out <flutter_lib_path> \
      --barrel <appname>_ui
 ```
 
-> `--from-json`을 사용하면 `.pen` 파일의 실제 변수값이 Dart 코드에 반영된다.
+> get_variables() 결과는 100K+자로 매우 클 수 있다. 반드시 파일로 저장 후 `--from-json`으로 전달한다.
+> `--from-json`은 get_variables()의 네이티브 형식(`{name: {type, value: [{theme, value}]}}`)을 직접 파싱한다.
 > 사용자가 Pencil에서 컬러를 직접 수정한 경우에도 정확히 동기화된다.
 
 생성 파일:

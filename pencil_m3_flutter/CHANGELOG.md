@@ -1,3 +1,18 @@
+## 1.0.0
+
+### Fixed
+
+- `gen_dart.py --from-json`: support native `get_variables()` dict format (was: only list format)
+- Hardcoded `pencil_m3_flutter/` paths → `${CLAUDE_PLUGIN_ROOT}/` in all skills
+- Pencil MCP reconnection guidance in init Step 2-2
+- SVG limitation warning in `pmf-change-logo` Case B
+- Logo node fallback: auto-create image node if missing inside Logo component
+- `get_variables()` large result handling: file-based workflow documented
+- Barrel file parent re-export: generates `lib/src/app_ui.dart` re-exporting `lib/src/design/app_ui.dart`
+- Flutter workspace registration step added to init (Step 5)
+
+---
+
 ## 0.9.0
 
 ### Changed

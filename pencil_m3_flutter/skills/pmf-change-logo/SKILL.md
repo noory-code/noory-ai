@@ -43,7 +43,8 @@ mcp__pencil__batch_get(patterns=["Logo"])
 `Logo` 이름의 reusable 컴포넌트 노드 ID를 찾는다.
 
 - 노드가 없으면: `mcp__pencil__batch_design`으로 192×192 reusable 프레임 `Logo` 신규 생성
-- 노드가 있으면: 해당 노드 ID 사용
+- 노드가 있지만 내부 이미지 노드가 없으면: 기존 Logo 프레임 안에 192×192 Rectangle + image fill 노드를 `batch_design`으로 추가 생성
+- 노드가 있고 내부 이미지 노드도 있으면: 해당 노드 ID 사용
 
 ## Step 4 — 로고 교체
 
@@ -54,6 +55,11 @@ G(<logoNodeId>, "ai", "<appname> app logo square minimal")
 ```
 
 ### Case B: 이미지 파일
+
+> SVG 파일은 Pencil의 image fill로 직접 적용 불가 (투명으로 렌더링됨).
+> PNG/JPG로 변환 후 사용:
+> - macOS: `sips -s format png logo.svg --out logo.png`
+> - ImageMagick: `convert logo.svg logo.png`
 
 ```
 mcp__pencil__batch_design

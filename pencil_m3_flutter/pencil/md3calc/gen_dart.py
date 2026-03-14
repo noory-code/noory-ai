@@ -23,6 +23,8 @@ Usage:
     python3 gen_dart.py "#6750A4" --out lib/src/design --barrel myapp_ui
     python3 gen_dart.py --from-json vars.json --out lib/src/design --barrel myapp_ui
 """
+from __future__ import annotations
+
 import argparse
 import json
 import sys
@@ -529,32 +531,50 @@ abstract final class AppThickness {
 """
 
 
+def _normalize_variables(data: dict | list) -> list[dict]:
+    """Normalize get_variables() output into [{name, themes}] list.
+
+    Supports two formats:
+    - Format A (list): {"variables": [{name, themes: {theme_key: value}}]}
+    - Format B (dict/native): {varName: {type, value: [{theme, value}]}}
+    """
+    # Unwrap {"variables": ...} wrapper if present
+    if isinstance(data, dict) and "variables" in data:
+        inner = data["variables"]
+        if isinstance(inner, list):
+            return inner
+        data = inner
+
+    # Format A: already a list of {name, themes}
+    if isinstance(data, list):
+        return data
+
+    # Format B (native): {varName: {type, value: [{theme, value}]}}
+    if isinstance(data, dict):
+        first_val = next(iter(data.values()), None)
+        if isinstance(first_val, dict) and "value" in first_val:
+            parsed = []
+            for var_name, var_data in data.items():
+                themes = {}
+                for tv in var_data.get("value", []):
+                    theme = tv.get("theme", "")
+                    themes[theme] = tv.get("value", "")
+                parsed.append({"name": var_name, "themes": themes})
+            return parsed
+
+    return []
+
+
 def parse_pen_variables(json_path: str) -> tuple[dict, str]:
     """Parse mcp__pencil__get_variables() JSON output into palettes dict + seed hex.
 
-    Expected JSON structure (from get_variables):
-    {
-      "variables": [
-        {
-          "name": "seed",
-          "themes": { "Semantic Colors Palette/Default": "#6750A4" }
-        },
-        {
-          "name": "primary/40",
-          "themes": { "Semantic Colors Palette/Default": "#6750A4" }
-        },
-        ...
-      ]
-    }
-
+    Supports both list format and native dict format from get_variables().
     Returns (palettes, seed_hex) in the same format as hct_palette.generate().
     """
     with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
 
-    variables = data.get("variables", data) if isinstance(data, dict) else data
-    if isinstance(variables, dict) and "variables" in variables:
-        variables = variables["variables"]
+    variables = _normalize_variables(data)
 
     theme_key = "Semantic Colors Palette/Default"
     palettes: dict[str, dict[str, str]] = {p: {} for p in PALETTES}
@@ -638,6 +658,18 @@ def main() -> None:
         path = out_dir / filename
         path.write_text(content, encoding="utf-8")
         print(f"  ✓ {path}")
+
+    # Generate parent re-export barrel (e.g. lib/src/app_ui.dart → re-exports lib/src/design/app_ui.dart)
+    if args.barrel:
+        parent_barrel = out_dir.parent / f"{args.barrel}.dart"
+        relative = out_dir.name
+        parent_barrel.write_text(
+            f"// {args.barrel}.dart — re-export from {relative}/\n"
+            f"// Re-generate: python3 gen_dart.py <seed_hex> --out <path> --barrel {args.barrel}\n"
+            f"export '{relative}/{args.barrel}.dart';\n",
+            encoding="utf-8",
+        )
+        print(f"  ✓ {parent_barrel} (parent re-export)")
 
     print(f"\nDone. Seed: {seed_hex}")
     print(f"Primary (light): {palettes['primary']['40']}")
