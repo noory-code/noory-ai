@@ -38,44 +38,66 @@ mcp__pencil__open_document("new")
 
 > `change-seed-color` 스킬 참조.
 
-## Step 4 — 로고 설정
+## Step 4 — Dart 코드 생성
+
+사용자에게 Flutter 프로젝트의 lib 경로를 확인한다 (예: `lib/src/design/`, `lib/core/theme/`).
+
+```bash
+python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib_path>
+```
+
+생성 파일:
+- `semantic_color_palette.dart` — 팔레트 원시값
+- `theme_colors.dart` — ColorScheme 6개 variant
+- `theme.dart` — AppTheme (ThemeData)
+- `tokens.dart` — Spacing / Radius / Elevation 등
+
+> `theme.dart`는 `google_fonts` 패키지를 사용한다. 프로젝트 `pubspec.yaml`에 추가 필요:
+> ```yaml
+> dependencies:
+>   google_fonts: ^6.2.1
+> ```
+
+## Step 5 — 로고 설정
 
 `change-logo` 스킬의 전체 절차를 실행한다.
 
 > `change-logo` 스킬 참조.
 
-## Step 5 — 프로젝트 design-guide 스킬 생성
+## Step 6 — 프로젝트 design 스킬 생성
 
-`pencil-material:design-guide`를 베이스로 삼아 이 프로젝트 전용 `design-guide` 스킬 파일을 생성한다.
+`pencil-material:design-guide`를 베이스로 삼아 이 프로젝트 전용 `design` 스킬 파일을 생성한다.
 
-저장 경로: `<프로젝트 루트>/.claude-plugin/skills/design-guide/SKILL.md`
+저장 경로: `<프로젝트 루트>/.claude-plugin/skills/design/SKILL.md`
 
 파일 내용:
 ```markdown
 ---
-name: design-guide
+name: design
 description: >
   Design screens for <appname> using the app design guide library.
   Triggers when the user asks to design a screen, create a UI, or build a layout.
 user-invocable: true
 ---
 
-# Design Guide — <appname>
+# Design — <appname>
 
 `pencil-material:design-guide` 스킬을 베이스로 한다.
-아래는 이 프로젝트에 특화된 추가 규칙이다.
 
-## Target file
-
-`<appname>-design-guide.lib.pen`을 import한 화면 작업용 `.pen` 파일.
+## 파일 경로
+- Pencil 라이브러리: `<pen_file_path>/<appname>-design-guide.lib.pen`
+- Flutter 테마 코드: `<flutter_lib_path>/`
+  - `semantic_color_palette.dart` — 팔레트 (시드 컬러 변경 시 재생성)
+  - `theme_colors.dart` — ColorScheme
+  - `theme.dart` — AppTheme
+  - `tokens.dart` — Spacing / Radius / Elevation
 
 ## 프로젝트 고유 규칙
 
-> 이 섹션은 프로젝트에 맞게 채워야 한다:
+> 이 섹션을 프로젝트에 맞게 채워라:
 > - 앱 고유 컴포넌트 및 ID
 > - 반복 사용되는 화면 패턴
-> - 브랜드 컬러 사용 규칙 (시드 컬러 기반)
-> - 타이포그래피 / 간격 특이사항
+> - 브랜드 컬러 사용 규칙
 
 ## Workflow
 
@@ -85,7 +107,7 @@ user-invocable: true
 
 > 생성 후 사용자에게 "프로젝트 고유 규칙 섹션을 채워달라"고 안내한다.
 
-## Step 6 — 결과 안내
+## Step 7 — 결과 안내
 
 완료 후 사용자에게 보고:
 
@@ -93,13 +115,15 @@ user-invocable: true
 ✓ <appname>-design-guide.lib.pen 생성 완료
 
 - Seed color: <hex>
-- Primary: <primary/40>
+- Primary (light): <primary/40>
+- Primary (dark):  <primary/80>
+- Flutter 테마 코드: <flutter_lib_path>/
 - 로고: 적용 완료
-- 프로젝트 design-guide 스킬: .claude-plugin/skills/design-guide/SKILL.md
+- 프로젝트 design 스킬: .claude-plugin/skills/design/SKILL.md
 
 다음 단계:
   1. SKILL.md의 "프로젝트 고유 규칙" 섹션을 앱에 맞게 작성
   2. Pencil에서 새 .pen 파일 생성 (예: <appname>-screens.pen)
   3. 해당 파일에 <appname>-design-guide.lib.pen import 추가
-  4. /<appname>:design-guide 로 화면 디자인 시작
+  4. /<appname>:design 으로 화면 디자인 시작
 ```

@@ -184,9 +184,19 @@ python3 hct_palette.py <seed_hex>
 > light-mc, dark-mc, light-hc, dark-hc 테마는 medium/high contrast 변형이다.
 > 이 스킬에서는 light/dark 만 업데이트한다. mc/hc가 필요하면 사용자에게 알린다.
 
-### Step 5 — 결과 확인
+### Step 5 — Dart 코드 재생성
+
+프로젝트 `design` 스킬의 `flutter_lib_path`에 Dart 파일을 재생성한다.
+
+```bash
+python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib_path>
+```
+
+> `flutter_lib_path`를 모르면 사용자에게 확인한다.
+
+### Step 6 — 결과 확인
 
 변경 완료 후 사용자에게 보고:
 - 새 seed color
-- 주요 토큰 값 (primary, secondary, tertiary)
-- Flutter `colors.dart` 업데이트가 필요함을 안내
+- Primary (light): primary/40, Primary (dark): primary/80
+- Flutter 테마 코드 재생성 완료: `<flutter_lib_path>/semantic_color_palette.dart`
