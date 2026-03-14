@@ -78,6 +78,13 @@ uv run python -m distill  # run MCP server
 - Summarize changes made
 - Ask "Shall I commit?" before committing
 
+### Plugin Changes
+
+- When any file inside a plugin directory (`pencil_m3_flutter/`, `evonest/`, `distill/`, `solera/`, `flutter-cask/`) is modified:
+  1. Bump `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for features/refactors)
+  2. Add entry to `CHANGELOG.md`
+  3. Commit + push in one step
+
 ### Diagrams
 
 - Use **Mermaid** for all diagrams
