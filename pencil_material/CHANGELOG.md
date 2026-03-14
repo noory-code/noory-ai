@@ -1,3 +1,18 @@
+## 0.2.0
+
+### Added
+
+- `init` skill: environment pre-check step (Step 0) — validates Pencil MCP connectivity, Python 3.9+, `materialyoucolor` package, and script file existence before onboarding begins
+
+### Fixed
+
+- `init`: removed duplicate Dart code generation — `change-seed-color` now owns the full flow (Pencil variables + Dart files); redundant `gen_dart.py` call in `init` Step 4 removed
+- `init` Step 1: added `flutter_lib_path` collection so it is available for `change-seed-color` delegation in Step 3
+- `change-seed-color`: target file clarified — public library when run standalone, new app `.lib.pen` when delegated from `init`
+- Plugin registered to `noory-ai` marketplace (`/plugin install pencil-material@noory-ai`)
+
+---
+
 ## 0.1.0
 
 ### Added
