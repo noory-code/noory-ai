@@ -35,7 +35,7 @@
 - `init`: removed duplicate Dart code generation — `change-seed-color` now owns the full flow (Pencil variables + Dart files); redundant `gen_dart.py` call in `init` Step 4 removed
 - `init` Step 1: added `flutter_lib_path` collection so it is available for `change-seed-color` delegation in Step 3
 - `change-seed-color`: target file clarified — public library when run standalone, new app `.lib.pen` when delegated from `init`
-- Plugin registered to `noory-ai` marketplace (`/plugin install pencil-material@noory-ai`)
+- Plugin registered to `noory-ai` marketplace (`/plugin install pencil-flutter-m3@noory-ai`)
 
 ---
 
@@ -43,7 +43,7 @@
 
 ### Added
 
-- Claude Code plugin (`pencil-material`) with 4 skills:
+- Claude Code plugin (`pencil-flutter-m3`) with 4 skills:
   - `init` — one-stop onboarding: creates app `.lib.pen`, sets seed color, logo, and generates project `design` skill
   - `design-guide` — M3 Expressive base rules + component ID reference + prompt generation methodology + optional Pencil MCP direct execution
   - `change-seed-color` — recalculates M3 palette and syncs both Pencil variables and Flutter Dart files

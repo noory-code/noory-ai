@@ -13,7 +13,7 @@
 # M3 Expressive Design Guide
 
 이 라이브러리를 import해서 디자인할 때 아래 규칙을 반드시 따르세요.
-/pencil-material:design-guide 스킬을 사용하면 이 가이드가 자동으로 적용됩니다.
+/pencil-flutter-m3:design-guide 스킬을 사용하면 이 가이드가 자동으로 적용됩니다.
 
 ## 핵심 원칙
 
@@ -58,7 +58,7 @@
 - TextFields/Filled/Empty: 1gP7O
 - Lists/TwoLineItem: X6KcN
 - Switch/On: 4cwpx
-전체 목록: /pencil-material:design-guide 스킬 참조
+전체 목록: /pencil-flutter-m3:design-guide 스킬 참조
 ```
 
 ---
@@ -72,6 +72,6 @@ guideContext=I("xrgHM", {
   type: "context",
   width: 800,
   height: 400,
-  content: "# M3 Expressive Design Guide\n\n이 라이브러리를 import해서 디자인할 때 아래 규칙을 반드시 따르세요.\n/pencil-material:design-guide 스킬을 사용하면 이 가이드가 자동으로 적용됩니다.\n\n## 핵심 원칙\n\n### 색상\n- 항상 Color Role 변수 사용: $primary, $onPrimary, $surface, $onSurface 등\n- 절대 색상 하드코딩 금지\n\n### 버튼 계층 (화면당 Filled는 1개만)\n1. Filled → 주요 액션 1개\n2. FilledTonal → 보조 액션\n3. Elevated → 평면 레이아웃 구분\n4. Outlined → 중간 강조\n5. Text → 최저 강조\n\n### FAB\n- 화면당 1개만, 가장 중요한 단일 액션\n\n### 내비게이션\n- Mobile 2~5개: NavigationBar (하단 고정)\n- Tablet/Desktop: NavigationRail\n- 5개 이상: NavigationDrawer\n\n### 컴포넌트 ID\n- Frame/Mobile/390: dnJUo\n- TopAppBar/Small: Mv3K9\n- NavigationBar/3Items: ItYES\n- FAB/Default: 9XN45\n- Buttons/Filled/Rounded/lg: SgybC\n- TextFields/Filled/Empty: 1gP7O\n전체 목록: /pencil-material:design-guide 스킬 참조"
+  content: "# M3 Expressive Design Guide\n\n이 라이브러리를 import해서 디자인할 때 아래 규칙을 반드시 따르세요.\n/pencil-flutter-m3:design-guide 스킬을 사용하면 이 가이드가 자동으로 적용됩니다.\n\n## 핵심 원칙\n\n### 색상\n- 항상 Color Role 변수 사용: $primary, $onPrimary, $surface, $onSurface 등\n- 절대 색상 하드코딩 금지\n\n### 버튼 계층 (화면당 Filled는 1개만)\n1. Filled → 주요 액션 1개\n2. FilledTonal → 보조 액션\n3. Elevated → 평면 레이아웃 구분\n4. Outlined → 중간 강조\n5. Text → 최저 강조\n\n### FAB\n- 화면당 1개만, 가장 중요한 단일 액션\n\n### 내비게이션\n- Mobile 2~5개: NavigationBar (하단 고정)\n- Tablet/Desktop: NavigationRail\n- 5개 이상: NavigationDrawer\n\n### 컴포넌트 ID\n- Frame/Mobile/390: dnJUo\n- TopAppBar/Small: Mv3K9\n- NavigationBar/3Items: ItYES\n- FAB/Default: 9XN45\n- Buttons/Filled/Rounded/lg: SgybC\n- TextFields/Filled/Empty: 1gP7O\n전체 목록: /pencil-flutter-m3:design-guide 스킬 참조"
 })
 ```

@@ -51,12 +51,12 @@ python3 -c "import materialyoucolor; print('ok')"
 ### 0-4. Python 스크립트 파일 존재 확인
 
 ```bash
-ls pencil_material/pencil/md3calc/hct_palette.py pencil_material/pencil/md3calc/gen_dart.py
+ls pencil_flutter_m3/pencil/md3calc/hct_palette.py pencil_flutter_m3/pencil/md3calc/gen_dart.py
 ```
 
 - 두 파일 모두 존재 → **검증 완료**
 - 없음 → **중단**:
-  > "pencil_material 디렉토리가 현재 프로젝트에 포함되어 있는지 확인해주세요.
+  > "pencil_flutter_m3 디렉토리가 현재 프로젝트에 포함되어 있는지 확인해주세요.
   > (현재 디렉토리: `pwd` 결과)"
 
 모든 검증 통과 시: `✓ 환경 확인 완료. 설정을 시작합니다.` 출력 후 Step 1로 진행.
@@ -93,7 +93,7 @@ ls pencil_material/pencil/md3calc/hct_palette.py pencil_material/pencil/md3calc/
 
 ```
 1. Finder(또는 파일 탐색기)에서 아래 파일을 복사한다:
-   pencil_material/pencil/material-design-guide.lib.pen
+   pencil_flutter_m3/pencil/material-design-guide.lib.pen
 
 2. 복사한 파일을 <저장 경로>/<appname>-design-guide.lib.pen 으로 이름 변경 후 저장한다.
 
@@ -138,7 +138,7 @@ Dart 생성은 `.pen` 파일이 SSOT — `get_variables()` → `--from-json`으�
 
 ## Step 5 — 프로젝트 design 스킬 생성
 
-`pencil-material:design-guide`를 베이스로 삼아 이 프로젝트 전용 `design` 스킬 파일을 생성한다.
+`pencil-flutter-m3:design-guide`를 베이스로 삼아 이 프로젝트 전용 `design` 스킬 파일을 생성한다.
 이 스킬의 역할: **사용자 요청 → Pencil AI 채팅창에 붙여넣을 프롬프트 텍스트 출력**.
 
 저장 경로: `<프로젝트 루트>/.claude-plugin/skills/design/SKILL.md`
@@ -155,12 +155,12 @@ user-invocable: true
 
 # Design — <appname>
 
-`pencil-material:design-guide`의 M3 규칙과 프롬프트 생성 방법론을 베이스로 한다.
+`pencil-flutter-m3:design-guide`의 M3 규칙과 프롬프트 생성 방법론을 베이스로 한다.
 
 ## 역할
 
 사용자가 화면 디자인을 요청하면:
-1. `pencil-material:design-guide`의 M3 규칙 + 아래 프로젝트 고유 규칙 적용
+1. `pencil-flutter-m3:design-guide`의 M3 규칙 + 아래 프로젝트 고유 규칙 적용
 2. **Pencil AI 채팅창에 붙여넣을 프롬프트 텍스트를 출력**
 
 > Claude Code가 직접 Pencil을 조작하지 않는다.
@@ -181,7 +181,7 @@ user-invocable: true
 
 ## 프롬프트 출력 형식
 
-`pencil-material:design-guide`의 프롬프트 생성 방법론을 따른다.
+`pencil-flutter-m3:design-guide`의 프롬프트 생성 방법론을 따른다.
 아래 템플릿에 화면 내용을 채워 출력한다:
 
 \`\`\`

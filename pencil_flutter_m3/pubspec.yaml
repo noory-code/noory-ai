@@ -1,7 +1,7 @@
-name: pencil_material
+name: pencil_flutter_m3
 description: "Material Design 3 디자인 시스템 패키지. SemanticColorPalette → ThemeColors → AppTheme 3-레이어 컬러 아키텍처 + Design Tokens + Pencil 가이드."
 version: 0.0.1
-homepage: https://github.com/noory-ai/pencil_material
+homepage: https://github.com/noory-code/noory-ai/tree/main/pencil_flutter_m3
 
 environment:
   sdk: ^3.11.1
