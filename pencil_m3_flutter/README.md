@@ -1,4 +1,4 @@
-# pencil-flutter-m3
+# pencil-m3-flutter
 
 Claude Code 플러그인 — Flutter Material Design 3 디자인 시스템 자동화.
 
@@ -10,20 +10,20 @@ Claude Code 플러그인 — Flutter Material Design 3 디자인 시스템 자�
 ## 이 플러그인이 하는 일
 
 ```
-/pencil-flutter-m3:init
+/pencil-m3-flutter:init
   → 앱별 <appname>-design-guide.lib.pen 생성
   → 시드 컬러 설정 (Pencil 변수 + Flutter Dart 코드 자동 생성)
   → 로고 설정
   → 프로젝트 전용 design 스킬 생성
 
-/pencil-flutter-m3:design-guide
+/pencil-m3-flutter:design-guide
   → M3 Expressive 규칙 기반으로 화면 디자인
   → Claude Code가 Pencil MCP 직접 조작 또는 프롬프트 생성
 
-/pencil-flutter-m3:change-seed-color
+/pencil-m3-flutter:change-seed-color
   → 시드 컬러 변경 → Pencil 변수 + Flutter 코드 동시 업데이트
 
-/pencil-flutter-m3:change-logo
+/pencil-m3-flutter:change-logo
   → 로고 컴포넌트 교체 (AI 생성 / 이미지 / 텍스트 이니셜)
 ```
 
@@ -59,7 +59,7 @@ pip install materialyoucolor
 ### 3. Python 스크립트 위치
 
 ```
-pencil_flutter_m3/pencil/md3calc/
+pencil_m3_flutter/pencil/md3calc/
 ├── hct_palette.py   # 시드 컬러 → M3 팔레트 JSON 계산
 └── gen_dart.py      # 팔레트 JSON → Flutter Dart 파일 생성
 ```
@@ -73,12 +73,12 @@ pencil_flutter_m3/pencil/md3calc/
 
 ### 1. 플러그인 설치
 
-이 `pencil_flutter_m3` 디렉토리를 프로젝트에 포함하거나 경로를 Claude Code에 등록한다.
+이 `pencil_m3_flutter` 디렉토리를 프로젝트에 포함하거나 경로를 Claude Code에 등록한다.
 
 ### 2. 앱 초기화
 
 ```
-/pencil-flutter-m3:init
+/pencil-m3-flutter:init
 ```
 
 Claude가 순서대로 안내한다:
@@ -136,7 +136,7 @@ AI 생성 / 이미지 파일 / 텍스트 이니셜 중 선택.
 
 `init` 실행 시 프로젝트에 자동 생성되는 스킬 (`.claude-plugin/skills/design/SKILL.md`).
 
-- `pencil-flutter-m3:design-guide`의 M3 규칙을 베이스로 상속
+- `pencil-m3-flutter:design-guide`의 M3 규칙을 베이스로 상속
 - 프로젝트 고유 컴포넌트, 화면 패턴 추가 정의
 - 사용자 요청 → **Pencil AI 채팅창에 붙여넣을 프롬프트 텍스트 출력**
 

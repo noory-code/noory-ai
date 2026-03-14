@@ -13,7 +13,7 @@ user-invocable: true
 
 ## Target file
 
-- 단독 실행 시: `pencil_flutter_m3/pencil/material-design-guide.lib.pen`
+- 단독 실행 시: `pencil_m3_flutter/pencil/material-design-guide.lib.pen`
 - `init`에서 위임 실행 시: 새로 생성한 `<appname>-design-guide.lib.pen`
   (init이 열어둔 파일이 현재 에디터에 열려 있으므로 그대로 사용)
 
@@ -25,10 +25,10 @@ user-invocable: true
 
 ### Step 2 — 팔레트 계산
 
-`pencil_flutter_m3/pencil/md3calc/hct_palette.py` 를 사용해 팔레트를 계산한다.
+`pencil_m3_flutter/pencil/md3calc/hct_palette.py` 를 사용해 팔레트를 계산한다.
 
 ```bash
-cd pencil_flutter_m3/pencil/md3calc
+cd pencil_m3_flutter/pencil/md3calc
 python3 hct_palette.py <seed_hex>
 ```
 
@@ -193,7 +193,7 @@ python3 hct_palette.py <seed_hex>
 
 ```
 1. mcp__pencil__get_variables() 실행 → 결과를 vars.json 파일로 저장
-2. python3 pencil_flutter_m3/pencil/md3calc/gen_dart.py \
+2. python3 pencil_m3_flutter/pencil/md3calc/gen_dart.py \
      --from-json vars.json \
      --out <flutter_lib_path> \
      --barrel <appname>_ui
