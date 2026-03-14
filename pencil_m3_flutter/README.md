@@ -10,16 +10,16 @@ Claude Code 플러그인 — Flutter Material Design 3 디자인 시스템 자�
 ## 이 플러그인이 하는 일
 
 ```
-/pencil-m3-flutter:pmf-init
+/pencil-m3-flutter:init
   → 앱별 <appname>-design-guide.lib.pen 생성
   → 시드 컬러 설정 (Pencil 변수 + Flutter Dart 코드 자동 생성)
   → 로고 설정
   → 프로젝트 전용 design 스킬 생성
 
-/pencil-m3-flutter:pmf-change-seed-color
+/pencil-m3-flutter:change-seed-color
   → 시드 컬러 변경 → Pencil 변수 + Flutter 코드 동시 업데이트
 
-/pencil-m3-flutter:pmf-change-logo
+/pencil-m3-flutter:change-logo
   → 로고 컴포넌트 교체 (AI 생성 / 이미지 / 텍스트 이니셜)
 ```
 
@@ -29,10 +29,10 @@ Claude Code 플러그인 — Flutter Material Design 3 디자인 시스템 자�
 
 | 스킬 | 역할 |
 |------|------|
-| `pmf-init` | 앱 디자인 시스템 초기화 (원스톱 온보딩) |
+| `init` | 앱 디자인 시스템 초기화 (원스톱 온보딩) |
 | `design-guide` | M3 화면 디자인 베이스 규칙 (non-invocable, 프로젝트 design 스킬의 베이스) |
-| `pmf-change-seed-color` | 시드 컬러 변경 → Pencil + Flutter 코드 동기화 |
-| `pmf-change-logo` | 로고 컴포넌트 교체 |
+| `change-seed-color` | 시드 컬러 변경 → Pencil + Flutter 코드 동기화 |
+| `change-logo` | 로고 컴포넌트 교체 |
 
 ---
 
@@ -74,7 +74,7 @@ pencil_m3_flutter/pencil/md3calc/
 ### 2. 앱 초기화
 
 ```
-/pencil-m3-flutter:pmf-init
+/pencil-m3-flutter:init
 ```
 
 Claude가 순서대로 안내한다:
@@ -98,7 +98,7 @@ Claude가 순서대로 안내한다:
 
 ## 스킬 상세
 
-### `pmf-init` — 앱 디자인 시스템 초기화
+### `init` — 앱 디자인 시스템 초기화
 
 1. `<appname>-design-guide.lib.pen` 생성 (Pencil 라이브러리)
 2. 시드 컬러 설정:
@@ -115,13 +115,13 @@ Claude가 순서대로 안내한다:
 
 M3 Expressive 규칙, 컴포넌트 ID 레퍼런스, 화면 패턴, 프롬프트 생성 방법론 포함.
 
-### `pmf-change-seed-color` — 시드 컬러 변경
+### `change-seed-color` — 시드 컬러 변경
 
 1. `hct_palette.py`로 새 팔레트 계산
 2. Pencil `set_variables`로 Color Scheme 업데이트
 3. `gen_dart.py`로 Flutter Dart 파일 재생성
 
-### `pmf-change-logo` — 로고 교체
+### `change-logo` — 로고 교체
 
 AI 생성 / 이미지 파일 / 텍스트 이니셜 중 선택.
 `Logo` reusable 컴포넌트를 교체하면 모든 인스턴스에 즉시 반영.

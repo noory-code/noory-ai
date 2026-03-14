@@ -1,5 +1,5 @@
 ---
-name: pmf-change-logo
+name: change-logo
 description: >
   Replace the app logo in the design guide .pen file.
   Triggers when the user asks to change, replace, or update the logo,

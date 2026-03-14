@@ -1,5 +1,5 @@
 ---
-name: pmf-change-seed-color
+name: change-seed-color
 description: >
   Change the seed color of the Material Design 3 Pencil library.
   Triggers when the user asks to change the seed color, primary color, brand color,

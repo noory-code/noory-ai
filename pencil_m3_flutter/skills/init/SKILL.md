@@ -1,5 +1,5 @@
 ---
-name: pmf-init
+name: init
 description: >
   Initialize a new app design guide .lib.pen file.
   Triggers when the user asks to initialize, create a new design guide,
@@ -118,11 +118,11 @@ mcp__pencil__open_document("<저장 경로>/<appname>-design-guide.lib.pen")
 
 ## Step 3 — 시드 컬러 설정 + Dart 코드 생성
 
-`pmf-change-seed-color` 스킬의 전체 절차를 실행한다.
+`change-seed-color` 스킬의 전체 절차를 실행한다.
 대상 파일은 Step 2에서 생성한 `<appname>-design-guide.lib.pen` (현재 에디터에 열려 있음).
 Step 1에서 수집한 `flutter_lib_path`를 컨텍스트로 전달한다.
 
-`pmf-change-seed-color`가 Pencil 변수 업데이트 + Dart 파일 생성까지 완료한다.
+`change-seed-color`가 Pencil 변수 업데이트 + Dart 파일 생성까지 완료한다.
 Dart 생성은 `.pen` 파일이 SSOT — `get_variables()` → `--from-json`으로 실제 변수값 기반 생성.
 `--barrel <appname>_ui` 옵션을 포함해 배럴 파일도 함께 생성한다:
 - `semantic_color_palette.dart` — 팔레트 원시값
@@ -141,9 +141,9 @@ Dart 생성은 `.pen` 파일이 SSOT — `get_variables()` → `--from-json`으�
 
 ## Step 4 — 로고 설정
 
-`pmf-change-logo` 스킬의 전체 절차를 실행한다.
+`change-logo` 스킬의 전체 절차를 실행한다.
 
-> `pmf-change-logo` 스킬 참조.
+> `change-logo` 스킬 참조.
 
 완료 후 보고: `✓ 로고 설정 완료. 다음: 프로젝트 design 스킬 생성`
 
