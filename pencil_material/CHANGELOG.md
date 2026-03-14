@@ -1,3 +1,18 @@
+## 0.4.0
+
+### Added
+
+- `gen_dart.py`: `--from-json` mode — reads `.pen` `get_variables()` JSON export to generate Dart code, making `.pen` file the single source of truth (SSOT) for color values
+- `init` Step 1: present choices with recommended defaults instead of free-text input (save path, app name, Flutter lib path)
+- `init` Steps 2–4: completion messages before advancing to next step
+
+### Changed
+
+- `change-seed-color` Step 5: use `get_variables()` → `--from-json` 2-step flow instead of computing from seed hex directly
+- `init` Step 3: delegate Dart generation via `.pen` SSOT flow
+
+---
+
 ## 0.3.0
 
 ### Fixed
