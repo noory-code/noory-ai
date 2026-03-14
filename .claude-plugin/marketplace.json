@@ -23,6 +23,11 @@
       "name": "flutter-cask",
       "source": "./flutter-cask",
       "description": "Flutter package guide skills — 33 packages for mobile development"
+    },
+    {
+      "name": "pencil-material",
+      "source": "./pencil_material",
+      "description": "Flutter Material Design 3 design system automation — init, design, seed color, logo via Pencil MCP"
     }
   ]
 }
