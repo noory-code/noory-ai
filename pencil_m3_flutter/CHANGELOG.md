@@ -1,3 +1,12 @@
+## 0.7.0
+
+### Fixed
+
+- Reorder init steps — file copy before Pencil MCP check
+- Split environment validation: Group A (Python) upfront, Group B (Pencil) deferred to Step 2-2
+
+---
+
 ## 0.6.0
 
 ### Changed
