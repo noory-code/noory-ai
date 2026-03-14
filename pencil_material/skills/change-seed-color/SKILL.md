@@ -13,7 +13,9 @@ user-invocable: true
 
 ## Target file
 
-`pencil_material/pencil/material-design-guide.lib.pen`
+- 단독 실행 시: `pencil_material/pencil/material-design-guide.lib.pen`
+- `init`에서 위임 실행 시: 새로 생성한 `<appname>-design-guide.lib.pen`
+  (init이 열어둔 파일이 현재 에디터에 열려 있으므로 그대로 사용)
 
 ## Workflow
 
@@ -186,13 +188,13 @@ python3 hct_palette.py <seed_hex>
 
 ### Step 5 — Dart 코드 재생성
 
-프로젝트 `design` 스킬의 `flutter_lib_path`에 Dart 파일을 재생성한다.
+단독/위임 구분 없이 항상 실행한다.
 
 ```bash
 python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib_path>
 ```
 
-> `flutter_lib_path`를 모르면 사용자에게 확인한다.
+> `flutter_lib_path`가 컨텍스트로 전달된 경우 그대로 사용한다. 없으면 사용자에게 확인한다.
 
 ### Step 6 — 결과 확인
 

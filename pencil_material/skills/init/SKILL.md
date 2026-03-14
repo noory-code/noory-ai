@@ -65,10 +65,11 @@ ls pencil_material/pencil/md3calc/hct_palette.py pencil_material/pencil/md3calc/
 
 ## Step 1 — 정보 수집
 
-사용자에게 두 가지를 확인한다:
+사용자에게 세 가지를 확인한다:
 
 1. **저장 경로** — `.lib.pen` 파일을 저장할 디렉토리 (예: `apps/myapp/pencil/`, `pencil/`)
 2. **앱 이름** — 파일명에 사용 (예: `myapp` → `myapp-design-guide.lib.pen`)
+3. **Flutter lib 경로** — Dart 코드를 생성할 위치 (예: `lib/src/design/`, `lib/core/theme/`)
 
 > 시드 컬러와 로고는 이후 단계에서 별도로 수집한다.
 
@@ -82,21 +83,13 @@ mcp__pencil__open_document("new")
 
 > Pencil이 파일명을 요청하면 `<appname>-design-guide`로 입력하고, 저장 시 확장자를 `.lib.pen`으로 지정한다.
 
-## Step 3 — 시드 컬러 설정
+## Step 3 — 시드 컬러 설정 + Dart 코드 생성
 
 `change-seed-color` 스킬의 전체 절차를 실행한다.
+대상 파일은 Step 2에서 생성한 `<appname>-design-guide.lib.pen` (현재 에디터에 열려 있음).
+Step 1에서 수집한 `flutter_lib_path`를 컨텍스트로 전달한다.
 
-> `change-seed-color` 스킬 참조.
-
-## Step 4 — Dart 코드 생성
-
-사용자에게 Flutter 프로젝트의 lib 경로를 확인한다 (예: `lib/src/design/`, `lib/core/theme/`).
-
-```bash
-python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib_path>
-```
-
-생성 파일:
+`change-seed-color`가 Pencil 변수 업데이트 + Dart 파일 생성까지 완료한다:
 - `semantic_color_palette.dart` — 팔레트 원시값
 - `theme_colors.dart` — ColorScheme 6개 variant
 - `theme.dart` — AppTheme (ThemeData)
@@ -108,13 +101,13 @@ python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib
 >   google_fonts: ^6.2.1
 > ```
 
-## Step 5 — 로고 설정
+## Step 4 — 로고 설정
 
 `change-logo` 스킬의 전체 절차를 실행한다.
 
 > `change-logo` 스킬 참조.
 
-## Step 6 — 프로젝트 design 스킬 생성
+## Step 5 — 프로젝트 design 스킬 생성
 
 `pencil-material:design-guide`를 베이스로 삼아 이 프로젝트 전용 `design` 스킬 파일을 생성한다.
 이 스킬의 역할: **사용자 요청 → Pencil AI 채팅창에 붙여넣을 프롬프트 텍스트 출력**.
@@ -183,7 +176,7 @@ user-invocable: true
 
 > 생성 후 사용자에게 "프로젝트 고유 규칙 섹션을 채워달라"고 안내한다.
 
-## Step 7 — 결과 안내
+## Step 6 — 결과 안내
 
 완료 후 사용자에게 보고:
 
