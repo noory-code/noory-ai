@@ -1,3 +1,12 @@
+## 0.9.0
+
+### Changed
+
+- Rename skills with `pmf-` prefix: `pmf-init`, `pmf-change-seed-color`, `pmf-change-logo`
+- Callable as `/pmf-init`, `/pmf-change-seed-color`, `/pmf-change-logo`
+
+---
+
 ## 0.8.0
 
 ### Changed
