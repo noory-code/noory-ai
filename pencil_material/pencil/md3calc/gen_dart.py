@@ -10,12 +10,21 @@ Outputs 4 files into the target directory:
 Optionally outputs a barrel file that re-exports all 4 files:
   <name>.dart                  — barrel export (e.g. myapp_ui.dart)
 
+Two input modes:
+  1. seed mode:  python3 gen_dart.py "#6750A4" --out lib/src/design
+     Computes palette from seed hex via HCT algorithm.
+
+  2. JSON mode:  python3 gen_dart.py --from-json vars.json --out lib/src/design
+     Reads .pen file variable values (from mcp__pencil__get_variables() output).
+     The .pen file is the single source of truth (SSOT).
+
 Usage:
     python3 gen_dart.py <seed_hex> --out <path>
-    python3 gen_dart.py "#6750A4" --out lib/src/design
     python3 gen_dart.py "#6750A4" --out lib/src/design --barrel myapp_ui
+    python3 gen_dart.py --from-json vars.json --out lib/src/design --barrel myapp_ui
 """
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -520,6 +529,62 @@ abstract final class AppThickness {
 """
 
 
+def parse_pen_variables(json_path: str) -> tuple[dict, str]:
+    """Parse mcp__pencil__get_variables() JSON output into palettes dict + seed hex.
+
+    Expected JSON structure (from get_variables):
+    {
+      "variables": [
+        {
+          "name": "seed",
+          "themes": { "Semantic Colors Palette/Default": "#6750A4" }
+        },
+        {
+          "name": "primary/40",
+          "themes": { "Semantic Colors Palette/Default": "#6750A4" }
+        },
+        ...
+      ]
+    }
+
+    Returns (palettes, seed_hex) in the same format as hct_palette.generate().
+    """
+    with open(json_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    variables = data.get("variables", data) if isinstance(data, dict) else data
+    if isinstance(variables, dict) and "variables" in variables:
+        variables = variables["variables"]
+
+    theme_key = "Semantic Colors Palette/Default"
+    palettes: dict[str, dict[str, str]] = {p: {} for p in PALETTES}
+    seed_hex = "#000000"
+
+    for var in variables:
+        name = var.get("name", "")
+        themes = var.get("themes", {})
+        value = themes.get(theme_key)
+        if value is None:
+            continue
+
+        if name == "seed":
+            seed_hex = value
+            continue
+
+        parts = name.split("/")
+        if len(parts) == 2 and parts[0] in palettes:
+            palette_key, tone = parts[0], parts[1]
+            palettes[palette_key][tone] = value
+
+    # Validate that we got some data
+    total_vars = sum(len(v) for v in palettes.values())
+    if total_vars == 0:
+        print(f"Error: No palette variables found in {json_path} under theme '{theme_key}'", file=sys.stderr)
+        sys.exit(1)
+
+    return palettes, seed_hex
+
+
 def gen_barrel(barrel_name: str) -> str:
     return (
         f"// {barrel_name}.dart — generated barrel file\n"
@@ -535,17 +600,29 @@ def gen_barrel(barrel_name: str) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate Flutter Dart theme files from a seed color.")
-    parser.add_argument("seed", help="Seed color hex, e.g. '#6750A4'")
+    parser.add_argument("seed", nargs="?", help="Seed color hex, e.g. '#6750A4' (not needed with --from-json)")
+    parser.add_argument("--from-json", metavar="PATH", dest="from_json",
+                        help="Read palette from .pen get_variables() JSON export instead of computing from seed")
     parser.add_argument("--out", required=True, help="Output directory path (e.g. lib/src/design)")
-    parser.add_argument("--barrel", metavar="NAME", help="Generate a barrel file NAME.dart that re-exports all 4 files (e.g. --barrel myapp_ui)")
+    parser.add_argument("--barrel", metavar="NAME",
+                        help="Generate a barrel file NAME.dart that re-exports all 4 files (e.g. --barrel myapp_ui)")
     args = parser.parse_args()
 
-    seed_hex = args.seed.strip()
+    if args.from_json:
+        # JSON mode: read from .pen variables export (SSOT)
+        palettes, seed_hex = parse_pen_variables(args.from_json)
+        print(f"Source: {args.from_json} (SSOT: .pen variables)")
+    elif args.seed:
+        # Seed mode: compute from HCT algorithm
+        seed_hex = args.seed.strip()
+        data = generate(seed_hex)
+        palettes = data["palettes"]
+        print(f"Source: HCT algorithm (seed: {seed_hex})")
+    else:
+        parser.error("either seed hex or --from-json is required")
+
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    data = generate(seed_hex)
-    palettes = data["palettes"]
 
     files = {
         "semantic_color_palette.dart": gen_semantic_color_palette(palettes, seed_hex),

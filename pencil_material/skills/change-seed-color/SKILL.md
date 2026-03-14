@@ -189,16 +189,18 @@ python3 hct_palette.py <seed_hex>
 ### Step 5 — Dart 코드 재생성
 
 단독/위임 구분 없이 항상 실행한다.
+`.pen` 파일이 컬러의 SSOT이므로 반드시 `.pen` 변수를 기반으로 Dart를 생성한다.
 
-```bash
-# 기본 (배럴 파일 없이)
-python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> --out <flutter_lib_path>
-
-# 배럴 파일 포함 (권장: lib/src/design, appname 전달 시)
-python3 pencil_material/pencil/md3calc/gen_dart.py <seed_hex> \
-  --out <flutter_lib_path> \
-  --barrel <appname>_ui
 ```
+1. mcp__pencil__get_variables() 실행 → 결과를 vars.json 파일로 저장
+2. python3 pencil_material/pencil/md3calc/gen_dart.py \
+     --from-json vars.json \
+     --out <flutter_lib_path> \
+     --barrel <appname>_ui
+```
+
+> `--from-json`을 사용하면 `.pen` 파일의 실제 변수값이 Dart 코드에 반영된다.
+> 사용자가 Pencil에서 컬러를 직접 수정한 경우에도 정확히 동기화된다.
 
 생성 파일:
 - `semantic_color_palette.dart`, `theme_colors.dart`, `theme.dart`, `tokens.dart`

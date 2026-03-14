@@ -65,13 +65,24 @@ ls pencil_material/pencil/md3calc/hct_palette.py pencil_material/pencil/md3calc/
 
 ## Step 1 — 정보 수집
 
-사용자에게 세 가지를 확인한다:
+사용자에게 세 가지를 선택지로 확인한다. 각 항목에 기본 추천값을 제시하고 직접 입력 옵션도 포함한다.
 
-1. **저장 경로** — `.lib.pen` 파일을 저장할 디렉토리 (예: `apps/myapp/pencil/`, `pencil/`)
-2. **앱 이름** — 파일명에 사용 (예: `myapp` → `myapp-design-guide.lib.pen`)
-3. **Flutter lib 경로** — Dart 코드를 생성할 위치 (예: `lib/src/design/`, `lib/core/theme/`)
+1. **저장 경로** — `.lib.pen` 파일을 저장할 디렉토리:
+   - `pencil/` (권장 — 프로젝트 루트 하위)
+   - `apps/<appname>/pencil/`
+   - 직접 입력
+
+2. **앱 이름** — 파일명에 사용 (프로젝트 디렉토리명에서 기본값 추출):
+   - `<프로젝트 디렉토리명>` (권장)
+   - 직접 입력
+
+3. **Flutter lib 경로** — Dart 코드를 생성할 위치:
+   - `lib/src/design/` (권장)
+   - `lib/core/theme/`
+   - 직접 입력
 
 > 시드 컬러와 로고는 이후 단계에서 별도로 수집한다.
+> 각 단계 완료 후 결과를 보여주고 다음 단계로 넘어간다. 단계를 건너뛰지 않는다.
 
 ## Step 2 — 앱 디자인 가이드 파일 생성
 
@@ -92,6 +103,8 @@ ls pencil_material/pencil/md3calc/hct_palette.py pencil_material/pencil/md3calc/
 
 > 복사 방식을 사용하면 material-design-guide.lib.pen의 166개 M3 컴포넌트와 Color Scheme 변수가 모두 포함된다.
 
+완료 후 보고: `✓ <appname>-design-guide.lib.pen 생성 완료. 다음: 시드 컬러 설정`
+
 ## Step 3 — 시드 컬러 설정 + Dart 코드 생성
 
 `change-seed-color` 스킬의 전체 절차를 실행한다.
@@ -99,7 +112,8 @@ ls pencil_material/pencil/md3calc/hct_palette.py pencil_material/pencil/md3calc/
 Step 1에서 수집한 `flutter_lib_path`를 컨텍스트로 전달한다.
 
 `change-seed-color`가 Pencil 변수 업데이트 + Dart 파일 생성까지 완료한다.
-Dart 생성 시 `--barrel <appname>_ui` 옵션을 포함해 배럴 파일도 함께 생성한다:
+Dart 생성은 `.pen` 파일이 SSOT — `get_variables()` → `--from-json`으로 실제 변수값 기반 생성.
+`--barrel <appname>_ui` 옵션을 포함해 배럴 파일도 함께 생성한다:
 - `semantic_color_palette.dart` — 팔레트 원시값
 - `theme_colors.dart` — ColorScheme 6개 variant
 - `theme.dart` — AppTheme (ThemeData)
@@ -112,11 +126,15 @@ Dart 생성 시 `--barrel <appname>_ui` 옵션을 포함해 배럴 파일도 함
 >   google_fonts: ^6.2.1
 > ```
 
+완료 후 보고: `✓ 시드 컬러 + Dart 코드 생성 완료. 다음: 로고 설정`
+
 ## Step 4 — 로고 설정
 
 `change-logo` 스킬의 전체 절차를 실행한다.
 
 > `change-logo` 스킬 참조.
+
+완료 후 보고: `✓ 로고 설정 완료. 다음: 프로젝트 design 스킬 생성`
 
 ## Step 5 — 프로젝트 design 스킬 생성
 
