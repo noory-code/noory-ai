@@ -1,3 +1,14 @@
+## 0.5.0
+
+### Changed
+
+- Rename plugin from `pencil-material` to `pencil-flutter-m3`
+- Directory: `pencil_material/` → `pencil_flutter_m3/`
+- Install: `/plugin install pencil-flutter-m3@noory-ai`
+- All skill references, script paths, and docs updated
+
+---
+
 ## 0.4.0
 
 ### Added
