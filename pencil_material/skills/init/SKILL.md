@@ -54,4 +54,9 @@ mcp__pencil__open_document("new")
 - Seed color: <hex>
 - Primary: <primary/40>
 - 로고: 적용 완료
+
+다음 단계 — 화면 디자인 시작:
+  1. Pencil에서 새 .pen 파일 생성 (예: myapp-screens.pen)
+  2. 해당 파일에 <appname>-design-guide.lib.pen import 추가
+  3. /pencil-material:design-guide 로 화면 디자인 시작
 ```

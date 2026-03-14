@@ -42,14 +42,19 @@ user-invocable: true
 
 ## Workflow
 
-### Step 1 — 에디터 상태 확인
+### Step 1 — 작업 파일 준비
 
 ```
 mcp__pencil__get_editor_state()
 ```
 
-현재 파일이 `material-design-guide.lib.pen`을 import하고 있는지 확인한다.
-imports에 없다면 사용자에게 추가를 안내한다.
+현재 열린 파일 상태를 확인한다:
+
+- **화면 작업용 `.pen` 파일이 열려 있고** `<appname>-design-guide.lib.pen`을 import하고 있으면 → Step 2로 진행
+- **파일이 없거나 import가 없으면** → 아래 절차 안내:
+  1. Pencil에서 새 `.pen` 파일 생성 (확장자 `.pen`, 라이브러리 아님)
+  2. 해당 파일에 `<appname>-design-guide.lib.pen` import 추가
+  3. 파일을 열고 다시 스킬 실행
 
 ### Step 2 — 디자인 요구사항 파악
 
