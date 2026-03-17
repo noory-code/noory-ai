@@ -1,9 +1,8 @@
 ---
 name: design-guide
 description: >
-  Base design rules for Material Design 3 screen design using the Pencil library.
-  Triggers when the user asks to design a screen, create a UI, or build a layout.
-  Also used as the base layer for project-specific design skills.
+  M3 Expressive base rules and component reference for Flutter screen design using the Pencil library.
+  Used as the base layer for project-specific design skills; not directly invocable.
 user-invocable: false
 ---
 

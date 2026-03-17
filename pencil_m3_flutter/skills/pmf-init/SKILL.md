@@ -43,7 +43,7 @@ python3 -c "import materialyoucolor; print('ok')"
 #### A-3. Python 스크립트 파일 존재 확인
 
 ```bash
-ls ${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/hct_palette.py ${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/gen_dart.py
+python3 -c "import pathlib; root=pathlib.Path('${CLAUDE_PLUGIN_ROOT}'); [exit(1) for p in ['pencil/md3calc/hct_palette.py','pencil/md3calc/gen_dart.py'] if not (root/p).exists()]"
 ```
 
 - 두 파일 모두 존재 → **그룹 A 통과**
