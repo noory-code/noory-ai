@@ -2,6 +2,18 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.0.2] — 2026-03-17
+
+### Fixed
+- Broken `docs/identity.md` link in README — replaced with `evonest_identity_refresh` tool reference
+- Missing `evonest_identity_refresh` in help skill "Available MCP Tools" table
+- Wrong filename `dynamic-adversarial.json` → `dynamic-adversarials.json` in PRIVACY.md
+- Outdated version in PRIVACY.md (v1.0.0 → v1.0.2)
+
+**422 tests passing**
+
+---
+
 ## [1.0.1] — 2026-03-17
 
 ### Fixed

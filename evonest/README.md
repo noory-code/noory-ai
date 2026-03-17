@@ -190,7 +190,7 @@ The most important file. Lives at `.evonest/identity.md` — created by `evonest
 
 Describe your project's mission, core values, current phase, quality standards, and boundaries (files Evonest must not touch). Evonest reads this at the start of every cycle — the richer it is, the better the proposals.
 
-See [docs/identity.md](docs/identity.md) for the full guide and template.
+Run `evonest_identity_refresh` to have Claude re-draft the identity by exploring your project.
 
 ## Configuration
 

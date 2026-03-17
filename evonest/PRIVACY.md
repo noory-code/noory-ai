@@ -16,7 +16,7 @@ All Evonest data is stored locally in the `.evonest/` directory within your proj
 | `identity.md` | Project identity document |
 | `proposals.json` | Analysis proposals and execution history |
 | `dynamic-personas.json` | Runtime-generated personas |
-| `dynamic-adversarial.json` | Runtime-generated challenges |
+| `dynamic-adversarials.json` | Runtime-generated challenges |
 
 You have full control: delete `.evonest/` to remove all Evonest data from a project.
 
@@ -42,4 +42,4 @@ For questions, open an issue at [github.com/noory-code/noory-ai](https://github.
 
 ---
 
-*Last updated: 2026-03-17 | Evonest v1.0.0*
+*Last updated: 2026-03-17 | Evonest v1.0.2*
