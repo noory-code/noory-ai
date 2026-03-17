@@ -7,6 +7,8 @@ All notable changes to Evonest are documented here.
 ### Fixed
 - Add missing YAML frontmatter (`name`, `description`) to `skills/evonest/SKILL.md`
 - Delete empty stale shadow directories: `.claude-plugin/commands/` and `.claude-plugin/skills/evonest/`
+- Sync `pyproject.toml` version to `1.0.4` (was out of sync with `plugin.json`)
+- Correct `hooks/hooks.json` description: hook notifies of remaining proposals, does not auto-chain
 
 ---
 

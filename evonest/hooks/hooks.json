@@ -1,5 +1,5 @@
 {
-  "description": "Auto-chain improve when a proposal completes successfully",
+  "description": "Notify user of remaining proposals after evonest_improve completes",
   "hooks": {
     "PostToolUse": [
       {
