@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1] — 2026-03-18
+
+### Fixed
+- **Cross-platform scripts**: replaced `check-skill-versions.sh` and `new-skill.sh` with Python equivalents for Windows/macOS/Linux compatibility
+
+---
+
 ## [1.2.0] — 2026-03-07
 
 ### Improved

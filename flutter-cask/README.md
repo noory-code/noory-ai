@@ -1,6 +1,6 @@
 # flutter-cask
 
-> Flutter package guide skills for Claude Code — 33 packages, zero setup
+> Flutter package guide skills for Claude Code — 32 packages, zero setup
 
 Curated reference skills for Flutter development. Each skill gives Claude instant access to usage patterns, best practices, and code examples for the most common Flutter packages.
 

@@ -70,7 +70,10 @@ def configure_logging(
     logger.propagate = False
 
 
-_CLI_COMMANDS = {"init", "run", "status", "history", "progress", "config", "identity", "backlog"}
+_CLI_COMMANDS = {
+    "init", "run", "status", "history", "progress", "config", "identity", "backlog",
+    "analyze", "improve", "evolve", "personas",
+}
 
 
 def main() -> None:

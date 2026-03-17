@@ -8,10 +8,11 @@ Python monorepo with two independent MCP (Model Context Protocol) servers. Each 
 
 ```
 noory-ai/
-├── evonest/       — Autonomous code evolution engine (v1.0.3)
-├── distill/       — Knowledge distillation from Claude conversations (v1.7.1)
-├── solera/        — AI-driven project workflow plugin (v2.9.3)
-└── flutter-cask/  — Flutter package guide skills (v1.2.1)
+├── evonest/            — Autonomous code evolution engine (v1.0.3)
+├── distill/            — Knowledge distillation from Claude conversations (v1.7.1)
+├── solera/             — AI-driven project workflow plugin (v2.9.3)
+├── flutter-cask/       — Flutter package guide skills (v1.2.1)
+└── pencil_m3_flutter/  — Flutter M3 design system automation (v1.0.0)
 ```
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
