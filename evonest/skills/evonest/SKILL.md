@@ -1,3 +1,11 @@
+---
+name: evonest
+description: >
+  Use evonest MCP tools to analyze, improve, and evolve a project — observe, plan, execute, verify.
+  Triggers when the user asks to run evonest, analyze code, find improvements, execute a proposal,
+  or improve a project with evonest.
+---
+
 # evonest
 
 Use this skill when the user asks to **analyze**, **improve**, or **evolve** a project with evonest, or when they mention:
