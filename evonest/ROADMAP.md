@@ -48,10 +48,10 @@
 
 ## v0.4.0 — Persona Community
 
-### 목표
-GitHub 기반 페르소나 공유 생태계 구축으로 네트워크 효과 확보. GitHub Copilot의 Microsoft 종속, Aider의 개별 커스터마이징 한계를 넘어 커뮤니티 주도 페르소나 라이브러리로 진입 장벽 형성.
+### Goals
+Build a GitHub-based persona sharing ecosystem to achieve network effects. Surpass GitHub Copilot's Microsoft lock-in and Aider's individual customization limitations by creating a community-driven persona library that forms a competitive moat.
 
-### 핵심 기능
+### Core Features
 
 #### 1. `evonest_import` MCP Tool
 ```python
@@ -60,12 +60,12 @@ evonest_import(
     target_type="persona"  # or "adversarial"
 )
 ```
-- GitHub raw URL에서 페르소나/adversarial JSON 직접 다운로드
-- `.evonest/dynamic-personas.json` 또는 `.evonest/dynamic-adversarials.json`에 자동 병합
-- 중복 체크 및 버전 관리
+- Download persona/adversarial JSON directly from GitHub raw URLs
+- Auto-merge into `.evonest/dynamic-personas.json` or `.evonest/dynamic-adversarials.json`
+- Duplicate detection and version management
 
-#### 2. 초기 페르소나 팩 공개
-`noory-code/evonest-personas` 저장소 구조:
+#### 2. Initial Persona Packs Release
+`noory-code/evonest-personas` repository structure:
 ```
 noory-code/evonest-personas
 ├── startup/
@@ -81,25 +81,25 @@ noory-code/evonest-personas
 │   ├── model-optimizer.json
 │   └── data-pipeline-architect.json
 ├── community/
-│   └── (커뮤니티 기여 페르소나)
-└── README.md  # 사용법, 기여 가이드
+│   └── (community-contributed personas)
+└── README.md  # Usage guide and contribution instructions
 ```
 
-#### 3. 품질 기준 및 기여 가이드라인
-- **페르소나 템플릿**: 필수 필드(name, role, instruction, temperature 등) 정의
-- **검증 자동화**: CI에서 JSON schema validation, instruction 길이 제한 체크
-- **큐레이션 프로세스**: 초기에는 maintainer approval, 이후 community upvote 시스템
-- **라이선스**: MIT (evonest 본체와 동일)
+#### 3. Quality Standards and Contribution Guidelines
+- **Persona template**: Define required fields (name, role, instruction, temperature, etc.)
+- **Automated validation**: JSON schema validation and instruction length checks in CI
+- **Curation process**: Maintainer approval initially, community upvote system later
+- **License**: MIT (same as the Evonest core)
 
-### 로드맵
-1. **Phase 1** (v0.4.0-alpha): `evonest_import` 툴 구현 + 3개 도메인 팩 (startup, security, data-science) 각 3개씩
-2. **Phase 2** (v0.4.0-beta): GitHub 저장소 공개 + 기여 가이드라인 문서 + CI 검증
-3. **Phase 3** (v0.4.0): 커뮤니티 페르소나 수집 캠페인 + 공식 블로그/문서 홍보
+### Roadmap
+1. **Phase 1** (v0.4.0-alpha): Implement `evonest_import` tool + 3 domain packs (startup, security, data-science) with 3 personas each
+2. **Phase 2** (v0.4.0-beta): Publish GitHub repository + contribution guidelines documentation + CI validation
+3. **Phase 3** (v0.4.0): Community persona collection campaign + official blog/documentation promotion
 
-### 경쟁 우위
-- **Copilot**: Microsoft 생태계에 종속, 커스터마이징 불가
-- **Aider**: 개별 사용자 커스터마이징만 가능, 공유 메커니즘 없음
-- **Evonest**: 커뮤니티 주도 페르소나 마켓플레이스 → 네트워크 효과 → 진입 장벽
+### Competitive Advantages
+- **Copilot**: Locked into Microsoft ecosystem, no customization possible
+- **Aider**: Only individual user customization, no sharing mechanism
+- **Evonest**: Community-driven persona marketplace → network effects → competitive moat
 
 ---
 

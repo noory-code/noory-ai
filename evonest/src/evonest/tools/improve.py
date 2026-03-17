@@ -27,7 +27,7 @@ def _extract_result(log_path: Path) -> str:
         exists = log_path.exists()
         readable = log_path.is_file() and bool(log_path.stat().st_mode & 0o400) if exists else False
         logger.warning(
-            "로그 파일 읽기 실패: path=%s, error=%s, exists=%s, readable=%s",
+            "Failed to read log file: path=%s, error=%s, exists=%s, readable=%s",
             log_path,
             e,
             exists,
@@ -61,9 +61,9 @@ async def _run_one(project: str, proposal_id: str | None) -> str:
     if proc.returncode != 0:
         stderr_text = stderr.decode(errors="replace").strip() if stderr else ""
         logger.error(
-            "improve 프로세스 실패 (exit code %d): %s",
+            "improve process failed (exit code %d): %s",
             proc.returncode,
-            stderr_text or "(stderr 없음)",
+            stderr_text or "(no stderr)",
         )
 
     return _extract_result(log_path)

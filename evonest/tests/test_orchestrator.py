@@ -118,7 +118,7 @@ async def test_observe_failure_logs_stderr(tmp_project: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_observe_failure_stderr_contains_actionable_info(tmp_project: Path) -> None:
-    """Observe 실패 시 stderr가 사용자가 조치할 수 있는 정보를 포함하는지 검증."""
+    """Verify that on observe failure, stderr contains actionable information for the user."""
     with (
         patch("evonest.core.phases.claude_runner.run") as mock_run,
         patch("evonest.core.orchestrator._git_stash"),
@@ -134,7 +134,7 @@ async def test_observe_failure_stderr_contains_actionable_info(tmp_project: Path
 
     state = ProjectState(tmp_project)
     log_text = state.log_path.read_text(encoding="utf-8")
-    # 에러 메시지가 명령어 이름과 해결 방법을 포함하는지 확인
+    # Verify the error message includes the command name and resolution steps
     assert "claude" in log_text.lower()
     assert "install" in log_text.lower() or "pip" in log_text.lower()
 

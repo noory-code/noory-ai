@@ -2,6 +2,23 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.0.0] — 2026-03-17
+
+### Changed (BREAKING)
+- **Version 1.0.0 release**: Evonest graduates from alpha to stable release
+- **Reframed messaging**: "AI-assisted code evolution" — emphasizes safety-first design
+  (review before execute, auto-revert on failure)
+- **Plugin description**: Updated for marketplace submission with safety guarantees
+
+### Added
+- **PRIVACY.md**: Privacy policy documenting local-only operation, no telemetry
+
+### Fixed
+- **All Korean text translated to English**: skills, ROADMAP, Python docstrings
+- **Korean trigger phrases removed** from help skill (English triggers sufficient)
+
+---
+
 ## [0.17.2] — 2026-03-07
 
 ### Improved

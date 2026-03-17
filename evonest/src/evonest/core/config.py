@@ -39,7 +39,7 @@ def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> Non
 
 @dataclass
 class LoggingConfig:
-    """로깅 구성 설정."""
+    """Logging configuration settings."""
 
     level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
     format: str = "text"  # "text" | "json"

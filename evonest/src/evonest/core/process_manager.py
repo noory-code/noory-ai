@@ -80,7 +80,7 @@ class ProcessManager:
         Returns:
             ProcessResult with output, exit_code, success.
         """
-        # 재시도 체인의 첫 시도인 경우 새로운 chain ID 생성
+        # Generate a new chain ID if this is the first attempt in the retry chain
         if _retry_chain_id is None:
             _retry_chain_id = str(uuid.uuid4())[:8]
 

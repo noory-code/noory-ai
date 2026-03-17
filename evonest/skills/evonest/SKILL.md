@@ -50,9 +50,9 @@ All tools take `project` (absolute path) as their first argument.
 ### Fully autonomous evolution
 1. `evonest_evolve(project, cycles=3)` — run 3 full cycles
 
-### 코드 변경 후 문서 동기화
-1. `evonest_update_docs(project)` — 변경 diff 확인 (dry_run=True 기본)
-2. 내용 검토 후 OK → `evonest_update_docs(project, dry_run=False)` — 실제 적용
+### Sync documentation after code changes
+1. `evonest_update_docs(project)` — Review change diff (dry_run=True by default)
+2. After reviewing, if OK → `evonest_update_docs(project, dry_run=False)` — Apply changes
 
 ### Cautious mode (review before executing)
 1. `evonest_evolve(project, cautious=True)` — pauses after Plan

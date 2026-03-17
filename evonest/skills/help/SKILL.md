@@ -6,7 +6,7 @@ metadata:
   category: meta
   type: reference
   style: guide
-  triggers: [what is evonest, evonest help, evonest tools, how to use evonest, evonest get started, evonest 뭐야, evonest 사용법, evonest 어떻게 써, evonest 도움말]
+  triggers: [what is evonest, evonest help, evonest tools, how to use evonest, evonest get started]
   uses: []
 ---
 

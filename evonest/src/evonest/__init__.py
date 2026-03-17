@@ -15,30 +15,30 @@ except PackageNotFoundError:
 def configure_logging(
     level: str = "INFO", format_type: str = "text", output: str = "stderr"
 ) -> None:
-    """로깅 구성을 설정합니다.
+    """Configure logging settings.
 
     Args:
-        level: 로그 레벨 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        format_type: 로그 포맷 ("text" 또는 "json")
-        output: 로그 출력 대상 ("stdout", "stderr", 또는 파일 경로)
+        level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        format_type: Log format ("text" or "json")
+        output: Log output target ("stdout", "stderr", or a file path)
     """
     logger = logging.getLogger("evonest")
     logger.setLevel(getattr(logging, level.upper(), logging.INFO))
 
-    # 기존 핸들러 제거
+    # Remove existing handlers
     logger.handlers.clear()
 
-    # 출력 대상 설정
+    # Configure output target
     handler: logging.Handler
     if output == "stdout":
         handler = logging.StreamHandler(sys.stdout)
     elif output == "stderr":
         handler = logging.StreamHandler(sys.stderr)
     else:
-        # 파일 경로로 간주
+        # Treat as file path
         handler = logging.FileHandler(Path(output))
 
-    # 포맷터 설정
+    # Configure formatter
     if format_type == "json":
 
         class JsonFormatter(logging.Formatter):
@@ -58,7 +58,7 @@ def configure_logging(
 
         formatter: logging.Formatter = JsonFormatter()
     else:
-        # 텍스트 포맷 (기본)
+        # Text format (default)
         fmt = (
             "%(asctime)s - %(name)s - %(levelname)s - "
             "%(module)s:%(funcName)s:%(lineno)d - %(message)s"
@@ -75,7 +75,7 @@ _CLI_COMMANDS = {"init", "run", "status", "history", "progress", "config", "iden
 
 def main() -> None:
     """Entry point: run MCP server by default, CLI if subcommand given."""
-    # 설정 파일에서 로깅 구성 로드 (존재하는 경우)
+    # Load logging config from settings file (if it exists)
     try:
         from evonest.core.config import EvonestConfig
 
@@ -87,7 +87,7 @@ def main() -> None:
             output=config.logging.output,
         )
     except Exception:
-        # 설정 로드 실패 시 기본 구성 사용
+        # Use default config on settings load failure
         configure_logging()
 
     if len(sys.argv) > 1 and (

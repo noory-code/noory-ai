@@ -1,6 +1,6 @@
 [project]
 name = "evonest"
-version = "0.17.2"
+version = "1.0.0"
 description = "Autonomous code evolution engine — observe, plan, execute, verify"
 readme = "README.md"
 license = "MIT"
@@ -8,7 +8,7 @@ requires-python = ">=3.11"
 authors = [{ name = "Evonest Contributors" }]
 keywords = ["mcp", "claude", "evolution", "code-quality", "autonomous"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.11",
