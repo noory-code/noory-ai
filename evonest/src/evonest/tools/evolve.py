@@ -68,12 +68,15 @@ async def evonest_evolve(
         cmd += ["--level", level]
 
     log_path = Path(project) / ".evonest" / "logs" / "current.log"
-    proc = subprocess.Popen(
-        cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+    popen_kwargs: dict[str, object] = {
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+    }
+    if sys.platform == "win32":
+        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+    else:
+        popen_kwargs["start_new_session"] = True
+    proc = subprocess.Popen(cmd, **popen_kwargs)  # type: ignore[arg-type]
     return (
         f"Evolve started (PID {proc.pid}).\n"
         f"Progress log: {log_path}\n"
