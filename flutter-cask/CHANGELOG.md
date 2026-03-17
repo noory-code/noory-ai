@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.2] — 2026-03-18
+
+### Fixed
+- Move `skills/template/` to `scaffold/template/` so unfilled placeholder is not loaded as an active skill
+- Fix help skill description and body: "33 packages" → "32 packages"
+- Translate all 35 SKILL.md changelog entries from Korean to English (`초기 릴리스` → `Initial release`)
+
+---
+
 ## [1.2.1] — 2026-03-18
 
 ### Fixed

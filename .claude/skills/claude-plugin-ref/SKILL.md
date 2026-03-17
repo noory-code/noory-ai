@@ -1,7 +1,7 @@
 ---
 name: claude-plugin-ref
 description: "Claude Code plugin development reference for this monorepo (evonest, distill, solera, flutter-cask, pencil_m3_flutter). Covers plugin structure, manifest, hooks, skills, commands, agents, MCP servers, and marketplace."
-user-invokable: true
+user-invocable: true
 ---
 
 # Claude Code Plugin Development Guide
@@ -256,7 +256,7 @@ Local install (during development):
 
 ```
 noory-ai/
-├── evonest/            — MCP server + skills + commands + hooks (v1.0.3)
+├── evonest/            — MCP server + skills + commands + hooks (v1.0.4)
 │   ├── .claude-plugin/plugin.json
 │   ├── skills/         — help, analyze, evolve, improve, identity
 │   ├── commands/       — slash commands
@@ -265,11 +265,11 @@ noory-ai/
 │   ├── .claude-plugin/plugin.json
 │   ├── skills/         — distill-recall, distill-learn, distill-profile, etc
 │   └── hooks/hooks.json (PreCompact + SessionEnd: auto-learn)
-├── solera/             — skills only (v2.10.0)
+├── solera/             — skills only (v2.10.1)
 │   └── .claude-plugin/plugin.json
-├── flutter-cask/       — skills only (v1.2.1)
+├── flutter-cask/       — skills only (v1.2.2)
 │   └── .claude-plugin/plugin.json
-└── pencil_m3_flutter/  — skills only (v1.0.0)
+└── pencil_m3_flutter/  — skills only (v1.0.1)
     └── .claude-plugin/plugin.json
 ```
 

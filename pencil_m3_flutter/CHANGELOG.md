@@ -1,3 +1,13 @@
+## 1.0.1 — 2026-03-18
+
+### Fixed
+- Remove invalid `"skills"` field from `plugin.json` manifest
+- Replace LICENSE placeholder with actual MIT license text
+- Rewrite `design-guide` skill description as declarative language (was trigger-style, but `user-invocable: false`)
+- Replace `ls` shell command with Python file existence check in `pmf-init` Step A-3
+
+---
+
 ## 1.0.0
 
 ### Fixed

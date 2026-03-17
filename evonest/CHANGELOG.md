@@ -2,6 +2,14 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.0.4] — 2026-03-18
+
+### Fixed
+- Add missing YAML frontmatter (`name`, `description`) to `skills/evonest/SKILL.md`
+- Delete empty stale shadow directories: `.claude-plugin/commands/` and `.claude-plugin/skills/evonest/`
+
+---
+
 ## [1.0.2] — 2026-03-17
 
 ### Fixed
