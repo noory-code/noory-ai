@@ -10,7 +10,7 @@ Python monorepo with two independent MCP (Model Context Protocol) servers. Each 
 noory-ai/
 ├── evonest/            — Autonomous code evolution engine (v1.0.3)
 ├── distill/            — Knowledge distillation from Claude conversations (v1.7.1)
-├── solera/             — AI-driven project workflow plugin (v2.9.3)
+├── solera/             — AI-driven project workflow plugin (v2.10.0)
 ├── flutter-cask/       — Flutter package guide skills (v1.2.1)
 └── pencil_m3_flutter/  — Flutter M3 design system automation (v1.0.0)
 ```

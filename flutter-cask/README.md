@@ -41,7 +41,7 @@ CI를 통해 매주 자동으로 스킬의 패키지 버전을 체크합니다:
 - **결과**: 업데이트가 필요한 경우 자동으로 이슈 생성
 - **수동 실행**: GitHub Actions에서 workflow_dispatch로 언제든 실행 가능
 
-버전 체크 스크립트: `scripts/check-skill-versions.sh`
+버전 체크 스크립트: `scripts/check-skill-versions.py`
 
 ## Feedback
 

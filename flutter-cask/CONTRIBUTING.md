@@ -6,15 +6,15 @@ Flutter Cask에 기여해주셔서 감사합니다! 이 문서는 새로운 스�
 
 ### 1. 스킬 생성 스크립트 사용
 
-프로젝트 루트에서 `new-skill.sh` 스크립트를 사용하면 새로운 스킬을 빠르게 생성할 수 있습니다.
+프로젝트 루트에서 `new-skill.py` 스크립트를 사용하면 새로운 스킬을 빠르게 생성할 수 있습니다.
 
 ```bash
-./new-skill.sh <skill-name> <package-name>
+./new-skill.py <skill-name> <package-name>
 ```
 
 **예시:**
 ```bash
-./new-skill.sh flutter-dio dio
+./new-skill.py flutter-dio dio
 ```
 
 이 명령은 `skills/flutter-dio/` 디렉토리와 기본 `SKILL.md` 파일을 생성합니다.

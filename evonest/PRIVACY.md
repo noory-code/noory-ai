@@ -42,4 +42,4 @@ For questions, open an issue at [github.com/noory-code/noory-ai](https://github.
 
 ---
 
-*Last updated: 2026-03-17 | Evonest v1.0.2*
+*Last updated: 2026-03-18 | Evonest v1.0.3*
