@@ -147,7 +147,7 @@ Key files:
 - `core/state.py` — all `.evonest/` directory access goes through here (single entry point)
 - `core/mutations.py` — persona & adversarial challenge selection
 - `core/claude_runner.py` — all `claude -p` subprocess calls (turn limits, error handling)
-- `mutations/personas.json` — 19 built-in personas (read-only at runtime)
+- `mutations/personas.json` — 20 built-in personas (read-only at runtime)
 - `mutations/adversarial.json` — 8 adversarial challenges
 
 Runtime-generated personas/adversarials go to `.evonest/dynamic-*.json` in the target project, never to `mutations/`.

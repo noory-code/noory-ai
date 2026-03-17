@@ -3,7 +3,7 @@
 ## Key Differentiators
 
 ### Multi-Persona System
-Single-AI tools (Aider, Cursor) offer only one perspective at a time. Evonest picks one persona per cycle, runs it as a fully isolated Claude process, and rotates through 19 built-in perspectives over time. security-auditor, chaos-engineer, and performance-analyst run independently with no shared context between them.
+Single-AI tools (Aider, Cursor) offer only one perspective at a time. Evonest picks one persona per cycle, runs it as a fully isolated Claude process, and rotates through 20 built-in perspectives over time. security-auditor, chaos-engineer, and performance-analyst run independently with no shared context between them.
 
 ### Adaptive Learning
 GitHub Copilot Workspace uses a fixed workflow. Evonest recalculates persona weights after every cycle — successful personas run more often; underperforming ones are deprioritized. After 50 cycles, the distribution reflects what actually works for your specific project.
