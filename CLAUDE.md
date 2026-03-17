@@ -8,8 +8,10 @@ Python monorepo with two independent MCP (Model Context Protocol) servers. Each 
 
 ```
 noory-ai/
-├── evonest/   — Autonomous code evolution engine (v0.2.0, Alpha)
-└── distill/   — Knowledge distillation from Claude conversations (v1.0.0)
+├── evonest/       — Autonomous code evolution engine (v1.0.3)
+├── distill/       — Knowledge distillation from Claude conversations (v1.7.1)
+├── solera/        — AI-driven project workflow plugin (v2.9.3)
+└── flutter-cask/  — Flutter package guide skills (v1.2.1)
 ```
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
@@ -107,6 +109,22 @@ uv run python -m distill  # run MCP server
 | "depending on the situation" | List each case with its action |
 | "as you see fit" | Provide `if: condition then: action` |
 | "handle accordingly" | Specify the exact handling logic |
+
+## Cross-Platform Compatibility
+
+All code must run on **macOS, Linux, and Windows**. Apply these rules to every change:
+
+| Banned | Use Instead |
+|--------|-------------|
+| Shell scripts (`.sh`, `.bash`) | Python scripts |
+| `fcntl` | `fcntl` on Unix, `msvcrt` on Windows (check `sys.platform`) |
+| `/tmp/` hardcoded paths | `tempfile.gettempdir()` |
+| `.venv/bin/python` | `Scripts/python.exe` on Windows, `bin/python` on Unix |
+| `start_new_session=True` | `subprocess.CREATE_NEW_PROCESS_GROUP` on Windows |
+| `osascript` (macOS-only) | Platform dispatch: `osascript` / `notify-send` / `powershell` |
+| `find`, `grep`, `sed`, `awk` in scripts | Python stdlib (`pathlib`, `re`, etc.) |
+
+Hook commands in `hooks.json` must use `python3` (not `bash`). `${CLAUDE_PLUGIN_ROOT}` is available in hook commands.
 
 ## Code Conventions
 
