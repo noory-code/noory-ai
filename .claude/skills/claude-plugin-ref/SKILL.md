@@ -1,6 +1,6 @@
 ---
 name: claude-plugin-ref
-description: "Claude Code plugin development reference for this monorepo (evonest, distill). Covers plugin structure, manifest, hooks, skills, commands, agents, MCP servers, and marketplace."
+description: "Claude Code plugin development reference for this monorepo (evonest, distill, solera, flutter-cask, pencil_m3_flutter). Covers plugin structure, manifest, hooks, skills, commands, agents, MCP servers, and marketplace."
 user-invokable: true
 ---
 
@@ -256,16 +256,21 @@ Local install (during development):
 
 ```
 noory-ai/
-├── evonest/
-│   ├── .claude-plugin/
-│   │   ├── plugin.json
-│   │   └── marketplace.json
-│   ├── skills/evonest/SKILL.md
-│   └── commands/{analyze,evolve,improve,identity}.md
-└── distill/
-    ├── .claude-plugin/plugin.json
-    ├── skills/distill/SKILL.md
-    └── hooks/hooks.json
+├── evonest/            — MCP server + skills + commands + hooks (v1.0.3)
+│   ├── .claude-plugin/plugin.json
+│   ├── skills/         — help, analyze, evolve, improve, identity
+│   ├── commands/       — slash commands
+│   └── hooks/hooks.json (PostToolUse: auto-chain improve)
+├── distill/            — MCP server + skills + hooks (v1.7.1)
+│   ├── .claude-plugin/plugin.json
+│   ├── skills/         — distill-recall, distill-learn, distill-profile, etc
+│   └── hooks/hooks.json (PreCompact + SessionEnd: auto-learn)
+├── solera/             — skills only (v2.10.0)
+│   └── .claude-plugin/plugin.json
+├── flutter-cask/       — skills only (v1.2.1)
+│   └── .claude-plugin/plugin.json
+└── pencil_m3_flutter/  — skills only (v1.0.0)
+    └── .claude-plugin/plugin.json
 ```
 
 ## Common Mistakes Checklist
@@ -275,5 +280,5 @@ noory-ai/
 - [ ] `skills` directory path must end with `/` (e.g. `"./skills/"`)
 - [ ] `commands` must be an array of file paths (directory path not supported)
 - [ ] marketplace.json `plugin` path must be relative to marketplace.json location
-- [ ] `${CLAUDE_PLUGIN_ROOT}` only works in MCP args (not in hook commands)
+- [ ] `${CLAUDE_PLUGIN_ROOT}` works in both MCP args and hook commands (substituted at plugin load time)
 - [ ] `.claude/settings.local.json` should be in .gitignore (personal settings)
