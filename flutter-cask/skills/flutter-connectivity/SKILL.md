@@ -162,4 +162,4 @@ class SyncManager {
 ## Changelog
 
 ### [1.1.0] - 2026-03-01
-- 초기 릴리스
+- Initial release

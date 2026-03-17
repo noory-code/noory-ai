@@ -196,4 +196,4 @@ See [references/mfa-example.md](references/mfa-example.md)
 ## Changelog
 
 ### [1.1.0] - 2026-03-01
-- 초기 릴리스
+- Initial release

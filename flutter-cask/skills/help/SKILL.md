@@ -1,6 +1,6 @@
 ---
 name: help
-description: Explain what flutter-cask is and list all 33 available Flutter package guide skills.
+description: Explain what flutter-cask is and list all 32 available Flutter package guide skills.
 metadata:
   version: "1.0.0"
   category: meta
@@ -12,7 +12,7 @@ metadata:
 
 # flutter-cask Help
 
-> Flutter package guide skills — 33 packages, zero setup.
+> Flutter package guide skills — 32 packages, zero setup.
 
 ## Overview
 
@@ -54,4 +54,4 @@ Just describe what you need — no explicit skill invocation required:
 ## Changelog
 
 ### [1.1.0] - 2026-03-01
-- 초기 릴리스
+- Initial release
