@@ -22,6 +22,7 @@ All tools take `project` (absolute path) as their first argument.
 | `evonest_history` | Show cycle history |
 | `evonest_config` | Read or update `.evonest/config.json` |
 | `evonest_identity` | Read or write `.evonest/identity.md` |
+| `evonest_identity_refresh` | Re-draft identity.md by having Claude explore the project (returns current + draft for review) |
 | `evonest_backlog` | Manage the improvement backlog |
 | `evonest_stimuli` | Add a stimulus (external input for the next observe cycle) |
 | `evonest_decide` | Record a human decision (constrains LLM proposals) |

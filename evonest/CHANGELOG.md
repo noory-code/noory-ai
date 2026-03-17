@@ -2,6 +2,16 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.0.1] — 2026-03-17
+
+### Fixed
+- **Skill documentation**: added missing `evonest_identity_refresh` tool to Available MCP Tools table
+- **CHANGELOG**: added test count to v1.0.0 entry
+
+**422 tests passing**
+
+---
+
 ## [1.0.0] — 2026-03-17
 
 ### Changed (BREAKING)
@@ -16,6 +26,8 @@ All notable changes to Evonest are documented here.
 ### Fixed
 - **All Korean text translated to English**: skills, ROADMAP, Python docstrings
 - **Korean trigger phrases removed** from help skill (English triggers sufficient)
+
+**422 tests passing**
 
 ---
 
