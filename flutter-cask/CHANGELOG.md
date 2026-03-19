@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3] — 2026-03-20
+
+### Fixed
+- `update-flutter-skills`: metadata `type: composite` → `type: unit` (no sub-skill invocations)
+
+---
+
 ## [1.2.2] — 2026-03-18
 
 ### Fixed

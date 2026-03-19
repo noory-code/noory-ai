@@ -4,7 +4,7 @@ description: Update all Flutter skills in the flutter-cask plugin. Reflect lates
 metadata:
   version: "1.2.0"
   category: meta
-  type: composite
+  type: unit
   style: procedural
   triggers: [update flutter skills, update-flutter-skills, flutter package guide update, skill update]
   uses: []
