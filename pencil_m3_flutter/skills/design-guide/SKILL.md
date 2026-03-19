@@ -4,40 +4,47 @@ description: >
   M3 Expressive base rules and component reference for Flutter screen design using the Pencil library.
   Used as the base layer for project-specific design skills; not directly invocable.
 user-invocable: false
+metadata:
+  version: "1.0.2"
+  category: design
+  type: unit
+  style: guide
+  triggers: [M3 design guide, material design rules, component reference, design base layer, pencil design]
+  uses: []
 ---
 
 # Design Guide — M3 Expressive (Base)
 
-이 스킬은 두 가지 역할을 한다:
+This skill serves two purposes:
 
-1. **직접 사용**: Claude Code가 Pencil MCP를 통해 직접 화면을 조립
-2. **베이스 레이어**: 프로젝트 전용 `design` 스킬이 이 규칙을 상속해 Pencil AI 프롬프트를 생성
+1. **Direct use**: Claude Code assembles screens directly via Pencil MCP
+2. **Base layer**: Project-specific `design` skills inherit these rules to generate Pencil AI prompts
 
 ---
 
-## M3 규칙 (베이스)
+## M3 Rules (Base)
 
-프로젝트 `design` 스킬은 이 섹션을 그대로 상속한다.
+Project `design` skills inherit this section as-is.
 
-### 컴포넌트 사용 원칙
+### Component Usage Principles
 
-| 컴포넌트 | 규칙 |
+| Component | Rule |
 |---------|------|
-| **Buttons** | 화면당 Filled는 1개만. 계층: Filled > FilledTonal > Elevated > Outlined > Text |
-| **FAB** | 화면당 1개만. 가장 중요한 단일 액션에만 사용 |
-| **NavigationBar** | 모바일 2~5개 destination. 항상 화면 하단 고정 |
-| **NavigationRail** | 태블릿/데스크탑 전용 |
-| **NavigationDrawer** | 5개 이상 destination일 때 |
-| **TextFields** | 기본은 Filled. 복잡한 배경에서만 Outlined |
-| **Cards** | Elevated: 평면 배경, Filled: 미묘한 그룹핑, Outlined: 복잡한 배경 |
-| **Chips** | Assist: 제안 액션, Filter: 필터링, Input: 사용자 입력값, Suggestion: 동적 옵션 |
-| **Selection** | Checkbox: 복수 선택, Radio: 단일 선택, Switch: On/Off 토글 |
-| **Snackbar** | 방해 없는 간단한 메시지. 중요한 결정은 Dialog 사용 |
-| **Colors** | 항상 Color Role 변수 사용 ($primary, $surface 등). 절대 하드코딩 금지 |
+| **Buttons** | Only 1 Filled per screen. Hierarchy: Filled > FilledTonal > Elevated > Outlined > Text |
+| **FAB** | Only 1 per screen. Use only for the single most important action |
+| **NavigationBar** | Mobile 2–5 destinations. Always fixed at the bottom of the screen |
+| **NavigationRail** | Tablet/desktop only |
+| **NavigationDrawer** | When there are 5 or more destinations |
+| **TextFields** | Default is Filled. Use Outlined only on complex backgrounds |
+| **Cards** | Elevated: flat backgrounds, Filled: subtle grouping, Outlined: complex backgrounds |
+| **Chips** | Assist: suggested actions, Filter: filtering, Input: user input values, Suggestion: dynamic options |
+| **Selection** | Checkbox: multiple selection, Radio: single selection, Switch: On/Off toggle |
+| **Snackbar** | Simple non-intrusive messages. Use Dialog for important decisions |
+| **Colors** | Always use Color Role variables ($primary, $surface, etc.). Never hardcode |
 
-### 컴포넌트 ID 레퍼런스 (material-design-guide.lib.pen)
+### Component ID Reference (material-design-guide.lib.pen)
 
-| 컴포넌트 | ID |
+| Component | ID |
 |---------|-----|
 | Frame/Mobile/390 | `dnJUo` |
 | Frame/Tablet/768 | `P7T42` |
@@ -70,125 +77,125 @@ user-invocable: false
 | Divider/Full | `YQxB2` |
 | Snackbar/TextOnly | `BR6ZB` |
 
-### 화면 타입별 레이아웃 패턴
+### Layout Patterns by Screen Type
 
-**로그인 / 온보딩**
+**Login / Onboarding**
 ```
 Frame/Mobile/390
-  └ Hero 영역 (~40% 높이, fill=$primaryContainer)
-      └ 로고 + 앱 이름
-  └ Form 카드 (cornerRadius [28,28,0,0], fill=$surface)
-      └ 제목 + 부제목
+  └ Hero area (~40% height, fill=$primaryContainer)
+      └ Logo + App name
+  └ Form card (cornerRadius [28,28,0,0], fill=$surface)
+      └ Title + Subtitle
       └ TextFields/Filled × N
-      └ Buttons/Filled (full-width, 주요 액션 1개)
-      └ Buttons/Text (보조 액션)
+      └ Buttons/Filled (full-width, 1 primary action)
+      └ Buttons/Text (secondary action)
 ```
 
-**홈 / 리스트**
+**Home / List**
 ```
 Frame/Mobile/390
-  └ TopAppBar/Small (상단 고정)
-  └ 스크롤 콘텐츠 영역
-      └ List 아이템들
-  └ FAB/Default (우측 하단)
-  └ NavigationBar (하단 고정)
+  └ TopAppBar/Small (fixed at top)
+  └ Scrollable content area
+      └ List items
+  └ FAB/Default (bottom right)
+  └ NavigationBar (fixed at bottom)
 ```
 
-**설정**
+**Settings**
 ```
 Frame/Mobile/390
   └ TopAppBar/Small
-  └ 섹션 레이블 (14px, $primary)
-  └ Lists/TwoLineItem + Switch 조합
+  └ Section label (14px, $primary)
+  └ Lists/TwoLineItem + Switch combination
   └ Divider/Full
-  └ 다음 섹션 반복
+  └ Repeat for next section
 ```
 
-**디테일 / 상세**
+**Detail**
 ```
 Frame/Mobile/390
-  └ TopAppBar (뒤로가기 포함)
-  └ 콘텐츠 카드
-  └ FAB/Extended (주요 액션)
+  └ TopAppBar (with back navigation)
+  └ Content card
+  └ FAB/Extended (primary action)
 ```
 
 ---
 
-## 프롬프트 생성 방법론
+## Prompt Generation Methodology
 
-프로젝트 `design` 스킬은 이 방법론으로 Pencil AI 프롬프트를 생성한다.
+Project `design` skills generate Pencil AI prompts using this methodology.
 
-### 프롬프트에 포함해야 할 정보
+### Information to Include in Prompts
 
-1. **대상 파일**: 어떤 `.pen` 파일에 작업할지
-2. **화면 이름**: 생성할 화면 이름
-3. **레이아웃 구조**: 위 패턴 중 해당하는 것 또는 커스텀 구조
-4. **컴포넌트 목록**: 사용할 컴포넌트와 ID
-5. **색상 규칙**: Color Role 변수만 사용 ($primary, $surface 등)
-6. **프로젝트 고유 규칙**: 앱별 추가 제약
+1. **Target file**: Which `.pen` file to work on
+2. **Screen name**: Name of the screen to generate
+3. **Layout structure**: Matching pattern from above or custom structure
+4. **Component list**: Components to use and their IDs
+5. **Color rules**: Use only Color Role variables ($primary, $surface, etc.)
+6. **Project-specific rules**: Additional constraints per app
 
-### 프롬프트 출력 형식
+### Prompt Output Format
 
 ```
-<파일명>.pen 에 <화면 이름> 화면을 추가해줘.
+Add a <screen name> screen to <filename>.pen.
 
-## 공통 규칙
-- 색상: 절대 하드코딩 금지. $primary, $surface, $onSurface 등 Color Role 변수만 사용
-- 폼팩터: Frame/Mobile/390 (ID: dnJUo)
-- 캔버스 빈 공간에 배치 (간격 100px)
+## Common Rules
+- Colors: Never hardcode. Use only Color Role variables such as $primary, $surface, $onSurface
+- Form factor: Frame/Mobile/390 (ID: dnJUo)
+- Place on empty canvas space (100px spacing)
 
-## 레이아웃
-<화면 구조 설명>
+## Layout
+<Screen structure description>
 
-## 컴포넌트
-<컴포넌트 이름 (ID: xxx)> × N — <역할 설명>
+## Components
+<Component name (ID: xxx)> × N — <Role description>
 
-## 프로젝트 고유 규칙
-<앱별 추가 규칙>
+## Project-Specific Rules
+<Additional app-specific rules>
 ```
 
 ---
 
-## Claude Code → Pencil MCP 직접 실행 (선택적)
+## Claude Code → Pencil MCP Direct Execution (Optional)
 
-Claude Code가 Pencil MCP를 통해 직접 화면을 조립해야 할 때 사용한다.
+Used when Claude Code needs to assemble screens directly via Pencil MCP.
 
-### Step 1 — 작업 파일 준비
+### Step 1 — Prepare Working File
 
 ```
 mcp__pencil__get_editor_state()
 ```
 
-- `<appname>-design-guide.lib.pen`을 import한 `.pen` 파일이 열려 있으면 → Step 2 진행
-- 없으면 → 새 `.pen` 파일 생성 후 `<appname>-design-guide.lib.pen` import 안내
+- If a `.pen` file that imports `<appname>-design-guide.lib.pen` is open → Proceed to Step 2
+- If not → Create a new `.pen` file and guide the user to import `<appname>-design-guide.lib.pen`
 
-### Step 2 — 디자인 요구사항 파악
+### Step 2 — Gather Design Requirements
 
-필요한 컴포넌트, 레이아웃, 색상 규칙 확인.
+Identify required components, layout, and color rules.
 
-### Step 3 — 빈 공간 찾기
+### Step 3 — Find Empty Space
 
 ```
 mcp__pencil__find_empty_space_on_canvas(direction: "right", width: ..., height: ..., padding: 100)
 ```
 
-### Step 4 — Placeholder 프레임 생성
+### Step 4 — Create Placeholder Frame
 
 ```javascript
 screen=I(document, {type: "ref", ref: "dnJUo", placeholder: true, x: ..., y: ...})
 ```
 
-### Step 5 — 컴포넌트 조립
+### Step 5 — Assemble Components
 
-위 컴포넌트 ID 레퍼런스와 M3 규칙을 따라 배치.
+Place components following the Component ID Reference and M3 rules above.
 
-색상 하드코딩 금지:
+No hardcoded colors:
 ```javascript
 {fill: "$primary"}      // ✓
 {fill: "#6750A4"}       // ✗
 ```
 
-### Step 6 — 검증 및 완료
+### Step 6 — Verify and Finalize
 
 ```
 mcp__pencil__get_screenshot(nodeId)

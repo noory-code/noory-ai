@@ -5,68 +5,77 @@ description: >
   Triggers when the user asks to change, replace, or update the logo,
   app icon, or brand mark in the Pencil design guide.
 user-invocable: true
+metadata:
+  version: "1.0.2"
+  category: design
+  type: unit
+  style: procedural
+  triggers: [change logo, replace logo, update app icon, brand mark, app logo]
+  uses: []
 ---
 
 # Change Logo
 
-디자인 가이드의 로고 컴포넌트를 교체한다.
+Replace the logo component in the design guide.
 
-## 로고 규격
+## Logo Specifications
 
-- **형태**: 정사각형 (권장 192×192)
-- **배경**: 투명 또는 앱 Primary 컬러
-- **배치**: `Logo` 이름의 reusable 컴포넌트 — 모든 인스턴스가 동시 업데이트됨
+- **Shape**: Square (recommended 192x192)
+- **Background**: Transparent or app Primary color
+- **Placement**: Reusable component named `Logo` -- all instances update simultaneously
 
-## Step 1 — 현재 파일 확인
+## Step 1 -- Verify Current File
 
 ```
 mcp__pencil__get_editor_state()
 ```
 
-현재 열린 `.pen` 파일이 앱 디자인 가이드인지 확인한다.
-`material-design-guide.lib.pen`이면 사용자에게 앱 전용 파일을 열도록 안내한다.
+Verify that the currently open `.pen` file is the app design guide.
+If it is `material-design-guide.lib.pen`, instruct the user to open the app-specific file.
 
-## Step 2 — 로고 소스 결정
+## Step 2 -- Determine Logo Source
 
-사용자에게 확인:
+Ask the user:
 
-- **이미지 파일 경로 제공** → 해당 이미지를 fill로 적용
-- **AI 생성 요청** → 앱 이름 기반으로 AI 로고 생성
-- **텍스트/이니셜만** → 텍스트 기반 로고 생성
+- **Image file path provided** -- Apply the image as a fill
+- **AI generation requested** -- Generate an AI logo based on the app name
+- **Text/initials only** -- Generate a text-based logo
 
-## Step 3 — 로고 노드 탐색
+## Step 3 -- Find Logo Node
 
 ```
 mcp__pencil__batch_get(patterns=["Logo"])
 ```
 
-`Logo` 이름의 reusable 컴포넌트 노드 ID를 찾는다.
+Find the node ID of the reusable component named `Logo`.
 
-- 노드가 없으면: `mcp__pencil__batch_design`으로 192×192 reusable 프레임 `Logo` 신규 생성
-- 노드가 있지만 내부 이미지 노드가 없으면: 기존 Logo 프레임 안에 192×192 Rectangle + image fill 노드를 `batch_design`으로 추가 생성
-- 노드가 있고 내부 이미지 노드도 있으면: 해당 노드 ID 사용
+- If node does not exist: Create a new 192x192 reusable frame `Logo` using `mcp__pencil__batch_design`
+- If node exists but has no inner image node: Add a 192x192 Rectangle + image fill node inside the existing Logo frame using `batch_design`
+- If node exists and inner image node also exists: Use that node ID
 
-## Step 4 — 로고 교체
+## Step 4 -- Replace Logo
 
-### Case A: AI 생성
+### Case A: AI Generation
 
 ```
 G(<logoNodeId>, "ai", "<appname> app logo square minimal")
 ```
 
-### Case B: 이미지 파일
+### Case B: Image File
 
-> SVG 파일은 Pencil의 image fill로 직접 적용 불가 (투명으로 렌더링됨).
-> PNG/JPG로 변환 후 사용:
+> SVG files cannot be applied directly as Pencil image fills (they render as transparent).
+> Convert to PNG/JPG before use:
 > - macOS: `sips -s format png logo.svg --out logo.png`
-> - ImageMagick: `convert logo.svg logo.png`
+> - Linux/Windows: `python3 -c "from PIL import Image; Image.open('logo.svg').save('logo.png')"`
+>   (requires `pip install Pillow`)
+> - ImageMagick (cross-platform): `convert logo.svg logo.png`
 
 ```
 mcp__pencil__batch_design
 U(<logoNodeId>, { fill: { type: "image", url: "<file_path>" } })
 ```
 
-### Case C: 텍스트 이니셜
+### Case C: Text Initials
 
 ```
 mcp__pencil__batch_design
@@ -74,11 +83,11 @@ bg=I(<logoNodeId>, { type: "frame", width: "fill_container", height: "fill_conta
 label=I(<logoNodeId>, { type: "text", content: "<initials>", fontSize: 72, fill: "$onPrimary", textAlign: "center" })
 ```
 
-## Step 5 — 결과 확인
+## Step 5 -- Verify Result
 
 ```
 mcp__pencil__get_screenshot(<logoNodeId>)
 ```
 
-스크린샷으로 결과를 확인하고 사용자에게 보여준다.
-만족스럽지 않으면 Step 4로 돌아가 재시도한다.
+Verify the result via screenshot and show it to the user.
+If unsatisfactory, return to Step 4 and retry.

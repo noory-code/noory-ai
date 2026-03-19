@@ -5,6 +5,13 @@ description: >
   Use evonest MCP tools to analyze, improve, and evolve a project — observe, plan, execute, verify.
   Triggers when the user asks to run evonest, analyze code, find improvements, execute a proposal,
   or improve a project with evonest.
+metadata:
+  version: "1.0.5"
+  category: evolution
+  type: unit
+  style: guide
+  triggers: [run evonest, analyze code, find improvements, execute proposal, improve project, evolve code, evonest status, evonest history, show proposals]
+  uses: []
 ---
 
 # evonest

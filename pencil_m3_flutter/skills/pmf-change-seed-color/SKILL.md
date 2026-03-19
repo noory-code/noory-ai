@@ -5,34 +5,41 @@ description: >
   Triggers when the user asks to change the seed color, primary color, brand color,
   or update the color palette/scheme in material-design-guide.lib.pen.
 user-invocable: true
+metadata:
+  version: "1.0.2"
+  category: design
+  type: unit
+  style: procedural
+  triggers: [change seed color, change primary color, update color palette, brand color, color scheme]
+  uses: []
 ---
 
 # Change Seed Color
 
-시드 컬러를 변경하면 M3 팔레트 전체(Semantic Colors + Material Color Scheme)가 재계산된다.
+Changing the seed color causes the entire M3 palette (Semantic Colors + Material Color Scheme) to be recalculated.
 
 ## Target file
 
-- 단독 실행 시: `${CLAUDE_PLUGIN_ROOT}/pencil/material-design-guide.lib.pen`
-- `init`에서 위임 실행 시: 새로 생성한 `<appname>-design-guide.lib.pen`
-  (init이 열어둔 파일이 현재 에디터에 열려 있으므로 그대로 사용)
+- Standalone execution: `${CLAUDE_PLUGIN_ROOT}/pencil/material-design-guide.lib.pen`
+- Delegated execution from `init`: The newly created `<appname>-design-guide.lib.pen`
+  (The file opened by init is already active in the editor, so use it as-is)
 
 ## Workflow
 
-### Step 1 — 시드 컬러 확인
+### Step 1 -- Confirm Seed Color
 
-사용자에게 새 시드 컬러 hex 값을 확인한다. 예: `#6750A4`
+Ask the user for the new seed color hex value. Example: `#6750A4`
 
-### Step 2 — 팔레트 계산
+### Step 2 -- Calculate Palette
 
-`${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/hct_palette.py` 를 사용해 팔레트를 계산한다.
+Use `${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/hct_palette.py` to calculate the palette.
 
 ```bash
 cd ${CLAUDE_PLUGIN_ROOT}/pencil/md3calc
 python3 hct_palette.py <seed_hex>
 ```
 
-출력 형식:
+Output format:
 ```json
 {
   "seed": "#6750A4",
@@ -45,16 +52,16 @@ python3 hct_palette.py <seed_hex>
 }
 ```
 
-> error 팔레트는 시드와 무관하게 M3 표준값을 사용한다.
+> The error palette uses M3 standard values regardless of the seed.
 
-### Step 3 — Semantic Colors Palette 업데이트
+### Step 3 -- Update Semantic Colors Palette
 
-`mcp__pencil__set_variables` 로 아래 변수들을 업데이트한다.
+Update the following variables using `mcp__pencil__set_variables`.
 
-**업데이트 대상 변수 목록:**
+**Variables to update:**
 
-| 변수명 | 테마 | 값 |
-|--------|------|-----|
+| Variable | Theme | Value |
+|----------|-------|-------|
 | `seed` | `Semantic Colors Palette/Default` | seed hex |
 | `primary/0` | `Semantic Colors Palette/Default` | primary[0] |
 | `primary/10` | `Semantic Colors Palette/Default` | primary[10] |
@@ -73,16 +80,16 @@ python3 hct_palette.py <seed_hex>
 | `tertiary/0` ~ `tertiary/100` | `Semantic Colors Palette/Default` | tertiary[*] |
 | `neutral/0` ~ `neutral/100` | `Semantic Colors Palette/Default` | neutral[*] |
 | `neutralVariant/0` ~ `neutralVariant/100` | `Semantic Colors Palette/Default` | neutralVariant[*] |
-| `error/0` ~ `error/100` | `Semantic Colors Palette/Default` | M3 표준 error 값 |
+| `error/0` ~ `error/100` | `Semantic Colors Palette/Default` | M3 standard error values |
 
-### Step 4 — Material Color Scheme 업데이트
+### Step 4 -- Update Material Color Scheme
 
-팔레트 값을 기반으로 M3 Color Scheme 토큰을 아래 규칙에 따라 매핑한다.
+Map M3 Color Scheme tokens based on palette values according to the rules below.
 
-**light 테마:**
+**Light theme:**
 
-| 토큰 | 팔레트 값 |
-|------|-----------|
+| Token | Palette Value |
+|-------|---------------|
 | `primary` | primary/40 |
 | `onPrimary` | primary/100 |
 | `primaryContainer` | primary/90 |
@@ -115,12 +122,12 @@ python3 hct_palette.py <seed_hex>
 | `onSurface` | neutral/10 |
 | `surfaceVariant` | neutralVariant/90 |
 | `onSurfaceVariant` | neutralVariant/30 |
-| `surfaceDim` | neutral/87 → neutral/90 근사 |
-| `surfaceBright` | neutral/98 → neutral/99 근사 |
+| `surfaceDim` | neutral/87 -- approximated to neutral/90 |
+| `surfaceBright` | neutral/98 -- approximated to neutral/99 |
 | `surfaceContainerLowest` | neutral/100 |
-| `surfaceContainerLow` | neutral/96 → neutral/95 근사 |
-| `surfaceContainer` | neutral/94 → neutral/95 근사 |
-| `surfaceContainerHigh` | neutral/92 → neutral/90 근사 |
+| `surfaceContainerLow` | neutral/96 -- approximated to neutral/95 |
+| `surfaceContainer` | neutral/94 -- approximated to neutral/95 |
+| `surfaceContainerHigh` | neutral/92 -- approximated to neutral/90 |
 | `surfaceContainerHighest` | neutral/90 |
 | `outline` | neutralVariant/50 |
 | `outlineVariant` | neutralVariant/80 |
@@ -131,10 +138,10 @@ python3 hct_palette.py <seed_hex>
 | `scrim` | neutral/0 |
 | `surfaceTint` | primary/40 |
 
-**dark 테마:**
+**Dark theme:**
 
-| 토큰 | 팔레트 값 |
-|------|-----------|
+| Token | Palette Value |
+|-------|---------------|
 | `primary` | primary/80 |
 | `onPrimary` | primary/20 |
 | `primaryContainer` | primary/30 |
@@ -167,13 +174,13 @@ python3 hct_palette.py <seed_hex>
 | `onSurface` | neutral/90 |
 | `surfaceVariant` | neutralVariant/30 |
 | `onSurfaceVariant` | neutralVariant/80 |
-| `surfaceDim` | neutral/6 → neutral/10 근사 |
-| `surfaceBright` | neutral/24 → neutral/20 근사 |
-| `surfaceContainerLowest` | neutral/4 → neutral/0 근사 |
+| `surfaceDim` | neutral/6 -- approximated to neutral/10 |
+| `surfaceBright` | neutral/24 -- approximated to neutral/20 |
+| `surfaceContainerLowest` | neutral/4 -- approximated to neutral/0 |
 | `surfaceContainerLow` | neutral/10 |
-| `surfaceContainer` | neutral/12 → neutral/10 근사 |
-| `surfaceContainerHigh` | neutral/17 → neutral/20 근사 |
-| `surfaceContainerHighest` | neutral/22 → neutral/20 근사 |
+| `surfaceContainer` | neutral/12 -- approximated to neutral/10 |
+| `surfaceContainerHigh` | neutral/17 -- approximated to neutral/20 |
+| `surfaceContainerHighest` | neutral/22 -- approximated to neutral/20 |
 | `outline` | neutralVariant/60 |
 | `outlineVariant` | neutralVariant/30 |
 | `inverseSurface` | neutral/90 |
@@ -183,36 +190,36 @@ python3 hct_palette.py <seed_hex>
 | `scrim` | neutral/0 |
 | `surfaceTint` | primary/80 |
 
-> light-mc, dark-mc, light-hc, dark-hc 테마는 medium/high contrast 변형이다.
-> 이 스킬에서는 light/dark 만 업데이트한다. mc/hc가 필요하면 사용자에게 알린다.
+> The light-mc, dark-mc, light-hc, and dark-hc themes are medium/high contrast variants.
+> This skill only updates light/dark. If mc/hc is needed, inform the user.
 
-### Step 5 — Dart 코드 재생성
+### Step 5 -- Regenerate Dart Code
 
-단독/위임 구분 없이 항상 실행한다.
-`.pen` 파일이 컬러의 SSOT이므로 반드시 `.pen` 변수를 기반으로 Dart를 생성한다.
+Always execute regardless of standalone or delegated mode.
+The `.pen` file is the SSOT for colors, so Dart code must be generated based on `.pen` variables.
 
 ```
-1. mcp__pencil__get_variables() 실행 → 결과를 /tmp/pen_vars.json 파일로 저장
+1. Run mcp__pencil__get_variables() -- save results to a temp file via tempfile.gettempdir()
 2. python3 ${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/gen_dart.py \
-     --from-json /tmp/pen_vars.json \
+     --from-json <temp_dir>/pen_vars.json \
      --out <flutter_lib_path> \
      --barrel <appname>_ui
 ```
 
-> get_variables() 결과는 100K+자로 매우 클 수 있다. 반드시 파일로 저장 후 `--from-json`으로 전달한다.
-> `--from-json`은 get_variables()의 네이티브 형식(`{name: {type, value: [{theme, value}]}}`)을 직접 파싱한다.
-> 사용자가 Pencil에서 컬러를 직접 수정한 경우에도 정확히 동기화된다.
+> The get_variables() result can exceed 100K+ characters. Always save to a file first and pass via `--from-json`.
+> `--from-json` directly parses the native format (`{name: {type, value: [{theme, value}]}}`) of get_variables().
+> This ensures accurate synchronization even when the user has manually edited colors in Pencil.
 
-생성 파일:
+Generated files:
 - `semantic_color_palette.dart`, `theme_colors.dart`, `theme.dart`, `tokens.dart`
-- `<appname>_ui.dart` — `--barrel` 지정 시 생성되는 배럴 파일
+- `<appname>_ui.dart` -- barrel file generated when `--barrel` is specified
 
-> `flutter_lib_path`가 컨텍스트로 전달된 경우 그대로 사용한다. 없으면 사용자에게 확인한다.
-> Flutter 컨벤션 기본 경로: `lib/src/design/`
+> If `flutter_lib_path` is provided via context, use it as-is. Otherwise, ask the user.
+> Flutter convention default path: `lib/src/design/`
 
-### Step 6 — 결과 확인
+### Step 6 -- Verify Results
 
-변경 완료 후 사용자에게 보고:
-- 새 seed color
+Report to the user after completion:
+- New seed color
 - Primary (light): primary/40, Primary (dark): primary/80
-- Flutter 테마 코드 재생성 완료: `<flutter_lib_path>/semantic_color_palette.dart`
+- Flutter theme code regeneration complete: `<flutter_lib_path>/semantic_color_palette.dart`

@@ -1,3 +1,15 @@
+## 1.0.2 — 2026-03-20
+
+### Fixed
+- Translate all 4 skill bodies from Korean to English (CLAUDE.md compliance)
+- Add `metadata` blocks to all 4 skills (version, category, type, triggers)
+- Add `"skills"` field to plugin.json for consistency
+- Replace macOS-only `sips` in pmf-change-logo with cross-platform alternatives
+- Replace `/tmp/` hardcoded path in pmf-change-seed-color with `tempfile.gettempdir()`
+- Replace `grep -q` in pmf-init with Python pathlib check
+
+---
+
 ## 1.0.1 — 2026-03-18
 
 ### Fixed

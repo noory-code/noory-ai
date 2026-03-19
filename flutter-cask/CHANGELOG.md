@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5] — 2026-03-20
+
+### Fixed
+- `help`: sync metadata version from "1.0.0" to "1.1.0"
+
+---
+
 ## [1.2.4] — 2026-03-20
 
 ### Added
