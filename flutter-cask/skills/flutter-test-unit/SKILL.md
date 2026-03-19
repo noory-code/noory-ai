@@ -1,5 +1,6 @@
 ---
 name: flutter-test-unit
+user-invocable: true
 description: Unit testing using test + mockito
 metadata:
   version: "1.1.0"

@@ -1,5 +1,6 @@
 ---
 name: flutter-google-fonts
+user-invocable: true
 description: Applying fonts using google_fonts
 metadata:
   version: "1.1.0"

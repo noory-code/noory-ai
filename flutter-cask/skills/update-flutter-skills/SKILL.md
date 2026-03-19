@@ -1,5 +1,6 @@
 ---
 name: update-flutter-skills
+user-invocable: true
 description: Update all Flutter skills in the flutter-cask plugin. Reflect latest docs, add new skills, improve existing skills.
 metadata:
   version: "1.2.0"

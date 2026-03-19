@@ -1,5 +1,6 @@
 ---
 name: flutter-secure-storage
+user-invocable: true
 description: Encrypted key-value storage (tokens, secret keys)
 metadata:
   version: "1.1.0"

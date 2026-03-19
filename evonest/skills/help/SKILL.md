@@ -1,5 +1,6 @@
 ---
 name: help
+user-invocable: true
 description: Explain what Evonest is, list all available MCP tools, and guide the first step.
 metadata:
   version: "1.0.0"

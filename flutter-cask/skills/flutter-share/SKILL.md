@@ -1,5 +1,6 @@
 ---
 name: flutter-share
+user-invocable: true
 description: Share content via the native share sheet
 metadata:
   version: "1.1.0"

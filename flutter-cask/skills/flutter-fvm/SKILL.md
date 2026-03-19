@@ -1,5 +1,6 @@
 ---
 name: flutter-fvm
+user-invocable: true
 description: Flutter SDK version management using FVM
 metadata:
   version: "1.1.0"

@@ -1,5 +1,6 @@
 ---
 name: flutter-webview
+user-invocable: true
 description: Display web pages inside the app (WebView)
 metadata:
   version: "1.1.0"

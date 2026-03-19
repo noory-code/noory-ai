@@ -1,5 +1,6 @@
 ---
 name: flutter-pinput
+user-invocable: true
 description: PIN/OTP code input widget
 metadata:
   version: "1.1.0"

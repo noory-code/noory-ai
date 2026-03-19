@@ -2,6 +2,13 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.0.5] — 2026-03-20
+
+### Added
+- `user-invocable: true` frontmatter to all skills for explicit /command invocation
+
+---
+
 ## [1.0.4] — 2026-03-18
 
 ### Fixed

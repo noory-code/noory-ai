@@ -1,5 +1,6 @@
 ---
 name: flutter-firebase-analytics
+user-invocable: true
 description: Firebase Analytics event tracking and user analysis
 metadata:
   version: "1.1.0"

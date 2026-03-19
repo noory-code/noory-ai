@@ -1,5 +1,6 @@
 ---
 name: flutter-cached-image
+user-invocable: true
 description: Image caching using cached_network_image
 metadata:
   version: "1.1.0"

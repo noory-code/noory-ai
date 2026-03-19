@@ -1,5 +1,6 @@
 ---
 name: flutter-package-info
+user-invocable: true
 description: Retrieve package info such as app version and build number
 metadata:
   version: "1.1.0"

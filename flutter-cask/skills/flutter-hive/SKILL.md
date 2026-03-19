@@ -1,5 +1,6 @@
 ---
 name: flutter-hive
+user-invocable: true
 description: Lightweight NoSQL local storage using Hive
 metadata:
   version: "1.1.0"

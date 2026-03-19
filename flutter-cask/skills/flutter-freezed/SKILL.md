@@ -1,5 +1,6 @@
 ---
 name: flutter-freezed
+user-invocable: true
 description: Immutable data class generation using the Freezed package
 metadata:
   version: "1.1.0"

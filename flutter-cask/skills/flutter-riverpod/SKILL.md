@@ -1,5 +1,6 @@
 ---
 name: flutter-riverpod
+user-invocable: true
 description: State management using Riverpod + riverpod_generator
 metadata:
   version: "1.1.0"

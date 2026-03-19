@@ -1,5 +1,6 @@
 ---
 name: flutter-in-app-purchase
+user-invocable: true
 description: In-app purchases (subscriptions, consumables, non-consumables)
 metadata:
   version: "1.1.0"

@@ -1,5 +1,6 @@
 ---
 name: flutter-shimmer
+user-invocable: true
 description: Loading skeleton animation
 metadata:
   version: "1.1.0"

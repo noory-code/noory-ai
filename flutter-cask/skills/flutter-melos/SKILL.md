@@ -1,5 +1,6 @@
 ---
 name: flutter-melos
+user-invocable: true
 description: Flutter monorepo management using Melos
 metadata:
   version: "1.1.0"
@@ -33,6 +34,7 @@ dart pub add melos --dev
 
 ```yaml
 name: my_project
+user-invocable: true
 publish_to: none
 
 environment:
@@ -74,6 +76,7 @@ melos:
 
 ```yaml
 name: {project}_entities
+user-invocable: true
 description: Domain entities
 
 environment:

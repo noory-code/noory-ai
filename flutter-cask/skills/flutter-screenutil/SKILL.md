@@ -1,5 +1,6 @@
 ---
 name: flutter-screenutil
+user-invocable: true
 description: Screen size adaptive utility for responsive UI
 metadata:
   version: "1.1.0"

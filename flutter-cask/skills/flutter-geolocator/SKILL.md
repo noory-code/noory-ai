@@ -1,5 +1,6 @@
 ---
 name: flutter-geolocator
+user-invocable: true
 description: GPS location retrieval and tracking
 metadata:
   version: "1.1.0"

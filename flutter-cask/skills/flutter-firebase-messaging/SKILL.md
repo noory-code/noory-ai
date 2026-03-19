@@ -1,5 +1,6 @@
 ---
 name: flutter-firebase-messaging
+user-invocable: true
 description: Firebase Cloud Messaging (FCM) push notifications
 metadata:
   version: "1.1.0"

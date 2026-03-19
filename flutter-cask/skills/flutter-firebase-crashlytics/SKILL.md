@@ -1,5 +1,6 @@
 ---
 name: flutter-firebase-crashlytics
+user-invocable: true
 description: Firebase Crashlytics crash reporting
 metadata:
   version: "1.1.0"

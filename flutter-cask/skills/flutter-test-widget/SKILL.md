@@ -1,5 +1,6 @@
 ---
 name: flutter-test-widget
+user-invocable: true
 description: Widget testing using flutter_test
 metadata:
   version: "1.1.0"

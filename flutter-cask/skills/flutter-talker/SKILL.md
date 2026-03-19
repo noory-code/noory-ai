@@ -1,5 +1,6 @@
 ---
 name: flutter-talker
+user-invocable: true
 description: Structured logging and debug console
 metadata:
   version: "1.1.0"

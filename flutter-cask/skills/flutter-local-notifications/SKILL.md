@@ -1,5 +1,6 @@
 ---
 name: flutter-local-notifications
+user-invocable: true
 description: Local push notifications (scheduled, repeating, custom)
 metadata:
   version: "1.1.0"

@@ -1,5 +1,6 @@
 ---
 name: flutter-admob
+user-invocable: true
 description: Google AdMob ads (banner, interstitial, rewarded)
 metadata:
   version: "1.1.0"

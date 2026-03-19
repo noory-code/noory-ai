@@ -1,5 +1,6 @@
 ---
 name: flutter-quill
+user-invocable: true
 description: Rich text editor (WYSIWYG)
 metadata:
   version: "1.1.0"

@@ -1,5 +1,6 @@
 ---
 name: flutter-go-router
+user-invocable: true
 description: Type-safe routing using go_router + go_router_builder
 metadata:
   version: "1.1.0"

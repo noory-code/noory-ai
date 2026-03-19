@@ -1,5 +1,6 @@
 ---
 name: flutter-connectivity
+user-invocable: true
 description: Network connectivity detection and monitoring
 metadata:
   version: "1.1.0"

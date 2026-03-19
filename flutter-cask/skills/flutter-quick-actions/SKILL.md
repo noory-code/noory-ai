@@ -1,5 +1,6 @@
 ---
 name: flutter-quick-actions
+user-invocable: true
 description: Home screen Quick Actions (3D Touch / Long Press)
 metadata:
   version: "1.1.0"

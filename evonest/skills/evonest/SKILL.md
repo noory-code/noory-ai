@@ -1,5 +1,6 @@
 ---
 name: evonest
+user-invocable: true
 description: >
   Use evonest MCP tools to analyze, improve, and evolve a project — observe, plan, execute, verify.
   Triggers when the user asks to run evonest, analyze code, find improvements, execute a proposal,

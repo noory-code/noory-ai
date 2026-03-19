@@ -1,5 +1,6 @@
 ---
 name: help
+user-invocable: true
 description: Explain what flutter-cask is and list all 32 available Flutter package guide skills.
 metadata:
   version: "1.0.0"

@@ -1,5 +1,6 @@
 ---
 name: flutter-image-picker
+user-invocable: true
 description: Pick images from gallery or camera
 metadata:
   version: "1.1.0"

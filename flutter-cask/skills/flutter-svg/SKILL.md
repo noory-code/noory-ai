@@ -1,5 +1,6 @@
 ---
 name: flutter-svg
+user-invocable: true
 description: SVG vector image rendering
 metadata:
   version: "1.1.0"

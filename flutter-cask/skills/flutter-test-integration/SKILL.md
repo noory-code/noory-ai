@@ -1,5 +1,6 @@
 ---
 name: flutter-test-integration
+user-invocable: true
 description: E2E testing using integration_test
 metadata:
   version: "1.1.0"

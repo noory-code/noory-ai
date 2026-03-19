@@ -1,5 +1,6 @@
 ---
 name: flutter-firebase-performance
+user-invocable: true
 description: Firebase Performance app performance monitoring
 metadata:
   version: "1.1.0"
