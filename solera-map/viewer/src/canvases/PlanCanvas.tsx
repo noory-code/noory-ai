@@ -186,8 +186,9 @@ function buildFlowElements(
     const isSelected = selection?.kind === "identity";
     nodes.push({
       id: IDENTITY_NODE_ID,
+      type: "identity",
       position: positionOf(IDENTITY_NODE_ID, autoPositions.get(IDENTITY_NODE_ID) ?? { x: 0, y: 0 }),
-      data: { label: <IdentityLabel identity={graph.identity} /> },
+      data: { children: <IdentityLabel identity={graph.identity} /> },
       style: {
         background: "#0f172a",
         color: "white",
@@ -206,10 +207,17 @@ function buildFlowElements(
     const isRoot = !concept.parent || !byId.has(concept.parent);
     const isSelected = selection?.kind === "concept" && selection.id === concept.id;
     const fallback = autoPositions.get(concept.id) ?? { x: 0, y: NODE_BAND_HEIGHT };
+    const side = sideMap.get(concept.id) ?? DEFAULT_SIDE;
+    // Target handle faces Identity / parent (inward); source handle faces
+    // children (outward). Inward = opposite of branch direction.
+    const targetPos = side === "right" ? Position.Left : Position.Right;
+    const sourcePos = side === "right" ? Position.Right : Position.Left;
     nodes.push({
       id,
       position: positionOf(id, fallback),
       data: { label: renderConceptLabel(concept, lens, isRoot) },
+      sourcePosition: sourcePos,
+      targetPosition: targetPos,
       style: {
         background: conceptBackground(concept, lens),
         border: `${isSelected ? 3 : isRoot ? 2 : 1}px solid ${
@@ -227,9 +235,11 @@ function buildFlowElements(
   const edges: Edge[] = [];
   if (graph.identity) {
     for (const top of topLevels) {
+      const side = sideMap.get(top.id) ?? DEFAULT_SIDE;
       edges.push({
         id: `identity-${top.id}`,
         source: IDENTITY_NODE_ID,
+        sourceHandle: side, // "left" or "right" — matches IdentityNodeView handles
         target: `concept:${top.id}`,
         style: { stroke: "#cbd5e1", strokeWidth: 2 },
         markerEnd: { type: MarkerType.ArrowClosed, color: "#cbd5e1" },
