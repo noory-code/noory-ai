@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchGraph, openGraphSocket, resolveProjectPath } from "./api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { fetchGraph, fetchLayout, openGraphSocket, resolveProjectPath, saveLayout } from "./api";
 import { PlanCanvas } from "./canvases/PlanCanvas";
-import type { Graph, WorkspaceLens } from "./types";
+import type { Graph, Layout, WorkspaceLens } from "./types";
 
 export function App() {
   const projectPath = useMemo(resolveProjectPath, []);
   const [graph, setGraph] = useState<Graph | null>(null);
+  const [layout, setLayout] = useState<Layout>({ nodes: {} });
   const [error, setError] = useState<string | null>(null);
   const [lens, setLens] = useState<WorkspaceLens>("plan");
+  const saveTimer = useRef<number | null>(null);
 
   const reload = useCallback(async () => {
     if (!projectPath) return;
     try {
-      setGraph(await fetchGraph(projectPath));
+      const [g, l] = await Promise.all([fetchGraph(projectPath), fetchLayout(projectPath)]);
+      setGraph(g);
+      setLayout(l);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -35,6 +39,23 @@ export function App() {
     return () => sock.close();
   }, [projectPath, reload]);
 
+  const persistLayout = useCallback(
+    (next: Layout) => {
+      setLayout(next);
+      if (!projectPath) return;
+      if (saveTimer.current !== null) {
+        window.clearTimeout(saveTimer.current);
+      }
+      saveTimer.current = window.setTimeout(() => {
+        saveTimer.current = null;
+        saveLayout(projectPath, next).catch((err) => {
+          setError(err instanceof Error ? err.message : String(err));
+        });
+      }, 400);
+    },
+    [projectPath],
+  );
+
   if (!projectPath) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
@@ -53,7 +74,12 @@ export function App() {
       <Header lens={lens} onLensChange={setLens} projectPath={projectPath} error={error} />
       <main className="flex-1">
         {graph ? (
-          <PlanCanvas graph={graph} lens={lens} />
+          <PlanCanvas
+            graph={graph}
+            lens={lens}
+            layout={layout}
+            onLayoutChange={persistLayout}
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-slate-400">
             loading…

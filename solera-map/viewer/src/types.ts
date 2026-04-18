@@ -70,3 +70,13 @@ export interface Graph {
 }
 
 export type WorkspaceLens = "plan" | "build" | "live";
+
+export interface NodeLayout {
+  x: number;
+  y: number;
+  collapsed?: boolean;
+}
+
+export interface Layout {
+  nodes: Record<string, NodeLayout>;
+}

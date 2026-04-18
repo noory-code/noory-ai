@@ -5,32 +5,57 @@ import ReactFlow, {
   Controls,
   type Edge,
   type Node,
+  type NodeChange,
+  applyNodeChanges,
 } from "reactflow";
-import type { Concept, Graph, WorkspaceLens } from "../types";
+import type { Concept, Graph, Layout, WorkspaceLens } from "../types";
 
 interface PlanCanvasProps {
   graph: Graph;
   lens: WorkspaceLens;
+  layout: Layout;
+  onLayoutChange: (next: Layout) => void;
 }
 
 /**
- * Read-only first pass: Concepts as nodes, Concept↔Concept edges as free-label lines.
- * Identity sits at the origin; Concepts spread out in a circle around it.
- * Layout is static for now — real positions come from map-layout.json in a later phase.
+ * Concept nodes laid out from persisted positions when available, falling back
+ * to a ring around the Identity node. Drags write through to `onLayoutChange`
+ * which persists to `_views/map-layout.json` server-side.
  */
-export function PlanCanvas({ graph, lens }: PlanCanvasProps) {
-  const { nodes, edges } = useMemo(() => buildFlowElements(graph, lens), [graph, lens]);
+export function PlanCanvas({ graph, lens, layout, onLayoutChange }: PlanCanvasProps) {
+  const { nodes, edges } = useMemo(
+    () => buildFlowElements(graph, lens, layout),
+    [graph, lens, layout],
+  );
+
+  const handleNodesChange = (changes: NodeChange[]) => {
+    // ReactFlow drag events include interim positions (type="position", dragging=true)
+    // and one final event (dragging=false). Persist only on the final one.
+    const positionCommits = changes.filter(
+      (c): c is Extract<NodeChange, { type: "position" }> =>
+        c.type === "position" && c.dragging === false && c.position !== undefined,
+    );
+    if (positionCommits.length === 0) return;
+
+    const updated = applyNodeChanges(changes, nodes);
+    const nextNodes: Record<string, { x: number; y: number }> = { ...layout.nodes };
+    for (const node of updated) {
+      nextNodes[node.id] = { x: node.position.x, y: node.position.y };
+    }
+    onLayoutChange({ ...layout, nodes: nextNodes });
+  };
 
   return (
     <div className="h-full w-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        fitView
+        fitView={Object.keys(layout.nodes).length === 0}
         fitViewOptions={{ padding: 0.2 }}
-        nodesDraggable={false}
+        nodesDraggable
         nodesConnectable={false}
         elementsSelectable
+        onNodesChange={handleNodesChange}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#e2e8f0" />
         <Controls showInteractive={false} />
@@ -39,18 +64,24 @@ export function PlanCanvas({ graph, lens }: PlanCanvasProps) {
   );
 }
 
-function buildFlowElements(graph: Graph, lens: WorkspaceLens): {
-  nodes: Node[];
-  edges: Edge[];
-} {
+function buildFlowElements(
+  graph: Graph,
+  lens: WorkspaceLens,
+  layout: Layout,
+): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
+
+  const positionOf = (id: string, fallback: { x: number; y: number }) => {
+    const stored = layout.nodes[id];
+    return stored ? { x: stored.x, y: stored.y } : fallback;
+  };
 
   if (graph.identity) {
     nodes.push({
       id: "identity",
       type: "default",
-      position: { x: 0, y: 0 },
+      position: positionOf("identity", { x: 0, y: 0 }),
       data: { label: "Identity" },
       style: {
         background: "#0f172a",
@@ -66,9 +97,11 @@ function buildFlowElements(graph: Graph, lens: WorkspaceLens): {
   const radius = Math.max(260, graph.concepts.length * 40);
   graph.concepts.forEach((c, i) => {
     const angle = (i / Math.max(graph.concepts.length, 1)) * Math.PI * 2;
+    const fallback = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+    const id = `concept:${c.id}`;
     nodes.push({
-      id: `concept:${c.id}`,
-      position: { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius },
+      id,
+      position: positionOf(id, fallback),
       data: { label: renderConceptLabel(c, lens) },
       style: {
         background: conceptBackground(c, lens),
@@ -83,7 +116,7 @@ function buildFlowElements(graph: Graph, lens: WorkspaceLens): {
       edges.push({
         id: `identity-${c.id}`,
         source: "identity",
-        target: `concept:${c.id}`,
+        target: id,
         style: { stroke: "#cbd5e1", strokeDasharray: "3 3" },
       });
     }

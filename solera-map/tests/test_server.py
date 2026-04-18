@@ -89,3 +89,46 @@ def test_graph_endpoint_missing_workspace_returns_404(
     r = client.get("/api/graph", params={"project_path": str(tmp_path)})
     assert r.status_code == 404
     assert "workspace" in r.json()["error"].lower()
+
+
+# ---------------------------------------------------------------------------
+# Layout endpoints
+# ---------------------------------------------------------------------------
+
+
+def test_layout_get_defaults_to_empty(client: TestClient, tmp_path: Path) -> None:
+    _seed_workspace(tmp_path / "workspace")
+    r = client.get("/api/layout", params={"project_path": str(tmp_path)})
+    assert r.status_code == 200
+    assert r.json() == {"nodes": {}}
+
+
+def test_layout_put_and_get_roundtrip(client: TestClient, tmp_path: Path) -> None:
+    _seed_workspace(tmp_path / "workspace")
+    body = {
+        "nodes": {
+            "concept:auth": {"x": 120.5, "y": -40},
+            "identity": {"x": 0, "y": 0, "collapsed": True},
+        }
+    }
+
+    put_r = client.put(
+        "/api/layout",
+        params={"project_path": str(tmp_path)},
+        json=body,
+    )
+    assert put_r.status_code == 200
+
+    get_r = client.get("/api/layout", params={"project_path": str(tmp_path)})
+    assert get_r.status_code == 200
+    assert get_r.json() == body
+
+
+def test_layout_put_requires_object_body(client: TestClient, tmp_path: Path) -> None:
+    _seed_workspace(tmp_path / "workspace")
+    r = client.put(
+        "/api/layout",
+        params={"project_path": str(tmp_path)},
+        json=[1, 2, 3],
+    )
+    assert r.status_code == 400

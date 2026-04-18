@@ -1,4 +1,4 @@
-import type { Graph } from "./types";
+import type { Graph, Layout } from "./types";
 
 const API_BASE = "";
 
@@ -10,6 +10,28 @@ export async function fetchGraph(projectPath: string): Promise<Graph> {
     throw new Error(body?.error ?? `HTTP ${res.status}`);
   }
   return (await res.json()) as Graph;
+}
+
+export async function fetchLayout(projectPath: string): Promise<Layout> {
+  const url = `${API_BASE}/api/layout?project_path=${encodeURIComponent(projectPath)}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    return { nodes: {} };
+  }
+  return (await res.json()) as Layout;
+}
+
+export async function saveLayout(projectPath: string, layout: Layout): Promise<void> {
+  const url = `${API_BASE}/api/layout?project_path=${encodeURIComponent(projectPath)}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(layout),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(body?.error ?? `HTTP ${res.status}`);
+  }
 }
 
 export interface GraphSocket {

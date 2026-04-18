@@ -214,6 +214,37 @@ def read_concept_graph(workspace: Path) -> list[ConceptEdge]:
     return edges
 
 
+def read_layout(workspace: Path) -> dict[str, Any]:
+    """Read `_views/map-layout.json` or return an empty layout."""
+    path = workspace / "_views" / "map-layout.json"
+    if not path.exists():
+        return {"nodes": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        _log.warning("malformed map-layout.json at %s; ignoring", path)
+        return {"nodes": {}}
+    if not isinstance(data, dict):
+        return {"nodes": {}}
+    nodes = data.get("nodes") or {}
+    return {"nodes": nodes if isinstance(nodes, dict) else {}}
+
+
+def write_layout(workspace: Path, layout: dict[str, Any]) -> None:
+    """Persist a layout dict to `_views/map-layout.json` (pretty JSON).
+
+    The schema is `{"nodes": {"<node_id>": {"x": float, "y": float}, ...}}`.
+    Arbitrary extra keys are allowed and preserved.
+    """
+    views_dir = workspace / "_views"
+    views_dir.mkdir(parents=True, exist_ok=True)
+    path = views_dir / "map-layout.json"
+    path.write_text(
+        json.dumps(layout, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
 def _extract_concept_id(bullet_line: str) -> str:
     """Pull a Concept id out of a Scope bullet.
 

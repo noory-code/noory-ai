@@ -33,7 +33,7 @@ from starlette.routing import BaseRoute, Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from solera_map.graph import Graph, build_graph
+from solera_map.graph import Graph, build_graph, read_layout, write_layout
 from solera_map.watcher import WorkspaceWatcher
 
 _log = logging.getLogger(__name__)
@@ -132,6 +132,41 @@ async def _graph_endpoint(request: Request) -> JSONResponse:
 
 async def _health_endpoint(_request: Request) -> JSONResponse:
     return JSONResponse({"status": "ok", "service": "solera-map"})
+
+
+async def _layout_get_endpoint(request: Request) -> JSONResponse:
+    project_path = request.query_params.get("project_path")
+    if not project_path:
+        return JSONResponse(
+            {"error": "project_path query param is required"}, status_code=400
+        )
+    try:
+        workspace = resolve_workspace(project_path)
+    except FileNotFoundError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=404)
+    return JSONResponse(read_layout(workspace))
+
+
+async def _layout_put_endpoint(request: Request) -> JSONResponse:
+    project_path = request.query_params.get("project_path")
+    if not project_path:
+        return JSONResponse(
+            {"error": "project_path query param is required"}, status_code=400
+        )
+    try:
+        workspace = resolve_workspace(project_path)
+    except FileNotFoundError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=404)
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON body"}, status_code=400)
+    if not isinstance(payload, dict):
+        return JSONResponse(
+            {"error": "layout body must be an object"}, status_code=400
+        )
+    write_layout(workspace, payload)
+    return JSONResponse({"ok": True})
 
 
 class BroadcastHub:
@@ -242,6 +277,8 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
     routes: list[BaseRoute] = [
         Route("/api/health", _health_endpoint),
         Route("/api/graph", _graph_endpoint),
+        Route("/api/layout", _layout_get_endpoint, methods=["GET"]),
+        Route("/api/layout", _layout_put_endpoint, methods=["PUT"]),
         WebSocketRoute("/ws", ws_endpoint),
     ]
     viewer_dist = _find_viewer_dist()
