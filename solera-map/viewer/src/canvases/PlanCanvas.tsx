@@ -3,13 +3,23 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   Controls,
+  Handle,
   MarkerType,
+  type NodeProps,
+  Position,
   type Edge,
   type Node,
   type NodeChange,
   applyNodeChanges,
 } from "reactflow";
-import type { Concept, Graph, Identity, Layout, WorkspaceLens } from "../types";
+import type {
+  BranchSide,
+  Concept,
+  Graph,
+  Identity,
+  Layout,
+  WorkspaceLens,
+} from "../types";
 
 export const IDENTITY_NODE_ID = "identity";
 
@@ -27,14 +37,19 @@ interface PlanCanvasProps {
   selection: SelectedNode | null;
 }
 
-const ROOT_SPACING_X = 320;
-const CHILD_SPACING_X = 240;
-const LEVEL_SPACING_Y = 180;
+const LEVEL_STEP_X = 280;
+const NODE_BAND_HEIGHT = 110;
+const BRANCH_GAP = 80;
+const DEFAULT_SIDE: BranchSide = "right";
 
 /**
- * Tree rooted at the Identity node. Top-level Concepts (parent === null) attach
- * to Identity. Deeper Concepts attach to their parent Concept. Clicking any
- * node lifts the selection to App so the SidePanel can render the details.
+ * Bilateral mindmap layout:
+ * - Identity at the origin.
+ * - Each top-level Concept carries a `side` hint (from layout metadata); its
+ *   subtree then fans outward in that direction (left = x−, right = x+).
+ * - A Concept's descendants inherit the branch's side, so positions stay
+ *   coherent as the tree grows.
+ * - Persisted positions always override auto-layout.
  */
 export function PlanCanvas({
   graph,
@@ -57,9 +72,14 @@ export function PlanCanvas({
     if (positionCommits.length === 0) return;
 
     const updated = applyNodeChanges(changes, nodes);
-    const nextNodes: Record<string, { x: number; y: number }> = { ...layout.nodes };
+    const nextNodes = { ...layout.nodes };
     for (const node of updated) {
-      nextNodes[node.id] = { x: node.position.x, y: node.position.y };
+      const prior = layout.nodes[node.id];
+      nextNodes[node.id] = {
+        ...(prior ?? {}),
+        x: node.position.x,
+        y: node.position.y,
+      };
     }
     onLayoutChange({ ...layout, nodes: nextNodes });
   };
@@ -69,7 +89,8 @@ export function PlanCanvas({
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        fitView={Object.keys(layout.nodes).length === 0}
+        nodeTypes={NODE_TYPES}
+        fitView
         fitViewOptions={{ padding: 0.2 }}
         nodesDraggable
         nodesConnectable={false}
@@ -91,6 +112,28 @@ export function PlanCanvas({
   );
 }
 
+// -- Identity node: carries both a left and a right source handle so edges
+//    can emanate in either direction depending on which side the child sits.
+
+function IdentityNodeView({ data }: NodeProps<{ children: React.ReactNode }>) {
+  return (
+    <>
+      <Handle type="source" position={Position.Left} id="left" style={HANDLE_STYLE} />
+      <Handle type="source" position={Position.Right} id="right" style={HANDLE_STYLE} />
+      {data.children}
+    </>
+  );
+}
+
+const NODE_TYPES = { identity: IdentityNodeView };
+
+const HANDLE_STYLE: React.CSSProperties = {
+  width: 6,
+  height: 6,
+  background: "#1e293b",
+  border: "1px solid #0f172a",
+};
+
 function buildFlowElements(
   graph: Graph,
   lens: WorkspaceLens,
@@ -105,39 +148,41 @@ function buildFlowElements(
     childrenByParent.get(key)!.push(c);
   }
 
+  const topLevels = childrenByParent.get(null) ?? [];
   const autoPositions = new Map<string, { x: number; y: number }>();
 
-  // Identity is the synthetic root. All top-level Concepts (parent=null) hang
-  // under it.
-  const hasIdentity = graph.identity !== null;
-  const topLevels = childrenByParent.get(null) ?? [];
+  const sideOfTop = (concept: Concept): BranchSide => {
+    const stored = layout.nodes[`concept:${concept.id}`]?.side;
+    return stored ?? DEFAULT_SIDE;
+  };
 
-  if (hasIdentity) {
-    const totalWidth = subtreeWidth(topLevels, childrenByParent);
-    autoPositions.set(IDENTITY_NODE_ID, { x: totalWidth / 2, y: 0 });
-    let cursor = 0;
-    for (const concept of topLevels) {
-      const w = subtreeWidthFor(concept, childrenByParent);
-      layoutSubtree(concept, childrenByParent, autoPositions, cursor + w / 2, 1);
-      cursor += w;
-    }
-  } else {
-    // Fallback: Concepts arranged as forest from y=0.
-    let cursor = 0;
-    for (const concept of topLevels) {
-      const w = subtreeWidthFor(concept, childrenByParent);
-      layoutSubtree(concept, childrenByParent, autoPositions, cursor + w / 2, 0);
-      cursor += w + ROOT_SPACING_X;
-    }
-  }
+  // Split top-levels by side; each subtree inherits its root's side.
+  const left = topLevels.filter((c) => sideOfTop(c) === "left");
+  const right = topLevels.filter((c) => sideOfTop(c) === "right");
+
+  // Build a side map so descendants inherit: {conceptId -> side}
+  const sideMap = new Map<string, BranchSide>();
+  const propagate = (c: Concept, side: BranchSide) => {
+    sideMap.set(c.id, side);
+    for (const kid of childrenByParent.get(c.id) ?? []) propagate(kid, side);
+  };
+  for (const c of left) propagate(c, "left");
+  for (const c of right) propagate(c, "right");
+
+  autoPositions.set(IDENTITY_NODE_ID, { x: 0, y: 0 });
+  layoutSide(left, "left", childrenByParent, autoPositions);
+  layoutSide(right, "right", childrenByParent, autoPositions);
 
   const nodes: Node[] = [];
   const positionOf = (id: string, fallback: { x: number; y: number }) => {
     const stored = layout.nodes[id];
-    return stored ? { x: stored.x, y: stored.y } : fallback;
+    if (stored?.x !== undefined && stored?.y !== undefined) {
+      return { x: stored.x, y: stored.y };
+    }
+    return fallback;
   };
 
-  if (hasIdentity && graph.identity) {
+  if (graph.identity) {
     const isSelected = selection?.kind === "identity";
     nodes.push({
       id: IDENTITY_NODE_ID,
@@ -160,7 +205,7 @@ function buildFlowElements(
     const id = `concept:${concept.id}`;
     const isRoot = !concept.parent || !byId.has(concept.parent);
     const isSelected = selection?.kind === "concept" && selection.id === concept.id;
-    const fallback = autoPositions.get(concept.id) ?? { x: 0, y: LEVEL_SPACING_Y };
+    const fallback = autoPositions.get(concept.id) ?? { x: 0, y: NODE_BAND_HEIGHT };
     nodes.push({
       id,
       position: positionOf(id, fallback),
@@ -180,8 +225,7 @@ function buildFlowElements(
   }
 
   const edges: Edge[] = [];
-  // Identity → top-level Concept (containment)
-  if (hasIdentity) {
+  if (graph.identity) {
     for (const top of topLevels) {
       edges.push({
         id: `identity-${top.id}`,
@@ -192,7 +236,6 @@ function buildFlowElements(
       });
     }
   }
-  // Parent Concept → child Concept (containment)
   for (const concept of graph.concepts) {
     if (!concept.parent || !byId.has(concept.parent)) continue;
     edges.push({
@@ -203,7 +246,6 @@ function buildFlowElements(
       markerEnd: { type: MarkerType.ArrowClosed, color: "#cbd5e1" },
     });
   }
-  // Free-label cross edges
   for (const e of graph.concept_edges) {
     edges.push({
       id: e.id,
@@ -218,34 +260,58 @@ function buildFlowElements(
   return { nodes, edges };
 }
 
-function subtreeWidthFor(concept: Concept, childrenBy: Map<string | null, Concept[]>): number {
-  const kids = childrenBy.get(concept.id) ?? [];
-  if (kids.length === 0) return CHILD_SPACING_X;
-  return kids.reduce((acc, k) => acc + subtreeWidthFor(k, childrenBy), 0);
-}
-
-function subtreeWidth(concepts: Concept[], childrenBy: Map<string | null, Concept[]>): number {
-  if (concepts.length === 0) return CHILD_SPACING_X;
-  return concepts.reduce((acc, c) => acc + subtreeWidthFor(c, childrenBy), 0);
-}
-
-function layoutSubtree(
-  concept: Concept,
-  childrenBy: Map<string | null, Concept[]>,
-  out: Map<string, { x: number; y: number }>,
-  centerX: number,
-  depth: number,
+function layoutSide(
+  roots: Concept[],
+  side: BranchSide,
+  childrenByParent: Map<string | null, Concept[]>,
+  positions: Map<string, { x: number; y: number }>,
 ): void {
-  out.set(concept.id, { x: centerX, y: depth * LEVEL_SPACING_Y });
-  const kids = childrenBy.get(concept.id) ?? [];
-  if (kids.length === 0) return;
-  const totalWidth = kids.reduce((acc, k) => acc + subtreeWidthFor(k, childrenBy), 0);
-  let cursor = centerX - totalWidth / 2;
-  for (const kid of kids) {
-    const w = subtreeWidthFor(kid, childrenBy);
-    layoutSubtree(kid, childrenBy, out, cursor + w / 2, depth + 1);
-    cursor += w;
+  if (roots.length === 0) return;
+  const dir = side === "right" ? 1 : -1;
+  const rootX = dir * LEVEL_STEP_X;
+
+  // Precompute each root's subtree height; stack them vertically centered
+  // at y=0 so Identity sits at the visual midpoint.
+  const heights = roots.map((r) => subtreeHeight(r, childrenByParent));
+  const totalHeight =
+    heights.reduce((acc, h) => acc + h, 0) + BRANCH_GAP * Math.max(roots.length - 1, 0);
+  let cursorY = -totalHeight / 2;
+  for (let i = 0; i < roots.length; i++) {
+    const centerY = cursorY + heights[i] / 2;
+    placeSubtree(roots[i], childrenByParent, positions, rootX, centerY, dir);
+    cursorY += heights[i] + BRANCH_GAP;
   }
+}
+
+function placeSubtree(
+  concept: Concept,
+  childrenByParent: Map<string | null, Concept[]>,
+  positions: Map<string, { x: number; y: number }>,
+  x: number,
+  centerY: number,
+  dir: 1 | -1,
+): void {
+  positions.set(concept.id, { x, y: centerY });
+  const kids = childrenByParent.get(concept.id) ?? [];
+  if (kids.length === 0) return;
+  const childX = x + dir * LEVEL_STEP_X;
+  const childHeights = kids.map((k) => subtreeHeight(k, childrenByParent));
+  const total = childHeights.reduce((a, b) => a + b, 0);
+  let cursorY = centerY - total / 2;
+  for (let i = 0; i < kids.length; i++) {
+    const my = cursorY + childHeights[i] / 2;
+    placeSubtree(kids[i], childrenByParent, positions, childX, my, dir);
+    cursorY += childHeights[i];
+  }
+}
+
+function subtreeHeight(
+  concept: Concept,
+  childrenByParent: Map<string | null, Concept[]>,
+): number {
+  const kids = childrenByParent.get(concept.id) ?? [];
+  if (kids.length === 0) return NODE_BAND_HEIGHT;
+  return kids.reduce((acc, k) => acc + subtreeHeight(k, childrenByParent), 0);
 }
 
 function IdentityLabel({ identity }: { identity: Identity }) {
@@ -266,7 +332,6 @@ function IdentityLabel({ identity }: { identity: Identity }) {
 }
 
 function extractFirstSentence(text: string): string {
-  // Skip markdown headers and pull the first meaningful line.
   for (const raw of text.split("\n")) {
     const trimmed = raw.trim();
     if (!trimmed) continue;

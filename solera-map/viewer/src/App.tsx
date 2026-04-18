@@ -96,8 +96,10 @@ export function App() {
             graph={graph}
             selection={selection}
             projectPath={projectPath}
+            layout={layout}
             onClose={() => setSelection(null)}
             onMutated={() => void reload()}
+            onLayoutChange={persistLayout}
           />
         )}
       </main>

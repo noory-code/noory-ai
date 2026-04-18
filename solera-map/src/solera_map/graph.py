@@ -96,6 +96,10 @@ class Identity(BaseModel):
     vision: str | None = None
     values: str | None = None
     goals: str | None = None
+    tone_and_manner: str | None = None
+    # Any other `workspace/identity/*.md` files we don't recognize above are
+    # surfaced here keyed by filename stem (e.g., "brand-voice").
+    extras: dict[str, str] = Field(default_factory=dict)
 
 
 class Release(BaseModel):
@@ -377,23 +381,66 @@ def read_stories(workspace: Path) -> tuple[list[Story], list[ActionItem]]:
     return stories, acts
 
 
+_IDENTITY_ALIASES: dict[str, tuple[str, ...]] = {
+    # canonical field → recognized filename stems (first match wins)
+    "mission": ("mission",),
+    "vision": ("vision",),
+    "values": ("core-values", "values"),
+    "goals": ("goals",),
+    "tone_and_manner": ("tone-and-manner", "tone", "voice"),
+}
+
+
+def _read_identity_body(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    _fm, body = parse_frontmatter(path.read_text(encoding="utf-8"))
+    return body.strip() or None
+
+
 def read_identity(workspace: Path) -> Identity | None:
     id_dir = workspace / "identity"
     if not id_dir.exists():
         return None
 
-    def _section_body(name: str) -> str | None:
-        p = id_dir / f"{name}.md"
-        if not p.exists():
-            return None
-        _fm, body = parse_frontmatter(p.read_text(encoding="utf-8"))
-        return body.strip() or None
+    files = list(id_dir.glob("*.md"))
+    if not files:
+        return None
+
+    # Index files by normalized stem ("vision_1" → "vision") to tolerate the
+    # "_N" suffixes Obsidian appends when duplicating notes.
+    def _norm(stem: str) -> str:
+        return re.sub(r"_\d+$", "", stem).lower()
+
+    by_stem: dict[str, Path] = {}
+    for f in files:
+        by_stem.setdefault(_norm(f.stem), f)
+
+    picked: dict[str, str | None] = {}
+    consumed: set[str] = set()
+    for field, aliases in _IDENTITY_ALIASES.items():
+        for alias in aliases:
+            if alias in by_stem:
+                picked[field] = _read_identity_body(by_stem[alias])
+                consumed.add(alias)
+                break
+        picked.setdefault(field, None)
+
+    extras: dict[str, str] = {}
+    for stem, path in by_stem.items():
+        if stem in consumed:
+            continue
+        body = _read_identity_body(path)
+        if body:
+            extras[stem] = body
 
     return Identity(
-        mission=_section_body("mission"),
-        vision=_section_body("vision"),
-        values=_section_body("core-values") or _section_body("values"),
-        goals=_section_body("goals"),
+        mission=picked["mission"],
+        vision=picked["vision"],
+        values=picked["values"],
+        goals=picked["goals"],
+        tone_and_manner=picked["tone_and_manner"],
+        extras=extras,
     )
 
 

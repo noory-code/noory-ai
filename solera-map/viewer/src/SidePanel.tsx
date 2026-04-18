@@ -1,22 +1,27 @@
 import { useState } from "react";
 import { patchConcept } from "./api";
 import type { SelectedNode } from "./canvases/PlanCanvas";
-import type { Concept, Graph, Identity } from "./types";
+import { MarkdownBody } from "./MarkdownBody";
+import type { BranchSide, Concept, Graph, Identity, Layout } from "./types";
 
 interface SidePanelProps {
   graph: Graph;
   selection: SelectedNode | null;
   projectPath: string;
+  layout: Layout;
   onClose: () => void;
   onMutated: () => void;
+  onLayoutChange: (next: Layout) => void;
 }
 
 export function SidePanel({
   graph,
   selection,
   projectPath,
+  layout,
   onClose,
   onMutated,
+  onLayoutChange,
 }: SidePanelProps) {
   if (selection === null) return null;
   return (
@@ -41,7 +46,9 @@ export function SidePanel({
             graph={graph}
             conceptId={selection.id}
             projectPath={projectPath}
+            layout={layout}
             onMutated={onMutated}
+            onLayoutChange={onLayoutChange}
           />
         )}
       </div>
@@ -55,26 +62,43 @@ function IdentityBody({ identity }: { identity: Identity }) {
       <Section title="Mission" body={identity.mission} />
       <Section title="Vision" body={identity.vision} />
       <Section title="Core Values" body={identity.values} />
+      <Section title="Tone & Manner" body={identity.tone_and_manner} />
       <Section title="Goals" body={identity.goals} />
+      {Object.entries(identity.extras ?? {}).map(([key, body]) => (
+        <Section key={key} title={humanizeStem(key)} body={body} />
+      ))}
     </div>
   );
+}
+
+function humanizeStem(stem: string): string {
+  return stem
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function ConceptBody({
   graph,
   conceptId,
   projectPath,
+  layout,
   onMutated,
+  onLayoutChange,
 }: {
   graph: Graph;
   conceptId: string;
   projectPath: string;
+  layout: Layout;
   onMutated: () => void;
+  onLayoutChange: (next: Layout) => void;
 }) {
   const concept = graph.concepts.find((c) => c.id === conceptId);
   if (!concept) return <EmptyState text="Concept not found." />;
 
   const children = graph.concepts.filter((c) => c.parent === concept.id);
+  const isTopLevel = !concept.parent || !graph.concepts.some((c) => c.id === concept.parent);
 
   return (
     <div className="space-y-4">
@@ -91,6 +115,13 @@ function ConceptBody({
         projectPath={projectPath}
         onMutated={onMutated}
       />
+      {isTopLevel && (
+        <SideToggle
+          conceptId={concept.id}
+          layout={layout}
+          onLayoutChange={onLayoutChange}
+        />
+      )}
       {children.length > 0 && (
         <MetaRow label="Children" value={children.map((c) => c.name).join(", ")} />
       )}
@@ -99,6 +130,68 @@ function ConceptBody({
       <Section title="Current Shape" body={concept.current_shape} tone="live" />
       {concept.horizon && <Section title="Horizon" body={concept.horizon} />}
     </div>
+  );
+}
+
+function SideToggle({
+  conceptId,
+  layout,
+  onLayoutChange,
+}: {
+  conceptId: string;
+  layout: Layout;
+  onLayoutChange: (next: Layout) => void;
+}) {
+  const nodeKey = `concept:${conceptId}`;
+  const current: BranchSide = layout.nodes[nodeKey]?.side ?? "right";
+
+  const setSide = (next: BranchSide) => {
+    if (next === current) return;
+    // Drop x/y on this node AND all its descendants so the fresh bilateral
+    // auto-layout can place them on the new side. Keep the `side` hint.
+    const nextNodes = { ...layout.nodes };
+    const prior = layout.nodes[nodeKey] ?? {};
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { x: _px, y: _py, ...rest } = prior;
+    nextNodes[nodeKey] = { ...rest, side: next };
+    onLayoutChange({ ...layout, nodes: nextNodes });
+  };
+
+  return (
+    <div className="flex items-start gap-3 text-[12px]">
+      <span className="mt-1 w-16 shrink-0 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+        Side
+      </span>
+      <div className="flex gap-1 rounded-md bg-slate-100 p-0.5">
+        <SideButton active={current === "left"} onClick={() => setSide("left")}>
+          ← Left
+        </SideButton>
+        <SideButton active={current === "right"} onClick={() => setSide("right")}>
+          Right →
+        </SideButton>
+      </div>
+    </div>
+  );
+}
+
+function SideButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded px-2.5 py-1 text-[11px] font-medium transition ${
+        active ? "bg-white text-ink shadow-sm" : "text-slate-500 hover:text-slate-800"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -197,9 +290,7 @@ function Section({
   return (
     <div>
       <SectionTitle title={title} tone={tone} />
-      <div className="whitespace-pre-wrap text-[12.5px] leading-relaxed text-slate-700">
-        {body}
-      </div>
+      <MarkdownBody text={body} />
     </div>
   );
 }

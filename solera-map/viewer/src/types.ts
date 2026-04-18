@@ -52,6 +52,8 @@ export interface Identity {
   vision: string | null;
   values: string | null;
   goals: string | null;
+  tone_and_manner: string | null;
+  extras: Record<string, string>;
 }
 
 export interface Release {
@@ -72,10 +74,16 @@ export interface Graph {
 
 export type WorkspaceLens = "plan" | "build" | "live";
 
+export type BranchSide = "left" | "right";
+
 export interface NodeLayout {
-  x: number;
-  y: number;
+  // Persisted drag position. When omitted, the canvas uses auto-layout.
+  x?: number;
+  y?: number;
   collapsed?: boolean;
+  // Only meaningful for top-level Concepts on the Plan canvas. Decides which
+  // side of the Identity root this branch and its subtree extends toward.
+  side?: BranchSide;
 }
 
 export interface Layout {

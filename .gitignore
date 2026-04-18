@@ -41,3 +41,6 @@ secrets*
 
 # Session handoff (local only)
 HANDOFF.md
+
+# Playwright MCP scratch (session traces, screenshots saved to root)
+.playwright-mcp/
