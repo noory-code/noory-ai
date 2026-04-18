@@ -12,6 +12,7 @@ export interface Concept {
   current_design: string;
   current_shape: string;
   horizon: string | null;
+  parent: string | null;
 }
 
 export interface ConceptEdge {

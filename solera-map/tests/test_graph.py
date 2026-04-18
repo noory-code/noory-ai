@@ -83,6 +83,31 @@ def test_read_concepts_parses_sections(tmp_path: Path) -> None:
     assert auth.current_shape == "Built so far for authentication."
     assert auth.horizon == "Future of authentication."
     assert auth.status == "active"
+    assert auth.parent is None
+
+
+def test_read_concepts_captures_parent(tmp_path: Path) -> None:
+    d = tmp_path / "concepts"
+    d.mkdir(parents=True)
+    (d / "app.md").write_text(
+        "---\nid: app\nname: App\nstatus: active\n---\n\n# Intent\nTop.\n",
+        encoding="utf-8",
+    )
+    (d / "me-tab.md").write_text(
+        "---\nid: me-tab\nname: Me Tab\nstatus: active\nparent: app\n---\n\n# Intent\nChild.\n",
+        encoding="utf-8",
+    )
+    (d / "profile.md").write_text(
+        "---\nid: profile\nname: Profile\nstatus: active\nparent: me-tab\n---\n\n"
+        "# Intent\nGrandchild.\n",
+        encoding="utf-8",
+    )
+
+    concepts = {c.id: c for c in read_concepts(tmp_path)}
+
+    assert concepts["app"].parent is None
+    assert concepts["me-tab"].parent == "app"
+    assert concepts["profile"].parent == "me-tab"
 
 
 def test_read_concepts_skips_index_file(tmp_path: Path) -> None:

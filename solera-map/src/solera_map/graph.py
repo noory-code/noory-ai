@@ -52,6 +52,7 @@ class Concept(BaseModel):
     current_design: str
     current_shape: str
     horizon: str | None = None
+    parent: str | None = None  # Concept ID of the containing Concept; None = top-level surface
 
 
 class ConceptEdge(BaseModel):
@@ -173,6 +174,7 @@ def read_concept_file(path: Path) -> Concept:
     fm, body = parse_frontmatter(text)
     sections = parse_sections(body)
     concept_id = fm.get("id") or path.stem
+    parent = fm.get("parent")
     return Concept(
         id=concept_id,
         name=fm.get("name", concept_id.replace("-", " ").title()),
@@ -181,6 +183,7 @@ def read_concept_file(path: Path) -> Concept:
         current_design=sections.get("Current Design", ""),
         current_shape=sections.get("Current Shape", ""),
         horizon=sections.get("Horizon"),
+        parent=str(parent) if parent else None,
     )
 
 
