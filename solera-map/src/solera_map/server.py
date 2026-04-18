@@ -29,9 +29,11 @@ from fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from starlette.routing import Route
+from starlette.routing import Route, WebSocketRoute
+from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from solera_map.graph import Graph, build_graph
+from solera_map.watcher import WorkspaceWatcher
 
 _log = logging.getLogger(__name__)
 
@@ -114,14 +116,120 @@ async def _health_endpoint(_request: Request) -> JSONResponse:
     return JSONResponse({"status": "ok", "service": "solera-map"})
 
 
-def create_http_app() -> Starlette:
-    """Build the Starlette application exposing the browser-facing API."""
-    return Starlette(
+class BroadcastHub:
+    """Fan-out between workspace watchers and connected WebSocket clients.
+
+    One watcher per workspace, created on the first subscription and torn
+    down when the last client for that workspace disconnects. Broadcasts
+    are idempotent — `notify(workspace)` can be called directly (by tests
+    or future MCP triggers) without a real filesystem event.
+
+    Tests that don't want a real filesystem watcher may pass
+    `enable_watchers=False`; subscriptions still work and `notify` remains
+    the event source.
+    """
+
+    def __init__(self, *, enable_watchers: bool = True) -> None:
+        self._subs: dict[Path, set[WebSocket]] = {}
+        self._watchers: dict[Path, WorkspaceWatcher] = {}
+        self._lock = asyncio.Lock()
+        self._enable_watchers = enable_watchers
+
+    async def subscribe(self, ws: WebSocket, workspace: Path) -> None:
+        async with self._lock:
+            if workspace not in self._subs:
+                self._subs[workspace] = set()
+                if self._enable_watchers:
+                    self._watchers[workspace] = self._start_watcher(workspace)
+            self._subs[workspace].add(ws)
+
+    async def unsubscribe(self, ws: WebSocket, workspace: Path) -> None:
+        async with self._lock:
+            subs = self._subs.get(workspace)
+            if subs is None:
+                return
+            subs.discard(ws)
+            if not subs:
+                self._subs.pop(workspace, None)
+                watcher = self._watchers.pop(workspace, None)
+                if watcher is not None:
+                    watcher.stop()
+
+    async def notify(self, workspace: Path) -> None:
+        """Broadcast a `graph_changed` event to all subscribers of workspace."""
+        async with self._lock:
+            targets = list(self._subs.get(workspace, ()))
+        dead: list[WebSocket] = []
+        for ws in targets:
+            try:
+                await ws.send_json({"event": "graph_changed"})
+            except Exception:
+                dead.append(ws)
+        if dead:
+            async with self._lock:
+                subs = self._subs.get(workspace)
+                if subs is not None:
+                    for ws in dead:
+                        subs.discard(ws)
+
+    def subscription_count(self, workspace: Path) -> int:
+        return len(self._subs.get(workspace, ()))
+
+    def _start_watcher(self, workspace: Path) -> WorkspaceWatcher:
+        loop = asyncio.get_running_loop()
+
+        async def on_change() -> None:
+            await self.notify(workspace)
+
+        watcher = WorkspaceWatcher(workspace, on_change=on_change, loop=loop)
+        watcher.start()
+        return watcher
+
+    async def shutdown(self) -> None:
+        async with self._lock:
+            for watcher in self._watchers.values():
+                watcher.stop()
+            self._watchers.clear()
+            self._subs.clear()
+
+
+def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
+    """Build the Starlette application exposing the browser-facing API.
+
+    If `hub` is omitted, a fresh `BroadcastHub` is created and attached to
+    `app.state.hub` so callers (and tests) can reach it.
+    """
+    target_hub = hub if hub is not None else BroadcastHub()
+
+    async def ws_endpoint(ws: WebSocket) -> None:
+        await ws.accept()
+        project_path = ws.query_params.get("project_path")
+        if not project_path:
+            await ws.close(code=1008, reason="project_path query param required")
+            return
+        try:
+            workspace = resolve_workspace(project_path)
+        except FileNotFoundError as exc:
+            await ws.close(code=1008, reason=str(exc))
+            return
+        await target_hub.subscribe(ws, workspace)
+        try:
+            while True:
+                await ws.receive_text()
+        except WebSocketDisconnect:
+            pass
+        finally:
+            await target_hub.unsubscribe(ws, workspace)
+
+    app = Starlette(
         routes=[
             Route("/api/health", _health_endpoint),
             Route("/api/graph", _graph_endpoint),
+            WebSocketRoute("/ws", ws_endpoint),
         ]
     )
+    app.state.hub = target_hub
+    return app
 
 
 def _port_is_free(port: int) -> bool:
@@ -150,7 +258,8 @@ def _resolved_port() -> int:
 
 
 async def _serve() -> None:
-    http_app = create_http_app()
+    hub = BroadcastHub()
+    http_app = create_http_app(hub=hub)
     port = _resolved_port()
 
     tasks: list[asyncio.Task[None]] = [
@@ -174,7 +283,10 @@ async def _serve() -> None:
             port,
         )
 
-    await asyncio.gather(*tasks)
+    try:
+        await asyncio.gather(*tasks)
+    finally:
+        await hub.shutdown()
 
 
 def run() -> None:
