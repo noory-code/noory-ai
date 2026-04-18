@@ -29,7 +29,8 @@ from fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from starlette.routing import Route, WebSocketRoute
+from starlette.routing import BaseRoute, Mount, Route, WebSocketRoute
+from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from solera_map.graph import Graph, build_graph
@@ -92,6 +93,23 @@ def get_map(project_path: str) -> dict[str, Any]:
             directory itself.
     """
     return _graph_for(project_path).model_dump(by_alias=True)
+
+
+@mcp.tool()
+def open_map(project_path: str) -> str:
+    """Open the Solera Map viewer in the user's default browser.
+
+    Invoked by the `/map` slash command. Validates that `project_path` is a
+    readable Solera workspace before opening, so the browser never lands on
+    a blank error page.
+    """
+    import webbrowser
+
+    resolve_workspace(project_path)  # raises if not a workspace
+    port = _resolved_port()
+    url = f"http://127.0.0.1:{port}/?project_path={project_path}"
+    webbrowser.open(url)
+    return f"Opened {url}"
 
 
 # ---------------------------------------------------------------------------
@@ -221,15 +239,40 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         finally:
             await target_hub.unsubscribe(ws, workspace)
 
-    app = Starlette(
-        routes=[
-            Route("/api/health", _health_endpoint),
-            Route("/api/graph", _graph_endpoint),
-            WebSocketRoute("/ws", ws_endpoint),
-        ]
-    )
+    routes: list[BaseRoute] = [
+        Route("/api/health", _health_endpoint),
+        Route("/api/graph", _graph_endpoint),
+        WebSocketRoute("/ws", ws_endpoint),
+    ]
+    viewer_dist = _find_viewer_dist()
+    if viewer_dist is not None:
+        # SPA: html=True also serves index.html when a path 404s, so client
+        # routes resolve without additional wiring.
+        routes.append(Mount("/", app=StaticFiles(directory=viewer_dist, html=True)))
+    else:
+        _log.info("viewer dist not found; HTTP server will only expose /api and /ws")
+
+    app = Starlette(routes=routes)
     app.state.hub = target_hub
     return app
+
+
+def _find_viewer_dist() -> Path | None:
+    """Locate `viewer/dist/` produced by Vite.
+
+    Plugin runtime path: `${CLAUDE_PLUGIN_ROOT}/viewer/dist`
+    Dev path: walk up from this file until we find `viewer/dist/index.html`.
+    """
+    env = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if env:
+        candidate = Path(env) / "viewer" / "dist"
+        if (candidate / "index.html").exists():
+            return candidate
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "viewer" / "dist"
+        if (candidate / "index.html").exists():
+            return candidate
+    return None
 
 
 def _port_is_free(port: int) -> bool:
@@ -296,3 +339,20 @@ def run() -> None:
         asyncio.run(_serve())
     except KeyboardInterrupt:
         pass
+
+
+def run_http_only() -> None:
+    """Run only the HTTP server — useful for `npm run dev` against an existing
+    browser, or for manual end-to-end verification without an MCP client.
+    """
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    hub = BroadcastHub()
+    app = create_http_app(hub=hub)
+    port = _resolved_port()
+    try:
+        uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # Sync shutdown — acceptable since we own the loop.
+        asyncio.run(hub.shutdown())

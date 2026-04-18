@@ -17,6 +17,7 @@ dependencies = [
 
 [project.scripts]
 solera-map = "solera_map.__main__:main"
+solera-map-http = "solera_map.__main__:http_only"
 
 [build-system]
 requires = ["hatchling"]
