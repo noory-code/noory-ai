@@ -1,0 +1,20 @@
+{
+  "name": "solera-map",
+  "version": "0.0.1",
+  "description": "Mindmap-style visual layer over Solera — Plan / Build / Live workspaces for drawing and tracking a product with AI.",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/solera-map",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "keywords": ["mcp", "solera", "mindmap", "product-map", "claude-code"],
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "commands": "./commands/",
+  "mcpServers": {
+    "solera-map": {
+      "command": "uv",
+      "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}", "python", "-m", "solera_map"]
+    }
+  }
+}
