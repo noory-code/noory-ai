@@ -51,4 +51,5 @@ dev = [
     "mypy>=1.10",
     "ruff>=0.8",
     "types-PyYAML>=6.0",
+    "httpx>=0.28.1",
 ]
