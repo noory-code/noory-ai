@@ -132,3 +132,114 @@ def test_layout_put_requires_object_body(client: TestClient, tmp_path: Path) -> 
         json=[1, 2, 3],
     )
     assert r.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# PATCH /api/concept/:id
+# ---------------------------------------------------------------------------
+
+
+def _write_concept(workspace: Path, concept_id: str, parent: str | None = None) -> None:
+    concepts = workspace / "concepts"
+    concepts.mkdir(parents=True, exist_ok=True)
+    lines = ["---", f"id: {concept_id}", f"name: {concept_id.title()}", "status: active"]
+    if parent is not None:
+        lines.append(f"parent: {parent}")
+    lines.append("---")
+    lines.append("")
+    lines.append(f"# Intent\nseed intent for {concept_id}.\n")
+    (concepts / f"{concept_id}.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def test_concept_patch_sets_parent(client: TestClient, tmp_path: Path) -> None:
+    ws = tmp_path / "workspace"
+    _write_concept(ws, "app")
+    _write_concept(ws, "profile")
+
+    r = client.patch(
+        "/api/concept/profile",
+        params={"project_path": str(tmp_path)},
+        json={"parent": "app"},
+    )
+    assert r.status_code == 200
+
+    graph = client.get("/api/graph", params={"project_path": str(tmp_path)}).json()
+    profile = next(c for c in graph["concepts"] if c["id"] == "profile")
+    assert profile["parent"] == "app"
+
+
+def test_concept_patch_clears_parent(client: TestClient, tmp_path: Path) -> None:
+    ws = tmp_path / "workspace"
+    _write_concept(ws, "app")
+    _write_concept(ws, "profile", parent="app")
+
+    r = client.patch(
+        "/api/concept/profile",
+        params={"project_path": str(tmp_path)},
+        json={"parent": None},
+    )
+    assert r.status_code == 200
+
+    graph = client.get("/api/graph", params={"project_path": str(tmp_path)}).json()
+    profile = next(c for c in graph["concepts"] if c["id"] == "profile")
+    assert profile["parent"] is None
+
+
+def test_concept_patch_rejects_unknown_parent(
+    client: TestClient, tmp_path: Path
+) -> None:
+    _write_concept(tmp_path / "workspace", "profile")
+    r = client.patch(
+        "/api/concept/profile",
+        params={"project_path": str(tmp_path)},
+        json={"parent": "ghost"},
+    )
+    assert r.status_code == 400
+
+
+def test_concept_patch_rejects_self_parent(client: TestClient, tmp_path: Path) -> None:
+    _write_concept(tmp_path / "workspace", "profile")
+    r = client.patch(
+        "/api/concept/profile",
+        params={"project_path": str(tmp_path)},
+        json={"parent": "profile"},
+    )
+    assert r.status_code == 400
+
+
+def test_concept_patch_rejects_cycle(client: TestClient, tmp_path: Path) -> None:
+    ws = tmp_path / "workspace"
+    _write_concept(ws, "a")
+    _write_concept(ws, "b", parent="a")
+    _write_concept(ws, "c", parent="b")
+    # Making `a` a child of `c` would loop c → b → a → c.
+    r = client.patch(
+        "/api/concept/a",
+        params={"project_path": str(tmp_path)},
+        json={"parent": "c"},
+    )
+    assert r.status_code == 400
+
+
+def test_concept_patch_rejects_disallowed_fields(
+    client: TestClient, tmp_path: Path
+) -> None:
+    _write_concept(tmp_path / "workspace", "profile")
+    r = client.patch(
+        "/api/concept/profile",
+        params={"project_path": str(tmp_path)},
+        json={"name": "hacked"},
+    )
+    assert r.status_code == 400
+
+
+def test_concept_patch_returns_404_for_missing_concept(
+    client: TestClient, tmp_path: Path
+) -> None:
+    (tmp_path / "workspace" / "concepts").mkdir(parents=True)
+    r = client.patch(
+        "/api/concept/missing",
+        params={"project_path": str(tmp_path)},
+        json={"parent": None},
+    )
+    assert r.status_code == 404

@@ -34,6 +34,25 @@ export async function saveLayout(projectPath: string, layout: Layout): Promise<v
   }
 }
 
+export async function patchConcept(
+  projectPath: string,
+  conceptId: string,
+  patch: { parent?: string | null },
+): Promise<void> {
+  const url = `${API_BASE}/api/concept/${encodeURIComponent(
+    conceptId,
+  )}?project_path=${encodeURIComponent(projectPath)}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(body?.error ?? `HTTP ${res.status}`);
+  }
+}
+
 export interface GraphSocket {
   close(): void;
 }

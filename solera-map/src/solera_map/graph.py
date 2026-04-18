@@ -169,6 +169,28 @@ def _status_from_icon_or_text(raw: str | None) -> WorkStatus:
 # ---------------------------------------------------------------------------
 
 
+def update_concept_frontmatter(path: Path, updates: dict[str, Any]) -> None:
+    """Merge `updates` into the Concept file's frontmatter and rewrite.
+
+    - Keys with value `None` are **removed** from frontmatter.
+    - Keys with any other value **overwrite**.
+    - Frontmatter ordering is preserved for keys that already existed; new
+      keys append to the end.
+    - The body (everything after the second `---`) is left untouched.
+    - If the file has no frontmatter, a new block is inserted at the top.
+    """
+    text = path.read_text(encoding="utf-8")
+    fm, body = parse_frontmatter(text)
+    for key, value in updates.items():
+        if value is None:
+            fm.pop(key, None)
+        else:
+            fm[key] = value
+    dumped = yaml.safe_dump(fm, allow_unicode=True, sort_keys=False).strip()
+    new_text = f"---\n{dumped}\n---\n{body}" if dumped else body
+    path.write_text(new_text, encoding="utf-8")
+
+
 def read_concept_file(path: Path) -> Concept:
     text = path.read_text(encoding="utf-8")
     fm, body = parse_frontmatter(text)

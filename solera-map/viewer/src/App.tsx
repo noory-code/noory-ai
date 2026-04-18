@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchGraph, fetchLayout, openGraphSocket, resolveProjectPath, saveLayout } from "./api";
-import { PlanCanvas } from "./canvases/PlanCanvas";
+import { PlanCanvas, type SelectedNode } from "./canvases/PlanCanvas";
+import { SidePanel } from "./SidePanel";
 import type { Graph, Layout, WorkspaceLens } from "./types";
 
 export function App() {
@@ -9,6 +10,7 @@ export function App() {
   const [layout, setLayout] = useState<Layout>({ nodes: {} });
   const [error, setError] = useState<string | null>(null);
   const [lens, setLens] = useState<WorkspaceLens>("plan");
+  const [selection, setSelection] = useState<SelectedNode | null>(null);
   const saveTimer = useRef<number | null>(null);
 
   const reload = useCallback(async () => {
@@ -72,18 +74,31 @@ export function App() {
   return (
     <div className="flex h-full flex-col">
       <Header lens={lens} onLensChange={setLens} projectPath={projectPath} error={error} />
-      <main className="flex-1">
-        {graph ? (
-          <PlanCanvas
+      <main className="flex flex-1 overflow-hidden">
+        <div className="flex-1">
+          {graph ? (
+            <PlanCanvas
+              graph={graph}
+              lens={lens}
+              layout={layout}
+              onLayoutChange={persistLayout}
+              onSelect={setSelection}
+              selection={selection}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-slate-400">
+              loading…
+            </div>
+          )}
+        </div>
+        {graph && (
+          <SidePanel
             graph={graph}
-            lens={lens}
-            layout={layout}
-            onLayoutChange={persistLayout}
+            selection={selection}
+            projectPath={projectPath}
+            onClose={() => setSelection(null)}
+            onMutated={() => void reload()}
           />
-        ) : (
-          <div className="flex h-full items-center justify-center text-slate-400">
-            loading…
-          </div>
         )}
       </main>
     </div>
