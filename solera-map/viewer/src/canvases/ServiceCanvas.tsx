@@ -120,7 +120,7 @@ export function ServiceCanvas({
   );
 }
 
-function buildServiceFlowElements(
+export function buildServiceFlowElements(
   graph: Graph,
   layout: Layout,
   selection: SelectedNode | null,
