@@ -1,6 +1,8 @@
 .vscode/**
 .vscode-test/**
 src/**
+tests/**
+out/test/**
 .gitignore
 .eslintrc.json
 **/tsconfig.json
@@ -8,3 +10,4 @@ src/**
 **/*.ts
 node_modules/**
 **/.DS_Store
+vitest.config.ts

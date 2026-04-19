@@ -44,6 +44,24 @@ The webview talks to `http://127.0.0.1:{port}` over an explicit `connect-src` Co
 
 solera-map v0.1.x reads from both `.solera/` (v4) and `workspace/` (v3) for one minor version. If the extension detects only `workspace/`, it shows an info notification suggesting `/solera-migrate-workspace-to-dotsolera` in Claude Code. solera-map v0.2.0 will drop the v3 fallback.
 
+## Tests
+
+Two test suites. Run from `solera-map-vscode/`:
+
+```bash
+npm run test             # unit tests (vitest, 37 tests) — csp / workspaceCheck / ServerProcess
+npm run test:integration # integration tests (@vscode/test-electron + mocha) — real VSCode host
+```
+
+The integration suite downloads VSCode once (~120 MB, cached under `.vscode-test/`) and launches a clean Extension Host to verify: activation, command registration, default configuration values, and onboarding-webview display for non-Solera folders.
+
+**Known local-macOS limitation (macOS 15 Sequoia+):** Apple's Gatekeeper blocks the test-electron-downloaded VSCode on first launch. Symptoms: `Exit code: 1` with no VSCode output. Workarounds:
+
+1. Open the downloaded app once manually: `open "solera-map-vscode/.vscode-test/vscode-darwin-arm64-1.85.0/Visual Studio Code.app"` — approve in **System Settings → Privacy & Security → "Open Anyway"** when prompted. Subsequent `npm run test:integration` runs work.
+2. Or run on Linux / CI — the issue does not occur there.
+
+Unit tests (`npm run test`) run unchanged on all platforms.
+
 ## Building from source
 
 ```bash

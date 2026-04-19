@@ -52,3 +52,5 @@ solera-map-vscode/out/
 solera-map-vscode/media/viewer/
 # Packaged extension
 solera-map-vscode/*.vsix
+# Integration test scaffolding (test-electron downloads VSCode here, ~120MB)
+solera-map-vscode/.vscode-test/
