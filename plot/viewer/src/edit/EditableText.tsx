@@ -54,9 +54,12 @@ export function EditableText({
 
   if (!editing) {
     const hasValue = value && value.trim().length > 0;
+    // No ``nodrag`` here — React Flow's ``nodeDragThreshold`` on the canvas
+    // distinguishes a click from a drag by mouse-move distance, so the user
+    // can still drag from the label without losing the click-to-edit affordance.
     return (
       <span
-        className={`nodrag cursor-text ${className ?? ""}`}
+        className={`cursor-text ${className ?? ""}`}
         role="button"
         tabIndex={0}
         aria-label={`${ariaLabel}. Click to edit.`}

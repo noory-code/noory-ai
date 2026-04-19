@@ -122,17 +122,16 @@ function SketchCanvasInner({
     [doc.edges],
   );
 
-  // Position commits only — mid-drag frames stay local to React Flow.
+  // Apply every position change (including mid-drag) so the node visually
+  // tracks the cursor. The debounced PUT in App.tsx coalesces the stream
+  // down to one save per 400 ms, so drags don't flood the server.
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      const positionCommits = changes.filter(
-        (c) => c.type === "position" && c.dragging === false && c.position,
-      );
-      if (positionCommits.length === 0) return;
       const posById = new Map<string, { x: number; y: number }>();
-      for (const c of positionCommits) {
+      for (const c of changes) {
         if (c.type === "position" && c.position) posById.set(c.id, c.position);
       }
+      if (posById.size === 0) return;
       const current = docRef.current;
       onDocChange({
         ...current,
@@ -455,6 +454,7 @@ function SketchCanvasInner({
         selectionOnDrag
         panOnDrag={[1, 2]}
         deleteKeyCode={["Delete", "Backspace"]}
+        nodeDragThreshold={4}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
