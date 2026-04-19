@@ -24,7 +24,10 @@ import type {
 export const IDENTITY_NODE_ID = "identity";
 
 export interface SelectedNode {
-  kind: "identity" | "concept";
+  // v4 extends the canvas selection to the Living-axis additions (persona,
+  // journey, narrative). The Service canvas uses these new kinds; PlanCanvas
+  // still emits only `identity` and `concept`.
+  kind: "identity" | "concept" | "persona" | "journey" | "narrative";
   id: string;
 }
 

@@ -6,8 +6,13 @@ A single asyncio event loop hosts two transports side-by-side:
 - Starlette + uvicorn over http://127.0.0.1:{port} for the browser viewer
 
 Both transports read the same `Graph` built by `solera_map.graph.build_graph`
-against a workspace directory supplied by the caller. The server holds no
+against a Solera root directory supplied by the caller. The server holds no
 process-wide project state — every request resolves its own `project_path`.
+
+Solera root resolution (Solera v4 onwards):
+- `.solera/` (the v4 location) is preferred.
+- `workspace/` (the v3 location) is accepted with a deprecation warning for
+  one minor version (solera-map v0.1.x). v0.2.0 will drop the fallback.
 
 Port selection:
 - Default 5170; override via `SOLERA_MAP_PORT`.
@@ -52,26 +57,50 @@ DEFAULT_HTTP_PORT = 5170
 # ---------------------------------------------------------------------------
 
 
-def resolve_workspace(project_path: str) -> Path:
-    """Resolve the `workspace/` directory under a Solera project path.
+def resolve_solera_root(project_path: str) -> Path:
+    """Resolve the Solera workspace root directory under a project path.
 
-    Accepts either the project root (containing `workspace/`) or the workspace
-    directory itself. Raises `FileNotFoundError` if neither form locates a
-    Concepts-bearing workspace.
+    Resolution order (Solera v4):
+      1. `{project_path}/.solera/` — v4 location (preferred).
+      2. `{project_path}/workspace/` — v3 location, accepted with a
+         DeprecationWarning. To be removed in solera-map v0.2.0.
+      3. `{project_path}/` itself — last-ditch fallback for callers that
+         already point at the workspace dir (any name).
+
+    A directory qualifies as a Solera workspace if it contains either
+    `concepts/` or `identity/`. Raises `FileNotFoundError` otherwise.
     """
     base = Path(project_path).expanduser().resolve()
-    candidates = [base / "workspace", base]
-    for candidate in candidates:
+    candidates: list[tuple[Path, str | None]] = [
+        (base / ".solera", None),
+        (base / "workspace", "v3"),
+        (base, None),
+    ]
+    for candidate, deprecation_label in candidates:
         if (candidate / "concepts").exists() or (candidate / "identity").exists():
+            if deprecation_label == "v3":
+                _log.warning(
+                    "Reading from legacy %s layout at %s. Run "
+                    "`solera-migrate-workspace-to-dotsolera` to relocate to .solera/. "
+                    "solera-map v0.2.0 will drop this fallback.",
+                    deprecation_label,
+                    candidate,
+                )
             return candidate
     raise FileNotFoundError(
         f"No Solera workspace found under {project_path!r} "
-        f"(looked for `workspace/` and bare directory)"
+        "(looked for `.solera/`, `workspace/`, and bare directory)"
     )
 
 
+# Deprecated alias kept for one minor version so external callers / tests
+# updating in lockstep don't break. Internal call sites use
+# `resolve_solera_root` directly.
+resolve_workspace = resolve_solera_root
+
+
 def _graph_for(project_path: str) -> Graph:
-    workspace = resolve_workspace(project_path)
+    workspace = resolve_solera_root(project_path)
     return build_graph(workspace)
 
 
@@ -95,8 +124,9 @@ def get_map(project_path: str) -> dict[str, Any]:
     """Return the Solera workspace graph for `project_path` as a JSON-ready dict.
 
     Args:
-        project_path: Project root (containing `workspace/`) or the workspace
-            directory itself.
+        project_path: Project root containing `.solera/` (Solera v4) or
+            `workspace/` (Solera v3, deprecated fallback). May also be the
+            Solera root directory itself.
     """
     return _graph_for(project_path).model_dump(by_alias=True)
 
@@ -111,7 +141,7 @@ def open_map(project_path: str) -> str:
     """
     import webbrowser
 
-    resolve_workspace(project_path)  # raises if not a workspace
+    resolve_solera_root(project_path)  # raises if not a workspace
     port = _resolved_port()
     url = f"http://127.0.0.1:{port}/?project_path={project_path}"
     webbrowser.open(url)
@@ -234,6 +264,197 @@ async def _concept_patch_endpoint(request: Request) -> JSONResponse:
 
     update_concept_frontmatter(target, payload)
     return JSONResponse({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# POST /api/concept/propose-from-narrative
+# ---------------------------------------------------------------------------
+#
+# Surfaces the Service canvas's "Propose as Concept" action ergonomically WITHOUT
+# bypassing the Moment 1 collaboration rule (`solera/skills/solera-write-concept/
+# SKILL.md:86-92` — "AI must not invent the Intent"). Behavior:
+#
+# 1. Validate the named Narrative exists.
+# 2. Validate the proposed concept_id does NOT already exist (this endpoint
+#    creates a stub; updates go through PATCH /api/concept/{id} or a direct
+#    `solera-write-concept update` invocation).
+# 3. Write a stub Concept whose `# Intent` is explicitly flagged
+#    "needs human review per solera-write-concept Moment 1 rule" — the human
+#    must run `solera-write-concept` in `update` mode to fill the real Intent.
+# 4. Append the new concept_id to the Narrative's `proposes:` frontmatter.
+# 5. Return the path of the new Concept file.
+#
+# What the endpoint does NOT do: finalize the Concept; copy the full Workflow
+# section from concept-template.md (solera-map does not vendor solera plugin
+# assets — the Workflow is added by `solera-write-concept update`); validate
+# axes-and-status invariants beyond the create-vs-update distinction.
+
+_VALID_KEBAB_RE = __import__("re").compile(r"^[a-z][a-z0-9-]{0,62}[a-z0-9]$")
+
+
+def _stub_concept_body(narrative_id: str, today: str) -> str:
+    """Body of a stub Concept created from a Narrative proposal.
+
+    Intentionally MINIMAL. The `# Intent` is the Moment 1 guardrail — flagged
+    "needs human review" so a casual reader cannot mistake it for a real
+    Intent. The `## Workflow` section is INTENTIONALLY OMITTED here; running
+    `solera-write-concept` in `update` mode will inject the canonical Workflow
+    from solera's `concept-template.md`.
+    """
+    return (
+        f"# Intent\n"
+        f"(proposed from narrative `{narrative_id}` on {today} — "
+        f"needs human review per solera-write-concept Moment 1 rule)\n"
+        f"\n"
+        f"# Current Design\n"
+        f"\n"
+        f"# Current Shape\n"
+        f"(no Stories have contributed yet)\n"
+        f"\n"
+        f"# Horizon\n"
+        f"(not set yet)\n"
+        f"\n"
+        f"# Health\n"
+        f"(no signals yet)\n"
+        f"\n"
+        f"# Contributions\n"
+        f"| Story | What it left behind | Date |\n"
+        f"|-------|---------------------|------|\n"
+        f"\n"
+        f"# Related Artifacts\n"
+        f"\n"
+        f"# Proposed From Narratives\n"
+        f"- [[narrative/{narrative_id}]]\n"
+        f"\n"
+        f"<!-- Stub created by solera-map propose-from-narrative on {today}.\n"
+        f"     Run `solera-write-concept` in `update` mode to fill Intent and\n"
+        f"     install the canonical ## Workflow section. -->\n"
+    )
+
+
+def _append_to_narrative_proposes(narrative_path: Path, concept_id: str) -> None:
+    """Add `concept_id` to a Narrative's frontmatter `proposes:` list (idempotent).
+
+    Reads the existing list (if any), appends if absent, rewrites the
+    frontmatter while preserving body and key order. If the file lacks
+    frontmatter, this is treated as an integrity violation — narrative
+    files always have frontmatter — so we skip silently rather than corrupt.
+    """
+    from solera_map.graph import parse_frontmatter  # local import to avoid cycle clarity
+
+    text = narrative_path.read_text(encoding="utf-8")
+    fm, body = parse_frontmatter(text)
+    if not fm:
+        # Defensive: do not invent frontmatter for a malformed Narrative.
+        return
+    existing = fm.get("proposes") or []
+    if isinstance(existing, str):
+        existing = [existing]
+    elif not isinstance(existing, list):
+        existing = []
+    if concept_id in existing:
+        return
+    existing.append(concept_id)
+    fm["proposes"] = existing
+    import yaml as _yaml
+
+    dumped = _yaml.safe_dump(fm, allow_unicode=True, sort_keys=False).strip()
+    narrative_path.write_text(f"---\n{dumped}\n---\n{body}", encoding="utf-8")
+
+
+async def _concept_propose_from_narrative_endpoint(request: Request) -> JSONResponse:
+    project_path = request.query_params.get("project_path")
+    if not project_path:
+        return JSONResponse(
+            {"error": "project_path query param is required"}, status_code=400
+        )
+    try:
+        workspace = resolve_solera_root(project_path)
+    except FileNotFoundError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=404)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON body"}, status_code=400)
+    if not isinstance(payload, dict):
+        return JSONResponse({"error": "body must be an object"}, status_code=400)
+
+    narrative_id = payload.get("narrative_id")
+    concept_id = payload.get("concept_id")
+    concept_name = payload.get("concept_name")
+
+    for field, value in (
+        ("narrative_id", narrative_id),
+        ("concept_id", concept_id),
+        ("concept_name", concept_name),
+    ):
+        if not isinstance(value, str) or not value.strip():
+            return JSONResponse(
+                {"error": f"{field} is required and must be a non-empty string"},
+                status_code=400,
+            )
+
+    assert isinstance(concept_id, str)  # narrowed for mypy
+    assert isinstance(narrative_id, str)
+    assert isinstance(concept_name, str)
+
+    if not _VALID_KEBAB_RE.match(concept_id):
+        return JSONResponse(
+            {
+                "error": (
+                    "concept_id must be kebab-case: lowercase letters/digits/hyphens, "
+                    "starting with a letter, ending with letter/digit, length 2-64"
+                )
+            },
+            status_code=400,
+        )
+
+    narrative_path = workspace / "narratives" / f"{narrative_id}.md"
+    if not narrative_path.exists():
+        return JSONResponse(
+            {"error": f"Narrative '{narrative_id}' not found"}, status_code=404
+        )
+
+    concept_path = workspace / "concepts" / f"{concept_id}.md"
+    if concept_path.exists():
+        return JSONResponse(
+            {
+                "error": (
+                    f"Concept '{concept_id}' already exists. Use a different id, or "
+                    f"run `solera-write-concept` in update mode against the existing one."
+                )
+            },
+            status_code=409,
+        )
+
+    from datetime import date
+
+    today = date.today().isoformat()
+
+    concept_path.parent.mkdir(parents=True, exist_ok=True)
+    frontmatter = (
+        f"---\n"
+        f"id: {concept_id}\n"
+        f"name: {concept_name}\n"
+        f"status: active\n"
+        f"created: {today}\n"
+        f"---\n\n"
+    )
+    concept_path.write_text(
+        frontmatter + _stub_concept_body(narrative_id, today), encoding="utf-8"
+    )
+
+    _append_to_narrative_proposes(narrative_path, concept_id)
+
+    return JSONResponse(
+        {
+            "ok": True,
+            "concept_path": str(concept_path.relative_to(workspace.parent)),
+            "concept_id": concept_id,
+            "needs_intent_review": True,
+        }
+    )
 
 
 def _would_create_cycle(workspace: Path, concept_id: str, proposed_parent: str) -> bool:
@@ -362,6 +583,11 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         Route("/api/layout", _layout_get_endpoint, methods=["GET"]),
         Route("/api/layout", _layout_put_endpoint, methods=["PUT"]),
         Route(
+            "/api/concept/propose-from-narrative",
+            _concept_propose_from_narrative_endpoint,
+            methods=["POST"],
+        ),
+        Route(
             "/api/concept/{concept_id}",
             _concept_patch_endpoint,
             methods=["PATCH"],
@@ -429,9 +655,16 @@ async def _serve() -> None:
     http_app = create_http_app(hub=hub)
     port = _resolved_port()
 
-    tasks: list[asyncio.Task[None]] = [
-        asyncio.create_task(mcp.run_stdio_async(), name="mcp-stdio"),
-    ]
+    # `SOLERA_MAP_NO_MCP=1` skips the MCP stdio task. Set by the VSCode
+    # extension's spawn helper, which only consumes the HTTP+WS interface and
+    # would otherwise leak a stdio reader that has no client. Default behavior
+    # (Claude Code plugin invocation) keeps stdio on.
+    skip_mcp = os.environ.get("SOLERA_MAP_NO_MCP", "").lower() in ("1", "true", "yes")
+    tasks: list[asyncio.Task[None]] = []
+    if not skip_mcp:
+        tasks.append(asyncio.create_task(mcp.run_stdio_async(), name="mcp-stdio"))
+    else:
+        _log.info("SOLERA_MAP_NO_MCP set; skipping MCP stdio transport")
 
     if _port_is_free(port):
         http_config = uvicorn.Config(
@@ -449,6 +682,11 @@ async def _serve() -> None:
             "MCP stdio transport remains available.",
             port,
         )
+
+    if not tasks:
+        # Defensive: skip_mcp + port busy → nothing to serve. Avoid hanging.
+        _log.error("No transports to start (MCP skipped, HTTP port busy). Exiting.")
+        return
 
     try:
         await asyncio.gather(*tasks)

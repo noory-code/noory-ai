@@ -53,6 +53,42 @@ export async function patchConcept(
   }
 }
 
+export interface ProposeConceptResult {
+  ok: true;
+  concept_path: string;
+  concept_id: string;
+  needs_intent_review: true;
+}
+
+/**
+ * Create a stub Concept proposed from a Narrative. The server flags the new
+ * Concept's `# Intent` as "needs human review per solera-write-concept Moment 1
+ * rule" — the human must run `solera-write-concept update` to fill it. This
+ * surfaces the canvas action without bypassing the Moment 1 collaboration rule.
+ */
+export async function proposeConceptFromNarrative(
+  projectPath: string,
+  body: { narrativeId: string; conceptId: string; conceptName: string },
+): Promise<ProposeConceptResult> {
+  const url = `${API_BASE}/api/concept/propose-from-narrative?project_path=${encodeURIComponent(
+    projectPath,
+  )}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      narrative_id: body.narrativeId,
+      concept_id: body.conceptId,
+      concept_name: body.conceptName,
+    }),
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(errBody?.error ?? `HTTP ${res.status}`);
+  }
+  return (await res.json()) as ProposeConceptResult;
+}
+
 export interface GraphSocket {
   close(): void;
 }

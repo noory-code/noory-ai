@@ -1,7 +1,7 @@
 [project]
 name = "solera-map"
-version = "0.0.1"
-description = "Mindmap-style visual layer for Solera projects — Plan / Build / Live workspaces over Solera data"
+version = "0.1.0"
+description = "Mindmap-style visual layer for Solera projects — Service / Plan / Build / Live canvases over Solera data"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11,<3.14"

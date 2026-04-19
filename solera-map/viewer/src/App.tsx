@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchGraph, fetchLayout, openGraphSocket, resolveProjectPath, saveLayout } from "./api";
 import { PlanCanvas, type SelectedNode } from "./canvases/PlanCanvas";
+import { ServiceCanvas } from "./canvases/ServiceCanvas";
 import { SidePanel } from "./SidePanel";
 import type { Graph, Layout, WorkspaceLens } from "./types";
 
@@ -77,14 +78,28 @@ export function App() {
       <main className="flex flex-1 overflow-hidden">
         <div className="flex-1">
           {graph ? (
-            <PlanCanvas
-              graph={graph}
-              lens={lens}
-              layout={layout}
-              onLayoutChange={persistLayout}
-              onSelect={setSelection}
-              selection={selection}
-            />
+            // Lens-routed canvas switch. `service` is its own component (the
+            // 4th canvas added in v0.1.0). `plan`/`build`/`live` still share
+            // PlanCanvas with lens-driven styling — promoting them to dedicated
+            // components is left to a future PR.
+            lens === "service" ? (
+              <ServiceCanvas
+                graph={graph}
+                layout={layout}
+                onLayoutChange={persistLayout}
+                onSelect={setSelection}
+                selection={selection}
+              />
+            ) : (
+              <PlanCanvas
+                graph={graph}
+                lens={lens}
+                layout={layout}
+                onLayoutChange={persistLayout}
+                onSelect={setSelection}
+                selection={selection}
+              />
+            )
           ) : (
             <div className="flex h-full items-center justify-center text-slate-400">
               loading…
@@ -116,6 +131,10 @@ interface HeaderProps {
 
 function Header({ lens, onLensChange, projectPath, error }: HeaderProps) {
   const tabs: { key: WorkspaceLens; label: string; accent: string }[] = [
+    // `service` is leftmost — humans walk users (Service) before drawing the
+    // product (Plan). Color uses Tailwind's stock rose-500 since the existing
+    // sketch/paint/live palette is tied to PlanCanvas's three lenses.
+    { key: "service", label: "Service", accent: "text-rose-500" },
     { key: "plan", label: "Plan", accent: "text-sketch" },
     { key: "build", label: "Build", accent: "text-paint" },
     { key: "live", label: "Live", accent: "text-live" },

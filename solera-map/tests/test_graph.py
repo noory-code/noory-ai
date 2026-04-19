@@ -1,4 +1,4 @@
-"""Tests for the workspace → Graph parser."""
+"""Tests for the Solera-root → Graph parser."""
 
 from __future__ import annotations
 
@@ -11,7 +11,10 @@ from solera_map.graph import (
     parse_sections,
     read_concept_graph,
     read_concepts,
+    read_journeys,
     read_milestones,
+    read_narratives,
+    read_personas,
     read_releases,
     read_stories,
 )
@@ -312,3 +315,281 @@ def test_build_graph_end_to_end(tmp_path: Path) -> None:
     assert graph.milestones == []
     assert graph.stories == []
     assert graph.releases == []
+    # New v4 Living-axis arrays default to empty when their dirs are absent.
+    assert graph.personas == []
+    assert graph.journeys == []
+    assert graph.narratives == []
+
+
+# ---------------------------------------------------------------------------
+# Personas (v4 Living axis)
+# ---------------------------------------------------------------------------
+
+
+def _write_persona(workspace: Path, persona_id: str, *, parent: str | None = None) -> None:
+    d = workspace / "personas"
+    d.mkdir(parents=True, exist_ok=True)
+    parent_line = f"parent: {parent}\n" if parent else ""
+    (d / f"{persona_id}.md").write_text(
+        f"---\n"
+        f"id: {persona_id}\n"
+        f"kind: persona\n"
+        f"name: {persona_id.replace('-', ' ').title()}\n"
+        f"status: active\n"
+        f"created: 2026-04-01\n"
+        f"{parent_line}"
+        f"---\n\n"
+        f"# Identity\nA shopkeeper running a small independent cafe in a dense urban area.\n\n"
+        f"# Goals\n"
+        f"- Sell more coffee per morning\n"
+        f"- Build a regular crowd\n\n"
+        f"# Pains\n"
+        f"- Mornings are chaotic; orders get lost\n"
+        f"- Cash drawer reconciliation is manual\n\n"
+        f"# Triggers\n"
+        f"- Drops one too many drink orders during peak\n"
+        f"- A regular asks if there's a loyalty system\n\n"
+        f"# Quotes\n"
+        f'- "I just need it to work during the morning rush." — *real interview*\n\n'
+        f"# Channels\nMobile (in-store), occasionally desktop after hours.\n",
+        encoding="utf-8",
+    )
+
+
+def test_read_personas_parses_sections_and_lists(tmp_path: Path) -> None:
+    _write_persona(tmp_path, "small-cafe-owner")
+
+    personas = read_personas(tmp_path)
+
+    assert len(personas) == 1
+    p = personas[0]
+    assert p.id == "small-cafe-owner"
+    assert p.status == "active"
+    assert "shopkeeper" in p.identity
+    assert p.goals == ["Sell more coffee per morning", "Build a regular crowd"]
+    assert len(p.pains) == 2
+    assert p.triggers == [
+        "Drops one too many drink orders during peak",
+        "A regular asks if there's a loyalty system",
+    ]
+    assert len(p.quotes) == 1 and "morning rush" in p.quotes[0]
+    assert p.channels and "Mobile" in p.channels
+    assert p.parent is None
+
+
+def test_read_personas_captures_parent(tmp_path: Path) -> None:
+    _write_persona(tmp_path, "buyer")
+    _write_persona(tmp_path, "vip-buyer", parent="buyer")
+
+    personas = {p.id: p for p in read_personas(tmp_path)}
+
+    assert personas["buyer"].parent is None
+    assert personas["vip-buyer"].parent == "buyer"
+
+
+def test_read_personas_skips_index_file(tmp_path: Path) -> None:
+    _write_persona(tmp_path, "buyer")
+    (tmp_path / "personas" / "_index.md").write_text("# index\n", encoding="utf-8")
+
+    assert {p.id for p in read_personas(tmp_path)} == {"buyer"}
+
+
+def test_read_personas_missing_dir_returns_empty(tmp_path: Path) -> None:
+    assert read_personas(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# Journeys (v4 Living axis)
+# ---------------------------------------------------------------------------
+
+
+def _write_journey(
+    workspace: Path,
+    journey_id: str,
+    *,
+    walks: str = "buyer",
+    parent: str | None = None,
+) -> None:
+    d = workspace / "journeys"
+    d.mkdir(parents=True, exist_ok=True)
+    parent_line = f"parent: {parent}\n" if parent else ""
+    (d / f"{journey_id}.md").write_text(
+        f"---\n"
+        f"id: {journey_id}\n"
+        f"kind: journey\n"
+        f"name: {journey_id.replace('-', ' ').title()}\n"
+        f"status: active\n"
+        f"created: 2026-04-01\n"
+        f"walks: {walks}\n"
+        f"{parent_line}"
+        f"---\n\n"
+        f"# Trigger\nThe buyer hears about the service from a friend.\n\n"
+        f"# Steps\n\n"
+        f"| # | Stage | Step | Touchpoint | Emotion | Pain |\n"
+        f"|---|-------|------|------------|---------|------|\n"
+        f"| 01 | Discovery | Search for a cafe app | Web | 😀 | — |\n"
+        f"| 02 | Signup | Create an account | Mobile | 😐 | Email confirmation slow |\n"
+        f"| 03 | First order | Browse menu | Mobile | 😀 | — |\n\n"
+        f"# Outcome\nThe buyer places their first order in under two minutes.\n",
+        encoding="utf-8",
+    )
+
+
+def test_read_journeys_parses_steps_table(tmp_path: Path) -> None:
+    _write_journey(tmp_path, "first-time-checkout", walks="small-cafe-owner")
+
+    journeys = read_journeys(tmp_path)
+
+    assert len(journeys) == 1
+    j = journeys[0]
+    assert j.id == "first-time-checkout"
+    assert j.walks == "small-cafe-owner"
+    assert "hears about the service" in j.trigger
+    assert "first order" in j.outcome
+    assert len(j.steps) == 3
+    assert j.steps[0].n == 1
+    assert j.steps[0].stage == "Discovery"
+    assert j.steps[0].emotion == "😀"
+    assert j.steps[1].pain == "Email confirmation slow"
+    assert j.steps[2].step == "Browse menu"
+
+
+def test_read_journeys_missing_walks_renders_orphan(tmp_path: Path) -> None:
+    """A Journey lacking `walks` is surfaced (canvas marks it orphan)."""
+    d = tmp_path / "journeys"
+    d.mkdir(parents=True)
+    (d / "broken.md").write_text(
+        "---\nid: broken\nkind: journey\nname: Broken\nstatus: active\ncreated: 2026-04-01\n---\n\n"
+        "# Trigger\nSomething.\n\n# Steps\n\n# Outcome\nNothing.\n",
+        encoding="utf-8",
+    )
+
+    journeys = read_journeys(tmp_path)
+
+    assert len(journeys) == 1
+    assert journeys[0].walks == ""  # rendered as orphan by the canvas
+
+
+def test_read_journeys_missing_dir_returns_empty(tmp_path: Path) -> None:
+    assert read_journeys(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# Narratives (v4 Living axis)
+# ---------------------------------------------------------------------------
+
+
+def _write_narrative(
+    workspace: Path,
+    narrative_id: str,
+    *,
+    form: str = "user_story",
+    about: list[str] | None = None,
+    in_journey: str | None = None,
+    proposes: list[str] | None = None,
+) -> None:
+    d = workspace / "narratives"
+    d.mkdir(parents=True, exist_ok=True)
+    about = about if about is not None else ["small-cafe-owner"]
+    in_journey_line = f"in_journey: {in_journey}\n" if in_journey else ""
+    proposes_line = (
+        f"proposes: {json.dumps(proposes)}\n"
+        if proposes is not None
+        else ""
+    )
+    (d / f"{narrative_id}.md").write_text(
+        f"---\n"
+        f"id: {narrative_id}\n"
+        f"kind: narrative\n"
+        f"form: {form}\n"
+        f"status: active\n"
+        f"created: 2026-04-01\n"
+        f"about: {json.dumps(about)}\n"
+        f"{in_journey_line}"
+        f"{proposes_line}"
+        f"---\n\n"
+        f"# Statement\n"
+        f"> As a small cafe owner, I want to track morning rush orders so that nothing slips.\n\n"
+        f"# Context\n"
+        f"During the morning rush the cafe loses orders silently until reconciliation.\n\n"
+        f"# Acceptance Cues\n"
+        f"- Orders that arrive after 7am show up in the active queue immediately.\n"
+        f"- A miss-fire is impossible without an audible alert.\n",
+        encoding="utf-8",
+    )
+
+
+def test_read_narratives_parses_user_story(tmp_path: Path) -> None:
+    _write_narrative(tmp_path, "rush-orders-not-lost")
+
+    narratives = read_narratives(tmp_path)
+
+    assert len(narratives) == 1
+    n = narratives[0]
+    assert n.id == "rush-orders-not-lost"
+    assert n.form == "user_story"
+    assert "small cafe owner" in n.statement
+    assert "morning rush" in n.context
+    assert len(n.acceptance_cues) == 2
+    assert n.about == ["small-cafe-owner"]
+    assert n.in_journey is None
+    assert n.proposes == []
+
+
+def test_read_narratives_captures_in_journey_and_proposes(tmp_path: Path) -> None:
+    _write_narrative(
+        tmp_path,
+        "first-purchase",
+        in_journey="first-time-checkout",
+        proposes=["order-tracking", "alert-bell"],
+    )
+
+    n = read_narratives(tmp_path)[0]
+
+    assert n.in_journey == "first-time-checkout"
+    assert n.proposes == ["order-tracking", "alert-bell"]
+
+
+def test_read_narratives_form_fallback_to_user_story(tmp_path: Path) -> None:
+    """Unknown `form:` values silently fall back to `user_story` rather than crash."""
+    d = tmp_path / "narratives"
+    d.mkdir(parents=True)
+    (d / "weird.md").write_text(
+        "---\n"
+        "id: weird\nkind: narrative\nform: poem\nstatus: active\ncreated: 2026-04-01\n"
+        'about: ["buyer"]\n---\n\n'
+        "# Statement\nA verse.\n\n# Context\nCtx.\n\n# Acceptance Cues\n- one\n",
+        encoding="utf-8",
+    )
+
+    n = read_narratives(tmp_path)[0]
+
+    assert n.form == "user_story"
+
+
+def test_read_narratives_missing_dir_returns_empty(tmp_path: Path) -> None:
+    assert read_narratives(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# build_graph end-to-end with v4 entities
+# ---------------------------------------------------------------------------
+
+
+def test_build_graph_includes_v4_living_axis(tmp_path: Path) -> None:
+    _write_concept(tmp_path, "order-tracking")
+    _write_persona(tmp_path, "small-cafe-owner")
+    _write_journey(tmp_path, "first-time-checkout", walks="small-cafe-owner")
+    _write_narrative(
+        tmp_path,
+        "rush-orders-not-lost",
+        in_journey="first-time-checkout",
+        proposes=["order-tracking"],
+    )
+
+    graph = build_graph(tmp_path)
+
+    assert {p.id for p in graph.personas} == {"small-cafe-owner"}
+    assert {j.id for j in graph.journeys} == {"first-time-checkout"}
+    assert {n.id for n in graph.narratives} == {"rush-orders-not-lost"}
+    assert graph.narratives[0].proposes == ["order-tracking"]

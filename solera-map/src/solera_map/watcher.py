@@ -1,12 +1,14 @@
-"""Workspace file watcher that notifies the asyncio event loop of changes.
+"""Solera-root file watcher that notifies the asyncio event loop of changes.
 
-A `WorkspaceWatcher` wraps a `watchdog.Observer` on a workspace directory and
-fires a user-supplied coroutine whenever a tracked file mutates. Rapid bursts
-(e.g., atomic saves from editors that write-then-rename) are collapsed via a
-debounce window.
+A `WorkspaceWatcher` wraps a `watchdog.Observer` on the Solera root directory
+(typically `<project>/.solera/` in v4 or `<project>/workspace/` in the
+deprecated v3 fallback) and fires a user-supplied coroutine whenever a tracked
+file mutates. Rapid bursts (e.g., atomic saves from editors that
+write-then-rename) are collapsed via a debounce window.
 
 Tracked files:
-- `*.md`                 (Concept / Story / ACT / Milestone / Identity)
+- `*.md`                 (Identity / Persona / Journey / Narrative / Concept /
+                          Milestone / Story / ACT)
 - `concept-graph.json`   (Concept↔Concept edges)
 - `map-layout.json`      (visual metadata)
 """
@@ -36,7 +38,7 @@ def _is_tracked(path: str) -> bool:
 
 
 class WorkspaceWatcher:
-    """Watches `workspace` recursively and invokes `on_change` on edits.
+    """Watches the Solera root recursively and invokes `on_change` on edits.
 
     `on_change` is an async callable with no arguments. It is scheduled on
     the event loop passed to `__init__`, not on watchdog's internal thread.

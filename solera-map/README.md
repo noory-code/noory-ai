@@ -1,12 +1,10 @@
 # solera-map
 
-> Mindmap-style visual layer for [Solera](../solera/) projects. Three canvases — **Plan** (sketch), **Build** (radial WBS), **Live** (accumulated value) — over the same Solera data.
+> Mindmap-style visual layer for [Solera](../solera/) projects. Four canvases — **Service** (persona-centric, upstream of Plan), **Plan** (sketch), **Build** (radial WBS), **Live** (accumulated value) — over the same Solera data.
 
 ## Status
 
-Scaffolding. v0.0.1 — package skeleton only. See [CHANGELOG.md](CHANGELOG.md).
-
-Implementation plan: Tier 1 ships the full three-canvas loop with rough UI. See conversation history / plan file for details.
+v0.1.0 — Service canvas + Living-axis entity reads + propose-from-narrative endpoint shipped. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Install
 
@@ -26,7 +24,7 @@ After install, open the viewer for a project:
 
 - **Python** (uv-managed) MCP stdio server + local HTTP server in a single process
 - **Browser** React + ReactFlow frontend (prebuilt static files under `viewer/dist/`)
-- **Data** `.md` files remain SSOT; two new files per project add Concept-to-Concept edges and layout metadata
+- **Data** `.md` files under `.solera/` remain SSOT; two solera-map-only files add Concept-to-Concept edges (`concept-graph.json`) and layout metadata (`_views/map-layout.json`)
 
 ## Build & Run
 
@@ -48,7 +46,7 @@ pnpm build         # produces viewer/dist/ (committed)
 
 ## Relation to Solera
 
-`solera-map` does **not** duplicate Solera data or skills. It reads the same `workspace/` files and delegates semantic operations (Concept create, Story kickoff, etc.) back to existing Solera skills via MCP.
+`solera-map` does **not** duplicate Solera data or skills. It reads the same `.solera/` files (or `workspace/` if the project has not yet migrated — supported as a deprecation fallback through solera-map v0.1.x) and delegates semantic operations (Concept create, Story kickoff, etc.) back to existing Solera skills via MCP.
 
 Concept structure (SSOT: [solera/skills/solera-write-concept/assets/concept-template.md](../solera/skills/solera-write-concept/assets/concept-template.md)) is reused verbatim:
 

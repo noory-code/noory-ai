@@ -3,6 +3,7 @@
 export type ConceptStatus = "active" | "deprecated" | "archived";
 export type MilestoneStatus = "proposed" | "agreed" | "in-progress" | "released";
 export type WorkStatus = "pending" | "in_progress" | "complete" | "on_hold" | "cancelled";
+export type NarrativeForm = "user_story" | "jtbd" | "scenario";
 
 export interface Concept {
   id: string;
@@ -13,6 +14,53 @@ export interface Concept {
   current_shape: string;
   horizon: string | null;
   parent: string | null;
+}
+
+// v4 Living-axis additions — upstream of Concept.
+
+export interface Persona {
+  id: string;
+  name: string;
+  status: ConceptStatus;
+  identity: string;
+  goals: string[];
+  pains: string[];
+  triggers: string[];
+  quotes: string[];
+  channels: string | null;
+  parent: string | null;
+}
+
+export interface JourneyStep {
+  n: number;
+  stage: string;
+  step: string;
+  touchpoint: string;
+  emotion: string;
+  pain: string;
+}
+
+export interface Journey {
+  id: string;
+  name: string;
+  status: ConceptStatus;
+  walks: string; // Persona id, "" when orphan (file lacks the field)
+  trigger: string;
+  steps: JourneyStep[];
+  outcome: string;
+  parent: string | null;
+}
+
+export interface Narrative {
+  id: string;
+  form: NarrativeForm;
+  status: ConceptStatus;
+  statement: string;
+  context: string;
+  acceptance_cues: string[];
+  about: string[];
+  in_journey: string | null;
+  proposes: string[];
 }
 
 export interface ConceptEdge {
@@ -64,6 +112,9 @@ export interface Release {
 
 export interface Graph {
   identity: Identity | null;
+  personas: Persona[];
+  journeys: Journey[];
+  narratives: Narrative[];
   concepts: Concept[];
   concept_edges: ConceptEdge[];
   milestones: Milestone[];
@@ -72,7 +123,9 @@ export interface Graph {
   releases: Release[];
 }
 
-export type WorkspaceLens = "plan" | "build" | "live";
+// `service` is leftmost — it is upstream of Plan in the user's mental model
+// (humans draw Personas/Journeys/Narratives, then propose Concepts to Plan).
+export type WorkspaceLens = "service" | "plan" | "build" | "live";
 
 export type BranchSide = "left" | "right";
 
