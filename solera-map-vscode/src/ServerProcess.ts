@@ -113,7 +113,15 @@ export class ServerProcess {
   private async waitForHealth(port: number): Promise<void> {
     const deadline = Date.now() + HEALTH_TIMEOUT_MS;
     while (Date.now() < deadline) {
-      if (this.child?.exitCode !== null && this.child?.exitCode !== undefined) {
+      // The exit listener (in start()) nulls `this.child` when the process
+      // exits. Check that condition FIRST — otherwise the polling loop would
+      // wait the full 15s instead of bailing out as soon as the child died.
+      if (this.child === undefined) {
+        throw new Error(
+          'server process exited prematurely. See "Solera Map" output for details.',
+        );
+      }
+      if (this.child.exitCode !== null && this.child.exitCode !== undefined) {
         throw new Error(
           `server process exited prematurely (code=${this.child.exitCode}). See "Solera Map" output for details.`,
         );
