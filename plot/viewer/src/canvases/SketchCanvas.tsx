@@ -17,6 +17,7 @@ import ReactFlow, {
 } from "reactflow";
 import { autoLayout } from "../flow/autoLayout";
 import type { SketchDoc, SketchEdge, SketchNode as DocNode } from "../types";
+import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
 import { SketchNode, type SketchNodeData } from "./SketchNode";
 import { SketchToolbar, type SaveState } from "./SketchToolbar";
@@ -71,13 +72,14 @@ function SketchCanvasInner({
   const selectedNodeIds = useRef<string[]>([]);
   const clipboard = useSketchClipboard();
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
 
-  const updateNodeLabel = useCallback(
-    (nodeId: string, label: string) => {
+  const updateNode = useCallback(
+    (nodeId: string, patch: Partial<DocNode>) => {
       const current = docRef.current;
       onDocChange({
         ...current,
-        nodes: current.nodes.map((n) => (n.id === nodeId ? { ...n, label } : n)),
+        nodes: current.nodes.map((n) => (n.id === nodeId ? { ...n, ...patch } : n)),
       });
     },
     [onDocChange],
@@ -89,16 +91,21 @@ function SketchCanvasInner({
         id: n.id,
         type: "sketch",
         position: { x: n.x, y: n.y },
+        // width/height for React Flow's measurement (keeps layout stable);
+        // actual visual size is the same value rendered via NodeResizer.
+        style: { width: n.width, height: n.height },
         data: {
           label: n.label,
           body: n.body,
           color: n.color,
           width: n.width,
           height: n.height,
-          onLabelChange: (next: string) => updateNodeLabel(n.id, next),
+          onLabelChange: (next: string) => updateNode(n.id, { label: next }),
+          onOpenBody: () => setBodyModalNodeId(n.id),
+          onResize: (w: number, h: number) => updateNode(n.id, { width: w, height: h }),
         },
       })),
-    [doc.nodes, updateNodeLabel],
+    [doc.nodes, updateNode],
   );
 
   const edges = useMemo<Edge[]>(
@@ -475,6 +482,18 @@ function SketchCanvasInner({
           onClose={closeMenu}
         />
       )}
+      {bodyModalNodeId && (() => {
+        const target = doc.nodes.find((n) => n.id === bodyModalNodeId);
+        if (!target) return null;
+        return (
+          <SketchBodyModal
+            node={target}
+            onCommit={(patch) => updateNode(target.id, patch)}
+            onClose={() => setBodyModalNodeId(null)}
+            onDelete={() => handleNodesDelete([{ id: target.id } as Node])}
+          />
+        );
+      })()}
     </div>
   );
 }

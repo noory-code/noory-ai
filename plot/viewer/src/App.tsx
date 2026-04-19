@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createSketch,
+  deleteSketch,
   getSketch,
   listSketches,
   openSketchSocket,
@@ -9,6 +10,7 @@ import {
   type SocketStatus,
 } from "./api";
 import { SketchCanvas } from "./canvases/SketchCanvas";
+import { SketchSidebar } from "./canvases/SketchSidebar";
 import type { SaveState } from "./canvases/SketchToolbar";
 import { useSketchHistory } from "./canvases/useSketchHistory";
 import type { SketchDoc, SketchSummary } from "./types";
@@ -142,7 +144,7 @@ export function App() {
     return () => sock.close();
   }, [projectPath, activeId, loadDoc, loadList, saveState]);
 
-  const handleCreateFirst = useCallback(async () => {
+  const handleCreate = useCallback(async () => {
     if (!projectPath) return;
     try {
       const id = `sketch-${Date.now().toString(36)}`;
@@ -155,6 +157,46 @@ export function App() {
       setError(err instanceof Error ? err.message : String(err));
     }
   }, [projectPath, loadList, history]);
+
+  const handleRename = useCallback(
+    async (id: string, name: string) => {
+      if (!projectPath) return;
+      try {
+        // Fetch current, rewrite name, PUT back.
+        const current = await getSketch(projectPath, id);
+        await putSketch(projectPath, { ...current, name });
+        await loadList();
+        if (activeId === id) {
+          history.replace({ ...(history.doc ?? current), name });
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [projectPath, loadList, activeId, history],
+  );
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      if (!projectPath) return;
+      try {
+        await deleteSketch(projectPath, id);
+        const list = (await loadList()) ?? [];
+        if (activeId === id) {
+          if (list.length === 0) {
+            setPhase("no-sketches");
+            setActiveId(null);
+          } else {
+            setActiveId(list[0].id);
+            void loadDoc(list[0].id);
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [projectPath, loadList, loadDoc, activeId],
+  );
 
   const handleDownload = useCallback(() => {
     if (!doc) return;
@@ -213,32 +255,39 @@ export function App() {
         error={error}
         socketStatus={socketStatus}
         sketchName={doc?.name ?? null}
-        summaries={summaries}
-        activeId={activeId}
-        onPick={(id) => {
-          setActiveId(id);
-          void loadDoc(id);
-        }}
       />
-      <main className="flex-1 overflow-hidden">
-        {phase === "loading" && <Loading />}
-        {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
-        {phase === "no-sketches" && <EmptyState onCreate={handleCreateFirst} />}
-        {phase === "ready" && doc && (
-          <SketchCanvas
-            key={doc.id}
-            doc={doc}
-            onDocChange={setDoc}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={history.canUndo}
-            canRedo={history.canRedo}
-            saveState={saveState}
-            onDownload={handleDownload}
-            onUpload={handleUpload}
-          />
-        )}
-      </main>
+      <div className="flex flex-1 overflow-hidden">
+        <SketchSidebar
+          sketches={summaries}
+          activeId={activeId}
+          onPick={(id) => {
+            setActiveId(id);
+            void loadDoc(id);
+          }}
+          onCreate={handleCreate}
+          onRename={handleRename}
+          onDelete={handleDelete}
+        />
+        <main className="flex-1 overflow-hidden">
+          {phase === "loading" && <Loading />}
+          {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
+          {phase === "no-sketches" && <EmptyState onCreate={handleCreate} />}
+          {phase === "ready" && doc && (
+            <SketchCanvas
+              key={doc.id}
+              doc={doc}
+              onDocChange={setDoc}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={history.canUndo}
+              canRedo={history.canRedo}
+              saveState={saveState}
+              onDownload={handleDownload}
+              onUpload={handleUpload}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
@@ -248,20 +297,9 @@ interface HeaderProps {
   error: string | null;
   socketStatus: SocketStatus;
   sketchName: string | null;
-  summaries: SketchSummary[];
-  activeId: string | null;
-  onPick: (id: string) => void;
 }
 
-function Header({
-  projectPath,
-  error,
-  socketStatus,
-  sketchName,
-  summaries,
-  activeId,
-  onPick,
-}: HeaderProps) {
+function Header({ projectPath, error, socketStatus, sketchName }: HeaderProps) {
   return (
     <header className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-2 backdrop-blur">
       <div className="flex items-center gap-4">
@@ -269,24 +307,8 @@ function Header({
         <span className="font-mono text-xs text-slate-500" title={projectPath}>
           {truncateMiddle(projectPath, 48)}
         </span>
-        {sketchName && (
-          <span className="text-sm text-slate-700">· {sketchName}</span>
-        )}
+        {sketchName && <span className="text-sm text-slate-700">· {sketchName}</span>}
       </div>
-      {summaries.length > 0 && (
-        <select
-          className="rounded border border-slate-300 bg-white px-2 py-1 text-xs"
-          value={activeId ?? ""}
-          onChange={(e) => onPick(e.target.value)}
-          aria-label="Switch sketch"
-        >
-          {summaries.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name || s.id}
-            </option>
-          ))}
-        </select>
-      )}
       <div className="flex w-64 items-center justify-end gap-2 text-right text-xs">
         <SocketIndicator status={socketStatus} />
         {error && (
