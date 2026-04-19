@@ -91,18 +91,23 @@ export interface SocketHandle {
 export function openSketchSocket(projectPath: string, handlers: SocketHandlers): SocketHandle {
   let closed = false;
   let backoff = 500;
+  let current: WebSocket | null = null;
 
   const connect = () => {
+    if (closed) return;
     handlers.onStatus?.("connecting");
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
     const ws = new WebSocket(
       `${proto}://${window.location.host}/ws?project_path=${encodeURIComponent(projectPath)}`,
     );
+    current = ws;
     ws.onopen = () => {
+      if (closed) return;
       handlers.onStatus?.("connected");
       backoff = 500;
     };
     ws.onmessage = (ev) => {
+      if (closed) return;
       try {
         const msg = JSON.parse(ev.data) as SocketEvent;
         handlers.onEvent(msg);
@@ -110,12 +115,13 @@ export function openSketchSocket(projectPath: string, handlers: SocketHandlers):
         handlers.onError?.(err instanceof Error ? err.message : String(err));
       }
     };
-    ws.onerror = () => handlers.onError?.("websocket error");
+    ws.onerror = () => {
+      // Swallow — onclose fires right after with the real reconnect logic.
+    };
     ws.onclose = () => {
-      if (closed) {
-        handlers.onStatus?.("disconnected");
-        return;
-      }
+      // Abandoned sockets (after caller.close()) don't touch status — the
+      // new socket from a StrictMode remount owns the status now.
+      if (closed) return;
       handlers.onStatus?.("reconnecting");
       setTimeout(connect, backoff);
       backoff = Math.min(backoff * 2, 15_000);
@@ -126,6 +132,9 @@ export function openSketchSocket(projectPath: string, handlers: SocketHandlers):
   return {
     close(): void {
       closed = true;
+      if (current && current.readyState <= WebSocket.OPEN) {
+        current.close();
+      }
     },
   };
 }

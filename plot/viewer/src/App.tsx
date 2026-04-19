@@ -125,16 +125,26 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectPath]);
 
-  // WebSocket
+  // WebSocket — funnel every volatile dep through refs so the subscription
+  // persists across unrelated re-renders. The effect only runs when the
+  // project itself changes.
+  const wsActiveIdRef = useRef<string | null>(activeId);
+  wsActiveIdRef.current = activeId;
+  const wsSaveStateRef = useRef<SaveState>(saveState);
+  wsSaveStateRef.current = saveState;
+  const wsLoadListRef = useRef(loadList);
+  wsLoadListRef.current = loadList;
+  const wsLoadDocRef = useRef(loadDoc);
+  wsLoadDocRef.current = loadDoc;
   useEffect(() => {
     if (!projectPath) return;
     const sock = openSketchSocket(projectPath, {
       onEvent: (msg) => {
         if (msg.event === "sketch_changed") {
-          void loadList();
-          if (activeId && saveState !== "saving") {
-            // Skip reload while we're saving — it's our own write coming back.
-            void loadDoc(activeId);
+          void wsLoadListRef.current();
+          const id = wsActiveIdRef.current;
+          if (id && wsSaveStateRef.current !== "saving") {
+            void wsLoadDocRef.current(id);
           }
         }
       },
@@ -142,7 +152,7 @@ export function App() {
       onError: (err) => setError(err),
     });
     return () => sock.close();
-  }, [projectPath, activeId, loadDoc, loadList, saveState]);
+  }, [projectPath]);
 
   const handleCreate = useCallback(async () => {
     if (!projectPath) return;
