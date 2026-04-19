@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
+import { EditableText } from "../edit/EditableText";
 
 export interface SketchNodeData {
   label: string;
@@ -7,14 +8,14 @@ export interface SketchNodeData {
   color: string;
   width: number;
   height: number;
+  onLabelChange?: (next: string) => void;
 }
 
 /**
- * Generic node for the sketch canvas. Read-only in v0.1 commit 2 —
- * editing lands in commit 3. Handles are on all four sides so edges
- * can originate from any direction once ``nodesConnectable`` turns on.
+ * Generic node for the sketch canvas. Label uses click-to-edit.
+ * Handles are on all four sides so edges can originate from any direction.
  */
-function SketchNodeComponent({ data, selected }: NodeProps<SketchNodeData>) {
+function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) {
   const ring = selected ? "ring-2 ring-indigo-500" : "ring-1 ring-slate-300";
   return (
     <div
@@ -24,6 +25,7 @@ function SketchNodeComponent({ data, selected }: NodeProps<SketchNodeData>) {
         width: data.width,
         minHeight: data.height,
       }}
+      data-node-id={id}
     >
       <Handle type="target" position={Position.Top} id="t" className="!bg-slate-400" />
       <Handle type="target" position={Position.Left} id="l" className="!bg-slate-400" />
@@ -31,7 +33,16 @@ function SketchNodeComponent({ data, selected }: NodeProps<SketchNodeData>) {
       <Handle type="source" position={Position.Bottom} id="b" className="!bg-slate-400" />
 
       <div className="text-sm font-semibold text-slate-800">
-        {data.label || <span className="italic text-slate-400">(untitled)</span>}
+        {data.onLabelChange ? (
+          <EditableText
+            value={data.label}
+            onCommit={data.onLabelChange}
+            placeholder="(untitled — click to edit)"
+            ariaLabel="Node label"
+          />
+        ) : (
+          <span>{data.label || <span className="italic text-slate-400">(untitled)</span>}</span>
+        )}
       </div>
       {data.body && (
         <div className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-slate-700">

@@ -1,31 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createSketch,
   getSketch,
   listSketches,
   openSketchSocket,
+  putSketch,
   resolveProjectPath,
   type SocketStatus,
 } from "./api";
 import { SketchCanvas } from "./canvases/SketchCanvas";
+import type { SaveState } from "./canvases/SketchToolbar";
 import type { SketchDoc, SketchSummary } from "./types";
 
 type Phase = "loading" | "no-sketches" | "ready" | "error";
 
+const DEBOUNCE_MS = 400;
+
 export function App() {
   const projectPath = useMemo(resolveProjectPath, []);
   const [summaries, setSummaries] = useState<SketchSummary[]>([]);
-  const [doc, setDoc] = useState<SketchDoc | null>(null);
+  const [doc, setDocState] = useState<SketchDoc | null>(null);
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<string | null>(null);
   const [socketStatus, setSocketStatus] = useState<SocketStatus>("connecting");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const [activeId, setActiveId] = useState<string | null>(() => {
     const url = new URL(window.location.href);
     return url.searchParams.get("sketch");
   });
 
-  const loadList = useCallback(async () => {
-    if (!projectPath) return;
+  const saveTimer = useRef<number | null>(null);
+  const savedTimer = useRef<number | null>(null);
+  // Track doc ids we wrote ourselves so the WebSocket event for our own
+  // save doesn't trigger a needless reload that wipes in-flight edits.
+  const lastWriteSignature = useRef<string | null>(null);
+
+  const loadList = useCallback(async (): Promise<SketchSummary[] | null> => {
+    if (!projectPath) return null;
     try {
       const list = await listSketches(projectPath);
       setSummaries(list);
@@ -33,7 +44,7 @@ export function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPhase("error");
-      return [];
+      return null;
     }
   }, [projectPath]);
 
@@ -42,7 +53,7 @@ export function App() {
       if (!projectPath) return;
       try {
         const d = await getSketch(projectPath, id);
-        setDoc(d);
+        setDocState(d);
         setPhase("ready");
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
@@ -52,7 +63,38 @@ export function App() {
     [projectPath],
   );
 
-  // Initial load: list sketches; pick active (URL param wins, else newest).
+  const persist = useCallback(
+    (next: SketchDoc) => {
+      if (!projectPath) return;
+      if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
+      setSaveState("saving");
+      saveTimer.current = window.setTimeout(() => {
+        saveTimer.current = null;
+        lastWriteSignature.current = `${next.id}@${Date.now()}`;
+        putSketch(projectPath, next)
+          .then(() => {
+            setSaveState("saved");
+            if (savedTimer.current !== null) window.clearTimeout(savedTimer.current);
+            savedTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
+          })
+          .catch((err) => {
+            setSaveState("error");
+            setError(err instanceof Error ? err.message : String(err));
+          });
+      }, DEBOUNCE_MS);
+    },
+    [projectPath],
+  );
+
+  const setDoc = useCallback(
+    (next: SketchDoc) => {
+      setDocState(next);
+      persist(next);
+    },
+    [persist],
+  );
+
+  // Initial load
   useEffect(() => {
     if (!projectPath) return;
     void (async () => {
@@ -66,23 +108,27 @@ export function App() {
       setActiveId(chosen);
       void loadDoc(chosen);
     })();
-  }, [projectPath, loadDoc, loadList, activeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectPath]);
 
-  // WebSocket for external changes (MCP / AI / another client).
+  // WebSocket
   useEffect(() => {
     if (!projectPath) return;
     const sock = openSketchSocket(projectPath, {
       onEvent: (msg) => {
         if (msg.event === "sketch_changed") {
           void loadList();
-          if (activeId) void loadDoc(activeId);
+          if (activeId && saveState !== "saving") {
+            // Skip reload while we're saving — it's our own write coming back.
+            void loadDoc(activeId);
+          }
         }
       },
       onStatus: setSocketStatus,
       onError: (err) => setError(err),
     });
     return () => sock.close();
-  }, [projectPath, activeId, loadDoc, loadList]);
+  }, [projectPath, activeId, loadDoc, loadList, saveState]);
 
   const handleCreateFirst = useCallback(async () => {
     if (!projectPath) return;
@@ -90,13 +136,50 @@ export function App() {
       const id = `sketch-${Date.now().toString(36)}`;
       const newDoc = await createSketch(projectPath, id, "Untitled");
       setActiveId(newDoc.id);
-      setDoc(newDoc);
+      setDocState(newDoc);
       setPhase("ready");
       await loadList();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
   }, [projectPath, loadList]);
+
+  const handleDownload = useCallback(() => {
+    if (!doc) return;
+    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${doc.id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [doc]);
+
+  const handleUpload = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const incoming = JSON.parse(text) as SketchDoc;
+        if (!incoming.id || !Array.isArray(incoming.nodes) || !Array.isArray(incoming.edges)) {
+          setError("Invalid sketch file");
+          return;
+        }
+        // Replace the active sketch's contents; keep the id.
+        if (!doc) return;
+        setDoc({ ...incoming, id: doc.id });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    };
+    input.click();
+  }, [doc, setDoc]);
 
   if (!projectPath) {
     return (
@@ -129,7 +212,16 @@ export function App() {
         {phase === "loading" && <Loading />}
         {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
         {phase === "no-sketches" && <EmptyState onCreate={handleCreateFirst} />}
-        {phase === "ready" && doc && <SketchCanvas doc={doc} />}
+        {phase === "ready" && doc && (
+          <SketchCanvas
+            key={doc.id}
+            doc={doc}
+            onDocChange={setDoc}
+            saveState={saveState}
+            onDownload={handleDownload}
+            onUpload={handleUpload}
+          />
+        )}
       </main>
     </div>
   );
@@ -242,9 +334,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
     <div className="flex h-full items-center justify-center p-8 text-center">
       <div>
         <h1 className="mb-2 text-2xl font-semibold">No sketches yet</h1>
-        <p className="mb-6 text-slate-500">
-          Create your first canvas to start mapping.
-        </p>
+        <p className="mb-6 text-slate-500">Create your first canvas to start mapping.</p>
         <button
           type="button"
           onClick={onCreate}
