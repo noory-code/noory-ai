@@ -10,6 +10,7 @@ import {
 } from "./api";
 import { SketchCanvas } from "./canvases/SketchCanvas";
 import type { SaveState } from "./canvases/SketchToolbar";
+import { useSketchHistory } from "./canvases/useSketchHistory";
 import type { SketchDoc, SketchSummary } from "./types";
 
 type Phase = "loading" | "no-sketches" | "ready" | "error";
@@ -19,7 +20,8 @@ const DEBOUNCE_MS = 400;
 export function App() {
   const projectPath = useMemo(resolveProjectPath, []);
   const [summaries, setSummaries] = useState<SketchSummary[]>([]);
-  const [doc, setDocState] = useState<SketchDoc | null>(null);
+  const history = useSketchHistory<SketchDoc>();
+  const doc = history.doc;
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<string | null>(null);
   const [socketStatus, setSocketStatus] = useState<SocketStatus>("connecting");
@@ -53,14 +55,14 @@ export function App() {
       if (!projectPath) return;
       try {
         const d = await getSketch(projectPath, id);
-        setDocState(d);
+        history.init(d);
         setPhase("ready");
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
         setPhase("error");
       }
     },
-    [projectPath],
+    [projectPath, history],
   );
 
   const persist = useCallback(
@@ -88,11 +90,21 @@ export function App() {
 
   const setDoc = useCallback(
     (next: SketchDoc) => {
-      setDocState(next);
+      history.push(next);
       persist(next);
     },
-    [persist],
+    [history, persist],
   );
+
+  const handleUndo = useCallback(() => {
+    const next = history.undo();
+    if (next) persist(next);
+  }, [history, persist]);
+
+  const handleRedo = useCallback(() => {
+    const next = history.redo();
+    if (next) persist(next);
+  }, [history, persist]);
 
   // Initial load
   useEffect(() => {
@@ -136,13 +148,13 @@ export function App() {
       const id = `sketch-${Date.now().toString(36)}`;
       const newDoc = await createSketch(projectPath, id, "Untitled");
       setActiveId(newDoc.id);
-      setDocState(newDoc);
+      history.init(newDoc);
       setPhase("ready");
       await loadList();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }, [projectPath, loadList]);
+  }, [projectPath, loadList, history]);
 
   const handleDownload = useCallback(() => {
     if (!doc) return;
@@ -217,6 +229,10 @@ export function App() {
             key={doc.id}
             doc={doc}
             onDocChange={setDoc}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={history.canUndo}
+            canRedo={history.canRedo}
             saveState={saveState}
             onDownload={handleDownload}
             onUpload={handleUpload}

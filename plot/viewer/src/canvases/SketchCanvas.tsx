@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -12,11 +12,15 @@ import ReactFlow, {
   type EdgeChange,
   type Node,
   type NodeChange,
+  type OnSelectionChangeParams,
   type ReactFlowInstance,
 } from "reactflow";
+import { autoLayout } from "../flow/autoLayout";
 import type { SketchDoc, SketchEdge, SketchNode as DocNode } from "../types";
+import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
 import { SketchNode, type SketchNodeData } from "./SketchNode";
 import { SketchToolbar, type SaveState } from "./SketchToolbar";
+import { useSketchClipboard } from "./useSketchClipboard";
 
 const NODE_TYPES = { sketch: SketchNode } as const;
 
@@ -27,6 +31,10 @@ const DEFAULT_COLOR = "#ffffff";
 export interface SketchCanvasProps {
   doc: SketchDoc;
   onDocChange: (next: SketchDoc) => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
   saveState: SaveState;
   onDownload: () => void;
   onUpload: () => void;
@@ -40,9 +48,19 @@ export function SketchCanvas(props: SketchCanvasProps) {
   );
 }
 
+interface MenuState {
+  x: number;
+  y: number;
+  items: ContextMenuItem[];
+}
+
 function SketchCanvasInner({
   doc,
   onDocChange,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
   saveState,
   onDownload,
   onUpload,
@@ -50,6 +68,9 @@ function SketchCanvasInner({
   const docRef = useRef<SketchDoc>(doc);
   docRef.current = doc;
   const flowRef = useRef<ReactFlowInstance | null>(null);
+  const selectedNodeIds = useRef<string[]>([]);
+  const clipboard = useSketchClipboard();
+  const [menu, setMenu] = useState<MenuState | null>(null);
 
   const updateNodeLabel = useCallback(
     (nodeId: string, label: string) => {
@@ -94,10 +115,7 @@ function SketchCanvasInner({
     [doc.edges],
   );
 
-  // Apply React Flow's cheap changes (selection, dimensions, drag-in-progress)
-  // to a local derived copy and propagate meaningful mutations (position,
-  // add, remove) to the parent. Position updates commit only on drag stop
-  // below — intermediate drag frames stay local to React Flow.
+  // Position commits only — mid-drag frames stay local to React Flow.
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const positionCommits = changes.filter(
@@ -106,9 +124,7 @@ function SketchCanvasInner({
       if (positionCommits.length === 0) return;
       const posById = new Map<string, { x: number; y: number }>();
       for (const c of positionCommits) {
-        if (c.type === "position" && c.position) {
-          posById.set(c.id, c.position);
-        }
+        if (c.type === "position" && c.position) posById.set(c.id, c.position);
       }
       const current = docRef.current;
       onDocChange({
@@ -121,12 +137,8 @@ function SketchCanvasInner({
     [onDocChange],
   );
 
-  // React Flow's onEdgesChange fires for selection + remove. We only care
-  // about remove here (delete-key triggers onEdgesDelete separately, but
-  // this path keeps the local Edge array consistent regardless).
   const handleEdgesChange = useCallback((_changes: EdgeChange[]) => {
-    // No-op — deletions are handled via onEdgesDelete.
-    // Selection is internal to React Flow.
+    // Selection and remove handled elsewhere.
   }, []);
 
   const handleConnect = useCallback(
@@ -154,9 +166,7 @@ function SketchCanvasInner({
       onDocChange({
         ...current,
         nodes: current.nodes.filter((n) => !ids.has(n.id)),
-        edges: current.edges.filter(
-          (e) => !ids.has(e.source) && !ids.has(e.target),
-        ),
+        edges: current.edges.filter((e) => !ids.has(e.source) && !ids.has(e.target)),
       });
     },
     [onDocChange],
@@ -196,7 +206,6 @@ function SketchCanvasInner({
   const handlePaneDoubleClick = useCallback(
     (event: React.MouseEvent) => {
       if (!flowRef.current) return;
-      // Only fire on the pane itself, not on child elements.
       const target = event.target as HTMLElement;
       if (!target.classList.contains("react-flow__pane")) return;
       const pos = flowRef.current.screenToFlowPosition({
@@ -209,20 +218,222 @@ function SketchCanvasInner({
   );
 
   const handleToolbarAdd = useCallback(() => {
-    // Place new node near the viewport centre.
     if (!flowRef.current) return;
-    const vp = flowRef.current.getViewport();
     const { innerWidth, innerHeight } = window;
-    const centreScreen = { x: innerWidth / 2, y: innerHeight / 2 };
-    const centre = flowRef.current.screenToFlowPosition(centreScreen);
-    addNodeAt(centre.x - DEFAULT_WIDTH / 2, centre.y - DEFAULT_HEIGHT / 2 + vp.y * 0);
+    const centre = flowRef.current.screenToFlowPosition({
+      x: innerWidth / 2,
+      y: innerHeight / 2,
+    });
+    addNodeAt(centre.x - DEFAULT_WIDTH / 2, centre.y - DEFAULT_HEIGHT / 2);
   }, [addNodeAt]);
 
+  const handleAutoLayout = useCallback(() => {
+    onDocChange(autoLayout(docRef.current));
+  }, [onDocChange]);
+
+  const handleSelectionChange = useCallback((sel: OnSelectionChangeParams) => {
+    selectedNodeIds.current = sel.nodes.map((n) => n.id);
+  }, []);
+
+  // ---------------- Context menu ----------------
+
+  const closeMenu = useCallback(() => setMenu(null), []);
+
+  const openNodeMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      const colors = ["#ffffff", "#fecaca", "#fed7aa", "#fef08a", "#bbf7d0", "#bae6fd", "#ddd6fe"];
+      setMenu({
+        x: event.clientX,
+        y: event.clientY,
+        items: [
+          {
+            label: "Duplicate",
+            onSelect: () => {
+              const current = docRef.current;
+              onDocChange(clipboard.duplicate(current, [node.id]));
+            },
+          },
+          {
+            label: "Copy",
+            onSelect: () => {
+              clipboard.copy(docRef.current, [node.id]);
+            },
+          },
+          { label: "", divider: true, onSelect: () => {} },
+          ...colors.map((hex) => ({
+            label: `Color ${hex}`,
+            onSelect: () => {
+              const current = docRef.current;
+              onDocChange({
+                ...current,
+                nodes: current.nodes.map((n) =>
+                  n.id === node.id ? { ...n, color: hex } : n,
+                ),
+              });
+            },
+          })),
+          { label: "", divider: true, onSelect: () => {} },
+          {
+            label: "Delete",
+            danger: true,
+            onSelect: () => handleNodesDelete([node]),
+          },
+        ],
+      });
+    },
+    [onDocChange, clipboard, handleNodesDelete],
+  );
+
+  const openEdgeMenu = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      event.preventDefault();
+      setMenu({
+        x: event.clientX,
+        y: event.clientY,
+        items: [
+          {
+            label: "Toggle dashed/solid",
+            onSelect: () => {
+              const current = docRef.current;
+              onDocChange({
+                ...current,
+                edges: current.edges.map((e) =>
+                  e.id === edge.id
+                    ? { ...e, style: e.style === "dashed" ? "solid" : "dashed" }
+                    : e,
+                ),
+              });
+            },
+          },
+          {
+            label: "Set label",
+            onSelect: () => {
+              const newLabel = window.prompt("Edge label:", edge.label ? String(edge.label) : "");
+              if (newLabel === null) return;
+              const current = docRef.current;
+              onDocChange({
+                ...current,
+                edges: current.edges.map((e) =>
+                  e.id === edge.id ? { ...e, label: newLabel } : e,
+                ),
+              });
+            },
+          },
+          { label: "", divider: true, onSelect: () => {} },
+          {
+            label: "Delete",
+            danger: true,
+            onSelect: () => handleEdgesDelete([edge]),
+          },
+        ],
+      });
+    },
+    [onDocChange, handleEdgesDelete],
+  );
+
+  const openPaneMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      if (!flowRef.current) return;
+      const flowPos = flowRef.current.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      setMenu({
+        x: event.clientX,
+        y: event.clientY,
+        items: [
+          {
+            label: "Add node here",
+            onSelect: () =>
+              addNodeAt(flowPos.x - DEFAULT_WIDTH / 2, flowPos.y - DEFAULT_HEIGHT / 2),
+          },
+          {
+            label: "Paste",
+            disabled: !clipboard.hasClip(),
+            onSelect: () =>
+              onDocChange(clipboard.paste(docRef.current, { x: 0, y: 0 })),
+          },
+          { label: "", divider: true, onSelect: () => {} },
+          {
+            label: "Auto layout",
+            onSelect: handleAutoLayout,
+          },
+        ],
+      });
+    },
+    [addNodeAt, clipboard, onDocChange, handleAutoLayout],
+  );
+
+  // ---------------- Keyboard shortcuts ----------------
+
+  useEffect(() => {
+    const isEditableTarget = (t: EventTarget | null) => {
+      if (!(t instanceof HTMLElement)) return false;
+      const tag = t.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && !e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        onUndo();
+        return;
+      }
+      if ((meta && e.shiftKey && e.key.toLowerCase() === "z") || (meta && e.key.toLowerCase() === "y")) {
+        e.preventDefault();
+        onRedo();
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "c") {
+        if (selectedNodeIds.current.length > 0) {
+          e.preventDefault();
+          clipboard.copy(docRef.current, selectedNodeIds.current);
+        }
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "v") {
+        if (clipboard.hasClip()) {
+          e.preventDefault();
+          onDocChange(clipboard.paste(docRef.current));
+        }
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "d") {
+        if (selectedNodeIds.current.length > 0) {
+          e.preventDefault();
+          onDocChange(clipboard.duplicate(docRef.current, selectedNodeIds.current));
+        }
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        if (flowRef.current) {
+          flowRef.current.setNodes((ns) => ns.map((n) => ({ ...n, selected: true })));
+          flowRef.current.setEdges((es) => es.map((edge) => ({ ...edge, selected: true })));
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [clipboard, onDocChange, onRedo, onUndo]);
+
   return (
-    <div className="relative h-full w-full" onDoubleClick={handlePaneDoubleClick}>
+    <div
+      className="relative h-full w-full"
+      onDoubleClick={handlePaneDoubleClick}
+      onClick={closeMenu}
+    >
       <SketchToolbar
         saveState={saveState}
+        canUndo={canUndo}
+        canRedo={canRedo}
         onAddNode={handleToolbarAdd}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        onAutoLayout={handleAutoLayout}
         onDownload={onDownload}
         onUpload={onUpload}
       />
@@ -233,12 +444,19 @@ function SketchCanvasInner({
         nodesConnectable
         nodesDraggable
         elementsSelectable
+        multiSelectionKeyCode={["Shift", "Meta", "Control"]}
+        selectionOnDrag
+        panOnDrag={[1, 2]}
         deleteKeyCode={["Delete", "Backspace"]}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
         onNodesDelete={handleNodesDelete}
         onEdgesDelete={handleEdgesDelete}
+        onSelectionChange={handleSelectionChange}
+        onNodeContextMenu={openNodeMenu}
+        onEdgeContextMenu={openEdgeMenu}
+        onPaneContextMenu={openPaneMenu}
         onInit={(inst) => {
           flowRef.current = inst;
         }}
@@ -249,10 +467,16 @@ function SketchCanvasInner({
         <MiniMap zoomable pannable />
         <Controls />
       </ReactFlow>
+      {menu && (
+        <SketchContextMenu
+          x={menu.x}
+          y={menu.y}
+          items={menu.items}
+          onClose={closeMenu}
+        />
+      )}
     </div>
   );
 }
 
-// Re-exports for tests that want to exercise the pure helpers without
-// mounting the canvas.
 export { applyEdgeChanges, applyNodeChanges };
