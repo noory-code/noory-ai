@@ -29,6 +29,20 @@ const DEFAULT_WIDTH = 180;
 const DEFAULT_HEIGHT = 80;
 const DEFAULT_COLOR = "#ffffff";
 
+/**
+ * Optional stencil preset used when a node is dropped from the palette or
+ * created via the toolbar. ``undefined`` → caller gets a plain rounded
+ * rectangle with the defaults above.
+ */
+export interface NodePreset {
+  shape: DocNode["shape"];
+  color: string;
+  width?: number;
+  height?: number;
+  icon?: string | null;
+  label?: string;
+}
+
 export interface SketchCanvasProps {
   doc: SketchDoc;
   onDocChange: (next: SketchDoc) => void;
@@ -91,8 +105,6 @@ function SketchCanvasInner({
         id: n.id,
         type: "sketch",
         position: { x: n.x, y: n.y },
-        // width/height for React Flow's measurement (keeps layout stable);
-        // actual visual size is the same value rendered via NodeResizer.
         style: { width: n.width, height: n.height },
         data: {
           label: n.label,
@@ -100,6 +112,8 @@ function SketchCanvasInner({
           color: n.color,
           width: n.width,
           height: n.height,
+          shape: n.shape,
+          icon: n.icon,
           onLabelChange: (next: string) => updateNode(n.id, { label: next }),
           onOpenBody: () => setBodyModalNodeId(n.id),
           onResize: (w: number, h: number) => updateNode(n.id, { width: w, height: h }),
@@ -191,17 +205,19 @@ function SketchCanvasInner({
   );
 
   const addNodeAt = useCallback(
-    (x: number, y: number) => {
+    (x: number, y: number, preset?: NodePreset) => {
       const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
       const newNode: DocNode = {
         id,
-        label: "",
+        label: preset?.label ?? "",
         body: "",
         x,
         y,
-        width: DEFAULT_WIDTH,
-        height: DEFAULT_HEIGHT,
-        color: DEFAULT_COLOR,
+        width: preset?.width ?? DEFAULT_WIDTH,
+        height: preset?.height ?? DEFAULT_HEIGHT,
+        color: preset?.color ?? DEFAULT_COLOR,
+        shape: preset?.shape ?? "rounded",
+        icon: preset?.icon ?? null,
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -426,11 +442,43 @@ function SketchCanvasInner({
     return () => window.removeEventListener("keydown", onKey);
   }, [clipboard, onDocChange, onRedo, onUndo]);
 
+  const handleDragOver = useCallback((event: React.DragEvent) => {
+    if (event.dataTransfer.types.includes("application/plot-preset")) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (event: React.DragEvent) => {
+      if (!flowRef.current) return;
+      const raw = event.dataTransfer.getData("application/plot-preset");
+      if (!raw) return;
+      event.preventDefault();
+      let preset: NodePreset;
+      try {
+        preset = JSON.parse(raw) as NodePreset;
+      } catch {
+        return;
+      }
+      const pos = flowRef.current.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      const w = preset.width ?? DEFAULT_WIDTH;
+      const h = preset.height ?? DEFAULT_HEIGHT;
+      addNodeAt(pos.x - w / 2, pos.y - h / 2, preset);
+    },
+    [addNodeAt],
+  );
+
   return (
     <div
       className="relative h-full w-full"
       onDoubleClick={handlePaneDoubleClick}
       onClick={closeMenu}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <SketchToolbar
         saveState={saveState}

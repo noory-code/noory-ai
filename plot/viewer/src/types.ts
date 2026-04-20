@@ -1,3 +1,11 @@
+export type Shape =
+  | "rectangle"
+  | "rounded"
+  | "circle"
+  | "ellipse"
+  | "diamond"
+  | "hexagon";
+
 export interface SketchNode {
   id: string;
   label: string;
@@ -7,6 +15,9 @@ export interface SketchNode {
   width: number;
   height: number;
   color: string;
+  shape: Shape;
+  /** Lucide icon name (e.g. "user", "star") or null for no icon. */
+  icon: string | null;
 }
 
 export interface SketchEdge {

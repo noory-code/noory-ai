@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { SketchSummary } from "../types";
+import { SketchStencil } from "./SketchStencil";
 
 export interface SketchSidebarProps {
   sketches: SketchSummary[];
@@ -61,7 +62,7 @@ export function SketchSidebar({
       >
         + New sketch
       </button>
-      <ul className="flex-1 overflow-y-auto px-2 py-3">
+      <ul className="max-h-[40vh] overflow-y-auto px-2 py-3">
         {sketches.length === 0 && (
           <li className="px-2 py-2 text-xs italic text-slate-400">(none yet)</li>
         )}
@@ -139,6 +140,9 @@ export function SketchSidebar({
           );
         })}
       </ul>
+      <div className="flex-1 overflow-y-auto">
+        <SketchStencil />
+      </div>
     </aside>
   );
 }

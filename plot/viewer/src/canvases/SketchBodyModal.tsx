@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
-import type { SketchNode } from "../types";
+import type { Shape, SketchNode } from "../types";
+import { ICON_KEYS, getIcon } from "./SketchIcons";
 
 const PALETTE = ["#ffffff", "#fecaca", "#fed7aa", "#fef08a", "#bbf7d0", "#bae6fd", "#ddd6fe"];
+
+const SHAPES: { id: Shape; label: string; preview: string }[] = [
+  { id: "rectangle", label: "Rectangle", preview: "▭" },
+  { id: "rounded", label: "Rounded", preview: "▢" },
+  { id: "circle", label: "Circle", preview: "●" },
+  { id: "ellipse", label: "Ellipse", preview: "⬭" },
+  { id: "diamond", label: "Diamond", preview: "◆" },
+  { id: "hexagon", label: "Hexagon", preview: "⬢" },
+];
 
 export interface SketchBodyModalProps {
   node: SketchNode;
@@ -10,9 +20,6 @@ export interface SketchBodyModalProps {
   onDelete: () => void;
 }
 
-/**
- * Double-click a node to open — full editor for label, body, color, size.
- */
 export function SketchBodyModal({
   node,
   onCommit,
@@ -24,21 +31,23 @@ export function SketchBodyModal({
   const [color, setColor] = useState(node.color);
   const [width, setWidth] = useState(node.width);
   const [height, setHeight] = useState(node.height);
+  const [shape, setShape] = useState<Shape>(node.shape);
+  const [icon, setIcon] = useState<string | null>(node.icon);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        onCommit({ label, body, color, width, height });
+        onCommit({ label, body, color, width, height, shape, icon });
         onClose();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [label, body, color, width, height, onCommit, onClose]);
+  }, [label, body, color, width, height, shape, icon, onCommit, onClose]);
 
   const commit = () => {
-    onCommit({ label, body, color, width, height });
+    onCommit({ label, body, color, width, height, shape, icon });
     onClose();
   };
 
@@ -50,7 +59,7 @@ export function SketchBodyModal({
       onClick={onClose}
     >
       <div
-        className="w-[480px] rounded-lg bg-white p-5 shadow-xl"
+        className="max-h-[90vh] w-[520px] overflow-y-auto rounded-lg bg-white p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -81,12 +90,34 @@ export function SketchBodyModal({
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            rows={6}
+            rows={5}
             className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
             placeholder="Longer note — supports line breaks"
           />
           <span className="text-[10px] text-slate-400">Cmd/Ctrl+Enter to save</span>
         </label>
+
+        <div className="mb-3">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">Shape</span>
+          <div className="flex flex-wrap gap-1">
+            {SHAPES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setShape(s.id)}
+                aria-label={s.label}
+                title={s.label}
+                className={`rounded border px-2 py-1 text-lg leading-none ${
+                  shape === s.id
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                    : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {s.preview}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="mb-3">
           <span className="mb-1 block text-xs font-semibold text-slate-600">Color</span>
@@ -106,12 +137,50 @@ export function SketchBodyModal({
           </div>
         </div>
 
+        <div className="mb-3">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-600">Icon</span>
+            {icon && (
+              <button
+                type="button"
+                onClick={() => setIcon(null)}
+                className="text-[10px] text-slate-500 hover:text-rose-700"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-9 gap-1">
+            {ICON_KEYS.map((key) => {
+              const Icon = getIcon(key);
+              if (!Icon) return null;
+              const active = icon === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setIcon(key)}
+                  aria-label={key}
+                  title={key}
+                  className={`flex h-7 w-7 items-center justify-center rounded border ${
+                    active
+                      ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <Icon size={14} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="mb-4 flex gap-3">
           <label className="flex-1">
             <span className="text-xs font-semibold text-slate-600">Width</span>
             <input
               type="number"
-              min={100}
+              min={80}
               max={600}
               value={width}
               onChange={(e) => setWidth(Number(e.target.value) || 180)}

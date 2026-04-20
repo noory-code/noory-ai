@@ -12,6 +12,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+Shape = Literal["rectangle", "rounded", "circle", "ellipse", "diamond", "hexagon"]
+
 
 class SketchNode(BaseModel):
     """A freeform node on the canvas."""
@@ -24,6 +26,8 @@ class SketchNode(BaseModel):
     width: float = 180.0
     height: float = 80.0
     color: str = "#ffffff"
+    shape: Shape = "rounded"
+    icon: str | None = None
 
 
 class SketchEdge(BaseModel):

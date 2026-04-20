@@ -1,6 +1,8 @@
 import { memo } from "react";
 import { Handle, NodeResizer, Position, type NodeProps } from "reactflow";
+import type { Shape } from "../types";
 import { EditableText } from "../edit/EditableText";
+import { getIcon } from "./SketchIcons";
 
 export interface SketchNodeData {
   label: string;
@@ -8,17 +10,69 @@ export interface SketchNodeData {
   color: string;
   width: number;
   height: number;
+  shape: Shape;
+  icon: string | null;
   onLabelChange?: (next: string) => void;
   onOpenBody?: () => void;
   onResize?: (width: number, height: number) => void;
 }
 
+/**
+ * Shape styles map to CSS. Diamond / hexagon use SVG clip-path since
+ * plain border-radius can't express non-rectangular outlines.
+ */
+function shapeStyle(shape: Shape): React.CSSProperties {
+  switch (shape) {
+    case "rectangle":
+      return { borderRadius: 0 };
+    case "rounded":
+      return { borderRadius: 8 };
+    case "circle":
+      return { borderRadius: "50%" };
+    case "ellipse":
+      return { borderRadius: "50%" };
+    case "diamond":
+      return { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" };
+    case "hexagon":
+      return {
+        clipPath:
+          "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
+      };
+  }
+}
+
+/**
+ * Some shapes (diamond, hexagon, circle) crop content at the edges; the
+ * label/body needs interior padding to stay visible.
+ */
+function contentPadding(shape: Shape): string {
+  switch (shape) {
+    case "circle":
+    case "ellipse":
+      return "px-6 py-4";
+    case "diamond":
+      return "px-8 py-6";
+    case "hexagon":
+      return "px-6 py-3";
+    default:
+      return "px-3 py-2";
+  }
+}
+
 function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) {
-  const ring = selected ? "ring-2 ring-indigo-500" : "ring-1 ring-slate-300";
+  const ring = selected
+    ? "outline outline-2 outline-indigo-500"
+    : "outline outline-1 outline-slate-300";
+  const style = {
+    backgroundColor: data.color,
+    ...shapeStyle(data.shape),
+  };
+  const Icon = getIcon(data.icon);
+  const centred = data.shape === "circle" || data.shape === "ellipse" || data.shape === "diamond";
   return (
     <>
       <NodeResizer
-        minWidth={120}
+        minWidth={80}
         minHeight={60}
         isVisible={selected}
         lineClassName="!border-indigo-400"
@@ -28,8 +82,10 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
         }}
       />
       <div
-        className={`relative h-full w-full rounded-md bg-white px-3 py-2 shadow-sm ${ring}`}
-        style={{ backgroundColor: data.color }}
+        className={`relative h-full w-full bg-white shadow-sm ${ring} ${contentPadding(
+          data.shape,
+        )}`}
+        style={style}
         data-node-id={id}
         onDoubleClick={(e) => {
           e.stopPropagation();
@@ -41,23 +97,36 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
         <Handle type="source" position={Position.Right} id="r" className="!bg-slate-400" />
         <Handle type="source" position={Position.Bottom} id="b" className="!bg-slate-400" />
 
-        <div className="text-sm font-semibold text-slate-800">
-          {data.onLabelChange ? (
-            <EditableText
-              value={data.label}
-              onCommit={data.onLabelChange}
-              placeholder="(untitled — click to edit)"
-              ariaLabel="Node label"
-            />
-          ) : (
-            <span>{data.label || <span className="italic text-slate-400">(untitled)</span>}</span>
+        <div
+          className={`flex h-full w-full flex-col gap-1 ${
+            centred ? "items-center justify-center text-center" : ""
+          }`}
+        >
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+            {Icon && <Icon size={14} className="shrink-0 text-slate-600" aria-hidden />}
+            {data.onLabelChange ? (
+              <EditableText
+                value={data.label}
+                onCommit={data.onLabelChange}
+                placeholder="(untitled — click to edit)"
+                ariaLabel="Node label"
+              />
+            ) : (
+              <span>
+                {data.label || <span className="italic text-slate-400">(untitled)</span>}
+              </span>
+            )}
+          </div>
+          {data.body && (
+            <div
+              className={`line-clamp-[8] whitespace-pre-wrap text-xs text-slate-700 ${
+                centred ? "text-center" : ""
+              }`}
+            >
+              {data.body}
+            </div>
           )}
         </div>
-        {data.body && (
-          <div className="mt-1 line-clamp-[8] whitespace-pre-wrap text-xs text-slate-700">
-            {data.body}
-          </div>
-        )}
       </div>
     </>
   );
