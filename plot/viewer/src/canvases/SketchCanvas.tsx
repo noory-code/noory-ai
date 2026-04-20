@@ -21,6 +21,7 @@ import { LayerBackground } from "./LayerBackground";
 import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
 import { SketchNode, type SketchNodeData } from "./SketchNode";
+import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar, type SaveState } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 
@@ -334,8 +335,6 @@ function SketchCanvasInner({
     (x: number, y: number, preset?: NodePreset) => {
       const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
       const height = preset?.height ?? DEFAULT_HEIGHT;
-      // Layer-aware snap so service presets always land in the upper band
-      // and actor presets in the lower band, regardless of drop cursor y.
       const snappedY = snapYToLayer(y, preset?.kind ?? null, height);
       const newNode: DocNode = {
         id,
@@ -350,6 +349,36 @@ function SketchCanvasInner({
         icon: preset?.icon ?? null,
         kind: preset?.kind ?? null,
         parent_id: null,
+        collapsed: false,
+      };
+      const current = docRef.current;
+      onDocChange({ ...current, nodes: [...current.nodes, newNode] });
+    },
+    [onDocChange],
+  );
+
+  const addNestedNodeAt = useCallback(
+    (args: {
+      parentId: string;
+      localX: number;
+      localY: number;
+      preset: NodePreset;
+    }) => {
+      const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      const { preset } = args;
+      const newNode: DocNode = {
+        id,
+        label: preset.label ?? "",
+        body: "",
+        x: args.localX,
+        y: args.localY,
+        width: preset.width ?? DEFAULT_WIDTH,
+        height: preset.height ?? DEFAULT_HEIGHT,
+        color: preset.color ?? DEFAULT_COLOR,
+        shape: preset.shape ?? "rounded",
+        icon: preset.icon ?? null,
+        kind: preset.kind ?? null,
+        parent_id: args.parentId,
         collapsed: false,
       };
       const current = docRef.current;
@@ -582,6 +611,37 @@ function SketchCanvasInner({
     }
   }, []);
 
+  /** Hit-test: first node (in reverse doc order so top-rendered wins)
+   *  whose absolute bounding box contains the given flow point. */
+  const containerAtFlowPoint = useCallback(
+    (x: number, y: number): DocNode | null => {
+      // Nodes with a parent position relative to the parent; compute absolute.
+      const absPos = (n: DocNode): { x: number; y: number } => {
+        let ax = n.x;
+        let ay = n.y;
+        let cur: DocNode | undefined = n;
+        while (cur?.parent_id) {
+          const parent = nodeById.get(cur.parent_id);
+          if (!parent) break;
+          ax += parent.x;
+          ay += parent.y;
+          cur = parent;
+        }
+        return { x: ax, y: ay };
+      };
+      // Iterate in reverse so later-drawn nodes (on top) win.
+      for (let i = doc.nodes.length - 1; i >= 0; i--) {
+        const n = doc.nodes[i];
+        const { x: ax, y: ay } = absPos(n);
+        if (x >= ax && x <= ax + n.width && y >= ay && y <= ay + n.height) {
+          return n;
+        }
+      }
+      return null;
+    },
+    [doc.nodes, nodeById],
+  );
+
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
       if (!flowRef.current) return;
@@ -600,9 +660,45 @@ function SketchCanvasInner({
       });
       const w = preset.width ?? DEFAULT_WIDTH;
       const h = preset.height ?? DEFAULT_HEIGHT;
-      addNodeAt(pos.x - w / 2, pos.y - h / 2, preset);
+
+      const container = containerAtFlowPoint(pos.x, pos.y);
+      const resolved = resolveDropTarget(
+        preset as StencilPreset,
+        container ? { id: container.id, kind: container.kind } : null,
+      );
+      if ("error" in resolved) {
+        window.alert(resolved.error);
+        return;
+      }
+      if (resolved.parentId) {
+        const parent = nodeById.get(resolved.parentId)!;
+        // Position relative to parent's top-left.
+        const parentAbs = (() => {
+          let ax = parent.x;
+          let ay = parent.y;
+          let cur: DocNode | undefined = parent;
+          while (cur?.parent_id) {
+            const p = nodeById.get(cur.parent_id);
+            if (!p) break;
+            ax += p.x;
+            ay += p.y;
+            cur = p;
+          }
+          return { x: ax, y: ay };
+        })();
+        const localX = pos.x - parentAbs.x - w / 2;
+        const localY = pos.y - parentAbs.y - h / 2;
+        addNestedNodeAt({
+          parentId: resolved.parentId,
+          localX: Math.max(8, localX),
+          localY: Math.max(28, localY),
+          preset,
+        });
+      } else {
+        addNodeAt(pos.x - w / 2, pos.y - h / 2, preset);
+      }
     },
-    [addNodeAt],
+    [addNodeAt, addNestedNodeAt, containerAtFlowPoint, nodeById],
   );
 
   return (
