@@ -153,7 +153,9 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
                 ? "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)"
                 : preset.shape === "hexagon"
                   ? "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)"
-                  : undefined,
+                  : preset.shape === "octagon"
+                    ? "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)"
+                    : undefined,
           }}
         >
           {Icon && <Icon size={12} className="text-slate-700" aria-hidden />}

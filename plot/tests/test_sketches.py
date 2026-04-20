@@ -47,8 +47,10 @@ def test_create_duplicate_raises(plot_root: Path) -> None:
 def test_write_updates_timestamp(plot_root: Path) -> None:
     doc = create_sketch(plot_root, "alpha", "Alpha")
     before = doc.updated
+    # Replace both nodes and edges to avoid dangling seed edges referring to
+    # removed seed nodes (v0.2: create_sketch also seeds 2 hierarchy edges).
     doc_with_node = doc.model_copy(
-        update={"nodes": [SketchNode(id="n1", label="First")]}
+        update={"nodes": [SketchNode(id="n1", label="First")], "edges": []}
     )
     write_sketch(plot_root, doc_with_node)
     reloaded = read_sketch(plot_root, "alpha")
@@ -91,9 +93,9 @@ def test_list_sorts_by_updated_desc(plot_root: Path) -> None:
     # Either order acceptable within the same millisecond tick; assert at
     # least both present and both have correct counts.
     summary_by_id = {s.id: s for s in result}
-    # v0.2: create_sketch seeds Core + Actor-root + Service-root.
+    # v0.2: create_sketch seeds Core + Actor-root + Service-root + 2 hierarchy edges.
     assert summary_by_id["newer"].node_count == 3
-    assert summary_by_id["older"].edge_count == 0
+    assert summary_by_id["older"].edge_count == 2
 
 
 def test_delete(plot_root: Path) -> None:

@@ -250,26 +250,8 @@ function SketchCanvasInner({
         },
       });
     }
-    // Auto-generated decomposition edges: parent → child for hierarchical
-    // kinds (actor / service only — rule and content are composition and
-    // stay in the Inspector). Dashed + grey + unlabeled so they don't
-    // compete with user-drawn value-flow edges.
-    for (const n of doc.nodes) {
-      if (!n.parent_id) continue;
-      if (n.kind !== "actor" && n.kind !== "service") continue;
-      // Skip if either end is hidden by collapse.
-      if (nearestCollapsedAncestor(n.id) || nearestCollapsedAncestor(n.parent_id))
-        continue;
-      out.push({
-        id: `__hier_${n.parent_id}_${n.id}`,
-        source: n.parent_id,
-        target: n.id,
-        style: { strokeDasharray: "4 3", stroke: "#94a3b8" },
-        animated: false,
-      });
-    }
     return out;
-  }, [doc.edges, doc.nodes, nearestCollapsedAncestor, valueFlowOn]);
+  }, [doc.edges, nearestCollapsedAncestor, valueFlowOn]);
 
   // Apply every position change (including mid-drag) so the node visually
   // tracks the cursor. The debounced PUT in App.tsx coalesces the stream
@@ -398,7 +380,28 @@ function SketchCanvasInner({
         identity: "",
       };
       const current = docRef.current;
-      onDocChange({ ...current, nodes: [...current.nodes, newNode] });
+      // Rule / content are composition: edited via the Inspector, no edge.
+      // Actor / service are hierarchy: materialise a real decomposition
+      // edge so users can edit it (label, verb, value_form).
+      const makeHierarchyEdge = preset.kind === "actor" || preset.kind === "service";
+      const edgeId = `e_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      const newEdges = makeHierarchyEdge
+        ? [
+            ...current.edges,
+            {
+              id: edgeId,
+              source: args.parentId,
+              target: id,
+              sourceHandle: null,
+              targetHandle: null,
+              label: "decomposes",
+              style: "dashed" as const,
+              action_verb: "decomposes",
+              value_form: [],
+            },
+          ]
+        : current.edges;
+      onDocChange({ ...current, nodes: [...current.nodes, newNode], edges: newEdges });
     },
     [onDocChange],
   );

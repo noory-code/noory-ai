@@ -46,6 +46,11 @@ function shapeStyle(shape: Shape): React.CSSProperties {
         clipPath:
           "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
       };
+    case "octagon":
+      return {
+        clipPath:
+          "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+      };
   }
 }
 
@@ -61,6 +66,7 @@ function contentPadding(shape: Shape): string {
     case "diamond":
       return "px-8 py-6";
     case "hexagon":
+    case "octagon":
       return "px-6 py-3";
     default:
       return "px-3 py-2";

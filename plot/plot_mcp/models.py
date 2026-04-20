@@ -15,7 +15,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-Shape = Literal["rectangle", "rounded", "circle", "ellipse", "diamond", "hexagon"]
+Shape = Literal[
+    "rectangle", "rounded", "circle", "ellipse", "diamond", "hexagon", "octagon",
+]
 
 # v0.2 node kinds. See PHILOSOPHY.md (P5, P11).
 #   core      — single project-identity node (the "true" root). Anchors the

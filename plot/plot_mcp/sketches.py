@@ -67,28 +67,31 @@ def write_sketch(plot_root: Path, doc: SketchDoc) -> None:
 
 
 def create_sketch(plot_root: Path, sketch_id: str, name: str) -> SketchDoc:
-    """Create a new sketch, seeded with a Core root + Actor root + Service root.
+    """Create a new sketch, seeded with Core + Actor-root + Service-root.
+
+    Core is an octagon (foundational). The two plane-centre roots attach
+    to Core via real decomposition edges so the user can edit them (add
+    verb / value_form / label) like any other edge.
 
     Raises ``FileExistsError`` if ``sketch_id`` is taken.
     """
-    from plot_mcp.models import SketchNode  # local import avoids cycles
+    from plot_mcp.models import SketchEdge, SketchNode  # local import avoids cycles
 
     path = _sketch_path(plot_root, sketch_id)
     if path.exists():
         raise FileExistsError(f"sketch already exists: {sketch_id}")
     today = date.today().isoformat()
-    # Three root nodes: Core at origin, Actor root left, Service root right.
     seeds = [
         SketchNode(
             id="core-root",
             kind="core",
             label=name or sketch_id,
-            x=-80,
-            y=-60,
-            width=160,
-            height=120,
+            x=-90,
+            y=-70,
+            width=180,
+            height=140,
             color="#fde68a",
-            shape="diamond",
+            shape="octagon",
             icon="star",
         ),
         SketchNode(
@@ -120,12 +123,34 @@ def create_sketch(plot_root: Path, sketch_id: str, name: str) -> SketchDoc:
             parent_id="core-root",
         ),
     ]
+    # Real edges (not synthetic) so users can edit them.
+    seed_edges = [
+        SketchEdge(
+            id="e-core-actor",
+            source="core-root",
+            target="actor-root",
+            label="decomposes",
+            style="dashed",
+            action_verb="decomposes",
+            value_form=[],
+        ),
+        SketchEdge(
+            id="e-core-service",
+            source="core-root",
+            target="service-root",
+            label="decomposes",
+            style="dashed",
+            action_verb="decomposes",
+            value_form=[],
+        ),
+    ]
     doc = SketchDoc(
         id=sketch_id,
         name=name or sketch_id,
         created=today,
         updated=datetime.now(UTC).isoformat(),
         nodes=seeds,
+        edges=seed_edges,
     )
     write_sketch(plot_root, doc)
     return doc

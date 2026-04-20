@@ -4,7 +4,8 @@ export type Shape =
   | "circle"
   | "ellipse"
   | "diamond"
-  | "hexagon";
+  | "hexagon"
+  | "octagon";
 
 /**
  * v0.2 node kinds. See PHILOSOPHY.md (P5, P11).
