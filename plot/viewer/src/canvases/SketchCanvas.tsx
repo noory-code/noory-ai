@@ -20,6 +20,7 @@ import type { NodeKind, SketchDoc, SketchEdge, SketchNode as DocNode } from "../
 import { LayerBackground } from "./LayerBackground";
 import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
+import { SketchEdgeModal, VALUE_FORM_COLORS } from "./SketchEdgeModal";
 import { SketchNode, type SketchNodeData } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar, type SaveState } from "./SketchToolbar";
@@ -105,6 +106,8 @@ function SketchCanvasInner({
   const clipboard = useSketchClipboard();
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
+  const [edgeModalId, setEdgeModalId] = useState<string | null>(null);
+  const [valueFlowOn, setValueFlowOn] = useState(false);
 
   const updateNode = useCallback(
     (nodeId: string, patch: Partial<DocNode>) => {
@@ -231,10 +234,15 @@ function SketchCanvasInner({
       const tAncestor = nearestCollapsedAncestor(e.target);
       const src = sAncestor ?? e.source;
       const tgt = tAncestor ?? e.target;
-      // Entirely inside a collapsed subtree — hide.
       if (sAncestor && tAncestor && sAncestor === tAncestor) continue;
-      // Bundling collapsed both ends into the same container — hide.
       if (src === tgt) continue;
+      // When Value Flow is on, paint the stroke using the first listed
+      // value form's colour. Multi-form edges get the first form's colour
+      // with a heavier weight so the user can at least eyeball them.
+      const stroke =
+        valueFlowOn && e.value_form && e.value_form.length > 0
+          ? VALUE_FORM_COLORS[e.value_form[0]]
+          : undefined;
       out.push({
         id: e.id,
         source: src,
@@ -242,11 +250,14 @@ function SketchCanvasInner({
         sourceHandle: sAncestor ? undefined : e.sourceHandle ?? undefined,
         targetHandle: tAncestor ? undefined : e.targetHandle ?? undefined,
         label: e.label || undefined,
-        style: e.style === "dashed" ? { strokeDasharray: "6 4" } : undefined,
+        style: {
+          ...(e.style === "dashed" ? { strokeDasharray: "6 4" } : {}),
+          ...(stroke ? { stroke, strokeWidth: e.value_form.length } : {}),
+        },
       });
     }
     return out;
-  }, [doc.edges, nearestCollapsedAncestor]);
+  }, [doc.edges, nearestCollapsedAncestor, valueFlowOn]);
 
   // Apply every position change (including mid-drag) so the node visually
   // tracks the cursor. The debounced PUT in App.tsx coalesces the stream
@@ -719,6 +730,8 @@ function SketchCanvasInner({
         onAutoLayout={handleAutoLayout}
         onDownload={onDownload}
         onUpload={onUpload}
+        valueFlowOn={valueFlowOn}
+        onToggleValueFlow={() => setValueFlowOn((v) => !v)}
       />
       <ReactFlow
         nodes={nodes}
@@ -739,6 +752,7 @@ function SketchCanvasInner({
         onSelectionChange={handleSelectionChange}
         onNodeContextMenu={openNodeMenu}
         onEdgeContextMenu={openEdgeMenu}
+        onEdgeDoubleClick={(_evt, edge) => setEdgeModalId(edge.id)}
         onPaneContextMenu={openPaneMenu}
         onInit={(inst) => {
           flowRef.current = inst;
@@ -768,6 +782,26 @@ function SketchCanvasInner({
             onCommit={(patch) => updateNode(target.id, patch)}
             onClose={() => setBodyModalNodeId(null)}
             onDelete={() => handleNodesDelete([{ id: target.id } as Node])}
+          />
+        );
+      })()}
+      {edgeModalId && (() => {
+        const target = doc.edges.find((e) => e.id === edgeModalId);
+        if (!target) return null;
+        return (
+          <SketchEdgeModal
+            edge={target}
+            onCommit={(patch) => {
+              const current = docRef.current;
+              onDocChange({
+                ...current,
+                edges: current.edges.map((e) =>
+                  e.id === target.id ? { ...e, ...patch } : e,
+                ),
+              });
+            }}
+            onClose={() => setEdgeModalId(null)}
+            onDelete={() => handleEdgesDelete([{ id: target.id } as Edge])}
           />
         );
       })()}

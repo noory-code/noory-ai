@@ -10,6 +10,9 @@ export interface SketchToolbarProps {
   onAutoLayout: () => void;
   onDownload: () => void;
   onUpload: () => void;
+  /** v0.2: edge colour toggle reflecting value_form. */
+  valueFlowOn: boolean;
+  onToggleValueFlow: () => void;
 }
 
 export function SketchToolbar({
