@@ -173,6 +173,8 @@ function SketchCanvasInner({
         targetHandle: connection.targetHandle ?? null,
         label: "",
         style: "solid",
+        action_verb: null,
+        value_form: [],
       };
       onDocChange({ ...current, edges: [...current.edges, newEdge] });
     },
@@ -218,6 +220,9 @@ function SketchCanvasInner({
         color: preset?.color ?? DEFAULT_COLOR,
         shape: preset?.shape ?? "rounded",
         icon: preset?.icon ?? null,
+        kind: null,
+        parent_id: null,
+        collapsed: false,
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
