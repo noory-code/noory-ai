@@ -39,34 +39,14 @@ const TOP_LEVEL: StencilPreset[] = [
 ];
 
 /**
- * Service internals — must be dropped INSIDE a Service container. Two
- * composition kinds (rule, content) and one decomposition (sub-service).
+ * Service internals visible on the canvas = decomposition only.
+ *
+ * Composition kinds (rule, content) are edited via the right-hand
+ * Inspector panel, not rendered as nodes. Keeping them out of the
+ * stencil prevents users from dropping them onto the canvas by
+ * accident.
  */
 const SERVICE_INTERNAL: StencilPreset[] = [
-  {
-    id: "rule",
-    labelHint: "Rule",
-    shape: "rectangle",
-    color: "#e7e5e4",
-    width: 140,
-    height: 50,
-    icon: "shield",
-    label: "Rule",
-    kind: "rule",
-    dropHint: "Drop inside a Service container",
-  },
-  {
-    id: "content",
-    labelHint: "Content",
-    shape: "hexagon",
-    color: "#ddd6fe",
-    width: 140,
-    height: 80,
-    icon: "package",
-    label: "Content",
-    kind: "content",
-    dropHint: "Drop inside a Service container",
-  },
   {
     id: "sub-service",
     labelHint: "Sub-Service",

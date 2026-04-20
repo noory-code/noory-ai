@@ -44,13 +44,13 @@ Every arrow bundles three things:
 - **Value form**: what kind of value flowed (money, attention, fame, ...)
 - **Direction**: from whom to whom
 
-### P7. Two-Layer Visualization
-The canvas is vertically split into two layers:
+### P7. Two Conceptual Planes (not spatial layers)
+There are two conceptual planes of thinking:
 
-- **Upper layer**: Services (value-creating hubs)
-- **Lower layer**: Actors (value-seeking participants)
+- **Actors plane** — who participates and how they relate.
+- **Services plane** — what value-creating machinery they interact through.
 
-Cross-layer edges carry value flow. Same-layer edges capture auxiliary relationships (Actor↔Actor direct, Service↔Service dependency). The spatial structure forces the question "is this a service or a participant?" to be answered *by position*.
+Originally this was sketched as a spatial top/bottom split on the canvas. The clearer framing is that the two planes **coexist in the same 2D space**; kind (shape, colour, icon) distinguishes actors from services, not y-position. Edges running between kinds carry value flow; same-kind edges capture auxiliary relationships. Users drag freely without positional constraints.
 
 ### P8. CE Before ME
 When designing the set of primitives, **coverage (Collectively Exhaustive)** is the primary criterion. Strict non-overlap (Mutually Exclusive) is relaxed — some overlap between primitive types is acceptable and left to user judgement.

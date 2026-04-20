@@ -1,0 +1,210 @@
+import { useMemo } from "react";
+import type { SketchNode } from "../types";
+
+export interface SketchInspectorProps {
+  /** Currently selected node. Null → panel shows empty state. */
+  node: SketchNode | null;
+  /** All nodes so we can find composition children of a Service. */
+  allNodes: SketchNode[];
+  /** Patch the selected node's own fields. */
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+  /** Create a new rule/content child under ``parentId``. */
+  onAddChild: (parentId: string, kind: "rule" | "content") => void;
+  /** Patch an existing child. */
+  onPatchChild: (childId: string, patch: Partial<SketchNode>) => void;
+  /** Remove a child. */
+  onRemoveChild: (childId: string) => void;
+  /** Close the panel. */
+  onClose: () => void;
+}
+
+/**
+ * Right-side detail panel.
+ *
+ * v0.2 correction (2026-04-20): composition elements (rules, contents)
+ * are edited here, not as nodes on the canvas.
+ */
+export function SketchInspector({
+  node,
+  allNodes,
+  onPatchNode,
+  onAddChild,
+  onPatchChild,
+  onRemoveChild,
+  onClose,
+}: SketchInspectorProps) {
+  const rules = useMemo(
+    () => (node ? allNodes.filter((n) => n.parent_id === node.id && n.kind === "rule") : []),
+    [node, allNodes],
+  );
+  const contents = useMemo(
+    () => (node ? allNodes.filter((n) => n.parent_id === node.id && n.kind === "content") : []),
+    [node, allNodes],
+  );
+
+  if (!node) {
+    return (
+      <aside className="pointer-events-auto absolute right-0 top-0 z-10 flex h-full w-80 flex-col border-l border-slate-200 bg-white/95 p-4 text-sm text-slate-500 shadow-sm backdrop-blur">
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          Inspector
+        </div>
+        <div className="mt-4 italic">Select a node to see details.</div>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="pointer-events-auto absolute right-0 top-0 z-10 flex h-full w-80 flex-col border-l border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            {node.kind ?? "Node"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close inspector"
+          className="rounded px-2 text-slate-400 hover:bg-slate-100"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto p-3">
+        {/* Label */}
+        <label className="mb-3 block">
+          <span className="text-xs font-semibold text-slate-600">Label</span>
+          <input
+            type="text"
+            value={node.label}
+            onChange={(e) => onPatchNode({ label: e.target.value })}
+            className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          />
+        </label>
+
+        {/* Body */}
+        <label className="mb-4 block">
+          <span className="text-xs font-semibold text-slate-600">Description</span>
+          <textarea
+            value={node.body}
+            onChange={(e) => onPatchNode({ body: e.target.value })}
+            rows={4}
+            className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+            placeholder="Longer description, markdown supported"
+          />
+        </label>
+
+        {/* Service-specific composition */}
+        {node.kind === "service" && (
+          <>
+            <CompositionList
+              title="Rules"
+              subtitle="policies, constraints, SLAs"
+              items={rules}
+              onAdd={() => onAddChild(node.id, "rule")}
+              onPatch={onPatchChild}
+              onRemove={onRemoveChild}
+            />
+            <CompositionList
+              title="Contents"
+              subtitle="artifacts, outputs, assets"
+              items={contents}
+              onAdd={() => onAddChild(node.id, "content")}
+              onPatch={onPatchChild}
+              onRemove={onRemoveChild}
+            />
+          </>
+        )}
+
+        {/* Actor placeholder — v0.3 fields land here */}
+        {node.kind === "actor" && (
+          <div className="rounded border border-dashed border-slate-300 p-3 text-xs italic text-slate-400">
+            Actor composition (permissions / capabilities / goals / state) lands in v0.3.
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+interface CompositionListProps {
+  title: string;
+  subtitle: string;
+  items: SketchNode[];
+  onAdd: () => void;
+  onPatch: (childId: string, patch: Partial<SketchNode>) => void;
+  onRemove: (childId: string) => void;
+}
+
+function CompositionList({
+  title,
+  subtitle,
+  items,
+  onAdd,
+  onPatch,
+  onRemove,
+}: CompositionListProps) {
+  return (
+    <div className="mb-4">
+      <div className="mb-1 flex items-baseline justify-between">
+        <div>
+          <div className="text-xs font-semibold text-slate-700">{title}</div>
+          <div className="text-[10px] italic text-slate-400">{subtitle}</div>
+        </div>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-slate-700"
+        >
+          + Add
+        </button>
+      </div>
+      {items.length === 0 ? (
+        <div className="rounded border border-dashed border-slate-200 p-2 text-[11px] italic text-slate-400">
+          (none)
+        </div>
+      ) : (
+        <ul className="space-y-1">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="group flex items-start gap-1 rounded border border-slate-200 bg-white px-2 py-1"
+            >
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={item.label}
+                  onChange={(e) => onPatch(item.id, { label: e.target.value })}
+                  placeholder="Name"
+                  className="w-full border-none bg-transparent text-xs font-medium text-slate-800 focus:outline-none"
+                />
+                <textarea
+                  value={item.body}
+                  onChange={(e) => onPatch(item.id, { body: e.target.value })}
+                  placeholder="Optional detail"
+                  rows={1}
+                  className="mt-0.5 w-full resize-y border-none bg-transparent text-[11px] text-slate-600 focus:outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Remove "${item.label || "(untitled)"}"?`)) {
+                    onRemove(item.id);
+                  }
+                }}
+                className="rounded px-1 text-[10px] text-rose-600 opacity-0 hover:bg-rose-50 group-hover:opacity-100"
+                aria-label="Remove"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

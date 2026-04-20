@@ -17,10 +17,10 @@ import ReactFlow, {
 } from "reactflow";
 import { autoLayout } from "../flow/autoLayout";
 import type { NodeKind, SketchDoc, SketchEdge, SketchNode as DocNode } from "../types";
-import { LayerBackground } from "./LayerBackground";
 import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
 import { SketchEdgeModal, VALUE_FORM_COLORS } from "./SketchEdgeModal";
+import { SketchInspector } from "./SketchInspector";
 import { SketchNode, type SketchNodeData } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar, type SaveState } from "./SketchToolbar";
@@ -48,19 +48,11 @@ export interface NodePreset {
   kind?: NodeKind | null;
 }
 
-/** Snap a flow y-coordinate into the correct layer for a given kind.
- *  Upper band = y < 0 = Services; lower band = y > 0 = Actors. */
-function snapYToLayer(y: number, kind: NodeKind | null | undefined, nodeHeight: number): number {
-  if (kind === "service") {
-    // Clamp so the whole node stays strictly above the divider.
-    const maxY = -20 - nodeHeight;
-    return Math.min(y, maxY);
-  }
-  if (kind === "actor") {
-    return Math.max(y, 20);
-  }
-  return y;
-}
+// Note (2026-04-20): the earlier implementation snapped services to an
+// upper band and actors to a lower band. The user clarified that the
+// "two layers" metaphor was conceptual, not spatial — services and
+// actors coexist on the same 2D plane, differentiated by kind (shape /
+// colour / icon), not by y position. Layer-snap helper removed.
 
 export interface SketchCanvasProps {
   doc: SketchDoc;
@@ -108,6 +100,7 @@ function SketchCanvasInner({
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
   const [edgeModalId, setEdgeModalId] = useState<string | null>(null);
   const [valueFlowOn, setValueFlowOn] = useState(false);
+  const [inspectorNodeId, setInspectorNodeId] = useState<string | null>(null);
 
   const updateNode = useCallback(
     (nodeId: string, patch: Partial<DocNode>) => {
@@ -192,6 +185,9 @@ function SketchCanvasInner({
     for (const n of ordered) {
       // Hide nodes whose ancestor chain contains a collapsed container.
       if (nearestCollapsedAncestor(n.id)) continue;
+      // v0.2 correction (2026-04-20): rule / content are edited through
+      // the right-hand Inspector panel, never rendered on the canvas.
+      if (n.kind === "rule" || n.kind === "content") continue;
       const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
       const base: Node<SketchNodeData> = {
         id: n.id,
@@ -264,30 +260,17 @@ function SketchCanvasInner({
   // down to one save per 400 ms, so drags don't flood the server.
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      const posById = new Map<string, { x: number; y: number; dragging?: boolean }>();
+      const posById = new Map<string, { x: number; y: number }>();
       for (const c of changes) {
-        if (c.type === "position" && c.position) {
-          posById.set(c.id, { ...c.position, dragging: c.dragging });
-        }
+        if (c.type === "position" && c.position) posById.set(c.id, c.position);
       }
       if (posById.size === 0) return;
       const current = docRef.current;
       onDocChange({
         ...current,
-        nodes: current.nodes.map((n) => {
-          const p = posById.get(n.id);
-          if (!p) return n;
-          // On drag-stop (dragging === false or undefined), snap top-level
-          // nodes back into their correct layer if the user crossed the
-          // divider. Mid-drag frames stay unsnapped so the node visually
-          // tracks the cursor.
-          const isCommit = p.dragging !== true;
-          if (isCommit && n.parent_id === null) {
-            const snappedY = snapYToLayer(p.y, n.kind, n.height);
-            return { ...n, x: p.x, y: snappedY };
-          }
-          return { ...n, x: p.x, y: p.y };
-        }),
+        nodes: current.nodes.map((n) =>
+          posById.has(n.id) ? { ...n, ...posById.get(n.id)! } : n,
+        ),
       });
     },
     [onDocChange],
@@ -345,16 +328,14 @@ function SketchCanvasInner({
   const addNodeAt = useCallback(
     (x: number, y: number, preset?: NodePreset) => {
       const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-      const height = preset?.height ?? DEFAULT_HEIGHT;
-      const snappedY = snapYToLayer(y, preset?.kind ?? null, height);
       const newNode: DocNode = {
         id,
         label: preset?.label ?? "",
         body: "",
         x,
-        y: snappedY,
+        y,
         width: preset?.width ?? DEFAULT_WIDTH,
-        height,
+        height: preset?.height ?? DEFAULT_HEIGHT,
         color: preset?.color ?? DEFAULT_COLOR,
         shape: preset?.shape ?? "rounded",
         icon: preset?.icon ?? null,
@@ -753,6 +734,8 @@ function SketchCanvasInner({
         onNodeContextMenu={openNodeMenu}
         onEdgeContextMenu={openEdgeMenu}
         onEdgeDoubleClick={(_evt, edge) => setEdgeModalId(edge.id)}
+        onNodeClick={(_evt, n) => setInspectorNodeId(n.id)}
+        onPaneClick={() => setInspectorNodeId(null)}
         onPaneContextMenu={openPaneMenu}
         onInit={(inst) => {
           flowRef.current = inst;
@@ -761,7 +744,6 @@ function SketchCanvasInner({
         fitViewOptions={{ padding: 0.2 }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <LayerBackground />
         <MiniMap zoomable pannable />
         <Controls />
       </ReactFlow>
@@ -805,6 +787,49 @@ function SketchCanvasInner({
           />
         );
       })()}
+      <SketchInspector
+        node={
+          inspectorNodeId
+            ? doc.nodes.find((n) => n.id === inspectorNodeId) ?? null
+            : null
+        }
+        allNodes={doc.nodes}
+        onPatchNode={(patch) => {
+          if (!inspectorNodeId) return;
+          updateNode(inspectorNodeId, patch);
+        }}
+        onAddChild={(parentId, kind) => {
+          const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+          const current = docRef.current;
+          const defaults = kind === "rule"
+            ? { shape: "rectangle" as const, color: "#e7e5e4", icon: "shield" as const }
+            : { shape: "hexagon" as const, color: "#ddd6fe", icon: "package" as const };
+          const newNode: DocNode = {
+            id,
+            label: kind === "rule" ? "New rule" : "New content",
+            body: "",
+            x: 0, y: 0,
+            width: 140,
+            height: 60,
+            color: defaults.color,
+            shape: defaults.shape,
+            icon: defaults.icon,
+            kind,
+            parent_id: parentId,
+            collapsed: false,
+          };
+          onDocChange({ ...current, nodes: [...current.nodes, newNode] });
+        }}
+        onPatchChild={(childId, patch) => updateNode(childId, patch)}
+        onRemoveChild={(childId) => {
+          const current = docRef.current;
+          onDocChange({
+            ...current,
+            nodes: current.nodes.filter((n) => n.id !== childId),
+          });
+        }}
+        onClose={() => setInspectorNodeId(null)}
+      />
     </div>
   );
 }
