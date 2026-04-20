@@ -67,16 +67,65 @@ def write_sketch(plot_root: Path, doc: SketchDoc) -> None:
 
 
 def create_sketch(plot_root: Path, sketch_id: str, name: str) -> SketchDoc:
-    """Create an empty sketch. Raises ``FileExistsError`` if ``sketch_id`` is taken."""
+    """Create a new sketch, seeded with a Core root + Actor root + Service root.
+
+    Raises ``FileExistsError`` if ``sketch_id`` is taken.
+    """
+    from plot_mcp.models import SketchNode  # local import avoids cycles
+
     path = _sketch_path(plot_root, sketch_id)
     if path.exists():
         raise FileExistsError(f"sketch already exists: {sketch_id}")
     today = date.today().isoformat()
+    # Three root nodes: Core at origin, Actor root left, Service root right.
+    seeds = [
+        SketchNode(
+            id="core-root",
+            kind="core",
+            label=name or sketch_id,
+            x=-80,
+            y=-60,
+            width=160,
+            height=120,
+            color="#fde68a",
+            shape="diamond",
+            icon="star",
+        ),
+        SketchNode(
+            id="actor-root",
+            kind="actor",
+            label="Actors",
+            is_root=True,
+            x=-320,
+            y=180,
+            width=140,
+            height=140,
+            color="#fecaca",
+            shape="circle",
+            icon="users",
+            parent_id="core-root",
+        ),
+        SketchNode(
+            id="service-root",
+            kind="service",
+            label="Services",
+            is_root=True,
+            x=180,
+            y=180,
+            width=200,
+            height=120,
+            color="#bae6fd",
+            shape="rounded",
+            icon="zap",
+            parent_id="core-root",
+        ),
+    ]
     doc = SketchDoc(
         id=sketch_id,
         name=name or sketch_id,
         created=today,
         updated=datetime.now(UTC).isoformat(),
+        nodes=seeds,
     )
     write_sketch(plot_root, doc)
     return doc

@@ -211,13 +211,13 @@ function SketchCanvasInner({
           onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
         },
       };
-      if (n.parent_id) {
-        base.parentNode = n.parent_id;
-        base.extent = "parent";
-      }
-      if (hasChildren && !n.collapsed) {
-        base.style = { ...base.style, zIndex: -1 };
-      }
+      // v0.2 correction (2026-04-20): parent_id is used for two distinct
+      // semantic categories:
+      //   - composition (rule, content) — data-only, Inspector panel.
+      //   - hierarchy (sub-actor, sub-service) — rendered as a sibling
+      //     with an auto-generated decomposition edge (see `edges` below).
+      // In neither case do we use React Flow's parentNode nesting any
+      // more: hierarchy is not "inside", it's "beside + linked".
       out.push(base);
     }
     return out;
@@ -225,6 +225,7 @@ function SketchCanvasInner({
 
   const edges = useMemo<Edge[]>(() => {
     const out: Edge[] = [];
+    // User-drawn edges.
     for (const e of doc.edges) {
       const sAncestor = nearestCollapsedAncestor(e.source);
       const tAncestor = nearestCollapsedAncestor(e.target);
@@ -232,9 +233,6 @@ function SketchCanvasInner({
       const tgt = tAncestor ?? e.target;
       if (sAncestor && tAncestor && sAncestor === tAncestor) continue;
       if (src === tgt) continue;
-      // When Value Flow is on, paint the stroke using the first listed
-      // value form's colour. Multi-form edges get the first form's colour
-      // with a heavier weight so the user can at least eyeball them.
       const stroke =
         valueFlowOn && e.value_form && e.value_form.length > 0
           ? VALUE_FORM_COLORS[e.value_form[0]]
@@ -252,8 +250,26 @@ function SketchCanvasInner({
         },
       });
     }
+    // Auto-generated decomposition edges: parent → child for hierarchical
+    // kinds (actor / service only — rule and content are composition and
+    // stay in the Inspector). Dashed + grey + unlabeled so they don't
+    // compete with user-drawn value-flow edges.
+    for (const n of doc.nodes) {
+      if (!n.parent_id) continue;
+      if (n.kind !== "actor" && n.kind !== "service") continue;
+      // Skip if either end is hidden by collapse.
+      if (nearestCollapsedAncestor(n.id) || nearestCollapsedAncestor(n.parent_id))
+        continue;
+      out.push({
+        id: `__hier_${n.parent_id}_${n.id}`,
+        source: n.parent_id,
+        target: n.id,
+        style: { strokeDasharray: "4 3", stroke: "#94a3b8" },
+        animated: false,
+      });
+    }
     return out;
-  }, [doc.edges, nearestCollapsedAncestor, valueFlowOn]);
+  }, [doc.edges, doc.nodes, nearestCollapsedAncestor, valueFlowOn]);
 
   // Apply every position change (including mid-drag) so the node visually
   // tracks the cursor. The debounced PUT in App.tsx coalesces the stream
@@ -342,6 +358,10 @@ function SketchCanvasInner({
         kind: preset?.kind ?? null,
         parent_id: null,
         collapsed: false,
+        is_root: false,
+        mission: "",
+        core_values: "",
+        identity: "",
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -372,6 +392,10 @@ function SketchCanvasInner({
         kind: preset.kind ?? null,
         parent_id: args.parentId,
         collapsed: false,
+        is_root: false,
+        mission: "",
+        core_values: "",
+        identity: "",
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -817,6 +841,10 @@ function SketchCanvasInner({
             kind,
             parent_id: parentId,
             collapsed: false,
+            is_root: false,
+            mission: "",
+            core_values: "",
+            identity: "",
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}

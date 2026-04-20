@@ -168,8 +168,16 @@ export function SketchStencil() {
   return (
     <div className="border-t border-slate-200 px-3 py-3">
       <Section title="Top-level" presets={TOP_LEVEL} />
-      <Section title="Service internals" presets={SERVICE_INTERNAL} note="drop into a Service" />
-      <Section title="Actor internals" presets={ACTOR_INTERNAL} note="drop into an Actor" />
+      <Section
+        title="Service hierarchy"
+        presets={SERVICE_INTERNAL}
+        note="drop on a Service"
+      />
+      <Section
+        title="Actor hierarchy"
+        presets={ACTOR_INTERNAL}
+        note="drop on an Actor"
+      />
     </div>
   );
 }

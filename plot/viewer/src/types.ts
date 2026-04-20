@@ -8,14 +8,16 @@ export type Shape =
 
 /**
  * v0.2 node kinds. See PHILOSOPHY.md (P5, P11).
- *   actor   — top-level participant, lower layer. Can contain sub-actors.
- *   service — top-level value hub, upper layer. Can contain rule/content/sub-service.
- *   rule    — nested policy inside a service (composition).
- *   content — nested artifact inside a service (composition).
+ *   core    — the single project-identity root (holds mission + core values
+ *             + identity for the whole sketch).
+ *   actor   — participant; may carry ``is_root=true`` to mark actor-tree centre.
+ *   service — value hub; may carry ``is_root=true`` to mark service-tree centre.
+ *   rule    — composition element inside a service (data-only, shown in Inspector).
+ *   content — composition element inside a service (data-only, shown in Inspector).
  * Sub-service / sub-actor are not separate kinds — they're service/actor
- * with a non-null parent_id.
+ * with a non-null parent_id (hierarchical decomposition).
  */
-export type NodeKind = "actor" | "service" | "rule" | "content";
+export type NodeKind = "core" | "actor" | "service" | "rule" | "content";
 
 /**
  * Plural forms of value that can flow along an edge. See PHILOSOPHY.md (P2).
@@ -47,6 +49,12 @@ export interface SketchNode {
   parent_id: string | null;
   /** v0.2: container fold state. ``false`` = expanded. */
   collapsed: boolean;
+  /** v0.2: mark this actor/service as the root of its tree (at most one per kind). */
+  is_root: boolean;
+  /** v0.2: populated for core / actor-root / service-root only. */
+  mission: string;
+  core_values: string;
+  identity: string;
 }
 
 export interface SketchEdge {

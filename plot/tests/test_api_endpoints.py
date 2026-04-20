@@ -104,7 +104,8 @@ def test_get_then_put(app_client: tuple[TestClient, str]) -> None:
     )
     assert resp.status_code == 200
     resp = client.get("/api/sketches/alpha", params={"project_path": project_path})
-    assert len(resp.json()["nodes"]) == 1
+    # v0.2: create_sketch seeds 3 root nodes, so after appending one more we have 4.
+    assert len(resp.json()["nodes"]) == 4
 
 
 def test_put_with_bad_edge_is_422(app_client: tuple[TestClient, str]) -> None:

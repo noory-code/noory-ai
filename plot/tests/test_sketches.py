@@ -91,7 +91,8 @@ def test_list_sorts_by_updated_desc(plot_root: Path) -> None:
     # Either order acceptable within the same millisecond tick; assert at
     # least both present and both have correct counts.
     summary_by_id = {s.id: s for s in result}
-    assert summary_by_id["newer"].node_count == 0
+    # v0.2: create_sketch seeds Core + Actor-root + Service-root.
+    assert summary_by_id["newer"].node_count == 3
     assert summary_by_id["older"].edge_count == 0
 
 

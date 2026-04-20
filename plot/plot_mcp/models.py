@@ -18,13 +18,16 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 Shape = Literal["rectangle", "rounded", "circle", "ellipse", "diamond", "hexagon"]
 
 # v0.2 node kinds. See PHILOSOPHY.md (P5, P11).
-#   actor     — top-level participant (lower layer). Can contain sub-actors.
-#   service   — top-level value hub (upper layer). Can contain rule/content/sub-service.
-#   rule      — nested policy/constraint inside a service (composition).
-#   content   — nested artifact inside a service (composition).
-# Sub-service and sub-actor are not new kinds — they're service/actor with a
-# non-null parent_id (decomposition).
-NodeKind = Literal["actor", "service", "rule", "content"]
+#   core      — single project-identity node (the "true" root). Anchors the
+#               two trees (actor-root + service-root) beneath it.
+#   actor     — participant in the value economy. May have is_root=True to
+#               mark the centre of the actor tree.
+#   service   — value-creating hub. May have is_root=True for the service tree.
+#   rule      — composition element inside a service (data-only, Inspector).
+#   content   — composition element inside a service (data-only, Inspector).
+# Sub-service and sub-actor are not new kinds — they're service/actor with
+# a non-null parent_id (hierarchy / decomposition).
+NodeKind = Literal["core", "actor", "service", "rule", "content"]
 
 # Composition kinds: must live inside a service.
 _COMPOSITION_KINDS = {"rule", "content"}
@@ -48,6 +51,16 @@ class SketchNode(BaseModel):
     kind: NodeKind | None = None
     parent_id: str | None = None
     collapsed: bool = False
+
+    # v0.2 root fields (2026-04-20)
+    # A sketch may designate up to one Actor-root and one Service-root.
+    # Roots carry Mission + Core Values + Identity for their respective
+    # plane (organization-side vs product-side). Non-root nodes leave
+    # these empty.
+    is_root: bool = False
+    mission: str = ""
+    core_values: str = ""
+    identity: str = ""
 
 
 ValueForm = Literal[
@@ -138,6 +151,38 @@ class SketchDoc(BaseModel):
                 seen.add(current)
                 parent = by_id[current]
                 current = parent.parent_id
+        return self
+
+    @model_validator(mode="after")
+    def _at_most_one_root_per_kind(self) -> SketchDoc:
+        """v0.2: at most one Core, one Actor-root, and one Service-root per sketch.
+
+        Actor-root and Service-root use ``is_root=True`` with their own
+        kinds; Core has ``kind="core"`` (singular by design). Actor-root
+        and Service-root may optionally sit under the Core via parent_id.
+        """
+        # Core is a singleton.
+        cores = [n for n in self.nodes if n.kind == "core"]
+        if len(cores) > 1:
+            raise ValueError(
+                f"at most one core node allowed per sketch; found {sorted(n.id for n in cores)}"
+            )
+
+        # Actor-/Service-root markers are per-kind singletons.
+        roots = [n for n in self.nodes if n.is_root]
+        by_kind: dict[str, list[str]] = {}
+        for r in roots:
+            if r.kind not in ("actor", "service"):
+                raise ValueError(
+                    f"node {r.id!r} is_root=True but kind is {r.kind!r} "
+                    "(only actor or service may be is_root)"
+                )
+            by_kind.setdefault(r.kind, []).append(r.id)
+        for kind, ids in by_kind.items():
+            if len(ids) > 1:
+                raise ValueError(
+                    f"at most one {kind}-root allowed per sketch; found {sorted(ids)}"
+                )
         return self
 
     @model_validator(mode="after")

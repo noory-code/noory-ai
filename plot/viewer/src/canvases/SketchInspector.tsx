@@ -53,13 +53,24 @@ export function SketchInspector({
     );
   }
 
+  const showsIdentity =
+    node.kind === "core" || (node.is_root && (node.kind === "actor" || node.kind === "service"));
+  const canToggleRoot =
+    !node.parent_id && (node.kind === "actor" || node.kind === "service");
+
   return (
     <aside className="pointer-events-auto absolute right-0 top-0 z-10 flex h-full w-80 flex-col border-l border-slate-200 bg-white/95 shadow-sm backdrop-blur">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-            {node.kind ?? "Node"}
+            {node.kind === "core"
+              ? "Core Root"
+              : node.is_root && node.kind === "actor"
+                ? "Actor Root"
+                : node.is_root && node.kind === "service"
+                  ? "Service Root"
+                  : node.kind ?? "Node"}
           </span>
         </div>
         <button
@@ -91,11 +102,66 @@ export function SketchInspector({
           <textarea
             value={node.body}
             onChange={(e) => onPatchNode({ body: e.target.value })}
-            rows={4}
+            rows={3}
             className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
             placeholder="Longer description, markdown supported"
           />
         </label>
+
+        {/* Root toggle — only for top-level actor / service */}
+        {canToggleRoot && (
+          <label className="mb-4 flex items-center gap-2 text-xs text-slate-700">
+            <input
+              type="checkbox"
+              checked={node.is_root}
+              onChange={(e) => onPatchNode({ is_root: e.target.checked })}
+              className="accent-indigo-600"
+            />
+            <span>
+              Mark as <strong>{node.kind === "actor" ? "Actor Root" : "Service Root"}</strong>{" "}
+              (centre of its tree)
+            </span>
+          </label>
+        )}
+
+        {/* Mission / Core Values / Identity — only on roots */}
+        {showsIdentity && (
+          <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+              Identity
+            </div>
+            <label className="mb-2 block">
+              <span className="text-[11px] font-semibold text-slate-600">Mission</span>
+              <textarea
+                value={node.mission}
+                onChange={(e) => onPatchNode({ mission: e.target.value })}
+                rows={2}
+                className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"
+                placeholder="Why this exists"
+              />
+            </label>
+            <label className="mb-2 block">
+              <span className="text-[11px] font-semibold text-slate-600">Core Values</span>
+              <textarea
+                value={node.core_values}
+                onChange={(e) => onPatchNode({ core_values: e.target.value })}
+                rows={3}
+                className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"
+                placeholder="One per line"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-semibold text-slate-600">Identity</span>
+              <textarea
+                value={node.identity}
+                onChange={(e) => onPatchNode({ identity: e.target.value })}
+                rows={2}
+                className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"
+                placeholder="Who / what this is"
+              />
+            </label>
+          </div>
+        )}
 
         {/* Service-specific composition */}
         {node.kind === "service" && (
@@ -120,7 +186,7 @@ export function SketchInspector({
         )}
 
         {/* Actor placeholder — v0.3 fields land here */}
-        {node.kind === "actor" && (
+        {node.kind === "actor" && !node.is_root && (
           <div className="rounded border border-dashed border-slate-300 p-3 text-xs italic text-slate-400">
             Actor composition (permissions / capabilities / goals / state) lands in v0.3.
           </div>
