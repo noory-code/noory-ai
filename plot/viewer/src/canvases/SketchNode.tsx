@@ -15,6 +15,14 @@ export interface SketchNodeData {
   onLabelChange?: (next: string) => void;
   onOpenBody?: () => void;
   onResize?: (width: number, height: number) => void;
+  /** v0.2: set when this node contains children. Enables the fold button. */
+  hasChildren?: boolean;
+  /** v0.2: current fold state. */
+  collapsed?: boolean;
+  /** v0.2: callback to flip fold state. */
+  onToggleCollapse?: () => void;
+  /** v0.2: count of nested children (shown on the fold badge when collapsed). */
+  childCount?: number;
 }
 
 /**
@@ -103,6 +111,20 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
           }`}
         >
           <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+            {data.hasChildren && data.onToggleCollapse && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  data.onToggleCollapse?.();
+                }}
+                className="nodrag flex h-4 w-4 shrink-0 items-center justify-center rounded text-[10px] text-slate-600 hover:bg-slate-200"
+                title={data.collapsed ? "Expand" : "Collapse"}
+                aria-label={data.collapsed ? "Expand container" : "Collapse container"}
+              >
+                {data.collapsed ? "▸" : "▾"}
+              </button>
+            )}
             {Icon && <Icon size={14} className="shrink-0 text-slate-600" aria-hidden />}
             {data.onLabelChange ? (
               <EditableText
@@ -114,6 +136,14 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
             ) : (
               <span>
                 {data.label || <span className="italic text-slate-400">(untitled)</span>}
+              </span>
+            )}
+            {data.collapsed && data.hasChildren && (
+              <span
+                className="ml-auto rounded-full bg-slate-200 px-1.5 text-[10px] text-slate-600"
+                aria-label={`${data.childCount} collapsed children`}
+              >
+                {data.childCount}
               </span>
             )}
           </div>

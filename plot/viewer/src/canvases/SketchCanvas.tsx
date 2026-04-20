@@ -116,9 +116,9 @@ function SketchCanvasInner({
     [onDocChange],
   );
 
-  // Precompute a parent → children map so we can render containers distinct
-  // from leaves and sort parents before their children (React Flow requires
-  // parents to appear earlier in the array).
+  // Precompute a parent → children map so we can render containers, sort
+  // parents before children (React Flow requirement), and compute visibility
+  // under collapse.
   const childIdsByParent = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const n of doc.nodes) {
@@ -131,6 +131,52 @@ function SketchCanvasInner({
     return map;
   }, [doc.nodes]);
 
+  const nodeById = useMemo(() => {
+    const m = new Map<string, DocNode>();
+    for (const n of doc.nodes) m.set(n.id, n);
+    return m;
+  }, [doc.nodes]);
+
+  // Nearest collapsed ancestor of ``nodeId`` (not counting nodeId itself),
+  // or null if nothing on the chain is collapsed.
+  const nearestCollapsedAncestor = useCallback(
+    (nodeId: string): string | null => {
+      let current = nodeById.get(nodeId);
+      while (current?.parent_id) {
+        const parent = nodeById.get(current.parent_id);
+        if (parent && parent.collapsed) return parent.id;
+        current = parent;
+      }
+      return null;
+    },
+    [nodeById],
+  );
+
+  const toggleCollapsed = useCallback(
+    (nodeId: string) => {
+      const current = docRef.current;
+      onDocChange({
+        ...current,
+        nodes: current.nodes.map((n) =>
+          n.id === nodeId ? { ...n, collapsed: !n.collapsed } : n,
+        ),
+      });
+    },
+    [onDocChange],
+  );
+
+  // Subtree size (recursive descendant count) — shown on the collapsed
+  // badge so user sees "how much is hidden".
+  const subtreeSize = useCallback(
+    (nodeId: string): number => {
+      const direct = childIdsByParent.get(nodeId) ?? [];
+      let total = direct.length;
+      for (const c of direct) total += subtreeSize(c);
+      return total;
+    },
+    [childIdsByParent],
+  );
+
   const nodes = useMemo<Node<SketchNodeData>[]>(() => {
     // Parents first, children after — React Flow requirement.
     const ordered = [...doc.nodes].sort((a, b) => {
@@ -138,7 +184,10 @@ function SketchCanvasInner({
       if (a.parent_id && !b.parent_id) return 1;
       return 0;
     });
-    return ordered.map((n) => {
+    const out: Node<SketchNodeData>[] = [];
+    for (const n of ordered) {
+      // Hide nodes whose ancestor chain contains a collapsed container.
+      if (nearestCollapsedAncestor(n.id)) continue;
       const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
       const base: Node<SketchNodeData> = {
         id: n.id,
@@ -156,38 +205,47 @@ function SketchCanvasInner({
           onLabelChange: (next: string) => updateNode(n.id, { label: next }),
           onOpenBody: () => setBodyModalNodeId(n.id),
           onResize: (w: number, h: number) => updateNode(n.id, { width: w, height: h }),
+          hasChildren,
+          collapsed: n.collapsed,
+          childCount: hasChildren ? subtreeSize(n.id) : 0,
+          onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
         },
       };
       if (n.parent_id) {
-        // Nested node — position is relative to parent. extent='parent'
-        // clamps drag to stay inside the parent's box.
         base.parentNode = n.parent_id;
         base.extent = "parent";
       }
-      if (hasChildren) {
-        // Parent containers shouldn't be draggable by their visual body
-        // (React Flow drags the whole subtree when you grab a group).
-        // Leave draggable true so user can still reposition the container
-        // via its label; visual tweaks land in commit 4.
+      if (hasChildren && !n.collapsed) {
         base.style = { ...base.style, zIndex: -1 };
       }
-      return base;
-    });
-  }, [doc.nodes, childIdsByParent, updateNode]);
+      out.push(base);
+    }
+    return out;
+  }, [doc.nodes, childIdsByParent, nearestCollapsedAncestor, subtreeSize, toggleCollapsed, updateNode]);
 
-  const edges = useMemo<Edge[]>(
-    () =>
-      doc.edges.map((e) => ({
+  const edges = useMemo<Edge[]>(() => {
+    const out: Edge[] = [];
+    for (const e of doc.edges) {
+      const sAncestor = nearestCollapsedAncestor(e.source);
+      const tAncestor = nearestCollapsedAncestor(e.target);
+      const src = sAncestor ?? e.source;
+      const tgt = tAncestor ?? e.target;
+      // Entirely inside a collapsed subtree — hide.
+      if (sAncestor && tAncestor && sAncestor === tAncestor) continue;
+      // Bundling collapsed both ends into the same container — hide.
+      if (src === tgt) continue;
+      out.push({
         id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle ?? undefined,
-        targetHandle: e.targetHandle ?? undefined,
+        source: src,
+        target: tgt,
+        sourceHandle: sAncestor ? undefined : e.sourceHandle ?? undefined,
+        targetHandle: tAncestor ? undefined : e.targetHandle ?? undefined,
         label: e.label || undefined,
         style: e.style === "dashed" ? { strokeDasharray: "6 4" } : undefined,
-      })),
-    [doc.edges],
-  );
+      });
+    }
+    return out;
+  }, [doc.edges, nearestCollapsedAncestor]);
 
   // Apply every position change (including mid-drag) so the node visually
   // tracks the cursor. The debounced PUT in App.tsx coalesces the stream
