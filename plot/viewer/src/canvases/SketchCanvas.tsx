@@ -16,7 +16,8 @@ import ReactFlow, {
   type ReactFlowInstance,
 } from "reactflow";
 import { autoLayout } from "../flow/autoLayout";
-import type { SketchDoc, SketchEdge, SketchNode as DocNode } from "../types";
+import type { NodeKind, SketchDoc, SketchEdge, SketchNode as DocNode } from "../types";
+import { LayerBackground } from "./LayerBackground";
 import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
 import { SketchNode, type SketchNodeData } from "./SketchNode";
@@ -41,6 +42,22 @@ export interface NodePreset {
   height?: number;
   icon?: string | null;
   label?: string;
+  /** v0.2: typed node kind. Used to constrain layer on drop and for AI. */
+  kind?: NodeKind | null;
+}
+
+/** Snap a flow y-coordinate into the correct layer for a given kind.
+ *  Upper band = y < 0 = Services; lower band = y > 0 = Actors. */
+function snapYToLayer(y: number, kind: NodeKind | null | undefined, nodeHeight: number): number {
+  if (kind === "service") {
+    // Clamp so the whole node stays strictly above the divider.
+    const maxY = -20 - nodeHeight;
+    return Math.min(y, maxY);
+  }
+  if (kind === "actor") {
+    return Math.max(y, 20);
+  }
+  return y;
 }
 
 export interface SketchCanvasProps {
@@ -141,17 +158,30 @@ function SketchCanvasInner({
   // down to one save per 400 ms, so drags don't flood the server.
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      const posById = new Map<string, { x: number; y: number }>();
+      const posById = new Map<string, { x: number; y: number; dragging?: boolean }>();
       for (const c of changes) {
-        if (c.type === "position" && c.position) posById.set(c.id, c.position);
+        if (c.type === "position" && c.position) {
+          posById.set(c.id, { ...c.position, dragging: c.dragging });
+        }
       }
       if (posById.size === 0) return;
       const current = docRef.current;
       onDocChange({
         ...current,
-        nodes: current.nodes.map((n) =>
-          posById.has(n.id) ? { ...n, ...posById.get(n.id)! } : n,
-        ),
+        nodes: current.nodes.map((n) => {
+          const p = posById.get(n.id);
+          if (!p) return n;
+          // On drag-stop (dragging === false or undefined), snap top-level
+          // nodes back into their correct layer if the user crossed the
+          // divider. Mid-drag frames stay unsnapped so the node visually
+          // tracks the cursor.
+          const isCommit = p.dragging !== true;
+          if (isCommit && n.parent_id === null) {
+            const snappedY = snapYToLayer(p.y, n.kind, n.height);
+            return { ...n, x: p.x, y: snappedY };
+          }
+          return { ...n, x: p.x, y: p.y };
+        }),
       });
     },
     [onDocChange],
@@ -209,18 +239,22 @@ function SketchCanvasInner({
   const addNodeAt = useCallback(
     (x: number, y: number, preset?: NodePreset) => {
       const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      const height = preset?.height ?? DEFAULT_HEIGHT;
+      // Layer-aware snap so service presets always land in the upper band
+      // and actor presets in the lower band, regardless of drop cursor y.
+      const snappedY = snapYToLayer(y, preset?.kind ?? null, height);
       const newNode: DocNode = {
         id,
         label: preset?.label ?? "",
         body: "",
         x,
-        y,
+        y: snappedY,
         width: preset?.width ?? DEFAULT_WIDTH,
-        height: preset?.height ?? DEFAULT_HEIGHT,
+        height,
         color: preset?.color ?? DEFAULT_COLOR,
         shape: preset?.shape ?? "rounded",
         icon: preset?.icon ?? null,
-        kind: null,
+        kind: preset?.kind ?? null,
         parent_id: null,
         collapsed: false,
       };
@@ -523,6 +557,7 @@ function SketchCanvasInner({
         fitViewOptions={{ padding: 0.2 }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+        <LayerBackground />
         <MiniMap zoomable pannable />
         <Controls />
       </ReactFlow>

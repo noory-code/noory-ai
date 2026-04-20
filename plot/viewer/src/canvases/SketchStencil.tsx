@@ -16,6 +16,7 @@ export const STENCIL_PRESETS: (NodePreset & { id: string; labelHint: string })[]
     height: 120,
     icon: "user",
     label: "Role",
+    kind: "actor",
   },
   {
     id: "service",
@@ -26,6 +27,7 @@ export const STENCIL_PRESETS: (NodePreset & { id: string; labelHint: string })[]
     height: 80,
     icon: "box",
     label: "Service",
+    kind: "service",
   },
   {
     id: "narrative",
@@ -46,6 +48,7 @@ export const STENCIL_PRESETS: (NodePreset & { id: string; labelHint: string })[]
     height: 100,
     icon: "users",
     label: "Actor",
+    kind: "actor",
   },
   {
     id: "concept",
