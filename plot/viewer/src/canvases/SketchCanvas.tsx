@@ -116,9 +116,31 @@ function SketchCanvasInner({
     [onDocChange],
   );
 
-  const nodes = useMemo<Node<SketchNodeData>[]>(
-    () =>
-      doc.nodes.map((n) => ({
+  // Precompute a parent → children map so we can render containers distinct
+  // from leaves and sort parents before their children (React Flow requires
+  // parents to appear earlier in the array).
+  const childIdsByParent = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const n of doc.nodes) {
+      if (n.parent_id) {
+        const arr = map.get(n.parent_id) ?? [];
+        arr.push(n.id);
+        map.set(n.parent_id, arr);
+      }
+    }
+    return map;
+  }, [doc.nodes]);
+
+  const nodes = useMemo<Node<SketchNodeData>[]>(() => {
+    // Parents first, children after — React Flow requirement.
+    const ordered = [...doc.nodes].sort((a, b) => {
+      if (!a.parent_id && b.parent_id) return -1;
+      if (a.parent_id && !b.parent_id) return 1;
+      return 0;
+    });
+    return ordered.map((n) => {
+      const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
+      const base: Node<SketchNodeData> = {
         id: n.id,
         type: "sketch",
         position: { x: n.x, y: n.y },
@@ -135,9 +157,23 @@ function SketchCanvasInner({
           onOpenBody: () => setBodyModalNodeId(n.id),
           onResize: (w: number, h: number) => updateNode(n.id, { width: w, height: h }),
         },
-      })),
-    [doc.nodes, updateNode],
-  );
+      };
+      if (n.parent_id) {
+        // Nested node — position is relative to parent. extent='parent'
+        // clamps drag to stay inside the parent's box.
+        base.parentNode = n.parent_id;
+        base.extent = "parent";
+      }
+      if (hasChildren) {
+        // Parent containers shouldn't be draggable by their visual body
+        // (React Flow drags the whole subtree when you grab a group).
+        // Leave draggable true so user can still reposition the container
+        // via its label; visual tweaks land in commit 4.
+        base.style = { ...base.style, zIndex: -1 };
+      }
+      return base;
+    });
+  }, [doc.nodes, childIdsByParent, updateNode]);
 
   const edges = useMemo<Edge[]>(
     () =>
