@@ -53,10 +53,16 @@ export function SketchInspector({
     );
   }
 
-  const showsIdentity =
-    node.kind === "core" || (node.is_root && (node.kind === "actor" || node.kind === "service"));
+  // v0.2 multi-canvas (2026-04-21): Mission / Core Value / Identity are
+  // now their own node kinds on the Core canvas, so the per-root text
+  // fields were removed. ``showsIdentity`` kept only for historical
+  // reference; the block that used it is gone.
   const canToggleRoot =
     !node.parent_id && (node.kind === "actor" || node.kind === "service");
+  const refActorLabel =
+    node.kind === "actor_ref" && node.ref_actor_id
+      ? allNodes.find((n) => n.id === node.ref_actor_id)?.label ?? node.ref_actor_id
+      : null;
 
   return (
     <aside className="pointer-events-auto absolute right-0 top-0 z-10 flex h-full w-80 flex-col border-l border-slate-200 bg-white/95 shadow-sm backdrop-blur">
@@ -124,42 +130,19 @@ export function SketchInspector({
           </label>
         )}
 
-        {/* Mission / Core Values / Identity — only on roots */}
-        {showsIdentity && (
-          <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
-              Identity
+        {/* Actor reference — read-only link back to the Actor canvas node. */}
+        {node.kind === "actor_ref" && (
+          <div className="mb-4 rounded border border-pink-200 bg-pink-50/40 p-2 text-[11px]">
+            <div className="mb-1 font-semibold uppercase tracking-wide text-pink-700">
+              References
             </div>
-            <label className="mb-2 block">
-              <span className="text-[11px] font-semibold text-slate-600">Mission</span>
-              <textarea
-                value={node.mission}
-                onChange={(e) => onPatchNode({ mission: e.target.value })}
-                rows={2}
-                className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"
-                placeholder="Why this exists"
-              />
-            </label>
-            <label className="mb-2 block">
-              <span className="text-[11px] font-semibold text-slate-600">Core Values</span>
-              <textarea
-                value={node.core_values}
-                onChange={(e) => onPatchNode({ core_values: e.target.value })}
-                rows={3}
-                className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"
-                placeholder="One per line"
-              />
-            </label>
-            <label className="block">
-              <span className="text-[11px] font-semibold text-slate-600">Identity</span>
-              <textarea
-                value={node.identity}
-                onChange={(e) => onPatchNode({ identity: e.target.value })}
-                rows={2}
-                className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"
-                placeholder="Who / what this is"
-              />
-            </label>
+            <div className="text-slate-700">
+              <span className="text-slate-500">Actor:</span>{" "}
+              <span className="font-medium">{refActorLabel ?? "(unresolved)"}</span>
+            </div>
+            <div className="mt-0.5 font-mono text-[10px] text-slate-400">
+              {node.ref_actor_id ?? "—"}
+            </div>
           </div>
         )}
 
