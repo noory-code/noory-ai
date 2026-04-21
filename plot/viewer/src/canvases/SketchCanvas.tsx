@@ -503,16 +503,6 @@ function SketchCanvasInner({
     [addNodeAt],
   );
 
-  const handleToolbarAdd = useCallback(() => {
-    if (!flowRef.current) return;
-    const { innerWidth, innerHeight } = window;
-    const centre = flowRef.current.screenToFlowPosition({
-      x: innerWidth / 2,
-      y: innerHeight / 2,
-    });
-    addNodeAt(centre.x - DEFAULT_WIDTH / 2, centre.y - DEFAULT_HEIGHT / 2);
-  }, [addNodeAt]);
-
   const handleAutoLayout = useCallback(() => {
     onDocChange(autoLayout(docRef.current));
   }, [onDocChange]);
@@ -864,7 +854,6 @@ function SketchCanvasInner({
         saveState={saveState}
         canUndo={canUndo}
         canRedo={canRedo}
-        onAddNode={handleToolbarAdd}
         onUndo={onUndo}
         onRedo={onRedo}
         onAutoLayout={handleAutoLayout}

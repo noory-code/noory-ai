@@ -4,7 +4,6 @@ export interface SketchToolbarProps {
   saveState: SaveState;
   canUndo: boolean;
   canRedo: boolean;
-  onAddNode: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onAutoLayout: () => void;
@@ -19,7 +18,6 @@ export function SketchToolbar({
   saveState,
   canUndo,
   canRedo,
-  onAddNode,
   onUndo,
   onRedo,
   onAutoLayout,
@@ -28,15 +26,6 @@ export function SketchToolbar({
 }: SketchToolbarProps) {
   return (
     <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2 py-1 text-xs shadow-sm backdrop-blur">
-      <button
-        type="button"
-        onClick={onAddNode}
-        className="rounded bg-slate-900 px-2 py-1 font-medium text-white hover:bg-slate-700"
-        title="Add node (double-click canvas also works)"
-      >
-        + Node
-      </button>
-      <Divider />
       <IconBtn label="Undo" enabled={canUndo} onClick={onUndo} hint="Cmd+Z">
         ↶
       </IconBtn>
