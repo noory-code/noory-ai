@@ -8,17 +8,31 @@ export type Shape =
   | "octagon";
 
 /**
- * v0.2 node kinds. See PHILOSOPHY.md (P5, P11).
- *   core    — the single project-identity root (holds mission + core values
- *             + identity for the whole sketch).
- *   actor   — participant; may carry ``is_root=true`` to mark actor-tree centre.
- *   service — value hub; may carry ``is_root=true`` to mark service-tree centre.
- *   rule    — composition element inside a service (data-only, shown in Inspector).
- *   content — composition element inside a service (data-only, shown in Inspector).
+ * v0.2 node kinds. See PHILOSOPHY.md (P5, P11) and plot_mcp/models.py.
+ *   core            — Core-canvas root (project identity anchor).
+ *   mission         — Core-canvas child; exactly one per Core canvas.
+ *   core_value      — Core-canvas child; 0..N.
+ *   identity        — Core-canvas child; exactly one per Core canvas.
+ *   identity_facet  — descendant of identity (tone / voice / visual / …).
+ *   actor           — participant in the value economy (Actor canvas).
+ *   actor_ref       — reference to an actor (Service canvases);
+ *                     carries ``ref_actor_id`` pointing at the Actor canvas.
+ *   service         — value hub (Overview / Detail / sub-service).
+ *   rule / content  — composition element inside a service (Detail only).
  * Sub-service / sub-actor are not separate kinds — they're service/actor
  * with a non-null parent_id (hierarchical decomposition).
  */
-export type NodeKind = "core" | "actor" | "service" | "rule" | "content";
+export type NodeKind =
+  | "core"
+  | "mission"
+  | "core_value"
+  | "identity"
+  | "identity_facet"
+  | "actor"
+  | "actor_ref"
+  | "service"
+  | "rule"
+  | "content";
 
 /**
  * Plural forms of value that can flow along an edge. See PHILOSOPHY.md (P2).
@@ -56,6 +70,8 @@ export interface SketchNode {
   mission: string;
   core_values: string;
   identity: string;
+  /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
+  ref_actor_id: string | null;
 }
 
 export interface SketchEdge {

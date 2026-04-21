@@ -13,30 +13,83 @@ export interface StencilPreset extends NodePreset {
  * Top-level presets — land directly on the canvas, auto-snap to the
  * correct layer (upper = services, lower = actors).
  */
-const TOP_LEVEL: StencilPreset[] = [
-  {
-    id: "actor",
-    labelHint: "Actor",
-    shape: "circle",
-    color: "#fecaca",
-    width: 130,
-    height: 130,
-    icon: "user",
-    label: "Actor",
-    kind: "actor",
-  },
-  {
-    id: "service",
-    labelHint: "Service",
-    shape: "rounded",
-    color: "#bae6fd",
-    width: 300,
-    height: 200,
-    icon: "zap",
-    label: "Service",
-    kind: "service",
-  },
-];
+const TOP_LEVEL_ACTOR: StencilPreset = {
+  id: "actor",
+  labelHint: "Actor",
+  shape: "circle",
+  color: "#fecaca",
+  width: 130,
+  height: 130,
+  icon: "user",
+  label: "Actor",
+  kind: "actor",
+};
+
+const TOP_LEVEL_SERVICE: StencilPreset = {
+  id: "service",
+  labelHint: "Service",
+  shape: "rounded",
+  color: "#bae6fd",
+  width: 300,
+  height: 200,
+  icon: "zap",
+  label: "Service",
+  kind: "service",
+};
+
+// Core-canvas presets (v0.2 multi-canvas, 2026-04-21). Mission / Identity
+// drop onto the Core octagon; Identity Facet drops onto the Identity node.
+const CORE_MISSION: StencilPreset = {
+  id: "mission",
+  labelHint: "Mission",
+  shape: "rounded",
+  color: "#fef3c7",
+  width: 200,
+  height: 90,
+  icon: "star",
+  label: "Mission",
+  kind: "mission",
+  dropHint: "Drop on the Core node",
+};
+
+const CORE_VALUE: StencilPreset = {
+  id: "core-value",
+  labelHint: "Core Value",
+  shape: "rounded",
+  color: "#fde68a",
+  width: 160,
+  height: 70,
+  icon: "star",
+  label: "Core Value",
+  kind: "core_value",
+  dropHint: "Drop on the Core node",
+};
+
+const CORE_IDENTITY: StencilPreset = {
+  id: "identity",
+  labelHint: "Identity",
+  shape: "rounded",
+  color: "#fed7aa",
+  width: 200,
+  height: 90,
+  icon: "star",
+  label: "Identity",
+  kind: "identity",
+  dropHint: "Drop on the Core node",
+};
+
+const CORE_IDENTITY_FACET: StencilPreset = {
+  id: "identity-facet",
+  labelHint: "Identity Facet",
+  shape: "rounded",
+  color: "#fdba74",
+  width: 140,
+  height: 60,
+  icon: "star",
+  label: "Tone",
+  kind: "identity_facet",
+  dropHint: "Drop on the Identity node",
+};
 
 /**
  * Service internals visible on the canvas = decomposition only.
@@ -81,9 +134,14 @@ const ACTOR_INTERNAL: StencilPreset[] = [
 ];
 
 export const STENCIL_PRESETS: StencilPreset[] = [
-  ...TOP_LEVEL,
+  TOP_LEVEL_ACTOR,
+  TOP_LEVEL_SERVICE,
   ...SERVICE_INTERNAL,
   ...ACTOR_INTERNAL,
+  CORE_MISSION,
+  CORE_VALUE,
+  CORE_IDENTITY,
+  CORE_IDENTITY_FACET,
 ];
 
 /**
@@ -103,6 +161,11 @@ export function resolveDropTarget(
   const isComposition = preset.kind === "rule" || preset.kind === "content";
   const isSubService = preset.id === "sub-service";
   const isSubActor = preset.id === "sub-actor";
+  const isCoreChild =
+    preset.kind === "mission" ||
+    preset.kind === "core_value" ||
+    preset.kind === "identity";
+  const isIdentityFacet = preset.kind === "identity_facet";
 
   if (isComposition || isSubService) {
     if (!containerAtDrop || containerAtDrop.kind !== "service") {
@@ -113,6 +176,18 @@ export function resolveDropTarget(
   if (isSubActor) {
     if (!containerAtDrop || containerAtDrop.kind !== "actor") {
       return { error: preset.dropHint ?? "Drop inside an Actor container" };
+    }
+    return { parentId: containerAtDrop.id };
+  }
+  if (isCoreChild) {
+    if (!containerAtDrop || containerAtDrop.kind !== "core") {
+      return { error: preset.dropHint ?? "Drop on the Core node" };
+    }
+    return { parentId: containerAtDrop.id };
+  }
+  if (isIdentityFacet) {
+    if (!containerAtDrop || containerAtDrop.kind !== "identity") {
+      return { error: preset.dropHint ?? "Drop on the Identity node" };
     }
     return { parentId: containerAtDrop.id };
   }
@@ -166,19 +241,51 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
   );
 }
 
-export function SketchStencil() {
+/** v0.2 multi-canvas: the tab that owns the presets shown in the stencil. */
+export type StencilCanvas = "core" | "actors" | "services";
+
+export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
+  if (canvas === "core") {
+    return (
+      <div className="border-t border-slate-200 px-3 py-3">
+        <Section
+          title="Identity anchors"
+          presets={[CORE_MISSION, CORE_IDENTITY]}
+          note="drop on the Core"
+        />
+        <Section
+          title="Core values"
+          presets={[CORE_VALUE]}
+          note="drop on the Core"
+        />
+        <Section
+          title="Identity facets"
+          presets={[CORE_IDENTITY_FACET]}
+          note="drop on the Identity"
+        />
+      </div>
+    );
+  }
+  if (canvas === "actors") {
+    return (
+      <div className="border-t border-slate-200 px-3 py-3">
+        <Section title="Top-level" presets={[TOP_LEVEL_ACTOR]} />
+        <Section
+          title="Actor hierarchy"
+          presets={ACTOR_INTERNAL}
+          note="drop on an Actor"
+        />
+      </div>
+    );
+  }
+  // services
   return (
     <div className="border-t border-slate-200 px-3 py-3">
-      <Section title="Top-level" presets={TOP_LEVEL} />
+      <Section title="Top-level" presets={[TOP_LEVEL_SERVICE]} />
       <Section
         title="Service hierarchy"
         presets={SERVICE_INTERNAL}
         note="drop on a Service"
-      />
-      <Section
-        title="Actor hierarchy"
-        presets={ACTOR_INTERNAL}
-        note="drop on an Actor"
       />
     </div>
   );

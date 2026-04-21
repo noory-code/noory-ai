@@ -1,10 +1,11 @@
 import { useState } from "react";
 import type { SketchSummary } from "../types";
-import { SketchStencil } from "./SketchStencil";
+import { SketchStencil, type StencilCanvas } from "./SketchStencil";
 
 export interface SketchSidebarProps {
   sketches: SketchSummary[];
   activeId: string | null;
+  stencilCanvas: StencilCanvas;
   onPick: (id: string) => void;
   onCreate: () => Promise<void> | void;
   onRename: (id: string, name: string) => Promise<void> | void;
@@ -14,6 +15,7 @@ export interface SketchSidebarProps {
 export function SketchSidebar({
   sketches,
   activeId,
+  stencilCanvas,
   onPick,
   onCreate,
   onRename,
@@ -141,7 +143,7 @@ export function SketchSidebar({
         })}
       </ul>
       <div className="flex-1 overflow-y-auto">
-        <SketchStencil />
+        <SketchStencil canvas={stencilCanvas} />
       </div>
     </aside>
   );

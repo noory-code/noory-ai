@@ -338,6 +338,7 @@ export function App() {
         <SketchSidebar
           sketches={summaries}
           activeId={activeId}
+          stencilCanvas={activeTab}
           onPick={(id) => {
             setActiveId(id);
             void loadDoc(id);

@@ -344,6 +344,7 @@ function SketchCanvasInner({
         mission: "",
         core_values: "",
         identity: "",
+        ref_actor_id: null,
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -378,6 +379,7 @@ function SketchCanvasInner({
         mission: "",
         core_values: "",
         identity: "",
+        ref_actor_id: null,
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -848,6 +850,7 @@ function SketchCanvasInner({
             mission: "",
             core_values: "",
             identity: "",
+            ref_actor_id: null,
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}
