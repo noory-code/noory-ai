@@ -1,8 +1,8 @@
-"""FastMCP tool surface for Plot.
+"""FastMCP tool surface for Plot (v0.4).
 
-Five tools map 1:1 to the HTTP sketch endpoints. Claude Code uses these to
-read the current map, propose additions, and mutate sketches on the user's
-behalf — the "AI collaborates on the same canvas" loop.
+Claude Code uses these tools to read and mutate a Plot project. The
+surface mirrors the HTTP API one-to-one so a session can move between
+both interchangeably.
 """
 
 from __future__ import annotations
@@ -22,95 +22,38 @@ from plot_mcp.folder_io import (
     write_canvas,
     write_project,
 )
-from plot_mcp.migrate import migrate_v01_to_v02
-from plot_mcp.models import CanvasDoc, CanvasKind, SketchDoc
-from plot_mcp.sketches import (
-    create_sketch,
-    delete_sketch,
-    list_sketches,
-    read_sketch,
-    write_sketch,
+from plot_mcp.git_store import (
+    TagAlreadyExistsError,
+    delete_tag,
+    list_tags,
+    tag_snapshot,
 )
+from plot_mcp.migrate import migrate_v01_to_v02
+from plot_mcp.models import CanvasDoc, CanvasKind
 from plot_mcp.workspace import resolve_plot_root, resolved_port
 
 mcp = FastMCP(
     "plot",
     instructions=(
-        "Plot exposes a project's sketch canvas as a typed list of nodes and "
-        "edges. Use `list_sketches(project_path)` to enumerate, `get_sketch` to "
-        "read one, and `update_sketch` to write back the full document after "
-        "any edit. Sketches are schema-free — labels and edge semantics are up "
-        "to the author; treat node.label and edge.label as the primary signal "
-        "when reasoning about the map."
+        "Plot stores projects as folders of per-canvas JSON files under "
+        "``.plot/sketches/{project}/``. Use ``list_projects`` / ``get_project`` "
+        "to discover state, ``get_canvas`` / ``update_canvas`` to read or write "
+        "a single canvas (``core`` / ``actors`` / ``services_overview`` / "
+        "``service_detail``), and ``tag_project`` to plant a named milestone "
+        "in the project's git repo. Edits are never auto-committed — only the "
+        "tag tools touch git."
     ),
 )
 
 
-@mcp.tool()
-def list_sketches_tool(project_path: str) -> list[dict[str, Any]]:
-    """List all sketches in ``{project_path}/.plot/sketches/``."""
-    plot_root = resolve_plot_root(project_path)
-    return [s.model_dump() for s in list_sketches(plot_root)]
-
-
-@mcp.tool()
-def get_sketch(project_path: str, sketch_id: str) -> dict[str, Any]:
-    """Read a single sketch document."""
-    plot_root = resolve_plot_root(project_path)
-    doc = read_sketch(plot_root, sketch_id)
-    return doc.model_dump(by_alias=True)
-
-
-@mcp.tool()
-def create_sketch_tool(project_path: str, sketch_id: str, name: str = "") -> dict[str, Any]:
-    """Create an empty sketch. ``sketch_id`` must be unique and kebab-case."""
-    plot_root = resolve_plot_root(project_path)
-    doc = create_sketch(plot_root, sketch_id, name)
-    return doc.model_dump(by_alias=True)
-
-
-@mcp.tool()
-def update_sketch(project_path: str, sketch_id: str, doc: dict[str, Any]) -> dict[str, Any]:
-    """Overwrite ``sketch_id`` with the given document. Returns the written document."""
-    plot_root = resolve_plot_root(project_path)
-    payload = dict(doc)
-    payload["id"] = sketch_id
-    validated = SketchDoc.model_validate(payload)
-    write_sketch(plot_root, validated)
-    return validated.model_dump(by_alias=True)
-
-
-@mcp.tool()
-def delete_sketch_tool(project_path: str, sketch_id: str) -> str:
-    """Delete a sketch file."""
-    plot_root = resolve_plot_root(project_path)
-    delete_sketch(plot_root, sketch_id)
-    return f"deleted {sketch_id}"
-
-
-@mcp.tool()
-def open_canvas(project_path: str, sketch_id: str | None = None) -> str:
-    """Open the Plot viewer in the default browser."""
-    resolve_plot_root(project_path)  # raises if path is unusable
-    port = resolved_port()
-    url = f"http://127.0.0.1:{port}/?project_path={project_path}"
-    if sketch_id:
-        url += f"&sketch={sketch_id}"
-    webbrowser.open(url)
-    return f"Opened {url}"
-
-
 # ---------------------------------------------------------------------------
-# v0.2 multi-canvas tools (project folder layout)
+# project CRUD
 # ---------------------------------------------------------------------------
-#
-# These operate on the per-canvas files under ``.plot/sketches/{project}/``.
-# Claude Code reads/writes one canvas at a time instead of the whole sketch.
 
 
 @mcp.tool()
 def list_projects(project_path: str) -> list[dict[str, Any]]:
-    """List every v0.2 project folder under ``.plot/sketches/``."""
+    """List every v0.4 project folder under ``.plot/sketches/``."""
     plot_root = resolve_plot_root(project_path)
     folder = plot_root / "sketches"
     if not folder.is_dir():
@@ -130,27 +73,49 @@ def list_projects(project_path: str) -> list[dict[str, Any]]:
 
 @mcp.tool()
 def get_project(project_path: str, project_id: str) -> dict[str, Any]:
-    """Read a project's metadata + its detail canvas ids."""
+    """Read a project's metadata + its service-detail ids + tags."""
     plot_root = resolve_plot_root(project_path)
     proj = read_project(plot_root, project_id)
-    detail_ids = list_service_details(plot_root, project_id)
-    return {**proj.model_dump(), "service_details": detail_ids}
+    return {
+        **proj.model_dump(),
+        "service_details": list_service_details(plot_root, project_id),
+        "tags": list_tags(plot_root / "sketches" / project_id),
+    }
 
 
 @mcp.tool()
-def create_project_tool(project_path: str, project_id: str, name: str = "") -> dict[str, Any]:
-    """Create a new v0.2 project folder seeded with Core / Actors / Services-Overview."""
+def create_project_tool(
+    project_path: str, project_id: str, name: str = ""
+) -> dict[str, Any]:
+    """Create a new project folder seeded with Core / Actors / Services-Overview."""
     plot_root = resolve_plot_root(project_path)
     proj = create_project(plot_root, project_id, name)
     return proj.model_dump()
 
 
 @mcp.tool()
+def rename_project(
+    project_path: str, project_id: str, name: str
+) -> dict[str, Any]:
+    """Update a project's ``name`` without touching its canvases."""
+    plot_root = resolve_plot_root(project_path)
+    proj = read_project(plot_root, project_id)
+    renamed = proj.model_copy(update={"name": name})
+    write_project(plot_root, renamed)
+    return read_project(plot_root, project_id).model_dump()
+
+
+@mcp.tool()
 def delete_project_tool(project_path: str, project_id: str) -> str:
-    """Delete a project folder. Detail canvases and their archives go with it."""
+    """Delete a project folder (and its git repo)."""
     plot_root = resolve_plot_root(project_path)
     delete_project(plot_root, project_id)
     return f"deleted {project_id}"
+
+
+# ---------------------------------------------------------------------------
+# canvas read / write
+# ---------------------------------------------------------------------------
 
 
 @mcp.tool()
@@ -160,19 +125,21 @@ def get_canvas(
     canvas_kind: CanvasKind,
     service_id: str | None = None,
 ) -> dict[str, Any]:
-    """Read a single canvas — ``canvas_kind`` is one of ``core`` / ``actors`` /
-    ``services_overview`` / ``service_detail``. ``service_id`` is required
-    for ``service_detail``."""
+    """Read a single canvas. ``canvas_kind`` ∈ ``core`` / ``actors`` /
+    ``services_overview`` / ``service_detail``. ``service_id`` is
+    required when ``canvas_kind == "service_detail"``."""
     plot_root = resolve_plot_root(project_path)
     canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
     return canvas.model_dump(by_alias=True)
 
 
 @mcp.tool()
-def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) -> dict[str, Any]:
-    """Overwrite a canvas. Writing the Overview auto-creates / archives
-    Detail canvases to match; the response reports what changed so the
-    caller can reconcile its UI."""
+def update_canvas(
+    project_path: str, project_id: str, canvas: dict[str, Any]
+) -> dict[str, Any]:
+    """Overwrite a canvas. Writing ``services_overview`` auto-creates /
+    archives Detail canvases so Overview and Detail stay 1:1. The
+    response reports the reconciliation."""
     plot_root = resolve_plot_root(project_path)
     validated = CanvasDoc.model_validate(canvas)
     write_canvas(plot_root, project_id, validated)
@@ -183,28 +150,78 @@ def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) ->
 
 
 @mcp.tool()
-def rename_project(project_path: str, project_id: str, name: str) -> dict[str, Any]:
-    """Update a project's ``name`` without touching its canvases."""
-    plot_root = resolve_plot_root(project_path)
-    proj = read_project(plot_root, project_id)
-    renamed = proj.model_copy(update={"name": name})
-    write_project(plot_root, renamed)
-    return read_project(plot_root, project_id).model_dump()
-
-
-@mcp.tool()
 def list_detail_canvases(project_path: str, project_id: str) -> list[str]:
     """Return the service ids that have their own Detail canvas."""
     plot_root = resolve_plot_root(project_path)
     return list_service_details(plot_root, project_id)
 
 
+# ---------------------------------------------------------------------------
+# git session tags
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def tag_project(
+    project_path: str,
+    project_id: str,
+    name: str,
+    message: str | None = None,
+) -> dict[str, Any]:
+    """Plant a named git tag at the current state of the project. Use this
+    at the start or end of a work session ("session-banas-start",
+    "before-refactor") — day-to-day edits don't commit, only tags do."""
+    plot_root = resolve_plot_root(project_path)
+    try:
+        return tag_snapshot(
+            plot_root / "sketches" / project_id, name, message=message
+        )
+    except TagAlreadyExistsError as exc:
+        raise ValueError(str(exc)) from exc
+
+
+@mcp.tool()
+def list_project_tags(project_path: str, project_id: str) -> list[dict[str, Any]]:
+    """Return tags for a project, newest first."""
+    plot_root = resolve_plot_root(project_path)
+    return list_tags(plot_root / "sketches" / project_id)
+
+
+@mcp.tool()
+def delete_project_tag(project_path: str, project_id: str, name: str) -> str:
+    """Drop a tag from a project. The commit it pointed at stays reachable."""
+    plot_root = resolve_plot_root(project_path)
+    try:
+        delete_tag(plot_root / "sketches" / project_id, name)
+    except KeyError as exc:
+        raise ValueError(f"tag not found: {exc.args[0]}") from exc
+    return f"deleted tag {name}"
+
+
+# ---------------------------------------------------------------------------
+# migration + utility
+# ---------------------------------------------------------------------------
+
+
 @mcp.tool()
 def migrate_v01_sketches(project_path: str) -> list[str]:
-    """Migrate any ``sketches/*.json`` (v0.1) files to the v0.2 folder layout.
+    """Migrate any ``sketches/*.json`` (v0.1) files to the v0.4 folder layout.
 
     Idempotent. Returns the list of project ids that were migrated.
-    The originals are renamed to ``{id}.json.v01.bak``.
+    Originals rename to ``{id}.json.v01.bak``. This also runs automatically
+    whenever ``GET /api/projects`` is called from the viewer.
     """
     plot_root = resolve_plot_root(project_path)
     return migrate_v01_to_v02(plot_root)
+
+
+@mcp.tool()
+def open_canvas(project_path: str, project_id: str | None = None) -> str:
+    """Open the Plot viewer in the default browser."""
+    resolve_plot_root(project_path)  # raises if path is unusable
+    port = resolved_port()
+    url = f"http://127.0.0.1:{port}/?project_path={project_path}"
+    if project_id:
+        url += f"&project={project_id}"
+    webbrowser.open(url)
+    return f"Opened {url}"
