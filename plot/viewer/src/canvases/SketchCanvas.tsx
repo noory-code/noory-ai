@@ -796,10 +796,20 @@ function SketchCanvasInner({
       const h = preset.height ?? DEFAULT_HEIGHT;
 
       const container = containerAtFlowPoint(pos.x, pos.y);
-      const resolved = resolveDropTarget(
+      let resolved = resolveDropTarget(
         preset as StencilPreset,
         container ? { id: container.id, kind: container.kind } : null,
       );
+      // UX fallback: identity_facet must live under an Identity node
+      // (Core-canvas validator enforces this). Requiring pixel-perfect
+      // drop on that specific node is too strict, so auto-adopt the
+      // canvas's single Identity node when the cursor landed elsewhere.
+      if ("error" in resolved && preset.kind === "identity_facet") {
+        const identityNode = doc.nodes.find((n) => n.kind === "identity");
+        if (identityNode) {
+          resolved = { parentId: identityNode.id };
+        }
+      }
       if ("error" in resolved) {
         window.alert(resolved.error);
         return;
