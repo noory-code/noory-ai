@@ -49,7 +49,6 @@ const CORE_MISSION: StencilPreset = {
   icon: "star",
   label: "Mission",
   kind: "mission",
-  dropHint: "Drop on the Core node",
 };
 
 const CORE_VALUE: StencilPreset = {
@@ -62,7 +61,6 @@ const CORE_VALUE: StencilPreset = {
   icon: "star",
   label: "Core Value",
   kind: "core_value",
-  dropHint: "Drop on the Core node",
 };
 
 const CORE_IDENTITY: StencilPreset = {
@@ -75,7 +73,6 @@ const CORE_IDENTITY: StencilPreset = {
   icon: "star",
   label: "Identity",
   kind: "identity",
-  dropHint: "Drop on the Core node",
 };
 
 const CORE_IDENTITY_FACET: StencilPreset = {
@@ -177,10 +174,6 @@ export function resolveDropTarget(
   const isComposition = preset.kind === "rule" || preset.kind === "content";
   const isSubService = preset.id === "sub-service";
   const isSubActor = preset.id === "sub-actor";
-  const isCoreChild =
-    preset.kind === "mission" ||
-    preset.kind === "core_value" ||
-    preset.kind === "identity";
   const isIdentityFacet = preset.kind === "identity_facet";
 
   if (isComposition || isSubService) {
@@ -192,12 +185,6 @@ export function resolveDropTarget(
   if (isSubActor) {
     if (!containerAtDrop || containerAtDrop.kind !== "actor") {
       return { error: preset.dropHint ?? "Drop inside an Actor container" };
-    }
-    return { parentId: containerAtDrop.id };
-  }
-  if (isCoreChild) {
-    if (!containerAtDrop || containerAtDrop.kind !== "core") {
-      return { error: preset.dropHint ?? "Drop on the Core node" };
     }
     return { parentId: containerAtDrop.id };
   }
@@ -265,19 +252,19 @@ export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
     return (
       <div className="border-t border-slate-200 px-3 py-3">
         <Section
-          title="Identity anchors"
-          presets={[CORE_MISSION, CORE_IDENTITY]}
-          note="drop on the Core"
+          title="Mission"
+          presets={[CORE_MISSION]}
+          note="one per project"
         />
         <Section
           title="Core values"
           presets={[CORE_VALUE]}
-          note="drop on the Core"
+          note="add as many as you need"
         />
         <Section
-          title="Identity facets"
-          presets={[CORE_IDENTITY_FACET]}
-          note="drop on the Identity"
+          title="Identity"
+          presets={[CORE_IDENTITY, CORE_IDENTITY_FACET]}
+          note="facet: drop on Identity"
         />
       </div>
     );
