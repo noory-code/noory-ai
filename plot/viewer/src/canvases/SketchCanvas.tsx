@@ -78,6 +78,13 @@ export interface SketchCanvasProps {
    * be showing a tab-filtered view that excludes the actors.
    */
   availableActors?: DocNode[];
+  /**
+   * v0.2 multi-canvas: when set, the canvas selects this node on mount
+   * (used for jumping from an actor_ref to its target in the Actors canvas).
+   * Fires ``onSelectionConsumed`` once applied so the URL param can be cleared.
+   */
+  selectNodeId?: string | null;
+  onSelectionConsumed?: () => void;
 }
 
 export function SketchCanvas(props: SketchCanvasProps) {
@@ -106,6 +113,8 @@ function SketchCanvasInner({
   onUpload,
   onNodeDrill,
   availableActors,
+  selectNodeId,
+  onSelectionConsumed,
 }: SketchCanvasProps) {
   const docRef = useRef<SketchDoc>(doc);
   docRef.current = doc;
@@ -116,12 +125,49 @@ function SketchCanvasInner({
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
   const [edgeModalId, setEdgeModalId] = useState<string | null>(null);
   const [valueFlowOn, setValueFlowOn] = useState(false);
-  const [pendingActorRef, setPendingActorRef] = useState<null | {
-    preset: NodePreset;
-    pos: { x: number; y: number };
-    resolved: { parentId: string | null };
-  }>(null);
+  // Create mode runs while the user is dropping a fresh Actor ref from the
+  // stencil; rewire mode runs when the Inspector asks to repoint an
+  // existing orphan actor_ref at a different actor.
+  type PendingActorRef =
+    | {
+        mode: "create";
+        preset: NodePreset;
+        pos: { x: number; y: number };
+        resolved: { parentId: string | null };
+      }
+    | { mode: "rewire"; nodeId: string };
+  const [pendingActorRef, setPendingActorRef] = useState<PendingActorRef | null>(null);
   const [inspectorNodeId, setInspectorNodeId] = useState<string | null>(null);
+
+  // v0.2 multi-canvas: honour ``selectNodeId`` arrival (e.g., jumping from
+  // an actor_ref on Services to its target on Actors). Runs once per
+  // distinct incoming id; afterwards the App clears its URL param.
+  const lastAppliedSelectRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectNodeId) return;
+    if (lastAppliedSelectRef.current === selectNodeId) return;
+    if (!doc.nodes.some((n) => n.id === selectNodeId)) return;
+    setInspectorNodeId(selectNodeId);
+    lastAppliedSelectRef.current = selectNodeId;
+    // Centre the viewport on the node, best-effort.
+    const inst = flowRef.current;
+    if (inst) inst.fitView({ nodes: [{ id: selectNodeId }], padding: 0.5, duration: 300 });
+    onSelectionConsumed?.();
+  }, [selectNodeId, doc.nodes, onSelectionConsumed]);
+
+  // Orphan detection: actor_refs whose target isn't in the available-actor
+  // set (either never was, or was just deleted on the Actors canvas).
+  const orphanActorRefIds = useMemo(() => {
+    const validActorIds = new Set((availableActors ?? doc.nodes).filter((n) => n.kind === "actor").map((n) => n.id));
+    const orphans = new Set<string>();
+    for (const n of doc.nodes) {
+      if (n.kind !== "actor_ref") continue;
+      if (!n.ref_actor_id || !validActorIds.has(n.ref_actor_id)) {
+        orphans.add(n.id);
+      }
+    }
+    return orphans;
+  }, [doc.nodes, availableActors]);
 
   const updateNode = useCallback(
     (nodeId: string, patch: Partial<DocNode>) => {
@@ -210,15 +256,21 @@ function SketchCanvasInner({
       // the right-hand Inspector panel, never rendered on the canvas.
       if (n.kind === "rule" || n.kind === "content") continue;
       const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
+      // Orphan actor_ref visual override: red-tinted fill, "⚠ " prefix so the
+      // break is obvious even at thumbnail scale. Rendering stays in the
+      // normal SketchNode component — no branch in the renderer.
+      const isOrphan = orphanActorRefIds.has(n.id);
+      const visualColor = isOrphan ? "#fee2e2" : n.color;
+      const visualLabel = isOrphan ? `⚠ ${n.label}` : n.label;
       const base: Node<SketchNodeData> = {
         id: n.id,
         type: "sketch",
         position: { x: n.x, y: n.y },
         style: { width: n.width, height: n.height },
         data: {
-          label: n.label,
+          label: visualLabel,
           body: n.body,
-          color: n.color,
+          color: visualColor,
           width: n.width,
           height: n.height,
           shape: n.shape,
@@ -242,7 +294,15 @@ function SketchCanvasInner({
       out.push(base);
     }
     return out;
-  }, [doc.nodes, childIdsByParent, nearestCollapsedAncestor, subtreeSize, toggleCollapsed, updateNode]);
+  }, [
+    doc.nodes,
+    childIdsByParent,
+    nearestCollapsedAncestor,
+    subtreeSize,
+    toggleCollapsed,
+    updateNode,
+    orphanActorRefIds,
+  ]);
 
   const edges = useMemo<Edge[]>(() => {
     const out: Edge[] = [];
@@ -715,7 +775,7 @@ function SketchCanvasInner({
       // actor_ref: defer creation until the picker modal resolves which
       // actor this reference points at.
       if (preset.kind === "actor_ref") {
-        setPendingActorRef({ preset, pos, resolved });
+        setPendingActorRef({ mode: "create", preset, pos, resolved });
         return;
       }
       if (resolved.parentId) {
@@ -847,8 +907,17 @@ function SketchCanvasInner({
       {pendingActorRef && (
         <ActorRefPicker
           nodes={availableActors ?? doc.nodes}
+          mode={pendingActorRef.mode}
           onCancel={() => setPendingActorRef(null)}
           onPick={(actor) => {
+            if (pendingActorRef.mode === "rewire") {
+              updateNode(pendingActorRef.nodeId, {
+                ref_actor_id: actor.id,
+                label: `→ ${actor.label || actor.id}`,
+              });
+              setPendingActorRef(null);
+              return;
+            }
             const { preset, pos, resolved } = pendingActorRef;
             const w = preset.width ?? DEFAULT_WIDTH;
             const h = preset.height ?? DEFAULT_HEIGHT;
@@ -889,6 +958,9 @@ function SketchCanvasInner({
             : null
         }
         allNodes={doc.nodes}
+        availableActors={availableActors ?? doc.nodes.filter((n) => n.kind === "actor")}
+        onRepickActorRef={(nodeId) => setPendingActorRef({ mode: "rewire", nodeId })}
+        onDeleteNode={(nodeId) => handleNodesDelete([{ id: nodeId } as Node])}
         onPatchNode={(patch) => {
           if (!inspectorNodeId) return;
           updateNode(inspectorNodeId, patch);

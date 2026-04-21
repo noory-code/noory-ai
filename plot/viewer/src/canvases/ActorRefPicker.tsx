@@ -7,16 +7,23 @@ export interface ActorRefPickerProps {
    * with their parent-chain label as context.
    */
   nodes: SketchNode[];
+  /**
+   * ``"create"`` (default) is the drag-drop flow: picking spawns a new
+   * ``actor_ref`` node. ``"rewire"`` is the orphan-fix flow from the
+   * Inspector: picking repoints an existing ref at the chosen actor.
+   */
+  mode?: "create" | "rewire";
   onPick: (actor: SketchNode) => void;
   onCancel: () => void;
 }
 
 /**
  * Modal opened when the user drops an ``actor_ref`` preset onto a Service
- * canvas. Lists every actor from the Actor canvas; clicking one closes the
- * modal and creates a reference node at the drop position.
+ * canvas, or re-picks an orphaned one from the Inspector. Lists every
+ * actor from the Actor canvas; clicking one closes the modal and hands
+ * back the pick.
  */
-export function ActorRefPicker({ nodes, onPick, onCancel }: ActorRefPickerProps) {
+export function ActorRefPicker({ nodes, mode = "create", onPick, onCancel }: ActorRefPickerProps) {
   const actors = nodes.filter((n) => n.kind === "actor");
   const byId = new Map(nodes.map((n) => [n.id, n] as const));
 
@@ -38,10 +45,13 @@ export function ActorRefPicker({ nodes, onPick, onCancel }: ActorRefPickerProps)
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Reference an actor</h2>
+          <h2 className="text-sm font-semibold text-slate-900">
+            {mode === "rewire" ? "Re-pick actor" : "Reference an actor"}
+          </h2>
           <p className="text-xs text-slate-500">
-            The service canvas will show a symbol pointing at the original in the
-            Actor canvas.
+            {mode === "rewire"
+              ? "Choose a replacement; the symbol on this canvas will update."
+              : "The service canvas will show a symbol pointing at the original in the Actor canvas."}
           </p>
         </div>
         {actors.length === 0 ? (

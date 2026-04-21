@@ -139,13 +139,18 @@ export function App() {
   const [detailServiceId, setDetailServiceId] = useState<string | null>(() => {
     return new URL(window.location.href).searchParams.get("detail");
   });
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(() => {
+    return new URL(window.location.href).searchParams.get("select");
+  });
 
   const selectTab = useCallback((tab: CanvasTab) => {
     setActiveTab(tab);
     setDetailServiceId(null);
+    setSelectedNodeId(null);
     const url = new URL(window.location.href);
     url.searchParams.set("canvas", tab);
     url.searchParams.delete("detail");
+    url.searchParams.delete("select");
     window.history.replaceState(null, "", url.toString());
   }, []);
 
@@ -161,6 +166,26 @@ export function App() {
     setDetailServiceId(null);
     const url = new URL(window.location.href);
     url.searchParams.delete("detail");
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+
+  const jumpToActor = useCallback((actorId: string) => {
+    setActiveTab("actors");
+    setDetailServiceId(null);
+    setSelectedNodeId(actorId);
+    const url = new URL(window.location.href);
+    url.searchParams.set("canvas", "actors");
+    url.searchParams.delete("detail");
+    url.searchParams.set("select", actorId);
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+
+  // Clear the URL ``?select=`` param after the canvas has consumed it once,
+  // so later clicks on other nodes aren't fighting the initial selection.
+  const consumeSelection = useCallback(() => {
+    setSelectedNodeId(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("select");
     window.history.replaceState(null, "", url.toString());
   }, []);
 
@@ -449,17 +474,25 @@ export function App() {
                 saveState={saveState}
                 onDownload={handleDownload}
                 onUpload={handleUpload}
-                onNodeDrill={
-                  activeTab === "services" && !detailServiceId
-                    ? (id) => {
-                        const n = doc.nodes.find((x) => x.id === id);
-                        if (n?.kind === "service" && !n.is_root) {
-                          drillIntoService(id);
-                        }
-                      }
-                    : undefined
-                }
+                onNodeDrill={(id) => {
+                  const n = doc.nodes.find((x) => x.id === id);
+                  if (!n) return;
+                  if (n.kind === "actor_ref" && n.ref_actor_id) {
+                    jumpToActor(n.ref_actor_id);
+                    return;
+                  }
+                  if (
+                    activeTab === "services" &&
+                    !detailServiceId &&
+                    n.kind === "service" &&
+                    !n.is_root
+                  ) {
+                    drillIntoService(id);
+                  }
+                }}
                 availableActors={doc.nodes.filter((n) => n.kind === "actor")}
+                selectNodeId={selectedNodeId}
+                onSelectionConsumed={consumeSelection}
               />
             )}
           </div>

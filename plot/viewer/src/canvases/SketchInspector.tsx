@@ -6,6 +6,12 @@ export interface SketchInspectorProps {
   node: SketchNode | null;
   /** All nodes so we can find composition children of a Service. */
   allNodes: SketchNode[];
+  /**
+   * v0.2 multi-canvas: actors across all canvases. Lets the Inspector
+   * detect orphan ``actor_ref`` nodes without false positives caused by
+   * the per-tab filtered view.
+   */
+  availableActors: SketchNode[];
   /** Patch the selected node's own fields. */
   onPatchNode: (patch: Partial<SketchNode>) => void;
   /** Create a new rule/content child under ``parentId``. */
@@ -14,6 +20,10 @@ export interface SketchInspectorProps {
   onPatchChild: (childId: string, patch: Partial<SketchNode>) => void;
   /** Remove a child. */
   onRemoveChild: (childId: string) => void;
+  /** Open the ActorRefPicker in rewire mode to repoint an actor_ref. */
+  onRepickActorRef: (nodeId: string) => void;
+  /** Remove a node entirely (used by the orphan actor_ref "Delete" action). */
+  onDeleteNode: (nodeId: string) => void;
   /** Close the panel. */
   onClose: () => void;
 }
@@ -27,10 +37,13 @@ export interface SketchInspectorProps {
 export function SketchInspector({
   node,
   allNodes,
+  availableActors,
   onPatchNode,
   onAddChild,
   onPatchChild,
   onRemoveChild,
+  onRepickActorRef,
+  onDeleteNode,
   onClose,
 }: SketchInspectorProps) {
   const rules = useMemo(
@@ -59,10 +72,12 @@ export function SketchInspector({
   // reference; the block that used it is gone.
   const canToggleRoot =
     !node.parent_id && (node.kind === "actor" || node.kind === "service");
-  const refActorLabel =
+  const refTarget =
     node.kind === "actor_ref" && node.ref_actor_id
-      ? allNodes.find((n) => n.id === node.ref_actor_id)?.label ?? node.ref_actor_id
+      ? availableActors.find((n) => n.id === node.ref_actor_id) ?? null
       : null;
+  const isOrphanActorRef =
+    node.kind === "actor_ref" && (!node.ref_actor_id || refTarget === null);
 
   return (
     <aside className="pointer-events-auto absolute right-0 top-0 z-10 flex h-full w-80 flex-col border-l border-slate-200 bg-white/95 shadow-sm backdrop-blur">
@@ -130,18 +145,44 @@ export function SketchInspector({
           </label>
         )}
 
-        {/* Actor reference — read-only link back to the Actor canvas node. */}
-        {node.kind === "actor_ref" && (
+        {/* Actor reference — link (or broken link) back to the Actor canvas node. */}
+        {node.kind === "actor_ref" && !isOrphanActorRef && refTarget && (
           <div className="mb-4 rounded border border-pink-200 bg-pink-50/40 p-2 text-[11px]">
             <div className="mb-1 font-semibold uppercase tracking-wide text-pink-700">
               References
             </div>
             <div className="text-slate-700">
               <span className="text-slate-500">Actor:</span>{" "}
-              <span className="font-medium">{refActorLabel ?? "(unresolved)"}</span>
+              <span className="font-medium">{refTarget.label || refTarget.id}</span>
             </div>
             <div className="mt-0.5 font-mono text-[10px] text-slate-400">
-              {node.ref_actor_id ?? "—"}
+              {node.ref_actor_id}
+            </div>
+          </div>
+        )}
+        {node.kind === "actor_ref" && isOrphanActorRef && (
+          <div className="mb-4 rounded border border-red-300 bg-red-50 p-2 text-[11px]">
+            <div className="mb-1 font-semibold uppercase tracking-wide text-red-700">
+              ⚠ Orphan — actor not found
+            </div>
+            <div className="mb-2 font-mono text-[10px] text-slate-500">
+              ref_actor_id: {node.ref_actor_id ?? "—"}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => onRepickActorRef(node.id)}
+                className="rounded border border-red-300 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
+              >
+                Re-pick…
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteNode(node.id)}
+                className="rounded px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100"
+              >
+                Delete
+              </button>
             </div>
           </div>
         )}
