@@ -84,6 +84,11 @@ export function SketchInspector({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
         <div className="flex items-center gap-2">
+          <span
+            className="inline-block h-3 w-3 shrink-0 rounded border border-slate-300"
+            style={{ backgroundColor: node.color || "#ffffff" }}
+            aria-hidden
+          />
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
             {node.kind === "core"
               ? "Core Root"
@@ -94,14 +99,32 @@ export function SketchInspector({
                   : node.kind ?? "Node"}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close inspector"
-          className="rounded px-2 text-slate-400 hover:bg-slate-100"
-        >
-          ✕
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Delete — available for any non-root, non-core node */}
+          {node.kind !== "core" && !node.is_root && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Delete "${node.label || node.id}"?`)) {
+                  onDeleteNode(node.id);
+                }
+              }}
+              aria-label="Delete node"
+              className="rounded px-2 text-[10px] text-rose-600 hover:bg-rose-50"
+              title="Delete node"
+            >
+              ✕ delete
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close inspector"
+            className="rounded px-2 text-slate-400 hover:bg-slate-100"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {/* Scrollable body */}

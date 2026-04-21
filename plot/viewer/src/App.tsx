@@ -396,6 +396,8 @@ export function App() {
     [syncUrl],
   );
 
+  const [helpOpen, setHelpOpen] = useState(false);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -404,18 +406,30 @@ export function App() {
         return;
       }
       const mod = e.metaKey || e.ctrlKey;
-      if (!mod) return;
-      if (e.key === "z" && !e.shiftKey) {
+      if (mod && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         handleUndo();
-      } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
+        return;
+      }
+      if (mod && ((e.key === "z" && e.shiftKey) || e.key === "y")) {
         e.preventDefault();
         handleRedo();
+        return;
+      }
+      // ``?`` without modifiers → toggle help.
+      if (!mod && !e.altKey && (e.key === "?" || (e.shiftKey && e.key === "/"))) {
+        e.preventDefault();
+        setHelpOpen((v) => !v);
+        return;
+      }
+      if (!mod && e.key === "Escape" && helpOpen) {
+        e.preventDefault();
+        setHelpOpen(false);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleUndo, handleRedo]);
+  }, [handleUndo, handleRedo, helpOpen]);
 
   // ------- project CRUD -------
 
@@ -593,6 +607,7 @@ export function App() {
         onDismissToast={() => setMigratedToast(null)}
         migratedToast={migratedToast}
       />
+      {helpOpen && <HelpCheatsheet onClose={() => setHelpOpen(false)} />}
       <div className="flex flex-1 overflow-hidden">
         <SketchSidebar
           projects={summaries}
@@ -894,6 +909,60 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         >
           New project
         </button>
+      </div>
+    </div>
+  );
+}
+
+function HelpCheatsheet({ onClose }: { onClose: () => void }) {
+  const items: [string, string][] = [
+    ["⌘/Ctrl + Z", "Undo (project-wide, auto-switches tab)"],
+    ["⌘/Ctrl + Shift + Z", "Redo"],
+    ["⌘/Ctrl + Y", "Redo (alt)"],
+    ["⌘/Ctrl + C", "Copy selection"],
+    ["⌘/Ctrl + V", "Paste"],
+    ["⌘/Ctrl + D", "Duplicate selection"],
+    ["⌘/Ctrl + A", "Select all"],
+    ["Delete / Backspace", "Delete selected nodes"],
+    ["Double-click service", "Drill into Service Detail (Overview)"],
+    ["Double-click actor_ref", "Jump to Actor canvas target"],
+    ["?", "Toggle this help"],
+    ["Esc", "Close help"],
+  ];
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard shortcuts"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-[28rem] max-w-[90vw] overflow-hidden rounded-lg bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900">
+            Keyboard shortcuts
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded px-2 text-slate-400 hover:bg-slate-100"
+          >
+            ✕
+          </button>
+        </div>
+        <dl className="divide-y divide-slate-100 text-xs">
+          {items.map(([combo, desc]) => (
+            <div key={combo} className="flex items-center gap-3 px-4 py-1.5">
+              <dt className="w-36 shrink-0 font-mono text-[11px] text-slate-700">
+                {combo}
+              </dt>
+              <dd className="text-slate-600">{desc}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </div>
   );

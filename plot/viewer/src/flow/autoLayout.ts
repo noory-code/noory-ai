@@ -14,10 +14,21 @@ export function autoLayout(doc: SketchDoc, direction: LayoutDirection = "LR"): S
   g.setGraph({ rankdir: direction, nodesep: 40, ranksep: 100, marginx: 20, marginy: 20 });
   g.setDefaultEdgeLabel(() => ({}));
 
+  const nodeIds = new Set(doc.nodes.map((n) => n.id));
   const connectedIds = new Set<string>();
+  // Explicit edges.
   for (const e of doc.edges) {
     connectedIds.add(e.source);
     connectedIds.add(e.target);
+  }
+  // ``parent_id`` acts as an implicit decomposition edge, so Core /
+  // Actors / Services-detail canvases — which rarely have explicit edges
+  // between the new node kinds — still get arranged.
+  for (const n of doc.nodes) {
+    if (n.parent_id && nodeIds.has(n.parent_id)) {
+      connectedIds.add(n.id);
+      connectedIds.add(n.parent_id);
+    }
   }
 
   for (const n of doc.nodes) {
@@ -27,6 +38,11 @@ export function autoLayout(doc: SketchDoc, direction: LayoutDirection = "LR"): S
   for (const e of doc.edges) {
     if (g.hasNode(e.source) && g.hasNode(e.target)) {
       g.setEdge(e.source, e.target);
+    }
+  }
+  for (const n of doc.nodes) {
+    if (n.parent_id && g.hasNode(n.parent_id) && g.hasNode(n.id)) {
+      g.setEdge(n.parent_id, n.id);
     }
   }
 

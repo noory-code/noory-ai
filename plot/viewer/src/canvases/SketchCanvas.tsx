@@ -744,6 +744,43 @@ function SketchCanvasInner({
     [doc.nodes, nodeById],
   );
 
+  /**
+   * Slide a rectangle off siblings it overlaps. Walks diagonally by
+   * ``OFFSET_STEP`` px up to ``MAX_STEPS`` tries. Caller passes the list
+   * of existing node rects in the same coordinate space so nested drops
+   * can use parent-local coords and free drops can use absolute coords.
+   */
+  const findFreeSpot = useCallback(
+    (
+      baseX: number,
+      baseY: number,
+      w: number,
+      h: number,
+      siblings: { x: number; y: number; width: number; height: number }[],
+    ): { x: number; y: number } => {
+      const OFFSET_STEP = 32;
+      const MAX_STEPS = 24;
+      const overlaps = (
+        a: [number, number, number, number],
+        b: [number, number, number, number],
+      ): boolean =>
+        !(a[2] <= b[0] || b[2] <= a[0] || a[3] <= b[1] || b[3] <= a[1]);
+      let x = baseX;
+      let y = baseY;
+      for (let i = 0; i < MAX_STEPS; i++) {
+        const mine: [number, number, number, number] = [x, y, x + w, y + h];
+        const collision = siblings.some((s) =>
+          overlaps(mine, [s.x, s.y, s.x + s.width, s.y + s.height]),
+        );
+        if (!collision) return { x, y };
+        x += OFFSET_STEP;
+        y += OFFSET_STEP;
+      }
+      return { x, y }; // gave up — place it at the final nudged position
+    },
+    [],
+  );
+
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
       if (!flowRef.current) return;
@@ -794,19 +831,25 @@ function SketchCanvasInner({
           }
           return { x: ax, y: ay };
         })();
-        const localX = pos.x - parentAbs.x - w / 2;
-        const localY = pos.y - parentAbs.y - h / 2;
+        const rawLocalX = Math.max(8, pos.x - parentAbs.x - w / 2);
+        const rawLocalY = Math.max(28, pos.y - parentAbs.y - h / 2);
+        const siblings = doc.nodes.filter((n) => n.parent_id === resolved.parentId);
+        const spot = findFreeSpot(rawLocalX, rawLocalY, w, h, siblings);
         addNestedNodeAt({
           parentId: resolved.parentId,
-          localX: Math.max(8, localX),
-          localY: Math.max(28, localY),
+          localX: spot.x,
+          localY: spot.y,
           preset,
         });
       } else {
-        addNodeAt(pos.x - w / 2, pos.y - h / 2, preset);
+        const rawX = pos.x - w / 2;
+        const rawY = pos.y - h / 2;
+        const siblings = doc.nodes.filter((n) => n.parent_id === null);
+        const spot = findFreeSpot(rawX, rawY, w, h, siblings);
+        addNodeAt(spot.x, spot.y, preset);
       }
     },
-    [addNodeAt, addNestedNodeAt, containerAtFlowPoint, nodeById],
+    [addNodeAt, addNestedNodeAt, containerAtFlowPoint, doc.nodes, findFreeSpot, nodeById],
   );
 
   return (
