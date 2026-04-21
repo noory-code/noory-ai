@@ -13,9 +13,65 @@ import { SketchCanvas } from "./canvases/SketchCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import type { SaveState } from "./canvases/SketchToolbar";
 import { useSketchHistory } from "./canvases/useSketchHistory";
-import type { SketchDoc, SketchSummary } from "./types";
+import type { SketchDoc, SketchNode, SketchSummary } from "./types";
 
 type Phase = "loading" | "no-sketches" | "ready" | "error";
+
+// v0.2 multi-canvas (2026-04-21): canvas-kind tabs above the ReactFlow area.
+// Each tab shows only the nodes/edges belonging to it; edits merge back
+// with the hidden nodes from the other tabs before persisting.
+type CanvasTab = "core" | "actors" | "services";
+const CANVAS_TABS: readonly { id: CanvasTab; label: string }[] = [
+  { id: "core", label: "Core" },
+  { id: "actors", label: "Actors" },
+  { id: "services", label: "Services" },
+];
+
+const CORE_KINDS = new Set(["core", "mission", "core_value", "identity", "identity_facet"]);
+const SERVICE_KINDS = new Set(["service", "rule", "content", "actor_ref"]);
+
+function classifyNodeTab(node: SketchNode, nodesById: Map<string, SketchNode>): CanvasTab {
+  // Walk up the parent chain, stopping at is_root or at top. The ancestor's
+  // own kind decides which tab the whole subtree belongs to.
+  let cur: SketchNode = node;
+  while (cur.parent_id && !cur.is_root) {
+    const parent = nodesById.get(cur.parent_id);
+    if (!parent) break;
+    cur = parent;
+  }
+  if (cur.kind === "actor") return "actors";
+  if (cur.kind === "service") return "services";
+  if (cur.kind && CORE_KINDS.has(cur.kind)) return "core";
+  if (cur.kind && SERVICE_KINDS.has(cur.kind)) return "services";
+  // Legacy v0.1 untyped nodes land on Services (the default workspace).
+  return "services";
+}
+
+function filterDocForTab(doc: SketchDoc, tab: CanvasTab): SketchDoc {
+  const byId = new Map(doc.nodes.map((n) => [n.id, n] as const));
+  const visibleNodes = doc.nodes.filter((n) => classifyNodeTab(n, byId) === tab);
+  const visibleIds = new Set(visibleNodes.map((n) => n.id));
+  // Edges that span tabs (e.g., v0.1 core-root → actor-root decomposition)
+  // are dropped from the view — they only made sense in the single-canvas world.
+  const visibleEdges = doc.edges.filter(
+    (e) => visibleIds.has(e.source) && visibleIds.has(e.target),
+  );
+  return { ...doc, nodes: visibleNodes, edges: visibleEdges };
+}
+
+function mergeTabEdit(prev: SketchDoc, next: SketchDoc, tab: CanvasTab): SketchDoc {
+  const byId = new Map(prev.nodes.map((n) => [n.id, n] as const));
+  const hiddenNodes = prev.nodes.filter((n) => classifyNodeTab(n, byId) !== tab);
+  const hiddenNodeIds = new Set(hiddenNodes.map((n) => n.id));
+  const hiddenEdges = prev.edges.filter(
+    (e) => hiddenNodeIds.has(e.source) || hiddenNodeIds.has(e.target),
+  );
+  return {
+    ...next,
+    nodes: [...hiddenNodes, ...next.nodes],
+    edges: [...hiddenEdges, ...next.edges],
+  };
+}
 
 const DEBOUNCE_MS = 400;
 
@@ -32,6 +88,18 @@ export function App() {
     const url = new URL(window.location.href);
     return url.searchParams.get("sketch");
   });
+  const [activeTab, setActiveTab] = useState<CanvasTab>(() => {
+    const url = new URL(window.location.href);
+    const raw = url.searchParams.get("canvas");
+    return CANVAS_TABS.some((t) => t.id === raw) ? (raw as CanvasTab) : "services";
+  });
+
+  const selectTab = useCallback((tab: CanvasTab) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("canvas", tab);
+    window.history.replaceState(null, "", url.toString());
+  }, []);
 
   const saveTimer = useRef<number | null>(null);
   const savedTimer = useRef<number | null>(null);
@@ -278,24 +346,29 @@ export function App() {
           onRename={handleRename}
           onDelete={handleDelete}
         />
-        <main className="flex-1 overflow-hidden">
-          {phase === "loading" && <Loading />}
-          {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
-          {phase === "no-sketches" && <EmptyState onCreate={handleCreate} />}
+        <main className="flex flex-1 flex-col overflow-hidden">
           {phase === "ready" && doc && (
-            <SketchCanvas
-              key={doc.id}
-              doc={doc}
-              onDocChange={setDoc}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={history.canUndo}
-              canRedo={history.canRedo}
-              saveState={saveState}
-              onDownload={handleDownload}
-              onUpload={handleUpload}
-            />
+            <CanvasTabs active={activeTab} onSelect={selectTab} />
           )}
+          <div className="flex-1 overflow-hidden">
+            {phase === "loading" && <Loading />}
+            {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
+            {phase === "no-sketches" && <EmptyState onCreate={handleCreate} />}
+            {phase === "ready" && doc && (
+              <SketchCanvas
+                key={`${doc.id}:${activeTab}`}
+                doc={filterDocForTab(doc, activeTab)}
+                onDocChange={(next) => setDoc(mergeTabEdit(doc, next, activeTab))}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                canUndo={history.canUndo}
+                canRedo={history.canRedo}
+                saveState={saveState}
+                onDownload={handleDownload}
+                onUpload={handleUpload}
+              />
+            )}
+          </div>
         </main>
       </div>
     </div>
@@ -328,6 +401,42 @@ function Header({ projectPath, error, socketStatus, sketchName }: HeaderProps) {
         )}
       </div>
     </header>
+  );
+}
+
+function CanvasTabs({
+  active,
+  onSelect,
+}: {
+  active: CanvasTab;
+  onSelect: (tab: CanvasTab) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Canvas"
+      className="flex items-center gap-1 border-b border-slate-200 bg-white px-3"
+    >
+      {CANVAS_TABS.map((tab) => {
+        const selected = tab.id === active;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            onClick={() => onSelect(tab.id)}
+            className={
+              selected
+                ? "border-b-2 border-slate-900 px-4 py-2 text-sm font-medium text-slate-900"
+                : "border-b-2 border-transparent px-4 py-2 text-sm text-slate-500 hover:text-slate-800"
+            }
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
