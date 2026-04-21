@@ -165,30 +165,21 @@ def list_service_details(plot_root: Path, project_id: str) -> list[str]:
 
 
 def _seed_core_canvas() -> CanvasDoc:
-    """Minimum valid Core canvas — root + mission + identity (no core values yet)."""
+    """Minimum valid Core canvas — three top-level pillars: Mission,
+    Core Value (one placeholder the user can rename / duplicate), and
+    Identity. No ``core``-kind parent octagon — the old anchor existed
+    to tie the single-canvas v0.2 world together, and in v0.4 it's just
+    noise on an already-focused canvas."""
     return CanvasDoc(
         canvas_id="core",
         canvas_kind="core",
         nodes=[
             SketchNode(
-                id="core-root",
-                kind="core",
-                label="Project",
-                x=-90,
-                y=-70,
-                width=180,
-                height=140,
-                color="#fde68a",
-                shape="octagon",
-                icon="star",
-            ),
-            SketchNode(
                 id="mission",
                 kind="mission",
-                parent_id="core-root",
                 label="Mission",
-                x=260,
-                y=-20,
+                x=-260,
+                y=-60,
                 width=200,
                 height=90,
                 color="#fef3c7",
@@ -196,12 +187,23 @@ def _seed_core_canvas() -> CanvasDoc:
                 icon="star",
             ),
             SketchNode(
+                id="core-value-1",
+                kind="core_value",
+                label="Core value",
+                x=0,
+                y=-60,
+                width=180,
+                height=80,
+                color="#fde68a",
+                shape="rounded",
+                icon="star",
+            ),
+            SketchNode(
                 id="identity",
                 kind="identity",
-                parent_id="core-root",
                 label="Identity",
-                x=260,
-                y=120,
+                x=220,
+                y=-60,
                 width=200,
                 height=90,
                 color="#fed7aa",

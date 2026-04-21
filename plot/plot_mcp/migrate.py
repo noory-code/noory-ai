@@ -146,44 +146,24 @@ def _migrate_one(plot_root: Path, doc: SketchDoc) -> None:
 
 
 def _build_core_canvas(core_root: SketchNode | None) -> CanvasDoc:
-    """Promote Mission / Core Values / Identity text fields on core-root
-    into their own nodes. Synthesise empty ones when missing so the Core
-    canvas validator (needs exactly 1 mission + 1 identity) is satisfied.
+    """Promote Mission / Core Values / Identity text fields on the v0.1
+    core-root into top-level nodes on the v0.4 Core canvas. The old
+    ``core``-kind octagon anchor is dropped — its only job in v0.2 was
+    to tie the single-canvas world together, and v0.4 canvases are
+    already separate. Synthesises empty Mission + Identity when missing
+    so the CanvasDoc validator (exactly 1 of each) stays happy.
     """
-    if core_root is None:
-        root = SketchNode(
-            id="core-root",
-            kind="core",
-            label="Project",
-            x=-90,
-            y=-70,
-            width=180,
-            height=140,
-            color="#fde68a",
-            shape="octagon",
-            icon="star",
-        )
-    else:
-        root = core_root.model_copy(
-            update={
-                "parent_id": None,
-                "mission": "",
-                "core_values": "",
-                "identity": "",
-            }
-        )
-    nodes: list[SketchNode] = [root]
+    nodes: list[SketchNode] = []
 
     mission_text = (core_root.mission if core_root else "").strip()
     nodes.append(
         SketchNode(
             id="mission",
             kind="mission",
-            parent_id=root.id,
             label="Mission",
             body=mission_text,
-            x=260,
-            y=-20,
+            x=-260,
+            y=-60,
             width=200,
             height=90,
             color="#fef3c7",
@@ -192,36 +172,38 @@ def _build_core_canvas(core_root: SketchNode | None) -> CanvasDoc:
         )
     )
 
-    # Core values split on newlines so each becomes its own node.
+    # Core values split on newlines so each becomes its own node. If the
+    # old field was empty, seed one placeholder so the pillar is visible.
     cv_raw = (core_root.core_values if core_root else "").strip()
     if cv_raw:
-        for i, line in enumerate(line.strip() for line in cv_raw.splitlines() if line.strip()):
-            nodes.append(
-                SketchNode(
-                    id=f"core-value-{i + 1}",
-                    kind="core_value",
-                    parent_id=root.id,
-                    label=line,
-                    x=260 + i * 180,
-                    y=-160,
-                    width=160,
-                    height=70,
-                    color="#fde68a",
-                    shape="rounded",
-                    icon="star",
-                )
+        lines = [line.strip() for line in cv_raw.splitlines() if line.strip()]
+    else:
+        lines = ["Core value"]
+    for i, line in enumerate(lines):
+        nodes.append(
+            SketchNode(
+                id=f"core-value-{i + 1}",
+                kind="core_value",
+                label=line,
+                x=0,
+                y=-60 + i * 96,
+                width=180,
+                height=80,
+                color="#fde68a",
+                shape="rounded",
+                icon="star",
             )
+        )
 
     identity_text = (core_root.identity if core_root else "").strip()
     nodes.append(
         SketchNode(
             id="identity",
             kind="identity",
-            parent_id=root.id,
             label="Identity",
             body=identity_text,
-            x=260,
-            y=120,
+            x=220,
+            y=-60,
             width=200,
             height=90,
             color="#fed7aa",

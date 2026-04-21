@@ -56,13 +56,14 @@ def test_create_project_builds_folder_layout(plot_root: Path) -> None:
     assert (folder / "services-detail").is_dir()
 
 
-def test_create_project_seeds_core_with_mission_and_identity(plot_root: Path) -> None:
+def test_create_project_seeds_core_with_three_pillars(plot_root: Path) -> None:
+    """v0.4: Core canvas seeds Mission + Core value + Identity as
+    top-level pillars; the old ``core``-kind octagon anchor is gone."""
     create_project(plot_root, "alpha", "Alpha")
     core = read_canvas(plot_root, "alpha", "core")
     kinds = sorted({n.kind for n in core.nodes if n.kind is not None})
-    assert "core" in kinds
-    assert "mission" in kinds
-    assert "identity" in kinds
+    assert kinds == ["core_value", "identity", "mission"]
+    assert all(n.parent_id is None for n in core.nodes)
 
 
 def test_create_project_seeds_actors_canvas_empty_root(plot_root: Path) -> None:

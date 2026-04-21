@@ -170,7 +170,7 @@ def test_canvas_get_returns_seeded_core(
     body = resp.json()
     assert body["canvas_kind"] == "core"
     kinds = sorted({n["kind"] for n in body["nodes"] if n.get("kind")})
-    assert "core" in kinds and "mission" in kinds and "identity" in kinds
+    assert kinds == ["core_value", "identity", "mission"]
 
 
 def test_canvas_put_round_trips_actor(

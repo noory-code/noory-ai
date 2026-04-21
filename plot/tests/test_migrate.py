@@ -45,11 +45,14 @@ def test_migrates_bare_v01_sketch(plot_root: Path) -> None:
 
 
 def test_migrated_core_canvas_has_seeds(plot_root: Path) -> None:
+    """v0.4: migrated Core canvas promotes mission/core_values/identity
+    into top-level pillars (no ``core`` anchor)."""
     create_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     core = read_canvas(plot_root, "alpha", "core")
     kinds = sorted({n.kind for n in core.nodes if n.kind is not None})
-    assert "core" in kinds and "mission" in kinds and "identity" in kinds
+    assert "mission" in kinds and "identity" in kinds and "core_value" in kinds
+    assert "core" not in kinds
 
 
 def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> None:
