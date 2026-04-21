@@ -260,6 +260,11 @@ function SketchCanvasInner({
       // v0.2 correction (2026-04-20): rule / content are edited through
       // the right-hand Inspector panel, never rendered on the canvas.
       if (n.kind === "rule" || n.kind === "content") continue;
+      // v0.4 ``core`` kind was the old single-canvas anchor octagon.
+      // New projects don't seed one; legacy projects may still have it
+      // from v0.1 migration. Hide it so the Core canvas shows just the
+      // three pillars (Mission / Core Value / Identity).
+      if (n.kind === "core") continue;
       const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
       // Orphan actor_ref visual override: red-tinted fill, "⚠ " prefix so the
       // break is obvious even at thumbnail scale. Rendering stays in the
@@ -345,16 +350,38 @@ function SketchCanvasInner({
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const posById = new Map<string, { x: number; y: number }>();
+      const dimById = new Map<string, { width: number; height: number }>();
       for (const c of changes) {
         if (c.type === "position" && c.position) posById.set(c.id, c.position);
+        // ``dimensions`` fires continuously during a NodeResizer drag.
+        // Applying it live to our state keeps the node visually shrinking
+        // while the handle is dragged, rather than snapping on release.
+        // The ``resizing`` flag filters out React Flow's own post-mount
+        // measurements so they don't clobber user-set sizes.
+        if (
+          c.type === "dimensions" &&
+          c.resizing &&
+          c.dimensions &&
+          c.dimensions.width > 0 &&
+          c.dimensions.height > 0
+        ) {
+          dimById.set(c.id, c.dimensions);
+        }
       }
-      if (posById.size === 0) return;
+      if (posById.size === 0 && dimById.size === 0) return;
       const current = docRef.current;
       onDocChange({
         ...current,
-        nodes: current.nodes.map((n) =>
-          posById.has(n.id) ? { ...n, ...posById.get(n.id)! } : n,
-        ),
+        nodes: current.nodes.map((n) => {
+          const p = posById.get(n.id);
+          const d = dimById.get(n.id);
+          if (!p && !d) return n;
+          return {
+            ...n,
+            ...(p ?? {}),
+            ...(d ? { width: d.width, height: d.height } : {}),
+          };
+        }),
       });
     },
     [onDocChange],

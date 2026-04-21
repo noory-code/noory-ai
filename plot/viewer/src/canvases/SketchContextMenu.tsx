@@ -42,7 +42,11 @@ export function SketchContextMenu({ x, y, items, onClose }: SketchContextMenuPro
     <div
       ref={menuRef}
       role="menu"
-      className="absolute z-20 min-w-[180px] rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+      // ``fixed`` anchors to the viewport; the ``event.clientX/Y`` we were
+      // handed is already viewport-relative, so ``absolute`` (which inherits
+      // the nearest positioned ancestor's origin) drifted when the canvas
+      // wrapper wasn't at (0,0).
+      className="fixed z-50 min-w-[180px] rounded-md border border-slate-200 bg-white py-1 shadow-lg"
       style={{ left: x, top: y }}
     >
       {items.map((item, idx) =>
