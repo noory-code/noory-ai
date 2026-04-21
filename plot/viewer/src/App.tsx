@@ -646,14 +646,9 @@ export function App() {
             {phase === "ready" && activeCanvas && activeId && (
               <SketchCanvas
                 key={`${activeId}:${activeCanvasKey}`}
-                doc={asSketchDoc(activeCanvas)}
+                doc={activeCanvas}
                 onDocChange={(next) => {
-                  const canvasNext: CanvasDoc = {
-                    ...activeCanvas,
-                    nodes: next.nodes,
-                    edges: next.edges,
-                  };
-                  applyEdit(activeCanvasKey, activeCanvas, canvasNext);
+                  applyEdit(activeCanvasKey, activeCanvas, next);
                 }}
                 onUndo={handleUndo}
                 onRedo={handleRedo}
@@ -688,23 +683,6 @@ export function App() {
       </div>
     </div>
   );
-}
-
-/**
- * Legacy SketchCanvas expects a ``SketchDoc`` shape. We adapt by
- * synthesising one on the fly — the canvas only reads id/name/version
- * metadata and the nodes/edges arrays.
- */
-function asSketchDoc(c: CanvasDoc): import("./types").SketchDoc {
-  return {
-    id: c.canvas_id,
-    name: c.canvas_id,
-    created: "",
-    updated: "",
-    version: 2,
-    nodes: c.nodes,
-    edges: c.edges,
-  };
 }
 
 // ---------------------------------------------------------------------------

@@ -88,24 +88,6 @@ export interface SketchEdge {
   value_form: ValueForm[];
 }
 
-export interface SketchDoc {
-  id: string;
-  name: string;
-  created: string;
-  updated: string;
-  version: number;
-  nodes: SketchNode[];
-  edges: SketchEdge[];
-}
-
-export interface SketchSummary {
-  id: string;
-  name: string;
-  updated: string;
-  node_count: number;
-  edge_count: number;
-}
-
 // ---------------------------------------------------------------------------
 // v0.4 multi-canvas — project folder layout
 // ---------------------------------------------------------------------------

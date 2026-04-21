@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import type { SketchDoc, SketchEdge, SketchNode } from "../types";
+import type { CanvasDoc, SketchEdge, SketchNode } from "../types";
 
 interface Clip {
   nodes: SketchNode[];
@@ -11,13 +11,13 @@ function randomId(prefix: string): string {
 }
 
 export interface SketchClipboard {
-  copy: (doc: SketchDoc, selectedNodeIds: string[]) => void;
-  paste: (doc: SketchDoc, offset?: { x: number; y: number }) => SketchDoc;
+  copy: (doc: CanvasDoc, selectedNodeIds: string[]) => void;
+  paste: (doc: CanvasDoc, offset?: { x: number; y: number }) => CanvasDoc;
   duplicate: (
-    doc: SketchDoc,
+    doc: CanvasDoc,
     selectedNodeIds: string[],
     offset?: { x: number; y: number },
-  ) => SketchDoc;
+  ) => CanvasDoc;
   hasClip: () => boolean;
 }
 
@@ -28,7 +28,7 @@ export interface SketchClipboard {
 export function useSketchClipboard(): SketchClipboard {
   const clipRef = useRef<Clip | null>(null);
 
-  const copy = useCallback((doc: SketchDoc, selectedNodeIds: string[]) => {
+  const copy = useCallback((doc: CanvasDoc, selectedNodeIds: string[]) => {
     const ids = new Set(selectedNodeIds);
     const nodes = doc.nodes.filter((n) => ids.has(n.id));
     const edges = doc.edges.filter((e) => ids.has(e.source) && ids.has(e.target));
@@ -37,10 +37,10 @@ export function useSketchClipboard(): SketchClipboard {
 
   const buildPaste = useCallback(
     (
-      doc: SketchDoc,
+      doc: CanvasDoc,
       clip: Clip,
       offset: { x: number; y: number },
-    ): SketchDoc => {
+    ): CanvasDoc => {
       const idMap: Record<string, string> = {};
       const newNodes: SketchNode[] = clip.nodes.map((n) => {
         const newId = randomId("n");
@@ -63,7 +63,7 @@ export function useSketchClipboard(): SketchClipboard {
   );
 
   const paste = useCallback(
-    (doc: SketchDoc, offset = { x: 40, y: 40 }): SketchDoc => {
+    (doc: CanvasDoc, offset = { x: 40, y: 40 }): CanvasDoc => {
       if (!clipRef.current || clipRef.current.nodes.length === 0) return doc;
       return buildPaste(doc, clipRef.current, offset);
     },
@@ -72,10 +72,10 @@ export function useSketchClipboard(): SketchClipboard {
 
   const duplicate = useCallback(
     (
-      doc: SketchDoc,
+      doc: CanvasDoc,
       selectedNodeIds: string[],
       offset = { x: 40, y: 40 },
-    ): SketchDoc => {
+    ): CanvasDoc => {
       const ids = new Set(selectedNodeIds);
       const clip: Clip = {
         nodes: doc.nodes.filter((n) => ids.has(n.id)),

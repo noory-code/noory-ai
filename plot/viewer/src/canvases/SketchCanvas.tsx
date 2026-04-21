@@ -16,7 +16,12 @@ import ReactFlow, {
   type ReactFlowInstance,
 } from "reactflow";
 import { autoLayout } from "../flow/autoLayout";
-import type { NodeKind, SketchDoc, SketchEdge, SketchNode as DocNode } from "../types";
+import type {
+  CanvasDoc,
+  NodeKind,
+  SketchEdge,
+  SketchNode as DocNode,
+} from "../types";
 import { ActorRefPicker } from "./ActorRefPicker";
 import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
@@ -61,8 +66,8 @@ export interface NodePreset {
 // colour / icon), not by y position. Layer-snap helper removed.
 
 export interface SketchCanvasProps {
-  doc: SketchDoc;
-  onDocChange: (next: SketchDoc) => void;
+  doc: CanvasDoc;
+  onDocChange: (next: CanvasDoc) => void;
   onUndo: () => void;
   onRedo: () => void;
   canUndo: boolean;
@@ -116,7 +121,7 @@ function SketchCanvasInner({
   selectNodeId,
   onSelectionConsumed,
 }: SketchCanvasProps) {
-  const docRef = useRef<SketchDoc>(doc);
+  const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
   const flowRef = useRef<ReactFlowInstance | null>(null);
   const selectedNodeIds = useRef<string[]>([]);

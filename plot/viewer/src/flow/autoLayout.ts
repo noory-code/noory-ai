@@ -1,5 +1,5 @@
 import dagre from "dagre";
-import type { SketchDoc } from "../types";
+import type { CanvasDoc } from "../types";
 
 export type LayoutDirection = "LR" | "TB" | "RL" | "BT";
 
@@ -9,7 +9,7 @@ export type LayoutDirection = "LR" | "TB" | "RL" | "BT";
  * Orphan nodes (no edges) remain in their original positions so that users
  * can still auto-arrange a partial graph without losing off-tree notes.
  */
-export function autoLayout(doc: SketchDoc, direction: LayoutDirection = "LR"): SketchDoc {
+export function autoLayout(doc: CanvasDoc, direction: LayoutDirection = "LR"): CanvasDoc {
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: direction, nodesep: 40, ranksep: 100, marginx: 20, marginy: 20 });
   g.setDefaultEdgeLabel(() => ({}));
