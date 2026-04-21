@@ -82,7 +82,6 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
     ...shapeStyle(data.shape),
   };
   const Icon = getIcon(data.icon);
-  const centred = data.shape === "circle" || data.shape === "ellipse" || data.shape === "diamond";
   return (
     <>
       <NodeResizer
@@ -111,11 +110,7 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
         <Handle type="source" position={Position.Right} id="r" className="!bg-slate-400" />
         <Handle type="source" position={Position.Bottom} id="b" className="!bg-slate-400" />
 
-        <div
-          className={`flex h-full w-full flex-col gap-1 ${
-            centred ? "items-center justify-center text-center" : ""
-          }`}
-        >
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-center">
           <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
             {data.hasChildren && data.onToggleCollapse && (
               <button
@@ -154,11 +149,7 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
             )}
           </div>
           {data.body && (
-            <div
-              className={`line-clamp-[8] whitespace-pre-wrap text-xs text-slate-700 ${
-                centred ? "text-center" : ""
-              }`}
-            >
+            <div className="line-clamp-[8] whitespace-pre-wrap text-center text-xs text-slate-700">
               {data.body}
             </div>
           )}
