@@ -1,7 +1,12 @@
-"""Endpoint tests via Starlette TestClient."""
+"""HTTP endpoint tests for the v0.4 project / canvas / tag surface.
+
+Legacy ``/api/sketches/*`` endpoints were removed in v0.4 — this file
+now covers only the new project-based shape.
+"""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -18,6 +23,11 @@ def app_client(tmp_path: Path) -> tuple[TestClient, str]:
     return TestClient(app), str(tmp_path)
 
 
+# ---------------------------------------------------------------------------
+# health + baseline
+# ---------------------------------------------------------------------------
+
+
 def test_health(app_client: tuple[TestClient, str]) -> None:
     client, _ = app_client
     resp = client.get("/api/health")
@@ -27,44 +37,57 @@ def test_health(app_client: tuple[TestClient, str]) -> None:
 
 def test_list_empty(app_client: tuple[TestClient, str]) -> None:
     client, project_path = app_client
-    resp = client.get("/api/sketches", params={"project_path": project_path})
+    resp = client.get("/api/projects", params={"project_path": project_path})
     assert resp.status_code == 200
-    assert resp.json() == []
+    body = resp.json()
+    assert body == {"projects": [], "migrated": []}
 
 
 def test_list_requires_project_path(app_client: tuple[TestClient, str]) -> None:
     client, _ = app_client
-    resp = client.get("/api/sketches")
+    resp = client.get("/api/projects")
     assert resp.status_code == 400
-    assert "project_path" in resp.json()["error"]
+
+
+def test_nonexistent_project_path_is_404(app_client: tuple[TestClient, str]) -> None:
+    client, _ = app_client
+    resp = client.get(
+        "/api/projects",
+        params={"project_path": "/tmp/definitely-does-not-exist-plot-xyz-12345"},
+    )
+    assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# project CRUD
+# ---------------------------------------------------------------------------
+
+
+def _create(client: TestClient, project_path: str, pid: str, name: str) -> dict:
+    resp = client.post(
+        "/api/projects",
+        params={"project_path": project_path},
+        json={"id": pid, "name": name},
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()
 
 
 def test_create_then_list(app_client: tuple[TestClient, str]) -> None:
     client, project_path = app_client
-    resp = client.post(
-        "/api/sketches",
-        params={"project_path": project_path},
-        json={"id": "alpha", "name": "Alpha"},
-    )
-    assert resp.status_code == 201
-    body = resp.json()
-    assert body["id"] == "alpha"
-    assert body["name"] == "Alpha"
-    # List now returns one entry
-    resp = client.get("/api/sketches", params={"project_path": project_path})
-    assert resp.status_code == 200
-    assert len(resp.json()) == 1
+    proj = _create(client, project_path, "alpha", "Alpha")
+    assert proj["id"] == "alpha"
+    assert proj["version"] == 2
+
+    listed = client.get("/api/projects", params={"project_path": project_path}).json()
+    assert [p["id"] for p in listed["projects"]] == ["alpha"]
 
 
-def test_create_duplicate_is_409(app_client: tuple[TestClient, str]) -> None:
+def test_duplicate_create_is_409(app_client: tuple[TestClient, str]) -> None:
     client, project_path = app_client
-    client.post(
-        "/api/sketches",
-        params={"project_path": project_path},
-        json={"id": "alpha", "name": "Alpha"},
-    )
+    _create(client, project_path, "alpha", "Alpha")
     resp = client.post(
-        "/api/sketches",
+        "/api/projects",
         params={"project_path": project_path},
         json={"id": "alpha", "name": "Again"},
     )
@@ -74,81 +97,317 @@ def test_create_duplicate_is_409(app_client: tuple[TestClient, str]) -> None:
 def test_create_missing_id_is_400(app_client: tuple[TestClient, str]) -> None:
     client, project_path = app_client
     resp = client.post(
-        "/api/sketches",
+        "/api/projects",
         params={"project_path": project_path},
         json={"name": "No ID"},
     )
     assert resp.status_code == 400
 
 
-def test_get_then_put(app_client: tuple[TestClient, str]) -> None:
+def test_project_get_returns_details_and_tags(
+    app_client: tuple[TestClient, str],
+) -> None:
     client, project_path = app_client
-    client.post(
-        "/api/sketches",
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/projects/alpha",
         params={"project_path": project_path},
-        json={"id": "alpha", "name": "Alpha"},
-    )
-    # GET
-    resp = client.get("/api/sketches/alpha", params={"project_path": project_path})
-    assert resp.status_code == 200
-    doc = resp.json()
-    # Add a node
-    doc["nodes"].append({"id": "n1", "label": "First", "x": 100, "y": 100, "color": "#fecaca"})
-    # PUT overwrites
-    resp = client.put(
-        "/api/sketches/alpha",
-        params={"project_path": project_path},
-        json=doc,
     )
     assert resp.status_code == 200
-    resp = client.get("/api/sketches/alpha", params={"project_path": project_path})
-    # v0.2: create_sketch seeds 3 root nodes, so after appending one more we have 4.
-    assert len(resp.json()["nodes"]) == 4
+    body = resp.json()
+    assert body["id"] == "alpha"
+    assert body["service_details"] == []
+    assert body["tags"] == []
 
 
-def test_put_with_bad_edge_is_422(app_client: tuple[TestClient, str]) -> None:
+def test_project_rename(app_client: tuple[TestClient, str]) -> None:
     client, project_path = app_client
-    client.post(
-        "/api/sketches",
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.patch(
+        "/api/projects/alpha",
         params={"project_path": project_path},
-        json={"id": "alpha", "name": "Alpha"},
+        json={"name": "Renamed"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Renamed"
+
+
+def test_project_rename_requires_name(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.patch(
+        "/api/projects/alpha",
+        params={"project_path": project_path},
+        json={},
+    )
+    assert resp.status_code == 400
+
+
+def test_project_delete(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.delete("/api/projects/alpha", params={"project_path": project_path})
+    assert resp.status_code == 200
+    resp = client.get("/api/projects/alpha", params={"project_path": project_path})
+    assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# canvas GET/PUT
+# ---------------------------------------------------------------------------
+
+
+def test_canvas_get_returns_seeded_core(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/projects/alpha/canvases/core",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["canvas_kind"] == "core"
+    kinds = sorted({n["kind"] for n in body["nodes"] if n.get("kind")})
+    assert "core" in kinds and "mission" in kinds and "identity" in kinds
+
+
+def test_canvas_put_round_trips_actor(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+    )
+    canvas = resp.json()
+    canvas["nodes"].append(
+        {
+            "id": "user",
+            "kind": "actor",
+            "label": "User",
+            "body": "",
+            "x": 0,
+            "y": 0,
+            "width": 120,
+            "height": 120,
+            "color": "#fecaca",
+            "shape": "circle",
+            "icon": "user",
+            "parent_id": None,
+            "collapsed": False,
+            "is_root": False,
+            "mission": "",
+            "core_values": "",
+            "identity": "",
+            "ref_actor_id": None,
+        }
     )
     resp = client.put(
-        "/api/sketches/alpha",
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+        json=canvas,
+    )
+    assert resp.status_code == 200
+    reloaded = client.get(
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+    ).json()
+    assert any(n["id"] == "user" for n in reloaded["nodes"])
+
+
+def test_canvas_put_overview_auto_creates_detail(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    payload = {
+        "canvas_id": "services_overview",
+        "canvas_kind": "services_overview",
+        "nodes": [
+            {
+                "id": "order",
+                "kind": "service",
+                "label": "주문",
+                "body": "",
+                "x": 0,
+                "y": 0,
+                "width": 160,
+                "height": 80,
+                "color": "#bae6fd",
+                "shape": "rounded",
+                "icon": "zap",
+                "parent_id": None,
+                "collapsed": False,
+                "is_root": False,
+                "mission": "",
+                "core_values": "",
+                "identity": "",
+                "ref_actor_id": None,
+            }
+        ],
+        "edges": [],
+    }
+    resp = client.put(
+        "/api/projects/alpha/canvases/services_overview",
+        params={"project_path": project_path},
+        json=payload,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["sync"]["created"] == ["order"]
+    detail = client.get(
+        "/api/projects/alpha/canvases/service_detail",
+        params={"project_path": project_path, "service_id": "order"},
+    )
+    assert detail.status_code == 200
+    assert detail.json()["service_ref"] == "order"
+
+
+def test_canvas_get_unknown_kind_is_400(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/projects/alpha/canvases/bogus",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 400
+
+
+def test_canvas_put_bad_body_is_422(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    # Edge referencing a non-existent node → model validator rejects.
+    resp = client.put(
+        "/api/projects/alpha/canvases/actors",
         params={"project_path": project_path},
         json={
-            "id": "alpha",
-            "name": "Alpha",
+            "canvas_id": "actors",
             "nodes": [],
-            "edges": [{"id": "e1", "source": "ghost", "target": "also-ghost"}],
+            "edges": [{"id": "e1", "source": "ghost", "target": "nowhere"}],
         },
     )
     assert resp.status_code == 422
 
 
-def test_delete(app_client: tuple[TestClient, str]) -> None:
+# ---------------------------------------------------------------------------
+# tags (session bookmarks)
+# ---------------------------------------------------------------------------
+
+
+def test_tags_empty_on_new_project(app_client: tuple[TestClient, str]) -> None:
     client, project_path = app_client
-    client.post(
-        "/api/sketches",
-        params={"project_path": project_path},
-        json={"id": "alpha", "name": "Alpha"},
-    )
-    resp = client.delete("/api/sketches/alpha", params={"project_path": project_path})
-    assert resp.status_code == 200
-    resp = client.get("/api/sketches/alpha", params={"project_path": project_path})
-    assert resp.status_code == 404
-
-
-def test_get_missing_is_404(app_client: tuple[TestClient, str]) -> None:
-    client, project_path = app_client
-    resp = client.get("/api/sketches/ghost", params={"project_path": project_path})
-    assert resp.status_code == 404
-
-
-def test_get_nonexistent_project_path_is_404(app_client: tuple[TestClient, str]) -> None:
-    client, _ = app_client
+    _create(client, project_path, "alpha", "Alpha")
     resp = client.get(
-        "/api/sketches",
-        params={"project_path": "/tmp/definitely-does-not-exist-plot-xyz-12345"},
+        "/api/projects/alpha/tags",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 200
+    assert resp.json() == {"tags": []}
+
+
+def test_tag_create_then_list(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.post(
+        "/api/projects/alpha/tags",
+        params={"project_path": project_path},
+        json={"name": "session-start", "message": "kickoff"},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["name"] == "session-start"
+
+    listed = client.get(
+        "/api/projects/alpha/tags",
+        params={"project_path": project_path},
+    ).json()
+    assert [t["name"] for t in listed["tags"]] == ["session-start"]
+
+
+def test_tag_duplicate_is_409(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    client.post(
+        "/api/projects/alpha/tags",
+        params={"project_path": project_path},
+        json={"name": "dup"},
+    )
+    resp = client.post(
+        "/api/projects/alpha/tags",
+        params={"project_path": project_path},
+        json={"name": "dup"},
+    )
+    assert resp.status_code == 409
+
+
+def test_tag_delete(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    client.post(
+        "/api/projects/alpha/tags",
+        params={"project_path": project_path},
+        json={"name": "doomed"},
+    )
+    resp = client.delete(
+        "/api/projects/alpha/tags/doomed",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 200
+    listed = client.get(
+        "/api/projects/alpha/tags",
+        params={"project_path": project_path},
+    ).json()
+    assert listed == {"tags": []}
+
+
+def test_tag_delete_unknown_is_404(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.delete(
+        "/api/projects/alpha/tags/ghost",
+        params={"project_path": project_path},
     )
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# v0.1 auto-migration on list
+# ---------------------------------------------------------------------------
+
+
+def test_list_migrates_v01_sketches_silently(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    sketches_dir = Path(project_path) / ".plot" / "sketches"
+    sketches_dir.mkdir(parents=True, exist_ok=True)
+    (sketches_dir / "legacy.json").write_text(
+        json.dumps(
+            {
+                "id": "legacy",
+                "name": "Legacy",
+                "created": "2026-01-01",
+                "updated": "2026-01-01T00:00:00+00:00",
+                "version": 1,
+                "nodes": [
+                    {
+                        "id": "core-root",
+                        "label": "Legacy",
+                        "kind": "core",
+                    }
+                ],
+                "edges": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    resp = client.get("/api/projects", params={"project_path": project_path})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "legacy" in body["migrated"]
+    assert any(p["id"] == "legacy" for p in body["projects"])

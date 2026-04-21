@@ -4,10 +4,45 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from typing import Any
 
 from starlette.websockets import WebSocket
 
 from plot_mcp.watcher import WorkspaceWatcher
+
+_CANVAS_BY_FILENAME: dict[str, str] = {
+    "core.json": "core",
+    "actors.json": "actors",
+    "services-overview.json": "services_overview",
+}
+
+
+def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | None:
+    """Map a changed file to ``{project_id, canvas_kind?, service_id?}``.
+
+    Returns ``None`` if the file doesn't live under a recognised project
+    folder (e.g. malformed paths or stray JSON under ``.plot/sketches/``).
+    """
+    try:
+        rel = changed_path.relative_to(plot_root / "sketches")
+    except ValueError:
+        return None
+    parts = rel.parts
+    if not parts:
+        return None
+    project_id = parts[0]
+    descriptor: dict[str, Any] = {"project_id": project_id}
+    # parts example: ("alpha", "core.json") or
+    #                ("alpha", "services-detail", "order.json")
+    if len(parts) >= 2:
+        leaf = parts[-1]
+        if len(parts) == 2 and leaf in _CANVAS_BY_FILENAME:
+            descriptor["canvas_kind"] = _CANVAS_BY_FILENAME[leaf]
+        elif len(parts) >= 3 and parts[1] == "services-detail" and leaf.endswith(".json"):
+            descriptor["canvas_kind"] = "service_detail"
+            descriptor["service_id"] = leaf[: -len(".json")]
+        # project.json and anything else → project-level event without canvas_kind
+    return descriptor
 
 
 class BroadcastHub:
@@ -43,14 +78,22 @@ class BroadcastHub:
                 if watcher is not None:
                     watcher.stop()
 
-    async def notify(self, plot_root: Path) -> None:
-        """Broadcast ``sketch_changed`` to every subscriber of ``plot_root``."""
+    async def notify(self, plot_root: Path, payload: dict[str, Any] | None = None) -> None:
+        """Broadcast a ``project_changed`` event to every subscriber of ``plot_root``.
+
+        ``payload`` is the ``{project_id, canvas_kind?, service_id?}``
+        descriptor produced by ``_describe_change``. ``None`` is treated
+        as a generic project-level event.
+        """
+        body: dict[str, Any] = {"event": "project_changed"}
+        if payload:
+            body.update(payload)
         async with self._lock:
             targets = list(self._subs.get(plot_root, ()))
         dead: list[WebSocket] = []
         for ws in targets:
             try:
-                await ws.send_json({"event": "sketch_changed"})
+                await ws.send_json(body)
             except Exception:
                 dead.append(ws)
         if dead:
@@ -66,8 +109,25 @@ class BroadcastHub:
     def _start_watcher(self, plot_root: Path) -> WorkspaceWatcher:
         loop = asyncio.get_running_loop()
 
-        async def on_change() -> None:
-            await self.notify(plot_root)
+        async def on_change(paths: set[Path]) -> None:
+            # Group by descriptor so two writes to the same canvas
+            # within a debounce window fire one event, not two.
+            descriptors: dict[tuple[str, str, str | None], dict[str, Any]] = {}
+            for p in paths:
+                d = _describe_change(plot_root, p)
+                if d is None:
+                    continue
+                key = (
+                    d["project_id"],
+                    d.get("canvas_kind", ""),
+                    d.get("service_id"),
+                )
+                descriptors.setdefault(key, d)
+            if not descriptors:
+                await self.notify(plot_root)  # generic fallback
+                return
+            for d in descriptors.values():
+                await self.notify(plot_root, d)
 
         watcher = WorkspaceWatcher(plot_root, on_change=on_change, loop=loop)
         watcher.start()

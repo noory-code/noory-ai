@@ -100,9 +100,7 @@ def _tag_exists(project_dir: Path, name: str) -> bool:
     return result.returncode == 0
 
 
-def tag_snapshot(
-    project_dir: Path, name: str, message: str | None = None
-) -> dict[str, Any]:
+def tag_snapshot(project_dir: Path, name: str, message: str | None = None) -> dict[str, Any]:
     """Snapshot the current working tree under an annotated git tag.
 
     Flow:
@@ -149,9 +147,7 @@ def tag_snapshot(
 # ---------------------------------------------------------------------------
 
 
-_LIST_FORMAT = (
-    "%(refname:short)%09%(objectname)%09%(taggerdate:iso-strict)%09%(contents:subject)"
-)
+_LIST_FORMAT = "%(refname:short)%09%(objectname)%09%(taggerdate:iso-strict)%09%(contents:subject)"
 
 
 def list_tags(project_dir: Path) -> list[dict[str, Any]]:
@@ -179,9 +175,7 @@ def list_tags(project_dir: Path) -> list[dict[str, Any]]:
         name = parts[0]
         ts = parts[2] if len(parts) > 2 else ""
         message = parts[3] if len(parts) > 3 else ""
-        commit_sha = _git(
-            "rev-list", "-n", "1", name, cwd=project_dir
-        ).stdout.strip()
+        commit_sha = _git("rev-list", "-n", "1", name, cwd=project_dir).stdout.strip()
         out.append(
             {
                 "name": name,

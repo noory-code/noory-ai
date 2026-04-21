@@ -138,9 +138,7 @@ def get_project(project_path: str, project_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-def create_project_tool(
-    project_path: str, project_id: str, name: str = ""
-) -> dict[str, Any]:
+def create_project_tool(project_path: str, project_id: str, name: str = "") -> dict[str, Any]:
     """Create a new v0.2 project folder seeded with Core / Actors / Services-Overview."""
     plot_root = resolve_plot_root(project_path)
     proj = create_project(plot_root, project_id, name)
@@ -171,9 +169,7 @@ def get_canvas(
 
 
 @mcp.tool()
-def update_canvas(
-    project_path: str, project_id: str, canvas: dict[str, Any]
-) -> dict[str, Any]:
+def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) -> dict[str, Any]:
     """Overwrite a canvas. Writing the Overview auto-creates / archives
     Detail canvases to match; the response reports what changed so the
     caller can reconcile its UI."""
@@ -187,9 +183,7 @@ def update_canvas(
 
 
 @mcp.tool()
-def rename_project(
-    project_path: str, project_id: str, name: str
-) -> dict[str, Any]:
+def rename_project(project_path: str, project_id: str, name: str) -> dict[str, Any]:
     """Update a project's ``name`` without touching its canvases."""
     plot_root = resolve_plot_root(project_path)
     proj = read_project(plot_root, project_id)

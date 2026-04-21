@@ -27,13 +27,15 @@ def _is_sketch_file(path: str) -> bool:
 class WorkspaceWatcher:
     """Watches ``{plot_root}/sketches/`` recursively.
 
-    ``on_change`` is awaited once per debounce window.
+    ``on_change`` is awaited once per debounce window with the set of
+    JSON file paths that changed during that window (useful for the
+    broadcast layer to infer which project / canvas to report).
     """
 
     def __init__(
         self,
         plot_root: Path,
-        on_change: Callable[[], Awaitable[None]],
+        on_change: Callable[[set[Path]], Awaitable[None]],
         loop: asyncio.AbstractEventLoop,
         debounce_ms: int = 200,
     ) -> None:
@@ -43,7 +45,7 @@ class WorkspaceWatcher:
         self._debounce = debounce_ms / 1000.0
         self._timer: asyncio.TimerHandle | None = None
         self._observer: BaseObserver | None = None
-        self._dirty = False
+        self._changed: set[Path] = set()
 
     def start(self) -> None:
         if self._observer is not None:
@@ -65,33 +67,34 @@ class WorkspaceWatcher:
         if self._timer is not None:
             self._timer.cancel()
             self._timer = None
-        self._dirty = False
+        self._changed.clear()
 
-    def _record(self) -> None:
-        self._loop.call_soon_threadsafe(self._schedule_fire)
+    def _record(self, path: Path) -> None:
+        self._loop.call_soon_threadsafe(self._schedule_fire, path)
 
-    def _schedule_fire(self) -> None:
-        self._dirty = True
+    def _schedule_fire(self, path: Path) -> None:
+        self._changed.add(path)
         if self._timer is not None:
             self._timer.cancel()
         self._timer = self._loop.call_later(self._debounce, self._fire)
 
     def _fire(self) -> None:
         self._timer = None
-        if not self._dirty:
+        if not self._changed:
             return
-        self._dirty = False
-        asyncio.create_task(self._safe_call())  # noqa: RUF006
+        paths = self._changed
+        self._changed = set()
+        asyncio.create_task(self._safe_call(paths))  # noqa: RUF006
 
-    async def _safe_call(self) -> None:
+    async def _safe_call(self, paths: set[Path]) -> None:
         try:
-            await self._on_change()
+            await self._on_change(paths)
         except Exception:
             _log.exception("watcher on_change callback failed")
 
 
 class _Handler(FileSystemEventHandler):
-    def __init__(self, notify: Callable[[], None]) -> None:
+    def __init__(self, notify: Callable[[Path], None]) -> None:
         self._notify = notify
 
     def on_any_event(self, event: FileSystemEvent) -> None:
@@ -99,5 +102,6 @@ class _Handler(FileSystemEventHandler):
             return
         src = str(event.src_path)
         dest = getattr(event, "dest_path", "") or ""
-        if _is_sketch_file(src) or (dest and _is_sketch_file(str(dest))):
-            self._notify()
+        for raw in (src, dest):
+            if raw and _is_sketch_file(raw):
+                self._notify(Path(raw))

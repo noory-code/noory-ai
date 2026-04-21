@@ -10,12 +10,17 @@ from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from plot_mcp.api_endpoints import (
+    canvas_get_endpoint,
+    canvas_put_endpoint,
     health_endpoint,
-    sketch_delete_endpoint,
-    sketch_get_endpoint,
-    sketch_post_endpoint,
-    sketch_put_endpoint,
-    sketches_list_endpoint,
+    project_delete_endpoint,
+    project_get_endpoint,
+    project_patch_endpoint,
+    project_post_endpoint,
+    projects_list_endpoint,
+    tag_delete_endpoint,
+    tag_post_endpoint,
+    tags_list_endpoint,
 )
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.workspace import find_viewer_dist, resolve_plot_root
@@ -49,11 +54,45 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
 
     routes: list[BaseRoute] = [
         Route("/api/health", health_endpoint),
-        Route("/api/sketches", sketches_list_endpoint, methods=["GET"]),
-        Route("/api/sketches", sketch_post_endpoint, methods=["POST"]),
-        Route("/api/sketches/{sketch_id}", sketch_get_endpoint, methods=["GET"]),
-        Route("/api/sketches/{sketch_id}", sketch_put_endpoint, methods=["PUT"]),
-        Route("/api/sketches/{sketch_id}", sketch_delete_endpoint, methods=["DELETE"]),
+        # v0.4 project + canvas + tag surface
+        Route("/api/projects", projects_list_endpoint, methods=["GET"]),
+        Route("/api/projects", project_post_endpoint, methods=["POST"]),
+        Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
+        Route(
+            "/api/projects/{project_id}",
+            project_patch_endpoint,
+            methods=["PATCH"],
+        ),
+        Route(
+            "/api/projects/{project_id}",
+            project_delete_endpoint,
+            methods=["DELETE"],
+        ),
+        Route(
+            "/api/projects/{project_id}/canvases/{kind}",
+            canvas_get_endpoint,
+            methods=["GET"],
+        ),
+        Route(
+            "/api/projects/{project_id}/canvases/{kind}",
+            canvas_put_endpoint,
+            methods=["PUT"],
+        ),
+        Route(
+            "/api/projects/{project_id}/tags",
+            tags_list_endpoint,
+            methods=["GET"],
+        ),
+        Route(
+            "/api/projects/{project_id}/tags",
+            tag_post_endpoint,
+            methods=["POST"],
+        ),
+        Route(
+            "/api/projects/{project_id}/tags/{tag_name}",
+            tag_delete_endpoint,
+            methods=["DELETE"],
+        ),
         WebSocketRoute("/ws", ws_endpoint),
     ]
     viewer_dist = find_viewer_dist()
