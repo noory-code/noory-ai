@@ -64,6 +64,8 @@ export interface SketchCanvasProps {
   saveState: SaveState;
   onDownload: () => void;
   onUpload: () => void;
+  /** v0.2 multi-canvas: double-click a node to drill into its Detail canvas (Services only). */
+  onNodeDrill?: (nodeId: string) => void;
 }
 
 export function SketchCanvas(props: SketchCanvasProps) {
@@ -90,6 +92,7 @@ function SketchCanvasInner({
   saveState,
   onDownload,
   onUpload,
+  onNodeDrill,
 }: SketchCanvasProps) {
   const docRef = useRef<SketchDoc>(doc);
   docRef.current = doc;
@@ -764,6 +767,7 @@ function SketchCanvasInner({
         onEdgeContextMenu={openEdgeMenu}
         onEdgeDoubleClick={(_evt, edge) => setEdgeModalId(edge.id)}
         onNodeClick={(_evt, n) => setInspectorNodeId(n.id)}
+        onNodeDoubleClick={(_evt, n) => onNodeDrill?.(n.id)}
         onPaneClick={() => setInspectorNodeId(null)}
         onPaneContextMenu={openPaneMenu}
         onInit={(inst) => {

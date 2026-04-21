@@ -59,6 +59,33 @@ function filterDocForTab(doc: SketchDoc, tab: CanvasTab): SketchDoc {
   return { ...doc, nodes: visibleNodes, edges: visibleEdges };
 }
 
+/**
+ * Services drill-down: return the subtree rooted at ``serviceId`` — the
+ * service itself plus every transitive descendant via parent_id. Used when
+ * the user enters the Detail view for a specific service.
+ */
+function filterDocForServiceDetail(doc: SketchDoc, serviceId: string): SketchDoc {
+  const childrenOf = new Map<string, SketchNode[]>();
+  for (const n of doc.nodes) {
+    if (!n.parent_id) continue;
+    const arr = childrenOf.get(n.parent_id) ?? [];
+    arr.push(n);
+    childrenOf.set(n.parent_id, arr);
+  }
+  const root = doc.nodes.find((n) => n.id === serviceId);
+  if (!root) return { ...doc, nodes: [], edges: [] };
+  const visible: SketchNode[] = [];
+  const stack = [root];
+  while (stack.length) {
+    const cur = stack.pop()!;
+    visible.push(cur);
+    stack.push(...(childrenOf.get(cur.id) ?? []));
+  }
+  const ids = new Set(visible.map((n) => n.id));
+  const edges = doc.edges.filter((e) => ids.has(e.source) && ids.has(e.target));
+  return { ...doc, nodes: visible, edges };
+}
+
 function mergeTabEdit(prev: SketchDoc, next: SketchDoc, tab: CanvasTab): SketchDoc {
   const byId = new Map(prev.nodes.map((n) => [n.id, n] as const));
   const hiddenNodes = prev.nodes.filter((n) => classifyNodeTab(n, byId) !== tab);
@@ -70,6 +97,22 @@ function mergeTabEdit(prev: SketchDoc, next: SketchDoc, tab: CanvasTab): SketchD
     ...next,
     nodes: [...hiddenNodes, ...next.nodes],
     edges: [...hiddenEdges, ...next.edges],
+  };
+}
+
+/**
+ * Merge an edit made inside a Detail view: replace the drilled-service
+ * subtree with ``next.nodes`` / ``next.edges`` while keeping everything
+ * else (other services, actors, core) intact.
+ */
+function mergeDetailEdit(prev: SketchDoc, next: SketchDoc, serviceId: string): SketchDoc {
+  const visible = filterDocForServiceDetail(prev, serviceId);
+  const visibleIds = new Set(visible.nodes.map((n) => n.id));
+  const visibleEdgeIds = new Set(visible.edges.map((e) => e.id));
+  return {
+    ...next,
+    nodes: [...prev.nodes.filter((n) => !visibleIds.has(n.id)), ...next.nodes],
+    edges: [...prev.edges.filter((e) => !visibleEdgeIds.has(e.id)), ...next.edges],
   };
 }
 
@@ -93,11 +136,31 @@ export function App() {
     const raw = url.searchParams.get("canvas");
     return CANVAS_TABS.some((t) => t.id === raw) ? (raw as CanvasTab) : "services";
   });
+  const [detailServiceId, setDetailServiceId] = useState<string | null>(() => {
+    return new URL(window.location.href).searchParams.get("detail");
+  });
 
   const selectTab = useCallback((tab: CanvasTab) => {
     setActiveTab(tab);
+    setDetailServiceId(null);
     const url = new URL(window.location.href);
     url.searchParams.set("canvas", tab);
+    url.searchParams.delete("detail");
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+
+  const drillIntoService = useCallback((serviceId: string) => {
+    setDetailServiceId(serviceId);
+    const url = new URL(window.location.href);
+    url.searchParams.set("canvas", "services");
+    url.searchParams.set("detail", serviceId);
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+
+  const backToOverview = useCallback(() => {
+    setDetailServiceId(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("detail");
     window.history.replaceState(null, "", url.toString());
   }, []);
 
@@ -351,15 +414,34 @@ export function App() {
           {phase === "ready" && doc && (
             <CanvasTabs active={activeTab} onSelect={selectTab} />
           )}
+          {phase === "ready" && doc && activeTab === "services" && detailServiceId && (
+            <ServicesBreadcrumb
+              label={
+                doc.nodes.find((n) => n.id === detailServiceId)?.label ??
+                detailServiceId
+              }
+              onBack={backToOverview}
+            />
+          )}
           <div className="flex-1 overflow-hidden">
             {phase === "loading" && <Loading />}
             {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
             {phase === "no-sketches" && <EmptyState onCreate={handleCreate} />}
             {phase === "ready" && doc && (
               <SketchCanvas
-                key={`${doc.id}:${activeTab}`}
-                doc={filterDocForTab(doc, activeTab)}
-                onDocChange={(next) => setDoc(mergeTabEdit(doc, next, activeTab))}
+                key={`${doc.id}:${activeTab}:${detailServiceId ?? ""}`}
+                doc={
+                  activeTab === "services" && detailServiceId
+                    ? filterDocForServiceDetail(doc, detailServiceId)
+                    : filterDocForTab(doc, activeTab)
+                }
+                onDocChange={(next) =>
+                  setDoc(
+                    activeTab === "services" && detailServiceId
+                      ? mergeDetailEdit(doc, next, detailServiceId)
+                      : mergeTabEdit(doc, next, activeTab),
+                  )
+                }
                 onUndo={handleUndo}
                 onRedo={handleRedo}
                 canUndo={history.canUndo}
@@ -367,6 +449,16 @@ export function App() {
                 saveState={saveState}
                 onDownload={handleDownload}
                 onUpload={handleUpload}
+                onNodeDrill={
+                  activeTab === "services" && !detailServiceId
+                    ? (id) => {
+                        const n = doc.nodes.find((x) => x.id === id);
+                        if (n?.kind === "service" && !n.is_root) {
+                          drillIntoService(id);
+                        }
+                      }
+                    : undefined
+                }
               />
             )}
           </div>
@@ -437,6 +529,22 @@ function CanvasTabs({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function ServicesBreadcrumb({ label, onBack }: { label: string; onBack: () => void }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-1.5 text-sm">
+      <button
+        type="button"
+        onClick={onBack}
+        className="text-slate-500 hover:text-slate-800"
+      >
+        ← Services
+      </button>
+      <span className="text-slate-400">›</span>
+      <span className="font-medium text-slate-900">{label}</span>
     </div>
   );
 }
