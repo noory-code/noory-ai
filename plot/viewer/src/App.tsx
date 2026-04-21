@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createProject,
   deleteProject,
   deleteProjectTag,
   getAllCanvases,
-  getCanvas,
   getProject,
   listProjects,
-  putCanvas,
   renameProject,
   resolveProjectPath,
   tagProject,
@@ -15,8 +13,8 @@ import {
 } from "./api";
 import { SketchCanvas } from "./canvases/SketchCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
-import type { SaveState } from "./canvases/SketchToolbar";
 import { useProjectHistory } from "./canvases/useProjectHistory";
+import { useCanvasPersist } from "./hooks/useCanvasPersist";
 import { useProjectSocket } from "./hooks/useProjectSocket";
 import type {
   CanvasDoc,
@@ -42,7 +40,6 @@ function tabToKind(tab: CanvasTab): CanvasKind {
   return "services_overview";
 }
 
-const DEBOUNCE_MS = 400;
 
 export function App() {
   const projectPath = useMemo(resolveProjectPath, []);
@@ -61,7 +58,6 @@ export function App() {
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
 
   const [activeId, setActiveId] = useState<string | null>(() => {
     const url = new URL(window.location.href);
@@ -78,11 +74,6 @@ export function App() {
     return new URL(window.location.href).searchParams.get("select");
   });
 
-  const saveTimer = useRef<number | null>(null);
-  const savedTimer = useRef<number | null>(null);
-  // Stays between putCanvas calls; the WebSocket echo ignores our own
-  // writes so they don't stomp on in-flight state.
-  const pendingWrites = useRef(new Set<CanvasKey>());
 
   // ------- url sync -------
 
@@ -192,6 +183,26 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectPath]);
 
+  // ------- persist + undo/redo (extracted to useCanvasPersist) -------
+
+  const {
+    saveState,
+    pendingWrites,
+    applyEdit,
+    undo: historyUndo,
+    redo: historyRedo,
+  } = useCanvasPersist({
+    projectPath,
+    activeId,
+    history,
+    setCanvasCache,
+    setServiceDetails,
+    onListStale: () => {
+      void loadList();
+    },
+    onError: (err) => setError(err),
+  });
+
   // ------- WebSocket (extracted to useProjectSocket) -------
 
   const socketStatus = useProjectSocket({
@@ -213,116 +224,17 @@ export function App() {
     onError: (err) => setError(err),
   });
 
-  // ------- persist one canvas (debounced) -------
-
-  const persistCanvas = useCallback(
-    (key: CanvasKey, canvas: CanvasDoc) => {
-      if (!projectPath || !activeId) return;
-      pendingWrites.current.add(key);
-      setSaveState("saving");
-      if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
-      saveTimer.current = window.setTimeout(() => {
-        saveTimer.current = null;
-        putCanvas(projectPath, activeId, canvas)
-          .then((res) => {
-            setSaveState("saved");
-            // If the server auto-created / archived Detail canvases, keep
-            // our cache + service-detail list in sync.
-            if (res.sync.created.length || res.sync.archived.length) {
-              setServiceDetails((prev) => {
-                const s = new Set(prev);
-                for (const n of res.sync.created) s.add(n);
-                for (const n of res.sync.archived) s.delete(n);
-                return Array.from(s).sort();
-              });
-              // Fetch any newly-created detail canvases so the cache is ready.
-              if (res.sync.created.length && projectPath && activeId) {
-                void (async () => {
-                  for (const sid of res.sync.created) {
-                    try {
-                      const d = await getCanvas(
-                        projectPath,
-                        activeId,
-                        "service_detail",
-                        sid,
-                      );
-                      setCanvasCache((prev) => {
-                        const next = new Map(prev);
-                        next.set(`service_detail:${sid}`, d);
-                        return next;
-                      });
-                    } catch {
-                      // best-effort; next open will fetch.
-                    }
-                  }
-                })();
-              }
-              if (res.sync.archived.length) {
-                setCanvasCache((prev) => {
-                  const next = new Map(prev);
-                  for (const sid of res.sync.archived) {
-                    next.delete(`service_detail:${sid}`);
-                  }
-                  return next;
-                });
-              }
-            }
-            if (savedTimer.current !== null) window.clearTimeout(savedTimer.current);
-            savedTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
-            void loadList();
-          })
-          .catch((err) => {
-            setSaveState("error");
-            setError(err instanceof Error ? err.message : String(err));
-          });
-      }, DEBOUNCE_MS);
-    },
-    [projectPath, activeId, loadList],
-  );
-
-  // ------- canvas edit entry point -------
-
-  const applyEdit = useCallback(
-    (key: CanvasKey, prev: CanvasDoc, next: CanvasDoc, opts?: { skipHistory?: boolean }) => {
-      setCanvasCache((cur) => {
-        const m = new Map(cur);
-        m.set(key, next);
-        return m;
-      });
-      if (!opts?.skipHistory) {
-        history.push({ canvasKey: key, prev, next });
-      }
-      persistCanvas(key, next);
-    },
-    [history, persistCanvas],
-  );
-
   const handleUndo = useCallback(() => {
-    const entry = history.undo();
-    if (!entry) return;
-    setCanvasCache((cur) => {
-      const m = new Map(cur);
-      m.set(entry.canvasKey, entry.prev);
-      return m;
-    });
-    persistCanvas(entry.canvasKey, entry.prev);
-    // Auto-switch tab to where the reverted edit landed.
-    focusCanvas(entry.canvasKey);
+    const key = historyUndo();
+    if (key) focusCanvas(key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, persistCanvas]);
+  }, [historyUndo]);
 
   const handleRedo = useCallback(() => {
-    const entry = history.redo();
-    if (!entry) return;
-    setCanvasCache((cur) => {
-      const m = new Map(cur);
-      m.set(entry.canvasKey, entry.next);
-      return m;
-    });
-    persistCanvas(entry.canvasKey, entry.next);
-    focusCanvas(entry.canvasKey);
+    const key = historyRedo();
+    if (key) focusCanvas(key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, persistCanvas]);
+  }, [historyRedo]);
 
   const focusCanvas = useCallback(
     (key: CanvasKey) => {
