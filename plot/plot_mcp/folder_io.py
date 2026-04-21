@@ -255,3 +255,54 @@ def delete_project(plot_root: Path, project_id: str) -> None:
     if not folder.exists():
         raise FileNotFoundError(f"project not found: {project_id}")
     shutil.rmtree(folder)
+
+
+# ---------------------------------------------------------------------------
+# Overview ↔ Detail sync
+# ---------------------------------------------------------------------------
+
+
+def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, list[str]]:
+    """Ensure services-detail/{id}.json exists for every service in the Overview.
+
+    Services that disappear from the Overview have their Detail files moved
+    to ``services-detail/_archive/{id}.json`` — a destructive delete would
+    throw away user work on a stray click. Called opportunistically after
+    writes to the Overview canvas.
+
+    Returns ``{"created": [...], "archived": [...]}`` for telemetry.
+    """
+    _ensure_project(plot_root, project_id)
+    try:
+        overview = read_canvas(plot_root, project_id, "services_overview")
+    except FileNotFoundError:
+        return {"created": [], "archived": []}
+    overview_service_ids = {n.id for n in overview.nodes if n.kind == "service"}
+    detail_folder = _project_dir(plot_root, project_id) / _DETAIL_SUBDIR
+    existing_details = {p.stem for p in detail_folder.glob("*.json")}
+
+    created: list[str] = []
+    for service_id in sorted(overview_service_ids - existing_details):
+        src = next(n for n in overview.nodes if n.id == service_id)
+        detail = CanvasDoc(
+            canvas_id=service_id,
+            canvas_kind="service_detail",
+            service_ref=service_id,
+            nodes=[src.model_copy(update={"parent_id": None, "is_root": False})],
+        )
+        _write_json(
+            _canvas_file(plot_root, project_id, "service_detail", service_id=service_id),
+            detail.model_dump(by_alias=True),
+        )
+        created.append(service_id)
+
+    archive_folder = detail_folder / "_archive"
+    archived: list[str] = []
+    for service_id in sorted(existing_details - overview_service_ids):
+        archive_folder.mkdir(exist_ok=True)
+        src_path = detail_folder / f"{service_id}.json"
+        dst_path = archive_folder / f"{service_id}.json"
+        src_path.replace(dst_path)
+        archived.append(service_id)
+
+    return {"created": created, "archived": archived}

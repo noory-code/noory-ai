@@ -12,7 +12,18 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from plot_mcp.models import SketchDoc
+from plot_mcp.folder_io import (
+    create_project,
+    delete_project,
+    list_service_details,
+    read_canvas,
+    read_project,
+    sync_details_with_overview,
+    write_canvas,
+    write_project,
+)
+from plot_mcp.migrate import migrate_v01_to_v02
+from plot_mcp.models import CanvasDoc, CanvasKind, SketchDoc
 from plot_mcp.sketches import (
     create_sketch,
     delete_sketch,
@@ -87,3 +98,119 @@ def open_canvas(project_path: str, sketch_id: str | None = None) -> str:
         url += f"&sketch={sketch_id}"
     webbrowser.open(url)
     return f"Opened {url}"
+
+
+# ---------------------------------------------------------------------------
+# v0.2 multi-canvas tools (project folder layout)
+# ---------------------------------------------------------------------------
+#
+# These operate on the per-canvas files under ``.plot/sketches/{project}/``.
+# Claude Code reads/writes one canvas at a time instead of the whole sketch.
+
+
+@mcp.tool()
+def list_projects(project_path: str) -> list[dict[str, Any]]:
+    """List every v0.2 project folder under ``.plot/sketches/``."""
+    plot_root = resolve_plot_root(project_path)
+    folder = plot_root / "sketches"
+    if not folder.is_dir():
+        return []
+    projects: list[dict[str, Any]] = []
+    for child in sorted(folder.iterdir()):
+        if not child.is_dir():
+            continue
+        try:
+            proj = read_project(plot_root, child.name)
+        except (FileNotFoundError, ValueError):
+            continue
+        projects.append(proj.model_dump())
+    projects.sort(key=lambda p: p.get("updated", ""), reverse=True)
+    return projects
+
+
+@mcp.tool()
+def get_project(project_path: str, project_id: str) -> dict[str, Any]:
+    """Read a project's metadata + its detail canvas ids."""
+    plot_root = resolve_plot_root(project_path)
+    proj = read_project(plot_root, project_id)
+    detail_ids = list_service_details(plot_root, project_id)
+    return {**proj.model_dump(), "service_details": detail_ids}
+
+
+@mcp.tool()
+def create_project_tool(
+    project_path: str, project_id: str, name: str = ""
+) -> dict[str, Any]:
+    """Create a new v0.2 project folder seeded with Core / Actors / Services-Overview."""
+    plot_root = resolve_plot_root(project_path)
+    proj = create_project(plot_root, project_id, name)
+    return proj.model_dump()
+
+
+@mcp.tool()
+def delete_project_tool(project_path: str, project_id: str) -> str:
+    """Delete a project folder. Detail canvases and their archives go with it."""
+    plot_root = resolve_plot_root(project_path)
+    delete_project(plot_root, project_id)
+    return f"deleted {project_id}"
+
+
+@mcp.tool()
+def get_canvas(
+    project_path: str,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    service_id: str | None = None,
+) -> dict[str, Any]:
+    """Read a single canvas — ``canvas_kind`` is one of ``core`` / ``actors`` /
+    ``services_overview`` / ``service_detail``. ``service_id`` is required
+    for ``service_detail``."""
+    plot_root = resolve_plot_root(project_path)
+    canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
+    return canvas.model_dump(by_alias=True)
+
+
+@mcp.tool()
+def update_canvas(
+    project_path: str, project_id: str, canvas: dict[str, Any]
+) -> dict[str, Any]:
+    """Overwrite a canvas. Writing the Overview auto-creates / archives
+    Detail canvases to match; the response reports what changed so the
+    caller can reconcile its UI."""
+    plot_root = resolve_plot_root(project_path)
+    validated = CanvasDoc.model_validate(canvas)
+    write_canvas(plot_root, project_id, validated)
+    sync: dict[str, list[str]] = {"created": [], "archived": []}
+    if validated.canvas_kind == "services_overview":
+        sync = sync_details_with_overview(plot_root, project_id)
+    return {"canvas": validated.model_dump(by_alias=True), "sync": sync}
+
+
+@mcp.tool()
+def rename_project(
+    project_path: str, project_id: str, name: str
+) -> dict[str, Any]:
+    """Update a project's ``name`` without touching its canvases."""
+    plot_root = resolve_plot_root(project_path)
+    proj = read_project(plot_root, project_id)
+    renamed = proj.model_copy(update={"name": name})
+    write_project(plot_root, renamed)
+    return read_project(plot_root, project_id).model_dump()
+
+
+@mcp.tool()
+def list_detail_canvases(project_path: str, project_id: str) -> list[str]:
+    """Return the service ids that have their own Detail canvas."""
+    plot_root = resolve_plot_root(project_path)
+    return list_service_details(plot_root, project_id)
+
+
+@mcp.tool()
+def migrate_v01_sketches(project_path: str) -> list[str]:
+    """Migrate any ``sketches/*.json`` (v0.1) files to the v0.2 folder layout.
+
+    Idempotent. Returns the list of project ids that were migrated.
+    The originals are renamed to ``{id}.json.v01.bak``.
+    """
+    plot_root = resolve_plot_root(project_path)
+    return migrate_v01_to_v02(plot_root)
