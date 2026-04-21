@@ -26,6 +26,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, cast
 
+from plot_mcp.git_store import ensure_repo
 from plot_mcp.models import CanvasDoc, CanvasKind, ProjectDoc, SketchNode
 
 _SINGLETON_CANVAS_FILES: dict[str, str] = {
@@ -221,6 +222,10 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
         raise FileExistsError(f"project already exists: {project_id}")
     folder.mkdir(parents=True)
     (folder / _DETAIL_SUBDIR).mkdir()
+    # Initialise the project's per-folder git repo now so that
+    # ``tag_snapshot`` works later without any extra wiring. The repo
+    # stays empty until the user plants a tag.
+    ensure_repo(folder)
 
     now = datetime.now(UTC).isoformat()
     proj = ProjectDoc(

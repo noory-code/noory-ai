@@ -198,3 +198,50 @@ def test_delete_project_removes_folder(plot_root: Path) -> None:
 def test_delete_missing_project_raises(plot_root: Path) -> None:
     with pytest.raises(FileNotFoundError):
         delete_project(plot_root, "never-existed")
+
+
+# ---------------------------------------------------------------------------
+# git repo wiring (v0.4)
+# ---------------------------------------------------------------------------
+
+
+def test_create_project_initialises_git_repo(plot_root: Path) -> None:
+    create_project(plot_root, "alpha", "Alpha")
+    assert (plot_root / "sketches" / "alpha" / ".git").is_dir()
+
+
+def test_create_project_leaves_git_repo_empty(plot_root: Path) -> None:
+    """Quiet-repo principle: no automatic commits, HEAD doesn't resolve."""
+    import subprocess
+
+    create_project(plot_root, "alpha", "Alpha")
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", "HEAD"],
+        cwd=plot_root / "sketches" / "alpha",
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+
+
+def test_write_canvas_does_not_commit(plot_root: Path) -> None:
+    """Editing a canvas must not bump the git log — only tags do."""
+    import subprocess
+
+    create_project(plot_root, "alpha", "Alpha")
+    write_canvas(
+        plot_root,
+        "alpha",
+        CanvasDoc(
+            canvas_id="actors",
+            canvas_kind="actors",
+            nodes=[SketchNode(id="u", kind="actor", label="U")],
+        ),
+    )
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", "HEAD"],
+        cwd=plot_root / "sketches" / "alpha",
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0  # still no commits
