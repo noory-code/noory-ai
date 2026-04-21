@@ -112,6 +112,11 @@ def tag_snapshot(project_dir: Path, name: str, message: str | None = None) -> di
 
     Raises ``TagAlreadyExistsError`` if ``name`` already exists as a tag.
     """
+    # Self-heal projects that were created before ``ensure_repo`` was wired
+    # into ``create_project`` — lets old projects still plant their first tag.
+    if not (project_dir / ".git").is_dir():
+        ensure_repo(project_dir)
+
     if _tag_exists(project_dir, name):
         raise TagAlreadyExistsError(f"tag already exists: {name!r}")
 
@@ -156,7 +161,13 @@ def list_tags(project_dir: Path) -> list[dict[str, Any]]:
     Each entry: ``{name, sha, ts, message}``. ``sha`` is the commit sha
     the tag points at (not the tag object's own sha), so it's the same
     sha ``tag_snapshot`` returned.
+
+    Returns ``[]`` if the project has no git repo yet (e.g. folder was
+    created by an old backend before ``ensure_repo`` was wired in, or
+    the user deleted ``.git/`` by hand).
     """
+    if not (project_dir / ".git").is_dir():
+        return []
     result = _git(
         "for-each-ref",
         "--sort=-taggerdate",
