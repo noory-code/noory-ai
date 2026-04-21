@@ -3,3 +3,36 @@
 @tailwind utilities;
 
 html, body, #root { height: 100%; }
+
+/* React Flow overrides
+   ------------------------------------------------------------------- */
+
+/* Default node cursor is ``grab``; flip to pointer on hover so the node
+   reads as clickable / interactive, and ``grabbing`` while actually dragging. */
+.react-flow__node { cursor: pointer; }
+.react-flow__node.dragging,
+.react-flow__node:active { cursor: grabbing; }
+
+/* Make connection handles visible + easy to hit. React Flow's default
+   6×6 dot is hard to spot and hard to click. */
+.react-flow__handle {
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid rgb(100 116 139) !important; /* slate-500 */
+  background: white !important;
+  opacity: 0.55;
+  transition: opacity 120ms ease, transform 120ms ease, border-color 120ms ease;
+}
+.react-flow__node:hover .react-flow__handle {
+  opacity: 1;
+}
+.react-flow__handle:hover {
+  transform: scale(1.35);
+  border-color: rgb(79 70 229) !important; /* indigo-600 */
+  background: rgb(224 231 255) !important; /* indigo-100 */
+}
+.react-flow__handle.connecting,
+.react-flow__handle.connectingfrom {
+  opacity: 1;
+  border-color: rgb(79 70 229) !important;
+}
