@@ -1,31 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  createProject,
-  deleteProject,
-  deleteProjectTag,
-  getAllCanvases,
-  getProject,
-  listProjects,
-  renameProject,
-  resolveProjectPath,
-  tagProject,
-  type SocketStatus,
-} from "./api";
+import { resolveProjectPath, type SocketStatus } from "./api";
 import { SketchCanvas } from "./canvases/SketchCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
+import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
-import type {
-  CanvasDoc,
-  CanvasKey,
-  CanvasKind,
-  ProjectDoc,
-  ProjectTag,
-  SketchNode,
-} from "./types";
-
-type Phase = "loading" | "no-projects" | "ready" | "error";
+import type { CanvasDoc, CanvasKey, CanvasKind, SketchNode } from "./types";
 
 type CanvasTab = "core" | "actors" | "services";
 const CANVAS_TABS: readonly { id: CanvasTab; label: string }[] = [
@@ -43,26 +24,9 @@ function tabToKind(tab: CanvasTab): CanvasKind {
 
 export function App() {
   const projectPath = useMemo(resolveProjectPath, []);
-  const [summaries, setSummaries] = useState<ProjectDoc[]>([]);
-  const [migratedToast, setMigratedToast] = useState<string[] | null>(null);
-  const [tags, setTags] = useState<ProjectTag[]>([]);
   const history = useProjectHistory();
-
-  const [canvasCache, setCanvasCache] = useState<Map<CanvasKey, CanvasDoc>>(
-    () => new Map(),
-  );
-  // Kept in state because persistCanvas updates it when Overview sync
-  // creates / archives Detail canvases; the list drives initial cache
-  // warm-up and (later) any Detail picker UI.
-  const [, setServiceDetails] = useState<string[]>([]);
-
-  const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<string | null>(null);
 
-  const [activeId, setActiveId] = useState<string | null>(() => {
-    const url = new URL(window.location.href);
-    return url.searchParams.get("project") ?? url.searchParams.get("sketch");
-  });
   const [activeTab, setActiveTab] = useState<CanvasTab>(() => {
     const raw = new URL(window.location.href).searchParams.get("canvas");
     return CANVAS_TABS.some((t) => t.id === raw) ? (raw as CanvasTab) : "services";
@@ -73,7 +37,6 @@ export function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(() => {
     return new URL(window.location.href).searchParams.get("select");
   });
-
 
   // ------- url sync -------
 
@@ -88,6 +51,43 @@ export function App() {
     },
     [],
   );
+
+  // ------- project state (extracted to useProject) -------
+
+  const initialActiveId = useMemo(() => {
+    const url = new URL(window.location.href);
+    return url.searchParams.get("project") ?? url.searchParams.get("sketch");
+  }, []);
+
+  const project = useProject({
+    projectPath,
+    history,
+    initialActiveId,
+    onActiveIdChange: (id) => {
+      syncUrl({ project: id, sketch: null });
+    },
+    onError: (err) => setError(err),
+  });
+
+  const {
+    summaries,
+    activeId,
+    canvasCache,
+    tags,
+    migratedToast,
+    phase,
+    setCanvasCache,
+    setServiceDetails,
+    setTags,
+    loadList,
+    create: handleCreate,
+    rename: handleRename,
+    remove: handleDelete,
+    pick: handlePick,
+    markSession: handleMarkSession,
+    deleteTag: handleDeleteTag,
+    dismissToast,
+  } = project;
 
   const selectTab = useCallback(
     (tab: CanvasTab) => {
@@ -126,62 +126,6 @@ export function App() {
     setSelectedNodeId(null);
     syncUrl({ select: null });
   }, [syncUrl]);
-
-  // ------- load project list -------
-
-  const loadList = useCallback(async () => {
-    if (!projectPath) return null;
-    try {
-      const { projects, migrated } = await listProjects(projectPath);
-      setSummaries(projects);
-      if (migrated.length > 0) setMigratedToast(migrated);
-      return projects;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setPhase("error");
-      return null;
-    }
-  }, [projectPath]);
-
-  const openProject = useCallback(
-    async (projectId: string) => {
-      if (!projectPath) return;
-      try {
-        const proj = await getProject(projectPath, projectId);
-        setServiceDetails(proj.service_details);
-        setTags(proj.tags);
-        const cache = await getAllCanvases(
-          projectPath,
-          projectId,
-          proj.service_details,
-        );
-        setCanvasCache(cache);
-        history.init();
-        setPhase("ready");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        setPhase("error");
-      }
-    },
-    [projectPath, history],
-  );
-
-  // Initial load
-  useEffect(() => {
-    if (!projectPath) return;
-    void (async () => {
-      const list = await loadList();
-      if (!list || list.length === 0) {
-        setPhase("no-projects");
-        return;
-      }
-      const chosen =
-        (activeId && list.find((p) => p.id === activeId)?.id) ?? list[0].id;
-      setActiveId(chosen);
-      void openProject(chosen);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectPath]);
 
   // ------- persist + undo/redo (extracted to useCanvasPersist) -------
 
@@ -295,95 +239,6 @@ export function App() {
     return () => window.removeEventListener("keydown", handler);
   }, [handleUndo, handleRedo, helpOpen]);
 
-  // ------- project CRUD -------
-
-  const handleCreate = useCallback(async () => {
-    if (!projectPath) return;
-    try {
-      const id = `proj-${Date.now().toString(36)}`;
-      const created = await createProject(projectPath, id, "Untitled");
-      setActiveId(created.id);
-      await loadList();
-      await openProject(created.id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [projectPath, loadList, openProject]);
-
-  const handleRename = useCallback(
-    async (id: string, name: string) => {
-      if (!projectPath) return;
-      try {
-        await renameProject(projectPath, id, name);
-        await loadList();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-    },
-    [projectPath, loadList],
-  );
-
-  const handleDelete = useCallback(
-    async (id: string) => {
-      if (!projectPath) return;
-      try {
-        await deleteProject(projectPath, id);
-        const list = (await loadList()) ?? [];
-        if (activeId === id) {
-          if (list.length === 0) {
-            setPhase("no-projects");
-            setActiveId(null);
-          } else {
-            setActiveId(list[0].id);
-            void openProject(list[0].id);
-          }
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-    },
-    [projectPath, loadList, activeId, openProject],
-  );
-
-  const handlePick = useCallback(
-    (id: string) => {
-      setActiveId(id);
-      syncUrl({ project: id, sketch: null });
-      void openProject(id);
-    },
-    [openProject, syncUrl],
-  );
-
-  // ------- tag actions -------
-
-  const handleMarkSession = useCallback(async () => {
-    if (!projectPath || !activeId) return;
-    const name = window.prompt("Session tag name (e.g. 'session-banas-start')");
-    if (!name || !name.trim()) return;
-    const message = window.prompt("Optional short message", "") || undefined;
-    try {
-      await tagProject(projectPath, activeId, name.trim(), message);
-      const proj = await getProject(projectPath, activeId);
-      setTags(proj.tags);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [projectPath, activeId]);
-
-  const handleDeleteTag = useCallback(
-    async (name: string) => {
-      if (!projectPath || !activeId) return;
-      try {
-        await deleteProjectTag(projectPath, activeId, name);
-        const proj = await getProject(projectPath, activeId);
-        setTags(proj.tags);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-    },
-    [projectPath, activeId],
-  );
-
   // ------- current canvas selection -------
 
   const activeCanvasKey: CanvasKey = useMemo(() => {
@@ -468,7 +323,7 @@ export function App() {
         error={error}
         socketStatus={socketStatus}
         projectName={summaries.find((p) => p.id === activeId)?.name ?? null}
-        onDismissToast={() => setMigratedToast(null)}
+        onDismissToast={dismissToast}
         migratedToast={migratedToast}
       />
       {helpOpen && <HelpCheatsheet onClose={() => setHelpOpen(false)} />}
