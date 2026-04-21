@@ -91,6 +91,21 @@ const CORE_IDENTITY_FACET: StencilPreset = {
   dropHint: "Drop on the Identity node",
 };
 
+// Actor reference — places a pointer to an Actor-canvas node on a
+// Service canvas. Lighter pink + a "→" prefix so it's visually distinct
+// from the original. The ref_actor_id is filled in by the picker modal.
+const ACTOR_REF: StencilPreset = {
+  id: "actor-ref",
+  labelHint: "Actor ref",
+  shape: "ellipse",
+  color: "#fce7f3",
+  width: 140,
+  height: 70,
+  icon: "user",
+  label: "→ actor",
+  kind: "actor_ref",
+};
+
 /**
  * Service internals visible on the canvas = decomposition only.
  *
@@ -142,6 +157,7 @@ export const STENCIL_PRESETS: StencilPreset[] = [
   CORE_VALUE,
   CORE_IDENTITY,
   CORE_IDENTITY_FACET,
+  ACTOR_REF,
 ];
 
 /**
@@ -286,6 +302,11 @@ export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
         title="Service hierarchy"
         presets={SERVICE_INTERNAL}
         note="drop on a Service"
+      />
+      <Section
+        title="Participants"
+        presets={[ACTOR_REF]}
+        note="pick from Actor canvas"
       />
     </div>
   );

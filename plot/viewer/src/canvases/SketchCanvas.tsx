@@ -17,6 +17,7 @@ import ReactFlow, {
 } from "reactflow";
 import { autoLayout } from "../flow/autoLayout";
 import type { NodeKind, SketchDoc, SketchEdge, SketchNode as DocNode } from "../types";
+import { ActorRefPicker } from "./ActorRefPicker";
 import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
 import { SketchEdgeModal, VALUE_FORM_COLORS } from "./SketchEdgeModal";
@@ -46,6 +47,11 @@ export interface NodePreset {
   label?: string;
   /** v0.2: typed node kind. Used to constrain layer on drop and for AI. */
   kind?: NodeKind | null;
+  /**
+   * v0.2 multi-canvas: set on actor_ref drops once the picker has resolved
+   * which actor in the Actor canvas this node points at.
+   */
+  ref_actor_id?: string | null;
 }
 
 // Note (2026-04-20): the earlier implementation snapped services to an
@@ -66,6 +72,12 @@ export interface SketchCanvasProps {
   onUpload: () => void;
   /** v0.2 multi-canvas: double-click a node to drill into its Detail canvas (Services only). */
   onNodeDrill?: (nodeId: string) => void;
+  /**
+   * v0.2 multi-canvas: actors available in the ActorRefPicker. Supplied by
+   * the App (it holds the unfiltered doc), because this canvas may itself
+   * be showing a tab-filtered view that excludes the actors.
+   */
+  availableActors?: DocNode[];
 }
 
 export function SketchCanvas(props: SketchCanvasProps) {
@@ -93,6 +105,7 @@ function SketchCanvasInner({
   onDownload,
   onUpload,
   onNodeDrill,
+  availableActors,
 }: SketchCanvasProps) {
   const docRef = useRef<SketchDoc>(doc);
   docRef.current = doc;
@@ -103,6 +116,11 @@ function SketchCanvasInner({
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
   const [edgeModalId, setEdgeModalId] = useState<string | null>(null);
   const [valueFlowOn, setValueFlowOn] = useState(false);
+  const [pendingActorRef, setPendingActorRef] = useState<null | {
+    preset: NodePreset;
+    pos: { x: number; y: number };
+    resolved: { parentId: string | null };
+  }>(null);
   const [inspectorNodeId, setInspectorNodeId] = useState<string | null>(null);
 
   const updateNode = useCallback(
@@ -347,7 +365,7 @@ function SketchCanvasInner({
         mission: "",
         core_values: "",
         identity: "",
-        ref_actor_id: null,
+        ref_actor_id: preset?.ref_actor_id ?? null,
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -382,7 +400,7 @@ function SketchCanvasInner({
         mission: "",
         core_values: "",
         identity: "",
-        ref_actor_id: null,
+        ref_actor_id: preset?.ref_actor_id ?? null,
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -694,6 +712,12 @@ function SketchCanvasInner({
         window.alert(resolved.error);
         return;
       }
+      // actor_ref: defer creation until the picker modal resolves which
+      // actor this reference points at.
+      if (preset.kind === "actor_ref") {
+        setPendingActorRef({ preset, pos, resolved });
+        return;
+      }
       if (resolved.parentId) {
         const parent = nodeById.get(resolved.parentId)!;
         // Position relative to parent's top-left.
@@ -820,6 +844,44 @@ function SketchCanvasInner({
           />
         );
       })()}
+      {pendingActorRef && (
+        <ActorRefPicker
+          nodes={availableActors ?? doc.nodes}
+          onCancel={() => setPendingActorRef(null)}
+          onPick={(actor) => {
+            const { preset, pos, resolved } = pendingActorRef;
+            const w = preset.width ?? DEFAULT_WIDTH;
+            const h = preset.height ?? DEFAULT_HEIGHT;
+            const resolvedPreset: NodePreset = {
+              ...preset,
+              label: `→ ${actor.label || actor.id}`,
+              ref_actor_id: actor.id,
+            };
+            if (resolved.parentId) {
+              const parent = nodeById.get(resolved.parentId)!;
+              let ax = parent.x;
+              let ay = parent.y;
+              let cur: DocNode | undefined = parent;
+              while (cur?.parent_id) {
+                const p = nodeById.get(cur.parent_id);
+                if (!p) break;
+                ax += p.x;
+                ay += p.y;
+                cur = p;
+              }
+              addNestedNodeAt({
+                parentId: resolved.parentId,
+                localX: Math.max(8, pos.x - ax - w / 2),
+                localY: Math.max(28, pos.y - ay - h / 2),
+                preset: resolvedPreset,
+              });
+            } else {
+              addNodeAt(pos.x - w / 2, pos.y - h / 2, resolvedPreset);
+            }
+            setPendingActorRef(null);
+          }}
+        />
+      )}
       <SketchInspector
         node={
           inspectorNodeId

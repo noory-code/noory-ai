@@ -459,6 +459,7 @@ export function App() {
                       }
                     : undefined
                 }
+                availableActors={doc.nodes.filter((n) => n.kind === "actor")}
               />
             )}
           </div>
