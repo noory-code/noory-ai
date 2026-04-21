@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from plot_mcp.folder_io import list_service_details, read_canvas, read_project
 from plot_mcp.migrate import migrate_v01_to_v02
-from plot_mcp.sketches import create_sketch, read_sketch, write_sketch
 from plot_mcp.workspace import resolve_plot_root
 
 
@@ -20,12 +19,143 @@ def plot_root(tmp_path: Path) -> Path:
 
 
 # ---------------------------------------------------------------------------
+# helpers — write a v0.1 sketch JSON without depending on the deleted
+# ``plot_mcp.sketches`` module. Keeps the legacy format visible in the
+# tests rather than hiding it behind a fixture builder.
+# ---------------------------------------------------------------------------
+
+
+def _v01_node(node_id: str, **overrides: Any) -> dict[str, Any]:
+    """Build a v0.1 SketchNode dict, letting callers override any field."""
+    base: dict[str, Any] = {
+        "id": node_id,
+        "label": node_id,
+        "body": "",
+        "x": 0,
+        "y": 0,
+        "width": 180,
+        "height": 80,
+        "color": "#ffffff",
+        "shape": "rounded",
+        "icon": None,
+        "kind": None,
+        "parent_id": None,
+        "collapsed": False,
+        "is_root": False,
+        "mission": "",
+        "core_values": "",
+        "identity": "",
+        "ref_actor_id": None,
+    }
+    base.update(overrides)
+    return base
+
+
+def _v01_seed_nodes() -> list[dict[str, Any]]:
+    """The three root nodes v0.1 ``create_sketch`` used to plant."""
+    return [
+        _v01_node(
+            "core-root",
+            kind="core",
+            label="alpha",
+            x=-90,
+            y=-70,
+            width=180,
+            height=140,
+            color="#fde68a",
+            shape="octagon",
+            icon="star",
+        ),
+        _v01_node(
+            "actor-root",
+            kind="actor",
+            label="Actors",
+            is_root=True,
+            parent_id="core-root",
+            x=-320,
+            y=180,
+            width=140,
+            height=140,
+            color="#fecaca",
+            shape="circle",
+            icon="users",
+        ),
+        _v01_node(
+            "service-root",
+            kind="service",
+            label="Services",
+            is_root=True,
+            parent_id="core-root",
+            x=180,
+            y=180,
+            width=200,
+            height=120,
+            color="#bae6fd",
+            shape="rounded",
+            icon="zap",
+        ),
+    ]
+
+
+def _v01_seed_edges() -> list[dict[str, Any]]:
+    return [
+        {
+            "id": "e-core-actor",
+            "source": "core-root",
+            "target": "actor-root",
+            "sourceHandle": None,
+            "targetHandle": None,
+            "label": "decomposes",
+            "style": "dashed",
+            "action_verb": "decomposes",
+            "value_form": [],
+        },
+        {
+            "id": "e-core-service",
+            "source": "core-root",
+            "target": "service-root",
+            "sourceHandle": None,
+            "targetHandle": None,
+            "label": "decomposes",
+            "style": "dashed",
+            "action_verb": "decomposes",
+            "value_form": [],
+        },
+    ]
+
+
+def _write_v01_sketch(
+    plot_root: Path,
+    sketch_id: str,
+    name: str,
+    *,
+    nodes: list[dict[str, Any]] | None = None,
+    edges: list[dict[str, Any]] | None = None,
+) -> None:
+    """Drop a v0.1 ``{id}.json`` onto disk for the migrator to find."""
+    doc = {
+        "id": sketch_id,
+        "name": name,
+        "created": "2026-01-01",
+        "updated": "2026-01-01T00:00:00+00:00",
+        "version": 1,
+        "nodes": nodes or _v01_seed_nodes(),
+        "edges": edges or _v01_seed_edges(),
+    }
+    sketches_dir = plot_root / "sketches"
+    sketches_dir.mkdir(exist_ok=True)
+    (sketches_dir / f"{sketch_id}.json").write_text(
+        json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+# ---------------------------------------------------------------------------
 # bare v0.1 seed (Core + Actor-root + Service-root only)
 # ---------------------------------------------------------------------------
 
 
 def test_migrates_bare_v01_sketch(plot_root: Path) -> None:
-    create_sketch(plot_root, "alpha", "Alpha")
+    _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrated = migrate_v01_to_v02(plot_root)
     assert migrated == ["alpha"]
 
@@ -47,7 +177,7 @@ def test_migrates_bare_v01_sketch(plot_root: Path) -> None:
 def test_migrated_core_canvas_has_seeds(plot_root: Path) -> None:
     """v0.4: migrated Core canvas promotes mission/core_values/identity
     into top-level pillars (no ``core`` anchor)."""
-    create_sketch(plot_root, "alpha", "Alpha")
+    _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     core = read_canvas(plot_root, "alpha", "core")
     kinds = sorted({n.kind for n in core.nodes if n.kind is not None})
@@ -57,7 +187,7 @@ def test_migrated_core_canvas_has_seeds(plot_root: Path) -> None:
 
 def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> None:
     """Bare v0.1 only seeds actor-root (is_root=True). It should land in actors.json."""
-    create_sketch(plot_root, "alpha", "Alpha")
+    _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     actors = read_canvas(plot_root, "alpha", "actors")
     # actor-root moves to actors.json as a top-level actor (parent_id cleared)
@@ -66,7 +196,7 @@ def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> Non
 
 
 def test_migrated_services_overview_has_no_nested(plot_root: Path) -> None:
-    create_sketch(plot_root, "alpha", "Alpha")
+    _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     overview = read_canvas(plot_root, "alpha", "services_overview")
     assert all(n.parent_id is None for n in overview.nodes)
@@ -74,7 +204,7 @@ def test_migrated_services_overview_has_no_nested(plot_root: Path) -> None:
 
 
 def test_migration_is_idempotent(plot_root: Path) -> None:
-    create_sketch(plot_root, "alpha", "Alpha")
+    _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     # second pass — nothing to do (already migrated)
     assert migrate_v01_to_v02(plot_root) == []
@@ -86,27 +216,14 @@ def test_migration_is_idempotent(plot_root: Path) -> None:
 
 
 def test_identity_fields_promoted_to_nodes(plot_root: Path) -> None:
-    doc = create_sketch(plot_root, "alpha", "Alpha")
-    # write identity text into the core-root node
-    core_node = next(n for n in doc.nodes if n.id == "core-root")
-    updated = doc.model_copy(
-        update={
-            "nodes": [
-                n.model_copy(
-                    update={
-                        "mission": "Deliver value",
-                        "core_values": "Speed\nClarity",
-                        "identity": "Tone: warm",
-                    }
-                )
-                if n.id == core_node.id
-                else n
-                for n in doc.nodes
-            ],
-            "updated": datetime.now(UTC).isoformat(),
-        }
-    )
-    write_sketch(plot_root, updated)
+    nodes = _v01_seed_nodes()
+    # Patch core-root with identity text fields (v0.1 carried them on the node itself).
+    for n in nodes:
+        if n["id"] == "core-root":
+            n["mission"] = "Deliver value"
+            n["core_values"] = "Speed\nClarity"
+            n["identity"] = "Tone: warm"
+    _write_v01_sketch(plot_root, "alpha", "Alpha", nodes=nodes)
 
     migrate_v01_to_v02(plot_root)
     core = read_canvas(plot_root, "alpha", "core")
@@ -126,49 +243,46 @@ def test_identity_fields_promoted_to_nodes(plot_root: Path) -> None:
 
 
 def test_top_level_services_get_detail_canvases(plot_root: Path) -> None:
-    doc = create_sketch(plot_root, "alpha", "Alpha")
-    from plot_mcp.models import SketchEdge, SketchNode
-
-    with_services = doc.model_copy(
-        update={
-            "nodes": [
-                *doc.nodes,
-                SketchNode(
-                    id="order",
-                    kind="service",
-                    label="주문",
-                    parent_id="service-root",
-                ),
-                SketchNode(
-                    id="order-cart",
-                    kind="service",
-                    label="장바구니",
-                    parent_id="order",
-                ),
-                SketchNode(
-                    id="pay",
-                    kind="service",
-                    label="결제",
-                    parent_id="service-root",
-                ),
-            ],
-            "edges": [
-                *doc.edges,
-                SketchEdge(
-                    id="e-order-cart",
-                    source="order",
-                    target="order-cart",
-                    label="decomposes",
-                    action_verb="decomposes",
-                ),
-            ],
-            "updated": datetime.now(UTC).isoformat(),
+    nodes = _v01_seed_nodes()
+    nodes.extend(
+        [
+            _v01_node(
+                "order",
+                kind="service",
+                label="주문",
+                parent_id="service-root",
+            ),
+            _v01_node(
+                "order-cart",
+                kind="service",
+                label="장바구니",
+                parent_id="order",
+            ),
+            _v01_node(
+                "pay",
+                kind="service",
+                label="결제",
+                parent_id="service-root",
+            ),
+        ]
+    )
+    edges = _v01_seed_edges()
+    edges.append(
+        {
+            "id": "e-order-cart",
+            "source": "order",
+            "target": "order-cart",
+            "sourceHandle": None,
+            "targetHandle": None,
+            "label": "decomposes",
+            "style": "solid",
+            "action_verb": "decomposes",
+            "value_form": [],
         }
     )
-    write_sketch(plot_root, with_services)
+    _write_v01_sketch(plot_root, "alpha", "Alpha", nodes=nodes, edges=edges)
 
     migrate_v01_to_v02(plot_root)
-    # Overview: two top-level services — order, pay — plus service-root?
     overview = read_canvas(plot_root, "alpha", "services_overview")
     labels = {n.label for n in overview.nodes}
     assert "주문" in labels and "결제" in labels
@@ -190,7 +304,7 @@ def test_top_level_services_get_detail_canvases(plot_root: Path) -> None:
 
 
 def test_malformed_v01_file_is_skipped(plot_root: Path) -> None:
-    create_sketch(plot_root, "ok", "OK")
+    _write_v01_sketch(plot_root, "ok", "OK")
     (plot_root / "sketches" / "broken.json").write_text("not json", encoding="utf-8")
     migrated = migrate_v01_to_v02(plot_root)
     assert migrated == ["ok"]
@@ -198,13 +312,11 @@ def test_malformed_v01_file_is_skipped(plot_root: Path) -> None:
     assert (plot_root / "sketches" / "broken.json").exists()
 
 
-def test_migrated_project_still_loadable_by_read_sketch_backup(plot_root: Path) -> None:
-    """The ``.v01.bak`` file is still valid JSON so humans can inspect it."""
-    create_sketch(plot_root, "alpha", "Alpha")
+def test_migrated_backup_is_inspectable(plot_root: Path) -> None:
+    """The ``.v01.bak`` file is still valid JSON so humans can diff it
+    against the new folder layout or roll back by hand."""
+    _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     raw = json.loads((plot_root / "sketches" / "alpha.json.v01.bak").read_text(encoding="utf-8"))
     assert raw["id"] == "alpha"
-    # Loading the old doc via read_sketch now fails because the file moved;
-    # we don't expect it to work — just that the backup is inspectable.
-    with pytest.raises(FileNotFoundError):
-        read_sketch(plot_root, "alpha")
+    assert raw["version"] == 1

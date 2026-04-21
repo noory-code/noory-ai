@@ -24,14 +24,134 @@ import json
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+from pydantic import BaseModel, Field, field_validator, model_validator
+
 from plot_mcp.folder_io import _canvas_file, _project_dir, _project_file, _write_json
 from plot_mcp.models import (
     CanvasDoc,
     ProjectDoc,
-    SketchDoc,
     SketchEdge,
     SketchNode,
 )
+
+# ---------------------------------------------------------------------------
+# v0.1 spec — private to the migration script
+# ---------------------------------------------------------------------------
+#
+# v0.1 stored everything as one ``{id}.json`` under ``sketches/``. v0.4
+# dropped that format but migration still needs to *read* it, so the
+# Pydantic model lives here rather than polluting ``plot_mcp/models.py``.
+# Identical shape + validators to the former ``SketchDoc``; kept strict so
+# a corrupt file fails up-front instead of producing a half-migrated
+# folder.
+
+
+_V01_COMPOSITION_KINDS = {"rule", "content"}
+
+
+class _V01SketchDoc(BaseModel):
+    """Legacy v0.1 single-file sketch document. Migration-only.
+
+    Loaded from ``.plot/sketches/{id}.json`` (the pre-v0.4 layout) and
+    broken apart into the v0.4 folder-per-project + canvas files.
+    """
+
+    id: str = Field(..., min_length=1)
+    name: str = ""
+    created: str = ""  # ISO date (YYYY-MM-DD)
+    updated: str = ""  # ISO datetime
+    version: int = 1
+    nodes: list[SketchNode] = Field(default_factory=list)
+    edges: list[SketchEdge] = Field(default_factory=list)
+
+    @field_validator("id")
+    @classmethod
+    def _kebab_id(cls, v: str) -> str:
+        if not v.replace("-", "").replace("_", "").isalnum():
+            raise ValueError(f"sketch id must be alphanumeric with -/_ only, got {v!r}")
+        return v
+
+    @model_validator(mode="after")
+    def _edges_reference_nodes(self) -> _V01SketchDoc:
+        node_ids = {n.id for n in self.nodes}
+        dangling = [e for e in self.edges if e.source not in node_ids or e.target not in node_ids]
+        if dangling:
+            missing = sorted({e.id for e in dangling})
+            raise ValueError(f"edges reference unknown nodes: {missing}")
+        if len({e.id for e in self.edges}) != len(self.edges):
+            raise ValueError("edge ids must be unique")
+        if len({n.id for n in self.nodes}) != len(self.nodes):
+            raise ValueError("node ids must be unique")
+        return self
+
+    @model_validator(mode="after")
+    def _parent_ids_are_valid(self) -> _V01SketchDoc:
+        by_id = {n.id: n for n in self.nodes}
+        for n in self.nodes:
+            if n.parent_id is None:
+                continue
+            if n.parent_id == n.id:
+                raise ValueError(f"node {n.id!r} cannot be its own parent")
+            if n.parent_id not in by_id:
+                raise ValueError(f"node {n.id!r}.parent_id points to unknown node {n.parent_id!r}")
+        for start in self.nodes:
+            seen: set[str] = set()
+            current: str | None = start.id
+            while current is not None:
+                if current in seen:
+                    raise ValueError(f"parent chain contains a cycle at node {current!r}")
+                seen.add(current)
+                parent = by_id[current]
+                current = parent.parent_id
+        return self
+
+    @model_validator(mode="after")
+    def _at_most_one_root_per_kind(self) -> _V01SketchDoc:
+        cores = [n for n in self.nodes if n.kind == "core"]
+        if len(cores) > 1:
+            raise ValueError(
+                f"at most one core node allowed per sketch; found {sorted(n.id for n in cores)}"
+            )
+        roots = [n for n in self.nodes if n.is_root]
+        by_kind: dict[str, list[str]] = {}
+        for r in roots:
+            if r.kind not in ("actor", "service"):
+                raise ValueError(
+                    f"node {r.id!r} is_root=True but kind is {r.kind!r} "
+                    "(only actor or service may be is_root)"
+                )
+            by_kind.setdefault(r.kind, []).append(r.id)
+        for kind, ids in by_kind.items():
+            if len(ids) > 1:
+                raise ValueError(f"at most one {kind}-root allowed per sketch; found {sorted(ids)}")
+        return self
+
+    @model_validator(mode="after")
+    def _composition_kinds_live_in_service(self) -> _V01SketchDoc:
+        by_id = {n.id: n for n in self.nodes}
+        for n in self.nodes:
+            if n.kind not in _V01_COMPOSITION_KINDS:
+                continue
+            if n.parent_id is None:
+                raise ValueError(
+                    f"node {n.id!r} of kind {n.kind!r} requires a parent_id "
+                    "(must live inside a service)"
+                )
+            parent = by_id.get(n.parent_id)
+            if parent is not None and parent.kind != "service":
+                raise ValueError(
+                    f"node {n.id!r} of kind {n.kind!r} must be a child of a service, "
+                    f"but parent {n.parent_id!r} has kind {parent.kind!r}"
+                )
+        return self
+
+
+def _read_v01_sketch(path: Path) -> _V01SketchDoc:
+    """Read one v0.1 ``{id}.json`` file. Raises on missing / malformed."""
+    if not path.exists():
+        raise FileNotFoundError(f"sketch not found: {path}")
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return _V01SketchDoc.model_validate(raw)
 
 
 def migrate_v01_to_v02(plot_root: Path) -> list[str]:
@@ -49,8 +169,7 @@ def migrate_v01_to_v02(plot_root: Path) -> list[str]:
         if path.name.endswith(".v01.bak"):
             continue
         try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-            doc = SketchDoc.model_validate(raw)
+            doc = _read_v01_sketch(path)
         except (ValueError, json.JSONDecodeError):
             continue
         folder = _project_dir(plot_root, doc.id)
@@ -69,7 +188,7 @@ def _backup(path: Path) -> None:
     path.replace(backup)
 
 
-def _migrate_one(plot_root: Path, doc: SketchDoc) -> None:
+def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
     folder = _project_dir(plot_root, doc.id)
     folder.mkdir(parents=True)
     (folder / "services-detail").mkdir()

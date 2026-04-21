@@ -84,9 +84,7 @@ def get_project(project_path: str, project_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-def create_project_tool(
-    project_path: str, project_id: str, name: str = ""
-) -> dict[str, Any]:
+def create_project_tool(project_path: str, project_id: str, name: str = "") -> dict[str, Any]:
     """Create a new project folder seeded with Core / Actors / Services-Overview."""
     plot_root = resolve_plot_root(project_path)
     proj = create_project(plot_root, project_id, name)
@@ -94,9 +92,7 @@ def create_project_tool(
 
 
 @mcp.tool()
-def rename_project(
-    project_path: str, project_id: str, name: str
-) -> dict[str, Any]:
+def rename_project(project_path: str, project_id: str, name: str) -> dict[str, Any]:
     """Update a project's ``name`` without touching its canvases."""
     plot_root = resolve_plot_root(project_path)
     proj = read_project(plot_root, project_id)
@@ -134,9 +130,7 @@ def get_canvas(
 
 
 @mcp.tool()
-def update_canvas(
-    project_path: str, project_id: str, canvas: dict[str, Any]
-) -> dict[str, Any]:
+def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) -> dict[str, Any]:
     """Overwrite a canvas. Writing ``services_overview`` auto-creates /
     archives Detail canvases so Overview and Detail stay 1:1. The
     response reports the reconciliation."""
@@ -173,9 +167,7 @@ def tag_project(
     "before-refactor") — day-to-day edits don't commit, only tags do."""
     plot_root = resolve_plot_root(project_path)
     try:
-        return tag_snapshot(
-            plot_root / "sketches" / project_id, name, message=message
-        )
+        return tag_snapshot(plot_root / "sketches" / project_id, name, message=message)
     except TagAlreadyExistsError as exc:
         raise ValueError(str(exc)) from exc
 
