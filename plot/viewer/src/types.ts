@@ -105,3 +105,56 @@ export interface SketchSummary {
   node_count: number;
   edge_count: number;
 }
+
+// ---------------------------------------------------------------------------
+// v0.4 multi-canvas — project folder layout
+// ---------------------------------------------------------------------------
+
+export type CanvasKind =
+  | "core"
+  | "actors"
+  | "services_overview"
+  | "service_detail";
+
+/**
+ * Cache key for a loaded canvas inside the viewer. Singleton canvases use
+ * just the kind; service-detail uses ``service_detail:{service_id}``.
+ */
+export type CanvasKey =
+  | "core"
+  | "actors"
+  | "services_overview"
+  | `service_detail:${string}`;
+
+export interface CanvasDoc {
+  canvas_id: string;
+  canvas_kind: CanvasKind;
+  service_ref: string | null;
+  nodes: SketchNode[];
+  edges: SketchEdge[];
+}
+
+export interface ProjectDoc {
+  id: string;
+  name: string;
+  created: string;
+  updated: string;
+  version: number;
+}
+
+export interface ProjectTag {
+  name: string;
+  sha: string;
+  ts: string;
+  message: string;
+}
+
+export interface ProjectChangedPayload {
+  project_id?: string;
+  canvas_kind?: CanvasKind;
+  service_id?: string;
+}
+
+export type SocketEvent =
+  | ({ event: "project_changed" } & ProjectChangedPayload)
+  | { event: string };
