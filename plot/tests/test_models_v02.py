@@ -30,18 +30,14 @@ def test_v01_files_load_with_none_kind() -> None:
 def test_rule_inside_service_ok() -> None:
     SketchDoc(
         id="ok",
-        nodes=_base_nodes(
-            [SketchNode(id="r1", kind="rule", parent_id="svc-a", label="Pricing")]
-        ),
+        nodes=_base_nodes([SketchNode(id="r1", kind="rule", parent_id="svc-a", label="Pricing")]),
     )
 
 
 def test_content_inside_service_ok() -> None:
     SketchDoc(
         id="ok",
-        nodes=_base_nodes(
-            [SketchNode(id="c1", kind="content", parent_id="svc-a", label="Image")]
-        ),
+        nodes=_base_nodes([SketchNode(id="c1", kind="content", parent_id="svc-a", label="Image")]),
     )
 
 
@@ -49,9 +45,7 @@ def test_rule_without_parent_rejected() -> None:
     with pytest.raises(ValueError, match="requires a parent_id"):
         SketchDoc(
             id="bad",
-            nodes=_base_nodes(
-                [SketchNode(id="r1", kind="rule", label="Free-floating rule")]
-            ),
+            nodes=_base_nodes([SketchNode(id="r1", kind="rule", label="Free-floating rule")]),
         )
 
 
@@ -59,9 +53,7 @@ def test_rule_inside_actor_rejected() -> None:
     with pytest.raises(ValueError, match="must be a child of a service"):
         SketchDoc(
             id="bad",
-            nodes=_base_nodes(
-                [SketchNode(id="r1", kind="rule", parent_id="actor-h", label="X")]
-            ),
+            nodes=_base_nodes([SketchNode(id="r1", kind="rule", parent_id="actor-h", label="X")]),
         )
 
 
@@ -69,9 +61,7 @@ def test_sub_service_inside_service_ok() -> None:
     """Decomposition: a service nested under another service."""
     SketchDoc(
         id="ok",
-        nodes=_base_nodes(
-            [SketchNode(id="svc-b", kind="service", parent_id="svc-a", label="Sub")]
-        ),
+        nodes=_base_nodes([SketchNode(id="svc-b", kind="service", parent_id="svc-a", label="Sub")]),
     )
 
 

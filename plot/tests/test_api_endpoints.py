@@ -93,9 +93,7 @@ def test_get_then_put(app_client: tuple[TestClient, str]) -> None:
     assert resp.status_code == 200
     doc = resp.json()
     # Add a node
-    doc["nodes"].append(
-        {"id": "n1", "label": "First", "x": 100, "y": 100, "color": "#fecaca"}
-    )
+    doc["nodes"].append({"id": "n1", "label": "First", "x": 100, "y": 100, "color": "#fecaca"})
     # PUT overwrites
     resp = client.put(
         "/api/sketches/alpha",
