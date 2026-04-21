@@ -7,7 +7,6 @@ import {
   getCanvas,
   getProject,
   listProjects,
-  openProjectSocket,
   putCanvas,
   renameProject,
   resolveProjectPath,
@@ -18,6 +17,7 @@ import { SketchCanvas } from "./canvases/SketchCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import type { SaveState } from "./canvases/SketchToolbar";
 import { useProjectHistory } from "./canvases/useProjectHistory";
+import { useProjectSocket } from "./hooks/useProjectSocket";
 import type {
   CanvasDoc,
   CanvasKey,
@@ -42,14 +42,6 @@ function tabToKind(tab: CanvasTab): CanvasKind {
   return "services_overview";
 }
 
-function canvasKey(kind: CanvasKind, serviceId?: string | null): CanvasKey {
-  if (kind === "service_detail") {
-    if (!serviceId) throw new Error("service_detail requires serviceId");
-    return `service_detail:${serviceId}`;
-  }
-  return kind;
-}
-
 const DEBOUNCE_MS = 400;
 
 export function App() {
@@ -69,7 +61,6 @@ export function App() {
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<string | null>(null);
-  const [socketStatus, setSocketStatus] = useState<SocketStatus>("connecting");
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
   const [activeId, setActiveId] = useState<string | null>(() => {
@@ -201,65 +192,26 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectPath]);
 
-  // ------- WebSocket -------
+  // ------- WebSocket (extracted to useProjectSocket) -------
 
-  const wsActiveIdRef = useRef<string | null>(activeId);
-  wsActiveIdRef.current = activeId;
-  const wsSaveStateRef = useRef<SaveState>(saveState);
-  wsSaveStateRef.current = saveState;
-
-  useEffect(() => {
-    if (!projectPath) return;
-    const sock = openProjectSocket(projectPath, {
-      onEvent: (msg) => {
-        if (msg.event !== "project_changed") return;
-        const payload = msg as { project_id?: string; canvas_kind?: CanvasKind; service_id?: string };
-        const pid = wsActiveIdRef.current;
-        if (!pid) return;
-        if (payload.project_id && payload.project_id !== pid) {
-          // Different project changed — refresh sidebar only.
-          void loadList();
-          return;
-        }
-        // Same project. If this was our own write, skip.
-        const key = payload.canvas_kind
-          ? canvasKey(payload.canvas_kind, payload.service_id)
-          : null;
-        if (key && pendingWrites.current.has(key)) {
-          pendingWrites.current.delete(key);
-          return;
-        }
-        // External change — clear in-memory history (no stale replay).
-        history.clear();
-        if (key && projectPath) {
-          void (async () => {
-            try {
-              const fresh = await getCanvas(
-                projectPath,
-                pid,
-                payload.canvas_kind!,
-                payload.service_id ?? null,
-              );
-              setCanvasCache((prev) => {
-                const next = new Map(prev);
-                next.set(key, fresh);
-                return next;
-              });
-            } catch (err) {
-              setError(err instanceof Error ? err.message : String(err));
-            }
-          })();
-        } else {
-          // Project-level event — just refresh sidebar + tags.
-          void loadList();
-          void getProject(projectPath, pid).then((p) => setTags(p.tags));
-        }
-      },
-      onStatus: setSocketStatus,
-      onError: (err) => setError(err),
-    });
-    return () => sock.close();
-  }, [projectPath, loadList, history]);
+  const socketStatus = useProjectSocket({
+    projectPath,
+    activeId,
+    pendingWrites,
+    onListStale: () => {
+      void loadList();
+    },
+    onExternalCanvas: (key, fresh) => {
+      setCanvasCache((prev) => {
+        const next = new Map(prev);
+        next.set(key, fresh);
+        return next;
+      });
+    },
+    onTagsRefresh: (nextTags) => setTags(nextTags),
+    onExternalChange: () => history.clear(),
+    onError: (err) => setError(err),
+  });
 
   // ------- persist one canvas (debounced) -------
 
