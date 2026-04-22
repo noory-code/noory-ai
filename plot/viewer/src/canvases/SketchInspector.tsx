@@ -342,6 +342,12 @@ interface TemplateField {
   rows?: number;
 }
 
+const REFERENCES_FIELD: TemplateField = {
+  heading: "References",
+  rows: 2,
+  hint: "[[workspace/identity/mission.md]] 같은 위키 링크",
+};
+
 const TEMPLATES: Partial<Record<NodeKind, TemplateField[]>> = {
   mission: [
     { heading: "Tagline", hint: "한 줄 슬로건" },
@@ -349,17 +355,21 @@ const TEMPLATES: Partial<Record<NodeKind, TemplateField[]>> = {
     { heading: "Method", hint: "어떻게 달성하나" },
     { heading: "Goal", hint: "도달하려는 상태" },
     { heading: "Story", rows: 5, hint: "왜 이 미션을 택했는가" },
+    REFERENCES_FIELD,
   ],
   core_value: [
     { heading: "Summary", rows: 2, hint: "이 값은 무엇인가" },
     { heading: "Decision criteria", rows: 3, hint: "갈등 상황에서 어떻게 행동하나" },
+    REFERENCES_FIELD,
   ],
   identity: [
     { heading: "Summary", rows: 2, hint: "이 측면의 핵심" },
     { heading: "Details", rows: 5, hint: "구체 규칙, 예시" },
+    REFERENCES_FIELD,
   ],
   project: [
     { heading: "Summary", rows: 3, hint: "프로젝트 한 문단 설명" },
+    REFERENCES_FIELD,
   ],
 };
 

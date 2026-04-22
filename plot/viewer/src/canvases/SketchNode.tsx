@@ -1,4 +1,5 @@
 import { memo } from "react";
+import ReactMarkdown from "react-markdown";
 import { Handle, NodeResizer, Position, type NodeProps } from "reactflow";
 import type { Shape } from "../types";
 import { EditableText } from "../edit/EditableText";
@@ -142,8 +143,8 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
             </span>
           )}
 
-        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-center">
-          <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+        <div className="flex h-full w-full flex-col items-stretch justify-center gap-1">
+          <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-slate-800">
             {data.showFold !== false && data.hasChildren && data.onToggleCollapse && (
               <button
                 type="button"
@@ -181,8 +182,8 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
             )}
           </div>
           {data.body && (
-            <div className="line-clamp-[8] whitespace-pre-wrap text-center text-xs text-slate-700">
-              {data.body}
+            <div className="nowheel overflow-auto text-left text-[11px] leading-snug text-slate-700 [&_a]:text-indigo-600 [&_a]:underline [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_h3]:mt-1 [&_h3]:text-[10px] [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:tracking-wider [&_h3]:text-slate-500 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1 [&_strong]:text-slate-900">
+              <ReactMarkdown>{data.body}</ReactMarkdown>
             </div>
           )}
         </div>
