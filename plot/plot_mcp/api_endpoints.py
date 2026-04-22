@@ -22,9 +22,9 @@ from plot_mcp.folder_io import (
     list_service_details,
     read_canvas,
     read_project,
+    rename_project,
     sync_details_with_overview,
     write_canvas,
-    write_project,
 )
 from plot_mcp.git_store import (
     TagAlreadyExistsError,
@@ -168,12 +168,10 @@ async def project_patch_endpoint(request: Request) -> JSONResponse:
     if not isinstance(name, str) or not name.strip():
         return _error("'name' is required and must be a non-empty string")
     try:
-        proj = read_project(plot_root, project_id)
+        renamed = rename_project(plot_root, project_id, name)
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
-    renamed = proj.model_copy(update={"name": name})
-    write_project(plot_root, renamed)
-    return JSONResponse(read_project(plot_root, project_id).model_dump())
+    return JSONResponse(renamed.model_dump())
 
 
 async def project_delete_endpoint(request: Request) -> Response:

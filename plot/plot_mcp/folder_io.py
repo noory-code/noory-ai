@@ -132,6 +132,14 @@ def read_canvas(
     service_id: str | None = None,
 ) -> CanvasDoc:
     _ensure_project(plot_root, project_id)
+    if canvas_kind == "core":
+        # Heal Core canvases written under pre-v0.5 schemas (``core`` anchor /
+        # ``identity_facet`` children / no Project node yet) before Pydantic
+        # sees the raw dict. Imported here to keep migrate.py optional on the
+        # hot path for non-core kinds.
+        from plot_mcp.migrate import upgrade_core_canvas_if_needed
+
+        upgrade_core_canvas_if_needed(plot_root, project_id)
     path = _canvas_file(plot_root, project_id, canvas_kind, service_id)
     raw = _read_json(path)
     return CanvasDoc.model_validate(raw)
@@ -142,12 +150,59 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
     service_id = canvas.service_ref if canvas.canvas_kind == "service_detail" else None
     path = _canvas_file(plot_root, project_id, canvas.canvas_kind, service_id)
     _write_json(path, canvas.model_dump(by_alias=True))
-    # bump project.updated whenever a canvas changes
     try:
         meta = read_project(plot_root, project_id)
     except FileNotFoundError:
         return
+    # Core canvas has the Project anchor whose label mirrors ProjectDoc.name.
+    # Writes to the canvas are the authoritative source of the rename — pull
+    # any drift back into the ProjectDoc so the sidebar / MCP stay in sync.
+    if canvas.canvas_kind == "core":
+        project_node = next((n for n in canvas.nodes if n.kind == "project"), None)
+        if project_node is not None:
+            new_label = project_node.label.strip()
+            if new_label and new_label != meta.name:
+                meta = meta.model_copy(update={"name": new_label})
+    # bump project.updated whenever a canvas changes
     write_project(plot_root, meta)
+
+
+def rename_project(plot_root: Path, project_id: str, new_name: str) -> ProjectDoc:
+    """Update ``ProjectDoc.name`` and sync the Core canvas Project anchor's
+    label in one shot. Returns the refreshed ProjectDoc.
+
+    Both sides stay in sync: the anchor label in ``core.json`` always equals
+    ``project.json``'s ``name``.
+    """
+    proj = read_project(plot_root, project_id)
+    renamed = proj.model_copy(update={"name": new_name})
+    _write_json(_project_file(plot_root, project_id), renamed.model_dump())
+
+    # Update the Project anchor label in the Core canvas (no-op if the
+    # canvas hasn't been upgraded yet — the upgrade hook on read_canvas
+    # will heal it on the next open).
+    try:
+        core = read_canvas(plot_root, project_id, "core")
+    except FileNotFoundError:
+        write_project(plot_root, renamed)
+        return read_project(plot_root, project_id)
+
+    project_node = next((n for n in core.nodes if n.kind == "project"), None)
+    if project_node is not None and project_node.label != new_name:
+        updated_nodes = [
+            n.model_copy(update={"label": new_name}) if n.id == project_node.id else n
+            for n in core.nodes
+        ]
+        synced = core.model_copy(update={"nodes": updated_nodes})
+        # Write directly without recursing through write_canvas (which would
+        # read back our just-renamed ProjectDoc and no-op the sync check).
+        _write_json(
+            _canvas_file(plot_root, project_id, "core"),
+            synced.model_dump(by_alias=True),
+        )
+
+    write_project(plot_root, renamed)
+    return read_project(plot_root, project_id)
 
 
 def list_service_details(plot_root: Path, project_id: str) -> list[str]:
@@ -164,22 +219,35 @@ def list_service_details(plot_root: Path, project_id: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def _seed_core_canvas() -> CanvasDoc:
-    """Minimum valid Core canvas — three top-level pillars: Mission,
-    Core Value (one placeholder the user can rename / duplicate), and
-    Identity. No ``core``-kind parent octagon — the old anchor existed
-    to tie the single-canvas v0.2 world together, and in v0.4 it's just
-    noise on an already-focused canvas."""
+def _seed_core_canvas(project_name: str) -> CanvasDoc:
+    """Minimum valid Core canvas — central Project anchor (circle, auto-seeded,
+    cannot be deleted) surrounded by Mission / Core Value / Identity pillars.
+
+    The Project node's label mirrors ``ProjectDoc.name``; editing either side
+    keeps both in sync via ``rename_project`` / ``sync_project_name_from_canvas``.
+    """
     return CanvasDoc(
         canvas_id="core",
         canvas_kind="core",
         nodes=[
             SketchNode(
+                id="project",
+                kind="project",
+                label=project_name,
+                x=-75,
+                y=-75,
+                width=150,
+                height=150,
+                color="#fef3c7",
+                shape="circle",
+                icon="compass",
+            ),
+            SketchNode(
                 id="mission",
                 kind="mission",
                 label="Mission",
-                x=-260,
-                y=-60,
+                x=-360,
+                y=-45,
                 width=200,
                 height=90,
                 color="#fef3c7",
@@ -190,8 +258,8 @@ def _seed_core_canvas() -> CanvasDoc:
                 id="core-value-1",
                 kind="core_value",
                 label="Core value",
-                x=0,
-                y=-60,
+                x=-90,
+                y=-260,
                 width=180,
                 height=80,
                 color="#fde68a",
@@ -201,9 +269,9 @@ def _seed_core_canvas() -> CanvasDoc:
             SketchNode(
                 id="identity",
                 kind="identity",
-                label="Identity",
-                x=220,
-                y=-60,
+                label="Voice",
+                x=160,
+                y=-45,
                 width=200,
                 height=90,
                 color="#fed7aa",
@@ -241,7 +309,7 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
 
     _write_json(
         _canvas_file(plot_root, project_id, "core"),
-        _seed_core_canvas().model_dump(by_alias=True),
+        _seed_core_canvas(proj.name).model_dump(by_alias=True),
     )
     _write_json(
         _canvas_file(plot_root, project_id, "actors"),

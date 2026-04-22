@@ -27,12 +27,14 @@ Shape = Literal[
 
 # v0.2 node kinds. See PHILOSOPHY.md (P5, P11).
 #
-# Canvas anchors:
-#   core             — root of the Core canvas (the project identity anchor).
-#   mission          — statement of purpose; exactly one per Core canvas.
+# Canvas anchors (Core):
+#   project          — central anchor of the Core canvas; exactly 1 per project,
+#                      auto-seeded, cannot be deleted, label mirrors ProjectDoc.name.
+#   mission          — statement of purpose; 1..N per Core canvas.
 #   core_value       — a value the project commits to; 0..N per Core canvas.
-#   identity         — identity anchor; exactly one per Core canvas.
-#   identity_facet   — tone / voice / visual / …; child of identity.
+#   identity         — an aspect of the project's identity (label = "Voice" /
+#                      "Energy" / "Speech style" / "Visual tone" / …); 1..N peers.
+#                      v0.5 absorbed the former ``identity_facet`` kind.
 #   actor            — participant in the value economy (Actor canvas only).
 #   actor_ref        — reference to an actor (Service canvases); carries
 #                      ``ref_actor_id`` pointing at an actor in the Actor canvas.
@@ -42,12 +44,17 @@ Shape = Literal[
 #
 # Sub-service and sub-actor are not new kinds — they're service/actor with
 # a non-null parent_id (hierarchy / decomposition).
+#
+# Deprecated (migrated on open by ``migrate._migrate_v04_core_schema``):
+#   core             — former Core root anchor (octagon). Removed in v0.3;
+#                      remaining disk nodes are converted to ``project``.
+#   identity_facet   — child of identity. Absorbed into ``identity`` in v0.5
+#                      with parent_id cleared (flat peer model).
 NodeKind = Literal[
-    "core",
+    "project",
     "mission",
     "core_value",
     "identity",
-    "identity_facet",
     "actor",
     "actor_ref",
     "service",
@@ -152,7 +159,7 @@ class SketchEdge(BaseModel):
 CanvasKind = Literal["core", "actors", "services_overview", "service_detail"]
 
 _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
-    "core": {"core", "mission", "core_value", "identity", "identity_facet"},
+    "core": {"project", "mission", "core_value", "identity"},
     "actors": {"actor"},
     "services_overview": {"service"},
     "service_detail": {"service", "rule", "content", "actor_ref"},
@@ -228,35 +235,25 @@ class CanvasDoc(BaseModel):
     def _core_canvas_rules(self) -> CanvasDoc:
         if self.canvas_kind != "core":
             return self
+        projects = [n for n in self.nodes if n.kind == "project"]
         missions = [n for n in self.nodes if n.kind == "mission"]
         identities = [n for n in self.nodes if n.kind == "identity"]
-        if len(missions) != 1:
+        if len(projects) != 1:
             raise ValueError(
-                f"core canvas requires exactly one mission node; found {len(missions)}"
+                f"core canvas requires exactly one project node; found {len(projects)}"
             )
-        if len(identities) != 1:
+        if projects[0].parent_id is not None:
             raise ValueError(
-                f"core canvas requires exactly one identity node; found {len(identities)}"
+                f"project node {projects[0].id!r} must be top-level (parent_id = null)"
             )
-        # identity_facet must be a descendant of the identity node.
-        by_id = {n.id: n for n in self.nodes}
-        identity_id = identities[0].id
-        for n in self.nodes:
-            if n.kind != "identity_facet":
-                continue
-            ancestor: str | None = n.parent_id
-            found = False
-            while ancestor is not None:
-                if ancestor == identity_id:
-                    found = True
-                    break
-                parent = by_id.get(ancestor)
-                ancestor = parent.parent_id if parent else None
-            if not found:
-                raise ValueError(
-                    f"identity_facet {n.id!r} must be a descendant of the "
-                    f"identity node {identity_id!r}"
-                )
+        if len(missions) < 1:
+            raise ValueError(
+                f"core canvas requires at least one mission node; found {len(missions)}"
+            )
+        if len(identities) < 1:
+            raise ValueError(
+                f"core canvas requires at least one identity node; found {len(identities)}"
+            )
         return self
 
     @model_validator(mode="after")

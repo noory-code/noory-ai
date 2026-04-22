@@ -16,11 +16,11 @@ from plot_mcp.models import CanvasDoc, SketchEdge, SketchNode
 
 
 def _core_seed_nodes() -> list[SketchNode]:
-    """Minimal valid core-canvas content: root + mission + identity."""
+    """Minimal valid core-canvas content: project anchor + 1 mission + 1 identity."""
     return [
-        SketchNode(id="core-root", kind="core", label="Project"),
-        SketchNode(id="mission", kind="mission", parent_id="core-root", label="M"),
-        SketchNode(id="identity", kind="identity", parent_id="core-root", label="I"),
+        SketchNode(id="project", kind="project", label="Project", shape="circle"),
+        SketchNode(id="mission", kind="mission", label="M"),
+        SketchNode(id="identity", kind="identity", label="Voice"),
     ]
 
 
@@ -34,20 +34,34 @@ def test_core_canvas_multiple_core_values_ok() -> None:
         canvas_kind="core",
         nodes=[
             *_core_seed_nodes(),
-            SketchNode(id="cv1", kind="core_value", parent_id="core-root", label="빠름"),
-            SketchNode(id="cv2", kind="core_value", parent_id="core-root", label="정확함"),
+            SketchNode(id="cv1", kind="core_value", label="빠름"),
+            SketchNode(id="cv2", kind="core_value", label="정확함"),
         ],
     )
 
 
-def test_core_canvas_identity_facets_ok() -> None:
+def test_core_canvas_multiple_missions_ok() -> None:
+    """v0.5: Mission is 1..N (was exactly 1)."""
     CanvasDoc(
         canvas_id="core",
         canvas_kind="core",
         nodes=[
             *_core_seed_nodes(),
-            SketchNode(id="tone", kind="identity_facet", parent_id="identity", label="Tone"),
-            SketchNode(id="voice", kind="identity_facet", parent_id="identity", label="Voice"),
+            SketchNode(id="m2", kind="mission", label="M2"),
+            SketchNode(id="m3", kind="mission", label="M3"),
+        ],
+    )
+
+
+def test_core_canvas_multiple_identities_ok() -> None:
+    """v0.5: Identity is 1..N peers (was exactly 1 + facet children)."""
+    CanvasDoc(
+        canvas_id="core",
+        canvas_kind="core",
+        nodes=[
+            *_core_seed_nodes(),
+            SketchNode(id="energy", kind="identity", label="Energy"),
+            SketchNode(id="speech", kind="identity", label="Speech style"),
         ],
     )
 
@@ -58,8 +72,8 @@ def test_core_canvas_missing_mission_rejected() -> None:
             canvas_id="core",
             canvas_kind="core",
             nodes=[
-                SketchNode(id="core-root", kind="core", label="Project"),
-                SketchNode(id="identity", kind="identity", parent_id="core-root", label="I"),
+                SketchNode(id="project", kind="project", label="Project", shape="circle"),
+                SketchNode(id="identity", kind="identity", label="I"),
             ],
         )
 
@@ -70,44 +84,52 @@ def test_core_canvas_missing_identity_rejected() -> None:
             canvas_id="core",
             canvas_kind="core",
             nodes=[
-                SketchNode(id="core-root", kind="core", label="Project"),
-                SketchNode(id="mission", kind="mission", parent_id="core-root", label="M"),
+                SketchNode(id="project", kind="project", label="Project", shape="circle"),
+                SketchNode(id="mission", kind="mission", label="M"),
             ],
         )
 
 
-def test_core_canvas_two_missions_rejected() -> None:
-    with pytest.raises(ValueError, match="exactly one mission"):
+def test_core_canvas_missing_project_rejected() -> None:
+    with pytest.raises(ValueError, match="project"):
+        CanvasDoc(
+            canvas_id="core",
+            canvas_kind="core",
+            nodes=[
+                SketchNode(id="mission", kind="mission", label="M"),
+                SketchNode(id="identity", kind="identity", label="I"),
+            ],
+        )
+
+
+def test_core_canvas_two_projects_rejected() -> None:
+    with pytest.raises(ValueError, match="exactly one project"):
         CanvasDoc(
             canvas_id="core",
             canvas_kind="core",
             nodes=[
                 *_core_seed_nodes(),
-                SketchNode(id="m2", kind="mission", parent_id="core-root", label="M2"),
+                SketchNode(id="p2", kind="project", label="P2", shape="circle"),
             ],
         )
 
 
-def test_core_canvas_two_identities_rejected() -> None:
-    with pytest.raises(ValueError, match="exactly one identity"):
+def test_core_canvas_nested_project_rejected() -> None:
+    """Project anchor must be top-level."""
+    with pytest.raises(ValueError, match="top-level"):
         CanvasDoc(
             canvas_id="core",
             canvas_kind="core",
             nodes=[
-                *_core_seed_nodes(),
-                SketchNode(id="i2", kind="identity", parent_id="core-root", label="I2"),
-            ],
-        )
-
-
-def test_core_canvas_identity_facet_outside_identity_rejected() -> None:
-    with pytest.raises(ValueError, match="identity_facet"):
-        CanvasDoc(
-            canvas_id="core",
-            canvas_kind="core",
-            nodes=[
-                *_core_seed_nodes(),
-                SketchNode(id="tone", kind="identity_facet", parent_id="core-root", label="T"),
+                SketchNode(id="mission", kind="mission", label="M"),
+                SketchNode(id="identity", kind="identity", label="I"),
+                SketchNode(
+                    id="project",
+                    kind="project",
+                    label="P",
+                    shape="circle",
+                    parent_id="mission",
+                ),
             ],
         )
 

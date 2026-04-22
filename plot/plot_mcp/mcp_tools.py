@@ -20,7 +20,9 @@ from plot_mcp.folder_io import (
     read_project,
     sync_details_with_overview,
     write_canvas,
-    write_project,
+)
+from plot_mcp.folder_io import (
+    rename_project as rename_project_folder,
 )
 from plot_mcp.git_store import (
     TagAlreadyExistsError,
@@ -93,12 +95,10 @@ def create_project_tool(project_path: str, project_id: str, name: str = "") -> d
 
 @mcp.tool()
 def rename_project(project_path: str, project_id: str, name: str) -> dict[str, Any]:
-    """Update a project's ``name`` without touching its canvases."""
+    """Update a project's ``name`` and mirror it onto the Core canvas's
+    Project anchor label in one shot."""
     plot_root = resolve_plot_root(project_path)
-    proj = read_project(plot_root, project_id)
-    renamed = proj.model_copy(update={"name": name})
-    write_project(plot_root, renamed)
-    return read_project(plot_root, project_id).model_dump()
+    return rename_project_folder(plot_root, project_id, name).model_dump()
 
 
 @mcp.tool()

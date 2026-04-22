@@ -1,14 +1,15 @@
-"""v0.1 → v0.2 migration: single-file ``{id}.json`` → folder layout.
+"""Legacy-sketch migration: v0.1 single-file → v0.4 folder layout + v0.5 core schema.
 
 Algorithm
 ---------
 
 For every ``.plot/sketches/{id}.json`` that looks like a v0.1 SketchDoc:
 
-    1. Parse as ``SketchDoc``.
-    2. Create ``.plot/sketches/{id}/`` and the four v0.2 canvas files:
+    1. Normalise legacy node kinds (see ``_normalise_legacy_node_kinds``) then
+       parse as ``_V01SketchDoc``.
+    2. Create ``.plot/sketches/{id}/`` and the four v0.4 canvas files:
        - ``project.json``
-       - ``core.json``  (core + mission + identity, promoted from fields)
+       - ``core.json``  (project anchor + mission + core-value + identity)
        - ``actors.json`` (actor subtree, parent chain cleaned)
        - ``services-overview.json`` (top-level services, no nesting)
        - ``services-detail/{service_id}.json`` per top-level service
@@ -16,6 +17,14 @@ For every ``.plot/sketches/{id}.json`` that looks like a v0.1 SketchDoc:
 
 Running a second time does nothing (idempotent). Malformed v0.1 files are
 left in place so the user can fix them by hand.
+
+v0.5 Core schema upgrade (inline on open)
+-----------------------------------------
+
+``upgrade_core_canvas_if_needed`` handles Core canvases that were written
+under earlier schemas (``core`` octagon anchor, ``identity_facet`` child
+nodes). It rewrites the raw dict before Pydantic validation and, when
+changes were made, persists the result so subsequent loads are cheap.
 """
 
 from __future__ import annotations
@@ -107,10 +116,12 @@ class _V01SketchDoc(BaseModel):
 
     @model_validator(mode="after")
     def _at_most_one_root_per_kind(self) -> _V01SketchDoc:
-        cores = [n for n in self.nodes if n.kind == "core"]
+        # Legacy ``core`` root is normalised to ``project`` in _read_v01_sketch.
+        cores = [n for n in self.nodes if n.kind == "project"]
         if len(cores) > 1:
             raise ValueError(
-                f"at most one core node allowed per sketch; found {sorted(n.id for n in cores)}"
+                f"at most one project node allowed per sketch; "
+                f"found {sorted(n.id for n in cores)}"
             )
         roots = [n for n in self.nodes if n.is_root]
         by_kind: dict[str, list[str]] = {}
@@ -146,11 +157,38 @@ class _V01SketchDoc(BaseModel):
         return self
 
 
+def _normalise_legacy_node_kinds(nodes: list[dict[str, object]]) -> bool:
+    """Rewrite node kinds that were removed in v0.5 to their canonical form.
+
+    Returns True iff any node was rewritten — callers that persist canvases
+    can use this to decide whether to re-save the file.
+    """
+    changed = False
+    for n in nodes:
+        kind = n.get("kind")
+        if kind == "core":
+            n["kind"] = "project"
+            # The old core root was an octagon; repaint as the circular
+            # Project anchor so the viewer picks the new shape up immediately.
+            if n.get("shape") in (None, "", "octagon"):
+                n["shape"] = "circle"
+            changed = True
+        elif kind == "identity_facet":
+            n["kind"] = "identity"
+            n["parent_id"] = None
+            changed = True
+    return changed
+
+
 def _read_v01_sketch(path: Path) -> _V01SketchDoc:
     """Read one v0.1 ``{id}.json`` file. Raises on missing / malformed."""
     if not path.exists():
         raise FileNotFoundError(f"sketch not found: {path}")
     raw = json.loads(path.read_text(encoding="utf-8"))
+    # v0.1 files may carry kinds that were retired in v0.5 (``core`` anchor,
+    # ``identity_facet`` children). Rewrite them up-front so Pydantic's
+    # post-v0.5 ``NodeKind`` Literal accepts the document.
+    _normalise_legacy_node_kinds(raw.get("nodes", []))
     return _V01SketchDoc.model_validate(raw)
 
 
@@ -205,7 +243,8 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
 
     # --- classify nodes -------------------------------------------------
     by_id = {n.id: n for n in doc.nodes}
-    core_root = next((n for n in doc.nodes if n.kind == "core"), None)
+    # ``kind == "core"`` was normalised to ``"project"`` in _read_v01_sketch.
+    core_root = next((n for n in doc.nodes if n.kind == "project"), None)
     actor_root = next((n for n in doc.nodes if n.kind == "actor" and n.is_root), None)
     service_root = next((n for n in doc.nodes if n.kind == "service" and n.is_root), None)
 
@@ -220,8 +259,8 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
     actor_nodes: list[SketchNode] = []
     service_nodes: list[SketchNode] = []
     for n in doc.nodes:
-        if n.kind == "core":
-            continue  # core root already handled
+        if n.kind == "project":
+            continue  # project anchor handled by _build_core_canvas
         if actor_root and _in_subtree(n, actor_root.id):
             actor_nodes.append(n)
         elif service_root and _in_subtree(n, service_root.id):
@@ -233,7 +272,7 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
         # identity-kind nodes would go to core but v0.1 didn't have them.
 
     # --- write core canvas ----------------------------------------------
-    core_canvas = _build_core_canvas(core_root)
+    core_canvas = _build_core_canvas(core_root, proj.name)
     _write_json(
         _canvas_file(plot_root, doc.id, "core"),
         core_canvas.model_dump(by_alias=True),
@@ -264,15 +303,27 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _build_core_canvas(core_root: SketchNode | None) -> CanvasDoc:
-    """Promote Mission / Core Values / Identity text fields on the v0.1
-    core-root into top-level nodes on the v0.4 Core canvas. The old
-    ``core``-kind octagon anchor is dropped — its only job in v0.2 was
-    to tie the single-canvas world together, and v0.4 canvases are
-    already separate. Synthesises empty Mission + Identity when missing
-    so the CanvasDoc validator (exactly 1 of each) stays happy.
+def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> CanvasDoc:
+    """Promote v0.1 root text fields (mission / core_values / identity) into
+    v0.5 top-level nodes on the Core canvas, and plant the v0.5 Project
+    anchor in the centre. Empty fields get placeholder nodes so the
+    ``_core_canvas_rules`` validator (≥ 1 mission, ≥ 1 identity, exactly
+    1 project) stays happy.
     """
-    nodes: list[SketchNode] = []
+    nodes: list[SketchNode] = [
+        SketchNode(
+            id="project",
+            kind="project",
+            label=project_name,
+            x=-75,
+            y=-75,
+            width=150,
+            height=150,
+            color="#fef3c7",
+            shape="circle",
+            icon="compass",
+        ),
+    ]
 
     mission_text = (core_root.mission if core_root else "").strip()
     nodes.append(
@@ -281,8 +332,8 @@ def _build_core_canvas(core_root: SketchNode | None) -> CanvasDoc:
             kind="mission",
             label="Mission",
             body=mission_text,
-            x=-260,
-            y=-60,
+            x=-360,
+            y=-45,
             width=200,
             height=90,
             color="#fef3c7",
@@ -304,8 +355,8 @@ def _build_core_canvas(core_root: SketchNode | None) -> CanvasDoc:
                 id=f"core-value-{i + 1}",
                 kind="core_value",
                 label=line,
-                x=0,
-                y=-60 + i * 96,
+                x=-90,
+                y=-260 + i * 96,
                 width=180,
                 height=80,
                 color="#fde68a",
@@ -319,10 +370,10 @@ def _build_core_canvas(core_root: SketchNode | None) -> CanvasDoc:
         SketchNode(
             id="identity",
             kind="identity",
-            label="Identity",
+            label="Voice",
             body=identity_text,
-            x=220,
-            y=-60,
+            x=160,
+            y=-45,
             width=200,
             height=90,
             color="#fed7aa",
@@ -454,3 +505,77 @@ def _split_services(
         )
 
     return overview, details
+
+
+# ---------------------------------------------------------------------------
+# v0.5 Core-canvas schema upgrade (called from folder_io.read_canvas)
+# ---------------------------------------------------------------------------
+
+
+def upgrade_core_canvas_if_needed(plot_root: Path, project_id: str) -> bool:
+    """Heal a Core canvas that was written under a pre-v0.5 schema.
+
+    Rewrites the raw ``core.json`` on disk so subsequent reads are cheap
+    and Pydantic parsing never trips on retired kinds. Returns True iff
+    the file was rewritten. Safe to call on every load (idempotent).
+
+    Operations (applied in order):
+      1. ``kind="core"`` → ``kind="project"``, ``shape="circle"``.
+      2. ``kind="identity_facet"`` → ``kind="identity"``, ``parent_id=None``.
+      3. If no Project anchor exists, synthesise one at centre using the
+         project's ``ProjectDoc.name`` as label.
+    """
+    path = _canvas_file(plot_root, project_id, "core")
+    if not path.exists():
+        return False
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    nodes = raw.get("nodes")
+    if not isinstance(nodes, list):
+        return False
+
+    changed = _normalise_legacy_node_kinds(nodes)
+
+    has_project = any(isinstance(n, dict) and n.get("kind") == "project" for n in nodes)
+    if not has_project:
+        project_name = _read_project_name(plot_root, project_id)
+        taken_ids = {n.get("id") for n in nodes if isinstance(n, dict)}
+        nodes.insert(0, _project_anchor_dict(project_name, taken_ids))
+        raw["nodes"] = nodes
+        changed = True
+
+    if changed:
+        _write_json(path, raw)
+    return changed
+
+
+def _read_project_name(plot_root: Path, project_id: str) -> str:
+    """Best-effort read of ``project.json``'s ``name``; falls back to id."""
+    proj_path = _project_file(plot_root, project_id)
+    try:
+        raw = json.loads(proj_path.read_text(encoding="utf-8"))
+        name = raw.get("name")
+        if isinstance(name, str) and name.strip():
+            return name
+    except (OSError, json.JSONDecodeError):
+        pass
+    return project_id
+
+
+def _project_anchor_dict(project_name: str, taken_ids: set[str | None]) -> dict[str, object]:
+    anchor_id = "project"
+    suffix = 1
+    while anchor_id in taken_ids:
+        suffix += 1
+        anchor_id = f"project-{suffix}"
+    return SketchNode(
+        id=anchor_id,
+        kind="project",
+        label=project_name,
+        x=-75,
+        y=-75,
+        width=150,
+        height=150,
+        color="#fef3c7",
+        shape="circle",
+        icon="compass",
+    ).model_dump()
