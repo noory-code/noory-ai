@@ -4,6 +4,21 @@ import type { Shape } from "../types";
 import { EditableText } from "../edit/EditableText";
 import { getIcon } from "./SketchIcons";
 
+/**
+ * Kinds the top-left tag recognises. Actors / services are identified
+ * clearly enough by their icon + colour, so we only label the Core-canvas
+ * kinds where the palette collapsed down to a single star+colour.
+ */
+const KIND_TAG_LABELS: Record<string, string> = {
+  project: "PROJECT",
+  mission: "MISSION",
+  core_value: "CORE VALUE",
+  identity: "IDENTITY",
+};
+
+/** Shapes whose top-left corner is inside the visible silhouette. */
+const KIND_TAG_SHAPES = new Set<Shape>(["rectangle", "rounded"]);
+
 export interface SketchNodeData {
   label: string;
   body: string;
@@ -12,6 +27,10 @@ export interface SketchNodeData {
   height: number;
   shape: Shape;
   icon: string | null;
+  /** v0.5: surfaced as the top-left "MISSION" / "CORE VALUE" / … tag so the
+   * kind is legible without opening the Inspector. ``null`` / ``undefined``
+   * hides the tag. */
+  kind?: string | null;
   onLabelChange?: (next: string) => void;
   onOpenBody?: () => void;
   onResize?: (width: number, height: number) => void;
@@ -23,6 +42,9 @@ export interface SketchNodeData {
   onToggleCollapse?: () => void;
   /** v0.2: count of nested children (shown on the fold badge when collapsed). */
   childCount?: number;
+  /** v0.5: suppress the fold button even when ``onToggleCollapse`` is wired
+   * (Core canvas uses peer layout; fold has no meaning there). */
+  showFold?: boolean;
 }
 
 /**
@@ -110,16 +132,26 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
         <Handle type="source" position={Position.Right} id="r" className="!bg-slate-400" />
         <Handle type="source" position={Position.Bottom} id="b" className="!bg-slate-400" />
 
+        {/* Top-left kind tag. Skipped for circle/ellipse/diamond shapes where
+            the corner lands outside the visible silhouette. */}
+        {data.kind &&
+          KIND_TAG_SHAPES.has(data.shape) &&
+          KIND_TAG_LABELS[data.kind] && (
+            <span className="pointer-events-none absolute left-2 top-1 text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+              {KIND_TAG_LABELS[data.kind]}
+            </span>
+          )}
+
         <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-center">
           <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
-            {data.hasChildren && data.onToggleCollapse && (
+            {data.showFold !== false && data.hasChildren && data.onToggleCollapse && (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   data.onToggleCollapse?.();
                 }}
-                className="nodrag flex h-4 w-4 shrink-0 items-center justify-center rounded text-[10px] text-slate-600 hover:bg-slate-200"
+                className="nodrag flex h-6 w-6 shrink-0 items-center justify-center rounded text-sm text-slate-600 hover:bg-slate-200"
                 title={data.collapsed ? "Expand" : "Collapse"}
                 aria-label={data.collapsed ? "Expand container" : "Collapse container"}
               >

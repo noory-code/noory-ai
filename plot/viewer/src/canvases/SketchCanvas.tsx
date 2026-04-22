@@ -280,6 +280,7 @@ function SketchCanvasInner({
           height: n.height,
           shape: n.shape,
           icon: n.icon,
+          kind: n.kind,
           onLabelChange: (next: string) => updateNode(n.id, { label: next }),
           onOpenBody: () => setBodyModalNodeId(n.id),
           onResize: (w: number, h: number) => updateNode(n.id, { width: w, height: h }),
@@ -287,6 +288,8 @@ function SketchCanvasInner({
           collapsed: n.collapsed,
           childCount: hasChildren ? subtreeSize(n.id) : 0,
           onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
+          // Core canvas lays pillars out as peers — fold has no meaning.
+          showFold: doc.canvas_kind !== "core",
         },
       };
       // v0.2 correction (2026-04-20): parent_id is used for two distinct
@@ -301,6 +304,7 @@ function SketchCanvasInner({
     return out;
   }, [
     doc.nodes,
+    doc.canvas_kind,
     childIdsByParent,
     nearestCollapsedAncestor,
     subtreeSize,

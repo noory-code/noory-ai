@@ -48,7 +48,7 @@ const CORE_MISSION: StencilPreset = {
   color: "#fef3c7",
   width: 200,
   height: 90,
-  icon: "star",
+  icon: null,
   label: "Mission",
   kind: "mission",
 };
@@ -60,7 +60,7 @@ const CORE_VALUE: StencilPreset = {
   color: "#fde68a",
   width: 160,
   height: 70,
-  icon: "star",
+  icon: null,
   label: "Core Value",
   kind: "core_value",
 };
@@ -72,7 +72,7 @@ const CORE_IDENTITY: StencilPreset = {
   color: "#fed7aa",
   width: 200,
   height: 90,
-  icon: "star",
+  icon: null,
   label: "Voice",
   kind: "identity",
 };
