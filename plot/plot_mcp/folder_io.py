@@ -240,7 +240,6 @@ def _seed_core_canvas(project_name: str) -> CanvasDoc:
                 height=150,
                 color="#fef3c7",
                 shape="circle",
-                icon="compass",
             ),
             SketchNode(
                 id="mission",
@@ -252,7 +251,6 @@ def _seed_core_canvas(project_name: str) -> CanvasDoc:
                 height=90,
                 color="#fef3c7",
                 shape="rounded",
-                icon="star",
             ),
             SketchNode(
                 id="core-value-1",
@@ -264,7 +262,6 @@ def _seed_core_canvas(project_name: str) -> CanvasDoc:
                 height=80,
                 color="#fde68a",
                 shape="rounded",
-                icon="star",
             ),
             SketchNode(
                 id="identity",
@@ -276,7 +273,6 @@ def _seed_core_canvas(project_name: str) -> CanvasDoc:
                 height=90,
                 color="#fed7aa",
                 shape="rounded",
-                icon="star",
             ),
         ],
     )

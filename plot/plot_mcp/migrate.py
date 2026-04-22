@@ -162,21 +162,52 @@ def _normalise_legacy_node_kinds(nodes: list[dict[str, object]]) -> bool:
 
     Returns True iff any node was rewritten — callers that persist canvases
     can use this to decide whether to re-save the file.
+
+    Transformations:
+      - ``kind="core"`` → ``kind="project"`` + ``shape="circle"``. The anchor
+        also loses the stale ``icon="star"`` (the seeded default) since v0.5
+        surfaces node identity via the top-left kind tag, not a star icon.
+      - Any node whose ``parent_id`` pointed at a legacy ``core``-kind node
+        is un-parented (``parent_id=None``). In v0.2 the octagon served as
+        a container and mission/identity were nested inside; v0.5 treats
+        them as peers around the small Project anchor, so leaving the old
+        parent link would visually trap the children inside the anchor.
+      - ``kind="identity_facet"`` → ``kind="identity"`` + ``parent_id=None``.
+      - Any Mission / CoreValue / Identity node carrying the seeded
+        ``icon="star"`` has the icon cleared (star retired from the palette).
     """
     changed = False
+    legacy_core_ids: set[str] = set()
     for n in nodes:
+        if isinstance(n, dict) and n.get("kind") == "core":
+            node_id = n.get("id")
+            if isinstance(node_id, str):
+                legacy_core_ids.add(node_id)
+
+    for n in nodes:
+        if not isinstance(n, dict):
+            continue
         kind = n.get("kind")
         if kind == "core":
             n["kind"] = "project"
-            # The old core root was an octagon; repaint as the circular
-            # Project anchor so the viewer picks the new shape up immediately.
             if n.get("shape") in (None, "", "octagon"):
                 n["shape"] = "circle"
+            if n.get("icon") == "star":
+                n["icon"] = None
             changed = True
         elif kind == "identity_facet":
             n["kind"] = "identity"
             n["parent_id"] = None
             changed = True
+
+        if n.get("parent_id") in legacy_core_ids:
+            n["parent_id"] = None
+            changed = True
+
+        if kind in ("mission", "core_value", "identity") and n.get("icon") == "star":
+            n["icon"] = None
+            changed = True
+
     return changed
 
 
@@ -321,7 +352,6 @@ def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> Canva
             height=150,
             color="#fef3c7",
             shape="circle",
-            icon="compass",
         ),
     ]
 
@@ -338,7 +368,6 @@ def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> Canva
             height=90,
             color="#fef3c7",
             shape="rounded",
-            icon="star",
         )
     )
 
@@ -361,8 +390,7 @@ def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> Canva
                 height=80,
                 color="#fde68a",
                 shape="rounded",
-                icon="star",
-            )
+                )
         )
 
     identity_text = (core_root.identity if core_root else "").strip()
@@ -378,7 +406,6 @@ def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> Canva
             height=90,
             color="#fed7aa",
             shape="rounded",
-            icon="star",
         )
     )
 

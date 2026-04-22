@@ -175,14 +175,18 @@ def test_migrates_bare_v01_sketch(plot_root: Path) -> None:
 
 
 def test_migrated_core_canvas_has_seeds(plot_root: Path) -> None:
-    """v0.4: migrated Core canvas promotes mission/core_values/identity
-    into top-level pillars (no ``core`` anchor)."""
+    """v0.5: migrated Core canvas hosts a Project anchor + mission/core_value/
+    identity top-level pillars. The legacy ``core`` kind is gone; the
+    anchor is ``project``."""
     _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     core = read_canvas(plot_root, "alpha", "core")
     kinds = sorted({n.kind for n in core.nodes if n.kind is not None})
+    assert "project" in kinds
     assert "mission" in kinds and "identity" in kinds and "core_value" in kinds
     assert "core" not in kinds
+    # Every seeded pillar is top-level — no child of the anchor.
+    assert all(n.parent_id is None for n in core.nodes)
 
 
 def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> None:
@@ -201,6 +205,111 @@ def test_migrated_services_overview_has_no_nested(plot_root: Path) -> None:
     overview = read_canvas(plot_root, "alpha", "services_overview")
     assert all(n.parent_id is None for n in overview.nodes)
     # Bare v0.1 seed has service-root only; it becomes a top-level service.
+
+
+def test_v05_upgrade_unparents_legacy_core_children(plot_root: Path) -> None:
+    """v0.4 → v0.5 Core upgrade (``upgrade_core_canvas_if_needed``):
+    a legacy ``core``-kind octagon with Mission/Identity nested under it
+    must be rewritten so the anchor is a circular ``project`` **and** the
+    old children are promoted to peers (``parent_id=None``) around it —
+    otherwise the small anchor visually traps the pillars.
+    """
+    from plot_mcp.folder_io import write_project
+    from plot_mcp.migrate import upgrade_core_canvas_if_needed
+    from plot_mcp.models import ProjectDoc
+
+    folder = plot_root / "sketches" / "alpha"
+    folder.mkdir(parents=True)
+    (folder / "services-detail").mkdir()
+    # Seed project.json so ``upgrade_core_canvas_if_needed`` can read the
+    # authoritative project name.
+    write_project(plot_root, ProjectDoc(id="alpha", name="Alpha v1", version=2))
+
+    (folder / "core.json").write_text(
+        json.dumps({
+            "canvas_id": "core",
+            "canvas_kind": "core",
+            "service_ref": None,
+            "edges": [],
+            "nodes": [
+                {
+                    "id": "core-root",
+                    "kind": "core",
+                    "label": "Legacy",
+                    "shape": "octagon",
+                    "icon": "star",
+                    "x": 0, "y": 0,
+                    "width": 180, "height": 140,
+                    "color": "#fde68a",
+                    "body": "", "parent_id": None, "collapsed": False,
+                    "is_root": False, "mission": "", "core_values": "",
+                    "identity": "", "ref_actor_id": None,
+                },
+                {
+                    "id": "mission",
+                    "kind": "mission",
+                    "label": "M",
+                    "shape": "rounded", "icon": "star",
+                    "x": 100, "y": 0, "width": 200, "height": 90,
+                    "color": "#fef3c7",
+                    "body": "", "parent_id": "core-root", "collapsed": False,
+                    "is_root": False, "mission": "", "core_values": "",
+                    "identity": "", "ref_actor_id": None,
+                },
+                {
+                    "id": "facet-1",
+                    "kind": "identity_facet",
+                    "label": "Tone",
+                    "shape": "rounded", "icon": None,
+                    "x": -100, "y": 0, "width": 140, "height": 60,
+                    "color": "#fdba74",
+                    "body": "", "parent_id": "identity", "collapsed": False,
+                    "is_root": False, "mission": "", "core_values": "",
+                    "identity": "", "ref_actor_id": None,
+                },
+                {
+                    "id": "identity",
+                    "kind": "identity",
+                    "label": "I",
+                    "shape": "rounded", "icon": "star",
+                    "x": 200, "y": 0, "width": 200, "height": 90,
+                    "color": "#fed7aa",
+                    "body": "", "parent_id": "core-root", "collapsed": False,
+                    "is_root": False, "mission": "", "core_values": "",
+                    "identity": "", "ref_actor_id": None,
+                },
+            ],
+        }, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    changed = upgrade_core_canvas_if_needed(plot_root, "alpha")
+    assert changed is True
+
+    core = read_canvas(plot_root, "alpha", "core")
+    by_id = {n.id: n for n in core.nodes}
+
+    # Legacy ``core`` renamed to ``project``; shape shifted to circle; star gone.
+    anchor = by_id["core-root"]
+    assert anchor.kind == "project"
+    assert anchor.shape == "circle"
+    assert anchor.icon is None
+
+    # Children previously parented to core-root are now peers.
+    assert by_id["mission"].parent_id is None
+    assert by_id["identity"].parent_id is None
+
+    # identity_facet folded into identity; still peer (parent cleared).
+    facet = by_id["facet-1"]
+    assert facet.kind == "identity"
+    assert facet.parent_id is None
+
+    # Star icons stripped from the pillar kinds.
+    assert by_id["mission"].icon is None
+    assert by_id["identity"].icon is None
+
+    # Idempotent: second call is a no-op.
+    assert upgrade_core_canvas_if_needed(plot_root, "alpha") is False
 
 
 def test_migration_is_idempotent(plot_root: Path) -> None:
