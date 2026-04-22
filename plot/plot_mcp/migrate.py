@@ -192,8 +192,6 @@ def _normalise_legacy_node_kinds(nodes: list[dict[str, object]]) -> bool:
             n["kind"] = "project"
             if n.get("shape") in (None, "", "octagon"):
                 n["shape"] = "circle"
-            if n.get("icon") == "star":
-                n["icon"] = None
             changed = True
         elif kind == "identity_facet":
             n["kind"] = "identity"
@@ -204,7 +202,14 @@ def _normalise_legacy_node_kinds(nodes: list[dict[str, object]]) -> bool:
             n["parent_id"] = None
             changed = True
 
-        if kind in ("mission", "core_value", "identity") and n.get("icon") == "star":
+        # Read the post-rewrite kind so facets migrated to ``identity`` also
+        # lose their seeded star. ``project`` gets cleaned alongside the
+        # three pillar kinds — no Core-canvas kind keeps a star in v0.5.
+        current_kind = n.get("kind")
+        if (
+            current_kind in ("project", "mission", "core_value", "identity")
+            and n.get("icon") == "star"
+        ):
             n["icon"] = None
             changed = True
 

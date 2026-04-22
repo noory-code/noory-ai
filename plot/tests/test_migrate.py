@@ -260,7 +260,7 @@ def test_v05_upgrade_unparents_legacy_core_children(plot_root: Path) -> None:
                     "id": "facet-1",
                     "kind": "identity_facet",
                     "label": "Tone",
-                    "shape": "rounded", "icon": None,
+                    "shape": "rounded", "icon": "star",
                     "x": -100, "y": 0, "width": 140, "height": 60,
                     "color": "#fdba74",
                     "body": "", "parent_id": "identity", "collapsed": False,
@@ -304,9 +304,12 @@ def test_v05_upgrade_unparents_legacy_core_children(plot_root: Path) -> None:
     assert facet.kind == "identity"
     assert facet.parent_id is None
 
-    # Star icons stripped from the pillar kinds.
+    # Star icons stripped from the pillar kinds — including a facet that
+    # had star but was migrated to identity (icon clean-up runs off the
+    # post-rewrite kind).
     assert by_id["mission"].icon is None
     assert by_id["identity"].icon is None
+    assert facet.icon is None
 
     # Idempotent: second call is a no-op.
     assert upgrade_core_canvas_if_needed(plot_root, "alpha") is False
