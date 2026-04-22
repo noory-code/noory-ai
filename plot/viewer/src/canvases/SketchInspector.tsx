@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import type { SketchNode } from "../types";
+import { readSection, writeSection } from "../lib/bodySections";
+import type { NodeKind, SketchNode } from "../types";
 
 export interface SketchInspectorProps {
   /** Currently selected node. Null → panel shows empty state. */
@@ -55,15 +56,10 @@ export function SketchInspector({
     [node, allNodes],
   );
 
+  // No node selected → hide the panel entirely. The canvas was covered by an
+  // empty placeholder before, but the reclaimed pixels are more useful.
   if (!node) {
-    return (
-      <aside className="pointer-events-auto absolute right-0 top-0 z-10 flex h-full w-80 flex-col border-l border-slate-200 bg-white/95 p-4 text-sm text-slate-500 shadow-sm backdrop-blur">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-          Inspector
-        </div>
-        <div className="mt-4 italic">Select a node to see details.</div>
-      </aside>
-    );
+    return null;
   }
 
   // v0.2 multi-canvas (2026-04-21): Mission / Core Value / Identity are
@@ -90,8 +86,8 @@ export function SketchInspector({
             aria-hidden
           />
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-            {node.kind === "core"
-              ? "Core Root"
+            {node.kind === "project"
+              ? "Project"
               : node.is_root && node.kind === "actor"
                 ? "Actor Root"
                 : node.is_root && node.kind === "service"
@@ -100,8 +96,8 @@ export function SketchInspector({
           </span>
         </div>
         <div className="flex items-center gap-1">
-          {/* Delete — available for any non-root, non-core node */}
-          {node.kind !== "core" && !node.is_root && (
+          {/* Delete — hidden for the Project anchor and for Actor/Service roots. */}
+          {node.kind !== "project" && !node.is_root && (
             <button
               type="button"
               onClick={() => {
@@ -140,17 +136,25 @@ export function SketchInspector({
           />
         </label>
 
-        {/* Body */}
-        <label className="mb-4 block">
-          <span className="text-xs font-semibold text-slate-600">Description</span>
-          <textarea
-            value={node.body}
-            onChange={(e) => onPatchNode({ body: e.target.value })}
-            rows={3}
-            className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-            placeholder="Longer description, markdown supported"
+        {/* Kind-specific templates (body is backed by H3 Markdown sections). */}
+        {node.kind && TEMPLATES[node.kind] ? (
+          <KindTemplate
+            body={node.body}
+            fields={TEMPLATES[node.kind]!}
+            onCommit={(nextBody) => onPatchNode({ body: nextBody })}
           />
-        </label>
+        ) : (
+          <label className="mb-4 block">
+            <span className="text-xs font-semibold text-slate-600">Description</span>
+            <textarea
+              value={node.body}
+              onChange={(e) => onPatchNode({ body: e.target.value })}
+              rows={3}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+              placeholder="Longer description, markdown supported"
+            />
+          </label>
+        )}
 
         {/* Root toggle — only for top-level actor / service */}
         {canToggleRoot && (
@@ -318,6 +322,83 @@ function CompositionList({
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Kind-aware body templates
+// ---------------------------------------------------------------------------
+//
+// Each template is a list of ``### Heading`` sections the Inspector should
+// expose as discrete fields. The underlying storage is still ``SketchNode.body``
+// (Markdown) — see ``lib/bodySections.ts``. Unknown headings already in the
+// body round-trip untouched. Kinds without an entry fall back to the generic
+// free-form Description textarea.
+
+interface TemplateField {
+  heading: string;
+  hint?: string;
+  rows?: number;
+}
+
+const TEMPLATES: Partial<Record<NodeKind, TemplateField[]>> = {
+  mission: [
+    { heading: "Tagline", hint: "한 줄 슬로건" },
+    { heading: "Audience", hint: "누구를 위한 미션인가" },
+    { heading: "Method", hint: "어떻게 달성하나" },
+    { heading: "Goal", hint: "도달하려는 상태" },
+    { heading: "Story", rows: 5, hint: "왜 이 미션을 택했는가" },
+  ],
+  core_value: [
+    { heading: "Summary", rows: 2, hint: "이 값은 무엇인가" },
+    { heading: "Decision criteria", rows: 3, hint: "갈등 상황에서 어떻게 행동하나" },
+  ],
+  identity: [
+    { heading: "Summary", rows: 2, hint: "이 측면의 핵심" },
+    { heading: "Details", rows: 5, hint: "구체 규칙, 예시" },
+  ],
+  project: [
+    { heading: "Summary", rows: 3, hint: "프로젝트 한 문단 설명" },
+  ],
+};
+
+interface KindTemplateProps {
+  body: string;
+  fields: TemplateField[];
+  onCommit: (nextBody: string) => void;
+}
+
+function KindTemplate({ body, fields, onCommit }: KindTemplateProps) {
+  return (
+    <div className="mb-4 space-y-3">
+      {fields.map((f) => {
+        const value = readSection(body, f.heading);
+        const rows = f.rows ?? 1;
+        return (
+          <label key={f.heading} className="block">
+            <span className="text-xs font-semibold text-slate-600">{f.heading}</span>
+            {f.hint && (
+              <span className="ml-2 text-[10px] italic text-slate-400">{f.hint}</span>
+            )}
+            {rows <= 1 ? (
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => onCommit(writeSection(body, f.heading, e.target.value))}
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+              />
+            ) : (
+              <textarea
+                value={value}
+                onChange={(e) => onCommit(writeSection(body, f.heading, e.target.value))}
+                rows={rows}
+                className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+              />
+            )}
+          </label>
+        );
+      })}
     </div>
   );
 }

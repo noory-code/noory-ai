@@ -37,8 +37,10 @@ const TOP_LEVEL_SERVICE: StencilPreset = {
   kind: "service",
 };
 
-// Core-canvas presets (v0.2 multi-canvas, 2026-04-21). Mission / Identity
-// drop onto the Core octagon; Identity Facet drops onto the Identity node.
+// Core-canvas presets. The Project anchor at the centre is auto-seeded,
+// not draggable — mission / core_value / identity are the user-placed
+// pillars. In v0.5 Identity is flat N peers (one per aspect: Voice /
+// Energy / Speech style / …); identity_facet was folded into identity.
 const CORE_MISSION: StencilPreset = {
   id: "mission",
   labelHint: "Mission",
@@ -71,21 +73,8 @@ const CORE_IDENTITY: StencilPreset = {
   width: 200,
   height: 90,
   icon: "star",
-  label: "Identity",
+  label: "Voice",
   kind: "identity",
-};
-
-const CORE_IDENTITY_FACET: StencilPreset = {
-  id: "identity-facet",
-  labelHint: "Identity Facet",
-  shape: "rounded",
-  color: "#fdba74",
-  width: 140,
-  height: 60,
-  icon: "star",
-  label: "Tone",
-  kind: "identity_facet",
-  dropHint: "Drop on the Identity node",
 };
 
 // Actor reference — places a pointer to an Actor-canvas node on a
@@ -153,7 +142,6 @@ export const STENCIL_PRESETS: StencilPreset[] = [
   CORE_MISSION,
   CORE_VALUE,
   CORE_IDENTITY,
-  CORE_IDENTITY_FACET,
   ACTOR_REF,
 ];
 
@@ -174,7 +162,6 @@ export function resolveDropTarget(
   const isComposition = preset.kind === "rule" || preset.kind === "content";
   const isSubService = preset.id === "sub-service";
   const isSubActor = preset.id === "sub-actor";
-  const isIdentityFacet = preset.kind === "identity_facet";
 
   if (isComposition || isSubService) {
     if (!containerAtDrop || containerAtDrop.kind !== "service") {
@@ -185,12 +172,6 @@ export function resolveDropTarget(
   if (isSubActor) {
     if (!containerAtDrop || containerAtDrop.kind !== "actor") {
       return { error: preset.dropHint ?? "Drop inside an Actor container" };
-    }
-    return { parentId: containerAtDrop.id };
-  }
-  if (isIdentityFacet) {
-    if (!containerAtDrop || containerAtDrop.kind !== "identity") {
-      return { error: preset.dropHint ?? "Drop on the Identity node" };
     }
     return { parentId: containerAtDrop.id };
   }
@@ -254,7 +235,7 @@ export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
         <Section
           title="Mission"
           presets={[CORE_MISSION]}
-          note="one per project"
+          note="add as many as you need"
         />
         <Section
           title="Core values"
@@ -263,8 +244,8 @@ export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
         />
         <Section
           title="Identity"
-          presets={[CORE_IDENTITY, CORE_IDENTITY_FACET]}
-          note="facet: drop on Identity"
+          presets={[CORE_IDENTITY]}
+          note="one per aspect — Voice, Energy, Speech style, …"
         />
       </div>
     );

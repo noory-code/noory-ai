@@ -260,11 +260,6 @@ function SketchCanvasInner({
       // v0.2 correction (2026-04-20): rule / content are edited through
       // the right-hand Inspector panel, never rendered on the canvas.
       if (n.kind === "rule" || n.kind === "content") continue;
-      // v0.4 ``core`` kind was the old single-canvas anchor octagon.
-      // New projects don't seed one; legacy projects may still have it
-      // from v0.1 migration. Hide it so the Core canvas shows just the
-      // three pillars (Mission / Core Value / Identity).
-      if (n.kind === "core") continue;
       const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
       // Orphan actor_ref visual override: red-tinted fill, "⚠ " prefix so the
       // break is obvious even at thumbnail scale. Rendering stays in the
@@ -413,8 +408,17 @@ function SketchCanvasInner({
 
   const handleNodesDelete = useCallback(
     (deleted: Node[]) => {
-      const ids = new Set(deleted.map((n) => n.id));
       const current = docRef.current;
+      // Project anchor is auto-seeded and the Core canvas validator requires
+      // exactly 1 — filter it out of every delete path (keyboard, context
+      // menu, Inspector) so the user can't accidentally remove it.
+      const protectedIds = new Set(
+        current.nodes.filter((n) => n.kind === "project").map((n) => n.id),
+      );
+      const ids = new Set(
+        deleted.map((n) => n.id).filter((id) => !protectedIds.has(id)),
+      );
+      if (ids.size === 0) return;
       onDocChange({
         ...current,
         nodes: current.nodes.filter((n) => !ids.has(n.id)),
@@ -551,13 +555,17 @@ function SketchCanvasInner({
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
       const colors = ["#ffffff", "#fecaca", "#fed7aa", "#fef08a", "#bbf7d0", "#bae6fd", "#ddd6fe"];
+      const docNode = docRef.current.nodes.find((n) => n.id === node.id);
+      const isProject = docNode?.kind === "project";
       setMenu({
         x: event.clientX,
         y: event.clientY,
         items: [
           {
             label: "Duplicate",
+            disabled: isProject,
             onSelect: () => {
+              if (isProject) return;
               const current = docRef.current;
               onDocChange(clipboard.duplicate(current, [node.id]));
             },
@@ -583,9 +591,13 @@ function SketchCanvasInner({
           })),
           { label: "", divider: true, onSelect: () => {} },
           {
-            label: "Delete",
-            danger: true,
-            onSelect: () => handleNodesDelete([node]),
+            label: isProject ? "Delete (Project anchor is protected)" : "Delete",
+            danger: !isProject,
+            disabled: isProject,
+            onSelect: () => {
+              if (isProject) return;
+              handleNodesDelete([node]);
+            },
           },
         ],
       });
@@ -823,20 +835,10 @@ function SketchCanvasInner({
       const h = preset.height ?? DEFAULT_HEIGHT;
 
       const container = containerAtFlowPoint(pos.x, pos.y);
-      let resolved = resolveDropTarget(
+      const resolved = resolveDropTarget(
         preset as StencilPreset,
         container ? { id: container.id, kind: container.kind } : null,
       );
-      // UX fallback: identity_facet must live under an Identity node
-      // (Core-canvas validator enforces this). Requiring pixel-perfect
-      // drop on that specific node is too strict, so auto-adopt the
-      // canvas's single Identity node when the cursor landed elsewhere.
-      if ("error" in resolved && preset.kind === "identity_facet") {
-        const identityNode = doc.nodes.find((n) => n.kind === "identity");
-        if (identityNode) {
-          resolved = { parentId: identityNode.id };
-        }
-      }
       if ("error" in resolved) {
         window.alert(resolved.error);
         return;

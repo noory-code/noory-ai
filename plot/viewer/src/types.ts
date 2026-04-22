@@ -8,12 +8,14 @@ export type Shape =
   | "octagon";
 
 /**
- * v0.2 node kinds. See PHILOSOPHY.md (P5, P11) and plot_mcp/models.py.
- *   core            — Core-canvas root (project identity anchor).
- *   mission         — Core-canvas child; exactly one per Core canvas.
+ * Node kinds. See PHILOSOPHY.md (P5, P11) and plot_mcp/models.py.
+ *   project         — Core-canvas central anchor (circle, auto-seeded, cannot
+ *                     be deleted; label mirrors ProjectDoc.name).
+ *   mission         — Core-canvas child; 1..N per Core canvas.
  *   core_value      — Core-canvas child; 0..N.
- *   identity        — Core-canvas child; exactly one per Core canvas.
- *   identity_facet  — descendant of identity (tone / voice / visual / …).
+ *   identity        — Core-canvas child; 1..N peers. Each represents an
+ *                     aspect (Voice / Energy / Speech style / …).
+ *                     v0.5 absorbed the former identity_facet kind.
  *   actor           — participant in the value economy (Actor canvas).
  *   actor_ref       — reference to an actor (Service canvases);
  *                     carries ``ref_actor_id`` pointing at the Actor canvas.
@@ -21,13 +23,15 @@ export type Shape =
  *   rule / content  — composition element inside a service (Detail only).
  * Sub-service / sub-actor are not separate kinds — they're service/actor
  * with a non-null parent_id (hierarchical decomposition).
+ *
+ * Deprecated kinds ("core" anchor, "identity_facet" child) are rewritten
+ * server-side by ``migrate.upgrade_core_canvas_if_needed`` on open.
  */
 export type NodeKind =
-  | "core"
+  | "project"
   | "mission"
   | "core_value"
   | "identity"
-  | "identity_facet"
   | "actor"
   | "actor_ref"
   | "service"

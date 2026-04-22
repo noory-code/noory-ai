@@ -46,8 +46,18 @@ export function SketchContextMenu({ x, y, items, onClose }: SketchContextMenuPro
       // handed is already viewport-relative, so ``absolute`` (which inherits
       // the nearest positioned ancestor's origin) drifted when the canvas
       // wrapper wasn't at (0,0).
-      className="fixed z-50 min-w-[180px] rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+      //
+      // ``select-none`` kills the residual text selection that the browser
+      // leaves behind when a right-click opens the menu — otherwise item
+      // labels can appear pre-highlighted as if the user had dragged across
+      // them.
+      className="fixed z-50 min-w-[180px] select-none rounded-md border border-slate-200 bg-white py-1 shadow-lg"
       style={{ left: x, top: y }}
+      onMouseDown={(e) => {
+        // Swallow the mousedown so the underlying pane never starts a box
+        // selection or loses the node focus we just used to open the menu.
+        e.preventDefault();
+      }}
     >
       {items.map((item, idx) =>
         item.divider ? (
