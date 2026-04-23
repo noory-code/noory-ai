@@ -76,6 +76,11 @@ export interface SketchNode {
   identity: string;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
+  /** v0.7: relative folder (under ``project_path``) holding this node's
+   *  ``index.md`` + supporting files. When set, the Inspector edits the MD
+   *  file directly and ``body`` is a short summary cache for the on-canvas
+   *  preview. Null → legacy body-in-JSON flow. */
+  folder_path?: string | null;
 }
 
 export interface SketchEdge {

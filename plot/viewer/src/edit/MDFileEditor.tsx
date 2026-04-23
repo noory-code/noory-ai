@@ -1,0 +1,141 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { readFile, writeFile } from "../api";
+
+export interface MDFileEditorProps {
+  projectPath: string;
+  /** Relative path under ``projectPath`` — e.g. ``workspace/core/mission-mission/index.md``. */
+  path: string;
+  /** Hints so the server can refresh the on-canvas preview cache. */
+  projectId: string;
+  nodeId: string;
+  canvasKind?: string;
+}
+
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+const DEBOUNCE_MS = 600;
+
+/**
+ * Raw Markdown editor backed by a single MD file. Mirrors the canvas
+ * autosave rhythm (debounced PUT) but against the file API instead of
+ * the canvas API.
+ *
+ * Intentionally a plain ``<textarea>`` for now — matches Solera's editor
+ * style and keeps the bundle small. Swap for CodeMirror later if the UX
+ * grows teeth.
+ */
+export function MDFileEditor({
+  projectPath,
+  path,
+  projectId,
+  nodeId,
+  canvasKind,
+}: MDFileEditorProps) {
+  const [content, setContent] = useState<string>("");
+  const [loadedPath, setLoadedPath] = useState<string>("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const saveTimer = useRef<number | null>(null);
+  // Track the latest path we fetched so stale fetch responses
+  // (from rapid node switching) don't overwrite the current editor.
+  const latestPath = useRef(path);
+  latestPath.current = path;
+
+  useEffect(() => {
+    let cancelled = false;
+    setSaveState("idle");
+    setError(null);
+    readFile(projectPath, path)
+      .then((body) => {
+        if (cancelled || latestPath.current !== path) return;
+        setContent(body);
+        setLoadedPath(path);
+      })
+      .catch((e: unknown) => {
+        if (cancelled || latestPath.current !== path) return;
+        setError(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      cancelled = true;
+      if (saveTimer.current !== null) {
+        window.clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+    };
+  }, [projectPath, path]);
+
+  const scheduleSave = useCallback(
+    (next: string) => {
+      if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
+      setSaveState("saving");
+      saveTimer.current = window.setTimeout(() => {
+        saveTimer.current = null;
+        writeFile(projectPath, path, next, {
+          projectId,
+          nodeId,
+          canvasKind,
+        })
+          .then(() => {
+            if (latestPath.current !== path) return;
+            setSaveState("saved");
+            setError(null);
+            window.setTimeout(() => {
+              if (latestPath.current === path) setSaveState("idle");
+            }, 1500);
+          })
+          .catch((e: unknown) => {
+            if (latestPath.current !== path) return;
+            setError(e instanceof Error ? e.message : String(e));
+            setSaveState("error");
+          });
+      }, DEBOUNCE_MS);
+    },
+    [projectPath, path, projectId, nodeId, canvasKind],
+  );
+
+  if (loadedPath !== path && error === null) {
+    return (
+      <div className="p-3 text-xs italic text-slate-400">Loading…</div>
+    );
+  }
+
+  return (
+    <div className="flex h-full w-full flex-col">
+      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-1.5 text-[10px] text-slate-500">
+        <span className="truncate font-mono" title={path}>
+          📁 {path}
+        </span>
+        <span
+          className={
+            saveState === "saving"
+              ? "text-slate-400"
+              : saveState === "saved"
+                ? "text-emerald-600"
+                : saveState === "error"
+                  ? "text-rose-600"
+                  : "text-transparent"
+          }
+        >
+          {saveState === "saving"
+            ? "saving…"
+            : saveState === "saved"
+              ? "saved"
+              : saveState === "error"
+                ? error ?? "save failed"
+                : "·"}
+        </span>
+      </div>
+      <textarea
+        value={content}
+        onChange={(e) => {
+          const next = e.target.value;
+          setContent(next);
+          scheduleSave(next);
+        }}
+        spellCheck={false}
+        className="h-full w-full flex-1 resize-none border-none bg-white p-3 font-mono text-[12px] leading-relaxed text-slate-800 focus:outline-none"
+        placeholder="Write freely. Use ### headings to mark Tagline / Summary / Details sections — the node preview picks up the first one."
+      />
+    </div>
+  );
+}

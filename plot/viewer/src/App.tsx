@@ -376,6 +376,8 @@ export function App() {
                 saveState={saveState}
                 onDownload={handleDownload}
                 onUpload={handleUpload}
+                projectPath={projectPath ?? ""}
+                projectId={activeId}
                 availableActors={availableActors}
                 selectNodeId={selectedNodeId}
                 onSelectionConsumed={consumeSelection}

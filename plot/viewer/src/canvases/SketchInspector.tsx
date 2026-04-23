@@ -1,6 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { createFolder, writeFile } from "../api";
+import { MDFileEditor } from "../edit/MDFileEditor";
 import { readSection, writeSection } from "../lib/bodySections";
-import type { NodeKind, SketchNode } from "../types";
+import { folderSlug } from "../lib/slug";
+import type { CanvasKind, NodeKind, SketchNode } from "../types";
 
 export interface SketchInspectorProps {
   /** Currently selected node. Null → panel shows empty state. */
@@ -27,6 +30,10 @@ export interface SketchInspectorProps {
   onDeleteNode: (nodeId: string) => void;
   /** Close the panel. */
   onClose: () => void;
+  /** v0.7: needed for the MD editor's file paths + preview-cache hints. */
+  projectPath: string;
+  projectId: string;
+  canvasKind: CanvasKind;
 }
 
 /**
@@ -46,6 +53,9 @@ export function SketchInspector({
   onRepickActorRef,
   onDeleteNode,
   onClose,
+  projectPath,
+  projectId,
+  canvasKind,
 }: SketchInspectorProps) {
   const rules = useMemo(
     () => (node ? allNodes.filter((n) => n.parent_id === node.id && n.kind === "rule") : []),
@@ -136,24 +146,48 @@ export function SketchInspector({
           />
         </label>
 
-        {/* Kind-specific templates (body is backed by H3 Markdown sections). */}
-        {node.kind && TEMPLATES[node.kind] ? (
-          <KindTemplate
-            body={node.body}
-            fields={TEMPLATES[node.kind]!}
-            onCommit={(nextBody) => onPatchNode({ body: nextBody })}
-          />
-        ) : (
-          <label className="mb-4 block">
-            <span className="text-xs font-semibold text-slate-600">Description</span>
-            <textarea
-              value={node.body}
-              onChange={(e) => onPatchNode({ body: e.target.value })}
-              rows={3}
-              className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-              placeholder="Longer description, markdown supported"
+        {/* v0.7: folder-backed node → raw MD editor on disk. Otherwise fall
+             back to the legacy kind-template / Description textarea. */}
+        {node.folder_path ? (
+          <div className="-mx-3 mb-4 h-[50vh] border-y border-slate-200">
+            <MDFileEditor
+              projectPath={projectPath}
+              path={`${node.folder_path}/index.md`}
+              projectId={projectId}
+              nodeId={node.id}
+              canvasKind={canvasKind}
             />
-          </label>
+          </div>
+        ) : (
+          <>
+            {node.kind && TEMPLATES[node.kind] ? (
+              <KindTemplate
+                body={node.body}
+                fields={TEMPLATES[node.kind]!}
+                onCommit={(nextBody) => onPatchNode({ body: nextBody })}
+              />
+            ) : (
+              <label className="mb-4 block">
+                <span className="text-xs font-semibold text-slate-600">
+                  Description
+                </span>
+                <textarea
+                  value={node.body}
+                  onChange={(e) => onPatchNode({ body: e.target.value })}
+                  rows={3}
+                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+                  placeholder="Longer description, markdown supported"
+                />
+              </label>
+            )}
+            <ConnectToFolderButton
+              node={node}
+              projectPath={projectPath}
+              projectId={projectId}
+              canvasKind={canvasKind}
+              onPatchNode={onPatchNode}
+            />
+          </>
         )}
 
         {/* Root toggle — only for top-level actor / service */}
@@ -347,6 +381,84 @@ const REFERENCES_FIELD: TemplateField = {
   rows: 2,
   hint: "[[workspace/identity/mission.md]] 같은 위키 링크",
 };
+
+// ---------------------------------------------------------------------------
+// Connect-to-folder button (v0.7)
+// ---------------------------------------------------------------------------
+//
+// Legacy body-backed nodes (BANAS and everything shipped before v0.7) can
+// opt into the new folder + index.md world without a big-bang migration.
+// Clicking the button asks the server to mint a folder based on kind+label,
+// writes the existing ``body`` content into the fresh ``index.md``, and
+// attaches ``folder_path`` to the node. The canvas PUT that follows keeps
+// the summary cache in ``body`` so preview stays accurate.
+
+interface ConnectToFolderButtonProps {
+  node: SketchNode;
+  projectPath: string;
+  projectId: string;
+  canvasKind: CanvasKind;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function ConnectToFolderButton({
+  node,
+  projectPath,
+  projectId,
+  canvasKind,
+  onPatchNode,
+}: ConnectToFolderButtonProps) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const onClick = async () => {
+    if (busy) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const canvasSlug = canvasKind === "services_overview" ? "services" : canvasKind;
+      const desired = node.kind
+        ? folderSlug(node.kind, node.label || node.kind, canvasSlug)
+        : `workspace/${canvasSlug}/${node.id}`;
+      const actualPath = await createFolder(projectPath, desired);
+      // Seed the fresh index.md with whatever body the node already had.
+      if (node.body.trim()) {
+        await writeFile(
+          projectPath,
+          `${actualPath}/index.md`,
+          node.body,
+          { projectId, nodeId: node.id, canvasKind },
+        );
+      }
+      onPatchNode({ folder_path: actualPath });
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mb-4 rounded border border-dashed border-slate-300 p-2 text-xs">
+      <div className="mb-1 font-semibold text-slate-600">Long-form editing</div>
+      <div className="mb-2 text-[11px] text-slate-500">
+        폴더로 연결하면 Inspector가 <code>index.md</code> 편집기로 변신.
+        기존 body 내용은 자동으로 그 파일로 이동합니다.
+      </div>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={busy}
+        className="rounded bg-slate-900 px-2 py-1 text-[11px] font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+      >
+        {busy ? "Connecting…" : "📁 Connect to folder"}
+      </button>
+      {err && (
+        <div className="mt-2 text-[11px] text-rose-600">{err}</div>
+      )}
+    </div>
+  );
+}
 
 const TEMPLATES: Partial<Record<NodeKind, TemplateField[]>> = {
   mission: [

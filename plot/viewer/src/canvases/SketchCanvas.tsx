@@ -75,6 +75,11 @@ export interface SketchCanvasProps {
   saveState: SaveState;
   onDownload: () => void;
   onUpload: () => void;
+  /** v0.7: Inspector's MD editor + "Connect to folder" button need both to
+   *  call the file/folder endpoints and to hint the server back for preview
+   *  cache sync on save. */
+  projectPath: string;
+  projectId: string;
   /** v0.2 multi-canvas: double-click a node to drill into its Detail canvas (Services only). */
   onNodeDrill?: (nodeId: string) => void;
   /**
@@ -116,6 +121,8 @@ function SketchCanvasInner({
   saveState,
   onDownload,
   onUpload,
+  projectPath,
+  projectId,
   onNodeDrill,
   availableActors,
   selectNodeId,
@@ -1039,6 +1046,9 @@ function SketchCanvasInner({
         }
         allNodes={doc.nodes}
         availableActors={availableActors ?? doc.nodes.filter((n) => n.kind === "actor")}
+        projectPath={projectPath}
+        projectId={projectId}
+        canvasKind={doc.canvas_kind}
         onRepickActorRef={(nodeId) => setPendingActorRef({ mode: "rewire", nodeId })}
         onDeleteNode={(nodeId) => handleNodesDelete([{ id: nodeId } as Node])}
         onPatchNode={(patch) => {

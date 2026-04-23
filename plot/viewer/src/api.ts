@@ -238,6 +238,76 @@ export async function deleteProjectTag(
 }
 
 // ---------------------------------------------------------------------------
+// v0.7 files + folders (Inspector MD editor)
+// ---------------------------------------------------------------------------
+
+export async function readFile(
+  projectPath: string,
+  path: string,
+): Promise<string> {
+  const url = `${API_BASE}/api/files?project_path=${encodeURIComponent(
+    projectPath,
+  )}&path=${encodeURIComponent(path)}`;
+  const body = await json<{ content: string }>(await fetch(url));
+  return body.content;
+}
+
+/**
+ * Save an MD file. When ``nodeId`` is supplied for an ``index.md`` write,
+ * the server also refreshes the node's summary cache so the on-canvas
+ * preview stays current without a round-trip fetch.
+ */
+export async function writeFile(
+  projectPath: string,
+  path: string,
+  content: string,
+  hint?: {
+    projectId?: string;
+    nodeId?: string;
+    canvasKind?: string;
+  },
+): Promise<{ preview: string | null }> {
+  const params = new URLSearchParams({
+    project_path: projectPath,
+    path,
+  });
+  if (hint?.projectId) params.set("project_id", hint.projectId);
+  if (hint?.nodeId) params.set("node_id", hint.nodeId);
+  if (hint?.canvasKind) params.set("canvas_kind", hint.canvasKind);
+  const url = `${API_BASE}/api/files?${params.toString()}`;
+  const resp = await json<{ preview?: string | null }>(
+    await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    }),
+  );
+  return { preview: resp.preview ?? null };
+}
+
+/**
+ * Ask the server to create ``path`` under ``project_path`` (seeding an
+ * empty ``index.md``). Returns the path actually created — may end with
+ * ``-2``/``-3`` when the desired slug was taken.
+ */
+export async function createFolder(
+  projectPath: string,
+  path: string,
+): Promise<string> {
+  const url = `${API_BASE}/api/folders?project_path=${encodeURIComponent(
+    projectPath,
+  )}`;
+  const body = await json<{ path: string }>(
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path }),
+    }),
+  );
+  return body.path;
+}
+
+// ---------------------------------------------------------------------------
 // WebSocket
 // ---------------------------------------------------------------------------
 
