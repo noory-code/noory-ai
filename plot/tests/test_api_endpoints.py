@@ -417,6 +417,145 @@ def test_tag_delete_unknown_is_404(app_client: tuple[TestClient, str]) -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# v0.7 file + folder surface (Inspector MD editor)
+# ---------------------------------------------------------------------------
+
+
+def test_file_put_and_get_roundtrip(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    put = client.put(
+        "/api/files",
+        params={"project_path": project_path, "path": "workspace/notes.md"},
+        json={"content": "# Hello\n일상 속..."},
+    )
+    assert put.status_code == 200
+    got = client.get(
+        "/api/files",
+        params={"project_path": project_path, "path": "workspace/notes.md"},
+    )
+    assert got.status_code == 200
+    assert got.json()["content"] == "# Hello\n일상 속..."
+
+
+def test_file_get_missing_returns_empty_content(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/files",
+        params={"project_path": project_path, "path": "workspace/nothing.md"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["content"] == ""
+
+
+def test_file_rejects_path_traversal(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/files",
+        params={"project_path": project_path, "path": "../../../etc/passwd"},
+    )
+    assert resp.status_code == 400
+
+
+def test_file_rejects_absolute_path(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/files",
+        params={"project_path": project_path, "path": "/etc/passwd"},
+    )
+    assert resp.status_code == 400
+
+
+def test_file_rejects_disallowed_extension(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.put(
+        "/api/files",
+        params={"project_path": project_path, "path": "workspace/foo.py"},
+        json={"content": "import os"},
+    )
+    assert resp.status_code == 400
+
+
+def test_file_put_syncs_node_body_preview(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """Saving an ``index.md`` with ``project_id``+``node_id`` hints should
+    mirror the MD summary into the referenced node's ``body``."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    # Connect the seeded mission node to a folder via a canvas PUT.
+    core = client.get(
+        "/api/projects/alpha/canvases/core",
+        params={"project_path": project_path},
+    ).json()
+    mission = next(n for n in core["nodes"] if n["kind"] == "mission")
+    mission["folder_path"] = "workspace/core/mission-mission"
+    client.put(
+        "/api/projects/alpha/canvases/core",
+        params={"project_path": project_path},
+        json=core,
+    ).raise_for_status()
+
+    # Write an index.md carrying a Tagline section — should land in node.body.
+    put = client.put(
+        "/api/files",
+        params={
+            "project_path": project_path,
+            "path": "workspace/core/mission-mission/index.md",
+            "project_id": "alpha",
+            "node_id": mission["id"],
+        },
+        json={"content": "### Tagline\n짧은 한 줄\n\n### Story\n긴 이야기"},
+    )
+    assert put.status_code == 200
+    assert put.json()["preview"] == "짧은 한 줄"
+
+    refreshed = client.get(
+        "/api/projects/alpha/canvases/core",
+        params={"project_path": project_path},
+    ).json()
+    refreshed_mission = next(
+        n for n in refreshed["nodes"] if n["id"] == mission["id"]
+    )
+    assert refreshed_mission["body"] == "짧은 한 줄"
+
+
+def test_folder_post_creates_unique_path(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    first = client.post(
+        "/api/folders",
+        params={"project_path": project_path},
+        json={"path": "workspace/core/mission-mission"},
+    )
+    assert first.status_code == 201
+    assert first.json()["path"] == "workspace/core/mission-mission"
+    # Second request with the same name → server appends ``-2``.
+    second = client.post(
+        "/api/folders",
+        params={"project_path": project_path},
+        json={"path": "workspace/core/mission-mission"},
+    )
+    assert second.status_code == 201
+    assert second.json()["path"] == "workspace/core/mission-mission-2"
+    # index.md is seeded inside the created folder.
+    assert (
+        Path(project_path)
+        / "workspace/core/mission-mission/index.md"
+    ).is_file()
+
+
 def test_list_migrates_v01_sketches_silently(
     app_client: tuple[TestClient, str],
 ) -> None:

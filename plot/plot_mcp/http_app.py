@@ -12,6 +12,9 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from plot_mcp.api_endpoints import (
     canvas_get_endpoint,
     canvas_put_endpoint,
+    file_get_endpoint,
+    file_put_endpoint,
+    folder_post_endpoint,
     health_endpoint,
     project_delete_endpoint,
     project_get_endpoint,
@@ -78,6 +81,10 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
             canvas_put_endpoint,
             methods=["PUT"],
         ),
+        # v0.7 file + folder surface (for Inspector MD editor)
+        Route("/api/files", file_get_endpoint, methods=["GET"]),
+        Route("/api/files", file_put_endpoint, methods=["PUT"]),
+        Route("/api/folders", folder_post_endpoint, methods=["POST"]),
         Route(
             "/api/projects/{project_id}/tags",
             tags_list_endpoint,

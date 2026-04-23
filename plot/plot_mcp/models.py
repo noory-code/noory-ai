@@ -105,10 +105,35 @@ class SketchNode(BaseModel):
     # Required when kind == "actor_ref"; ignored otherwise.
     ref_actor_id: str | None = None
 
+    # v0.7 folder-backed content (2026-04-23).
+    # When set, the node's long-form body lives in ``{project_path}/{folder_path}/index.md``
+    # instead of ``body``. ``body`` still holds a short summary cache for node preview.
+    # Path is relative to the project root; path-traversal patterns ("..") are rejected.
+    folder_path: str | None = None
+
     @model_validator(mode="after")
     def _actor_ref_requires_ref_id(self) -> SketchNode:
         if self.kind == "actor_ref" and not self.ref_actor_id:
             raise ValueError(f"node {self.id!r} of kind 'actor_ref' requires ref_actor_id")
+        return self
+
+    @model_validator(mode="after")
+    def _folder_path_is_safe(self) -> SketchNode:
+        if self.folder_path is None:
+            return self
+        path = self.folder_path.strip()
+        if not path:
+            raise ValueError(f"node {self.id!r} folder_path must not be blank")
+        if path.startswith("/"):
+            raise ValueError(
+                f"node {self.id!r} folder_path must be relative, got {path!r}"
+            )
+        # Reject ``..`` segments to prevent escape; normalise slashes first.
+        parts = path.replace("\\", "/").split("/")
+        if any(part == ".." or part == "" for part in parts):
+            raise ValueError(
+                f"node {self.id!r} folder_path must not contain '..' or empty segments"
+            )
         return self
 
 

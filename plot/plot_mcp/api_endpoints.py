@@ -16,6 +16,15 @@ from pydantic import ValidationError
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
+from plot_mcp.body_sections import pick_summary
+from plot_mcp.file_io import (
+    ExtensionNotAllowedError,
+    UnsafePathError,
+    ensure_folder,
+    read_text_file,
+    uniquify_folder,
+    write_text_file,
+)
 from plot_mcp.folder_io import (
     create_project,
     delete_project,
@@ -304,3 +313,146 @@ async def tag_delete_endpoint(request: Request) -> JSONResponse:
     except KeyError as exc:
         return _error(f"tag not found: {exc.args[0]}", status=404)
     return JSONResponse({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# v0.7 text-file + folder surface — powers the Inspector MD editor.
+# ---------------------------------------------------------------------------
+
+
+def _project_root_from_plot_root(plot_root: Path) -> Path:
+    """``resolve_plot_root`` returns ``{project_path}/.plot/``; strip ``.plot``
+    so file-IO endpoints can address the project directory itself (where the
+    user's ``workspace/`` tree lives)."""
+    return plot_root.parent
+
+
+def _sync_node_body_cache_on_md_write(
+    plot_root: Path,
+    project_id: str | None,
+    node_id: str | None,
+    canvas_kind: str | None,
+    rel_path: str,
+    content: str,
+) -> str | None:
+    """When the viewer saves an ``index.md`` for a folder-backed node, mirror
+    the node's summary into canvas JSON so the on-canvas preview stays
+    current. No-op when any required hint is missing — the caller just
+    won't see a refreshed preview until the next full reload.
+    """
+    if not project_id or not node_id:
+        return None
+    if not rel_path.endswith("/index.md"):
+        return None
+    canvas: CanvasDoc | None = None
+    parsed_kind = _parse_canvas_kind(canvas_kind) if canvas_kind else None
+    kinds_to_try: tuple[CanvasKind, ...]
+    if parsed_kind is not None:
+        kinds_to_try = (parsed_kind,)
+    else:
+        kinds_to_try = ("core", "actors", "services_overview")
+    for kind in kinds_to_try:
+        try:
+            candidate = read_canvas(plot_root, project_id, kind)
+        except FileNotFoundError:
+            continue
+        if any(n.id == node_id for n in candidate.nodes):
+            canvas = candidate
+            break
+    if canvas is None:
+        return None
+    target = next((n for n in canvas.nodes if n.id == node_id), None)
+    if target is None:
+        return None
+    preview = pick_summary(content, target.kind)
+    if target.body == preview:
+        return preview
+    new_nodes = [
+        n.model_copy(update={"body": preview}) if n.id == node_id else n
+        for n in canvas.nodes
+    ]
+    synced = canvas.model_copy(update={"nodes": new_nodes})
+    try:
+        write_canvas(plot_root, project_id, synced)
+    except FileNotFoundError:
+        return None
+    return preview
+
+
+async def file_get_endpoint(request: Request) -> JSONResponse:
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    rel_path = request.query_params.get("path")
+    if not rel_path:
+        return _error("'path' query param is required")
+    project_root = _project_root_from_plot_root(plot_root)
+    try:
+        content = read_text_file(project_root, rel_path)
+    except (UnsafePathError, ExtensionNotAllowedError) as exc:
+        return _error(str(exc), status=400)
+    except ValueError as exc:
+        return _error(str(exc), status=413)
+    return JSONResponse({"path": rel_path, "content": content})
+
+
+async def file_put_endpoint(request: Request) -> JSONResponse:
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    rel_path = request.query_params.get("path")
+    if not rel_path:
+        return _error("'path' query param is required")
+    try:
+        body: dict[str, Any] = await request.json()
+    except json.JSONDecodeError:
+        return _error("invalid JSON body")
+    content = body.get("content")
+    if not isinstance(content, str):
+        return _error("'content' must be a string")
+    project_root = _project_root_from_plot_root(plot_root)
+    try:
+        write_text_file(project_root, rel_path, content)
+    except (UnsafePathError, ExtensionNotAllowedError) as exc:
+        return _error(str(exc), status=400)
+    except ValueError as exc:
+        return _error(str(exc), status=413)
+    # Optional hints: when the viewer passes ``project_id``+``node_id``
+    # alongside an ``index.md`` write, sync a short summary cache back
+    # into the canvas so the on-canvas node preview stays accurate
+    # without a separate fetch.
+    preview = _sync_node_body_cache_on_md_write(
+        plot_root,
+        project_id=request.query_params.get("project_id"),
+        node_id=request.query_params.get("node_id"),
+        canvas_kind=request.query_params.get("canvas_kind"),
+        rel_path=rel_path,
+        content=content,
+    )
+    return JSONResponse({"path": rel_path, "ok": True, "preview": preview})
+
+
+async def folder_post_endpoint(request: Request) -> JSONResponse:
+    """Create ``{project_path}/{path}`` with a fresh ``index.md``. Returns
+    the path actually created (may have a ``-2``/``-3`` suffix when the
+    desired name was taken)."""
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    try:
+        body: dict[str, Any] = await request.json()
+    except json.JSONDecodeError:
+        return _error("invalid JSON body")
+    desired = body.get("path")
+    if not isinstance(desired, str) or not desired.strip():
+        return _error("'path' is required and must be a non-empty string")
+    project_root = _project_root_from_plot_root(plot_root)
+    try:
+        actual = uniquify_folder(project_root, desired)
+        ensure_folder(project_root, actual)
+    except UnsafePathError as exc:
+        return _error(str(exc), status=400)
+    return JSONResponse({"path": actual}, status_code=201)
