@@ -1,6 +1,7 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { Handle, NodeResizer, Position, type NodeProps } from "reactflow";
+import { parseBody } from "../lib/bodySections";
 import type { Shape } from "../types";
 import { EditableText } from "../edit/EditableText";
 import { getIcon } from "./SketchIcons";
@@ -96,6 +97,26 @@ function contentPadding(shape: Shape): string {
   }
 }
 
+/** Shown inline on the node: the one-line summary, not the whole body.
+ * Order: Tagline (Mission) → Summary (everything else) → first non-meta
+ * section → any lead text above the sections. Long-form fields (Story,
+ * Decision criteria, Details, References) stay hidden — open the Inspector. */
+function pickBodyPreview(body: string): string {
+  if (!body) return "";
+  const parsed = parseBody(body);
+  const PRIMARY = ["tagline", "summary"];
+  const HIDDEN = new Set(["references"]);
+  for (const key of PRIMARY) {
+    const hit = parsed.sections.find((s) => s.heading.toLowerCase() === key);
+    if (hit && hit.content.trim()) return hit.content;
+  }
+  const firstVisible = parsed.sections.find(
+    (s) => !HIDDEN.has(s.heading.toLowerCase()) && s.content.trim(),
+  );
+  if (firstVisible) return firstVisible.content;
+  return parsed.lead;
+}
+
 function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) {
   const ring = selected
     ? "outline outline-2 outline-indigo-500"
@@ -105,6 +126,7 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
     ...shapeStyle(data.shape),
   };
   const Icon = getIcon(data.icon);
+  const bodyPreview = useMemo(() => pickBodyPreview(data.body), [data.body]);
   return (
     <>
       <NodeResizer
@@ -181,9 +203,9 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
               </span>
             )}
           </div>
-          {data.body && (
-            <div className="nowheel overflow-auto text-left text-[11px] leading-snug text-slate-700 [&_a]:text-indigo-600 [&_a]:underline [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_h3]:mt-1 [&_h3]:text-[10px] [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:tracking-wider [&_h3]:text-slate-500 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1 [&_strong]:text-slate-900">
-              <ReactMarkdown>{data.body}</ReactMarkdown>
+          {bodyPreview && (
+            <div className="nowheel overflow-auto text-left text-[11px] leading-snug text-slate-700 [&_a]:text-indigo-600 [&_a]:underline [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1 [&_strong]:text-slate-900">
+              <ReactMarkdown>{bodyPreview}</ReactMarkdown>
             </div>
           )}
         </div>
