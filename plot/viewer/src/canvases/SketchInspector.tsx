@@ -42,6 +42,15 @@ export interface SketchInspectorProps {
  * v0.2 correction (2026-04-20): composition elements (rules, contents)
  * are edited here, not as nodes on the canvas.
  */
+const WIDTH_STORAGE_KEY = "plot.inspector.width";
+type InspectorWidth = "narrow" | "wide";
+
+function loadWidth(): InspectorWidth {
+  if (typeof window === "undefined") return "narrow";
+  const stored = window.localStorage.getItem(WIDTH_STORAGE_KEY);
+  return stored === "wide" ? "wide" : "narrow";
+}
+
 export function SketchInspector({
   node,
   allNodes,
@@ -57,6 +66,16 @@ export function SketchInspector({
   projectId,
   canvasKind,
 }: SketchInspectorProps) {
+  const [width, setWidth] = useState<InspectorWidth>(loadWidth);
+  const toggleWidth = () => {
+    const next: InspectorWidth = width === "narrow" ? "wide" : "narrow";
+    setWidth(next);
+    try {
+      window.localStorage.setItem(WIDTH_STORAGE_KEY, next);
+    } catch {
+      // ignore storage quota errors; width choice is a nicety, not essential.
+    }
+  };
   const rules = useMemo(
     () => (node ? allNodes.filter((n) => n.parent_id === node.id && n.kind === "rule") : []),
     [node, allNodes],
@@ -86,7 +105,12 @@ export function SketchInspector({
     node.kind === "actor_ref" && (!node.ref_actor_id || refTarget === null);
 
   return (
-    <aside className="pointer-events-auto absolute right-0 top-0 z-10 flex h-full w-80 flex-col border-l border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+    <aside
+      className={
+        "pointer-events-auto absolute right-0 top-0 z-10 flex h-full flex-col border-l border-slate-200 bg-white/95 shadow-sm backdrop-blur " +
+        (width === "wide" ? "w-[min(720px,60vw)]" : "w-80")
+      }
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
         <div className="flex items-center gap-2">
@@ -122,6 +146,15 @@ export function SketchInspector({
               ✕ delete
             </button>
           )}
+          <button
+            type="button"
+            onClick={toggleWidth}
+            aria-label={width === "wide" ? "Narrow inspector" : "Widen inspector"}
+            title={width === "wide" ? "Narrow" : "Widen"}
+            className="rounded px-2 text-slate-400 hover:bg-slate-100"
+          >
+            {width === "wide" ? "⇥" : "⇤"}
+          </button>
           <button
             type="button"
             onClick={onClose}

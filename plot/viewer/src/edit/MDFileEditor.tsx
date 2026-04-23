@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { readFile, writeFile } from "../api";
+import { MDPreview } from "./MDPreview";
 
 export interface MDFileEditorProps {
   projectPath: string;
@@ -35,6 +36,7 @@ export function MDFileEditor({
   const [loadedPath, setLoadedPath] = useState<string>("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<"edit" | "preview" | "split">("edit");
   const saveTimer = useRef<number | null>(null);
   // Track the latest path we fetched so stale fetch responses
   // (from rapid node switching) don't overwrite the current editor.
@@ -99,43 +101,79 @@ export function MDFileEditor({
     );
   }
 
+  const editor = (
+    <textarea
+      value={content}
+      onChange={(e) => {
+        const next = e.target.value;
+        setContent(next);
+        scheduleSave(next);
+      }}
+      spellCheck={false}
+      className="h-full w-full flex-1 resize-none border-none bg-white p-3 font-mono text-[12px] leading-relaxed text-slate-800 focus:outline-none"
+      placeholder="Write freely. Use ### headings to mark Tagline / Summary / Details sections — the node preview picks up the first one. ```mermaid blocks render in Preview."
+    />
+  );
+
+  const preview = (
+    <div className="h-full w-full flex-1 overflow-auto p-3">
+      <MDPreview content={content} />
+    </div>
+  );
+
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex items-center justify-between border-b border-slate-200 px-3 py-1.5 text-[10px] text-slate-500">
         <span className="truncate font-mono" title={path}>
           📁 {path}
         </span>
-        <span
-          className={
-            saveState === "saving"
-              ? "text-slate-400"
+        <div className="flex items-center gap-2">
+          <div className="flex rounded border border-slate-200 text-[10px]">
+            {(["edit", "split", "preview"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={
+                  "px-2 py-0.5 " +
+                  (mode === m
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-500 hover:bg-slate-100")
+                }
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          <span
+            className={
+              saveState === "saving"
+                ? "text-slate-400"
+                : saveState === "saved"
+                  ? "text-emerald-600"
+                  : saveState === "error"
+                    ? "text-rose-600"
+                    : "text-transparent"
+            }
+          >
+            {saveState === "saving"
+              ? "saving…"
               : saveState === "saved"
-                ? "text-emerald-600"
+                ? "saved"
                 : saveState === "error"
-                  ? "text-rose-600"
-                  : "text-transparent"
-          }
-        >
-          {saveState === "saving"
-            ? "saving…"
-            : saveState === "saved"
-              ? "saved"
-              : saveState === "error"
-                ? error ?? "save failed"
-                : "·"}
-        </span>
+                  ? error ?? "save failed"
+                  : "·"}
+          </span>
+        </div>
       </div>
-      <textarea
-        value={content}
-        onChange={(e) => {
-          const next = e.target.value;
-          setContent(next);
-          scheduleSave(next);
-        }}
-        spellCheck={false}
-        className="h-full w-full flex-1 resize-none border-none bg-white p-3 font-mono text-[12px] leading-relaxed text-slate-800 focus:outline-none"
-        placeholder="Write freely. Use ### headings to mark Tagline / Summary / Details sections — the node preview picks up the first one."
-      />
+      {mode === "edit" && editor}
+      {mode === "preview" && preview}
+      {mode === "split" && (
+        <div className="flex min-h-0 flex-1">
+          <div className="flex min-h-0 flex-1 border-r border-slate-200">{editor}</div>
+          <div className="flex min-h-0 flex-1">{preview}</div>
+        </div>
+      )}
     </div>
   );
 }
