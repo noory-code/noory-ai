@@ -4,6 +4,42 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.0] — 2026-04-23
+
+### Changed — **breaking disk-layout refactor**
+- **`.plot/` is wrapper-less and canvas-grouped.** Every project now owns a single folder under `.plot/` containing one subfolder per canvas kind; each canvas folder holds its structure (`canvas.json`) alongside its nodes' content folders. The former sibling `workspace/` tree is gone — long-form content lives inside the project's own folder.
+  ```
+  .plot/{project_id}/
+    project.json
+    core/
+      canvas.json
+      {slug}/index.md
+    actors/
+      canvas.json
+      {slug}/index.md
+    services/
+      canvas.json                 ← top-view
+      {service_id}/
+        index.md
+        detail.json               ← per-service drill-down
+  ```
+  - `.plot/sketches/` intermediate removed.
+  - `core.json` / `actors.json` / `services-overview.json` → `{canvas}/canvas.json`.
+  - `services-detail/{sid}.json` → `services/{sid}/detail.json` (co-located with the service's `index.md`).
+- **`CanvasKind` literal `services_overview` → `services`.** Tab label is already "Services" — the canvas key now matches.
+- **`/api/files`, `/api/folders` are project-scoped.** `project_id` is required; `path` is relative to `.plot/{project_id}/`. Client can no longer accidentally address another project's tree via `..`.
+- **`folderSlug` drops the `workspace/` prefix.** Returns `{canvas}/{kind}-{label}` on both server (`plot_mcp/slug.py`) and client (`viewer/src/lib/slug.ts`).
+- **`sync_details_with_overview`** archives a service's whole folder (including `index.md`) to `services/_archive/{sid}/` when it disappears from the top-view — the previous `.json`-only archive would have orphaned any long-form notes.
+
+### Removed
+- `workspace/` wrapper folder (everything moved inside `.plot/{project_id}/`).
+- `services-detail/` dedicated folder.
+- `.plot/sketches/` intermediate directory for new projects (legacy v0.1 migration still reads from it when it exists).
+
+### Notes
+- **No automatic migration from v0.7.** The user confirmed no production data — BANAS is a dev-only artifact. Opening an old v0.7 project in v0.8 will look empty; re-create or run a manual port.
+- v0.1 → v0.4 auto-migration path still works and lands new projects in the v0.8 layout.
+
 ## [0.7.1] — 2026-04-23
 
 ### Added
