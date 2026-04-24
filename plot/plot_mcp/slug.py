@@ -37,13 +37,15 @@ def slugify(text: str) -> str:
 
 
 def folder_slug(kind: str, label: str, canvas: str = "core") -> str:
-    """Compose a ``workspace/{canvas}/{kind}-{label}`` relative folder path.
+    """Compose ``{canvas}/{kind}-{label}`` — the default relative folder
+    for a node's long-form content, rooted at the project's own folder
+    (``.plot/{project_id}/``).
 
-    Called by both server and client to agree on the default location for a
-    new node's folder. The server then uniquifies if taken.
+    Called by both server and client so they agree on a deterministic
+    location; the server then uniquifies (``-2``/``-3``) if taken.
     """
     kind_slug = slugify(kind) or "node"
     label_slug = slugify(label)
     stem = f"{kind_slug}-{label_slug}" if label_slug else kind_slug
     canvas_slug = slugify(canvas) or "core"
-    return f"workspace/{canvas_slug}/{stem}"
+    return f"{canvas_slug}/{stem}"

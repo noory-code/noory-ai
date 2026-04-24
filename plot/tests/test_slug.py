@@ -6,21 +6,21 @@ from plot_mcp.slug import folder_slug, slugify
 
 
 def test_mission_label_mission() -> None:
-    assert folder_slug("mission", "Mission") == "workspace/core/mission-mission"
+    assert folder_slug("mission", "Mission") == "core/mission-mission"
 
 
 def test_core_value_with_korean_and_ascii() -> None:
     assert folder_slug("core_value", "관용 (Tolerance)") == (
-        "workspace/core/core-value-관용-tolerance"
+        "core/core-value-관용-tolerance"
     )
 
 
 def test_identity_voice() -> None:
-    assert folder_slug("identity", "Voice") == "workspace/core/identity-voice"
+    assert folder_slug("identity", "Voice") == "core/identity-voice"
 
 
 def test_canvas_override() -> None:
-    assert folder_slug("actor", "User", canvas="actors") == "workspace/actors/actor-user"
+    assert folder_slug("actor", "User", canvas="actors") == "actors/actor-user"
 
 
 def test_slugify_collapses_and_trims() -> None:
@@ -31,5 +31,5 @@ def test_slugify_collapses_and_trims() -> None:
 
 def test_slugify_empty_falls_back_in_folder_slug() -> None:
     """An empty label still produces a meaningful path (kind only)."""
-    assert folder_slug("mission", "") == "workspace/core/mission"
-    assert folder_slug("mission", "!!!") == "workspace/core/mission"
+    assert folder_slug("mission", "") == "core/mission"
+    assert folder_slug("mission", "!!!") == "core/mission"

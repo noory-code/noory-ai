@@ -261,8 +261,8 @@ def test_canvas_put_overview_auto_creates_detail(
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
     payload = {
-        "canvas_id": "services_overview",
-        "canvas_kind": "services_overview",
+        "canvas_id": "services",
+        "canvas_kind": "services",
         "nodes": [
             {
                 "id": "order",
@@ -288,7 +288,7 @@ def test_canvas_put_overview_auto_creates_detail(
         "edges": [],
     }
     resp = client.put(
-        "/api/projects/alpha/canvases/services_overview",
+        "/api/projects/alpha/canvases/services",
         params={"project_path": project_path},
         json=payload,
     )
@@ -427,13 +427,21 @@ def test_file_put_and_get_roundtrip(app_client: tuple[TestClient, str]) -> None:
     _create(client, project_path, "alpha", "Alpha")
     put = client.put(
         "/api/files",
-        params={"project_path": project_path, "path": "workspace/notes.md"},
+        params={
+            "project_path": project_path,
+            "project_id": "alpha",
+            "path": "notes.md",
+        },
         json={"content": "# Hello\n일상 속..."},
     )
     assert put.status_code == 200
     got = client.get(
         "/api/files",
-        params={"project_path": project_path, "path": "workspace/notes.md"},
+        params={
+            "project_path": project_path,
+            "project_id": "alpha",
+            "path": "notes.md",
+        },
     )
     assert got.status_code == 200
     assert got.json()["content"] == "# Hello\n일상 속..."
@@ -446,10 +454,24 @@ def test_file_get_missing_returns_empty_content(
     _create(client, project_path, "alpha", "Alpha")
     resp = client.get(
         "/api/files",
-        params={"project_path": project_path, "path": "workspace/nothing.md"},
+        params={
+            "project_path": project_path,
+            "project_id": "alpha",
+            "path": "nothing.md",
+        },
     )
     assert resp.status_code == 200
     assert resp.json()["content"] == ""
+
+
+def test_file_requires_project_id(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/files",
+        params={"project_path": project_path, "path": "notes.md"},
+    )
+    assert resp.status_code == 400
 
 
 def test_file_rejects_path_traversal(app_client: tuple[TestClient, str]) -> None:
@@ -457,7 +479,11 @@ def test_file_rejects_path_traversal(app_client: tuple[TestClient, str]) -> None
     _create(client, project_path, "alpha", "Alpha")
     resp = client.get(
         "/api/files",
-        params={"project_path": project_path, "path": "../../../etc/passwd"},
+        params={
+            "project_path": project_path,
+            "project_id": "alpha",
+            "path": "../../../etc/passwd",
+        },
     )
     assert resp.status_code == 400
 
@@ -467,7 +493,30 @@ def test_file_rejects_absolute_path(app_client: tuple[TestClient, str]) -> None:
     _create(client, project_path, "alpha", "Alpha")
     resp = client.get(
         "/api/files",
-        params={"project_path": project_path, "path": "/etc/passwd"},
+        params={
+            "project_path": project_path,
+            "project_id": "alpha",
+            "path": "/etc/passwd",
+        },
+    )
+    assert resp.status_code == 400
+
+
+def test_file_cannot_climb_into_other_project(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """v0.8 scoping: a file API call for project ``alpha`` can't walk up
+    to ``beta`` via ``../beta/...``."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    _create(client, project_path, "beta", "Beta")
+    resp = client.get(
+        "/api/files",
+        params={
+            "project_path": project_path,
+            "project_id": "alpha",
+            "path": "../beta/project.json",
+        },
     )
     assert resp.status_code == 400
 
@@ -479,7 +528,11 @@ def test_file_rejects_disallowed_extension(
     _create(client, project_path, "alpha", "Alpha")
     resp = client.put(
         "/api/files",
-        params={"project_path": project_path, "path": "workspace/foo.py"},
+        params={
+            "project_path": project_path,
+            "project_id": "alpha",
+            "path": "foo.py",
+        },
         json={"content": "import os"},
     )
     assert resp.status_code == 400
@@ -488,8 +541,8 @@ def test_file_rejects_disallowed_extension(
 def test_file_put_syncs_node_body_preview(
     app_client: tuple[TestClient, str],
 ) -> None:
-    """Saving an ``index.md`` with ``project_id``+``node_id`` hints should
-    mirror the MD summary into the referenced node's ``body``."""
+    """Saving an ``index.md`` with ``node_id`` hint should mirror the MD
+    summary into the referenced node's ``body``."""
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
     # Connect the seeded mission node to a folder via a canvas PUT.
@@ -498,7 +551,7 @@ def test_file_put_syncs_node_body_preview(
         params={"project_path": project_path},
     ).json()
     mission = next(n for n in core["nodes"] if n["kind"] == "mission")
-    mission["folder_path"] = "workspace/core/mission-mission"
+    mission["folder_path"] = "core/mission-mission"
     client.put(
         "/api/projects/alpha/canvases/core",
         params={"project_path": project_path},
@@ -510,8 +563,8 @@ def test_file_put_syncs_node_body_preview(
         "/api/files",
         params={
             "project_path": project_path,
-            "path": "workspace/core/mission-mission/index.md",
             "project_id": "alpha",
+            "path": "core/mission-mission/index.md",
             "node_id": mission["id"],
         },
         json={"content": "### Tagline\n짧은 한 줄\n\n### Story\n긴 이야기"},
@@ -537,22 +590,22 @@ def test_folder_post_creates_unique_path(
     first = client.post(
         "/api/folders",
         params={"project_path": project_path},
-        json={"path": "workspace/core/mission-mission"},
+        json={"project_id": "alpha", "path": "core/mission-mission"},
     )
     assert first.status_code == 201
-    assert first.json()["path"] == "workspace/core/mission-mission"
+    assert first.json()["path"] == "core/mission-mission"
     # Second request with the same name → server appends ``-2``.
     second = client.post(
         "/api/folders",
         params={"project_path": project_path},
-        json={"path": "workspace/core/mission-mission"},
+        json={"project_id": "alpha", "path": "core/mission-mission"},
     )
     assert second.status_code == 201
-    assert second.json()["path"] == "workspace/core/mission-mission-2"
-    # index.md is seeded inside the created folder.
+    assert second.json()["path"] == "core/mission-mission-2"
+    # index.md is seeded inside the created folder (under the project scope).
     assert (
         Path(project_path)
-        / "workspace/core/mission-mission/index.md"
+        / ".plot/alpha/core/mission-mission/index.md"
     ).is_file()
 
 

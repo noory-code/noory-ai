@@ -174,19 +174,21 @@ class SketchEdge(BaseModel):
 #
 #   core              — Mission / CoreValue / Identity (singleton)
 #   actors            — Actor definitions (singleton, SSOT for actor identities)
-#   services_overview — top-level services (singleton)
+#   services          — top-level services (singleton). v0.8 renamed from
+#                       ``services_overview``; paired with ``service_detail``
+#                       for the per-service drill-down.
 #   service_detail    — per-service drill-down (one per service in overview)
 #
 # Each ``CanvasDoc`` enforces its own allowed ``NodeKind`` set and structural
 # rules; shared validators (edge refs, parent cycles, unique ids) still apply.
 # The old monolithic ``SketchDoc`` stays alongside during migration.
 
-CanvasKind = Literal["core", "actors", "services_overview", "service_detail"]
+CanvasKind = Literal["core", "actors", "services", "service_detail"]
 
 _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     "core": {"project", "mission", "core_value", "identity"},
     "actors": {"actor"},
-    "services_overview": {"service"},
+    "services": {"service"},
     "service_detail": {"service", "rule", "content", "actor_ref"},
 }
 
@@ -282,13 +284,13 @@ class CanvasDoc(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _overview_canvas_rules(self) -> CanvasDoc:
-        if self.canvas_kind != "services_overview":
+    def _services_canvas_rules(self) -> CanvasDoc:
+        if self.canvas_kind != "services":
             return self
         nested = [n for n in self.nodes if n.parent_id is not None]
         if nested:
             raise ValueError(
-                "services_overview forbids nested nodes (use service_detail for "
+                "services canvas forbids nested nodes (use service_detail for "
                 f"decomposition); offending: {sorted(n.id for n in nested)}"
             )
         return self

@@ -11,8 +11,8 @@ For every ``.plot/sketches/{id}.json`` that looks like a v0.1 SketchDoc:
        - ``project.json``
        - ``core.json``  (project anchor + mission + core-value + identity)
        - ``actors.json`` (actor subtree, parent chain cleaned)
-       - ``services-overview.json`` (top-level services, no nesting)
-       - ``services-detail/{service_id}.json`` per top-level service
+       - ``services/canvas.json`` (top-level services, no nesting)
+       - ``services/{service_id}/detail.json`` per top-level service
     3. Rename the original to ``{id}.json.v01.bak``.
 
 Running a second time does nothing (idempotent). Malformed v0.1 files are
@@ -265,7 +265,9 @@ def _backup(path: Path) -> None:
 def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
     folder = _project_dir(plot_root, doc.id)
     folder.mkdir(parents=True)
-    (folder / "services-detail").mkdir()
+    # v0.8: no longer seed a ``services-detail/`` folder — detail canvases
+    # live alongside their service under ``services/{sid}/detail.json``
+    # and are created lazily by ``sync_details_with_overview``.
 
     # --- project metadata -----------------------------------------------
     proj = ProjectDoc(
@@ -324,7 +326,7 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
     # --- split services into overview + details -------------------------
     overview, detail_canvases = _split_services(service_nodes, service_root, doc.edges)
     _write_json(
-        _canvas_file(plot_root, doc.id, "services_overview"),
+        _canvas_file(plot_root, doc.id, "services"),
         overview.model_dump(by_alias=True),
     )
     for detail in detail_canvases:
@@ -493,8 +495,8 @@ def _split_services(
     overview_ids = {n.id for n in overview_nodes}
     overview_edges = [e for e in edges if e.source in overview_ids and e.target in overview_ids]
     overview = CanvasDoc(
-        canvas_id="services_overview",
-        canvas_kind="services_overview",
+        canvas_id="services",
+        canvas_kind="services",
         nodes=overview_nodes,
         edges=overview_edges,
     )

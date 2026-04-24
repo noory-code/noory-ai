@@ -27,8 +27,8 @@ def _overview_with(service_labels: dict[str, str]) -> CanvasDoc:
         SketchNode(id=sid, kind="service", label=label) for sid, label in service_labels.items()
     ]
     return CanvasDoc(
-        canvas_id="services_overview",
-        canvas_kind="services_overview",
+        canvas_id="services",
+        canvas_kind="services",
         nodes=nodes,
     )
 
@@ -54,7 +54,9 @@ def test_sync_archives_removed_service(plot_root: Path) -> None:
     assert result["archived"] == ["pay"]
     # pay detail moved to _archive, no longer listed as a live detail
     assert "pay" not in list_service_details(plot_root, "alpha")
-    archive = plot_root / "sketches" / "alpha" / "services-detail" / "_archive" / "pay.json"
+    # v0.8: archived service folder moves to ``services/_archive/{sid}/``
+    # with its ``detail.json`` (and any ``index.md``) intact.
+    archive = plot_root / "alpha" / "services" / "_archive" / "pay" / "detail.json"
     assert archive.is_file()
 
 

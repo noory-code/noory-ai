@@ -48,7 +48,7 @@ from plot_mcp.workspace import resolve_plot_root
 _log = logging.getLogger(__name__)
 
 _ALLOWED_CANVAS_KINDS: frozenset[str] = frozenset(
-    ("core", "actors", "services_overview", "service_detail"),
+    ("core", "actors", "services", "service_detail"),
 )
 
 
@@ -102,14 +102,17 @@ async def projects_list_endpoint(request: Request) -> JSONResponse:
         plot_root = _require_plot_root(request)
     except _ApiError as exc:
         return exc.response
-    # Silently migrate any leftover v0.1 files in the sketches/ root.
+    # Silently migrate any leftover v0.1 files in the (now-legacy)
+    # ``sketches/`` root. Only runs if that directory still exists.
     migrated = migrate_v01_to_v02(plot_root)
-    # Enumerate project folders, newest-first by ``updated``.
-    folder = plot_root / "sketches"
+    # Enumerate project folders, newest-first by ``updated``. In the v0.8
+    # layout each project is a direct child of ``plot_root``; we skip the
+    # legacy ``sketches/`` folder (migration landing pad) and any other
+    # non-project child that has no ``project.json``.
     projects: list[dict[str, Any]] = []
-    if folder.is_dir():
-        for child in sorted(folder.iterdir()):
-            if not child.is_dir():
+    if plot_root.is_dir():
+        for child in sorted(plot_root.iterdir()):
+            if not child.is_dir() or child.name == "sketches":
                 continue
             try:
                 proj = read_project(plot_root, child.name)
@@ -153,7 +156,7 @@ async def project_get_endpoint(request: Request) -> JSONResponse:
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
     details = list_service_details(plot_root, project_id)
-    tags = list_tags(plot_root / "sketches" / project_id)
+    tags = list_tags(plot_root / project_id)
     return JSONResponse(
         {
             **proj.model_dump(),
@@ -252,7 +255,7 @@ async def canvas_put_endpoint(request: Request) -> JSONResponse:
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
     sync: dict[str, list[str]] = {"created": [], "archived": []}
-    if canvas_kind == "services_overview":
+    if canvas_kind == "services":
         sync = sync_details_with_overview(plot_root, project_id)
     return JSONResponse({"canvas": canvas.model_dump(by_alias=True), "sync": sync})
 
@@ -268,7 +271,7 @@ async def tags_list_endpoint(request: Request) -> JSONResponse:
     except _ApiError as exc:
         return exc.response
     project_id = request.path_params["project_id"]
-    folder = plot_root / "sketches" / project_id
+    folder = plot_root / project_id
     if not folder.is_dir():
         return _error(f"project not found: {project_id}", status=404)
     return JSONResponse({"tags": list_tags(folder)})
@@ -280,7 +283,7 @@ async def tag_post_endpoint(request: Request) -> JSONResponse:
     except _ApiError as exc:
         return exc.response
     project_id = request.path_params["project_id"]
-    folder = plot_root / "sketches" / project_id
+    folder = plot_root / project_id
     if not folder.is_dir():
         return _error(f"project not found: {project_id}", status=404)
     try:
@@ -305,7 +308,7 @@ async def tag_delete_endpoint(request: Request) -> JSONResponse:
         return exc.response
     project_id = request.path_params["project_id"]
     name = request.path_params["tag_name"]
-    folder = plot_root / "sketches" / project_id
+    folder = plot_root / project_id
     if not folder.is_dir():
         return _error(f"project not found: {project_id}", status=404)
     try:
@@ -320,11 +323,12 @@ async def tag_delete_endpoint(request: Request) -> JSONResponse:
 # ---------------------------------------------------------------------------
 
 
-def _project_root_from_plot_root(plot_root: Path) -> Path:
-    """``resolve_plot_root`` returns ``{project_path}/.plot/``; strip ``.plot``
-    so file-IO endpoints can address the project directory itself (where the
-    user's ``workspace/`` tree lives)."""
-    return plot_root.parent
+def _project_scoped_root(plot_root: Path, project_id: str) -> Path:
+    """v0.8: everything a project owns lives under ``.plot/{project_id}/``.
+    File/folder API paths are relative to this scope so a request can't
+    climb up into another project (or outside ``.plot/``).
+    """
+    return plot_root / project_id
 
 
 def _sync_node_body_cache_on_md_write(
@@ -350,7 +354,7 @@ def _sync_node_body_cache_on_md_write(
     if parsed_kind is not None:
         kinds_to_try = (parsed_kind,)
     else:
-        kinds_to_try = ("core", "actors", "services_overview")
+        kinds_to_try = ("core", "actors", "services")
     for kind in kinds_to_try:
         try:
             candidate = read_canvas(plot_root, project_id, kind)
@@ -384,10 +388,15 @@ async def file_get_endpoint(request: Request) -> JSONResponse:
         plot_root = _require_plot_root(request)
     except _ApiError as exc:
         return exc.response
+    project_id = request.query_params.get("project_id")
+    if not project_id:
+        return _error("'project_id' query param is required")
     rel_path = request.query_params.get("path")
     if not rel_path:
         return _error("'path' query param is required")
-    project_root = _project_root_from_plot_root(plot_root)
+    project_root = _project_scoped_root(plot_root, project_id)
+    if not project_root.is_dir():
+        return _error(f"project not found: {project_id}", status=404)
     try:
         content = read_text_file(project_root, rel_path)
     except (UnsafePathError, ExtensionNotAllowedError) as exc:
@@ -402,6 +411,9 @@ async def file_put_endpoint(request: Request) -> JSONResponse:
         plot_root = _require_plot_root(request)
     except _ApiError as exc:
         return exc.response
+    project_id = request.query_params.get("project_id")
+    if not project_id:
+        return _error("'project_id' query param is required")
     rel_path = request.query_params.get("path")
     if not rel_path:
         return _error("'path' query param is required")
@@ -412,20 +424,22 @@ async def file_put_endpoint(request: Request) -> JSONResponse:
     content = body.get("content")
     if not isinstance(content, str):
         return _error("'content' must be a string")
-    project_root = _project_root_from_plot_root(plot_root)
+    project_root = _project_scoped_root(plot_root, project_id)
+    if not project_root.is_dir():
+        return _error(f"project not found: {project_id}", status=404)
     try:
         write_text_file(project_root, rel_path, content)
     except (UnsafePathError, ExtensionNotAllowedError) as exc:
         return _error(str(exc), status=400)
     except ValueError as exc:
         return _error(str(exc), status=413)
-    # Optional hints: when the viewer passes ``project_id``+``node_id``
-    # alongside an ``index.md`` write, sync a short summary cache back
-    # into the canvas so the on-canvas node preview stays accurate
-    # without a separate fetch.
+    # Optional hints: when the viewer passes ``node_id`` (and optionally
+    # ``canvas_kind``) alongside an ``index.md`` write, sync a short
+    # summary cache back into the canvas so the on-canvas preview stays
+    # accurate without a separate fetch.
     preview = _sync_node_body_cache_on_md_write(
         plot_root,
-        project_id=request.query_params.get("project_id"),
+        project_id=project_id,
         node_id=request.query_params.get("node_id"),
         canvas_kind=request.query_params.get("canvas_kind"),
         rel_path=rel_path,
@@ -435,7 +449,7 @@ async def file_put_endpoint(request: Request) -> JSONResponse:
 
 
 async def folder_post_endpoint(request: Request) -> JSONResponse:
-    """Create ``{project_path}/{path}`` with a fresh ``index.md``. Returns
+    """Create ``.plot/{project_id}/{path}`` with a fresh ``index.md``. Returns
     the path actually created (may have a ``-2``/``-3`` suffix when the
     desired name was taken)."""
     try:
@@ -446,10 +460,15 @@ async def folder_post_endpoint(request: Request) -> JSONResponse:
         body: dict[str, Any] = await request.json()
     except json.JSONDecodeError:
         return _error("invalid JSON body")
+    project_id = body.get("project_id")
+    if not isinstance(project_id, str) or not project_id:
+        return _error("'project_id' is required and must be a non-empty string")
     desired = body.get("path")
     if not isinstance(desired, str) or not desired.strip():
         return _error("'path' is required and must be a non-empty string")
-    project_root = _project_root_from_plot_root(plot_root)
+    project_root = _project_scoped_root(plot_root, project_id)
+    if not project_root.is_dir():
+        return _error(f"project not found: {project_id}", status=404)
     try:
         actual = uniquify_folder(project_root, desired)
         ensure_folder(project_root, actual)

@@ -218,14 +218,14 @@ def test_actors_canvas_actor_ref_rejected() -> None:
 
 
 # ---------------------------------------------------------------------------
-# services_overview canvas
+# services canvas
 # ---------------------------------------------------------------------------
 
 
 def test_overview_top_level_services_ok() -> None:
     CanvasDoc(
-        canvas_id="services_overview",
-        canvas_kind="services_overview",
+        canvas_id="services",
+        canvas_kind="services",
         nodes=[
             SketchNode(id="order", kind="service", label="주문"),
             SketchNode(id="pay", kind="service", label="결제"),
@@ -237,8 +237,8 @@ def test_overview_nested_service_rejected() -> None:
     """Overview forbids decomposition — that's what Detail canvases are for."""
     with pytest.raises(ValueError, match="nested"):
         CanvasDoc(
-            canvas_id="services_overview",
-            canvas_kind="services_overview",
+            canvas_id="services",
+            canvas_kind="services",
             nodes=[
                 SketchNode(id="order", kind="service", label="주문"),
                 SketchNode(id="order-sub", kind="service", parent_id="order", label="Sub"),
@@ -249,8 +249,8 @@ def test_overview_nested_service_rejected() -> None:
 def test_overview_actor_rejected() -> None:
     with pytest.raises(ValueError, match="not allowed"):
         CanvasDoc(
-            canvas_id="services_overview",
-            canvas_kind="services_overview",
+            canvas_id="services",
+            canvas_kind="services",
             nodes=[SketchNode(id="a1", kind="actor", label="Stray")],
         )
 

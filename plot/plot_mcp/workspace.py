@@ -20,9 +20,10 @@ DEFAULT_HTTP_PORT = 5190
 def resolve_plot_root(project_path: str) -> Path:
     """Resolve ``{project_path}/.plot/``, creating it on first access.
 
-    Plot is schema-free — any project directory can host sketches. The only
-    convention is the ``.plot/`` dotfolder. Unlike Solera, we don't require
-    pre-existing content; a fresh project starts empty and writes are lazy.
+    Plot is schema-free — any project directory can host projects. The only
+    convention is the ``.plot/`` dotfolder; each project lives at
+    ``.plot/{project_id}/`` with its canvas folders beneath. v0.8 dropped
+    the former ``sketches/`` intermediate directory.
     """
     base = Path(project_path).expanduser().resolve()
     if not base.exists():
@@ -31,7 +32,6 @@ def resolve_plot_root(project_path: str) -> Path:
         raise NotADirectoryError(f"project_path is not a directory: {base}")
     root = base / ".plot"
     root.mkdir(exist_ok=True)
-    (root / "sketches").mkdir(exist_ok=True)
     return root
 
 

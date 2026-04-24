@@ -1,21 +1,30 @@
-"""Folder-based project store for Plot v0.2 multi-canvas.
+"""Folder-based project store for Plot v0.8 (wrapper-less, canvas-grouped).
 
 Disk layout
 -----------
 
-    .plot/sketches/{project_id}/
-        project.json                 — ProjectDoc
-        core.json                    — CanvasDoc (canvas_kind = "core")
-        actors.json                  — CanvasDoc (canvas_kind = "actors")
-        services-overview.json       — CanvasDoc (canvas_kind = "services_overview")
-        services-detail/
-            {service_id}.json        — CanvasDoc (canvas_kind = "service_detail")
+    .plot/{project_id}/
+        project.json                     — ProjectDoc
+        core/
+            canvas.json                  — CanvasDoc (canvas_kind = "core")
+            {node-slug}/index.md         — node long-form (opt-in per node)
+        actors/
+            canvas.json
+            {node-slug}/index.md
+        services/
+            canvas.json                  — top-view (canvas_kind = "services")
+            {service_id}/
+                index.md                 — Service node long-form
+                detail.json              — CanvasDoc (canvas_kind = "service_detail")
 
-Every canvas lives in its own file so a write to one canvas never
+Every canvas lives in its own file (``canvas.json`` for singletons,
+``detail.json`` for service detail) so a write to one canvas never
 touches another. Thin wrapper: no caching, atomic replace only.
 
-The old ``sketches.py`` single-file store stays alongside during the
-v0.1 → v0.2 migration window.
+v0.8 dropped the legacy ``.plot/sketches/`` intermediate folder, the
+per-canvas filename convention (``core.json`` etc), the standalone
+``services-detail/`` folder, and the sibling ``workspace/`` tree — all
+node long-form content now lives inside the project's own folder tree.
 """
 
 from __future__ import annotations
@@ -29,12 +38,10 @@ from typing import Any, cast
 from plot_mcp.git_store import ensure_repo
 from plot_mcp.models import CanvasDoc, CanvasKind, ProjectDoc, SketchNode
 
-_SINGLETON_CANVAS_FILES: dict[str, str] = {
-    "core": "core.json",
-    "actors": "actors.json",
-    "services_overview": "services-overview.json",
-}
-_DETAIL_SUBDIR = "services-detail"
+# v0.8 layout: every canvas — singleton or detail — lives in a folder
+# named after the canvas (or the owning service, for details), and its
+# structure is always called ``canvas.json`` (or ``detail.json`` for
+# service_detail). No more per-canvas filename convention to memorise.
 
 
 # ---------------------------------------------------------------------------
@@ -42,14 +49,8 @@ _DETAIL_SUBDIR = "services-detail"
 # ---------------------------------------------------------------------------
 
 
-def _sketches_dir(plot_root: Path) -> Path:
-    d = plot_root / "sketches"
-    d.mkdir(exist_ok=True)
-    return d
-
-
 def _project_dir(plot_root: Path, project_id: str) -> Path:
-    return _sketches_dir(plot_root) / project_id
+    return plot_root / project_id
 
 
 def _project_file(plot_root: Path, project_id: str) -> Path:
@@ -66,8 +67,8 @@ def _canvas_file(
     if canvas_kind == "service_detail":
         if not service_id:
             raise ValueError("service_detail requires service_id")
-        return folder / _DETAIL_SUBDIR / f"{service_id}.json"
-    return folder / _SINGLETON_CANVAS_FILES[canvas_kind]
+        return folder / "services" / service_id / "detail.json"
+    return folder / canvas_kind / "canvas.json"
 
 
 def _ensure_project(plot_root: Path, project_id: str) -> Path:
@@ -206,12 +207,20 @@ def rename_project(plot_root: Path, project_id: str, new_name: str) -> ProjectDo
 
 
 def list_service_details(plot_root: Path, project_id: str) -> list[str]:
-    """Return the service ids for which a Detail canvas exists."""
+    """Return the service ids for which a Detail canvas exists.
+    v0.8 layout: each service lives at ``services/{sid}/`` and its detail
+    canvas is the sibling ``detail.json`` alongside ``index.md``. Folders
+    without a ``detail.json`` (e.g. a service connected to a folder but
+    whose detail was archived) are skipped."""
     _ensure_project(plot_root, project_id)
-    folder = _project_dir(plot_root, project_id) / _DETAIL_SUBDIR
-    if not folder.is_dir():
+    services_folder = _project_dir(plot_root, project_id) / "services"
+    if not services_folder.is_dir():
         return []
-    return sorted(p.stem for p in folder.glob("*.json"))
+    return sorted(
+        sid.name
+        for sid in services_folder.iterdir()
+        if sid.is_dir() and (sid / "detail.json").is_file()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -279,7 +288,12 @@ def _seed_core_canvas(project_name: str) -> CanvasDoc:
 
 
 def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
-    """Create a fresh project folder, seeded with Core / Actors / Services-Overview.
+    """Create a fresh project folder, seeded with Core / Actors / Services.
+
+    v0.8 layout: one folder per project (``.plot/{project_id}/``) with a
+    subfolder per canvas kind. Each canvas folder holds a ``canvas.json``.
+    Service-detail canvases join the relevant service folder later via
+    ``sync_details_with_overview``.
 
     Raises ``FileExistsError`` if ``project_id`` is taken.
     """
@@ -287,7 +301,6 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     if folder.exists():
         raise FileExistsError(f"project already exists: {project_id}")
     folder.mkdir(parents=True)
-    (folder / _DETAIL_SUBDIR).mkdir()
     # Initialise the project's per-folder git repo now so that
     # ``tag_snapshot`` works later without any extra wiring. The repo
     # stays empty until the user plants a tag.
@@ -312,10 +325,10 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
         CanvasDoc(canvas_id="actors", canvas_kind="actors").model_dump(by_alias=True),
     )
     _write_json(
-        _canvas_file(plot_root, project_id, "services_overview"),
+        _canvas_file(plot_root, project_id, "services"),
         CanvasDoc(
-            canvas_id="services_overview",
-            canvas_kind="services_overview",
+            canvas_id="services",
+            canvas_kind="services",
         ).model_dump(by_alias=True),
     )
     return proj
@@ -334,23 +347,35 @@ def delete_project(plot_root: Path, project_id: str) -> None:
 
 
 def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, list[str]]:
-    """Ensure services-detail/{id}.json exists for every service in the Overview.
+    """Ensure ``services/{sid}/detail.json`` exists for every service in the
+    top-view ``services`` canvas.
 
-    Services that disappear from the Overview have their Detail files moved
-    to ``services-detail/_archive/{id}.json`` — a destructive delete would
-    throw away user work on a stray click. Called opportunistically after
-    writes to the Overview canvas.
+    Services that disappear from the top view have their whole folder moved
+    to ``services/_archive/{sid}/`` — a destructive delete would throw away
+    user work (``index.md``, attachments) on a stray click. Called
+    opportunistically after writes to the services canvas.
 
     Returns ``{"created": [...], "archived": [...]}`` for telemetry.
     """
     _ensure_project(plot_root, project_id)
     try:
-        overview = read_canvas(plot_root, project_id, "services_overview")
+        overview = read_canvas(plot_root, project_id, "services")
     except FileNotFoundError:
         return {"created": [], "archived": []}
     overview_service_ids = {n.id for n in overview.nodes if n.kind == "service"}
-    detail_folder = _project_dir(plot_root, project_id) / _DETAIL_SUBDIR
-    existing_details = {p.stem for p in detail_folder.glob("*.json")}
+    services_folder = _project_dir(plot_root, project_id) / "services"
+    services_folder.mkdir(exist_ok=True)
+    # Existing service folders: every immediate subdir that isn't ``_archive``
+    # and has its own ``detail.json``.
+    existing_details: set[str] = set()
+    if services_folder.is_dir():
+        for child in services_folder.iterdir():
+            if (
+                child.is_dir()
+                and child.name != "_archive"
+                and (child / "detail.json").is_file()
+            ):
+                existing_details.add(child.name)
 
     created: list[str] = []
     for service_id in sorted(overview_service_ids - existing_details):
@@ -367,12 +392,19 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
         )
         created.append(service_id)
 
-    archive_folder = detail_folder / "_archive"
+    archive_folder = services_folder / "_archive"
     archived: list[str] = []
     for service_id in sorted(existing_details - overview_service_ids):
         archive_folder.mkdir(exist_ok=True)
-        src_path = detail_folder / f"{service_id}.json"
-        dst_path = archive_folder / f"{service_id}.json"
+        src_path = services_folder / service_id
+        dst_path = archive_folder / service_id
+        # If the archive already has a folder with the same id (rare — same
+        # service created, archived, and recreated), rename with a suffix.
+        if dst_path.exists():
+            n = 2
+            while (archive_folder / f"{service_id}-{n}").exists():
+                n += 1
+            dst_path = archive_folder / f"{service_id}-{n}"
         src_path.replace(dst_path)
         archived.append(service_id)
 

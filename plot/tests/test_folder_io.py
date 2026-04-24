@@ -1,15 +1,17 @@
-"""Folder-based project IO for Plot v0.2 multi-canvas.
+"""Folder-based project IO for Plot v0.8 (wrapper-less canvas-grouped layout).
 
 Layout
 ------
 
-    .plot/sketches/{project_id}/
+    .plot/{project_id}/
       project.json                   — ProjectDoc metadata
-      core.json                      — CanvasDoc (canvas_kind = "core")
-      actors.json                    — CanvasDoc (canvas_kind = "actors")
-      services-overview.json         — CanvasDoc (canvas_kind = "services_overview")
-      services-detail/
-        {service_node_id}.json       — CanvasDoc (canvas_kind = "service_detail")
+      core/canvas.json               — CanvasDoc (canvas_kind = "core")
+      actors/canvas.json             — CanvasDoc (canvas_kind = "actors")
+      services/
+        canvas.json                  — top-view (canvas_kind = "services")
+        {service_id}/
+          index.md                   — Service node long-form (opt-in)
+          detail.json                — CanvasDoc (canvas_kind = "service_detail")
 """
 
 from __future__ import annotations
@@ -46,14 +48,14 @@ def test_create_project_builds_folder_layout(plot_root: Path) -> None:
     assert proj.id == "alpha"
     assert proj.name == "Alpha"
     assert proj.version == 2
-    folder = plot_root / "sketches" / "alpha"
+    folder = plot_root / "alpha"
     assert folder.is_dir()
     assert (folder / "project.json").is_file()
-    assert (folder / "core.json").is_file()
-    assert (folder / "actors.json").is_file()
-    assert (folder / "services-overview.json").is_file()
-    # services-detail folder may be empty but should exist for listing consistency
-    assert (folder / "services-detail").is_dir()
+    assert (folder / "core" / "canvas.json").is_file()
+    assert (folder / "actors" / "canvas.json").is_file()
+    assert (folder / "services" / "canvas.json").is_file()
+    # No more eager ``services-detail/`` folder — detail canvases are
+    # seeded lazily by sync_details_with_overview when services appear.
 
 
 def test_create_project_seeds_core_with_project_anchor(plot_root: Path) -> None:
@@ -79,10 +81,10 @@ def test_create_project_seeds_actors_canvas_empty_root(plot_root: Path) -> None:
     assert all(n.kind == "actor" for n in actors.nodes)
 
 
-def test_create_project_seeds_services_overview_empty(plot_root: Path) -> None:
+def test_create_project_seeds_services_canvas_empty(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
-    overview = read_canvas(plot_root, "alpha", "services_overview")
-    assert overview.canvas_kind == "services_overview"
+    overview = read_canvas(plot_root, "alpha", "services")
+    assert overview.canvas_kind == "services"
     assert overview.nodes == []
 
 
@@ -187,7 +189,7 @@ def test_detail_canvas_path_uses_service_id(plot_root: Path) -> None:
         nodes=[SketchNode(id="order", kind="service", label="O")],
     )
     write_canvas(plot_root, "alpha", detail)
-    assert (plot_root / "sketches" / "alpha" / "services-detail" / "order.json").is_file()
+    assert (plot_root / "alpha" / "services" / "order" / "detail.json").is_file()
 
 
 # ---------------------------------------------------------------------------
@@ -198,7 +200,7 @@ def test_detail_canvas_path_uses_service_id(plot_root: Path) -> None:
 def test_delete_project_removes_folder(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     delete_project(plot_root, "alpha")
-    assert not (plot_root / "sketches" / "alpha").exists()
+    assert not (plot_root / "alpha").exists()
 
 
 def test_delete_missing_project_raises(plot_root: Path) -> None:
@@ -213,7 +215,7 @@ def test_delete_missing_project_raises(plot_root: Path) -> None:
 
 def test_create_project_initialises_git_repo(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
-    assert (plot_root / "sketches" / "alpha" / ".git").is_dir()
+    assert (plot_root / "alpha" / ".git").is_dir()
 
 
 def test_create_project_leaves_git_repo_empty(plot_root: Path) -> None:
@@ -223,7 +225,7 @@ def test_create_project_leaves_git_repo_empty(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     result = subprocess.run(
         ["git", "rev-parse", "--verify", "HEAD"],
-        cwd=plot_root / "sketches" / "alpha",
+        cwd=plot_root / "alpha",
         capture_output=True,
         text=True,
     )
@@ -246,7 +248,7 @@ def test_write_canvas_does_not_commit(plot_root: Path) -> None:
     )
     result = subprocess.run(
         ["git", "rev-parse", "--verify", "HEAD"],
-        cwd=plot_root / "sketches" / "alpha",
+        cwd=plot_root / "alpha",
         capture_output=True,
         text=True,
     )

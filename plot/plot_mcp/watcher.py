@@ -1,8 +1,8 @@
-"""Watcher for `.plot/sketches/*.json` → WebSocket notifications.
+"""Watcher for `.plot/**/*.json` → WebSocket notifications.
 
-Only one kind of event (``sketch``) is emitted — there's no separate
-`layout` channel because position is part of the sketch JSON itself.
-Debounced so atomic rename-saves don't double-fire.
+Only one kind of event (``project_changed``) is emitted — position is part
+of the canvas JSON itself. Debounced so atomic rename-saves don't
+double-fire.
 """
 
 from __future__ import annotations
@@ -19,13 +19,16 @@ from watchdog.observers.api import BaseObserver
 _log = logging.getLogger(__name__)
 
 
-def _is_sketch_file(path: str) -> bool:
+def _is_canvas_file(path: str) -> bool:
+    """v0.8: canvas files are ``canvas.json`` (singletons) or
+    ``detail.json`` (per-service details). Ignore other JSON (project.json
+    metadata, attachments) so the watcher doesn't fire on every write."""
     p = Path(path)
-    return p.suffix == ".json" and "sketches" in p.parts
+    return p.name in {"canvas.json", "detail.json", "project.json"}
 
 
 class WorkspaceWatcher:
-    """Watches ``{plot_root}/sketches/`` recursively.
+    """Watches ``{plot_root}/`` recursively.
 
     ``on_change`` is awaited once per debounce window with the set of
     JSON file paths that changed during that window (useful for the
@@ -52,7 +55,7 @@ class WorkspaceWatcher:
             return
         handler = _Handler(self._record)
         observer = Observer()
-        target = self._plot_root / "sketches"
+        target = self._plot_root
         target.mkdir(exist_ok=True)
         observer.schedule(handler, str(target), recursive=True)
         observer.start()
@@ -103,5 +106,5 @@ class _Handler(FileSystemEventHandler):
         src = str(event.src_path)
         dest = getattr(event, "dest_path", "") or ""
         for raw in (src, dest):
-            if raw and _is_sketch_file(raw):
+            if raw and _is_canvas_file(raw):
                 self._notify(Path(raw))

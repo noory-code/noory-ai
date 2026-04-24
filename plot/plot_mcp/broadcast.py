@@ -10,21 +10,21 @@ from starlette.websockets import WebSocket
 
 from plot_mcp.watcher import WorkspaceWatcher
 
-_CANVAS_BY_FILENAME: dict[str, str] = {
-    "core.json": "core",
-    "actors.json": "actors",
-    "services-overview.json": "services_overview",
-}
+_SINGLETON_CANVAS_KINDS = {"core", "actors", "services"}
 
 
 def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | None:
     """Map a changed file to ``{project_id, canvas_kind?, service_id?}``.
 
-    Returns ``None`` if the file doesn't live under a recognised project
-    folder (e.g. malformed paths or stray JSON under ``.plot/sketches/``).
+    v0.8 layout:
+      - ``{project_id}/{canvas_kind}/canvas.json`` for singleton canvases
+      - ``{project_id}/services/{service_id}/detail.json`` for details
+      - ``{project_id}/project.json`` for project metadata
+
+    Returns ``None`` for anything else (attachments, leftover files, etc.).
     """
     try:
-        rel = changed_path.relative_to(plot_root / "sketches")
+        rel = changed_path.relative_to(plot_root)
     except ValueError:
         return None
     parts = rel.parts
@@ -32,16 +32,17 @@ def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | No
         return None
     project_id = parts[0]
     descriptor: dict[str, Any] = {"project_id": project_id}
-    # parts example: ("alpha", "core.json") or
-    #                ("alpha", "services-detail", "order.json")
-    if len(parts) >= 2:
-        leaf = parts[-1]
-        if len(parts) == 2 and leaf in _CANVAS_BY_FILENAME:
-            descriptor["canvas_kind"] = _CANVAS_BY_FILENAME[leaf]
-        elif len(parts) >= 3 and parts[1] == "services-detail" and leaf.endswith(".json"):
-            descriptor["canvas_kind"] = "service_detail"
-            descriptor["service_id"] = leaf[: -len(".json")]
-        # project.json and anything else → project-level event without canvas_kind
+    # parts examples:
+    #   ("alpha", "project.json")
+    #   ("alpha", "core", "canvas.json")
+    #   ("alpha", "services", "canvas.json")
+    #   ("alpha", "services", "order", "detail.json")
+    if len(parts) == 3 and parts[2] == "canvas.json" and parts[1] in _SINGLETON_CANVAS_KINDS:
+        descriptor["canvas_kind"] = parts[1]
+    elif len(parts) == 4 and parts[1] == "services" and parts[3] == "detail.json":
+        descriptor["canvas_kind"] = "service_detail"
+        descriptor["service_id"] = parts[2]
+    # project.json and anything else → project-level event without canvas_kind
     return descriptor
 
 

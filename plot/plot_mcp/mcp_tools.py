@@ -55,14 +55,13 @@ mcp = FastMCP(
 
 @mcp.tool()
 def list_projects(project_path: str) -> list[dict[str, Any]]:
-    """List every v0.4 project folder under ``.plot/sketches/``."""
+    """List every project folder directly under ``.plot/`` (v0.8 layout)."""
     plot_root = resolve_plot_root(project_path)
-    folder = plot_root / "sketches"
-    if not folder.is_dir():
+    if not plot_root.is_dir():
         return []
     projects: list[dict[str, Any]] = []
-    for child in sorted(folder.iterdir()):
-        if not child.is_dir():
+    for child in sorted(plot_root.iterdir()):
+        if not child.is_dir() or child.name == "sketches":
             continue
         try:
             proj = read_project(plot_root, child.name)
@@ -81,7 +80,7 @@ def get_project(project_path: str, project_id: str) -> dict[str, Any]:
     return {
         **proj.model_dump(),
         "service_details": list_service_details(plot_root, project_id),
-        "tags": list_tags(plot_root / "sketches" / project_id),
+        "tags": list_tags(plot_root / project_id),
     }
 
 
@@ -138,7 +137,7 @@ def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) ->
     validated = CanvasDoc.model_validate(canvas)
     write_canvas(plot_root, project_id, validated)
     sync: dict[str, list[str]] = {"created": [], "archived": []}
-    if validated.canvas_kind == "services_overview":
+    if validated.canvas_kind == "services":
         sync = sync_details_with_overview(plot_root, project_id)
     return {"canvas": validated.model_dump(by_alias=True), "sync": sync}
 
@@ -167,7 +166,7 @@ def tag_project(
     "before-refactor") — day-to-day edits don't commit, only tags do."""
     plot_root = resolve_plot_root(project_path)
     try:
-        return tag_snapshot(plot_root / "sketches" / project_id, name, message=message)
+        return tag_snapshot(plot_root / project_id, name, message=message)
     except TagAlreadyExistsError as exc:
         raise ValueError(str(exc)) from exc
 
@@ -176,7 +175,7 @@ def tag_project(
 def list_project_tags(project_path: str, project_id: str) -> list[dict[str, Any]]:
     """Return tags for a project, newest first."""
     plot_root = resolve_plot_root(project_path)
-    return list_tags(plot_root / "sketches" / project_id)
+    return list_tags(plot_root / project_id)
 
 
 @mcp.tool()
@@ -184,7 +183,7 @@ def delete_project_tag(project_path: str, project_id: str, name: str) -> str:
     """Drop a tag from a project. The commit it pointed at stays reachable."""
     plot_root = resolve_plot_root(project_path)
     try:
-        delete_tag(plot_root / "sketches" / project_id, name)
+        delete_tag(plot_root / project_id, name)
     except KeyError as exc:
         raise ValueError(f"tag not found: {exc.args[0]}") from exc
     return f"deleted tag {name}"

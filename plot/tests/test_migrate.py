@@ -159,11 +159,11 @@ def test_migrates_bare_v01_sketch(plot_root: Path) -> None:
     migrated = migrate_v01_to_v02(plot_root)
     assert migrated == ["alpha"]
 
-    # folder exists
-    folder = plot_root / "sketches" / "alpha"
+    # v0.8 layout: project folder is directly under plot_root.
+    folder = plot_root / "alpha"
     assert folder.is_dir()
 
-    # v0.1 file was backed up, not deleted
+    # v0.1 file was backed up in the (still-legacy) sketches/ drop-zone.
     assert (plot_root / "sketches" / "alpha.json.v01.bak").is_file()
     assert not (plot_root / "sketches" / "alpha.json").exists()
 
@@ -199,10 +199,10 @@ def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> Non
     assert all(n.parent_id is None for n in actors.nodes)
 
 
-def test_migrated_services_overview_has_no_nested(plot_root: Path) -> None:
+def test_migrated_services_canvas_has_no_nested(plot_root: Path) -> None:
     _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
-    overview = read_canvas(plot_root, "alpha", "services_overview")
+    overview = read_canvas(plot_root, "alpha", "services")
     assert all(n.parent_id is None for n in overview.nodes)
     # Bare v0.1 seed has service-root only; it becomes a top-level service.
 
@@ -218,14 +218,14 @@ def test_v05_upgrade_unparents_legacy_core_children(plot_root: Path) -> None:
     from plot_mcp.migrate import upgrade_core_canvas_if_needed
     from plot_mcp.models import ProjectDoc
 
-    folder = plot_root / "sketches" / "alpha"
+    folder = plot_root / "alpha"
     folder.mkdir(parents=True)
-    (folder / "services-detail").mkdir()
+    (folder / "core").mkdir()
     # Seed project.json so ``upgrade_core_canvas_if_needed`` can read the
     # authoritative project name.
     write_project(plot_root, ProjectDoc(id="alpha", name="Alpha v1", version=2))
 
-    (folder / "core.json").write_text(
+    (folder / "core" / "canvas.json").write_text(
         json.dumps({
             "canvas_id": "core",
             "canvas_kind": "core",
@@ -395,7 +395,7 @@ def test_top_level_services_get_detail_canvases(plot_root: Path) -> None:
     _write_v01_sketch(plot_root, "alpha", "Alpha", nodes=nodes, edges=edges)
 
     migrate_v01_to_v02(plot_root)
-    overview = read_canvas(plot_root, "alpha", "services_overview")
+    overview = read_canvas(plot_root, "alpha", "services")
     labels = {n.label for n in overview.nodes}
     assert "주문" in labels and "결제" in labels
 
