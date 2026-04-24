@@ -47,7 +47,7 @@ export function MDFileEditor({
     let cancelled = false;
     setSaveState("idle");
     setError(null);
-    readFile(projectPath, path)
+    readFile(projectPath, projectId, path)
       .then((body) => {
         if (cancelled || latestPath.current !== path) return;
         setContent(body);
@@ -72,8 +72,7 @@ export function MDFileEditor({
       setSaveState("saving");
       saveTimer.current = window.setTimeout(() => {
         saveTimer.current = null;
-        writeFile(projectPath, path, next, {
-          projectId,
+        writeFile(projectPath, projectId, path, next, {
           nodeId,
           canvasKind,
         })

@@ -18,7 +18,7 @@ const CANVAS_TABS: readonly { id: CanvasTab; label: string }[] = [
 function tabToKind(tab: CanvasTab): CanvasKind {
   if (tab === "core") return "core";
   if (tab === "actors") return "actors";
-  return "services_overview";
+  return "services";
 }
 
 
@@ -190,7 +190,7 @@ export function App() {
         setActiveTab("actors");
         setDetailServiceId(null);
         syncUrl({ canvas: "actors", detail: null });
-      } else if (key === "services_overview") {
+      } else if (key === "services") {
         setActiveTab("services");
         setDetailServiceId(null);
         syncUrl({ canvas: "services", detail: null });
@@ -351,7 +351,7 @@ export function App() {
             <ServicesBreadcrumb
               label={
                 canvasCache
-                  .get("services_overview")
+                  .get("services")
                   ?.nodes.find((n) => n.id === detailServiceId)?.label ??
                 detailServiceId
               }

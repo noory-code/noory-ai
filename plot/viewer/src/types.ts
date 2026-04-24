@@ -104,7 +104,7 @@ export interface SketchEdge {
 export type CanvasKind =
   | "core"
   | "actors"
-  | "services_overview"
+  | "services"
   | "service_detail";
 
 /**
@@ -114,7 +114,7 @@ export type CanvasKind =
 export type CanvasKey =
   | "core"
   | "actors"
-  | "services_overview"
+  | "services"
   | `service_detail:${string}`;
 
 export interface CanvasDoc {

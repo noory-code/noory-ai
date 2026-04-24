@@ -449,18 +449,19 @@ function ConnectToFolderButton({
     setBusy(true);
     setErr(null);
     try {
-      const canvasSlug = canvasKind === "services_overview" ? "services" : canvasKind;
+      const canvasSlug = canvasKind;
       const desired = node.kind
         ? folderSlug(node.kind, node.label || node.kind, canvasSlug)
-        : `workspace/${canvasSlug}/${node.id}`;
-      const actualPath = await createFolder(projectPath, desired);
+        : `${canvasSlug}/${node.id}`;
+      const actualPath = await createFolder(projectPath, projectId, desired);
       // Seed the fresh index.md with whatever body the node already had.
       if (node.body.trim()) {
         await writeFile(
           projectPath,
+          projectId,
           `${actualPath}/index.md`,
           node.body,
-          { projectId, nodeId: node.id, canvasKind },
+          { nodeId: node.id, canvasKind },
         );
       }
       onPatchNode({ folder_path: actualPath });

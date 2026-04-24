@@ -21,5 +21,5 @@ export function folderSlug(kind: string, label: string, canvas = "core"): string
   const labelSlug = slugify(label);
   const stem = labelSlug ? `${kindSlug}-${labelSlug}` : kindSlug;
   const canvasSlug = slugify(canvas) || "core";
-  return `workspace/${canvasSlug}/${stem}`;
+  return `${canvasSlug}/${stem}`;
 }

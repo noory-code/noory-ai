@@ -175,8 +175,8 @@ export async function getAllCanvases(
     ["core", getCanvas(projectPath, projectId, "core")],
     ["actors", getCanvas(projectPath, projectId, "actors")],
     [
-      "services_overview",
-      getCanvas(projectPath, projectId, "services_overview"),
+      "services",
+      getCanvas(projectPath, projectId, "services"),
     ],
   ];
   for (const sid of serviceDetails) {
@@ -241,13 +241,22 @@ export async function deleteProjectTag(
 // v0.7 files + folders (Inspector MD editor)
 // ---------------------------------------------------------------------------
 
+/**
+ * v0.8: file/folder APIs are project-scoped. Paths are always resolved
+ * relative to ``.plot/{projectId}/`` on the server, so a request can't
+ * accidentally address another project's tree.
+ */
 export async function readFile(
   projectPath: string,
+  projectId: string,
   path: string,
 ): Promise<string> {
-  const url = `${API_BASE}/api/files?project_path=${encodeURIComponent(
-    projectPath,
-  )}&path=${encodeURIComponent(path)}`;
+  const params = new URLSearchParams({
+    project_path: projectPath,
+    project_id: projectId,
+    path,
+  });
+  const url = `${API_BASE}/api/files?${params.toString()}`;
   const body = await json<{ content: string }>(await fetch(url));
   return body.content;
 }
@@ -259,19 +268,19 @@ export async function readFile(
  */
 export async function writeFile(
   projectPath: string,
+  projectId: string,
   path: string,
   content: string,
   hint?: {
-    projectId?: string;
     nodeId?: string;
     canvasKind?: string;
   },
 ): Promise<{ preview: string | null }> {
   const params = new URLSearchParams({
     project_path: projectPath,
+    project_id: projectId,
     path,
   });
-  if (hint?.projectId) params.set("project_id", hint.projectId);
   if (hint?.nodeId) params.set("node_id", hint.nodeId);
   if (hint?.canvasKind) params.set("canvas_kind", hint.canvasKind);
   const url = `${API_BASE}/api/files?${params.toString()}`;
@@ -286,12 +295,13 @@ export async function writeFile(
 }
 
 /**
- * Ask the server to create ``path`` under ``project_path`` (seeding an
- * empty ``index.md``). Returns the path actually created — may end with
+ * Ask the server to create ``path`` under ``.plot/{projectId}/`` and seed
+ * an empty ``index.md``. Returns the path actually created — may end with
  * ``-2``/``-3`` when the desired slug was taken.
  */
 export async function createFolder(
   projectPath: string,
+  projectId: string,
   path: string,
 ): Promise<string> {
   const url = `${API_BASE}/api/folders?project_path=${encodeURIComponent(
@@ -301,7 +311,7 @@ export async function createFolder(
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path }),
+      body: JSON.stringify({ project_id: projectId, path }),
     }),
   );
   return body.path;
