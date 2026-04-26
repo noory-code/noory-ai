@@ -27,7 +27,6 @@ export function SketchBodyModal({
   onDelete,
 }: SketchBodyModalProps) {
   const [label, setLabel] = useState(node.label);
-  const [body, setBody] = useState(node.body);
   const [color, setColor] = useState(node.color);
   const [width, setWidth] = useState(node.width);
   const [height, setHeight] = useState(node.height);
@@ -38,16 +37,16 @@ export function SketchBodyModal({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        onCommit({ label, body, color, width, height, shape, icon });
+        onCommit({ label, color, width, height, shape, icon });
         onClose();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [label, body, color, width, height, shape, icon, onCommit, onClose]);
+  }, [label, color, width, height, shape, icon, onCommit, onClose]);
 
   const commit = () => {
-    onCommit({ label, body, color, width, height, shape, icon });
+    onCommit({ label, color, width, height, shape, icon });
     onClose();
   };
 
@@ -85,19 +84,12 @@ export function SketchBodyModal({
           />
         </label>
 
-        <label className="mb-3 block">
-          <span className="text-xs font-semibold text-slate-600">Body (markdown)</span>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={5}
-            className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-            placeholder="Longer note — supports line breaks"
-          />
-          <span className="text-[10px] text-slate-400">Cmd/Ctrl+Enter to save</span>
-        </label>
+        <p className="mb-3 text-[11px] text-slate-500">
+          Long-form text lives in the Inspector's <code>details.md</code> editor.
+          This modal handles the visual properties only.
+        </p>
 
-        <div className="mb-3">
+<div className="mb-3">
           <span className="mb-1 block text-xs font-semibold text-slate-600">Shape</span>
           <div className="flex flex-wrap gap-1">
             {SHAPES.map((s) => (

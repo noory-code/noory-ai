@@ -1,7 +1,6 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import { Handle, NodeResizer, Position, type NodeProps } from "reactflow";
-import { parseBody } from "../lib/bodySections";
 import type { Shape } from "../types";
 import { EditableText } from "../edit/EditableText";
 import { getIcon } from "./SketchIcons";
@@ -97,26 +96,6 @@ function contentPadding(shape: Shape): string {
   }
 }
 
-/** Shown inline on the node: the one-line summary, not the whole body.
- * Order: Tagline (Mission) → Summary (everything else) → first non-meta
- * section → any lead text above the sections. Long-form fields (Story,
- * Decision criteria, Details, References) stay hidden — open the Inspector. */
-function pickBodyPreview(body: string): string {
-  if (!body) return "";
-  const parsed = parseBody(body);
-  const PRIMARY = ["tagline", "summary"];
-  const HIDDEN = new Set(["references"]);
-  for (const key of PRIMARY) {
-    const hit = parsed.sections.find((s) => s.heading.toLowerCase() === key);
-    if (hit && hit.content.trim()) return hit.content;
-  }
-  const firstVisible = parsed.sections.find(
-    (s) => !HIDDEN.has(s.heading.toLowerCase()) && s.content.trim(),
-  );
-  if (firstVisible) return firstVisible.content;
-  return parsed.lead;
-}
-
 function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) {
   const ring = selected
     ? "outline outline-2 outline-indigo-500"
@@ -126,7 +105,9 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
     ...shapeStyle(data.shape),
   };
   const Icon = getIcon(data.icon);
-  const bodyPreview = useMemo(() => pickBodyPreview(data.body), [data.body]);
+  // v0.9: ``data.body`` is already the chosen typed-field preview (pulled
+  // by SketchCanvas — Mission's tagline / others' summary). No parsing.
+  const bodyPreview = data.body;
   return (
     <>
       <NodeResizer

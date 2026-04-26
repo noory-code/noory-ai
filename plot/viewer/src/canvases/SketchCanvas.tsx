@@ -274,6 +274,14 @@ function SketchCanvasInner({
       const isOrphan = orphanActorRefIds.has(n.id);
       const visualColor = isOrphan ? "#fee2e2" : n.color;
       const visualLabel = isOrphan ? `⚠ ${n.label}` : n.label;
+      // v0.9 node preview: pick the first non-empty typed field. Mission
+      // prefers ``tagline``; everything else prefers ``summary``. The
+      // long-form ``details.md`` is intentionally not surfaced on the
+      // canvas — it lives in the Inspector.
+      const previewBody =
+        n.kind === "mission"
+          ? n.tagline || n.summary || ""
+          : n.summary || n.tagline || n.criteria || "";
       const base: Node<SketchNodeData> = {
         id: n.id,
         type: "sketch",
@@ -281,7 +289,7 @@ function SketchCanvasInner({
         style: { width: n.width, height: n.height },
         data: {
           label: visualLabel,
-          body: n.body,
+          body: previewBody,
           color: visualColor,
           width: n.width,
           height: n.height,
@@ -457,7 +465,6 @@ function SketchCanvasInner({
       const newNode: DocNode = {
         id,
         label: preset?.label ?? "",
-        body: "",
         x,
         y,
         width: preset?.width ?? DEFAULT_WIDTH,
@@ -492,7 +499,6 @@ function SketchCanvasInner({
       const newNode: DocNode = {
         id,
         label: preset.label ?? "",
-        body: "",
         x: args.localX,
         y: args.localY,
         width: preset.width ?? DEFAULT_WIDTH,
@@ -1064,8 +1070,7 @@ function SketchCanvasInner({
           const newNode: DocNode = {
             id,
             label: kind === "rule" ? "New rule" : "New content",
-            body: "",
-            x: 0, y: 0,
+                x: 0, y: 0,
             width: 140,
             height: 60,
             color: defaults.color,

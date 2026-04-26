@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { createFolder, writeFile } from "../api";
+import { createFolder } from "../api";
 import { MDFileEditor } from "../edit/MDFileEditor";
-import { readSection, writeSection } from "../lib/bodySections";
 import { folderSlug } from "../lib/slug";
 import type { CanvasKind, NodeKind, SketchNode } from "../types";
 
@@ -179,49 +178,17 @@ export function SketchInspector({
           />
         </label>
 
-        {/* v0.7: folder-backed node → raw MD editor on disk. Otherwise fall
-             back to the legacy kind-template / Description textarea. */}
-        {node.folder_path ? (
-          <div className="-mx-3 mb-4 h-[50vh] border-y border-slate-200">
-            <MDFileEditor
-              projectPath={projectPath}
-              path={`${node.folder_path}/index.md`}
-              projectId={projectId}
-              nodeId={node.id}
-              canvasKind={canvasKind}
-            />
-          </div>
-        ) : (
-          <>
-            {node.kind && TEMPLATES[node.kind] ? (
-              <KindTemplate
-                body={node.body}
-                fields={TEMPLATES[node.kind]!}
-                onCommit={(nextBody) => onPatchNode({ body: nextBody })}
-              />
-            ) : (
-              <label className="mb-4 block">
-                <span className="text-xs font-semibold text-slate-600">
-                  Description
-                </span>
-                <textarea
-                  value={node.body}
-                  onChange={(e) => onPatchNode({ body: e.target.value })}
-                  rows={3}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-                  placeholder="Longer description, markdown supported"
-                />
-              </label>
-            )}
-            <ConnectToFolderButton
-              node={node}
-              projectPath={projectPath}
-              projectId={projectId}
-              canvasKind={canvasKind}
-              onPatchNode={onPatchNode}
-            />
-          </>
-        )}
+        {/* v0.9: typed short fields per kind (canvas.json SSOT) + per-node
+             ``details.md`` for long-form prose. Inspector shows both. */}
+        <TypedFieldsForm node={node} onPatchNode={onPatchNode} />
+
+        <DetailsSection
+          node={node}
+          projectPath={projectPath}
+          projectId={projectId}
+          canvasKind={canvasKind}
+          onPatchNode={onPatchNode}
+        />
 
         {/* Root toggle — only for top-level actor / service */}
         {canToggleRoot && (
@@ -366,8 +333,8 @@ function CompositionList({
                   className="w-full border-none bg-transparent text-xs font-medium text-slate-800 focus:outline-none"
                 />
                 <textarea
-                  value={item.body}
-                  onChange={(e) => onPatch(item.id, { body: e.target.value })}
+                  value={item.summary ?? ""}
+                  onChange={(e) => onPatch(item.id, { summary: e.target.value })}
                   placeholder="Optional detail"
                   rows={1}
                   className="mt-0.5 w-full resize-y border-none bg-transparent text-[11px] text-slate-600 focus:outline-none"
@@ -394,39 +361,93 @@ function CompositionList({
 }
 
 // ---------------------------------------------------------------------------
-// Kind-aware body templates
+// v0.9 typed fields per kind
 // ---------------------------------------------------------------------------
 //
-// Each template is a list of ``### Heading`` sections the Inspector should
-// expose as discrete fields. The underlying storage is still ``SketchNode.body``
-// (Markdown) — see ``lib/bodySections.ts``. Unknown headings already in the
-// body round-trip untouched. Kinds without an entry fall back to the generic
-// free-form Description textarea.
+// Inspector renders kind-specific text inputs that bind directly to typed
+// fields on the SketchNode (canvas.json SSOT). No MD parsing, no header
+// matching — just plain inputs. Fields are optional on the model side, so
+// the same node can carry any subset.
 
-interface TemplateField {
-  heading: string;
+type TypedFieldKey = "tagline" | "audience" | "method" | "goal" | "summary" | "criteria";
+
+interface TypedField {
+  key: TypedFieldKey;
+  label: string;
   hint?: string;
   rows?: number;
 }
 
-const REFERENCES_FIELD: TemplateField = {
-  heading: "References",
-  rows: 2,
-  hint: "[[workspace/identity/mission.md]] 같은 위키 링크",
+const TYPED_FIELDS: Partial<Record<NodeKind, TypedField[]>> = {
+  mission: [
+    { key: "tagline", label: "Tagline", hint: "한 줄 슬로건" },
+    { key: "audience", label: "Audience", hint: "누구를 위한 미션인가" },
+    { key: "method", label: "Method", hint: "어떻게 달성하나" },
+    { key: "goal", label: "Goal", hint: "도달하려는 상태" },
+  ],
+  core_value: [
+    { key: "summary", label: "Summary", rows: 2, hint: "이 값은 무엇인가" },
+    { key: "criteria", label: "Decision criteria", rows: 3, hint: "갈등 시 어떻게 행동하나" },
+  ],
+  identity: [
+    { key: "summary", label: "Summary", rows: 2, hint: "이 측면의 핵심" },
+  ],
+  project: [
+    { key: "summary", label: "Summary", rows: 2, hint: "프로젝트 한 문단 설명" },
+  ],
 };
 
+function TypedFieldsForm({
+  node,
+  onPatchNode,
+}: {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}) {
+  const fields = node.kind ? TYPED_FIELDS[node.kind] : undefined;
+  if (!fields || fields.length === 0) return null;
+  return (
+    <div className="mb-4 space-y-3">
+      {fields.map((f) => {
+        const value = (node[f.key] as string | undefined) ?? "";
+        const rows = f.rows ?? 1;
+        return (
+          <label key={f.key} className="block">
+            <span className="text-xs font-semibold text-slate-600">{f.label}</span>
+            {f.hint && (
+              <span className="ml-2 text-[10px] italic text-slate-400">{f.hint}</span>
+            )}
+            {rows <= 1 ? (
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => onPatchNode({ [f.key]: e.target.value } as Partial<SketchNode>)}
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+              />
+            ) : (
+              <textarea
+                value={value}
+                onChange={(e) => onPatchNode({ [f.key]: e.target.value } as Partial<SketchNode>)}
+                rows={rows}
+                className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+              />
+            )}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
-// Connect-to-folder button (v0.7)
+// v0.9 details.md section
 // ---------------------------------------------------------------------------
 //
-// Legacy body-backed nodes (BANAS and everything shipped before v0.7) can
-// opt into the new folder + index.md world without a big-bang migration.
-// Clicking the button asks the server to mint a folder based on kind+label,
-// writes the existing ``body`` content into the fresh ``index.md``, and
-// attaches ``folder_path`` to the node. The canvas PUT that follows keeps
-// the summary cache in ``body`` so preview stays accurate.
+// Long-form prose lives in a per-node ``details.md`` file. JSON keeps no
+// mirror, so external editors (Obsidian, VS Code) can edit the same file
+// without sync conflicts — the watcher just nudges open viewers to reload.
 
-interface ConnectToFolderButtonProps {
+interface DetailsSectionProps {
   node: SketchNode;
   projectPath: string;
   projectId: string;
@@ -434,17 +455,31 @@ interface ConnectToFolderButtonProps {
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 
-function ConnectToFolderButton({
+function DetailsSection({
   node,
   projectPath,
   projectId,
   canvasKind,
   onPatchNode,
-}: ConnectToFolderButtonProps) {
+}: DetailsSectionProps) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const onClick = async () => {
+  if (node.details_path) {
+    return (
+      <div className="-mx-3 mb-4 h-[50vh] border-y border-slate-200">
+        <MDFileEditor
+          projectPath={projectPath}
+          path={node.details_path}
+          projectId={projectId}
+          nodeId={node.id}
+          canvasKind={canvasKind}
+        />
+      </div>
+    );
+  }
+
+  const onCreate = async () => {
     if (busy) return;
     setBusy(true);
     setErr(null);
@@ -454,17 +489,9 @@ function ConnectToFolderButton({
         ? folderSlug(node.kind, node.label || node.kind, canvasSlug)
         : `${canvasSlug}/${node.id}`;
       const actualPath = await createFolder(projectPath, projectId, desired);
-      // Seed the fresh index.md with whatever body the node already had.
-      if (node.body.trim()) {
-        await writeFile(
-          projectPath,
-          projectId,
-          `${actualPath}/index.md`,
-          node.body,
-          { nodeId: node.id, canvasKind },
-        );
-      }
-      onPatchNode({ folder_path: actualPath });
+      // Server seeds an empty ``index.md``; v0.9 wants the file named
+      // ``details.md`` instead. Convention: use ``${actualPath}/details.md``.
+      onPatchNode({ details_path: `${actualPath}/details.md` });
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -474,87 +501,20 @@ function ConnectToFolderButton({
 
   return (
     <div className="mb-4 rounded border border-dashed border-slate-300 p-2 text-xs">
-      <div className="mb-1 font-semibold text-slate-600">Long-form editing</div>
+      <div className="mb-1 font-semibold text-slate-600">Long-form details</div>
       <div className="mb-2 text-[11px] text-slate-500">
-        폴더로 연결하면 Inspector가 <code>index.md</code> 편집기로 변신.
-        기존 body 내용은 자동으로 그 파일로 이동합니다.
+        긴 글, 표, Mermaid 다이어그램이 필요하면 별도 MD 파일을 만드세요.
+        외부 에디터(Obsidian, VS Code)에서도 같은 파일을 직접 편집할 수 있어요.
       </div>
       <button
         type="button"
-        onClick={onClick}
+        onClick={onCreate}
         disabled={busy}
         className="rounded bg-slate-900 px-2 py-1 text-[11px] font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
       >
-        {busy ? "Connecting…" : "📁 Connect to folder"}
+        {busy ? "Creating…" : "📁 Create details"}
       </button>
-      {err && (
-        <div className="mt-2 text-[11px] text-rose-600">{err}</div>
-      )}
-    </div>
-  );
-}
-
-const TEMPLATES: Partial<Record<NodeKind, TemplateField[]>> = {
-  mission: [
-    { heading: "Tagline", hint: "한 줄 슬로건" },
-    { heading: "Audience", hint: "누구를 위한 미션인가" },
-    { heading: "Method", hint: "어떻게 달성하나" },
-    { heading: "Goal", hint: "도달하려는 상태" },
-    { heading: "Story", rows: 5, hint: "왜 이 미션을 택했는가" },
-    REFERENCES_FIELD,
-  ],
-  core_value: [
-    { heading: "Summary", rows: 2, hint: "이 값은 무엇인가" },
-    { heading: "Decision criteria", rows: 3, hint: "갈등 상황에서 어떻게 행동하나" },
-    REFERENCES_FIELD,
-  ],
-  identity: [
-    { heading: "Summary", rows: 2, hint: "이 측면의 핵심" },
-    { heading: "Details", rows: 5, hint: "구체 규칙, 예시" },
-    REFERENCES_FIELD,
-  ],
-  project: [
-    { heading: "Summary", rows: 3, hint: "프로젝트 한 문단 설명" },
-    REFERENCES_FIELD,
-  ],
-};
-
-interface KindTemplateProps {
-  body: string;
-  fields: TemplateField[];
-  onCommit: (nextBody: string) => void;
-}
-
-function KindTemplate({ body, fields, onCommit }: KindTemplateProps) {
-  return (
-    <div className="mb-4 space-y-3">
-      {fields.map((f) => {
-        const value = readSection(body, f.heading);
-        const rows = f.rows ?? 1;
-        return (
-          <label key={f.heading} className="block">
-            <span className="text-xs font-semibold text-slate-600">{f.heading}</span>
-            {f.hint && (
-              <span className="ml-2 text-[10px] italic text-slate-400">{f.hint}</span>
-            )}
-            {rows <= 1 ? (
-              <input
-                type="text"
-                value={value}
-                onChange={(e) => onCommit(writeSection(body, f.heading, e.target.value))}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-              />
-            ) : (
-              <textarea
-                value={value}
-                onChange={(e) => onCommit(writeSection(body, f.heading, e.target.value))}
-                rows={rows}
-                className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-              />
-            )}
-          </label>
-        );
-      })}
+      {err && <div className="mt-2 text-[11px] text-rose-600">{err}</div>}
     </div>
   );
 }
