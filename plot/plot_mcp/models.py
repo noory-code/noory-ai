@@ -68,11 +68,24 @@ _COMPOSITION_KINDS = {"rule", "content"}
 
 
 class SketchNode(BaseModel):
-    """A freeform node on the canvas."""
+    """A freeform node on the canvas.
+
+    v0.9 splits content storage cleanly:
+      - **Typed short fields** (``tagline`` / ``audience`` / ... / ``summary``)
+        live in this model and are written/read only by Plot itself.
+      - **Long-form prose** lives in a separate ``details.md`` file
+        addressed by ``details_path``. Plot reads/writes that file too,
+        but external editors (Obsidian, VS Code) may also edit it
+        because Plot keeps no mirror of its content here — there's no
+        sync conflict because the data isn't duplicated.
+
+    The previous ``body`` field is gone in v0.9: its dual role (preview
+    cache + edit target) was the source of every sync headache from v0.7
+    and v0.8.
+    """
 
     id: str = Field(..., min_length=1)
     label: str = ""
-    body: str = ""
     x: float = 0.0
     y: float = 0.0
     width: float = 180.0
@@ -105,11 +118,21 @@ class SketchNode(BaseModel):
     # Required when kind == "actor_ref"; ignored otherwise.
     ref_actor_id: str | None = None
 
-    # v0.7 folder-backed content (2026-04-23).
-    # When set, the node's long-form body lives in ``{project_path}/{folder_path}/index.md``
-    # instead of ``body``. ``body`` still holds a short summary cache for node preview.
-    # Path is relative to the project root; path-traversal patterns ("..") are rejected.
-    folder_path: str | None = None
+    # v0.9 typed content fields. Optional, default ``""``. Each Inspector
+    # template chooses which keys are surfaced for its kind — the model
+    # itself stays permissive so any kind can carry any subset.
+    tagline: str = ""        # mission
+    audience: str = ""       # mission
+    method: str = ""         # mission
+    goal: str = ""           # mission
+    summary: str = ""        # core_value / identity / project / actor / service
+    criteria: str = ""       # core_value
+
+    # v0.9 long-form pointer. Project-relative path (e.g.
+    # ``"core/mission-1/details.md"``); Plot resolves it under
+    # ``.plot/{project_id}/``. ``None`` means the node has no MD file yet
+    # — the Inspector offers a "Create details" button to mint one.
+    details_path: str | None = None
 
     @model_validator(mode="after")
     def _actor_ref_requires_ref_id(self) -> SketchNode:
@@ -118,21 +141,21 @@ class SketchNode(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _folder_path_is_safe(self) -> SketchNode:
-        if self.folder_path is None:
+    def _details_path_is_safe(self) -> SketchNode:
+        if self.details_path is None:
             return self
-        path = self.folder_path.strip()
+        path = self.details_path.strip()
         if not path:
-            raise ValueError(f"node {self.id!r} folder_path must not be blank")
+            raise ValueError(f"node {self.id!r} details_path must not be blank")
         if path.startswith("/"):
             raise ValueError(
-                f"node {self.id!r} folder_path must be relative, got {path!r}"
+                f"node {self.id!r} details_path must be relative, got {path!r}"
             )
         # Reject ``..`` segments to prevent escape; normalise slashes first.
         parts = path.replace("\\", "/").split("/")
         if any(part == ".." or part == "" for part in parts):
             raise ValueError(
-                f"node {self.id!r} folder_path must not contain '..' or empty segments"
+                f"node {self.id!r} details_path must not contain '..' or empty segments"
             )
         return self
 

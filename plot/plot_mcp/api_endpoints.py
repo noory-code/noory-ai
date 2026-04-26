@@ -16,7 +16,6 @@ from pydantic import ValidationError
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-from plot_mcp.body_sections import pick_summary
 from plot_mcp.file_io import (
     ExtensionNotAllowedError,
     UnsafePathError,
@@ -331,58 +330,6 @@ def _project_scoped_root(plot_root: Path, project_id: str) -> Path:
     return plot_root / project_id
 
 
-def _sync_node_body_cache_on_md_write(
-    plot_root: Path,
-    project_id: str | None,
-    node_id: str | None,
-    canvas_kind: str | None,
-    rel_path: str,
-    content: str,
-) -> str | None:
-    """When the viewer saves an ``index.md`` for a folder-backed node, mirror
-    the node's summary into canvas JSON so the on-canvas preview stays
-    current. No-op when any required hint is missing — the caller just
-    won't see a refreshed preview until the next full reload.
-    """
-    if not project_id or not node_id:
-        return None
-    if not rel_path.endswith("/index.md"):
-        return None
-    canvas: CanvasDoc | None = None
-    parsed_kind = _parse_canvas_kind(canvas_kind) if canvas_kind else None
-    kinds_to_try: tuple[CanvasKind, ...]
-    if parsed_kind is not None:
-        kinds_to_try = (parsed_kind,)
-    else:
-        kinds_to_try = ("core", "actors", "services")
-    for kind in kinds_to_try:
-        try:
-            candidate = read_canvas(plot_root, project_id, kind)
-        except FileNotFoundError:
-            continue
-        if any(n.id == node_id for n in candidate.nodes):
-            canvas = candidate
-            break
-    if canvas is None:
-        return None
-    target = next((n for n in canvas.nodes if n.id == node_id), None)
-    if target is None:
-        return None
-    preview = pick_summary(content, target.kind)
-    if target.body == preview:
-        return preview
-    new_nodes = [
-        n.model_copy(update={"body": preview}) if n.id == node_id else n
-        for n in canvas.nodes
-    ]
-    synced = canvas.model_copy(update={"nodes": new_nodes})
-    try:
-        write_canvas(plot_root, project_id, synced)
-    except FileNotFoundError:
-        return None
-    return preview
-
-
 async def file_get_endpoint(request: Request) -> JSONResponse:
     try:
         plot_root = _require_plot_root(request)
@@ -433,19 +380,11 @@ async def file_put_endpoint(request: Request) -> JSONResponse:
         return _error(str(exc), status=400)
     except ValueError as exc:
         return _error(str(exc), status=413)
-    # Optional hints: when the viewer passes ``node_id`` (and optionally
-    # ``canvas_kind``) alongside an ``index.md`` write, sync a short
-    # summary cache back into the canvas so the on-canvas preview stays
-    # accurate without a separate fetch.
-    preview = _sync_node_body_cache_on_md_write(
-        plot_root,
-        project_id=project_id,
-        node_id=request.query_params.get("node_id"),
-        canvas_kind=request.query_params.get("canvas_kind"),
-        rel_path=rel_path,
-        content=content,
-    )
-    return JSONResponse({"path": rel_path, "ok": True, "preview": preview})
+    # v0.9: no longer mirrors a summary back into the canvas — typed
+    # fields live on the node directly, so writing ``details.md`` is a
+    # leaf operation. The watcher still picks up the disk change and
+    # broadcasts ``project_changed`` for any open client.
+    return JSONResponse({"path": rel_path, "ok": True})
 
 
 async def folder_post_endpoint(request: Request) -> JSONResponse:

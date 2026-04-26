@@ -538,48 +538,50 @@ def test_file_rejects_disallowed_extension(
     assert resp.status_code == 400
 
 
-def test_file_put_syncs_node_body_preview(
+def test_file_put_does_not_touch_canvas(
     app_client: tuple[TestClient, str],
 ) -> None:
-    """Saving an ``index.md`` with ``node_id`` hint should mirror the MD
-    summary into the referenced node's ``body``."""
+    """v0.9: writing a node's ``details.md`` is a leaf operation — the
+    node's typed fields in canvas.json are untouched. (No more body cache
+    sync; typed fields are the canvas-side source.)"""
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
-    # Connect the seeded mission node to a folder via a canvas PUT.
-    core = client.get(
+    core_before = client.get(
         "/api/projects/alpha/canvases/core",
         params={"project_path": project_path},
     ).json()
-    mission = next(n for n in core["nodes"] if n["kind"] == "mission")
-    mission["folder_path"] = "core/mission-mission"
+    mission = next(n for n in core_before["nodes"] if n["kind"] == "mission")
+    mission["details_path"] = "core/mission-mission/details.md"
     client.put(
         "/api/projects/alpha/canvases/core",
         params={"project_path": project_path},
-        json=core,
+        json=core_before,
     ).raise_for_status()
 
-    # Write an index.md carrying a Tagline section — should land in node.body.
     put = client.put(
         "/api/files",
         params={
             "project_path": project_path,
             "project_id": "alpha",
-            "path": "core/mission-mission/index.md",
+            "path": "core/mission-mission/details.md",
             "node_id": mission["id"],
         },
-        json={"content": "### Tagline\n짧은 한 줄\n\n### Story\n긴 이야기"},
+        json={"content": "긴 이야기..."},
     )
     assert put.status_code == 200
-    assert put.json()["preview"] == "짧은 한 줄"
+    body = put.json()
+    assert "preview" not in body  # no canvas-side caching anymore
 
-    refreshed = client.get(
+    core_after = client.get(
         "/api/projects/alpha/canvases/core",
         params={"project_path": project_path},
     ).json()
     refreshed_mission = next(
-        n for n in refreshed["nodes"] if n["id"] == mission["id"]
+        n for n in core_after["nodes"] if n["id"] == mission["id"]
     )
-    assert refreshed_mission["body"] == "짧은 한 줄"
+    # typed fields untouched, details_path stable
+    assert refreshed_mission.get("tagline", "") == ""
+    assert refreshed_mission["details_path"] == "core/mission-mission/details.md"
 
 
 def test_folder_post_creates_unique_path(

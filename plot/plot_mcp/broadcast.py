@@ -37,11 +37,30 @@ def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | No
     #   ("alpha", "core", "canvas.json")
     #   ("alpha", "services", "canvas.json")
     #   ("alpha", "services", "order", "detail.json")
+    #   ("alpha", "core", "mission-1", "details.md")
+    #   ("alpha", "services", "order", "details.md")
     if len(parts) == 3 and parts[2] == "canvas.json" and parts[1] in _SINGLETON_CANVAS_KINDS:
         descriptor["canvas_kind"] = parts[1]
     elif len(parts) == 4 and parts[1] == "services" and parts[3] == "detail.json":
         descriptor["canvas_kind"] = "service_detail"
         descriptor["service_id"] = parts[2]
+    elif (
+        len(parts) == 4
+        and parts[3] == "details.md"
+        and parts[1] in _SINGLETON_CANVAS_KINDS
+    ):
+        # v0.9 per-node details.md: a viewer that has the parent canvas
+        # open should reload to pick up external edits.
+        descriptor["canvas_kind"] = parts[1]
+    elif (
+        len(parts) == 4
+        and parts[1] == "services"
+        and parts[3] == "details.md"
+    ):
+        # services/{sid}/details.md — service node's long-form. Reloading
+        # the services top-view is enough because the details file is
+        # only fetched lazily by the Inspector when the service is selected.
+        descriptor["canvas_kind"] = "services"
     # project.json and anything else → project-level event without canvas_kind
     return descriptor
 

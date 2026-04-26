@@ -134,29 +134,29 @@ def test_core_canvas_nested_project_rejected() -> None:
         )
 
 
-def test_node_folder_path_absolute_rejected() -> None:
+def test_node_details_path_absolute_rejected() -> None:
     with pytest.raises(ValueError, match="relative"):
-        SketchNode(id="n1", kind="mission", label="M", folder_path="/etc/passwd")
+        SketchNode(id="n1", kind="mission", label="M", details_path="/etc/passwd")
 
 
-def test_node_folder_path_traversal_rejected() -> None:
+def test_node_details_path_traversal_rejected() -> None:
     with pytest.raises(ValueError, match=r"\.\."):
         SketchNode(
-            id="n1", kind="mission", label="M", folder_path="workspace/../etc"
+            id="n1", kind="mission", label="M", details_path="workspace/../etc"
         )
 
 
-def test_node_folder_path_blank_rejected() -> None:
+def test_node_details_path_blank_rejected() -> None:
     with pytest.raises(ValueError, match="blank"):
-        SketchNode(id="n1", kind="mission", label="M", folder_path="   ")
+        SketchNode(id="n1", kind="mission", label="M", details_path="   ")
 
 
-def test_node_folder_path_valid() -> None:
+def test_node_details_path_valid() -> None:
     n = SketchNode(
         id="n1", kind="mission", label="M",
-        folder_path="workspace/core/mission-mission",
+        details_path="workspace/core/mission-mission",
     )
-    assert n.folder_path == "workspace/core/mission-mission"
+    assert n.details_path == "workspace/core/mission-mission"
 
 
 def test_core_canvas_actor_kind_rejected() -> None:

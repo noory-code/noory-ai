@@ -340,13 +340,16 @@ def test_identity_fields_promoted_to_nodes(plot_root: Path) -> None:
     migrate_v01_to_v02(plot_root)
     core = read_canvas(plot_root, "alpha", "core")
     by_kind = {n.kind: n for n in core.nodes}
-    assert by_kind["mission"].body == "Deliver value" or by_kind["mission"].label
+    # v0.9: legacy ``mission`` text on the core-root lands in the typed
+    # ``tagline`` field of the new mission node; ``identity`` text lands
+    # in ``summary``. ``label`` stays the kind name.
+    assert by_kind["mission"].tagline == "Deliver value"
     # Two core_value nodes from "Speed\nClarity"
     values = [n for n in core.nodes if n.kind == "core_value"]
     labels = {n.label for n in values}
     assert {"Speed", "Clarity"} <= labels
-    # Identity text lives on the identity node (label or body)
-    assert "warm" in by_kind["identity"].body or "warm" in by_kind["identity"].label
+    # Identity text lives on the identity node's typed ``summary`` field.
+    assert "warm" in by_kind["identity"].summary
 
 
 # ---------------------------------------------------------------------------

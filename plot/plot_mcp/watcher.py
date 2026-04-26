@@ -19,12 +19,13 @@ from watchdog.observers.api import BaseObserver
 _log = logging.getLogger(__name__)
 
 
-def _is_canvas_file(path: str) -> bool:
-    """v0.8: canvas files are ``canvas.json`` (singletons) or
-    ``detail.json`` (per-service details). Ignore other JSON (project.json
-    metadata, attachments) so the watcher doesn't fire on every write."""
+def _is_watched_file(path: str) -> bool:
+    """v0.9: watch canvas files (``canvas.json`` / ``detail.json`` /
+    ``project.json``) **and** node ``details.md`` files. The latter lets
+    Plot pick up external edits in Obsidian / VS Code and broadcast them
+    to any open viewer. Other JSON or attachments are ignored."""
     p = Path(path)
-    return p.name in {"canvas.json", "detail.json", "project.json"}
+    return p.name in {"canvas.json", "detail.json", "project.json", "details.md"}
 
 
 class WorkspaceWatcher:
@@ -106,5 +107,5 @@ class _Handler(FileSystemEventHandler):
         src = str(event.src_path)
         dest = getattr(event, "dest_path", "") or ""
         for raw in (src, dest):
-            if raw and _is_canvas_file(raw):
+            if raw and _is_watched_file(raw):
                 self._notify(Path(raw))
