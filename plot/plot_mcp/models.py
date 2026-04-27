@@ -118,20 +118,16 @@ class SketchNode(BaseModel):
     # Required when kind == "actor_ref"; ignored otherwise.
     ref_actor_id: str | None = None
 
-    # v0.9 typed content fields. Optional, default ``""``. Each Inspector
-    # template chooses which keys are surfaced for its kind — the model
-    # itself stays permissive so any kind can carry any subset.
-    tagline: str = ""        # mission
-    audience: str = ""       # mission
-    method: str = ""         # mission
-    goal: str = ""           # mission
-    summary: str = ""        # core_value / identity / project / actor / service
-    criteria: str = ""       # core_value
-
-    # v0.9 long-form pointer. Project-relative path (e.g.
+    # v0.9.1 long-form pointer. Project-relative path (e.g.
     # ``"core/mission-1/details.md"``); Plot resolves it under
     # ``.plot/{project_id}/``. ``None`` means the node has no MD file yet
     # — the Inspector offers a "Create details" button to mint one.
+    #
+    # v0.9 briefly carried six typed fields (tagline / audience / method /
+    # goal / summary / criteria) for kind-specific Inspector forms. v0.9.1
+    # drops them: short text lives in the node's ``label``, long text
+    # lives in ``details.md``, and any structure between (Tagline /
+    # Audience / etc.) the user expresses freely inside the MD file.
     details_path: str | None = None
 
     @model_validator(mode="after")

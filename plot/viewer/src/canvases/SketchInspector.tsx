@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFolder } from "../api";
 import { MDFileEditor } from "../edit/MDFileEditor";
 import { folderSlug } from "../lib/slug";
-import type { CanvasKind, NodeKind, SketchNode } from "../types";
+import type { CanvasKind, SketchNode } from "../types";
 
 export interface SketchInspectorProps {
   /** Currently selected node. Null → panel shows empty state. */
@@ -178,10 +178,9 @@ export function SketchInspector({
           />
         </label>
 
-        {/* v0.9: typed short fields per kind (canvas.json SSOT) + per-node
-             ``details.md`` for long-form prose. Inspector shows both. */}
-        <TypedFieldsForm node={node} onPatchNode={onPatchNode} />
-
+        {/* v0.9.1: only ``label`` (above) + per-node ``details.md`` for
+             long-form prose. Typed fields were removed because for most
+             kinds they collapsed to "label vs slightly-different-label". */}
         <DetailsSection
           node={node}
           projectPath={projectPath}
@@ -332,13 +331,6 @@ function CompositionList({
                   placeholder="Name"
                   className="w-full border-none bg-transparent text-xs font-medium text-slate-800 focus:outline-none"
                 />
-                <textarea
-                  value={item.summary ?? ""}
-                  onChange={(e) => onPatch(item.id, { summary: e.target.value })}
-                  placeholder="Optional detail"
-                  rows={1}
-                  className="mt-0.5 w-full resize-y border-none bg-transparent text-[11px] text-slate-600 focus:outline-none"
-                />
               </div>
               <button
                 type="button"
@@ -361,86 +353,7 @@ function CompositionList({
 }
 
 // ---------------------------------------------------------------------------
-// v0.9 typed fields per kind
-// ---------------------------------------------------------------------------
-//
-// Inspector renders kind-specific text inputs that bind directly to typed
-// fields on the SketchNode (canvas.json SSOT). No MD parsing, no header
-// matching — just plain inputs. Fields are optional on the model side, so
-// the same node can carry any subset.
-
-type TypedFieldKey = "tagline" | "audience" | "method" | "goal" | "summary" | "criteria";
-
-interface TypedField {
-  key: TypedFieldKey;
-  label: string;
-  hint?: string;
-  rows?: number;
-}
-
-const TYPED_FIELDS: Partial<Record<NodeKind, TypedField[]>> = {
-  mission: [
-    { key: "tagline", label: "Tagline", hint: "한 줄 슬로건" },
-    { key: "audience", label: "Audience", hint: "누구를 위한 미션인가" },
-    { key: "method", label: "Method", hint: "어떻게 달성하나" },
-    { key: "goal", label: "Goal", hint: "도달하려는 상태" },
-  ],
-  core_value: [
-    { key: "summary", label: "Summary", rows: 2, hint: "이 값은 무엇인가" },
-    { key: "criteria", label: "Decision criteria", rows: 3, hint: "갈등 시 어떻게 행동하나" },
-  ],
-  identity: [
-    { key: "summary", label: "Summary", rows: 2, hint: "이 측면의 핵심" },
-  ],
-  project: [
-    { key: "summary", label: "Summary", rows: 2, hint: "프로젝트 한 문단 설명" },
-  ],
-};
-
-function TypedFieldsForm({
-  node,
-  onPatchNode,
-}: {
-  node: SketchNode;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}) {
-  const fields = node.kind ? TYPED_FIELDS[node.kind] : undefined;
-  if (!fields || fields.length === 0) return null;
-  return (
-    <div className="mb-4 space-y-3">
-      {fields.map((f) => {
-        const value = (node[f.key] as string | undefined) ?? "";
-        const rows = f.rows ?? 1;
-        return (
-          <label key={f.key} className="block">
-            <span className="text-xs font-semibold text-slate-600">{f.label}</span>
-            {f.hint && (
-              <span className="ml-2 text-[10px] italic text-slate-400">{f.hint}</span>
-            )}
-            {rows <= 1 ? (
-              <input
-                type="text"
-                value={value}
-                onChange={(e) => onPatchNode({ [f.key]: e.target.value } as Partial<SketchNode>)}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-              />
-            ) : (
-              <textarea
-                value={value}
-                onChange={(e) => onPatchNode({ [f.key]: e.target.value } as Partial<SketchNode>)}
-                rows={rows}
-                className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-              />
-            )}
-          </label>
-        );
-      })}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// v0.9 details.md section
+// v0.9.1 details.md section — the only content surface
 // ---------------------------------------------------------------------------
 //
 // Long-form prose lives in a per-node ``details.md`` file. JSON keeps no

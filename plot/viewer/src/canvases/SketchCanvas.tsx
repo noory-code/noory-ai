@@ -274,14 +274,10 @@ function SketchCanvasInner({
       const isOrphan = orphanActorRefIds.has(n.id);
       const visualColor = isOrphan ? "#fee2e2" : n.color;
       const visualLabel = isOrphan ? `⚠ ${n.label}` : n.label;
-      // v0.9 node preview: pick the first non-empty typed field. Mission
-      // prefers ``tagline``; everything else prefers ``summary``. The
-      // long-form ``details.md`` is intentionally not surfaced on the
-      // canvas — it lives in the Inspector.
-      const previewBody =
-        n.kind === "mission"
-          ? n.tagline || n.summary || ""
-          : n.summary || n.tagline || n.criteria || "";
+      // v0.9.1: typed fields are gone. The on-canvas node shows just the
+      // label; long-form lives in details.md (Inspector only). Pass an
+      // empty preview so SketchNode hides the body block.
+      const previewBody = "";
       const base: Node<SketchNodeData> = {
         id: n.id,
         type: "sketch",

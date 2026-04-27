@@ -362,13 +362,15 @@ def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> Canva
         ),
     ]
 
-    mission_text = (core_root.mission if core_root else "").strip()
+    # v0.9.1 dropped typed fields — legacy ``mission`` text on core-root
+    # has nowhere structured to land. The user can paste it into the new
+    # node's ``details.md`` after migration if they care; we don't auto-
+    # synthesise an MD file here to keep migration side-effect-free.
     nodes.append(
         SketchNode(
             id="mission",
             kind="mission",
             label="Mission",
-            tagline=mission_text,
             x=-360,
             y=-45,
             width=200,
@@ -400,13 +402,13 @@ def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> Canva
                 )
         )
 
-    identity_text = (core_root.identity if core_root else "").strip()
+    # Same: legacy ``identity`` text is dropped. User can paste it into
+    # the new node's ``details.md`` after migration.
     nodes.append(
         SketchNode(
             id="identity",
             kind="identity",
             label="Voice",
-            summary=identity_text,
             x=160,
             y=-45,
             width=200,

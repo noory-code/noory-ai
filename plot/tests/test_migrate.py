@@ -339,17 +339,18 @@ def test_identity_fields_promoted_to_nodes(plot_root: Path) -> None:
 
     migrate_v01_to_v02(plot_root)
     core = read_canvas(plot_root, "alpha", "core")
-    by_kind = {n.kind: n for n in core.nodes}
-    # v0.9: legacy ``mission`` text on the core-root lands in the typed
-    # ``tagline`` field of the new mission node; ``identity`` text lands
-    # in ``summary``. ``label`` stays the kind name.
-    assert by_kind["mission"].tagline == "Deliver value"
+    # v0.9.1 dropped typed fields — legacy ``mission`` / ``identity``
+    # text on the v0.1 core-root no longer survives migration (it would
+    # need a ``details.md`` write, but the migration is intentionally
+    # side-effect-free w.r.t. file IO). The structural nodes still get
+    # created so the user can re-paste their content.
+    kinds_present = {n.kind for n in core.nodes}
+    assert "mission" in kinds_present
+    assert "identity" in kinds_present
     # Two core_value nodes from "Speed\nClarity"
     values = [n for n in core.nodes if n.kind == "core_value"]
     labels = {n.label for n in values}
     assert {"Speed", "Clarity"} <= labels
-    # Identity text lives on the identity node's typed ``summary`` field.
-    assert "warm" in by_kind["identity"].summary
 
 
 # ---------------------------------------------------------------------------

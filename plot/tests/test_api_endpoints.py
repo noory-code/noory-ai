@@ -579,8 +579,7 @@ def test_file_put_does_not_touch_canvas(
     refreshed_mission = next(
         n for n in core_after["nodes"] if n["id"] == mission["id"]
     )
-    # typed fields untouched, details_path stable
-    assert refreshed_mission.get("tagline", "") == ""
+    # details_path stays the same — file write didn't touch the canvas.
     assert refreshed_mission["details_path"] == "core/mission-mission/details.md"
 
 
