@@ -78,7 +78,7 @@ Generalise the existing `actor_ref` symbol pattern to Foundation.
 
 **Tests**: validator coverage, picker round-trip.
 
-## Step 4 — Service typed fields (top vs sub)  `[ ]`
+## Step 4 — Service typed fields (top vs sub)  `[x]`
 
 **Python**
 - `SketchNode`: add service-relevant typed fields.

@@ -94,6 +94,16 @@ export interface SketchNode {
   description: string;
   do: string;
   dont: string;
+  /** v0.10 Step 4: service typed fields. Top-level service surfaces
+   *  what / value_created / scope; sub-service surfaces value_created /
+   *  trigger / how / outcome. Both share do / dont. Inspector branches
+   *  by canvas kind + parent_id. */
+  what: string;
+  value_created: string;
+  scope: string;
+  trigger: string;
+  how: string;
+  outcome: string;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */

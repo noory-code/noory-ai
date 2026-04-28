@@ -165,6 +165,25 @@ class SketchNode(BaseModel):
     do: str = ""
     dont: str = ""
 
+    # service (Services / Service-Detail, kind="service"):
+    #   Top-level (parent_id is None) and sub-service (parent_id != None)
+    #   share the same model — Inspector decides which fields to surface.
+    #   ``what``         — concise statement of what the service is.
+    #   ``value_created``— the value this service produces.
+    #   ``scope``        — boundary statement (top-level only).
+    #   ``trigger``      — what kicks the service off (sub-service).
+    #   ``how``          — how it works (sub-service).
+    #   ``outcome``      — observable end state (sub-service; shared with
+    #                      ``step`` in v0.10 Step 5).
+    #   ``do`` / ``dont`` — already declared above for core_value/identity;
+    #                      reused here.
+    what: str = ""
+    value_created: str = ""
+    scope: str = ""
+    trigger: str = ""
+    how: str = ""
+    outcome: str = ""
+
     # v0.9.1 long-form pointer. Project-relative path (e.g.
     # ``"foundation/mission-1/details.md"``); Plot resolves it under
     # ``.plot/{project_id}/``. ``None`` means the node has no MD file yet

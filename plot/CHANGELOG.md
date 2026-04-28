@@ -4,6 +4,33 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.3] — 2026-04-28
+
+Step 4 of the v0.10 kind-redefinition program. Service nodes gain typed
+fields differentiated by canvas — top-level services (the strategic
+view) and sub-services (the operational view) get different forms while
+sharing one model.
+
+### Added — **Service typed fields**
+- `SketchNode` gains six optional `str` fields (default `""`):
+  - Top-level focus: `what`, `value_created`, `scope`.
+  - Sub-service focus: `value_created`, `trigger`, `how`, `outcome`.
+  - The shared Do/Don't pair from Step 2 (`do`, `dont`) is reused.
+- One model carries all six on every service node; the **Inspector**
+  surfaces them per branch:
+  - `kind === "service"` on the **services** canvas with no parent →
+    Label · What · Value created · Scope · Do · Don't.
+  - `kind === "service"` on a **service_detail** canvas →
+    Label · Value created · Trigger · How · Outcome · Do · Don't.
+
+### Notes — **No hard validator gating**
+- The ROADMAP suggested gating top-level services on either a
+  Foundation ref or non-empty `value_created`. Per the v0.10 design
+  philosophy ("rich fields, minimal required"), this is **not** a
+  hard validator: writes succeed regardless. The Inspector's typed
+  form makes the missing fields visible without blocking drafting.
+- Round-trip and per-branch tests added in `tests/test_canvas_doc.py`.
+
 ## [0.10.2] — 2026-04-28
 
 Step 3 of the v0.10 kind-redefinition program. Generalises the existing

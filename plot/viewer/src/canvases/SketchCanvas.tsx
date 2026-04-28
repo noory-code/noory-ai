@@ -528,6 +528,12 @@ function SketchCanvasInner({
         ref_mission_id: preset?.ref_mission_id ?? null,
         ref_value_id: preset?.ref_value_id ?? null,
         ref_identity_id: preset?.ref_identity_id ?? null,
+        what: "",
+        value_created: "",
+        scope: "",
+        trigger: "",
+        how: "",
+        outcome: "",
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -572,6 +578,12 @@ function SketchCanvasInner({
         ref_mission_id: preset?.ref_mission_id ?? null,
         ref_value_id: preset?.ref_value_id ?? null,
         ref_identity_id: preset?.ref_identity_id ?? null,
+        what: "",
+        value_created: "",
+        scope: "",
+        trigger: "",
+        how: "",
+        outcome: "",
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -1234,6 +1246,12 @@ function SketchCanvasInner({
             ref_mission_id: null,
             ref_value_id: null,
             ref_identity_id: null,
+            what: "",
+            value_created: "",
+            scope: "",
+            trigger: "",
+            how: "",
+            outcome: "",
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}
