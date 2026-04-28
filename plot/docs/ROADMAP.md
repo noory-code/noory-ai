@@ -7,7 +7,7 @@ patch bumped, pushed). Together they realise the design captured in
 
 > Status legend: `[ ]` not started · `[~]` in progress · `[x]` shipped.
 
-## Step 1 — Foundation rename + Mission typed fields  `[ ]`
+## Step 1 — Foundation rename + Mission typed fields  `[x]`
 
 The smallest contained change, so it can land before anything else.
 
@@ -38,7 +38,7 @@ The smallest contained change, so it can land before anything else.
 
 **Verification**: `pytest -q`, `ruff`, `mypy`, `tsc --noEmit` clean.
 
-## Step 2 — Core Value + Identity typed fields  `[ ]`
+## Step 2 — Core Value + Identity typed fields  `[x]`
 
 **Python**
 - `SketchNode`:

@@ -130,6 +130,19 @@ class SketchNode(BaseModel):
     why: str = ""
     direction: str = ""
 
+    # core_value (Foundation, kind="core_value"):
+    #   ``definition`` — one or two sentences explaining what the value means.
+    # identity (Foundation, kind="identity"):
+    #   ``description`` — how the aspect is expressed (Voice / Energy / …).
+    # Shared between core_value and identity (and any future kind that finds
+    # the Do/Don't pair useful — see CONCEPTS.md "AI-first" principle):
+    #   ``do``   — concrete positive example ("we do X this way")
+    #   ``dont`` — concrete anti-pattern ("we never do Y")
+    definition: str = ""
+    description: str = ""
+    do: str = ""
+    dont: str = ""
+
     # v0.9.1 long-form pointer. Project-relative path (e.g.
     # ``"foundation/mission-1/details.md"``); Plot resolves it under
     # ``.plot/{project_id}/``. ``None`` means the node has no MD file yet

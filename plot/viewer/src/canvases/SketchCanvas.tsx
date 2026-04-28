@@ -478,6 +478,10 @@ function SketchCanvasInner({
         what_we_do: "",
         why: "",
         direction: "",
+        definition: "",
+        description: "",
+        do: "",
+        dont: "",
         ref_actor_id: preset?.ref_actor_id ?? null,
       };
       const current = docRef.current;
@@ -515,6 +519,10 @@ function SketchCanvasInner({
         what_we_do: "",
         why: "",
         direction: "",
+        definition: "",
+        description: "",
+        do: "",
+        dont: "",
         ref_actor_id: preset?.ref_actor_id ?? null,
       };
       const current = docRef.current;
@@ -1088,6 +1096,10 @@ function SketchCanvasInner({
             what_we_do: "",
             why: "",
             direction: "",
+            definition: "",
+            description: "",
+            do: "",
+            dont: "",
             ref_actor_id: null,
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });

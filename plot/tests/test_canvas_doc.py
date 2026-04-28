@@ -157,6 +157,76 @@ def test_typed_fields_default_to_empty() -> None:
     assert n.what_we_do == ""
     assert n.why == ""
     assert n.direction == ""
+    assert n.definition == ""
+    assert n.description == ""
+    assert n.do == ""
+    assert n.dont == ""
+
+
+def test_core_value_carries_typed_fields() -> None:
+    """v0.10 Step 2: core_value nodes carry ``definition`` plus the shared
+    ``do`` / ``dont`` AI-first pair. Stored on the node, no details.md."""
+    n = SketchNode(
+        id="cv-tolerance",
+        kind="core_value",
+        label="관용",
+        definition="다름을 인정하고 있는 그대로 받아들임",
+        do="다른 의견을 먼저 듣는다",
+        dont="틀렸다고 단정한다",
+    )
+    assert n.definition.startswith("다름을 인정")
+    assert "먼저 듣는다" in n.do
+    assert "단정한다" in n.dont
+
+
+def test_identity_carries_typed_fields() -> None:
+    """v0.10 Step 2: identity nodes carry ``description`` plus the shared
+    Do/Don't pair so an LLM can mimic the persona deterministically."""
+    n = SketchNode(
+        id="id-voice",
+        kind="identity",
+        label="Voice",
+        description="따뜻하고 진솔한 1:1 대화처럼 말한다",
+        do="이름을 부른다",
+        dont="공지글 같은 말투로 쓴다",
+    )
+    assert "따뜻하고" in n.description
+    assert "이름을 부른다" in n.do
+    assert "공지글 같은" in n.dont
+
+
+def test_value_and_identity_typed_fields_round_trip_in_canvas() -> None:
+    """Foundation canvas serialises and parses Step 2 typed fields end-to-end."""
+    doc = CanvasDoc(
+        canvas_id="foundation",
+        canvas_kind="foundation",
+        nodes=[
+            *_core_seed_nodes(),
+            SketchNode(
+                id="cv1",
+                kind="core_value",
+                label="Trust",
+                definition="우리는 서로의 의도를 의심하지 않는다",
+                do="동기를 먼저 묻는다",
+                dont="비난부터 한다",
+            ),
+            SketchNode(
+                id="id1",
+                kind="identity",
+                label="Energy",
+                description="조용하고 또렷하다",
+                do="짧고 단단하게 말한다",
+                dont="장황하게 늘어놓는다",
+            ),
+        ],
+    )
+    parsed = CanvasDoc.model_validate(doc.model_dump())
+    cv = next(n for n in parsed.nodes if n.id == "cv1")
+    ident = next(n for n in parsed.nodes if n.id == "id1")
+    assert cv.definition.startswith("우리는 서로")
+    assert cv.do == "동기를 먼저 묻는다"
+    assert ident.description == "조용하고 또렷하다"
+    assert ident.dont == "장황하게 늘어놓는다"
 
 
 def test_node_details_path_absolute_rejected() -> None:

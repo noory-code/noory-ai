@@ -4,6 +4,38 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.1] — 2026-04-28
+
+Step 2 of the v0.10 kind-redefinition program (see
+[`docs/ROADMAP.md`](docs/ROADMAP.md)). Re-introduces typed fields on
+the remaining two Foundation kinds, with the AI-first **Do / Don't**
+pair shared between them.
+
+### Added — **Core Value typed fields**
+- `SketchNode.definition` (`str`, default `""`) — what the value means.
+- Inspector renders a typed form when `kind === "core_value"`:
+  Label · Definition · Do · Don't.
+
+### Added — **Identity typed fields**
+- `SketchNode.description` (`str`, default `""`) — how the aspect is
+  expressed (Voice / Energy / Speech style / …).
+- Inspector renders a typed form when `kind === "identity"`:
+  Label · Description · Do · Don't.
+
+### Added — **Shared Do / Don't pair**
+- `SketchNode.do`, `SketchNode.dont` (`str`, default `""`). Both fields
+  exist on every node so the schema stays uniform; only the Inspector
+  forms for `core_value` and `identity` surface them today. Future kinds
+  (Mission, Service) may opt in without a schema migration.
+
+### Notes
+- All four new fields are optional and default to `""` — none of them
+  introduce a validator that could reject a legacy canvas. Mirroring
+  v0.10 Step 1's principle: "rich fields, minimal required".
+- Long-form prose still belongs in `details.md` per node. Typed fields
+  are for short, structured facets that an LLM (or human reader) can
+  consume deterministically.
+
 ## [0.10.0] — 2026-04-28
 
 This release kicks off the v0.10 kind-redefinition program (see

@@ -79,6 +79,13 @@ export interface SketchNode {
   what_we_do: string;
   why: string;
   direction: string;
+  /** v0.10 Step 2: typed fields for ``core_value`` (definition + do/dont)
+   *  and ``identity`` (description + do/dont). Other kinds default to "".
+   *  do/dont follow the AI-first principle in docs/CONCEPTS.md. */
+  definition: string;
+  description: string;
+  do: string;
+  dont: string;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.9.1: project-relative path to this node's long-form ``details.md``

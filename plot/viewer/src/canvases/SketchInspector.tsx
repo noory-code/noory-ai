@@ -185,6 +185,19 @@ export function SketchInspector({
           <MissionFields node={node} onPatchNode={onPatchNode} />
         )}
 
+        {/* v0.10 Step 2: Core Value typed form — definition + Do/Don't pair.
+             Do/Don't follows the AI-first principle (LLMs mimic concrete
+             examples better than abstract rules). Optional: blank fields
+             remain blank, no validator complains. */}
+        {node.kind === "core_value" && (
+          <CoreValueFields node={node} onPatchNode={onPatchNode} />
+        )}
+
+        {/* v0.10 Step 2: Identity typed form — description + Do/Don't pair. */}
+        {node.kind === "identity" && (
+          <IdentityFields node={node} onPatchNode={onPatchNode} />
+        )}
+
         {/* v0.9.1: ``label`` + per-node ``details.md`` for long-form prose. */}
         <DetailsSection
           node={node}
@@ -415,6 +428,103 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
         />
       </label>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// v0.10 Step 2 — Core Value + Identity typed fields
+// ---------------------------------------------------------------------------
+//
+// Core Value answers "how do we behave under conflict?" Identity answers
+// "how do we look and sound?" Both benefit from a Do/Don't pair: LLMs that
+// help simulate behaviour or write copy in the project's voice reach for
+// concrete examples first, abstract rules second.
+
+interface CoreValueFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function CoreValueFields({ node, onPatchNode }: CoreValueFieldsProps) {
+  return (
+    <div className="mb-4 rounded border border-amber-200 bg-amber-50/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+        Core value
+      </div>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">Definition</span>
+        <span className="ml-1 text-[10px] text-slate-500">— what this value means</span>
+        <textarea
+          rows={2}
+          value={node.definition ?? ""}
+          onChange={(e) => onPatchNode({ definition: e.target.value })}
+          placeholder="한두 문장으로"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        />
+      </label>
+      <DoDontFields node={node} onPatchNode={onPatchNode} />
+    </div>
+  );
+}
+
+interface IdentityFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function IdentityFields({ node, onPatchNode }: IdentityFieldsProps) {
+  return (
+    <div className="mb-4 rounded border border-violet-200 bg-violet-50/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+        Identity
+      </div>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">Description</span>
+        <span className="ml-1 text-[10px] text-slate-500">— how this aspect is expressed</span>
+        <textarea
+          rows={2}
+          value={node.description ?? ""}
+          onChange={(e) => onPatchNode({ description: e.target.value })}
+          placeholder="이 측면이 어떻게 드러나는가"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        />
+      </label>
+      <DoDontFields node={node} onPatchNode={onPatchNode} />
+    </div>
+  );
+}
+
+interface DoDontFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
+  return (
+    <>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-emerald-700">Do</span>
+        <span className="ml-1 text-[10px] text-slate-500">— concrete positive example</span>
+        <textarea
+          rows={2}
+          value={node.do ?? ""}
+          onChange={(e) => onPatchNode({ do: e.target.value })}
+          placeholder="이렇게 행동/표현한다"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-emerald-600 focus:outline-none"
+        />
+      </label>
+      <label className="block">
+        <span className="text-xs font-semibold text-rose-700">Don't</span>
+        <span className="ml-1 text-[10px] text-slate-500">— anti-pattern</span>
+        <textarea
+          rows={2}
+          value={node.dont ?? ""}
+          onChange={(e) => onPatchNode({ dont: e.target.value })}
+          placeholder="이렇게는 안 한다"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
+        />
+      </label>
+    </>
   );
 }
 
