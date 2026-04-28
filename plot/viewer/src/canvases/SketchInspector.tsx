@@ -318,11 +318,13 @@ export function SketchInspector({
           <>
             <CompositionList
               title="Rules"
-              subtitle="policies, constraints, SLAs"
+              subtitle="policies, constraints, SLAs, permissions"
               items={rules}
               onAdd={() => onAddChild(node.id, "rule")}
               onPatch={onPatchChild}
               onRemove={onRemoveChild}
+              kind="rule"
+              availableActors={availableActors}
             />
             <CompositionList
               title="Contents"
@@ -331,6 +333,8 @@ export function SketchInspector({
               onAdd={() => onAddChild(node.id, "content")}
               onPatch={onPatchChild}
               onRemove={onRemoveChild}
+              kind="content"
+              availableActors={availableActors}
             />
           </>
         )}
@@ -353,6 +357,13 @@ interface CompositionListProps {
   onAdd: () => void;
   onPatch: (childId: string, patch: Partial<SketchNode>) => void;
   onRemove: (childId: string) => void;
+  /** v0.10 Step 6: which kind this list is for. The expanded form
+   *  shows kind-specific typed fields (rule → policy + permissions,
+   *  content → format + producer/consumer). */
+  kind: "rule" | "content";
+  /** v0.10 Step 6: actor masters used by rule's permission editor and
+   *  by content's producer/consumer pickers. */
+  availableActors?: SketchNode[];
 }
 
 function CompositionList({
@@ -362,6 +373,8 @@ function CompositionList({
   onAdd,
   onPatch,
   onRemove,
+  kind,
+  availableActors,
 }: CompositionListProps) {
   return (
     <div className="mb-4">
@@ -385,36 +398,89 @@ function CompositionList({
       ) : (
         <ul className="space-y-1">
           {items.map((item) => (
-            <li
+            <CompositionRow
               key={item.id}
-              className="group flex items-start gap-1 rounded border border-slate-200 bg-white px-2 py-1"
-            >
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={item.label}
-                  onChange={(e) => onPatch(item.id, { label: e.target.value })}
-                  placeholder="Name"
-                  className="w-full border-none bg-transparent text-xs font-medium text-slate-800 focus:outline-none"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm(`Remove "${item.label || "(untitled)"}"?`)) {
-                    onRemove(item.id);
-                  }
-                }}
-                className="rounded px-1 text-[10px] text-rose-600 opacity-0 hover:bg-rose-50 group-hover:opacity-100"
-                aria-label="Remove"
-              >
-                ✕
-              </button>
-            </li>
+              item={item}
+              kind={kind}
+              availableActors={availableActors}
+              onPatch={onPatch}
+              onRemove={onRemove}
+            />
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+interface CompositionRowProps {
+  item: SketchNode;
+  kind: "rule" | "content";
+  availableActors?: SketchNode[];
+  onPatch: (childId: string, patch: Partial<SketchNode>) => void;
+  onRemove: (childId: string) => void;
+}
+
+function CompositionRow({
+  item,
+  kind,
+  availableActors,
+  onPatch,
+  onRemove,
+}: CompositionRowProps) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <li className="group rounded border border-slate-200 bg-white">
+      <div className="flex items-start gap-1 px-2 py-1">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="rounded px-1 text-[10px] text-slate-500 hover:bg-slate-100"
+          aria-label={expanded ? "Collapse" : "Expand"}
+          title={expanded ? "Collapse" : "Expand"}
+        >
+          {expanded ? "▾" : "▸"}
+        </button>
+        <div className="flex-1">
+          <input
+            type="text"
+            value={item.label}
+            onChange={(e) => onPatch(item.id, { label: e.target.value })}
+            placeholder="Name"
+            className="w-full border-none bg-transparent text-xs font-medium text-slate-800 focus:outline-none"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm(`Remove "${item.label || "(untitled)"}"?`)) {
+              onRemove(item.id);
+            }
+          }}
+          className="rounded px-1 text-[10px] text-rose-600 opacity-0 hover:bg-rose-50 group-hover:opacity-100"
+          aria-label="Remove"
+        >
+          ✕
+        </button>
+      </div>
+      {expanded && (
+        <div className="border-t border-slate-100 px-2 py-2">
+          {kind === "rule" ? (
+            <RuleFields
+              node={item}
+              availableActors={availableActors ?? []}
+              onPatchNode={(patch) => onPatch(item.id, patch)}
+            />
+          ) : (
+            <ContentFields
+              node={item}
+              availableActors={availableActors ?? []}
+              onPatchNode={(patch) => onPatch(item.id, patch)}
+            />
+          )}
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -595,6 +661,202 @@ function ServiceTextarea({
         placeholder={placeholder}
         className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-sky-600 focus:outline-none"
       />
+    </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// v0.10 Step 6 — rule + content typed-field polish
+// ---------------------------------------------------------------------------
+//
+// Rules carry a policy statement, an enforcement note, and an optional
+// actor → permission map (e.g. {"user": "RUD", "admin": "CRUD"}). The
+// permission string is free-form; the suggested vocabulary is C/R/U/D.
+//
+// Contents carry a format hint and producer/consumer actor master ids.
+// The pickers list ``availableActors`` (the actor masters from the
+// Actors canvas), so picking is consistent with actor_ref semantics.
+
+interface RuleFieldsProps {
+  node: SketchNode;
+  availableActors: SketchNode[];
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsProps) {
+  const permissions = node.actor_permissions ?? {};
+  const usedIds = new Set(Object.keys(permissions));
+  const candidates = availableActors.filter((a) => !usedIds.has(a.id));
+  return (
+    <div className="text-xs">
+      <label className="mb-2 block">
+        <span className="font-semibold text-slate-700">Policy</span>
+        <textarea
+          rows={2}
+          value={node.policy ?? ""}
+          onChange={(e) => onPatchNode({ policy: e.target.value })}
+          placeholder="이 룰이 강제하는 것"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 focus:border-stone-500 focus:outline-none"
+        />
+      </label>
+      <label className="mb-2 block">
+        <span className="font-semibold text-slate-700">Enforcement</span>
+        <textarea
+          rows={2}
+          value={node.enforcement ?? ""}
+          onChange={(e) => onPatchNode({ enforcement: e.target.value })}
+          placeholder="어디서/어떻게 강제?"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 focus:border-stone-500 focus:outline-none"
+        />
+      </label>
+      <div className="mt-2">
+        <div className="mb-1 font-semibold text-slate-700">Actor permissions</div>
+        <div className="mb-1 text-[10px] italic text-slate-400">
+          C/R/U/D shorthand recommended (e.g. <code>RUD</code>)
+        </div>
+        {Object.entries(permissions).length === 0 && (
+          <div className="rounded border border-dashed border-slate-200 p-1.5 text-[11px] italic text-slate-400">
+            (none)
+          </div>
+        )}
+        <ul className="space-y-1">
+          {Object.entries(permissions).map(([actorId, perm]) => {
+            const actor = availableActors.find((a) => a.id === actorId);
+            return (
+              <li key={actorId} className="flex items-center gap-1">
+                <span
+                  className="flex-1 truncate text-[11px] text-slate-700"
+                  title={actorId}
+                >
+                  {actor?.label || actorId}
+                </span>
+                <input
+                  type="text"
+                  value={perm}
+                  onChange={(e) =>
+                    onPatchNode({
+                      actor_permissions: {
+                        ...permissions,
+                        [actorId]: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="CRUD"
+                  className="w-20 rounded border border-slate-300 px-1.5 py-0.5 text-[11px] focus:border-stone-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = { ...permissions };
+                    delete next[actorId];
+                    onPatchNode({ actor_permissions: next });
+                  }}
+                  className="rounded px-1 text-[10px] text-rose-600 hover:bg-rose-50"
+                  aria-label="Remove permission"
+                >
+                  ✕
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {candidates.length > 0 && (
+          <select
+            value=""
+            onChange={(e) => {
+              const id = e.target.value;
+              if (!id) return;
+              onPatchNode({
+                actor_permissions: { ...permissions, [id]: "" },
+              });
+            }}
+            className="mt-1 w-full rounded border border-slate-300 px-1.5 py-0.5 text-[11px] focus:border-stone-500 focus:outline-none"
+          >
+            <option value="">+ add actor permission…</option>
+            {candidates.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.label || a.id}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface ContentFieldsProps {
+  node: SketchNode;
+  availableActors: SketchNode[];
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function ContentFields({
+  node,
+  availableActors,
+  onPatchNode,
+}: ContentFieldsProps) {
+  return (
+    <div className="text-xs">
+      <label className="mb-2 block">
+        <span className="font-semibold text-slate-700">Format</span>
+        <input
+          type="text"
+          value={node.format ?? ""}
+          onChange={(e) => onPatchNode({ format: e.target.value })}
+          placeholder="JSON / MD / image / token …"
+          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 focus:border-violet-500 focus:outline-none"
+        />
+      </label>
+      <ContentActorPicker
+        label="Producer"
+        hint="actor that creates this artifact"
+        actorId={node.producer_actor_id}
+        availableActors={availableActors}
+        onChange={(id) => onPatchNode({ producer_actor_id: id })}
+      />
+      <ContentActorPicker
+        label="Consumer"
+        hint="actor that uses this artifact"
+        actorId={node.consumer_actor_id}
+        availableActors={availableActors}
+        onChange={(id) => onPatchNode({ consumer_actor_id: id })}
+      />
+    </div>
+  );
+}
+
+interface ContentActorPickerProps {
+  label: string;
+  hint: string;
+  actorId: string | null;
+  availableActors: SketchNode[];
+  onChange: (id: string | null) => void;
+}
+
+function ContentActorPicker({
+  label,
+  hint,
+  actorId,
+  availableActors,
+  onChange,
+}: ContentActorPickerProps) {
+  return (
+    <label className="mb-2 block">
+      <span className="font-semibold text-slate-700">{label}</span>
+      <span className="ml-1 text-[10px] text-slate-500">— {hint}</span>
+      <select
+        value={actorId ?? ""}
+        onChange={(e) => onChange(e.target.value || null)}
+        className="mt-1 w-full rounded border border-slate-300 px-2 py-1 focus:border-violet-500 focus:outline-none"
+      >
+        <option value="">(unset)</option>
+        {availableActors.map((a) => (
+          <option key={a.id} value={a.id}>
+            {a.label || a.id}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

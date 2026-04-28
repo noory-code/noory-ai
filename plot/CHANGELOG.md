@@ -4,6 +4,49 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.5] — 2026-04-28
+
+Step 6 of the v0.10 kind-redefinition program — and the **final** step.
+The two pre-existing composition kinds (`rule`, `content`) gain typed
+fields so the Inspector can drive them as deterministically as the
+kinds added earlier in v0.10.
+
+### Added — **`rule` typed fields**
+- `SketchNode.policy: str = ""` — the rule statement.
+- `SketchNode.enforcement: str = ""` — how it's enforced.
+- `SketchNode.actor_permissions: dict[str, str] = {}` — actor-id →
+  permission-string map. Free-form value; suggested vocabulary is
+  C/R/U/D shorthand (`"RUD"`, `"CRUD"`, etc.).
+
+### Added — **`content` typed fields**
+- `SketchNode.format: str = ""` — artifact shape (JSON, MD, image, …).
+- `SketchNode.producer_actor_id: str | None = None` — actor master id
+  that creates the content.
+- `SketchNode.consumer_actor_id: str | None = None` — actor master id
+  that consumes it.
+
+### Added — **Expandable Inspector rows**
+- The `CompositionList` rows for Rules and Contents are now expandable
+  via a chevron toggle. Collapsed: just the label input. Expanded:
+  the kind-specific typed form.
+- Rule form includes a **permission editor**: a dropdown of actor
+  masters not yet assigned + a per-row permission text input + a
+  remove button.
+- Content form includes producer/consumer **actor pickers** populated
+  from the same `availableActors` list the Inspector already uses.
+
+### Notes
+- `actor_permissions` is keyed by actor master id (matching the
+  `actor_ref` semantic from Step 3); the editor surfaces the actor's
+  label for readability.
+- The permission string is intentionally free-form for v0.10. A future
+  release may switch to a richer schema (e.g. `{create, read, update,
+  delete}` booleans) once the convention settles.
+- This release closes out the v0.10 kind-redefinition program: every
+  kind now has a clear semantic purpose, typed fields where the
+  domain has separable facets, and Inspector rendering. The next
+  release line can focus on edge utilisation or the time-axis layer.
+
 ## [0.10.4] — 2026-04-28
 
 Step 5 of the v0.10 kind-redefinition program. Two new composition

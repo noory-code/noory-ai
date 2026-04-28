@@ -652,6 +652,74 @@ def test_services_canvas_rejects_metric() -> None:
         )
 
 
+# ---------------------------------------------------------------------------
+# v0.10 Step 6 — rule + content typed-field polish
+# ---------------------------------------------------------------------------
+
+
+def test_rule_typed_fields_round_trip() -> None:
+    n = SketchNode(
+        id="r-pwd",
+        kind="rule",
+        label="Password policy",
+        policy="비밀번호 8자 이상 + 숫자 + 특수문자",
+        enforcement="가입 폼 + 비밀번호 변경 화면에서 검증",
+        actor_permissions={"user": "RUD", "admin": "CRUD"},
+    )
+    assert n.policy.startswith("비밀번호 8자")
+    assert n.enforcement.startswith("가입 폼")
+    assert n.actor_permissions == {"user": "RUD", "admin": "CRUD"}
+
+
+def test_content_typed_fields_round_trip() -> None:
+    n = SketchNode(
+        id="c-session",
+        kind="content",
+        label="Session token",
+        format="JWT (HS256)",
+        producer_actor_id="auth-service",
+        consumer_actor_id="user",
+    )
+    assert n.format == "JWT (HS256)"
+    assert n.producer_actor_id == "auth-service"
+    assert n.consumer_actor_id == "user"
+
+
+def test_actor_permissions_default_empty() -> None:
+    """A node without actor_permissions still validates and serialises."""
+    n = SketchNode(id="r1", kind="rule", label="R")
+    assert n.actor_permissions == {}
+    parsed = SketchNode.model_validate(n.model_dump())
+    assert parsed.actor_permissions == {}
+
+
+def test_actor_permissions_round_trip_through_canvas() -> None:
+    """Permission dict survives a full CanvasDoc serialise/parse cycle."""
+    canvas = CanvasDoc(
+        canvas_id="auth",
+        canvas_kind="service_detail",
+        service_ref="auth",
+        nodes=[
+            SketchNode(id="auth", kind="service", label="Auth"),
+            SketchNode(
+                id="r1",
+                kind="rule",
+                parent_id="auth",
+                label="Post permissions",
+                policy="자기 글만 수정/삭제",
+                actor_permissions={
+                    "user": "RUD-self",
+                    "admin": "CRUD-all",
+                },
+            ),
+        ],
+    )
+    parsed = CanvasDoc.model_validate(canvas.model_dump())
+    rule = next(n for n in parsed.nodes if n.id == "r1")
+    assert rule.actor_permissions["user"] == "RUD-self"
+    assert rule.actor_permissions["admin"] == "CRUD-all"
+
+
 def test_foundation_canvas_rejects_foundation_refs() -> None:
     """Masters live on the Foundation canvas; refs would be a self-loop."""
     with pytest.raises(ValueError, match="not allowed"):

@@ -116,7 +116,7 @@ Generalise the existing `actor_ref` symbol pattern to Foundation.
 
 **Tests**: round-trip + visual stencil load.
 
-## Step 6 — rule / content typed-field polish  `[ ]`
+## Step 6 — rule / content typed-field polish  `[x]`
 
 The composition kinds that already exist gain richer typed fields.
 

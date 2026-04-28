@@ -115,6 +115,16 @@ export interface SketchNode {
   /** v0.10 Step 5: step kind — ordinal in the procedural sequence,
    *  ``null`` = unordered (e.g. parallel branches). */
   order: number | null;
+  /** v0.10 Step 6: rule kind — policy text, enforcement mechanism,
+   *  and an actor-id → permission-string map (e.g. {"user": "RUD"}). */
+  policy: string;
+  enforcement: string;
+  actor_permissions: Record<string, string>;
+  /** v0.10 Step 6: content kind — artifact format + producer/consumer
+   *  actor master ids (null = unset). */
+  format: string;
+  producer_actor_id: string | null;
+  consumer_actor_id: string | null;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */

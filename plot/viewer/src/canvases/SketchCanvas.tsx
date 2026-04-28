@@ -537,6 +537,12 @@ function SketchCanvasInner({
         target: "",
         measurement: "",
         order: null,
+        policy: "",
+        enforcement: "",
+        actor_permissions: {},
+        format: "",
+        producer_actor_id: null,
+        consumer_actor_id: null,
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -590,6 +596,12 @@ function SketchCanvasInner({
         target: "",
         measurement: "",
         order: null,
+        policy: "",
+        enforcement: "",
+        actor_permissions: {},
+        format: "",
+        producer_actor_id: null,
+        consumer_actor_id: null,
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -1261,6 +1273,12 @@ function SketchCanvasInner({
             target: "",
             measurement: "",
             order: null,
+            policy: "",
+            enforcement: "",
+            actor_permissions: {},
+            format: "",
+            producer_actor_id: null,
+            consumer_actor_id: null,
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}

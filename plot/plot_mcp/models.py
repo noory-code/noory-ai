@@ -202,6 +202,25 @@ class SketchNode(BaseModel):
     #   ``outcome`` is shared with service (declared above).
     order: int | None = None
 
+    # rule (service_detail, kind="rule"):
+    #   ``policy``      — the rule statement (what's enforced).
+    #   ``enforcement`` — how it's enforced (mechanism, system).
+    #   ``actor_permissions`` — actor-id → permission-string, e.g.
+    #                           ``{"user": "RUD", "admin": "CRUD"}``. The
+    #                           permission string is free-form for now;
+    #                           "C/R/U/D" is the suggested vocabulary.
+    policy: str = ""
+    enforcement: str = ""
+    actor_permissions: dict[str, str] = Field(default_factory=dict)
+
+    # content (service_detail, kind="content"):
+    #   ``format``             — shape of the artifact (JSON, MD, image…).
+    #   ``producer_actor_id``  — actor master id that creates the content.
+    #   ``consumer_actor_id``  — actor master id that consumes the content.
+    format: str = ""
+    producer_actor_id: str | None = None
+    consumer_actor_id: str | None = None
+
     # v0.9.1 long-form pointer. Project-relative path (e.g.
     # ``"foundation/mission-1/details.md"``); Plot resolves it under
     # ``.plot/{project_id}/``. ``None`` means the node has no MD file yet
