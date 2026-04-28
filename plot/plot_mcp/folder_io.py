@@ -292,6 +292,46 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:
     )
 
 
+def _seed_actors_canvas() -> CanvasDoc:
+    """v0.11 — actors canvas seeds with two placeholder classes ("Operator"
+    and "User") to satisfy the IDENTITY.md "≥ 2 actor classes" minimum.
+
+    Users rename the labels freely; the ``side`` field carries the
+    semantic distinction (operator vs user) which validators and AI
+    tooling can rely on regardless of the visible label.
+    """
+    return CanvasDoc(
+        canvas_id="actors",
+        canvas_kind="actors",
+        nodes=[
+            SketchNode(
+                id="operator",
+                kind="actor",
+                label="Operator",
+                side="operator",
+                x=-160,
+                y=-50,
+                width=140,
+                height=80,
+                color="#bae6fd",
+                shape="rounded",
+            ),
+            SketchNode(
+                id="user",
+                kind="actor",
+                label="User",
+                side="user",
+                x=40,
+                y=-50,
+                width=140,
+                height=80,
+                color="#fecaca",
+                shape="rounded",
+            ),
+        ],
+    )
+
+
 def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     """Create a fresh project folder, seeded with Core / Actors / Services.
 
@@ -327,7 +367,7 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     )
     _write_json(
         _canvas_file(plot_root, project_id, "actors"),
-        CanvasDoc(canvas_id="actors", canvas_kind="actors").model_dump(by_alias=True),
+        _seed_actors_canvas().model_dump(by_alias=True),
     )
     _write_json(
         _canvas_file(plot_root, project_id, "services"),
@@ -389,7 +429,35 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
             canvas_id=service_id,
             canvas_kind="service_detail",
             service_ref=service_id,
-            nodes=[src.model_copy(update={"parent_id": None, "is_root": False})],
+            # v0.11 — every service_detail needs ≥ 2 actor_refs (operator +
+            # user) per IDENTITY.md. Auto-seed two stub refs that point at
+            # the project's seeded actors. Users can re-pick via the
+            # picker, or add more refs as the design develops.
+            nodes=[
+                src.model_copy(update={"parent_id": None, "is_root": False}),
+                SketchNode(
+                    id=f"{service_id}-operator-ref",
+                    kind="actor_ref",
+                    label="→ Operator",
+                    ref_actor_id="operator",
+                    side="operator",
+                    color="#bae6fd",
+                    shape="ellipse",
+                    width=140,
+                    height=70,
+                ),
+                SketchNode(
+                    id=f"{service_id}-user-ref",
+                    kind="actor_ref",
+                    label="→ User",
+                    ref_actor_id="user",
+                    side="user",
+                    color="#fecaca",
+                    shape="ellipse",
+                    width=140,
+                    height=70,
+                ),
+            ],
         )
         _write_json(
             _canvas_file(plot_root, project_id, "service_detail", service_id=service_id),

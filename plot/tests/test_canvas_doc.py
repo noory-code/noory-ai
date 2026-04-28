@@ -236,9 +236,7 @@ def test_node_details_path_absolute_rejected() -> None:
 
 def test_node_details_path_traversal_rejected() -> None:
     with pytest.raises(ValueError, match=r"\.\."):
-        SketchNode(
-            id="n1", kind="mission", label="M", details_path="workspace/../etc"
-        )
+        SketchNode(id="n1", kind="mission", label="M", details_path="workspace/../etc")
 
 
 def test_node_details_path_blank_rejected() -> None:
@@ -248,7 +246,9 @@ def test_node_details_path_blank_rejected() -> None:
 
 def test_node_details_path_valid() -> None:
     n = SketchNode(
-        id="n1", kind="mission", label="M",
+        id="n1",
+        kind="mission",
+        label="M",
         details_path="workspace/core/mission-mission",
     )
     assert n.details_path == "workspace/core/mission-mission"
@@ -271,12 +271,26 @@ def test_core_canvas_actor_kind_rejected() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_actors_canvas_single_actor_ok() -> None:
+def test_actors_canvas_two_actors_ok() -> None:
+    """v0.11 — actors canvas requires ≥ 2 actor classes."""
     CanvasDoc(
         canvas_id="actors",
         canvas_kind="actors",
-        nodes=[SketchNode(id="user", kind="actor", label="사용자")],
+        nodes=[
+            SketchNode(id="operator", kind="actor", label="운영자", side="operator"),
+            SketchNode(id="user", kind="actor", label="사용자", side="user"),
+        ],
     )
+
+
+def test_actors_canvas_single_actor_rejected() -> None:
+    """v0.11 — IDENTITY.md baseline: ≥ 2 actor classes required."""
+    with pytest.raises(ValueError, match="2 actor"):
+        CanvasDoc(
+            canvas_id="actors",
+            canvas_kind="actors",
+            nodes=[SketchNode(id="user", kind="actor", label="사용자")],
+        )
 
 
 def test_actors_canvas_sub_actor_via_parent_id_ok() -> None:
@@ -284,8 +298,8 @@ def test_actors_canvas_sub_actor_via_parent_id_ok() -> None:
         canvas_id="actors",
         canvas_kind="actors",
         nodes=[
-            SketchNode(id="team", kind="actor", label="Team"),
-            SketchNode(id="member", kind="actor", parent_id="team", label="Member"),
+            SketchNode(id="team", kind="actor", label="Team", side="user"),
+            SketchNode(id="member", kind="actor", parent_id="team", label="Member", side="user"),
         ],
     )
 
@@ -356,7 +370,25 @@ def test_overview_actor_rejected() -> None:
 
 
 def _detail_seed(canvas_id: str = "order") -> list[SketchNode]:
-    return [SketchNode(id=canvas_id, kind="service", label="주문")]
+    """Minimum valid service_detail content (v0.11): root service + two
+    actor_refs (operator + user) to satisfy IDENTITY.md baseline."""
+    return [
+        SketchNode(id=canvas_id, kind="service", label="주문"),
+        SketchNode(
+            id=f"{canvas_id}-op-ref",
+            kind="actor_ref",
+            label="→ operator",
+            ref_actor_id="operator",
+            side="operator",
+        ),
+        SketchNode(
+            id=f"{canvas_id}-user-ref",
+            kind="actor_ref",
+            label="→ user",
+            ref_actor_id="user",
+            side="user",
+        ),
+    ]
 
 
 def test_detail_canvas_minimum_ok() -> None:
@@ -366,6 +398,17 @@ def test_detail_canvas_minimum_ok() -> None:
         service_ref="order",
         nodes=_detail_seed(),
     )
+
+
+def test_detail_canvas_under_two_actor_refs_rejected() -> None:
+    """v0.11 — service_detail requires ≥ 2 actor_refs (IDENTITY.md baseline)."""
+    with pytest.raises(ValueError, match="actor_ref"):
+        CanvasDoc(
+            canvas_id="order",
+            canvas_kind="service_detail",
+            service_ref="order",
+            nodes=[SketchNode(id="order", kind="service", label="주문")],
+        )
 
 
 def test_detail_canvas_service_ref_must_match_canvas_id() -> None:
@@ -481,7 +524,10 @@ def test_service_detail_accepts_foundation_refs() -> None:
         nodes=[
             SketchNode(id="auth", kind="service", label="Auth"),
             SketchNode(
-                id="ar1", kind="actor_ref", label="→ user", ref_actor_id="user"
+                id="ar1", kind="actor_ref", label="→ user", ref_actor_id="user", side="user"
+            ),
+            SketchNode(
+                id="ar2", kind="actor_ref", label="→ op", ref_actor_id="operator", side="operator"
             ),
             SketchNode(id="mr1", kind="mission_ref", label="→ M", ref_mission_id="m1"),
             SketchNode(id="vr1", kind="value_ref", label="→ Trust", ref_value_id="cv1"),
@@ -497,7 +543,8 @@ def test_actors_canvas_rejects_foundation_refs() -> None:
             canvas_id="actors",
             canvas_kind="actors",
             nodes=[
-                SketchNode(id="user", kind="actor", label="U"),
+                SketchNode(id="user", kind="actor", label="U", side="user"),
+                SketchNode(id="op", kind="actor", label="O", side="operator"),
                 SketchNode(id="mr", kind="mission_ref", label="→ M", ref_mission_id="m1"),
             ],
         )
@@ -542,6 +589,12 @@ def test_sub_service_typed_fields_round_trip() -> None:
                 trigger="사용자가 로그인 버튼을 누른다",
                 how="ID/PW 검증 후 세션 발급",
                 outcome="홈 화면으로 리다이렉트",
+            ),
+            SketchNode(
+                id="ar-op", kind="actor_ref", label="→ op", ref_actor_id="operator", side="operator"
+            ),
+            SketchNode(
+                id="ar-user", kind="actor_ref", label="→ user", ref_actor_id="user", side="user"
             ),
         ],
     )
@@ -606,6 +659,12 @@ def test_service_detail_accepts_metric_and_step() -> None:
                 parent_id="auth",
                 label="Verify credentials",
                 order=1,
+            ),
+            SketchNode(
+                id="ar-op", kind="actor_ref", label="→ op", ref_actor_id="operator", side="operator"
+            ),
+            SketchNode(
+                id="ar-user", kind="actor_ref", label="→ user", ref_actor_id="user", side="user"
             ),
         ],
     )
@@ -711,6 +770,12 @@ def test_actor_permissions_round_trip_through_canvas() -> None:
                     "user": "RUD-self",
                     "admin": "CRUD-all",
                 },
+            ),
+            SketchNode(
+                id="ar-op", kind="actor_ref", label="→ op", ref_actor_id="operator", side="operator"
+            ),
+            SketchNode(
+                id="ar-user", kind="actor_ref", label="→ user", ref_actor_id="user", side="user"
             ),
         ],
     )

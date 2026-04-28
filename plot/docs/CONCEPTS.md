@@ -113,12 +113,50 @@ node holds **one facet**.
   side and a user side. Value exchange requires both sides; a project
   with fewer is structurally incomplete.
 - **Lives on**: the Actors canvas as a master record.
-- **Hierarchy**: `parent_id` chains let you express "User → Admin User
-  → Super Admin" or "Vendor → Premium Vendor".
+- **Hierarchy**: `parent_id` chains express *is-a* refinement —
+  the child is a more specific subclass of the parent. The dimension
+  of refinement (subscription tier, fandom, role within a side, etc.)
+  is left to the user; Plot doesn't pin it.
+
+#### Actor classification, two orthogonal mechanisms (v0.11)
+
+The two mechanisms are independent and combine freely:
+
+1. **`side` typed field — flat category**
+   Every actor declares which side of the value exchange they occupy.
+   Values: `operator` (service operator/developer) or `user` (service
+   participant/consumer). Two actors with different `side` values are
+   structurally different parties; this is what the project-level
+   "≥ 2 actor classes" floor checks.
+2. **`parent_id` tree — is-a refinement**
+   Within a side, sub-actors refine the parent class. *Example*:
+   `Fan → Bartender's Fan` is one fandom inside the user side;
+   `Operator → Moderator` is one role inside the operator side.
+   The dimension of refinement is domain-specific.
+
+This is the answer to "are admin/super-admin and fan/bartender's-fan
+the same kind of relationship?" — **no**. Admin vs user is a `side`
+distinction; super-admin within admin is a `parent_id` distinction.
+Mixing them on one mechanism collapses meaning.
+
+#### Actor typed fields (v0.11)
+
+Mission-style typed fields, intentionally minimal:
+
+- `motivation` — why this actor participates. Pulls them in.
+- `pain` — frictions, frustrations, blockers. Pushes against them.
+
+Standard persona-design pair (Goals/Pains, Motivations/Pains in
+modern variants). Skip Do/Don't on actors — those work for kinds that
+*model behaviour to imitate* (Identity, Core Value), not for the
+acting subject itself. Permissions live on `rule.actor_permissions`,
+not on the actor.
 
 The Actors canvas is the **single source of truth** for actor
 identities. Anywhere else in Plot that needs to refer to one, it does
-so via `actor_ref` (see _Reference kinds_ below).
+so via `actor_ref` (see _Reference kinds_ below). v0.11 also
+denormalises `side` onto each `actor_ref` so a service detail canvas
+can validate its operator/user mix without cross-canvas lookups.
 
 ---
 

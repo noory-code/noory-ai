@@ -35,7 +35,11 @@ Shape = Literal[
 #   identity         — an aspect of the project's identity (label = "Voice" /
 #                      "Energy" / "Speech style" / "Visual tone" / …); 1..N peers.
 #                      v0.5 absorbed the former ``identity_facet`` kind.
-#   actor            — participant in the value economy (Actor canvas only).
+#   actor            — a class of people in the value economy. People only —
+#                      external APIs / systems / bots / infrastructure are
+#                      *not* actors (out of scope until Mode 2 / time-axis).
+#                      v0.11 redefines this from "person/system/organisation"
+#                      to "class of people" — see plot/docs/IDENTITY.md.
 #   actor_ref        — reference to an actor (Service canvases); carries
 #                      ``ref_actor_id`` pointing at an actor in the Actor canvas.
 #   service          — value-creating hub (Overview root, Detail root, sub-service).
@@ -201,6 +205,21 @@ class SketchNode(BaseModel):
     #               leaves the step unordered (e.g. parallel branches).
     #   ``outcome`` is shared with service (declared above).
     order: int | None = None
+
+    # actor (Actors canvas, kind="actor"):
+    #   v0.11 — actors carry ``motivation`` (internal driver — why this actor
+    #   participates in the project's services) and ``pain`` (struggles or
+    #   frustrations the actor faces). Standard persona-design pair, with
+    #   the AI-first framing from IDENTITY.md.
+    motivation: str = ""
+    pain: str = ""
+    # ``side`` partitions actors by which side of the value exchange they
+    # occupy. v0.11 settles on two values; ``external`` etc. may be added
+    # later if a domain demands it.
+    #   ``operator`` — service operators / developers. Always explicit on
+    #                  every service per IDENTITY.md (moderation duty).
+    #   ``user``     — service users / consumers / participants.
+    side: Literal["operator", "user"] | None = None
 
     # rule (service_detail, kind="rule"):
     #   ``policy``      — the rule statement (what's enforced).
@@ -458,6 +477,39 @@ class CanvasDoc(BaseModel):
                     f"node {n.id!r} of kind {n.kind!r} must be a child of a "
                     f"service, but parent has kind {parent.kind!r}"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _actors_canvas_minimum(self) -> CanvasDoc:
+        # v0.11 — IDENTITY.md "Service minimum baseline": every project needs
+        # ≥ 2 actor classes (typically operator + user). Without two sides,
+        # value exchange can't happen.
+        if self.canvas_kind != "actors":
+            return self
+        actors = [n for n in self.nodes if n.kind == "actor"]
+        if len(actors) < 2:
+            raise ValueError(
+                f"actors canvas requires at least 2 actor classes "
+                f"(operator + user), got {len(actors)}. See IDENTITY.md."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _service_detail_actor_refs_minimum(self) -> CanvasDoc:
+        # v0.11 — every service must have ≥ 2 participating actor_refs.
+        # IDENTITY.md "Service minimum baseline": a playground with one
+        # person isn't a playground. Side-mix (operator + user explicitly)
+        # is encouraged via Inspector UI for v0.11.0 — hard side-mix
+        # validation deferred to a later release once migration is complete.
+        if self.canvas_kind != "service_detail":
+            return self
+        actor_refs = [n for n in self.nodes if n.kind == "actor_ref"]
+        if len(actor_refs) < 2:
+            raise ValueError(
+                f"service_detail {self.canvas_id!r} requires at least 2 "
+                f"actor_ref nodes (operator + user), got {len(actor_refs)}. "
+                "See IDENTITY.md."
+            )
         return self
 
 

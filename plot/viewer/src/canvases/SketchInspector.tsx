@@ -287,6 +287,11 @@ export function SketchInspector({
           </div>
         )}
 
+        {/* v0.11: Actor typed form — side / motivation / pain. */}
+        {node.kind === "actor" && (
+          <ActorFields node={node} onPatchNode={onPatchNode} />
+        )}
+
         {/* v0.10 Step 5: Metric typed form — target + measurement. */}
         {node.kind === "metric" && (
           <MetricFields node={node} onPatchNode={onPatchNode} />
@@ -858,6 +863,75 @@ function ContentActorPicker({
         ))}
       </select>
     </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// v0.11 — Actor typed fields (side / motivation / pain)
+// ---------------------------------------------------------------------------
+//
+// See plot/docs/IDENTITY.md "Actor & Service — the Core Philosophy".
+// `side` partitions an actor by which side of the value exchange they
+// occupy (operator vs user). `motivation` + `pain` use the standard
+// persona-design pair: motivation pulls the actor in, pain pushes them.
+
+interface ActorFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
+  return (
+    <div className="mb-4 rounded border border-rose-200 bg-rose-50/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+        Actor
+      </div>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">Side</span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — which side of the value exchange
+        </span>
+        <select
+          value={node.side ?? ""}
+          onChange={(e) =>
+            onPatchNode({
+              side: e.target.value === "" ? null : (e.target.value as "operator" | "user"),
+            })
+          }
+          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
+        >
+          <option value="">(unset)</option>
+          <option value="operator">operator (운영자 / 개발자)</option>
+          <option value="user">user (사용자)</option>
+        </select>
+      </label>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">Motivation</span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — why this actor participates (동기)
+        </span>
+        <textarea
+          rows={2}
+          value={node.motivation ?? ""}
+          onChange={(e) => onPatchNode({ motivation: e.target.value })}
+          placeholder="이 actor 가 무엇을 얻으려 하는가"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
+        />
+      </label>
+      <label className="block">
+        <span className="text-xs font-semibold text-slate-700">Pain</span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — friction or frustration (고충)
+        </span>
+        <textarea
+          rows={2}
+          value={node.pain ?? ""}
+          onChange={(e) => onPatchNode({ pain: e.target.value })}
+          placeholder="겪는 어려움 / 좌절"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
+        />
+      </label>
+    </div>
   );
 }
 

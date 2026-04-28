@@ -222,9 +222,9 @@ def test_canvas_put_round_trips_actor(
     canvas = resp.json()
     canvas["nodes"].append(
         {
-            "id": "user",
+            "id": "guest",
             "kind": "actor",
-            "label": "User",
+            "label": "Guest",
             "body": "",
             "x": 0,
             "y": 0,
@@ -252,7 +252,7 @@ def test_canvas_put_round_trips_actor(
         "/api/projects/alpha/canvases/actors",
         params={"project_path": project_path},
     ).json()
-    assert any(n["id"] == "user" for n in reloaded["nodes"])
+    assert any(n["id"] == "guest" for n in reloaded["nodes"])
 
 
 def test_canvas_put_overview_auto_creates_detail(

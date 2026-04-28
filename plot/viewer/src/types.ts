@@ -125,6 +125,15 @@ export interface SketchNode {
   format: string;
   producer_actor_id: string | null;
   consumer_actor_id: string | null;
+  /** v0.11: actor typed fields — internal motivation + faced pain. The
+   *  Inspector surfaces both when ``kind === "actor"``. See
+   *  plot/docs/IDENTITY.md "Actor & Service — the Core Philosophy". */
+  motivation: string;
+  pain: string;
+  /** v0.11: classifies an actor (or actor_ref) by which side of the
+   *  value exchange they occupy. Set on every actor; on actor_ref it
+   *  mirrors the master's side (denormalised at picker time). */
+  side: "operator" | "user" | null;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */

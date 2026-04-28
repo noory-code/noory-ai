@@ -4,6 +4,60 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.0] — 2026-04-28
+
+The Actor model promised by v0.10.6 / v0.10.7 lands as code. Phase A
+of the v0.11 redefinition (A1–A5) is fully implemented; B/C/D follow
+in later releases.
+
+### Added — **Actor typed fields**
+- `SketchNode.motivation: str = ""` — why this actor participates.
+- `SketchNode.pain: str = ""` — frictions / frustrations they face.
+- `SketchNode.side: Literal["operator", "user"] | None = None` —
+  flat category; partitions actors by which side of the value
+  exchange they occupy. Set on every actor; mirrored onto every
+  `actor_ref` so service-detail canvases can validate operator/user
+  mixes without cross-canvas lookups.
+- Inspector renders an `Actor` form (Side selector + Motivation +
+  Pain textareas) when `kind === "actor"`.
+
+### Changed — **Hard validators**
+- `actors` canvas now requires **≥ 2 actor classes**.
+  IDENTITY.md baseline: a project without two sides can't host value
+  exchange. New projects seed two placeholders (Operator + User) so
+  this floor is satisfied out of the box.
+- `service_detail` canvas now requires **≥ 2 `actor_ref` nodes**.
+  Auto-creation paths (`sync_details_with_overview`, the v0.10
+  migrator) seed two stub refs (operator + user) for every new or
+  migrated detail canvas.
+
+### Added — **Project + migration seeding**
+- `_seed_actors_canvas()` (folder_io.py) seeds two actor classes
+  ("Operator" + "User", with `side` set) on project creation.
+- Migration path (`_backfill_actor_sides` + `_ensure_minimum_actors`
+  + `_detail_actor_ref_seeds`) heals legacy v0.10.x projects on open:
+  defaults missing `side` to `"user"`, pads under-populated actors
+  canvases, and seeds operator/user actor_refs for any service_detail
+  that doesn't already have them. Idempotent.
+
+### Changed — **`docs/CONCEPTS.md` actor section**
+- Adds the "two orthogonal mechanisms" subsection (`side` flat
+  category + `parent_id` is-a tree) — the central insight from Phase
+  A3 of the discussion.
+- Documents the v0.11 typed fields (`motivation`, `pain`) and notes
+  the deliberate exclusion of Do/Don't and permissions from the
+  actor.
+
+### Notes
+- Phase A discussion log lives at
+  `~/.claude/plans/ancient-pondering-petal.md`.
+- Phase B (actor_ref Symbol justification + orphan UX), Phase C
+  (Service field polish), and Phase D (time-axis compatibility) are
+  the remaining v0.11.x work.
+- This release re-asserts every IDENTITY.md floor as Pydantic
+  validation, not just doc text. Existing projects migrate cleanly;
+  no data loss is expected.
+
 ## [0.10.7] — 2026-04-28
 
 Docs-only patch capturing the load-bearing Actor / Service decisions

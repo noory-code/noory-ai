@@ -145,7 +145,14 @@ def test_write_canvas_rejects_wrong_project(plot_root: Path) -> None:
         write_canvas(
             plot_root,
             "ghost",
-            CanvasDoc(canvas_id="actors", canvas_kind="actors"),
+            CanvasDoc(
+                canvas_id="actors",
+                canvas_kind="actors",
+                nodes=[
+                    SketchNode(id="op", kind="actor", label="O", side="operator"),
+                    SketchNode(id="user", kind="actor", label="U", side="user"),
+                ],
+            ),
         )
 
 
@@ -166,14 +173,35 @@ def test_list_service_details_empty_by_default(plot_root: Path) -> None:
     assert list_service_details(plot_root, "alpha") == []
 
 
+def _detail_with_actor_refs(service_id: str = "order") -> CanvasDoc:
+    """v0.11 — every service_detail needs ≥ 2 actor_refs."""
+    return CanvasDoc(
+        canvas_id=service_id,
+        canvas_kind="service_detail",
+        service_ref=service_id,
+        nodes=[
+            SketchNode(id=service_id, kind="service", label="주문"),
+            SketchNode(
+                id=f"{service_id}-op",
+                kind="actor_ref",
+                label="→ op",
+                ref_actor_id="operator",
+                side="operator",
+            ),
+            SketchNode(
+                id=f"{service_id}-user",
+                kind="actor_ref",
+                label="→ user",
+                ref_actor_id="user",
+                side="user",
+            ),
+        ],
+    )
+
+
 def test_write_and_list_service_detail(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
-    detail = CanvasDoc(
-        canvas_id="order",
-        canvas_kind="service_detail",
-        service_ref="order",
-        nodes=[SketchNode(id="order", kind="service", label="주문")],
-    )
+    detail = _detail_with_actor_refs("order")
     write_canvas(plot_root, "alpha", detail)
     assert list_service_details(plot_root, "alpha") == ["order"]
     loaded = read_canvas(plot_root, "alpha", "service_detail", service_id="order")
@@ -183,12 +211,7 @@ def test_write_and_list_service_detail(plot_root: Path) -> None:
 
 def test_detail_canvas_path_uses_service_id(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
-    detail = CanvasDoc(
-        canvas_id="order",
-        canvas_kind="service_detail",
-        service_ref="order",
-        nodes=[SketchNode(id="order", kind="service", label="O")],
-    )
+    detail = _detail_with_actor_refs("order")
     write_canvas(plot_root, "alpha", detail)
     assert (plot_root / "alpha" / "services" / "order" / "detail.json").is_file()
 
@@ -244,7 +267,10 @@ def test_write_canvas_does_not_commit(plot_root: Path) -> None:
         CanvasDoc(
             canvas_id="actors",
             canvas_kind="actors",
-            nodes=[SketchNode(id="u", kind="actor", label="U")],
+            nodes=[
+                SketchNode(id="op", kind="actor", label="O", side="operator"),
+                SketchNode(id="u", kind="actor", label="U", side="user"),
+            ],
         ),
     )
     result = subprocess.run(
