@@ -4,7 +4,7 @@ import { MDPreview } from "./MDPreview";
 
 export interface MDFileEditorProps {
   projectPath: string;
-  /** Relative path under ``projectPath`` — e.g. ``workspace/core/mission-mission/index.md``. */
+  /** Relative path under ``projectPath`` — e.g. ``workspace/foundation/mission-mission/index.md``. */
   path: string;
   /** Hints so the server can refresh the on-canvas preview cache. */
   projectId: string;

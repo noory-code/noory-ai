@@ -118,16 +118,22 @@ class SketchNode(BaseModel):
     # Required when kind == "actor_ref"; ignored otherwise.
     ref_actor_id: str | None = None
 
+    # v0.10 typed fields per kind. All optional ``""`` defaults so the
+    # same model carries any subset; the Inspector form chooses which to
+    # surface for each kind. The fields are clustered by their owning
+    # kind in the comments below; v0.9.1's "all kinds get all fields"
+    # generic pool is gone, but the schema is still permissive — any
+    # unused field stays empty without runtime cost.
+    #
+    # mission (Foundation, kind="mission"):
+    what_we_do: str = ""
+    why: str = ""
+    direction: str = ""
+
     # v0.9.1 long-form pointer. Project-relative path (e.g.
-    # ``"core/mission-1/details.md"``); Plot resolves it under
+    # ``"foundation/mission-1/details.md"``); Plot resolves it under
     # ``.plot/{project_id}/``. ``None`` means the node has no MD file yet
     # — the Inspector offers a "Create details" button to mint one.
-    #
-    # v0.9 briefly carried six typed fields (tagline / audience / method /
-    # goal / summary / criteria) for kind-specific Inspector forms. v0.9.1
-    # drops them: short text lives in the node's ``label``, long text
-    # lives in ``details.md``, and any structure between (Tagline /
-    # Audience / etc.) the user expresses freely inside the MD file.
     details_path: str | None = None
 
     @model_validator(mode="after")
@@ -191,7 +197,8 @@ class SketchEdge(BaseModel):
 #
 # A project is split into four canvas kinds:
 #
-#   core              — Mission / CoreValue / Identity (singleton)
+#   foundation        — project / mission / core_value / identity (singleton).
+#                       v0.10 renamed from ``core``.
 #   actors            — Actor definitions (singleton, SSOT for actor identities)
 #   services          — top-level services (singleton). v0.8 renamed from
 #                       ``services_overview``; paired with ``service_detail``
@@ -200,12 +207,11 @@ class SketchEdge(BaseModel):
 #
 # Each ``CanvasDoc`` enforces its own allowed ``NodeKind`` set and structural
 # rules; shared validators (edge refs, parent cycles, unique ids) still apply.
-# The old monolithic ``SketchDoc`` stays alongside during migration.
 
-CanvasKind = Literal["core", "actors", "services", "service_detail"]
+CanvasKind = Literal["foundation", "actors", "services", "service_detail"]
 
 _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
-    "core": {"project", "mission", "core_value", "identity"},
+    "foundation": {"project", "mission", "core_value", "identity"},
     "actors": {"actor"},
     "services": {"service"},
     "service_detail": {"service", "rule", "content", "actor_ref"},
@@ -278,15 +284,15 @@ class CanvasDoc(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _core_canvas_rules(self) -> CanvasDoc:
-        if self.canvas_kind != "core":
+    def _foundation_canvas_rules(self) -> CanvasDoc:
+        if self.canvas_kind != "foundation":
             return self
         projects = [n for n in self.nodes if n.kind == "project"]
         missions = [n for n in self.nodes if n.kind == "mission"]
         identities = [n for n in self.nodes if n.kind == "identity"]
         if len(projects) != 1:
             raise ValueError(
-                f"core canvas requires exactly one project node; found {len(projects)}"
+                f"foundation canvas requires exactly one project node; found {len(projects)}"
             )
         if projects[0].parent_id is not None:
             raise ValueError(
@@ -294,11 +300,11 @@ class CanvasDoc(BaseModel):
             )
         if len(missions) < 1:
             raise ValueError(
-                f"core canvas requires at least one mission node; found {len(missions)}"
+                f"foundation canvas requires at least one mission node; found {len(missions)}"
             )
         if len(identities) < 1:
             raise ValueError(
-                f"core canvas requires at least one identity node; found {len(identities)}"
+                f"foundation canvas requires at least one identity node; found {len(identities)}"
             )
         return self
 

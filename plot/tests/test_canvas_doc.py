@@ -25,13 +25,13 @@ def _core_seed_nodes() -> list[SketchNode]:
 
 
 def test_core_canvas_minimum_seed_ok() -> None:
-    CanvasDoc(canvas_id="core", canvas_kind="core", nodes=_core_seed_nodes())
+    CanvasDoc(canvas_id="foundation", canvas_kind="foundation", nodes=_core_seed_nodes())
 
 
 def test_core_canvas_multiple_core_values_ok() -> None:
     CanvasDoc(
-        canvas_id="core",
-        canvas_kind="core",
+        canvas_id="foundation",
+        canvas_kind="foundation",
         nodes=[
             *_core_seed_nodes(),
             SketchNode(id="cv1", kind="core_value", label="빠름"),
@@ -43,8 +43,8 @@ def test_core_canvas_multiple_core_values_ok() -> None:
 def test_core_canvas_multiple_missions_ok() -> None:
     """v0.5: Mission is 1..N (was exactly 1)."""
     CanvasDoc(
-        canvas_id="core",
-        canvas_kind="core",
+        canvas_id="foundation",
+        canvas_kind="foundation",
         nodes=[
             *_core_seed_nodes(),
             SketchNode(id="m2", kind="mission", label="M2"),
@@ -56,8 +56,8 @@ def test_core_canvas_multiple_missions_ok() -> None:
 def test_core_canvas_multiple_identities_ok() -> None:
     """v0.5: Identity is 1..N peers (was exactly 1 + facet children)."""
     CanvasDoc(
-        canvas_id="core",
-        canvas_kind="core",
+        canvas_id="foundation",
+        canvas_kind="foundation",
         nodes=[
             *_core_seed_nodes(),
             SketchNode(id="energy", kind="identity", label="Energy"),
@@ -69,8 +69,8 @@ def test_core_canvas_multiple_identities_ok() -> None:
 def test_core_canvas_missing_mission_rejected() -> None:
     with pytest.raises(ValueError, match="mission"):
         CanvasDoc(
-            canvas_id="core",
-            canvas_kind="core",
+            canvas_id="foundation",
+            canvas_kind="foundation",
             nodes=[
                 SketchNode(id="project", kind="project", label="Project", shape="circle"),
                 SketchNode(id="identity", kind="identity", label="I"),
@@ -81,8 +81,8 @@ def test_core_canvas_missing_mission_rejected() -> None:
 def test_core_canvas_missing_identity_rejected() -> None:
     with pytest.raises(ValueError, match="identity"):
         CanvasDoc(
-            canvas_id="core",
-            canvas_kind="core",
+            canvas_id="foundation",
+            canvas_kind="foundation",
             nodes=[
                 SketchNode(id="project", kind="project", label="Project", shape="circle"),
                 SketchNode(id="mission", kind="mission", label="M"),
@@ -93,8 +93,8 @@ def test_core_canvas_missing_identity_rejected() -> None:
 def test_core_canvas_missing_project_rejected() -> None:
     with pytest.raises(ValueError, match="project"):
         CanvasDoc(
-            canvas_id="core",
-            canvas_kind="core",
+            canvas_id="foundation",
+            canvas_kind="foundation",
             nodes=[
                 SketchNode(id="mission", kind="mission", label="M"),
                 SketchNode(id="identity", kind="identity", label="I"),
@@ -105,8 +105,8 @@ def test_core_canvas_missing_project_rejected() -> None:
 def test_core_canvas_two_projects_rejected() -> None:
     with pytest.raises(ValueError, match="exactly one project"):
         CanvasDoc(
-            canvas_id="core",
-            canvas_kind="core",
+            canvas_id="foundation",
+            canvas_kind="foundation",
             nodes=[
                 *_core_seed_nodes(),
                 SketchNode(id="p2", kind="project", label="P2", shape="circle"),
@@ -118,8 +118,8 @@ def test_core_canvas_nested_project_rejected() -> None:
     """Project anchor must be top-level."""
     with pytest.raises(ValueError, match="top-level"):
         CanvasDoc(
-            canvas_id="core",
-            canvas_kind="core",
+            canvas_id="foundation",
+            canvas_kind="foundation",
             nodes=[
                 SketchNode(id="mission", kind="mission", label="M"),
                 SketchNode(id="identity", kind="identity", label="I"),
@@ -132,6 +132,31 @@ def test_core_canvas_nested_project_rejected() -> None:
                 ),
             ],
         )
+
+
+def test_mission_node_carries_typed_fields() -> None:
+    """v0.10: mission nodes have ``what_we_do`` / ``why`` / ``direction``
+    typed fields stored directly on the node — Plot is the sole editor
+    so they go straight into canvas.json, not into details.md."""
+    n = SketchNode(
+        id="mission-1",
+        kind="mission",
+        label="Mission",
+        what_we_do="우리는 매일 서로의 팬이 되는 커뮤니티를 운영한다",
+        why="사람들이 서로 빛나게 하고 싶어서",
+        direction="누구나 히어로인 일상으로",
+    )
+    assert n.what_we_do.startswith("우리는 매일")
+    assert "히어로" in n.direction
+
+
+def test_typed_fields_default_to_empty() -> None:
+    """A non-mission node still validates — typed fields default to empty
+    strings, so any kind can carry any subset."""
+    n = SketchNode(id="x", kind="actor", label="User")
+    assert n.what_we_do == ""
+    assert n.why == ""
+    assert n.direction == ""
 
 
 def test_node_details_path_absolute_rejected() -> None:
@@ -162,8 +187,8 @@ def test_node_details_path_valid() -> None:
 def test_core_canvas_actor_kind_rejected() -> None:
     with pytest.raises(ValueError, match="not allowed"):
         CanvasDoc(
-            canvas_id="core",
-            canvas_kind="core",
+            canvas_id="foundation",
+            canvas_kind="foundation",
             nodes=[
                 *_core_seed_nodes(),
                 SketchNode(id="a1", kind="actor", label="Stray"),

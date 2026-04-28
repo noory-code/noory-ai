@@ -174,19 +174,19 @@ def test_migrates_bare_v01_sketch(plot_root: Path) -> None:
     assert proj.version == 2
 
 
-def test_migrated_core_canvas_has_seeds(plot_root: Path) -> None:
-    """v0.5: migrated Core canvas hosts a Project anchor + mission/core_value/
-    identity top-level pillars. The legacy ``core`` kind is gone; the
-    anchor is ``project``."""
+def test_migrated_foundation_canvas_has_seeds(plot_root: Path) -> None:
+    """v0.10: migrated Foundation canvas hosts a Project anchor +
+    mission/core_value/identity top-level pillars. The legacy ``core``
+    node-kind is gone; the anchor is ``project``."""
     _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
-    core = read_canvas(plot_root, "alpha", "core")
-    kinds = sorted({n.kind for n in core.nodes if n.kind is not None})
+    foundation = read_canvas(plot_root, "alpha", "foundation")
+    kinds = sorted({n.kind for n in foundation.nodes if n.kind is not None})
     assert "project" in kinds
     assert "mission" in kinds and "identity" in kinds and "core_value" in kinds
     assert "core" not in kinds
     # Every seeded pillar is top-level — no child of the anchor.
-    assert all(n.parent_id is None for n in core.nodes)
+    assert all(n.parent_id is None for n in foundation.nodes)
 
 
 def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> None:
@@ -207,22 +207,23 @@ def test_migrated_services_canvas_has_no_nested(plot_root: Path) -> None:
     # Bare v0.1 seed has service-root only; it becomes a top-level service.
 
 
-def test_v05_upgrade_unparents_legacy_core_children(plot_root: Path) -> None:
-    """v0.4 → v0.5 Core upgrade (``upgrade_core_canvas_if_needed``):
-    a legacy ``core``-kind octagon with Mission/Identity nested under it
-    must be rewritten so the anchor is a circular ``project`` **and** the
-    old children are promoted to peers (``parent_id=None``) around it —
-    otherwise the small anchor visually traps the pillars.
+def test_v10_upgrade_renames_core_dir_and_unparents_children(plot_root: Path) -> None:
+    """v0.10 Foundation upgrade rewrites a pre-v0.10 disk:
+    1. ``core/`` folder → ``foundation/``.
+    2. ``canvas_kind = "core"`` → ``"foundation"``.
+    3. legacy ``core``-kind octagon → ``project`` + ``shape="circle"``.
+    4. ``identity_facet`` → ``identity`` + ``parent_id=None``.
+    5. Children of the legacy core anchor get ``parent_id=None`` so the
+       small anchor doesn't visually trap them.
     """
     from plot_mcp.folder_io import write_project
-    from plot_mcp.migrate import upgrade_core_canvas_if_needed
+    from plot_mcp.migrate import upgrade_foundation_canvas_if_needed
     from plot_mcp.models import ProjectDoc
 
     folder = plot_root / "alpha"
     folder.mkdir(parents=True)
     (folder / "core").mkdir()
-    # Seed project.json so ``upgrade_core_canvas_if_needed`` can read the
-    # authoritative project name.
+    # Seed project.json so the upgrader can read the authoritative name.
     write_project(plot_root, ProjectDoc(id="alpha", name="Alpha v1", version=2))
 
     (folder / "core" / "canvas.json").write_text(
@@ -283,13 +284,17 @@ def test_v05_upgrade_unparents_legacy_core_children(plot_root: Path) -> None:
         encoding="utf-8",
     )
 
-    changed = upgrade_core_canvas_if_needed(plot_root, "alpha")
+    changed = upgrade_foundation_canvas_if_needed(plot_root, "alpha")
     assert changed is True
 
-    core = read_canvas(plot_root, "alpha", "core")
-    by_id = {n.id: n for n in core.nodes}
+    # ``core/`` folder was renamed to ``foundation/`` on disk.
+    assert not (folder / "core").exists()
+    assert (folder / "foundation" / "canvas.json").is_file()
 
-    # Legacy ``core`` renamed to ``project``; shape shifted to circle; star gone.
+    foundation = read_canvas(plot_root, "alpha", "foundation")
+    by_id = {n.id: n for n in foundation.nodes}
+
+    # Legacy ``core`` renamed to ``project``; shape → circle; star gone.
     anchor = by_id["core-root"]
     assert anchor.kind == "project"
     assert anchor.shape == "circle"
@@ -304,15 +309,13 @@ def test_v05_upgrade_unparents_legacy_core_children(plot_root: Path) -> None:
     assert facet.kind == "identity"
     assert facet.parent_id is None
 
-    # Star icons stripped from the pillar kinds — including a facet that
-    # had star but was migrated to identity (icon clean-up runs off the
-    # post-rewrite kind).
+    # Star icons stripped from the pillar kinds.
     assert by_id["mission"].icon is None
     assert by_id["identity"].icon is None
     assert facet.icon is None
 
     # Idempotent: second call is a no-op.
-    assert upgrade_core_canvas_if_needed(plot_root, "alpha") is False
+    assert upgrade_foundation_canvas_if_needed(plot_root, "alpha") is False
 
 
 def test_migration_is_idempotent(plot_root: Path) -> None:
@@ -338,7 +341,8 @@ def test_identity_fields_promoted_to_nodes(plot_root: Path) -> None:
     _write_v01_sketch(plot_root, "alpha", "Alpha", nodes=nodes)
 
     migrate_v01_to_v02(plot_root)
-    core = read_canvas(plot_root, "alpha", "core")
+    foundation = read_canvas(plot_root, "alpha", "foundation")
+    core = foundation  # local alias keeps the rest of the assertion text simple
     # v0.9.1 dropped typed fields — legacy ``mission`` / ``identity``
     # text on the v0.1 core-root no longer survives migration (it would
     # need a ``details.md`` write, but the migration is intentionally

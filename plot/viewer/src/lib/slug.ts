@@ -16,10 +16,10 @@ export function slugify(text: string): string {
   return replaced.replace(/^-+|-+$/g, "");
 }
 
-export function folderSlug(kind: string, label: string, canvas = "core"): string {
+export function folderSlug(kind: string, label: string, canvas = "foundation"): string {
   const kindSlug = slugify(kind) || "node";
   const labelSlug = slugify(label);
   const stem = labelSlug ? `${kindSlug}-${labelSlug}` : kindSlug;
-  const canvasSlug = slugify(canvas) || "core";
+  const canvasSlug = slugify(canvas) || "foundation";
   return `${canvasSlug}/${stem}`;
 }

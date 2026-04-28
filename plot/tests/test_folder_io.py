@@ -5,7 +5,7 @@ Layout
 
     .plot/{project_id}/
       project.json                   — ProjectDoc metadata
-      core/canvas.json               — CanvasDoc (canvas_kind = "core")
+      foundation/canvas.json         — CanvasDoc (canvas_kind = "foundation")
       actors/canvas.json             — CanvasDoc (canvas_kind = "actors")
       services/
         canvas.json                  — top-view (canvas_kind = "services")
@@ -51,23 +51,24 @@ def test_create_project_builds_folder_layout(plot_root: Path) -> None:
     folder = plot_root / "alpha"
     assert folder.is_dir()
     assert (folder / "project.json").is_file()
-    assert (folder / "core" / "canvas.json").is_file()
+    assert (folder / "foundation" / "canvas.json").is_file()
     assert (folder / "actors" / "canvas.json").is_file()
     assert (folder / "services" / "canvas.json").is_file()
     # No more eager ``services-detail/`` folder — detail canvases are
     # seeded lazily by sync_details_with_overview when services appear.
 
 
-def test_create_project_seeds_core_with_project_anchor(plot_root: Path) -> None:
-    """v0.5: Core canvas seeds a central Project anchor (circle, label =
-    ProjectDoc.name) surrounded by Mission + Core value + Identity pillars.
+def test_create_project_seeds_foundation_with_project_anchor(plot_root: Path) -> None:
+    """v0.10: Foundation canvas seeds a central Project anchor (circle,
+    label = ProjectDoc.name) surrounded by Mission + Core value + Identity
+    pillars.
     """
     create_project(plot_root, "alpha", "Alpha")
-    core = read_canvas(plot_root, "alpha", "core")
-    kinds = sorted({n.kind for n in core.nodes if n.kind is not None})
+    foundation = read_canvas(plot_root, "alpha", "foundation")
+    kinds = sorted({n.kind for n in foundation.nodes if n.kind is not None})
     assert kinds == ["core_value", "identity", "mission", "project"]
-    assert all(n.parent_id is None for n in core.nodes)
-    project_nodes = [n for n in core.nodes if n.kind == "project"]
+    assert all(n.parent_id is None for n in foundation.nodes)
+    project_nodes = [n for n in foundation.nodes if n.kind == "project"]
     assert len(project_nodes) == 1
     assert project_nodes[0].label == "Alpha"
     assert project_nodes[0].shape == "circle"

@@ -226,10 +226,10 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
 }
 
 /** v0.2 multi-canvas: the tab that owns the presets shown in the stencil. */
-export type StencilCanvas = "core" | "actors" | "services";
+export type StencilCanvas = "foundation" | "actors" | "services";
 
 export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
-  if (canvas === "core") {
+  if (canvas === "foundation") {
     return (
       <div className="border-t border-slate-200 px-3 py-3">
         <Section

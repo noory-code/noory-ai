@@ -47,7 +47,7 @@ from plot_mcp.workspace import resolve_plot_root
 _log = logging.getLogger(__name__)
 
 _ALLOWED_CANVAS_KINDS: frozenset[str] = frozenset(
-    ("core", "actors", "services", "service_detail"),
+    ("foundation", "actors", "services", "service_detail"),
 )
 
 

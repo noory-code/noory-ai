@@ -299,8 +299,8 @@ function SketchCanvasInner({
           collapsed: n.collapsed,
           childCount: hasChildren ? subtreeSize(n.id) : 0,
           onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
-          // Core canvas lays pillars out as peers — fold has no meaning.
-          showFold: doc.canvas_kind !== "core",
+          // Foundation canvas lays pillars out as peers — fold has no meaning.
+          showFold: doc.canvas_kind !== "foundation",
         },
       };
       // v0.2 correction (2026-04-20): parent_id is used for two distinct
@@ -475,6 +475,9 @@ function SketchCanvasInner({
         mission: "",
         core_values: "",
         identity: "",
+        what_we_do: "",
+        why: "",
+        direction: "",
         ref_actor_id: preset?.ref_actor_id ?? null,
       };
       const current = docRef.current;
@@ -509,6 +512,9 @@ function SketchCanvasInner({
         mission: "",
         core_values: "",
         identity: "",
+        what_we_do: "",
+        why: "",
+        direction: "",
         ref_actor_id: preset?.ref_actor_id ?? null,
       };
       const current = docRef.current;
@@ -1079,6 +1085,9 @@ function SketchCanvasInner({
             mission: "",
             core_values: "",
             identity: "",
+            what_we_do: "",
+            why: "",
+            direction: "",
             ref_actor_id: null,
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });

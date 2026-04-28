@@ -8,14 +8,14 @@ export type Shape =
   | "octagon";
 
 /**
- * Node kinds. See PHILOSOPHY.md (P5, P11) and plot_mcp/models.py.
- *   project         — Core-canvas central anchor (circle, auto-seeded, cannot
- *                     be deleted; label mirrors ProjectDoc.name).
- *   mission         — Core-canvas child; 1..N per Core canvas.
- *   core_value      — Core-canvas child; 0..N.
- *   identity        — Core-canvas child; 1..N peers. Each represents an
- *                     aspect (Voice / Energy / Speech style / …).
- *                     v0.5 absorbed the former identity_facet kind.
+ * Node kinds. See docs/CONCEPTS.md and plot_mcp/models.py.
+ *   project         — Foundation-canvas central anchor (circle, auto-seeded,
+ *                     cannot be deleted; label mirrors ProjectDoc.name).
+ *   mission         — Foundation-canvas child; 0..N. Carries typed fields
+ *                     ``what_we_do`` / ``why`` / ``direction``.
+ *   core_value      — Foundation-canvas child; 0..N.
+ *   identity        — Foundation-canvas child; 0..N peers. Each represents
+ *                     an aspect (Voice / Energy / Speech style / …).
  *   actor           — participant in the value economy (Actor canvas).
  *   actor_ref       — reference to an actor (Service canvases);
  *                     carries ``ref_actor_id`` pointing at the Actor canvas.
@@ -25,7 +25,7 @@ export type Shape =
  * with a non-null parent_id (hierarchical decomposition).
  *
  * Deprecated kinds ("core" anchor, "identity_facet" child) are rewritten
- * server-side by ``migrate.upgrade_core_canvas_if_needed`` on open.
+ * server-side by ``migrate.upgrade_foundation_canvas_if_needed`` on open.
  */
 export type NodeKind =
   | "project"
@@ -73,6 +73,12 @@ export interface SketchNode {
   mission: string;
   core_values: string;
   identity: string;
+  /** v0.10: typed fields for ``mission`` kind. Default empty for other kinds.
+   *  what_we_do = current-tense daily activity; why = reason for being;
+   *  direction = positioning (space, not time). See docs/CONCEPTS.md. */
+  what_we_do: string;
+  why: string;
+  direction: string;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.9.1: project-relative path to this node's long-form ``details.md``
@@ -100,7 +106,7 @@ export interface SketchEdge {
 // ---------------------------------------------------------------------------
 
 export type CanvasKind =
-  | "core"
+  | "foundation"
   | "actors"
   | "services"
   | "service_detail";
@@ -110,7 +116,7 @@ export type CanvasKind =
  * just the kind; service-detail uses ``service_detail:{service_id}``.
  */
 export type CanvasKey =
-  | "core"
+  | "foundation"
   | "actors"
   | "services"
   | `service_detail:${string}`;

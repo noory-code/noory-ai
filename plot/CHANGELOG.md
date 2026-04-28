@@ -4,6 +4,51 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.0] — 2026-04-28
+
+This release kicks off the v0.10 kind-redefinition program (see
+[`docs/CONCEPTS.md`](docs/CONCEPTS.md) and [`docs/ROADMAP.md`](docs/ROADMAP.md)).
+Step 1 ships the rename of the identity canvas and the first AI-first typed
+fields on `mission`. Subsequent steps will re-introduce typed fields on the
+remaining kinds where the domain has clearly distinct facets.
+
+### Changed — **`core` canvas → `foundation` canvas**
+- Canvas kind/id rename: `"core"` → `"foundation"`. The folder is now
+  `.plot/{project_id}/foundation/canvas.json`. Existing v0.5–v0.9 projects
+  are migrated transparently on open: the `core/` directory is renamed to
+  `foundation/` and the `canvas_kind` field is rewritten. Legacy alias
+  `migrate.upgrade_core_canvas_if_needed` still works.
+  ([`plot_mcp/folder_io.py`](plot_mcp/folder_io.py),
+   [`plot_mcp/migrate.py`](plot_mcp/migrate.py),
+   [`plot_mcp/models.py`](plot_mcp/models.py))
+- Viewer tab label is now **Foundation** (not Core); `CanvasKind` /
+  `CanvasKey` types match. Default folder slug is `foundation/…`.
+  ([`viewer/src/types.ts`](viewer/src/types.ts),
+   [`viewer/src/App.tsx`](viewer/src/App.tsx),
+   [`viewer/src/lib/slug.ts`](viewer/src/lib/slug.ts))
+
+### Added — **Mission typed fields** (AI-first)
+- `SketchNode.what_we_do`, `SketchNode.why`, `SketchNode.direction` (all `str`,
+  default `""`). These three facets are stored directly on the `mission` node
+  in `canvas.json` — Plot is the sole editor. Long-form prose still lives in
+  `details.md`. Other kinds also carry the fields as empty strings; only the
+  Inspector for `kind === "mission"` exposes a typed form.
+  ([`plot_mcp/models.py`](plot_mcp/models.py),
+   [`viewer/src/types.ts`](viewer/src/types.ts),
+   [`viewer/src/canvases/SketchInspector.tsx`](viewer/src/canvases/SketchInspector.tsx))
+
+### Added — **Concept docs**
+- [`docs/CONCEPTS.md`](docs/CONCEPTS.md) — the full glossary
+  (4 canvases × 13 kinds + design principles). SSOT for human and AI tooling.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — six-step v0.10 implementation
+  plan. Step 1 is this release.
+
+### Notes
+- Mission is **0..N** (was effectively 1..N). Validator unchanged; the doc
+  surface now matches what the model already allowed since v0.5.
+- Foundation rename is backward-compatible at the file-system layer — opening
+  a v0.9 project rewrites it in place to the new layout.
+
 ## [0.9.1] — 2026-04-28
 
 ### Removed

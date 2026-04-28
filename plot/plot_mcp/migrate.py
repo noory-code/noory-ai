@@ -298,7 +298,7 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
     service_nodes: list[SketchNode] = []
     for n in doc.nodes:
         if n.kind == "project":
-            continue  # project anchor handled by _build_core_canvas
+            continue  # project anchor handled by _build_foundation_canvas
         if actor_root and _in_subtree(n, actor_root.id):
             actor_nodes.append(n)
         elif service_root and _in_subtree(n, service_root.id):
@@ -309,11 +309,11 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
             service_nodes.append(n)
         # identity-kind nodes would go to core but v0.1 didn't have them.
 
-    # --- write core canvas ----------------------------------------------
-    core_canvas = _build_core_canvas(core_root, proj.name)
+    # --- write foundation canvas ---------------------------------------
+    foundation_canvas = _build_foundation_canvas(core_root, proj.name)
     _write_json(
-        _canvas_file(plot_root, doc.id, "core"),
-        core_canvas.model_dump(by_alias=True),
+        _canvas_file(plot_root, doc.id, "foundation"),
+        foundation_canvas.model_dump(by_alias=True),
     )
 
     # --- write actors canvas --------------------------------------------
@@ -341,7 +341,7 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> CanvasDoc:
+def _build_foundation_canvas(core_root: SketchNode | None, project_name: str) -> CanvasDoc:
     """Promote v0.1 root text fields (mission / core_values / identity) into
     v0.5 top-level nodes on the Core canvas, and plant the v0.5 Project
     anchor in the centre. Empty fields get placeholder nodes so the
@@ -418,7 +418,7 @@ def _build_core_canvas(core_root: SketchNode | None, project_name: str) -> Canva
         )
     )
 
-    return CanvasDoc(canvas_id="core", canvas_kind="core", nodes=nodes)
+    return CanvasDoc(canvas_id="foundation", canvas_kind="foundation", nodes=nodes)
 
 
 def _build_actors_canvas(
@@ -544,33 +544,60 @@ def _split_services(
 
 
 # ---------------------------------------------------------------------------
-# v0.5 Core-canvas schema upgrade (called from folder_io.read_canvas)
+# Foundation-canvas schema upgrade (called from folder_io.read_canvas)
 # ---------------------------------------------------------------------------
 
 
-def upgrade_core_canvas_if_needed(plot_root: Path, project_id: str) -> bool:
-    """Heal a Core canvas that was written under a pre-v0.5 schema.
+def upgrade_foundation_canvas_if_needed(plot_root: Path, project_id: str) -> bool:
+    """Heal a Foundation canvas written under any pre-v0.10 schema.
 
-    Rewrites the raw ``core.json`` on disk so subsequent reads are cheap
-    and Pydantic parsing never trips on retired kinds. Returns True iff
-    the file was rewritten. Safe to call on every load (idempotent).
+    Rewrites the raw ``foundation/canvas.json`` on disk so subsequent
+    reads are cheap and Pydantic parsing never trips on retired kinds.
+    Returns True iff the file was rewritten. Safe to call on every load
+    (idempotent).
 
     Operations (applied in order):
-      1. ``kind="core"`` → ``kind="project"``, ``shape="circle"``.
-      2. ``kind="identity_facet"`` → ``kind="identity"``, ``parent_id=None``.
-      3. If no Project anchor exists, synthesise one at centre using the
+      0. v0.10 layout: rename ``core/`` folder → ``foundation/`` if the
+         old name exists and the new one doesn't.
+      1. ``canvas_kind="core"`` → ``canvas_kind="foundation"``.
+      2. ``kind="core"`` (legacy octagon) → ``kind="project"``,
+         ``shape="circle"``.
+      3. ``kind="identity_facet"`` → ``kind="identity"``,
+         ``parent_id=None``.
+      4. If no Project anchor exists, synthesise one at centre using the
          project's ``ProjectDoc.name`` as label.
     """
-    path = _canvas_file(plot_root, project_id, "core")
+    project_dir = plot_root / project_id
+    legacy_dir = project_dir / "core"
+    new_dir = project_dir / "foundation"
+
+    # 0. Rename ``core/`` → ``foundation/`` if needed.
+    if legacy_dir.is_dir() and not new_dir.exists():
+        legacy_dir.rename(new_dir)
+
+    path = _canvas_file(plot_root, project_id, "foundation")
     if not path.exists():
         return False
     raw = json.loads(path.read_text(encoding="utf-8"))
+
+    changed = False
+
+    # 1. Bump canvas_kind if a stale ``core`` value made it onto disk.
+    if raw.get("canvas_kind") == "core":
+        raw["canvas_kind"] = "foundation"
+        if raw.get("canvas_id") == "core":
+            raw["canvas_id"] = "foundation"
+        changed = True
+
     nodes = raw.get("nodes")
     if not isinstance(nodes, list):
-        return False
+        return changed
 
-    changed = _normalise_legacy_node_kinds(nodes)
+    # 2-3. Legacy node-kind rewrites.
+    if _normalise_legacy_node_kinds(nodes):
+        changed = True
 
+    # 4. Project anchor synthesis.
     has_project = any(isinstance(n, dict) and n.get("kind") == "project" for n in nodes)
     if not has_project:
         project_name = _read_project_name(plot_root, project_id)
@@ -582,6 +609,11 @@ def upgrade_core_canvas_if_needed(plot_root: Path, project_id: str) -> bool:
     if changed:
         _write_json(path, raw)
     return changed
+
+
+# Backwards-compatible alias for any in-process caller still importing the
+# pre-v0.10 name. New code uses ``upgrade_foundation_canvas_if_needed``.
+upgrade_core_canvas_if_needed = upgrade_foundation_canvas_if_needed
 
 
 def _read_project_name(plot_root: Path, project_id: str) -> str:

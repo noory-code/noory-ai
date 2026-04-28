@@ -178,9 +178,14 @@ export function SketchInspector({
           />
         </label>
 
-        {/* v0.9.1: only ``label`` (above) + per-node ``details.md`` for
-             long-form prose. Typed fields were removed because for most
-             kinds they collapsed to "label vs slightly-different-label". */}
+        {/* v0.10: Mission carries three typed fields that capture distinct
+             facets — what we do (today), why (reason for being), direction
+             (positioning, not time). Other kinds keep label + details.md. */}
+        {node.kind === "mission" && (
+          <MissionFields node={node} onPatchNode={onPatchNode} />
+        )}
+
+        {/* v0.9.1: ``label`` + per-node ``details.md`` for long-form prose. */}
         <DetailsSection
           node={node}
           projectPath={projectPath}
@@ -348,6 +353,67 @@ function CompositionList({
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// v0.10 Mission typed fields
+// ---------------------------------------------------------------------------
+//
+// Mission has three distinct facets that are too domain-specific to collapse
+// into a single label or free-form prose:
+//   - what_we_do: current-tense daily activity ("우리는 매일 …")
+//   - why: reason for being ("사람들이 …하기를 바라서")
+//   - direction: positioning, space-axis (Vision/Goal is the time-axis,
+//                handled separately).
+// LLMs benefit from typed fields over free prose, and human authors are
+// nudged to address all three facets explicitly. See docs/CONCEPTS.md.
+
+interface MissionFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
+  return (
+    <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+        Mission
+      </div>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">What we do</span>
+        <span className="ml-1 text-[10px] text-slate-500">— current-tense daily activity</span>
+        <textarea
+          rows={2}
+          value={node.what_we_do ?? ""}
+          onChange={(e) => onPatchNode({ what_we_do: e.target.value })}
+          placeholder="우리는 매일 …"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        />
+      </label>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">Why</span>
+        <span className="ml-1 text-[10px] text-slate-500">— reason for being</span>
+        <textarea
+          rows={2}
+          value={node.why ?? ""}
+          onChange={(e) => onPatchNode({ why: e.target.value })}
+          placeholder="사람들이 … 하기를 바라서"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        />
+      </label>
+      <label className="block">
+        <span className="text-xs font-semibold text-slate-700">Direction</span>
+        <span className="ml-1 text-[10px] text-slate-500">— positioning (space, not time)</span>
+        <textarea
+          rows={2}
+          value={node.direction ?? ""}
+          onChange={(e) => onPatchNode({ direction: e.target.value })}
+          placeholder="누구나 … 인 일상으로"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        />
+      </label>
     </div>
   );
 }

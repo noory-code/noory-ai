@@ -8,15 +8,15 @@ import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
 import type { CanvasDoc, CanvasKey, CanvasKind, SketchNode } from "./types";
 
-type CanvasTab = "core" | "actors" | "services";
+type CanvasTab = "foundation" | "actors" | "services";
 const CANVAS_TABS: readonly { id: CanvasTab; label: string }[] = [
-  { id: "core", label: "Core" },
+  { id: "foundation", label: "Foundation" },
   { id: "actors", label: "Actors" },
   { id: "services", label: "Services" },
 ];
 
 function tabToKind(tab: CanvasTab): CanvasKind {
-  if (tab === "core") return "core";
+  if (tab === "foundation") return "foundation";
   if (tab === "actors") return "actors";
   return "services";
 }
@@ -182,10 +182,10 @@ export function App() {
 
   const focusCanvas = useCallback(
     (key: CanvasKey) => {
-      if (key === "core") {
-        setActiveTab("core");
+      if (key === "foundation") {
+        setActiveTab("foundation");
         setDetailServiceId(null);
-        syncUrl({ canvas: "core", detail: null });
+        syncUrl({ canvas: "foundation", detail: null });
       } else if (key === "actors") {
         setActiveTab("actors");
         setDetailServiceId(null);

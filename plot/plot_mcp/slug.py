@@ -36,7 +36,7 @@ def slugify(text: str) -> str:
     return replaced.strip("-")
 
 
-def folder_slug(kind: str, label: str, canvas: str = "core") -> str:
+def folder_slug(kind: str, label: str, canvas: str = "foundation") -> str:
     """Compose ``{canvas}/{kind}-{label}`` — the default relative folder
     for a node's long-form content, rooted at the project's own folder
     (``.plot/{project_id}/``).
@@ -47,5 +47,5 @@ def folder_slug(kind: str, label: str, canvas: str = "core") -> str:
     kind_slug = slugify(kind) or "node"
     label_slug = slugify(label)
     stem = f"{kind_slug}-{label_slug}" if label_slug else kind_slug
-    canvas_slug = slugify(canvas) or "core"
+    canvas_slug = slugify(canvas) or "foundation"
     return f"{canvas_slug}/{stem}"

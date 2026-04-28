@@ -133,7 +133,7 @@ def test_project_rename(app_client: tuple[TestClient, str]) -> None:
 
     # v0.5: rename mirrors onto the Core canvas Project anchor label.
     canvas_resp = client.get(
-        "/api/projects/alpha/canvases/core",
+        "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
     )
     assert canvas_resp.status_code == 200
@@ -150,14 +150,14 @@ def test_canvas_core_put_syncs_project_name(
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
     core = client.get(
-        "/api/projects/alpha/canvases/core",
+        "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
     ).json()
     for n in core["nodes"]:
         if n["kind"] == "project":
             n["label"] = "Alpha 2.0"
     put = client.put(
-        "/api/projects/alpha/canvases/core",
+        "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
         json=core,
     )
@@ -200,12 +200,12 @@ def test_canvas_get_returns_seeded_core(
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
     resp = client.get(
-        "/api/projects/alpha/canvases/core",
+        "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["canvas_kind"] == "core"
+    assert body["canvas_kind"] == "foundation"
     kinds = sorted({n["kind"] for n in body["nodes"] if n.get("kind")})
     assert kinds == ["core_value", "identity", "mission", "project"]
 
@@ -547,13 +547,13 @@ def test_file_put_does_not_touch_canvas(
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
     core_before = client.get(
-        "/api/projects/alpha/canvases/core",
+        "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
     ).json()
     mission = next(n for n in core_before["nodes"] if n["kind"] == "mission")
     mission["details_path"] = "core/mission-mission/details.md"
     client.put(
-        "/api/projects/alpha/canvases/core",
+        "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
         json=core_before,
     ).raise_for_status()
@@ -573,7 +573,7 @@ def test_file_put_does_not_touch_canvas(
     assert "preview" not in body  # no canvas-side caching anymore
 
     core_after = client.get(
-        "/api/projects/alpha/canvases/core",
+        "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
     ).json()
     refreshed_mission = next(

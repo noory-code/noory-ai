@@ -172,7 +172,7 @@ export async function getAllCanvases(
   serviceDetails: string[],
 ): Promise<Map<CanvasKey, CanvasDoc>> {
   const entries: [CanvasKey, Promise<CanvasDoc>][] = [
-    ["core", getCanvas(projectPath, projectId, "core")],
+    ["foundation", getCanvas(projectPath, projectId, "foundation")],
     ["actors", getCanvas(projectPath, projectId, "actors")],
     [
       "services",

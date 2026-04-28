@@ -1,30 +1,30 @@
-"""Folder-based project store for Plot v0.8 (wrapper-less, canvas-grouped).
+"""Folder-based project store for Plot v0.10 (wrapper-less, canvas-grouped).
 
 Disk layout
 -----------
 
     .plot/{project_id}/
         project.json                     — ProjectDoc
-        core/
-            canvas.json                  — CanvasDoc (canvas_kind = "core")
-            {node-slug}/index.md         — node long-form (opt-in per node)
+        foundation/
+            canvas.json                  — CanvasDoc (canvas_kind = "foundation")
+            {node-slug}/details.md       — node long-form (opt-in per node)
         actors/
             canvas.json
-            {node-slug}/index.md
+            {node-slug}/details.md
         services/
             canvas.json                  — top-view (canvas_kind = "services")
             {service_id}/
-                index.md                 — Service node long-form
+                details.md               — Service node long-form
                 detail.json              — CanvasDoc (canvas_kind = "service_detail")
 
 Every canvas lives in its own file (``canvas.json`` for singletons,
 ``detail.json`` for service detail) so a write to one canvas never
 touches another. Thin wrapper: no caching, atomic replace only.
 
-v0.8 dropped the legacy ``.plot/sketches/`` intermediate folder, the
-per-canvas filename convention (``core.json`` etc), the standalone
-``services-detail/`` folder, and the sibling ``workspace/`` tree — all
-node long-form content now lives inside the project's own folder tree.
+v0.10 renamed the ``core/`` folder to ``foundation/`` to match the
+underlying concept (Foundation = the project's identity). Pre-v0.10
+disk layouts are healed lazily on read — see
+``migrate.upgrade_foundation_canvas_if_needed``.
 """
 
 from __future__ import annotations
@@ -133,14 +133,15 @@ def read_canvas(
     service_id: str | None = None,
 ) -> CanvasDoc:
     _ensure_project(plot_root, project_id)
-    if canvas_kind == "core":
-        # Heal Core canvases written under pre-v0.5 schemas (``core`` anchor /
-        # ``identity_facet`` children / no Project node yet) before Pydantic
-        # sees the raw dict. Imported here to keep migrate.py optional on the
-        # hot path for non-core kinds.
-        from plot_mcp.migrate import upgrade_core_canvas_if_needed
+    if canvas_kind == "foundation":
+        # Heal Foundation canvases written under pre-v0.10 schemas (legacy
+        # ``core`` canvas folder + ``core``/``identity_facet`` node kinds +
+        # missing Project anchor) before Pydantic sees the raw dict.
+        # Imported here to keep migrate.py optional on the hot path for
+        # non-foundation kinds.
+        from plot_mcp.migrate import upgrade_foundation_canvas_if_needed
 
-        upgrade_core_canvas_if_needed(plot_root, project_id)
+        upgrade_foundation_canvas_if_needed(plot_root, project_id)
     path = _canvas_file(plot_root, project_id, canvas_kind, service_id)
     raw = _read_json(path)
     return CanvasDoc.model_validate(raw)
@@ -155,10 +156,11 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
         meta = read_project(plot_root, project_id)
     except FileNotFoundError:
         return
-    # Core canvas has the Project anchor whose label mirrors ProjectDoc.name.
-    # Writes to the canvas are the authoritative source of the rename — pull
-    # any drift back into the ProjectDoc so the sidebar / MCP stay in sync.
-    if canvas.canvas_kind == "core":
+    # Foundation canvas has the Project anchor whose label mirrors
+    # ProjectDoc.name. Writes to the canvas are the authoritative source of
+    # the rename — pull any drift back into the ProjectDoc so the sidebar /
+    # MCP stay in sync.
+    if canvas.canvas_kind == "foundation":
         project_node = next((n for n in canvas.nodes if n.kind == "project"), None)
         if project_node is not None:
             new_label = project_node.label.strip()
@@ -169,36 +171,37 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
 
 
 def rename_project(plot_root: Path, project_id: str, new_name: str) -> ProjectDoc:
-    """Update ``ProjectDoc.name`` and sync the Core canvas Project anchor's
-    label in one shot. Returns the refreshed ProjectDoc.
+    """Update ``ProjectDoc.name`` and sync the Foundation canvas Project
+    anchor's label in one shot. Returns the refreshed ProjectDoc.
 
-    Both sides stay in sync: the anchor label in ``core.json`` always equals
-    ``project.json``'s ``name``.
+    Both sides stay in sync: the anchor label in
+    ``foundation/canvas.json`` always equals ``project.json``'s ``name``.
     """
     proj = read_project(plot_root, project_id)
     renamed = proj.model_copy(update={"name": new_name})
     _write_json(_project_file(plot_root, project_id), renamed.model_dump())
 
-    # Update the Project anchor label in the Core canvas (no-op if the
-    # canvas hasn't been upgraded yet — the upgrade hook on read_canvas
-    # will heal it on the next open).
+    # Update the Project anchor label in the Foundation canvas (no-op if
+    # the canvas hasn't been upgraded yet — the upgrade hook on
+    # read_canvas heals it on the next open).
     try:
-        core = read_canvas(plot_root, project_id, "core")
+        foundation = read_canvas(plot_root, project_id, "foundation")
     except FileNotFoundError:
         write_project(plot_root, renamed)
         return read_project(plot_root, project_id)
 
-    project_node = next((n for n in core.nodes if n.kind == "project"), None)
+    project_node = next((n for n in foundation.nodes if n.kind == "project"), None)
     if project_node is not None and project_node.label != new_name:
         updated_nodes = [
             n.model_copy(update={"label": new_name}) if n.id == project_node.id else n
-            for n in core.nodes
+            for n in foundation.nodes
         ]
-        synced = core.model_copy(update={"nodes": updated_nodes})
-        # Write directly without recursing through write_canvas (which would
-        # read back our just-renamed ProjectDoc and no-op the sync check).
+        synced = foundation.model_copy(update={"nodes": updated_nodes})
+        # Write directly without recursing through write_canvas (which
+        # would read back our just-renamed ProjectDoc and no-op the
+        # sync check).
         _write_json(
-            _canvas_file(plot_root, project_id, "core"),
+            _canvas_file(plot_root, project_id, "foundation"),
             synced.model_dump(by_alias=True),
         )
 
@@ -228,16 +231,18 @@ def list_service_details(plot_root: Path, project_id: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def _seed_core_canvas(project_name: str) -> CanvasDoc:
-    """Minimum valid Core canvas — central Project anchor (circle, auto-seeded,
-    cannot be deleted) surrounded by Mission / Core Value / Identity pillars.
+def _seed_foundation_canvas(project_name: str) -> CanvasDoc:
+    """Minimum valid Foundation canvas — central Project anchor (circle,
+    auto-seeded, cannot be deleted) surrounded by Mission / Core Value /
+    Identity pillars.
 
-    The Project node's label mirrors ``ProjectDoc.name``; editing either side
-    keeps both in sync via ``rename_project`` / ``sync_project_name_from_canvas``.
+    The Project node's label mirrors ``ProjectDoc.name``; editing either
+    side keeps both in sync via ``rename_project`` /
+    ``sync_project_name_from_canvas``.
     """
     return CanvasDoc(
-        canvas_id="core",
-        canvas_kind="core",
+        canvas_id="foundation",
+        canvas_kind="foundation",
         nodes=[
             SketchNode(
                 id="project",
@@ -317,8 +322,8 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     _write_json(_project_file(plot_root, project_id), proj.model_dump())
 
     _write_json(
-        _canvas_file(plot_root, project_id, "core"),
-        _seed_core_canvas(proj.name).model_dump(by_alias=True),
+        _canvas_file(plot_root, project_id, "foundation"),
+        _seed_foundation_canvas(proj.name).model_dump(by_alias=True),
     )
     _write_json(
         _canvas_file(plot_root, project_id, "actors"),

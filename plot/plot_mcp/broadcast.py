@@ -10,7 +10,7 @@ from starlette.websockets import WebSocket
 
 from plot_mcp.watcher import WorkspaceWatcher
 
-_SINGLETON_CANVAS_KINDS = {"core", "actors", "services"}
+_SINGLETON_CANVAS_KINDS = {"foundation", "actors", "services"}
 
 
 def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | None:
@@ -34,10 +34,10 @@ def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | No
     descriptor: dict[str, Any] = {"project_id": project_id}
     # parts examples:
     #   ("alpha", "project.json")
-    #   ("alpha", "core", "canvas.json")
+    #   ("alpha", "foundation", "canvas.json")
     #   ("alpha", "services", "canvas.json")
     #   ("alpha", "services", "order", "detail.json")
-    #   ("alpha", "core", "mission-1", "details.md")
+    #   ("alpha", "foundation", "mission-1", "details.md")
     #   ("alpha", "services", "order", "details.md")
     if len(parts) == 3 and parts[2] == "canvas.json" and parts[1] in _SINGLETON_CANVAS_KINDS:
         descriptor["canvas_kind"] = parts[1]
