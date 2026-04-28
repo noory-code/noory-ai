@@ -4,6 +4,35 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.6] — 2026-04-28
+
+Docs-only patch ahead of v0.11. Captures Plot's product identity in
+permanent storage so future sessions (human or AI) can ground their
+decisions in what Plot actually is — and is not.
+
+### Added — **`docs/IDENTITY.md`**
+- New canonical document stating what Plot is (a strategic operations
+  design + alignment tool) and what it is not (a simple mindmap or
+  brainstorming tool).
+- The four use purposes: concrete service planning, direction alignment,
+  position in the big picture, relationship visualisation.
+- The two modes — today's picture mode and the future time-axis task
+  mode — and the implication that v0.11+ models must survive the
+  transition.
+- Korean original quote from the user (2026-04-28) preserved so the
+  source intent is auditable.
+
+### Changed — `docs/CONCEPTS.md`
+- Header now points to `IDENTITY.md` first. CONCEPTS remains the
+  technical reference (kinds, canvases, fields); IDENTITY is the
+  "why and for whom" check applied before any new concept lands.
+
+### Notes
+- This release contains no code changes. It exists to fix a gap caught
+  during v0.11 planning: the user-stated identity from 2026-04-28 was
+  living only in the in-progress plan file, which is volatile across
+  sessions.
+
 ## [0.10.5] — 2026-04-28
 
 Step 6 of the v0.10 kind-redefinition program — and the **final** step.

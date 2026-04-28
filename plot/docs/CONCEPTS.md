@@ -6,7 +6,12 @@ that both human users and the AI tooling (Claude, MCP) consult when
 they need to know "what is a `service`?" or "where does a `mission_ref`
 live?".
 
+> **Read [`IDENTITY.md`](IDENTITY.md) first** if you haven't. It defines
+> what Plot *is* (a strategic operations design + alignment tool, not a
+> mindmap) and the four use purposes every kind below ultimately serves.
+>
 > Sibling docs:
+> - `IDENTITY.md` — what Plot is and is not (the "why and for whom").
 > - `PHILOSOPHY.md` — the underlying value-flow / two-layer thesis.
 > - `ROADMAP.md` — the implementation order in which v0.10 is being built.
 
