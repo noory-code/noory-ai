@@ -98,13 +98,20 @@ node holds **one facet**.
 
 ## Actor kind
 
-### `actor` — a participant in the value economy
+### `actor` — a class of people participating in the value economy
 
-Anyone — person, system, organisation — that takes part in the
-project's services.
+> An actor is a **class of people** who participate in this project's
+> value economy — making, exchanging, and relating to each other.
+> (See `IDENTITY.md` for why this definition is load-bearing.)
 
 - **Asks**: who is involved?
-- **Count**: 0..N
+- **Class, not individual**: "User" / "Operator", not "Kim Cheol-su".
+- **People only**: external APIs, systems, bots, and infrastructure
+  are *not* actors — they belong to the **infrastructure** layer,
+  which is out of scope until the time-axis (Mode 2) ships.
+- **Count**: **≥ 2 per project** — typically an operator/developer
+  side and a user side. Value exchange requires both sides; a project
+  with fewer is structurally incomplete.
 - **Lives on**: the Actors canvas as a master record.
 - **Hierarchy**: `parent_id` chains let you express "User → Admin User
   → Super Admin" or "Vendor → Premium Vendor".
@@ -117,15 +124,28 @@ so via `actor_ref` (see _Reference kinds_ below).
 
 ## Service kinds
 
-### `service` — the arena of value
+### `service` — a playground for production and exchange
 
-Services are **arenas** where actors create value and exchange it with
-each other. The same `service` kind is used at every depth: a
-top-level service like _Auth_, a sub-service like _Login_ inside it,
-or a sub-sub-service inside that. Depth is expressed by `parent_id`.
+> A service is a **playground** where stakeholders **produce and
+> exchange value** while building relationships with each other.
+> (See `IDENTITY.md` for why "produce + exchange" together — not
+> "exchange" alone — is the right phrasing.)
 
-- **Asks**: what value do we make here, who exchanges with whom, and
-  (for sub-services) how does this contribute to the parent service?
+The "playground" metaphor matters. A service is not a fixed pipeline
+or a transaction queue; it's a space where:
+
+- multiple actors act in parallel (concurrency),
+- different kinds of activity coexist — making content, consuming it,
+  trading, building relationships (diversity),
+- the procedure isn't predetermined (degrees of freedom).
+
+The same `service` kind is used at every depth: a top-level service
+like _Auth_, a sub-service like _Login_ inside it, or a sub-sub-service
+inside that. Depth is expressed by `parent_id`.
+
+- **Asks**: what value do we produce and exchange here, who is
+  involved, and (for sub-services) how does this contribute to the
+  parent service?
 - **Counts**: 0..N at every level.
 - **Lives on**:
   - Top-level (no `parent_id`): the Services canvas.
@@ -134,6 +154,26 @@ or a sub-sub-service inside that. Depth is expressed by `parent_id`.
 - **Forces a question**: every service prompts the user with "what
   value does this make?" — Plot's design intent is to make this
   question unavoidable at every level.
+
+#### Service minimum baseline — the only hard floor
+
+Every service must have **at least two participating `actor_ref`
+nodes** — and an explicit operator must be one of them.
+
+This is the single non-negotiable validator on services. It encodes
+two claims from `IDENTITY.md`:
+
+1. A playground with one person is not a playground; "produce +
+   exchange" requires at least two parties.
+2. The operator is **never implicit**. Without an explicit operator
+   `actor_ref`, the question "who keeps this service aligned with the
+   project's mission, values, and identity?" has no answer — and
+   alignment ownership is precisely what Plot is meant to make
+   visible.
+
+Everything else on `service` follows the wider **rich fields, minimal
+required** default — most fields stay optional so the template
+prompts thinking without blocking flow.
 
 #### Top-level service — strategic
 
@@ -261,10 +301,19 @@ AI ask "which Mission does this service realise?" rigorously.
    different concepts into one kind. Mission ≠ Vision ≠ Goal; rule ≠
    content ≠ metric ≠ step. Each kind carries its own typed fields.
 
-2. **Templates are rich, requirements are minimal.** The Inspector
-   surfaces many typed fields per kind to prompt thinking, but most
-   are optional. A few — like a top-level service requiring a Foundation
-   reference — gate quality without forcing busywork.
+2. **Templates are rich, requirements are minimal — but the floor is
+   real.** The Inspector surfaces many typed fields per kind to prompt
+   thinking, and most are optional. A small set of hard requirements
+   set Plot's quality floor — they encode what Plot *is*, not just
+   nice-to-haves. The current floor:
+   - A top-level service requires a Foundation reference (identity or
+     value).
+   - A project's `actors` canvas requires **≥ 2** actor classes.
+   - Every service requires **≥ 2** `actor_ref` participants, and one
+     of them must be an explicit operator (moderation /
+     alignment-keeper).
+
+   See `IDENTITY.md` for why these specific floors exist.
 
 3. **AI-first.** Typed fields, `do`/`dont` pairs, and concrete examples
    make Plot canvases directly usable by Claude and other LLMs:

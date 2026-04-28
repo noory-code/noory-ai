@@ -4,6 +4,53 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.7] — 2026-04-28
+
+Docs-only patch capturing the load-bearing Actor / Service decisions
+made in v0.11 Phase A1 + A2 planning. The code changes (validators,
+seed actors) ship later as v0.11.0; this release is the philosophy
+front-load so the docs are accurate before any model moves.
+
+### Added — `IDENTITY.md` "Actor & Service — the Core Philosophy" section
+- **Actor definition**: a *class of people* who participate in the
+  project's value economy. Class, not individual; people only — APIs,
+  systems, bots, and infrastructure are out of scope until Mode 2.
+- **Service definition**: a *playground* where stakeholders **produce
+  and exchange** value (the dual phrasing is deliberate — services
+  produce new value through actor participation, not just route
+  pre-existing value).
+- **Service minimum baseline**: every service must include **≥ 2**
+  participating `actor_ref` nodes — non-negotiable.
+- **Operator-explicit rule**: the operator/developer must always be
+  one of those `actor_ref`s. The reasoning is moderation: services
+  are playgrounds, freedom needs alignment-keepers, and *which*
+  operator owns alignment for *which* service must be visible —
+  exactly Plot's stated purpose.
+- A "Why these are philosophy, not just rules" subsection explains
+  that loosening any of these floors changes the product, not just
+  the schema.
+
+### Changed — `CONCEPTS.md`
+- `actor` kind: redefined as "a class of people," with the people-only
+  scope and the project-level `≥ 2` floor stated. Previous "person /
+  system / organisation" wording retired.
+- `service` kind: re-introduced with the playground metaphor,
+  "produce + exchange" phrasing, and a new explicit subsection
+  documenting the service minimum baseline (≥ 2 actor_refs, explicit
+  operator).
+- "Design principles" #2 ("templates rich, requirements minimal") now
+  enumerates the current set of hard floors and cross-references
+  IDENTITY.md.
+
+### Notes
+- This is **not** a behaviour change. The validators and the seed
+  actors (User / Operator placeholders) land in v0.11.0 once the rest
+  of Phase A — A3 (sub-actor semantics), A4 (typed fields), A5
+  (naming) — and Phase B / C / D are decided. Doing docs first means
+  the model changes can be evaluated against a stable spec.
+- Plan-file framework with the running discussion log lives at
+  `~/.claude/plans/ancient-pondering-petal.md`.
+
 ## [0.10.6] — 2026-04-28
 
 Docs-only patch ahead of v0.11. Captures Plot's product identity in
