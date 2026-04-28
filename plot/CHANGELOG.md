@@ -4,6 +4,53 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.2] — 2026-04-28
+
+Step 3 of the v0.10 kind-redefinition program. Generalises the existing
+`actor_ref` Symbol/Component pattern to the three Foundation masters
+(Mission / Core Value / Identity), so a Service can declare which
+Foundation commitment it answers to without leaving its canvas.
+
+### Added — **Foundation reference kinds**
+- New node kinds: `mission_ref`, `value_ref`, `identity_ref`. Together
+  with the pre-existing `actor_ref` they form a uniform four-member
+  family of "instance points at master" symbols.
+- New `SketchNode` fields: `ref_mission_id`, `ref_value_id`,
+  `ref_identity_id` (each `str | None = None`). Validator rule: every
+  `*_ref` kind requires its corresponding `ref_*_id` to be set.
+- `_ALLOWED_KINDS_BY_CANVAS`: the three new ref kinds are admitted on
+  the **Services** overview canvas and on **Service-Detail** canvases.
+  They stay forbidden on Foundation (would be a self-loop) and on
+  Actors (out of place there).
+
+### Added — **Stencil presets + picker UI**
+- New stencil entries on the Services-side stencil: Mission ref, Value
+  ref, Identity ref (under a "Foundation refs" section). Each gets a
+  distinct hue and Lucide icon (flag / star / heart) so the canvas reads
+  at a glance.
+- New `FoundationRefPicker` modal — drop a ref onto the canvas, the
+  picker lists candidates pulled from the Foundation canvas (Mission /
+  Core Value / Identity, depending on the kind dropped). Clicking one
+  spawns the ref node with the right `ref_*_id` set and a `→ {label}`
+  display label.
+- `App` derives the three master lists (`availableMissions`,
+  `availableValues`, `availableIdentities`) from the Foundation canvas
+  cache and passes them down to the canvas/inspector.
+
+### Added — **Inspector ref display**
+- The Inspector shows a "References — {kind}" block for each ref node,
+  listing the resolved master label or a "⚠ master not found" warning
+  when the target doesn't exist (orphan).
+
+### Notes
+- The orphan re-pick UX from `actor_ref` is **not** generalised in this
+  step — for now users can drop a fresh ref preset and delete the
+  broken one. Re-pick is on the list for a follow-up patch.
+- The validator does not (yet) cross-check that `ref_mission_id` etc.
+  point at an actual master in the project's Foundation canvas: writes
+  succeed even with stale ids so drafting stays cheap; the Inspector's
+  orphan warning surfaces the issue interactively.
+
 ## [0.10.1] — 2026-04-28
 
 Step 2 of the v0.10 kind-redefinition program (see

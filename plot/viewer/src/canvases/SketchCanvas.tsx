@@ -23,6 +23,12 @@ import type {
   SketchNode as DocNode,
 } from "../types";
 import { ActorRefPicker } from "./ActorRefPicker";
+import {
+  FoundationRefPicker,
+  masterKindForRef,
+  refIdFieldForKind,
+  type FoundationRefMasterKind,
+} from "./FoundationRefPicker";
 import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
 import { SketchEdgeModal, VALUE_FORM_COLORS } from "./SketchEdgeModal";
@@ -57,6 +63,13 @@ export interface NodePreset {
    * which actor in the Actor canvas this node points at.
    */
   ref_actor_id?: string | null;
+  /**
+   * v0.10 Step 3: set on Foundation ref drops once the picker resolves the
+   * master node from the Foundation canvas.
+   */
+  ref_mission_id?: string | null;
+  ref_value_id?: string | null;
+  ref_identity_id?: string | null;
 }
 
 // Note (2026-04-20): the earlier implementation snapped services to an
@@ -88,6 +101,15 @@ export interface SketchCanvasProps {
    * be showing a tab-filtered view that excludes the actors.
    */
   availableActors?: DocNode[];
+  /**
+   * v0.10 Step 3: Foundation masters available in the FoundationRefPicker.
+   * Each list is the foundation canvas's nodes filtered by kind. App
+   * supplies them so the Services canvas doesn't have to read across the
+   * canvas boundary.
+   */
+  availableMissions?: DocNode[];
+  availableValues?: DocNode[];
+  availableIdentities?: DocNode[];
   /**
    * v0.2 multi-canvas: when set, the canvas selects this node on mount
    * (used for jumping from an actor_ref to its target in the Actors canvas).
@@ -125,6 +147,9 @@ function SketchCanvasInner({
   projectId,
   onNodeDrill,
   availableActors,
+  availableMissions,
+  availableValues,
+  availableIdentities,
   selectNodeId,
   onSelectionConsumed,
 }: SketchCanvasProps) {
@@ -149,6 +174,23 @@ function SketchCanvasInner({
       }
     | { mode: "rewire"; nodeId: string };
   const [pendingActorRef, setPendingActorRef] = useState<PendingActorRef | null>(null);
+  // v0.10 Step 3: same shape as PendingActorRef, but with the ref kind so
+  // we know which master list to feed the picker and which id field to set.
+  type PendingFoundationRef =
+    | {
+        mode: "create";
+        refKind: "mission_ref" | "value_ref" | "identity_ref";
+        preset: NodePreset;
+        pos: { x: number; y: number };
+        resolved: { parentId: string | null };
+      }
+    | {
+        mode: "rewire";
+        refKind: "mission_ref" | "value_ref" | "identity_ref";
+        nodeId: string;
+      };
+  const [pendingFoundationRef, setPendingFoundationRef] =
+    useState<PendingFoundationRef | null>(null);
   const [inspectorNodeId, setInspectorNodeId] = useState<string | null>(null);
 
   // v0.2 multi-canvas: honour ``selectNodeId`` arrival (e.g., jumping from
@@ -483,6 +525,9 @@ function SketchCanvasInner({
         do: "",
         dont: "",
         ref_actor_id: preset?.ref_actor_id ?? null,
+        ref_mission_id: preset?.ref_mission_id ?? null,
+        ref_value_id: preset?.ref_value_id ?? null,
+        ref_identity_id: preset?.ref_identity_id ?? null,
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -524,6 +569,9 @@ function SketchCanvasInner({
         do: "",
         dont: "",
         ref_actor_id: preset?.ref_actor_id ?? null,
+        ref_mission_id: preset?.ref_mission_id ?? null,
+        ref_value_id: preset?.ref_value_id ?? null,
+        ref_identity_id: preset?.ref_identity_id ?? null,
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -876,6 +924,23 @@ function SketchCanvasInner({
         setPendingActorRef({ mode: "create", preset, pos, resolved });
         return;
       }
+      // v0.10 Step 3: same deferred-creation flow for the three Foundation
+      // ref kinds. The picker pulls candidates from the Foundation canvas
+      // (passed in via props) and resolves which master to point at.
+      if (
+        preset.kind === "mission_ref" ||
+        preset.kind === "value_ref" ||
+        preset.kind === "identity_ref"
+      ) {
+        setPendingFoundationRef({
+          mode: "create",
+          refKind: preset.kind,
+          preset,
+          pos,
+          resolved,
+        });
+        return;
+      }
       if (resolved.parentId) {
         const parent = nodeById.get(resolved.parentId)!;
         // Position relative to parent's top-left.
@@ -1007,6 +1072,68 @@ function SketchCanvasInner({
           />
         );
       })()}
+      {pendingFoundationRef && (() => {
+        const masterKind: FoundationRefMasterKind | null = masterKindForRef(
+          pendingFoundationRef.refKind,
+        );
+        if (!masterKind) return null;
+        const masters =
+          masterKind === "mission"
+            ? availableMissions ?? []
+            : masterKind === "core_value"
+              ? availableValues ?? []
+              : availableIdentities ?? [];
+        const idField = refIdFieldForKind(pendingFoundationRef.refKind);
+        if (!idField) return null;
+        return (
+          <FoundationRefPicker
+            masterKind={masterKind}
+            masters={masters}
+            mode={pendingFoundationRef.mode}
+            onCancel={() => setPendingFoundationRef(null)}
+            onPick={(master) => {
+              if (pendingFoundationRef.mode === "rewire") {
+                updateNode(pendingFoundationRef.nodeId, {
+                  [idField]: master.id,
+                  label: `→ ${master.label || master.id}`,
+                } as Partial<DocNode>);
+                setPendingFoundationRef(null);
+                return;
+              }
+              const { preset, pos, resolved } = pendingFoundationRef;
+              const w = preset.width ?? DEFAULT_WIDTH;
+              const h = preset.height ?? DEFAULT_HEIGHT;
+              const resolvedPreset: NodePreset = {
+                ...preset,
+                label: `→ ${master.label || master.id}`,
+                [idField]: master.id,
+              };
+              if (resolved.parentId) {
+                const parent = nodeById.get(resolved.parentId)!;
+                let ax = parent.x;
+                let ay = parent.y;
+                let cur: DocNode | undefined = parent;
+                while (cur?.parent_id) {
+                  const p = nodeById.get(cur.parent_id);
+                  if (!p) break;
+                  ax += p.x;
+                  ay += p.y;
+                  cur = p;
+                }
+                addNestedNodeAt({
+                  parentId: resolved.parentId,
+                  localX: Math.max(8, pos.x - ax - w / 2),
+                  localY: Math.max(28, pos.y - ay - h / 2),
+                  preset: resolvedPreset,
+                });
+              } else {
+                addNodeAt(pos.x - w / 2, pos.y - h / 2, resolvedPreset);
+              }
+              setPendingFoundationRef(null);
+            }}
+          />
+        );
+      })()}
       {pendingActorRef && (
         <ActorRefPicker
           nodes={availableActors ?? doc.nodes}
@@ -1062,6 +1189,9 @@ function SketchCanvasInner({
         }
         allNodes={doc.nodes}
         availableActors={availableActors ?? doc.nodes.filter((n) => n.kind === "actor")}
+        availableMissions={availableMissions}
+        availableValues={availableValues}
+        availableIdentities={availableIdentities}
         projectPath={projectPath}
         projectId={projectId}
         canvasKind={doc.canvas_kind}
@@ -1101,6 +1231,9 @@ function SketchCanvasInner({
             do: "",
             dont: "",
             ref_actor_id: null,
+            ref_mission_id: null,
+            ref_value_id: null,
+            ref_identity_id: null,
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}

@@ -258,6 +258,23 @@ export function App() {
     return actorsCanvas.nodes.filter((n) => n.kind === "actor");
   }, [actorsCanvas]);
 
+  // v0.10 Step 3: foundation canvas feeds the FoundationRefPicker. The
+  // three master kinds are filtered separately so each picker shows only
+  // the relevant candidates.
+  const foundationCanvas = canvasCache.get("foundation");
+  const availableMissions: SketchNode[] = useMemo(() => {
+    if (!foundationCanvas) return [];
+    return foundationCanvas.nodes.filter((n) => n.kind === "mission");
+  }, [foundationCanvas]);
+  const availableValues: SketchNode[] = useMemo(() => {
+    if (!foundationCanvas) return [];
+    return foundationCanvas.nodes.filter((n) => n.kind === "core_value");
+  }, [foundationCanvas]);
+  const availableIdentities: SketchNode[] = useMemo(() => {
+    if (!foundationCanvas) return [];
+    return foundationCanvas.nodes.filter((n) => n.kind === "identity");
+  }, [foundationCanvas]);
+
   // ------- download / upload -------
 
   const handleDownload = useCallback(() => {
@@ -379,6 +396,9 @@ export function App() {
                 projectPath={projectPath ?? ""}
                 projectId={activeId}
                 availableActors={availableActors}
+                availableMissions={availableMissions}
+                availableValues={availableValues}
+                availableIdentities={availableIdentities}
                 selectNodeId={selectedNodeId}
                 onSelectionConsumed={consumeSelection}
                 onNodeDrill={(id) => {

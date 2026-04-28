@@ -60,7 +60,23 @@ NodeKind = Literal[
     "service",
     "rule",
     "content",
+    # v0.10 Step 3: Foundation symbol refs (Symbol/Component pattern). The
+    # masters live on the Foundation canvas; instances can be placed on
+    # Services and Service-Detail canvases to declare which Foundation
+    # commitment a service answers to. See docs/CONCEPTS.md.
+    "mission_ref",
+    "value_ref",
+    "identity_ref",
 ]
+
+# v0.10 Step 3: which ref kind requires which id field. Used by the
+# validator below and by callers that need to enumerate ref kinds.
+_REF_KIND_TO_ID_FIELD: dict[str, str] = {
+    "actor_ref": "ref_actor_id",
+    "mission_ref": "ref_mission_id",
+    "value_ref": "ref_value_id",
+    "identity_ref": "ref_identity_id",
+}
 
 # Composition kinds: must live inside a service (applies to SketchDoc and
 # service_detail CanvasDoc alike).
@@ -118,6 +134,12 @@ class SketchNode(BaseModel):
     # Required when kind == "actor_ref"; ignored otherwise.
     ref_actor_id: str | None = None
 
+    # v0.10 Step 3: Foundation refs. Each is required when its corresponding
+    # ref kind is set; ignored otherwise. The picker fills these in.
+    ref_mission_id: str | None = None
+    ref_value_id: str | None = None
+    ref_identity_id: str | None = None
+
     # v0.10 typed fields per kind. All optional ``""`` defaults so the
     # same model carries any subset; the Inspector form chooses which to
     # surface for each kind. The fields are clustered by their owning
@@ -150,9 +172,12 @@ class SketchNode(BaseModel):
     details_path: str | None = None
 
     @model_validator(mode="after")
-    def _actor_ref_requires_ref_id(self) -> SketchNode:
-        if self.kind == "actor_ref" and not self.ref_actor_id:
-            raise ValueError(f"node {self.id!r} of kind 'actor_ref' requires ref_actor_id")
+    def _ref_kind_requires_ref_id(self) -> SketchNode:
+        # v0.10 Step 3: every *_ref kind requires its matching id field set.
+        # The pre-existing actor_ref check is a special case of the same rule.
+        field = _REF_KIND_TO_ID_FIELD.get(self.kind or "")
+        if field and not getattr(self, field, None):
+            raise ValueError(f"node {self.id!r} of kind {self.kind!r} requires {field}")
         return self
 
     @model_validator(mode="after")
@@ -223,11 +248,16 @@ class SketchEdge(BaseModel):
 
 CanvasKind = Literal["foundation", "actors", "services", "service_detail"]
 
+# v0.10 Step 3: Foundation refs are admitted on the Services overview *and*
+# Service-Detail canvases — services can declare which Mission / Value /
+# Identity they answer to without leaving the canvas.
+_FOUNDATION_REFS = {"mission_ref", "value_ref", "identity_ref"}
+
 _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     "foundation": {"project", "mission", "core_value", "identity"},
     "actors": {"actor"},
-    "services": {"service"},
-    "service_detail": {"service", "rule", "content", "actor_ref"},
+    "services": {"service"} | _FOUNDATION_REFS,
+    "service_detail": {"service", "rule", "content", "actor_ref"} | _FOUNDATION_REFS,
 }
 
 

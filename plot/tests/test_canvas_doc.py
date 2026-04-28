@@ -431,6 +431,91 @@ def test_detail_canvas_actor_ref_without_ref_id_rejected() -> None:
         )
 
 
+# ---------------------------------------------------------------------------
+# v0.10 Step 3 — Foundation reference kinds (Symbol/Component pattern)
+# ---------------------------------------------------------------------------
+
+
+def test_mission_ref_requires_ref_mission_id() -> None:
+    with pytest.raises(ValueError, match="ref_mission_id"):
+        SketchNode(id="mr", kind="mission_ref", label="→ Mission")
+
+
+def test_value_ref_requires_ref_value_id() -> None:
+    with pytest.raises(ValueError, match="ref_value_id"):
+        SketchNode(id="vr", kind="value_ref", label="→ Trust")
+
+
+def test_identity_ref_requires_ref_identity_id() -> None:
+    with pytest.raises(ValueError, match="ref_identity_id"):
+        SketchNode(id="ir", kind="identity_ref", label="→ Voice")
+
+
+def test_foundation_refs_valid_when_id_set() -> None:
+    SketchNode(id="mr", kind="mission_ref", label="→ M", ref_mission_id="m1")
+    SketchNode(id="vr", kind="value_ref", label="→ V", ref_value_id="cv1")
+    SketchNode(id="ir", kind="identity_ref", label="→ I", ref_identity_id="id1")
+
+
+def test_services_canvas_accepts_foundation_refs() -> None:
+    """Top-level service can sit beside foundation ref nodes that declare
+    which Mission / Value / Identity it answers to."""
+    CanvasDoc(
+        canvas_id="services",
+        canvas_kind="services",
+        nodes=[
+            SketchNode(id="auth", kind="service", label="Auth"),
+            SketchNode(id="mr1", kind="mission_ref", label="→ M", ref_mission_id="m1"),
+            SketchNode(id="vr1", kind="value_ref", label="→ Trust", ref_value_id="cv1"),
+            SketchNode(id="ir1", kind="identity_ref", label="→ Voice", ref_identity_id="id1"),
+        ],
+    )
+
+
+def test_service_detail_accepts_foundation_refs() -> None:
+    """Sub-service composition canvas accepts the four ref kinds together."""
+    CanvasDoc(
+        canvas_id="auth",
+        canvas_kind="service_detail",
+        service_ref="auth",
+        nodes=[
+            SketchNode(id="auth", kind="service", label="Auth"),
+            SketchNode(
+                id="ar1", kind="actor_ref", label="→ user", ref_actor_id="user"
+            ),
+            SketchNode(id="mr1", kind="mission_ref", label="→ M", ref_mission_id="m1"),
+            SketchNode(id="vr1", kind="value_ref", label="→ Trust", ref_value_id="cv1"),
+            SketchNode(id="ir1", kind="identity_ref", label="→ Voice", ref_identity_id="id1"),
+        ],
+    )
+
+
+def test_actors_canvas_rejects_foundation_refs() -> None:
+    """Foundation refs only make sense on Services-side canvases."""
+    with pytest.raises(ValueError, match="not allowed"):
+        CanvasDoc(
+            canvas_id="actors",
+            canvas_kind="actors",
+            nodes=[
+                SketchNode(id="user", kind="actor", label="U"),
+                SketchNode(id="mr", kind="mission_ref", label="→ M", ref_mission_id="m1"),
+            ],
+        )
+
+
+def test_foundation_canvas_rejects_foundation_refs() -> None:
+    """Masters live on the Foundation canvas; refs would be a self-loop."""
+    with pytest.raises(ValueError, match="not allowed"):
+        CanvasDoc(
+            canvas_id="foundation",
+            canvas_kind="foundation",
+            nodes=[
+                *_core_seed_nodes(),
+                SketchNode(id="mr", kind="mission_ref", label="→ M", ref_mission_id="mission"),
+            ],
+        )
+
+
 def test_detail_canvas_actor_kind_rejected() -> None:
     """Raw actors belong in the Actor canvas, not Detail."""
     with pytest.raises(ValueError, match="not allowed"):

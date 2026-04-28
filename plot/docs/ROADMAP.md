@@ -54,7 +54,7 @@ The smallest contained change, so it can land before anything else.
 
 **Tests**: round-trip + Inspector field rendering.
 
-## Step 3 — Reference kinds (mission_ref / value_ref / identity_ref)  `[ ]`
+## Step 3 — Reference kinds (mission_ref / value_ref / identity_ref)  `[x]`
 
 Generalise the existing `actor_ref` symbol pattern to Foundation.
 

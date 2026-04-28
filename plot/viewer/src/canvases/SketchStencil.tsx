@@ -92,6 +92,49 @@ const ACTOR_REF: StencilPreset = {
   kind: "actor_ref",
 };
 
+// v0.10 Step 3: Foundation references — symbol/component instances of a
+// Mission / Core Value / Identity master from the Foundation canvas.
+// Distinct hue per kind so the canvas reads at a glance: yellow = Mission,
+// amber = Value, orange = Identity (matching the Foundation stencil tints).
+// Each carries its specific ref_*_id once the picker resolves the target.
+const MISSION_REF: StencilPreset = {
+  id: "mission-ref",
+  labelHint: "Mission ref",
+  shape: "ellipse",
+  color: "#fef3c7",
+  width: 160,
+  height: 60,
+  icon: "flag",
+  label: "→ Mission",
+  kind: "mission_ref",
+};
+
+const VALUE_REF: StencilPreset = {
+  id: "value-ref",
+  labelHint: "Value ref",
+  shape: "ellipse",
+  color: "#fde68a",
+  width: 160,
+  height: 60,
+  icon: "star",
+  label: "→ Value",
+  kind: "value_ref",
+};
+
+const IDENTITY_REF: StencilPreset = {
+  id: "identity-ref",
+  labelHint: "Identity ref",
+  shape: "ellipse",
+  color: "#fed7aa",
+  width: 160,
+  height: 60,
+  icon: "heart",
+  label: "→ Identity",
+  kind: "identity_ref",
+};
+
+const FOUNDATION_REFS: StencilPreset[] = [MISSION_REF, VALUE_REF, IDENTITY_REF];
+
 /**
  * Service internals visible on the canvas = decomposition only.
  *
@@ -143,6 +186,7 @@ export const STENCIL_PRESETS: StencilPreset[] = [
   CORE_VALUE,
   CORE_IDENTITY,
   ACTOR_REF,
+  ...FOUNDATION_REFS,
 ];
 
 /**
@@ -275,6 +319,11 @@ export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
         title="Participants"
         presets={[ACTOR_REF]}
         note="pick from Actor canvas"
+      />
+      <Section
+        title="Foundation refs"
+        presets={FOUNDATION_REFS}
+        note="anchor to Mission / Value / Identity"
       />
     </div>
   );

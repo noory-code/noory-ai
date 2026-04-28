@@ -15,6 +15,11 @@ export interface SketchInspectorProps {
    * the per-tab filtered view.
    */
   availableActors: SketchNode[];
+  /** v0.10 Step 3: foundation masters so the Inspector can render
+   *  ref-target labels for the three foundation ref kinds. */
+  availableMissions?: SketchNode[];
+  availableValues?: SketchNode[];
+  availableIdentities?: SketchNode[];
   /** Patch the selected node's own fields. */
   onPatchNode: (patch: Partial<SketchNode>) => void;
   /** Create a new rule/content child under ``parentId``. */
@@ -54,6 +59,9 @@ export function SketchInspector({
   node,
   allNodes,
   availableActors,
+  availableMissions,
+  availableValues,
+  availableIdentities,
   onPatchNode,
   onAddChild,
   onPatchChild,
@@ -221,6 +229,20 @@ export function SketchInspector({
               (centre of its tree)
             </span>
           </label>
+        )}
+
+        {/* v0.10 Step 3: Foundation refs show their target master + a hint
+             when the master is missing (orphan). No re-pick button yet —
+             user can drag a fresh ref preset and delete the broken one. */}
+        {(node.kind === "mission_ref" ||
+          node.kind === "value_ref" ||
+          node.kind === "identity_ref") && (
+          <FoundationRefBlock
+            node={node}
+            availableMissions={availableMissions ?? []}
+            availableValues={availableValues ?? []}
+            availableIdentities={availableIdentities ?? []}
+          />
         )}
 
         {/* Actor reference — link (or broken link) back to the Actor canvas node. */}
@@ -427,6 +449,70 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
           className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// v0.10 Step 3 — Foundation reference display (mission_ref / value_ref / identity_ref)
+// ---------------------------------------------------------------------------
+
+interface FoundationRefBlockProps {
+  node: SketchNode;
+  availableMissions: SketchNode[];
+  availableValues: SketchNode[];
+  availableIdentities: SketchNode[];
+}
+
+function FoundationRefBlock({
+  node,
+  availableMissions,
+  availableValues,
+  availableIdentities,
+}: FoundationRefBlockProps) {
+  let label: string;
+  let id: string | null;
+  let masters: SketchNode[];
+  let tone: { fg: string; bg: string };
+  if (node.kind === "mission_ref") {
+    label = "Mission";
+    id = node.ref_mission_id;
+    masters = availableMissions;
+    tone = { fg: "text-amber-700", bg: "border-amber-200 bg-amber-50/40" };
+  } else if (node.kind === "value_ref") {
+    label = "Core value";
+    id = node.ref_value_id;
+    masters = availableValues;
+    tone = { fg: "text-yellow-700", bg: "border-yellow-200 bg-yellow-50/40" };
+  } else {
+    label = "Identity";
+    id = node.ref_identity_id;
+    masters = availableIdentities;
+    tone = { fg: "text-orange-700", bg: "border-orange-200 bg-orange-50/40" };
+  }
+  const target = id ? masters.find((m) => m.id === id) ?? null : null;
+  const orphan = !id || target === null;
+  return (
+    <div className={`mb-4 rounded border p-2 text-[11px] ${tone.bg}`}>
+      <div className={`mb-1 font-semibold uppercase tracking-wide ${tone.fg}`}>
+        References — {label}
+      </div>
+      {orphan ? (
+        <>
+          <div className="text-rose-700">⚠ master not found on Foundation canvas</div>
+          <div className="mt-0.5 font-mono text-[10px] text-slate-500">
+            id: {id ?? "—"}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="text-slate-700">
+            <span className="text-slate-500">{label}:</span>{" "}
+            <span className="font-medium">{target.label || target.id}</span>
+          </div>
+          <div className="mt-0.5 font-mono text-[10px] text-slate-400">{id}</div>
+        </>
+      )}
     </div>
   );
 }

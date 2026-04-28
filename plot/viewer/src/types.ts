@@ -36,7 +36,15 @@ export type NodeKind =
   | "actor_ref"
   | "service"
   | "rule"
-  | "content";
+  | "content"
+  // v0.10 Step 3: Foundation symbol refs (master/instance pattern). Masters
+  // live on the Foundation canvas; instances on Services / Service-Detail.
+  | "mission_ref"
+  | "value_ref"
+  | "identity_ref";
+
+/** v0.10 Step 3: the four ref kinds form a uniform family. */
+export type RefKind = "actor_ref" | "mission_ref" | "value_ref" | "identity_ref";
 
 /**
  * Plural forms of value that can flow along an edge. See PHILOSOPHY.md (P2).
@@ -88,6 +96,10 @@ export interface SketchNode {
   dont: string;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
+  /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */
+  ref_mission_id: string | null;
+  ref_value_id: string | null;
+  ref_identity_id: string | null;
   /** v0.9.1: project-relative path to this node's long-form ``details.md``
    *  (resolved server-side under ``.plot/{project_id}/``). ``null`` =
    *  no MD yet; Inspector offers a "Create details" button. */
