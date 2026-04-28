@@ -67,6 +67,11 @@ NodeKind = Literal[
     "mission_ref",
     "value_ref",
     "identity_ref",
+    # v0.10 Step 5: composition kinds inside a service_detail canvas.
+    #   metric — how the service is measured (KPI, success rate, latency).
+    #   step   — an ordered procedural step in the service's flow.
+    "metric",
+    "step",
 ]
 
 # v0.10 Step 3: which ref kind requires which id field. Used by the
@@ -80,7 +85,8 @@ _REF_KIND_TO_ID_FIELD: dict[str, str] = {
 
 # Composition kinds: must live inside a service (applies to SketchDoc and
 # service_detail CanvasDoc alike).
-_COMPOSITION_KINDS = {"rule", "content"}
+# v0.10 Step 5: metric + step join the family.
+_COMPOSITION_KINDS = {"rule", "content", "metric", "step"}
 
 
 class SketchNode(BaseModel):
@@ -184,6 +190,18 @@ class SketchNode(BaseModel):
     how: str = ""
     outcome: str = ""
 
+    # metric (service_detail, kind="metric"):
+    #   ``target``      — goal value or threshold (e.g. ">99% success").
+    #   ``measurement`` — how the metric is measured.
+    target: str = ""
+    measurement: str = ""
+
+    # step (service_detail, kind="step"):
+    #   ``order`` — ordinal position in the procedural sequence; ``None``
+    #               leaves the step unordered (e.g. parallel branches).
+    #   ``outcome`` is shared with service (declared above).
+    order: int | None = None
+
     # v0.9.1 long-form pointer. Project-relative path (e.g.
     # ``"foundation/mission-1/details.md"``); Plot resolves it under
     # ``.plot/{project_id}/``. ``None`` means the node has no MD file yet
@@ -276,7 +294,14 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     "foundation": {"project", "mission", "core_value", "identity"},
     "actors": {"actor"},
     "services": {"service"} | _FOUNDATION_REFS,
-    "service_detail": {"service", "rule", "content", "actor_ref"} | _FOUNDATION_REFS,
+    "service_detail": {
+        "service",
+        "rule",
+        "content",
+        "metric",
+        "step",
+        "actor_ref",
+    } | _FOUNDATION_REFS,
 }
 
 

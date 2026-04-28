@@ -287,6 +287,17 @@ export function SketchInspector({
           </div>
         )}
 
+        {/* v0.10 Step 5: Metric typed form — target + measurement. */}
+        {node.kind === "metric" && (
+          <MetricFields node={node} onPatchNode={onPatchNode} />
+        )}
+
+        {/* v0.10 Step 5: Step typed form — order + outcome (outcome shared
+             with service kind, declared once on the model). */}
+        {node.kind === "step" && (
+          <StepFields node={node} onPatchNode={onPatchNode} />
+        )}
+
         {/* v0.10 Step 4: Service typed form — branches by canvas + parent.
              Top-level services (services canvas, parent_id = null) get
              "what / value_created / scope" plus the shared Do/Don't pair.
@@ -585,6 +596,87 @@ function ServiceTextarea({
         className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-sky-600 focus:outline-none"
       />
     </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// v0.10 Step 5 — metric + step composition typed fields
+// ---------------------------------------------------------------------------
+
+interface MetricFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function MetricFields({ node, onPatchNode }: MetricFieldsProps) {
+  return (
+    <div className="mb-4 rounded border border-lime-200 bg-lime-50/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-lime-700">
+        Metric
+      </div>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">Target</span>
+        <span className="ml-1 text-[10px] text-slate-500">— goal value or threshold</span>
+        <input
+          type="text"
+          value={node.target ?? ""}
+          onChange={(e) => onPatchNode({ target: e.target.value })}
+          placeholder=">99% / under 200ms / …"
+          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-lime-600 focus:outline-none"
+        />
+      </label>
+      <label className="block">
+        <span className="text-xs font-semibold text-slate-700">Measurement</span>
+        <span className="ml-1 text-[10px] text-slate-500">— how it's measured</span>
+        <textarea
+          rows={2}
+          value={node.measurement ?? ""}
+          onChange={(e) => onPatchNode({ measurement: e.target.value })}
+          placeholder="어떤 신호를 어떻게 집계?"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-lime-600 focus:outline-none"
+        />
+      </label>
+    </div>
+  );
+}
+
+interface StepFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function StepFields({ node, onPatchNode }: StepFieldsProps) {
+  return (
+    <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+        Step
+      </div>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">Order</span>
+        <span className="ml-1 text-[10px] text-slate-500">— ordinal in sequence (blank = unordered)</span>
+        <input
+          type="number"
+          value={node.order ?? ""}
+          onChange={(e) => {
+            const raw = e.target.value;
+            onPatchNode({ order: raw === "" ? null : Number(raw) });
+          }}
+          placeholder="1, 2, 3, …"
+          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        />
+      </label>
+      <label className="block">
+        <span className="text-xs font-semibold text-slate-700">Outcome</span>
+        <span className="ml-1 text-[10px] text-slate-500">— observable end state</span>
+        <textarea
+          rows={2}
+          value={node.outcome ?? ""}
+          onChange={(e) => onPatchNode({ outcome: e.target.value })}
+          placeholder="이 step 끝나면 어떤 상태?"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        />
+      </label>
+    </div>
   );
 }
 

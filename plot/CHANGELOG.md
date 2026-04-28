@@ -4,6 +4,45 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.4] — 2026-04-28
+
+Step 5 of the v0.10 kind-redefinition program. Two new composition
+kinds for the Service-Detail canvas — explicit success indicators
+(metrics) and ordered procedural flow (steps).
+
+### Added — **`metric` kind**
+- New node kind admitted only on the **service_detail** canvas, with
+  the same parent-must-be-a-service rule that already governs
+  `rule` / `content`.
+- Typed fields:
+  - `target: str = ""` — goal value or threshold (e.g. `>99%`).
+  - `measurement: str = ""` — how the metric is measured.
+- Stencil entry on the Services-tab stencil under "Composition"
+  (drop on a Service container).
+
+### Added — **`step` kind**
+- New node kind admitted only on the **service_detail** canvas, same
+  parent constraint as the other composition kinds.
+- Typed fields:
+  - `order: int | None = None` — ordinal position in the sequence;
+    `None` leaves the step unordered (e.g. parallel branches).
+  - `outcome: str = ""` — observable end state. Shared with `service`
+    (declared once on the model in v0.10 Step 4).
+- Stencil entry on the Services-tab stencil under "Composition".
+
+### Changed — **`_COMPOSITION_KINDS`**
+- Now `{rule, content, metric, step}`. Inside a `service_detail`
+  canvas all four kinds must have a service parent.
+
+### Notes
+- `metric` and `step` are canvas-first composition (visible on the
+  Service-Detail canvas), unlike `rule` / `content` which remain
+  Inspector-only `+ Add` items. The model accepts both kinds in either
+  position; the editorial choice is a UI policy.
+- Inspector forms render the typed fields per-kind. Drop validator
+  rejects metric/step placed at top level with the standard
+  "Drop inside a Service container" message.
+
 ## [0.10.3] — 2026-04-28
 
 Step 4 of the v0.10 kind-redefinition program. Service nodes gain typed

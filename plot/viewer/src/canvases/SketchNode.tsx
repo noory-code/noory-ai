@@ -15,6 +15,9 @@ const KIND_TAG_LABELS: Record<string, string> = {
   mission: "MISSION",
   core_value: "CORE VALUE",
   identity: "IDENTITY",
+  // v0.10 Step 5: composition kinds visible on Service-Detail canvases.
+  metric: "METRIC",
+  step: "STEP",
 };
 
 /** Shapes whose top-left corner is inside the visible silhouette. */

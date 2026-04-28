@@ -41,7 +41,12 @@ export type NodeKind =
   // live on the Foundation canvas; instances on Services / Service-Detail.
   | "mission_ref"
   | "value_ref"
-  | "identity_ref";
+  | "identity_ref"
+  // v0.10 Step 5: composition kinds inside service_detail.
+  //   metric — KPI / SLA / success rate
+  //   step   — ordered procedural step
+  | "metric"
+  | "step";
 
 /** v0.10 Step 3: the four ref kinds form a uniform family. */
 export type RefKind = "actor_ref" | "mission_ref" | "value_ref" | "identity_ref";
@@ -104,6 +109,12 @@ export interface SketchNode {
   trigger: string;
   how: string;
   outcome: string;
+  /** v0.10 Step 5: metric kind — target value + how it's measured. */
+  target: string;
+  measurement: string;
+  /** v0.10 Step 5: step kind — ordinal in the procedural sequence,
+   *  ``null`` = unordered (e.g. parallel branches). */
+  order: number | null;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */

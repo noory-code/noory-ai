@@ -98,7 +98,7 @@ Generalise the existing `actor_ref` symbol pattern to Foundation.
 
 **Tests**: top vs sub field round-trip, Foundation-ref validator.
 
-## Step 5 — New composition kinds (metric, step)  `[ ]`
+## Step 5 — New composition kinds (metric, step)  `[x]`
 
 **Python**
 - `NodeKind`: add `"metric"`, `"step"`.

@@ -138,10 +138,11 @@ const FOUNDATION_REFS: StencilPreset[] = [MISSION_REF, VALUE_REF, IDENTITY_REF];
 /**
  * Service internals visible on the canvas = decomposition only.
  *
- * Composition kinds (rule, content) are edited via the right-hand
- * Inspector panel, not rendered as nodes. Keeping them out of the
- * stencil prevents users from dropping them onto the canvas by
- * accident.
+ * rule / content remain Inspector-only (they're small structured items
+ * edited via the "+ Add" button, not dragged), but v0.10 Step 5 adds
+ * metric / step as canvas-first composition: an ordered procedural
+ * flow (steps) and explicit success indicators (metrics) make more
+ * sense visually on the Service-Detail canvas than buried in a list.
  */
 const SERVICE_INTERNAL: StencilPreset[] = [
   {
@@ -154,6 +155,33 @@ const SERVICE_INTERNAL: StencilPreset[] = [
     icon: "zap",
     label: "Sub-Service",
     kind: "service",
+    dropHint: "Drop inside a Service container",
+  },
+];
+
+const SERVICE_COMPOSITION: StencilPreset[] = [
+  {
+    id: "metric",
+    labelHint: "Metric",
+    shape: "rounded",
+    color: "#d9f99d",
+    width: 150,
+    height: 60,
+    icon: "target",
+    label: "Metric",
+    kind: "metric",
+    dropHint: "Drop inside a Service container",
+  },
+  {
+    id: "step",
+    labelHint: "Step",
+    shape: "rectangle",
+    color: "#e0e7ff",
+    width: 150,
+    height: 60,
+    icon: "clipboard-list",
+    label: "Step",
+    kind: "step",
     dropHint: "Drop inside a Service container",
   },
 ];
@@ -181,6 +209,7 @@ export const STENCIL_PRESETS: StencilPreset[] = [
   TOP_LEVEL_ACTOR,
   TOP_LEVEL_SERVICE,
   ...SERVICE_INTERNAL,
+  ...SERVICE_COMPOSITION,
   ...ACTOR_INTERNAL,
   CORE_MISSION,
   CORE_VALUE,
@@ -203,7 +232,13 @@ export function resolveDropTarget(
   preset: StencilPreset,
   containerAtDrop: { id: string; kind: NodeKind | null } | null,
 ): { parentId: string | null } | { error: string } {
-  const isComposition = preset.kind === "rule" || preset.kind === "content";
+  // v0.10 Step 5: metric + step join rule + content as composition kinds
+  // — they all require a service parent.
+  const isComposition =
+    preset.kind === "rule" ||
+    preset.kind === "content" ||
+    preset.kind === "metric" ||
+    preset.kind === "step";
   const isSubService = preset.id === "sub-service";
   const isSubActor = preset.id === "sub-actor";
 
@@ -314,6 +349,11 @@ export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
         title="Service hierarchy"
         presets={SERVICE_INTERNAL}
         note="drop on a Service"
+      />
+      <Section
+        title="Composition"
+        presets={SERVICE_COMPOSITION}
+        note="metrics + steps inside a service detail"
       />
       <Section
         title="Participants"

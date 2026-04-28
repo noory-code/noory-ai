@@ -551,6 +551,107 @@ def test_sub_service_typed_fields_round_trip() -> None:
     assert login.outcome == "홈 화면으로 리다이렉트"
 
 
+# ---------------------------------------------------------------------------
+# v0.10 Step 5 — metric / step composition kinds
+# ---------------------------------------------------------------------------
+
+
+def test_metric_node_carries_typed_fields() -> None:
+    n = SketchNode(
+        id="m-login-rate",
+        kind="metric",
+        label="Login success rate",
+        target=">99%",
+        measurement="OK 응답 / 전체 요청 (5분 윈도우)",
+    )
+    assert n.target == ">99%"
+    assert "OK 응답" in n.measurement
+
+
+def test_step_node_carries_typed_fields() -> None:
+    n = SketchNode(
+        id="s-verify",
+        kind="step",
+        label="Verify credentials",
+        order=2,
+        outcome="세션 토큰 발급 OR 401 반환",
+    )
+    assert n.order == 2
+    assert "세션 토큰" in n.outcome
+
+
+def test_step_order_optional() -> None:
+    """Unordered steps (parallel branches) leave ``order`` at ``None``."""
+    n = SketchNode(id="s-async", kind="step", label="Send email")
+    assert n.order is None
+
+
+def test_service_detail_accepts_metric_and_step() -> None:
+    CanvasDoc(
+        canvas_id="auth",
+        canvas_kind="service_detail",
+        service_ref="auth",
+        nodes=[
+            SketchNode(id="auth", kind="service", label="Auth"),
+            SketchNode(
+                id="m1",
+                kind="metric",
+                parent_id="auth",
+                label="Login success rate",
+                target=">99%",
+            ),
+            SketchNode(
+                id="s1",
+                kind="step",
+                parent_id="auth",
+                label="Verify credentials",
+                order=1,
+            ),
+        ],
+    )
+
+
+def test_metric_requires_service_parent() -> None:
+    """Like rule/content, metric/step are composition kinds and must live
+    inside a service. Top-level placement is rejected."""
+    with pytest.raises(ValueError, match="parent_id"):
+        CanvasDoc(
+            canvas_id="auth",
+            canvas_kind="service_detail",
+            service_ref="auth",
+            nodes=[
+                SketchNode(id="auth", kind="service", label="Auth"),
+                SketchNode(id="m1", kind="metric", label="Stray"),
+            ],
+        )
+
+
+def test_step_requires_service_parent() -> None:
+    with pytest.raises(ValueError, match="parent_id"):
+        CanvasDoc(
+            canvas_id="auth",
+            canvas_kind="service_detail",
+            service_ref="auth",
+            nodes=[
+                SketchNode(id="auth", kind="service", label="Auth"),
+                SketchNode(id="s1", kind="step", label="Stray"),
+            ],
+        )
+
+
+def test_services_canvas_rejects_metric() -> None:
+    """metric/step belong inside service_detail, not on the overview."""
+    with pytest.raises(ValueError, match="not allowed"):
+        CanvasDoc(
+            canvas_id="services",
+            canvas_kind="services",
+            nodes=[
+                SketchNode(id="auth", kind="service", label="Auth"),
+                SketchNode(id="m1", kind="metric", label="Stray"),
+            ],
+        )
+
+
 def test_foundation_canvas_rejects_foundation_refs() -> None:
     """Masters live on the Foundation canvas; refs would be a self-loop."""
     with pytest.raises(ValueError, match="not allowed"):

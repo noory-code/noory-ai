@@ -534,6 +534,9 @@ function SketchCanvasInner({
         trigger: "",
         how: "",
         outcome: "",
+        target: "",
+        measurement: "",
+        order: null,
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -584,6 +587,9 @@ function SketchCanvasInner({
         trigger: "",
         how: "",
         outcome: "",
+        target: "",
+        measurement: "",
+        order: null,
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -1252,6 +1258,9 @@ function SketchCanvasInner({
             trigger: "",
             how: "",
             outcome: "",
+            target: "",
+            measurement: "",
+            order: null,
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}
