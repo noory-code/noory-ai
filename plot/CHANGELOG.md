@@ -4,6 +4,45 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.2] — 2026-04-30
+
+Phase C of v0.11. Two long-standing soft rules graduate to hard
+validators, and `actor_ref` joins the typed-field family with a
+per-actor-per-service value-flow pair.
+
+### Added — **`actor_ref` typed fields (Phase C3)**
+- `SketchNode.gives: str = ""` — what this actor gives to the service.
+- `SketchNode.receives: str = ""` — what this actor receives back.
+- Inspector renders an "Value flow" form on `actor_ref` selection
+  with the two fields side by side. Both optional.
+- Rationale: PHILOSOPHY.md P6 ("arrows carry action + value") in its
+  weakened form. The flow lives on the ref node rather than on an
+  explicit edge, so the value economy is captured per-pair without
+  forcing the user to draw and label dozens of arrows.
+- `service.value_created` (aggregate) and `actor_ref.gives` /
+  `receives` (per-pair) are deliberately orthogonal.
+
+### Changed — **Top-level service Foundation anchor is now a hard
+validator (Phase C2)**
+- A `services` canvas containing at least one top-level service must
+  also contain at least one Foundation reference (`mission_ref` /
+  `value_ref` / `identity_ref`). An empty services canvas is fine.
+- The same rule was already in IDENTITY.md and CONCEPTS.md as docs;
+  this release wires it into Pydantic.
+- Mapping is **canvas-level, not per-service**: the visual layout
+  (which anchor sits next to which service) carries the 1:1 nuance.
+  This keeps the model schema free of new fields and matches the
+  existing `mission_ref` placement pattern from v0.10.2.
+- Migrator: legacy v0.1 sketches whose split overview canvas had no
+  anchor get a single `mission_ref → "mission"` seeded automatically
+  so the canvas validates after open. Idempotent.
+
+### Notes
+- Tests: 162 passing. New test `test_overview_services_without_anchor_rejected`
+  asserts the new floor; existing fixtures padded with anchors.
+- Phase D (time-axis compatibility + v0.11 vs v0.12+ scoping) remains
+  the last v0.11 step.
+
 ## [0.11.1] — 2026-04-30
 
 Phase B of v0.11. The `actor_ref` orphan UX (re-pick, delete) now

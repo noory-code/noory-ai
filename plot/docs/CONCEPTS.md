@@ -331,6 +331,22 @@ Each ref kind is a separate kind, not a single generic one. They look
 visually distinct, validate against the right master kind, and let the
 AI ask "which Mission does this service realise?" rigorously.
 
+### `actor_ref` typed fields (v0.11.2)
+
+`actor_ref` carries the **per-actor-per-service value flow** — the
+weakened form of PHILOSOPHY.md P6 ("arrows carry action and value").
+The flow lives on the ref node rather than on an explicit edge.
+
+- `gives` — what this actor gives to the service.
+- `receives` — what this actor receives back.
+
+Both optional. `service.value_created` is the aggregate; `gives` /
+`receives` is each actor's individual exchange. The AI uses this pair
+to reason about persona behaviour and service value economics without
+having to parse free prose. The other ref kinds carry only the
+`ref_*_id` link plus the auto-synced label (no value-flow fields —
+the foundation refs aren't trade participants).
+
 ---
 
 ## Design principles
@@ -344,8 +360,10 @@ AI ask "which Mission does this service realise?" rigorously.
    thinking, and most are optional. A small set of hard requirements
    set Plot's quality floor — they encode what Plot *is*, not just
    nice-to-haves. The current floor:
-   - A top-level service requires a Foundation reference (identity or
-     value).
+   - A `services` canvas with at least one top-level service requires
+     **≥ 1 Foundation anchor** (`mission_ref` / `value_ref` /
+     `identity_ref`) on the same canvas — alignment ownership must be
+     visible at the top view.
    - A project's `actors` canvas requires **≥ 2** actor classes.
    - Every service requires **≥ 2** `actor_ref` participants, and one
      of them must be an explicit operator (moderation /

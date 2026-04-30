@@ -134,6 +134,11 @@ export interface SketchNode {
    *  value exchange they occupy. Set on every actor; on actor_ref it
    *  mirrors the master's side (denormalised at picker time). */
   side: "operator" | "user" | null;
+  /** v0.11 Phase C3: actor_ref captures the value flow between this
+   *  actor and the service it sits in. ``gives`` and ``receives`` are
+   *  per-actor-per-service; service.value_created is the aggregate. */
+  gives: string;
+  receives: string;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */

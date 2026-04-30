@@ -213,6 +213,15 @@ class SketchNode(BaseModel):
     #   the AI-first framing from IDENTITY.md.
     motivation: str = ""
     pain: str = ""
+
+    # actor_ref (service / service_detail, kind="actor_ref"):
+    #   v0.11 Phase C3 — each ref captures the value flow between this actor
+    #   and the service it sits in. ``gives`` and ``receives`` are
+    #   per-actor-per-service; service.value_created is the aggregate. The
+    #   weakened version of PHILOSOPHY.md P6 ("arrows carry action + value")
+    #   — the value flow lives on the node instead of an explicit edge.
+    gives: str = ""
+    receives: str = ""
     # ``side`` partitions actors by which side of the value exchange they
     # occupy. v0.11 settles on two values; ``external`` etc. may be added
     # later if a domain demands it.
@@ -443,6 +452,25 @@ class CanvasDoc(BaseModel):
                 "services canvas forbids nested nodes (use service_detail for "
                 f"decomposition); offending: {sorted(n.id for n in nested)}"
             )
+        # v0.11 Phase C2 — when at least one top-level service exists on the
+        # canvas, at least one Foundation anchor (mission_ref / value_ref /
+        # identity_ref) must also be present. This enforces IDENTITY.md's
+        # "alignment ownership must be visible" floor without forcing a 1:1
+        # service↔anchor mapping (the visual layout carries that nuance).
+        # An empty services canvas (no services yet) is fine.
+        services = [n for n in self.nodes if n.kind == "service"]
+        if services:
+            anchors = [
+                n
+                for n in self.nodes
+                if n.kind in {"mission_ref", "value_ref", "identity_ref"}
+            ]
+            if not anchors:
+                raise ValueError(
+                    "services canvas with top-level services requires at least "
+                    "one Foundation anchor (mission_ref / value_ref / "
+                    "identity_ref). See IDENTITY.md."
+                )
         return self
 
     @model_validator(mode="after")

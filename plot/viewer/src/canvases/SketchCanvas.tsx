@@ -569,6 +569,8 @@ function SketchCanvasInner({
         motivation: "",
         pain: "",
         side: null,
+        gives: "",
+        receives: "",
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -631,6 +633,8 @@ function SketchCanvasInner({
         motivation: "",
         pain: "",
         side: null,
+        gives: "",
+        receives: "",
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -1328,6 +1332,8 @@ function SketchCanvasInner({
             motivation: "",
             pain: "",
             side: null,
+            gives: "",
+            receives: "",
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}

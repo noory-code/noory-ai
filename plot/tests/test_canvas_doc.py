@@ -332,14 +332,38 @@ def test_actors_canvas_actor_ref_rejected() -> None:
 
 
 def test_overview_top_level_services_ok() -> None:
+    """v0.11 Phase C2 — services canvas with services needs ≥ 1 anchor."""
     CanvasDoc(
         canvas_id="services",
         canvas_kind="services",
         nodes=[
             SketchNode(id="order", kind="service", label="주문"),
             SketchNode(id="pay", kind="service", label="결제"),
+            SketchNode(
+                id="mr1",
+                kind="mission_ref",
+                ref_mission_id="mission",
+                label="→ Mission",
+            ),
         ],
     )
+
+
+def test_overview_services_without_anchor_rejected() -> None:
+    """v0.11 Phase C2 — services canvas with services but no anchor rejects."""
+    with pytest.raises(ValueError, match="Foundation anchor"):
+        CanvasDoc(
+            canvas_id="services",
+            canvas_kind="services",
+            nodes=[
+                SketchNode(id="order", kind="service", label="주문"),
+            ],
+        )
+
+
+def test_overview_empty_canvas_ok() -> None:
+    """v0.11 — empty services canvas (no services yet) is fine, no anchor needed."""
+    CanvasDoc(canvas_id="services", canvas_kind="services", nodes=[])
 
 
 def test_overview_nested_service_rejected() -> None:

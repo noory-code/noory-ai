@@ -251,6 +251,12 @@ export function SketchInspector({
           />
         )}
 
+        {/* v0.11.2 Phase C3: actor_ref captures per-actor-per-service value
+             flow. Two free-form fields, both optional. */}
+        {node.kind === "actor_ref" && (
+          <ActorRefFields node={node} onPatchNode={onPatchNode} />
+        )}
+
         {/* Actor reference — link (or broken link) back to the Actor canvas node. */}
         {node.kind === "actor_ref" && !isOrphanActorRef && refTarget && (
           <div className="mb-4 rounded border border-pink-200 bg-pink-50/40 p-2 text-[11px]">
@@ -869,6 +875,58 @@ function ContentActorPicker({
         ))}
       </select>
     </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// v0.11.2 Phase C3 — actor_ref value flow (gives / receives)
+// ---------------------------------------------------------------------------
+//
+// Per-actor-per-service value flow on the ref node itself (rather than on
+// an explicit edge). PHILOSOPHY.md P6 ("arrows carry action and value")
+// in its weakened form: the value lives on the ref node, the arrow is the
+// implicit "this actor participates in this service" relationship.
+// service.value_created is the aggregate; gives/receives is each actor's
+// individual exchange with this service.
+
+interface ActorRefFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
+  return (
+    <div className="mb-4 rounded border border-pink-200 bg-pink-50/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-pink-700">
+        Value flow (this service ↔ this actor)
+      </div>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-emerald-700">Gives</span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — what this actor gives to the service (주는 가치)
+        </span>
+        <textarea
+          rows={2}
+          value={node.gives ?? ""}
+          onChange={(e) => onPatchNode({ gives: e.target.value })}
+          placeholder="콘텐츠 / 시간 / 결제 / 주의 …"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-emerald-600 focus:outline-none"
+        />
+      </label>
+      <label className="block">
+        <span className="text-xs font-semibold text-violet-700">Receives</span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — what this actor receives back (받는 가치)
+        </span>
+        <textarea
+          rows={2}
+          value={node.receives ?? ""}
+          onChange={(e) => onPatchNode({ receives: e.target.value })}
+          placeholder="피드백 / 신뢰 / 접근권 / 즐거움 …"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-violet-600 focus:outline-none"
+        />
+      </label>
+    </div>
   );
 }
 
