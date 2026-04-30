@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.3] — 2026-04-30
+
+Closes the v0.11 release line. Phase D (Mode 2 time-axis layer
+compatibility) was verified without code changes — every Phase A/B/C
+decision extends non-destructively when the time-axis kinds (Task,
+schedule, etc.) are eventually added. The infrastructure layer joins
+Mode 2 as already documented in IDENTITY.md.
+
+### Changed — `docs/ROADMAP.md`
+- Reorganised to cover both v0.10 and v0.11 release lines with a
+  per-phase ship table for v0.11.
+
+### Notes — what's next
+- v0.11 model is now intentionally stable. The next round is
+  **user-experience polish** — known follow-ups (e.g. node click
+  going to label-edit instead of opening the Inspector) and anything
+  surfaced by hands-on use of the new actor/service model.
+- Mode 2 (time-axis task layer) waits until that polish round
+  generates concrete requirements.
+- No code or schema changes in this release.
+
 ## [0.11.2] — 2026-04-30
 
 Phase C of v0.11. Two long-standing soft rules graduate to hard

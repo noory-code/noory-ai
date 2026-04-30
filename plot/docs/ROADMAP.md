@@ -1,11 +1,28 @@
-# Plot Roadmap — v0.10
+# Plot Roadmap — v0.10 / v0.11
 
-The implementation order for the v0.10 kind redefinition. Each step is
+The implementation order for the major release lines. Each step is
 an independent, ship-ready commit (Python green, viewer green, plugin
 patch bumped, pushed). Together they realise the design captured in
-[`CONCEPTS.md`](CONCEPTS.md).
+[`IDENTITY.md`](IDENTITY.md) and [`CONCEPTS.md`](CONCEPTS.md).
 
 > Status legend: `[ ]` not started · `[~]` in progress · `[x]` shipped.
+
+---
+
+## v0.11 — Actor / Service redefinition  `[x]` (all four phases shipped 2026-04-30)
+
+| Phase | Decision | Ship |
+|---|---|---|
+| **A** Actor model | class of people, side ∈ {operator, user}, motivation/pain typed fields, ≥ 2 actors per project, ≥ 2 actor_refs per service | v0.10.7 docs + v0.11.0 |
+| **B** Ref orphan UX | foundation refs join actor_ref's orphan UI; ref labels auto-sync from masters | v0.11.1 |
+| **C** Service polish | services-canvas anchor hard validator; actor_ref `gives` / `receives` value-flow fields | v0.11.2 |
+| **D** Compatibility | time-axis (Mode 2) compatibility verified; v0.11 closes; infrastructure deferred to Mode 2 | (no code) |
+
+Discussion log: `~/.claude/plans/ancient-pondering-petal.md`.
+
+---
+
+## v0.10 — Kind redefinition  `[x]` (shipped 2026-04-28)
 
 ## Step 1 — Foundation rename + Mission typed fields  `[x]`
 
