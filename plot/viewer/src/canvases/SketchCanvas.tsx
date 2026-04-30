@@ -314,8 +314,31 @@ function SketchCanvasInner({
       // break is obvious even at thumbnail scale. Rendering stays in the
       // normal SketchNode component — no branch in the renderer.
       const isOrphan = orphanActorRefIds.has(n.id);
+      // v0.11.1 — for ref kinds, derive the displayed label from the master
+      // (auto-sync). Stored label is used as fallback only when the master
+      // is missing (orphan). This keeps ref labels never stale.
+      const masterDerivedLabel = ((): string | null => {
+        if (n.kind === "actor_ref" && n.ref_actor_id) {
+          const m = (availableActors ?? doc.nodes).find((a) => a.id === n.ref_actor_id);
+          if (m) return `→ ${m.label || m.id}`;
+        }
+        if (n.kind === "mission_ref" && n.ref_mission_id) {
+          const m = (availableMissions ?? []).find((a) => a.id === n.ref_mission_id);
+          if (m) return `→ ${m.label || m.id}`;
+        }
+        if (n.kind === "value_ref" && n.ref_value_id) {
+          const m = (availableValues ?? []).find((a) => a.id === n.ref_value_id);
+          if (m) return `→ ${m.label || m.id}`;
+        }
+        if (n.kind === "identity_ref" && n.ref_identity_id) {
+          const m = (availableIdentities ?? []).find((a) => a.id === n.ref_identity_id);
+          if (m) return `→ ${m.label || m.id}`;
+        }
+        return null;
+      })();
+      const baseLabel = masterDerivedLabel ?? n.label;
       const visualColor = isOrphan ? "#fee2e2" : n.color;
-      const visualLabel = isOrphan ? `⚠ ${n.label}` : n.label;
+      const visualLabel = isOrphan ? `⚠ ${baseLabel}` : baseLabel;
       // v0.9.1: typed fields are gone. The on-canvas node shows just the
       // label; long-form lives in details.md (Inspector only). Pass an
       // empty preview so SketchNode hides the body block.
@@ -1232,6 +1255,23 @@ function SketchCanvasInner({
         projectId={projectId}
         canvasKind={doc.canvas_kind}
         onRepickActorRef={(nodeId) => setPendingActorRef({ mode: "rewire", nodeId })}
+        onRepickFoundationRef={(nodeId) => {
+          // v0.11.1 — find the orphan ref's kind and open the picker.
+          const target = doc.nodes.find((n) => n.id === nodeId);
+          if (
+            !target ||
+            (target.kind !== "mission_ref" &&
+              target.kind !== "value_ref" &&
+              target.kind !== "identity_ref")
+          ) {
+            return;
+          }
+          setPendingFoundationRef({
+            mode: "rewire",
+            refKind: target.kind,
+            nodeId,
+          });
+        }}
         onDeleteNode={(nodeId) => handleNodesDelete([{ id: nodeId } as Node])}
         onPatchNode={(patch) => {
           if (!inspectorNodeId) return;

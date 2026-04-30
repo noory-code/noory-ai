@@ -30,6 +30,9 @@ export interface SketchInspectorProps {
   onRemoveChild: (childId: string) => void;
   /** Open the ActorRefPicker in rewire mode to repoint an actor_ref. */
   onRepickActorRef: (nodeId: string) => void;
+  /** v0.11.1 — open FoundationRefPicker in rewire mode for orphaned
+   *  mission_ref / value_ref / identity_ref. */
+  onRepickFoundationRef?: (nodeId: string) => void;
   /** Remove a node entirely (used by the orphan actor_ref "Delete" action). */
   onDeleteNode: (nodeId: string) => void;
   /** Close the panel. */
@@ -67,6 +70,7 @@ export function SketchInspector({
   onPatchChild,
   onRemoveChild,
   onRepickActorRef,
+  onRepickFoundationRef,
   onDeleteNode,
   onClose,
   projectPath,
@@ -242,6 +246,8 @@ export function SketchInspector({
             availableMissions={availableMissions ?? []}
             availableValues={availableValues ?? []}
             availableIdentities={availableIdentities ?? []}
+            onRepickFoundationRef={onRepickFoundationRef}
+            onDeleteNode={onDeleteNode}
           />
         )}
 
@@ -1025,6 +1031,10 @@ interface FoundationRefBlockProps {
   availableMissions: SketchNode[];
   availableValues: SketchNode[];
   availableIdentities: SketchNode[];
+  /** v0.11.1 — opens FoundationRefPicker in rewire mode for the given node. */
+  onRepickFoundationRef?: (nodeId: string) => void;
+  /** v0.11.1 — delete the orphan ref outright. */
+  onDeleteNode?: (nodeId: string) => void;
 }
 
 function FoundationRefBlock({
@@ -1032,6 +1042,8 @@ function FoundationRefBlock({
   availableMissions,
   availableValues,
   availableIdentities,
+  onRepickFoundationRef,
+  onDeleteNode,
 }: FoundationRefBlockProps) {
   let label: string;
   let id: string | null;
@@ -1063,9 +1075,31 @@ function FoundationRefBlock({
       {orphan ? (
         <>
           <div className="text-rose-700">⚠ master not found on Foundation canvas</div>
-          <div className="mt-0.5 font-mono text-[10px] text-slate-500">
+          <div className="mb-2 font-mono text-[10px] text-slate-500">
             id: {id ?? "—"}
           </div>
+          {(onRepickFoundationRef || onDeleteNode) && (
+            <div className="flex gap-2">
+              {onRepickFoundationRef && (
+                <button
+                  type="button"
+                  onClick={() => onRepickFoundationRef(node.id)}
+                  className="rounded border border-rose-300 bg-white px-2 py-1 text-[11px] font-medium text-rose-700 hover:bg-rose-100"
+                >
+                  Re-pick…
+                </button>
+              )}
+              {onDeleteNode && (
+                <button
+                  type="button"
+                  onClick={() => onDeleteNode(node.id)}
+                  className="rounded px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
         </>
       ) : (
         <>

@@ -4,6 +4,40 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.1] — 2026-04-30
+
+Phase B of v0.11. The `actor_ref` orphan UX (re-pick, delete) now
+extends to all four ref kinds, and ref labels stay in sync with their
+masters automatically.
+
+### Added — **Foundation ref orphan UX**
+- `mission_ref` / `value_ref` / `identity_ref` Inspector blocks now
+  show a **Re-pick…** + **Delete** button pair when the master is
+  missing from the Foundation canvas. Mirrors the existing
+  `actor_ref` orphan UI.
+- `FoundationRefPicker` already supported a `rewire` mode (since
+  v0.10.2); this release wires it through `SketchCanvas` so the
+  Inspector's Re-pick button opens the picker and the user-selected
+  master replaces the orphan's `ref_*_id`.
+
+### Added — **Ref label auto-sync**
+- The displayed label for any ref kind (`actor_ref`, `mission_ref`,
+  `value_ref`, `identity_ref`) is now **derived from the master at
+  render time** — `→ {master.label}`. The stored label remains as a
+  fallback for the orphan case (master missing).
+- This means: rename the master `Mission` to `우리의 사명`, and every
+  `mission_ref` on every canvas updates instantly with no propagation
+  step. No more stale denormalised labels.
+
+### Notes
+- Implementation: the label transform happens in `SketchCanvas`'s
+  React Flow node mapping (`useMemo`), via lookups against the
+  `availableActors` / `availableMissions` / `availableValues` /
+  `availableIdentities` props the App already passes through. No
+  backend / migration change needed.
+- Phase C (Service field polish) and Phase D (time-axis
+  compatibility) remain.
+
 ## [0.11.0] — 2026-04-28
 
 The Actor model promised by v0.10.6 / v0.10.7 lands as code. Phase A
