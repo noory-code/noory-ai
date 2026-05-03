@@ -4,6 +4,36 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.4] — 2026-05-03
+
+Three corrections from continued usage.
+
+### Changed — **Auto-layout dispatches by canvas shape**
+- `dagre LR` lays a graph out as a left→right tree, which only fits
+  the canvases that *are* trees (Services, Service Detail). On
+  Foundation and Actors — both "project anchor at the centre, peers
+  around it" — it collapsed everything into a single horizontal row
+  and broke the radial mental model.
+- New `radialLayout` keeps the `project` anchor where it sits and
+  spreads the other connected nodes on a circle around it (top-down
+  start, equal angular steps, ring sized to the largest peer node).
+  `SketchCanvas.handleAutoLayout` dispatches by `canvas_kind` —
+  Foundation / Actors radial; Services / Service Detail stay dagre.
+
+### Changed — **Label alignment: category left, service centre**
+- v0.12.2 left-aligned service titles to read them as "headers", but
+  in v0.12 the actual *header* role belongs to `category` (the
+  container). Service nodes are leaves and read better centred like
+  every other kind. So the conditional flips: only `category` uses
+  `justify-start`; everything else (including `service`) stays
+  centred.
+
+### Changed — **Collapse button: lose the circle, grow the arrow**
+- The 32×32 white-circle-with-shadow control read as a UI chrome
+  blob detached from the label. Replaced with a borderless inline
+  arrow at `text-xl` (`▸` / `▾`) that hugs the label, hover
+  darkens. Same hit area, much less visual noise.
+
 ## [0.12.3] — 2026-05-03
 
 Docs only — sync `CONCEPTS.md` to v0.12 reality.

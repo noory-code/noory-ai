@@ -58,3 +58,55 @@ export function autoLayout(doc: CanvasDoc, direction: LayoutDirection = "LR"): C
     }),
   };
 }
+
+/**
+ * v0.12.4 — radial tidy for canvases that aren't trees. The project anchor
+ * stays put; the rest are spread on a circle around it with equal angular
+ * spacing, so the canvas reads as "everything radiates from the project."
+ *
+ * Use for Foundation and Actors (project + peers) where dagre LR's layered
+ * left-to-right output collapses the radial mental model into a horizontal
+ * row.
+ *
+ * Orphans (no connection to the anchor and no edges) keep their positions.
+ */
+export function radialLayout(doc: CanvasDoc, anchorId = "project"): CanvasDoc {
+  const anchor = doc.nodes.find((n) => n.id === anchorId);
+  if (!anchor) return autoLayout(doc); // fall back if no anchor
+
+  // Anchor centre stays where the user has it.
+  const cx = anchor.x + anchor.width / 2;
+  const cy = anchor.y + anchor.height / 2;
+
+  const others = doc.nodes.filter((n) => n.id !== anchorId);
+  // Pick the larger node footprint to size the ring; guarantees no overlap
+  // with the anchor at minimum 60 px clearance.
+  const maxOtherDim = others.reduce(
+    (m, n) => Math.max(m, n.width, n.height),
+    0,
+  );
+  const anchorReach = Math.max(anchor.width, anchor.height) / 2;
+  const radius = Math.max(220, anchorReach + maxOtherDim / 2 + 80);
+
+  const placedById = new Map<string, { x: number; y: number }>();
+  const n = others.length;
+  if (n > 0) {
+    // Start at the top (12 o'clock) and walk clockwise.
+    const start = -Math.PI / 2;
+    for (let i = 0; i < n; i += 1) {
+      const node = others[i];
+      const theta = start + (i * 2 * Math.PI) / n;
+      const x = cx + radius * Math.cos(theta) - node.width / 2;
+      const y = cy + radius * Math.sin(theta) - node.height / 2;
+      placedById.set(node.id, { x, y });
+    }
+  }
+
+  return {
+    ...doc,
+    nodes: doc.nodes.map((node) => {
+      const p = placedById.get(node.id);
+      return p ? { ...node, x: p.x, y: p.y } : node;
+    }),
+  };
+}

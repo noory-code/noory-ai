@@ -161,11 +161,11 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
           )}
 
         <div className="flex h-full w-full flex-col items-stretch justify-center gap-1">
-          {/* v0.12.2: service titles align left so the label reads as a
-              header, not a centered chip. Other kinds stay centered. */}
+          {/* v0.12.4: category labels align left (they read as group
+              headers); other kinds — including service — stay centered. */}
           <div
             className={`flex items-center gap-1.5 text-sm font-semibold text-slate-800 ${
-              data.kind === "service" ? "justify-start" : "justify-center"
+              data.kind === "category" ? "justify-start" : "justify-center"
             }`}
           >
             {data.showFold !== false && data.hasChildren && data.onToggleCollapse && (
@@ -175,7 +175,7 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
                   e.stopPropagation();
                   data.onToggleCollapse?.();
                 }}
-                className="nodrag flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-base text-slate-700 shadow-sm hover:bg-slate-100"
+                className="nodrag flex shrink-0 items-center justify-center px-1 text-xl leading-none text-slate-500 hover:text-slate-900"
                 title={data.collapsed ? "Expand" : "Collapse"}
                 aria-label={data.collapsed ? "Expand container" : "Collapse container"}
               >

@@ -15,7 +15,7 @@ import ReactFlow, {
   type OnSelectionChangeParams,
   type ReactFlowInstance,
 } from "reactflow";
-import { autoLayout } from "../flow/autoLayout";
+import { autoLayout, radialLayout } from "../flow/autoLayout";
 import type {
   CanvasDoc,
   NodeKind,
@@ -722,7 +722,14 @@ function SketchCanvasInner({
   );
 
   const handleAutoLayout = useCallback(() => {
-    onDocChange(autoLayout(docRef.current));
+    // v0.12.4 — Foundation and Actors are radial (project anchor at the
+    // centre, peers around it). Services / Service Detail are trees, where
+    // dagre LR's layered output is the right answer.
+    const current = docRef.current;
+    const useRadial =
+      current.canvas_kind === "foundation" ||
+      current.canvas_kind === "actors";
+    onDocChange(useRadial ? radialLayout(current) : autoLayout(current));
   }, [onDocChange]);
 
   const handleSelectionChange = useCallback((sel: OnSelectionChangeParams) => {
