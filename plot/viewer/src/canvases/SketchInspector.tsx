@@ -321,13 +321,12 @@ export function SketchInspector({
           <StepFields node={node} onPatchNode={onPatchNode} />
         )}
 
-        {/* v0.10 Step 4: Service typed form — branches by canvas + parent.
-             Top-level services (services canvas, parent_id = null) get
-             "what / value_created / scope" plus the shared Do/Don't pair.
-             Sub-services (service_detail canvas, parent_id != null) get
-             the richer "value_created / trigger / how / outcome" set,
-             also with Do/Don't. All optional — design philosophy is
-             "rich fields, minimal required". */}
+        {/* v0.12.1: Service typed form — sub-service was eliminated in
+             v0.12, so a service is one kind regardless of canvas. The form
+             surfaces target_side + the full six typed fields (what /
+             value_created / scope / trigger / how / outcome) + Do/Don't.
+             All optional — design philosophy is "rich fields, minimal
+             required". */}
         {node.kind === "service" && (
           <ServiceFields
             node={node}
@@ -599,20 +598,14 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
 }
 
 // ---------------------------------------------------------------------------
-// v0.10 Step 4 — Service typed fields (top-level vs sub-service)
+// v0.12.1 — Service typed fields
 // ---------------------------------------------------------------------------
 //
-// One service node carries every typed field; only the Inspector chooses
-// which subset to surface.
-//
-//   Top-level (services canvas, parent_id == null):
-//     label · what · value_created · scope · do · dont
-//   Sub-service (service_detail, parent_id != null):
-//     label · value_created · trigger · how · outcome · do · dont
-//
-// All fields optional. Inspector shows a one-line hint when a top-level
-// service has neither value_created nor a Foundation ref nearby — that's
-// the soft check replacing the "validator gating" idea in the ROADMAP.
+// Sub-service was eliminated in v0.12 — service is now a leaf inside a
+// category, and the per-service modal (service_detail canvas) hosts the
+// composition. Both contexts surface the same field set: target_side +
+// six typed fields (what / value_created / scope / trigger / how /
+// outcome) + do/dont. All optional.
 
 interface ServiceFieldsProps {
   node: SketchNode;
@@ -620,12 +613,11 @@ interface ServiceFieldsProps {
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 
-function ServiceFields({ node, canvasKind, onPatchNode }: ServiceFieldsProps) {
-  const isTopLevel = canvasKind === "services" && !node.parent_id;
+function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
   return (
     <div className="mb-4 rounded border border-sky-200 bg-sky-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-sky-700">
-        {isTopLevel ? "Service" : "Sub-service"}
+        Service
       </div>
       {/* v0.11.4 — target_side classifies the service by which side of the
           value exchange it exists for. Mirror of actor.side. */}
@@ -649,62 +641,48 @@ function ServiceFields({ node, canvasKind, onPatchNode }: ServiceFieldsProps) {
           <option value="both">둘 다 (both)</option>
         </select>
       </label>
-      {isTopLevel ? (
-        <>
-          <ServiceTextarea
-            label="What"
-            hint="concise statement of what this service is"
-            value={node.what}
-            onChange={(v) => onPatchNode({ what: v })}
-            placeholder="이 서비스는…"
-          />
-          <ServiceTextarea
-            label="Value created"
-            hint="what value this service produces"
-            value={node.value_created}
-            onChange={(v) => onPatchNode({ value_created: v })}
-            placeholder="만들어내는 가치"
-          />
-          <ServiceTextarea
-            label="Scope"
-            hint="boundary — what's in / out"
-            value={node.scope}
-            onChange={(v) => onPatchNode({ scope: v })}
-            placeholder="포함/제외 범위"
-          />
-        </>
-      ) : (
-        <>
-          <ServiceTextarea
-            label="Value created"
-            hint="what this sub-service contributes"
-            value={node.value_created}
-            onChange={(v) => onPatchNode({ value_created: v })}
-            placeholder="부모 서비스에 어떤 기여를?"
-          />
-          <ServiceTextarea
-            label="Trigger"
-            hint="what kicks it off"
-            value={node.trigger}
-            onChange={(v) => onPatchNode({ trigger: v })}
-            placeholder="언제/무엇으로 시작?"
-          />
-          <ServiceTextarea
-            label="How"
-            hint="how it works"
-            value={node.how}
-            onChange={(v) => onPatchNode({ how: v })}
-            placeholder="어떻게 동작?"
-          />
-          <ServiceTextarea
-            label="Outcome"
-            hint="observable end state"
-            value={node.outcome}
-            onChange={(v) => onPatchNode({ outcome: v })}
-            placeholder="끝나면 어떤 상태?"
-          />
-        </>
-      )}
+      <ServiceTextarea
+        label="What"
+        hint="concise statement of what this service is"
+        value={node.what}
+        onChange={(v) => onPatchNode({ what: v })}
+        placeholder="이 서비스는…"
+      />
+      <ServiceTextarea
+        label="Value created"
+        hint="what value this service produces"
+        value={node.value_created}
+        onChange={(v) => onPatchNode({ value_created: v })}
+        placeholder="만들어내는 가치"
+      />
+      <ServiceTextarea
+        label="Scope"
+        hint="boundary — what's in / out"
+        value={node.scope}
+        onChange={(v) => onPatchNode({ scope: v })}
+        placeholder="포함/제외 범위"
+      />
+      <ServiceTextarea
+        label="Trigger"
+        hint="what kicks it off"
+        value={node.trigger}
+        onChange={(v) => onPatchNode({ trigger: v })}
+        placeholder="언제/무엇으로 시작?"
+      />
+      <ServiceTextarea
+        label="How"
+        hint="how it works"
+        value={node.how}
+        onChange={(v) => onPatchNode({ how: v })}
+        placeholder="어떻게 동작?"
+      />
+      <ServiceTextarea
+        label="Outcome"
+        hint="observable end state"
+        value={node.outcome}
+        onChange={(v) => onPatchNode({ outcome: v })}
+        placeholder="끝나면 어떤 상태?"
+      />
       <DoDontFields node={node} onPatchNode={onPatchNode} />
     </div>
   );

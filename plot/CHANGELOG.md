@@ -4,6 +4,34 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.1] — 2026-05-03
+
+Two decisive bugs from the v0.12.0 cleanup pass.
+
+### Fixed — **Service double-click now opens the detail modal**
+- The intended v0.12 gesture (double-click a service → modal overlay)
+  silently failed: `SketchNode`'s inner `dblclick` handler called
+  `e.stopPropagation()` and opened the generic Edit Node modal,
+  shadowing React Flow's `onNodeDoubleClick → onNodeDrill`. The
+  `ServiceDetailModal` was unreachable via the documented gesture.
+- `SketchNodeData` now carries an optional `onDrill`. `SketchCanvas`
+  wires it for kinds where drill is the intended dblclick gesture
+  (services-canvas service → detail modal; service_detail actor_ref →
+  jump to actor master). `SketchNode` prefers `onDrill` over
+  `onOpenBody` when both could fire, so the Edit Node modal stops
+  hijacking drill-eligible nodes.
+
+### Changed — **Inspector says "Service", not "Sub-service"**
+- v0.12 eliminated sub-service, but `SketchInspector.ServiceFields`
+  still branched on `isTopLevel` and rendered "Sub-service" as the
+  section header for any service with a `parent_id` (i.e. all
+  services on the v0.12 services canvas, plus the service_detail
+  root). Header is now always "Service".
+- The dead "top-level vs sub" branch is gone: every service surfaces
+  the same six typed fields (`what` / `value_created` / `scope` /
+  `trigger` / `how` / `outcome`) plus Do/Don't, matching v0.12's
+  "service is one kind" model.
+
 ## [0.12.0] — 2026-05-03
 
 A larger refactor — the **Service vs Category split**. v0.10.3's

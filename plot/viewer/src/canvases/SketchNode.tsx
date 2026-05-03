@@ -39,6 +39,11 @@ export interface SketchNodeData {
   kind?: string | null;
   onLabelChange?: (next: string) => void;
   onOpenBody?: () => void;
+  /** v0.12.1: when set, double-click invokes drill instead of opening the
+   * generic edit-node modal. Wired by SketchCanvas for kinds where drill is
+   * the intended dblclick gesture (services-canvas service → modal,
+   * service_detail actor_ref → jump to actor master). */
+  onDrill?: () => void;
   onResize?: (width: number, height: number) => void;
   /** v0.2: set when this node contains children. Enables the fold button. */
   hasChildren?: boolean;
@@ -133,7 +138,11 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
         data-node-id={id}
         onDoubleClick={(e) => {
           e.stopPropagation();
-          data.onOpenBody?.();
+          if (data.onDrill) {
+            data.onDrill();
+          } else {
+            data.onOpenBody?.();
+          }
         }}
       >
         <Handle type="target" position={Position.Top} id="t" className="!bg-slate-400" />

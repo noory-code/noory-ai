@@ -349,6 +349,19 @@ function SketchCanvasInner({
       // label; long-form lives in details.md (Inspector only). Pass an
       // empty preview so SketchNode hides the body block.
       const previewBody = "";
+      // v0.12.1 — for kinds where double-click should drill (not open the
+      // generic edit modal), wire `onDrill`. SketchNode's dblclick prefers
+      // drill when set. React Flow's own onNodeDoubleClick is masked by
+      // SketchNode's stopPropagation, so routing drill through node data
+      // is the reliable path. Cases:
+      //   - services canvas, service kind, !is_root → open service modal
+      //   - service_detail canvas, actor_ref → jump to actor master
+      const drillThisNode =
+        (doc.canvas_kind === "services" && n.kind === "service" && !n.is_root) ||
+        (doc.canvas_kind === "service_detail" && n.kind === "actor_ref");
+      const onDrill = drillThisNode && onNodeDrill
+        ? () => onNodeDrill(n.id)
+        : undefined;
       const base: Node<SketchNodeData> = {
         id: n.id,
         type: "sketch",
@@ -365,6 +378,7 @@ function SketchCanvasInner({
           kind: n.kind,
           onLabelChange: (next: string) => updateNode(n.id, { label: next }),
           onOpenBody: () => setBodyModalNodeId(n.id),
+          onDrill,
           onResize: (w: number, h: number) => updateNode(n.id, { width: w, height: h }),
           hasChildren,
           collapsed: n.collapsed,
@@ -393,6 +407,7 @@ function SketchCanvasInner({
     toggleCollapsed,
     updateNode,
     orphanActorRefIds,
+    onNodeDrill,
   ]);
 
   const edges = useMemo<Edge[]>(() => {
