@@ -303,6 +303,18 @@ function SketchCanvasInner({
       // v0.2 correction (2026-04-20): rule / content are edited through
       // the right-hand Inspector panel, never rendered on the canvas.
       if (n.kind === "rule" || n.kind === "content") continue;
+      // v0.12.2: inside the service-detail modal the service-root is
+      // redundant — the modal header already names it. Hide it from
+      // the canvas so refs and composition reads cleaner. The root is
+      // identified by id == doc.service_ref (set when the per-service
+      // canvas is loaded).
+      if (
+        doc.canvas_kind === "service_detail" &&
+        doc.service_ref &&
+        n.id === doc.service_ref
+      ) {
+        continue;
+      }
       const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
       // Orphan actor_ref visual override: red-tinted fill, "⚠ " prefix so the
       // break is obvious even at thumbnail scale. Rendering stays in the
@@ -412,8 +424,15 @@ function SketchCanvasInner({
 
   const edges = useMemo<Edge[]>(() => {
     const out: Edge[] = [];
+    // v0.12.2 — same hide rule as the nodes memo: drop edges that point at
+    // the modal's hidden service-root.
+    const isHiddenRoot = (id: string): boolean =>
+      doc.canvas_kind === "service_detail" &&
+      !!doc.service_ref &&
+      id === doc.service_ref;
     // User-drawn edges.
     for (const e of doc.edges) {
+      if (isHiddenRoot(e.source) || isHiddenRoot(e.target)) continue;
       const sAncestor = nearestCollapsedAncestor(e.source);
       const tAncestor = nearestCollapsedAncestor(e.target);
       const src = sAncestor ?? e.source;
@@ -438,7 +457,7 @@ function SketchCanvasInner({
       });
     }
     return out;
-  }, [doc.edges, nearestCollapsedAncestor, valueFlowOn]);
+  }, [doc.edges, doc.canvas_kind, doc.service_ref, nearestCollapsedAncestor, valueFlowOn]);
 
   // Apply every position change (including mid-drag) so the node visually
   // tracks the cursor. The debounced PUT in App.tsx coalesces the stream

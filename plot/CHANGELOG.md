@@ -4,6 +4,30 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.2] — 2026-05-03
+
+Visual polish on the v0.12 surfaces, driven by direct usage feedback.
+
+### Changed — **Collapse button is a clear circle, not a tiny chevron**
+- The fold/unfold control on container nodes (categories on the
+  Services canvas, sub-actor parents on Actors) was a 24×24 square
+  with no border that visually disappeared. Now 32×32, `rounded-full`,
+  white background with a slate border and shadow. Same arrow glyph,
+  much higher discoverability.
+
+### Changed — **Service titles align left**
+- Service node labels were centered like every other kind. With the
+  v0.12 service-as-leaf model the label reads better as a header,
+  so service nodes now `justify-start`. Other kinds still center.
+
+### Fixed — **Service-detail modal hides the redundant root node**
+- The modal's inner canvas seeded a copy of the service itself as a
+  visible node, even though the modal header already names it
+  ("SERVICE DETAIL — Login"). The modal now filters the root
+  (matched by `doc.service_ref === node.id`) from both the nodes
+  and edges memos, so refs and composition read against an empty
+  background.
+
 ## [0.12.1] — 2026-05-03
 
 Two decisive bugs from the v0.12.0 cleanup pass.

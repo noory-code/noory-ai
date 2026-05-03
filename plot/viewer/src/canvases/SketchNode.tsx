@@ -161,7 +161,13 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
           )}
 
         <div className="flex h-full w-full flex-col items-stretch justify-center gap-1">
-          <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-slate-800">
+          {/* v0.12.2: service titles align left so the label reads as a
+              header, not a centered chip. Other kinds stay centered. */}
+          <div
+            className={`flex items-center gap-1.5 text-sm font-semibold text-slate-800 ${
+              data.kind === "service" ? "justify-start" : "justify-center"
+            }`}
+          >
             {data.showFold !== false && data.hasChildren && data.onToggleCollapse && (
               <button
                 type="button"
@@ -169,7 +175,7 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
                   e.stopPropagation();
                   data.onToggleCollapse?.();
                 }}
-                className="nodrag flex h-6 w-6 shrink-0 items-center justify-center rounded text-sm text-slate-600 hover:bg-slate-200"
+                className="nodrag flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-base text-slate-700 shadow-sm hover:bg-slate-100"
                 title={data.collapsed ? "Expand" : "Collapse"}
                 aria-label={data.collapsed ? "Expand container" : "Collapse container"}
               >
