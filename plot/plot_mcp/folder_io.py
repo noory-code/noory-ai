@@ -144,15 +144,14 @@ def read_canvas(
         upgrade_foundation_canvas_if_needed(plot_root, project_id)
     path = _canvas_file(plot_root, project_id, canvas_kind, service_id)
     raw = _read_json(path)
-    # v0.11.4 — actors / services canvases now carry a project anchor copy
-    # (label-synced from foundation). Backfill on read for projects created
-    # before v0.11.4 so the new validators / UX find the anchor present.
-    if canvas_kind in ("actors", "services"):
-        raw = _backfill_project_anchor(plot_root, project_id, canvas_kind, raw)
+    # v0.13 Phase 0 — project anchor moved to ``ProjectDoc.anchors``. If an
+    # old canvas still carries a ``project`` kind node, evict it: copy its
+    # position/visual to ProjectDoc.anchors[canvas] and remove from nodes.
+    if canvas_kind in ("foundation", "actors", "services"):
+        raw = _evict_legacy_project_anchor(plot_root, project_id, canvas_kind, raw)
     # v0.11.5 — services canvas no longer accepts Foundation refs (they
     # moved to service_detail). Drop any stale ones from older projects so
-    # the canvas validates on open. Same idempotent pattern as the anchor
-    # backfill above.
+    # the canvas validates on open. Same idempotent pattern.
     if canvas_kind == "services":
         raw = _drop_disallowed_services_kinds(plot_root, project_id, raw)
         # v0.12 — wrap orphan top-level services in a default category so
@@ -234,26 +233,68 @@ def _drop_disallowed_services_kinds(
     return raw
 
 
-def _backfill_project_anchor(
+def _evict_legacy_project_anchor(
     plot_root: Path,
     project_id: str,
     canvas_kind: CanvasKind,
     raw: dict[str, Any],
 ) -> dict[str, Any]:
-    """v0.11.4 migration helper: ensure actors / services canvases carry
-    a project anchor node. Idempotent. Reads ProjectDoc.name for the
-    label so the anchor is consistent with the Foundation copy.
+    """v0.13 Phase 0 migration helper: project anchor is now in
+    ``ProjectDoc.anchors``. If an old canvas .json still carries a
+    ``project`` kind node, copy its position/visual into ProjectDoc.anchors
+    and remove the node. Idempotent — does nothing once cleaned up.
     """
+    from plot_mcp.models import AnchorPlacement
+
     nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
-    if any((n.get("kind") == "project") for n in nodes):
+    legacy_anchors = [n for n in nodes if n.get("kind") == "project"]
+    if not legacy_anchors:
+        # Defensive: an earlier eviction (without the edge cleanup that
+        # landed in v0.13.0) may have left orphan edges referencing the
+        # removed project node. Strip them now if any are still pointing
+        # at a vanished id.
+        node_ids = {n.get("id") for n in nodes}
+        edges: list[dict[str, Any]] = list(raw.get("edges") or [])
+        kept_edges = [
+            e for e in edges
+            if e.get("source") in node_ids and e.get("target") in node_ids
+        ]
+        if len(kept_edges) != len(edges):
+            raw = {**raw, "edges": kept_edges}
+            _write_json(_canvas_file(plot_root, project_id, canvas_kind), raw)
         return raw
     try:
         proj = read_project(plot_root, project_id)
     except FileNotFoundError:
+        # No project doc → can't migrate; just drop the node so the canvas
+        # validates. Position is unrecoverable but defaults are sensible.
+        kept = [n for n in nodes if n.get("kind") != "project"]
+        raw = {**raw, "nodes": kept}
+        _write_json(_canvas_file(plot_root, project_id, canvas_kind), raw)
         return raw
-    anchor = _seed_project_anchor(proj.name).model_dump(by_alias=True)
-    raw = {**raw, "nodes": [anchor, *nodes]}
-    # Persist so subsequent reads skip the backfill.
+    legacy = legacy_anchors[0]
+    anchor = AnchorPlacement(
+        x=float(legacy.get("x", -75.0)),
+        y=float(legacy.get("y", -75.0)),
+        width=float(legacy.get("width", 150.0)),
+        height=float(legacy.get("height", 150.0)),
+        color=str(legacy.get("color", "#fef3c7")),
+        shape=legacy.get("shape", "circle"),  # type: ignore[arg-type]
+    )
+    new_anchors = {**proj.anchors, canvas_kind: anchor}
+    proj = proj.model_copy(update={"anchors": new_anchors})
+    write_project(plot_root, proj)
+    evicted_ids = {n.get("id") for n in legacy_anchors}
+    kept = [n for n in nodes if n.get("kind") != "project"]
+    # v0.13 Phase 0: also drop any edges that referenced the evicted project
+    # node — otherwise CanvasDoc validator fails with "edges reference
+    # unknown nodes".
+    edges: list[dict[str, Any]] = list(raw.get("edges") or [])
+    kept_edges = [
+        e for e in edges
+        if e.get("source") not in evicted_ids and e.get("target") not in evicted_ids
+    ]
+    raw = {**raw, "nodes": kept, "edges": kept_edges}
     _write_json(_canvas_file(plot_root, project_id, canvas_kind), raw)
     return raw
 
@@ -267,75 +308,29 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
         meta = read_project(plot_root, project_id)
     except FileNotFoundError:
         return
-    # Foundation canvas has the Project anchor whose label mirrors
-    # ProjectDoc.name. Writes to the canvas are the authoritative source of
-    # the rename — pull any drift back into the ProjectDoc so the sidebar /
-    # MCP stay in sync.
-    if canvas.canvas_kind == "foundation":
-        project_node = next((n for n in canvas.nodes if n.kind == "project"), None)
-        if project_node is not None:
-            new_label = project_node.label.strip()
-            if new_label and new_label != meta.name:
-                meta = meta.model_copy(update={"name": new_label})
-    # bump project.updated whenever a canvas changes
+    # v0.13 Phase 0: project label SSOT is ProjectDoc.name; no longer derived
+    # from a per-canvas project node (the node is gone). Renames go through
+    # ``rename_project`` directly. We just bump updated below.
     write_project(plot_root, meta)
 
 
 def rename_project(plot_root: Path, project_id: str, new_name: str) -> ProjectDoc:
-    """Update ``ProjectDoc.name`` and sync the Foundation canvas Project
-    anchor's label in one shot. Returns the refreshed ProjectDoc.
-
-    Both sides stay in sync: the anchor label in
-    ``foundation/canvas.json`` always equals ``project.json``'s ``name``.
+    """Update ``ProjectDoc.name``. v0.13 Phase 0: there is no per-canvas
+    project node any more — label is derived from ProjectDoc.name at render
+    time. Touching the foundation canvas via read still triggers the
+    legacy-anchor eviction migrator for old projects.
     """
     proj = read_project(plot_root, project_id)
     renamed = proj.model_copy(update={"name": new_name})
-    _write_json(_project_file(plot_root, project_id), renamed.model_dump())
-
-    # Update the Project anchor label in the Foundation canvas (no-op if
-    # the canvas hasn't been upgraded yet — the upgrade hook on
-    # read_canvas heals it on the next open).
-    try:
-        foundation = read_canvas(plot_root, project_id, "foundation")
-    except FileNotFoundError:
-        write_project(plot_root, renamed)
-        return read_project(plot_root, project_id)
-
-    project_node = next((n for n in foundation.nodes if n.kind == "project"), None)
-    if project_node is not None and project_node.label != new_name:
-        updated_nodes = [
-            n.model_copy(update={"label": new_name}) if n.id == project_node.id else n
-            for n in foundation.nodes
-        ]
-        synced = foundation.model_copy(update={"nodes": updated_nodes})
-        # Write directly without recursing through write_canvas (which
-        # would read back our just-renamed ProjectDoc and no-op the
-        # sync check).
-        _write_json(
-            _canvas_file(plot_root, project_id, "foundation"),
-            synced.model_dump(by_alias=True),
-        )
-
-    # v0.11.4 — propagate the rename to the project anchors on the actors
-    # and services canvases too. Each carries a copy of the project node;
-    # all three copies' labels must match ProjectDoc.name.
-    for canvas_kind in ("actors", "services"):
-        try:
-            other = read_canvas(plot_root, project_id, canvas_kind)
-        except FileNotFoundError:
-            continue
-        anchor = next((n for n in other.nodes if n.kind == "project"), None)
-        if anchor is not None and anchor.label != new_name:
-            updated = [
-                n.model_copy(update={"label": new_name}) if n.id == anchor.id else n
-                for n in other.nodes
-            ]
-            _write_json(
-                _canvas_file(plot_root, project_id, canvas_kind),
-                other.model_copy(update={"nodes": updated}).model_dump(by_alias=True),
-            )
-
     write_project(plot_root, renamed)
+    # v0.13 Phase 0: project anchors no longer carry the label as a node
+    # field — label SSOT is ProjectDoc.name, derived at render. Touch the
+    # foundation canvas via read so the legacy-anchor eviction migrator
+    # runs if the project predates v0.13.
+    try:
+        read_canvas(plot_root, project_id, "foundation")
+    except FileNotFoundError:
+        pass
     return read_project(plot_root, project_id)
 
 
@@ -361,30 +356,18 @@ def list_service_details(plot_root: Path, project_id: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def _seed_foundation_canvas(project_name: str) -> CanvasDoc:
-    """Minimum valid Foundation canvas — central Project anchor (circle,
-    auto-seeded, cannot be deleted) surrounded by Mission / Core Value /
-    Identity pillars.
+def _seed_foundation_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
+    """Minimum valid Foundation canvas — Mission / Core Value / Identity.
 
-    The Project node's label mirrors ``ProjectDoc.name``; editing either
-    side keeps both in sync via ``rename_project`` /
-    ``sync_project_name_from_canvas``.
+    v0.13 Phase 0: the Project anchor is no longer a node here. It lives in
+    ``ProjectDoc.anchors["foundation"]`` and is rendered by the viewer at
+    display time. ``project_name`` argument retained for signature stability
+    but unused.
     """
     return CanvasDoc(
         canvas_id="foundation",
         canvas_kind="foundation",
         nodes=[
-            SketchNode(
-                id="project",
-                kind="project",
-                label=project_name,
-                x=-75,
-                y=-75,
-                width=150,
-                height=150,
-                color="#fef3c7",
-                shape="circle",
-            ),
             SketchNode(
                 id="mission",
                 kind="mission",
@@ -422,37 +405,17 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:
     )
 
 
-def _seed_project_anchor(project_name: str) -> SketchNode:
-    """v0.11.4 — project anchor node, identical instance reused across
-    every primary canvas (foundation / actors / services). Label mirrors
-    ProjectDoc.name on every canvas; renames propagate through
-    ``rename_project``.
-    """
-    return SketchNode(
-        id="project",
-        kind="project",
-        label=project_name,
-        x=-75,
-        y=-75,
-        width=150,
-        height=150,
-        color="#fef3c7",
-        shape="circle",
-    )
-
-
-def _seed_actors_canvas(project_name: str) -> CanvasDoc:
+def _seed_actors_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
     """v0.11 — actors canvas seeds with two placeholder classes ("Operator"
     and "User") to satisfy the IDENTITY.md "≥ 2 actor classes" minimum.
 
-    v0.11.4 — also seeds a project anchor at the centre so the canvas
-    reads as "actors spread out from the project."
+    v0.13 Phase 0: project anchor moved to ``ProjectDoc.anchors``; not seeded
+    here.
     """
     return CanvasDoc(
         canvas_id="actors",
         canvas_kind="actors",
         nodes=[
-            _seed_project_anchor(project_name),
             SketchNode(
                 id="operator",
                 kind="actor",
@@ -481,15 +444,14 @@ def _seed_actors_canvas(project_name: str) -> CanvasDoc:
     )
 
 
-def _seed_services_canvas(project_name: str) -> CanvasDoc:
-    """v0.11.4 — services canvas seeds with the project anchor only.
-    Top-level services + Foundation refs are added by the user as the
-    architecture takes shape.
+def _seed_services_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
+    """v0.13 Phase 0: services canvas starts empty (project anchor moved to
+    ``ProjectDoc.anchors``). Categories + services are added by the user.
     """
     return CanvasDoc(
         canvas_id="services",
         canvas_kind="services",
-        nodes=[_seed_project_anchor(project_name)],
+        nodes=[],
     )
 
 
@@ -518,7 +480,7 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
         name=name or project_id,
         created=date.today().isoformat(),
         updated=now,
-        version=2,
+        version=3,
     )
     _write_json(_project_file(plot_root, project_id), proj.model_dump())
 

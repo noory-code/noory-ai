@@ -54,6 +54,8 @@ export interface UseProjectApi {
   markSession: () => Promise<void>;
   deleteTag: (name: string) => Promise<void>;
   dismissToast: () => void;
+  /** v0.13 Phase 0: replace one summary in place (used by anchor PATCH). */
+  replaceSummary: (next: ProjectDoc) => void;
 }
 
 /**
@@ -225,6 +227,10 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
 
   const dismissToast = useCallback(() => setMigratedToast(null), []);
 
+  const replaceSummary = useCallback((next: ProjectDoc) => {
+    setSummaries((prev) => prev.map((p) => (p.id === next.id ? next : p)));
+  }, []);
+
   return {
     summaries,
     activeId,
@@ -244,5 +250,6 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     markSession,
     deleteTag,
     dismissToast,
+    replaceSummary,
   };
 }

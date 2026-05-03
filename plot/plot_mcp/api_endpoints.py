@@ -33,6 +33,7 @@ from plot_mcp.folder_io import (
     rename_project,
     sync_details_with_overview,
     write_canvas,
+    write_project,
 )
 from plot_mcp.git_store import (
     TagAlreadyExistsError,
@@ -183,6 +184,39 @@ async def project_patch_endpoint(request: Request) -> JSONResponse:
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
     return JSONResponse(renamed.model_dump())
+
+
+async def project_anchor_patch_endpoint(request: Request) -> JSONResponse:
+    """v0.13 Phase 0: PATCH the project anchor for a given canvas.
+
+    Body fields (all optional):
+      x, y, width, height, color, shape
+    Only supplied fields are updated; the rest stay as before.
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    canvas = request.path_params["canvas"]
+    if canvas not in {"foundation", "actors", "services"}:
+        return _error(f"unknown canvas {canvas!r}", status=400)
+    try:
+        body: dict[str, Any] = await request.json()
+    except json.JSONDecodeError:
+        return _error("invalid JSON body")
+    try:
+        proj = read_project(plot_root, project_id)
+    except FileNotFoundError as exc:
+        return _error(str(exc), status=404)
+    from plot_mcp.models import AnchorPlacement
+
+    current = proj.anchors.get(canvas, AnchorPlacement())
+    patched = current.model_copy(update={k: v for k, v in body.items() if v is not None})
+    new_anchors = {**proj.anchors, canvas: patched}
+    proj = proj.model_copy(update={"anchors": new_anchors})
+    write_project(plot_root, proj)
+    return JSONResponse(proj.model_dump())
 
 
 async def project_delete_endpoint(request: Request) -> Response:

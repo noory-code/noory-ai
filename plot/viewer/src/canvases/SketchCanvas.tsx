@@ -114,7 +114,26 @@ export interface SketchCanvasProps {
    */
   selectNodeId?: string | null;
   onSelectionConsumed?: () => void;
+  /**
+   * v0.13 Phase 0: per-canvas project anchor. The anchor is rendered as a
+   * synthetic node injected by SketchCanvas (it does NOT live in
+   * ``doc.nodes``). Drag updates flow through ``onAnchorChange`` instead of
+   * the regular node update path; the canvas .json never carries a project
+   * node.
+   */
+  projectAnchor?: import("../types").AnchorPlacement | null;
+  /** v0.13 Phase 0: project name shown on the synthetic anchor's label. */
+  projectName?: string | null;
+  /** v0.13 Phase 0: callback when the user drags / resizes the anchor. */
+  onAnchorChange?: (patch: Partial<import("../types").AnchorPlacement>) => void;
 }
+
+/**
+ * v0.13 Phase 0: id reserved for the synthetic project anchor node injected
+ * into Foundation/Actors/Services canvases. Never written to canvas.json —
+ * the position lives in ``ProjectDoc.anchors``.
+ */
+const PROJECT_ANCHOR_ID = "__project_anchor__";
 
 export function SketchCanvas(props: SketchCanvasProps) {
   return (
@@ -146,6 +165,9 @@ function SketchCanvasInner({
   availableIdentities,
   selectNodeId,
   onSelectionConsumed,
+  projectAnchor,
+  projectName,
+  onAnchorChange,
 }: SketchCanvasProps) {
   const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
@@ -409,6 +431,36 @@ function SketchCanvasInner({
       // more: hierarchy is not "inside", it's "beside + linked".
       out.push(base);
     }
+    // v0.13 Phase 0: inject the synthetic project anchor when the host has
+    // supplied one. Lives on Foundation/Actors/Services canvases only.
+    if (
+      projectAnchor &&
+      (doc.canvas_kind === "foundation" ||
+        doc.canvas_kind === "actors" ||
+        doc.canvas_kind === "services")
+    ) {
+      out.unshift({
+        id: PROJECT_ANCHOR_ID,
+        type: "sketch",
+        position: { x: projectAnchor.x, y: projectAnchor.y },
+        style: { width: projectAnchor.width, height: projectAnchor.height },
+        data: {
+          label: projectName ?? "Project",
+          body: "",
+          color: projectAnchor.color,
+          width: projectAnchor.width,
+          height: projectAnchor.height,
+          shape: projectAnchor.shape,
+          icon: null,
+          kind: "project",
+          onResize: (w: number, h: number) => onAnchorChange?.({ width: w, height: h }),
+          // Anchor is a derived view — not editable inline. Inspector also
+          // hides it. Drag/resize is the only mutation; routed via
+          // onAnchorChange in handleNodesChange.
+          showFold: false,
+        },
+      });
+    }
     return out;
   }, [
     doc.nodes,
@@ -420,6 +472,9 @@ function SketchCanvasInner({
     updateNode,
     orphanActorRefIds,
     onNodeDrill,
+    projectAnchor,
+    projectName,
+    onAnchorChange,
   ]);
 
   const edges = useMemo<Edge[]>(() => {
@@ -484,6 +539,24 @@ function SketchCanvasInner({
         }
       }
       if (posById.size === 0 && dimById.size === 0) return;
+      // v0.13 Phase 0: route synthetic project anchor changes to onAnchorChange.
+      const anchorPos = posById.get(PROJECT_ANCHOR_ID);
+      const anchorDim = dimById.get(PROJECT_ANCHOR_ID);
+      if ((anchorPos || anchorDim) && onAnchorChange) {
+        const patch: Partial<import("../types").AnchorPlacement> = {};
+        if (anchorPos) {
+          patch.x = anchorPos.x;
+          patch.y = anchorPos.y;
+        }
+        if (anchorDim) {
+          patch.width = anchorDim.width;
+          patch.height = anchorDim.height;
+        }
+        onAnchorChange(patch);
+        posById.delete(PROJECT_ANCHOR_ID);
+        dimById.delete(PROJECT_ANCHOR_ID);
+      }
+      if (posById.size === 0 && dimById.size === 0) return;
       const current = docRef.current;
       onDocChange({
         ...current,
@@ -499,7 +572,7 @@ function SketchCanvasInner({
         }),
       });
     },
-    [onDocChange],
+    [onDocChange, onAnchorChange],
   );
 
   const handleEdgesChange = useCallback((_changes: EdgeChange[]) => {
@@ -529,12 +602,13 @@ function SketchCanvasInner({
   const handleNodesDelete = useCallback(
     (deleted: Node[]) => {
       const current = docRef.current;
-      // Project anchor is auto-seeded and the Core canvas validator requires
-      // exactly 1 — filter it out of every delete path (keyboard, context
-      // menu, Inspector) so the user can't accidentally remove it.
+      // v0.13 Phase 0: synthetic project anchor isn't a real node — silently
+      // ignore delete attempts. Legacy ``project`` kind nodes (any old data
+      // still pre-eviction-migration) are also protected.
       const protectedIds = new Set(
         current.nodes.filter((n) => n.kind === "project").map((n) => n.id),
       );
+      protectedIds.add(PROJECT_ANCHOR_ID);
       const ids = new Set(
         deleted.map((n) => n.id).filter((id) => !protectedIds.has(id)),
       );
@@ -1136,8 +1210,15 @@ function SketchCanvasInner({
         onNodeContextMenu={openNodeMenu}
         onEdgeContextMenu={openEdgeMenu}
         onEdgeDoubleClick={(_evt, edge) => setEdgeModalId(edge.id)}
-        onNodeClick={(_evt, n) => setInspectorNodeId(n.id)}
-        onNodeDoubleClick={(_evt, n) => onNodeDrill?.(n.id)}
+        onNodeClick={(_evt, n) => {
+          // v0.13 Phase 0: synthetic anchor is read-only — no Inspector.
+          if (n.id === PROJECT_ANCHOR_ID) return;
+          setInspectorNodeId(n.id);
+        }}
+        onNodeDoubleClick={(_evt, n) => {
+          if (n.id === PROJECT_ANCHOR_ID) return;
+          onNodeDrill?.(n.id);
+        }}
         onPaneClick={() => setInspectorNodeId(null)}
         onPaneContextMenu={openPaneMenu}
         onInit={(inst) => {

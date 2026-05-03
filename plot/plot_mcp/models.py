@@ -453,17 +453,21 @@ class CanvasDoc(BaseModel):
     def _foundation_canvas_rules(self) -> CanvasDoc:
         if self.canvas_kind != "foundation":
             return self
+        # v0.13 Phase 0: project anchor is now stored in ProjectDoc.anchors,
+        # not as a node here. Old v0.12 files may still have a project node;
+        # tolerate it (the migrator removes them) but enforce uniqueness +
+        # top-level if present.
         projects = [n for n in self.nodes if n.kind == "project"]
-        missions = [n for n in self.nodes if n.kind == "mission"]
-        identities = [n for n in self.nodes if n.kind == "identity"]
-        if len(projects) != 1:
+        if len(projects) > 1:
             raise ValueError(
-                f"foundation canvas requires exactly one project node; found {len(projects)}"
+                f"foundation canvas may carry at most one legacy project node; found {len(projects)}"
             )
-        if projects[0].parent_id is not None:
+        if projects and projects[0].parent_id is not None:
             raise ValueError(
                 f"project node {projects[0].id!r} must be top-level (parent_id = null)"
             )
+        missions = [n for n in self.nodes if n.kind == "mission"]
+        identities = [n for n in self.nodes if n.kind == "identity"]
         if len(missions) < 1:
             raise ValueError(
                 f"foundation canvas requires at least one mission node; found {len(missions)}"
@@ -576,18 +580,56 @@ class CanvasDoc(BaseModel):
         return self
 
 
+class AnchorPlacement(BaseModel):
+    """v0.13 Phase 0: per-canvas position/visual of the Project anchor.
+
+    Before v0.13, every primary canvas (foundation/actors/services) carried
+    its own ``project`` kind node, redundantly storing label / position / size /
+    colour / shape on each. ProjectDoc.name was the only true SSOT for the
+    label; positions duplicated.
+
+    v0.13 promotes the anchor itself to ProjectDoc — one ``AnchorPlacement``
+    per canvas kind. Canvas .json files no longer carry a ``project`` node;
+    the renderer derives the anchor from ProjectDoc + canvas_kind and injects
+    it into React Flow's node array at render time.
+    """
+
+    x: float = -75.0
+    y: float = -75.0
+    width: float = 150.0
+    height: float = 150.0
+    color: str = "#fef3c7"
+    shape: Shape = "circle"
+
+
+def _default_anchors() -> dict[str, AnchorPlacement]:
+    return {
+        "foundation": AnchorPlacement(),
+        "actors": AnchorPlacement(),
+        "services": AnchorPlacement(),
+    }
+
+
 class ProjectDoc(BaseModel):
     """Project-level metadata. Stored as ``.plot/sketches/{project_id}/project.json``.
 
     Replaces v0.1's monolithic ``SketchDoc`` as the top-level entity; nodes and
     edges move into per-canvas ``CanvasDoc`` files alongside.
+
+    v0.13 Phase 0: ``anchors`` becomes the SSOT for the per-canvas Project
+    anchor (was duplicated as a ``project`` node in every canvas .json).
     """
 
     id: str = Field(..., min_length=1)
     name: str = ""
     created: str = ""  # ISO date
     updated: str = ""  # ISO datetime
-    version: int = 2
+    version: int = 3
+    # v0.13 Phase 0 — per-canvas project anchor positions. Default-seeded so
+    # any project loaded from a v0.12 file gets sensible defaults without an
+    # explicit migration; the migrator overwrites these from the old per-
+    # canvas ``project`` nodes if any are present.
+    anchors: dict[str, AnchorPlacement] = Field(default_factory=_default_anchors)
 
     @field_validator("id")
     @classmethod

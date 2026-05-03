@@ -17,6 +17,7 @@ from plot_mcp.api_endpoints import (
     folder_post_endpoint,
     health_endpoint,
     project_delete_endpoint,
+    project_anchor_patch_endpoint,
     project_get_endpoint,
     project_patch_endpoint,
     project_post_endpoint,
@@ -70,6 +71,12 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
             "/api/projects/{project_id}",
             project_delete_endpoint,
             methods=["DELETE"],
+        ),
+        # v0.13 Phase 0 — anchor placement per canvas
+        Route(
+            "/api/projects/{project_id}/anchors/{canvas}",
+            project_anchor_patch_endpoint,
+            methods=["PATCH"],
         ),
         Route(
             "/api/projects/{project_id}/canvases/{kind}",

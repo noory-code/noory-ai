@@ -90,20 +90,24 @@ def test_core_canvas_missing_identity_rejected() -> None:
         )
 
 
-def test_core_canvas_missing_project_rejected() -> None:
-    with pytest.raises(ValueError, match="project"):
-        CanvasDoc(
-            canvas_id="foundation",
-            canvas_kind="foundation",
-            nodes=[
-                SketchNode(id="mission", kind="mission", label="M"),
-                SketchNode(id="identity", kind="identity", label="I"),
-            ],
-        )
+def test_core_canvas_missing_project_accepted() -> None:
+    """v0.13 Phase 0: project anchor moved to ProjectDoc.anchors.
+    Foundation no longer requires a project node in nodes."""
+    canvas = CanvasDoc(
+        canvas_id="foundation",
+        canvas_kind="foundation",
+        nodes=[
+            SketchNode(id="mission", kind="mission", label="M"),
+            SketchNode(id="identity", kind="identity", label="I"),
+        ],
+    )
+    assert all(n.kind != "project" for n in canvas.nodes)
 
 
 def test_core_canvas_two_projects_rejected() -> None:
-    with pytest.raises(ValueError, match="exactly one project"):
+    """v0.13 Phase 0: legacy project nodes tolerated for backwards compat
+    but at most one (the eviction migrator removes them entirely)."""
+    with pytest.raises(ValueError, match="legacy project"):
         CanvasDoc(
             canvas_id="foundation",
             canvas_kind="foundation",

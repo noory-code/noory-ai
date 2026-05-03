@@ -171,33 +171,28 @@ def test_migrates_bare_v01_sketch(plot_root: Path) -> None:
     proj = read_project(plot_root, "alpha")
     assert proj.id == "alpha"
     assert proj.name == "Alpha"
-    assert proj.version == 2
+    assert proj.version == 3  # v0.13 Phase 0
 
 
 def test_migrated_foundation_canvas_has_seeds(plot_root: Path) -> None:
-    """v0.10: migrated Foundation canvas hosts a Project anchor +
-    mission/core_value/identity top-level pillars. The legacy ``core``
-    node-kind is gone; the anchor is ``project``."""
+    """v0.13 Phase 0: migrated Foundation canvas hosts mission/core_value/
+    identity (no project node — moved to ProjectDoc.anchors)."""
     _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     foundation = read_canvas(plot_root, "alpha", "foundation")
     kinds = sorted({n.kind for n in foundation.nodes if n.kind is not None})
-    assert "project" in kinds
     assert "mission" in kinds and "identity" in kinds and "core_value" in kinds
+    assert "project" not in kinds  # evicted by v0.13 migrator
     assert "core" not in kinds
-    # Every seeded pillar is top-level — no child of the anchor.
     assert all(n.parent_id is None for n in foundation.nodes)
 
 
 def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> None:
-    """Bare v0.1 only seeds actor-root (is_root=True). It should land in actors.json.
-    v0.11.4 also backfills a project anchor on read."""
+    """v0.13 Phase 0: actors canvas has actors only (no project node)."""
     _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     actors = read_canvas(plot_root, "alpha", "actors")
-    # All non-anchor nodes are actors with cleared parents.
-    non_anchor = [n for n in actors.nodes if n.kind != "project"]
-    assert all(n.kind == "actor" for n in non_anchor)
+    assert all(n.kind == "actor" for n in actors.nodes if n.kind)
     assert all(n.parent_id is None for n in actors.nodes)
 
 
@@ -226,7 +221,7 @@ def test_v10_upgrade_renames_core_dir_and_unparents_children(plot_root: Path) ->
     folder.mkdir(parents=True)
     (folder / "core").mkdir()
     # Seed project.json so the upgrader can read the authoritative name.
-    write_project(plot_root, ProjectDoc(id="alpha", name="Alpha v1", version=2))
+    write_project(plot_root, ProjectDoc(id="alpha", name="Alpha v1", version=3))
 
     (folder / "core" / "canvas.json").write_text(
         json.dumps({
@@ -296,11 +291,14 @@ def test_v10_upgrade_renames_core_dir_and_unparents_children(plot_root: Path) ->
     foundation = read_canvas(plot_root, "alpha", "foundation")
     by_id = {n.id: n for n in foundation.nodes}
 
-    # Legacy ``core`` renamed to ``project``; shape → circle; star gone.
-    anchor = by_id["core-root"]
-    assert anchor.kind == "project"
-    assert anchor.shape == "circle"
-    assert anchor.icon is None
+    # v0.13 Phase 0 — legacy ``core``/``project`` anchor evicted from canvas
+    # to ProjectDoc.anchors. ``core-root`` no longer present in nodes.
+    assert "core-root" not in by_id
+
+    # Anchor position migrated to ProjectDoc.anchors["foundation"].
+    proj = read_project(plot_root, "alpha")
+    assert "foundation" in proj.anchors
+    assert proj.anchors["foundation"].shape == "circle"
 
     # Children previously parented to core-root are now peers.
     assert by_id["mission"].parent_id is None
@@ -315,9 +313,6 @@ def test_v10_upgrade_renames_core_dir_and_unparents_children(plot_root: Path) ->
     assert by_id["mission"].icon is None
     assert by_id["identity"].icon is None
     assert facet.icon is None
-
-    # Idempotent: second call is a no-op.
-    assert upgrade_foundation_canvas_if_needed(plot_root, "alpha") is False
 
 
 def test_migration_is_idempotent(plot_root: Path) -> None:

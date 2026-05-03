@@ -47,52 +47,52 @@ def test_create_project_builds_folder_layout(plot_root: Path) -> None:
     proj = create_project(plot_root, "alpha", "Alpha")
     assert proj.id == "alpha"
     assert proj.name == "Alpha"
-    assert proj.version == 2
+    assert proj.version == 3  # v0.13 Phase 0
     folder = plot_root / "alpha"
     assert folder.is_dir()
     assert (folder / "project.json").is_file()
     assert (folder / "foundation" / "canvas.json").is_file()
     assert (folder / "actors" / "canvas.json").is_file()
     assert (folder / "services" / "canvas.json").is_file()
-    # No more eager ``services-detail/`` folder — detail canvases are
-    # seeded lazily by sync_details_with_overview when services appear.
 
 
-def test_create_project_seeds_foundation_with_project_anchor(plot_root: Path) -> None:
-    """v0.10: Foundation canvas seeds a central Project anchor (circle,
-    label = ProjectDoc.name) surrounded by Mission + Core value + Identity
-    pillars.
+def test_create_project_seeds_foundation_without_project_node(plot_root: Path) -> None:
+    """v0.13 Phase 0: project anchor moved to ProjectDoc.anchors. Foundation
+    canvas seeds Mission + Core value + Identity pillars only — no project node.
     """
     create_project(plot_root, "alpha", "Alpha")
     foundation = read_canvas(plot_root, "alpha", "foundation")
     kinds = sorted({n.kind for n in foundation.nodes if n.kind is not None})
-    assert kinds == ["core_value", "identity", "mission", "project"]
+    assert kinds == ["core_value", "identity", "mission"]
     assert all(n.parent_id is None for n in foundation.nodes)
-    project_nodes = [n for n in foundation.nodes if n.kind == "project"]
-    assert len(project_nodes) == 1
-    assert project_nodes[0].label == "Alpha"
-    assert project_nodes[0].shape == "circle"
+    assert all(n.kind != "project" for n in foundation.nodes)
 
 
 def test_create_project_seeds_actors_canvas(plot_root: Path) -> None:
-    """v0.11 seeds Operator + User actors; v0.11.4 also seeds the project anchor."""
+    """v0.13 Phase 0: actors canvas seeds Operator + User only (no project node)."""
     create_project(plot_root, "alpha", "Alpha")
     actors = read_canvas(plot_root, "alpha", "actors")
     assert actors.canvas_kind == "actors"
     kinds = sorted({n.kind for n in actors.nodes if n.kind})
-    assert kinds == ["actor", "project"]
-    project_anchor = next(n for n in actors.nodes if n.kind == "project")
-    assert project_anchor.label == "Alpha"
+    assert kinds == ["actor"]
+    assert all(n.kind != "project" for n in actors.nodes)
 
 
 def test_create_project_seeds_services_canvas(plot_root: Path) -> None:
-    """v0.11.4 — services canvas seeds the project anchor (was empty in v0.11)."""
+    """v0.13 Phase 0: services canvas starts empty (no project node)."""
     create_project(plot_root, "alpha", "Alpha")
     overview = read_canvas(plot_root, "alpha", "services")
     assert overview.canvas_kind == "services"
-    project_anchors = [n for n in overview.nodes if n.kind == "project"]
-    assert len(project_anchors) == 1
-    assert project_anchors[0].label == "Alpha"
+    assert all(n.kind != "project" for n in overview.nodes)
+
+
+def test_create_project_seeds_anchors_in_project_doc(plot_root: Path) -> None:
+    """v0.13 Phase 0: ProjectDoc carries anchor placements per canvas."""
+    proj = create_project(plot_root, "alpha", "Alpha")
+    assert "foundation" in proj.anchors
+    assert "actors" in proj.anchors
+    assert "services" in proj.anchors
+    assert proj.anchors["foundation"].shape == "circle"
 
 
 def test_create_duplicate_raises(plot_root: Path) -> None:

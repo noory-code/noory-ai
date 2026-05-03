@@ -126,6 +126,38 @@ export async function deleteProject(
   return ok(await fetch(url, { method: "DELETE" }));
 }
 
+/**
+ * v0.13 Phase 0: PATCH the per-canvas project anchor placement. Body fields
+ * are all optional; only supplied fields are updated. Returns the refreshed
+ * ProjectDoc.
+ */
+export async function patchProjectAnchor(
+  projectPath: string,
+  projectId: string,
+  canvas: CanvasKind,
+  patch: Partial<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: string;
+    shape: string;
+  }>,
+): Promise<ProjectDoc> {
+  const url = `${API_BASE}/api/projects/${encodeURIComponent(
+    projectId,
+  )}/anchors/${encodeURIComponent(canvas)}?project_path=${encodeURIComponent(
+    projectPath,
+  )}`;
+  return json<ProjectDoc>(
+    await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // canvases
 // ---------------------------------------------------------------------------

@@ -206,12 +206,31 @@ export interface CanvasDoc {
   edges: SketchEdge[];
 }
 
+/**
+ * v0.13 Phase 0: per-canvas project anchor placement. The anchor is rendered
+ * as a derived node by SketchCanvas (not stored in canvas.json). This is the
+ * SSOT for the anchor's position / visual; the canvas no longer carries a
+ * ``project`` kind node.
+ */
+export interface AnchorPlacement {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  shape: Shape;
+}
+
 export interface ProjectDoc {
   id: string;
   name: string;
   created: string;
   updated: string;
   version: number;
+  /** v0.13 Phase 0: anchor placements per canvas. Keys are CanvasKind values
+   *  (foundation / actors / services). Older project.json may omit; the
+   *  viewer applies defaults. */
+  anchors?: Partial<Record<CanvasKind, AnchorPlacement>>;
 }
 
 export interface ProjectTag {

@@ -275,7 +275,7 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
         name=doc.name or doc.id,
         created=doc.created or date.today().isoformat(),
         updated=datetime.now(UTC).isoformat(),
-        version=2,
+        version=3,  # v0.13 Phase 0
     )
     _write_json(_project_file(plot_root, doc.id), proj.model_dump())
 

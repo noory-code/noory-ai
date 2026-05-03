@@ -77,7 +77,7 @@ def test_create_then_list(app_client: tuple[TestClient, str]) -> None:
     client, project_path = app_client
     proj = _create(client, project_path, "alpha", "Alpha")
     assert proj["id"] == "alpha"
-    assert proj["version"] == 2
+    assert proj["version"] == 3  # v0.13 Phase 0
 
     listed = client.get("/api/projects", params={"project_path": project_path}).json()
     assert [p["id"] for p in listed["projects"]] == ["alpha"]
@@ -121,6 +121,7 @@ def test_project_get_returns_details_and_tags(
 
 
 def test_project_rename(app_client: tuple[TestClient, str]) -> None:
+    """v0.13 Phase 0: rename updates ProjectDoc.name only (no canvas node sync)."""
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
     resp = client.patch(
@@ -130,43 +131,14 @@ def test_project_rename(app_client: tuple[TestClient, str]) -> None:
     )
     assert resp.status_code == 200
     assert resp.json()["name"] == "Renamed"
-
-    # v0.5: rename mirrors onto the Core canvas Project anchor label.
+    # foundation canvas no longer carries a project node — anchor label is
+    # derived from ProjectDoc.name at render time.
     canvas_resp = client.get(
         "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
     )
     assert canvas_resp.status_code == 200
-    project_nodes = [n for n in canvas_resp.json()["nodes"] if n["kind"] == "project"]
-    assert len(project_nodes) == 1
-    assert project_nodes[0]["label"] == "Renamed"
-
-
-def test_canvas_core_put_syncs_project_name(
-    app_client: tuple[TestClient, str],
-) -> None:
-    """v0.5: editing the Project anchor's label in the Core canvas pulls
-    the change back into ``ProjectDoc.name`` (reverse of rename-endpoint)."""
-    client, project_path = app_client
-    _create(client, project_path, "alpha", "Alpha")
-    core = client.get(
-        "/api/projects/alpha/canvases/foundation",
-        params={"project_path": project_path},
-    ).json()
-    for n in core["nodes"]:
-        if n["kind"] == "project":
-            n["label"] = "Alpha 2.0"
-    put = client.put(
-        "/api/projects/alpha/canvases/foundation",
-        params={"project_path": project_path},
-        json=core,
-    )
-    assert put.status_code == 200
-    proj = client.get(
-        "/api/projects/alpha",
-        params={"project_path": project_path},
-    ).json()
-    assert proj["name"] == "Alpha 2.0"
+    assert all(n["kind"] != "project" for n in canvas_resp.json()["nodes"])
 
 
 def test_project_rename_requires_name(app_client: tuple[TestClient, str]) -> None:
@@ -197,6 +169,7 @@ def test_project_delete(app_client: tuple[TestClient, str]) -> None:
 def test_canvas_get_returns_seeded_core(
     app_client: tuple[TestClient, str],
 ) -> None:
+    """v0.13 Phase 0: foundation seeds Mission + Core value + Identity (no project)."""
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
     resp = client.get(
@@ -207,7 +180,7 @@ def test_canvas_get_returns_seeded_core(
     body = resp.json()
     assert body["canvas_kind"] == "foundation"
     kinds = sorted({n["kind"] for n in body["nodes"] if n.get("kind")})
-    assert kinds == ["core_value", "identity", "mission", "project"]
+    assert kinds == ["core_value", "identity", "mission"]
 
 
 def test_canvas_put_round_trips_actor(

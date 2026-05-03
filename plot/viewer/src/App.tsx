@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { resolveProjectPath, type SocketStatus } from "./api";
+import { patchProjectAnchor, resolveProjectPath, type SocketStatus } from "./api";
 import { SketchCanvas } from "./canvases/SketchCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
 import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
-import type { CanvasKey, CanvasKind, SketchNode } from "./types";
+import type {
+  AnchorPlacement,
+  CanvasKey,
+  CanvasKind,
+  ProjectDoc,
+  SketchNode,
+} from "./types";
 
 type CanvasTab = "foundation" | "actors" | "services";
 const CANVAS_TABS: readonly { id: CanvasTab; label: string }[] = [
@@ -19,6 +25,29 @@ function tabToKind(tab: CanvasTab): CanvasKind {
   if (tab === "foundation") return "foundation";
   if (tab === "actors") return "actors";
   return "services";
+}
+
+/**
+ * v0.13 Phase 0: pull the per-canvas project anchor placement out of a
+ * ProjectDoc summary, falling back to defaults when the field is missing
+ * (older v0.12 projects pre-eviction-migration). The synthetic anchor is
+ * only injected on Foundation/Actors/Services tabs.
+ */
+function resolveProjectAnchor(
+  proj: ProjectDoc | undefined,
+  tab: CanvasTab,
+): AnchorPlacement | null {
+  if (!proj) return null;
+  const fromDoc = proj.anchors?.[tab];
+  if (fromDoc) return fromDoc;
+  return {
+    x: -75,
+    y: -75,
+    width: 150,
+    height: 150,
+    color: "#fef3c7",
+    shape: "circle",
+  };
 }
 
 
@@ -361,6 +390,21 @@ export function App() {
                 availableIdentities={availableIdentities}
                 selectNodeId={selectedNodeId}
                 onSelectionConsumed={consumeSelection}
+                projectAnchor={resolveProjectAnchor(
+                  summaries.find((p) => p.id === activeId),
+                  activeTab,
+                )}
+                projectName={
+                  summaries.find((p) => p.id === activeId)?.name ?? null
+                }
+                onAnchorChange={(patch) => {
+                  if (!projectPath) return;
+                  void patchProjectAnchor(projectPath, activeId, activeTab, patch).then(
+                    (refreshed) => {
+                      project.replaceSummary?.(refreshed);
+                    },
+                  );
+                }}
                 onNodeDrill={(id) => {
                   const n = activeCanvas.nodes.find((x) => x.id === id);
                   if (!n) return;
