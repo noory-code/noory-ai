@@ -24,6 +24,10 @@ live?".
 | **Services** (top) | What value do we create and exchange? | `service`, `mission_ref`, `value_ref`, `identity_ref` |
 | **Service Detail** (per-service) | How does this one service work inside? | `service` (sub via `parent_id`), `rule`, `content`, `metric`, `step`, `actor_ref`, `mission_ref`, `value_ref`, `identity_ref` |
 
+> **v0.11.4** — `project` is also auto-seeded on Actors and Services
+> canvases (label-synced from Foundation) so every primary canvas
+> visually radiates from the same project anchor.
+
 Foundation defines the project's identity. Actors lists the participants.
 Services maps the value economy at a high level. Each service drills into
 its own Service Detail canvas where the actual work happens — rules,
@@ -37,11 +41,16 @@ symbols.
 ### `project` — the project anchor
 
 Auto-seeded, exactly one per project, cannot be deleted. Sits at the
-centre of the Foundation canvas as a circle.
+centre of every primary canvas (Foundation, Actors, Services) as a
+circle so the mental model "everything spreads out from the project"
+reads at a glance — v0.11.4.
 
 - **Asks**: which project is this?
-- **Count**: 1 (enforced)
-- **Label**: mirrors `ProjectDoc.name`; editing one updates the other.
+- **Count**: exactly 1 on Foundation (enforced); 1 visible copy on each
+  of Actors / Services (auto-seeded, label-synced from Foundation).
+- **Label**: mirrors `ProjectDoc.name` on every canvas it appears on;
+  editing one of them updates `ProjectDoc.name` and propagates to the
+  other copies.
 - **Examples**: "BANAS", "Plot", "Auth Demo"
 
 ### `mission` — purpose, in space
@@ -163,6 +172,21 @@ can validate its operator/user mix without cross-canvas lookups.
 ## Service kinds
 
 ### `service` — a playground for production and exchange
+
+**v0.11.4 typed field — `target_side`** (`operator` / `user` / `both` / `null`)
+classifies the service by which side of the value exchange it exists for.
+This is the mirror image of `actor.side`:
+
+| Service example | `target_side` | Tinted hue |
+|---|---|---|
+| Admin panel | `operator` | blue |
+| User-facing app | `user` | red |
+| Auth / backend service | `both` | violet |
+
+The Inspector shows a Target side selector on every service. The on-canvas
+service node body is tinted accordingly so the operator-vs-user split reads
+at a glance — same picture, two layers of meaning.
+
 
 > A service is a **playground** where stakeholders **produce and
 > exchange value** while building relationships with each other.

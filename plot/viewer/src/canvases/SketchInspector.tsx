@@ -591,6 +591,28 @@ function ServiceFields({ node, canvasKind, onPatchNode }: ServiceFieldsProps) {
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-sky-700">
         {isTopLevel ? "Service" : "Sub-service"}
       </div>
+      {/* v0.11.4 — target_side classifies the service by which side of the
+          value exchange it exists for. Mirror of actor.side. */}
+      <label className="mb-3 block">
+        <span className="text-xs font-semibold text-slate-700">Target side</span>
+        <span className="ml-1 text-[10px] text-slate-500">— 운영자측 / 사용자측 / 둘 다</span>
+        <select
+          value={node.target_side ?? ""}
+          onChange={(e) => {
+            const v = e.target.value;
+            onPatchNode({
+              target_side:
+                v === "operator" || v === "user" || v === "both" ? v : null,
+            });
+          }}
+          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-sky-600 focus:outline-none"
+        >
+          <option value="">(미지정)</option>
+          <option value="operator">운영자측 (operator)</option>
+          <option value="user">사용자측 (user)</option>
+          <option value="both">둘 다 (both)</option>
+        </select>
+      </label>
       {isTopLevel ? (
         <>
           <ServiceTextarea

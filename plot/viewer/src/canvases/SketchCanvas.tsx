@@ -337,7 +337,19 @@ function SketchCanvasInner({
         return null;
       })();
       const baseLabel = masterDerivedLabel ?? n.label;
-      const visualColor = isOrphan ? "#fee2e2" : n.color;
+      // v0.11.4 — service.target_side tints the body so operator-facing
+      // services (admin) and user-facing services (app) read at a glance.
+      // operator → blue tint, user → red tint, both → violet tint.
+      let visualColor: string = isOrphan ? "#fee2e2" : n.color;
+      if (
+        !isOrphan &&
+        n.kind === "service" &&
+        n.target_side != null
+      ) {
+        if (n.target_side === "operator") visualColor = "#dbeafe"; // blue-100
+        else if (n.target_side === "user") visualColor = "#fee2e2"; // red-100
+        else if (n.target_side === "both") visualColor = "#ede9fe"; // violet-100
+      }
       const visualLabel = isOrphan ? `⚠ ${baseLabel}` : baseLabel;
       // v0.9.1: typed fields are gone. The on-canvas node shows just the
       // label; long-form lives in details.md (Inspector only). Pass an
@@ -571,6 +583,7 @@ function SketchCanvasInner({
         side: null,
         gives: "",
         receives: "",
+        target_side: null,
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -635,6 +648,7 @@ function SketchCanvasInner({
         side: null,
         gives: "",
         receives: "",
+        target_side: null,
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -1334,6 +1348,7 @@ function SketchCanvasInner({
             side: null,
             gives: "",
             receives: "",
+            target_side: null,
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}

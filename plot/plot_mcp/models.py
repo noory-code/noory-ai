@@ -176,6 +176,13 @@ class SketchNode(BaseModel):
     dont: str = ""
 
     # service (Services / Service-Detail, kind="service"):
+    #   v0.11.4 — service carries ``target_side`` so the canvas (and AI) can
+    #   tell at a glance whether this service exists for operators (an admin
+    #   panel), users (a customer-facing app), or both. Mirror image of
+    #   ``actor.side``; together they form Plot's two-axis classification
+    #   (actor side / service target_side) that keeps the operator-vs-user
+    #   distinction consistent across the model.
+    target_side: Literal["operator", "user", "both"] | None = None
     #   Top-level (parent_id is None) and sub-service (parent_id != None)
     #   share the same model — Inspector decides which fields to surface.
     #   ``what``         — concise statement of what the service is.
@@ -339,8 +346,13 @@ _FOUNDATION_REFS = {"mission_ref", "value_ref", "identity_ref"}
 
 _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     "foundation": {"project", "mission", "core_value", "identity"},
-    "actors": {"actor"},
-    "services": {"service"} | _FOUNDATION_REFS,
+    # v0.11.4 — project anchor is now visible on every primary canvas so the
+    # mental model "everything spreads out from the project" reads at a
+    # glance. The Foundation canvas remains the sole master (label-sync
+    # source from ProjectDoc.name); the actors / services instances are
+    # auto-seeded copies kept in sync.
+    "actors": {"actor", "project"},
+    "services": {"service", "project"} | _FOUNDATION_REFS,
     "service_detail": {
         "service",
         "rule",

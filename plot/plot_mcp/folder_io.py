@@ -144,7 +144,36 @@ def read_canvas(
         upgrade_foundation_canvas_if_needed(plot_root, project_id)
     path = _canvas_file(plot_root, project_id, canvas_kind, service_id)
     raw = _read_json(path)
+    # v0.11.4 — actors / services canvases now carry a project anchor copy
+    # (label-synced from foundation). Backfill on read for projects created
+    # before v0.11.4 so the new validators / UX find the anchor present.
+    if canvas_kind in ("actors", "services"):
+        raw = _backfill_project_anchor(plot_root, project_id, canvas_kind, raw)
     return CanvasDoc.model_validate(raw)
+
+
+def _backfill_project_anchor(
+    plot_root: Path,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    raw: dict[str, Any],
+) -> dict[str, Any]:
+    """v0.11.4 migration helper: ensure actors / services canvases carry
+    a project anchor node. Idempotent. Reads ProjectDoc.name for the
+    label so the anchor is consistent with the Foundation copy.
+    """
+    nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
+    if any((n.get("kind") == "project") for n in nodes):
+        return raw
+    try:
+        proj = read_project(plot_root, project_id)
+    except FileNotFoundError:
+        return raw
+    anchor = _seed_project_anchor(proj.name).model_dump(by_alias=True)
+    raw = {**raw, "nodes": [anchor, *nodes]}
+    # Persist so subsequent reads skip the backfill.
+    _write_json(_canvas_file(plot_root, project_id, canvas_kind), raw)
+    return raw
 
 
 def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
@@ -204,6 +233,25 @@ def rename_project(plot_root: Path, project_id: str, new_name: str) -> ProjectDo
             _canvas_file(plot_root, project_id, "foundation"),
             synced.model_dump(by_alias=True),
         )
+
+    # v0.11.4 — propagate the rename to the project anchors on the actors
+    # and services canvases too. Each carries a copy of the project node;
+    # all three copies' labels must match ProjectDoc.name.
+    for canvas_kind in ("actors", "services"):
+        try:
+            other = read_canvas(plot_root, project_id, canvas_kind)
+        except FileNotFoundError:
+            continue
+        anchor = next((n for n in other.nodes if n.kind == "project"), None)
+        if anchor is not None and anchor.label != new_name:
+            updated = [
+                n.model_copy(update={"label": new_name}) if n.id == anchor.id else n
+                for n in other.nodes
+            ]
+            _write_json(
+                _canvas_file(plot_root, project_id, canvas_kind),
+                other.model_copy(update={"nodes": updated}).model_dump(by_alias=True),
+            )
 
     write_project(plot_root, renamed)
     return read_project(plot_root, project_id)
@@ -292,24 +340,43 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:
     )
 
 
-def _seed_actors_canvas() -> CanvasDoc:
+def _seed_project_anchor(project_name: str) -> SketchNode:
+    """v0.11.4 — project anchor node, identical instance reused across
+    every primary canvas (foundation / actors / services). Label mirrors
+    ProjectDoc.name on every canvas; renames propagate through
+    ``rename_project``.
+    """
+    return SketchNode(
+        id="project",
+        kind="project",
+        label=project_name,
+        x=-75,
+        y=-75,
+        width=150,
+        height=150,
+        color="#fef3c7",
+        shape="circle",
+    )
+
+
+def _seed_actors_canvas(project_name: str) -> CanvasDoc:
     """v0.11 — actors canvas seeds with two placeholder classes ("Operator"
     and "User") to satisfy the IDENTITY.md "≥ 2 actor classes" minimum.
 
-    Users rename the labels freely; the ``side`` field carries the
-    semantic distinction (operator vs user) which validators and AI
-    tooling can rely on regardless of the visible label.
+    v0.11.4 — also seeds a project anchor at the centre so the canvas
+    reads as "actors spread out from the project."
     """
     return CanvasDoc(
         canvas_id="actors",
         canvas_kind="actors",
         nodes=[
+            _seed_project_anchor(project_name),
             SketchNode(
                 id="operator",
                 kind="actor",
                 label="Operator",
                 side="operator",
-                x=-160,
+                x=-260,
                 y=-50,
                 width=140,
                 height=80,
@@ -321,7 +388,7 @@ def _seed_actors_canvas() -> CanvasDoc:
                 kind="actor",
                 label="User",
                 side="user",
-                x=40,
+                x=140,
                 y=-50,
                 width=140,
                 height=80,
@@ -329,6 +396,18 @@ def _seed_actors_canvas() -> CanvasDoc:
                 shape="rounded",
             ),
         ],
+    )
+
+
+def _seed_services_canvas(project_name: str) -> CanvasDoc:
+    """v0.11.4 — services canvas seeds with the project anchor only.
+    Top-level services + Foundation refs are added by the user as the
+    architecture takes shape.
+    """
+    return CanvasDoc(
+        canvas_id="services",
+        canvas_kind="services",
+        nodes=[_seed_project_anchor(project_name)],
     )
 
 
@@ -367,14 +446,11 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     )
     _write_json(
         _canvas_file(plot_root, project_id, "actors"),
-        _seed_actors_canvas().model_dump(by_alias=True),
+        _seed_actors_canvas(proj.name).model_dump(by_alias=True),
     )
     _write_json(
         _canvas_file(plot_root, project_id, "services"),
-        CanvasDoc(
-            canvas_id="services",
-            canvas_kind="services",
-        ).model_dump(by_alias=True),
+        _seed_services_canvas(proj.name).model_dump(by_alias=True),
     )
     return proj
 

@@ -74,19 +74,25 @@ def test_create_project_seeds_foundation_with_project_anchor(plot_root: Path) ->
     assert project_nodes[0].shape == "circle"
 
 
-def test_create_project_seeds_actors_canvas_empty_root(plot_root: Path) -> None:
+def test_create_project_seeds_actors_canvas(plot_root: Path) -> None:
+    """v0.11 seeds Operator + User actors; v0.11.4 also seeds the project anchor."""
     create_project(plot_root, "alpha", "Alpha")
     actors = read_canvas(plot_root, "alpha", "actors")
-    # Actors canvas can start empty — no seed node required.
     assert actors.canvas_kind == "actors"
-    assert all(n.kind == "actor" for n in actors.nodes)
+    kinds = sorted({n.kind for n in actors.nodes if n.kind})
+    assert kinds == ["actor", "project"]
+    project_anchor = next(n for n in actors.nodes if n.kind == "project")
+    assert project_anchor.label == "Alpha"
 
 
-def test_create_project_seeds_services_canvas_empty(plot_root: Path) -> None:
+def test_create_project_seeds_services_canvas(plot_root: Path) -> None:
+    """v0.11.4 — services canvas seeds the project anchor (was empty in v0.11)."""
     create_project(plot_root, "alpha", "Alpha")
     overview = read_canvas(plot_root, "alpha", "services")
     assert overview.canvas_kind == "services"
-    assert overview.nodes == []
+    project_anchors = [n for n in overview.nodes if n.kind == "project"]
+    assert len(project_anchors) == 1
+    assert project_anchors[0].label == "Alpha"
 
 
 def test_create_duplicate_raises(plot_root: Path) -> None:
@@ -135,8 +141,9 @@ def test_write_canvas_round_trip(plot_root: Path) -> None:
     )
     write_canvas(plot_root, "alpha", canvas)
     loaded = read_canvas(plot_root, "alpha", "actors")
-    labels = sorted(n.label for n in loaded.nodes)
-    assert labels == ["관리자", "사용자"]
+    # v0.11.4 read backfills the project anchor; just check the actor labels.
+    actor_labels = sorted(n.label for n in loaded.nodes if n.kind == "actor")
+    assert actor_labels == ["관리자", "사용자"]
 
 
 def test_write_canvas_rejects_wrong_project(plot_root: Path) -> None:

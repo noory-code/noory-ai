@@ -4,6 +4,49 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.4] — 2026-05-03
+
+First user-experience-driven patch on the v0.11 model. Two paired
+changes triggered by hands-on use:
+
+- "Where's the project? Each canvas feels like it floats on its own."
+  → Project anchor visible on every primary canvas.
+- "Operator-facing services and user-facing services need to read
+  differently at a glance."
+  → New `target_side` typed field on `service`, mirror of `actor.side`.
+
+### Added — **Project anchor on Actors / Services canvases**
+- `_ALLOWED_KINDS_BY_CANVAS` admits `project` on Actors and Services
+  in addition to Foundation.
+- New `_seed_project_anchor()` factory; `_seed_actors_canvas()` and
+  the new `_seed_services_canvas()` both seed it at the centre.
+- `rename_project()` now propagates the rename to Actors / Services
+  copies in addition to Foundation. All three labels stay in sync.
+- `read_canvas` quietly backfills the anchor for projects created
+  before v0.11.4 (idempotent).
+
+### Added — **`service.target_side` typed field**
+- `SketchNode.target_side: Literal["operator", "user", "both"] | None
+  = None`. Mirror of `actor.side`.
+- Inspector ServiceFields gains a Target side selector
+  (운영자측 / 사용자측 / 둘 다 / 미지정).
+- Canvas tints the service body by `target_side`:
+  - `operator` → blue (`#dbeafe`)
+  - `user` → red (`#fee2e2`)
+  - `both` → violet (`#ede9fe`)
+- No new kind. The two-axis classification (actor side ↔ service
+  target_side) keeps the model's mental shape consistent.
+
+### Notes
+- Tests: 162 passing. Two existing fixtures updated for the new
+  Actors / Services seeds.
+- "Product" is intentionally **not** a new kind — operator-facing
+  services and user-facing services are distinct service instances
+  with different `target_side`, not a separate kind. This decision
+  was confirmed during the discussion (see plan file).
+- Users can keep building deep service hierarchies (sub-sub-service
+  is fine — depth stays unlimited).
+
 ## [0.11.3] — 2026-04-30
 
 Closes the v0.11 release line. Phase D (Mode 2 time-axis layer

@@ -139,6 +139,10 @@ export interface SketchNode {
    *  per-actor-per-service; service.value_created is the aggregate. */
   gives: string;
   receives: string;
+  /** v0.11.4: service classification — which side of the value exchange
+   *  this service exists for. Mirror of ``actor.side`` so Plot's two
+   *  axes (actor / service) share the same classification pattern. */
+  target_side: "operator" | "user" | "both" | null;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */

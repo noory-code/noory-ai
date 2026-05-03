@@ -190,12 +190,14 @@ def test_migrated_foundation_canvas_has_seeds(plot_root: Path) -> None:
 
 
 def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> None:
-    """Bare v0.1 only seeds actor-root (is_root=True). It should land in actors.json."""
+    """Bare v0.1 only seeds actor-root (is_root=True). It should land in actors.json.
+    v0.11.4 also backfills a project anchor on read."""
     _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     actors = read_canvas(plot_root, "alpha", "actors")
-    # actor-root moves to actors.json as a top-level actor (parent_id cleared)
-    assert all(n.kind == "actor" for n in actors.nodes)
+    # All non-anchor nodes are actors with cleared parents.
+    non_anchor = [n for n in actors.nodes if n.kind != "project"]
+    assert all(n.kind == "actor" for n in non_anchor)
     assert all(n.parent_id is None for n in actors.nodes)
 
 
