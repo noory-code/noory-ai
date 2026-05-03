@@ -21,8 +21,8 @@ live?".
 |---|---|---|
 | **Foundation** | Who are we, and why do we exist? | `project`, `mission`, `core_value`, `identity` |
 | **Actors** | Who participates? | `actor` |
-| **Services** (top) | What value do we create and exchange? | `service`, `mission_ref`, `value_ref`, `identity_ref` |
-| **Service Detail** (per-service) | How does this one service work inside? | `service` (sub via `parent_id`), `rule`, `content`, `metric`, `step`, `actor_ref`, `mission_ref`, `value_ref`, `identity_ref` |
+| **Services** (top) | What value do we create and exchange? | `project`, `category`, `service` |
+| **Service Detail** (modal, per-service) | How does this one service work inside? | `actor_ref`, `mission_ref`, `value_ref`, `identity_ref`, `metric`, `step`, `rule`, `content` |
 
 > **v0.11.4** — `project` is also auto-seeded on Actors and Services
 > canvases (label-synced from Foundation) so every primary canvas
@@ -48,10 +48,10 @@ live?".
 > step / rule / content / typed fields all still live there).
 
 Foundation defines the project's identity. Actors lists the participants.
-Services maps the value economy at a high level. Each service drills into
-its own Service Detail canvas where the actual work happens — rules,
-content, metrics, steps, and the actors that interact via reference
-symbols.
+Services maps the value economy at a high level — `category → service`.
+Double-clicking a service opens its **Service Detail modal** where the
+actual work happens — rules, content, metrics, steps, and the actors
+that interact via reference symbols.
 
 ---
 
@@ -240,18 +240,18 @@ or a transaction queue; it's a space where:
   trading, building relationships (diversity),
 - the procedure isn't predetermined (degrees of freedom).
 
-The same `service` kind is used at every depth: a top-level service
-like _Auth_, a sub-service like _Login_ inside it, or a sub-sub-service
-inside that. Depth is expressed by `parent_id`.
+`service` is a **leaf** under a `category` (v0.12). The Services
+canvas reads exactly two levels: `category → service`. There is no
+sub-service; what used to be a "sub-service" is now the service
+itself, and what used to be a "top-level service" is now a category.
 
-- **Asks**: what value do we produce and exchange here, who is
-  involved, and (for sub-services) how does this contribute to the
-  parent service?
-- **Counts**: 0..N at every level.
-- **Lives on**:
-  - Top-level (no `parent_id`): the Services canvas.
-  - Sub-service (`parent_id != null`): the parent service's Service
-    Detail canvas.
+- **Asks**: what value do we produce and exchange here, and who is
+  involved?
+- **Counts**: 0..N per category.
+- **Lives on**: the Services canvas (as a leaf inside a category).
+  Per-service composition (refs, metric, step, rule, content) lives
+  on the **Service Detail modal** opened by double-clicking the
+  service.
 - **Forces a question**: every service prompts the user with "what
   value does this make?" — Plot's design intent is to make this
   question unavoidable at every level.
@@ -276,46 +276,36 @@ Everything else on `service` follows the wider **rich fields, minimal
 required** default — most fields stay optional so the template
 prompts thinking without blocking flow.
 
-#### Top-level service — strategic
+#### Service typed fields (v0.12)
 
-Required typed fields:
-
-- `label` — the service name.
-- One of: an `identity_ref` or a `value_ref` — every top-level service
-  must declare which Foundation it embodies.
-
-Optional typed fields:
-
+- `target_side` — `operator` / `user` / `both` / `null` (which side
+  of the value exchange this service exists for; mirrors
+  `actor.side`). Visualised as a node tint.
 - `what` — one-line definition.
-- `value_created` — the value it creates at a high level.
+- `value_created` — the value it creates.
 - `scope` — what it covers vs what is left to a sibling service.
-- `do` / `dont` — design constraints (AI-friendly).
-
-The surrounding canvas may also carry placed `mission_ref` /
-`value_ref` / `identity_ref` symbols to make the alignment visible.
-
-#### Sub-service — operational
-
-All typed fields are **optional** by design — the template is rich so
-it prompts thinking, but Plot never refuses to save a half-empty
-sub-service.
-
-- `value_created` — what specific value this contributes.
 - `trigger` — when it happens.
 - `how` — the mechanism.
 - `outcome` — what state results.
-- `do` / `dont` — design constraints.
+- `do` / `dont` — design constraints (AI-friendly).
 
-Around the sub-service, place `actor_ref` symbols to show which actors
-participate. The exchange itself is captured in the actor_refs +
-typed fields combination.
+All typed fields are **optional** by design — the template is rich
+so it prompts thinking, but Plot never refuses to save a half-empty
+service. The Inspector surfaces all of them in one section so the
+strategic and operational thinking sit side by side.
+
+Inside the service-detail modal, place `actor_ref` symbols to show
+which actors participate, and `mission_ref` / `value_ref` /
+`identity_ref` symbols to anchor the service to Foundation. The
+exchange itself is captured in the actor_refs + typed fields
+combination.
 
 ---
 
 ## Composition kinds (inside Service Detail)
 
-These exist only inside a Service Detail canvas, as `parent_id`
-children of the service node they decompose.
+These exist only inside a Service Detail modal, as `parent_id`
+children of the service the modal is for.
 
 ### `rule` — policy, constraint, permission
 
@@ -422,15 +412,16 @@ the foundation refs aren't trade participants).
    real.** The Inspector surfaces many typed fields per kind to prompt
    thinking, and most are optional. A small set of hard requirements
    set Plot's quality floor — they encode what Plot *is*, not just
-   nice-to-haves. The current floor:
-   - A `services` canvas with at least one top-level service requires
-     **≥ 1 Foundation anchor** (`mission_ref` / `value_ref` /
-     `identity_ref`) on the same canvas — alignment ownership must be
-     visible at the top view.
+   nice-to-haves. The current floor (v0.12):
+   - On the Services canvas, every `service` must sit under a
+     `category` (no orphan services); every `category` must be
+     top-level (no nested categories).
    - A project's `actors` canvas requires **≥ 2** actor classes.
    - Every service requires **≥ 2** `actor_ref` participants, and one
      of them must be an explicit operator (moderation /
-     alignment-keeper).
+     alignment-keeper). Foundation anchors (`mission_ref` /
+     `value_ref` / `identity_ref`) live inside the per-service modal,
+     not on the Services canvas itself.
 
    See `IDENTITY.md` for why these specific floors exist.
 

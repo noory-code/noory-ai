@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.3] — 2026-05-03
+
+Docs only — sync `CONCEPTS.md` to v0.12 reality.
+
+### Changed — **CONCEPTS.md**
+- Canvas table: Services row now `project / category / service`;
+  Service Detail row drops `service (sub via parent_id)` (sub-service
+  was eliminated in v0.12) and is labelled "(modal, per-service)".
+- `service` kind: the "Top-level service" / "Sub-service" sub-sections
+  are merged into a single v0.12 service definition with one typed
+  field block (`target_side`, `what`, `value_created`, `scope`,
+  `trigger`, `how`, `outcome`, `do`, `dont`).
+- Design principles: the validator floor for the Services canvas is
+  rewritten — `service` must sit under a `category`, no nested
+  categories. The v0.11.2 "≥ 1 Foundation anchor on the Services
+  canvas" rule is removed (anchors now live inside the per-service
+  modal, not on the top view).
+- Stylistic phrasings updated from "Service Detail canvas" to
+  "Service Detail modal" wherever the old surface was named.
+
 ## [0.12.2] — 2026-05-03
 
 Visual polish on the v0.12 surfaces, driven by direct usage feedback.
