@@ -11,7 +11,7 @@ fields are unchanged.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -314,6 +314,107 @@ ValueForm = Literal[
     "access",  # 접근권 — 기회, 멤버십, 독점성
     "effort",  # 시간·노력 — 투입 시간, 창의 노동
 ]
+
+
+# ---------------------------------------------------------------------------
+# v0.13 Phase 1 — Foundation discriminated union
+# ---------------------------------------------------------------------------
+#
+# The legacy ``SketchNode`` above is a god object: every kind's typed fields
+# coexist as defaults on every node, so a core_value carries empty
+# ``motivation`` / ``actor_permissions`` / ``producer_actor_id`` / etc. in
+# its JSON. v0.13 splits this per kind via a Pydantic discriminated union.
+#
+# Phase 1 (this section) only DEFINES the new classes. Foundation canvas
+# read/write keeps using SketchNode for now; Phase 3 wires the new types
+# into folder_io once the MD-template I/O lands.
+#
+# Scope: Foundation kinds only (project / mission / core_value / identity).
+# Actors / Services / Service Detail keep god SketchNode for now —
+# v0.14+ extends the same treatment to the rest.
+
+
+class BaseNodeFields(BaseModel):
+    """v0.13 Phase 1: shared graph-level fields. Lives in canvas.json.
+
+    Excludes every typed-text field; those move to per-node MD templates
+    in Phase 3 and only appear on the kind subclasses below.
+    """
+
+    id: str = Field(..., min_length=1)
+    label: str = ""
+    x: float = 0.0
+    y: float = 0.0
+    width: float = 180.0
+    height: float = 80.0
+    color: str = "#ffffff"
+    shape: Shape = "rounded"
+    icon: str | None = None
+    parent_id: str | None = None
+    collapsed: bool = False
+    is_root: bool = False
+    details_path: str | None = None
+
+
+class ProjectNode(BaseNodeFields):
+    """v0.13 Phase 1: ``project`` kind anchor.
+
+    In v0.13 the project anchor's data lives in ``ProjectDoc.anchors`` and
+    is rendered as a synthetic node by the viewer (not stored in
+    canvas.json). This class is kept for symmetry with the other kinds and
+    for the rare fully-derived case; canvas.json should not normally
+    contain a ProjectNode.
+    """
+
+    kind: Literal["project"] = "project"
+
+
+class MissionNode(BaseNodeFields):
+    """v0.13 Phase 1: mission kind. Typed text (``what_we_do`` / ``why`` /
+    ``direction``) lives in the per-node MD template, not in JSON."""
+
+    kind: Literal["mission"] = "mission"
+    what_we_do: str = ""
+    why: str = ""
+    direction: str = ""
+
+
+class CoreValueNode(BaseNodeFields):
+    """v0.13 Phase 1: core_value kind. Typed text (``definition`` / ``do`` /
+    ``dont``) lives in the per-node MD template, not in JSON."""
+
+    kind: Literal["core_value"] = "core_value"
+    definition: str = ""
+    do: str = ""
+    dont: str = ""
+
+
+class IdentityNode(BaseNodeFields):
+    """v0.13 Phase 1: identity kind. Typed text (``description`` / ``do`` /
+    ``dont``) lives in the per-node MD template, not in JSON."""
+
+    kind: Literal["identity"] = "identity"
+    description: str = ""
+    do: str = ""
+    dont: str = ""
+
+
+# Discriminated union — the runtime + IDE narrows on ``kind`` automatically.
+# Used by Phase 3's MD template I/O to instantiate the correct subclass per
+# node (Pydantic dispatches via the ``kind`` literal).
+FoundationNode = Annotated[
+    Union[ProjectNode, MissionNode, CoreValueNode, IdentityNode],
+    Field(discriminator="kind"),
+]
+
+# Per-kind text-field map (used by Phase 3 to render / parse the MD
+# template). Keep in sync with the subclass definitions above.
+FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
+    "project": [],
+    "mission": ["what_we_do", "why", "direction"],
+    "core_value": ["definition", "do", "dont"],
+    "identity": ["description", "do", "dont"],
+}
 
 
 class SketchEdge(BaseModel):

@@ -496,6 +496,12 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
         _canvas_file(plot_root, project_id, "services"),
         _seed_services_canvas(proj.name).model_dump(by_alias=True),
     )
+    # v0.13 Phase 2 — write per-kind JSON Schema + MD template files into
+    # ``.plot/{proj}/schema/`` so external tools (Obsidian YAML LSP, custom
+    # validators) can verify Foundation node files.
+    from plot_mcp.schema_export import export_foundation_schemas
+
+    export_foundation_schemas(plot_root, project_id)
     return proj
 
 
