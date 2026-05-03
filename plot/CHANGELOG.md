@@ -4,6 +4,46 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.6] — 2026-05-03
+
+Code-level audit cleared the v0.10/v0.11 residue still leaking into
+the v0.12 Services surfaces.
+
+### Changed — **`is_root` UI no longer applies to service**
+- Inspector still surfaced a "Mark as Service Root" checkbox and a
+  "Service Root" header for any parentless service. v0.12 made
+  `service` a category leaf — there is no service-root concept any
+  more. The toggle and the header branch now apply only to `actor`.
+  The `is_root` field stays on the data model (still meaningful for
+  actor); only the service UI path is removed.
+
+### Changed — **Service Detail modal shows the parent category**
+- The header used to read just "SERVICE DETAIL — Login". Inside the
+  modal users had no way to see which category the service belonged
+  to; drill context was lost. Header now reads
+  "SERVICE DETAIL  {Category} › {Service}", with the category label
+  derived from the service's `parent_id` lookup against the cached
+  Services canvas.
+
+### Added — **Soft warning on empty categories**
+- A `category` with zero child services is structurally legal but
+  semantically noise (categories exist to group services). Inspector
+  now surfaces an amber hint inside `CategoryFields` when child
+  count = 0, suggesting the user either drop a service in or delete
+  the category. Not a hard validator — autosave-friendly.
+
+### Changed — **Stale "sub-service" wording removed**
+- Comments and JSDoc across `types.ts`, `SketchStencil.tsx`, and
+  `SketchCanvas.tsx` still described the v0.10/v0.11 sub-service
+  decomposition. Updated to v0.12 phrasing
+  ("category → service leaf"; "service detail = modal").
+
+### Changed — **Auto-layout button tooltip drops "(dagre LR)"**
+- v0.12.4 made auto-layout dispatch by canvas (radial for
+  Foundation/Actors, dagre for Services/Detail), so the literal
+  "(dagre LR)" tooltip was a lie on half the canvases. Tooltip is
+  now just "Auto layout".
+
 ## [0.12.5] — 2026-05-03
 
 ### Fixed — **Radial auto-layout preserves the user's angle**

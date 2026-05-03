@@ -106,8 +106,9 @@ export function SketchInspector({
   // now their own node kinds on the Core canvas, so the per-root text
   // fields were removed. ``showsIdentity`` kept only for historical
   // reference; the block that used it is gone.
-  const canToggleRoot =
-    !node.parent_id && (node.kind === "actor" || node.kind === "service");
+  // v0.12.6 — service is a category leaf in v0.12; the "root" concept no
+  // longer applies to it. Only actor still carries it.
+  const canToggleRoot = !node.parent_id && node.kind === "actor";
   const refTarget =
     node.kind === "actor_ref" && node.ref_actor_id
       ? availableActors.find((n) => n.id === node.ref_actor_id) ?? null
@@ -135,9 +136,7 @@ export function SketchInspector({
               ? "Project"
               : node.is_root && node.kind === "actor"
                 ? "Actor Root"
-                : node.is_root && node.kind === "service"
-                  ? "Service Root"
-                  : node.kind ?? "Node"}
+                : node.kind ?? "Node"}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -200,7 +199,15 @@ export function SketchInspector({
         {/* v0.12 — category fields. A category is a thematic grouping;
             its only typed field is ``theme`` (one-line common thread). */}
         {node.kind === "category" && (
-          <CategoryFields node={node} onPatchNode={onPatchNode} />
+          <CategoryFields
+            node={node}
+            childCount={
+              allNodes.filter(
+                (n) => n.parent_id === node.id && n.kind === "service",
+              ).length
+            }
+            onPatchNode={onPatchNode}
+          />
         )}
 
         {/* v0.10 Step 2: Core Value typed form — definition + Do/Don't pair.
@@ -225,7 +232,8 @@ export function SketchInspector({
           onPatchNode={onPatchNode}
         />
 
-        {/* Root toggle — only for top-level actor / service */}
+        {/* Root toggle — only for top-level actor (v0.12.6: service is a
+            category leaf in v0.12, no root semantics). */}
         {canToggleRoot && (
           <label className="mb-4 flex items-center gap-2 text-xs text-slate-700">
             <input
@@ -235,8 +243,7 @@ export function SketchInspector({
               className="accent-indigo-600"
             />
             <span>
-              Mark as <strong>{node.kind === "actor" ? "Actor Root" : "Service Root"}</strong>{" "}
-              (centre of its tree)
+              Mark as <strong>Actor Root</strong> (centre of its tree)
             </span>
           </label>
         )}
@@ -523,10 +530,13 @@ function CompositionRow({
 
 interface CategoryFieldsProps {
   node: SketchNode;
+  /** v0.12.6: number of services nested under this category. 0 → soft
+   *  warning that the category is currently empty. */
+  childCount: number;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 
-function CategoryFields({ node, onPatchNode }: CategoryFieldsProps) {
+function CategoryFields({ node, childCount, onPatchNode }: CategoryFieldsProps) {
   return (
     <div className="mb-4 rounded border border-slate-200 bg-slate-50/60 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
@@ -545,6 +555,13 @@ function CategoryFields({ node, onPatchNode }: CategoryFieldsProps) {
           className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-slate-600 focus:outline-none"
         />
       </label>
+      {childCount === 0 && (
+        <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-800">
+          이 카테고리에 service 가 없습니다. category 는 service 를 묶기 위해
+          존재 — 비어있으면 시각 노이즈입니다. service 를 추가하거나 카테고리를
+          삭제하세요.
+        </p>
+      )}
     </div>
   );
 }

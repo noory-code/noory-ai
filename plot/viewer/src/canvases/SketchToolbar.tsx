@@ -36,7 +36,7 @@ export function SketchToolbar({
         type="button"
         onClick={onAutoLayout}
         className="rounded px-2 py-1 text-slate-700 hover:bg-slate-100"
-        title="Auto layout (dagre LR)"
+        title="Auto layout"
       >
         Auto layout
       </button>

@@ -224,9 +224,10 @@ export const STENCIL_PRESETS: StencilPreset[] = [
  * new node should use, or `null` if the drop is top-level, or a string
  * error message if the drop is invalid.
  *
- * - Top-level kinds (actor, service with empty `dropHint`) land at top.
- * - Composition kinds (rule, content) require a Service parent.
- * - sub-service requires a Service parent (decomposition).
+ * - Top-level kinds (actor, category) land at top.
+ * - service (v0.12) requires a Category parent on the Services canvas.
+ * - Composition kinds (rule, content, metric, step) require a Service
+ *   parent on the Service Detail modal.
  * - sub-actor requires an Actor parent (decomposition).
  */
 export function resolveDropTarget(
@@ -314,9 +315,9 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
 }
 
 /** v0.2 multi-canvas: the tab that owns the presets shown in the stencil.
- *  v0.11.5 — splits the services tab into two distinct surfaces:
- *  ``services`` (top view: just project + top-level services) and
- *  ``service_detail`` (sub-service + composition + dynamic refs). */
+ *  v0.12 — services-side surfaces:
+ *  ``services`` (top view: project + categories + their service leaves) and
+ *  ``service_detail`` (per-service modal: composition + dynamic refs). */
 export type StencilCanvas = "foundation" | "actors" | "services" | "service_detail";
 
 interface SketchStencilProps {
@@ -384,10 +385,10 @@ export function SketchStencil({
       </div>
     );
   }
-  // service_detail — full sub-service + composition + dynamic refs.
-  // Each ref preset is generated per master so drops skip the picker
-  // and the stencil reads as the project's actual cast (10 missions =
-  // 10 mission ref entries with their real labels).
+  // service_detail (v0.12 modal) — composition + dynamic refs. Each ref
+  // preset is generated per master so drops skip the picker and the
+  // stencil reads as the project's actual cast (10 missions = 10 mission
+  // ref entries with their real labels).
   const actorRefPresets = availableActors.map((a) => actorRefPresetFor(a));
   const missionRefPresets = availableMissions.map((m) => missionRefPresetFor(m));
   const valueRefPresets = availableValues.map((v) => valueRefPresetFor(v));

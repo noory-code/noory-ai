@@ -386,14 +386,18 @@ export function App() {
       </div>
       {/* v0.12 — Service detail modal. Renders on top of the services
           canvas without unmounting it. Esc / backdrop click closes. */}
-      {phase === "ready" && detailServiceId && detailCanvas && detailCanvasKey && activeId && (
+      {phase === "ready" && detailServiceId && detailCanvas && detailCanvasKey && activeId && (() => {
+        const servicesNodes = canvasCache.get("services")?.nodes ?? [];
+        const svcNode = servicesNodes.find((n) => n.id === detailServiceId);
+        // v0.12.6 — surface the parent category so the modal header carries
+        // drill context. parent_id on a service points at the category.
+        const categoryNode = svcNode?.parent_id
+          ? servicesNodes.find((n) => n.id === svcNode.parent_id)
+          : undefined;
+        return (
         <ServiceDetailModal
-          serviceLabel={
-            canvasCache
-              .get("services")
-              ?.nodes.find((n) => n.id === detailServiceId)?.label ??
-            detailServiceId
-          }
+          serviceLabel={svcNode?.label ?? detailServiceId}
+          categoryLabel={categoryNode?.label ?? null}
           onClose={backToOverview}
         >
           <SketchCanvas
@@ -422,17 +426,20 @@ export function App() {
             }}
           />
         </ServiceDetailModal>
-      )}
+        );
+      })()}
     </div>
   );
 }
 
 function ServiceDetailModal({
   serviceLabel,
+  categoryLabel,
   onClose,
   children,
 }: {
   serviceLabel: string;
+  categoryLabel: string | null;
   onClose: () => void;
   children: React.ReactNode;
 }) {
@@ -447,7 +454,11 @@ function ServiceDetailModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Service detail — ${serviceLabel}`}
+      aria-label={
+        categoryLabel
+          ? `Service detail — ${categoryLabel} › ${serviceLabel}`
+          : `Service detail — ${serviceLabel}`
+      }
       className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40"
       onClick={onClose}
     >
@@ -460,6 +471,14 @@ function ServiceDetailModal({
             <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Service detail
             </span>
+            {/* v0.12.6 — show parent category context so users always know
+                which group a service belongs to even inside the modal. */}
+            {categoryLabel && (
+              <>
+                <span className="text-xs text-slate-500">{categoryLabel}</span>
+                <span className="text-xs text-slate-300">›</span>
+              </>
+            )}
             <span className="text-sm font-medium text-slate-900">{serviceLabel}</span>
           </div>
           <button

@@ -403,7 +403,7 @@ function SketchCanvasInner({
       // v0.2 correction (2026-04-20): parent_id is used for two distinct
       // semantic categories:
       //   - composition (rule, content) — data-only, Inspector panel.
-      //   - hierarchy (sub-actor, sub-service) — rendered as a sibling
+      //   - hierarchy (sub-actor) — rendered as a sibling
       //     with an auto-generated decomposition edge (see `edges` below).
       // In neither case do we use React Flow's parentNode nesting any
       // more: hierarchy is not "inside", it's "beside + linked".

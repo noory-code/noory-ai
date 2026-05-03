@@ -19,10 +19,13 @@ export type Shape =
  *   actor           — participant in the value economy (Actor canvas).
  *   actor_ref       — reference to an actor (Service canvases);
  *                     carries ``ref_actor_id`` pointing at the Actor canvas.
- *   service         — value hub (Overview / Detail / sub-service).
- *   rule / content  — composition element inside a service (Detail only).
- * Sub-service / sub-actor are not separate kinds — they're service/actor
- * with a non-null parent_id (hierarchical decomposition).
+ *   category        — top-level grouping on the Services canvas (v0.12).
+ *   service         — leaf inside a category; per-service composition lives
+ *                     in the Service Detail modal.
+ *   rule / content  — composition element inside a service (modal only).
+ * Sub-actor isn't a separate kind — it's an actor with a non-null parent_id
+ * (hierarchical decomposition). v0.12 dropped sub-service entirely; service
+ * is always a leaf of a category.
  *
  * Deprecated kinds ("core" anchor, "identity_facet" child) are rewritten
  * server-side by ``migrate.upgrade_foundation_canvas_if_needed`` on open.
@@ -103,10 +106,9 @@ export interface SketchNode {
   description: string;
   do: string;
   dont: string;
-  /** v0.10 Step 4: service typed fields. Top-level service surfaces
-   *  what / value_created / scope; sub-service surfaces value_created /
-   *  trigger / how / outcome. Both share do / dont. Inspector branches
-   *  by canvas kind + parent_id. */
+  /** v0.12.1: service typed fields. Single service kind surfaces all six
+   *  (what / value_created / scope / trigger / how / outcome) plus do/dont
+   *  in one Inspector section — sub-service was eliminated in v0.12. */
   what: string;
   value_created: string;
   scope: string;
