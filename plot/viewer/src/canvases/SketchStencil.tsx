@@ -25,19 +25,29 @@ const TOP_LEVEL_ACTOR: StencilPreset = {
   kind: "actor",
 };
 
-const TOP_LEVEL_SERVICE: StencilPreset = {
-  id: "service",
+const TOP_LEVEL_CATEGORY: StencilPreset = {
+  id: "category",
+  labelHint: "Category",
+  shape: "rounded",
+  color: "#e2e8f0",
+  width: 220,
+  height: 120,
+  icon: null,
+  label: "Category",
+  kind: "category",
+};
+
+const SERVICE_INSIDE_CATEGORY: StencilPreset = {
+  id: "service-in-category",
   labelHint: "Service",
   shape: "rounded",
   color: "#bae6fd",
-  // v0.11.6 — default size shrunk (was 300×200) per user feedback. Users
-  // can still resize after drop; smaller default keeps the canvas tidy
-  // when many top-level services are added.
-  width: 180,
-  height: 100,
+  width: 160,
+  height: 80,
   icon: "zap",
   label: "Service",
   kind: "service",
+  dropHint: "Drop inside a Category container",
 };
 
 // Core-canvas presets. The Project anchor at the centre is auto-seeded,
@@ -147,20 +157,8 @@ const FOUNDATION_REFS: StencilPreset[] = [MISSION_REF, VALUE_REF, IDENTITY_REF];
  * flow (steps) and explicit success indicators (metrics) make more
  * sense visually on the Service-Detail canvas than buried in a list.
  */
-const SERVICE_INTERNAL: StencilPreset[] = [
-  {
-    id: "sub-service",
-    labelHint: "Sub-Service",
-    shape: "rounded",
-    color: "#bae6fd",
-    width: 160,
-    height: 80,
-    icon: "zap",
-    label: "Sub-Service",
-    kind: "service",
-    dropHint: "Drop inside a Service container",
-  },
-];
+// v0.12 — sub-service is gone. Service is a leaf inside a category;
+// nothing nests inside a service on the Services canvas.
 
 const SERVICE_COMPOSITION: StencilPreset[] = [
   {
@@ -210,8 +208,8 @@ const ACTOR_INTERNAL: StencilPreset[] = [
 
 export const STENCIL_PRESETS: StencilPreset[] = [
   TOP_LEVEL_ACTOR,
-  TOP_LEVEL_SERVICE,
-  ...SERVICE_INTERNAL,
+  TOP_LEVEL_CATEGORY,
+  SERVICE_INSIDE_CATEGORY,
   ...SERVICE_COMPOSITION,
   ...ACTOR_INTERNAL,
   CORE_MISSION,
@@ -242,12 +240,20 @@ export function resolveDropTarget(
     preset.kind === "content" ||
     preset.kind === "metric" ||
     preset.kind === "step";
-  const isSubService = preset.id === "sub-service";
   const isSubActor = preset.id === "sub-actor";
+  // v0.12: a service preset on the Services canvas drops *inside a
+  // category* (services are leaves nested under a category).
+  const isServiceInsideCategory = preset.id === "service-in-category";
 
-  if (isComposition || isSubService) {
+  if (isComposition) {
     if (!containerAtDrop || containerAtDrop.kind !== "service") {
       return { error: preset.dropHint ?? "Drop inside a Service container" };
+    }
+    return { parentId: containerAtDrop.id };
+  }
+  if (isServiceInsideCategory) {
+    if (!containerAtDrop || containerAtDrop.kind !== "category") {
+      return { error: preset.dropHint ?? "Drop inside a Category container" };
     }
     return { parentId: containerAtDrop.id };
   }
@@ -365,11 +371,16 @@ export function SketchStencil({
     );
   }
   if (canvas === "services") {
-    // v0.11.5 — services top view: just the top-level service preset.
-    // Sub-service / composition / refs all live on service_detail.
+    // v0.12 — services canvas: project + category + services-inside-category.
+    // The category is the top-level grouping; services are leaves.
     return (
       <div className="border-t border-slate-200 px-3 py-3">
-        <Section title="Top-level" presets={[TOP_LEVEL_SERVICE]} />
+        <Section title="Top-level" presets={[TOP_LEVEL_CATEGORY]} />
+        <Section
+          title="Service"
+          presets={[SERVICE_INSIDE_CATEGORY]}
+          note="drop inside a Category"
+        />
       </div>
     );
   }
@@ -384,14 +395,9 @@ export function SketchStencil({
   return (
     <div className="border-t border-slate-200 px-3 py-3">
       <Section
-        title="Service hierarchy"
-        presets={SERVICE_INTERNAL}
-        note="drop on a Service"
-      />
-      <Section
         title="Composition"
         presets={SERVICE_COMPOSITION}
-        note="metrics + steps inside a service detail"
+        note="metrics + steps inside this service"
       />
       {actorRefPresets.length > 0 && (
         <Section

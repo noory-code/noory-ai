@@ -332,15 +332,41 @@ def test_actors_canvas_actor_ref_rejected() -> None:
 
 
 def test_overview_top_level_services_ok() -> None:
-    """v0.11.5 — services canvas only carries top-level services (+ project)."""
+    """v0.12 — services canvas: project + category + service (nested in category)."""
     CanvasDoc(
         canvas_id="services",
         canvas_kind="services",
         nodes=[
-            SketchNode(id="order", kind="service", label="주문"),
-            SketchNode(id="pay", kind="service", label="결제"),
+            SketchNode(id="commerce", kind="category", label="Commerce"),
+            SketchNode(id="order", kind="service", parent_id="commerce", label="주문"),
+            SketchNode(id="pay", kind="service", parent_id="commerce", label="결제"),
         ],
     )
+
+
+def test_overview_service_without_category_parent_rejected() -> None:
+    """v0.12 — service must be nested inside a category."""
+    with pytest.raises(ValueError, match="category"):
+        CanvasDoc(
+            canvas_id="services",
+            canvas_kind="services",
+            nodes=[SketchNode(id="order", kind="service", label="주문")],
+        )
+
+
+def test_overview_nested_category_rejected() -> None:
+    """v0.12 — categories must be top-level (no category-of-categories)."""
+    with pytest.raises(ValueError, match="top-level"):
+        CanvasDoc(
+            canvas_id="services",
+            canvas_kind="services",
+            nodes=[
+                SketchNode(id="parent", kind="category", label="Parent"),
+                SketchNode(
+                    id="child", kind="category", parent_id="parent", label="Child"
+                ),
+            ],
+        )
 
 
 def test_overview_services_rejects_foundation_refs() -> None:

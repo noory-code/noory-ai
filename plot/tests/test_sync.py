@@ -23,10 +23,14 @@ def plot_root(tmp_path: Path) -> Path:
 
 
 def _overview_with(service_labels: dict[str, str]) -> CanvasDoc:
-    """v0.11.5 — services canvas only carries services (no foundation refs)."""
+    """v0.12 — services canvas: services nested under a single default category."""
     nodes: list[SketchNode] = [
-        SketchNode(id=sid, kind="service", label=label) for sid, label in service_labels.items()
+        SketchNode(id="default-cat", kind="category", label="Default"),
     ]
+    nodes.extend(
+        SketchNode(id=sid, kind="service", parent_id="default-cat", label=label)
+        for sid, label in service_labels.items()
+    )
     return CanvasDoc(
         canvas_id="services",
         canvas_kind="services",

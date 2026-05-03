@@ -240,15 +240,24 @@ export function App() {
 
   // ------- current canvas selection -------
 
+  // v0.12 — services-tab + detailServiceId no longer swaps the main
+  // canvas. The services canvas stays mounted; service detail opens
+  // in a modal overlay instead. activeCanvasKey reflects only the
+  // top-level tab choice.
   const activeCanvasKey: CanvasKey = useMemo(() => {
-    if (activeTab === "services" && detailServiceId) {
-      return `service_detail:${detailServiceId}` as CanvasKey;
-    }
     const kind = tabToKind(activeTab);
     return kind as CanvasKey;
-  }, [activeTab, detailServiceId]);
+  }, [activeTab]);
 
   const activeCanvas = canvasCache.get(activeCanvasKey) ?? null;
+
+  // v0.12 — service detail (modal). Separate cache lookup so the modal
+  // and the underlying services canvas can render simultaneously.
+  const detailCanvasKey: CanvasKey | null = useMemo(() => {
+    if (!detailServiceId) return null;
+    return `service_detail:${detailServiceId}` as CanvasKey;
+  }, [detailServiceId]);
+  const detailCanvas = detailCanvasKey ? canvasCache.get(detailCanvasKey) ?? null : null;
 
   // actors canvas provides the orphan check list + picker source
   const actorsCanvas = canvasCache.get("actors");
@@ -329,17 +338,6 @@ export function App() {
               onMarkSession={handleMarkSession}
             />
           )}
-          {phase === "ready" && activeTab === "services" && detailServiceId && (
-            <ServicesBreadcrumb
-              label={
-                canvasCache
-                  .get("services")
-                  ?.nodes.find((n) => n.id === detailServiceId)?.label ??
-                detailServiceId
-              }
-              onBack={backToOverview}
-            />
-          )}
           <div className="flex-1 overflow-hidden">
             {phase === "loading" && <Loading />}
             {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
@@ -370,9 +368,11 @@ export function App() {
                     jumpToActor(n.ref_actor_id);
                     return;
                   }
+                  // v0.12 — service double-click opens the detail in a
+                  // modal overlay. The services canvas stays mounted
+                  // beneath the modal.
                   if (
                     activeTab === "services" &&
-                    !detailServiceId &&
                     n.kind === "service" &&
                     !n.is_root
                   ) {
@@ -383,6 +383,96 @@ export function App() {
             )}
           </div>
         </main>
+      </div>
+      {/* v0.12 — Service detail modal. Renders on top of the services
+          canvas without unmounting it. Esc / backdrop click closes. */}
+      {phase === "ready" && detailServiceId && detailCanvas && detailCanvasKey && activeId && (
+        <ServiceDetailModal
+          serviceLabel={
+            canvasCache
+              .get("services")
+              ?.nodes.find((n) => n.id === detailServiceId)?.label ??
+            detailServiceId
+          }
+          onClose={backToOverview}
+        >
+          <SketchCanvas
+            key={`${activeId}:${detailCanvasKey}`}
+            doc={detailCanvas}
+            onDocChange={(next) => {
+              applyEdit(detailCanvasKey, detailCanvas, next);
+            }}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={history.canUndo}
+            canRedo={history.canRedo}
+            projectPath={projectPath ?? ""}
+            projectId={activeId}
+            availableActors={availableActors}
+            availableMissions={availableMissions}
+            availableValues={availableValues}
+            availableIdentities={availableIdentities}
+            selectNodeId={null}
+            onSelectionConsumed={() => {}}
+            onNodeDrill={(id) => {
+              const n = detailCanvas.nodes.find((x) => x.id === id);
+              if (n?.kind === "actor_ref" && n.ref_actor_id) {
+                jumpToActor(n.ref_actor_id);
+              }
+            }}
+          />
+        </ServiceDetailModal>
+      )}
+    </div>
+  );
+}
+
+function ServiceDetailModal({
+  serviceLabel,
+  onClose,
+  children,
+}: {
+  serviceLabel: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Service detail — ${serviceLabel}`}
+      className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-[90vh] w-[92vw] max-w-[1600px] flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              Service detail
+            </span>
+            <span className="text-sm font-medium text-slate-900">{serviceLabel}</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+            aria-label="Close (Esc)"
+            title="Close (Esc)"
+          >
+            ✕
+          </button>
+        </header>
+        <div className="relative flex-1 overflow-hidden">{children}</div>
       </div>
     </div>
   );
@@ -440,27 +530,9 @@ function CanvasTabs({
   );
 }
 
-function ServicesBreadcrumb({
-  label,
-  onBack,
-}: {
-  label: string;
-  onBack: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-1.5 text-sm">
-      <button
-        type="button"
-        onClick={onBack}
-        className="text-slate-500 hover:text-slate-800"
-      >
-        ← Services
-      </button>
-      <span className="text-slate-400">›</span>
-      <span className="font-medium text-slate-900">{label}</span>
-    </div>
-  );
-}
+// v0.12 — ServicesBreadcrumb removed. Drill-in is now a modal overlay
+// (see ServiceDetailModal above), so the breadcrumb / "← Services" back
+// button isn't needed.
 
 interface HeaderProps {
   projectPath: string;

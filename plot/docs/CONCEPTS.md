@@ -1,4 +1,4 @@
-# Plot Concepts (v0.10)
+# Plot Concepts (v0.12)
 
 The conceptual reference for Plot — what each canvas, kind, and design
 principle means, with examples. This document is the source of truth
@@ -37,6 +37,15 @@ live?".
 > Service-Detail canvas now generates **one draggable per master** —
 > 10 missions = 10 mission ref entries, each labelled with the
 > master's actual name. Drops are direct (no picker).
+>
+> **v0.12** — what used to be a "top-level service" is now a
+> `category` (a thematic grouping). The Services canvas now reads as
+> `project → category → service`, with services as **leaves**
+> (sub-service is gone — service hierarchy is exactly two levels).
+> Service detail is no longer a separate canvas screen; double-clicking
+> a service opens a **modal overlay** containing the same content
+> (sub-service is gone, but actor_ref / foundation refs / metric /
+> step / rule / content / typed fields all still live there).
 
 Foundation defines the project's identity. Actors lists the participants.
 Services maps the value economy at a high level. Each service drills into
@@ -180,6 +189,26 @@ can validate its operator/user mix without cross-canvas lookups.
 ---
 
 ## Service kinds
+
+### `category` — a thematic grouping of services (v0.12)
+
+Categories are pure containers on the Services canvas. They don't
+create value themselves; they just collect services that share a
+common theme (e.g. "Admin" / "App" / "Backend"). Every service on
+the Services canvas is nested under a category (`parent_id` →
+category id).
+
+- **Asks**: what kinds of service are we grouping here?
+- **Counts**: 0..N. Categories are top-level on the Services canvas.
+- **Lives on**: the Services canvas only.
+- **Typed fields**:
+  - `theme` — one-line common thread the category's services share.
+
+`target_side` lives on `service`, not on `category`: a category's
+own label usually telegraphs its side (Admin / App), and a single
+category can intentionally mix sides at the service level
+(e.g. a "Payments" category that bundles a user-facing checkout
+service and an operator-facing settlement service).
 
 ### `service` — a playground for production and exchange
 

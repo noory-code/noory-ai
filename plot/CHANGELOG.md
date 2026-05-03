@@ -4,6 +4,56 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.0] — 2026-05-03
+
+A larger refactor — the **Service vs Category split**. v0.10.3's
+choice to keep top-level service and sub-service in a single `service`
+kind never matched the user's mental model: top-level was always a
+*grouping* (Admin / App / Backend), and the actual unit of value
+production+exchange was the sub-service. v0.12 splits them.
+
+### Added — **`category` kind**
+- New top-level kind on the Services canvas. Categories are pure
+  containers — they don't carry actor_refs, foundation refs, or any
+  composition. Services nest inside them.
+- One typed field: `theme` (one-line common thread).
+- Stencil: a Category preset (top-level) and a Service preset that
+  drops *inside* a category container.
+- Validator: services on the Services canvas must have a category
+  parent; categories must be top-level (no nested categories).
+
+### Changed — **Service is now a leaf**
+- The "service hierarchy depth = unlimited" rule from v0.10.3 is
+  retired. A service has no sub-service. The Services canvas reads
+  exactly two levels: `category → service`.
+- All the previous sub-service typed fields (`value_created` /
+  `trigger` / `how` / `outcome` / `do` / `dont`) and the v0.11.4
+  `target_side` field stay on `service` exactly as before.
+
+### Changed — **Service detail is now a modal overlay**
+- Double-clicking a service no longer swaps the main canvas. The
+  Services canvas stays mounted; the detail content opens in a
+  modal overlay (Esc / backdrop click closes).
+- The on-disk `service_detail/{id}/detail.json` file structure is
+  unchanged. The change is purely UI — modal instead of canvas-swap.
+- The drill-in breadcrumb is removed.
+
+### Migration
+- v0.1 → v0.2 split now seeds a single default `Category` ("Services",
+  with `theme = "Migrated services"`) and parents the migrated
+  top-level services under it.
+- On read of the Services canvas, any orphan top-level services left
+  by v0.11.x projects are silently re-parented under a seeded
+  `default-category`. Idempotent.
+
+### Notes
+- 164 Python tests passing. Test fixtures updated to wrap services
+  in a category. ruff / mypy / tsc all clean.
+- `category` brings the kind count from 14 to 15.
+- The "user can keep building deep service hierarchies" claim from
+  v0.11.4 is rescinded for v0.12 — that's no longer the model. Depth
+  in the picture maxes at category → service.
+
 ## [0.11.6] — 2026-05-03
 
 Three small UX fixes from continued use.

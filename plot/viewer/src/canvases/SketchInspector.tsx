@@ -197,6 +197,12 @@ export function SketchInspector({
           <MissionFields node={node} onPatchNode={onPatchNode} />
         )}
 
+        {/* v0.12 — category fields. A category is a thematic grouping;
+            its only typed field is ``theme`` (one-line common thread). */}
+        {node.kind === "category" && (
+          <CategoryFields node={node} onPatchNode={onPatchNode} />
+        )}
+
         {/* v0.10 Step 2: Core Value typed form — definition + Do/Don't pair.
              Do/Don't follows the AI-first principle (LLMs mimic concrete
              examples better than abstract rules). Optional: blank fields
@@ -513,6 +519,36 @@ function CompositionRow({
 //                handled separately).
 // LLMs benefit from typed fields over free prose, and human authors are
 // nudged to address all three facets explicitly. See docs/CONCEPTS.md.
+
+// v0.12 — category typed field: one-line theme.
+
+interface CategoryFieldsProps {
+  node: SketchNode;
+  onPatchNode: (patch: Partial<SketchNode>) => void;
+}
+
+function CategoryFields({ node, onPatchNode }: CategoryFieldsProps) {
+  return (
+    <div className="mb-4 rounded border border-slate-200 bg-slate-50/60 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
+        Category
+      </div>
+      <label className="block">
+        <span className="text-xs font-semibold text-slate-700">Theme</span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — common thread tying these services together
+        </span>
+        <textarea
+          rows={2}
+          value={node.theme ?? ""}
+          onChange={(e) => onPatchNode({ theme: e.target.value })}
+          placeholder="이 카테고리의 공통 주제 / 묶음의 본질"
+          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-slate-600 focus:outline-none"
+        />
+      </label>
+    </div>
+  );
+}
 
 interface MissionFieldsProps {
   node: SketchNode;

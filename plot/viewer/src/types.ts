@@ -46,7 +46,11 @@ export type NodeKind =
   //   metric — KPI / SLA / success rate
   //   step   — ordered procedural step
   | "metric"
-  | "step";
+  | "step"
+  // v0.12: ``category`` is a thematic grouping of services on the
+  // Services canvas. Categories are pure containers (no value
+  // creation themselves); services are leaves nested inside them.
+  | "category";
 
 /** v0.10 Step 3: the four ref kinds form a uniform family. */
 export type RefKind = "actor_ref" | "mission_ref" | "value_ref" | "identity_ref";
@@ -143,6 +147,9 @@ export interface SketchNode {
    *  this service exists for. Mirror of ``actor.side`` so Plot's two
    *  axes (actor / service) share the same classification pattern. */
   target_side: "operator" | "user" | "both" | null;
+  /** v0.12: category typed field — one-line common theme that ties this
+   *  category's services together. Default empty for non-category nodes. */
+  theme: string;
   /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
   ref_actor_id: string | null;
   /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */

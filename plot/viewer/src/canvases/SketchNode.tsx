@@ -18,6 +18,8 @@ const KIND_TAG_LABELS: Record<string, string> = {
   // v0.10 Step 5: composition kinds visible on Service-Detail canvases.
   metric: "METRIC",
   step: "STEP",
+  // v0.12: category groups services on the Services canvas.
+  category: "CATEGORY",
 };
 
 /** Shapes whose top-left corner is inside the visible silhouette. */

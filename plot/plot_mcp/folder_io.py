@@ -155,7 +155,57 @@ def read_canvas(
     # backfill above.
     if canvas_kind == "services":
         raw = _drop_disallowed_services_kinds(plot_root, project_id, raw)
+        # v0.12 — wrap orphan top-level services in a default category so
+        # the new "service must be nested in a category" validator passes.
+        raw = _wrap_legacy_services_in_default_category(plot_root, project_id, raw)
     return CanvasDoc.model_validate(raw)
+
+
+def _wrap_legacy_services_in_default_category(
+    plot_root: Path,
+    project_id: str,
+    raw: dict[str, Any],
+) -> dict[str, Any]:
+    """v0.12 migration helper: any service nodes on the services canvas
+    without a parent_id are legacy top-level services. Wrap them under a
+    seeded default category so v0.12's "service must be nested" validator
+    accepts them. Idempotent — only acts when orphan top-level services
+    are detected.
+    """
+    nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
+    orphans = [n for n in nodes if n.get("kind") == "service" and not n.get("parent_id")]
+    if not orphans:
+        return raw
+    has_default = any(
+        n.get("kind") == "category" and n.get("id") == "default-category"
+        for n in nodes
+    )
+    rebuilt: list[dict[str, Any]] = []
+    if not has_default:
+        rebuilt.append(
+            {
+                **SketchNode(
+                    id="default-category",
+                    kind="category",
+                    label="Services",
+                    theme="Migrated services",
+                    x=-200,
+                    y=-50,
+                    width=200,
+                    height=100,
+                    color="#e2e8f0",
+                    shape="rounded",
+                ).model_dump(by_alias=True),
+            }
+        )
+    for n in nodes:
+        if n.get("kind") == "service" and not n.get("parent_id"):
+            rebuilt.append({**n, "parent_id": "default-category"})
+        else:
+            rebuilt.append(n)
+    raw = {**raw, "nodes": rebuilt}
+    _write_json(_canvas_file(plot_root, project_id, "services"), raw)
+    return raw
 
 
 def _drop_disallowed_services_kinds(
@@ -167,9 +217,15 @@ def _drop_disallowed_services_kinds(
     / ``identity_ref`` (and any other now-disallowed kinds) from the services
     top view. They live in ``service_detail`` from v0.11.5 onwards.
     Idempotent.
+
+    v0.12 update: read the live ``_ALLOWED_KINDS_BY_CANVAS`` so future
+    additions to the services-canvas allow-list don't trigger spurious
+    drops here.
     """
+    from plot_mcp.models import _ALLOWED_KINDS_BY_CANVAS
+
     nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
-    allowed = {"service", "project"}
+    allowed = _ALLOWED_KINDS_BY_CANVAS["services"]
     kept = [n for n in nodes if n.get("kind") in allowed or n.get("kind") is None]
     if len(kept) == len(nodes):
         return raw

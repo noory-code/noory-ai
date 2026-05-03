@@ -578,6 +578,7 @@ function SketchCanvasInner({
         gives: "",
         receives: "",
         target_side: null,
+        theme: "",
       };
       const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, newNode] });
@@ -643,6 +644,7 @@ function SketchCanvasInner({
         gives: "",
         receives: "",
         target_side: null,
+        theme: "",
       };
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
@@ -1347,6 +1349,7 @@ function SketchCanvasInner({
             gives: "",
             receives: "",
             target_side: null,
+            theme: "",
           };
           onDocChange({ ...current, nodes: [...current.nodes, newNode] });
         }}

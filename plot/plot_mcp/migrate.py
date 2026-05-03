@@ -579,11 +579,30 @@ def _split_services(
         if parent is None or parent == service_root_id:
             top_level.append(n)
 
-    # Overview: top-level services, parent_id cleared, no composition.
-    overview_nodes = [
+    # v0.12 — services canvas now requires services to be nested inside a
+    # category. Wrap all v0.1-migrated top-level services under a single
+    # default category so the migrated canvas validates. Users can split
+    # into more thematic categories afterwards.
+    overview_nodes: list[SketchNode] = []
+    if top_level:
+        overview_nodes.append(
+            SketchNode(
+                id="default-category",
+                kind="category",
+                label="Services",
+                theme="Migrated services",
+                x=-200,
+                y=-50,
+                width=200,
+                height=100,
+                color="#e2e8f0",
+                shape="rounded",
+            )
+        )
+    overview_nodes.extend(
         n.model_copy(
             update={
-                "parent_id": None,
+                "parent_id": "default-category",
                 "is_root": False,
                 "mission": "",
                 "core_values": "",
@@ -591,12 +610,9 @@ def _split_services(
             }
         )
         for n in top_level
-    ]
+    )
     overview_ids = {n.id for n in overview_nodes}
     overview_edges = [e for e in edges if e.source in overview_ids and e.target in overview_ids]
-    # v0.11.5 — services canvas no longer accepts Foundation refs. The
-    # Phase C2 anchor seed (mission_ref) is dropped here; alignment
-    # ownership now lives inside each service_detail.
     overview = CanvasDoc(
         canvas_id="services",
         canvas_kind="services",

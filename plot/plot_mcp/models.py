@@ -76,6 +76,12 @@ NodeKind = Literal[
     #   step   — an ordered procedural step in the service's flow.
     "metric",
     "step",
+    # v0.12: ``category`` is a thematic grouping of services. Replaces what
+    # used to be the "top-level service" idiom — categories are pure
+    # containers (no value creation themselves), and the actual services
+    # they contain are leaf nodes (no further sub-service nesting). See
+    # docs/IDENTITY.md for the why.
+    "category",
 ]
 
 # v0.10 Step 3: which ref kind requires which id field. Used by the
@@ -183,6 +189,14 @@ class SketchNode(BaseModel):
     #   (actor side / service target_side) that keeps the operator-vs-user
     #   distinction consistent across the model.
     target_side: Literal["operator", "user", "both"] | None = None
+
+    # category (Services canvas, kind="category"):
+    #   v0.12 — categories are thematic groupings of services. A category is
+    #   a pure container; it doesn't create value itself. ``theme`` is the
+    #   one and only typed field — a one-line statement of the common
+    #   thread that ties this category's services together (e.g. "all the
+    #   admin operator's system-management services").
+    theme: str = ""
     #   Top-level (parent_id is None) and sub-service (parent_id != None)
     #   share the same model — Inspector decides which fields to surface.
     #   ``what``         — concise statement of what the service is.
@@ -352,12 +366,13 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     # source from ProjectDoc.name); the actors / services instances are
     # auto-seeded copies kept in sync.
     "actors": {"actor", "project"},
-    # v0.11.5 — services canvas (top view) only carries the project anchor
-    # and top-level service nodes. Foundation refs / actor_ref / metric /
-    # step all moved to service_detail (where sub-service decomposition
-    # already lives). The previous "anchor required" hard validator on
-    # services is dropped accordingly.
-    "services": {"service", "project"},
+    # v0.12 — services canvas (top view) carries:
+    #   - project anchor (centre)
+    #   - category (thematic grouping)
+    #   - service (leaf, child of a category via parent_id)
+    # Categories sit at the top level; services are nested inside them.
+    # All sub-service / refs / composition still live in service_detail.
+    "services": {"project", "category", "service"},
     "service_detail": {
         "service",
         "rule",
@@ -463,17 +478,34 @@ class CanvasDoc(BaseModel):
     def _services_canvas_rules(self) -> CanvasDoc:
         if self.canvas_kind != "services":
             return self
-        nested = [n for n in self.nodes if n.parent_id is not None]
-        if nested:
-            raise ValueError(
-                "services canvas forbids nested nodes (use service_detail for "
-                f"decomposition); offending: {sorted(n.id for n in nested)}"
-            )
-        # v0.11.5 — the v0.11.2 anchor hard validator is retired. Foundation
-        # refs (mission_ref / value_ref / identity_ref) are no longer allowed
-        # on the services top view; alignment ownership is expressed inside
-        # each service_detail instead. The services canvas stays a clean
-        # top-level architecture diagram (project + services only).
+        # v0.12 — nested nodes are now allowed (a category contains its
+        # services), but only in this specific shape:
+        #   * project anchor: top-level (parent_id is None)
+        #   * category: top-level
+        #   * service: must have parent_id set, and the parent must be a
+        #     category (services are leaves nested inside categories)
+        by_id = {n.id: n for n in self.nodes}
+        for n in self.nodes:
+            if n.kind == "service":
+                if n.parent_id is None:
+                    raise ValueError(
+                        f"service {n.id!r} on services canvas must be nested "
+                        "inside a category (parent_id required). v0.12: "
+                        "top-level services are now categories."
+                    )
+                parent = by_id.get(n.parent_id)
+                if parent is None or parent.kind != "category":
+                    parent_kind = parent.kind if parent else "missing"
+                    raise ValueError(
+                        f"service {n.id!r}'s parent must be a category, "
+                        f"got {parent_kind!r}"
+                    )
+            elif n.kind == "category":
+                if n.parent_id is not None:
+                    raise ValueError(
+                        f"category {n.id!r} must be top-level on services "
+                        "canvas (no nested categories in v0.12)"
+                    )
         return self
 
     @model_validator(mode="after")
