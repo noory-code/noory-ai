@@ -27,6 +27,16 @@ live?".
 > **v0.11.4** — `project` is also auto-seeded on Actors and Services
 > canvases (label-synced from Foundation) so every primary canvas
 > visually radiates from the same project anchor.
+>
+> **v0.11.5** — the Services top view now carries **only**
+> `project` + `service`. All composition, references, and value flow
+> (metric / step / actor_ref / mission_ref / value_ref / identity_ref)
+> live exclusively on Service-Detail canvases, where sub-service
+> decomposition already happens. The previous "anchor required" hard
+> validator on Services is dropped accordingly. The stencil for a
+> Service-Detail canvas now generates **one draggable per master** —
+> 10 missions = 10 mission ref entries, each labelled with the
+> master's actual name. Drops are direct (no picker).
 
 Foundation defines the project's identity. Actors lists the participants.
 Services maps the value economy at a high level. Each service drills into

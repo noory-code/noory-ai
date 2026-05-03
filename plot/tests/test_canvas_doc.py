@@ -332,37 +332,38 @@ def test_actors_canvas_actor_ref_rejected() -> None:
 
 
 def test_overview_top_level_services_ok() -> None:
-    """v0.11 Phase C2 — services canvas with services needs ≥ 1 anchor."""
+    """v0.11.5 — services canvas only carries top-level services (+ project)."""
     CanvasDoc(
         canvas_id="services",
         canvas_kind="services",
         nodes=[
             SketchNode(id="order", kind="service", label="주문"),
             SketchNode(id="pay", kind="service", label="결제"),
-            SketchNode(
-                id="mr1",
-                kind="mission_ref",
-                ref_mission_id="mission",
-                label="→ Mission",
-            ),
         ],
     )
 
 
-def test_overview_services_without_anchor_rejected() -> None:
-    """v0.11 Phase C2 — services canvas with services but no anchor rejects."""
-    with pytest.raises(ValueError, match="Foundation anchor"):
+def test_overview_services_rejects_foundation_refs() -> None:
+    """v0.11.5 — services canvas no longer admits foundation refs (they
+    moved to service_detail)."""
+    with pytest.raises(ValueError, match="not allowed"):
         CanvasDoc(
             canvas_id="services",
             canvas_kind="services",
             nodes=[
                 SketchNode(id="order", kind="service", label="주문"),
+                SketchNode(
+                    id="mr",
+                    kind="mission_ref",
+                    ref_mission_id="mission",
+                    label="→ M",
+                ),
             ],
         )
 
 
 def test_overview_empty_canvas_ok() -> None:
-    """v0.11 — empty services canvas (no services yet) is fine, no anchor needed."""
+    """An empty services canvas (no services yet) is fine."""
     CanvasDoc(canvas_id="services", canvas_kind="services", nodes=[])
 
 
@@ -524,19 +525,18 @@ def test_foundation_refs_valid_when_id_set() -> None:
     SketchNode(id="ir", kind="identity_ref", label="→ I", ref_identity_id="id1")
 
 
-def test_services_canvas_accepts_foundation_refs() -> None:
-    """Top-level service can sit beside foundation ref nodes that declare
-    which Mission / Value / Identity it answers to."""
-    CanvasDoc(
-        canvas_id="services",
-        canvas_kind="services",
-        nodes=[
-            SketchNode(id="auth", kind="service", label="Auth"),
-            SketchNode(id="mr1", kind="mission_ref", label="→ M", ref_mission_id="m1"),
-            SketchNode(id="vr1", kind="value_ref", label="→ Trust", ref_value_id="cv1"),
-            SketchNode(id="ir1", kind="identity_ref", label="→ Voice", ref_identity_id="id1"),
-        ],
-    )
+def test_services_canvas_rejects_foundation_refs_v0_11_5() -> None:
+    """v0.11.5 — foundation refs no longer admitted on the services top
+    view. Use service_detail for alignment ownership."""
+    with pytest.raises(ValueError, match="not allowed"):
+        CanvasDoc(
+            canvas_id="services",
+            canvas_kind="services",
+            nodes=[
+                SketchNode(id="auth", kind="service", label="Auth"),
+                SketchNode(id="mr1", kind="mission_ref", label="→ M", ref_mission_id="m1"),
+            ],
+        )
 
 
 def test_service_detail_accepts_foundation_refs() -> None:

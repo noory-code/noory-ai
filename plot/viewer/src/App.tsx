@@ -348,7 +348,13 @@ export function App() {
         <SketchSidebar
           projects={summaries}
           activeId={activeId}
-          stencilCanvas={activeTab}
+          stencilCanvas={
+            activeTab === "services" && detailServiceId ? "service_detail" : activeTab
+          }
+          availableActors={availableActors}
+          availableMissions={availableMissions}
+          availableValues={availableValues}
+          availableIdentities={availableIdentities}
           tags={tags}
           onPick={handlePick}
           onCreate={handleCreate}

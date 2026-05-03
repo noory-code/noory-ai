@@ -594,23 +594,9 @@ def _split_services(
     ]
     overview_ids = {n.id for n in overview_nodes}
     overview_edges = [e for e in edges if e.source in overview_ids and e.target in overview_ids]
-    # v0.11 Phase C2 — services canvas with services needs ≥ 1 Foundation
-    # anchor (mission_ref / value_ref / identity_ref). For migrated v0.1
-    # sketches that lacked anchors entirely, seed a single mission_ref
-    # pointing at the seeded "mission" master so the canvas validates.
-    if overview_nodes:
-        overview_nodes = overview_nodes + [
-            SketchNode(
-                id="anchor-mission",
-                kind="mission_ref",
-                ref_mission_id="mission",
-                label="→ Mission",
-                color="#fef3c7",
-                shape="ellipse",
-                width=160,
-                height=60,
-            )
-        ]
+    # v0.11.5 — services canvas no longer accepts Foundation refs. The
+    # Phase C2 anchor seed (mission_ref) is dropped here; alignment
+    # ownership now lives inside each service_detail.
     overview = CanvasDoc(
         canvas_id="services",
         canvas_kind="services",

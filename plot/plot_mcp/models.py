@@ -352,7 +352,12 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     # source from ProjectDoc.name); the actors / services instances are
     # auto-seeded copies kept in sync.
     "actors": {"actor", "project"},
-    "services": {"service", "project"} | _FOUNDATION_REFS,
+    # v0.11.5 — services canvas (top view) only carries the project anchor
+    # and top-level service nodes. Foundation refs / actor_ref / metric /
+    # step all moved to service_detail (where sub-service decomposition
+    # already lives). The previous "anchor required" hard validator on
+    # services is dropped accordingly.
+    "services": {"service", "project"},
     "service_detail": {
         "service",
         "rule",
@@ -464,25 +469,11 @@ class CanvasDoc(BaseModel):
                 "services canvas forbids nested nodes (use service_detail for "
                 f"decomposition); offending: {sorted(n.id for n in nested)}"
             )
-        # v0.11 Phase C2 — when at least one top-level service exists on the
-        # canvas, at least one Foundation anchor (mission_ref / value_ref /
-        # identity_ref) must also be present. This enforces IDENTITY.md's
-        # "alignment ownership must be visible" floor without forcing a 1:1
-        # service↔anchor mapping (the visual layout carries that nuance).
-        # An empty services canvas (no services yet) is fine.
-        services = [n for n in self.nodes if n.kind == "service"]
-        if services:
-            anchors = [
-                n
-                for n in self.nodes
-                if n.kind in {"mission_ref", "value_ref", "identity_ref"}
-            ]
-            if not anchors:
-                raise ValueError(
-                    "services canvas with top-level services requires at least "
-                    "one Foundation anchor (mission_ref / value_ref / "
-                    "identity_ref). See IDENTITY.md."
-                )
+        # v0.11.5 — the v0.11.2 anchor hard validator is retired. Foundation
+        # refs (mission_ref / value_ref / identity_ref) are no longer allowed
+        # on the services top view; alignment ownership is expressed inside
+        # each service_detail instead. The services canvas stays a clean
+        # top-level architecture diagram (project + services only).
         return self
 
     @model_validator(mode="after")

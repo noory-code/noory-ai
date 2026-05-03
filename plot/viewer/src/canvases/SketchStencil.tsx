@@ -1,4 +1,4 @@
-import type { NodeKind } from "../types";
+import type { NodeKind, SketchNode } from "../types";
 import type { NodePreset } from "./SketchCanvas";
 import { getIcon } from "./SketchIcons";
 
@@ -304,10 +304,30 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
   );
 }
 
-/** v0.2 multi-canvas: the tab that owns the presets shown in the stencil. */
-export type StencilCanvas = "foundation" | "actors" | "services";
+/** v0.2 multi-canvas: the tab that owns the presets shown in the stencil.
+ *  v0.11.5 — splits the services tab into two distinct surfaces:
+ *  ``services`` (top view: just project + top-level services) and
+ *  ``service_detail`` (sub-service + composition + dynamic refs). */
+export type StencilCanvas = "foundation" | "actors" | "services" | "service_detail";
 
-export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
+interface SketchStencilProps {
+  canvas: StencilCanvas;
+  /** v0.11.5 — masters for the dynamic ref presets shown on the
+   *  service_detail stencil. Each master becomes its own draggable
+   *  preset that drops directly (no picker round-trip). */
+  availableActors?: SketchNode[];
+  availableMissions?: SketchNode[];
+  availableValues?: SketchNode[];
+  availableIdentities?: SketchNode[];
+}
+
+export function SketchStencil({
+  canvas,
+  availableActors = [],
+  availableMissions = [],
+  availableValues = [],
+  availableIdentities = [],
+}: SketchStencilProps) {
   if (canvas === "foundation") {
     return (
       <div className="border-t border-slate-200 px-3 py-3">
@@ -341,10 +361,25 @@ export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
       </div>
     );
   }
-  // services
+  if (canvas === "services") {
+    // v0.11.5 — services top view: just the top-level service preset.
+    // Sub-service / composition / refs all live on service_detail.
+    return (
+      <div className="border-t border-slate-200 px-3 py-3">
+        <Section title="Top-level" presets={[TOP_LEVEL_SERVICE]} />
+      </div>
+    );
+  }
+  // service_detail — full sub-service + composition + dynamic refs.
+  // Each ref preset is generated per master so drops skip the picker
+  // and the stencil reads as the project's actual cast (10 missions =
+  // 10 mission ref entries with their real labels).
+  const actorRefPresets = availableActors.map((a) => actorRefPresetFor(a));
+  const missionRefPresets = availableMissions.map((m) => missionRefPresetFor(m));
+  const valueRefPresets = availableValues.map((v) => valueRefPresetFor(v));
+  const identityRefPresets = availableIdentities.map((i) => identityRefPresetFor(i));
   return (
     <div className="border-t border-slate-200 px-3 py-3">
-      <Section title="Top-level" presets={[TOP_LEVEL_SERVICE]} />
       <Section
         title="Service hierarchy"
         presets={SERVICE_INTERNAL}
@@ -355,18 +390,100 @@ export function SketchStencil({ canvas }: { canvas: StencilCanvas }) {
         presets={SERVICE_COMPOSITION}
         note="metrics + steps inside a service detail"
       />
-      <Section
-        title="Participants"
-        presets={[ACTOR_REF]}
-        note="pick from Actor canvas"
-      />
-      <Section
-        title="Foundation refs"
-        presets={FOUNDATION_REFS}
-        note="anchor to Mission / Value / Identity"
-      />
+      {actorRefPresets.length > 0 && (
+        <Section
+          title="Actors"
+          presets={actorRefPresets}
+          note="drag any actor onto this service"
+        />
+      )}
+      {missionRefPresets.length > 0 && (
+        <Section
+          title="Missions"
+          presets={missionRefPresets}
+          note="drag a mission this service answers to"
+        />
+      )}
+      {valueRefPresets.length > 0 && (
+        <Section
+          title="Core values"
+          presets={valueRefPresets}
+          note="drag a value this service embodies"
+        />
+      )}
+      {identityRefPresets.length > 0 && (
+        <Section
+          title="Identity aspects"
+          presets={identityRefPresets}
+          note="drag an identity aspect this service expresses"
+        />
+      )}
     </div>
   );
+}
+
+// v0.11.5 dynamic ref presets — each master becomes its own draggable.
+// The preset already carries the master id, so SketchCanvas's drop
+// handler creates the ref instance directly without opening a picker.
+
+function actorRefPresetFor(a: SketchNode): StencilPreset {
+  return {
+    id: `actor-ref:${a.id}`,
+    labelHint: a.label || a.id,
+    shape: "ellipse",
+    color: a.side === "operator" ? "#bae6fd" : "#fce7f3",
+    width: 140,
+    height: 70,
+    icon: "user",
+    label: `→ ${a.label || a.id}`,
+    kind: "actor_ref",
+    ref_actor_id: a.id,
+  };
+}
+
+function missionRefPresetFor(m: SketchNode): StencilPreset {
+  return {
+    id: `mission-ref:${m.id}`,
+    labelHint: m.label || m.id,
+    shape: "ellipse",
+    color: "#fef3c7",
+    width: 160,
+    height: 60,
+    icon: "flag",
+    label: `→ ${m.label || m.id}`,
+    kind: "mission_ref",
+    ref_mission_id: m.id,
+  };
+}
+
+function valueRefPresetFor(v: SketchNode): StencilPreset {
+  return {
+    id: `value-ref:${v.id}`,
+    labelHint: v.label || v.id,
+    shape: "ellipse",
+    color: "#fde68a",
+    width: 160,
+    height: 60,
+    icon: "star",
+    label: `→ ${v.label || v.id}`,
+    kind: "value_ref",
+    ref_value_id: v.id,
+  };
+}
+
+function identityRefPresetFor(i: SketchNode): StencilPreset {
+  return {
+    id: `identity-ref:${i.id}`,
+    labelHint: i.label || i.id,
+    shape: "ellipse",
+    color: "#fed7aa",
+    width: 160,
+    height: 60,
+    icon: "heart",
+    label: `→ ${i.label || i.id}`,
+    kind: "identity_ref",
+    ref_identity_id: i.id,
+  };
 }
 
 function Section({

@@ -995,19 +995,26 @@ function SketchCanvasInner({
         window.alert(resolved.error);
         return;
       }
-      // actor_ref: defer creation until the picker modal resolves which
-      // actor this reference points at.
-      if (preset.kind === "actor_ref") {
+      // v0.11.5 — if the preset already carries the target master id (the
+      // common case now that the stencil generates per-master presets),
+      // skip the picker entirely and create the ref directly. The picker
+      // is reserved for the rewire flow on orphan refs.
+      const presetHasRefId =
+        (preset.kind === "actor_ref" && preset.ref_actor_id) ||
+        (preset.kind === "mission_ref" && preset.ref_mission_id) ||
+        (preset.kind === "value_ref" && preset.ref_value_id) ||
+        (preset.kind === "identity_ref" && preset.ref_identity_id);
+      // actor_ref: only open picker if the preset has no ref_actor_id yet.
+      if (preset.kind === "actor_ref" && !presetHasRefId) {
         setPendingActorRef({ mode: "create", preset, pos, resolved });
         return;
       }
-      // v0.10 Step 3: same deferred-creation flow for the three Foundation
-      // ref kinds. The picker pulls candidates from the Foundation canvas
-      // (passed in via props) and resolves which master to point at.
+      // Foundation refs: only open picker for legacy unbound presets.
       if (
-        preset.kind === "mission_ref" ||
-        preset.kind === "value_ref" ||
-        preset.kind === "identity_ref"
+        (preset.kind === "mission_ref" ||
+          preset.kind === "value_ref" ||
+          preset.kind === "identity_ref") &&
+        !presetHasRefId
       ) {
         setPendingFoundationRef({
           mode: "create",

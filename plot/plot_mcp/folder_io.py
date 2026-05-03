@@ -149,7 +149,33 @@ def read_canvas(
     # before v0.11.4 so the new validators / UX find the anchor present.
     if canvas_kind in ("actors", "services"):
         raw = _backfill_project_anchor(plot_root, project_id, canvas_kind, raw)
+    # v0.11.5 — services canvas no longer accepts Foundation refs (they
+    # moved to service_detail). Drop any stale ones from older projects so
+    # the canvas validates on open. Same idempotent pattern as the anchor
+    # backfill above.
+    if canvas_kind == "services":
+        raw = _drop_disallowed_services_kinds(plot_root, project_id, raw)
     return CanvasDoc.model_validate(raw)
+
+
+def _drop_disallowed_services_kinds(
+    plot_root: Path,
+    project_id: str,
+    raw: dict[str, Any],
+) -> dict[str, Any]:
+    """v0.11.5 migration helper: silently drop ``mission_ref`` / ``value_ref``
+    / ``identity_ref`` (and any other now-disallowed kinds) from the services
+    top view. They live in ``service_detail`` from v0.11.5 onwards.
+    Idempotent.
+    """
+    nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
+    allowed = {"service", "project"}
+    kept = [n for n in nodes if n.get("kind") in allowed or n.get("kind") is None]
+    if len(kept) == len(nodes):
+        return raw
+    raw = {**raw, "nodes": kept}
+    _write_json(_canvas_file(plot_root, project_id, "services"), raw)
+    return raw
 
 
 def _backfill_project_anchor(

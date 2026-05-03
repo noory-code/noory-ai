@@ -4,6 +4,45 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.5] — 2026-05-03
+
+Two paired user-experience changes triggered by hands-on use.
+
+### Changed — **Services top view only carries Project + Services**
+- `_ALLOWED_KINDS_BY_CANVAS["services"]` is now `{"service", "project"}`
+  (was `{"service", "project"} | _FOUNDATION_REFS`).
+- All Foundation references (`mission_ref` / `value_ref` /
+  `identity_ref`), participant references (`actor_ref`), and
+  composition kinds (`metric` / `step`) are **service-detail-only**
+  from now on. Sub-service decomposition already lives there, so the
+  whole "rich detail" lives in one place.
+- The v0.11.2 anchor hard validator on the Services canvas is dropped
+  along with this change. Alignment ownership now lives inside each
+  Service-Detail canvas.
+- Migrator: read of an older Services canvas silently drops any
+  Foundation ref nodes (idempotent) so existing projects open clean.
+
+### Changed — **Stencil generates one draggable per master**
+- The Service-Detail stencil no longer shows a generic "Mission ref"
+  preset. Instead it renders **one draggable per master**, labelled
+  with that master's real label and tinted with its colour. Ten
+  missions on the Foundation canvas → ten mission entries on the
+  Service-Detail stencil. Same for `value_ref`, `identity_ref`, and
+  `actor_ref`.
+- Drops are now **direct**: the preset already carries the target
+  master id, so the picker no longer opens for the create flow. The
+  picker is reserved for the Inspector's rewire button on orphans.
+- `StencilCanvas` type gains a `service_detail` value; `App.tsx`
+  passes `"service_detail"` whenever the user is drilled into a
+  service detail (was always `"services"` before).
+
+### Notes
+- 162 Python tests passing. Existing fixtures padded to match the
+  new allowed-kinds set.
+- The Inspector's existing actor_ref / foundation_ref orphan UX
+  (Re-pick / Delete) still works — the rewire flow keeps the picker.
+- "Product as a kind" remains rejected from the v0.11.4 discussion.
+
 ## [0.11.4] — 2026-05-03
 
 First user-experience-driven patch on the v0.11 model. Two paired

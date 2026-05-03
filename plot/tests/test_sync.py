@@ -23,19 +23,10 @@ def plot_root(tmp_path: Path) -> Path:
 
 
 def _overview_with(service_labels: dict[str, str]) -> CanvasDoc:
-    """v0.11 Phase C2 — services canvas with services needs ≥ 1 anchor."""
+    """v0.11.5 — services canvas only carries services (no foundation refs)."""
     nodes: list[SketchNode] = [
         SketchNode(id=sid, kind="service", label=label) for sid, label in service_labels.items()
     ]
-    if nodes:
-        nodes.append(
-            SketchNode(
-                id="anchor-mission",
-                kind="mission_ref",
-                ref_mission_id="mission",
-                label="→ Mission",
-            )
-        )
     return CanvasDoc(
         canvas_id="services",
         canvas_kind="services",

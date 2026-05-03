@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ProjectDoc, ProjectTag } from "../types";
+import type { ProjectDoc, ProjectTag, SketchNode } from "../types";
 import { SketchStencil, type StencilCanvas } from "./SketchStencil";
 
 export interface SketchSidebarProps {
@@ -7,6 +7,12 @@ export interface SketchSidebarProps {
   activeId: string | null;
   stencilCanvas: StencilCanvas;
   tags: ProjectTag[];
+  /** v0.11.5 — masters for the dynamic ref presets on the
+   *  service_detail stencil (each master = its own draggable). */
+  availableActors?: SketchNode[];
+  availableMissions?: SketchNode[];
+  availableValues?: SketchNode[];
+  availableIdentities?: SketchNode[];
   onPick: (id: string) => void;
   onCreate: () => Promise<void> | void;
   onRename: (id: string, name: string) => Promise<void> | void;
@@ -19,6 +25,10 @@ export function SketchSidebar({
   activeId,
   stencilCanvas,
   tags,
+  availableActors,
+  availableMissions,
+  availableValues,
+  availableIdentities,
   onPick,
   onCreate,
   onRename,
@@ -189,7 +199,13 @@ export function SketchSidebar({
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
-        <SketchStencil canvas={stencilCanvas} />
+        <SketchStencil
+          canvas={stencilCanvas}
+          availableActors={availableActors}
+          availableMissions={availableMissions}
+          availableValues={availableValues}
+          availableIdentities={availableIdentities}
+        />
       </div>
     </aside>
   );
