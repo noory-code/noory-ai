@@ -30,8 +30,11 @@ const TOP_LEVEL_SERVICE: StencilPreset = {
   labelHint: "Service",
   shape: "rounded",
   color: "#bae6fd",
-  width: 300,
-  height: 200,
+  // v0.11.6 — default size shrunk (was 300×200) per user feedback. Users
+  // can still resize after drop; smaller default keeps the canvas tidy
+  // when many top-level services are added.
+  width: 180,
+  height: 100,
   icon: "zap",
   label: "Service",
   kind: "service",

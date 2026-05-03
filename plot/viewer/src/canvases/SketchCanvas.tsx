@@ -35,7 +35,7 @@ import { SketchEdgeModal, VALUE_FORM_COLORS } from "./SketchEdgeModal";
 import { SketchInspector } from "./SketchInspector";
 import { SketchNode, type SketchNodeData } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
-import { SketchToolbar, type SaveState } from "./SketchToolbar";
+import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 
 const NODE_TYPES = { sketch: SketchNode } as const;
@@ -85,9 +85,6 @@ export interface SketchCanvasProps {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-  saveState: SaveState;
-  onDownload: () => void;
-  onUpload: () => void;
   /** v0.7: Inspector's MD editor + "Connect to folder" button need both to
    *  call the file/folder endpoints and to hint the server back for preview
    *  cache sync on save. */
@@ -140,9 +137,6 @@ function SketchCanvasInner({
   onRedo,
   canUndo,
   canRedo,
-  saveState,
-  onDownload,
-  onUpload,
   projectPath,
   projectId,
   onNodeDrill,
@@ -1071,14 +1065,11 @@ function SketchCanvasInner({
       onDrop={handleDrop}
     >
       <SketchToolbar
-        saveState={saveState}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={onUndo}
         onRedo={onRedo}
         onAutoLayout={handleAutoLayout}
-        onDownload={onDownload}
-        onUpload={onUpload}
         valueFlowOn={valueFlowOn}
         onToggleValueFlow={() => setValueFlowOn((v) => !v)}
       />

@@ -6,7 +6,7 @@ import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
 import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
-import type { CanvasDoc, CanvasKey, CanvasKind, SketchNode } from "./types";
+import type { CanvasKey, CanvasKind, SketchNode } from "./types";
 
 type CanvasTab = "foundation" | "actors" | "services";
 const CANVAS_TABS: readonly { id: CanvasTab; label: string }[] = [
@@ -130,7 +130,6 @@ export function App() {
   // ------- persist + undo/redo (extracted to useCanvasPersist) -------
 
   const {
-    saveState,
     pendingWrites,
     applyEdit,
     undo: historyUndo,
@@ -275,50 +274,10 @@ export function App() {
     return foundationCanvas.nodes.filter((n) => n.kind === "identity");
   }, [foundationCanvas]);
 
-  // ------- download / upload -------
-
-  const handleDownload = useCallback(() => {
-    if (!activeCanvas) return;
-    const blob = new Blob([JSON.stringify(activeCanvas, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${activeCanvas.canvas_id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [activeCanvas]);
-
-  const handleUpload = useCallback(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "application/json,.json";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file || !activeCanvas) return;
-      try {
-        const text = await file.text();
-        const incoming = JSON.parse(text) as CanvasDoc;
-        if (!Array.isArray(incoming.nodes) || !Array.isArray(incoming.edges)) {
-          setError("Invalid canvas file");
-          return;
-        }
-        const next: CanvasDoc = {
-          ...incoming,
-          canvas_id: activeCanvas.canvas_id,
-          canvas_kind: activeCanvas.canvas_kind,
-          service_ref: activeCanvas.service_ref,
-        };
-        applyEdit(activeCanvasKey, activeCanvas, next);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-    };
-    input.click();
-  }, [activeCanvas, activeCanvasKey, applyEdit]);
+  // v0.11.6 — download / upload toolbar buttons removed per user
+  // feedback. Save is automatic; the toolbar focuses on undo/redo +
+  // layout. Reintroducing JSON import/export should go through a
+  // dedicated import/export flow if it returns at all.
 
   if (!projectPath) {
     return (
@@ -396,9 +355,6 @@ export function App() {
                 onRedo={handleRedo}
                 canUndo={history.canUndo}
                 canRedo={history.canRedo}
-                saveState={saveState}
-                onDownload={handleDownload}
-                onUpload={handleUpload}
                 projectPath={projectPath ?? ""}
                 projectId={activeId}
                 availableActors={availableActors}

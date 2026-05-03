@@ -4,6 +4,29 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.6] — 2026-05-03
+
+Three small UX fixes from continued use.
+
+### Removed — **Toolbar Download / Upload / save-state indicator**
+- Save is automatic and silent already; the persistent indicator was
+  noise. Errors still surface via the App-level error toast.
+- `SketchToolbar` now only carries Undo / Redo / Auto layout.
+- `SketchCanvasProps` no longer takes `saveState` / `onDownload` /
+  `onUpload`; App.tsx drops `handleDownload` / `handleUpload`. JSON
+  import/export, if it ever returns, will be a dedicated flow.
+
+### Changed — **Top-level service default size shrinks**
+- Was 300×200, now 180×100. Users still resize after drop; the
+  smaller default keeps the Services canvas tidy when many top-level
+  services are added (the previous size felt overscale next to the
+  project anchor).
+
+### Notes
+- This release is viewer-only. Python schema unchanged.
+- Pairs naturally with the user's flow after v0.11.5: drop a top-
+  level service, drill in, and use the per-master stencil for refs.
+
 ## [0.11.5] — 2026-05-03
 
 Two paired user-experience changes triggered by hands-on use.
