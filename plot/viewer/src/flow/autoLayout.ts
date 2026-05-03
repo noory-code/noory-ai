@@ -61,14 +61,19 @@ export function autoLayout(doc: CanvasDoc, direction: LayoutDirection = "LR"): C
 
 /**
  * v0.12.4 — radial tidy for canvases that aren't trees. The project anchor
- * stays put; the rest are spread on a circle around it with equal angular
- * spacing, so the canvas reads as "everything radiates from the project."
+ * stays put; every other node keeps the **angle** it currently has relative
+ * to the anchor, and is moved onto a common ring at that angle. So if the
+ * user dragged Identity to the left and Core Value to the right, those
+ * sides are preserved — auto-layout only normalises the distance and
+ * removes overlap.
+ *
+ * v0.12.5 correction: previous version placed nodes in `doc.nodes` order
+ * around the ring (top → clockwise), which felt arbitrary. The user's
+ * expectation is "tidy where I put it," not "redo from scratch."
  *
  * Use for Foundation and Actors (project + peers) where dagre LR's layered
  * left-to-right output collapses the radial mental model into a horizontal
  * row.
- *
- * Orphans (no connection to the anchor and no edges) keep their positions.
  */
 export function radialLayout(doc: CanvasDoc, anchorId = "project"): CanvasDoc {
   const anchor = doc.nodes.find((n) => n.id === anchorId);
@@ -79,8 +84,8 @@ export function radialLayout(doc: CanvasDoc, anchorId = "project"): CanvasDoc {
   const cy = anchor.y + anchor.height / 2;
 
   const others = doc.nodes.filter((n) => n.id !== anchorId);
-  // Pick the larger node footprint to size the ring; guarantees no overlap
-  // with the anchor at minimum 60 px clearance.
+  if (others.length === 0) return doc;
+
   const maxOtherDim = others.reduce(
     (m, n) => Math.max(m, n.width, n.height),
     0,
@@ -88,18 +93,38 @@ export function radialLayout(doc: CanvasDoc, anchorId = "project"): CanvasDoc {
   const anchorReach = Math.max(anchor.width, anchor.height) / 2;
   const radius = Math.max(220, anchorReach + maxOtherDim / 2 + 80);
 
-  const placedById = new Map<string, { x: number; y: number }>();
-  const n = others.length;
-  if (n > 0) {
-    // Start at the top (12 o'clock) and walk clockwise.
-    const start = -Math.PI / 2;
-    for (let i = 0; i < n; i += 1) {
-      const node = others[i];
-      const theta = start + (i * 2 * Math.PI) / n;
-      const x = cx + radius * Math.cos(theta) - node.width / 2;
-      const y = cy + radius * Math.sin(theta) - node.height / 2;
-      placedById.set(node.id, { x, y });
+  // Compute each node's current angle from the anchor; if the node sits
+  // exactly on top of the anchor (atan2(0, 0) = 0 → 3 o'clock), drift it
+  // by index so colocated seeds spread out instead of stacking.
+  const angled = others.map((n, i) => {
+    const ncx = n.x + n.width / 2;
+    const ncy = n.y + n.height / 2;
+    const dx = ncx - cx;
+    const dy = ncy - cy;
+    let theta: number;
+    if (dx === 0 && dy === 0) {
+      theta = -Math.PI / 2 + (i * 2 * Math.PI) / others.length;
+    } else {
+      theta = Math.atan2(dy, dx);
     }
+    return { node: n, theta };
+  });
+
+  // Spread any pair that ends up too close in angle (< ~15°) so they don't
+  // visually overlap on the ring. Sort by angle, walk through, nudge.
+  angled.sort((a, b) => a.theta - b.theta);
+  const minSep = (15 * Math.PI) / 180;
+  for (let i = 1; i < angled.length; i += 1) {
+    if (angled[i].theta - angled[i - 1].theta < minSep) {
+      angled[i].theta = angled[i - 1].theta + minSep;
+    }
+  }
+
+  const placedById = new Map<string, { x: number; y: number }>();
+  for (const { node, theta } of angled) {
+    const x = cx + radius * Math.cos(theta) - node.width / 2;
+    const y = cy + radius * Math.sin(theta) - node.height / 2;
+    placedById.set(node.id, { x, y });
   }
 
   return {

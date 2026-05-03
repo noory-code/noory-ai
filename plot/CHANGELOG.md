@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.5] — 2026-05-03
+
+### Fixed — **Radial auto-layout preserves the user's angle**
+- v0.12.4's radial placed peers around the project in `doc.nodes`
+  declaration order (top → clockwise), so a node the user had
+  dragged to the right could end up on the left after auto-layout.
+  The placement felt arbitrary because it ignored where the user
+  put things.
+- New behaviour: each peer keeps its **current angle** from the
+  project anchor; auto-layout only normalises distance (snap onto
+  the same ring) and nudges any pair that would sit within 15° of
+  each other so they don't visually overlap. If the user dragged
+  Identity to the right, it stays on the right.
+
 ## [0.12.4] — 2026-05-03
 
 Three corrections from continued usage.
