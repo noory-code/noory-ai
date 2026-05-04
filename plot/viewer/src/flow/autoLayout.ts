@@ -75,15 +75,36 @@ export function autoLayout(doc: CanvasDoc, direction: LayoutDirection = "LR"): C
  * left-to-right output collapses the radial mental model into a horizontal
  * row.
  */
-export function radialLayout(doc: CanvasDoc, anchorId = "project"): CanvasDoc {
-  const anchor = doc.nodes.find((n) => n.id === anchorId);
+export interface RadialAnchor {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export function radialLayout(
+  doc: CanvasDoc,
+  options: { anchorId?: string; anchorOverride?: RadialAnchor } = {},
+): CanvasDoc {
+  const { anchorId = "project", anchorOverride } = options;
+  // v0.13: the project anchor lives in ProjectDoc.anchors and is rendered
+  // as a synthetic node — it's not in doc.nodes. SketchCanvas passes its
+  // current placement via ``anchorOverride`` so radial still has a centre
+  // to spread peers around. v0.12 fall-back: look for a kind=project node
+  // in doc.nodes (legacy data only).
+  const anchor =
+    anchorOverride ?? doc.nodes.find((n) => n.id === anchorId);
   if (!anchor) return autoLayout(doc); // fall back if no anchor
 
   // Anchor centre stays where the user has it.
   const cx = anchor.x + anchor.width / 2;
   const cy = anchor.y + anchor.height / 2;
 
-  const others = doc.nodes.filter((n) => n.id !== anchorId);
+  // Filter out the anchor *if* it happened to be in doc.nodes (legacy
+  // path). For v0.13 anchorOverride, every doc node is a peer.
+  const others = anchorOverride
+    ? doc.nodes
+    : doc.nodes.filter((n) => n.id !== anchorId);
   if (others.length === 0) return doc;
 
   const maxOtherDim = others.reduce(
@@ -110,13 +131,32 @@ export function radialLayout(doc: CanvasDoc, anchorId = "project"): CanvasDoc {
     return { node: n, theta };
   });
 
-  // Spread any pair that ends up too close in angle (< ~15°) so they don't
-  // visually overlap on the ring. Sort by angle, walk through, nudge.
+  // Spread pairs that are too close in angle so they don't visually
+  // overlap on the ring. Minimum separation is the arc length each node
+  // needs (largest dim + padding) divided by the ring radius — i.e. the
+  // tightest angle that keeps nodes from touching. Walk sorted by angle
+  // and nudge any that are tighter; if the chain wraps past 2π, distribute
+  // evenly as a fallback so we don't pile everything to one side.
   angled.sort((a, b) => a.theta - b.theta);
-  const minSep = (15 * Math.PI) / 180;
+  const padding = 24;
+  const minSep = Math.min(
+    Math.PI / 2,
+    (maxOtherDim + padding) / radius,
+  );
   for (let i = 1; i < angled.length; i += 1) {
     if (angled[i].theta - angled[i - 1].theta < minSep) {
       angled[i].theta = angled[i - 1].theta + minSep;
+    }
+  }
+  // If the spreading pushed the last node past the first by more than 2π,
+  // the user's input was too clustered to spread cleanly — distribute
+  // evenly around the full circle starting at the first node's angle.
+  const span = angled[angled.length - 1].theta - angled[0].theta;
+  if (span > 2 * Math.PI - minSep) {
+    const start = angled[0].theta;
+    const step = (2 * Math.PI) / angled.length;
+    for (let i = 0; i < angled.length; i += 1) {
+      angled[i].theta = start + i * step;
     }
   }
 

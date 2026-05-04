@@ -801,12 +801,23 @@ function SketchCanvasInner({
     // v0.12.4 — Foundation and Actors are radial (project anchor at the
     // centre, peers around it). Services / Service Detail are trees, where
     // dagre LR's layered output is the right answer.
+    // v0.13 — project anchor is now derived from ProjectDoc.anchors and not
+    // stored in doc.nodes. Pass it as ``anchorOverride`` so radial still
+    // has a centre to spread peers around.
     const current = docRef.current;
     const useRadial =
       current.canvas_kind === "foundation" ||
       current.canvas_kind === "actors";
-    onDocChange(useRadial ? radialLayout(current) : autoLayout(current));
-  }, [onDocChange]);
+    if (!useRadial) {
+      onDocChange(autoLayout(current));
+      return;
+    }
+    onDocChange(
+      radialLayout(current, {
+        anchorOverride: projectAnchor ?? undefined,
+      }),
+    );
+  }, [onDocChange, projectAnchor]);
 
   const handleSelectionChange = useCallback((sel: OnSelectionChangeParams) => {
     selectedNodeIds.current = sel.nodes.map((n) => n.id);
