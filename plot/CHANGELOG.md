@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.1] — 2026-05-04
+
+### Fixed — **Radial auto-layout under v0.13's derived project anchor**
+- ``radialLayout`` was still looking for the project node inside
+  ``doc.nodes`` (legacy v0.12 path). v0.13 moved the anchor out to
+  ``ProjectDoc.anchors``; the lookup returned nothing on Foundation /
+  Actors and silently fell back to dagre LR, collapsing the canvas
+  into a horizontal row.
+- New ``options.anchorOverride`` parameter; SketchCanvas passes the
+  derived anchor in. Legacy in-doc.nodes lookup preserved as a
+  fallback.
+
+### Fixed — **Peer overlap on radial rings**
+- The "minimum angular separation" between adjacent peers was a fixed
+  15°. With node widths > 120 px on a 220 px ring, two peers could
+  end up visibly overlapping. Now derives the gap from
+  ``(maxNodeDim + 24px padding) / radius`` so it scales with actual
+  footprint. Caps at π/2.
+- If the spread chain wraps past 2π (user's nodes were so clustered
+  that respecting angles couldn't yield separation), fall back to
+  even distribution around the full circle.
+
 ## [0.13.0] — 2026-05-04
 
 A foundational rework of how a project's data is laid out on disk —
