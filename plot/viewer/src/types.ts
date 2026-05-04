@@ -162,7 +162,61 @@ export interface SketchNode {
    *  (resolved server-side under ``.plot/{project_id}/``). ``null`` =
    *  no MD yet; Inspector offers a "Create details" button. */
   details_path?: string | null;
+  /** v0.13 Phase 7: server-side MD parse warnings for Foundation nodes.
+   *  Present only when the per-node template has missing/unknown
+   *  sections, broken H1, etc. Inspector renders a yellow ⚠ + the
+   *  warning list so the user can fix the file. Pure response
+   *  decoration — never PUT back. */
+  _md_warnings?: string[];
 }
+
+// ---------------------------------------------------------------------------
+// v0.13 Phase 5 — Foundation discriminated-union types (cosmetic)
+// ---------------------------------------------------------------------------
+//
+// The runtime payload is still SketchNode (god interface) — the server
+// merges typed text from per-node MD templates into the same shape Plot
+// has used since v0.10. These per-kind aliases let Foundation-aware code
+// narrow ``n.kind`` and rely on the right typed fields without runtime
+// changes. They're the TS counterpart to Phase 1's Pydantic split.
+
+export interface BaseFoundationNode extends Omit<SketchNode, "kind"> {
+  /** Always present for the Foundation kinds; required, not optional. */
+  kind: NodeKind;
+}
+
+export interface ProjectFoundationNode extends BaseFoundationNode {
+  kind: "project";
+}
+
+export interface MissionFoundationNode extends BaseFoundationNode {
+  kind: "mission";
+  what_we_do: string;
+  why: string;
+  direction: string;
+}
+
+export interface CoreValueFoundationNode extends BaseFoundationNode {
+  kind: "core_value";
+  definition: string;
+  do: string;
+  dont: string;
+}
+
+export interface IdentityFoundationNode extends BaseFoundationNode {
+  kind: "identity";
+  description: string;
+  do: string;
+  dont: string;
+}
+
+/** v0.13 Phase 5: Foundation-canvas discriminated union. Use when narrowing
+ *  on ``kind`` for type-safe access to a Foundation node's typed text. */
+export type FoundationNode =
+  | ProjectFoundationNode
+  | MissionFoundationNode
+  | CoreValueFoundationNode
+  | IdentityFoundationNode;
 
 export interface SketchEdge {
   id: string;

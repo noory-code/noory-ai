@@ -261,7 +261,19 @@ async def canvas_get_endpoint(request: Request) -> JSONResponse:
         canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
-    return JSONResponse(canvas.model_dump(by_alias=True))
+    raw = canvas.model_dump(by_alias=True)
+    # v0.13 Phase 7 — enrich foundation nodes with MD-parse warnings so
+    # the Inspector can surface a yellow ⚠ + actionable hint. Not part of
+    # the model (stays clean on write); pure response decoration.
+    from plot_mcp.folder_io import collect_foundation_md_warnings
+
+    warnings_by_node = collect_foundation_md_warnings(plot_root, project_id, canvas)
+    if warnings_by_node:
+        for n in raw.get("nodes", []):
+            warns = warnings_by_node.get(n.get("id"))
+            if warns:
+                n["_md_warnings"] = warns
+    return JSONResponse(raw)
 
 
 async def canvas_put_endpoint(request: Request) -> JSONResponse:

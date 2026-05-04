@@ -61,6 +61,16 @@ def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | No
         # the services top-view is enough because the details file is
         # only fetched lazily by the Inspector when the service is selected.
         descriptor["canvas_kind"] = "services"
+    elif (
+        len(parts) == 3
+        and parts[1] == "foundation"
+        and parts[2].endswith(".md")
+    ):
+        # v0.13 Phase 4: per-node MD template under foundation/ — any
+        # .md file directly under the foundation/ folder belongs to a
+        # foundation node. Reloading the foundation canvas is enough
+        # since the API merges typed text from these files on read.
+        descriptor["canvas_kind"] = "foundation"
     # project.json and anything else → project-level event without canvas_kind
     return descriptor
 

@@ -379,6 +379,33 @@ def _merge_md_typed_text_into_nodes(
     return {**raw, "nodes": new_nodes}
 
 
+def collect_foundation_md_warnings(
+    plot_root: Path, project_id: str, canvas: CanvasDoc
+) -> dict[str, list[str]]:
+    """v0.13 Phase 7: scan each Foundation node's MD template and return
+    ``{node_id: [warning_strings...]}`` for any node whose parser raised
+    warnings. Empty mapping when everything is clean. Doesn't mutate the
+    canvas. Called by ``canvas_get_endpoint`` to enrich the API response
+    out-of-band so the model stays clean."""
+    if canvas.canvas_kind != "foundation":
+        return {}
+    from plot_mcp.md_template import parse_md_template
+    from plot_mcp.models import FOUNDATION_TYPED_TEXT_FIELDS
+
+    out: dict[str, list[str]] = {}
+    for n in canvas.nodes:
+        kind = n.kind
+        if not kind or not FOUNDATION_TYPED_TEXT_FIELDS.get(kind):
+            continue
+        md_path = _foundation_md_path(plot_root, project_id, kind, n.id, n.label)
+        if not md_path.exists():
+            continue
+        parsed = parse_md_template(md_path.read_text(encoding="utf-8"), kind)
+        if parsed.warnings:
+            out[n.id] = parsed.warnings
+    return out
+
+
 def _evict_legacy_project_anchor(
     plot_root: Path,
     project_id: str,

@@ -4,6 +4,110 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.0] — 2026-05-04
+
+A foundational rework of how a project's data is laid out on disk —
+**graph in JSON, typed content in Markdown, schema in its own folder**.
+Foundation canvas is the v1 surface; Actors / Services / Service
+Detail keep the v0.12 layout for now and join the new model in v0.14+.
+
+### BREAKING — file layout
+
+The first time Plot reads a v0.12 project, it migrates Foundation in
+place:
+
+  .plot/{project}/
+    project.json                 ← + new ``anchors`` field
+    schema/                      ← ✨ NEW (auto-generated, git-tracked)
+      _meta.json                 schema_version=1, plot_version, kinds
+      project.json               JSON Schema for project node entry
+      mission.json               + core_value.json, identity.json
+      mission.md.template        + core_value.md.template, identity.md.template
+    foundation/
+      canvas.json                ← graph only (no project node, no typed text)
+      mission-mission.md         ← ✨ per-node typed text + free prose
+      core_value-{slug}.md
+      identity-voice.md
+    actors/canvas.json           ← v0.12 layout, project node evicted
+    services/                    ← v0.12 layout, project node evicted
+
+### Phase 0 — Project SSOT
+- New ``ProjectDoc.anchors: dict[CanvasKind, AnchorPlacement]``. Each
+  AnchorPlacement carries x/y/w/h/color/shape for the project anchor
+  on a given canvas. Default-seeded; old projects fall back cleanly.
+- Per-canvas seeds (foundation/actors/services) no longer create a
+  ``project`` kind node — the anchor is no longer canvas data.
+- Eviction migrator on canvas read: legacy ``project`` node →
+  ``ProjectDoc.anchors[canvas]`` + node removed + orphan edges stripped.
+- Frontend: SketchCanvas injects a synthetic project anchor (id
+  ``__project_anchor__``) derived from ProjectDoc.anchors. Drag /
+  resize routes through a new ``PATCH /api/projects/{id}/anchors/{canvas}``;
+  the canvas .json never carries a project node again.
+- ``ProjectDoc.version`` bumped 2 → 3.
+
+### Phase 1 — Pydantic discriminated union (Foundation)
+- ``BaseNodeFields`` carries the 13 graph fields. Per-kind subclasses
+  ``ProjectNode`` / ``MissionNode`` / ``CoreValueNode`` /
+  ``IdentityNode`` declare a ``Literal`` discriminator on ``kind`` and
+  their own typed-text fields. ``FoundationNode = Annotated[Union[...],
+  Field(discriminator="kind")]``.
+- The legacy god ``SketchNode`` stays in place — Foundation just gains
+  type-safer per-kind constructors.
+
+### Phase 2 — Schema auto-export
+- New module ``schema_export.py``. ``create_project`` writes
+  ``.plot/{project}/schema/`` with one JSON Schema per kind (graph
+  fields only) plus per-kind MD templates. Idempotent.
+
+### Phase 3 — Markdown template I/O
+- New module ``md_template.py``. ``parse_md_template`` is **lenient**
+  (missing sections → empty + warning, unknown headings preserved in
+  warnings, case-insensitive headings, HTML comments stripped, free
+  prose below the ``---`` rule preserved verbatim).
+  ``render_md_template`` is **strict** (canonical section order per
+  kind, free prose round-trips).
+- 18 round-trip + lenient + strict tests.
+
+### Phase 6 — Migration v0.12 → v0.13 (Foundation)
+- ``_evict_typed_text_to_md`` runs on first foundation read: per-kind
+  typed text in canvas.json → ``foundation/{kind}-{slug}.md`` template
+  (preserving any existing free prose), then stripped from JSON.
+- ``_merge_md_typed_text_into_nodes`` re-attaches typed text from the
+  canonical MD path into the in-memory node so Inspector / API
+  continue to see populated fields.
+- ``_split_foundation_typed_text_to_md`` runs on every foundation
+  write so Inspector edits land in MD, not back in canvas.json.
+
+### Phase 4 — File watcher
+- Watcher recognises ``foundation/*.md`` (any .md directly under
+  ``foundation/``) as v0.13 per-node templates. External Obsidian /
+  VS Code edits trigger ``project_changed`` with ``canvas_kind:
+  "foundation"`` so any open viewer reloads.
+
+### Phase 5 — TypeScript Foundation discriminated union
+- ``BaseFoundationNode`` + ``MissionFoundationNode`` /
+  ``CoreValueFoundationNode`` / ``IdentityFoundationNode`` /
+  ``ProjectFoundationNode`` per-kind types.
+  ``FoundationNode = ...`` discriminated on ``kind``. Ready for
+  Foundation-aware code paths to narrow safely.
+
+### Phase 7 — Resilience UX
+- New helper ``collect_foundation_md_warnings`` runs alongside
+  canvas read; ``canvas_get_endpoint`` injects per-node
+  ``_md_warnings`` into the response without polluting the model.
+- Frontend: ``SketchNode`` shows a yellow ⚠ badge when warnings
+  present. Inspector displays the warning list with a hint pointing
+  at the file the user should fix.
+
+### Compatibility
+- v0.12 projects auto-migrate on first read. Eviction is idempotent:
+  re-running on v0.13 data is a no-op. The legacy v0.7
+  ``{slug}/details.md`` per-node folders are left in place for
+  backward compatibility but no longer used by Foundation reads;
+  ``details_path`` may continue to point at them for the user's
+  reference.
+- 182 tests pass (164 prior + 18 new for md_template).
+
 ## [0.12.6] — 2026-05-03
 
 Code-level audit cleared the v0.10/v0.11 residue still leaking into

@@ -430,11 +430,25 @@ the foundation refs aren't trade participants).
    structured JSON to read, do/dont guidance to imitate, examples to
    keep behaviour consistent.
 
-4. **`details.md` is free prose, never mirrored.** Long-form writing,
-   tables, and Mermaid diagrams live in the per-node `details.md`
-   file. Plot never parses or duplicates that content into the canvas
-   JSON, so external editors (Obsidian, VS Code) can edit the file
-   without sync conflicts.
+4. **Two-surface storage: graph in JSON, typed content in MD
+   templates.** (v0.13, Foundation only — other canvases follow in
+   v0.14+.) A node's *graph data* (id, kind, position, label,
+   parent_id, refs, ``details_path``) lives in
+   ``{canvas}/canvas.json``. A Foundation node's *typed text* lives
+   in ``{canvas}/{kind}-{slug}.md`` as a kind-specific
+   heading-section template (``# Label`` / ``## Definition`` /
+   ``## Do`` / ``## Don't`` / ``---`` / free prose). **MD is plain
+   markdown — no YAML frontmatter.** Plot is the *schema author* and
+   external editors (Obsidian, VS Code) are *value editors*; both
+   may write the file. Read is **lenient** (missing or unknown
+   sections become empty + a UI warning); write is **strict**
+   (canonical heading order, schema-conformant). The file system is
+   the SSOT; Plot UI is one editor on top of it.
+
+   A frozen schema lives next to the project at ``.plot/{project}/
+   schema/`` so the user can tell what each kind expects, and so
+   external tools can validate independently. The schema is
+   auto-exported on project create and stays in git with the data.
 
 5. **Symbol/Component pattern for cross-canvas references.** A master
    lives on its home canvas; references on other canvases point at it.

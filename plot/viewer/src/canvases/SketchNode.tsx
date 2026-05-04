@@ -53,6 +53,10 @@ export interface SketchNodeData {
   onToggleCollapse?: () => void;
   /** v0.2: count of nested children (shown on the fold badge when collapsed). */
   childCount?: number;
+  /** v0.13 Phase 7: server-side MD parse warnings for this Foundation node.
+   * When non-empty, the node renders a yellow ⚠ badge in its top-right;
+   * the Inspector lists each warning with a link to the source file. */
+  mdWarnings?: string[];
   /** v0.5: suppress the fold button even when ``onToggleCollapse`` is wired
    * (Core canvas uses peer layout; fold has no meaning there). */
   showFold?: boolean;
@@ -159,6 +163,19 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
               {KIND_TAG_LABELS[data.kind]}
             </span>
           )}
+
+        {/* v0.13 Phase 7 — yellow ⚠ badge when the node's MD template parsed
+            with warnings. Inspector shows the full list; this is the at-a-
+            glance signal so the user notices broken external edits. */}
+        {data.mdWarnings && data.mdWarnings.length > 0 && (
+          <span
+            className="pointer-events-none absolute right-1 top-1 rounded-full bg-amber-100 px-1.5 text-[11px] leading-tight text-amber-800 ring-1 ring-amber-300"
+            title={`${data.mdWarnings.length} MD warning(s) — open Inspector for details`}
+            aria-label={`${data.mdWarnings.length} markdown parse warnings`}
+          >
+            ⚠
+          </span>
+        )}
 
         <div className="flex h-full w-full flex-col items-stretch justify-center gap-1">
           {/* v0.12.4: category labels align left (they read as group

@@ -420,6 +420,8 @@ function SketchCanvasInner({
           onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
           // Foundation canvas lays pillars out as peers — fold has no meaning.
           showFold: doc.canvas_kind !== "foundation",
+          // v0.13 Phase 7 — server-side MD parse warnings, surfaces ⚠ badge.
+          mdWarnings: n._md_warnings,
         },
       };
       // v0.2 correction (2026-04-20): parent_id is used for two distinct

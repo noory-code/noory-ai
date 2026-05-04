@@ -178,6 +178,25 @@ export function SketchInspector({
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto p-3">
+        {/* v0.13 Phase 7 — MD parse warnings, surfaced first so the user
+             sees the problem before editing. The list comes from the
+             server's per-node template parse (collect_foundation_md_warnings). */}
+        {node._md_warnings && node._md_warnings.length > 0 && (
+          <div className="mb-3 rounded border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
+            <div className="mb-1 font-semibold">⚠ Markdown template warnings</div>
+            <ul className="ml-4 list-disc">
+              {node._md_warnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+            {node.details_path && (
+              <p className="mt-1 text-[10px] text-amber-800">
+                Edit <code>{node.details_path}</code> to fix.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Label */}
         <label className="mb-3 block">
           <span className="text-xs font-semibold text-slate-600">Label</span>

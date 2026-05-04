@@ -20,12 +20,18 @@ _log = logging.getLogger(__name__)
 
 
 def _is_watched_file(path: str) -> bool:
-    """v0.9: watch canvas files (``canvas.json`` / ``detail.json`` /
-    ``project.json``) **and** node ``details.md`` files. The latter lets
-    Plot pick up external edits in Obsidian / VS Code and broadcast them
-    to any open viewer. Other JSON or attachments are ignored."""
+    """v0.9: watch canvas + project metadata.
+    v0.13: also watch every ``.md`` file under ``foundation/`` directly,
+    since per-node typed-text templates (``{kind}-{slug}.md``) live there.
+    External Obsidian / VS Code edits propagate to any open viewer."""
     p = Path(path)
-    return p.name in {"canvas.json", "detail.json", "project.json", "details.md"}
+    if p.name in {"canvas.json", "detail.json", "project.json", "details.md"}:
+        return True
+    # v0.13 Phase 4: per-node MD templates under foundation/ — match any
+    # .md file whose parent directory is named "foundation".
+    if p.suffix == ".md" and p.parent.name == "foundation":
+        return True
+    return False
 
 
 class WorkspaceWatcher:
