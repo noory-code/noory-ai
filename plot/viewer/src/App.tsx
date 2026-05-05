@@ -331,7 +331,7 @@ export function App() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-screen min-h-screen flex-col">
       <Header
         projectPath={projectPath}
         error={error}

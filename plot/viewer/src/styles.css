@@ -2,7 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root { height: 100%; }
+html, body, #root {
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+body { margin: 0; }
 
 /* React Flow overrides
    ------------------------------------------------------------------- */
@@ -16,18 +21,22 @@ html, body, #root { height: 100%; }
 /* Make connection handles visible + easy to hit. React Flow's default
    6×6 dot is hard to spot and hard to click. */
 .react-flow__handle {
-  width: 12px !important;
-  height: 12px !important;
-  border: 2px solid rgb(100 116 139) !important; /* slate-500 */
+  width: 10px !important;
+  height: 10px !important;
+  border: 1.5px solid rgb(148 163 184) !important; /* slate-400 */
   background: white !important;
-  opacity: 0.55;
+  opacity: 0;
   transition: opacity 120ms ease, transform 120ms ease, border-color 120ms ease;
 }
+/* v0.13.2 — only reveal handles on direct hover, not whenever the cursor
+   touches the node body. The previous "all 4 handles pop the moment you
+   approach the node" behavior felt noisy. */
 .react-flow__node:hover .react-flow__handle {
-  opacity: 1;
+  opacity: 0.55;
 }
 .react-flow__handle:hover {
-  transform: scale(1.35);
+  opacity: 1;
+  transform: scale(1.25);
   border-color: rgb(79 70 229) !important; /* indigo-600 */
   background: rgb(224 231 255) !important; /* indigo-100 */
 }

@@ -111,9 +111,15 @@ function contentPadding(shape: Shape): string {
 }
 
 function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) {
+  // v0.13.2 — the synthetic project anchor is a derived view, not editable.
+  // Render it with a distinctive double ring so users can tell it apart from
+  // service / category circles that share the same yellow fill.
+  const isAnchor = data.kind === "project";
   const ring = selected
     ? "outline outline-2 outline-indigo-500"
-    : "outline outline-1 outline-slate-300";
+    : isAnchor
+      ? "outline outline-2 outline-slate-600 outline-offset-2 ring-1 ring-slate-300"
+      : "outline outline-1 outline-slate-300";
   const style = {
     backgroundColor: data.color,
     ...shapeStyle(data.shape),
@@ -169,7 +175,7 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
             glance signal so the user notices broken external edits. */}
         {data.mdWarnings && data.mdWarnings.length > 0 && (
           <span
-            className="pointer-events-none absolute right-1 top-1 rounded-full bg-amber-100 px-1.5 text-[11px] leading-tight text-amber-800 ring-1 ring-amber-300"
+            className="pointer-events-none absolute right-1 top-1 rounded-full bg-white px-1.5 py-px text-[11px] font-bold leading-tight text-amber-700 shadow-sm ring-1 ring-amber-500"
             title={`${data.mdWarnings.length} MD warning(s) — open Inspector for details`}
             aria-label={`${data.mdWarnings.length} markdown parse warnings`}
           >

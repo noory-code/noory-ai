@@ -10,19 +10,12 @@ export interface SketchToolbarProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  onAutoLayout: () => void;
   /** v0.2: edge colour toggle reflecting value_form. */
   valueFlowOn: boolean;
   onToggleValueFlow: () => void;
 }
 
-export function SketchToolbar({
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
-  onAutoLayout,
-}: SketchToolbarProps) {
+export function SketchToolbar({ canUndo, canRedo, onUndo, onRedo }: SketchToolbarProps) {
   return (
     <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2 py-1 text-xs shadow-sm backdrop-blur">
       <IconBtn label="Undo" enabled={canUndo} onClick={onUndo} hint="Cmd+Z">
@@ -31,21 +24,8 @@ export function SketchToolbar({
       <IconBtn label="Redo" enabled={canRedo} onClick={onRedo} hint="Shift+Cmd+Z">
         ↷
       </IconBtn>
-      <Divider />
-      <button
-        type="button"
-        onClick={onAutoLayout}
-        className="rounded px-2 py-1 text-slate-700 hover:bg-slate-100"
-        title="Auto layout"
-      >
-        Auto layout
-      </button>
     </div>
   );
-}
-
-function Divider() {
-  return <span className="h-4 w-px bg-slate-200" aria-hidden />;
 }
 
 function IconBtn({

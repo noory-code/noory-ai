@@ -4,6 +4,61 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.2] — 2026-05-05
+
+### Added — **Foundation SPEC + decision log**
+- ``plot/docs/SPEC.md`` — first canonical behaviour spec (Foundation
+  canvas only). Codifies anchor / edges / auto-layout / ⚠ badge /
+  hover / Inspector / viewport behaviour with explicit user approval.
+- ``plot/docs/DECISIONS.md`` — append-only UX / behaviour decision
+  log. Today's seven decisions are logged with status (accepted /
+  rejected / pending). Future UI changes must add an entry here
+  before / alongside the code change.
+- Reason: prior to this release, behavioural decisions lived only in
+  code comments (not agreed) or in session memory (didn't survive).
+  Cross-session work didn't accumulate. The two new files are the
+  fix.
+
+### Changed — **Foundation canvas: smaller, agreed-upon polish**
+- **Anchor visually distinct from Service circles.** The project
+  anchor now wears a slate-600 outline + offset + slate-300 inner
+  ring so it reads as "this is the project itself, not a peer", even
+  when it appears on Actors / Services where same-coloured Service
+  circles also exist. (Decision D-2026-05-04-C.)
+- **⚠ MD-warning badge contrast.** Was amber-100 fill on amber-100 /
+  amber-50 cards — nearly invisible. Now white fill, amber-700
+  glyph, amber-500 ring + shadow; legible on every Foundation card
+  colour. (Decision D-2026-05-04-F.)
+- **Quieter hover.** Connection handles stay hidden at rest; fade to
+  opacity 0.55 while the cursor is on the node body; only become
+  fully opaque + scaled on direct handle hover. The previous "all
+  four handles pop the moment the cursor approaches" felt noisy.
+  (Decision D-2026-05-04-E.)
+- **Defensive viewport sizing.** Outermost shell uses ``h-screen
+  min-h-screen``; ``html, body, #root`` add ``min-height: 100dvh``
+  fallback. Belt-and-braces against cascading quirks so the canvas
+  always reaches the bottom of the window. (Decision D-2026-05-04-G,
+  approval pending user confirmation.)
+
+### Removed — **Auto-layout button + auto-edges (rolled back same day)**
+- **"Auto layout" button gone** from the canvas toolbar and the pane
+  context menu. ``handleAutoLayout`` callback and ``autoLayout`` /
+  ``radialLayout`` imports dropped from ``SketchCanvas``. Layout is
+  fully manual — node positions encode user intent and shouldn't be
+  silently rewritten. (Decision D-2026-05-04-D.)
+- **Synthetic anchor → child auto-edges removed** before reaching a
+  release. Briefly added during this session as dashed slate-400
+  lines connecting the anchor to Mission / CoreValue / Identity, but
+  the user rejected the approach: edges that the user can't edit or
+  delete break the "every line on the canvas is mine to control"
+  expectation. All edges on Foundation are user-drawn. (Decision
+  D-2026-05-04-A.)
+- **Anchor handle suppression rolled back.** Briefly hid the anchor's
+  four React Flow handles on the assumption that "synthetic =
+  read-only" (a stale code comment, not an agreed decision). Handles
+  restored — the user may draw edges from / to the anchor like any
+  other node. (Decision D-2026-05-04-B.)
+
 ## [0.13.1] — 2026-05-04
 
 ### Fixed — **Radial auto-layout under v0.13's derived project anchor**

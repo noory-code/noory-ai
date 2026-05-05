@@ -1,0 +1,179 @@
+# DECISIONS — Plot UX / behaviour log
+
+> Every decision that shapes how Plot **looks or behaves** belongs here.
+> If a UI / behaviour change is not represented by an entry below (or
+> by an explicit line in [`SPEC.md`](./SPEC.md)), it was not properly
+> agreed and should be reverted.
+
+---
+
+## How to use this file
+
+**Before** a UI / behaviour change:
+1. Check [`SPEC.md`](./SPEC.md) — does it cover this?
+   - If yes: implement what the spec says.
+   - If no: **stop. Ask the user.** Don't read code comments and treat
+     them as spec — comments are not approved decisions.
+2. After user gives direction, append a `D-YYYY-MM-DD-X` entry below
+   *first*, then implement.
+
+**After** a change ships:
+- Mark the decision **Accepted** if the user kept it after seeing it.
+- Mark it **Rejected** if the user asked to revert.
+- Rejected entries stay in the log so the next session knows not to
+  re-propose the same idea.
+
+**Entry template:**
+
+```
+### D-YYYY-MM-DD-X — short title
+
+- **What:** the proposed / made change in one line.
+- **Why:** the rationale (problem the change addresses).
+- **Alternatives:** what was considered and rejected.
+- **Approval:** Accepted | Rejected | Pending — by whom, when.
+- **Spec impact:** which line of SPEC.md this updates (if any).
+```
+
+---
+
+## Log
+
+### D-2026-05-04-A — No auto-edges from anchor
+
+- **What:** Renderer was emitting synthetic dashed slate-400 edges from
+  the project anchor to every top-level Mission / CoreValue / Identity
+  node on Foundation.
+- **Why:** the relationship "this Mission belongs to this project" was
+  implicit; auto-edges were proposed to make it visible.
+- **Alternatives:** real seed edges written into `canvas.json`
+  (rejected — auto-creates user data without consent); leave it to
+  the user (chosen).
+- **Approval:** **Rejected** by user, 2026-05-04 — auto-edges weren't
+  editable / deletable, which broke the user's "every line on the
+  canvas is mine to control" expectation.
+- **Spec impact:** [`SPEC.md` §Edges](./SPEC.md#edges) — codifies "all
+  edges are user-drawn".
+
+---
+
+### D-2026-05-04-B — Anchor handles stay visible
+
+- **What:** Hide the four React Flow connection handles on the
+  synthetic project anchor.
+- **Why:** code comment said "synthetic anchor is read-only"; assumed
+  this meant the user shouldn't draw edges from it either.
+- **Alternatives:** keep the handles (chosen after rejection).
+- **Approval:** **Rejected** by user, 2026-05-04 — the user never
+  agreed the anchor was read-only. The "read-only" claim was a stale
+  code comment from v0.13 Phase 0 development that the assistant
+  treated as spec. Anchor handles are restored.
+- **Spec impact:** [`SPEC.md` §Anchor](./SPEC.md#anchor-the-centre-node)
+  — "Handles (4 sides): Visible. User may draw edges from / to the
+  anchor like any other node."
+
+---
+
+### D-2026-05-04-C — Anchor visually distinct from Service circles
+
+- **What:** Add a slate-600 outline + offset + slate-300 inner ring to
+  the project anchor, so it's recognisable as "the project itself" and
+  not confused with the same-coloured Service nodes that appear on
+  the Services canvas.
+- **Why:** without differentiation, a user landing on Services / Actors
+  (where the anchor is also auto-seeded) couldn't tell which yellow
+  circle was the project vs a Service.
+- **Alternatives:** different fill colour (rejected — fill is already
+  meaningful per kind palette); icon overlay (rejected — competes
+  with kind-tag corner labels).
+- **Approval:** **Accepted** by user, 2026-05-04 — implicitly, by not
+  asking to revert when other items were rolled back.
+- **Spec impact:** [`SPEC.md` §Anchor](./SPEC.md#anchor-the-centre-node)
+  — "Visual differentiation".
+
+---
+
+### D-2026-05-04-D — Auto-layout removed entirely
+
+- **What:** Remove the "Auto layout" toolbar button and the
+  corresponding pane-context-menu entry. Drop the `radialLayout` /
+  `autoLayout` calls and the `handleAutoLayout` callback from
+  `SketchCanvas`.
+- **Why:** layout encodes user intent (where things sit relative to
+  each other reflects how the user thinks about them). Auto-layout
+  silently overwrites that intent.
+- **Alternatives:** keep auto-layout but require confirmation
+  (rejected — adds friction without solving the intent-overwrite
+  problem); restrict to specific canvas kinds (rejected — same issue
+  on every kind).
+- **Approval:** **Accepted (removal)** by user, 2026-05-04.
+- **Spec impact:** [`SPEC.md` §Auto-layout](./SPEC.md#auto-layout) —
+  codifies "removed; layout is fully manual".
+
+---
+
+### D-2026-05-04-E — Hover handles only fade in lightly
+
+- **What:** Connection handles stay invisible at rest; fade to
+  `opacity: 0.55` while the cursor is on the node body; only become
+  fully opaque + scaled when the cursor lands directly on a handle.
+- **Why:** the prior behaviour (all four handles pop to full opacity +
+  scale 1.35× the moment the cursor enters the node) felt noisy and
+  read as "the node is constantly inviting a connection".
+- **Alternatives:** keep prior behaviour (rejected — noisy); hide
+  handles entirely until a modifier key (rejected — too hidden,
+  discoverability suffers).
+- **Approval:** **Accepted** by user, 2026-05-04 — implicitly.
+- **Spec impact:** [`SPEC.md` §Hover behaviour](./SPEC.md#hover-behaviour).
+
+---
+
+### D-2026-05-04-F — ⚠ badge contrast bumped
+
+- **What:** Change MD-warning badge from `bg-amber-100 text-amber-800
+  ring-amber-300` to `bg-white text-amber-700 ring-amber-500 shadow-sm`
+  so it stays legible on cream / pastel-orange / pastel-yellow card
+  backgrounds.
+- **Why:** the prior amber-on-amber palette nearly disappeared into
+  the Mission and CoreValue card colours.
+- **Alternatives:** stronger amber fill (rejected — competes with
+  card colour); red fill (rejected — overstates severity for a
+  fixable parse warning).
+- **Approval:** **Accepted** by user, 2026-05-04 — implicitly.
+- **Spec impact:** [`SPEC.md` §⚠ Markdown-template warning badge](./SPEC.md#-markdown-template-warning-badge).
+
+---
+
+### D-2026-05-04-G — Defensive viewport CSS
+
+- **What:** Add `h-screen min-h-screen` to the outermost shell `<div>`
+  and `min-height: 100vh / 100dvh` fallbacks on `html, body, #root`.
+- **Why:** user reported the canvas not filling top-to-bottom in
+  their browser, even though Playwright measurement showed the
+  existing `height: 100%` chain was correct. Defensive doubling
+  (`100vh` + `100dvh`) costs nothing in clean cascades and rescues
+  edge cases (mobile-style viewports, iframe embeds, dev-tools
+  docking).
+- **Alternatives:** require user to share a screenshot before
+  changing anything (rejected as too slow — defensive CSS is cheap);
+  do nothing (rejected — user reported a real symptom).
+- **Approval:** Pending — user has not yet confirmed whether their
+  browser symptom resolved after the change.
+- **Spec impact:** [`SPEC.md` §Viewport](./SPEC.md#viewport).
+
+---
+
+### D-2026-05-05-A — SPEC + DECISIONS files exist; comments are not spec
+
+- **What:** Introduce `plot/docs/SPEC.md` (Foundation only, for now)
+  and `plot/docs/DECISIONS.md` (this file). Future UI / behaviour
+  changes must reference an entry in one of these.
+- **Why:** session-to-session work was not accumulating: every
+  session re-relitigated the same trade-offs because the prior
+  session's decisions lived only in code comments (which were not
+  agreed) or in the assistant's working memory (which doesn't
+  survive). The fix is a single canonical place where every
+  behavioural decision is written down with date + rationale +
+  approval status.
+- **Approval:** **Accepted** by user, 2026-05-05.
+- **Spec impact:** none — meta-rule about how decisions are recorded.
