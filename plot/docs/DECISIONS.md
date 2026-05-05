@@ -177,3 +177,59 @@
   approval status.
 - **Approval:** **Accepted** by user, 2026-05-05.
 - **Spec impact:** none — meta-rule about how decisions are recorded.
+
+---
+
+### D-2026-05-05-B — Architecture violation acknowledged: god components
+
+- **What:** Acknowledge that today's viewer code violates the
+  project's own structural rule (project CLAUDE.md: "Review for
+  splitting when a file exceeds 500 lines") and the user's stated
+  design principles (global CLAUDE.md: SOLID / SRP / Clean
+  Architecture / DDD).
+- **Evidence (measured 2026-05-05, post-v0.13.2):**
+  - `viewer/src/canvases/SketchCanvas.tsx` — **1476 lines, 40 hooks,
+    ≥13 distinct responsibilities** (node transforms, edge
+    transforms, anchor sync, click→Inspector routing, three context
+    menus, keyboard shortcuts, drag-and-drop, overlap nudging,
+    value-flow toggle, collapsed-tree state, orphan ref detection,
+    Service-Detail modal routing, undo/redo glue).
+  - `viewer/src/canvases/SketchInspector.tsx` — **1422 lines.**
+  - `viewer/src/App.tsx` — **791 lines.**
+  - `viewer/src/canvases/SketchStencil.tsx` — **523 lines.**
+- **Why this matters:** today's hover bug, today's edge regressions,
+  and the recurring "small change here breaks something over there"
+  pattern are symptoms of the god-component shape — every concern
+  shares the same closure scope, so changes have unbounded blast
+  radius. CSS-only fixes (today's hover tone-down) cover the
+  symptom without fixing the cause.
+- **Decision:** **No new responsibilities are added to
+  SketchCanvas.tsx, SketchInspector.tsx, App.tsx, or
+  SketchStencil.tsx until each is split.** New behaviour goes into
+  new files. Existing-file edits must reduce or maintain LOC, never
+  grow.
+- **Plan:** see [`ARCHITECTURE.md`](./ARCHITECTURE.md) — responsibility
+  inventory + candidate split boundaries. Actual split happens in a
+  subsequent session, in plan mode, with user approval of the chosen
+  boundary.
+- **Approval:** Pending — user has agreed the violation exists and
+  asked for the inventory; the chosen split boundary is **not yet
+  approved**.
+- **Spec impact:** none on behaviour SPEC; lives in ARCHITECTURE.md.
+
+---
+
+### D-2026-05-05-C — `plot/CLAUDE.md` for practical guidance
+
+- **What:** Create `plot/CLAUDE.md` translating the global / project
+  core principles (SOLID, Clean Architecture, SRP, SSOT, AHA, YAGNI,
+  TDD, "임시 통과 금지", "추측 금지", etc.) into Plot-specific
+  *practical* checklists, triggers, and commands the assistant must
+  follow inside the `plot/` subtree.
+- **Why:** the principles are theoretical and live two directories
+  up; in-session, the assistant defaults to "do the change" without
+  consulting them. A Plot-local file with concrete triggers ("before
+  editing SketchCanvas.tsx, do X") makes the principles operational.
+- **Approval:** **Accepted** by user, 2026-05-05.
+- **Spec impact:** none — meta rule about how the assistant operates
+  inside `plot/`.

@@ -1,8 +1,8 @@
-# SPEC — Foundation canvas
+# SPEC — Plot canvases
 
-> **Scope (v0.13.x):** behaviour spec for the **Foundation** canvas only.
-> Actors / Services / Service-Detail follow in later expansions; until
-> then their behaviour is implementation-defined.
+> **Scope (v0.13.x):** behaviour spec for **Foundation** and **Actors**.
+> Services / Service-Detail follow in later expansions; until then their
+> behaviour is implementation-defined.
 
 > **Status of this file:** the canonical answer to "how should Foundation
 > behave?". Code, comments, and prior decisions are *not* spec — only
@@ -10,6 +10,10 @@
 > file disagrees with the code, the code is wrong, not the spec.
 
 ---
+
+---
+
+# Foundation
 
 ## What Foundation is
 
@@ -139,7 +143,7 @@ min-h-screen` on the root and `min-height: 100dvh` fallback on
 
 ---
 
-## Things explicitly NOT in this spec yet
+## Things explicitly NOT in this Foundation spec yet
 
 - Behaviour of the Anchor's Inspector (open / closed?).
 - Drag-and-drop from the Foundation stencil onto the canvas (creation
@@ -151,3 +155,79 @@ min-h-screen` on the root and `min-height: 100dvh` fallback on
 These are deferred to subsequent SPEC entries. **No implementation
 decision should be made on these without first appending to this spec
 and getting user approval.**
+
+---
+
+# Actors
+
+## What Actors is
+
+The canvas that answers **"who participates?"** for the project. It
+carries the `actor` kind only ([`CONCEPTS.md`](./CONCEPTS.md)). Each
+actor represents a participant — a person, role, system, organisation
+— that takes part in any of the project's services.
+
+## Anchor
+
+Same anchor as Foundation: same synthetic node, same SSOT in
+``ProjectDoc.anchors``, same label (mirrors `ProjectDoc.name`), same
+visual differentiation. Auto-seeded on the Actors canvas — v0.11.4 —
+so every primary canvas radiates from one centre.
+
+> See [Foundation §Anchor](#anchor-the-centre-node) for full anchor
+> behaviour. Behaviour is identical on Actors.
+
+## Nodes — `actor`
+
+| Aspect | Behaviour |
+|---|---|
+| **Shape** | `rounded` (rectangle with rounded corners). |
+| **Colour** | Per-node, user-chosen via the Inspector. Default fill (when not yet set) — **TBD, see open question below.** |
+| **Hierarchy** | Top-level actor (`parent_id: null`) or sub-actor (`parent_id` = another actor's id). The stencil exposes both as separate draggables: "Actor" (top-level) and "Sub-Actor" (drop onto an existing actor). |
+| **Sub-actor visual relationship** | **TBD — see open question.** |
+| **Inspector** | Same panel as Foundation; typed-fields per actor — **TBD which fields.** |
+| **⚠ MD-warning badge** | Same mechanism as Foundation typed-text nodes. (Per-actor MD file path: TBD — verify in code before next change.) |
+
+## Edges
+
+Same rule as Foundation: **all edges are user-drawn.** No auto-edges
+between anchor and actors, no auto-edges between actors. Edited via
+double-click (edge modal). Persisted in `actors/canvas.json`.
+
+> The `valueFlowOn` toggle in `SketchCanvas` recolours edges by
+> ``value_form``; whether that toggle is reachable from the UI on
+> Actors specifically is **TBD** — verify before next edge work.
+
+## Auto-layout, hover, viewport
+
+Same as Foundation. (Defensive viewport CSS / hover behaviour /
+auto-layout removal apply globally to every canvas.)
+
+## Open questions (Actors)
+
+- **Default actor colour / palette** — does dragging "Actor" from the
+  stencil produce a deterministic colour, or random, or does the user
+  always pick? Today's banas-v013 has Operator=blue, User=pink — were
+  those defaults or chosen? Decision needed before next stencil work.
+- **Sub-actor visual relationship** — when an actor has `parent_id`,
+  does the canvas draw a synthetic edge to the parent? Or is the
+  parent–child relationship visualised some other way (nesting,
+  proximity, label)? Today's banas-v013 has no sub-actors so behaviour
+  isn't visible. Verify before adding any sub-actor.
+- **Anchor ↔ actor relationship** — should there be any *visual*
+  indicator that "this actor participates in this project", or is
+  membership purely positional (actor lives on Actors canvas =
+  belongs to project)? Today: nothing. Decision needed if anything
+  should be added.
+- **Actor's typed fields + per-actor MD file** — which fields exist on
+  an `actor` node? Does it carry an MD template like Foundation
+  typed-text nodes? Confirm in the code or with the user before
+  Inspector / Actors-related changes.
+- **Edge semantics on Actors** — are edges between actors meant to
+  encode value-flow (gives / receives), reporting lines, social ties,
+  or just freeform? CONCEPTS.md hints at value_form on edges; SPEC
+  needs to nail what's expected on Actors.
+
+These remain implementation-defined until the user gives direction
+and a `D-YYYY-MM-DD-X` entry is added to
+[`DECISIONS.md`](./DECISIONS.md).
