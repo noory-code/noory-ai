@@ -36,6 +36,7 @@ import { SketchNode, type SketchNodeData } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
+import { useCollapsedTree } from "./sketch/useCollapsedTree";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
 import { useValueFlow } from "./sketch/useValueFlow";
 
@@ -239,66 +240,8 @@ function SketchCanvasInner({
     [onDocChange],
   );
 
-  // Precompute a parent → children map so we can render containers, sort
-  // parents before children (React Flow requirement), and compute visibility
-  // under collapse.
-  const childIdsByParent = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const n of doc.nodes) {
-      if (n.parent_id) {
-        const arr = map.get(n.parent_id) ?? [];
-        arr.push(n.id);
-        map.set(n.parent_id, arr);
-      }
-    }
-    return map;
-  }, [doc.nodes]);
-
-  const nodeById = useMemo(() => {
-    const m = new Map<string, DocNode>();
-    for (const n of doc.nodes) m.set(n.id, n);
-    return m;
-  }, [doc.nodes]);
-
-  // Nearest collapsed ancestor of ``nodeId`` (not counting nodeId itself),
-  // or null if nothing on the chain is collapsed.
-  const nearestCollapsedAncestor = useCallback(
-    (nodeId: string): string | null => {
-      let current = nodeById.get(nodeId);
-      while (current?.parent_id) {
-        const parent = nodeById.get(current.parent_id);
-        if (parent && parent.collapsed) return parent.id;
-        current = parent;
-      }
-      return null;
-    },
-    [nodeById],
-  );
-
-  const toggleCollapsed = useCallback(
-    (nodeId: string) => {
-      const current = docRef.current;
-      onDocChange({
-        ...current,
-        nodes: current.nodes.map((n) =>
-          n.id === nodeId ? { ...n, collapsed: !n.collapsed } : n,
-        ),
-      });
-    },
-    [onDocChange],
-  );
-
-  // Subtree size (recursive descendant count) — shown on the collapsed
-  // badge so user sees "how much is hidden".
-  const subtreeSize = useCallback(
-    (nodeId: string): number => {
-      const direct = childIdsByParent.get(nodeId) ?? [];
-      let total = direct.length;
-      for (const c of direct) total += subtreeSize(c);
-      return total;
-    },
-    [childIdsByParent],
-  );
+  const { childIdsByParent, nodeById, nearestCollapsedAncestor, toggleCollapsed, subtreeSize } =
+    useCollapsedTree(doc.nodes, docRef, onDocChange);
 
   const nodes = useMemo<Node<SketchNodeData>[]>(() => {
     // Parents first, children after — React Flow requirement.

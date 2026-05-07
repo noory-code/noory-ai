@@ -44,6 +44,13 @@ This release ships the **test baseline** that gates the extraction:
   (`canvases/sketch/useOrphanActorRefs.ts`). New folder:
   `viewer/src/canvases/sketch/`. SketchCanvas.tsx: 1476 → 1466 LOC
   (−10).
+- **Step 3 — collapsed-tree state**
+  (`canvases/sketch/useCollapsedTree.ts`). One hook now owns
+  `childIdsByParent`, `nodeById`, `nearestCollapsedAncestor`,
+  `toggleCollapsed` (reads `docRef` for mid-drag freshness per the
+  coupling map), and `subtreeSize`. The lookup map is also used by
+  drag/drop and keyboard, so the hook is the single source. SC:
+  1466 → 1409 LOC (−57).
 
 The extraction commits land incrementally over subsequent versions
 under this same v0.13.x line; each commit is a single concern moved
