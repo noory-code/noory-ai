@@ -161,6 +161,34 @@ min-h-screen` on the root and `min-height: 100dvh` fallback on
 
 ---
 
+## Drag-and-drop
+
+The canvas accepts drag-and-drop from the sidebar stencil. Drop
+behaviour:
+
+- **Hit-test order:** when computing which node "contains" the drop
+  point, iterate the doc nodes in **reverse** order so later-drawn
+  (visually on-top) nodes win over earlier-drawn parents. Without
+  this, dropping onto a nested sub-actor would land on the parent
+  actor instead.
+- **Free drop (no container):** the new node lands at the cursor
+  flow-point, centred. If it would overlap an existing top-level
+  sibling, slide it diagonally by 32 px steps (max 24 tries) until
+  free.
+- **Nested drop (inside a container):** the new node uses
+  parent-local coordinates relative to the container's top-left. If
+  it overlaps a sibling, the same 32 px diagonal nudge applies among
+  parent's direct children.
+- **Hierarchy edge:** dropping `actor` or `service` kind onto an
+  existing container also creates a dashed `decomposes` edge
+  parent→child so the user can edit the relationship like any other
+  edge.
+- **Reference kinds (`actor_ref`, `mission_ref`, `value_ref`,
+  `identity_ref`)** with no preset target id open a picker modal
+  before the node is created. Presets that already carry the master
+  id (the v0.11.5+ stencil generates per-master entries) skip the
+  picker.
+
 ## Keyboard shortcuts
 
 The canvas listens on `window` for keyboard shortcuts. The listener

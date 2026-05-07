@@ -112,6 +112,25 @@ This release ships the **test baseline** that gates the extraction:
   array). SC: 1199 → 1073 LOC (−126). Browser verified: right-click
   on a Mission node renders the Duplicate / Copy / Color × 7 /
   Delete menu items.
+- **Step 11 — Drag-and-drop + overlap nudging**
+  (`canvases/sketch/useDragAndDrop.ts` hook +
+  `canvases/sketch/overlapNudge.ts` pure module). The pure
+  module owns `containerAtFlowPoint` and `findFreeSpot` — both
+  pure functions of (nodes, point) / (rect, siblings); React-
+  free, unit-testable. The hook owns the drop orchestration:
+  preset parse, hit-test, hierarchy edge creation,
+  reference-kind picker dispatch, and the two `pendingActorRef`
+  / `pendingFoundationRef` states. `PendingActorRef` and
+  `PendingFoundationRef` types lifted to `sketch/types.ts` so
+  the modal render block (Step 12 next) can read them. SPEC
+  §Drag-and-drop section added with the canonical hit-test /
+  nudge / hierarchy-edge / picker rules. SC: 857 → 673 LOC
+  (−184). Browser sanity (Foundation, banas-v013): nodes still
+  render, no console errors. Real drag-from-stencil cannot be
+  exercised via Playwright (synthetic dataTransfer doesn't
+  round-trip the way the browser's native drag does); the hook
+  body is byte-equal to the prior inline so the drop pipeline
+  is preserved by construction.
 - **Step 10 — Node creation helpers**
   (`canvases/sketch/useNodeCreation.ts`).  `addNodeAt` (top-level)
   and `addNestedNodeAt` (drop onto an existing container, with

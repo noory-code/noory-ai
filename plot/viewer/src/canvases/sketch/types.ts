@@ -31,3 +31,31 @@ export interface NodePreset {
   ref_value_id?: string | null;
   ref_identity_id?: string | null;
 }
+
+/**
+ * Drag/drop intermediate state — set when a stencil drop opens a
+ * picker modal, cleared when the user resolves or cancels the
+ * modal.
+ */
+export type PendingActorRef =
+  | {
+      mode: "create";
+      preset: NodePreset;
+      pos: { x: number; y: number };
+      resolved: { parentId: string | null };
+    }
+  | { mode: "rewire"; nodeId: string };
+
+export type PendingFoundationRef =
+  | {
+      mode: "create";
+      refKind: "mission_ref" | "value_ref" | "identity_ref";
+      preset: NodePreset;
+      pos: { x: number; y: number };
+      resolved: { parentId: string | null };
+    }
+  | {
+      mode: "rewire";
+      refKind: "mission_ref" | "value_ref" | "identity_ref";
+      nodeId: string;
+    };

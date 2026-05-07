@@ -32,7 +32,6 @@ import { SketchContextMenu } from "./SketchContextMenu";
 import { SketchEdgeModal } from "./SketchEdgeModal";
 import { SketchInspector } from "./SketchInspector";
 import { SketchNode } from "./SketchNode";
-import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 import { applyAnchorChange } from "./sketch/applyAnchorChange";
@@ -43,6 +42,7 @@ import {
 } from "./sketch/constants";
 import { useContextMenus } from "./sketch/useContextMenus";
 import { useKeyboardShortcuts } from "./sketch/useKeyboardShortcuts";
+import { useDragAndDrop } from "./sketch/useDragAndDrop";
 import { useNodeCreation } from "./sketch/useNodeCreation";
 import type { NodePreset } from "./sketch/types";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
@@ -148,35 +148,6 @@ function SketchCanvasInner({
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
   const [edgeModalId, setEdgeModalId] = useState<string | null>(null);
   const { valueFlowOn, toggleValueFlow } = useValueFlow();
-  // Create mode runs while the user is dropping a fresh Actor ref from the
-  // stencil; rewire mode runs when the Inspector asks to repoint an
-  // existing orphan actor_ref at a different actor.
-  type PendingActorRef =
-    | {
-        mode: "create";
-        preset: NodePreset;
-        pos: { x: number; y: number };
-        resolved: { parentId: string | null };
-      }
-    | { mode: "rewire"; nodeId: string };
-  const [pendingActorRef, setPendingActorRef] = useState<PendingActorRef | null>(null);
-  // v0.10 Step 3: same shape as PendingActorRef, but with the ref kind so
-  // we know which master list to feed the picker and which id field to set.
-  type PendingFoundationRef =
-    | {
-        mode: "create";
-        refKind: "mission_ref" | "value_ref" | "identity_ref";
-        preset: NodePreset;
-        pos: { x: number; y: number };
-        resolved: { parentId: string | null };
-      }
-    | {
-        mode: "rewire";
-        refKind: "mission_ref" | "value_ref" | "identity_ref";
-        nodeId: string;
-      };
-  const [pendingFoundationRef, setPendingFoundationRef] =
-    useState<PendingFoundationRef | null>(null);
   const {
     inspectorNodeId,
     setInspectorNodeId,
@@ -376,175 +347,20 @@ function SketchCanvasInner({
     onDocChange,
   });
 
-  const handleDragOver = useCallback((event: React.DragEvent) => {
-    if (event.dataTransfer.types.includes("application/plot-preset")) {
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "copy";
-    }
-  }, []);
-
-  /** Hit-test: first node (in reverse doc order so top-rendered wins)
-   *  whose absolute bounding box contains the given flow point. */
-  const containerAtFlowPoint = useCallback(
-    (x: number, y: number): DocNode | null => {
-      // Nodes with a parent position relative to the parent; compute absolute.
-      const absPos = (n: DocNode): { x: number; y: number } => {
-        let ax = n.x;
-        let ay = n.y;
-        let cur: DocNode | undefined = n;
-        while (cur?.parent_id) {
-          const parent = nodeById.get(cur.parent_id);
-          if (!parent) break;
-          ax += parent.x;
-          ay += parent.y;
-          cur = parent;
-        }
-        return { x: ax, y: ay };
-      };
-      // Iterate in reverse so later-drawn nodes (on top) win.
-      for (let i = doc.nodes.length - 1; i >= 0; i--) {
-        const n = doc.nodes[i];
-        const { x: ax, y: ay } = absPos(n);
-        if (x >= ax && x <= ax + n.width && y >= ay && y <= ay + n.height) {
-          return n;
-        }
-      }
-      return null;
-    },
-    [doc.nodes, nodeById],
-  );
-
-  /**
-   * Slide a rectangle off siblings it overlaps. Walks diagonally by
-   * ``OFFSET_STEP`` px up to ``MAX_STEPS`` tries. Caller passes the list
-   * of existing node rects in the same coordinate space so nested drops
-   * can use parent-local coords and free drops can use absolute coords.
-   */
-  const findFreeSpot = useCallback(
-    (
-      baseX: number,
-      baseY: number,
-      w: number,
-      h: number,
-      siblings: { x: number; y: number; width: number; height: number }[],
-    ): { x: number; y: number } => {
-      const OFFSET_STEP = 32;
-      const MAX_STEPS = 24;
-      const overlaps = (
-        a: [number, number, number, number],
-        b: [number, number, number, number],
-      ): boolean =>
-        !(a[2] <= b[0] || b[2] <= a[0] || a[3] <= b[1] || b[3] <= a[1]);
-      let x = baseX;
-      let y = baseY;
-      for (let i = 0; i < MAX_STEPS; i++) {
-        const mine: [number, number, number, number] = [x, y, x + w, y + h];
-        const collision = siblings.some((s) =>
-          overlaps(mine, [s.x, s.y, s.x + s.width, s.y + s.height]),
-        );
-        if (!collision) return { x, y };
-        x += OFFSET_STEP;
-        y += OFFSET_STEP;
-      }
-      return { x, y }; // gave up — place it at the final nudged position
-    },
-    [],
-  );
-
-  const handleDrop = useCallback(
-    (event: React.DragEvent) => {
-      if (!flowRef.current) return;
-      const raw = event.dataTransfer.getData("application/plot-preset");
-      if (!raw) return;
-      event.preventDefault();
-      let preset: NodePreset;
-      try {
-        preset = JSON.parse(raw) as NodePreset;
-      } catch {
-        return;
-      }
-      const pos = flowRef.current.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-      const w = preset.width ?? DEFAULT_WIDTH;
-      const h = preset.height ?? DEFAULT_HEIGHT;
-
-      const container = containerAtFlowPoint(pos.x, pos.y);
-      const resolved = resolveDropTarget(
-        preset as StencilPreset,
-        container ? { id: container.id, kind: container.kind } : null,
-      );
-      if ("error" in resolved) {
-        window.alert(resolved.error);
-        return;
-      }
-      // v0.11.5 — if the preset already carries the target master id (the
-      // common case now that the stencil generates per-master presets),
-      // skip the picker entirely and create the ref directly. The picker
-      // is reserved for the rewire flow on orphan refs.
-      const presetHasRefId =
-        (preset.kind === "actor_ref" && preset.ref_actor_id) ||
-        (preset.kind === "mission_ref" && preset.ref_mission_id) ||
-        (preset.kind === "value_ref" && preset.ref_value_id) ||
-        (preset.kind === "identity_ref" && preset.ref_identity_id);
-      // actor_ref: only open picker if the preset has no ref_actor_id yet.
-      if (preset.kind === "actor_ref" && !presetHasRefId) {
-        setPendingActorRef({ mode: "create", preset, pos, resolved });
-        return;
-      }
-      // Foundation refs: only open picker for legacy unbound presets.
-      if (
-        (preset.kind === "mission_ref" ||
-          preset.kind === "value_ref" ||
-          preset.kind === "identity_ref") &&
-        !presetHasRefId
-      ) {
-        setPendingFoundationRef({
-          mode: "create",
-          refKind: preset.kind,
-          preset,
-          pos,
-          resolved,
-        });
-        return;
-      }
-      if (resolved.parentId) {
-        const parent = nodeById.get(resolved.parentId)!;
-        // Position relative to parent's top-left.
-        const parentAbs = (() => {
-          let ax = parent.x;
-          let ay = parent.y;
-          let cur: DocNode | undefined = parent;
-          while (cur?.parent_id) {
-            const p = nodeById.get(cur.parent_id);
-            if (!p) break;
-            ax += p.x;
-            ay += p.y;
-            cur = p;
-          }
-          return { x: ax, y: ay };
-        })();
-        const rawLocalX = Math.max(8, pos.x - parentAbs.x - w / 2);
-        const rawLocalY = Math.max(28, pos.y - parentAbs.y - h / 2);
-        const siblings = doc.nodes.filter((n) => n.parent_id === resolved.parentId);
-        const spot = findFreeSpot(rawLocalX, rawLocalY, w, h, siblings);
-        addNestedNodeAt({
-          parentId: resolved.parentId,
-          localX: spot.x,
-          localY: spot.y,
-          preset,
-        });
-      } else {
-        const rawX = pos.x - w / 2;
-        const rawY = pos.y - h / 2;
-        const siblings = doc.nodes.filter((n) => n.parent_id === null);
-        const spot = findFreeSpot(rawX, rawY, w, h, siblings);
-        addNodeAt(spot.x, spot.y, preset);
-      }
-    },
-    [addNodeAt, addNestedNodeAt, containerAtFlowPoint, doc.nodes, findFreeSpot, nodeById],
-  );
+  const {
+    handleDragOver,
+    handleDrop,
+    pendingActorRef,
+    setPendingActorRef,
+    pendingFoundationRef,
+    setPendingFoundationRef,
+  } = useDragAndDrop({
+    nodes: doc.nodes,
+    nodeById,
+    flowRef,
+    addNodeAt,
+    addNestedNodeAt,
+  });
 
   return (
     <div
