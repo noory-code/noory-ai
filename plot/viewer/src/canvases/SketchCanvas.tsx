@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -30,7 +30,7 @@ import {
 } from "./FoundationRefPicker";
 import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
-import { SketchEdgeModal, VALUE_FORM_COLORS } from "./SketchEdgeModal";
+import { SketchEdgeModal } from "./SketchEdgeModal";
 import { SketchInspector } from "./SketchInspector";
 import { SketchNode } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
@@ -38,6 +38,7 @@ import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 import { PROJECT_ANCHOR_ID } from "./sketch/constants";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
+import { useEdgesMemo } from "./sketch/useEdgesMemo";
 import { useInspectorRouting } from "./sketch/useInspectorRouting";
 import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
@@ -255,42 +256,7 @@ function SketchCanvasInner({
     setBodyModalNodeId,
   });
 
-  const edges = useMemo<Edge[]>(() => {
-    const out: Edge[] = [];
-    // v0.12.2 — same hide rule as the nodes memo: drop edges that point at
-    // the modal's hidden service-root.
-    const isHiddenRoot = (id: string): boolean =>
-      doc.canvas_kind === "service_detail" &&
-      !!doc.service_ref &&
-      id === doc.service_ref;
-    // User-drawn edges.
-    for (const e of doc.edges) {
-      if (isHiddenRoot(e.source) || isHiddenRoot(e.target)) continue;
-      const sAncestor = nearestCollapsedAncestor(e.source);
-      const tAncestor = nearestCollapsedAncestor(e.target);
-      const src = sAncestor ?? e.source;
-      const tgt = tAncestor ?? e.target;
-      if (sAncestor && tAncestor && sAncestor === tAncestor) continue;
-      if (src === tgt) continue;
-      const stroke =
-        valueFlowOn && e.value_form && e.value_form.length > 0
-          ? VALUE_FORM_COLORS[e.value_form[0]]
-          : undefined;
-      out.push({
-        id: e.id,
-        source: src,
-        target: tgt,
-        sourceHandle: sAncestor ? undefined : e.sourceHandle ?? undefined,
-        targetHandle: tAncestor ? undefined : e.targetHandle ?? undefined,
-        label: e.label || undefined,
-        style: {
-          ...(e.style === "dashed" ? { strokeDasharray: "6 4" } : {}),
-          ...(stroke ? { stroke, strokeWidth: e.value_form.length } : {}),
-        },
-      });
-    }
-    return out;
-  }, [doc.edges, doc.canvas_kind, doc.service_ref, nearestCollapsedAncestor, valueFlowOn]);
+  const edges = useEdgesMemo({ doc, nearestCollapsedAncestor, valueFlowOn });
 
   // Apply every position change (including mid-drag) so the node visually
   // tracks the cursor. The debounced PUT in App.tsx coalesces the stream

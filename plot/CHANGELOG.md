@@ -75,6 +75,19 @@ This release ships the **test baseline** that gates the extraction:
   this hook preserves. SC: 1394 → 1246 LOC (−148). Browser
   verified: Foundation renders 4 nodes (anchor + Mission +
   CoreValue + Identity), 0 edges, 3 ⚠ badges intact.
+- **Step 6 — Doc-to-edge transform**
+  (`canvases/sketch/edgeTransform.ts` pure +
+  `canvases/sketch/useEdgesMemo.ts` thin wrapper). The pure
+  module survives here because edges have far fewer callback
+  dependencies than nodes — only data + collapse hide rule +
+  value-flow recolour. Genuinely unit-testable in isolation if
+  someone later wants snapshot tests over thousands of edge
+  shapes. SC: 1246 → 1212 LOC (−34). Browser sanity (Foundation,
+  banas-v013): 0 edges (regression test still pinned), 0
+  console errors. Recolour path not exercised against this
+  fixture (no user-drawn edges); the pure code is byte-equal to
+  the prior inline so the recolour invariant is preserved by
+  construction.
 
 The extraction commits land incrementally over subsequent versions
 under this same v0.13.x line; each commit is a single concern moved
