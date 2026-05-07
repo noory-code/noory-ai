@@ -112,6 +112,18 @@ This release ships the **test baseline** that gates the extraction:
   array). SC: 1199 → 1073 LOC (−126). Browser verified: right-click
   on a Mission node renders the Duplicate / Copy / Color × 7 /
   Delete menu items.
+- **Step 12 — Modal / picker renders**
+  (`canvases/sketch/SketchModals.tsx`). One component renders the
+  four conditional modal blocks: SketchBodyModal (long-form node
+  body editor), SketchEdgeModal (edge label + dashed + value-form),
+  FoundationRefPicker (mission/value/identity ref picker), and
+  ActorRefPicker (actor ref picker, both create + rewire flows).
+  Inspector stays in the SC shell. Side-cleanup: extracted a
+  `parentAbsolute()` helper that the two picker callbacks both
+  used to walk the parent chain (was duplicated inline). SC drops
+  six imports (ActorRefPicker, FoundationRefPicker family,
+  SketchBodyModal, SketchEdgeModal, NodePreset). SC: 673 → 546
+  LOC (−127). One step under the 500-LOC threshold mark.
 - **Step 11 — Drag-and-drop + overlap nudging**
   (`canvases/sketch/useDragAndDrop.ts` hook +
   `canvases/sketch/overlapNudge.ts` pure module). The pure

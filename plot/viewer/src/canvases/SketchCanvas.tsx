@@ -20,20 +20,12 @@ import type {
   SketchEdge,
   SketchNode as DocNode,
 } from "../types";
-import { ActorRefPicker } from "./ActorRefPicker";
-import {
-  FoundationRefPicker,
-  masterKindForRef,
-  refIdFieldForKind,
-  type FoundationRefMasterKind,
-} from "./FoundationRefPicker";
-import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu } from "./SketchContextMenu";
-import { SketchEdgeModal } from "./SketchEdgeModal";
 import { SketchInspector } from "./SketchInspector";
 import { SketchNode } from "./SketchNode";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
+import { SketchModals } from "./sketch/SketchModals";
 import { applyAnchorChange } from "./sketch/applyAnchorChange";
 import {
   DEFAULT_HEIGHT,
@@ -44,7 +36,6 @@ import { useContextMenus } from "./sketch/useContextMenus";
 import { useKeyboardShortcuts } from "./sketch/useKeyboardShortcuts";
 import { useDragAndDrop } from "./sketch/useDragAndDrop";
 import { useNodeCreation } from "./sketch/useNodeCreation";
-import type { NodePreset } from "./sketch/types";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
 import { useEdgesMemo } from "./sketch/useEdgesMemo";
 import { useInspectorRouting } from "./sketch/useInspectorRouting";
@@ -420,147 +411,29 @@ function SketchCanvasInner({
           onClose={closeMenu}
         />
       )}
-      {bodyModalNodeId && (() => {
-        const target = doc.nodes.find((n) => n.id === bodyModalNodeId);
-        if (!target) return null;
-        return (
-          <SketchBodyModal
-            node={target}
-            onCommit={(patch) => updateNode(target.id, patch)}
-            onClose={() => setBodyModalNodeId(null)}
-            onDelete={() => handleNodesDelete([{ id: target.id } as Node])}
-          />
-        );
-      })()}
-      {edgeModalId && (() => {
-        const target = doc.edges.find((e) => e.id === edgeModalId);
-        if (!target) return null;
-        return (
-          <SketchEdgeModal
-            edge={target}
-            onCommit={(patch) => {
-              const current = docRef.current;
-              onDocChange({
-                ...current,
-                edges: current.edges.map((e) =>
-                  e.id === target.id ? { ...e, ...patch } : e,
-                ),
-              });
-            }}
-            onClose={() => setEdgeModalId(null)}
-            onDelete={() => handleEdgesDelete([{ id: target.id } as Edge])}
-          />
-        );
-      })()}
-      {pendingFoundationRef && (() => {
-        const masterKind: FoundationRefMasterKind | null = masterKindForRef(
-          pendingFoundationRef.refKind,
-        );
-        if (!masterKind) return null;
-        const masters =
-          masterKind === "mission"
-            ? availableMissions ?? []
-            : masterKind === "core_value"
-              ? availableValues ?? []
-              : availableIdentities ?? [];
-        const idField = refIdFieldForKind(pendingFoundationRef.refKind);
-        if (!idField) return null;
-        return (
-          <FoundationRefPicker
-            masterKind={masterKind}
-            masters={masters}
-            mode={pendingFoundationRef.mode}
-            onCancel={() => setPendingFoundationRef(null)}
-            onPick={(master) => {
-              if (pendingFoundationRef.mode === "rewire") {
-                updateNode(pendingFoundationRef.nodeId, {
-                  [idField]: master.id,
-                  label: `→ ${master.label || master.id}`,
-                } as Partial<DocNode>);
-                setPendingFoundationRef(null);
-                return;
-              }
-              const { preset, pos, resolved } = pendingFoundationRef;
-              const w = preset.width ?? DEFAULT_WIDTH;
-              const h = preset.height ?? DEFAULT_HEIGHT;
-              const resolvedPreset: NodePreset = {
-                ...preset,
-                label: `→ ${master.label || master.id}`,
-                [idField]: master.id,
-              };
-              if (resolved.parentId) {
-                const parent = nodeById.get(resolved.parentId)!;
-                let ax = parent.x;
-                let ay = parent.y;
-                let cur: DocNode | undefined = parent;
-                while (cur?.parent_id) {
-                  const p = nodeById.get(cur.parent_id);
-                  if (!p) break;
-                  ax += p.x;
-                  ay += p.y;
-                  cur = p;
-                }
-                addNestedNodeAt({
-                  parentId: resolved.parentId,
-                  localX: Math.max(8, pos.x - ax - w / 2),
-                  localY: Math.max(28, pos.y - ay - h / 2),
-                  preset: resolvedPreset,
-                });
-              } else {
-                addNodeAt(pos.x - w / 2, pos.y - h / 2, resolvedPreset);
-              }
-              setPendingFoundationRef(null);
-            }}
-          />
-        );
-      })()}
-      {pendingActorRef && (
-        <ActorRefPicker
-          nodes={availableActors ?? doc.nodes}
-          mode={pendingActorRef.mode}
-          onCancel={() => setPendingActorRef(null)}
-          onPick={(actor) => {
-            if (pendingActorRef.mode === "rewire") {
-              updateNode(pendingActorRef.nodeId, {
-                ref_actor_id: actor.id,
-                label: `→ ${actor.label || actor.id}`,
-              });
-              setPendingActorRef(null);
-              return;
-            }
-            const { preset, pos, resolved } = pendingActorRef;
-            const w = preset.width ?? DEFAULT_WIDTH;
-            const h = preset.height ?? DEFAULT_HEIGHT;
-            const resolvedPreset: NodePreset = {
-              ...preset,
-              label: `→ ${actor.label || actor.id}`,
-              ref_actor_id: actor.id,
-            };
-            if (resolved.parentId) {
-              const parent = nodeById.get(resolved.parentId)!;
-              let ax = parent.x;
-              let ay = parent.y;
-              let cur: DocNode | undefined = parent;
-              while (cur?.parent_id) {
-                const p = nodeById.get(cur.parent_id);
-                if (!p) break;
-                ax += p.x;
-                ay += p.y;
-                cur = p;
-              }
-              addNestedNodeAt({
-                parentId: resolved.parentId,
-                localX: Math.max(8, pos.x - ax - w / 2),
-                localY: Math.max(28, pos.y - ay - h / 2),
-                preset: resolvedPreset,
-              });
-            } else {
-              addNodeAt(pos.x - w / 2, pos.y - h / 2, resolvedPreset);
-            }
-            setPendingActorRef(null);
-          }}
-        />
-      )}
+      <SketchModals
+        doc={doc}
+        docRef={docRef}
+        onDocChange={onDocChange}
+        nodeById={nodeById}
+        updateNode={updateNode}
+        handleNodesDelete={handleNodesDelete}
+        handleEdgesDelete={handleEdgesDelete}
+        addNodeAt={addNodeAt}
+        addNestedNodeAt={addNestedNodeAt}
+        bodyModalNodeId={bodyModalNodeId}
+        setBodyModalNodeId={setBodyModalNodeId}
+        edgeModalId={edgeModalId}
+        setEdgeModalId={setEdgeModalId}
+        pendingFoundationRef={pendingFoundationRef}
+        setPendingFoundationRef={setPendingFoundationRef}
+        pendingActorRef={pendingActorRef}
+        setPendingActorRef={setPendingActorRef}
+        availableActors={availableActors}
+        availableMissions={availableMissions}
+        availableValues={availableValues}
+        availableIdentities={availableIdentities}
+      />
       <SketchInspector
         node={
           inspectorNodeId
