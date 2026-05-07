@@ -28,8 +28,16 @@ This release ships the **test baseline** that gates the extraction:
   hook that was never implemented (orphan from a planned-but-skipped
   feature). The actual undo/redo lives in
   `viewer/src/canvases/useProjectHistory.ts`; if dedicated coverage is
-  wanted there, that's a new feature task. Test suite now: 3 files /
-  9 tests, all passing.
+  wanted there, that's a new feature task.
+- **Regression test set added** at
+  `viewer/tests/SketchCanvas.regression.test.tsx` — four pinning
+  assertions for invariants the v0.13.2 bugs flipped: 0 auto-edges
+  on Foundation when `doc.edges` is empty (D-2026-05-04-A);
+  anchor renders 4 React Flow handles (D-2026-05-04-B); no "Auto
+  layout" button in the toolbar (D-2026-05-04-D); Inspector aside
+  appears after a node click. All four match real-browser state
+  (verified at the v0.13.3 baseline). Test suite now: 4 files /
+  13 tests, all passing.
 
 The extraction commits land incrementally over subsequent versions
 under this same v0.13.x line; each commit is a single concern moved
