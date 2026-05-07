@@ -27,6 +27,10 @@ export interface UseNodeCreationResult {
     localY: number;
     preset: NodePreset;
   }) => void;
+  /** Inspector "+ child" action. Creates a rule / content composition
+   *  child of ``parentId`` with kind-specific defaults (shape / colour /
+   *  icon / dimensions). No edge — composition is data-only. */
+  addCompositionChild: (parentId: string, kind: "rule" | "content") => void;
 }
 
 function freshId(prefix: "n" | "e"): string {
@@ -183,5 +187,69 @@ export function useNodeCreation({
     [docRef, onDocChange],
   );
 
-  return { addNodeAt, addNestedNodeAt };
+  const addCompositionChild = useCallback(
+    (parentId: string, kind: "rule" | "content") => {
+      const id = freshId("n");
+      const current = docRef.current;
+      const defaults =
+        kind === "rule"
+          ? { shape: "rectangle" as const, color: "#e7e5e4", icon: "shield" as const }
+          : { shape: "hexagon" as const, color: "#ddd6fe", icon: "package" as const };
+      const newNode: DocNode = {
+        id,
+        label: kind === "rule" ? "New rule" : "New content",
+        x: 0,
+        y: 0,
+        width: 140,
+        height: 60,
+        color: defaults.color,
+        shape: defaults.shape,
+        icon: defaults.icon,
+        kind,
+        parent_id: parentId,
+        collapsed: false,
+        is_root: false,
+        mission: "",
+        core_values: "",
+        identity: "",
+        what_we_do: "",
+        why: "",
+        direction: "",
+        definition: "",
+        description: "",
+        do: "",
+        dont: "",
+        ref_actor_id: null,
+        ref_mission_id: null,
+        ref_value_id: null,
+        ref_identity_id: null,
+        what: "",
+        value_created: "",
+        scope: "",
+        trigger: "",
+        how: "",
+        outcome: "",
+        target: "",
+        measurement: "",
+        order: null,
+        policy: "",
+        enforcement: "",
+        actor_permissions: {},
+        format: "",
+        producer_actor_id: null,
+        consumer_actor_id: null,
+        motivation: "",
+        pain: "",
+        side: null,
+        gives: "",
+        receives: "",
+        target_side: null,
+        theme: "",
+      };
+      onDocChange({ ...current, nodes: [...current.nodes, newNode] });
+    },
+    [docRef, onDocChange],
+  );
+
+  return { addNodeAt, addNestedNodeAt, addCompositionChild };
 }

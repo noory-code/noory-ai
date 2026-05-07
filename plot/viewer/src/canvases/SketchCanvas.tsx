@@ -5,7 +5,6 @@ import ReactFlow, {
   Controls,
   MiniMap,
   ReactFlowProvider,
-  type Node,
   type NodeChange,
   type ReactFlowInstance,
 } from "reactflow";
@@ -14,12 +13,16 @@ import type {
   SketchNode as DocNode,
 } from "../types";
 import { SketchContextMenu } from "./SketchContextMenu";
-import { SketchInspector } from "./SketchInspector";
 import { SketchNode } from "./SketchNode";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
+import { SketchInspectorBindings } from "./sketch/SketchInspectorBindings";
 import { SketchModals } from "./sketch/SketchModals";
 import { applyAnchorChange } from "./sketch/applyAnchorChange";
+import {
+  applyNodeChangesToDoc,
+  collectNodeChanges,
+} from "./sketch/nodeChanges";
 import { useContextMenus } from "./sketch/useContextMenus";
 import { useKeyboardShortcuts } from "./sketch/useKeyboardShortcuts";
 import { useDragAndDrop } from "./sketch/useDragAndDrop";
@@ -179,54 +182,26 @@ function SketchCanvasInner({
 
   const edges = useEdgesMemo({ doc, nearestCollapsedAncestor, valueFlowOn });
 
-  // Apply every position change (including mid-drag) so the node visually
-  // tracks the cursor. The debounced PUT in App.tsx coalesces the stream
-  // down to one save per 400 ms, so drags don't flood the server.
+  // React Flow's onNodesChange must dispatch atomically per the
+  // coupling map — keep this handler in the shell, but the pure
+  // bits (collect + apply) live in sketch/nodeChanges.ts and the
+  // anchor branch in sketch/applyAnchorChange.ts.
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      const posById = new Map<string, { x: number; y: number }>();
-      const dimById = new Map<string, { width: number; height: number }>();
-      for (const c of changes) {
-        if (c.type === "position" && c.position) posById.set(c.id, c.position);
-        // ``dimensions`` fires continuously during a NodeResizer drag.
-        // Applying it live to our state keeps the node visually shrinking
-        // while the handle is dragged, rather than snapping on release.
-        // The ``resizing`` flag filters out React Flow's own post-mount
-        // measurements so they don't clobber user-set sizes.
-        if (
-          c.type === "dimensions" &&
-          c.resizing &&
-          c.dimensions &&
-          c.dimensions.width > 0 &&
-          c.dimensions.height > 0
-        ) {
-          dimById.set(c.id, c.dimensions);
-        }
-      }
+      const { posById, dimById } = collectNodeChanges(changes);
       if (posById.size === 0 && dimById.size === 0) return;
-      // SPEC §Anchor: anchor mutations route via onAnchorChange.
       const anchorPatch = applyAnchorChange(posById, dimById);
       if (anchorPatch && onAnchorChange) onAnchorChange(anchorPatch);
       if (posById.size === 0 && dimById.size === 0) return;
-      const current = docRef.current;
-      onDocChange({
-        ...current,
-        nodes: current.nodes.map((n) => {
-          const p = posById.get(n.id);
-          const d = dimById.get(n.id);
-          if (!p && !d) return n;
-          return {
-            ...n,
-            ...(p ?? {}),
-            ...(d ? { width: d.width, height: d.height } : {}),
-          };
-        }),
-      });
+      onDocChange(applyNodeChangesToDoc(docRef.current, posById, dimById));
     },
     [onDocChange, onAnchorChange],
   );
 
-  const { addNodeAt, addNestedNodeAt } = useNodeCreation({ docRef, onDocChange });
+  const { addNodeAt, addNestedNodeAt, addCompositionChild } = useNodeCreation({
+    docRef,
+    onDocChange,
+  });
 
   const {
     handleConnect,
@@ -361,110 +336,23 @@ function SketchCanvasInner({
         availableValues={availableValues}
         availableIdentities={availableIdentities}
       />
-      <SketchInspector
-        node={
-          inspectorNodeId
-            ? doc.nodes.find((n) => n.id === inspectorNodeId) ?? null
-            : null
-        }
-        allNodes={doc.nodes}
-        availableActors={availableActors ?? doc.nodes.filter((n) => n.kind === "actor")}
+      <SketchInspectorBindings
+        doc={doc}
+        docRef={docRef}
+        onDocChange={onDocChange}
+        inspectorNodeId={inspectorNodeId}
+        setInspectorNodeId={setInspectorNodeId}
+        updateNode={updateNode}
+        handleNodesDelete={handleNodesDelete}
+        addCompositionChild={addCompositionChild}
+        setPendingActorRef={setPendingActorRef}
+        setPendingFoundationRef={setPendingFoundationRef}
+        availableActors={availableActors}
         availableMissions={availableMissions}
         availableValues={availableValues}
         availableIdentities={availableIdentities}
         projectPath={projectPath}
         projectId={projectId}
-        canvasKind={doc.canvas_kind}
-        onRepickActorRef={(nodeId) => setPendingActorRef({ mode: "rewire", nodeId })}
-        onRepickFoundationRef={(nodeId) => {
-          // v0.11.1 — find the orphan ref's kind and open the picker.
-          const target = doc.nodes.find((n) => n.id === nodeId);
-          if (
-            !target ||
-            (target.kind !== "mission_ref" &&
-              target.kind !== "value_ref" &&
-              target.kind !== "identity_ref")
-          ) {
-            return;
-          }
-          setPendingFoundationRef({
-            mode: "rewire",
-            refKind: target.kind,
-            nodeId,
-          });
-        }}
-        onDeleteNode={(nodeId) => handleNodesDelete([{ id: nodeId } as Node])}
-        onPatchNode={(patch) => {
-          if (!inspectorNodeId) return;
-          updateNode(inspectorNodeId, patch);
-        }}
-        onAddChild={(parentId, kind) => {
-          const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-          const current = docRef.current;
-          const defaults = kind === "rule"
-            ? { shape: "rectangle" as const, color: "#e7e5e4", icon: "shield" as const }
-            : { shape: "hexagon" as const, color: "#ddd6fe", icon: "package" as const };
-          const newNode: DocNode = {
-            id,
-            label: kind === "rule" ? "New rule" : "New content",
-                x: 0, y: 0,
-            width: 140,
-            height: 60,
-            color: defaults.color,
-            shape: defaults.shape,
-            icon: defaults.icon,
-            kind,
-            parent_id: parentId,
-            collapsed: false,
-            is_root: false,
-            mission: "",
-            core_values: "",
-            identity: "",
-            what_we_do: "",
-            why: "",
-            direction: "",
-            definition: "",
-            description: "",
-            do: "",
-            dont: "",
-            ref_actor_id: null,
-            ref_mission_id: null,
-            ref_value_id: null,
-            ref_identity_id: null,
-            what: "",
-            value_created: "",
-            scope: "",
-            trigger: "",
-            how: "",
-            outcome: "",
-            target: "",
-            measurement: "",
-            order: null,
-            policy: "",
-            enforcement: "",
-            actor_permissions: {},
-            format: "",
-            producer_actor_id: null,
-            consumer_actor_id: null,
-            motivation: "",
-            pain: "",
-            side: null,
-            gives: "",
-            receives: "",
-            target_side: null,
-            theme: "",
-          };
-          onDocChange({ ...current, nodes: [...current.nodes, newNode] });
-        }}
-        onPatchChild={(childId, patch) => updateNode(childId, patch)}
-        onRemoveChild={(childId) => {
-          const current = docRef.current;
-          onDocChange({
-            ...current,
-            nodes: current.nodes.filter((n) => n.id !== childId),
-          });
-        }}
-        onClose={() => setInspectorNodeId(null)}
       />
     </div>
   );

@@ -236,6 +236,46 @@
 
 ---
 
+### D-2026-05-08-D — SketchCanvas split: stop at 360 LOC (not 150)
+
+- **What:** The SketchCanvas split lands at 360 LOC, not the
+  plan's 150-LOC design target.
+- **Why stopped:** The plan's "ideal shell ≈ 150 LOC" was
+  aspirational. Realistic floor for the current shell shape is
+  ~330 LOC, broken down as:
+  - ~50 LOC imports (16 sketch hooks + reactflow + types)
+  - ~55 LOC `SketchCanvasProps` interface with JSDoc — the
+    component's public API surface; cannot compress without
+    losing documentation
+  - ~10 LOC component setup (refs + 2 modal-id useStates)
+  - ~140 LOC hook composition (12 hooks × ~10 LOC each for
+    args + destructured returns)
+  - ~15 LOC `handleNodesChange` shell (must stay in shell
+    per the coupling map)
+  - ~80 LOC JSX render block (ReactFlow root + Toolbar +
+    SketchModals + Inspector + ContextMenu)
+- **Further compression would mean** introducing a
+  `useSketchCanvasModel(props)` umbrella hook that returns ~30
+  fields the JSX consumes — exactly the **Candidate B
+  controller pattern rejected in D-2026-05-08-A**. Going there
+  now would re-concentrate the previously-decomposed concerns
+  into a single 30-output return value, undoing the SRP win.
+- **Net result:** SC went from **1476 LOC → 360 LOC (76%
+  reduction)**. The original violation (CLAUDE.md "Review for
+  splitting when a file exceeds 500 lines") is resolved with
+  140-LOC headroom. 16 extracted modules under
+  `canvases/sketch/` each have a single responsibility and
+  unit-testable surface (4 of them — `nodeTransform`,
+  `edgeTransform`, `overlapNudge`, `applyAnchorChange`,
+  `nodeChanges`, `useOrphanActorRefs`,
+  `useCollapsedTree.toggleCollapsed` — are pure or
+  near-pure modules).
+- **Approval:** Pending — user can override and request the
+  controller-hook step if the 360-LOC floor is unacceptable.
+- **Spec impact:** none.
+
+---
+
 ### D-2026-05-08-C — Cursor-flicker fix on node hover
 
 - **What:** Set `.react-flow__handle { cursor: pointer }` (matching

@@ -112,6 +112,31 @@ This release ships the **test baseline** that gates the extraction:
   array). SC: 1199 → 1073 LOC (−126). Browser verified: right-click
   on a Mission node renders the Duplicate / Copy / Color × 7 /
   Delete menu items.
+- **Step 14 — Shell consolidation; split complete.** Three
+  more reductions land:
+  - `addCompositionChild(parentId, kind)` factored into
+    `useNodeCreation`. The Inspector's `onAddChild` (60 lines
+    of inline default-everything DocNode boilerplate) becomes
+    a one-line callback.
+  - `SketchInspectorBindings.tsx` (new) wraps the SketchInspector
+    with all the SC-side glue (which node is selected, repick /
+    delete / patch / add-child routing). SC's render block goes
+    from ~100 lines of inline JSX to one
+    `<SketchInspectorBindings ... />` element.
+  - `nodeChanges.ts` (new pure module) exposes
+    `collectNodeChanges(changes)` and
+    `applyNodeChangesToDoc(doc, posById, dimById)`.
+    `handleNodesChange` shrinks to 10 lines while still living
+    in the shell (React Flow's `onNodesChange` requires
+    atomic dispatch per the coupling map).
+  Final SC LOC: **1476 → 360 (75.6 % reduction).** 16 hook
+  modules + 5 pure helpers under `viewer/src/canvases/sketch/`
+  each carry a single responsibility. The 360-LOC floor
+  (instead of the plan's 150 design target) is recorded in
+  [D-2026-05-08-D](./docs/DECISIONS.md): pushing further would
+  reintroduce the controller-hook god scope that
+  D-2026-05-08-A explicitly rejected.
+
 - **Step 13 — Small flow handlers**
   (`canvases/sketch/useFlowHandlers.ts`). One hook bundles
   `handleConnect` (new edge), `handleEdgesChange` (no-op stub
