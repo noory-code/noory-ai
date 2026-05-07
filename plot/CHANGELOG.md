@@ -112,6 +112,25 @@ This release ships the **test baseline** that gates the extraction:
   array). SC: 1199 → 1073 LOC (−126). Browser verified: right-click
   on a Mission node renders the Duplicate / Copy / Color × 7 /
   Delete menu items.
+- **Step 13 — Small flow handlers**
+  (`canvases/sketch/useFlowHandlers.ts`). One hook bundles
+  `handleConnect` (new edge), `handleEdgesChange` (no-op stub
+  React Flow still requires), `handleNodesDelete` (with anchor
+  + legacy project-kind protection per SPEC §Anchor),
+  `handleEdgesDelete`, `handlePaneDoubleClick` (add node where
+  the user double-clicked, only on the React Flow pane), and
+  `handleSelectionChange` (selection ref sync). `handleNodesChange`
+  stays in the SC shell — its mid-drag `docRef.current` read is
+  load-bearing per the coupling map and would regress if the
+  React Flow event were dispatched through a longer call chain.
+  Cleanup: SC drops six unused reactflow type imports
+  (`Connection`, `Edge`, `EdgeChange`, `OnSelectionChangeParams`,
+  the `SketchEdge` type, the constants block), and the
+  `applyEdgeChanges` / `applyNodeChanges` re-export at the
+  bottom of the file (dead code — nothing imports them from SC).
+  **SC LOC: 546 → 472 (−74) — under the 500-LOC threshold for
+  the first time since the file was born.** Gate 2 satisfied;
+  one-step-from-final-shell remains.
 - **Step 12 — Modal / picker renders**
   (`canvases/sketch/SketchModals.tsx`). One component renders the
   four conditional modal blocks: SketchBodyModal (long-form node
