@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.3] — 2026-05-08
+
+### Changed — **SketchCanvas refactor: test baseline + extraction in progress**
+
+The viewer's central component (`canvases/SketchCanvas.tsx`, 1476
+LOC, 16 concerns in one closure) is being split down to a thin React
+Flow shell (target ≈ 150 LOC) per
+[D-2026-05-08-A](./docs/DECISIONS.md). Approach: Candidate A
+(modified) — surgical responsibility split with pure transforms
+(nodes / edges / overlap math) extracted as `.ts` modules, hooks for
+the rest, React Flow prop wiring stays in the shell.
+
+This release ships the **test baseline** that gates the extraction:
+
+- **JSDOM `localStorage` mock added** to `viewer/tests/setup.ts`.
+  JSDOM previously shipped a placeholder without `getItem` /
+  `setItem` methods, which crashed any test that mounted a component
+  calling `window.localStorage.getItem(...)` (notably `SketchInspector`'s
+  width-toggle persistence). The previously-broken
+  `SketchCanvas.smoke.test.tsx` is green again.
+- **`viewer/tests/useSketchHistory.test.ts` deleted.** It imported a
+  hook that was never implemented (orphan from a planned-but-skipped
+  feature). The actual undo/redo lives in
+  `viewer/src/canvases/useProjectHistory.ts`; if dedicated coverage is
+  wanted there, that's a new feature task. Test suite now: 3 files /
+  9 tests, all passing.
+
+The extraction commits land incrementally over subsequent versions
+under this same v0.13.x line; each commit is a single concern moved
+out, browser-verified per the plan's matrix.
+
 ## [0.13.2] — 2026-05-05
 
 ### Added — **Foundation SPEC + decision log**

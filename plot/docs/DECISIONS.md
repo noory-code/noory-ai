@@ -233,3 +233,40 @@
 - **Approval:** **Accepted** by user, 2026-05-05.
 - **Spec impact:** none — meta rule about how the assistant operates
   inside `plot/`.
+
+---
+
+### D-2026-05-08-A — SketchCanvas split: Candidate A (modified)
+
+- **What:** Split `plot/viewer/src/canvases/SketchCanvas.tsx` (1476
+  LOC, 16 concerns) down to a thin React Flow shell (target ≈ 150
+  LOC, hard ceiling 200 LOC) using **Candidate A modified**: surgical
+  responsibility split per ARCHITECTURE.md, with the two pure
+  transforms (nodes / edges) and overlap math extracted as plain
+  `.ts` modules (no React imports) — borrowing Candidate B's domain
+  purity for the parts where it actually fits.
+- **Why:**
+  - Candidate B (Clean Architecture controller) rejected: would
+    re-concentrate `docRef`'s 19+ read sites into one
+    `useSketchController.ts` — same god scope, different filename.
+    The pure-transform win is real but only for two of 16 concerns,
+    so we cherry-pick that part.
+  - Candidate C (mechanical 4-file split) rejected: trades visible
+    LOC for unchanged coupling. The next bug still has 1476-LOC
+    blast radius across 4 files, just spread thinner.
+  - Candidate A surgically isolates the 5 easy concerns (memos,
+    inspector routing, value-flow, collapse, orphan) into
+    single-purpose hooks, and keeps React Flow's prop wiring in the
+    shell where it must live (per coupling map: `onNodesChange`,
+    `onEdgesChange`, etc. need single handlers).
+- **Plan:** see [`/Users/woogis/.claude/plans/wiggly-herding-pixel.md`](../../../.claude/plans/wiggly-herding-pixel.md)
+  — Pre-Step 0 (test baseline) + Steps 1–14 (extraction in
+  risk-ascending order), each commit-sized and browser-verified per
+  the matrix.
+- **Layout:** new files under `plot/viewer/src/canvases/sketch/`.
+  16 files total (10 hooks + 4 pure modules + 1 modal component +
+  1 shell remainder).
+- **Approval:** **Accepted** by user, 2026-05-08.
+- **Spec impact:** none on behaviour. Some load-bearing comments
+  surface as new SPEC entries before extraction (Steps 5/7/9/11)
+  per the plan's "Comments policy".
