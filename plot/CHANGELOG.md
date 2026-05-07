@@ -112,6 +112,22 @@ This release ships the **test baseline** that gates the extraction:
   array). SC: 1199 → 1073 LOC (−126). Browser verified: right-click
   on a Mission node renders the Duplicate / Copy / Color × 7 /
   Delete menu items.
+- **Step 9 — Window keyboard shortcuts**
+  (`canvases/sketch/useKeyboardShortcuts.ts`). One hook owns the
+  `window.addEventListener("keydown")` effect and the canonical
+  combo set (Cmd+Z / Cmd+Shift+Z / Cmd+Y / Cmd+C / Cmd+V /
+  Cmd+D / Cmd+A). The editable-target guard
+  (`INPUT` / `TEXTAREA` / `contentEditable`) is preserved
+  byte-equally — typing in Inspector text fields still does NOT
+  trigger canvas undo. SPEC §Keyboard shortcuts added with the
+  full combo table and the load-bearing guard note. SC: 1073 →
+  1030 LOC (−43). Browser verified: synthetic `keydown` reaches
+  the listener and `preventDefault` fires for Cmd+A; the
+  imperative `setNodes` selection path doesn't survive a
+  Playwright synthetic dispatch (React Flow re-renders from our
+  `useNodesMemo` and overwrites the imperative state) — that's a
+  pre-existing limitation of synthetic testing, not a regression
+  of this refactor.
 
 ### Fixed — **Cursor flicker on node hover**
 

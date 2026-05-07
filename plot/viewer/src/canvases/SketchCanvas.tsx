@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -44,6 +44,7 @@ import {
   PROJECT_ANCHOR_ID,
 } from "./sketch/constants";
 import { useContextMenus } from "./sketch/useContextMenus";
+import { useKeyboardShortcuts } from "./sketch/useKeyboardShortcuts";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
 import { useEdgesMemo } from "./sketch/useEdgesMemo";
 import { useInspectorRouting } from "./sketch/useInspectorRouting";
@@ -538,59 +539,15 @@ function SketchCanvasInner({
     addNodeAt,
   });
 
-  // ---------------- Keyboard shortcuts ----------------
-
-  useEffect(() => {
-    const isEditableTarget = (t: EventTarget | null) => {
-      if (!(t instanceof HTMLElement)) return false;
-      const tag = t.tagName;
-      return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (isEditableTarget(e.target)) return;
-      const meta = e.metaKey || e.ctrlKey;
-      if (meta && !e.shiftKey && e.key.toLowerCase() === "z") {
-        e.preventDefault();
-        onUndo();
-        return;
-      }
-      if ((meta && e.shiftKey && e.key.toLowerCase() === "z") || (meta && e.key.toLowerCase() === "y")) {
-        e.preventDefault();
-        onRedo();
-        return;
-      }
-      if (meta && e.key.toLowerCase() === "c") {
-        if (selectedNodeIds.current.length > 0) {
-          e.preventDefault();
-          clipboard.copy(docRef.current, selectedNodeIds.current);
-        }
-        return;
-      }
-      if (meta && e.key.toLowerCase() === "v") {
-        if (clipboard.hasClip()) {
-          e.preventDefault();
-          onDocChange(clipboard.paste(docRef.current));
-        }
-        return;
-      }
-      if (meta && e.key.toLowerCase() === "d") {
-        if (selectedNodeIds.current.length > 0) {
-          e.preventDefault();
-          onDocChange(clipboard.duplicate(docRef.current, selectedNodeIds.current));
-        }
-        return;
-      }
-      if (meta && e.key.toLowerCase() === "a") {
-        e.preventDefault();
-        if (flowRef.current) {
-          flowRef.current.setNodes((ns) => ns.map((n) => ({ ...n, selected: true })));
-          flowRef.current.setEdges((es) => es.map((edge) => ({ ...edge, selected: true })));
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [clipboard, onDocChange, onRedo, onUndo]);
+  useKeyboardShortcuts({
+    docRef,
+    flowRef,
+    selectedNodeIds,
+    clipboard,
+    onUndo,
+    onRedo,
+    onDocChange,
+  });
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     if (event.dataTransfer.types.includes("application/plot-preset")) {

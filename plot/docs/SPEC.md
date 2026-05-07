@@ -161,6 +161,27 @@ min-h-screen` on the root and `min-height: 100dvh` fallback on
 
 ---
 
+## Keyboard shortcuts
+
+The canvas listens on `window` for keyboard shortcuts. The listener
+is a no-op when focus is inside an editable target (`INPUT`,
+`TEXTAREA`, or `contentEditable`) — so typing in the Inspector text
+fields never triggers canvas actions.
+
+| Combo | Action |
+|---|---|
+| `Cmd/Ctrl + Z` | Undo (one step). |
+| `Cmd/Ctrl + Shift + Z` *or* `Cmd/Ctrl + Y` | Redo (one step). |
+| `Cmd/Ctrl + C` | Copy currently-selected nodes to the in-app clipboard. No-op if nothing is selected. |
+| `Cmd/Ctrl + V` | Paste from the in-app clipboard. No-op if the clipboard is empty. |
+| `Cmd/Ctrl + D` | Duplicate currently-selected nodes in place. |
+| `Cmd/Ctrl + A` | Select all nodes and edges on the active canvas (uses React Flow's `setNodes` / `setEdges` directly, bypassing `onNodesChange`). |
+
+> **Editable-target guard is load-bearing.** Without it, `Cmd+Z`
+> inside a text input would undo the canvas doc instead of the local
+> text edit, which is surprising and destructive. Any keyboard hook
+> refactor must preserve the guard.
+
 ## Things explicitly NOT in this Foundation spec yet
 
 - Behaviour of the Anchor's Inspector (open / closed?).
