@@ -36,7 +36,9 @@ import { SketchNode, type SketchNodeData } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
+import { PROJECT_ANCHOR_ID } from "./sketch/constants";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
+import { useInspectorRouting } from "./sketch/useInspectorRouting";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
 import { useValueFlow } from "./sketch/useValueFlow";
 
@@ -130,12 +132,6 @@ export interface SketchCanvasProps {
   onAnchorChange?: (patch: Partial<import("../types").AnchorPlacement>) => void;
 }
 
-/**
- * v0.13 Phase 0: id reserved for the synthetic project anchor node injected
- * into Foundation/Actors/Services canvases. Never written to canvas.json —
- * the position lives in ``ProjectDoc.anchors``.
- */
-const PROJECT_ANCHOR_ID = "__project_anchor__";
 
 export function SketchCanvas(props: SketchCanvasProps) {
   return (
@@ -209,23 +205,19 @@ function SketchCanvasInner({
       };
   const [pendingFoundationRef, setPendingFoundationRef] =
     useState<PendingFoundationRef | null>(null);
-  const [inspectorNodeId, setInspectorNodeId] = useState<string | null>(null);
-
-  // v0.2 multi-canvas: honour ``selectNodeId`` arrival (e.g., jumping from
-  // an actor_ref on Services to its target on Actors). Runs once per
-  // distinct incoming id; afterwards the App clears its URL param.
-  const lastAppliedSelectRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!selectNodeId) return;
-    if (lastAppliedSelectRef.current === selectNodeId) return;
-    if (!doc.nodes.some((n) => n.id === selectNodeId)) return;
-    setInspectorNodeId(selectNodeId);
-    lastAppliedSelectRef.current = selectNodeId;
-    // Centre the viewport on the node, best-effort.
-    const inst = flowRef.current;
-    if (inst) inst.fitView({ nodes: [{ id: selectNodeId }], padding: 0.5, duration: 300 });
-    onSelectionConsumed?.();
-  }, [selectNodeId, doc.nodes, onSelectionConsumed]);
+  const {
+    inspectorNodeId,
+    setInspectorNodeId,
+    onNodeClick: handleNodeClick,
+    onNodeDoubleClick: handleNodeDoubleClick,
+    onPaneClick: handlePaneClick,
+  } = useInspectorRouting({
+    nodes: doc.nodes,
+    flowRef,
+    selectNodeId,
+    onSelectionConsumed,
+    onNodeDrill,
+  });
 
   const orphanActorRefIds = useOrphanActorRefs(doc.nodes, availableActors);
 
@@ -1127,16 +1119,9 @@ function SketchCanvasInner({
         onNodeContextMenu={openNodeMenu}
         onEdgeContextMenu={openEdgeMenu}
         onEdgeDoubleClick={(_evt, edge) => setEdgeModalId(edge.id)}
-        onNodeClick={(_evt, n) => {
-          // v0.13 Phase 0: synthetic anchor is read-only — no Inspector.
-          if (n.id === PROJECT_ANCHOR_ID) return;
-          setInspectorNodeId(n.id);
-        }}
-        onNodeDoubleClick={(_evt, n) => {
-          if (n.id === PROJECT_ANCHOR_ID) return;
-          onNodeDrill?.(n.id);
-        }}
-        onPaneClick={() => setInspectorNodeId(null)}
+        onNodeClick={handleNodeClick}
+        onNodeDoubleClick={handleNodeDoubleClick}
+        onPaneClick={handlePaneClick}
         onPaneContextMenu={openPaneMenu}
         onInit={(inst) => {
           flowRef.current = inst;

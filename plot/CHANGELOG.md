@@ -51,6 +51,15 @@ This release ships the **test baseline** that gates the extraction:
   coupling map), and `subtreeSize`. The lookup map is also used by
   drag/drop and keyboard, so the hook is the single source. SC:
   1466 → 1409 LOC (−57).
+- **Step 4 — Inspector routing**
+  (`canvases/sketch/useInspectorRouting.ts`) plus
+  `canvases/sketch/constants.ts` for the shared
+  `PROJECT_ANCHOR_ID`. The hook owns `inspectorNodeId` state, the
+  `selectNodeId` jump-and-fit effect, and the three React Flow
+  callbacks (`onNodeClick`, `onNodeDoubleClick`, `onPaneClick`),
+  including the anchor read-only guard. SC: 1409 → 1394 LOC
+  (−15). Browser verified: clicking Mission opens Inspector;
+  clicking the anchor does not.
 
 The extraction commits land incrementally over subsequent versions
 under this same v0.13.x line; each commit is a single concern moved
