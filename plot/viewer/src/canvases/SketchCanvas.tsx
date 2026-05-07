@@ -29,7 +29,7 @@ import {
   type FoundationRefMasterKind,
 } from "./FoundationRefPicker";
 import { SketchBodyModal } from "./SketchBodyModal";
-import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
+import { SketchContextMenu } from "./SketchContextMenu";
 import { SketchEdgeModal } from "./SketchEdgeModal";
 import { SketchInspector } from "./SketchInspector";
 import { SketchNode } from "./SketchNode";
@@ -37,7 +37,13 @@ import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 import { applyAnchorChange } from "./sketch/applyAnchorChange";
-import { PROJECT_ANCHOR_ID } from "./sketch/constants";
+import {
+  DEFAULT_COLOR,
+  DEFAULT_HEIGHT,
+  DEFAULT_WIDTH,
+  PROJECT_ANCHOR_ID,
+} from "./sketch/constants";
+import { useContextMenus } from "./sketch/useContextMenus";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
 import { useEdgesMemo } from "./sketch/useEdgesMemo";
 import { useInspectorRouting } from "./sketch/useInspectorRouting";
@@ -47,9 +53,6 @@ import { useValueFlow } from "./sketch/useValueFlow";
 
 const NODE_TYPES = { sketch: SketchNode } as const;
 
-const DEFAULT_WIDTH = 180;
-const DEFAULT_HEIGHT = 80;
-const DEFAULT_COLOR = "#ffffff";
 
 /**
  * Optional stencil preset used when a node is dropped from the palette or
@@ -144,12 +147,6 @@ export function SketchCanvas(props: SketchCanvasProps) {
   );
 }
 
-interface MenuState {
-  x: number;
-  y: number;
-  items: ContextMenuItem[];
-}
-
 function SketchCanvasInner({
   doc,
   onDocChange,
@@ -175,7 +172,6 @@ function SketchCanvasInner({
   const flowRef = useRef<ReactFlowInstance | null>(null);
   const selectedNodeIds = useRef<string[]>([]);
   const clipboard = useSketchClipboard();
-  const [menu, setMenu] = useState<MenuState | null>(null);
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
   const [edgeModalId, setEdgeModalId] = useState<string | null>(null);
   const { valueFlowOn, toggleValueFlow } = useValueFlow();
@@ -532,137 +528,15 @@ function SketchCanvasInner({
 
   // ---------------- Context menu ----------------
 
-  const closeMenu = useCallback(() => setMenu(null), []);
-
-  const openNodeMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      event.preventDefault();
-      const colors = ["#ffffff", "#fecaca", "#fed7aa", "#fef08a", "#bbf7d0", "#bae6fd", "#ddd6fe"];
-      const docNode = docRef.current.nodes.find((n) => n.id === node.id);
-      const isProject = docNode?.kind === "project";
-      setMenu({
-        x: event.clientX,
-        y: event.clientY,
-        items: [
-          {
-            label: "Duplicate",
-            disabled: isProject,
-            onSelect: () => {
-              if (isProject) return;
-              const current = docRef.current;
-              onDocChange(clipboard.duplicate(current, [node.id]));
-            },
-          },
-          {
-            label: "Copy",
-            onSelect: () => {
-              clipboard.copy(docRef.current, [node.id]);
-            },
-          },
-          { label: "", divider: true, onSelect: () => {} },
-          ...colors.map((hex) => ({
-            label: `Color ${hex}`,
-            onSelect: () => {
-              const current = docRef.current;
-              onDocChange({
-                ...current,
-                nodes: current.nodes.map((n) =>
-                  n.id === node.id ? { ...n, color: hex } : n,
-                ),
-              });
-            },
-          })),
-          { label: "", divider: true, onSelect: () => {} },
-          {
-            label: isProject ? "Delete (Project anchor is protected)" : "Delete",
-            danger: !isProject,
-            disabled: isProject,
-            onSelect: () => {
-              if (isProject) return;
-              handleNodesDelete([node]);
-            },
-          },
-        ],
-      });
-    },
-    [onDocChange, clipboard, handleNodesDelete],
-  );
-
-  const openEdgeMenu = useCallback(
-    (event: React.MouseEvent, edge: Edge) => {
-      event.preventDefault();
-      setMenu({
-        x: event.clientX,
-        y: event.clientY,
-        items: [
-          {
-            label: "Toggle dashed/solid",
-            onSelect: () => {
-              const current = docRef.current;
-              onDocChange({
-                ...current,
-                edges: current.edges.map((e) =>
-                  e.id === edge.id
-                    ? { ...e, style: e.style === "dashed" ? "solid" : "dashed" }
-                    : e,
-                ),
-              });
-            },
-          },
-          {
-            label: "Set label",
-            onSelect: () => {
-              const newLabel = window.prompt("Edge label:", edge.label ? String(edge.label) : "");
-              if (newLabel === null) return;
-              const current = docRef.current;
-              onDocChange({
-                ...current,
-                edges: current.edges.map((e) =>
-                  e.id === edge.id ? { ...e, label: newLabel } : e,
-                ),
-              });
-            },
-          },
-          { label: "", divider: true, onSelect: () => {} },
-          {
-            label: "Delete",
-            danger: true,
-            onSelect: () => handleEdgesDelete([edge]),
-          },
-        ],
-      });
-    },
-    [onDocChange, handleEdgesDelete],
-  );
-
-  const openPaneMenu = useCallback(
-    (event: React.MouseEvent) => {
-      event.preventDefault();
-      if (!flowRef.current) return;
-      const flowPos = flowRef.current.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-      setMenu({
-        x: event.clientX,
-        y: event.clientY,
-        items: [
-          {
-            label: "Add node here",
-            onSelect: () =>
-              addNodeAt(flowPos.x - DEFAULT_WIDTH / 2, flowPos.y - DEFAULT_HEIGHT / 2),
-          },
-          {
-            label: "Paste",
-            disabled: !clipboard.hasClip(),
-            onSelect: () =>
-              onDocChange(clipboard.paste(docRef.current, { x: 0, y: 0 })),
-          },
-        ],
-      });
-    },
-    [addNodeAt, clipboard, onDocChange],
-  );
+  const { menu, closeMenu, openNodeMenu, openEdgeMenu, openPaneMenu } = useContextMenus({
+    docRef,
+    flowRef,
+    onDocChange,
+    clipboard,
+    handleNodesDelete,
+    handleEdgesDelete,
+    addNodeAt,
+  });
 
   // ---------------- Keyboard shortcuts ----------------
 

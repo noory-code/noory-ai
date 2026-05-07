@@ -101,6 +101,18 @@ This release ships the **test baseline** that gates the extraction:
   extraction of the prior inline so the persistence invariant is
   preserved by construction.
 
+- **Step 8 — Three context menus**
+  (`canvases/sketch/useContextMenus.ts`). One hook owns
+  `menu` state, `openPaneMenu`, `openNodeMenu`, `openEdgeMenu`,
+  `closeMenu`. `MenuState` type lives in the hook; `DEFAULT_WIDTH`
+  / `DEFAULT_HEIGHT` / `DEFAULT_COLOR` lifted to
+  `sketch/constants.ts` so the future `useNodeCreation` (Step 10)
+  can reuse them without circular imports. Color palette also
+  lifted to a const inside the hook (was a per-call inline
+  array). SC: 1199 → 1073 LOC (−126). Browser verified: right-click
+  on a Mission node renders the Duplicate / Copy / Color × 7 /
+  Delete menu items.
+
 ### Fixed — **Cursor flicker on node hover**
 
 `.react-flow__handle` now uses `cursor: pointer` (matching the node
