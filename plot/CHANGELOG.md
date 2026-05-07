@@ -101,6 +101,19 @@ This release ships the **test baseline** that gates the extraction:
   extraction of the prior inline so the persistence invariant is
   preserved by construction.
 
+### Fixed — **Cursor flicker on node hover**
+
+`.react-flow__handle` now uses `cursor: pointer` (matching the node
+body); `cursor: crosshair` is restored only while a connection is
+actively being drawn (`.connecting` / `.connectingfrom`). Previously
+React Flow's default crosshair on handles fought our pointer rule on
+the node body — moving the mouse across a node would flip the cursor
+back and forth (described by the user as "보자기 / 가위 계속 바뀌는",
+paper / scissors swapping). The v0.13.2 hover tone-down made handles
+visually quieter but left the cursor invariant ambiguous; this fix
+addresses the root cause. (D-2026-05-08-C, SPEC §Hover behaviour
+updated.)
+
 The extraction commits land incrementally over subsequent versions
 under this same v0.13.x line; each commit is a single concern moved
 out, browser-verified per the plan's matrix.

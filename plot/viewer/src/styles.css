@@ -26,6 +26,12 @@ body { margin: 0; }
   border: 1.5px solid rgb(148 163 184) !important; /* slate-400 */
   background: white !important;
   opacity: 0;
+  /* v0.13.4 — match the node body's ``cursor: pointer`` so that
+     moving the mouse across a node doesn't flicker the cursor
+     between pointer (node) and crosshair (React Flow's default
+     handle cursor). Crosshair is restored only while a connection
+     is actually being drawn (``.connecting`` / ``.connectingfrom``). */
+  cursor: pointer !important;
   transition: opacity 120ms ease, transform 120ms ease, border-color 120ms ease;
 }
 /* v0.13.2 — only reveal handles on direct hover, not whenever the cursor
@@ -43,5 +49,6 @@ body { margin: 0; }
 .react-flow__handle.connecting,
 .react-flow__handle.connectingfrom {
   opacity: 1;
+  cursor: crosshair !important;
   border-color: rgb(79 70 229) !important;
 }

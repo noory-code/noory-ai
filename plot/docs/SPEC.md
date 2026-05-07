@@ -123,10 +123,18 @@ bottom) are *not* always visible.
 | Cursor over the node body | Faintly visible (`opacity: 0.55`) |
 | Cursor on a specific handle | Fully visible, scaled 1.25×, indigo border |
 
+The cursor stays `pointer` everywhere on the node region — body and
+handles alike — so moving the mouse across a node never flickers the
+cursor between pointer and crosshair. Crosshair is reserved for the
+moment a connection is actually being drawn
+(`.react-flow__handle.connecting` / `.connectingfrom`); that's the
+only time the user is doing something the crosshair signals.
+
 > **Why:** the previous "all four handles pop the moment the cursor
 > approaches the node" felt noisy and read like the node was
 > constantly trying to start a connection. (Decision
-> **D-2026-05-04-E**.)
+> **D-2026-05-04-E**.) The cursor-flicker fix on top of that is
+> [D-2026-05-08-C](./DECISIONS.md).
 
 ---
 

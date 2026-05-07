@@ -236,6 +236,32 @@
 
 ---
 
+### D-2026-05-08-C — Cursor-flicker fix on node hover
+
+- **What:** Set `.react-flow__handle { cursor: pointer }` (matching
+  the node body), restoring `cursor: crosshair` only when a
+  connection is actively being drawn
+  (`.react-flow__handle.connecting` / `.connectingfrom`).
+- **Why:** moving the mouse across a node would flicker the cursor
+  between `pointer` (node body, our rule) and `crosshair` (React
+  Flow's default handle cursor). The user described it as "보자기 /
+  가위 계속 바뀌는" — paper / scissors swapping — which was visually
+  noisy and made the canvas feel jittery.
+- **Why this isn't another bandaid:** the v0.13.2 hover tone-down
+  (D-2026-05-04-E) reduced the *visual* prominence of handles but
+  left React Flow's default `cursor: crosshair` rule untouched.
+  That CSS default is the real source of the flicker — making the
+  cursor invariant deterministic across the whole node region is
+  the actual fix, not a fade.
+- **What we kept:** crosshair during active edge drawing — that's
+  semantic (the user IS doing something crosshair-shaped). And
+  `cursor: grabbing` on `:active` when a drag actually starts.
+- **Approval:** Pending — user requested the fix, ship and confirm.
+- **Spec impact:** SPEC §Hover behaviour now codifies the cursor
+  invariant explicitly.
+
+---
+
 ### D-2026-05-08-B — Step 5 deviation: hook only, no pure node-transform module
 
 - **What:** Plan called for Step 5 to extract two files —
