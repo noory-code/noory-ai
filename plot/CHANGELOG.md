@@ -112,6 +112,20 @@ This release ships the **test baseline** that gates the extraction:
   array). SC: 1199 → 1073 LOC (−126). Browser verified: right-click
   on a Mission node renders the Duplicate / Copy / Color × 7 /
   Delete menu items.
+- **Step 10 — Node creation helpers**
+  (`canvases/sketch/useNodeCreation.ts`).  `addNodeAt` (top-level)
+  and `addNestedNodeAt` (drop onto an existing container, with
+  decomposition edge for actor / service kinds) move out of the
+  shell. Side-extraction: `NodePreset` interface lifted to
+  `canvases/sketch/types.ts` so multiple sketch hooks (and
+  `SketchStencil`) can import without circular deps. The
+  default-everything DocNode boilerplate is duplicated across
+  `addNodeAt` and `addNestedNodeAt` — intentionally preserved
+  byte-equally during this extraction; a `makeBlankNode()`
+  follow-up is worth doing once Step 11 is also out of the way.
+  Cleanup: SC drops `NodeKind` and `DEFAULT_COLOR` imports (only
+  the new hook needs them). SC: 1030 → 857 LOC (−173). Browser
+  sanity: Foundation renders (4 nodes incl. anchor).
 - **Step 9 — Window keyboard shortcuts**
   (`canvases/sketch/useKeyboardShortcuts.ts`). One hook owns the
   `window.addEventListener("keydown")` effect and the canonical

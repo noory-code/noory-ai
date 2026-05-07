@@ -1,5 +1,5 @@
 import type { NodeKind, SketchNode } from "../types";
-import type { NodePreset } from "./SketchCanvas";
+import type { NodePreset } from "./sketch/types";
 import { getIcon } from "./SketchIcons";
 
 export interface StencilPreset extends NodePreset {

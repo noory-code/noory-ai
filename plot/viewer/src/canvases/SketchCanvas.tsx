@@ -17,7 +17,6 @@ import ReactFlow, {
 } from "reactflow";
 import type {
   CanvasDoc,
-  NodeKind,
   SketchEdge,
   SketchNode as DocNode,
 } from "../types";
@@ -38,13 +37,14 @@ import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 import { applyAnchorChange } from "./sketch/applyAnchorChange";
 import {
-  DEFAULT_COLOR,
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   PROJECT_ANCHOR_ID,
 } from "./sketch/constants";
 import { useContextMenus } from "./sketch/useContextMenus";
 import { useKeyboardShortcuts } from "./sketch/useKeyboardShortcuts";
+import { useNodeCreation } from "./sketch/useNodeCreation";
+import type { NodePreset } from "./sketch/types";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
 import { useEdgesMemo } from "./sketch/useEdgesMemo";
 import { useInspectorRouting } from "./sketch/useInspectorRouting";
@@ -54,34 +54,6 @@ import { useValueFlow } from "./sketch/useValueFlow";
 
 const NODE_TYPES = { sketch: SketchNode } as const;
 
-
-/**
- * Optional stencil preset used when a node is dropped from the palette or
- * created via the toolbar. ``undefined`` → caller gets a plain rounded
- * rectangle with the defaults above.
- */
-export interface NodePreset {
-  shape: DocNode["shape"];
-  color: string;
-  width?: number;
-  height?: number;
-  icon?: string | null;
-  label?: string;
-  /** v0.2: typed node kind. Used to constrain layer on drop and for AI. */
-  kind?: NodeKind | null;
-  /**
-   * v0.2 multi-canvas: set on actor_ref drops once the picker has resolved
-   * which actor in the Actor canvas this node points at.
-   */
-  ref_actor_id?: string | null;
-  /**
-   * v0.10 Step 3: set on Foundation ref drops once the picker resolves the
-   * master node from the Foundation canvas.
-   */
-  ref_mission_id?: string | null;
-  ref_value_id?: string | null;
-  ref_identity_id?: string | null;
-}
 
 // Note (2026-04-20): the earlier implementation snapped services to an
 // upper band and actors to a lower band. The user clarified that the
@@ -362,152 +334,7 @@ function SketchCanvasInner({
     [onDocChange],
   );
 
-  const addNodeAt = useCallback(
-    (x: number, y: number, preset?: NodePreset) => {
-      const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-      const newNode: DocNode = {
-        id,
-        label: preset?.label ?? "",
-        x,
-        y,
-        width: preset?.width ?? DEFAULT_WIDTH,
-        height: preset?.height ?? DEFAULT_HEIGHT,
-        color: preset?.color ?? DEFAULT_COLOR,
-        shape: preset?.shape ?? "rounded",
-        icon: preset?.icon ?? null,
-        kind: preset?.kind ?? null,
-        parent_id: null,
-        collapsed: false,
-        is_root: false,
-        mission: "",
-        core_values: "",
-        identity: "",
-        what_we_do: "",
-        why: "",
-        direction: "",
-        definition: "",
-        description: "",
-        do: "",
-        dont: "",
-        ref_actor_id: preset?.ref_actor_id ?? null,
-        ref_mission_id: preset?.ref_mission_id ?? null,
-        ref_value_id: preset?.ref_value_id ?? null,
-        ref_identity_id: preset?.ref_identity_id ?? null,
-        what: "",
-        value_created: "",
-        scope: "",
-        trigger: "",
-        how: "",
-        outcome: "",
-        target: "",
-        measurement: "",
-        order: null,
-        policy: "",
-        enforcement: "",
-        actor_permissions: {},
-        format: "",
-        producer_actor_id: null,
-        consumer_actor_id: null,
-        motivation: "",
-        pain: "",
-        side: null,
-        gives: "",
-        receives: "",
-        target_side: null,
-        theme: "",
-      };
-      const current = docRef.current;
-      onDocChange({ ...current, nodes: [...current.nodes, newNode] });
-    },
-    [onDocChange],
-  );
-
-  const addNestedNodeAt = useCallback(
-    (args: {
-      parentId: string;
-      localX: number;
-      localY: number;
-      preset: NodePreset;
-    }) => {
-      const id = `n_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-      const { preset } = args;
-      const newNode: DocNode = {
-        id,
-        label: preset.label ?? "",
-        x: args.localX,
-        y: args.localY,
-        width: preset.width ?? DEFAULT_WIDTH,
-        height: preset.height ?? DEFAULT_HEIGHT,
-        color: preset.color ?? DEFAULT_COLOR,
-        shape: preset.shape ?? "rounded",
-        icon: preset.icon ?? null,
-        kind: preset.kind ?? null,
-        parent_id: args.parentId,
-        collapsed: false,
-        is_root: false,
-        mission: "",
-        core_values: "",
-        identity: "",
-        what_we_do: "",
-        why: "",
-        direction: "",
-        definition: "",
-        description: "",
-        do: "",
-        dont: "",
-        ref_actor_id: preset?.ref_actor_id ?? null,
-        ref_mission_id: preset?.ref_mission_id ?? null,
-        ref_value_id: preset?.ref_value_id ?? null,
-        ref_identity_id: preset?.ref_identity_id ?? null,
-        what: "",
-        value_created: "",
-        scope: "",
-        trigger: "",
-        how: "",
-        outcome: "",
-        target: "",
-        measurement: "",
-        order: null,
-        policy: "",
-        enforcement: "",
-        actor_permissions: {},
-        format: "",
-        producer_actor_id: null,
-        consumer_actor_id: null,
-        motivation: "",
-        pain: "",
-        side: null,
-        gives: "",
-        receives: "",
-        target_side: null,
-        theme: "",
-      };
-      const current = docRef.current;
-      // Rule / content are composition: edited via the Inspector, no edge.
-      // Actor / service are hierarchy: materialise a real decomposition
-      // edge so users can edit it (label, verb, value_form).
-      const makeHierarchyEdge = preset.kind === "actor" || preset.kind === "service";
-      const edgeId = `e_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-      const newEdges = makeHierarchyEdge
-        ? [
-            ...current.edges,
-            {
-              id: edgeId,
-              source: args.parentId,
-              target: id,
-              sourceHandle: null,
-              targetHandle: null,
-              label: "decomposes",
-              style: "dashed" as const,
-              action_verb: "decomposes",
-              value_form: [],
-            },
-          ]
-        : current.edges;
-      onDocChange({ ...current, nodes: [...current.nodes, newNode], edges: newEdges });
-    },
-    [onDocChange],
-  );
+  const { addNodeAt, addNestedNodeAt } = useNodeCreation({ docRef, onDocChange });
 
   const handlePaneDoubleClick = useCallback(
     (event: React.MouseEvent) => {
