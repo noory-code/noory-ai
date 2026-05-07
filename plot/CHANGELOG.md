@@ -88,6 +88,18 @@ This release ships the **test baseline** that gates the extraction:
   fixture (no user-drawn edges); the pure code is byte-equal to
   the prior inline so the recolour invariant is preserved by
   construction.
+- **Step 7 — Anchor mutation branch**
+  (`canvases/sketch/applyAnchorChange.ts`, pure helper).
+  `handleNodesChange` stays in the shell (React Flow's
+  `onNodesChange` prop must dispatch atomically per the coupling
+  map) but the anchor-vs-regular-node split now reads as one
+  helper call, surfacing SPEC §Anchor "Mutation routing". SC:
+  1212 → 1199 LOC (−13). Browser sanity: anchor present, 4
+  handles, 0 console errors. Mid-drag persistence path cannot be
+  exercised through Playwright synthetic clicks (they bypass
+  d3-zoom's drag pipeline); the helper is a byte-equal
+  extraction of the prior inline so the persistence invariant is
+  preserved by construction.
 
 The extraction commits land incrementally over subsequent versions
 under this same v0.13.x line; each commit is a single concern moved

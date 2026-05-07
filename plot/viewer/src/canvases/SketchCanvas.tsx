@@ -36,6 +36,7 @@ import { SketchNode } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
+import { applyAnchorChange } from "./sketch/applyAnchorChange";
 import { PROJECT_ANCHOR_ID } from "./sketch/constants";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
 import { useEdgesMemo } from "./sketch/useEdgesMemo";
@@ -283,23 +284,9 @@ function SketchCanvasInner({
         }
       }
       if (posById.size === 0 && dimById.size === 0) return;
-      // v0.13 Phase 0: route synthetic project anchor changes to onAnchorChange.
-      const anchorPos = posById.get(PROJECT_ANCHOR_ID);
-      const anchorDim = dimById.get(PROJECT_ANCHOR_ID);
-      if ((anchorPos || anchorDim) && onAnchorChange) {
-        const patch: Partial<import("../types").AnchorPlacement> = {};
-        if (anchorPos) {
-          patch.x = anchorPos.x;
-          patch.y = anchorPos.y;
-        }
-        if (anchorDim) {
-          patch.width = anchorDim.width;
-          patch.height = anchorDim.height;
-        }
-        onAnchorChange(patch);
-        posById.delete(PROJECT_ANCHOR_ID);
-        dimById.delete(PROJECT_ANCHOR_ID);
-      }
+      // SPEC §Anchor: anchor mutations route via onAnchorChange.
+      const anchorPatch = applyAnchorChange(posById, dimById);
+      if (anchorPatch && onAnchorChange) onAnchorChange(anchorPatch);
       if (posById.size === 0 && dimById.size === 0) return;
       const current = docRef.current;
       onDocChange({
