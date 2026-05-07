@@ -33,8 +33,10 @@ project name (e.g. "Banas v0.13").
 | Aspect | Behaviour |
 |---|---|
 | **Origin** | Auto-seeded; SSOT lives in `ProjectDoc.anchors`, not in `canvas.json`. Rendered as a synthetic node. |
+| **Injection scope** | Injected on every primary canvas kind — `foundation`, `actors`, `services`. Service-Detail (modal) does **not** carry an anchor. (See [CONCEPTS.md §project](./CONCEPTS.md#project--the-project-anchor).) |
+| **Mutation routing** | Drag / resize updates flow through `onAnchorChange` (a separate prop), **never** through `onDocChange`. Canvas-level mutation handlers must branch on `id === PROJECT_ANCHOR_ID` and dispatch to the anchor path before falling through to the regular-node path. |
 | **Count** | Exactly 1. |
-| **Delete** | Not allowed (no UI affordance). |
+| **Delete** | Not allowed (no UI affordance). The synthetic id is silently ignored if it ever surfaces in a delete event. |
 | **Label** | Mirrors `ProjectDoc.name`. |
 | **Drag** | Allowed. Persists via `PATCH /api/projects/:id/anchor`. |
 | **Resize** | Allowed. Persists via the same PATCH. |
@@ -50,6 +52,14 @@ project name (e.g. "Banas v0.13").
   work.
 
 ---
+
+## Rendering order
+
+Parents must be emitted to React Flow **before** their children in
+the node array. React Flow's parent / nesting machinery uses array
+order to resolve `parentNode` references during the first paint. Any
+future node-transform refactor must preserve this property — sort by
+`parent_id == null` first, then children.
 
 ## Edges
 

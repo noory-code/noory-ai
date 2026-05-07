@@ -32,13 +32,14 @@ import { SketchBodyModal } from "./SketchBodyModal";
 import { SketchContextMenu, type ContextMenuItem } from "./SketchContextMenu";
 import { SketchEdgeModal, VALUE_FORM_COLORS } from "./SketchEdgeModal";
 import { SketchInspector } from "./SketchInspector";
-import { SketchNode, type SketchNodeData } from "./SketchNode";
+import { SketchNode } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 import { PROJECT_ANCHOR_ID } from "./sketch/constants";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
 import { useInspectorRouting } from "./sketch/useInspectorRouting";
+import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
 import { useValueFlow } from "./sketch/useValueFlow";
 
@@ -235,173 +236,24 @@ function SketchCanvasInner({
   const { childIdsByParent, nodeById, nearestCollapsedAncestor, toggleCollapsed, subtreeSize } =
     useCollapsedTree(doc.nodes, docRef, onDocChange);
 
-  const nodes = useMemo<Node<SketchNodeData>[]>(() => {
-    // Parents first, children after — React Flow requirement.
-    const ordered = [...doc.nodes].sort((a, b) => {
-      if (!a.parent_id && b.parent_id) return -1;
-      if (a.parent_id && !b.parent_id) return 1;
-      return 0;
-    });
-    const out: Node<SketchNodeData>[] = [];
-    for (const n of ordered) {
-      // Hide nodes whose ancestor chain contains a collapsed container.
-      if (nearestCollapsedAncestor(n.id)) continue;
-      // v0.2 correction (2026-04-20): rule / content are edited through
-      // the right-hand Inspector panel, never rendered on the canvas.
-      if (n.kind === "rule" || n.kind === "content") continue;
-      // v0.12.2: inside the service-detail modal the service-root is
-      // redundant — the modal header already names it. Hide it from
-      // the canvas so refs and composition reads cleaner. The root is
-      // identified by id == doc.service_ref (set when the per-service
-      // canvas is loaded).
-      if (
-        doc.canvas_kind === "service_detail" &&
-        doc.service_ref &&
-        n.id === doc.service_ref
-      ) {
-        continue;
-      }
-      const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
-      // Orphan actor_ref visual override: red-tinted fill, "⚠ " prefix so the
-      // break is obvious even at thumbnail scale. Rendering stays in the
-      // normal SketchNode component — no branch in the renderer.
-      const isOrphan = orphanActorRefIds.has(n.id);
-      // v0.11.1 — for ref kinds, derive the displayed label from the master
-      // (auto-sync). Stored label is used as fallback only when the master
-      // is missing (orphan). This keeps ref labels never stale.
-      const masterDerivedLabel = ((): string | null => {
-        if (n.kind === "actor_ref" && n.ref_actor_id) {
-          const m = (availableActors ?? doc.nodes).find((a) => a.id === n.ref_actor_id);
-          if (m) return `→ ${m.label || m.id}`;
-        }
-        if (n.kind === "mission_ref" && n.ref_mission_id) {
-          const m = (availableMissions ?? []).find((a) => a.id === n.ref_mission_id);
-          if (m) return `→ ${m.label || m.id}`;
-        }
-        if (n.kind === "value_ref" && n.ref_value_id) {
-          const m = (availableValues ?? []).find((a) => a.id === n.ref_value_id);
-          if (m) return `→ ${m.label || m.id}`;
-        }
-        if (n.kind === "identity_ref" && n.ref_identity_id) {
-          const m = (availableIdentities ?? []).find((a) => a.id === n.ref_identity_id);
-          if (m) return `→ ${m.label || m.id}`;
-        }
-        return null;
-      })();
-      const baseLabel = masterDerivedLabel ?? n.label;
-      // v0.11.4 — service.target_side tints the body so operator-facing
-      // services (admin) and user-facing services (app) read at a glance.
-      // operator → blue tint, user → red tint, both → violet tint.
-      let visualColor: string = isOrphan ? "#fee2e2" : n.color;
-      if (
-        !isOrphan &&
-        n.kind === "service" &&
-        n.target_side != null
-      ) {
-        if (n.target_side === "operator") visualColor = "#dbeafe"; // blue-100
-        else if (n.target_side === "user") visualColor = "#fee2e2"; // red-100
-        else if (n.target_side === "both") visualColor = "#ede9fe"; // violet-100
-      }
-      const visualLabel = isOrphan ? `⚠ ${baseLabel}` : baseLabel;
-      // v0.9.1: typed fields are gone. The on-canvas node shows just the
-      // label; long-form lives in details.md (Inspector only). Pass an
-      // empty preview so SketchNode hides the body block.
-      const previewBody = "";
-      // v0.12.1 — for kinds where double-click should drill (not open the
-      // generic edit modal), wire `onDrill`. SketchNode's dblclick prefers
-      // drill when set. React Flow's own onNodeDoubleClick is masked by
-      // SketchNode's stopPropagation, so routing drill through node data
-      // is the reliable path. Cases:
-      //   - services canvas, service kind, !is_root → open service modal
-      //   - service_detail canvas, actor_ref → jump to actor master
-      const drillThisNode =
-        (doc.canvas_kind === "services" && n.kind === "service" && !n.is_root) ||
-        (doc.canvas_kind === "service_detail" && n.kind === "actor_ref");
-      const onDrill = drillThisNode && onNodeDrill
-        ? () => onNodeDrill(n.id)
-        : undefined;
-      const base: Node<SketchNodeData> = {
-        id: n.id,
-        type: "sketch",
-        position: { x: n.x, y: n.y },
-        style: { width: n.width, height: n.height },
-        data: {
-          label: visualLabel,
-          body: previewBody,
-          color: visualColor,
-          width: n.width,
-          height: n.height,
-          shape: n.shape,
-          icon: n.icon,
-          kind: n.kind,
-          onLabelChange: (next: string) => updateNode(n.id, { label: next }),
-          onOpenBody: () => setBodyModalNodeId(n.id),
-          onDrill,
-          onResize: (w: number, h: number) => updateNode(n.id, { width: w, height: h }),
-          hasChildren,
-          collapsed: n.collapsed,
-          childCount: hasChildren ? subtreeSize(n.id) : 0,
-          onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
-          // Foundation canvas lays pillars out as peers — fold has no meaning.
-          showFold: doc.canvas_kind !== "foundation",
-          // v0.13 Phase 7 — server-side MD parse warnings, surfaces ⚠ badge.
-          mdWarnings: n._md_warnings,
-        },
-      };
-      // v0.2 correction (2026-04-20): parent_id is used for two distinct
-      // semantic categories:
-      //   - composition (rule, content) — data-only, Inspector panel.
-      //   - hierarchy (sub-actor) — rendered as a sibling
-      //     with an auto-generated decomposition edge (see `edges` below).
-      // In neither case do we use React Flow's parentNode nesting any
-      // more: hierarchy is not "inside", it's "beside + linked".
-      out.push(base);
-    }
-    // v0.13 Phase 0: inject the synthetic project anchor when the host has
-    // supplied one. Lives on Foundation/Actors/Services canvases only.
-    if (
-      projectAnchor &&
-      (doc.canvas_kind === "foundation" ||
-        doc.canvas_kind === "actors" ||
-        doc.canvas_kind === "services")
-    ) {
-      out.unshift({
-        id: PROJECT_ANCHOR_ID,
-        type: "sketch",
-        position: { x: projectAnchor.x, y: projectAnchor.y },
-        style: { width: projectAnchor.width, height: projectAnchor.height },
-        data: {
-          label: projectName ?? "Project",
-          body: "",
-          color: projectAnchor.color,
-          width: projectAnchor.width,
-          height: projectAnchor.height,
-          shape: projectAnchor.shape,
-          icon: null,
-          kind: "project",
-          onResize: (w: number, h: number) => onAnchorChange?.({ width: w, height: h }),
-          // Anchor is a derived view — not editable inline. Inspector also
-          // hides it. Drag/resize is the only mutation; routed via
-          // onAnchorChange in handleNodesChange.
-          showFold: false,
-        },
-      });
-    }
-    return out;
-  }, [
-    doc.nodes,
-    doc.canvas_kind,
+  const nodes = useNodesMemo({
+    doc,
     childIdsByParent,
     nearestCollapsedAncestor,
     subtreeSize,
     toggleCollapsed,
     updateNode,
     orphanActorRefIds,
+    availableActors,
+    availableMissions,
+    availableValues,
+    availableIdentities,
     onNodeDrill,
     projectAnchor,
     projectName,
     onAnchorChange,
-  ]);
+    setBodyModalNodeId,
+  });
 
   const edges = useMemo<Edge[]>(() => {
     const out: Edge[] = [];

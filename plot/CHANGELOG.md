@@ -60,6 +60,21 @@ This release ships the **test baseline** that gates the extraction:
   including the anchor read-only guard. SC: 1409 → 1394 LOC
   (−15). Browser verified: clicking Mission opens Inspector;
   clicking the anchor does not.
+- **Step 5 — Doc-to-node transform**
+  (`canvases/sketch/useNodesMemo.ts`). One hook owns the
+  parents-before-children sort, the hide rules
+  (collapsed-ancestor / rule&content / service-detail
+  service-root), the orphan-actor_ref visual override, the
+  master-derived ref label sync, the service.target_side body
+  tint, drill routing, and synthetic project anchor injection.
+  Plan called for a separate pure `nodeTransform.ts` + thin
+  wrapper, but the transform reads ten-plus callbacks; a "pure"
+  form would be cosmetic. Documented as
+  [D-2026-05-08-B](./docs/DECISIONS.md). SPEC §Anchor and SPEC
+  §Rendering order updated with the implementation invariants
+  this hook preserves. SC: 1394 → 1246 LOC (−148). Browser
+  verified: Foundation renders 4 nodes (anchor + Mission +
+  CoreValue + Identity), 0 edges, 3 ⚠ badges intact.
 
 The extraction commits land incrementally over subsequent versions
 under this same v0.13.x line; each commit is a single concern moved

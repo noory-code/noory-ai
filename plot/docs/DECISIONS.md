@@ -236,6 +236,35 @@
 
 ---
 
+### D-2026-05-08-B — Step 5 deviation: hook only, no pure node-transform module
+
+- **What:** Plan called for Step 5 to extract two files —
+  `nodeTransform.ts` (pure, no React) plus a thin `useNodesMemo.ts`
+  wrapper. Implementation ships only `useNodesMemo.ts` (a single
+  React hook).
+- **Why:** the node transform reads ten-plus callbacks
+  (`updateNode`, `setBodyModalNodeId`, `onNodeDrill`,
+  `onAnchorChange`, plus collapsed-tree's four exports) and
+  produces per-node closures (`onLabelChange`, `onResize`,
+  `onToggleCollapse`, `onDrill`). A "pure" version would still
+  require those callbacks as inputs — the purity would be
+  cosmetic, paid for in a 10-field input interface and a
+  React-aware wrapper that mostly just shuffles arguments. AHA
+  ("avoid hasty abstraction") + YAGNI.
+- **What this gives up:** node transform is not unit-testable in
+  isolation today. If a future use case needs that (e.g. snapshot
+  testing thousands of doc shapes), the hook can be split then —
+  one rewrite is cheaper than the wrong abstraction now.
+- **What this preserves:** edge transform (Step 6) is still split
+  pure + thin-hook. Edges have far fewer callbacks (one: edge
+  modal open) so the pure form is genuinely useful.
+- **Approval:** Pending — recorded as a same-day execution decision;
+  user can override and request the pure node-transform split if
+  they want.
+- **Spec impact:** none.
+
+---
+
 ### D-2026-05-08-A — SketchCanvas split: Candidate A (modified)
 
 - **What:** Split `plot/viewer/src/canvases/SketchCanvas.tsx` (1476
