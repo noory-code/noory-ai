@@ -36,6 +36,8 @@ import { SketchNode, type SketchNodeData } from "./SketchNode";
 import { resolveDropTarget, type StencilPreset } from "./SketchStencil";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
+import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
+import { useValueFlow } from "./sketch/useValueFlow";
 
 const NODE_TYPES = { sketch: SketchNode } as const;
 
@@ -176,7 +178,7 @@ function SketchCanvasInner({
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
   const [edgeModalId, setEdgeModalId] = useState<string | null>(null);
-  const [valueFlowOn, setValueFlowOn] = useState(false);
+  const { valueFlowOn, toggleValueFlow } = useValueFlow();
   // Create mode runs while the user is dropping a fresh Actor ref from the
   // stencil; rewire mode runs when the Inspector asks to repoint an
   // existing orphan actor_ref at a different actor.
@@ -224,19 +226,7 @@ function SketchCanvasInner({
     onSelectionConsumed?.();
   }, [selectNodeId, doc.nodes, onSelectionConsumed]);
 
-  // Orphan detection: actor_refs whose target isn't in the available-actor
-  // set (either never was, or was just deleted on the Actors canvas).
-  const orphanActorRefIds = useMemo(() => {
-    const validActorIds = new Set((availableActors ?? doc.nodes).filter((n) => n.kind === "actor").map((n) => n.id));
-    const orphans = new Set<string>();
-    for (const n of doc.nodes) {
-      if (n.kind !== "actor_ref") continue;
-      if (!n.ref_actor_id || !validActorIds.has(n.ref_actor_id)) {
-        orphans.add(n.id);
-      }
-    }
-    return orphans;
-  }, [doc.nodes, availableActors]);
+  const orphanActorRefIds = useOrphanActorRefs(doc.nodes, availableActors);
 
   const updateNode = useCallback(
     (nodeId: string, patch: Partial<DocNode>) => {
@@ -1172,7 +1162,7 @@ function SketchCanvasInner({
         onUndo={onUndo}
         onRedo={onRedo}
         valueFlowOn={valueFlowOn}
-        onToggleValueFlow={() => setValueFlowOn((v) => !v)}
+        onToggleValueFlow={toggleValueFlow}
       />
       <ReactFlow
         nodes={nodes}

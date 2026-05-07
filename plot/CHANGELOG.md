@@ -38,6 +38,12 @@ This release ships the **test baseline** that gates the extraction:
   appears after a node click. All four match real-browser state
   (verified at the v0.13.3 baseline). Test suite now: 4 files /
   13 tests, all passing.
+- **Step 1 + 2 of the SketchCanvas split** — extracted the
+  value-flow toggle state (`canvases/sketch/useValueFlow.ts`) and
+  the orphan actor_ref detection memo
+  (`canvases/sketch/useOrphanActorRefs.ts`). New folder:
+  `viewer/src/canvases/sketch/`. SketchCanvas.tsx: 1476 → 1466 LOC
+  (−10).
 
 The extraction commits land incrementally over subsequent versions
 under this same v0.13.x line; each commit is a single concern moved
