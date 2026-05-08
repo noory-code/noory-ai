@@ -236,6 +236,35 @@
 
 ---
 
+### D-2026-05-08-F — Handles appear only when the node is selected
+
+- **What:** Removed the hover-fade and direct-handle-scale animations
+  on `.react-flow__handle`. Handles are now `opacity: 0` until the
+  node is selected (`.react-flow__node.selected`), at which point
+  they appear at full opacity with the indigo "connectable"
+  styling.
+- **Why:** the user reported "커서였다가 검지였다가 큰 검지였다가
+  작은 검지였다가 등등" — the cursor itself appearing to vary in
+  size / shape as it moved across a node. DOM-level cursor probing
+  showed only `pointer` and `default` were ever set; the perceived
+  variation was the four handle dots pulsing in opacity (0 →
+  0.55 on node-hover) and one of them scaling to 1.25× on direct
+  handle-hover. The dots near the pointer reading as "cursor".
+- **What this changes for the user:**
+  - To draw an edge: click a node first (selects it; handles
+    appear). Then drag from a handle. One extra click vs. before.
+  - Hovering a node now never changes the visual at all. The node
+    just sits there. Selecting (clicking) is the explicit gesture
+    that opens both Inspector and edge-drawing handles.
+- **Approval:** Pending — matches the user's evolving "노드 선택할
+  수 있게만" direction (D-2026-05-08-E) plus this round's flicker
+  diagnosis. User can override if the extra click feels
+  too costly.
+- **Spec impact:** SPEC §Hover behaviour rewritten — three states
+  collapse to two (hidden / selected), no more fade / scale.
+
+---
+
 ### D-2026-05-08-E — Pan-on-drag removed; cursor stays pointer on click
 
 - **What:** Three paired changes (the third was discovered after

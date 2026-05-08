@@ -129,13 +129,15 @@ and the minimap (bottom-right).
 ## Hover behaviour
 
 The four React Flow connection handles (○ at top / left / right /
-bottom) are *not* always visible.
+bottom) are visible **only when the node is selected**. Hovering
+alone does not reveal them.
 
 | State | Handle visibility |
 |---|---|
-| Idle (cursor not on the node) | Hidden (`opacity: 0`) |
-| Cursor over the node body | Faintly visible (`opacity: 0.55`) |
-| Cursor on a specific handle | Fully visible, scaled 1.25×, indigo border |
+| Idle (node not selected) | Hidden (`opacity: 0`) |
+| Hover (node not selected) | Hidden — same as idle |
+| Selected (clicked) | Fully visible, indigo border |
+| During an active drag of an edge from the handle | `connecting` / `connectingfrom` styling adds crosshair cursor |
 
 The cursor stays `pointer` everywhere on the node region — body and
 handles alike, idle, hover, and click (mousedown). Crosshair is

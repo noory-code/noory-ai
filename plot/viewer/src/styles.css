@@ -31,31 +31,26 @@ body { margin: 0; }
 .react-flow__viewport,
 .react-flow__renderer { cursor: default !important; }
 
-/* Make connection handles visible + easy to hit. React Flow's default
-   6×6 dot is hard to spot and hard to click. */
+/* Connection handles. React Flow's default 6×6 dot is hard to spot
+   and hard to click; ours is 10×10 with a slate ring. */
 .react-flow__handle {
   width: 10px !important;
   height: 10px !important;
   border: 1.5px solid rgb(148 163 184) !important; /* slate-400 */
   background: white !important;
   opacity: 0;
-  /* v0.13.4 — match the node body's ``cursor: pointer`` so that
-     moving the mouse across a node doesn't flicker the cursor
-     between pointer (node) and crosshair (React Flow's default
-     handle cursor). Crosshair is restored only while a connection
-     is actually being drawn (``.connecting`` / ``.connectingfrom``). */
   cursor: pointer !important;
-  transition: opacity 120ms ease, transform 120ms ease, border-color 120ms ease;
+  /* No transition: handles either appear (selected) or don't
+     (idle / hover). Animating the appearance was the root of the
+     user's "큰 검지 / 작은 검지" flicker complaint — the dots
+     near the cursor pulsed in size as the user moved across the
+     node, reading as the cursor itself growing / shrinking. */
 }
-/* v0.13.2 — only reveal handles on direct hover, not whenever the cursor
-   touches the node body. The previous "all 4 handles pop the moment you
-   approach the node" behavior felt noisy. */
-.react-flow__node:hover .react-flow__handle {
-  opacity: 0.55;
-}
-.react-flow__handle:hover {
+/* v0.13.5 — handles appear ONLY when the node is selected. Hover
+   alone does not reveal them. Selecting the node first (one click)
+   is the explicit gesture that surfaces edge handles. */
+.react-flow__node.selected .react-flow__handle {
   opacity: 1;
-  transform: scale(1.25);
   border-color: rgb(79 70 229) !important; /* indigo-600 */
   background: rgb(224 231 255) !important; /* indigo-100 */
 }

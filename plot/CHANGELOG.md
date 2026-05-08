@@ -4,6 +4,32 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.4] — 2026-05-08
+
+### Fixed — **Cursor / handle visual flicker on node hover (final)**
+
+The user reported "커서였다가 검지였다가 큰 검지였다가 작은
+검지였다가 등등" — the cursor itself appearing to vary in size /
+shape as it moved across a node, even after the v0.13.3 cursor
+unification. DOM probing showed the cursor was never actually
+varying; the perceived variation was the four handle dots
+pulsing in opacity (0 → 0.55 on node-hover) and the one near
+the pointer scaling to 1.25× on direct handle-hover. The dots
+near the pointer were reading as "cursor".
+
+- **Handles now appear only when the node is selected.** Hovering
+  a node no longer reveals or animates anything. Click to select
+  the node → handles appear at full opacity with indigo styling
+  → drag from a handle to draw an edge. One extra click compared
+  to the prior hover-to-reveal flow, but the canvas reads still
+  on hover.
+- **All transition / scale animations on handles removed** —
+  they were the actual flicker source.
+- SPEC §Hover behaviour rewritten: three visibility states (idle
+  / hover / direct-handle-hover) collapse to two (hidden /
+  selected). DECISIONS [D-2026-05-08-F](./docs/DECISIONS.md)
+  records the user direction and the diagnosis trail.
+
 ## [0.13.3] — 2026-05-08
 
 ### Changed — **SketchCanvas refactor: test baseline + extraction in progress**
