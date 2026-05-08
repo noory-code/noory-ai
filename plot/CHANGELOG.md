@@ -218,6 +218,29 @@ This release ships the **test baseline** that gates the extraction:
   pre-existing limitation of synthetic testing, not a regression
   of this refactor.
 
+### Changed — **Canvas pan-on-drag removed; node cursor invariant tightened**
+
+Per [D-2026-05-08-E](./docs/DECISIONS.md):
+
+- **`panOnDrag={false}` on `<ReactFlow>`.** Grabbing an empty
+  canvas region and dragging no longer pans the viewport. Use the
+  zoom controls (bottom-left) or the minimap (bottom-right) to
+  move the view. Users were accidentally panning while reaching
+  for nodes; removing the affordance lets the canvas read as a
+  fixed page.
+- **Cursor on a node is now `pointer` everywhere, in every state**
+  (idle, hover, mousedown). The `.react-flow__node:active {
+  cursor: grabbing }` rule is gone — clicking a node no longer
+  flashes the grabbing cursor, only an actual drag does (via
+  `.react-flow__node.dragging`).
+- **`EditableText` display span uses `cursor-pointer`**, not
+  `cursor-text`. The display span is `role="button"` (click to
+  edit), so the I-beam cursor was misleading and was the
+  remaining flicker source the v0.13.3 cursor fix didn't catch.
+
+SPEC §Pan and select (new) and §Hover behaviour (clarified)
+codify the cursor invariant.
+
 ### Fixed — **Cursor flicker on node hover**
 
 `.react-flow__handle` now uses `cursor: pointer` (matching the node

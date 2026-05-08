@@ -236,6 +236,42 @@
 
 ---
 
+### D-2026-05-08-E — Pan-on-drag removed; cursor stays pointer on click
+
+- **What:** Two paired changes:
+  - **`panOnDrag={false}` on `<ReactFlow>`.** Grabbing an empty
+    canvas region and dragging no longer pans the viewport.
+    Zoom / fit-view controls (bottom-left) and the minimap remain
+    the only ways to move the view.
+  - **Removed `.react-flow__node:active { cursor: grabbing }`
+    rule.** Clicking a node previously flipped the cursor to
+    grabbing for a frame even on a pure click (no drag); that
+    competed with the v0.13.4 hover invariant ("on a node the
+    cursor is `pointer`, period"). The
+    `.react-flow__node.dragging` rule is kept so an actual drag
+    still surfaces grabbing.
+  - **Removed `cursor-text` from the EditableText display span**
+    (separate but-related fix in the same commit). The display
+    span is `role="button"` (click to enter edit mode) and now
+    uses `cursor-pointer`. Previously hovering the label flipped
+    the cursor to I-beam — the user described it as
+    "보자기 / 가위 계속 바뀌는" (paper / scissors swapping).
+- **Why:** user said exactly:
+  > "노드 위에 커서 올리면 노드 선택할 수 있게만하고 캔버스 쥐고
+  > 옮기는 동작을 없애세요"
+  — when the cursor is on a node, only "select" should read; and
+  the canvas grab-and-move action should be removed.
+- **What we kept:** `nodesDraggable={true}`. The user did not ask
+  to remove node drag; only the *visual signal* that the node
+  was draggable on hover. They keep the position-control they've
+  always wanted; the cursor just doesn't advertise it on every
+  click.
+- **Approval:** Accepted by user, 2026-05-08.
+- **Spec impact:** SPEC §Pan and select (new), §Hover behaviour
+  (clarified cursor invariant).
+
+---
+
 ### D-2026-05-08-D — SketchCanvas split: stop at 360 LOC (not 150)
 
 - **What:** The SketchCanvas split lands at 360 LOC, not the

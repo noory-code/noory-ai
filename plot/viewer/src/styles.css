@@ -12,11 +12,15 @@ body { margin: 0; }
 /* React Flow overrides
    ------------------------------------------------------------------- */
 
-/* Default node cursor is ``grab``; flip to pointer on hover so the node
-   reads as clickable / interactive, and ``grabbing`` while actually dragging. */
+/* v0.13.4 — node cursor is always ``pointer``: hovering communicates
+   "click to select", which is the only affordance the user wants on
+   the node. Previously :active flipped to ``grabbing`` during a
+   click — that read like the cursor was promising a drag the user
+   never asked for. The .dragging rule (still in flight during a
+   drag) is preserved so a real drag does still surface the
+   grabbing cursor. */
 .react-flow__node { cursor: pointer; }
-.react-flow__node.dragging,
-.react-flow__node:active { cursor: grabbing; }
+.react-flow__node.dragging { cursor: grabbing; }
 
 /* Make connection handles visible + easy to hit. React Flow's default
    6×6 dot is hard to spot and hard to click. */

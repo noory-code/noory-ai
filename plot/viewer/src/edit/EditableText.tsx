@@ -57,9 +57,17 @@ export function EditableText({
     // No ``nodrag`` here — React Flow's ``nodeDragThreshold`` on the canvas
     // distinguishes a click from a drag by mouse-move distance, so the user
     // can still drag from the label without losing the click-to-edit affordance.
+    //
+    // v0.13.4 — display span is a click-to-edit *button*
+    // (role="button"), so the cursor is ``pointer``. Previously it
+    // was ``cursor-text`` which (a) flickered the cursor on node
+    // hover (paper ↔ I-beam) and (b) advertised text-selection
+    // affordance the span didn't actually have. Once the user
+    // clicks and the input/textarea takes over below, the browser's
+    // native text cursor on those elements does the right thing.
     return (
       <span
-        className={`cursor-text ${className ?? ""}`}
+        className={`cursor-pointer ${className ?? ""}`}
         role="button"
         tabIndex={0}
         aria-label={`${ariaLabel}. Click to edit.`}

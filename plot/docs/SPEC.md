@@ -112,6 +112,20 @@ mission).
 
 ---
 
+## Pan and select
+
+The canvas does **not** pan when the user grabs an empty area and
+drags. React Flow's `panOnDrag` is off; the only ways to move the
+viewport are the zoom-in / zoom-out / fit-view controls (bottom-left)
+and the minimap (bottom-right).
+
+> **Why:** users were accidentally panning the canvas while trying
+> to click on or drag from a node. A canvas where "grab and pull"
+> means something on every empty pixel competes with the user's
+> intent to interact with the actual nodes. Removing pan-on-drag
+> makes the canvas read as a fixed page; explicit zoom controls do
+> the rest.
+
 ## Hover behaviour
 
 The four React Flow connection handles (○ at top / left / right /
@@ -124,17 +138,21 @@ bottom) are *not* always visible.
 | Cursor on a specific handle | Fully visible, scaled 1.25×, indigo border |
 
 The cursor stays `pointer` everywhere on the node region — body and
-handles alike — so moving the mouse across a node never flickers the
-cursor between pointer and crosshair. Crosshair is reserved for the
-moment a connection is actually being drawn
-(`.react-flow__handle.connecting` / `.connectingfrom`); that's the
-only time the user is doing something the crosshair signals.
+handles alike, idle, hover, and click (mousedown). Crosshair is
+reserved for the moment a connection is actually being drawn
+(`.react-flow__handle.connecting` / `.connectingfrom`); grabbing is
+reserved for the moment a node is actually being dragged
+(`.react-flow__node.dragging`). The label display span and the ⚠
+badge inherit `pointer` from the node wrapper, so moving the mouse
+across a node never flickers the cursor between affordances.
 
 > **Why:** the previous "all four handles pop the moment the cursor
 > approaches the node" felt noisy and read like the node was
 > constantly trying to start a connection. (Decision
-> **D-2026-05-04-E**.) The cursor-flicker fix on top of that is
-> [D-2026-05-08-C](./DECISIONS.md).
+> **D-2026-05-04-E**.) The cursor-flicker fixes on top of that are
+> [D-2026-05-08-C](./DECISIONS.md) (handle crosshair removed),
+> [D-2026-05-08-E](./DECISIONS.md) (label `cursor-text` removed,
+> `:active grabbing` removed).
 
 ---
 
