@@ -238,11 +238,19 @@
 
 ### D-2026-05-08-E — Pan-on-drag removed; cursor stays pointer on click
 
-- **What:** Two paired changes:
+- **What:** Three paired changes (the third was discovered after
+  the user said "같아" to the first two — pure prop disable
+  wasn't enough; the baseline CSS still set `grab`):
   - **`panOnDrag={false}` on `<ReactFlow>`.** Grabbing an empty
     canvas region and dragging no longer pans the viewport.
     Zoom / fit-view controls (bottom-left) and the minimap remain
     the only ways to move the view.
+  - **CSS override on `.react-flow__pane` / `.react-flow__viewport`
+    / `.react-flow__renderer` to `cursor: default !important`.**
+    React Flow's baseline stylesheet keeps `cursor: grab` on the
+    pane / viewport even when `panOnDrag` is off, which
+    reintroduced the cursor flicker (grab over canvas ↔ pointer
+    over node) that the user reported.
   - **Removed `.react-flow__node:active { cursor: grabbing }`
     rule.** Clicking a node previously flipped the cursor to
     grabbing for a frame even on a pure click (no drag); that

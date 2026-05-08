@@ -22,6 +22,15 @@ body { margin: 0; }
 .react-flow__node { cursor: pointer; }
 .react-flow__node.dragging { cursor: grabbing; }
 
+/* v0.13.4 — pan-on-drag is off (SC sets ``panOnDrag={false}``), but
+   React Flow's baseline CSS still puts ``cursor: grab`` on the pane
+   and viewport. That flickered the cursor between ``grab`` (empty
+   canvas) and ``pointer`` (node). Force the pane / viewport to
+   ``default`` so the empty canvas reads as "page", not "grab me". */
+.react-flow__pane,
+.react-flow__viewport,
+.react-flow__renderer { cursor: default !important; }
+
 /* Make connection handles visible + easy to hit. React Flow's default
    6×6 dot is hard to spot and hard to click. */
 .react-flow__handle {

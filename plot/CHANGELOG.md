@@ -228,6 +228,14 @@ Per [D-2026-05-08-E](./docs/DECISIONS.md):
   move the view. Users were accidentally panning while reaching
   for nodes; removing the affordance lets the canvas read as a
   fixed page.
+- **Pane / viewport cursor forced to `default`** with a CSS
+  override on `.react-flow__pane` / `.react-flow__viewport` /
+  `.react-flow__renderer`. React Flow's baseline CSS keeps the
+  `cursor: grab` rule on those elements even after `panOnDrag` is
+  disabled — that reintroduced the cursor flicker the user had
+  reported (`grab` over empty canvas ↔ `pointer` over a node).
+  After the override the canvas region reads "default" (page) and
+  only the node region reads "pointer" (clickable).
 - **Cursor on a node is now `pointer` everywhere, in every state**
   (idle, hover, mousedown). The `.react-flow__node:active {
   cursor: grabbing }` rule is gone — clicking a node no longer
