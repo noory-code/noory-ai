@@ -42,7 +42,7 @@ project name (e.g. "Banas v0.13").
 | **Resize** | Allowed. Persists via the same PATCH. |
 | **Handles (4 sides)** | Visible. User may draw edges from / to the anchor like any other node. |
 | **Inspector on click** | **TBD — open question, see below.** |
-| **Visual differentiation** | Distinct outline (slate-600 + offset + slate-300 inner ring) so users tell it apart from same-colour Service circles on other canvases. |
+| **Visual differentiation** | 2 px slate-600 **border** so users tell it apart from same-colour Service circles on other canvases. (Border, not outline — outline paints outside the hit-box and caused cursor flicker on slow hover; see [D-2026-05-08-G](./DECISIONS.md). Regular nodes use a 1 px slate-300 border, selected nodes 2 px indigo-500.) |
 
 ### Open questions (not yet decided)
 

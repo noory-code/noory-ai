@@ -236,6 +236,49 @@
 
 ---
 
+### D-2026-05-08-G — Node decoration must coincide with the hit-box (no `outline` / `ring`)
+
+- **What:** Replace the three node-decoration class strings in
+  `SketchNode.tsx` with `border` equivalents. Old: `outline …
+  outline-offset-2 ring-1 …` (anchor) / `outline outline-1 …`
+  (regular) / `outline outline-2 outline-indigo-500` (selected).
+  New: `border-2 border-slate-600` / `border border-slate-300` /
+  `border-2 border-indigo-500`.
+- **Why — the diagnosis the previous rounds missed:** v0.13.3 and
+  v0.13.4 unified the cursor inside the node and on the pane to
+  `pointer` and `default` respectively. DOM probing showed a
+  single cursor inside the node region. Yet the user still saw
+  `pointer ↔ default` flicker on a slow mouse-move across a
+  single node. The reason is that **`outline` paints outside the
+  border-box and is excluded from hit-testing.** Pixels under the
+  outline (and inside the `outline-offset` gap) look like they
+  belong to the node, but a hit-test there resolves to the parent
+  `.react-flow__pane` (cursor: default). For the anchor, the
+  flicker zone was 8–10 px wide. For regular nodes (1 px outline)
+  it was sub-pixel-perceivable.
+- **The general rule (recorded for every future node-styling
+  change):**
+  > Visual extent and hit-box of an interactive node must
+  > coincide. Use `border` (border-box, hit-tested) rather than
+  > `outline` / `outline-offset` / `ring` / outset
+  > `box-shadow` for any decoration on `.react-flow__node`,
+  > `.react-flow__handle`, or any clickable element. Inset
+  > `box-shadow` is fine — it paints inside the box and doesn't
+  > affect hit-testing.
+- **Verified:** `getBoundingClientRect()` on the
+  `.react-flow__node` and its inner decorated `<div>` returns
+  identical x/y/w/h after the change (banas-v013 anchor:
+  710.875, 636.062, 206.54×206.54). Single distinct cursor =
+  `pointer` across the entire node tree.
+- **Approval:** Accepted by user, 2026-05-08 (plan approved
+  before commit).
+- **Spec impact:** SPEC §Anchor "Visual differentiation" row
+  updated to reference `border` instead of outline + offset +
+  ring. The general rule is also added to `plot/CLAUDE.md`
+  anti-patterns.
+
+---
+
 ### D-2026-05-08-F — Handles appear only when the node is selected
 
 - **What:** Removed the hover-fade and direct-handle-scale animations

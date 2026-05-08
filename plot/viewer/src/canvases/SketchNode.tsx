@@ -115,11 +115,19 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
   // Render it with a distinctive double ring so users can tell it apart from
   // service / category circles that share the same yellow fill.
   const isAnchor = data.kind === "project";
+  // v0.13.5 — borders, not outlines. ``outline`` paints OUTSIDE the
+  // border-box and is excluded from hit-testing, so the cursor under
+  // the outline pixels resolves to .react-flow__pane (cursor: default)
+  // rather than to the node (cursor: pointer). With outline-offset-2
+  // the anchor's flicker zone was 8-10 px wide — slow mouse moves
+  // across it visibly flipped pointer ↔ default. ``border`` is part
+  // of the border-box and counts toward hit-testing, so visual and
+  // hit-box coincide. (D-2026-05-08-G.)
   const ring = selected
-    ? "outline outline-2 outline-indigo-500"
+    ? "border-2 border-indigo-500"
     : isAnchor
-      ? "outline outline-2 outline-slate-600 outline-offset-2 ring-1 ring-slate-300"
-      : "outline outline-1 outline-slate-300";
+      ? "border-2 border-slate-600"
+      : "border border-slate-300";
   const style = {
     backgroundColor: data.color,
     ...shapeStyle(data.shape),

@@ -4,6 +4,54 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.5] — 2026-05-08
+
+### Fixed — **Cursor flicker root cause: outline paints outside hit-box**
+
+After three previous rounds of cursor fixes (v0.13.3 → v0.13.4) the
+user still reported `default ↔ pointer` flicker on a slow mouse-move
+across one node ("커서 검지 커서 검지 이렇게 되요"). DOM probing
+returned a single cursor (`pointer`) for every descendant of the
+node, which ruled out competing cursor declarations and left only
+one possible cause: the cursor was crossing the **node's actual
+hit-box boundary** while the user thought they were still inside
+the visual node.
+
+The decoration `outline outline-2 outline-slate-600 outline-offset-2
+ring-1 ring-slate-300` on the synthetic project anchor paints the
+visual ring **8–10 px outside** the `.react-flow__node` bounding box.
+Pixels in that ring zone — though they look like part of the node —
+hit-test to `.react-flow__pane` (cursor: default). Slow movement
+across the ring zone flicked the cursor `pointer ↔ default`.
+
+Fix: replace `outline` (paints outside the box, excluded from
+hit-testing) with `border` (part of the border-box, included in
+hit-testing). After the change the hit-box and the visual box are
+pixel-identical (verified via `getBoundingClientRect`); the cursor
+is `pointer` everywhere on the node region with no flicker zone.
+
+Per-state class change in `viewer/src/canvases/SketchNode.tsx`:
+
+| State | Before | After |
+|---|---|---|
+| Selected | `outline outline-2 outline-indigo-500` | `border-2 border-indigo-500` |
+| Anchor (idle) | `outline outline-2 outline-slate-600 outline-offset-2 ring-1 ring-slate-300` | `border-2 border-slate-600` |
+| Regular (idle) | `outline outline-1 outline-slate-300` | `border border-slate-300` |
+
+The anchor loses its 8 px breathing-room visual + thin slate-300
+inner ring (those were the source of the flicker zone). The new
+2 px slate-600 border keeps the anchor visually distinct from the
+1 px slate-300 of regular nodes and the 2 px indigo-500 of selected
+nodes. If the original "double ring" look matters, an `inset
+box-shadow` is the right tool for a follow-up — it paints inside
+the box and doesn't touch hit-testing.
+
+[D-2026-05-08-G](./docs/DECISIONS.md) records the diagnosis and the
+general rule that follows: **node decoration must coincide with the
+hit-box; never use `outline` / `outline-offset` / `ring` /
+`shadow-[…]` rules that paint outside the box for any pointer-
+significant element.**
+
 ## [0.13.4] — 2026-05-08
 
 ### Fixed — **Cursor / handle visual flicker on node hover (final)**
