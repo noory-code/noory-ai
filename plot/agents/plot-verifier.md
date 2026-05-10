@@ -73,7 +73,16 @@ or shows an error overlay, return **CANNOT VERIFY**.
 
 ### Step 4 — Match against the change description
 
-For each kind of change, run the matching probe:
+**Default for any viewer change:** run the cursor DOM probe sweep
+(§4a) FIRST regardless of the declared change kind. Per
+D-2026-05-11-C, cursor is a cross-cutting visual contract — a
+latent cursor regression must not hide behind an unrelated feature
+commit. If the sweep returns any cursor outside the allowed set
+({`grab`, `grabbing`, `pointer`, `crosshair`,
+`ew/ns/nwse/nesw-resize`}), verdict = **DIVERGES** even if the
+declared change was unrelated.
+
+Then for the declared change kind, run the matching probe below:
 
 #### 4a. Cursor change (most common)
 

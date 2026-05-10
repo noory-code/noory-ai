@@ -35,6 +35,15 @@ GATING_COMMAND_RE = re.compile(
 )
 
 
+# Cross-cutting visual SSOT files. Bundling any of these with a
+# feature change in one commit is the v0.13.10 anti-pattern (see
+# D-2026-05-11-C). Pre-commit gate blocks the bundle; the visual
+# fix ships in its own atomic commit with its own D-id.
+CROSS_CUTTING_VISUAL_CODE = frozenset({
+    "viewer/src/styles.css",
+})
+
+
 def find_plot_root() -> Path | None:
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
     if plugin_root:
@@ -72,6 +81,46 @@ def viewer_changes_staged(staged: list[str], plot_root: Path) -> bool:
 def mcp_changes_staged(staged: list[str], plot_root: Path) -> bool:
     rel = plot_root.name + "/plot_mcp/"
     return any(p.startswith(rel) for p in staged)
+
+
+def cross_cutting_bundle_check(
+    staged: list[str], plot_root: Path
+) -> str | None:
+    """Return a deny message if cross-cutting visual code and feature
+    code are both staged in the same commit. Returns None when OK.
+
+    Cross-cutting visual code = CROSS_CUTTING_VISUAL_CODE (currently
+    just ``viewer/src/styles.css``). Feature code = any other file
+    under ``viewer/`` or ``plot_mcp/`` (tests excluded — they ship
+    with their target). Docs-only commits are never blocked.
+    """
+    prefix = plot_root.name + "/"
+    rel = [p[len(prefix):] for p in staged if p.startswith(prefix)]
+    visual = {p for p in rel if p in CROSS_CUTTING_VISUAL_CODE}
+    feature = [
+        p
+        for p in rel
+        if (p.startswith("viewer/") or p.startswith("plot_mcp/"))
+        and p not in CROSS_CUTTING_VISUAL_CODE
+        and not p.startswith("viewer/tests/")
+    ]
+    if not (visual and feature):
+        return None
+    feature_preview = feature[:5] + (["…"] if len(feature) > 5 else [])
+    return (
+        "### Cross-cutting visual change bundled with feature change\n\n"
+        f"- Visual (cross-cutting SSOT): {sorted(visual)}\n"
+        f"- Feature: {feature_preview}\n\n"
+        "Split this into two atomic commits per D-2026-05-11-C:\n"
+        "1. Visual fix only — own D-YYYY-MM-DD-X entry in DECISIONS.md.\n"
+        "2. Feature change — depends on (1).\n"
+        "\n"
+        "Rationale: bundling a cross-cutting visual change with a\n"
+        "feature change makes post-hoc causation unreadable (see\n"
+        "v0.13.10). The cursor flicker → auto-layout misattribution\n"
+        "that drove this gate is documented in D-2026-05-10-G and\n"
+        "D-2026-05-11-C.\n"
+    )
 
 
 def run_check(command: list[str], cwd: Path) -> tuple[bool, str]:
@@ -141,6 +190,10 @@ def main() -> int:
             failures.append(
                 f"### plot_mcp pytest failed\n\n```\n{out.strip()[-2000:]}\n```"
             )
+
+    bundle_msg = cross_cutting_bundle_check(staged, plot_root)
+    if bundle_msg:
+        failures.append(bundle_msg)
 
     if failures:
         message = (

@@ -4,6 +4,54 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.3] — 2026-05-10
+
+### Added — Cursor ⊥ auto-layout structural gate (D-2026-05-11-C)
+
+Concludes the architectural review queued via the `NEXT_SESSION.md`
+"다음" trigger filed in D-2026-05-11-B.
+
+**Diagnosis:** the perceived cursor ↔ auto-layout coupling was
+*cognitive (commit bundling in v0.13.10)*, not *mechanical (shared
+files)*. Empirical verification of v0.13.7..v0.14.2 git history:
+`viewer/src/styles.css` was never modified by any auto-layout
+commit, and `autoLayout.ts` was never modified by any cursor
+commit. The cursor flicker root cause (RF v11 `role="button"` +
+Tailwind preflight) had existed since v0.13.0; the auto-layout
+work merely surfaced it during browser verification.
+
+**Three orthogonal enforcement mechanisms ship in this release:**
+
+- `plot/hooks/pre_commit_gate.py` — new
+  `cross_cutting_bundle_check()` denies commits that stage
+  `viewer/src/styles.css` (cross-cutting visual SSOT) alongside
+  feature code under `viewer/` or `plot_mcp/`. Tests excluded from
+  the "feature" category.
+- `plot/viewer/tests/styles-cursor-baseline.test.tsx` — static
+  Vitest guard asserting `styles.css` contains zero cursor
+  declarations outside comments. Adding a cursor rule requires a
+  fresh `D-YYYY-MM-DD-X` decision id and updating the test
+  together — the audit trail becomes mechanical.
+- `plot/agents/plot-verifier.md` — Step 4 default now runs the
+  cursor DOM probe sweep FIRST on every viewer change, regardless
+  of declared change kind. Latent cross-cutting visual regressions
+  cannot hide behind unrelated feature commits.
+- `plot/CLAUDE.md` anti-patterns table — new row "Bundling a
+  cross-cutting visual change with a feature change in one
+  commit", pointing to D-2026-05-11-C.
+
+**No viewer behaviour change. No DOMAIN.md change** — DOMAIN.md
+line 205 already correctly characterises cursor as cross-cutting
+with no natural domain home. The right enforcement layer is
+commit hygiene + static guard + verification default, not domain
+re-modelling.
+
+Code-level alternatives (extract `cursorContract.ts` module,
+refactor `useNodesMemo` / `useEdgesMemo`) considered and rejected
+as YAGNI — `styles.css` is 27 LOC with zero cursor rules
+post-v0.14.2, and the ghost-edge symptom from v0.13.9 was already
+resolved by D-2026-05-10-G.
+
 ## [0.14.2] — 2026-05-11
 
 ### Removed — All cursor cancellation rules; pure RF default + Tailwind preflight

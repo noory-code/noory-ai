@@ -1002,3 +1002,85 @@ in the same browser-verification round:
 - **Spec impact:** No immediate code change. Spec impact from the
   next-session review goes into a follow-up D-YYYY-MM-DD-X entry
   once the architectural fix is designed.
+
+---
+
+### D-2026-05-11-C — cursor ⊥ auto-layout: cognitive coupling, not mechanical; structural gate added
+
+- **What:** The "cursor was broken by auto-layout work" review
+  (queued in D-2026-05-11-B + NEXT_SESSION.md, fired by the
+  user saying "다음") concludes that the coupling was
+  **cognitive (commit bundling), not mechanical (shared files)**.
+  Verified empirically against the v0.13.7..v0.14.2 git history:
+  - `viewer/src/styles.css` (cursor SSOT) was not modified by any
+    auto-layout commit (v0.13.8 docs, v0.13.9 impl, v0.14.1 revert).
+  - `autoLayout.ts` / `useAutoLayout.ts` were not modified by any
+    cursor commit (v0.13.10, v0.14.2).
+  - The only mechanical intersections were `SketchCanvas.tsx`
+    (shell, 359 LOC, well within the 500-line rule) and
+    `SketchToolbar.tsx` (button-location decision) — both edits
+    touched disjoint JSX regions.
+  - v0.13.10 commit ("cursor flicker root cause + auto-layout
+    button placement") bundled both concerns in one atomic commit;
+    this is the cognitive coupling vector.
+  - Cursor flicker existed since v0.13.0 (RF v11's `role="button"`
+    + Tailwind preflight `[role="button"] { cursor: pointer }`
+    collision) — auto-layout was the *trigger for discovery*, not
+    *insertion*. D-2026-05-10-G already records this causal
+    correction; this entry generalises the lesson.
+
+  Structural gate ships in v0.14.3 with three orthogonal
+  enforcement mechanisms:
+  1. `plot/hooks/pre_commit_gate.py::cross_cutting_bundle_check`
+     denies any commit that stages `viewer/src/styles.css`
+     (cross-cutting visual SSOT) alongside feature code under
+     `viewer/` or `plot_mcp/`. Tests are excluded from the
+     "feature" category so test-with-target shipping stays normal.
+  2. `viewer/tests/styles-cursor-baseline.test.tsx` asserts
+     `styles.css` has zero cursor declarations outside comments.
+     Adding one requires a fresh D-id and updating the test
+     together — making the audit trail mechanical.
+  3. `plot/agents/plot-verifier.md` Step 4 default now runs the
+     cursor DOM probe sweep FIRST on every viewer change,
+     regardless of declared change kind. A latent cursor
+     regression hidden behind an unrelated feature commit fails
+     verification.
+
+  `plot/CLAUDE.md` anti-patterns table gains a row pointing here.
+
+- **Why this matters:** Cursor (cross-cutting visual contract) and
+  Layout (`EssencePlanning` algorithm per
+  [`DOMAIN.md`](./DOMAIN.md)) cannot share a natural domain
+  home. DOMAIN.md line 205 already records this correctly:
+  *"Cursor SSOT | Cross-cutting | OK as-is — visual contract has
+  no natural domain home."* The right enforcement layer is
+  **commit hygiene + static guard + verification default**, not
+  domain re-modelling.
+- **Alternatives considered and rejected:**
+  - (a) Extract `cursorContract.ts` module — rejected: `styles.css`
+    is currently 27 LOC with zero cursor rules (post-v0.14.2).
+    Empty abstraction violates YAGNI.
+  - (b) Pre-commit gate via shell hook in `.git/hooks/` instead
+    of `pre_commit_gate.py` — rejected: noory-ai CLAUDE.md
+    "Cross-Platform Compatibility" bans shell scripts; the Plot
+    hook already runs through `pre_commit_gate.py` PreToolUse.
+  - (c) Add cursor as a separate bounded context in DOMAIN.md —
+    rejected: DOMAIN.md line 205 already explicitly decided
+    cursor is cross-cutting with no domain home. Adding a context
+    would contradict that decision.
+  - (d) Refactor `useNodesMemo` / `useEdgesMemo` to isolate
+    transient runtime state — rejected: the ghost-edge symptom
+    from v0.13.9 testing was resolved by D-2026-05-10-G
+    (auto-layout removal). No live problem to refactor for.
+- **Honest premise correction:** the original D-2026-05-11-B
+  framing implied a mechanical coupling between cursor and
+  auto-layout files. Phase 1 analysis showed this was wrong —
+  the files never shared territory. The architectural review
+  therefore targets the real failure mode (commit bundling +
+  latent visual bugs surfacing during feature verification)
+  rather than the named one (cursor ↔ auto-layout file
+  coupling). User confirmed this re-framing during the 2026-05-10
+  session.
+- **Approval:** Pending — user, 2026-05-10.
+- **Spec impact:** none. Structural / process change with no
+  observable Plot behaviour difference.
