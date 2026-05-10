@@ -141,12 +141,17 @@ describe("SketchCanvas regression — pin v0.13.2 reverts", () => {
     expect(handles.length).toBe(4);
   });
 
-  it("toolbar does not render an 'Auto layout' button", () => {
-    // D-2026-05-04-D — auto-layout removed. Reproduces the layout-
-    // overwrites-user-intent bug.
-    const doc = makeCanvas("foundation");
+  it("toolbar renders an 'Auto layout' button (enabled when anchor + at least one node)", () => {
+    // D-2026-05-10-E — auto-layout restored as mindmap directional
+    // tree. Button is enabled when an anchor exists on the canvas
+    // and at least one non-anchor node is present.
+    const doc = makeCanvas("foundation", [
+      makeNode({ id: "mission", label: "Mission", kind: "mission" }),
+    ]);
     const { queryByRole } = mount(doc);
-    expect(queryByRole("button", { name: /auto layout/i })).toBeNull();
+    const btn = queryByRole("button", { name: /auto layout/i });
+    expect(btn).not.toBeNull();
+    expect(btn!.getAttribute("disabled")).toBeNull();
   });
 
   it("Inspector aside appears after a node click", () => {

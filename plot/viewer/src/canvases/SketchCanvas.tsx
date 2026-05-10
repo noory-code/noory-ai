@@ -34,6 +34,7 @@ import { useInspectorRouting } from "./sketch/useInspectorRouting";
 import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
 import { useValueFlow } from "./sketch/useValueFlow";
+import { useAutoLayout } from "./sketch/useAutoLayout";
 
 const NODE_TYPES = { sketch: SketchNode } as const;
 
@@ -240,6 +241,8 @@ function SketchCanvasInner({
     onDocChange,
   });
 
+  const applyAutoLayout = useAutoLayout({ docRef, onDocChange, projectAnchor });
+
   const {
     handleDragOver,
     handleDrop,
@@ -270,6 +273,8 @@ function SketchCanvasInner({
         onRedo={onRedo}
         valueFlowOn={valueFlowOn}
         onToggleValueFlow={toggleValueFlow}
+        canAutoLayout={!!projectAnchor && doc.nodes.length > 0}
+        onAutoLayout={applyAutoLayout}
       />
       <ReactFlow
         nodes={nodes}

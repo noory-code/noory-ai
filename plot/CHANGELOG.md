@@ -4,6 +4,72 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.9] — 2026-05-10
+
+### Added — Auto-layout button (mindmap directional tree implementation)
+
+Implements the spec shipped in v0.13.8. Single click on the new
+"Auto layout" button on `<SketchToolbar>` runs the directional-tree
+algorithm against the active canvas, repositions every non-anchor
+node, and dispatches one `onDocChange` so `Cmd+Z` reverses the
+layout in one step.
+
+#### New files
+
+- `viewer/src/canvases/sketch/autoLayout.ts` (297 LOC) — pure
+  module, no React imports. Exports `computeAutoLayout(input):
+  { positions: Map<id, {x, y}> }`. Implements:
+  - BFS spanning tree from the anchor.
+  - Per-child direction from the parent-side handle (R / L / T / B).
+    Falls back to positional inference when the edge has null
+    `sourceHandle` / `targetHandle`.
+  - R / L children → vertical column on the parent's right / left.
+  - T / B children → horizontal row above / below the parent.
+  - Recursive: grandchildren follow the same rule using *their*
+    incoming handle.
+  - Reingold-Tilford-style subtree-extent tracking → no node
+    footprint overlaps (verified by unit test on a mixed-depth
+    grandchild case).
+  - Determinism: ties broken by node id at every level.
+  - Isolated nodes (not reachable from anchor) → vertical column
+    in the anchor's lower-right empty quadrant, sorted by id.
+  - Cycles handled by BFS spanning tree (no infinite loop;
+    cycle-closing edges are not used for placement).
+- `viewer/src/canvases/sketch/useAutoLayout.ts` (43 LOC) — thin
+  React hook bridging `computeAutoLayout` to `onDocChange`. Reads
+  `docRef.current` + `projectAnchor`, computes positions, builds
+  the next `CanvasDoc` with updated `nodes[]`, fires `onDocChange`
+  once.
+- `viewer/tests/autoLayout.test.ts` — 11 new unit tests pinning:
+  per-direction grouping (R children stay right, T children above,
+  …), strict no-migration-downward when right is crowded, recursion
+  into grandchildren in their own direction, no overlap on a mixed
+  R + grandchildren case, determinism across runs, cycle handling,
+  isolated nodes, handle-direction inference fallback, and helper
+  contracts.
+
+#### Wired changes
+
+- `viewer/src/canvases/SketchToolbar.tsx` — new `canAutoLayout`
+  + `onAutoLayout` props; new `IconBtn` rendered between Redo and
+  end of toolbar (glyph: `⊞`).
+- `viewer/src/canvases/SketchCanvas.tsx` — imports `useAutoLayout`,
+  calls it, passes the result to `<SketchToolbar>`. Six lines of
+  glue; no new responsibility (the algorithm and the React bridge
+  both live in `sketch/`). LOC 360 → 366.
+- `viewer/tests/SketchCanvas.regression.test.tsx` — the
+  D-2026-05-04-D regression test (`'toolbar does not render an
+  Auto layout button'`) was updated to assert the **opposite** per
+  D-2026-05-10-E: button MUST render and is enabled when the
+  canvas has an anchor + at least one non-anchor node.
+
+#### What stayed the same
+
+- The anchor is never moved by auto-layout.
+- Edges keep their `sourceHandle` / `targetHandle` after layout.
+- No animation, no preview, no confirmation dialog — single click
+  ⇒ instant re-layout per spec.
+
 ## [0.13.8] — 2026-05-10
 
 ### Spec — Auto-layout restored as a mindmap-style directional tree
