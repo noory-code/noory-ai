@@ -76,58 +76,51 @@ override these.
 
 ---
 
-## The two rules we add — Tailwind preflight cancellation
+## No overrides — pure RF default + Tailwind preflight
 
-`styles.css` contains exactly two cursor-related rules:
+`styles.css` contains **zero** cursor rules. The v0.13.6
+(D-2026-05-10-C) and v0.13.10 (D-2026-05-10-F) Tailwind preflight
+cancellation rules were removed in v0.14.2 per direct user request:
+*"일단 RF 기본으로 돌리라구요"* (D-2026-05-11-A).
 
-```css
-/* (1) RF v11 sets role="button" on .react-flow__node itself for
-       accessibility. Restore RF's intended grab. */
-.react-flow__node[role="button"] {
-  cursor: grab;
-}
-.react-flow__node[role="button"].dragging {
-  cursor: grabbing;
-}
+Resulting cursor behaviour comes from two stylesheet sources only:
 
-/* (2) Inside a node, force descendants to inherit the node's cursor
-       so EditableText label + fold button don't flip to pointer. */
-.react-flow__node *:not(.react-flow__handle):not(.react-flow__resize-control) {
-  cursor: inherit;
-}
-```
+1. **React Flow** (`reactflow/dist/style.css` +
+   `@reactflow/node-resizer/dist/style.css`).
+2. **Tailwind preflight** (`@tailwind base;`).
 
-### Why this exists
+### What Tailwind preflight does to RF cursors
 
-Tailwind preflight (loaded via `@tailwind base;`) ships these rules
-in every Tailwind-using project:
+Tailwind preflight ships:
 
 ```css
 button, [role="button"] { cursor: pointer; }
 :disabled { cursor: default; }
 ```
 
-Three elements in our canvas match these selectors:
+Three places in the Plot canvas match these selectors:
 
-- **`.react-flow__node` itself** — RF v11 sets `role="button"` on every
-  node element for accessibility. Tailwind preflight matches it
-  directly. Without rule (1), the node element shows `cursor: pointer`,
-  and (because cursor inherits) every descendant inside the node shows
-  `cursor: pointer` too.
-- **The fold button** (`<button>`) on container nodes.
-- **The EditableText label span** which carries `role="button"` for
-  keyboard accessibility.
+- **`.react-flow__node` itself** — RF v11 sets `role="button"` on
+  every node for accessibility. Preflight wins over RF's
+  `cursor: grab` ⇒ node shows `pointer`.
+- **EditableText label span** (mission / core_value / etc.) — also
+  `role="button"` for keyboard a11y ⇒ `pointer`.
+- **Fold `<button>`** inside container nodes ⇒ `pointer`.
 
-Without the cancellation rules, the cursor flips between `grab` (RF
-default on the pane) and `pointer` (Tailwind preflight on the node)
-as the mouse crosses the node-pane boundary. That is the exact
-flicker the v0.13.3 → v0.13.6 work tried to fix six times — and
-finally identified in v0.13.10 via Playwright DOM-probe diagnostics.
+The combination is **the user's preferred mental model**: clickable
+node = `pointer`; pane = `grab`; handle = `crosshair`; drag in
+flight = `grabbing`. No overrides needed; the stack composes
+correctly out of the box.
 
-Rule (1) restores `grab` on the node element. Rule (2) makes every
-descendant inherit from the node — except the React Flow
-infrastructure (handles and resize controls), which keeps its
-semantic cursor.
+### Anchor asymmetry
+
+Anchor uses a static `<span>` (no EditableText, no `role="button"`)
+because the anchor label mirrors `ProjectDoc.name` and isn't edited
+from the canvas. So anchor body inner divs show their inherited
+cursor (`grab`) while regular node bodies show `pointer`. This is a
+known asymmetry of the pure-default decision; acceptable per
+D-2026-05-11-A. If a future requirement demands anchor = pointer too,
+add a SINGLE focused rule and a fresh decision id.
 
 ### Why this isn't "just another override"
 
@@ -240,12 +233,17 @@ rule is missing or has been broken. Check `styles.css` first.
 
 ## Change history
 
+- **v0.14.2 (2026-05-11)** — removed all cancellation rules.
+  `styles.css` has zero cursor rules. Pure RF default + Tailwind
+  preflight composes to user's preferred mental model. See
+  D-2026-05-11-A.
 - **v0.13.10 (2026-05-10)** — added cancellation rule for
   `.react-flow__node[role="button"]` itself (RF v11 a11y attribute
   was the root cursor-flicker source all along). Identified via
-  Playwright DOM probe. See D-2026-05-10-F.
+  Playwright DOM probe. See D-2026-05-10-F. (Reverted in v0.14.2.)
 - **v0.13.6 (2026-05-10)** — full reset to RF defaults + Tailwind
   preflight cancellation on descendants. See D-2026-05-10-C.
+  (Reverted in v0.14.2.)
 - **v0.13.3-v0.13.5** — six-round override stack (now removed). See
   D-2026-05-04-E, D-2026-05-08-C, D-2026-05-08-E, D-2026-05-08-F,
   D-2026-05-08-G, D-2026-05-10-A.

@@ -233,41 +233,43 @@ fields never triggers canvas actions.
 
 ## Cursor states (canvas-wide SSOT, applies to every canvas)
 
-**v0.13.6 reset + v0.13.10 supplement:** every cursor on the canvas
-surface follows **React Flow's default**, sourced from
-`reactflow/dist/style.css` and
-`@reactflow/node-resizer/dist/style.css`. `styles.css` adds **two
-Tailwind preflight cancellation rules** so the RF default actually
-takes effect:
+**v0.14.2 reset:** every cursor follows **pure React Flow default
++ pure Tailwind preflight, with NO overrides** in `styles.css`. The
+v0.13.6 (D-2026-05-10-C) and v0.13.10 (D-2026-05-10-F) Tailwind
+preflight cancellation rules were removed in v0.14.2 per direct
+user request *"일단 RF 기본으로 돌리라구요"* (D-2026-05-11-A).
 
-1. RF v11 sets `role="button"` on `.react-flow__node` itself for
-   accessibility — Tailwind preflight `[role="button"] { cursor:
-   pointer }` therefore overrode the RF-default `cursor: grab` on
-   every node. (D-2026-05-10-F.) Restore explicitly.
-2. Inside a node, the EditableText label span (also `role="button"`)
-   and the fold `<button>` would still flip to pointer per the same
-   preflight. Force inheritance from the node above so the whole
-   node body shows the same cursor. (D-2026-05-10-C.)
+This table reproduces the resulting cursors so future sessions can
+verify them without re-reading vendor CSS.
 
-The full deep-dive lives in [`CURSOR.md`](./CURSOR.md). This table
-reproduces the resulting behaviour so future sessions can verify it
-without re-reading vendor CSS.
+| Region | State | Cursor | Source |
+|---|---|---|---|
+| Empty canvas (`.react-flow__pane`) | idle | `grab` | RF default |
+| Empty canvas (`.react-flow__pane.dragging`) | panning | `grabbing` | RF default |
+| `.react-flow__node` (RF v11 sets `role="button"`) | idle | `pointer` | Tailwind preflight `[role="button"]` overrides RF's `grab` |
+| `.react-flow__node.dragging` | dragging | `grabbing` | RF default beats preflight via specificity |
+| Anchor body inner divs | idle hover | `grab` | inherits from `.react-flow__node` BUT anchor uses static `<span>` (no `role="button"`) so inner divs show their own inherited cursor — empirically `grab` because the inner div isn't itself preflight-matched |
+| EditableText label span (mission / core_value / identity / actor / service / etc.) | idle hover | `pointer` | Tailwind preflight on `[role="button"]` (the role kept for keyboard a11y) |
+| Fold `<button>` inside container nodes | idle hover | `pointer` | Tailwind preflight on `<button>` |
+| Multi-selection rect (`.react-flow__nodesselection-rect`) | hover | `grab` | RF default |
+| Connection handle (`.react-flow__handle.connectionindicator`) | hover, connectable | `crosshair` | RF default |
+| Connection handle (`.react-flow__handle.connecting / .connectingfrom`) | active edge drag | `crosshair` | RF default |
+| Edge (`.react-flow__edge`) | hover | `pointer` | RF default |
+| Edge updater (`.react-flow__edgeupdater`) | hover end-point | `move` | RF default |
+| Resize control side (`.react-flow__resize-control.left/right`) | hover | `ew-resize` | `@reactflow/node-resizer` default |
+| Resize control side (`.react-flow__resize-control.top/bottom`) | hover | `ns-resize` | `@reactflow/node-resizer` default |
+| Resize control corner (`.react-flow__resize-control.top.left / bottom.right`) | hover | `nwse-resize` | `@reactflow/node-resizer` default |
+| Resize control corner (`.react-flow__resize-control.bottom.left / top.right`) | hover | `nesw-resize` | `@reactflow/node-resizer` default |
+| Inspector / Toolbar / context menu | per element | per element | Tailwind / browser defaults |
 
-| Region | State | Cursor |
-|---|---|---|
-| Empty canvas (`.react-flow__pane`) | idle | `grab` |
-| Empty canvas (`.react-flow__pane.dragging`) | actively panning | `grabbing` |
-| Node body (`.react-flow__node`) and **all descendants** (label, body, icons, badge, fold button) | idle hover | `grab` (RF default + Tailwind preflight cancellation; see [CURSOR.md](./CURSOR.md)) |
-| Node body (`.react-flow__node.dragging`) | actively dragging the node | `grabbing` |
-| Multi-selection rect (`.react-flow__nodesselection-rect`) | hover | `grab` |
-| Connection handle (`.react-flow__handle.connectionindicator`) | hover, connectable | `crosshair` |
-| Edge (`.react-flow__edge`) | hover | `pointer` |
-| Edge updater (`.react-flow__edgeupdater`) | hover on edge end-point | `move` |
-| Resize control side (`.react-flow__resize-control.left/right`) | hover | `ew-resize` |
-| Resize control side (`.react-flow__resize-control.top/bottom`) | hover | `ns-resize` |
-| Resize control corner (`.react-flow__resize-control.top.left / bottom.right`) | hover | `nwse-resize` |
-| Resize control corner (`.react-flow__resize-control.bottom.left / top.right`) | hover | `nesw-resize` |
-| Inspector / Toolbar / context menu | per element | per element (Tailwind / browser defaults) |
+**Asymmetry note:** anchor body shows `grab` while
+mission / core_value / identity / etc. body shows `pointer` because
+EditableText (which carries `role="button"`) is conditionally
+attached only to nodes with an `onLabelChange` callback. Anchor
+labels are not user-edited from the canvas (label mirrors
+`ProjectDoc.name`), so anchor lacks the EditableText span. This is
+a known asymmetry of the pure-RF-default decision; deemed
+acceptable per D-2026-05-11-A.
 
 **The RF mental model in one sentence:** anything draggable shows
 `grab`, the active drag shows `grabbing`, drawing a connection shows

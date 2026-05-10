@@ -67,6 +67,36 @@ def read_recent_decisions(plot_root: Path, n: int = 5) -> list[str]:
     return headings[-n:]
 
 
+def read_next_session_queue(plot_root: Path) -> list[tuple[str, str]]:
+    """Return [(trigger_keyword, short_title)] for every active queue item.
+
+    NEXT_SESSION.md format:
+    ## Active queue
+    ### `<TRIGGER>` — <short title>
+    ...
+    ## Completed
+    """
+    next_path = plot_root / "docs" / "NEXT_SESSION.md"
+    if not next_path.exists():
+        return []
+    text = next_path.read_text(encoding="utf-8")
+    # Slice between "## Active queue" and "## Completed"
+    active_match = re.search(
+        r"^## Active queue\s*\n(.*?)(?=^## Completed|\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not active_match:
+        return []
+    active_section = active_match.group(1)
+    items = re.findall(
+        r"^###\s+`([^`]+)`\s+—\s+(.+)$",
+        active_section,
+        re.MULTILINE,
+    )
+    return items
+
+
 def main() -> int:
     plot_root = find_plot_root()
     if plot_root is None:
@@ -76,6 +106,7 @@ def main() -> int:
 
     essence = read_vision_essence(plot_root)
     recent = read_recent_decisions(plot_root, n=5)
+    queue = read_next_session_queue(plot_root)
 
     additional_context_lines = [
         "# Plot session anchor",
@@ -95,6 +126,30 @@ def main() -> int:
         [
             "",
             "Source: `plot/docs/DECISIONS.md`. Always read the full entry before re-proposing related work.",
+        ]
+    )
+
+    if queue:
+        additional_context_lines.extend(
+            [
+                "",
+                "**Queued tasks for next session — trigger by user keyword (read `plot/docs/NEXT_SESSION.md` for full scope):**",
+                "",
+            ]
+        )
+        for trigger, title in queue:
+            additional_context_lines.append(
+                f"- User says **`{trigger}`** ⇒ execute: {title}"
+            )
+        additional_context_lines.append("")
+        additional_context_lines.append(
+            "If the user's first message contains one of the trigger keywords above, "
+            "open `plot/docs/NEXT_SESSION.md` and execute the matching item before any "
+            "other work."
+        )
+
+    additional_context_lines.extend(
+        [
             "",
             "**Pre-action gates active:**",
             "- Gate -1: read VISION.md essence (auto-loaded above).",

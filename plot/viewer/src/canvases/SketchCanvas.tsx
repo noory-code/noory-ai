@@ -3,7 +3,6 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   Controls,
-  MiniMap,
   ReactFlowProvider,
   type NodeChange,
   type ReactFlowInstance,
@@ -303,7 +302,6 @@ function SketchCanvasInner({
         fitViewOptions={{ padding: 0.2 }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <MiniMap zoomable pannable />
         <Controls />
       </ReactFlow>
       {menu && (

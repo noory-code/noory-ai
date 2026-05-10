@@ -9,41 +9,19 @@ html, body, #root {
 }
 body { margin: 0; }
 
-/* No React Flow overrides. v0.13.6 reset: cursor / handle visibility
-   / handle size / handle colour all follow ``reactflow/dist/style.css``
-   and ``@reactflow/node-resizer/dist/style.css`` baselines. The full
-   cursor SSOT lives in ``plot/docs/SPEC.md`` §Cursor states; pinning
-   it here would re-introduce the override-stacking problem that
-   produced six rounds of cursor regressions in v0.13.3-v0.13.6.
-   (D-2026-05-10-C.) */
-
-/* Two cursor-related rules cancelling Tailwind preflight matches that
-   break RF's "node hover = grab" mental model. Both pixel-verified
-   via Playwright DOM probe (see CURSOR.md #verify-the-cursor-state).
-   (D-2026-05-10-F.) */
-
-/* (1) RF v11 sets role="button" on .react-flow__node itself for
-   accessibility. Tailwind preflight ``[role="button"] { cursor:
-   pointer }`` therefore makes EVERY canvas node show pointer, then
-   propagates pointer down the inheritance chain. This was the
-   actual cursor-flicker root cause that v0.13.3-v0.13.6 fixes
-   misdiagnosed: the assumed "RF default grab" was being shadowed
-   on .react-flow__node itself before any descendant rule even
-   ran. Restore RF's intended grab/grabbing pair explicitly. */
-.react-flow__node[role="button"] {
-  cursor: grab;
-}
-.react-flow__node[role="button"].dragging {
-  cursor: grabbing;
-}
-
-/* (2) Inside a node, the EditableText label span ``role="button"``
-   and the fold ``<button>`` would still flip to pointer per
-   Tailwind preflight. Force inheritance from the node above so the
-   whole node body shows the same cursor. The :not() exclusions
-   preserve RF's semantic cursors on connection handles
-   (crosshair when connecting via .connectionindicator) and on
-   resize controls (ew/ns/nwse/nesw-resize). */
-.react-flow__node *:not(.react-flow__handle):not(.react-flow__resize-control) {
-  cursor: inherit;
-}
+/* No React Flow / cursor / handle overrides at all.
+   Pure RF default + pure Tailwind preflight. v0.14.2 reverts the
+   v0.13.6 (D-2026-05-10-C) and v0.13.10 (D-2026-05-10-F) Tailwind
+   preflight cancellation rules per direct user request: *"일단 RF
+   기본으로 돌리라구요."* Resulting cursors:
+   - Node body (.react-flow__node has role="button" set by RF v11) →
+     ``pointer`` from Tailwind preflight.
+   - Node descendants (label span role="button", fold <button>) →
+     ``pointer`` from Tailwind preflight.
+   - Pane (.react-flow__pane) → ``grab`` from RF default.
+   - Pane during drag (.react-flow__pane.dragging) → ``grabbing``.
+   - Connection handle (.react-flow__handle.connectionindicator) →
+     ``crosshair`` from RF default.
+   - Resize controls (.react-flow__resize-control.{...}) → directional
+     resize cursors from @reactflow/node-resizer default.
+   See plot/docs/CURSOR.md for the full table. (D-2026-05-11-A.) */

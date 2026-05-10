@@ -4,6 +4,84 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.2] — 2026-05-11
+
+### Removed — All cursor cancellation rules; pure RF default + Tailwind preflight
+
+User direction: *"일단 RF 기본으로 돌리라구요. 이해를 못하지?"* The
+v0.13.6 (D-2026-05-10-C) and v0.13.10 (D-2026-05-10-F) Tailwind
+preflight cancellation rules were the assistant repeatedly forcing
+`node = grab` to match RF's nominal default — but the user's
+mental model was always "node = pointer (clickable), pane = grab
+(pannable), handle = crosshair (drawable)" which is **exactly what
+pure RF default + Tailwind preflight composes to** with zero
+overrides.
+
+`viewer/src/styles.css` now contains only `@tailwind` imports and
+`html/body/#root` sizing. Resulting cursors:
+
+| Region | Cursor | Source |
+|---|---|---|
+| `.react-flow__pane` | `grab` / `grabbing` | RF default |
+| `.react-flow__node` (RF v11 sets `role="button"`) | `pointer` | Tailwind preflight `[role="button"]` |
+| `.react-flow__node.dragging` | `grabbing` | RF default beats preflight via specificity |
+| EditableText label span (`role="button"`) | `pointer` | Tailwind preflight |
+| Fold `<button>` | `pointer` | Tailwind preflight |
+| `.react-flow__handle.connectionindicator` | `crosshair` | RF default |
+| Resize controls | `ew/ns/nwse/nesw-resize` | `@reactflow/node-resizer` default |
+
+Anchor body shows `grab` because the anchor uses a static `<span>`
+(no EditableText, no `role="button"`); the inner divs inherit the
+parent's cursor without preflight matching them. Acceptable
+asymmetry per D-2026-05-11-A.
+
+### Removed — MiniMap (bottom-right overview)
+
+User: *"오른쪽 아래에 있는 오버뷰? 이거 없애요."* Drop the
+`<MiniMap zoomable pannable />` and its import from
+`viewer/src/canvases/SketchCanvas.tsx`. The lower-right corner is
+now empty.
+
+### Added — `plot/docs/NEXT_SESSION.md` queue + SessionStart hook integration
+
+User: *"다음세션에서 심층적으로 검토하고 개선할 수 있게 해두세요.
+다음세선서 '다음' 이라고 하면 이거 해야해요."*
+
+A new `plot/docs/NEXT_SESSION.md` file holds keyword-triggered tasks
+that the assistant should pick up at the next Plot session start.
+The first queued item: **`다음`** ⇒ architectural review of how
+auto-layout work bled into cursor code (see D-2026-05-11-B for
+context, NEXT_SESSION.md for full scope).
+
+`plot/hooks/session_start.py` reads `NEXT_SESSION.md`'s "Active
+queue" section and surfaces each `### \`<TRIGGER>\` — <title>`
+heading in the SessionStart `additionalContext`. The assistant
+watches the user's first message; if it contains a trigger keyword,
+that item becomes the active task.
+
+### Added — DECISIONS.md entries
+
+- **D-2026-05-11-A** — Pure RF default cursors + MiniMap removal,
+  with the lesson "default to NO cursor rules in `styles.css`".
+- **D-2026-05-11-B** — Architectural concern: auto-layout work
+  affected cursor code; review queued for next session via the
+  `다음` trigger.
+
+### Updated — SPEC.md / CURSOR.md
+
+Both rewritten to reflect "no overrides" and the resulting cursor
+table. CURSOR.md change-history extended with the v0.14.2 entry.
+
+### Verification
+
+- `tsc --noEmit`: clean.
+- `vitest run`: 11/11 passing.
+- Playwright probe: pane=`grab`, mission body span=`pointer`,
+  handle=`crosshair`, anchor body=`grab` (asymmetry as documented),
+  MiniMap absent.
+- SessionStart hook smoke test: VISION + 5 DECISIONS + `다음`
+  trigger all surfaced in `additionalContext`.
+
 ## [0.14.1] — 2026-05-10
 
 ### Removed — Auto-layout (again)

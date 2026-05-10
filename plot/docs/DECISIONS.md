@@ -909,3 +909,96 @@ in the same browser-verification round:
 - **Files reverted:**
   - `viewer/src/canvases/SketchCanvas.tsx` (drop ControlButton + useAutoLayout)
   - `viewer/tests/SketchCanvas.regression.test.tsx` (re-invert auto layout assertion)
+
+---
+
+### D-2026-05-11-A — Pure RF default cursors (revert all cancellation rules); remove MiniMap
+
+- **What:** Two related simplifications shipped in v0.14.2.
+  1. **Cursor:** Remove every cursor rule from
+     `viewer/src/styles.css`. The v0.13.6 (D-2026-05-10-C) and
+     v0.13.10 (D-2026-05-10-F) Tailwind preflight cancellation rules
+     are gone. `styles.css` now contains only `@tailwind` imports +
+     `html/body/#root` sizing. Resulting cursors come purely from
+     React Flow defaults + Tailwind preflight composition.
+  2. **MiniMap:** Remove the `<MiniMap zoomable pannable />` from
+     `viewer/src/canvases/SketchCanvas.tsx` (and its import). No
+     more bottom-right overview.
+- **Why (user):** *"일단 RF 기본으로 돌리라구요. 이해를 못하지?"* —
+  the user's core mental model has been "pointer on clickable node,
+  crosshair on draw-from handle, grab on pannable pane" all along.
+  v0.13.6 and v0.13.10 added cancellations to force `node = grab`
+  (RF's nominal default) but that contradicted the user's intent.
+  Pure RF default + Tailwind preflight COMPOSES to exactly what the
+  user wants:
+  - `.react-flow__node` (RF v11 sets `role="button"`) → preflight
+    overrides RF's `grab` to `pointer`.
+  - EditableText label span (`role="button"` for keyboard a11y) →
+    preflight `pointer`.
+  - Fold `<button>` → preflight `pointer`.
+  - `.react-flow__pane` → RF default `grab`.
+  - `.react-flow__handle.connectionindicator` → RF default
+    `crosshair`.
+  - Resize controls → vendor defaults.
+  Verified empirically via Playwright DOM probe at multiple
+  coordinates after the revert.
+- **Lesson encoded for future sessions:** The assistant repeatedly
+  added cancellation rules to "fix" Tailwind preflight matching RF's
+  attribute-based selectors. The user's preference was always to
+  let preflight + RF compose naturally. Four iterations of this
+  mistake (v0.13.5 / v0.13.6 / v0.13.10 / v0.14.2) should have been
+  one. Heuristic for future Plot cursor work: **default to NO
+  cursor rules in `styles.css`. Only add a rule when a real,
+  Playwright-probed user complaint cannot be explained by Tailwind
+  + RF interaction.**
+- **Anchor asymmetry note:** anchor body shows `grab` (because the
+  anchor uses a static `<span>`, no `role="button"`) while the
+  other Foundation nodes show `pointer` (EditableText). Acceptable
+  per this decision; if a future requirement demands anchor =
+  pointer too, a single focused rule + new decision id.
+- **Approval:** **Accepted** by user, 2026-05-11 — *"이제 됐네 자
+  문서들 업데이트하구요."* User additionally requested MiniMap
+  removal in the same exchange (*"오른쪽 아래에 있는 오버뷰? 이거
+  없애요."*) which is bundled here.
+- **Spec impact:**
+  - [`SPEC.md` §Cursor states](./SPEC.md#cursor-states-canvas-wide-ssot-applies-to-every-canvas)
+    — fully rewritten to "pure RF default + Tailwind preflight, no
+    overrides" with the new cursor table and the anchor-asymmetry
+    note.
+  - [`CURSOR.md`](./CURSOR.md) — cancellation sections removed,
+    "no overrides — pure RF default + Tailwind preflight" section
+    added; change-history updated.
+  - [`SPEC.md`](./SPEC.md) — MiniMap removed from the implicit
+    canvas surface inventory (no explicit MiniMap section existed,
+    so no rewrite needed beyond noting in CHANGELOG).
+- **Files touched:**
+  - `viewer/src/styles.css` — strip cursor rules.
+  - `viewer/src/canvases/SketchCanvas.tsx` — remove `MiniMap` import + JSX.
+
+---
+
+### D-2026-05-11-B — Architectural concern: auto-layout work bled into cursor code (review next session)
+
+- **What (user observation):** *"지금 문제는 오토레이아웃을
+  넣어달라고 했는데 이거 때문에 커서 관련된 코드에 영향을 받는거에요.
+  이거 잘못된거죠. 완전히 다른 영역인데 영향을 받는다? 이거 설계를
+  잘못한거에요. 다음세션에서 심층적으로 검토하고 개선할 수 있게
+  해두세요."*
+- **Why this matters:** Cursor (visual contract for the canvas
+  surface) and Layout (positioning algorithm) are two independent
+  concerns. The fact that v0.13.8 → v0.14.1 auto-layout work
+  triggered ~6 cursor regressions demonstrates that the codebase
+  does not isolate these contexts. Per
+  [`DOMAIN.md`](./DOMAIN.md): cursor is a cross-cutting visual
+  contract; layout belongs to `EssencePlanning`. They should not
+  share files, mutation paths, or runtime state. Today they do.
+- **Trigger for next session:** When the user says **"다음"** in a
+  Plot session start, this entry's "Review scope" below becomes
+  the active task. The SessionStart hook surfaces this trigger
+  via [`plot/docs/NEXT_SESSION.md`](./NEXT_SESSION.md) — see
+  there for the full review scope and execution plan.
+- **Approval:** **Accepted** by user, 2026-05-11 (instruction
+  to record + execute next session).
+- **Spec impact:** No immediate code change. Spec impact from the
+  next-session review goes into a follow-up D-YYYY-MM-DD-X entry
+  once the architectural fix is designed.
