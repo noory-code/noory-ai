@@ -43,6 +43,61 @@ behaviour question from memory or from code comments alone.**
 
 ## Pre-action gates
 
+### Gate 0 — User confirmation pins the spec (immediately, before any other action)
+
+The single most important rule for making work *accumulate* across
+sessions. Without this gate, confirmed behaviour evaporates between
+sessions and the next session re-asks questions the user already
+answered. (See the v0.13.3 → v0.13.6 cursor saga for what happens
+when this gate is missing.)
+
+**Trigger — fires the moment the user's message contains any of:**
+
+| 한국어 | 영어 |
+|---|---|
+| 승인합니다 / 승인 / 그래 / 좋아 / 좋아요 / 네 좋아요 | approved / OK / ship it / looks good |
+| 됐다 / 됐어 / 이제 됐다 / 맞아요 / 맞다 | works / right / correct / done |
+
+**Execution order (no skipping, no batching, before any other tool call):**
+
+1. **State the confirmed behaviour in one sentence.** Extract from
+   the user's message + the immediately preceding context what,
+   precisely, was just approved. Write it as one declarative line —
+   the same shape that would go into SPEC.md.
+2. **Locate the behaviour in [`docs/SPEC.md`](./docs/SPEC.md).**
+   - YES, it exists there → verify the existing text matches the
+     confirmed behaviour exactly. If it diverges, edit SPEC.md
+     immediately so the spec text and the confirmed behaviour are
+     pixel-identical.
+   - NO, it does not exist → add a new line / table row / section
+     to the appropriate canvas. If the location is genuinely
+     unclear, ask the user where it goes — never invent a section.
+3. **Append a `D-YYYY-MM-DD-X` entry to [`docs/DECISIONS.md`](./docs/DECISIONS.md).**
+   Use the template at the top of that file. Approval line:
+   `**Approval:** Accepted by user, YYYY-MM-DD.`
+4. **Stage SPEC + DECISIONS into the current commit cycle.** If a
+   commit has already shipped before the confirmation arrived,
+   open a docs-only follow-up immediately:
+   `docs(plot): pin D-YYYY-MM-DD-X to SPEC`. The version bump is
+   patch-level when only docs changed.
+
+**Banned shortcuts:**
+
+- *"다음에 정리하겠습니다"* / *"I'll do this later"* — the next
+  session does not see this conversation. Not pinning now = never
+  pinned. Same severity as `behavior: 부분 완료 → 금지` in the
+  global CLAUDE.md.
+- *"이미 이번 commit 에 들어갔다고 가정"* — verify by reading the
+  staged diff. Don't assume a SPEC line exists because you intended
+  to write one.
+- *"한 confirmation 으로 여러 동작을 한꺼번에 batch"* — each
+  confirmed behaviour gets its own 1-4 cycle. If three things were
+  approved in one message, three SPEC updates + three D entries.
+- *"Confirmation 의미가 모호하니 그냥 넘어감"* — if the trigger
+  fires but you cannot identify the confirmed behaviour, ask
+  *"어떤 동작을 승인하신 건지 한 줄로 확인 부탁드립니다"* before
+  doing anything else.
+
 ### Gate 1 — Before any UI / behaviour change
 
 ```

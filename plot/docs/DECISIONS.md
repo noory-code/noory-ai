@@ -649,3 +649,53 @@
   §Cursor states](./SPEC.md#cursor-states-canvas-wide-ssot-applies-to-every-canvas)
   rewritten to mirror the vendor CSS exactly. [`plot/CLAUDE.md`](../CLAUDE.md)
   anti-patterns updated.
+
+---
+
+### D-2026-05-10-D — Gate 0: user confirmation pins the spec immediately
+
+- **What:** Add a new pre-action gate at position 0 (before the
+  existing Gate 1) in [`plot/CLAUDE.md`](../CLAUDE.md). The gate
+  fires on a fixed keyword set in the user's message
+  (`승인합니다 / 좋아요 / 네 좋아요 / 됐다 / 이제 됐다 / 맞아요`,
+  English equivalents) and forces the assistant, before any other
+  tool call, to: (1) state the confirmed behaviour in one
+  declarative sentence, (2) update `docs/SPEC.md` so its text
+  matches the confirmation pixel-identically, (3) append a
+  `D-YYYY-MM-DD-X` entry to this file with `Accepted by user,
+  YYYY-MM-DD`, and (4) stage SPEC + DECISIONS into the current
+  commit cycle (or a docs-only follow-up if the implementing
+  commit already shipped).
+- **Why:** This is a structural fix for the "work doesn't
+  accumulate across sessions" pattern the user has flagged
+  repeatedly. The v0.13.3 → v0.13.6 cursor work is the canonical
+  motivating example — six rounds of cursor changes because each
+  confirmed behaviour evaporated before reaching the spec, so the
+  next session re-asked questions the user had already answered.
+  The user's exact framing this session: *"plot 의 claude.md 에
+  제품의 스펙이 확정되면 문서에 반영한다는 룰이 있어야할 것
+  같구요."*
+- **Why these specific keywords (not a free-form trigger):**
+  Concrete `literal-string-match` triggers are far more reliably
+  applied by the assistant than vague conditions like "behaviour
+  changed". The list is closed and short on purpose. New
+  approval-style phrasings can be added later via a follow-up
+  decision id; do not silently expand the list.
+- **Why "before any other tool call":** Without an ordering
+  constraint, the assistant defers SPEC updates to the next
+  message, then forgets, then ships an implementation commit
+  with no spec line to back it. The "before any other tool call"
+  language matches the same fail-fast severity as `behavior:
+  부분 완료 → 금지` in the global CLAUDE.md.
+- **Banned shortcuts (encoded in the gate body):** deferring to
+  "next session"; assuming the SPEC line exists without verifying
+  the diff; batching multiple confirmations into one update;
+  treating an unclear confirmation as implicit (must explicitly
+  ask the user instead).
+- **Approval:** **Accepted** by user, 2026-05-10 — *"네 좋아요"*
+  in response to the proposed Gate 0 draft. This decision entry
+  is itself the first application of Gate 0.
+- **Spec impact:** None on product spec. This is an operational
+  rule change in `plot/CLAUDE.md`. SPEC.md remains the canonical
+  product behaviour spec; Gate 0 is the discipline that keeps it
+  in sync with reality.

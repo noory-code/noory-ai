@@ -4,6 +4,39 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.7] — 2026-05-10
+
+### Added — Gate 0: user confirmation pins the spec immediately
+
+`plot/CLAUDE.md` adds a new pre-action gate at position 0 (before the
+existing Gate 1). Trigger: any user message containing one of a fixed
+keyword set (`승인합니다 / 좋아요 / 네 좋아요 / 됐다 / 이제 됐다 /
+맞아요`, English equivalents). When the trigger fires, the assistant
+must, before any other tool call:
+
+1. State the confirmed behaviour in one declarative sentence.
+2. Verify or add the matching line to `docs/SPEC.md`.
+3. Append a `D-YYYY-MM-DD-X` entry to `docs/DECISIONS.md` with
+   `Approval: Accepted by user, YYYY-MM-DD`.
+4. Stage SPEC + DECISIONS changes into the current commit cycle (or
+   a docs-only follow-up if the implementing commit already shipped).
+
+Banned shortcuts: deferring to "next session", assuming the SPEC was
+already updated without verifying the diff, batching multiple
+confirmations into one update, treating an unclear confirmation as
+implicit (must ask the user).
+
+This is a structural fix for the "work doesn't accumulate across
+sessions" problem the user has flagged repeatedly. Without it, each
+session re-asks questions the previous session already answered.
+The v0.13.3 → v0.13.6 cursor saga is the canonical motivating
+example — six rounds of cursor work because confirmed behaviour
+never made it into the spec until v0.13.6 reset.
+
+Authored as the first application of Gate 0 itself (user said *"네
+좋아요"* on 2026-05-10 in the same conversation that drafted the
+gate). See [D-2026-05-10-D](./docs/DECISIONS.md).
+
 ## [0.13.6] — 2026-05-10
 
 ### Changed — Reset to React Flow vendor cursor / handle defaults
