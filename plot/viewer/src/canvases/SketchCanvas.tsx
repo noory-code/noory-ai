@@ -278,7 +278,7 @@ function SketchCanvasInner({
         nodesConnectable
         nodesDraggable
         elementsSelectable
-        panOnDrag={false}
+        panOnDrag
         multiSelectionKeyCode={["Meta", "Control"]}
         selectionKeyCode="Shift"
         deleteKeyCode={["Delete", "Backspace"]}

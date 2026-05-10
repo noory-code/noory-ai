@@ -9,54 +9,25 @@ html, body, #root {
 }
 body { margin: 0; }
 
-/* React Flow overrides
-   ------------------------------------------------------------------- */
+/* No React Flow overrides. v0.13.6 reset: cursor / handle visibility
+   / handle size / handle colour all follow ``reactflow/dist/style.css``
+   and ``@reactflow/node-resizer/dist/style.css`` baselines. The full
+   cursor SSOT lives in ``plot/docs/SPEC.md`` §Cursor states; pinning
+   it here would re-introduce the override-stacking problem that
+   produced six rounds of cursor regressions in v0.13.3-v0.13.6.
+   (D-2026-05-10-C.) */
 
-/* v0.13.4 — node cursor is always ``pointer``: hovering communicates
-   "click to select", which is the only affordance the user wants on
-   the node. Previously :active flipped to ``grabbing`` during a
-   click — that read like the cursor was promising a drag the user
-   never asked for. The .dragging rule (still in flight during a
-   drag) is preserved so a real drag does still surface the
-   grabbing cursor. */
-.react-flow__node { cursor: pointer; }
-.react-flow__node.dragging { cursor: grabbing; }
-
-/* v0.13.4 — pan-on-drag is off (SC sets ``panOnDrag={false}``), but
-   React Flow's baseline CSS still puts ``cursor: grab`` on the pane
-   and viewport. That flickered the cursor between ``grab`` (empty
-   canvas) and ``pointer`` (node). Force the pane / viewport to
-   ``default`` so the empty canvas reads as "page", not "grab me". */
-.react-flow__pane,
-.react-flow__viewport,
-.react-flow__renderer { cursor: default !important; }
-
-/* Connection handles. React Flow's default 6×6 dot is hard to spot
-   and hard to click; ours is 10×10 with a slate ring. */
-.react-flow__handle {
-  width: 10px !important;
-  height: 10px !important;
-  border: 1.5px solid rgb(148 163 184) !important; /* slate-400 */
-  background: white !important;
-  opacity: 0;
-  cursor: pointer !important;
-  /* No transition: handles either appear (selected) or don't
-     (idle / hover). Animating the appearance was the root of the
-     user's "큰 검지 / 작은 검지" flicker complaint — the dots
-     near the cursor pulsed in size as the user moved across the
-     node, reading as the cursor itself growing / shrinking. */
-}
-/* v0.13.5 — handles appear ONLY when the node is selected. Hover
-   alone does not reveal them. Selecting the node first (one click)
-   is the explicit gesture that surfaces edge handles. */
-.react-flow__node.selected .react-flow__handle {
-  opacity: 1;
-  border-color: rgb(79 70 229) !important; /* indigo-600 */
-  background: rgb(224 231 255) !important; /* indigo-100 */
-}
-.react-flow__handle.connecting,
-.react-flow__handle.connectingfrom {
-  opacity: 1;
-  cursor: crosshair !important;
-  border-color: rgb(79 70 229) !important;
+/* Single cursor-related rule: undo the Tailwind preflight rules that
+   force ``cursor: pointer`` on ``<button>`` and ``[role="button"]``
+   inside the canvas. Without this, the EditableText label span
+   (role="button") and the fold ``<button>`` flicker between
+   ``pointer`` and the RF-default ``grab`` of the node — even though
+   we've removed every custom override. RF's "node hover = grab"
+   mental model is the contract; Tailwind's button-pointer rule is
+   a UI assumption that doesn't hold inside a draggable canvas
+   surface. The :not() exclusions preserve RF's semantic cursors
+   on connection handles (crosshair) and resize controls
+   (ew/ns/nwse/nesw-resize). (D-2026-05-10-C.) */
+.react-flow__node *:not(.react-flow__handle):not(.react-flow__resize-control) {
+  cursor: inherit;
 }

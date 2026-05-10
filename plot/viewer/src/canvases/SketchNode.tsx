@@ -111,18 +111,10 @@ function contentPadding(shape: Shape): string {
 }
 
 function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) {
-  // v0.13.2 — the synthetic project anchor is a derived view, not editable.
-  // Render it with a distinctive double ring so users can tell it apart from
-  // service / category circles that share the same yellow fill.
   const isAnchor = data.kind === "project";
-  // v0.13.5 — borders, not outlines. ``outline`` paints OUTSIDE the
-  // border-box and is excluded from hit-testing, so the cursor under
-  // the outline pixels resolves to .react-flow__pane (cursor: default)
-  // rather than to the node (cursor: pointer). With outline-offset-2
-  // the anchor's flicker zone was 8-10 px wide — slow mouse moves
-  // across it visibly flipped pointer ↔ default. ``border`` is part
-  // of the border-box and counts toward hit-testing, so visual and
-  // hit-box coincide. (D-2026-05-08-G.)
+  // ``border`` (not ``outline``) so the visual extent matches the
+  // hit-box — clicks on the decoration land on the node, not the
+  // pane below. (D-2026-05-08-G.)
   const ring = selected
     ? "border-2 border-indigo-500"
     : isAnchor

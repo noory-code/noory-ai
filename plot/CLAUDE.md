@@ -20,6 +20,8 @@
 > - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — what shape the
 >   code is in and how to fix it.
 > - [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — data model.
+> - [`docs/CURSOR.md`](./docs/CURSOR.md) — canvas cursor SSOT
+>   (RF defaults + the one Tailwind cancellation rule).
 > - [`docs/PHILOSOPHY.md`](./docs/PHILOSOPHY.md) — value-flow / two-layer
 >   thesis.
 > - [`docs/ROADMAP.md`](./docs/ROADMAP.md) — release order.
@@ -228,7 +230,8 @@ cd plot && uv run ruff format plot_mcp/ tests/
 | **Claiming "verified" without browser** | Type-check passes ≠ feature works | Gate 3: open the URL, click the thing. |
 | **Silently rolling user-visible state** | (Hypothetical) Auto-rebalance Foundation nodes radially | Rule 7: any automated change to user-visible state needs explicit consent. |
 | **Burying decisions in commit messages** | (Past pattern) "fix anchor click → no Inspector" with no DECISIONS entry | Gate 4: every user-visible decision = a `D-YYYY-MM-DD-X` entry. |
-| **Decorating a node with paint-outside-box CSS** | `outline` + `outline-offset-2` + `ring-1` on the project anchor — caused 8-10 px cursor-flicker zone (see D-2026-05-08-G) | Use `border` (part of border-box, hit-tested). Inset `box-shadow` is OK; outset isn't. Visual extent and hit-box of an interactive node must coincide. |
+| **Decorating a node with paint-outside-box CSS** | `outline` + `outline-offset-2` + `ring-1` on the project anchor — clicks on the visible decoration passed through to the pane (see D-2026-05-08-G) | Use `border` (part of border-box, hit-tested). Inset `box-shadow` is OK; outset isn't. Visual extent and click target of an interactive node must coincide. |
+| **Adding any cursor / handle / pan override on top of RF defaults** | v0.13.3 → v0.13.5 stacked six rounds of cursor / handle interventions; each fix introduced or revealed the next round's bug, ending with a full reset in v0.13.6 (see D-2026-05-10-C) | Default to React Flow vendor CSS (`reactflow/dist/style.css`, `@reactflow/node-resizer/dist/style.css`). To deviate, open a fresh `D-YYYY-MM-DD-X` entry, get user approval, and add the rule to `styles.css` with an `!important` comment naming the decision id. The override stack itself is the regression engine — never grow it without an audit trail. |
 
 ---
 

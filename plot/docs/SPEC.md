@@ -114,47 +114,37 @@ mission).
 
 ## Pan and select
 
-The canvas does **not** pan when the user grabs an empty area and
-drags. React Flow's `panOnDrag` is off; the only ways to move the
-viewport are the zoom-in / zoom-out / fit-view controls (bottom-left)
-and the minimap (bottom-right).
+The canvas **pans** when the user grabs an empty area (the React
+Flow pane) and drags. The empty pane shows the `grab` cursor while
+idle and `grabbing` while a pan is in flight. Selection box is
+**Shift+drag** on the empty pane (the `selectionKeyCode`); plain
+drag pans, plain drag on a node moves the node.
 
-> **Why:** users were accidentally panning the canvas while trying
-> to click on or drag from a node. A canvas where "grab and pull"
-> means something on every empty pixel competes with the user's
-> intent to interact with the actual nodes. Removing pan-on-drag
-> makes the canvas read as a fixed page; explicit zoom controls do
-> the rest.
+> **Why:** v0.13.4 removed pan-on-drag because users were
+> accidentally panning while trying to click a node. v0.13.6 puts
+> it back per the user's "노드 밖에 호버했을 때 보여야하는 손바닥
+> 커서가 안생기구요" — the absence of a hand cursor read as the
+> canvas being inert, which it isn't. The 4 px `nodeDragThreshold`
+> already disambiguates a click on a node from a drag of a node;
+> there is no equivalent disambiguation needed for the pane (a
+> click that doesn't move = nothing happens; a click that moves =
+> pan). See [D-2026-05-10-A](./DECISIONS.md).
 
 ## Hover behaviour
 
-The four React Flow connection handles (○ at top / left / right /
-bottom) are visible **only when the node is selected**. Hovering
-alone does not reveal them.
+Hover behaviour is **React Flow defaults, no overrides**. All four
+connection handles (○ at top / left / right / bottom) are visible at
+all times — RF default `width: 6px; height: 6px; background: #1a192b`.
 
-| State | Handle visibility |
-|---|---|
-| Idle (node not selected) | Hidden (`opacity: 0`) |
-| Hover (node not selected) | Hidden — same as idle |
-| Selected (clicked) | Fully visible, indigo border |
-| During an active drag of an edge from the handle | `connecting` / `connectingfrom` styling adds crosshair cursor |
-
-The cursor stays `pointer` everywhere on the node region — body and
-handles alike, idle, hover, and click (mousedown). Crosshair is
-reserved for the moment a connection is actually being drawn
-(`.react-flow__handle.connecting` / `.connectingfrom`); grabbing is
-reserved for the moment a node is actually being dragged
-(`.react-flow__node.dragging`). The label display span and the ⚠
-badge inherit `pointer` from the node wrapper, so moving the mouse
-across a node never flickers the cursor between affordances.
-
-> **Why:** the previous "all four handles pop the moment the cursor
-> approaches the node" felt noisy and read like the node was
-> constantly trying to start a connection. (Decision
-> **D-2026-05-04-E**.) The cursor-flicker fixes on top of that are
-> [D-2026-05-08-C](./DECISIONS.md) (handle crosshair removed),
-> [D-2026-05-08-E](./DECISIONS.md) (label `cursor-text` removed,
-> `:active grabbing` removed).
+> **Why this is RF default and not our previous custom gating:** six
+> rounds of cursor / handle interventions (v0.13.3 → v0.13.5) chased
+> a "click vs draw vs drag" affordance problem and produced more
+> regressions than they fixed. v0.13.6 reset to RF defaults so the
+> baseline is uniform and the next session starts from one known
+> state instead of an override stack. See
+> [D-2026-05-10-C](./DECISIONS.md). If a future requirement needs to
+> deviate (e.g. hide handles until selection), open a new decision
+> with explicit user approval *before* re-introducing the override.
 
 ---
 
@@ -229,6 +219,49 @@ fields never triggers canvas actions.
 > inside a text input would undo the canvas doc instead of the local
 > text edit, which is surprising and destructive. Any keyboard hook
 > refactor must preserve the guard.
+
+## Cursor states (canvas-wide SSOT, applies to every canvas)
+
+**v0.13.6 reset:** every cursor on the canvas surface is **React
+Flow's default**, sourced from `reactflow/dist/style.css` and
+`@reactflow/node-resizer/dist/style.css`. `styles.css` adds **one
+single rule** — a Tailwind preflight cancellation that makes node
+descendants inherit the RF default `grab` (without it, the fold
+button and the EditableText label `[role="button"]` flip to
+`pointer` and re-introduce flicker). The full deep-dive lives in
+[`CURSOR.md`](./CURSOR.md). This table reproduces the resulting
+behaviour so future sessions can verify it without re-reading
+vendor CSS.
+
+| Region | State | Cursor |
+|---|---|---|
+| Empty canvas (`.react-flow__pane`) | idle | `grab` |
+| Empty canvas (`.react-flow__pane.dragging`) | actively panning | `grabbing` |
+| Node body (`.react-flow__node`) and **all descendants** (label, body, icons, badge, fold button) | idle hover | `grab` (RF default + Tailwind preflight cancellation; see [CURSOR.md](./CURSOR.md)) |
+| Node body (`.react-flow__node.dragging`) | actively dragging the node | `grabbing` |
+| Multi-selection rect (`.react-flow__nodesselection-rect`) | hover | `grab` |
+| Connection handle (`.react-flow__handle.connectionindicator`) | hover, connectable | `crosshair` |
+| Edge (`.react-flow__edge`) | hover | `pointer` |
+| Edge updater (`.react-flow__edgeupdater`) | hover on edge end-point | `move` |
+| Resize control side (`.react-flow__resize-control.left/right`) | hover | `ew-resize` |
+| Resize control side (`.react-flow__resize-control.top/bottom`) | hover | `ns-resize` |
+| Resize control corner (`.react-flow__resize-control.top.left / bottom.right`) | hover | `nwse-resize` |
+| Resize control corner (`.react-flow__resize-control.bottom.left / top.right`) | hover | `nesw-resize` |
+| Inspector / Toolbar / context menu | per element | per element (Tailwind / browser defaults) |
+
+**The RF mental model in one sentence:** anything draggable shows
+`grab`, the active drag shows `grabbing`, drawing a connection shows
+`crosshair`, clicking-to-select an edge shows `pointer`, and
+resizing shows the directional resize cursor. Both pane and node
+share `grab` so the cursor never changes when crossing between
+them — by construction there is nothing to flicker.
+
+**To deviate from this table:** open a `D-YYYY-MM-DD-X` entry,
+record the rationale, and only then add a CSS rule in `styles.css`
+guarded by an `!important` comment naming the decision id.
+
+See [D-2026-05-10-C](./DECISIONS.md) for the reset rationale and
+the full list of v0.13.3-v0.13.5 overrides that were removed.
 
 ## Things explicitly NOT in this Foundation spec yet
 

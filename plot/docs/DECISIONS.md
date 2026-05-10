@@ -481,3 +481,171 @@
 - **Spec impact:** none on behaviour. Some load-bearing comments
   surface as new SPEC entries before extraction (Steps 5/7/9/11)
   per the plan's "Comments policy".
+
+---
+
+### D-2026-05-10-A — Pan re-enabled; canvas reads as a pannable surface again
+
+- **What:** `panOnDrag` flipped back to `true` on the React Flow
+  surface, and the v0.13.4 `cursor: default !important` override on
+  `.react-flow__pane` / `.react-flow__viewport` /
+  `.react-flow__renderer` is removed so React Flow's native
+  `cursor: grab` (idle) and `cursor: grabbing`
+  (`.react-flow__pane.dragging`) take effect.
+- **Why:** the user reports — quoted directly — *"노드 밖에 호버
+  했을 때 보여야하는 손바닥 커서가 안생기구요."* The absence of a
+  hand cursor on the empty canvas read as the surface being inert
+  (a "page", not a "canvas"), which conflicted with the user's
+  workflow of moving the viewport to inspect different regions of
+  the project graph. The v0.13.4 reasoning ("users were
+  accidentally panning while clicking nodes") is reversed by the
+  4 px `nodeDragThreshold`: clicks short of 4 px on a node still
+  register as clicks (Inspector opens), and drags on the empty
+  pane unambiguously start panning. There is no behaviour collision
+  to disambiguate.
+- **Methodology — probe before fix for the lingering flicker:** the
+  user *also* reports — *"노드 위에 올라가면 화살표하고 검지모양
+  커서가 깝박 거리고 있어요."* — that the arrow ↔ pointer flicker
+  on nodes persists after v0.13.5. Five rounds of cursor work have
+  fixed five distinct localised sources, but a pervasive source
+  remains. Per the plot/CLAUDE.md "추측 금지" / "임시 통과 금지"
+  rules, the v0.13.6 ship deliberately splits in two: Part 1 (this
+  decision — pan reverse) ships immediately because it is
+  spec-driven and definite; Part 2 (find and fix the pervasive
+  flicker) requires a live-DOM probe in the user's real browser
+  before any node-cursor code changes. The probe script and its
+  expected outcomes are recorded in
+  [`/Users/woogis/.claude/plans/wiggly-herding-pixel.md`](../../../.claude/plans/wiggly-herding-pixel.md).
+- **Alternatives:**
+  - "Hand cursor visual only, no pan" — rejected as user-hostile
+    (a misleading affordance is worse than a missing one).
+  - Keep pan off + a different visible cursor (e.g. `default`) —
+    user explicitly asked for the hand back AND for the pan, so
+    no daylight between visual and behaviour.
+- **Approval:** **Accepted** by user, 2026-05-10 (plan approved
+  before commit).
+- **Spec impact:** [`SPEC.md` §Pan and select](./SPEC.md#pan-and-select)
+  — rewritten from "does not pan" to "pans on empty-pane drag".
+  [`SPEC.md` §Cursor states](./SPEC.md#cursor-states-canvas-wide-ssot-applies-to-every-canvas)
+  — new section establishing the canvas-wide cursor SSOT (later
+  rewritten in D-2026-05-10-C).
+  [`plot/CLAUDE.md`](../CLAUDE.md) anti-patterns — new row banning
+  the "force `cursor: default` on the pane to suppress flicker
+  while disabling pan altogether" pattern.
+
+---
+
+### D-2026-05-10-B — Force-pointer on every node descendant — Rejected (rolled back same session)
+
+- **What proposed:** Add
+  `.react-flow__node *:not(.react-flow__handle):not(.react-flow__resize-control) { cursor: pointer !important }`
+  to `styles.css` so every descendant of a node shows `pointer`,
+  killing the "anywhere on the node" arrow-flicker the user kept
+  reporting.
+- **Why proposed:** Symptomatic fix when the diagnostic probe
+  approach (D-2026-05-10-A Part 2) felt too slow.
+- **Why rolled back:** As soon as the user saw the cursor
+  table I had drafted, they pushed back — *"정리한게 이상하지
+  않아요?"* / *"커서 동작 다 정리해보세요 일단."* — and on a
+  follow-up cleanup request, *"RF 디폴트로 일단 가세요. 거기서
+  부터 다시 시작하죠. 코드 정리 제대로 하구요."* The force-pointer
+  rule was the latest in a six-round cursor-override stack
+  (v0.13.3-v0.13.6 Part 1) where each round papered over a
+  prior round's regression. The user's call: stop adding
+  overrides, restart from the React Flow vendor baseline, then
+  decide what (if anything) to deviate from. See D-2026-05-10-C.
+- **Approval:** **Rejected** by user, 2026-05-10 (rolled back in
+  the same session before commit).
+- **Spec impact:** None — the override never shipped. The
+  D-2026-05-10-A entry was edited to remove the
+  D-2026-05-10-B forward reference.
+
+---
+
+### D-2026-05-10-C — Reset all RF cursor / handle overrides; restart from vendor baseline
+
+- **What:** Remove **every** custom cursor / handle / handle-size /
+  handle-colour CSS rule from `viewer/src/styles.css`. The file now
+  contains only the html/body/#root sizing block. All cursor
+  behaviour comes from `node_modules/reactflow/dist/style.css` and
+  `node_modules/@reactflow/node-resizer/dist/style.css` directly.
+  Also remove the `cursor-pointer` Tailwind class from
+  `EditableText.tsx`'s display span — the label inherits from the
+  node, which under RF default is `grab`.
+- **Why:** Six rounds of cursor / handle interventions
+  (D-2026-05-04-E hover-fade, D-2026-05-08-C handle-cursor unify,
+  D-2026-05-08-E pan-off + label cursor-text removal, D-2026-05-08-F
+  handles-on-select, D-2026-05-08-G border-replaces-outline,
+  D-2026-05-10-A pan re-enable) shipped overrides on top of
+  overrides. Each fix solved one localised symptom and revealed or
+  introduced another. After the user's *"정리한게 이상하지 않아요?"*
+  / *"RF 디폴트로 일단 가세요"* feedback, the structural problem
+  is plain: the override stack itself is the regression engine,
+  not any single rule in it. Removing the whole stack and
+  restarting from the vendor baseline gives us:
+  - **One known state** to reason from. Future "what should the
+    cursor be on X?" questions answer themselves by reading the
+    vendor CSS.
+  - **No flicker by construction.** RF's baseline puts `cursor:
+    grab` on both `.react-flow__pane` and `.react-flow__node` —
+    the cursor literally cannot change when crossing the boundary.
+  - **One predictable mental model for the user.** RF's "anything
+    draggable shows `grab`; active drag shows `grabbing`; drawing
+    a connection shows `crosshair`; resizing shows the directional
+    resize cursor" is uniform and well-known across all React Flow
+    deployments.
+- **What we kept (not part of this reset):**
+  - v0.13.6 Part 1 pan re-enable (`panOnDrag` on, no
+    `cursor: default !important` override on the pane). That
+    matches RF default and stays.
+  - v0.13.5 border-replaces-outline on the inner node decoration.
+    That decision is about *visual extent matching the click
+    target*, not about cursor — clicks on the visible decoration
+    must select the node, not pass through to the pane. Keeps.
+  - SketchCanvas split (D-2026-05-08-A) and all other
+    architecture / behaviour decisions unrelated to cursor.
+- **One single rule retained — Tailwind preflight cancellation:**
+  Tailwind's preflight forces `cursor: pointer` on every
+  `<button>` and `[role="button"]`. The fold button and the
+  EditableText label span (`role="button"`) inside a node match
+  these selectors and re-introduce the very flicker this reset
+  was meant to kill — node hover = `grab` (RF), label hover =
+  `pointer` (Tailwind). To honor RF's "node = uniform grab"
+  contract, `styles.css` keeps a **single** rule:
+  ```css
+  .react-flow__node *:not(.react-flow__handle):not(.react-flow__resize-control) {
+    cursor: inherit;
+  }
+  ```
+  This is not an override of RF — it is an override of *Tailwind
+  preflight* that restores the RF inheritance chain inside the
+  canvas. The :not() exclusions preserve RF's own semantic cursors
+  on connection handles (crosshair) and resize controls
+  (directional resize). This is the only cursor rule in
+  `styles.css` and may not grow without a fresh decision id.
+- **What this rolls back:**
+  - `.react-flow__node { cursor: pointer }` (was D-2026-05-08-C).
+  - `.react-flow__node.dragging { cursor: grabbing }` (was redundant
+    with RF default).
+  - `.react-flow__handle { width 10px / height 10px / opacity 0 / 1.5px slate-400 border / white background / cursor: pointer !important }` (was D-2026-05-08-F + earlier).
+  - `.react-flow__node.selected .react-flow__handle { opacity 1 / indigo border + bg }` (was D-2026-05-08-F).
+  - `.react-flow__handle.connecting / .connectingfrom { cursor: crosshair !important / opacity 1 / indigo border }` (was D-2026-05-08-C — RF default already covers this via `.connectionindicator`).
+  - `EditableText` display span `cursor-pointer` class (was D-2026-05-08-E).
+- **Cursor behaviour after this reset** — see
+  [`SPEC.md` §Cursor states](./SPEC.md#cursor-states-canvas-wide-ssot-applies-to-every-canvas).
+  In one sentence: hover anywhere on the canvas (pane or node) =
+  `grab`; drag (pane or node) = `grabbing`; hover a connection
+  handle = `crosshair`; hover an edge = `pointer`; hover a resize
+  control = directional resize cursor.
+- **Future deviation rule:** any new cursor / handle override must
+  open a fresh `D-YYYY-MM-DD-X` entry with explicit user approval
+  *and* a comment in the CSS rule naming that decision id. The
+  override stack must never grow without an audit trail.
+- **Approval:** **Accepted** by user, 2026-05-10 — *"RF 디폴트로
+  일단 가세요. 거기서부터 다시 시작하죠. 코드 정리 제대로 하구요."*
+- **Spec impact:** [`SPEC.md` §Hover behaviour](./SPEC.md#hover-behaviour)
+  rewritten from "handles only when selected, cursor pointer
+  everywhere" to "RF defaults, handles always visible". [`SPEC.md`
+  §Cursor states](./SPEC.md#cursor-states-canvas-wide-ssot-applies-to-every-canvas)
+  rewritten to mirror the vendor CSS exactly. [`plot/CLAUDE.md`](../CLAUDE.md)
+  anti-patterns updated.

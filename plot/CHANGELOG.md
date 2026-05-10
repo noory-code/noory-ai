@@ -4,6 +4,145 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.6] — 2026-05-10
+
+### Changed — Reset to React Flow vendor cursor / handle defaults
+
+Six rounds of cursor / handle interventions across v0.13.3 → v0.13.5
+shipped overrides on top of overrides. Each round fixed one
+localised symptom and revealed or introduced another. After the
+user's *"정리한게 이상하지 않아요?"* / *"RF 디폴트로 일단 가세요.
+거기서부터 다시 시작하죠. 코드 정리 제대로 하구요."* feedback,
+v0.13.6 removes the entire override stack and restarts from the
+React Flow vendor baseline.
+
+The structural reasoning (D-2026-05-10-C):
+
+- **One known state** to reason from. Vendor CSS in
+  `node_modules/reactflow/dist/style.css` is now the single source
+  of truth — no mental model lives in our `styles.css`.
+- **No flicker by construction.** RF baseline puts `cursor: grab`
+  on both `.react-flow__pane` and `.react-flow__node` — the cursor
+  literally cannot change when the mouse crosses the boundary, so
+  the "arrow ↔ pointer flicker" the user kept reporting is gone
+  not because we patched it but because the conditions for it no
+  longer exist.
+- **The RF mental model is uniform:** anything draggable shows
+  `grab`; active drag shows `grabbing`; drawing a connection shows
+  `crosshair`; resizing shows the directional resize cursor. This
+  is the standard React Flow contract that ships in every other
+  React Flow product.
+
+#### Two changes that did not need rolling back
+
+- **Pan re-enable** (`SketchCanvas.tsx`: `panOnDrag={false}` →
+  `panOnDrag`) shipped earlier in this release per D-2026-05-10-A
+  and matches RF default. Stays.
+- **Border-replaces-outline** on the inner node decoration (v0.13.5,
+  D-2026-05-08-G) is about visual extent matching the click target
+  — clicks on the visible decoration must select the node, not
+  pass through to the pane. Independent of cursor, stays.
+
+### Removed — The full v0.13.3 → v0.13.5 cursor / handle override stack
+
+`viewer/src/styles.css` — removed:
+
+- `.react-flow__node { cursor: pointer }` (was D-2026-05-08-C —
+  unified node cursor). RF default `grab` restored.
+- `.react-flow__node.dragging { cursor: grabbing }` (was redundant
+  with RF default).
+- `.react-flow__pane / .react-flow__viewport / .react-flow__renderer { cursor: default !important }` (was v0.13.4 — already removed earlier in this release per D-2026-05-10-A).
+- `.react-flow__handle { width 10px / height 10px / 1.5px slate-400 border / white background / opacity 0 / cursor: pointer !important }` (was D-2026-05-08-F + earlier). RF default 6×6 dark-fill always-visible dot restored.
+- `.react-flow__node.selected .react-flow__handle { opacity 1 / indigo border + bg }` (was D-2026-05-08-F — handles-on-select). Handles now always visible per RF default.
+- `.react-flow__handle.connecting / .connectingfrom { cursor: crosshair !important / opacity 1 / indigo border }` (was D-2026-05-08-C). RF's native `.connectionindicator` selector covers crosshair-while-connecting.
+
+`viewer/src/edit/EditableText.tsx` — removed:
+
+- `cursor-pointer` Tailwind class on the display span (was
+  D-2026-05-08-E — label cursor unification). The label inherits
+  from the node, which under RF default is `grab`.
+
+`viewer/src/canvases/SketchNode.tsx` — simplified the v0.13.5 border
+comment block from a six-line cursor-flicker rationale to a single
+sentence about hit-box matching the visual extent (the cursor part
+of the rationale was disproven by D-2026-05-10-C anyway).
+
+### Added — One single retained CSS rule (Tailwind preflight cancellation)
+
+After the reset, the user reported flicker still present on node
+hover. Investigation found the source: **Tailwind preflight** ships
+`button, [role="button"] { cursor: pointer }`, which inside our
+nodes matches:
+
+- The fold `<button>` on container nodes.
+- The EditableText label span (has `role="button"` for keyboard
+  accessibility — needed for screen readers).
+
+These elements flipped the cursor from RF's `grab` to Tailwind's
+`pointer` — re-introducing the very flicker the reset was meant to
+kill, with no override of ours involved.
+
+The fix is one CSS rule that cancels the Tailwind preflight effect
+inside `.react-flow__node`, restoring RF's inheritance chain:
+
+```css
+.react-flow__node *:not(.react-flow__handle):not(.react-flow__resize-control) {
+  cursor: inherit;
+}
+```
+
+The :not() exclusions preserve RF's own semantic cursors on
+connection handles (crosshair) and resize controls (directional
+resize). This is the **only** cursor rule in `styles.css` after the
+reset; it does not change RF, only stops Tailwind from contradicting
+it. (D-2026-05-10-C.)
+
+### Documentation
+
+`docs/SPEC.md`:
+
+- §Pan and select rewritten — the pan-off paragraph from v0.13.4 is
+  gone; the new prose codifies "drag empty pane = pan; Shift+drag =
+  selection box; node drag = node move".
+- §Hover behaviour rewritten — was "handles only when selected,
+  cursor pointer everywhere"; now "RF defaults, handles always
+  visible".
+- §Cursor states rewritten — table mirrors the React Flow vendor
+  CSS exactly + the one Tailwind cancellation rule so future
+  sessions can verify against the spec without re-reading vendor
+  CSS. Includes the "RF mental model in one sentence" summary.
+
+`docs/CURSOR.md` — **new file**, dedicated cursor SSOT:
+
+- TL;DR table for the five cursor regions a user actually sees.
+- Full table with selectors mirroring React Flow vendor CSS.
+- Detailed write-up of the Tailwind preflight cancellation rule:
+  what it is, why it's not "just another override", why we don't
+  fix the problem upstream by removing `role="button"` from the
+  label.
+- Anti-patterns derived from v0.13.3 → v0.13.5 mistakes.
+- "How to deviate" workflow for any future cursor change — must
+  open a `D-YYYY-MM-DD-X` decision id, get user approval, add a
+  CSS comment naming the id, update SPEC + CURSOR + add a
+  regression test.
+- DevTools probe script for verifying cursor state in the browser.
+
+`plot/CLAUDE.md`:
+
+- "Pairs with" list — `docs/CURSOR.md` added.
+- Anti-patterns table updated: replaced the four cursor-related
+  rows with one general rule about not adding cursor / handle
+  overrides without a decision id.
+
+`docs/DECISIONS.md` — three new entries:
+
+- **D-2026-05-10-A** Pan re-enable (Accepted, shipped earlier in
+  this release).
+- **D-2026-05-10-B** Force-pointer on every node descendant
+  (Rejected, rolled back in same session before commit).
+- **D-2026-05-10-C** Reset to RF defaults + Tailwind preflight
+  cancellation (Accepted, this release).
+
 ## [0.13.5] — 2026-05-08
 
 ### Fixed — **Cursor flicker root cause: outline paints outside hit-box**
