@@ -93,22 +93,35 @@
 
 ---
 
-### D-2026-05-04-D — Auto-layout removed entirely
+### D-2026-05-04-D — Auto-layout removed entirely — **Rejected (misattribution corrected 2026-05-10)**
 
-- **What:** Remove the "Auto layout" toolbar button and the
-  corresponding pane-context-menu entry. Drop the `radialLayout` /
-  `autoLayout` calls and the `handleAutoLayout` callback from
-  `SketchCanvas`.
-- **Why:** layout encodes user intent (where things sit relative to
-  each other reflects how the user thinks about them). Auto-layout
-  silently overwrites that intent.
-- **Alternatives:** keep auto-layout but require confirmation
-  (rejected — adds friction without solving the intent-overwrite
-  problem); restrict to specific canvas kinds (rejected — same issue
-  on every kind).
-- **Approval:** **Accepted (removal)** by user, 2026-05-04.
+- **What was implemented:** Removed the "Auto layout" toolbar button
+  and the corresponding pane-context-menu entry. Dropped the
+  `radialLayout` / `autoLayout` calls and the `handleAutoLayout`
+  callback from `SketchCanvas`.
+- **Original (incorrect) rationale:** layout encodes user intent;
+  auto-layout silently overwrites that intent.
+- **Why this entry is now Rejected:** the user confirmed in the
+  2026-05-10 Foundation re-verification session that this removal
+  was a misread of their actual intent. Direct quote (2026-05-10):
+  *"내가 없애라는건 다운로드 업로드 이런거였는데. 오토레이아웃만
+  남기라는거였는데."* The earlier session's *"그리고
+  오토레이아웃도 없앴어요. 이해?"* (2026-05-04) was the
+  assistant's own erroneous summary of the v0.11.6 toolbar cleanup,
+  not a fresh user instruction. The user wanted only download /
+  upload buttons removed; auto-layout was meant to stay.
+- **What replaces this:** [D-2026-05-10-E](#d-2026-05-10-e--auto-layout-restored-as-mindmap-style-directional-tree) —
+  auto-layout restored with a proper handle-aware directional-tree
+  spec.
+- **Lesson encoded into Gate 0:** assistant-summarised "이해?"
+  questions are not user confirmations of the underlying claim. A
+  decision id requires the user to **affirmatively** approve the
+  precise behaviour, not nod along to the assistant's paraphrase.
+- **Approval:** **Rejected** by user, 2026-05-10. The original
+  "Accepted (removal)" line from 2026-05-04 stands as a historical
+  record of the misattribution.
 - **Spec impact:** [`SPEC.md` §Auto-layout](./SPEC.md#auto-layout) —
-  codifies "removed; layout is fully manual".
+  rewritten by D-2026-05-10-E.
 
 ---
 
@@ -699,3 +712,60 @@
   rule change in `plot/CLAUDE.md`. SPEC.md remains the canonical
   product behaviour spec; Gate 0 is the discipline that keeps it
   in sync with reality.
+
+---
+
+### D-2026-05-10-E — Auto-layout restored as mindmap-style directional tree
+
+- **What:** Bring back an "Auto layout" button on the
+  `<SketchToolbar>`. Implementation is a custom directional-tree
+  algorithm rooted at the canvas anchor, grouping each node's
+  children by the parent-side handle of the connecting edge:
+  - `R` handle ⇒ child stacked in a vertical column to the right.
+  - `L` handle ⇒ child stacked in a vertical column to the left.
+  - `T` handle ⇒ child placed in a horizontal row above.
+  - `B` handle ⇒ child placed in a horizontal row below.
+  Spacing uses Reingold-Tilford-style subtree-extent tracking to
+  guarantee no node-to-node overlap. Tree edges follow a BFS
+  spanning tree from the anchor; cycle-closing edges are drawn but
+  ignored for placement. Node-id ordering breaks ties for full
+  determinism. Result is applied via `onDocChange` so it lands in
+  the standard undo stack.
+- **Why this shape (not radial / not force-directed):** the user's
+  two binding constraints are *"오른쪽에 연결된 노드들을 오른쪽에
+  정렬해야하고 (아래로 정렬하면 안됨), 위쪽에 있는건 위쪽에 정렬"*
+  (handle direction is strict — the side a child connects from is
+  the side it lands on) and *"노드들이 서로 겹치지 않게"* (no
+  overlap, period). Radial layouts (e.g. d3 `tree()` with polar
+  coordinates) violate the first because they distribute children
+  evenly around 360° regardless of which handle was used.
+  Force-directed layouts (e.g. d3-force) violate the first because
+  edge directionality has no preferred axis in the simulation.
+  A custom directional tree is the smallest algorithm that hits
+  both constraints exactly.
+- **Why no library:** the four-direction grouping is unconventional
+  enough that no off-the-shelf layout library matches without
+  significant adaptation. The pure algorithm fits in one ~150-LOC
+  module under `plot/viewer/src/canvases/sketch/autoLayout.ts`
+  with no new runtime dependency.
+- **Why anchor stays put:** moving the anchor would yank the entire
+  visual centre of the canvas every time the user runs auto-layout.
+  Keeping it fixed lets the user position the anchor manually once
+  and use auto-layout to clean up everything around it.
+- **Why BFS spanning tree (not full graph layout):** the spec
+  promises *no edge crossings in the spanning tree* — that's only
+  achievable on an actual tree. Cycles in the user's graph are
+  collapsed to a tree by BFS; the leftover edges are drawn as
+  cross-links so the user still sees them. Crossings on
+  cross-links are unavoidable on graphs with cycles and are
+  acknowledged in the spec.
+- **Why no animation, no preview:** explicit user requirement is
+  that auto-layout be predictable. Single-click → instant re-layout
+  → `Cmd+Z` if you don't like it. Adding animation or preview
+  introduces a moment where the user is staring at an in-progress
+  layout and can't tell whether to trust it.
+- **Approval:** **Accepted** by user, 2026-05-10 — *"네 일단
+  해봐요"* on the proposed spec table.
+- **Spec impact:** [`SPEC.md` §Auto-layout](./SPEC.md#auto-layout) —
+  fully rewritten from "Removed" to the directional-tree spec
+  above.

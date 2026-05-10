@@ -4,6 +4,76 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.8] — 2026-05-10
+
+### Spec — Auto-layout restored as a mindmap-style directional tree
+
+D-2026-05-04-D (auto-layout removed) was based on a misread of the
+user's v0.11.6 toolbar-cleanup request. The user wanted only
+download / upload buttons removed; auto-layout was meant to stay.
+The 2026-05-10 Foundation re-verification surfaced this — direct
+user quote: *"내가 없애라는건 다운로드 업로드 이런거였는데.
+오토레이아웃만 남기라는거였는데."*
+
+This release ships the **spec** for the corrected behaviour. The
+implementation lands in v0.13.9.
+
+#### Algorithm shape (full table in `docs/SPEC.md` §Auto-layout)
+
+- **Root:** the canvas anchor, kept fixed in place. Surrounding
+  nodes arrange around the anchor's current position.
+- **Spanning tree:** BFS from the anchor over `doc.edges`. Tree
+  edges drive layout; cycle-closing edges are drawn but ignored.
+- **Direction per child:** the **parent-side handle** of each tree
+  edge picks the child's direction relative to its parent — `R`
+  handle ⇒ child to the right, `T` handle ⇒ child above, etc.
+- **R / L children:** stacked in a vertical column on the right /
+  left of the parent.
+- **T / B children:** placed in a horizontal row above / below the
+  parent.
+- **Recursive:** grandchildren follow the same rule, using *their*
+  incoming-edge parent-side handle. Direction is absolute.
+- **No overlap:** Reingold-Tilford-style subtree-extent tracking
+  guarantees node footprints never collide. `padding` defaults to
+  32 px; node footprint = its `data.width × data.height`.
+- **Determinism:** node-id sort order breaks every tie. Same input
+  ⇒ same output, every time.
+- **Isolated nodes:** placed in the anchor's lower-right empty
+  quadrant in a separate vertical column.
+
+#### Trigger
+
+- A single "Auto layout" button on `<SketchToolbar>` (next to
+  undo / redo). Click ⇒ instant execution, no confirmation.
+- Result is applied via `onDocChange`, so `Cmd / Ctrl + Z` reverses
+  it in one step.
+
+#### What auto-layout does NOT do
+
+- Does not move the anchor.
+- Does not change which nodes are connected (edges stay).
+- Does not re-balance handles after layout.
+- Does not animate or preview — single-click determinism is the
+  product feature.
+
+### Documentation
+
+- `docs/SPEC.md` §Auto-layout — fully rewritten from "Removed" to
+  the directional-tree spec above.
+- `docs/DECISIONS.md`:
+  - **D-2026-05-04-D** marked **Rejected** with a misattribution
+    note explaining the 2026-05-04 / 2026-05-10 timeline.
+  - **D-2026-05-10-E** new entry, Accepted: full algorithm rationale
+    (why directional, why not radial, why not force-directed, why
+    no library, why anchor stays fixed, why no animation).
+
+### First Gate 0 application
+
+This entire release exists because Gate 0 (added in v0.13.7) fired
+on the user's *"네 일단 해봐요"* during the spec discussion. SPEC +
+DECISIONS were updated in the same commit cycle as the version
+bump, exactly as Gate 0 prescribes.
+
 ## [0.13.7] — 2026-05-10
 
 ### Added — Gate 0: user confirmation pins the spec immediately
