@@ -79,70 +79,23 @@ future node-transform refactor must preserve this property — sort by
 
 ## Auto-layout
 
-**Mindmap-style directional tree layout** triggered by an "Auto
-layout" button. The layout respects two non-negotiable constraints:
-**no edge crossings in the spanning tree** and **no node-to-node
-overlap**. Per-direction grouping by handle preserves the user's
-explicit connection topology.
+**Removed (again) per [D-2026-05-10-G](./DECISIONS.md).** The Plot
+canvas does not render an "Auto layout" button anywhere. There is no
+auto-layout entry in the pane context menu either. Layout is fully
+manual.
 
-### Algorithm
-
-| Aspect | Behaviour |
-|---|---|
-| **Root** | Anchor (synthetic project node) is the layout root. Stays where it is — surrounding nodes arrange around the anchor's current position. Anchor itself is not moved by auto-layout. |
-| **Spanning tree** | BFS from the anchor over `doc.edges`. Edges in the BFS tree are layout edges; remaining edges are cross-links (drawn as-is, not used for placement). |
-| **Direction per child** | The **parent-side handle** of each tree edge determines which direction (T / R / B / L) the child sits relative to its parent. If anchor's `R` handle is the source side of the edge, the child is to anchor's right. Handle inference for legacy edges without `sourceHandle` / `targetHandle`: pick the handle nearest the current relative position. |
-| **R / L children** | Stacked in a **vertical column** on the parent's right / left. Sorted by node id within the column for determinism. |
-| **T / B children** | Stacked in a **horizontal row** above / below the parent. Sorted by node id within the row for determinism. |
-| **Recursive** | Each child's own children apply the same rule recursively, using *their* incoming-edge parent-side handle to choose direction. Direction is **absolute** (T = absolute up), not relative to the parent's outward direction. |
-| **Spacing — no overlap** | Reingold-Tilford-style subtree-extent tracking (bottom-up). Sibling spacing = max(sibling subtree cross-extents) + `padding`. Depth-step spacing = max(depth-level subtree extents) + `padding`. `padding` defaults to 32 px. Each node's footprint = its `data.width` × `data.height`. |
-| **Determinism** | Same input ⇒ same output. Tie-breaking by node id everywhere. |
-| **Isolated nodes** | Nodes not reachable from anchor in the spanning tree are placed in a separate region (anchor's lower-right empty quadrant) in node-id order, in a vertical column. They don't influence the main tree's layout. |
-| **Cycles** | Tree edges only follow the BFS spanning tree; the remaining cycle-closing edges are cross-links and are *drawn* (so the user still sees them) but ignored for placement. |
-| **Collapsed containers** | Collapsed children are skipped in the recursion. Their positions follow the parent (handled by React Flow's parent-relative coordinate system). |
-| **Anchor-less canvases** (e.g. Service-Detail) | Out of scope for v0.13.8. Pick a "pseudo-root" (highest-degree node, ties broken by id) when the spec is extended. |
-
-### Trigger and undo
-
-- A single "Auto layout" button **inside the React Flow `<Controls>`
-  panel** at the lower-left of the canvas (rendered via
-  `<ControlButton>` — sits below zoom / fit / lock so the user
-  finds it alongside the other view-state controls).
-- Click ⇒ immediate execution. No confirmation dialog.
-- Result is applied via `onDocChange`, so it lands in the regular
-  history stack — `Cmd / Ctrl + Z` reverses the layout in one step.
-- The button is enabled only when an anchor exists on the canvas
-  AND at least one non-anchor node is present.
-
-> **Why lower-left, not the top-right toolbar:** the user wanted
-> auto-layout grouped with other view-state controls (zoom / fit)
-> rather than mutation actions (undo / redo). Lower-left is where
-> the user's eye already goes for "move the camera" tasks, and
-> auto-layout is a layout-of-the-camera-view operation. See
-> [D-2026-05-10-F](./DECISIONS.md).
-
-### What auto-layout does **not** do
-
-- Does not move the anchor.
-- Does not re-balance handles. Edges keep their `sourceHandle` /
-  `targetHandle` after layout. (If the user later wants to switch
-  handles to make a connection cleaner, that's a manual edit.)
-- Does not change which nodes are connected. Edges stay; only
-  node positions change.
-- Does not pick a different spanning tree if the result looks ugly.
-  The user controls layout by drawing edges from / to specific
-  handles.
-
-> **Why this is the spec, with full context:** D-2026-05-04-D
-> originally codified "auto-layout removed entirely" — that decision
-> was based on a misread of the user's request to remove
-> download / upload buttons in the same v0.11.6 toolbar cleanup.
-> D-2026-05-10-E (this spec) corrects the record: auto-layout was
-> never meant to be removed, only refined. The new spec exists
-> because radial / force-directed layouts (the obvious "mindmap"
-> options) ignored the user's drawn handle topology and produced
-> arbitrary positions, violating the user's "지금 있는 연결 상태를
-> 가장 우선으로 고려" requirement.
+> **History:** D-2026-05-04-D removed auto-layout based on a
+> misattributed user request (real intent was to remove
+> download/upload only). D-2026-05-10-E reversed that with a full
+> directional-tree spec, implemented in v0.13.9, button placement
+> tuned in v0.13.10 (D-2026-05-10-F). v0.14.1 removes the feature
+> again — this time with explicit user cost/benefit reasoning:
+> *"auto layout 빼야겠네 문제가 너무 많다"*. The lingering
+> cursor-flicker problems user associated with auto-layout were
+> independently caused by Tailwind preflight on
+> `.react-flow__node[role="button"]` and remain fixed
+> (D-2026-05-10-F). Re-introducing auto-layout would need a fresh
+> decision id and a clear cost/benefit story for the new context.
 
 ---
 

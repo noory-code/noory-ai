@@ -141,17 +141,19 @@ describe("SketchCanvas regression — pin v0.13.2 reverts", () => {
     expect(handles.length).toBe(4);
   });
 
-  it("toolbar renders an 'Auto layout' button (enabled when anchor + at least one node)", () => {
-    // D-2026-05-10-E — auto-layout restored as mindmap directional
-    // tree. Button is enabled when an anchor exists on the canvas
-    // and at least one non-anchor node is present.
+  it("canvas does not render an 'Auto layout' button anywhere", () => {
+    // D-2026-05-10-G — auto-layout removed again per user cost/benefit.
+    // Spec'd in v0.13.8 (D-2026-05-10-E), implemented in v0.13.9, button
+    // moved to lower-left in v0.13.10 (D-2026-05-10-F), removed entirely
+    // in v0.14.1 — feature value < complexity overhead at current Plot
+    // stage. (Cursor issues blamed on auto-layout were independently
+    // caused by Tailwind preflight per D-2026-05-10-F and remain fixed
+    // after this removal.)
     const doc = makeCanvas("foundation", [
       makeNode({ id: "mission", label: "Mission", kind: "mission" }),
     ]);
     const { queryByRole } = mount(doc);
-    const btn = queryByRole("button", { name: /auto layout/i });
-    expect(btn).not.toBeNull();
-    expect(btn!.getAttribute("disabled")).toBeNull();
+    expect(queryByRole("button", { name: /auto layout/i })).toBeNull();
   });
 
   it("Inspector aside appears after a node click", () => {

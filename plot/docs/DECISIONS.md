@@ -715,7 +715,11 @@
 
 ---
 
-### D-2026-05-10-E — Auto-layout restored as mindmap-style directional tree
+### D-2026-05-10-E — Auto-layout restored as mindmap-style directional tree — **Rejected (rolled back v0.14.1, 2026-05-10)**
+
+> Originally Accepted 2026-05-10 (this entry). Rolled back the same
+> day in v0.14.1 — see [D-2026-05-10-G](#d-2026-05-10-g--auto-layout-removed-again-cost-vs-benefit).
+> Original entry preserved below for the historical record.
 
 - **What:** Bring back an "Auto layout" button on the
   `<SketchToolbar>`. Implementation is a custom directional-tree
@@ -843,3 +847,65 @@ in the same browser-verification round:
   [`SPEC.md` §Auto-layout — Trigger and undo](./SPEC.md#auto-layout)
   — button location updated to lower-left Controls panel.
   [`CURSOR.md`](./CURSOR.md) updated.
+
+---
+
+### D-2026-05-10-G — Auto-layout removed again — cost vs benefit
+
+- **What:** Remove auto-layout from Plot in v0.14.1. Delete
+  `viewer/src/canvases/sketch/autoLayout.ts`,
+  `viewer/src/canvases/sketch/useAutoLayout.ts`, and the unit test
+  file. Drop the `<ControlButton>` invocation in `SketchCanvas.tsx`
+  along with its imports. Revert the regression test from
+  v0.13.9-inverted ("auto layout button MUST exist") back to its
+  v0.13.8 form ("auto layout button MUST NOT exist").
+- **Why (user):** *"근데 auto layout 빼야겠네 문제가 너무 많다. 넣고
+  나서 커서 들에 문제 너무 많고."* User cost/benefit assessment
+  after observing the feature in action: the value of auto-layout
+  at this stage of Plot does not justify the complexity / debugging
+  load it added across v0.13.8 → v0.14.0.
+- **Honest correction on causation:** the user attributed the cursor
+  flicker problems to auto-layout temporally ("after adding it,
+  cursor problems were too many"). The actual root cause was
+  unrelated — RF v11 sets `role="button"` on `.react-flow__node`
+  which Tailwind preflight matched and overrode the RF default
+  `cursor: grab` (see [D-2026-05-10-F](#d-2026-05-10-f--cursor-flicker-root-cause-rolebutton-on-react-flow__node-auto-layout-button-moved-to-lower-left-controls)).
+  The Tailwind preflight cancellation rule shipped in v0.13.10 fixes
+  the cursor flicker independently and remains in place after this
+  removal. Removing auto-layout therefore does not undo any cursor
+  fix — it simplifies the canvas surface.
+- **Why the user's call still stands despite the misattribution:** the
+  removal is a separate cost/benefit decision. Even if cursor was
+  the trigger to revisit, the broader argument ("the feature added
+  too much complexity for too little user value at this stage")
+  applies on its own merits. Plot has no users with complex
+  multi-actor / multi-service graphs yet; the value of auto-layout
+  is theoretical until then. When real users surface a clear need,
+  re-introduction can be weighed afresh with concrete user
+  workflows in mind.
+- **What stays:** the v0.13.10 cursor fix
+  (`.react-flow__node[role="button"] { cursor: grab }` + the
+  descendant inheritance rule). Plot v0.14.1 has no cursor flicker;
+  pane and node both show `grab`, transitions are clean.
+- **Re-introduction policy:** any future "let's bring back
+  auto-layout" proposal must (a) open a fresh `D-YYYY-MM-DD-X` entry,
+  (b) cite specific real-user workflows that demand it, (c) include
+  a cost/benefit comparison against this entry's reasoning, and
+  (d) get explicit user approval before any code lands. The
+  D-2026-05-04-D / D-2026-05-10-E / D-2026-05-10-G oscillation in
+  this DECISIONS log is itself the cautionary tale.
+- **Approval:** **Accepted** by user, 2026-05-10 — *"빼야겠네"*
+  (in response to assistant's offer to verify Foundation behaviour
+  next).
+- **Spec impact:** [`SPEC.md` §Auto-layout](./SPEC.md#auto-layout)
+  rewritten back to "Removed", with the full history paragraph
+  preserving the lineage of decisions D-2026-05-04-D →
+  D-2026-05-10-E → D-2026-05-10-F → D-2026-05-10-G so future
+  sessions can read the saga in one place.
+- **Files removed:**
+  - `viewer/src/canvases/sketch/autoLayout.ts`
+  - `viewer/src/canvases/sketch/useAutoLayout.ts`
+  - `viewer/tests/autoLayout.test.ts`
+- **Files reverted:**
+  - `viewer/src/canvases/SketchCanvas.tsx` (drop ControlButton + useAutoLayout)
+  - `viewer/tests/SketchCanvas.regression.test.tsx` (re-invert auto layout assertion)

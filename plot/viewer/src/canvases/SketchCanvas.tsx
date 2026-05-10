@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
-  ControlButton,
   Controls,
   MiniMap,
   ReactFlowProvider,
@@ -35,7 +34,6 @@ import { useInspectorRouting } from "./sketch/useInspectorRouting";
 import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
 import { useValueFlow } from "./sketch/useValueFlow";
-import { useAutoLayout } from "./sketch/useAutoLayout";
 
 const NODE_TYPES = { sketch: SketchNode } as const;
 
@@ -242,8 +240,6 @@ function SketchCanvasInner({
     onDocChange,
   });
 
-  const applyAutoLayout = useAutoLayout({ docRef, onDocChange, projectAnchor });
-
   const {
     handleDragOver,
     handleDrop,
@@ -308,20 +304,7 @@ function SketchCanvasInner({
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <MiniMap zoomable pannable />
-        <Controls>
-          {/* Auto layout — D-2026-05-10-E spec, D-2026-05-10-F placement.
-              Lives inside <Controls> next to zoom/fit so the user finds it
-              alongside the other view-state buttons. Disabled when no anchor
-              or when the canvas has no non-anchor nodes. */}
-          <ControlButton
-            onClick={applyAutoLayout}
-            title="Auto layout"
-            aria-label="Auto layout"
-            disabled={!projectAnchor || doc.nodes.length === 0}
-          >
-            <span aria-hidden>⊞</span>
-          </ControlButton>
-        </Controls>
+        <Controls />
       </ReactFlow>
       {menu && (
         <SketchContextMenu

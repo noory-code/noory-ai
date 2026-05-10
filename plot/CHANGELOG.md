@@ -4,6 +4,71 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.1] — 2026-05-10
+
+### Removed — Auto-layout (again)
+
+User cost/benefit call: *"근데 auto layout 빼야겠네 문제가 너무 많다.
+넣고 나서 커서 들에 문제 너무 많고."*
+
+The feature added across v0.13.8 (spec) → v0.13.9 (impl) → v0.13.10
+(button placement) carried more debugging / verification load than
+its current value justified. Plot has no users with complex
+multi-actor / multi-service graphs yet; the layout-readability
+benefit is theoretical at this stage. Re-introduction in the future
+needs a fresh decision id with concrete user workflows in evidence.
+
+### Honest correction — cursor problems were not caused by auto-layout
+
+The user temporally associated cursor flicker with auto-layout
+(*"넣고 나서 커서 들에 문제 너무 많고"*). The actual root cause was
+unrelated and was diagnosed + fixed in v0.13.10 (D-2026-05-10-F):
+RF v11 sets `role="button"` on `.react-flow__node`; Tailwind preflight
+matches that selector and overrides the RF default `cursor: grab`.
+The Tailwind preflight cancellation rule in `viewer/src/styles.css`
+fixes the flicker independently of auto-layout's existence. This
+removal therefore does not undo any cursor fix — Plot v0.14.1 still
+has uniform `grab` on pane and nodes, no flicker.
+
+### Files removed
+
+- `viewer/src/canvases/sketch/autoLayout.ts` (297 LOC pure algorithm).
+- `viewer/src/canvases/sketch/useAutoLayout.ts` (43 LOC React bridge).
+- `viewer/tests/autoLayout.test.ts` (11 unit tests).
+
+### Files reverted
+
+- `viewer/src/canvases/SketchCanvas.tsx`:
+  - Drop `ControlButton` from the React Flow imports.
+  - Drop `useAutoLayout` import.
+  - Drop the `applyAutoLayout` hook call and the `<ControlButton>`
+    block inside `<Controls>`.
+  - LOC 366 → 360 (back to the v0.13.7 baseline).
+- `viewer/tests/SketchCanvas.regression.test.tsx`:
+  - The `'toolbar does not render an Auto layout button'` test from
+    v0.13.8 is restored (with a new comment block referencing the
+    full lineage D-2026-05-04-D → -10-E → -10-G).
+
+### Documentation
+
+- `docs/SPEC.md` §Auto-layout — rewritten to "Removed" with a single
+  history paragraph linking the four-decision lineage.
+- `docs/DECISIONS.md`:
+  - **D-2026-05-10-E** marked **Rejected (rolled back v0.14.1)** with
+    a forward pointer to D-2026-05-10-G.
+  - **D-2026-05-10-G** new entry, Accepted, with the cost/benefit
+    reasoning + the cursor-causation correction + the
+    re-introduction policy (must cite real-user workflows and
+    cost/benefit comparison).
+
+### Verification
+
+- `tsc --noEmit`: clean.
+- `vitest run`: 11/11 passing (24 → 11 because the 11 auto-layout
+  tests were deleted with their source; the remaining 11 cover
+  every other regression and pass after the inverted auto-layout
+  test was re-inverted).
+
 ## [0.14.0] — 2026-05-10
 
 ### Added — Plot dev infrastructure (the "AI develops Plot reliably" milestone)
