@@ -769,3 +769,77 @@
 - **Spec impact:** [`SPEC.md` §Auto-layout](./SPEC.md#auto-layout) —
   fully rewritten from "Removed" to the directional-tree spec
   above.
+
+---
+
+### D-2026-05-10-F — Cursor flicker root cause: `[role="button"]` on `.react-flow__node`; Auto layout button moved to lower-left Controls
+
+Two related fixes shipped together because the user surfaced both
+in the same browser-verification round:
+
+#### Part 1 — Tailwind preflight cancellation on `.react-flow__node[role="button"]`
+
+- **What:** Add `.react-flow__node[role="button"] { cursor: grab }`
+  (and its `.dragging` companion → `grabbing`) to `viewer/src/styles.css`.
+- **Why — root cause finally identified:** v0.13.3-v0.13.6 chased
+  cursor flicker through six rounds and *every diagnosis was wrong*.
+  The actual cause: **React Flow v11 sets `role="button"` on
+  `.react-flow__node` itself** for accessibility. Tailwind preflight
+  `[role="button"] { cursor: pointer }` matches that element directly,
+  which overrides the RF-default `cursor: grab` *on the node* and
+  then propagates pointer down the inheritance chain. The v0.13.6
+  reset's premise ("RF default is grab; just remove our overrides")
+  was correct in theory but Tailwind preflight had been silently
+  shadowing it the whole time. Verified empirically via Playwright
+  DOM probe — walking the parent chain from a span inside a Mission
+  node showed `cursor: pointer` originating at the
+  `.react-flow__node` element, not at any of our descendant rules.
+- **Verification:** post-fix Playwright sweep across the entire
+  canvas grid (50px sample × 22 columns × 21 rows) returned only
+  three distinct cursors anywhere: `grab` (pane + every node body),
+  `auto` (SVG inside MiniMap, never user-interactive), `not-allowed`
+  (disabled toolbar buttons). No `pointer` on any node body. No
+  cursor changes when crossing between pane and node.
+- **Why this didn't surface earlier:** every prior round assumed
+  the cursor cascade stopped at our rules vs RF defaults. Nobody
+  walked the actual DOM tree to find that Tailwind was injecting
+  via an attribute selector neither our code nor RF documentation
+  highlighted. The fix took 30 seconds once the cause was known;
+  the prior six rounds spent ~60 minutes of round-trip on wrong
+  diagnoses. Process lesson: probe the live DOM **first**, theorise
+  **second**.
+
+#### Part 2 — Auto layout button moved from `<SketchToolbar>` to React Flow `<Controls>`
+
+- **What:** Move the v0.13.9 Auto layout `IconBtn` (top-right
+  toolbar) into the React Flow `<Controls>` panel at lower-left,
+  rendered as a `<ControlButton>` below zoom / fit / lock.
+- **Why:** the user grouped auto-layout mentally with view-state
+  controls (zoom / fit) rather than mutation actions (undo / redo).
+  Direct quote: *"정렬은 그리고 왼쪽 아래에 핏하는거하고 같은 곳에
+  넣어도 되요. 오른쪽 상단에 둘 필요 없음."* Lower-left is also where
+  the user's eye already goes for camera-related operations.
+- **What this preserves:** the algorithm itself is unchanged from
+  D-2026-05-10-E; only the trigger UI moved. Disabled state still
+  fires when no anchor exists or when the canvas has no non-anchor
+  nodes.
+
+#### Process change implied for future sessions
+
+- **First step on any cursor / hit-test bug = Playwright DOM probe**,
+  not code reading. CURSOR.md's probe script is the canonical
+  starting point. Walking the parent chain from
+  `document.elementFromPoint` is mandatory before proposing a fix.
+- **Tailwind preflight is a hidden source of cursor regressions.**
+  It applies to attribute selectors (`[role="button"]`, `[disabled]`)
+  that interact silently with vendor library accessibility
+  attributes. CURSOR.md's anti-patterns table now includes this
+  failure mode.
+
+- **Approval:** **Accepted** by user, 2026-05-10.
+- **Spec impact:** [`SPEC.md` §Cursor states](./SPEC.md#cursor-states-canvas-wide-ssot-applies-to-every-canvas)
+  — augmented to mention BOTH preflight cancellation rules (v0.13.6
+  for descendants, v0.13.10 for the node element itself).
+  [`SPEC.md` §Auto-layout — Trigger and undo](./SPEC.md#auto-layout)
+  — button location updated to lower-left Controls panel.
+  [`CURSOR.md`](./CURSOR.md) updated.

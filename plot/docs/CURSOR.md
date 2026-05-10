@@ -76,11 +76,22 @@ override these.
 
 ---
 
-## The one rule we add — Tailwind preflight cancellation
+## The two rules we add — Tailwind preflight cancellation
 
-`styles.css` contains exactly one cursor-related rule:
+`styles.css` contains exactly two cursor-related rules:
 
 ```css
+/* (1) RF v11 sets role="button" on .react-flow__node itself for
+       accessibility. Restore RF's intended grab. */
+.react-flow__node[role="button"] {
+  cursor: grab;
+}
+.react-flow__node[role="button"].dragging {
+  cursor: grabbing;
+}
+
+/* (2) Inside a node, force descendants to inherit the node's cursor
+       so EditableText label + fold button don't flip to pointer. */
 .react-flow__node *:not(.react-flow__handle):not(.react-flow__resize-control) {
   cursor: inherit;
 }
@@ -96,22 +107,27 @@ button, [role="button"] { cursor: pointer; }
 :disabled { cursor: default; }
 ```
 
-Two elements inside our nodes match these selectors:
+Three elements in our canvas match these selectors:
 
-- The fold button (`<button>`) on container nodes — `cursor: pointer`.
-- The EditableText label span has `role="button"` for keyboard
-  accessibility — `cursor: pointer`.
+- **`.react-flow__node` itself** — RF v11 sets `role="button"` on every
+  node element for accessibility. Tailwind preflight matches it
+  directly. Without rule (1), the node element shows `cursor: pointer`,
+  and (because cursor inherits) every descendant inside the node shows
+  `cursor: pointer` too.
+- **The fold button** (`<button>`) on container nodes.
+- **The EditableText label span** which carries `role="button"` for
+  keyboard accessibility.
 
-Without the cancellation rule, the cursor flips between `grab` (RF
-default on the node body) and `pointer` (Tailwind preflight on the
-button / role=button) as the mouse moves across the node. That is
-the exact flicker the v0.13.3 → v0.13.5 override stack tried to
-fix five times.
+Without the cancellation rules, the cursor flips between `grab` (RF
+default on the pane) and `pointer` (Tailwind preflight on the node)
+as the mouse crosses the node-pane boundary. That is the exact
+flicker the v0.13.3 → v0.13.6 work tried to fix six times — and
+finally identified in v0.13.10 via Playwright DOM-probe diagnostics.
 
-The cancellation rule makes every descendant of `.react-flow__node`
-inherit the cursor from the node itself (which is `grab`) — except
-the React Flow infrastructure (handles and resize controls), which
-keeps its semantic cursor.
+Rule (1) restores `grab` on the node element. Rule (2) makes every
+descendant inherit from the node — except the React Flow
+infrastructure (handles and resize controls), which keeps its
+semantic cursor.
 
 ### Why this isn't "just another override"
 
@@ -224,8 +240,12 @@ rule is missing or has been broken. Check `styles.css` first.
 
 ## Change history
 
+- **v0.13.10 (2026-05-10)** — added cancellation rule for
+  `.react-flow__node[role="button"]` itself (RF v11 a11y attribute
+  was the root cursor-flicker source all along). Identified via
+  Playwright DOM probe. See D-2026-05-10-F.
 - **v0.13.6 (2026-05-10)** — full reset to RF defaults + Tailwind
-  preflight cancellation. See D-2026-05-10-C.
+  preflight cancellation on descendants. See D-2026-05-10-C.
 - **v0.13.3-v0.13.5** — six-round override stack (now removed). See
   D-2026-05-04-E, D-2026-05-08-C, D-2026-05-08-E, D-2026-05-08-F,
   D-2026-05-08-G, D-2026-05-10-A.

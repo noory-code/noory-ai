@@ -104,13 +104,22 @@ explicit connection topology.
 
 ### Trigger and undo
 
-- A single "Auto layout" button in `<SketchToolbar>` (next to
-  undo / redo).
+- A single "Auto layout" button **inside the React Flow `<Controls>`
+  panel** at the lower-left of the canvas (rendered via
+  `<ControlButton>` — sits below zoom / fit / lock so the user
+  finds it alongside the other view-state controls).
 - Click ⇒ immediate execution. No confirmation dialog.
 - Result is applied via `onDocChange`, so it lands in the regular
   history stack — `Cmd / Ctrl + Z` reverses the layout in one step.
-- The button is enabled only when at least one non-anchor node
-  exists on the canvas.
+- The button is enabled only when an anchor exists on the canvas
+  AND at least one non-anchor node is present.
+
+> **Why lower-left, not the top-right toolbar:** the user wanted
+> auto-layout grouped with other view-state controls (zoom / fit)
+> rather than mutation actions (undo / redo). Lower-left is where
+> the user's eye already goes for "move the camera" tasks, and
+> auto-layout is a layout-of-the-camera-view operation. See
+> [D-2026-05-10-F](./DECISIONS.md).
 
 ### What auto-layout does **not** do
 
@@ -271,16 +280,25 @@ fields never triggers canvas actions.
 
 ## Cursor states (canvas-wide SSOT, applies to every canvas)
 
-**v0.13.6 reset:** every cursor on the canvas surface is **React
-Flow's default**, sourced from `reactflow/dist/style.css` and
-`@reactflow/node-resizer/dist/style.css`. `styles.css` adds **one
-single rule** — a Tailwind preflight cancellation that makes node
-descendants inherit the RF default `grab` (without it, the fold
-button and the EditableText label `[role="button"]` flip to
-`pointer` and re-introduce flicker). The full deep-dive lives in
-[`CURSOR.md`](./CURSOR.md). This table reproduces the resulting
-behaviour so future sessions can verify it without re-reading
-vendor CSS.
+**v0.13.6 reset + v0.13.10 supplement:** every cursor on the canvas
+surface follows **React Flow's default**, sourced from
+`reactflow/dist/style.css` and
+`@reactflow/node-resizer/dist/style.css`. `styles.css` adds **two
+Tailwind preflight cancellation rules** so the RF default actually
+takes effect:
+
+1. RF v11 sets `role="button"` on `.react-flow__node` itself for
+   accessibility — Tailwind preflight `[role="button"] { cursor:
+   pointer }` therefore overrode the RF-default `cursor: grab` on
+   every node. (D-2026-05-10-F.) Restore explicitly.
+2. Inside a node, the EditableText label span (also `role="button"`)
+   and the fold `<button>` would still flip to pointer per the same
+   preflight. Force inheritance from the node above so the whole
+   node body shows the same cursor. (D-2026-05-10-C.)
+
+The full deep-dive lives in [`CURSOR.md`](./CURSOR.md). This table
+reproduces the resulting behaviour so future sessions can verify it
+without re-reading vendor CSS.
 
 | Region | State | Cursor |
 |---|---|---|

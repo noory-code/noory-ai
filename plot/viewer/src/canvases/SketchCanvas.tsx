@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
+  ControlButton,
   Controls,
   MiniMap,
   ReactFlowProvider,
@@ -273,8 +274,6 @@ function SketchCanvasInner({
         onRedo={onRedo}
         valueFlowOn={valueFlowOn}
         onToggleValueFlow={toggleValueFlow}
-        canAutoLayout={!!projectAnchor && doc.nodes.length > 0}
-        onAutoLayout={applyAutoLayout}
       />
       <ReactFlow
         nodes={nodes}
@@ -309,7 +308,20 @@ function SketchCanvasInner({
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <MiniMap zoomable pannable />
-        <Controls />
+        <Controls>
+          {/* Auto layout — D-2026-05-10-E spec, D-2026-05-10-F placement.
+              Lives inside <Controls> next to zoom/fit so the user finds it
+              alongside the other view-state buttons. Disabled when no anchor
+              or when the canvas has no non-anchor nodes. */}
+          <ControlButton
+            onClick={applyAutoLayout}
+            title="Auto layout"
+            aria-label="Auto layout"
+            disabled={!projectAnchor || doc.nodes.length === 0}
+          >
+            <span aria-hidden>⊞</span>
+          </ControlButton>
+        </Controls>
       </ReactFlow>
       {menu && (
         <SketchContextMenu

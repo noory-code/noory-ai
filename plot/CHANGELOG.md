@@ -4,6 +4,102 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.10] — 2026-05-10
+
+### Fixed — Cursor flicker root cause: `[role="button"]` on `.react-flow__node`
+
+After six rounds across v0.13.3 → v0.13.6 with every diagnosis
+proven wrong by the user reporting the same flicker, **the actual
+cause was finally identified via Playwright DOM probe**:
+
+> React Flow v11 sets `role="button"` on the
+> `.react-flow__node` element itself for accessibility. Tailwind
+> preflight ships `[role="button"] { cursor: pointer }`, which
+> matches that element directly and overrides RF's intended
+> `cursor: grab` *before any descendant rule runs*.
+
+The v0.13.6 reset's premise ("RF default is grab; remove our
+overrides and grab will work") was correct in theory but Tailwind
+preflight had been silently shadowing it the whole time. None of
+the prior six rounds walked the actual DOM parent chain to find
+this — they all theorised from CSS files instead.
+
+#### Fix
+
+`viewer/src/styles.css` — add a second cursor rule (the first one
+from v0.13.6 still applies to descendants):
+
+```css
+.react-flow__node[role="button"] {
+  cursor: grab;
+}
+.react-flow__node[role="button"].dragging {
+  cursor: grabbing;
+}
+```
+
+#### Verification
+
+Playwright DOM probe sweep across the entire post-layout canvas
+(50 px grid sample × 22 cols × 21 rows) returned only three
+distinct cursors anywhere:
+
+- `grab` — `.react-flow__pane` AND every node body (uniform).
+- `auto` — SVG inside MiniMap (never user-interactive).
+- `not-allowed` — disabled toolbar buttons.
+
+Zero `pointer` on any node body. Zero cursor changes when crossing
+between pane and node. The flicker is structurally impossible now.
+
+#### Process change
+
+- **First step on any cursor / hit-test bug = Playwright DOM probe**,
+  not code reading.
+- Tailwind preflight is a hidden source of cursor regressions —
+  it interacts silently with vendor library accessibility attributes.
+
+### Changed — Auto layout button moved from top-right toolbar to lower-left Controls panel
+
+Per user direction (*"정렬은 그리고 왼쪽 아래에 핏하는거하고 같은
+곳에 넣어도 되요. 오른쪽 상단에 둘 필요 없음."*) the v0.13.9 Auto
+layout button moves from `<SketchToolbar>` (top-right) into the
+React Flow `<Controls>` panel at lower-left, rendered as a
+`<ControlButton>` below zoom / fit / lock.
+
+Rationale: the user grouped auto-layout mentally with view-state
+controls (zoom / fit) rather than mutation actions (undo / redo).
+Lower-left is also where the user's eye already goes for
+camera-related operations. Algorithm itself is unchanged from
+D-2026-05-10-E.
+
+#### Files
+
+- `viewer/src/canvases/SketchCanvas.tsx` — adds `ControlButton` to
+  the `<Controls>` panel; removes the auto-layout props from the
+  `<SketchToolbar>` instantiation.
+- `viewer/src/canvases/SketchToolbar.tsx` — reverts to its v0.13.8
+  shape (no `canAutoLayout` / `onAutoLayout` props, no Auto layout
+  button).
+- `viewer/tests/SketchCanvas.regression.test.tsx` — the
+  v0.13.9-inverted regression test still asserts "auto layout
+  button exists" via `aria-label="Auto layout"`, which still
+  matches because the button kept the same accessible name when
+  it moved into Controls.
+
+### Documentation
+
+- `docs/SPEC.md` §Cursor states — explicitly mentions BOTH
+  Tailwind preflight cancellation rules (descendants from v0.13.6
+  + `.react-flow__node[role="button"]` from v0.13.10).
+- `docs/SPEC.md` §Auto-layout — Trigger and undo section updated
+  with the new lower-left location and rationale.
+- `docs/CURSOR.md` — Tailwind cancellation section expanded to
+  cover the `.react-flow__node` element itself (in addition to
+  descendants); change-history entry for v0.13.10.
+- `docs/DECISIONS.md` — D-2026-05-10-F new entry, Accepted, with
+  the full diagnosis story and the implied process change ("probe
+  the DOM first, theorise second").
+
 ## [0.13.9] — 2026-05-10
 
 ### Added — Auto-layout button (mindmap directional tree implementation)

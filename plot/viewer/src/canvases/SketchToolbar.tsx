@@ -13,22 +13,9 @@ export interface SketchToolbarProps {
   /** v0.2: edge colour toggle reflecting value_form. */
   valueFlowOn: boolean;
   onToggleValueFlow: () => void;
-  /** v0.13.9 — auto-layout (D-2026-05-10-E). Enabled when an anchor
-   *  exists on the active canvas and at least one non-anchor node is
-   *  present. Click ⇒ instant directional-tree layout via
-   *  ``onDocChange`` (history-tracked, ``Cmd+Z`` reverses). */
-  canAutoLayout: boolean;
-  onAutoLayout: () => void;
 }
 
-export function SketchToolbar({
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
-  canAutoLayout,
-  onAutoLayout,
-}: SketchToolbarProps) {
+export function SketchToolbar({ canUndo, canRedo, onUndo, onRedo }: SketchToolbarProps) {
   return (
     <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2 py-1 text-xs shadow-sm backdrop-blur">
       <IconBtn label="Undo" enabled={canUndo} onClick={onUndo} hint="Cmd+Z">
@@ -36,9 +23,6 @@ export function SketchToolbar({
       </IconBtn>
       <IconBtn label="Redo" enabled={canRedo} onClick={onRedo} hint="Shift+Cmd+Z">
         ↷
-      </IconBtn>
-      <IconBtn label="Auto layout" enabled={canAutoLayout} onClick={onAutoLayout} hint="">
-        ⊞
       </IconBtn>
     </div>
   );

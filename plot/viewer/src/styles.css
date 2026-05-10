@@ -17,17 +17,33 @@ body { margin: 0; }
    produced six rounds of cursor regressions in v0.13.3-v0.13.6.
    (D-2026-05-10-C.) */
 
-/* Single cursor-related rule: undo the Tailwind preflight rules that
-   force ``cursor: pointer`` on ``<button>`` and ``[role="button"]``
-   inside the canvas. Without this, the EditableText label span
-   (role="button") and the fold ``<button>`` flicker between
-   ``pointer`` and the RF-default ``grab`` of the node — even though
-   we've removed every custom override. RF's "node hover = grab"
-   mental model is the contract; Tailwind's button-pointer rule is
-   a UI assumption that doesn't hold inside a draggable canvas
-   surface. The :not() exclusions preserve RF's semantic cursors
-   on connection handles (crosshair) and resize controls
-   (ew/ns/nwse/nesw-resize). (D-2026-05-10-C.) */
+/* Two cursor-related rules cancelling Tailwind preflight matches that
+   break RF's "node hover = grab" mental model. Both pixel-verified
+   via Playwright DOM probe (see CURSOR.md #verify-the-cursor-state).
+   (D-2026-05-10-F.) */
+
+/* (1) RF v11 sets role="button" on .react-flow__node itself for
+   accessibility. Tailwind preflight ``[role="button"] { cursor:
+   pointer }`` therefore makes EVERY canvas node show pointer, then
+   propagates pointer down the inheritance chain. This was the
+   actual cursor-flicker root cause that v0.13.3-v0.13.6 fixes
+   misdiagnosed: the assumed "RF default grab" was being shadowed
+   on .react-flow__node itself before any descendant rule even
+   ran. Restore RF's intended grab/grabbing pair explicitly. */
+.react-flow__node[role="button"] {
+  cursor: grab;
+}
+.react-flow__node[role="button"].dragging {
+  cursor: grabbing;
+}
+
+/* (2) Inside a node, the EditableText label span ``role="button"``
+   and the fold ``<button>`` would still flip to pointer per
+   Tailwind preflight. Force inheritance from the node above so the
+   whole node body shows the same cursor. The :not() exclusions
+   preserve RF's semantic cursors on connection handles
+   (crosshair when connecting via .connectionindicator) and on
+   resize controls (ew/ns/nwse/nesw-resize). */
 .react-flow__node *:not(.react-flow__handle):not(.react-flow__resize-control) {
   cursor: inherit;
 }
