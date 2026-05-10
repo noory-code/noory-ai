@@ -13,18 +13,16 @@
 >   tells you *exactly what to do, when*. When this file disagrees with
 >   the others, this file is wrong — fix this file, not the others.
 >
-> **Pairs with:**
-> - [`docs/SPEC.md`](./docs/SPEC.md) — what Plot should *do*.
-> - [`docs/DECISIONS.md`](./docs/DECISIONS.md) — *why* it does what it
->   does, and what was tried and rejected.
-> - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — what shape the
->   code is in and how to fix it.
-> - [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — data model.
-> - [`docs/CURSOR.md`](./docs/CURSOR.md) — canvas cursor SSOT
->   (RF defaults + the one Tailwind cancellation rule).
-> - [`docs/PHILOSOPHY.md`](./docs/PHILOSOPHY.md) — value-flow / two-layer
->   thesis.
-> - [`docs/ROADMAP.md`](./docs/ROADMAP.md) — release order.
+> **Pairs with (read in this order on session start):**
+> 1. [`docs/VISION.md`](./docs/VISION.md) — **the essence** + 3-phase cycle. Single source of truth above everything else. Read first, every session.
+> 2. [`docs/DOMAIN.md`](./docs/DOMAIN.md) — bounded contexts, ubiquitous language, dependency direction. Use to decide *where* code goes.
+> 3. [`docs/SPEC.md`](./docs/SPEC.md) — what Plot should *do* per canvas.
+> 4. [`docs/DECISIONS.md`](./docs/DECISIONS.md) — *why* it does what it does, and what was tried and rejected (last 5 entries auto-surfaced by the SessionStart hook).
+> 5. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — what shape the code is in and how to fix it.
+> 6. [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — data model (kinds / fields).
+> 7. [`docs/CURSOR.md`](./docs/CURSOR.md) — canvas cursor SSOT.
+> 8. [`docs/PHILOSOPHY.md`](./docs/PHILOSOPHY.md) — value-flow / 10 principles.
+> 9. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — release order.
 
 ---
 
@@ -42,6 +40,25 @@ behaviour question from memory or from code comments alone.**
 ---
 
 ## Pre-action gates
+
+### Gate -1 — Re-anchor to the essence (every session, before answering anything)
+
+The single rule that keeps every other rule honest. Plot's essence
+(from [`docs/VISION.md`](./docs/VISION.md)):
+
+> **Plot 은 본질을 모르는 사람이 본질을 찾고, 그걸 놓치지 않으면서, 그
+> 본질 아래에서 서비스를 쉽게 기획·개발할 수 있게 AI 와 협업하는
+> 툴이다.**
+
+This sentence + the last 5 DECISIONS entries are auto-surfaced via
+`hooks/session_start.py` at SessionStart. **Read both before
+formulating the first answer.** When this gate disagrees with any
+other rule, this gate wins; fix the other rule.
+
+When the user makes a request, classify it against the three phases
+(Discovery / Retention / Execution per VISION.md). If it doesn't fit
+any phase or threatens the cycle's reversibility, **stop and ask**
+before proceeding.
 
 ### Gate 0 — User confirmation pins the spec (immediately, before any other action)
 
@@ -131,7 +148,19 @@ waits for the split (see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)).
 
 ### Gate 3 — Before claiming "done"
 
-Run the actual viewer:
+**Use the [`plot-verifier`](./agents/plot-verifier.md) sub-agent.**
+For any UI change in `viewer/`, invoke `plot-verifier` to navigate
+the browser, screenshot the change, and probe the DOM. Do not claim
+"done" until the verifier returns **MATCHES SPEC**.
+
+For UI bugs specifically, the [`plot-frontend-bug-diagnosis`](./skills/plot-frontend-bug-diagnosis/SKILL.md)
+skill is the upstream procedure (probe → diagnose → fix → re-probe).
+
+For features, the [`plot-feature-tdd`](./skills/plot-feature-tdd/SKILL.md)
+skill is the end-to-end pipeline; Step 8 invokes the verifier.
+
+The legacy "manual" path below is kept as a fallback for sessions
+where the Playwright MCP is offline:
 
 ```bash
 cd plot && uv run plot-mcp-http &              # MCP HTTP on 5190

@@ -4,6 +4,172 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.0] — 2026-05-10
+
+### Added — Plot dev infrastructure (the "AI develops Plot reliably" milestone)
+
+After two weeks of tactical fixes (six rounds on cursor; auto-layout
+misattributed; SPEC drift across sessions), the user's diagnosis cut
+through: *"플러그인 설치가 되어 있는데? 왜? 그러지? ... 진짜 큰일이네
+... 필요한 스킬, 룰, 서브 에이전트들, 다 만들면서 해야 제대로 빠르고
+효율적으로 일 할 수 있습니까? 그럼 그렇게 하구요."*
+
+The fix is structural: replace human-memory-dependent rules with
+deterministic infrastructure that fires automatically. This release
+ships the full set so the next session inherits a workable AI dev
+environment instead of starting from "be careful next time."
+
+#### `docs/VISION.md` (new) — single-source-of-truth essence
+
+The one sentence that overrides every other priority:
+
+> **Plot 은 본질을 모르는 사람이 본질을 찾고, 그걸 놓치지 않으면서, 그
+> 본질 아래에서 서비스를 쉽게 기획·개발할 수 있게 AI 와 협업하는
+> 툴이다.**
+
+Plus the three-phase cycle (Discovery / Retention / Execution with
+AICollaboration cross-cutting), who Plot is for, the feature-decision
+checklist, and a banned-pattern table calibrated to past drift
+(cursor 6 rounds; auto-edges D-2026-05-04-A; auto-layout removal
+D-2026-05-04-D).
+
+#### `docs/DOMAIN.md` (new) — bounded contexts + ubiquitous language
+
+Translates VISION into 5 bounded contexts:
+
+- **EssenceDiscovery** — Foundation canvas, Inspector typed text
+- **EssenceRetention** — anchor injection, cross-canvas refs
+- **EssencePlanning** — Actors / Services, value-flow, auto-layout
+- **EssenceExecution** — Service-Detail, MCP tools
+- **AICollaboration** — cross-cutting (skills, hooks, agents, MCP)
+
+Each context names its surfaces, what it owns vs not, current code
+home (with file paths), and where current code violates the model
+(refactor candidates with severity).
+
+Plus the ubiquitous language table that disambiguates Plot terms
+("Node" vs "rf-node" vs DOM node, "Service" vs REST service, etc.),
+the entity-vs-VO classification, and the dependency-direction
+mermaid that codifies "EssenceExecution may read EssenceDiscovery
+but not the reverse."
+
+#### `skills/plot-frontend-bug-diagnosis` (new) — Playwright probe-first
+
+The deterministic procedure that v0.13.10 finally stumbled on after
+six failed cursor rounds. Triggers on `cursor / hover / pointer /
+hit-test / flicker / 깜빡` keywords. 10 mandatory steps:
+
+1. Verify Playwright + dev server.
+2. Navigate to affected canvas.
+3. Baseline screenshot.
+4. Cursor / hit-test probe at suspect coordinates (templates included).
+5. Walk parent chain to find the cursor source.
+6. Identify source rule (CSS file + selector + line).
+7. Propose fix anchored to probe.
+8. Apply fix, re-probe.
+9. Confirmation screenshot.
+10. Update SPEC + CURSOR + DECISIONS per Gate 0.
+
+Banned shortcuts table (5 patterns) + quick-reference for common Plot
+cursor bug patterns.
+
+#### `skills/plot-feature-tdd` (new) — essence-anchored test-first
+
+Triggers on `feature / 기능 추가 / 만들어줘 / add / implement`. 10
+mandatory steps:
+
+1. Re-read VISION.md first sentence.
+2. Identify VISION phase.
+3. Look up bounded context in DOMAIN.md.
+4. Sketch entity / VO touched.
+5. Check SPEC.md for existing coverage.
+6. Write regression test FIRST (Red).
+7. Implement minimally (Green).
+8. Browser-verify with `plot-verifier` agent.
+9. Update SPEC + DECISIONS + CHANGELOG (Gate 0).
+10. Commit + push (Gate 4).
+
+Non-negotiables table (test first; one context per change; no SPEC
+drift; browser-verify all UI changes; never grow oversize files;
+never auto-emit user-visible state).
+
+#### `hooks/session_start.py` (new) — surface VISION + recent DECISIONS
+
+Runs on every Claude Code session start when the Plot plugin is
+loaded. Emits an `additionalContext` payload that prepends to the
+assistant's system prompt:
+
+- VISION.md essence sentence verbatim.
+- Last 5 DECISIONS.md headings.
+- Pre-action gate list (Gate -1 → Gate 4).
+- Available skills.
+
+This is the deterministic answer to "the assistant forgets what we
+agreed last session." Output verified via direct invocation.
+
+#### `hooks/pre_commit_gate.py` (new) — block bad commits
+
+Fires on PreToolUse when the assistant runs `git commit` or `git
+push`. Reads the staged file list:
+
+- If `plot/viewer/` changed → run `npx tsc --noEmit` + `npx vitest run`.
+- If `plot/plot_mcp/` changed → run `uv run pytest`.
+
+Failures return `permissionDecision: deny` with the failure output,
+so the assistant must fix and retry. No more "tests broke after
+commit" surprises.
+
+#### `agents/plot-verifier.md` (new) — Playwright sub-agent
+
+A read-only browser verifier. Parent assistant invokes it after any
+UI change in `viewer/`. Sub-agent navigates, screenshots,
+DOM-probes, and returns one of three verdicts:
+
+- **MATCHES SPEC** — with evidence (paths + probe data).
+- **DIVERGES** — with the specific element / cursor / position that
+  differs and the most likely cause.
+- **CANNOT VERIFY** — environment broken; exact obstacle named.
+
+Sole tools: Playwright MCP browser_* + Bash + Read. Cannot mutate
+the canvas (mutations belong to the parent assistant).
+
+#### `CLAUDE.md` updates
+
+- New **Gate -1** (re-anchor to essence) added at the top of
+  Pre-action gates. Gate 0-4 now follow.
+- "Pairs with" list updated to read VISION → DOMAIN → SPEC →
+  DECISIONS → ARCHITECTURE → CONCEPTS → CURSOR → PHILOSOPHY →
+  ROADMAP, in that order, every session.
+- Gate 3 rewritten to delegate to the `plot-verifier` sub-agent
+  (with the manual fallback path retained for offline cases).
+
+#### `plot/.claude-plugin/plugin.json` updates
+
+- Registered `agents` and `hooks` paths.
+- Version bump to **0.14.0** (minor bump because the assistant's
+  effective behaviour changed — new gates, new procedures, new
+  automation — without breaking any product API).
+
+### Verification
+
+- `tsc --noEmit`: clean.
+- `vitest run`: 24/24 passing.
+- `session_start.py`: produces VISION + last 5 DECISIONS as
+  `additionalContext`, 600+ chars.
+- `pre_commit_gate.py`: passes through non-gating commands; runs
+  checks on `git commit`; returns `deny` with output on failure.
+- Skills + agent: SKILL.md / agent.md frontmatter validates;
+  triggers and tools listed explicitly.
+
+### Why minor bump (0.13 → 0.14)
+
+The product UX is unchanged. What changed is the assistant's
+operating environment — the rules / tools / procedures by which
+future Plot work happens. By the user's framing, this is the
+"AI develops Plot reliably" milestone, which conceptually opens a
+new release line. v0.14.x will iterate on this infrastructure as
+real sessions surface gaps.
+
 ## [0.13.10] — 2026-05-10
 
 ### Fixed — Cursor flicker root cause: `[role="button"]` on `.react-flow__node`
