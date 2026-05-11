@@ -168,7 +168,25 @@
     "addActorPermission": "+ add actor permission…",
     "permissionRemove": "Remove permission",
     "masterNotFound": "⚠ master not found on Foundation canvas",
-    "empty": "(none)"
+    "empty": "(none)",
+    "actorCompositionDeferred": "Actor composition (permissions / capabilities / goals / state) lands in v0.3.",
+    "longFormDetailsHeader": "Long-form details",
+    "longFormDetailsIntro": "Need long prose, tables, or Mermaid diagrams? Create a separate MD file. External editors (Obsidian, VS Code) can edit the same file directly.",
+    "createDetails": "📁 Create details",
+    "creating": "Creating…"
+  },
+  "composition": {
+    "add": "+ Add",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "namePlaceholder": "Name",
+    "remove": "Remove",
+    "confirmRemove": "Remove \"{{name}}\"?",
+    "untitled": "(untitled)",
+    "rules": "Rules",
+    "rulesSubtitle": "policies, constraints, SLAs, permissions",
+    "contents": "Contents",
+    "contentsSubtitle": "artifacts, outputs, assets"
   },
   "stencil": {
     "section": {

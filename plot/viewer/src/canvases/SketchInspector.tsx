@@ -380,8 +380,8 @@ export function SketchInspector({
         {node.kind === "service" && (
           <>
             <CompositionList
-              title="Rules"
-              subtitle="policies, constraints, SLAs, permissions"
+              title={t("composition.rules")}
+              subtitle={t("composition.rulesSubtitle")}
               items={rules}
               onAdd={() => onAddChild(node.id, "rule")}
               onPatch={onPatchChild}
@@ -390,8 +390,8 @@ export function SketchInspector({
               availableActors={availableActors}
             />
             <CompositionList
-              title="Contents"
-              subtitle="artifacts, outputs, assets"
+              title={t("composition.contents")}
+              subtitle={t("composition.contentsSubtitle")}
               items={contents}
               onAdd={() => onAddChild(node.id, "content")}
               onPatch={onPatchChild}
@@ -405,7 +405,7 @@ export function SketchInspector({
         {/* Actor placeholder — v0.3 fields land here */}
         {node.kind === "actor" && !node.is_root && (
           <div className="rounded border border-dashed border-slate-300 p-3 text-xs italic text-slate-400">
-            Actor composition (permissions / capabilities / goals / state) lands in v0.3.
+            {t("inspector.actorCompositionDeferred")}
           </div>
         )}
       </div>
@@ -439,6 +439,7 @@ function CompositionList({
   kind,
   availableActors,
 }: CompositionListProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4">
       <div className="mb-1 flex items-baseline justify-between">
@@ -451,12 +452,12 @@ function CompositionList({
           onClick={onAdd}
           className="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-slate-700"
         >
-          + Add
+          {t("composition.add")}
         </button>
       </div>
       {items.length === 0 ? (
         <div className="rounded border border-dashed border-slate-200 p-2 text-[11px] italic text-slate-400">
-          (none)
+          {t("inspector.empty")}
         </div>
       ) : (
         <ul className="space-y-1">
@@ -491,6 +492,7 @@ function CompositionRow({
   onPatch,
   onRemove,
 }: CompositionRowProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   return (
     <li className="group rounded border border-slate-200 bg-white">
@@ -499,8 +501,8 @@ function CompositionRow({
           type="button"
           onClick={() => setExpanded((v) => !v)}
           className="rounded px-1 text-[10px] text-slate-500 hover:bg-slate-100"
-          aria-label={expanded ? "Collapse" : "Expand"}
-          title={expanded ? "Collapse" : "Expand"}
+          aria-label={expanded ? t("composition.collapse") : t("composition.expand")}
+          title={expanded ? t("composition.collapse") : t("composition.expand")}
         >
           {expanded ? "▾" : "▸"}
         </button>
@@ -509,19 +511,25 @@ function CompositionRow({
             type="text"
             value={item.label}
             onChange={(e) => onPatch(item.id, { label: e.target.value })}
-            placeholder="Name"
+            placeholder={t("composition.namePlaceholder")}
             className="w-full border-none bg-transparent text-xs font-medium text-slate-800 focus:outline-none"
           />
         </div>
         <button
           type="button"
           onClick={() => {
-            if (window.confirm(`Remove "${item.label || "(untitled)"}"?`)) {
+            if (
+              window.confirm(
+                t("composition.confirmRemove", {
+                  name: item.label || t("composition.untitled"),
+                }),
+              )
+            ) {
               onRemove(item.id);
             }
           }}
           className="rounded px-1 text-[10px] text-rose-600 opacity-0 hover:bg-rose-50 group-hover:opacity-100"
-          aria-label="Remove"
+          aria-label={t("composition.remove")}
         >
           ✕
         </button>
@@ -1425,6 +1433,7 @@ function DetailsSection({
   canvasKind,
   onPatchNode,
 }: DetailsSectionProps) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -1464,18 +1473,17 @@ function DetailsSection({
 
   return (
     <div className="mb-4 rounded border border-dashed border-slate-300 p-2 text-xs">
-      <div className="mb-1 font-semibold text-slate-600">Long-form details</div>
-      <div className="mb-2 text-[11px] text-slate-500">
-        긴 글, 표, Mermaid 다이어그램이 필요하면 별도 MD 파일을 만드세요.
-        외부 에디터(Obsidian, VS Code)에서도 같은 파일을 직접 편집할 수 있어요.
+      <div className="mb-1 font-semibold text-slate-600">
+        {t("inspector.longFormDetailsHeader")}
       </div>
+      <div className="mb-2 text-[11px] text-slate-500">{t("inspector.longFormDetailsIntro")}</div>
       <button
         type="button"
         onClick={onCreate}
         disabled={busy}
         className="rounded bg-slate-900 px-2 py-1 text-[11px] font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
       >
-        {busy ? "Creating…" : "📁 Create details"}
+        {busy ? t("inspector.creating") : t("inspector.createDetails")}
       </button>
       {err && <div className="mt-2 text-[11px] text-rose-600">{err}</div>}
     </div>

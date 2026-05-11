@@ -4,6 +4,80 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.10] — 2026-05-12
+
+### Added — i18n: composition lists + Long-form details + Actor placeholder (Phase C)
+
+Final Inspector i18n phase. Migrates the remaining Service
+composition lists (Rules / Contents), the Long-form details
+section, and the Actor v0.3 placeholder.
+
+**New `composition.*` keys:**
+
+- `add` (+ Add / + 추가)
+- `expand` / `collapse` (펼치기 / 접기)
+- `namePlaceholder` (Name / 이름)
+- `remove` (Remove / 삭제)
+- `confirmRemove` (interpolated `{{name}}`)
+- `untitled` ((untitled) / (이름 없음))
+- `rules` (Rules / 규칙)
+- `rulesSubtitle` ("정책 · 제약 · SLA · 권한" — user-approved)
+- `contents` (Contents / 콘텐츠)
+- `contentsSubtitle` ("아티팩트 · 결과물 · 자산" — user-approved)
+
+**New `inspector.*` keys:**
+
+- `actorCompositionDeferred` ("v0.3 에서 액터 구성(권한 · 기능 ·
+  목표 · 상태)을 지원할 예정입니다." — user-approved)
+- `longFormDetailsHeader` (장문 상세)
+- `longFormDetailsIntro` (Korean retained verbatim; English
+  translation user-approved)
+- `createDetails` (📁 상세 만들기)
+- `creating` (생성 중…)
+
+All new hint sentences in this commit went through the
+`AskUserQuestion` review workflow per `I18N_KO_GLOSSARY.md` §3.
+
+### Changed
+
+- `plot/viewer/src/canvases/SketchInspector.tsx`:
+  - `CompositionList` migrated (title / subtitle pass-through;
+    `+ Add` button; empty-state placeholder).
+  - `CompositionRow` migrated (expand / collapse aria + title;
+    Name placeholder; Remove confirm dialog with `{{name}}` +
+    `(untitled)` fallback; Remove aria-label).
+  - `DetailsSection` migrated (header; intro paragraph; busy
+    label; idle label).
+  - Actor v0.3 placeholder migrated.
+- `plot/viewer/src/i18n/locales/{en,ko}.json` — ~15 new keys.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` → 14/14 (parity active).
+- Browser smoke (Playwright KO on Services → Login Inspector):
+  서비스 / 라벨 / ✕ 삭제 / 장문 상세 / 📁 상세 만들기 / 대상
+  측 운영자측 / 무엇 / 만드는 가치 / 범위 / 트리거 / 방법 /
+  결과 / 할 것 / 하지 말 것. Category node badge reads 카테고리.
+- Pre-commit gate self-trip → PASS.
+
+### Queued — v0.14.11 (Stencil draggable labels)
+
+The labels INSIDE each draggable preset in `SketchStencil`
+("Mission" / "Core Value" / "Identity" / "Actor" / "Sub-Actor" /
+"Category" / "Service" / "Metric" / "Step" / "Rule" / "Content")
+are still English. They render via `StencilPreset.label`
+hardcoded in TS module-level constants. Migration needs a
+runtime t() call at the StencilItem render site (since module-
+level constants can't call hooks). Small follow-up commit.
+
+### Queued — separate diagnosis (deferred)
+
+- "❀ ❀ ❀" Inspector MD preview font fallback investigation.
+- "1 validation error for CanvasDoc Val…" toast briefly visible
+  during Inspector load — not regression (pre-existing, surfaced
+  by Playwright nav timing). Worth a closer look if it persists.
+
 ## [0.14.9] — 2026-05-12
 
 ### Added — i18n: Inspector typed-field labels per kind (Phase B)
