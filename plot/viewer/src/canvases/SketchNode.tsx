@@ -1,26 +1,29 @@
 import { memo } from "react";
 import ReactMarkdown from "react-markdown";
+import { useTranslation } from "react-i18next";
 import { Handle, NodeResizer, Position, type NodeProps } from "reactflow";
 import type { Shape } from "../types";
 import { EditableText } from "../edit/EditableText";
 import { getIcon } from "./SketchIcons";
 
 /**
- * Kinds the top-left tag recognises. Actors / services are identified
- * clearly enough by their icon + colour, so we only label the Core-canvas
- * kinds where the palette collapsed down to a single star+colour.
+ * Kinds the top-left tag is shown for. Actors / services are identified
+ * clearly enough by their icon + colour, so we only label the Foundation-
+ * canvas kinds where the palette collapsed down to a single star+colour.
+ * The visible text per kind comes from i18n (``kindTag.*`` keys), so this
+ * set is now membership-only.
  */
-const KIND_TAG_LABELS: Record<string, string> = {
-  project: "PROJECT",
-  mission: "MISSION",
-  core_value: "CORE VALUE",
-  identity: "IDENTITY",
+const KIND_TAG_KINDS = new Set<string>([
+  "project",
+  "mission",
+  "core_value",
+  "identity",
   // v0.10 Step 5: composition kinds visible on Service-Detail canvases.
-  metric: "METRIC",
-  step: "STEP",
+  "metric",
+  "step",
   // v0.12: category groups services on the Services canvas.
-  category: "CATEGORY",
-};
+  "category",
+]);
 
 /** Shapes whose top-left corner is inside the visible silhouette. */
 const KIND_TAG_SHAPES = new Set<Shape>(["rectangle", "rounded"]);
@@ -111,6 +114,7 @@ function contentPadding(shape: Shape): string {
 }
 
 function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) {
+  const { t } = useTranslation();
   const isAnchor = data.kind === "project";
   // ``border`` (not ``outline``) so the visual extent matches the
   // hit-box — clicks on the decoration land on the node, not the
@@ -164,9 +168,9 @@ function SketchNodeComponent({ id, data, selected }: NodeProps<SketchNodeData>) 
             the corner lands outside the visible silhouette. */}
         {data.kind &&
           KIND_TAG_SHAPES.has(data.shape) &&
-          KIND_TAG_LABELS[data.kind] && (
+          KIND_TAG_KINDS.has(data.kind) && (
             <span className="pointer-events-none absolute left-2 top-1 text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-              {KIND_TAG_LABELS[data.kind]}
+              {t(`kindTag.${data.kind}`)}
             </span>
           )}
 

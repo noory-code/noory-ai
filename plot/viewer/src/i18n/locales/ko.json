@@ -39,7 +39,7 @@
     "aria": "캔버스",
     "keyboardShortcuts": "키보드 단축키",
     "tabs": {
-      "foundation": "토대",
+      "foundation": "파운데이션",
       "actors": "액터",
       "services": "서비스"
     }
@@ -55,6 +55,47 @@
   },
   "shell": {
     "closeEsc": "닫기 (Esc)"
+  },
+  "kind": {
+    "project": "프로젝트",
+    "actorRoot": "액터 루트",
+    "node": "노드",
+    "mission": "미션",
+    "core_value": "코어밸류",
+    "identity": "아이덴티티",
+    "actor": "액터",
+    "actor_ref": "액터 (참조)",
+    "mission_ref": "미션 (참조)",
+    "value_ref": "코어밸류 (참조)",
+    "identity_ref": "아이덴티티 (참조)",
+    "service": "서비스",
+    "category": "카테고리",
+    "metric": "지표",
+    "step": "단계",
+    "rule": "규칙",
+    "content": "콘텐츠"
+  },
+  "kindTag": {
+    "project": "프로젝트",
+    "mission": "미션",
+    "core_value": "코어밸류",
+    "identity": "아이덴티티",
+    "metric": "지표",
+    "step": "단계",
+    "category": "카테고리"
+  },
+  "inspector": {
+    "label": "라벨",
+    "deleteNode": "노드 삭제",
+    "deleteShort": "✕ 삭제",
+    "confirmDelete": "\"{{name}}\" 을(를) 삭제할까요?",
+    "narrow": "좁게",
+    "widen": "넓게",
+    "narrowInspector": "인스펙터 좁게",
+    "widenInspector": "인스펙터 넓게",
+    "closeInspector": "인스펙터 닫기",
+    "mdWarnings": "⚠ 마크다운 템플릿 경고",
+    "mdWarningsFixHint": "<code>{{path}}</code> 를 편집해 수정하세요."
   },
   "stencil": {
     "section": {

@@ -56,6 +56,47 @@
   "shell": {
     "closeEsc": "Close (Esc)"
   },
+  "kind": {
+    "project": "Project",
+    "actorRoot": "Actor root",
+    "node": "Node",
+    "mission": "Mission",
+    "core_value": "Core value",
+    "identity": "Identity",
+    "actor": "Actor",
+    "actor_ref": "Actor (ref)",
+    "mission_ref": "Mission (ref)",
+    "value_ref": "Core value (ref)",
+    "identity_ref": "Identity (ref)",
+    "service": "Service",
+    "category": "Category",
+    "metric": "Metric",
+    "step": "Step",
+    "rule": "Rule",
+    "content": "Content"
+  },
+  "kindTag": {
+    "project": "PROJECT",
+    "mission": "MISSION",
+    "core_value": "CORE VALUE",
+    "identity": "IDENTITY",
+    "metric": "METRIC",
+    "step": "STEP",
+    "category": "CATEGORY"
+  },
+  "inspector": {
+    "label": "Label",
+    "deleteNode": "Delete node",
+    "deleteShort": "✕ delete",
+    "confirmDelete": "Delete \"{{name}}\"?",
+    "narrow": "Narrow",
+    "widen": "Widen",
+    "narrowInspector": "Narrow inspector",
+    "widenInspector": "Widen inspector",
+    "closeInspector": "Close inspector",
+    "mdWarnings": "⚠ Markdown template warnings",
+    "mdWarningsFixHint": "Edit <code>{{path}}</code> to fix."
+  },
   "stencil": {
     "section": {
       "mission": "Mission",

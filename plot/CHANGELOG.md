@@ -4,6 +4,94 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.8] — 2026-05-12
+
+### Added — i18n: kind labels SSOT + Inspector header / actions / Label
+
+Continues the v0.14.4 → v0.14.6 i18n rollout. This is **Phase A**
+of the Inspector migration. Two more phases follow (typed-field
+section labels per kind, then composition items / modals / misc).
+
+**New `kind.*` namespace** — canonical Plot kind names per
+locale. Korean follows the user-provided product spec's canonical
+vocabulary (2026-05-11):
+
+- project / actorRoot / node / mission / core_value / identity /
+  actor / actor_ref / mission_ref / value_ref / identity_ref /
+  service / category / metric / step / rule / content.
+
+Korean values: 프로젝트 / 액터 루트 / 노드 / 미션 / 코어밸류 /
+아이덴티티 / 액터 / 액터 (참조) / 미션 (참조) / 코어밸류 (참조)
+/ 아이덴티티 (참조) / 서비스 / 카테고리 / 지표 / 단계 / 규칙 /
+콘텐츠.
+
+**New `kindTag.*` namespace** — the small UPPERCASE label
+painted top-left of each node (`SketchNode`). Subset of kinds
+that get the visual badge per `KIND_TAG_KINDS`: project / mission
+/ core_value / identity / metric / step / category.
+
+**New `inspector.*` keys** — header bar + actions + Label field:
+
+- label / deleteNode / deleteShort / confirmDelete (interpolated
+  `{{name}}`).
+- narrow / widen / narrowInspector / widenInspector /
+  closeInspector.
+- mdWarnings / mdWarningsFixHint (HTML-interpolated `{{path}}`,
+  rendered via `dangerouslySetInnerHTML` for the `<code>` tag).
+
+### Changed
+
+- `plot/viewer/src/canvases/SketchNode.tsx` — replaced the
+  hardcoded `KIND_TAG_LABELS` lookup with a membership-only
+  `KIND_TAG_KINDS` set + `t(\`kindTag.${kind}\`)` lookup. The
+  badge text now follows the user's locale.
+- `plot/viewer/src/canvases/SketchInspector.tsx` — `useTranslation()`
+  in `SketchInspector`; kind badge in header reads from `kind.*`
+  with the `project` / `actorRoot` fallback chain; delete button
+  text + tooltip + confirm dialog use `inspector.*`; narrow/widen
+  + close labels + tooltips use `inspector.*`; MD warnings panel
+  header + fix hint (with `<code>{{path}}</code>` interpolation)
+  use `inspector.mdWarnings*`; Label field heading uses
+  `inspector.label`.
+- `plot/viewer/src/i18n/locales/ko.json` — retroactive label fix
+  per user direction: `canvas.tabs.foundation` 토대 → **파운데이션**.
+  (v0.14.5 shipped 토대; v0.14.6 corrected actors 행위자 → 액터;
+  this commit completes the canonical-naming pass on the tabs.)
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` → 14/14 passed (parity test still passes;
+  `kind` + `kindTag` + `inspector` keys present in both locales).
+- Browser smoke (Playwright KO sweep on Foundation): node badges
+  read 미션 / 코어밸류 / 아이덴티티; Inspector top-bar reads 미션
+  + ✕ 삭제 + 라벨; tabs read 파운데이션 / 액터 / 서비스.
+- Pre-commit gate self-trip → PASS (styles.css not touched).
+
+### Queued — Phase B (v0.14.9)
+
+- Inspector typed-field section labels per kind:
+  - Mission: What we do / Why / Direction.
+  - Core value: Definition / Do / Don't.
+  - Identity: Description / Do / Don't.
+  - Actor: Side / Motivation / Pain / Target side.
+  - Service: What / Value created / Scope / Trigger / Outcome /
+    Theme.
+  - actor_ref: Gives / Receives.
+  - step: Order / Outcome.
+  - metric: Target / Measurement.
+  - rule: Policy / Enforcement / Actor permissions.
+  - content: Format / Producer / Consumer.
+  - Long-form details.
+
+### Queued — Phase C (v0.14.10)
+
+- Composition items (Name placeholder, Remove, Expand/Collapse).
+- Inspector edit / split / preview tabs.
+- Foundation refs label ("Actor:" prefix).
+- Inspector "Create details" button.
+- ⚠ MD preview "❀ ❀ ❀" font fallback investigation.
+
 ## [0.14.7] — 2026-05-11
 
 ### Added — `plot/docs/PRODUCT_SPEC.md` (D-2026-05-11-E)

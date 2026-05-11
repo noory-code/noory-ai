@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createFolder } from "../api";
 import { MDFileEditor } from "../edit/MDFileEditor";
 import { folderSlug } from "../lib/slug";
@@ -77,6 +78,7 @@ export function SketchInspector({
   projectId,
   canvasKind,
 }: SketchInspectorProps) {
+  const { t } = useTranslation();
   const [width, setWidth] = useState<InspectorWidth>(loadWidth);
   const toggleWidth = () => {
     const next: InspectorWidth = width === "narrow" ? "wide" : "narrow";
@@ -133,10 +135,12 @@ export function SketchInspector({
           />
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
             {node.kind === "project"
-              ? "Project"
+              ? t("kind.project")
               : node.is_root && node.kind === "actor"
-                ? "Actor Root"
-                : node.kind ?? "Node"}
+                ? t("kind.actorRoot")
+                : node.kind
+                  ? t(`kind.${node.kind}`)
+                  : t("kind.node")}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -145,22 +149,30 @@ export function SketchInspector({
             <button
               type="button"
               onClick={() => {
-                if (window.confirm(`Delete "${node.label || node.id}"?`)) {
+                if (
+                  window.confirm(
+                    t("inspector.confirmDelete", { name: node.label || node.id }),
+                  )
+                ) {
                   onDeleteNode(node.id);
                 }
               }}
-              aria-label="Delete node"
+              aria-label={t("inspector.deleteNode")}
               className="rounded px-2 text-[10px] text-rose-600 hover:bg-rose-50"
-              title="Delete node"
+              title={t("inspector.deleteNode")}
             >
-              ✕ delete
+              {t("inspector.deleteShort")}
             </button>
           )}
           <button
             type="button"
             onClick={toggleWidth}
-            aria-label={width === "wide" ? "Narrow inspector" : "Widen inspector"}
-            title={width === "wide" ? "Narrow" : "Widen"}
+            aria-label={
+              width === "wide"
+                ? t("inspector.narrowInspector")
+                : t("inspector.widenInspector")
+            }
+            title={width === "wide" ? t("inspector.narrow") : t("inspector.widen")}
             className="rounded px-2 text-slate-400 hover:bg-slate-100"
           >
             {width === "wide" ? "⇥" : "⇤"}
@@ -168,7 +180,7 @@ export function SketchInspector({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close inspector"
+            aria-label={t("inspector.closeInspector")}
             className="rounded px-2 text-slate-400 hover:bg-slate-100"
           >
             ✕
@@ -183,23 +195,26 @@ export function SketchInspector({
              server's per-node template parse (collect_foundation_md_warnings). */}
         {node._md_warnings && node._md_warnings.length > 0 && (
           <div className="mb-3 rounded border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
-            <div className="mb-1 font-semibold">⚠ Markdown template warnings</div>
+            <div className="mb-1 font-semibold">{t("inspector.mdWarnings")}</div>
             <ul className="ml-4 list-disc">
               {node._md_warnings.map((w, i) => (
                 <li key={i}>{w}</li>
               ))}
             </ul>
             {node.details_path && (
-              <p className="mt-1 text-[10px] text-amber-800">
-                Edit <code>{node.details_path}</code> to fix.
-              </p>
+              <p
+                className="mt-1 text-[10px] text-amber-800"
+                dangerouslySetInnerHTML={{
+                  __html: t("inspector.mdWarningsFixHint", { path: node.details_path }),
+                }}
+              />
             )}
           </div>
         )}
 
         {/* Label */}
         <label className="mb-3 block">
-          <span className="text-xs font-semibold text-slate-600">Label</span>
+          <span className="text-xs font-semibold text-slate-600">{t("inspector.label")}</span>
           <input
             type="text"
             value={node.label}
