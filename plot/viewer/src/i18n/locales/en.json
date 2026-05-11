@@ -1,0 +1,45 @@
+{
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "rename": "Rename",
+    "language": "Language"
+  },
+  "toolbar": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "valueFlow": "Value flow",
+    "shortcuts": {
+      "undo": "Cmd+Z",
+      "redo": "Shift+Cmd+Z"
+    }
+  },
+  "sidebar": {
+    "projects": "Projects",
+    "newProject": "+ New project",
+    "noProjects": "(none yet)",
+    "noTagsHint": "(no tags yet)",
+    "rename": "Rename",
+    "delete": "Delete",
+    "showProjects": "Show projects",
+    "hideProjects": "Hide",
+    "expandProjectList": "Expand project list",
+    "collapseProjectList": "Collapse project list",
+    "renameProject": "Rename project",
+    "deleteProject": "Delete project",
+    "sessionTags": "Session tags",
+    "deleteTag": "Delete tag (commit stays)",
+    "plantTag": "Plant a git tag at the current state of the project",
+    "confirmDeleteProject": "Delete project \"{{name}}\"?",
+    "confirmDeleteTag": "Delete tag \"{{name}}\"?"
+  },
+  "canvas": {
+    "aria": "Canvas",
+    "keyboardShortcuts": "Keyboard shortcuts"
+  },
+  "shell": {
+    "closeEsc": "Close (Esc)"
+  }
+}

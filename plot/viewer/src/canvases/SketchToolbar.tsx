@@ -2,6 +2,7 @@
 // feedback. Save is automatic and silent; the rare error case surfaces
 // through the App-level error toast already, so the toolbar can stay
 // focused on undo/redo + layout actions only.
+import { useTranslation } from "react-i18next";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -16,12 +17,23 @@ export interface SketchToolbarProps {
 }
 
 export function SketchToolbar({ canUndo, canRedo, onUndo, onRedo }: SketchToolbarProps) {
+  const { t } = useTranslation();
   return (
     <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2 py-1 text-xs shadow-sm backdrop-blur">
-      <IconBtn label="Undo" enabled={canUndo} onClick={onUndo} hint="Cmd+Z">
+      <IconBtn
+        label={t("toolbar.undo")}
+        enabled={canUndo}
+        onClick={onUndo}
+        hint={t("toolbar.shortcuts.undo")}
+      >
         ↶
       </IconBtn>
-      <IconBtn label="Redo" enabled={canRedo} onClick={onRedo} hint="Shift+Cmd+Z">
+      <IconBtn
+        label={t("toolbar.redo")}
+        enabled={canRedo}
+        onClick={onRedo}
+        hint={t("toolbar.shortcuts.redo")}
+      >
         ↷
       </IconBtn>
     </div>

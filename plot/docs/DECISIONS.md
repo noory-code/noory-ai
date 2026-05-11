@@ -1084,3 +1084,60 @@ in the same browser-verification round:
 - **Approval:** Pending — user, 2026-05-10.
 - **Spec impact:** none. Structural / process change with no
   observable Plot behaviour difference.
+
+---
+
+### D-2026-05-11-D — i18n infrastructure (English primary, Korean locale)
+
+- **What:** Bootstrap i18n in the Plot viewer using `react-i18next`
+  + `i18next` + `i18next-browser-languagedetector`. New module
+  `viewer/src/i18n/` owns the resource bundles
+  (`locales/en.json` + `locales/ko.json`), the `init()` call
+  (imported from `main.tsx` for side effects), and the
+  `LanguageToggle` component rendered at the bottom of
+  `SketchSidebar`. First-batch migrations: `SketchToolbar` (Undo /
+  Redo + tooltips) and `SketchSidebar` (project list controls,
+  rename / delete confirmations, session-tags section). All
+  remaining hardcoded UI text is queued for follow-up commits.
+
+  Static guards shipped:
+  - `viewer/tests/i18n-keys-parity.test.ts` — asserts `ko.json`
+    has the identical key set as `en.json` and that every value is
+    a non-empty string. Locale drift = test fail.
+  - `plot/CLAUDE.md` anti-patterns table gains a row blocking
+    hardcoded UI text.
+
+  Detection order is `localStorage["plot:lang"] → navigator.language
+  → en`. User choice persists across sessions.
+
+- **Why:** User direction (2026-05-10):
+  > "우리는 로컬라이즈도 신경 써야합니다. 이건 글로벌 서비스가
+  > 될거거든요."
+
+  Establishes the global-service identity recorded in
+  `feedback_plot_global_service.md`. Domain-boundary + SSOT must be
+  strict from inception (user CLAUDE.md "design"); deferring i18n
+  to a "later" milestone would compound hardcoded-text sprawl and
+  force a high-cost retrofit.
+
+- **Library choice rationale:** `react-i18next` (over a custom
+  ~50 LOC wrapper or `lingui`):
+  - Mature production stack; well-documented React hooks API.
+  - Supports interpolation (`{{name}}`), pluralization, namespaces
+    out of the box — needed within months as the UI surface
+    grows.
+  - Standard pattern for the global-service identity; ~30KB cost
+    is acceptable for a viewer that already ships Mermaid +
+    React Flow + React Markdown.
+  - User explicitly selected this option via AskUserQuestion.
+
+- **Scope limit (first commit):** Only the most visible toolbar +
+  sidebar strings migrate in v0.14.4. The rest of the viewer
+  (Inspector forms, Stencil labels, App-level toasts, context
+  menus, modals) will migrate in subsequent commits. The
+  anti-pattern row + the parity test prevent NEW hardcoded text
+  from appearing in the meantime.
+
+- **Approval:** Pending — user, 2026-05-10.
+- **Spec impact:** none observable beyond the new language toggle
+  pill in the sidebar's footer. No canvas behaviour changes.

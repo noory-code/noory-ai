@@ -1,6 +1,10 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
+// Boot i18n once for the whole test suite (D-2026-05-11-D). Without
+// this, components rendering ``useTranslation()`` emit NO_I18NEXT_INSTANCE
+// warnings and fall back to the literal key string.
+import "../src/i18n";
 
 afterEach(() => {
   cleanup();

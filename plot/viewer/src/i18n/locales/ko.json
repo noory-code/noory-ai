@@ -1,0 +1,45 @@
+{
+  "common": {
+    "close": "닫기",
+    "cancel": "취소",
+    "save": "저장",
+    "delete": "삭제",
+    "rename": "이름 변경",
+    "language": "언어"
+  },
+  "toolbar": {
+    "undo": "되돌리기",
+    "redo": "다시 실행",
+    "valueFlow": "가치 흐름",
+    "shortcuts": {
+      "undo": "Cmd+Z",
+      "redo": "Shift+Cmd+Z"
+    }
+  },
+  "sidebar": {
+    "projects": "프로젝트",
+    "newProject": "+ 새 프로젝트",
+    "noProjects": "(아직 없음)",
+    "noTagsHint": "(태그 없음)",
+    "rename": "이름 변경",
+    "delete": "삭제",
+    "showProjects": "프로젝트 목록 보기",
+    "hideProjects": "숨기기",
+    "expandProjectList": "프로젝트 목록 펼치기",
+    "collapseProjectList": "프로젝트 목록 접기",
+    "renameProject": "프로젝트 이름 변경",
+    "deleteProject": "프로젝트 삭제",
+    "sessionTags": "세션 태그",
+    "deleteTag": "태그 삭제 (커밋은 유지)",
+    "plantTag": "현재 프로젝트 상태에 git 태그 찍기",
+    "confirmDeleteProject": "프로젝트 \"{{name}}\" 을(를) 삭제할까요?",
+    "confirmDeleteTag": "태그 \"{{name}}\" 을(를) 삭제할까요?"
+  },
+  "canvas": {
+    "aria": "캔버스",
+    "keyboardShortcuts": "키보드 단축키"
+  },
+  "shell": {
+    "closeEsc": "닫기 (Esc)"
+  }
+}

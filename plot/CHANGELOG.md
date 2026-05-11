@@ -4,6 +4,62 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.4] — 2026-05-10
+
+### Added — i18n infrastructure (English primary, Korean locale) — D-2026-05-11-D
+
+Plot is being positioned as a global service (user direction
+2026-05-10: *"이건 글로벌 서비스가 될거거든요"*). This release
+boots the i18n stack and migrates the most visible UI strings.
+Remaining hardcoded text (Inspector forms, Stencil, modals,
+context menus, App-level toasts) is queued for follow-up commits;
+the new anti-pattern row + parity test prevent NEW hardcoded text
+from leaking in.
+
+**New module — `plot/viewer/src/i18n/`:**
+
+- `index.ts` — bootstraps `i18next` + `react-i18next` +
+  `i18next-browser-languagedetector`. Detection order
+  `localStorage["plot:lang"] → navigator.language → en`. Fallback
+  `en`. Imported for side effects from `main.tsx`.
+- `locales/en.json` — primary resource bundle.
+- `locales/ko.json` — Korean locale.
+- `LanguageToggle.tsx` — compact EN / KO pill rendered at the
+  bottom of `SketchSidebar`. Choice persists via localStorage.
+
+**Migrated strings (this commit):**
+
+- `SketchToolbar.tsx` — Undo / Redo button labels + tooltip
+  shortcuts.
+- `SketchSidebar.tsx` — collapse / expand controls, "Projects"
+  header, "+ New project" button, "(none yet)" placeholder,
+  per-project Rename / Delete buttons + confirm dialogs, "Session
+  tags" section + per-tag confirm dialogs + delete tooltips.
+
+**Guards:**
+
+- `plot/viewer/tests/i18n-keys-parity.test.ts` — Vitest static
+  guard asserting `ko.json` has the identical key set as `en.json`
+  and every value is a non-empty string. Locale drift is a build
+  failure.
+- `plot/CLAUDE.md` anti-patterns table — new row "Hardcoding
+  user-facing UI text in a viewer component", pointing to
+  D-2026-05-11-D.
+
+**Dependencies added:** `react-i18next ^15`, `i18next ^23`,
+`i18next-browser-languagedetector ^8`. ~30KB cost (production
+build) is acceptable for a viewer that already ships Mermaid +
+React Flow + React Markdown.
+
+**Out of scope this release** (queued for follow-up):
+
+- Inspector typed-field labels per kind (largest single migration
+  surface).
+- Stencil draggable labels.
+- Modal headings and confirm dialogs in `SketchModals`.
+- App-level toast / error messages.
+- Context-menu items.
+
 ## [0.14.3] — 2026-05-10
 
 ### Added — Cursor ⊥ auto-layout structural gate (D-2026-05-11-C)
