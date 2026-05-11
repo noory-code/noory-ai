@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { NodeKind, SketchNode } from "../types";
 import type { NodePreset } from "./sketch/types";
 import { getIcon } from "./SketchIcons";
@@ -338,23 +339,24 @@ export function SketchStencil({
   availableValues = [],
   availableIdentities = [],
 }: SketchStencilProps) {
+  const { t } = useTranslation();
   if (canvas === "foundation") {
     return (
       <div className="border-t border-slate-200 px-3 py-3">
         <Section
-          title="Mission"
+          title={t("stencil.section.mission")}
           presets={[CORE_MISSION]}
-          note="add as many as you need"
+          note={t("stencil.note.addAsManyAsYouNeed")}
         />
         <Section
-          title="Core values"
+          title={t("stencil.section.coreValues")}
           presets={[CORE_VALUE]}
-          note="add as many as you need"
+          note={t("stencil.note.addAsManyAsYouNeed")}
         />
         <Section
-          title="Identity"
+          title={t("stencil.section.identity")}
           presets={[CORE_IDENTITY]}
-          note="one per aspect — Voice, Energy, Speech style, …"
+          note={t("stencil.note.identityOnePerAspect")}
         />
       </div>
     );
@@ -362,11 +364,11 @@ export function SketchStencil({
   if (canvas === "actors") {
     return (
       <div className="border-t border-slate-200 px-3 py-3">
-        <Section title="Top-level" presets={[TOP_LEVEL_ACTOR]} />
+        <Section title={t("stencil.section.topLevel")} presets={[TOP_LEVEL_ACTOR]} />
         <Section
-          title="Actor hierarchy"
+          title={t("stencil.section.actorHierarchy")}
           presets={ACTOR_INTERNAL}
-          note="drop on an Actor"
+          note={t("stencil.note.dropOnActor")}
         />
       </div>
     );
@@ -376,11 +378,11 @@ export function SketchStencil({
     // The category is the top-level grouping; services are leaves.
     return (
       <div className="border-t border-slate-200 px-3 py-3">
-        <Section title="Top-level" presets={[TOP_LEVEL_CATEGORY]} />
+        <Section title={t("stencil.section.topLevel")} presets={[TOP_LEVEL_CATEGORY]} />
         <Section
-          title="Service"
+          title={t("stencil.section.service")}
           presets={[SERVICE_INSIDE_CATEGORY]}
-          note="drop inside a Category"
+          note={t("stencil.note.dropInsideCategory")}
         />
       </div>
     );
@@ -396,36 +398,36 @@ export function SketchStencil({
   return (
     <div className="border-t border-slate-200 px-3 py-3">
       <Section
-        title="Composition"
+        title={t("stencil.section.composition")}
         presets={SERVICE_COMPOSITION}
-        note="metrics + steps inside this service"
+        note={t("stencil.note.compositionInsideService")}
       />
       {actorRefPresets.length > 0 && (
         <Section
-          title="Actors"
+          title={t("stencil.section.actors")}
           presets={actorRefPresets}
-          note="drag any actor onto this service"
+          note={t("stencil.note.dragActorOntoService")}
         />
       )}
       {missionRefPresets.length > 0 && (
         <Section
-          title="Missions"
+          title={t("stencil.section.missions")}
           presets={missionRefPresets}
-          note="drag a mission this service answers to"
+          note={t("stencil.note.dragMissionThisServiceAnswersTo")}
         />
       )}
       {valueRefPresets.length > 0 && (
         <Section
-          title="Core values"
+          title={t("stencil.section.coreValues")}
           presets={valueRefPresets}
-          note="drag a value this service embodies"
+          note={t("stencil.note.dragValueThisServiceEmbodies")}
         />
       )}
       {identityRefPresets.length > 0 && (
         <Section
-          title="Identity aspects"
+          title={t("stencil.section.identityAspects")}
           presets={identityRefPresets}
-          note="drag an identity aspect this service expresses"
+          note={t("stencil.note.dragIdentityAspectThisServiceExpresses")}
         />
       )}
     </div>

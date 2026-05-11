@@ -40,7 +40,7 @@
     "keyboardShortcuts": "키보드 단축키",
     "tabs": {
       "foundation": "토대",
-      "actors": "행위자",
+      "actors": "액터",
       "services": "서비스"
     }
   },
@@ -55,5 +55,30 @@
   },
   "shell": {
     "closeEsc": "닫기 (Esc)"
+  },
+  "stencil": {
+    "section": {
+      "mission": "미션",
+      "coreValues": "코어밸류",
+      "identity": "아이덴티티",
+      "topLevel": "최상위",
+      "actorHierarchy": "액터 계층",
+      "service": "서비스",
+      "composition": "구성 요소",
+      "actors": "액터",
+      "missions": "미션",
+      "identityAspects": "아이덴티티 측면"
+    },
+    "note": {
+      "addAsManyAsYouNeed": "필요한 만큼 추가하세요",
+      "identityOnePerAspect": "측면별로 하나씩 — 목소리, 에너지, 말투, …",
+      "dropOnActor": "액터 위에 놓으세요",
+      "dropInsideCategory": "카테고리 안에 놓으세요",
+      "compositionInsideService": "이 서비스 안의 지표 + 단계",
+      "dragActorOntoService": "이 서비스에 액터를 끌어 놓으세요",
+      "dragMissionThisServiceAnswersTo": "이 서비스가 응답하는 미션을 끌어 놓으세요",
+      "dragValueThisServiceEmbodies": "이 서비스가 구현하는 코어밸류를 끌어 놓으세요",
+      "dragIdentityAspectThisServiceExpresses": "이 서비스가 표현하는 아이덴티티 측면을 끌어 놓으세요"
+    }
   }
 }

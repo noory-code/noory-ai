@@ -4,6 +4,69 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.6] — 2026-05-11
+
+### Added — i18n migration: Stencil section headers + helper notes
+
+Continues v0.14.5. Migrates the SketchStencil's per-canvas section
+labels and helper notes across all four canvases (Foundation /
+Actors / Services / Service-Detail).
+
+Korean translations align with the canonical Plot vocabulary
+provided by the user 2026-05-11:
+
+> 심볼 종류: 미션, 코어밸류, 아이덴티티 / 액터 / 서비스
+
+So Korean reads as 미션 / 코어밸류 / 아이덴티티 / 액터 / 서비스 —
+NOT a literal "정체성" / "행위자" / "핵심 가치" translation.
+
+### Translated keys added
+
+`stencil.section.*`:
+- mission / coreValues / identity / topLevel / actorHierarchy /
+  service / composition / actors / missions / identityAspects
+
+`stencil.note.*`:
+- addAsManyAsYouNeed (필요한 만큼 추가하세요)
+- identityOnePerAspect (측면별로 하나씩 — 목소리, 에너지, 말투, …)
+- dropOnActor (액터 위에 놓으세요)
+- dropInsideCategory (카테고리 안에 놓으세요)
+- compositionInsideService (이 서비스 안의 지표 + 단계)
+- dragActorOntoService (이 서비스에 액터를 끌어 놓으세요)
+- dragMissionThisServiceAnswersTo
+- dragValueThisServiceEmbodies
+- dragIdentityAspectThisServiceExpresses
+
+### Changed
+
+- `plot/viewer/src/canvases/SketchStencil.tsx` — `useTranslation()`
+  in `SketchStencil`; replaced 10 hardcoded `title=` props and 8
+  hardcoded `note=` props with `t()` lookups across the four
+  per-canvas branches.
+- `plot/viewer/src/i18n/locales/ko.json` — `canvas.tabs.actors`
+  corrected from "행위자" to "액터" per the user-provided product
+  spec's canonical naming. (Was set in v0.14.5; before that locale
+  reached any user, so retroactive fix in the same i18n rollout.)
+
+### Verification
+
+- `npx tsc --noEmit` → clean.
+- `npx vitest run` → 14/14 passed (parity test catches en/ko
+  drift).
+- Browser smoke (Playwright KO sweep): Foundation stencil shows
+  미션 / 코어밸류 / 아이덴티티 with the new notes. Tabs read
+  토대 / 액터 / 서비스 as expected.
+- Pre-commit gate self-trip → PASS (styles.css not touched).
+
+### Queued for v0.14.7+
+
+- Inspector form labels (largest single migration surface; will
+  land as its own commit / session).
+- Plot product spec → `plot/docs/PRODUCT_SPEC.md` consolidation
+  per user direction 2026-05-11 ("이건 잘 정리해두세요. 작업 다
+  끝나고").
+- "❀ ❀ ❀" MD preview font fallback investigation.
+
 ## [0.14.5] — 2026-05-11
 
 ### Added — i18n migration: canvas tabs + Mark session + Service-Detail modal header

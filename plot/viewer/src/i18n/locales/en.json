@@ -55,5 +55,30 @@
   },
   "shell": {
     "closeEsc": "Close (Esc)"
+  },
+  "stencil": {
+    "section": {
+      "mission": "Mission",
+      "coreValues": "Core values",
+      "identity": "Identity",
+      "topLevel": "Top-level",
+      "actorHierarchy": "Actor hierarchy",
+      "service": "Service",
+      "composition": "Composition",
+      "actors": "Actors",
+      "missions": "Missions",
+      "identityAspects": "Identity aspects"
+    },
+    "note": {
+      "addAsManyAsYouNeed": "add as many as you need",
+      "identityOnePerAspect": "one per aspect — Voice, Energy, Speech style, …",
+      "dropOnActor": "drop on an Actor",
+      "dropInsideCategory": "drop inside a Category",
+      "compositionInsideService": "metrics + steps inside this service",
+      "dragActorOntoService": "drag any actor onto this service",
+      "dragMissionThisServiceAnswersTo": "drag a mission this service answers to",
+      "dragValueThisServiceEmbodies": "drag a value this service embodies",
+      "dragIdentityAspectThisServiceExpresses": "drag an identity aspect this service expresses"
+    }
   }
 }
