@@ -32,13 +32,24 @@ from __future__ import annotations
 import json
 from datetime import UTC, date, datetime
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from plot_mcp.folder_io import _canvas_file, _project_dir, _project_file, _write_json
 from plot_mcp.models import (
+    ActorNode,
+    ActorRefNode,
     CanvasDoc,
+    CategoryNode,
+    ContentNode,
+    CoreValueNode,
+    IdentityNode,
+    MissionNode,
     ProjectDoc,
+    ProjectNode,
+    RuleNode,
+    ServiceNode,
     SketchEdge,
     SketchNode,
 )
@@ -58,6 +69,52 @@ from plot_mcp.models import (
 _V01_COMPOSITION_KINDS = {"rule", "content"}
 
 
+class _V01SketchNode(BaseModel):
+    """Legacy v0.1 god-object node. Migration-only.
+
+    The current per-kind discriminated union (`SketchNode` in models.py)
+    cannot parse v0.1 raw JSON because v0.1 stored typed text fields
+    (``mission`` / ``core_values`` / ``identity`` strings, plus the
+    full god field pool) on every node. This class is a permissive
+    superset that accepts any v0.1 node shape so the migration can read
+    legacy data, then constructs the right per-kind class for output.
+
+    No discriminator dispatch — ``kind`` is a free-form string here so
+    pre-v0.5 kinds like ``core`` / ``identity_facet`` parse before
+    ``_normalise_legacy_node_kinds`` rewrites them.
+    """
+
+    id: str = Field(..., min_length=1)
+    label: str = ""
+    x: float = 0.0
+    y: float = 0.0
+    width: float = 180.0
+    height: float = 80.0
+    color: str = "#ffffff"
+    shape: str = "rounded"
+    icon: str | None = None
+    kind: str = ""
+    parent_id: str | None = None
+    collapsed: bool = False
+    is_root: bool = False
+    details_path: str | None = None
+
+    # Legacy v0.1 / v0.2 root-text fields. Live only on the legacy data;
+    # current per-kind classes do not carry them.
+    mission: str = ""
+    core_values: str = ""
+    identity: str = ""
+
+    # Forward-compat fields the migration may need to read from later
+    # legacy revisions (v0.2 → v0.10) before re-emitting as per-kind
+    # classes. Permissive defaults; unknown keys ignored.
+    side: Literal["operator", "user"] | None = None
+    motivation: str = ""
+    pain: str = ""
+
+    model_config = {"extra": "ignore"}
+
+
 class _V01SketchDoc(BaseModel):
     """Legacy v0.1 single-file sketch document. Migration-only.
 
@@ -70,7 +127,7 @@ class _V01SketchDoc(BaseModel):
     created: str = ""  # ISO date (YYYY-MM-DD)
     updated: str = ""  # ISO datetime
     version: int = 1
-    nodes: list[SketchNode] = Field(default_factory=list)
+    nodes: list[_V01SketchNode] = Field(default_factory=list)
     edges: list[SketchEdge] = Field(default_factory=list)
 
     @field_validator("id")
@@ -285,16 +342,16 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
     actor_root = next((n for n in doc.nodes if n.kind == "actor" and n.is_root), None)
     service_root = next((n for n in doc.nodes if n.kind == "service" and n.is_root), None)
 
-    def _in_subtree(node: SketchNode, root_id: str) -> bool:
-        cur: SketchNode | None = node
+    def _in_subtree(node: _V01SketchNode, root_id: str) -> bool:
+        cur: _V01SketchNode | None = node
         while cur is not None:
             if cur.id == root_id:
                 return True
             cur = by_id.get(cur.parent_id) if cur.parent_id else None
         return False
 
-    actor_nodes: list[SketchNode] = []
-    service_nodes: list[SketchNode] = []
+    actor_nodes: list[_V01SketchNode] = []
+    service_nodes: list[_V01SketchNode] = []
     for n in doc.nodes:
         if n.kind == "project":
             continue  # project anchor handled by _build_foundation_canvas
@@ -340,7 +397,7 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _build_foundation_canvas(core_root: SketchNode | None, project_name: str) -> CanvasDoc:
+def _build_foundation_canvas(core_root: _V01SketchNode | None, project_name: str) -> CanvasDoc:
     """Promote v0.1 root text fields (mission / core_values / identity) into
     v0.5 top-level nodes on the Core canvas, and plant the v0.5 Project
     anchor in the centre. Empty fields get placeholder nodes so the
@@ -348,9 +405,8 @@ def _build_foundation_canvas(core_root: SketchNode | None, project_name: str) ->
     1 project) stays happy.
     """
     nodes: list[SketchNode] = [
-        SketchNode(
+        ProjectNode(
             id="project",
-            kind="project",
             label=project_name,
             x=-75,
             y=-75,
@@ -366,9 +422,8 @@ def _build_foundation_canvas(core_root: SketchNode | None, project_name: str) ->
     # node's ``details.md`` after migration if they care; we don't auto-
     # synthesise an MD file here to keep migration side-effect-free.
     nodes.append(
-        SketchNode(
+        MissionNode(
             id="mission",
-            kind="mission",
             label="Mission",
             x=-360,
             y=-45,
@@ -388,9 +443,8 @@ def _build_foundation_canvas(core_root: SketchNode | None, project_name: str) ->
         lines = ["Core value"]
     for i, line in enumerate(lines):
         nodes.append(
-            SketchNode(
+            CoreValueNode(
                 id=f"core-value-{i + 1}",
-                kind="core_value",
                 label=line,
                 x=-90,
                 y=-260 + i * 96,
@@ -404,9 +458,8 @@ def _build_foundation_canvas(core_root: SketchNode | None, project_name: str) ->
     # Same: legacy ``identity`` text is dropped. User can paste it into
     # the new node's ``details.md`` after migration.
     nodes.append(
-        SketchNode(
+        IdentityNode(
             id="identity",
-            kind="identity",
             label="Voice",
             x=160,
             y=-45,
@@ -421,29 +474,43 @@ def _build_foundation_canvas(core_root: SketchNode | None, project_name: str) ->
 
 
 def _build_actors_canvas(
-    actor_nodes: list[SketchNode],
-    actor_root: SketchNode | None,
+    actor_nodes: list[_V01SketchNode],
+    actor_root: _V01SketchNode | None,
     edges: list[SketchEdge],
 ) -> CanvasDoc:
     """Actor subtree. If actor-root was the only content, keep it as a
     top-level actor; sub-actors keep their parent_id relative to it.
     Edges reaching outside the subtree are dropped.
+
+    Converts each legacy v0.1 ``_V01SketchNode`` into a current-schema
+    ``ActorNode`` at the boundary; downstream helpers
+    (``_backfill_actor_sides`` / ``_ensure_minimum_actors``) operate on
+    the per-kind class.
     """
     node_ids = {n.id for n in actor_nodes}
-    cleaned: list[SketchNode] = []
+    cleaned: list[ActorNode] = []
     for n in actor_nodes:
         # If the parent is core-root (or anything outside the actors canvas),
         # drop parent_id so it becomes top-level here.
         parent_id = n.parent_id if n.parent_id in node_ids else None
         cleaned.append(
-            n.model_copy(
-                update={
-                    "parent_id": parent_id,
-                    "is_root": False,  # is_root meaningless across canvases
-                    "mission": "",
-                    "core_values": "",
-                    "identity": "",
-                }
+            ActorNode(
+                id=n.id,
+                label=n.label,
+                x=n.x,
+                y=n.y,
+                width=n.width,
+                height=n.height,
+                color=n.color,
+                shape=n.shape,  # type: ignore[arg-type]
+                icon=n.icon,
+                parent_id=parent_id,
+                collapsed=n.collapsed,
+                is_root=False,  # is_root meaningless across canvases
+                details_path=n.details_path,
+                motivation=n.motivation,
+                pain=n.pain,
+                side=n.side,
             )
         )
     cleaned_ids = {n.id for n in cleaned}
@@ -457,12 +524,12 @@ def _build_actors_canvas(
     return CanvasDoc(
         canvas_id="actors",
         canvas_kind="actors",
-        nodes=cleaned,
+        nodes=list(cleaned),
         edges=scoped_edges,
     )
 
 
-def _detail_actor_ref_seeds(service_id: str) -> list[SketchNode]:
+def _detail_actor_ref_seeds(service_id: str) -> list[ActorRefNode]:
     """v0.11 — auto-seed two stub actor_refs (operator + user) when a
     migrated service_detail otherwise has zero. Mirrors
     ``folder_io.sync_details_with_overview``'s seeding so behaviour is
@@ -470,9 +537,8 @@ def _detail_actor_ref_seeds(service_id: str) -> list[SketchNode]:
     sync.
     """
     return [
-        SketchNode(
+        ActorRefNode(
             id=f"{service_id}-operator-ref",
-            kind="actor_ref",
             label="→ Operator",
             ref_actor_id="operator",
             side="operator",
@@ -481,9 +547,8 @@ def _detail_actor_ref_seeds(service_id: str) -> list[SketchNode]:
             width=140,
             height=70,
         ),
-        SketchNode(
+        ActorRefNode(
             id=f"{service_id}-user-ref",
-            kind="actor_ref",
             label="→ User",
             ref_actor_id="user",
             side="user",
@@ -495,36 +560,34 @@ def _detail_actor_ref_seeds(service_id: str) -> list[SketchNode]:
     ]
 
 
-def _backfill_actor_sides(nodes: list[SketchNode]) -> list[SketchNode]:
+def _backfill_actor_sides(nodes: list[ActorNode]) -> list[ActorNode]:
     """v0.11 migration helper: legacy actor nodes have ``side = None``.
     Default them to ``"user"`` so the model is self-consistent. Users can
     flip individual actors to ``"operator"`` via the Inspector after open.
     """
-    out: list[SketchNode] = []
+    out: list[ActorNode] = []
     for n in nodes:
-        if n.kind == "actor" and n.side is None:
+        if n.side is None:
             out.append(n.model_copy(update={"side": "user"}))
         else:
             out.append(n)
     return out
 
 
-def _ensure_minimum_actors(nodes: list[SketchNode]) -> list[SketchNode]:
+def _ensure_minimum_actors(nodes: list[ActorNode]) -> list[ActorNode]:
     """v0.11 migration helper: pad an under-populated actors canvas with
     placeholder classes so the new ≥ 2 validator doesn't reject open.
     Idempotent — adds only what's missing.
     """
-    actors = [n for n in nodes if n.kind == "actor"]
-    has_operator = any(n.side == "operator" for n in actors)
-    has_user = any(n.side == "user" for n in actors)
-    pad: list[SketchNode] = []
+    has_operator = any(n.side == "operator" for n in nodes)
+    has_user = any(n.side == "user" for n in nodes)
+    pad: list[ActorNode] = []
     used_ids = {n.id for n in nodes}
     if not has_operator:
         oid = "operator" if "operator" not in used_ids else "operator-seed"
         pad.append(
-            SketchNode(
+            ActorNode(
                 id=oid,
-                kind="actor",
                 label="Operator",
                 side="operator",
                 x=-160,
@@ -535,12 +598,11 @@ def _ensure_minimum_actors(nodes: list[SketchNode]) -> list[SketchNode]:
                 shape="rounded",
             )
         )
-    if not has_user and len(actors) + len(pad) < 2:
+    if not has_user and len(nodes) + len(pad) < 2:
         uid = "user" if "user" not in used_ids else "user-seed"
         pad.append(
-            SketchNode(
+            ActorNode(
                 id=uid,
-                kind="actor",
                 label="User",
                 side="user",
                 x=40,
@@ -554,21 +616,86 @@ def _ensure_minimum_actors(nodes: list[SketchNode]) -> list[SketchNode]:
     return nodes + pad
 
 
+def _v01_to_service(n: _V01SketchNode, *, parent_id: str | None) -> ServiceNode:
+    """Convert a legacy v0.1 ``service``-kind node into a current
+    ``ServiceNode``. v0.1 did not carry the v0.10+ typed-text fields
+    (``what`` / ``value_created`` / ``scope`` / ``trigger`` / ``how`` /
+    ``outcome``); defaults stay empty. Drops legacy ``is_root`` /
+    ``mission`` / ``core_values`` / ``identity`` god-pool fields.
+    """
+    return ServiceNode(
+        id=n.id,
+        label=n.label,
+        x=n.x,
+        y=n.y,
+        width=n.width,
+        height=n.height,
+        color=n.color,
+        shape=n.shape,  # type: ignore[arg-type]
+        icon=n.icon,
+        parent_id=parent_id,
+        collapsed=n.collapsed,
+        is_root=False,
+        details_path=n.details_path,
+    )
+
+
+def _v01_to_composition(n: _V01SketchNode) -> RuleNode | ContentNode:
+    """Convert a legacy v0.1 ``rule`` / ``content`` node into the
+    current per-kind class. Typed fields stay at their defaults because
+    v0.1 only carried label + position, not v0.10+ structured fields.
+    """
+    if n.kind == "rule":
+        return RuleNode(
+            id=n.id,
+            label=n.label,
+            x=n.x,
+            y=n.y,
+            width=n.width,
+            height=n.height,
+            color=n.color,
+            shape=n.shape,  # type: ignore[arg-type]
+            icon=n.icon,
+            parent_id=n.parent_id,
+            collapsed=n.collapsed,
+            details_path=n.details_path,
+        )
+    if n.kind == "content":
+        return ContentNode(
+            id=n.id,
+            label=n.label,
+            x=n.x,
+            y=n.y,
+            width=n.width,
+            height=n.height,
+            color=n.color,
+            shape=n.shape,  # type: ignore[arg-type]
+            icon=n.icon,
+            parent_id=n.parent_id,
+            collapsed=n.collapsed,
+            details_path=n.details_path,
+        )
+    raise ValueError(f"unsupported v0.1 composition kind: {n.kind!r}")
+
+
 def _split_services(
-    service_nodes: list[SketchNode],
-    service_root: SketchNode | None,
+    service_nodes: list[_V01SketchNode],
+    service_root: _V01SketchNode | None,
     edges: list[SketchEdge],
 ) -> tuple[CanvasDoc, list[CanvasDoc]]:
     """Top-level services become Overview nodes (no nesting); each
     top-level service + its descendants becomes a Detail canvas.
     ``service-root`` itself is dropped — it was a layout anchor only.
+
+    Converts legacy v0.1 ``_V01SketchNode`` instances into current
+    per-kind classes at the boundary.
     """
     by_id = {n.id: n for n in service_nodes}
     service_root_id = service_root.id if service_root else None
 
     # Top-level = direct children of service-root, OR a service that has no
     # parent at all in the input set.
-    top_level: list[SketchNode] = []
+    top_level: list[_V01SketchNode] = []
     for n in service_nodes:
         if n.kind != "service":
             continue
@@ -585,9 +712,8 @@ def _split_services(
     overview_nodes: list[SketchNode] = []
     if top_level:
         overview_nodes.append(
-            SketchNode(
+            CategoryNode(
                 id="default-category",
-                kind="category",
                 label="Services",
                 theme="Migrated services",
                 x=-200,
@@ -598,18 +724,8 @@ def _split_services(
                 shape="rounded",
             )
         )
-    overview_nodes.extend(
-        n.model_copy(
-            update={
-                "parent_id": "default-category",
-                "is_root": False,
-                "mission": "",
-                "core_values": "",
-                "identity": "",
-            }
-        )
-        for n in top_level
-    )
+    for n in top_level:
+        overview_nodes.append(_v01_to_service(n, parent_id="default-category"))
     overview_ids = {n.id for n in overview_nodes}
     overview_edges = [e for e in edges if e.source in overview_ids and e.target in overview_ids]
     overview = CanvasDoc(
@@ -630,25 +746,23 @@ def _split_services(
             for child in service_nodes:
                 if child.parent_id == cur and child.id not in descendant_ids:
                     stack.append(child.id)
-        descendants = [
-            n.model_copy(
-                update={
-                    "is_root": False,
-                    "mission": "",
-                    "core_values": "",
-                    "identity": "",
-                    # root_service itself has parent cleared; composition
-                    # kinds keep their intra-subtree parent_id.
-                    "parent_id": None if n.id == root_service.id else n.parent_id,
-                }
-            )
-            for n in (by_id[i] for i in descendant_ids)
-        ]
+        descendants: list[SketchNode] = []
+        for did in descendant_ids:
+            n = by_id[did]
+            if n.kind == "service":
+                # root_service itself has parent cleared; sub-services keep
+                # their intra-subtree parent_id.
+                pid = None if n.id == root_service.id else n.parent_id
+                descendants.append(_v01_to_service(n, parent_id=pid))
+            elif n.kind in ("rule", "content"):
+                descendants.append(_v01_to_composition(n))
+            # v0.1 didn't have metric / step / refs / actor_ref — nothing
+            # else needs translation here.
         ids = {n.id for n in descendants}
         scoped_edges = [e for e in edges if e.source in ids and e.target in ids]
         # v0.11 — pad with operator + user actor_refs so the new
         # ≥ 2 actor_ref validator accepts migrated detail canvases.
-        descendants = descendants + _detail_actor_ref_seeds(root_service.id)
+        descendants = descendants + list(_detail_actor_ref_seeds(root_service.id))
         details.append(
             CanvasDoc(
                 canvas_id=root_service.id,
@@ -754,9 +868,8 @@ def _project_anchor_dict(project_name: str, taken_ids: set[str | None]) -> dict[
     while anchor_id in taken_ids:
         suffix += 1
         anchor_id = f"project-{suffix}"
-    return SketchNode(
+    return ProjectNode(
         id=anchor_id,
-        kind="project",
         label=project_name,
         x=-75,
         y=-75,

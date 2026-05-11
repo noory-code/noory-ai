@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, TypeAdapter, field_validator, model_validator
 
 Shape = Literal[
     "rectangle",
@@ -84,223 +84,10 @@ NodeKind = Literal[
     "category",
 ]
 
-# v0.10 Step 3: which ref kind requires which id field. Used by the
-# validator below and by callers that need to enumerate ref kinds.
-_REF_KIND_TO_ID_FIELD: dict[str, str] = {
-    "actor_ref": "ref_actor_id",
-    "mission_ref": "ref_mission_id",
-    "value_ref": "ref_value_id",
-    "identity_ref": "ref_identity_id",
-}
-
 # Composition kinds: must live inside a service (applies to SketchDoc and
 # service_detail CanvasDoc alike).
 # v0.10 Step 5: metric + step join the family.
 _COMPOSITION_KINDS = {"rule", "content", "metric", "step"}
-
-
-class SketchNode(BaseModel):
-    """A freeform node on the canvas.
-
-    v0.9 splits content storage cleanly:
-      - **Typed short fields** (``tagline`` / ``audience`` / ... / ``summary``)
-        live in this model and are written/read only by Plot itself.
-      - **Long-form prose** lives in a separate ``details.md`` file
-        addressed by ``details_path``. Plot reads/writes that file too,
-        but external editors (Obsidian, VS Code) may also edit it
-        because Plot keeps no mirror of its content here — there's no
-        sync conflict because the data isn't duplicated.
-
-    The previous ``body`` field is gone in v0.9: its dual role (preview
-    cache + edit target) was the source of every sync headache from v0.7
-    and v0.8.
-    """
-
-    id: str = Field(..., min_length=1)
-    label: str = ""
-    x: float = 0.0
-    y: float = 0.0
-    width: float = 180.0
-    height: float = 80.0
-    color: str = "#ffffff"
-    shape: Shape = "rounded"
-    icon: str | None = None
-
-    # v0.2 additions
-    kind: NodeKind | None = None
-    parent_id: str | None = None
-    collapsed: bool = False
-
-    # v0.2 root fields (2026-04-20)
-    # A sketch may designate up to one Actor-root and one Service-root.
-    # Roots carry Mission + Core Values + Identity for their respective
-    # plane (organization-side vs product-side). Non-root nodes leave
-    # these empty.
-    #
-    # v0.2 multi-canvas (2026-04-21) promotes Mission / CoreValue / Identity
-    # to their own nodes inside the Core canvas — these string fields remain
-    # for v0.1/v0.2-single-canvas backward compat and for the migration
-    # script to read before converting them into nodes.
-    is_root: bool = False
-    mission: str = ""
-    core_values: str = ""
-    identity: str = ""
-
-    # v0.2 multi-canvas: actor_ref nodes point at an actor in the Actor canvas.
-    # Required when kind == "actor_ref"; ignored otherwise.
-    ref_actor_id: str | None = None
-
-    # v0.10 Step 3: Foundation refs. Each is required when its corresponding
-    # ref kind is set; ignored otherwise. The picker fills these in.
-    ref_mission_id: str | None = None
-    ref_value_id: str | None = None
-    ref_identity_id: str | None = None
-
-    # v0.10 typed fields per kind. All optional ``""`` defaults so the
-    # same model carries any subset; the Inspector form chooses which to
-    # surface for each kind. The fields are clustered by their owning
-    # kind in the comments below; v0.9.1's "all kinds get all fields"
-    # generic pool is gone, but the schema is still permissive — any
-    # unused field stays empty without runtime cost.
-    #
-    # mission (Foundation, kind="mission"):
-    what_we_do: str = ""
-    why: str = ""
-    direction: str = ""
-
-    # core_value (Foundation, kind="core_value"):
-    #   ``definition`` — one or two sentences explaining what the value means.
-    # identity (Foundation, kind="identity"):
-    #   ``description`` — how the aspect is expressed (Voice / Energy / …).
-    # Shared between core_value and identity (and any future kind that finds
-    # the Do/Don't pair useful — see CONCEPTS.md "AI-first" principle):
-    #   ``do``   — concrete positive example ("we do X this way")
-    #   ``dont`` — concrete anti-pattern ("we never do Y")
-    definition: str = ""
-    description: str = ""
-    do: str = ""
-    dont: str = ""
-
-    # service (Services / Service-Detail, kind="service"):
-    #   v0.11.4 — service carries ``target_side`` so the canvas (and AI) can
-    #   tell at a glance whether this service exists for operators (an admin
-    #   panel), users (a customer-facing app), or both. Mirror image of
-    #   ``actor.side``; together they form Plot's two-axis classification
-    #   (actor side / service target_side) that keeps the operator-vs-user
-    #   distinction consistent across the model.
-    target_side: Literal["operator", "user", "both"] | None = None
-
-    # category (Services canvas, kind="category"):
-    #   v0.12 — categories are thematic groupings of services. A category is
-    #   a pure container; it doesn't create value itself. ``theme`` is the
-    #   one and only typed field — a one-line statement of the common
-    #   thread that ties this category's services together (e.g. "all the
-    #   admin operator's system-management services").
-    theme: str = ""
-    #   Top-level (parent_id is None) and sub-service (parent_id != None)
-    #   share the same model — Inspector decides which fields to surface.
-    #   ``what``         — concise statement of what the service is.
-    #   ``value_created``— the value this service produces.
-    #   ``scope``        — boundary statement (top-level only).
-    #   ``trigger``      — what kicks the service off (sub-service).
-    #   ``how``          — how it works (sub-service).
-    #   ``outcome``      — observable end state (sub-service; shared with
-    #                      ``step`` in v0.10 Step 5).
-    #   ``do`` / ``dont`` — already declared above for core_value/identity;
-    #                      reused here.
-    what: str = ""
-    value_created: str = ""
-    scope: str = ""
-    trigger: str = ""
-    how: str = ""
-    outcome: str = ""
-
-    # metric (service_detail, kind="metric"):
-    #   ``target``      — goal value or threshold (e.g. ">99% success").
-    #   ``measurement`` — how the metric is measured.
-    target: str = ""
-    measurement: str = ""
-
-    # step (service_detail, kind="step"):
-    #   ``order`` — ordinal position in the procedural sequence; ``None``
-    #               leaves the step unordered (e.g. parallel branches).
-    #   ``outcome`` is shared with service (declared above).
-    order: int | None = None
-
-    # actor (Actors canvas, kind="actor"):
-    #   v0.11 — actors carry ``motivation`` (internal driver — why this actor
-    #   participates in the project's services) and ``pain`` (struggles or
-    #   frustrations the actor faces). Standard persona-design pair, with
-    #   the AI-first framing from IDENTITY.md.
-    motivation: str = ""
-    pain: str = ""
-
-    # actor_ref (service / service_detail, kind="actor_ref"):
-    #   v0.11 Phase C3 — each ref captures the value flow between this actor
-    #   and the service it sits in. ``gives`` and ``receives`` are
-    #   per-actor-per-service; service.value_created is the aggregate. The
-    #   weakened version of PHILOSOPHY.md P6 ("arrows carry action + value")
-    #   — the value flow lives on the node instead of an explicit edge.
-    gives: str = ""
-    receives: str = ""
-    # ``side`` partitions actors by which side of the value exchange they
-    # occupy. v0.11 settles on two values; ``external`` etc. may be added
-    # later if a domain demands it.
-    #   ``operator`` — service operators / developers. Always explicit on
-    #                  every service per IDENTITY.md (moderation duty).
-    #   ``user``     — service users / consumers / participants.
-    side: Literal["operator", "user"] | None = None
-
-    # rule (service_detail, kind="rule"):
-    #   ``policy``      — the rule statement (what's enforced).
-    #   ``enforcement`` — how it's enforced (mechanism, system).
-    #   ``actor_permissions`` — actor-id → permission-string, e.g.
-    #                           ``{"user": "RUD", "admin": "CRUD"}``. The
-    #                           permission string is free-form for now;
-    #                           "C/R/U/D" is the suggested vocabulary.
-    policy: str = ""
-    enforcement: str = ""
-    actor_permissions: dict[str, str] = Field(default_factory=dict)
-
-    # content (service_detail, kind="content"):
-    #   ``format``             — shape of the artifact (JSON, MD, image…).
-    #   ``producer_actor_id``  — actor master id that creates the content.
-    #   ``consumer_actor_id``  — actor master id that consumes the content.
-    format: str = ""
-    producer_actor_id: str | None = None
-    consumer_actor_id: str | None = None
-
-    # v0.9.1 long-form pointer. Project-relative path (e.g.
-    # ``"foundation/mission-1/details.md"``); Plot resolves it under
-    # ``.plot/{project_id}/``. ``None`` means the node has no MD file yet
-    # — the Inspector offers a "Create details" button to mint one.
-    details_path: str | None = None
-
-    @model_validator(mode="after")
-    def _ref_kind_requires_ref_id(self) -> SketchNode:
-        # v0.10 Step 3: every *_ref kind requires its matching id field set.
-        # The pre-existing actor_ref check is a special case of the same rule.
-        field = _REF_KIND_TO_ID_FIELD.get(self.kind or "")
-        if field and not getattr(self, field, None):
-            raise ValueError(f"node {self.id!r} of kind {self.kind!r} requires {field}")
-        return self
-
-    @model_validator(mode="after")
-    def _details_path_is_safe(self) -> SketchNode:
-        if self.details_path is None:
-            return self
-        path = self.details_path.strip()
-        if not path:
-            raise ValueError(f"node {self.id!r} details_path must not be blank")
-        if path.startswith("/"):
-            raise ValueError(f"node {self.id!r} details_path must be relative, got {path!r}")
-        # Reject ``..`` segments to prevent escape; normalise slashes first.
-        parts = path.replace("\\", "/").split("/")
-        if any(part == ".." or part == "" for part in parts):
-            raise ValueError(
-                f"node {self.id!r} details_path must not contain '..' or empty segments"
-            )
-        return self
 
 
 ValueForm = Literal[
@@ -315,28 +102,37 @@ ValueForm = Literal[
 
 
 # ---------------------------------------------------------------------------
-# v0.13 Phase 1 — Foundation discriminated union
+# v0.15 Phase 1 — 15-way discriminated union (god ``SketchNode`` retired)
 # ---------------------------------------------------------------------------
 #
-# The legacy ``SketchNode`` above is a god object: every kind's typed fields
-# coexist as defaults on every node, so a core_value carries empty
-# ``motivation`` / ``actor_permissions`` / ``producer_actor_id`` / etc. in
-# its JSON. v0.13 splits this per kind via a Pydantic discriminated union.
+# Through v0.14 the canvas node model was a single god ``SketchNode``
+# class carrying every typed field for every kind as a default-empty
+# string / None. v0.15 splits this per kind via a Pydantic discriminated
+# union (one ``BaseNodeFields`` subclass per kind, dispatched on the
+# ``kind`` literal). See D-2026-05-12-B for the rationale.
 #
-# Phase 1 (this section) only DEFINES the new classes. Foundation canvas
-# read/write keeps using SketchNode for now; Phase 3 wires the new types
-# into folder_io once the MD-template I/O lands.
+# Class layout below:
+#   BaseNodeFields                              — shared graph layer
+#   ProjectNode / MissionNode / CoreValueNode   — Foundation 4 (v0.13)
+#   IdentityNode
+#   ActorNode / ActorRefNode / ServiceNode      — Actors + Services (v0.15.1)
+#   CategoryNode / MissionRefNode / ValueRefNode
+#   IdentityRefNode
+#   MetricNode / StepNode / RuleNode / ContentNode  — composition (v0.15.2)
 #
-# Scope: Foundation kinds only (project / mission / core_value / identity).
-# Actors / Services / Service Detail keep god SketchNode for now —
-# v0.14+ extends the same treatment to the rest.
+#   FoundationNode  — Foundation-only sub-union (4 kinds)
+#   SketchNode      — full 15-way discriminated union
 
 
 class BaseNodeFields(BaseModel):
-    """v0.13 Phase 1: shared graph-level fields. Lives in canvas.json.
+    """Shared graph-level fields for every canvas node kind.
 
-    Excludes every typed-text field; those move to per-node MD templates
-    in Phase 3 and only appear on the kind subclasses below.
+    Every per-kind class extends this; typed text fields are declared on
+    the per-kind class only (no god-object pool of all fields).
+
+    The ``_details_path_is_safe`` validator runs on every subclass so
+    that any node carrying a ``details_path`` is path-traversal-checked
+    at construction time.
     """
 
     id: str = Field(..., min_length=1)
@@ -352,6 +148,23 @@ class BaseNodeFields(BaseModel):
     collapsed: bool = False
     is_root: bool = False
     details_path: str | None = None
+
+    @model_validator(mode="after")
+    def _details_path_is_safe(self) -> BaseNodeFields:
+        if self.details_path is None:
+            return self
+        path = self.details_path.strip()
+        if not path:
+            raise ValueError(f"node {self.id!r} details_path must not be blank")
+        if path.startswith("/"):
+            raise ValueError(f"node {self.id!r} details_path must be relative, got {path!r}")
+        # Reject ``..`` segments to prevent escape; normalise slashes first.
+        parts = path.replace("\\", "/").split("/")
+        if any(part == ".." or part == "" for part in parts):
+            raise ValueError(
+                f"node {self.id!r} details_path must not contain '..' or empty segments"
+            )
+        return self
 
 
 class ProjectNode(BaseNodeFields):
@@ -445,19 +258,20 @@ class ActorNode(BaseNodeFields):
 class ActorRefNode(BaseNodeFields):
     """v0.15 Phase 1: ``actor_ref`` kind. References an actor master that
     lives on the Actors canvas. ``gives`` / ``receives`` capture the
-    per-actor-per-service value flow (PHILOSOPHY P6 weakened form)."""
+    per-actor-per-service value flow (PHILOSOPHY P6 weakened form).
+    ``side`` mirrors the referenced actor's side so the canvas can
+    colour-code without dereferencing the master each render."""
 
     kind: Literal["actor_ref"] = "actor_ref"
     ref_actor_id: str | None = None
     gives: str = ""
     receives: str = ""
+    side: Literal["operator", "user"] | None = None
 
     @model_validator(mode="after")
     def _ref_actor_id_required(self) -> ActorRefNode:
         if not self.ref_actor_id:
-            raise ValueError(
-                f"node {self.id!r} of kind 'actor_ref' requires ref_actor_id"
-            )
+            raise ValueError(f"node {self.id!r} of kind 'actor_ref' requires ref_actor_id")
         return self
 
 
@@ -497,9 +311,7 @@ class MissionRefNode(BaseNodeFields):
     @model_validator(mode="after")
     def _ref_mission_id_required(self) -> MissionRefNode:
         if not self.ref_mission_id:
-            raise ValueError(
-                f"node {self.id!r} of kind 'mission_ref' requires ref_mission_id"
-            )
+            raise ValueError(f"node {self.id!r} of kind 'mission_ref' requires ref_mission_id")
         return self
 
 
@@ -514,9 +326,7 @@ class ValueRefNode(BaseNodeFields):
     @model_validator(mode="after")
     def _ref_value_id_required(self) -> ValueRefNode:
         if not self.ref_value_id:
-            raise ValueError(
-                f"node {self.id!r} of kind 'value_ref' requires ref_value_id"
-            )
+            raise ValueError(f"node {self.id!r} of kind 'value_ref' requires ref_value_id")
         return self
 
 
@@ -531,10 +341,103 @@ class IdentityRefNode(BaseNodeFields):
     @model_validator(mode="after")
     def _ref_identity_id_required(self) -> IdentityRefNode:
         if not self.ref_identity_id:
-            raise ValueError(
-                f"node {self.id!r} of kind 'identity_ref' requires ref_identity_id"
-            )
+            raise ValueError(f"node {self.id!r} of kind 'identity_ref' requires ref_identity_id")
         return self
+
+
+# ---------------------------------------------------------------------------
+# v0.15 Phase 1.2 — composition kinds (live inside service_detail canvases)
+# ---------------------------------------------------------------------------
+
+
+class MetricNode(BaseNodeFields):
+    """v0.15 Phase 1.2: ``metric`` kind. How a service is measured
+    (KPI, success rate, latency)."""
+
+    kind: Literal["metric"] = "metric"
+    target: str = ""
+    measurement: str = ""
+
+
+class StepNode(BaseNodeFields):
+    """v0.15 Phase 1.2: ``step`` kind. An ordered procedural step in the
+    service flow. ``order`` may be None for unordered / parallel branches."""
+
+    kind: Literal["step"] = "step"
+    order: int | None = None
+    outcome: str = ""
+
+
+class RuleNode(BaseNodeFields):
+    """v0.15 Phase 1.2: ``rule`` kind. A composition element inside a
+    service expressing an enforced policy (with per-actor permissions)."""
+
+    kind: Literal["rule"] = "rule"
+    policy: str = ""
+    enforcement: str = ""
+    actor_permissions: dict[str, str] = Field(default_factory=dict)
+
+
+class ContentNode(BaseNodeFields):
+    """v0.15 Phase 1.2: ``content`` kind. A produced / consumed artifact
+    inside a service (JSON / MD / image, with producer + consumer actor
+    masters by id)."""
+
+    kind: Literal["content"] = "content"
+    format: str = ""
+    producer_actor_id: str | None = None
+    consumer_actor_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# v0.15 Phase 1.2 — 15-way discriminated union (replaces god ``SketchNode``)
+# ---------------------------------------------------------------------------
+#
+# Pydantic dispatches construction / validation on the ``kind`` literal.
+# ``CanvasDoc.nodes: list[SketchNode]`` automatically narrows each node to
+# its correct kind subclass. Use ``SketchNode`` for type annotations and
+# the per-kind classes for direct construction.
+
+SketchNode = Annotated[
+    ProjectNode
+    | MissionNode
+    | CoreValueNode
+    | IdentityNode
+    | ActorNode
+    | ActorRefNode
+    | ServiceNode
+    | CategoryNode
+    | MissionRefNode
+    | ValueRefNode
+    | IdentityRefNode
+    | MetricNode
+    | StepNode
+    | RuleNode
+    | ContentNode,
+    Field(discriminator="kind"),
+]
+
+# Validate raw dicts against the discriminated union without going through
+# a ``CanvasDoc`` wrapper. Equivalent to ``BaseModel.model_validate`` on
+# the legacy god class — call sites that need per-kind dispatch on a
+# standalone dict use ``SketchNodeAdapter.validate_python(raw)``.
+SketchNodeAdapter: TypeAdapter[
+    ProjectNode
+    | MissionNode
+    | CoreValueNode
+    | IdentityNode
+    | ActorNode
+    | ActorRefNode
+    | ServiceNode
+    | CategoryNode
+    | MissionRefNode
+    | ValueRefNode
+    | IdentityRefNode
+    | MetricNode
+    | StepNode
+    | RuleNode
+    | ContentNode
+] = TypeAdapter(SketchNode)
 
 
 class SketchEdge(BaseModel):

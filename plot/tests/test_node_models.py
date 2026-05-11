@@ -1,12 +1,20 @@
 """Per-kind node-class round-trip + invariant tests.
 
-v0.15 Phase 1 (Server SSOT). Covers the non-Foundation kinds split out
-of the god ``SketchNode`` in v0.14.15 and the 4 composition kinds added
-in v0.14.16. Foundation classes have their own coverage in
-``test_canvas_doc.py`` and ``test_md_template.py``.
+v0.15 Phase 1 (Server SSOT). Covers all 11 non-Foundation kinds split
+out of the god ``SketchNode``:
+
+  - v0.14.16 — actor / actor_ref / service / category / 3 ref kinds
+  - v0.14.17 — metric / step / rule / content + 15-way SketchNode union
+
+Foundation kinds (project / mission / core_value / identity) have
+their own coverage in ``test_canvas_doc.py`` and ``test_md_template.py``.
 
 The round-trip pattern mirrors ``test_canvas_doc.py`` —
 ``Cls.model_validate(Cls(...).model_dump()) == original``.
+
+The discriminated-union dispatch is tested via ``SketchNodeAdapter`` —
+the public ``TypeAdapter`` exposed alongside ``SketchNode`` for raw-dict
+validation.
 """
 
 from __future__ import annotations
@@ -17,9 +25,14 @@ from plot_mcp.models import (
     ActorNode,
     ActorRefNode,
     CategoryNode,
+    ContentNode,
     IdentityRefNode,
+    MetricNode,
     MissionRefNode,
+    RuleNode,
     ServiceNode,
+    SketchNodeAdapter,
+    StepNode,
     ValueRefNode,
 )
 
@@ -144,3 +157,86 @@ def test_service_defaults_match_sketchnode_service_defaults() -> None:
 def test_category_defaults_match_sketchnode_category_defaults() -> None:
     n = CategoryNode(id="cat-min", label="Category")
     assert n.model_dump()["theme"] == ""
+
+
+# ---------------------------------------------------------------------------
+# v0.14.17 — composition kinds (metric / step / rule / content)
+# ---------------------------------------------------------------------------
+
+
+def test_metric_round_trip() -> None:
+    n = MetricNode(id="m1", label="Latency", target="<200ms", measurement="p95")
+    assert MetricNode.model_validate(n.model_dump()) == n
+
+
+def test_step_round_trip_with_order() -> None:
+    n = StepNode(id="s1", label="Sign in", order=1, outcome="session token")
+    assert StepNode.model_validate(n.model_dump()) == n
+
+
+def test_step_round_trip_without_order() -> None:
+    """``order = None`` keeps the step unordered (parallel branches)."""
+    n = StepNode(id="s1", label="Either path")
+    assert n.order is None
+    assert StepNode.model_validate(n.model_dump()) == n
+
+
+def test_rule_round_trip() -> None:
+    n = RuleNode(
+        id="r1",
+        label="GDPR opt-in",
+        policy="explicit consent",
+        enforcement="checkbox + audit log",
+        actor_permissions={"user": "RUD", "admin": "CRUD"},
+    )
+    assert RuleNode.model_validate(n.model_dump()) == n
+
+
+def test_content_round_trip() -> None:
+    n = ContentNode(
+        id="c1",
+        label="Receipt",
+        format="application/json",
+        producer_actor_id="checkout",
+        consumer_actor_id="user",
+    )
+    assert ContentNode.model_validate(n.model_dump()) == n
+
+
+# ---------------------------------------------------------------------------
+# v0.14.17 — discriminated-union dispatch via SketchNodeAdapter
+# ---------------------------------------------------------------------------
+
+
+def test_adapter_dispatches_actor() -> None:
+    raw = ActorNode(id="a", label="Actor", side="user").model_dump()
+    parsed = SketchNodeAdapter.validate_python(raw)
+    assert isinstance(parsed, ActorNode)
+    assert parsed.side == "user"
+
+
+def test_adapter_dispatches_metric() -> None:
+    raw = MetricNode(id="m", label="M", target="x", measurement="y").model_dump()
+    parsed = SketchNodeAdapter.validate_python(raw)
+    assert isinstance(parsed, MetricNode)
+    assert parsed.target == "x"
+
+
+def test_adapter_dispatches_actor_ref_with_validator() -> None:
+    raw = ActorRefNode(id="ref", label="R", ref_actor_id="a").model_dump()
+    parsed = SketchNodeAdapter.validate_python(raw)
+    assert isinstance(parsed, ActorRefNode)
+    assert parsed.ref_actor_id == "a"
+
+
+def test_adapter_rejects_unknown_kind() -> None:
+    """The discriminator must reject an unknown kind, not silently dispatch
+    to a fallback class."""
+    with pytest.raises(ValueError, match="kind"):
+        SketchNodeAdapter.validate_python({"id": "x", "kind": "ghost"})
+
+
+def test_adapter_rejects_missing_kind() -> None:
+    """Discriminated union requires the discriminator field to be present."""
+    with pytest.raises(ValueError, match="kind"):
+        SketchNodeAdapter.validate_python({"id": "x"})

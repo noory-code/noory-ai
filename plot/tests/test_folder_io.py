@@ -29,7 +29,12 @@ from plot_mcp.folder_io import (
     write_canvas,
     write_project,
 )
-from plot_mcp.models import CanvasDoc, SketchNode
+from plot_mcp.models import (
+    ActorNode,
+    ActorRefNode,
+    CanvasDoc,
+    ServiceNode,
+)
 from plot_mcp.workspace import resolve_plot_root
 
 
@@ -135,8 +140,8 @@ def test_write_canvas_round_trip(plot_root: Path) -> None:
         canvas_id="actors",
         canvas_kind="actors",
         nodes=[
-            SketchNode(id="user", kind="actor", label="사용자"),
-            SketchNode(id="admin", kind="actor", label="관리자"),
+            ActorNode(id="user", label="사용자"),
+            ActorNode(id="admin", label="관리자"),
         ],
     )
     write_canvas(plot_root, "alpha", canvas)
@@ -156,8 +161,8 @@ def test_write_canvas_rejects_wrong_project(plot_root: Path) -> None:
                 canvas_id="actors",
                 canvas_kind="actors",
                 nodes=[
-                    SketchNode(id="op", kind="actor", label="O", side="operator"),
-                    SketchNode(id="user", kind="actor", label="U", side="user"),
+                    ActorNode(id="op", label="O", side="operator"),
+                    ActorNode(id="user", label="U", side="user"),
                 ],
             ),
         )
@@ -187,17 +192,15 @@ def _detail_with_actor_refs(service_id: str = "order") -> CanvasDoc:
         canvas_kind="service_detail",
         service_ref=service_id,
         nodes=[
-            SketchNode(id=service_id, kind="service", label="주문"),
-            SketchNode(
+            ServiceNode(id=service_id, label="주문"),
+            ActorRefNode(
                 id=f"{service_id}-op",
-                kind="actor_ref",
                 label="→ op",
                 ref_actor_id="operator",
                 side="operator",
             ),
-            SketchNode(
+            ActorRefNode(
                 id=f"{service_id}-user",
-                kind="actor_ref",
                 label="→ user",
                 ref_actor_id="user",
                 side="user",
@@ -275,8 +278,8 @@ def test_write_canvas_does_not_commit(plot_root: Path) -> None:
             canvas_id="actors",
             canvas_kind="actors",
             nodes=[
-                SketchNode(id="op", kind="actor", label="O", side="operator"),
-                SketchNode(id="u", kind="actor", label="U", side="user"),
+                ActorNode(id="op", label="O", side="operator"),
+                ActorNode(id="u", label="U", side="user"),
             ],
         ),
     )

@@ -36,7 +36,17 @@ from pathlib import Path
 from typing import Any, cast
 
 from plot_mcp.git_store import ensure_repo
-from plot_mcp.models import CanvasDoc, CanvasKind, ProjectDoc, SketchNode
+from plot_mcp.models import (
+    ActorNode,
+    ActorRefNode,
+    CanvasDoc,
+    CanvasKind,
+    CategoryNode,
+    CoreValueNode,
+    IdentityNode,
+    MissionNode,
+    ProjectDoc,
+)
 
 # v0.8 layout: every canvas — singleton or detail — lives in a folder
 # named after the canvas (or the owning service, for details), and its
@@ -189,9 +199,8 @@ def _wrap_legacy_services_in_default_category(
     if not has_default:
         rebuilt.append(
             {
-                **SketchNode(
+                **CategoryNode(
                     id="default-category",
-                    kind="category",
                     label="Services",
                     theme="Migrated services",
                     x=-200,
@@ -586,9 +595,8 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
         canvas_id="foundation",
         canvas_kind="foundation",
         nodes=[
-            SketchNode(
+            MissionNode(
                 id="mission",
-                kind="mission",
                 label="Mission",
                 x=-360,
                 y=-45,
@@ -597,9 +605,8 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
                 color="#fef3c7",
                 shape="rounded",
             ),
-            SketchNode(
+            CoreValueNode(
                 id="core-value-1",
-                kind="core_value",
                 label="Core value",
                 x=-90,
                 y=-260,
@@ -608,9 +615,8 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
                 color="#fde68a",
                 shape="rounded",
             ),
-            SketchNode(
+            IdentityNode(
                 id="identity",
-                kind="identity",
                 label="Voice",
                 x=160,
                 y=-45,
@@ -634,9 +640,8 @@ def _seed_actors_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
         canvas_id="actors",
         canvas_kind="actors",
         nodes=[
-            SketchNode(
+            ActorNode(
                 id="operator",
-                kind="actor",
                 label="Operator",
                 side="operator",
                 x=-260,
@@ -646,9 +651,8 @@ def _seed_actors_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
                 color="#bae6fd",
                 shape="rounded",
             ),
-            SketchNode(
+            ActorNode(
                 id="user",
-                kind="actor",
                 label="User",
                 side="user",
                 x=140,
@@ -775,9 +779,8 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
             # picker, or add more refs as the design develops.
             nodes=[
                 src.model_copy(update={"parent_id": None, "is_root": False}),
-                SketchNode(
+                ActorRefNode(
                     id=f"{service_id}-operator-ref",
-                    kind="actor_ref",
                     label="→ Operator",
                     ref_actor_id="operator",
                     side="operator",
@@ -786,9 +789,8 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
                     width=140,
                     height=70,
                 ),
-                SketchNode(
+                ActorRefNode(
                     id=f"{service_id}-user-ref",
-                    kind="actor_ref",
                     label="→ User",
                     ref_actor_id="user",
                     side="user",

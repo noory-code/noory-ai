@@ -13,7 +13,7 @@ from plot_mcp.folder_io import (
     sync_details_with_overview,
     write_canvas,
 )
-from plot_mcp.models import CanvasDoc, SketchNode
+from plot_mcp.models import CanvasDoc, CategoryNode, ServiceNode, SketchNode
 from plot_mcp.workspace import resolve_plot_root
 
 
@@ -25,10 +25,10 @@ def plot_root(tmp_path: Path) -> Path:
 def _overview_with(service_labels: dict[str, str]) -> CanvasDoc:
     """v0.12 — services canvas: services nested under a single default category."""
     nodes: list[SketchNode] = [
-        SketchNode(id="default-cat", kind="category", label="Default"),
+        CategoryNode(id="default-cat", label="Default"),
     ]
     nodes.extend(
-        SketchNode(id=sid, kind="service", parent_id="default-cat", label=label)
+        ServiceNode(id=sid, parent_id="default-cat", label=label)
         for sid, label in service_labels.items()
     )
     return CanvasDoc(

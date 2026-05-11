@@ -4,6 +4,89 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.17] — 2026-05-12
+
+v0.15 structural reset Phase 1.2 — atomic flip. God `SketchNode`
+class retired; `SketchNode` is now a 15-way Pydantic discriminated
+union dispatched on the `kind` literal. The 4 composition kinds
+(metric / step / rule / content) join the per-class family. No
+behaviour change; round-trip and migration paths preserved
+(D-2026-05-12-B).
+
+### Added
+
+- `plot_mcp/models.py` — four composition Pydantic classes:
+  - `MetricNode` (target / measurement)
+  - `StepNode` (order: int | None / outcome)
+  - `RuleNode` (policy / enforcement / actor_permissions)
+  - `ContentNode` (format / producer_actor_id / consumer_actor_id)
+- `plot_mcp/models.py` — `SketchNode` is now
+  `Annotated[Union[15 per-kind classes], Field(discriminator="kind")]`.
+  Pydantic dispatches construction / validation on the `kind` literal;
+  `CanvasDoc.nodes: list[SketchNode]` automatically narrows.
+- `plot_mcp/models.py` — `SketchNodeAdapter: TypeAdapter[SketchNode]`
+  exposed for raw-dict validation outside a `CanvasDoc` wrapper
+  (e.g. WebSocket payloads in v0.15 Phase 2).
+- `plot_mcp/models.py` — `BaseNodeFields._details_path_is_safe`
+  validator (hoisted from the retired god class) so every per-kind
+  class enforces the path-traversal check at construction time.
+- `plot_mcp/models.py` — `ActorRefNode.side` field. Mirrors the
+  referenced actor's side so canvases can colour-code without
+  dereferencing the master each render.
+- `plot_mcp/migrate.py` — `_V01SketchNode` legacy class. Permissive
+  superset that accepts v0.1 raw JSON (including the legacy
+  `mission` / `core_values` / `identity` god string fields). Owned by
+  the migration module; `models.py` stays clean of legacy concerns.
+- `plot_mcp/migrate.py` — `_v01_to_service` / `_v01_to_composition`
+  converters. Translate `_V01SketchNode` instances into current
+  per-kind classes at the canvas-build boundary.
+- `plot/tests/test_node_models.py` — 10 new tests:
+  - 5 round-trip per composition kind (metric / step ordered + unordered
+    / rule / content).
+  - 5 discriminated-union dispatch via `SketchNodeAdapter`
+    (actor / metric / actor_ref-with-validator / unknown-kind /
+    missing-kind rejections).
+
+### Removed
+
+- `plot_mcp/models.py` — god `SketchNode` class (203 LOC, lines
+  102-305 in v0.14.16). Every kind's typed-text fields no longer
+  pool together as defaults on a single class.
+- `plot_mcp/models.py` — `_REF_KIND_TO_ID_FIELD` map and the god
+  `_ref_kind_requires_ref_id` validator. Each ref kind class now
+  owns its own validator (added in v0.14.16).
+- Tests — `test_typed_fields_default_to_empty` (god polymorphism
+  check; replaced by `test_actor_does_not_carry_foreign_typed_fields`
+  which now asserts the OPPOSITE: that ActorNode does NOT carry
+  Mission's typed fields).
+
+### Changed
+
+- 134 call sites across `plot_mcp/migrate.py`, `plot_mcp/folder_io.py`,
+  `tests/test_canvas_doc.py`, `tests/test_folder_io.py`, and
+  `tests/test_sync.py` migrated from `SketchNode(id=..., kind="X", ...)`
+  to the per-kind constructor `XNode(id=..., ...)`. One-shot codemod
+  written + applied + deleted (no committed migration scaffolding).
+- `plot_mcp/migrate.py` — `_build_actors_canvas`, `_split_services`,
+  `_backfill_actor_sides`, `_ensure_minimum_actors` now consume
+  `_V01SketchNode` (legacy) and emit per-kind class instances
+  (current). Conversion happens at the function boundary; downstream
+  helpers operate on current per-kind classes.
+- `tests/test_canvas_doc.py::test_actor_permissions_default_empty`
+  rewritten to validate via `SketchNodeAdapter.validate_python(...)`
+  (the union exposed by Pydantic) instead of the retired
+  `SketchNode.model_validate(...)`.
+
+### Why
+
+The god `SketchNode` was the load-bearing piece of the v0.14
+god-object pattern (D-2026-05-12-B, user direct quote: "엔티티 정의도
+안되어 있구요... fromJson, toJson 같은걸 쓰고 클래스를 코드로 만들어서
+개념화해야 했다"). v0.14.17 ships the principled atomic flip with
+zero remaining ruff / mypy debt and zero behavioural regressions
+(207 / 207 tests green, up from 197 in v0.14.16 thanks to the new
+composition + adapter coverage).
+
 ## [0.14.16] — 2026-05-12
 
 v0.15 structural reset Phase 1.1 — server-side per-class Pydantic
