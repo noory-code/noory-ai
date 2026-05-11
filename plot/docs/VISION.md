@@ -86,6 +86,11 @@ sentence**.
 
 ## Cross-references
 
+- [`PRODUCT_SPEC.md`](./PRODUCT_SPEC.md) — **product-level decisions**
+  (platforms, business model, MVP scope, symbol system, canvas
+  inventory). Sits above this file in the doc set; this file is the
+  essence, PRODUCT_SPEC is how the essence becomes a shippable
+  product.
 - [`PHILOSOPHY.md`](./PHILOSOPHY.md) — the **why** behind value relations
   (10 principles). VISION inherits from this; PHILOSOPHY is the
   conceptual foundation, VISION is the operational mission.

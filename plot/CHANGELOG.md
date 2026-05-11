@@ -4,6 +4,56 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.7] — 2026-05-11
+
+### Added — `plot/docs/PRODUCT_SPEC.md` (D-2026-05-11-E)
+
+User delivered a Plot product spec mid-session covering platforms,
+business model, tech stack, data principles, Figma-style symbol
+system, four canvas layers, agent-interview UX, snapshot work-item
+layer, PR-style feedback loop, MVP scope, future items. Per user
+direction *"이건 잘 정리해두세요"* the spec is pinned as a new
+canonical document.
+
+**Position:** PRODUCT_SPEC sits *above* VISION.md in the doc set.
+VISION = the essence; PRODUCT_SPEC = how the essence becomes a
+shippable product (platforms, business model, MVP scope).
+
+**Translation:** Korean source → English per noory-ai CLAUDE.md
+"Language" rule. Korean vocabulary preserved where it's a Plot
+term (Mission / Core value / Identity / Actor / Service / User
+journey / Snapshot).
+
+**Open questions captured in §16** (not decided in this commit):
+
+1. `owner` field on every node — multi-user prerequisite. Land
+   date unset.
+2. Mission-Core-value vs Identity canvas split (audience: humans
+   vs agents). Today both live in Foundation.
+3. PR-style feedback loop enforcement — MCP tools today write
+   directly.
+4. Snapshot work-item layer — net-new subsystem.
+5. Mermaid Service-Detail rendering — UI location unset.
+6. `canvas.tabs.foundation` Korean label review if Mission /
+   Identity canvases split.
+
+### Changed
+
+- `plot/docs/VISION.md` — Cross-references now point at
+  PRODUCT_SPEC first.
+- `plot/CLAUDE.md` — reading order updated; PRODUCT_SPEC is step
+  2 (right after VISION, before DOMAIN).
+- `plot/docs/DECISIONS.md` — new D-2026-05-11-E entry pinning the
+  decision.
+
+### Not changed (deliberate)
+
+- No code changes.
+- No canvas / kind / Inspector behaviour changes.
+- SPEC.md / CONCEPTS.md / ROADMAP.md / DOMAIN.md left as-is — each
+  remains the source of truth for its own concern. PRODUCT_SPEC
+  cross-links into them.
+
 ## [0.14.6] — 2026-05-11
 
 ### Added — i18n migration: Stencil section headers + helper notes

@@ -1141,3 +1141,66 @@ in the same browser-verification round:
 - **Approval:** Pending — user, 2026-05-10.
 - **Spec impact:** none observable beyond the new language toggle
   pill in the sidebar's footer. No canvas behaviour changes.
+
+---
+
+### D-2026-05-11-E — Product spec pinned as PRODUCT_SPEC.md; product framing now lives above VISION
+
+- **What:** User delivered a Plot product spec mid-session
+  (2026-05-11) covering platforms (Claude plugin → macOS app),
+  business model (individual free / enterprise paid, PLG growth),
+  tech stack (React Flow / JSON / Markdown / Mermaid / MCP), data
+  principles (JSON SoT, owner field, MD export targets), Figma-style
+  symbol system, four canvas layers with audience split (humans vs
+  agents), agent-interview UX pattern, snapshot work-item layer,
+  PR-style feedback loop, MVP scope, future / out-of-scope.
+
+  Per user direction *"이건 잘 정리해두세요. 작업 다 끝나고"*, the
+  spec is pinned to [`plot/docs/PRODUCT_SPEC.md`](./PRODUCT_SPEC.md)
+  as a new canonical document. Translated to English (per
+  noory-ai CLAUDE.md "Language" rule), reorganised into AI-First
+  structured sections with cross-references to existing docs.
+
+- **Why this matters:** product-level facts (who Plot is for, what
+  platforms, what's in MVP, what's deferred) were scattered across
+  conversation history and partially in VISION.md. Consolidating to
+  one file gives every future session a single place to read the
+  framing before touching code. Without it, the next session is
+  liable to re-litigate decisions that already have a user mandate.
+
+- **Position in the doc set:** PRODUCT_SPEC sits **above** VISION.md.
+  VISION is the essence; PRODUCT_SPEC is how the essence becomes a
+  shippable product. `plot/CLAUDE.md` reading order updated to put
+  PRODUCT_SPEC as step 2 (right after VISION, before DOMAIN).
+  `VISION.md` Cross-references updated to point at PRODUCT_SPEC
+  first.
+
+- **What this does NOT do:**
+  - Does NOT change code. No new fields on `SketchNode`, no canvas
+    splits, no new MCP tools.
+  - Does NOT change the existing doc files beyond cross-link
+    insertion. SPEC, CONCEPTS, ROADMAP, DOMAIN unchanged.
+  - Does NOT decide the open questions captured in §16 of
+    PRODUCT_SPEC (Mission/Identity canvas split, PR-loop
+    enforcement, snapshot subsystem, Mermaid rendering, owner field
+    landing date). Each becomes its own follow-up `D-YYYY-MM-DD-X`
+    when the user calls.
+
+- **Alternatives considered and rejected:**
+  - **Fold the product spec into VISION.md** — rejected: VISION's
+    "one sentence at the top" discipline (D-pre-VISION) breaks if
+    platform / business-model / MVP detail gets bolted on. Two
+    files, clear roles.
+  - **Distribute the spec content across existing docs** (Mermaid
+    → ROADMAP, owner field → CONCEPTS, snapshot → SPEC, …) —
+    rejected: scatter violates SSOT and makes the framing hard to
+    read in one session. PRODUCT_SPEC is the framing; the other
+    docs implement it.
+  - **Skip pinning, treat as conversation memory only** — rejected:
+    explicitly contradicts the user instruction *"이건 잘
+    정리해두세요"*.
+
+- **Approval:** Pending — user, 2026-05-11.
+- **Spec impact:** SPEC.md unchanged (PRODUCT_SPEC is upstream).
+  VISION.md gains a Cross-references entry. plot/CLAUDE.md reading
+  order updated to include PRODUCT_SPEC as item 2.

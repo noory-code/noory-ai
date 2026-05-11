@@ -15,14 +15,15 @@
 >
 > **Pairs with (read in this order on session start):**
 > 1. [`docs/VISION.md`](./docs/VISION.md) — **the essence** + 3-phase cycle. Single source of truth above everything else. Read first, every session.
-> 2. [`docs/DOMAIN.md`](./docs/DOMAIN.md) — bounded contexts, ubiquitous language, dependency direction. Use to decide *where* code goes.
-> 3. [`docs/SPEC.md`](./docs/SPEC.md) — what Plot should *do* per canvas.
-> 4. [`docs/DECISIONS.md`](./docs/DECISIONS.md) — *why* it does what it does, and what was tried and rejected (last 5 entries auto-surfaced by the SessionStart hook).
-> 5. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — what shape the code is in and how to fix it.
-> 6. [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — data model (kinds / fields).
-> 7. [`docs/CURSOR.md`](./docs/CURSOR.md) — canvas cursor SSOT.
-> 8. [`docs/PHILOSOPHY.md`](./docs/PHILOSOPHY.md) — value-flow / 10 principles.
-> 9. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — release order.
+> 2. [`docs/PRODUCT_SPEC.md`](./docs/PRODUCT_SPEC.md) — **product-level decisions** (platforms, business model, MVP scope, symbol system, canvas inventory, future / out-of-scope). Read second; it is the framing every other doc sits inside.
+> 3. [`docs/DOMAIN.md`](./docs/DOMAIN.md) — bounded contexts, ubiquitous language, dependency direction. Use to decide *where* code goes.
+> 4. [`docs/SPEC.md`](./docs/SPEC.md) — what Plot should *do* per canvas.
+> 5. [`docs/DECISIONS.md`](./docs/DECISIONS.md) — *why* it does what it does, and what was tried and rejected (last 5 entries auto-surfaced by the SessionStart hook).
+> 6. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — what shape the code is in and how to fix it.
+> 7. [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — data model (kinds / fields).
+> 8. [`docs/CURSOR.md`](./docs/CURSOR.md) — canvas cursor SSOT.
+> 9. [`docs/PHILOSOPHY.md`](./docs/PHILOSOPHY.md) — value-flow / 10 principles.
+> 10. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — release order.
 
 ---
 
