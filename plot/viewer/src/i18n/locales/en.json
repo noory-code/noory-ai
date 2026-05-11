@@ -37,7 +37,21 @@
   },
   "canvas": {
     "aria": "Canvas",
-    "keyboardShortcuts": "Keyboard shortcuts"
+    "keyboardShortcuts": "Keyboard shortcuts",
+    "tabs": {
+      "foundation": "Foundation",
+      "actors": "Actors",
+      "services": "Services"
+    }
+  },
+  "header": {
+    "markSession": "Mark session…",
+    "markSessionHint": "Plant a git tag at the current state of the project"
+  },
+  "serviceDetail": {
+    "label": "Service detail",
+    "ariaWithCategory": "Service detail — {{category}} › {{service}}",
+    "ariaWithoutCategory": "Service detail — {{service}}"
   },
   "shell": {
     "closeEsc": "Close (Esc)"

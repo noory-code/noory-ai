@@ -37,7 +37,21 @@
   },
   "canvas": {
     "aria": "캔버스",
-    "keyboardShortcuts": "키보드 단축키"
+    "keyboardShortcuts": "키보드 단축키",
+    "tabs": {
+      "foundation": "토대",
+      "actors": "행위자",
+      "services": "서비스"
+    }
+  },
+  "header": {
+    "markSession": "세션 기록…",
+    "markSessionHint": "현재 프로젝트 상태에 git 태그를 찍습니다"
+  },
+  "serviceDetail": {
+    "label": "서비스 상세",
+    "ariaWithCategory": "서비스 상세 — {{category}} › {{service}}",
+    "ariaWithoutCategory": "서비스 상세 — {{service}}"
   },
   "shell": {
     "closeEsc": "닫기 (Esc)"

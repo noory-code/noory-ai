@@ -4,6 +4,52 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.5] — 2026-05-11
+
+### Added — i18n migration: canvas tabs + Mark session + Service-Detail modal header
+
+Continues the v0.14.4 i18n rollout. Migrates the next-most-visible
+surface: the three canvas tab labels at the top of the viewer, the
+"Mark session…" button + its hint, and the Service-Detail modal's
+header / aria-label / close-button.
+
+**Translated keys added to `en.json` + `ko.json`:**
+
+- `canvas.tabs.foundation` / `canvas.tabs.actors` / `canvas.tabs.services`
+  — 토대 / 행위자 / 서비스.
+- `header.markSession` / `header.markSessionHint` — 세션 기록… /
+  현재 프로젝트 상태에 git 태그를 찍습니다.
+- `serviceDetail.label` — 서비스 상세.
+- `serviceDetail.ariaWithCategory` / `serviceDetail.ariaWithoutCategory`
+  — interpolation-driven aria-label so screen readers see the
+  Korean "서비스 상세 — {category} › {service}" form.
+
+**Changed:**
+
+- `plot/viewer/src/App.tsx` — replaced hardcoded `CANVAS_TABS`
+  label table with `CANVAS_TAB_IDS` + `t("canvas.tabs.{id}")`,
+  switched `aria-label="Canvas"` to `t("canvas.aria")`, swapped
+  the `Mark session…` button text + hint, and rewrote
+  `ServiceDetailModal` to read all visible / aria text from i18n
+  (including the close-button label/title via the existing
+  `shell.closeEsc` key).
+
+### Out of scope this release (queued for v0.14.6+)
+
+- Stencil section headers (TOP-LEVEL, MISSION, CORE VALUES,
+  IDENTITY, ACTOR HIERARCHY, COMPOSITION, ACTORS, IDENTITY
+  ASPECTS) and helper hints ("add as many as you need", "drop
+  inside a Category", "drop on an Actor").
+- Inspector form labels and section headers (largest single
+  migration surface; will land as its own commit / session).
+- Investigation: Inspector MD preview renders `* * *` separators
+  as "❀ ❀ ❀" — looks like a font fallback issue, queued for
+  separate diagnosis.
+- Decision: Plot kind labels (Mission, Core Value, Identity,
+  Actor, Service, Category, …) shown inside nodes — stay English
+  as canonical kind names vs. localise? Will surface as an
+  AskUserQuestion before the v0.14.6 Stencil migration lands.
+
 ## [0.14.4] — 2026-05-10
 
 ### Added — i18n infrastructure (English primary, Korean locale) — D-2026-05-11-D

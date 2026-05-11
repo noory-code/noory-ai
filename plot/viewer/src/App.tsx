@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { patchProjectAnchor, resolveProjectPath, type SocketStatus } from "./api";
 import { SketchCanvas } from "./canvases/SketchCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
@@ -15,11 +16,7 @@ import type {
 } from "./types";
 
 type CanvasTab = "foundation" | "actors" | "services";
-const CANVAS_TABS: readonly { id: CanvasTab; label: string }[] = [
-  { id: "foundation", label: "Foundation" },
-  { id: "actors", label: "Actors" },
-  { id: "services", label: "Services" },
-];
+const CANVAS_TAB_IDS: readonly CanvasTab[] = ["foundation", "actors", "services"];
 
 function tabToKind(tab: CanvasTab): CanvasKind {
   if (tab === "foundation") return "foundation";
@@ -58,7 +55,9 @@ export function App() {
 
   const [activeTab, setActiveTab] = useState<CanvasTab>(() => {
     const raw = new URL(window.location.href).searchParams.get("canvas");
-    return CANVAS_TABS.some((t) => t.id === raw) ? (raw as CanvasTab) : "services";
+    return (CANVAS_TAB_IDS as readonly string[]).includes(raw ?? "")
+      ? (raw as CanvasTab)
+      : "services";
   });
   const [detailServiceId, setDetailServiceId] = useState<string | null>(() => {
     return new URL(window.location.href).searchParams.get("detail");
@@ -487,6 +486,7 @@ function ServiceDetailModal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -500,8 +500,11 @@ function ServiceDetailModal({
       aria-modal="true"
       aria-label={
         categoryLabel
-          ? `Service detail — ${categoryLabel} › ${serviceLabel}`
-          : `Service detail — ${serviceLabel}`
+          ? t("serviceDetail.ariaWithCategory", {
+              category: categoryLabel,
+              service: serviceLabel,
+            })
+          : t("serviceDetail.ariaWithoutCategory", { service: serviceLabel })
       }
       className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40"
       onClick={onClose}
@@ -513,7 +516,7 @@ function ServiceDetailModal({
         <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2">
           <div className="flex items-baseline gap-2">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Service detail
+              {t("serviceDetail.label")}
             </span>
             {/* v0.12.6 — show parent category context so users always know
                 which group a service belongs to even inside the modal. */}
@@ -529,8 +532,8 @@ function ServiceDetailModal({
             type="button"
             onClick={onClose}
             className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
-            aria-label="Close (Esc)"
-            title="Close (Esc)"
+            aria-label={t("shell.closeEsc")}
+            title={t("shell.closeEsc")}
           >
             ✕
           </button>
@@ -554,29 +557,30 @@ function CanvasTabs({
   onSelect: (tab: CanvasTab) => void;
   onMarkSession: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       role="tablist"
-      aria-label="Canvas"
+      aria-label={t("canvas.aria")}
       className="flex items-center justify-between border-b border-slate-200 bg-white px-3"
     >
       <div className="flex items-center gap-1">
-        {CANVAS_TABS.map((tab) => {
-          const selected = tab.id === active;
+        {CANVAS_TAB_IDS.map((id) => {
+          const selected = id === active;
           return (
             <button
-              key={tab.id}
+              key={id}
               type="button"
               role="tab"
               aria-selected={selected}
-              onClick={() => onSelect(tab.id)}
+              onClick={() => onSelect(id)}
               className={
                 selected
                   ? "border-b-2 border-slate-900 px-4 py-2 text-sm font-medium text-slate-900"
                   : "border-b-2 border-transparent px-4 py-2 text-sm text-slate-500 hover:text-slate-800"
               }
             >
-              {tab.label}
+              {t(`canvas.tabs.${id}`)}
             </button>
           );
         })}
@@ -585,9 +589,9 @@ function CanvasTabs({
         type="button"
         onClick={onMarkSession}
         className="rounded border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
-        title="Plant a git tag at the current state of the project"
+        title={t("header.markSessionHint")}
       >
-        Mark session…
+        {t("header.markSession")}
       </button>
     </div>
   );
