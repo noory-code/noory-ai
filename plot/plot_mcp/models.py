@@ -415,6 +415,128 @@ FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# v0.15 Phase 1 — non-Foundation per-class Pydantic models
+# ---------------------------------------------------------------------------
+#
+# Extends the v0.13 Phase-1 ``BaseNodeFields`` + ``FoundationNode``
+# discriminated-union pattern to the remaining 11 node kinds. Each kind
+# now owns only its own typed fields rather than living as defaults on
+# the god ``SketchNode`` class.
+#
+# These classes are additive in v0.14.15; ``CanvasDoc.nodes`` still uses
+# god ``SketchNode`` until v0.14.16 promotes ``SketchNode`` to the full
+# 15-way discriminated union.
+#
+# The four ref classes carry their own ``@model_validator`` that mirrors
+# the dispatch ``_ref_kind_requires_ref_id`` on god ``SketchNode``.
+
+
+class ActorNode(BaseNodeFields):
+    """v0.15 Phase 1: ``actor`` kind. A class of people in the value
+    economy (PHILOSOPHY P5, IDENTITY.md ``Actor as class``)."""
+
+    kind: Literal["actor"] = "actor"
+    motivation: str = ""
+    pain: str = ""
+    side: Literal["operator", "user"] | None = None
+
+
+class ActorRefNode(BaseNodeFields):
+    """v0.15 Phase 1: ``actor_ref`` kind. References an actor master that
+    lives on the Actors canvas. ``gives`` / ``receives`` capture the
+    per-actor-per-service value flow (PHILOSOPHY P6 weakened form)."""
+
+    kind: Literal["actor_ref"] = "actor_ref"
+    ref_actor_id: str | None = None
+    gives: str = ""
+    receives: str = ""
+
+    @model_validator(mode="after")
+    def _ref_actor_id_required(self) -> ActorRefNode:
+        if not self.ref_actor_id:
+            raise ValueError(
+                f"node {self.id!r} of kind 'actor_ref' requires ref_actor_id"
+            )
+        return self
+
+
+class ServiceNode(BaseNodeFields):
+    """v0.15 Phase 1: ``service`` kind. The value-creating hub
+    (PHILOSOPHY P5). Top-level (parent_id None) and sub-service share
+    the same shape — the Inspector surfaces different fields per role."""
+
+    kind: Literal["service"] = "service"
+    target_side: Literal["operator", "user", "both"] | None = None
+    what: str = ""
+    value_created: str = ""
+    scope: str = ""
+    trigger: str = ""
+    how: str = ""
+    outcome: str = ""
+    do: str = ""
+    dont: str = ""
+
+
+class CategoryNode(BaseNodeFields):
+    """v0.15 Phase 1: ``category`` kind. Thematic grouping of services on
+    the Services canvas; a pure container with no value creation of its
+    own. ``theme`` is the one-line statement of the common thread."""
+
+    kind: Literal["category"] = "category"
+    theme: str = ""
+
+
+class MissionRefNode(BaseNodeFields):
+    """v0.15 Phase 1: ``mission_ref`` kind. References a Foundation
+    Mission master; lets a service declare which Mission it answers to."""
+
+    kind: Literal["mission_ref"] = "mission_ref"
+    ref_mission_id: str | None = None
+
+    @model_validator(mode="after")
+    def _ref_mission_id_required(self) -> MissionRefNode:
+        if not self.ref_mission_id:
+            raise ValueError(
+                f"node {self.id!r} of kind 'mission_ref' requires ref_mission_id"
+            )
+        return self
+
+
+class ValueRefNode(BaseNodeFields):
+    """v0.15 Phase 1: ``value_ref`` kind. References a Foundation
+    CoreValue master; lets a service declare which Core Value it
+    answers to."""
+
+    kind: Literal["value_ref"] = "value_ref"
+    ref_value_id: str | None = None
+
+    @model_validator(mode="after")
+    def _ref_value_id_required(self) -> ValueRefNode:
+        if not self.ref_value_id:
+            raise ValueError(
+                f"node {self.id!r} of kind 'value_ref' requires ref_value_id"
+            )
+        return self
+
+
+class IdentityRefNode(BaseNodeFields):
+    """v0.15 Phase 1: ``identity_ref`` kind. References a Foundation
+    Identity master; lets a service declare which Identity aspect it
+    expresses."""
+
+    kind: Literal["identity_ref"] = "identity_ref"
+    ref_identity_id: str | None = None
+
+    @model_validator(mode="after")
+    def _ref_identity_id_required(self) -> IdentityRefNode:
+        if not self.ref_identity_id:
+            raise ValueError(
+                f"node {self.id!r} of kind 'identity_ref' requires ref_identity_id"
+            )
+        return self
+
+
 class SketchEdge(BaseModel):
     """A freeform edge between two nodes."""
 

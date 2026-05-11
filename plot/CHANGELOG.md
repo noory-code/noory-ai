@@ -4,6 +4,40 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.16] — 2026-05-12
+
+v0.15 structural reset Phase 1.1 — server-side per-class Pydantic
+models for 7 of the 11 non-Foundation node kinds (D-2026-05-12-B).
+Additive only; god `SketchNode` is untouched and remains the type
+backing `CanvasDoc.nodes` until v0.14.17 promotes the union.
+
+### Added
+
+- `plot_mcp/models.py` — seven per-kind Pydantic classes extending
+  `BaseNodeFields`:
+  - `ActorNode` (motivation / pain / side)
+  - `ActorRefNode` (ref_actor_id required + gives / receives)
+  - `ServiceNode` (target_side + 6 service-typed fields + do / dont)
+  - `CategoryNode` (theme)
+  - `MissionRefNode` (ref_mission_id required)
+  - `ValueRefNode` (ref_value_id required)
+  - `IdentityRefNode` (ref_identity_id required)
+- Each ref class carries its own `@model_validator` mirroring the
+  dispatch `_ref_kind_requires_ref_id` on god `SketchNode`.
+- `plot/tests/test_node_models.py` — 15 tests covering per-class
+  round-trip (`Cls.model_validate(Cls(...).model_dump()) == original`),
+  ref-id required invariants, and default-field wire parity with the
+  god `SketchNode` defaults.
+
+### Why
+
+Per the v0.15 plan (B → A order, no-shim policy), Phase 1 ships
+the server SSOT first so viewer entity classes in Phase 2 can mirror
+a fully-disciplined Pydantic discriminated union. v0.14.16 is the
+additive prep; v0.14.17 promotes `SketchNode` to a 15-way
+`Annotated[..., Field(discriminator="kind")]` and retires the god
+class.
+
 ## [0.14.15] — 2026-05-12
 
 v0.15 structural reset Phase 0 — pre-existing lint / type-check
