@@ -4,6 +4,90 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.19] — 2026-05-12
+
+v0.15 structural reset Phase 2.0 — viewer-side scaffolding for the
+domain entity layer + per-kind Inspector framework. Pure additive +
+one mechanical refactor (extract `DetailsSection` so the new
+`BaseInspector` shell and the legacy `SketchInspector` share one
+implementation). No user-visible behaviour change. (D-2026-05-12-B)
+
+### Added — `viewer/src/domain/`
+
+- `DomainParseError.ts` — custom error subclass thrown by every
+  per-kind `fromJson` parser; carries the offending raw input on
+  the error so callers can surface it without re-deriving.
+- `BaseFields.ts` — `BaseFieldsJson` (wire shape) + `BaseFields`
+  (in-memory shape with defaults filled) + `parseBaseFields(raw)`
+  validator that throws `DomainParseError` on any invariant
+  violation. Mirrors `plot_mcp/models.py::BaseNodeFields` 1:1.
+- `parseEntity.ts` — discriminator dispatch on `raw.kind`. Each
+  per-kind class registers its parser via `registerKindParser`
+  during module load; `parseEntity` looks up at runtime. Throws
+  `DomainParseError` for missing / unknown kinds.
+- `index.ts` — barrel re-export.
+
+### Added — `viewer/src/canvases/inspectors/`
+
+- `types.ts` — `KindInspectorProps` (the prop slice every per-kind
+  inspector consumes; kind-specific extras live on per-kind prop
+  interfaces inside `inspectors/{kind}/index.tsx`).
+- `BaseInspector.tsx` — chrome SSOT for every per-kind inspector.
+  Wraps the per-kind body as `children` and renders the shared
+  header (kind tag, delete, width toggle, close), MD-warnings
+  banner, label input, long-form details section, and actor-root
+  toggle. Width preference (narrow / wide) persists across reloads
+  via the same localStorage key the legacy inspector uses.
+- `DetailsSection.tsx` — extracted from `SketchInspector.tsx`
+  (was a local function). Now a standalone shared chrome piece
+  consumed by both the legacy inspector and `BaseInspector`.
+- `registry.ts` — `KIND_INSPECTORS: Partial<Record<NodeKind,
+  KindInspectorComponent>>` (intentionally `Partial` during the
+  migration so a kind without a registered inspector returns
+  `undefined` and the caller can fall back). Phase 2.1+ populates
+  one entry per commit.
+- `KindInspector.tsx` — resolver. Looks up the registered
+  per-kind inspector for the current node and renders it; returns
+  `null` when the kind isn't migrated yet so the legacy inspector
+  stays in charge.
+
+### Added — tests
+
+- `viewer/tests/domain/base-fields.test.ts` — 13 tests covering
+  `parseBaseFields` (defaults / overrides / id-required /
+  type-required / shape-validation / `DomainParseError.raw`
+  attachment) and `parseEntity` (empty registry / missing kind /
+  non-string kind / unknown kind / dispatch wiring with a
+  test-only registered parser).
+
+### Changed
+
+- `viewer/src/canvases/SketchInspector.tsx` — removed local
+  `DetailsSection` function (71 LOC) and the unused
+  `createFolder` / `MDFileEditor` / `folderSlug` imports it
+  needed; now imports `DetailsSection` from
+  `./inspectors/DetailsSection`. SketchInspector LOC drops
+  1491 → 1413 (Gate 2 ✓ — file shrinks, no new responsibilities).
+
+### Why
+
+Phase 2.0 puts the rails in place so each Phase 2.1+ commit can
+land one kind at a time (vertical slice — entity class +
+per-kind inspector + types.ts cleanup) without inventing new
+infrastructure on every ship. The `Partial<Record<...>>`
+registry typing lets the legacy `SketchInspector` keep handling
+unmigrated kinds while migrated ones flow through `KindInspector`,
+so the user sees no UI change at any commit boundary.
+
+### Verification
+
+- `npx tsc --noEmit` — clean.
+- `npx vitest run` — 27 / 27 passed (14 prior + 13 new).
+- Existing `i18n-keys-parity.test.ts` and
+  `styles-cursor-baseline.test.tsx` static guards still pass.
+
+Plugin patch bump 0.14.18 → 0.14.19 per the Plot plugin rule.
+
 ## [0.14.18] — 2026-05-12
 
 v0.15 structural reset Phase 1.3 — extend `schema_export` to all 15
