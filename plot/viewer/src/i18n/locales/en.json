@@ -189,6 +189,11 @@
     "contentsSubtitle": "artifacts, outputs, assets"
   },
   "stencil": {
+    "subActor": "Sub-Actor",
+    "dragOntoCanvas": "Drag {{name}} onto the canvas",
+    "dropHintIntoCategory": "Drop inside a Category container",
+    "dropHintIntoService": "Drop inside a Service container",
+    "dropHintIntoActor": "Drop inside an Actor container",
     "section": {
       "mission": "Mission",
       "coreValues": "Core values",

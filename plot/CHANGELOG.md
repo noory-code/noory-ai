@@ -4,6 +4,68 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.11] — 2026-05-12
+
+### Added — i18n: Stencil draggable preset labels
+
+Final stencil-side i18n step. Migrates the labels that appear
+inside each draggable preset card in `SketchStencil` (visible in
+every per-canvas stencil), plus the tooltip / drop-hint text on
+the same cards.
+
+**New `stencil.*` keys:**
+
+- `subActor` (Sub-Actor / 서브 액터)
+- `dragOntoCanvas` (interpolated `{{name}}`)
+- `dropHintIntoCategory` / `dropHintIntoService` /
+  `dropHintIntoActor` — replace the three hardcoded English
+  drop-hints.
+
+### Changed
+
+- `plot/viewer/src/canvases/SketchStencil.tsx`:
+  - `StencilPreset` interface gains optional `labelI18nKey` and
+    `dropHintI18nKey` fields.
+  - Sub-Actor preset declares `labelI18nKey: "stencil.subActor"`
+    (its kind is "actor" so the default `kind.${kind}` fallback
+    would conflict with `TOP_LEVEL_ACTOR`).
+  - SERVICE_INSIDE_CATEGORY / metric / step / sub-actor declare
+    their `dropHintI18nKey`.
+  - `StencilItem` renders with `useTranslation()`; resolves the
+    label via (preset.labelI18nKey ?? `kind.${preset.kind}` ??
+    preset.labelHint). Resolves the drop-hint title similarly.
+    The drag-onto-canvas fallback tooltip uses the interpolated
+    `stencil.dragOntoCanvas` key.
+  - `onDragStart` data-transfer payload strips the new i18n key
+    fields (alongside `id` / `labelHint` / `dropHint`) before
+    serialising the preset.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` → 14/14 (parity active).
+- Browser smoke (Playwright KO on Services): stencil reads
+  최상위 / 카테고리 / 서비스 + "카테고리 안에 놓으세요" drop
+  hint. Confirmed via direct screenshot.
+- Pre-commit gate self-trip → PASS.
+
+### Out of scope
+
+The *initial label of the dropped node* (`preset.label`) stays
+language-pinned (English by default). Rationale: as soon as the
+drop lands, that string is user data — the user will edit it.
+Localising the drop time would create asymmetric data (KO user's
+node "미션", EN user's node "Mission") which is wrong: it's the
+same project, viewed in different locales. The stencil-side
+label (visible only while dragging) follows locale; the dropped
+node's label is data and stays as-is.
+
+### Queued — separate diagnosis
+
+- "❀ ❀ ❀" Inspector MD preview font fallback investigation.
+- "1 validation error for CanvasDoc Val…" toast briefly during
+  Inspector load — verify whether it persists.
+
 ## [0.14.10] — 2026-05-12
 
 ### Added — i18n: composition lists + Long-form details + Actor placeholder (Phase C)

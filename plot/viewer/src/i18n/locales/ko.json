@@ -189,6 +189,11 @@
     "contentsSubtitle": "아티팩트 · 결과물 · 자산"
   },
   "stencil": {
+    "subActor": "서브 액터",
+    "dragOntoCanvas": "{{name}}을(를) 캔버스로 끌어 놓으세요",
+    "dropHintIntoCategory": "카테고리 안에 놓으세요",
+    "dropHintIntoService": "서비스 안에 놓으세요",
+    "dropHintIntoActor": "액터 안에 놓으세요",
     "section": {
       "mission": "미션",
       "coreValues": "코어밸류",

@@ -8,6 +8,14 @@ export interface StencilPreset extends NodePreset {
   labelHint: string;
   /** Shown to the user as the reason why a drop was rejected (if non-null). */
   dropHint?: string;
+  /** v0.14.11: i18n key for the stencil sidebar label. Falls back to
+   *  ``labelHint`` when absent. The drop-time node label
+   *  (``label``) stays language-pinned because it becomes user data
+   *  the instant the drop lands. */
+  labelI18nKey?: string;
+  /** v0.14.11: i18n key for the ``dropHint`` tooltip line. Falls back
+   *  to ``dropHint`` when absent. */
+  dropHintI18nKey?: string;
 }
 
 /**
@@ -49,6 +57,7 @@ const SERVICE_INSIDE_CATEGORY: StencilPreset = {
   label: "Service",
   kind: "service",
   dropHint: "Drop inside a Category container",
+  dropHintI18nKey: "stencil.dropHintIntoCategory",
 };
 
 // Core-canvas presets. The Project anchor at the centre is auto-seeded,
@@ -173,6 +182,7 @@ const SERVICE_COMPOSITION: StencilPreset[] = [
     label: "Metric",
     kind: "metric",
     dropHint: "Drop inside a Service container",
+    dropHintI18nKey: "stencil.dropHintIntoService",
   },
   {
     id: "step",
@@ -185,6 +195,7 @@ const SERVICE_COMPOSITION: StencilPreset[] = [
     label: "Step",
     kind: "step",
     dropHint: "Drop inside a Service container",
+    dropHintI18nKey: "stencil.dropHintIntoService",
   },
 ];
 
@@ -196,6 +207,7 @@ const ACTOR_INTERNAL: StencilPreset[] = [
   {
     id: "sub-actor",
     labelHint: "Sub-Actor",
+    labelI18nKey: "stencil.subActor",
     shape: "circle",
     color: "#fecaca",
     width: 100,
@@ -204,6 +216,7 @@ const ACTOR_INTERNAL: StencilPreset[] = [
     label: "Sub-Actor",
     kind: "actor",
     dropHint: "Drop inside an Actor container",
+    dropHintI18nKey: "stencil.dropHintIntoActor",
   },
 ];
 
@@ -271,13 +284,31 @@ export function resolveDropTarget(
 }
 
 function StencilItem({ preset }: { preset: StencilPreset }) {
+  const { t } = useTranslation();
   const Icon = getIcon(preset.icon);
+  // v0.14.11: prefer the preset's explicit i18n key; fall back to
+  // ``kind.${kind}`` (covers Mission / Core value / Identity / etc.);
+  // final fallback is the English ``labelHint`` for any kind without
+  // a kind.* entry (e.g. dynamic refs that use the master's label
+  // directly).
+  const labelKey = preset.labelI18nKey ?? (preset.kind ? `kind.${preset.kind}` : "");
+  const label = labelKey ? t(labelKey, { defaultValue: preset.labelHint }) : preset.labelHint;
+  const dropHintText = preset.dropHintI18nKey
+    ? t(preset.dropHintI18nKey)
+    : preset.dropHint;
   return (
     <li>
       <div
         draggable
         onDragStart={(e) => {
-          const { id: _id, labelHint: _lh, dropHint: _dh, ...inner } = preset;
+          const {
+            id: _id,
+            labelHint: _lh,
+            dropHint: _dh,
+            labelI18nKey: _lk,
+            dropHintI18nKey: _dk,
+            ...inner
+          } = preset;
           e.dataTransfer.setData(
             "application/plot-preset",
             JSON.stringify(inner),
@@ -285,7 +316,7 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
           e.dataTransfer.effectAllowed = "copy";
         }}
         className="flex cursor-grab items-center gap-2 rounded border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 shadow-sm hover:bg-slate-50 active:cursor-grabbing"
-        title={preset.dropHint ?? `Drag ${preset.labelHint} onto the canvas`}
+        title={dropHintText ?? t("stencil.dragOntoCanvas", { name: label })}
       >
         <span
           className="flex h-6 w-6 shrink-0 items-center justify-center"
@@ -309,7 +340,7 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
         >
           {Icon && <Icon size={12} className="text-slate-700" aria-hidden />}
         </span>
-        <span className="truncate">{preset.labelHint}</span>
+        <span className="truncate">{label}</span>
       </div>
     </li>
   );
