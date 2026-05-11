@@ -4,6 +4,52 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.12] — 2026-05-12
+
+### Changed — PRODUCT_SPEC.md revision 2 (D-2026-05-12-A)
+
+User delivered a substantially revised product spec. The new
+material:
+
+- **Language split:** Plot is a "mindmap" to users, "graph"
+  internally. Cycles + self-loops are part of the model.
+- **`isomorphic-git`** added to the tech stack.
+- **Source-data version control** is now an explicit subsystem
+  (§6 of PRODUCT_SPEC). Canvas JSON / user stories / tasks are
+  git-versioned independent of any source-code repo. Snapshot ≡
+  commit; agent proposal ≡ branch; user approve ≡ merge.
+- **Foundation = one canvas** (Mission + Core value + Identity).
+  Resolves the v0.14.7 open question. Audience distinction is
+  visual, not structural.
+- **Service-Detail starts empty,** fills bottom-up through
+  agent-interview + user-story loop. Living document.
+- **Service interview produces two artefacts** — Service-Detail
+  content + user-story draft, shared provenance.
+- **Feedback loop is git-branch shaped** per the new §6.
+- **GitHub integration** added to future items.
+- **MVP scope section removed** — rev-1 framing dropped.
+
+### Queued — open questions
+
+PRODUCT_SPEC §15 reorganised. Closed: Mission/Identity canvas
+split. Added:
+
+- MD-as-export migration (today's co-equal MD becomes derived
+  from JSON). Deferred per user direction *"이 부분은 나중에
+  다시 다듬어 봅시다."*
+- isomorphic-git integration timing.
+- i18n string lifecycle skill (delete unused keys) — user
+  flagged *"사용되지 않는 것들 삭제하고 하는 거 관리되어야해요."*
+- Plot repository split (move out of noory-ai monorepo) — user
+  flagged for analysis.
+
+### Not changed (deliberate)
+
+- No code changes — spec-only update.
+- SPEC.md / CONCEPTS.md / ROADMAP.md unchanged. Each will get
+  its own update when the queued items (MD-as-export, git,
+  Foundation merger if not already that way) land.
+
 ## [0.14.11] — 2026-05-12
 
 ### Added — i18n: Stencil draggable preset labels

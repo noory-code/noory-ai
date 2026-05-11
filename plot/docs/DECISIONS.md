@@ -1204,3 +1204,60 @@ in the same browser-verification round:
 - **Spec impact:** SPEC.md unchanged (PRODUCT_SPEC is upstream).
   VISION.md gains a Cross-references entry. plot/CLAUDE.md reading
   order updated to include PRODUCT_SPEC as item 2.
+
+---
+
+### D-2026-05-12-A — PRODUCT_SPEC.md revision 2: mindmap/graph split, isomorphic-git, Foundation single canvas, MD-as-export queued
+
+- **What:** User delivered a substantially revised product spec
+  on 2026-05-12 (full text recorded in the conversation). The
+  spec changes flowing into `plot/docs/PRODUCT_SPEC.md` rev 2:
+  1. **§1 — Language split.** Plot is a "mindmap" to users,
+     "graph" internally. Internal model supports cycles +
+     self-loops; trees alone don't fit.
+  2. **§4 — `isomorphic-git` added** to the tech stack.
+  3. **§5 — "Cycles allowed"** explicit. Self-loops legal.
+  4. **§6 — Source-data version control (new section).**
+     Plot's *content* (canvas JSON, user stories, tasks) is git-
+     versioned, isolated from any source-code git the user
+     happens to be in. Snapshot ≡ commit. Agent proposal ≡
+     branch. User approve ≡ merge. User reject ≡ branch delete.
+     GitHub remote integration is a future option.
+  5. **§8 — Mission / Core-value / Identity → one canvas.** The
+     v0.14.7 open question (#2) "split or keep one canvas?" is
+     resolved by the user: keep one. Audience distinction
+     (human-facing for Mission + Core value; agent-facing for
+     Identity) is visual, not structural.
+  6. **§8 — Service-Detail starts empty.** Fills bottom-up
+     through the agent-interview + user-story loop. Living
+     document framing.
+  7. **§9 — Service interview produces two artefacts.** Service-
+     Detail content AND user-story draft, sharing provenance.
+  8. **§10 — Snapshot ≡ commit SHA**, formalising the link
+     between the work-item layer and §6.
+  9. **§11 — Feedback loop is git-branch shaped** per §6.
+  10. **§13 — GitHub integration** added to future items.
+  11. **MVP section removed.** The rev-1 "MVP scope" framing is
+      gone; the user has moved past pre-launch scope discussion.
+  12. **§15 Open questions reorganised.**
+      - Closed: Mission/Identity canvas split (resolved in §8).
+      - Added: MD-as-export migration (Phase 2; the v0.13 co-
+        equal MD becomes a derived export). User direction:
+        *"이 부분은 나중에 다시 다듬어 봅시다."* Deferred.
+      - Added: isomorphic-git integration timing.
+      - Added: i18n string lifecycle skill (delete unused keys).
+      - Added: Plot repository split (move out of noory-ai
+        monorepo).
+- **Why:** The product framing matures. Cycles + git + bottom-up
+  service-detail + branch-shaped agent proposals are concrete
+  enough now to commit. Open items either have a clear
+  deferral marker or a clear future plan.
+- **Approval:** Pending — user, 2026-05-12 (delivered spec
+  verbatim, no further confirmation requested).
+- **Spec impact:** PRODUCT_SPEC.md fully rewritten (rev 2). No
+  immediate code change. The MD-as-export shift (§15 #2) and the
+  git integration (§15 #3) are large enough to need their own
+  D entries when work begins. SPEC.md / CONCEPTS.md / ROADMAP.md
+  unchanged — each will get its own update when the queued items
+  land.
+- **Files:** `plot/docs/PRODUCT_SPEC.md` (rev 2), this entry.

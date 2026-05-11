@@ -1,12 +1,13 @@
 # Plot — Product Spec
 
-> **Source:** user-provided product brief, 2026-05-11.
+> **Source:** user-provided product brief, last updated
+> 2026-05-12 (revision 2).
 >
 > **Position in the doc set:** this file captures **product-level
-> decisions** (who Plot is for, what platforms, what business model,
-> what's in MVP). It sits **above** [`VISION.md`](./VISION.md) — VISION
-> is the essence; this file is how the essence becomes a shippable
-> product.
+> decisions** (who Plot is for, what platforms, what business
+> model, what's in scope). It sits **above** [`VISION.md`](./VISION.md)
+> — VISION is the essence; this file is how the essence becomes a
+> shippable product.
 >
 > **Read order on session start:**
 > 1. [`VISION.md`](./VISION.md) — the essence.
@@ -26,6 +27,17 @@ A mindmap-based planning tool. Two-sided goal:
 Plot is the surface where the two co-draw — the human anchors
 direction, the agent fills in supported moves.
 
+### Language split — mindmap vs graph
+
+- **To the user, Plot is a "mindmap."** Friendly, approachable
+  vocabulary.
+- **Internally, the structure is a "graph."** Supports cycles,
+  self-loops, and arbitrary cross-references — relationships a
+  strict tree cannot express.
+
+Use *mindmap* in UI text, marketing, onboarding. Use *graph* in
+code identifiers, data model, internal docs.
+
 ## 2. Platforms
 
 | Phase | Host | MCP |
@@ -34,22 +46,22 @@ direction, the agent fills in supported moves.
 | **Next** | macOS desktop app | MCP server embedded in the app process. |
 
 The desktop app is downstream; no new viewer / data model work is
-required to enable it. The current React Flow viewer ships as a
-webview; the Python MCP server ships as an embedded process.
+required to enable it.
 
 ## 3. Business model
 
 - **Individuals:** free.
 - **Enterprise:** paid. Surface = collaboration + permissions +
-  security. Detailed design deferred (see §10 Future).
+  security. Detailed design deferred (see §13 Future).
 - **Growth model:** PLG — individual adoption → team / org spread.
 
 ## 4. Tech stack
 
 | Layer | Tech | Owner doc |
 |---|---|---|
-| Canvas | React Flow | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
+| Canvas + graph engine | React Flow | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Source of truth | JSON | [`CONCEPTS.md`](./CONCEPTS.md) |
+| Source-data version control | **isomorphic-git** | §5 below |
 | Free-text rendering | Markdown | [`SPEC.md`](./SPEC.md) §Foundation |
 | Diagram rendering | Mermaid | (queued for Service-Detail visualisation) |
 | Agent connection | MCP | [`DOMAIN.md`](./DOMAIN.md) AICollaboration |
@@ -60,18 +72,55 @@ webview; the Python MCP server ships as an embedded process.
   JSON files under `.plot/{project}/`.
 - **Free-text fields → Markdown.** Realised in v0.13 for Foundation
   (`foundation/{kind}-{slug}.md`).
+
+  > **Note (2026-05-12, deferred refactor):** The user has flagged
+  > that the long-term direction is "JSON is SSOT, MD is generated
+  > from JSON" — i.e. MD becomes a *derived export*, not a
+  > co-equal storage layer. Today's v0.13 model is a stepping
+  > stone; the move from co-equal MD to derived MD is queued.
+  > Tracked in §15 Open questions.
 - **Structured fields → arrays / objects.** Anything that needs
   validation or referential integrity stays in JSON.
 - **Every node carries a unique id.** Referential tracking is a
-  precondition for §6 Symbols.
-- **Every node carries an `owner` field.** Currently unused; reserved
-  for the multi-user expansion in §10. (See [`CONCEPTS.md`](./CONCEPTS.md)
-  for the existing kind schemas — `owner` must be added before
-  multi-user lands.)
-- **Export targets:** Markdown, Mermaid, MCP. (MCP "export" = exposing
-  the sketch as agent context, not file output.)
+  precondition for §7 Symbols.
+- **Every node carries an `owner` field.** Currently unused;
+  reserved for the multi-user expansion in §13.
+- **Cycles allowed.** Plot's data model is a graph, not a tree.
+  Self-loops (`Service A → Service A`) and cycles
+  (`A → B → A`) are legal.
+- **Export targets:** Markdown, Mermaid, MCP. (MCP "export" =
+  exposing the sketch as agent context, not file output.)
 
-## 6. Symbol system
+## 6. Source-data version control (git)
+
+Plot's *content* (canvas JSON, user stories, tasks) is version-
+controlled with git, **independent of any application source-
+code git repo the user happens to be inside**. The user does not
+need to know git exists; the trail accumulates internally.
+
+| User action | Internal git event |
+|---|---|
+| Edit a canvas | Auto-commit |
+| Snapshot a workflow state | Same commit (snapshot ≡ commit) |
+| Agent proposes a canvas change | Create a branch |
+| User approves agent's proposal | Merge the branch |
+| User rejects agent's proposal | Delete the branch |
+| (future) Sync with remote | Optional GitHub link |
+
+Implementation: `isomorphic-git` so the version-control loop runs
+inside the viewer / MCP server without requiring system `git`.
+
+### Why this matters for the agent loop
+
+- The snapshot model in §9 is literally a commit reference. When
+  a long-running task starts, the agent's context is pinned to
+  the commit SHA at task start; subsequent canvas edits do not
+  invalidate the agent's working state.
+- The PR-style feedback loop in §10 is git-branch shaped: agents
+  cannot mutate the trunk directly; their proposals are branches
+  pending human merge.
+
+## 7. Symbol system
 
 The Figma-symbol concept applied to a graph editor: a node defined
 once is referenced everywhere; editing the master updates every
@@ -89,32 +138,33 @@ reference at render time.
 - Service.
 
 **Service-to-service edges = User journey.** A path
-`Service A → Service B → Service C` IS the user journey. Rendered on
-the main Services canvas as connection lines. (Today's `services`
-canvas edge layer already supports this; the *interpretation* as a
-journey is the product framing — see [`SPEC.md`](./SPEC.md) §Edges.)
+`Service A → Service B → Service C` IS the user journey. Rendered
+on the main Services canvas as connection lines. Self-loops
+(`Service A → Service A`) ARE expressible — useful when a
+service's output feeds back to its own input (feedback loop in
+the user journey itself).
 
-## 7. Canvas layers (spatial)
+## 8. Canvas layers (spatial)
 
-Four canvases. Each has a defined audience.
+Three canvases. The audience (human / agent) is encoded *inside*
+the canvases rather than as canvas boundaries.
 
-| # | Canvas | Audience | Defines |
-|---|---|---|---|
-| 1 | **Mission / Core value** | Human | Why the project exists. |
-| 2 | **Identity** | Agent | Tone and manner the agent must follow. |
-| 3 | **Actor** | Both | Stakeholder map: actors, their relations, pain points. |
-| 4 | **Service** | Both | Categorised services. Main canvas = service overview + user-journey edges. Double-click a service → modal canvas with: related actors (symbol references), actor relations / actions / constraints, diagram visualisation, agent-driven definition. |
+| # | Canvas | Defines |
+|---|---|---|
+| 1 | **Mission / Core value / Identity** (one canvas) | All three on a single Foundation canvas. Mission = *why we exist* (human-facing). Core value = *what drives us* (human-facing). Identity = *tone & manner* (agent-facing). The visual layout connects Mission → Core value → Identity as a flow. |
+| 2 | **Actor** | Stakeholder map: actors, their relations, pain points. |
+| 3 | **Service** | Categorised services. Main canvas = service overview + user-journey edges. Double-click a service → modal canvas with: related actors (symbol references), actor relations / actions / constraints, diagram visualisation, agent-driven definition. **Service-detail starts empty.** The agent-interview + user-story flow fills it bottom-up; it is a *living* document, not a designed-up-front spec. |
 
-The current viewer collapses (1) and (2) into a single Foundation
-canvas with three kinds (`mission`, `core_value`, `identity`). The
-product spec's distinction (human-facing vs agent-facing) is a
-*layer concept inside Foundation*, not a separate canvas yet. Split
-into two canvases is a separate decision before it can land.
+**Resolution of the earlier "split Mission/Core-value vs Identity"
+open question (v0.14.7 §16):** the user decided 2026-05-12 to
+keep them on a single canvas — the audience distinction is real
+but it does not need a canvas boundary. The visual flow inside
+the Foundation canvas carries the meaning.
 
-## 8. Core UX pattern — canvas via conversation
+## 9. Core UX pattern — canvas via conversation
 
-Every canvas's first draft comes from an **agent interview**. This
-is Plot's onboarding flow AND its primary interaction loop.
+Every canvas's first draft comes from an **agent interview**.
+This is Plot's onboarding flow AND its primary interaction loop.
 
 **Flow:**
 
@@ -126,74 +176,75 @@ empty canvas
   → human approves / edits
 ```
 
+**The Service interview produces two artefacts at once:**
+
+- **Service-Detail content** (design / intent) → goes onto the
+  canvas.
+- **User-story draft** → goes into the work-item layer (§10).
+
+The interview covers actors, actions, constraints AND the
+concrete user scenarios that motivate the service. The two
+artefacts share provenance from the same interview transcript.
+
 **Context flow between canvases:**
 
-- Mission interview → results referenced in Actor interview.
-- Actor interview → results referenced in Service interview.
+- Foundation interview (Mission / Core value / Identity) →
+  results referenced in the Actor interview.
+- Actor interview → results referenced in the Service interview.
 - Each prior canvas becomes the input context of the next.
 
 This is the operational form of the VISION cycle (Discovery →
 Retention → Execution). See [`VISION.md`](./VISION.md).
 
-## 9. Work-item layer (temporal)
+## 10. Work-item layer (temporal)
 
 Distinct from the canvases (which are spatial).
 
-- Service canvas → user stories → tasks (derived).
-- Each task carries **provenance metadata**: which actor relation it
-  came from, which service generated it.
-- **Snapshot model:** when work starts on a task, a canvas snapshot
-  is taken. The task is then immune to subsequent canvas edits — it
-  references a frozen view.
+- Service interview generates the user-story draft alongside the
+  service-detail content (§9).
+- User stories → tasks (derived).
+- Each task carries **provenance metadata**: which service +
+  which actor relation it came from.
+- **During execution, discoveries flow back as PRs.** When a
+  user-story task reveals new design constraints, the agent
+  proposes those as canvas-change branches against the
+  service-detail node.
+- **Snapshot model:** snapshot ≡ git commit (§6). When work
+  starts on a task, the agent's context pins to the commit SHA
+  at task start; subsequent canvas edits do not invalidate the
+  agent's working state.
 
-This layer does not exist in Plot today. It's a future addition;
-the data-structure work needed: a `snapshots/` folder per project
-+ a `tasks/` index + the provenance fields on each task.
-
-## 10. Feedback loop
+## 11. Feedback loop (PR-style on canvases)
 
 **Agents cannot mutate the source of truth directly.** Every
-proposed canvas change from an agent goes through a PR-style flow:
+proposed canvas change from an agent goes through a branch:
 
-- Agent proposes a change.
-- Human approves or rejects.
-- Only approved changes touch JSON.
-- Interview results follow the same PR flow.
+- Agent proposes → creates a git branch (§6).
+- Human approves → merge.
+- Human rejects → delete the branch.
+- Only merged branches touch the canvas's main view.
+- Interview results follow the same branch flow.
 
 Implementation today: not yet enforced. The MCP tool surface
-(`extend`, `reshape`) currently writes directly. The PR gate is a
-required addition before any "self-improving agent" pattern is
-safe.
+(`extend`, `reshape`) currently writes directly. The branch-
+based gate ships when §6 (isomorphic-git) lands.
 
-## 11. Agent integration
+## 12. Agent integration
 
 - Embedded MCP server (current: `plot/plot_mcp/`).
-- Snapshot-based context injection (per §9).
+- Snapshot-based (= commit-SHA-based) context injection per §10.
 - Default skill set provided alongside the MCP server.
 
-## 12. MVP scope
-
-What ships in the first commercially complete version:
-
-- Canvas (Foundation + Actor + Service + Service-Detail).
-- Agent interview per canvas.
-- JSON export (already exists — `.plot/{project}/`).
-- Agent context injection.
-
-MCP-as-protocol is **post-MVP** in the framing here, but Plot's
-current implementation already ships MCP. Read this constraint as
-"MCP is a value-add for adopters who use Claude Code; the MVP must
-work for users who never touch MCP."
-
-## 13. Future / out-of-scope-for-MVP
+## 13. Future / out-of-scope
 
 - Enterprise collaboration + permission management.
 - Security model.
 - Multi-user concurrent canvas editing.
 - Symbol-level permissions (org / team scoped).
+- **GitHub integration** — surface the internal git history (§6)
+  to an external GitHub remote when the user wants public /
+  collaborative version control.
 - Mermaid Service-Detail diagram rendering.
-- Snapshot work-item layer (§9).
-- PR-style feedback loop enforcement (§10).
 
 ## 14. Cross-references
 
@@ -209,42 +260,80 @@ work for users who never touch MCP."
 | Release sequence | [`ROADMAP.md`](./ROADMAP.md) |
 | Code shape and split plan | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Cursor visual contract | [`CURSOR.md`](./CURSOR.md) |
+| Korean translation glossary | [`I18N_KO_GLOSSARY.md`](./I18N_KO_GLOSSARY.md) |
 | Identity (older identity doc, v0.10 era) | [`IDENTITY.md`](./IDENTITY.md) |
 
-## 15. When this file changes
+## 15. Open questions captured for follow-up
+
+These items appear in the product spec but do not yet have
+implementation clarity. Logged here so they don't get lost.
+
+1. **`owner` field on every node** — required for multi-user.
+   Today's `SketchNode` has no `owner`. Add to
+   [`CONCEPTS.md`](./CONCEPTS.md) when the multi-user roadmap
+   firms up.
+2. **MD as derived export, not co-equal storage** — current v0.13
+   model has JSON + MD as parallel sources. The user's stated
+   long-term direction is MD generated *from* JSON. Migration
+   path:
+   - Phase 1 (today): JSON graph + per-node MD template (co-equal).
+   - Phase 2 (queued): JSON only as SoT; MD is regenerated from
+     JSON on demand. External-editor edits of MD become read-only
+     or push through a reverse-parser. Major SPEC + CONCEPTS
+     rewrite.
+   - Decision deferred per user direction 2026-05-12 *"이 부분은
+     나중에 다시 다듬어 봅시다."*
+3. **isomorphic-git integration timing** — §6 / §11 hinge on git
+   being live inside the viewer / MCP. Currently no git is
+   integrated. Land before any "self-improving agent" pattern.
+4. **Snapshot work-item layer** (§10) — net-new subsystem. Schema
+   for `tasks/`, `user_stories/`, provenance links to commit
+   SHAs.
+5. **Mermaid Service-Detail rendering** — Service-Detail canvas
+   needs a diagram-export view. Decision: in-modal toggle?
+   Separate panel?
+6. **i18n string lifecycle skill** — adding new translations is
+   handled (Glossary §3 workflow); **removing unused keys** is
+   not. User flagged 2026-05-12 *"사용되지 않는 것들 삭제하고
+   하는 거 관리되어야해요."* Need a tool / skill that scans
+   `viewer/src/` for `t("...")` calls and reports keys present in
+   `locales/*.json` that no source file references. Likely a
+   `plot/skills/plot-i18n-audit/` skill.
+7. **Plot repository split** — should `plot/` migrate out of the
+   `noory-ai` monorepo into its own repo? User flagged
+   2026-05-12 *"plot 이라는 프로젝트가 커지는데 리포지토리
+   분리를 해야하나… 아니면 그냥 둬야하나…"* Decision deferred;
+   trade-off analysis is in the assistant's session reply.
+
+## 16. When this file changes
 
 This file changes only when the user explicitly re-defines a
-product-level fact (platform target, business model, MVP scope,
-symbol / canvas inventory). Each such change is a
-`D-YYYY-MM-DD-X` entry in [`DECISIONS.md`](./DECISIONS.md). Drift in
-tactical files (SPEC, DECISIONS) does not modify this file; it
-modifies them to align with this file.
+product-level fact (platform target, business model, scope, canvas
+inventory, …). Each such change is a `D-YYYY-MM-DD-X` entry in
+[`DECISIONS.md`](./DECISIONS.md). Drift in tactical files (SPEC,
+DECISIONS) does not modify this file; it modifies them to align
+with this file.
 
-## 16. Open questions captured for follow-up
+## 17. Revision history
 
-These items appear in the product spec but do not have implementation
-clarity yet. Logged here so they don't get lost:
-
-1. **`owner` field on every node** — required for multi-user. Today's
-   `SketchNode` has no `owner`. When does this land? Likely before
-   collaboration enters scope, not before MVP. Add to
-   [`CONCEPTS.md`](./CONCEPTS.md) when the multi-user roadmap firms
-   up.
-2. **Mission/Core-value vs Identity canvas split** — product spec
-   treats them as separate canvases (human-facing vs agent-facing).
-   Today's Foundation is one canvas with three kinds. Decision: keep
-   as one canvas with section grouping in the stencil, OR split into
-   two canvases? Needs an explicit user call.
-3. **PR-style feedback loop enforcement** (§10) — currently MCP
-   tools write directly. Enforcing the PR loop changes the agent
-   contract. Where does the diff queue live? Per-project file? Where
-   does the approve / reject UI go? Plan needed.
-4. **Snapshot work-item layer** (§9) — net-new subsystem. Schema for
-   `tasks/`, `snapshots/`. Plan needed.
-5. **Mermaid Service-Detail rendering** — Service-Detail canvas
-   needs a diagram-export view. Decision: in-modal toggle? Separate
-   panel?
-6. **`canvas.tabs.foundation` Korean label** — currently "토대". The
-   product spec uses "미션/코어밸류 + 아이덴티티" as the audience
-   split. If Foundation stays one canvas, "토대" is acceptable; if
-   split, two new tab labels required.
+- **2026-05-11 (rev 1, v0.14.7, D-2026-05-11-E):** initial pin.
+- **2026-05-12 (rev 2, v0.14.12, D-2026-05-12-A):**
+  - Added §1 mindmap / graph language split.
+  - Added `isomorphic-git` to §4.
+  - Added §5 "cycles allowed" principle.
+  - **New §6** source-data version control.
+  - §7 Symbol system clarified self-loops in user journey.
+  - §8 collapsed "Mission/Core-value + Identity" into one
+    Foundation canvas (resolves v0.14.7 open question #2).
+  - §8 Service-Detail explicitly "starts empty, fills bottom-up."
+  - §9 Service interview produces TWO artefacts (service-detail +
+    user-story draft).
+  - §10 work-item layer now references commit-SHA snapshots from
+    §6.
+  - §11 feedback loop is git-branch shaped.
+  - §13 GitHub integration added.
+  - **MVP scope section removed** — was §12 in rev 1, dropped
+    deliberately. User has moved past "what's in MVP" framing.
+  - §15 Open questions: removed resolved item #2 (Mission/Identity
+    canvas split); added #2 (MD-as-export migration), #6 (i18n
+    string lifecycle skill), #7 (repo split).
