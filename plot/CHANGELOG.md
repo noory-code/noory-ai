@@ -4,6 +4,50 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.13] — 2026-05-12
+
+### Changed — NEXT_SESSION.md backlog pinned (session wrap)
+
+User flagged 2026-05-12 *"이거 다 할일로 지정해두고요"* —
+capture every queued item (small wins, meta decisions, mid-size
+plans) so the backlog persists into the next session.
+
+Backlog now spelled out across three layers (each layer is a
+mirror; pick any one as the source of truth when planning):
+
+- `plot/docs/NEXT_SESSION.md` — three sections (small wins / meta
+  decisions / mid-size). 10 items. User picks the next item
+  explicitly each session.
+- `~/.claude/projects/.../memory/project_plot_next_session.md`
+  — full prose with AI's prioritisation analysis +
+  repository-split 7-step plan + closed-this-session log.
+- TodoWrite (this assistant's session-scoped checklist) — same
+  10 items.
+
+### Backlog items recorded (cross-link)
+
+Small wins:
+1. i18n audit skill (`plot/skills/plot-i18n-audit/`)
+2. `owner` field on `SketchNode`
+3. Mermaid Service-Detail rendering UI location
+4. Self-loop visual verification (`Service A → Service A`)
+5. Foundation single-canvas flow visual check
+
+Meta decisions:
+6. Plot repository split (extract `plot/` from noory-ai
+   monorepo — AI recommends; user decision)
+
+Mid-size:
+7. isomorphic-git integration (PRODUCT_SPEC §6)
+8. MD-as-export migration (user-deferred)
+9. Snapshot work-item layer
+10. v0.15 Actors → v0.13 model (re-evaluate after #8)
+
+### Verification
+
+- Pre-commit gate self-trip → PASS (no code changes; docs +
+  plugin.json + CHANGELOG only).
+
 ## [0.14.12] — 2026-05-12
 
 ### Changed — PRODUCT_SPEC.md revision 2 (D-2026-05-12-A)

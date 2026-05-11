@@ -9,7 +9,43 @@
 
 ## Active queue
 
-*(none — see Completed below)*
+No keyword-triggered items right now. The backlog below is
+ordered by size; user picks the next item explicitly each
+session. (Full context lives in
+[`memory/project_plot_next_session.md`](../../.claude/projects/-Users-woogis-Workspace-repo-noory-ai/memory/project_plot_next_session.md)
+which the session-start hook surfaces.)
+
+### Backlog — small wins (< 1 session each)
+
+1. **i18n audit skill** (`plot/skills/plot-i18n-audit/`) — detect
+   unused / missing / orphan locale keys. User flag 2026-05-12.
+2. **`owner` field on `SketchNode`** — multi-user prerequisite
+   (PRODUCT_SPEC §15 #1).
+3. **Mermaid Service-Detail rendering** — UI location decision
+   (PRODUCT_SPEC §15 #5).
+4. **Self-loop visual verification** — `Service A → Service A`
+   renders correctly in React Flow (PRODUCT_SPEC §7).
+5. **Foundation single-canvas flow visual** — Mission → Core
+   value → Identity visual flow check (PRODUCT_SPEC §8).
+
+### Backlog — meta decisions (user input required)
+
+6. **Plot repository split** — move `plot/` out of the
+   `noory-ai` monorepo to its own repo. AI recommends split;
+   7-step plan in the memory file. User decision pending.
+
+### Backlog — mid-size (each = own plan, multi-commit)
+
+7. **isomorphic-git integration** (PRODUCT_SPEC §6) — viewer +
+   MCP gain canvas-versioning. Precondition for PR-style
+   feedback loop (§11) enforcement.
+8. **MD-as-export migration** (PRODUCT_SPEC §15 #2) —
+   **user-deferred** *"이 부분은 나중에 다시 다듬어 봅시다."*
+   Do not start without explicit user kick-off.
+9. **Snapshot work-item layer** (PRODUCT_SPEC §10) — tasks +
+   user-stories + commit-SHA provenance. Depends on (7).
+10. **v0.15 Actors → v0.13 model** — re-evaluate after (8) lands
+    since the data model shifts.
 
 ---
 
