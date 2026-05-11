@@ -571,15 +571,16 @@ interface CategoryFieldsProps {
 }
 
 function CategoryFields({ node, childCount, onPatchNode }: CategoryFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-slate-200 bg-slate-50/60 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
-        Category
+        {t("kind.category")}
       </div>
       <label className="block">
-        <span className="text-xs font-semibold text-slate-700">Theme</span>
+        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.theme")}</span>
         <span className="ml-1 text-[10px] text-slate-500">
-          — common thread tying these services together
+          — {t("inspector.fieldHint.theme")}
         </span>
         <textarea
           rows={2}
@@ -606,14 +607,19 @@ interface MissionFieldsProps {
 }
 
 function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
-        Mission
+        {t("kind.mission")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">What we do</span>
-        <span className="ml-1 text-[10px] text-slate-500">— current-tense daily activity</span>
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.whatWeDo")}
+        </span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — {t("inspector.fieldHint.whatWeDo")}
+        </span>
         <textarea
           rows={2}
           value={node.what_we_do ?? ""}
@@ -623,8 +629,8 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
         />
       </label>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">Why</span>
-        <span className="ml-1 text-[10px] text-slate-500">— reason for being</span>
+        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.why")}</span>
+        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.why")}</span>
         <textarea
           rows={2}
           value={node.why ?? ""}
@@ -634,8 +640,12 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
         />
       </label>
       <label className="block">
-        <span className="text-xs font-semibold text-slate-700">Direction</span>
-        <span className="ml-1 text-[10px] text-slate-500">— positioning (space, not time)</span>
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.direction")}
+        </span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — {t("inspector.fieldHint.direction")}
+        </span>
         <textarea
           rows={2}
           value={node.direction ?? ""}
@@ -665,16 +675,21 @@ interface ServiceFieldsProps {
 }
 
 function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-sky-200 bg-sky-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-sky-700">
-        Service
+        {t("kind.service")}
       </div>
       {/* v0.11.4 — target_side classifies the service by which side of the
           value exchange it exists for. Mirror of actor.side. */}
       <label className="mb-3 block">
-        <span className="text-xs font-semibold text-slate-700">Target side</span>
-        <span className="ml-1 text-[10px] text-slate-500">— 운영자측 / 사용자측 / 둘 다</span>
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.targetSide")}
+        </span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — {t("inspector.fieldHint.targetSide")}
+        </span>
         <select
           value={node.target_side ?? ""}
           onChange={(e) => {
@@ -686,50 +701,50 @@ function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
           }}
           className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-sky-600 focus:outline-none"
         >
-          <option value="">(미지정)</option>
-          <option value="operator">운영자측 (operator)</option>
-          <option value="user">사용자측 (user)</option>
-          <option value="both">둘 다 (both)</option>
+          <option value="">{t("inspector.unset")}</option>
+          <option value="operator">{t("inspector.operatorSideOption")}</option>
+          <option value="user">{t("inspector.userSideOption")}</option>
+          <option value="both">{t("inspector.bothSideOption")}</option>
         </select>
       </label>
       <ServiceTextarea
-        label="What"
-        hint="concise statement of what this service is"
+        label={t("inspector.field.what")}
+        hint={t("inspector.fieldHint.what")}
         value={node.what}
         onChange={(v) => onPatchNode({ what: v })}
         placeholder="이 서비스는…"
       />
       <ServiceTextarea
-        label="Value created"
-        hint="what value this service produces"
+        label={t("inspector.field.valueCreated")}
+        hint={t("inspector.fieldHint.valueCreated")}
         value={node.value_created}
         onChange={(v) => onPatchNode({ value_created: v })}
         placeholder="만들어내는 가치"
       />
       <ServiceTextarea
-        label="Scope"
-        hint="boundary — what's in / out"
+        label={t("inspector.field.scope")}
+        hint={t("inspector.fieldHint.scope")}
         value={node.scope}
         onChange={(v) => onPatchNode({ scope: v })}
         placeholder="포함/제외 범위"
       />
       <ServiceTextarea
-        label="Trigger"
-        hint="what kicks it off"
+        label={t("inspector.field.trigger")}
+        hint={t("inspector.fieldHint.trigger")}
         value={node.trigger}
         onChange={(v) => onPatchNode({ trigger: v })}
         placeholder="언제/무엇으로 시작?"
       />
       <ServiceTextarea
-        label="How"
-        hint="how it works"
+        label={t("inspector.field.how")}
+        hint={t("inspector.fieldHint.how")}
         value={node.how}
         onChange={(v) => onPatchNode({ how: v })}
         placeholder="어떻게 동작?"
       />
       <ServiceTextarea
-        label="Outcome"
-        hint="observable end state"
+        label={t("inspector.field.outcome")}
+        hint={t("inspector.fieldHint.outcome")}
         value={node.outcome}
         onChange={(v) => onPatchNode({ outcome: v })}
         placeholder="끝나면 어떤 상태?"
@@ -788,13 +803,14 @@ interface RuleFieldsProps {
 }
 
 function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsProps) {
+  const { t } = useTranslation();
   const permissions = node.actor_permissions ?? {};
   const usedIds = new Set(Object.keys(permissions));
   const candidates = availableActors.filter((a) => !usedIds.has(a.id));
   return (
     <div className="text-xs">
       <label className="mb-2 block">
-        <span className="font-semibold text-slate-700">Policy</span>
+        <span className="font-semibold text-slate-700">{t("inspector.field.policy")}</span>
         <textarea
           rows={2}
           value={node.policy ?? ""}
@@ -804,7 +820,7 @@ function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsProps) {
         />
       </label>
       <label className="mb-2 block">
-        <span className="font-semibold text-slate-700">Enforcement</span>
+        <span className="font-semibold text-slate-700">{t("inspector.field.enforcement")}</span>
         <textarea
           rows={2}
           value={node.enforcement ?? ""}
@@ -814,13 +830,19 @@ function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsProps) {
         />
       </label>
       <div className="mt-2">
-        <div className="mb-1 font-semibold text-slate-700">Actor permissions</div>
-        <div className="mb-1 text-[10px] italic text-slate-400">
-          C/R/U/D shorthand recommended (e.g. <code>RUD</code>)
+        <div className="mb-1 font-semibold text-slate-700">
+          {t("inspector.field.actorPermissions")}
         </div>
+        <div
+          className="mb-1 text-[10px] italic text-slate-400"
+          dangerouslySetInnerHTML={{
+            __html: t("inspector.fieldHint.actorPermissionsShorthand"),
+          }}
+        />
+
         {Object.entries(permissions).length === 0 && (
           <div className="rounded border border-dashed border-slate-200 p-1.5 text-[11px] italic text-slate-400">
-            (none)
+            {t("inspector.empty")}
           </div>
         )}
         <ul className="space-y-1">
@@ -856,7 +878,7 @@ function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsProps) {
                     onPatchNode({ actor_permissions: next });
                   }}
                   className="rounded px-1 text-[10px] text-rose-600 hover:bg-rose-50"
-                  aria-label="Remove permission"
+                  aria-label={t("inspector.permissionRemove")}
                 >
                   ✕
                 </button>
@@ -876,7 +898,7 @@ function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsProps) {
             }}
             className="mt-1 w-full rounded border border-slate-300 px-1.5 py-0.5 text-[11px] focus:border-stone-500 focus:outline-none"
           >
-            <option value="">+ add actor permission…</option>
+            <option value="">{t("inspector.addActorPermission")}</option>
             {candidates.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.label || a.id}
@@ -900,10 +922,11 @@ function ContentFields({
   availableActors,
   onPatchNode,
 }: ContentFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="text-xs">
       <label className="mb-2 block">
-        <span className="font-semibold text-slate-700">Format</span>
+        <span className="font-semibold text-slate-700">{t("inspector.field.format")}</span>
         <input
           type="text"
           value={node.format ?? ""}
@@ -913,15 +936,15 @@ function ContentFields({
         />
       </label>
       <ContentActorPicker
-        label="Producer"
-        hint="actor that creates this artifact"
+        label={t("inspector.field.producer")}
+        hint={t("inspector.fieldHint.producer")}
         actorId={node.producer_actor_id}
         availableActors={availableActors}
         onChange={(id) => onPatchNode({ producer_actor_id: id })}
       />
       <ContentActorPicker
-        label="Consumer"
-        hint="actor that uses this artifact"
+        label={t("inspector.field.consumer")}
+        hint={t("inspector.fieldHint.consumer")}
         actorId={node.consumer_actor_id}
         availableActors={availableActors}
         onChange={(id) => onPatchNode({ consumer_actor_id: id })}
@@ -945,6 +968,7 @@ function ContentActorPicker({
   availableActors,
   onChange,
 }: ContentActorPickerProps) {
+  const { t } = useTranslation();
   return (
     <label className="mb-2 block">
       <span className="font-semibold text-slate-700">{label}</span>
@@ -954,7 +978,7 @@ function ContentActorPicker({
         onChange={(e) => onChange(e.target.value || null)}
         className="mt-1 w-full rounded border border-slate-300 px-2 py-1 focus:border-violet-500 focus:outline-none"
       >
-        <option value="">(unset)</option>
+        <option value="">{t("inspector.unset")}</option>
         {availableActors.map((a) => (
           <option key={a.id} value={a.id}>
             {a.label || a.id}
@@ -982,16 +1006,15 @@ interface ActorRefFieldsProps {
 }
 
 function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-pink-200 bg-pink-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-pink-700">
-        Value flow (this service ↔ this actor)
+        {t("inspector.valueFlowHeader")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-emerald-700">Gives</span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — what this actor gives to the service (주는 가치)
-        </span>
+        <span className="text-xs font-semibold text-emerald-700">{t("inspector.field.gives")}</span>
+        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.gives")}</span>
         <textarea
           rows={2}
           value={node.gives ?? ""}
@@ -1001,9 +1024,11 @@ function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
         />
       </label>
       <label className="block">
-        <span className="text-xs font-semibold text-violet-700">Receives</span>
+        <span className="text-xs font-semibold text-violet-700">
+          {t("inspector.field.receives")}
+        </span>
         <span className="ml-1 text-[10px] text-slate-500">
-          — what this actor receives back (받는 가치)
+          — {t("inspector.fieldHint.receives")}
         </span>
         <textarea
           rows={2}
@@ -1032,16 +1057,15 @@ interface ActorFieldsProps {
 }
 
 function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-rose-200 bg-rose-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
-        Actor
+        {t("kind.actor")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">Side</span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — which side of the value exchange
-        </span>
+        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.side")}</span>
+        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.side")}</span>
         <select
           value={node.side ?? ""}
           onChange={(e) =>
@@ -1051,29 +1075,29 @@ function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
           }
           className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
         >
-          <option value="">(unset)</option>
-          <option value="operator">operator (운영자 / 개발자)</option>
-          <option value="user">user (사용자)</option>
+          <option value="">{t("inspector.unset")}</option>
+          <option value="operator">{t("inspector.operatorOption")}</option>
+          <option value="user">{t("inspector.userOption")}</option>
         </select>
       </label>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">Motivation</span>
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.motivation")}
+        </span>
         <span className="ml-1 text-[10px] text-slate-500">
-          — why this actor participates (동기)
+          — {t("inspector.fieldHint.motivation")}
         </span>
         <textarea
           rows={2}
           value={node.motivation ?? ""}
           onChange={(e) => onPatchNode({ motivation: e.target.value })}
-          placeholder="이 actor 가 무엇을 얻으려 하는가"
+          placeholder="이 액터가 무엇을 얻으려 하는가"
           className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
         />
       </label>
       <label className="block">
-        <span className="text-xs font-semibold text-slate-700">Pain</span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — friction or frustration (고충)
-        </span>
+        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.pain")}</span>
+        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.pain")}</span>
         <textarea
           rows={2}
           value={node.pain ?? ""}
@@ -1096,14 +1120,15 @@ interface MetricFieldsProps {
 }
 
 function MetricFields({ node, onPatchNode }: MetricFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-lime-200 bg-lime-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-lime-700">
-        Metric
+        {t("kind.metric")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">Target</span>
-        <span className="ml-1 text-[10px] text-slate-500">— goal value or threshold</span>
+        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.target")}</span>
+        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.target")}</span>
         <input
           type="text"
           value={node.target ?? ""}
@@ -1113,8 +1138,12 @@ function MetricFields({ node, onPatchNode }: MetricFieldsProps) {
         />
       </label>
       <label className="block">
-        <span className="text-xs font-semibold text-slate-700">Measurement</span>
-        <span className="ml-1 text-[10px] text-slate-500">— how it's measured</span>
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.measurement")}
+        </span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — {t("inspector.fieldHint.measurement")}
+        </span>
         <textarea
           rows={2}
           value={node.measurement ?? ""}
@@ -1133,14 +1162,15 @@ interface StepFieldsProps {
 }
 
 function StepFields({ node, onPatchNode }: StepFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
-        Step
+        {t("kind.step")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">Order</span>
-        <span className="ml-1 text-[10px] text-slate-500">— ordinal in sequence (blank = unordered)</span>
+        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.order")}</span>
+        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.order")}</span>
         <input
           type="number"
           value={node.order ?? ""}
@@ -1153,13 +1183,17 @@ function StepFields({ node, onPatchNode }: StepFieldsProps) {
         />
       </label>
       <label className="block">
-        <span className="text-xs font-semibold text-slate-700">Outcome</span>
-        <span className="ml-1 text-[10px] text-slate-500">— observable end state</span>
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.outcome")}
+        </span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — {t("inspector.fieldHint.outcome")}
+        </span>
         <textarea
           rows={2}
           value={node.outcome ?? ""}
           onChange={(e) => onPatchNode({ outcome: e.target.value })}
-          placeholder="이 step 끝나면 어떤 상태?"
+          placeholder="이 단계 끝나면 어떤 상태?"
           className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
@@ -1190,22 +1224,23 @@ function FoundationRefBlock({
   onRepickFoundationRef,
   onDeleteNode,
 }: FoundationRefBlockProps) {
+  const { t } = useTranslation();
   let label: string;
   let id: string | null;
   let masters: SketchNode[];
   let tone: { fg: string; bg: string };
   if (node.kind === "mission_ref") {
-    label = "Mission";
+    label = t("kind.mission");
     id = node.ref_mission_id;
     masters = availableMissions;
     tone = { fg: "text-amber-700", bg: "border-amber-200 bg-amber-50/40" };
   } else if (node.kind === "value_ref") {
-    label = "Core value";
+    label = t("kind.core_value");
     id = node.ref_value_id;
     masters = availableValues;
     tone = { fg: "text-yellow-700", bg: "border-yellow-200 bg-yellow-50/40" };
   } else {
-    label = "Identity";
+    label = t("kind.identity");
     id = node.ref_identity_id;
     masters = availableIdentities;
     tone = { fg: "text-orange-700", bg: "border-orange-200 bg-orange-50/40" };
@@ -1215,11 +1250,11 @@ function FoundationRefBlock({
   return (
     <div className={`mb-4 rounded border p-2 text-[11px] ${tone.bg}`}>
       <div className={`mb-1 font-semibold uppercase tracking-wide ${tone.fg}`}>
-        References — {label}
+        {t("inspector.referencesHeader", { label })}
       </div>
       {orphan ? (
         <>
-          <div className="text-rose-700">⚠ master not found on Foundation canvas</div>
+          <div className="text-rose-700">{t("inspector.masterNotFound")}</div>
           <div className="mb-2 font-mono text-[10px] text-slate-500">
             id: {id ?? "—"}
           </div>
@@ -1231,7 +1266,7 @@ function FoundationRefBlock({
                   onClick={() => onRepickFoundationRef(node.id)}
                   className="rounded border border-rose-300 bg-white px-2 py-1 text-[11px] font-medium text-rose-700 hover:bg-rose-100"
                 >
-                  Re-pick…
+                  {t("inspector.rePick")}
                 </button>
               )}
               {onDeleteNode && (
@@ -1240,7 +1275,7 @@ function FoundationRefBlock({
                   onClick={() => onDeleteNode(node.id)}
                   className="rounded px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100"
                 >
-                  Delete
+                  {t("common.delete")}
                 </button>
               )}
             </div>
@@ -1274,14 +1309,19 @@ interface CoreValueFieldsProps {
 }
 
 function CoreValueFields({ node, onPatchNode }: CoreValueFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-amber-200 bg-amber-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-        Core value
+        {t("kind.core_value")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">Definition</span>
-        <span className="ml-1 text-[10px] text-slate-500">— what this value means</span>
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.definition")}
+        </span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — {t("inspector.fieldHint.definition")}
+        </span>
         <textarea
           rows={2}
           value={node.definition ?? ""}
@@ -1301,19 +1341,24 @@ interface IdentityFieldsProps {
 }
 
 function IdentityFields({ node, onPatchNode }: IdentityFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-4 rounded border border-violet-200 bg-violet-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
-        Identity
+        {t("kind.identity")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">Description</span>
-        <span className="ml-1 text-[10px] text-slate-500">— how this aspect is expressed</span>
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.description")}
+        </span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — {t("inspector.fieldHint.description")}
+        </span>
         <textarea
           rows={2}
           value={node.description ?? ""}
           onChange={(e) => onPatchNode({ description: e.target.value })}
-          placeholder="이 측면이 어떻게 드러나는가"
+          placeholder="이 속성이 어떻게 드러나는가"
           className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
@@ -1328,11 +1373,12 @@ interface DoDontFieldsProps {
 }
 
 function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
+  const { t } = useTranslation();
   return (
     <>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-emerald-700">Do</span>
-        <span className="ml-1 text-[10px] text-slate-500">— concrete positive example</span>
+        <span className="text-xs font-semibold text-emerald-700">{t("inspector.field.do")}</span>
+        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.do")}</span>
         <textarea
           rows={2}
           value={node.do ?? ""}
@@ -1342,8 +1388,8 @@ function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
         />
       </label>
       <label className="block">
-        <span className="text-xs font-semibold text-rose-700">Don't</span>
-        <span className="ml-1 text-[10px] text-slate-500">— anti-pattern</span>
+        <span className="text-xs font-semibold text-rose-700">{t("inspector.field.dont")}</span>
+        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.dont")}</span>
         <textarea
           rows={2}
           value={node.dont ?? ""}

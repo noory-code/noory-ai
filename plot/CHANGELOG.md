@@ -4,6 +4,97 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.9] — 2026-05-12
+
+### Added — i18n: Inspector typed-field labels per kind (Phase B)
+
+Continues v0.14.8. Migrates every Inspector typed-field section
+across all node kinds (Mission / Category / Service / actor_ref /
+Actor / Metric / Step / FoundationRef / CoreValue / Identity /
+DoDont / Rule / Content). All section headers reuse the
+`kind.*` SSOT from v0.14.8.
+
+**New `inspector.field.*` keys** (label per field):
+
+- theme / whatWeDo / why / direction / targetSide / what /
+  valueCreated / scope / trigger / how / outcome / policy /
+  enforcement / actorPermissions / format / producer / consumer /
+  definition / description / side / motivation / pain / target /
+  measurement / order / gives / receives / do / dont /
+  longFormDetails.
+
+**New `inspector.fieldHint.*` keys** (italic hint per field).
+Translated to natural Korean per the new
+[`I18N_KO_GLOSSARY.md`](docs/I18N_KO_GLOSSARY.md) workflow.
+
+**Misc new `inspector.*` keys** (modal flow + select options):
+
+- `valueFlowHeader` (이 서비스 ↔ 이 액터 가치 흐름 헤더)
+- `referencesHeader` (interpolated `{{label}}`)
+- `rePick` / `unset` / `empty` /
+  `operatorOption` / `userOption` / `operatorSideOption` /
+  `userSideOption` / `bothSideOption` /
+  `addActorPermission` / `permissionRemove` / `masterNotFound`.
+
+### Added — `plot/docs/I18N_KO_GLOSSARY.md`
+
+New doc capturing:
+
+1. Canonical Plot vocabulary (Korean spellings the project
+   commits to — 미션 / 코어밸류 / 아이덴티티 / 액터 / 서비스 /
+   파운데이션 / 등).
+2. UI-context fragments (Undo / Redo / Delete / etc.).
+3. **Hint-sentence review process** — before committing new
+   `inspector.fieldHint.*` strings, surface them via
+   `AskUserQuestion` for review. The AI-translated-Korean
+   failure mode (e.g. 측면별로 → 속성별로) is structural, not
+   one-off, so the workflow needs a gate.
+4. Correction log — every user-driven Korean fix gets a row so
+   the same mistake does not repeat across sessions.
+
+### Fixed — Korean translation drift caught by user 2026-05-12
+
+- `stencil.note.identityOnePerAspect`: 측면별로 하나씩 →
+  **속성별로 하나씩** (user direction; 측면 is unnatural in this
+  register).
+- `IdentityFields` description placeholder: 이 측면이 어떻게
+  드러나는가 → **이 속성이 어떻게 드러나는가** (same rule).
+- `ActorFields` motivation placeholder: "이 actor 가 …" →
+  **"이 액터가 …"** (canonical naming consistency).
+
+### Changed
+
+- `plot/viewer/src/canvases/SketchInspector.tsx` — every
+  `<Fields>` subcomponent (10 of them) gained `useTranslation()`;
+  ~50 hardcoded label / hint strings replaced with `t()`
+  lookups; per-kind section headers now read from `kind.*`.
+- `plot/viewer/src/i18n/locales/{en,ko}.json` — net ~40 new keys.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` → 14/14 passed (parity test active; en/ko
+  remain in sync).
+- Browser smoke (Playwright KO on Foundation): Mission node →
+  Inspector header shows 미션 + 라벨 + ✕ 삭제; Mission section
+  reads 미션 / 하는 일 — 현재형으로 표현한 매일의 활동 / 이유
+  — 존재 이유 / 방향 — 포지셔닝 (공간이지 시간이 아님). Stencil
+  reads 속성별로 하나씩 — 목소리, 에너지, 말투, …
+- Pre-commit gate self-trip → PASS.
+
+### Queued — Phase C (v0.14.10)
+
+- Composition items (Name placeholder, Remove, Expand / Collapse,
+  Rules / Contents tab labels).
+- "Creating…" / "📁 Create details" button.
+- Foundation-ref label prefix (already handled in Phase B
+  references header; verify no straggler).
+- `body` placeholder / Edge modal headers.
+
+### Queued — separate
+
+- "❀ ❀ ❀" Inspector MD preview font fallback investigation.
+
 ## [0.14.8] — 2026-05-12
 
 ### Added — i18n: kind labels SSOT + Inspector header / actions / Label
