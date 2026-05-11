@@ -1261,3 +1261,122 @@ in the same browser-verification round:
   unchanged — each will get its own update when the queued items
   land.
 - **Files:** `plot/docs/PRODUCT_SPEC.md` (rev 2), this entry.
+
+---
+
+### D-2026-05-12-B — Structural reset planned: v0.15.0 = domain layer + entity classes + componentisation
+
+- **What:** Capture the architectural-debt diagnosis the user
+  surfaced at the end of the 2026-05-12 session and queue the
+  v0.15.0 structural reset as the next session's top priority.
+  Old backlog items (i18n audit, Mermaid, owner field, repo
+  split, isomorphic-git, MD-export, snapshot layer, v0.15 Actors
+  migration) are PARKED until the reset lands.
+
+  User direct quotes:
+  - *"파운데이션에서 사용되는 커서 컨트롤하고 액터나
+    서비스에서 사용되는 커서 컨트롤이 다릅니다. 코어 원칙이
+    지켜지고 있지않아요. 이게 진짜 문제인거에요. 개발을 잘
+    못하고 있는거거든요. 이건 당장해야하는거에요."*
+  - *"엔티티 정의도 안되어 있구요."*
+  - *"기본을 못하고 있는겁니다."*
+  - *"코드 재활용 할 수도 없게 해뒀어요. JSON을 직접 건드리고
+    있는게 아닌지 모르겠네요. fromJson, toJson 같은걸 쓰고
+    클래스를 코드로 만들어서 개념화해야 했다."*
+  - *"도메인 레이어 설계가 제대로 되어 있는지도
+    모르겠구요."*
+  - *"이런 작업들을 다음 세션에 해야해요."*
+  - *"필요하다면 스킬이나 룰을 만들구요."*
+
+- **Code evidence supporting the critique (verified 2026-05-12):**
+
+  | Probe | Result |
+  |---|---|
+  | `viewer/src/types.ts:174` comment | Self-admits *"The runtime payload is still SketchNode (god interface)"* |
+  | `grep -rE "fromJson\|toJson\|parse(\|serialize("` in viewer/src | **0 hits** (JSON.parse / stringify excluded) |
+  | `grep -rE "^class \|^export class "` in viewer/src | **0 hits** |
+  | `find viewer/src -type d \| grep -iE "domain\|entit\|model"` | No directory |
+  | `types.ts` 305 LOC | 100% type / interface declarations; zero methods, zero invariants |
+  | `SketchInspector.tsx` | 1422 LOC, kind-branching for every typed field |
+  | `SketchCanvas.tsx` | 359 LOC, one god component for 3 canvas tabs via `doc.canvas_kind` runtime discriminator |
+
+  The viewer has **no domain layer** in the Clean-Architecture /
+  DDD sense. It has a god TypeScript interface (`SketchNode`)
+  holding every kind's flat fields, no JSON↔domain boundary, no
+  per-kind entity classes, no per-canvas components, no per-kind
+  Inspector modules. The v0.13 "Phase 5 discriminated union" is
+  cosmetic aliases only (per the `types.ts:174` comment); runtime
+  is still god.
+
+- **Why this matters:** the rule violation is explicit. Both:
+  - User CLAUDE.md `architecture: Clean Architecture, DDD`, and
+  - Memory `feedback_no_god_object.md` non-negotiable rule:
+    *"kind 별 클래스 + Pydantic/TS discriminated union 비협상.
+    한 클래스에 모든 kind 필드 = 디자인 실패."*
+
+  The 9 i18n / UI cleanup commits shipped this session
+  (v0.14.3–v0.14.12) are paint on top of the god object. They
+  do not fix the structural problem and they make further
+  surface work increasingly fragile.
+
+- **What ships in v0.15.0 (planned, multi-session):**
+
+  - **Phase A — Domain entity classes** in
+    `viewer/src/domain/`. 15 per-kind classes (Mission /
+    CoreValue / Identity / Actor / ActorRef / Service /
+    Category / MissionRef / ValueRef / IdentityRef / Metric /
+    Step / Rule / Content / Project), each with kind-specific
+    fields only + `static fromJson` / `toJson` / invariants.
+    `domain/SketchNode.ts` = discriminated union. `domain/CanvasDoc.ts`
+    = `Canvas` class.
+  - **Phase B — Server alignment** with
+    `plot_mcp/models.py` Pydantic.
+  - **Phase C — Inspector kind fan-out.** Split
+    `SketchInspector.tsx` into per-kind inspectors.
+  - **Phase D — Canvas componentisation.** `FoundationCanvas`,
+    `ActorsCanvas`, `ServicesCanvas`, `ServiceDetailCanvas` as
+    separate components.
+  - **Phase E — Cursor / interaction contracts per canvas.**
+  - **Phase F — Verification.** Per-canvas cursor sweep +
+    per-kind Inspector smoke + entity-shape round-trip test.
+
+  Done criteria: `viewer/src/domain/` has ≥ 15 entity classes,
+  UI components do not import god `SketchNode`, per-canvas
+  cursor sweeps return identical allow-listed inventories,
+  `SketchInspector.tsx` reduces to dispatch shell (≤ 300 LOC) or
+  is removed.
+
+- **Skills / rules to consider** (user-allowed: *"필요하다면
+  스킬이나 룰을 만들구요"*), discussed at session start:
+  - `plot/skills/plot-entity-template/`
+  - `plot/skills/plot-domain-design/`
+  - Pre-commit hook `no-god-import` (block god `SketchNode`
+    import in new viewer files post-Phase-A)
+  - Vitest entity-shape round-trip test
+  - `plot/CLAUDE.md` anti-pattern row: *"Treating raw JSON as
+    domain entity (no fromJson boundary)."*
+
+- **Honest correction on prior commits:** The 9 i18n / UI
+  cleanup commits this session were technically clean but they
+  delivered surface polish on top of a known god object. The
+  god object is documented in `types.ts:174` and in
+  `feedback_no_god_object.md` — the assistant did not surface
+  this debt earlier in the session and proceeded with surface
+  work. Better behaviour next session: when a feedback rule
+  says "비협상" and the codebase visibly violates it, surface
+  the debt BEFORE adding more surface work, not after the user
+  flags it.
+
+- **Approval:** Pending — user, 2026-05-12 (the user delivered
+  the diagnosis + the *"다음 세션에 해야해요"* + the
+  *"필요하다면 스킬이나 룰을 만들구요"* permission).
+- **Spec impact:** No PRODUCT_SPEC change. No SPEC.md /
+  CONCEPTS.md / DOMAIN.md change yet — those will update when
+  Phase A lands (CONCEPTS.md in particular). NEXT_SESSION.md
+  trigger queue: `구조 리셋` / `v0.15` / `도메인` / `엔티티`
+  all surface this entry's plan.
+- **Files in this commit:**
+  - `plot/docs/NEXT_SESSION.md` — new active queue entry.
+  - `plot/docs/DECISIONS.md` — this entry.
+  - `~/.claude/projects/.../memory/project_plot_next_session.md`
+    — full plan + skill/rule candidates.

@@ -9,43 +9,114 @@
 
 ## Active queue
 
-No keyword-triggered items right now. The backlog below is
-ordered by size; user picks the next item explicitly each
-session. (Full context lives in
-[`memory/project_plot_next_session.md`](../../.claude/projects/-Users-woogis-Workspace-repo-noory-ai/memory/project_plot_next_session.md)
-which the session-start hook surfaces.)
+### `구조 리셋` — v0.15.0 domain layer + entity classes + componentisation
 
-### Backlog — small wins (< 1 session each)
+> **Trigger:** user says **"구조 리셋"** or **"v0.15"** or
+> **"도메인"** or **"엔티티"** as the first / near-first message
+> of a Plot session.
+>
+> **Filed:** 2026-05-12 by user (multiple messages).
+>
+> **Reference:** [D-2026-05-12-B](./DECISIONS.md) (this entry +
+> its plan) and full backlog detail in
+> [`memory/project_plot_next_session.md`](../../.claude/projects/-Users-woogis-Workspace-repo-noory-ai/memory/project_plot_next_session.md).
 
-1. **i18n audit skill** (`plot/skills/plot-i18n-audit/`) — detect
-   unused / missing / orphan locale keys. User flag 2026-05-12.
-2. **`owner` field on `SketchNode`** — multi-user prerequisite
-   (PRODUCT_SPEC §15 #1).
-3. **Mermaid Service-Detail rendering** — UI location decision
-   (PRODUCT_SPEC §15 #5).
-4. **Self-loop visual verification** — `Service A → Service A`
-   renders correctly in React Flow (PRODUCT_SPEC §7).
-5. **Foundation single-canvas flow visual** — Mission → Core
-   value → Identity visual flow check (PRODUCT_SPEC §8).
+#### The problem (user direct quotes 2026-05-12)
 
-### Backlog — meta decisions (user input required)
+- *"파운데이션에서 사용되는 커서 컨트롤하고 액터나 서비스에서
+  사용되는 커서 컨트롤이 다릅니다. 코어 원칙이 지켜지고
+  있지않아요."*
+- *"엔티티 정의도 안되어 있구요."*
+- *"기본을 못하고 있는겁니다."*
+- *"코드 재활용 할 수도 없게 해뒀어요. JSON을 직접 건드리고
+  있는게 아닌지 모르겠네요. fromJson, toJson 같은걸 쓰고
+  클래스를 코드로 만들어서 개념화해야 했다."*
+- *"도메인 레이어 설계가 제대로 되어 있는지도 모르겠구요."*
 
-6. **Plot repository split** — move `plot/` out of the
-   `noory-ai` monorepo to its own repo. AI recommends split;
-   7-step plan in the memory file. User decision pending.
+#### Code evidence (collected 2026-05-12)
 
-### Backlog — mid-size (each = own plan, multi-commit)
+| Evidence | Status |
+|---|---|
+| `viewer/src/types.ts:174` comment | Self-admits god interface |
+| `grep -rE "fromJson\|toJson\|parse(\|serialize("` viewer/src | 0 hits |
+| `grep -rE "^class \|^export class "` viewer/src | 0 hits |
+| `find viewer/src -type d \| grep -iE "domain\|entit\|model"` | No domain dir |
+| `types.ts` 305 LOC | 100% `type` / `interface`, zero methods |
+| `SketchInspector.tsx` | 1422 LOC; branches on `kind` for every typed field |
+| `SketchCanvas.tsx` | 359 LOC; one god component for 3 canvases |
 
-7. **isomorphic-git integration** (PRODUCT_SPEC §6) — viewer +
-   MCP gain canvas-versioning. Precondition for PR-style
-   feedback loop (§11) enforcement.
-8. **MD-as-export migration** (PRODUCT_SPEC §15 #2) —
-   **user-deferred** *"이 부분은 나중에 다시 다듬어 봅시다."*
-   Do not start without explicit user kick-off.
-9. **Snapshot work-item layer** (PRODUCT_SPEC §10) — tasks +
-   user-stories + commit-SHA provenance. Depends on (7).
-10. **v0.15 Actors → v0.13 model** — re-evaluate after (8) lands
-    since the data model shifts.
+#### Plan (do all phases in order; each phase = its own
+multi-commit plan; viewer green at every phase boundary)
+
+**Phase A — Domain entity classes.** New
+`viewer/src/domain/{Mission,CoreValue,Identity,Actor,ActorRef,
+Service,Category,MissionRef,ValueRef,IdentityRef,Metric,Step,
+Rule,Content,Project}.ts`. Each is a real `class` with
+fromJson / toJson / invariants / kind-specific fields only.
+`domain/SketchNode.ts` = discriminated union of the 15 classes.
+`domain/CanvasDoc.ts` = `Canvas` class with `findById` etc.
+
+**Phase B — Server alignment.** Verify
+`plot_mcp/models.py` Pydantic discriminated union matches 1:1.
+Decide manual vs generated TS types.
+
+**Phase C — Inspector kind fan-out.** Split
+`SketchInspector.tsx` (1422 LOC) into per-kind files
+(`inspectors/MissionInspector.tsx` etc.) on top of domain
+classes.
+
+**Phase D — Canvas componentisation.**
+`FoundationCanvas.tsx`, `ActorsCanvas.tsx`,
+`ServicesCanvas.tsx`, `ServiceDetailCanvas.tsx` as separate
+top-level components. No more runtime `canvas_kind` switch.
+
+**Phase E — Cursor / interaction contracts per canvas.**
+Per-canvas Playwright cursor sweep returns identical
+inventories.
+
+**Phase F — Verification.** Per-canvas cursor sweep + per-kind
+Inspector smoke + entity-shape round-trip test.
+
+#### Skills / rules to consider (user-allowed 2026-05-12)
+
+Discuss at session start, create only those that prove their
+weight during the work:
+
+1. `plot/skills/plot-entity-template/` — per-kind entity class
+   boilerplate.
+2. `plot/skills/plot-domain-design/` — Plot-specific DDD
+   guidance.
+3. Pre-commit hook `no-god-import` — block god `SketchNode`
+   import in new viewer files once Phase A lands.
+4. Vitest entity-shape round-trip test.
+5. `plot/CLAUDE.md` anti-pattern row — *"Treating raw JSON as
+   domain entity (no fromJson boundary)."*
+
+#### Done criteria
+
+Session-by-session: each phase boundary leaves Plot green +
+tests passing. The whole reset is done when:
+
+- `viewer/src/domain/` exists with 15 per-kind entity classes
+  + Canvas / SketchNode union.
+- `grep -rE "^class \|^export class "` in `viewer/src/domain` →
+  ≥ 15 hits (one per kind).
+- All UI components import per-kind classes, not god
+  `SketchNode`.
+- Per-canvas cursor sweeps return identical, allow-listed
+  inventories.
+- `SketchInspector.tsx` ≤ 300 LOC (chrome + dispatch only) or
+  removed entirely.
+- `SketchCanvas.tsx` removed or reduced to a shared shell used
+  by the 4 per-canvas components.
+
+#### What this reset does NOT do
+
+- Does not change Plot UI / behaviour from the user's seat.
+  Same canvases, same nodes, same i18n. Internal structure
+  only.
+- Does not re-open the old backlog items (i18n audit, owner
+  field, Mermaid, …). Those wait until the reset lands.
 
 ---
 
@@ -60,9 +131,6 @@ which the session-start hook surfaces.)
 - After completion, the assistant **moves the item to the
   "Completed" section below** with the date + commit hash, instead
   of deleting it. This preserves the audit trail.
-- New items are added to "Active queue" by appending a
-  `### TRIGGER — short title` section with the same structure as
-  the example above.
 
 ---
 
@@ -71,26 +139,7 @@ which the session-start hook surfaces.)
 ### `다음` — Architectural review: cursor / auto-layout coupling
 
 > **Completed:** 2026-05-10 in v0.14.3.
-> **Outcome:** [D-2026-05-11-C](./DECISIONS.md#d-2026-05-11-c--cursor--auto-layout-cognitive-coupling-not-mechanical-structural-gate-added).
-> **Diagnosis:** the coupling was *cognitive (commit bundling)*,
-> not *mechanical (shared files)*. Cursor flicker was a latent
-> RF v11 + Tailwind preflight bug from v0.13.0; auto-layout work
-> was the discovery trigger, not the cause. The v0.13.10 commit
-> bundled both concerns and produced the misattribution.
->
-> **Structural gate shipped:**
-> 1. `pre_commit_gate.py::cross_cutting_bundle_check` blocks
->    commits that stage `viewer/src/styles.css` alongside feature
->    code.
-> 2. `viewer/tests/styles-cursor-baseline.test.tsx` static guard
->    asserts `styles.css` has zero cursor rules.
-> 3. `plot/agents/plot-verifier.md` Step 4 default now runs
->    cursor DOM probe sweep on every viewer change.
-> 4. `plot/CLAUDE.md` anti-patterns table gains a row.
->
-> **Original review scope** (filed 2026-05-11 by user, ref
-> D-2026-05-11-B): Coupling map, causal trace, design options
-> (a–d), pin via decision id, regression test, plan filing. All
-> six steps completed; design choice = (b) pre-commit gate +
-> static test + verifier default. Options (a) / (c) / (d)
-> evaluated and rejected with rationale in D-2026-05-11-C.
+> **Outcome:** [D-2026-05-11-C](./DECISIONS.md).
+> Pre-commit gate + static guard + plot-verifier default sweep
+> shipped. (Full diagnosis preserved in the file's prior revision
+> and the D-entry.)

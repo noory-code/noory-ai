@@ -4,6 +4,85 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.14] — 2026-05-12
+
+### Changed — Backlog re-prioritised: v0.15.0 structural reset is now next-session top priority (D-2026-05-12-B)
+
+End-of-session user critique surfaced a fundamental
+architectural debt the v0.14.x cleanup commits did not touch:
+
+- No domain layer in `viewer/src/`.
+- `SketchNode` is a god TypeScript interface holding every
+  kind's flat fields (self-admitted at `types.ts:174`).
+- No JSON↔domain boundary (`fromJson` / `toJson` patterns
+  return 0 hits across `viewer/src`).
+- No real classes (`class` / `export class` returns 0 hits).
+- `SketchCanvas.tsx` is one god component serving 3 canvases
+  via runtime `canvas_kind` discrimination.
+- `SketchInspector.tsx` is 1422 LOC branching on `kind` for
+  every typed field.
+
+User direct quotes (recorded in D-2026-05-12-B):
+
+- *"엔티티 정의도 안되어 있구요."*
+- *"기본을 못하고 있는겁니다."*
+- *"코드 재활용 할 수도 없게 해뒀어요. fromJson, toJson
+  같은걸 쓰고 클래스를 코드로 만들어서 개념화해야 했다."*
+- *"도메인 레이어 설계가 제대로 되어 있는지도 모르겠구요."*
+
+The v0.14.3–v0.14.12 i18n + cleanup commits delivered correct
+surface polish but did not address the god object. Honest
+correction logged: the assistant should have surfaced the debt
+*before* adding more surface work, not after the user flagged it.
+
+### Added — NEXT_SESSION.md trigger entry
+
+`구조 리셋` / `v0.15` / `도메인` / `엔티티` — any of these as
+the first session message fires the v0.15.0 structural reset
+plan:
+
+- **Phase A — Domain entity classes** (`viewer/src/domain/` with
+  15 per-kind classes + fromJson/toJson + invariants +
+  discriminated union).
+- **Phase B — Server alignment** with `plot_mcp/models.py`.
+- **Phase C — Inspector kind fan-out** (per-kind files).
+- **Phase D — Canvas componentisation** (FoundationCanvas /
+  ActorsCanvas / ServicesCanvas / ServiceDetailCanvas).
+- **Phase E — Cursor / interaction contracts per canvas.**
+- **Phase F — Verification.**
+
+### Added — Skills / rules candidate list (user-allowed)
+
+User permission 2026-05-12: *"필요하다면 스킬이나 룰을
+만들구요."* Candidates to evaluate at structural-reset session
+start (create only those that prove their weight):
+
+- `plot/skills/plot-entity-template/`
+- `plot/skills/plot-domain-design/`
+- Pre-commit hook `no-god-import` (post-Phase-A)
+- Vitest entity-shape round-trip test
+- `plot/CLAUDE.md` anti-pattern row: *"Treating raw JSON as
+  domain entity (no fromJson boundary)."*
+
+### Parked — old backlog (until structural reset lands)
+
+The 10-item backlog pinned in v0.14.13 is paused. These items
+remain valid but should not be picked up before Phase A above:
+
+- i18n audit skill, owner field on SketchNode, Mermaid
+  Service-Detail rendering, self-loop visual, Foundation flow
+  visual, Plot repository split, isomorphic-git integration,
+  MD-as-export migration (user-deferred regardless), snapshot
+  work-item layer, v0.15 Actors model migration.
+
+### Not changed
+
+- No code changes. Docs + backlog re-prioritisation only.
+
+### Verification
+
+- Pre-commit gate self-trip → PASS.
+
 ## [0.14.13] — 2026-05-12
 
 ### Changed — NEXT_SESSION.md backlog pinned (session wrap)
