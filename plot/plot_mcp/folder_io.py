@@ -721,9 +721,9 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     # v0.13 Phase 2 — write per-kind JSON Schema + MD template files into
     # ``.plot/{proj}/schema/`` so external tools (Obsidian YAML LSP, custom
     # validators) can verify Foundation node files.
-    from plot_mcp.schema_export import export_foundation_schemas
+    from plot_mcp.schema_export import export_all_schemas
 
-    export_foundation_schemas(plot_root, project_id)
+    export_all_schemas(plot_root, project_id)
     return proj
 
 

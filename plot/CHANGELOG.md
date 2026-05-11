@@ -4,6 +4,54 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.18] — 2026-05-12
+
+v0.15 structural reset Phase 1.3 — extend `schema_export` to all 15
+kinds. Server SSOT now publishes per-kind JSON Schemas + Foundation
+MD templates for the full discriminated union introduced in v0.14.17
+(D-2026-05-12-B).
+
+### Added
+
+- `plot_mcp/schema_export.py` — `_ALL_KIND_CLASSES` map covering all
+  15 per-kind Pydantic classes (replaces Foundation-only
+  `_FOUNDATION_KIND_CLASSES`). `SCHEMA_VERSION` bumped 1 → 2 to flag
+  the expansion to downstream consumers.
+- `plot_mcp/schema_export.py` — `export_all_schemas(project_root,
+  project_id)` (renamed from `export_foundation_schemas`). Emits 15
+  `{kind}.json` JSON Schema files + 3 `{kind}.md.template` heading
+  templates (Foundation typed-text kinds only). Idempotent — files
+  with unchanged content keep their mtime.
+- `plot/tests/test_schema_export.py` — 7 tests covering the export
+  surface:
+  - all 15 `{kind}.json` files emitted
+  - only Foundation typed-text kinds emit `{kind}.md.template`
+  - Foundation JSON strips typed-text fields
+  - non-Foundation JSON includes typed fields
+    (Actor.motivation, Service.target_side, Metric.target, …)
+  - `_meta.json` lists every kind with the right schema/plot version
+  - idempotent — second call preserves mtime
+  - each schema parses with `id` in required props (smoke)
+
+### Changed
+
+- `plot_mcp/folder_io.py:724` — `create_project` now calls
+  `export_all_schemas` instead of `export_foundation_schemas`.
+
+### Why
+
+Phase 2 (viewer-side domain entity classes) needs a server SSOT that
+publishes the full per-kind shape, not just the Foundation subset.
+The schema files under `.plot/{project_id}/schema/` will back the
+TS↔Pydantic field-name parity test introduced when
+`viewer/src/domain/` lands in Phase 2.0.
+
+### Verification
+
+- `uv run pytest` — 214 / 214 passed (207 prior + 7 new).
+- `uv run mypy plot_mcp/` — Success: no issues found in 17 files.
+- `uv run ruff check plot_mcp/ tests/` — All checks passed.
+
 ## [0.14.17] — 2026-05-12
 
 v0.15 structural reset Phase 1.2 — atomic flip. God `SketchNode`

@@ -1,21 +1,25 @@
-"""v0.13 Phase 2: auto-export per-kind schemas + MD templates.
+"""v0.13 Phase 2 + v0.15 Phase 1.3 — auto-export per-kind schemas + MD templates.
 
-Plot's data has two surfaces per Foundation node:
-1. **canvas.json entry** — graph data (id, position, label, parent_id, ...).
-   The shape is governed by Pydantic's ``BaseNodeFields`` and the kind
-   subclass; we export it as JSON Schema for IDE / tool consumption.
-2. **{kind}.md** — typed-text template (heading-section format). We export
-   a literal template file that shows the expected section headings; the
-   parser reads any number of these sections back into typed fields.
+Plot's data has two surfaces per node:
+
+1. **canvas.json entry** — graph data + per-kind typed fields. The shape
+   is governed by a Pydantic class per kind (``BaseNodeFields`` + 15
+   subclasses); we export it as JSON Schema for IDE / tool consumption.
+2. **{kind}.md** — typed-text template (heading-section format).
+   *Only* Foundation kinds (mission / core_value / identity) split
+   typed text out of JSON into MD; the other 11 kinds keep their typed
+   fields in the canvas.json entry, so they get only the JSON schema.
 
 Files land in ``{project_root}/.plot/{project_id}/schema/``:
 
   _meta.json                — schema_version, plot_version, kinds
-  {kind}.json               — JSON Schema (canvas.json node fields only)
+  {kind}.json               — JSON Schema for the canvas.json entry
+                              of this kind (15 files, one per kind)
   mission.md.template       — heading template for the mission kind
   core_value.md.template    — ditto
   identity.md.template      — ditto
-  (project has no template — typed text is empty)
+  (project + the 11 non-Foundation kinds have no MD template
+   because they do not split typed text out of JSON.)
 
 The export is idempotent: same content yields no rewrite.
 """
@@ -29,11 +33,22 @@ from typing import Any
 
 from plot_mcp.models import (
     FOUNDATION_TYPED_TEXT_FIELDS,
+    ActorNode,
+    ActorRefNode,
     BaseNodeFields,
+    CategoryNode,
+    ContentNode,
     CoreValueNode,
     IdentityNode,
+    IdentityRefNode,
+    MetricNode,
     MissionNode,
+    MissionRefNode,
     ProjectNode,
+    RuleNode,
+    ServiceNode,
+    StepNode,
+    ValueRefNode,
 )
 
 # Canonical heading + body format used in the MD templates. Mirrored on the
@@ -56,14 +71,32 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
     },
 }
 
-SCHEMA_VERSION = 1
-PLOT_VERSION = "0.13.0"
+SCHEMA_VERSION = 2  # v0.15.3 — extended to all 15 kinds
+PLOT_VERSION = "0.14.18"
 
-_FOUNDATION_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
+# v0.15.3 — full 15-kind map. Replaces the v0.13 ``_FOUNDATION_KIND_CLASSES``
+# Foundation-only subset.
+_ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
+    # Foundation (4) — typed text lives in MD template
     "project": ProjectNode,
     "mission": MissionNode,
     "core_value": CoreValueNode,
     "identity": IdentityNode,
+    # Actors / Services hub (3)
+    "actor": ActorNode,
+    "actor_ref": ActorRefNode,
+    "service": ServiceNode,
+    # Grouping (1)
+    "category": CategoryNode,
+    # Foundation refs (3)
+    "mission_ref": MissionRefNode,
+    "value_ref": ValueRefNode,
+    "identity_ref": IdentityRefNode,
+    # Composition inside service_detail (4)
+    "metric": MetricNode,
+    "step": StepNode,
+    "rule": RuleNode,
+    "content": ContentNode,
 }
 
 
@@ -96,10 +129,15 @@ def _render_md_template(kind: str, label_placeholder: str = "{label}") -> str:
 
 
 def _node_canvas_schema(kind: str) -> dict[str, Any]:
-    """JSON Schema for what this kind's canvas.json node looks like — i.e.
-    only the BaseNodeFields graph data, **excluding** typed text. The
-    typed text fields live in the MD template."""
-    cls = _FOUNDATION_KIND_CLASSES[kind]
+    """JSON Schema for what this kind's canvas.json node looks like.
+
+    For Foundation kinds (mission / core_value / identity) the typed-text
+    fields are stripped because they live in the per-kind MD template,
+    not in JSON. For the 11 non-Foundation kinds, every field including
+    typed text is part of the canvas.json entry, so the schema returns
+    the full Pydantic-generated shape unchanged.
+    """
+    cls = _ALL_KIND_CLASSES[kind]
     raw: dict[str, Any] = cls.model_json_schema()
     typed_text = set(FOUNDATION_TYPED_TEXT_FIELDS.get(kind, []))
     if typed_text:
@@ -116,8 +154,14 @@ def _node_canvas_schema(kind: str) -> dict[str, Any]:
     return raw
 
 
-def export_foundation_schemas(project_root: Path, project_id: str) -> None:
-    """Write the schema/ directory for ``project_id``. Idempotent."""
+def export_all_schemas(project_root: Path, project_id: str) -> None:
+    """Write the schema/ directory for ``project_id``.
+
+    Generates ``_meta.json`` + 15 ``{kind}.json`` JSON Schema files +
+    3 ``{kind}.md.template`` heading templates (Foundation kinds only).
+
+    Idempotent — files with unchanged content keep their mtime.
+    """
     schema_dir = _schema_dir(project_root, project_id)
     schema_dir.mkdir(parents=True, exist_ok=True)
 
@@ -126,7 +170,7 @@ def export_foundation_schemas(project_root: Path, project_id: str) -> None:
         "schema_version": SCHEMA_VERSION,
         "plot_version": PLOT_VERSION,
         "generated_at": datetime.now(UTC).isoformat(),
-        "kinds": list(_FOUNDATION_KIND_CLASSES.keys()),
+        "kinds": list(_ALL_KIND_CLASSES.keys()),
     }
     # generated_at changes every run; only rewrite when the rest changed.
     existing_meta_path = schema_dir / "_meta.json"
@@ -146,16 +190,16 @@ def export_foundation_schemas(project_root: Path, project_id: str) -> None:
             json.dumps(meta, ensure_ascii=False, indent=2) + "\n",
         )
 
-    # {kind}.json — JSON Schema for canvas.json entry
-    for kind in _FOUNDATION_KIND_CLASSES:
+    # {kind}.json — JSON Schema for canvas.json entry (all 15 kinds)
+    for kind in _ALL_KIND_CLASSES:
         schema = _node_canvas_schema(kind)
         _atomic_write(
             schema_dir / f"{kind}.json",
             json.dumps(schema, ensure_ascii=False, indent=2) + "\n",
         )
 
-    # {kind}.md.template — only for kinds with typed text
-    for kind in _FOUNDATION_KIND_CLASSES:
+    # {kind}.md.template — only Foundation kinds with typed text
+    for kind in _ALL_KIND_CLASSES:
         if not FOUNDATION_TYPED_TEXT_FIELDS.get(kind):
             continue
         _atomic_write(
