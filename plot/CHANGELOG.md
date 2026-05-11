@@ -4,6 +4,56 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.15] — 2026-05-12
+
+v0.15 structural reset Phase 0 — pre-existing lint / type-check
+debt cleared to zero so subsequent phases land on a green baseline
+(D-2026-05-12-B). No behaviour change.
+
+### Fixed — `ruff check` → 0 errors
+
+- `plot_mcp/http_app.py` — import block sorted.
+- `plot_mcp/md_template.py` — extracted `tail` local variable to fit
+  the typed-area / free-prose split under the 100-char line limit.
+- `plot_mcp/models.py` — `FoundationNode` discriminated union now
+  uses the PEP 604 `X | Y` form instead of `typing.Union[...]`;
+  unused `Union` import removed. `_foundation_canvas_rules` error
+  message split across two lines.
+
+### Fixed — `mypy plot_mcp/` → 0 errors
+
+Root causes addressed (not suppressed):
+
+- `plot_mcp/schema_export.py` — `_FOUNDATION_KIND_CLASSES` now
+  declares `dict[str, type[BaseNodeFields]]` so `cls.model_json_schema()`
+  resolves against the Pydantic `BaseModel` API instead of the bare
+  `ModelMetaclass`. `_node_canvas_schema` return value gets an
+  explicit `dict[str, Any]` annotation.
+- `plot_mcp/folder_io.py` — three Foundation-MD helpers
+  (`_evict_typed_text_to_md`, `_merge_md_typed_text_into_nodes`,
+  `_split_foundation_typed_text_to_md`) narrow `kind = n.get("kind")`
+  with an `isinstance(kind, str)` guard before passing to
+  `_foundation_md_path` / `parse_md_template` / `render_md_template`
+  (which all require `str`, not `Any | None`).
+- `plot_mcp/folder_io.py` — removed an unused
+  `# type: ignore[arg-type]` on the legacy project-anchor `shape`
+  read; renamed the second `edges` local in
+  `_evict_legacy_project_anchor` to `all_edges` to satisfy the
+  `no-redef` rule.
+
+### Fixed — formatting
+
+`ruff format` applied across `plot_mcp/` + `tests/`. 10 files
+reformatted; no semantic changes.
+
+### Why
+
+The v0.15 structural reset requires every phase to leave the tree
+green at the commit boundary. Inheriting a pre-existing baseline
+of 5 ruff + 12 mypy errors would have made each Phase 1.x ship
+fight the noise. Zero-debt cleanup commits first, structural
+changes afterward.
+
 ## [0.14.14] — 2026-05-12
 
 ### Changed — Backlog re-prioritised: v0.15.0 structural reset is now next-session top priority (D-2026-05-12-B)

@@ -44,28 +44,16 @@ def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | No
     elif len(parts) == 4 and parts[1] == "services" and parts[3] == "detail.json":
         descriptor["canvas_kind"] = "service_detail"
         descriptor["service_id"] = parts[2]
-    elif (
-        len(parts) == 4
-        and parts[3] == "details.md"
-        and parts[1] in _SINGLETON_CANVAS_KINDS
-    ):
+    elif len(parts) == 4 and parts[3] == "details.md" and parts[1] in _SINGLETON_CANVAS_KINDS:
         # v0.9 per-node details.md: a viewer that has the parent canvas
         # open should reload to pick up external edits.
         descriptor["canvas_kind"] = parts[1]
-    elif (
-        len(parts) == 4
-        and parts[1] == "services"
-        and parts[3] == "details.md"
-    ):
+    elif len(parts) == 4 and parts[1] == "services" and parts[3] == "details.md":
         # services/{sid}/details.md — service node's long-form. Reloading
         # the services top-view is enough because the details file is
         # only fetched lazily by the Inspector when the service is selected.
         descriptor["canvas_kind"] = "services"
-    elif (
-        len(parts) == 3
-        and parts[1] == "foundation"
-        and parts[2].endswith(".md")
-    ):
+    elif len(parts) == 3 and parts[1] == "foundation" and parts[2].endswith(".md"):
         # v0.13 Phase 4: per-node MD template under foundation/ — any
         # .md file directly under the foundation/ folder belongs to a
         # foundation node. Reloading the foundation canvas is enough

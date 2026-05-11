@@ -115,9 +115,9 @@ def test_ensure_folder_is_idempotent(project_root: Path) -> None:
         "existing content", encoding="utf-8"
     )
     ensure_folder(project_root, "workspace/core/mission-mission")
-    assert (
-        project_root / "workspace/core/mission-mission/index.md"
-    ).read_text(encoding="utf-8") == "existing content"
+    assert (project_root / "workspace/core/mission-mission/index.md").read_text(
+        encoding="utf-8"
+    ) == "existing content"
 
 
 def test_uniquify_returns_desired_when_free(project_root: Path) -> None:

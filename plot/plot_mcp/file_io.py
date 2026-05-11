@@ -53,17 +53,14 @@ def resolve_safe_path(project_path: Path, rel_path: str) -> Path:
     try:
         target.relative_to(root)
     except ValueError as exc:
-        raise UnsafePathError(
-            f"rel_path escapes project root: {rel_path!r}"
-        ) from exc
+        raise UnsafePathError(f"rel_path escapes project root: {rel_path!r}") from exc
     return target
 
 
 def _ensure_allowed_extension(target: Path) -> None:
     if target.suffix.lower() not in ALLOWED_EXTENSIONS:
         raise ExtensionNotAllowedError(
-            f"extension {target.suffix!r} not allowed "
-            f"(allowed: {sorted(ALLOWED_EXTENSIONS)})"
+            f"extension {target.suffix!r} not allowed (allowed: {sorted(ALLOWED_EXTENSIONS)})"
         )
 
 
@@ -75,9 +72,7 @@ def read_text_file(project_path: Path, rel_path: str) -> str:
     if not target.exists():
         return ""
     if target.stat().st_size > MAX_FILE_BYTES:
-        raise ValueError(
-            f"file {rel_path!r} exceeds {MAX_FILE_BYTES} bytes; refusing to read"
-        )
+        raise ValueError(f"file {rel_path!r} exceeds {MAX_FILE_BYTES} bytes; refusing to read")
     return target.read_text(encoding="utf-8")
 
 
@@ -86,9 +81,7 @@ def write_text_file(project_path: Path, rel_path: str, content: str) -> None:
     target = resolve_safe_path(project_path, rel_path)
     _ensure_allowed_extension(target)
     if len(content.encode("utf-8")) > MAX_FILE_BYTES:
-        raise ValueError(
-            f"content exceeds {MAX_FILE_BYTES} bytes; refusing to write {rel_path!r}"
-        )
+        raise ValueError(f"content exceeds {MAX_FILE_BYTES} bytes; refusing to write {rel_path!r}")
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".tmp")
     tmp.write_text(content, encoding="utf-8")
@@ -108,18 +101,14 @@ def _resolve_safe_dir(project_path: Path, rel_folder: str) -> tuple[Path, Path]:
     raw_parts = normalised.split("/")
     parts = [p for p in raw_parts if p != "."]
     if not parts or any(p == ".." or p == "" for p in parts):
-        raise UnsafePathError(
-            f"rel_folder contains '..' or empty segments: {rel_folder!r}"
-        )
+        raise UnsafePathError(f"rel_folder contains '..' or empty segments: {rel_folder!r}")
     root = project_path.resolve()
     rel_obj = Path(*parts)
     target = (root / rel_obj).resolve()
     try:
         target.relative_to(root)
     except ValueError as exc:
-        raise UnsafePathError(
-            f"rel_folder escapes project root: {rel_folder!r}"
-        ) from exc
+        raise UnsafePathError(f"rel_folder escapes project root: {rel_folder!r}") from exc
     return target, rel_obj
 
 

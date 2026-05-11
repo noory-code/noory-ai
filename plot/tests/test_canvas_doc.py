@@ -366,9 +366,7 @@ def test_overview_nested_category_rejected() -> None:
             canvas_kind="services",
             nodes=[
                 SketchNode(id="parent", kind="category", label="Parent"),
-                SketchNode(
-                    id="child", kind="category", parent_id="parent", label="Child"
-                ),
+                SketchNode(id="child", kind="category", parent_id="parent", label="Child"),
             ],
         )
 

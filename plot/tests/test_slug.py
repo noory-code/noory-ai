@@ -10,9 +10,7 @@ def test_mission_label_mission() -> None:
 
 
 def test_core_value_with_korean_and_ascii() -> None:
-    assert folder_slug("core_value", "관용 (Tolerance)") == (
-        "foundation/core-value-관용-tolerance"
-    )
+    assert folder_slug("core_value", "관용 (Tolerance)") == ("foundation/core-value-관용-tolerance")
 
 
 def test_identity_voice() -> None:

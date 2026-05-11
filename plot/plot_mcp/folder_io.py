@@ -183,8 +183,7 @@ def _wrap_legacy_services_in_default_category(
     if not orphans:
         return raw
     has_default = any(
-        n.get("kind") == "category" and n.get("id") == "default-category"
-        for n in nodes
+        n.get("kind") == "category" and n.get("id") == "default-category" for n in nodes
     )
     rebuilt: list[dict[str, Any]] = []
     if not has_default:
@@ -283,15 +282,15 @@ def _evict_typed_text_to_md(
     new_nodes: list[dict[str, Any]] = []
     for n in nodes:
         kind = n.get("kind")
-        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind or "", [])
+        if not isinstance(kind, str):
+            new_nodes.append(n)
+            continue
+        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind, [])
         if not typed_field_names:
             new_nodes.append(n)
             continue
         # Collect any non-empty typed text from canvas.json.
-        existing_typed = {
-            field: (n.get(field) or "")
-            for field in typed_field_names
-        }
+        existing_typed = {field: (n.get(field) or "") for field in typed_field_names}
         has_inline = any(v.strip() for v in existing_typed.values())
         # If there's no typed text inline AND no typed-text-keys at all,
         # the node is already cleaned. Don't touch details_path or MD.
@@ -299,9 +298,7 @@ def _evict_typed_text_to_md(
         if not has_inline and not keys_present:
             new_nodes.append(n)
             continue
-        md_path = _foundation_md_path(
-            plot_root, project_id, kind, n["id"], n.get("label", "")
-        )
+        md_path = _foundation_md_path(plot_root, project_id, kind, n["id"], n.get("label", ""))
         # Preserve existing free prose if the MD file already exists.
         existing_prose = ""
         existing_md_typed: dict[str, str] = {}
@@ -361,13 +358,14 @@ def _merge_md_typed_text_into_nodes(
     new_nodes: list[dict[str, Any]] = []
     for n in nodes:
         kind = n.get("kind")
-        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind or "", [])
+        if not isinstance(kind, str):
+            new_nodes.append(n)
+            continue
+        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind, [])
         if not typed_field_names:
             new_nodes.append(n)
             continue
-        md_path = _foundation_md_path(
-            plot_root, project_id, kind, n["id"], n.get("label", "")
-        )
+        md_path = _foundation_md_path(plot_root, project_id, kind, n["id"], n.get("label", ""))
         if not md_path.exists():
             new_nodes.append(n)
             continue
@@ -429,8 +427,7 @@ def _evict_legacy_project_anchor(
         node_ids = {n.get("id") for n in nodes}
         edges: list[dict[str, Any]] = list(raw.get("edges") or [])
         kept_edges = [
-            e for e in edges
-            if e.get("source") in node_ids and e.get("target") in node_ids
+            e for e in edges if e.get("source") in node_ids and e.get("target") in node_ids
         ]
         if len(kept_edges) != len(edges):
             raw = {**raw, "edges": kept_edges}
@@ -452,7 +449,7 @@ def _evict_legacy_project_anchor(
         width=float(legacy.get("width", 150.0)),
         height=float(legacy.get("height", 150.0)),
         color=str(legacy.get("color", "#fef3c7")),
-        shape=legacy.get("shape", "circle"),  # type: ignore[arg-type]
+        shape=legacy.get("shape", "circle"),
     )
     new_anchors = {**proj.anchors, canvas_kind: anchor}
     proj = proj.model_copy(update={"anchors": new_anchors})
@@ -462,9 +459,10 @@ def _evict_legacy_project_anchor(
     # v0.13 Phase 0: also drop any edges that referenced the evicted project
     # node — otherwise CanvasDoc validator fails with "edges reference
     # unknown nodes".
-    edges: list[dict[str, Any]] = list(raw.get("edges") or [])
+    all_edges: list[dict[str, Any]] = list(raw.get("edges") or [])
     kept_edges = [
-        e for e in edges
+        e
+        for e in all_edges
         if e.get("source") not in evicted_ids and e.get("target") not in evicted_ids
     ]
     raw = {**raw, "nodes": kept, "edges": kept_edges}
@@ -506,21 +504,20 @@ def _split_foundation_typed_text_to_md(
     new_nodes: list[dict[str, Any]] = []
     for n in nodes:
         kind = n.get("kind")
-        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind or "", [])
+        if not isinstance(kind, str):
+            new_nodes.append(n)
+            continue
+        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind, [])
         if not typed_field_names:
             new_nodes.append(n)
             continue
         # Pull current typed text out of the JSON entry; defaults to "".
         typed = {field: (n.get(field) or "") for field in typed_field_names}
-        md_path = _foundation_md_path(
-            plot_root, project_id, kind, n["id"], n.get("label", "")
-        )
+        md_path = _foundation_md_path(plot_root, project_id, kind, n["id"], n.get("label", ""))
         # Preserve free prose if a prior MD file exists.
         existing_prose = ""
         if md_path.exists():
-            existing_prose = parse_md_template(
-                md_path.read_text(encoding="utf-8"), kind
-            ).free_prose
+            existing_prose = parse_md_template(md_path.read_text(encoding="utf-8"), kind).free_prose
         md_path.parent.mkdir(parents=True, exist_ok=True)
         md_path.write_text(
             render_md_template(kind, n.get("label", ""), typed, existing_prose),
@@ -762,11 +759,7 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
     existing_details: set[str] = set()
     if services_folder.is_dir():
         for child in services_folder.iterdir():
-            if (
-                child.is_dir()
-                and child.name != "_archive"
-                and (child / "detail.json").is_file()
-            ):
+            if child.is_dir() and child.name != "_archive" and (child / "detail.json").is_file():
                 existing_details.add(child.name)
 
     created: list[str] = []

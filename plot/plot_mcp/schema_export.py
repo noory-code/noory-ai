@@ -29,6 +29,7 @@ from typing import Any
 
 from plot_mcp.models import (
     FOUNDATION_TYPED_TEXT_FIELDS,
+    BaseNodeFields,
     CoreValueNode,
     IdentityNode,
     MissionNode,
@@ -58,7 +59,7 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
 SCHEMA_VERSION = 1
 PLOT_VERSION = "0.13.0"
 
-_FOUNDATION_KIND_CLASSES = {
+_FOUNDATION_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     "project": ProjectNode,
     "mission": MissionNode,
     "core_value": CoreValueNode,
@@ -99,7 +100,7 @@ def _node_canvas_schema(kind: str) -> dict[str, Any]:
     only the BaseNodeFields graph data, **excluding** typed text. The
     typed text fields live in the MD template."""
     cls = _FOUNDATION_KIND_CLASSES[kind]
-    raw = cls.model_json_schema()
+    raw: dict[str, Any] = cls.model_json_schema()
     typed_text = set(FOUNDATION_TYPED_TEXT_FIELDS.get(kind, []))
     if typed_text:
         props = raw.get("properties", {})

@@ -120,8 +120,7 @@ class _V01SketchDoc(BaseModel):
         cores = [n for n in self.nodes if n.kind == "project"]
         if len(cores) > 1:
             raise ValueError(
-                f"at most one project node allowed per sketch; "
-                f"found {sorted(n.id for n in cores)}"
+                f"at most one project node allowed per sketch; found {sorted(n.id for n in cores)}"
             )
         roots = [n for n in self.nodes if n.is_root]
         by_kind: dict[str, list[str]] = {}
@@ -399,7 +398,7 @@ def _build_foundation_canvas(core_root: SketchNode | None, project_name: str) ->
                 height=80,
                 color="#fde68a",
                 shape="rounded",
-                )
+            )
         )
 
     # Same: legacy ``identity`` text is dropped. User can paste it into

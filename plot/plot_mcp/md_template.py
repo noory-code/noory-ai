@@ -102,7 +102,8 @@ def parse_md_template(text: str, kind: str) -> ParsedTemplate:
         free_prose = ""
     else:
         typed_area = text[: hr.start()]
-        free_prose = text[hr.end() :].lstrip("\n").rstrip() + "\n" if text[hr.end() :].strip() else ""
+        tail = text[hr.end() :]
+        free_prose = tail.lstrip("\n").rstrip() + "\n" if tail.strip() else ""
 
     # Pull the H1 label (first line starting with `# `).
     label = ""

@@ -11,7 +11,7 @@ fields are unchanged.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -293,9 +293,7 @@ class SketchNode(BaseModel):
         if not path:
             raise ValueError(f"node {self.id!r} details_path must not be blank")
         if path.startswith("/"):
-            raise ValueError(
-                f"node {self.id!r} details_path must be relative, got {path!r}"
-            )
+            raise ValueError(f"node {self.id!r} details_path must be relative, got {path!r}")
         # Reject ``..`` segments to prevent escape; normalise slashes first.
         parts = path.replace("\\", "/").split("/")
         if any(part == ".." or part == "" for part in parts):
@@ -403,7 +401,7 @@ class IdentityNode(BaseNodeFields):
 # Used by Phase 3's MD template I/O to instantiate the correct subclass per
 # node (Pydantic dispatches via the ``kind`` literal).
 FoundationNode = Annotated[
-    Union[ProjectNode, MissionNode, CoreValueNode, IdentityNode],
+    ProjectNode | MissionNode | CoreValueNode | IdentityNode,
     Field(discriminator="kind"),
 ]
 
@@ -481,7 +479,8 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
         "metric",
         "step",
         "actor_ref",
-    } | _FOUNDATION_REFS,
+    }
+    | _FOUNDATION_REFS,
 }
 
 
@@ -561,7 +560,8 @@ class CanvasDoc(BaseModel):
         projects = [n for n in self.nodes if n.kind == "project"]
         if len(projects) > 1:
             raise ValueError(
-                f"foundation canvas may carry at most one legacy project node; found {len(projects)}"
+                f"foundation canvas may carry at most one legacy project node; "
+                f"found {len(projects)}"
             )
         if projects and projects[0].parent_id is not None:
             raise ValueError(
@@ -602,8 +602,7 @@ class CanvasDoc(BaseModel):
                 if parent is None or parent.kind != "category":
                     parent_kind = parent.kind if parent else "missing"
                     raise ValueError(
-                        f"service {n.id!r}'s parent must be a category, "
-                        f"got {parent_kind!r}"
+                        f"service {n.id!r}'s parent must be a category, got {parent_kind!r}"
                     )
             elif n.kind == "category":
                 if n.parent_id is not None:

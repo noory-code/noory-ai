@@ -569,9 +569,7 @@ def test_file_put_does_not_touch_canvas(
         "/api/projects/alpha/canvases/foundation",
         params={"project_path": project_path},
     ).json()
-    refreshed_mission = next(
-        n for n in core_after["nodes"] if n["id"] == mission["id"]
-    )
+    refreshed_mission = next(n for n in core_after["nodes"] if n["id"] == mission["id"])
     # details_path stays the same — file write didn't touch the canvas.
     assert refreshed_mission["details_path"] == "core/mission-mission/details.md"
 
@@ -597,10 +595,7 @@ def test_folder_post_creates_unique_path(
     assert second.status_code == 201
     assert second.json()["path"] == "core/mission-mission-2"
     # index.md is seeded inside the created folder (under the project scope).
-    assert (
-        Path(project_path)
-        / ".plot/alpha/core/mission-mission/index.md"
-    ).is_file()
+    assert (Path(project_path) / ".plot/alpha/core/mission-mission/index.md").is_file()
 
 
 def test_list_migrates_v01_sketches_silently(
