@@ -135,19 +135,21 @@ describe("no-god-union-import (Phase 5.2)", () => {
 
 /**
  * LOC ceilings — see plan ``dazzling-greeting-diffie.md`` Phase 5.2
- * + D-2026-05-12-F. Raise via decision (file outgrew its single
- * responsibility and needs a split), never via test edit.
+ * + D-2026-05-12-F (the no-growth ceiling at 830) + D-2026-05-12-H
+ * (the App.tsx split that landed the plan target ≤ 400 over five
+ * commits v0.16.1 → v0.16.5). Raise via decision (file outgrew its
+ * single responsibility and needs a split), never via test edit.
  *
- * App.tsx note: the plan target is ``≤ 400`` (current 811 reflects
- * URL sync + filter callbacks + handler glue that has not yet been
- * extracted). The ceiling below is a *no-growth* guard at the
- * current LOC + small headroom; the App.tsx split is filed as the
- * v0.16+ follow-up (D-2026-05-12-F §App.tsx refactor follow-up).
+ * App.tsx: the plan target ``≤ 400`` is now live as of v0.16.5
+ * (App.tsx 381 LOC). Header / CanvasTabs / HelpCheatsheet /
+ * ServiceDetailModal / states moved to ``viewer/src/shell/``;
+ * useUrlSync / useAvailableNodes / useAppKeyboard moved to
+ * ``viewer/src/hooks/``.
  */
 const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   "App.tsx": {
-    ceiling: 830,
-    note: "Plan target ≤ 400; current 811. No-growth ceiling until App.tsx split lands.",
+    ceiling: 400,
+    note: "Plan target locked in v0.16.5 (D-2026-05-12-H).",
   },
   "canvases/SketchCanvas.tsx": { ceiling: 420 },
   "canvases/nodes/BaseNode.tsx": { ceiling: 250 },

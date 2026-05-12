@@ -4,6 +4,80 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.5] — 2026-05-12
+
+v0.16.0 follow-up — App.tsx split commit 5 of 5, **DONE**. The
+plan target ``≤ 400`` LOC for App.tsx (deferred from Phase 5.2,
+filed in D-2026-05-12-F) is now locked in. App.tsx 423 → 381 LOC;
+``structural-guards.test.tsx`` ceiling lowered from **830 → 400**.
+(D-2026-05-12-H)
+
+### Added — viewer/src/hooks/useAvailableNodes.ts
+
+- Derives the four cross-canvas "available master" lists from the
+  canvas cache: ``availableActors`` (actors canvas, kind="actor") +
+  ``availableMissions`` / ``availableValues`` / ``availableIdentities``
+  (foundation canvas, kind="mission" / "core_value" / "identity").
+- Replaces 4 inline ``useMemo`` blocks in App.tsx.
+
+### Added — viewer/src/hooks/useAppKeyboard.ts
+
+- Owns the App-shell keyboard shortcuts: ⌘/Ctrl+Z (undo), ⌘/Ctrl+
+  Shift+Z / ⌘/Ctrl+Y (redo), ``?`` (toggle help), Esc (close help
+  when open).
+- Skips when focus is in an editable field (INPUT / TEXTAREA /
+  contentEditable).
+
+### Changed — viewer/src/App.tsx
+
+- 423 → 381 LOC (-42).
+- 4 inline ``availableX`` ``useMemo`` blocks replaced by one
+  ``useAvailableNodes(canvasCache)`` call.
+- 33-LOC inline keyboard ``useEffect`` replaced by ``useAppKeyboard({
+  onUndo, onRedo, helpOpen, setHelpOpen })``.
+- ``useEffect`` import dropped (no longer used in App).
+- ``SketchNode`` type import dropped (now scoped inside
+  ``useAvailableNodes``).
+
+### Changed — viewer/tests/structural-guards.test.tsx
+
+- ``App.tsx`` ceiling **830 → 400**. The plan target from
+  D-2026-05-12-F is now enforced. Raising the ceiling requires a
+  fresh ``D-YYYY-MM-DD-X`` entry that names the new responsibility
+  App.tsx legitimately absorbed.
+
+### Changed — plot/CLAUDE.md §Gate 2
+
+- App.tsx row updated: 811 / 830 → 381 / 400.
+- New rows for ``shell/*`` and ``hooks/use*`` outlining the
+  per-concern split pattern.
+
+### Changed — plot/docs/ARCHITECTURE.md
+
+- "What's still pending" section: App.tsx ≤ 400 marked **DONE**.
+  Pointer to the v0.16.1–v0.16.5 commit sequence.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 361 / 361 passed.
+- ``uv run pytest`` — 256 / 256 passed (no server-side changes).
+- App.tsx LOC budget assertion: 381 ≤ 400 ✓.
+
+### App.tsx split scorecard (v0.16.1 → v0.16.5)
+
+| Commit | App.tsx LOC | Δ | Extracted |
+|---|---:|---:|---|
+| v0.16.0 (baseline) | 811 | — | — |
+| v0.16.1 | 715 | -96 | ``shell/Header.tsx`` |
+| v0.16.2 | 564 | -151 | ``shell/CanvasTabs.tsx``, ``HelpCheatsheet.tsx``, ``states.tsx`` |
+| v0.16.3 | 496 | -68 | ``shell/ServiceDetailModal.tsx`` |
+| v0.16.4 | 423 | -73 | ``hooks/useUrlSync.ts`` |
+| v0.16.5 | 381 | -42 | ``hooks/useAvailableNodes.ts``, ``useAppKeyboard.ts`` + ceiling lock |
+
+Plugin patch bump 0.16.4 → 0.16.5. App.tsx no longer owns chrome
+or glue — only project-level state + canvas wiring.
+
 ## [0.16.4] — 2026-05-12
 
 v0.16.0 follow-up — App.tsx split commit 4 of 5. URL ⟷ tab /

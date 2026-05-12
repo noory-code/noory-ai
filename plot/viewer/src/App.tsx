@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { patchProjectAnchor, resolveProjectPath } from "./api";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
@@ -6,6 +6,8 @@ import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
 import { ServicesCanvas } from "./canvases/ServicesCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import { useProjectHistory } from "./canvases/useProjectHistory";
+import { useAppKeyboard } from "./hooks/useAppKeyboard";
+import { useAvailableNodes } from "./hooks/useAvailableNodes";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
 import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
@@ -20,7 +22,6 @@ import type {
   CanvasKey,
   CanvasKind,
   ProjectDoc,
-  SketchNode,
 } from "./types";
 
 function tabToKind(tab: CanvasTab): CanvasKind {
@@ -164,38 +165,12 @@ export function App() {
 
   const [helpOpen, setHelpOpen] = useState(false);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
-        return;
-      }
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        handleUndo();
-        return;
-      }
-      if (mod && ((e.key === "z" && e.shiftKey) || e.key === "y")) {
-        e.preventDefault();
-        handleRedo();
-        return;
-      }
-      // ``?`` without modifiers → toggle help.
-      if (!mod && !e.altKey && (e.key === "?" || (e.shiftKey && e.key === "/"))) {
-        e.preventDefault();
-        setHelpOpen((v) => !v);
-        return;
-      }
-      if (!mod && e.key === "Escape" && helpOpen) {
-        e.preventDefault();
-        setHelpOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [handleUndo, handleRedo, helpOpen]);
+  useAppKeyboard({
+    onUndo: handleUndo,
+    onRedo: handleRedo,
+    helpOpen,
+    setHelpOpen,
+  });
 
   // ------- current canvas selection -------
 
@@ -218,29 +193,12 @@ export function App() {
   }, [detailServiceId]);
   const detailCanvas = detailCanvasKey ? canvasCache.get(detailCanvasKey) ?? null : null;
 
-  // actors canvas provides the orphan check list + picker source
-  const actorsCanvas = canvasCache.get("actors");
-  const availableActors: SketchNode[] = useMemo(() => {
-    if (!actorsCanvas) return [];
-    return actorsCanvas.nodes.filter((n) => n.kind === "actor");
-  }, [actorsCanvas]);
-
-  // v0.10 Step 3: foundation canvas feeds the FoundationRefPicker. The
-  // three master kinds are filtered separately so each picker shows only
-  // the relevant candidates.
-  const foundationCanvas = canvasCache.get("foundation");
-  const availableMissions: SketchNode[] = useMemo(() => {
-    if (!foundationCanvas) return [];
-    return foundationCanvas.nodes.filter((n) => n.kind === "mission");
-  }, [foundationCanvas]);
-  const availableValues: SketchNode[] = useMemo(() => {
-    if (!foundationCanvas) return [];
-    return foundationCanvas.nodes.filter((n) => n.kind === "core_value");
-  }, [foundationCanvas]);
-  const availableIdentities: SketchNode[] = useMemo(() => {
-    if (!foundationCanvas) return [];
-    return foundationCanvas.nodes.filter((n) => n.kind === "identity");
-  }, [foundationCanvas]);
+  // v0.10 Step 3 / v0.16.5 — cross-canvas "available master" lists for
+  // pickers + orphan detection. Foundation canvas feeds the three
+  // foundation-kind pickers; Actors canvas feeds the ActorRefPicker
+  // + orphan check.
+  const { availableActors, availableMissions, availableValues, availableIdentities } =
+    useAvailableNodes(canvasCache);
 
   // v0.11.6 — download / upload toolbar buttons removed per user
   // feedback. Save is automatic; the toolbar focuses on undo/redo +

@@ -1831,11 +1831,30 @@ in the same browser-verification round:
 - **Spec impact:** none — internal refactor. No user-visible
   behaviour change.
 
-- **First commit (v0.16.1):**
-  - ``plot/viewer/src/shell/Header.tsx`` — new. Header + SocketIndicator
-    + truncateMiddle moved from App.tsx.
-  - ``plot/viewer/src/App.tsx`` — 811 → 715 LOC (-96).
-  - ``plot/CHANGELOG.md`` — v0.16.1 section.
-  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.0 → 0.16.1.
-  - ``plot/docs/DECISIONS.md`` — this entry (umbrella for v0.16.1
-    → v0.16.5).
+- **Per-commit summary (v0.16.1 → v0.16.5):**
+  - v0.16.1 — ``shell/Header.tsx`` (Header + SocketIndicator +
+    truncateMiddle). App.tsx 811 → 715.
+  - v0.16.2 — ``shell/CanvasTabs.tsx`` + ``shell/HelpCheatsheet.tsx`` +
+    ``shell/states.tsx`` (Loading + ErrorPanel + EmptyState).
+    ``CanvasTab`` type SSOT moved next to its visual consumer.
+    App.tsx 715 → 564.
+  - v0.16.3 — ``shell/ServiceDetailModal.tsx``. ``useTranslation``
+    dropped from App.tsx (modal was the only consumer).
+    App.tsx 564 → 496.
+  - v0.16.4 — ``hooks/useUrlSync.ts`` (3 useState + 6 navigation
+    callbacks + syncUrl). App.tsx 496 → 423.
+  - v0.16.5 — ``hooks/useAvailableNodes.ts`` + ``hooks/useAppKeyboard.ts``.
+    structural-guards ceiling 830 → 400. CLAUDE.md Gate 2 LOC table
+    + ARCHITECTURE "What's still pending" updated. App.tsx 423 → 381.
+
+- **Final state at v0.16.5:**
+  - App.tsx LOC: 811 → 381 (-430).
+  - LOC ceiling locked at 400 in ``structural-guards.test.tsx``.
+  - 5 new shell files + 3 new hook files; each owns one slice of
+    chrome / glue. No prop-drilling beyond the App composition root.
+  - 361/361 viewer tests green at every commit boundary; tsc clean
+    at every commit boundary.
+
+- **Approval:** Accepted by structural verification — final ceiling
+  assertion in ``structural-guards.test.tsx`` enforces the plan
+  target on every future commit.

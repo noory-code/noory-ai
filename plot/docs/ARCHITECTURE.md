@@ -103,10 +103,13 @@ entry.
 
 ### What's still pending
 
-- **App.tsx ≤ 400** — current 811 LOC. URL sync + filter callbacks
-  + handler glue should be extracted to hooks. No-growth ceiling
-  830 protects against further bloat in the meantime.
-  Filed as v0.16+ follow-up in [D-2026-05-12-F](./DECISIONS.md).
+- **~~App.tsx ≤ 400~~** — **DONE** in v0.16.5 (D-2026-05-12-H).
+  App.tsx 811 → 381 LOC over five commits (v0.16.1–v0.16.5).
+  Header / CanvasTabs / HelpCheatsheet / ServiceDetailModal /
+  states moved to `viewer/src/shell/`; useUrlSync /
+  useAvailableNodes / useAppKeyboard moved to `viewer/src/hooks/`.
+  LOC ceiling locked at 400 in
+  `viewer/tests/structural-guards.test.tsx`.
 - **Server schema export parity with viewer** — `schema_export.py`
   exports all 15 kinds (v0.14.17). A test asserting field-name
   parity between `Cls.model_fields.keys()` (Pydantic) and the TS
