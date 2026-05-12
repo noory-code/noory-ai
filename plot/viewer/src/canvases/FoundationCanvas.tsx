@@ -1,19 +1,22 @@
 /**
- * Foundation-canvas wrapper. v0.15 Phase 3.2.
+ * Foundation-canvas wrapper. v0.15 Phase 3.4 — supplies the
+ * canvas-kind-specific behaviour (no fold, no drill, anchor on)
+ * via wrapper-supplied props instead of having SketchCanvas read
+ * ``doc.canvas_kind``.
  *
- * Pure pass-through to ``SketchCanvas`` for now — Phase 3.4 absorbs
- * the canvas-kind-specific behaviour (showFold=false, anchor injection,
- * filter rules) that currently lives in ``useNodesMemo.ts`` /
- * ``useEdgesMemo.ts`` and routes them through wrapper-supplied props
- * instead. Phase 3.5 wires ``NODE_RENDERERS`` so this wrapper supplies
- * a Foundation-only ``nodeTypes`` map.
- *
- * The wrapper exists now (vs. straight SketchCanvas calls) so the
- * call-site routing in App.tsx is named — clicking the Foundation tab
- * mounts ``<FoundationCanvas>``, not ``<SketchCanvas doc.kind=...>``.
+ * Phase 3.5 will wire NODE_RENDERERS so this wrapper supplies a
+ * Foundation-only ``nodeTypes`` map.
  */
 import { SketchCanvas, type SketchCanvasProps } from "./SketchCanvas";
 
 export function FoundationCanvas(props: SketchCanvasProps) {
-  return <SketchCanvas {...props} />;
+  return (
+    <SketchCanvas
+      {...props}
+      hideRootServiceNode={false}
+      shouldDrill={undefined}
+      showFoldButton={false}
+      injectAnchor={true}
+    />
+  );
 }

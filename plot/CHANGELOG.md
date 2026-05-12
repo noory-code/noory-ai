@@ -4,6 +4,62 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.4] — 2026-05-12
+
+v0.15 structural reset Phase 3.4 — canvas_kind switches stripped
+from useNodesMemo + useEdgesMemo + edgeTransform; each per-canvas
+wrapper now supplies its own behaviour via 4 explicit props.
+(D-2026-05-12-B)
+
+### Changed — useNodesMemo
+
+The 4 ``doc.canvas_kind`` switches inside the transform are gone.
+``useNodesMemo`` now takes 4 new wrapper-supplied args:
+
+- ``hideRootServiceNode: boolean`` — drop the canvas's root-service
+  node from the rendered list. Was: ``canvas_kind === "service_detail"``.
+- ``shouldDrill: ((node) => boolean) | undefined`` — predicate that
+  opts nodes into double-click drill. Was: inline kind-specific
+  conditions on services / service_detail.
+- ``showFoldButton: boolean`` — render the fold (▾/▸) button on
+  container nodes. Was: ``canvas_kind !== "foundation"``.
+- ``injectAnchor: boolean`` — inject the synthetic project anchor
+  at the top of the node list. Was: ``ANCHOR_KINDS.has(canvas_kind)``.
+
+### Changed — useEdgesMemo + edgeTransform
+
+The ``canvasKind`` parameter is gone; ``hideRootServiceNode`` flows
+in instead. ``edgeTransform`` is still pure + unit-testable in
+isolation; the change just renamed the input flag.
+
+### Changed — SketchCanvas
+
+Forwards the 4 new props to the transforms with safe defaults
+(``hideRootServiceNode=false``, ``showFoldButton=true``,
+``injectAnchor=true``, ``shouldDrill=undefined``) so any direct call
+without a wrapper still works (none today; the default just means
+"normal main-canvas behaviour").
+
+### Changed — wrappers
+
+- ``FoundationCanvas``: ``hideRootServiceNode=false``,
+  ``shouldDrill=undefined``, ``showFoldButton=false``,
+  ``injectAnchor=true``.
+- ``ActorsCanvas``: ``showFoldButton=true``, others as Foundation.
+- ``ServicesCanvas``: ``shouldDrill=(n => n.kind === "service" && !n.is_root)``,
+  others as Foundation but ``showFoldButton=true``.
+- ``ServiceDetailCanvas``: ``hideRootServiceNode=true``,
+  ``shouldDrill=(n => n.kind === "actor_ref")``, ``injectAnchor=false``,
+  ``showFoldButton=true``.
+
+### Verification
+
+- ``grep -nE "canvas_kind\s*===" useNodesMemo useEdgesMemo edgeTransform App.tsx`` — 0 hits.
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 106 / 106 passed.
+
+Plugin patch bump 0.15.3 → 0.15.4.
+
 ## [0.15.3] — 2026-05-12
 
 v0.15 structural reset Phase 3.3 — ServicesCanvas + ServiceDetailCanvas

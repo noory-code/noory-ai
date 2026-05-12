@@ -1,10 +1,22 @@
 /**
- * Services-canvas wrapper. v0.15 Phase 3.3. Pure pass-through (see
- * ``FoundationCanvas`` doc — Phase 3.4 absorbs canvas-kind-specific
- * behaviour, Phase 3.5 wires NODE_RENDERERS).
+ * Services-canvas wrapper. v0.15 Phase 3.4 — fold on, drill on
+ * non-root service nodes (per v0.12.1), anchor on.
  */
 import { SketchCanvas, type SketchCanvasProps } from "./SketchCanvas";
+import type { SketchNode } from "../types";
+
+function shouldDrillService(n: SketchNode): boolean {
+  return n.kind === "service" && !n.is_root;
+}
 
 export function ServicesCanvas(props: SketchCanvasProps) {
-  return <SketchCanvas {...props} />;
+  return (
+    <SketchCanvas
+      {...props}
+      hideRootServiceNode={false}
+      shouldDrill={shouldDrillService}
+      showFoldButton={true}
+      injectAnchor={true}
+    />
+  );
 }

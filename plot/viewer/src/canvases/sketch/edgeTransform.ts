@@ -3,27 +3,32 @@
 // edges have far fewer dependencies than nodes (no callbacks, just
 // data + value-flow toggle), which is why the pure split survives
 // here but not in nodeTransform (see D-2026-05-08-B).
+//
+// v0.15 Phase 3.4 — the canvas_kind switch moved out to the
+// ``hideRootServiceNode`` wrapper-supplied flag. ServiceDetailCanvas
+// passes true (and supplies serviceRef); other wrappers pass false.
 import type { Edge } from "reactflow";
 import type { CanvasDoc } from "../../types";
 import { VALUE_FORM_COLORS } from "../SketchEdgeModal";
 
 export interface EdgeTransformInput {
   edges: CanvasDoc["edges"];
-  canvasKind: CanvasDoc["canvas_kind"];
   serviceRef: CanvasDoc["service_ref"];
   /** Walk the parent chain; return the id of the first collapsed
    *  ancestor (not counting ``id`` itself), or null if none. */
   nearestCollapsedAncestor: (id: string) => string | null;
   /** When on, edges are recoloured by their first value_form entry. */
   valueFlowOn: boolean;
+  /** v0.15 Phase 3.4 — drop edges that touch the hidden service-root
+   *  (true on ServiceDetailCanvas; false elsewhere). */
+  hideRootServiceNode: boolean;
 }
 
 export function edgeTransform(input: EdgeTransformInput): Edge[] {
-  const { edges, canvasKind, serviceRef, nearestCollapsedAncestor, valueFlowOn } = input;
-  // v0.12.2 — same hide rule as the nodes transform: drop edges that
-  // point at the service-detail modal's hidden service-root.
+  const { edges, serviceRef, nearestCollapsedAncestor, valueFlowOn, hideRootServiceNode } =
+    input;
   const isHiddenRoot = (id: string): boolean =>
-    canvasKind === "service_detail" && !!serviceRef && id === serviceRef;
+    hideRootServiceNode && !!serviceRef && id === serviceRef;
   const out: Edge[] = [];
   for (const e of edges) {
     if (isHiddenRoot(e.source) || isHiddenRoot(e.target)) continue;

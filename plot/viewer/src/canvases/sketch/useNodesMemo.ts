@@ -5,8 +5,13 @@
 //  - orphan-actor_ref visual override (red tint + ⚠ prefix)
 //  - master-derived label sync for ref kinds
 //  - service.target_side body tint
-//  - drill routing for service / actor_ref kinds
+//  - drill routing for the kinds the parent canvas wrapper opts in
 //  - synthetic project anchor injection (SPEC §Anchor)
+//
+// v0.15 Phase 3.4 — the four canvas_kind switches that used to live
+// here moved out to per-canvas wrapper props (hideRootServiceNode,
+// shouldDrill, showFoldButton, injectAnchor). The transform itself
+// no longer reads ``doc.canvas_kind``.
 //
 // Kept as a single hook (not a pure module + thin wrapper) because the
 // transform reads ten-plus callbacks; a "pure" form would just shuffle
@@ -16,7 +21,6 @@ import { type Node } from "reactflow";
 import type {
   AnchorPlacement,
   CanvasDoc,
-  CanvasKind,
   SketchNode as DocNode,
 } from "../../types";
 import { type SketchNodeData } from "../SketchNode";
@@ -41,13 +45,24 @@ export interface UseNodesMemoArgs {
     | ((patch: Partial<AnchorPlacement>) => void)
     | undefined;
   setBodyModalNodeId: Dispatch<SetStateAction<string | null>>;
+  /** v0.15 Phase 3.4 — drop the canvas's root-service node from the
+   *  rendered list (true on ServiceDetailCanvas where the modal
+   *  header already names the service). */
+  hideRootServiceNode: boolean;
+  /** v0.15 Phase 3.4 — predicate the wrapper supplies to opt nodes
+   *  into double-click drill. ServicesCanvas: ``service && !is_root``;
+   *  ServiceDetailCanvas: ``actor_ref``. Foundation / Actors leave
+   *  this undefined so no node drills. */
+  shouldDrill: ((node: DocNode) => boolean) | undefined;
+  /** v0.15 Phase 3.4 — render the fold (▾/▸) button on container
+   *  nodes. Foundation lays pillars out as peers — fold has no
+   *  meaning there. */
+  showFoldButton: boolean;
+  /** v0.15 Phase 3.4 — inject the synthetic project anchor at the
+   *  top of the node list. False on ServiceDetailCanvas (the modal
+   *  has its own header). */
+  injectAnchor: boolean;
 }
-
-const ANCHOR_KINDS: ReadonlySet<CanvasKind> = new Set([
-  "foundation",
-  "actors",
-  "services",
-]);
 
 export function useNodesMemo({
   doc,
@@ -66,6 +81,10 @@ export function useNodesMemo({
   projectName,
   onAnchorChange,
   setBodyModalNodeId,
+  hideRootServiceNode,
+  shouldDrill,
+  showFoldButton,
+  injectAnchor,
 }: UseNodesMemoArgs): Node<SketchNodeData>[] {
   return useMemo<Node<SketchNodeData>[]>(() => {
     // SPEC §Rendering order: parents first, children after. React
@@ -84,12 +103,9 @@ export function useNodesMemo({
       // through the right-hand Inspector panel, never on the canvas.
       if (n.kind === "rule" || n.kind === "content") continue;
       // v0.12.2: inside the service-detail modal the service-root
-      // is redundant — the modal header already names it.
-      if (
-        doc.canvas_kind === "service_detail" &&
-        doc.service_ref &&
-        n.id === doc.service_ref
-      ) {
+      // is redundant — the modal header already names it. Wrapper
+      // (ServiceDetailCanvas) opts in via ``hideRootServiceNode``.
+      if (hideRootServiceNode && doc.service_ref && n.id === doc.service_ref) {
         continue;
       }
       const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
@@ -127,10 +143,9 @@ export function useNodesMemo({
       const visualLabel = isOrphan ? `⚠ ${baseLabel}` : baseLabel;
       // v0.12.1 — kinds whose double-click should drill (not open the
       // generic edit modal) get onDrill wired. SketchNode's dblclick
-      // prefers drill when set.
-      const drillThisNode =
-        (doc.canvas_kind === "services" && n.kind === "service" && !n.is_root) ||
-        (doc.canvas_kind === "service_detail" && n.kind === "actor_ref");
+      // prefers drill when set. v0.15 Phase 3.4: per-canvas drill
+      // predicate supplied by the wrapper.
+      const drillThisNode = shouldDrill?.(n) ?? false;
       const onDrill = drillThisNode && onNodeDrill ? () => onNodeDrill(n.id) : undefined;
       out.push({
         id: n.id,
@@ -154,16 +169,18 @@ export function useNodesMemo({
           collapsed: n.collapsed,
           childCount: hasChildren ? subtreeSize(n.id) : 0,
           onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
-          // Foundation lays pillars out as peers — fold has no meaning.
-          showFold: doc.canvas_kind !== "foundation",
+          // v0.15 Phase 3.4: per-canvas opt-in. Foundation lays pillars
+          // out as peers and passes false; everywhere else passes true.
+          showFold: showFoldButton,
           mdWarnings: n._md_warnings,
         },
       });
     }
-    // SPEC §Anchor — synthetic project anchor injected on every primary
-    // canvas kind (foundation / actors / services). Mutation routes via
-    // onAnchorChange, NEVER via onDocChange.
-    if (projectAnchor && ANCHOR_KINDS.has(doc.canvas_kind)) {
+    // SPEC §Anchor — synthetic project anchor. v0.15 Phase 3.4: each
+    // wrapper opts in via ``injectAnchor`` (true on Foundation /
+    // Actors / Services; false on ServiceDetailCanvas). Mutation
+    // routes via onAnchorChange, NEVER via onDocChange.
+    if (projectAnchor && injectAnchor) {
       out.unshift({
         id: PROJECT_ANCHOR_ID,
         type: "sketch",
@@ -186,7 +203,6 @@ export function useNodesMemo({
     return out;
   }, [
     doc.nodes,
-    doc.canvas_kind,
     doc.service_ref,
     childIdsByParent,
     nearestCollapsedAncestor,
@@ -203,5 +219,9 @@ export function useNodesMemo({
     projectName,
     onAnchorChange,
     setBodyModalNodeId,
+    hideRootServiceNode,
+    shouldDrill,
+    showFoldButton,
+    injectAnchor,
   ]);
 }

@@ -91,6 +91,20 @@ export interface SketchCanvasProps {
   projectName?: string | null;
   /** v0.13 Phase 0: callback when the user drags / resizes the anchor. */
   onAnchorChange?: (patch: Partial<import("../types").AnchorPlacement>) => void;
+  /** v0.15 Phase 3.4 — drop the canvas's root-service node from
+   *  the rendered list (true on ServiceDetailCanvas where the
+   *  modal header already names the service). Default false. */
+  hideRootServiceNode?: boolean;
+  /** v0.15 Phase 3.4 — predicate that opts nodes into double-click
+   *  drill. Each canvas wrapper supplies its own. Default ``undefined``
+   *  = no drilling. */
+  shouldDrill?: (node: DocNode) => boolean;
+  /** v0.15 Phase 3.4 — render the fold (▾/▸) button on container
+   *  nodes. Default true; FoundationCanvas passes false. */
+  showFoldButton?: boolean;
+  /** v0.15 Phase 3.4 — inject the synthetic project anchor at the top
+   *  of the node list. Default true; ServiceDetailCanvas passes false. */
+  injectAnchor?: boolean;
 }
 
 
@@ -121,6 +135,10 @@ function SketchCanvasInner({
   projectAnchor,
   projectName,
   onAnchorChange,
+  hideRootServiceNode,
+  shouldDrill,
+  showFoldButton,
+  injectAnchor,
 }: SketchCanvasProps) {
   const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
@@ -183,9 +201,18 @@ function SketchCanvasInner({
     projectName,
     onAnchorChange,
     setBodyModalNodeId,
+    hideRootServiceNode: hideRootServiceNode ?? false,
+    shouldDrill,
+    showFoldButton: showFoldButton ?? true,
+    injectAnchor: injectAnchor ?? true,
   });
 
-  const edges = useEdgesMemo({ doc, nearestCollapsedAncestor, valueFlowOn });
+  const edges = useEdgesMemo({
+    doc,
+    nearestCollapsedAncestor,
+    valueFlowOn,
+    hideRootServiceNode: hideRootServiceNode ?? false,
+  });
 
   // React Flow's onNodesChange must dispatch atomically per the
   // coupling map — keep this handler in the shell, but the pure
