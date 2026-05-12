@@ -2359,3 +2359,77 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.12 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.11 → 0.16.12.
+
+---
+
+### D-2026-05-12-P — Add ``owner: str | None`` to BaseNodeFields (multi-user prep)
+
+- **What:** Add an ``owner`` field to ``BaseNodeFields`` (Pydantic)
+  and ``BaseFieldsJson`` / ``BaseFields`` (TS), plus the matching
+  ``readonly owner!: string | null`` declaration + ``owner:
+  this.owner`` toJson emission on each of the 15 entity classes.
+  Type ``string | null``, default ``null``. Schema parity test
+  ``_EXPECTED_BASE_FIELDS`` extended.
+
+- **Why:** the canonical Plot spec re-delivered by the user
+  (plan ``~/.claude/plans/dazzling-inventing-boole.md``) §"데이터
+  구조 원칙":
+  > "owner 필드 포함 (멀티유저 확장 대비)."
+
+  Multi-user editing itself is out of scope for the current cycle
+  (per spec §"추후 과제"); this commit lands the *data field* so
+  the wire format is ready when multi-user does ship. Single-user
+  sessions write ``null``; server fills from session context once
+  multi-user lands.
+
+- **Scope discipline (what this decision does NOT do):**
+  - **No UI surface.** Inspector / node renderers / display
+    unchanged. ``owner`` is invisible to today's user.
+  - **No permission logic.** Read / write authorisation comes
+    later with the rest of the multi-user track.
+  - **No retroactive backfill.** Existing nodes load with
+    ``owner=null`` via Pydantic + TS defaults; no migration.
+  - **All 15 kinds inherit.** Refs (``mission_ref`` /
+    ``value_ref`` / ``identity_ref`` / ``actor_ref``) and
+    composition kinds (``rule`` / ``content`` / ``step`` /
+    ``metric``) can each be owned independently if needed. The
+    spec doesn't say "symbols only" — every node gets it.
+
+- **Alternatives considered:**
+  - **Structured owner** (``{ id: string; type: "user" | "team" |
+    "org" }``): rejected per YAGNI. Multi-user data shape is not
+    yet specced; ``string | null`` is the cheapest extensible
+    placeholder.
+  - **Owner only on symbol kinds** (Mission / CoreValue /
+    Identity / Actor / Service): rejected. Future scope (e.g.
+    a workspace where service rules carry team-specific
+    permissions) would need it on rules. Default ``null`` on all
+    is cost-free today and future-proof.
+  - **Skip the field, add it when multi-user starts**: rejected.
+    Wire-format migrations are expensive once user data is in
+    the wild; adding the field now (with default ``null``) is
+    backwards-compatible.
+
+- **Approval:** Accepted by spec mandate. Schema parity test
+  pins TS ↔ Pydantic agreement on the new field.
+
+- **Spec impact:** none in ``docs/SPEC.md`` (no user-visible
+  behaviour change). ``docs/PRODUCT_SPEC.md §5 데이터 구조 원칙``
+  could later be reconciled with the canonical spec wording, but
+  that is a separate doc-only commit.
+
+- **Files in this commit:**
+  - ``plot/plot_mcp/models.py`` — ``BaseNodeFields`` adds
+    ``owner: str | None = None`` after ``details_path``.
+  - ``plot/viewer/src/domain/BaseFields.ts`` —
+    ``BaseFieldsJson`` + ``BaseFields`` interfaces add ``owner:
+    string | null``; ``parseBaseFields`` reads it with null
+    default.
+  - ``plot/viewer/src/domain/{15 entity files}`` — each gets a
+    ``readonly owner!: string | null`` field + ``owner:
+    this.owner`` line in ``toJson``.
+  - ``plot/tests/test_schema_parity.py`` — ``_EXPECTED_BASE_FIELDS``
+    gains ``"owner"``.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.13 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.12 → 0.16.13.

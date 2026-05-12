@@ -148,6 +148,10 @@ class BaseNodeFields(BaseModel):
     collapsed: bool = False
     is_root: bool = False
     details_path: str | None = None
+    # v0.16.12 — owner identifier for multi-user prep. ``None`` when
+    # authored by an anonymous / single-user session. Server fills
+    # from session context once multi-user lands.
+    owner: str | None = None
 
     @model_validator(mode="after")
     def _details_path_is_safe(self) -> BaseNodeFields:

@@ -26,6 +26,7 @@ export class MissionRef implements BaseFields {
   readonly collapsed!: boolean;
   readonly is_root!: boolean;
   readonly details_path!: string | null;
+  readonly owner!: string | null;
 
   readonly kind: "mission_ref" = "mission_ref";
 
@@ -73,6 +74,7 @@ export class MissionRef implements BaseFields {
       collapsed: this.collapsed,
       is_root: this.is_root,
       details_path: this.details_path,
+      owner: this.owner,
       kind: "mission_ref",
       ref_mission_id: this.ref_mission_id,
     };

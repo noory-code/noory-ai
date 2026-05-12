@@ -29,6 +29,7 @@ export class Rule implements BaseFields {
   readonly collapsed!: boolean;
   readonly is_root!: boolean;
   readonly details_path!: string | null;
+  readonly owner!: string | null;
 
   readonly kind: "rule" = "rule";
 
@@ -80,6 +81,7 @@ export class Rule implements BaseFields {
       collapsed: this.collapsed,
       is_root: this.is_root,
       details_path: this.details_path,
+      owner: this.owner,
       kind: "rule",
       policy: this.policy,
       enforcement: this.enforcement,

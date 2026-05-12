@@ -30,6 +30,7 @@ export class Step implements BaseFields {
   readonly collapsed!: boolean;
   readonly is_root!: boolean;
   readonly details_path!: string | null;
+  readonly owner!: string | null;
 
   readonly kind: "step" = "step";
 
@@ -71,6 +72,7 @@ export class Step implements BaseFields {
       collapsed: this.collapsed,
       is_root: this.is_root,
       details_path: this.details_path,
+      owner: this.owner,
       kind: "step",
       order: this.order,
       outcome: this.outcome,

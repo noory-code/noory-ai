@@ -30,6 +30,10 @@ export interface BaseFieldsJson {
   collapsed: boolean;
   is_root: boolean;
   details_path: string | null;
+  /** v0.16.12 — owner identifier for multi-user prep. ``null`` when
+   *  authored by an anonymous / single-user session. Server fills
+   *  from session context once multi-user lands. */
+  owner: string | null;
 }
 
 /** In-memory shape (defaults filled in). Every field present and typed. */
@@ -47,6 +51,10 @@ export interface BaseFields {
   collapsed: boolean;
   is_root: boolean;
   details_path: string | null;
+  /** v0.16.12 — owner identifier for multi-user prep. ``null`` when
+   *  authored by an anonymous / single-user session. Server fills
+   *  from session context once multi-user lands. */
+  owner: string | null;
 }
 
 const VALID_SHAPES: ReadonlySet<Shape> = new Set<Shape>([
@@ -145,5 +153,6 @@ export function parseBaseFields(raw: unknown): BaseFields {
     collapsed: asBoolean(obj.collapsed, false, "collapsed", raw),
     is_root: asBoolean(obj.is_root, false, "is_root", raw),
     details_path: asNullableString(obj.details_path, "details_path", raw),
+    owner: asNullableString(obj.owner, "owner", raw),
   };
 }

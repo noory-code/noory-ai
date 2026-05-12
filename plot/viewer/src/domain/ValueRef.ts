@@ -26,6 +26,7 @@ export class ValueRef implements BaseFields {
   readonly collapsed!: boolean;
   readonly is_root!: boolean;
   readonly details_path!: string | null;
+  readonly owner!: string | null;
 
   readonly kind: "value_ref" = "value_ref";
 
@@ -73,6 +74,7 @@ export class ValueRef implements BaseFields {
       collapsed: this.collapsed,
       is_root: this.is_root,
       details_path: this.details_path,
+      owner: this.owner,
       kind: "value_ref",
       ref_value_id: this.ref_value_id,
     };

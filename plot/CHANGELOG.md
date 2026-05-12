@@ -4,6 +4,56 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.13] — 2026-05-12
+
+Multi-user prep — ``owner: str | None`` (default ``null``) added
+to ``BaseNodeFields`` (Pydantic) and ``BaseFieldsJson`` / ``BaseFields``
+(TS). Inherited by all 15 entity classes. Wire-format only — no UI,
+no permission logic, no migration. Single-user sessions write
+``null``; server will fill from session context once multi-user
+ships. Canonical Plot spec §"데이터 구조 원칙":
+> "owner 필드 포함 (멀티유저 확장 대비)."
+(D-2026-05-12-P)
+
+### Changed — plot_mcp/models.py
+
+- ``BaseNodeFields.owner: str | None = None`` after ``details_path``.
+
+### Changed — viewer/src/domain/BaseFields.ts
+
+- ``BaseFieldsJson`` + ``BaseFields`` interfaces gain
+  ``owner: string | null``.
+- ``parseBaseFields`` reads ``obj.owner`` with null default
+  (using existing ``asNullableString`` helper).
+
+### Changed — viewer/src/domain/{15 entity files}
+
+Each entity class adds:
+- ``readonly owner!: string | null;`` declaration after
+  ``readonly details_path!: string | null;``.
+- ``owner: this.owner,`` line in ``toJson`` after ``details_path``.
+
+(``Object.assign(this, base)`` in each constructor already copies
+the new field through from ``parseBaseFields``; no per-class
+fromJson change needed.)
+
+### Changed — tests/test_schema_parity.py
+
+- ``_EXPECTED_BASE_FIELDS`` gains ``"owner"`` so the 2-anchor +
+  15-per-kind parity tests assert agreement on the new field.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 383 / 383 passed.
+- ``uv run pytest`` — 274 / 274 (schema parity now asserts the
+  14-field BaseFields canonical set on both sides).
+- ``uv run mypy plot_mcp/`` — clean.
+- ``uv run ruff check`` — clean.
+- ``test_pre_commit_gate.py`` — 11 / 11 (kill-switch happy).
+
+Plugin patch bump 0.16.12 → 0.16.13.
+
 ## [0.16.12] — 2026-05-12
 
 Kill-switch cleanup — v0.16.11 (D-2026-05-12-N) introduced a
