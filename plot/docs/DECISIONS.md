@@ -1783,3 +1783,59 @@ in the same browser-verification round:
   - ``plot/.claude-plugin/plugin.json`` — **minor** bump 0.15.10 →
     0.16.0 (structural reset complete; the only minor bump in the
     entire reset sequence).
+
+---
+
+### D-2026-05-12-H — App.tsx split (5-commit refactor → reach plan target ≤ 400 LOC)
+
+- **What:** Reduce ``viewer/src/App.tsx`` from 811 LOC to ≤ 400 LOC
+  (the plan target from D-2026-05-12-F, deferred from Phase 5.2)
+  by extracting:
+
+  | Target file | Source LOC | Sliced commit |
+  |---|---:|---|
+  | ``shell/Header.tsx`` (Header + SocketIndicator + truncateMiddle) | ~96 | v0.16.1 |
+  | ``shell/CanvasTabs.tsx`` + ``shell/HelpCheatsheet.tsx`` + ``shell/states.tsx`` (Loading + ErrorPanel + EmptyState) | ~140 | v0.16.2 |
+  | ``shell/ServiceDetailModal.tsx`` | ~67 | v0.16.3 |
+  | ``hooks/useUrlSync.ts`` (syncUrl + activeTab / detailServiceId / selectedNodeId state + 6 navigation callbacks: selectTab / drillIntoService / backToOverview / jumpToActor / consumeSelection / focusCanvas) | ~80 | v0.16.4 |
+  | ``hooks/useAvailableNodes.ts`` (4 filter memos) + ``hooks/useAppKeyboard.ts`` (undo/redo/help shortcuts) + ceiling 830 → 400 | ~58 | v0.16.5 |
+
+- **Why now:** v0.16.0 left App.tsx as the lone oversize file in the
+  post-reset tree. The structural-guards no-growth ceiling (830)
+  prevents further bloat but doesn't redeem the gap. Each extraction
+  is mechanically safe (props-in / props-out boundaries are clean,
+  no shared closure state to thread) and is verifiable with the
+  existing 361-test suite at every step.
+
+- **Commit slicing rationale:** five extractions, one per commit.
+  Each ships viewer green (tsc + vitest) and pushes LOC down
+  monotonically. The final commit (v0.16.5) lowers the
+  ``structural-guards.test.tsx`` ceiling from 830 to **400**,
+  locking in the plan target — that lowering is the only change
+  in the final commit that requires this decision id.
+
+- **Alternatives considered:**
+  - **Single big-bang commit:** rejected per "small ships over big
+    bangs" (``feedback_small_ships_over_big_bangs.md``). 5 atomic
+    commits give 5 verification points; a single 280-LOC delta has
+    one.
+  - **Extract logic before UI** (hooks first, components second):
+    rejected. The hooks reference component-local state (activeTab /
+    detailServiceId / selectedNodeId) that lives outside the
+    extracted components; extracting components first leaves a
+    smaller, cleaner App.tsx for the hook extraction to operate on.
+
+- **Approval:** Pending — follow-up to D-2026-05-12-F where the gap
+  was filed.
+
+- **Spec impact:** none — internal refactor. No user-visible
+  behaviour change.
+
+- **First commit (v0.16.1):**
+  - ``plot/viewer/src/shell/Header.tsx`` — new. Header + SocketIndicator
+    + truncateMiddle moved from App.tsx.
+  - ``plot/viewer/src/App.tsx`` — 811 → 715 LOC (-96).
+  - ``plot/CHANGELOG.md`` — v0.16.1 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.0 → 0.16.1.
+  - ``plot/docs/DECISIONS.md`` — this entry (umbrella for v0.16.1
+    → v0.16.5).

@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.1] — 2026-05-12
+
+v0.16.0 follow-up — App.tsx split commit 1 of 5. Header +
+SocketIndicator + ``truncateMiddle`` extracted to
+``viewer/src/shell/Header.tsx``. Pure JSX move, no behaviour
+change. (D-2026-05-12-H)
+
+### Added — viewer/src/shell/Header.tsx
+
+- ``Header`` component (project path + name + socket + error +
+  migration toast).
+- Internal ``SocketIndicator`` + ``truncateMiddle`` helpers,
+  scoped to this file.
+
+### Changed — viewer/src/App.tsx
+
+- 811 → 715 LOC (-96).
+- ``SocketStatus`` type import dropped (now scoped inside the new
+  shell module).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 361 / 361 passed (no test changes; same
+  component tree, just imported from a new path).
+- ``uv run pytest`` — 245 / 245 passed (no server-side changes).
+
+Plugin patch bump 0.16.0 → 0.16.1. Four more extractions land
+through v0.16.5; the final commit lowers the structural-guards
+ceiling from 830 to 400.
+
 ## [0.16.0] — 2026-05-12
 
 **v0.15 structural reset COMPLETE.** Domain layer + per-kind
