@@ -4,6 +4,30 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.27] — 2026-05-13
+
+Third of 5 deferred D-2026-05-12-B catch-up artefacts. Add
+``viewer/tests/no-god-import.test.tsx`` — static guard enforcing the
+v0.15 Phase 2.10 invariant that ``viewer/src/types.ts`` re-exports
+``SketchNode`` from the discriminated union rather than declaring a
+god interface. Plus per-kind file existence + ``{Kind}Json`` export +
+``registerKindParser`` call. Together with ``test_schema_parity.py``
+(server side) and the upcoming ``entity-roundtrip.test.tsx`` (Phase D),
+keeps the domain layer intact. Hook semantics realised via existing
+``pre_commit_gate.py`` running vitest on every viewer commit.
+(D-2026-05-13-D)
+
+### Added
+
+- ``viewer/tests/no-god-import.test.tsx`` — 46 sub-tests (1 anti-god
+  + 15 file-exists + 15 Json-export + 15 registerKindParser).
+
+### Verification
+
+- viewer vitest — 445 / 445 (399 → 445, +46).
+- New guard fails cleanly on regression (verified by inspection of
+  assertion messages).
+
 ## [0.16.26] — 2026-05-13
 
 Second of 5 deferred D-2026-05-12-B catch-up artefacts. Add

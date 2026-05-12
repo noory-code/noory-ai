@@ -2932,3 +2932,65 @@ in the same browser-verification round:
 - **Position in the 5-batch:** 2 of 5. Remaining queued:
   D-2026-05-13-D (no-god-import hook), D-2026-05-13-E (entity-roundtrip
   test), D-2026-05-13-F (CLAUDE.md anti-pattern row).
+
+---
+
+### D-2026-05-13-D — no-god-import static guard (overdue from D-2026-05-12-B)
+
+- **What:** Add ``viewer/tests/no-god-import.test.tsx`` — vitest
+  static guard with four invariants:
+  1. ``viewer/src/types.ts`` does **not** declare a god ``SketchNode``
+     interface (must be a re-export from ``domain/SketchNode.ts``).
+  2. Every ``NodeKind`` discriminator value has a corresponding
+     ``domain/{Kind}.ts`` entity class file.
+  3. Every domain class exports its JSON wire interface
+     ``{Kind}Json``.
+  4. Every domain class registers its parser via
+     ``registerKindParser("{kind}", {Kind}.fromJson)``.
+
+  Hook semantics: ``pre_commit_gate.py`` already runs vitest on every
+  viewer commit (per D-2026-05-11-C). A failure here blocks ``git
+  commit``. No new hook code needed — the guard inherits the existing
+  enforcement layer.
+
+- **Why:** D-2026-05-12-B requested a "pre-commit hook ``no-god-import``
+  (block god ``SketchNode`` import in new viewer files post-Phase-A)".
+  v0.15 Phase 2.10 retired the god interface; this guard prevents
+  drift back. Without it, a future session could quietly re-add
+  ``export interface SketchNode { ... }`` to types.ts and the
+  discriminated-union pattern would silently rot.
+
+- **Why a vitest test, not a separate Python hook:** Two reasons.
+  (1) ``pre_commit_gate.py`` already runs vitest for viewer changes;
+  a static guard *is* a pre-commit check via that path, with no new
+  code surface. (2) A Python hook would have to re-implement TS
+  parsing for ``types.ts`` and the domain files; vitest gets file
+  globbing + regex assertion + actionable failure messages for free.
+
+- **Why test.each over a single multi-assertion test:** Per-kind
+  failure messages are essential — when a developer forgets ``Foo.ts``
+  for a new ``foo`` kind, the failure should say "domain/Foo.ts is
+  missing for NodeKind 'foo'", not "some kind file is missing". 46
+  individual sub-tests cost ~6 ms and give pinpoint diagnostics.
+
+- **Approval:** Accepted by user, 2026-05-13 (the "5개 다" answer of
+  the same session that opened D-2026-05-13-B).
+
+- **Spec impact:** None — internal guard. Cross-references
+  CONCEPTS.md (NodeKind), DOMAIN.md (discriminated-union mandate),
+  plot-entity-template SKILL.md (the procedure this guard enforces).
+
+- **Files:**
+  - ``plot/viewer/tests/no-god-import.test.tsx`` — new, ~120 LOC,
+    46 sub-tests.
+  - ``plot/CHANGELOG.md`` — v0.16.27 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.26 → 0.16.27.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Test counts:**
+  - Before: 399 viewer tests.
+  - After: 445 viewer tests (+46 sub-tests).
+
+- **Position in the 5-batch:** 3 of 5. Remaining queued:
+  D-2026-05-13-E (entity-roundtrip test), D-2026-05-13-F (CLAUDE.md
+  anti-pattern row).
