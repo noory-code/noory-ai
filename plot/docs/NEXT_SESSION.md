@@ -9,7 +9,71 @@
 
 ## Active queue
 
-*(empty as of 2026-05-12 end of session.)*
+### `RF 움직임` — Canvas interaction "엉망" 깊게 파기
+
+> **Trigger:** user says **"RF 움직임"** or **"움직임 엉망"** or
+> **"RF 기본 동작"** or **"canvas interaction"** or
+> **"엉망 깊게 파자"** as the first / near-first message.
+>
+> **Filed:** 2026-05-12 end-of-session. User reports canvas
+> interaction *움직임* feels off ("엉망", "어색") after hands-on
+> review of v0.16.x. The v0.16.20-23 rollback batch removed the
+> synthetic anchor + radial layout + self-loop visual — user
+> clarified this was *over-reach* on my part. The actual user
+> intent was "anchor 유지 + interaction 이 RF stock 처럼", not
+> "anchor 제거".
+>
+> The remaining suspects (kept across v0.16.20-23):
+> - **v0.16.16 useStableHandlers** — callback identity stabilisation
+> - **v0.16.17 Cmd+A controlled-contract sync**
+> - **v0.16.18 fitView gating** (onInit only, not RF prop default)
+> - **v0.16.6+ keyboard shortcut hook** (Cmd+Z/C/V/D)
+> - **Per-kind NODE_RENDERERS / BaseNode chrome** (v0.15.1+)
+> - **useNodesMemo / useEdgesMemo transform** (drop rules / content /
+>   hidden-root / value-flow recolour / etc.)
+> - **useCollapsedTree** (fold/expand)
+> - **useDragAndDrop** (stencil → canvas)
+> - **useInspectorRouting** (click → Inspector)
+> - **useContextMenus** (pane/node/edge right-click)
+>
+> **Open questions to answer in this session:**
+> 1. What *specific* user-visible motion is "어색"? Drag /
+>    pan / zoom / click select / hover / wheel? — user must name
+>    or demonstrate concretely.
+> 2. Is the regression pre- or post- v0.15 reset? Bisect against
+>    a freshly-installed plain ``reactflow@11.11.4`` demo as the
+>    "RF baseline" reference.
+> 3. Should the *visual* features removed in v0.16.20-23
+>    (anchor / radial / self-loop) be **restored** while keeping
+>    interaction at RF stock? (User clarified anchor removal was
+>    over-reach — restoration is most likely the right call.)
+>
+> **Approach for the session:**
+> - Plan-mode entry **mandatory**. No code before plan approval.
+> - **Hands-on validation in user's real Chrome** before any
+>   commit is called "done" — Playwright synthetic input cannot
+>   drive d3-zoom event paths (plot/CLAUDE.md Gate 3); the entire
+>   v0.16.15-19 batch failed because of this very gap.
+> - Reference: ``~/.claude/plans/dazzling-inventing-boole.md``
+>   (the v0.16.20-23 rollback plan + 8-layer table that user
+>   approved). The "Phase A default" toggles documented there
+>   are the starting decision surface.
+> - DECISIONS entries to consult: D-2026-05-12-V/W/X/Y (the
+>   reverts), D-2026-05-11-A (cursor SSOT), D-2026-05-04-B
+>   (anchor handles), D-2026-05-10-C/F (cursor reset history).
+>
+> **Reference commits (recovery if anchor visual gets restored):**
+> - aa385a0 — v0.16.15 anchor optimistic update
+> - 7edbbf8 — v0.16.21 anchor-radial revert
+> - 32f3dc5 — v0.16.22 anchor injection revert
+> - 0713343 — v0.16.18 fitView gating
+> - 06199cf — v0.16.16 stable handlers
+> - 014fa12 — v0.16.17 Cmd+A sync
+> - 75ee0b0 — v0.16.20 self-loop revert
+
+---
+
+## Roadmap items (queued but lower priority)
 
 The remaining big-scope work is filed in
 [`ROADMAP.md` §"v0.17+ — Roadmap items"](./ROADMAP.md), with the
