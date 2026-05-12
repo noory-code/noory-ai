@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { patchProjectAnchor, resolveProjectPath } from "./api";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
@@ -13,6 +12,7 @@ import { useProjectSocket } from "./hooks/useProjectSocket";
 import { CANVAS_TAB_IDS, CanvasTabs, type CanvasTab } from "./shell/CanvasTabs";
 import { Header } from "./shell/Header";
 import { HelpCheatsheet } from "./shell/HelpCheatsheet";
+import { ServiceDetailModal } from "./shell/ServiceDetailModal";
 import { EmptyState, ErrorPanel, Loading } from "./shell/states";
 import type {
   AnchorPlacement,
@@ -492,73 +492,5 @@ export function App() {
   );
 }
 
-function ServiceDetailModal({
-  serviceLabel,
-  categoryLabel,
-  onClose,
-  children,
-}: {
-  serviceLabel: string;
-  categoryLabel: string | null;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  const { t } = useTranslation();
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={
-        categoryLabel
-          ? t("serviceDetail.ariaWithCategory", {
-              category: categoryLabel,
-              service: serviceLabel,
-            })
-          : t("serviceDetail.ariaWithoutCategory", { service: serviceLabel })
-      }
-      className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40"
-      onClick={onClose}
-    >
-      <div
-        className="flex h-[90vh] w-[92vw] max-w-[1600px] flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              {t("serviceDetail.label")}
-            </span>
-            {/* v0.12.6 — show parent category context so users always know
-                which group a service belongs to even inside the modal. */}
-            {categoryLabel && (
-              <>
-                <span className="text-xs text-slate-500">{categoryLabel}</span>
-                <span className="text-xs text-slate-300">›</span>
-              </>
-            )}
-            <span className="text-sm font-medium text-slate-900">{serviceLabel}</span>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
-            aria-label={t("shell.closeEsc")}
-            title={t("shell.closeEsc")}
-          >
-            ✕
-          </button>
-        </header>
-        <div className="relative flex-1 overflow-hidden">{children}</div>
-      </div>
-    </div>
-  );
-}
 
 

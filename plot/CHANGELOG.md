@@ -4,6 +4,36 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.3] — 2026-05-12
+
+v0.16.0 follow-up — App.tsx split commit 3 of 5. ServiceDetailModal
+extracted; ``useTranslation`` import dropped from App.tsx (only
+consumer was the modal). Pure JSX move, no behaviour change.
+(D-2026-05-12-H)
+
+### Added — viewer/src/shell/ServiceDetailModal.tsx
+
+- ``ServiceDetailModal`` — overlay that mounts ServiceDetailCanvas
+  on top of the still-mounted services canvas (v0.12 drill-in
+  pattern). Esc / backdrop click / × button all call ``onClose``.
+
+### Changed — viewer/src/App.tsx
+
+- 564 → 496 LOC (-68).
+- Inline ``ServiceDetailModal`` definition removed.
+- ``useTranslation`` import dropped (App.tsx no longer renders any
+  i18n-aware JSX directly — every i18n string lives inside an
+  extracted shell or canvas component).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 361 / 361 passed.
+
+Plugin patch bump 0.16.2 → 0.16.3. Two more extractions (URL sync +
+filters/keyboard hooks) land through v0.16.5; the final commit
+lowers the structural-guards ceiling from 830 to 400.
+
 ## [0.16.2] — 2026-05-12
 
 v0.16.0 follow-up — App.tsx split commit 2 of 5. Tab strip, help
