@@ -23,3 +23,7 @@ export { Identity } from "./Identity";
 export type { IdentityJson } from "./Identity";
 export { Mission } from "./Mission";
 export type { MissionJson } from "./Mission";
+export { Project } from "./Project";
+export type { ProjectJson } from "./Project";
+export { Category } from "./Category";
+export type { CategoryJson } from "./Category";

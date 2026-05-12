@@ -13,12 +13,14 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  Category,
   CoreValue,
   DomainParseError,
   Identity,
   Metric,
   Mission,
   parseEntity,
+  Project,
   Step,
 } from "../../src/domain";
 
@@ -221,6 +223,54 @@ describe("parseEntity → Foundation kinds dispatch", () => {
   it("dispatches identity to Identity", () => {
     const node = parseEntity({ id: "id1", kind: "identity", description: "x" });
     expect(node).toBeInstanceOf(Identity);
+  });
+});
+
+describe("Project.fromJson + toJson round-trip", () => {
+  it("populates defaults", () => {
+    const p = Project.fromJson({ id: "project", kind: "project" });
+    expect(p.kind).toBe("project");
+    expect(p.label).toBe("");
+  });
+
+  it("round-trips through parseEntity", () => {
+    const node = parseEntity({ id: "project", kind: "project", label: "Plot" });
+    expect(node).toBeInstanceOf(Project);
+    expect(node.label).toBe("Plot");
+  });
+
+  it("rejects raw with the wrong kind", () => {
+    expect(() => Project.fromJson({ id: "x", kind: "actor" })).toThrow(DomainParseError);
+  });
+});
+
+describe("Category.fromJson + toJson round-trip", () => {
+  it("populates defaults", () => {
+    const c = Category.fromJson({ id: "cat-1", kind: "category" });
+    expect(c.kind).toBe("category");
+    expect(c.theme).toBe("");
+  });
+
+  it("preserves theme and round-trips", () => {
+    const a = Category.fromJson({
+      id: "cat-1",
+      kind: "category",
+      label: "Admin",
+      theme: "operator system management",
+    });
+    const b = Category.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("rejects non-string theme", () => {
+    expect(() => Category.fromJson({ id: "c", kind: "category", theme: 42 })).toThrow(
+      DomainParseError,
+    );
+  });
+
+  it("dispatches via parseEntity", () => {
+    const node = parseEntity({ id: "c", kind: "category", theme: "x" });
+    expect(node).toBeInstanceOf(Category);
   });
 });
 

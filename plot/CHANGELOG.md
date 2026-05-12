@@ -4,6 +4,46 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.24] — 2026-05-12
+
+v0.15 structural reset Phase 2.5 + 2.6 — bundled vertical slice for
+the two simplest remaining kinds: ``project`` (Foundation anchor,
+no typed body) and ``category`` (one-line ``theme`` + ``childCount``
+empty-warning). (D-2026-05-12-B)
+
+### Added — KindInspectorProps grew an `allNodes` field
+
+Category needs to count nested services for its empty-warning. Rather
+than build a context-provider for one prop, the existing
+``SketchInspector`` already passes ``allNodes`` and the registry now
+forwards it through ``KindInspector`` to every per-kind component.
+Most kinds ignore it; Category uses it.
+
+### Added
+
+- ``viewer/src/domain/Project.ts`` (no typed fields beyond BaseFields).
+- ``viewer/src/domain/Category.ts`` (theme).
+- ``viewer/src/canvases/inspectors/project/index.tsx`` —
+  ``ProjectInspector`` is just ``BaseInspector`` (chrome only).
+- ``viewer/src/canvases/inspectors/category/index.tsx`` — computes
+  ``childCount`` from ``allNodes`` and renders the empty-warning when
+  zero.
+- registry: ``project`` + ``category``.
+- 7 round-trip tests + 3 smoke tests.
+
+### Removed
+
+- Local ``CategoryFields`` (~38 LOC) from ``SketchInspector.tsx``.
+- Stale "returns null for unmigrated kinds" smoke test (used
+  ``category`` as the unmigrated example; now category IS migrated).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 71 / 71 passed (62 prior + 9 new).
+
+Plugin patch bump 0.14.23 → 0.14.24.
+
 ## [0.14.23] — 2026-05-12
 
 v0.15 structural reset Phase 2.4 — ``mission`` Foundation kind

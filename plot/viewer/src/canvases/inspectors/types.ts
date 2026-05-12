@@ -13,6 +13,9 @@ export interface KindInspectorProps {
   /** Currently selected node (the per-kind component narrows on
    *  ``node.kind`` internally — single line, discriminator flow). */
   node: SketchNode;
+  /** All nodes on the canvas, so per-kind inspectors can compute
+   *  derived data (e.g. CategoryInspector counts its child services). */
+  allNodes: SketchNode[];
   /** Patch the selected node's own fields. */
   onPatchNode: (patch: Partial<SketchNode>) => void;
   /** Remove a node entirely (used by ``BaseInspector``'s delete button). */

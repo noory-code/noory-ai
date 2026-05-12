@@ -77,9 +77,14 @@ function makeNode(overrides: MakeNodeOverrides): SketchNode {
   };
 }
 
-function makeProps(node: SketchNode, canvasKind: CanvasKind = "service_detail") {
+function makeProps(
+  node: SketchNode,
+  canvasKind: CanvasKind = "service_detail",
+  allNodes: SketchNode[] = [node],
+) {
   return {
     node,
+    allNodes,
     onPatchNode: vi.fn(),
     onDeleteNode: vi.fn(),
     onClose: vi.fn(),
@@ -125,11 +130,6 @@ describe("MetricInspector (Phase 2.1)", () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
-  it("returns null for unmigrated kinds (KindInspector contract)", () => {
-    const node = makeNode({ id: "x1", kind: "category" });
-    const { container } = render(<KindInspector {...makeProps(node, "services")} />);
-    expect(container.firstChild).toBeNull();
-  });
 });
 
 describe("StepInspector (Phase 2.2)", () => {
@@ -209,5 +209,29 @@ describe("MissionInspector (Phase 2.4)", () => {
     expect(screen.getByDisplayValue("우리는 매일 빛난다")).toBeInTheDocument();
     expect(screen.getByDisplayValue("사람들이 서로 빛나기를")).toBeInTheDocument();
     expect(screen.getByDisplayValue("누구나 히어로")).toBeInTheDocument();
+  });
+});
+
+describe("ProjectInspector (Phase 2.5)", () => {
+  it("renders BaseInspector chrome only (no per-kind body)", () => {
+    const node = makeNode({ id: "project", kind: "project", label: "Plot" });
+    render(<KindInspector {...makeProps(node, "foundation")} />);
+    expect(screen.getByDisplayValue("Plot")).toBeInTheDocument();
+  });
+});
+
+describe("CategoryInspector (Phase 2.6)", () => {
+  it("renders chrome + theme + does NOT show empty-warning when child services exist", () => {
+    const cat = makeNode({ id: "cat-1", kind: "category", label: "Admin", theme: "ops" });
+    const child = makeNode({ id: "svc-1", kind: "service", label: "Manage", parent_id: "cat-1" });
+    render(<KindInspector {...makeProps(cat, "services", [cat, child])} />);
+    expect(screen.getByDisplayValue("ops")).toBeInTheDocument();
+    expect(screen.queryByText(/이 카테고리에 service/)).not.toBeInTheDocument();
+  });
+
+  it("shows the empty-warning when childCount === 0", () => {
+    const cat = makeNode({ id: "cat-1", kind: "category", label: "Empty" });
+    render(<KindInspector {...makeProps(cat, "services", [cat])} />);
+    expect(screen.getByText(/이 카테고리에 service/)).toBeInTheDocument();
   });
 });

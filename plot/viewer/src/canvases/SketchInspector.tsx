@@ -116,6 +116,7 @@ export function SketchInspector({
     return (
       <KindInspector
         node={node}
+        allNodes={allNodes}
         onPatchNode={onPatchNode}
         onDeleteNode={onDeleteNode}
         onClose={onClose}
@@ -247,19 +248,7 @@ export function SketchInspector({
 
         {/* v0.14.23 — mission migrated to inspectors/mission/. */}
 
-        {/* v0.12 — category fields. A category is a thematic grouping;
-            its only typed field is ``theme`` (one-line common thread). */}
-        {node.kind === "category" && (
-          <CategoryFields
-            node={node}
-            childCount={
-              allNodes.filter(
-                (n) => n.parent_id === node.id && n.kind === "service",
-              ).length
-            }
-            onPatchNode={onPatchNode}
-          />
-        )}
+        {/* v0.14.24 — category migrated to inspectors/category/. */}
 
         {/* v0.10 Step 2: Core Value typed form — definition + Do/Don't pair.
              Do/Don't follows the AI-first principle (LLMs mimic concrete
@@ -582,44 +571,7 @@ function CompositionRow({
 
 // v0.12 — category typed field: one-line theme.
 
-interface CategoryFieldsProps {
-  node: SketchNode;
-  /** v0.12.6: number of services nested under this category. 0 → soft
-   *  warning that the category is currently empty. */
-  childCount: number;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}
-
-function CategoryFields({ node, childCount, onPatchNode }: CategoryFieldsProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="mb-4 rounded border border-slate-200 bg-slate-50/60 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
-        {t("kind.category")}
-      </div>
-      <label className="block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.theme")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — {t("inspector.fieldHint.theme")}
-        </span>
-        <textarea
-          rows={2}
-          value={node.theme ?? ""}
-          onChange={(e) => onPatchNode({ theme: e.target.value })}
-          placeholder="이 카테고리의 공통 주제 / 묶음의 본질"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-slate-600 focus:outline-none"
-        />
-      </label>
-      {childCount === 0 && (
-        <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-800">
-          이 카테고리에 service 가 없습니다. category 는 service 를 묶기 위해
-          존재 — 비어있으면 시각 노이즈입니다. service 를 추가하거나 카테고리를
-          삭제하세요.
-        </p>
-      )}
-    </div>
-  );
-}
+// v0.14.24 — CategoryFields moved to inspectors/category/index.tsx
 
 // v0.14.23 — MissionFields moved to inspectors/mission/index.tsx
 
