@@ -4,6 +4,50 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.23] — 2026-05-12
+
+Docs-only — closure of the 4-commit "RF 기본 동작" rollback batch
+(v0.16.20-23). ROADMAP §"v0.17+" gains a "Deferred (RF 기본 동작
+rollback)" subsection listing the 3 canonical Plot spec mandates
+this rollback violates: synthetic anchor / anchor-radial layout /
+self-loop visual. Each mandate links its last-shipping decision +
+revert decision so a future session can re-derive cleanly.
+(D-2026-05-12-Y)
+
+### Changed — plot/docs/ROADMAP.md
+
+- §"v0.17+ — Roadmap items" gains a "Deferred" subsection listing
+  the 3 spec mandates removed by this batch + recovery references
+  (git commit hashes for the implementations + tests).
+
+### Rollback batch summary (v0.16.20-23)
+
+| Commit | Revert | Decision | Tests delta |
+|---|---|---|---:|
+| v0.16.20 | SelfLoopEdge custom edge | D-2026-05-12-V | −7 |
+| v0.16.21 | Anchor-radial layout | D-2026-05-12-W | −15 |
+| v0.16.22 | Synthetic anchor + PATCH path | D-2026-05-12-X | −10 |
+| v0.16.23 | Docs-only ROADMAP archive | D-2026-05-12-Y | 0 |
+
+Net: viewer 399 → 367 tests; server 274 unchanged. App.tsx LOC:
+385 → 334. Of the v0.16.15-19 fix batch:
+- **v0.16.16 stable handlers** + **v0.16.17 Cmd+A sync** +
+  **v0.16.18 fitView gating** kept (they fix RF-default behaviour,
+  no custom layer on top).
+- **v0.16.15 anchor snap-back** + **v0.16.19 anchor handler
+  useCallback** rolled back as part of v0.16.22 anchor removal.
+
+### Lesson recorded
+
+Static audits (parity / structural-guards / LOC budget / cursor
+baseline) cannot detect runtime interaction quality. The "RF
+integration test layer" (Playwright real-input) filed in ROADMAP
+§v0.17+ remains the right next investment. Until it lands,
+*every* user-facing canvas change needs hands-on validation in
+the user's actual browser before the commit is called "done".
+
+Plugin patch bump 0.16.22 → 0.16.23.
+
 ## [0.16.22] — 2026-05-12
 
 Rollback — Synthetic project anchor + PATCH path reverted. Canvases

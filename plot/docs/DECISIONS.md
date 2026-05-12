@@ -2907,3 +2907,70 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.22 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.21 → 0.16.22.
+
+---
+
+### D-2026-05-12-Y — "RF 기본 동작" rollback batch closure (v0.16.20-23)
+
+- **What:** Docs-only closure of the 4-commit "RF 기본 동작"
+  rollback batch. ``ROADMAP.md`` §"v0.17+" gets a "Deferred"
+  subsection listing the 3 canonical Plot spec mandates that this
+  rollback violates (anchor / radial / self-loop). Each mandate
+  links its last-shipping decision id + the revert decision id.
+
+- **Why:** Future sessions picking up the "agent / canvas
+  interaction" axis need to know:
+  1. These mandates exist in the canonical Plot spec.
+  2. They were *consciously* deferred by user request, not
+     forgotten.
+  3. Re-introduction is not a 3-line revert revert — it requires
+     plan-mode + hands-on validation in the *user's actual
+     browser*, not Playwright synthetic input (which can't drive
+     d3-zoom event paths per ``plot/CLAUDE.md §Gate 3``).
+
+- **Batch closure (v0.16.20-23):**
+
+  | Commit | Revert | Decision | Tests delta |
+  |---|---|---|---:|
+  | v0.16.20 | SelfLoopEdge custom edge | D-2026-05-12-V | −7 |
+  | v0.16.21 | Anchor-radial layout | D-2026-05-12-W | −15 |
+  | v0.16.22 | Synthetic anchor + PATCH path | D-2026-05-12-X | −10 |
+  | v0.16.23 | Docs-only ROADMAP archive | D-2026-05-12-Y | 0 |
+
+  Net: viewer 399 → 367 (32 tests removed); server 274 unchanged.
+
+- **Honest note on this session's arc:** the v0.16.15-19 batch
+  (5 fixes for "anchor snap-back / refetch storm / Cmd+A /
+  fitView / handle stability") was authored from code audit
+  alone — never validated in the user's browser before ship.
+  When the user *did* validate, the cumulative custom layers on
+  top of RF made interactions feel "엉망" (off from RF mental
+  model) regardless of which specific fix was correct. The
+  v0.16.20-23 rollback is the user-directed remedy: less code,
+  more RF default. Of the 5 fixes:
+  - **v0.16.16 stable handlers** + **v0.16.17 Cmd+A sync** +
+    **v0.16.18 fitView gating** were kept (they fix RF-default
+    behaviour, not add custom layer on top).
+  - **v0.16.15 anchor snap-back** + **v0.16.19 anchor handler
+    useCallback** rolled back as part of v0.16.22 anchor removal
+    (the bug they fixed no longer exists because anchor is gone).
+
+- **What the user's "RF 기본 동작" request taught:** *static*
+  audits (Pydantic / TS parity / structural guards / LOC budget /
+  cursor baseline) cannot detect runtime interaction quality.
+  The "RF integration test layer" (Playwright real-input) filed
+  in ROADMAP §v0.17+ remains the right next investment. Until
+  it lands, *every* user-facing canvas change needs
+  hands-on validation in the user's actual browser before
+  the commit is called "done".
+
+- **Approval:** Implicit — user explicitly approved the plan that
+  shipped this batch.
+
+- **Files in this commit:**
+  - ``plot/docs/ROADMAP.md`` §"v0.17+" — "Deferred (RF 기본 동작
+    rollback)" subsection added.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.23 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.22 →
+    0.16.23.

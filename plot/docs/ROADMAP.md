@@ -12,7 +12,7 @@ patch bumped, pushed). Together they realise the design captured in
 
 ## v0.17+ — Roadmap items (queued, design red-team findings inline)
 
-The three items below were surfaced from
+The items below were surfaced from
 ``memory/project_plot_next_session.md`` 's parked backlog after
 the v0.15 / v0.16 cycle wrapped. Each has been **adversarially
 reviewed via the ``plot-design-red-team`` skill** (D-2026-05-12-K)
@@ -23,6 +23,27 @@ Pick order intent: **A → B**, then **C** as a separate
 product-decision lane. Do not begin A without re-entering plan
 mode; each Major / Critical finding below needs an answer in
 ``DECISIONS.md`` first.
+
+### Deferred (RF 기본 동작 rollback, v0.16.20-23)
+
+User directly requested "RF 기본 동작" rollback after v0.16.15-19's
+code-audit fixes did not address user-felt regressions. The
+following canonical Plot spec mandates were **deferred** — code is
+gone from disk; re-introduction requires fresh plan-mode + explicit
+user approval.
+
+| Deferred mandate | Last decision before revert | Revert decision |
+|---|---|---|
+| **Synthetic project anchor at canvas centre** (spec §"미션/코어밸류/아이덴티티 캔버스" + "프로젝트 노드 가운데") | D-2026-05-04-B/C, D-2026-05-12-Q, -U | D-2026-05-12-X (v0.16.22) |
+| **Anchor-radial M/CV/Id auto-placement** (spec "주변에 붙임. 뭐가 먼저고 말고는 없습니다") | D-2026-05-12-N, -O | D-2026-05-12-W (v0.16.21) |
+| **Self-loop visual rendering** (spec "셀프 피드백 루프 표현 가능") | D-2026-05-12-M | D-2026-05-12-V (v0.16.20) |
+
+If a future session decides to re-introduce these, the
+implementations + tests are recoverable from git history
+(commits 2487ba6 / 7edbbf8 / 75ee0b0 / 0713343 / aa385a0). Don't
+copy-paste — re-derive from current architecture state and the
+canonical spec, with hands-on validation in the user's actual
+browser before claiming "done".
 
 ---
 
