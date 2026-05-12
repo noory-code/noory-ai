@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CanvasKind, SketchNode } from "../types";
 import { DetailsSection } from "./inspectors/DetailsSection";
+import { KindInspector } from "./inspectors/KindInspector";
+import { lookupKindInspector } from "./inspectors/registry";
 
 export interface SketchInspectorProps {
   /** Currently selected node. Null → panel shows empty state. */
@@ -100,6 +102,25 @@ export function SketchInspector({
   // empty placeholder before, but the reclaimed pixels are more useful.
   if (!node) {
     return null;
+  }
+
+  // v0.15 Phase 2.1+ — when a kind has migrated to its own per-kind
+  // inspector under ``inspectors/{kind}/``, short-circuit here. The
+  // KindInspector renders its own BaseInspector chrome so the legacy
+  // ``aside`` below is bypassed entirely. Unmigrated kinds fall through
+  // to the legacy chrome.
+  if (lookupKindInspector(node.kind)) {
+    return (
+      <KindInspector
+        node={node}
+        onPatchNode={onPatchNode}
+        onDeleteNode={onDeleteNode}
+        onClose={onClose}
+        projectPath={projectPath}
+        projectId={projectId}
+        canvasKind={canvasKind}
+      />
+    );
   }
 
   // v0.2 multi-canvas (2026-04-21): Mission / Core Value / Identity are
@@ -349,10 +370,11 @@ export function SketchInspector({
           <ActorFields node={node} onPatchNode={onPatchNode} />
         )}
 
-        {/* v0.10 Step 5: Metric typed form — target + measurement. */}
-        {node.kind === "metric" && (
-          <MetricFields node={node} onPatchNode={onPatchNode} />
-        )}
+        {/* v0.15 Phase 2.1 — metric kind migrated to inspectors/metric/.
+             The short-circuit at the top of SketchInspector routes
+             metric nodes to MetricInspector before this body renders;
+             this branch is unreachable for kind="metric" and kept here
+             only as a Phase 2 audit trail. */}
 
         {/* v0.10 Step 5: Step typed form — order + outcome (outcome shared
              with service kind, declared once on the model). */}
@@ -1117,50 +1139,9 @@ function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
 }
 
 // ---------------------------------------------------------------------------
-// v0.10 Step 5 — metric + step composition typed fields
+// v0.10 Step 5 — step composition typed fields
+// (Metric typed form moved to inspectors/metric/ in v0.14.20.)
 // ---------------------------------------------------------------------------
-
-interface MetricFieldsProps {
-  node: SketchNode;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}
-
-function MetricFields({ node, onPatchNode }: MetricFieldsProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="mb-4 rounded border border-lime-200 bg-lime-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-lime-700">
-        {t("kind.metric")}
-      </div>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.target")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.target")}</span>
-        <input
-          type="text"
-          value={node.target ?? ""}
-          onChange={(e) => onPatchNode({ target: e.target.value })}
-          placeholder=">99% / under 200ms / …"
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-lime-600 focus:outline-none"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-semibold text-slate-700">
-          {t("inspector.field.measurement")}
-        </span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — {t("inspector.fieldHint.measurement")}
-        </span>
-        <textarea
-          rows={2}
-          value={node.measurement ?? ""}
-          onChange={(e) => onPatchNode({ measurement: e.target.value })}
-          placeholder="어떤 신호를 어떻게 집계?"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-lime-600 focus:outline-none"
-        />
-      </label>
-    </div>
-  );
-}
 
 interface StepFieldsProps {
   node: SketchNode;

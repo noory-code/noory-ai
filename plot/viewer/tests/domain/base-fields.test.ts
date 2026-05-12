@@ -96,11 +96,7 @@ describe("parseBaseFields", () => {
   });
 });
 
-describe("parseEntity (Phase 2.0 — empty registry)", () => {
-  it("returns an empty registered kinds list before any kind is added", () => {
-    expect(registeredKinds()).toEqual([]);
-  });
-
+describe("parseEntity dispatch", () => {
   it("rejects raw without a kind discriminator", () => {
     expect(() => parseEntity({ id: "n1" })).toThrow(DomainParseError);
   });
@@ -114,8 +110,8 @@ describe("parseEntity (Phase 2.0 — empty registry)", () => {
   });
 
   it("dispatches to a registered parser when one exists", () => {
-    // Sanity wiring test — Phase 2.1 will register real parsers.
-    // Use a unique kind to avoid contaminating Phase 2.1's registry.
+    // Sanity wiring test using a test-only kind so we don't collide
+    // with the auto-registered per-kind classes (metric, etc.).
     const FAKE_KIND = "__test_only_kind__";
     let called = false;
     registerKindParser(FAKE_KIND, (raw) => {
@@ -127,5 +123,12 @@ describe("parseEntity (Phase 2.0 — empty registry)", () => {
     parseEntity({ id: "n1", kind: FAKE_KIND });
     expect(called).toBe(true);
     expect(registeredKinds()).toContain(FAKE_KIND);
+  });
+
+  it("registers per-kind parsers as their entity-class modules import", () => {
+    // Importing the domain barrel side-effect-loads every per-kind
+    // entity class (Metric, in Phase 2.1). The registry should reflect
+    // that without the test having to call ``registerKindParser`` itself.
+    expect(registeredKinds()).toContain("metric");
   });
 });

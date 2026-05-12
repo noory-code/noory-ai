@@ -1,0 +1,119 @@
+/**
+ * Per-kind entity-class round-trip + parseEntity dispatch tests.
+ *
+ * Each Phase 2.X commit lands one entity class and adds its tests
+ * here. The pattern is the same:
+ *
+ *   1. ``Class.fromJson(rawJson)`` builds the entity.
+ *   2. ``entity.toJson()`` serialises back.
+ *   3. ``Class.fromJson(entity.toJson())`` deep-equals the original.
+ *   4. ``parseEntity(rawJson)`` dispatches to the right class.
+ *
+ * Mirrors the server-side ``plot/tests/test_node_models.py`` pattern.
+ */
+import { describe, expect, it } from "vitest";
+import { DomainParseError, Metric, parseEntity } from "../../src/domain";
+
+describe("Metric.fromJson + toJson round-trip", () => {
+  it("populates defaults from a minimal raw", () => {
+    const m = Metric.fromJson({ id: "m1", kind: "metric" });
+    expect(m.id).toBe("m1");
+    expect(m.kind).toBe("metric");
+    expect(m.target).toBe("");
+    expect(m.measurement).toBe("");
+    expect(m.label).toBe("");
+    expect(m.x).toBe(0);
+  });
+
+  it("preserves provided typed fields", () => {
+    const m = Metric.fromJson({
+      id: "m1",
+      kind: "metric",
+      label: "Latency",
+      target: ">99% under 200ms",
+      measurement: "p95 from server timing-API",
+    });
+    expect(m.label).toBe("Latency");
+    expect(m.target).toBe(">99% under 200ms");
+    expect(m.measurement).toBe("p95 from server timing-API");
+  });
+
+  it("toJson emits kind and the typed fields", () => {
+    const m = Metric.fromJson({
+      id: "m1",
+      kind: "metric",
+      target: "x",
+      measurement: "y",
+    });
+    const dumped = m.toJson();
+    expect(dumped.kind).toBe("metric");
+    expect(dumped.target).toBe("x");
+    expect(dumped.measurement).toBe("y");
+    expect(dumped.id).toBe("m1");
+  });
+
+  it("survives a full fromJson / toJson / fromJson round-trip", () => {
+    const raw = {
+      id: "m1",
+      kind: "metric" as const,
+      label: "L",
+      x: 10,
+      y: 20,
+      width: 200,
+      height: 90,
+      color: "#fef3c7",
+      shape: "rounded" as const,
+      icon: null,
+      parent_id: "svc-1",
+      collapsed: false,
+      is_root: false,
+      details_path: "services/svc-1/m1.md",
+      target: "x",
+      measurement: "y",
+    };
+    const a = Metric.fromJson(raw);
+    const b = Metric.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("rejects raw with the wrong kind", () => {
+    expect(() => Metric.fromJson({ id: "m1", kind: "actor" })).toThrow(DomainParseError);
+  });
+
+  it("rejects raw with non-string typed field", () => {
+    expect(() => Metric.fromJson({ id: "m1", kind: "metric", target: 42 })).toThrow(
+      DomainParseError,
+    );
+  });
+
+  it("treats a missing typed field as empty string", () => {
+    const m = Metric.fromJson({ id: "m1", kind: "metric", target: undefined });
+    expect(m.target).toBe("");
+  });
+
+  it("instances spread as plain data (React Flow safety)", () => {
+    // applyNodeChanges will spread {...node, x: newX} — that must
+    // preserve every BaseFields + typed field even though prototype
+    // methods (toJson) are lost on the spread copy.
+    const m = Metric.fromJson({
+      id: "m1",
+      kind: "metric",
+      target: "x",
+      measurement: "y",
+    });
+    const spread = { ...m };
+    expect(spread.id).toBe("m1");
+    expect(spread.kind).toBe("metric");
+    expect(spread.target).toBe("x");
+    expect(spread.measurement).toBe("y");
+    expect(spread.width).toBe(180);
+  });
+});
+
+describe("parseEntity → Metric dispatch", () => {
+  it("returns a Metric instance for kind=\"metric\"", () => {
+    const node = parseEntity({ id: "m1", kind: "metric", target: "x" });
+    expect(node).toBeInstanceOf(Metric);
+    expect((node as Metric).target).toBe("x");
+  });
+});

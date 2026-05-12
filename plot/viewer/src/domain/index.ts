@@ -10,3 +10,8 @@ export { DomainParseError } from "./DomainParseError";
 export type { BaseFields, BaseFieldsJson } from "./BaseFields";
 export { parseBaseFields } from "./BaseFields";
 export { parseEntity, registerKindParser, registeredKinds } from "./parseEntity";
+
+// Per-kind entity classes (Phase 2.1+). Importing this barrel registers
+// every kind's parser with parseEntity via module-load side effects.
+export { Metric } from "./Metric";
+export type { MetricJson } from "./Metric";

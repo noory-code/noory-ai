@@ -4,6 +4,70 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.20] — 2026-05-12
+
+v0.15 structural reset Phase 2.1 — first vertical slice.
+``metric`` kind migrates out of the legacy god ``SketchInspector``
+into ``viewer/src/domain/Metric.ts`` + ``viewer/src/canvases/inspectors/metric/``.
+The pattern this commit establishes is the template Phase 2.2+
+will repeat for every remaining kind. (D-2026-05-12-B)
+
+### Decision — types.ts atomic flip stays in Phase 2.10
+
+Considered: trim god ``SketchNode`` interface kind-by-kind in each
+Phase 2.X. Rejected: leaves transient type holes mid-migration and
+contradicts the Phase 1.2 atomic-flip principle. Per-kind RENDERING
+moves out incrementally; the god TYPE shape stays intact until
+Phase 2.10 retires it atomically (mirrors v0.14.17's god-class flip).
+
+### Added — viewer/src/domain/
+
+- ``Metric.ts`` — ``class Metric`` with BaseFields slice + ``target`` +
+  ``measurement`` + ``kind: "metric"`` literal. Static
+  ``fromJson(raw)`` validates via ``parseBaseFields`` then per-kind
+  invariants. Self-registers with ``parseEntity`` on module load.
+- ``index.ts`` re-exports ``Metric`` + ``MetricJson``.
+
+### Added — viewer/src/canvases/inspectors/metric/
+
+- ``index.tsx`` — ``MetricInspector`` wraps the per-kind
+  ``MetricFields`` body (``target`` text input + ``measurement``
+  textarea, identical i18n keys to the legacy ``MetricFields``)
+  inside the shared ``BaseInspector`` chrome.
+
+### Added — registry + short-circuit wiring
+
+- ``inspectors/registry.ts`` registers ``metric: MetricInspector``.
+- ``SketchInspector.tsx`` — top of the function (after the
+  ``if (!node)`` guard) checks ``lookupKindInspector(node.kind)`` and
+  delegates to ``KindInspector`` when the kind is migrated. Unmigrated
+  kinds fall through to the legacy ``aside`` body unchanged.
+
+### Added — tests
+
+- ``viewer/tests/domain/round-trip.test.ts`` — 9 tests covering
+  ``Metric.fromJson`` defaults / overrides / kind validation /
+  type coercion / round-trip / spread-safety (React Flow
+  ``applyNodeChanges`` compatibility) + ``parseEntity`` dispatch.
+- ``viewer/tests/inspectors/inspectors.smoke.test.tsx`` — 3 tests:
+  MetricInspector renders shared chrome + typed fields, no
+  ``console.error`` fires, ``KindInspector`` returns ``null`` for
+  unmigrated kinds (the resolver contract).
+
+### Removed
+
+- ``viewer/src/canvases/SketchInspector.tsx`` — local ``MetricFields``
+  function + its props interface (43 LOC). Now lives in
+  ``inspectors/metric/index.tsx``. SketchInspector LOC drops
+  1413 → 1394 (Gate 2 ✓).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 39 / 39 passed (27 prior + 12 new).
+
+Plugin patch bump 0.14.19 → 0.14.20 per the Plot plugin rule.
+
 ## [0.14.19] — 2026-05-12
 
 v0.15 structural reset Phase 2.0 — viewer-side scaffolding for the

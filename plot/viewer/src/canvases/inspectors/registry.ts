@@ -12,12 +12,14 @@
  */
 import type { FC } from "react";
 import type { NodeKind } from "../../types";
+import { MetricInspector } from "./metric";
 import type { KindInspectorProps } from "./types";
 
 export type KindInspectorComponent = FC<KindInspectorProps>;
 
 export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> = {
-  // Populated by Phase 2.1+ per-kind commits.
+  // Phase 2.1+ per-kind entries land here.
+  metric: MetricInspector,
 };
 
 /** Look up the registered inspector for a kind, or ``undefined`` while
