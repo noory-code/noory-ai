@@ -1,0 +1,58 @@
+/**
+ * Keyboard-shortcut cheat sheet overlay. Toggled with ``?``; closed
+ * with Esc / backdrop click / × button. Extracted from ``App.tsx``
+ * (v0.16.2).
+ */
+export function HelpCheatsheet({ onClose }: { onClose: () => void }) {
+  const items: [string, string][] = [
+    ["⌘/Ctrl + Z", "Undo (project-wide, auto-switches tab)"],
+    ["⌘/Ctrl + Shift + Z", "Redo"],
+    ["⌘/Ctrl + Y", "Redo (alt)"],
+    ["⌘/Ctrl + C", "Copy selection"],
+    ["⌘/Ctrl + V", "Paste"],
+    ["⌘/Ctrl + D", "Duplicate selection"],
+    ["⌘/Ctrl + A", "Select all"],
+    ["Delete / Backspace", "Delete selected nodes"],
+    ["Double-click service", "Drill into Service Detail (Overview)"],
+    ["Double-click actor_ref", "Jump to Actor canvas target"],
+    ["?", "Toggle this help"],
+    ["Esc", "Close help"],
+  ];
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard shortcuts"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-[28rem] max-w-[90vw] overflow-hidden rounded-lg bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900">
+            Keyboard shortcuts
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded px-2 text-slate-400 hover:bg-slate-100"
+          >
+            ✕
+          </button>
+        </div>
+        <dl className="divide-y divide-slate-100 text-xs">
+          {items.map(([combo, desc]) => (
+            <div key={combo} className="flex items-center gap-3 px-4 py-1.5">
+              <dt className="w-36 shrink-0 font-mono text-[11px] text-slate-700">
+                {combo}
+              </dt>
+              <dd className="text-slate-600">{desc}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </div>
+  );
+}

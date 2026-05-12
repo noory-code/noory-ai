@@ -10,7 +10,10 @@ import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
 import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
+import { CANVAS_TAB_IDS, CanvasTabs, type CanvasTab } from "./shell/CanvasTabs";
 import { Header } from "./shell/Header";
+import { HelpCheatsheet } from "./shell/HelpCheatsheet";
+import { EmptyState, ErrorPanel, Loading } from "./shell/states";
 import type {
   AnchorPlacement,
   CanvasKey,
@@ -18,9 +21,6 @@ import type {
   ProjectDoc,
   SketchNode,
 } from "./types";
-
-type CanvasTab = "foundation" | "actors" | "services";
-const CANVAS_TAB_IDS: readonly CanvasTab[] = ["foundation", "actors", "services"];
 
 function tabToKind(tab: CanvasTab): CanvasKind {
   if (tab === "foundation") return "foundation";
@@ -561,155 +561,4 @@ function ServiceDetailModal({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Small UI bits
-// ---------------------------------------------------------------------------
-
-function CanvasTabs({
-  active,
-  onSelect,
-  onMarkSession,
-}: {
-  active: CanvasTab;
-  onSelect: (tab: CanvasTab) => void;
-  onMarkSession: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div
-      role="tablist"
-      aria-label={t("canvas.aria")}
-      className="flex items-center justify-between border-b border-slate-200 bg-white px-3"
-    >
-      <div className="flex items-center gap-1">
-        {CANVAS_TAB_IDS.map((id) => {
-          const selected = id === active;
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              onClick={() => onSelect(id)}
-              className={
-                selected
-                  ? "border-b-2 border-slate-900 px-4 py-2 text-sm font-medium text-slate-900"
-                  : "border-b-2 border-transparent px-4 py-2 text-sm text-slate-500 hover:text-slate-800"
-              }
-            >
-              {t(`canvas.tabs.${id}`)}
-            </button>
-          );
-        })}
-      </div>
-      <button
-        type="button"
-        onClick={onMarkSession}
-        className="rounded border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
-        title={t("header.markSessionHint")}
-      >
-        {t("header.markSession")}
-      </button>
-    </div>
-  );
-}
-
-// v0.12 — ServicesBreadcrumb removed. Drill-in is now a modal overlay
-// (see ServiceDetailModal above), so the breadcrumb / "← Services" back
-// button isn't needed.
-
-function Loading() {
-  return (
-    <div className="flex h-full items-center justify-center text-slate-500">
-      Loading…
-    </div>
-  );
-}
-
-function ErrorPanel({ message }: { message: string }) {
-  return (
-    <div className="flex h-full items-center justify-center p-8 text-center">
-      <div>
-        <h1 className="mb-2 text-xl font-semibold text-rose-700">
-          Something broke
-        </h1>
-        <p className="font-mono text-xs text-slate-600">{message}</p>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ onCreate }: { onCreate: () => void }) {
-  return (
-    <div className="flex h-full items-center justify-center p-8 text-center">
-      <div>
-        <h1 className="mb-2 text-2xl font-semibold">No projects yet</h1>
-        <p className="mb-6 text-slate-500">
-          Create your first Plot project to start mapping.
-        </p>
-        <button
-          type="button"
-          onClick={onCreate}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-        >
-          New project
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function HelpCheatsheet({ onClose }: { onClose: () => void }) {
-  const items: [string, string][] = [
-    ["⌘/Ctrl + Z", "Undo (project-wide, auto-switches tab)"],
-    ["⌘/Ctrl + Shift + Z", "Redo"],
-    ["⌘/Ctrl + Y", "Redo (alt)"],
-    ["⌘/Ctrl + C", "Copy selection"],
-    ["⌘/Ctrl + V", "Paste"],
-    ["⌘/Ctrl + D", "Duplicate selection"],
-    ["⌘/Ctrl + A", "Select all"],
-    ["Delete / Backspace", "Delete selected nodes"],
-    ["Double-click service", "Drill into Service Detail (Overview)"],
-    ["Double-click actor_ref", "Jump to Actor canvas target"],
-    ["?", "Toggle this help"],
-    ["Esc", "Close help"],
-  ];
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Keyboard shortcuts"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
-      onClick={onClose}
-    >
-      <div
-        className="w-[28rem] max-w-[90vw] overflow-hidden rounded-lg bg-white shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
-            Keyboard shortcuts
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded px-2 text-slate-400 hover:bg-slate-100"
-          >
-            ✕
-          </button>
-        </div>
-        <dl className="divide-y divide-slate-100 text-xs">
-          {items.map(([combo, desc]) => (
-            <div key={combo} className="flex items-center gap-3 px-4 py-1.5">
-              <dt className="w-36 shrink-0 font-mono text-[11px] text-slate-700">
-                {combo}
-              </dt>
-              <dd className="text-slate-600">{desc}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </div>
-  );
-}
 

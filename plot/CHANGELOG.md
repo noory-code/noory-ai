@@ -4,6 +4,41 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.2] — 2026-05-12
+
+v0.16.0 follow-up — App.tsx split commit 2 of 5. Tab strip, help
+overlay, and the three placeholder states extracted to
+``viewer/src/shell/``. Pure JSX move, no behaviour change.
+(D-2026-05-12-H)
+
+### Added — viewer/src/shell/
+
+- ``CanvasTabs.tsx`` — Foundation / Actors / Services tab strip +
+  Mark-session button. **Also exports the ``CanvasTab`` discriminator
+  + ``CANVAS_TAB_IDS`` SSOT** (the type now lives next to its only
+  visual consumer; App.tsx imports both).
+- ``HelpCheatsheet.tsx`` — keyboard-shortcut cheat sheet overlay.
+- ``states.tsx`` — ``Loading`` + ``ErrorPanel`` + ``EmptyState``
+  (each < 15 LOC; grouped per file).
+
+### Changed — viewer/src/App.tsx
+
+- 715 → 564 LOC (-151).
+- ``CanvasTab`` type + ``CANVAS_TAB_IDS`` const moved out (now
+  imported from ``./shell/CanvasTabs``).
+- ``CanvasTabs`` / ``Loading`` / ``ErrorPanel`` / ``EmptyState`` /
+  ``HelpCheatsheet`` inline definitions removed.
+- ``// Small UI bits`` divider comment removed.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 361 / 361 passed.
+
+Plugin patch bump 0.16.1 → 0.16.2. Three more extractions land
+through v0.16.5; the final commit lowers the structural-guards
+ceiling from 830 to 400.
+
 ## [0.16.1] — 2026-05-12
 
 v0.16.0 follow-up — App.tsx split commit 1 of 5. Header +
