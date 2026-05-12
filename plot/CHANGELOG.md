@@ -4,6 +4,33 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.6] — 2026-05-12
+
+Schema parity test — Pydantic ↔ TS XxxJson field sets pinned for
+all 15 kinds. The v0.15 reset's parallel union is now machine-checked
+end-to-end; field-name drift between server and viewer fails at CI
+time with the offending kind named. (D-2026-05-12-I)
+
+### Added — plot/tests/test_schema_parity.py
+
+- 18 tests across three describe-equivalent groups:
+  - 2 anchor tests pinning ``BaseNodeFields`` (Pydantic) and
+    ``BaseFieldsJson`` (TS) against the canonical 13-field set
+    (id / label / x / y / width / height / color / shape / icon /
+    parent_id / collapsed / is_root / details_path).
+  - 15 parametrised per-kind parity assertions
+    (``Pydantic.model_fields.keys() == TS XxxJson field set``).
+  - 1 sanity assertion that the discriminated union has exactly
+    15 entries.
+
+### Verification
+
+- ``uv run pytest`` — 274 / 274 passed (256 prior + 18 new).
+- ``uv run mypy plot_mcp/`` — clean.
+- ``uv run ruff check plot_mcp/ tests/`` — clean.
+
+Plugin patch bump 0.16.5 → 0.16.6.
+
 ## [0.16.5] — 2026-05-12
 
 v0.16.0 follow-up — App.tsx split commit 5 of 5, **DONE**. The

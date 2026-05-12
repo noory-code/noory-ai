@@ -1858,3 +1858,66 @@ in the same browser-verification round:
 - **Approval:** Accepted by structural verification — final ceiling
   assertion in ``structural-guards.test.tsx`` enforces the plan
   target on every future commit.
+
+---
+
+### D-2026-05-12-I — Schema parity test (Pydantic ↔ TS XxxJson, 15 kinds)
+
+- **What:** Add ``plot/tests/test_schema_parity.py`` — 18 tests that
+  assert, for every kind in the 15-way discriminated union, the
+  Pydantic class's ``model_fields.keys()`` is identical to the
+  TypeScript ``XxxJson`` interface's field set in
+  ``viewer/src/domain/{Kind}.ts``. Closes the schema round-trip
+  loop end-to-end.
+
+- **Why:** the v0.15 reset gave server and viewer a parallel 15-way
+  union; both sides currently agree, but nothing *enforces* that
+  agreement. The next time someone adds a field to ``ServiceNode``
+  on the server but forgets the TS side (or vice versa), the
+  drift would only surface as a runtime parse failure on an actual
+  user document. This test catches the drift at CI time with the
+  offending field set in the failure message.
+
+- **Test composition (18 tests):**
+  - 1 anchor: ``BaseNodeFields.model_fields`` matches the canonical
+    13-field set (id / label / x / y / width / height / color /
+    shape / icon / parent_id / collapsed / is_root / details_path).
+  - 1 anchor: ``BaseFieldsJson`` interface (TS) matches the same
+    canonical set.
+  - 15 parametrised per-kind asserts: Pydantic field set ==
+    (TS XxxJson kind-specific fields) ∪ (BaseFieldsJson 13 fields).
+  - 1 sanity: ``_ALL_KIND_CLASSES`` has exactly 15 entries.
+
+- **Implementation choice — regex over TS-compiler parsing:** TS
+  source is parsed with a regex (matching ``export interface XxxJson
+  extends BaseFieldsJson { ... }`` and pulling field names off
+  ``\w+\s*:``). Adding a TS compiler dependency (ts-morph or
+  typescript via tsc API in a Python harness) would be heavier than
+  the test's payoff. The interface idiom is stable post-reset (every
+  per-kind file follows the same template), and if a future commit
+  changes the idiom, the regex fails loudly — that failure is
+  the signal to update the parser, not to silence the test.
+
+- **Alternatives considered:**
+  - **Have the build emit a JSON manifest of TS field names**: more
+    robust, but introduces a build step that runs before the test
+    and requires Node.js in the pytest harness. YAGNI.
+  - **Run the parity assertion on the viewer side via
+    ``schema_export.py`` JSON Schema files**: server already exports
+    these; the viewer could load them and cross-check. Rejected
+    because the JSON Schema files exclude the typed-text fields for
+    Foundation kinds (they live in MD templates) — so the parity
+    test would need a different shape per kind, defeating the
+    structural argument. Server-side regex is simpler and uniform.
+
+- **Approval:** Accepted by structural verification — all 18 tests
+  green against the current tree confirms parity holds today; any
+  future drift fails the test with the offending kind named.
+
+- **Spec impact:** none — internal verification scaffolding.
+
+- **Files in this commit:**
+  - ``plot/tests/test_schema_parity.py`` — new, 18 tests.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.6 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.5 → 0.16.6.
