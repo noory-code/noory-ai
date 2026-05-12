@@ -1461,3 +1461,87 @@ in the same browser-verification round:
   - `plot/docs/DECISIONS.md` — this entry.
   - `plot/CHANGELOG.md` — v0.15.7 section.
   - `plot/.claude-plugin/plugin.json` — patch bump 0.15.6 → 0.15.7.
+
+---
+
+### D-2026-05-12-D — Extend cursor-baseline guard to all canvas-internal files (Phase 4.2)
+
+- **What:** Extend ``viewer/tests/styles-cursor-baseline.test.tsx``
+  from a 1-test ``styles.css`` guard to a 129-test static sweep
+  that asserts ZERO raw ``cursor:`` declarations and ZERO
+  ``style.cursor =`` JS assignments across every canvas-internal
+  source file:
+  - 4 wrapper files (Foundation / Actors / Services / ServiceDetail).
+  - Shared shell: SketchCanvas, BaseNode, BaseInspector,
+    KindInspector, DetailsSection, the two registries, inspectors/types.
+  - 15 per-kind node renderers under ``canvases/nodes/{kind}/``.
+  - 15 per-kind inspectors under ``canvases/inspectors/{kind}/``.
+  - inspectors/shared/* (composition helpers).
+  - All sketch hooks under ``canvases/sketch/`` (~17 files).
+  Plus a registry-size sanity (15 per-kind node + 15 per-kind
+  inspector dirs).
+
+- **Why:** D-2026-05-12-C established that, *as of today*, cursor
+  inventory is uniform across the 4 wrappers. The job of this
+  decision is to make the property **structurally permanent** —
+  any future edit that introduces a per-canvas cursor rule fails
+  the build with a pointer to this decision id and a forced choice:
+  either (a) open a new ``D-YYYY-MM-DD-X`` entry and update
+  ``docs/CURSOR.md`` (the documented escape hatch per
+  D-2026-05-11-A §"How to deviate"), or (b) keep cursor inventory
+  uniform.
+
+- **What the guard does *not* match:** Tailwind utility class
+  strings (``cursor-grab``, ``cursor-not-allowed``,
+  ``cursor-pointer``, ``cursor-grabbing``, ``active:cursor-grabbing``,
+  ``disabled:cursor-not-allowed``) — the regex ``cursor\s*:``
+  requires a literal ``cursor:`` (colon-suffixed), while utility
+  classes are ``cursor-<state>`` (hyphen-suffixed). This is by
+  design: those utilities appear on chrome surfaces
+  (``SketchStencil`` drag tray, ``SketchContextMenu`` items,
+  ``SketchToolbar`` buttons, ``SketchEdgeModal`` form rows,
+  ``DetailsSection`` button) that are shared identically across
+  all 4 wrappers and are not part of the canvas/node/edge cursor
+  contract. Adding the same Tailwind utility to a wrapper or a
+  per-kind file would still pass this guard but immediately fail
+  the DOM-equivalence test in
+  ``viewer/tests/cursor-sweep.test.tsx`` if the resulting class
+  composition differs from the other wrappers.
+
+- **Alternatives considered:**
+  - **Allowlist per-file overrides via inline marker comments**
+    (e.g. ``/* eslint-cursor-override D-... */``): rejected as
+    YAGNI. The escape hatch is "open a new decision id and update
+    ``docs/CURSOR.md``"; if a future override is needed, it warrants
+    deliberate human decision, not a per-line comment.
+  - **Ban Tailwind ``cursor-*`` utility classes from canvas files
+    too** (not just raw ``cursor:`` declarations): tempting for
+    extra strictness, but the chrome usage in
+    ``DetailsSection.tsx`` (``disabled:cursor-not-allowed``) is
+    correct UX feedback for an interactive button. The line
+    between "chrome inside an inspector body" and "canvas surface"
+    is the per-kind inspector file boundary, not the
+    inspectors/-tree boundary, and is already covered: any per-kind
+    inspector that *adds* a cursor utility will live in
+    ``inspectors/{kind}/index.tsx`` which the new guard *does*
+    scan — so it would have to use a raw ``cursor:`` declaration
+    (caught) or a ``style.cursor =`` JS assignment (caught). Pure
+    utility class additions would slip through the guard but be
+    immediately visible in the cursor-sweep DOM test, which would
+    show the class on the per-kind node DOM and break the
+    skeleton-equivalence assertion.
+  - **Live-browser Playwright sweep** (per original Phase 4.1
+    plan): see D-2026-05-12-C §Alternatives. Same rationale.
+
+- **Approval:** Pending — same direction as D-2026-05-12-C.
+
+- **Spec impact:** none — ``docs/CURSOR.md`` already declares the
+  cursor SSOT; this decision makes the SSOT *unbypassable in code*.
+
+- **Files in this commit:**
+  - ``plot/viewer/tests/styles-cursor-baseline.test.tsx`` —
+    extended from 1 test to 129 (1 styles.css + 128 from it.each
+    across the canvas files).
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.15.8 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.15.7 → 0.15.8.

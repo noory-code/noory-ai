@@ -4,6 +4,54 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.8] — 2026-05-12
+
+v0.15 reset Phase 4.2 — extended cursor-baseline static guard.
+The existing 1-test ``styles.css`` guard (D-2026-05-11-C) is
+broadened into a 129-test sweep that asserts ZERO raw ``cursor:``
+declarations and ZERO ``style.cursor =`` JS assignments across
+every canvas-internal source file: 4 wrappers, shared shell (SketchCanvas
+/ BaseNode / BaseInspector / KindInspector / DetailsSection /
+registries / types), 15 per-kind node renderers, 15 per-kind
+inspectors, inspectors/shared, and all 17 sketch hooks. With
+``cursor-sweep.test.tsx`` (D-2026-05-12-C, ships in 0.15.7) and
+this guard, per-canvas cursor drift is structurally impossible.
+(D-2026-05-12-D)
+
+### Added — guards inside viewer/tests/styles-cursor-baseline.test.tsx
+
+- ``KIND_DIRS`` SSOT for the 15 node-kind names (assertion: every
+  expected per-kind directory exists under both
+  ``canvases/nodes/`` and ``canvases/inspectors/``).
+- ``it.each`` raw ``cursor:`` guard across all 60-ish canvas-internal
+  source files (regex ``cursor\s*:`` — colon-suffixed; intentionally
+  ignores Tailwind ``cursor-X`` utility class names by design).
+- ``it.each`` ``style.cursor =`` JS assignment guard (regex
+  ``\bstyle\s*\.\s*cursor\s*=``).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 242 / 242 passed (114 prior + 128 new from this
+  file).
+- ``uv run pytest`` — 214 / 214 passed (no server-side changes).
+
+### Note on Tailwind utility classes
+
+``cursor-grab`` (SketchStencil), ``active:cursor-grabbing``
+(SketchStencil), ``cursor-not-allowed`` (SketchContextMenu,
+SketchToolbar), ``cursor-pointer`` (SketchEdgeModal),
+``disabled:cursor-not-allowed`` (DetailsSection): each is a class
+string with a hyphen after ``cursor``, not a colon, and lives on
+chrome surfaces shared identically across all 4 wrappers. The
+regex above intentionally does not match these; their per-file
+addition is allowed and tracked by the cursor-sweep DOM-equivalence
+test instead (which would notice class-set drift across wrappers).
+See D-2026-05-12-D §"What the guard does not match" for the full
+rationale.
+
+Plugin patch bump 0.15.7 → 0.15.8.
+
 ## [0.15.7] — 2026-05-12
 
 v0.15 reset Phase 4.1 — cursor uniformity audit + JSDOM sweep.
