@@ -2795,3 +2795,48 @@ in the same browser-verification round:
   batch (v0.16.20-23). Companion reverts: anchor-radial layout
   (v0.16.21), synthetic anchor + PATCH path (v0.16.22), cleanup +
   ROADMAP archive (v0.16.23).
+
+---
+
+### D-2026-05-12-W — Revert anchor-radial layout ("RF 기본 동작" rollback, 2/4)
+
+- **What:** Delete ``viewer/src/canvases/sketch/anchorRadialLayout.ts``
+  + companion test. Remove ``applyAnchorRadialLayout`` arg from
+  ``useNodeCreation`` + ``SketchCanvas`` props. Remove
+  ``applyAnchorRadialLayout={true}`` from FoundationCanvas. New
+  Mission / CoreValue / Identity nodes drop at user-chosen
+  coordinates, not auto-placed at radial slots.
+
+- **Why:** Continues the "RF 기본 동작" rollback. The anchor-radial
+  layer is *contingent* on the synthetic anchor existing (radius
+  measured from anchor centre); the next commit (v0.16.22) removes
+  the anchor itself, which would leave radial logic orphaned. Cleaner
+  to revert the radial layer here, then the anchor itself in v0.16.22.
+
+- **Supersedes:** D-2026-05-12-N (anchor-radial initial placement)
+  and D-2026-05-12-O (canvas_kind → wrapper prop refactor that
+  enabled D-2026-05-12-N). The canonical Plot spec mandate
+  ("프로젝트 노드 놓고(앵커) 그 주변에 미션, 코어밸류,
+  아이덴티티 붙이면 되요") is **deferred**.
+
+- **Verification:**
+  - ``npx tsc --noEmit`` — clean.
+  - ``npx vitest run`` — 377 / 377 (392 prior − 15 deleted radial tests).
+  - ``uv run pytest`` — 274 / 274.
+
+- **Files:**
+  - ``plot/viewer/src/canvases/sketch/anchorRadialLayout.ts`` — DELETED.
+  - ``plot/viewer/src/canvases/sketch/useNodeCreation.ts`` —
+    ``applyAnchorRadialLayout`` arg + helper usage removed; drop
+    at caller-supplied ``x``/``y``.
+  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` —
+    ``applyAnchorRadialLayout?: boolean`` prop removed; not threaded
+    into ``useNodeCreation``.
+  - ``plot/viewer/src/canvases/FoundationCanvas.tsx`` —
+    ``applyAnchorRadialLayout={true}`` removed.
+  - ``plot/viewer/tests/foundation-radial-layout.test.tsx`` — DELETED.
+  - ``plot/docs/SPEC.md §Foundation`` — "Anchor-radial initial
+    placement" subsection removed.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.21 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.20 → 0.16.21.

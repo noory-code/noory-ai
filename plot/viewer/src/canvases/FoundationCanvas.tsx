@@ -17,7 +17,6 @@ export function FoundationCanvas(props: SketchCanvasProps) {
       shouldDrill={undefined}
       showFoldButton={false}
       injectAnchor={true}
-      applyAnchorRadialLayout={true}
     />
   );
 }

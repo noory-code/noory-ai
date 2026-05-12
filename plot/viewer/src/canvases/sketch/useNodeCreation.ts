@@ -10,24 +10,12 @@
 import { type MutableRefObject, useCallback } from "react";
 import { createBlankNode } from "../../domain";
 import type { CanvasDoc, NodeKind, SketchNode as DocNode } from "../../types";
-import {
-  anchorRadialPosition,
-  countFoundationKinds,
-  isFoundationRadialKind,
-} from "./anchorRadialLayout";
 import { DEFAULT_COLOR, DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
 import type { NodePreset } from "./types";
 
 export interface UseNodeCreationArgs {
   docRef: MutableRefObject<CanvasDoc>;
   onDocChange: (next: CanvasDoc) => void;
-  /** v0.16.12 (D-2026-05-12-O) — wrapper-supplied flag. True on
-   *  FoundationCanvas: new Mission / CoreValue / Identity nodes snap
-   *  to anchor-radial slots. False (default) on every other wrapper.
-   *  Per D-2026-05-12-F structural-guards, sketch hooks must not
-   *  read ``doc.canvas_kind`` — wrappers signal canvas-specific
-   *  behaviour via explicit props. */
-  applyAnchorRadialLayout?: boolean;
 }
 
 export interface UseNodeCreationResult {
@@ -64,7 +52,6 @@ function requirePresetKind(preset: NodePreset | undefined): NodeKind {
 export function useNodeCreation({
   docRef,
   onDocChange,
-  applyAnchorRadialLayout = false,
 }: UseNodeCreationArgs): UseNodeCreationResult {
   const addNodeAt = useCallback(
     (x: number, y: number, preset?: NodePreset) => {
@@ -72,33 +59,16 @@ export function useNodeCreation({
       const current = docRef.current;
       const width = preset?.width ?? DEFAULT_WIDTH;
       const height = preset?.height ?? DEFAULT_HEIGHT;
-      // v0.16.11 (D-2026-05-12-N) / v0.16.12 (D-2026-05-12-O):
-      // when the wrapper opts in via ``applyAnchorRadialLayout``
-      // (currently FoundationCanvas only), the three radial kinds
-      // (mission / core_value / identity) snap to the anchor-radial
-      // slot per the canonical Plot spec
-      // ("프로젝트 노드 놓고 그 주변에 미션, 코어밸류, 아이덴티티
-      //  붙이면 되요"). The drop x/y still bubbles up from the
-      // drag-and-drop or context-menu handler; we override it only
-      // when the wrapper flag + kind combination matches. Users can
-      // drag the node anywhere afterward (positional hint, not constraint).
-      const useRadial =
-        applyAnchorRadialLayout && isFoundationRadialKind(kind);
-      const { x: nx, y: ny } = useRadial
-        ? anchorRadialPosition(
-            kind,
-            countFoundationKinds(current.nodes),
-            width,
-            height,
-          )
-        : { x, y };
+      // v0.16.21 (D-2026-05-12-W) — anchor-radial auto-placement
+      // reverted per user "RF 기본 동작" request. Drop at user's
+      // chosen x/y; no per-kind / per-canvas override.
       const node: DocNode = createBlankNode(
         kind,
         {
           id: freshId("n"),
           label: preset?.label ?? "",
-          x: nx,
-          y: ny,
+          x,
+          y,
           width,
           height,
           color: preset?.color ?? DEFAULT_COLOR,
@@ -115,7 +85,7 @@ export function useNodeCreation({
       );
       onDocChange({ ...current, nodes: [...current.nodes, node] });
     },
-    [docRef, onDocChange, applyAnchorRadialLayout],
+    [docRef, onDocChange],
   );
 
   const addNestedNodeAt = useCallback(

@@ -109,10 +109,6 @@ export interface SketchCanvasProps {
   /** v0.15 Phase 3.4 — inject the synthetic project anchor at the top
    *  of the node list. Default true; ServiceDetailCanvas passes false. */
   injectAnchor?: boolean;
-  /** v0.16.12 (D-2026-05-12-O) — when true, new ``mission`` /
-   *  ``core_value`` / ``identity`` nodes snap to anchor-radial slots
-   *  per the canonical Plot spec (Foundation only). Default false. */
-  applyAnchorRadialLayout?: boolean;
 }
 
 
@@ -147,7 +143,6 @@ function SketchCanvasInner({
   shouldDrill,
   showFoldButton,
   injectAnchor,
-  applyAnchorRadialLayout,
 }: SketchCanvasProps) {
   const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
@@ -242,7 +237,6 @@ function SketchCanvasInner({
   const { addNodeAt, addNestedNodeAt, addCompositionChild } = useNodeCreation({
     docRef,
     onDocChange,
-    applyAnchorRadialLayout: applyAnchorRadialLayout ?? false,
   });
 
   const {

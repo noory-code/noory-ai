@@ -4,6 +4,39 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.21] — 2026-05-12
+
+Rollback — Anchor-radial initial placement reverted. New Mission /
+CoreValue / Identity nodes on Foundation canvas drop at user-chosen
+coordinates (RF default) instead of auto-placed at 120° radial slots
+around the anchor. Second of 4-commit "RF 기본 동작" rollback.
+(D-2026-05-12-W, supersedes D-2026-05-12-N + D-2026-05-12-O)
+
+### Removed
+
+- ``viewer/src/canvases/sketch/anchorRadialLayout.ts``.
+- ``viewer/tests/foundation-radial-layout.test.tsx``.
+- ``applyAnchorRadialLayout`` arg from ``useNodeCreation``.
+- ``applyAnchorRadialLayout?: boolean`` prop from
+  ``SketchCanvasProps``.
+- ``applyAnchorRadialLayout={true}`` from FoundationCanvas wrapper.
+
+### Changed
+
+- ``useNodeCreation.addNodeAt`` — drop at caller-supplied
+  ``x``/``y`` unconditionally.
+- ``docs/SPEC.md §Foundation`` — "Anchor-radial initial placement"
+  subsection removed. Canonical spec mandate (anchor + surrounding
+  M/CV/Id) deferred.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 377 / 377 (392 prior − 15 deleted radial tests).
+- ``uv run pytest`` — 274 / 274.
+
+Plugin patch bump 0.16.20 → 0.16.21.
+
 ## [0.16.20] — 2026-05-12
 
 Rollback — Self-loop custom edge reverted per user "RF 기본 동작"

@@ -25,32 +25,6 @@ behaviour, not data model.)
 
 ---
 
-## Anchor-radial initial placement (D-2026-05-12-N)
-
-Per the canonical Plot spec:
-> "프로젝트 노드 놓고(앵커) 그 주변에 미션, 코어밸류, 아이덴티티
-> 붙이면 되요. 뭐가 먼저고 말고는 없습니다."
-
-When the user creates a Mission / CoreValue / Identity node on the
-Foundation canvas, the new node's initial position is set to a slot
-on a circle of radius 320 px around the anchor centre (canvas
-``(0, 0)``). Slots are 120° apart for visual balance — Mission at
-9 o'clock, CoreValue at 1 o'clock, Identity at 5 o'clock. **No
-narrative ordering** is implied; the radial arrangement signals
-"each of the three is an aspect of the same project."
-
-The slot is **a positional hint, not a constraint**:
-- After creation, the user can drag the node anywhere.
-- Subsequent same-kind nodes get a +30° offset to avoid overlap.
-- No edges are emitted (D-2026-05-04-A preserved — all edges
-  user-drawn).
-- Other canvases (Actors / Services / ServiceDetail) unaffected.
-
-Implementation: ``viewer/src/canvases/sketch/anchorRadialLayout.ts``
-(pure helper) consumed by ``useNodeCreation`` 's ``addNodeAt``.
-
----
-
 ## Anchor (the centre node)
 
 The yellow circle in the middle of the canvas, labelled with the
