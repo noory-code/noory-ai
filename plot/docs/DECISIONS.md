@@ -2591,3 +2591,46 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.16 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.15 → 0.16.16.
+
+---
+
+### D-2026-05-12-S — Cmd+A respects controlled-component contract
+
+- **What:** ``useKeyboardShortcuts`` 's ``Cmd+A`` handler used to flip
+  the RF store's ``selected`` flag via ``setNodes`` / ``setEdges``,
+  but never synced ``selectedNodeIds.current`` (the SketchCanvas ref
+  the clipboard reads). After Cmd+A, the user's next ``Cmd+C`` /
+  ``Cmd+D`` copied the *previous* selection, not "all nodes". Fix:
+  after the store mutation, write ``selectedNodeIds.current =
+  inst.getNodes().map(n => n.id)`` so the ref tracks the RF store.
+
+- **Why:** RF emits ``onSelectionChange`` only on *user-initiated*
+  selection events (click / box-select / arrow keys). Programmatic
+  ``setNodes(... selected: true)`` does NOT trigger it. The
+  SketchCanvas wire-up assumed onSelectionChange was the single
+  source of selection truth — Cmd+A broke that assumption.
+
+- **Architecture honesty:** the deeper fix would be to *not* use
+  ``setNodes`` for selection at all, but RF v11 doesn't expose a
+  public "select all programmatically + fire onSelectionChange" API.
+  Manual ref sync is the localised fix that preserves both sides
+  of the contract.
+
+- **Tests:** ``plot/viewer/tests/select-all-sync.test.tsx`` — 2 tests:
+  Cmd+A populates ``selectedNodeIds.current`` with all rendered node
+  ids + RF store ``selected`` flag flips for all nodes; then Cmd+C
+  copies the full set (via clipboard mock).
+
+- **Approval:** Accepted by regression test.
+
+- **Spec impact:** ``docs/SPEC.md §Keyboard shortcuts`` already
+  declares Cmd+A's user-visible behaviour ("Select all nodes and
+  edges"); this fix makes the *internal contract* match.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/canvases/sketch/useKeyboardShortcuts.ts`` —
+    Cmd+A branch now also syncs ``selectedNodeIds.current``.
+  - ``plot/viewer/tests/select-all-sync.test.tsx`` — new (2 tests).
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.17 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.16 → 0.16.17.

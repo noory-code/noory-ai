@@ -4,6 +4,36 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.17] — 2026-05-12
+
+Bug fix — Cmd+A respects controlled-component contract. Previously
+Cmd+A flipped RF's internal ``selected`` flag via ``setNodes`` /
+``setEdges``, but never synced ``selectedNodeIds.current`` (the
+SketchCanvas ref the clipboard reads). Cmd+C / Cmd+D following
+Cmd+A copied / duplicated the *previous* selection, not "all nodes".
+Fix: write ``selectedNodeIds.current = inst.getNodes().map(n => n.id)``
+after the store mutation. (D-2026-05-12-S)
+
+### Changed — viewer/src/canvases/sketch/useKeyboardShortcuts.ts
+
+- Cmd+A branch: after ``setNodes``/``setEdges``, sync
+  ``selectedNodeIds.current`` from the RF store.
+
+### Added — viewer/tests/select-all-sync.test.tsx
+
+2 tests:
+- Cmd+A populates ``selectedNodeIds.current`` with all rendered
+  node ids + RF store ``selected`` flag flips for all nodes.
+- Cmd+C after Cmd+A copies the full set (via clipboard mock).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 397 / 397 passed (395 prior + 2 new).
+- ``uv run pytest`` — 274 / 274.
+
+Plugin patch bump 0.16.16 → 0.16.17.
+
 ## [0.16.16] — 2026-05-12
 
 Bug fix — refetch storm. Playwright session recording showed 404 GETs

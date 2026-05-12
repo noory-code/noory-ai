@@ -78,9 +78,19 @@ export function useKeyboardShortcuts({
       }
       if (meta && e.key.toLowerCase() === "a") {
         e.preventDefault();
+        // v0.16.17 (D-2026-05-12-S) — Cmd+A used to call only
+        // ``setNodes``/``setEdges`` to flip RF's internal ``selected``
+        // flag, which does NOT emit ``onSelectionChange`` → the App's
+        // ``selectedNodeIds`` ref stayed stale → next Cmd+C / Cmd+D
+        // copied the OLD selection. Fix: sync ``selectedNodeIds.current``
+        // alongside the RF store mutation so the controlled-component
+        // contract is preserved.
         if (flowRef.current) {
-          flowRef.current.setNodes((ns) => ns.map((n) => ({ ...n, selected: true })));
-          flowRef.current.setEdges((es) => es.map((edge) => ({ ...edge, selected: true })));
+          const inst = flowRef.current;
+          const allNodeIds = inst.getNodes().map((n) => n.id);
+          inst.setNodes((ns) => ns.map((n) => ({ ...n, selected: true })));
+          inst.setEdges((es) => es.map((edge) => ({ ...edge, selected: true })));
+          selectedNodeIds.current = allNodeIds;
         }
       }
     };
