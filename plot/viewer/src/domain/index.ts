@@ -15,3 +15,5 @@ export { parseEntity, registerKindParser, registeredKinds } from "./parseEntity"
 // every kind's parser with parseEntity via module-load side effects.
 export { Metric } from "./Metric";
 export type { MetricJson } from "./Metric";
+export { Step } from "./Step";
+export type { StepJson } from "./Step";

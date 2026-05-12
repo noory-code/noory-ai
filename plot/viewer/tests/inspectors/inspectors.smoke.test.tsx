@@ -126,8 +126,30 @@ describe("MetricInspector (Phase 2.1)", () => {
   });
 
   it("returns null for unmigrated kinds (KindInspector contract)", () => {
-    const node = makeNode({ id: "a1", kind: "actor" });
-    const { container } = render(<KindInspector {...makeProps(node, "actors")} />);
+    const node = makeNode({ id: "x1", kind: "category" });
+    const { container } = render(<KindInspector {...makeProps(node, "services")} />);
     expect(container.firstChild).toBeNull();
+  });
+});
+
+describe("StepInspector (Phase 2.2)", () => {
+  it("renders with shared chrome + ordered step typed fields", () => {
+    const node = makeNode({
+      id: "s1",
+      kind: "step",
+      label: "Sign in",
+      order: 1,
+      outcome: "session token",
+    });
+    render(<KindInspector {...makeProps(node)} />);
+    expect(screen.getByDisplayValue("Sign in")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("1")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("session token")).toBeInTheDocument();
+  });
+
+  it("renders an unordered step (order=null) without firing console.error", () => {
+    const node = makeNode({ id: "s1", kind: "step", label: "Either path" });
+    render(<KindInspector {...makeProps(node)} />);
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 });

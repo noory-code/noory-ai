@@ -4,6 +4,36 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.21] — 2026-05-12
+
+v0.15 structural reset Phase 2.2 — ``step`` kind vertical slice
+(D-2026-05-12-B). Repeats the Phase 2.1 pattern.
+
+### Added
+
+- ``viewer/src/domain/Step.ts`` — ``class Step`` with ``order: int |
+  null`` (null for parallel branches) + ``outcome``. Self-registers
+  with ``parseEntity``.
+- ``viewer/src/canvases/inspectors/step/index.tsx`` — ``StepInspector``
+  wraps the per-kind body inside ``BaseInspector``.
+- ``inspectors/registry.ts`` registers ``step: StepInspector``.
+- 5 round-trip tests for Step (defaults / ordered / fractional-rejection
+  / wrong-kind rejection / null-order round-trip).
+- 1 dispatch test (parseEntity → Step).
+- 2 smoke tests (StepInspector renders ordered + unordered nodes
+  without console.error).
+
+### Removed
+
+- Local ``StepFields`` (47 LOC) from ``SketchInspector.tsx``.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 47 / 47 passed (39 prior + 8 new).
+
+Plugin patch bump 0.14.20 → 0.14.21 per the Plot plugin rule.
+
 ## [0.14.20] — 2026-05-12
 
 v0.15 structural reset Phase 2.1 — first vertical slice.

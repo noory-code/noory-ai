@@ -12,7 +12,7 @@
  * Mirrors the server-side ``plot/tests/test_node_models.py`` pattern.
  */
 import { describe, expect, it } from "vitest";
-import { DomainParseError, Metric, parseEntity } from "../../src/domain";
+import { DomainParseError, Metric, parseEntity, Step } from "../../src/domain";
 
 describe("Metric.fromJson + toJson round-trip", () => {
   it("populates defaults from a minimal raw", () => {
@@ -115,5 +115,42 @@ describe("parseEntity → Metric dispatch", () => {
     const node = parseEntity({ id: "m1", kind: "metric", target: "x" });
     expect(node).toBeInstanceOf(Metric);
     expect((node as Metric).target).toBe("x");
+  });
+});
+
+describe("Step.fromJson + toJson round-trip", () => {
+  it("populates defaults from a minimal raw", () => {
+    const s = Step.fromJson({ id: "s1", kind: "step" });
+    expect(s.kind).toBe("step");
+    expect(s.order).toBeNull();
+    expect(s.outcome).toBe("");
+  });
+
+  it("preserves an explicit ordered step", () => {
+    const s = Step.fromJson({ id: "s1", kind: "step", order: 3, outcome: "session" });
+    expect(s.order).toBe(3);
+    expect(s.outcome).toBe("session");
+  });
+
+  it("rejects fractional order", () => {
+    expect(() => Step.fromJson({ id: "s1", kind: "step", order: 1.5 })).toThrow(DomainParseError);
+  });
+
+  it("rejects raw with the wrong kind", () => {
+    expect(() => Step.fromJson({ id: "s1", kind: "metric" })).toThrow(DomainParseError);
+  });
+
+  it("survives full round-trip with order=null (parallel branch)", () => {
+    const a = Step.fromJson({ id: "s1", kind: "step", outcome: "x" });
+    const b = Step.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+});
+
+describe("parseEntity → Step dispatch", () => {
+  it("returns a Step instance for kind=\"step\"", () => {
+    const node = parseEntity({ id: "s1", kind: "step", order: 1 });
+    expect(node).toBeInstanceOf(Step);
+    expect((node as Step).order).toBe(1);
   });
 });

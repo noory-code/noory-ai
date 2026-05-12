@@ -376,11 +376,9 @@ export function SketchInspector({
              this branch is unreachable for kind="metric" and kept here
              only as a Phase 2 audit trail. */}
 
-        {/* v0.10 Step 5: Step typed form — order + outcome (outcome shared
-             with service kind, declared once on the model). */}
-        {node.kind === "step" && (
-          <StepFields node={node} onPatchNode={onPatchNode} />
-        )}
+        {/* v0.14.21 — step kind migrated to inspectors/step/. The
+             top-of-component short-circuit routes step nodes to
+             StepInspector before this body renders. */}
 
         {/* v0.12.1: Service typed form — sub-service was eliminated in
              v0.12, so a service is one kind regardless of canvas. The form
@@ -1143,50 +1141,7 @@ function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
 // (Metric typed form moved to inspectors/metric/ in v0.14.20.)
 // ---------------------------------------------------------------------------
 
-interface StepFieldsProps {
-  node: SketchNode;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}
-
-function StepFields({ node, onPatchNode }: StepFieldsProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
-        {t("kind.step")}
-      </div>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.order")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.order")}</span>
-        <input
-          type="number"
-          value={node.order ?? ""}
-          onChange={(e) => {
-            const raw = e.target.value;
-            onPatchNode({ order: raw === "" ? null : Number(raw) });
-          }}
-          placeholder="1, 2, 3, …"
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-semibold text-slate-700">
-          {t("inspector.field.outcome")}
-        </span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — {t("inspector.fieldHint.outcome")}
-        </span>
-        <textarea
-          rows={2}
-          value={node.outcome ?? ""}
-          onChange={(e) => onPatchNode({ outcome: e.target.value })}
-          placeholder="이 단계 끝나면 어떤 상태?"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-        />
-      </label>
-    </div>
-  );
-}
+// v0.14.21 — StepFields moved to inspectors/step/index.tsx
 
 // ---------------------------------------------------------------------------
 // v0.10 Step 3 — Foundation reference display (mission_ref / value_ref / identity_ref)
