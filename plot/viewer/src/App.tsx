@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { patchProjectAnchor, resolveProjectPath, type SocketStatus } from "./api";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
-import { SketchCanvas } from "./canvases/SketchCanvas";
+import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
+import { ServicesCanvas } from "./canvases/ServicesCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
@@ -373,16 +374,17 @@ export function App() {
             {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
             {phase === "no-projects" && <EmptyState onCreate={handleCreate} />}
             {phase === "ready" && activeCanvas && activeId && (() => {
-              // v0.15 Phase 3.2 — route per-canvas wrappers by activeTab.
-              // Migrated tabs (foundation, actors) get their named wrapper;
-              // services / service_detail still use the bare SketchCanvas
-              // until Phase 3.3 lands their wrappers.
+              // v0.15 Phase 3.3 — every tab routes through its named
+              // wrapper. SketchCanvas is no longer called directly from
+              // App.tsx; the wrappers each delegate to it for now and
+              // Phase 3.4 / 3.5 absorbs the canvas-kind-specific
+              // behaviour.
               const Canvas =
                 activeTab === "foundation"
                   ? FoundationCanvas
                   : activeTab === "actors"
                     ? ActorsCanvas
-                    : SketchCanvas;
+                    : ServicesCanvas;
               return (
               <Canvas
                 key={`${activeId}:${activeCanvasKey}`}
@@ -457,7 +459,7 @@ export function App() {
           categoryLabel={categoryNode?.label ?? null}
           onClose={backToOverview}
         >
-          <SketchCanvas
+          <ServiceDetailCanvas
             key={`${activeId}:${detailCanvasKey}`}
             doc={detailCanvas}
             onDocChange={(next) => {

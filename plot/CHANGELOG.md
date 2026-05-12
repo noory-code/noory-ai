@@ -4,6 +4,35 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.3] — 2026-05-12
+
+v0.15 structural reset Phase 3.3 — ServicesCanvas + ServiceDetailCanvas
+wrappers added; ``App.tsx`` no longer calls ``SketchCanvas`` directly.
+(D-2026-05-12-B)
+
+### Added
+
+- ``viewer/src/canvases/ServicesCanvas.tsx`` — services-overview
+  wrapper. Pass-through; Phase 3.4 absorbs canvas-kind-specific
+  behaviour.
+- ``viewer/src/canvases/ServiceDetailCanvas.tsx`` — service-detail
+  modal wrapper. Pass-through; Phase 3.4 absorbs the service-detail-
+  specific anchor + edge filter rules; Phase 3.5 wires NODE_RENDERERS.
+
+### Changed
+
+- ``viewer/src/App.tsx`` — the ``SketchCanvas`` import is gone.
+  Both call sites (main canvas + service-detail modal) now mount
+  the named wrapper. The activeTab dispatch picks
+  Foundation / Actors / Services per tab.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 106 / 106 passed.
+
+Plugin patch bump 0.15.2 → 0.15.3.
+
 ## [0.15.2] — 2026-05-12
 
 v0.15 structural reset Phase 3.2 — FoundationCanvas + ActorsCanvas
