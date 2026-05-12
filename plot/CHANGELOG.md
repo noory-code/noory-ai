@@ -4,6 +4,74 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.11] — 2026-05-12
+
+Foundation anchor-radial initial placement — when the user creates
+a Mission / CoreValue / Identity node on the Foundation canvas, the
+new node snaps to a slot on a circle of radius 320 px around the
+anchor centre. Slots 120° apart for visual balance. No narrative
+ordering. **Positional hint, not a constraint** — user can drag
+afterward. D-2026-05-12-N.
+
+### Added — viewer/src/canvases/sketch/anchorRadialLayout.ts
+
+Pure helper module (~95 LOC). Exports:
+
+- ``FOUNDATION_RADIAL_KINDS`` SSOT (the three radial kinds).
+- ``isFoundationRadialKind`` type guard.
+- ``anchorRadialSlot(kind, existing)`` — slot centre on the
+  320 px circle.
+- ``anchorRadialPosition(kind, existing, w, h)`` — top-left
+  position so the node centre lands on the slot.
+- ``countFoundationKinds(nodes)`` — counts of each radial kind
+  in the current canvas (drives the +30° same-kind offset).
+
+Clock-face mapping:
+
+- Mission   →  9 o'clock (270°) — left of anchor.
+- CoreValue →  1 o'clock (30°)  — upper-right of anchor.
+- Identity  →  5 o'clock (150°) — lower-right of anchor.
+
+### Changed — viewer/src/canvases/sketch/useNodeCreation.ts
+
+- ``addNodeAt`` checks ``doc.canvas_kind === "foundation"`` AND
+  ``isFoundationRadialKind(kind)``. If both true, ``x``/``y`` are
+  overridden by ``anchorRadialPosition``. All other cases keep
+  the caller-supplied position.
+
+### Added — viewer/tests/foundation-radial-layout.test.tsx
+
+15 tests covering: SSOT membership, kind-discrimination guard,
+slot positions for first node of each kind, on-radius invariant
+across all slots, +30° collision offset for repeat kinds,
+top-left centring math, ``countFoundationKinds`` ignoring
+non-radial kinds.
+
+### Changed — docs/SPEC.md §Foundation
+
+- New "Anchor-radial initial placement" subsection at the top
+  of the Foundation section, citing the canonical spec mandate
+  + D-2026-05-12-N + the D-2026-05-04-A relationship (auto-position
+  is fine because user can drag; auto-edges still banned).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 383 / 383 passed (368 prior + 15 new).
+- ``uv run pytest`` — 274 / 274 (no server change).
+
+Plugin patch bump 0.16.10 → 0.16.11. Second of the 3-item
+parked-backlog batch.
+
+### Note on v0.16.12 (originally planned)
+
+The third batch item (Service-Detail Mermaid panel) was **dropped**.
+User clarification 2026-05-12: Service-Detail's
+*"다이어그램 시각화"* is the existing React Flow canvas itself
+(actor refs + their relationships + rule/content composition).
+Not a separate Mermaid chart. ``ServiceDetailCanvas`` already
+serves that role; no panel work needed.
+
 ## [0.16.10] — 2026-05-12
 
 Self-loop visual rendering — user-drawn edges with

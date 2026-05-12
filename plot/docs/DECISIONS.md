@@ -2214,3 +2214,73 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.10 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.9 → 0.16.10.
+
+---
+
+### D-2026-05-12-N — Foundation anchor-radial initial placement
+
+- **What:** When a user creates a Mission / CoreValue / Identity
+  node on the Foundation canvas, the new node's initial position
+  snaps to a slot on a circle of radius 320 px around the anchor
+  centre (canvas ``(0, 0)``). Slots are 120° apart — Mission at
+  9 o'clock, CoreValue at 1 o'clock, Identity at 5 o'clock.
+  Subsequent same-kind nodes offset +30°. The slot is a
+  *positional hint, not a constraint* — user can drag the node
+  anywhere after creation.
+
+- **Why:** the canonical Plot spec re-delivered by the user
+  (plan ``~/.claude/plans/dazzling-inventing-boole.md``) says:
+  > "프로젝트 노드 놓고(앵커) 그 주변에 미션, 코어밸류, 아이덴티티
+  > 붙이면 되요. 뭐가 먼저고 말고는 없습니다."
+
+  Previously the three nodes dropped wherever the cursor was —
+  no visual signal that they belonged to the same project's
+  essence. Anchor-radial placement makes the relationship
+  spatially explicit on first sight.
+
+- **Relationship to D-2026-05-04-A (no auto-edges):** preserved.
+  This decision adds *auto-position*, not *auto-edges*. The
+  canonical objection in D-2026-05-04-A was that auto-edges
+  weren't editable / deletable. A position can be re-set by
+  dragging the node — fully reversible, fully user-controllable.
+
+- **Order is intentionally absent:** the user explicitly said
+  *"뭐가 먼저고 말고는 없습니다"*. The 9 / 1 / 5 clock-face slots
+  are chosen for *visual balance* (120° apart), not for any
+  narrative reading order. Mission is not "first."
+
+- **Alternatives considered:**
+  - **Lane backgrounds with Why / Drives / Tone labels**:
+    rejected — adds visual chrome and implies a sequence; user
+    explicitly said no sequence.
+  - **Suggested-edge buttons** (sidebar "Add Mission→CoreValue
+    arrow"): rejected — re-introduces the auto-edge problem
+    D-2026-05-04-A solved.
+  - **Auto-edges from anchor** to each Foundation kind: rejected
+    same reason.
+  - **Only fire on empty canvas (don't offset for repeats)**:
+    rejected — adding a 2nd Mission would stack on the 1st;
+    +30° offset is the cheapest fix.
+
+- **Approval:** Accepted by spec mandate; pure-helper coverage
+  ensures the slot math doesn't drift.
+
+- **Spec impact:** ``docs/SPEC.md §Foundation`` gains an
+  "Anchor-radial initial placement" subsection at the top of
+  the Foundation section, before the anchor table.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/canvases/sketch/anchorRadialLayout.ts`` —
+    new (~95 LOC). Pure helper: ``anchorRadialSlot`` /
+    ``anchorRadialPosition`` / ``countFoundationKinds`` /
+    ``isFoundationRadialKind`` / ``FOUNDATION_RADIAL_KINDS`` SSOT.
+  - ``plot/viewer/src/canvases/sketch/useNodeCreation.ts`` —
+    ``addNodeAt`` overrides ``x``/``y`` when canvas is foundation
+    and kind is one of the three radial kinds.
+  - ``plot/viewer/tests/foundation-radial-layout.test.tsx`` —
+    new (15 tests).
+  - ``plot/docs/SPEC.md`` — new "Anchor-radial initial placement"
+    subsection.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.11 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.10 → 0.16.11.

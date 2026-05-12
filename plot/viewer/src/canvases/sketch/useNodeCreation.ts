@@ -10,6 +10,11 @@
 import { type MutableRefObject, useCallback } from "react";
 import { createBlankNode } from "../../domain";
 import type { CanvasDoc, NodeKind, SketchNode as DocNode } from "../../types";
+import {
+  anchorRadialPosition,
+  countFoundationKinds,
+  isFoundationRadialKind,
+} from "./anchorRadialLayout";
 import { DEFAULT_COLOR, DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
 import type { NodePreset } from "./types";
 
@@ -56,15 +61,36 @@ export function useNodeCreation({
   const addNodeAt = useCallback(
     (x: number, y: number, preset?: NodePreset) => {
       const kind = requirePresetKind(preset);
+      const current = docRef.current;
+      const width = preset?.width ?? DEFAULT_WIDTH;
+      const height = preset?.height ?? DEFAULT_HEIGHT;
+      // v0.16.11 (D-2026-05-12-N) — on the Foundation canvas, the three
+      // radial kinds (mission / core_value / identity) snap to the
+      // anchor-radial slot per the canonical Plot spec
+      // ("프로젝트 노드 놓고 그 주변에 미션, 코어밸류, 아이덴티티 붙이면 되요").
+      // The drop x/y still bubbles up from the drag-and-drop or
+      // context-menu handler; we override it only when the canvas +
+      // kind combination matches. Users can drag the node anywhere
+      // afterward (positional hint, not constraint).
+      const isFoundation = current.canvas_kind === "foundation";
+      const useRadial = isFoundation && isFoundationRadialKind(kind);
+      const { x: nx, y: ny } = useRadial
+        ? anchorRadialPosition(
+            kind,
+            countFoundationKinds(current.nodes),
+            width,
+            height,
+          )
+        : { x, y };
       const node: DocNode = createBlankNode(
         kind,
         {
           id: freshId("n"),
           label: preset?.label ?? "",
-          x,
-          y,
-          width: preset?.width ?? DEFAULT_WIDTH,
-          height: preset?.height ?? DEFAULT_HEIGHT,
+          x: nx,
+          y: ny,
+          width,
+          height,
           color: preset?.color ?? DEFAULT_COLOR,
           shape: preset?.shape ?? "rounded",
           icon: preset?.icon ?? null,
@@ -77,7 +103,6 @@ export function useNodeCreation({
           ref_identity_id: preset?.ref_identity_id ?? null,
         },
       );
-      const current = docRef.current;
       onDocChange({ ...current, nodes: [...current.nodes, node] });
     },
     [docRef, onDocChange],
