@@ -153,3 +153,43 @@ describe("StepInspector (Phase 2.2)", () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("CoreValueInspector (Phase 2.3)", () => {
+  it("renders with shared chrome + definition + do/dont", () => {
+    const node = makeNode({
+      id: "cv1",
+      kind: "core_value",
+      label: "관용",
+      definition: "다름을 인정하고 받아들임",
+      do: "다른 의견을 먼저 듣는다",
+      dont: "비난부터 한다",
+    });
+    render(<KindInspector {...makeProps(node, "foundation")} />);
+    expect(screen.getByDisplayValue("관용")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("다름을 인정하고 받아들임")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("다른 의견을 먼저 듣는다")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("비난부터 한다")).toBeInTheDocument();
+  });
+
+  it("renders empty defaults without firing console.error", () => {
+    const node = makeNode({ id: "cv1", kind: "core_value", label: "Empty" });
+    render(<KindInspector {...makeProps(node, "foundation")} />);
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("IdentityInspector (Phase 2.3)", () => {
+  it("renders with shared chrome + description + do/dont", () => {
+    const node = makeNode({
+      id: "id1",
+      kind: "identity",
+      label: "Voice",
+      description: "따뜻하고 진솔하게",
+      do: "이름을 부른다",
+      dont: "공지글 같은 말투로 쓴다",
+    });
+    render(<KindInspector {...makeProps(node, "foundation")} />);
+    expect(screen.getByDisplayValue("Voice")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("따뜻하고 진솔하게")).toBeInTheDocument();
+  });
+});

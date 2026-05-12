@@ -12,6 +12,8 @@
  */
 import type { FC } from "react";
 import type { NodeKind } from "../../types";
+import { CoreValueInspector } from "./core_value";
+import { IdentityInspector } from "./identity";
 import { MetricInspector } from "./metric";
 import { StepInspector } from "./step";
 import type { KindInspectorProps } from "./types";
@@ -22,6 +24,8 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   // Phase 2.1+ per-kind entries land here.
   metric: MetricInspector,
   step: StepInspector,
+  core_value: CoreValueInspector,
+  identity: IdentityInspector,
 };
 
 /** Look up the registered inspector for a kind, or ``undefined`` while

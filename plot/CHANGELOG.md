@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.22] — 2026-05-12
+
+v0.15 structural reset Phase 2.3 — bundled vertical slice for the
+two Foundation kinds that share the do / dont AI-first pair:
+``core_value`` and ``identity``. (D-2026-05-12-B)
+
+### Added
+
+- ``viewer/src/domain/CoreValue.ts`` — definition + do + dont.
+- ``viewer/src/domain/Identity.ts`` — description + do + dont.
+- ``viewer/src/canvases/inspectors/shared/DoDontFields.tsx`` —
+  shared do/dont pair extracted from ``SketchInspector.tsx``.
+  CoreValue + Identity per-kind inspectors consume it; the legacy
+  ``Service`` branch (still on the legacy code path until Phase 2.9)
+  imports it from the new shared location.
+- ``inspectors/core_value/index.tsx`` + ``inspectors/identity/index.tsx``.
+- registry: ``core_value: CoreValueInspector`` + ``identity: IdentityInspector``.
+- 8 round-trip tests + 2 dispatch tests + 3 smoke tests.
+
+### Removed
+
+- Local ``CoreValueFields`` / ``IdentityFields`` / ``DoDontFields``
+  (~95 LOC) from ``SketchInspector.tsx``.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 57 / 57 passed (47 prior + 10 new).
+
+Plugin patch bump 0.14.21 → 0.14.22.
+
 ## [0.14.21] — 2026-05-12
 
 v0.15 structural reset Phase 2.2 — ``step`` kind vertical slice

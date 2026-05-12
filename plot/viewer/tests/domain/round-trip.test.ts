@@ -12,7 +12,14 @@
  * Mirrors the server-side ``plot/tests/test_node_models.py`` pattern.
  */
 import { describe, expect, it } from "vitest";
-import { DomainParseError, Metric, parseEntity, Step } from "../../src/domain";
+import {
+  CoreValue,
+  DomainParseError,
+  Identity,
+  Metric,
+  parseEntity,
+  Step,
+} from "../../src/domain";
 
 describe("Metric.fromJson + toJson round-trip", () => {
   it("populates defaults from a minimal raw", () => {
@@ -152,5 +159,66 @@ describe("parseEntity → Step dispatch", () => {
     const node = parseEntity({ id: "s1", kind: "step", order: 1 });
     expect(node).toBeInstanceOf(Step);
     expect((node as Step).order).toBe(1);
+  });
+});
+
+describe("CoreValue.fromJson + toJson round-trip", () => {
+  it("populates defaults", () => {
+    const cv = CoreValue.fromJson({ id: "cv1", kind: "core_value" });
+    expect(cv.kind).toBe("core_value");
+    expect(cv.definition).toBe("");
+    expect(cv.do).toBe("");
+    expect(cv.dont).toBe("");
+  });
+
+  it("preserves typed fields and round-trips", () => {
+    const a = CoreValue.fromJson({
+      id: "cv1",
+      kind: "core_value",
+      definition: "관용",
+      do: "다른 의견을 먼저 듣는다",
+      dont: "비난부터 한다",
+    });
+    const b = CoreValue.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("rejects raw with the wrong kind", () => {
+    expect(() => CoreValue.fromJson({ id: "cv1", kind: "metric" })).toThrow(DomainParseError);
+  });
+});
+
+describe("Identity.fromJson + toJson round-trip", () => {
+  it("populates defaults", () => {
+    const id = Identity.fromJson({ id: "id1", kind: "identity" });
+    expect(id.kind).toBe("identity");
+    expect(id.description).toBe("");
+    expect(id.do).toBe("");
+    expect(id.dont).toBe("");
+  });
+
+  it("preserves typed fields and round-trips", () => {
+    const a = Identity.fromJson({
+      id: "id1",
+      kind: "identity",
+      label: "Voice",
+      description: "따뜻하고 진솔하게",
+      do: "이름을 부른다",
+      dont: "공지글 같은 말투로",
+    });
+    const b = Identity.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+});
+
+describe("parseEntity → Foundation kinds dispatch", () => {
+  it("dispatches core_value to CoreValue", () => {
+    const node = parseEntity({ id: "cv1", kind: "core_value", definition: "x" });
+    expect(node).toBeInstanceOf(CoreValue);
+  });
+
+  it("dispatches identity to Identity", () => {
+    const node = parseEntity({ id: "id1", kind: "identity", description: "x" });
+    expect(node).toBeInstanceOf(Identity);
   });
 });

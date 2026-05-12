@@ -4,6 +4,9 @@ import type { CanvasKind, SketchNode } from "../types";
 import { DetailsSection } from "./inspectors/DetailsSection";
 import { KindInspector } from "./inspectors/KindInspector";
 import { lookupKindInspector } from "./inspectors/registry";
+// v0.14.22 — DoDontFields lives in inspectors/shared/. Service kind
+// (still on the legacy code path until Phase 2.9) consumes it from there.
+import { DoDontFields } from "./inspectors/shared/DoDontFields";
 
 export interface SketchInspectorProps {
   /** Currently selected node. Null → panel shows empty state. */
@@ -267,14 +270,10 @@ export function SketchInspector({
              Do/Don't follows the AI-first principle (LLMs mimic concrete
              examples better than abstract rules). Optional: blank fields
              remain blank, no validator complains. */}
-        {node.kind === "core_value" && (
-          <CoreValueFields node={node} onPatchNode={onPatchNode} />
-        )}
+        {/* v0.14.22 — core_value migrated to inspectors/core_value/. */}
 
         {/* v0.10 Step 2: Identity typed form — description + Do/Don't pair. */}
-        {node.kind === "identity" && (
-          <IdentityFields node={node} onPatchNode={onPatchNode} />
-        )}
+        {/* v0.14.22 — identity migrated to inspectors/identity/. */}
 
         {/* v0.9.1: ``label`` + per-node ``details.md`` for long-form prose. */}
         <DetailsSection
@@ -1245,104 +1244,8 @@ function FoundationRefBlock({
 // help simulate behaviour or write copy in the project's voice reach for
 // concrete examples first, abstract rules second.
 
-interface CoreValueFieldsProps {
-  node: SketchNode;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}
-
-function CoreValueFields({ node, onPatchNode }: CoreValueFieldsProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="mb-4 rounded border border-amber-200 bg-amber-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-        {t("kind.core_value")}
-      </div>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
-          {t("inspector.field.definition")}
-        </span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — {t("inspector.fieldHint.definition")}
-        </span>
-        <textarea
-          rows={2}
-          value={node.definition ?? ""}
-          onChange={(e) => onPatchNode({ definition: e.target.value })}
-          placeholder="한두 문장으로"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-        />
-      </label>
-      <DoDontFields node={node} onPatchNode={onPatchNode} />
-    </div>
-  );
-}
-
-interface IdentityFieldsProps {
-  node: SketchNode;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}
-
-function IdentityFields({ node, onPatchNode }: IdentityFieldsProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="mb-4 rounded border border-violet-200 bg-violet-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
-        {t("kind.identity")}
-      </div>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
-          {t("inspector.field.description")}
-        </span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — {t("inspector.fieldHint.description")}
-        </span>
-        <textarea
-          rows={2}
-          value={node.description ?? ""}
-          onChange={(e) => onPatchNode({ description: e.target.value })}
-          placeholder="이 속성이 어떻게 드러나는가"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-        />
-      </label>
-      <DoDontFields node={node} onPatchNode={onPatchNode} />
-    </div>
-  );
-}
-
-interface DoDontFieldsProps {
-  node: SketchNode;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}
-
-function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
-  const { t } = useTranslation();
-  return (
-    <>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-emerald-700">{t("inspector.field.do")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.do")}</span>
-        <textarea
-          rows={2}
-          value={node.do ?? ""}
-          onChange={(e) => onPatchNode({ do: e.target.value })}
-          placeholder="이렇게 행동/표현한다"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-emerald-600 focus:outline-none"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-semibold text-rose-700">{t("inspector.field.dont")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.dont")}</span>
-        <textarea
-          rows={2}
-          value={node.dont ?? ""}
-          onChange={(e) => onPatchNode({ dont: e.target.value })}
-          placeholder="이렇게는 안 한다"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
-        />
-      </label>
-    </>
-  );
-}
+// v0.14.22 — CoreValueFields / IdentityFields / DoDontFields moved to
+// inspectors/core_value/ + inspectors/identity/ + inspectors/shared/.
 
 // v0.14.19 — DetailsSection extracted to ``inspectors/DetailsSection.tsx``
 // so the new ``BaseInspector`` shell (Phase 2.0+) and this legacy inspector

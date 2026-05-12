@@ -17,3 +17,7 @@ export { Metric } from "./Metric";
 export type { MetricJson } from "./Metric";
 export { Step } from "./Step";
 export type { StepJson } from "./Step";
+export { CoreValue } from "./CoreValue";
+export type { CoreValueJson } from "./CoreValue";
+export { Identity } from "./Identity";
+export type { IdentityJson } from "./Identity";
