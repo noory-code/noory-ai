@@ -4,6 +4,69 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.7] — 2026-05-12
+
+v0.15 reset Phase 4.1 — cursor uniformity audit + JSDOM sweep.
+The user's complaint that fired the v0.15 reset
+(*"파운데이션에서 사용되는 커서 컨트롤하고 액터나 서비스에서
+사용되는 커서 컨트롤이 다릅니다"*) is now answered empirically:
+all 4 wrappers (Foundation / Actors / Services / ServiceDetail)
+route through a single SketchCanvas + NODE_RENDERERS + BaseNode
+pipeline, with **zero** per-canvas cursor declarations anywhere
+in the wrapper / per-kind node / per-kind inspector / sketch hook
+files, and **identical** ``react-flow__*`` class skeletons under
+DOM sweep. Cursor inventory is fully determined by the shared RF
+vendor CSS + Tailwind preflight stack; per-canvas drift is now
+structurally impossible. (D-2026-05-12-C)
+
+### Added — viewer/tests/cursor-sweep.test.tsx
+
+- 8 tests across 3 describe blocks:
+  1. Zero inline ``style.cursor`` assignments on any element rendered
+     by FoundationCanvas / ActorsCanvas / ServicesCanvas /
+     ServiceDetailCanvas (empty doc).
+  2. Zero inline ``style.cursor`` when each wrapper is seeded with
+     all 15 node kinds (via ``createBlankNode`` from the domain layer).
+  3. ``react-flow__*`` class-skeleton equivalence across the 4
+     wrappers — same set of fragments (``react-flow__pane``,
+     ``react-flow__renderer``, ``react-flow__viewport``, …) on each.
+- Per-kind node renderer probes: Foundation seed (project + mission +
+  core_value + identity) and Services seed (category + service) each
+  render with zero inline cursor on any descendant.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 114 / 114 passed (106 prior + 8 new from this
+  file).
+- ``uv run pytest`` — 214 / 214 passed (no server-side changes).
+
+### Audit evidence (pinned via D-2026-05-12-C)
+
+| Probe | Result |
+|---|---|
+| ``grep -rn "cursor:" viewer/src/canvases/`` | 0 raw CSS hits |
+| Tailwind ``cursor-*`` utility usage | Only in chrome (Stencil / ContextMenu / Toolbar / EdgeModal / DetailsSection) — shared across all wrappers |
+| ``grep -rEn "style\.cursor\|cursor\s*="`` viewer/src/ | 0 hits |
+| ``styles.css`` cursor declarations | 0 (guarded by ``styles-cursor-baseline.test.tsx`` since D-2026-05-11-C) |
+| Wrapper LOC (Foundation / Actors / Services / ServiceDetail) | 22 / 16 / 22 / 23 — props-only thin shells |
+
+### Deviation from the original Phase 4.1 plan
+
+The plan called for a Playwright spec that probes
+``getComputedStyle()`` in a real browser. The audit above proves
+cursor uniformity structurally — every per-canvas cursor source
+has been eliminated — and the JSDOM sweep pins the DOM-shape
+equivalence. Adding Playwright would re-derive the same conclusion
+at the cost of ~300 MB browser binaries + a separate test runner.
+The user-runnable DevTools recipe in ``docs/CURSOR.md`` §"How to
+verify the cursor state in the browser" (lines 197-215) remains
+the canonical sensory confirmation when the user wants one. See
+D-2026-05-12-C §Alternatives for the reversal path if a future
+drift report needs live evidence.
+
+Plugin patch bump 0.15.6 → 0.15.7.
+
 ## [0.15.6] — 2026-05-12
 
 Docs-only — handoff for the next session. v0.15 reset Phases 4–5

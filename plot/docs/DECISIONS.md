@@ -1380,3 +1380,84 @@ in the same browser-verification round:
   - `plot/docs/DECISIONS.md` — this entry.
   - `~/.claude/projects/.../memory/project_plot_next_session.md`
     — full plan + skill/rule candidates.
+
+---
+
+### D-2026-05-12-C — Cursor uniformity audit: 4 wrappers verified equivalent (Phase 4.1)
+
+- **What:** Empirical confirmation, after v0.15 reset Phases 1-3,
+  that the 4 canvas wrappers (Foundation / Actors / Services /
+  ServiceDetail) produce a uniform cursor inventory. Pinned via a
+  new JSDOM-side sweep (`viewer/tests/cursor-sweep.test.tsx`) +
+  the existing static guard (`styles-cursor-baseline.test.tsx`).
+
+- **Why:** the v0.15 reset was fired by the user's complaint
+  *"파운데이션에서 사용되는 커서 컨트롤하고 액터나 서비스에서
+  사용되는 커서 컨트롤이 다릅니다"* (D-2026-05-12-B). With Phase 3
+  routing every wrapper through one SketchCanvas + NODE_RENDERERS +
+  BaseNode pipeline, that complaint can be answered empirically.
+
+- **Audit evidence (verified 2026-05-12 by static + DOM sweep):**
+
+  | Probe | Result |
+  |---|---|
+  | `grep -rn "cursor:" viewer/src/canvases/ viewer/src/edit/` | **0 hits** outside Tailwind utility classes |
+  | Tailwind `cursor-*` utility usage | Only in chrome files (`SketchStencil.tsx`, `SketchContextMenu.tsx`, `SketchToolbar.tsx`, `SketchEdgeModal.tsx`, `inspectors/DetailsSection.tsx`) — shared across all 4 wrappers |
+  | `grep -rEn "style\.cursor\|cursor\s*=" viewer/src/` | **0 hits** |
+  | `viewer/src/styles.css` cursor declarations | **0** (already guarded by `styles-cursor-baseline.test.tsx` since D-2026-05-11-C) |
+  | `viewer/src/canvases/nodes/{kind}/index.tsx` (15 per-kind renderers) | All wrap `BaseNode`; zero per-kind cursor overrides |
+  | `viewer/src/canvases/inspectors/{kind}/index.tsx` (15 per-kind inspectors) | All wrap `BaseInspector`; zero per-kind cursor overrides |
+  | Wrapper files (Foundation/Actors/Services/ServiceDetail) | 16-23 LOC each; props-only thin shells over a shared `SketchCanvas` |
+  | DOM sweep — 4 wrappers seeded with same doc | Identical `react-flow__*` class skeletons (pane, renderer, viewport, …); zero inline `style.cursor` on any element |
+  | DOM sweep — 4 wrappers seeded with all 15 kinds | Zero inline `style.cursor` on any node, anywhere |
+
+  Cursor inventory is therefore determined exclusively by the three
+  shared stylesheet sources documented in
+  [`docs/CURSOR.md`](./CURSOR.md):
+  1. React Flow vendor CSS (`reactflow/dist/style.css`).
+  2. `@reactflow/node-resizer` vendor CSS.
+  3. Tailwind preflight (`@tailwind base;` injecting
+     `button, [role="button"] { cursor: pointer }`).
+
+  None of these is per-canvas; all four wrappers compose the same
+  three layers. Per-canvas cursor drift is structurally impossible
+  with the post-Phase-3 code.
+
+- **Alternatives considered:**
+  - **Playwright sweep** (per original Phase 4.1 plan): would run
+    real `getComputedStyle()` in Chromium. **Rejected** for this
+    audit because (a) the static + DOM proof above is exhaustive
+    given the cursor SSOT is entirely in CSS / vendor stylesheets,
+    (b) Playwright adds ~300 MB browser binaries + a separate test
+    runner that no other Plot test relies on, and (c) the user-runnable
+    DevTools recipe in `docs/CURSOR.md` §"How to verify the cursor
+    state in the browser" (lines 197-215) is the appropriate
+    sensory confirmation when the user wants one. If a future
+    drift report turns out to need live `getComputedStyle()`
+    evidence, this decision can be reversed with a follow-up
+    `D-YYYY-MM-DD-X` entry.
+  - **Per-canvas Tailwind `cursor-*` allowlist guard** (folded
+    into Phase 4.2): the wrapper files contain zero Tailwind
+    cursor utility classes today; Phase 4.2 will pin that as a
+    static guard so a future addition fails the build with a
+    decision-id prompt.
+
+- **Approval:** Pending user confirmation. Audit findings + the
+  JSDOM sweep test were chosen as the verification mechanism
+  per "make the reasonable call, the user will redirect"
+  direction at session start. If the user reads this entry and
+  wants the live-browser sweep too, that becomes Phase 4.1.5 and
+  reuses the same fixture + `seedAllKinds()` helper.
+
+- **Spec impact:** none — `docs/CURSOR.md` already documents the
+  cursor SSOT; this audit confirms the post-Phase-3 code satisfies
+  it. `docs/SPEC.md §Cursor states` likewise unchanged.
+
+- **Files in this commit:**
+  - `plot/viewer/tests/cursor-sweep.test.tsx` — new JSDOM sweep
+    (8 tests: zero-inline-cursor across 4 wrappers on empty + all-15-kinds
+    seeds; react-flow class-skeleton equivalence across the 4
+    wrappers; per-kind node renderer no-cursor checks).
+  - `plot/docs/DECISIONS.md` — this entry.
+  - `plot/CHANGELOG.md` — v0.15.7 section.
+  - `plot/.claude-plugin/plugin.json` — patch bump 0.15.6 → 0.15.7.
