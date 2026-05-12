@@ -13,6 +13,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  Actor,
   ActorRef,
   Category,
   CoreValue,
@@ -332,6 +333,39 @@ describe("Foundation refs (Mission/Value/Identity) round-trip", () => {
       ref_identity_id: "id-1",
     });
     expect(i.ref_identity_id).toBe("id-1");
+  });
+});
+
+describe("Actor.fromJson + toJson round-trip", () => {
+  it("populates defaults", () => {
+    const a = Actor.fromJson({ id: "a1", kind: "actor" });
+    expect(a.kind).toBe("actor");
+    expect(a.motivation).toBe("");
+    expect(a.pain).toBe("");
+    expect(a.side).toBeNull();
+  });
+
+  it("preserves typed fields and round-trips", () => {
+    const x = Actor.fromJson({
+      id: "a1",
+      kind: "actor",
+      label: "Operator",
+      motivation: "운영 부담",
+      pain: "탭이 너무 많다",
+      side: "operator",
+    });
+    const y = Actor.fromJson(x.toJson());
+    expect({ ...y }).toEqual({ ...x });
+  });
+
+  it("rejects invalid side", () => {
+    expect(() => Actor.fromJson({ id: "a1", kind: "actor", side: "bot" })).toThrow(
+      DomainParseError,
+    );
+  });
+
+  it("dispatches via parseEntity", () => {
+    expect(parseEntity({ id: "a", kind: "actor" })).toBeInstanceOf(Actor);
   });
 });
 

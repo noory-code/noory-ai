@@ -35,3 +35,5 @@ export { ValueRef } from "./ValueRef";
 export type { ValueRefJson } from "./ValueRef";
 export { IdentityRef } from "./IdentityRef";
 export type { IdentityRefJson } from "./IdentityRef";
+export { Actor } from "./Actor";
+export type { ActorJson } from "./Actor";

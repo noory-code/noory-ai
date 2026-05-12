@@ -296,6 +296,37 @@ describe("Foundation ref inspectors (Phase 2.7)", () => {
   });
 });
 
+describe("ActorInspector (Phase 2.8)", () => {
+  it("renders side select + motivation + pain", () => {
+    const node = makeNode({
+      id: "a1",
+      kind: "actor",
+      label: "User",
+      side: "user",
+      motivation: "수다",
+      pain: "외로움",
+    });
+    render(<KindInspector {...makeProps(node, "actors")} />);
+    expect(screen.getByDisplayValue("User")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("수다")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("외로움")).toBeInTheDocument();
+  });
+
+  it("shows the actor-composition placeholder for non-root actors", () => {
+    const node = makeNode({ id: "a1", kind: "actor", label: "Sub", is_root: false });
+    render(<KindInspector {...makeProps(node, "actors")} />);
+    // ``italic`` class uniquely tags the actor-composition placeholder
+    // (DetailsSection's "Create details" panel uses dashed-border too).
+    expect(document.querySelector(".italic.text-slate-400")).toBeInTheDocument();
+  });
+
+  it("hides the placeholder for actor-root", () => {
+    const node = makeNode({ id: "a1", kind: "actor", label: "Root", is_root: true });
+    render(<KindInspector {...makeProps(node, "actors")} />);
+    expect(document.querySelector(".italic.text-slate-400")).toBeNull();
+  });
+});
+
 describe("CategoryInspector (Phase 2.6)", () => {
   it("renders chrome + theme + does NOT show empty-warning when child services exist", () => {
     const cat = makeNode({ id: "cat-1", kind: "category", label: "Admin", theme: "ops" });

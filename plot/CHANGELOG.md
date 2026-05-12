@@ -4,6 +4,32 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.26] — 2026-05-12
+
+v0.15 structural reset Phase 2.8 — ``actor`` kind vertical slice
+(D-2026-05-12-B). Includes the v0.3 actor-composition placeholder
+that fires for non-root actors.
+
+### Added
+
+- ``viewer/src/domain/Actor.ts`` (motivation + pain + side validator).
+- ``viewer/src/canvases/inspectors/actor/index.tsx`` — renders the
+  side select + motivation + pain + the placeholder for non-root.
+- registry: ``actor: ActorInspector``.
+- 4 round-trip + 3 smoke tests.
+
+### Removed
+
+- Local ``ActorFields`` (~58 LOC) + the actor-placeholder branch
+  from ``SketchInspector.tsx``.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 90 / 90 passed (83 prior + 7 new).
+
+Plugin patch bump 0.14.25 → 0.14.26.
+
 ## [0.14.25] — 2026-05-12
 
 v0.15 structural reset Phase 2.7 — bundled vertical slice for the 4
