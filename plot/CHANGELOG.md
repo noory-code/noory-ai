@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.28] — 2026-05-13
+
+Fourth of 5 deferred D-2026-05-12-B catch-up artefacts. Add
+``viewer/tests/entity-roundtrip.test.tsx`` — vitest static guard
+verifying ``parseEntity(createBlankNode(kind, base)).toJson() ===
+createBlankNode(kind, base)`` for every NodeKind. Catches silent
+field drift between ``fromJson`` and ``toJson`` (a field added in
+one and missed in the other) before the regression reaches the
+React Flow render path. Companion to no-god-import (Phase C) and
+test_schema_parity (server side). (D-2026-05-13-E)
+
+### Added
+
+- ``viewer/tests/entity-roundtrip.test.tsx`` — 16 sub-tests:
+  - 15 per-kind round-trip (parseEntity ∘ toJson is identity).
+  - 1 dispatch coverage (parseEntity accepts every NodeKind).
+
+### Verification
+
+- viewer vitest — 461 / 461 (445 → 461, +16).
+
 ## [0.16.27] — 2026-05-13
 
 Third of 5 deferred D-2026-05-12-B catch-up artefacts. Add

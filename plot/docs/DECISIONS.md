@@ -2994,3 +2994,67 @@ in the same browser-verification round:
 - **Position in the 5-batch:** 3 of 5. Remaining queued:
   D-2026-05-13-E (entity-roundtrip test), D-2026-05-13-F (CLAUDE.md
   anti-pattern row).
+
+---
+
+### D-2026-05-13-E — entity-roundtrip vitest test (overdue from D-2026-05-12-B)
+
+- **What:** Add ``viewer/tests/entity-roundtrip.test.tsx`` — vitest
+  static guard verifying that for every NodeKind:
+
+  ```ts
+  parseEntity(createBlankNode(kind, base)).toJson() ===
+    createBlankNode(kind, base)
+  ```
+
+  Two test groups:
+  1. 15 per-kind cases (``test.each(NODE_KINDS)``) asserting the
+     round-trip equality with actionable failure messages.
+  2. 1 dispatch-coverage case asserting ``parseEntity`` accepts every
+     NodeKind without throwing.
+
+- **Why:** ``fromJson`` and ``toJson`` are inverse operations by
+  contract. A common drift mode: a field gets added to fromJson
+  (e.g., a new typed-text validator) but the developer forgets to
+  emit it in toJson (or vice versa). The result is a field that's
+  read on the wire, normalised on parse, and **dropped on the next
+  serialisation** — a silent data-loss bug. This guard catches the
+  drift at commit time, not at runtime when a user saves a project
+  and loses fields. Closes the v0.13-v0.14 era's class of bugs
+  where the absence of a fromJson boundary made this drift
+  undetectable.
+
+- **Why createBlankNode as the input fixture:** ``createBlankNode``
+  is already the canonical "valid wire shape for kind K with default
+  typed-text". It exercises the same fromJson + toJson pair as
+  production code; if a kind's fromJson normalises a field that
+  toJson omits, ``createBlankNode`` itself produces a non-idempotent
+  result and the round-trip test catches it.
+
+- **Why REF_OVERRIDES carve-out:** The four ref-family kinds
+  (``actor_ref`` / ``mission_ref`` / ``value_ref`` / ``identity_ref``)
+  require a non-null ``ref_{target}_id`` to land as valid. Other kinds
+  accept default overrides. The overrides map keeps the test
+  self-contained without leaking per-kind branching into the test
+  body.
+
+- **Approval:** Accepted by user, 2026-05-13 (the "5개 다" answer of
+  the same session that opened D-2026-05-13-B).
+
+- **Spec impact:** None — internal guard. Strengthens
+  plot-entity-template SKILL.md Step 13 (round-trip test) from
+  "should write one" to "the test exists and passes for every kind".
+
+- **Files:**
+  - ``plot/viewer/tests/entity-roundtrip.test.tsx`` — new, ~95 LOC,
+    16 sub-tests.
+  - ``plot/CHANGELOG.md`` — v0.16.28 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.27 → 0.16.28.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Test counts:**
+  - Before: 445 viewer tests.
+  - After: 461 viewer tests (+16 sub-tests).
+
+- **Position in the 5-batch:** 4 of 5. Remaining queued:
+  D-2026-05-13-F (CLAUDE.md anti-pattern row).
