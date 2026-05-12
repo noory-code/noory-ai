@@ -16,6 +16,7 @@ import {
   Actor,
   ActorRef,
   Category,
+  Content,
   CoreValue,
   DomainParseError,
   Identity,
@@ -25,6 +26,8 @@ import {
   MissionRef,
   parseEntity,
   Project,
+  Rule,
+  Service,
   Step,
   ValueRef,
 } from "../../src/domain";
@@ -333,6 +336,94 @@ describe("Foundation refs (Mission/Value/Identity) round-trip", () => {
       ref_identity_id: "id-1",
     });
     expect(i.ref_identity_id).toBe("id-1");
+  });
+});
+
+describe("Service.fromJson + toJson round-trip", () => {
+  it("populates defaults", () => {
+    const s = Service.fromJson({ id: "svc-1", kind: "service" });
+    expect(s.kind).toBe("service");
+    expect(s.target_side).toBeNull();
+    expect(s.what).toBe("");
+  });
+
+  it("preserves all 6 typed fields + do/dont and round-trips", () => {
+    const a = Service.fromJson({
+      id: "svc-1",
+      kind: "service",
+      label: "Sign-up",
+      target_side: "user",
+      what: "신규 가입",
+      value_created: "접근권",
+      scope: "이메일/패스워드",
+      trigger: "/signup 진입",
+      how: "이메일 + 비번",
+      outcome: "계정 생성",
+      do: "진행 표시",
+      dont: "불필요 필드 묻기",
+    });
+    const b = Service.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("rejects invalid target_side", () => {
+    expect(() =>
+      Service.fromJson({ id: "x", kind: "service", target_side: "bot" }),
+    ).toThrow(DomainParseError);
+  });
+});
+
+describe("Rule.fromJson + toJson round-trip", () => {
+  it("populates defaults including empty actor_permissions", () => {
+    const r = Rule.fromJson({ id: "r1", kind: "rule" });
+    expect(r.actor_permissions).toEqual({});
+  });
+
+  it("preserves typed fields including permissions map", () => {
+    const a = Rule.fromJson({
+      id: "r1",
+      kind: "rule",
+      policy: "GDPR opt-in",
+      enforcement: "checkbox + audit",
+      actor_permissions: { user: "RUD", admin: "CRUD" },
+    });
+    const b = Rule.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("rejects non-string permission value", () => {
+    expect(() =>
+      Rule.fromJson({ id: "r1", kind: "rule", actor_permissions: { user: 42 } }),
+    ).toThrow(DomainParseError);
+  });
+});
+
+describe("Content.fromJson + toJson round-trip", () => {
+  it("populates defaults with null actor refs", () => {
+    const c = Content.fromJson({ id: "c1", kind: "content" });
+    expect(c.format).toBe("");
+    expect(c.producer_actor_id).toBeNull();
+    expect(c.consumer_actor_id).toBeNull();
+  });
+
+  it("preserves typed fields and round-trips", () => {
+    const a = Content.fromJson({
+      id: "c1",
+      kind: "content",
+      format: "application/json",
+      producer_actor_id: "checkout",
+      consumer_actor_id: "user",
+    });
+    const b = Content.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+});
+
+describe("parseEntity → service / rule / content dispatch", () => {
+  it("dispatches each", () => {
+    expect(parseEntity({ id: "1", kind: "service" })).toBeInstanceOf(Service);
+    expect(parseEntity({ id: "2", kind: "rule" })).toBeInstanceOf(Rule);
+    expect(parseEntity({ id: "3", kind: "content" })).toBeInstanceOf(Content);
   });
 });
 

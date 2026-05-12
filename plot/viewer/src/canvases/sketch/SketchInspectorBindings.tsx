@@ -1,22 +1,15 @@
-// Wraps SketchInspector with all the SC-side glue: which node is
-// selected, which prop maps to which canvas mutation, where the
-// repick / drill / delete flows route. SC stays a thin shell.
+// Wires the inspector panel to the SketchCanvas-side state: which
+// node is selected, which prop maps to which canvas mutation, where
+// the repick / drill / delete flows route. SC stays a thin shell.
 //
-// Inspector itself stays in canvases/SketchInspector.tsx — the
-// 1422-LOC behemoth is a separate refactor (ARCHITECTURE.md
-// migration order item 3). This wrapper is purely the wiring.
-import {
-  type Dispatch,
-  type SetStateAction,
-  type MutableRefObject,
-} from "react";
+// v0.14.27 — calls ``KindInspector`` directly. The legacy
+// ``SketchInspector`` (1491 LOC at v0.14.18) was deleted as part of
+// the v0.15 structural reset Phase 2.9 once every kind had its own
+// per-kind inspector under ``inspectors/{kind}/``.
+import { type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import type { Node } from "reactflow";
-import type {
-  CanvasDoc,
-  CanvasKind,
-  SketchNode as DocNode,
-} from "../../types";
-import { SketchInspector } from "../SketchInspector";
+import type { CanvasDoc, CanvasKind, SketchNode as DocNode } from "../../types";
+import { KindInspector } from "../inspectors/KindInspector";
 import type { PendingActorRef, PendingFoundationRef } from "./types";
 
 export interface SketchInspectorBindingsProps {
@@ -56,9 +49,12 @@ export function SketchInspectorBindings({
   projectPath,
   projectId,
 }: SketchInspectorBindingsProps) {
+  if (!inspectorNodeId) return null;
+  const node = doc.nodes.find((n) => n.id === inspectorNodeId) ?? null;
+  if (!node) return null;
   return (
-    <SketchInspector
-      node={inspectorNodeId ? doc.nodes.find((n) => n.id === inspectorNodeId) ?? null : null}
+    <KindInspector
+      node={node}
       allNodes={doc.nodes}
       availableActors={availableActors ?? doc.nodes.filter((n) => n.kind === "actor")}
       availableMissions={availableMissions}

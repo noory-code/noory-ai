@@ -39,4 +39,11 @@ export interface KindInspectorProps {
   /** v0.11.1 — open FoundationRefPicker in rewire mode for an orphan
    *  mission_ref / value_ref / identity_ref. */
   onRepickFoundationRef?: (nodeId: string) => void;
+  /** v0.10 Step 6: ServiceInspector composition list — create a rule
+   *  or content child under the parent service. */
+  onAddChild?: (parentId: string, kind: "rule" | "content") => void;
+  /** v0.10 Step 6: edit a composition child (rule / content) in place. */
+  onPatchChild?: (childId: string, patch: Partial<SketchNode>) => void;
+  /** v0.10 Step 6: remove a composition child. */
+  onRemoveChild?: (childId: string) => void;
 }

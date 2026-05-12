@@ -15,6 +15,7 @@ import type { NodeKind } from "../../types";
 import { ActorInspector } from "./actor";
 import { ActorRefInspector } from "./actor_ref";
 import { CategoryInspector } from "./category";
+import { ContentInspector } from "./content";
 import { CoreValueInspector } from "./core_value";
 import { IdentityInspector } from "./identity";
 import { IdentityRefInspector } from "./identity_ref";
@@ -22,6 +23,8 @@ import { MetricInspector } from "./metric";
 import { MissionInspector } from "./mission";
 import { MissionRefInspector } from "./mission_ref";
 import { ProjectInspector } from "./project";
+import { RuleInspector } from "./rule";
+import { ServiceInspector } from "./service";
 import { StepInspector } from "./step";
 import type { KindInspectorProps } from "./types";
 import { ValueRefInspector } from "./value_ref";
@@ -42,6 +45,9 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   value_ref: ValueRefInspector,
   identity_ref: IdentityRefInspector,
   actor: ActorInspector,
+  service: ServiceInspector,
+  rule: RuleInspector,
+  content: ContentInspector,
 };
 
 /** Look up the registered inspector for a kind, or ``undefined`` while

@@ -4,6 +4,80 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.27] — 2026-05-12
+
+v0.15 structural reset Phase 2.9 — final per-kind vertical slice
+(Service + Rule + Content) AND deletion of the legacy
+``SketchInspector.tsx`` (was 1491 LOC at v0.14.18; this commit
+removes the last remnants and cuts the file from disk).
+(D-2026-05-12-B)
+
+### Decision — phase merge
+
+The plan had Phase 2.10 do "delete SketchInspector + retire god
+types.ts" as one step. This commit pulls the SketchInspector
+deletion forward because by the time service migrated, every kind
+was in the registry — the legacy fallback path was unreachable
+dead code. Phase 2.10 (next commit) now does ONLY the types.ts
+atomic flip (god interface → 15-way discriminated union).
+
+### Added — viewer/src/domain/ (3 final entity classes)
+
+- ``Service.ts`` — target_side + 6 typed fields (what /
+  value_created / scope / trigger / how / outcome) + do/dont.
+- ``Rule.ts`` — policy + enforcement + actor_permissions
+  (Record<string,string> with strict value typing).
+- ``Content.ts`` — format + producer_actor_id + consumer_actor_id.
+
+### Added — viewer/src/canvases/inspectors/ (3 per-kind + 3 shared)
+
+- ``service/index.tsx`` — ServiceInspector wraps ServiceFields +
+  two CompositionList panels (rules + contents).
+- ``service/CompositionList.tsx`` — extracted CompositionList +
+  CompositionRow.
+- ``service/RuleFields.tsx`` — extracted RuleFields with the
+  per-actor-permissions editor.
+- ``service/ContentFields.tsx`` — extracted ContentFields +
+  ContentActorPicker.
+- ``rule/index.tsx`` — direct-selection variant of RuleFields
+  inside BaseInspector chrome.
+- ``content/index.tsx`` — direct-selection variant of ContentFields.
+- KindInspectorProps grows ``onAddChild?`` + ``onPatchChild?`` +
+  ``onRemoveChild?`` (all optional — only ServiceInspector uses
+  them; other kinds receive undefined).
+
+### Removed
+
+- ``viewer/src/canvases/SketchInspector.tsx`` — the 1491-LOC
+  god component is now ZERO LOC on disk.
+- All local fields helpers and composition components that lived
+  inside it (CompositionList, CompositionRow, ServiceFields,
+  ServiceTextarea, RuleFields, ContentFields, ContentActorPicker).
+
+### Changed
+
+- ``viewer/src/canvases/sketch/SketchInspectorBindings.tsx`` now
+  calls ``KindInspector`` directly, with an inline null-guard for
+  the no-selection case. The bindings file is the same external
+  contract — it's the ONLY consumer of the inspector framework
+  outside ``inspectors/`` itself.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 103 / 103 passed (90 prior + 13 new
+  covering Service / Rule / Content round-trip + dispatch + smoke).
+
+### Registry status — all 15 kinds migrated
+
+```
+metric, step, core_value, identity, mission, project, category,
+actor_ref, mission_ref, value_ref, identity_ref, actor,
+service, rule, content
+```
+
+Plugin patch bump 0.14.26 → 0.14.27.
+
 ## [0.14.26] — 2026-05-12
 
 v0.15 structural reset Phase 2.8 — ``actor`` kind vertical slice

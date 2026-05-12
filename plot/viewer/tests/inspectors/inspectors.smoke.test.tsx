@@ -296,6 +296,72 @@ describe("Foundation ref inspectors (Phase 2.7)", () => {
   });
 });
 
+describe("ServiceInspector (Phase 2.9)", () => {
+  it("renders Service typed fields + composition lists", () => {
+    const svc = makeNode({
+      id: "svc-1",
+      kind: "service",
+      label: "Sign-up",
+      target_side: "user",
+      what: "신규 가입",
+      value_created: "access",
+    });
+    const rule = makeNode({
+      id: "r1",
+      kind: "rule",
+      label: "GDPR",
+      parent_id: "svc-1",
+      policy: "explicit consent",
+    });
+    render(
+      <KindInspector
+        {...makeProps(svc, "service_detail", [svc, rule])}
+        onAddChild={vi.fn()}
+        onPatchChild={vi.fn()}
+        onRemoveChild={vi.fn()}
+      />,
+    );
+    expect(screen.getByDisplayValue("Sign-up")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("신규 가입")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("access")).toBeInTheDocument();
+    // Rule child label shows in the rules CompositionList
+    expect(screen.getByDisplayValue("GDPR")).toBeInTheDocument();
+  });
+
+  it("hides composition lists when child callbacks are unset", () => {
+    const svc = makeNode({ id: "svc-1", kind: "service", label: "Bare" });
+    render(<KindInspector {...makeProps(svc, "service_detail", [svc])} />);
+    // No "Add" button when callbacks aren't wired
+    expect(screen.queryByText(/composition\.add/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("RuleInspector + ContentInspector (Phase 2.9)", () => {
+  it("RuleInspector renders policy + enforcement + permissions", () => {
+    const r = makeNode({
+      id: "r1",
+      kind: "rule",
+      label: "Rule 1",
+      policy: "consent",
+      enforcement: "checkbox",
+    });
+    render(<KindInspector {...makeProps(r, "service_detail")} />);
+    expect(screen.getByDisplayValue("consent")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("checkbox")).toBeInTheDocument();
+  });
+
+  it("ContentInspector renders format + producer/consumer pickers", () => {
+    const c = makeNode({
+      id: "c1",
+      kind: "content",
+      label: "Receipt",
+      format: "application/json",
+    });
+    render(<KindInspector {...makeProps(c, "service_detail")} />);
+    expect(screen.getByDisplayValue("application/json")).toBeInTheDocument();
+  });
+});
+
 describe("ActorInspector (Phase 2.8)", () => {
   it("renders side select + motivation + pain", () => {
     const node = makeNode({
