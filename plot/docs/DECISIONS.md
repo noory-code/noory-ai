@@ -2519,3 +2519,75 @@ in the same browser-verification round:
   Companion fixes: refetch storm (v0.16.16), Cmd+A controlled
   contract (v0.16.17), fitView gating (v0.16.18), anchor
   data.onResize stability (v0.16.19).
+
+---
+
+### D-2026-05-12-R — Stable callback handlers (refetch storm fix)
+
+- **What:** New ``viewer/src/hooks/useStableHandlers.ts`` returns
+  ``useCallback``-wrapped post-project handlers (handleListStale /
+  handleExternalCanvas / handleTagsRefresh / handleExternalChange).
+  ``App.tsx`` additionally inlines ``handleError`` + ``handleActiveIdChange``
+  pre-project as direct ``useCallback`` (they must be stable BEFORE
+  ``useProject`` is invoked).
+
+- **Why:** Playwright session recording showed **404 GETs to the same
+  3 endpoints** in a single idle browser session — a refetch storm.
+  Root cause: App.tsx passed inline arrow closures to ``useProject``,
+  ``useCanvasPersist``, and ``useProjectSocket``. Those closures
+  were recreated on every render. ``useProject``'s ``loadList`` had
+  ``onError`` in its dependency array, so ``loadList`` was rebuilt
+  every render too. Under certain WebSocket event timings the
+  cascade could trigger a refetch chain: WS event → onListStale →
+  loadList → setSummaries → App re-render → new closures → next
+  WS event sees a different ``handlersRef.current`` snapshot → repeat.
+
+- **Stability boundary:**
+  - *Pre-project* handlers (``handleError``, ``handleActiveIdChange``)
+    must be stable before ``useProject`` runs, so they live as
+    direct ``useCallback`` in App.tsx (2 callbacks, 5 lines).
+  - *Post-project* handlers (the 4 above) depend on ``useProject``'s
+    output (``loadList``, ``setCanvasCache``, ``setTags``) and are
+    bundled into ``useStableHandlers``.
+  - This 2-stage shape keeps App.tsx under its 400-LOC ceiling
+    (App.tsx 393 → 380 LOC after extraction).
+
+- **Why the refetch storm appeared *now*:** the v0.16.0 App.tsx
+  split (D-2026-05-12-H) extracted useUrlSync / useAvailableNodes /
+  useAppKeyboard, leaving the *project / persist / socket* trio of
+  hook wirings inline with their inline callbacks. None of the v0.15
+  / v0.16 structural guards catch callback identity issues —
+  structural-guards.test.tsx is *static* (file shape / LOC), not
+  *runtime* (re-render behaviour). The storm only surfaced under
+  hands-on use, exactly as the user predicted.
+
+- **Tests:** ``plot/viewer/tests/stable-handlers.test.tsx`` —
+  5 tests covering: identity stability across re-renders, identity
+  change when ``loadList`` ref changes, ``handleExternalCanvas``
+  produces the right Map-updater, ``handleExternalChange`` calls
+  ``historyClear``, ``handleListStale`` invokes ``loadList``.
+
+- **Alternatives considered:**
+  - **Move all inline closures to refs in useProject / useCanvasPersist
+    / useProjectSocket** (so caller stability doesn't matter):
+    rejected. Already done in useCanvasPersist + useProjectSocket
+    via ``handlersRef``. useProject doesn't follow the same pattern;
+    converting it would change its public contract. Caller-side
+    useCallback is the localised fix.
+  - **Wrap each handler in a separate ``useCallback`` inline in App.tsx**:
+    rejected — would push App.tsx past 400 LOC ceiling without a
+    structural decision. The hook extraction is structurally cleaner.
+
+- **Approval:** Accepted by regression test + LOC budget compliance.
+
+- **Spec impact:** none — internal refactor.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/hooks/useStableHandlers.ts`` — new (~60 LOC).
+  - ``plot/viewer/src/App.tsx`` — pre-project handlers via
+    ``useCallback``, post-project via ``useStableHandlers``. 393 →
+    380 LOC.
+  - ``plot/viewer/tests/stable-handlers.test.tsx`` — new (5 tests).
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.16 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.15 → 0.16.16.

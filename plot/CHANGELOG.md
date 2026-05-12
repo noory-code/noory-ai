@@ -4,6 +4,62 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.16] — 2026-05-12
+
+Bug fix — refetch storm. Playwright session recording showed 404 GETs
+to the same 3 endpoints in a single idle browser session. Cause:
+App.tsx passed inline arrow closures to ``useProject`` / ``useCanvasPersist``
+/ ``useProjectSocket``; those closures were recreated every render,
+which under specific WS event timings produced a fetch chain that
+re-triggered on each iteration. Fix: ``useStableHandlers`` hook returns
+``useCallback``-wrapped post-project handlers; pre-project handlers
+(``handleError`` / ``handleActiveIdChange``) are inlined as direct
+``useCallback`` in App.tsx. (D-2026-05-12-R)
+
+### Added — viewer/src/hooks/useStableHandlers.ts
+
+Returns ``useCallback``-wrapped:
+- ``handleListStale`` — calls ``loadList``.
+- ``handleExternalCanvas`` — Map-set into ``setCanvasCache``.
+- ``handleTagsRefresh`` — passes through to ``setTags``.
+- ``handleExternalChange`` — calls ``historyClear``.
+
+### Changed — viewer/src/App.tsx
+
+- Pre-project handlers (``handleError``, ``handleActiveIdChange``)
+  defined as ``useCallback`` before ``useProject`` is invoked.
+- Post-project handlers come from ``useStableHandlers`` (single
+  destructure).
+- ``useProject`` destructure compacted onto fewer lines.
+- LOC: 393 → 380.
+
+### Added — viewer/tests/stable-handlers.test.tsx
+
+5 tests:
+- Identity stability across re-renders when deps are stable.
+- Identity change when ``loadList`` reference changes (correct
+  recompute behaviour).
+- ``handleExternalCanvas`` produces the right Map-updater.
+- ``handleExternalChange`` calls ``historyClear``.
+- ``handleListStale`` invokes ``loadList``.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 395 / 395 passed (390 prior + 5 new).
+- ``uv run pytest`` — 274 / 274 (no server change).
+
+### Why this wasn't caught by v0.15 structural guards
+
+The structural-guards test (D-2026-05-12-F) is *static* — it checks
+file shape, LOC ceilings, registry completeness, no-god-dispatch.
+Callback identity stability is a *runtime* concern that no static
+guard can detect; it surfaces only under hands-on use. The lesson
+will go into the future v0.17+ "RF integration test layer" (filed
+in ROADMAP) — runtime regression tests via Playwright.
+
+Plugin patch bump 0.16.15 → 0.16.16.
+
 ## [0.16.15] — 2026-05-12
 
 Bug fix — anchor drag snap-back. User dragging the synthetic project

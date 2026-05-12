@@ -12,6 +12,7 @@ import { useAvailableNodes } from "./hooks/useAvailableNodes";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
 import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
+import { useStableHandlers } from "./hooks/useStableHandlers";
 import { useUrlSync } from "./hooks/useUrlSync";
 import { CanvasTabs, type CanvasTab } from "./shell/CanvasTabs";
 import { Header } from "./shell/Header";
@@ -82,35 +83,31 @@ export function App() {
     return url.searchParams.get("project") ?? url.searchParams.get("sketch");
   }, []);
 
+  // v0.16.16 (D-2026-05-12-R) — stable callbacks prevent cascading
+  // identity changes that previously caused a WS-driven refetch storm.
+  const handleError = useCallback((err: string) => setError(err), []);
+  const handleActiveIdChange = useCallback(
+    (id: string | null) => syncUrl({ project: id, sketch: null }),
+    [syncUrl],
+  );
+
   const project = useProject({
     projectPath,
     history,
     initialActiveId,
-    onActiveIdChange: (id) => {
-      syncUrl({ project: id, sketch: null });
-    },
-    onError: (err) => setError(err),
+    onActiveIdChange: handleActiveIdChange,
+    onError: handleError,
   });
-
   const {
-    summaries,
-    activeId,
-    canvasCache,
-    tags,
-    migratedToast,
-    phase,
-    setCanvasCache,
-    setServiceDetails,
-    setTags,
-    loadList,
-    create: handleCreate,
-    rename: handleRename,
-    remove: handleDelete,
-    pick: handlePick,
-    markSession: handleMarkSession,
-    deleteTag: handleDeleteTag,
-    dismissToast,
+    summaries, activeId, canvasCache, tags, migratedToast, phase,
+    setCanvasCache, setServiceDetails, setTags, loadList,
+    create: handleCreate, rename: handleRename, remove: handleDelete,
+    pick: handlePick, markSession: handleMarkSession,
+    deleteTag: handleDeleteTag, dismissToast,
   } = project;
+
+  const { handleListStale, handleExternalCanvas, handleTagsRefresh, handleExternalChange } =
+    useStableHandlers({ setCanvasCache, setTags, loadList, historyClear: history.clear });
 
   // ------- persist + undo/redo (extracted to useCanvasPersist) -------
 
@@ -125,10 +122,8 @@ export function App() {
     history,
     setCanvasCache,
     setServiceDetails,
-    onListStale: () => {
-      void loadList();
-    },
-    onError: (err) => setError(err),
+    onListStale: handleListStale,
+    onError: handleError,
   });
 
   // ------- WebSocket (extracted to useProjectSocket) -------
@@ -137,19 +132,11 @@ export function App() {
     projectPath,
     activeId,
     pendingWrites,
-    onListStale: () => {
-      void loadList();
-    },
-    onExternalCanvas: (key, fresh) => {
-      setCanvasCache((prev) => {
-        const next = new Map(prev);
-        next.set(key, fresh);
-        return next;
-      });
-    },
-    onTagsRefresh: (nextTags) => setTags(nextTags),
-    onExternalChange: () => history.clear(),
-    onError: (err) => setError(err),
+    onListStale: handleListStale,
+    onExternalCanvas: handleExternalCanvas,
+    onTagsRefresh: handleTagsRefresh,
+    onExternalChange: handleExternalChange,
+    onError: handleError,
   });
 
   const handleUndo = useCallback(() => {
