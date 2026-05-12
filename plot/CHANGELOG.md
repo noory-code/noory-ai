@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.29] — 2026-05-13
+
+Fifth and final of 5 deferred D-2026-05-12-B catch-up artefacts. Add
+a row to ``plot/CLAUDE.md`` §Anti-patterns: *"Treating raw JSON as a
+domain entity (no fromJson boundary)"*. Cross-references the
+``plot-entity-template`` skill (Phase A), ``no-god-import.test.tsx``
+(Phase C), ``entity-roundtrip.test.tsx`` (Phase D), and server-side
+``test_schema_parity.py``. Closes the D-2026-05-12-B candidate list.
+(D-2026-05-13-F)
+
+### Added
+
+- ``plot/CLAUDE.md`` — anti-pattern table row 11 ("Treating raw JSON
+  as a domain entity").
+
 ## [0.16.28] — 2026-05-13
 
 Fourth of 5 deferred D-2026-05-12-B catch-up artefacts. Add

@@ -3058,3 +3058,58 @@ in the same browser-verification round:
 
 - **Position in the 5-batch:** 4 of 5. Remaining queued:
   D-2026-05-13-F (CLAUDE.md anti-pattern row).
+
+---
+
+### D-2026-05-13-F — CLAUDE.md anti-pattern row "Treating raw JSON as domain entity" (overdue from D-2026-05-12-B)
+
+- **What:** Add a row to ``plot/CLAUDE.md`` §Anti-patterns:
+  *"Treating raw JSON as a domain entity (no fromJson boundary)"*.
+  Cross-references the four upstream artefacts shipped in this
+  catch-up batch:
+  - ``plot-entity-template`` skill — Phase A.
+  - ``no-god-import.test.tsx`` — Phase C.
+  - ``entity-roundtrip.test.tsx`` — Phase D.
+  - server-side ``test_schema_parity.py`` — pre-existing.
+
+  Concrete example cited: pre-v0.15 god SketchNode interface where
+  UI read ``.what_we_do`` directly off the wire shape with no class,
+  no invariant check, no normalisation.
+
+- **Why:** plot/CLAUDE.md's anti-pattern table is the **trigger
+  surface** for the session-start sanity scan. Without a row naming
+  the god-JSON anti-pattern explicitly, a future session could
+  silently regress to it. The other four artefacts in this batch
+  enforce the rule at code-gen time (skill), commit time (vitest
+  guards), and CI time; this row enforces it at session-start
+  *reading* time — the layer that's been the weak link historically
+  (the v0.13-v0.14 god SketchNode lived for ~30 sessions before
+  anyone called it out).
+
+- **Why this is enough for closure of D-2026-05-12-B:** The original
+  D-2026-05-12-B entry listed exactly five candidates under "Skills /
+  rules to consider":
+  1. ``plot/skills/plot-entity-template/`` — landed in D-2026-05-13-B.
+  2. ``plot/skills/plot-domain-design/`` — landed in D-2026-05-13-C.
+  3. Pre-commit hook ``no-god-import`` — landed in D-2026-05-13-D as
+     vitest guard (functionally equivalent: pre_commit_gate.py runs
+     vitest on every viewer commit).
+  4. Vitest entity-shape round-trip test — landed in D-2026-05-13-E.
+  5. ``plot/CLAUDE.md`` anti-pattern row "Treating raw JSON as
+     domain entity" — landed in this entry.
+
+  All five candidates now shipped; D-2026-05-12-B's deferred work is
+  closed.
+
+- **Approval:** Accepted by user, 2026-05-13 (the "5개 다" answer of
+  the same session that opened D-2026-05-13-B).
+
+- **Spec impact:** None — CLAUDE.md is operational guide, not spec.
+
+- **Files:**
+  - ``plot/CLAUDE.md`` — one new row in §Anti-patterns table.
+  - ``plot/CHANGELOG.md`` — v0.16.29 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.28 → 0.16.29.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Position in the 5-batch:** 5 of 5 — **batch closed**.
