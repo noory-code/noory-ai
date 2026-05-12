@@ -9,114 +9,133 @@
 
 ## Active queue
 
-### `구조 리셋` — v0.15.0 domain layer + entity classes + componentisation
+### `검증` — v0.15 reset Phases 4 + 5 (cursor sweep + verification gates)
 
-> **Trigger:** user says **"구조 리셋"** or **"v0.15"** or
-> **"도메인"** or **"엔티티"** as the first / near-first message
-> of a Plot session.
+> **Trigger:** user says **"검증"** or **"verification"** or
+> **"phase 4"** or **"phase 5"** or **"커서 sweep"** as the first /
+> near-first message of a Plot session.
 >
-> **Filed:** 2026-05-12 by user (multiple messages).
+> **Filed:** 2026-05-12 by user — Phase 1+2+3 of the v0.15 reset
+> shipped this session (D-2026-05-12-B); Phases 4–5 deferred to a
+> dedicated next session because they have a different shape (test
+> infra + acceptance gates rather than per-kind work).
 >
-> **Reference:** [D-2026-05-12-B](./DECISIONS.md) (this entry +
-> its plan) and full backlog detail in
-> [`memory/project_plot_next_session.md`](../../.claude/projects/-Users-woogis-Workspace-repo-noory-ai/memory/project_plot_next_session.md).
+> **Reference:** [D-2026-05-12-B](./DECISIONS.md), the full plan
+> in `~/.claude/plans/dazzling-greeting-diffie.md`, and the
+> per-phase changelog from v0.14.15 → v0.15.5.
 
-#### The problem (user direct quotes 2026-05-12)
+#### Phase 4 — Per-canvas cursor sweep
 
-- *"파운데이션에서 사용되는 커서 컨트롤하고 액터나 서비스에서
-  사용되는 커서 컨트롤이 다릅니다. 코어 원칙이 지켜지고
-  있지않아요."*
-- *"엔티티 정의도 안되어 있구요."*
-- *"기본을 못하고 있는겁니다."*
-- *"코드 재활용 할 수도 없게 해뒀어요. JSON을 직접 건드리고
-  있는게 아닌지 모르겠네요. fromJson, toJson 같은걸 쓰고
-  클래스를 코드로 만들어서 개념화해야 했다."*
-- *"도메인 레이어 설계가 제대로 되어 있는지도 모르겠구요."*
+The user's complaint that fired the v0.15 reset (*"파운데이션에서
+사용되는 커서 컨트롤하고 액터나 서비스에서 사용되는 커서 컨트롤이
+다릅니다"*) needs an empirical answer now that the reset's structural
+half is done. Phase 4 work:
 
-#### Code evidence (collected 2026-05-12)
+1. **Audit** — file `D-2026-05-13-X` in `DECISIONS.md` listing
+   the `getComputedStyle(...).cursor` returns of every meaningful
+   target on each of the 4 canvases (Foundation / Actors /
+   Services / ServiceDetail). Compare against `docs/CURSOR.md`
+   contract (which says all 4 share one cursor table).
+2. **Author Playwright sweep** — `viewer/tests/cursor-sweep.spec.ts`
+   that mounts each wrapper, hovers (i) empty pane (ii) regular
+   node body (iii) anchor body (iv) connection handle (v) edge
+   (vi) resize handle, snapshots cursor inventory per canvas, and
+   asserts the 4 inventories are identical (modulo the v0.11.4
+   anchor-vs-button asymmetry per D-2026-05-11-A).
+3. **Extend the static cursor-baseline guard** — `viewer/tests/
+   styles-cursor-baseline.test.tsx` should also verify the 4
+   wrapper files contain zero `cursor:` strings.
+4. Fixture project under `viewer/tests/fixtures/cursor-sweep-project/`
+   with `.plot/` seeded via `domain/createBlankNode` so schema
+   drift breaks fixture build before the sweep runs.
 
-| Evidence | Status |
-|---|---|
-| `viewer/src/types.ts:174` comment | Self-admits god interface |
-| `grep -rE "fromJson\|toJson\|parse(\|serialize("` viewer/src | 0 hits |
-| `grep -rE "^class \|^export class "` viewer/src | 0 hits |
-| `find viewer/src -type d \| grep -iE "domain\|entit\|model"` | No domain dir |
-| `types.ts` 305 LOC | 100% `type` / `interface`, zero methods |
-| `SketchInspector.tsx` | 1422 LOC; branches on `kind` for every typed field |
-| `SketchCanvas.tsx` | 359 LOC; one god component for 3 canvases |
+Expected output: 2 commits (`v0.15.6` author sweep + `v0.15.7`
+extend baseline guard + DECISIONS pin).
 
-#### Plan (do all phases in order; each phase = its own
-multi-commit plan; viewer green at every phase boundary)
+#### Phase 5 — Verification gates + kill-switch
 
-**Phase A — Domain entity classes.** New
-`viewer/src/domain/{Mission,CoreValue,Identity,Actor,ActorRef,
-Service,Category,MissionRef,ValueRef,IdentityRef,Metric,Step,
-Rule,Content,Project}.ts`. Each is a real `class` with
-fromJson / toJson / invariants / kind-specific fields only.
-`domain/SketchNode.ts` = discriminated union of the 15 classes.
-`domain/CanvasDoc.ts` = `Canvas` class with `findById` etc.
+5 acceptance gates + 2 static guards + 1 kill-switch. All planned
+in detail in the plan file's "Phase 5" section. Highlights:
 
-**Phase B — Server alignment.** Verify
-`plot_mcp/models.py` Pydantic discriminated union matches 1:1.
-Decide manual vs generated TS types.
+1. **Per-kind Inspector smoke** — extend
+   `viewer/tests/inspectors/inspectors.smoke.test.tsx` to exercise
+   every one of the 15 kinds with a synthetic node and assert
+   chrome + per-kind body render without `console.error`.
+2. **Entity round-trip** — already mostly there in
+   `viewer/tests/domain/round-trip.test.ts` and
+   `plot/tests/test_node_models.py`; consolidate.
+3. **Per-canvas cursor sweep** — Phase 4's spec.
+4. **Static guard: `no-god-union-import.test.ts`** — fail the
+   build if any `viewer/src/canvases/` `.tsx` matches
+   `node.kind === "X"` god dispatch outside the
+   `inspectors/` registry's allowlist.
+5. **LOC budget guard** — `viewer/tests/loc-budget.test.ts`
+   asserting `App.tsx ≤ 400`, wrapper canvases ≤ 150, per-kind
+   inspector ≤ 250, per-kind node renderer ≤ 100,
+   `BaseInspector ≤ 200`, `BaseNode ≤ 250`.
+6. **Kill-switch** — `plot/hooks/pre_commit_gate.py` adds
+   `reset_complete_check` that verifies (a) Pydantic
+   ``SketchNode`` is the 15-way union, (b) viewer
+   ``SketchNode.tsx`` absent, (c) `SketchInspector.tsx` absent,
+   (d) zero `doc.canvas_kind` in `viewer/src/canvases/sketch/`,
+   (e) all five Phase 5 acceptance gates green. Active for
+   v0.15.x; removed at v0.16.0.
 
-**Phase C — Inspector kind fan-out.** Split
-`SketchInspector.tsx` (1422 LOC) into per-kind files
-(`inspectors/MissionInspector.tsx` etc.) on top of domain
-classes.
+Expected output: 3 commits (`v0.15.8` smoke + round-trip
+consolidation, `v0.15.9` static guards, `v0.16.0` kill-switch +
+final DECISIONS pin + SPEC update + ARCHITECTURE Domain section).
 
-**Phase D — Canvas componentisation.**
-`FoundationCanvas.tsx`, `ActorsCanvas.tsx`,
-`ServicesCanvas.tsx`, `ServiceDetailCanvas.tsx` as separate
-top-level components. No more runtime `canvas_kind` switch.
+#### What "v0.15 reset complete" means at v0.16.0
 
-**Phase E — Cursor / interaction contracts per canvas.**
-Per-canvas Playwright cursor sweep returns identical
-inventories.
+- Server: 15-way Pydantic union, no god class, schema_export for
+  all 15 kinds, parity test pinning TS↔Pydantic field names.
+- Viewer: 15 entity classes, 15 per-kind inspectors, 15 per-kind
+  node renderers, 4 canvas wrappers, no god ``SketchInspector.tsx``
+  or ``SketchNode.tsx`` on disk, no canvas_kind switches in
+  transforms, no ``"sketch"`` god type.
+- Tests: 100+ viewer + 200+ server, all green.
+- ``pre_commit_gate.reset_complete_check`` returning OK on every
+  commit (then retired).
 
-**Phase F — Verification.** Per-canvas cursor sweep + per-kind
-Inspector smoke + entity-shape round-trip test.
+---
 
-#### Skills / rules to consider (user-allowed 2026-05-12)
+### `구조 리셋` (COMPLETED Phase 1+2+3 in this session)
 
-Discuss at session start, create only those that prove their
-weight during the work:
+> **Completed Phases 1–3:** 2026-05-12 across v0.14.15 → v0.15.5
+> (23 commits). Phases 4–5 → see active `검증` queue above.
+>
+> **Reference:** [D-2026-05-12-B](./DECISIONS.md).
+>
+> **What landed in Phase 1+2+3 this session:**
+>
+> - **Phase 0** v0.14.15 — pre-existing 17 ruff/mypy debts → 0.
+> - **Phase 1.1–1.3** v0.14.16–18 — server-side Pydantic 15-way
+>   discriminated union, schema_export extended to all 15 kinds,
+>   god ``SketchNode`` class deleted server-side.
+> - **Phase 2.0–2.10** v0.14.19–v0.15.0 — viewer domain layer
+>   (15 entity classes + Canvas + parseEntity + DomainParseError
+>   + createBlankNode factory), per-kind Inspector framework
+>   (15 inspectors + BaseInspector + KindInspector + 4 shared
+>   pieces in `inspectors/shared/`), atomic flip of
+>   ``viewer/src/types.ts`` god ``SketchNode`` interface to
+>   discriminated union, ``SketchInspector.tsx`` (1491 LOC)
+>   deleted from disk.
+> - **Phase 3.1–3.5** v0.15.1–5 — 15 per-kind React Flow node
+>   renderers (BaseNode + per-kind wrappers + NODE_RENDERERS
+>   registry), 4 canvas wrappers (FoundationCanvas / ActorsCanvas
+>   / ServicesCanvas / ServiceDetailCanvas), 4 ``canvas_kind``
+>   switches stripped from transforms (replaced by 4
+>   wrapper-supplied props), ``SketchNode.tsx`` (245 LOC)
+>   deleted from disk.
+>
+> **Verification status:** server 214/214 tests + ruff/mypy clean;
+> viewer 106/106 tests + tsc clean. No user-visible behaviour
+> change. The "no god object" rule is now enforced end-to-end.
 
-1. `plot/skills/plot-entity-template/` — per-kind entity class
-   boilerplate.
-2. `plot/skills/plot-domain-design/` — Plot-specific DDD
-   guidance.
-3. Pre-commit hook `no-god-import` — block god `SketchNode`
-   import in new viewer files once Phase A lands.
-4. Vitest entity-shape round-trip test.
-5. `plot/CLAUDE.md` anti-pattern row — *"Treating raw JSON as
-   domain entity (no fromJson boundary)."*
-
-#### Done criteria
-
-Session-by-session: each phase boundary leaves Plot green +
-tests passing. The whole reset is done when:
-
-- `viewer/src/domain/` exists with 15 per-kind entity classes
-  + Canvas / SketchNode union.
-- `grep -rE "^class \|^export class "` in `viewer/src/domain` →
-  ≥ 15 hits (one per kind).
-- All UI components import per-kind classes, not god
-  `SketchNode`.
-- Per-canvas cursor sweeps return identical, allow-listed
-  inventories.
-- `SketchInspector.tsx` ≤ 300 LOC (chrome + dispatch only) or
-  removed entirely.
-- `SketchCanvas.tsx` removed or reduced to a shared shell used
-  by the 4 per-canvas components.
-
-#### What this reset does NOT do
-
-- Does not change Plot UI / behaviour from the user's seat.
-  Same canvases, same nodes, same i18n. Internal structure
-  only.
-- Does not re-open the old backlog items (i18n audit, owner
-  field, Mermaid, …). Those wait until the reset lands.
+(Original "구조 리셋" trigger text — problem statement, code
+evidence, Phase A–F plan, done criteria, skills shortlist — is
+preserved in git history at v0.14.14 and in the plan file
+`~/.claude/plans/dazzling-greeting-diffie.md`.)
 
 ---
 

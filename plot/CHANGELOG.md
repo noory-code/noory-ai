@@ -4,6 +4,34 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.6] — 2026-05-12
+
+Docs-only — handoff for the next session. v0.15 reset Phases 4–5
+queued in NEXT_SESSION.md under the new ``검증`` trigger; the
+original ``구조 리셋`` queue entry is moved to Completed with the
+per-phase summary of what shipped this session (v0.14.15 → v0.15.5,
+23 commits). (D-2026-05-12-B)
+
+### Changed — plot/docs/NEXT_SESSION.md
+
+- New active queue item: ``검증`` (triggers: 검증 / verification /
+  phase 4 / phase 5 / 커서 sweep). Carries the Phase 4 (cursor
+  sweep + drift audit) and Phase 5 (verification gates +
+  kill-switch → v0.16.0) per-phase plan.
+- Old ``구조 리셋`` entry moved to "Completed Phase 1+2+3 in this
+  session" with a per-phase summary. The original problem statement,
+  code evidence, and Phase A–F plan blocks were removed (preserved
+  in git history at v0.14.14 + the plan file
+  ``~/.claude/plans/dazzling-greeting-diffie.md``).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 106 / 106 passed (no test changes).
+- ``uv run pytest`` — 214 / 214 passed (no test changes).
+
+Plugin patch bump 0.15.5 → 0.15.6.
+
 ## [0.15.5] — 2026-05-12
 
 v0.15 structural reset Phase 3.5 — legacy ``SketchNode.tsx`` (245
