@@ -2284,3 +2284,78 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.11 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.10 → 0.16.11.
+
+---
+
+### D-2026-05-12-O — Anchor-radial via wrapper-supplied prop (kill-switch cleanup of v0.16.11)
+
+- **What:** Replace the ``doc.canvas_kind === "foundation"`` check
+  inside ``useNodeCreation.addNodeAt`` (shipped v0.16.11,
+  D-2026-05-12-N) with a wrapper-supplied prop
+  ``applyAnchorRadialLayout?: boolean``. FoundationCanvas passes
+  ``true``; other wrappers default ``false``. Same observable
+  behaviour, but the per-canvas decision now lives at the wrapper
+  layer where D-2026-05-12-F structural-guards expect it.
+
+- **Why:** v0.16.11 introduced a ``canvas_kind`` branching pattern
+  inside ``viewer/src/canvases/sketch/useNodeCreation.ts``. The
+  ``reset_complete_check`` kill-switch (D-2026-05-12-G) caught it
+  on first run and refused the next commit — exactly the gate's
+  intended behaviour. The gate's failure message:
+  > "Per Phase 3.4 the sketch transforms never branch on canvas
+  > kind; each wrapper supplies behaviour via 4 explicit props
+  > (``hideRootServiceNode`` / ``shouldDrill`` / ``showFoldButton``
+  > / ``injectAnchor``)."
+
+  This decision adds the **5th** wrapper-supplied prop
+  (``applyAnchorRadialLayout``) so anchor-radial joins the same
+  pattern. No god-dispatch reintroduced.
+
+- **Honest note:** v0.16.11 (D-2026-05-12-N) *should* have been
+  authored with the wrapper-prop pattern from the start — the
+  design red-team that ran on the v0.16.11 proposal missed the
+  invariant pinned by D-2026-05-12-F. The fact that the
+  kill-switch caught it on the next commit attempt is the value
+  of the structural guard system; the cleanup is small (one
+  prop, three lines) but the lesson goes into
+  ``plot-design-red-team`` SKILL.md Attack 2 "Unstated
+  invariants" as a calibration anchor: future Foundation /
+  Service / Actor canvas-kind branching needs to pass through
+  the wrapper-prop SSOT.
+
+- **Alternatives considered:**
+  - **Loosen the kill-switch** to allow ``canvas_kind`` reads in
+    ``useNodeCreation.ts``: rejected. The structural guard's
+    purpose is to keep the wrapper-prop pattern the SSOT for
+    canvas-specific behaviour. Adding a per-file exemption
+    would create an "is it on the list?" question every time
+    something new touches the file.
+  - **Move the check into the wrapper** (FoundationCanvas
+    intercepts ``addNodeAt`` calls and overrides x/y): rejected.
+    The wrapper would need access to the underlying state +
+    layout helpers — more surface to maintain than a boolean
+    flag.
+  - **Re-introduce ``canvas_kind`` as a wrapper prop**: pointless
+    — the existing 4 props (``hideRootServiceNode`` /
+    ``shouldDrill`` / ``showFoldButton`` / ``injectAnchor``) and
+    the new 5th do the same thing without giving the underlying
+    sketch hook back a god discriminator.
+
+- **Approval:** Accepted — kill-switch recovery; viewer 383/383
+  + server 274/274 + pre_commit_gate 11/11 green.
+
+- **Spec impact:** none — internal cleanup.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/canvases/sketch/useNodeCreation.ts`` —
+    add ``applyAnchorRadialLayout?: boolean`` arg, replace
+    ``current.canvas_kind === "foundation"`` with the flag.
+  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` — add
+    ``applyAnchorRadialLayout?: boolean`` to ``SketchCanvasProps``,
+    thread it into ``useNodeCreation``.
+  - ``plot/viewer/src/canvases/FoundationCanvas.tsx`` — pass
+    ``applyAnchorRadialLayout={true}``. Other wrappers unchanged
+    (default false).
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.12 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.11 → 0.16.12.

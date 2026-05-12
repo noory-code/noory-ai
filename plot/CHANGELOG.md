@@ -4,6 +4,53 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.12] — 2026-05-12
+
+Kill-switch cleanup — v0.16.11 (D-2026-05-12-N) introduced a
+``doc.canvas_kind === "foundation"`` check in
+``useNodeCreation.ts`` which the v0.15 reset's
+``reset_complete_check`` kill-switch (D-2026-05-12-G) correctly
+rejected on the next commit attempt. Same observable behaviour
+reshipped via a wrapper-supplied prop ``applyAnchorRadialLayout``
+(5th sibling to ``hideRootServiceNode`` / ``shouldDrill`` /
+``showFoldButton`` / ``injectAnchor``). FoundationCanvas opts in;
+other wrappers default ``false``. (D-2026-05-12-O)
+
+### Changed — viewer/src/canvases/sketch/useNodeCreation.ts
+
+- ``UseNodeCreationArgs`` gains optional
+  ``applyAnchorRadialLayout?: boolean``.
+- Inline ``current.canvas_kind === "foundation"`` removed.
+- ``addNodeAt`` useCallback dep array adds the new flag.
+
+### Changed — viewer/src/canvases/SketchCanvas.tsx
+
+- ``SketchCanvasProps`` adds ``applyAnchorRadialLayout?: boolean``.
+- Threaded into ``useNodeCreation`` call.
+
+### Changed — viewer/src/canvases/FoundationCanvas.tsx
+
+- Passes ``applyAnchorRadialLayout={true}``.
+
+### Honest note
+
+The design red-team that ran on the v0.16.11 proposal missed the
+``D-2026-05-12-F structural-guards`` invariant about sketch hooks
+not reading ``doc.canvas_kind``. The kill-switch caught it within
+one commit; the fix is small (one prop, three line edits). The
+lesson goes into ``plot-design-red-team`` Attack 2 (Unstated
+invariants) as a calibration anchor.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 383 / 383 passed (no test changes).
+- ``uv run pytest`` — 274 / 274.
+- ``uv run pytest tests/test_pre_commit_gate.py`` — 11 / 11
+  passed (kill-switch recovered).
+
+Plugin patch bump 0.16.11 → 0.16.12.
+
 ## [0.16.11] — 2026-05-12
 
 Foundation anchor-radial initial placement — when the user creates

@@ -21,6 +21,13 @@ import type { NodePreset } from "./types";
 export interface UseNodeCreationArgs {
   docRef: MutableRefObject<CanvasDoc>;
   onDocChange: (next: CanvasDoc) => void;
+  /** v0.16.12 (D-2026-05-12-O) — wrapper-supplied flag. True on
+   *  FoundationCanvas: new Mission / CoreValue / Identity nodes snap
+   *  to anchor-radial slots. False (default) on every other wrapper.
+   *  Per D-2026-05-12-F structural-guards, sketch hooks must not
+   *  read ``doc.canvas_kind`` — wrappers signal canvas-specific
+   *  behaviour via explicit props. */
+  applyAnchorRadialLayout?: boolean;
 }
 
 export interface UseNodeCreationResult {
@@ -57,6 +64,7 @@ function requirePresetKind(preset: NodePreset | undefined): NodeKind {
 export function useNodeCreation({
   docRef,
   onDocChange,
+  applyAnchorRadialLayout = false,
 }: UseNodeCreationArgs): UseNodeCreationResult {
   const addNodeAt = useCallback(
     (x: number, y: number, preset?: NodePreset) => {
@@ -64,16 +72,18 @@ export function useNodeCreation({
       const current = docRef.current;
       const width = preset?.width ?? DEFAULT_WIDTH;
       const height = preset?.height ?? DEFAULT_HEIGHT;
-      // v0.16.11 (D-2026-05-12-N) — on the Foundation canvas, the three
-      // radial kinds (mission / core_value / identity) snap to the
-      // anchor-radial slot per the canonical Plot spec
-      // ("프로젝트 노드 놓고 그 주변에 미션, 코어밸류, 아이덴티티 붙이면 되요").
-      // The drop x/y still bubbles up from the drag-and-drop or
-      // context-menu handler; we override it only when the canvas +
-      // kind combination matches. Users can drag the node anywhere
-      // afterward (positional hint, not constraint).
-      const isFoundation = current.canvas_kind === "foundation";
-      const useRadial = isFoundation && isFoundationRadialKind(kind);
+      // v0.16.11 (D-2026-05-12-N) / v0.16.12 (D-2026-05-12-O):
+      // when the wrapper opts in via ``applyAnchorRadialLayout``
+      // (currently FoundationCanvas only), the three radial kinds
+      // (mission / core_value / identity) snap to the anchor-radial
+      // slot per the canonical Plot spec
+      // ("프로젝트 노드 놓고 그 주변에 미션, 코어밸류, 아이덴티티
+      //  붙이면 되요"). The drop x/y still bubbles up from the
+      // drag-and-drop or context-menu handler; we override it only
+      // when the wrapper flag + kind combination matches. Users can
+      // drag the node anywhere afterward (positional hint, not constraint).
+      const useRadial =
+        applyAnchorRadialLayout && isFoundationRadialKind(kind);
       const { x: nx, y: ny } = useRadial
         ? anchorRadialPosition(
             kind,
@@ -105,7 +115,7 @@ export function useNodeCreation({
       );
       onDocChange({ ...current, nodes: [...current.nodes, node] });
     },
-    [docRef, onDocChange],
+    [docRef, onDocChange, applyAnchorRadialLayout],
   );
 
   const addNestedNodeAt = useCallback(
