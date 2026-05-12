@@ -4,6 +4,47 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.4] — 2026-05-12
+
+v0.16.0 follow-up — App.tsx split commit 4 of 5. URL ⟷ tab /
+drill / selection state pulled out of App into a new
+``useUrlSync`` hook. App owns only project-level state +
+canvas wiring now; tab/drill/selection live in the hook.
+(D-2026-05-12-H)
+
+### Added — viewer/src/hooks/useUrlSync.ts
+
+A hook that owns the three browser-URL query params Plot keeps in
+sync (``?canvas`` / ``?detail`` / ``?select``) and exposes:
+
+- State: ``activeTab`` / ``detailServiceId`` / ``selectedNodeId``.
+- Action: ``syncUrl`` — generic URL writer (also used by App.tsx
+  to sync ``?project=<id>`` when useProject changes activeId).
+- Navigation callbacks: ``selectTab`` / ``drillIntoService`` /
+  ``backToOverview`` / ``jumpToActor`` / ``consumeSelection`` /
+  ``focusCanvas`` (the last consumed by ``handleUndo`` / ``handleRedo``
+  in App to refocus the right tab after a cross-tab undo).
+
+### Changed — viewer/src/App.tsx
+
+- 496 → 423 LOC (-73).
+- Three ``useState`` blocks for tab/drill/selection removed.
+- Six navigation callbacks (selectTab / drillIntoService /
+  backToOverview / jumpToActor / consumeSelection / focusCanvas)
+  removed.
+- ``syncUrl`` callback removed.
+- ``CANVAS_TAB_IDS`` import dropped (only used inside the hook now;
+  ``CanvasTab`` type still imported for the local ``tabToKind`` helper).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 361 / 361 passed.
+
+Plugin patch bump 0.16.3 → 0.16.4. One more extraction
+(``useAvailableNodes`` + ``useAppKeyboard``) lands in v0.16.5,
+followed by lowering the structural-guards ceiling from 830 to 400.
+
 ## [0.16.3] — 2026-05-12
 
 v0.16.0 follow-up — App.tsx split commit 3 of 5. ServiceDetailModal

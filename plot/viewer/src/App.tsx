@@ -9,7 +9,8 @@ import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
 import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
-import { CANVAS_TAB_IDS, CanvasTabs, type CanvasTab } from "./shell/CanvasTabs";
+import { useUrlSync } from "./hooks/useUrlSync";
+import { CanvasTabs, type CanvasTab } from "./shell/CanvasTabs";
 import { Header } from "./shell/Header";
 import { HelpCheatsheet } from "./shell/HelpCheatsheet";
 import { ServiceDetailModal } from "./shell/ServiceDetailModal";
@@ -57,32 +58,20 @@ export function App() {
   const history = useProjectHistory();
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<CanvasTab>(() => {
-    const raw = new URL(window.location.href).searchParams.get("canvas");
-    return (CANVAS_TAB_IDS as readonly string[]).includes(raw ?? "")
-      ? (raw as CanvasTab)
-      : "services";
-  });
-  const [detailServiceId, setDetailServiceId] = useState<string | null>(() => {
-    return new URL(window.location.href).searchParams.get("detail");
-  });
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(() => {
-    return new URL(window.location.href).searchParams.get("select");
-  });
+  // ------- URL ⟷ canvas tab / drill / selection (extracted to useUrlSync) -------
 
-  // ------- url sync -------
-
-  const syncUrl = useCallback(
-    (updates: Record<string, string | null | undefined>) => {
-      const url = new URL(window.location.href);
-      for (const [k, v] of Object.entries(updates)) {
-        if (v == null || v === "") url.searchParams.delete(k);
-        else url.searchParams.set(k, v);
-      }
-      window.history.replaceState(null, "", url.toString());
-    },
-    [],
-  );
+  const {
+    activeTab,
+    detailServiceId,
+    selectedNodeId,
+    syncUrl,
+    selectTab,
+    drillIntoService,
+    backToOverview,
+    jumpToActor,
+    consumeSelection,
+    focusCanvas,
+  } = useUrlSync();
 
   // ------- project state (extracted to useProject) -------
 
@@ -120,44 +109,6 @@ export function App() {
     deleteTag: handleDeleteTag,
     dismissToast,
   } = project;
-
-  const selectTab = useCallback(
-    (tab: CanvasTab) => {
-      setActiveTab(tab);
-      setDetailServiceId(null);
-      syncUrl({ canvas: tab, detail: null, select: null });
-    },
-    [syncUrl],
-  );
-
-  const drillIntoService = useCallback(
-    (serviceId: string) => {
-      setActiveTab("services");
-      setDetailServiceId(serviceId);
-      syncUrl({ canvas: "services", detail: serviceId });
-    },
-    [syncUrl],
-  );
-
-  const backToOverview = useCallback(() => {
-    setDetailServiceId(null);
-    syncUrl({ detail: null });
-  }, [syncUrl]);
-
-  const jumpToActor = useCallback(
-    (actorId: string) => {
-      setActiveTab("actors");
-      setDetailServiceId(null);
-      setSelectedNodeId(actorId);
-      syncUrl({ canvas: "actors", detail: null, select: actorId });
-    },
-    [syncUrl],
-  );
-
-  const consumeSelection = useCallback(() => {
-    setSelectedNodeId(null);
-    syncUrl({ select: null });
-  }, [syncUrl]);
 
   // ------- persist + undo/redo (extracted to useCanvasPersist) -------
 
@@ -210,30 +161,6 @@ export function App() {
     if (key) focusCanvas(key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyRedo]);
-
-  const focusCanvas = useCallback(
-    (key: CanvasKey) => {
-      if (key === "foundation") {
-        setActiveTab("foundation");
-        setDetailServiceId(null);
-        syncUrl({ canvas: "foundation", detail: null });
-      } else if (key === "actors") {
-        setActiveTab("actors");
-        setDetailServiceId(null);
-        syncUrl({ canvas: "actors", detail: null });
-      } else if (key === "services") {
-        setActiveTab("services");
-        setDetailServiceId(null);
-        syncUrl({ canvas: "services", detail: null });
-      } else {
-        const sid = key.slice("service_detail:".length);
-        setActiveTab("services");
-        setDetailServiceId(sid);
-        syncUrl({ canvas: "services", detail: sid });
-      }
-    },
-    [syncUrl],
-  );
 
   const [helpOpen, setHelpOpen] = useState(false);
 
