@@ -4,6 +4,50 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.1] — 2026-05-12
+
+v0.15 structural reset Phase 3.1 — BaseNode shell + 15-kind React
+Flow node renderer registry. Mirrors the Phase 2 Inspector pattern
+(BaseInspector + KIND_INSPECTORS + per-kind wrappers) at the node
+layer. (D-2026-05-12-B)
+
+The legacy ``SketchNode.tsx`` (245 LOC) is unchanged and still in
+use by ``SketchCanvas`` until Phase 3.5 wires the registry.
+Phase 3.2–3.4 introduces canvas wrappers that consume the registry.
+
+### Added — viewer/src/canvases/nodes/
+
+- ``BaseNode.tsx`` — chrome SSOT: NodeResizer, the outer
+  shape-styled div, the 4 React Flow Handles, the MD-warnings
+  badge, the label / icon / fold / body area. Per-kind callers
+  pass a small ``chrome`` prop with ``showKindTag`` /
+  ``isAnchor`` / ``labelAlignLeft`` / ``bodyOverride`` overrides.
+- ``shouldShowKindTag(shape)`` helper — returns true for
+  ``rectangle`` / ``rounded`` shapes (where the top-left corner
+  is inside the visible silhouette).
+- ``{kind}/index.tsx`` × 15 — minimal per-kind wrappers (avg
+  ~12 LOC each). Currently same chrome as today; the per-file
+  structure is the hook point for future per-kind visual variations.
+  ``ProjectNode`` carries ``isAnchor: true``; ``CategoryNode``
+  carries ``labelAlignLeft: true``; Foundation + composition kinds
+  enable ``showKindTag`` for rectangle / rounded shapes.
+- ``registry.ts`` — ``NODE_RENDERERS: Record<NodeKind,
+  NodeRendererComponent>`` covering all 15 kinds.
+
+### Added — tests
+
+- ``viewer/tests/nodes/registry.test.tsx`` — 3 tests: registry
+  has all 15 NodeKind entries, every entry is a callable
+  component, and ``shouldShowKindTag`` returns true only for
+  rectangle / rounded shapes.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 106 / 106 passed (103 prior + 3 new).
+
+Plugin patch bump 0.15.0 → 0.15.1.
+
 ## [0.15.0] — 2026-05-12
 
 v0.15 structural reset Phase 2.10 — viewer-side god ``SketchNode``
