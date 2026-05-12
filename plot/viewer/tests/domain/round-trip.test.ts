@@ -17,6 +17,7 @@ import {
   DomainParseError,
   Identity,
   Metric,
+  Mission,
   parseEntity,
   Step,
 } from "../../src/domain";
@@ -220,5 +221,36 @@ describe("parseEntity → Foundation kinds dispatch", () => {
   it("dispatches identity to Identity", () => {
     const node = parseEntity({ id: "id1", kind: "identity", description: "x" });
     expect(node).toBeInstanceOf(Identity);
+  });
+});
+
+describe("Mission.fromJson + toJson round-trip", () => {
+  it("populates defaults", () => {
+    const m = Mission.fromJson({ id: "m1", kind: "mission" });
+    expect(m.kind).toBe("mission");
+    expect(m.what_we_do).toBe("");
+    expect(m.why).toBe("");
+    expect(m.direction).toBe("");
+  });
+
+  it("preserves typed fields and round-trips", () => {
+    const a = Mission.fromJson({
+      id: "m1",
+      kind: "mission",
+      what_we_do: "우리는 매일 …",
+      why: "사람들이 …",
+      direction: "누구나 … 인 일상으로",
+    });
+    const b = Mission.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("rejects raw with the wrong kind", () => {
+    expect(() => Mission.fromJson({ id: "m1", kind: "actor" })).toThrow(DomainParseError);
+  });
+
+  it("dispatches via parseEntity", () => {
+    const node = parseEntity({ id: "m1", kind: "mission", what_we_do: "x" });
+    expect(node).toBeInstanceOf(Mission);
   });
 });

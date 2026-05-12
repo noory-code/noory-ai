@@ -245,12 +245,7 @@ export function SketchInspector({
           />
         </label>
 
-        {/* v0.10: Mission carries three typed fields that capture distinct
-             facets — what we do (today), why (reason for being), direction
-             (positioning, not time). Other kinds keep label + details.md. */}
-        {node.kind === "mission" && (
-          <MissionFields node={node} onPatchNode={onPatchNode} />
-        )}
+        {/* v0.14.23 — mission migrated to inspectors/mission/. */}
 
         {/* v0.12 — category fields. A category is a thematic grouping;
             its only typed field is ``theme`` (one-line common thread). */}
@@ -626,62 +621,7 @@ function CategoryFields({ node, childCount, onPatchNode }: CategoryFieldsProps) 
   );
 }
 
-interface MissionFieldsProps {
-  node: SketchNode;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}
-
-function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
-        {t("kind.mission")}
-      </div>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
-          {t("inspector.field.whatWeDo")}
-        </span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — {t("inspector.fieldHint.whatWeDo")}
-        </span>
-        <textarea
-          rows={2}
-          value={node.what_we_do ?? ""}
-          onChange={(e) => onPatchNode({ what_we_do: e.target.value })}
-          placeholder="우리는 매일 …"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-        />
-      </label>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.why")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.why")}</span>
-        <textarea
-          rows={2}
-          value={node.why ?? ""}
-          onChange={(e) => onPatchNode({ why: e.target.value })}
-          placeholder="사람들이 … 하기를 바라서"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-semibold text-slate-700">
-          {t("inspector.field.direction")}
-        </span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — {t("inspector.fieldHint.direction")}
-        </span>
-        <textarea
-          rows={2}
-          value={node.direction ?? ""}
-          onChange={(e) => onPatchNode({ direction: e.target.value })}
-          placeholder="누구나 … 인 일상으로"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
-        />
-      </label>
-    </div>
-  );
-}
+// v0.14.23 — MissionFields moved to inspectors/mission/index.tsx
 
 // ---------------------------------------------------------------------------
 // v0.12.1 — Service typed fields

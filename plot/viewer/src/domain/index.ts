@@ -21,3 +21,5 @@ export { CoreValue } from "./CoreValue";
 export type { CoreValueJson } from "./CoreValue";
 export { Identity } from "./Identity";
 export type { IdentityJson } from "./Identity";
+export { Mission } from "./Mission";
+export type { MissionJson } from "./Mission";

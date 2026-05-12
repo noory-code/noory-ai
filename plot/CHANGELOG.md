@@ -4,6 +4,29 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.23] — 2026-05-12
+
+v0.15 structural reset Phase 2.4 — ``mission`` Foundation kind
+vertical slice. (D-2026-05-12-B)
+
+### Added
+
+- ``viewer/src/domain/Mission.ts`` (what_we_do + why + direction).
+- ``viewer/src/canvases/inspectors/mission/index.tsx``.
+- registry: ``mission: MissionInspector``.
+- 4 round-trip tests + 1 smoke test.
+
+### Removed
+
+- Local ``MissionFields`` (~55 LOC) from ``SketchInspector.tsx``.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 62 / 62 passed (57 prior + 5 new).
+
+Plugin patch bump 0.14.22 → 0.14.23.
+
 ## [0.14.22] — 2026-05-12
 
 v0.15 structural reset Phase 2.3 — bundled vertical slice for the

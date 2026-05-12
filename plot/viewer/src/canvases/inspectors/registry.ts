@@ -15,6 +15,7 @@ import type { NodeKind } from "../../types";
 import { CoreValueInspector } from "./core_value";
 import { IdentityInspector } from "./identity";
 import { MetricInspector } from "./metric";
+import { MissionInspector } from "./mission";
 import { StepInspector } from "./step";
 import type { KindInspectorProps } from "./types";
 
@@ -26,6 +27,7 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   step: StepInspector,
   core_value: CoreValueInspector,
   identity: IdentityInspector,
+  mission: MissionInspector,
 };
 
 /** Look up the registered inspector for a kind, or ``undefined`` while
