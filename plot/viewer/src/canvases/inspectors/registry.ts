@@ -12,14 +12,18 @@
  */
 import type { FC } from "react";
 import type { NodeKind } from "../../types";
+import { ActorRefInspector } from "./actor_ref";
 import { CategoryInspector } from "./category";
 import { CoreValueInspector } from "./core_value";
 import { IdentityInspector } from "./identity";
+import { IdentityRefInspector } from "./identity_ref";
 import { MetricInspector } from "./metric";
 import { MissionInspector } from "./mission";
+import { MissionRefInspector } from "./mission_ref";
 import { ProjectInspector } from "./project";
 import { StepInspector } from "./step";
 import type { KindInspectorProps } from "./types";
+import { ValueRefInspector } from "./value_ref";
 
 export type KindInspectorComponent = FC<KindInspectorProps>;
 
@@ -32,6 +36,10 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   mission: MissionInspector,
   project: ProjectInspector,
   category: CategoryInspector,
+  actor_ref: ActorRefInspector,
+  mission_ref: MissionRefInspector,
+  value_ref: ValueRefInspector,
+  identity_ref: IdentityRefInspector,
 };
 
 /** Look up the registered inspector for a kind, or ``undefined`` while

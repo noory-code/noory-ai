@@ -123,6 +123,12 @@ export function SketchInspector({
         projectPath={projectPath}
         projectId={projectId}
         canvasKind={canvasKind}
+        availableActors={availableActors}
+        availableMissions={availableMissions}
+        availableValues={availableValues}
+        availableIdentities={availableIdentities}
+        onRepickActorRef={onRepickActorRef}
+        onRepickFoundationRef={onRepickFoundationRef}
       />
     );
   }
@@ -134,12 +140,8 @@ export function SketchInspector({
   // v0.12.6 — service is a category leaf in v0.12; the "root" concept no
   // longer applies to it. Only actor still carries it.
   const canToggleRoot = !node.parent_id && node.kind === "actor";
-  const refTarget =
-    node.kind === "actor_ref" && node.ref_actor_id
-      ? availableActors.find((n) => n.id === node.ref_actor_id) ?? null
-      : null;
-  const isOrphanActorRef =
-    node.kind === "actor_ref" && (!node.ref_actor_id || refTarget === null);
+  // v0.14.25 — actor_ref reference / orphan handling moved to
+  // inspectors/actor_ref/ along with the rest of the actor_ref branch.
 
   return (
     <aside
@@ -284,69 +286,8 @@ export function SketchInspector({
           </label>
         )}
 
-        {/* v0.10 Step 3: Foundation refs show their target master + a hint
-             when the master is missing (orphan). No re-pick button yet —
-             user can drag a fresh ref preset and delete the broken one. */}
-        {(node.kind === "mission_ref" ||
-          node.kind === "value_ref" ||
-          node.kind === "identity_ref") && (
-          <FoundationRefBlock
-            node={node}
-            availableMissions={availableMissions ?? []}
-            availableValues={availableValues ?? []}
-            availableIdentities={availableIdentities ?? []}
-            onRepickFoundationRef={onRepickFoundationRef}
-            onDeleteNode={onDeleteNode}
-          />
-        )}
-
-        {/* v0.11.2 Phase C3: actor_ref captures per-actor-per-service value
-             flow. Two free-form fields, both optional. */}
-        {node.kind === "actor_ref" && (
-          <ActorRefFields node={node} onPatchNode={onPatchNode} />
-        )}
-
-        {/* Actor reference — link (or broken link) back to the Actor canvas node. */}
-        {node.kind === "actor_ref" && !isOrphanActorRef && refTarget && (
-          <div className="mb-4 rounded border border-pink-200 bg-pink-50/40 p-2 text-[11px]">
-            <div className="mb-1 font-semibold uppercase tracking-wide text-pink-700">
-              References
-            </div>
-            <div className="text-slate-700">
-              <span className="text-slate-500">Actor:</span>{" "}
-              <span className="font-medium">{refTarget.label || refTarget.id}</span>
-            </div>
-            <div className="mt-0.5 font-mono text-[10px] text-slate-400">
-              {node.ref_actor_id}
-            </div>
-          </div>
-        )}
-        {node.kind === "actor_ref" && isOrphanActorRef && (
-          <div className="mb-4 rounded border border-red-300 bg-red-50 p-2 text-[11px]">
-            <div className="mb-1 font-semibold uppercase tracking-wide text-red-700">
-              ⚠ Orphan — actor not found
-            </div>
-            <div className="mb-2 font-mono text-[10px] text-slate-500">
-              ref_actor_id: {node.ref_actor_id ?? "—"}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => onRepickActorRef(node.id)}
-                className="rounded border border-red-300 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
-              >
-                Re-pick…
-              </button>
-              <button
-                type="button"
-                onClick={() => onDeleteNode(node.id)}
-                className="rounded px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        )}
+        {/* v0.14.25 — actor_ref + 3 foundation refs migrated to
+             inspectors/actor_ref/ + inspectors/{mission,value,identity}_ref/. */}
 
         {/* v0.11: Actor typed form — side / motivation / pain. */}
         {node.kind === "actor" && (
@@ -917,47 +858,7 @@ function ContentActorPicker({
 // service.value_created is the aggregate; gives/receives is each actor's
 // individual exchange with this service.
 
-interface ActorRefFieldsProps {
-  node: SketchNode;
-  onPatchNode: (patch: Partial<SketchNode>) => void;
-}
-
-function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="mb-4 rounded border border-pink-200 bg-pink-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-pink-700">
-        {t("inspector.valueFlowHeader")}
-      </div>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-emerald-700">{t("inspector.field.gives")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.gives")}</span>
-        <textarea
-          rows={2}
-          value={node.gives ?? ""}
-          onChange={(e) => onPatchNode({ gives: e.target.value })}
-          placeholder="콘텐츠 / 시간 / 결제 / 주의 …"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-emerald-600 focus:outline-none"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-semibold text-violet-700">
-          {t("inspector.field.receives")}
-        </span>
-        <span className="ml-1 text-[10px] text-slate-500">
-          — {t("inspector.fieldHint.receives")}
-        </span>
-        <textarea
-          rows={2}
-          value={node.receives ?? ""}
-          onChange={(e) => onPatchNode({ receives: e.target.value })}
-          placeholder="피드백 / 신뢰 / 접근권 / 즐거움 …"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-violet-600 focus:outline-none"
-        />
-      </label>
-    </div>
-  );
-}
+// v0.14.25 — ActorRefFields moved to inspectors/actor_ref/index.tsx
 
 // ---------------------------------------------------------------------------
 // v0.11 — Actor typed fields (side / motivation / pain)
@@ -1038,94 +939,7 @@ function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
 // v0.10 Step 3 — Foundation reference display (mission_ref / value_ref / identity_ref)
 // ---------------------------------------------------------------------------
 
-interface FoundationRefBlockProps {
-  node: SketchNode;
-  availableMissions: SketchNode[];
-  availableValues: SketchNode[];
-  availableIdentities: SketchNode[];
-  /** v0.11.1 — opens FoundationRefPicker in rewire mode for the given node. */
-  onRepickFoundationRef?: (nodeId: string) => void;
-  /** v0.11.1 — delete the orphan ref outright. */
-  onDeleteNode?: (nodeId: string) => void;
-}
-
-function FoundationRefBlock({
-  node,
-  availableMissions,
-  availableValues,
-  availableIdentities,
-  onRepickFoundationRef,
-  onDeleteNode,
-}: FoundationRefBlockProps) {
-  const { t } = useTranslation();
-  let label: string;
-  let id: string | null;
-  let masters: SketchNode[];
-  let tone: { fg: string; bg: string };
-  if (node.kind === "mission_ref") {
-    label = t("kind.mission");
-    id = node.ref_mission_id;
-    masters = availableMissions;
-    tone = { fg: "text-amber-700", bg: "border-amber-200 bg-amber-50/40" };
-  } else if (node.kind === "value_ref") {
-    label = t("kind.core_value");
-    id = node.ref_value_id;
-    masters = availableValues;
-    tone = { fg: "text-yellow-700", bg: "border-yellow-200 bg-yellow-50/40" };
-  } else {
-    label = t("kind.identity");
-    id = node.ref_identity_id;
-    masters = availableIdentities;
-    tone = { fg: "text-orange-700", bg: "border-orange-200 bg-orange-50/40" };
-  }
-  const target = id ? masters.find((m) => m.id === id) ?? null : null;
-  const orphan = !id || target === null;
-  return (
-    <div className={`mb-4 rounded border p-2 text-[11px] ${tone.bg}`}>
-      <div className={`mb-1 font-semibold uppercase tracking-wide ${tone.fg}`}>
-        {t("inspector.referencesHeader", { label })}
-      </div>
-      {orphan ? (
-        <>
-          <div className="text-rose-700">{t("inspector.masterNotFound")}</div>
-          <div className="mb-2 font-mono text-[10px] text-slate-500">
-            id: {id ?? "—"}
-          </div>
-          {(onRepickFoundationRef || onDeleteNode) && (
-            <div className="flex gap-2">
-              {onRepickFoundationRef && (
-                <button
-                  type="button"
-                  onClick={() => onRepickFoundationRef(node.id)}
-                  className="rounded border border-rose-300 bg-white px-2 py-1 text-[11px] font-medium text-rose-700 hover:bg-rose-100"
-                >
-                  {t("inspector.rePick")}
-                </button>
-              )}
-              {onDeleteNode && (
-                <button
-                  type="button"
-                  onClick={() => onDeleteNode(node.id)}
-                  className="rounded px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100"
-                >
-                  {t("common.delete")}
-                </button>
-              )}
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="text-slate-700">
-            <span className="text-slate-500">{label}:</span>{" "}
-            <span className="font-medium">{target.label || target.id}</span>
-          </div>
-          <div className="mt-0.5 font-mono text-[10px] text-slate-400">{id}</div>
-        </>
-      )}
-    </div>
-  );
-}
+// v0.14.25 — FoundationRefBlock moved to inspectors/shared/FoundationRefBlock.tsx
 
 // ---------------------------------------------------------------------------
 // v0.10 Step 2 — Core Value + Identity typed fields

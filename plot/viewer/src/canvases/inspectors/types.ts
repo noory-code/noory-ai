@@ -26,4 +26,17 @@ export interface KindInspectorProps {
   projectPath: string;
   projectId: string;
   canvasKind: CanvasKind;
+  /** v0.2 multi-canvas: actors across all canvases. ActorRefInspector
+   *  uses this to look up the referenced actor master + detect orphans. */
+  availableActors?: SketchNode[];
+  /** v0.10 Step 3: foundation masters used by the *_ref inspectors to
+   *  display the referenced master's label + detect orphans. */
+  availableMissions?: SketchNode[];
+  availableValues?: SketchNode[];
+  availableIdentities?: SketchNode[];
+  /** v0.11 — open ActorRefPicker in rewire mode for an orphan actor_ref. */
+  onRepickActorRef?: (nodeId: string) => void;
+  /** v0.11.1 — open FoundationRefPicker in rewire mode for an orphan
+   *  mission_ref / value_ref / identity_ref. */
+  onRepickFoundationRef?: (nodeId: string) => void;
 }

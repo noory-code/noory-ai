@@ -4,6 +4,52 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.25] — 2026-05-12
+
+v0.15 structural reset Phase 2.7 — bundled vertical slice for the 4
+reference kinds: ``actor_ref`` + ``mission_ref`` / ``value_ref`` /
+``identity_ref``. (D-2026-05-12-B)
+
+### Added — KindInspectorProps grew ref-related optional fields
+
+- ``availableActors?: SketchNode[]`` (ActorRef master lookup).
+- ``availableMissions?`` / ``availableValues?`` / ``availableIdentities?``
+  (FoundationRef master lookups).
+- ``onRepickActorRef?`` + ``onRepickFoundationRef?`` callbacks for
+  re-pick UI on orphaned refs.
+
+### Added — viewer/src/domain/
+
+- ``ActorRef.ts`` (ref_actor_id + gives + receives + side validator).
+- ``MissionRef.ts``, ``ValueRef.ts``, ``IdentityRef.ts`` (each with
+  the corresponding ref_*_id field).
+
+### Added — viewer/src/canvases/inspectors/
+
+- ``shared/FoundationRefBlock.tsx`` — extracted from the legacy
+  inspector. Resolves master from available-list; surfaces orphan
+  state with re-pick + delete actions.
+- ``actor_ref/index.tsx`` — gives/receives form + actor-master
+  display + orphan handling.
+- ``mission_ref/`` + ``value_ref/`` + ``identity_ref/`` — each wraps
+  the shared FoundationRefBlock inside BaseInspector.
+- registry: all 4 ref kinds registered.
+
+### Removed — SketchInspector.tsx
+
+- All 4 ref-kind branches (~85 LOC of inline JSX).
+- Local ``ActorRefFields`` (~40 LOC) + ``FoundationRefBlock``
+  (~85 LOC). Now in ``inspectors/`` per-kind + shared paths.
+- Stale ``refTarget`` / ``isOrphanActorRef`` locals (used only by the
+  removed branches).
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 83 / 83 passed (71 prior + 12 new).
+
+Plugin patch bump 0.14.24 → 0.14.25.
+
 ## [0.14.24] — 2026-05-12
 
 v0.15 structural reset Phase 2.5 + 2.6 — bundled vertical slice for

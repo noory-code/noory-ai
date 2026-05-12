@@ -13,15 +13,19 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  ActorRef,
   Category,
   CoreValue,
   DomainParseError,
   Identity,
+  IdentityRef,
   Metric,
   Mission,
+  MissionRef,
   parseEntity,
   Project,
   Step,
+  ValueRef,
 } from "../../src/domain";
 
 describe("Metric.fromJson + toJson round-trip", () => {
@@ -271,6 +275,72 @@ describe("Category.fromJson + toJson round-trip", () => {
   it("dispatches via parseEntity", () => {
     const node = parseEntity({ id: "c", kind: "category", theme: "x" });
     expect(node).toBeInstanceOf(Category);
+  });
+});
+
+describe("ActorRef.fromJson + toJson round-trip", () => {
+  it("populates defaults", () => {
+    const r = ActorRef.fromJson({ id: "ref-1", kind: "actor_ref" });
+    expect(r.kind).toBe("actor_ref");
+    expect(r.ref_actor_id).toBeNull();
+    expect(r.gives).toBe("");
+    expect(r.receives).toBe("");
+    expect(r.side).toBeNull();
+  });
+
+  it("preserves ref + gives/receives/side and round-trips", () => {
+    const a = ActorRef.fromJson({
+      id: "ref-1",
+      kind: "actor_ref",
+      ref_actor_id: "operator",
+      gives: "moderation",
+      receives: "reputation",
+      side: "operator",
+    });
+    const b = ActorRef.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("rejects invalid side", () => {
+    expect(() =>
+      ActorRef.fromJson({ id: "r", kind: "actor_ref", side: "ghost" }),
+    ).toThrow(DomainParseError);
+  });
+});
+
+describe("Foundation refs (Mission/Value/Identity) round-trip", () => {
+  it("MissionRef preserves ref_mission_id", () => {
+    const m = MissionRef.fromJson({
+      id: "mref-1",
+      kind: "mission_ref",
+      ref_mission_id: "mission-1",
+    });
+    expect(m.kind).toBe("mission_ref");
+    expect(m.ref_mission_id).toBe("mission-1");
+    expect(MissionRef.fromJson(m.toJson())).toEqual(m);
+  });
+
+  it("ValueRef preserves ref_value_id", () => {
+    const v = ValueRef.fromJson({ id: "vref-1", kind: "value_ref", ref_value_id: "cv-1" });
+    expect(v.ref_value_id).toBe("cv-1");
+  });
+
+  it("IdentityRef preserves ref_identity_id", () => {
+    const i = IdentityRef.fromJson({
+      id: "iref-1",
+      kind: "identity_ref",
+      ref_identity_id: "id-1",
+    });
+    expect(i.ref_identity_id).toBe("id-1");
+  });
+});
+
+describe("parseEntity → ref kinds dispatch", () => {
+  it("dispatches each ref kind to its class", () => {
+    expect(parseEntity({ id: "1", kind: "actor_ref" })).toBeInstanceOf(ActorRef);
+    expect(parseEntity({ id: "2", kind: "mission_ref" })).toBeInstanceOf(MissionRef);
+    expect(parseEntity({ id: "3", kind: "value_ref" })).toBeInstanceOf(ValueRef);
+    expect(parseEntity({ id: "4", kind: "identity_ref" })).toBeInstanceOf(IdentityRef);
   });
 });
 

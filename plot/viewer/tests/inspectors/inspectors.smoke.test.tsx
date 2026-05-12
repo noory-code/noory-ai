@@ -220,6 +220,82 @@ describe("ProjectInspector (Phase 2.5)", () => {
   });
 });
 
+describe("ActorRefInspector (Phase 2.7)", () => {
+  it("renders gives/receives + reference display when actor master exists", () => {
+    const actor = makeNode({ id: "operator", kind: "actor", label: "Operator", side: "operator" });
+    const ref = makeNode({
+      id: "ref-1",
+      kind: "actor_ref",
+      label: "→ Op",
+      ref_actor_id: "operator",
+      gives: "mod",
+      receives: "rep",
+    });
+    render(
+      <KindInspector
+        {...makeProps(ref, "service_detail", [ref, actor])}
+        availableActors={[actor]}
+      />,
+    );
+    expect(screen.getByDisplayValue("mod")).toBeInTheDocument();
+    expect(screen.getByText(/Operator/)).toBeInTheDocument();
+  });
+
+  it("renders the orphan warning when ref_actor_id is unknown", () => {
+    const ref = makeNode({
+      id: "ref-1",
+      kind: "actor_ref",
+      label: "→ ?",
+      ref_actor_id: "ghost",
+    });
+    render(
+      <KindInspector {...makeProps(ref, "service_detail", [ref])} availableActors={[]} />,
+    );
+    expect(screen.getByText(/Orphan/i)).toBeInTheDocument();
+  });
+});
+
+describe("Foundation ref inspectors (Phase 2.7)", () => {
+  it("MissionRefInspector renders the master label when present", () => {
+    const master = makeNode({ id: "m1", kind: "mission", label: "Plot 미션" });
+    const ref = makeNode({
+      id: "mref-1",
+      kind: "mission_ref",
+      label: "Plot 미션 참조",
+      ref_mission_id: "m1",
+    });
+    render(
+      <KindInspector
+        {...makeProps(ref, "service_detail", [ref])}
+        availableMissions={[master]}
+      />,
+    );
+    expect(screen.getByText(/Plot 미션/)).toBeInTheDocument();
+  });
+
+  it("ValueRefInspector renders master-not-found when orphan", () => {
+    const ref = makeNode({ id: "vref-1", kind: "value_ref", label: "?", ref_value_id: "ghost" });
+    render(
+      <KindInspector {...makeProps(ref, "service_detail", [ref])} availableValues={[]} />,
+    );
+    // i18n key inspector.masterNotFound — check by class on red rose text
+    expect(screen.getByText(/id: ghost/)).toBeInTheDocument();
+  });
+
+  it("IdentityRefInspector renders without firing console.error", () => {
+    const ref = makeNode({
+      id: "iref-1",
+      kind: "identity_ref",
+      label: "Voice ref",
+      ref_identity_id: "i1",
+    });
+    render(
+      <KindInspector {...makeProps(ref, "service_detail", [ref])} availableIdentities={[]} />,
+    );
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe("CategoryInspector (Phase 2.6)", () => {
   it("renders chrome + theme + does NOT show empty-warning when child services exist", () => {
     const cat = makeNode({ id: "cat-1", kind: "category", label: "Admin", theme: "ops" });
