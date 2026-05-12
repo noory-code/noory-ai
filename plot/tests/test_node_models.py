@@ -240,3 +240,87 @@ def test_adapter_rejects_missing_kind() -> None:
     """Discriminated union requires the discriminator field to be present."""
     with pytest.raises(ValueError, match="kind"):
         SketchNodeAdapter.validate_python({"id": "x"})
+
+
+# ---------------------------------------------------------------------------
+# v0.15.9 Phase 5.1 — exhaustive 15-kind adapter sweep
+#
+# Pins the structural contract: every kind in the 15-way union must
+# survive ``Adapter.validate_python(Class(...).model_dump())`` intact,
+# returning the same class. A drift in a typed-field default or a
+# missing class registration fails this sweep.
+# ---------------------------------------------------------------------------
+
+
+from plot_mcp.models import (  # noqa: E402  (kept at bottom for clarity)
+    CoreValueNode,
+    IdentityNode,
+    MissionNode,
+    ProjectNode,
+)
+
+_ALL_KIND_CLASSES = {
+    "project": ProjectNode,
+    "mission": MissionNode,
+    "core_value": CoreValueNode,
+    "identity": IdentityNode,
+    "actor": ActorNode,
+    "actor_ref": ActorRefNode,
+    "service": ServiceNode,
+    "category": CategoryNode,
+    "mission_ref": MissionRefNode,
+    "value_ref": ValueRefNode,
+    "identity_ref": IdentityRefNode,
+    "metric": MetricNode,
+    "step": StepNode,
+    "rule": RuleNode,
+    "content": ContentNode,
+}
+
+
+def _make_minimal(kind: str):
+    """Build the smallest valid instance for a given kind. Ref kinds
+    need a non-empty discriminator id (per the ref-validator), so we
+    supply the minimum payload each kind enforces."""
+    cls = _ALL_KIND_CLASSES[kind]
+    base = {"id": f"{kind}-1", "label": kind}
+    if kind == "actor_ref":
+        return cls(**base, ref_actor_id=f"{kind}-master")
+    if kind == "mission_ref":
+        return cls(**base, ref_mission_id=f"{kind}-master")
+    if kind == "value_ref":
+        return cls(**base, ref_value_id=f"{kind}-master")
+    if kind == "identity_ref":
+        return cls(**base, ref_identity_id=f"{kind}-master")
+    return cls(**base)
+
+
+@pytest.mark.parametrize("kind", sorted(_ALL_KIND_CLASSES.keys()))
+def test_adapter_dispatches_every_kind(kind: str) -> None:
+    """Every kind in the 15-way union round-trips via the adapter
+    and returns an instance of its own class."""
+    instance = _make_minimal(kind)
+    raw = instance.model_dump()
+    parsed = SketchNodeAdapter.validate_python(raw)
+    expected_cls = _ALL_KIND_CLASSES[kind]
+    assert isinstance(parsed, expected_cls), (
+        f"adapter returned {type(parsed).__name__} for kind={kind}, "
+        f"expected {expected_cls.__name__}"
+    )
+    assert parsed.kind == kind
+
+
+@pytest.mark.parametrize("kind", sorted(_ALL_KIND_CLASSES.keys()))
+def test_every_kind_round_trip_idempotent(kind: str) -> None:
+    """``model_validate(instance.model_dump())`` must equal the original."""
+    cls = _ALL_KIND_CLASSES[kind]
+    instance = _make_minimal(kind)
+    second = cls.model_validate(instance.model_dump())
+    assert second == instance
+
+
+def test_union_covers_all_15_kinds() -> None:
+    """Sanity: the adapter's discriminated union exposes 15 distinct
+    classes (catches a drop / duplicate during a future refactor)."""
+    assert len(_ALL_KIND_CLASSES) == 15
+    assert len({c.__name__ for c in _ALL_KIND_CLASSES.values()}) == 15

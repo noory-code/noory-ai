@@ -4,6 +4,52 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.9] — 2026-05-12
+
+v0.15 reset Phase 5.1 — exhaustive 15-kind smoke + round-trip
+sweeps across viewer and server. Each parametric suite iterates
+over the 15-way node-kind union and asserts the structural
+contract; a future drop / addition / mis-registration in any of
+{ Pydantic class, parseEntity dispatch, KindInspector registry }
+fails the suite immediately with the offending kind in the test
+name. (D-2026-05-12-E)
+
+### Added — viewer/tests/inspectors/inspectors.exhaustive.test.tsx
+
+- 30 tests = 15 kinds × { ``KindInspector`` returns a non-null
+  tree, no ``console.error`` during render }.
+- Uses ``createBlankNode`` (domain SSOT) to build each synthetic
+  node from canonical defaults.
+
+### Added — viewer/tests/domain/round-trip.exhaustive.test.ts
+
+- 45 tests = 15 kinds × { ``parseEntity`` dispatches to a class
+  instance, ``fromJson(toJson())`` is idempotent, kind is
+  preserved across the round-trip }.
+
+### Added — plot/tests/test_node_models.py (exhaustive section)
+
+- 31 new tests = 15 kinds × { adapter dispatches to right class,
+  ``model_validate(instance.model_dump())`` is idempotent } +
+  1 union-size sanity. Pins the server-side 15-way discriminated
+  union as the source of truth for kind enumeration.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 317 / 317 passed (242 prior + 75 new).
+- ``uv run pytest`` — 245 / 245 passed (214 prior + 31 new).
+- ``uv run mypy plot_mcp/`` — clean.
+- ``uv run ruff check plot_mcp/ tests/`` — clean.
+
+Phase 5.1 leaves the hand-written per-kind tests in place (they
+cover kind-specific edge cases the structural sweep can't
+enumerate — e.g. ``CategoryInspector`` empty-warning,
+``ActorRefInspector`` orphan rendering, Service composition lists).
+The sweep is additive, not a replacement.
+
+Plugin patch bump 0.15.8 → 0.15.9.
+
 ## [0.15.8] — 2026-05-12
 
 v0.15 reset Phase 4.2 — extended cursor-baseline static guard.

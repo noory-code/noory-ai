@@ -1545,3 +1545,61 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.15.8 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.15.7 → 0.15.8.
+
+---
+
+### D-2026-05-12-E — Exhaustive 15-kind smoke + round-trip sweeps (Phase 5.1)
+
+- **What:** Add three parametric ``it.each`` / ``parametrize`` suites
+  that exhaustively iterate over the 15-way node-kind union:
+
+  - **Viewer ``KindInspector`` smoke** —
+    ``viewer/tests/inspectors/inspectors.exhaustive.test.tsx``
+    (30 tests = 15 kinds × { non-null tree, no console.error }).
+  - **Viewer entity round-trip** —
+    ``viewer/tests/domain/round-trip.exhaustive.test.ts``
+    (45 tests = 15 kinds × { parseEntity dispatches, idempotent
+    round-trip, kind preservation }).
+  - **Server adapter sweep** — appended to
+    ``plot/tests/test_node_models.py`` (31 tests = 15 kinds ×
+    { adapter dispatches to right class, round-trip idempotent } +
+    1 union-size sanity).
+
+- **Why:** Phase 2's per-kind asserts in
+  ``inspectors.smoke.test.tsx`` + ``round-trip.test.ts`` +
+  ``test_node_models.py`` cover every kind by hand. The new
+  parametric suites pin the *contract*: if a future commit adds a
+  16th kind and forgets to register an inspector or a parseEntity
+  branch or a Pydantic class, the sweep fails immediately with
+  the offending kind in the test name. Same goal as the per-kind
+  ``it.each`` cursor guard in D-2026-05-12-D — make per-kind
+  drift impossible without a test failure.
+
+- **Alternatives considered:**
+  - **Delete the hand-written per-kind tests** in
+    ``inspectors.smoke.test.tsx`` + ``round-trip.test.ts`` now
+    that the exhaustive sweep covers them: rejected. The
+    hand-written tests check kind-specific edge cases (e.g.
+    ``CategoryInspector`` empty-warning, ``ActorRefInspector``
+    orphan rendering, ``Service`` composition list) that a
+    structural sweep can't enumerate. They stay; the sweep is
+    *additive*.
+  - **Use a snapshot test** to capture each kind's full Inspector
+    DOM: rejected as brittle. A snapshot fires on every benign
+    Tailwind class reshuffle; we want failure only when the
+    structural contract breaks.
+
+- **Approval:** Pending — same direction as D-2026-05-12-C / -D.
+
+- **Spec impact:** none — internal verification scaffolding.
+
+- **Files in this commit:**
+  - ``plot/viewer/tests/inspectors/inspectors.exhaustive.test.tsx``
+    — new (30 tests).
+  - ``plot/viewer/tests/domain/round-trip.exhaustive.test.ts`` —
+    new (45 tests).
+  - ``plot/tests/test_node_models.py`` — appended exhaustive
+    sweep section (31 new tests).
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.15.9 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.15.8 → 0.15.9.
