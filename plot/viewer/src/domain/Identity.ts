@@ -11,9 +11,9 @@ import { registerKindParser } from "./parseEntity";
 
 export interface IdentityJson extends BaseFieldsJson {
   kind: "identity";
-  description?: string;
-  do?: string;
-  dont?: string;
+  description: string;
+  do: string;
+  dont: string;
 }
 
 export class Identity implements BaseFields {

@@ -3,20 +3,23 @@
  * service_detail canvas). v0.15 Phase 2.2.
  */
 import { useTranslation } from "react-i18next";
+import type { StepJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import type { KindInspectorProps } from "../types";
 
 export function StepInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "step") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
-      <StepFields node={props.node} onPatchNode={props.onPatchNode} />
+      <StepFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
 }
 
 interface StepFieldsProps {
-  node: SketchNode;
+  node: StepJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 

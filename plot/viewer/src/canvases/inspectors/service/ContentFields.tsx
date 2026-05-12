@@ -6,10 +6,11 @@
  * select from ``availableActors`` so the pick UX matches actor_ref).
  */
 import { useTranslation } from "react-i18next";
+import type { ContentJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 
 export interface ContentFieldsProps {
-  node: SketchNode;
+  node: ContentJson;
   availableActors: SketchNode[];
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
@@ -31,14 +32,14 @@ export function ContentFields({ node, availableActors, onPatchNode }: ContentFie
       <ContentActorPicker
         label={t("inspector.field.producer")}
         hint={t("inspector.fieldHint.producer")}
-        actorId={node.producer_actor_id}
+        actorId={node.producer_actor_id ?? null}
         availableActors={availableActors}
         onChange={(id) => onPatchNode({ producer_actor_id: id })}
       />
       <ContentActorPicker
         label={t("inspector.field.consumer")}
         hint={t("inspector.fieldHint.consumer")}
-        actorId={node.consumer_actor_id}
+        actorId={node.consumer_actor_id ?? null}
         availableActors={availableActors}
         onChange={(id) => onPatchNode({ consumer_actor_id: id })}
       />

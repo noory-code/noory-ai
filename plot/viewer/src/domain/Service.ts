@@ -10,15 +10,15 @@ import { registerKindParser } from "./parseEntity";
 
 export interface ServiceJson extends BaseFieldsJson {
   kind: "service";
-  target_side?: "operator" | "user" | "both" | null;
-  what?: string;
-  value_created?: string;
-  scope?: string;
-  trigger?: string;
-  how?: string;
-  outcome?: string;
-  do?: string;
-  dont?: string;
+  target_side: "operator" | "user" | "both" | null;
+  what: string;
+  value_created: string;
+  scope: string;
+  trigger: string;
+  how: string;
+  outcome: string;
+  do: string;
+  dont: string;
 }
 
 export class Service implements BaseFields {

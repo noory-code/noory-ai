@@ -9,6 +9,7 @@
  */
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { ServiceJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { DoDontFields } from "../shared/DoDontFields";
@@ -16,8 +17,9 @@ import type { KindInspectorProps } from "../types";
 import { CompositionList } from "./CompositionList";
 
 export function ServiceInspector(props: KindInspectorProps) {
-  const { node, allNodes, onPatchNode, onAddChild, onPatchChild, onRemoveChild, availableActors } =
-    props;
+  if (props.node.kind !== "service") return null;
+  const node = props.node;
+  const { allNodes, onPatchNode, onAddChild, onPatchChild, onRemoveChild, availableActors } = props;
   const { t } = useTranslation();
   const rules = useMemo(
     () => allNodes.filter((n) => n.parent_id === node.id && n.kind === "rule"),
@@ -59,7 +61,7 @@ export function ServiceInspector(props: KindInspectorProps) {
 }
 
 interface ServiceFieldsProps {
-  node: SketchNode;
+  node: ServiceJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 
@@ -96,42 +98,42 @@ function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
       <ServiceTextarea
         label={t("inspector.field.what")}
         hint={t("inspector.fieldHint.what")}
-        value={node.what}
+        value={node.what ?? ""}
         onChange={(v) => onPatchNode({ what: v })}
         placeholder="이 서비스는…"
       />
       <ServiceTextarea
         label={t("inspector.field.valueCreated")}
         hint={t("inspector.fieldHint.valueCreated")}
-        value={node.value_created}
+        value={node.value_created ?? ""}
         onChange={(v) => onPatchNode({ value_created: v })}
         placeholder="만들어내는 가치"
       />
       <ServiceTextarea
         label={t("inspector.field.scope")}
         hint={t("inspector.fieldHint.scope")}
-        value={node.scope}
+        value={node.scope ?? ""}
         onChange={(v) => onPatchNode({ scope: v })}
         placeholder="포함/제외 범위"
       />
       <ServiceTextarea
         label={t("inspector.field.trigger")}
         hint={t("inspector.fieldHint.trigger")}
-        value={node.trigger}
+        value={node.trigger ?? ""}
         onChange={(v) => onPatchNode({ trigger: v })}
         placeholder="언제/무엇으로 시작?"
       />
       <ServiceTextarea
         label={t("inspector.field.how")}
         hint={t("inspector.fieldHint.how")}
-        value={node.how}
+        value={node.how ?? ""}
         onChange={(v) => onPatchNode({ how: v })}
         placeholder="어떻게 동작?"
       />
       <ServiceTextarea
         label={t("inspector.field.outcome")}
         hint={t("inspector.fieldHint.outcome")}
-        value={node.outcome}
+        value={node.outcome ?? ""}
         onChange={(v) => onPatchNode({ outcome: v })}
         placeholder="끝나면 어떤 상태?"
       />

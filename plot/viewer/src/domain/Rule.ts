@@ -10,9 +10,9 @@ import { registerKindParser } from "./parseEntity";
 
 export interface RuleJson extends BaseFieldsJson {
   kind: "rule";
-  policy?: string;
-  enforcement?: string;
-  actor_permissions?: Record<string, string>;
+  policy: string;
+  enforcement: string;
+  actor_permissions: Record<string, string>;
 }
 
 export class Rule implements BaseFields {

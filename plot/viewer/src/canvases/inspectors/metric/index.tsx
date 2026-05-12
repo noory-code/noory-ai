@@ -8,20 +8,23 @@
  * ``SketchInspector``. Lays the pattern Phase 2.2+ kinds repeat.
  */
 import { useTranslation } from "react-i18next";
+import type { MetricJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import type { KindInspectorProps } from "../types";
 
 export function MetricInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "metric") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
-      <MetricFields node={props.node} onPatchNode={props.onPatchNode} />
+      <MetricFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
 }
 
 interface MetricFieldsProps {
-  node: SketchNode;
+  node: MetricJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 

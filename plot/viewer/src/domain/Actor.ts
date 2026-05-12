@@ -10,9 +10,9 @@ import { registerKindParser } from "./parseEntity";
 
 export interface ActorJson extends BaseFieldsJson {
   kind: "actor";
-  motivation?: string;
-  pain?: string;
-  side?: "operator" | "user" | null;
+  motivation: string;
+  pain: string;
+  side: "operator" | "user" | null;
 }
 
 export class Actor implements BaseFields {

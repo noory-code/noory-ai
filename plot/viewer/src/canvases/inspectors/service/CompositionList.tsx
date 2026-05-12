@@ -133,13 +133,14 @@ function CompositionRow({
       </div>
       {expanded && (
         <div className="border-t border-slate-100 px-2 py-2">
-          {kind === "rule" ? (
+          {kind === "rule" && item.kind === "rule" && (
             <RuleFields
               node={item}
               availableActors={availableActors ?? []}
               onPatchNode={(patch) => onPatch(item.id, patch)}
             />
-          ) : (
+          )}
+          {kind === "content" && item.kind === "content" && (
             <ContentFields
               node={item}
               availableActors={availableActors ?? []}

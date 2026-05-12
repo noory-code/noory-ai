@@ -2,20 +2,23 @@
  * Per-kind inspector for ``mission`` Foundation nodes. v0.15 Phase 2.4.
  */
 import { useTranslation } from "react-i18next";
+import type { MissionJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import type { KindInspectorProps } from "../types";
 
 export function MissionInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "mission") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
-      <MissionFields node={props.node} onPatchNode={props.onPatchNode} />
+      <MissionFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
 }
 
 interface MissionFieldsProps {
-  node: SketchNode;
+  node: MissionJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 

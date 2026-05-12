@@ -11,7 +11,7 @@ import { registerKindParser } from "./parseEntity";
 
 export interface CategoryJson extends BaseFieldsJson {
   kind: "category";
-  theme?: string;
+  theme: string;
 }
 
 export class Category implements BaseFields {

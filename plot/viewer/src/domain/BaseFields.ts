@@ -10,21 +10,26 @@
 import type { Shape } from "../types";
 import { DomainParseError } from "./DomainParseError";
 
-/** Wire shape (what the server sends). All optional except ``id``. */
+/** Wire shape (what the server sends). The server-side Pydantic
+ *  layer always populates every field with its default, so the wire
+ *  shape is always-populated — required everywhere. ``fromJson``
+ *  itself still tolerates raw inputs that omit fields (uses defaults
+ *  internally) but the output of ``toJson`` and the entity instances
+ *  always carry every BaseFields field. */
 export interface BaseFieldsJson {
   id: string;
-  label?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  color?: string;
-  shape?: Shape;
-  icon?: string | null;
-  parent_id?: string | null;
-  collapsed?: boolean;
-  is_root?: boolean;
-  details_path?: string | null;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  shape: Shape;
+  icon: string | null;
+  parent_id: string | null;
+  collapsed: boolean;
+  is_root: boolean;
+  details_path: string | null;
 }
 
 /** In-memory shape (defaults filled in). Every field present and typed. */

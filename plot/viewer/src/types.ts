@@ -1,3 +1,12 @@
+/**
+ * Plot v0.15 viewer wire types.
+ *
+ * Per-node typed shapes live in ``./domain/`` as per-kind entity
+ * classes; ``SketchNode`` itself is the discriminated union of those
+ * classes (re-exported below). The legacy god ``SketchNode`` interface
+ * — every kind's typed fields collapsed into one shape — was retired
+ * in v0.15 Phase 2.10 (D-2026-05-12-B).
+ */
 export type Shape =
   | "rectangle"
   | "rounded"
@@ -8,27 +17,21 @@ export type Shape =
   | "octagon";
 
 /**
- * Node kinds. See docs/CONCEPTS.md and plot_mcp/models.py.
+ * Node kinds. Mirrors ``plot_mcp/models.py::NodeKind`` 1:1.
  *   project         — Foundation-canvas central anchor (circle, auto-seeded,
  *                     cannot be deleted; label mirrors ProjectDoc.name).
  *   mission         — Foundation-canvas child; 0..N. Carries typed fields
  *                     ``what_we_do`` / ``why`` / ``direction``.
  *   core_value      — Foundation-canvas child; 0..N.
- *   identity        — Foundation-canvas child; 0..N peers. Each represents
- *                     an aspect (Voice / Energy / Speech style / …).
+ *   identity        — Foundation-canvas child; 0..N peers.
  *   actor           — participant in the value economy (Actor canvas).
  *   actor_ref       — reference to an actor (Service canvases);
- *                     carries ``ref_actor_id`` pointing at the Actor canvas.
+ *                     carries ``ref_actor_id``.
  *   category        — top-level grouping on the Services canvas (v0.12).
- *   service         — leaf inside a category; per-service composition lives
- *                     in the Service Detail modal.
+ *   service         — leaf inside a category.
  *   rule / content  — composition element inside a service (modal only).
- * Sub-actor isn't a separate kind — it's an actor with a non-null parent_id
- * (hierarchical decomposition). v0.12 dropped sub-service entirely; service
- * is always a leaf of a category.
- *
- * Deprecated kinds ("core" anchor, "identity_facet" child) are rewritten
- * server-side by ``migrate.upgrade_foundation_canvas_if_needed`` on open.
+ *   metric / step   — composition KPI / procedural step (modal only).
+ *   mission_ref / value_ref / identity_ref — Foundation references.
  */
 export type NodeKind =
   | "project"
@@ -40,19 +43,11 @@ export type NodeKind =
   | "service"
   | "rule"
   | "content"
-  // v0.10 Step 3: Foundation symbol refs (master/instance pattern). Masters
-  // live on the Foundation canvas; instances on Services / Service-Detail.
   | "mission_ref"
   | "value_ref"
   | "identity_ref"
-  // v0.10 Step 5: composition kinds inside service_detail.
-  //   metric — KPI / SLA / success rate
-  //   step   — ordered procedural step
   | "metric"
   | "step"
-  // v0.12: ``category`` is a thematic grouping of services on the
-  // Services canvas. Categories are pure containers (no value
-  // creation themselves); services are leaves nested inside them.
   | "category";
 
 /** v0.10 Step 3: the four ref kinds form a uniform family. */
@@ -62,161 +57,18 @@ export type RefKind = "actor_ref" | "mission_ref" | "value_ref" | "identity_ref"
  * Plural forms of value that can flow along an edge. See PHILOSOPHY.md (P2).
  */
 export type ValueForm =
-  | "economic"    // 돈, 결제, 수수료
-  | "attention"   // 관심, 트래픽
-  | "social"      // 이름, 명성, 관계, 신뢰
-  | "cognitive"   // 정보, 데이터, 노하우
-  | "experience"  // 즐거움, 편의, 성취
-  | "access"      // 기회, 멤버십, 독점성
-  | "effort";     // 시간, 창의 노동
+  | "economic" // 돈, 결제, 수수료
+  | "attention" // 관심, 트래픽
+  | "social" // 이름, 명성, 관계, 신뢰
+  | "cognitive" // 정보, 데이터, 노하우
+  | "experience" // 즐거움, 편의, 성취
+  | "access" // 기회, 멤버십, 독점성
+  | "effort"; // 시간, 창의 노동
 
-export interface SketchNode {
-  id: string;
-  label: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  color: string;
-  shape: Shape;
-  /** Lucide icon name (e.g. "user", "star") or null for no icon. */
-  icon: string | null;
-  /** v0.2: typed kind. ``null`` = legacy / untyped. */
-  kind: NodeKind | null;
-  /** v0.2: nested parent node id, or null for top-level. */
-  parent_id: string | null;
-  /** v0.2: container fold state. ``false`` = expanded. */
-  collapsed: boolean;
-  /** v0.2: mark this actor/service as the root of its tree (at most one per kind). */
-  is_root: boolean;
-  /** v0.2: populated for core / actor-root / service-root only. */
-  mission: string;
-  core_values: string;
-  identity: string;
-  /** v0.10: typed fields for ``mission`` kind. Default empty for other kinds.
-   *  what_we_do = current-tense daily activity; why = reason for being;
-   *  direction = positioning (space, not time). See docs/CONCEPTS.md. */
-  what_we_do: string;
-  why: string;
-  direction: string;
-  /** v0.10 Step 2: typed fields for ``core_value`` (definition + do/dont)
-   *  and ``identity`` (description + do/dont). Other kinds default to "".
-   *  do/dont follow the AI-first principle in docs/CONCEPTS.md. */
-  definition: string;
-  description: string;
-  do: string;
-  dont: string;
-  /** v0.12.1: service typed fields. Single service kind surfaces all six
-   *  (what / value_created / scope / trigger / how / outcome) plus do/dont
-   *  in one Inspector section — sub-service was eliminated in v0.12. */
-  what: string;
-  value_created: string;
-  scope: string;
-  trigger: string;
-  how: string;
-  outcome: string;
-  /** v0.10 Step 5: metric kind — target value + how it's measured. */
-  target: string;
-  measurement: string;
-  /** v0.10 Step 5: step kind — ordinal in the procedural sequence,
-   *  ``null`` = unordered (e.g. parallel branches). */
-  order: number | null;
-  /** v0.10 Step 6: rule kind — policy text, enforcement mechanism,
-   *  and an actor-id → permission-string map (e.g. {"user": "RUD"}). */
-  policy: string;
-  enforcement: string;
-  actor_permissions: Record<string, string>;
-  /** v0.10 Step 6: content kind — artifact format + producer/consumer
-   *  actor master ids (null = unset). */
-  format: string;
-  producer_actor_id: string | null;
-  consumer_actor_id: string | null;
-  /** v0.11: actor typed fields — internal motivation + faced pain. The
-   *  Inspector surfaces both when ``kind === "actor"``. See
-   *  plot/docs/IDENTITY.md "Actor & Service — the Core Philosophy". */
-  motivation: string;
-  pain: string;
-  /** v0.11: classifies an actor (or actor_ref) by which side of the
-   *  value exchange they occupy. Set on every actor; on actor_ref it
-   *  mirrors the master's side (denormalised at picker time). */
-  side: "operator" | "user" | null;
-  /** v0.11 Phase C3: actor_ref captures the value flow between this
-   *  actor and the service it sits in. ``gives`` and ``receives`` are
-   *  per-actor-per-service; service.value_created is the aggregate. */
-  gives: string;
-  receives: string;
-  /** v0.11.4: service classification — which side of the value exchange
-   *  this service exists for. Mirror of ``actor.side`` so Plot's two
-   *  axes (actor / service) share the same classification pattern. */
-  target_side: "operator" | "user" | "both" | null;
-  /** v0.12: category typed field — one-line common theme that ties this
-   *  category's services together. Default empty for non-category nodes. */
-  theme: string;
-  /** v0.2 multi-canvas: set when kind === "actor_ref", points at Actor canvas node id. */
-  ref_actor_id: string | null;
-  /** v0.10 Step 3: Foundation refs. Set when kind === "*_ref"; null otherwise. */
-  ref_mission_id: string | null;
-  ref_value_id: string | null;
-  ref_identity_id: string | null;
-  /** v0.9.1: project-relative path to this node's long-form ``details.md``
-   *  (resolved server-side under ``.plot/{project_id}/``). ``null`` =
-   *  no MD yet; Inspector offers a "Create details" button. */
-  details_path?: string | null;
-  /** v0.13 Phase 7: server-side MD parse warnings for Foundation nodes.
-   *  Present only when the per-node template has missing/unknown
-   *  sections, broken H1, etc. Inspector renders a yellow ⚠ + the
-   *  warning list so the user can fix the file. Pure response
-   *  decoration — never PUT back. */
-  _md_warnings?: string[];
-}
-
-// ---------------------------------------------------------------------------
-// v0.13 Phase 5 — Foundation discriminated-union types (cosmetic)
-// ---------------------------------------------------------------------------
-//
-// The runtime payload is still SketchNode (god interface) — the server
-// merges typed text from per-node MD templates into the same shape Plot
-// has used since v0.10. These per-kind aliases let Foundation-aware code
-// narrow ``n.kind`` and rely on the right typed fields without runtime
-// changes. They're the TS counterpart to Phase 1's Pydantic split.
-
-export interface BaseFoundationNode extends Omit<SketchNode, "kind"> {
-  /** Always present for the Foundation kinds; required, not optional. */
-  kind: NodeKind;
-}
-
-export interface ProjectFoundationNode extends BaseFoundationNode {
-  kind: "project";
-}
-
-export interface MissionFoundationNode extends BaseFoundationNode {
-  kind: "mission";
-  what_we_do: string;
-  why: string;
-  direction: string;
-}
-
-export interface CoreValueFoundationNode extends BaseFoundationNode {
-  kind: "core_value";
-  definition: string;
-  do: string;
-  dont: string;
-}
-
-export interface IdentityFoundationNode extends BaseFoundationNode {
-  kind: "identity";
-  description: string;
-  do: string;
-  dont: string;
-}
-
-/** v0.13 Phase 5: Foundation-canvas discriminated union. Use when narrowing
- *  on ``kind`` for type-safe access to a Foundation node's typed text. */
-export type FoundationNode =
-  | ProjectFoundationNode
-  | MissionFoundationNode
-  | CoreValueFoundationNode
-  | IdentityFoundationNode;
+// v0.15 Phase 2.10 — discriminated-union ``SketchNode`` lives in
+// ``./domain/``. Re-exported here so the dozen+ files that already
+// import from ``../types`` keep working.
+export type { SketchEntity, SketchNode } from "./domain";
 
 export interface SketchEdge {
   id: string;
@@ -236,11 +88,7 @@ export interface SketchEdge {
 // v0.4 multi-canvas — project folder layout
 // ---------------------------------------------------------------------------
 
-export type CanvasKind =
-  | "foundation"
-  | "actors"
-  | "services"
-  | "service_detail";
+export type CanvasKind = "foundation" | "actors" | "services" | "service_detail";
 
 /**
  * Cache key for a loaded canvas inside the viewer. Singleton canvases use
@@ -251,6 +99,8 @@ export type CanvasKey =
   | "actors"
   | "services"
   | `service_detail:${string}`;
+
+import type { SketchNode } from "./domain";
 
 export interface CanvasDoc {
   canvas_id: string;

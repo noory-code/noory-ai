@@ -1,16 +1,15 @@
 // Node-creation helpers: addNodeAt for top-level nodes,
 // addNestedNodeAt for sub-actor / sub-service drops onto an existing
-// container. Both build a brand-new DocNode with all typed fields
-// zeroed; the preset overrides shape/color/kind/etc. but the
-// per-kind text fields stay empty until the user fills them in via
-// the Inspector.
+// container, addCompositionChild for Inspector-driven rule / content
+// children.
 //
-// Note: there's a heavy dose of repeated default-zero initialisation
-// shared between the two functions; factoring it out
-// (``makeBlankNode()``) is worth doing in a follow-up but kept verbatim
-// here to keep the extraction byte-equal to the prior inline.
+// v0.15 Phase 2.10 — uses the per-kind ``createBlankNode`` factory
+// from ``../../domain`` instead of inlining the god-style 47-field
+// initialiser. Each kind's defaults come from its own entity class's
+// ``fromJson`` so the wire shape is always canonical.
 import { type MutableRefObject, useCallback } from "react";
-import type { CanvasDoc, SketchNode as DocNode } from "../../types";
+import { createBlankNode } from "../../domain";
+import type { CanvasDoc, NodeKind, SketchNode as DocNode } from "../../types";
 import { DEFAULT_COLOR, DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
 import type { NodePreset } from "./types";
 
@@ -37,66 +36,49 @@ function freshId(prefix: "n" | "e"): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
+/** v0.15 Phase 2.10 — drag-from-stencil presets must always specify a
+ *  kind. The legacy "kind: null" path is gone: a node without a kind
+ *  has no domain meaning. */
+function requirePresetKind(preset: NodePreset | undefined): NodeKind {
+  if (!preset?.kind) {
+    throw new Error(
+      "useNodeCreation: preset.kind is required (the v0.14 untyped-node " +
+        "path was retired in the v0.15 structural reset).",
+    );
+  }
+  return preset.kind;
+}
+
 export function useNodeCreation({
   docRef,
   onDocChange,
 }: UseNodeCreationArgs): UseNodeCreationResult {
   const addNodeAt = useCallback(
     (x: number, y: number, preset?: NodePreset) => {
-      const id = freshId("n");
-      const newNode: DocNode = {
-        id,
-        label: preset?.label ?? "",
-        x,
-        y,
-        width: preset?.width ?? DEFAULT_WIDTH,
-        height: preset?.height ?? DEFAULT_HEIGHT,
-        color: preset?.color ?? DEFAULT_COLOR,
-        shape: preset?.shape ?? "rounded",
-        icon: preset?.icon ?? null,
-        kind: preset?.kind ?? null,
-        parent_id: null,
-        collapsed: false,
-        is_root: false,
-        mission: "",
-        core_values: "",
-        identity: "",
-        what_we_do: "",
-        why: "",
-        direction: "",
-        definition: "",
-        description: "",
-        do: "",
-        dont: "",
-        ref_actor_id: preset?.ref_actor_id ?? null,
-        ref_mission_id: preset?.ref_mission_id ?? null,
-        ref_value_id: preset?.ref_value_id ?? null,
-        ref_identity_id: preset?.ref_identity_id ?? null,
-        what: "",
-        value_created: "",
-        scope: "",
-        trigger: "",
-        how: "",
-        outcome: "",
-        target: "",
-        measurement: "",
-        order: null,
-        policy: "",
-        enforcement: "",
-        actor_permissions: {},
-        format: "",
-        producer_actor_id: null,
-        consumer_actor_id: null,
-        motivation: "",
-        pain: "",
-        side: null,
-        gives: "",
-        receives: "",
-        target_side: null,
-        theme: "",
-      };
+      const kind = requirePresetKind(preset);
+      const node: DocNode = createBlankNode(
+        kind,
+        {
+          id: freshId("n"),
+          label: preset?.label ?? "",
+          x,
+          y,
+          width: preset?.width ?? DEFAULT_WIDTH,
+          height: preset?.height ?? DEFAULT_HEIGHT,
+          color: preset?.color ?? DEFAULT_COLOR,
+          shape: preset?.shape ?? "rounded",
+          icon: preset?.icon ?? null,
+          parent_id: null,
+        },
+        {
+          ref_actor_id: preset?.ref_actor_id ?? null,
+          ref_mission_id: preset?.ref_mission_id ?? null,
+          ref_value_id: preset?.ref_value_id ?? null,
+          ref_identity_id: preset?.ref_identity_id ?? null,
+        },
+      );
       const current = docRef.current;
-      onDocChange({ ...current, nodes: [...current.nodes, newNode] });
+      onDocChange({ ...current, nodes: [...current.nodes, node] });
     },
     [docRef, onDocChange],
   );
@@ -108,59 +90,29 @@ export function useNodeCreation({
       localY: number;
       preset: NodePreset;
     }) => {
-      const id = freshId("n");
       const { preset } = args;
-      const newNode: DocNode = {
-        id,
-        label: preset.label ?? "",
-        x: args.localX,
-        y: args.localY,
-        width: preset.width ?? DEFAULT_WIDTH,
-        height: preset.height ?? DEFAULT_HEIGHT,
-        color: preset.color ?? DEFAULT_COLOR,
-        shape: preset.shape ?? "rounded",
-        icon: preset.icon ?? null,
-        kind: preset.kind ?? null,
-        parent_id: args.parentId,
-        collapsed: false,
-        is_root: false,
-        mission: "",
-        core_values: "",
-        identity: "",
-        what_we_do: "",
-        why: "",
-        direction: "",
-        definition: "",
-        description: "",
-        do: "",
-        dont: "",
-        ref_actor_id: preset?.ref_actor_id ?? null,
-        ref_mission_id: preset?.ref_mission_id ?? null,
-        ref_value_id: preset?.ref_value_id ?? null,
-        ref_identity_id: preset?.ref_identity_id ?? null,
-        what: "",
-        value_created: "",
-        scope: "",
-        trigger: "",
-        how: "",
-        outcome: "",
-        target: "",
-        measurement: "",
-        order: null,
-        policy: "",
-        enforcement: "",
-        actor_permissions: {},
-        format: "",
-        producer_actor_id: null,
-        consumer_actor_id: null,
-        motivation: "",
-        pain: "",
-        side: null,
-        gives: "",
-        receives: "",
-        target_side: null,
-        theme: "",
-      };
+      const kind = requirePresetKind(preset);
+      const node: DocNode = createBlankNode(
+        kind,
+        {
+          id: freshId("n"),
+          label: preset.label ?? "",
+          x: args.localX,
+          y: args.localY,
+          width: preset.width ?? DEFAULT_WIDTH,
+          height: preset.height ?? DEFAULT_HEIGHT,
+          color: preset.color ?? DEFAULT_COLOR,
+          shape: preset.shape ?? "rounded",
+          icon: preset.icon ?? null,
+          parent_id: args.parentId,
+        },
+        {
+          ref_actor_id: preset?.ref_actor_id ?? null,
+          ref_mission_id: preset?.ref_mission_id ?? null,
+          ref_value_id: preset?.ref_value_id ?? null,
+          ref_identity_id: preset?.ref_identity_id ?? null,
+        },
+      );
       const current = docRef.current;
       // Rule / content are composition: edited via the Inspector, no edge.
       // Actor / service are hierarchy: materialise a real decomposition
@@ -172,7 +124,7 @@ export function useNodeCreation({
             {
               id: freshId("e"),
               source: args.parentId,
-              target: id,
+              target: node.id,
               sourceHandle: null,
               targetHandle: null,
               label: "decomposes",
@@ -182,21 +134,23 @@ export function useNodeCreation({
             },
           ]
         : current.edges;
-      onDocChange({ ...current, nodes: [...current.nodes, newNode], edges: newEdges });
+      onDocChange({
+        ...current,
+        nodes: [...current.nodes, node],
+        edges: newEdges,
+      });
     },
     [docRef, onDocChange],
   );
 
   const addCompositionChild = useCallback(
     (parentId: string, kind: "rule" | "content") => {
-      const id = freshId("n");
-      const current = docRef.current;
       const defaults =
         kind === "rule"
-          ? { shape: "rectangle" as const, color: "#e7e5e4", icon: "shield" as const }
-          : { shape: "hexagon" as const, color: "#ddd6fe", icon: "package" as const };
-      const newNode: DocNode = {
-        id,
+          ? { shape: "rectangle" as const, color: "#e7e5e4", icon: "shield" }
+          : { shape: "hexagon" as const, color: "#ddd6fe", icon: "package" };
+      const node: DocNode = createBlankNode(kind, {
+        id: freshId("n"),
         label: kind === "rule" ? "New rule" : "New content",
         x: 0,
         y: 0,
@@ -205,48 +159,10 @@ export function useNodeCreation({
         color: defaults.color,
         shape: defaults.shape,
         icon: defaults.icon,
-        kind,
         parent_id: parentId,
-        collapsed: false,
-        is_root: false,
-        mission: "",
-        core_values: "",
-        identity: "",
-        what_we_do: "",
-        why: "",
-        direction: "",
-        definition: "",
-        description: "",
-        do: "",
-        dont: "",
-        ref_actor_id: null,
-        ref_mission_id: null,
-        ref_value_id: null,
-        ref_identity_id: null,
-        what: "",
-        value_created: "",
-        scope: "",
-        trigger: "",
-        how: "",
-        outcome: "",
-        target: "",
-        measurement: "",
-        order: null,
-        policy: "",
-        enforcement: "",
-        actor_permissions: {},
-        format: "",
-        producer_actor_id: null,
-        consumer_actor_id: null,
-        motivation: "",
-        pain: "",
-        side: null,
-        gives: "",
-        receives: "",
-        target_side: null,
-        theme: "",
-      };
-      onDocChange({ ...current, nodes: [...current.nodes, newNode] });
+      });
+      const current = docRef.current;
+      onDocChange({ ...current, nodes: [...current.nodes, node] });
     },
     [docRef, onDocChange],
   );

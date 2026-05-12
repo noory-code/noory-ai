@@ -9,7 +9,7 @@ import { registerKindParser } from "./parseEntity";
 
 export interface MissionRefJson extends BaseFieldsJson {
   kind: "mission_ref";
-  ref_mission_id?: string | null;
+  ref_mission_id: string | null;
 }
 
 export class MissionRef implements BaseFields {

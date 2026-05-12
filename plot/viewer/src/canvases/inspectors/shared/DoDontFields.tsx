@@ -8,8 +8,17 @@
 import { useTranslation } from "react-i18next";
 import type { SketchNode } from "../../../types";
 
+/** Any node that carries the do / dont AI-first pair (CoreValue,
+ *  Identity, Service all do; the type-narrowed prop accepts any of
+ *  them via a structural subset). Both fields are optional on the
+ *  Json shape — the component coerces undefined to "". */
+export interface DoDontCarrier {
+  do?: string;
+  dont?: string;
+}
+
 export interface DoDontFieldsProps {
-  node: SketchNode;
+  node: DoDontCarrier;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 

@@ -10,9 +10,9 @@ import { registerKindParser } from "./parseEntity";
 
 export interface MissionJson extends BaseFieldsJson {
   kind: "mission";
-  what_we_do?: string;
-  why?: string;
-  direction?: string;
+  what_we_do: string;
+  why: string;
+  direction: string;
 }
 
 export class Mission implements BaseFields {

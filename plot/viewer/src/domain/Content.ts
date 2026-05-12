@@ -10,9 +10,9 @@ import { registerKindParser } from "./parseEntity";
 
 export interface ContentJson extends BaseFieldsJson {
   kind: "content";
-  format?: string;
-  producer_actor_id?: string | null;
-  consumer_actor_id?: string | null;
+  format: string;
+  producer_actor_id: string | null;
+  consumer_actor_id: string | null;
 }
 
 export class Content implements BaseFields {

@@ -4,6 +4,92 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.0] — 2026-05-12
+
+v0.15 structural reset Phase 2.10 — viewer-side god ``SketchNode``
+interface RETIRED. The TypeScript wire shape is now a discriminated
+union of 15 per-kind ``XxxJson`` interfaces (mirroring the server-side
+Pydantic union landed in v0.14.17). This is the version-bump moment
+the entire reset has been climbing toward. (D-2026-05-12-B)
+
+### Atomic flip — types.ts
+
+- ``viewer/src/types.ts`` no longer defines an ``interface SketchNode``
+  with all 47 typed fields collapsed. The 130-LOC god block (and the
+  4 ``*FoundationNode`` cosmetic-narrowing types) are gone.
+- ``viewer/src/types.ts`` re-exports ``SketchNode`` from ``./domain``;
+  the dozen+ files that already import from ``../types`` keep working
+  without any import path changes.
+- New ``viewer/src/domain/SketchNode.ts`` defines:
+  - ``SketchEntity`` — class-instance union (used by parseEntity +
+    tests; rare in viewer code).
+  - ``SketchNode`` — JSON-shape union (used by React Flow state,
+    Inspector props, api.ts response casts, undo/redo). Class
+    instances satisfy this structurally; plain objects from
+    ``{...node, x: newX}`` spread also satisfy it (no method
+    requirement on the union).
+
+### Per-kind ``XxxJson`` interfaces tightened to required
+
+The wire shape from the server (Pydantic ``model_dump()``) always
+populates every field with its default, so each ``XxxJson`` is now
+"required everywhere". This eliminates ``?? ""`` / ``?? null``
+fallbacks throughout the Inspector code and matches reality.
+
+### Per-kind Inspector narrowing
+
+Every ``inspectors/{kind}/index.tsx`` now opens with:
+
+```ts
+if (props.node.kind !== "<kind>") return null;
+const node = props.node;
+```
+
+so TypeScript narrows ``node`` to the per-kind ``XxxJson`` shape
+inside the body. The matching ``XxxFields`` component declares
+``node: XxxJson`` (was ``node: SketchNode`` god). Per-kind components
+now type-check the kind-specific field accesses they always relied
+on (``node.target`` for Metric, ``node.target_side`` for Service,
+etc.).
+
+### Added — viewer/src/domain/createBlankNode.ts
+
+Factory that builds a wire-shape node for a given kind by running
+the per-kind entity class's ``fromJson`` + ``toJson``. Replaces the
+v0.14 god-style 47-field inline initialiser in
+``useNodeCreation.ts``. Each blank node now carries exactly the
+canonical defaults its kind owns — no foreign fields.
+
+### Added — narrowed shared components
+
+- ``inspectors/shared/DoDontFields.tsx`` accepts a structural
+  ``DoDontCarrier`` (``{ do?: string; dont?: string }``) instead
+  of a god-typed ``SketchNode``.
+- ``inspectors/shared/FoundationRefBlock.tsx`` accepts the
+  ``MissionRefJson | ValueRefJson | IdentityRefJson`` narrowed
+  union.
+
+### Removed
+
+- God ``SketchNode`` interface (130 LOC) from ``viewer/src/types.ts``.
+- ``BaseFoundationNode`` + ``ProjectFoundationNode`` +
+  ``MissionFoundationNode`` + ``CoreValueFoundationNode`` +
+  ``IdentityFoundationNode`` (the v0.13 cosmetic-narrowing aliases
+  superseded by the real per-kind entity classes).
+- The "kind: NodeKind | null" path in node-creation. Every node now
+  has a non-null kind discriminator at construction time.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 103 / 103 passed.
+- All 15 per-kind inspectors narrow correctly; no ``as any`` /
+  no untyped accesses on the union.
+
+Plugin minor bump 0.14.27 → 0.15.0 — the v0.15 reset's central
+promise (no god object on either server or viewer; per-kind
+discriminated union end-to-end) is now LIVE.
+
 ## [0.14.27] — 2026-05-12
 
 v0.15 structural reset Phase 2.9 — final per-kind vertical slice

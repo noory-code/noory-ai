@@ -8,10 +8,12 @@ import { ContentFields } from "../service/ContentFields";
 import type { KindInspectorProps } from "../types";
 
 export function ContentInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "content") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
       <ContentFields
-        node={props.node}
+        node={node}
         availableActors={props.availableActors ?? []}
         onPatchNode={props.onPatchNode}
       />

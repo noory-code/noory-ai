@@ -5,22 +5,25 @@
  * v0.15 Phase 2.8.
  */
 import { useTranslation } from "react-i18next";
+import type { ActorJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import type { KindInspectorProps } from "../types";
 
 export function ActorInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "actor") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
-      <ActorFields node={props.node} onPatchNode={props.onPatchNode} />
+      <ActorFields node={node} onPatchNode={props.onPatchNode} />
       {/* v0.3 placeholder — actor composition still deferred for non-root. */}
-      {!props.node.is_root && <ActorCompositionPlaceholder />}
+      {!node.is_root && <ActorCompositionPlaceholder />}
     </BaseInspector>
   );
 }
 
 interface ActorFieldsProps {
-  node: SketchNode;
+  node: ActorJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 

@@ -9,10 +9,11 @@
  * inspectors share one implementation.
  */
 import { useTranslation } from "react-i18next";
+import type { IdentityRefJson, MissionRefJson, ValueRefJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 
 export interface FoundationRefBlockProps {
-  node: SketchNode;
+  node: MissionRefJson | ValueRefJson | IdentityRefJson;
   availableMissions: SketchNode[];
   availableValues: SketchNode[];
   availableIdentities: SketchNode[];

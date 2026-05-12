@@ -2,21 +2,24 @@
  * Per-kind inspector for ``identity`` Foundation nodes. v0.15 Phase 2.3.
  */
 import { useTranslation } from "react-i18next";
+import type { IdentityJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { DoDontFields } from "../shared/DoDontFields";
 import type { KindInspectorProps } from "../types";
 
 export function IdentityInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "identity") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
-      <IdentityFields node={props.node} onPatchNode={props.onPatchNode} />
+      <IdentityFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
 }
 
 interface IdentityFieldsProps {
-  node: SketchNode;
+  node: IdentityJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 

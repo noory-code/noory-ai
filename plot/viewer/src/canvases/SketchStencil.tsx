@@ -470,11 +470,13 @@ export function SketchStencil({
 // handler creates the ref instance directly without opening a picker.
 
 function actorRefPresetFor(a: SketchNode): StencilPreset {
+  // v0.15: only actor kind has ``side``; narrow before reading.
+  const side = a.kind === "actor" ? a.side : null;
   return {
     id: `actor-ref:${a.id}`,
     labelHint: a.label || a.id,
     shape: "ellipse",
-    color: a.side === "operator" ? "#bae6fd" : "#fce7f3",
+    color: side === "operator" ? "#bae6fd" : "#fce7f3",
     width: 140,
     height: 70,
     icon: "user",

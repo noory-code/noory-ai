@@ -11,10 +11,12 @@ import { RuleFields } from "../service/RuleFields";
 import type { KindInspectorProps } from "../types";
 
 export function RuleInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "rule") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
       <RuleFields
-        node={props.node}
+        node={node}
         availableActors={props.availableActors ?? []}
         onPatchNode={props.onPatchNode}
       />

@@ -43,3 +43,12 @@ export { Rule } from "./Rule";
 export type { RuleJson } from "./Rule";
 export { Content } from "./Content";
 export type { ContentJson } from "./Content";
+
+// v0.15 Phase 2.10 — discriminated-union SketchNode (replaces the
+// god ``SketchNode`` interface that lived in ``viewer/src/types.ts``).
+export type { SketchEntity, SketchNode } from "./SketchNode";
+
+// v0.15 Phase 2.10 — node-creation factory (replaces the v0.14
+// god-style inline default initialiser in useNodeCreation.ts).
+export type { BlankNodeBase, CreateNodeOverrides } from "./createBlankNode";
+export { createBlankNode } from "./createBlankNode";

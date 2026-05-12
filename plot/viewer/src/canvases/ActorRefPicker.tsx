@@ -29,7 +29,7 @@ export function ActorRefPicker({ nodes, mode = "create", onPick, onCancel }: Act
 
   const parentLabel = (actor: SketchNode): string | null => {
     const p = actor.parent_id ? byId.get(actor.parent_id) : null;
-    return p && p.kind === "actor" ? p.label : null;
+    return p && p.kind === "actor" ? p.label ?? null : null;
   };
 
   return (

@@ -151,7 +151,13 @@ function SketchCanvasInner({
       const current = docRef.current;
       onDocChange({
         ...current,
-        nodes: current.nodes.map((n) => (n.id === nodeId ? { ...n, ...patch } : n)),
+        // v0.15: spread merge of a discriminated union loses the kind-narrowed
+        // type; cast back to DocNode after the structural merge. Safe at
+        // runtime because ``patch: Partial<DocNode>`` can only patch valid
+        // fields.
+        nodes: current.nodes.map((n) =>
+          n.id === nodeId ? ({ ...n, ...patch } as DocNode) : n,
+        ),
       });
     },
     [onDocChange],

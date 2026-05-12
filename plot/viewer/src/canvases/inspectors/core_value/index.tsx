@@ -2,21 +2,24 @@
  * Per-kind inspector for ``core_value`` Foundation nodes. v0.15 Phase 2.3.
  */
 import { useTranslation } from "react-i18next";
+import type { CoreValueJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { DoDontFields } from "../shared/DoDontFields";
 import type { KindInspectorProps } from "../types";
 
 export function CoreValueInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "core_value") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
-      <CoreValueFields node={props.node} onPatchNode={props.onPatchNode} />
+      <CoreValueFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
 }
 
 interface CoreValueFieldsProps {
-  node: SketchNode;
+  node: CoreValueJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 

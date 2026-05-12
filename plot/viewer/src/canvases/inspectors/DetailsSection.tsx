@@ -55,9 +55,9 @@ export function DetailsSection({
     setErr(null);
     try {
       const canvasSlug = canvasKind;
-      const desired = node.kind
-        ? folderSlug(node.kind, node.label || node.kind, canvasSlug)
-        : `${canvasSlug}/${node.id}`;
+      // v0.15: every entity has a non-null kind literal (the discriminator),
+      // so the legacy "kind absent" fallback is gone.
+      const desired = folderSlug(node.kind, node.label || node.kind, canvasSlug);
       const actualPath = await createFolder(projectPath, projectId, desired);
       // Server seeds an empty ``index.md``; v0.9 wants the file named
       // ``details.md`` instead. Convention: use ``${actualPath}/details.md``.

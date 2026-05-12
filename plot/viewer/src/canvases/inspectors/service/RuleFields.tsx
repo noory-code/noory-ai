@@ -6,10 +6,11 @@
  * map (free-form; suggested vocabulary C / R / U / D).
  */
 import { useTranslation } from "react-i18next";
+import type { RuleJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 
 export interface RuleFieldsProps {
-  node: SketchNode;
+  node: RuleJson;
   availableActors: SketchNode[];
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }

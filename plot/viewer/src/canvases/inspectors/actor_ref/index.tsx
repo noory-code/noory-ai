@@ -7,19 +7,22 @@
  * v0.15 Phase 2.7.
  */
 import { useTranslation } from "react-i18next";
+import type { ActorRefJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import type { KindInspectorProps } from "../types";
 
 export function ActorRefInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "actor_ref") return null;
+  const node = props.node;
   const refTarget =
-    props.node.ref_actor_id && props.availableActors
-      ? props.availableActors.find((n) => n.id === props.node.ref_actor_id) ?? null
+    node.ref_actor_id && props.availableActors
+      ? props.availableActors.find((n) => n.id === node.ref_actor_id) ?? null
       : null;
-  const isOrphan = !props.node.ref_actor_id || refTarget === null;
+  const isOrphan = !node.ref_actor_id || refTarget === null;
   return (
     <BaseInspector {...props}>
-      <ActorRefFields node={props.node} onPatchNode={props.onPatchNode} />
+      <ActorRefFields node={node} onPatchNode={props.onPatchNode} />
       {!isOrphan && refTarget && (
         <div className="mb-4 rounded border border-pink-200 bg-pink-50/40 p-2 text-[11px]">
           <div className="mb-1 font-semibold uppercase tracking-wide text-pink-700">References</div>
@@ -27,9 +30,7 @@ export function ActorRefInspector(props: KindInspectorProps) {
             <span className="text-slate-500">Actor:</span>{" "}
             <span className="font-medium">{refTarget.label || refTarget.id}</span>
           </div>
-          <div className="mt-0.5 font-mono text-[10px] text-slate-400">
-            {props.node.ref_actor_id}
-          </div>
+          <div className="mt-0.5 font-mono text-[10px] text-slate-400">{node.ref_actor_id}</div>
         </div>
       )}
       {isOrphan && (
@@ -38,13 +39,13 @@ export function ActorRefInspector(props: KindInspectorProps) {
             ⚠ Orphan — actor not found
           </div>
           <div className="mb-2 font-mono text-[10px] text-slate-500">
-            ref_actor_id: {props.node.ref_actor_id ?? "—"}
+            ref_actor_id: {node.ref_actor_id ?? "—"}
           </div>
           <div className="flex gap-2">
             {props.onRepickActorRef && (
               <button
                 type="button"
-                onClick={() => props.onRepickActorRef?.(props.node.id)}
+                onClick={() => props.onRepickActorRef?.(node.id)}
                 className="rounded border border-red-300 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-100"
               >
                 Re-pick…
@@ -52,7 +53,7 @@ export function ActorRefInspector(props: KindInspectorProps) {
             )}
             <button
               type="button"
-              onClick={() => props.onDeleteNode(props.node.id)}
+              onClick={() => props.onDeleteNode(node.id)}
               className="rounded px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100"
             >
               Delete
@@ -65,7 +66,7 @@ export function ActorRefInspector(props: KindInspectorProps) {
 }
 
 interface ActorRefFieldsProps {
-  node: SketchNode;
+  node: ActorRefJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }
 

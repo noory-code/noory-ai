@@ -8,10 +8,12 @@ import { FoundationRefBlock } from "../shared/FoundationRefBlock";
 import type { KindInspectorProps } from "../types";
 
 export function MissionRefInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "mission_ref") return null;
+  const node = props.node;
   return (
     <BaseInspector {...props}>
       <FoundationRefBlock
-        node={props.node}
+        node={node}
         availableMissions={props.availableMissions ?? []}
         availableValues={props.availableValues ?? []}
         availableIdentities={props.availableIdentities ?? []}

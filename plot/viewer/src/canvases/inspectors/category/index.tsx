@@ -6,27 +6,26 @@
  * v0.15 Phase 2.6.
  */
 import { useTranslation } from "react-i18next";
+import type { CategoryJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import type { KindInspectorProps } from "../types";
 
 export function CategoryInspector(props: KindInspectorProps) {
+  if (props.node.kind !== "category") return null;
+  const node = props.node;
   const childCount = props.allNodes.filter(
-    (n) => n.parent_id === props.node.id && n.kind === "service",
+    (n) => n.parent_id === node.id && n.kind === "service",
   ).length;
   return (
     <BaseInspector {...props}>
-      <CategoryFields
-        node={props.node}
-        childCount={childCount}
-        onPatchNode={props.onPatchNode}
-      />
+      <CategoryFields node={node} childCount={childCount} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
 }
 
 interface CategoryFieldsProps {
-  node: SketchNode;
+  node: CategoryJson;
   childCount: number;
   onPatchNode: (patch: Partial<SketchNode>) => void;
 }

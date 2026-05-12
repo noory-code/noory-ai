@@ -12,8 +12,8 @@ import { registerKindParser } from "./parseEntity";
 
 export interface StepJson extends BaseFieldsJson {
   kind: "step";
-  order?: number | null;
-  outcome?: string;
+  order: number | null;
+  outcome: string;
 }
 
 export class Step implements BaseFields {

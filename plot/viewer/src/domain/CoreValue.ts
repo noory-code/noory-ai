@@ -11,9 +11,9 @@ import { registerKindParser } from "./parseEntity";
 
 export interface CoreValueJson extends BaseFieldsJson {
   kind: "core_value";
-  definition?: string;
-  do?: string;
-  dont?: string;
+  definition: string;
+  do: string;
+  dont: string;
 }
 
 export class CoreValue implements BaseFields {

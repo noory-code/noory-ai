@@ -9,7 +9,7 @@ import { registerKindParser } from "./parseEntity";
 
 export interface ValueRefJson extends BaseFieldsJson {
   kind: "value_ref";
-  ref_value_id?: string | null;
+  ref_value_id: string | null;
 }
 
 export class ValueRef implements BaseFields {

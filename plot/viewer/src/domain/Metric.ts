@@ -17,8 +17,8 @@ import { registerKindParser } from "./parseEntity";
 
 export interface MetricJson extends BaseFieldsJson {
   kind: "metric";
-  target?: string;
-  measurement?: string;
+  target: string;
+  measurement: string;
 }
 
 export class Metric implements BaseFields {
