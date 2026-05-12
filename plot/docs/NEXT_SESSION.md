@@ -15,15 +15,22 @@
 > **"RF 기본 동작"** or **"canvas interaction"** or
 > **"엉망 깊게 파자"** as the first / near-first message.
 >
-> **Filed:** 2026-05-12 end-of-session. User reports canvas
-> interaction *움직임* feels off ("엉망", "어색") after hands-on
-> review of v0.16.x. The v0.16.20-23 rollback batch removed the
-> synthetic anchor + radial layout + self-loop visual — user
-> clarified this was *over-reach* on my part. The actual user
-> intent was "anchor 유지 + interaction 이 RF stock 처럼", not
-> "anchor 제거".
+> **Filed:** 2026-05-12 end-of-session. **Updated 2026-05-13:**
+> v0.16.24 restored the anchor + radial + self-loop visual layer
+> (D-2026-05-13-A) after user clarified the v0.16.20-23 batch was
+> over-reach. Interaction "엉망" is now isolated as a **separate**
+> concern from the anchor visual layer — restoring the anchor did
+> **not** fix the interaction complaint (the complaint pre-existed
+> in v0.16.19 with the anchor present).
 >
-> The remaining suspects (kept across v0.16.20-23):
+> **Current baseline for diagnosis:** v0.16.29 — anchor + radial +
+> self-loop visible; all 5 D-2026-05-12-B catch-up artefacts shipped
+> (plot-entity-template skill, plot-domain-design skill,
+> no-god-import guard, entity-roundtrip guard, CLAUDE.md anti-pattern
+> row). viewer tests: 461 / 461 green.
+>
+> **Suspects (post-restoration, layers that *survived* the rollback
+> and might still cause "엉망"):**
 > - **v0.16.16 useStableHandlers** — callback identity stabilisation
 > - **v0.16.17 Cmd+A controlled-contract sync**
 > - **v0.16.18 fitView gating** (onInit only, not RF prop default)
@@ -43,10 +50,8 @@
 > 2. Is the regression pre- or post- v0.15 reset? Bisect against
 >    a freshly-installed plain ``reactflow@11.11.4`` demo as the
 >    "RF baseline" reference.
-> 3. Should the *visual* features removed in v0.16.20-23
->    (anchor / radial / self-loop) be **restored** while keeping
->    interaction at RF stock? (User clarified anchor removal was
->    over-reach — restoration is most likely the right call.)
+> 3. (Closed 2026-05-13) Should anchor / radial / self-loop be
+>    restored? — **Yes**, done in v0.16.24 (D-2026-05-13-A).
 >
 > **Approach for the session:**
 > - Plan-mode entry **mandatory**. No code before plan approval.
@@ -54,22 +59,19 @@
 >   commit is called "done" — Playwright synthetic input cannot
 >   drive d3-zoom event paths (plot/CLAUDE.md Gate 3); the entire
 >   v0.16.15-19 batch failed because of this very gap.
-> - Reference: ``~/.claude/plans/dazzling-inventing-boole.md``
->   (the v0.16.20-23 rollback plan + 8-layer table that user
->   approved). The "Phase A default" toggles documented there
->   are the starting decision surface.
-> - DECISIONS entries to consult: D-2026-05-12-V/W/X/Y (the
->   reverts), D-2026-05-11-A (cursor SSOT), D-2026-05-04-B
->   (anchor handles), D-2026-05-10-C/F (cursor reset history).
+> - Reference plan: ``~/.claude/plans/sparkling-discovering-blanket.md``
+>   (the 2026-05-13 plan that landed v0.16.24-29; its Step 3 layer
+>   kill-switch bisect procedure is the entry point for this work).
+> - DECISIONS entries to consult: D-2026-05-13-A (restoration),
+>   D-2026-05-11-A (cursor SSOT), D-2026-05-04-B (anchor handles),
+>   D-2026-05-10-C/F (cursor reset history).
 >
-> **Reference commits (recovery if anchor visual gets restored):**
-> - aa385a0 — v0.16.15 anchor optimistic update
-> - 7edbbf8 — v0.16.21 anchor-radial revert
-> - 32f3dc5 — v0.16.22 anchor injection revert
+> **Reference commits (current state — anchor visual is live):**
+> - 7bc96f8 — v0.16.24 anchor visual restoration
+> - aa385a0 — v0.16.15 anchor optimistic update (live again post-v0.16.24)
 > - 0713343 — v0.16.18 fitView gating
 > - 06199cf — v0.16.16 stable handlers
 > - 014fa12 — v0.16.17 Cmd+A sync
-> - 75ee0b0 — v0.16.20 self-loop revert
 
 ---
 

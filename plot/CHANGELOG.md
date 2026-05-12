@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.30] — 2026-05-13
+
+Docs follow-up to v0.16.24-29 catch-up batch. Update
+``NEXT_SESSION.md`` "RF 움직임" trigger entry to reflect:
+- Anchor visual is now **restored** (v0.16.24, D-2026-05-13-A) —
+  Open Question 3 is closed.
+- Baseline for next-session diagnosis is **v0.16.29** with 461 / 461
+  viewer tests + all 5 D-2026-05-12-B catch-up artefacts shipped.
+- Reference plan switched from
+  ``~/.claude/plans/dazzling-inventing-boole.md`` (historical
+  rollback plan, now an over-reach reference) to
+  ``~/.claude/plans/sparkling-discovering-blanket.md`` (current
+  plan, Step 3 layer kill-switch bisect is the diagnosis entry).
+- Recovery-commit list trimmed to currently-live commits.
+
+### Changed
+
+- ``plot/docs/NEXT_SESSION.md`` — RF 움직임 entry refreshed for the
+  post-v0.16.24 baseline.
+
 ## [0.16.29] — 2026-05-13
 
 Fifth and final of 5 deferred D-2026-05-12-B catch-up artefacts. Add
