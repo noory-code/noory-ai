@@ -4,6 +4,66 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.8] — 2026-05-12
+
+New skill — ``plot-design-red-team`` runs 8 adversarial attacks
+against a Plot proposal BEFORE implementation. Sister skill to
+``plot-code-red-team`` (v0.16.7). Reads a SPEC change draft, a
+DECISIONS entry draft, a plan file, or a verbal proposal and
+attacks the *idea*, not the code. (D-2026-05-12-K)
+
+### Added — plot/skills/plot-design-red-team/SKILL.md
+
+The 8 attacks:
+1. VISION re-anchor (off-essence / phase-leakage).
+2. Unstated invariants (service / actor / anchor / edge
+   assumptions pinned by DECISIONS).
+3. Failure modes (worst-case input / timing / browser).
+4. Reversibility (one-way write / user-state contamination /
+   migration trap).
+5. VISION / PRODUCT_SPEC alignment (canvas inventory, kind
+   out-of-scope, global service).
+6. Over-fit / under-fit (YAGNI vs AHA tension).
+7. Hidden tradeoffs (every benefit must name what it makes harder).
+8. Scope drift (implicit "and also…" additions).
+
+Output verdict: ✅ READY TO IMPLEMENT / 🟡 REVISE FIRST /
+🔴 REDESIGN.
+
+### Why the two-skill split
+
+Code reviews catch bad code; they don't catch bad ideas. Plot's
+v0.13.2 auto-edges were good code that the user rolled back
+same-day — the idea was wrong. D-2026-05-10-E auto-layout shipped
+twice and was rejected twice. Catching these at the *proposal*
+stage is cheaper than catching them at the diff.
+
+The two skills together close the review loop end-to-end (proposal
+→ code). Together with the v0.16.0 reset's structural guards +
+v0.16.6 schema parity test, Plot now has:
+
+- **Structural** review (8 acceptance gates + kill-switch from
+  v0.16.0).
+- **Schema** review (parity test from v0.16.6).
+- **Code** red-team (v0.16.7).
+- **Design** red-team (this commit).
+
+### Evolution path (documented inside the skill)
+
+Per the user's 2026-05-12 direction
+(``memory/project_red_team_review_skill.md``):
+*"이런 것들이 만들어지면 차차 정형화된 워크플로우로
+진화되어야합니다."*
+
+Phase 1 (now): manual invocation via trigger phrases.
+Phase 2 (after several uses): hook on PR creation that nudges
+"should this have run on the underlying decision?"
+Phase 3 (mature): composed slash command ``/plot-propose <text>``.
+
+Phases 2-3 are explicitly *not* pre-built; let usage shape them.
+
+Plugin patch bump 0.16.7 → 0.16.8.
+
 ## [0.16.7] — 2026-05-12
 
 New skill — ``plot-code-red-team`` runs 9 adversarial attacks

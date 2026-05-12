@@ -1991,3 +1991,71 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.7 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.6 → 0.16.7.
+
+---
+
+### D-2026-05-12-K — plot-design-red-team skill (adversarial design review)
+
+- **What:** Add ``plot/skills/plot-design-red-team/SKILL.md`` — the
+  pre-implementation companion to ``plot-code-red-team`` (D-2026-05-12-J).
+  Reads a SPEC change draft, a DECISIONS entry draft, a plan file
+  (e.g. ``~/.claude/plans/*.md``), or a verbal proposal and runs 8
+  adversarial attacks on the *idea*, not the code.
+
+- **Why:** code reviews catch bad code; they don't catch bad
+  ideas. Plot's v0.13.2 auto-edges were good code that the user
+  rolled back same-day — the idea was wrong. D-2026-05-10-E
+  auto-layout shipped twice and was rejected twice. Catching
+  these at the proposal stage is cheaper than catching them at
+  the diff.
+
+- **The 8 attacks:**
+  1. **VISION re-anchor** — off-essence / phase-leakage findings.
+  2. **Unstated invariants** — assumptions about service / actor /
+     anchor / edge that the existing DECISIONS pin down.
+  3. **Failure modes** — worst-case input / timing / browser.
+  4. **Reversibility** — one-way write / user-state contamination /
+     migration-trap.
+  5. **VISION / PRODUCT_SPEC alignment** — product-framing
+     conflicts (canvas inventory, kind out-of-scope, global service).
+  6. **Over-fit / under-fit** (YAGNI vs AHA) — bespoke
+     ``if (kind === "X")`` smell vs premature abstraction.
+  7. **Hidden tradeoffs** — every benefit must name what it makes
+     harder; if no tradeoff can be named, the benefit is suspect.
+  8. **Scope drift** — implicit additions ("and also…") that
+     weren't in the one-line proposal.
+
+  Output verdict: ✅ READY TO IMPLEMENT / 🟡 REVISE FIRST /
+  🔴 REDESIGN.
+
+- **Evolution path documented in the skill:**
+  1. Phase 1 (now): manual invocation via trigger phrases.
+  2. Phase 2 (after several uses): hook on PR creation that nudges
+     "should this have run on the underlying decision?"
+  3. Phase 3 (mature): composed slash command
+     ``/plot-propose <text>`` running design red-team →
+     appending DECISIONS entry → gating implementation.
+  Phases 2-3 are explicitly *not* pre-built per the user's
+  *"차차 정형화된 워크플로우로 진화"* direction; let usage
+  shape them.
+
+- **Approval:** Pending — first iteration. Sister skill
+  ``plot-code-red-team`` shipped at v0.16.7 (D-2026-05-12-J).
+  Together the two skills close the review loop end-to-end
+  (proposal → code).
+
+- **Alternatives considered:**
+  - **Single ``plot-red-team`` skill that auto-detects whether the
+    target is code or design**: rejected — the failure modes
+    attacked at design time (unstated invariants, reversibility)
+    are categorically different from code time (god dispatch, LOC
+    creep). Separate skills keep each procedure tight.
+  - **Make the design review mandatory on every new SPEC line**:
+    rejected as YAGNI workflow-layer. The user explicitly said
+    *"차차 정형화"* — wait until usage justifies the gate.
+
+- **Files in this commit:**
+  - ``plot/skills/plot-design-red-team/SKILL.md`` — new, ~240 LOC.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.8 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.7 → 0.16.8.
