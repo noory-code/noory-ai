@@ -25,10 +25,21 @@ behaviour, not data model.)
 
 ---
 
-## Anchor (the centre node)
+## Anchor (centre node) — REMOVED in v0.16.22
 
-The yellow circle in the middle of the canvas, labelled with the
-project name (e.g. "Banas v0.13").
+The synthetic project anchor (yellow circle in the canvas centre,
+labelled with the project name) was removed in v0.16.22 per user
+"RF 기본 동작" rollback request (D-2026-05-12-X). Canvases now
+start empty until the user adds nodes. The server-side anchor
+data (``ProjectDoc.anchors``) and PATCH endpoint are retained for
+backward compatibility but no longer drive rendering.
+
+The canonical Plot spec mandate ("프로젝트 노드 가운데") is
+**deferred** — re-introducing the centre anchor requires fresh
+plan-mode + explicit user approval.
+
+The historical table below is kept for archival reference only;
+none of these properties are currently honoured.
 
 | Aspect | Behaviour |
 |---|---|

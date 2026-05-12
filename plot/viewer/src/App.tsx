@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { patchProjectAnchor, resolveProjectPath } from "./api";
-import { applyOptimisticAnchorPatch } from "./lib/anchorOptimistic";
+import { resolveProjectPath } from "./api";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
 import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
@@ -20,39 +19,14 @@ import { HelpCheatsheet } from "./shell/HelpCheatsheet";
 import { ServiceDetailModal } from "./shell/ServiceDetailModal";
 import { EmptyState, ErrorPanel, Loading } from "./shell/states";
 import type {
-  AnchorPlacement,
   CanvasKey,
   CanvasKind,
-  ProjectDoc,
 } from "./types";
 
 function tabToKind(tab: CanvasTab): CanvasKind {
   if (tab === "foundation") return "foundation";
   if (tab === "actors") return "actors";
   return "services";
-}
-
-/**
- * v0.13 Phase 0: pull the per-canvas project anchor placement out of a
- * ProjectDoc summary, falling back to defaults when the field is missing
- * (older v0.12 projects pre-eviction-migration). The synthetic anchor is
- * only injected on Foundation/Actors/Services tabs.
- */
-function resolveProjectAnchor(
-  proj: ProjectDoc | undefined,
-  tab: CanvasTab,
-): AnchorPlacement | null {
-  if (!proj) return null;
-  const fromDoc = proj.anchors?.[tab];
-  if (fromDoc) return fromDoc;
-  return {
-    x: -75,
-    y: -75,
-    width: 150,
-    height: 150,
-    color: "#fef3c7",
-    shape: "circle",
-  };
 }
 
 
@@ -109,28 +83,11 @@ export function App() {
   const { handleListStale, handleExternalCanvas, handleTagsRefresh, handleExternalChange } =
     useStableHandlers({ setCanvasCache, setTags, loadList, historyClear: history.clear });
 
-  // v0.16.19 (D-2026-05-12-U) — anchor change handler stable across
-  // non-state-changing renders so useNodesMemo's data.onResize for the
-  // synthetic anchor node keeps a stable ref.
-  const handleAnchorChange = useCallback(
-    (patch: Partial<AnchorPlacement>) => {
-      if (!projectPath || !activeId) return;
-      const previous = summaries.find((p) => p.id === activeId);
-      if (previous) {
-        project.replaceSummary(
-          applyOptimisticAnchorPatch(previous, activeTab, patch),
-        );
-      }
-      void patchProjectAnchor(projectPath, activeId, activeTab, patch).then(
-        (refreshed) => project.replaceSummary(refreshed),
-        (err) => {
-          if (previous) project.replaceSummary(previous);
-          setError(err instanceof Error ? err.message : String(err));
-        },
-      );
-    },
-    [projectPath, activeId, activeTab, summaries, project],
-  );
+  // v0.16.22 (D-2026-05-12-X) — anchor change handler removed.
+  // Synthetic anchor is no longer injected; canvases get no anchor
+  // props. Server-side ``PATCH /api/projects/:id/anchor`` endpoint
+  // retained for backward compat with older viewers that may still
+  // send anchor updates.
 
   // ------- persist + undo/redo (extracted to useCanvasPersist) -------
 
@@ -301,14 +258,6 @@ export function App() {
                 availableIdentities={availableIdentities}
                 selectNodeId={selectedNodeId}
                 onSelectionConsumed={consumeSelection}
-                projectAnchor={resolveProjectAnchor(
-                  summaries.find((p) => p.id === activeId),
-                  activeTab,
-                )}
-                projectName={
-                  summaries.find((p) => p.id === activeId)?.name ?? null
-                }
-                onAnchorChange={handleAnchorChange}
                 onNodeDrill={(id) => {
                   const n = activeCanvas.nodes.find((x) => x.id === id);
                   if (!n) return;

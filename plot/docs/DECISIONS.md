@@ -2840,3 +2840,70 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.21 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.20 → 0.16.21.
+
+---
+
+### D-2026-05-12-X — Revert synthetic anchor + PATCH path ("RF 기본 동작" rollback, 3/4)
+
+- **What:** Remove the synthetic project anchor injection from
+  ``useNodesMemo``. Drop the anchor split in ``handleNodesChange``.
+  Delete ``applyAnchorChange.ts`` + ``lib/anchorOptimistic.ts`` +
+  the anchor regression test. Remove anchor-related props
+  (``projectAnchor`` / ``projectName`` / ``onAnchorChange`` /
+  ``injectAnchor``) from ``SketchCanvas`` + all 4 wrappers. App.tsx
+  drops ``handleAnchorChange``, ``resolveProjectAnchor``, and the
+  ``patchProjectAnchor`` import. Server-side ``PATCH /api/projects/
+  :id/anchor`` endpoint retained (backward compat).
+
+- **Why:** User direct request continued. Synthetic anchor was the
+  largest custom layer on top of stock React Flow; removing it
+  brings every canvas to the empty-pane RF default state, which
+  matches the user's "RF 기본 동작" mental model.
+
+- **Supersedes:** D-2026-05-04-B (anchor handles), D-2026-05-04-C
+  (anchor visually distinct from Service circles), D-2026-05-12-Q
+  (anchor optimistic update), D-2026-05-12-U (handleAnchorChange
+  useCallback). The canonical Plot spec mandate ("프로젝트 노드
+  가운데") is **deferred**.
+
+- **What's NOT removed (server side, for back-compat):**
+  - ``ProjectDoc.anchors`` field in Pydantic model + JSON shape.
+  - ``PATCH /api/projects/:id/anchor`` endpoint.
+  - Older viewer versions calling this endpoint succeed silently;
+    new viewer ignores the result.
+
+- **Verification:**
+  - ``npx tsc --noEmit`` — clean.
+  - ``npx vitest run`` — 367 / 367 (377 prior − 10 anchor-related
+    tests removed/updated).
+  - ``uv run pytest`` — 274 / 274 (server-side unchanged).
+  - ``test_pre_commit_gate.py`` — 11 / 11. ``canvas_kind`` branching
+    invariant unchanged (synthetic anchor never branched on
+    canvas_kind directly anyway — was opt-in via wrapper prop).
+
+- **Files:**
+  - ``plot/viewer/src/canvases/sketch/applyAnchorChange.ts`` — DELETED.
+  - ``plot/viewer/src/lib/anchorOptimistic.ts`` — DELETED (dir emptied).
+  - ``plot/viewer/tests/anchor-drag-snap-back.test.tsx`` — DELETED.
+  - ``plot/viewer/src/canvases/sketch/useNodesMemo.ts`` — anchor
+    injection block + ``projectAnchor``/``projectName``/``onAnchorChange``/
+    ``injectAnchor`` props + ``PROJECT_ANCHOR_ID`` import removed.
+  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` — anchor props
+    removed from ``SketchCanvasProps``; ``handleNodesChange`` no
+    longer calls ``applyAnchorChange``; ``applyAnchorChange`` import
+    removed.
+  - ``plot/viewer/src/canvases/{Foundation,Actors,Services,
+    ServiceDetail}Canvas.tsx`` — ``injectAnchor={...}`` prop removed
+    from each wrapper's pass-through.
+  - ``plot/viewer/src/App.tsx`` — ``handleAnchorChange``,
+    ``resolveProjectAnchor``, ``patchProjectAnchor``,
+    ``applyOptimisticAnchorPatch``, ``AnchorPlacement``,
+    ``ProjectDoc`` (type only) imports + JSX anchor props removed.
+    LOC: 385 → 334.
+  - ``plot/viewer/tests/SketchCanvas.regression.test.tsx`` — anchor
+    pin tests updated: previously "anchor renders 4 handles" now
+    asserts "anchor element is absent (v0.16.22 revert)".
+  - ``plot/docs/SPEC.md §Anchor`` — REMOVED-marker added.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.22 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.21 → 0.16.22.

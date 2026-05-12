@@ -17,7 +17,6 @@ import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 import { SketchInspectorBindings } from "./sketch/SketchInspectorBindings";
 import { SketchModals } from "./sketch/SketchModals";
-import { applyAnchorChange } from "./sketch/applyAnchorChange";
 import {
   applyNodeChangesToDoc,
   collectNodeChanges,
@@ -83,18 +82,6 @@ export interface SketchCanvasProps {
    */
   selectNodeId?: string | null;
   onSelectionConsumed?: () => void;
-  /**
-   * v0.13 Phase 0: per-canvas project anchor. The anchor is rendered as a
-   * synthetic node injected by SketchCanvas (it does NOT live in
-   * ``doc.nodes``). Drag updates flow through ``onAnchorChange`` instead of
-   * the regular node update path; the canvas .json never carries a project
-   * node.
-   */
-  projectAnchor?: import("../types").AnchorPlacement | null;
-  /** v0.13 Phase 0: project name shown on the synthetic anchor's label. */
-  projectName?: string | null;
-  /** v0.13 Phase 0: callback when the user drags / resizes the anchor. */
-  onAnchorChange?: (patch: Partial<import("../types").AnchorPlacement>) => void;
   /** v0.15 Phase 3.4 — drop the canvas's root-service node from
    *  the rendered list (true on ServiceDetailCanvas where the
    *  modal header already names the service). Default false. */
@@ -106,9 +93,6 @@ export interface SketchCanvasProps {
   /** v0.15 Phase 3.4 — render the fold (▾/▸) button on container
    *  nodes. Default true; FoundationCanvas passes false. */
   showFoldButton?: boolean;
-  /** v0.15 Phase 3.4 — inject the synthetic project anchor at the top
-   *  of the node list. Default true; ServiceDetailCanvas passes false. */
-  injectAnchor?: boolean;
 }
 
 
@@ -136,13 +120,9 @@ function SketchCanvasInner({
   availableIdentities,
   selectNodeId,
   onSelectionConsumed,
-  projectAnchor,
-  projectName,
-  onAnchorChange,
   hideRootServiceNode,
   shouldDrill,
   showFoldButton,
-  injectAnchor,
 }: SketchCanvasProps) {
   const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
@@ -201,14 +181,10 @@ function SketchCanvasInner({
     availableValues,
     availableIdentities,
     onNodeDrill,
-    projectAnchor,
-    projectName,
-    onAnchorChange,
     setBodyModalNodeId,
     hideRootServiceNode: hideRootServiceNode ?? false,
     shouldDrill,
     showFoldButton: showFoldButton ?? true,
-    injectAnchor: injectAnchor ?? true,
   });
 
   const edges = useEdgesMemo({
@@ -219,19 +195,15 @@ function SketchCanvasInner({
   });
 
   // React Flow's onNodesChange must dispatch atomically per the
-  // coupling map — keep this handler in the shell, but the pure
-  // bits (collect + apply) live in sketch/nodeChanges.ts and the
-  // anchor branch in sketch/applyAnchorChange.ts.
+  // coupling map. v0.16.22 (D-2026-05-12-X): anchor split removed —
+  // anchor isn't injected any more, so no split needed.
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const { posById, dimById } = collectNodeChanges(changes);
       if (posById.size === 0 && dimById.size === 0) return;
-      const anchorPatch = applyAnchorChange(posById, dimById);
-      if (anchorPatch && onAnchorChange) onAnchorChange(anchorPatch);
-      if (posById.size === 0 && dimById.size === 0) return;
       onDocChange(applyNodeChangesToDoc(docRef.current, posById, dimById));
     },
-    [onDocChange, onAnchorChange],
+    [onDocChange],
   );
 
   const { addNodeAt, addNestedNodeAt, addCompositionChild } = useNodeCreation({

@@ -4,6 +4,63 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.22] — 2026-05-12
+
+Rollback — Synthetic project anchor + PATCH path reverted. Canvases
+no longer inject a synthetic yellow-circle anchor at centre; they
+start empty until the user adds nodes. The server-side
+``ProjectDoc.anchors`` field and ``PATCH /api/projects/:id/anchor``
+endpoint are retained (backward compat) but no longer drive
+viewer rendering. Third of 4-commit "RF 기본 동작" rollback. The
+canonical Plot spec mandate ("프로젝트 노드 가운데") is deferred.
+(D-2026-05-12-X)
+
+### Removed
+
+- ``viewer/src/canvases/sketch/applyAnchorChange.ts``.
+- ``viewer/src/lib/anchorOptimistic.ts`` + empty ``lib/`` dir.
+- ``viewer/tests/anchor-drag-snap-back.test.tsx``.
+- Synthetic anchor injection block (~20 LOC) from
+  ``useNodesMemo.ts``.
+- ``projectAnchor`` / ``projectName`` / ``onAnchorChange`` /
+  ``injectAnchor`` props from ``SketchCanvasProps``.
+- ``injectAnchor={...}`` prop from all 4 canvas wrappers.
+- ``handleAnchorChange`` useCallback + JSX usage from App.tsx.
+- ``resolveProjectAnchor`` helper + ``patchProjectAnchor`` import
+  + ``applyOptimisticAnchorPatch`` + ``AnchorPlacement`` /
+  ``ProjectDoc`` type imports from App.tsx.
+
+### Changed
+
+- ``useNodesMemo.ts`` returns only user-doc nodes; no synthetic
+  prepend.
+- ``handleNodesChange`` in SketchCanvas no longer splits anchor
+  position changes — the regular ``applyNodeChangesToDoc`` path
+  handles everything.
+- ``SketchCanvas.regression.test.tsx`` anchor pin test updated:
+  asserts ``__project_anchor__`` element is ABSENT (was: 4
+  handles present).
+- ``App.tsx`` LOC: 385 → 334.
+- ``docs/SPEC.md §Anchor`` — REMOVED marker added; historical
+  table archived in place.
+
+### Server side (unchanged for back-compat)
+
+- ``ProjectDoc.anchors: dict[CanvasKind, AnchorPlacement] | None``
+  remains in Pydantic.
+- ``PATCH /api/projects/:id/anchor`` endpoint remains operational.
+- Older viewer versions calling this endpoint succeed silently;
+  new viewer ignores the result.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 367 / 367 (377 prior − 10 anchor tests).
+- ``uv run pytest`` — 274 / 274.
+- ``test_pre_commit_gate.py`` reset_complete_check — 11 / 11.
+
+Plugin patch bump 0.16.21 → 0.16.22.
+
 ## [0.16.21] — 2026-05-12
 
 Rollback — Anchor-radial initial placement reverted. New Mission /

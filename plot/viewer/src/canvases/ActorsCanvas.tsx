@@ -10,7 +10,6 @@ export function ActorsCanvas(props: SketchCanvasProps) {
       hideRootServiceNode={false}
       shouldDrill={undefined}
       showFoldButton={true}
-      injectAnchor={true}
     />
   );
 }

@@ -19,12 +19,10 @@
 import { type Dispatch, type SetStateAction, useMemo } from "react";
 import { type Node } from "reactflow";
 import type {
-  AnchorPlacement,
   CanvasDoc,
   SketchNode as DocNode,
 } from "../../types";
 import type { BaseNodeData } from "../nodes/BaseNode";
-import { PROJECT_ANCHOR_ID } from "./constants";
 
 export interface UseNodesMemoArgs {
   doc: CanvasDoc;
@@ -39,11 +37,6 @@ export interface UseNodesMemoArgs {
   availableValues: DocNode[] | undefined;
   availableIdentities: DocNode[] | undefined;
   onNodeDrill: ((nodeId: string) => void) | undefined;
-  projectAnchor: AnchorPlacement | null | undefined;
-  projectName: string | null | undefined;
-  onAnchorChange:
-    | ((patch: Partial<AnchorPlacement>) => void)
-    | undefined;
   setBodyModalNodeId: Dispatch<SetStateAction<string | null>>;
   /** v0.15 Phase 3.4 — drop the canvas's root-service node from the
    *  rendered list (true on ServiceDetailCanvas where the modal
@@ -58,10 +51,6 @@ export interface UseNodesMemoArgs {
    *  nodes. Foundation lays pillars out as peers — fold has no
    *  meaning there. */
   showFoldButton: boolean;
-  /** v0.15 Phase 3.4 — inject the synthetic project anchor at the
-   *  top of the node list. False on ServiceDetailCanvas (the modal
-   *  has its own header). */
-  injectAnchor: boolean;
 }
 
 export function useNodesMemo({
@@ -77,14 +66,10 @@ export function useNodesMemo({
   availableValues,
   availableIdentities,
   onNodeDrill,
-  projectAnchor,
-  projectName,
-  onAnchorChange,
   setBodyModalNodeId,
   hideRootServiceNode,
   shouldDrill,
   showFoldButton,
-  injectAnchor,
 }: UseNodesMemoArgs): Node<BaseNodeData>[] {
   return useMemo<Node<BaseNodeData>[]>(() => {
     // SPEC §Rendering order: parents first, children after. React
@@ -179,31 +164,9 @@ export function useNodesMemo({
         },
       });
     }
-    // SPEC §Anchor — synthetic project anchor. v0.15 Phase 3.4: each
-    // wrapper opts in via ``injectAnchor`` (true on Foundation /
-    // Actors / Services; false on ServiceDetailCanvas). Mutation
-    // routes via onAnchorChange, NEVER via onDocChange.
-    if (projectAnchor && injectAnchor) {
-      out.unshift({
-        id: PROJECT_ANCHOR_ID,
-        // v0.15 Phase 3.5 — synthetic anchor uses the ProjectNode renderer.
-        type: "project",
-        position: { x: projectAnchor.x, y: projectAnchor.y },
-        style: { width: projectAnchor.width, height: projectAnchor.height },
-        data: {
-          label: projectName ?? "Project",
-          body: "",
-          color: projectAnchor.color,
-          width: projectAnchor.width,
-          height: projectAnchor.height,
-          shape: projectAnchor.shape,
-          icon: null,
-          kind: "project",
-          onResize: (w: number, h: number) => onAnchorChange?.({ width: w, height: h }),
-          showFold: false,
-        },
-      });
-    }
+    // v0.16.22 (D-2026-05-12-X) — synthetic project anchor injection
+    // reverted per user "RF 기본 동작" request. Anchor is no longer
+    // rendered on any canvas; nodes appear directly on an empty pane.
     return out;
   }, [
     doc.nodes,
@@ -219,13 +182,9 @@ export function useNodesMemo({
     availableValues,
     availableIdentities,
     onNodeDrill,
-    projectAnchor,
-    projectName,
-    onAnchorChange,
     setBodyModalNodeId,
     hideRootServiceNode,
     shouldDrill,
     showFoldButton,
-    injectAnchor,
   ]);
 }
