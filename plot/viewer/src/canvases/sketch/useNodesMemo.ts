@@ -23,7 +23,7 @@ import type {
   CanvasDoc,
   SketchNode as DocNode,
 } from "../../types";
-import { type SketchNodeData } from "../SketchNode";
+import type { BaseNodeData } from "../nodes/BaseNode";
 import { PROJECT_ANCHOR_ID } from "./constants";
 
 export interface UseNodesMemoArgs {
@@ -85,8 +85,8 @@ export function useNodesMemo({
   shouldDrill,
   showFoldButton,
   injectAnchor,
-}: UseNodesMemoArgs): Node<SketchNodeData>[] {
-  return useMemo<Node<SketchNodeData>[]>(() => {
+}: UseNodesMemoArgs): Node<BaseNodeData>[] {
+  return useMemo<Node<BaseNodeData>[]>(() => {
     // SPEC §Rendering order: parents first, children after. React
     // Flow uses array order to resolve parentNode references on the
     // first paint.
@@ -95,7 +95,7 @@ export function useNodesMemo({
       if (a.parent_id && !b.parent_id) return 1;
       return 0;
     });
-    const out: Node<SketchNodeData>[] = [];
+    const out: Node<BaseNodeData>[] = [];
     for (const n of ordered) {
       // Hide nodes whose ancestor chain contains a collapsed container.
       if (nearestCollapsedAncestor(n.id)) continue;
@@ -149,7 +149,10 @@ export function useNodesMemo({
       const onDrill = drillThisNode && onNodeDrill ? () => onNodeDrill(n.id) : undefined;
       out.push({
         id: n.id,
-        type: "sketch",
+        // v0.15 Phase 3.5 — node ``type`` is the kind discriminator.
+        // SketchCanvas's ``nodeTypes`` map (NODE_RENDERERS) dispatches
+        // to the per-kind renderer. Replaces the v0.14 "sketch" god type.
+        type: n.kind,
         position: { x: n.x, y: n.y },
         style: { width: n.width, height: n.height },
         data: {
@@ -183,7 +186,8 @@ export function useNodesMemo({
     if (projectAnchor && injectAnchor) {
       out.unshift({
         id: PROJECT_ANCHOR_ID,
-        type: "sketch",
+        // v0.15 Phase 3.5 — synthetic anchor uses the ProjectNode renderer.
+        type: "project",
         position: { x: projectAnchor.x, y: projectAnchor.y },
         style: { width: projectAnchor.width, height: projectAnchor.height },
         data: {

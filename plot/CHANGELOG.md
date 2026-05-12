@@ -4,6 +4,53 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.5] — 2026-05-12
+
+v0.15 structural reset Phase 3.5 — legacy ``SketchNode.tsx`` (245
+LOC) DELETED. ``NODE_RENDERERS`` is now wired into SketchCanvas's
+React Flow ``nodeTypes`` map; each node carries its kind as the
+React Flow ``type`` discriminator instead of the v0.14 ``"sketch"``
+god type. Phase 3 complete. (D-2026-05-12-B)
+
+### Removed (BREAKING within viewer/src/canvases/)
+
+- ``viewer/src/canvases/SketchNode.tsx`` — the 245-LOC god renderer
+  that branched on ``data.kind`` for every cosmetic choice. Now
+  zero LOC on disk.
+
+### Changed — SketchCanvas
+
+- ``NODE_TYPES = NODE_RENDERERS`` (was ``{ sketch: SketchNode }``).
+  React Flow now dispatches by kind; each per-kind component from
+  ``nodes/{kind}/`` handles its own node rendering.
+
+### Changed — useNodesMemo
+
+- Each rendered node's ``type`` field is now ``n.kind`` (was the
+  hardcoded ``"sketch"`` god type).
+- Synthetic project anchor's ``type`` is ``"project"``.
+- ``SketchNodeData`` import replaced by ``BaseNodeData`` from
+  ``../nodes/BaseNode`` (the per-kind data shape).
+
+### Verification
+
+- ``find viewer/src -name "SketchNode.tsx"`` — absent.
+- ``grep '"sketch"' viewer/src/canvases/sketch/`` — only inside
+  a comment, no live code reference.
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 106 / 106 passed.
+
+### Phase 3 complete
+
+15 per-kind React Flow node renderers + 4 canvas wrappers
+(Foundation / Actors / Services / ServiceDetail) + zero
+``canvas_kind`` switches in transforms + zero ``"sketch"`` god
+type. The viewer canvas layer now mirrors Phase 2's Inspector
+layer's per-kind discipline end-to-end.
+
+Plugin patch bump 0.15.4 → 0.15.5. Phase 4 (per-canvas cursor
+sweep) is the natural next ship.
+
 ## [0.15.4] — 2026-05-12
 
 v0.15 structural reset Phase 3.4 — canvas_kind switches stripped

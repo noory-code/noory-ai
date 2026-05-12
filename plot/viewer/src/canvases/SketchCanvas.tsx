@@ -12,7 +12,7 @@ import type {
   SketchNode as DocNode,
 } from "../types";
 import { SketchContextMenu } from "./SketchContextMenu";
-import { SketchNode } from "./SketchNode";
+import { NODE_RENDERERS } from "./nodes/registry";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
 import { SketchInspectorBindings } from "./sketch/SketchInspectorBindings";
@@ -34,7 +34,11 @@ import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
 import { useValueFlow } from "./sketch/useValueFlow";
 
-const NODE_TYPES = { sketch: SketchNode } as const;
+// v0.15 Phase 3.5 — per-kind React Flow node types come from the
+// 15-kind ``NODE_RENDERERS`` registry. Each node's ``type`` in the
+// React Flow node array is its kind discriminator (``"metric"`` /
+// ``"service"`` / …) instead of the v0.14 ``"sketch"`` god type.
+const NODE_TYPES = NODE_RENDERERS;
 
 
 // Note (2026-04-20): the earlier implementation snapped services to an
