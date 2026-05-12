@@ -9,9 +9,14 @@
 
 ## Active queue
 
-### `검증` — v0.15 reset Phases 4 + 5 (cursor sweep + verification gates)
+*(empty — `검증` completed 2026-05-12 over v0.15.7 → v0.16.0; see
+Completed section below.)*
 
-> **Trigger:** user says **"검증"** or **"verification"** or
+---
+
+## (archived) `검증` — v0.15 reset Phases 4 + 5
+
+> **Original trigger:** user said **"검증"** or **"verification"** or
 > **"phase 4"** or **"phase 5"** or **"커서 sweep"** as the first /
 > near-first message of a Plot session.
 >
@@ -22,7 +27,7 @@
 >
 > **Reference:** [D-2026-05-12-B](./DECISIONS.md), the full plan
 > in `~/.claude/plans/dazzling-greeting-diffie.md`, and the
-> per-phase changelog from v0.14.15 → v0.15.5.
+> per-phase changelog from v0.14.15 → v0.16.0.
 
 #### Phase 4 — Per-canvas cursor sweep
 
@@ -154,6 +159,42 @@ preserved in git history at v0.14.14 and in the plan file
 ---
 
 ## Completed
+
+### `검증` — v0.15 reset Phases 4 + 5 (cursor sweep + verification gates)
+
+> **Completed:** 2026-05-12 over v0.15.7 → v0.16.0 (5 commits).
+> **Outcome:** [D-2026-05-12-C](./DECISIONS.md),
+> [D-2026-05-12-D](./DECISIONS.md),
+> [D-2026-05-12-E](./DECISIONS.md),
+> [D-2026-05-12-F](./DECISIONS.md),
+> [D-2026-05-12-G](./DECISIONS.md).
+>
+> **What landed:**
+>
+> - **v0.15.7 (Phase 4.1)** — cursor uniformity audit + JSDOM
+>   ``cursor-sweep.test.tsx`` (8 tests). Replaced the planned
+>   Playwright sweep with a static + DOM equivalence proof; the
+>   audit table pins zero cursor declarations across all
+>   wrapper / node / inspector / hook files.
+> - **v0.15.8 (Phase 4.2)** — extended ``styles-cursor-baseline``
+>   guard from 1 test to 129 (covers wrappers + BaseNode + 15
+>   per-kind node renderers + BaseInspector + 15 per-kind
+>   inspectors + shared helpers + 17 sketch hooks).
+> - **v0.15.9 (Phase 5.1)** — exhaustive 15-kind smoke + round-trip
+>   sweeps across viewer (30 + 45 tests) and server (31 tests).
+> - **v0.15.10 (Phase 5.2)** — ``structural-guards.test.tsx`` (44
+>   tests): no-god-union-import + LOC budget + registry
+>   completeness. CLAUDE.md Gate 2 LOC table updated.
+> - **v0.16.0 (Phase 5.3)** — ``reset_complete_check`` kill-switch
+>   in ``hooks/pre_commit_gate.py`` + ARCHITECTURE.md Domain
+>   layer section + final DECISIONS pin.
+>
+> **Verification status at v0.16.0:**
+>
+> - viewer: 361 / 361 vitest + tsc clean.
+> - server: 256 / 256 pytest + mypy clean + ruff clean.
+> - structural reset complete = single boolean now reads true via
+>   ``reset_complete_check``.
 
 ### `다음` — Architectural review: cursor / auto-layout coupling
 

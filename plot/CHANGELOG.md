@@ -4,6 +4,87 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.0] — 2026-05-12
+
+**v0.15 structural reset COMPLETE.** Domain layer + per-kind
+inspectors + per-kind node renderers + 4 thin wrappers + 8 acceptance
+gates + 1 kill-switch land at v0.16.0. (D-2026-05-12-G)
+
+### Added — hooks/pre_commit_gate.py::reset_complete_check
+
+A single-boolean kill-switch that fires on every commit touching
+viewer or server code. Verifies four structural invariants the
+existing acceptance-gate suite cannot detect:
+
+1. ``plot_mcp/models.py`` exposes ``SketchNode`` as a 15-way
+   discriminated union (not a god class).
+2. ``viewer/src/canvases/SketchInspector.tsx`` stays absent from disk.
+3. ``viewer/src/canvases/SketchNode.tsx`` stays absent from disk.
+4. Zero ``canvas_kind`` branching in ``viewer/src/canvases/sketch/``
+   source files (comments-only references ignored).
+
+Docs-only / non-viewer / non-server commits skip the check entirely.
+
+### Added — tests/test_pre_commit_gate.py (11 tests)
+
+- Pass-case against the real repo (verifies the current tree
+  satisfies all four invariants).
+- Docs-only skip-case (3 parametrised non-viewer / non-server paths).
+- Each invariant has an isolated failure-mode test using a
+  ``tmp_path`` scaffold so the deny path is exercised without
+  mutating the real working tree.
+- Comment-stripping test (``canvas_kind`` inside ``//`` and ``/* */``
+  comments does NOT trip the gate).
+
+### Changed — docs/ARCHITECTURE.md
+
+- New "Post-v0.15 shape" section at the top documenting the
+  Domain → UI dependency direction, a contracts table linking
+  each invariant to its test + decision id, and a "how to add a
+  16th kind" recipe.
+- Legacy pre-reset section preserved below with a "historical only"
+  banner; LOC numbers in that section no longer reflect reality.
+
+### Changed — docs/NEXT_SESSION.md
+
+- ``검증`` queue item moved to Completed with a per-commit summary
+  (v0.15.7 → v0.16.0). Active queue now empty.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 361 / 361 passed.
+- ``uv run pytest`` — 256 / 256 passed (245 prior + 11 new from
+  ``test_pre_commit_gate.py``).
+- ``uv run mypy plot_mcp/`` — clean.
+- ``uv run ruff check plot_mcp/ tests/ hooks/pre_commit_gate.py`` —
+  clean.
+- ``reset_complete_check`` returns ``None`` (= reset COMPLETE)
+  against the current tree.
+
+### Reset scorecard (v0.14.15 → v0.16.0, 28 commits)
+
+| Phase | Commits | Versions | Outcome |
+|---|---:|---|---|
+| 0 — Pre-existing ruff/mypy debt | 1 | v0.14.15 | 17 → 0 |
+| 1 — Server SSOT (Pydantic 15-class union) | 3 | v0.14.16-18 | god ``SketchNode`` class → ``Annotated[Union[15]]`` |
+| 2 — Viewer entities + per-kind Inspector fan-out | 12 | v0.14.19-v0.15.0 | god ``SketchInspector.tsx`` (1491 LOC) deleted; ``SketchNode`` (TS) is now a 15-way union |
+| 3 — Canvas wrappers + per-kind node renderers | 5 | v0.15.1-5 | 4 thin wrappers + 15 per-kind nodes + god ``SketchNode.tsx`` (245 LOC) deleted |
+| 4 — Cursor uniformity sweep + extended guard | 2 | v0.15.7-8 | 8 + 128 new cursor tests; ``cursor_kind`` drift structurally impossible |
+| 5.1 — Exhaustive 15-kind sweeps | 1 | v0.15.9 | 75 viewer + 31 server tests, parametrised across all kinds |
+| 5.2 — Structural guards (god + LOC + registry) | 1 | v0.15.10 | 44 tests; CLAUDE.md Gate 2 LOC table updated |
+| 5.3 — Kill-switch + docs + complete pin | 1 | v0.16.0 | This commit. Reset DONE. |
+
+- viewer tests: 106 → 361.
+- server tests: 214 → 256.
+- god files removed: 2 (1491 + 245 = 1736 LOC).
+- god switches removed: 4 (3 in transforms + 1 in App.tsx tabToKind).
+- structural invariants pinned: 8 acceptance gates + 1 kill-switch.
+
+Plugin minor bump 0.15.10 → 0.16.0 — the only minor bump in the
+entire reset sequence. Subsequent work (App.tsx split, schema
+parity, Actors v0.15 migration, …) starts from this baseline.
+
 ## [0.15.10] — 2026-05-12
 
 v0.15 reset Phase 5.2 — three structural guards protect the post-reset

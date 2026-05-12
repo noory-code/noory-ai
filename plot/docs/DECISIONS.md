@@ -1685,3 +1685,101 @@ in the same browser-verification round:
   - ``plot/CHANGELOG.md`` — v0.15.10 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.15.9 →
     0.15.10.
+
+---
+
+### D-2026-05-12-G — Structural reset complete: reset_complete_check kill-switch (v0.16.0 / Phase 5.3)
+
+- **What:** Mark the v0.15 structural reset (D-2026-05-12-B)
+  COMPLETE at v0.16.0. Ship a single-boolean kill-switch
+  (``hooks/pre_commit_gate.py::reset_complete_check``) that fires
+  on every commit touching viewer or server code and verifies the
+  four structural invariants the reset was designed to enforce.
+  Update ``docs/ARCHITECTURE.md`` to document the post-reset
+  Domain layer + the runtime-enforced contracts. Move the
+  ``검증`` queue item to Completed.
+
+- **Why:** the reset deleted ``SketchInspector.tsx`` (Phase 2.10)
+  and ``SketchNode.tsx`` (Phase 3.5), promoted Pydantic
+  ``SketchNode`` to a 15-way discriminated union (Phase 1),
+  stripped every ``canvas_kind`` switch from the sketch transforms
+  (Phase 3.4), and shipped 5 acceptance gates (Phases 4-5). Each
+  was a deliberate, hard-to-reverse move. The kill-switch makes
+  the reset's done-state machine-checkable: any future commit that
+  re-introduces a god dispatch trips the gate with a pointer to
+  this decision.
+
+- **The single boolean (AND of four):**
+
+  1. ``plot_mcp/models.py`` exposes
+     ``SketchNode = Annotated[Union[...], Field(discriminator="kind")]``
+     (the 15-way discriminated union — both ``Union[...]`` and
+     ``X | Y | ...`` syntaxes accepted; the gate matches either).
+  2. ``viewer/src/canvases/SketchInspector.tsx`` absent from disk.
+  3. ``viewer/src/canvases/SketchNode.tsx`` absent from disk.
+  4. Zero ``canvas_kind`` branching (``===`` / ``!==`` / ``switch``
+     / ``case``) in ``viewer/src/canvases/sketch/`` source files
+     (comments-only references ignored).
+
+  The fifth criterion in the plan (*"5 acceptance gates green"*)
+  is enforced separately by the pre-commit gate's existing
+  ``npx vitest run`` + ``uv run pytest`` invocations: any
+  acceptance-gate failure already blocks the commit, so the
+  kill-switch focuses on the structural invariants the test
+  suite cannot detect (deleted file present, server union form).
+
+- **Lifecycle:** the plan suggested the kill-switch be removed
+  *after* v0.16.0. Kept in place as a permanent guard — the
+  structural invariants are non-negotiable per the user's
+  ``feedback_no_god_object.md`` memory ("kind 별 클래스 + Pydantic /
+  TS discriminated union 비협상"). Removing the gate after one
+  green commit would be premature; the test costs ~10 ms per
+  viewer-touching commit and detects regressions the rest of
+  the suite cannot.
+
+- **Tests:** ``plot/tests/test_pre_commit_gate.py`` — 11 tests
+  exercising the pass-case against the real repo, the docs-only
+  skip-case, each of the four invariants' failure modes in a
+  ``tmp_path`` scaffold, and the comment-stripping behaviour for
+  ``canvas_kind`` mentions that live inside comments.
+
+- **Docs:**
+  - ``docs/ARCHITECTURE.md`` — new "Post-v0.15 shape" section at the
+    top documenting the actual Domain → UI dependency direction,
+    a contracts table linking each invariant to its test +
+    decision id, and a "how to add a 16th kind" recipe. The legacy
+    pre-reset section is preserved below with a "historical only"
+    banner.
+  - ``docs/NEXT_SESSION.md`` — ``검증`` queue item moved to
+    Completed with a per-commit summary (v0.15.7 → v0.16.0).
+
+- **Alternatives considered:**
+  - **Skip ARCHITECTURE.md update; the test suite IS the docs:**
+    rejected. Tests describe what cannot happen; they don't
+    describe what the code IS. New contributors need a 5-paragraph
+    layer overview to read the test file as a contract, not a
+    riddle.
+  - **Remove the kill-switch after v0.16.0** (per the original plan
+    text): rejected — see Lifecycle above.
+  - **Bundle the App.tsx split into v0.16.0**: rejected. Phase
+    5.2's no-growth ceiling (830) protects against further bloat;
+    the split is a separate decision with its own verification
+    surface.
+
+- **Approval:** Pending — same direction as D-2026-05-12-C/D/E/F.
+
+- **Spec impact:** none — the reset is internal structure. SPEC.md
+  unchanged (per Gate 0: behaviour is the SPEC's domain, structure
+  is ARCHITECTURE's).
+
+- **Files in this commit:**
+  - ``plot/hooks/pre_commit_gate.py`` — new
+    ``reset_complete_check`` function wired into ``main()``.
+  - ``plot/tests/test_pre_commit_gate.py`` — new (11 tests).
+  - ``plot/docs/ARCHITECTURE.md`` — new "Post-v0.15 shape" section.
+  - ``plot/docs/NEXT_SESSION.md`` — ``검증`` moved to Completed.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.0 section.
+  - ``plot/.claude-plugin/plugin.json`` — **minor** bump 0.15.10 →
+    0.16.0 (structural reset complete; the only minor bump in the
+    entire reset sequence).

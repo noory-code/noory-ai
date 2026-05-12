@@ -26,7 +26,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 # Patterns that, if matched anywhere in the bash command, indicate a
 # write to the public history (commit / push) where we want to gate.
 GATING_COMMAND_RE = re.compile(
@@ -81,6 +80,116 @@ def viewer_changes_staged(staged: list[str], plot_root: Path) -> bool:
 def mcp_changes_staged(staged: list[str], plot_root: Path) -> bool:
     rel = plot_root.name + "/plot_mcp/"
     return any(p.startswith(rel) for p in staged)
+
+
+def reset_complete_check(
+    staged: list[str], plot_root: Path
+) -> str | None:
+    """Verify the v0.15 structural reset stays complete on every commit
+    that touches viewer or server code.
+
+    Returns a deny message when any of the four structural invariants
+    pinned by D-2026-05-12-B → -F is violated; returns None when OK.
+
+    The invariants (single boolean = AND of all four):
+
+      1. ``plot_mcp/models.py`` defines ``SketchNode`` as an
+         ``Annotated[Union[...], Field(discriminator="kind")]`` — i.e.
+         the 15-way discriminated union, not a god class.
+      2. ``viewer/src/canvases/SketchInspector.tsx`` absent from disk
+         (deleted in v0.15.0, Phase 2.10).
+      3. ``viewer/src/canvases/SketchNode.tsx`` absent from disk
+         (deleted in v0.15.5, Phase 3.5).
+      4. Zero ``canvas_kind ===`` / ``canvas_kind !==`` / ``switch
+         (canvas_kind`` branching in ``viewer/src/canvases/sketch/``
+         — wrappers supply canvas-specific behaviour via props, not
+         the transforms branching on canvas kind.
+
+    Docs-only and other non-viewer/non-server commits skip the check.
+    """
+    if not (viewer_changes_staged(staged, plot_root) or mcp_changes_staged(staged, plot_root)):
+        return None
+
+    failures: list[str] = []
+
+    # 1) Server: SketchNode is the 15-way discriminated union.
+    models_path = plot_root / "plot_mcp" / "models.py"
+    try:
+        models_src = models_path.read_text(encoding="utf-8")
+    except OSError as exc:  # pragma: no cover — repo guarantees presence
+        return f"reset_complete_check: cannot read {models_path}: {exc}"
+
+    # Match both forms the codebase + tests use:
+    #   SketchNode = Annotated[Union[...], Field(discriminator="kind")]
+    #   SketchNode = Annotated[X | Y | ..., Field(discriminator="kind")]
+    # ``re.DOTALL`` so the union body across lines is allowed.
+    union_re = re.compile(
+        r"SketchNode\s*=\s*Annotated\[.*?\bField\s*\(\s*discriminator\s*=\s*[\"']kind[\"']",
+        re.DOTALL,
+    )
+    if not union_re.search(models_src):
+        failures.append(
+            "1) ``plot_mcp/models.py`` no longer exposes ``SketchNode = "
+            "Annotated[Union[...]]`` (the 15-way discriminated union). "
+            "Reverting to a god ``SketchNode`` class violates "
+            "D-2026-05-12-B Phase 1."
+        )
+
+    # 2 & 3) Deleted god files must stay absent.
+    god_files = [
+        "viewer/src/canvases/SketchInspector.tsx",
+        "viewer/src/canvases/SketchNode.tsx",
+    ]
+    for rel in god_files:
+        full = plot_root / rel
+        if full.exists():
+            failures.append(
+                f"2/3) ``{rel}`` was re-created on disk. The v0.15 "
+                "reset deleted this god component (Phase 2.10 / 3.5); "
+                "per-kind responsibilities live in ``inspectors/{kind}/`` "
+                "and ``nodes/{kind}/``."
+            )
+
+    # 4) No canvas_kind branching in sketch hooks.
+    sketch_dir = plot_root / "viewer" / "src" / "canvases" / "sketch"
+    canvas_kind_re = re.compile(
+        r"canvas_kind\s*(===|!==|\)|case\s+['\"])",
+    )
+    if sketch_dir.is_dir():
+        for entry in sketch_dir.iterdir():
+            if not entry.is_file() or entry.suffix not in {".ts", ".tsx"}:
+                continue
+            try:
+                content = entry.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            # Strip /* ... */ block comments + // line comments.
+            stripped = re.sub(r"/\*[\s\S]*?\*/", "", content)
+            stripped = "\n".join(
+                re.sub(r"//.*$", "", line) for line in stripped.split("\n")
+            )
+            if canvas_kind_re.search(stripped):
+                failures.append(
+                    f"4) ``viewer/src/canvases/sketch/{entry.name}`` contains "
+                    "a ``canvas_kind`` branching pattern. Per Phase 3.4 the "
+                    "sketch transforms never branch on canvas kind; each "
+                    "wrapper supplies behaviour via 4 explicit props "
+                    "(``hideRootServiceNode`` / ``shouldDrill`` / "
+                    "``showFoldButton`` / ``injectAnchor``)."
+                )
+
+    if not failures:
+        return None
+
+    return (
+        "### v0.15 structural reset regression (D-2026-05-12-B → -F)\n\n"
+        + "\n".join(f"- {f}" for f in failures)
+        + "\n\nThis commit re-introduces a god dispatch the reset was "
+        "designed to eliminate. Either revert the offending change or, "
+        "if the violation is genuinely the right design call, open a "
+        "fresh ``D-YYYY-MM-DD-X`` entry in ``plot/docs/DECISIONS.md`` "
+        "explaining the reversal and update this gate accordingly."
+    )
 
 
 def cross_cutting_bundle_check(
@@ -194,6 +303,10 @@ def main() -> int:
     bundle_msg = cross_cutting_bundle_check(staged, plot_root)
     if bundle_msg:
         failures.append(bundle_msg)
+
+    reset_msg = reset_complete_check(staged, plot_root)
+    if reset_msg:
+        failures.append(reset_msg)
 
     if failures:
         message = (

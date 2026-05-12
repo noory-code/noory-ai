@@ -11,7 +11,137 @@
 
 ---
 
-## Current shape
+## Post-v0.15 shape (Domain layer + per-kind components)
+
+> **Status (v0.16.0 / 2026-05-12):** the v0.15 structural reset
+> (D-2026-05-12-B → -G) reshaped the viewer end-to-end. This section
+> documents what the code *actually looks like now*. The legacy
+> "Current shape" section below is preserved for historical context
+> (pre-reset) but its LOC numbers and split-candidate analysis no
+> longer reflect reality — read this section first.
+
+### Layers (dependency direction = outer ← inner)
+
+```
+viewer/src/
+  domain/                       — pure entity layer. No React, no UI.
+    BaseFields.ts                 - shared graph fields (id / label / x / y / …)
+    DomainParseError.ts           - Fail-Fast exception thrown by fromJson
+    {Mission,CoreValue,…,Project}.ts × 15
+                                  - per-kind entity class
+                                    • static fromJson(raw): Class
+                                    • toJson(): { …json shape }
+                                    • invariants inline in fromJson
+                                  - composition over inheritance: each class
+                                    uses parseBaseFields(raw) helper, not a
+                                    Base class. No methods beyond fromJson /
+                                    toJson — safe to spread.
+    SketchNode.ts                 - 15-way discriminated union
+                                    (export type SketchNode = Mission | … )
+    parseEntity.ts                - kind-discriminator dispatcher; throws
+                                    DomainParseError on unknown kind
+    createBlankNode.ts            - per-kind factory using the entity classes
+                                    (the only legitimate switch(kind) in the
+                                    viewer)
+    Canvas.ts                     - Canvas-level domain object
+
+  canvases/                     — UI layer.
+    nodes/
+      BaseNode.tsx                - chrome SSOT: NodeResizer + 4 Handles +
+                                    kind-tag + MD-warning badge + shape clip
+      {kind}/index.tsx × 15       - wraps BaseNode with per-kind chrome
+                                    flags + body override
+      registry.ts                 - NodeKind → component map (size 15,
+                                    runtime-asserted)
+
+    inspectors/
+      BaseInspector.tsx           - chrome SSOT: header + label + delete +
+                                    close + details-section slot
+      KindInspector.tsx           - resolver: looks up per-kind component
+                                    from registry, returns null if unknown
+      DetailsSection.tsx          - shared "Connect to folder" + MD edit
+                                    chrome
+      shared/                     - composition helpers used by 2+ per-kind
+                                    inspectors (FoundationRefBlock,
+                                    DoDontFields)
+      {kind}/index.tsx × 15       - per-kind typed-field body
+      registry.ts                 - NodeKind → component map (size 15)
+
+    {Foundation,Actors,Services,ServiceDetail}Canvas.tsx
+                                  - 16-23 LOC wrappers. Each supplies four
+                                    props to a shared SketchCanvas:
+                                    hideRootServiceNode, shouldDrill,
+                                    showFoldButton, injectAnchor.
+
+    SketchCanvas.tsx              - shared shell. Mounts React Flow with
+                                    NODE_RENDERERS = registry, wires the
+                                    sketch hooks.
+
+    sketch/                       - hooks (`use*.ts`) + pure transforms.
+                                    None branch on canvas_kind any more;
+                                    behaviour comes from the wrapper props.
+                                    Static guard: structural-guards.test.tsx
+                                    asserts zero `switch (kind)` here.
+```
+
+### Contracts (runtime-enforced)
+
+Each contract is a test file. A future commit that violates one
+fails the build with a pointer to the relevant `D-2026-05-12-X`
+entry.
+
+| Contract | Test | Decision |
+|---|---|---|
+| `styles.css` has zero cursor declarations | `styles-cursor-baseline.test.tsx` | [D-2026-05-11-C](./DECISIONS.md) |
+| Wrappers / nodes / inspectors / hooks have zero raw `cursor:` declarations and zero `style.cursor =` JS assignments | `styles-cursor-baseline.test.tsx` (extended) | [D-2026-05-12-D](./DECISIONS.md) |
+| 4 wrappers produce identical `react-flow__*` class skeletons + zero inline cursors when seeded with the same doc | `cursor-sweep.test.tsx` | [D-2026-05-12-C](./DECISIONS.md) |
+| Every kind has a per-kind inspector + node renderer + entry in `NODE_RENDERERS` | `structural-guards.test.tsx` + `nodes/registry.test.tsx` | [D-2026-05-12-F](./DECISIONS.md) |
+| No god dispatch (`switch (X.kind)`) in wrappers / SketchCanvas / BaseNode / BaseInspector / KindInspector / DetailsSection / App.tsx / sketch hooks | `structural-guards.test.tsx` | [D-2026-05-12-F](./DECISIONS.md) |
+| File LOC fits the ceiling table in `CLAUDE.md §Gate 2` | `structural-guards.test.tsx` | [D-2026-05-12-F](./DECISIONS.md) |
+| 15-kind exhaustive Inspector + entity round-trip | `inspectors.exhaustive.test.tsx` + `round-trip.exhaustive.test.ts` + `test_node_models.py` | [D-2026-05-12-E](./DECISIONS.md) |
+| Server `SketchNode` is the 15-way discriminated union; deleted god files stay absent; no `canvas_kind` branching in `canvases/sketch/` | `hooks/pre_commit_gate.py::reset_complete_check` | [D-2026-05-12-G](./DECISIONS.md) |
+
+### What's still pending
+
+- **App.tsx ≤ 400** — current 811 LOC. URL sync + filter callbacks
+  + handler glue should be extracted to hooks. No-growth ceiling
+  830 protects against further bloat in the meantime.
+  Filed as v0.16+ follow-up in [D-2026-05-12-F](./DECISIONS.md).
+- **Server schema export parity with viewer** — `schema_export.py`
+  exports all 15 kinds (v0.14.17). A test asserting field-name
+  parity between `Cls.model_fields.keys()` (Pydantic) and the TS
+  domain class shape would close the round-trip loop. Filed as
+  future work in [D-2026-05-12-B](./DECISIONS.md).
+
+### How to add a 16th kind (post-reset)
+
+1. **Server:** new `XNode(BaseNodeFields)` in
+   `plot_mcp/models.py`, add to `SketchNode = Annotated[Union[...]]`,
+   add to `_ALL_KIND_CLASSES` in `schema_export.py`.
+2. **Viewer domain:** new `domain/X.ts` (class + JSON type + fromJson
+   + toJson), add to `parseEntity.ts` dispatch, add to
+   `createBlankNode.ts` switch, add to `domain/index.ts` barrel.
+3. **Per-kind UI:** new `canvases/nodes/x/index.tsx`,
+   `canvases/inspectors/x/index.tsx`, both registered in their
+   respective `registry.ts`.
+4. **Tests:** add the kind name to `KIND_DIRS` in
+   `styles-cursor-baseline.test.tsx` + `structural-guards.test.tsx`
+   + the exhaustive smoke/round-trip files + the server-side sweep.
+
+The 5 static guards will scream until each step is done — that's
+the intentional friction. Don't bypass.
+
+---
+
+## Current shape (legacy — pre-v0.15 reset)
+
+> **Section below is historical.** LOC numbers and split-candidate
+> analyses describe the pre-reset state (SketchCanvas at 1476,
+> SketchInspector at 1422, etc.). The v0.15 reset (D-2026-05-12-B
+> shipped over v0.14.15 → v0.16.0) executed Candidate A + B
+> simultaneously: domain layer (B) + per-responsibility sketch
+> hooks (A). The legacy text is kept for context only; do not
+> reference it as a description of today's code.
 
 ### File sizes
 
