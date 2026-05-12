@@ -4,6 +4,34 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.2] — 2026-05-12
+
+v0.15 structural reset Phase 3.2 — FoundationCanvas + ActorsCanvas
+wrappers introduced as named pass-throughs; App.tsx routes by
+``activeTab``. (D-2026-05-12-B)
+
+### Added
+
+- ``viewer/src/canvases/FoundationCanvas.tsx`` — pure pass-through
+  to ``SketchCanvas``. Phase 3.4 absorbs canvas-kind-specific
+  behaviour; Phase 3.5 wires ``NODE_RENDERERS`` so this wrapper
+  supplies a Foundation-only ``nodeTypes`` map.
+- ``viewer/src/canvases/ActorsCanvas.tsx`` — same pattern.
+
+### Changed
+
+- ``viewer/src/App.tsx`` — the main canvas mount now picks
+  ``FoundationCanvas`` / ``ActorsCanvas`` / (legacy)
+  ``SketchCanvas`` based on ``activeTab``. The component identity
+  is now named per tab; behaviour unchanged.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 106 / 106 passed.
+
+Plugin patch bump 0.15.1 → 0.15.2.
+
 ## [0.15.1] — 2026-05-12
 
 v0.15 structural reset Phase 3.1 — BaseNode shell + 15-kind React
