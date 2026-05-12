@@ -4,6 +4,38 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.18] — 2026-05-12
+
+Bug fix — fitView gating. ReactFlow's ``fitView`` prop re-fits
+whenever the ``nodes`` reference changes; Plot's ``useNodesMemo``
+returns a fresh array every render, so the user's manual zoom/pan
+was reset mid-session by every unrelated state update. Fix: drop
+the prop, call ``inst.fitView({ padding: 0.2 })`` once inside
+``onInit``. Canvas tab switches still re-fit because the wrapper
+has ``key={activeCanvasKey}`` → remount → onInit fires.
+(D-2026-05-12-T)
+
+### Changed — viewer/src/canvases/SketchCanvas.tsx
+
+- Remove ``fitView`` + ``fitViewOptions`` props from
+  ``<ReactFlow>``.
+- ``onInit`` now invokes ``inst.fitView({ padding: 0.2 })`` once.
+
+### Added — viewer/tests/viewport-stability.test.tsx
+
+2 static-grep guards:
+- No top-level ``fitView`` prop on ``<ReactFlow ...>``.
+- ``onInit`` JSX form present and contains an
+  ``inst.fitView(...)`` call.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 399 / 399 passed (397 prior + 2 new).
+- ``uv run pytest`` — 274 / 274.
+
+Plugin patch bump 0.16.17 → 0.16.18.
+
 ## [0.16.17] — 2026-05-12
 
 Bug fix — Cmd+A respects controlled-component contract. Previously

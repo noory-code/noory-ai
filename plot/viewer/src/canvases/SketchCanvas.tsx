@@ -342,9 +342,17 @@ function SketchCanvasInner({
         onPaneContextMenu={openPaneMenu}
         onInit={(inst) => {
           flowRef.current = inst;
+          // v0.16.18 (D-2026-05-12-T) — fitView only on mount, NOT
+          // on every render. The ``fitView`` prop on ReactFlow used
+          // to fire whenever the ``nodes`` array reference changed
+          // (every render in our setup — useNodesMemo always returns
+          // a fresh array because of synthetic-anchor injection),
+          // which reset the user's manual zoom/pan mid-session.
+          // Each canvas wrapper has ``key={activeCanvasKey}`` in App.tsx
+          // so tab changes naturally remount and re-fit; viewport
+          // stays stable across non-mount renders.
+          inst.fitView({ padding: 0.2 });
         }}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <Controls />

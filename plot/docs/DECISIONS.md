@@ -2634,3 +2634,58 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.17 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.16 → 0.16.17.
+
+---
+
+### D-2026-05-12-T — fitView gating: onInit only, not as ReactFlow prop
+
+- **What:** Remove the ``fitView`` (+ ``fitViewOptions``) prop from
+  the ``<ReactFlow>`` element in ``SketchCanvas``. Call
+  ``inst.fitView({ padding: 0.2 })`` once inside the ``onInit``
+  callback. Tab changes still re-fit because the wrapper has
+  ``key={activeCanvasKey}`` (App.tsx) which forces remount → new
+  ``onInit`` fires.
+
+- **Why:** Plot's ``useNodesMemo`` returns a fresh ``nodes`` array
+  on every render (synthetic anchor is re-injected from the prop).
+  RF v11's ``fitView`` prop re-fits whenever the ``nodes`` reference
+  changes, so the user's manual zoom / pan was reset mid-session
+  by every unrelated state update (Inspector form input, history
+  push, etc.). Visible bug: cannot zoom-into a region — the view
+  springs back to "fit all" on next render.
+
+- **Approval:** Accepted by static guard. The
+  ``viewport-stability.test.tsx`` regex catches reintroduction of
+  the ``fitView`` prop.
+
+- **Tests:** ``plot/viewer/tests/viewport-stability.test.tsx``
+  — 2 static-grep tests:
+  - No top-level ``fitView`` prop on ``<ReactFlow ...>``.
+  - ``onInit`` JSX form present and contains an ``inst.fitView(...)``
+    call.
+
+- **Alternatives considered:**
+  - **Memoize ``nodes`` array reference** to make the prop stable
+    across non-content-changing renders: would need deep equality
+    on ``useNodesMemo`` output, which is non-trivial and bypasses
+    React's normal reference-equality contract.
+  - **Use ``useNodesInitialized`` + a once-only effect**: more
+    code; the simpler ``onInit`` callback covers initial mount and
+    tab-switch remount equally well.
+  - **Set ``fitView={false}`` explicitly**: same effect as removing
+    the prop (default is undefined-falsy), but slightly clearer
+    intent. Either is fine; we go with removal.
+
+- **Spec impact:** ``docs/SPEC.md §Viewport`` already says
+  "Fit view fires once on mount + once per canvas switch." This
+  fix makes the code match.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` — remove
+    ``fitView`` + ``fitViewOptions`` props from ``<ReactFlow>``;
+    add ``inst.fitView({ padding: 0.2 })`` to ``onInit``.
+  - ``plot/viewer/tests/viewport-stability.test.tsx`` — new
+    (2 static-grep tests).
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.18 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.17 → 0.16.18.
