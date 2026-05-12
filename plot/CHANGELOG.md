@@ -4,6 +4,40 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.33] — 2026-05-13
+
+Vision pin for PRODUCT_SPEC §15 #2 Phase 2 (D-2026-05-12-A
+deferral) reopening. User pinned a 4-point design vision during
+Foundation hands-on testing:
+
+1. JSON = SSOT (co-equal storage abolished).
+2. JSON value = MD-formatted string (typed-text fields inside
+   JSON, viewer edits via MD editor).
+3. MD extraction = explicit button (no auto-sync).
+4. Extraction unit = canvas (per-node MD files abolished, single
+   MD file per canvas).
+
+User direction 2026-05-13: *"이건 내일 논의해봅시다"* — today
+ships vision pin only (docs); detail discussion (editor UX /
+line-break handling / per-canvas layout / migration path / button
+placement / idempotence / regression guard) and implementation
+deferred to next session under the ``JSON SSOT 논의`` trigger.
+(D-2026-05-13-J)
+
+### Changed
+
+- ``plot/docs/PRODUCT_SPEC.md`` §15 #2 — 4-point vision inlined;
+  status transitioned from "deferred" to "in-discussion 2026-05-13".
+- ``plot/docs/DECISIONS.md`` — D-2026-05-13-J entry (Pending —
+  vision locked, detail decisions deferred to next session).
+- ``plot/docs/NEXT_SESSION.md`` — new ``JSON SSOT 논의`` Active
+  queue entry at the top, with the 7 open detail questions.
+
+### Out of scope
+
+- No code changes (no folder_io / models / api_endpoints / viewer
+  edits). Phase 2 implementation deferred to next session.
+
 ## [0.16.32] — 2026-05-13
 
 End-of-session bookkeeping. Pin user hands-on confirmation of

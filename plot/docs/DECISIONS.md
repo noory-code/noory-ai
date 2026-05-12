@@ -3276,3 +3276,97 @@ in the same browser-verification round:
 
 - **Files in this commit:** same as D-2026-05-13-H plus the
   NEXT_SESSION entry pair.
+
+---
+
+### D-2026-05-13-J — JSON SSOT design vision (Phase 2 reopening — Pending detail)
+
+- **What:** User pinned a 4-point design vision for Phase 2 of
+  the deferred *"MD as derived export"* discussion
+  (D-2026-05-12-A §15 #2, originally deferred 2026-05-12
+  *"이 부분은 나중에 다시 다듬어 봅시다"*). User reopened the
+  discussion on 2026-05-13 after Foundation hands-on testing,
+  with the following verbatim statement:
+
+  > *"json 이 원본이어야한다. 그래서 json 에 들어가는
+  > 밸류값들은 md 포멧을 들어가야하고 그렇게 편집될 수 있어야한다.
+  > 그리고 특정 버튼을 누르면 json 에서 md 로 추출할 수 있어야한다.
+  > 근데 그걸 개별 노드로 하면 안되고 캔버스 마다 그렇게 해야한다."*
+
+  4-point pin:
+
+  1. **JSON = SSOT.** Current v0.13 co-equal storage model (MD
+     also SoT) is abolished.
+  2. **JSON value = MD-formatted string.** Typed-text fields
+     (`mission.what_we_do` / `why` / `direction`, equivalents
+     for `core_value` / `identity`) are stored as MD-formatted
+     strings *inside* JSON. Viewer edits via an MD editor.
+  3. **MD extraction = explicit button.** No automatic sync.
+     User triggers JSON → MD conversion only when pressing an
+     Export button.
+  4. **Extraction unit = canvas.** Current v0.13 per-node MD
+     files (`foundation/{kind}-{slug}.md`) are abolished. A
+     single MD file per canvas (`foundation.md` or equivalent).
+
+- **Current (v0.13 Phase 3+6) vs Vision (Phase 2) — factual diff:**
+
+  | Aspect | Current (Phase 1) | Vision (Phase 2) |
+  |---|---|---|
+  | Storage | JSON + per-node MD co-equal | JSON SSOT |
+  | Typed-text location | JSON (stripped on write) + MD (canonical) | Inside JSON as MD-formatted string |
+  | Read merge | server-side `_merge_md_typed_text_into_nodes` | merge unnecessary (JSON read only) |
+  | Write split | server-side `_split_foundation_typed_text_to_md` | MD not written (JSON written directly) |
+  | MD file form | per-node (~N files per canvas) | per-canvas (1 file per canvas) |
+  | MD update timing | every viewer save | user export-button press only |
+  | MD purpose | co-source-of-truth | derived export (no read-back) |
+
+- **Why now:** User hands-on testing of v0.16.32 Foundation
+  canvas surfaced *"뭐지"* (=something is off) intuition.
+  Investigating with the user revealed the root concern is the
+  *JSON/MD relationship itself*, not any specific bug. The
+  D-2026-05-12-A deferral is no longer the right state — user
+  has a clear design vision and wants the discussion reopened.
+
+- **Why pin now (today, docs-only) rather than wait for detail
+  consensus:** Without a pin, the 4-point vision exists only in
+  conversation history. The next session would re-elicit the
+  same statement from the user. Pinning today preserves the
+  user's exact words as the locked starting point; detail
+  discussion next session works *from* this pin, not toward it.
+
+- **Approval status:** **Pending — detail discussion deferred to
+  next session per user direction 2026-05-13 *"이건 내일
+  논의해봅시다"*.** The 4-point vision itself is locked (user
+  explicit statement). Approval transitions to Accepted once
+  detail open-questions (editor UX, line-break handling,
+  per-canvas layout, migration path, button placement,
+  idempotence, regression guard) are resolved next session.
+
+- **Spec impact:**
+  - `plot/docs/PRODUCT_SPEC.md` §15 #2 — updated 2026-05-13 with
+    the 4-point vision and "in-discussion" status (replaces
+    "deferred").
+  - `plot/docs/SPEC.md` — **no change yet**; Phase 2 implementation
+    will rewrite Foundation §Storage / §Typed-text sections.
+    Today's ship is vision-pin only.
+  - `plot/docs/CONCEPTS.md` — no change yet.
+
+- **Out of scope (today):** Phase 2 implementation code
+  (folder_io / models / api_endpoints / viewer editor — none
+  touched). All detail decisions (open-questions list above)
+  deferred to next session.
+
+- **NEXT_SESSION trigger:** ``JSON SSOT 논의`` / ``json 원본`` /
+  ``MD 추출`` / ``export 버튼`` / ``phase 2`` / ``내일 논의``.
+
+- **Files in this commit:**
+  - `plot/docs/DECISIONS.md` — this entry.
+  - `plot/docs/PRODUCT_SPEC.md` — §15 #2 update.
+  - `plot/docs/NEXT_SESSION.md` — `JSON SSOT 논의` queue entry.
+  - `plot/CHANGELOG.md` — v0.16.33 section.
+  - `plot/.claude-plugin/plugin.json` — patch bump 0.16.32 → 0.16.33.
+
+- **Reference:** plan file
+  `~/.claude/plans/sparkling-discovering-blanket.md` (user-approved
+  this session) contains the 7 open detail questions for
+  next-session reference.

@@ -9,6 +9,54 @@
 
 ## Active queue
 
+### `JSON SSOT 논의` — Phase 2 (MD as derived export) detail discussion
+
+> **Trigger:** user says **"JSON SSOT"** or **"json 원본"** or
+> **"MD 추출"** or **"export 버튼"** or **"phase 2"** or
+> **"내일 논의"** as the first / near-first message.
+>
+> **Filed:** 2026-05-13 end-of-session. User pinned the 4-point
+> design vision (D-2026-05-13-J) and asked to resume detail
+> discussion next session. Today's ship was docs-only — no code
+> changes; this entry is the next-session entry point.
+>
+> **The 4-point vision (locked, do not re-litigate):**
+>
+> 1. **JSON = SSOT.** Co-equal storage abolished.
+> 2. **JSON value = MD-formatted string.** Typed-text fields
+>    stored as MD-formatted strings inside JSON; viewer edits via
+>    MD editor.
+> 3. **MD export = explicit button.** No auto-sync.
+> 4. **Export unit = canvas.** Per-node MD files abolished;
+>    single MD file per canvas.
+>
+> **Open detail questions for the session (from plan file
+> `~/.claude/plans/sparkling-discovering-blanket.md`):**
+>
+> 1. MD editor form (textarea / preview split / WYSIWYG /
+>    external trigger)?
+> 2. JSON typed-text string line-break handling (`\n` literal /
+>    raw newlines / both)?
+> 3. Per-canvas MD layout (per-node section + heading / single
+>    narrative / other)?
+> 4. Migration path (current N per-node MD files → 1
+>    per-canvas MD; user data preservation)?
+> 5. Export-button placement (canvas toolbar / top-right menu /
+>    sidebar)?
+> 6. Export idempotence (same JSON → same MD every time)?
+> 7. Phase 2 regression guard (vitest / pytest invariant beyond
+>    existing schema-parity / no-god-import / entity-roundtrip)?
+>
+> **Approach:**
+> - Plan-mode entry mandatory. No code before detail consensus
+>   and plan approval.
+> - Vision 4-point is locked — discussion is detail-only.
+> - Cross-references: D-2026-05-13-J (vision pin),
+>   D-2026-05-12-A §15 #2 (original deferred entry),
+>   `plot/docs/PRODUCT_SPEC.md` §15 #2 (updated 2026-05-13).
+
+---
+
 ### `잔여 silent state` — 422 PATCH + None→None orphan edge (lower priority)
 
 > **Trigger:** user says **"422"** or **"None edge"** or

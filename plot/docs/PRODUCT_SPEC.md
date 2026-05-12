@@ -277,12 +277,27 @@ implementation clarity. Logged here so they don't get lost.
    long-term direction is MD generated *from* JSON. Migration
    path:
    - Phase 1 (today): JSON graph + per-node MD template (co-equal).
-   - Phase 2 (queued): JSON only as SoT; MD is regenerated from
-     JSON on demand. External-editor edits of MD become read-only
-     or push through a reverse-parser. Major SPEC + CONCEPTS
-     rewrite.
-   - Decision deferred per user direction 2026-05-12 *"이 부분은
-     나중에 다시 다듬어 봅시다."*
+   - Phase 2 (in-discussion 2026-05-13): JSON only as SoT.
+     User vision pinned 2026-05-13 (D-2026-05-13-J):
+     1. **JSON = SSOT.** Co-equal storage abolished.
+     2. **JSON value = MD-formatted string.** Typed-text fields
+        (`mission.what_we_do` / `why` / `direction` etc.) stored
+        as MD-formatted strings *inside* JSON. Viewer edits via
+        MD editor.
+     3. **MD export = explicit button.** No auto-sync; user
+        triggers JSON → MD conversion on demand.
+     4. **Export unit = canvas.** Per-node MD files
+        (`foundation/{kind}-{slug}.md`) abolished; single MD
+        file per canvas (`foundation.md` or equivalent).
+
+     Detailed open questions (editor UX / line-break handling
+     / per-canvas layout / migration path / button placement /
+     idempotence / Phase 2 guard test) — next-session
+     discussion under the `JSON SSOT 논의` trigger.
+
+   - Original user direction quote 2026-05-12 *"이 부분은
+     나중에 다시 다듬어 봅시다."* — discussion reopened
+     2026-05-13.
 3. **isomorphic-git integration timing** — §6 / §11 hinge on git
    being live inside the viewer / MCP. Currently no git is
    integrated. Land before any "self-improving agent" pattern.
