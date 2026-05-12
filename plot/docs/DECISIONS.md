@@ -2689,3 +2689,59 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.18 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.17 → 0.16.18.
+
+---
+
+### D-2026-05-12-U — Stable handleAnchorChange via useCallback (data.onResize ref stability)
+
+- **What:** Extract App.tsx's inline ``onAnchorChange`` JSX arrow into
+  a top-level ``useCallback``-wrapped ``handleAnchorChange`` declared
+  alongside the other stable handlers. ``useNodesMemo`` 's synthetic
+  anchor node carries an inline ``data.onResize: (w, h) => onAnchorChange?.(...)``;
+  by stabilising ``onAnchorChange`` ref at the source, the memo's
+  ``data`` object now only rebuilds when anchor-relevant state
+  actually changes (projectPath / activeId / activeTab / summaries /
+  project), not on every App render.
+
+- **Why:** Closes the loop of the 5-commit React Flow regression
+  batch (v0.16.15-19). Before this commit, even after v0.16.16's
+  callback stabilisation, ``onAnchorChange`` was still inline JSX —
+  recreated every App render. Each render triggered ``useNodesMemo``
+  recomputation → fresh anchor node data → RF rerenders the anchor
+  node. Visually subtle but contributes to anchor flicker / hover
+  jitter under heavy use.
+
+- **Approval:** Accepted by no-regression (399 / 399 tests still
+  pass, no new failures) + LOC budget compliance (App.tsx 380 →
+  385 LOC; well under 400 ceiling).
+
+- **Tests:** No new dedicated test — the existing
+  ``anchor-drag-snap-back.test.tsx`` (7 tests) covers
+  ``handleAnchorChange`` 's behaviour (optimistic merge, revert);
+  the existing ``stable-handlers.test.tsx`` (5 tests) covers the
+  identity-stability pattern this commit applies to anchor too.
+
+- **Spec impact:** none — internal stability optimization.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/App.tsx`` — extract inline arrow JSX to
+    ``handleAnchorChange = useCallback(...)``; replace prop usage
+    with the stable reference.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.19 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.18 → 0.16.19.
+
+- **Batch closure (v0.16.15-19):** This is the 5th and final commit
+  of the React Flow regression-fix batch surfaced by user hands-on
+  review of v0.16.14. All four major issues + this minor are now
+  addressed with regression tests pinning each:
+
+  | # | Issue | Decision | Test |
+  |---|---|---|---|
+  | 1 | Anchor drag snap-back | D-2026-05-12-Q | anchor-drag-snap-back.test.tsx (7 tests) |
+  | 2 | Refetch storm | D-2026-05-12-R | stable-handlers.test.tsx (5 tests) |
+  | 3 | Cmd+A controlled contract | D-2026-05-12-S | select-all-sync.test.tsx (2 tests) |
+  | 4 | fitView mid-session reset | D-2026-05-12-T | viewport-stability.test.tsx (2 tests) |
+  | 5 | Anchor data.onResize ref stability | D-2026-05-12-U | (covered by 1 + 2) |
+
+  Total: 399 viewer tests (383 baseline + 16 new across the batch).

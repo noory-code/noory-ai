@@ -109,6 +109,29 @@ export function App() {
   const { handleListStale, handleExternalCanvas, handleTagsRefresh, handleExternalChange } =
     useStableHandlers({ setCanvasCache, setTags, loadList, historyClear: history.clear });
 
+  // v0.16.19 (D-2026-05-12-U) — anchor change handler stable across
+  // non-state-changing renders so useNodesMemo's data.onResize for the
+  // synthetic anchor node keeps a stable ref.
+  const handleAnchorChange = useCallback(
+    (patch: Partial<AnchorPlacement>) => {
+      if (!projectPath || !activeId) return;
+      const previous = summaries.find((p) => p.id === activeId);
+      if (previous) {
+        project.replaceSummary(
+          applyOptimisticAnchorPatch(previous, activeTab, patch),
+        );
+      }
+      void patchProjectAnchor(projectPath, activeId, activeTab, patch).then(
+        (refreshed) => project.replaceSummary(refreshed),
+        (err) => {
+          if (previous) project.replaceSummary(previous);
+          setError(err instanceof Error ? err.message : String(err));
+        },
+      );
+    },
+    [projectPath, activeId, activeTab, summaries, project],
+  );
+
   // ------- persist + undo/redo (extracted to useCanvasPersist) -------
 
   const {
@@ -285,25 +308,7 @@ export function App() {
                 projectName={
                   summaries.find((p) => p.id === activeId)?.name ?? null
                 }
-                onAnchorChange={(patch) => {
-                  if (!projectPath || !activeId) return;
-                  // v0.16.15 (D-2026-05-12-Q) — optimistic before PATCH
-                  // so RF's controlled ``nodes`` prop doesn't snap back
-                  // during the network round-trip.
-                  const previous = summaries.find((p) => p.id === activeId);
-                  if (previous) {
-                    project.replaceSummary(
-                      applyOptimisticAnchorPatch(previous, activeTab, patch),
-                    );
-                  }
-                  void patchProjectAnchor(projectPath, activeId, activeTab, patch).then(
-                    (refreshed) => project.replaceSummary(refreshed),
-                    (err) => {
-                      if (previous) project.replaceSummary(previous);
-                      setError(err instanceof Error ? err.message : String(err));
-                    },
-                  );
-                }}
+                onAnchorChange={handleAnchorChange}
                 onNodeDrill={(id) => {
                   const n = activeCanvas.nodes.find((x) => x.id === id);
                   if (!n) return;

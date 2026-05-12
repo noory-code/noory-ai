@@ -4,6 +4,53 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.19] — 2026-05-12
+
+Minor stability — ``handleAnchorChange`` extracted from inline JSX
+to a top-level ``useCallback``. ``useNodesMemo`` 's synthetic anchor
+node carries an inline ``data.onResize`` that delegates to
+``onAnchorChange``; by stabilising the source ref, the memo's
+``data`` object now only rebuilds when anchor-relevant state
+actually changes (projectPath / activeId / activeTab / summaries /
+project), not on every App render. Closes the 5-commit React Flow
+regression-fix batch (v0.16.15-19). (D-2026-05-12-U)
+
+### Changed — viewer/src/App.tsx
+
+- Inline ``onAnchorChange`` JSX arrow (17 lines) extracted into
+  top-level ``handleAnchorChange = useCallback(...)``.
+- JSX site uses the stable reference: ``onAnchorChange={handleAnchorChange}``.
+- LOC: 380 → 385 (within 400 ceiling).
+
+### Tests
+
+No new dedicated test; existing ``anchor-drag-snap-back.test.tsx``
+(7) + ``stable-handlers.test.tsx`` (5) cover both behaviour and
+identity-stability patterns this commit applies.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 399 / 399 passed (no test count change).
+- ``uv run pytest`` — 274 / 274.
+
+### Batch closure (v0.16.15-19)
+
+Five commits ship the React Flow regression-fix batch surfaced by
+user hands-on review of v0.16.14:
+
+| # | Fix | Decision | Tests |
+|---|---|---|---:|
+| 1 | Anchor drag snap-back | D-2026-05-12-Q | 7 |
+| 2 | Refetch storm | D-2026-05-12-R | 5 |
+| 3 | Cmd+A controlled contract | D-2026-05-12-S | 2 |
+| 4 | fitView mid-session reset | D-2026-05-12-T | 2 |
+| 5 | Anchor data.onResize stability | D-2026-05-12-U | (covered) |
+
+Viewer tests: 383 → 399 (+16). Server: 274 / 274 unchanged.
+
+Plugin patch bump 0.16.18 → 0.16.19.
+
 ## [0.16.18] — 2026-05-12
 
 Bug fix — fitView gating. ReactFlow's ``fitView`` prop re-fits
