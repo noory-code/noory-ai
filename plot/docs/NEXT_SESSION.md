@@ -9,8 +9,25 @@
 
 ## Active queue
 
-*(empty — `검증` completed 2026-05-12 over v0.15.7 → v0.16.0; see
-Completed section below.)*
+*(empty as of 2026-05-12 end of session.)*
+
+The remaining big-scope work is filed in
+[`ROADMAP.md` §"v0.17+ — Roadmap items"](./ROADMAP.md), with the
+``plot-design-red-team`` 8-attack findings baked into each item:
+
+- **A) isomorphic-git source-data version control** — spec-mandated;
+  6 Major findings need ``DECISIONS.md`` answers before any code.
+- **B) Work-item layer (userstory + task)** — spec-mandated; hard
+  dependency on A; 4 Major findings.
+- **C) Plot repository split** — product decision the user owns.
+
+Pick order on the next session: invoke one of the trigger phrases
+``isomorphic-git`` / ``git 통합`` / ``일감 레이어`` / ``work-item`` /
+``repo split`` / ``레포 분리`` — and the session re-enters plan
+mode against the ROADMAP entry's findings as the anchor.
+
+Also queued: **user-driven hands-on review** — user wants to
+exercise the v0.16 ship end-to-end before any new feature work.
 
 ---
 

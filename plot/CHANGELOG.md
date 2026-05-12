@@ -4,6 +4,59 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.14] — 2026-05-12
+
+Docs-only — end-of-session wrap-up. Three remaining parked-backlog
+items (isomorphic-git / work-item layer / repo split) are filed
+in ``ROADMAP.md`` §"v0.17+" **with the ``plot-design-red-team``
+8-attack findings inlined per item** so the next implementer
+walks into pinned design questions instead of fresh discovery.
+``NEXT_SESSION.md`` queue is empty pending user hands-on review
+of the v0.16 ship.
+
+### Changed — plot/docs/ROADMAP.md
+
+- New top section "v0.17+ — Roadmap items (queued, design
+  red-team findings inline)" listing:
+  - **A) isomorphic-git source-data version control** — 6 Major
+    findings need DECISIONS answers (UI vocab / .git location /
+    agent commit identity / conflict resolution UX / commit
+    granularity / MVP scope cut). Spec mandate quoted. 2-4 weeks
+    estimated, 8-12 commits.
+  - **B) Work-item layer (userstory + task)** — hard dep on A.
+    4 Major findings (file locations / origin-metadata schema /
+    orphan handling / MVP schema cut). 1-2 weeks after A.
+  - **C) Plot repository split** — product decision the user
+    owns. Technical side: 🟢 READY (one-time ``git filter-repo``).
+
+### Changed — plot/docs/NEXT_SESSION.md
+
+- Active queue empty; entry text points at ROADMAP §"v0.17+".
+- Trigger phrases listed for each ROADMAP item so re-entry is
+  one phrase away.
+- First-priority next-session task = user-driven hands-on review
+  of v0.16 ship.
+
+### This session scorecard (v0.15.7 → v0.16.13, 19 commits)
+
+| Track | Commits | Outcome |
+|---|---:|---|
+| v0.15 Phase 4-5 (검증) | 5 | reset COMPLETE; 8 acceptance gates + kill-switch |
+| App.tsx split | 5 | 811 → 381 LOC, ceiling locked at 400 |
+| Schema parity test | 1 | 15-kind Pydantic ↔ TS pinned |
+| Red-team skills | 2 | code + design SKILL.md |
+| First red-team dogfood (i18n-audit) | 1 | 6 findings → revised before code |
+| Self-loop visual | 1 | SelfLoopEdge custom edge type |
+| Foundation anchor-radial | 1 | Mission/CV/Id radial slots |
+| Kill-switch cleanup | 1 | canvas_kind → wrapper prop |
+| Owner field | 1 | BaseNodeFields multi-user prep |
+| End-of-session wrap | 1 | this commit |
+
+viewer 383/383 + server 274/274 + kill-switch 11/11. tsc / mypy /
+ruff all clean.
+
+Plugin patch bump 0.16.13 → 0.16.14.
+
 ## [0.16.13] — 2026-05-12
 
 Multi-user prep — ``owner: str | None`` (default ``null``) added
