@@ -36,8 +36,17 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     const tAncestor = nearestCollapsedAncestor(e.target);
     const src = sAncestor ?? e.source;
     const tgt = tAncestor ?? e.target;
+    // Collapsed-ancestor collapse: both endpoints fold into the same
+    // collapsed parent → edge is invisible inside that subtree, drop.
     if (sAncestor && tAncestor && sAncestor === tAncestor) continue;
-    if (src === tgt) continue;
+    // ``src === tgt`` after collapse logic. Two cases:
+    //   (a) Original ``e.source === e.target`` (user-drawn self-loop)
+    //       → render as a self-loop arc per D-2026-05-12-M.
+    //   (b) ``e.source !== e.target`` but exactly one side collapsed
+    //       into the same id as the other → cross-subtree edge that
+    //       now looks like a self-loop on the collapsed parent; drop.
+    const isRealSelfLoop = e.source === e.target;
+    if (src === tgt && !isRealSelfLoop) continue;
     const stroke =
       valueFlowOn && e.value_form && e.value_form.length > 0
         ? VALUE_FORM_COLORS[e.value_form[0]]
@@ -49,6 +58,9 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
       sourceHandle: sAncestor ? undefined : e.sourceHandle ?? undefined,
       targetHandle: tAncestor ? undefined : e.targetHandle ?? undefined,
       label: e.label || undefined,
+      // Self-loops route through SelfLoopEdge (curved arc); regular
+      // edges keep React Flow's default Bezier path.
+      ...(isRealSelfLoop ? { type: "selfLoop" } : {}),
       style: {
         ...(e.style === "dashed" ? { strokeDasharray: "6 4" } : {}),
         ...(stroke ? { stroke, strokeWidth: e.value_form.length } : {}),

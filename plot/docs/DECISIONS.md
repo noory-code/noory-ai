@@ -2141,3 +2141,76 @@ in the same browser-verification round:
   - ``plot/CHANGELOG.md`` — v0.16.9 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.8 →
     0.16.9.
+
+---
+
+### D-2026-05-12-M — Self-loops render as curved arcs (SelfLoopEdge)
+
+- **What:** Custom React Flow edge type ``SelfLoopEdge`` renders a
+  cubic-Bezier arc for any edge with ``source === target`` whose
+  endpoints don't collapse to a different ancestor. The
+  ``edgeTransform`` filter at line 40 is now precise: it drops
+  collapsed-ancestor pseudo-self-loops (cross-subtree edges that
+  fold into the same parent) but lets user-drawn self-loops through.
+
+- **Why:** the canonical Plot spec re-delivered by the user
+  (2026-05-12, recorded in plan
+  ``~/.claude/plans/dazzling-inventing-boole.md``) explicitly
+  permits feedback loops:
+  > "셀프 피드백 루프 표현 가능 (서비스 A → 서비스 A)."
+
+  The previous unconditional ``if (src === tgt) continue;`` filter
+  in ``edgeTransform.ts:40`` silently dropped every self-loop —
+  including user-drawn ones — leaving a spec-violating gap: the
+  data model allowed self-loops, the renderer didn't show them.
+
+- **What the arc looks like:** cubic Bezier from source to target
+  with two control points bulged 100 px above the source/target
+  line. For a same-handle self-loop (``sourceX === targetX``,
+  ``sourceY === targetY``) the curve becomes a vertical teardrop;
+  for opposite-handle (R→L) self-loops it's a wide arc over the
+  node. Always non-degenerate (visibly clickable / selectable /
+  deletable).
+
+- **Real vs pseudo self-loop classification:**
+  - **Real** = ``edge.source === edge.target`` in the doc
+    (user-drawn). Renders as ``type: "selfLoop"``.
+  - **Pseudo** = ``edge.source !== edge.target`` but at least one
+    side collapses to match the other. Filtered (preserves the
+    pre-v0.16.10 behaviour for collapsed subtrees).
+  Both sides covered by ``self-loop-render.test.tsx``.
+
+- **Alternatives considered:**
+  - **No filter change — accept React Flow default rendering**:
+    rejected. RF's default draws a zero-length line on same-handle
+    self-loops; on opposite-handle the line goes through the node
+    body (chord). Neither is readable.
+  - **Force handles to differ before allowing connect** (i.e. block
+    same-handle self-loops at draw time): rejected as YAGNI. The
+    arc renderer handles same-handle gracefully; constraint at
+    draw time is more code for no benefit.
+  - **External library (e.g. d3 self-loop helpers)**: rejected.
+    The math fits in ~30 LOC; an extra dep would dwarf it.
+
+- **Approval:** Accepted by spec mandate. The canonical Plot spec
+  required this; the previous filter was a violation.
+
+- **Spec impact:** ``docs/SPEC.md §Edges`` gains a "Self-loops
+  (source === target)" subsection citing this decision.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/canvases/edges/SelfLoopEdge.tsx`` — new (~80
+    LOC); custom edge component + ``selfLoopPath`` pure helper
+    (exported for tests).
+  - ``plot/viewer/src/canvases/edges/registry.ts`` — new (~10
+    LOC); ``EDGE_TYPES`` SSOT.
+  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` — wire
+    ``edgeTypes={EDGE_TYPES}`` on ReactFlow + import.
+  - ``plot/viewer/src/canvases/sketch/edgeTransform.ts`` — split
+    real vs pseudo self-loop at the filter; add ``type: "selfLoop"``
+    on real self-loop output.
+  - ``plot/viewer/tests/self-loop-render.test.tsx`` — new (7 tests).
+  - ``plot/docs/SPEC.md`` — new "Self-loops" subsection under §Edges.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.10 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.9 → 0.16.10.

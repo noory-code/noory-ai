@@ -75,6 +75,22 @@ future node-transform refactor must preserve this property — sort by
 > An auto-drawn line that the user can't edit feels like the tool
 > overruling them. (Decision **D-2026-05-04-A**, see DECISIONS.md.)
 
+### Self-loops (source === target)
+
+User-drawn edges where ``source === target`` render as a curved arc
+bulging away from the node (via ``SelfLoopEdge`` custom edge type,
+``viewer/src/canvases/edges/SelfLoopEdge.tsx``). The arc is
+click-able for select / delete / context-menu like any other edge.
+
+Per the canonical Plot spec §"서비스 간 연결 = 유저저니":
+> "셀프 피드백 루프 표현 가능 (서비스 A → 서비스 A)."
+
+Permitted on every canvas that accepts user-drawn edges. The
+collapsed-ancestor filter in ``edgeTransform.ts`` is preserved —
+edges whose endpoints fold into the same collapsed parent (but
+were *not* originally a self-loop) still drop. Decision
+**D-2026-05-12-M**.
+
 ---
 
 ## Auto-layout

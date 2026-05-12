@@ -4,6 +4,68 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.10] — 2026-05-12
+
+Self-loop visual rendering — user-drawn edges with
+``source === target`` now render as a curved Bezier arc instead of
+being silently dropped. The canonical Plot spec
+(*"셀프 피드백 루프 표현 가능 (서비스 A → 서비스 A)"*) explicitly
+permitted them; the previous ``edgeTransform.ts:40`` filter was a
+spec violation. Plan ``~/.claude/plans/dazzling-inventing-boole.md``,
+decision **D-2026-05-12-M**.
+
+### Added — viewer/src/canvases/edges/SelfLoopEdge.tsx
+
+- React Flow custom edge component. Cubic Bezier arc from source
+  to target with two control points bulged 100 px above. Click-able,
+  selectable, deletable like any edge. Label renders at the arc's apex.
+- Exports ``selfLoopPath`` pure helper (the math is the
+  worth-protecting part) for unit testing.
+
+### Added — viewer/src/canvases/edges/registry.ts
+
+- ``EDGE_TYPES`` SSOT (mirrors ``nodes/registry.ts`` pattern).
+  Single entry today (``selfLoop``); future edge types extend here.
+
+### Changed — viewer/src/canvases/sketch/edgeTransform.ts
+
+- Filter at line 40 split into two cases:
+  - **Real self-loop** (``e.source === e.target``) → emit with
+    ``type: "selfLoop"``. Renders via ``SelfLoopEdge``.
+  - **Pseudo self-loop** (``e.source !== e.target`` but both
+    collapse to the same id) → filter (preserves pre-v0.16.10
+    behaviour for collapsed subtrees).
+- Collapsed-ancestor filter (line 39) unchanged.
+
+### Changed — viewer/src/canvases/SketchCanvas.tsx
+
+- ``ReactFlow`` now receives ``edgeTypes={EDGE_TYPES}``.
+
+### Added — viewer/tests/self-loop-render.test.tsx
+
+7 tests:
+- Real self-loop → ``type: "selfLoop"`` emitted with label + value-flow.
+- Pseudo self-loop (collapsed) → filtered (2 cases: both-collapse,
+  one-side-collapse-to-other).
+- Regular cross-node edge → no ``type`` (default Bezier).
+- ``selfLoopPath`` → non-degenerate arc from zero-distance input;
+  cubic Bezier shape preserved with different source/target.
+
+### Changed — docs/SPEC.md §Edges
+
+- New "Self-loops (source === target)" subsection citing the canonical
+  Plot spec mandate + D-2026-05-12-M.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 368 / 368 passed (361 prior + 7 new).
+- ``uv run pytest`` — 274 / 274 (no server change).
+
+Plugin patch bump 0.16.9 → 0.16.10. First commit in the 3-item
+parked-backlog batch (v0.16.10 — self-loop / v0.16.11 — Foundation
+anchor-radial / v0.16.12 — Service-Detail Mermaid panel).
+
 ## [0.16.9] — 2026-05-12
 
 New skill — ``plot-i18n-audit`` runs 4 static audits on the viewer
