@@ -1921,3 +1921,73 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.6 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.5 → 0.16.6.
+
+---
+
+### D-2026-05-12-J — plot-code-red-team skill (adversarial code review)
+
+- **What:** Add ``plot/skills/plot-code-red-team/SKILL.md`` — a
+  procedure skill that runs 9 adversarial attacks against a Plot
+  branch / commit set / PR. Triggers on Korean (리뷰 / 코드리뷰 /
+  공격적으로 / 비판적으로) and English (review / red-team / check
+  this) review-request phrases. Output is a structured report:
+  evidence (file:line) → rule violated (CLAUDE.md / DECISIONS /
+  SPEC citation) → severity (Critical / Major / Minor) →
+  suggested fix → verdict (✅ MERGE OK / 🟡 MERGE WITH FIXES /
+  🔴 DO NOT MERGE).
+
+- **Why:** the user's 2026-05-12 direction (memory:
+  ``project_red_team_review_skill.md``):
+  *"코드 리뷰나 설계 리뷰를 하는 스킬도 필요할 것 같구요. 이건
+  레드팀 처럼 비판적 시각으로 바라 볼 수 있게 작성이 되어야해요."*
+  Plot has lived 1491-LOC god components for 8 months, six cursor
+  rounds in three sessions, an anchor decoration painting outside
+  the click target for two weeks. Each was reviewed in isolation
+  and passed. The fix is not "review harder" — the fix is
+  "review *adversarially*."
+
+- **The 9 attacks:**
+  1. **Diff-vs-claim** — scope creep, behaviour-change-disguised-as-refactor,
+     cross-cutting bundle.
+  2. **Bad-faith input** — null / wrong-type / path-traversal /
+     PII-leak failure modes.
+  3. **Code-as-spec violations** — un-specced behaviour, comment-as-spec
+     (D-2026-05-04-B), broken decision trail.
+  4. **Hidden coupling** — closure-shared state, prop-semantic
+     drift, architecture-direction violation.
+  5. **God dispatch** — micro-god in per-kind files,
+     ``switch (node.kind)`` regression in non-allowlisted files.
+  6. **Cross-cutting visual bundle** — cognitive scapegoat
+     (D-2026-05-11-C rationale).
+  7. **LOC budget creep** — file growing without absorbing a
+     legit responsibility (god-object precursor signal).
+  8. **Rotted comments** — TODO/FIXME/XXX/HACK additions, stale
+     references to deleted modules, what-not-why comments.
+  9. **Test coverage** — regression-bait (TDD violation), brittle
+     tests asserting implementation details, fixtures bypassing
+     ``createBlankNode``.
+
+- **Approval:** Pending — first iteration. Per the user's direction
+  (*"이런 것들이 만들어지면 차차 정형화된 워크플로우로
+  진화되어야합니다"*), the skill calibrates from real use; if five
+  consecutive reviews produce zero findings, the codebase has
+  internalised the rules and the skill is doing its job by being
+  obsolete. Sister skill ``plot-design-red-team`` lands in v0.16.8
+  for pre-implementation reviews.
+
+- **Alternatives considered:**
+  - **One unified ``plot-red-team`` skill** that branches code-vs-design
+    by trigger: rejected. The two procedures share intent but
+    diverge sharply on what to attack (code = bad-faith input,
+    coupling, dispatch; design = unstated invariants, reversibility,
+    user-essence match). Splitting keeps each procedure tight.
+  - **Auto-run as a hook on every commit**: rejected per the user's
+    *"차차 정형화된 워크플로우로 진화"* direction. Don't pre-build
+    the workflow layer; let it crystallize from the first few real
+    uses.
+
+- **Files in this commit:**
+  - ``plot/skills/plot-code-red-team/SKILL.md`` — new, ~200 LOC.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.7 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.6 → 0.16.7.

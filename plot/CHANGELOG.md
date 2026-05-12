@@ -4,6 +4,44 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.7] — 2026-05-12
+
+New skill — ``plot-code-red-team`` runs 9 adversarial attacks
+against a Plot branch / commit set / PR. Triggers on Korean (리뷰 /
+코드리뷰 / 공격적으로 / 비판적으로) and English (review / red-team)
+phrases. Output: structured report with evidence (file:line) → rule
+violated → severity → suggested fix → verdict. (D-2026-05-12-J)
+
+### Added — plot/skills/plot-code-red-team/SKILL.md
+
+The 9 attacks, in order:
+1. Diff-vs-claim (scope creep / behaviour-disguised-as-refactor).
+2. Bad-faith input (null / wrong-type / path-traversal / PII).
+3. Code-as-spec violations (un-specced behaviour, comments-as-spec).
+4. Hidden coupling (closure state, prop-semantic drift).
+5. God dispatch (micro-god in per-kind files; ``switch (node.kind)``
+   regression).
+6. Cross-cutting visual bundle (cognitive scapegoat).
+7. LOC budget creep (file absorbing responsibility without
+   admitting it).
+8. Rotted comments (TODO additions, stale module references).
+9. Test coverage (regression-bait, brittle tests).
+
+Output verdict: ✅ MERGE OK / 🟡 MERGE WITH FIXES / 🔴 DO NOT MERGE.
+
+### Why now
+
+Memory ``project_red_team_review_skill.md`` filed the user's
+direction during the v0.15 Phase 2 session: *"코드 리뷰나 설계
+리뷰를 하는 스킬도 필요할 것 같구요. 이건 레드팀 처럼 비판적
+시각으로 바라 볼 수 있게."* Deferred until after the v0.15 reset.
+The reset shipped at v0.16.0; this is the first follow-up skill.
+
+Sister skill ``plot-design-red-team`` (pre-implementation review)
+lands in v0.16.8.
+
+Plugin patch bump 0.16.6 → 0.16.7.
+
 ## [0.16.6] — 2026-05-12
 
 Schema parity test — Pydantic ↔ TS XxxJson field sets pinned for
