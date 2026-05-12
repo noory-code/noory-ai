@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.26] — 2026-05-13
+
+Second of 5 deferred D-2026-05-12-B catch-up artefacts. Add
+``plot/skills/plot-domain-design/SKILL.md`` — the **gate** that forces
+the placement decision *before* any code lands. Five-decision walk
+(thing-vs-rule / entity-vs-value / existing-kind-reuse / bounded-context
+home / SSOT location) writes a Decision summary into DECISIONS.md
+*before* implementation begins. The v0.13.3-v0.13.10 cursor saga was
+caused by no domain map; this skill is the framework that saga lacked.
+(D-2026-05-13-C)
+
+### Added
+
+- ``plot/skills/plot-domain-design/SKILL.md`` — procedure skill.
+
 ## [0.16.25] — 2026-05-13
 
 First of 5 deferred D-2026-05-12-B candidate artefacts. Add

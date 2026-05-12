@@ -2884,3 +2884,51 @@ in the same browser-verification round:
 
   All five close the D-2026-05-12-B "Skills / rules to consider"
   candidate list.
+
+---
+
+### D-2026-05-13-C — plot-domain-design skill (overdue from D-2026-05-12-B)
+
+- **What:** Add ``plot/skills/plot-domain-design/SKILL.md`` — a
+  procedure skill that runs **before** entity-template / feature-tdd
+  when a new concept doesn't yet have a clear home. 5-decision walk:
+  1. Thing vs Rule
+  2. Entity vs Value-object
+  3. Does an existing kind already cover it? (MECE check against
+     CONCEPTS.md 15 rows)
+  4. Which bounded context owns it? (against DOMAIN.md 5 contexts)
+  5. SSOT location
+
+  Output: a Decision summary the user approves *before* implementation
+  begins.
+
+- **Why:** The v0.13.3 → v0.13.10 cursor saga (six rounds, see
+  D-2026-05-10-C / D-2026-05-10-F) was caused by no domain-placement
+  framework — every fix picked "where does this rule live?"
+  ad-hoc, and the next bug surfaced in a different ad-hoc location.
+  DOMAIN.md (2026-05-12) ended that by giving every concern a
+  bounded-context home; this skill is the **gate** that forces the
+  placement decision early in the workflow, before code lands.
+
+- **Why a separate skill, not part of plot-feature-tdd:** The
+  placement decision is heavy enough (5 distinct decisions, often
+  involving DOMAIN.md / CONCEPTS.md / DECISIONS.md cross-references)
+  to warrant its own trigger surface. plot-feature-tdd already
+  references "Step 3 — Identify bounded context"; this skill is the
+  detailed unpack of that step for *new* concepts.
+
+- **Approval:** Accepted by user, 2026-05-13 (the "5개 다" answer of
+  the same session that opened D-2026-05-13-B).
+
+- **Spec impact:** None — procedure docs. Cross-references
+  DOMAIN.md / CONCEPTS.md / SPEC.md / VISION.md.
+
+- **Files:**
+  - ``plot/skills/plot-domain-design/SKILL.md`` — new, ~230 LOC.
+  - ``plot/CHANGELOG.md`` — v0.16.26 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.25 → 0.16.26.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Position in the 5-batch:** 2 of 5. Remaining queued:
+  D-2026-05-13-D (no-god-import hook), D-2026-05-13-E (entity-roundtrip
+  test), D-2026-05-13-F (CLAUDE.md anti-pattern row).
