@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.25] — 2026-05-13
+
+First of 5 deferred D-2026-05-12-B candidate artefacts. Add
+``plot/skills/plot-entity-template/SKILL.md`` — the single procedure
+SSOT for adding a new domain entity (a new ``kind``) end-to-end.
+14-step walk covers CONCEPTS / SPEC / domain class with ``fromJson`` /
+union extend / factory / Pydantic model / schema-parity / per-kind
+renderer / per-kind inspector / registry / i18n / round-trip test /
+structural-guards. User direction 2026-05-12: *"필요하다면 스킬이나
+룰을 만들구요"* (D-2026-05-12-B), surfaced as overdue 2026-05-13.
+(D-2026-05-13-B)
+
+### Added
+
+- ``plot/skills/plot-entity-template/SKILL.md`` — procedure skill.
+
 ## [0.16.24] — 2026-05-13
 
 Restore the v0.16.20-23 "RF 기본 동작 rollback" batch as a single

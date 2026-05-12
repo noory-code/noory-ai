@@ -2833,3 +2833,54 @@ in the same browser-verification round:
   not the synthetic node decoration. Spec mandates ("프로젝트 노드
   가운데", "셀프 피드백 루프", "주변에 붙임") override at-the-moment
   preference unless the user *explicitly* says "spec 도 폐기".
+
+---
+
+### D-2026-05-13-B — plot-entity-template skill (overdue from D-2026-05-12-B)
+
+- **What:** Add ``plot/skills/plot-entity-template/SKILL.md`` — a
+  procedure skill that walks adding a new ``kind`` end-to-end in 14
+  steps (CONCEPTS / SPEC / domain class with ``fromJson`` / union
+  extend / factory / Pydantic model / schema-parity / per-kind
+  renderer / per-kind inspector / registry / i18n / round-trip test
+  / structural-guards). Frontmatter triggers on "new kind",
+  "엔티티 추가", "새 종류", "fromJson", "discriminated union" etc.
+
+- **Why:** This is the first of five artefacts the user *allowed*
+  building under D-2026-05-12-B's *"필요하다면 스킬이나 룰을
+  만들구요"* permission. The v0.15 reset (Phase 1-5) shipped the
+  15 entity classes + per-kind UI files; the procedure for *future*
+  kind additions was the missing piece. User flagged on 2026-05-13
+  that **none of the five candidates had been built** ("개발 스킬을
+  좀 만들라고 했는데 하나도 안 만들었네"). This entry is the first
+  ship of the five-phase catch-up batch (D-2026-05-13-B through F).
+
+- **Why a procedure skill, not free-text in CLAUDE.md:** A 14-step
+  walk that names ~14 files is too long for CLAUDE.md (which is the
+  triggers + gates SSOT, not implementation walkthrough). A skill
+  surfaces only when the trigger fires ("new kind" etc.), keeping
+  Plot CLAUDE.md focused. Also matches the existing pattern —
+  ``plot-feature-tdd`` / ``plot-frontend-bug-diagnosis`` /
+  ``plot-i18n-audit`` are also procedure skills.
+
+- **Approval:** Accepted by user, 2026-05-13 (in-session
+  ``AskUserQuestion`` answer "5개 다").
+
+- **Spec impact:** None — skill is procedure docs, not a behaviour
+  change. Cross-references SPEC.md / CONCEPTS.md / DOMAIN.md as the
+  truths each step writes into.
+
+- **Files:**
+  - ``plot/skills/plot-entity-template/SKILL.md`` — new, ~250 LOC.
+  - ``plot/CHANGELOG.md`` — v0.16.25 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.24 → 0.16.25.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Companion artefacts (queued):**
+  - D-2026-05-13-C → ``plot-domain-design`` skill.
+  - D-2026-05-13-D → ``no-god-import`` pre-commit hook.
+  - D-2026-05-13-E → ``entity-roundtrip`` vitest test.
+  - D-2026-05-13-F → ``plot/CLAUDE.md`` anti-pattern row.
+
+  All five close the D-2026-05-12-B "Skills / rules to consider"
+  candidate list.
