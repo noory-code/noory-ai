@@ -93,10 +93,7 @@ const ANCHOR: AnchorPlacement = {
   shape: "circle",
 };
 
-function mount(doc: CanvasDoc, _anchor: AnchorPlacement | null = ANCHOR) {
-  // v0.16.22 (D-2026-05-12-X) — synthetic project anchor removed.
-  // ``_anchor`` arg kept for call-site compat but unused.
-  void _anchor;
+function mount(doc: CanvasDoc, anchor: AnchorPlacement | null = ANCHOR) {
   return render(
     <ReactFlowProvider>
       <SketchCanvas
@@ -108,6 +105,9 @@ function mount(doc: CanvasDoc, _anchor: AnchorPlacement | null = ANCHOR) {
         canRedo={false}
         projectPath="/tmp/plot-test"
         projectId="test-project"
+        projectAnchor={anchor}
+        projectName="Test Project"
+        onAnchorChange={() => {}}
       />
     </ReactFlowProvider>,
   );
@@ -128,14 +128,17 @@ describe("SketchCanvas regression — pin v0.13.2 reverts", () => {
     expect(container.querySelectorAll(".react-flow__edge")).toHaveLength(0);
   });
 
-  it("Foundation: no synthetic anchor (v0.16.22 D-2026-05-12-X revert)", () => {
-    // Was D-2026-05-04-B — anchor drawable / connectable. v0.16.22
-    // reverted the synthetic anchor entirely per user "RF 기본 동작"
-    // request. Canvas now starts empty until the user adds nodes.
+  it("Foundation: anchor renders the four React Flow handles", () => {
+    // D-2026-05-04-B — anchor is drawable from / connectable to like any
+    // node. Reproduces the anchor-handle-suppression bug.
     const doc = makeCanvas("foundation");
     const { container } = mount(doc);
     const anchor = container.querySelector('[data-id="__project_anchor__"]');
-    expect(anchor).toBeNull();
+    expect(anchor).toBeTruthy();
+    // SketchNode renders Top / Left / Right / Bottom handles. Each is
+    // a div.react-flow__handle. The anchor inherits them.
+    const handles = anchor!.querySelectorAll(".react-flow__handle");
+    expect(handles.length).toBe(4);
   });
 
   it("canvas does not render an 'Auto layout' button anywhere", () => {

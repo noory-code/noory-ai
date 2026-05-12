@@ -2748,229 +2748,88 @@ in the same browser-verification round:
 
 ---
 
-### D-2026-05-12-V — Revert SelfLoopEdge ("RF 기본 동작" rollback, 1/4)
+### D-2026-05-13-A — Restore anchor visual layer (v0.16.20-23 batch reverted)
 
-- **What:** Delete ``viewer/src/canvases/edges/SelfLoopEdge.tsx`` +
-  ``edges/registry.ts``. Remove ``edgeTypes`` prop from
-  ``<ReactFlow>``. Revert ``edgeTransform.ts`` filter to RF-default
-  ``if (src === tgt) continue;``. Delete companion test file.
+- **What:** Revert all four commits of the v0.16.20-23 "RF 기본 동작
+  rollback" batch as a single squashed git-revert:
+  - ``ac35021`` v0.16.23 (batch closure docs / version bump)
+  - ``32f3dc5`` v0.16.22 (synthetic anchor + PATCH path revert)
+  - ``7edbbf8`` v0.16.21 (anchor-radial layout revert)
+  - ``75ee0b0`` v0.16.20 (self-loop custom edge revert)
 
-- **Why:** User direct request after v0.16.15-19 batch:
-  > "그냥 RF 기본 동작으로 동작하게 해주세요."
+  Restores: synthetic project anchor on Foundation / Actors / Services
+  canvases; anchor-radial initial placement for Foundation new nodes
+  (120° auto-radial around anchor); ``SelfLoopEdge`` custom edge for
+  ``source === target``; anchor PATCH path (``applyAnchorChange`` +
+  ``anchorOptimistic`` + ``handleAnchorChange``).
 
-  User reports "캔버스하고 커서 동작 컨트롤이러지" + "동작이
-  이상" (콘솔 에러 아님) after hands-on review. Code-audit-driven
-  fixes (v0.16.15-19) did not address the user-felt regression;
-  user's stated remedy is rollback to RF stock interaction layer.
+  Keeps reverted: nothing — all four layers fully restored to their
+  v0.16.19 state.
 
-- **Supersedes:** D-2026-05-12-M. The received Plot spec §"서비스
-  간 연결" mandate ("셀프 피드백 루프 표현 가능") is **deferred**
-  — re-introducing visual self-loops requires fresh plan-mode +
-  user approval after this batch settles.
+- **Why:** User direct correction — "다 복구 하라" — after the
+  v0.16.20-23 batch was identified as over-reach. The original
+  triggering message "그냥 RF 기본 동작으로 동작하게 해주세요"
+  (v0.16.20 commit body) was interpreted as "remove the synthetic
+  anchor and all its associated visual layers"; the user's actual
+  intent was "keep the anchor + make *interaction* feel like stock
+  React Flow". Removing the anchor itself violated the canonical
+  Plot spec mandate ("프로젝트 노드가 가운데" — SPEC §Anchor) and
+  contradicted the user's mental model. NEXT_SESSION.md:22-24 already
+  recorded this as over-reach before this session.
 
-- **Why not just leave SelfLoopEdge in place:** custom edge type
-  was one of the layers the user might be experiencing as
-  "interference" with their RF mental model. Pure default RF
-  behaviour for edges = same as every other React Flow product
-  the user has used. Lower cognitive load.
+- **Why not partial restore (anchor only, skip radial / self-loop):**
+  User asked to restore *all*; partial restore would silently
+  re-interpret the message a second time after the first
+  mis-interpretation already cost a 4-commit batch.
 
-- **Verification:**
-  - ``npx tsc --noEmit`` — clean.
-  - ``npx vitest run`` — 392 / 392 (399 prior − 7 deleted self-loop tests).
-  - ``uv run pytest`` — 274 / 274 (no server change).
+- **Why not surgical revert of useNodesMemo block only:** The four
+  layers were entangled at the commit level (anchor injection feeds
+  PATCH path; PATCH path feeds optimistic update; radial layout
+  reads anchor position; self-loop edge is independent but was
+  bundled in the same batch). A single git-revert of the four
+  commits is the audit-trail-preserving inverse — every restoration
+  becomes a documented git event, not a hand-rewrite.
 
-- **Files:**
-  - ``plot/viewer/src/canvases/edges/SelfLoopEdge.tsx`` — DELETED.
-  - ``plot/viewer/src/canvases/edges/registry.ts`` — DELETED.
-  - ``plot/viewer/src/canvases/edges/`` — empty dir removed.
-  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` — ``edgeTypes={EDGE_TYPES}`` + import 제거.
-  - ``plot/viewer/src/canvases/sketch/edgeTransform.ts`` — filter precision split 제거; RF-default 단일 filter 복원.
-  - ``plot/viewer/tests/self-loop-render.test.tsx`` — DELETED.
-  - ``plot/docs/SPEC.md §Edges`` — "Self-loops" 서브섹션을 "deferred, RF default = drop" 으로 갱신.
-  - ``plot/docs/DECISIONS.md`` — this entry.
-  - ``plot/CHANGELOG.md`` — v0.16.20 section.
-  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.19 → 0.16.20.
+- **Real bug remains unresolved:** Interaction "엉망" — the user's
+  *actual* complaint that triggered v0.16.15-19 *and* v0.16.20-23 —
+  was never fixed by either batch. v0.16.19 (anchor present) and
+  v0.16.23 (anchor absent) both exhibit the issue. This restoration
+  is a precondition for diagnosis, not the diagnosis itself.
+  Next-session work: ``RF 움직임`` trigger — reproducible step
+  capture + layer kill-switch bisect (NEXT_SESSION.md).
 
-- **Series context:** First of 4-commit "RF 기본 동작" rollback
-  batch (v0.16.20-23). Companion reverts: anchor-radial layout
-  (v0.16.21), synthetic anchor + PATCH path (v0.16.22), cleanup +
-  ROADMAP archive (v0.16.23).
+- **Approval:** Accepted by user, 2026-05-13, via in-session
+  ``AskUserQuestion`` answer: *"다 복구 하라고 그리고 문제의 원인을
+  찾자고"*.
 
----
+- **Spec impact:** [SPEC.md §Anchor](./SPEC.md#anchor-the-centre-node)
+  / §Edges Self-loops / §Foundation Anchor-radial all restored to
+  v0.16.19 text by the revert. No new spec lines.
 
-### D-2026-05-12-W — Revert anchor-radial layout ("RF 기본 동작" rollback, 2/4)
+- **Files in this commit:** all files in the
+  ``ac35021..75ee0b0`` four-commit revert + ``plugin.json`` version
+  ``0.16.19`` → ``0.16.24`` + ``CHANGELOG.md`` v0.16.24 section +
+  this entry.
 
-- **What:** Delete ``viewer/src/canvases/sketch/anchorRadialLayout.ts``
-  + companion test. Remove ``applyAnchorRadialLayout`` arg from
-  ``useNodeCreation`` + ``SketchCanvas`` props. Remove
-  ``applyAnchorRadialLayout={true}`` from FoundationCanvas. New
-  Mission / CoreValue / Identity nodes drop at user-chosen
-  coordinates, not auto-placed at radial slots.
+- **Reverted decisions (now back in force):**
+  - D-2026-05-12-M (self-loop visual)
+  - D-2026-05-12-N (anchor-radial layout)
+  - D-2026-05-12-O / P / Q (anchor injection / PATCH / optimistic)
+  - D-2026-05-04-B / C (anchor handles visible + visually distinct)
 
-- **Why:** Continues the "RF 기본 동작" rollback. The anchor-radial
-  layer is *contingent* on the synthetic anchor existing (radius
-  measured from anchor centre); the next commit (v0.16.22) removes
-  the anchor itself, which would leave radial logic orphaned. Cleaner
-  to revert the radial layer here, then the anchor itself in v0.16.22.
+- **Rejected decisions (these are reverted away):**
+  - D-2026-05-12-V (self-loop revert) — **Rejected**.
+  - D-2026-05-12-W (anchor-radial revert) — **Rejected**.
+  - D-2026-05-12-X (synthetic anchor + PATCH revert) — **Rejected**.
+  - D-2026-05-12-Y (rollback batch closure) — **Rejected**.
 
-- **Supersedes:** D-2026-05-12-N (anchor-radial initial placement)
-  and D-2026-05-12-O (canvas_kind → wrapper prop refactor that
-  enabled D-2026-05-12-N). The canonical Plot spec mandate
-  ("프로젝트 노드 놓고(앵커) 그 주변에 미션, 코어밸류,
-  아이덴티티 붙이면 되요") is **deferred**.
+  Note: revert removed these entries from the DECISIONS.md file
+  itself (since the v0.16.22-23 commits added them). They are
+  documented here so the next session sees both the proposal and
+  its rejection.
 
-- **Verification:**
-  - ``npx tsc --noEmit`` — clean.
-  - ``npx vitest run`` — 377 / 377 (392 prior − 15 deleted radial tests).
-  - ``uv run pytest`` — 274 / 274.
-
-- **Files:**
-  - ``plot/viewer/src/canvases/sketch/anchorRadialLayout.ts`` — DELETED.
-  - ``plot/viewer/src/canvases/sketch/useNodeCreation.ts`` —
-    ``applyAnchorRadialLayout`` arg + helper usage removed; drop
-    at caller-supplied ``x``/``y``.
-  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` —
-    ``applyAnchorRadialLayout?: boolean`` prop removed; not threaded
-    into ``useNodeCreation``.
-  - ``plot/viewer/src/canvases/FoundationCanvas.tsx`` —
-    ``applyAnchorRadialLayout={true}`` removed.
-  - ``plot/viewer/tests/foundation-radial-layout.test.tsx`` — DELETED.
-  - ``plot/docs/SPEC.md §Foundation`` — "Anchor-radial initial
-    placement" subsection removed.
-  - ``plot/docs/DECISIONS.md`` — this entry.
-  - ``plot/CHANGELOG.md`` — v0.16.21 section.
-  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.20 → 0.16.21.
-
----
-
-### D-2026-05-12-X — Revert synthetic anchor + PATCH path ("RF 기본 동작" rollback, 3/4)
-
-- **What:** Remove the synthetic project anchor injection from
-  ``useNodesMemo``. Drop the anchor split in ``handleNodesChange``.
-  Delete ``applyAnchorChange.ts`` + ``lib/anchorOptimistic.ts`` +
-  the anchor regression test. Remove anchor-related props
-  (``projectAnchor`` / ``projectName`` / ``onAnchorChange`` /
-  ``injectAnchor``) from ``SketchCanvas`` + all 4 wrappers. App.tsx
-  drops ``handleAnchorChange``, ``resolveProjectAnchor``, and the
-  ``patchProjectAnchor`` import. Server-side ``PATCH /api/projects/
-  :id/anchor`` endpoint retained (backward compat).
-
-- **Why:** User direct request continued. Synthetic anchor was the
-  largest custom layer on top of stock React Flow; removing it
-  brings every canvas to the empty-pane RF default state, which
-  matches the user's "RF 기본 동작" mental model.
-
-- **Supersedes:** D-2026-05-04-B (anchor handles), D-2026-05-04-C
-  (anchor visually distinct from Service circles), D-2026-05-12-Q
-  (anchor optimistic update), D-2026-05-12-U (handleAnchorChange
-  useCallback). The canonical Plot spec mandate ("프로젝트 노드
-  가운데") is **deferred**.
-
-- **What's NOT removed (server side, for back-compat):**
-  - ``ProjectDoc.anchors`` field in Pydantic model + JSON shape.
-  - ``PATCH /api/projects/:id/anchor`` endpoint.
-  - Older viewer versions calling this endpoint succeed silently;
-    new viewer ignores the result.
-
-- **Verification:**
-  - ``npx tsc --noEmit`` — clean.
-  - ``npx vitest run`` — 367 / 367 (377 prior − 10 anchor-related
-    tests removed/updated).
-  - ``uv run pytest`` — 274 / 274 (server-side unchanged).
-  - ``test_pre_commit_gate.py`` — 11 / 11. ``canvas_kind`` branching
-    invariant unchanged (synthetic anchor never branched on
-    canvas_kind directly anyway — was opt-in via wrapper prop).
-
-- **Files:**
-  - ``plot/viewer/src/canvases/sketch/applyAnchorChange.ts`` — DELETED.
-  - ``plot/viewer/src/lib/anchorOptimistic.ts`` — DELETED (dir emptied).
-  - ``plot/viewer/tests/anchor-drag-snap-back.test.tsx`` — DELETED.
-  - ``plot/viewer/src/canvases/sketch/useNodesMemo.ts`` — anchor
-    injection block + ``projectAnchor``/``projectName``/``onAnchorChange``/
-    ``injectAnchor`` props + ``PROJECT_ANCHOR_ID`` import removed.
-  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` — anchor props
-    removed from ``SketchCanvasProps``; ``handleNodesChange`` no
-    longer calls ``applyAnchorChange``; ``applyAnchorChange`` import
-    removed.
-  - ``plot/viewer/src/canvases/{Foundation,Actors,Services,
-    ServiceDetail}Canvas.tsx`` — ``injectAnchor={...}`` prop removed
-    from each wrapper's pass-through.
-  - ``plot/viewer/src/App.tsx`` — ``handleAnchorChange``,
-    ``resolveProjectAnchor``, ``patchProjectAnchor``,
-    ``applyOptimisticAnchorPatch``, ``AnchorPlacement``,
-    ``ProjectDoc`` (type only) imports + JSX anchor props removed.
-    LOC: 385 → 334.
-  - ``plot/viewer/tests/SketchCanvas.regression.test.tsx`` — anchor
-    pin tests updated: previously "anchor renders 4 handles" now
-    asserts "anchor element is absent (v0.16.22 revert)".
-  - ``plot/docs/SPEC.md §Anchor`` — REMOVED-marker added.
-  - ``plot/docs/DECISIONS.md`` — this entry.
-  - ``plot/CHANGELOG.md`` — v0.16.22 section.
-  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.21 → 0.16.22.
-
----
-
-### D-2026-05-12-Y — "RF 기본 동작" rollback batch closure (v0.16.20-23)
-
-- **What:** Docs-only closure of the 4-commit "RF 기본 동작"
-  rollback batch. ``ROADMAP.md`` §"v0.17+" gets a "Deferred"
-  subsection listing the 3 canonical Plot spec mandates that this
-  rollback violates (anchor / radial / self-loop). Each mandate
-  links its last-shipping decision id + the revert decision id.
-
-- **Why:** Future sessions picking up the "agent / canvas
-  interaction" axis need to know:
-  1. These mandates exist in the canonical Plot spec.
-  2. They were *consciously* deferred by user request, not
-     forgotten.
-  3. Re-introduction is not a 3-line revert revert — it requires
-     plan-mode + hands-on validation in the *user's actual
-     browser*, not Playwright synthetic input (which can't drive
-     d3-zoom event paths per ``plot/CLAUDE.md §Gate 3``).
-
-- **Batch closure (v0.16.20-23):**
-
-  | Commit | Revert | Decision | Tests delta |
-  |---|---|---|---:|
-  | v0.16.20 | SelfLoopEdge custom edge | D-2026-05-12-V | −7 |
-  | v0.16.21 | Anchor-radial layout | D-2026-05-12-W | −15 |
-  | v0.16.22 | Synthetic anchor + PATCH path | D-2026-05-12-X | −10 |
-  | v0.16.23 | Docs-only ROADMAP archive | D-2026-05-12-Y | 0 |
-
-  Net: viewer 399 → 367 (32 tests removed); server 274 unchanged.
-
-- **Honest note on this session's arc:** the v0.16.15-19 batch
-  (5 fixes for "anchor snap-back / refetch storm / Cmd+A /
-  fitView / handle stability") was authored from code audit
-  alone — never validated in the user's browser before ship.
-  When the user *did* validate, the cumulative custom layers on
-  top of RF made interactions feel "엉망" (off from RF mental
-  model) regardless of which specific fix was correct. The
-  v0.16.20-23 rollback is the user-directed remedy: less code,
-  more RF default. Of the 5 fixes:
-  - **v0.16.16 stable handlers** + **v0.16.17 Cmd+A sync** +
-    **v0.16.18 fitView gating** were kept (they fix RF-default
-    behaviour, not add custom layer on top).
-  - **v0.16.15 anchor snap-back** + **v0.16.19 anchor handler
-    useCallback** rolled back as part of v0.16.22 anchor removal
-    (the bug they fixed no longer exists because anchor is gone).
-
-- **What the user's "RF 기본 동작" request taught:** *static*
-  audits (Pydantic / TS parity / structural guards / LOC budget /
-  cursor baseline) cannot detect runtime interaction quality.
-  The "RF integration test layer" (Playwright real-input) filed
-  in ROADMAP §v0.17+ remains the right next investment. Until
-  it lands, *every* user-facing canvas change needs
-  hands-on validation in the user's actual browser before
-  the commit is called "done".
-
-- **Approval:** Implicit — user explicitly approved the plan that
-  shipped this batch.
-
-- **Files in this commit:**
-  - ``plot/docs/ROADMAP.md`` §"v0.17+" — "Deferred (RF 기본 동작
-    rollback)" subsection added.
-  - ``plot/docs/DECISIONS.md`` — this entry.
-  - ``plot/CHANGELOG.md`` — v0.16.23 section.
-  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.22 →
-    0.16.23.
+- **Lesson:** When the user says "RF 기본 동작" mid-session, the
+  scope is **interaction (cursor / drag / pan / zoom / select)**,
+  not the synthetic node decoration. Spec mandates ("프로젝트 노드
+  가운데", "셀프 피드백 루프", "주변에 붙임") override at-the-moment
+  preference unless the user *explicitly* says "spec 도 폐기".

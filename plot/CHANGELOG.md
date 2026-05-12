@@ -4,174 +4,71 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.16.23] — 2026-05-12
+## [0.16.24] — 2026-05-13
 
-Docs-only — closure of the 4-commit "RF 기본 동작" rollback batch
-(v0.16.20-23). ROADMAP §"v0.17+" gains a "Deferred (RF 기본 동작
-rollback)" subsection listing the 3 canonical Plot spec mandates
-this rollback violates: synthetic anchor / anchor-radial layout /
-self-loop visual. Each mandate links its last-shipping decision +
-revert decision so a future session can re-derive cleanly.
-(D-2026-05-12-Y)
+Restore the v0.16.20-23 "RF 기본 동작 rollback" batch as a single
+``git revert`` of all four commits (``ac35021`` v0.16.23, ``32f3dc5``
+v0.16.22, ``7edbbf8`` v0.16.21, ``75ee0b0`` v0.16.20). User direct
+correction "다 복구 하라" after the prior batch was identified as
+over-reach (NEXT_SESSION.md:22-24). The original triggering message
+"그냥 RF 기본 동작으로 동작하게 해주세요" had been interpreted as
+"remove the synthetic anchor and all its visual layers"; the user's
+actual intent was "keep the anchor + make *interaction* feel like
+stock React Flow". (D-2026-05-13-A)
 
-### Changed — plot/docs/ROADMAP.md
+### Added (restored)
 
-- §"v0.17+ — Roadmap items" gains a "Deferred" subsection listing
-  the 3 spec mandates removed by this batch + recovery references
-  (git commit hashes for the implementations + tests).
-
-### Rollback batch summary (v0.16.20-23)
-
-| Commit | Revert | Decision | Tests delta |
-|---|---|---|---:|
-| v0.16.20 | SelfLoopEdge custom edge | D-2026-05-12-V | −7 |
-| v0.16.21 | Anchor-radial layout | D-2026-05-12-W | −15 |
-| v0.16.22 | Synthetic anchor + PATCH path | D-2026-05-12-X | −10 |
-| v0.16.23 | Docs-only ROADMAP archive | D-2026-05-12-Y | 0 |
-
-Net: viewer 399 → 367 tests; server 274 unchanged. App.tsx LOC:
-385 → 334. Of the v0.16.15-19 fix batch:
-- **v0.16.16 stable handlers** + **v0.16.17 Cmd+A sync** +
-  **v0.16.18 fitView gating** kept (they fix RF-default behaviour,
-  no custom layer on top).
-- **v0.16.15 anchor snap-back** + **v0.16.19 anchor handler
-  useCallback** rolled back as part of v0.16.22 anchor removal.
-
-### Lesson recorded
-
-Static audits (parity / structural-guards / LOC budget / cursor
-baseline) cannot detect runtime interaction quality. The "RF
-integration test layer" (Playwright real-input) filed in ROADMAP
-§v0.17+ remains the right next investment. Until it lands,
-*every* user-facing canvas change needs hands-on validation in
-the user's actual browser before the commit is called "done".
-
-Plugin patch bump 0.16.22 → 0.16.23.
-
-## [0.16.22] — 2026-05-12
-
-Rollback — Synthetic project anchor + PATCH path reverted. Canvases
-no longer inject a synthetic yellow-circle anchor at centre; they
-start empty until the user adds nodes. The server-side
-``ProjectDoc.anchors`` field and ``PATCH /api/projects/:id/anchor``
-endpoint are retained (backward compat) but no longer drive
-viewer rendering. Third of 4-commit "RF 기본 동작" rollback. The
-canonical Plot spec mandate ("프로젝트 노드 가운데") is deferred.
-(D-2026-05-12-X)
-
-### Removed
-
-- ``viewer/src/canvases/sketch/applyAnchorChange.ts``.
-- ``viewer/src/lib/anchorOptimistic.ts`` + empty ``lib/`` dir.
-- ``viewer/tests/anchor-drag-snap-back.test.tsx``.
-- Synthetic anchor injection block (~20 LOC) from
-  ``useNodesMemo.ts``.
-- ``projectAnchor`` / ``projectName`` / ``onAnchorChange`` /
-  ``injectAnchor`` props from ``SketchCanvasProps``.
-- ``injectAnchor={...}`` prop from all 4 canvas wrappers.
-- ``handleAnchorChange`` useCallback + JSX usage from App.tsx.
-- ``resolveProjectAnchor`` helper + ``patchProjectAnchor`` import
-  + ``applyOptimisticAnchorPatch`` + ``AnchorPlacement`` /
-  ``ProjectDoc`` type imports from App.tsx.
-
-### Changed
-
-- ``useNodesMemo.ts`` returns only user-doc nodes; no synthetic
-  prepend.
-- ``handleNodesChange`` in SketchCanvas no longer splits anchor
-  position changes — the regular ``applyNodeChangesToDoc`` path
-  handles everything.
-- ``SketchCanvas.regression.test.tsx`` anchor pin test updated:
-  asserts ``__project_anchor__`` element is ABSENT (was: 4
-  handles present).
-- ``App.tsx`` LOC: 385 → 334.
-- ``docs/SPEC.md §Anchor`` — REMOVED marker added; historical
-  table archived in place.
-
-### Server side (unchanged for back-compat)
-
-- ``ProjectDoc.anchors: dict[CanvasKind, AnchorPlacement] | None``
-  remains in Pydantic.
-- ``PATCH /api/projects/:id/anchor`` endpoint remains operational.
-- Older viewer versions calling this endpoint succeed silently;
-  new viewer ignores the result.
-
-### Verification
-
-- ``npx tsc --noEmit`` — clean.
-- ``npx vitest run`` — 367 / 367 (377 prior − 10 anchor tests).
-- ``uv run pytest`` — 274 / 274.
-- ``test_pre_commit_gate.py`` reset_complete_check — 11 / 11.
-
-Plugin patch bump 0.16.21 → 0.16.22.
-
-## [0.16.21] — 2026-05-12
-
-Rollback — Anchor-radial initial placement reverted. New Mission /
-CoreValue / Identity nodes on Foundation canvas drop at user-chosen
-coordinates (RF default) instead of auto-placed at 120° radial slots
-around the anchor. Second of 4-commit "RF 기본 동작" rollback.
-(D-2026-05-12-W, supersedes D-2026-05-12-N + D-2026-05-12-O)
-
-### Removed
-
-- ``viewer/src/canvases/sketch/anchorRadialLayout.ts``.
+- ``viewer/src/canvases/edges/SelfLoopEdge.tsx`` — custom edge for
+  ``source === target`` (arc rendering).
+- ``viewer/src/canvases/edges/registry.ts`` — edge type registry.
+- ``viewer/src/canvases/sketch/anchorRadialLayout.ts`` — 120°
+  auto-radial slot computation for Foundation new nodes.
+- ``viewer/src/canvases/sketch/applyAnchorChange.ts`` — anchor PATCH
+  diff helper.
+- ``viewer/src/lib/anchorOptimistic.ts`` — optimistic local update on
+  anchor drag / resize.
+- ``viewer/tests/anchor-drag-snap-back.test.tsx`` — 7 tests.
 - ``viewer/tests/foundation-radial-layout.test.tsx``.
-- ``applyAnchorRadialLayout`` arg from ``useNodeCreation``.
-- ``applyAnchorRadialLayout?: boolean`` prop from
-  ``SketchCanvasProps``.
-- ``applyAnchorRadialLayout={true}`` from FoundationCanvas wrapper.
-
-### Changed
-
-- ``useNodeCreation.addNodeAt`` — drop at caller-supplied
-  ``x``/``y`` unconditionally.
-- ``docs/SPEC.md §Foundation`` — "Anchor-radial initial placement"
-  subsection removed. Canonical spec mandate (anchor + surrounding
-  M/CV/Id) deferred.
-
-### Verification
-
-- ``npx tsc --noEmit`` — clean.
-- ``npx vitest run`` — 377 / 377 (392 prior − 15 deleted radial tests).
-- ``uv run pytest`` — 274 / 274.
-
-Plugin patch bump 0.16.20 → 0.16.21.
-
-## [0.16.20] — 2026-05-12
-
-Rollback — Self-loop custom edge reverted per user "RF 기본 동작"
-request. Delete ``SelfLoopEdge.tsx`` + edge registry; revert
-``edgeTransform.ts`` filter to RF default (drop ``src === tgt``).
-First of 4-commit "RF 기본 동작" rollback batch (v0.16.20-23) after
-v0.16.15-19 fix batch did not match user-felt regression.
-(D-2026-05-12-V, supersedes D-2026-05-12-M)
-
-### Removed
-
-- ``viewer/src/canvases/edges/SelfLoopEdge.tsx``.
-- ``viewer/src/canvases/edges/registry.ts``.
-- ``viewer/src/canvases/edges/`` directory.
 - ``viewer/tests/self-loop-render.test.tsx``.
-- ``edgeTypes={EDGE_TYPES}`` prop + import from ``SketchCanvas.tsx``.
 
-### Changed
+### Changed (restored to v0.16.19 state)
 
-- ``edgeTransform.ts`` filter split (v0.16.10's real-vs-pseudo
-  self-loop distinction) reverted to RF-default
-  ``if (src === tgt) continue;``.
-- ``docs/SPEC.md §Edges`` "Self-loops" subsection updated: data
-  model still permits ``source === target``, but renderer drops
-  them. Received-spec mandate ("셀프 피드백 루프 표현 가능")
-  deferred — re-introduction requires fresh plan-mode + approval.
+- ``viewer/src/canvases/sketch/useNodesMemo.ts`` — synthetic anchor
+  injection block + ``projectAnchor`` / ``projectName`` /
+  ``onAnchorChange`` props restored.
+- ``viewer/src/canvases/SketchCanvas.tsx`` — ``edgeTypes`` prop +
+  anchor props + ``applyAnchorRadialLayout`` prop restored.
+- ``viewer/src/canvases/FoundationCanvas.tsx`` /
+  ``ActorsCanvas.tsx`` / ``ServicesCanvas.tsx`` — ``injectAnchor={true}``
+  restored.
+- ``viewer/src/canvases/ServiceDetailCanvas.tsx`` —
+  ``injectAnchor={false}`` restored.
+- ``viewer/src/canvases/sketch/useNodeCreation.ts`` —
+  ``applyAnchorRadialLayout`` argument restored.
+- ``viewer/src/canvases/sketch/edgeTransform.ts`` — ``isRealSelfLoop``
+  branch restored.
+- ``viewer/src/App.tsx`` — ``handleAnchorChange`` useCallback +
+  ``onAnchorChange`` prop wiring restored.
+- ``docs/SPEC.md`` — §Anchor / §Edges Self-loops / §Foundation
+  Anchor-radial sections restored.
+- ``docs/DECISIONS.md`` — D-2026-05-13-A entry; D-2026-05-12-V/W/X/Y
+  removed by revert (their decisions are now Rejected as documented
+  in D-2026-05-13-A).
+- ``docs/ROADMAP.md`` — anchor / self-loop / radial archived entries
+  removed by revert.
 
-### Verification
+### Removed (the previous batch's removals undone)
 
-- ``npx tsc --noEmit`` — clean.
-- ``npx vitest run`` — 392 / 392 (399 prior − 7 deleted self-loop tests).
-- ``uv run pytest`` — 274 / 274.
+- v0.16.20-23 removals (anchor injection, radial layout, self-loop,
+  PATCH path) are no longer in effect. See "Added (restored)" above.
 
-Plugin patch bump 0.16.19 → 0.16.20.
+### Known unresolved
+
+- Interaction "엉망" — the *actual* user complaint that originally
+  triggered both v0.16.15-19 and v0.16.20-23 — is **not** addressed
+  by this revert. v0.16.19 (anchor present) and v0.16.23 (anchor
+  absent) both exhibited the issue. Diagnosis happens in the next
+  session under the ``RF 움직임`` trigger (NEXT_SESSION.md).
 
 ## [0.16.19] — 2026-05-12
 

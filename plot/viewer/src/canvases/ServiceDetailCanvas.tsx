@@ -17,6 +17,7 @@ export function ServiceDetailCanvas(props: SketchCanvasProps) {
       hideRootServiceNode={true}
       shouldDrill={shouldDrillActorRef}
       showFoldButton={true}
+      injectAnchor={false}
     />
   );
 }

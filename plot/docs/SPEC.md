@@ -25,21 +25,36 @@ behaviour, not data model.)
 
 ---
 
-## Anchor (centre node) — REMOVED in v0.16.22
+## Anchor-radial initial placement (D-2026-05-12-N)
 
-The synthetic project anchor (yellow circle in the canvas centre,
-labelled with the project name) was removed in v0.16.22 per user
-"RF 기본 동작" rollback request (D-2026-05-12-X). Canvases now
-start empty until the user adds nodes. The server-side anchor
-data (``ProjectDoc.anchors``) and PATCH endpoint are retained for
-backward compatibility but no longer drive rendering.
+Per the canonical Plot spec:
+> "프로젝트 노드 놓고(앵커) 그 주변에 미션, 코어밸류, 아이덴티티
+> 붙이면 되요. 뭐가 먼저고 말고는 없습니다."
 
-The canonical Plot spec mandate ("프로젝트 노드 가운데") is
-**deferred** — re-introducing the centre anchor requires fresh
-plan-mode + explicit user approval.
+When the user creates a Mission / CoreValue / Identity node on the
+Foundation canvas, the new node's initial position is set to a slot
+on a circle of radius 320 px around the anchor centre (canvas
+``(0, 0)``). Slots are 120° apart for visual balance — Mission at
+9 o'clock, CoreValue at 1 o'clock, Identity at 5 o'clock. **No
+narrative ordering** is implied; the radial arrangement signals
+"each of the three is an aspect of the same project."
 
-The historical table below is kept for archival reference only;
-none of these properties are currently honoured.
+The slot is **a positional hint, not a constraint**:
+- After creation, the user can drag the node anywhere.
+- Subsequent same-kind nodes get a +30° offset to avoid overlap.
+- No edges are emitted (D-2026-05-04-A preserved — all edges
+  user-drawn).
+- Other canvases (Actors / Services / ServiceDetail) unaffected.
+
+Implementation: ``viewer/src/canvases/sketch/anchorRadialLayout.ts``
+(pure helper) consumed by ``useNodeCreation`` 's ``addNodeAt``.
+
+---
+
+## Anchor (the centre node)
+
+The yellow circle in the middle of the canvas, labelled with the
+project name (e.g. "Banas v0.13").
 
 | Aspect | Behaviour |
 |---|---|
@@ -88,17 +103,19 @@ future node-transform refactor must preserve this property — sort by
 
 ### Self-loops (source === target)
 
-User-drawn edges where ``source === target`` are accepted by the
-data model (``SketchEdge`` carries no source-vs-target validator)
-but **not rendered** on the canvas. ``edgeTransform.ts`` drops
-them, matching React Flow's default behaviour. Reverted from
-v0.16.10's ``SelfLoopEdge`` custom arc per user "RF 기본 동작"
-request (D-2026-05-12-V; supersedes D-2026-05-12-M).
+User-drawn edges where ``source === target`` render as a curved arc
+bulging away from the node (via ``SelfLoopEdge`` custom edge type,
+``viewer/src/canvases/edges/SelfLoopEdge.tsx``). The arc is
+click-able for select / delete / context-menu like any other edge.
 
-The canonical Plot spec §"서비스 간 연결 = 유저저니" mandates
-"셀프 피드백 루프 표현 가능 (서비스 A → 서비스 A)"; that
-mandate is **deferred** — re-introducing visual self-loops requires
-plan-mode + explicit user approval.
+Per the canonical Plot spec §"서비스 간 연결 = 유저저니":
+> "셀프 피드백 루프 표현 가능 (서비스 A → 서비스 A)."
+
+Permitted on every canvas that accepts user-drawn edges. The
+collapsed-ancestor filter in ``edgeTransform.ts`` is preserved —
+edges whose endpoints fold into the same collapsed parent (but
+were *not* originally a self-loop) still drop. Decision
+**D-2026-05-12-M**.
 
 ---
 
