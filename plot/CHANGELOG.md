@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.32] — 2026-05-13
+
+End-of-session bookkeeping. Pin user hands-on confirmation of
+v0.16.24 anchor visual restoration + RF interaction working
+correctly (D-2026-05-13-H). File two silent state inconsistencies
+surfaced by automated page probe as a new lower-priority NEXT_SESSION
+queue entry (D-2026-05-13-I): (1) console 422 storm with
+``e_``-prefixed unknown node ids, (2) ``services/canvas.json`` orphan
+edge with ``None`` endpoints. User interaction confirmed working —
+neither of these surface visibly in the user's session, but both are
+real data-integrity issues that should be fixed before next major
+release.
+
+### Changed
+
+- ``plot/docs/NEXT_SESSION.md`` — RF 움직임 entry archived to
+  Completed; new `잔여 silent state` entry added at top of Active
+  queue for the 422 storm + orphan edge.
+- ``plot/docs/DECISIONS.md`` — D-2026-05-13-H (hands-on confirm)
+  and D-2026-05-13-I (silent state filing) entries.
+
 ## [0.16.31] — 2026-05-13
 
 Skill classification correction. Plot's plugin-skill directory

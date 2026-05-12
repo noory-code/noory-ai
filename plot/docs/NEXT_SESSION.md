@@ -9,13 +9,68 @@
 
 ## Active queue
 
-### `RF 움직임` — Canvas interaction "엉망" 깊게 파기
+### `잔여 silent state` — 422 PATCH + None→None orphan edge (lower priority)
 
-> **Trigger:** user says **"RF 움직임"** or **"움직임 엉망"** or
-> **"RF 기본 동작"** or **"canvas interaction"** or
-> **"엉망 깊게 파자"** as the first / near-first message.
+> **Trigger:** user says **"422"** or **"None edge"** or
+> **"orphan edge"** or **"silent state"** or **"잔여 에러"**.
 >
-> **Filed:** 2026-05-12 end-of-session. **Updated 2026-05-13:**
+> **Filed:** 2026-05-13 end-of-session. Even after v0.16.24-29
+> closed "RF 움직임" (user confirmed via hands-on, D-2026-05-13-H),
+> two silent state inconsistencies remained surfaced by automated
+> page probe:
+>
+> 1. **Console `422 Unprocessable Entity × 7`** on
+>    ``http://localhost:5193/?project_path=.../plot-test-v010``
+>    — server validation error
+>    *"edges reference unknown nodes: ['e_mp2vvxg9_k9cq',
+>    'e_mp2vw2a3_jwo8', 'e_mp2vw4a3_b8cd', 'e_mp2vw78k_exi5']"*.
+>    The four `e_`-prefixed ids are not present anywhere in raw
+>    storage (`grep` 0 hits). Most likely: client → server PATCH
+>    payload is setting `edge.source` or `edge.target` to an edge
+>    id (not a node id). User did not feel this in interaction —
+>    optimistic update covers it.
+> 2. **`services/canvas.json` orphan edge** `e_mopntgek_4y74` with
+>    ``source_id: None, target_id: None``. Pydantic should be
+>    rejecting it on the next save; user has not encountered it
+>    visibly. Storage-level cleanup or migration is needed.
+>
+> **Why low priority:** user interaction confirmed working
+> (D-2026-05-13-H). These are background data-integrity issues
+> the user is not feeling. But the 422 storm is a real bug that
+> *would* surface if the user's session ever loses its optimistic
+> state (page refresh, browser restart, etc.) — fix before the
+> next major release.
+>
+> **Approach for the session:**
+> - Plan-mode entry mandatory.
+> - Step 1: capture exact PATCH request body via Chrome DevTools
+>   Network panel (or chrome-devtools-mcp `list_network_requests` +
+>   `get_network_request` of one 422). Identify whether source or
+>   target field is the `e_`-prefixed id.
+> - Step 2: trace back through viewer code to where the wrong field
+>   is set. Suspect: anchor PATCH path (`applyAnchorChange.ts`,
+>   `onAnchorChange` callback) or edge-creation flow.
+> - Step 3: storage migration for the None→None services edge —
+>   sweep + remove orphan edges across all canvases. Add a
+>   pre-commit gate guard so future orphan edges fail loudly.
+
+---
+
+### (Completed 2026-05-13) `RF 움직임` — Canvas interaction "엉망" 깊게 파기
+
+> **Completed:** 2026-05-13 end-of-session. After v0.16.24-31
+> shipped (anchor visual restoration + 5 catch-up artefacts +
+> skill reclassification), user hands-on validation in real Chrome
+> confirmed: *"이제 잘 동작하는 거 같아요"* + *"근데 이제 된 거
+> 같은데?"* (D-2026-05-13-H). Trigger archived; remaining silent
+> state issues surfaced separately above.
+>
+> **Trigger phrases (preserved for future reference if regression
+> resurfaces):** "RF 움직임" / "움직임 엉망" / "RF 기본 동작" /
+> "canvas interaction" / "엉망 깊게 파자".
+>
+> **Filed (history):** 2026-05-12 end-of-session. **Updated
+> 2026-05-13:**
 > v0.16.24 restored the anchor + radial + self-loop visual layer
 > (D-2026-05-13-A) after user clarified the v0.16.20-23 batch was
 > over-reach. Interaction "엉망" is now isolated as a **separate**

@@ -3198,3 +3198,81 @@ in the same browser-verification round:
   ``noory-ai/pencil_m3_flutter/`` may have the same misclassification.
   Audit deferred until those plugins' next session — not blocking
   Plot work.
+
+---
+
+### D-2026-05-13-H — v0.16.24 hands-on validation confirmed (Gate 0 pin)
+
+- **What:** User confirmed via hands-on test in their real Chrome
+  that v0.16.24 anchor visual restoration works as intended and
+  the "RF 움직임 엉망" interaction complaint is no longer present.
+  Verbatim user messages 2026-05-13:
+  - *"근데 이제 된 거 같은데?"* (in response to a question about
+    whether the 4 visible foundation edges were intended).
+  - *"이제 잘 동작하는 거 같아요."* (in response to the
+    diagnosis-plan offer).
+
+- **Why:** Gate 0 trigger — confirmation pins the spec. Closing the
+  "RF 움직임" NEXT_SESSION entry requires this pin or the next
+  session would reopen the same diagnosis.
+
+- **Spec impact:** None — confirms existing SPEC behaviour
+  (anchor visible + RF stock interaction). No new SPEC line.
+
+- **NEXT_SESSION impact:** ``RF 움직임`` active-queue entry
+  archived to the Completed section.
+
+- **Files in this commit:**
+  - ``plot/docs/NEXT_SESSION.md`` — entry archive.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.32 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.31 → 0.16.32.
+
+- **Caveat:** Hands-on validation by spot-check; silent
+  state issues found by automated page probe remain unresolved —
+  see D-2026-05-13-I for the filing.
+
+---
+
+### D-2026-05-13-I — Silent state inconsistencies filed (lower-priority queue)
+
+- **What:** Two data-integrity issues surfaced by automated page
+  probe of ``http://localhost:5193/?project_path=.../plot-test-v010``
+  on 2026-05-13, recorded so the next session can pick them up:
+
+  1. **Console `422 Unprocessable Entity × 7`** with server
+     validation error *"edges reference unknown nodes:
+     ['e_mp2vvxg9_k9cq', 'e_mp2vw2a3_jwo8', 'e_mp2vw4a3_b8cd',
+     'e_mp2vw78k_exi5']"*. The four ``e_``-prefixed ids are not
+     present anywhere in raw storage (``grep`` 0 hits across
+     ``.plot/``). Most likely cause: client → server PATCH payload
+     is setting ``edge.source`` or ``edge.target`` to an edge id
+     instead of a node id. Optimistic update covers the user
+     experience; the user does not feel it.
+
+  2. **``services/canvas.json`` orphan edge** ``e_mopntgek_4y74``
+     with ``source_id: None, target_id: None``. Pydantic should
+     reject on the next save attempt; user has not encountered it
+     visibly.
+
+- **Why low priority:** User-facing interaction confirmed working
+  (D-2026-05-13-H). These do not surface in the user's session.
+
+- **Why not zero priority:** The 422 storm is a real client-side
+  bug that *would* surface if the user's session ever loses its
+  optimistic state (hard reload mid-edit, browser restart, etc.).
+  The None→None edge is a storage corruption that will block any
+  future save touching ``services/canvas.json``.
+
+- **Approval:** Pending — filed for next-session pickup. User
+  asked to wrap session ("이제 잘 동작하는 거 같아요"); these
+  issues recorded honestly without acting on them this session
+  to avoid extending scope without user consent.
+
+- **NEXT_SESSION trigger:** ``잔여 silent state`` / ``422`` /
+  ``None edge`` / ``orphan edge`` / ``잔여 에러``.
+
+- **Spec impact:** None.
+
+- **Files in this commit:** same as D-2026-05-13-H plus the
+  NEXT_SESSION entry pair.
