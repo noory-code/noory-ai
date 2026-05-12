@@ -4,6 +4,62 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.9] — 2026-05-12
+
+New skill — ``plot-i18n-audit`` runs 4 static audits on the viewer
+codebase for i18n compliance per ``feedback_plot_global_service`` +
+D-2026-05-11-D. **First dogfood of the v0.16.8 ``plot-design-red-team``
+skill** — the v1 proposal was design-reviewed before implementation;
+6 findings (3 Major + 3 Minor) forced revisions before ship.
+(D-2026-05-12-L)
+
+### Added — plot/skills/plot-i18n-audit/SKILL.md
+
+The 4 audits:
+1. **Hardcoded user-facing strings** — JSX text + named attribute
+   allowlist (aria-* / title / alt / placeholder / label); exemption
+   rules for length ≤ 3 / NodeKind literals / brand regex
+   ``^[A-Z]{2,8}$`` / MIME type / adjacent ``// i18n-skip`` comment.
+2. **Undefined ``t()`` keys** — static + dynamic
+   (``t(\`prefix.${var}\`)`` template-literal prefix expansion).
+3. **Stale en.json keys** — zero static or dynamic-prefix references.
+4. **Untranslated ko.json values** — ``ko[k] === en[k]`` AND length
+   > 3 AND value ≠ key tail AND not in brand / MIME allowlist.
+
+Output verdict: ✅ CLEAN / 🟡 FIX / 🔴 BLOCK. Audits 3-4 are
+Minor; alone they never escalate verdict.
+
+### Why now
+
+Memory ``feedback_plot_global_service.md``
+(*"이건 글로벌 서비스가 될거거든요"*, 2026-05-10) pinned i18n as
+non-negotiable. ``i18n-keys-parity.test.ts`` enforces locale parity
+but cannot see hardcoded strings, undefined ``t()`` calls, stale keys,
+or untranslated values. This skill closes those four gaps without
+TS-compiler infra.
+
+### Process note — first red-team dogfood
+
+The v1 proposal was reviewed via ``plot-design-red-team`` (v0.16.8)
+before any SKILL.md was written. The skill returned 🟡 REVISE FIRST
+with 3 Major + 3 Minor findings: fuzzy "user-facing" definition,
+unhandled dynamic-key composition, over-fit untranslated check,
+missing WIP escape hatch, undefined audit scope. **Every Major
+finding was addressed in the revised proposal that shipped here.**
+The dogfood loop was the value-add of v0.16.7 + v0.16.8: catch
+proposal weaknesses before code.
+
+### Evolution path (documented inside the skill)
+
+- Phase 1 (now): manual invocation, manual scan, manual report.
+- Phase 2: wire Audit 1 + 2 into a vitest static guard so missing
+  keys / hardcoded strings fail the build.
+- Phase 3: PreCommit hook gating FIX / BLOCK verdicts.
+- Per ``project_red_team_review_skill.md`` philosophy: don't
+  pre-build Phase 2-3; let usage shape them.
+
+Plugin patch bump 0.16.8 → 0.16.9.
+
 ## [0.16.8] — 2026-05-12
 
 New skill — ``plot-design-red-team`` runs 8 adversarial attacks

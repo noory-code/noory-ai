@@ -2059,3 +2059,85 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.8 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.7 → 0.16.8.
+
+---
+
+### D-2026-05-12-L — plot-i18n-audit skill (revised after dogfooded design red-team)
+
+- **What:** Add ``plot/skills/plot-i18n-audit/SKILL.md`` — a
+  procedure skill that runs 4 static audits on the viewer
+  codebase for i18n compliance per
+  ``feedback_plot_global_service.md`` (Plot is a global service)
+  + D-2026-05-11-D (English primary / Korean locale, parity
+  guard already in place).
+
+- **Why:** the existing ``i18n-keys-parity.test.ts`` enforces
+  *parity* (en ↔ ko key sets), but cannot see:
+  1. **Hardcoded** user-facing strings the bundle never receives.
+  2. **Undefined** ``t("foo.bar")`` calls whose key is missing
+     from en.json.
+  3. **Stale** keys in en.json that no source file references.
+  4. **Untranslated** values where ``ko[k] === en[k]`` for
+     non-trivial text.
+
+  This skill closes those four gaps without TS-compiler infra.
+
+- **Design-red-team verdict (dogfooded ``plot-design-red-team``
+  v0.16.8 on the v1 proposal):** 🟡 REVISE FIRST. Three Major
+  + three Minor findings led to these revisions before ship:
+
+  | Finding | Severity | Revision applied |
+  |---|---|---|
+  | A2.1 — "user-facing string" too fuzzy | Major | Explicit definition: JSX text + named attribute allowlist (aria-* / title / alt / placeholder / label) + exemption rules (length ≤ 3 / NodeKind literal / brand regex / adjacent ``// i18n-skip``) |
+  | A2.2 — dynamic ``t(\`prefix.${var}\`)`` un-handled | Major | Audit 2 + Audit 3 explicitly extract template-literal prefix; mark ``prefix.*`` entirely referenced |
+  | A3.1 — dynamic composition false-positives | Major | Same as A2.2 |
+  | A6.1 — untranslated check over-fits | Minor | Equal-string check gated by length > 3 AND value ≠ key tail |
+  | A7.1 — WIP / dev-only handling absent | Minor | ``// i18n-skip`` comment marker (no permanent variant — forces eventual i18n) |
+  | A8.1 — audit scope undefined | Minor | Explicit "scan ``viewer/src/**/*.{ts,tsx}``, exclude i18n / tests / main.tsx" |
+
+  After revisions: 🟢 READY TO IMPLEMENT (per skill's verdict
+  scale). The dogfood loop was the value-add of v0.16.7 + v0.16.8
+  red-team skills — caught real proposal weaknesses before code.
+
+- **Output verdict scale (skill itself):**
+  - ✅ CLEAN — zero findings.
+  - 🟡 FIX — ≥ 1 hardcoded / undefined-key finding (user-visible
+    bug in the running viewer).
+  - 🔴 BLOCK — ≥ 3 hardcoded / undefined-key findings (systematic
+    i18n bypass).
+  - Stale (Audit 3) + untranslated (Audit 4) are Minor — they
+    appear in the report but never escalate verdict on their own.
+
+- **Phase 1 / 2 / 3 evolution (documented inside the skill):**
+  - Phase 1 (now): manual invocation, manual scan, manual report.
+  - Phase 2: wire Audit 1 + 2 into a vitest static guard
+    (``i18n-static-audit.test.tsx``) so missing keys / hardcoded
+    strings fail the build. Audits 3 + 4 stay manual.
+  - Phase 3: PreCommit hook gating FIX / BLOCK verdicts.
+  - Per ``project_red_team_review_skill.md`` evolution philosophy:
+    don't pre-build Phase 2-3; let usage shape them.
+
+- **Approval:** Pending — first iteration. Calibrates from real
+  use; if five consecutive runs convert no findings to changes,
+  move to Phase 2 and retire manual invocation.
+
+- **Alternatives considered:**
+  - **Auto-fix:** rejected. Auto-translation guesses, auto-key-naming
+    guesses, auto-exemption guesses each multiply risk. Read-only
+    by design.
+  - **TS compiler (ts-morph) parsing:** rejected. Same rationale
+    as D-2026-05-12-I (schema parity): regex is brittle but the
+    failure mode is loud and fixable; compiler dependency is
+    heavier than the skill's payoff.
+  - **Merge with ``i18n-keys-parity.test.ts``:** rejected. Parity
+    is a single binary contract enforced at vitest time; the audit
+    is a 4-category report enforced at human-review time. Mixing
+    them buries the report inside test failures and loses the
+    structured output.
+
+- **Files in this commit:**
+  - ``plot/skills/plot-i18n-audit/SKILL.md`` — new, ~220 LOC.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.9 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.8 →
+    0.16.9.
