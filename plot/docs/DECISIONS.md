@@ -2433,3 +2433,89 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.16.13 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.12 → 0.16.13.
+
+---
+
+### D-2026-05-12-Q — Anchor drag snap-back: optimistic local update
+
+- **What:** ``App.tsx`` 's ``onAnchorChange`` handler now updates
+  ``summaries`` state **optimistically** (via the new pure helper
+  ``viewer/src/lib/anchorOptimistic.ts::applyOptimisticAnchorPatch``)
+  *before* the ``patchProjectAnchor`` PATCH request fires. After the
+  server response, the optimistic doc is replaced with the canonical
+  server doc. On PATCH failure, the previous (pre-patch) doc is
+  restored.
+
+- **Why:** React Flow is a *controlled* component — its ``nodes``
+  prop is the SSOT for node positions. The anchor drag flow was:
+  ```
+  user drag → onNodesChange → handleNodesChange → applyAnchorChange
+  → onAnchorChange(patch) → patchProjectAnchor (async, 100-500ms)
+  → replaceSummary
+  ```
+  Before this fix, ``summaries`` state only updated *after* the PATCH
+  resolved, so during the round-trip the computed ``projectAnchor``
+  prop carried the OLD position. React Flow, being controlled,
+  rendered the anchor at the OLD position prop → user saw the anchor
+  snap back to its pre-drag location.
+
+  Same pattern as any optimistic-update UX: client commits the
+  local view first, reconciles with server response after.
+
+- **Why this wasn't caught earlier:** v0.13 Phase 0 introduced the
+  anchor PATCH path but only tested it with localhost MCP server,
+  where the PATCH round-trip is < 5ms — fast enough that the snap-back
+  was sub-perceptible. Once the user's actual workflow involved any
+  network latency (slow local CPU under HMR, real-world deploy
+  latency, etc.), the gap became visible.
+
+- **Architecture:**
+  - New ``viewer/src/lib/anchorOptimistic.ts`` (~50 LOC):
+    ``applyOptimisticAnchorPatch(current, tab, patch): ProjectDoc``
+    + ``resolveAnchorPlacement(proj, tab): AnchorPlacement``. Pure,
+    side-effect-free, testable in isolation.
+  - ``App.tsx`` onAnchorChange shrinks from 7 lines to 17 lines
+    (added optimistic update + error revert) but uses helper so
+    the *new* logic stays in a 50-LOC pure module instead of
+    bloating App.tsx (which has a 400-LOC structural ceiling).
+
+- **Tests:** ``plot/viewer/tests/anchor-drag-snap-back.test.tsx``
+  — 7 tests covering: x/y patch, missing-anchors-default, other-tab
+  isolation, dimension-only patch, revert-via-previous, default
+  fallback, stored-placement readback.
+
+- **Alternatives considered:**
+  - **Use ``useReactFlow().setNodes()`` to forcibly write the new
+    anchor position into RF's store before the PATCH**: rejected —
+    breaks the controlled-component contract (same anti-pattern as
+    Cmd+A in D-2026-05-12-R, addressed separately at v0.16.17).
+  - **Synchronous PATCH (await before returning)**: rejected — would
+    block the drag handler on the server round-trip.
+  - **Move ``summaries`` to a Context with optimistic+server
+    reducer pattern**: over-engineering for one patch site. If a
+    second optimistic site appears later, revisit.
+
+- **Approval:** Accepted by spec mandate (RF controlled-component
+  contract) + regression test pinning.
+
+- **Spec impact:** ``docs/SPEC.md §Anchor`` already says
+  "Mutation routing: anchor changes flow through ``onAnchorChange``
+  (a separate prop), **never** through ``onDocChange``". This decision
+  doesn't change that — only the *timing* of the state propagation
+  back into ``summaries``.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/lib/anchorOptimistic.ts`` — new (~55 LOC).
+  - ``plot/viewer/src/App.tsx`` — onAnchorChange uses the helper +
+    error revert. 381 → 393 LOC (within 400 ceiling).
+  - ``plot/viewer/tests/anchor-drag-snap-back.test.tsx`` — new
+    (7 tests).
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.15 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.14 → 0.16.15.
+
+- **Series context:** First of 5-commit React Flow regression-fix
+  batch (v0.16.15-19) prompted by user hands-on review of v0.16.14.
+  Companion fixes: refetch storm (v0.16.16), Cmd+A controlled
+  contract (v0.16.17), fitView gating (v0.16.18), anchor
+  data.onResize stability (v0.16.19).

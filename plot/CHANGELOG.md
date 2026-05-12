@@ -4,6 +4,61 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.15] — 2026-05-12
+
+Bug fix — anchor drag snap-back. User dragging the synthetic project
+anchor on Foundation / Actors / Services canvases would briefly snap
+back to its pre-drag position during the 100-500ms server PATCH
+round-trip. Cause: ``summaries`` state only updated *after* the PATCH
+resolved, so React Flow's controlled ``nodes`` prop rendered the OLD
+anchor placement during the gap. Fix: optimistic local update before
+the network call, with revert on PATCH failure. (D-2026-05-12-Q)
+
+### Added — viewer/src/lib/anchorOptimistic.ts
+
+- ``applyOptimisticAnchorPatch(current, tab, patch): ProjectDoc`` —
+  pure helper that merges an anchor patch into a ProjectDoc.
+- ``resolveAnchorPlacement(proj, tab): AnchorPlacement`` — same
+  fallback logic as App.tsx's resolveProjectAnchor, extracted for
+  helper-internal use.
+
+### Changed — viewer/src/App.tsx
+
+- ``onAnchorChange`` handler:
+  - Captures the previous ProjectDoc before mutation.
+  - Calls ``replaceSummary(applyOptimisticAnchorPatch(...))`` *before*
+    ``patchProjectAnchor``.
+  - On PATCH success, ``replaceSummary(refreshed)`` with server doc.
+  - On PATCH failure, ``replaceSummary(previous)`` to revert.
+- LOC: 381 → 393 (under 400 ceiling per structural-guards).
+
+### Added — viewer/tests/anchor-drag-snap-back.test.tsx
+
+7 tests covering:
+- x/y patch preserves other anchor fields.
+- Missing-anchors project gets a default-fallback patch.
+- Patching foundation leaves actors anchor untouched.
+- Dimension-only patch preserves position.
+- Revert path (``previous`` reference unchanged by merge).
+- ``resolveAnchorPlacement`` default + stored variants.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 390 / 390 passed (383 prior + 7 new).
+- ``uv run pytest`` — 274 / 274 (no server change).
+
+### Series context
+
+First of a 5-commit React Flow regression-fix batch (v0.16.15-19)
+prompted by user hands-on review of v0.16.14. The batch addresses
+multiple React Flow misuse patterns surfaced when the user dragged
+the anchor: snap-back here, refetch storm (v0.16.16), Cmd+A
+controlled-contract violation (v0.16.17), fitView mid-session resets
+(v0.16.18), anchor data.onResize stability (v0.16.19).
+
+Plugin patch bump 0.16.14 → 0.16.15.
+
 ## [0.16.14] — 2026-05-12
 
 Docs-only — end-of-session wrap-up. Three remaining parked-backlog

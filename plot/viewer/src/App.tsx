@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { patchProjectAnchor, resolveProjectPath } from "./api";
+import { applyOptimisticAnchorPatch } from "./lib/anchorOptimistic";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
 import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
@@ -298,10 +299,21 @@ export function App() {
                   summaries.find((p) => p.id === activeId)?.name ?? null
                 }
                 onAnchorChange={(patch) => {
-                  if (!projectPath) return;
+                  if (!projectPath || !activeId) return;
+                  // v0.16.15 (D-2026-05-12-Q) — optimistic before PATCH
+                  // so RF's controlled ``nodes`` prop doesn't snap back
+                  // during the network round-trip.
+                  const previous = summaries.find((p) => p.id === activeId);
+                  if (previous) {
+                    project.replaceSummary(
+                      applyOptimisticAnchorPatch(previous, activeTab, patch),
+                    );
+                  }
                   void patchProjectAnchor(projectPath, activeId, activeTab, patch).then(
-                    (refreshed) => {
-                      project.replaceSummary?.(refreshed);
+                    (refreshed) => project.replaceSummary(refreshed),
+                    (err) => {
+                      if (previous) project.replaceSummary(previous);
+                      setError(err instanceof Error ? err.message : String(err));
                     },
                   );
                 }}
