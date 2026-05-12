@@ -133,19 +133,39 @@ session that may never have had user approval. See
 "synthetic anchor is read-only" comment caused the assistant to remove
 anchor handles, which the user never agreed to.
 
-### Gate 2 — Before editing an oversize file
+### Gate 2 — Before editing a file near its LOC budget
 
-| File | LOC (2026-05-05) | Rule |
-|---|---:|---|
-| `viewer/src/canvases/SketchCanvas.tsx` | 1476 | **No new responsibilities.** New behaviour → new file. Existing-file edits must hold or reduce LOC. |
-| `viewer/src/canvases/SketchInspector.tsx` | 1422 | Same. |
-| `viewer/src/App.tsx` | 791 | Same. |
-| `viewer/src/canvases/SketchStencil.tsx` | 523 | Same. |
+Per [D-2026-05-12-F](./docs/DECISIONS.md). The v0.15 structural
+reset (D-2026-05-12-B) deleted `SketchInspector.tsx` (Phase 2.10)
+and `SketchNode.tsx` (Phase 3.5); the remaining oversize file is
+`App.tsx`. Every canvas-internal file has a runtime-enforced LOC
+ceiling — see `viewer/tests/structural-guards.test.tsx`.
 
-Per [D-2026-05-05-B](./docs/DECISIONS.md). Bug-fix edits to these
-files are allowed only if they don't grow LOC. If a fix needs new
-state / new handler / new render block, it goes in a new file or
-waits for the split (see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)).
+| File | LOC (2026-05-12) | Ceiling | Rule |
+|---|---:|---:|---|
+| `viewer/src/App.tsx` | 811 | 830 | **No-growth** — plan target ≤ 400; URL sync + filter callbacks + handler glue should be extracted to hooks in a v0.16+ follow-up. |
+| `viewer/src/canvases/SketchCanvas.tsx` | 396 | 420 | **No-growth** — shared shell; new responsibilities → new sketch hook or wrapper. |
+| `viewer/src/canvases/nodes/BaseNode.tsx` | 227 | 250 | Chrome SSOT for all 15 per-kind node renderers. New visual responsibilities → per-kind file. |
+| `viewer/src/canvases/inspectors/BaseInspector.tsx` | 198 | 220 | Chrome SSOT for all 15 per-kind inspectors. New chrome → here; new typed-field body → per-kind file. |
+| `viewer/src/canvases/{Foundation,Actors,Services,ServiceDetail}Canvas.tsx` | 16-23 | 150 | Props-only thin shells. **Never** put behaviour here — push it into a sketch hook or BaseNode chrome flag. |
+| `viewer/src/canvases/nodes/{kind}/index.tsx` × 15 | ≤ 19 | 100 | Per-kind node renderer; wraps `BaseNode` with kind-specific chrome flags + body override. |
+| `viewer/src/canvases/inspectors/{kind}/index.tsx` × 15 | ≤ 167 | 250 | Per-kind inspector; renders inside `BaseInspector`'s slot. |
+| ~~`viewer/src/canvases/SketchInspector.tsx`~~ | — | absent | **DELETED** in v0.15.0 (Phase 2.10). Re-creating fails `structural-guards.test.tsx`. |
+| ~~`viewer/src/canvases/SketchNode.tsx`~~ | — | absent | **DELETED** in v0.15.5 (Phase 3.5). Re-creating fails `structural-guards.test.tsx`. |
+
+**Raising a ceiling** = open a fresh `D-YYYY-MM-DD-X` entry that
+either (a) names the new responsibility the file legitimately
+absorbed, or (b) accepts a refactor follow-up. **Never** edit the
+test ceiling without the decision id.
+
+**Lowering a ceiling** (i.e. enforcing the planned target after a
+split) = the same — pin via a decision so the next session knows
+what changed.
+
+If a fix to one of these files needs new state / handler / render
+block AND grows LOC past the ceiling, it goes in a new file or
+waits for the planned split (see
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)).
 
 ### Gate 3 — Before claiming "done"
 

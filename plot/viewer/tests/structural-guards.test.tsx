@@ -1,0 +1,218 @@
+/**
+ * Structural guards — Phase 5.2 (D-2026-05-12-F).
+ *
+ * Three contracts pin the v0.15 reset's structural shape so a future
+ * commit cannot regress to a god component without the build failing
+ * with a pointer to the relevant decision:
+ *
+ *   1. ``no-god-union-import``: the deleted god components
+ *      (``SketchInspector.tsx``, ``SketchNode.tsx``) must remain
+ *      absent from disk, and no canvas file (wrappers + sketch hooks
+ *      + App.tsx) may use a ``switch (X.kind)`` god dispatch outside
+ *      the allowlisted registries / domain layer / per-kind factory.
+ *      Per-kind narrowing guards (``if (node.kind !== "X") return null``)
+ *      inside ``inspectors/{kind}/`` or ``nodes/{kind}/`` files
+ *      remain allowed — they are the *consumers* of the union, not
+ *      god dispatchers.
+ *
+ *   2. ``loc-budget``: each canvas-internal file fits inside a
+ *      ceiling proportional to its responsibility. The ceiling is
+ *      tight enough that bloat triggers a decision before review;
+ *      lowering a ceiling requires a fresh ``D-YYYY-MM-DD-X`` entry.
+ *      *Raise* via decision (the file outgrew its single responsibility
+ *      and needs a split), never via test edit.
+ *
+ *   3. ``registry-completeness``: the 15 per-kind directories
+ *      (``canvases/nodes/{kind}/`` + ``canvases/inspectors/{kind}/``)
+ *      must each exist, and the runtime registries must enumerate
+ *      all 15. Catches a kind drop / addition during refactor.
+ *
+ * Adding a 16th kind requires touching the registries and the
+ * ``KIND_DIRS`` SSOTs in both this file and
+ * ``styles-cursor-baseline.test.tsx`` — the friction is intentional.
+ */
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import { NODE_RENDERERS } from "../src/canvases/nodes/registry";
+
+const SRC = resolve(__dirname, "../src");
+
+function loc(rel: string): number {
+  return readFileSync(resolve(SRC, rel), "utf8").split("\n").length;
+}
+
+function stripComments(s: string): string {
+  let out = s.replace(/\/\*[\s\S]*?\*\//g, "");
+  out = out
+    .split("\n")
+    .map((line) => line.replace(/\/\/.*$/, ""))
+    .join("\n");
+  return out;
+}
+
+const KIND_DIRS = [
+  "actor",
+  "actor_ref",
+  "category",
+  "content",
+  "core_value",
+  "identity",
+  "identity_ref",
+  "metric",
+  "mission",
+  "mission_ref",
+  "project",
+  "rule",
+  "service",
+  "step",
+  "value_ref",
+] as const;
+
+// ---------------------------------------------------------------------
+// Contract 1: no-god-union-import
+// ---------------------------------------------------------------------
+
+const GOD_FILES_ABSENT = [
+  "canvases/SketchInspector.tsx",
+  "canvases/SketchNode.tsx",
+] as const;
+
+/** Files where a ``switch (X.kind)`` god-dispatch would re-introduce
+ *  the v0.14 anti-pattern. Per-kind files (`inspectors/{kind}/`,
+ *  `nodes/{kind}/`, registries, and the domain factory in
+ *  `domain/createBlankNode.ts`) are explicitly excluded. */
+function listForbiddenSwitchFiles(): string[] {
+  const out: string[] = [];
+
+  // 4 canvas wrappers + shared shell
+  out.push(
+    "canvases/FoundationCanvas.tsx",
+    "canvases/ActorsCanvas.tsx",
+    "canvases/ServicesCanvas.tsx",
+    "canvases/ServiceDetailCanvas.tsx",
+    "canvases/SketchCanvas.tsx",
+    "canvases/nodes/BaseNode.tsx",
+    "canvases/inspectors/BaseInspector.tsx",
+    "canvases/inspectors/KindInspector.tsx",
+    "canvases/inspectors/DetailsSection.tsx",
+    "App.tsx",
+  );
+
+  // All sketch hooks
+  for (const e of readdirSync(resolve(SRC, "canvases/sketch"), { withFileTypes: true })) {
+    if (e.isFile() && (e.name.endsWith(".ts") || e.name.endsWith(".tsx"))) {
+      out.push(`canvases/sketch/${e.name}`);
+    }
+  }
+
+  return out.sort();
+}
+
+const FORBIDDEN_SWITCH_FILES = listForbiddenSwitchFiles();
+
+describe("no-god-union-import (Phase 5.2)", () => {
+  it.each(GOD_FILES_ABSENT)(
+    "the god file %s must remain absent from disk",
+    (rel) => {
+      expect(existsSync(resolve(SRC, rel)), `god file present: ${rel}`).toBe(false);
+    },
+  );
+
+  it.each(FORBIDDEN_SWITCH_FILES)(
+    "no `switch (X.kind)` god dispatch in %s",
+    (rel) => {
+      const src = stripComments(readFileSync(resolve(SRC, rel), "utf8"));
+      const matches = src.match(/switch\s*\(\s*[\w.]*\.?kind\s*\)/g) ?? [];
+      expect(matches, `god dispatch in ${rel}`).toEqual([]);
+    },
+  );
+});
+
+// ---------------------------------------------------------------------
+// Contract 2: loc-budget
+// ---------------------------------------------------------------------
+
+/**
+ * LOC ceilings — see plan ``dazzling-greeting-diffie.md`` Phase 5.2
+ * + D-2026-05-12-F. Raise via decision (file outgrew its single
+ * responsibility and needs a split), never via test edit.
+ *
+ * App.tsx note: the plan target is ``≤ 400`` (current 811 reflects
+ * URL sync + filter callbacks + handler glue that has not yet been
+ * extracted). The ceiling below is a *no-growth* guard at the
+ * current LOC + small headroom; the App.tsx split is filed as the
+ * v0.16+ follow-up (D-2026-05-12-F §App.tsx refactor follow-up).
+ */
+const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
+  "App.tsx": {
+    ceiling: 830,
+    note: "Plan target ≤ 400; current 811. No-growth ceiling until App.tsx split lands.",
+  },
+  "canvases/SketchCanvas.tsx": { ceiling: 420 },
+  "canvases/nodes/BaseNode.tsx": { ceiling: 250 },
+  "canvases/inspectors/BaseInspector.tsx": { ceiling: 220 },
+  "canvases/FoundationCanvas.tsx": { ceiling: 150 },
+  "canvases/ActorsCanvas.tsx": { ceiling: 150 },
+  "canvases/ServicesCanvas.tsx": { ceiling: 150 },
+  "canvases/ServiceDetailCanvas.tsx": { ceiling: 150 },
+};
+
+function perKindFiles(parent: string): string[] {
+  return KIND_DIRS.map((k) => `${parent}/${k}/index.tsx`).filter((p) =>
+    existsSync(resolve(SRC, p)),
+  );
+}
+
+describe("loc-budget (Phase 5.2)", () => {
+  it.each(Object.entries(LOC_BUDGETS))(
+    "%s fits inside its ceiling",
+    (rel, { ceiling }) => {
+      const actual = loc(rel);
+      expect(actual, `${rel} LOC budget`).toBeLessThanOrEqual(ceiling);
+    },
+  );
+
+  it("every per-kind node renderer ≤ 100 LOC", () => {
+    for (const rel of perKindFiles("canvases/nodes")) {
+      const actual = loc(rel);
+      expect(actual, `${rel} per-kind node LOC`).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("every per-kind inspector ≤ 250 LOC", () => {
+    for (const rel of perKindFiles("canvases/inspectors")) {
+      const actual = loc(rel);
+      expect(actual, `${rel} per-kind inspector LOC`).toBeLessThanOrEqual(250);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------
+// Contract 3: registry-completeness
+// ---------------------------------------------------------------------
+
+describe("registry-completeness (Phase 5.2)", () => {
+  it("every kind has a per-kind node renderer file", () => {
+    for (const kind of KIND_DIRS) {
+      const path = `canvases/nodes/${kind}/index.tsx`;
+      expect(existsSync(resolve(SRC, path)), `missing: ${path}`).toBe(true);
+      // Sanity: file is non-empty.
+      expect(statSync(resolve(SRC, path)).size, `empty: ${path}`).toBeGreaterThan(0);
+    }
+  });
+
+  it("every kind has a per-kind inspector file", () => {
+    for (const kind of KIND_DIRS) {
+      const path = `canvases/inspectors/${kind}/index.tsx`;
+      expect(existsSync(resolve(SRC, path)), `missing: ${path}`).toBe(true);
+      expect(statSync(resolve(SRC, path)).size, `empty: ${path}`).toBeGreaterThan(0);
+    }
+  });
+
+  it("NODE_RENDERERS registry contains exactly the 15 kinds", () => {
+    expect(Object.keys(NODE_RENDERERS).sort()).toEqual(
+      KIND_DIRS.slice().sort() as unknown as string[],
+    );
+  });
+});

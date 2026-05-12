@@ -4,6 +4,55 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.10] — 2026-05-12
+
+v0.15 reset Phase 5.2 — three structural guards protect the post-reset
+shape against regression: no-god-union-import (the deleted
+``SketchInspector.tsx`` / ``SketchNode.tsx`` must stay absent + no
+``switch (X.kind)`` god dispatch in wrappers, App.tsx, SketchCanvas,
+BaseNode, BaseInspector, KindInspector, DetailsSection, or any sketch
+hook), loc-budget (per-file ceilings — raise via decision, never via
+test edit), and registry-completeness (every kind has a per-kind
+node + inspector file + registry entry). (D-2026-05-12-F)
+
+### Added — viewer/tests/structural-guards.test.tsx
+
+- 44 tests across three describe blocks:
+  - ``no-god-union-import``: 2 god-files-absent + 17 no-switch-dispatch
+    across wrappers / shared shell / App.tsx / 14 sketch hooks.
+  - ``loc-budget``: 8 named-file ceilings + 2 per-kind sweeps
+    (every per-kind node ≤ 100 LOC, every per-kind inspector ≤ 250 LOC).
+  - ``registry-completeness``: per-kind file existence + non-empty +
+    ``NODE_RENDERERS`` registry contains the 15 kinds and only those.
+
+### Changed — plot/CLAUDE.md §Gate 2
+
+- LOC table replaced. Stale 1476 / 1422 / 791 / 523 entries removed;
+  new 8-row post-reset table added with current LOC + runtime-enforced
+  ceiling for each canvas-internal file.
+- Two "deleted-file" rows pin ``SketchInspector.tsx`` and
+  ``SketchNode.tsx`` as absent (re-creating fails the test).
+- Documentation pin: "raise a ceiling via decision id; never via
+  test edit". App.tsx no-growth deviation (current 811 vs plan target
+  ≤ 400) explicitly documented.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 361 / 361 passed (317 prior + 44 new).
+- ``uv run pytest`` — 245 / 245 passed (no server-side changes).
+
+### App.tsx refactor follow-up (deferred)
+
+The original Phase 5.2 plan targets ``App.tsx ≤ 400`` LOC. Current
+811 reflects URL sync + filter callbacks + handler glue that has not
+been extracted into hooks. The split is filed for the v0.16 cycle;
+doing it inside this commit would have bundled structural rules +
+a behavioural refactor (cross-cutting bundle violation). The
+no-growth ceiling (830) catches any further bloat in the meantime.
+
+Plugin patch bump 0.15.9 → 0.15.10.
+
 ## [0.15.9] — 2026-05-12
 
 v0.15 reset Phase 5.1 — exhaustive 15-kind smoke + round-trip

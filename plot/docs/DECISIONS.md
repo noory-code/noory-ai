@@ -1603,3 +1603,85 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
   - ``plot/CHANGELOG.md`` — v0.15.9 section.
   - ``plot/.claude-plugin/plugin.json`` — patch bump 0.15.8 → 0.15.9.
+
+---
+
+### D-2026-05-12-F — Structural guards: no-god-import + LOC budget + registry-completeness (Phase 5.2)
+
+- **What:** Pin three structural contracts that protect the v0.15
+  reset's shape against regression:
+
+  1. **no-god-union-import** — the deleted god files
+     (``SketchInspector.tsx``, ``SketchNode.tsx``) must remain
+     absent from disk, and no ``switch (X.kind)`` god dispatch may
+     appear in the 4 wrappers, App.tsx, SketchCanvas, BaseNode,
+     BaseInspector, KindInspector, DetailsSection, or any sketch
+     hook. (The single legitimate ``switch (kind)`` lives in
+     ``domain/createBlankNode.ts`` — the per-kind factory; per-kind
+     narrowing guards inside ``inspectors/{kind}/index.tsx`` and
+     ``nodes/{kind}/index.tsx`` are allowed because those files
+     are the kind's *home*, not god dispatchers.)
+  2. **loc-budget** — each canvas-internal file has a ceiling in
+     ``viewer/tests/structural-guards.test.tsx``. The test enforces
+     the ceiling; the table in ``plot/CLAUDE.md §Gate 2`` documents
+     the current LOC + the ceiling side by side.
+  3. **registry-completeness** — every kind in the 15-way union
+     must have an ``inspectors/{kind}/index.tsx`` file, a
+     ``nodes/{kind}/index.tsx`` file, and an entry in
+     ``NODE_RENDERERS``. Adding a 16th kind requires updating the
+     ``KIND_DIRS`` SSOT in both ``structural-guards.test.tsx`` and
+     ``styles-cursor-baseline.test.tsx`` — intentional friction.
+
+- **App.tsx refactor follow-up:** the original plan
+  (``dazzling-greeting-diffie.md`` §"LOC budget guard") targets
+  ``App.tsx ≤ 400``. Current 811 reflects URL sync (~75 LOC) +
+  filter callbacks for the 4 wrappers (~50 LOC) + handler glue
+  that has not been extracted into hooks. Phase 5.2's loc-budget
+  guard therefore ships a **no-growth ceiling** (830) rather than
+  the plan target. The split is filed for the v0.16 cycle; doing
+  it inside this commit would have bundled three structural rules
+  + a behavioural refactor, violating "small ships over big bangs"
+  (``feedback_small_ships_over_big_bangs.md``).
+
+- **Why three guards in one commit:** they share a single failure
+  mode — *a future commit makes one of the 15 kinds invisible to a
+  per-kind file*. Splitting into three commits would each be
+  defensible in isolation, but the next session's Phase 5.3
+  kill-switch (``reset_complete_check``) reads all three together
+  to decide "is the reset complete?". Co-shipping keeps the
+  contract surface coherent.
+
+- **Alternatives considered:**
+  - **Force the App.tsx split inside this commit** to land
+    the plan-target ``≤ 400``: rejected. The split needs its own
+    decision id, its own commit, and its own verification gate
+    (Phase 3 verifier on every canvas tab after the refactor).
+    Mixing it with structural guards would defeat "atomic commits"
+    + the cross-cutting bundle check.
+  - **Use AST parsing (ts-morph) instead of regex** for the
+    god-dispatch scan: rejected as YAGNI. The regex
+    ``switch\s*\(\s*[\w.]*\.?kind\s*\)`` catches the only god
+    dispatch shape we care about (``switch (X.kind)``);
+    per-kind narrowing guards (``if (node.kind !== "X")``) are
+    structurally different and aren't matched.
+  - **Snapshot every per-kind file's contents** as a registry SSOT:
+    rejected as brittle — Tailwind class reshuffles would trigger
+    false positives.
+
+- **Approval:** Pending — same direction as D-2026-05-12-C/D/E.
+
+- **Spec impact:** ``plot/CLAUDE.md §Gate 2`` LOC table replaced
+  with the 8-row post-reset table (stale 1476/1422/791/523 entries
+  removed; new ceilings + the deleted-file rows added).
+  ``docs/SPEC.md`` unchanged.
+
+- **Files in this commit:**
+  - ``plot/viewer/tests/structural-guards.test.tsx`` — new, 44 tests
+    (2 god-files-absent + 17 no-switch-dispatch + 8 LOC ceilings +
+    2 per-kind LOC sweeps + 3 registry-completeness assertions +
+    rest from it.each fanout).
+  - ``plot/CLAUDE.md`` — Gate 2 LOC table updated.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.15.10 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.15.9 →
+    0.15.10.
