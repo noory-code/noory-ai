@@ -3113,3 +3113,88 @@ in the same browser-verification round:
   - ``plot/docs/DECISIONS.md`` — this entry.
 
 - **Position in the 5-batch:** 5 of 5 — **batch closed**.
+
+---
+
+### D-2026-05-13-G — Skill classification: dev-facing skills move to monorepo-level .claude/skills/
+
+- **What:** Move 7 dev-facing skills from ``plot/skills/`` to
+  ``noory-ai/.claude/skills/`` (monorepo-level Claude Code workspace
+  skills directory):
+  - ``plot-entity-template/`` (was v0.16.25 D-2026-05-13-B).
+  - ``plot-domain-design/`` (was v0.16.26 D-2026-05-13-C).
+  - ``plot-feature-tdd/``.
+  - ``plot-frontend-bug-diagnosis/``.
+  - ``plot-i18n-audit/`` (was v0.16.9 D-2026-05-12-L).
+  - ``plot-code-red-team/`` (was v0.16.7 D-2026-05-12-J).
+  - ``plot-design-red-team/`` (was v0.16.8 D-2026-05-12-K).
+
+  Retained in ``plot/skills/`` (end-user-facing):
+  - ``plot-help/``.
+  - ``plot-new-sketch/``.
+  - ``plot-read-sketch/``.
+
+  All cross-references inside the 7 moved SKILL.md files updated
+  via ``sed`` batch: ``(../../X)`` → ``(../../plot/X)``. The single
+  cross-home filesystem link (``plot-entity-template`` ref to
+  ``feedback_no_god_object`` auto-memory) converted to plain-text
+  reference.
+
+- **Why:** Plot's plugin-skill directory ``plot/skills/`` is meant
+  for **end-user** skills — procedures that trigger in a *consumer's*
+  project after they install the Plot plugin (``plot-new-sketch``,
+  ``plot-read-sketch``, ``plot-help`` make sense there). The other
+  seven skills are **dev-facing**: they trigger during Plot's *own*
+  development, reference Plot's internal source (``viewer/src/``,
+  ``plot_mcp/``, ``docs/``), and would be useless noise in a
+  consumer's project. User flagged 2026-05-13:
+  *"플롯 안에 스킬이 클로드 동작을 시키는 스킬인가요? 저건 플러그인이
+  가진 스킬이잖아요. .claude/ 에 들어가야하는거 아닌가?"*
+
+- **Why monorepo-level (.claude/) over user-global (~/.claude/):**
+  These skills reference Plot-specific files (``Mission.ts``,
+  ``DOMAIN.md``, ``CONCEPTS.md``, ``CLAUDE.md`` Gate references).
+  In another project they would mis-trigger or break links. Scoping
+  them to the monorepo means they only activate when the developer
+  is *in* this monorepo — exactly where they apply.
+
+- **Why scope is 7, not all 10:** Three skills (``plot-help``,
+  ``plot-new-sketch``, ``plot-read-sketch``) describe procedures
+  a *consumer* runs on their own sketches. They reference plugin
+  commands and consumer workflows, not Plot internals. They stay
+  in ``plot/skills/`` where the plugin manifest exposes them.
+
+- **Honest correction:** I added ``plot-entity-template`` and
+  ``plot-domain-design`` to ``plot/skills/`` in v0.16.25 / v0.16.26
+  without making this dev-vs-user-facing distinction. User caught
+  it. The fix landed in the *same session* as the misclassification
+  — D-2026-05-13-B/C are not rejected; the skills are correct
+  artefacts, only their placement was wrong.
+
+- **Lesson:** Before adding a procedure skill, classify:
+  *"Does this trigger inside the plugin-consumer's project, or
+  during the plugin's own development?"* If the latter, it goes in
+  the monorepo's ``.claude/skills/``, never in ``plugin/skills/``.
+
+- **Approval:** Accepted by user, 2026-05-13 (explicit ".claude/
+  에 들어가야하는거 아닌가" + "네 맞아요 고고씽").
+
+- **Spec impact:** None — internal organisation. Plot's plugin
+  manifest still exposes ``plot/skills/`` but now only the 3
+  end-user-facing skills.
+
+- **Files in this commit:**
+  - 7× ``git mv plot/skills/{name}/ → .claude/skills/{name}/``.
+  - 7× SKILL.md path updates (sed: ``(../../X)`` → ``(../../plot/X)``).
+  - ``plot-entity-template/SKILL.md`` feedback_no_god_object link
+    converted to text reference.
+  - ``plot/CHANGELOG.md`` — v0.16.31 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.30 → 0.16.31.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Re-classification of other plugins in this monorepo (deferred):**
+  ``noory-ai/solera/skills/``, ``noory-ai/distill/skills/``,
+  ``noory-ai/evonest/skills/``, ``noory-ai/flutter-cask/``,
+  ``noory-ai/pencil_m3_flutter/`` may have the same misclassification.
+  Audit deferred until those plugins' next session — not blocking
+  Plot work.

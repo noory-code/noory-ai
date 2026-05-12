@@ -36,7 +36,7 @@ which user persona is affected — then proceed.
 
 ## The pipeline (10 steps, no skipping)
 
-### Step 1 — Re-read [VISION.md](../../docs/VISION.md) first sentence
+### Step 1 — Re-read [VISION.md](../../plot/docs/VISION.md) first sentence
 
 Out loud (in your reply): the one-sentence essence. This anchors
 everything that follows. If the proposed feature does not serve this
@@ -53,7 +53,7 @@ Pick exactly one of:
 
 The choice is binding for the rest of the pipeline.
 
-### Step 3 — Look up the bounded context in [DOMAIN.md](../../docs/DOMAIN.md)
+### Step 3 — Look up the bounded context in [DOMAIN.md](../../plot/docs/DOMAIN.md)
 
 Map the phase to a bounded context. State which *Code home* directory
 the new code belongs in. If the natural location violates the
@@ -71,14 +71,14 @@ In ≤ 5 lines:
 - If a new entity / VO is needed, name it and show its identity rule
   (entity) or by-value semantics (VO).
 
-### Step 5 — Check [SPEC.md](../../docs/SPEC.md) for existing coverage
+### Step 5 — Check [SPEC.md](../../plot/docs/SPEC.md) for existing coverage
 
 - **Already specced** (the spec line matches the proposed behaviour):
   implement to the spec exactly. No more, no less.
 - **Specced for a different behaviour** (proposal contradicts SPEC):
-  this is a SPEC change request — invoke [Gate 0](../../CLAUDE.md)
+  this is a SPEC change request — invoke [Gate 0](../../plot/CLAUDE.md)
   rules. Add a `D-YYYY-MM-DD-X` entry to
-  [DECISIONS.md](../../docs/DECISIONS.md) **first**, get user
+  [DECISIONS.md](../../plot/docs/DECISIONS.md) **first**, get user
   approval if not already given, only **then** modify SPEC and
   proceed.
 - **Not specced**: this is a new SPEC line. Same Gate 0 path —
@@ -107,11 +107,11 @@ possible response to the test.
 
 If the implementation tempts you to grow `SketchCanvas.tsx`,
 `SketchInspector.tsx`, `App.tsx`, or `SketchStencil.tsx`, **stop and
-read [Gate 2](../../CLAUDE.md)** — those files have a no-growth
+read [Gate 2](../../plot/CLAUDE.md)** — those files have a no-growth
 ceiling. Put new behaviour in a new file under
 `viewer/src/canvases/sketch/` (or other appropriate context dir).
 
-### Step 8 — Browser-verify with the [`plot-verifier`](../../agents/plot-verifier.md) sub-agent
+### Step 8 — Browser-verify with the [`plot-verifier`](../../plot/agents/plot-verifier.md) sub-agent
 
 If the change touches UI, invoke the `plot-verifier` agent:
 1. It navigates to the affected canvas.
@@ -127,13 +127,13 @@ For MCP / backend-only changes, browser verification is skipped;
 
 ### Step 9 — Update SPEC + DECISIONS + CHANGELOG (Gate 0 + Gate 4)
 
-Per [Gate 0](../../CLAUDE.md): user confirmation pins the spec
+Per [Gate 0](../../plot/CLAUDE.md): user confirmation pins the spec
 **immediately**. The new behaviour goes into SPEC.md verbatim, the
 `D-YYYY-MM-DD-X` entry is appended to DECISIONS.md, the CHANGELOG
 gets a release section. Bump `plugin.json` version (patch for
 fixes, minor for features, major for behavioural breaks).
 
-### Step 10 — Commit + push per [Gate 4](../../CLAUDE.md)
+### Step 10 — Commit + push per [Gate 4](../../plot/CLAUDE.md)
 
 Commit message format: `type(plot): vX.Y.Z — short summary`. Body
 mirrors the CHANGELOG section. Co-author trailer included. Push to
@@ -149,17 +149,17 @@ mirrors the CHANGELOG section. Co-author trailer included. Push to
 | **One context per change.** | If a change spans two bounded contexts, split it into two changes. The "I'll just touch both" pattern is how layering breaks. |
 | **No SPEC drift.** Confirmed behaviour goes into SPEC.md *in the same commit cycle* — never deferred. | Drift is the cause of "we keep re-asking the same questions" pain. |
 | **Browser-verify all UI changes.** | TypeScript and JSDOM don't observe cursors, layouts, or animation timing. |
-| **Never grow SketchCanvas / SketchInspector / App / SketchStencil.** | Per [Gate 2](../../CLAUDE.md). New behaviour → new file in the matching context's directory. |
-| **Never auto-emit user-visible state.** | Per [Plot CLAUDE.md rule 7](../../CLAUDE.md). All edges, layouts, labels are user-authored unless explicitly approved. |
+| **Never grow SketchCanvas / SketchInspector / App / SketchStencil.** | Per [Gate 2](../../plot/CLAUDE.md). New behaviour → new file in the matching context's directory. |
+| **Never auto-emit user-visible state.** | Per [Plot CLAUDE.md rule 7](../../plot/CLAUDE.md). All edges, layouts, labels are user-authored unless explicitly approved. |
 
 ---
 
 ## Cross-references
 
-- [`VISION.md`](../../docs/VISION.md) — the essence and three phases.
-- [`DOMAIN.md`](../../docs/DOMAIN.md) — bounded contexts and code homes.
-- [`SPEC.md`](../../docs/SPEC.md) — current behaviour SSOT.
-- [`DECISIONS.md`](../../docs/DECISIONS.md) — change-log SSOT.
-- [`CLAUDE.md`](../../CLAUDE.md) — operational gates that make this skill enforceable.
-- [`agents/plot-verifier.md`](../../agents/plot-verifier.md) — Step 8 sub-agent.
+- [`VISION.md`](../../plot/docs/VISION.md) — the essence and three phases.
+- [`DOMAIN.md`](../../plot/docs/DOMAIN.md) — bounded contexts and code homes.
+- [`SPEC.md`](../../plot/docs/SPEC.md) — current behaviour SSOT.
+- [`DECISIONS.md`](../../plot/docs/DECISIONS.md) — change-log SSOT.
+- [`CLAUDE.md`](../../plot/CLAUDE.md) — operational gates that make this skill enforceable.
+- [`agents/plot-verifier.md`](../../plot/agents/plot-verifier.md) — Step 8 sub-agent.
 - [`plot-frontend-bug-diagnosis/SKILL.md`](../plot-frontend-bug-diagnosis/SKILL.md) — companion skill for UI bug-fix track.

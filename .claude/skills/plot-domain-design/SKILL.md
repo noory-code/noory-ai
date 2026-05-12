@@ -24,11 +24,11 @@ metadata:
 # plot-domain-design — placing a new concept before writing code
 
 > **Why this skill exists.** Plot's v0.13.3 → v0.13.10 cursor saga
-> (six rounds, see [D-2026-05-10-C](../../docs/DECISIONS.md),
-> [D-2026-05-10-F](../../docs/DECISIONS.md)) was caused by no domain
+> (six rounds, see [D-2026-05-10-C](../../plot/docs/DECISIONS.md),
+> [D-2026-05-10-F](../../plot/docs/DECISIONS.md)) was caused by no domain
 > map: every fix picked "where does this rule live?" without a
 > framework, and the next bug surfaced in a different ad-hoc location.
-> [DOMAIN.md](../../docs/DOMAIN.md) ended that by giving every concern
+> [DOMAIN.md](../../plot/docs/DOMAIN.md) ended that by giving every concern
 > a bounded-context home. **This skill is the gate** that forces the
 > placement decision *before* any code lands.
 >
@@ -98,12 +98,12 @@ existing kind, ask:
 
 The MECE rule (`noory-ai/CLAUDE.md`): new kinds must not overlap
 with existing ones. The v0.14 `Category` vs `Service` confusion (which
-took 3 iterations to resolve, see [D-2026-04-28-X](../../docs/DECISIONS.md))
+took 3 iterations to resolve, see [D-2026-04-28-X](../../plot/docs/DECISIONS.md))
 is the canonical "should have reused" case.
 
 ### Decision 4 — Which bounded context owns it?
 
-Open [`DOMAIN.md`](../../docs/DOMAIN.md) §"Bounded contexts (5)" and
+Open [`DOMAIN.md`](../../plot/docs/DOMAIN.md) §"Bounded contexts (5)" and
 match the new concept against each context's **Owns** / **Does NOT
 own** lists:
 
@@ -136,7 +136,7 @@ truth:
 | Per-canvas behaviour flag | Canvas wrapper prop (`hideRootServiceNode`, `shouldDrill`, etc.) |
 | Per-kind UI behaviour | `BaseNode` flag set by `nodes/{kind}/index.tsx` |
 | Cross-kind invariant | `viewer/src/domain/{Kind}.ts::fromJson` |
-| Cursor / pan / zoom rule | `viewer/src/styles.css` with `!important` + D-id comment (per [D-2026-05-11-A](../../docs/DECISIONS.md)) |
+| Cursor / pan / zoom rule | `viewer/src/styles.css` with `!important` + D-id comment (per [D-2026-05-11-A](../../plot/docs/DECISIONS.md)) |
 
 If the SSOT location doesn't yet exist for the proposed concept,
 **that's the design decision** — name where it goes *before* writing

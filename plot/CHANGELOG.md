@@ -4,6 +4,48 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.31] — 2026-05-13
+
+Skill classification correction. Plot's plugin-skill directory
+``plot/skills/`` is meant for **end-user** skills that trigger in
+the *consumer's* project after installing the Plot plugin. Seven
+of the eight skills there were actually **dev-facing** — they
+trigger during Plot's *own* development and have no meaning to a
+plugin consumer. Moving them to the monorepo-level
+``noory-ai/.claude/skills/`` aligns the boundary: the plugin
+manifest exposes only what a consumer actually needs; the dev-tool
+procedures live in the monorepo's Claude Code workspace where they
+trigger when working *on* Plot. (D-2026-05-13-G)
+
+### Removed (moved out of plot/skills/)
+
+The following moved to ``noory-ai/.claude/skills/`` via
+``git mv`` (audit-trail preserved):
+
+- ``plot-entity-template/`` (was v0.16.25 D-2026-05-13-B)
+- ``plot-domain-design/`` (was v0.16.26 D-2026-05-13-C)
+- ``plot-feature-tdd/``
+- ``plot-frontend-bug-diagnosis/``
+- ``plot-i18n-audit/`` (was v0.16.9 D-2026-05-12-L)
+- ``plot-code-red-team/`` (was v0.16.7 D-2026-05-12-J)
+- ``plot-design-red-team/`` (was v0.16.8 D-2026-05-12-K)
+
+### Retained in plot/skills/ (end-user facing)
+
+- ``plot-help/`` — Plot usage explanation.
+- ``plot-new-sketch/`` — consumer creates a new sketch.
+- ``plot-read-sketch/`` — consumer reads an existing sketch.
+
+### Changed
+
+- All cross-references inside the 7 moved SKILL.md files updated:
+  ``(../../X)`` → ``(../../plot/X)`` to point from the new location
+  back into the plot/ subdirectory.
+- ``plot-entity-template/SKILL.md`` ``feedback_no_god_object``
+  cross-reference converted from a broken cross-home filesystem
+  link to plain-text reference (auto-memory paths are user-home
+  specific and cannot be relative-linked from a monorepo file).
+
 ## [0.16.30] — 2026-05-13
 
 Docs follow-up to v0.16.24-29 catch-up batch. Update

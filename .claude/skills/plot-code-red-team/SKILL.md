@@ -96,7 +96,7 @@ breaks the code.
 
 ### Attack 3 — Code-as-spec violations
 
-Plot's [Gate 1](../../CLAUDE.md) is non-negotiable: **comments are
+Plot's [Gate 1](../../plot/CLAUDE.md) is non-negotiable: **comments are
 not spec.** For every user-visible behaviour the diff changes,
 verify there is a SPEC.md line or a `D-YYYY-MM-DD-X` entry in
 DECISIONS.md that approved it.

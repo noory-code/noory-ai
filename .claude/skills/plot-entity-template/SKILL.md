@@ -26,9 +26,10 @@ metadata:
 > (``plot_mcp/models/``), a per-kind node renderer, a per-kind
 > inspector, i18n keys, and round-trip tests. Adding a 16th kind
 > *correctly* means touching ~14 files in a single landing. Skipping
-> any of them re-introduces god-object debt (see
-> [feedback_no_god_object.md](../../../../../.claude/projects/-Users-woogis-Workspace-repo-noory-ai/memory/feedback_no_god_object.md))
-> and is blocked at multiple layers — structural-guards tests,
+> any of them re-introduces god-object debt (see auto-memory
+> ``feedback_no_god_object`` — *"kind 별 클래스 + Pydantic/TS
+> discriminated union 비협상"*) and is blocked at multiple layers
+> — structural-guards tests,
 > schema-parity tests, no-god-import hook, entity-roundtrip test.
 >
 > This skill is the **single procedure SSOT** for that walk. Follow it
@@ -90,7 +91,7 @@ as templates; banned phrases per `noory-ai/CLAUDE.md` apply.
 
 ### Step 3 — `viewer/src/domain/{Kind}.ts`: entity class
 
-Pattern (from [`Mission.ts`](../../viewer/src/domain/Mission.ts)):
+Pattern (from [`Mission.ts`](../../plot/viewer/src/domain/Mission.ts)):
 
 ```ts
 // JSON wire shape
@@ -211,7 +212,7 @@ cd plot/viewer && npx vitest run -t "inspector registry includes {kind}"
 
 Every user-facing string for the new kind must land in **both**
 locales. The `i18n-keys-parity.test.tsx` static guard fails the build
-on drift. Per [D-2026-05-11-D](../../docs/DECISIONS.md) — Plot is a
+on drift. Per [D-2026-05-11-D](../../plot/docs/DECISIONS.md) — Plot is a
 global service; no hardcoded strings.
 
 Required keys (minimum):
@@ -222,7 +223,7 @@ Required keys (minimum):
 
 ### Step 13 — `viewer/tests/entity-roundtrip.test.tsx`: round-trip case
 
-Per [Phase D of this batch](../../docs/DECISIONS.md). The test
+Per [Phase D of this batch](../../plot/docs/DECISIONS.md). The test
 iterates every kind and asserts:
 
 ```ts

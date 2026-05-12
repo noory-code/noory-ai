@@ -26,8 +26,8 @@ metadata:
 ## Trigger
 
 Activate when the user reports a Plot canvas UI behaviour that
-disagrees with [`SPEC.md`](../../docs/SPEC.md) or
-[`CURSOR.md`](../../docs/CURSOR.md):
+disagrees with [`SPEC.md`](../../plot/docs/SPEC.md) or
+[`CURSOR.md`](../../plot/docs/CURSOR.md):
 
 - Cursor showing a wrong shape (`pointer` instead of `grab`,
   `default` on a node, etc.)
@@ -200,10 +200,10 @@ intent.
 
 ### Step 10 — Update SPEC / CURSOR / DECISIONS per Gate 0
 
-If the fix changed any spec'd behaviour, [Gate 0](../../CLAUDE.md)
-fires. Pin the new behaviour into [`CURSOR.md`](../../docs/CURSOR.md)
+If the fix changed any spec'd behaviour, [Gate 0](../../plot/CLAUDE.md)
+fires. Pin the new behaviour into [`CURSOR.md`](../../plot/docs/CURSOR.md)
 and add a `D-YYYY-MM-DD-X` entry in
-[`DECISIONS.md`](../../docs/DECISIONS.md) before commit.
+[`DECISIONS.md`](../../plot/docs/DECISIONS.md) before commit.
 
 ---
 
@@ -233,10 +233,10 @@ and add a `D-YYYY-MM-DD-X` entry in
 
 ## Cross-references
 
-- [`docs/CURSOR.md`](../../docs/CURSOR.md) — canvas cursor SSOT.
-- [`docs/SPEC.md` §Cursor states](../../docs/SPEC.md) — table form.
-- [`docs/DECISIONS.md` D-2026-05-10-F](../../docs/DECISIONS.md) — the
+- [`docs/CURSOR.md`](../../plot/docs/CURSOR.md) — canvas cursor SSOT.
+- [`docs/SPEC.md` §Cursor states](../../plot/docs/SPEC.md) — table form.
+- [`docs/DECISIONS.md` D-2026-05-10-F](../../plot/docs/DECISIONS.md) — the
   diagnosis story that motivated this skill.
-- [`docs/DOMAIN.md`](../../docs/DOMAIN.md) — bounded contexts (cursor
+- [`docs/DOMAIN.md`](../../plot/docs/DOMAIN.md) — bounded contexts (cursor
   is a cross-cutting visual contract; it belongs nowhere specific but
   must remain consistent).
