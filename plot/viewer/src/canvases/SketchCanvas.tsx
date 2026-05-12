@@ -12,7 +12,6 @@ import type {
   SketchNode as DocNode,
 } from "../types";
 import { SketchContextMenu } from "./SketchContextMenu";
-import { EDGE_TYPES } from "./edges/registry";
 import { NODE_RENDERERS } from "./nodes/registry";
 import { SketchToolbar } from "./SketchToolbar";
 import { useSketchClipboard } from "./useSketchClipboard";
@@ -318,7 +317,6 @@ function SketchCanvasInner({
         nodes={nodes}
         edges={edges}
         nodeTypes={NODE_TYPES}
-        edgeTypes={EDGE_TYPES}
         nodesConnectable
         nodesDraggable
         elementsSelectable

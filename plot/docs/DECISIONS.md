@@ -2745,3 +2745,53 @@ in the same browser-verification round:
   | 5 | Anchor data.onResize ref stability | D-2026-05-12-U | (covered by 1 + 2) |
 
   Total: 399 viewer tests (383 baseline + 16 new across the batch).
+
+---
+
+### D-2026-05-12-V — Revert SelfLoopEdge ("RF 기본 동작" rollback, 1/4)
+
+- **What:** Delete ``viewer/src/canvases/edges/SelfLoopEdge.tsx`` +
+  ``edges/registry.ts``. Remove ``edgeTypes`` prop from
+  ``<ReactFlow>``. Revert ``edgeTransform.ts`` filter to RF-default
+  ``if (src === tgt) continue;``. Delete companion test file.
+
+- **Why:** User direct request after v0.16.15-19 batch:
+  > "그냥 RF 기본 동작으로 동작하게 해주세요."
+
+  User reports "캔버스하고 커서 동작 컨트롤이러지" + "동작이
+  이상" (콘솔 에러 아님) after hands-on review. Code-audit-driven
+  fixes (v0.16.15-19) did not address the user-felt regression;
+  user's stated remedy is rollback to RF stock interaction layer.
+
+- **Supersedes:** D-2026-05-12-M. The received Plot spec §"서비스
+  간 연결" mandate ("셀프 피드백 루프 표현 가능") is **deferred**
+  — re-introducing visual self-loops requires fresh plan-mode +
+  user approval after this batch settles.
+
+- **Why not just leave SelfLoopEdge in place:** custom edge type
+  was one of the layers the user might be experiencing as
+  "interference" with their RF mental model. Pure default RF
+  behaviour for edges = same as every other React Flow product
+  the user has used. Lower cognitive load.
+
+- **Verification:**
+  - ``npx tsc --noEmit`` — clean.
+  - ``npx vitest run`` — 392 / 392 (399 prior − 7 deleted self-loop tests).
+  - ``uv run pytest`` — 274 / 274 (no server change).
+
+- **Files:**
+  - ``plot/viewer/src/canvases/edges/SelfLoopEdge.tsx`` — DELETED.
+  - ``plot/viewer/src/canvases/edges/registry.ts`` — DELETED.
+  - ``plot/viewer/src/canvases/edges/`` — empty dir removed.
+  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` — ``edgeTypes={EDGE_TYPES}`` + import 제거.
+  - ``plot/viewer/src/canvases/sketch/edgeTransform.ts`` — filter precision split 제거; RF-default 단일 filter 복원.
+  - ``plot/viewer/tests/self-loop-render.test.tsx`` — DELETED.
+  - ``plot/docs/SPEC.md §Edges`` — "Self-loops" 서브섹션을 "deferred, RF default = drop" 으로 갱신.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/CHANGELOG.md`` — v0.16.20 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.19 → 0.16.20.
+
+- **Series context:** First of 4-commit "RF 기본 동작" rollback
+  batch (v0.16.20-23). Companion reverts: anchor-radial layout
+  (v0.16.21), synthetic anchor + PATCH path (v0.16.22), cleanup +
+  ROADMAP archive (v0.16.23).

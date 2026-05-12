@@ -4,6 +4,41 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.20] — 2026-05-12
+
+Rollback — Self-loop custom edge reverted per user "RF 기본 동작"
+request. Delete ``SelfLoopEdge.tsx`` + edge registry; revert
+``edgeTransform.ts`` filter to RF default (drop ``src === tgt``).
+First of 4-commit "RF 기본 동작" rollback batch (v0.16.20-23) after
+v0.16.15-19 fix batch did not match user-felt regression.
+(D-2026-05-12-V, supersedes D-2026-05-12-M)
+
+### Removed
+
+- ``viewer/src/canvases/edges/SelfLoopEdge.tsx``.
+- ``viewer/src/canvases/edges/registry.ts``.
+- ``viewer/src/canvases/edges/`` directory.
+- ``viewer/tests/self-loop-render.test.tsx``.
+- ``edgeTypes={EDGE_TYPES}`` prop + import from ``SketchCanvas.tsx``.
+
+### Changed
+
+- ``edgeTransform.ts`` filter split (v0.16.10's real-vs-pseudo
+  self-loop distinction) reverted to RF-default
+  ``if (src === tgt) continue;``.
+- ``docs/SPEC.md §Edges`` "Self-loops" subsection updated: data
+  model still permits ``source === target``, but renderer drops
+  them. Received-spec mandate ("셀프 피드백 루프 표현 가능")
+  deferred — re-introduction requires fresh plan-mode + approval.
+
+### Verification
+
+- ``npx tsc --noEmit`` — clean.
+- ``npx vitest run`` — 392 / 392 (399 prior − 7 deleted self-loop tests).
+- ``uv run pytest`` — 274 / 274.
+
+Plugin patch bump 0.16.19 → 0.16.20.
+
 ## [0.16.19] — 2026-05-12
 
 Minor stability — ``handleAnchorChange`` extracted from inline JSX
