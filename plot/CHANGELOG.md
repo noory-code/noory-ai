@@ -4,6 +4,49 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.18.1] — 2026-05-16
+
+Docs-only patch. Pins the "tree-in-forest" AI-context architecture
+framing surfaced in the 2026-05-16 ideation session
+(D-2026-05-16-D) and queues it as ROADMAP §D for future
+implementation. No code changes.
+
+### Added
+
+- `docs/ROADMAP.md` §D — **Forest-anchored AI context (graph-RAG-lite
+  + verification loop)**. Adds a queued item alongside A
+  (isomorphic-git), B (work-item layer), C (repo split). Phased plan
+  (Phase 1 Plot-internal `context_envelope` MCP tool + skill rule +
+  interview pattern strengthening; Phase 2 post-Distill port for
+  transcript crystallization; Phase 3 post-Evonest port for output
+  consistency verification). Design red-team not yet run; checklist
+  for what to surface before Phase 1 starts (envelope token budget,
+  call-skip detection, staleness vs canvas updates).
+- `docs/DECISIONS.md` D-2026-05-16-D — **AI-context architecture:
+  "tree-in-forest" 3-layer framing**. Records the framing that
+  splits the problem into (1) data structural connection — free
+  via Plot's typed user-authored graph, (2) input-side call
+  enforcement — small effort, and (3) output-side verification —
+  large, downstream of Distill / Evonest ports. Includes the i18n
+  global-service regression as the concrete failure case proving
+  Layer 2 is the bottleneck (Layer 1 fully built + Layer 3 partial
+  static guard still fails to stop AI hardcoding user-facing
+  strings). Lists 3 rejected alternatives (full GraphRAG library
+  import / single-feature bundle / defer until Distill+Evonest
+  ports). Approved by user 2026-05-16.
+
+### Changed
+
+- None.
+
+### Removed
+
+- None.
+
+### Fixed
+
+- None.
+
 ## [0.18.0] — 2026-05-16
 
 Phase 3 of the JSON SSOT migration (D-2026-05-16-E). The visible

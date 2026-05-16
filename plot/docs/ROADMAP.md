@@ -198,6 +198,67 @@ unless we leave a stub redirect in the monorepo. Pin a
 
 ---
 
+### D) Forest-anchored AI context (graph-RAG-lite + verification loop)  `[ ]`
+
+**Spec mandate:** none yet — surfaced in the 2026-05-16 ideation
+session (see [D-2026-05-16-D](./DECISIONS.md)). Frames the
+"tree-in-forest" problem: the AI implements a feature's spec
+faithfully but misses the surrounding Identity / tone / sibling-
+service coherence that the canvas already captures.
+
+**Why it matters:** Plot's essence ([`VISION.md`](./VISION.md))
+hinges on AI work staying anchored to the discovered essence.
+Without explicit forest-injection mechanics, Retention (Phase 2) and
+Execution (Phase 3) drift apart — the canvas captures intent the
+agent does not actually use.
+
+**Three-layer framing (per [D-2026-05-16-D](./DECISIONS.md)):**
+
+| Layer | Question | Cost |
+|---|---|---|
+| Data structural connection | Is the forest representable as a graph? | **Free** — Plot's typed user-authored graph already is one; the GraphRAG entity-extraction step is zero |
+| Input side / call enforcement | Does the AI pull forest data when starting work? | **Small** — `context_envelope` MCP tool + skill rule + interview-pattern strengthening |
+| Output side / verification | Did the AI's output actually reflect the forest? | **Large** — needs a verification loop (human PR review today; automated later via Evonest port) |
+
+**Phase plan:**
+
+- **Phase 1 (near-term, Plot-internal only)** — `context_envelope(node_id)`
+  MCP tool returning ancestor chain + Symbol resolves (Identity) +
+  N-hop neighbours. Skill rule: the agent must call it before
+  starting work on a node. Interview pattern
+  ([`PRODUCT_SPEC.md` §9](./PRODUCT_SPEC.md)) surfaces the envelope
+  result as the interview's opening context. Sizing: days. No new
+  deps; no embedding / vector DB.
+- **Phase 2 (post Distill port)** — crystallize accumulated
+  interview transcripts + decision log into implicit Identity /
+  tone signals. Reuses the existing Distill ``fastembed`` +
+  ``sqlite-vec`` stack (same monorepo).
+- **Phase 3 (post Evonest port)** — automated forest-consistency
+  check on agent output (LLM-as-judge against Identity tone +
+  Mission alignment + sibling-service contradictions). Sits at the
+  PR-style merge gate ([`PRODUCT_SPEC.md` §11](./PRODUCT_SPEC.md)).
+
+**Design red-team verdict:** not yet run. Before Phase 1 starts,
+re-enter plan mode and run ``plot-design-red-team`` to surface at
+minimum:
+
+- envelope size / token budget tradeoffs (how many hops, how much
+  typed text before token cost dominates),
+- failure mode when the agent skips the tool call (does any guard
+  detect "agent shipped diff without calling envelope"?),
+- staleness of cached envelopes when the canvas updates mid-task
+  (snapshot-pinning interaction with item A).
+
+**Dependency direction:** Phase 1 has **no hard dependency** on
+items A / B / C. Phases 2 / 3 depend on the future Distill /
+Evonest ports (currently sibling packages in the monorepo, not
+Plot features).
+
+**Expected sizing:** Phase 1 = days; Phases 2 / 3 are downstream of
+Distill / Evonest porting and not standalone-sized here.
+
+---
+
 ## v0.10 / v0.11 history (shipped)
 
 

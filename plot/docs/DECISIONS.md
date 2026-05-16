@@ -4227,6 +4227,97 @@ in the same browser-verification round:
 
 ---
 
+### D-2026-05-16-D — AI-context architecture: "tree-in-forest" 3-layer framing
+
+- **What:** Adopt a 3-layer mental model for the "AI implements a
+  feature's spec faithfully but misses the surrounding forest
+  (Identity / tone / sibling services)" problem, and queue it as
+  [`ROADMAP.md` §D](./ROADMAP.md).
+
+  - **Layer 1 — Data structural connection.** Free. Plot's typed
+    user-authored graph is already a GraphRAG-quality substrate;
+    the usual GraphRAG entity-extraction step is zero-cost because
+    the user drew the graph.
+  - **Layer 2 — Input side / call enforcement.** Small.
+    Addressable with a `context_envelope` MCP tool (ancestor chain
+    + Symbol resolves + N-hop neighbours), a Plot skill rule
+    forcing the agent to call it before starting node-scoped work,
+    and the existing interview pattern
+    ([`PRODUCT_SPEC.md` §9](./PRODUCT_SPEC.md)) surfacing the
+    envelope result as the interview's opening context.
+  - **Layer 3 — Output side / verification loop.** Large. Cannot
+    be closed by the agent alone — the agent reading the forest
+    does not guarantee the forest shaping its output. Today this is
+    human PR review at the merge gate
+    ([`PRODUCT_SPEC.md` §11](./PRODUCT_SPEC.md)); automation
+    arrives later with the Distill (crystallize transcripts → implicit
+    Identity) and Evonest (LLM-as-judge consistency check) ports.
+
+- **Why:** earlier turns in this ideation conflated retrieval (data
+  exposure) with behaviour change (the AI actually internalising
+  the forest). The 3-layer split makes it explicit that Plot is
+  **not** blocked on retrieval infrastructure — Layer 1 is
+  essentially free — and that the real cost lives in Layers 2 + 3,
+  of which only Layer 2 is small enough to ship before Distill /
+  Evonest are ported. The split also names where each future
+  monorepo-package port (Distill, Evonest) becomes load-bearing:
+  Distill → Layer 3 crystallization input; Evonest → Layer 3
+  verification engine.
+
+- **Concrete failure case — i18n / global-service:** Plot's i18n
+  surface is the *most fully built-out* forest-anchoring mechanism
+  in the project today — `useTranslation()` / `t()` plumbing,
+  `viewer/src/i18n/locales/{en,ko}.json`, AND the static guard
+  `viewer/tests/i18n-keys-parity.test.tsx` are all live (Layer 1
+  fully built, Layer 3 partial — the guard catches en/ko key-count
+  parity, NOT raw strings bypassing `t()`). Despite this, AI
+  sessions repeatedly hardcode user-facing strings into `.tsx`
+  files (per the global-service direction
+  [D-2026-05-11-D](./DECISIONS.md) and the CLAUDE.md anti-pattern
+  table "Hardcoding user-facing UI text in a viewer component").
+  This is the sharpest available evidence that **Layer 2 (call
+  enforcement at code-write time) is the actual bottleneck**:
+  passive mechanisms — anti-pattern docs, memory notes, post-write
+  static guards — do not stop the regression because none of them
+  *announce themselves* to the AI at the moment of writing the
+  offending string. The case justifies Phase 1 of §D shipping
+  independently of Phases 2 / 3.
+
+- **Alternatives:**
+  - **Import a full GraphRAG library** (rejected — Plot's typed
+    user-authored graph makes most GraphRAG machinery redundant;
+    entity extraction is zero-cost when the user already authored
+    the relationships).
+  - **Bundle the three layers as one feature** (rejected —
+    conflates very different difficulty levels and delays the
+    deliverable Phase 1 deliverable).
+  - **Defer entirely until Distill / Evonest are ported** (rejected
+    — Phase 1 is small enough to ship and measure independently;
+    the measurement informs how much of the problem remains for
+    Phases 2 / 3).
+
+- **Approval:** Accepted by user, 2026-05-16.
+
+- **Spec impact:** none directly. Queues a new ROADMAP item
+  ([`ROADMAP.md` §D](./ROADMAP.md)) below A / B / C. No
+  [`SPEC.md`](./SPEC.md) line yet because Phase 1 implementation
+  has not been scoped — when the `context_envelope` MCP tool lands,
+  a fresh `D-` entry will pin its observable behaviour (envelope
+  contents, when the agent must call it, what "skipping the call"
+  looks like).
+
+- **Cross-refs:**
+  - [`ROADMAP.md` §D](./ROADMAP.md) — queued item that this
+    framing parents.
+  - [`PRODUCT_SPEC.md` §9](./PRODUCT_SPEC.md) — interview pattern
+    that Layer 2 strengthens.
+  - [`PRODUCT_SPEC.md` §11](./PRODUCT_SPEC.md) — PR-style merge
+    gate that Layer 3 inhabits.
+  - [`VISION.md`](./VISION.md) — the essence the forest-anchoring
+    serves (Retention + Execution phases).
+
+---
+
 ### D-2026-05-16-E — Phase 3 per-node publish (button + MD export + MAJOR bump)
 
 - **What:** Ship the visible surface of the JSON SSOT publish
