@@ -4,6 +4,32 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.39] — 2026-05-13
+
+Pin user hands-on confirmation of v0.16.38 anchor-edge cleanup
+whitelist fix (D-2026-05-13-N). After MCP HTTP server restart with
+the cleanup-side ``PROJECT_ANCHOR_ID`` whitelist, user verified in
+real Chrome: *"이제 동작하네"* — nodes no longer disappear on
+reload; anchor edges persist across repeated hard reloads.
+
+D-2026-05-13-N approval transitions Pending → Accepted.
+
+### Changed
+
+- ``plot/docs/DECISIONS.md`` — D-2026-05-13-N approval Pending →
+  Accepted (hands-on verified by user, 2026-05-13).
+
+### D-2026-05-13-I closure status (final)
+
+- 422 storm + e_-prefixed unknown ids — **resolved** in
+  D-2026-05-13-M (v0.16.37).
+- Cleanup-side anchor-edge strip → refetch storm — **resolved** in
+  D-2026-05-13-N (v0.16.38, this entry's prerequisite).
+- ``services/canvas.json`` ``e_mopntgek_4y74 | None → None`` orphan
+  edge — **still open**. Separate storage-cleanup pass needed.
+  Filed: NEXT_SESSION.md ``잔여 silent state`` (now scoped to the
+  orphan edge only).
+
 ## [0.16.38] — 2026-05-13
 
 User reported v0.16.37 fix incomplete: *"안고쳐짐. 새로고침을 하다보면

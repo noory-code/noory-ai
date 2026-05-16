@@ -3758,8 +3758,10 @@ in the same browser-verification round:
   import keeps the dependency edge unidirectional. Cheap pattern;
   the function is only called on cold reads, not hot paths.
 
-- **Approval:** Pending — Gate 3 hands-on verification by user in
-  real Chrome after MCP HTTP server restart.
+- **Approval:** **Accepted** — Gate 3 hands-on verified by user
+  2026-05-13 after MCP HTTP server restart. User verbatim:
+  *"이제 동작하네"*. Nodes no longer disappear on reload; anchor
+  edges persist across repeated hard reloads.
 
 - **Spec impact:** None — same surface as D-2026-05-13-M, just a
   second function that needed the same whitelist.
