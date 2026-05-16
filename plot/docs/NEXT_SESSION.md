@@ -9,7 +9,59 @@
 
 ## Active queue
 
-### `JSON SSOT 논의` — Phase 2 (MD as derived export) detail discussion
+### `Phase 1 — JSON SSOT 구현 (MD 흡수)` — kick off the 6-phase migration
+
+> **Trigger:** user says **"Phase 1"** or **"JSON SSOT 구현"** or
+> **"MD 흡수"** as the first / near-first message.
+>
+> **Filed:** 2026-05-13. The JSON SSOT vision was pinned in two
+> steps: D-2026-05-13-J (initial 4-point) → D-2026-05-13-O
+> (today's 7-principle revision that supersedes J's point #4 and
+> adds per-node versioning + folder hierarchy). Phase 0 (docs)
+> shipped today (v0.16.40). Phase 1 (code) lands next session.
+>
+> **Phase 1 scope (per D-2026-05-13-O and plan
+> ``~/.claude/plans/sparkling-discovering-blanket.md``):**
+>
+> - **Server:** replace ``_evict_typed_text_to_md`` +
+>   ``_merge_md_typed_text_into_nodes`` +
+>   ``_split_foundation_typed_text_to_md`` with a one-shot
+>   read-side migrator ``_absorb_md_typed_text_into_json`` that
+>   moves ``foundation/{kind}-{slug}.md`` content into JSON node
+>   fields and renames the source file to ``foundation/_legacy/``.
+> - **Viewer:** typed-field inspectors (mission / core_value /
+>   identity) switch from plain ``<textarea>`` to monospace
+>   MD-aware editor (preserves newlines, no preview yet).
+> - **Migration safety:** 4-scenario coverage. All paths preserve
+>   user content; legacy files quarantined not deleted.
+> - **Tests:** new ``tests/test_folder_io.py::test_absorb_md_typed_text_into_json_*``.
+> - **Ship as:** v0.17.0 (minor — Foundation storage model change).
+>
+> **Approach:**
+> - Plan-mode entry mandatory (Gate 1 — SPEC change).
+> - Plan-agent design review before code (large refactor).
+> - Hands-on validation in user's real Chrome before commit
+>   (Gate 3) — v0.13 project loads and shows the prior MD content
+>   in the new inspector.
+>
+> **Subsequent phases (each its own plan-mode + approval):**
+>
+> | Phase | Scope | Ship version |
+> |---:|---|:---:|
+> | 2 | ``version: str = "v1.0"`` in BaseFields | v0.17.1 |
+> | 3 | "Publish" button + per-node MD export + MAJOR bump | v0.17.2 |
+> | 4 | MINOR propagation (ancestor chain) | v0.18.0 |
+> | 5 | Folder hierarchy + container-publish semantics | v0.19.0 |
+> | 6 | Legacy purge + final docs sync | v0.19.1 |
+
+---
+
+### (archived 2026-05-13) ``JSON SSOT 논의`` — superseded by Phase 1 trigger
+
+> **Superseded:** by the 6-phase sequence above. The initial
+> 4-point vision (D-2026-05-13-J) has been replaced by the
+> 7-principle vision (D-2026-05-13-O) and is no longer the active
+> entry point.
 
 > **Trigger:** user says **"JSON SSOT"** or **"json 원본"** or
 > **"MD 추출"** or **"export 버튼"** or **"phase 2"** or

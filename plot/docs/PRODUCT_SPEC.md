@@ -272,32 +272,45 @@ implementation clarity. Logged here so they don't get lost.
    Today's `SketchNode` has no `owner`. Add to
    [`CONCEPTS.md`](./CONCEPTS.md) when the multi-user roadmap
    firms up.
-2. **MD as derived export, not co-equal storage** — current v0.13
-   model has JSON + MD as parallel sources. The user's stated
-   long-term direction is MD generated *from* JSON. Migration
-   path:
-   - Phase 1 (today): JSON graph + per-node MD template (co-equal).
-   - Phase 2 (in-discussion 2026-05-13): JSON only as SoT.
-     User vision pinned 2026-05-13 (D-2026-05-13-J):
-     1. **JSON = SSOT.** Co-equal storage abolished.
+2. **JSON SSOT + per-node MD + per-node versioning + folder hierarchy**
+   — 6-phase migration in progress per
+   [D-2026-05-13-O](./DECISIONS.md). User stated the 7 canonical
+   principles verbatim during the 2026-05-13 design session:
+
+     1. **JSON = SSOT.** v0.13's JSON+MD co-equal storage abolished.
      2. **JSON value = MD-formatted string.** Typed-text fields
-        (`mission.what_we_do` / `why` / `direction` etc.) stored
-        as MD-formatted strings *inside* JSON. Viewer edits via
-        MD editor.
-     3. **MD export = explicit button.** No auto-sync; user
-        triggers JSON → MD conversion on demand.
-     4. **Export unit = canvas.** Per-node MD files
-        (`foundation/{kind}-{slug}.md`) abolished; single MD
-        file per canvas (`foundation.md` or equivalent).
+        are stored inside JSON as MD-formatted strings; viewer
+        edits via MD-aware editor.
+     3. **MD extraction = "발행" (publish) button.** No automatic
+        sync.
+     4. **Per-node MD file.** *Supersedes D-2026-05-13-J point #4*
+        ("per-canvas single MD") — user explicit clarification.
+     5. **Per-node versioning.** File-level git history = node
+        history.
+     6. **Version format `vMAJOR.MINOR`:**
+        - MAJOR + 1 on the node's own content publish.
+        - MINOR + 1 when any descendant publishes
+          (chain-propagated to all ancestors).
+        - Leaf nodes: MAJOR only (`v1.0` → `v2.0` → …).
+     7. **MD folder hierarchy = node hierarchy 1:1.** Container
+        nodes become folders; leaves become files inside.
 
-     Detailed open questions (editor UX / line-break handling
-     / per-canvas layout / migration path / button placement /
-     idempotence / Phase 2 guard test) — next-session
-     discussion under the `JSON SSOT 논의` trigger.
+   6-phase ship sequence (each phase its own plan-mode + user
+   approval, see D-2026-05-13-O):
 
-   - Original user direction quote 2026-05-12 *"이 부분은
-     나중에 다시 다듬어 봅시다."* — discussion reopened
-     2026-05-13.
+   - **Phase 0** (shipped v0.16.40, 2026-05-13) — Vision pin docs.
+   - **Phase 1** — MD → JSON absorption (kill MD-as-SoT).
+   - **Phase 2** — `version: str = "v1.0"` in BaseFields.
+   - **Phase 3** — "Publish" button + per-node MD export + MAJOR.
+   - **Phase 4** — MINOR propagation (ancestor chain).
+   - **Phase 5** — Folder hierarchy + container-publish.
+   - **Phase 6** — Legacy purge + final docs sync.
+
+   Original user direction (D-2026-05-12-A): *"이 부분은 나중에
+   다시 다듬어 봅시다."* — discussion reopened 2026-05-13.
+   First vision pin (D-2026-05-13-J): per-canvas MD. Today's pin
+   (D-2026-05-13-O): per-node MD with versioning + folder
+   hierarchy — supersedes D-2026-05-13-J point #4.
 3. **isomorphic-git integration timing** — §6 / §11 hinge on git
    being live inside the viewer / MCP. Currently no git is
    integrated. Land before any "self-improving agent" pattern.

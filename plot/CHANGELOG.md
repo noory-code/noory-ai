@@ -4,6 +4,35 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.40] — 2026-05-13
+
+Phase 0 of the JSON SSOT + per-node MD + per-node versioning +
+folder-hierarchy migration. User stated 7 principles in plain text
+and approved the 6-phase ship sequence; this commit pins the
+principles as docs only — no code changes.
+
+The 7 principles supersede D-2026-05-13-J point #4 (the original
+"per-canvas MD" wording) with "per-node MD file", and add three
+new principles (per-node versioning, vMAJOR.MINOR rules, folder
+hierarchy). Phase 1 (MD → JSON absorption) lands in the next
+session under the trigger ``Phase 1`` / ``JSON SSOT 구현`` /
+``MD 흡수``. (D-2026-05-13-O)
+
+### Changed
+
+- ``plot/docs/DECISIONS.md`` — D-2026-05-13-O entry pinning the
+  7 principles + 6-phase ship sequence + D-J supersede chain.
+- ``plot/docs/PRODUCT_SPEC.md`` §15 #2 — replace 4-point block
+  with 7-principle list + cross-reference to D-2026-05-13-O.
+- ``plot/docs/NEXT_SESSION.md`` — Active queue ``JSON SSOT 논의``
+  entry transitions to ``Phase 1 — JSON SSOT 구현 (MD 흡수)`` with
+  the 6-phase sequence referenced.
+
+### Out of scope (this session)
+
+- All Phase 1-6 code changes. Each subsequent phase opens its own
+  plan-mode + user approval cycle.
+
 ## [0.16.39] — 2026-05-13
 
 Pin user hands-on confirmation of v0.16.38 anchor-edge cleanup

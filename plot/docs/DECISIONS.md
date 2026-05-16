@@ -3795,6 +3795,124 @@ in the same browser-verification round:
   Adding the same whitelist twice in one day for the same constant
   is the signal.
 
+---
+
+### D-2026-05-13-O — JSON SSOT migration: 7 principles (Phase 0 vision pin)
+
+- **What:** User stated 7 principles for the JSON SSOT + per-node
+  MD + per-node versioning + folder-hierarchy migration during the
+  2026-05-13 design discussion that continued D-2026-05-13-J's
+  vision pin. This entry pins the 7 principles canonically and
+  references the approved 6-phase ship sequence
+  (``~/.claude/plans/sparkling-discovering-blanket.md``).
+
+  The 7 principles:
+
+  1. **JSON = SSOT.** v0.13's JSON+MD co-equal storage is abolished.
+  2. **JSON value = MD-formatted string.** Typed-text fields are
+     stored inside JSON as MD-formatted strings; viewer edits via
+     an MD-aware editor.
+  3. **MD extraction = "발행" (publish) button.** No automatic sync.
+  4. **per-node MD file.** *Supersedes D-2026-05-13-J point #4*
+     ("per-canvas single MD") — user explicit clarification:
+     *"각 노드의 MD 분리해야죠"*.
+  5. **Per-node versioning.** File-level git history = node history.
+  6. **Version format ``vMAJOR.MINOR``:**
+     - MAJOR + 1 when the node's own content is published.
+     - MINOR + 1 when any descendant publishes (chain-propagated
+       to all ancestors).
+     - Leaf nodes (no children): MAJOR only (``v1.0`` → ``v2.0`` → …).
+     - User quote: *"하위 노드가 버전이 업데이트 되면 상위 노드의
+       버전도 올라가야겠죠. ... 메이저와 마이너 마이너는 하위
+       버전이 올라갈 때 올라가구요"*.
+  7. **MD folder hierarchy = node hierarchy 1:1.** Container nodes
+     become folders; leaves become files inside (or ``index.md``
+     inside its own folder). User quote: *"md 정리는요. 폴더를
+     적극 활용하세요"*.
+
+- **Why now:** D-2026-05-13-J's "이건 내일 논의해봅시다" promise
+  is being kept *today* (the in-session "내일"). User reopened
+  the discussion mid-session after the v0.16.37 / v0.16.38 fix
+  loop closed, asked plan-mode if needed, and approved Phase 0.
+
+- **Why Phase 0 = docs only:** small-ships per
+  ``feedback_small_ships_over_big_bangs.md`` and explicit user
+  trauma from the auto-layout 4 cycles (D-2026-05-04-D /
+  D-2026-05-10-E / D-2026-05-10-F / D-2026-05-10-G). Pinning the
+  principles in docs before any code lands gives Phase 1-6 a
+  stable reference + a same-day rollback path.
+
+- **6-phase sequence (full plan in
+  ``~/.claude/plans/sparkling-discovering-blanket.md``):**
+
+  | Phase | Scope | Ship version |
+  |---:|---|:---:|
+  | 0 | Vision pin docs only (this entry) | v0.16.40 |
+  | 1 | MD → JSON absorption (kill MD-as-SoT) | v0.17.0 |
+  | 2 | ``version: str = "v1.0"`` in BaseFields | v0.17.1 |
+  | 3 | "Publish" button + per-node MD + MAJOR bump (leaf) | v0.17.2 |
+  | 4 | MINOR propagation (ancestor chain) | v0.18.0 |
+  | 5 | Folder hierarchy + container-publish semantics | v0.19.0 |
+  | 6 | Legacy purge + final docs sync | v0.19.1 |
+
+  Each subsequent phase opens its own plan-mode + user approval.
+
+- **Container-publish semantics (deferred to Phase 5):** The 7
+  principles do not specify container-publish behavior in singular
+  form. Three alternatives flagged for Phase 5 plan-mode entry:
+  - A) container = own MD + every descendant MD + 1 commit (default).
+  - B) container = own MD only; children stay at their versions.
+  - C) container = own MD + immediate children only.
+  User decides at Phase 5; not this session.
+
+- **isomorphic-git integration (out of scope for all 6 phases):**
+  Existing ``plot_mcp/git_store.py`` (subprocess-native) is
+  sufficient through Phase 6. isomorphic-git is a separate v0.20+
+  lane (ROADMAP §"v0.17+" already lists it with 6 Major findings
+  from ``plot-design-red-team``). Conflating it with publish would
+  create a 12-issue mega-phase.
+
+- **Approval:** **Accepted (Phase 0 only)** by user, 2026-05-13.
+  Plan-mode plan approved + 7 principles confirmed verbatim
+  (*"맞아요. 맞습니다."*, *"네네 맞아요"*, *"좋습니다. 가봅시다"*).
+  Phases 1-6 approval queued; each phase opens its own
+  approval cycle.
+
+- **Spec impact:**
+  - ``plot/docs/PRODUCT_SPEC.md`` §15 #2 — 4-point block replaced
+    with 7-principle list + cross-reference to this entry.
+  - ``plot/docs/NEXT_SESSION.md`` — ``JSON SSOT 논의`` entry
+    transitions to ``Phase 1 — JSON SSOT 구현 (MD 흡수)``.
+  - ``plot/docs/SPEC.md`` — no change yet (Phase 1+ will rewrite
+    Foundation §Storage and §Typed-text sections; container-publish
+    will land in §Edges or §Versioning section in Phase 5).
+  - ``plot/docs/CONCEPTS.md`` — no change yet (Phase 2 will add
+    ``version`` to BaseFields documentation).
+
+- **D-entry supersede chain:**
+  - D-2026-05-12-A §15 #2 — original deferred entry. Stays as
+    historical record.
+  - D-2026-05-13-J — first vision pin. Today's entry supersedes
+    point #4 explicitly (per-canvas → per-node); points 1-3 carry
+    forward verbatim; new points 5-7 added.
+  - D-2026-05-13-O (this entry) — 7-principle vision + 6-phase
+    sequence reference.
+  - D-2026-05-?? × 6 — one entry per Phase 1-6 implementation.
+
+- **Files in this commit:**
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/docs/PRODUCT_SPEC.md`` §15 #2 update.
+  - ``plot/docs/NEXT_SESSION.md`` — Active queue refresh.
+  - ``plot/CHANGELOG.md`` — v0.16.40 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.39 → 0.16.40.
+
+- **Next-session trigger:** ``Phase 1`` / ``JSON SSOT 구현`` /
+  ``MD 흡수``.
+
+- **Out of scope:**
+  - Services orphan edge ``e_mopntgek_4y74 | None → None`` —
+    D-2026-05-13-I residual. Separate cleanup pass.
+
 - **Spec impact:** None — internal migration helper. The user-facing
   invariant ("page load is a single GET set per canvas, then idle")
   is implicit in the design; no SPEC.md line names it. If this class
