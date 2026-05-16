@@ -7,6 +7,7 @@
  */
 import { useTranslation } from "react-i18next";
 import type { SketchNode } from "../../../types";
+import { MdTextarea } from "./MdTextarea";
 
 /** Any node that carries the do / dont AI-first pair (CoreValue,
  *  Identity, Service all do; the type-narrowed prop accepts any of
@@ -29,23 +30,19 @@ export function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
       <label className="mb-2 block">
         <span className="text-xs font-semibold text-emerald-700">{t("inspector.field.do")}</span>
         <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.do")}</span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.do ?? ""}
-          onChange={(e) => onPatchNode({ do: e.target.value })}
+          onChange={(v) => onPatchNode({ do: v })}
           placeholder="이렇게 행동/표현한다"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-emerald-600 focus:outline-none"
         />
       </label>
       <label className="block">
         <span className="text-xs font-semibold text-rose-700">{t("inspector.field.dont")}</span>
         <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.dont")}</span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.dont ?? ""}
-          onChange={(e) => onPatchNode({ dont: e.target.value })}
+          onChange={(v) => onPatchNode({ dont: v })}
           placeholder="이렇게는 안 한다"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-rose-600 focus:outline-none"
         />
       </label>
     </>

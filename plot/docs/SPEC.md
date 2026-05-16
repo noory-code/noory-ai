@@ -516,16 +516,19 @@ The eligibility predicate is implemented twice in lockstep —
 ``viewer/src/domain/publishEligibility.ts::canPublish``. Drift
 between the two is a Phase 4-blocking bug; both must stay in sync.
 
-### Typed text + body fields (v0.18.2+)
+### Typed text + body fields (v0.19.0+)
 
-Per [D-2026-05-16-F](./DECISIONS.md). All publish-eligible kinds
-carry a ``body`` field for free-form notes (a "노트" extra). All
-typed text fields on these kinds (e.g. `mission.what_we_do`,
-`actor.motivation`, `service.scope`, `rule.policy`) are stored as
-**MD-formatted strings** (D-2026-05-13-O #2) and edited via
-**monospace MD textareas** in the Inspector. The legacy
-DetailsSection MD-file editor is hidden for all 10
-publish-eligible kinds — JSON SSOT.
+Per [D-2026-05-16-F](./DECISIONS.md) (body field on 10 kinds) +
+[D-2026-05-17-B](./DECISIONS.md) (MD-aware editor). All
+publish-eligible kinds carry a ``body`` field for free-form notes
+(a "노트" extra). All typed text fields on these kinds (e.g.
+`mission.what_we_do`, `actor.motivation`, `service.scope`,
+`rule.policy`) are stored as **MD-formatted strings**
+(D-2026-05-13-O #2) and edited via a **CodeMirror 6 MD-aware
+editor** in the Inspector (headings / lists / bold / italic / code
+/ links / blockquotes render with syntax highlight as the user
+edits). The legacy DetailsSection MD-file editor is hidden for all
+10 publish-eligible kinds — JSON SSOT.
 
 The ref 4 kinds (`actor_ref` / `mission_ref` / `value_ref` /
 `identity_ref`) are **publish-ineligible** and carry **no

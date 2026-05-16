@@ -10,6 +10,7 @@ import type { MissionJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { BodyField } from "../shared/BodyField";
+import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
 
 export function MissionInspector(props: KindInspectorProps) {
@@ -41,23 +42,19 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
         <span className="ml-1 text-[10px] text-slate-500">
           — {t("inspector.fieldHint.whatWeDo")}
         </span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.what_we_do ?? ""}
-          onChange={(e) => onPatchNode({ what_we_do: e.target.value })}
+          onChange={(v) => onPatchNode({ what_we_do: v })}
           placeholder="우리는 매일 …"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
       <label className="mb-2 block">
         <span className="text-xs font-semibold text-slate-700">{t("inspector.field.why")}</span>
         <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.why")}</span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.why ?? ""}
-          onChange={(e) => onPatchNode({ why: e.target.value })}
+          onChange={(v) => onPatchNode({ why: v })}
           placeholder="사람들이 … 하기를 바라서"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
       <label className="mb-2 block">
@@ -67,12 +64,10 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
         <span className="ml-1 text-[10px] text-slate-500">
           — {t("inspector.fieldHint.direction")}
         </span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.direction ?? ""}
-          onChange={(e) => onPatchNode({ direction: e.target.value })}
+          onChange={(v) => onPatchNode({ direction: v })}
           placeholder="누구나 … 인 일상으로"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />

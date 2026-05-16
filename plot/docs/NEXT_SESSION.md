@@ -73,6 +73,70 @@
 
 ---
 
+### `v0.20.0 — Mermaid SVG inline decoration` (queued)
+
+> **Trigger:** user says **"mermaid"** or **"머메이드"** or **"Live Preview"** or **"v0.20"** as the first / near-first message.
+>
+> **Filed:** 2026-05-17 (D-2026-05-17-B follow-up). Stage 2 of the
+> 3-stage Obsidian Live Preview track that v0.19.0 started. Render
+> ```` ```mermaid ```` code blocks as inline SVG widgets *on top of*
+> the source code inside the CodeMirror MdTextarea.
+>
+> **Scope:**
+>
+> - CodeMirror ``ViewPlugin`` that walks the syntax tree for
+>   ```` ```mermaid```` fenced blocks and inserts a Decoration.widget
+>   below each block with the rendered SVG.
+> - Mermaid is already a dep + ``viewer/src/edit/MDPreview.tsx``
+>   has a working ``mermaid.render`` path that handles errors gracefully —
+>   reuse that helper, don't reinvent.
+> - **Lazy import**: ``await import("mermaid")`` only when the first
+>   mermaid block appears in any open editor. ~700KB raw / ~140KB gzip
+>   chunk; keep out of initial bundle.
+> - Re-render on content change (debounced ~200ms).
+> - SSOT preserved — decoration is visual-only.
+>
+> **Approach:** plan-mode + plot-design-red-team (edge cases: invalid mermaid
+> syntax, very large diagrams, multiple blocks per field, theme).
+
+### `v0.21.0 — Live Preview decorations` (heading / list / image) (queued)
+
+> **Trigger:** user says **"Live Preview"** or **"v0.21"** or **"heading style"** or **"image embed"**.
+>
+> **Filed:** 2026-05-17 (D-2026-05-17-B follow-up). Stage 3.
+>
+> - Heading font-size scaling on ``#``/``##``/``###`` lines (visual; raw MD untouched).
+> - List bullet rendering (``-`` becomes a styled bullet glyph).
+> - Image embed (``![alt](url)``) renders the image inline.
+>
+> Each is a separate ``ViewPlugin`` decoration on top of the
+> CodeMirror MdTextarea. SSOT preserved.
+
+### `MCP-driven node creation via AI conversation` (queued, filed 2026-05-17)
+
+> **Trigger:** user says **"MCP 대화"** or **"AI 로 노드 만들기"** or **"context_envelope"** or **"conversation MCP"**.
+>
+> **Filed:** 2026-05-17 (user explicit deferral — *"MCP 로 대화하면서
+> 만드는건 나중으로 미루고"*). Combines with tree-in-forest
+> [D-2026-05-16-D](./DECISIONS.md) Layer 2 (``context_envelope`` MCP
+> tool).
+>
+> **Scope sketch (plan-mode required):**
+>
+> - New / extended MCP tools: ``context_envelope(node_id)``,
+>   ``draft_node_proposal``, ``apply_node_proposal``.
+> - Conversation pattern: AI walks user through node creation,
+>   pulls context (parent ancestors + sibling identity / mission
+>   refs), drafts the typed fields, calls
+>   ``update_canvas`` (already exists) to materialize.
+> - PSPEC §9 interview pattern surfaces the envelope as the
+>   opening context.
+>
+> **Approach:** plan-mode + plot-design-red-team. Substantial phase
+> — own design discussion + likely 2-3 ships.
+
+---
+
 ### `cross-kind ref typed-text symmetry` (lower priority, filed 2026-05-16)
 
 > **Trigger:** user says **"ref symmetry"** or **"ref typed text"** or
@@ -127,6 +191,31 @@
 >   used by ``test_git_store.py``.
 >
 > **Ship as:** v0.18.x patch once the misclick rate justifies it.
+
+---
+
+### (archived 2026-05-17) `v0.19.0 — MD-aware Inspector editor (CodeMirror 6)` — shipped v0.19.0
+
+> **Trigger:** user said *"노드에 있는 각 항목들 md 잖아요. md 편집기 붙일 수 있나요?"* + *"머메이드 차트 지원해뒀으면"* + *"옵시디언 처럼"* (2026-05-17).
+>
+> **Filed:** 2026-05-17. Shipped same session as [D-2026-05-17-B](./DECISIONS.md). Stage 1 of 3-stage Live Preview track.
+>
+> **What landed:**
+> - ``MdTextarea`` shared component (CodeMirror 6 + ``@codemirror/lang-markdown``); 19 textareas across 11 Inspector files now use it.
+> - Bundle delta: gzip +175KB (within 150-180KB plan).
+> - viewer 524/524 green; tsc clean.
+>
+> **Trigger phrases preserved:** ``MD 편집기`` / ``CodeMirror`` / ``markdown editor`` / ``v0.19``.
+
+---
+
+### (archived 2026-05-17) `v0.18.3 — reload fit-view race fix` — shipped v0.18.3
+
+> **Trigger:** user reported *"파운데이션에서 새로고침 하면 노드들 싹다 사라집니다"* (turned out to be viewport-not-fit, not data loss).
+>
+> **Filed:** 2026-05-17. Shipped same session as [D-2026-05-17-A](./DECISIONS.md).
+>
+> **What landed:** Moved fitView out of RF's onInit callback into a ``useNodesInitialized`` effect (waits for DOM measurement). v0.16.18 "fit once on mount" intent preserved via ``didInitialFitRef`` gate.
 
 ---
 

@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import type { ActorRefJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
 
 export function ActorRefInspector(props: KindInspectorProps) {
@@ -82,12 +83,10 @@ function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
           {t("inspector.field.gives")}
         </span>
         <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.gives")}</span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.gives ?? ""}
-          onChange={(e) => onPatchNode({ gives: e.target.value })}
+          onChange={(v) => onPatchNode({ gives: v })}
           placeholder="콘텐츠 / 시간 / 결제 / 주의 …"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-emerald-600 focus:outline-none"
         />
       </label>
       <label className="block">
@@ -97,12 +96,10 @@ function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
         <span className="ml-1 text-[10px] text-slate-500">
           — {t("inspector.fieldHint.receives")}
         </span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.receives ?? ""}
-          onChange={(e) => onPatchNode({ receives: e.target.value })}
+          onChange={(v) => onPatchNode({ receives: v })}
           placeholder="피드백 / 신뢰 / 접근권 / 즐거움 …"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-violet-600 focus:outline-none"
         />
       </label>
     </div>

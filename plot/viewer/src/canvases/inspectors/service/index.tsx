@@ -14,6 +14,7 @@ import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { BodyField } from "../shared/BodyField";
 import { DoDontFields } from "../shared/DoDontFields";
+import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
 import { CompositionList } from "./CompositionList";
 
@@ -157,13 +158,7 @@ function ServiceTextarea({ label, hint, value, onChange, placeholder }: ServiceT
     <label className="mb-2 block">
       <span className="text-xs font-semibold text-slate-700">{label}</span>
       <span className="ml-1 text-[10px] text-slate-500">— {hint}</span>
-      <textarea
-        rows={2}
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-sky-600 focus:outline-none"
-      />
+      <MdTextarea value={value ?? ""} onChange={onChange} placeholder={placeholder} />
     </label>
   );
 }

@@ -4,6 +4,72 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.19.0] — 2026-05-17
+
+MD-aware Inspector typed-text editor (stage 1 of 3-stage Obsidian
+Live Preview track). Per [D-2026-05-17-B](./docs/DECISIONS.md).
+Replaces 19 plain monospace ``<textarea>`` blocks across the
+Inspector with a single shared ``MdTextarea`` component backed by
+**CodeMirror 6 + ``@codemirror/lang-markdown``**. Headings, lists,
+bold, italic, code, links, and blockquotes now render with MD
+syntax highlight while the user edits. Raw MD remains the SSOT —
+the editor never transforms the value, only re-paints it.
+
+Stages 2 (v0.20.0 mermaid SVG decoration) and 3 (v0.21.0 heading
+font-size / list bullet / image embed decorations) build on the
+``MdTextarea`` foundation without an editor library swap.
+
+### Added
+
+- ``viewer/src/canvases/inspectors/shared/MdTextarea.tsx`` — **new**
+  shared component. ~110 LOC. CodeMirror 6 + markdown extension +
+  ``EditorView.lineWrapping`` + history + base theme matching Plot's
+  existing slate-300 border / indigo-600 focus chrome. Mounts once,
+  syncs external ``value`` prop via replace transactions. Hidden
+  ``<textarea>`` mirror keeps RTL ``getByDisplayValue`` queries
+  working in the smoke tests.
+- ``viewer/package.json`` — direct deps: ``codemirror`` (^6.0.2),
+  ``@codemirror/lang-markdown`` (^6.5.0).
+
+### Changed
+
+- ``viewer/src/canvases/inspectors/shared/BodyField.tsx`` —
+  ``<textarea>`` → ``<MdTextarea>``.
+- ``viewer/src/canvases/inspectors/shared/DoDontFields.tsx`` — 2
+  ``<textarea>`` → ``<MdTextarea>``.
+- ``viewer/src/canvases/inspectors/service/index.tsx`` — internal
+  ``ServiceTextarea`` helper now wraps ``<MdTextarea>``;
+  propagates to all 6 service typed-text fields (what /
+  value_created / scope / trigger / how / outcome).
+- ``viewer/src/canvases/inspectors/service/RuleFields.tsx`` — 2
+  ``<textarea>`` → ``<MdTextarea>``.
+- ``viewer/src/canvases/inspectors/{mission,core_value,identity,actor,category,metric,step,actor_ref}/index.tsx``
+  × 8 — every multi-line typed text ``<textarea>`` → ``<MdTextarea>``.
+- Per-inspector ring color (sky/rose/violet/emerald/slate/lime/stone)
+  dropped on typed-text fields in favor of a single canonical
+  slate→indigo focus theme. Visual simplification per KISS; kind
+  colors stay on header chrome (color badge + KIND tag).
+
+### Bundle size
+
+Vendor + viewer index bundle:
+- Before (v0.18.3): index 1,257 KB raw / 340 KB gzip.
+- After (v0.19.0): index 1,759 KB raw / 515 KB gzip.
+- Delta: +502 KB raw / **+175 KB gzip** (within the planned
+  150-180 KB gzip budget). Mermaid lazy chunks (cytoscape / katex /
+  wardley) unchanged.
+
+### Tests
+
+- ``viewer/tests/inspectors/inspectors.smoke.test.tsx`` — auto-flowed
+  via the hidden mirror ``<textarea>`` in MdTextarea (RTL
+  ``getByDisplayValue`` finds it). No assertion changes needed.
+- viewer: vitest **524/524** green; tsc clean.
+- server: pytest 359/359 (unaffected).
+- LOC budgets unchanged (BodyField / DoDontFields / per-kind
+  inspectors all *smaller* after the swap; MdTextarea is its own
+  file).
+
 ## [0.18.3] — 2026-05-17
 
 Fixes a viewport-fit race surfaced on reload (D-2026-05-17-A):

@@ -7,6 +7,7 @@ import type { StepJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { BodyField } from "../shared/BodyField";
+import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
 
 export function StepInspector(props: KindInspectorProps) {
@@ -52,12 +53,10 @@ function StepFields({ node, onPatchNode }: StepFieldsProps) {
         <span className="ml-1 text-[10px] text-slate-500">
           — {t("inspector.fieldHint.outcome")}
         </span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.outcome ?? ""}
-          onChange={(e) => onPatchNode({ outcome: e.target.value })}
+          onChange={(v) => onPatchNode({ outcome: v })}
           placeholder="이 단계 끝나면 어떤 상태?"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />

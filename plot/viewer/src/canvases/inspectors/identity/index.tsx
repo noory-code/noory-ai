@@ -11,6 +11,7 @@ import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { BodyField } from "../shared/BodyField";
 import { DoDontFields } from "../shared/DoDontFields";
+import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
 
 export function IdentityInspector(props: KindInspectorProps) {
@@ -42,12 +43,10 @@ function IdentityFields({ node, onPatchNode }: IdentityFieldsProps) {
         <span className="ml-1 text-[10px] text-slate-500">
           — {t("inspector.fieldHint.description")}
         </span>
-        <textarea
-          rows={2}
+        <MdTextarea
           value={node.description ?? ""}
-          onChange={(e) => onPatchNode({ description: e.target.value })}
+          onChange={(v) => onPatchNode({ description: v })}
           placeholder="이 속성이 어떻게 드러나는가"
-          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
       <DoDontFields node={node} onPatchNode={onPatchNode} />

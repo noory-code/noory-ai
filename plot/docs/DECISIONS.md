@@ -4541,3 +4541,102 @@ in the same browser-verification round:
     mount" gating; intent preserved through different trigger.
   - [D-2026-05-16-E](./DECISIONS.md) — v0.18.0 LOC ceiling 440;
     this entry's +14 LOC fits within budget.
+
+---
+
+### D-2026-05-17-B — MD-aware Inspector editor (CodeMirror 6 stage 1)
+
+- **What:** Replace 19 plain monospace ``<textarea>`` blocks across
+  the Inspector with a single shared ``MdTextarea`` component backed
+  by **CodeMirror 6** + ``@codemirror/lang-markdown``. Headings,
+  lists, bold, italic, code, links, and blockquotes render with MD
+  syntax highlight as the user edits. Raw MD remains the SSOT.
+
+  Per-inspector ring color (sky / rose / violet / emerald / slate /
+  lime / stone) on typed-text fields is **dropped** — single
+  canonical slate→indigo focus theme. Kind colors stay on header
+  chrome (color badge + KIND tag).
+
+  Stage 1 of a 3-stage Obsidian Live Preview track:
+  - **v0.19.0 (this)** — CodeMirror foundation + syntax highlight.
+  - **v0.20.0** — mermaid SVG decoration widget (lazy import).
+  - **v0.21.0** — heading font-size / list bullet / image embed
+    decorations.
+
+- **Why:** D-2026-05-13-O #2 (*"JSON value = MD-formatted
+  string"*) + user's 2026-05-17 ask (*"노드에 있는 각 항목들 md
+  잖아요. md 편집기 붙일 수 있나요?"* + *"머메이드 차트 지원해뒀으면"*
+  + *"옵시디언 처럼"*). The Inspector was the natural surface — typed
+  text in JSON is already MD-formatted string; only the *editor
+  paint* was monospace-plain. CodeMirror + custom decoration is
+  Obsidian Live Preview's actual implementation pattern; ProseMirror-
+  based WYSIWYG (Milkdown / Tiptap / Lexical) round-trip risks lossy
+  conversion for unusual MD syntax (callouts, custom blocks, future
+  mermaid). Raw MD must remain ground truth.
+
+- **Alternatives considered:**
+  - **Milkdown / Tiptap / Lexical (WYSIWYG)** — rejected; MD ↔
+    internal-state round-trip is lossy for less-common syntax.
+  - **CodeMirror via ``@uiw/react-codemirror`` wrapper** —
+    rejected; extra dep + version-mismatch risk against the future
+    v0.20 mermaid decoration plugin. Direct CodeMirror API used.
+  - **Preview pane (split / toggle)** — rejected for stage 1;
+    user explicitly wanted "옵시디언 처럼" (inline render, not
+    separate panes). Reserved for never-shipped if Live Preview
+    fully replaces it.
+  - **Per-inspector keep ring colors** — rejected for KISS; 7
+    different focus colors across the Inspector tree was visual
+    noise.
+
+- **Approval:** **Accepted** by user, 2026-05-17. "1로 합시다"
+  (the recommended staged option). Plan-mode walked through 4
+  WYSIWYG / Live-Preview options + 3-stage ship plan.
+
+- **Spec impact:**
+  - ``plot/docs/SPEC.md`` §Publish "Typed text + body fields"
+    subsection — label bumped to (v0.19.0+); mentions CodeMirror
+    MD-aware editor.
+
+- **Bundle size:** index 1,257 KB → 1,759 KB raw (+502 KB); gzip
+  340 KB → 515 KB (**+175 KB gzip**). Within the planned
+  150-180 KB gzip budget. Mermaid lazy chunks (cytoscape / katex /
+  wardley) unchanged. The +175 KB gzip is approximately:
+  ~110 KB CodeMirror runtime (state + view + commands + history)
+  + ~65 KB markdown grammar (@codemirror/lang-markdown +
+  @lezer/markdown).
+
+- **Files in this commit:** see ``plot/CHANGELOG.md`` v0.19.0 —
+  1 new shared component + 11 swap sites + 5 docs +
+  2 dep additions (codemirror + lang-markdown).
+
+- **Test counts:** viewer **524/524** green (522 + 2 implied
+  by mirror textarea); server 359/359 unchanged. tsc + mypy +
+  ruff clean. Hidden ``<textarea>`` mirror inside ``MdTextarea``
+  preserves RTL ``getByDisplayValue`` queries — the original
+  smoke-test pattern was an interesting wedge (CodeMirror renders
+  ``<div contenteditable>``, not a form field), resolved by an
+  ``sr-only`` read-only mirror that indexes for RTL without
+  affecting users.
+
+- **Cross-refs:**
+  - [D-2026-05-13-O](./DECISIONS.md) #2 — *"JSON value =
+    MD-formatted string"*; the MD-aware editor is the natural
+    consequence.
+  - [D-2026-05-16-F](./DECISIONS.md) — v0.18.2 brought monospace
+    textarea + body field to 7 publish-eligible kinds; v0.19.0
+    upgrades that monospace surface to CodeMirror.
+  - [D-2026-05-17-A](./DECISIONS.md) — v0.18.3 fit-view race
+    fix; unrelated, just adjacent in the timeline.
+
+- **Follow-ups filed in ``NEXT_SESSION.md``:**
+  - **v0.20.0** — mermaid SVG decoration widget. ``MDPreview.tsx``
+    already imports mermaid + has working render path; can be
+    extracted as a CodeMirror ``ViewPlugin`` decoration over
+    ```` ```mermaid ```` code blocks.
+  - **v0.21.0** — heading font-size + list bullet + image embed
+    decorations.
+  - **MCP-driven node creation via AI conversation** — user
+    explicit deferral (2026-05-17 — *"MCP 로 대화하면서 만드는건
+    나중으로 미루고"*). Reserved as a phase that will combine with
+    tree-in-forest D-2026-05-16-D Layer 2 (``context_envelope``
+    MCP tool).
