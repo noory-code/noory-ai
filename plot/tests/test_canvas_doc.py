@@ -896,6 +896,132 @@ def test_edges_referencing_unknown_nodes_rejected() -> None:
         )
 
 
+# ---------------------------------------------------------------------------
+# v0.16.37 — D-2026-05-13-M (anchor edge 422 reject fix)
+# ---------------------------------------------------------------------------
+
+
+def test_edge_from_synthetic_anchor_to_user_node_accepted() -> None:
+    """D-2026-05-04-B SPEC mandate: user may draw edges from / to the
+    synthetic project anchor like any other node. The anchor itself
+    lives in ``ProjectDoc.anchors``, not in ``canvas.nodes`` — the
+    validator must whitelist its id so anchor edges don't 422 reject.
+    Regression for D-2026-05-13-M (user complaint
+    *"새로 고침하면 연결선이 사라지죠"*)."""
+    from plot_mcp.models import PROJECT_ANCHOR_ID
+
+    doc = CanvasDoc(
+        canvas_id="actors",
+        canvas_kind="actors",
+        nodes=[
+            ActorNode(id="operator", label="Op"),
+            ActorNode(id="user", label="U"),
+        ],
+        edges=[
+            SketchEdge(
+                id="e_anchor_to_user",
+                source=PROJECT_ANCHOR_ID,
+                target="user",
+            ),
+        ],
+    )
+    assert doc.edges[0].source == PROJECT_ANCHOR_ID
+    assert doc.edges[0].target == "user"
+
+
+def test_edge_from_user_node_to_synthetic_anchor_accepted() -> None:
+    """Direction-symmetric companion of the above — D-2026-05-04-B's
+    *"from / to the anchor"* covers both directions."""
+    from plot_mcp.models import PROJECT_ANCHOR_ID
+
+    doc = CanvasDoc(
+        canvas_id="actors",
+        canvas_kind="actors",
+        nodes=[
+            ActorNode(id="operator", label="Op"),
+            ActorNode(id="user", label="U"),
+        ],
+        edges=[
+            SketchEdge(
+                id="e_user_to_anchor",
+                source="user",
+                target=PROJECT_ANCHOR_ID,
+            ),
+        ],
+    )
+    assert doc.edges[0].target == PROJECT_ANCHOR_ID
+
+
+def test_dangling_edge_error_message_reports_missing_endpoint_not_edge_id() -> None:
+    """v0.16.37 bug fix: prior to D-2026-05-13-M, the validator's error
+    message reported *edge ids* (``e_<timestamp>_<rand>``) as if they
+    were missing node ids. This sent D-2026-05-13-I diagnosis down a
+    wrong path. The fixed message reports the actual missing endpoint
+    id."""
+    with pytest.raises(ValueError, match=r"'ghost_node'") as exc:
+        CanvasDoc(
+            canvas_id="actors",
+            canvas_kind="actors",
+            nodes=[ActorNode(id="user", label="U")],
+            edges=[
+                SketchEdge(
+                    id="e_mp2vvxg9_k9cq",  # edge id — must NOT appear in msg
+                    source="user",
+                    target="ghost_node",
+                ),
+            ],
+        )
+    # Edge id must not be in the error message (the old bug).
+    assert "e_mp2vvxg9_k9cq" not in str(exc.value)
+
+
+def test_dangling_edge_reports_multiple_missing_endpoints_sorted() -> None:
+    """When multiple edges have different missing endpoints, the error
+    message lists each distinct missing id (sorted), not duplicates."""
+    with pytest.raises(ValueError, match="unknown nodes") as exc:
+        CanvasDoc(
+            canvas_id="actors",
+            canvas_kind="actors",
+            nodes=[ActorNode(id="user", label="U")],
+            edges=[
+                SketchEdge(id="e1", source="user", target="ghost_a"),
+                SketchEdge(id="e2", source="ghost_b", target="user"),
+                SketchEdge(id="e3", source="user", target="ghost_a"),
+            ],
+        )
+    msg = str(exc.value)
+    assert "ghost_a" in msg
+    assert "ghost_b" in msg
+    # 'user' is a valid node — must NOT be in the error.
+    assert "'user'" not in msg
+    # Edge ids must NOT appear.
+    assert "'e1'" not in msg
+    assert "'e2'" not in msg
+
+
+def test_edge_with_one_anchor_one_ghost_endpoint_reports_only_ghost() -> None:
+    """Anchor id is whitelisted; if only the *other* endpoint is
+    missing, only that endpoint must appear in the error message."""
+    from plot_mcp.models import PROJECT_ANCHOR_ID
+
+    with pytest.raises(ValueError, match="unknown nodes") as exc:
+        CanvasDoc(
+            canvas_id="actors",
+            canvas_kind="actors",
+            nodes=[ActorNode(id="user", label="U")],
+            edges=[
+                SketchEdge(
+                    id="e_mixed",
+                    source=PROJECT_ANCHOR_ID,
+                    target="ghost_x",
+                ),
+            ],
+        )
+    msg = str(exc.value)
+    assert "ghost_x" in msg
+    assert PROJECT_ANCHOR_ID not in msg
+
+
 def test_parent_cycle_rejected() -> None:
     with pytest.raises(ValueError, match="cycle"):
         CanvasDoc(

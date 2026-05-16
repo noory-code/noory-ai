@@ -3570,6 +3570,128 @@ in the same browser-verification round:
   - After: 486 viewer tests (+25 — 13 autoLayout unit + 6 isolation
     + 6 follow-up from regression toggle).
 
+---
+
+### D-2026-05-13-M — Anchor edge 422 reject fix (D-2026-05-13-I root cause)
+
+- **What:** Whitelist the synthetic project anchor id
+  (``__project_anchor__``) in ``CanvasDoc._edges_reference_nodes``
+  Pydantic validator so user-drawn edges with the anchor as
+  ``source`` or ``target`` validate cleanly. Plus a compounding
+  error-message bug fix — the validator now reports the actual
+  *missing endpoint ids*, not the *edge ids of dangling edges*.
+
+- **Why:** User reported 2026-05-13 *"왜 새로 고침하면 연결선이
+  사라지죠?"* — user-drawn edges between the synthetic anchor and
+  other nodes silently failed to persist. The viewer's optimistic
+  update masked the 422 reject (edge appears on screen) until
+  reload lost the optimistic state and the empty server response
+  surfaced.
+
+  Phase 1 trace (two Explore agents, file:line cited):
+  - Viewer creates the edge correctly: ``useFlowHandlers.handleConnect``
+    sets ``edge.source = connection.source`` (which is
+    ``"__project_anchor__"`` when the user drags from the anchor's
+    handle).
+  - ``putCanvas`` sends the doc raw with no transform.
+  - Server-side validator (``models.py:538-545``) does
+    ``node_ids = {n.id for n in self.nodes}`` — the anchor lives
+    in ``ProjectDoc.anchors``, not ``canvas.nodes``, so its id is
+    missing from ``node_ids``. Every anchor edge gets flagged as
+    "referencing unknown nodes" and 422 rejected.
+  - D-2026-05-04-B SPEC mandate (*"User may draw edges from / to
+    the anchor like any other node"*) is violated at the
+    validator layer, even though the viewer-side rendering layer
+    honours it.
+
+  Compounding bug: the validator's error message reported the
+  *edge ids of the dangling edges* (``{e.id for e in dangling}``),
+  not the missing endpoint ids. The ``e_<timestamp>_<random>`` ids
+  in the error text *looked like* node ids but weren't — they were
+  always the edge's own id. This sent D-2026-05-13-I diagnosis
+  toward a fictional "edge id is being set as source/target"
+  hypothesis when the real story was much simpler: a missing
+  whitelist entry.
+
+- **Fix:**
+
+  ```python
+  PROJECT_ANCHOR_ID = "__project_anchor__"  # mirrors viewer/constants.ts
+
+  @model_validator(mode="after")
+  def _edges_reference_nodes(self) -> CanvasDoc:
+      node_ids = {n.id for n in self.nodes} | {PROJECT_ANCHOR_ID}
+      dangling = [...]
+      if dangling:
+          missing = sorted({
+              ep for e in dangling
+              for ep in (e.source, e.target)
+              if ep not in node_ids
+          })
+          raise ValueError(f"edges reference unknown nodes: {missing}")
+      return self
+  ```
+
+  Two changes in one validator: anchor whitelisted + error message
+  reports actual missing endpoints (sorted, distinct, no edge ids).
+
+- **Why not the alternatives:**
+  - **Alt 1 (rejected):** Have the server store anchor edges in a
+    separate ``ProjectDoc.anchor_edges`` field. Risk: schema fork
+    between viewer (one edges list) and server (two edges lists)
+    that would have to be re-merged on every read. Higher
+    complexity for zero functional gain.
+  - **Alt 2 (rejected):** Strip anchor edges on the client before
+    PATCH. Risk: anchor edges become client-local only — exactly
+    the bug we're fixing (edges sync-lost on reload). Same UX
+    failure mode.
+  - **Alt 3 (rejected):** Restore the v0.13 Phase 0 model where
+    the anchor lives in ``canvas.nodes``. Conflicts with
+    D-2026-05-13-K's storm fix and reopens a settled architectural
+    question. Out of scope.
+
+- **Approval:** Pending — Gate 3 hands-on verification by user in
+  real Chrome after MCP HTTP server restart.
+
+- **Spec impact:**
+  - D-2026-05-04-B is now actually enforceable end-to-end. SPEC.md
+    §Anchor "Handles visible. User may draw edges from / to the
+    anchor like any other node" was the *user-visible* contract;
+    the server validator now honours it.
+
+- **Files in this commit:**
+  - ``plot/plot_mcp/models.py`` — ``PROJECT_ANCHOR_ID`` constant +
+    validator (anchor whitelist + error message fix).
+  - ``plot/tests/test_canvas_doc.py`` — 5 regression tests
+    (anchor edge both directions accepted, error message reports
+    missing endpoints not edge ids, multi-edge case, mixed
+    anchor-plus-ghost case).
+  - ``plot/CHANGELOG.md`` — v0.16.37 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.36 → 0.16.37.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Test counts:**
+  - Before: 276 server tests.
+  - After: 281 server tests (+5 regression).
+
+- **D-2026-05-13-I closure status:**
+  - 422 storm + "e_-prefixed unknown node ids" — **resolved** by
+    this entry (both the anchor whitelist and the error-message
+    bug). The misleading e_-prefixed ids in the error text are
+    gone; the underlying 422 cause is fixed.
+  - ``services/canvas.json`` orphan edge ``e_mopntgek_4y74``
+    (source/target both ``None``) — **remains open**. Separate
+    storage-cleanup pass needed; not addressed here.
+
+- **Lesson:** Error messages that misreport *what* is wrong send
+  diagnosis down wrong paths. The ``{e.id for e in dangling}``
+  expression was off by one indirection — it should have been the
+  set of missing endpoint ids, not the set of edge ids whose
+  endpoints were missing. ``plot-design-red-team`` Attack 6 (Error
+  taxonomy) gains a new calibration anchor: *"the error message
+  must name the thing that is missing, not the thing that
+  references the missing thing."*
+
 - **Spec impact:** None — internal migration helper. The user-facing
   invariant ("page load is a single GET set per canvas, then idle")
   is implicit in the design; no SPEC.md line names it. If this class

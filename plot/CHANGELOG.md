@@ -4,6 +4,71 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.37] — 2026-05-13
+
+Fix anchor-edge 422 reject. User reported *"왜 새로 고침하면 연결선이
+사라지죠?"* — user-drawn edges between the synthetic project anchor
+and other nodes silently failed to persist.
+
+Root cause: server-side Pydantic validator
+``CanvasDoc._edges_reference_nodes`` (``models.py:538-545``) treated
+``"__project_anchor__"`` as an unknown node id and rejected every
+PATCH carrying an anchor edge with 422 Unprocessable Entity. The
+viewer's optimistic update masked the failure (edge appears on
+screen) until reload (which loses optimistic state → edge gone from
+both client and server).
+
+Compounding bug: the validator's error message reported the *edge
+ids* of the dangling edges as if they were missing node ids, which
+sent the D-2026-05-13-I diagnosis down a wrong path (e_-prefixed
+ids that were never node ids to begin with).
+
+Spec context: D-2026-05-04-B mandates *"User may draw edges from /
+to the anchor like any other node"* — anchor edges are a
+spec-supported feature, not an edge case to filter out.
+
+(D-2026-05-13-M — closes the 422-storm half of D-2026-05-13-I; the
+None→None services orphan edge remains separately tracked.)
+
+### Fixed
+
+- ``plot/plot_mcp/models.py::CanvasDoc._edges_reference_nodes`` —
+  whitelist the new module-level ``PROJECT_ANCHOR_ID`` constant
+  (mirrors the viewer's ``constants.ts``) so user-drawn anchor
+  edges validate cleanly.
+- Same validator — error message now reports the actual *missing
+  endpoint ids* (sorted), not the *edge ids* of the dangling edges.
+  Compatibility: callers that pattern-matched on edge-id text
+  break, but no production code did (all D-2026-05-13-I
+  speculation about ``e_``-prefixed ids was a symptom of this bug).
+
+### Added
+
+- ``plot/plot_mcp/models.py`` — ``PROJECT_ANCHOR_ID`` module-level
+  constant (mirrors ``viewer/src/canvases/sketch/constants.ts``).
+- ``plot/tests/test_canvas_doc.py`` — 5 regression tests:
+  - anchor → user-node edge accepted (both directions).
+  - error message reports missing endpoint, not edge id.
+  - multi-edge case: sorted distinct missing endpoints, no edge ids.
+  - one-anchor-one-ghost case: only the ghost surfaces in the
+    error.
+
+### Verification
+
+- plot_mcp pytest — 281 / 281 (276 → 281, +5 regression).
+- plot_mcp mypy — clean.
+- plot_mcp ruff — clean.
+- viewer vitest — 486 / 486 (no regression; schema-parity unaffected).
+- kill-switch — 11 / 11.
+
+### Hands-on (Gate 3 — pending after MCP HTTP server restart)
+
+User to verify in real Chrome:
+- Draw an edge between the project anchor and a user node.
+- Server returns 200 on save (no 422 in DevTools console).
+- Hard reload — the edge is still there.
+- Multiple anchor edges, both directions — all persist.
+
 ## [0.16.36] — 2026-05-13
 
 Re-introduce auto-layout as Foundation-only opt-in feature with a

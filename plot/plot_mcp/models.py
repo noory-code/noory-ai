@@ -231,6 +231,14 @@ FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
     "identity": ["description", "do", "dont"],
 }
 
+# v0.13 Phase 0 — the project anchor lives in ``ProjectDoc.anchors``,
+# not in ``canvas.nodes``. The viewer injects a synthetic node with
+# this id so user-drawn edges can legitimately reference it
+# (D-2026-05-04-B: *"User may draw edges from / to the anchor like
+# any other node"*). Mirrors ``viewer/src/canvases/sketch/constants.ts``
+# ``PROJECT_ANCHOR_ID``. See D-2026-05-13-M.
+PROJECT_ANCHOR_ID = "__project_anchor__"
+
 
 # ---------------------------------------------------------------------------
 # v0.15 Phase 1 — non-Foundation per-class Pydantic models
@@ -537,10 +545,26 @@ class CanvasDoc(BaseModel):
 
     @model_validator(mode="after")
     def _edges_reference_nodes(self) -> CanvasDoc:
-        node_ids = {n.id for n in self.nodes}
-        dangling = [e for e in self.edges if e.source not in node_ids or e.target not in node_ids]
+        # The synthetic project anchor lives in ``ProjectDoc.anchors``,
+        # not in ``self.nodes`` — but user-drawn edges may legitimately
+        # reference it per D-2026-05-04-B SPEC mandate. Treat its id as
+        # a known endpoint for validation. See D-2026-05-13-M.
+        node_ids = {n.id for n in self.nodes} | {PROJECT_ANCHOR_ID}
+        dangling = [
+            e for e in self.edges
+            if e.source not in node_ids or e.target not in node_ids
+        ]
         if dangling:
-            missing = sorted({e.id for e in dangling})
+            # Report the *missing endpoint ids*, not the edge ids.
+            # The previous ``{e.id for e in dangling}`` produced misleading
+            # error text (it surfaced edge ids as if they were missing
+            # nodes), which sent D-2026-05-13-I diagnosis down a wrong
+            # path. Fixed in D-2026-05-13-M.
+            missing = sorted({
+                ep for e in dangling
+                for ep in (e.source, e.target)
+                if ep not in node_ids
+            })
             raise ValueError(f"edges reference unknown nodes: {missing}")
         return self
 
