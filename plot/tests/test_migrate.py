@@ -474,3 +474,160 @@ def test_migrated_backup_is_inspectable(plot_root: Path) -> None:
     raw = json.loads((plot_root / "sketches" / "alpha.json.v01.bak").read_text(encoding="utf-8"))
     assert raw["id"] == "alpha"
     assert raw["version"] == 1
+
+
+# ---------------------------------------------------------------------------
+# v0.16.34 — page-load refetch storm regression (D-2026-05-13-K)
+# ---------------------------------------------------------------------------
+
+
+def test_upgrade_foundation_is_idempotent_when_anchor_in_project_doc(
+    plot_root: Path,
+) -> None:
+    """Regression: page-load refetch storm.
+
+    Pre-v0.13 ``upgrade_foundation_canvas_if_needed`` step 4 would
+    synthesise a ``kind=project`` anchor node when none existed in
+    ``canvas.json``. After v0.13 Phase 0 moved the anchor into
+    ``ProjectDoc.anchors``, step 4 became a no-op-that-isn't:
+
+      1. upgrade adds anchor node to canvas.json (write 1).
+      2. ``_evict_legacy_project_anchor`` on next read removes it
+         (write 2).
+      3. Both writes touch the file → watcher → broadcast → viewer
+         refetch → step 1 again → infinite loop.
+
+    The guard added in v0.16.34 short-circuits step 4 when project.json
+    already carries an anchor for ``foundation``. This test pins the
+    new behaviour: calling ``upgrade_foundation_canvas_if_needed``
+    twice on a v0.13-shaped project must not modify canvas.json on the
+    second call.
+    """
+    from plot_mcp.folder_io import _canvas_file, _project_file, _write_json
+    from plot_mcp.migrate import upgrade_foundation_canvas_if_needed
+
+    project_id = "pj"
+    project_dir = plot_root / project_id
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "foundation").mkdir(exist_ok=True)
+
+    # v0.13-shaped project.json with anchors.foundation populated.
+    _write_json(
+        _project_file(plot_root, project_id),
+        {
+            "id": project_id,
+            "name": "Test",
+            "created": "2026-05-13",
+            "updated": "2026-05-13T00:00:00+00:00",
+            "version": 2,
+            "anchors": {
+                "foundation": {
+                    "x": -75.0,
+                    "y": -75.0,
+                    "width": 150.0,
+                    "height": 150.0,
+                    "color": "#fef3c7",
+                    "shape": "circle",
+                }
+            },
+        },
+    )
+    # canvas.json with only user nodes (no kind=project entry).
+    _write_json(
+        _canvas_file(plot_root, project_id, "foundation"),
+        {
+            "canvas_id": "foundation",
+            "canvas_kind": "foundation",
+            "service_ref": None,
+            "nodes": [
+                {
+                    "id": "m1",
+                    "label": "Mission",
+                    "kind": "mission",
+                    "x": 0,
+                    "y": 0,
+                    "width": 200,
+                    "height": 100,
+                    "color": "#fef3c7",
+                    "shape": "rounded",
+                    "icon": None,
+                    "parent_id": None,
+                    "collapsed": False,
+                    "is_root": False,
+                    "details_path": None,
+                    "owner": None,
+                }
+            ],
+            "edges": [],
+        },
+    )
+
+    canvas_path = _canvas_file(plot_root, project_id, "foundation")
+    # First call: ProjectDoc.anchors already has 'foundation' → no synthesis.
+    changed_first = upgrade_foundation_canvas_if_needed(plot_root, project_id)
+    assert changed_first is False, (
+        "step 4 must not add a kind=project node when ProjectDoc.anchors "
+        "already carries the anchor — that would create the v0.16.34 "
+        "refetch-storm loop."
+    )
+    mtime_after_first = canvas_path.stat().st_mtime
+
+    # Second call: still no-op.
+    changed_second = upgrade_foundation_canvas_if_needed(plot_root, project_id)
+    assert changed_second is False
+    mtime_after_second = canvas_path.stat().st_mtime
+
+    # File mtime must not advance on either call (write would advance it).
+    assert mtime_after_first == mtime_after_second, (
+        "canvas.json mtime advanced between two idle upgrades — that is "
+        "the page-load refetch-storm signature."
+    )
+
+
+def test_upgrade_foundation_still_synthesises_anchor_for_pre_v013_project(
+    plot_root: Path,
+) -> None:
+    """The guard added in v0.16.34 must not regress the original
+    pre-v0.13 use case: a project.json without an anchor entry should
+    still get its anchor synthesised on first read."""
+    from plot_mcp.folder_io import _canvas_file, _project_file, _write_json
+    from plot_mcp.migrate import upgrade_foundation_canvas_if_needed
+
+    project_id = "pj"
+    project_dir = plot_root / project_id
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "foundation").mkdir(exist_ok=True)
+
+    # Pre-v0.13-shaped project.json — no 'anchors' field.
+    _write_json(
+        _project_file(plot_root, project_id),
+        {
+            "id": project_id,
+            "name": "Legacy",
+            "created": "2026-01-01",
+            "updated": "2026-01-01T00:00:00+00:00",
+            "version": 1,
+        },
+    )
+    # canvas.json without any kind=project node either.
+    _write_json(
+        _canvas_file(plot_root, project_id, "foundation"),
+        {
+            "canvas_id": "foundation",
+            "canvas_kind": "foundation",
+            "service_ref": None,
+            "nodes": [],
+            "edges": [],
+        },
+    )
+
+    changed = upgrade_foundation_canvas_if_needed(plot_root, project_id)
+    assert changed is True, "legacy project (no anchors) must get synthesis"
+
+    raw = json.loads(
+        _canvas_file(plot_root, project_id, "foundation").read_text(
+            encoding="utf-8"
+        )
+    )
+    has_project_node = any(n.get("kind") == "project" for n in raw["nodes"])
+    assert has_project_node, "step 4 must still seed the anchor when missing"

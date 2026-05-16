@@ -3370,3 +3370,119 @@ in the same browser-verification round:
   `~/.claude/plans/sparkling-discovering-blanket.md` (user-approved
   this session) contains the 7 open detail questions for
   next-session reference.
+
+---
+
+### D-2026-05-13-K — Page-load refetch storm fix (anchor add-then-evict loop)
+
+- **What:** Guard ``migrate.py::upgrade_foundation_canvas_if_needed``
+  step 4 (pre-v0.13 project-anchor synthesis) on
+  ``ProjectDoc.anchors[canvas_kind]``. When ``project.json`` already
+  carries an anchor for foundation, step 4 short-circuits — no node
+  synthesis, no canvas.json write, no watcher fire.
+
+- **Why:** User reported 2026-05-13 *"파운데이션 볼건데요. 노드가
+  보였다가 사라지네요"* on fresh page load. Server log showed the
+  GET 3-call set (``/projects`` → ``/projects/{id}`` →
+  ``/projects/{id}/canvases/foundation``) repeating dozens of times
+  — an **infinite refetch storm**.
+
+  The previous-day "잘 동작" confirmation (D-2026-05-13-H) was
+  technically correct *for that session's state* — the user's
+  optimistic in-memory state was masking the storm. Fresh page
+  reload loses optimistic state → storm is visible (predicted by
+  D-2026-05-13-I).
+
+  The actual root cause is a **direct-opposing-writes loop** between
+  two migration helpers that both fire on every read:
+
+  1. ``migrate.py::upgrade_foundation_canvas_if_needed`` step 4
+     (line 834) — pre-v0.13 migration that *synthesises* a
+     ``kind=project`` anchor node when ``canvas.json`` has none.
+     Writes the file.
+  2. ``folder_io.py::_evict_legacy_project_anchor`` (line 478) —
+     v0.13 Phase 0 migration that *removes* any ``kind=project``
+     node and copies its placement into ``ProjectDoc.anchors``.
+     Writes the file.
+
+  For v0.13+ projects the sequence on every ``read_canvas`` is:
+
+  ```
+  upgrade.step4 adds anchor node (write 1)
+    → _evict_legacy removes anchor node (writes 2 + 3 — canvas.json + project.json)
+      → watcher debounce 200ms
+        → broadcast 'project_changed'
+          → viewer onExternalCanvas → fresh getCanvas
+            → read_canvas runs again → upgrade.step4 adds anchor node …
+  ```
+
+  Loop bandwidth: roughly 3 GETs per cycle, cycles every ~200-500 ms
+  (debounce + roundtrip). Each cycle replaces ``canvasCache`` in
+  React state — the viewer's React Flow remounts within a race window
+  that sometimes leaves nodes unrendered, producing the user-visible
+  "noodes briefly appear then disappear" symptom.
+
+- **Why this wasn't caught earlier:** Step 4 is *individually
+  correct* for pre-v0.13 projects and *idempotent in isolation*
+  (running it twice on a pre-v0.13 fixture produces the same
+  result). The interaction with v0.13 Phase 0's
+  ``_evict_legacy_project_anchor`` was the missing case. Neither
+  function alone is broken; the *pair*, called in sequence on every
+  read, is.
+
+  This matches the v0.13.3-v0.13.10 cursor saga's anti-pattern: a
+  migration step left in place across a major refactor without
+  re-evaluating its interaction with the new state model.
+  ``plot-design-red-team`` Attack 2 (Unstated invariants) gains a
+  new calibration anchor: *"migration helpers must be re-evaluated
+  against the post-migration state model; a step that was a no-op
+  by chance becomes a self-loop by chance."*
+
+- **Why the specific fix (not the others considered):**
+  - **Alternative A (rejected):** delete step 4 entirely. Risk:
+    breaks pre-v0.13 projects that genuinely need the synthesis
+    (would lose their anchor permanently). The two regression tests
+    pin both behaviours independently — kept the synthesis path
+    intact via the alternate branch.
+  - **Alternative B (rejected):** add origin tag to ``_write_json``
+    so the watcher can skip "self-echoed" writes. Risk: scope
+    expansion to the entire write surface; many helpers would need
+    plumbing. Surgical fix at step 4 is enough — once step 4 stops
+    writing on the idempotent path, the loop stops.
+  - **Alternative C (rejected):** make ``_evict_typed_text_to_md``
+    strict-idempotent. Originally suspected in the plan, but Phase
+    3 code re-read showed that function is already idempotent for
+    cleaned canvases. The actual write source was step 4.
+
+- **Approval:** Pending — Gate 3 hands-on verification by user in
+  real Chrome after MCP HTTP server restart.
+
+- **Spec impact:** None — internal migration helper. The user-facing
+  invariant ("page load is a single GET set per canvas, then idle")
+  is implicit in the design; no SPEC.md line names it. If this class
+  of bug recurs, consider pinning the invariant explicitly.
+
+- **Files in this commit:**
+  - ``plot/plot_mcp/migrate.py`` — step 4 guard +
+    ``_project_doc_has_anchor`` helper.
+  - ``plot/tests/test_migrate.py`` — 2 new regression tests.
+  - ``plot/CHANGELOG.md`` — v0.16.34 Fixed section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.33 → 0.16.34.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Test counts:**
+  - Before: 274 server tests.
+  - After: 276 server tests (+2 regression).
+
+- **Related entries:**
+  - D-2026-05-13-H — yesterday's hands-on pin ("이제 잘 동작") was
+    masked by optimistic state; today's fresh page load surfaced the
+    underlying loop.
+  - D-2026-05-13-I — predicted the surfacing ("would surface if the
+    user's session ever loses its optimistic state"). The 422 storm
+    in I may also stem from the same loop (each cycle re-tries the
+    PATCH that 422s) — verify after this fix lands.
+
+- **Next-session impact:** ``잔여 silent state`` entry (D-2026-05-13-I)
+  may be partially or fully resolved by this fix. Re-evaluate after
+  Gate 3 hands-on confirms storm is gone.

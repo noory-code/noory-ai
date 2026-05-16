@@ -4,6 +4,68 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.34] — 2026-05-13
+
+Fix page-load refetch storm. After user reported "Foundation nodes
+appear briefly then disappear; need to reload to see them again",
+server log showed the GET 3-call set (`/projects` →
+`/projects/{id}` → `/projects/{id}/canvases/foundation`) repeating
+dozens of times per page load — an infinite refetch loop.
+
+Root cause: ``upgrade_foundation_canvas_if_needed`` step 4
+(``migrate.py:834``) — a pre-v0.13 migration that synthesises a
+``kind=project`` anchor node when ``canvas.json`` has none — fires
+on *every* read for v0.13+ projects. The synthesised node is then
+immediately removed by ``_evict_legacy_project_anchor``
+(``folder_io.py:478``) on the same read because v0.13 Phase 0
+moved the anchor to ``ProjectDoc.anchors``. Both functions write
+the file, the watcher fires, the broadcast triggers a viewer
+refetch, the next read repeats the cycle.
+
+The two functions are running in opposing directions every read
+because the v0.13 Phase 0 migration left step 4 in place without
+gating it on the new anchor location.
+
+Fix: guard step 4 on ``ProjectDoc.anchors[canvas_kind]``. When
+``project.json`` already carries an anchor for foundation, step 4
+short-circuits — no node synthesis, no write, no watcher fire.
+Pre-v0.13 projects (no ``anchors`` field) still get the original
+synthesis behaviour, preserving backward compatibility.
+(D-2026-05-13-K)
+
+### Fixed
+
+- ``plot/plot_mcp/migrate.py:upgrade_foundation_canvas_if_needed``
+  step 4 — added ``_project_doc_has_anchor`` guard so the legacy
+  pre-v0.13 anchor synthesis no-ops when v0.13 Phase 0 has already
+  migrated the anchor to ``ProjectDoc.anchors``.
+
+### Added
+
+- ``plot/tests/test_migrate.py`` — two regression tests:
+  - ``test_upgrade_foundation_is_idempotent_when_anchor_in_project_doc``
+    pins the new guard (no write on idempotent re-call when the
+    anchor lives in project.json).
+  - ``test_upgrade_foundation_still_synthesises_anchor_for_pre_v013_project``
+    pins backward compat — pre-v0.13 projects still get synthesis.
+
+### Verification
+
+- plot_mcp pytest — 276 / 276 (274 → 276, +2 new tests).
+- plot_mcp mypy — clean.
+- plot_mcp ruff — clean.
+- viewer tsc — clean.
+- kill-switch (pre_commit_gate) — 11 / 11.
+
+### Hands-on (Gate 3 — pending user verification)
+
+User to verify in real Chrome after MCP HTTP server restart:
+- page hard reload (Cmd+Shift+R)
+- server log: GET 3-call set fires *once* on page load + idle
+  silence afterward (no storm).
+- Foundation nodes appear and stay visible.
+- No console 422 storm.
+
 ## [0.16.33] — 2026-05-13
 
 Vision pin for PRODUCT_SPEC §15 #2 Phase 2 (D-2026-05-12-A

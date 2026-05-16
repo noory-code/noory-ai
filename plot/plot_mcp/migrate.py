@@ -830,18 +830,49 @@ def upgrade_foundation_canvas_if_needed(plot_root: Path, project_id: str) -> boo
     if _normalise_legacy_node_kinds(nodes):
         changed = True
 
-    # 4. Project anchor synthesis.
+    # 4. Project anchor synthesis (pre-v0.13 only).
+    #    v0.13 Phase 0 moved the anchor to ``ProjectDoc.anchors``. If the
+    #    project.json already carries an anchor for ``foundation``, this
+    #    migration step is a no-op — synthesising an anchor node would
+    #    immediately be evicted by ``_evict_legacy_project_anchor`` on the
+    #    next read, creating an add→evict→write→watcher→broadcast→refetch
+    #    loop (the v0.16.34 storm root cause, D-2026-05-13-K).
     has_project = any(isinstance(n, dict) and n.get("kind") == "project" for n in nodes)
     if not has_project:
-        project_name = _read_project_name(plot_root, project_id)
-        taken_ids = {n.get("id") for n in nodes if isinstance(n, dict)}
-        nodes.insert(0, _project_anchor_dict(project_name, taken_ids))
-        raw["nodes"] = nodes
-        changed = True
+        proj_already_anchored = _project_doc_has_anchor(
+            plot_root, project_id, "foundation"
+        )
+        if not proj_already_anchored:
+            project_name = _read_project_name(plot_root, project_id)
+            taken_ids = {n.get("id") for n in nodes if isinstance(n, dict)}
+            nodes.insert(0, _project_anchor_dict(project_name, taken_ids))
+            raw["nodes"] = nodes
+            changed = True
 
     if changed:
         _write_json(path, raw)
     return changed
+
+
+def _project_doc_has_anchor(
+    plot_root: Path, project_id: str, canvas_kind: str
+) -> bool:
+    """Return True iff ``project.json`` already carries an anchor entry
+    for the given canvas kind. Used by step 4 of
+    ``upgrade_foundation_canvas_if_needed`` to short-circuit the
+    pre-v0.13 anchor synthesis when v0.13 Phase 0 has already migrated
+    the anchor to ``ProjectDoc.anchors``."""
+    project_file = _project_file(plot_root, project_id)
+    if not project_file.exists():
+        return False
+    try:
+        doc = json.loads(project_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    anchors = doc.get("anchors")
+    if not isinstance(anchors, dict):
+        return False
+    return canvas_kind in anchors
 
 
 # Backwards-compatible alias for any in-process caller still importing the
