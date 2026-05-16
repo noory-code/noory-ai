@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.4] — 2026-05-16
+
+Docs-only PSPEC §6 clarifier. Lands ahead of v0.18.0 Phase 3 so
+that the cross-cutting docs fix is **not bundled** into the
+feature commit (per Plot CLAUDE.md anti-pattern: "Bundling a
+cross-cutting visual change with a feature change in one commit",
+v0.13.10 cursor saga precedent).
+
+### Changed
+
+- ``plot/docs/PRODUCT_SPEC.md`` §6 — annotated the "Edit a canvas
+  → Auto-commit" row as **aspirational**: it lands with the
+  isomorphic-git in-viewer integration (ROADMAP §"v0.17+" item A).
+  Through v0.17 / v0.18 the canvas stays uncommitted between
+  explicit user actions — only **publish** (v0.18.0+) and
+  **session-tag** (v0.16+) trigger commits. Added the two
+  explicit-action rows to the table and a one-paragraph
+  reality-vs-aspiration note + an inline note on the
+  ``isomorphic-git`` line clarifying subprocess git is the current
+  implementation.
+
 ## [0.17.3] — 2026-05-16
 
 Docs-only cleanup. Archives the lower-priority "잔여 silent state"

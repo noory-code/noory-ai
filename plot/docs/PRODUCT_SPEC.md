@@ -100,15 +100,29 @@ need to know git exists; the trail accumulates internally.
 
 | User action | Internal git event |
 |---|---|
-| Edit a canvas | Auto-commit |
+| Edit a canvas | Auto-commit *(aspirational — see note below)* |
 | Snapshot a workflow state | Same commit (snapshot ≡ commit) |
+| **Publish a node** *(v0.18.0+)* | **Explicit commit with `Publish-*` trailers** |
+| **Session-tag the project** *(v0.16+)* | **Explicit commit + annotated tag** |
 | Agent proposes a canvas change | Create a branch |
 | User approves agent's proposal | Merge the branch |
 | User rejects agent's proposal | Delete the branch |
 | (future) Sync with remote | Optional GitHub link |
 
+> **v0.17 / v0.18 reality vs aspiration.** The "Edit a canvas →
+> Auto-commit" row is **aspirational**; it lands with the
+> isomorphic-git in-viewer integration (ROADMAP §"v0.17+" item A).
+> Through v0.17 and v0.18 the canvas stays *uncommitted* between
+> explicit user actions — only **publish** (D-2026-05-16-D, v0.18.0)
+> and **session-tag** (v0.16+) trigger a commit. The other rows
+> (branch on agent proposal, sync with remote) are also gated on
+> the isomorphic-git integration. Until then the implementation uses
+> subprocess `git` and only fires on the two explicit-action rows.
+
 Implementation: `isomorphic-git` so the version-control loop runs
 inside the viewer / MCP server without requiring system `git`.
+*(Currently subprocess `git` is used for the two explicit-commit
+triggers; isomorphic-git swap-in is ROADMAP-A.)*
 
 ### Why this matters for the agent loop
 
