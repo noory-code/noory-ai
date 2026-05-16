@@ -63,8 +63,15 @@ export function useInspectorRouting({
   }, [selectNodeId, nodes, onSelectionConsumed, flowRef]);
 
   const onNodeClick = useCallback((_evt: unknown, n: Node) => {
-    // v0.13 Phase 0: synthetic anchor is read-only — no Inspector.
-    if (n.id === PROJECT_ANCHOR_ID) return;
+    // v0.17.1 (D-2026-05-16-B): synthetic anchor has no Inspector, and
+    // clicking it also closes any currently-open Inspector — anchor
+    // click reads as a deselect for the user. Treating it as a no-op
+    // (the v0.13 behaviour) left stale inspector content visible after
+    // the user moved focus to the anchor.
+    if (n.id === PROJECT_ANCHOR_ID) {
+      setInspectorNodeId(null);
+      return;
+    }
     setInspectorNodeId(n.id);
   }, []);
 

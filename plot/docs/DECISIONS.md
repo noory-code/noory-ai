@@ -4066,5 +4066,61 @@ in the same browser-verification round:
   ``BaseNodeFields`` with ``^v\\d+\\.\\d+$`` validator (server) +
   mirror in TS (viewer). No UI surface yet. The Phase 2 ship
   version is decided in its own plan-mode entry; the originally
-  planned slot ``v0.17.1`` may be taken by an unrelated patch ship
-  (e.g. UX polish) before Phase 2 lands.
+  planned slot ``v0.17.1`` is being taken by an unrelated UX patch
+  (D-2026-05-16-B); Phase 2 lands as v0.17.2 or later.
+
+### D-2026-05-16-B — Anchor click closes Inspector
+
+- **What:** Clicking the synthetic project anchor on any canvas
+  now closes the currently-open Inspector (sets
+  ``inspectorNodeId`` to ``null``). Previously
+  ``useInspectorRouting.onNodeClick`` had an early-return no-op for
+  the anchor — the v0.13 implementation read "anchor has no
+  Inspector", which left whichever node was previously selected
+  stale on screen.
+
+- **Why:** Per-user request (2026-05-16): *"프로젝트 앵커 노드
+  클릭하면 이전에 선택되었던 노드 상세 닫히게 해주세요."* In the
+  user's mental model, the anchor is a content-less centre marker;
+  clicking it is a "deselect everything" gesture, not a no-op.
+  Anchor click now produces the same effect as clicking the empty
+  pane — `setInspectorNodeId(null)`. The change is minimal and
+  matches Plot's UX principle "Clear Feedback" (every click produces
+  visible state change).
+
+- **Why ship as its own commit (not bundled with v0.17.0 Phase 1):**
+  Plot CLAUDE.md anti-pattern "Bundling a cross-cutting visual
+  change with a feature change in one commit" — v0.13.10's
+  cursor-patch-plus-auto-layout precedent shows what happens when
+  visual fixes ride along with feature commits. Phase 1 ships pure
+  storage migration; this UX polish ships on its own as v0.17.1.
+
+- **Alternatives considered:**
+  - Leave anchor as no-op (status quo) — rejected, user explicitly
+    asked for the close-on-click behaviour.
+  - Make anchor itself open an Inspector showing project metadata —
+    out of scope; the anchor SSOT is ``ProjectDoc.anchors`` + the
+    label is ``ProjectDoc.name``, no per-anchor typed-text exists.
+
+- **Approval:** **Accepted** by user, 2026-05-16. Direct request
+  ("프로젝트 앵커 노드 클릭하면 이전에 선택되었던 노드 상세 닫히게
+  해주세요").
+
+- **Spec impact:** Implicit. The behaviour matches the existing
+  ``onPaneClick`` deselect semantic; SPEC.md §Inspector "Trigger"
+  row already says "Single click on a node (any kind except — TBD
+  anchor)" — the TBD now resolves to "anchor click deselects". No
+  separate SPEC line needed for this small clarification; the test
+  is the spec.
+
+- **Files in this commit:**
+  - ``viewer/src/canvases/sketch/useInspectorRouting.ts`` —
+    onNodeClick anchor branch sets null.
+  - ``viewer/tests/anchor-click-closes-inspector.test.tsx`` — new
+    regression guard (2 cases).
+  - ``plot/CHANGELOG.md`` — v0.17.1 section.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/.claude-plugin/plugin.json`` — 0.17.0 → 0.17.1.
+
+- **Test counts:**
+  - Viewer: 488 → 490 (+2). Server unchanged (290 / 290).

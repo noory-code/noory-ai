@@ -4,6 +4,30 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.1] — 2026-05-16
+
+Inspector UX polish (D-2026-05-16-B): clicking the synthetic project
+anchor now closes any currently-open Inspector. Previously the
+anchor branch in ``useInspectorRouting.onNodeClick`` was an
+early-return no-op (a v0.13 leftover that read "anchor has no
+Inspector"), which left the previously-selected node's content
+visible on screen even after the user moved focus to the anchor.
+Anchor click now reads as a deselect — the same effect as clicking
+the empty pane. No other behaviour changes.
+
+### Changed
+
+- ``viewer/src/canvases/sketch/useInspectorRouting.ts::onNodeClick``
+  — anchor branch sets ``inspectorNodeId`` to ``null`` and returns,
+  instead of the previous no-op early return.
+
+### Added
+
+- ``viewer/tests/anchor-click-closes-inspector.test.tsx`` —
+  regression guard. Two cases: anchor click while an Inspector is
+  open closes it; anchor click while no Inspector is open stays
+  closed (idempotent no-op).
+
 ## [0.17.0] — 2026-05-16
 
 Phase 1 of the JSON SSOT migration (D-2026-05-16-A). JSON is now
