@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.35] — 2026-05-13
+
+Pin user hands-on confirmation of v0.16.34 page-load refetch storm
+fix (D-2026-05-13-K). After restart of the MCP HTTP server with the
+new ``upgrade_foundation_canvas_if_needed`` step-4 guard, user
+verified in real Chrome: *"이제 됐습니다"* — Foundation nodes
+appear and stay visible; no refetch storm in server log.
+D-2026-05-13-K approval transitions Pending → Accepted.
+
+### Changed
+
+- ``plot/docs/DECISIONS.md`` — D-2026-05-13-K approval status
+  ``Pending → Accepted (hands-on verified by user, 2026-05-13)``.
+
 ## [0.16.34] — 2026-05-13
 
 Fix page-load refetch storm. After user reported "Foundation nodes

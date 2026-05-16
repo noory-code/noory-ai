@@ -3454,8 +3454,10 @@ in the same browser-verification round:
     3 code re-read showed that function is already idempotent for
     cleaned canvases. The actual write source was step 4.
 
-- **Approval:** Pending — Gate 3 hands-on verification by user in
-  real Chrome after MCP HTTP server restart.
+- **Approval:** **Accepted** — Gate 3 hands-on verified by user
+  2026-05-13 after MCP HTTP server restart with the new step-4
+  guard. User verbatim: *"이제 됐습니다."* Foundation nodes appear
+  and stay visible; no refetch storm in server log.
 
 - **Spec impact:** None — internal migration helper. The user-facing
   invariant ("page load is a single GET set per canvas, then idle")
