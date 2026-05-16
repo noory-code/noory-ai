@@ -19,6 +19,7 @@ export interface ServiceJson extends BaseFieldsJson {
   outcome: string;
   do: string;
   dont: string;
+  body: string;
 }
 
 export class Service implements BaseFields {
@@ -49,6 +50,7 @@ export class Service implements BaseFields {
   readonly outcome: string;
   readonly do: string;
   readonly dont: string;
+  readonly body: string;
 
   private constructor(
     base: BaseFields,
@@ -62,6 +64,7 @@ export class Service implements BaseFields {
       outcome: string;
       doField: string;
       dont: string;
+      body: string;
     },
   ) {
     Object.assign(this, base);
@@ -74,6 +77,7 @@ export class Service implements BaseFields {
     this.outcome = typed.outcome;
     this.do = typed.doField;
     this.dont = typed.dont;
+    this.body = typed.body;
   }
 
   static fromJson(raw: unknown): Service {
@@ -94,6 +98,7 @@ export class Service implements BaseFields {
       outcome: readOptionalString(obj.outcome, "outcome", raw),
       doField: readOptionalString(obj.do, "do", raw),
       dont: readOptionalString(obj.dont, "dont", raw),
+      body: readOptionalString(obj.body, "body", raw),
     });
   }
 
@@ -124,6 +129,7 @@ export class Service implements BaseFields {
       outcome: this.outcome,
       do: this.do,
       dont: this.dont,
+      body: this.body,
     };
   }
 }

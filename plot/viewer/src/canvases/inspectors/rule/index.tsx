@@ -7,6 +7,7 @@
  * chrome — so direct selection of a rule doesn't dead-end.
  */
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import { RuleFields } from "../service/RuleFields";
 import type { KindInspectorProps } from "../types";
 
@@ -14,12 +15,13 @@ export function RuleInspector(props: KindInspectorProps) {
   if (props.node.kind !== "rule") return null;
   const node = props.node;
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <RuleFields
         node={node}
         availableActors={props.availableActors ?? []}
         onPatchNode={props.onPatchNode}
       />
+      <BodyField value={node.body ?? ""} onChange={(body) => props.onPatchNode({ body })} />
     </BaseInspector>
   );
 }

@@ -14,6 +14,7 @@ export interface StepJson extends BaseFieldsJson {
   kind: "step";
   order: number | null;
   outcome: string;
+  body: string;
 }
 
 export class Step implements BaseFields {
@@ -37,11 +38,18 @@ export class Step implements BaseFields {
 
   readonly order: number | null;
   readonly outcome: string;
+  readonly body: string;
 
-  private constructor(base: BaseFields, order: number | null, outcome: string) {
+  private constructor(
+    base: BaseFields,
+    order: number | null,
+    outcome: string,
+    body: string,
+  ) {
     Object.assign(this, base);
     this.order = order;
     this.outcome = outcome;
+    this.body = body;
   }
 
   static fromJson(raw: unknown): Step {
@@ -55,7 +63,8 @@ export class Step implements BaseFields {
     }
     const order = readNullableInt(obj.order, "order", raw);
     const outcome = readOptionalString(obj.outcome, "outcome", raw);
-    return new Step(base, order, outcome);
+    const body = readOptionalString(obj.body, "body", raw);
+    return new Step(base, order, outcome, body);
   }
 
   toJson(): StepJson {
@@ -78,6 +87,7 @@ export class Step implements BaseFields {
       kind: "step",
       order: this.order,
       outcome: this.outcome,
+      body: this.body,
     };
   }
 }

@@ -73,6 +73,29 @@
 
 ---
 
+### `cross-kind ref typed-text symmetry` (lower priority, filed 2026-05-16)
+
+> **Trigger:** user says **"ref symmetry"** or **"ref typed text"** or
+> **"actor_ref vs mission_ref"** or **"ref 비대칭"**.
+>
+> **Filed:** 2026-05-16 (D-2026-05-16-F follow-up). actor_ref 만
+> ``gives`` / ``receives`` 라는 ref-context-specific typed text 를
+> 가지는데, mission_ref / value_ref / identity_ref 는 pure pointer
+> (typed text 없음). 의도적 설계인지, actor 만 *행동 단위* 이고 나머지는
+> *상태 단위* 라서 비대칭이 합리적인지, 아니면 4 ref 의 모델이 통일되어야
+> 하는지 미해결.
+>
+> **Approach:** 별도 plan-mode 에서:
+> - 4 ref 의 의도 비교 — actor 와 다르게 mission/value/identity 가 ref
+>   context 에서 자체 typed text 를 가질 의미가 있나?
+> - 사용 사례 발견 시 mission_ref 등에도 `notes_in_context` 같은 typed
+>   text 추가 검토.
+> - 또는 actor_ref 의 `gives` / `receives` 도 별도 placement (e.g.
+>   actor_ref 와 actor master 사이의 *edge* 의 typed property) 로 옮기는
+>   재검토.
+
+---
+
 ### `v0.18.x follow-up — Unpublish button` (lower priority)
 
 > **Trigger:** user says **"Unpublish"** or **"미스클릭"** or
@@ -104,6 +127,48 @@
 >   used by ``test_git_store.py``.
 >
 > **Ship as:** v0.18.x patch once the misclick rate justifies it.
+
+---
+
+### (archived 2026-05-16) `v0.18.2 — typed text MD 통일 + body on 7 publish-eligible kinds` — shipped v0.18.2
+
+> **Trigger:** user same-session confirmation of intent — *"노드 상세
+> typed field 값은 모두 MD 문법, body 는 extra, 발행하면 MD"* + *"ref =
+> 복사본/링크 (서비스 관계 표현)"*.
+>
+> **Filed:** 2026-05-16. Shipped same session as
+> [D-2026-05-16-F](./DECISIONS.md). Phase 1 (v0.17.0) had covered
+> Foundation 3 kinds with the "monospace MD textarea + body" pattern;
+> Phase 3 (v0.18.0) shipped publish before bringing the other 7 to
+> parity. v0.18.2 closes that gap.
+>
+> **What landed:**
+>
+> - **Server** (``plot_mcp/models.py``): ``body: str = ""`` on 7 kinds
+>   (actor / service / category / metric / step / rule / content).
+> - **Viewer entity** (`viewer/src/domain/{Actor,Service,Category,
+>   Metric,Step,Rule,Content}.ts` × 7): ``body`` field through
+>   interface + class + constructor + fromJson + toJson.
+> - **Viewer inspectors** (7 kinds): monospace MD textarea on every
+>   typed text field + ``<BodyField>`` + ``hideDetailsSection``.
+>   Shared ``RuleFields`` / ``ContentFields`` lifted to monospace.
+> - **Viewer actor_ref** inspector: `gives` / `receives` textarea
+>   lifted to monospace MD (ref is still publish-ineligible + no
+>   `body`, but input surface is consistent).
+> - **Docs**: PUBLISH.md per-kind H2 reference for 15 kinds +
+>   ref-as-relation-tool note; SPEC.md §Publish typed-text-and-body
+>   subsection; DECISIONS D-2026-05-16-F.
+>
+> **Verification status:**
+> - Server: pytest 359/359 (unchanged — schema-parity auto-flowed);
+>   mypy + ruff clean.
+> - Viewer: vitest 522/522 (unchanged — entity-roundtrip auto-flowed);
+>   tsc clean.
+> - LOC ceilings: all 7 per-kind inspectors stay within 250 ceiling;
+>   no structural-guards changes.
+>
+> **Trigger phrases preserved:** ``body 통일`` / ``monospace MD`` /
+> ``노트 필드 7 kind`` / ``per-kind MD format``.
 
 ---
 

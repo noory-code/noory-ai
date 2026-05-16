@@ -13,6 +13,7 @@ export interface ActorJson extends BaseFieldsJson {
   motivation: string;
   pain: string;
   side: "operator" | "user" | null;
+  body: string;
 }
 
 export class Actor implements BaseFields {
@@ -37,17 +38,20 @@ export class Actor implements BaseFields {
   readonly motivation: string;
   readonly pain: string;
   readonly side: "operator" | "user" | null;
+  readonly body: string;
 
   private constructor(
     base: BaseFields,
     motivation: string,
     pain: string,
     side: "operator" | "user" | null,
+    body: string,
   ) {
     Object.assign(this, base);
     this.motivation = motivation;
     this.pain = pain;
     this.side = side;
+    this.body = body;
   }
 
   static fromJson(raw: unknown): Actor {
@@ -64,6 +68,7 @@ export class Actor implements BaseFields {
       readOptionalString(obj.motivation, "motivation", raw),
       readOptionalString(obj.pain, "pain", raw),
       readSide(obj.side, raw),
+      readOptionalString(obj.body, "body", raw),
     );
   }
 
@@ -88,6 +93,7 @@ export class Actor implements BaseFields {
       motivation: this.motivation,
       pain: this.pain,
       side: this.side,
+      body: this.body,
     };
   }
 }

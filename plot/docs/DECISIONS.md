@@ -4419,3 +4419,70 @@ in the same browser-verification round:
   - [D-2026-05-16-C](./DECISIONS.md) — Phase 2 ship (v0.17.2).
   - [PSPEC §6](./PRODUCT_SPEC.md) — v0.17.4 clarifier that aligned
     the git-event spec with v0.17/v0.18 reality.
+
+---
+
+### D-2026-05-16-F — typed text MD 통일 + body 7 kinds + per-kind MD format
+
+- **What:** Extend the v0.17.0 Phase 1 *"JSON value = MD-formatted
+  string + monospace MD textarea + body field"* pattern from
+  Foundation 3 kinds to the 7 other publish-eligible kinds
+  (actor / service / category / metric / step / rule / content).
+  Also lift `actor_ref`'s `gives` / `receives` textarea to
+  monospace MD (ref is still publish-ineligible + no `body`).
+  Document 15-kind per-kind MD section list in
+  ``docs/PUBLISH.md``.
+
+- **Why:** D-2026-05-13-O #2 (*"JSON value = MD-formatted string"*)
+  + user's same-session re-confirmation: *"노드 클릭하면 상세 —
+  설명·할것·하지말것·노트 — 모두 MD 문법, 노트는 extra. 발행하면
+  MD."* Phase 1 cover 1/5; Phase 3 (v0.18.0) shipped publish
+  before the input parity, so 7/10 publish-eligible kinds had
+  plain-text input but emitted MD on publish — inconsistent.
+  v0.18.2 closes the gap.
+
+  Separately, the user defined ref's role: *"레퍼런스는 복사본
+  혹은 링크. 미션/사용자 레퍼런스를 서비스 그릴 때 연결되면 매우
+  훌륭. 누구를 위한 / 누가 활동하는 / 누구와 누가 관계 맺는
+  서비스인가 표현."* — ref is a **relation tool** on services /
+  service-detail, not an own-SSOT node. No `body` for ref; but
+  `actor_ref.gives` / `actor_ref.receives` are valid *service-
+  context-specific relation descriptions* and their input is
+  monospace MD for consistency.
+
+- **Alternatives considered:**
+  - **`body` on ref 4** — rejected; ref is a relation, not a free
+    note channel.
+  - **Plain text on ref typed text** — rejected; inconsistent
+    with "all typed text MD".
+  - **Per-kind override** — rejected; YAGNI, intent is uniform.
+  - **Bundle with Phase 4** — rejected; small ships.
+
+- **Approval:** **Accepted** by user, 2026-05-16 (same-session
+  confirmation chain).
+
+- **Spec impact:**
+  - `plot/docs/SPEC.md` §Publish — new "Typed text + body fields
+    (v0.18.2+)" subsection.
+  - `plot/docs/PUBLISH.md` — per-kind H2 reference (15 kinds) +
+    ref-as-relation-tool note.
+
+- **Files in this commit:** see ``plot/CHANGELOG.md`` v0.18.2 —
+  server models.py (1) + viewer entity (7) + viewer inspectors
+  (7 + 2 shared + actor_ref) + docs (5).
+
+- **Test counts:** server 359/359, viewer 522/522 — both unchanged
+  count (schema-parity + entity-roundtrip + inspectors smoke
+  auto-flowed the body field through). mypy + ruff + tsc clean.
+
+- **Cross-refs:**
+  - [D-2026-05-13-O](./DECISIONS.md) #2 — the gap this closes.
+  - [D-2026-05-16-A](./DECISIONS.md) — Phase 1 (v0.17.0) — the
+    pattern v0.18.2 generalizes.
+  - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 (v0.18.0) — the
+    publish flow the body field gets emitted through.
+
+- **Follow-up filed in NEXT_SESSION.md:**
+  - cross-kind ref typed-text symmetry — *왜 actor_ref 만 `gives`/
+    `receives` 가 있고 mission_ref / value_ref / identity_ref 는
+    없는가?* — 가치 있을 때 별도 phase 재검토.

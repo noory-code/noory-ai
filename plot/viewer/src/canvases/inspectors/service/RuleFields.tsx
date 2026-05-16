@@ -29,7 +29,7 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
           value={node.policy ?? ""}
           onChange={(e) => onPatchNode({ policy: e.target.value })}
           placeholder="이 룰이 강제하는 것"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 focus:border-stone-500 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-stone-500 focus:outline-none"
         />
       </label>
       <label className="mb-2 block">
@@ -39,7 +39,7 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
           value={node.enforcement ?? ""}
           onChange={(e) => onPatchNode({ enforcement: e.target.value })}
           placeholder="어디서/어떻게 강제?"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 focus:border-stone-500 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-stone-500 focus:outline-none"
         />
       </label>
       <div className="mt-2">

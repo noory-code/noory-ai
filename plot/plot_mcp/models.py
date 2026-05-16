@@ -308,6 +308,7 @@ class ActorNode(BaseNodeFields):
     motivation: str = ""
     pain: str = ""
     side: Literal["operator", "user"] | None = None
+    body: str = ""
 
 
 class ActorRefNode(BaseNodeFields):
@@ -345,6 +346,7 @@ class ServiceNode(BaseNodeFields):
     outcome: str = ""
     do: str = ""
     dont: str = ""
+    body: str = ""
 
 
 class CategoryNode(BaseNodeFields):
@@ -354,6 +356,7 @@ class CategoryNode(BaseNodeFields):
 
     kind: Literal["category"] = "category"
     theme: str = ""
+    body: str = ""
 
 
 class MissionRefNode(BaseNodeFields):
@@ -412,6 +415,7 @@ class MetricNode(BaseNodeFields):
     kind: Literal["metric"] = "metric"
     target: str = ""
     measurement: str = ""
+    body: str = ""
 
 
 class StepNode(BaseNodeFields):
@@ -421,6 +425,7 @@ class StepNode(BaseNodeFields):
     kind: Literal["step"] = "step"
     order: int | None = None
     outcome: str = ""
+    body: str = ""
 
 
 class RuleNode(BaseNodeFields):
@@ -431,6 +436,7 @@ class RuleNode(BaseNodeFields):
     policy: str = ""
     enforcement: str = ""
     actor_permissions: dict[str, str] = Field(default_factory=dict)
+    body: str = ""
 
 
 class ContentNode(BaseNodeFields):
@@ -442,6 +448,7 @@ class ContentNode(BaseNodeFields):
     format: str = ""
     producer_actor_id: str | None = None
     consumer_actor_id: str | None = None
+    body: str = ""
 
 
 # ---------------------------------------------------------------------------

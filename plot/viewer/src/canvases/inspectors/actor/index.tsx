@@ -8,13 +8,14 @@ import { useTranslation } from "react-i18next";
 import type { ActorJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import type { KindInspectorProps } from "../types";
 
 export function ActorInspector(props: KindInspectorProps) {
   if (props.node.kind !== "actor") return null;
   const node = props.node;
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <ActorFields node={node} onPatchNode={props.onPatchNode} />
       {/* v0.3 placeholder — actor composition still deferred for non-root. */}
       {!node.is_root && <ActorCompositionPlaceholder />}
@@ -63,10 +64,10 @@ function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
           value={node.motivation ?? ""}
           onChange={(e) => onPatchNode({ motivation: e.target.value })}
           placeholder="이 액터가 무엇을 얻으려 하는가"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-rose-600 focus:outline-none"
         />
       </label>
-      <label className="block">
+      <label className="mb-2 block">
         <span className="text-xs font-semibold text-slate-700">{t("inspector.field.pain")}</span>
         <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.pain")}</span>
         <textarea
@@ -74,9 +75,10 @@ function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
           value={node.pain ?? ""}
           onChange={(e) => onPatchNode({ pain: e.target.value })}
           placeholder="겪는 어려움 / 좌절"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-rose-600 focus:outline-none"
         />
       </label>
+      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
 }

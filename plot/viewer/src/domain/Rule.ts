@@ -13,6 +13,7 @@ export interface RuleJson extends BaseFieldsJson {
   policy: string;
   enforcement: string;
   actor_permissions: Record<string, string>;
+  body: string;
 }
 
 export class Rule implements BaseFields {
@@ -37,17 +38,20 @@ export class Rule implements BaseFields {
   readonly policy: string;
   readonly enforcement: string;
   readonly actor_permissions: Record<string, string>;
+  readonly body: string;
 
   private constructor(
     base: BaseFields,
     policy: string,
     enforcement: string,
     actor_permissions: Record<string, string>,
+    body: string,
   ) {
     Object.assign(this, base);
     this.policy = policy;
     this.enforcement = enforcement;
     this.actor_permissions = actor_permissions;
+    this.body = body;
   }
 
   static fromJson(raw: unknown): Rule {
@@ -64,6 +68,7 @@ export class Rule implements BaseFields {
       readOptionalString(obj.policy, "policy", raw),
       readOptionalString(obj.enforcement, "enforcement", raw),
       readPermissions(obj.actor_permissions, raw),
+      readOptionalString(obj.body, "body", raw),
     );
   }
 
@@ -88,6 +93,7 @@ export class Rule implements BaseFields {
       policy: this.policy,
       enforcement: this.enforcement,
       actor_permissions: this.actor_permissions,
+      body: this.body,
     };
   }
 }

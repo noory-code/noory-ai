@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import type { ServiceJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import { DoDontFields } from "../shared/DoDontFields";
 import type { KindInspectorProps } from "../types";
 import { CompositionList } from "./CompositionList";
@@ -30,7 +31,7 @@ export function ServiceInspector(props: KindInspectorProps) {
     [allNodes, node.id],
   );
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <ServiceFields node={node} onPatchNode={onPatchNode} />
       {onAddChild && onPatchChild && onRemoveChild && (
         <>
@@ -138,6 +139,7 @@ function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
         placeholder="끝나면 어떤 상태?"
       />
       <DoDontFields node={node} onPatchNode={onPatchNode} />
+      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
 }
@@ -160,7 +162,7 @@ function ServiceTextarea({ label, hint, value, onChange, placeholder }: ServiceT
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-sky-600 focus:outline-none"
+        className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-sky-600 focus:outline-none"
       />
     </label>
   );

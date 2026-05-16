@@ -26,7 +26,7 @@ export function ContentFields({ node, availableActors, onPatchNode }: ContentFie
           value={node.format ?? ""}
           onChange={(e) => onPatchNode({ format: e.target.value })}
           placeholder="JSON / MD / image / token …"
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 focus:border-violet-500 focus:outline-none"
+          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-violet-500 focus:outline-none"
         />
       </label>
       <ContentActorPicker

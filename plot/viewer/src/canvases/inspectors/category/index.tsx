@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import type { CategoryJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import type { KindInspectorProps } from "../types";
 
 export function CategoryInspector(props: KindInspectorProps) {
@@ -18,7 +19,7 @@ export function CategoryInspector(props: KindInspectorProps) {
     (n) => n.parent_id === node.id && n.kind === "service",
   ).length;
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <CategoryFields node={node} childCount={childCount} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
@@ -37,7 +38,7 @@ function CategoryFields({ node, childCount, onPatchNode }: CategoryFieldsProps) 
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
         {t("kind.category")}
       </div>
-      <label className="block">
+      <label className="mb-2 block">
         <span className="text-xs font-semibold text-slate-700">{t("inspector.field.theme")}</span>
         <span className="ml-1 text-[10px] text-slate-500">
           — {t("inspector.fieldHint.theme")}
@@ -47,9 +48,10 @@ function CategoryFields({ node, childCount, onPatchNode }: CategoryFieldsProps) 
           value={node.theme ?? ""}
           onChange={(e) => onPatchNode({ theme: e.target.value })}
           placeholder="이 카테고리의 공통 주제 / 묶음의 본질"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-slate-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-slate-600 focus:outline-none"
         />
       </label>
+      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
       {childCount === 0 && (
         <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-800">
           이 카테고리에 service 가 없습니다. category 는 service 를 묶기 위해

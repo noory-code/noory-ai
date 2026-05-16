@@ -62,6 +62,59 @@ Listen → respond → reflect.
 Free-form rationale paragraph.
 ```
 
+### Per-kind H2 sections (15-kind reference)
+
+For every publish-eligible kind, the H2 sections after the
+frontmatter follow the order of the kind's declared typed fields
+on the Pydantic class. Each value renders verbatim if it is a
+string, or as inline YAML/scalar otherwise.
+
+#### Foundation kinds (v0.17.0+)
+
+| kind | H2 sections (in order) |
+|---|---|
+| `mission` | `## What we do` / `## Why` / `## Direction` / `## Body` |
+| `core_value` | `## Definition` / `## Do` / `## Dont` / `## Body` |
+| `identity` | `## Description` / `## Do` / `## Dont` / `## Body` |
+
+#### Actors / Services / composition kinds (v0.18.2+)
+
+| kind | H2 sections (in order) |
+|---|---|
+| `actor` | `## Motivation` / `## Pain` / `## Side` / `## Body` |
+| `service` | `## Target side` / `## What` / `## Value created` / `## Scope` / `## Trigger` / `## How` / `## Outcome` / `## Do` / `## Dont` / `## Body` |
+| `category` | `## Theme` / `## Body` |
+| `metric` | `## Target` / `## Measurement` / `## Body` |
+| `step` | `## Order` / `## Outcome` / `## Body` |
+| `rule` | `## Policy` / `## Enforcement` / `## Actor permissions` / `## Body` |
+| `content` | `## Format` / `## Producer actor id` / `## Consumer actor id` / `## Body` |
+
+`## Side` (actor) and `## Target side` (service) render the
+``"operator" | "user" | null`` scalar literally; `## Order` (step)
+renders the integer literally; `## Actor permissions` (rule) renders
+the ``Record<actor_id, permission>`` dict as inline YAML;
+`## Producer actor id` / `## Consumer actor id` (content) render the
+referenced actor id verbatim (or empty if unset).
+
+#### Publish-ineligible kinds (5)
+
+These kinds do **not** emit MD files:
+
+- `project` — the synthetic anchor. Its label mirrors
+  ``ProjectDoc.name`` (single project-wide SSOT). Publish-ineligible.
+- `actor_ref` — alias for an `actor` master. Its typed text
+  (`gives` / `receives`) describes *the service-context-specific
+  relation*, and is editable as MD-syntax, but it is **not emitted
+  as a published MD file** — the referent (`actor`) is the
+  publish surface. Publish-ineligible.
+- `mission_ref` / `value_ref` / `identity_ref` — pointers to
+  Foundation masters; pure links. No own typed text. Publish the
+  master instead.
+
+Ref = a relation tool in the services / service-detail canvas
+("who for / by whom / under which mission / value / identity").
+Not a separate SSOT.
+
 ### Field rendering rules
 
 | Field type | Rendered as |

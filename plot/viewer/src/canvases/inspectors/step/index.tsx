@@ -6,13 +6,14 @@ import { useTranslation } from "react-i18next";
 import type { StepJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import type { KindInspectorProps } from "../types";
 
 export function StepInspector(props: KindInspectorProps) {
   if (props.node.kind !== "step") return null;
   const node = props.node;
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <StepFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
@@ -44,7 +45,7 @@ function StepFields({ node, onPatchNode }: StepFieldsProps) {
           className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
-      <label className="block">
+      <label className="mb-2 block">
         <span className="text-xs font-semibold text-slate-700">
           {t("inspector.field.outcome")}
         </span>
@@ -56,9 +57,10 @@ function StepFields({ node, onPatchNode }: StepFieldsProps) {
           value={node.outcome ?? ""}
           onChange={(e) => onPatchNode({ outcome: e.target.value })}
           placeholder="이 단계 끝나면 어떤 상태?"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
+      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
 }

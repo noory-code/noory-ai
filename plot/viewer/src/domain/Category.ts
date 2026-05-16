@@ -12,6 +12,7 @@ import { registerKindParser } from "./parseEntity";
 export interface CategoryJson extends BaseFieldsJson {
   kind: "category";
   theme: string;
+  body: string;
 }
 
 export class Category implements BaseFields {
@@ -34,10 +35,12 @@ export class Category implements BaseFields {
   readonly kind: "category" = "category";
 
   readonly theme: string;
+  readonly body: string;
 
-  private constructor(base: BaseFields, theme: string) {
+  private constructor(base: BaseFields, theme: string, body: string) {
     Object.assign(this, base);
     this.theme = theme;
+    this.body = body;
   }
 
   static fromJson(raw: unknown): Category {
@@ -49,17 +52,17 @@ export class Category implements BaseFields {
         raw,
       );
     }
-    let theme = "";
-    if (obj.theme !== undefined && obj.theme !== null) {
-      if (typeof obj.theme !== "string") {
+    const readStr = (value: unknown, field: string): string => {
+      if (value === undefined || value === null) return "";
+      if (typeof value !== "string") {
         throw new DomainParseError(
-          `Category.theme must be a string, got ${JSON.stringify(obj.theme)}`,
+          `Category.${field} must be a string, got ${JSON.stringify(value)}`,
           raw,
         );
       }
-      theme = obj.theme;
-    }
-    return new Category(base, theme);
+      return value;
+    };
+    return new Category(base, readStr(obj.theme, "theme"), readStr(obj.body, "body"));
   }
 
   toJson(): CategoryJson {
@@ -81,6 +84,7 @@ export class Category implements BaseFields {
       version: this.version,
       kind: "category",
       theme: this.theme,
+      body: this.body,
     };
   }
 }

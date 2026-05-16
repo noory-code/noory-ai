@@ -11,13 +11,14 @@ import { useTranslation } from "react-i18next";
 import type { MetricJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import type { KindInspectorProps } from "../types";
 
 export function MetricInspector(props: KindInspectorProps) {
   if (props.node.kind !== "metric") return null;
   const node = props.node;
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <MetricFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
@@ -38,15 +39,15 @@ function MetricFields({ node, onPatchNode }: MetricFieldsProps) {
       <label className="mb-2 block">
         <span className="text-xs font-semibold text-slate-700">{t("inspector.field.target")}</span>
         <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.target")}</span>
-        <input
-          type="text"
+        <textarea
+          rows={2}
           value={node.target ?? ""}
           onChange={(e) => onPatchNode({ target: e.target.value })}
           placeholder=">99% / under 200ms / …"
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-lime-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-lime-600 focus:outline-none"
         />
       </label>
-      <label className="block">
+      <label className="mb-2 block">
         <span className="text-xs font-semibold text-slate-700">
           {t("inspector.field.measurement")}
         </span>
@@ -58,9 +59,10 @@ function MetricFields({ node, onPatchNode }: MetricFieldsProps) {
           value={node.measurement ?? ""}
           onChange={(e) => onPatchNode({ measurement: e.target.value })}
           placeholder="어떤 신호를 어떻게 집계?"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-lime-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-lime-600 focus:outline-none"
         />
       </label>
+      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
 }

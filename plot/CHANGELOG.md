@@ -4,6 +4,57 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.18.2] — 2026-05-16
+
+Brings the v0.17.0 Phase 1 *"JSON value = MD-formatted string +
+monospace MD textarea + `body` field"* pattern from Foundation 3
+kinds (mission / core_value / identity) to the **7 other
+publish-eligible kinds** (actor / service / category / metric /
+step / rule / content). v0.18.0 had shipped publish before the
+input parity, so 7 of 10 publish-eligible kinds had plain-text
+input while emitting MD on publish — inconsistent. v0.18.2 closes
+the gap.
+
+Also lifts `actor_ref`'s `gives` / `receives` textarea to
+monospace MD for input consistency — ref is still
+publish-ineligible and has no `body` (ref = relation tool, not
+own-SSOT node). 4 ref kinds otherwise unchanged.
+
+Per [D-2026-05-16-F](./docs/DECISIONS.md). Documents 15-kind H2
+section reference in [`docs/PUBLISH.md`](./docs/PUBLISH.md).
+
+### Added
+
+- ``plot_mcp/models.py`` — ``body: str = ""`` on 7 kind classes
+  (ActorNode / ServiceNode / CategoryNode / MetricNode / StepNode
+  / RuleNode / ContentNode). ref 4 + ProjectNode unchanged.
+- ``viewer/src/domain/{Actor,Service,Category,Metric,Step,Rule,
+  Content}.ts`` × 7 — ``body: string`` through Json interface +
+  class field + constructor + fromJson + toJson, mirroring the
+  Foundation pattern.
+- 7 per-kind inspectors (`actor` / `service` / `category` /
+  `metric` / `step` / `rule` / `content`) — monospace MD textarea
+  on every typed text field + ``<BodyField>`` + ``hideDetailsSection``.
+- ``docs/PUBLISH.md`` — per-kind H2 section reference table for
+  all 15 kinds (Foundation 3 + Actors/Services/composition 7 +
+  publish-ineligible 5) + ref-as-relation-tool note.
+- ``docs/SPEC.md`` §Publish — new "Typed text + body fields
+  (v0.18.2+)" subsection.
+- ``docs/DECISIONS.md`` — D-2026-05-16-F entry.
+- ``docs/NEXT_SESSION.md`` — v0.18.2 archived; "cross-kind ref
+  typed-text symmetry" follow-up filed (actor_ref 의 `gives`/
+  `receives` 비대칭 검토).
+
+### Changed
+
+- ``viewer/src/canvases/inspectors/service/RuleFields.tsx`` —
+  `policy` / `enforcement` textareas lifted to monospace MD.
+- ``viewer/src/canvases/inspectors/service/ContentFields.tsx`` —
+  `format` input gets `font-mono` class for visual consistency
+  (remains single-line `<input>`).
+- ``viewer/src/canvases/inspectors/actor_ref/index.tsx`` —
+  `gives` / `receives` textareas lifted to monospace MD.
+
 ## [0.18.1] — 2026-05-16
 
 Docs-only patch. Pins the "tree-in-forest" AI-context architecture

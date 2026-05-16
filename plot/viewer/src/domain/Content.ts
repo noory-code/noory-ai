@@ -13,6 +13,7 @@ export interface ContentJson extends BaseFieldsJson {
   format: string;
   producer_actor_id: string | null;
   consumer_actor_id: string | null;
+  body: string;
 }
 
 export class Content implements BaseFields {
@@ -37,17 +38,20 @@ export class Content implements BaseFields {
   readonly format: string;
   readonly producer_actor_id: string | null;
   readonly consumer_actor_id: string | null;
+  readonly body: string;
 
   private constructor(
     base: BaseFields,
     format: string,
     producer_actor_id: string | null,
     consumer_actor_id: string | null,
+    body: string,
   ) {
     Object.assign(this, base);
     this.format = format;
     this.producer_actor_id = producer_actor_id;
     this.consumer_actor_id = consumer_actor_id;
+    this.body = body;
   }
 
   static fromJson(raw: unknown): Content {
@@ -64,6 +68,7 @@ export class Content implements BaseFields {
       readOptionalString(obj.format, "format", raw),
       readNullableString(obj.producer_actor_id, "producer_actor_id", raw),
       readNullableString(obj.consumer_actor_id, "consumer_actor_id", raw),
+      readOptionalString(obj.body, "body", raw),
     );
   }
 
@@ -88,6 +93,7 @@ export class Content implements BaseFields {
       format: this.format,
       producer_actor_id: this.producer_actor_id,
       consumer_actor_id: this.consumer_actor_id,
+      body: this.body,
     };
   }
 }

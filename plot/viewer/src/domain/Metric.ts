@@ -19,6 +19,7 @@ export interface MetricJson extends BaseFieldsJson {
   kind: "metric";
   target: string;
   measurement: string;
+  body: string;
 }
 
 export class Metric implements BaseFields {
@@ -45,11 +46,18 @@ export class Metric implements BaseFields {
   // Metric-specific typed fields.
   readonly target: string;
   readonly measurement: string;
+  readonly body: string;
 
-  private constructor(base: BaseFields, target: string, measurement: string) {
+  private constructor(
+    base: BaseFields,
+    target: string,
+    measurement: string,
+    body: string,
+  ) {
     Object.assign(this, base);
     this.target = target;
     this.measurement = measurement;
+    this.body = body;
   }
 
   /** Parse + validate a raw dict into a Metric instance. Throws
@@ -65,7 +73,8 @@ export class Metric implements BaseFields {
     }
     const target = readOptionalString(obj.target, "target", raw);
     const measurement = readOptionalString(obj.measurement, "measurement", raw);
-    return new Metric(base, target, measurement);
+    const body = readOptionalString(obj.body, "body", raw);
+    return new Metric(base, target, measurement, body);
   }
 
   /** Wire-shape representation. ``kind`` is always emitted so the
@@ -90,6 +99,7 @@ export class Metric implements BaseFields {
       kind: "metric",
       target: this.target,
       measurement: this.measurement,
+      body: this.body,
     };
   }
 }

@@ -87,7 +87,7 @@ function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
           value={node.gives ?? ""}
           onChange={(e) => onPatchNode({ gives: e.target.value })}
           placeholder="콘텐츠 / 시간 / 결제 / 주의 …"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-emerald-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-emerald-600 focus:outline-none"
         />
       </label>
       <label className="block">
@@ -102,7 +102,7 @@ function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
           value={node.receives ?? ""}
           onChange={(e) => onPatchNode({ receives: e.target.value })}
           placeholder="피드백 / 신뢰 / 접근권 / 즐거움 …"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-violet-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-violet-600 focus:outline-none"
         />
       </label>
     </div>
