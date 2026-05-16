@@ -32,6 +32,7 @@ export class CoreValue implements BaseFields {
   readonly is_root!: boolean;
   readonly details_path!: string | null;
   readonly owner!: string | null;
+  readonly version!: string;
 
   readonly kind: "core_value" = "core_value";
 
@@ -88,6 +89,7 @@ export class CoreValue implements BaseFields {
       is_root: this.is_root,
       details_path: this.details_path,
       owner: this.owner,
+      version: this.version,
       kind: "core_value",
       definition: this.definition,
       do: this.do,

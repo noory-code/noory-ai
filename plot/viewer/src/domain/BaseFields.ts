@@ -34,6 +34,11 @@ export interface BaseFieldsJson {
    *  authored by an anonymous / single-user session. Server fills
    *  from session context once multi-user lands. */
   owner: string | null;
+  /** v0.17.2 Phase 2 (D-2026-05-16-C) — per-node version. Format
+   *  ``v<MAJOR>.<MINOR>`` (e.g. ``v1.0`` / ``v2.3``). Pre-Phase-2
+   *  canvases auto-fill ``"v1.0"`` on read. Phase 3 increments on
+   *  Publish; Phase 4 propagates up the ancestor chain. */
+  version: string;
 }
 
 /** In-memory shape (defaults filled in). Every field present and typed. */
@@ -55,6 +60,8 @@ export interface BaseFields {
    *  authored by an anonymous / single-user session. Server fills
    *  from session context once multi-user lands. */
   owner: string | null;
+  /** v0.17.2 Phase 2 (D-2026-05-16-C) — see BaseFieldsJson. */
+  version: string;
 }
 
 const VALID_SHAPES: ReadonlySet<Shape> = new Set<Shape>([
@@ -126,6 +133,22 @@ function asShape(value: unknown, raw: unknown): Shape {
   return value as Shape;
 }
 
+/** v0.17.2 Phase 2 (D-2026-05-16-C) — version regex contract mirroring
+ *  ``plot_mcp/models.py::BaseNodeFields._version_is_valid``. Defaults
+ *  to ``"v1.0"`` when omitted (pre-Phase-2 canvas back-compat). */
+const VERSION_RE = /^v\d+\.\d+$/;
+
+function asVersionString(value: unknown, raw: unknown): string {
+  if (value === undefined) return "v1.0";
+  if (typeof value !== "string" || !VERSION_RE.test(value)) {
+    throw new DomainParseError(
+      `entity.version must match ^v\\d+\\.\\d+$ (e.g. "v1.0"), got ${JSON.stringify(value)}`,
+      raw,
+    );
+  }
+  return value;
+}
+
 /** Parse + validate the BaseFields slice of any entity raw dict.
  *  Throws ``DomainParseError`` on any invariant violation; the entity
  *  constructor that calls this can rely on the result.
@@ -154,5 +177,6 @@ export function parseBaseFields(raw: unknown): BaseFields {
     is_root: asBoolean(obj.is_root, false, "is_root", raw),
     details_path: asNullableString(obj.details_path, "details_path", raw),
     owner: asNullableString(obj.owner, "owner", raw),
+    version: asVersionString(obj.version, raw),
   };
 }

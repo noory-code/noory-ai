@@ -94,6 +94,32 @@ describe("parseBaseFields", () => {
       expect((err as DomainParseError).raw).toBe(raw);
     }
   });
+
+  // v0.17.2 Phase 2 (D-2026-05-16-C) — per-node version field.
+  it("defaults version to v1.0 when omitted (pre-Phase-2 back-compat)", () => {
+    const fields = parseBaseFields({ id: "n1" });
+    expect(fields.version).toBe("v1.0");
+  });
+
+  it.each(["v0.1", "v1.0", "v2.3", "v10.20", "v123.456"])(
+    "accepts valid version %s",
+    (version) => {
+      const fields = parseBaseFields({ id: "n1", version });
+      expect(fields.version).toBe(version);
+    },
+  );
+
+  it.each(["1.0", "v1", "v1.0.0", "vX.Y", "", "v1.", "v.1", "V1.0"])(
+    "throws DomainParseError on invalid version %s",
+    (version) => {
+      expect(() => parseBaseFields({ id: "n1", version })).toThrow(DomainParseError);
+    },
+  );
+
+  it("throws DomainParseError on non-string version", () => {
+    expect(() => parseBaseFields({ id: "n1", version: 1.0 })).toThrow(DomainParseError);
+    expect(() => parseBaseFields({ id: "n1", version: null })).toThrow(DomainParseError);
+  });
 });
 
 describe("parseEntity dispatch", () => {

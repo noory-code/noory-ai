@@ -97,6 +97,7 @@ _EXPECTED_BASE_FIELDS = {
     "is_root",
     "details_path",
     "owner",  # v0.16.12 (D-2026-05-12-O) — multi-user prep
+    "version",  # v0.17.2 Phase 2 (D-2026-05-16-C) — per-node version
 }
 
 

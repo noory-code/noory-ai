@@ -32,6 +32,7 @@ export class ActorRef implements BaseFields {
   readonly is_root!: boolean;
   readonly details_path!: string | null;
   readonly owner!: string | null;
+  readonly version!: string;
 
   readonly kind: "actor_ref" = "actor_ref";
 
@@ -88,6 +89,7 @@ export class ActorRef implements BaseFields {
       is_root: this.is_root,
       details_path: this.details_path,
       owner: this.owner,
+      version: this.version,
       kind: "actor_ref",
       ref_actor_id: this.ref_actor_id,
       gives: this.gives,

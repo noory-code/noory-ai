@@ -27,6 +27,7 @@ export class IdentityRef implements BaseFields {
   readonly is_root!: boolean;
   readonly details_path!: string | null;
   readonly owner!: string | null;
+  readonly version!: string;
 
   readonly kind: "identity_ref" = "identity_ref";
 
@@ -75,6 +76,7 @@ export class IdentityRef implements BaseFields {
       is_root: this.is_root,
       details_path: this.details_path,
       owner: this.owner,
+      version: this.version,
       kind: "identity_ref",
       ref_identity_id: this.ref_identity_id,
     };

@@ -4124,3 +4124,103 @@ in the same browser-verification round:
 
 - **Test counts:**
   - Viewer: 488 → 490 (+2). Server unchanged (290 / 290).
+
+---
+
+### D-2026-05-16-C — Phase 2 per-node `version` field in BaseFields
+
+- **What:** Add a per-node ``version: str = "v1.0"`` field to
+  ``plot_mcp/models.py::BaseNodeFields`` (server) and to both
+  ``BaseFieldsJson`` (wire) and ``BaseFields`` (in-memory) interfaces
+  in ``viewer/src/domain/BaseFields.ts``, plus a single
+  ``version: this.version,`` line and a ``readonly version!:
+  string;`` declaration on each of the 15 per-kind entity classes.
+  Both layers enforce the format ``^v\d+\.\d+$`` via a regex (model
+  validator on the server, ``asVersionString`` helper on the viewer).
+
+- **Why:** The 7-principle JSON SSOT vision (D-2026-05-13-O) calls
+  for explicit per-node versioning so future phases can:
+
+  - **Phase 3** — increment a node's ``version`` on explicit
+    "Publish" (MAJOR bump), emit a per-node MD export tagged with
+    that version.
+  - **Phase 4** — propagate the bump up the ancestor chain (MINOR
+    bumps on parents).
+  - **Phase 5+** — folder-hierarchy publish semantics depend on the
+    field.
+
+  Phase 1 (v0.17.0) made JSON the SSOT for typed-text content;
+  Phase 2 now lays the data foundation Phases 3–5 read from and
+  write to. The phase ships **with no UI surface** — no badge, no
+  button, no visible difference. The visual surface lands in
+  Phase 3.
+
+- **Alternatives considered:**
+  - **3-component SemVer (``v1.2.3``)** — rejected for v0.17.x.
+    The publish model (Phase 3: MAJOR; Phase 4: MINOR) only needs
+    two components today. A patch component would need a third
+    rule and is best deferred to a fresh ``D-`` entry that names
+    a concrete trigger. The regex contract fails ``"v1.0.0"``
+    loudly so accidental drift can't sneak in.
+  - **Per-kind optional version field** (kind opts in) — rejected,
+    violates MECE. Every kind needs the field once Phase 3 can
+    publish anything; lifting it to ``BaseNodeFields`` keeps it
+    universal and lets the 15-kind parametric schema-parity test
+    cover it automatically.
+  - **Nullable version with default ``None``** — rejected. The
+    publish model treats every node as carrying a version from
+    creation; nullable would force every consumer to handle the
+    ``None`` case and re-introduce default-fill logic.
+  - **Defer until Phase 3 (UI) lands** — rejected. Phase 3 will
+    need to bump the field, which means the read-side must already
+    populate it on pre-Phase-2 canvases. Splitting the data layer
+    from the UI layer keeps each commit atomic and the read
+    contract stable across the rest of the v0.17.x sequence.
+
+- **Approval:** **Accepted** by user, 2026-05-16. Filed as the
+  active queue item in ``plot/docs/NEXT_SESSION.md`` with the
+  exact scope ("Server: add ``version: str = "v1.0"`` to
+  BaseNodeFields with ``^v\d+\.\d+$`` validator. Defaults to
+  ``"v1.0"`` for backward compatibility (existing nodes auto-fill
+  on read). Viewer: mirror in
+  ``viewer/src/domain/BaseFields.ts``…. No UI surface yet.").
+
+- **Spec impact:** None directly user-visible. The data layer now
+  carries a new key; ``SPEC.md`` will gain its first ``version``
+  mention in Phase 3 (Publish button text + per-node MD export
+  format). Until then, the wire format is the spec, captured by
+  ``test_schema_parity.py``.
+
+- **Files in this commit:**
+  - ``plot_mcp/models.py`` — ``version`` field + ``_version_is_valid``
+    validator on ``BaseNodeFields``; ``import re`` added.
+  - ``tests/test_schema_parity.py`` — ``_EXPECTED_BASE_FIELDS``
+    grows from 14 to 15 (``"version"`` appended).
+  - ``tests/test_node_models.py`` — 4 new tests (default, valid
+    regex matches, invalid rejections, per-kind round-trip).
+  - ``viewer/src/domain/BaseFields.ts`` — both interfaces +
+    ``asVersionString`` helper.
+  - ``viewer/src/domain/{Actor,ActorRef,Category,Content,CoreValue,
+    Identity,IdentityRef,Metric,Mission,MissionRef,Project,Rule,
+    Service,Step,ValueRef}.ts`` — 15 files × 2 line additions each
+    (class body + ``toJson``).
+  - ``viewer/tests/domain/base-fields.test.ts`` — 4 new tests
+    (default fill, valid versions, invalid rejections, non-string
+    rejection).
+  - ``plot/CHANGELOG.md`` — v0.17.2 section.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+  - ``plot/docs/NEXT_SESSION.md`` — Phase 2 trigger archived,
+    Phase 3 trigger surfaced.
+  - ``plot/.claude-plugin/plugin.json`` — 0.17.1 → 0.17.2.
+
+- **Test counts:**
+  - Server: 318 → 322 (+4). Viewer: 505 → 514 (+9).
+  - All green; mypy + ruff + tsc all clean.
+
+- **Cross-refs:**
+  - [D-2026-05-13-J](./DECISIONS.md) — initial 4-point JSON SSOT
+    vision (now superseded by O).
+  - [D-2026-05-13-O](./DECISIONS.md) — 7-principle JSON SSOT
+    vision (the policy that names this phase).
+  - [D-2026-05-16-A](./DECISIONS.md) — Phase 1 ship (v0.17.0).
+  - [D-2026-05-16-B](./DECISIONS.md) — v0.17.1 anchor-click polish.

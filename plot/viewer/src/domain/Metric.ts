@@ -37,6 +37,7 @@ export class Metric implements BaseFields {
   readonly is_root!: boolean;
   readonly details_path!: string | null;
   readonly owner!: string | null;
+  readonly version!: string;
 
   // Discriminator (always "metric" for instances of this class).
   readonly kind: "metric" = "metric";
@@ -85,6 +86,7 @@ export class Metric implements BaseFields {
       is_root: this.is_root,
       details_path: this.details_path,
       owner: this.owner,
+      version: this.version,
       kind: "metric",
       target: this.target,
       measurement: this.measurement,

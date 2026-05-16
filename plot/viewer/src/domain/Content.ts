@@ -30,6 +30,7 @@ export class Content implements BaseFields {
   readonly is_root!: boolean;
   readonly details_path!: string | null;
   readonly owner!: string | null;
+  readonly version!: string;
 
   readonly kind: "content" = "content";
 
@@ -82,6 +83,7 @@ export class Content implements BaseFields {
       is_root: this.is_root,
       details_path: this.details_path,
       owner: this.owner,
+      version: this.version,
       kind: "content",
       format: this.format,
       producer_actor_id: this.producer_actor_id,

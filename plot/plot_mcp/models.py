@@ -11,6 +11,7 @@ fields are unchanged.
 
 from __future__ import annotations
 
+import re
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, TypeAdapter, field_validator, model_validator
@@ -152,6 +153,12 @@ class BaseNodeFields(BaseModel):
     # authored by an anonymous / single-user session. Server fills
     # from session context once multi-user lands.
     owner: str | None = None
+    # v0.17.2 Phase 2 (D-2026-05-16-C) — per-node version laying the
+    # ground for Phase 3 "Publish" (MAJOR bump) + Phase 4 MINOR
+    # propagation. Format: ``v<MAJOR>.<MINOR>`` (e.g. ``v1.0`` /
+    # ``v2.3``). Defaults to ``v1.0`` so pre-Phase-2 canvases auto-fill
+    # on read; first write after open serialises the new key.
+    version: str = "v1.0"
 
     @model_validator(mode="after")
     def _details_path_is_safe(self) -> BaseNodeFields:
@@ -167,6 +174,15 @@ class BaseNodeFields(BaseModel):
         if any(part == ".." or part == "" for part in parts):
             raise ValueError(
                 f"node {self.id!r} details_path must not contain '..' or empty segments"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _version_is_valid(self) -> BaseNodeFields:
+        if not re.match(r"^v\d+\.\d+$", self.version):
+            raise ValueError(
+                f"node {self.id!r} version must match ``^v\\d+\\.\\d+$`` "
+                f"(e.g. ``v1.0``), got {self.version!r}"
             )
         return self
 

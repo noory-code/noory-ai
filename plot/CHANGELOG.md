@@ -4,6 +4,51 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.2] — 2026-05-16
+
+Phase 2 of the JSON SSOT migration (D-2026-05-16-C). Adds a
+per-node ``version`` field to ``BaseNodeFields`` (server) +
+``BaseFields`` / ``BaseFieldsJson`` (viewer), defaulting to
+``"v1.0"``. The field is the data foundation Phases 3–5 read from
+and write to: Phase 3 increments it on explicit "Publish" (MAJOR
+bump), Phase 4 propagates the bump up the ancestor chain (MINOR
+bumps), Phase 5+ extends to folder-hierarchy publish semantics. The
+format is locked by a regex contract (``^v\d+\.\d+$``) on both
+sides; a three-component version (``"v1.0.0"``) fails loudly until a
+fresh ``D-`` entry widens the contract. **No UI surface in this
+phase** — no badge, no button, no visible difference. Pre-v0.17.2
+canvases auto-fill ``"v1.0"`` on read; first write after open
+serialises the new key.
+
+### Added
+
+- ``plot_mcp/models.py::BaseNodeFields.version`` — ``str = "v1.0"``
+  default + ``_version_is_valid`` model validator enforcing
+  ``^v\d+\.\d+$``. Inherited by all 15 per-kind classes via the
+  discriminated union.
+- ``viewer/src/domain/BaseFields.ts::asVersionString`` —
+  ``parseBaseFields`` helper mirroring the server regex; defaults to
+  ``"v1.0"`` on missing key, throws ``DomainParseError`` on invalid.
+- ``viewer/src/domain/BaseFields.ts`` — ``version: string`` added to
+  both ``BaseFieldsJson`` (wire) and ``BaseFields`` (in-memory)
+  interfaces.
+- 15 per-kind entity classes
+  (``viewer/src/domain/{Actor,ActorRef,Category,Content,CoreValue,
+  Identity,IdentityRef,Metric,Mission,MissionRef,Project,Rule,
+  Service,Step,ValueRef}.ts``) — ``readonly version!: string;`` on
+  the class body + ``version: this.version,`` in ``toJson()``.
+- ``tests/test_node_models.py`` — 4 new tests covering default,
+  valid regex matches, invalid rejections, and per-kind round-trip.
+- ``viewer/tests/domain/base-fields.test.ts`` — 4 new tests
+  covering default fill, valid versions, invalid rejections, and
+  non-string rejection.
+
+### Changed
+
+- ``tests/test_schema_parity.py::_EXPECTED_BASE_FIELDS`` — added
+  ``"version"`` so the 15-kind parametric parity test auto-asserts
+  Pydantic ↔ TS interface agreement on the new field.
+
 ## [0.17.1] — 2026-05-16
 
 Inspector UX polish (D-2026-05-16-B): clicking the synthetic project

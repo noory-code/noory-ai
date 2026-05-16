@@ -20,6 +20,7 @@ validation.
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
 from plot_mcp.models import (
     ActorNode,
@@ -324,3 +325,52 @@ def test_union_covers_all_15_kinds() -> None:
     classes (catches a drop / duplicate during a future refactor)."""
     assert len(_ALL_KIND_CLASSES) == 15
     assert len({c.__name__ for c in _ALL_KIND_CLASSES.values()}) == 15
+
+
+# ---------------------------------------------------------------------------
+# v0.17.2 Phase 2 (D-2026-05-16-C) — BaseNodeFields.version field
+# ---------------------------------------------------------------------------
+
+
+def test_base_fields_version_default() -> None:
+    """Omitting ``version`` lands as the canonical default ``"v1.0"`` —
+    the backward-compat path for pre-Phase-2 canvases."""
+    node = MissionNode(id="n1")
+    assert node.version == "v1.0"
+
+
+@pytest.mark.parametrize("valid", ["v1.0", "v0.1", "v123.456", "v10.20"])
+def test_base_fields_version_accepts_valid(valid: str) -> None:
+    """Any string matching ``^v\\d+\\.\\d+$`` lands without error."""
+    node = MissionNode(id="n1", version=valid)
+    assert node.version == valid
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        "1.0",  # missing ``v`` prefix
+        "v1",  # missing minor
+        "v1.0.0",  # 3-component (Phase 3+ must open a fresh D-id to widen)
+        "vX.Y",  # non-numeric
+        "",  # empty
+        "v1.",  # trailing dot
+        "v.1",  # leading dot
+        "V1.0",  # uppercase ``V``
+    ],
+)
+def test_base_fields_version_rejects_invalid(invalid: str) -> None:
+    """The regex contract rejects malformed version strings loudly."""
+    with pytest.raises(ValidationError, match="version must match"):
+        MissionNode(id="n1", version=invalid)
+
+
+@pytest.mark.parametrize("kind", sorted(_ALL_KIND_CLASSES.keys()))
+def test_base_fields_version_round_trips_for_every_kind(kind: str) -> None:
+    """The ``version`` field round-trips intact for all 15 kinds —
+    catches drift between Pydantic dump and adapter validate paths."""
+    instance = _make_minimal(kind)
+    raw = instance.model_dump()
+    assert raw["version"] == "v1.0"
+    parsed = SketchNodeAdapter.validate_python(raw)
+    assert parsed.version == "v1.0"

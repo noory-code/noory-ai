@@ -9,46 +9,101 @@
 
 ## Active queue
 
-### `Phase 2 — version: str = "v1.0"` in BaseFields
+### `Phase 3 — Publish button + per-node MD export + MAJOR bump`
 
-> **Trigger:** user says **"Phase 2"** or **"BaseFields version"** or
-> **"v1.0 필드"** as the first / near-first message.
+> **Trigger:** user says **"Phase 3"** or **"Publish 버튼"** or
+> **"publish button"** or **"MD export"** or **"MAJOR bump"** as the
+> first / near-first message.
 >
-> **Filed:** 2026-05-16. Phase 1 (D-2026-05-16-A) shipped today in
-> v0.17.0 — Foundation typed-text fields are inline JSON MD-syntax
-> strings; legacy MD quarantined; viewer's MD-editor surface gone.
-> Phase 2 lands the per-node ``version`` field that Phases 3-4 read
-> from / write to.
+> **Filed:** 2026-05-16. Phase 2 (D-2026-05-16-C) shipped today in
+> v0.17.2 — every node now carries ``version: "v1.0"`` (default), with
+> the regex contract ``^v\d+\.\d+$`` enforced on both server and
+> viewer. Phase 3 surfaces the visible side of the publish model.
 >
-> **Phase 2 scope (per D-2026-05-13-O and plan file):**
+> **Phase 3 scope (per D-2026-05-13-O):**
 >
-> - **Server:** add ``version: str = "v1.0"`` to
->   ``plot_mcp/models.py::BaseNodeFields`` with ``^v\d+\.\d+$``
->   validator. Defaults to ``"v1.0"`` for backward compatibility
->   (existing nodes auto-fill on read).
-> - **Viewer:** mirror in ``viewer/src/domain/BaseFields.ts`` (TS
->   type + ``parseBaseFields`` + each per-kind ``toJson``).
-> - **No UI surface yet.** Phase 3 introduces the badge + publish
->   button.
-> - **Tests:** ``test_schema_parity`` auto-flows the new field
->   (parametric over 15 kinds); ``entity-roundtrip.test.tsx``
->   auto-flows.
-> - **Ship as:** patch bump (likely v0.17.2 — v0.17.1 may be taken
->   by unrelated UX polish; decide in plan-mode).
+> - **Viewer:** "Publish" affordance on the Inspector (button or
+>   menu item) that:
+>   - Increments the selected node's ``version`` MAJOR component
+>     (e.g. ``v1.0`` → ``v2.0``); MINOR resets to ``0``.
+>   - Emits a per-node MD export file (path / template TBD in
+>     plan-mode). Format: serialise the node's typed-text fields +
+>     metadata into MD, tagged with the new version.
+>   - Records the publish event somewhere durable (audit trail —
+>     spec TBD; could be a ``foundation/_publish_log.json`` or a
+>     ``last_published_at`` field).
+> - **Server:** MCP tool(s) for the publish action (write + log).
+> - **UI surface:** badge / icon showing the current version on the
+>   node. Subtle — don't break the canvas visual hierarchy.
+> - **Tests:** publish flow round-trip (version increments, MD file
+>   lands, audit recorded).
+> - **Ship as:** likely v0.17.x (the visible surface for v0.17's
+>   SSOT story).
+>
+> **Open detail questions for the session:**
+>
+> 1. Per-node MD file path — ``published/{kind}-{slug}-{version}.md``?
+>    A single ``published.md`` per canvas? A repo-wide tree?
+> 2. Audit trail durability — JSON log file vs git commit metadata?
+> 3. Publish button placement — Inspector toolbar / context menu /
+>    keyboard shortcut?
+> 4. MAJOR bump semantics — does publishing a child trigger the
+>    Phase 4 MINOR propagation in the same commit, or is that a
+>    separate phase?
+> 5. Idempotence — does publishing the same node twice produce the
+>    same MD content + version, or always bump?
 >
 > **Approach:**
-> - Plan-mode entry mandatory.
-> - Hands-on Gate 3: open a v0.17.0 project, confirm a Mission node
->   now carries ``version: "v1.0"`` after first save (or first read).
+> - Plan-mode entry mandatory (UI surface = SPEC change).
+> - plot-design-red-team review before code (new surface area).
+> - Hands-on Gate 3 in real Chrome (clicking the publish button,
+>   verifying file lands, verifying version bumps).
 >
-> **Subsequent phases (each its own plan-mode + approval):**
+> **Subsequent phases:**
 >
 > | Phase | Scope | Indicative version |
 > |---:|---|:---:|
-> | 3 | "Publish" button + per-node MD export + MAJOR bump | v0.17.x |
 > | 4 | MINOR propagation (ancestor chain) | v0.18.0 |
 > | 5 | Folder hierarchy + container-publish semantics | v0.19.0 |
 > | 6 | Legacy purge + final docs sync | v0.19.1 |
+
+---
+
+### (archived 2026-05-16) `Phase 2 — version: str = "v1.0"` in BaseFields — shipped v0.17.2
+
+> **Trigger:** user said **"다음 작업 시작"** as the first / near-first
+> message of this session (after Phase 1 ship). Resolved against the
+> active queue entry filed earlier in the day.
+>
+> **Filed:** 2026-05-16. Shipped same session as
+> [D-2026-05-16-C](./DECISIONS.md).
+>
+> **What landed:**
+>
+> - ``plot_mcp/models.py::BaseNodeFields.version`` — ``str = "v1.0"``
+>   default + ``_version_is_valid`` regex validator
+>   (``^v\d+\.\d+$``). Inherited by all 15 per-kind classes via
+>   the discriminated union.
+> - ``viewer/src/domain/BaseFields.ts`` — ``version`` added to both
+>   ``BaseFieldsJson`` (wire) and ``BaseFields`` (in-memory)
+>   interfaces; ``asVersionString`` helper added to
+>   ``parseBaseFields`` mirroring the server regex.
+> - 15 per-kind entity classes
+>   (``Actor`` / ``ActorRef`` / ``Category`` / ``Content`` /
+>   ``CoreValue`` / ``Identity`` / ``IdentityRef`` / ``Metric`` /
+>   ``Mission`` / ``MissionRef`` / ``Project`` / ``Rule`` /
+>   ``Service`` / ``Step`` / ``ValueRef``) — ``readonly version!:
+>   string;`` on the class body + ``version: this.version,`` in
+>   ``toJson()``.
+> - Tests: 4 server-side (``test_node_models.py``) + 4
+>   viewer-side (``base-fields.test.ts``) + 1 server contract
+>   line in ``test_schema_parity.py::_EXPECTED_BASE_FIELDS``.
+>   The 15-kind parametric parity test auto-flowed the change.
+>
+> **Verification status:**
+> - Server: 318 → 322 tests, all green (mypy + ruff clean).
+> - Viewer: 505 → 514 tests, all green (tsc clean).
+> - No user-visible change. UI surface lands in Phase 3.
 
 ---
 
