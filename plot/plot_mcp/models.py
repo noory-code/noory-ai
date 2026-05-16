@@ -600,21 +600,16 @@ class CanvasDoc(BaseModel):
         # reference it per D-2026-05-04-B SPEC mandate. Treat its id as
         # a known endpoint for validation. See D-2026-05-13-M.
         node_ids = {n.id for n in self.nodes} | {PROJECT_ANCHOR_ID}
-        dangling = [
-            e for e in self.edges
-            if e.source not in node_ids or e.target not in node_ids
-        ]
+        dangling = [e for e in self.edges if e.source not in node_ids or e.target not in node_ids]
         if dangling:
             # Report the *missing endpoint ids*, not the edge ids.
             # The previous ``{e.id for e in dangling}`` produced misleading
             # error text (it surfaced edge ids as if they were missing
             # nodes), which sent D-2026-05-13-I diagnosis down a wrong
             # path. Fixed in D-2026-05-13-M.
-            missing = sorted({
-                ep for e in dangling
-                for ep in (e.source, e.target)
-                if ep not in node_ids
-            })
+            missing = sorted(
+                {ep for e in dangling for ep in (e.source, e.target) if ep not in node_ids}
+            )
             raise ValueError(f"edges reference unknown nodes: {missing}")
         return self
 

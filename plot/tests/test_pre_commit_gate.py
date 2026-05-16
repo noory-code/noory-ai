@@ -149,8 +149,7 @@ def test_reset_failure_message_omits_comment_only_canvas_kind(tmp_path: Path) ->
     a hint, not a regression signal)."""
     root = _make_minimal_plot_tree(tmp_path)
     (root / "viewer" / "src" / "canvases" / "sketch" / "useFlowHandlers.ts").write_text(
-        '// v0.15 Phase 3.4 — removed all canvas_kind === switches.\n'
-        "export const y = 2;\n",
+        "// v0.15 Phase 3.4 — removed all canvas_kind === switches.\nexport const y = 2;\n",
         encoding="utf-8",
     )
     assert _GATE.reset_complete_check(_staged_viewer(), root) is None
@@ -164,9 +163,7 @@ def test_reset_failure_message_omits_comment_only_canvas_kind(tmp_path: Path) ->
         ["plot/skills/some-skill/SKILL.md"],
     ],
 )
-def test_reset_skips_non_viewer_non_server_commits(
-    tmp_path: Path, staged: list[str]
-) -> None:
+def test_reset_skips_non_viewer_non_server_commits(tmp_path: Path, staged: list[str]) -> None:
     """Non-viewer / non-server staged paths skip the check entirely."""
     root = _make_minimal_plot_tree(tmp_path)
     # Even if the baseline is BROKEN, the check skips when nothing

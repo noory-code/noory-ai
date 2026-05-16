@@ -839,9 +839,7 @@ def upgrade_foundation_canvas_if_needed(plot_root: Path, project_id: str) -> boo
     #    loop (the v0.16.34 storm root cause, D-2026-05-13-K).
     has_project = any(isinstance(n, dict) and n.get("kind") == "project" for n in nodes)
     if not has_project:
-        proj_already_anchored = _project_doc_has_anchor(
-            plot_root, project_id, "foundation"
-        )
+        proj_already_anchored = _project_doc_has_anchor(plot_root, project_id, "foundation")
         if not proj_already_anchored:
             project_name = _read_project_name(plot_root, project_id)
             taken_ids = {n.get("id") for n in nodes if isinstance(n, dict)}
@@ -854,9 +852,7 @@ def upgrade_foundation_canvas_if_needed(plot_root: Path, project_id: str) -> boo
     return changed
 
 
-def _project_doc_has_anchor(
-    plot_root: Path, project_id: str, canvas_kind: str
-) -> bool:
+def _project_doc_has_anchor(plot_root: Path, project_id: str, canvas_kind: str) -> bool:
     """Return True iff ``project.json`` already carries an anchor entry
     for the given canvas kind. Used by step 4 of
     ``upgrade_foundation_canvas_if_needed`` to short-circuit the

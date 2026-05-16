@@ -624,10 +624,6 @@ def test_upgrade_foundation_still_synthesises_anchor_for_pre_v013_project(
     changed = upgrade_foundation_canvas_if_needed(plot_root, project_id)
     assert changed is True, "legacy project (no anchors) must get synthesis"
 
-    raw = json.loads(
-        _canvas_file(plot_root, project_id, "foundation").read_text(
-            encoding="utf-8"
-        )
-    )
+    raw = json.loads(_canvas_file(plot_root, project_id, "foundation").read_text(encoding="utf-8"))
     has_project_node = any(n.get("kind") == "project" for n in raw["nodes"])
     assert has_project_node, "step 4 must still seed the anchor when missing"
