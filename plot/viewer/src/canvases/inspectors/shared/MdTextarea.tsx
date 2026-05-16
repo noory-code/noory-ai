@@ -136,6 +136,11 @@ export function MdTextarea({
         tabIndex={-1}
         aria-hidden
         className="sr-only"
+        onFocus={() => {
+          /* If focus lands here (e.g. Playwright synthetic click quirk or
+           * browser fallback), redirect it to the CM editor immediately. */
+          viewRef.current?.focus();
+        }}
         onChange={() => {
           /* read-only mirror; CodeMirror owns input */
         }}

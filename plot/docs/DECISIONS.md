@@ -4858,3 +4858,54 @@ in the same browser-verification round:
   - **Source-mode toggle** — Obsidian-style "edit vs preview" tab
     that hides the source when not editing; queued only if the
     always-visible-source pattern becomes UX pain.
+
+---
+
+### D-2026-05-17-E — MdTextarea focus redirect (v0.21.1)
+
+**Context:** After v0.21.0 shipped, the user reported that clicking an
+Inspector typed-text field (MdTextarea / CodeMirror 6) did not reliably
+land keyboard focus in the editor. Browser focus event tracing revealed
+the sequence:
+
+1. Click on `.cm-content` → CM6 correctly focuses the editor.
+2. Browser click processing (post-mousedown) could redirect focus to
+   the adjacent sr-only mirror `<textarea>` (tabIndex -1) instead of
+   keeping it on `.cm-content`.
+3. The `cm-focused` class was absent; the user could not type.
+
+Root-cause evidence: the sr-only textarea sits immediately after the
+CM editor in DOM order. Browser and Playwright click semantics can
+deliver the native "give focus to clicked/adjacent form element"
+signal to the textarea rather than the contenteditable CM editor.
+
+**Decision:** Add `onFocus={() => viewRef.current?.focus()}` to the
+sr-only textarea. If it ever receives focus (for any reason), it
+immediately delegates to the CM editor. The textarea retains its
+existing role as an RTL `getByDisplayValue` test mirror; this patch
+adds no new DOM elements and does not break the 529 vitest tests.
+
+**Why `onFocus` on the textarea rather than `autoFocus` / removal:**
+- `autoFocus` on the CM editor would scroll to it on Inspector mount,
+  which is undesirable.
+- Removing the textarea would break the vitest smoke-test suite
+  (`getByDisplayValue`); refactoring all those queries is out of scope.
+- `inert` attribute is supported but would also hide the textarea from
+  `getByDisplayValue` in jsdom.
+- The one-line redirect is self-contained and zero-risk to the SSOT
+  contract (CM doc is still the canonical source; the textarea is
+  read-only and is never written by this handler).
+
+**Approval:** Self-approved bug fix; consistent with SPEC §Inspector
+interaction contract (user can type in typed-text fields after
+clicking them). No new SPEC line required.
+
+**Spec impact:** None — the spec already implies that clicking a
+typed-text field focuses it. This entry documents the implementation
+fix, not a new behaviour.
+
+**Cross-refs:**
+- [D-2026-05-17-B](./DECISIONS.md) — v0.19.0 CodeMirror 6 foundation
+  (MdTextarea introduced sr-only mirror).
+- [D-2026-05-17-D](./DECISIONS.md) — v0.21.0 mermaid decoration
+  (previous ship, same component).

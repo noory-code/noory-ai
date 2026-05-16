@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.21.1] — 2026-05-17
+
+### Fixed
+
+- **MdTextarea focus redirect** (D-2026-05-17-E) — clicking an
+  Inspector typed-text field now correctly lands keyboard focus on
+  the CodeMirror editor. Previously, the browser's click processing
+  could redirect focus to the hidden sr-only mirror textarea instead
+  of the CM editor; the textarea now immediately delegates any
+  received focus back to the CM view via `onFocus` → `view.focus()`.
+
 ## [0.21.0] — 2026-05-17
 
 Live Preview Stage 2 — mermaid SVG inline decoration. Any
