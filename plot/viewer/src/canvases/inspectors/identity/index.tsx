@@ -1,10 +1,15 @@
 /**
- * Per-kind inspector for ``identity`` Foundation nodes. v0.15 Phase 2.3.
+ * Per-kind inspector for ``identity`` Foundation nodes. v0.17 Phase 1
+ * (D-2026-05-16-A): every typed-text field value (``description`` /
+ * ``do`` / ``dont`` / ``body``) is an MD-formatted string in JSON.
+ * The DetailsSection MD-editor surface is hidden — JSON SSOT means
+ * no MD file editing.
  */
 import { useTranslation } from "react-i18next";
 import type { IdentityJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import { DoDontFields } from "../shared/DoDontFields";
 import type { KindInspectorProps } from "../types";
 
@@ -12,7 +17,7 @@ export function IdentityInspector(props: KindInspectorProps) {
   if (props.node.kind !== "identity") return null;
   const node = props.node;
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <IdentityFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
@@ -42,10 +47,11 @@ function IdentityFields({ node, onPatchNode }: IdentityFieldsProps) {
           value={node.description ?? ""}
           onChange={(e) => onPatchNode({ description: e.target.value })}
           placeholder="이 속성이 어떻게 드러나는가"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
       <DoDontFields node={node} onPatchNode={onPatchNode} />
+      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
 }

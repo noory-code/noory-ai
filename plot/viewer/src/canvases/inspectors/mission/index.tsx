@@ -1,17 +1,22 @@
 /**
- * Per-kind inspector for ``mission`` Foundation nodes. v0.15 Phase 2.4.
+ * Per-kind inspector for ``mission`` Foundation nodes. v0.17 Phase 1
+ * (D-2026-05-16-A): every typed-text field value (``what_we_do`` /
+ * ``why`` / ``direction`` / ``body``) is an MD-formatted string in
+ * JSON. The DetailsSection MD-editor surface is hidden — JSON SSOT
+ * means no MD file editing.
  */
 import { useTranslation } from "react-i18next";
 import type { MissionJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import type { KindInspectorProps } from "../types";
 
 export function MissionInspector(props: KindInspectorProps) {
   if (props.node.kind !== "mission") return null;
   const node = props.node;
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <MissionFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
@@ -41,7 +46,7 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
           value={node.what_we_do ?? ""}
           onChange={(e) => onPatchNode({ what_we_do: e.target.value })}
           placeholder="우리는 매일 …"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
       <label className="mb-2 block">
@@ -52,10 +57,10 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
           value={node.why ?? ""}
           onChange={(e) => onPatchNode({ why: e.target.value })}
           placeholder="사람들이 … 하기를 바라서"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
-      <label className="block">
+      <label className="mb-2 block">
         <span className="text-xs font-semibold text-slate-700">
           {t("inspector.field.direction")}
         </span>
@@ -67,9 +72,10 @@ function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
           value={node.direction ?? ""}
           onChange={(e) => onPatchNode({ direction: e.target.value })}
           placeholder="누구나 … 인 일상으로"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
+      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
 }

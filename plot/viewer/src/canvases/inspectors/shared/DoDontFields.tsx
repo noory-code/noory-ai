@@ -34,7 +34,7 @@ export function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
           value={node.do ?? ""}
           onChange={(e) => onPatchNode({ do: e.target.value })}
           placeholder="이렇게 행동/표현한다"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-emerald-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-emerald-600 focus:outline-none"
         />
       </label>
       <label className="block">
@@ -45,7 +45,7 @@ export function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
           value={node.dont ?? ""}
           onChange={(e) => onPatchNode({ dont: e.target.value })}
           placeholder="이렇게는 안 한다"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-rose-600 focus:outline-none"
         />
       </label>
     </>

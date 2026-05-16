@@ -1,10 +1,15 @@
 /**
- * Per-kind inspector for ``core_value`` Foundation nodes. v0.15 Phase 2.3.
+ * Per-kind inspector for ``core_value`` Foundation nodes. v0.17 Phase 1
+ * (D-2026-05-16-A): every typed-text field value (``definition`` /
+ * ``do`` / ``dont`` / ``body``) is an MD-formatted string in JSON.
+ * The DetailsSection MD-editor surface is hidden — JSON SSOT means
+ * no MD file editing.
  */
 import { useTranslation } from "react-i18next";
 import type { CoreValueJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
+import { BodyField } from "../shared/BodyField";
 import { DoDontFields } from "../shared/DoDontFields";
 import type { KindInspectorProps } from "../types";
 
@@ -12,7 +17,7 @@ export function CoreValueInspector(props: KindInspectorProps) {
   if (props.node.kind !== "core_value") return null;
   const node = props.node;
   return (
-    <BaseInspector {...props}>
+    <BaseInspector {...props} hideDetailsSection>
       <CoreValueFields node={node} onPatchNode={props.onPatchNode} />
     </BaseInspector>
   );
@@ -42,10 +47,11 @@ function CoreValueFields({ node, onPatchNode }: CoreValueFieldsProps) {
           value={node.definition ?? ""}
           onChange={(e) => onPatchNode({ definition: e.target.value })}
           placeholder="한두 문장으로"
-          className="mt-1 w-full resize-y rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          className="mt-1 w-full resize-y whitespace-pre-wrap rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-indigo-600 focus:outline-none"
         />
       </label>
       <DoDontFields node={node} onPatchNode={onPatchNode} />
+      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
 }

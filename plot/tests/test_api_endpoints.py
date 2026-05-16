@@ -570,8 +570,15 @@ def test_file_put_does_not_touch_canvas(
         params={"project_path": project_path},
     ).json()
     refreshed_mission = next(n for n in core_after["nodes"] if n["id"] == mission["id"])
-    # details_path stays the same — file write didn't touch the canvas.
-    assert refreshed_mission["details_path"] == "core/mission-mission/details.md"
+    # v0.17 Phase 1 (D-2026-05-16-A): Foundation typed-text kinds carry no
+    # details_path in JSON. The absorption migrator clears the user-set
+    # custom path on Mission/CoreValue/Identity unconditionally — JSON
+    # SSOT now covers all MD-syntax fields (typed + body); per-node MD
+    # editing surface is gone. The test's premise — "writing a file via
+    # /api/files does not touch the canvas as a side-effect" — still
+    # holds: the canvas mutation that cleared details_path was the PUT
+    # at line above, not the file write.
+    assert refreshed_mission["details_path"] is None
 
 
 def test_folder_post_creates_unique_path(

@@ -126,6 +126,7 @@
       "receives": "Receives",
       "do": "Do",
       "dont": "Don't",
+      "body": "Notes (Markdown)",
       "longFormDetails": "Long-form details"
     },
     "fieldHint": {
@@ -154,7 +155,8 @@
       "definition": "what this value means",
       "description": "how this aspect is expressed",
       "do": "concrete positive example",
-      "dont": "anti-pattern"
+      "dont": "anti-pattern",
+      "body": "long-form notes; Markdown syntax supported"
     },
     "valueFlowHeader": "Value flow (this service ↔ this actor)",
     "referencesHeader": "References — {{label}}",

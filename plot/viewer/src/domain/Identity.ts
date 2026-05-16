@@ -1,8 +1,8 @@
 /**
- * v0.15 Phase 2.3 — ``identity`` entity class. Foundation kind. Carries
- * ``description`` + the shared ``do`` / ``dont`` pair; the typed text
- * lives in the per-node MD template, merged into the in-memory wire
- * shape by ``folder_io.py``.
+ * v0.17 Phase 1 (D-2026-05-16-A) — ``identity`` Foundation entity.
+ * JSON is the sole SSOT: every typed-text field value (``description``
+ * / ``do`` / ``dont`` / ``body``) is an MD-formatted string carried
+ * inline. Per-node MD files are publish-output only (Phase 3+).
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -14,6 +14,7 @@ export interface IdentityJson extends BaseFieldsJson {
   description: string;
   do: string;
   dont: string;
+  body: string;
 }
 
 export class Identity implements BaseFields {
@@ -37,12 +38,20 @@ export class Identity implements BaseFields {
   readonly description: string;
   readonly do: string;
   readonly dont: string;
+  readonly body: string;
 
-  private constructor(base: BaseFields, description: string, doField: string, dont: string) {
+  private constructor(
+    base: BaseFields,
+    description: string,
+    doField: string,
+    dont: string,
+    body: string,
+  ) {
     Object.assign(this, base);
     this.description = description;
     this.do = doField;
     this.dont = dont;
+    this.body = body;
   }
 
   static fromJson(raw: unknown): Identity {
@@ -59,6 +68,7 @@ export class Identity implements BaseFields {
       readOptionalString(obj.description, "description", raw),
       readOptionalString(obj.do, "do", raw),
       readOptionalString(obj.dont, "dont", raw),
+      readOptionalString(obj.body, "body", raw),
     );
   }
 
@@ -82,6 +92,7 @@ export class Identity implements BaseFields {
       description: this.description,
       do: this.do,
       dont: this.dont,
+      body: this.body,
     };
   }
 }

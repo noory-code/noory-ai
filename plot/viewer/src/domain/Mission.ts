@@ -1,7 +1,9 @@
 /**
- * v0.15 Phase 2.4 — ``mission`` Foundation entity. Carries ``what_we_do``
- * + ``why`` + ``direction``. Typed text lives in MD template; the wire
- * shape is the merge result.
+ * v0.17 Phase 1 (D-2026-05-16-A) — ``mission`` Foundation entity. JSON
+ * is the sole SSOT: every typed-text field value (``what_we_do`` /
+ * ``why`` / ``direction`` / ``body``) is an MD-formatted string,
+ * carried inline in the wire shape. Per-node MD files are
+ * publish-output only (Phase 3+).
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -13,6 +15,7 @@ export interface MissionJson extends BaseFieldsJson {
   what_we_do: string;
   why: string;
   direction: string;
+  body: string;
 }
 
 export class Mission implements BaseFields {
@@ -36,12 +39,20 @@ export class Mission implements BaseFields {
   readonly what_we_do: string;
   readonly why: string;
   readonly direction: string;
+  readonly body: string;
 
-  private constructor(base: BaseFields, what_we_do: string, why: string, direction: string) {
+  private constructor(
+    base: BaseFields,
+    what_we_do: string,
+    why: string,
+    direction: string,
+    body: string,
+  ) {
     Object.assign(this, base);
     this.what_we_do = what_we_do;
     this.why = why;
     this.direction = direction;
+    this.body = body;
   }
 
   static fromJson(raw: unknown): Mission {
@@ -58,6 +69,7 @@ export class Mission implements BaseFields {
       readOptionalString(obj.what_we_do, "what_we_do", raw),
       readOptionalString(obj.why, "why", raw),
       readOptionalString(obj.direction, "direction", raw),
+      readOptionalString(obj.body, "body", raw),
     );
   }
 
@@ -81,6 +93,7 @@ export class Mission implements BaseFields {
       what_we_do: this.what_we_do,
       why: this.why,
       direction: this.direction,
+      body: this.body,
     };
   }
 }

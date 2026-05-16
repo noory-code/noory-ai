@@ -3942,3 +3942,129 @@ in the same browser-verification round:
 - **Next-session impact:** ``잔여 silent state`` entry (D-2026-05-13-I)
   may be partially or fully resolved by this fix. Re-evaluate after
   Gate 3 hands-on confirms storm is gone.
+
+### D-2026-05-16-A — Phase 1 JSON SSOT (MD absorbed, _legacy/ quarantine)
+
+- **What:** Implement Phase 1 of the 6-phase JSON SSOT sequence
+  pinned by D-2026-05-13-O. Foundation typed-text kinds
+  (mission / core_value / identity) carry every MD-syntax string
+  field (typed + new ``body``) inline in JSON; the read-side
+  migrator ``_absorb_md_typed_text_into_json`` ingests pre-v0.17
+  ``foundation/{kind}-{slug}.md`` files into the JSON node and
+  quarantines them to ``foundation/_legacy/``. ``write_canvas`` no
+  longer splits typed fields out to MD; ``details_path`` is cleared
+  on these kinds unconditionally; the viewer's DetailsSection
+  MD-editor surface is hidden via a new ``hideDetailsSection`` prop
+  on ``BaseInspector``. Inspector typed-text textareas become
+  monospace + newline-preserving so users edit raw MD-syntax
+  strings. A shared ``BodyField`` component renders the new ``body``
+  field in all 3 inspectors.
+
+- **Why:** D-2026-05-13-O's principle #1 (JSON = SSOT) and #2 (JSON
+  value = MD-formatted string) cannot coexist with the v0.13
+  eviction-and-rehydration loop. Phase 1 retires the dual-storage
+  model — a precondition for Phase 2 (per-node versioning) and
+  Phase 3 (Publish button, MD becomes pure output).
+
+- **Conflict policy (the 4 scenarios named in the plan-file):**
+  - JSON empty, MD populated → MD wins; absorb.
+  - JSON populated, MD missing → no-op (JSON already SSoT).
+  - Both populated → JSON wins (latest); MD still quarantined.
+  - Both empty → no-op.
+
+  Plus a 5th invariant: ``details_path`` is cleared on Foundation
+  typed-text kinds regardless of value (canonical or
+  user-set-custom), because the v0.17 UI no longer surfaces an MD
+  editor for these kinds.
+
+- **Why per-node ``body`` is structurally just another MD-syntax
+  field, not a separate "free prose" channel:** Per user
+  re-confirmation 2026-05-16 (*"json 이 원천이라고 그리고 거기
+  들어가는 밸류 필드의 문법이 엠디 여야한다고"*). The new ``body``
+  field's value is an MD-syntax string identical in handling to
+  ``what_we_do`` / ``definition`` / ``do`` / etc. Its semantic role
+  ("long-form notes") is conveyed only by its i18n label
+  (``inspector.field.body`` — "Notes (Markdown)" / "노트
+  (Markdown)"); the storage and editing model is uniform.
+
+- **Why ``_legacy/`` quarantine (not delete):** Data preservation.
+  Phase 6 (v0.19.1) will offer a one-time user prompt to delete the
+  quarantine after they confirm migration safety in real projects.
+  No precedent existed in the codebase for this pattern; the
+  migrator introduces it.
+
+- **Why ``_split_foundation_typed_text_to_md`` deleted (not
+  neutered):** Plan-file Phase 1 explicitly says "replace ... with
+  a one-shot read-side migrator". Pydantic ``model_dump(by_alias=True)``
+  already emits every field — including the new ``body`` — directly
+  to the JSON output, so a no-op shim adds nothing. Deletion makes
+  the disk-write code path readable end-to-end.
+
+- **Why ``collect_foundation_md_warnings`` returns ``{}`` instead
+  of being deleted:** It is called from
+  ``api_endpoints.canvas_get_endpoint`` to surface MD-template
+  warnings in the API response. After absorption no canonical MD
+  files exist, so warnings are always empty. Kept as a stable
+  callable for backward API compatibility; Phase 6 deletes the
+  call site.
+
+- **Alternatives considered and rejected:**
+  - Co-equal JSON+MD storage (the v0.13 status quo) — creates two
+    SSoTs; principle #1 forbids.
+  - Per-canvas single MD file (D-2026-05-13-J point #4) — already
+    superseded by D-2026-05-13-O point #4.
+  - Drop free prose entirely on absorption — data loss; user
+    explicitly chose ``body`` field for preservation.
+  - Keep ``details_path`` pointing at the quarantined file — re-
+    enables the DetailsSection MD editor surface, contradicting the
+    user's "MD 파일 편집은 사용자가 못하게" intent.
+  - WYSIWYG / MD-preview editor in Phase 1 — out of scope per
+    user's "preview 없음" decision; raw monospace edit suffices.
+
+- **Approval:** **Accepted** by user, 2026-05-16. Approved sequence:
+  plan-mode plan (``~/.claude/plans/eager-fluttering-moore.md``)
+  approved → 3 design questions answered (body field added; legacy
+  link not kept; MD editing disabled) → mid-implementation re-anchor
+  ("json 이 원천이라고") → Gate 4 confirmation ("이거 하고 게이트
+  4까지 합시다") covering the implementation as a whole.
+
+- **Spec impact:**
+  - ``plot/docs/PRODUCT_SPEC.md`` §15 #2 — Phase 1 status updated
+    from "queued" to "shipped 2026-05-16".
+  - ``plot/docs/NEXT_SESSION.md`` — ``Phase 1`` active-queue entry
+    archived; ``Phase 2`` becomes the next trigger.
+  - ``plot/docs/SPEC.md`` — Foundation typed-text storage line
+    inside §Storage updated to reflect JSON-SSOT.
+
+- **Files in this commit:**
+  - Server: ``plot_mcp/models.py``, ``plot_mcp/folder_io.py``.
+  - Server tests: ``tests/test_folder_io.py``,
+    ``tests/test_api_endpoints.py``.
+  - Viewer domain: ``viewer/src/domain/{Mission,CoreValue,Identity}.ts``.
+  - Viewer inspectors: ``viewer/src/canvases/inspectors/BaseInspector.tsx``,
+    ``shared/BodyField.tsx`` (new),
+    ``shared/DoDontFields.tsx``,
+    ``{mission,core_value,identity}/index.tsx``.
+  - Viewer i18n: ``viewer/src/i18n/locales/{en,ko}.json``.
+  - Docs: this entry + CHANGELOG + PRODUCT_SPEC + NEXT_SESSION + SPEC.
+  - Manifest: ``plot/.claude-plugin/plugin.json`` 0.16.40 → 0.17.0.
+
+- **Test counts:**
+  - Server: 283 → 290 (+7 ``test_absorb_md_typed_text_into_json_*``).
+  - Viewer: unchanged (488 / 488 still green; schema-parity auto-
+    flowed the new ``body`` field).
+
+- **Related entries:**
+  - D-2026-05-13-O — vision pin this entry implements (Phase 1 of
+    the 6-phase sequence).
+  - D-2026-05-13-J — earlier 4-point vision, point #4 superseded
+    by D-2026-05-13-O.
+  - D-2026-05-12-A — v0.13 co-equal storage being retired.
+
+- **Next phase trigger:** ``Phase 2`` / ``BaseFields version`` /
+  ``v1.0 필드`` — adds ``version: str = "v1.0"`` to
+  ``BaseNodeFields`` with ``^v\\d+\\.\\d+$`` validator (server) +
+  mirror in TS (viewer). No UI surface yet. The Phase 2 ship
+  version is decided in its own plan-mode entry; the originally
+  planned slot ``v0.17.1`` may be taken by an unrelated patch ship
+  (e.g. UX polish) before Phase 2 lands.

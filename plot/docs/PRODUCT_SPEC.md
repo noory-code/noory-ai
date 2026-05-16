@@ -299,7 +299,11 @@ implementation clarity. Logged here so they don't get lost.
    approval, see D-2026-05-13-O):
 
    - **Phase 0** (shipped v0.16.40, 2026-05-13) — Vision pin docs.
-   - **Phase 1** — MD → JSON absorption (kill MD-as-SoT).
+   - **Phase 1** (shipped v0.17.0, 2026-05-16) — MD → JSON
+     absorption: typed-text fields + new `body` live in JSON as
+     MD-syntax strings; legacy MD quarantined to `_legacy/`;
+     viewer's MD-editor surface hidden for the 3 typed-text kinds.
+     See D-2026-05-16-A.
    - **Phase 2** — `version: str = "v1.0"` in BaseFields.
    - **Phase 3** — "Publish" button + per-node MD export + MAJOR.
    - **Phase 4** — MINOR propagation (ancestor chain).

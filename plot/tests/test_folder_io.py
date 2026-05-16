@@ -412,3 +412,259 @@ def test_orphan_non_anchor_edges_still_stripped(plot_root: Path) -> None:
     # First read should strip the orphan edge.
     doc = read_canvas(plot_root, "alpha", "foundation")
     assert len(doc.edges) == 0, "orphan (non-anchor) edge must still be stripped"
+
+
+# ---------------------------------------------------------------------------
+# v0.17 Phase 1 — JSON SSOT (D-2026-05-16-A) absorption migrator
+# ---------------------------------------------------------------------------
+
+
+def _seed_foundation_with_md(
+    plot_root: Path,
+    project_id: str,
+    *,
+    json_mission_what_we_do: str = "",
+    json_mission_body: str = "",
+    md_what_we_do: str | None = "We help **users** discover.\n\n- A\n- B",
+    md_why: str | None = "Because clarity matters.",
+    md_direction: str | None = "Toward shared intent.",
+    md_free_prose: str | None = "Longer notes here.\n## subsection\nWith MD syntax.",
+    mission_label: str = "Mission",
+    json_details_path: str | None = None,
+) -> tuple[Path, Path]:
+    """Helper: bootstrap a foundation canvas with the default mission +
+    core_value + identity nodes (validator requires all three) and a
+    legacy MD file alongside the mission node at the canonical path.
+    Returns (canvas_path, md_path). Set md_* to None to skip writing
+    that MD section; set json_* to pre-populate JSON values."""
+    import json as _json
+
+    from plot_mcp.folder_io import _canvas_file, _foundation_md_path
+    from plot_mcp.models import CoreValueNode, IdentityNode, MissionNode
+
+    create_project(plot_root, project_id, project_id.capitalize())
+    canvas_path = _canvas_file(plot_root, project_id, "foundation")
+    mission_dict = MissionNode(id="m", label=mission_label).model_dump()
+    if json_mission_what_we_do:
+        mission_dict["what_we_do"] = json_mission_what_we_do
+    if json_mission_body:
+        mission_dict["body"] = json_mission_body
+    if json_details_path is not None:
+        mission_dict["details_path"] = json_details_path
+    core_value_dict = CoreValueNode(id="cv", label="Value").model_dump()
+    identity_dict = IdentityNode(id="id1", label="Persona").model_dump()
+    raw = {
+        "canvas_id": "foundation",
+        "canvas_kind": "foundation",
+        "service_ref": None,
+        "nodes": [mission_dict, core_value_dict, identity_dict],
+        "edges": [],
+    }
+    canvas_path.write_text(_json.dumps(raw), encoding="utf-8")
+
+    md_path = _foundation_md_path(plot_root, project_id, "mission", "m", mission_label)
+    md_chunks: list[str] = [f"# {mission_label}", ""]
+    if md_what_we_do is not None:
+        md_chunks += ["## What we do", md_what_we_do, ""]
+    if md_why is not None:
+        md_chunks += ["## Why", md_why, ""]
+    if md_direction is not None:
+        md_chunks += ["## Direction", md_direction, ""]
+    if md_free_prose is not None:
+        md_chunks += ["---", md_free_prose]
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    md_path.write_text("\n".join(md_chunks), encoding="utf-8")
+    return canvas_path, md_path
+
+
+def test_absorb_md_typed_text_into_json_basic(plot_root: Path) -> None:
+    """JSON empty + MD populated → typed fields + body filled (MD-syntax
+    strings preserved verbatim), MD moved to ``foundation/_legacy/``,
+    details_path cleared to None."""
+    from plot_mcp.folder_io import _legacy_md_dir
+
+    canvas_path, md_path = _seed_foundation_with_md(plot_root, "alpha")
+
+    doc = read_canvas(plot_root, "alpha", "foundation")
+    mission = next(n for n in doc.nodes if n.kind == "mission")
+
+    assert mission.what_we_do == "We help **users** discover.\n\n- A\n- B"
+    assert mission.why == "Because clarity matters."
+    assert mission.direction == "Toward shared intent."
+    # parse_md_template normalises free-prose to rstripped + trailing "\n".
+    assert mission.body == "Longer notes here.\n## subsection\nWith MD syntax.\n"
+    assert mission.details_path is None
+
+    assert not md_path.exists(), "original MD must be moved out of the canonical path"
+    legacy_md = _legacy_md_dir(plot_root, "alpha") / md_path.name
+    assert legacy_md.exists(), "legacy quarantine must contain the original MD"
+
+
+def test_absorb_md_typed_text_into_json_both_populated_json_wins(plot_root: Path) -> None:
+    """JSON populated + MD populated → JSON values retained; MD still
+    quarantined."""
+    from plot_mcp.folder_io import _legacy_md_dir
+
+    canvas_path, md_path = _seed_foundation_with_md(
+        plot_root,
+        "alpha",
+        json_mission_what_we_do="json-wins",
+        json_mission_body="json-body-wins",
+    )
+
+    doc = read_canvas(plot_root, "alpha", "foundation")
+    mission = next(n for n in doc.nodes if n.kind == "mission")
+    assert mission.what_we_do == "json-wins"
+    assert mission.body == "json-body-wins"
+    # Fields that JSON didn't populate fall back to MD.
+    assert mission.why == "Because clarity matters."
+    assert not md_path.exists()
+    legacy_md = _legacy_md_dir(plot_root, "alpha") / md_path.name
+    assert legacy_md.exists(), "MD is quarantined regardless of conflict outcome"
+
+
+def test_absorb_md_typed_text_into_json_no_md_file(plot_root: Path) -> None:
+    """No MD on disk → no field absorption. details_path cleared only
+    if it pointed at the canonical (absent) MD path."""
+    import json as _json
+
+    from plot_mcp.folder_io import _canvas_file, _foundation_md_path
+    from plot_mcp.models import CoreValueNode, IdentityNode, MissionNode
+
+    create_project(plot_root, "alpha", "Alpha")
+    canonical_rel = str(
+        _foundation_md_path(plot_root, "alpha", "mission", "m", "Mission").relative_to(
+            plot_root / "alpha"
+        )
+    ).replace("\\", "/")
+
+    canvas_path = _canvas_file(plot_root, "alpha", "foundation")
+    mission_dict = MissionNode(id="m", label="Mission", what_we_do="kept").model_dump()
+    mission_dict["details_path"] = canonical_rel
+    raw = {
+        "canvas_id": "foundation",
+        "canvas_kind": "foundation",
+        "service_ref": None,
+        "nodes": [
+            mission_dict,
+            CoreValueNode(id="cv", label="Value").model_dump(),
+            IdentityNode(id="id1", label="Persona").model_dump(),
+        ],
+        "edges": [],
+    }
+    canvas_path.write_text(_json.dumps(raw), encoding="utf-8")
+
+    doc = read_canvas(plot_root, "alpha", "foundation")
+    mission = next(n for n in doc.nodes if n.kind == "mission")
+    assert mission.what_we_do == "kept"
+    assert mission.details_path is None, "canonical-pointing details_path is cleared"
+
+
+def test_absorb_md_typed_text_into_json_idempotent(plot_root: Path) -> None:
+    """Calling read_canvas three times moves the MD exactly once; the
+    _legacy/ directory carries one entry; mtime is stable on repeat."""
+    from plot_mcp.folder_io import _legacy_md_dir
+
+    canvas_path, md_path = _seed_foundation_with_md(plot_root, "alpha")
+    read_canvas(plot_root, "alpha", "foundation")
+    legacy_dir = _legacy_md_dir(plot_root, "alpha")
+    legacy_entries_after_first = sorted(p.name for p in legacy_dir.iterdir())
+    canvas_mtime_after_first = canvas_path.stat().st_mtime
+
+    for _ in range(2):
+        read_canvas(plot_root, "alpha", "foundation")
+
+    legacy_entries_after_third = sorted(p.name for p in legacy_dir.iterdir())
+    assert legacy_entries_after_third == legacy_entries_after_first, (
+        "_legacy/ must not gain duplicates across repeated reads"
+    )
+    assert canvas_path.stat().st_mtime == canvas_mtime_after_first, (
+        "canvas.json mtime must be stable on idle reads after the one-shot migration"
+    )
+
+
+def test_absorb_md_typed_text_into_json_preserves_md_syntax(plot_root: Path) -> None:
+    """Typed field values + body retain MD syntax (bold, bullets,
+    headings, newlines) verbatim."""
+    raw_md_value = "**Bold** and `code`.\n\n- bullet one\n- bullet two"
+    body_md = "## Long-form\n\nMore *italic* text.\n\n```python\nprint('hi')\n```"
+
+    _seed_foundation_with_md(
+        plot_root,
+        "alpha",
+        md_what_we_do=raw_md_value,
+        md_free_prose=body_md,
+    )
+
+    doc = read_canvas(plot_root, "alpha", "foundation")
+    mission = next(n for n in doc.nodes if n.kind == "mission")
+    assert mission.what_we_do == raw_md_value
+    # parse_md_template normalises free-prose to rstripped + trailing "\n".
+    assert mission.body == body_md + "\n"
+
+
+def test_absorb_md_typed_text_into_json_post_hr_text_lands_in_body(plot_root: Path) -> None:
+    """The post-``---`` free-prose section maps to the new body field."""
+    _seed_foundation_with_md(
+        plot_root,
+        "alpha",
+        md_what_we_do="foo",
+        md_why=None,
+        md_direction=None,
+        md_free_prose="long notes\n## subsection",
+    )
+    doc = read_canvas(plot_root, "alpha", "foundation")
+    mission = next(n for n in doc.nodes if n.kind == "mission")
+    assert mission.what_we_do == "foo"
+    assert mission.body == "long notes\n## subsection\n"
+
+
+def test_absorb_md_typed_text_into_json_duplicate_slug_collision(plot_root: Path) -> None:
+    """A pre-existing _legacy entry at the same slug must not be
+    overwritten; the migrator appends the short node-id suffix and
+    keeps both files."""
+    import json as _json
+
+    from plot_mcp.folder_io import _canvas_file, _foundation_md_path, _legacy_md_dir
+    from plot_mcp.models import CoreValueNode, IdentityNode, MissionNode
+
+    create_project(plot_root, "alpha", "Alpha")
+    canvas_path = _canvas_file(plot_root, "alpha", "foundation")
+
+    legacy_dir = _legacy_md_dir(plot_root, "alpha")
+    legacy_dir.mkdir(parents=True, exist_ok=True)
+    existing = legacy_dir / "mission-mission.md"
+    existing.write_text("# preexisting legacy content", encoding="utf-8")
+
+    mission_dict = MissionNode(id="m_aaaaaaaa", label="Mission").model_dump()
+    canvas_path.write_text(
+        _json.dumps(
+            {
+                "canvas_id": "foundation",
+                "canvas_kind": "foundation",
+                "service_ref": None,
+                "nodes": [
+                    mission_dict,
+                    CoreValueNode(id="cv", label="Value").model_dump(),
+                    IdentityNode(id="id1", label="Persona").model_dump(),
+                ],
+                "edges": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    md_path = _foundation_md_path(plot_root, "alpha", "mission", "m_aaaaaaaa", "Mission")
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    md_path.write_text("# Mission\n\n## What we do\nnew content\n", encoding="utf-8")
+
+    read_canvas(plot_root, "alpha", "foundation")
+
+    assert existing.read_text(encoding="utf-8") == "# preexisting legacy content", (
+        "pre-existing _legacy entry must not be overwritten"
+    )
+    suffixed = legacy_dir / "mission-mission-m_aaaaaa.md"
+    assert suffixed.exists(), (
+        f"collision-suffixed legacy file must be created; "
+        f"have {sorted(p.name for p in legacy_dir.iterdir())}"
+    )
+    assert "new content" in suffixed.read_text(encoding="utf-8")

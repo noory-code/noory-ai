@@ -159,13 +159,15 @@ def read_canvas(
     # position/visual to ProjectDoc.anchors[canvas] and remove from nodes.
     if canvas_kind in ("foundation", "actors", "services"):
         raw = _evict_legacy_project_anchor(plot_root, project_id, canvas_kind, raw)
-    # v0.13 Phase 3+6 — for foundation, extract per-kind typed text out of
-    # canvas.json into ``foundation/{kind}-{slug}.md`` heading-section
-    # templates and (on read) merge them back into the in-memory node so
-    # the rest of the pipeline still sees a populated CanvasDoc.
+    # v0.17 Phase 1 (D-2026-05-16-A) — JSON is the single SSOT for
+    # Foundation typed-text fields. On first read of any pre-v0.17
+    # project, absorb the typed H2 sections + post-``---`` body from
+    # ``foundation/{kind}-{slug}.md`` into the JSON node, clear
+    # ``details_path``, and quarantine the source MD file to
+    # ``foundation/_legacy/``. Subsequent reads are no-ops (the
+    # original path no longer exists).
     if canvas_kind == "foundation":
-        raw = _evict_typed_text_to_md(plot_root, project_id, raw)
-        raw = _merge_md_typed_text_into_nodes(plot_root, project_id, raw)
+        raw = _absorb_md_typed_text_into_json(plot_root, project_id, raw)
     # v0.11.5 — services canvas no longer accepts Foundation refs (they
     # moved to service_detail). Drop any stale ones from older projects so
     # the canvas validates on open. Same idempotent pattern.
@@ -265,152 +267,106 @@ def _foundation_md_path(
     return _project_dir(plot_root, project_id) / "foundation" / f"{kind}-{base_slug}.md"
 
 
-def _evict_typed_text_to_md(
+def _legacy_md_dir(plot_root: Path, project_id: str) -> Path:
+    return _project_dir(plot_root, project_id) / "foundation" / "_legacy"
+
+
+def _absorb_md_typed_text_into_json(
     plot_root: Path, project_id: str, raw: dict[str, Any]
 ) -> dict[str, Any]:
-    """v0.13 Phase 3+6 migration helper: extract typed-text fields out of
-    Foundation node entries in canvas.json into per-node MD templates.
-    Idempotent — re-running with already-clean canvas.json + present MD
-    files is a no-op.
+    """v0.17 Phase 1 one-shot read-side migrator (D-2026-05-16-A).
 
-    Strategy:
-      For each node of kind in (mission/core_value/identity):
-        1. Compute the MD file path (kind-slug.md under foundation/).
-        2. If the canvas.json node still carries any typed-text values,
-           render an MD template merging those into the file (preserving
-           any existing free-prose body if the file already exists).
-        3. Strip the typed-text fields from the canvas.json node.
-        4. Set ``details_path`` to the new MD path so the viewer can
-           link the two surfaces.
+    For each Foundation node of a typed-text kind (mission / core_value /
+    identity), absorb the H2 typed sections + post-``---`` free prose
+    from ``foundation/{kind}-{slug}.md`` into the JSON node (typed fields
+    + new ``body`` field, all as MD-formatted strings), clear
+    ``details_path`` to ``None``, and quarantine the source MD file to
+    ``foundation/_legacy/{kind}-{slug}.md``.
+
+    Conflict policy (4 scenarios):
+      - JSON empty,   MD populated → MD wins; absorb.
+      - JSON populated, MD missing → no-op for fields (JSON already SSoT).
+      - Both populated              → JSON wins (latest); MD still quarantined.
+      - Both empty                  → no-op.
+
+    Idempotent: once the original MD path is gone, subsequent reads see
+    no source file and skip. The ``_legacy/`` quarantine is never read.
     """
-    from plot_mcp.md_template import parse_md_template, render_md_template
-    from plot_mcp.models import FOUNDATION_TYPED_TEXT_FIELDS
+    from plot_mcp.md_template import parse_md_template
+    from plot_mcp.models import FOUNDATION_MD_FIELDS, FOUNDATION_TYPED_TEXT_FIELDS
 
     nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
     changed = False
     new_nodes: list[dict[str, Any]] = []
     for n in nodes:
         kind = n.get("kind")
-        if not isinstance(kind, str):
-            new_nodes.append(n)
-            continue
-        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind, [])
-        if not typed_field_names:
-            new_nodes.append(n)
-            continue
-        # Collect any non-empty typed text from canvas.json.
-        existing_typed = {field: (n.get(field) or "") for field in typed_field_names}
-        has_inline = any(v.strip() for v in existing_typed.values())
-        # If there's no typed text inline AND no typed-text-keys at all,
-        # the node is already cleaned. Don't touch details_path or MD.
-        keys_present = any(field in n for field in typed_field_names)
-        if not has_inline and not keys_present:
+        if not isinstance(kind, str) or not FOUNDATION_MD_FIELDS.get(kind):
             new_nodes.append(n)
             continue
         md_path = _foundation_md_path(plot_root, project_id, kind, n["id"], n.get("label", ""))
-        # Preserve existing free prose if the MD file already exists.
-        existing_prose = ""
-        existing_md_typed: dict[str, str] = {}
-        if md_path.exists():
-            parsed = parse_md_template(md_path.read_text(encoding="utf-8"), kind)
-            existing_prose = parsed.free_prose
-            existing_md_typed = parsed.typed_fields
-        # Merge: canvas.json typed text wins on conflict (legacy data),
-        # but we don't blow away non-empty MD content if the canvas value
-        # is blank.
-        merged = dict(existing_md_typed)
-        for field, val in existing_typed.items():
-            if val.strip() or field not in merged:
-                merged[field] = val
-        # Always strip the typed-text keys from the canvas.json node.
-        cleaned = {k: v for k, v in n.items() if k not in typed_field_names}
-        # Set details_path to the project-relative MD path only when not
-        # already pointing at a real file (preserves user-set custom paths).
-        rel_md = md_path.relative_to(_project_dir(plot_root, project_id))
-        new_details = str(rel_md).replace("\\", "/")
-        existing_details = cleaned.get("details_path")
-        if not existing_details:
-            cleaned["details_path"] = new_details
-        if has_inline or not md_path.exists():
-            md_path.parent.mkdir(parents=True, exist_ok=True)
-            md_path.write_text(
-                render_md_template(kind, n.get("label", ""), merged, existing_prose),
-                encoding="utf-8",
-            )
-        # Compare each field individually to detect actual change.
-        if cleaned != n:
+        # No source MD → no field absorption + no quarantine move. But
+        # Foundation typed-text kinds carry no ``details_path`` in v0.17+
+        # (invariant per D-2026-05-16-A: JSON is SSOT for these kinds;
+        # the viewer's MD-editor surface is gone). Clear unconditionally
+        # if set; idempotent when already cleared.
+        if not md_path.exists():
+            if n.get("details_path") is not None:
+                cleaned = {**n, "details_path": None}
+                changed = True
+                new_nodes.append(cleaned)
+                continue
+            new_nodes.append(n)
+            continue
+        parsed = parse_md_template(md_path.read_text(encoding="utf-8"), kind)
+        merged = {**n}
+        # Typed H2 fields: JSON value wins when present, else absorb MD.
+        for field in FOUNDATION_TYPED_TEXT_FIELDS.get(kind, []):
+            json_val = str(merged.get(field) or "")
+            md_val = parsed.typed_fields.get(field, "")
+            if not json_val.strip() and md_val.strip():
+                merged[field] = md_val
+        # body ← MD's post-``---`` free prose (same conflict policy).
+        json_body = str(merged.get("body") or "")
+        if not json_body.strip() and parsed.free_prose.strip():
+            merged["body"] = parsed.free_prose
+        # Foundation typed-text kinds carry no details_path in v0.17+.
+        merged["details_path"] = None
+        # Quarantine the source MD file. ``Path.rename`` is atomic within
+        # the same filesystem; if the destination already exists (e.g.
+        # duplicate slug across nodes), append the node-id short suffix
+        # and try once more; if still colliding, leave the source in
+        # place and continue (no data loss, just deferred cleanup).
+        legacy_dir = _legacy_md_dir(plot_root, project_id)
+        legacy_dir.mkdir(parents=True, exist_ok=True)
+        dest = legacy_dir / md_path.name
+        if dest.exists():
+            short_id = str(n.get("id", ""))[:8] or "x"
+            dest = legacy_dir / f"{md_path.stem}-{short_id}.md"
+        if dest.exists():
+            # Two collisions — give up moving (rare; leave on disk).
+            new_nodes.append(merged)
             changed = True
-        new_nodes.append(cleaned)
+            continue
+        md_path.rename(dest)
+        new_nodes.append(merged)
+        changed = True
     if changed:
         raw = {**raw, "nodes": new_nodes}
         _write_json(_canvas_file(plot_root, project_id, "foundation"), raw)
     return raw
 
 
-def _merge_md_typed_text_into_nodes(
-    plot_root: Path, project_id: str, raw: dict[str, Any]
-) -> dict[str, Any]:
-    """v0.13 Phase 3+6: after eviction, re-attach typed-text fields to the
-    in-memory nodes by reading the per-kind MD template at the canonical
-    ``foundation/{kind}-{slug}.md`` path. Pure transform; no writes.
-
-    ``details_path`` is intentionally NOT used here — it may still point
-    at a legacy v0.7 ``{slug}/details.md`` (free-prose-only) location that
-    has nothing to do with v0.13 typed-text storage. The canonical path
-    derives from kind + label, matching what ``_evict_typed_text_to_md``
-    writes.
-    """
-    from plot_mcp.md_template import parse_md_template
-    from plot_mcp.models import FOUNDATION_TYPED_TEXT_FIELDS
-
-    nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
-    new_nodes: list[dict[str, Any]] = []
-    for n in nodes:
-        kind = n.get("kind")
-        if not isinstance(kind, str):
-            new_nodes.append(n)
-            continue
-        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind, [])
-        if not typed_field_names:
-            new_nodes.append(n)
-            continue
-        md_path = _foundation_md_path(plot_root, project_id, kind, n["id"], n.get("label", ""))
-        if not md_path.exists():
-            new_nodes.append(n)
-            continue
-        parsed = parse_md_template(md_path.read_text(encoding="utf-8"), kind)
-        merged = {**n}
-        for field in typed_field_names:
-            merged[field] = parsed.typed_fields.get(field, "")
-        new_nodes.append(merged)
-    return {**raw, "nodes": new_nodes}
-
-
 def collect_foundation_md_warnings(
     plot_root: Path, project_id: str, canvas: CanvasDoc
 ) -> dict[str, list[str]]:
-    """v0.13 Phase 7: scan each Foundation node's MD template and return
-    ``{node_id: [warning_strings...]}`` for any node whose parser raised
-    warnings. Empty mapping when everything is clean. Doesn't mutate the
-    canvas. Called by ``canvas_get_endpoint`` to enrich the API response
-    out-of-band so the model stays clean."""
-    if canvas.canvas_kind != "foundation":
-        return {}
-    from plot_mcp.md_template import parse_md_template
-    from plot_mcp.models import FOUNDATION_TYPED_TEXT_FIELDS
-
-    out: dict[str, list[str]] = {}
-    for n in canvas.nodes:
-        kind = n.kind
-        if not kind or not FOUNDATION_TYPED_TEXT_FIELDS.get(kind):
-            continue
-        md_path = _foundation_md_path(plot_root, project_id, kind, n.id, n.label)
-        if not md_path.exists():
-            continue
-        parsed = parse_md_template(md_path.read_text(encoding="utf-8"), kind)
-        if parsed.warnings:
-            out[n.id] = parsed.warnings
-    return out
+    """v0.17 Phase 1 (D-2026-05-16-A): JSON is the sole SSOT for
+    Foundation typed-text fields. The pre-v0.17 MD-template parser
+    warnings are no longer surfaced because there are no MD files left
+    at the canonical path after ``_absorb_md_typed_text_into_json``
+    runs. Kept as a stable callable so the API response shape stays
+    backward-compatible; Phase 6 will drop the call site entirely.
+    """
+    return {}
 
 
 def _evict_legacy_project_anchor(
@@ -495,10 +451,10 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
     service_id = canvas.service_ref if canvas.canvas_kind == "service_detail" else None
     path = _canvas_file(plot_root, project_id, canvas.canvas_kind, service_id)
     raw = canvas.model_dump(by_alias=True)
-    # v0.13 Phase 3+6: split foundation typed text out of the JSON entry
-    # into per-node MD templates. The JSON keeps only graph fields.
-    if canvas.canvas_kind == "foundation":
-        raw = _split_foundation_typed_text_to_md(plot_root, project_id, raw)
+    # v0.17 Phase 1 (D-2026-05-16-A) — JSON is the sole SSOT for
+    # Foundation typed-text fields. The v0.13 ``_split_foundation_typed_
+    # text_to_md`` write-side helper is gone; Pydantic now serialises
+    # every field (typed + body) into the JSON output directly.
     _write_json(path, raw)
     try:
         meta = read_project(plot_root, project_id)
@@ -508,48 +464,6 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
     # from a per-canvas project node (the node is gone). Renames go through
     # ``rename_project`` directly. We just bump updated below.
     write_project(plot_root, meta)
-
-
-def _split_foundation_typed_text_to_md(
-    plot_root: Path, project_id: str, raw: dict[str, Any]
-) -> dict[str, Any]:
-    """v0.13 Phase 3+6: on foundation write, render any typed text on each
-    kind node into the canonical ``foundation/{kind}-{slug}.md`` template
-    (preserving any existing free prose) and strip the typed-text fields
-    from the JSON entry."""
-    from plot_mcp.md_template import parse_md_template, render_md_template
-    from plot_mcp.models import FOUNDATION_TYPED_TEXT_FIELDS
-
-    nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
-    new_nodes: list[dict[str, Any]] = []
-    for n in nodes:
-        kind = n.get("kind")
-        if not isinstance(kind, str):
-            new_nodes.append(n)
-            continue
-        typed_field_names = FOUNDATION_TYPED_TEXT_FIELDS.get(kind, [])
-        if not typed_field_names:
-            new_nodes.append(n)
-            continue
-        # Pull current typed text out of the JSON entry; defaults to "".
-        typed = {field: (n.get(field) or "") for field in typed_field_names}
-        md_path = _foundation_md_path(plot_root, project_id, kind, n["id"], n.get("label", ""))
-        # Preserve free prose if a prior MD file exists.
-        existing_prose = ""
-        if md_path.exists():
-            existing_prose = parse_md_template(md_path.read_text(encoding="utf-8"), kind).free_prose
-        md_path.parent.mkdir(parents=True, exist_ok=True)
-        md_path.write_text(
-            render_md_template(kind, n.get("label", ""), typed, existing_prose),
-            encoding="utf-8",
-        )
-        # Strip typed-text fields from the JSON entry; ensure details_path.
-        cleaned = {k: v for k, v in n.items() if k not in typed_field_names}
-        if not cleaned.get("details_path"):
-            rel_md = md_path.relative_to(_project_dir(plot_root, project_id))
-            cleaned["details_path"] = str(rel_md).replace("\\", "/")
-        new_nodes.append(cleaned)
-    return {**raw, "nodes": new_nodes}
 
 
 def rename_project(plot_root: Path, project_id: str, new_name: str) -> ProjectDoc:

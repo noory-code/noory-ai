@@ -188,27 +188,44 @@ canvas:
 
 ---
 
-## ⚠ Markdown-template warning badge
+## Foundation typed-text storage (v0.17+)
 
 Each Foundation typed-text node (`mission`, `core_value`, `identity`)
-stores its body in `foundation/{kind}-{id}.md` with named sections per
-typed field (e.g. `## What we do`, `## Why`, `## Direction` for
-mission).
+stores its content **inline in JSON** as MD-syntax string values per
+D-2026-05-13-O principle #2 + D-2026-05-16-A. Fields are:
 
-**Behaviour:**
-- Server reads the MD file each time the canvas is fetched and
-  collects warnings via `collect_foundation_md_warnings`.
-- Each warning string identifies the offending typed-field section
-  (currently: missing or empty section).
-- Warnings ride along on each node as `_md_warnings: string[]`.
-- When non-empty:
-  - The node renders a small ⚠ badge (top-right). Visual: white fill,
-    amber-700 glyph, amber-500 ring + shadow, so it stays readable on
-    the cream / pastel-orange / pastel-yellow card backgrounds.
-  - The Inspector header section lists each warning in full, plus a
-    pointer to the source MD file.
-- The badge is purely informational. Clicking it does nothing
-  (Inspector already shows the same list when the node is selected).
+- `mission` — `what_we_do`, `why`, `direction`, `body`
+- `core_value` — `definition`, `do`, `dont`, `body`
+- `identity` — `description`, `do`, `dont`, `body`
+
+Every value is a Markdown-formatted string; newlines, bullets, bold,
+links survive verbatim. The viewer's per-kind Inspector renders each
+field as a monospace `<textarea>` so users edit the raw MD source
+(rendered preview lands in a later phase).
+
+**No per-file MD editing surface.** The shared `DetailsSection.tsx`
+chrome (legacy MD editor for kinds whose long-form lives in
+`{slug}/details.md`) is hidden on these 3 kinds via the
+`hideDetailsSection` prop on `BaseInspector`. `details_path` carries
+no value on Foundation typed-text kinds — it is cleared
+unconditionally by the read-side migrator. Per-node MD files become
+publish-output only in Phase 3.
+
+**Pre-v0.17 migration:** First `read_canvas` of any project with
+legacy `foundation/{kind}-{slug}.md` files runs
+`_absorb_md_typed_text_into_json` to ingest the H2 sections + the
+post-`---` free prose into the JSON node, then renames the source
+file into `foundation/_legacy/`. Subsequent reads are no-ops
+(idempotent). Quarantine — not deletion — preserves user data until
+Phase 6 purge (v0.19.1).
+
+**⚠ MD-template warning badge — retired (kept as no-op):** The pre-
+v0.17 badge surfaced parser warnings on the canvas card. After
+absorption no canonical MD file remains, so warnings are always
+empty; `collect_foundation_md_warnings` returns `{}` and the badge
+no longer renders on the 3 typed-text kinds. The function is kept
+callable for backward API compatibility; Phase 6 deletes the call
+site.
 
 ---
 

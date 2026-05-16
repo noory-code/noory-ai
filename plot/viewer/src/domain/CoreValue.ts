@@ -1,8 +1,8 @@
 /**
- * v0.15 Phase 2.3 — ``core_value`` entity class. Foundation kind whose
- * typed text (``definition`` / ``do`` / ``dont``) lives in the per-node
- * MD template; the wire-shape representation here mirrors what
- * folder_io.py merges back into the in-memory CanvasDoc.
+ * v0.17 Phase 1 (D-2026-05-16-A) — ``core_value`` Foundation entity.
+ * JSON is the sole SSOT: every typed-text field value (``definition``
+ * / ``do`` / ``dont`` / ``body``) is an MD-formatted string carried
+ * inline. Per-node MD files are publish-output only (Phase 3+).
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -14,6 +14,7 @@ export interface CoreValueJson extends BaseFieldsJson {
   definition: string;
   do: string;
   dont: string;
+  body: string;
 }
 
 export class CoreValue implements BaseFields {
@@ -37,12 +38,20 @@ export class CoreValue implements BaseFields {
   readonly definition: string;
   readonly do: string;
   readonly dont: string;
+  readonly body: string;
 
-  private constructor(base: BaseFields, definition: string, doField: string, dont: string) {
+  private constructor(
+    base: BaseFields,
+    definition: string,
+    doField: string,
+    dont: string,
+    body: string,
+  ) {
     Object.assign(this, base);
     this.definition = definition;
     this.do = doField;
     this.dont = dont;
+    this.body = body;
   }
 
   static fromJson(raw: unknown): CoreValue {
@@ -59,6 +68,7 @@ export class CoreValue implements BaseFields {
       readOptionalString(obj.definition, "definition", raw),
       readOptionalString(obj.do, "do", raw),
       readOptionalString(obj.dont, "dont", raw),
+      readOptionalString(obj.body, "body", raw),
     );
   }
 
@@ -82,6 +92,7 @@ export class CoreValue implements BaseFields {
       definition: this.definition,
       do: this.do,
       dont: this.dont,
+      body: this.body,
     };
   }
 }

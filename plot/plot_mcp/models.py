@@ -185,33 +185,43 @@ class ProjectNode(BaseNodeFields):
 
 
 class MissionNode(BaseNodeFields):
-    """v0.13 Phase 1: mission kind. Typed text (``what_we_do`` / ``why`` /
-    ``direction``) lives in the per-node MD template, not in JSON."""
+    """v0.17 Phase 1: mission kind. JSON = SSOT. Every typed-text field
+    value (``what_we_do`` / ``why`` / ``direction`` / ``body``) is an
+    MD-formatted string. Per-node MD files are publish-output only
+    (Phase 3+). Pre-v0.17 projects are absorbed on first read via
+    ``_absorb_md_typed_text_into_json``."""
 
     kind: Literal["mission"] = "mission"
     what_we_do: str = ""
     why: str = ""
     direction: str = ""
+    body: str = ""
 
 
 class CoreValueNode(BaseNodeFields):
-    """v0.13 Phase 1: core_value kind. Typed text (``definition`` / ``do`` /
-    ``dont``) lives in the per-node MD template, not in JSON."""
+    """v0.17 Phase 1: core_value kind. JSON = SSOT. Every typed-text field
+    value (``definition`` / ``do`` / ``dont`` / ``body``) is an
+    MD-formatted string. Per-node MD files are publish-output only
+    (Phase 3+)."""
 
     kind: Literal["core_value"] = "core_value"
     definition: str = ""
     do: str = ""
     dont: str = ""
+    body: str = ""
 
 
 class IdentityNode(BaseNodeFields):
-    """v0.13 Phase 1: identity kind. Typed text (``description`` / ``do`` /
-    ``dont``) lives in the per-node MD template, not in JSON."""
+    """v0.17 Phase 1: identity kind. JSON = SSOT. Every typed-text field
+    value (``description`` / ``do`` / ``dont`` / ``body``) is an
+    MD-formatted string. Per-node MD files are publish-output only
+    (Phase 3+)."""
 
     kind: Literal["identity"] = "identity"
     description: str = ""
     do: str = ""
     dont: str = ""
+    body: str = ""
 
 
 # Discriminated union — the runtime + IDE narrows on ``kind`` automatically.
@@ -222,13 +232,30 @@ FoundationNode = Annotated[
     Field(discriminator="kind"),
 ]
 
-# Per-kind text-field map (used by Phase 3 to render / parse the MD
-# template). Keep in sync with the subclass definitions above.
+# Per-kind H2-section field map for the *legacy* MD template parser.
+# Each entry lists the typed fields that ``parse_md_template`` extracts
+# from ``## Heading`` sections of pre-v0.17 ``foundation/{kind}-{slug}.md``
+# files. Phase 1's ``_absorb_md_typed_text_into_json`` uses this to know
+# which JSON keys to absorb from H2 content; the ``body`` field is
+# separately sourced from the post-``---`` free prose, so it is NOT in
+# this map. Keep in sync with the subclass definitions above.
 FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
     "project": [],
     "mission": ["what_we_do", "why", "direction"],
     "core_value": ["definition", "do", "dont"],
     "identity": ["description", "do", "dont"],
+}
+
+# Per-kind *all-MD-syntax-fields-per-kind* map. JSON SSOT consumers
+# (viewer MD-aware inspectors, Phase 3 publish output) iterate this
+# list to know every field whose value is an MD-formatted string.
+# Equals ``FOUNDATION_TYPED_TEXT_FIELDS[kind] + ["body"]`` for the 3
+# typed-text kinds, empty otherwise.
+FOUNDATION_MD_FIELDS: dict[str, list[str]] = {
+    "project": [],
+    "mission": ["what_we_do", "why", "direction", "body"],
+    "core_value": ["definition", "do", "dont", "body"],
+    "identity": ["description", "do", "dont", "body"],
 }
 
 # v0.13 Phase 0 — the project anchor lives in ``ProjectDoc.anchors``,

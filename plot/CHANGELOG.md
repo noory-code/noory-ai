@@ -4,6 +4,93 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0] — 2026-05-16
+
+Phase 1 of the JSON SSOT migration (D-2026-05-16-A). JSON is now
+the sole source of truth for Foundation typed-text fields on
+mission / core_value / identity kinds; every field value
+(``what_we_do`` / ``why`` / ``direction`` / ``definition`` / ``do``
+/ ``dont`` / ``description`` + new ``body``) is an MD-formatted
+string carried inline in the wire shape. The v0.13 co-equal JSON+MD
+storage is retired: on first read of any pre-v0.17 project, the
+read-side migrator ``_absorb_md_typed_text_into_json`` ingests the
+typed H2 sections + post-``---`` free prose into the JSON node,
+clears ``details_path``, and moves the source MD to
+``foundation/_legacy/{kind}-{slug}.md`` for safekeeping. The
+viewer's MD-editor surface (DetailsSection) is hidden for these 3
+kinds — JSON SSOT means no per-file MD editing for typed-text
+content. Per-node MD files become publish-output only, landing in
+Phase 3.
+
+### Added
+
+- ``plot_mcp/folder_io.py::_absorb_md_typed_text_into_json`` — one-shot
+  read-side migrator with 4-scenario conflict policy + ``_legacy/``
+  quarantine + collision-suffix fallback.
+- ``plot_mcp/folder_io.py::_legacy_md_dir`` — canonical
+  ``foundation/_legacy/`` resolver.
+- ``plot_mcp/models.py::FOUNDATION_MD_FIELDS`` — all-MD-syntax-fields
+  map per kind (typed + body); SSOT for the viewer and Phase 3
+  publish.
+- ``plot_mcp/models.py::MissionNode/CoreValueNode/IdentityNode``
+  ``body: str = ""`` field — JSON SSOT home for the legacy MD's
+  post-``---`` free prose.
+- ``viewer/src/canvases/inspectors/shared/BodyField.tsx`` — shared
+  MD-aware ``body`` editor surface (monospace, newline-preserving).
+- ``viewer/src/canvases/inspectors/BaseInspector.tsx``
+  ``hideDetailsSection?: boolean`` prop — gates the legacy MD editor
+  surface per kind.
+- ``viewer/src/i18n/locales/{en,ko}.json`` — ``inspector.field.body``
+  / ``inspector.fieldHint.body``.
+- ``tests/test_folder_io.py`` — 7 new
+  ``test_absorb_md_typed_text_into_json_*`` cases covering basic
+  absorption, conflict policies, idempotency, MD-syntax
+  preservation, free-prose→body mapping, no-md-file cleanup, and
+  slug-collision suffixing.
+
+### Changed
+
+- ``plot_mcp/folder_io.py::read_canvas`` — Foundation branch swaps
+  the old 2-call eviction chain for the single
+  ``_absorb_md_typed_text_into_json``.
+- ``plot_mcp/folder_io.py::write_canvas`` — Foundation branch drops
+  the ``_split_foundation_typed_text_to_md`` call; Pydantic now
+  serialises every typed + body field directly to JSON.
+- ``plot_mcp/folder_io.py::collect_foundation_md_warnings`` —
+  returns ``{}`` unconditionally (no canonical MD files survive
+  absorption); kept as a stable callable for backward API
+  compatibility.
+- ``viewer/src/canvases/inspectors/{mission,core_value,identity}/index.tsx``
+  — pass ``hideDetailsSection``, render the new ``body`` field,
+  switch every typed-text textarea to ``font-mono whitespace-pre-wrap``
+  so users see and edit the raw MD-syntax string.
+- ``viewer/src/canvases/inspectors/shared/DoDontFields.tsx`` —
+  monospace + newline-preserving textareas (``do`` / ``dont`` values
+  are MD-syntax strings).
+- ``viewer/src/domain/{Mission,CoreValue,Identity}.ts`` — add
+  ``body`` field to the JSON shape, class, ``fromJson``, ``toJson``.
+- ``tests/test_api_endpoints.py::test_file_put_does_not_touch_canvas``
+  — assertion updated to reflect the v0.17 invariant that
+  Foundation typed-text kinds carry no ``details_path`` after
+  absorption.
+- ``plot/docs/DECISIONS.md`` — new ``D-2026-05-16-A`` entry pinning
+  the Phase 1 implementation decisions (unconditional ``details_path``
+  clear; ``_legacy/`` quarantine; ``body`` as another MD-syntax
+  field; ``hideDetailsSection``).
+- ``plot/docs/PRODUCT_SPEC.md`` §15 #2 — Phase 1 status updated from
+  "queued" to "shipped 2026-05-16"; Phase 2-6 remain queued.
+- ``plot/docs/NEXT_SESSION.md`` — Phase 1 active-queue entry
+  archived; Phase 2 (``version: str = "v1.0"`` in BaseFields) is
+  the next trigger.
+
+### Removed
+
+- ``plot_mcp/folder_io.py::_evict_typed_text_to_md``,
+  ``_merge_md_typed_text_into_nodes``,
+  ``_split_foundation_typed_text_to_md`` — the v0.13
+  eviction-and-rehydration trio. Replaced by the single read-side
+  absorber.
+
 ## [0.16.40] — 2026-05-13
 
 Phase 0 of the JSON SSOT + per-node MD + per-node versioning +

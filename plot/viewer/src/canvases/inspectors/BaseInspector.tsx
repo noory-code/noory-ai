@@ -38,6 +38,11 @@ export interface BaseInspectorProps {
    *  DetailsSection — i.e. inside the scrollable body, after the
    *  shared chrome but before the long-form area. */
   children?: ReactNode;
+  /** v0.17 Phase 1 (D-2026-05-16-A): hide the DetailsSection (MD
+   *  file editor + "Create details" button) for kinds whose long-form
+   *  content has been absorbed into JSON SSOT typed fields (currently
+   *  Foundation mission / core_value / identity). Default false. */
+  hideDetailsSection?: boolean;
 }
 
 export function BaseInspector({
@@ -49,6 +54,7 @@ export function BaseInspector({
   projectId,
   canvasKind,
   children,
+  hideDetailsSection = false,
 }: BaseInspectorProps) {
   const { t } = useTranslation();
   const [width, setWidth] = useState<InspectorWidth>(loadWidth);
@@ -169,14 +175,18 @@ export function BaseInspector({
         {/* Per-kind body */}
         {children}
 
-        {/* Long-form details.md (chrome SSOT — every kind gets it). */}
-        <DetailsSection
-          node={node}
-          projectPath={projectPath}
-          projectId={projectId}
-          canvasKind={canvasKind}
-          onPatchNode={onPatchNode}
-        />
+        {/* Long-form details.md (chrome SSOT — every kind gets it,
+            except Foundation typed-text kinds whose long-form content
+            lives in JSON SSOT typed fields since v0.17 Phase 1). */}
+        {!hideDetailsSection && (
+          <DetailsSection
+            node={node}
+            projectPath={projectPath}
+            projectId={projectId}
+            canvasKind={canvasKind}
+            onPatchNode={onPatchNode}
+          />
+        )}
 
         {/* Actor-root toggle — only for top-level actor. */}
         {canToggleRoot && (

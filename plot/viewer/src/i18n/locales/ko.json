@@ -126,6 +126,7 @@
       "receives": "받는 것",
       "do": "할 것",
       "dont": "하지 말 것",
+      "body": "노트 (Markdown)",
       "longFormDetails": "장문 상세"
     },
     "fieldHint": {
@@ -154,7 +155,8 @@
       "definition": "이 가치의 의미",
       "description": "이 속성이 어떻게 드러나는가",
       "do": "구체적인 긍정 예시",
-      "dont": "안티 패턴"
+      "dont": "안티 패턴",
+      "body": "긴 형식의 노트; Markdown 문법 사용 가능"
     },
     "valueFlowHeader": "가치 흐름 (이 서비스 ↔ 이 액터)",
     "referencesHeader": "참조 — {{label}}",

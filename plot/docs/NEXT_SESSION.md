@@ -9,7 +9,50 @@
 
 ## Active queue
 
-### `Phase 1 — JSON SSOT 구현 (MD 흡수)` — kick off the 6-phase migration
+### `Phase 2 — version: str = "v1.0"` in BaseFields
+
+> **Trigger:** user says **"Phase 2"** or **"BaseFields version"** or
+> **"v1.0 필드"** as the first / near-first message.
+>
+> **Filed:** 2026-05-16. Phase 1 (D-2026-05-16-A) shipped today in
+> v0.17.0 — Foundation typed-text fields are inline JSON MD-syntax
+> strings; legacy MD quarantined; viewer's MD-editor surface gone.
+> Phase 2 lands the per-node ``version`` field that Phases 3-4 read
+> from / write to.
+>
+> **Phase 2 scope (per D-2026-05-13-O and plan file):**
+>
+> - **Server:** add ``version: str = "v1.0"`` to
+>   ``plot_mcp/models.py::BaseNodeFields`` with ``^v\d+\.\d+$``
+>   validator. Defaults to ``"v1.0"`` for backward compatibility
+>   (existing nodes auto-fill on read).
+> - **Viewer:** mirror in ``viewer/src/domain/BaseFields.ts`` (TS
+>   type + ``parseBaseFields`` + each per-kind ``toJson``).
+> - **No UI surface yet.** Phase 3 introduces the badge + publish
+>   button.
+> - **Tests:** ``test_schema_parity`` auto-flows the new field
+>   (parametric over 15 kinds); ``entity-roundtrip.test.tsx``
+>   auto-flows.
+> - **Ship as:** patch bump (likely v0.17.2 — v0.17.1 may be taken
+>   by unrelated UX polish; decide in plan-mode).
+>
+> **Approach:**
+> - Plan-mode entry mandatory.
+> - Hands-on Gate 3: open a v0.17.0 project, confirm a Mission node
+>   now carries ``version: "v1.0"`` after first save (or first read).
+>
+> **Subsequent phases (each its own plan-mode + approval):**
+>
+> | Phase | Scope | Indicative version |
+> |---:|---|:---:|
+> | 3 | "Publish" button + per-node MD export + MAJOR bump | v0.17.x |
+> | 4 | MINOR propagation (ancestor chain) | v0.18.0 |
+> | 5 | Folder hierarchy + container-publish semantics | v0.19.0 |
+> | 6 | Legacy purge + final docs sync | v0.19.1 |
+
+---
+
+### (archived 2026-05-16) `Phase 1 — JSON SSOT 구현 (MD 흡수)` — shipped v0.17.0
 
 > **Trigger:** user says **"Phase 1"** or **"JSON SSOT 구현"** or
 > **"MD 흡수"** as the first / near-first message.
