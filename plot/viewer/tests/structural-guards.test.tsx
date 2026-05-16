@@ -151,9 +151,15 @@ const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
     ceiling: 400,
     note: "Plan target locked in v0.16.5 (D-2026-05-12-H).",
   },
-  "canvases/SketchCanvas.tsx": { ceiling: 420 },
+  "canvases/SketchCanvas.tsx": {
+    ceiling: 440,
+    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to absorb the onPublishNode prop wiring through to SketchInspectorBindings.",
+  },
   "canvases/nodes/BaseNode.tsx": { ceiling: 250 },
-  "canvases/inspectors/BaseInspector.tsx": { ceiling: 220 },
+  "canvases/inspectors/BaseInspector.tsx": {
+    ceiling: 270,
+    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 to absorb the version badge (left cluster) + publish button + confirm-dialog handler (right cluster). Chrome SSOT is the natural home; extracting a PublishButton would not meaningfully reduce LOC.",
+  },
   "canvases/FoundationCanvas.tsx": { ceiling: 150 },
   "canvases/ActorsCanvas.tsx": { ceiling: 150 },
   "canvases/ServicesCanvas.tsx": { ceiling: 150 },

@@ -4224,3 +4224,107 @@ in the same browser-verification round:
     vision (the policy that names this phase).
   - [D-2026-05-16-A](./DECISIONS.md) — Phase 1 ship (v0.17.0).
   - [D-2026-05-16-B](./DECISIONS.md) — v0.17.1 anchor-click polish.
+
+---
+
+### D-2026-05-16-E — Phase 3 per-node publish (button + MD export + MAJOR bump)
+
+- **What:** Ship the visible surface of the JSON SSOT publish
+  model: a **📤 publish button** in the Inspector header that on
+  confirm bumps the node's ``version`` MAJOR (``v1.0 → v2.0``),
+  writes a per-node MD file at
+  ``<canvas_dir>/published/{kind}-{slug}-{version}.md``, and
+  records a git commit with ``Publish-*:`` trailers. A **version
+  badge** in the header's left cluster shows the node's current
+  version. A **uniform MD template** (YAML frontmatter with 7 keys
+  + one H2 section per declared typed field) renders identically
+  across all 15 kinds. **Eligibility**: project anchor + ``is_root``
+  + 4 ``*_ref`` alias kinds rejected (button hidden + server 409);
+  remaining 10 kinds eligible.
+
+- **Why:** Phase 2 (v0.17.2) shipped the ``BaseNodeFields.version``
+  field on the per-node publish assumption fixed by
+  [D-2026-05-13-O](./DECISIONS.md) #4 (which supersedes
+  D-2026-05-13-J #4 with the user-quoted *"각 노드의 MD
+  분리해야죠"*). Phase 3 is the explicit user surface that bumps
+  that field. Subject of the git commit is for humans; the 5
+  trailers (``Publish-Node-Id`` / ``Publish-Kind`` /
+  ``Publish-Canvas`` / ``Publish-Version-From`` /
+  ``Publish-Version-To``) are the **Phase 4 contract**.
+
+- **Alternatives considered:**
+  - **Canvas-unit publish** (D-2026-05-13-J #4) — rejected,
+    superseded.
+  - **Idempotent / no-op-on-unchanged publish** — rejected;
+    collapses audit history; the npm/cargo mental model misleads
+    because Plot publishes are *attestation* events, not registry
+    uploads. Confirm dialog text names this explicitly so users
+    don't carry the wrong model in.
+  - **Per-publish git tag in addition to commit** — rejected; tag
+    namespace would balloon; ``git log --grep "^Publish-Node-Id:"``
+    + ``git interpret-trailers`` give the same queryability.
+  - **Separate ``foundation/_publish_log.jsonl`` audit file** —
+    rejected; would duplicate what git already records (SSOT
+    violation).
+  - **Bundle Phase 4 MINOR propagation into Phase 3** — rejected;
+    cross-canvas ancestor walk has its own design questions; small
+    ship over big bang.
+  - **Auto-publish on save** — rejected; PHILOSOPHY *"user controls
+    every line"*; publish is an explicit gesture.
+  - **Context menu / keyboard shortcut for publish** — rejected;
+    header chrome is the one canonical surface for single-node
+    actions (delete / width / close already live there);
+    discoverability beats hidden affordances.
+  - **Always-idempotent file overwrite** (single MD per node) —
+    rejected; kills the per-version file lineage that Phase 5's
+    folder hierarchy + Phase 6's legacy purge depend on.
+  - **Unpublish button in Phase 3** — rejected for this phase;
+    manual recovery via ``git revert HEAD`` + MD cleanup
+    documented in ``docs/PUBLISH.md``; automated Unpublish queued
+    as v0.18.x follow-up in ``NEXT_SESSION.md``.
+
+- **Approval:** **Accepted** by user, 2026-05-16. Plan reviewed via
+  plot-design-red-team (8-attack pass); five Major findings
+  (publish eligibility table, PSPEC §6 cross-cutting split,
+  uniform MD template, undo recovery procedure, commit trailer
+  contract) + two Minor (``published/`` semantics, always-bump
+  framing) absorbed into the plan before code.
+
+- **Spec impact:**
+  - New ``plot/docs/SPEC.md`` section ``## Publish (v0.18.0)``.
+  - New ``plot/docs/PUBLISH.md`` short doc — MD format reference +
+    ``published/`` semantics + manual recovery procedure.
+  - ``plot/docs/NEXT_SESSION.md`` updated to archive Phase 3 and
+    surface Phase 4 trigger + v0.18.x Unpublish button follow-up.
+  - PSPEC §6 git-event-table clarifier shipped separately in
+    v0.17.4 (per design-red-team A5-1 split).
+
+- **LOC ceiling raises (per Gate 2):**
+  - ``viewer/src/canvases/SketchCanvas.tsx``: 420 → 440 (+20 for
+    publish-prop threading; no-growth henceforth).
+  - ``viewer/src/canvases/inspectors/BaseInspector.tsx``: 220 → 270
+    (publish button + version badge + confirm-dialog handler;
+    no-growth henceforth).
+  - Plot CLAUDE.md Gate 2 LOC table updated to match.
+
+- **Files in this commit:** see [`plot/CHANGELOG.md`](../CHANGELOG.md)
+  v0.18.0 section — 25-ish files (5 server modules + 5 viewer +
+  4 docs + i18n + tests).
+
+- **Test counts:**
+  - Server: 359 → 396 (+37; mypy + ruff clean).
+  - Viewer: 514 → 522 (+8 new publishEligibility + auto-flow
+    through existing parametric tests; tsc clean).
+  - Backward-compat smoke: real-project ``plot-test-v013/banas-v013``
+    mission node v1.0 → v2.0 publish flow verified end-to-end
+    (server-side, ahead of viewer).
+
+- **Cross-refs:**
+  - [D-2026-05-13-J](./DECISIONS.md) — superseded canvas-unit
+    publish (do not re-litigate).
+  - [D-2026-05-13-O](./DECISIONS.md) — 7 principles; #4 per-node
+    MD, #5 per-node version, #7 folder hierarchy (Phase 5).
+  - [D-2026-05-16-A](./DECISIONS.md) — Phase 1 ship (v0.17.0).
+  - [D-2026-05-16-C](./DECISIONS.md) — Phase 2 ship (v0.17.2).
+  - [PSPEC §6](./PRODUCT_SPEC.md) — v0.17.4 clarifier that aligned
+    the git-event spec with v0.17/v0.18 reality.

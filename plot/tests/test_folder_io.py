@@ -21,9 +21,11 @@ from pathlib import Path
 import pytest
 
 from plot_mcp.folder_io import (
+    PublishNotEligibleError,
     create_project,
     delete_project,
     list_service_details,
+    publish_node,
     read_canvas,
     read_project,
     write_canvas,
@@ -668,3 +670,110 @@ def test_absorb_md_typed_text_into_json_duplicate_slug_collision(plot_root: Path
         f"have {sorted(p.name for p in legacy_dir.iterdir())}"
     )
     assert "new content" in suffixed.read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# v0.18.0 Phase 3 (D-2026-05-16-E) — publish_node
+# ---------------------------------------------------------------------------
+
+
+def _foundation_mission_id(plot_root: Path, pid: str) -> str:
+    """Helper: return the id of the seeded ``mission`` Foundation node."""
+    canvas = read_canvas(plot_root, pid, "foundation")
+    return next(n.id for n in canvas.nodes if n.kind == "mission")
+
+
+def test_publish_node_writes_md_at_expected_path(plot_root: Path) -> None:
+    create_project(plot_root, "alpha", "Alpha")
+    mid = _foundation_mission_id(plot_root, "alpha")
+    result = publish_node(plot_root, "alpha", "foundation", mid)
+    md_full = plot_root / "alpha" / result["md_path"]
+    assert md_full.is_file()
+    assert md_full.parent.name == "published"
+    assert result["md_path"].startswith("foundation/published/mission-")
+    assert result["md_path"].endswith("-v2.0.md")
+
+
+def test_publish_node_bumps_major_version(plot_root: Path) -> None:
+    create_project(plot_root, "alpha", "Alpha")
+    mid = _foundation_mission_id(plot_root, "alpha")
+    r1 = publish_node(plot_root, "alpha", "foundation", mid)
+    assert r1["from_version"] == "v1.0" and r1["to_version"] == "v2.0"
+    r2 = publish_node(plot_root, "alpha", "foundation", mid)
+    assert r2["from_version"] == "v2.0" and r2["to_version"] == "v3.0"
+
+
+def test_publish_node_persists_version_in_canvas_json(plot_root: Path) -> None:
+    create_project(plot_root, "alpha", "Alpha")
+    mid = _foundation_mission_id(plot_root, "alpha")
+    publish_node(plot_root, "alpha", "foundation", mid)
+    canvas = read_canvas(plot_root, "alpha", "foundation")
+    mission = next(n for n in canvas.nodes if n.id == mid)
+    assert mission.version == "v2.0"
+
+
+def test_publish_node_always_bumps_on_repeat_writes_distinct_files(
+    plot_root: Path,
+) -> None:
+    create_project(plot_root, "alpha", "Alpha")
+    mid = _foundation_mission_id(plot_root, "alpha")
+    r1 = publish_node(plot_root, "alpha", "foundation", mid)
+    r2 = publish_node(plot_root, "alpha", "foundation", mid)
+    p1 = plot_root / "alpha" / r1["md_path"]
+    p2 = plot_root / "alpha" / r2["md_path"]
+    assert p1.is_file() and p2.is_file()
+    assert p1 != p2  # distinct filenames per publish version
+    assert r1["sha"] != r2["sha"]
+
+
+def test_publish_node_rejects_project_anchor(plot_root: Path) -> None:
+    """Project anchor lives in ProjectDoc.anchors, not canvas.nodes.
+    Attempting to publish via the canvas API surfaces as KeyError
+    (anchor id not in nodes) — equivalent rejection."""
+    create_project(plot_root, "alpha", "Alpha")
+    with pytest.raises(KeyError):
+        publish_node(plot_root, "alpha", "foundation", "__project_anchor__")
+
+
+def test_publish_node_rejects_root_actor(plot_root: Path) -> None:
+    create_project(plot_root, "alpha", "Alpha")
+    # Seed an is_root=True actor explicitly (default seed actors are non-root).
+    actors = read_canvas(plot_root, "alpha", "actors")
+    root_actor = ActorNode(id="root-actor", label="Root", is_root=True)
+    new_actors = actors.model_copy(update={"nodes": [*actors.nodes, root_actor]})
+    write_canvas(plot_root, "alpha", new_actors)
+    with pytest.raises(PublishNotEligibleError, match="not publish-eligible"):
+        publish_node(plot_root, "alpha", "actors", "root-actor")
+
+
+# actor_ref ineligibility is unit-tested in test_md_publish.py
+# (``test_can_publish_rejects_ref_kinds``); folder_io re-tests would
+# need a contrived services-canvas seed (category + nested ref).
+
+
+def test_publish_node_rejects_unknown_node(plot_root: Path) -> None:
+    create_project(plot_root, "alpha", "Alpha")
+    with pytest.raises(KeyError, match="not on canvas"):
+        publish_node(plot_root, "alpha", "foundation", "no-such-node")
+
+
+def test_publish_node_creates_git_commit_with_trailers(plot_root: Path) -> None:
+    import subprocess
+
+    create_project(plot_root, "alpha", "Alpha")
+    mid = _foundation_mission_id(plot_root, "alpha")
+    publish_node(plot_root, "alpha", "foundation", mid)
+    project_dir = plot_root / "alpha"
+    out = subprocess.run(
+        ["git", "log", "--format=%s%n%b", "-1"],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert out.startswith('publish: mission "Mission" → v2.0')
+    assert "Publish-Node-Id: " in out
+    assert "Publish-Kind: mission" in out
+    assert "Publish-Canvas: foundation" in out
+    assert "Publish-Version-From: v1.0" in out
+    assert "Publish-Version-To: v2.0" in out

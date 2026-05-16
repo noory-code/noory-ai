@@ -6,6 +6,7 @@ import {
   getAllCanvases,
   getProject,
   listProjects,
+  publishNode,
   renameProject,
   tagProject,
 } from "../api";
@@ -52,6 +53,13 @@ export interface UseProjectApi {
   remove: (id: string) => Promise<void>;
   pick: (id: string) => void;
   markSession: () => Promise<void>;
+  /** v0.18.0 Phase 3 (D-2026-05-16-E) — publish a node. Re-reads the
+   *  canvas after the server-side bump so the Inspector reflects the
+   *  new version on next paint. */
+  publishNodeAction: (
+    canvasKey: CanvasKey,
+    nodeId: string,
+  ) => Promise<void>;
   deleteTag: (name: string) => Promise<void>;
   dismissToast: () => void;
   /** v0.13 Phase 0: replace one summary in place (used by anchor PATCH). */
@@ -211,6 +219,29 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     }
   }, [projectPath, activeId, onError]);
 
+  const publishNodeAction = useCallback(
+    async (canvasKey: CanvasKey, nodeId: string) => {
+      if (!projectPath || !activeId) return;
+      const [canvasKind, serviceId] = canvasKey.split(":") as [string, string?];
+      try {
+        await publishNode(projectPath, activeId, canvasKind, nodeId, serviceId);
+        // Re-read the canvas via the existing all-canvases fetch so the
+        // Inspector reflects the bumped version + the new MD file on
+        // disk is visible to subsequent reads.
+        const proj = await getProject(projectPath, activeId);
+        const refreshed = await getAllCanvases(
+          projectPath,
+          activeId,
+          proj.service_details,
+        );
+        setCanvasCache(refreshed);
+      } catch (err) {
+        onError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [projectPath, activeId, onError],
+  );
+
   const deleteTag = useCallback(
     async (name: string) => {
       if (!projectPath || !activeId) return;
@@ -248,6 +279,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     remove,
     pick,
     markSession,
+    publishNodeAction,
     deleteTag,
     dismissToast,
     replaceSummary,

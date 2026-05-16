@@ -148,6 +148,61 @@ def tag_snapshot(project_dir: Path, name: str, message: str | None = None) -> di
 
 
 # ---------------------------------------------------------------------------
+# publish_snapshot — v0.18.0 Phase 3 (D-2026-05-16-E)
+# ---------------------------------------------------------------------------
+
+
+def publish_snapshot(
+    project_dir: Path,
+    *,
+    node_id: str,
+    kind: str,
+    canvas: str,
+    label: str,
+    from_v: str,
+    to_v: str,
+) -> dict[str, Any]:
+    """Snapshot a per-node publish as a git commit with machine-readable
+    ``Publish-*:`` trailers.
+
+    Phase 4 (MINOR propagation up the ancestor chain) reads these
+    trailers via ``git interpret-trailers``; the subject is for humans
+    and may break under exotic labels without affecting Phase 4.
+
+    Flow:
+      1. ``git add -A`` — picks up both the canvas.json bump and the
+         new ``published/<file>.md``.
+      2. ``git commit -m <subject>\\n\\n<trailers>`` — no
+         ``--allow-empty``; a publish must change the version field
+         so an empty diff is a bug.
+
+    Returns ``{sha, subject, trailers}``.
+    """
+    if not (project_dir / ".git").is_dir():
+        ensure_repo(project_dir)
+
+    subject = f'publish: {kind} "{label}" → {to_v}'
+    trailers = {
+        "Publish-Node-Id": node_id,
+        "Publish-Kind": kind,
+        "Publish-Canvas": canvas,
+        "Publish-Version-From": from_v,
+        "Publish-Version-To": to_v,
+    }
+    body = "\n".join(f"{k}: {v}" for k, v in trailers.items())
+    message = f"{subject}\n\n{body}"
+
+    _git("add", "-A", cwd=project_dir)
+    _git("commit", "-m", message, cwd=project_dir)
+    sha = _git("rev-parse", "HEAD", cwd=project_dir).stdout.strip()
+    return {
+        "sha": sha,
+        "subject": subject,
+        "trailers": trailers,
+    }
+
+
+# ---------------------------------------------------------------------------
 # list_tags / delete_tag
 # ---------------------------------------------------------------------------
 

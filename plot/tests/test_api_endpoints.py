@@ -636,3 +636,75 @@ def test_list_migrates_v01_sketches_silently(
     body = resp.json()
     assert "legacy" in body["migrated"]
     assert any(p["id"] == "legacy" for p in body["projects"])
+
+
+# ---------------------------------------------------------------------------
+# v0.18.0 Phase 3 (D-2026-05-16-E) — publish endpoint
+# ---------------------------------------------------------------------------
+
+
+def _mission_id(client: TestClient, project_path: str, pid: str) -> str:
+    canvas = client.get(
+        f"/api/projects/{pid}/canvases/foundation",
+        params={"project_path": project_path},
+    ).json()
+    return next(n["id"] for n in canvas["nodes"] if n["kind"] == "mission")
+
+
+def test_publish_endpoint_round_trip(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    mid = _mission_id(client, project_path, "alpha")
+    resp = client.post(
+        f"/api/projects/alpha/canvases/foundation/nodes/{mid}/publish",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["from_version"] == "v1.0"
+    assert body["to_version"] == "v2.0"
+    assert body["md_path"].startswith("foundation/published/")
+    assert len(body["sha"]) == 40
+
+
+def test_publish_endpoint_unknown_node_is_404(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.post(
+        "/api/projects/alpha/canvases/foundation/nodes/ghost/publish",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 404
+
+
+def test_publish_endpoint_ineligible_root_is_409(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    # Seed an is_root actor via PUT canvas (default seed actors are non-root).
+    actors = client.get(
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+    ).json()
+    actors["nodes"].append(
+        {
+            "id": "root-actor",
+            "kind": "actor",
+            "label": "Root",
+            "is_root": True,
+        }
+    )
+    put = client.put(
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+        json=actors,
+    )
+    assert put.status_code in (200, 201)
+    resp = client.post(
+        "/api/projects/alpha/canvases/actors/nodes/root-actor/publish",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 409

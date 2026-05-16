@@ -119,6 +119,11 @@ export interface SketchCanvasProps {
   /** v0.16.36 (D-2026-05-13-L) — Foundation-only opt-in auto-layout
    *  button in RF Controls. Default false; wrapper opt-in. */
   enableAutoLayout?: boolean;
+  /** v0.18.0 Phase 3 (D-2026-05-16-E) — fire to publish a node. The
+   *  Inspector renders the publish button; the callback wraps the
+   *  HTTP POST + version refresh. Optional so canvases not yet wired
+   *  (or tests) compile. */
+  onPublishNode?: (nodeId: string) => void;
 }
 
 
@@ -155,6 +160,7 @@ function SketchCanvasInner({
   injectAnchor,
   applyAnchorRadialLayout,
   enableAutoLayout,
+  onPublishNode,
 }: SketchCanvasProps) {
   const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
@@ -412,6 +418,7 @@ function SketchCanvasInner({
         availableIdentities={availableIdentities}
         projectPath={projectPath}
         projectId={projectId}
+        onPublishNode={onPublishNode}
       />
     </div>
   );

@@ -103,6 +103,7 @@ export function App() {
     setCanvasCache, setServiceDetails, setTags, loadList,
     create: handleCreate, rename: handleRename, remove: handleDelete,
     pick: handlePick, markSession: handleMarkSession,
+    publishNodeAction: handlePublishNode,
     deleteTag: handleDeleteTag, dismissToast,
   } = project;
 
@@ -309,6 +310,9 @@ export function App() {
                   summaries.find((p) => p.id === activeId)?.name ?? null
                 }
                 onAnchorChange={handleAnchorChange}
+                onPublishNode={(id) => {
+                  void handlePublishNode(activeCanvasKey, id);
+                }}
                 onNodeDrill={(id) => {
                   const n = activeCanvas.nodes.find((x) => x.id === id);
                   if (!n) return;
@@ -372,6 +376,9 @@ export function App() {
               if (n?.kind === "actor_ref" && n.ref_actor_id) {
                 jumpToActor(n.ref_actor_id);
               }
+            }}
+            onPublishNode={(id) => {
+              void handlePublishNode(detailCanvasKey, id);
             }}
           />
         </ServiceDetailModal>

@@ -14,6 +14,7 @@
  */
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { canPublish } from "../../domain/publishEligibility";
 import type { CanvasKind, SketchNode } from "../../types";
 import { DetailsSection } from "./DetailsSection";
 
@@ -31,6 +32,11 @@ export interface BaseInspectorProps {
   onPatchNode: (patch: Partial<SketchNode>) => void;
   onDeleteNode: (nodeId: string) => void;
   onClose: () => void;
+  /** v0.18.0 Phase 3 (D-2026-05-16-E): publish the selected node.
+   *  Returning a promise allows the caller to surface errors as
+   *  toasts; the button stays enabled, the confirm dialog is the
+   *  user-side debounce. Optional so legacy callers compile. */
+  onPublishNode?: (nodeId: string) => void;
   projectPath: string;
   projectId: string;
   canvasKind: CanvasKind;
@@ -50,6 +56,7 @@ export function BaseInspector({
   onPatchNode,
   onDeleteNode,
   onClose,
+  onPublishNode,
   projectPath,
   projectId,
   canvasKind,
@@ -96,8 +103,48 @@ export function BaseInspector({
                   ? t(`kind.${node.kind}`)
                   : t("kind.node")}
           </span>
+          {/* v0.18.0 Phase 3 (D-2026-05-16-E) — per-node version badge.
+              Code value (literal vMAJOR.MINOR); no i18n. */}
+          {node.kind !== "project" && (
+            <span
+              className="font-mono text-[10px] tabular-nums text-slate-400"
+              aria-label={`version ${node.version}`}
+            >
+              {node.version}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
+          {/* v0.18.0 Phase 3 — Publish button. Same eligibility as
+              canPublish() helper. Confirm dialog is the human debounce. */}
+          {onPublishNode && canPublish(node) && (
+            <button
+              type="button"
+              onClick={() => {
+                const fromVersion = node.version;
+                const next = parseInt(fromVersion.slice(1).split(".")[0], 10) + 1;
+                const toVersion = `v${next}.0`;
+                const kindLabel = t(`kind.${node.kind}`);
+                if (
+                  window.confirm(
+                    t("inspector.confirmPublish", {
+                      kind: kindLabel,
+                      label: node.label || node.id,
+                      fromVersion,
+                      toVersion,
+                    }),
+                  )
+                ) {
+                  onPublishNode(node.id);
+                }
+              }}
+              aria-label={t("inspector.publish")}
+              className="rounded px-2 text-[10px] text-emerald-700 hover:bg-emerald-50"
+              title={t("inspector.publishHint")}
+            >
+              {t("inspector.publishShort")}
+            </button>
+          )}
           {/* Delete — hidden for the Project anchor and for Actor/Service roots. */}
           {node.kind !== "project" && !node.is_root && (
             <button

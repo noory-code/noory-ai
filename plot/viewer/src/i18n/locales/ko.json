@@ -96,6 +96,10 @@
     "closeInspector": "인스펙터 닫기",
     "mdWarnings": "⚠ 마크다운 템플릿 경고",
     "mdWarningsFixHint": "<code>{{path}}</code> 를 편집해 수정하세요.",
+    "publish": "버전 publish",
+    "publishShort": "📤 publish",
+    "publishHint": "MAJOR 버전을 올리고 published MD 파일을 발행합니다. 매번 publish 마다 새 버전이 생깁니다.",
+    "confirmPublish": "{{kind}} \"{{label}}\" 을(를) publish 하시겠습니까?\n\n버전이 {{fromVersion}} → {{toVersion}} 로 올라가고, 새 MD 파일이 생기며, git commit 이 기록됩니다. 매번 publish 마다 새 버전이 생깁니다 — 의도하지 않은 클릭이면 취소하세요.",
     "field": {
       "theme": "테마",
       "whatWeDo": "하는 일",

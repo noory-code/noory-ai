@@ -9,63 +9,153 @@
 
 ## Active queue
 
-### `Phase 3 — Publish button + per-node MD export + MAJOR bump`
+### `Phase 4 — MINOR propagation up the ancestor chain`
 
-> **Trigger:** user says **"Phase 3"** or **"Publish 버튼"** or
-> **"publish button"** or **"MD export"** or **"MAJOR bump"** as the
-> first / near-first message.
+> **Trigger:** user says **"Phase 4"** or **"MINOR propagation"** or
+> **"ancestor chain"** or **"MINOR bump"** as the first / near-first
+> message.
 >
-> **Filed:** 2026-05-16. Phase 2 (D-2026-05-16-C) shipped today in
-> v0.17.2 — every node now carries ``version: "v1.0"`` (default), with
-> the regex contract ``^v\d+\.\d+$`` enforced on both server and
-> viewer. Phase 3 surfaces the visible side of the publish model.
+> **Filed:** 2026-05-16. Phase 3 (D-2026-05-16-E) shipped same day
+> in v0.18.0 — the Publish button + per-node MD export + per-node
+> ``Publish-*:`` git trailers are live. Phase 4 reads those
+> trailers and propagates MINOR bumps to the ancestor chain.
 >
-> **Phase 3 scope (per D-2026-05-13-O):**
+> **Phase 4 scope (per D-2026-05-13-O #5 + #7):**
 >
-> - **Viewer:** "Publish" affordance on the Inspector (button or
->   menu item) that:
->   - Increments the selected node's ``version`` MAJOR component
->     (e.g. ``v1.0`` → ``v2.0``); MINOR resets to ``0``.
->   - Emits a per-node MD export file (path / template TBD in
->     plan-mode). Format: serialise the node's typed-text fields +
->     metadata into MD, tagged with the new version.
->   - Records the publish event somewhere durable (audit trail —
->     spec TBD; could be a ``foundation/_publish_log.json`` or a
->     ``last_published_at`` field).
-> - **Server:** MCP tool(s) for the publish action (write + log).
-> - **UI surface:** badge / icon showing the current version on the
->   node. Subtle — don't break the canvas visual hierarchy.
-> - **Tests:** publish flow round-trip (version increments, MD file
->   lands, audit recorded).
-> - **Ship as:** likely v0.17.x (the visible surface for v0.17's
->   SSOT story).
+> - **Trigger:** server receives a publish event for node N.
+> - **Walk:** from N's ``parent_id``, walk up the tree (same canvas
+>   only? cross-canvas via ``actor_ref`` / Foundation `*_ref`? — to
+>   decide in plan-mode) until hitting a node with no parent.
+> - **For each ancestor A** along the walk:
+>   - Increment A's MINOR component (``v3.0 → v3.1`` ;
+>     ``v3.4 → v3.5``).
+>   - Append a row to A's published MD file?
+>     Or just bump the JSON, no new MD?
+>     (Plan-mode decision.)
+>   - Add a git trailer line recording the propagation
+>     (``Publish-Propagated-Ancestor: <node_id> v3.0→v3.1``).
+> - **Idempotence:** if A has no published MD yet (i.e. never
+>   manually published), does MINOR bumping it still make sense?
+>   (Plan-mode decision: probably yes — MINOR records that a
+>   descendant changed without forcing an ancestor publish.)
+> - **Ship as:** likely v0.18.x or v0.19.0.
 >
 > **Open detail questions for the session:**
 >
-> 1. Per-node MD file path — ``published/{kind}-{slug}-{version}.md``?
->    A single ``published.md`` per canvas? A repo-wide tree?
-> 2. Audit trail durability — JSON log file vs git commit metadata?
-> 3. Publish button placement — Inspector toolbar / context menu /
->    keyboard shortcut?
-> 4. MAJOR bump semantics — does publishing a child trigger the
->    Phase 4 MINOR propagation in the same commit, or is that a
->    separate phase?
-> 5. Idempotence — does publishing the same node twice produce the
->    same MD content + version, or always bump?
+> 1. Cross-canvas propagation — does publishing a step on the
+>    service_detail canvas bump the parent service on services
+>    canvas, the category, the project anchor? Where does the chain
+>    stop?
+> 2. Does propagation emit new MD files for ancestors, or only bump
+>    their JSON ``version``? If the latter, the per-node MD
+>    file's stated version on disk drifts from the live JSON value.
+> 3. Are propagation events recorded as separate git commits, or
+>    folded into the publish commit via additional trailers?
+> 4. Reversal — does ``git revert`` of the publish commit also
+>    revert the propagation, or are propagations separate commits
+>    that need separate reverts?
+> 5. Should the Inspector show "this node was last propagated by
+>    publish of descendant X" somewhere visible?
 >
 > **Approach:**
-> - Plan-mode entry mandatory (UI surface = SPEC change).
-> - plot-design-red-team review before code (new surface area).
-> - Hands-on Gate 3 in real Chrome (clicking the publish button,
->   verifying file lands, verifying version bumps).
+> - Plan-mode entry mandatory.
+> - plot-design-red-team review (cross-canvas walk has invariants
+>   that need attacking).
+> - Hands-on Gate 3 in real Chrome — verify that publishing a leaf
+>   ripples up.
 >
 > **Subsequent phases:**
 >
 > | Phase | Scope | Indicative version |
 > |---:|---|:---:|
-> | 4 | MINOR propagation (ancestor chain) | v0.18.0 |
 > | 5 | Folder hierarchy + container-publish semantics | v0.19.0 |
 > | 6 | Legacy purge + final docs sync | v0.19.1 |
+
+---
+
+### `v0.18.x follow-up — Unpublish button` (lower priority)
+
+> **Trigger:** user says **"Unpublish"** or **"미스클릭"** or
+> **"publish 취소"** as the first / near-first message.
+>
+> **Filed:** 2026-05-16. Phase 3 ships without an Unpublish button
+> (red-team A4-1; recovery is manual via ``git revert HEAD`` +
+> optional MD-file rm, per [`PUBLISH.md`](./PUBLISH.md)). Once
+> real usage shows the misclick rate, automate.
+>
+> **Scope:**
+>
+> - Inspector header: **↩ unpublish** button next to **📤
+>   publish**, visible only when ``node.version != "v1.0"`` (i.e.
+>   only when there's a publish event to undo).
+> - Server endpoint
+>   ``POST /api/projects/{id}/canvases/{kind}/nodes/{node_id}/unpublish``
+>   that:
+>   1. Finds the most recent publish commit via
+>      ``git log --grep "^Publish-Node-Id: {node_id}"``.
+>   2. Runs ``git revert <sha> --no-edit``.
+>   3. ``rm`` the published MD file that the revert left behind
+>      on disk (the revert may not clean working-tree files
+>      depending on git version).
+> - Confirmation dialog name explicitly: "Unpublish brings the
+>   version back to ``v(N-1).0``; the ``-vN.0.md`` file is removed.
+>   Continue?"
+> - Tests: unit-test the revert flow against the fake-repo fixture
+>   used by ``test_git_store.py``.
+>
+> **Ship as:** v0.18.x patch once the misclick rate justifies it.
+
+---
+
+### (archived 2026-05-16) `Phase 3 — Publish button + per-node MD export + MAJOR bump` — shipped v0.18.0
+
+> **Trigger:** user said **"작업합시다"** as the first / near-first
+> message of this session (after Phase 2 ship + silent-state
+> archival).
+>
+> **Filed:** 2026-05-16. Shipped same session as
+> [D-2026-05-16-E](./DECISIONS.md).
+>
+> **What landed:**
+>
+> - **Server (new module):** ``plot_mcp/md_publish.py`` —
+>   uniform-across-15-kinds MD render (YAML 7-key frontmatter +
+>   per-typed-field H2 sections) + ``can_publish`` eligibility +
+>   ``bump_major`` arithmetic.
+> - **Server:** ``folder_io.publish_node`` (atomic read → bump →
+>   render → write → commit), ``git_store.publish_snapshot``
+>   (commit with 5 ``Publish-*:`` trailers), HTTP endpoint
+>   ``POST /api/projects/{id}/canvases/{kind}/nodes/{node_id}/publish``,
+>   MCP tool ``publish_node_tool``.
+> - **Viewer:** ``BaseInspector`` chrome additions (version badge
+>   left cluster + 📤 publish button right cluster + confirm
+>   dialog), ``publishEligibility.ts`` (canPublish mirror),
+>   ``api.ts::publishNode``, ``useProject::publishNodeAction``,
+>   prop threading via SketchCanvas → SketchInspectorBindings →
+>   KindInspector → per-kind inspectors (auto-flow via
+>   ``{...props}`` spread).
+> - **i18n:** 4 new keys (``inspector.publish`` /
+>   ``inspector.publishShort`` / ``inspector.publishHint`` /
+>   ``inspector.confirmPublish``) in both en + ko.
+> - **Docs:** new ``docs/PUBLISH.md`` reference + new SPEC
+>   ``§Publish (v0.18.0+)`` section; CHANGELOG; DECISIONS
+>   D-2026-05-16-E; PSPEC §6 clarifier shipped separately as
+>   v0.17.4 per red-team A5-1.
+> - **LOC ceilings raised** (with D-entry justification):
+>   SketchCanvas 420 → 440; BaseInspector 220 → 270. Both
+>   no-growth henceforth.
+>
+> **Verification status:**
+> - Server: pytest **396/396** green (359 → 396, +37); mypy +
+>   ruff clean.
+> - Viewer: vitest **522/522** green (514 → 522, +8); tsc clean.
+> - Backward-compat smoke: real-project ``plot-test-v013/banas-v013``
+>   mission node v1.0 → v2.0 publish flow verified end-to-end on
+>   server before commit.
+>
+> **Trigger phrases preserved verbatim for future reference:**
+> ``Phase 3`` / ``Publish 버튼`` / ``publish button`` / ``MD export``
+> / ``MAJOR bump``.
 
 ---
 

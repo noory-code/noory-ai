@@ -35,7 +35,13 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, cast
 
-from plot_mcp.git_store import ensure_repo
+from plot_mcp.git_store import ensure_repo, publish_snapshot
+from plot_mcp.md_publish import (
+    bump_major,
+    can_publish,
+    published_md_path,
+    render_node_md,
+)
 from plot_mcp.models import (
     ActorNode,
     ActorRefNode,
@@ -749,3 +755,92 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
         archived.append(service_id)
 
     return {"created": created, "archived": archived}
+
+
+# ---------------------------------------------------------------------------
+# v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
+# ---------------------------------------------------------------------------
+
+
+class PublishNotEligibleError(ValueError):
+    """Raised by ``publish_node`` when the target node is not
+    publish-eligible (project anchor, is_root, ``*_ref``).
+    Mirrors the server-side guard for the viewer's button visibility
+    rule in ``viewer/src/domain/publishEligibility.ts``."""
+
+
+def publish_node(
+    plot_root: Path,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    node_id: str,
+    *,
+    service_id: str | None = None,
+) -> dict[str, Any]:
+    """Publish ``node_id`` on the named canvas.
+
+    Flow (per [D-2026-05-16-E]):
+      1. Read canvas, locate node by id.
+      2. Validate eligibility (``can_publish``); reject otherwise.
+      3. Compute ``from_v`` = current ``node.version``,
+         ``to_v = bump_major(from_v)``.
+      4. Mutate node in place with the new version (validated by
+         Pydantic's existing regex on round-trip via ``model_copy``).
+      5. Render the published MD content via ``render_node_md`` and
+         write to ``<canvas_dir>/published/{kind}-{slug}-{to_v}.md``.
+      6. Write the canvas back to disk (atomic).
+      7. Create a git commit via ``publish_snapshot`` with
+         ``Publish-*:`` trailers.
+
+    Returns ``{node_id, from_version, to_version, md_path, sha}``.
+    Raises ``KeyError`` if ``node_id`` not on the canvas;
+    ``PublishNotEligibleError`` if the kind/role disallows publish.
+    """
+    project_dir = _ensure_project(plot_root, project_id)
+    canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
+    by_id = {n.id: n for n in canvas.nodes}
+    if node_id not in by_id:
+        raise KeyError(f"node {node_id!r} not on canvas {canvas_kind!r}")
+    node = by_id[node_id]
+    if not can_publish(node):
+        raise PublishNotEligibleError(
+            f"node {node_id!r} (kind={node.kind!r}, is_root={node.is_root}) "
+            "is not publish-eligible"
+        )
+
+    from_v = node.version
+    to_v = bump_major(from_v)
+    bumped = node.model_copy(update={"version": to_v})
+    canvas_path = _canvas_file(plot_root, project_id, canvas_kind, service_id)
+    canvas_dir = canvas_path.parent
+
+    md_path = published_md_path(
+        canvas_dir, kind=node.kind, label=node.label, version=to_v
+    )
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    md_path.write_text(
+        render_node_md(bumped, canvas=canvas_kind),
+        encoding="utf-8",
+    )
+
+    new_nodes = [bumped if n.id == node_id else n for n in canvas.nodes]
+    new_canvas = canvas.model_copy(update={"nodes": new_nodes})
+    write_canvas(plot_root, project_id, new_canvas)
+
+    commit = publish_snapshot(
+        project_dir,
+        node_id=node.id,
+        kind=node.kind,
+        canvas=canvas_kind,
+        label=node.label,
+        from_v=from_v,
+        to_v=to_v,
+    )
+
+    return {
+        "node_id": node.id,
+        "from_version": from_v,
+        "to_version": to_v,
+        "md_path": str(md_path.relative_to(project_dir)),
+        "sha": commit["sha"],
+    }

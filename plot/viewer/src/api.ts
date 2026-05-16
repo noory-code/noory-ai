@@ -256,6 +256,36 @@ export async function tagProject(
   );
 }
 
+// ---------------------------------------------------------------------------
+// v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
+// ---------------------------------------------------------------------------
+
+export interface PublishNodeResponse {
+  node_id: string;
+  from_version: string;
+  to_version: string;
+  md_path: string;
+  sha: string;
+}
+
+export async function publishNode(
+  projectPath: string,
+  projectId: string,
+  canvasKind: string,
+  nodeId: string,
+  serviceId?: string,
+): Promise<PublishNodeResponse> {
+  const params = new URLSearchParams({ project_path: projectPath });
+  if (serviceId) params.set("service_id", serviceId);
+  const url =
+    `${API_BASE}/api/projects/${encodeURIComponent(projectId)}` +
+    `/canvases/${encodeURIComponent(canvasKind)}` +
+    `/nodes/${encodeURIComponent(nodeId)}/publish?${params.toString()}`;
+  return json<PublishNodeResponse>(
+    await fetch(url, { method: "POST" }),
+  );
+}
+
 export async function deleteProjectTag(
   projectPath: string,
   projectId: string,

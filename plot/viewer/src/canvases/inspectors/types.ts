@@ -20,6 +20,11 @@ export interface KindInspectorProps {
   onPatchNode: (patch: Partial<SketchNode>) => void;
   /** Remove a node entirely (used by ``BaseInspector``'s delete button). */
   onDeleteNode: (nodeId: string) => void;
+  /** v0.18.0 Phase 3 (D-2026-05-16-E) — publish the selected node
+   *  (used by ``BaseInspector``'s publish button). Optional so the
+   *  prop can be elided in tests / shells that don't surface
+   *  publish. */
+  onPublishNode?: (nodeId: string) => void;
   /** Close the panel (used by ``BaseInspector``'s close button). */
   onClose: () => void;
   /** v0.7: needed for the MD editor's file paths + preview-cache hints. */

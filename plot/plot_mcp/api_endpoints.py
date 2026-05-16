@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from pydantic import ValidationError
 from starlette.requests import Request
@@ -25,9 +25,11 @@ from plot_mcp.file_io import (
     write_text_file,
 )
 from plot_mcp.folder_io import (
+    PublishNotEligibleError,
     create_project,
     delete_project,
     list_service_details,
+    publish_node,
     read_canvas,
     read_project,
     rename_project,
@@ -342,6 +344,47 @@ async def tag_post_endpoint(request: Request) -> JSONResponse:
     try:
         result = tag_snapshot(folder, name, message=message)
     except TagAlreadyExistsError as exc:
+        return _error(str(exc), status=409)
+    return JSONResponse(result, status_code=201)
+
+
+# ---------------------------------------------------------------------------
+# v0.18.0 Phase 3 (D-2026-05-16-E) — publish endpoint
+# ---------------------------------------------------------------------------
+
+
+async def node_publish_endpoint(request: Request) -> JSONResponse:
+    """``POST /api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/publish``
+
+    Optional query parameter ``service_id`` for service_detail canvases.
+    Returns ``{node_id, from_version, to_version, md_path, sha}``.
+    Errors:
+      - 404 if project / node not found
+      - 409 if node not publish-eligible (kind/role disallows)
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    canvas_kind = request.path_params["canvas_kind"]
+    node_id = request.path_params["node_id"]
+    if canvas_kind not in _ALLOWED_CANVAS_KINDS:
+        return _error(f"invalid canvas_kind: {canvas_kind}", status=400)
+    service_id = request.query_params.get("service_id") or None
+    try:
+        result = publish_node(
+            plot_root,
+            project_id,
+            cast("CanvasKind", canvas_kind),
+            node_id,
+            service_id=service_id,
+        )
+    except FileNotFoundError as exc:
+        return _error(str(exc), status=404)
+    except KeyError as exc:
+        return _error(str(exc.args[0]), status=404)
+    except PublishNotEligibleError as exc:
         return _error(str(exc), status=409)
     return JSONResponse(result, status_code=201)
 

@@ -4,6 +4,124 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.18.0] — 2026-05-16
+
+Phase 3 of the JSON SSOT migration (D-2026-05-16-E). The visible
+surface of per-node publishing lands. Each eligible node now has a
+**📤 publish** button in its Inspector header that bumps the node's
+``version`` MAJOR component (``v1.0`` → ``v2.0``), emits a uniform
+per-node MD file under ``<canvas>/published/{kind}-{slug}-{version}.md``,
+and records a git commit with machine-readable ``Publish-*:``
+trailers. The trailers are the **Phase 4 contract** (MINOR
+propagation parses them via ``git interpret-trailers`` next phase).
+A **version badge** in the Inspector header's left cluster shows the
+node's current version next to its KIND tag.
+
+Eligibility per D-2026-05-16-E §1.2: the project anchor, ``is_root``
+nodes (Actors / Services root anchors), and the four ``*_ref`` alias
+kinds are excluded — alias nodes publish via their referent.
+
+Idempotence: always-bump. Two publishes = two distinct MD files +
+two distinct commits. The confirm dialog is the human debounce; its
+text explicitly names this contract so users from npm/cargo
+ecosystems don't carry the wrong mental model.
+
+Audit recovery: no Unpublish button this phase. Recovery procedure
+is documented in ``docs/PUBLISH.md`` (manual ``git revert HEAD``
+plus optional MD cleanup). The v0.18.x follow-up automating this is
+queued in ``docs/NEXT_SESSION.md``.
+
+The PSPEC §6 "canvas auto-commit" line was clarified in
+**v0.17.4** ahead of this commit to avoid bundling a cross-cutting
+docs fix into the feature commit (Plot CLAUDE.md anti-pattern).
+
+### Added
+
+- ``plot_mcp/md_publish.py`` — **new module**. ``render_node_md``
+  emits the uniform "YAML frontmatter (7 keys) + per-typed-field H2
+  sections" MD template across all 15 kinds. ``can_publish`` is the
+  eligibility helper; ``bump_major`` is the version-string
+  arithmetic.
+- ``plot_mcp/folder_io.py::publish_node`` — reads the canvas,
+  bumps the node's ``version``, writes the published MD, writes the
+  bumped canvas, and creates the git commit via
+  ``publish_snapshot``. Raises ``PublishNotEligibleError`` (409) on
+  ineligible kinds; ``KeyError`` (404) on missing node.
+- ``plot_mcp/git_store.py::publish_snapshot`` — parallel to
+  ``tag_snapshot``. ``git add -A`` + ``git commit`` (no
+  ``--allow-empty``, no tag). Subject is human-readable; 5 trailers
+  encode the machine contract: ``Publish-Node-Id`` /
+  ``Publish-Kind`` / ``Publish-Canvas`` / ``Publish-Version-From``
+  / ``Publish-Version-To``.
+- ``plot_mcp/api_endpoints.py::node_publish_endpoint`` →
+  ``POST /api/projects/{id}/canvases/{kind}/nodes/{node_id}/publish``
+  (optional ``service_id`` query param). Returns 201
+  ``{node_id, from_version, to_version, md_path, sha}``.
+- ``plot_mcp/mcp_tools.py::publish_node_tool`` — MCP wrapper.
+- ``viewer/src/api.ts::publishNode`` — viewer client function.
+- ``viewer/src/domain/publishEligibility.ts`` — **new helper**.
+  Server-mirroring ``canPublish(node)`` predicate; drives both the
+  Inspector button visibility and the no-god-import contract for
+  publish gating.
+- ``viewer/src/canvases/inspectors/BaseInspector.tsx`` — version
+  badge in left cluster (no i18n — code value); ``📤`` publish
+  button in right cluster between width-toggle and delete, gated on
+  ``canPublish`` and ``onPublishNode != null``; ``window.confirm``
+  dialog with ``inspector.confirmPublish`` body naming the MAJOR
+  bump explicitly.
+- ``viewer/src/hooks/useProject.ts::publishNodeAction`` — wraps
+  the HTTP call + re-fetches all canvases so the Inspector's
+  ``node.version`` reflects the bump on next paint.
+- ``viewer/src/canvases/SketchCanvas.tsx`` — new ``onPublishNode``
+  prop threaded through SketchInspectorBindings.
+- ``viewer/src/canvases/sketch/SketchInspectorBindings.tsx`` —
+  forwards ``onPublishNode`` to ``KindInspector``.
+- ``viewer/src/canvases/inspectors/types.ts::KindInspectorProps``
+  — optional ``onPublishNode`` field; auto-flows to every per-kind
+  inspector via the ``{...props}`` spread pattern (no per-file
+  thread).
+- ``viewer/src/App.tsx`` — wires ``handlePublishNode`` from
+  ``useProject`` to both the main Canvas and the ServiceDetail
+  modal Canvas.
+- ``viewer/src/i18n/locales/{en,ko}.json`` — 4 new keys:
+  ``inspector.publish`` / ``inspector.publishShort`` /
+  ``inspector.publishHint`` / ``inspector.confirmPublish`` (with
+  ``{kind}`` / ``{label}`` / ``{fromVersion}`` / ``{toVersion}``
+  placeholders).
+- ``tests/test_md_publish.py`` — **new test file**. 24 cases:
+  ``bump_major`` regex + invalid rejects (7), ``can_publish``
+  parametric per kind (10+), uniform frontmatter shape (10),
+  per-typed-field H2 sections, non-string field inline-YAML
+  round-trip, empty-field heading preservation.
+- ``tests/test_folder_io.py`` — 8 new publish tests (MD path,
+  version bump, persisted version, distinct-files-per-publish,
+  rejects project anchor / root actor / unknown node, git commit
+  with trailers).
+- ``tests/test_api_endpoints.py`` — 3 new endpoint tests (200 round-trip,
+  404 on unknown node, 409 on ineligible root).
+- ``viewer/tests/domain/publishEligibility.test.ts`` — **new test
+  file**. 15 parametric cases mirroring the server eligibility
+  table.
+- ``plot/docs/SPEC.md`` — **new section** ``## Publish (v0.18.0)``.
+- ``plot/docs/PUBLISH.md`` — **new doc**. MD format reference,
+  ``published/`` semantics, manual recovery procedure.
+- ``pyproject.toml`` — ``pyyaml>=6.0`` added as a direct dep (was
+  transitive only).
+
+### Changed
+
+- ``viewer/tests/structural-guards.test.tsx`` — LOC ceilings raised
+  for the two chrome files that absorbed Phase 3 responsibilities:
+  - ``canvases/SketchCanvas.tsx``: 420 → 440 (one-time, +20 for
+    publish-prop threading; no-growth henceforth).
+  - ``canvases/inspectors/BaseInspector.tsx``: 220 → 270 (publish
+    button + version badge + confirm dialog handler).
+  Plot CLAUDE.md Gate 2 LOC table updated to match.
+- ``plot/docs/NEXT_SESSION.md`` — Phase 3 entry → Completed;
+  surfaced Phase 4 (MINOR propagation) as new Active queue head;
+  surfaced v0.18.x ``Unpublish button`` follow-up.
+- ``plot/docs/DECISIONS.md`` — D-2026-05-16-E entry.
+
 ## [0.17.4] — 2026-05-16
 
 Docs-only PSPEC §6 clarifier. Lands ahead of v0.18.0 Phase 3 so

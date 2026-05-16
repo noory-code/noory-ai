@@ -144,11 +144,11 @@ ceiling — see `viewer/tests/structural-guards.test.tsx`.
 | File | LOC (2026-05-12) | Ceiling | Rule |
 |---|---:|---:|---|
 | `viewer/src/App.tsx` | 381 | 400 | Plan target locked in v0.16.5 (D-2026-05-12-H). Header / tabs / help / modal / states moved to `shell/`; URL sync / filter / keyboard hooks moved to `hooks/`. |
-| `viewer/src/canvases/SketchCanvas.tsx` | 396 | 420 | **No-growth** — shared shell; new responsibilities → new sketch hook or wrapper. |
+| `viewer/src/canvases/SketchCanvas.tsx` | 427 | 440 | v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to thread the publish handler through to SketchInspectorBindings. **No-growth henceforth** — new responsibilities → new sketch hook or wrapper. |
 | `viewer/src/shell/*.tsx` | ≤ 90 | — | App-chrome components (Header / CanvasTabs / HelpCheatsheet / ServiceDetailModal / states). Each owns its slice of chrome JSX; new chrome → new file in `shell/`. |
 | `viewer/src/hooks/use*.ts` | varies | — | App-shell hooks (useProject / useCanvasPersist / useProjectSocket / useUrlSync / useAvailableNodes / useAppKeyboard). Per-concern; do not bundle. |
 | `viewer/src/canvases/nodes/BaseNode.tsx` | 227 | 250 | Chrome SSOT for all 15 per-kind node renderers. New visual responsibilities → per-kind file. |
-| `viewer/src/canvases/inspectors/BaseInspector.tsx` | 198 | 220 | Chrome SSOT for all 15 per-kind inspectors. New chrome → here; new typed-field body → per-kind file. |
+| `viewer/src/canvases/inspectors/BaseInspector.tsx` | 256 | 270 | v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 to absorb the version badge + publish button + confirm-dialog handler. Chrome SSOT for all 15 per-kind inspectors. New chrome → here; new typed-field body → per-kind file. |
 | `viewer/src/canvases/{Foundation,Actors,Services,ServiceDetail}Canvas.tsx` | 16-23 | 150 | Props-only thin shells. **Never** put behaviour here — push it into a sketch hook or BaseNode chrome flag. |
 | `viewer/src/canvases/nodes/{kind}/index.tsx` × 15 | ≤ 19 | 100 | Per-kind node renderer; wraps `BaseNode` with kind-specific chrome flags + body override. |
 | `viewer/src/canvases/inspectors/{kind}/index.tsx` × 15 | ≤ 167 | 250 | Per-kind inspector; renders inside `BaseInspector`'s slot. |

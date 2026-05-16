@@ -29,6 +29,10 @@ export interface SketchInspectorBindingsProps {
   availableIdentities: DocNode[] | undefined;
   projectPath: string;
   projectId: string;
+  /** v0.18.0 Phase 3 (D-2026-05-16-E) — publish handler routed
+   *  through to BaseInspector. Receives node id; the BaseInspector
+   *  itself shows the confirm dialog and prepares the version bump. */
+  onPublishNode?: (nodeId: string) => void;
 }
 
 export function SketchInspectorBindings({
@@ -48,6 +52,7 @@ export function SketchInspectorBindings({
   availableIdentities,
   projectPath,
   projectId,
+  onPublishNode,
 }: SketchInspectorBindingsProps) {
   if (!inspectorNodeId) return null;
   const node = doc.nodes.find((n) => n.id === inspectorNodeId) ?? null;
@@ -92,6 +97,7 @@ export function SketchInspectorBindings({
         });
       }}
       onClose={() => setInspectorNodeId(null)}
+      onPublishNode={onPublishNode}
     />
   );
 }

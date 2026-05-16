@@ -96,6 +96,10 @@
     "closeInspector": "Close inspector",
     "mdWarnings": "⚠ Markdown template warnings",
     "mdWarningsFixHint": "Edit <code>{{path}}</code> to fix.",
+    "publish": "Publish version",
+    "publishShort": "📤 publish",
+    "publishHint": "Bump MAJOR version and emit a published MD file. Each publish creates a new version.",
+    "confirmPublish": "Publish {{kind}} \"{{label}}\"?\n\nThis bumps version {{fromVersion}} → {{toVersion}}, writes a new MD file, and records a git commit. Each publish creates a new version — cancel if you didn't mean to bump.",
     "field": {
       "theme": "Theme",
       "whatWeDo": "What we do",

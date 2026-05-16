@@ -479,3 +479,81 @@ auto-layout removal apply globally to every canvas.)
 These remain implementation-defined until the user gives direction
 and a `D-YYYY-MM-DD-X` entry is added to
 [`DECISIONS.md`](./DECISIONS.md).
+
+---
+
+## Publish (v0.18.0+)
+
+Per [D-2026-05-16-E](./DECISIONS.md). Publish is an explicit
+per-node action: the user selects a node, clicks the **📤** button
+in the Inspector header, confirms the dialog, and three things
+happen atomically — the node's ``version`` bumps MAJOR
+(``v1.0 → v2.0``), a uniform MD file lands at
+``<canvas>/published/{kind}-{slug}-{version}.md``, and a git commit
+is recorded with machine-readable ``Publish-*:`` trailers.
+
+### What the Inspector shows
+
+- **Version badge** (left header cluster, after KIND tag) —
+  monospace ``v<MAJOR>.<MINOR>`` (e.g. ``v1.0``). No i18n.
+- **Publish button** (right header cluster, between width-toggle and
+  delete) — labeled ``📤 publish`` (i18n via
+  ``inspector.publishShort``). Hidden when the node is publish-
+  ineligible (see eligibility table below).
+
+### Publish eligibility (15 kinds)
+
+| kind | Inspector button | Reason |
+|---|:---:|---|
+| `project` | hidden | anchor mirrors ``ProjectDoc.name`` |
+| `actor` (is_root) | hidden | cross-canvas anchor for ``actor_ref`` |
+| `service` (is_root) | hidden | ServiceDetail canvas anchor |
+| `actor_ref` / `mission_ref` / `value_ref` / `identity_ref` | hidden | aliases; publish the referent instead |
+| 10 remaining (mission / core_value / identity / category / actor non-root / service non-root / metric / step / rule / content) | visible | publish bumps own MAJOR |
+
+The eligibility predicate is implemented twice in lockstep —
+``plot_mcp/md_publish.py::can_publish`` and
+``viewer/src/domain/publishEligibility.ts::canPublish``. Drift
+between the two is a Phase 4-blocking bug; both must stay in sync.
+
+### What lands on disk per publish
+
+- **MD file** at
+  ``<project_id>/<canvas>/published/{kind}-{slug}-{version}.md`` in
+  the format pinned in [`PUBLISH.md`](./PUBLISH.md).
+- **Bumped ``version`` field** persisted to the canvas's
+  ``canvas.json`` via the regular write path.
+- **Git commit** in the project's git repo
+  (``.plot/{project_id}/.git``) with subject
+  ``publish: {kind} "{label}" → {version}`` and 5 ``Publish-*:``
+  trailers: ``Publish-Node-Id`` / ``Publish-Kind`` /
+  ``Publish-Canvas`` / ``Publish-Version-From`` /
+  ``Publish-Version-To``. Phase 4 parses the trailers via
+  ``git interpret-trailers``.
+
+### Idempotence
+
+Always-bump. Publishing the same node N times produces N distinct
+MD files (``-v2.0.md`` / ``-v3.0.md`` / …) and N distinct commits.
+The confirm dialog text names this contract so users from
+npm/cargo ecosystems don't carry the wrong mental model.
+
+### Recovery from a misclick
+
+No Unpublish button in v0.18.0. Manual recovery is documented in
+[`PUBLISH.md`](./PUBLISH.md) — ``git revert HEAD`` plus optional
+MD-file cleanup. An automated **Unpublish** button is queued as a
+v0.18.x follow-up in [`NEXT_SESSION.md`](./NEXT_SESSION.md).
+
+### What Phase 3 explicitly does NOT do
+
+- **MINOR propagation up the ancestor chain.** Phase 4 (own
+  plan-mode entry; reads ``Publish-*:`` trailers).
+- **Container-publish semantics** (publishing a `category` pulls
+  children too). Phase 5.
+- **Folder-hierarchy MD layout** (``published/foundation/mission/
+  v2.0.md`` style). Phase 5.
+- **Render-preview surface** for published MD files inside the
+  viewer. Out of scope.
+- **Bulk publish** / publish-history viewer / batched publish.
+  Out of scope.

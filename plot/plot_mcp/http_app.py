@@ -16,6 +16,7 @@ from plot_mcp.api_endpoints import (
     file_put_endpoint,
     folder_post_endpoint,
     health_endpoint,
+    node_publish_endpoint,
     project_anchor_patch_endpoint,
     project_delete_endpoint,
     project_get_endpoint,
@@ -106,6 +107,12 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
             "/api/projects/{project_id}/tags/{tag_name}",
             tag_delete_endpoint,
             methods=["DELETE"],
+        ),
+        # v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
+        Route(
+            "/api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/publish",
+            node_publish_endpoint,
+            methods=["POST"],
         ),
         WebSocketRoute("/ws", ws_endpoint),
     ]

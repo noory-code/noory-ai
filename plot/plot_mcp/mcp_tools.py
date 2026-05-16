@@ -8,14 +8,16 @@ both interchangeably.
 from __future__ import annotations
 
 import webbrowser
-from typing import Any
+from typing import Any, cast
 
 from fastmcp import FastMCP
 
 from plot_mcp.folder_io import (
+    PublishNotEligibleError,
     create_project,
     delete_project,
     list_service_details,
+    publish_node,
     read_canvas,
     read_project,
     sync_details_with_overview,
@@ -168,6 +170,42 @@ def tag_project(
     try:
         return tag_snapshot(plot_root / project_id, name, message=message)
     except TagAlreadyExistsError as exc:
+        raise ValueError(str(exc)) from exc
+
+
+@mcp.tool()
+def publish_node_tool(
+    project_path: str,
+    project_id: str,
+    canvas_kind: str,
+    node_id: str,
+    service_id: str | None = None,
+) -> dict[str, Any]:
+    """Publish a single node (Phase 3, D-2026-05-16-E).
+
+    Bumps the node's ``version`` MAJOR component (``v1.0`` → ``v2.0``),
+    writes a per-node MD file at
+    ``<canvas>/published/{kind}-{slug}-{version}.md``, and creates a
+    git commit with machine-readable ``Publish-*:`` trailers (Phase 4
+    reads these trailers for ancestor MINOR propagation).
+
+    Eligibility: project anchor / ``is_root`` / ``*_ref`` kinds are
+    rejected with ValueError. All other 10 kinds (mission, core_value,
+    identity, actor non-root, service non-root, category, metric,
+    step, rule, content) are publish-eligible.
+
+    Returns ``{node_id, from_version, to_version, md_path, sha}``.
+    """
+    plot_root = resolve_plot_root(project_path)
+    try:
+        return publish_node(
+            plot_root,
+            project_id,
+            cast("CanvasKind", canvas_kind),
+            node_id,
+            service_id=service_id,
+        )
+    except PublishNotEligibleError as exc:
         raise ValueError(str(exc)) from exc
 
 
