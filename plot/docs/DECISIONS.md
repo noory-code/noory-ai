@@ -4486,3 +4486,58 @@ in the same browser-verification round:
   - cross-kind ref typed-text symmetry — *왜 actor_ref 만 `gives`/
     `receives` 가 있고 mission_ref / value_ref / identity_ref 는
     없는가?* — 가치 있을 때 별도 phase 재검토.
+
+---
+
+### D-2026-05-17-A — Reload fit-view race fix (DOM measurement)
+
+- **What:** Move ``fitView`` from RF's ``onInit`` callback into a
+  ``useNodesInitialized`` effect inside ``SketchCanvas``. ``onInit``
+  now only stores the instance ref. A ``didInitialFitRef`` gate
+  ensures fit fires once per mount; ``activeCanvasKey`` remount in
+  App.tsx re-triggers on tab change.
+
+- **Why:** User reported on Foundation reload (2026-05-17):
+  *"파운데이션에서 새로고침 하면 노드들 싹다 사라집니다."* Disk
+  inventory confirmed all 4 nodes + 4 edges intact. Real failure
+  mode: viewport pinned at (0, 0); user-placed nodes outside the
+  default 1080×720 viewport rendered off-screen until manual
+  fit-view click. Root cause: RF's ``onInit`` fires *before* node
+  DOM measurement, so ``inst.fitView`` computed bounds from
+  un-measured nodes and snapped to (0, 0).
+  ``useNodesInitialized`` returns ``true`` only after every node
+  carries real measured dimensions.
+
+- **Alternatives considered:**
+  - **setTimeout(0) inside onInit** — works but magic delay;
+    ``useNodesInitialized`` is the explicit RF API.
+  - **``fitView`` prop on ``<ReactFlow>``** — re-introduces the
+    v0.16.18 (D-2026-05-12-T) regression where every render's
+    fresh ``nodes`` array reference triggers re-fit, resetting
+    user's manual zoom/pan.
+  - **Drop fit entirely, manual only** — rejected; reproduces
+    the bug being fixed.
+
+- **Approval:** Accepted by user, 2026-05-17. Confirmed via
+  chrome-devtools MCP reload (all 4 Foundation nodes + 4 edges
+  visible without manual fit; console clean).
+
+- **Spec impact:** None new. v0.16.18 (D-2026-05-12-T) "fit once
+  on mount, not every render" intent preserved; only the *trigger*
+  for that single fit moves from ``onInit`` to
+  ``useNodesInitialized``.
+
+- **Files in this commit:**
+  - ``viewer/src/canvases/SketchCanvas.tsx`` — +~14 LOC.
+  - ``plot/.claude-plugin/plugin.json`` — 0.18.2 → 0.18.3.
+  - ``plot/CHANGELOG.md`` — v0.18.3 section.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Test counts:** viewer 522/522 green (LOC budget guard caught
+  +2 over-440 first attempt → trimmed to fit). tsc clean.
+
+- **Cross-refs:**
+  - [D-2026-05-12-T](./DECISIONS.md) — v0.16.18 "fit once on
+    mount" gating; intent preserved through different trigger.
+  - [D-2026-05-16-E](./DECISIONS.md) — v0.18.0 LOC ceiling 440;
+    this entry's +14 LOC fits within budget.

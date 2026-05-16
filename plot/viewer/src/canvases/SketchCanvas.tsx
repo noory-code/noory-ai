@@ -1,10 +1,12 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
   ControlButton,
   Controls,
   ReactFlowProvider,
+  useNodesInitialized,
+  useReactFlow,
   type NodeChange,
   type ReactFlowInstance,
 } from "reactflow";
@@ -166,6 +168,17 @@ function SketchCanvasInner({
   docRef.current = doc;
   const flowRef = useRef<ReactFlowInstance | null>(null);
   const selectedNodeIds = useRef<string[]>([]);
+  // v0.18.3 (D-2026-05-17-A) — defer fitView until RF measures every
+  // node's DOM box. The onInit path fit (0,0) before measurement.
+  const rf = useReactFlow();
+  const nodesInitialized = useNodesInitialized();
+  const didInitialFitRef = useRef(false);
+  useEffect(() => {
+    if (nodesInitialized && !didInitialFitRef.current) {
+      rf.fitView({ padding: 0.2 });
+      didInitialFitRef.current = true;
+    }
+  }, [nodesInitialized, rf]);
   const clipboard = useSketchClipboard();
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);
   const [edgeModalId, setEdgeModalId] = useState<string | null>(null);
@@ -355,16 +368,12 @@ function SketchCanvasInner({
         onPaneContextMenu={openPaneMenu}
         onInit={(inst) => {
           flowRef.current = inst;
-          // v0.16.18 (D-2026-05-12-T) — fitView only on mount, NOT
-          // on every render. The ``fitView`` prop on ReactFlow used
-          // to fire whenever the ``nodes`` array reference changed
-          // (every render in our setup — useNodesMemo always returns
-          // a fresh array because of synthetic-anchor injection),
-          // which reset the user's manual zoom/pan mid-session.
-          // Each canvas wrapper has ``key={activeCanvasKey}`` in App.tsx
-          // so tab changes naturally remount and re-fit; viewport
-          // stays stable across non-mount renders.
-          inst.fitView({ padding: 0.2 });
+          // v0.18.3 (D-2026-05-17-A) — fitView moved out of onInit to
+          // the ``useNodesInitialized`` effect above (DOM-measurement
+          // race). v0.16.18 (D-2026-05-12-T) intent — fit once on
+          // mount, not on every render — is preserved by the
+          // ``didInitialFitRef`` gate. ``activeCanvasKey`` remount
+          // path still re-fits (didInitialFitRef resets per remount).
         }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />

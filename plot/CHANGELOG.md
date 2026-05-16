@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.18.3] — 2026-05-17
+
+Fixes a viewport-fit race surfaced on reload (D-2026-05-17-A):
+loading a Foundation canvas with user-positioned nodes outside the
+default 1080×720 box left the viewport stuck on (0, 0), so nodes
+appeared "gone" until the user clicked fit-view manually. Root
+cause: ``onInit``'s ``fitView`` ran before RF measured node DOM
+boxes, so it fit to (0, 0). Replaced with a
+``useNodesInitialized`` effect that fits exactly once after
+measurement.
+
+The v0.16.18 (D-2026-05-12-T) "fit once on mount, not every
+render" intent is preserved — a ``didInitialFitRef`` ref gates
+re-fits within the same mount, and ``activeCanvasKey`` remount in
+``App.tsx`` still triggers a fresh fit on tab change.
+
+### Changed
+
+- ``viewer/src/canvases/SketchCanvas.tsx`` — moved ``fitView`` out
+  of ``onInit`` into a ``useNodesInitialized`` effect; ``onInit``
+  now only stores the instance reference.
+
 ## [0.18.2] — 2026-05-16
 
 Brings the v0.17.0 Phase 1 *"JSON value = MD-formatted string +
