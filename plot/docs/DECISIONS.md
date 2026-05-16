@@ -3692,6 +3692,107 @@ in the same browser-verification round:
   must name the thing that is missing, not the thing that
   references the missing thing."*
 
+---
+
+### D-2026-05-13-N — Anchor edge cleanup whitelist (v0.16.37 follow-up)
+
+- **What:** Add ``PROJECT_ANCHOR_ID`` to the ``node_ids`` set in
+  ``_evict_legacy_project_anchor``'s defensive orphan-edge cleanup
+  branch (``folder_io.py:437-443``). Same one-line fix as v0.16.37
+  applied to the second location that needed it.
+
+- **Why:** User reported v0.16.37 incomplete: *"안고쳐짐.
+  새로고침을 하다보면 캔버스에 노드들이 사라지는 이슈가 있네요"*.
+  Investigation:
+  - canvas.json showed 2 anchor edges present (the v0.16.37 fix
+    made user PUT 200 OK, edges hit disk).
+  - Server log showed PUT 200 OK + ongoing GETs.
+  - Server-side ``_evict_legacy_project_anchor`` has a *second*
+    cleanup that runs even when ``legacy_anchors`` is empty (the
+    defensive branch). That cleanup also did
+    ``node_ids = {n.get("id") for n in nodes}`` — the same anchor-id
+    gap the Pydantic validator had.
+  - Sequence: read canvas → defensive cleanup strips anchor edges
+    → write empty edges → watcher fires → viewer refetches →
+    fresh read → empty doc → nodes/edges disappear from viewer
+    even though storage briefly recovers when the next user PUT
+    races in.
+
+  This is the *same shape* as the v0.16.34 add-then-evict loop, with
+  a different pair of functions in opposing directions:
+
+  ```
+  user PUT writes anchor edges  →  storage has them briefly
+  read calls _evict_legacy → defensive cleanup → strip → write 0
+  → watcher → broadcast → viewer refetch (empty response)
+  → next user PUT writes anchor edges again ... race race race
+  ```
+
+  v0.16.37 fixed only the validator. The cleanup was the second
+  bull in the china shop.
+
+- **Why this was missed in v0.16.37:** The Phase 1 agent's grep on
+  ``__project_anchor__`` correctly found zero matches in
+  ``plot_mcp/``, but the *risk surface* was wider than the grep
+  hit count: any function with a literal ``{n.id for n in nodes}``
+  *set difference against edge endpoints* needed the same fix.
+  Lesson encoded for plot-design-red-team Attack 5 (Implicit
+  invariants): *"when adding a whitelist constant for a synthetic
+  id, audit every place that computes a 'known ids' set against
+  edge endpoints — not just the place named in the bug report."*
+
+- **Fix:**
+
+  ```python
+  if not legacy_anchors:
+      from plot_mcp.models import PROJECT_ANCHOR_ID
+      node_ids = {n.get("id") for n in nodes} | {PROJECT_ANCHOR_ID}
+      ...
+  ```
+
+  One line of effective change (the ``| {PROJECT_ANCHOR_ID}``).
+
+- **Why local import:** Module-level import would create a
+  circular-import risk between ``folder_io`` (which imports models)
+  and ``models`` (which doesn't, but might in future). The local
+  import keeps the dependency edge unidirectional. Cheap pattern;
+  the function is only called on cold reads, not hot paths.
+
+- **Approval:** Pending — Gate 3 hands-on verification by user in
+  real Chrome after MCP HTTP server restart.
+
+- **Spec impact:** None — same surface as D-2026-05-13-M, just a
+  second function that needed the same whitelist.
+
+- **Files in this commit:**
+  - ``plot/plot_mcp/folder_io.py::_evict_legacy_project_anchor`` —
+    defensive cleanup whitelist.
+  - ``plot/tests/test_folder_io.py`` — 2 regression tests:
+    - ``test_read_canvas_preserves_anchor_edges_across_repeated_reads``
+      — anchor edges survive read + canvas.json mtime stable.
+    - ``test_orphan_non_anchor_edges_still_stripped`` —
+      backward-compat: non-anchor orphan edges still stripped.
+  - ``plot/CHANGELOG.md`` — v0.16.38 section.
+  - ``plot/.claude-plugin/plugin.json`` — patch bump 0.16.37 → 0.16.38.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Test counts:**
+  - Before: 281 server tests.
+  - After: 283 server tests (+2 regression).
+
+- **D-2026-05-13-I closure status (updated):**
+  - 422 storm + e_-prefixed unknown ids: resolved in
+    D-2026-05-13-M.
+  - 'nodes disappear on reload' refetch loop via anchor-edge cleanup:
+    resolved here in D-2026-05-13-N.
+  - ``services/canvas.json`` None→None orphan edge: still open.
+
+- **Lesson (process):** Sequential bug-fix sessions that share a
+  root cause (synthetic-id gap) should audit *every* function with
+  the same shape, not just the one named in the bug report.
+  Adding the same whitelist twice in one day for the same constant
+  is the signal.
+
 - **Spec impact:** None — internal migration helper. The user-facing
   invariant ("page load is a single GET set per canvas, then idle")
   is implicit in the design; no SPEC.md line names it. If this class

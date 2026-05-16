@@ -290,3 +290,125 @@ def test_write_canvas_does_not_commit(plot_root: Path) -> None:
         text=True,
     )
     assert result.returncode != 0  # still no commits
+
+
+# ---------------------------------------------------------------------------
+# v0.16.38 — D-2026-05-13-N: anchor edges survive the defensive orphan-edge
+# cleanup in ``_evict_legacy_project_anchor``.
+# ---------------------------------------------------------------------------
+
+
+def test_read_canvas_preserves_anchor_edges_across_repeated_reads(
+    plot_root: Path,
+) -> None:
+    """Regression: anchor edges (source/target = PROJECT_ANCHOR_ID) must
+    survive the defensive orphan-edge cleanup in
+    ``_evict_legacy_project_anchor``. Prior to D-2026-05-13-N the
+    cleanup's ``node_ids`` set excluded the synthetic anchor id, so
+    every read stripped anchor edges from disk and the watcher fired,
+    causing the refetch storm + on-screen 'edges disappear after
+    reload' symptom (user 2026-05-13).
+
+    This test: write a foundation canvas with two anchor edges, read
+    it three times, assert canvas.json's edges array is unchanged and
+    the file's mtime does not advance between reads (write would
+    advance mtime — the storm trigger)."""
+    from plot_mcp.folder_io import _canvas_file
+    from plot_mcp.models import (
+        PROJECT_ANCHOR_ID,
+        CoreValueNode,
+        IdentityNode,
+        MissionNode,
+        SketchEdge,
+    )
+
+    create_project(plot_root, "alpha", "Alpha")
+    write_canvas(
+        plot_root,
+        "alpha",
+        CanvasDoc(
+            canvas_id="foundation",
+            canvas_kind="foundation",
+            nodes=[
+                MissionNode(id="m", label="Mission"),
+                CoreValueNode(id="cv", label="CoreValue"),
+                IdentityNode(id="id1", label="Identity"),
+            ],
+            edges=[
+                SketchEdge(
+                    id="e_anchor_1",
+                    source=PROJECT_ANCHOR_ID,
+                    target="m",
+                ),
+                SketchEdge(
+                    id="e_anchor_2",
+                    source="cv",
+                    target=PROJECT_ANCHOR_ID,
+                ),
+            ],
+        ),
+    )
+
+    canvas_path = _canvas_file(plot_root, "alpha", "foundation")
+    mtime_baseline = canvas_path.stat().st_mtime
+
+    # Three idle reads must leave the file untouched.
+    for _ in range(3):
+        doc = read_canvas(plot_root, "alpha", "foundation")
+        assert len(doc.edges) == 2, (
+            "anchor edges must survive read — D-2026-05-13-N regression"
+        )
+        edge_endpoints = {(e.source, e.target) for e in doc.edges}
+        assert (PROJECT_ANCHOR_ID, "m") in edge_endpoints
+        assert ("cv", PROJECT_ANCHOR_ID) in edge_endpoints
+
+    mtime_after = canvas_path.stat().st_mtime
+    assert mtime_after == mtime_baseline, (
+        "canvas.json mtime advanced between idle reads — the defensive "
+        "cleanup is rewriting anchor edges away. That's the v0.16.38 "
+        "storm trigger D-2026-05-13-N must prevent."
+    )
+
+
+def test_orphan_non_anchor_edges_still_stripped(plot_root: Path) -> None:
+    """The anchor whitelist must not break the original orphan-edge
+    cleanup intent: edges referencing a truly missing node (not the
+    anchor) should still be stripped on read."""
+    import json
+
+    from plot_mcp.folder_io import _canvas_file
+    from plot_mcp.models import CoreValueNode, IdentityNode, MissionNode
+
+    create_project(plot_root, "alpha", "Alpha")
+    canvas_path = _canvas_file(plot_root, "alpha", "foundation")
+
+    # Manually write a foundation canvas with an orphan edge bypassing
+    # Pydantic validation — simulating a pre-v0.13.0 storage state.
+    raw = {
+        "canvas_id": "foundation",
+        "canvas_kind": "foundation",
+        "service_ref": None,
+        "nodes": [
+            MissionNode(id="m", label="M").model_dump(),
+            CoreValueNode(id="cv", label="CV").model_dump(),
+            IdentityNode(id="id1", label="Id").model_dump(),
+        ],
+        "edges": [
+            {
+                "id": "e_orphan",
+                "source": "ghost_node",  # not in nodes, not the anchor
+                "target": "m",
+                "sourceHandle": None,
+                "targetHandle": None,
+                "label": None,
+                "style": "solid",
+                "action_verb": None,
+                "value_form": [],
+            },
+        ],
+    }
+    canvas_path.write_text(json.dumps(raw), encoding="utf-8")
+
+    # First read should strip the orphan edge.
+    doc = read_canvas(plot_root, "alpha", "foundation")
+    assert len(doc.edges) == 0, "orphan (non-anchor) edge must still be stripped"

@@ -4,6 +4,59 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.38] — 2026-05-13
+
+User reported v0.16.37 fix incomplete: *"안고쳐짐. 새로고침을 하다보면
+캔버스에 노드들이 사라지는 이슈가 있네요"*. Investigation revealed a
+**second anchor-id whitelist gap** in the same server file —
+``_evict_legacy_project_anchor``'s defensive orphan-edge cleanup
+(``folder_io.py:437-443``) used the same ``{n.id for n in nodes}``
+pattern as the Pydantic validator fixed in v0.16.37, which means
+anchor edges were getting stripped on read, the storage write
+triggered the watcher, the watcher fired ``project_changed``, the
+viewer refetched, the cleanup stripped again — the v0.16.34-shape
+loop with anchor edges as the trigger payload. The 200 OK on PUT
+masked the loop because every PUT raced with the next cleanup.
+
+Fix: add the same ``PROJECT_ANCHOR_ID`` whitelist to the defensive
+cleanup. Same one-character philosophical change as v0.16.37 (Phase 1
+agent: *"two layers of defence broken in the same place"*).
+(D-2026-05-13-N)
+
+### Fixed
+
+- ``plot/plot_mcp/folder_io.py::_evict_legacy_project_anchor``
+  defensive orphan-edge cleanup — ``node_ids`` set now includes
+  ``PROJECT_ANCHOR_ID``, so anchor edges survive the cleanup
+  instead of being silently rewritten on every read.
+
+### Added
+
+- ``plot/tests/test_folder_io.py``:
+  - ``test_read_canvas_preserves_anchor_edges_across_repeated_reads``
+    — writes a canvas with two anchor edges (both directions),
+    reads it three times, asserts edges survive + canvas.json mtime
+    does not advance (write would advance it — the storm trigger).
+  - ``test_orphan_non_anchor_edges_still_stripped`` — backward-compat
+    pin: edges referencing truly missing nodes (not the anchor) are
+    still stripped on read.
+
+### Verification
+
+- plot_mcp pytest — 283 / 283 (281 → 283, +2 regression).
+- plot_mcp mypy — clean.
+- plot_mcp ruff — clean (after I001 import-sort fix).
+- viewer vitest — 486 / 486 (no regression).
+- kill-switch — 11 / 11.
+
+### Hands-on (Gate 3 — pending after MCP HTTP restart)
+
+User to verify in real Chrome:
+- Anchor edges persist across repeated hard reloads (the
+  v0.16.37 fix already made PUT succeed; this fix makes the
+  subsequent reads stable).
+- Nodes do not disappear after reload.
+
 ## [0.16.37] — 2026-05-13
 
 Fix anchor-edge 422 reject. User reported *"왜 새로 고침하면 연결선이

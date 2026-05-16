@@ -433,7 +433,18 @@ def _evict_legacy_project_anchor(
         # landed in v0.13.0) may have left orphan edges referencing the
         # removed project node. Strip them now if any are still pointing
         # at a vanished id.
-        node_ids = {n.get("id") for n in nodes}
+        #
+        # v0.16.38 (D-2026-05-13-N) — the synthetic project anchor
+        # ``PROJECT_ANCHOR_ID`` is a valid edge endpoint per
+        # D-2026-05-04-B SPEC mandate even though it doesn't live in
+        # ``nodes``. Whitelist it here so user-drawn anchor edges
+        # aren't strip-and-rewritten on every read (which triggered
+        # the watcher → broadcast → refetch loop reported by the
+        # user on 2026-05-13 as *"새로고침을 하다보면 캔버스에 노드들이
+        # 사라지는 이슈"*).
+        from plot_mcp.models import PROJECT_ANCHOR_ID
+
+        node_ids = {n.get("id") for n in nodes} | {PROJECT_ANCHOR_ID}
         edges: list[dict[str, Any]] = list(raw.get("edges") or [])
         kept_edges = [
             e for e in edges if e.get("source") in node_ids and e.get("target") in node_ids
