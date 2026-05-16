@@ -1,14 +1,18 @@
-import mermaid from "mermaid";
 import { useEffect, useId, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default" });
+import { loadMermaid } from "./mermaidLoader";
 
 /**
  * Render a ``\`\`\`mermaid`` fenced block as an actual diagram by handing
  * the source to ``mermaid.render``. Falls back to the raw code on parse
  * error so a typo in the diagram source doesn't crash the Inspector.
+ *
+ * v0.21.0 (D-2026-05-17-D) switched from a module-level static
+ * ``import mermaid from "mermaid"`` to the shared ``loadMermaid``
+ * singleton so both the Preview tab and the MdTextarea Live Preview
+ * decoration share one lazy chunk.
  */
 function MermaidBlock({ code }: { code: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -18,8 +22,8 @@ function MermaidBlock({ code }: { code: string }) {
   useEffect(() => {
     let cancelled = false;
     const id = `mmd-${baseId}`;
-    mermaid
-      .render(id, code)
+    loadMermaid()
+      .then((mermaid) => mermaid.render(id, code))
       .then(({ svg }) => {
         if (cancelled) return;
         if (ref.current) ref.current.innerHTML = svg;

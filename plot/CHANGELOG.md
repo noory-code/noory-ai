@@ -4,6 +4,76 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.21.0] — 2026-05-17
+
+Live Preview Stage 2 — mermaid SVG inline decoration. Any
+``` ```mermaid``` ``` fenced block inside the Inspector's MdTextarea
+now renders as an SVG widget directly below the closing fence,
+200 ms after the last keystroke. The user keeps editing the raw
+markdown above; the SVG re-renders. Per
+[D-2026-05-17-D](./docs/DECISIONS.md). Stage 2 of the 3-stage
+Obsidian Live Preview track that v0.19.0 started; Stage 3 (heading
+font-size + list bullet + image embed decorations) is queued for
+v0.22.0+.
+
+Mermaid is now **lazy-loaded** through a shared singleton
+([viewer/src/edit/mermaidLoader.ts](./viewer/src/edit/mermaidLoader.ts)).
+A project with no mermaid blocks pays zero mermaid bytes.
+Bundle delta: index chunk **1,759 KB raw / 515 KB gzip** (v0.19.0)
+→ **1,185 KB raw / 381 KB gzip** (v0.21.0) — mermaid moved to its
+own `mermaid.core-*.js` lazy chunk plus per-diagram-type chunks.
+
+Seven open spec questions, all locked in plan-mode
+([D-2026-05-17-D](./docs/DECISIONS.md)): lazy singleton, reuse
+MDPreview error pattern, no size cap, block widget below the fence
+(SSOT keeps source visible), default mermaid theme, 200 ms debounce,
+new vitest SSOT-invariant test.
+
+### Added
+
+- ``viewer/src/edit/mermaidLoader.ts`` (new) — shared
+  ``loadMermaid()`` singleton. Lazy ``import("mermaid")`` + one-time
+  ``mermaid.initialize({ startOnLoad: false, securityLevel: "loose",
+  theme: "default" })``. Hands callers an ``{ render(id, code) }``
+  API and never sees the markdown source itself.
+- ``viewer/src/canvases/inspectors/shared/mdMermaidPlugin.ts``
+  (new) — composite CodeMirror 6 extension. ``mermaidDecoField``
+  ``StateField<DecorationSet>`` holds the current widget set;
+  ``mermaidDebouncer`` ``ViewPlugin`` watches doc changes and
+  dispatches ``setMermaidDecorations`` 200 ms after the last edit.
+  ``MermaidWidget extends WidgetType`` renders the SVG via the
+  shared loader; on failure swaps to a red-border
+  ``data-mermaid="error"`` block.
+- ``viewer/tests/inspectors/mermaid-decoration.test.tsx`` (new) —
+  SSOT invariant + happy path + error path. Mocks ``mermaidLoader``
+  so the real mermaid library is never pulled into the test bundle.
+
+### Changed
+
+- ``viewer/src/canvases/inspectors/shared/MdTextarea.tsx`` — adds
+  ``mdMermaidPlugin`` to the EditorState extensions array (2 LOC).
+- ``viewer/src/edit/MDPreview.tsx`` — switched from
+  ``import mermaid from "mermaid"`` + module-level
+  ``mermaid.initialize`` to the shared ``loadMermaid()`` singleton.
+  First MDPreview render now awaits a dynamic import; first-paint of
+  the Inspector improves because the Preview tab is not on the
+  initial path.
+
+### Architectural notes
+
+- **CodeMirror 6 forbids ``ViewPlugin``-sourced block decorations.**
+  Block widgets must come from a ``StateField`` so they participate
+  in the layout pass. v0.21.0 splits the work: a ``StateField``
+  owns the decoration set, a ``ViewPlugin`` handles the debounce
+  and dispatches ``StateEffect``s. Both ship together as a single
+  ``Extension`` array.
+- **SSOT preserved.** The decoration only reads ``view.state.doc``
+  and emits widgets; it never dispatches a transaction. The
+  vitest ``mermaid decoration — SSOT invariant`` test pins this
+  contract (verifies ``onChange`` is never called and the hidden
+  read-only mirror still matches the original value after the
+  widget renders).
+
 ## [0.20.0] — 2026-05-17
 
 Phase 4 MINOR propagation up the ancestor chain. When a node is

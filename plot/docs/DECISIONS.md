@@ -4736,3 +4736,125 @@ in the same browser-verification round:
   - **Phase 5** — folder hierarchy + container-publish semantics
     → v0.22.0 (was v0.21.0).
   - **Phase 6** — legacy purge + final docs sync → v0.22.1.
+
+---
+
+### D-2026-05-17-D — Mermaid SVG inline decoration (v0.21.0, Live Preview Stage 2)
+
+- **What:** Render ``` ```mermaid``` ``` fenced blocks inside the
+  MdTextarea as inline SVG widgets *below* the closing fence. The
+  raw markdown source remains visible and editable above; the SVG
+  re-renders 200 ms after the last keystroke. Mermaid is loaded
+  lazily — a project with no mermaid blocks pays zero mermaid
+  bytes. Seven sub-decisions, all locked in plan-mode:
+
+  1. **Lazy import trigger:** singleton ``loadMermaid()`` helper.
+     First access (from either MDPreview's Preview tab or the
+     MdTextarea decoration) triggers ``import("mermaid")`` once and
+     caches the promise.
+  2. **Invalid mermaid syntax:** reuse MDPreview's existing
+     pattern — ``mermaid.render`` returns a rejected promise, the
+     widget swaps to a red-border ``data-mermaid="error"`` block
+     containing ``mermaid error: <msg>``. Source text never
+     mutated.
+  3. **Large diagrams + multi-block:** no cap; ``max-height:
+     480px; overflow: auto`` on the widget container. Each fenced
+     block gets its own widget. YAGNI on size caps.
+  4. **Decoration position:** block widget placed *after* the
+     closing ` ``` ` of the fence (``Decoration.widget({ side: 1,
+     block: true })``). The Obsidian Live Preview pattern *hides*
+     source unless the cursor is inside the block; Plot keeps the
+     source visible because SSOT (D-2026-05-13-O #2) requires the
+     authoritative markdown to remain editable + observable at all
+     times. A source-toggle is deferred to a future v0.21.x if the
+     always-visible source becomes pain.
+  5. **Theme:** ``theme: "default"`` (mermaid's bundled theme).
+     Matches the existing ``MDPreview.tsx`` config so the two
+     paths render identically. Plot's slate/indigo chrome lives
+     outside the SVG (border + container).
+  6. **Debounce:** 200 ms on doc changes via a ``ViewPlugin`` that
+     debounces dispatch of the ``setMermaidDecorations``
+     ``StateEffect``. Fast enough that the SVG "feels live"
+     (mermaid parse adds 50-150ms on top); slow enough that typing
+     mid-fence doesn't fire ``mermaid.render`` per keystroke. Bump
+     to 300ms in a v0.21.x patch if complaints arrive.
+  7. **SSOT invariant test:** vitest case mounts ``<MdTextarea
+     value={MERMAID_SOURCE} onChange={fn}>``, waits for the
+     mocked ``mermaid.render`` to be invoked, then asserts
+     ``onChange`` was never called and the hidden mirror textarea
+     still holds the original value. Pins the contract that the
+     decoration cannot mutate source.
+
+- **Architectural note (CodeMirror 6 block decoration rule):**
+  CodeMirror 6 disallows block-level decorations sourced directly
+  from a ``ViewPlugin``'s ``decorations`` facet — they must come
+  from a ``StateField`` so they participate in the layout pass.
+  v0.21.0 therefore splits the plugin into:
+
+  - ``mermaidDecoField`` — ``StateField<DecorationSet>`` holding
+    the current widget set; updated only via the
+    ``setMermaidDecorations`` ``StateEffect`` (otherwise just
+    ``map``s through doc changes so widgets stay anchored).
+  - ``mermaidDebouncer`` — ``ViewPlugin`` that watches doc
+    changes, debounces 200 ms, walks the syntax tree, and
+    dispatches a fresh decoration set via the effect.
+
+  Both ship together as the composite ``mdMermaidPlugin: Extension``
+  spread into the editor's extensions array.
+
+- **Why:** v0.19.0 (D-2026-05-17-B) shipped the CodeMirror 6
+  MdTextarea foundation as "stage 1 of a 3-stage Obsidian Live
+  Preview track". Stage 2 brings the most-requested decoration —
+  mermaid — while keeping the bundle lean (no eager mermaid load).
+  Bundle delta: index chunk ``1,759 KB raw / 515 KB gzip`` (v0.19.0)
+  → ``1,185 KB raw / 381 KB gzip`` (v0.21.0). The 574 KB raw / 134
+  KB gzip difference is mermaid moving to its own lazy chunk.
+
+- **Alternatives considered + rejected:**
+  - *Static ``import mermaid``* — Plot has no project-wide
+    requirement that mermaid be available; users without mermaid
+    blocks shouldn't pay for the library. Rejected.
+  - *Obsidian's replace-on-blur pattern* — would hide the source
+    when the cursor leaves the fence. Plot's SSOT rule + lack of
+    a source-mode toggle make the always-visible source the safer
+    default. Rejected for v0.21.0; reconsiderable later.
+  - *Per-keystroke render (no debounce)* — would fire
+    ``mermaid.render`` 10+ times per second while the user types.
+    Mermaid parse is 50-150ms; the resulting UI jank is
+    unacceptable. Rejected.
+  - *i18n the ``mermaid error:`` prefix.* The existing MDPreview
+    ``MermaidBlock`` has had the same hardcoded prefix since
+    v0.16.x. The string is technical debug output that doesn't
+    surface in normal user flow (only when a user types an
+    invalid diagram). Adding i18n for parity would force the
+    widget (vanilla DOM, no React context) to call ``i18next.t``
+    imperatively — overhead disproportionate to value. Skipped.
+    If a global service review flags the inconsistency, the fix
+    is a 4-line patch in v0.21.x.
+
+- **Approval:** **Accepted** by user, 2026-05-17 — plan-mode
+  walkthrough with the seven sub-decisions presented (one
+  AskUserQuestion-free path; YAGNI / SSOT / KISS make every Q
+  self-resolve). User approved the bundled plan via ExitPlanMode.
+
+- **Spec impact:**
+  - [`SPEC.md` §Typed text + body fields](./SPEC.md#typed-text-and-body-fields-v0190)
+    — extended with a paragraph noting v0.21.0 brings mermaid
+    Live Preview decoration on top of the MdTextarea foundation.
+  - No new top-level SPEC section — the decoration is a visual
+    enhancement of the existing MdTextarea; SSOT contract
+    unchanged.
+
+- **Cross-refs:**
+  - [D-2026-05-17-B](./DECISIONS.md) — v0.19.0 stage 1
+    (CodeMirror 6 foundation).
+  - [D-2026-05-13-O](./DECISIONS.md) #2 — *"JSON value =
+    MD-formatted string"*; the decoration must preserve this
+    contract by never round-tripping through ``onChange``.
+
+- **Follow-ups filed in ``NEXT_SESSION.md``:**
+  - **Live Preview Stage 3** (heading font-size + list bullet +
+    image embed decorations) — now sits at v0.22.0+ in the queue.
+  - **Source-mode toggle** — Obsidian-style "edit vs preview" tab
+    that hides the source when not editing; queued only if the
+    always-visible-source pattern becomes UX pain.

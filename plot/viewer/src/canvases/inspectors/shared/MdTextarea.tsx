@@ -19,6 +19,8 @@ import { EditorState } from "@codemirror/state";
 import { EditorView, highlightSpecialChars, keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
 
+import { mdMermaidPlugin } from "./mdMermaidPlugin";
+
 export interface MdTextareaProps {
   value: string;
   onChange: (value: string) => void;
@@ -73,6 +75,7 @@ export function MdTextarea({
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         highlightSpecialChars(),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+        mdMermaidPlugin,
         baseTheme,
         EditorView.contentAttributes.of({
           "aria-label": placeholder ?? "Markdown editor",

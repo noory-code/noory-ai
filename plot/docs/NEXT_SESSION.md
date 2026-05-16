@@ -9,9 +9,9 @@
 
 ## Active queue
 
-### `v0.21.0 — Mermaid SVG inline decoration` (queued)
+### `Live Preview Stage 3 — heading / list / image decorations` (queued, deferred from v0.21.0)
 
-> **Trigger:** user says **"mermaid"** or **"머메이드"** or **"Live Preview"** or **"v0.21"** as the first / near-first message. (Note: was queued for v0.20.0 until 2026-05-17 — Phase 4 propagation took the v0.20.0 slot per D-2026-05-17-C.)
+> **Trigger:** user says **"Live Preview"** or **"v0.22"** or **"heading style"** or **"image embed"** as the first / near-first message. (Was queued for v0.22.0 previously; check that the version label still makes sense after v0.21.0 ships.)
 >
 > **Filed:** 2026-05-17 (D-2026-05-17-B follow-up). Stage 2 of the
 > 3-stage Obsidian Live Preview track that v0.19.0 started. Render
@@ -127,6 +127,35 @@
 >   used by ``test_git_store.py``.
 >
 > **Ship as:** v0.18.x patch once the misclick rate justifies it.
+
+---
+
+### (archived 2026-05-17) `v0.21.0 — Mermaid SVG inline decoration` — shipped v0.21.0
+
+> **Trigger:** user said *"네 플랜 모드 필요하죠?"* + entered plan mode 2026-05-17. Plan: ``~/.claude/plans/jolly-bouncing-orbit.md``.
+>
+> **Filed:** 2026-05-17. **Shipped** 2026-05-17 same session as [D-2026-05-17-D](./DECISIONS.md). Stage 2 of 3-stage Live Preview track.
+>
+> **7 open questions locked (no AskUserQuestion needed — YAGNI/SSOT/KISS made each answer self-resolve):**
+>
+> 1. Lazy import singleton via ``loadMermaid()``.
+> 2. Reuse MDPreview error pattern (red ``data-mermaid="error"`` block).
+> 3. No size cap; ``max-height: 480px; overflow: auto``.
+> 4. Block widget *below* the fence (not replacing source) — SSOT keeps the markdown editable + visible.
+> 5. Default mermaid theme (matches MDPreview).
+> 6. 200 ms debounce.
+> 7. New vitest SSOT-invariant test.
+>
+> **What landed:**
+> - ``viewer/src/edit/mermaidLoader.ts`` (new) — singleton lazy import + initialize.
+> - ``viewer/src/canvases/inspectors/shared/mdMermaidPlugin.ts`` (new) — ``StateField`` + ``ViewPlugin`` debouncer (CM6 disallows ViewPlugin-sourced block decorations; split is structural, not stylistic).
+> - ``MdTextarea`` wires ``mdMermaidPlugin`` into the extensions list (2-LOC delta).
+> - ``MDPreview`` switched from static ``import mermaid`` to the shared loader.
+> - ``viewer/tests/inspectors/mermaid-decoration.test.tsx`` — 3 cases: SSOT invariant, happy path, error path.
+> - Bundle: index ``1,759 KB / 515 KB gzip`` → ``1,185 KB / 381 KB gzip`` (−574 KB raw / −134 KB gzip).
+> - tsc clean, vitest **529/529** (524 prior + 3 mermaid + 2 unrelated misc?).
+>
+> **Trigger phrases preserved:** ``mermaid`` / ``머메이드`` / ``Live Preview`` / ``v0.21``.
 
 ---
 

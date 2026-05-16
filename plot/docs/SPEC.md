@@ -530,6 +530,16 @@ editor** in the Inspector (headings / lists / bold / italic / code
 edits). The legacy DetailsSection MD-file editor is hidden for all
 10 publish-eligible kinds — JSON SSOT.
 
+**Mermaid Live Preview (v0.21.0+, [D-2026-05-17-D](./DECISIONS.md)):**
+Any ``` ```mermaid``` ``` fenced block inside the MdTextarea renders
+as an inline SVG widget below the closing fence, 200 ms after the
+last keystroke. The raw markdown source stays visible and editable
+above the diagram (SSOT — the decoration is visual-only). Mermaid
+is lazy-loaded the first time *any* mermaid block enters the
+viewer; projects without mermaid blocks pay zero mermaid bytes.
+Invalid mermaid syntax swaps the SVG for a red-border error block
+without disturbing the source.
+
 The ref 4 kinds (`actor_ref` / `mission_ref` / `value_ref` /
 `identity_ref`) are **publish-ineligible** and carry **no
 ``body``** — they are relation tools on the services canvas
