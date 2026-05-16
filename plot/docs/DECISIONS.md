@@ -3459,6 +3459,117 @@ in the same browser-verification round:
   guard. User verbatim: *"이제 됐습니다."* Foundation nodes appear
   and stay visible; no refetch storm in server log.
 
+---
+
+### D-2026-05-13-L — Auto-layout re-introduction (Foundation only, opt-in)
+
+- **What:** Re-introduce the v0.13.9 directional-tree auto-layout
+  feature as a **Foundation-only opt-in**. ``SketchCanvas`` gains
+  an optional ``enableAutoLayout?: boolean`` prop (default false).
+  ``FoundationCanvas`` is the *only* wrapper that passes
+  ``enableAutoLayout={true}``. Other wrappers (Actors / Services /
+  ServiceDetail) never opt in.
+
+- **Why now:** User direct request 2026-05-13: *"혹시 자동 정렬을
+  넣을 수 있을까요? 이걸 물어보는 이유는 자동 정렬 기능을 넣으면
+  항상 캔버스 기본동작들이 망가졌기 때문입니다. ... 다른 곳에
+  영향이 안 가게 만들어야합니다."* User trauma from 4 prior
+  add/remove cycles (D-04-D / D-10-E / D-10-F / D-10-G) — isolation
+  is the non-negotiable constraint.
+
+- **Re-introduction policy compliance** (per D-2026-05-10-G's
+  "Re-introduction policy" 4-condition gate):
+
+  | Condition | Satisfied by |
+  |---|---|
+  | (a) Fresh ``D-YYYY-MM-DD-X`` entry | this entry |
+  | (b) Real-user workflow demanding it | user's direct ask |
+  | (c) Cost/benefit comparison vs D-10-G | the 4-layer isolation contract (below) addresses the "다른 곳에 영향" risk that D-10-G feared. Cursor flicker that originally co-occurred with auto-layout was independently caused by Tailwind preflight and fixed in D-2026-05-10-F — that risk path is permanently closed. |
+  | (d) Explicit user approval before code | ExitPlanMode-approved plan, 2026-05-13 |
+
+- **Isolation contract (4 layers of defence):**
+
+  1. **Wrapper opt-in** — only ``FoundationCanvas`` passes
+     ``enableAutoLayout={true}``. Other 3 wrappers don't pass the
+     prop → default false → button never renders. Adding any other
+     wrapper to the opt-in list is a breaking change that must
+     update ``viewer/tests/auto-layout-isolation.test.tsx``.
+  2. **Conditional render** — ``SketchCanvas`` renders the
+     ``ControlButton`` only when ``enableAutoLayout === true``.
+     React hooks (e.g. ``useAutoLayout``) are still called
+     unconditionally (hooks rule) but the returned callback is
+     wired only to a button that doesn't exist when off — dead
+     code path with zero side effects.
+  3. **No state mutation when disabled** — the hook's callback is
+     pure with respect to ``doc.nodes`` until invoked. ``doc``
+     itself is never read during the hook's identity stability,
+     only inside the on-click handler. Nothing fires implicitly.
+  4. **Touches positions only** — the on-click handler computes
+     new ``(x, y)`` for each user node, builds ``next = {...doc,
+     nodes: doc.nodes.map(...)}``, and dispatches a single
+     ``onDocChange(next)``. ``kind``, ``label``, ``parent_id``,
+     typed-text fields, and edges are spread through unchanged.
+
+- **One-shot apply + Cmd+Z** (chose over the plan's preview/apply
+  pattern): the explicit user-consent guarantee comes from the
+  button click itself; the regular undo stack is the safety net.
+  A separate preview state machine would add 15+ LOC + a separate
+  visual surface for no additional isolation gain. The
+  preview/apply pattern is preserved as a future option if hands-on
+  shows the one-shot UX is too aggressive — convert to preview
+  state pattern in a follow-up D-entry.
+
+- **Algorithm:** Restored unchanged from v0.13.9
+  (``viewer/src/canvases/sketch/autoLayout.ts``, commit
+  ``75330c7``, 297 LOC, pure function — no React imports).
+  Deterministic BFS from the project anchor, handle-aware
+  directional placement, Reingold-Tilford-style sibling spacing.
+  Tied to a fixed anchor so the layout is reproducible across
+  sessions.
+
+- **Type compatibility:** Confirmed via ``npx tsc --noEmit`` —
+  the v0.13.9 algorithm reads only ``BaseFields`` (id / x / y /
+  width / height) on nodes, which is the common shape of every
+  member of the v0.15+ ``SketchNode`` discriminated union. No
+  changes needed to the algorithm.
+
+- **Approval:** Pending — Gate 3 hands-on verification by user in
+  real Chrome.
+
+- **Spec impact:**
+  - ``plot/docs/SPEC.md`` §Auto-layout — full rewrite reflecting
+    the new Foundation-only opt-in + 4-layer isolation contract +
+    5-cycle history block.
+  - ``plot/CLAUDE.md`` rule 6 — *"No auto-layout"* → *"Auto-layout
+    is Foundation-only opt-in"* with explicit prohibition on
+    adding other wrappers without a fresh D-entry.
+
+- **Files in this commit:**
+  - ``plot/viewer/src/canvases/sketch/autoLayout.ts`` (restored,
+    pure function).
+  - ``plot/viewer/src/canvases/sketch/useAutoLayout.ts`` (restored,
+    React hook).
+  - ``plot/viewer/src/canvases/SketchCanvas.tsx`` (prop + conditional
+    button, 412 → 419 LOC, within 420 ceiling).
+  - ``plot/viewer/src/canvases/FoundationCanvas.tsx``
+    (``enableAutoLayout={true}``).
+  - ``plot/viewer/tests/autoLayout.test.ts`` (restored, 13 unit
+    tests).
+  - ``plot/viewer/tests/auto-layout-isolation.test.tsx`` (new, 6
+    isolation regression tests).
+  - ``plot/viewer/tests/SketchCanvas.regression.test.tsx``
+    (comment rewrite — default-off + Foundation opt-in semantics).
+  - ``plot/docs/SPEC.md`` §Auto-layout (rewrite).
+  - ``plot/CLAUDE.md`` rule 6 (rewrite).
+  - ``plot/CHANGELOG.md`` v0.16.36 section.
+  - ``plot/.claude-plugin/plugin.json`` patch bump 0.16.35 → 0.16.36.
+  - ``plot/docs/DECISIONS.md`` — this entry.
+
+- **Test counts:**
+  - Before: 461 viewer tests.
+  - After: 486 viewer tests (+25 — 13 autoLayout unit + 6 isolation
+    + 6 follow-up from regression toggle).
+
 - **Spec impact:** None — internal migration helper. The user-facing
   invariant ("page load is a single GET set per canvas, then idle")
   is implicit in the design; no SPEC.md line names it. If this class

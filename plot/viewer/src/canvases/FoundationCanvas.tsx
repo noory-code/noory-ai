@@ -18,6 +18,7 @@ export function FoundationCanvas(props: SketchCanvasProps) {
       showFoldButton={false}
       injectAnchor={true}
       applyAnchorRadialLayout={true}
+      enableAutoLayout={true}
     />
   );
 }

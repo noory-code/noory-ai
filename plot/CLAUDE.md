@@ -266,9 +266,15 @@ Per `noory-ai/CLAUDE.md` plugin rule:
    visually — the user will draw the edge if they want it shown.
    Per [SPEC §Edges](./docs/SPEC.md#edges) and
    [D-2026-05-04-A](./docs/DECISIONS.md).
-6. **No auto-layout.** Layout encodes user intent.
-   Per [SPEC §Auto-layout](./docs/SPEC.md#auto-layout) and
-   [D-2026-05-04-D](./docs/DECISIONS.md).
+6. **Auto-layout is Foundation-only opt-in.** The
+   `FoundationCanvas` wrapper passes `enableAutoLayout={true}` to
+   `SketchCanvas`; no other wrapper may. The trigger touches
+   `x`/`y` only and lands via the regular `onDocChange` (Cmd+Z
+   undoes it). Per [SPEC §Auto-layout](./docs/SPEC.md#auto-layout)
+   and [D-2026-05-13-L](./docs/DECISIONS.md). The isolation contract
+   is pinned by `viewer/tests/auto-layout-isolation.test.tsx` —
+   never opt other wrappers in without a fresh `D-` entry that
+   updates that test.
 7. **The user controls every line, every position, every colour.**
    The canvas is a co-drawing surface (Plot's PHILOSOPHY.md). Any
    automated change to user-visible state needs explicit consent.

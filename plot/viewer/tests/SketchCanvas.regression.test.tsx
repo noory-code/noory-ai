@@ -141,19 +141,23 @@ describe("SketchCanvas regression — pin v0.13.2 reverts", () => {
     expect(handles.length).toBe(4);
   });
 
-  it("canvas does not render an 'Auto layout' button anywhere", () => {
-    // D-2026-05-10-G — auto-layout removed again per user cost/benefit.
-    // Spec'd in v0.13.8 (D-2026-05-10-E), implemented in v0.13.9, button
-    // moved to lower-left in v0.13.10 (D-2026-05-10-F), removed entirely
-    // in v0.14.1 — feature value < complexity overhead at current Plot
-    // stage. (Cursor issues blamed on auto-layout were independently
-    // caused by Tailwind preflight per D-2026-05-10-F and remain fixed
-    // after this removal.)
+  it("SketchCanvas default (no enableAutoLayout prop) renders no Auto layout button", () => {
+    // D-2026-05-13-L — auto-layout re-introduced as Foundation-only
+    // opt-in via ``enableAutoLayout`` wrapper prop. SketchCanvas
+    // default behaviour stays "no auto-layout button" — only the
+    // FoundationCanvas wrapper opts in. Actors / Services /
+    // ServiceDetail wrappers must never opt in (isolation regression
+    // covered in auto-layout-isolation.test.tsx).
+    //
+    // History: D-2026-05-04-D removed (misread), D-2026-05-10-E
+    // restored (directional-tree), D-2026-05-10-F button placement,
+    // D-2026-05-10-G removed again (cost/benefit), D-2026-05-13-L
+    // re-introduced as isolated opt-in.
     const doc = makeCanvas("foundation", [
       makeNode({ id: "mission", label: "Mission", kind: "mission" }),
     ]);
     const { queryByRole } = mount(doc);
-    expect(queryByRole("button", { name: /auto layout/i })).toBeNull();
+    expect(queryByRole("button", { name: /auto.?layout/i })).toBeNull();
   });
 
   it("Inspector aside appears after a node click", () => {

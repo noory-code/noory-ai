@@ -4,6 +4,88 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.36] — 2026-05-13
+
+Re-introduce auto-layout as Foundation-only opt-in feature with a
+4-layer isolation contract. User direct request: *"혹시 자동 정렬을
+넣을 수 있을까요? ... 다른 곳에 영향이 안 가게 만들어야합니다."*
+Closes the D-2026-05-10-G re-introduction policy with a fresh
+decision (D-2026-05-13-L) that satisfies all four conditions:
+fresh D-id, real-user workflow, cost/benefit vs D-G, explicit user
+approval before code.
+
+The v0.13.9 directional-tree algorithm
+(`computeAutoLayout`, BFS spanning tree + handle-aware placement
++ Reingold-Tilford overlap avoidance, deterministic) is restored
+unchanged — pure function from commit 75330c7, no type changes
+needed (compatible with the v0.15+ discriminated union via
+`BaseFields`).
+
+### Added
+
+- `viewer/src/canvases/sketch/autoLayout.ts` — restored v0.13.9
+  pure function (297 LOC, no React import).
+- `viewer/src/canvases/sketch/useAutoLayout.ts` — React hook
+  wrapping `computeAutoLayout` (43 LOC).
+- `viewer/tests/autoLayout.test.ts` — 13 unit tests restored.
+- `viewer/tests/auto-layout-isolation.test.tsx` — 6 isolation
+  regression tests:
+  - FoundationCanvas renders the button (opt-in present).
+  - ActorsCanvas / ServicesCanvas / ServiceDetailCanvas: button
+    must NOT exist (isolation contract).
+  - Clicking the button calls `onDocChange` exactly once
+    (one-shot apply contract).
+  - Auto-layout touches positions only (kind / label / typed-text
+    byte-identical before vs after).
+
+### Changed
+
+- `viewer/src/canvases/SketchCanvas.tsx` — added optional
+  `enableAutoLayout?: boolean` prop (default `false`). When
+  true, the `<Controls>` panel renders an extra ⊞ button wired
+  to `useAutoLayout`. SketchCanvas LOC 412 → 419 (within 420
+  ceiling).
+- `viewer/src/canvases/FoundationCanvas.tsx` — passes
+  `enableAutoLayout={true}` (the only wrapper that does so).
+- `viewer/tests/SketchCanvas.regression.test.tsx` — the
+  "no Auto layout button" assertion is preserved but the comment
+  is rewritten to reflect the new "default-off; FoundationCanvas
+  wrapper opts in" semantics.
+- `docs/SPEC.md` §Auto-layout — full rewrite. "Removed (again)"
+  → "Re-introduced v0.16.36, Foundation only, opt-in" + the
+  4-layer isolation contract + 5-cycle history block.
+- `CLAUDE.md` rule 6 — *"No auto-layout"* →
+  *"Auto-layout is Foundation-only opt-in. … never opt other
+  wrappers in without a fresh D- entry that updates that test."*
+- `docs/DECISIONS.md` — D-2026-05-13-L entry pinning vision +
+  isolation contract.
+
+### Design (one-shot apply + Cmd+Z, chose over preview/apply)
+
+The user's *"다른 곳에 영향 안 가게"* constraint is satisfied by
+the wrapper-opt-in pattern; the user-consent guarantee is the
+explicit button click + the undo stack as the safety net. A
+preview/apply state machine would add 15+ LOC and a separate
+preview-state surface for no additional isolation gain. The
+plan's preview/apply pattern is preserved as a deferred option
+in the D-2026-05-13-L body for future consideration if hands-on
+shows the one-shot UX is too aggressive.
+
+### Verification
+
+- viewer vitest — 486 / 486 (461 → 486, +25 new tests).
+- viewer tsc — clean.
+- structural-guards — SketchCanvas 419 / 420 ceiling.
+- plot_mcp pre-commit gate (kill-switch) — 11 / 11.
+
+### Hands-on (Gate 3 — pending user verification)
+
+User to verify in real Chrome after viewer hot-reload:
+- Foundation canvas: `<Controls>` shows the ⊞ Auto-layout button.
+- Clicking it rearranges nodes deterministically; Cmd+Z reverts.
+- Actors / Services / ServiceDetail canvases: no button (drag /
+  pan / zoom / cursor unchanged).
+
 ## [0.16.35] — 2026-05-13
 
 Pin user hands-on confirmation of v0.16.34 page-load refetch storm

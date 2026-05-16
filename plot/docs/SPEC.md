@@ -121,23 +121,70 @@ were *not* originally a self-loop) still drop. Decision
 
 ## Auto-layout
 
-**Removed (again) per [D-2026-05-10-G](./DECISIONS.md).** The Plot
-canvas does not render an "Auto layout" button anywhere. There is no
-auto-layout entry in the pane context menu either. Layout is fully
-manual.
+**Re-introduced v0.16.36 per [D-2026-05-13-L](./DECISIONS.md) — Foundation
+only, opt-in via wrapper prop.** Plot's `SketchCanvas` default behaviour
+is *no auto-layout button*. The `FoundationCanvas` wrapper is the *only*
+wrapper that opts in via `enableAutoLayout={true}`. The `ActorsCanvas`,
+`ServicesCanvas`, and `ServiceDetailCanvas` wrappers must never opt in
+(isolation regression test: `viewer/tests/auto-layout-isolation.test.tsx`).
 
-> **History:** D-2026-05-04-D removed auto-layout based on a
-> misattributed user request (real intent was to remove
-> download/upload only). D-2026-05-10-E reversed that with a full
-> directional-tree spec, implemented in v0.13.9, button placement
-> tuned in v0.13.10 (D-2026-05-10-F). v0.14.1 removes the feature
-> again — this time with explicit user cost/benefit reasoning:
-> *"auto layout 빼야겠네 문제가 너무 많다"*. The lingering
-> cursor-flicker problems user associated with auto-layout were
-> independently caused by Tailwind preflight on
-> `.react-flow__node[role="button"]` and remain fixed
-> (D-2026-05-10-F). Re-introducing auto-layout would need a fresh
-> decision id and a clear cost/benefit story for the new context.
+### Behaviour (Foundation canvas only)
+
+- The `<Controls>` panel (bottom-left of the canvas) renders an extra
+  `⊞` button labelled "Auto-layout".
+- Clicking it runs the v0.13.9 directional-tree algorithm
+  ([`viewer/src/canvases/sketch/autoLayout.ts`](../viewer/src/canvases/sketch/autoLayout.ts)):
+  - The project anchor stays fixed in place (BFS root).
+  - Spanning tree from anchor places each child in the direction
+    (T/R/B/L) of the parent-side handle on the connecting edge.
+  - Sibling spacing tracks subtree extents (Reingold-Tilford-style)
+    so no two node footprints overlap.
+  - Deterministic — ties broken by node id.
+- The new positions are dispatched via the regular `onDocChange`
+  pipeline, so **`Cmd+Z` undoes the auto-layout exactly like any
+  manual move**. The user-consent guarantee comes from the explicit
+  button click + the undo stack — no separate preview state.
+- Auto-layout touches **positions only**. `kind`, `label`,
+  `parent_id`, typed-text fields, edges — all byte-identical
+  before vs after.
+
+### Isolation contract (D-2026-05-13-L)
+
+Four layers of defence prevent auto-layout from affecting any other
+canvas:
+
+1. **Wrapper opt-in** — only `FoundationCanvas` passes
+   `enableAutoLayout={true}` to `SketchCanvas`.
+2. **Conditional render** — `SketchCanvas` only renders the
+   `ControlButton` when `enableAutoLayout === true`.
+3. **No state mutation when disabled** — the `useAutoLayout` hook
+   is called unconditionally (React hooks rule) but its returned
+   callback is only wired to a button that doesn't exist when the
+   feature is off.
+4. **Touches positions only** — the trigger replaces `x` / `y` on
+   nodes via `onDocChange`; no edges / anchor / typed-text mutation.
+
+### History (4 prior add/remove cycles)
+
+- **D-2026-05-04-D** — removed (misattributed user request; real
+  intent was to remove download/upload only). **Rejected**.
+- **D-2026-05-10-E** — reversed; full directional-tree spec.
+  Implemented in v0.13.9.
+- **D-2026-05-10-F** — button placement tuned (toolbar →
+  `<Controls>`). v0.13.10. **Cursor flicker that the user
+  attributed to auto-layout was independently caused by Tailwind
+  preflight on `.react-flow__node[role="button"]` — fixed in this
+  decision and remains fixed.**
+- **D-2026-05-10-G** — removed again per user cost/benefit
+  reasoning: *"auto layout 빼야겠네 문제가 너무 많다"*. The cursor
+  problems were already fixed; the cited "문제" was likely the
+  feature's complexity in the absence of a real user with a
+  complex graph.
+- **D-2026-05-13-L** — re-introduced as Foundation-only opt-in.
+  User direct request: *"혹시 자동 정렬을 넣을 수 있을까요? ...
+  다른 곳에 영향이 안 가게 만들어야합니다."* The isolation
+  contract above is the cost/benefit answer to D-2026-05-10-G —
+  the feature now cannot affect other canvases by construction.
 
 ---
 

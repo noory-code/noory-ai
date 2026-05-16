@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
+  ControlButton,
   Controls,
   ReactFlowProvider,
   type NodeChange,
@@ -33,6 +34,7 @@ import { useEdgesMemo } from "./sketch/useEdgesMemo";
 import { useInspectorRouting } from "./sketch/useInspectorRouting";
 import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
+import { useAutoLayout } from "./sketch/useAutoLayout";
 import { useValueFlow } from "./sketch/useValueFlow";
 
 // v0.15 Phase 3.5 — per-kind React Flow node types come from the
@@ -114,6 +116,9 @@ export interface SketchCanvasProps {
    *  ``core_value`` / ``identity`` nodes snap to anchor-radial slots
    *  per the canonical Plot spec (Foundation only). Default false. */
   applyAnchorRadialLayout?: boolean;
+  /** v0.16.36 (D-2026-05-13-L) — Foundation-only opt-in auto-layout
+   *  button in RF Controls. Default false; wrapper opt-in. */
+  enableAutoLayout?: boolean;
 }
 
 
@@ -149,6 +154,7 @@ function SketchCanvasInner({
   showFoldButton,
   injectAnchor,
   applyAnchorRadialLayout,
+  enableAutoLayout,
 }: SketchCanvasProps) {
   const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
@@ -193,6 +199,7 @@ function SketchCanvasInner({
 
   const { childIdsByParent, nodeById, nearestCollapsedAncestor, toggleCollapsed, subtreeSize } =
     useCollapsedTree(doc.nodes, docRef, onDocChange);
+  const triggerAutoLayout = useAutoLayout({ docRef, onDocChange, projectAnchor });
 
   const nodes = useNodesMemo({
     doc,
@@ -355,7 +362,7 @@ function SketchCanvasInner({
         }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <Controls />
+        <Controls>{enableAutoLayout && <ControlButton onClick={triggerAutoLayout} aria-label="Auto-layout" title="Auto-layout">⊞</ControlButton>}</Controls>
       </ReactFlow>
       {menu && (
         <SketchContextMenu
