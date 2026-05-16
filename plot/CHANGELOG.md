@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.3] — 2026-05-16
+
+Docs-only cleanup. Archives the lower-priority "잔여 silent state"
+queue entry (D-2026-05-13-I) — both root issues have been closed
+for some time: the 422 PATCH storm by v0.16.37
+([D-2026-05-13-M](./docs/DECISIONS.md)) and the orphan-edge
+cleanup by v0.16.38 ([D-2026-05-13-N](./docs/DECISIONS.md)). A
+hands-on smoke run via chrome-devtools MCP on test-v010 confirmed
+the live state today: 12 fetch/xhr requests, 0 at HTTP 422,
+0 console errors, 0 warnings. Storage inventory across the four
+``proj-monmft3s`` canvases showed zero dangling edges and zero
+None-endpoint edges. NEXT_SESSION.md is now in sync with reality.
+
+### Changed
+
+- ``plot/docs/NEXT_SESSION.md`` — moved the "잔여 silent state"
+  block from **Active queue** to the **Completed 2026-05-16**
+  section; trigger phrases preserved verbatim for future
+  regression re-surface; references to D-2026-05-13-M / -N + the
+  v0.17.2 same-day verification recorded inline.
+
 ## [0.17.2] — 2026-05-16
 
 Phase 2 of the JSON SSOT migration (D-2026-05-16-C). Adds a

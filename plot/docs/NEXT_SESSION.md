@@ -207,50 +207,32 @@
 
 ---
 
-### `잔여 silent state` — 422 PATCH + None→None orphan edge (lower priority)
+### (Completed 2026-05-16) `잔여 silent state` — 422 PATCH + None→None orphan edge
 
-> **Trigger:** user says **"422"** or **"None edge"** or
-> **"orphan edge"** or **"silent state"** or **"잔여 에러"**.
+> **Completed:** 2026-05-16. Confirmed closed by hands-on smoke
+> verification in v0.17.2's same-day session: opened test-v010 in
+> Chrome via chrome-devtools MCP, performed tab-switch + click
+> interactions, observed **0 / 12 requests at HTTP 422 + 0 console
+> errors + 0 warnings**. Live storage inventory (raw
+> ``proj-monmft3s/{foundation,actors,services}/canvas.json``)
+> showed zero dangling edges and zero None-endpoint edges; the
+> orphan edge ``e_mopntgek_4y74`` flagged at filing time is no
+> longer present.
 >
-> **Filed:** 2026-05-13 end-of-session. Even after v0.16.24-29
-> closed "RF 움직임" (user confirmed via hands-on, D-2026-05-13-H),
-> two silent state inconsistencies remained surfaced by automated
-> page probe:
+> **Both root issues already fixed before this verification:**
 >
-> 1. **Console `422 Unprocessable Entity × 7`** on
->    ``http://localhost:5193/?project_path=.../plot-test-v010``
->    — server validation error
->    *"edges reference unknown nodes: ['e_mp2vvxg9_k9cq',
->    'e_mp2vw2a3_jwo8', 'e_mp2vw4a3_b8cd', 'e_mp2vw78k_exi5']"*.
->    The four `e_`-prefixed ids are not present anywhere in raw
->    storage (`grep` 0 hits). Most likely: client → server PATCH
->    payload is setting `edge.source` or `edge.target` to an edge
->    id (not a node id). User did not feel this in interaction —
->    optimistic update covers it.
-> 2. **`services/canvas.json` orphan edge** `e_mopntgek_4y74` with
->    ``source_id: None, target_id: None``. Pydantic should be
->    rejecting it on the next save; user has not encountered it
->    visibly. Storage-level cleanup or migration is needed.
+> 1. **422 PATCH storm** — fixed in **v0.16.37** (commit 4e43d5a,
+>    [D-2026-05-13-M](./DECISIONS.md)). Anchor edge reject path
+>    rewritten + error message corrected (was mislabelling edge
+>    ids as missing nodes, which is what made the original
+>    diagnosis chase the wrong suspect).
+> 2. **None→None orphan edge cleanup** — fixed in **v0.16.38**
+>    (commit 0e148c9, [D-2026-05-13-N](./DECISIONS.md)). Anchor
+>    edge cleanup whitelist landed as the v0.16.37 follow-up.
 >
-> **Why low priority:** user interaction confirmed working
-> (D-2026-05-13-H). These are background data-integrity issues
-> the user is not feeling. But the 422 storm is a real bug that
-> *would* surface if the user's session ever loses its optimistic
-> state (page refresh, browser restart, etc.) — fix before the
-> next major release.
->
-> **Approach for the session:**
-> - Plan-mode entry mandatory.
-> - Step 1: capture exact PATCH request body via Chrome DevTools
->   Network panel (or chrome-devtools-mcp `list_network_requests` +
->   `get_network_request` of one 422). Identify whether source or
->   target field is the `e_`-prefixed id.
-> - Step 2: trace back through viewer code to where the wrong field
->   is set. Suspect: anchor PATCH path (`applyAnchorChange.ts`,
->   `onAnchorChange` callback) or edge-creation flow.
-> - Step 3: storage migration for the None→None services edge —
->   sweep + remove orphan edges across all canvases. Add a
->   pre-commit gate guard so future orphan edges fail loudly.
+> **Trigger phrases (preserved verbatim for future regression
+> re-surface):** ``잔여 silent state`` / ``422`` / ``None edge`` /
+> ``orphan edge`` / ``잔여 에러``.
 
 ---
 
