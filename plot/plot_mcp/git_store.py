@@ -161,22 +161,32 @@ def publish_snapshot(
     label: str,
     from_v: str,
     to_v: str,
+    propagated: list[tuple[str, str, str]] | None = None,
 ) -> dict[str, Any]:
     """Snapshot a per-node publish as a git commit with machine-readable
     ``Publish-*:`` trailers.
 
-    Phase 4 (MINOR propagation up the ancestor chain) reads these
-    trailers via ``git interpret-trailers``; the subject is for humans
-    and may break under exotic labels without affecting Phase 4.
+    Five base trailers (``Publish-Node-Id`` / ``Publish-Kind`` /
+    ``Publish-Canvas`` / ``Publish-Version-From`` / ``Publish-Version-To``)
+    describe the user-driven MAJOR bump.
+
+    ``propagated`` carries Phase 4 (D-2026-05-17-C) MINOR propagation
+    records as ``(ancestor_id, from_v, to_v)`` tuples; one
+    ``Publish-Propagated-Ancestor: <id> <from>→<to>`` trailer is
+    appended per ancestor. Empty list / None → no propagation trailers
+    (the publish target had no parent chain to bump).
 
     Flow:
-      1. ``git add -A`` — picks up both the canvas.json bump and the
-         new ``published/<file>.md``.
+      1. ``git add -A`` — picks up the canvas.json bump(s) and the new
+         ``published/<file>.md``.
       2. ``git commit -m <subject>\\n\\n<trailers>`` — no
          ``--allow-empty``; a publish must change the version field
          so an empty diff is a bug.
 
-    Returns ``{sha, subject, trailers}``.
+    Returns ``{sha, subject, trailers}``. ``trailers`` is a dict for
+    the 5 base trailers; propagation trailers (which can repeat the
+    same key) are not surfaced in the returned dict — read the commit
+    via ``git interpret-trailers`` instead.
     """
     if not (project_dir / ".git").is_dir():
         ensure_repo(project_dir)
@@ -189,7 +199,10 @@ def publish_snapshot(
         "Publish-Version-From": from_v,
         "Publish-Version-To": to_v,
     }
-    body = "\n".join(f"{k}: {v}" for k, v in trailers.items())
+    lines = [f"{k}: {v}" for k, v in trailers.items()]
+    for ancestor_id, anc_from, anc_to in propagated or []:
+        lines.append(f"Publish-Propagated-Ancestor: {ancestor_id} {anc_from}→{anc_to}")
+    body = "\n".join(lines)
     message = f"{subject}\n\n{body}"
 
     _git("add", "-A", cwd=project_dir)

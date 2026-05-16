@@ -13,6 +13,7 @@ import yaml
 
 from plot_mcp.md_publish import (
     bump_major,
+    bump_minor,
     can_publish,
     published_md_path,
     render_node_md,
@@ -59,6 +60,38 @@ def test_bump_major_rejects_malformed() -> None:
         bump_major("1.0")
     with pytest.raises(ValueError, match="invalid version format"):
         bump_major("v1")
+
+
+# ---------------------------------------------------------------------------
+# bump_minor — v0.20.0 Phase 4 (D-2026-05-17-C)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "from_v,to_v",
+    [
+        ("v1.0", "v1.1"),
+        ("v2.3", "v2.4"),
+        ("v0.0", "v0.1"),
+        ("v9.7", "v9.8"),
+        ("v100.500", "v100.501"),
+    ],
+)
+def test_bump_minor_basic(from_v: str, to_v: str) -> None:
+    assert bump_minor(from_v) == to_v
+
+
+def test_bump_minor_preserves_major() -> None:
+    """MAJOR component stays put; only MINOR increments."""
+    assert bump_minor("v9.4") == "v9.5"
+    assert bump_minor("v42.0") == "v42.1"
+
+
+def test_bump_minor_rejects_malformed() -> None:
+    with pytest.raises(ValueError, match="invalid version format"):
+        bump_minor("1.0")
+    with pytest.raises(ValueError, match="invalid version format"):
+        bump_minor("v1")
 
 
 # ---------------------------------------------------------------------------
@@ -233,7 +266,5 @@ def test_published_md_path_preserves_korean_slug(tmp_path: Path) -> None:
 
 
 def test_published_md_path_falls_back_for_empty_label(tmp_path: Path) -> None:
-    p = published_md_path(
-        tmp_path / "foundation", kind="mission", label="", version="v1.0"
-    )
+    p = published_md_path(tmp_path / "foundation", kind="mission", label="", version="v1.0")
     assert p.name == "mission-untitled-v1.0.md"

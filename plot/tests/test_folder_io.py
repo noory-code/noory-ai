@@ -35,7 +35,9 @@ from plot_mcp.models import (
     ActorNode,
     ActorRefNode,
     CanvasDoc,
+    CategoryNode,
     ServiceNode,
+    StepNode,
 )
 from plot_mcp.workspace import resolve_plot_root
 
@@ -357,9 +359,7 @@ def test_read_canvas_preserves_anchor_edges_across_repeated_reads(
     # Three idle reads must leave the file untouched.
     for _ in range(3):
         doc = read_canvas(plot_root, "alpha", "foundation")
-        assert len(doc.edges) == 2, (
-            "anchor edges must survive read — D-2026-05-13-N regression"
-        )
+        assert len(doc.edges) == 2, "anchor edges must survive read — D-2026-05-13-N regression"
         edge_endpoints = {(e.source, e.target) for e in doc.edges}
         assert (PROJECT_ANCHOR_ID, "m") in edge_endpoints
         assert ("cv", PROJECT_ANCHOR_ID) in edge_endpoints
@@ -777,3 +777,168 @@ def test_publish_node_creates_git_commit_with_trailers(plot_root: Path) -> None:
     assert "Publish-Canvas: foundation" in out
     assert "Publish-Version-From: v1.0" in out
     assert "Publish-Version-To: v2.0" in out
+
+
+# ---------------------------------------------------------------------------
+# v0.20.0 Phase 4 (D-2026-05-17-C) — MINOR propagation up ancestor chain
+# ---------------------------------------------------------------------------
+
+
+def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
+    """Build a Services canvas with a category + service, plus a
+    matching ServiceDetail canvas with a step node. Returns
+    ``(category_id, service_id, step_id)``."""
+    services = read_canvas(plot_root, "alpha", "services")
+    category = CategoryNode(id="cat-acq", label="Customer Acquisition")
+    service = ServiceNode(id="svc-onboarding", label="Onboarding", parent_id="cat-acq")
+    new_services = services.model_copy(update={"nodes": [category, service]})
+    write_canvas(plot_root, "alpha", new_services)
+
+    detail = CanvasDoc(
+        canvas_id="svc-onboarding",
+        canvas_kind="service_detail",
+        service_ref="svc-onboarding",
+        nodes=[
+            ServiceNode(id="svc-onboarding", label="Onboarding"),
+            StepNode(
+                id="step-verify",
+                label="Verify email",
+                parent_id="svc-onboarding",
+                order=1,
+            ),
+            ActorRefNode(
+                id="aref-user",
+                parent_id="svc-onboarding",
+                ref_actor_id="user",
+                side="user",
+            ),
+            ActorRefNode(
+                id="aref-op",
+                parent_id="svc-onboarding",
+                ref_actor_id="operator",
+                side="operator",
+            ),
+        ],
+    )
+    write_canvas(plot_root, "alpha", detail)
+    return "cat-acq", "svc-onboarding", "step-verify"
+
+
+def test_publish_step_propagates_minor_to_service_and_category(
+    plot_root: Path,
+) -> None:
+    """Publishing a leaf step bumps the step MAJOR and propagates MINOR
+    to (a) the root service mirror in detail.json, (b) the master
+    service in services/canvas.json, (c) the parent category in
+    services/canvas.json."""
+    create_project(plot_root, "alpha", "Alpha")
+    _cat, sid, step_id = _seed_services_with_step(plot_root)
+
+    result = publish_node(plot_root, "alpha", "service_detail", step_id, service_id=sid)
+
+    assert result["from_version"] == "v1.0"
+    assert result["to_version"] == "v2.0"
+
+    # Step itself: MAJOR-bumped in detail.json.
+    detail = read_canvas(plot_root, "alpha", "service_detail", service_id=sid)
+    step = next(n for n in detail.nodes if n.id == step_id)
+    assert step.version == "v2.0"
+
+    # Root service mirror in detail.json: MINOR-bumped to v1.1.
+    root_service = next(n for n in detail.nodes if n.id == sid)
+    assert root_service.version == "v1.1"
+
+    # Master service in services/canvas.json: MINOR-bumped to v1.1.
+    services = read_canvas(plot_root, "alpha", "services")
+    master = next(n for n in services.nodes if n.id == sid)
+    assert master.version == "v1.1"
+
+    # Category in services/canvas.json: MINOR-bumped to v1.1.
+    cat = next(n for n in services.nodes if n.id == "cat-acq")
+    assert cat.version == "v1.1"
+
+
+def test_publish_step_writes_single_commit_with_propagation_trailers(
+    plot_root: Path,
+) -> None:
+    import subprocess
+
+    create_project(plot_root, "alpha", "Alpha")
+    _cat, sid, step_id = _seed_services_with_step(plot_root)
+    publish_node(plot_root, "alpha", "service_detail", step_id, service_id=sid)
+
+    project_dir = plot_root / "alpha"
+    # Single commit since the seed (no commit), then publish (one commit).
+    # Inspect the latest commit message.
+    out = subprocess.run(
+        ["git", "log", "--format=%s%n%b", "-1"],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert out.startswith('publish: step "Verify email" → v2.0')
+    # Base trailers (5) intact.
+    assert "Publish-Node-Id: step-verify" in out
+    assert "Publish-Kind: step" in out
+    assert "Publish-Canvas: service_detail" in out
+    assert "Publish-Version-From: v1.0" in out
+    assert "Publish-Version-To: v2.0" in out
+    # New propagation trailers — one per logical ancestor.
+    propagation_lines = [
+        ln for ln in out.splitlines() if ln.startswith("Publish-Propagated-Ancestor: ")
+    ]
+    assert len(propagation_lines) == 2
+    propagated_ids = {ln.split(": ", 1)[1].split(" ", 1)[0] for ln in propagation_lines}
+    assert propagated_ids == {sid, "cat-acq"}
+    # The svc trailer records the v1.0→v1.1 transition.
+    assert any(ln == f"Publish-Propagated-Ancestor: {sid} v1.0→v1.1" for ln in propagation_lines)
+    assert any(ln == "Publish-Propagated-Ancestor: cat-acq v1.0→v1.1" for ln in propagation_lines)
+
+
+def test_publish_service_propagates_to_category_only(plot_root: Path) -> None:
+    """Publishing a service (not a step) MAJOR-bumps the service in both
+    its files (Services master + ServiceDetail mirror) and MINOR-bumps
+    the category."""
+    create_project(plot_root, "alpha", "Alpha")
+    _cat, sid, _step = _seed_services_with_step(plot_root)
+
+    result = publish_node(plot_root, "alpha", "services", sid)
+    assert result["to_version"] == "v2.0"
+
+    # Master service: MAJOR-bumped.
+    services = read_canvas(plot_root, "alpha", "services")
+    master = next(n for n in services.nodes if n.id == sid)
+    assert master.version == "v2.0"
+
+    # Service mirror in detail.json: MAJOR-bumped (kept in sync).
+    detail = read_canvas(plot_root, "alpha", "service_detail", service_id=sid)
+    mirror = next(n for n in detail.nodes if n.id == sid)
+    assert mirror.version == "v2.0"
+
+    # Category: MINOR-bumped.
+    cat = next(n for n in services.nodes if n.id == "cat-acq")
+    assert cat.version == "v1.1"
+
+
+def test_publish_foundation_node_has_no_propagation(plot_root: Path) -> None:
+    """A Foundation top-level peer (mission) has no parent. Publish must
+    not emit any ``Publish-Propagated-Ancestor`` trailers."""
+    import subprocess
+
+    create_project(plot_root, "alpha", "Alpha")
+    mid = _foundation_mission_id(plot_root, "alpha")
+    publish_node(plot_root, "alpha", "foundation", mid)
+
+    project_dir = plot_root / "alpha"
+    out = subprocess.run(
+        ["git", "log", "--format=%s%n%b", "-1"],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    propagation_lines = [
+        ln for ln in out.splitlines() if ln.startswith("Publish-Propagated-Ancestor: ")
+    ]
+    assert propagation_lines == []

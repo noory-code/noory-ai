@@ -154,9 +154,7 @@ def published_md_path(canvas_dir: Path, *, kind: str, label: str, version: str) 
 # ---------------------------------------------------------------------------
 
 
-_REF_KINDS: frozenset[str] = frozenset(
-    {"actor_ref", "mission_ref", "value_ref", "identity_ref"}
-)
+_REF_KINDS: frozenset[str] = frozenset({"actor_ref", "mission_ref", "value_ref", "identity_ref"})
 
 
 def can_publish(node: SketchNode) -> bool:
@@ -192,3 +190,17 @@ def bump_major(version: str) -> str:
         raise ValueError(f"bump_major: invalid version format {version!r}")
     major_str, _minor_str = version[1:].split(".", 1)
     return f"v{int(major_str) + 1}.0"
+
+
+def bump_minor(version: str) -> str:
+    """Increment the MINOR component of a ``v<MAJOR>.<MINOR>`` string;
+    leave MAJOR unchanged. ``v1.0`` → ``v1.1``; ``v2.3`` → ``v2.4``.
+
+    Used by Phase 4 (D-2026-05-17-C) when a descendant publishes and
+    its ancestor chain is silently bumped — the ancestor's content did
+    not change, so MAJOR stays put.
+    """
+    if not (version.startswith("v") and "." in version):
+        raise ValueError(f"bump_minor: invalid version format {version!r}")
+    major_str, minor_str = version[1:].split(".", 1)
+    return f"v{int(major_str)}.{int(minor_str) + 1}"

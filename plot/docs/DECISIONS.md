@@ -4640,3 +4640,99 @@ in the same browser-verification round:
     나중으로 미루고"*). Reserved as a phase that will combine with
     tree-in-forest D-2026-05-16-D Layer 2 (``context_envelope``
     MCP tool).
+
+---
+
+### D-2026-05-17-C — Phase 4 MINOR propagation up ancestor chain (v0.20.0)
+
+- **What:** When a node is published, walk its ``parent_id`` ancestor
+  chain and MINOR-bump every ancestor's ``version`` field. Single git
+  commit with the existing 5 base ``Publish-*:`` trailers plus one
+  ``Publish-Propagated-Ancestor: <id> <from>→<to>`` trailer per
+  bumped ancestor. Five sub-decisions, all approved together in
+  plan-mode:
+
+  1. **Scope of "ancestor" = ``parent_id`` chain only.** Refs
+     (``actor_ref``, ``mission_ref``, ``value_ref``, ``identity_ref``,
+     and ``CanvasDoc.service_ref``) are **not** walked. When the same
+     id has file-presence in two canvases (ServiceDetail root service
+     ↔ Services master service), they count as one logical node and
+     the walk crosses via id-matching only. User direction
+     (2026-05-17): *"이건 노드로 제한합니다. refs 는 링크만
+     걸리는거잖아요. 그래서 페어런트와 자식 관계만"*.
+  2. **No new ancestor MD files.** MINOR propagation only bumps
+     ancestor JSON ``version``. The existing per-version MD files
+     stay as "MAJOR publish snapshots". JSON ``version`` legitimately
+     drifts past the latest on-disk MD version — the gap means
+     "descendants moved since the last own-content publish".
+  3. **Single commit with extra trailers**, not separate commits.
+     ``git interpret-trailers`` supports duplicate keys; multi-line
+     ``Publish-Propagated-Ancestor`` is the canonical shape.
+  4. **Revert is automatic.** ``git revert HEAD`` undoes the publish
+     commit, including all ancestor MINOR bumps and the new MD file,
+     in one shot. No special handling.
+  5. **No new Inspector UI** for v0.20.0. The existing version badge
+     already shows ``vMAJOR.MINOR``; users see MINOR moving silently.
+     A future "this node was last propagated by descendant X" badge
+     can ship in v0.21+ if usage warrants.
+
+- **Why:** D-2026-05-13-O #5 defined ``MINOR + 1 when any descendant
+  publishes (chain-propagated to all ancestors)`` but Phase 3
+  (v0.18.0, D-2026-05-16-E) only delivered the MAJOR half. Until
+  Phase 4 lands, the ``MINOR`` axis is dead state — the AI context
+  envelope ([D-2026-05-16-D](./DECISIONS.md)) cannot see "this branch
+  moved recently because something below it shipped". Phase 4 makes
+  the tree-in-forest mental model observable in real data.
+
+- **Alternatives considered + rejected:**
+  - *Full cross-canvas walk via refs* (publishing a step bumps
+    every Actor / Mission / Identity it references). User rejected:
+    refs are *links*, not parent–child; bumping the Actor when a
+    service references it would create wide noisy ripples whose
+    semantics ("Actor changed because something pointed at it")
+    don't match how users think.
+  - *Same-canvas only* (no mirror crossing). Would mean a step in
+    service_detail never bumps the master service in Services. The
+    Services badge wouldn't reflect detail-level activity at all,
+    defeating the point of MINOR.
+  - *Re-render ancestor MD files at each MINOR* (option 2(b)). The
+    ancestor's content didn't change — re-rendering would just
+    create a confusing pile of near-duplicate MDs with different
+    version suffixes. Reserved for if the disk-MD/JSON drift
+    becomes user-visible pain.
+  - *Separate commits per ancestor* (option 3(a)). A leaf publish
+    on a 5-level deep tree would produce 5 commits, polluting the
+    log. Atomicity also degrades: partial revert leaves
+    inconsistent state.
+  - *Add a "Propagation history" Inspector tab now*. YAGNI — git log
+    already records every propagation; UI without a felt need is
+    speculative scope creep.
+
+- **Approval:** **Accepted** by user, 2026-05-17 — plan-mode
+  walkthrough with the five sub-decisions presented; user picked
+  scope decision (1) explicitly via AskUserQuestion, then approved
+  the bundled plan via ExitPlanMode.
+
+- **Spec impact:**
+  - [`SPEC.md` §Publish — MINOR propagation](./SPEC.md#publish—minor-propagation)
+    — new subsection codifying the 5 answers.
+  - [`PUBLISH.md`](./PUBLISH.md) — trailer schema extended;
+    ``Publish-Propagated-Ancestor: <id> <from>→<to>`` documented.
+  - [`ROADMAP.md`](./ROADMAP.md) — Phase 4 ship version corrected
+    from outdated "v0.18.0" entry to "v0.20.0" (Phase 3 already
+    consumed v0.18.0).
+
+- **Cross-refs:**
+  - [D-2026-05-13-O](./DECISIONS.md) #5 + #7 — defined MINOR
+    semantics + reserved Phase 4 for propagation.
+  - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 ship (v0.18.0)
+    that pre-installed the 5-trailer commit shape Phase 4 extends.
+  - [D-2026-05-16-D](./DECISIONS.md) — tree-in-forest framing
+    that motivates the silent propagation behaviour.
+
+- **Follow-ups filed in ``NEXT_SESSION.md``:**
+  - **Mermaid SVG inline decoration** moves from v0.20.0 →
+    **v0.21.0** (Phase 4 took the v0.20.0 slot).
+  - **Phase 5** — folder hierarchy + container-publish semantics
+    → v0.22.0 (was v0.21.0).
+  - **Phase 6** — legacy purge + final docs sync → v0.22.1.

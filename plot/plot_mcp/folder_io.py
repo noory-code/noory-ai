@@ -38,6 +38,7 @@ from typing import Any, cast
 from plot_mcp.git_store import ensure_repo, publish_snapshot
 from plot_mcp.md_publish import (
     bump_major,
+    bump_minor,
     can_publish,
     published_md_path,
     render_node_md,
@@ -53,6 +54,7 @@ from plot_mcp.models import (
     MissionNode,
     ProjectDoc,
 )
+from plot_mcp.propagation import walk_ancestors
 
 # v0.8 layout: every canvas — singleton or detail — lives in a folder
 # named after the canvas (or the owning service, for details), and its
@@ -769,6 +771,43 @@ class PublishNotEligibleError(ValueError):
     rule in ``viewer/src/domain/publishEligibility.ts``."""
 
 
+def _load_all_canvases(plot_root: Path, project_id: str) -> dict[str, CanvasDoc]:
+    """Load every canvas in a project, keyed by a unique string.
+
+    Key scheme:
+      - ``"foundation"`` → foundation canvas
+      - ``"actors"`` → actors canvas
+      - ``"services"`` → services canvas
+      - ``"service_detail:<service_id>"`` → per-service detail canvas
+
+    Used by Phase 4 (D-2026-05-17-C) propagation walk; the walk only
+    requires the keys to be unique within the returned dict.
+    """
+    canvases: dict[str, CanvasDoc] = {}
+    fixed_kinds: tuple[CanvasKind, ...] = ("foundation", "actors", "services")
+    for kind in fixed_kinds:
+        try:
+            canvases[kind] = read_canvas(plot_root, project_id, kind)
+        except FileNotFoundError:
+            continue
+    for sid in list_service_details(plot_root, project_id):
+        try:
+            canvases[f"service_detail:{sid}"] = read_canvas(
+                plot_root, project_id, "service_detail", service_id=sid
+            )
+        except FileNotFoundError:
+            continue
+    return canvases
+
+
+def _bump_node_version_in_canvas(canvas: CanvasDoc, node_id: str, to_v: str) -> CanvasDoc:
+    """Return a copy of ``canvas`` with ``node_id``'s version replaced."""
+    new_nodes = [
+        n.model_copy(update={"version": to_v}) if n.id == node_id else n for n in canvas.nodes
+    ]
+    return canvas.model_copy(update={"nodes": new_nodes})
+
+
 def publish_node(
     plot_root: Path,
     project_id: str,
@@ -779,53 +818,107 @@ def publish_node(
 ) -> dict[str, Any]:
     """Publish ``node_id`` on the named canvas.
 
-    Flow (per [D-2026-05-16-E]):
-      1. Read canvas, locate node by id.
-      2. Validate eligibility (``can_publish``); reject otherwise.
-      3. Compute ``from_v`` = current ``node.version``,
-         ``to_v = bump_major(from_v)``.
-      4. Mutate node in place with the new version (validated by
-         Pydantic's existing regex on round-trip via ``model_copy``).
+    Flow (per [D-2026-05-16-E] + [D-2026-05-17-C] Phase 4):
+      1. Load every canvas in the project (Phase 4 needs the full
+         ancestor walk).
+      2. Locate the target node; validate eligibility (``can_publish``).
+      3. Compute ``from_v`` / ``to_v`` (MAJOR bump for the target).
+      4. MAJOR-bump the target's ``version`` in **every** canvas it
+         appears in (mirror sync — e.g. a service node has presences
+         in both Services and ServiceDetail).
       5. Render the published MD content via ``render_node_md`` and
          write to ``<canvas_dir>/published/{kind}-{slug}-{to_v}.md``.
-      6. Write the canvas back to disk (atomic).
-      7. Create a git commit via ``publish_snapshot`` with
-         ``Publish-*:`` trailers.
+         The MD anchor canvas is the one the user published from
+         (``canvas_kind``).
+      6. Walk the ancestor chain (``propagation.walk_ancestors``).
+         For each logical ancestor, MINOR-bump its ``version`` in
+         every canvas where it has file-presence (mirror sync again).
+      7. Persist every touched canvas (write_canvas).
+      8. Create a single git commit via ``publish_snapshot`` with
+         5 base ``Publish-*:`` trailers + one
+         ``Publish-Propagated-Ancestor:`` per ancestor.
 
-    Returns ``{node_id, from_version, to_version, md_path, sha}``.
+    Returns ``{node_id, from_version, to_version, md_path, sha,
+    propagated}``. ``propagated`` is a list of
+    ``{node_id, from_version, to_version, canvases}`` so clients can
+    refresh the affected inspector badges in one round-trip.
+
     Raises ``KeyError`` if ``node_id`` not on the canvas;
     ``PublishNotEligibleError`` if the kind/role disallows publish.
     """
     project_dir = _ensure_project(plot_root, project_id)
-    canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
-    by_id = {n.id: n for n in canvas.nodes}
+    canvases = _load_all_canvases(plot_root, project_id)
+    start_canvas_key = (
+        f"service_detail:{service_id}" if canvas_kind == "service_detail" else canvas_kind
+    )
+    start_canvas = canvases.get(start_canvas_key)
+    if start_canvas is None:
+        raise FileNotFoundError(f"canvas {canvas_kind!r} (service_id={service_id!r}) not found")
+
+    by_id = {n.id: n for n in start_canvas.nodes}
     if node_id not in by_id:
         raise KeyError(f"node {node_id!r} not on canvas {canvas_kind!r}")
     node = by_id[node_id]
     if not can_publish(node):
         raise PublishNotEligibleError(
-            f"node {node_id!r} (kind={node.kind!r}, is_root={node.is_root}) "
-            "is not publish-eligible"
+            f"node {node_id!r} (kind={node.kind!r}, is_root={node.is_root}) is not publish-eligible"
         )
 
     from_v = node.version
     to_v = bump_major(from_v)
     bumped = node.model_copy(update={"version": to_v})
+
     canvas_path = _canvas_file(plot_root, project_id, canvas_kind, service_id)
     canvas_dir = canvas_path.parent
-
-    md_path = published_md_path(
-        canvas_dir, kind=node.kind, label=node.label, version=to_v
-    )
+    md_path = published_md_path(canvas_dir, kind=node.kind, label=node.label, version=to_v)
     md_path.parent.mkdir(parents=True, exist_ok=True)
     md_path.write_text(
         render_node_md(bumped, canvas=canvas_kind),
         encoding="utf-8",
     )
 
-    new_nodes = [bumped if n.id == node_id else n for n in canvas.nodes]
-    new_canvas = canvas.model_copy(update={"nodes": new_nodes})
-    write_canvas(plot_root, project_id, new_canvas)
+    touched: dict[str, CanvasDoc] = {}
+
+    # Step 4 — MAJOR-bump the target in every canvas it appears in
+    # (mirror sync). A service node has presences in both the Services
+    # master canvas and its ServiceDetail mirror; both must stay in
+    # lockstep.
+    for key, canvas in canvases.items():
+        if any(n.id == node_id for n in canvas.nodes):
+            touched[key] = _bump_node_version_in_canvas(canvas, node_id, to_v)
+
+    # Refresh the index for ancestor walking with the post-MAJOR-bump
+    # canvases so versions in trailers reflect the real `from_v` we
+    # are about to bump (every ancestor stays at its old version
+    # until MINOR'd here).
+    effective_canvases = {**canvases, **touched}
+    ancestors = walk_ancestors(node_id, effective_canvases)
+
+    propagated: list[tuple[str, str, str]] = []
+    propagated_records: list[dict[str, Any]] = []
+    for ancestor in ancestors:
+        # The ancestor's current version is identical across mirrors
+        # (kept in sync by every prior publish that touched it).
+        sample_canvas_key = ancestor.canvas_keys[0]
+        sample_canvas = effective_canvases[sample_canvas_key]
+        sample_node = next(n for n in sample_canvas.nodes if n.id == ancestor.node_id)
+        anc_from = sample_node.version
+        anc_to = bump_minor(anc_from)
+        for key in ancestor.canvas_keys:
+            base = touched.get(key, effective_canvases[key])
+            touched[key] = _bump_node_version_in_canvas(base, ancestor.node_id, anc_to)
+        propagated.append((ancestor.node_id, anc_from, anc_to))
+        propagated_records.append(
+            {
+                "node_id": ancestor.node_id,
+                "from_version": anc_from,
+                "to_version": anc_to,
+                "canvases": list(ancestor.canvas_keys),
+            }
+        )
+
+    for key, canvas in touched.items():
+        write_canvas(plot_root, project_id, canvas)
 
     commit = publish_snapshot(
         project_dir,
@@ -835,6 +928,7 @@ def publish_node(
         label=node.label,
         from_v=from_v,
         to_v=to_v,
+        propagated=propagated,
     )
 
     return {
@@ -843,4 +937,5 @@ def publish_node(
         "to_version": to_v,
         "md_path": str(md_path.relative_to(project_dir)),
         "sha": commit["sha"],
+        "propagated": propagated_records,
     }

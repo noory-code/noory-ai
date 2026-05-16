@@ -9,73 +9,9 @@
 
 ## Active queue
 
-### `Phase 4 — MINOR propagation up the ancestor chain`
+### `v0.21.0 — Mermaid SVG inline decoration` (queued)
 
-> **Trigger:** user says **"Phase 4"** or **"MINOR propagation"** or
-> **"ancestor chain"** or **"MINOR bump"** as the first / near-first
-> message.
->
-> **Filed:** 2026-05-16. Phase 3 (D-2026-05-16-E) shipped same day
-> in v0.18.0 — the Publish button + per-node MD export + per-node
-> ``Publish-*:`` git trailers are live. Phase 4 reads those
-> trailers and propagates MINOR bumps to the ancestor chain.
->
-> **Phase 4 scope (per D-2026-05-13-O #5 + #7):**
->
-> - **Trigger:** server receives a publish event for node N.
-> - **Walk:** from N's ``parent_id``, walk up the tree (same canvas
->   only? cross-canvas via ``actor_ref`` / Foundation `*_ref`? — to
->   decide in plan-mode) until hitting a node with no parent.
-> - **For each ancestor A** along the walk:
->   - Increment A's MINOR component (``v3.0 → v3.1`` ;
->     ``v3.4 → v3.5``).
->   - Append a row to A's published MD file?
->     Or just bump the JSON, no new MD?
->     (Plan-mode decision.)
->   - Add a git trailer line recording the propagation
->     (``Publish-Propagated-Ancestor: <node_id> v3.0→v3.1``).
-> - **Idempotence:** if A has no published MD yet (i.e. never
->   manually published), does MINOR bumping it still make sense?
->   (Plan-mode decision: probably yes — MINOR records that a
->   descendant changed without forcing an ancestor publish.)
-> - **Ship as:** likely v0.18.x or v0.19.0.
->
-> **Open detail questions for the session:**
->
-> 1. Cross-canvas propagation — does publishing a step on the
->    service_detail canvas bump the parent service on services
->    canvas, the category, the project anchor? Where does the chain
->    stop?
-> 2. Does propagation emit new MD files for ancestors, or only bump
->    their JSON ``version``? If the latter, the per-node MD
->    file's stated version on disk drifts from the live JSON value.
-> 3. Are propagation events recorded as separate git commits, or
->    folded into the publish commit via additional trailers?
-> 4. Reversal — does ``git revert`` of the publish commit also
->    revert the propagation, or are propagations separate commits
->    that need separate reverts?
-> 5. Should the Inspector show "this node was last propagated by
->    publish of descendant X" somewhere visible?
->
-> **Approach:**
-> - Plan-mode entry mandatory.
-> - plot-design-red-team review (cross-canvas walk has invariants
->   that need attacking).
-> - Hands-on Gate 3 in real Chrome — verify that publishing a leaf
->   ripples up.
->
-> **Subsequent phases:**
->
-> | Phase | Scope | Indicative version |
-> |---:|---|:---:|
-> | 5 | Folder hierarchy + container-publish semantics | v0.19.0 |
-> | 6 | Legacy purge + final docs sync | v0.19.1 |
-
----
-
-### `v0.20.0 — Mermaid SVG inline decoration` (queued)
-
-> **Trigger:** user says **"mermaid"** or **"머메이드"** or **"Live Preview"** or **"v0.20"** as the first / near-first message.
+> **Trigger:** user says **"mermaid"** or **"머메이드"** or **"Live Preview"** or **"v0.21"** as the first / near-first message. (Note: was queued for v0.20.0 until 2026-05-17 — Phase 4 propagation took the v0.20.0 slot per D-2026-05-17-C.)
 >
 > **Filed:** 2026-05-17 (D-2026-05-17-B follow-up). Stage 2 of the
 > 3-stage Obsidian Live Preview track that v0.19.0 started. Render
@@ -99,9 +35,9 @@
 > **Approach:** plan-mode + plot-design-red-team (edge cases: invalid mermaid
 > syntax, very large diagrams, multiple blocks per field, theme).
 
-### `v0.21.0 — Live Preview decorations` (heading / list / image) (queued)
+### `v0.22.0 — Live Preview decorations` (heading / list / image) (queued)
 
-> **Trigger:** user says **"Live Preview"** or **"v0.21"** or **"heading style"** or **"image embed"**.
+> **Trigger:** user says **"Live Preview"** or **"v0.22"** or **"heading style"** or **"image embed"**.
 >
 > **Filed:** 2026-05-17 (D-2026-05-17-B follow-up). Stage 3.
 >
@@ -191,6 +127,34 @@
 >   used by ``test_git_store.py``.
 >
 > **Ship as:** v0.18.x patch once the misclick rate justifies it.
+
+---
+
+### (archived 2026-05-17) `Phase 4 — MINOR propagation up the ancestor chain` — shipped v0.20.0
+
+> **Trigger:** user said **"Phase 4"** / **"MINOR propagation"** had been queued since 2026-05-16; user invoked via **"다음 작업 합시다. 브라우저 띄우고"** (2026-05-17) + plan-mode multi-choice (chose Phase 4 over Mermaid SVG decoration).
+>
+> **Filed:** 2026-05-16. **Shipped** 2026-05-17 same session as [D-2026-05-17-C](./DECISIONS.md). Plan: ``~/.claude/plans/jolly-bouncing-orbit.md``.
+>
+> **5 open questions answered in plan-mode (user-approved):**
+>
+> 1. **Scope = ``parent_id`` chain only.** Refs are not walked. Same-id mirrors crossed via id-matching.
+> 2. **No new ancestor MD files** — only JSON ``version`` bumps.
+> 3. **Single commit** with extra ``Publish-Propagated-Ancestor:`` trailers (not separate commits).
+> 4. **Revert is automatic** — ``git revert HEAD`` undoes everything (single commit).
+> 5. **No new Inspector UI** — version badge already shows MINOR.
+>
+> **What landed:**
+> - ``plot_mcp/propagation.py`` (new) — pure ``walk_ancestors`` module + ``LogicalAncestor`` dataclass; ignores refs, follows ``parent_id`` and same-id mirrors only.
+> - ``plot_mcp/md_publish.py::bump_minor`` (new).
+> - ``plot_mcp/folder_io.py::publish_node`` rewired — loads all canvases, MAJOR-bumps target + mirrors, walks ancestors, MINOR-bumps each, persists every touched canvas.
+> - ``plot_mcp/git_store.py::publish_snapshot`` — accepts ``propagated`` list; appends ``Publish-Propagated-Ancestor: <id> <from>→<to>`` trailers (one per logical ancestor).
+> - ``plot_mcp/api_endpoints.py`` + ``plot_mcp/mcp_tools.py`` — response shape carries new ``propagated`` array.
+> - Viewer ``api.ts::PublishNodeResponse`` + new ``PublishPropagatedAncestor`` interface. Existing ``useProject::publishNodeAction`` already re-fetched all canvases, so client picks up ancestor bumps automatically.
+> - Tests: 8 new (5 in ``test_propagation.py``, 1 in ``test_md_publish.py`` (×3 bump_minor cases), 3 in ``test_folder_io.py``). Server 385/385 + viewer 524/524.
+> - Docs: SPEC §Publish — MINOR propagation; PUBLISH.md commit format + "does not"; DECISIONS D-2026-05-17-C.
+>
+> **Trigger phrases preserved:** ``Phase 4`` / ``MINOR propagation`` / ``ancestor chain`` / ``MINOR bump`` / ``propagated`` / ``Publish-Propagated-Ancestor``.
 
 ---
 

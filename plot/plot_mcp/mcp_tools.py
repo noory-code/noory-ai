@@ -181,20 +181,25 @@ def publish_node_tool(
     node_id: str,
     service_id: str | None = None,
 ) -> dict[str, Any]:
-    """Publish a single node (Phase 3, D-2026-05-16-E).
+    """Publish a single node (D-2026-05-16-E + D-2026-05-17-C).
 
     Bumps the node's ``version`` MAJOR component (``v1.0`` → ``v2.0``),
     writes a per-node MD file at
-    ``<canvas>/published/{kind}-{slug}-{version}.md``, and creates a
-    git commit with machine-readable ``Publish-*:`` trailers (Phase 4
-    reads these trailers for ancestor MINOR propagation).
+    ``<canvas>/published/{kind}-{slug}-{version}.md``, MINOR-propagates
+    the bump up the ``parent_id`` chain (v0.20.0 / D-2026-05-17-C), and
+    creates a single git commit with machine-readable ``Publish-*:``
+    base trailers + one ``Publish-Propagated-Ancestor:`` trailer per
+    bumped ancestor.
 
     Eligibility: project anchor / ``is_root`` / ``*_ref`` kinds are
     rejected with ValueError. All other 10 kinds (mission, core_value,
     identity, actor non-root, service non-root, category, metric,
     step, rule, content) are publish-eligible.
 
-    Returns ``{node_id, from_version, to_version, md_path, sha}``.
+    Returns ``{node_id, from_version, to_version, md_path, sha,
+    propagated}``. ``propagated`` is the list of ancestor records
+    (``{node_id, from_version, to_version, canvases}``) so the caller
+    can refresh affected views without a separate request.
     """
     plot_root = resolve_plot_root(project_path)
     try:

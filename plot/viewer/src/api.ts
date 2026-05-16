@@ -257,8 +257,18 @@ export async function tagProject(
 }
 
 // ---------------------------------------------------------------------------
-// v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
+// Publish — D-2026-05-16-E (Phase 3, MAJOR) + D-2026-05-17-C (Phase 4, MINOR
+// propagation)
 // ---------------------------------------------------------------------------
+
+export interface PublishPropagatedAncestor {
+  node_id: string;
+  from_version: string;
+  to_version: string;
+  /** Canvas keys this ancestor has file-presence in (e.g. ``services``,
+   * ``service_detail:<sid>``). All canvases were bumped in lockstep. */
+  canvases: string[];
+}
 
 export interface PublishNodeResponse {
   node_id: string;
@@ -266,6 +276,10 @@ export interface PublishNodeResponse {
   to_version: string;
   md_path: string;
   sha: string;
+  /** v0.20.0: ancestors whose MINOR version was bumped by this publish.
+   * Empty when the published node is a top-level peer (Foundation
+   * mission / core_value / identity / Actors actor). */
+  propagated: PublishPropagatedAncestor[];
 }
 
 export async function publishNode(

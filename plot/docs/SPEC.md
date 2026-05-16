@@ -545,33 +545,79 @@ emitted on publish.
   ``<project_id>/<canvas>/published/{kind}-{slug}-{version}.md`` in
   the format pinned in [`PUBLISH.md`](./PUBLISH.md).
 - **Bumped ``version`` field** persisted to the canvas's
-  ``canvas.json`` via the regular write path.
+  ``canvas.json`` via the regular write path. When the published
+  node has a mirror in another canvas (e.g. a service master in
+  Services + its ServiceDetail root mirror), **both files** are
+  bumped in lockstep.
 - **Git commit** in the project's git repo
   (``.plot/{project_id}/.git``) with subject
-  ``publish: {kind} "{label}" → {version}`` and 5 ``Publish-*:``
-  trailers: ``Publish-Node-Id`` / ``Publish-Kind`` /
-  ``Publish-Canvas`` / ``Publish-Version-From`` /
-  ``Publish-Version-To``. Phase 4 parses the trailers via
-  ``git interpret-trailers``.
+  ``publish: {kind} "{label}" → {version}``, the 5 base
+  ``Publish-*:`` trailers (Phase 3), plus zero or more
+  ``Publish-Propagated-Ancestor:`` trailers (Phase 4 — see next
+  section).
+
+### Publish — MINOR propagation (v0.20.0+)
+
+Per [D-2026-05-17-C](./DECISIONS.md). When the user publishes
+``N``, the server walks ``N``'s ``parent_id`` chain across every
+canvas in the project and **MINOR-bumps every ancestor**.
+
+- **Walk rule:** ``parent_id`` chain only. Refs
+  (``actor_ref``, ``mission_ref``, ``value_ref``, ``identity_ref``,
+  and ``CanvasDoc.service_ref``) are **not walked**. When the same
+  id has file-presence in multiple canvases (ServiceDetail root
+  service ↔ Services master service), the walk treats them as one
+  logical node and crosses the canvas boundary via id-matching
+  only.
+- **What changes per ancestor:** only the JSON ``version`` field
+  (``v1.0`` → ``v1.1``, ``v2.3`` → ``v2.4``). **No new MD file** is
+  emitted. The on-disk MD stays at its MAJOR-publish snapshot
+  version; the JSON ``version`` legitimately drifts past the
+  latest on-disk MD filename, and the gap is the "descendants
+  moved since" indicator.
+- **Where in the commit:** one
+  ``Publish-Propagated-Ancestor: <node_id> <from_v>→<to_v>``
+  trailer per ancestor, appended after the 5 base trailers. Single
+  atomic commit; ``git revert HEAD`` undoes the entire propagation.
+- **Walk termination examples:**
+  - **Mission published** → 0 ancestors (Foundation peers are
+    top-level; no propagation).
+  - **Step in service_detail published** → 2 ancestors:
+    (a) the service (mirrored in services + service_detail),
+    (b) the parent category.
+  - **Service in services published** → 1 ancestor: the parent
+    category. The MAJOR bump also lands in the ServiceDetail
+    mirror file to keep them in lockstep.
+- **No Inspector UI for propagation history.** The existing
+  version badge already shows ``vMAJOR.MINOR``; users see MINOR
+  moving silently as descendants ship. Git log is authoritative
+  for "who propagated what when".
 
 ### Idempotence
 
-Always-bump. Publishing the same node N times produces N distinct
-MD files (``-v2.0.md`` / ``-v3.0.md`` / …) and N distinct commits.
-The confirm dialog text names this contract so users from
-npm/cargo ecosystems don't carry the wrong mental model.
+Always-bump on the publish target (MAJOR). Publishing the same node
+N times produces N distinct MD files (``-v2.0.md`` / ``-v3.0.md`` /
+…) and N distinct commits. The confirm dialog text names this
+contract so users from npm/cargo ecosystems don't carry the wrong
+mental model. Ancestor MINOR propagation is non-idempotent in the
+same way — every publish triggers a fresh MINOR bump up the chain.
 
 ### Recovery from a misclick
 
-No Unpublish button in v0.18.0. Manual recovery is documented in
+No Unpublish button in v0.20.0. Manual recovery is documented in
 [`PUBLISH.md`](./PUBLISH.md) — ``git revert HEAD`` plus optional
-MD-file cleanup. An automated **Unpublish** button is queued as a
-v0.18.x follow-up in [`NEXT_SESSION.md`](./NEXT_SESSION.md).
+MD-file cleanup. Revert is atomic across the MAJOR bump, the new
+MD file, every mirror bump, and every ancestor MINOR bump — they
+all live in one commit. An automated **Unpublish** button is queued
+as a follow-up in [`NEXT_SESSION.md`](./NEXT_SESSION.md).
 
-### What Phase 3 explicitly does NOT do
+### What Phase 4 explicitly does NOT do
 
-- **MINOR propagation up the ancestor chain.** Phase 4 (own
-  plan-mode entry; reads ``Publish-*:`` trailers).
+- **Cross-ref propagation** (following ``actor_ref`` /
+  ``mission_ref`` etc.). Refs are *links*, not parent–child.
+  Bumping the Actor because a service references it would create
+  wide noisy ripples with unclear semantics. User-rejected
+  alternative in D-2026-05-17-C.
 - **Container-publish semantics** (publishing a `category` pulls
   children too). Phase 5.
 - **Folder-hierarchy MD layout** (``published/foundation/mission/
@@ -580,3 +626,5 @@ v0.18.x follow-up in [`NEXT_SESSION.md`](./NEXT_SESSION.md).
   viewer. Out of scope.
 - **Bulk publish** / publish-history viewer / batched publish.
   Out of scope.
+- **Inspector "propagated by descendant X" badge.** YAGNI; queued
+  for a future release if usage warrants.

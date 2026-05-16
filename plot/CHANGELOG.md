@@ -4,6 +4,86 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.20.0] — 2026-05-17
+
+Phase 4 MINOR propagation up the ancestor chain. When a node is
+published, every ancestor along its ``parent_id`` chain gets a
+silent ``v<MAJOR>.<MINOR>`` MINOR bump in the same atomic git
+commit, with one ``Publish-Propagated-Ancestor: <id> <from>→<to>``
+trailer per ancestor. Per [D-2026-05-17-C](./docs/DECISIONS.md).
+Closes the second half of the D-2026-05-13-O versioning model that
+v0.18.0 (Phase 3) only delivered the MAJOR half of.
+
+The 5 open spec questions filed in NEXT_SESSION.md are locked:
+
+1. **Scope = ``parent_id`` chain only.** Refs (``actor_ref``,
+   ``mission_ref``, ``value_ref``, ``identity_ref``,
+   ``service_ref``) are not propagation paths. Same-id mirrors
+   (ServiceDetail root service ↔ Services master service) are
+   crossed by id-matching only.
+2. **No new MD files for propagated ancestors** — only their JSON
+   ``version`` field advances. Disk MD snapshots stay at their
+   MAJOR-publish versions; the JSON/MD version gap is the
+   "descendants moved" indicator.
+3. **One git commit** with extra trailers (not separate commits).
+4. **``git revert HEAD``** undoes the entire publish + propagation
+   atomically.
+5. **No new Inspector UI** for v0.20.0 — version badge already
+   shows MINOR.
+
+### Added
+
+- ``plot_mcp/propagation.py`` (new) — pure ``walk_ancestors()``
+  module + ``LogicalAncestor`` dataclass. Walks ``parent_id`` and
+  same-id mirrors only; ignores all ``*_ref`` fields. Returns
+  ancestors with the list of canvas keys each appears in so the
+  caller can mirror-sync every file.
+- ``plot_mcp/md_publish.py::bump_minor`` — ``v<MAJOR>.<MINOR>`` →
+  ``v<MAJOR>.<MINOR+1>``. Mirror of existing ``bump_major``.
+- ``plot_mcp/folder_io.py::_load_all_canvases`` —
+  enumerates foundation / actors / services + every
+  ``service_detail:<sid>`` into one dict for the propagation walk.
+- ``plot_mcp/folder_io.py::_bump_node_version_in_canvas`` — pure
+  helper, returns a CanvasDoc copy with one node's version
+  replaced.
+- ``viewer/src/api.ts::PublishPropagatedAncestor`` interface +
+  ``propagated: PublishPropagatedAncestor[]`` on
+  ``PublishNodeResponse``.
+- Tests (server): 5 new in ``tests/test_propagation.py``, 3 new
+  ``bump_minor`` cases in ``tests/test_md_publish.py``, 3 new
+  integration tests in ``tests/test_folder_io.py``.
+- Docs: ``SPEC.md`` §Publish — MINOR propagation (new
+  subsection); ``PUBLISH.md`` extended trailer schema +
+  cross-ref `git log --grep` recipe; ``DECISIONS.md``
+  D-2026-05-17-C; ``NEXT_SESSION.md`` Phase 4 → completed,
+  Mermaid SVG queue v0.20.0 → v0.21.0, Live Preview decorations
+  queue v0.21.0 → v0.22.0.
+
+### Changed
+
+- ``plot_mcp/folder_io.py::publish_node`` — now MAJOR-bumps the
+  target in **every** canvas it appears in (mirror sync; e.g. a
+  service node lives in both Services and ServiceDetail), walks
+  ancestors, MINOR-bumps each in every canvas it appears in, and
+  persists every touched canvas in one pass. Returns a
+  ``propagated`` array in the response dict so the client can
+  refresh ancestor badges without a separate request.
+- ``plot_mcp/git_store.py::publish_snapshot`` — new optional
+  ``propagated: list[tuple[str, str, str]] | None = None``
+  parameter; appends one ``Publish-Propagated-Ancestor: <id>
+  <from>→<to>`` trailer per ancestor after the 5 existing base
+  trailers. Five-trailer commit shape (D-2026-05-16-E)
+  preserved for back-compat.
+- ``plot_mcp/api_endpoints.py::node_publish_endpoint`` docstring
+  updated; response JSON gained the ``propagated`` key.
+- ``plot_mcp/mcp_tools.py::publish_node_tool`` docstring updated;
+  return value gained ``propagated`` key.
+
+### Removed
+
+- The "Phase 4's job" line from ``PUBLISH.md`` §"What publish does
+  NOT do". Phase 4 is no longer hypothetical.
+
 ## [0.19.0] — 2026-05-17
 
 MD-aware Inspector typed-text editor (stage 1 of 3-stage Obsidian

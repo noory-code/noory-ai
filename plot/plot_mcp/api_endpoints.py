@@ -357,7 +357,10 @@ async def node_publish_endpoint(request: Request) -> JSONResponse:
     """``POST /api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/publish``
 
     Optional query parameter ``service_id`` for service_detail canvases.
-    Returns ``{node_id, from_version, to_version, md_path, sha}``.
+    Returns ``{node_id, from_version, to_version, md_path, sha,
+    propagated}``. ``propagated`` (v0.20.0 / D-2026-05-17-C) is the
+    list of ancestor nodes whose MINOR version was bumped — each item
+    is ``{node_id, from_version, to_version, canvases}``.
     Errors:
       - 404 if project / node not found
       - 409 if node not publish-eligible (kind/role disallows)

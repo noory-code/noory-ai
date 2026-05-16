@@ -150,25 +150,41 @@ as a follow-up D-entry.
 ## Git commit format
 
 ```
-publish: mission "Tolerance" → v2.0
+publish: step "Verify email" → v2.0
 
-Publish-Node-Id: msn_xyz789
-Publish-Kind: mission
-Publish-Canvas: foundation
+Publish-Node-Id: step-verify
+Publish-Kind: step
+Publish-Canvas: service_detail
 Publish-Version-From: v1.0
 Publish-Version-To: v2.0
+Publish-Propagated-Ancestor: svc-onboarding v1.0→v1.1
+Publish-Propagated-Ancestor: cat-acq v1.0→v1.1
 ```
 
 - **Subject** is human-readable. Label is double-quoted as-is.
-- **Trailers** are the machine contract. Phase 4 (MINOR
-  propagation) reads them via ``git interpret-trailers``. The
-  subject is allowed to break under exotic labels; the trailers
-  must not.
+- **Five base trailers** describe the user-driven MAJOR bump
+  on the publish target itself. ``Publish-Canvas`` is always the
+  canvas the user clicked Publish on; mirror canvases (e.g. the
+  Services master when the user published from ServiceDetail) are
+  not listed separately.
+- **``Publish-Propagated-Ancestor:`` trailers** (v0.20.0 / Phase 4,
+  D-2026-05-17-C) appear one-per-line for each ancestor whose
+  MINOR version was bumped. The walk follows ``parent_id`` only —
+  refs are not propagation paths. Empty when the published node
+  has no parent chain (Foundation peers, Actors).
+- **Trailers** are the machine contract. The subject is allowed to
+  break under exotic labels; the trailers must not.
 
 Query publish history with:
 
 ```bash
 git -C .plot/<project_id> log --grep "^Publish-Node-Id:"
+```
+
+Find every commit that bumped a given ancestor:
+
+```bash
+git -C .plot/<project_id> log --grep "^Publish-Propagated-Ancestor: <id>"
 ```
 
 ---
@@ -234,8 +250,15 @@ encapsulate steps 1–3 above into one user action.
 
 ## What publish does NOT do
 
-- Does **not** propagate to ancestor nodes (Phase 4's job).
-- Does **not** trigger any other node's version to change.
+- Does **not** follow ``*_ref`` fields (``actor_ref``, ``mission_ref``,
+  ``value_ref``, ``identity_ref``, ``service_ref``). Those are link
+  relationships, not parent–child. Propagation is structural only.
+- Does **not** emit new MD files for propagated ancestors. Their
+  content didn't change; only the JSON ``version`` advances. Disk
+  MDs remain at their MAJOR-publish snapshot versions, JSON
+  ``version`` may legitimately drift past the latest on-disk MD
+  filename — the gap is the "descendants moved since" indicator.
+- Does **not** trigger any other node's MAJOR version to change.
 - Does **not** push to a remote git (the project's git repo is
   local-only; remote sync is a future ROADMAP item).
 - Does **not** create a git tag (tags stay reserved for the
