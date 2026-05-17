@@ -14,6 +14,7 @@ from plot_mcp.api_endpoints import (
     canvas_put_endpoint,
     file_get_endpoint,
     file_put_endpoint,
+    file_raw_endpoint,
     folder_post_endpoint,
     health_endpoint,
     node_publish_endpoint,
@@ -94,6 +95,8 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         # v0.7 file + folder surface (for Inspector MD editor)
         Route("/api/files", file_get_endpoint, methods=["GET"]),
         Route("/api/files", file_put_endpoint, methods=["PUT"]),
+        # v0.24.0 (D-2026-05-17-L) — raw image bytes for Live Preview embeds
+        Route("/api/files/raw", file_raw_endpoint, methods=["GET"]),
         Route("/api/folders", folder_post_endpoint, methods=["POST"]),
         Route(
             "/api/projects/{project_id}/tags",

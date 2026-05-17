@@ -15,6 +15,14 @@ from pathlib import Path
 # upload attempts out of the write path.
 ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".md", ".txt"})
 
+# v0.24.0 (D-2026-05-17-L) — image extensions served raw via the
+# /api/files/raw endpoint for Live Preview image embeds. Same
+# path-traversal safety as text reads (resolve_safe_path); extension
+# allow-list is the only auth.
+ALLOWED_IMAGE_EXTENSIONS: frozenset[str] = frozenset(
+    {".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg"}
+)
+
 # Reject pathological payloads early.
 MAX_FILE_BYTES: int = 1 * 1024 * 1024  # 1 MiB
 

@@ -4,6 +4,39 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.0] — 2026-05-17
+
+### Added
+
+- **Live Preview Stage 3 — heading + list + image embed decorations**
+  ([D-2026-05-17-L](./docs/DECISIONS.md)). Three new CodeMirror plugins
+  layered into the MdTextarea on top of v0.21.0's mermaid plugin.
+  Completes the 3-stage Obsidian Live Preview track started in v0.19.0.
+
+  - **mdHeadingPlugin**: ``# Title`` / ``## Subtitle`` / ``### Section``
+    lines now render with scaled font-size (1.5× / 1.3× / 1.15×) while
+    the user keeps editing the raw ``#`` markers.
+  - **mdListPlugin**: bullet list markers (``-`` / ``*`` / ``+``)
+    render as a styled ``•`` glyph via CSS ``::before`` (mark
+    decoration; raw markers stay in the doc).
+  - **mdImagePlugin**: ``![alt](url)`` lines get an inline block
+    widget below with the rendered image. URLs accepted:
+    ``http(s)://``, ``data:image/``, and project-relative paths
+    (``./img.png``). Lazy load + max-width 100% + max-height 480px.
+    Broken image → red error block.
+
+- New endpoint ``GET /api/files/raw`` serves raw image bytes for the
+  image-embed plugin (the existing ``/api/files`` returns JSON
+  ``{content}`` which an ``<img>`` tag can't render). Extension
+  allow-list (``.png/.jpg/.jpeg/.gif/.webp/.avif/.svg``); same
+  path-traversal safety as text reads.
+
+### Tests
+
+- 4 new pytest cases (``test_file_raw_endpoint.py``): byte round-trip
+  + 404 + 400 (disallowed ext) + 400 (path traversal).
+- Full suite: 421 pytest + 545 vitest pass; mypy + tsc clean.
+
 ## [0.23.2] — 2026-05-17
 
 ### Changed

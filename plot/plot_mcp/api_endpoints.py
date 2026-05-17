@@ -15,13 +15,15 @@ from typing import Any, cast
 
 from pydantic import ValidationError
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import FileResponse, JSONResponse, Response
 
 from plot_mcp.file_io import (
+    ALLOWED_IMAGE_EXTENSIONS,
     ExtensionNotAllowedError,
     UnsafePathError,
     ensure_folder,
     read_text_file,
+    resolve_safe_path,
     uniquify_folder,
     write_text_file,
 )
@@ -620,6 +622,43 @@ async def file_get_endpoint(request: Request) -> JSONResponse:
     except ValueError as exc:
         return _error(str(exc), status=413)
     return JSONResponse({"path": rel_path, "content": content})
+
+
+async def file_raw_endpoint(request: Request) -> Response:
+    """v0.24.0 (D-2026-05-17-L) — serve raw bytes for image embeds.
+
+    Same query shape as ``file_get_endpoint`` (``project_path`` +
+    ``project_id`` + ``path``), but returns the file's bytes via
+    ``FileResponse`` so the browser ``<img>`` tag can render it
+    directly. Extension allow-list = ``ALLOWED_IMAGE_EXTENSIONS``
+    (.png/.jpg/.jpeg/.gif/.webp/.avif/.svg). Path-traversal safety
+    via the existing ``resolve_safe_path``.
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.query_params.get("project_id")
+    if not project_id:
+        return _error("'project_id' query param is required")
+    rel_path = request.query_params.get("path")
+    if not rel_path:
+        return _error("'path' query param is required")
+    project_root = _project_scoped_root(plot_root, project_id)
+    if not project_root.is_dir():
+        return _error(f"project not found: {project_id}", status=404)
+    try:
+        target = resolve_safe_path(project_root, rel_path)
+    except UnsafePathError as exc:
+        return _error(str(exc), status=400)
+    if target.suffix.lower() not in ALLOWED_IMAGE_EXTENSIONS:
+        return _error(
+            f"extension {target.suffix!r} not allowed for raw image read",
+            status=400,
+        )
+    if not target.is_file():
+        return _error(f"file not found: {rel_path}", status=404)
+    return FileResponse(target)
 
 
 async def file_put_endpoint(request: Request) -> JSONResponse:

@@ -5462,6 +5462,81 @@ required.
 - [D-2026-05-17-J](./DECISIONS.md) — v0.23.1 Unpublish; the unpublish
   button is now the secondary action under the footer publish CTA.
 
+---
+
+### D-2026-05-17-L — Live Preview Stage 3 (heading + list + image, v0.24.0)
+
+**Context:** v0.19.0 (D-2026-05-17-B) shipped the CodeMirror 6
+MdTextarea foundation with syntax highlight = Stage 1. v0.21.0
+(D-2026-05-17-D) added mermaid inline SVG widgets = Stage 2. The
+3-stage Obsidian Live Preview track planned **Stage 3** as
+heading-font-size + list-bullet + image-embed decorations on top of
+the source. User approved batch-shipping all three together
+2026-05-17 (*"(A) heading + list + image 세 가지 모두 v0.24.0 에 한
+번에 ship"* via AskUserQuestion).
+
+**Decision:** Three new CodeMirror plugins (separate files for SoC),
+all wired into the existing ``MdTextarea`` extensions array.
+
+| Plugin | Decoration kind | Pattern |
+|---|---|---|
+| ``mdHeadingPlugin`` | Line (mark) | ATXHeading1-6 nodes → line class ``cm-md-h{N}``; CSS theme scales font-size (H1 1.5×, H2 1.3×, H3 1.15×, H4-6 just bold). |
+| ``mdListPlugin`` | Mark | ``ListMark`` nodes inside ``BulletList`` (skip OrderedList) → mark class ``cm-md-bullet``; CSS hides the raw ``- / * / +`` char and paints ``•`` via ``::before``. |
+| ``mdImagePlugin`` | Block widget | ``Image`` nodes with image-extension URLs → block widget placed after the image's line, holding a lazy-loaded ``<img>``. Same StateField + ViewPlugin debouncer split as mdMermaidPlugin (block widgets must come from a StateField per CM6). |
+
+**Heading sizing rationale (reasonable defaults):**
+H1 1.5× / H2 1.3× / H3 1.15× mirrors Obsidian Live Preview's
+conservative scaling — enough for visual hierarchy, not so much that
+short Inspector panels run out of space. H4-H6 keep base font-size +
+bold so deep heading nests don't shrink past readable.
+
+**Bullet glyph rationale:** ``•`` (U+2022) matches GitHub-flavoured
+markdown, Obsidian Live Preview, and Mermaid's own list rendering
+— the universal "this is an unordered list item" glyph.
+
+**Image scope:**
+- Source URLs accepted: ``http(s)://...``, ``data:image/...``, and
+  project-relative paths (``./img.png`` or ``img.png``).
+- Project-relative paths require a new server endpoint
+  ``GET /api/files/raw`` that serves bytes (the existing
+  ``/api/files`` returns JSON ``{content}`` — unusable for an
+  ``<img>`` tag).
+- Server-side extension allow-list:
+  ``.png/.jpg/.jpeg/.gif/.webp/.avif/.svg``. Path-traversal safety
+  via the existing ``resolve_safe_path``.
+- Broken image → red-bordered "image not loaded: ``<url>``" block
+  swap on ``img.onerror``.
+- Lazy load (``loading="lazy"``) so off-screen images don't fetch.
+- Sizing: ``max-width: 100%; max-height: 480px; display: block;
+  margin: 0 auto``. User-resizable not needed — fits the Inspector
+  width automatically.
+
+**SSOT invariant:** all three plugins are visual-only. The doc is
+never mutated; the user keeps editing the raw markdown source above
+the rendered output.
+
+**Verification:**
+- 4 new pytest cases in ``test_file_raw_endpoint.py``: byte
+  round-trip, 404 for missing file, 400 for disallowed extension,
+  400 for path-traversal attempt.
+- Full suite: 421 pytest + 545 vitest pass; mypy + tsc clean.
+
+**Approval:** User-locked via AskUserQuestion 2026-05-17 (option
+"(A) heading + list + image 세 가지 모두 v0.24.0 에 한 번에 ship"
++ ASCII-mockup preview of rendered output).
+
+**Spec impact:** ``SPEC.md §Typed text and body fields`` mentions
+Live Preview decorations; the Stage 3 paragraph is added there.
+
+**Cross-refs:**
+- [D-2026-05-17-B](./DECISIONS.md) — v0.19.0 Stage 1 (MdTextarea
+  foundation).
+- [D-2026-05-17-D](./DECISIONS.md) — v0.21.0 Stage 2 (mermaid
+  inline SVG). The image plugin reuses the same StateField + ViewPlugin
+  debouncer split.
+- [D-2026-05-13-O](./DECISIONS.md) #2 — *"JSON value = MD-formatted
+  string"* SSOT; preserved by all three decorations being visual-only.
+
 **Cross-refs:**
 - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish. The
   "always-bump on the publish target (MAJOR)" clause under
