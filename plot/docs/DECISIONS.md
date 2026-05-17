@@ -4899,6 +4899,9 @@ adds no new DOM elements and does not break the 529 vitest tests.
 **Approval:** Self-approved bug fix; consistent with SPEC §Inspector
 interaction contract (user can type in typed-text fields after
 clicking them). No new SPEC line required.
+**Post-ship user confirm 2026-05-17:** *"이제 되네"* — user verified
+that clicking an Inspector typed-text field lands focus in the CM
+editor in real Chrome.
 
 **Spec impact:** None — the spec already implies that clicking a
 typed-text field focuses it. This entry documents the implementation
@@ -4961,6 +4964,10 @@ the proposal in the prior turn (Gate 1 satisfied per CLAUDE.md
 anti-pattern *"Adding any cursor / handle / pan override on top
 of RF defaults"* — the override stack is a regression engine
 unless every entry has an audit trail).
+**Post-ship user confirm 2026-05-17:** *"고쳐진거 같아요"* — user
+verified handle drag works (indirect confirm: drag-to-connect
+requires grabbing a handle reliably, and the connect verification
+succeeded; see D-2026-05-17-G).
 
 **Spec impact:** None — visible behaviour is unchanged. The spec
 section on edges/handles does not need updating because the
@@ -5052,6 +5059,9 @@ before.
 behaviour contradicted SPEC §Anchor / §Edges). User-reported
 scenario *"코어밸류 탑핸들에서 앵커의 왼쪽핸들로 연결선을 만들려고
 할 때 연결이 되지 않아요"* is the test case.
+**Post-ship user confirm 2026-05-17:** *"고쳐진거 같아요"* — user
+verified the Core Value top → Anchor left edge now draws in real
+Chrome.
 
 **Spec impact:** No SPEC text change required — SPEC already
 implied this behaviour. This entry documents the implementation

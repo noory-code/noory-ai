@@ -4,6 +4,16 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.21.4] — 2026-05-17
+
+### Changed
+
+- Docs-only — appended **Post-ship user confirm** lines to
+  DECISIONS entries D-2026-05-17-E (focus), D-2026-05-17-F (handle
+  hit area), and D-2026-05-17-G (loose connection mode). All three
+  bug fixes from today were verified by the user in real Chrome.
+  No code or behaviour change.
+
 ## [0.21.3] — 2026-05-17
 
 ### Fixed
