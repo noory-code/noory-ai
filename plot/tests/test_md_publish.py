@@ -246,13 +246,14 @@ def test_render_yaml_frontmatter_has_all_7_keys(cls: type, extra: dict) -> None:
 
 
 def test_published_md_path_uses_kind_slug_version(tmp_path: Path) -> None:
+    """v0.23.0 (D-2026-05-17-I): layout is ``published/<kind>/<slug>/<version>.md``."""
     p = published_md_path(
         tmp_path / "foundation",
         kind="mission",
         label="Tolerance",
         version="v2.0",
     )
-    assert p == tmp_path / "foundation" / "published" / "mission-tolerance-v2.0.md"
+    assert p == tmp_path / "foundation" / "published" / "mission" / "tolerance" / "v2.0.md"
 
 
 def test_published_md_path_preserves_korean_slug(tmp_path: Path) -> None:
@@ -262,9 +263,9 @@ def test_published_md_path_preserves_korean_slug(tmp_path: Path) -> None:
         label="관용",
         version="v1.0",
     )
-    assert p.name == "core_value-관용-v1.0.md"
+    assert p == tmp_path / "foundation" / "published" / "core_value" / "관용" / "v1.0.md"
 
 
 def test_published_md_path_falls_back_for_empty_label(tmp_path: Path) -> None:
     p = published_md_path(tmp_path / "foundation", kind="mission", label="", version="v1.0")
-    assert p.name == "mission-untitled-v1.0.md"
+    assert p == tmp_path / "foundation" / "published" / "mission" / "untitled" / "v1.0.md"

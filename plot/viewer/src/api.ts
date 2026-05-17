@@ -300,6 +300,37 @@ export async function publishNode(
   );
 }
 
+/** v0.23.0 (D-2026-05-17-I) — one published version's metadata. */
+export interface PublishedVersion {
+  version: string;
+  path: string;
+  published_at: string | null;
+  sha: string | null;
+  size: number;
+}
+
+export interface PublishedVersionsResponse {
+  versions: PublishedVersion[];
+}
+
+/** v0.23.0 — list a node's published MD versions (newest first). */
+export async function listPublishedVersions(
+  projectPath: string,
+  projectId: string,
+  canvasKind: string,
+  nodeId: string,
+  serviceId?: string,
+): Promise<PublishedVersion[]> {
+  const params = new URLSearchParams({ project_path: projectPath });
+  if (serviceId) params.set("service_id", serviceId);
+  const url =
+    `${API_BASE}/api/projects/${encodeURIComponent(projectId)}` +
+    `/canvases/${encodeURIComponent(canvasKind)}` +
+    `/nodes/${encodeURIComponent(nodeId)}/published?${params.toString()}`;
+  const resp = await json<PublishedVersionsResponse>(await fetch(url));
+  return resp.versions;
+}
+
 export async function deleteProjectTag(
   projectPath: string,
   projectId: string,

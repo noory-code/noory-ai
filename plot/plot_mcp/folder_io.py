@@ -30,6 +30,7 @@ disk layouts are healed lazily on read — see
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -188,7 +189,53 @@ def read_canvas(
         # v0.12 — wrap orphan top-level services in a default category so
         # the new "service must be nested in a category" validator passes.
         raw = _wrap_legacy_services_in_default_category(plot_root, project_id, raw)
+    # v0.23.0 (D-2026-05-17-I) — migrate legacy flat published MD layout
+    # (<canvas>/published/<kind>-<slug>-v<X>.md) to the kind/slug/version.md
+    # hierarchy. Idempotent: once moved, the legacy filenames no longer
+    # exist so the scan is a no-op on subsequent reads.
+    canvas_dir = _canvas_file(plot_root, project_id, canvas_kind, service_id).parent
+    _migrate_published_flat_to_kind_slug(canvas_dir)
     return CanvasDoc.model_validate(raw)
+
+
+# v0.23.0 (D-2026-05-17-I) — published MD layout migration.
+# Pre-v0.23.0 layout was flat: ``<canvas>/published/<kind>-<slug>-vN.M.md``.
+# v0.23.0+ layout groups by kind + slug: ``<canvas>/published/<kind>/<slug>/vN.M.md``.
+# Same data, better navigation: all versions of a logical document live in
+# one folder, and that folder is grouped under its kind.
+_LEGACY_PUBLISHED_FILENAME_RE = re.compile(
+    r"^(?P<kind>[a-z_]+)-(?P<slug>.+)-v(?P<v>\d+\.\d+)\.md$"
+)
+
+
+def _migrate_published_flat_to_kind_slug(canvas_dir: Path) -> None:
+    """Move legacy flat published files into the new kind/slug/version layout.
+
+    Idempotent: looks only at direct ``.md`` children of
+    ``<canvas_dir>/published/``. Once moved, no files match the regex
+    there so subsequent calls are no-ops. Existing destinations are
+    skipped (the new layout takes precedence — we never overwrite).
+    """
+    published_dir = canvas_dir / "published"
+    if not published_dir.is_dir():
+        return
+    for entry in published_dir.iterdir():
+        if not entry.is_file() or entry.suffix != ".md":
+            continue
+        match = _LEGACY_PUBLISHED_FILENAME_RE.match(entry.name)
+        if not match:
+            continue
+        kind = match.group("kind")
+        slug = match.group("slug")
+        version = match.group("v")
+        dest = published_dir / kind / slug / f"v{version}.md"
+        if dest.exists():
+            # New layout already has this version; the legacy file is
+            # redundant. Leave it in place rather than silently delete
+            # — caller can clean up after auditing.
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        entry.rename(dest)
 
 
 def _wrap_legacy_services_in_default_category(

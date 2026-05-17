@@ -684,14 +684,16 @@ def _foundation_mission_id(plot_root: Path, pid: str) -> str:
 
 
 def test_publish_node_writes_md_at_expected_path(plot_root: Path) -> None:
+    """v0.23.0 (D-2026-05-17-I): layout is published/<kind>/<slug>/<version>.md."""
     create_project(plot_root, "alpha", "Alpha")
     mid = _foundation_mission_id(plot_root, "alpha")
     result = publish_node(plot_root, "alpha", "foundation", mid)
     md_full = plot_root / "alpha" / result["md_path"]
     assert md_full.is_file()
-    assert md_full.parent.name == "published"
-    assert result["md_path"].startswith("foundation/published/mission-")
-    assert result["md_path"].endswith("-v2.0.md")
+    assert md_full.name == "v2.0.md"
+    # Path: foundation/published/mission/<slug>/v2.0.md
+    assert result["md_path"].startswith("foundation/published/mission/")
+    assert result["md_path"].endswith("/v2.0.md")
 
 
 def test_publish_node_bumps_major_version(plot_root: Path) -> None:

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any, cast
 
@@ -404,6 +405,122 @@ async def node_publish_endpoint(request: Request) -> JSONResponse:
     except PublishNotEligibleError as exc:
         return _error(str(exc), status=409)
     return JSONResponse(result, status_code=201)
+
+
+# ---------------------------------------------------------------------------
+# v0.23.0 (D-2026-05-17-I) — list a node's published versions
+# ---------------------------------------------------------------------------
+
+
+_FRONTMATTER_PUBLISHED_AT_RE = re.compile(
+    r"^published_at:\s*'?([^'\n]+)'?\s*$", re.MULTILINE
+)
+
+
+def _read_published_at(md_path: Path) -> str | None:
+    """Read ``published_at`` from a published MD file's YAML frontmatter.
+
+    Returns None on any parse failure — the field is informational, so
+    a malformed file shouldn't break the listing.
+    """
+    try:
+        head = md_path.read_text(encoding="utf-8", errors="replace")[:2048]
+    except OSError:
+        return None
+    match = _FRONTMATTER_PUBLISHED_AT_RE.search(head)
+    return match.group(1).strip() if match else None
+
+
+def _git_commit_sha_for_path(project_dir: Path, rel_path: str) -> str | None:
+    """Short sha of the commit that introduced ``rel_path``. None on any failure."""
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["git", "log", "--diff-filter=A", "-1", "--format=%h", "--", rel_path],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    sha = result.stdout.strip()
+    return sha or None
+
+
+_VERSION_FILENAME_RE = re.compile(r"^v(\d+\.\d+)\.md$")
+
+
+async def node_published_list_endpoint(request: Request) -> JSONResponse:
+    """``GET /api/projects/{id}/canvases/{kind}/nodes/{node_id}/published``
+
+    Returns a list of published MD file metadata for the node, newest
+    version first. Each entry: ``{version, path, published_at, sha, size}``.
+    Empty list when the node has never been published or its slug folder
+    doesn't exist.
+
+    Optional ``service_id`` query parameter (mirrors publish endpoint).
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    canvas_kind = request.path_params["canvas_kind"]
+    node_id = request.path_params["node_id"]
+    if canvas_kind not in _ALLOWED_CANVAS_KINDS:
+        return _error(f"invalid canvas_kind: {canvas_kind}", status=400)
+    service_id = request.query_params.get("service_id") or None
+    project_dir = plot_root / project_id
+    if not project_dir.is_dir():
+        return _error(f"project not found: {project_id}", status=404)
+    # Resolve the canvas to locate the node + derive its kind+slug.
+    from plot_mcp.folder_io import read_canvas
+    from plot_mcp.slug import slugify
+
+    try:
+        canvas = read_canvas(
+            plot_root, project_id, cast("CanvasKind", canvas_kind), service_id
+        )
+    except FileNotFoundError as exc:
+        return _error(str(exc), status=404)
+    node = next((n for n in canvas.nodes if n.id == node_id), None)
+    if node is None:
+        return _error(f"node not found: {node_id}", status=404)
+    slug = slugify(node.label) or "untitled"
+    # Locate the slug folder. The canvas's on-disk parent is the
+    # canvas directory used by published_md_path.
+    from plot_mcp.folder_io import _canvas_file
+
+    canvas_dir = _canvas_file(plot_root, project_id, cast("CanvasKind", canvas_kind), service_id).parent
+    slug_dir = canvas_dir / "published" / node.kind / slug
+    if not slug_dir.is_dir():
+        return JSONResponse({"versions": []})
+    versions: list[dict[str, Any]] = []
+    for entry in slug_dir.iterdir():
+        if not entry.is_file():
+            continue
+        match = _VERSION_FILENAME_RE.match(entry.name)
+        if not match:
+            continue
+        version = "v" + match.group(1)
+        rel_path = str(entry.relative_to(project_dir))
+        versions.append(
+            {
+                "version": version,
+                "path": rel_path,
+                "published_at": _read_published_at(entry),
+                "sha": _git_commit_sha_for_path(project_dir, rel_path),
+                "size": entry.stat().st_size,
+            }
+        )
+    # Sort newest version first; parse "v<MAJOR>.<MINOR>" into tuple.
+    versions.sort(
+        key=lambda v: tuple(int(p) for p in v["version"][1:].split(".")),
+        reverse=True,
+    )
+    return JSONResponse({"versions": versions})
 
 
 async def tag_delete_endpoint(request: Request) -> JSONResponse:

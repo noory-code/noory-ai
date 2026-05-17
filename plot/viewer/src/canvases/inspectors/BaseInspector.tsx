@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { canPublish } from "../../domain/publishEligibility";
 import type { CanvasKind, SketchNode } from "../../types";
 import { DetailsSection } from "./DetailsSection";
+import { PublishedVersionsSection } from "./shared/PublishedVersionsSection";
 
 const WIDTH_STORAGE_KEY = "plot.inspector.width";
 type InspectorWidth = "narrow" | "wide";
@@ -255,6 +256,18 @@ export function BaseInspector({
             projectId={projectId}
             canvasKind={canvasKind}
             onPatchNode={onPatchNode}
+          />
+        )}
+
+        {/* v0.23.0 (D-2026-05-17-I) — Published versions list +
+            click-to-open MD modal. Only for publish-eligible kinds. */}
+        {canPublish(node) && (
+          <PublishedVersionsSection
+            projectPath={projectPath}
+            projectId={projectId}
+            canvasKind={canvasKind}
+            nodeId={node.id}
+            refreshKey={node.version}
           />
         )}
 

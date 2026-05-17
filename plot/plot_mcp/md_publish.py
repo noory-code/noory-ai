@@ -137,16 +137,18 @@ def render_node_md(node: SketchNode, *, canvas: str) -> str:
 def published_md_path(canvas_dir: Path, *, kind: str, label: str, version: str) -> Path:
     """Resolve the absolute path for a published node's MD file.
 
-    Pattern: ``<canvas_dir>/published/{kind}-{slug}-{version}.md``.
+    Pattern (v0.23.0, D-2026-05-17-I): ``<canvas_dir>/published/<kind>/<slug>/<version>.md``.
     The slug is derived from ``label`` via ``slugify`` (Korean/CJK
-    preserved). Collisions across nodes with identical labels are
-    *not* handled here — the version suffix differentiates per-node
-    publish history. Two distinct nodes with the same label collide
-    on Phase 3 and would need short-id disambiguation; tracked as
-    Phase 3 known limitation (see SPEC §Publish)."""
+    preserved). All versions of the same logical document live in
+    one folder, grouped under their kind. Collisions across nodes
+    with identical labels still land in the same slug folder — the
+    version suffix differentiates them; users rename to disambiguate.
+
+    Pre-v0.23.0 flat layout (``<canvas_dir>/published/{kind}-{slug}-{version}.md``)
+    is migrated to the new layout on first ``read_canvas`` via
+    ``_migrate_published_flat_to_kind_slug`` (see folder_io.py)."""
     slug = slugify(label) or "untitled"
-    fname = f"{kind}-{slug}-{version}.md"
-    return canvas_dir / "published" / fname
+    return canvas_dir / "published" / kind / slug / f"{version}.md"
 
 
 # ---------------------------------------------------------------------------

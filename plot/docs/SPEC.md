@@ -552,8 +552,13 @@ emitted on publish.
 ### What lands on disk per publish
 
 - **MD file** at
-  ``<project_id>/<canvas>/published/{kind}-{slug}-{version}.md`` in
-  the format pinned in [`PUBLISH.md`](./PUBLISH.md).
+  ``<project_id>/<canvas>/published/<kind>/<slug>/v<MAJOR>.<MINOR>.md``
+  (v0.23.0 layout per [D-2026-05-17-I](./DECISIONS.md); pre-v0.23.0
+  flat ``<canvas>/published/<kind>-<slug>-v<MAJOR>.<MINOR>.md`` is
+  auto-migrated on first ``read_canvas``). MD format pinned in
+  [`PUBLISH.md`](./PUBLISH.md). All versions of the same logical
+  document live in one ``<kind>/<slug>/`` folder, browsable in the
+  Inspector's "Published versions" section.
 - **Bumped ``version`` field** persisted to the canvas's
   ``canvas.json`` via the regular write path. When the published
   node has a mirror in another canvas (e.g. a service master in
@@ -565,6 +570,26 @@ emitted on publish.
   ``Publish-*:`` trailers (Phase 3), plus zero or more
   ``Publish-Propagated-Ancestor:`` trailers (Phase 4 — see next
   section).
+
+### Published versions in the Inspector (v0.23.0+)
+
+Per [D-2026-05-17-I](./DECISIONS.md). The Inspector, for every
+publish-eligible node, shows a **Published versions** section
+underneath the per-kind body + DetailsSection. The section lists
+one row per existing published MD file, newest version first, with
+``{version, published_at, sha}``. Clicking a row opens a modal that
+renders the MD via ``MDPreview`` (GFM + Mermaid). Escape or
+backdrop-click closes.
+
+Empty when the node has never been published. The list refreshes
+when the node's ``version`` changes (i.e. immediately after a
+publish-button press).
+
+The list endpoint is
+``GET /api/projects/{id}/canvases/{kind}/nodes/{node_id}/published``
+and returns ``{versions: [{version, path, published_at, sha, size}]}``.
+``published_at`` is parsed from the MD frontmatter; ``sha`` is the
+short hash of the git commit that introduced the file.
 
 ### Publish — MINOR propagation (v0.20.0+)
 

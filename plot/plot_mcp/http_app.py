@@ -17,6 +17,7 @@ from plot_mcp.api_endpoints import (
     folder_post_endpoint,
     health_endpoint,
     node_publish_endpoint,
+    node_published_list_endpoint,
     project_anchor_patch_endpoint,
     project_delete_endpoint,
     project_get_endpoint,
@@ -113,6 +114,12 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
             "/api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/publish",
             node_publish_endpoint,
             methods=["POST"],
+        ),
+        # v0.23.0 (D-2026-05-17-I) — list a node's published versions
+        Route(
+            "/api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/published",
+            node_published_list_endpoint,
+            methods=["GET"],
         ),
         WebSocketRoute("/ws", ws_endpoint),
     ]

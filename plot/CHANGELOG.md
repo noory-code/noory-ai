@@ -4,6 +4,45 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.23.0] — 2026-05-17
+
+### Added
+
+- **Inspector "Published versions" section + MD modal**
+  ([D-2026-05-17-I](./docs/DECISIONS.md)). For every publish-eligible
+  node, the Inspector now shows a list of every published MD version
+  (newest first), with version label + publish timestamp + short
+  commit sha. Clicking a row opens a modal that renders the MD via
+  the existing ``MDPreview`` (GFM + Mermaid). Escape or backdrop
+  closes. Empty when never published; auto-refreshes after a publish.
+- New endpoint
+  ``GET /api/projects/{id}/canvases/{kind}/nodes/{node_id}/published``
+  returns the list metadata. Reuses the existing ``GET /api/files``
+  for the actual MD content.
+
+### Changed
+
+- **Published MD folder layout reorganised**
+  ([D-2026-05-17-I](./docs/DECISIONS.md)). Pre-v0.23.0 flat layout
+  (``<canvas>/published/<kind>-<slug>-v<X>.md``) → new grouped
+  layout (``<canvas>/published/<kind>/<slug>/v<X>.md``). All
+  versions of the same logical document live in one folder; kind
+  serves as the top-level taxonomy. ``published_md_path`` returns
+  the new path; viewer's Published versions section reads it.
+- ``SPEC.md §Publish §What lands on disk per publish`` updated;
+  new ``§Published versions in the Inspector`` subsection added.
+- ``BaseInspector.tsx`` LOC ceiling raised 285 → 295 to absorb the
+  ``PublishedVersionsSection`` insertion (canPublish-gated).
+
+### Migration
+
+- Idempotent first-read migration in ``folder_io.read_canvas`` moves
+  legacy flat files to the new layout on the next canvas read. No
+  user action needed; no commit emitted (the move is silent — same
+  pattern as the v0.13 ``_absorb_md_typed_text_into_json``).
+- Skipped silently when the destination already exists (no
+  overwrite).
+
 ## [0.22.2] — 2026-05-17
 
 ### Changed

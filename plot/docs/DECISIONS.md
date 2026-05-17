@@ -5151,6 +5151,115 @@ follow-up *"퍼블리시 버튼이 인스펙터 창 아래로 좀 크게"* — q
 in NEXT_SESSION.md as the ``v0.22.x publish-button placement +
 size`` item, deferred per user *"이런건 나중에 합시다"*.
 
+---
+
+### D-2026-05-17-I — Published-MD folder reorg + Inspector Published versions UI (v0.23.0)
+
+**Context:** Two adjacent user requests during the v0.22.0 ship:
+*"발행을 하면요. md 가 생기잖아요. 그거 어디서 보여줬으면 하는데
+그거 어디에 생기는지도 좀 알려주고요"* and *"폴더 정리를 좀
+해주셔야할 것 같은데요. 무지성하게 정리하지 마시구요."* — i.e.
+the published MD library needs both a viewer surface and a deliberate
+folder structure.
+
+The pre-v0.23.0 layout was flat:
+``<canvas>/published/<kind>-<slug>-v<X>.md``. With multiple kinds
+× multiple nodes × N versions each, the published folder grew into
+an unbrowsable list with no logical grouping.
+
+**Decision 1 — Folder layout = ``<canvas>/published/<kind>/<slug>/v<X>.md``**
+
+User-picked via AskUserQuestion 2026-05-17 with ASCII-tree previews
+of three candidate layouts (slug-keyed / id-keyed / flat-kind).
+
+```
+.plot/<project_id>/foundation/published/
+  ├── mission/mission/v2.0.md v3.0.md v4.0.md
+  ├── identity/voice/v2.0.md v3.0.md v4.0.md
+  └── core_value/core-value/v2.0.md v3.0.md v4.0.md
+```
+
+Rationale: one folder per logical document; all versions of the same
+node grouped together; kind serves as the top-level taxonomy.
+Label rename → folder rename → git tracks via rename detection.
+
+**Decision 2 — Migration = smallest viable idempotent first-read move**
+
+User: *"마이그레이션이 필요한가? 아직 쓰는 사람도 없는데?? 하지만
+우리 테스트 프로젝트에서 마이그레이션이 필요하지. 그건 그냥 알아서
+해요."*
+
+Implemented as ``_migrate_published_flat_to_kind_slug(canvas_dir)`` in
+``folder_io.py``, called from ``read_canvas`` for every canvas kind.
+The helper regex-matches legacy filenames
+(``^(?P<kind>[a-z_]+)-(?P<slug>.+)-v(?P<v>\d+\.\d+)\.md$``), moves
+each to the new location via ``Path.rename``, and skips silently if
+the destination already exists. Idempotent — once the legacy files
+are gone, subsequent calls are no-ops. No special git commit for the
+move (same pattern as ``_absorb_md_typed_text_into_json``).
+
+**Decision 3 — Inspector "Published versions" section + click-to-modal**
+
+User-picked from 4 UX options 2026-05-17: *"인스펙터에 파일 정보
+보여주고요. 클릭하면 모달 팝업으로"*. Implementation:
+
+- **Server**: new
+  ``GET /api/projects/{id}/canvases/{kind}/nodes/{node_id}/published``
+  reads the slug folder for the node and returns
+  ``{versions: [{version, path, published_at, sha, size}, ...]}``
+  sorted newest first. ``published_at`` from MD frontmatter; ``sha``
+  from ``git log --diff-filter=A -1 --format=%h -- <path>``.
+- **Client**:
+  - ``PublishedVersionsSection`` renders inside ``BaseInspector``
+    after ``DetailsSection``, gated by ``canPublish(node)``. One
+    row per version (button) showing version + published_at + sha;
+    click → opens ``PublishedMDModal``.
+  - ``PublishedMDModal`` reuses ``MDPreview`` (GFM + Mermaid) inside
+    a SketchBodyModal-style backdrop+escape scaffold. Loads the MD
+    via the existing ``readFile`` (``GET /api/files``) — no new
+    file-read endpoint needed.
+  - List refreshes whenever ``node.version`` changes (so a
+    just-clicked publish button surfaces the new ``vN.0`` row).
+- **i18n**: new keys ``inspector.publishedVersions`` (section
+  header), ``inspector.publishedVersionsEmpty`` ("아직 발행된 버전
+  없음" / "No published versions yet").
+
+**LOC ceiling raise:** ``BaseInspector.tsx`` 285 → 295 to absorb the
+``PublishedVersionsSection`` insertion (7 LOC of props wiring inside a
+``canPublish(node)`` guard). Pinned in ``structural-guards.test.tsx``
+with the v0.18.0 → v0.22.0 → v0.23.0 historic note.
+
+**Verification:**
+- 10 new pytest cases in ``test_published_endpoint.py`` (path
+  layout, migration idempotence, endpoint output, 404 path).
+- 4 existing pytest cases updated to the new path shape
+  (``test_md_publish.py`` + ``test_folder_io.py``).
+- 4 new vitest cases in ``published-versions-section.test.tsx``
+  (empty / non-empty / click-opens-modal / refreshKey re-fetch).
+- Full suite: 409 pytest + 539 vitest pass; mypy + tsc clean.
+
+**Approval:** User-locked via two AskUserQuestion rounds 2026-05-17
+(folder layout via ASCII-tree preview, migration policy via "그냥
+알아서 해요"). Plan approved via ExitPlanMode same turn. User then
+said *"3 빼고 싹다 해버리지 뭐"* to ship v0.23.0 + four follow-ups
+in one session.
+
+**Spec impact:**
+- ``SPEC.md §Publish §What lands on disk per publish`` path example
+  rewritten to ``<kind>/<slug>/v<X>.md`` with v0.23.0 + auto-migration
+  note.
+- ``SPEC.md §Publish`` adds new ``§Published versions in the
+  Inspector`` subsection.
+
+**Cross-refs:**
+- [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish; the
+  ``published_md_path`` function lives there.
+- [D-2026-05-17-H](./DECISIONS.md) — v0.22.0 dirty-gate; the
+  ``PublishedVersionsSection`` refresh key is ``node.version``,
+  which moves on publish (MAJOR) and on Phase 4 propagation
+  (MINOR). MINOR-only drift won't add new rows but the re-fetch
+  is cheap.
+
 **Cross-refs:**
 - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish. The
   "always-bump on the publish target (MAJOR)" clause under

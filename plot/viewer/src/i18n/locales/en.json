@@ -100,6 +100,8 @@
     "publishShort": "📤 publish",
     "publishHint": "Bump MAJOR version and emit a published MD file. Each publish creates a new version.",
     "publishDisabledHint": "No content changes since {{version}}",
+    "publishedVersions": "Published versions",
+    "publishedVersionsEmpty": "No published versions yet",
     "confirmPublish": "Publish {{kind}} \"{{label}}\"?\n\nThis bumps version {{fromVersion}} → {{toVersion}}, writes a new MD file, and records a git commit. Each publish creates a new version — cancel if you didn't mean to bump.",
     "field": {
       "theme": "Theme",
