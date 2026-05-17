@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.4] — 2026-05-18
+
+### Changed
+
+- Docs-only — `plot/docs/NEXT_SESSION.md` adds a new top-priority
+  entry **"Foundation 정리 + Actor 정리"** (user-filed at session
+  end 2026-05-18: *"다음에는 파운데이션 정리 한번하고 액터 정리로
+  갈거에요"*). Target = the `banas-imported` test project; scope
+  open for re-anchor at next session start. Plot-space-vs-time rule
+  ([[feedback_plot_space_vs_time]]) applies — only spatial
+  (relations/structure) content gets imported; vision / roadmap /
+  sprint are explicitly out.
+
+No code or behaviour change.
+
 ## [0.24.3] — 2026-05-18
 
 ### Changed

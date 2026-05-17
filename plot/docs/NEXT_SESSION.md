@@ -9,6 +9,40 @@
 
 ## Active queue
 
+### `Foundation 정리 + Actor 정리` (queued, TOP priority, filed 2026-05-18)
+
+> **Trigger:** user says **"foundation 정리"** / **"파운데이션 정리"** /
+> **"actor 정리"** / **"액터 정리"** / **"banas foundation"** /
+> **"banas actor"** as the first / near-first message.
+>
+> **Filed:** 2026-05-18 end of session. After import-Banas + 16
+> ships, user planned next pass: *"다음에는 파운데이션 정리
+> 한번하고 액터 정리로 갈거에요. 마무리하고 마치죠"*.
+>
+> **Scope (open — re-anchor with user at session start):**
+>
+> Foundation pass — likely candidates:
+> - banas-imported의 Mission / Core Values / Identity 컨텐츠 정돈
+>   (typed-text 필드 다시 살펴, body 정리, edge 그리기로 관계 표현).
+> - 추가 identity 노드 (visual identity / brand voice) 후보.
+> - Foundation 캔버스의 anchor 위치 + 노드 placement 손볼 수도.
+>
+> Actors pass — likely candidates:
+> - Hero / Fan / Bana 페르소나의 sub-actor (sub-persona) 추가
+>   (예: Hero 아래 "Photo Hero", "Music Hero" 같은 vertical
+>   specialisation).
+> - Actor 간 관계 edge (Hero ↔ Fan: 양방향 지지).
+> - Bana = Hero + Fan 의 union 이라는 의미를 시각적으로 표현
+>   (parent_id 또는 edge 로).
+>
+> **Plot 의 본질 ([[feedback_plot_space_vs_time]]) 기준 — 공간 기반
+> 만 다루기. 시간 / 단계 / 마일스톤 류는 안 들임.**
+>
+> **Approach:** plan-mode 짧게 + AskUserQuestion 으로 lock
+> (시각자료 활용 — ASCII tree / mockup).
+
+---
+
 ### `v0.23.0 — node publish UX (Inspector Published versions) + published-MD folder reorg` (queued, top priority, filed 2026-05-17)
 
 > **Trigger:** user says **"퍼블리시"** / **"발행 문서"** /
