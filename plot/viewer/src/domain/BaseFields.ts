@@ -39,6 +39,12 @@ export interface BaseFieldsJson {
    *  canvases auto-fill ``"v1.0"`` on read. Phase 3 increments on
    *  Publish; Phase 4 propagates up the ancestor chain. */
   version: string;
+  /** v0.22.0 (D-2026-05-17-H) — publish dirty baseline (server-managed).
+   *  Wire key is ``_publish_baseline``. Captures the content snapshot at
+   *  the most recent publish so the server can compute ``_dirty`` on
+   *  GET. The client does NOT round-trip this field; ``write_canvas``
+   *  preserves it from the disk state when a PUT payload omits it. */
+  publish_baseline?: unknown;
 }
 
 /** In-memory shape (defaults filled in). Every field present and typed. */

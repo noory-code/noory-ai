@@ -4,6 +4,45 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.22.0] — 2026-05-17
+
+### Added
+
+- **Publish dirty tracking + button disable when clean**
+  ([D-2026-05-17-H](./docs/DECISIONS.md)). The Inspector's 📤 publish
+  button is now disabled when the selected node has no content
+  changes since its last publish. "Content" = typed-text fields +
+  ``label`` + ``body`` + the set of edges incident on the node.
+  Visual changes (position / color / size / shape) and Phase 4 MINOR
+  drift from a descendant publish do **not** trigger dirty. Hover
+  tooltip on the disabled button names the last-published version
+  (*"v2.0 이후 변경 사항 없음"* / *"No content changes since v2.0"*).
+  Initial publish (no baseline yet) is always allowed.
+
+  Server-side: new private ``publish_baseline: dict | None`` field on
+  ``BaseNodeFields`` (aliased ``_publish_baseline``); ``publish_node``
+  stamps it on the bumped target and any mirror canvas;
+  ``canvas_get_endpoint`` recomputes ``_dirty`` per node on every GET.
+  ``write_canvas`` preserves baseline from disk when client PUTs omit
+  it.
+
+### Changed
+
+- ``SPEC.md §Publish §Idempotence`` rewritten as ``§Publish gated by
+  dirty``. The "always-bump on the publish target (MAJOR)" clause is
+  preserved but now conditioned on the button being enabled.
+- ``BaseInspector.tsx`` LOC ceiling raised 270 → 285 to wrap the
+  publish button in a dirty-aware IIFE (disabled state, conditional
+  ``onClick``, dirty-vs-clean className + tooltip). Single audit
+  trail in ``structural-guards.test.tsx``.
+
+### Migration
+
+- Existing canvas.json files load unchanged (``_publish_baseline``
+  defaults to ``None``). Nodes that were published before v0.22.0
+  will show as dirty on first GET (no baseline yet) — one harmless
+  re-publish per node seeds the baseline.
+
 ## [0.21.4] — 2026-05-17
 
 ### Changed

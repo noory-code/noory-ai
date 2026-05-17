@@ -116,35 +116,58 @@ export function BaseInspector({
         </div>
         <div className="flex items-center gap-1">
           {/* v0.18.0 Phase 3 — Publish button. Same eligibility as
-              canPublish() helper. Confirm dialog is the human debounce. */}
-          {onPublishNode && canPublish(node) && (
-            <button
-              type="button"
-              onClick={() => {
-                const fromVersion = node.version;
-                const next = parseInt(fromVersion.slice(1).split(".")[0], 10) + 1;
-                const toVersion = `v${next}.0`;
-                const kindLabel = t(`kind.${node.kind}`);
-                if (
-                  window.confirm(
-                    t("inspector.confirmPublish", {
-                      kind: kindLabel,
-                      label: node.label || node.id,
-                      fromVersion,
-                      toVersion,
-                    }),
-                  )
-                ) {
-                  onPublishNode(node.id);
-                }
-              }}
-              aria-label={t("inspector.publish")}
-              className="rounded px-2 text-[10px] text-emerald-700 hover:bg-emerald-50"
-              title={t("inspector.publishHint")}
-            >
-              {t("inspector.publishShort")}
-            </button>
-          )}
+              canPublish() helper. Confirm dialog is the human debounce.
+              v0.22.0 (D-2026-05-17-H) — disabled when the node is clean
+              (no content changes since last publish). Missing _dirty ⇒
+              treat as dirty (back-compat for pre-v0.22.0 server). */}
+          {onPublishNode &&
+            canPublish(node) &&
+            (() => {
+              const isDirty = node._dirty ?? true;
+              return (
+                <button
+                  type="button"
+                  disabled={!isDirty}
+                  onClick={
+                    isDirty
+                      ? () => {
+                          const fromVersion = node.version;
+                          const next =
+                            parseInt(fromVersion.slice(1).split(".")[0], 10) + 1;
+                          const toVersion = `v${next}.0`;
+                          const kindLabel = t(`kind.${node.kind}`);
+                          if (
+                            window.confirm(
+                              t("inspector.confirmPublish", {
+                                kind: kindLabel,
+                                label: node.label || node.id,
+                                fromVersion,
+                                toVersion,
+                              }),
+                            )
+                          ) {
+                            onPublishNode(node.id);
+                          }
+                        }
+                      : undefined
+                  }
+                  aria-label={t("inspector.publish")}
+                  className={
+                    "rounded px-2 text-[10px] " +
+                    (isDirty
+                      ? "text-emerald-700 hover:bg-emerald-50"
+                      : "cursor-not-allowed text-slate-300")
+                  }
+                  title={
+                    isDirty
+                      ? t("inspector.publishHint")
+                      : t("inspector.publishDisabledHint", { version: node.version })
+                  }
+                >
+                  {t("inspector.publishShort")}
+                </button>
+              );
+            })()}
           {/* Delete — hidden for the Project anchor and for Actor/Service roots. */}
           {node.kind !== "project" && !node.is_root && (
             <button

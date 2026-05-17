@@ -43,6 +43,8 @@ from plot_mcp.md_publish import (
     published_md_path,
     render_node_md,
 )
+from pydantic import ValidationError
+
 from plot_mcp.models import (
     ActorNode,
     ActorRefNode,
@@ -53,6 +55,8 @@ from plot_mcp.models import (
     IdentityNode,
     MissionNode,
     ProjectDoc,
+    SketchEdge,
+    SketchNode,
 )
 from plot_mcp.propagation import walk_ancestors
 
@@ -458,6 +462,33 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
     _ensure_project(plot_root, project_id)
     service_id = canvas.service_ref if canvas.canvas_kind == "service_detail" else None
     path = _canvas_file(plot_root, project_id, canvas.canvas_kind, service_id)
+    # v0.22.0 (D-2026-05-17-H) — preserve server-managed
+    # ``_publish_baseline`` across PUTs. The client doesn't round-trip
+    # this field (it's a server-managed dirty baseline), so a PUT from
+    # the viewer would otherwise clobber it back to ``None`` and reset
+    # every clean node to dirty. Read the existing on-disk canvas and
+    # carry any non-None baseline forward for nodes whose incoming
+    # baseline is ``None``.
+    existing_baselines: dict[str, dict[str, Any]] = {}
+    if path.is_file():
+        try:
+            existing_raw = _read_json(path)
+            existing = CanvasDoc.model_validate(existing_raw)
+            existing_baselines = {
+                n.id: n.publish_baseline
+                for n in existing.nodes
+                if n.publish_baseline is not None
+            }
+        except (FileNotFoundError, ValueError, ValidationError):
+            existing_baselines = {}
+    if existing_baselines:
+        preserved = [
+            n.model_copy(update={"publish_baseline": existing_baselines[n.id]})
+            if (n.publish_baseline is None and n.id in existing_baselines)
+            else n
+            for n in canvas.nodes
+        ]
+        canvas = canvas.model_copy(update={"nodes": preserved})
     raw = canvas.model_dump(by_alias=True)
     # v0.17 Phase 1 (D-2026-05-16-A) — JSON is the sole SSOT for
     # Foundation typed-text fields. The v0.13 ``_split_foundation_typed_
@@ -808,6 +839,98 @@ def _bump_node_version_in_canvas(canvas: CanvasDoc, node_id: str, to_v: str) -> 
     return canvas.model_copy(update={"nodes": new_nodes})
 
 
+# ---------------------------------------------------------------------------
+# v0.22.0 (D-2026-05-17-H) — publish dirty tracking
+# ---------------------------------------------------------------------------
+
+# Fields excluded from the dirty snapshot. Visual placement / size / color
+# / shape / icon / collapsed are user state but do NOT influence the
+# published MD content, so editing them must not flip a clean node to
+# dirty.
+_DIRTY_VISUAL_FIELDS: frozenset[str] = frozenset(
+    {"x", "y", "width", "height", "color", "shape", "icon", "collapsed"}
+)
+
+# Fields excluded from the dirty snapshot for non-content reasons:
+#   - id: node identity, never compared
+#   - version: moves with publish; the bump itself is not new content
+#   - parent_id: structural reparenting is intentionally NOT classified as
+#     dirty in v0.22.0 (see DECISIONS D-2026-05-17-H §Out of scope)
+#   - is_root: structural metadata; only set at creation
+#   - details_path: legacy MD path; v0.17 JSON SSOT made it inert for the
+#     10 publish-eligible kinds
+#   - owner: multi-user prep; not user content
+#   - _publish_baseline / publish_baseline: the baseline itself
+#   - _md_warnings: never persisted; server decoration only
+_DIRTY_NON_CONTENT_FIELDS: frozenset[str] = frozenset(
+    {
+        "id",
+        "version",
+        "parent_id",
+        "is_root",
+        "details_path",
+        "owner",
+        "publish_baseline",
+        "_publish_baseline",
+        "_md_warnings",
+    }
+)
+
+
+def _incident_edges(edges: list[SketchEdge], node_id: str) -> list[SketchEdge]:
+    """Edges where ``node_id`` is either endpoint."""
+    return [e for e in edges if e.source == node_id or e.target == node_id]
+
+
+def _dirty_snapshot(node: SketchNode, incident_edges: list[SketchEdge]) -> dict[str, Any]:
+    """Capture the dirty-relevant slice of a node + its incident edges.
+
+    Includes: typed-text fields + label + body + ``kind`` discriminator +
+    incident edges (sorted, edge ``id`` excluded).
+    Excludes: visual fields (``_DIRTY_VISUAL_FIELDS``), structural / identity
+    fields (``_DIRTY_NON_CONTENT_FIELDS``).
+    """
+    node_raw = node.model_dump(by_alias=True)
+    for f in _DIRTY_VISUAL_FIELDS | _DIRTY_NON_CONTENT_FIELDS:
+        node_raw.pop(f, None)
+    edges_raw = [
+        {k: v for k, v in e.model_dump(by_alias=True).items() if k != "id"}
+        for e in incident_edges
+    ]
+    edges_raw.sort(
+        key=lambda d: (
+            d.get("source", "") or "",
+            d.get("target", "") or "",
+            d.get("sourceHandle", "") or "",
+            d.get("targetHandle", "") or "",
+            d.get("label", "") or "",
+        )
+    )
+    return {"node": node_raw, "edges": edges_raw}
+
+
+def is_node_dirty(node: SketchNode, incident_edges: list[SketchEdge]) -> bool:
+    """``True`` when the node has been edited (content / edges) since its
+    last publish. ``True`` when no baseline exists yet (initial publish
+    is always allowed)."""
+    if node.publish_baseline is None:
+        return True
+    return _dirty_snapshot(node, incident_edges) != node.publish_baseline
+
+
+def _patch_node_in_canvas(
+    canvas: CanvasDoc, node_id: str, patch: dict[str, Any]
+) -> CanvasDoc:
+    """Return a copy of ``canvas`` with ``node_id``'s listed fields
+    replaced via ``model_copy(update=patch)``. Preserves all other
+    fields — important for mirror sync where parent_id can differ
+    between a service's master canvas and its ServiceDetail mirror."""
+    new_nodes = [
+        n.model_copy(update=patch) if n.id == node_id else n for n in canvas.nodes
+    ]
+    return canvas.model_copy(update={"nodes": new_nodes})
+
+
 def publish_node(
     plot_root: Path,
     project_id: str,
@@ -879,13 +1002,27 @@ def publish_node(
 
     touched: dict[str, CanvasDoc] = {}
 
+    # v0.22.0 (D-2026-05-17-H) — compute the post-publish dirty baseline
+    # using the bumped node + incident edges of the canvas the user
+    # published from. Publish-eligible nodes only exist in a single
+    # canvas (service masters live in ``services``; their ServiceDetail
+    # mirror is ``is_root`` and therefore publish-ineligible), so the
+    # start_canvas's edges are the right baseline source.
+    incident = _incident_edges(start_canvas.edges, node_id)
+    new_baseline = _dirty_snapshot(bumped, incident)
+
     # Step 4 — MAJOR-bump the target in every canvas it appears in
-    # (mirror sync). A service node has presences in both the Services
-    # master canvas and its ServiceDetail mirror; both must stay in
-    # lockstep.
+    # (mirror sync) and stamp the dirty baseline. Patch only ``version``
+    # + ``publish_baseline`` so other fields stay canvas-local — most
+    # importantly ``parent_id`` (services master has parent=category,
+    # ServiceDetail mirror is is_root with parent=None).
+    version_baseline_patch: dict[str, Any] = {
+        "version": to_v,
+        "publish_baseline": new_baseline,
+    }
     for key, canvas in canvases.items():
         if any(n.id == node_id for n in canvas.nodes):
-            touched[key] = _bump_node_version_in_canvas(canvas, node_id, to_v)
+            touched[key] = _patch_node_in_canvas(canvas, node_id, version_baseline_patch)
 
     # Refresh the index for ancestor walking with the post-MAJOR-bump
     # canvases so versions in trailers reflect the real `from_v` we

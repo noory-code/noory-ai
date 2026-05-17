@@ -157,8 +157,8 @@ const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   },
   "canvases/nodes/BaseNode.tsx": { ceiling: 250 },
   "canvases/inspectors/BaseInspector.tsx": {
-    ceiling: 270,
-    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 to absorb the version badge (left cluster) + publish button + confirm-dialog handler (right cluster). Chrome SSOT is the natural home; extracting a PublishButton would not meaningfully reduce LOC.",
+    ceiling: 285,
+    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 (publish button + confirm-dialog handler). v0.22.0 (D-2026-05-17-H) raised 270 → 285 to wrap the button in a dirty-aware IIFE: disabled state, conditional onClick, dirty-vs-clean className + tooltip. Chrome SSOT remains the natural home.",
   },
   "canvases/FoundationCanvas.tsx": { ceiling: 150 },
   "canvases/ActorsCanvas.tsx": { ceiling: 150 },

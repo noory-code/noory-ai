@@ -98,6 +98,7 @@ _EXPECTED_BASE_FIELDS = {
     "details_path",
     "owner",  # v0.16.12 (D-2026-05-12-O) — multi-user prep
     "version",  # v0.17.2 Phase 2 (D-2026-05-16-C) — per-node version
+    "publish_baseline",  # v0.22.0 (D-2026-05-17-H) — publish dirty baseline
 }
 
 

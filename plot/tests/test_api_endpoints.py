@@ -708,3 +708,63 @@ def test_publish_endpoint_ineligible_root_is_409(
         params={"project_path": project_path},
     )
     assert resp.status_code == 409
+
+
+# ---------------------------------------------------------------------------
+# v0.22.0 (D-2026-05-17-H) — _dirty decoration in canvas GET response
+# ---------------------------------------------------------------------------
+
+
+def test_canvas_get_marks_unpublished_node_dirty(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """A freshly-seeded node (never published, publish_baseline=None)
+    must surface as ``_dirty: true`` so the Inspector enables the
+    publish button for the initial release."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    canvas = client.get(
+        "/api/projects/alpha/canvases/foundation",
+        params={"project_path": project_path},
+    ).json()
+    mission = next(n for n in canvas["nodes"] if n["kind"] == "mission")
+    assert mission["_dirty"] is True
+
+
+def test_canvas_get_marks_just_published_node_clean(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """After publish, GET-ing the canvas must return ``_dirty: false`` —
+    the Inspector should disable the publish button."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    mid = _mission_id(client, project_path, "alpha")
+    client.post(
+        f"/api/projects/alpha/canvases/foundation/nodes/{mid}/publish",
+        params={"project_path": project_path},
+    )
+    canvas = client.get(
+        "/api/projects/alpha/canvases/foundation",
+        params={"project_path": project_path},
+    ).json()
+    mission = next(n for n in canvas["nodes"] if n["id"] == mid)
+    assert mission["_dirty"] is False
+
+
+def test_canvas_get_omits_dirty_for_ineligible_kinds(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """``project`` anchor (and other publish-ineligible kinds) don't
+    carry a ``_dirty`` field — there's no publish button to gate."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    canvas = client.get(
+        "/api/projects/alpha/canvases/foundation",
+        params={"project_path": project_path},
+    ).json()
+    # Foundation may not include a project-kind node post-v0.13 (anchor
+    # is synthetic), but if any ineligible kinds are present, they must
+    # not have ``_dirty``.
+    for n in canvas["nodes"]:
+        if n.get("kind") == "project" or n.get("is_root"):
+            assert "_dirty" not in n

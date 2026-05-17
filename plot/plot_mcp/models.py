@@ -12,7 +12,7 @@ fields are unchanged.
 from __future__ import annotations
 
 import re
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, TypeAdapter, field_validator, model_validator
 
@@ -159,6 +159,19 @@ class BaseNodeFields(BaseModel):
     # ``v2.3``). Defaults to ``v1.0`` so pre-Phase-2 canvases auto-fill
     # on read; first write after open serialises the new key.
     version: str = "v1.0"
+    # v0.22.0 (D-2026-05-17-H) — publish dirty baseline. Captures the
+    # content snapshot at the most recent publish (typed-text fields +
+    # label + body + incident edges); visual fields excluded. Server
+    # compares this to the current node + incident edges to compute
+    # ``_dirty`` for the Inspector's publish button gate. ``None`` ⇒
+    # never published (or pre-v0.22.0 migration) ⇒ treated as dirty
+    # (initial publish is always allowed). Persisted in canvas.json
+    # under the leading-underscore alias to mark it server-managed.
+    publish_baseline: dict[str, Any] | None = Field(
+        default=None, alias="_publish_baseline"
+    )
+
+    model_config = {"populate_by_name": True}
 
     @model_validator(mode="after")
     def _details_path_is_safe(self) -> BaseNodeFields:

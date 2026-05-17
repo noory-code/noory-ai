@@ -603,14 +603,39 @@ canvas in the project and **MINOR-bumps every ancestor**.
   moving silently as descendants ship. Git log is authoritative
   for "who propagated what when".
 
-### Idempotence
+### Publish is gated by dirty (v0.22.0+)
 
-Always-bump on the publish target (MAJOR). Publishing the same node
-N times produces N distinct MD files (``-v2.0.md`` / ``-v3.0.md`` /
-…) and N distinct commits. The confirm dialog text names this
-contract so users from npm/cargo ecosystems don't carry the wrong
-mental model. Ancestor MINOR propagation is non-idempotent in the
-same way — every publish triggers a fresh MINOR bump up the chain.
+Per [D-2026-05-17-H](./DECISIONS.md). Publishing requires the node to
+have at least one **content change** since the last publish. Content =
+typed-text fields + ``label`` + ``body`` + the set of edges incident
+on the node. Visual changes (``x`` / ``y`` / ``width`` / ``height`` /
+``color`` / ``shape`` / ``icon`` / ``collapsed``) are silently saved to
+``canvas.json`` like any other state but do **not** mark the node
+dirty. The Phase 4 ancestor MINOR drift
+([D-2026-05-17-C](./DECISIONS.md)) is also not dirty by itself — the
+propagated ``version`` bump is bookkeeping, not new content.
+
+The Inspector **disables the 📤 publish button when the node is
+clean**, with a ``title`` tooltip naming the last-published version
+(*"v2.0 이후 변경 사항 없음"* / *"No content changes since v2.0"*).
+When the user first creates a publish-eligible node, the button is
+enabled (no baseline yet → initial publish always allowed).
+
+Edge changes are bilateral: adding, removing, or editing an edge
+``(A → B)`` marks both ``A`` and ``B`` dirty (each endpoint's
+incident-edge set changed).
+
+Implementation: the server stamps a ``_publish_baseline`` private
+field on the bumped node (and any mirror) at publish time, then
+recomputes ``_dirty`` on every canvas GET by comparing the current
+content + incident edges against the baseline. The viewer never
+round-trips ``_publish_baseline``; ``write_canvas`` preserves it from
+disk state when a PUT payload omits it.
+
+When the user *does* press a still-enabled publish button, the bump
+is still always-MAJOR (``v1.0 → v2.0``); each publish produces a
+distinct MD file (``-v2.0.md`` / ``-v3.0.md`` / …) and a distinct
+commit. Ancestor MINOR propagation runs as before.
 
 ### Recovery from a misclick
 

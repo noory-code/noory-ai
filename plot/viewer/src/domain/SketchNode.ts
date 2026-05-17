@@ -80,4 +80,10 @@ export type SketchNode = (
   | ContentJson
 ) & {
   _md_warnings?: string[];
+  /** v0.22.0 (D-2026-05-17-H) — server-decorated dirty signal.
+   *  ``true`` when the node has content changes since the last publish
+   *  (typed-text / label / body / incident edges) OR has never been
+   *  published (no baseline yet). ``false`` when the node matches its
+   *  baseline. Missing field ⇒ treat as ``true`` for back-compat. */
+  _dirty?: boolean;
 };

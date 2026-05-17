@@ -5063,6 +5063,95 @@ scenario *"코어밸류 탑핸들에서 앵커의 왼쪽핸들로 연결선을 �
 verified the Core Value top → Anchor left edge now draws in real
 Chrome.
 
+---
+
+### D-2026-05-17-H — Publish gated by dirty (v0.22.0)
+
+**Context:** After exercising the Publish flow shipped in v0.18.0 +
+v0.20.0 + v0.21.3, the user noticed that pressing 📤 always bumped
+``vMAJOR → v(MAJOR+1).0`` regardless of whether anything had actually
+changed since the previous publish. SPEC §Publish §Idempotence
+explicitly documented this as intentional ("release model — every
+publish is a snapshot"), but the user disagreed:
+*"퍼블리시 동작 보고 있는데 변경 내용이 없어도 버전이 올라가네요."*
+
+**Decision (user-locked, AskUserQuestion):**
+
+- **UX-level gate:** Inspector disables the publish button when the
+  node is clean (user-picked from 4 options: 1️⃣ skip + alert,
+  2️⃣ confirm-dialog warning, 3️⃣ keep current spec, 4️⃣ disable
+  button — user picked #4).
+- **"Dirty" = content change**, per user enumeration *"내용 변경
+  아이덴티티 예시로 디스크립션 두 돈트 노트 그리고 연결선 정도"*:
+  - typed-text fields + ``label`` + ``body``
+  - **edges incident on the node** (add / remove / field edit on
+    either endpoint marks both endpoints dirty)
+- **NOT dirty** (silent canvas saves, no publish trigger):
+  - Visual fields: ``x`` / ``y`` / ``width`` / ``height`` / ``color``
+    / ``shape`` / ``icon`` / ``collapsed``
+  - Structural: ``parent_id`` reparenting
+  - **MINOR drift from a descendant publish** ([D-2026-05-17-C]) —
+    the auto-bumped ``version`` number is bookkeeping, not new
+    content; ancestor's typed-text + edges unchanged
+
+User insight that drove this scope: *"저장이랑 버전이랑 상관이
+없구나!!"* — autosave (canvas PUT) is unconditional; publish is the
+separable explicit action.
+
+**Architecture (7 locked answers):**
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | Baseline storage | New ``publish_baseline: dict \| None`` private field on ``BaseNodeFields``, aliased ``_publish_baseline`` in canvas.json (matches the leading-underscore server-managed pattern of ``_md_warnings``). |
+| 2 | Baseline shape | ``{"node": {…content fields, visual + structural excluded}, "edges": [sorted incident edges with ephemeral edge ``id`` excluded]}``. |
+| 3 | Where ``_dirty`` is computed | Server-side, at canvas GET time, on the response (same shape as ``_md_warnings``). Never persisted; recomputed per request. |
+| 4 | Inspector behaviour | Button disabled when ``node._dirty === false``. Tooltip = ``t("inspector.publishDisabledHint", { version })``. Missing ``_dirty`` ⇒ treated as ``true`` (back-compat). |
+| 5 | Migration for existing nodes | ``_publish_baseline`` defaults to ``None`` ⇒ dirty = true. First publish after v0.22.0 seeds the baseline. Zero schema migration; existing canvas.json files load unchanged. |
+| 6 | Phase 4 MINOR drift handling | Ancestor MINOR bump deliberately does NOT touch ``_publish_baseline``. Ancestor stays clean. |
+| 7 | Edge dirty propagation | Adding / removing / editing an edge ``(A → B)`` marks both ``A`` and ``B`` dirty. Edge ``id`` is excluded from the snapshot because it's server-generated. |
+
+**Cross-server-client baseline preservation:** The Pydantic
+``BaseNodeFields`` adds ``publish_baseline``; the TypeScript
+``BaseFieldsJson`` mirrors it as ``publish_baseline?: unknown`` (the
+schema-parity test enforces field-set equality). Per-kind entity
+classes (Mission, Identity, Service, …) do NOT round-trip the
+baseline through their ``toJson()`` — the field is optional in the
+TS wire schema. To prevent client PUTs from clobbering the server-
+managed baseline back to ``None``, ``write_canvas`` reads the
+on-disk canvas first and carries any non-None baseline forward when
+the incoming payload omits it.
+
+**Spec impact:** ``SPEC.md §Publish §Idempotence`` rewritten as
+``§Publish gated by dirty``. The "always-MAJOR-bump" clause under
+the old §Idempotence is preserved verbatim for the case when the
+user *does* press the still-enabled button.
+
+**Verification:**
+- 19 new pytest cases (``tests/test_dirty_tracking.py``) — pure
+  helpers + end-to-end publish flow + Phase 4 MINOR drift
+  invariant.
+- 3 new pytest cases (``tests/test_api_endpoints.py``) — ``_dirty``
+  decoration on canvas GET response.
+- 4 new vitest cases (``tests/inspectors/publish-button-dirty.test.tsx``)
+  — button enabled / disabled / back-compat / disabled-no-call.
+- Schema parity test updated to include ``publish_baseline`` in
+  ``_EXPECTED_BASE_FIELDS``; ``BaseFieldsJson`` updated to match.
+- ``BaseInspector.tsx`` LOC ceiling 270 → 285 (audit-trail noted
+  in the structural-guards test).
+- Full suite: 399 pytest + 533 vitest pass.
+
+**Approval:** User-locked via AskUserQuestion 2026-05-17 (option
+"변경 없으면 publish 버튼 비활성화"). Plan approved via ExitPlanMode.
+
+**Cross-refs:**
+- [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish. The
+  "always-bump on the publish target (MAJOR)" clause under
+  ``§Idempotence`` (now rewritten under ``§Publish gated by dirty``)
+  is **conditioned** on the button being enabled; ``§Idempotence``
+  itself no longer governs the user's intent gate.
+- [D-2026-05-17-C](./DECISIONS.md) — Phase 4 MINOR propagation.
+  Confirmed non-dirty per #6 above; the propagated bump is bookkeeping.
+
 **Spec impact:** No SPEC text change required — SPEC already
 implied this behaviour. This entry documents the implementation
 correction, not a new behaviour.

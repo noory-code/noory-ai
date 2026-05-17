@@ -267,7 +267,12 @@ async def canvas_get_endpoint(request: Request) -> JSONResponse:
     # v0.13 Phase 7 — enrich foundation nodes with MD-parse warnings so
     # the Inspector can surface a yellow ⚠ + actionable hint. Not part of
     # the model (stays clean on write); pure response decoration.
-    from plot_mcp.folder_io import collect_foundation_md_warnings
+    from plot_mcp.folder_io import (
+        _incident_edges,
+        collect_foundation_md_warnings,
+        is_node_dirty,
+    )
+    from plot_mcp.md_publish import can_publish
 
     warnings_by_node = collect_foundation_md_warnings(plot_root, project_id, canvas)
     if warnings_by_node:
@@ -275,6 +280,15 @@ async def canvas_get_endpoint(request: Request) -> JSONResponse:
             warns = warnings_by_node.get(n.get("id"))
             if warns:
                 n["_md_warnings"] = warns
+    # v0.22.0 (D-2026-05-17-H) — per-node dirty signal for the Inspector
+    # publish button gate. Pure response decoration (matches the
+    # ``_md_warnings`` pattern); never written back to disk.
+    nodes_by_id = {n.id: n for n in canvas.nodes}
+    for n in raw.get("nodes", []):
+        node_obj = nodes_by_id.get(n.get("id"))
+        if node_obj is None or not can_publish(node_obj):
+            continue
+        n["_dirty"] = is_node_dirty(node_obj, _incident_edges(canvas.edges, node_obj.id))
     return JSONResponse(raw)
 
 
