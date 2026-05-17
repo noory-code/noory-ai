@@ -10,6 +10,8 @@ import { registerKindParser } from "./parseEntity";
 export interface MissionRefJson extends BaseFieldsJson {
   kind: "mission_ref";
   ref_mission_id: string | null;
+  /** v0.24.x (D-2026-05-17-M) — service-context notes (4-ref symmetry). */
+  notes_in_context: string;
 }
 
 export class MissionRef implements BaseFields {
@@ -32,10 +34,16 @@ export class MissionRef implements BaseFields {
   readonly kind: "mission_ref" = "mission_ref";
 
   readonly ref_mission_id: string | null;
+  readonly notes_in_context: string;
 
-  private constructor(base: BaseFields, ref_mission_id: string | null) {
+  private constructor(
+    base: BaseFields,
+    ref_mission_id: string | null,
+    notes_in_context: string,
+  ) {
     Object.assign(this, base);
     this.ref_mission_id = ref_mission_id;
+    this.notes_in_context = notes_in_context;
   }
 
   static fromJson(raw: unknown): MissionRef {
@@ -57,7 +65,8 @@ export class MissionRef implements BaseFields {
       }
       ref_mission_id = obj.ref_mission_id;
     }
-    return new MissionRef(base, ref_mission_id);
+    const notes_in_context = readNotesInContext(obj.notes_in_context, raw);
+    return new MissionRef(base, ref_mission_id, notes_in_context);
   }
 
   toJson(): MissionRefJson {
@@ -79,8 +88,20 @@ export class MissionRef implements BaseFields {
       version: this.version,
       kind: "mission_ref",
       ref_mission_id: this.ref_mission_id,
+      notes_in_context: this.notes_in_context,
     };
   }
+}
+
+function readNotesInContext(value: unknown, raw: unknown): string {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "string") {
+    throw new DomainParseError(
+      `MissionRef.notes_in_context must be a string, got ${JSON.stringify(value)}`,
+      raw,
+    );
+  }
+  return value;
 }
 
 registerKindParser("mission_ref", (raw) => MissionRef.fromJson(raw) as never);

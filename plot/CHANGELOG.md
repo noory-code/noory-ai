@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.1] — 2026-05-17
+
+### Added
+
+- **4-ref symmetry: ``notes_in_context`` for mission_ref / value_ref /
+  identity_ref** ([D-2026-05-17-M](./docs/DECISIONS.md)). The three
+  non-actor ref kinds now carry a free-form typed-text field so
+  service authors can capture how the referenced Mission / CoreValue
+  / Identity applies to **this** service without leaving the canvas.
+  Mirrors the existing ``actor_ref.gives``/``receives`` pattern
+  (D-2026-05-16-F) — same free-form MD textarea, same in-context
+  semantics. User-locked via AskUserQuestion (option "(B) 확장").
+- New i18n keys ``inspector.field.notesInContext`` +
+  ``inspector.fieldHint.notesInContext`` (en + ko).
+
+### Migration
+
+- Zero-migration: ``notes_in_context`` defaults to ``""``. Pre-v0.24.1
+  canvas.json files load unchanged.
+
 ## [0.24.0] — 2026-05-17
 
 ### Added

@@ -10,6 +10,8 @@ import { registerKindParser } from "./parseEntity";
 export interface IdentityRefJson extends BaseFieldsJson {
   kind: "identity_ref";
   ref_identity_id: string | null;
+  /** v0.24.x (D-2026-05-17-M) — service-context notes (4-ref symmetry). */
+  notes_in_context: string;
 }
 
 export class IdentityRef implements BaseFields {
@@ -32,10 +34,16 @@ export class IdentityRef implements BaseFields {
   readonly kind: "identity_ref" = "identity_ref";
 
   readonly ref_identity_id: string | null;
+  readonly notes_in_context: string;
 
-  private constructor(base: BaseFields, ref_identity_id: string | null) {
+  private constructor(
+    base: BaseFields,
+    ref_identity_id: string | null,
+    notes_in_context: string,
+  ) {
     Object.assign(this, base);
     this.ref_identity_id = ref_identity_id;
+    this.notes_in_context = notes_in_context;
   }
 
   static fromJson(raw: unknown): IdentityRef {
@@ -57,7 +65,8 @@ export class IdentityRef implements BaseFields {
       }
       ref_identity_id = obj.ref_identity_id;
     }
-    return new IdentityRef(base, ref_identity_id);
+    const notes_in_context = readNotesInContext(obj.notes_in_context, raw);
+    return new IdentityRef(base, ref_identity_id, notes_in_context);
   }
 
   toJson(): IdentityRefJson {
@@ -79,8 +88,20 @@ export class IdentityRef implements BaseFields {
       version: this.version,
       kind: "identity_ref",
       ref_identity_id: this.ref_identity_id,
+      notes_in_context: this.notes_in_context,
     };
   }
+}
+
+function readNotesInContext(value: unknown, raw: unknown): string {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "string") {
+    throw new DomainParseError(
+      `IdentityRef.notes_in_context must be a string, got ${JSON.stringify(value)}`,
+      raw,
+    );
+  }
+  return value;
 }
 
 registerKindParser("identity_ref", (raw) => IdentityRef.fromJson(raw) as never);

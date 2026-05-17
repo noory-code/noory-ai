@@ -5537,6 +5537,79 @@ Live Preview decorations; the Stage 3 paragraph is added there.
 - [D-2026-05-13-O](./DECISIONS.md) #2 — *"JSON value = MD-formatted
   string"* SSOT; preserved by all three decorations being visual-only.
 
+---
+
+### D-2026-05-17-M — 4-ref symmetry: notes_in_context for mission/value/identity_ref (v0.24.1)
+
+**Context:** Long-standing NEXT_SESSION item (filed 2026-05-16,
+D-2026-05-16-F follow-up) asking whether ``actor_ref``'s
+``gives``/``receives`` typed-text was an intentional asymmetry vs the
+other 3 ref kinds being pure pointers. User-locked direction
+2026-05-17 via AskUserQuestion: **option (B) — extend**.
+
+**Before:**
+
+| ref kind | typed text |
+|---|---|
+| ActorRefNode | ``gives`` + ``receives`` (service-context value flow) |
+| MissionRefNode | none (pure pointer) |
+| ValueRefNode | none (pure pointer) |
+| IdentityRefNode | none (pure pointer) |
+
+**Decision:** All 3 non-actor ref kinds gain a single free-form
+``notes_in_context: str = ""`` field. Service authors can capture how
+the referenced Mission / CoreValue / Identity applies to **this**
+service without leaving the canvas.
+
+```
+actor_ref     gives + receives     ← unchanged (richer than the others)
+mission_ref   notes_in_context     ← new
+value_ref     notes_in_context     ← new
+identity_ref  notes_in_context     ← new
+```
+
+**Implementation:**
+- ``plot_mcp/models.py`` — added ``notes_in_context: str = ""`` to
+  ``MissionRefNode`` / ``ValueRefNode`` / ``IdentityRefNode``.
+- ``viewer/src/domain/{MissionRef, ValueRef, IdentityRef}.ts`` —
+  added field to interface + class + ``fromJson`` (with
+  ``readNotesInContext`` helper) + ``toJson``.
+- ``viewer/src/canvases/inspectors/{mission_ref,value_ref,identity_ref}/index.tsx``
+  — added a single ``MdTextarea`` for the field below the existing
+  ``FoundationRefBlock``.
+- ``viewer/src/i18n/locales/{en,ko}.json`` — new keys
+  ``inspector.field.notesInContext`` and
+  ``inspector.fieldHint.notesInContext``.
+- ``tests/inspectors/inspectors.smoke.test.tsx`` +
+  ``publish-button-dirty.test.tsx`` — added ``notes_in_context: ""``
+  to the ``makeNode`` helper so the per-kind smoke tests still
+  satisfy the SketchNode type.
+
+**Why no migration:** pre-v0.24.1 canvas.json files don't carry the
+field; Pydantic's default ``""`` fills it on read. No schema bump
+needed.
+
+**Approval:** User-locked 2026-05-17 via AskUserQuestion
+("(B) 확장 — mission/value/identity_ref 에도 notes_in_context").
+Batch-shipped with v0.23.x + v0.24.0 in the same session.
+
+**Verification:**
+- 421 pytest pass (no regressions; schema-parity test now requires
+  the new field on the TS side, which we added).
+- 545 vitest pass.
+- mypy + tsc clean.
+
+**Spec impact:** None pinned in SPEC — the ``notes_in_context``
+contract is "free-form typed text per-ref in service context",
+identical to how the existing ``actor_ref.gives``/``receives`` work
+(no SPEC pin either).
+
+**Cross-refs:**
+- D-2026-05-16-F — body field rollout (the pattern this follows for
+  free-form ref-side typed text).
+- NEXT_SESSION.md ``cross-kind ref typed-text symmetry`` (now
+  archived).
+
 **Cross-refs:**
 - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish. The
   "always-bump on the publish target (MAJOR)" clause under

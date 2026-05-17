@@ -59,6 +59,7 @@ function makeNode(overrides: MakeNodeOverrides): SketchNode {
     motivation: "",
     pain: "",
     gives: "",
+    notes_in_context: "",
     receives: "",
     side: null,
     policy: "",
