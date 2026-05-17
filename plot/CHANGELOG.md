@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.22.2] — 2026-05-17
+
+### Changed
+
+- Docs-only — queued `v0.23.0` as the top item in
+  `plot/docs/NEXT_SESSION.md`: **node publish UX (Inspector
+  Published versions section + MD modal) + published-MD folder
+  reorg** to `<canvas>/published/<kind>/<slug>/v<X>.md`. Critical
+  design questions were locked this turn (folder layout picked via
+  ASCII-tree AskUserQuestion; migration policy = smallest viable
+  first-read idempotent move). Implementation deferred to v0.23.0
+  per user *"다음 세션에서 ... 고민해봐야겠네요"* + *"그리고 어떻게
+  정리할건지 저한테 말해주고 작업합시다."*
+
+  Plan pinned at
+  `/Users/woogis/.claude/plans/jolly-bouncing-orbit.md`.
+
+  No code or behaviour change.
+
 ## [0.22.1] — 2026-05-17
 
 ### Changed

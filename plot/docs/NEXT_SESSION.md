@@ -9,6 +9,99 @@
 
 ## Active queue
 
+### `v0.23.0 — node publish UX (Inspector Published versions) + published-MD folder reorg` (queued, top priority, filed 2026-05-17)
+
+> **Trigger:** user says **"퍼블리시"** / **"발행 문서"** /
+> **"published 보기"** / **"폴더 정리"** / **"v0.23"** as the first
+> / near-first message.
+>
+> **Filed:** 2026-05-17 end of session. After v0.22.0 dirty-gate
+> ship, user asked where published MD files live + asked for
+> deliberate folder reorg, then deferred implementation:
+> *"다음 세션에서 노드 퍼블리시 하고 문서 관리 어떻게 할지
+> 고민해봐야겠네요."* + *"그리고 어떻게 정리할건지 저한테 말해주고
+> 작업합시다."* Critical design questions were locked the same turn.
+>
+> **Locked decisions (carry from plan-mode 2026-05-17):**
+>
+> 1. **Folder layout: `kind/slug/v<X>.md`** (user-picked via
+>    AskUserQuestion ASCII-tree preview). Human-readable, one folder
+>    per logical document, all versions of a node together. Label
+>    rename → folder rename → git tracks via rename detection.
+>
+>    ```
+>    .plot/<project_id>/foundation/published/
+>      ├── mission/mission/v2.0.md v3.0.md v4.0.md
+>      ├── identity/voice/v2.0.md v3.0.md v4.0.md
+>      └── core_value/core-value/v2.0.md v3.0.md v4.0.md
+>    ```
+>
+> 2. **Migration: smallest viable**. No other Plot users yet (user
+>    confirmed). New code path writes new layout from v0.23.0
+>    onward. One-shot idempotent first-read migration in
+>    `read_canvas` (same pattern as
+>    `_absorb_md_typed_text_into_json`) moves legacy
+>    `<canvas>/published/<kind>-<slug>-v<X>.md` files to the new
+>    location. No explicit migration commit.
+>
+> 3. **Inspector UX: "Published versions" section + modal**
+>    (user-picked: *"인스펙터에 파일 정보 보여주고요. 클릭하면 모달
+>    팝업으로"*). Section lists `{version, published_at, sha}` rows;
+>    clicking opens a modal that renders the MD via the existing
+>    `MDPreview` component on top of the `SketchBodyModal` scaffold.
+>
+> **Implementation walk (server → client → docs):**
+>
+> - **`plot/plot_mcp/md_publish.py::published_md_path`** — change
+>   return path to `canvas_dir / "published" / kind / slug / f"{version}.md"`.
+> - **`plot/plot_mcp/folder_io.py`** — add
+>   `_migrate_published_flat_to_kind_slug` called from `read_canvas`
+>   on first read; regex `^(?P<kind>[a-z_]+)-(?P<slug>.+)-v(?P<v>\d+\.\d+)\.md$`
+>   matches legacy filenames; skip if destination exists; idempotent.
+> - **New endpoint** `GET /api/projects/{id}/canvases/{kind}/nodes/{node_id}/published`
+>   returns `[{version, path, published_at, sha, size}]` sorted
+>   newest first. `published_at` from MD frontmatter; `sha` from
+>   `git log --diff-filter=A -1 --format=%h -- <path>`.
+> - **`plot/viewer/src/api.ts`** — `getPublishedVersions(...)`.
+> - **New** `viewer/src/canvases/inspectors/shared/PublishedVersionsSection.tsx`
+>   — renders in BaseInspector after `DetailsSection`. Watch the 285
+>   LOC ceiling on BaseInspector (D-2026-05-17-H); ~5 LOC budget for
+>   the prop wiring, otherwise raise the ceiling with a new D entry.
+> - **New** `viewer/src/canvases/PublishedMDModal.tsx` — reuses
+>   `SketchBodyModal` + `MDPreview`. Escape + backdrop close.
+> - **i18n** (`en` + `ko`): `inspector.publishedVersions`,
+>   `inspector.publishedVersionsEmpty`, `inspector.publishedAt`.
+> - **Tests**: pytest for migration + endpoint;
+>   vitest for section empty/non-empty + modal open on click.
+> - **Docs**: SPEC.md §Publish "What lands on disk" path examples
+>   updated; new §"Published versions in the Inspector". DECISIONS
+>   `D-2026-05-17-I` (or next letter) pinning the locks above.
+> - **Ship as:** v0.23.0 (minor — new feature).
+>
+> **Reuse, don't re-derive:**
+>
+> | Need | Existing piece |
+> |---|---|
+> | Read MD file | `file_get_endpoint` in `api_endpoints.py:439-459` (`.md` already in `ALLOWED_EXTENSIONS`) |
+> | Markdown rendering (GFM + Mermaid) | `MDPreview` |
+> | Modal scaffold | `SketchBodyModal` |
+> | Inspector insertion point | After `DetailsSection` in `BaseInspector.tsx:245-259` |
+> | Idempotent migration pattern | `_absorb_md_typed_text_into_json` in `folder_io.py` |
+> | Slug | `slug.py::slugify` (CJK-safe) |
+>
+> **Out of scope (v0.23.0):**
+> - Cross-version diff view ("what changed between v3.0 and v4.0").
+> - Unpublish (already in `v0.18.x follow-up` queue).
+> - Bulk publish / publish-history viewer / cross-project library.
+> - Folder-name collision handling beyond `slug + version`
+>   uniqueness (two nodes with identical labels would land in the
+>   same folder; users rename to resolve).
+>
+> **Plan file:** `/Users/woogis/.claude/plans/jolly-bouncing-orbit.md`
+> has the full plan that was approved this turn.
+
+---
+
 ### `Live Preview Stage 3 — heading / list / image decorations` (queued, deferred from v0.21.0)
 
 > **Trigger:** user says **"Live Preview"** or **"v0.22"** or **"heading style"** or **"image embed"** as the first / near-first message. (Was queued for v0.22.0 previously; check that the version label still makes sense after v0.21.0 ships.)
