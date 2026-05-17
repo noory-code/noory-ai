@@ -197,10 +197,13 @@ def read_canvas(
         raw = _wrap_legacy_services_in_default_category(plot_root, project_id, raw)
     # v0.23.0 (D-2026-05-17-I) — migrate legacy flat published MD layout
     # (<canvas>/published/<kind>-<slug>-v<X>.md) to the kind/slug/version.md
-    # hierarchy. Idempotent: once moved, the legacy filenames no longer
-    # exist so the scan is a no-op on subsequent reads.
+    # hierarchy. Idempotent.
     canvas_dir = _canvas_file(plot_root, project_id, canvas_kind, service_id).parent
     _migrate_published_flat_to_kind_slug(canvas_dir)
+    # v0.24.3 (D-2026-05-18-A) — migrate slug-folder layout to id-folder.
+    # Reads node id↔label from the raw canvas so we can compute the
+    # old slug folder name and rename it to the node id.
+    _migrate_published_slug_to_id(canvas_dir, raw)
     return CanvasDoc.model_validate(raw)
 
 
@@ -242,6 +245,58 @@ def _migrate_published_flat_to_kind_slug(canvas_dir: Path) -> None:
             continue
         dest.parent.mkdir(parents=True, exist_ok=True)
         entry.rename(dest)
+
+
+# v0.24.3 (D-2026-05-18-A) — published slug-folder → id-folder migration.
+# Pre-v0.24.3 layout used ``slugify(label)`` as the folder name, which
+# could be Korean / CJK. v0.24.3 switches to node id (ASCII per Plot's
+# id policy) for clean, rename-stable folder names. Idempotent —
+# once renamed, the slug folder no longer exists so subsequent reads
+# are no-ops.
+
+
+def _migrate_published_slug_to_id(
+    canvas_dir: Path, raw_canvas: dict[str, Any]
+) -> None:
+    """Rename ``<canvas>/published/<kind>/<slug>/`` folders to
+    ``<canvas>/published/<kind>/<node_id>/`` for every node whose
+    id and label appear in the raw canvas. Nodes whose id already
+    equals their slug (e.g. id="mission" + label="Mission") are
+    a no-op rename. Missing slug folders are silently skipped.
+    Conflicts (id folder already exists) leave the slug folder in
+    place so the user can audit; we never overwrite.
+    """
+    from plot_mcp.slug import slugify
+
+    published_dir = canvas_dir / "published"
+    if not published_dir.is_dir():
+        return
+    nodes = raw_canvas.get("nodes")
+    if not isinstance(nodes, list):
+        return
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        kind = node.get("kind")
+        node_id = node.get("id")
+        label = node.get("label")
+        if not isinstance(kind, str) or not isinstance(node_id, str):
+            continue
+        if not isinstance(label, str):
+            continue
+        slug = slugify(label) or "untitled"
+        if slug == node_id:
+            continue  # already at the new layout (or coincidentally identical)
+        kind_dir = published_dir / kind
+        if not kind_dir.is_dir():
+            continue
+        slug_dir = kind_dir / slug
+        id_dir = kind_dir / node_id
+        if not slug_dir.is_dir():
+            continue
+        if id_dir.exists():
+            continue  # destination occupied — leave slug folder for audit
+        slug_dir.rename(id_dir)
 
 
 def _wrap_legacy_services_in_default_category(
@@ -1051,7 +1106,7 @@ def publish_node(
 
     canvas_path = _canvas_file(plot_root, project_id, canvas_kind, service_id)
     canvas_dir = canvas_path.parent
-    md_path = published_md_path(canvas_dir, kind=node.kind, label=node.label, version=to_v)
+    md_path = published_md_path(canvas_dir, kind=node.kind, node_id=node.id, version=to_v)
     md_path.parent.mkdir(parents=True, exist_ok=True)
     md_path.write_text(
         render_node_md(bumped, canvas=canvas_kind),

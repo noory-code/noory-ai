@@ -9,6 +9,7 @@ from starlette.testclient import TestClient
 
 from plot_mcp.folder_io import (
     _migrate_published_flat_to_kind_slug,
+    _migrate_published_slug_to_id,
     create_project,
     publish_node,
     read_canvas,
@@ -109,6 +110,61 @@ def test_migration_skips_when_destination_exists(plot_root: Path) -> None:
     assert (pub / "mission" / "mission" / "v2.0.md").read_text() == "new"
     # Legacy file preserved when destination already occupied.
     assert (pub / "mission-mission-v2.0.md").read_text() == "legacy"
+
+
+def test_slug_to_id_migration_renames_folders(plot_root: Path) -> None:
+    """v0.24.3 (D-2026-05-18-A): slug-folder layout → id-folder layout."""
+    canvas_dir = plot_root / "alpha" / "foundation"
+    pub = canvas_dir / "published"
+    # Seed pre-v0.24.3 layout: published/core_value/<slug>/v2.0.md
+    (pub / "core_value" / "관용").mkdir(parents=True)
+    (pub / "core_value" / "관용" / "v2.0.md").write_text("old", encoding="utf-8")
+
+    raw_canvas = {
+        "nodes": [
+            {"id": "core-tolerance", "kind": "core_value", "label": "관용"},
+        ],
+    }
+    _migrate_published_slug_to_id(canvas_dir, raw_canvas)
+
+    assert (pub / "core_value" / "core-tolerance" / "v2.0.md").is_file()
+    assert not (pub / "core_value" / "관용").exists()
+
+
+def test_slug_to_id_migration_is_noop_when_id_equals_slug(plot_root: Path) -> None:
+    canvas_dir = plot_root / "alpha" / "foundation"
+    pub = canvas_dir / "published"
+    (pub / "mission" / "mission").mkdir(parents=True)
+    (pub / "mission" / "mission" / "v2.0.md").write_text("existing", encoding="utf-8")
+
+    raw_canvas = {
+        "nodes": [
+            {"id": "mission", "kind": "mission", "label": "Mission"},
+        ],
+    }
+    _migrate_published_slug_to_id(canvas_dir, raw_canvas)
+    # Untouched: id "mission" == slugify("Mission") "mission".
+    assert (pub / "mission" / "mission" / "v2.0.md").read_text() == "existing"
+
+
+def test_slug_to_id_migration_skips_when_id_folder_exists(plot_root: Path) -> None:
+    """When both slug-folder and id-folder exist, leave slug in place
+    for audit (don't merge / overwrite)."""
+    canvas_dir = plot_root / "alpha" / "foundation"
+    pub = canvas_dir / "published"
+    (pub / "core_value" / "관용").mkdir(parents=True)
+    (pub / "core_value" / "관용" / "v2.0.md").write_text("slug-side", encoding="utf-8")
+    (pub / "core_value" / "core-tolerance").mkdir(parents=True)
+    (pub / "core_value" / "core-tolerance" / "v3.0.md").write_text("id-side", encoding="utf-8")
+
+    raw_canvas = {
+        "nodes": [
+            {"id": "core-tolerance", "kind": "core_value", "label": "관용"},
+        ],
+    }
+    _migrate_published_slug_to_id(canvas_dir, raw_canvas)
+    assert (pub / "core_value" / "관용").is_dir()
+    assert (pub / "core_value" / "core-tolerance" / "v3.0.md").is_file()
 
 
 def test_migration_ignores_non_matching_files(plot_root: Path) -> None:

@@ -245,27 +245,35 @@ def test_render_yaml_frontmatter_has_all_7_keys(cls: type, extra: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_published_md_path_uses_kind_slug_version(tmp_path: Path) -> None:
-    """v0.23.0 (D-2026-05-17-I): layout is ``published/<kind>/<slug>/<version>.md``."""
+def test_published_md_path_uses_kind_node_id_version(tmp_path: Path) -> None:
+    """v0.24.3 (D-2026-05-18-A): layout is ``published/<kind>/<node_id>/<version>.md``."""
     p = published_md_path(
         tmp_path / "foundation",
         kind="mission",
-        label="Tolerance",
+        node_id="mission",
         version="v2.0",
     )
-    assert p == tmp_path / "foundation" / "published" / "mission" / "tolerance" / "v2.0.md"
+    assert p == tmp_path / "foundation" / "published" / "mission" / "mission" / "v2.0.md"
 
 
-def test_published_md_path_preserves_korean_slug(tmp_path: Path) -> None:
+def test_published_md_path_uses_node_id_verbatim_for_ascii_safety(tmp_path: Path) -> None:
+    """The path uses node id directly — no slugification. Node ids are
+    ASCII per Plot's id policy; even if a user smuggles non-ASCII in,
+    the path reflects exactly what they typed (no surprise transform)."""
     p = published_md_path(
         tmp_path / "foundation",
         kind="core_value",
-        label="관용",
+        node_id="core-tolerance",
         version="v1.0",
     )
-    assert p == tmp_path / "foundation" / "published" / "core_value" / "관용" / "v1.0.md"
+    assert p == tmp_path / "foundation" / "published" / "core_value" / "core-tolerance" / "v1.0.md"
 
 
-def test_published_md_path_falls_back_for_empty_label(tmp_path: Path) -> None:
-    p = published_md_path(tmp_path / "foundation", kind="mission", label="", version="v1.0")
-    assert p == tmp_path / "foundation" / "published" / "mission" / "untitled" / "v1.0.md"
+def test_published_md_path_handles_id_with_dashes(tmp_path: Path) -> None:
+    p = published_md_path(
+        tmp_path / "foundation",
+        kind="core_value",
+        node_id="core-value-1",
+        version="v3.0",
+    )
+    assert p == tmp_path / "foundation" / "published" / "core_value" / "core-value-1" / "v3.0.md"

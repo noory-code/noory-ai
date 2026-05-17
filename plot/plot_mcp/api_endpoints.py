@@ -523,9 +523,8 @@ async def node_published_list_endpoint(request: Request) -> JSONResponse:
     project_dir = plot_root / project_id
     if not project_dir.is_dir():
         return _error(f"project not found: {project_id}", status=404)
-    # Resolve the canvas to locate the node + derive its kind+slug.
+    # Resolve the canvas to locate the node + derive its kind.
     from plot_mcp.folder_io import read_canvas
-    from plot_mcp.slug import slugify
 
     try:
         canvas = read_canvas(
@@ -536,17 +535,15 @@ async def node_published_list_endpoint(request: Request) -> JSONResponse:
     node = next((n for n in canvas.nodes if n.id == node_id), None)
     if node is None:
         return _error(f"node not found: {node_id}", status=404)
-    slug = slugify(node.label) or "untitled"
-    # Locate the slug folder. The canvas's on-disk parent is the
-    # canvas directory used by published_md_path.
+    # v0.24.3 (D-2026-05-18-A) — folder name = node id, not slug.
     from plot_mcp.folder_io import _canvas_file
 
     canvas_dir = _canvas_file(plot_root, project_id, cast("CanvasKind", canvas_kind), service_id).parent
-    slug_dir = canvas_dir / "published" / node.kind / slug
-    if not slug_dir.is_dir():
+    node_dir = canvas_dir / "published" / node.kind / node.id
+    if not node_dir.is_dir():
         return JSONResponse({"versions": []})
     versions: list[dict[str, Any]] = []
-    for entry in slug_dir.iterdir():
+    for entry in node_dir.iterdir():
         if not entry.is_file():
             continue
         match = _VERSION_FILENAME_RE.match(entry.name)

@@ -5612,6 +5612,82 @@ identical to how the existing ``actor_ref.gives``/``receives`` work
 
 ---
 
+### D-2026-05-18-A — Published folder name: slug → node_id (v0.24.3)
+
+**Context:** v0.23.0 (D-2026-05-17-I) made published MD files live
+in ``<canvas>/published/<kind>/<slug>/<version>.md`` where ``slug =
+slugify(label)``. ``slugify`` preserves Korean / CJK characters, so
+Banas's "관용 (Tolerance)" core value would land in
+``published/core_value/관용-tolerance/v2.0.md``. User flagged the
+non-ASCII folder name 2026-05-17: *"파일이름이 한글로 만들어지는게
+좀 그러네"*. After ASCII-tree review of (A) node-id-based,
+(B) Romanization, (C) keep slug, user picked **(A)** with the
+follow-up *"그냥 id 로 해야겠다. 그지?"*.
+
+**Decision:** Folder name = **``node.id``**, not ``slugify(label)``.
+Plot's id policy nudges users to ASCII identifiers, so the folder
+path is now reliably ASCII without any transformation. Bonus: label
+rename no longer renames the folder (id is stable).
+
+**Implementation:**
+
+- ``plot_mcp/md_publish.py::published_md_path`` signature changed
+  from ``(canvas_dir, *, kind, label, version)`` to
+  ``(canvas_dir, *, kind, node_id, version)``. Drops the
+  ``slugify`` call; uses ``node_id`` verbatim.
+- ``plot_mcp/folder_io.py::publish_node`` updated caller.
+- ``plot_mcp/folder_io.py`` new
+  ``_migrate_published_slug_to_id(canvas_dir, raw_canvas)``: walks
+  the raw canvas nodes, computes the old slug for each ``(id,
+  label)`` pair, and renames ``published/<kind>/<slug>/`` →
+  ``published/<kind>/<node_id>/``. Idempotent (no-op when slug ==
+  node_id, or when the slug folder no longer exists). Conflicts
+  (id folder already exists) leave the slug folder in place for
+  audit — we never overwrite. Hooked into ``read_canvas`` alongside
+  the existing v0.23.0 flat-to-kind-slug migration.
+- ``plot_mcp/api_endpoints.py::node_published_list_endpoint``
+  switched from ``slug_dir = published/<kind>/<slug>`` to
+  ``node_dir = published/<kind>/<node.id>``.
+
+**Migration coverage:**
+
+| From layout | Migration path | Helper |
+|---|---|---|
+| Pre-v0.23.0 flat | flat → kind/slug → kind/id | flat-to-kind-slug (still runs) → slug-to-id |
+| v0.23.0 kind/slug | kind/slug → kind/id | slug-to-id |
+| v0.24.3 kind/id | (no-op) | both helpers return early |
+
+Two-step migration for pre-v0.23.0 projects is intentional: the
+flat-to-kind-slug helper still runs first to keep that v0.23.0
+contract simple, then slug-to-id rewrites the result. Result is
+the same regardless of which version the canvas was last written by.
+
+**Verification:**
+- 3 new pytest cases (``test_published_endpoint.py``): slug folder
+  rename, no-op when id==slug, skip when destination exists.
+- 3 existing pytest cases updated for new signature
+  (``test_md_publish.py``).
+- Full suite: 424 pytest + 545 vitest pass; mypy + tsc clean.
+
+**Approval:** User-locked 2026-05-17 via AskUserQuestion option (A)
++ followed-up confirmation *"그냥 id 로 해야겠다. 그지?"*.
+
+**Spec impact:**
+- ``SPEC.md §Publish §What lands on disk per publish`` path example
+  rewritten from ``<slug>`` to ``<node_id>``.
+
+**Cross-refs:**
+- [D-2026-05-17-I](./DECISIONS.md) — v0.23.0 folder reorg + Inspector
+  "Published versions" UI. Superseded by this entry's folder choice;
+  the UI surface is unchanged.
+- [D-2026-05-17-J](./DECISIONS.md) — Unpublish; revert path unchanged
+  (git revert on the publish commit also reverses the directory
+  structure).
+- [[feedback-show-dont-tell]] (memory) — ASCII-tree previews drove
+  the lock for this decision.
+
+---
+
 ### D-2026-05-17-N — Default node size + auto-layout collision fixes (v0.24.2)
 
 **Context:** After importing the Banas workspace data into a fresh

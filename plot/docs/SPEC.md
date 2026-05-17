@@ -552,13 +552,16 @@ emitted on publish.
 ### What lands on disk per publish
 
 - **MD file** at
-  ``<project_id>/<canvas>/published/<kind>/<slug>/v<MAJOR>.<MINOR>.md``
-  (v0.23.0 layout per [D-2026-05-17-I](./DECISIONS.md); pre-v0.23.0
-  flat ``<canvas>/published/<kind>-<slug>-v<MAJOR>.<MINOR>.md`` is
-  auto-migrated on first ``read_canvas``). MD format pinned in
-  [`PUBLISH.md`](./PUBLISH.md). All versions of the same logical
-  document live in one ``<kind>/<slug>/`` folder, browsable in the
-  Inspector's "Published versions" section.
+  ``<project_id>/<canvas>/published/<kind>/<node_id>/v<MAJOR>.<MINOR>.md``
+  (v0.24.3 layout per [D-2026-05-18-A](./DECISIONS.md); pre-v0.24.3
+  used ``<slug>`` instead of ``<node_id>``, which could produce
+  Korean / CJK folder names. v0.23.0 → v0.24.3 migration runs on
+  first ``read_canvas``: ``<slug>`` folder renamed to ``<node_id>``.
+  Pre-v0.23.0 flat ``<canvas>/published/<kind>-<slug>-v<MAJOR>.<MINOR>.md``
+  is still auto-migrated by the older first-read pass.) MD format
+  pinned in [`PUBLISH.md`](./PUBLISH.md). All versions of the same
+  logical document live in one ``<kind>/<node_id>/`` folder,
+  browsable in the Inspector's "Published versions" section.
 - **Bumped ``version`` field** persisted to the canvas's
   ``canvas.json`` via the regular write path. When the published
   node has a mirror in another canvas (e.g. a service master in

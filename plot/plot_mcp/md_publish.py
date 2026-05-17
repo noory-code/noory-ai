@@ -134,21 +134,23 @@ def render_node_md(node: SketchNode, *, canvas: str) -> str:
     return "\n".join(parts).rstrip() + "\n"
 
 
-def published_md_path(canvas_dir: Path, *, kind: str, label: str, version: str) -> Path:
+def published_md_path(canvas_dir: Path, *, kind: str, node_id: str, version: str) -> Path:
     """Resolve the absolute path for a published node's MD file.
 
-    Pattern (v0.23.0, D-2026-05-17-I): ``<canvas_dir>/published/<kind>/<slug>/<version>.md``.
-    The slug is derived from ``label`` via ``slugify`` (Korean/CJK
-    preserved). All versions of the same logical document live in
-    one folder, grouped under their kind. Collisions across nodes
-    with identical labels still land in the same slug folder — the
-    version suffix differentiates them; users rename to disambiguate.
+    Pattern (v0.24.3, D-2026-05-18-A): ``<canvas_dir>/published/<kind>/<node_id>/<version>.md``.
+    Node ``id`` is the stable SSOT (never renames), and Plot's id
+    policy nudges users to ASCII — both yield clean ASCII folder
+    names. Pre-v0.24.3 used ``slugify(label)`` which could create
+    Korean / CJK folder names; the user requested ASCII-only paths.
 
-    Pre-v0.23.0 flat layout (``<canvas_dir>/published/{kind}-{slug}-{version}.md``)
-    is migrated to the new layout on first ``read_canvas`` via
-    ``_migrate_published_flat_to_kind_slug`` (see folder_io.py)."""
-    slug = slugify(label) or "untitled"
-    return canvas_dir / "published" / kind / slug / f"{version}.md"
+    Migration paths handled in folder_io.py:
+      - Pre-v0.23.0 flat (``<kind>-<slug>-<version>.md``) → covered
+        by ``_migrate_published_flat_to_kind_slug`` (still runs on
+        first read for back-compat).
+      - v0.23.x slug-folder (``<kind>/<slug>/<version>.md``) →
+        ``_migrate_published_slug_to_id`` walks the canvas and
+        renames each ``<slug>`` folder to ``<node_id>``."""
+    return canvas_dir / "published" / kind / node_id / f"{version}.md"
 
 
 # ---------------------------------------------------------------------------

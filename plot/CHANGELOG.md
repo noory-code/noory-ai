@@ -4,6 +4,33 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.3] — 2026-05-18
+
+### Changed
+
+- **Published folder name: ``slug`` → ``node_id``**
+  ([D-2026-05-18-A](./docs/DECISIONS.md)). v0.23.0 used
+  ``slugify(label)`` which preserved Korean / CJK characters,
+  producing folder names like ``published/core_value/관용-tolerance/``.
+  v0.24.3 switches to ``node.id`` (ASCII per Plot's id policy):
+  ``published/core_value/core-tolerance/v2.0.md``. Bonus: label
+  rename no longer renames the folder (id is stable).
+
+- ``published_md_path`` signature: ``(canvas_dir, *, kind, label,
+  version)`` → ``(canvas_dir, *, kind, node_id, version)``.
+
+### Migration
+
+- New ``_migrate_published_slug_to_id`` helper runs on first
+  ``read_canvas``: walks the raw canvas nodes, computes the old
+  slug for each ``(id, label)`` pair, and renames
+  ``published/<kind>/<slug>/`` → ``published/<kind>/<node_id>/``.
+  Idempotent (no-op when slug == node_id, or when the slug folder
+  no longer exists). Conflicts leave the slug folder for audit
+  rather than overwrite.
+- Two-step migration for pre-v0.23.0 projects: flat-to-kind-slug
+  → slug-to-id. Result identical regardless of source version.
+
 ## [0.24.2] — 2026-05-17
 
 ### Changed
