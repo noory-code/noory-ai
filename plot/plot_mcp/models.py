@@ -140,8 +140,12 @@ class BaseNodeFields(BaseModel):
     label: str = ""
     x: float = 0.0
     y: float = 0.0
-    width: float = 180.0
-    height: float = 80.0
+    # v0.24.2 (D-2026-05-17-N) — reduced from 180×80 to 140×60 to fit
+    # more nodes per canvas + give auto-layout more room. Existing
+    # nodes keep their own values in canvas.json; only nodes that omit
+    # width/height (defaults filled by Pydantic) get the new size.
+    width: float = 140.0
+    height: float = 60.0
     color: str = "#ffffff"
     shape: Shape = "rounded"
     icon: str | None = None

@@ -239,17 +239,21 @@ describe("computeAutoLayout — determinism + cycle handling", () => {
 });
 
 describe("computeAutoLayout — isolated nodes", () => {
-  it("places nodes not reachable from anchor in lower-right column", () => {
+  it("places nodes not reachable from anchor in a lower-right grid (no overlap)", () => {
+    // v0.24.2 (D-2026-05-17-N) — isolated nodes pack into a square-ish
+    // grid (not a single column). 2 orphans = 2 columns × 1 row so they
+    // share the same y, differ in x; cells never collide because the
+    // grid step = max(width)+padding / max(height)+padding.
     const nodes = [mkNode("connected"), mkNode("orphan1"), mkNode("orphan2")];
     const edges = [mkEdge("e1", ANCHOR.id, "connected", "r", "l")];
     const { positions } = computeAutoLayout({ nodes, edges, anchor: ANCHOR });
     expect(positions.has("orphan1")).toBe(true);
     expect(positions.has("orphan2")).toBe(true);
-    // Orphans share the same x (column), differ in y
     const o1 = positions.get("orphan1")!;
     const o2 = positions.get("orphan2")!;
-    expect(o1.x).toBe(o2.x);
-    expect(o1.y).not.toBe(o2.y);
+    // Grid: 2 nodes → 2 columns × 1 row → same y, different x.
+    expect(o1.y).toBe(o2.y);
+    expect(o1.x).not.toBe(o2.x);
   });
 });
 

@@ -5610,6 +5610,82 @@ identical to how the existing ``actor_ref.gives``/``receives`` work
 - NEXT_SESSION.md ``cross-kind ref typed-text symmetry`` (now
   archived).
 
+---
+
+### D-2026-05-17-N — Default node size + auto-layout collision fixes (v0.24.2)
+
+**Context:** After importing the Banas workspace data into a fresh
+Plot project (Foundation + Actors via one-off script), the user
+reported two adjacent UX issues:
+
+> *"정렬할 때 노드끼리 겹치면 안되는데 그리고 노드 크기가 너무 커요."*
+
+Two AskUserQuestion locks 2026-05-17 narrowed the fixes:
+
+- "정렬할 때 노드 겹침" → option (A) — the ➤ auto-layout button on
+  Foundation produces visual overlap when nodes have large footprints
+  (200+ px wide) because the 32 px sibling-padding is too small to
+  separate them cleanly; isolated nodes also stack into a single
+  vertical column that grows unwieldy past 5 entries.
+- "노드 크기가 너무 크다" → option (B) — Plot's hardcoded default
+  ``180×80`` is too big for canvases that hold 5-10 nodes per view;
+  the user wants a smaller default that fits more material per
+  viewport without scroll.
+
+**Decision:**
+
+1. **Default node size 180×80 → 140×60** in three places (server
+   Pydantic, client ``parseBaseFields`` fallback, viewer
+   ``DEFAULT_WIDTH``/``HEIGHT`` constants). Existing nodes keep
+   their own width/height in canvas.json; only nodes created from
+   this point on adopt the new default. No migration.
+2. **Auto-layout padding 32 → 64**. Doubles the breathing room
+   between sibling subtrees + isolated-node grid cells. With the
+   smaller default node size, the resulting layout is *more*
+   compact, not less.
+3. **Isolated-node placement: column → square-ish grid**. Pre-v0.24.2
+   stacked all isolated (not BFS-reachable from anchor) nodes into a
+   single vertical column to the anchor's lower-right; this got
+   unwieldy past ~5 entries and could visually overlap with the
+   spanning-tree footprint. v0.24.2 packs them into a grid with
+   ``cols = ceil(sqrt(count))`` rows; cell step =
+   ``max(width) + padding`` × ``max(height) + padding`` so cells
+   never collide.
+
+**Implementation:**
+
+| File | Change |
+|---|---|
+| ``plot/plot_mcp/models.py`` | ``BaseNodeFields.width: float = 140.0``, ``height: float = 60.0``. |
+| ``plot/viewer/src/canvases/sketch/constants.ts`` | ``DEFAULT_WIDTH = 140``, ``DEFAULT_HEIGHT = 60``. |
+| ``plot/viewer/src/domain/BaseFields.ts`` | ``parseBaseFields`` defaults updated to match. |
+| ``plot/viewer/src/canvases/sketch/autoLayout.ts`` | ``DEFAULT_PADDING = 64``; isolated-nodes block rewritten as a grid. |
+
+**Tests updated:**
+- ``base-fields.test.ts`` — expects 140×60 defaults.
+- ``round-trip.test.ts`` — expects 140 default width.
+- ``autoLayout.test.ts`` — isolated-nodes test rewritten for grid
+  placement (2 orphans → same y, different x).
+- Full suite: 421 pytest + 545 vitest pass; mypy + tsc clean.
+
+**Approval:** User-locked via two AskUserQuestion options
+2026-05-17 (Align issue: A — auto-layout button; Node size: B —
+Plot default reduction).
+
+**Spec impact:**
+- ``SPEC.md §Auto-layout`` mentions the padding; the value isn't
+  pinned, so no SPEC text change required for the padding bump.
+- The default node size isn't pinned in SPEC either (it's an
+  implementation default, not a contract).
+
+**Cross-refs:**
+- [D-2026-05-13-L](./DECISIONS.md) — auto-layout Foundation-only
+  isolation rule (unchanged; the grid rewrite is internal to the
+  algorithm).
+- [D-2026-05-04-A](./DECISIONS.md) — all edges user-drawn; isolated
+  nodes (no edges to the anchor) are still placed but in their own
+  grid quadrant.
+
 **Cross-refs:**
 - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish. The
   "always-bump on the publish target (MAJOR)" clause under

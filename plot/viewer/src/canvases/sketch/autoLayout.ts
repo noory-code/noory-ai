@@ -20,7 +20,11 @@ import type { SketchEdge, SketchNode } from "../../types";
 
 export type Direction = "T" | "R" | "B" | "L";
 
-const DEFAULT_PADDING = 32;
+// v0.24.2 (D-2026-05-17-N) — raised from 32 → 64. Larger padding gives
+// sibling subtrees + isolated-node columns more breathing room and
+// eliminates the visual overlap that 32 px occasionally produced for
+// node footprints ≥ 200 px wide.
+const DEFAULT_PADDING = 64;
 
 export interface AutoLayoutAnchor {
   id: string;
@@ -115,17 +119,29 @@ export function computeAutoLayout(input: AutoLayoutInput): AutoLayoutOutput {
     });
   }
 
-  // Isolated nodes — not visited by BFS. Place to anchor's lower-right
-  // empty quadrant in id order, in a vertical column.
+  // Isolated nodes — not visited by BFS. v0.24.2 (D-2026-05-17-N) —
+  // pack into a grid (square-ish) to the anchor's lower-right empty
+  // quadrant in id order. Pre-v0.24.2 packed them all into a single
+  // vertical column, which got unwieldy past 5 nodes. Grid cells use
+  // the largest isolated node's width/height + padding so no two
+  // cells ever collide.
   const visited = new Set(rootSub.positions.keys());
   const isolated = input.nodes.filter((n) => !visited.has(n.id));
   if (isolated.length > 0) {
     isolated.sort((a, b) => a.id.localeCompare(b.id));
-    const startX = anchorCx + rootSub.bbox.maxX + padding * 4;
-    let cursorY = anchorCy + rootSub.bbox.maxY + padding * 2;
-    for (const n of isolated) {
-      positions.set(n.id, { x: startX, y: cursorY });
-      cursorY += n.height + padding;
+    const cellW = Math.max(...isolated.map((n) => n.width)) + padding;
+    const cellH = Math.max(...isolated.map((n) => n.height)) + padding;
+    const cols = Math.max(1, Math.ceil(Math.sqrt(isolated.length)));
+    const startX = anchorCx + Math.max(rootSub.bbox.maxX, input.anchor.width / 2) + padding * 2;
+    const startY = anchorCy - ((Math.ceil(isolated.length / cols) - 1) * cellH) / 2;
+    for (let i = 0; i < isolated.length; i++) {
+      const n = isolated[i];
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      positions.set(n.id, {
+        x: startX + col * cellW,
+        y: startY + row * cellH,
+      });
     }
   }
 

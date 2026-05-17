@@ -4,6 +4,32 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.2] — 2026-05-17
+
+### Changed
+
+- **Default node size 180×80 → 140×60**
+  ([D-2026-05-17-N](./docs/DECISIONS.md)). Smaller default fits more
+  nodes per viewport without scroll. Existing nodes keep their own
+  width/height in canvas.json — only nodes created from now on adopt
+  the new default. Changed in three SSOTs in lockstep: server
+  ``BaseNodeFields``, client ``parseBaseFields`` fallback, and viewer
+  ``DEFAULT_WIDTH``/``HEIGHT`` constants.
+- **Auto-layout padding 32 → 64** + **isolated-node grid**. The
+  ➤ align button now uses 64 px between sibling subtrees (was 32 px,
+  which produced visual overlap for nodes ≥ 200 px wide), and packs
+  isolated (not-BFS-reachable) nodes into a square-ish grid instead
+  of a single vertical column. Grid cells use
+  ``max(width)+padding × max(height)+padding`` so they never collide.
+
+### Tests updated
+
+- ``base-fields.test.ts``, ``round-trip.test.ts`` — expect 140×60
+  defaults.
+- ``autoLayout.test.ts`` — isolated-node test rewritten for grid
+  placement.
+- 421 pytest + 545 vitest pass; mypy + tsc clean.
+
 ## [0.24.1] — 2026-05-17
 
 ### Added

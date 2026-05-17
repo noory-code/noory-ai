@@ -124,7 +124,8 @@ describe("Metric.fromJson + toJson round-trip", () => {
     expect(spread.kind).toBe("metric");
     expect(spread.target).toBe("x");
     expect(spread.measurement).toBe("y");
-    expect(spread.width).toBe(180);
+    // v0.24.2 (D-2026-05-17-N) — default width reduced 180 → 140.
+    expect(spread.width).toBe(140);
   });
 });
 

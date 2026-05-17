@@ -22,8 +22,9 @@ describe("parseBaseFields", () => {
     expect(fields.label).toBe("");
     expect(fields.x).toBe(0);
     expect(fields.y).toBe(0);
-    expect(fields.width).toBe(180);
-    expect(fields.height).toBe(80);
+    // v0.24.2 (D-2026-05-17-N) — default size reduced from 180×80 to 140×60.
+    expect(fields.width).toBe(140);
+    expect(fields.height).toBe(60);
     expect(fields.color).toBe("#ffffff");
     expect(fields.shape).toBe("rounded");
     expect(fields.icon).toBeNull();
