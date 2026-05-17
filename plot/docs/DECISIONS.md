@@ -4984,3 +4984,83 @@ contract ("user draws edges between handles") is preserved.
 - [D-2026-05-11-A](./DECISIONS.md) — *"RF 기본으로 돌리라구요"*
   baseline that this override deliberately deviates from, with
   user sign-off recorded above.
+
+---
+
+### D-2026-05-17-G — Connection mode = Loose (v0.21.3)
+
+**Context:** User reported that dragging from Core Value's top
+handle to the Anchor's left handle did not form an edge. Code
+audit revealed two facts:
+
+1. `BaseNode.tsx` lines 154–157 declare the four handles with
+   asymmetric types:
+   - Top (id `"t"`) — `type="target"`
+   - Left (id `"l"`) — `type="target"`
+   - Right (id `"r"`) — `type="source"`
+   - Bottom (id `"b"`) — `type="source"`
+2. The `ReactFlow` component had no explicit `connectionMode`,
+   which means the RF default `ConnectionMode.Strict` applied —
+   only `source` → `target` drags form edges. `target` → `target`
+   (and `source` → `source`) are silently rejected by RF before
+   `onConnect` even fires.
+
+**Spec evidence the strict default contradicted intent:**
+
+[`SPEC.md §Anchor`](./SPEC.md#anchor):
+
+> **Handles (4 sides):** Visible. User may draw edges **from / to**
+> the anchor like any other node.
+
+[`SPEC.md §Edges`](./SPEC.md#edges):
+
+> All edges are user-drawn.
+
+Both lines imply the user — not the framework — decides whether a
+specific pair of handles connects. The strict mode silently
+overruled that intent for ½ of all handle-pair combinations on
+*every* node, not just the anchor.
+
+**Decision:** Add `connectionMode={ConnectionMode.Loose}` to the
+single `ReactFlow` component in `SketchCanvas.tsx`. `Loose` makes
+RF accept connections between any two handles regardless of `type`;
+`onConnect` then fires and `handleConnect` (which already does no
+source/target validation) appends the edge to `doc.edges` as
+before.
+
+**Why a single canvas-wide flag rather than per-handle changes:**
+- Per-handle: would mean adding 4 invisible "source" handles on top
+  of the 4 visible "target" handles (or vice versa), doubling DOM,
+  CSS-z-index gymnastics, and breaking the `id="t|l|r|b"` SSOT.
+- ConnectionMode.Loose: one line, zero DOM additions, preserves
+  the existing handle id convention (still useful for edge
+  rendering / labelling), and matches the way Excalidraw, Mermaid
+  live editor, and Obsidian Canvas behave (any-handle ↔
+  any-handle).
+
+**Side-effect surface (audited):**
+- Existing edges in `canvas.json` are unchanged — the loaded
+  `sourceHandle` / `targetHandle` strings still resolve.
+- `useFlowHandlers.handleConnect` adds new edges with the dragged
+  source/target as-is. No additional normalisation needed.
+- Edge rendering uses `sourceHandle` / `targetHandle` for anchor
+  positioning, unaffected by the connection-mode change.
+- `viewer/tests/structural-guards.test.tsx` and the 525 other
+  tests do not assert connection mode; all 529 pass.
+
+**Approval:** Self-approved as SPEC-compliance bug fix (the prior
+behaviour contradicted SPEC §Anchor / §Edges). User-reported
+scenario *"코어밸류 탑핸들에서 앵커의 왼쪽핸들로 연결선을 만들려고
+할 때 연결이 되지 않아요"* is the test case.
+
+**Spec impact:** No SPEC text change required — SPEC already
+implied this behaviour. This entry documents the implementation
+correction, not a new behaviour.
+
+**Cross-refs:**
+- [D-2026-05-04-A](./DECISIONS.md) — *"all edges are user-drawn,
+  no auto-emission"*; loose mode preserves this invariant
+  (`handleConnect` is still the only edge-creation path).
+- [D-2026-05-13-I](./DECISIONS.md) — silent-state issues queue
+  (this was the latent example of "user action silently fails";
+  scratched off the queue).

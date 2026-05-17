@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.21.3] — 2026-05-17
+
+### Fixed
+
+- **Connection mode = Loose** (D-2026-05-17-G) — edges can now be
+  drawn between any two handles regardless of `type="source"` vs
+  `type="target"`. Previously, the RF default `strict` mode blocked
+  target→target / source→source drags, so e.g. "Core Value top
+  handle → Anchor left handle" silently failed (both are
+  `type="target"` in BaseNode). This contradicted
+  [SPEC.md §Anchor](./docs/SPEC.md#anchor) which states *"User may
+  draw edges from / to the anchor like any other node"*. Single-line
+  fix: `connectionMode={ConnectionMode.Loose}` on the ReactFlow
+  component in SketchCanvas.
+
 ## [0.21.2] — 2026-05-17
 
 ### Fixed

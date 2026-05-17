@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
+  ConnectionMode,
   ControlButton,
   Controls,
   ReactFlowProvider,
@@ -349,6 +350,7 @@ function SketchCanvasInner({
         nodesDraggable
         elementsSelectable
         panOnDrag
+        connectionMode={ConnectionMode.Loose}
         multiSelectionKeyCode={["Meta", "Control"]}
         selectionKeyCode="Shift"
         deleteKeyCode={["Delete", "Backspace"]}
