@@ -4,6 +4,29 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.23.2] — 2026-05-17
+
+### Changed
+
+- **Publish moved to sticky Inspector footer** as a primary CTA
+  ([D-2026-05-17-K](./docs/DECISIONS.md)). Inspector header now
+  carries only chrome (delete / widen / close); the publish action
+  is a large emerald button at the bottom of the Inspector, full
+  width, with the next version in its label (*"📤 publish → v3.0"*).
+  Unpublish is a secondary amber text link below, visible only when
+  there's a publish to revert. Footer only renders for publish-eligible
+  kinds. User-picked layout via AskUserQuestion ASCII-mockup.
+- **Published MD modal now opens centred on the viewport**
+  ([D-2026-05-17-K](./docs/DECISIONS.md)). Root cause for the v0.23.0
+  "trapped in Inspector" symptom was the aside's `backdrop-blur`
+  making it the containing block for `position: fixed` descendants
+  (CSS spec). Fix: ``PublishedMDModal`` is now rendered via
+  ``createPortal`` into ``document.body``. Modal container is also
+  user-resizable via CSS ``resize: both`` (drag the bottom-right
+  grip; min 360×240, max 95vw×95vh, default 720×80vh).
+- LOC ceiling raise: ``BaseInspector.tsx`` 340 → 380 (audit trail in
+  ``structural-guards.test.tsx``).
+
 ## [0.23.1] — 2026-05-17
 
 ### Added

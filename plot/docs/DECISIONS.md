@@ -5358,6 +5358,110 @@ not just the most recent).
   Published versions section; the list will reflect the removal of
   the reverted MD file on next refresh.
 
+---
+
+### D-2026-05-17-K — Inspector publish footer + portal+resizable Published MD modal (v0.23.2)
+
+**Context:** After v0.23.1 shipped (Publish + Unpublish buttons in
+the Inspector header), the user surfaced two adjacent UX issues:
+
+1. *"퍼블리시 버튼이 인스펙터 창 아래로 좀 크게"* — the publish
+   button as a small icon in the cluttered header isn't a primary
+   CTA. Inspector's clear action surface should be the publish.
+2. *"모달 팝업이 인스펙터 영역에서만 보이네요? 저거 그냥 가운데
+   보이면 좋은데 크기 조절 가능하게 해서."* — the v0.23.0 Published
+   MD modal was visually trapped inside the Inspector aside rather
+   than centred on the viewport, and was a fixed size.
+
+Both are bound to the same Inspector layout pass, so they ship in
+a single commit.
+
+**Decision 1 — Publish footer (sticky, primary CTA)**
+
+User-picked from ASCII-mockup AskUserQuestion (4 layouts):
+
+```
+┌ Inspector ──────────────┐
+│ CORE VALUE  v2.0   ✕    │  ← header (publish moved out)
+├─────────────────────────┤
+│ Label / fields / ...    │  ← scrolling body
+│ Published versions      │
+│  • v2.0 ...             │
+├─────────────────────────┤
+│ ┌─────────────────────┐ │  ← sticky footer
+│ │  📤 Publish → v3.0  │ │  ← primary CTA (emerald-600)
+│ └─────────────────────┘ │
+│      ↩ unpublish v2.0   │  ← secondary text link
+└─────────────────────────┘
+```
+
+- Implementation: ``BaseInspector`` now ends in a ``shrink-0
+  border-t bg-white p-3`` footer block (the existing ``flex
+  flex-col`` aside layout makes this a natural sticky pattern —
+  the scrollable body is ``flex-1 overflow-y-auto``, so the footer
+  sits at the visible bottom regardless of scroll position).
+- Publish button: full-width, ``bg-emerald-600 text-white shadow-sm``
+  when dirty; ``bg-slate-100 text-slate-400 cursor-not-allowed``
+  when clean. Label includes the next version (e.g. *"📤 publish
+  → v3.0"*) so the user sees the bump magnitude before clicking.
+- Unpublish: small text link below the publish button, amber colour,
+  hover underline. Visible only when ``version !== "v1.0"`` (mirror
+  of v0.23.1 logic).
+- Footer only renders for publish-eligible kinds — for project /
+  is_root / *_ref nodes the Inspector ends at the scrollable body
+  (no empty footer).
+
+**Decision 2 — PublishedMDModal via React Portal + CSS resize**
+
+Root cause for the "trapped modal" symptom: the Inspector aside
+carries ``backdrop-blur``. CSS spec — any element with
+``backdrop-filter`` becomes the containing block for its
+``position: fixed`` descendants (the same is true for ``transform``,
+``filter``, ``perspective``, ``will-change``, ``contain``). So the
+modal's ``fixed inset-0`` was resolving against the aside, not the
+viewport.
+
+- Fix: ``PublishedMDModal`` now wraps its tree in
+  ``createPortal(modal, document.body)`` so it lives directly under
+  ``<body>`` and the ``fixed`` positioning lands on the viewport.
+- Resizable: modal container gets inline style ``resize: both;
+  overflow: hidden; minWidth: 360px; minHeight: 240px; maxWidth:
+  95vw; maxHeight: 95vh; width: 720px; height: 80vh``. The browser
+  draws a small resize grip in the bottom-right corner; user can
+  drag to any size within the min/max.
+
+**Why not also restructure SketchBodyModal:** SketchBodyModal is
+mounted in ``SketchCanvas`` (outside the Inspector aside), so it
+already centres on the viewport. No portal needed there.
+
+**Approval:** User-locked the footer layout via AskUserQuestion
+ASCII-mockup 2026-05-17 (option A). Modal portal+resize was a
+direct user request 2026-05-17 (*"가운데 보이면 좋은데 크기 조절
+가능하게 해서"*) — implemented without further question since the
+direction is unambiguous.
+
+**LOC ceiling raises:**
+- ``BaseInspector.tsx`` 340 → 380 (footer block adds ~95 LOC; net
+  ~+40 after removing the header publish/unpublish IIFEs).
+
+**Verification:**
+- 539 vitest pass; tsc clean.
+- Manual Gate 3: modal opens centred on viewport (verified via
+  Playwright + screenshot), resizable corner grip works, Escape
+  closes, backdrop click closes.
+
+**Spec impact:** ``SPEC.md §Publish`` doesn't pin button placement
+(intentionally — that's UX detail, not contract). No SPEC change
+required.
+
+**Cross-refs:**
+- [D-2026-05-17-H](./DECISIONS.md) — v0.22.0 dirty-gate still drives
+  the publish button enabled/disabled state.
+- [D-2026-05-17-I](./DECISIONS.md) — v0.23.0 PublishedVersionsSection
+  + PublishedMDModal; the modal is now portal'd.
+- [D-2026-05-17-J](./DECISIONS.md) — v0.23.1 Unpublish; the unpublish
+  button is now the secondary action under the footer publish CTA.
+
 **Cross-refs:**
 - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish. The
   "always-bump on the publish target (MAJOR)" clause under

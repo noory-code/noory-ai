@@ -157,8 +157,8 @@ const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   },
   "canvases/nodes/BaseNode.tsx": { ceiling: 250 },
   "canvases/inspectors/BaseInspector.tsx": {
-    ceiling: 340,
-    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 (publish button + confirm-dialog handler). v0.22.0 (D-2026-05-17-H) raised 270 → 285 to wrap the button in a dirty-aware IIFE. v0.23.0 (D-2026-05-17-I) raised 285 → 295 (PublishedVersionsSection insertion). v0.23.x (D-2026-05-17-J) raised 295 → 340 to add the Unpublish button + onUnpublishNode prop + confirm dialog handler (parallel to publish button).",
+    ceiling: 380,
+    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 (publish button + confirm-dialog handler). v0.22.0 (D-2026-05-17-H) raised 270 → 285 to wrap the button in a dirty-aware IIFE. v0.23.0 (D-2026-05-17-I) raised 285 → 295 (PublishedVersionsSection insertion). v0.23.1 (D-2026-05-17-J) raised 295 → 340 (Unpublish button). v0.23.2 (D-2026-05-17-K) raised 340 → 380 to move publish + unpublish from the header cluster into a sticky footer (primary CTA layout, user-picked via ASCII-mockup AskUserQuestion).",
   },
   "canvases/FoundationCanvas.tsx": { ceiling: 150 },
   "canvases/ActorsCanvas.tsx": { ceiling: 150 },

@@ -2,8 +2,16 @@
  * v0.23.0 (D-2026-05-17-I) — Modal that fetches and renders a published
  * MD file. Reuses the SketchBodyModal scaffold (backdrop + click-outside
  * close + Escape key) and MDPreview (GFM + Mermaid + error fallback).
+ *
+ * v0.23.2 (D-2026-05-17-K) — rendered via createPortal into document.body
+ * so the modal centres on the **viewport**, not on the Inspector aside.
+ * (The aside has `backdrop-blur` which makes it a containing block for
+ * its `position: fixed` descendants, so without a portal the modal got
+ * trapped inside the Inspector strip.) Modal container is resizable
+ * via CSS `resize: both`.
  */
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { readFile } from "../api";
 import { MDPreview } from "../edit/MDPreview";
@@ -54,16 +62,25 @@ export function PublishedMDModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-30 flex items-center justify-center bg-slate-900/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
       role="dialog"
       aria-modal="true"
       aria-label={`Published ${version}`}
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-[720px] flex-col rounded-lg bg-white shadow-xl"
+        className="flex flex-col overflow-hidden rounded-lg bg-white shadow-xl"
+        style={{
+          width: "720px",
+          height: "80vh",
+          minWidth: "360px",
+          minHeight: "240px",
+          maxWidth: "95vw",
+          maxHeight: "95vh",
+          resize: "both",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
@@ -104,4 +121,5 @@ export function PublishedMDModal({
       </div>
     </div>
   );
+  return createPortal(modal, document.body);
 }

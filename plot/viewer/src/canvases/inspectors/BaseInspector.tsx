@@ -121,95 +121,9 @@ export function BaseInspector({
           )}
         </div>
         <div className="flex items-center gap-1">
-          {/* v0.18.0 Phase 3 — Publish button. Same eligibility as
-              canPublish() helper. Confirm dialog is the human debounce.
-              v0.22.0 (D-2026-05-17-H) — disabled when the node is clean
-              (no content changes since last publish). Missing _dirty ⇒
-              treat as dirty (back-compat for pre-v0.22.0 server). */}
-          {onPublishNode &&
-            canPublish(node) &&
-            (() => {
-              const isDirty = node._dirty ?? true;
-              return (
-                <button
-                  type="button"
-                  disabled={!isDirty}
-                  onClick={
-                    isDirty
-                      ? () => {
-                          const fromVersion = node.version;
-                          const next =
-                            parseInt(fromVersion.slice(1).split(".")[0], 10) + 1;
-                          const toVersion = `v${next}.0`;
-                          const kindLabel = t(`kind.${node.kind}`);
-                          if (
-                            window.confirm(
-                              t("inspector.confirmPublish", {
-                                kind: kindLabel,
-                                label: node.label || node.id,
-                                fromVersion,
-                                toVersion,
-                              }),
-                            )
-                          ) {
-                            onPublishNode(node.id);
-                          }
-                        }
-                      : undefined
-                  }
-                  aria-label={t("inspector.publish")}
-                  className={
-                    "rounded px-2 text-[10px] " +
-                    (isDirty
-                      ? "text-emerald-700 hover:bg-emerald-50"
-                      : "cursor-not-allowed text-slate-300")
-                  }
-                  title={
-                    isDirty
-                      ? t("inspector.publishHint")
-                      : t("inspector.publishDisabledHint", { version: node.version })
-                  }
-                >
-                  {t("inspector.publishShort")}
-                </button>
-              );
-            })()}
-          {/* v0.23.x (D-2026-05-17-J) — Unpublish button. Only when
-              there's a publish to revert (version !== "v1.0") and only
-              for publish-eligible kinds (canPublish guard same as the
-              publish button). */}
-          {onUnpublishNode &&
-            canPublish(node) &&
-            node.version !== "v1.0" && (
-              <button
-                type="button"
-                onClick={() => {
-                  const fromVersion = node.version;
-                  const major = parseInt(
-                    fromVersion.slice(1).split(".")[0],
-                    10,
-                  );
-                  const toVersion = `v${major - 1}.0`;
-                  if (
-                    window.confirm(
-                      t("inspector.confirmUnpublish", {
-                        kind: t(`kind.${node.kind}`),
-                        label: node.label || node.id,
-                        fromVersion,
-                        toVersion,
-                      }),
-                    )
-                  ) {
-                    onUnpublishNode(node.id);
-                  }
-                }}
-                aria-label={t("inspector.unpublish")}
-                title={t("inspector.unpublishHint")}
-                className="rounded px-2 text-[10px] text-amber-700 hover:bg-amber-50"
-              >
-                {t("inspector.unpublishShort")}
-              </button>
-            )}
+          {/* v0.23.2 (D-2026-05-17-K) — publish/unpublish buttons moved
+              from this header cluster to the sticky footer below.
+              Header now only carries chrome (delete / widen / close). */}
           {/* Delete — hidden for the Project anchor and for Actor/Service roots. */}
           {node.kind !== "project" && !node.is_root && (
             <button
@@ -327,6 +241,90 @@ export function BaseInspector({
           </label>
         )}
       </div>
+
+      {/* v0.23.2 (D-2026-05-17-K) — sticky publish footer. Primary CTA
+          surface for publish; unpublish is a small text link beneath
+          when there's something to revert. Only rendered for
+          publish-eligible kinds; the footer disappears entirely for
+          project / is_root / *_ref nodes. */}
+      {onPublishNode && canPublish(node) && (() => {
+        const isDirty = node._dirty ?? true;
+        const fromVersion = node.version;
+        const nextMajor =
+          parseInt(fromVersion.slice(1).split(".")[0], 10) + 1;
+        const toVersion = `v${nextMajor}.0`;
+        const kindLabel = t(`kind.${node.kind}`);
+        const hasPublishToRevert = fromVersion !== "v1.0";
+        return (
+          <div className="shrink-0 border-t border-slate-200 bg-white p-3">
+            <button
+              type="button"
+              disabled={!isDirty}
+              onClick={
+                isDirty
+                  ? () => {
+                      if (
+                        window.confirm(
+                          t("inspector.confirmPublish", {
+                            kind: kindLabel,
+                            label: node.label || node.id,
+                            fromVersion,
+                            toVersion,
+                          }),
+                        )
+                      ) {
+                        onPublishNode(node.id);
+                      }
+                    }
+                  : undefined
+              }
+              aria-label={t("inspector.publish")}
+              title={
+                isDirty
+                  ? t("inspector.publishHint")
+                  : t("inspector.publishDisabledHint", { version: fromVersion })
+              }
+              className={
+                "w-full rounded-md px-3 py-2 text-sm font-semibold " +
+                (isDirty
+                  ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+                  : "cursor-not-allowed bg-slate-100 text-slate-400")
+              }
+            >
+              {t("inspector.publishShort")} → {toVersion}
+            </button>
+            {onUnpublishNode && hasPublishToRevert && (
+              <div className="mt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const prevMajor =
+                      parseInt(fromVersion.slice(1).split(".")[0], 10) - 1;
+                    const prevVersion = `v${prevMajor}.0`;
+                    if (
+                      window.confirm(
+                        t("inspector.confirmUnpublish", {
+                          kind: kindLabel,
+                          label: node.label || node.id,
+                          fromVersion,
+                          toVersion: prevVersion,
+                        }),
+                      )
+                    ) {
+                      onUnpublishNode(node.id);
+                    }
+                  }}
+                  aria-label={t("inspector.unpublish")}
+                  title={t("inspector.unpublishHint")}
+                  className="text-[11px] text-amber-700 hover:underline"
+                >
+                  {t("inspector.unpublishShort")} {fromVersion}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </aside>
   );
 }
