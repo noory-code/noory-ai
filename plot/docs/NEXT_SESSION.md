@@ -96,6 +96,45 @@
 
 ---
 
+### `v0.22.x follow-up — publish-button placement + size` (lower priority, filed 2026-05-17)
+
+> **Trigger:** user says **"publish 버튼 크게"** or **"인스펙터
+> 아래 publish"** or **"footer publish"** as the first / near-first
+> message.
+>
+> **Filed:** 2026-05-17 alongside v0.22.0 ship. User's words after
+> confirming v0.22.0 worked: *"제 생각엔 퍼블리시 버튼이 인스펙터
+> 창 아래로 좀 크게 있으면 좋을 것 같은데.. 이런건 나중에 합시다."*
+>
+> **Scope (proposal — re-anchor with user before implementing):**
+>
+> - Move the 📤 publish button from the BaseInspector header (small
+>   icon-text button in the right cluster) to a **sticky footer
+>   inside the Inspector aside**, full-width, taller (e.g. 36-40 px
+>   tall, primary CTA styling).
+> - Keep the dirty-gate from D-2026-05-17-H — the larger footer
+>   button still disables when clean, with the same tooltip.
+> - Sticky positioning so the footer stays visible regardless of
+>   how far down the inspector body the user scrolls.
+> - Re-evaluate the Inspector chrome — the header would become
+>   leaner (just KIND tag + version + delete / width / close
+>   buttons; no publish).
+>
+> **Open questions:**
+>
+> - Should the footer also surface the version badge prominently
+>   (so the user sees "current v3.0" right above the publish CTA)?
+> - Should the disabled-state footer collapse / shrink to save
+>   space, or stay full-size grey?
+> - Mobile / narrow inspector width — does a sticky footer still
+>   fit alongside the body scroll?
+>
+> **Ship as:** v0.22.x patch (UX-only; no schema or behaviour change).
+> Requires plot-design-red-team pass given it touches the Inspector's
+> primary CTA surface.
+
+---
+
 ### `v0.18.x follow-up — Unpublish button` (lower priority)
 
 > **Trigger:** user says **"Unpublish"** or **"미스클릭"** or

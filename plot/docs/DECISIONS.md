@@ -5142,6 +5142,14 @@ user *does* press the still-enabled button.
 
 **Approval:** User-locked via AskUserQuestion 2026-05-17 (option
 "변경 없으면 publish 버튼 비활성화"). Plan approved via ExitPlanMode.
+**Post-ship user confirm 2026-05-17:** *"이제 되네"* — user
+verified the dirty-gate works in real Chrome after the MCP server
+was restarted with v0.22.0 code (server-restart needed because
+Python lacks Vite's HMR; the previous MCP process was still serving
+v0.21.4 responses without ``_dirty``). Same turn surfaced a UX
+follow-up *"퍼블리시 버튼이 인스펙터 창 아래로 좀 크게"* — queued
+in NEXT_SESSION.md as the ``v0.22.x publish-button placement +
+size`` item, deferred per user *"이런건 나중에 합시다"*.
 
 **Cross-refs:**
 - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish. The

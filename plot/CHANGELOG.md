@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.22.1] — 2026-05-17
+
+### Changed
+
+- Docs-only — D-2026-05-17-H Approval line gets a post-ship user
+  confirm (*"이제 되네"*) after the v0.22.0 dirty-gate was verified
+  in real Chrome. Same turn, the user proposed enlarging the
+  publish button and moving it to the Inspector footer — queued
+  in NEXT_SESSION.md as ``v0.22.x publish-button placement + size``
+  (deferred per user *"이런건 나중에 합시다"*). No code change.
+
 ## [0.22.0] — 2026-05-17
 
 ### Added
