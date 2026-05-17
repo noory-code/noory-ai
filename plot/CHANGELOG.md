@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.21.2] — 2026-05-17
+
+### Fixed
+
+- **Handle hit area** (D-2026-05-17-F) — connection handles now have
+  a 30×30 invisible click target while the visible dot stays exactly
+  10×10. Previously, the 10×10 hit area made it easy to miss the
+  handle by 1–2 px and have nothing happen. Implemented as a single
+  `.react-flow__handle::after { position: absolute; inset: -7px; }`
+  rule in `styles.css`; pseudo-element clicks bubble to the parent
+  so RF's `event.target.closest('.react-flow__handle')` identification
+  is unaffected. User-approved RF default override (CLAUDE.md
+  anti-pattern audit trail rule).
+
 ## [0.21.1] — 2026-05-17
 
 ### Fixed

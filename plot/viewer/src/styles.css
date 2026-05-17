@@ -25,3 +25,21 @@ body { margin: 0; }
    - Resize controls (.react-flow__resize-control.{...}) → directional
      resize cursors from @reactflow/node-resizer default.
    See plot/docs/CURSOR.md for the full table. (D-2026-05-11-A.) */
+
+/* D-2026-05-17-F: enlarge handle hit area without changing visual size.
+   RF default handles are 6x6 visible (10x10 including border). Users
+   reported intermittent "handle doesn't respond" when clicks landed
+   1-2 px off-center. The ::after pseudo-element extends the click
+   target to ~24x24 (7 px in every direction) while the visible dot
+   stays exactly the same. Pseudo-element clicks bubble to the parent
+   ``.react-flow__handle``; RF identifies the handle via
+   ``event.target.closest('.react-flow__handle')`` so identification is
+   unaffected. */
+.react-flow__handle::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  right: -7px;
+  bottom: -7px;
+}

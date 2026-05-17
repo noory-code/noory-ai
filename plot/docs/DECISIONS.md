@@ -4909,3 +4909,78 @@ fix, not a new behaviour.
   (MdTextarea introduced sr-only mirror).
 - [D-2026-05-17-D](./DECISIONS.md) — v0.21.0 mermaid decoration
   (previous ship, same component).
+
+---
+
+### D-2026-05-17-F — Connection handle hit-area expansion (v0.21.2)
+
+**Context:** User reported that connection handles "don't work
+properly depending on position" — clicks 1–2 px off-center on a
+handle were silently ignored. DOM probe confirmed the RF default
+handle is a 10×10 px box (6 px content + 1 px border + transform).
+That is below the comfortable click target for a pointer device
+when the visible glyph is also the hit target.
+
+**Decision:** Add a single CSS rule to `viewer/src/styles.css`:
+
+```css
+.react-flow__handle::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  right: -7px;
+  bottom: -7px;
+}
+```
+
+Result: visible handle stays exactly 10×10 (no visual change), but
+the effective click target is ~30×30 (`::after` extends 7 px in
+every direction; verified by `elementFromPoint` probe). Pseudo-
+element clicks bubble to the parent `.react-flow__handle`, so
+React Flow's `event.target.closest('.react-flow__handle')` lookup
+identifies the handle correctly.
+
+**Why pseudo-element rather than enlarging the visible dot:**
+- Enlarging the visible dot would shift the canvas aesthetic and
+  conflict with the existing minimal grey-on-white style.
+- Pseudo-element click extension is the standard pattern used by
+  Figma, Mermaid live editor, Excalidraw, etc., for icon-sized
+  interactive targets that need a 24–44 px hit zone.
+- Single CSS rule, no JS, no DOM additions, no React changes.
+
+**Why hit extension is 7 px (not larger):**
+- 30×30 keeps the rule well clear of adjacent handles on the same
+  node (top vs. left of a 200×90 node = ~100 px center-to-center,
+  no hit-area overlap).
+- Larger (e.g., ±12 px → 34×34) gives diminishing returns and could
+  start to overlap inter-handle gaps on very small nodes.
+
+**Approval:** User-approved 2026-05-17: *"네 진행해주세요"* after
+the proposal in the prior turn (Gate 1 satisfied per CLAUDE.md
+anti-pattern *"Adding any cursor / handle / pan override on top
+of RF defaults"* — the override stack is a regression engine
+unless every entry has an audit trail).
+
+**Spec impact:** None — visible behaviour is unchanged. The spec
+section on edges/handles does not need updating because the
+contract ("user draws edges between handles") is preserved.
+
+**Verification:**
+- vitest 529/529 pass (the `styles-cursor-baseline.test.tsx` static
+  guard only forbids `cursor:` declarations and `style.cursor =`
+  JS assignments; this rule uses neither).
+- DOM probe: hit area extends 15 px from visible center in each
+  direction (= 30×30 total) while `handle.getBoundingClientRect()`
+  remains 10×10.
+- Screenshot diff: visual identical to v0.21.1.
+
+**Cross-refs:**
+- [D-2026-05-10-C](./DECISIONS.md) / [D-2026-05-10-F](./DECISIONS.md)
+  — v0.13.3 → v0.13.5 stacked six rounds of cursor/handle CSS
+  interventions ending in a full reset. This rule joins the
+  freshly empty override stack with an explicit audit trail; future
+  cursor/handle additions must follow the same pattern.
+- [D-2026-05-11-A](./DECISIONS.md) — *"RF 기본으로 돌리라구요"*
+  baseline that this override deliberately deviates from, with
+  user sign-off recorded above.
