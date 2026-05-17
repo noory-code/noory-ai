@@ -5260,6 +5260,104 @@ in one session.
   (MINOR). MINOR-only drift won't add new rows but the re-fetch
   is cheap.
 
+---
+
+### D-2026-05-17-J — Unpublish button (v0.23.1)
+
+**Context:** NEXT_SESSION.md had a long-standing follow-up entry
+``v0.18.x follow-up — Unpublish button`` with a fully-spec'd
+implementation. With v0.23.0 surfacing the published library in the
+Inspector, the natural next step was to also give the user a way to
+undo a misclicked publish without dropping to the shell. User
+approved batch-ship 2026-05-17 (*"3 빼고 싹다 해버리지 뭐"*).
+
+**Decision:** Implement Unpublish as **``git revert`` of the most
+recent publish commit for the node**. The revert pattern preserves
+git history (non-destructive) and atomically undoes:
+- the canvas.json version bump,
+- the new MD file,
+- any Phase 4 ancestor MINOR bumps that were part of the same commit.
+
+**Server:**
+- ``git_store.py::find_latest_publish_commit(project_dir, node_id)``
+  greps the log for the ``Publish-Node-Id: <node_id>`` trailer
+  (extended regex, ``--format=%H``).
+- ``git_store.py::revert_publish(project_dir, sha)`` runs
+  ``git revert --no-edit <sha>`` and returns the new HEAD sha.
+- ``git_store.py::ensure_clean_working_tree(project_dir)`` —
+  **safety helper introduced for unpublish robustness.** Before a
+  publish, snapshots any untracked / dirty files into a separate
+  ``chore(plot): seed pre-publish state`` commit, so the subsequent
+  publish commit only contains the publish-specific changes. Without
+  this, the very first publish in a fresh project would bundle
+  canvas.json + .gitignore + .gitattributes into one publish commit,
+  and reverting it would wipe canvas.json. Called from
+  ``publish_node`` (idempotent no-op when the tree is already clean).
+- ``folder_io.py::unpublish_node(plot_root, project_id, canvas_kind,
+  node_id, *, service_id=None)`` — resolves the node, locates the
+  publish commit, runs revert, re-reads the canvas to capture the
+  rolled-back version. Raises ``UnpublishNotEligibleError`` (409)
+  when no publish commit exists; ``KeyError`` (404) when the node
+  isn't on the canvas.
+- HTTP endpoint
+  ``POST /api/projects/{id}/canvases/{kind}/nodes/{node_id}/unpublish``
+  returns ``{node_id, from_version, to_version, reverted_sha,
+  revert_commit_sha}``.
+
+**Client:**
+- New ``api.ts::unpublishNode(...)`` mirrors ``publishNode``.
+- ``BaseInspector`` adds an **↩ unpublish** button next to the
+  publish button, visible only when ``canPublish(node)`` AND
+  ``node.version !== "v1.0"``. Confirm dialog text describes the
+  ``v(N) → v(N-1).0`` rollback and notes that history is preserved.
+- ``onUnpublishNode`` prop threads through ``SketchInspectorBindings``
+  → ``SketchCanvas`` → ``App.tsx``, parallel to ``onPublishNode``.
+- ``useProject.unpublishNodeAction`` mirrors ``publishNodeAction``
+  (re-fetch all canvases after revert so Inspector + canvas reflect
+  the new version).
+
+**i18n:** new keys ``inspector.unpublish``,
+``inspector.unpublishShort`` (*"↩ unpublish"*),
+``inspector.unpublishHint``, ``inspector.confirmUnpublish``.
+
+**LOC ceiling raises (audit trail):**
+- ``BaseInspector.tsx`` 295 → 340 (unpublish button + handler).
+- ``SketchCanvas.tsx`` 440 → 450 (onUnpublishNode prop wiring).
+- ``App.tsx`` 400 → 410 (handler wired on both canvas slots).
+
+**Verification:**
+- 8 new pytest cases in ``test_unpublish.py``: revert behaviour,
+  MD-file cleanup, revert-commit subject, error paths
+  (UnpublishNotEligibleError / KeyError), HTTP round-trip
+  (201/404/409).
+- Full suite: 417 pytest + 539 vitest pass; mypy + tsc clean.
+
+**Approval:** User-locked via NEXT_SESSION.md spec (filed 2026-05-16);
+batch-ship approved 2026-05-17 (*"3 빼고 싹다 해버리지 뭐. 플랜모드
+필요합니까?"*). No plan-mode needed since the spec was already
+fully-defined.
+
+**Spec impact:** No SPEC text added in this entry — the publish
+spec already implies a recovery path (PUBLISH.md documents the
+manual ``git revert HEAD`` flow that this feature automates). A
+future ``SPEC.md §Publish §Unpublish`` paragraph can be added if
+the recovery flow grows new options (e.g. revert older commits,
+not just the most recent).
+
+**Cross-refs:**
+- NEXT_SESSION.md ``v0.18.x follow-up — Unpublish button`` (now
+  archived).
+- [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish + the
+  ``Publish-Node-Id`` trailer this implementation greps for.
+- [D-2026-05-17-C](./DECISIONS.md) — Phase 4 MINOR propagation;
+  ``git revert`` atomically reverses the ancestor bumps too.
+- [D-2026-05-17-H](./DECISIONS.md) — v0.22.0 dirty-gate; after an
+  unpublish, ``_dirty`` recomputes (the baseline disappears with
+  the reverted commit, so dirty = true via the None-baseline path).
+- [D-2026-05-17-I](./DECISIONS.md) — v0.23.0 folder reorg + Inspector
+  Published versions section; the list will reflect the removal of
+  the reverted MD file on next refresh.
+
 **Cross-refs:**
 - [D-2026-05-16-E](./DECISIONS.md) — Phase 3 publish. The
   "always-bump on the publish target (MAJOR)" clause under

@@ -102,6 +102,10 @@
     "publishDisabledHint": "No content changes since {{version}}",
     "publishedVersions": "Published versions",
     "publishedVersionsEmpty": "No published versions yet",
+    "unpublish": "Unpublish",
+    "unpublishShort": "↩ unpublish",
+    "unpublishHint": "Revert the most recent publish (git revert). Brings the version back to v(N-1).0 and removes the corresponding MD file.",
+    "confirmUnpublish": "Unpublish {{kind}} \"{{label}}\"?\n\nThis git-reverts the most recent publish commit: version {{fromVersion}} → {{toVersion}}, removes the v{{fromVersion}}.md file, and creates a Revert commit. The history is preserved (revert is non-destructive).",
     "confirmPublish": "Publish {{kind}} \"{{label}}\"?\n\nThis bumps version {{fromVersion}} → {{toVersion}}, writes a new MD file, and records a git commit. Each publish creates a new version — cancel if you didn't mean to bump.",
     "field": {
       "theme": "Theme",

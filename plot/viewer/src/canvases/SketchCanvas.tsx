@@ -127,6 +127,9 @@ export interface SketchCanvasProps {
    *  HTTP POST + version refresh. Optional so canvases not yet wired
    *  (or tests) compile. */
   onPublishNode?: (nodeId: string) => void;
+  /** v0.23.x (D-2026-05-17-J) — fire to unpublish (git revert) a node's
+   *  most recent publish. Optional. */
+  onUnpublishNode?: (nodeId: string) => void;
 }
 
 
@@ -164,6 +167,7 @@ function SketchCanvasInner({
   applyAnchorRadialLayout,
   enableAutoLayout,
   onPublishNode,
+  onUnpublishNode,
 }: SketchCanvasProps) {
   const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
@@ -430,6 +434,7 @@ function SketchCanvasInner({
         projectPath={projectPath}
         projectId={projectId}
         onPublishNode={onPublishNode}
+        onUnpublishNode={onUnpublishNode}
       />
     </div>
   );

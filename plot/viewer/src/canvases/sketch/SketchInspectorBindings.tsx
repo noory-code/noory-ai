@@ -33,6 +33,8 @@ export interface SketchInspectorBindingsProps {
    *  through to BaseInspector. Receives node id; the BaseInspector
    *  itself shows the confirm dialog and prepares the version bump. */
   onPublishNode?: (nodeId: string) => void;
+  /** v0.23.x (D-2026-05-17-J) — unpublish handler. */
+  onUnpublishNode?: (nodeId: string) => void;
 }
 
 export function SketchInspectorBindings({
@@ -53,6 +55,7 @@ export function SketchInspectorBindings({
   projectPath,
   projectId,
   onPublishNode,
+  onUnpublishNode,
 }: SketchInspectorBindingsProps) {
   if (!inspectorNodeId) return null;
   const node = doc.nodes.find((n) => n.id === inspectorNodeId) ?? null;
@@ -98,6 +101,7 @@ export function SketchInspectorBindings({
       }}
       onClose={() => setInspectorNodeId(null)}
       onPublishNode={onPublishNode}
+      onUnpublishNode={onUnpublishNode}
     />
   );
 }

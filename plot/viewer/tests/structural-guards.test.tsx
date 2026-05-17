@@ -148,17 +148,17 @@ describe("no-god-union-import (Phase 5.2)", () => {
  */
 const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   "App.tsx": {
-    ceiling: 400,
-    note: "Plan target locked in v0.16.5 (D-2026-05-12-H).",
+    ceiling: 410,
+    note: "Plan target locked in v0.16.5 (D-2026-05-12-H). v0.23.x (D-2026-05-17-J) raised 400 → 410 to wire onUnpublishNode on both SketchCanvas slots (active canvas + service-detail modal).",
   },
   "canvases/SketchCanvas.tsx": {
-    ceiling: 440,
-    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to absorb the onPublishNode prop wiring through to SketchInspectorBindings.",
+    ceiling: 450,
+    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to absorb the onPublishNode prop wiring through to SketchInspectorBindings. v0.23.x (D-2026-05-17-J) raised 440 → 450 to add the onUnpublishNode prop wiring (same pattern).",
   },
   "canvases/nodes/BaseNode.tsx": { ceiling: 250 },
   "canvases/inspectors/BaseInspector.tsx": {
-    ceiling: 295,
-    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 (publish button + confirm-dialog handler). v0.22.0 (D-2026-05-17-H) raised 270 → 285 to wrap the button in a dirty-aware IIFE. v0.23.0 (D-2026-05-17-I) raised 285 → 295 to insert the PublishedVersionsSection (only for publish-eligible kinds; reuses canPublish predicate; ~7 LOC of props wiring).",
+    ceiling: 340,
+    note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 (publish button + confirm-dialog handler). v0.22.0 (D-2026-05-17-H) raised 270 → 285 to wrap the button in a dirty-aware IIFE. v0.23.0 (D-2026-05-17-I) raised 285 → 295 (PublishedVersionsSection insertion). v0.23.x (D-2026-05-17-J) raised 295 → 340 to add the Unpublish button + onUnpublishNode prop + confirm dialog handler (parallel to publish button).",
   },
   "canvases/FoundationCanvas.tsx": { ceiling: 150 },
   "canvases/ActorsCanvas.tsx": { ceiling: 150 },

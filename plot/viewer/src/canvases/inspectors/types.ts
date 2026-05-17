@@ -25,6 +25,10 @@ export interface KindInspectorProps {
    *  prop can be elided in tests / shells that don't surface
    *  publish. */
   onPublishNode?: (nodeId: string) => void;
+  /** v0.23.x (D-2026-05-17-J) — unpublish (git revert most recent
+   *  publish commit). Optional; surfaced only when the node has a
+   *  publish to revert. */
+  onUnpublishNode?: (nodeId: string) => void;
   /** Close the panel (used by ``BaseInspector``'s close button). */
   onClose: () => void;
   /** v0.7: needed for the MD editor's file paths + preview-cache hints. */

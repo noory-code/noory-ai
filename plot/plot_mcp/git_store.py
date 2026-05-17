@@ -216,6 +216,66 @@ def publish_snapshot(
 
 
 # ---------------------------------------------------------------------------
+# v0.23.x (D-2026-05-17-J) — unpublish
+# ---------------------------------------------------------------------------
+
+
+def ensure_clean_working_tree(project_dir: Path) -> None:
+    """Capture any pre-publish dirty state in its own commit.
+
+    Without this, a publish that runs against an untracked / dirty
+    working tree (e.g. the very first publish in a fresh project, or
+    after an offline-edit session) would bundle unrelated files into
+    the publish commit. A later ``git revert`` of that publish would
+    then wipe canvas.json + every other untracked file, leaving the
+    project broken.
+
+    Idempotent: no-op when the working tree is already clean.
+    """
+    if not (project_dir / ".git").is_dir():
+        return
+    result = _git("status", "--porcelain", cwd=project_dir, check=False)
+    if not result.stdout.strip():
+        return
+    _git("add", "-A", cwd=project_dir)
+    _git("commit", "-m", "chore(plot): seed pre-publish state", cwd=project_dir)
+
+
+def find_latest_publish_commit(project_dir: Path, node_id: str) -> str | None:
+    """Return the short sha of the most recent publish commit for a node,
+    or None when the node has never been published.
+
+    Greps the git log for the ``Publish-Node-Id: <node_id>`` trailer line.
+    Most-recent-first; we take the first match.
+    """
+    if not (project_dir / ".git").is_dir():
+        return None
+    result = _git(
+        "log",
+        "--grep=^Publish-Node-Id: " + node_id + "$",
+        "--extended-regexp",
+        "-1",
+        "--format=%H",
+        cwd=project_dir,
+        check=False,
+    )
+    sha = result.stdout.strip()
+    return sha or None
+
+
+def revert_publish(project_dir: Path, sha: str) -> str:
+    """Revert a publish commit and return the new HEAD sha.
+
+    ``git revert <sha> --no-edit`` creates a new commit that undoes
+    the canvas.json bump(s) + the published MD file in a single step.
+    Caller is responsible for verifying the commit was a publish
+    (via the trailer) before invoking — this is a pure git op.
+    """
+    _git("revert", "--no-edit", sha, cwd=project_dir)
+    return _git("rev-parse", "HEAD", cwd=project_dir).stdout.strip()
+
+
+# ---------------------------------------------------------------------------
 # list_tags / delete_tag
 # ---------------------------------------------------------------------------
 

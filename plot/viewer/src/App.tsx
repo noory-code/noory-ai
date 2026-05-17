@@ -104,6 +104,7 @@ export function App() {
     create: handleCreate, rename: handleRename, remove: handleDelete,
     pick: handlePick, markSession: handleMarkSession,
     publishNodeAction: handlePublishNode,
+    unpublishNodeAction: handleUnpublishNode,
     deleteTag: handleDeleteTag, dismissToast,
   } = project;
 
@@ -313,6 +314,9 @@ export function App() {
                 onPublishNode={(id) => {
                   void handlePublishNode(activeCanvasKey, id);
                 }}
+                onUnpublishNode={(id) => {
+                  void handleUnpublishNode(activeCanvasKey, id);
+                }}
                 onNodeDrill={(id) => {
                   const n = activeCanvas.nodes.find((x) => x.id === id);
                   if (!n) return;
@@ -379,6 +383,10 @@ export function App() {
             }}
             onPublishNode={(id) => {
               void handlePublishNode(detailCanvasKey, id);
+            }}
+            onUnpublishNode={(id) => {
+              if (!detailCanvasKey) return;
+              void handleUnpublishNode(detailCanvasKey, id);
             }}
           />
         </ServiceDetailModal>

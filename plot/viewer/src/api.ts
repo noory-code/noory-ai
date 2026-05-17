@@ -300,6 +300,31 @@ export async function publishNode(
   );
 }
 
+/** v0.23.x (D-2026-05-17-J) — unpublish (git revert) response. */
+export interface UnpublishNodeResponse {
+  node_id: string;
+  from_version: string;
+  to_version: string;
+  reverted_sha: string;
+  revert_commit_sha: string;
+}
+
+export async function unpublishNode(
+  projectPath: string,
+  projectId: string,
+  canvasKind: string,
+  nodeId: string,
+  serviceId?: string,
+): Promise<UnpublishNodeResponse> {
+  const params = new URLSearchParams({ project_path: projectPath });
+  if (serviceId) params.set("service_id", serviceId);
+  const url =
+    `${API_BASE}/api/projects/${encodeURIComponent(projectId)}` +
+    `/canvases/${encodeURIComponent(canvasKind)}` +
+    `/nodes/${encodeURIComponent(nodeId)}/unpublish?${params.toString()}`;
+  return json<UnpublishNodeResponse>(await fetch(url, { method: "POST" }));
+}
+
 /** v0.23.0 (D-2026-05-17-I) — one published version's metadata. */
 export interface PublishedVersion {
   version: string;

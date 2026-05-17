@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.23.1] — 2026-05-17
+
+### Added
+
+- **Unpublish button** ([D-2026-05-17-J](./docs/DECISIONS.md)). An
+  ↩ unpublish button now sits next to 📤 publish in the Inspector
+  header, visible only when the node has a publish to revert
+  (``version !== "v1.0"``). Click → confirm dialog → server runs
+  ``git revert`` on the most recent publish commit for the node,
+  atomically undoing the version bump, the published MD file, and
+  any Phase 4 ancestor MINOR bumps that were part of the same
+  commit. History is preserved (revert is non-destructive).
+- New endpoint
+  ``POST /api/projects/{id}/canvases/{kind}/nodes/{node_id}/unpublish``
+  returning ``{node_id, from_version, to_version, reverted_sha,
+  revert_commit_sha}``. 409 when there's no publish to revert.
+
+### Changed
+
+- ``publish_node`` now calls ``ensure_clean_working_tree`` before
+  staging its own changes — if the project's git working tree is
+  dirty (e.g. fresh project where canvas.json isn't tracked yet),
+  the helper snapshots that state into a separate ``chore(plot):
+  seed pre-publish state`` commit. Without this, the very first
+  publish in a project would bundle canvas.json into the publish
+  commit, and a later unpublish revert would wipe canvas.json
+  entirely. Idempotent no-op on a clean tree.
+- LOC ceilings raised (audit trail in ``structural-guards.test.tsx``):
+  ``BaseInspector.tsx`` 295 → 340, ``SketchCanvas.tsx`` 440 → 450,
+  ``App.tsx`` 400 → 410.
+
 ## [0.23.0] — 2026-05-17
 
 ### Added

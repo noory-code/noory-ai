@@ -27,6 +27,7 @@ from plot_mcp.file_io import (
 )
 from plot_mcp.folder_io import (
     PublishNotEligibleError,
+    UnpublishNotEligibleError,
     create_project,
     delete_project,
     list_service_details,
@@ -35,6 +36,7 @@ from plot_mcp.folder_io import (
     read_project,
     rename_project,
     sync_details_with_overview,
+    unpublish_node,
     write_canvas,
     write_project,
 )
@@ -403,6 +405,50 @@ async def node_publish_endpoint(request: Request) -> JSONResponse:
     except KeyError as exc:
         return _error(str(exc.args[0]), status=404)
     except PublishNotEligibleError as exc:
+        return _error(str(exc), status=409)
+    return JSONResponse(result, status_code=201)
+
+
+# ---------------------------------------------------------------------------
+# v0.23.x (D-2026-05-17-J) — unpublish
+# ---------------------------------------------------------------------------
+
+
+async def node_unpublish_endpoint(request: Request) -> JSONResponse:
+    """``POST /api/projects/{id}/canvases/{kind}/nodes/{node_id}/unpublish``
+
+    Reverts the most recent publish commit for the node.
+    Returns ``{node_id, from_version, to_version, reverted_sha,
+    revert_commit_sha}``.
+
+    Optional ``service_id`` for service_detail canvases.
+    Errors:
+      - 404 if project / canvas / node not found
+      - 409 if the node has no publish commit to revert
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    canvas_kind = request.path_params["canvas_kind"]
+    node_id = request.path_params["node_id"]
+    if canvas_kind not in _ALLOWED_CANVAS_KINDS:
+        return _error(f"invalid canvas_kind: {canvas_kind}", status=400)
+    service_id = request.query_params.get("service_id") or None
+    try:
+        result = unpublish_node(
+            plot_root,
+            project_id,
+            cast("CanvasKind", canvas_kind),
+            node_id,
+            service_id=service_id,
+        )
+    except FileNotFoundError as exc:
+        return _error(str(exc), status=404)
+    except KeyError as exc:
+        return _error(str(exc.args[0]), status=404)
+    except UnpublishNotEligibleError as exc:
         return _error(str(exc), status=409)
     return JSONResponse(result, status_code=201)
 

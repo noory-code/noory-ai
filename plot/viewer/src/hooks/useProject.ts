@@ -7,6 +7,7 @@ import {
   getProject,
   listProjects,
   publishNode,
+  unpublishNode,
   renameProject,
   tagProject,
 } from "../api";
@@ -57,6 +58,11 @@ export interface UseProjectApi {
    *  canvas after the server-side bump so the Inspector reflects the
    *  new version on next paint. */
   publishNodeAction: (
+    canvasKey: CanvasKey,
+    nodeId: string,
+  ) => Promise<void>;
+  /** v0.23.x (D-2026-05-17-J) — unpublish via git revert. */
+  unpublishNodeAction: (
     canvasKey: CanvasKey,
     nodeId: string,
   ) => Promise<void>;
@@ -242,6 +248,28 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     [projectPath, activeId, onError],
   );
 
+  // v0.23.x (D-2026-05-17-J) — unpublish action mirrors publishNodeAction
+  // (same refresh flow).
+  const unpublishNodeAction = useCallback(
+    async (canvasKey: CanvasKey, nodeId: string) => {
+      if (!projectPath || !activeId) return;
+      const [canvasKind, serviceId] = canvasKey.split(":") as [string, string?];
+      try {
+        await unpublishNode(projectPath, activeId, canvasKind, nodeId, serviceId);
+        const proj = await getProject(projectPath, activeId);
+        const refreshed = await getAllCanvases(
+          projectPath,
+          activeId,
+          proj.service_details,
+        );
+        setCanvasCache(refreshed);
+      } catch (err) {
+        onError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [projectPath, activeId, onError],
+  );
+
   const deleteTag = useCallback(
     async (name: string) => {
       if (!projectPath || !activeId) return;
@@ -280,6 +308,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     pick,
     markSession,
     publishNodeAction,
+    unpublishNodeAction,
     deleteTag,
     dismissToast,
     replaceSummary,

@@ -38,6 +38,10 @@ export interface BaseInspectorProps {
    *  toasts; the button stays enabled, the confirm dialog is the
    *  user-side debounce. Optional so legacy callers compile. */
   onPublishNode?: (nodeId: string) => void;
+  /** v0.23.x (D-2026-05-17-J): unpublish — git revert the most recent
+   *  publish commit for this node. Only surfaced when
+   *  ``node.version !== "v1.0"`` (i.e. there's something to undo). */
+  onUnpublishNode?: (nodeId: string) => void;
   projectPath: string;
   projectId: string;
   canvasKind: CanvasKind;
@@ -58,6 +62,7 @@ export function BaseInspector({
   onDeleteNode,
   onClose,
   onPublishNode,
+  onUnpublishNode,
   projectPath,
   projectId,
   canvasKind,
@@ -169,6 +174,42 @@ export function BaseInspector({
                 </button>
               );
             })()}
+          {/* v0.23.x (D-2026-05-17-J) — Unpublish button. Only when
+              there's a publish to revert (version !== "v1.0") and only
+              for publish-eligible kinds (canPublish guard same as the
+              publish button). */}
+          {onUnpublishNode &&
+            canPublish(node) &&
+            node.version !== "v1.0" && (
+              <button
+                type="button"
+                onClick={() => {
+                  const fromVersion = node.version;
+                  const major = parseInt(
+                    fromVersion.slice(1).split(".")[0],
+                    10,
+                  );
+                  const toVersion = `v${major - 1}.0`;
+                  if (
+                    window.confirm(
+                      t("inspector.confirmUnpublish", {
+                        kind: t(`kind.${node.kind}`),
+                        label: node.label || node.id,
+                        fromVersion,
+                        toVersion,
+                      }),
+                    )
+                  ) {
+                    onUnpublishNode(node.id);
+                  }
+                }}
+                aria-label={t("inspector.unpublish")}
+                title={t("inspector.unpublishHint")}
+                className="rounded px-2 text-[10px] text-amber-700 hover:bg-amber-50"
+              >
+                {t("inspector.unpublishShort")}
+              </button>
+            )}
           {/* Delete — hidden for the Project anchor and for Actor/Service roots. */}
           {node.kind !== "project" && !node.is_root && (
             <button

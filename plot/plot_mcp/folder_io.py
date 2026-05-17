@@ -36,7 +36,13 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, cast
 
-from plot_mcp.git_store import ensure_repo, publish_snapshot
+from plot_mcp.git_store import (
+    ensure_clean_working_tree,
+    ensure_repo,
+    find_latest_publish_commit,
+    publish_snapshot,
+    revert_publish,
+)
 from plot_mcp.md_publish import (
     bump_major,
     bump_minor,
@@ -1017,6 +1023,11 @@ def publish_node(
     ``PublishNotEligibleError`` if the kind/role disallows publish.
     """
     project_dir = _ensure_project(plot_root, project_id)
+    # v0.23.x (D-2026-05-17-J) — snapshot any pre-publish working-tree
+    # state into its own commit so a future ``git revert`` of the
+    # publish commit cannot wipe unrelated files (e.g. untracked
+    # canvas.json in a fresh project).
+    ensure_clean_working_tree(project_dir)
     canvases = _load_all_canvases(plot_root, project_id)
     start_canvas_key = (
         f"service_detail:{service_id}" if canvas_kind == "service_detail" else canvas_kind
@@ -1122,4 +1133,67 @@ def publish_node(
         "md_path": str(md_path.relative_to(project_dir)),
         "sha": commit["sha"],
         "propagated": propagated_records,
+    }
+
+
+# ---------------------------------------------------------------------------
+# v0.23.x (D-2026-05-17-J) — unpublish
+# ---------------------------------------------------------------------------
+
+
+class UnpublishNotEligibleError(ValueError):
+    """Raised by ``unpublish_node`` when there's nothing to undo
+    (the node has never been published)."""
+
+
+def unpublish_node(
+    plot_root: Path,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    node_id: str,
+    *,
+    service_id: str | None = None,
+) -> dict[str, Any]:
+    """Revert the most recent publish of ``node_id`` via ``git revert``.
+
+    Flow:
+      1. Validate target canvas + node exist.
+      2. Locate the latest publish commit via the
+         ``Publish-Node-Id: <node_id>`` trailer.
+      3. ``git revert --no-edit <sha>`` — creates a new commit that
+         undoes the canvas.json bump(s) + removes the published MD
+         file in one step.
+      4. Re-read the canvas to capture the new version.
+
+    Returns ``{node_id, from_version, to_version, reverted_sha,
+    revert_commit_sha}``.
+
+    Raises ``KeyError`` if the node isn't on the canvas;
+    ``UnpublishNotEligibleError`` if no publish commit exists for it.
+    """
+    project_dir = _ensure_project(plot_root, project_id)
+    canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
+    node = next((n for n in canvas.nodes if n.id == node_id), None)
+    if node is None:
+        raise KeyError(f"node {node_id!r} not on canvas {canvas_kind!r}")
+    from_v = node.version
+    publish_sha = find_latest_publish_commit(project_dir, node_id)
+    if publish_sha is None:
+        raise UnpublishNotEligibleError(
+            f"node {node_id!r} has no publish commit to revert"
+        )
+    revert_sha = revert_publish(project_dir, publish_sha)
+    # Re-read the canvas via the regular path to get the new version
+    # (the revert restored the previous value).
+    canvas_after = read_canvas(plot_root, project_id, canvas_kind, service_id)
+    node_after = next(
+        (n for n in canvas_after.nodes if n.id == node_id), None
+    )
+    to_v = node_after.version if node_after else from_v
+    return {
+        "node_id": node_id,
+        "from_version": from_v,
+        "to_version": to_v,
+        "reverted_sha": publish_sha,
+        "revert_commit_sha": revert_sha,
     }
