@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.9] — 2026-05-19
+
+### Changed
+
+- **Korean i18n polish for actor inspector** —
+  `viewer/src/i18n/locales/ko.json`. User flagged 2026-05-19 that
+  `측` / `페인` / `운영자측` were awkward Korean (1-char
+  translation + transliteration). Locked via AskUserQuestion preview:
+  - `inspector.field.side`: `측` → `역할`
+  - `inspector.field.pain`: `페인` → `어려움`
+  - `inspector.fieldHint.side`: `가치 교환의 어느 쪽` →
+    `가치 교환에서 맡는 역할`
+  - `inspector.fieldHint.targetSide`: `운영자측 / 사용자측 / 둘 다`
+    → `제공자 / 사용자 / 둘 다`
+  - `inspector.operatorSideOption`: `운영자측` → `제공자`
+  - `inspector.userSideOption`: `사용자측` → `사용자`
+  - `bothSideOption` unchanged (`둘 다`).
+  `en.json` untouched (already natural). Key set unchanged so
+  `i18n-keys-parity` guard stays green. 546/546 viewer tests pass,
+  tsc clean.
+
 ## [0.24.8] — 2026-05-19
 
 ### Fixed
