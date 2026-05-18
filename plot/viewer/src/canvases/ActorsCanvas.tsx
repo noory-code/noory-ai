@@ -11,6 +11,7 @@ export function ActorsCanvas(props: SketchCanvasProps) {
       shouldDrill={undefined}
       showFoldButton={true}
       injectAnchor={true}
+      enableAutoLayout={true}
     />
   );
 }

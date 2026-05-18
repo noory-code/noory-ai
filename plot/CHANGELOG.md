@@ -4,6 +4,34 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.5] — 2026-05-18
+
+### Added
+
+- **Auto-layout button on the Actors canvas**
+  ([D-2026-05-18-B](./docs/DECISIONS.md)). `ActorsCanvas` now opts
+  into the `⊞` Auto-layout button alongside `FoundationCanvas`
+  (`enableAutoLayout={true}`). Same contract as Foundation:
+  one-shot apply via the regular `onDocChange` pipeline, `Cmd+Z`
+  undoes it, positions-only mutation (no `kind` / `label` /
+  `parent_id` / typed-text / edge changes). Driven by the
+  `banas-imported` Actors canvas where Hero / Fan / Bana root
+  personas were overlapping. `ServicesCanvas` and
+  `ServiceDetailCanvas` remain off — hub-and-spoke / root-pinned
+  geometry where the directional-tree algorithm has no obvious win
+  yet; revisit when a real overlap case arrives.
+
+### Changed
+
+- `viewer/tests/auto-layout-isolation.test.tsx` — Actor wrapper
+  test flipped from "must NOT render" to "renders the Auto-layout
+  button"; a new Actor positions-only assertion mirrors the
+  Foundation one. `Services` / `ServiceDetail` assertions
+  unchanged — they remain the negative side of the contract.
+- `docs/SPEC.md §Auto-layout` — "Foundation only" wording removed
+  in favour of "opt-in per wrapper"; isolation contract section
+  + history append.
+
 ## [0.24.4] — 2026-05-18
 
 ### Changed

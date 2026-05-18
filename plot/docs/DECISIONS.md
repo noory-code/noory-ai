@@ -5782,3 +5782,60 @@ correction, not a new behaviour.
 - [D-2026-05-13-I](./DECISIONS.md) — silent-state issues queue
   (this was the latent example of "user action silently fails";
   scratched off the queue).
+
+---
+
+### D-2026-05-18-B — Auto-layout opt-in extended to Actors canvas (v0.24.5)
+
+**Context:** Per [D-2026-05-13-L](./DECISIONS.md) the auto-layout
+button is a per-wrapper opt-in. v0.16.36 wired it for
+`FoundationCanvas` only. 2026-05-18, the user opened the Actors
+canvas on `banas-imported` (Hero / Fan / Bana root personas
+overlapping) and directly requested the same button:
+*"액터 캔버스에 노드 정렬 기능 넣기"*.
+
+The isolation contract is *honoured by extending opt-in, not by
+removing it*: `ActorsCanvas` now also passes
+`enableAutoLayout={true}`; `ServicesCanvas` and `ServiceDetailCanvas`
+remain off. The 4-layer defence model (wrapper opt-in / conditional
+render / no-mutation-when-disabled / positions-only) is unchanged —
+the opt-in list grew from {Foundation} to {Foundation, Actors}.
+
+**Decision:** `ActorsCanvas` joins `FoundationCanvas` in opting into
+the `⊞` Auto-layout button. Same contract: one-shot apply via the
+regular `onDocChange` pipeline, `Cmd+Z` undoes it, positions-only
+mutation (kind / label / parent_id / typed-text bytewise identical).
+`ServicesCanvas` and `ServiceDetailCanvas` stay off — `Services` is
+hub-and-spoke around a single anchored Service node and
+`ServiceDetail` is root-pinned, neither of which the v0.13.9
+directional-tree algorithm has an obvious win for. Revisit when a
+real overlap case arrives there.
+
+**Implementation:**
+
+- `viewer/src/canvases/ActorsCanvas.tsx` — add `enableAutoLayout={true}`.
+- `viewer/tests/auto-layout-isolation.test.tsx`:
+  - Flip "ActorsCanvas wrapper does NOT render" → "ActorsCanvas
+    wrapper renders".
+  - Add a new positions-only assertion for the Actors canvas
+    (mirror of the Foundation positions-only test, using `actor`
+    kind + `motivation` / `pain` / `side` typed fields).
+  - `ServicesCanvas` and `ServiceDetailCanvas` assertions
+    unchanged — they remain the negative side of the isolation
+    contract.
+- `docs/SPEC.md §Auto-layout` — wording / heading / isolation
+  contract section / history entry updated.
+
+**Approval:** Accepted by user, 2026-05-18 — direct request
+*"액터 캔버스에 노드 정렬 기능 넣기"*. Confirmed via Gate 0 +
+Gate 1 (SPEC change for a behaviour not yet pinned) before any
+code edit.
+
+**Cross-refs:**
+
+- [D-2026-05-13-L](./DECISIONS.md) — the original Foundation-only
+  opt-in; the isolation contract scaffolding this entry extends.
+- [D-2026-05-04-D](./DECISIONS.md) / [D-2026-05-10-G](./DECISIONS.md)
+  — prior removal cycles; resolved structurally by per-wrapper
+  opt-in (so this extension does not re-introduce the original
+  "auto-layout everywhere" risk that drove the removals).

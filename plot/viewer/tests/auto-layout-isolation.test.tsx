@@ -1,12 +1,13 @@
 /**
  * v0.16.36 — Auto-layout isolation regression (D-2026-05-13-L).
+ * v0.24.5 — Actor opt-in (D-2026-05-18-B).
  *
  * Pins the 4-layer isolation contract for the re-introduced
  * auto-layout feature:
  *
- *   1. Wrapper opt-in only — FoundationCanvas passes
- *      ``enableAutoLayout={true}``; ActorsCanvas / ServicesCanvas /
- *      ServiceDetailCanvas never do.
+ *   1. Wrapper opt-in only — FoundationCanvas + ActorsCanvas pass
+ *      ``enableAutoLayout={true}``; ServicesCanvas / ServiceDetailCanvas
+ *      never do.
  *   2. Conditional render — when ``enableAutoLayout`` is false /
  *      undefined the auto-layout button is not in the DOM.
  *   3. Triggering the button mutates ``doc.nodes`` via the regular
@@ -140,7 +141,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     ).not.toBeNull();
   });
 
-  it("ActorsCanvas wrapper does NOT render the Auto-layout button", () => {
+  it("ActorsCanvas wrapper renders the Auto-layout button (D-2026-05-18-B)", () => {
     const doc = makeCanvas("actors", [
       makeNode({ id: "a", label: "Actor", kind: "actor" }),
     ]);
@@ -149,8 +150,8 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     );
     expect(
       queryByRole("button", { name: /auto.?layout/i }),
-      "ActorsCanvas must NOT opt into auto-layout — isolation contract.",
-    ).toBeNull();
+      "ActorsCanvas opts into the auto-layout button per D-2026-05-18-B.",
+    ).not.toBeNull();
   });
 
   it("ServicesCanvas wrapper does NOT render the Auto-layout button", () => {
@@ -204,6 +205,50 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       "Auto-layout button must call onDocChange exactly once " +
         "(one-shot apply + Cmd+Z is the user-consent contract).",
     ).toBe(1);
+  });
+
+  it("ActorsCanvas: Auto-layout touches positions only, not kind/label/typed-text (D-2026-05-18-B)", () => {
+    const original = makeNode({
+      id: "h",
+      label: "Hero",
+      kind: "actor",
+      x: 100,
+      y: 100,
+      motivation: "find-heroes",
+      pain: "discovery-friction",
+      side: "consumer",
+    });
+    const doc = makeCanvas("actors", [
+      original,
+      makeNode({ id: "f", label: "Fan", kind: "actor", x: 200, y: 200 }),
+    ]);
+    let last: CanvasDoc | null = null;
+    const { getByRole } = render(
+      <ActorsCanvas
+        {...commonProps(doc, (d) => {
+          last = d;
+        })}
+      />,
+    );
+    fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
+    expect(last).not.toBeNull();
+    const after = (last as unknown as CanvasDoc).nodes.find(
+      (n) => n.id === "h",
+    );
+    expect(after, "node 'h' must survive auto-layout").toBeTruthy();
+    if (!after) return;
+    expect(after.kind).toBe(original.kind);
+    expect(after.label).toBe(original.label);
+    expect(after.parent_id).toBe(original.parent_id);
+    expect(
+      (after as unknown as Record<string, unknown>).motivation,
+    ).toBe("find-heroes");
+    expect((after as unknown as Record<string, unknown>).pain).toBe(
+      "discovery-friction",
+    );
+    expect((after as unknown as Record<string, unknown>).side).toBe(
+      "consumer",
+    );
   });
 
   it("FoundationCanvas: Auto-layout touches positions only, not kind/label/typed-text", () => {

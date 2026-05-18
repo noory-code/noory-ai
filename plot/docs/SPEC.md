@@ -121,14 +121,15 @@ were *not* originally a self-loop) still drop. Decision
 
 ## Auto-layout
 
-**Re-introduced v0.16.36 per [D-2026-05-13-L](./DECISIONS.md) — Foundation
-only, opt-in via wrapper prop.** Plot's `SketchCanvas` default behaviour
-is *no auto-layout button*. The `FoundationCanvas` wrapper is the *only*
-wrapper that opts in via `enableAutoLayout={true}`. The `ActorsCanvas`,
-`ServicesCanvas`, and `ServiceDetailCanvas` wrappers must never opt in
-(isolation regression test: `viewer/tests/auto-layout-isolation.test.tsx`).
+**Re-introduced v0.16.36 per [D-2026-05-13-L](./DECISIONS.md) — opt-in
+per wrapper.** Plot's `SketchCanvas` default behaviour is *no
+auto-layout button*. `FoundationCanvas` (v0.16.36) and `ActorsCanvas`
+([D-2026-05-18-B](./DECISIONS.md), v0.24.5) opt in via
+`enableAutoLayout={true}`. `ServicesCanvas` and `ServiceDetailCanvas`
+do not opt in (isolation regression test:
+`viewer/tests/auto-layout-isolation.test.tsx`).
 
-### Behaviour (Foundation canvas only)
+### Behaviour (canvases that opt in)
 
 - The `<Controls>` panel (bottom-left of the canvas) renders an extra
   `⊞` button labelled "Auto-layout".
@@ -148,12 +149,12 @@ wrapper that opts in via `enableAutoLayout={true}`. The `ActorsCanvas`,
   `parent_id`, typed-text fields, edges — all byte-identical
   before vs after.
 
-### Isolation contract (D-2026-05-13-L)
+### Isolation contract (D-2026-05-13-L, extended D-2026-05-18-B)
 
-Four layers of defence prevent auto-layout from affecting any other
-canvas:
+Four layers of defence keep auto-layout from affecting any wrapper
+that did not opt in:
 
-1. **Wrapper opt-in** — only `FoundationCanvas` passes
+1. **Wrapper opt-in** — only `FoundationCanvas` + `ActorsCanvas` pass
    `enableAutoLayout={true}` to `SketchCanvas`.
 2. **Conditional render** — `SketchCanvas` only renders the
    `ControlButton` when `enableAutoLayout === true`.
@@ -164,7 +165,7 @@ canvas:
 4. **Touches positions only** — the trigger replaces `x` / `y` on
    nodes via `onDocChange`; no edges / anchor / typed-text mutation.
 
-### History (4 prior add/remove cycles)
+### History (5 prior add/remove/extend cycles)
 
 - **D-2026-05-04-D** — removed (misattributed user request; real
   intent was to remove download/upload only). **Rejected**.
@@ -185,6 +186,11 @@ canvas:
   다른 곳에 영향이 안 가게 만들어야합니다."* The isolation
   contract above is the cost/benefit answer to D-2026-05-10-G —
   the feature now cannot affect other canvases by construction.
+- **D-2026-05-18-B** — extended opt-in to `ActorsCanvas`. User
+  direct request after opening banas-imported and seeing Hero / Fan /
+  Bana overlap: *"액터 캔버스에 노드 정렬 기능 넣기"*. Isolation
+  contract honoured (`Services` / `ServiceDetail` still off);
+  same one-shot apply + `Cmd+Z` + positions-only contract.
 
 ---
 
