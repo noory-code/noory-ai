@@ -5892,3 +5892,47 @@ JTBD / Service Design / Pragmatic) → 사용자 *"나도 C 처럼 느껴요. �
   공간/관계 데이터 (시간 기반 ✗) — Plot 도메인 안.
 - `project_plot_research_subjects_deferred.md` (memory) — 결정 +
   trajectory 보존.
+
+---
+
+### D-2026-05-19-B — Actor state/transitions meta-question OPEN (v0.24.7)
+
+**Context:** 2026-05-19 토론 중 사용자가 *"로그인 같은 경우 어떻게
+할 거예요?"* 질문 → 익명 방문자 (Guest) → 로그인 service → Bana 또는
+Admin 으로 라우팅되는 전이가 Plot actor 모델 안 어디서 표현되는지
+드러나지 않음. 즉 PHILOSOPHY P5 *"Actor as class"* 가 *상태(state) /
+상태 전이(transition)* 차원을 명시적으로 다루지 못함.
+
+**Decision (개방):** **결정하지 않음.** 현재 암묵적 입장은 *"상태는
+Service / ServiceDetail flow 안에 가두고, actor 는 정적 역할/클래스
+유지"*. 이 입장이 깨끗한지 / 더 명시적으로 해야 하는지 / 새 schema
+field 가 필요한지 — *모두 미해결*. 사용자 직접 표현: *"이거 그냥
+patch 로 풀 문제 아닙니다. 모델의 기본 가정을 건드리는 질문이에요."*
+
+**Why pin if open:** 다음 세션에서 *"이걸 이미 결정했나?"* 를 다시
+묻지 않도록 — open 상태도 SSOT 가 있어야 함. Plot v0.13 god SketchNode
+saga 와 동일 교훈: 결정 안 한 항목을 *암묵* 으로 두면 다음 사람이
+ad-hoc 결정함 → 일관성 깨짐.
+
+**Implementation:**
+- `plot/.claude-plugin/plugin.json` — v0.24.6 → v0.24.7 (docs only).
+- `plot/CHANGELOG.md` — v0.24.7 entry.
+- Claude memory `project_plot_state_transitions_open.md` — 관찰 +
+  드러난 긴장 3 가지 + 가능한 해소 방향 5 가지 (현 상태 유지 / state
+  typed field / new kind / docs-only 명시화 / state_via_service ref)
+  + revisit trigger 보존.
+
+**Trigger to revisit:**
+- 사용자가 Plot 안에서 *상태 전이 흐름* (예: 로그인, 결제, 신청 →
+  승인 → 거절) 을 그리기 시작하면서 actor 캔버스와 service flow 의
+  분리가 어색해질 때.
+- 또는 Plot 모델 v1.0 commitment 시점.
+
+**Cross-refs:**
+- `[[project_plot_state_transitions_open.md]]` (memory) — open
+  question + 해소 방향 5 옵션.
+- `docs/PHILOSOPHY.md` P5 — *"Actor as class"* 원문 (이 결정의 기반
+  이지만 동시에 이 토론의 출발점).
+- D-2026-05-19-A — 같은 *"actor 모델 확장 후보"* 패턴 (research
+  subjects 도 deferred). 두 deferred 가 시그널: actor 모델이 추상
+  level 에서 압박 받기 시작했음.

@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.7] — 2026-05-19
+
+### Changed
+
+- Docs-only — `docs/DECISIONS.md`
+  ([D-2026-05-19-B](./docs/DECISIONS.md)) pins the
+  **actor state/transitions meta-question OPEN**. PHILOSOPHY P5
+  "Actor as class" doesn't explicitly handle state/transitions
+  (e.g., Guest → Login service → Bana). Current implicit stance:
+  state lives in Service/ServiceDetail flow; actor stays static
+  role. **Decision deferred (open)** — pinned so future sessions
+  don't re-debate. Memory `project_plot_state_transitions_open.md`
+  preserves 5 candidate resolutions (status quo / typed field /
+  new kind / docs-only formalisation / state_via_service ref).
+  Trigger to revisit: user starts drawing state-transition flows
+  (login, payment, approval) and the actor/service boundary feels
+  awkward.
+
+No code or behaviour change.
+
 ## [0.24.6] — 2026-05-19
 
 ### Changed
