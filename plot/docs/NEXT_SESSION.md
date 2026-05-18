@@ -9,6 +9,43 @@
 
 ## Active queue
 
+### `Research subject 백데이터 기능` (queued, lower priority, filed 2026-05-19)
+
+> **Trigger:** user says **"인터뷰 데이터"** / **"리서치 서브젝트"** /
+> **"interview subjects"** / **"research subjects"** / **"백데이터"** as
+> the first / near-first message.
+>
+> **Filed:** 2026-05-19 mid-session. After 4-layer hierarchy
+> discussion (anchor → Bana → mode → vertical), user surfaced the
+> need to track *real interview subjects* (김유정, 박태식 등) — the
+> people whose aggregated motivations / pains *become* an actor's
+> typed fields.
+>
+> **Decision (D-2026-05-19-A):** Actor 캔버스 stays role-level
+> (4-layer max). Research subjects live in the actor's `body`
+> Markdown field under a `## 인터뷰 대상자` section. No new typed
+> fields, no new kind, no new canvas. YAGNI per global CLAUDE.md
+> `design: YAGNI > others`. User direct quote: *"편의 기능이라고
+> 생각하면 되겠죠?"* + agreement that body MD is the right grace
+> vessel for now.
+>
+> **Trigger to revisit:** User starts tracking 10+ research
+> subjects per actor, or the body MD becomes unwieldy (no sort /
+> filter / search). When that pain accumulates, evaluate:
+>
+> | Option | Cost | Boundary impact |
+> |---|---|---|
+> | `body` MD section (current) | 0 | 0 |
+> | `subjects: SubjectEntry[]` new typed field | Pydantic + TS + Inspector | low |
+> | New "Research" canvas | high (4 → 5 canvases) | medium |
+> | External tool link (Notion etc.) | 0 | 0 (separation clean) |
+>
+> Most likely path: row 1 or row 4 — promote to row 2 only when
+> usage demands. `fromJson` + schema-parity guard make all paths
+> backward-compat.
+
+---
+
 ### `Foundation 정리 + Actor 정리` (queued, TOP priority, filed 2026-05-18)
 
 > **Trigger:** user says **"foundation 정리"** / **"파운데이션 정리"** /

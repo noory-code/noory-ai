@@ -5839,3 +5839,56 @@ code edit.
   — prior removal cycles; resolved structurally by per-wrapper
   opt-in (so this extension does not re-introduce the original
   "auto-layout everywhere" risk that drove the removals).
+
+---
+
+### D-2026-05-19-A — Research subject 백데이터 기능 deferred (v0.24.6)
+
+**Context:** 2026-05-19 actor 캔버스 4층 hierarchy (anchor → Bana →
+mode → vertical) 토론 중 사용자가 추가 question:
+*"바텐더 김유정 / 편의점 주인 박태식 같은 구체 인물을 5층 노드로
+두면 어떨까?"*. 토론 통해 도달한 결론은 actor 캔버스 = **역할/클래스
+그래프** (PHILOSOPHY P5 "Actor as class") 유지, 구체 인물은 *역할의
+아래 노드* 가 아니라 *역할이 합쳐져 만들어지는 source 데이터*.
+
+User 명시 동의: *"actor 캔버스에서는 4층까지... 백데이터처럼 할 수
+있으면 좋겠다 갑자기 생각... 편의 기능이라고 생각하면 되겠죠?"*.
+
+**Decision:** Actor 캔버스 = **4-layer max** (anchor → Bana → mode
+→ vertical). Research subject (실제 인터뷰 대상자) 는 *그 사람들이
+합쳐져서 추출되는* actor 의 `body` (Markdown) 필드 안 `## 인터뷰
+대상자` 섹션에 적음. **새 typed 필드, 새 kind, 새 캔버스 모두 만들지
+않음.** Global CLAUDE.md `design: YAGNI > others` + Plot 의 v0.13
+god SketchNode 교훈 (speculative 필드 추가 = 도메인 구조 망가뜨림)
+재발 방지.
+
+**Implementation:**
+- 새 코드 0줄.
+- `plot/docs/NEXT_SESSION.md` — "Research subject 백데이터 기능"
+  lower-priority queue entry 추가 (revisit trigger + 4 option
+  trajectory 표 포함).
+- Claude memory `project_plot_research_subjects_deferred.md` —
+  결정 + future trajectory 4 옵션 보존 + revisit trigger
+  ("10+ subject 가 body MD 안에 쌓여 sort/filter/search 필요해질
+  때").
+
+**Approval:** Accepted by user, 2026-05-19. 토론 시작 *"이거 토론
+한판 하고 싶은데.. 다양한 의견을 좀 주세요"* → 4 관점 비교 (Cooper /
+JTBD / Service Design / Pragmatic) → 사용자 *"나도 C 처럼 느껴요. ㅇㅋㅇㅋ"*
++ *"이건 편의 기능이라고 생각하면 되겠죠?"* (조건적 동의: 편의 기능
+이라는 framing 으로 받아들임) → *"지금으로 충분하다. 결론이죠?"*
+(최종 lock).
+
+**Backward-compat 보장 (future trajectory 모두 가능):**
+- `fromJson` boundary (D-2026-05-13-D/E) — 새 typed field 추가
+  시 default 값으로 backward-compat.
+- `test_schema_parity.py` — Pydantic ↔ TS 동기화 강제.
+- 즉 *"지금 코드 0 줄 추가 안 해도 미래에 깨끗하게 붙음"*.
+
+**Cross-refs:**
+- `[[feedback_no_god_object]]` (memory) — speculative 새 필드 추가
+  금지의 SSOT.
+- `[[feedback_plot_space_vs_time]]` (memory) — research subject 도
+  공간/관계 데이터 (시간 기반 ✗) — Plot 도메인 안.
+- `project_plot_research_subjects_deferred.md` (memory) — 결정 +
+  trajectory 보존.

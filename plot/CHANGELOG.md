@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.6] — 2026-05-19
+
+### Changed
+
+- Docs-only — `docs/NEXT_SESSION.md` + `docs/DECISIONS.md`
+  ([D-2026-05-19-A](./docs/DECISIONS.md)) pin the
+  **research-subject backing-data feature deferred** decision.
+  Actor 캔버스 stays role-level (4-layer max: anchor → Bana →
+  mode → vertical). Real interview subjects (김유정, 박태식 등) live
+  in the actor's `body` Markdown under a `## 인터뷰 대상자` section
+  — no new typed field, no new kind, no new canvas. YAGNI per
+  global CLAUDE.md `design: YAGNI > others` + Plot's v0.13 god
+  SketchNode lesson. `fromJson` + `test_schema_parity.py` keep
+  all future trajectories (new field / new canvas / external tool)
+  backward-compat. Revisit trigger filed in NEXT_SESSION queue
+  (10+ subject pile-up).
+
+No code or behaviour change.
+
 ## [0.24.5] — 2026-05-18
 
 ### Added
