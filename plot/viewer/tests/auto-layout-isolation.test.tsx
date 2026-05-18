@@ -216,7 +216,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       y: 100,
       motivation: "find-heroes",
       pain: "discovery-friction",
-      side: "consumer",
+      side: "operator",
     });
     const doc = makeCanvas("actors", [
       original,
@@ -247,7 +247,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       "discovery-friction",
     );
     expect((after as unknown as Record<string, unknown>).side).toBe(
-      "consumer",
+      "operator",
     );
   });
 

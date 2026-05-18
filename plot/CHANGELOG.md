@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.8] — 2026-05-19
+
+### Fixed
+
+- `viewer/tests/auto-layout-isolation.test.tsx` — Actor
+  positions-only assertion was using `side: "consumer"` (shipped in
+  v0.24.5), which is not a valid Plot enum value. Pydantic
+  `ActorNode.side` is `Literal["operator", "user"] | None`; TS
+  test slipped through because of an `as SketchNode` cast in
+  `makeNode`. Replaced with `side: "operator"` (matches Hero's
+  provider role). Test continues to pass (7/7). Root cause = not
+  cross-checking `plot_mcp/models.py::ActorNode` before writing
+  the test — global CLAUDE.md `honesty: 추측 금지` violation.
+
 ## [0.24.7] — 2026-05-19
 
 ### Changed
