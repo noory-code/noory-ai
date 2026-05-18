@@ -191,10 +191,10 @@ def publish_node_tool(
     base trailers + one ``Publish-Propagated-Ancestor:`` trailer per
     bumped ancestor.
 
-    Eligibility: project anchor / ``is_root`` / ``*_ref`` kinds are
-    rejected with ValueError. All other 10 kinds (mission, core_value,
-    identity, actor non-root, service non-root, category, metric,
-    step, rule, content) are publish-eligible.
+    Eligibility: project anchor / ``service`` is_root (ServiceDetail
+    mirror) / ``*_ref`` kinds are rejected with ValueError. All other
+    kinds are publish-eligible — including ``actor`` is_root masters
+    like Bana / Admin / Guest (v0.24.10 / D-2026-05-19-C).
 
     Returns ``{node_id, from_version, to_version, md_path, sha,
     propagated}``. ``propagated`` is the list of ancestor records

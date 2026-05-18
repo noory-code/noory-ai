@@ -4,6 +4,34 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.10] — 2026-05-19
+
+### Changed
+
+- **Actor master (is_root) now publishes directly**
+  ([D-2026-05-19-C](./docs/DECISIONS.md)). v0.18.0's blanket
+  `is_root` publish guard (waiting on Phase 5 referent flow) is
+  narrowed to `is_root && kind === "service"`. Actor masters like
+  Bana / Admin / Guest with their own typed text (motivation /
+  pain / body) now hit the standard direct-publish path: per-node
+  MD file + MAJOR version bump + git commit. Service is_root
+  (ServiceDetail mirror) stays guarded — its Services-canvas
+  master is the publish entry point. Phase 5 referent flow will
+  layer cross-canvas referent updates on top of this direct
+  path; no migration needed.
+- Lockstep updates: `plot_mcp/md_publish.py::can_publish` +
+  `viewer/src/domain/publishEligibility.ts::canPublish` +
+  publish docstrings + `docs/SPEC.md §Publish eligibility` table.
+
+### Fixed
+
+- 4 server tests flipped from "actor is_root rejects publish" to
+  "actor is_root succeeds": `test_md_publish.py`,
+  `test_folder_io.py`, `test_api_endpoints.py`, +
+  `viewer/tests/domain/publishEligibility.test.ts`. Service
+  is_root rejection retained as a separate assertion. 425 server
+  pytest + 546 viewer vitest all pass. mypy clean.
+
 ## [0.24.9] — 2026-05-19
 
 ### Changed

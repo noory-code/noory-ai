@@ -679,12 +679,13 @@ def test_publish_endpoint_unknown_node_is_404(
     assert resp.status_code == 404
 
 
-def test_publish_endpoint_ineligible_root_is_409(
+def test_publish_endpoint_actor_root_succeeds(
     app_client: tuple[TestClient, str],
 ) -> None:
+    """D-2026-05-19-C — actor master publishes via the endpoint
+    directly. Replaces the pre-v0.24.10 409 guard test."""
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
-    # Seed an is_root actor via PUT canvas (default seed actors are non-root).
     actors = client.get(
         "/api/projects/alpha/canvases/actors",
         params={"project_path": project_path},
@@ -707,7 +708,9 @@ def test_publish_endpoint_ineligible_root_is_409(
         "/api/projects/alpha/canvases/actors/nodes/root-actor/publish",
         params={"project_path": project_path},
     )
-    assert resp.status_code == 409
+    assert resp.status_code in (200, 201)
+    body = resp.json()
+    assert body["to_version"] == "v2.0"
 
 
 # ---------------------------------------------------------------------------

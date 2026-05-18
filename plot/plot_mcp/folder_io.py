@@ -36,6 +36,8 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, cast
 
+from pydantic import ValidationError
+
 from plot_mcp.git_store import (
     ensure_clean_working_tree,
     ensure_repo,
@@ -50,8 +52,6 @@ from plot_mcp.md_publish import (
     published_md_path,
     render_node_md,
 )
-from pydantic import ValidationError
-
 from plot_mcp.models import (
     ActorNode,
     ActorRefNode,

@@ -103,9 +103,16 @@ def test_can_publish_rejects_project_anchor() -> None:
     assert can_publish(ProjectNode(id="p1")) is False
 
 
-def test_can_publish_rejects_is_root() -> None:
-    assert can_publish(ActorNode(id="actor-root", is_root=True)) is False
+def test_can_publish_rejects_is_root_service() -> None:
+    """ServiceDetail mirror — master gets published, mirror follows."""
     assert can_publish(ServiceNode(id="svc-root", is_root=True)) is False
+
+
+def test_can_publish_accepts_is_root_actor() -> None:
+    """D-2026-05-19-C — actor master (Bana / Admin / Guest) publishes
+    its own typed text directly. Phase 5 referent flow will layer on
+    top of this direct-publish path."""
+    assert can_publish(ActorNode(id="actor-root", is_root=True)) is True
 
 
 @pytest.mark.parametrize(

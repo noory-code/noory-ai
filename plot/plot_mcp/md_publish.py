@@ -30,7 +30,6 @@ from typing import Any
 import yaml  # type: ignore[import-untyped]
 
 from plot_mcp.models import BaseNodeFields, SketchNode
-from plot_mcp.slug import slugify
 
 # Frontmatter key order — pinned. Phase 4 / 5 parsers depend on the
 # YAML round-trip; do not reorder without a fresh D-entry.
@@ -166,16 +165,19 @@ def can_publish(node: SketchNode) -> bool:
 
     Hidden (returns False) for:
     - ``project`` anchor (mirrors ProjectDoc.name, not its own SSOT).
-    - ``is_root`` nodes (cross-canvas anchors; mirror published via
-      the referent flow once Phase 5 lands).
+    - ``service`` with ``is_root`` (ServiceDetail mirror of a
+      Services-canvas master; the master gets published, the mirror
+      follows). v0.24.10 / D-2026-05-19-C narrowed this from
+      "all is_root" to "service is_root only" so that actor masters
+      (Bana / Admin / Guest) can publish their own typed text directly.
     - ``*_ref`` kinds (aliases; publish the referent instead).
 
-    All other kinds + non-root nodes return True. ``category`` is
-    eligible (own version only this phase; container-publish is
-    Phase 5)."""
+    All other kinds + non-root nodes return True. ``actor`` is_root
+    is now eligible (own version, direct publish; Phase 5 referent
+    flow will layer cross-canvas referent updates on top)."""
     if node.kind == "project":
         return False
-    if node.is_root:
+    if node.is_root and node.kind == "service":
         return False
     if node.kind in _REF_KINDS:
         return False

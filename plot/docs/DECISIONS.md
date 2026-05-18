@@ -5936,3 +5936,62 @@ ad-hoc 결정함 → 일관성 깨짐.
 - D-2026-05-19-A — 같은 *"actor 모델 확장 후보"* 패턴 (research
   subjects 도 deferred). 두 deferred 가 시그널: actor 모델이 추상
   level 에서 압박 받기 시작했음.
+
+---
+
+### D-2026-05-19-C — Actor master (is_root) now publishes directly (v0.24.10)
+
+**Context:** Per `publishEligibility.ts` comment + v0.18.0 setup
+(D-2026-05-16-E), `is_root` 노드 (actor 든 service 든) publish 가드에
+막혔음 — *"Phase 5 referent flow 가 publish 를 대신 처리한다"* 라는
+가정. 그러나 Phase 5 미정 + 현재 사용자가 직접 master 발행 원함:
+banas-imported 의 Bana / Admin / Guest (모두 actor + is_root=true)
+은 motivation / pain / body 채워져 있는데 발행 버튼 안 보임.
+
+User 명시 (2026-05-19): *"액터 루트도 내용이 있는데 발행되어야하는데"*
++ 토론 통해 *"actor 의 is_root 는 cross-canvas master 마커일 뿐 그
+자체로 발행을 막을 이유 없음"* 합의.
+
+**Decision:** Publish 가드를 `is_root` 전반 → `is_root && kind ==
+"service"` 로 좁힘. Actor master 는 다른 일반 actor 와 동일한
+direct-publish 흐름으로 들어감 (per-node MD + MAJOR bump + git
+commit).
+
+- Service is_root 는 *여전히 가드 유지*: ServiceDetail 의 mirror
+  관계 (Services 캔버스의 master 가 발행되면 mirror 가 자동 따라옴) 가
+  내부 invariant 라 그대로 두는 게 안전. 향후 별개 D-entry 로
+  재검토 가능.
+- Phase 5 referent flow 가 나중에 ship 되면, master 의 publish v 를
+  *referent base 로 참조* 하는 방식으로 자연 위에 얹힘. 충돌 0.
+
+**Implementation:**
+
+| File | 변화 |
+|---|---|
+| `plot_mcp/md_publish.py::can_publish` | `if node.is_root: return False` → `if node.is_root and node.kind == "service": return False` |
+| `viewer/src/domain/publishEligibility.ts::canPublish` | 동일하게 좁힘 + JSDoc 갱신 (mirror SSOT 유지) |
+| `plot_mcp/mcp_tools.py` (publish_node docstring) | eligibility 설명 갱신 |
+| `tests/test_md_publish.py` | `test_can_publish_rejects_is_root` → `test_can_publish_rejects_is_root_service` + 새 `test_can_publish_accepts_is_root_actor` |
+| `tests/test_folder_io.py` | `test_publish_node_rejects_root_actor` → `test_publish_node_accepts_root_actor` (성공 path 검증, v1.0→v2.0) |
+| `tests/test_api_endpoints.py` | `test_publish_endpoint_ineligible_root_is_409` → `test_publish_endpoint_actor_root_succeeds` (200/201, to_version=v2.0) |
+| `viewer/tests/domain/publishEligibility.test.ts` | `it.each(["actor","service"]) rejects is_root` → split into `rejects is_root service` + `accepts is_root actor` |
+| `docs/SPEC.md §Publish eligibility` | table 갱신 — actor (is_root) 행을 **visible** 로 |
+
+**Verification:**
+- 425 server pytest + 546 viewer vitest 모두 pass.
+- mypy clean (19 source files).
+- ruff clean for the touched files; 1 pre-existing E501 in
+  `api_endpoints.py:541` (from v0.24.3) untouched.
+
+**Approval:** Accepted by user, 2026-05-19. Direct request *"액터
+루트도 내용이 있는데 발행되어야하는데"* + 토론 통해 lock (관점
+재정렬: YAGNI 잘못 적용한 첫 제안 폐기 → cross-canvas master 의미
+재확인 → 가드 좁힘 합의).
+
+**Spec impact:** `docs/SPEC.md §Publish eligibility` table updated.
+
+**Cross-refs:**
+- D-2026-05-16-E (v0.18.0 publish UX origin)
+- D-2026-05-17-C / D-2026-05-17-K (publish UX 진화)
+- D-2026-05-19-B — `[[project_plot_state_transitions_open]]`
+  (관련: actor master 가 state 표현하는 게 적절한가의 더 큰 질문)

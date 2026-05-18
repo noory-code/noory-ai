@@ -41,12 +41,13 @@ describe("canPublish", () => {
     expect(canPublish(makeNode("project"))).toBe(false);
   });
 
-  it.each(["actor", "service"] as const)(
-    "rejects is_root kind '%s'",
-    (kind) => {
-      expect(canPublish(makeNode(kind, { is_root: true }))).toBe(false);
-    },
-  );
+  it("rejects is_root service (ServiceDetail mirror)", () => {
+    expect(canPublish(makeNode("service", { is_root: true }))).toBe(false);
+  });
+
+  it("accepts is_root actor (master; D-2026-05-19-C)", () => {
+    expect(canPublish(makeNode("actor", { is_root: true }))).toBe(true);
+  });
 
   it.each([
     "actor_ref",

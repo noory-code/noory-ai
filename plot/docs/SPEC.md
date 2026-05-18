@@ -512,10 +512,10 @@ is recorded with machine-readable ``Publish-*:`` trailers.
 | kind | Inspector button | Reason |
 |---|:---:|---|
 | `project` | hidden | anchor mirrors ``ProjectDoc.name`` |
-| `actor` (is_root) | hidden | cross-canvas anchor for ``actor_ref`` |
-| `service` (is_root) | hidden | ServiceDetail canvas anchor |
+| `actor` (is_root) | **visible** | master holds its own typed text (D-2026-05-19-C, v0.24.10) |
+| `service` (is_root) | hidden | ServiceDetail mirror; the Services-canvas master publishes, mirror follows |
 | `actor_ref` / `mission_ref` / `value_ref` / `identity_ref` | hidden | aliases; publish the referent instead |
-| 10 remaining (mission / core_value / identity / category / actor non-root / service non-root / metric / step / rule / content) | visible | publish bumps own MAJOR |
+| 11 remaining (mission / core_value / identity / category / actor any / service non-root / metric / step / rule / content) | visible | publish bumps own MAJOR |
 
 The eligibility predicate is implemented twice in lockstep —
 ``plot_mcp/md_publish.py::can_publish`` and

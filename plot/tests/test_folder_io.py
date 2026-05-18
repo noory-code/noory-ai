@@ -21,7 +21,6 @@ from pathlib import Path
 import pytest
 
 from plot_mcp.folder_io import (
-    PublishNotEligibleError,
     create_project,
     delete_project,
     list_service_details,
@@ -737,15 +736,17 @@ def test_publish_node_rejects_project_anchor(plot_root: Path) -> None:
         publish_node(plot_root, "alpha", "foundation", "__project_anchor__")
 
 
-def test_publish_node_rejects_root_actor(plot_root: Path) -> None:
+def test_publish_node_accepts_root_actor(plot_root: Path) -> None:
+    """D-2026-05-19-C — actor master (is_root=True) publishes its own
+    typed text directly. Replaces the pre-v0.24.10 rejection test."""
     create_project(plot_root, "alpha", "Alpha")
-    # Seed an is_root=True actor explicitly (default seed actors are non-root).
     actors = read_canvas(plot_root, "alpha", "actors")
     root_actor = ActorNode(id="root-actor", label="Root", is_root=True)
     new_actors = actors.model_copy(update={"nodes": [*actors.nodes, root_actor]})
     write_canvas(plot_root, "alpha", new_actors)
-    with pytest.raises(PublishNotEligibleError, match="not publish-eligible"):
-        publish_node(plot_root, "alpha", "actors", "root-actor")
+    result = publish_node(plot_root, "alpha", "actors", "root-actor")
+    assert result["from_version"] == "v1.0"
+    assert result["to_version"] == "v2.0"
 
 
 # actor_ref ineligibility is unit-tested in test_md_publish.py
