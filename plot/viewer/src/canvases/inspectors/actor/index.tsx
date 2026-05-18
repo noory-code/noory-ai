@@ -18,8 +18,10 @@ export function ActorInspector(props: KindInspectorProps) {
   return (
     <BaseInspector {...props} hideDetailsSection>
       <ActorFields node={node} onPatchNode={props.onPatchNode} />
-      {/* v0.3 placeholder — actor composition still deferred for non-root. */}
-      {!node.is_root && <ActorCompositionPlaceholder />}
+      {/* v0.24.11 (D-2026-05-19-D) — v0.3 ActorCompositionPlaceholder
+          removed alongside actor.is_root deprecation; the message was a
+          vague "coming in v0.3" notice that referenced the now-deleted
+          is_root semantic. */}
     </BaseInspector>
   );
 }
@@ -80,11 +82,3 @@ function ActorFields({ node, onPatchNode }: ActorFieldsProps) {
   );
 }
 
-function ActorCompositionPlaceholder() {
-  const { t } = useTranslation();
-  return (
-    <div className="rounded border border-dashed border-slate-300 p-3 text-xs italic text-slate-400">
-      {t("inspector.actorCompositionDeferred")}
-    </div>
-  );
-}

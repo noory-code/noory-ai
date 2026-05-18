@@ -81,9 +81,12 @@ export function BaseInspector({
     }
   };
 
-  // v0.12.6 — service is a category leaf in v0.12; the "root" concept
-  // no longer applies to it. Only actor still carries it.
-  const canToggleRoot = !node.parent_id && node.kind === "actor";
+  // v0.24.11 (D-2026-05-19-D) — actor.is_root semantically deprecated.
+  // Every actor is a Symbol candidate (referenceable from Service canvas
+  // via actor_ref); the boolean toggle no longer distinguishes anything
+  // for the user. Toggle removed entirely. Service.is_root stays as the
+  // ServiceDetail anchor marker (set by create flow, not user toggle).
+  const canToggleRoot = false;
 
   return (
     <aside
@@ -101,13 +104,13 @@ export function BaseInspector({
             aria-hidden
           />
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            {/* v0.24.11 (D-2026-05-19-D) — actor.is_root is no longer a
+                user-visible distinction; badge is always "액터" / "Actor". */}
             {node.kind === "project"
               ? t("kind.project")
-              : node.is_root && node.kind === "actor"
-                ? t("kind.actorRoot")
-                : node.kind
-                  ? t(`kind.${node.kind}`)
-                  : t("kind.node")}
+              : node.kind
+                ? t(`kind.${node.kind}`)
+                : t("kind.node")}
           </span>
           {/* v0.18.0 Phase 3 (D-2026-05-16-E) — per-node version badge.
               Code value (literal vMAJOR.MINOR); no i18n. */}

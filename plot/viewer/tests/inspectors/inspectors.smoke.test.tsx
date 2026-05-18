@@ -379,19 +379,10 @@ describe("ActorInspector (Phase 2.8)", () => {
     expect(screen.getByDisplayValue("외로움")).toBeInTheDocument();
   });
 
-  it("shows the actor-composition placeholder for non-root actors", () => {
-    const node = makeNode({ id: "a1", kind: "actor", label: "Sub", is_root: false });
-    render(<KindInspector {...makeProps(node, "actors")} />);
-    // ``italic`` class uniquely tags the actor-composition placeholder
-    // (DetailsSection's "Create details" panel uses dashed-border too).
-    expect(document.querySelector(".italic.text-slate-400")).toBeInTheDocument();
-  });
-
-  it("hides the placeholder for actor-root", () => {
-    const node = makeNode({ id: "a1", kind: "actor", label: "Root", is_root: true });
-    render(<KindInspector {...makeProps(node, "actors")} />);
-    expect(document.querySelector(".italic.text-slate-400")).toBeNull();
-  });
+  // v0.24.11 (D-2026-05-19-D) — ActorCompositionPlaceholder removed.
+  // The placeholder was a vague "v0.3 coming soon" notice gated on
+  // actor.is_root, which itself was deprecated. Tests for that
+  // placeholder removed alongside.
 });
 
 describe("CategoryInspector (Phase 2.6)", () => {

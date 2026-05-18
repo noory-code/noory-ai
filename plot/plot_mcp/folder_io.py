@@ -178,6 +178,12 @@ def read_canvas(
     # position/visual to ProjectDoc.anchors[canvas] and remove from nodes.
     if canvas_kind in ("foundation", "actors", "services"):
         raw = _evict_legacy_project_anchor(plot_root, project_id, canvas_kind, raw)
+    # v0.24.11 (D-2026-05-19-D) — actor.is_root semantic deprecated; reset
+    # any pre-v0.24.11 ``is_root=true`` on actor nodes to False on first
+    # read. Service.is_root is preserved (still meaningful as the
+    # ServiceDetail anchor marker). See [[project_plot_symbol_concept]].
+    if canvas_kind == "actors":
+        raw = _migrate_actor_isroot_to_false(raw)
     # v0.17 Phase 1 (D-2026-05-16-A) — JSON is the single SSOT for
     # Foundation typed-text fields. On first read of any pre-v0.17
     # project, absorb the typed H2 sections + post-``---`` body from
@@ -215,6 +221,28 @@ def read_canvas(
 _LEGACY_PUBLISHED_FILENAME_RE = re.compile(
     r"^(?P<kind>[a-z_]+)-(?P<slug>.+)-v(?P<v>\d+\.\d+)\.md$"
 )
+
+
+def _migrate_actor_isroot_to_false(raw: dict[str, Any]) -> dict[str, Any]:
+    """v0.24.11 (D-2026-05-19-D) — reset legacy actor ``is_root=True``
+    to False. Idempotent (no-op after first read).
+
+    Background: pre-v0.24.11, ``actor.is_root`` was retained as a
+    cross-canvas master marker (per SPEC.md). The user pinned 2026-05-19
+    that every actor is a Symbol candidate (referenceable from the
+    Service canvas via ``actor_ref``), so the boolean distinguishes
+    nothing. Actor.is_root is now deprecated; service.is_root remains
+    (ServiceDetail anchor marker).
+    """
+    nodes = raw.get("nodes")
+    if not isinstance(nodes, list):
+        return raw
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        if node.get("kind") == "actor" and node.get("is_root") is True:
+            node["is_root"] = False
+    return raw
 
 
 def _migrate_published_flat_to_kind_slug(canvas_dir: Path) -> None:

@@ -15,6 +15,61 @@ live?".
 > - `PHILOSOPHY.md` — the underlying value-flow / two-layer thesis.
 > - `ROADMAP.md` — the implementation order in which v0.10 is being built.
 
+## Symbol — the cross-canvas referenceable master (v0.24.11, D-2026-05-19-D)
+
+Plot has an asymmetric **producer → consumer** flow between canvases:
+
+```
+Producers (define Symbols)              Consumers (use Symbols)
+─────────────────────────              ─────────────────────────
+Foundation canvas                       Service canvas
+  ├─ Mission                              (when designing a service,
+  ├─ Core Value         ──referenced──→   drag-drop a Symbol → it lands as
+  └─ Identity                             a mission_ref / value_ref /
+                                          identity_ref / actor_ref alias
+Actors canvas                             node carrying notes_in_context)
+  ├─ Actor
+  └─ Sub-Actor                          ServiceDetail canvas
+                                          (same *_ref pattern + step / rule
+                                          / content / metric per-flow)
+```
+
+A **Symbol** is any node of the 5 candidate kinds (`mission`, `core_value`,
+`identity`, `actor`, sub-actor) that lives on the producer side. **Every
+instance of these kinds is a Symbol** — there is no per-node "is this a
+symbol?" toggle, because the answer is always yes for these kinds and
+never for any other kind. The consumer side references Symbols via the
+4 alias kinds (`mission_ref` / `value_ref` / `identity_ref` /
+`actor_ref`); the referent is the Symbol id, and the alias node may
+carry `notes_in_context` to override field text per-service-context
+without mutating the master (4-ref symmetry per [D-2026-05-17-M](./DECISIONS.md)).
+
+This formalises the two-plane structure described in
+[`PHILOSOPHY.md`](./PHILOSOPHY.md) — *"관계론적 가치 + 서비스 = 허브노드 +
+2층 구조"*. Symbols are the **left plane** (identity / who).
+Services are the **right plane** (value-creating hub). Cross-plane
+edges + `*_ref` aliases are how they connect.
+
+### What this replaces (history)
+
+Pre-v0.24.11, the field `is_root` on actor nodes was framed as a
+"cross-canvas master marker" (SPEC.md §Publish eligibility). In
+practice the boolean distinguished nothing — every actor is a
+Symbol candidate. The field for actor is deprecated per
+[D-2026-05-19-D](./DECISIONS.md); `service.is_root` remains as the
+ServiceDetail anchor marker (still load-bearing for that one role).
+
+The original v0.2 intent of `is_root` (singleton trunk per tree, with
+its own embedded Mission/Values/Identity per "organisation-side
+identity" vs "product-side identity") evaporated in the v0.13 reset
+(Foundation kinds became their own nodes on the Foundation canvas, not
+embedded in actor/service roots). The field carried a retrofitted
+meaning ("cross-canvas master") that this section now formalises as
+the Symbol concept, sitting on the kind itself rather than on a per-
+instance flag.
+
+---
+
 ## Canvases — 4 kinds, each answering a different question
 
 | Canvas | Asks | Holds (kinds) |

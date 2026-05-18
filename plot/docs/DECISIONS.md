@@ -5995,3 +5995,90 @@ commit).
 - D-2026-05-17-C / D-2026-05-17-K (publish UX 진화)
 - D-2026-05-19-B — `[[project_plot_state_transitions_open]]`
   (관련: actor master 가 state 표현하는 게 적절한가의 더 큰 질문)
+
+---
+
+### D-2026-05-19-D — `actor.is_root` deprecated, Symbol concept formalised (v0.24.11)
+
+**Context:** 2026-05-19 *"mark as actor root 의 의미가 대체 뭔지 몰라서
+그래요"* — 사용자는 *"Mark as Actor Root (centre of its tree)"* 토글이
+무엇을 의미하는지 인식 불가. UI 라벨 자체가 정보 전달 실패 (CLAUDE.md
+anti-pattern *"Don't Make Me Think"*).
+
+증거 기반 추적: 원래 의도 (origin commit `54c2f4a`, 2026-04-20) 는
+*"three roots — Core, Actor root, Service root"* — singleton trunk
+per tree + 각자 *"organisation-side / product-side identity"* (자기
+Mission/Values/Identity 보유). v0.13 reset (D-2026-05-12-B) 가
+Foundation 분리하면서 *"identity 보유"* 의미 증발. SPEC.md `*actor
+(is_root): cross-canvas anchor for actor_ref*` 는 retrofit 된 설명.
+v0.24.10 에서 publish 가드 풀면서 *"cross-canvas master"* 의미도
+무의미해짐 (publish 측에서 구분 안 함).
+
+사용자 명시 lock (2026-05-19): *"모든 액터는 다른 캔버스에 참조됩니다 ...
+좀더 정확히는 서비스 캔버스에 참조될 수 있다고"* + *"액터 및 서브액터는
+심볼이 될 수 있고, 파운데이션에 있는 미션/코어밸류/아이덴티티 다 심볼이
+될 수 있어요"* + *"그래서 그 심볼을 사용하는 곳은 서비스 캔버스구요"*
++ *"아니 1이지 모든게 다 심볼이 될 수 있다니까"* (옵션 1 = actor.is_root
+field 폐기 선택).
+
+**Decision:**
+
+1. **`actor.is_root` 사용처 모두 제거** (semantic deprecation):
+   - `BaseInspector.tsx` — "Mark as Actor Root" toggle 삭제, actor
+     배지에서 "액터 루트" 분기 삭제.
+   - `actor/index.tsx` — `{!node.is_root && <ActorCompositionPlaceholder />}`
+     분기 + placeholder 컴포넌트 자체 삭제 ("v0.3 에서 액터 구성 지원
+     예정" 미정형 메시지).
+   - `inspector.actorCompositionDeferred` i18n 키 stale (둘 다 locales
+     에 남아있지만 더 이상 호출 안 됨; 청소는 별도).
+2. **Pydantic field 보존** — `BaseNodeFields.is_root` 자체는 schema
+   유지 (service 가 여전히 사용). Actor 에서만 의미 없음.
+3. **Migration**: `_migrate_actor_isroot_to_false` 가 모든 actor
+   `is_root=true` → `false` 로 정정 (canvas read 시 idempotent).
+   banas-imported 의 Bana / Admin / Guest 모두 영향 받음 (다음 read 에
+   migrated).
+4. **Service.is_root 유지** — ServiceDetail mirror anchor 표시로 여전히
+   load-bearing.
+5. **Symbol 개념을 first-class 로 박음**: `docs/CONCEPTS.md ## Symbol`
+   섹션 신설 — 5 candidate kinds (mission / core_value / identity /
+   actor / sub-actor) 와 consumer (service / service_detail via *_ref)
+   명시. 두 plane 비대칭 흐름 ASCII 다이어그램. Plot의 2층 구조
+   (PHILOSOPHY) 와 연결.
+
+**Implementation:**
+
+- `viewer/src/canvases/inspectors/BaseInspector.tsx` (toggle 삭제,
+  badge 분기 삭제)
+- `viewer/src/canvases/inspectors/actor/index.tsx` (placeholder 삭제)
+- `plot_mcp/folder_io.py` (`_migrate_actor_isroot_to_false`, actors
+  canvas read hook)
+- `viewer/tests/inspectors/inspectors.smoke.test.tsx` (placeholder
+  관련 2 tests 삭제)
+- `docs/SPEC.md §Publish eligibility` (table 정리)
+- `docs/CONCEPTS.md` (Symbol 섹션 신설)
+
+**Verification:**
+- 544/544 viewer + 425/425 server pytest pass.
+- mypy + tsc clean.
+- canvas.json migration 검증: banas-imported 다음 read 시 Bana/Admin/Guest
+  자동 is_root=false 로 갱신.
+
+**Approval:** Accepted by user, 2026-05-19. 토론 6 rounds 통해
+정착 — UX 버그 인식 → 원래 의도 추적 (git log) → 옵션 비교 →
+사용자 *"1이지"* + Symbol 통합 개념 명시.
+
+**Spec impact:**
+- `docs/SPEC.md §Publish eligibility` table 정리.
+- `docs/CONCEPTS.md ## Symbol` 섹션 신설.
+
+**Cross-refs:**
+- D-2026-05-19-C (v0.24.10 publish 가드 actor 풀린 결정 — 이 entry 가
+  그 위에 한 단계 더 청소).
+- D-2026-05-12-B (v0.13 god SketchNode 리셋 — 이 reset 이 `is_root`
+  원래 의미를 증발시킨 변곡점).
+- Origin commit `54c2f4a` (2026-04-20) — `is_root` 원래 도입 의도.
+- `[[project_plot_symbol_concept]]` (memory) — Symbol 개념 + 5 candidate
+  + producer/consumer 모델 보존.
+- `[[feedback_no_god_object]]` — Symbol 을 새 typed field / new kind
+  으로 박지 않고 *"이 kind 자체가 Symbol"* 으로 둠 (kind palette 증식
+  방지).

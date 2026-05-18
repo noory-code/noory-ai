@@ -4,6 +4,59 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.11] — 2026-05-19
+
+### Added
+
+- **`Symbol` formalised as a first-class domain concept**
+  ([D-2026-05-19-D](./docs/DECISIONS.md),
+  [CONCEPTS.md §Symbol](./docs/CONCEPTS.md)). A Symbol is a node of
+  one of 5 producer kinds — `mission`, `core_value`, `identity`,
+  `actor`, sub-actor — that can be referenced from the consumer side
+  (Service / ServiceDetail canvases) via the 4 alias kinds
+  (`mission_ref` / `value_ref` / `identity_ref` / `actor_ref`).
+  Symbol-ness is a *kind property*, not a per-instance toggle — every
+  instance of a producer kind is always a Symbol candidate.
+- `_migrate_actor_isroot_to_false` — idempotent canvas.json migrator
+  that resets legacy `actor.is_root=true` to `false` on first read.
+  banas-imported's Bana / Admin / Guest auto-migrate.
+
+### Changed
+
+- `actor.is_root` no longer surfaces in the Inspector. The
+  *"Mark as Actor Root (centre of its tree)"* checkbox is gone, the
+  actor badge no longer reads "액터 루트" (just "액터"), and the
+  v0.3 `ActorCompositionPlaceholder` (which was gated on `!is_root`)
+  is removed. `service.is_root` is preserved as the ServiceDetail
+  anchor marker (still load-bearing for that one role).
+- `docs/SPEC.md §Publish eligibility` table cleaned up: removed the
+  `actor (is_root)` row since the field is now meaningless for
+  actor kind.
+
+### Removed
+
+- `viewer/tests/inspectors/inspectors.smoke.test.tsx` — two tests
+  that pinned the `ActorCompositionPlaceholder` visibility per
+  `is_root` removed.
+
+### Rationale
+
+User flagged 2026-05-19 *"mark as actor root 의 의미가 대체 뭔지
+몰라서 그래요"* — the toggle's label conveyed nothing. Tracking the
+field's history (origin commit `54c2f4a`, 2026-04-20 → v0.13 reset)
+showed the original intent (singleton trunk per tree + embedded
+identity) had evaporated. v0.24.10 already removed the publish gate
+on actor.is_root; this ship removes the last vestigial semantic.
+The Symbol concept formalised here gives the producer/consumer model
+a name and a SPEC home so future sessions don't re-derive it.
+
+User direct quotes locking the change: *"모든 액터는 다른 캔버스에
+참조됩니다"* / *"액터 및 서브액터는 심볼이 될 수 있고, 파운데이션에
+있는 미션/코어밸류/아이덴티티 다 심볼이 될 수 있어요"* /
+*"아니 1이지 모든게 다 심볼이 될 수 있다니까"*.
+
+544/544 viewer vitest + 425/425 server pytest pass; mypy + tsc clean.
+
 ## [0.24.10] — 2026-05-19
 
 ### Changed
