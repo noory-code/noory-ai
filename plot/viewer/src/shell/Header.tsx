@@ -19,6 +19,11 @@ interface HeaderProps {
   saveState: SaveState;
   projectName: string | null;
   blueprintVersion: string | null;
+  /** v0.24.14 (D-2026-05-21-C) — when set, the app is in snapshot mode at
+   *  this git tag. Banner appears with an exit button; edits are blocked
+   *  upstream. */
+  viewingTag: string | null;
+  onExitTagView: () => void;
   migratedToast: string[] | null;
   onDismissToast: () => void;
 }
@@ -30,9 +35,12 @@ export function Header({
   saveState,
   projectName,
   blueprintVersion,
+  viewingTag,
+  onExitTagView,
   migratedToast,
   onDismissToast,
 }: HeaderProps) {
+  const { t } = useTranslation();
   return (
     <header className="flex flex-col border-b border-slate-200 bg-white/80 backdrop-blur">
       <div className="flex items-center justify-between px-4 py-2">
@@ -67,6 +75,20 @@ export function Header({
           )}
         </div>
       </div>
+      {viewingTag && (
+        <div className="flex items-center justify-between border-t border-amber-200 bg-amber-50 px-4 py-1.5 text-xs text-amber-900">
+          <span>
+            👁 {t("snapshot.viewing", { tag: viewingTag })}
+          </span>
+          <button
+            type="button"
+            onClick={onExitTagView}
+            className="rounded border border-amber-300 bg-white px-2 py-0.5 text-[11px] text-amber-800 hover:bg-amber-100"
+          >
+            ✕ {t("snapshot.exit")}
+          </button>
+        </div>
+      )}
       {migratedToast && migratedToast.length > 0 && (
         <div className="flex items-center justify-between border-t border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs text-emerald-800">
           <span>

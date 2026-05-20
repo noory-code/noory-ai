@@ -21,6 +21,7 @@ from plot_mcp.api_endpoints import (
     node_published_list_endpoint,
     node_unpublish_endpoint,
     project_anchor_patch_endpoint,
+    project_at_tag_endpoint,
     project_delete_endpoint,
     project_get_endpoint,
     project_patch_endpoint,
@@ -120,6 +121,12 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
             "/api/projects/{project_id}/publish",
             project_publish_endpoint,
             methods=["POST"],
+        ),
+        # v0.24.14 (D-2026-05-21-C) — read-only snapshot at git tag.
+        Route(
+            "/api/projects/{project_id}/at-tag/{tag}",
+            project_at_tag_endpoint,
+            methods=["GET"],
         ),
         # v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
         Route(

@@ -283,6 +283,35 @@ def revert_publish(project_dir: Path, sha: str) -> str:
 _LIST_FORMAT = "%(refname:short)%09%(objectname)%09%(taggerdate:iso-strict)%09%(contents:subject)"
 
 
+def read_file_at_tag(project_dir: Path, tag: str, relative_path: str) -> bytes:
+    """v0.24.14 (D-2026-05-21-C) — read a file's bytes at the given tag.
+
+    Uses ``git show <tag>:<relative_path>`` so we never touch the working
+    tree (no checkout). ``relative_path`` is repo-relative (e.g.
+    ``foundation/canvas.json``).
+
+    Raises:
+        FileNotFoundError — when the tag or path doesn't exist at that tag.
+    """
+    if not _tag_exists(project_dir, tag):
+        raise FileNotFoundError(f"tag not found: {tag!r}")
+    # git show outputs the blob to stdout; check=False so we can craft a
+    # readable error when the path is missing at that tag.
+    spec = f"{tag}:{relative_path}"
+    result = subprocess.run(
+        ["git", "show", spec],
+        cwd=project_dir,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise FileNotFoundError(
+            f"file not at tag {tag!r}: {relative_path} "
+            f"(git show {spec} exited {result.returncode})"
+        )
+    return result.stdout
+
+
 def list_tags(project_dir: Path) -> list[dict[str, Any]]:
     """Return all annotated tags, newest first by tagger date.
 

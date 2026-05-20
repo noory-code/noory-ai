@@ -385,6 +385,80 @@ async def tag_post_endpoint(request: Request) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# v0.24.14 (D-2026-05-21-C) — read-only "view at tag" endpoint
+# ---------------------------------------------------------------------------
+
+
+async def project_at_tag_endpoint(request: Request) -> JSONResponse:
+    """``GET /api/projects/{project_id}/at-tag/{tag}``
+
+    Returns the project's full state at the given git tag without
+    touching the working tree (uses ``git show <tag>:<path>`` internally).
+    Response body:
+
+    ``{
+        "project": ProjectDoc,
+        "canvases": {
+            "foundation": CanvasDoc,
+            "actors": CanvasDoc,
+            "services": CanvasDoc,
+            "service_detail:<id>": CanvasDoc,
+            ...
+        }
+    }``
+
+    Read-only by construction — the viewer drops this into a separate
+    snapshot cache slot; no PUT path operates on tag-scoped data.
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    tag = request.path_params["tag"]
+    folder = plot_root / project_id
+    if not folder.is_dir():
+        return _error(f"project not found: {project_id}", status=404)
+
+    from plot_mcp.git_store import read_file_at_tag
+
+    def _read_canvas_json(rel: str) -> dict[str, Any] | None:
+        try:
+            raw = read_file_at_tag(folder, tag, rel)
+        except FileNotFoundError:
+            return None
+        try:
+            return cast("dict[str, Any]", json.loads(raw.decode("utf-8")))
+        except json.JSONDecodeError:
+            return None
+
+    project_raw = _read_canvas_json("project.json")
+    if project_raw is None:
+        return _error(f"project.json not at tag {tag!r}", status=404)
+    canvases: dict[str, dict[str, Any]] = {}
+    for kind in ("foundation", "actors", "services"):
+        c = _read_canvas_json(f"{kind}/canvas.json")
+        if c is not None:
+            canvases[kind] = c
+    # service_detail canvases live under services/<service_id>/detail.json —
+    # discover by listing the services canvas's category/service nodes.
+    services_canvas = canvases.get("services")
+    if isinstance(services_canvas, dict):
+        for n in services_canvas.get("nodes", []):
+            if not isinstance(n, dict):
+                continue
+            if n.get("kind") != "service" or not n.get("is_root"):
+                continue
+            sid = n.get("id")
+            if not isinstance(sid, str):
+                continue
+            d = _read_canvas_json(f"services/{sid}/detail.json")
+            if d is not None:
+                canvases[f"service_detail:{sid}"] = d
+    return JSONResponse({"project": project_raw, "canvases": canvases})
+
+
+# ---------------------------------------------------------------------------
 # v0.24.13 (D-2026-05-21-B) — project-level blueprint publish endpoint
 # ---------------------------------------------------------------------------
 

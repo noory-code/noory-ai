@@ -10,6 +10,7 @@ import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useAppKeyboard } from "./hooks/useAppKeyboard";
 import { useAvailableNodes } from "./hooks/useAvailableNodes";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
+import { useSnapshotView } from "./hooks/useSnapshotView";
 import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
 import { useStableHandlers } from "./hooks/useStableHandlers";
@@ -99,7 +100,7 @@ export function App() {
     onError: handleError,
   });
   const {
-    summaries, activeId, canvasCache, tags, migratedToast, phase,
+    summaries, activeId, canvasCache: liveCanvasCache, tags, migratedToast, phase,
     setCanvasCache, setServiceDetails, setTags, loadList,
     create: handleCreate, rename: handleRename, remove: handleDelete,
     pick: handlePick,
@@ -139,7 +140,7 @@ export function App() {
 
   const {
     pendingWrites,
-    applyEdit,
+    applyEdit: liveApplyEdit,
     saveState,
     undo: historyUndo,
     redo: historyRedo,
@@ -152,6 +153,16 @@ export function App() {
     onListStale: handleListStale,
     onError: handleError,
   });
+
+  // v0.24.14 (D-2026-05-21-C) — snapshot view: when ``viewingTag`` is set,
+  // the app renders the canvas state at that git tag. Edits are gated at
+  // the App boundary so save / publish flows never operate on tag data.
+  const { viewingTag, snapshotCache, enterTagView, exitTagView } =
+    useSnapshotView(projectPath, activeId, handleError);
+  const canvasCache = viewingTag ? snapshotCache : liveCanvasCache;
+  const applyEdit: typeof liveApplyEdit = viewingTag
+    ? (() => {}) as typeof liveApplyEdit
+    : liveApplyEdit;
 
   // ------- WebSocket (extracted to useProjectSocket) -------
 
@@ -242,6 +253,8 @@ export function App() {
         saveState={saveState}
         projectName={summaries.find((p) => p.id === activeId)?.name ?? null}
         blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? null}
+        viewingTag={viewingTag}
+        onExitTagView={exitTagView}
         onDismissToast={dismissToast}
         migratedToast={migratedToast}
       />
@@ -263,6 +276,8 @@ export function App() {
           onRename={handleRename}
           onDelete={handleDelete}
           onDeleteTag={handleDeleteTag}
+          onViewTag={enterTagView}
+          viewingTag={viewingTag}
         />
         <main className="flex flex-1 flex-col overflow-hidden">
           {phase === "ready" && (

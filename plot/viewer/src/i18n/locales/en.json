@@ -29,6 +29,7 @@
     "collapseProjectList": "Collapse project list",
     "renameProject": "Rename project",
     "deleteProject": "Delete project",
+    "viewTag": "View at {{name}} (read-only)",
     "sessionTags": "Session tags",
     "deleteTag": "Delete tag (commit stays)",
     "plantTag": "Plant a git tag at the current state of the project",
@@ -61,6 +62,10 @@
     "minor": "Minor",
     "patch": "Patch",
     "confirm": "Publish blueprint {{from}} → {{to}}?\n\nA git tag named {{to}} will be created at the current project state."
+  },
+  "snapshot": {
+    "viewing": "Viewing snapshot at {{tag}} — edits are disabled until you exit.",
+    "exit": "exit snapshot"
   },
   "serviceDetail": {
     "label": "Service detail",

@@ -6227,3 +6227,57 @@ lock.
 - D-2026-05-19-D — Symbol 개념 (cross-canvas master). 프로젝트 발행
   은 *모든 Symbol + 사용처* 의 정합 snapshot.
 - `[[project_plot_blueprint_versioning]]` (memory) — 결정 + UX flow.
+
+---
+
+### D-2026-05-21-C — Snapshot view (read-only "view at tag") (v0.24.14)
+
+**Context:** D-2026-05-21-B 으로 *설계도 발행* 도입 후 사용자 질문:
+*"버전들 쭉 탐색하고 그 버전 볼 수 있는 기능은요?"* → grep 결과
+사이드바에 *목록* 만 있고 *시점 보기* 코드 0줄임을 확인. 사용자 명시:
+*"구현하고 다음 세션에서는 서비스 캔버스 작업만할거니까"* — 이번 세션
+끝나기 전에 구현.
+
+**Decision:** 사이드바 git tag 행을 *클릭* 하면 그 시점의 캔버스 상태를
+read-only 로 뷰. 작업 본진 (live cache) 은 그대로, 별도 snapshot
+cache 로 swap. 편집 비활성. 헤더에 amber 배너 + "✕ 나가기" 버튼.
+
+**Implementation:**
+
+| File | 변화 |
+|---|---|
+| `plot_mcp/git_store.py::read_file_at_tag()` | `git show <tag>:<path>` 래퍼. working tree 안 건드림. |
+| `plot_mcp/api_endpoints.py::project_at_tag_endpoint()` | `GET /api/projects/{id}/at-tag/{tag}` — project + 모든 canvases 묶음 반환 |
+| `plot_mcp/http_app.py` | route 등록 |
+| `viewer/src/api.ts::getProjectAtTag()` | 클라이언트 |
+| `viewer/src/hooks/useSnapshotView.ts` | 신규 hook — viewingTag + snapshotCache + enter/exit actions |
+| `viewer/src/App.tsx` | hook 사용 + cache swap + applyEdit 가드 (`viewingTag ? noop : liveApplyEdit`) |
+| `viewer/src/shell/Header.tsx` | amber 배너 + 나가기 버튼 |
+| `viewer/src/canvases/SketchSidebar.tsx` | 태그 행 클릭 핸들러 + viewed 표시 (👁 + amber tint) |
+| `viewer/src/i18n/locales/{en,ko}.json` | `snapshot.{viewing,exit}` + `sidebar.viewTag` |
+| `tests/test_api_endpoints.py` | 2 새 테스트 (snapshot 반환 / 404 unknown tag) |
+| `viewer/tests/structural-guards.test.tsx` | App.tsx 천장 410 → 425 (이 결정에 의한 cache swap + applyEdit guard 배선) |
+
+**Why not modify useCanvasPersist directly?** Edit 가드를 App 경계에서
+하는 게 더 작은 변경 — 기존 hook 의 contract 안 건드림. snapshot mode
+는 *전적으로* App-level concern (= "이 화면 뭐 보여줄지" + "edit 처리
+할지").
+
+**Why `git show` not `git checkout`?** Working tree 보존. 동시에 여러
+태그 볼 수 있는 길도 열어둠 (현재는 한 번에 1개만).
+
+**Verification:**
+- 431 server pytest + 544 viewer vitest pass. tsc + mypy + ruff clean.
+- App.tsx 421 LOC (새 천장 425 안).
+- 새 endpoint 검증: 태그 후 캔버스 mutate 해도 `/at-tag/<v>` 응답에는
+  태그 시점 state 반환 (mutate 안 보임).
+
+**Approval:** Accepted by user, 2026-05-21 — *"구현하고 다음 세션에서는
+서비스 캔버스 작업만할거니까"*. 직전 5 round 토론 (직접 grep 확인 +
+*"미구현한게 있다고?"* + *"발행을 안했다는거에요. 구현을 안했다는거에요?"*)
+으로 명확화.
+
+**Cross-refs:**
+- D-2026-05-21-B (v0.24.13 — 발행 UX, 이 entry 가 *그 결과 보기* 를
+  마저 채움)
+- `git_store.py:7` 코멘트 *"future viewer UI"* 가 이 entry 로 실현됨.

@@ -284,6 +284,60 @@ def test_project_publish_minor_and_major_bumps(
     assert major["to_version"] == "v1.0.0"
 
 
+def test_project_at_tag_returns_snapshot(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """v0.24.14 (D-2026-05-21-C) — GET /at-tag/{tag} returns the
+    project + all canvases at the given git tag without touching the
+    working tree."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    # Snapshot v0.1.1.
+    pub = client.post(
+        "/api/projects/alpha/publish",
+        params={"project_path": project_path},
+        json={"bump": "patch"},
+    )
+    assert pub.status_code == 201
+    # Mutate the working tree AFTER the tag to confirm the snapshot
+    # endpoint returns the tag-time state, not the current state.
+    actors = client.get(
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+    ).json()
+    actors["nodes"].append(
+        {"id": "after-tag", "kind": "actor", "label": "After tag", "body": ""},
+    )
+    client.put(
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+        json=actors,
+    )
+    # Read at the tag.
+    snap = client.get(
+        "/api/projects/alpha/at-tag/v0.1.1",
+        params={"project_path": project_path},
+    )
+    assert snap.status_code == 200, snap.text
+    body = snap.json()
+    assert body["project"]["blueprint_version"] == "v0.1.1"
+    snap_actors = body["canvases"]["actors"]
+    # 'after-tag' node was added AFTER the tag — must NOT appear.
+    assert not any(n["id"] == "after-tag" for n in snap_actors["nodes"])
+
+
+def test_project_at_tag_404_for_unknown_tag(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.get(
+        "/api/projects/alpha/at-tag/v9.9.9",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 404
+
+
 def test_project_publish_invalid_bump_is_400(
     app_client: tuple[TestClient, str],
 ) -> None:

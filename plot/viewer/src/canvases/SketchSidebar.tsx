@@ -20,6 +20,10 @@ export interface SketchSidebarProps {
   onRename: (id: string, name: string) => Promise<void> | void;
   onDelete: (id: string) => Promise<void> | void;
   onDeleteTag: (name: string) => Promise<void> | void;
+  /** v0.24.14 (D-2026-05-21-C) — enter read-only snapshot view at this tag. */
+  onViewTag: (name: string) => Promise<void> | void;
+  /** Current tag being viewed (if any) — highlight the row. */
+  viewingTag: string | null;
 }
 
 export function SketchSidebar({
@@ -36,6 +40,8 @@ export function SketchSidebar({
   onRename,
   onDelete,
   onDeleteTag,
+  onViewTag,
+  viewingTag,
 }: SketchSidebarProps) {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
@@ -180,27 +186,40 @@ export function SketchSidebar({
                   {t("sidebar.noTagsHint")}
                 </li>
               )}
-              {tags.map((tag) => (
-                <li
-                  key={tag.name}
-                  className="group flex items-center justify-between rounded px-1 py-0.5 text-[11px] text-slate-700 hover:bg-slate-100"
-                  title={`${tag.message}\n${tag.sha.slice(0, 8)} · ${tag.ts}`}
-                >
-                  <span className="truncate font-medium">{tag.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm(t("sidebar.confirmDeleteTag", { name: tag.name }))) {
-                        void onDeleteTag(tag.name);
-                      }
-                    }}
-                    className="hidden px-1 text-[10px] text-rose-600 hover:bg-rose-100 group-hover:inline"
-                    title={t("sidebar.deleteTag")}
+              {tags.map((tag) => {
+                const isViewed = tag.name === viewingTag;
+                return (
+                  <li
+                    key={tag.name}
+                    className={`group flex items-center justify-between rounded px-1 py-0.5 text-[11px] hover:bg-slate-100 ${
+                      isViewed ? "bg-amber-100 text-amber-800" : "text-slate-700"
+                    }`}
+                    title={`${tag.message}\n${tag.sha.slice(0, 8)} · ${tag.ts}`}
                   >
-                    ✕
-                  </button>
-                </li>
-              ))}
+                    <button
+                      type="button"
+                      onClick={() => void onViewTag(tag.name)}
+                      className="flex-1 truncate text-left font-medium"
+                      title={t("sidebar.viewTag", { name: tag.name })}
+                    >
+                      {isViewed ? "👁 " : ""}
+                      {tag.name}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(t("sidebar.confirmDeleteTag", { name: tag.name }))) {
+                          void onDeleteTag(tag.name);
+                        }
+                      }}
+                      className="hidden px-1 text-[10px] text-rose-600 hover:bg-rose-100 group-hover:inline"
+                      title={t("sidebar.deleteTag")}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

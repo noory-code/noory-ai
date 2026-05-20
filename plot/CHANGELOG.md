@@ -4,6 +4,36 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.14] — 2026-05-21
+
+### Added
+
+- **Snapshot view ("view at git tag")**
+  ([D-2026-05-21-C](./docs/DECISIONS.md)). Click any tag in the
+  sidebar to enter read-only snapshot mode at that point in time.
+  An amber banner appears in the header (*"Viewing snapshot at vN
+  — edits are disabled until you exit"*); the canvas renders the
+  project state at that tag without touching the working tree. The
+  user's live work stays intact and resumes on `✕ exit`.
+- Server: `git_store.py::read_file_at_tag()` (wraps `git show
+  <tag>:<path>`, working tree untouched). New
+  `GET /api/projects/{id}/at-tag/{tag}` endpoint returns the
+  ProjectDoc + every canvas (foundation / actors / services + each
+  service_detail) at the tag.
+- Viewer: `useSnapshotView` hook owns the snapshot state machine
+  (viewingTag / snapshotCache / enterTagView / exitTagView). App
+  swaps cache + guards `applyEdit` so saves never touch tag data.
+- 2 new server tests (snapshot returns tag-time state even after
+  later mutation / unknown tag 404).
+
+### Changed
+
+- `SketchSidebar` tag rows are now clickable (entire row is the
+  view-at-tag action; the ✕ delete remains on hover). The viewed
+  tag highlights with a 👁 marker and amber background.
+- `viewer/tests/structural-guards.test.tsx` — App.tsx ceiling raised
+  410 → 425 for the snapshot-mode wiring per D-2026-05-21-C.
+
 ## [0.24.13] — 2026-05-21
 
 ### Added

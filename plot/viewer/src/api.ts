@@ -257,6 +257,27 @@ export async function tagProject(
 }
 
 // ---------------------------------------------------------------------------
+// Snapshot view — v0.24.14 (D-2026-05-21-C)
+// Read project + all canvases at a given git tag (read-only).
+// ---------------------------------------------------------------------------
+
+export interface ProjectAtTagResponse {
+  project: ProjectDoc;
+  canvases: Record<string, CanvasDoc>;
+}
+
+export async function getProjectAtTag(
+  projectPath: string,
+  projectId: string,
+  tag: string,
+): Promise<ProjectAtTagResponse> {
+  const url = `${API_BASE}/api/projects/${encodeURIComponent(
+    projectId,
+  )}/at-tag/${encodeURIComponent(tag)}?project_path=${encodeURIComponent(projectPath)}`;
+  return json<ProjectAtTagResponse>(await fetch(url));
+}
+
+// ---------------------------------------------------------------------------
 // Project-level publish — v0.24.13 (D-2026-05-21-B)
 // Bump blueprint semver (major/minor/patch) + create git tag.
 // ---------------------------------------------------------------------------
