@@ -53,6 +53,15 @@
       "error": "save failed"
     }
   },
+  "publishProject": {
+    "label": "Publish blueprint",
+    "hint": "Bump the project's semver version and create a git tag at that version. Choose major / minor / patch.",
+    "bumpHeader": "Current: {{current}}",
+    "major": "Major",
+    "minor": "Minor",
+    "patch": "Patch",
+    "confirm": "Publish blueprint {{from}} → {{to}}?\n\nA git tag named {{to}} will be created at the current project state."
+  },
   "serviceDetail": {
     "label": "Service detail",
     "ariaWithCategory": "Service detail — {{category}} › {{service}}",

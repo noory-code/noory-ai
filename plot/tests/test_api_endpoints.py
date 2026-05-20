@@ -228,6 +228,75 @@ def test_canvas_put_round_trips_actor(
     assert any(n["id"] == "guest" for n in reloaded["nodes"])
 
 
+def test_project_publish_bumps_patch_creates_tag(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """v0.24.13 (D-2026-05-21-B) — POST /publish bumps blueprint
+    version and creates a git tag at the resulting version name."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    # New project defaults to v0.1.0.
+    proj = client.get(
+        "/api/projects/alpha",
+        params={"project_path": project_path},
+    ).json()
+    assert proj.get("blueprint_version") == "v0.1.0"
+    resp = client.post(
+        "/api/projects/alpha/publish",
+        params={"project_path": project_path},
+        json={"bump": "patch"},
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["from_version"] == "v0.1.0"
+    assert body["to_version"] == "v0.1.1"
+    # Project doc reflects the new version on next read.
+    proj_after = client.get(
+        "/api/projects/alpha",
+        params={"project_path": project_path},
+    ).json()
+    assert proj_after["blueprint_version"] == "v0.1.1"
+    # The tag list now contains v0.1.1.
+    tags = client.get(
+        "/api/projects/alpha/tags",
+        params={"project_path": project_path},
+    ).json()
+    assert any(t["name"] == "v0.1.1" for t in tags["tags"])
+
+
+def test_project_publish_minor_and_major_bumps(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    minor = client.post(
+        "/api/projects/alpha/publish",
+        params={"project_path": project_path},
+        json={"bump": "minor"},
+    ).json()
+    assert minor["to_version"] == "v0.2.0"
+    major = client.post(
+        "/api/projects/alpha/publish",
+        params={"project_path": project_path},
+        json={"bump": "major"},
+    ).json()
+    assert major["from_version"] == "v0.2.0"
+    assert major["to_version"] == "v1.0.0"
+
+
+def test_project_publish_invalid_bump_is_400(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.post(
+        "/api/projects/alpha/publish",
+        params={"project_path": project_path},
+        json={"bump": "huge"},
+    )
+    assert resp.status_code == 400
+
+
 def test_canvas_put_response_includes_dirty_decoration(
     app_client: tuple[TestClient, str],
 ) -> None:

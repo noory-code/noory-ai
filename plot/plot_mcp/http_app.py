@@ -25,6 +25,7 @@ from plot_mcp.api_endpoints import (
     project_get_endpoint,
     project_patch_endpoint,
     project_post_endpoint,
+    project_publish_endpoint,
     projects_list_endpoint,
     tag_delete_endpoint,
     tag_post_endpoint,
@@ -112,6 +113,13 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
             "/api/projects/{project_id}/tags/{tag_name}",
             tag_delete_endpoint,
             methods=["DELETE"],
+        ),
+        # v0.24.13 (D-2026-05-21-B) — project-level blueprint publish.
+        # Replaces "세션 기록" UX with semver bump (major/minor/patch).
+        Route(
+            "/api/projects/{project_id}/publish",
+            project_publish_endpoint,
+            methods=["POST"],
         ),
         # v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
         Route(

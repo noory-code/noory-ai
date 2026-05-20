@@ -6149,3 +6149,81 @@ field 폐기 선택).
 - `useCanvasPersist.ts` (SSOT for save flow)
 - `[[feedback_show_dont_tell]]` (memory) — *"silent success 은 버그"*
   rule 의 적용 사례.
+
+---
+
+### D-2026-05-21-B — 설계도 발행 (project-level semver) + blueprint framing (v0.24.13)
+
+**Context:** 2026-05-21 사용자 *"각 캔버스들 정식 발행 개념을 잊은것
+같은데요? ... 실제 작업할 때는 고정된 버전이 있어야하는데. 작업
+중에 중간에 변경이 이뤄지면 안되잖아요"*. 디스커션 통해 도달:
+
+- 사용자 의도 = *"Plot 의 산출물 = 설계도 (design blueprint), 그 전체
+  의 안정된 snapshot 관리 필요"*.
+- per-canvas publish 는 D-2026-05-13-J #4 에서 거부 → per-node 로
+  결정 (D-2026-05-13-O). 그러나 *"전체 설계도 단위 freeze"* 는
+  별개 미해결.
+- 사용자 lock: *"그냥 프로젝트에 버저닝하는게 좋지 않습니까?"* +
+  *"Banas v0.13 이렇게 붙이듯이"* + *"근데 프로젝트 버저닝은 메이저
+  마이너 패치 이렇게 가야죠"*.
+
+**Decision:** **프로젝트 자체에 semver 버전** 도입.
+
+- `ProjectDoc.blueprint_version: str = "v0.1.0"` (Pydantic 기본값,
+  기존 프로젝트는 first read 시 자동 backfill).
+- 사용자가 `📤 설계도 발행 ▾` 버튼 (CanvasTabs 오른쪽, "세션 기록…"
+  자리 대체) 으로 major/minor/patch 중 선택 → semver bump + 그 시점
+  git tag (이름 = 새 버전).
+- Header 에 현재 `blueprint_version` 항상 표시 (프로젝트 이름 옆 monospace
+  배지).
+- 기존 ad-hoc tag API (POST /tags) 는 그대로 유지 (사이드바 세션 태그
+  UI 가 사용중). 새 endpoint POST /api/projects/{id}/publish 가
+  semver bump 흐름 owns.
+
+**Why per-node + per-project (not per-canvas):**
+- per-node = 단일 entity 의 evolution (현행 유지).
+- per-project = 전체 설계도의 release version (이 entry).
+- per-canvas = 거부 (중간 단위, 의미 없는 churn 위험).
+
+**Implementation:**
+
+| File | 변화 |
+|---|---|
+| `plot_mcp/models.py::ProjectDoc` | `blueprint_version: str = "v0.1.0"` 필드 추가 |
+| `plot_mcp/api_endpoints.py` | `_bump_blueprint_version()` 헬퍼 + `project_publish_endpoint()` |
+| `plot_mcp/http_app.py` | `POST /api/projects/{project_id}/publish` route 등록 |
+| `viewer/src/api.ts` | `publishProject()` + `PublishProjectResponse` + `BlueprintBump` |
+| `viewer/src/types.ts::ProjectDoc` | `blueprint_version?: string` |
+| `viewer/src/shell/BlueprintPublishButton.tsx` | 신규 — 버튼 + 드롭다운 + confirm |
+| `viewer/src/shell/CanvasTabs.tsx` | `onMarkSession` prop 제거 → `blueprintVersion` + `onPublishBlueprint` |
+| `viewer/src/shell/Header.tsx` | `blueprintVersion` prop 추가 + 배지 렌더링 |
+| `viewer/src/hooks/useProject.ts` | `publishBlueprint(bump)` action |
+| `viewer/src/App.tsx` | wire `handlePublishBlueprint` + Header / CanvasTabs 에 version 전달 |
+| `viewer/src/i18n/locales/{en,ko}.json` | `publishProject.*` 키 6개 (label/hint/major/minor/patch/confirm/bumpHeader) |
+| `tests/test_api_endpoints.py` | 3 새 케이스 (patch bump / major+minor / invalid bump 400) |
+
+**Approval:** Accepted by user, 2026-05-21. 6 round discussion (canvas
+publish 거부 추적 → "고정된 버전 필요" → "프로젝트 버저닝" → semver →
+"버전들 쭉 볼 수 있게" → 위치 = CanvasTabs 우측 → "진행합시다") 통해
+lock.
+
+**Verification:**
+- 429 server pytest + 544 viewer vitest pass; tsc + mypy clean.
+- App.tsx 406 LOC (ceiling 410 유지).
+- viewer build 성공.
+
+**Spec impact:**
+- 새 endpoint `POST /api/projects/{project_id}/publish` (Body:
+  `{"bump": "major"|"minor"|"patch", "message"?: str}` → 201
+  `{from_version, to_version, tag}`).
+- `ProjectDoc` JSON 에 `blueprint_version` 키 추가 (back-compat 기본값).
+- UI: "Mark session…" 버튼 사라짐, "📤 설계도 발행 ▾" 으로 대체.
+  Header 에 blueprint version 배지 등장.
+
+**Cross-refs:**
+- D-2026-05-13-J / D-2026-05-13-O — per-canvas publish 거부 + per-node
+  결정. 이 entry 가 *그 위 단위* (project) 를 추가 — 거부와 충돌 ✗,
+  보완.
+- D-2026-05-19-D — Symbol 개념 (cross-canvas master). 프로젝트 발행
+  은 *모든 Symbol + 사용처* 의 정합 snapshot.
+- `[[project_plot_blueprint_versioning]]` (memory) — 결정 + UX flow.

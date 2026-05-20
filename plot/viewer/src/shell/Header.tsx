@@ -18,6 +18,7 @@ interface HeaderProps {
   socketStatus: SocketStatus;
   saveState: SaveState;
   projectName: string | null;
+  blueprintVersion: string | null;
   migratedToast: string[] | null;
   onDismissToast: () => void;
 }
@@ -28,6 +29,7 @@ export function Header({
   socketStatus,
   saveState,
   projectName,
+  blueprintVersion,
   migratedToast,
   onDismissToast,
 }: HeaderProps) {
@@ -41,6 +43,14 @@ export function Header({
           </span>
           {projectName && (
             <span className="text-sm text-slate-700">· {projectName}</span>
+          )}
+          {blueprintVersion && (
+            <span
+              className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-slate-600"
+              title="Blueprint version"
+            >
+              {blueprintVersion}
+            </span>
           )}
         </div>
         <div className="flex w-72 items-center justify-end gap-2 text-right text-xs">

@@ -850,6 +850,12 @@ class ProjectDoc(BaseModel):
     # explicit migration; the migrator overwrites these from the old per-
     # canvas ``project`` nodes if any are present.
     anchors: dict[str, AnchorPlacement] = Field(default_factory=_default_anchors)
+    # v0.24.13 (D-2026-05-21-B) — project-level semver. Distinct from
+    # ``version`` (schema migration counter). Represents the *blueprint
+    # release version* — bumped explicitly via the publish endpoint
+    # (major/minor/patch), each bump creates a git tag. Default "v0.1.0"
+    # for new projects; migration backfills existing projects.
+    blueprint_version: str = "v0.1.0"
 
     @field_validator("id")
     @classmethod

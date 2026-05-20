@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  type BlueprintBump,
   createProject,
   deleteProject,
   deleteProjectTag,
@@ -7,6 +8,7 @@ import {
   getProject,
   listProjects,
   publishNode,
+  publishProject,
   unpublishNode,
   renameProject,
   tagProject,
@@ -54,6 +56,9 @@ export interface UseProjectApi {
   remove: (id: string) => Promise<void>;
   pick: (id: string) => void;
   markSession: () => Promise<void>;
+  /** v0.24.13 (D-2026-05-21-B) — bump project blueprint semver +
+   *  create a git tag at the new version name. */
+  publishBlueprint: (bump: BlueprintBump) => Promise<void>;
   /** v0.18.0 Phase 3 (D-2026-05-16-E) — publish a node. Re-reads the
    *  canvas after the server-side bump so the Inspector reflects the
    *  new version on next paint. */
@@ -211,6 +216,28 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     [openProject, setActiveId],
   );
 
+  const publishBlueprint = useCallback(
+    async (bump: BlueprintBump) => {
+      if (!projectPath || !activeId) return;
+      try {
+        await publishProject(projectPath, activeId, bump);
+        // Refresh summaries (blueprint_version) and tags.
+        const proj = await getProject(projectPath, activeId);
+        setSummaries((prev) =>
+          prev.map((p) =>
+            p.id === activeId
+              ? { ...p, blueprint_version: proj.blueprint_version }
+              : p,
+          ),
+        );
+        setTags(proj.tags);
+      } catch (err) {
+        onError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [projectPath, activeId, onError],
+  );
+
   const markSession = useCallback(async () => {
     if (!projectPath || !activeId) return;
     const name = window.prompt("Session tag name (e.g. 'session-banas-start')");
@@ -307,6 +334,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     remove,
     pick,
     markSession,
+    publishBlueprint,
     publishNodeAction,
     unpublishNodeAction,
     deleteTag,

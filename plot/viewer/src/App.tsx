@@ -102,7 +102,8 @@ export function App() {
     summaries, activeId, canvasCache, tags, migratedToast, phase,
     setCanvasCache, setServiceDetails, setTags, loadList,
     create: handleCreate, rename: handleRename, remove: handleDelete,
-    pick: handlePick, markSession: handleMarkSession,
+    pick: handlePick,
+    publishBlueprint: handlePublishBlueprint,
     publishNodeAction: handlePublishNode,
     unpublishNodeAction: handleUnpublishNode,
     deleteTag: handleDeleteTag, dismissToast,
@@ -240,6 +241,7 @@ export function App() {
         socketStatus={socketStatus}
         saveState={saveState}
         projectName={summaries.find((p) => p.id === activeId)?.name ?? null}
+        blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? null}
         onDismissToast={dismissToast}
         migratedToast={migratedToast}
       />
@@ -267,7 +269,9 @@ export function App() {
             <CanvasTabs
               active={activeTab}
               onSelect={selectTab}
-              onMarkSession={handleMarkSession}
+              blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? "v0.1.0"}
+              onPublishBlueprint={handlePublishBlueprint}
+              publishDisabled={!activeId}
             />
           )}
           <div className="flex-1 overflow-hidden">

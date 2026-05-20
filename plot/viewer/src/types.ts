@@ -135,6 +135,11 @@ export interface ProjectDoc {
    *  (foundation / actors / services). Older project.json may omit; the
    *  viewer applies defaults. */
   anchors?: Partial<Record<CanvasKind, AnchorPlacement>>;
+  /** v0.24.13 (D-2026-05-21-B) — blueprint-level semver. Bumped via
+   *  ``POST /api/projects/{id}/publish``. Defaults to ``v0.1.0`` for
+   *  new projects; older projects without the field get the default
+   *  via Pydantic on first read. */
+  blueprint_version?: string;
 }
 
 export interface ProjectTag {

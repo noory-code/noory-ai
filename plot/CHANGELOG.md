@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.13] — 2026-05-21
+
+### Added
+
+- **설계도 발행 (project-level semver)**
+  ([D-2026-05-21-B](./docs/DECISIONS.md)). Plot's output is now framed
+  as a *설계도 (design blueprint)* — the whole project at one
+  coherent point. Each project carries a `blueprint_version`
+  (default `v0.1.0`); the user bumps major / minor / patch from the
+  new `📤 설계도 발행 ▾` button on the canvas tab strip (replaces
+  the old `Mark session…` button). Each bump persists the new
+  version on `ProjectDoc` and creates a git tag at the resulting
+  version name.
+- `POST /api/projects/{id}/publish` endpoint (body
+  `{"bump": "major"|"minor"|"patch", "message"?}`; returns 201 with
+  `{from_version, to_version, tag}`).
+- Header now shows the current blueprint version as a monospace
+  badge next to the project name.
+- 3 server tests pinning the publish endpoint behaviour
+  (patch / minor+major chain / invalid bump → 400).
+
+### Changed
+
+- `ProjectDoc` Pydantic + TS interfaces gain optional
+  `blueprint_version`. Existing projects backfill to `v0.1.0` via
+  Pydantic default on first read (no explicit migration needed).
+- `CanvasTabs` swaps `onMarkSession` for `blueprintVersion` +
+  `onPublishBlueprint` props. The ad-hoc tag endpoint
+  (`POST /tags`) stays for sidebar session-tag use; the canvas tab
+  strip no longer triggers it.
+
 ## [0.24.12] — 2026-05-21
 
 ### Added

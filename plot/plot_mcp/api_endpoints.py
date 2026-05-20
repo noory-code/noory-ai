@@ -385,6 +385,90 @@ async def tag_post_endpoint(request: Request) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# v0.24.13 (D-2026-05-21-B) — project-level blueprint publish endpoint
+# ---------------------------------------------------------------------------
+
+
+def _bump_blueprint_version(current: str, bump: str) -> str:
+    """Bump ``v<MAJOR>.<MINOR>.<PATCH>`` per the chosen level.
+
+    - "major": ``v1.2.3`` → ``v2.0.0``
+    - "minor": ``v1.2.3`` → ``v1.3.0``
+    - "patch": ``v1.2.3`` → ``v1.2.4``
+    """
+    if not current.startswith("v"):
+        raise ValueError(f"invalid blueprint version (must start with 'v'): {current!r}")
+    parts = current[1:].split(".")
+    if len(parts) != 3 or not all(p.isdigit() for p in parts):
+        raise ValueError(f"invalid semver (need v<MAJOR>.<MINOR>.<PATCH>): {current!r}")
+    major, minor, patch = (int(p) for p in parts)
+    if bump == "major":
+        return f"v{major + 1}.0.0"
+    if bump == "minor":
+        return f"v{major}.{minor + 1}.0"
+    if bump == "patch":
+        return f"v{major}.{minor}.{patch + 1}"
+    raise ValueError(f"bump must be one of major/minor/patch, got {bump!r}")
+
+
+async def project_publish_endpoint(request: Request) -> JSONResponse:
+    """``POST /api/projects/{project_id}/publish``
+
+    Body: ``{"bump": "major" | "minor" | "patch", "message": "..."}``
+
+    Bumps ``ProjectDoc.blueprint_version``, persists the project, and
+    creates a git tag at the resulting version. Tag name = the new
+    version string (e.g. ``v0.2.0``). Idempotent for the *project*
+    write (tags are unique, second call with the same target version
+    after manual revert would 409).
+
+    Returns ``{from_version, to_version, tag}``.
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    folder = plot_root / project_id
+    if not folder.is_dir():
+        return _error(f"project not found: {project_id}", status=404)
+    try:
+        body: dict[str, Any] = await request.json()
+    except json.JSONDecodeError:
+        return _error("invalid JSON body")
+    bump = body.get("bump")
+    if bump not in ("major", "minor", "patch"):
+        return _error("'bump' must be one of major/minor/patch")
+    message_input = body.get("message")
+    message = (
+        message_input
+        if isinstance(message_input, str) and message_input.strip()
+        else None
+    )
+
+    from plot_mcp.folder_io import read_project, write_project
+
+    project = read_project(plot_root, project_id)
+    from_version = project.blueprint_version
+    try:
+        to_version = _bump_blueprint_version(from_version, bump)
+    except ValueError as exc:
+        return _error(str(exc))
+    bumped = project.model_copy(update={"blueprint_version": to_version})
+    write_project(plot_root, bumped)
+    try:
+        tag = tag_snapshot(folder, to_version, message=message or to_version)
+    except TagAlreadyExistsError as exc:
+        # Roll back the project version on tag collision.
+        write_project(plot_root, project)
+        return _error(str(exc), status=409)
+    return JSONResponse(
+        {"from_version": from_version, "to_version": to_version, "tag": tag},
+        status_code=201,
+    )
+
+
+# ---------------------------------------------------------------------------
 # v0.18.0 Phase 3 (D-2026-05-16-E) — publish endpoint
 # ---------------------------------------------------------------------------
 

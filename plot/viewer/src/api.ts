@@ -257,6 +257,37 @@ export async function tagProject(
 }
 
 // ---------------------------------------------------------------------------
+// Project-level publish — v0.24.13 (D-2026-05-21-B)
+// Bump blueprint semver (major/minor/patch) + create git tag.
+// ---------------------------------------------------------------------------
+
+export type BlueprintBump = "major" | "minor" | "patch";
+
+export interface PublishProjectResponse {
+  from_version: string;
+  to_version: string;
+  tag: ProjectTag;
+}
+
+export async function publishProject(
+  projectPath: string,
+  projectId: string,
+  bump: BlueprintBump,
+  message?: string,
+): Promise<PublishProjectResponse> {
+  const url = `${API_BASE}/api/projects/${encodeURIComponent(
+    projectId,
+  )}/publish?project_path=${encodeURIComponent(projectPath)}`;
+  return json<PublishProjectResponse>(
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bump, message }),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Publish — D-2026-05-16-E (Phase 3, MAJOR) + D-2026-05-17-C (Phase 4, MINOR
 // propagation)
 // ---------------------------------------------------------------------------

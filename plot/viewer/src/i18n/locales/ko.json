@@ -53,6 +53,15 @@
       "error": "저장 실패"
     }
   },
+  "publishProject": {
+    "label": "설계도 발행",
+    "hint": "프로젝트의 semver 버전을 올리고 그 시점에 git 태그를 박습니다. 메이저 / 마이너 / 패치 중 선택.",
+    "bumpHeader": "현재: {{current}}",
+    "major": "메이저",
+    "minor": "마이너",
+    "patch": "패치",
+    "confirm": "설계도 {{from}} → {{to}} 발행하시겠습니까?\n\n현재 프로젝트 상태에 {{to}} 라는 git 태그가 박힙니다."
+  },
   "serviceDetail": {
     "label": "서비스 상세",
     "ariaWithCategory": "서비스 상세 — {{category}} › {{service}}",
