@@ -79,6 +79,35 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
         putCanvas(pp, pid, canvas)
           .then((res) => {
             setSaveState("saved");
+            // v0.24.12 (D-2026-05-21-A) — refresh per-node ``_dirty``
+            // from PUT response. Pre-v0.24.12 the response was a bare
+            // canvas without ``_dirty`` decoration, so the Inspector's
+            // publish button gate stayed stale until a full GET (e.g.
+            // page reload). Merge only ``_dirty`` so any user edit that
+            // arrived after the PUT was sent stays intact (the next
+            // PUT cycle will refresh ``_dirty`` for that edit too).
+            const dirtyByNodeId = new Map<string, boolean>();
+            for (const n of res.canvas.nodes) {
+              const d = (n as { _dirty?: boolean })._dirty;
+              if (typeof d === "boolean") dirtyByNodeId.set(n.id, d);
+            }
+            if (dirtyByNodeId.size > 0) {
+              setCanvasCache((cur) => {
+                const cached = cur.get(key);
+                if (!cached) return cur;
+                const m = new Map(cur);
+                m.set(key, {
+                  ...cached,
+                  nodes: cached.nodes.map((n) => {
+                    const d = dirtyByNodeId.get(n.id);
+                    return d === undefined
+                      ? n
+                      : ({ ...n, _dirty: d } as typeof n);
+                  }),
+                });
+                return m;
+              });
+            }
             // Reconcile Overview ↔ Detail sync the server reports.
             if (res.sync.created.length || res.sync.archived.length) {
               setServiceDetails((prev) => {

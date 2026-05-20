@@ -1,14 +1,22 @@
 /**
- * Top-of-page header — project path + name + socket status + error
- * + migration toast. Extracted from ``App.tsx`` (v0.16.1) so the
+ * Top-of-page header — project path + name + socket status + save state
+ * + error + migration toast. Extracted from ``App.tsx`` (v0.16.1) so the
  * App component owns wiring only, not chrome JSX.
+ *
+ * v0.24.12 (D-2026-05-21-A) — SaveIndicator added. ``useCanvasPersist``
+ * already computed ``saveState`` ("idle" / "saving" / "saved" / "error")
+ * but it was never rendered, leaving canvas auto-save without user
+ * feedback. The indicator now sits next to the live socket dot.
  */
+import { useTranslation } from "react-i18next";
 import type { SocketStatus } from "../api";
+import type { SaveState } from "../canvases/SketchToolbar";
 
 interface HeaderProps {
   projectPath: string;
   error: string | null;
   socketStatus: SocketStatus;
+  saveState: SaveState;
   projectName: string | null;
   migratedToast: string[] | null;
   onDismissToast: () => void;
@@ -18,6 +26,7 @@ export function Header({
   projectPath,
   error,
   socketStatus,
+  saveState,
   projectName,
   migratedToast,
   onDismissToast,
@@ -34,7 +43,8 @@ export function Header({
             <span className="text-sm text-slate-700">· {projectName}</span>
           )}
         </div>
-        <div className="flex w-64 items-center justify-end gap-2 text-right text-xs">
+        <div className="flex w-72 items-center justify-end gap-2 text-right text-xs">
+          <SaveIndicator state={saveState} />
           <SocketIndicator status={socketStatus} />
           {error && (
             <span
@@ -64,6 +74,26 @@ export function Header({
         </div>
       )}
     </header>
+  );
+}
+
+function SaveIndicator({ state }: { state: SaveState }) {
+  const { t } = useTranslation();
+  if (state === "idle") return null;
+  const label = t(`header.saveState.${state}`);
+  const tone =
+    state === "saving"
+      ? "text-slate-500"
+      : state === "saved"
+        ? "text-emerald-700"
+        : "text-rose-600";
+  const icon =
+    state === "saving" ? "💾" : state === "saved" ? "✓" : "⚠";
+  return (
+    <span className={`inline-flex items-center gap-1 ${tone}`} title={label}>
+      <span aria-hidden>{icon}</span>
+      <span>{label}</span>
+    </span>
   );
 }
 

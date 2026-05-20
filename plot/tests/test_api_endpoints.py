@@ -228,6 +228,37 @@ def test_canvas_put_round_trips_actor(
     assert any(n["id"] == "guest" for n in reloaded["nodes"])
 
 
+def test_canvas_put_response_includes_dirty_decoration(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """v0.24.12 (D-2026-05-21-A) — PUT response must carry per-node
+    ``_dirty`` so the viewer's publish-button gate updates without a
+    separate GET. Pre-v0.24.12 the response was a bare canvas and the
+    publish button stayed stale until a full reload."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    canvas = client.get(
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+    ).json()
+    # Mutate one publish-eligible actor (the seeded ones from
+    # create_project are non-root publishable actors).
+    actor_node = next(n for n in canvas["nodes"] if n["kind"] == "actor")
+    actor_node["motivation"] = "dirty marker"
+    resp = client.put(
+        "/api/projects/alpha/canvases/actors",
+        params={"project_path": project_path},
+        json=canvas,
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    response_node = next(
+        n for n in body["canvas"]["nodes"] if n["id"] == actor_node["id"]
+    )
+    assert "_dirty" in response_node, "PUT response missing _dirty decoration"
+    assert response_node["_dirty"] is True
+
+
 def test_canvas_put_overview_auto_creates_detail(
     app_client: tuple[TestClient, str],
 ) -> None:

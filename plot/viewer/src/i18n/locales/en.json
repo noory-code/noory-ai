@@ -46,7 +46,12 @@
   },
   "header": {
     "markSession": "Mark session…",
-    "markSessionHint": "Plant a git tag at the current state of the project"
+    "markSessionHint": "Plant a git tag at the current state of the project",
+    "saveState": {
+      "saving": "saving…",
+      "saved": "saved",
+      "error": "save failed"
+    }
   },
   "serviceDetail": {
     "label": "Service detail",

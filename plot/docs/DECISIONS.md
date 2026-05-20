@@ -6082,3 +6082,70 @@ field 폐기 선택).
 - `[[feedback_no_god_object]]` — Symbol 을 새 typed field / new kind
   으로 박지 않고 *"이 kind 자체가 Symbol"* 으로 둠 (kind palette 증식
   방지).
+
+---
+
+### D-2026-05-21-A — Auto-save user feedback restored (v0.24.12)
+
+**Context:** 2026-05-21 사용자 시도 *"바텐더 액터에 노트를 채웠어요"*
+→ *"자동저장 안되고"* 보고. Probe 결과:
+
+1. **자동 저장 메커니즘 자체는 동작** — 사용자가 친 모든 글자
+   (body / motivation / pain) 가 `canvas.json` 에 정상 반영됨.
+   ([useCanvasPersist.ts](../viewer/src/hooks/useCanvasPersist.ts)
+   의 400ms 디바운스 PUT.)
+2. **그러나 가시적 피드백 0 군데** — `useCanvasPersist` 가
+   `saveState` ("idle"/"saving"/"saved"/"error") 를 계산하고 return
+   하지만 *Header / 어느 shell 컴포넌트도 렌더링 안 함*. 사용자 입장:
+   타이핑 → 무반응 → "안 됨" 결론.
+3. **부수 발견: PUT 응답 `_dirty` 누락** — `canvas_put_endpoint` 가
+   bare canvas 만 반환. GET 엔드포인트에만 `_dirty` 박힘
+   ([api_endpoints.py:296](../plot_mcp/api_endpoints.py)). 결과:
+   사용자가 편집해도 publish 버튼이 reload 전까지 stale (이전 GET 시점
+   `_dirty=false`). v0.22.0 의 dirty-tracking UX 가 실제로 페이지
+   reload 까지 작동 안 함.
+
+**Decision (2-pronged fix, atomic):**
+
+1. **Fix A — Header SaveIndicator (UX 갈증 해소).** `Header.tsx` 에
+   `<SaveIndicator state={saveState}>` 컴포넌트 추가. socket dot 옆에
+   *idle 시 숨김 / saving "💾 저장중…" / saved "✓ 저장됨" / error "⚠
+   저장 실패"*. `App.tsx` 가 `useCanvasPersist().saveState` 를 Header
+   prop 으로 흘림. i18n 키 `header.saveState.{saving,saved,error}` 가
+   en/ko locales 둘 다 추가.
+2. **Fix B — PUT response includes _dirty (정확성).**
+   `canvas_put_endpoint` 가 GET 과 동일한 `_dirty` decoration 으로
+   응답 본문 enrich. `useCanvasPersist` 가 응답에서 per-node `_dirty`
+   추출 → cache 의 동일 노드에 머지 (사용자 in-flight edit 무관 —
+   `_dirty` 필드만 갱신, 다른 필드 미변경). 결과: 편집 → 400ms 후
+   publish 버튼 즉시 enable.
+
+**Implementation:**
+
+| File | 변화 |
+|---|---|
+| `plot_mcp/api_endpoints.py::canvas_put_endpoint` | response body 에 GET 과 동일한 `_dirty` decoration 추가 (~10 lines, lazy import 패턴 GET 과 동일) |
+| `viewer/src/hooks/useCanvasPersist.ts` | `.then((res) => {...})` 안에서 `res.canvas.nodes` 의 `_dirty` 를 cache 의 해당 node 에 머지 |
+| `viewer/src/shell/Header.tsx` | `SaveIndicator` 컴포넌트 신설, `saveState` prop 받음 |
+| `viewer/src/App.tsx` | `useCanvasPersist` 에서 `saveState` 받아 `<Header saveState={...}>` 로 흘림 |
+| `viewer/src/i18n/locales/{en,ko}.json` | `header.saveState.{saving,saved,error}` 키 추가 |
+| `tests/test_api_endpoints.py` | `test_canvas_put_response_includes_dirty_decoration` 새 케이스 |
+
+**Approval:** Accepted by user, 2026-05-21. 사용자 직접 보고
+*"바텐더 액터에 노트를 채웠어요 ... 자동저장 안되고 일단"*
+→ probe 통해 *"save mechanism OK, UX feedback 0"* 진단 lock
+*"이건 모든 노드에 해당할 것 같은데?"* (= 일반화 가능 confirm)
+→ *"네 진행합시다"* 두 fix 동시 ship 승인.
+
+**Verification:**
+- 426/426 server pytest (1 새 test 추가) + 544/544 viewer vitest.
+- tsc + mypy clean.
+- v0.24.11 → v0.24.12.
+
+**Cross-refs:**
+- D-2026-05-17-H (v0.22.0 — `_dirty` 컨셉 + 노드별 dirty tracking 도입.
+  당시 GET 만 decoration, PUT 누락된 채로 ship 됐음; 이 entry 가 그
+  미완 부분 마무리.)
+- `useCanvasPersist.ts` (SSOT for save flow)
+- `[[feedback_show_dont_tell]]` (memory) — *"silent success 은 버그"*
+  rule 의 적용 사례.

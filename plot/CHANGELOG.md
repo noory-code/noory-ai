@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.12] — 2026-05-21
+
+### Added
+
+- **Header SaveIndicator** ([D-2026-05-21-A](./docs/DECISIONS.md)).
+  Canvas auto-save now shows a visible state next to the live socket
+  dot: 💾 saving… / ✓ saved / ⚠ save failed (hidden when idle).
+  `useCanvasPersist` already computed `saveState` but no shell
+  component rendered it — silent success was a bug per
+  Plot's *"Clear Feedback"* UX rule. i18n keys
+  `header.saveState.{saving,saved,error}` for en + ko.
+
+### Fixed
+
+- **PUT canvas response now includes `_dirty` decoration**
+  ([D-2026-05-21-A](./docs/DECISIONS.md), v0.22.0 follow-up). The
+  v0.22.0 dirty-tracking UX (publish button only enabled when the
+  node differs from its last-published baseline) silently broke for
+  edits made in the current session: GET response carried `_dirty`,
+  but PUT response did not. After every auto-save, the viewer's
+  `_dirty` stayed stale until a full page reload. v0.24.12 mirrors
+  the GET endpoint's decoration in the PUT endpoint, and
+  `useCanvasPersist` merges the response's per-node `_dirty` into
+  the cache (non-destructive — only the `_dirty` field is
+  overwritten, so in-flight user edits stay intact).
+
+### Verification
+
+- New server test `test_canvas_put_response_includes_dirty_decoration`
+  (426 server pytest + 544 viewer vitest all pass; tsc + mypy clean).
+
 ## [0.24.11] — 2026-05-19
 
 ### Added

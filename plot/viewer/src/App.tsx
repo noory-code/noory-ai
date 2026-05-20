@@ -139,6 +139,7 @@ export function App() {
   const {
     pendingWrites,
     applyEdit,
+    saveState,
     undo: historyUndo,
     redo: historyRedo,
   } = useCanvasPersist({
@@ -237,6 +238,7 @@ export function App() {
         projectPath={projectPath}
         error={error}
         socketStatus={socketStatus}
+        saveState={saveState}
         projectName={summaries.find((p) => p.id === activeId)?.name ?? null}
         onDismissToast={dismissToast}
         migratedToast={migratedToast}

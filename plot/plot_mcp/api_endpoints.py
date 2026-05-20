@@ -323,7 +323,24 @@ async def canvas_put_endpoint(request: Request) -> JSONResponse:
     sync: dict[str, list[str]] = {"created": [], "archived": []}
     if canvas_kind == "services":
         sync = sync_details_with_overview(plot_root, project_id)
-    return JSONResponse({"canvas": canvas.model_dump(by_alias=True), "sync": sync})
+    # v0.24.12 (D-2026-05-21-A) — decorate response canvas with the
+    # per-node ``_dirty`` signal so the Inspector's publish button gate
+    # updates without a separate GET. Mirrors the GET endpoint's
+    # decoration (this file ~line 296). Before v0.24.12, PUT returned a
+    # bare canvas and the viewer's _dirty stayed stale until the next
+    # full reload — the publish button never lit up for edits made in
+    # the current session.
+    from plot_mcp.folder_io import _incident_edges, is_node_dirty
+    from plot_mcp.md_publish import can_publish
+
+    raw = canvas.model_dump(by_alias=True)
+    nodes_by_id = {n.id: n for n in canvas.nodes}
+    for n in raw.get("nodes", []):
+        node_obj = nodes_by_id.get(n.get("id"))
+        if node_obj is None or not can_publish(node_obj):
+            continue
+        n["_dirty"] = is_node_dirty(node_obj, _incident_edges(canvas.edges, node_obj.id))
+    return JSONResponse({"canvas": raw, "sync": sync})
 
 
 # ---------------------------------------------------------------------------
