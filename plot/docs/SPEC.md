@@ -131,7 +131,7 @@ behaviour is *no auto-layout button*. Each wrapper opts in by setting
 |---|---|---|---|
 | `FoundationCanvas` | `"tree"` | Directional tree (BFS from anchor, T/R/B/L per parent-handle) | v0.16.36 |
 | `ActorsCanvas` | `"tree"` | Directional tree (same as Foundation) | v0.24.5 |
-| `ServicesCanvas` | `"radial"` | Hub-and-spoke (BFS rings around anchor) | v0.25.0 |
+| `ServicesCanvas` | _(none)_ | — Summary canvas; controls live inside the per-service modal (D-2026-05-24-C). | — |
 | `ServiceDetailCanvas` | `"radial"` | Hub-and-spoke (rings around the hidden root-service) | v0.25.0 |
 
 Isolation regression test:
@@ -235,6 +235,15 @@ that did not opt in:
   *"다른 캔버스에는 있는데 캔버스 정렬기능이 없다"*. The isolation
   contract is preserved (each wrapper still chooses; SketchCanvas
   still has no default).
+- **D-2026-05-24-C** — same-day partial rollback of D-2026-05-24-B.
+  `ServicesCanvas` reverted to no opt-in. User direction *"메인
+  캔버스는 서비스에 대한 요약을 보여주는 것 뿐이에요"* +
+  *"컨트롤하는것도 따로 해야지"* — the main Services canvas is a
+  summary view; auto-layout and other controls belong inside the
+  per-service modal (`ServiceDetailModal` + `ServiceDetailCanvas`),
+  not on the overview. `ServiceDetailCanvas` keeps its `"radial"`
+  opt-in. The `layoutAlgo` prop generalisation from D-2026-05-24-B
+  is retained — only the Services wrapper's choice changed.
 
 ---
 

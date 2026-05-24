@@ -4,6 +4,29 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.25.1] — 2026-05-24
+
+### Removed
+
+- **Auto-layout `⊞` button on the main `ServicesCanvas`**
+  ([D-2026-05-24-C](./docs/DECISIONS.md#d-2026-05-24-c--services-canvas-reverts-auto-layout-opt-in-controls-live-in-per-service-modal-v0251)).
+  Same-day partial rollback of D-2026-05-24-B. User clarified the
+  Services-as-summary intent: per-service controls belong inside the
+  `ServiceDetailModal`, not on the overview canvas. `ServicesCanvas`
+  now passes no `layoutAlgo`. `ServiceDetailCanvas` keeps
+  `layoutAlgo="radial"` — the per-service modal is where auto-layout
+  lives. The `layoutAlgo` prop generalisation from v0.25.0 is
+  retained; the radial algorithm (`radialLayout.ts` /
+  `useRadialLayout.ts`) stays live, used by `ServiceDetailCanvas`.
+
+### Changed
+
+- `viewer/tests/auto-layout-isolation.test.tsx` — Services test
+  flipped back to "must NOT opt in"; Services positions-only test
+  removed; header doc and contract list updated.
+- `docs/SPEC.md` §Auto-layout table — Services row marked as no
+  opt-in.
+
 ## [0.25.0] — 2026-05-24
 
 ### Added

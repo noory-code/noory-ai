@@ -6432,3 +6432,73 @@ selected directly.
   by supplying the missing algorithm).
 - D-2026-05-24-A (Phase A sibling — default node size 80×36 — informs
   the radial `ringGap = 40` choice).
+
+---
+
+### D-2026-05-24-C — Services canvas reverts auto-layout opt-in; controls live in per-service modal (v0.25.1)
+
+**Context:** Same-session immediate follow-up to D-2026-05-24-B
+(shipped earlier in the same 2026-05-24 review session). After
+v0.25.0 landed the radial ⊞ button on both `ServicesCanvas` and
+`ServiceDetailCanvas`, user clarified the intent:
+
+> *"서비스 상세 설계 캔버스는 모달로 따로 보여줘야해요. 컨트롤하는
+> 것도 따로 보여줘야합니다. 메인 캔버스는 서비스에 대한 요약을
+> 보여주는 것 뿐이에요."* + *"컨트롤하는것도 따로 해야지"*
+
+The conceptual split:
+- **Main `ServicesCanvas`** = summary view of all services. Read-y;
+  no per-service editing controls live here. (Modal already exists
+  for that, opened via service-node double-click — `ServiceDetailModal`
+  has been around since v0.16.3.)
+- **`ServiceDetailModal` + `ServiceDetailCanvas`** = per-service
+  editing surface. *This* is where auto-layout and other per-service
+  controls belong.
+
+I had wired ⊞ on both in v0.25.0, which broke this split.
+
+**Decision:**
+
+1. **Revert** `ServicesCanvas` from `layoutAlgo="radial"` back to no
+   opt-in. The ⊞ button no longer renders on the main Services canvas.
+2. **Keep** `ServiceDetailCanvas` at `layoutAlgo="radial"`. The
+   per-service modal continues to offer auto-layout.
+3. **Retain** the `layoutAlgo` prop generalisation from
+   D-2026-05-24-B — only the wrapper's *choice* changed. The radial
+   algorithm code (`radialLayout.ts`, `useRadialLayout.ts`) stays
+   live, used by `ServiceDetailCanvas`.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/ServicesCanvas.tsx` | removed `layoutAlgo="radial"` |
+| `viewer/tests/auto-layout-isolation.test.tsx` | Services test flipped back to "must NOT opt in"; the Services positions-only test deleted (no button to click); ServiceDetail tests untouched |
+| `docs/SPEC.md` | algo table updated (Services row → no opt-in); History extended with this entry |
+
+**Why a same-day rollback?** Because the v0.25.0 wiring was
+demonstrably wrong relative to the (now-explicit) Services-as-summary
+intent. Honest rollback per the *"Same-day rollbacks are honest"* rule
+in `plot/CLAUDE.md`. The radial *algorithm* is not the bug; the
+*Services wrapper opting in* was.
+
+**Why not also reconsider ServiceDetail?** User explicitly limited
+the rollback to controls on the *main* canvas. The per-service modal
+is exactly where these controls were said to belong.
+
+**Verification:**
+- Viewer vitest passes (Services no-button assertion + ServiceDetail
+  button-present assertion both green).
+- Server pytest unaffected.
+- tsc clean.
+
+**Approval:** Accepted by user, 2026-05-24 — *"컨트롤하는것도 따로
+해야지"*.
+
+**Cross-refs:**
+- D-2026-05-24-B (v0.25.0 — the entry this rolls back, partially).
+  That entry stays Accepted for the `ServiceDetailCanvas` half +
+  `layoutAlgo` prop generalisation.
+- v0.16.3 `ServiceDetailModal` extraction — the pre-existing modal
+  surface this entry treats as the canonical home for per-service
+  controls.
