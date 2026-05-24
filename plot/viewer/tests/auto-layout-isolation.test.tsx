@@ -1,20 +1,24 @@
 /**
  * v0.16.36 — Auto-layout isolation regression (D-2026-05-13-L).
  * v0.24.5 — Actor opt-in (D-2026-05-18-B).
+ * v0.25.0 — Services + ServiceDetail opt-in with radial algorithm
+ *           (D-2026-05-24-B). ``enableAutoLayout`` boolean generalised
+ *           to ``layoutAlgo: "tree" | "radial" | null``.
  *
- * Pins the 4-layer isolation contract for the re-introduced
- * auto-layout feature:
+ * Pins the 4-layer isolation contract for the auto-layout feature:
  *
- *   1. Wrapper opt-in only — FoundationCanvas + ActorsCanvas pass
- *      ``enableAutoLayout={true}``; ServicesCanvas / ServiceDetailCanvas
- *      never do.
- *   2. Conditional render — when ``enableAutoLayout`` is false /
- *      undefined the auto-layout button is not in the DOM.
+ *   1. Wrapper opt-in only — every wrapper passes its own
+ *      ``layoutAlgo``: Foundation / Actors → ``"tree"``;
+ *      Services / ServiceDetail → ``"radial"``. SketchCanvas itself
+ *      has no default — without a wrapper, no button.
+ *   2. Conditional render — when ``layoutAlgo`` is null / undefined
+ *      the auto-layout button is not in the DOM.
  *   3. Triggering the button mutates ``doc.nodes`` via the regular
  *      ``onDocChange`` path (one-shot apply; Cmd+Z undoes it). No
  *      hidden side effects on edges / anchor / other state.
  *   4. The trigger touches *positions only* — kind / label / parent_id
- *      / typed-text fields stay byte-identical.
+ *      / typed-text fields stay byte-identical, regardless of which
+ *      algorithm the wrapper opted into.
  *
  * Layer 3 ("one-shot apply + Cmd+Z" — chose over the plan's
  * "preview/apply" pattern, see D-2026-05-13-L body): the explicit
@@ -154,7 +158,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     ).not.toBeNull();
   });
 
-  it("ServicesCanvas wrapper does NOT render the Auto-layout button", () => {
+  it("ServicesCanvas wrapper renders the Auto-layout button (D-2026-05-24-B, radial)", () => {
     const doc = makeCanvas("services", [
       makeNode({ id: "s", label: "Service", kind: "service" }),
     ]);
@@ -163,11 +167,11 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     );
     expect(
       queryByRole("button", { name: /auto.?layout/i }),
-      "ServicesCanvas must NOT opt into auto-layout — isolation contract.",
-    ).toBeNull();
+      "ServicesCanvas opts into the radial auto-layout button per D-2026-05-24-B.",
+    ).not.toBeNull();
   });
 
-  it("ServiceDetailCanvas wrapper does NOT render the Auto-layout button", () => {
+  it("ServiceDetailCanvas wrapper renders the Auto-layout button (D-2026-05-24-B, radial)", () => {
     const doc = makeCanvas("service_detail", [
       makeNode({
         id: "svc-1",
@@ -181,8 +185,100 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     );
     expect(
       queryByRole("button", { name: /auto.?layout/i }),
-      "ServiceDetailCanvas must NOT opt into auto-layout — isolation contract.",
-    ).toBeNull();
+      "ServiceDetailCanvas opts into the radial auto-layout button per D-2026-05-24-B.",
+    ).not.toBeNull();
+  });
+
+  it("ServicesCanvas: Auto-layout touches positions only, not kind/label/typed-text (D-2026-05-24-B, radial)", () => {
+    const original = makeNode({
+      id: "s1",
+      label: "Login",
+      kind: "service",
+      x: 50,
+      y: 50,
+      what: "log in",
+      why: "auth",
+    });
+    const doc = makeCanvas("services", [
+      original,
+      makeNode({ id: "s2", label: "Logout", kind: "service", x: 200, y: 200 }),
+    ]);
+    let last: CanvasDoc | null = null;
+    const { getByRole } = render(
+      <ServicesCanvas
+        {...commonProps(doc, (d) => {
+          last = d;
+        })}
+      />,
+    );
+    fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
+    expect(last).not.toBeNull();
+    const after = (last as unknown as CanvasDoc).nodes.find((n) => n.id === "s1");
+    expect(after, "node 's1' must survive radial auto-layout").toBeTruthy();
+    if (!after) return;
+    expect(after.kind).toBe(original.kind);
+    expect(after.label).toBe(original.label);
+    expect(after.parent_id).toBe(original.parent_id);
+    expect((after as unknown as Record<string, unknown>).what).toBe("log in");
+    expect((after as unknown as Record<string, unknown>).why).toBe("auth");
+  });
+
+  it("ServiceDetailCanvas: Auto-layout touches positions only (D-2026-05-24-B, radial, hidden root-service as hub)", () => {
+    // ServiceDetail injects no anchor; the hub is the (hidden)
+    // root-service. Add one ring-1 spoke so the algorithm has work to do.
+    const original = makeNode({
+      id: "step-1",
+      label: "Step 1",
+      kind: "step",
+      x: 50,
+      y: 50,
+      how: "do thing",
+      outcome: "thing-done",
+    });
+    const doc = makeCanvas("service_detail", [
+      makeNode({
+        id: "svc-1",
+        label: "Login",
+        kind: "service",
+        is_root: true,
+        x: 0,
+        y: 0,
+      }),
+      original,
+    ]);
+    doc.edges = [
+      {
+        id: "e-svc-step",
+        source: "svc-1",
+        target: "step-1",
+        sourceHandle: null,
+        targetHandle: null,
+        label: "",
+        style: "solid",
+        action_verb: null,
+        value_form: [],
+      },
+    ];
+    let last: CanvasDoc | null = null;
+    const props = commonProps(doc, (d) => {
+      last = d;
+    });
+    // ServiceDetail wrapper passes injectAnchor=false — clear projectAnchor
+    // so useRadialLayout's pickHub falls back to the root-service node.
+    const { getByRole } = render(
+      <ServiceDetailCanvas {...props} projectAnchor={null} />,
+    );
+    fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
+    expect(last).not.toBeNull();
+    const after = (last as unknown as CanvasDoc).nodes.find(
+      (n) => n.id === "step-1",
+    );
+    expect(after, "node 'step-1' must survive radial auto-layout").toBeTruthy();
+    if (!after) return;
+    expect(after.kind).toBe(original.kind);
+    expect(after.label).toBe(original.label);
+    expect((after as unknown as Record<string, unknown>).how).toBe("do thing");
+    expect((after as unknown as Record<string, unknown>).outcome).toBe("thing-done");
   });
 
   it("FoundationCanvas: clicking Auto-layout calls onDocChange exactly once", () => {

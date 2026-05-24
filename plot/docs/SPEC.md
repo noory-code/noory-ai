@@ -121,48 +121,83 @@ were *not* originally a self-loop) still drop. Decision
 
 ## Auto-layout
 
-**Re-introduced v0.16.36 per [D-2026-05-13-L](./DECISIONS.md) — opt-in
-per wrapper.** Plot's `SketchCanvas` default behaviour is *no
-auto-layout button*. `FoundationCanvas` (v0.16.36) and `ActorsCanvas`
-([D-2026-05-18-B](./DECISIONS.md), v0.24.5) opt in via
-`enableAutoLayout={true}`. `ServicesCanvas` and `ServiceDetailCanvas`
-do not opt in (isolation regression test:
-`viewer/tests/auto-layout-isolation.test.tsx`).
+**Re-introduced v0.16.36 per [D-2026-05-13-L](./DECISIONS.md);
+generalised v0.25.0 per [D-2026-05-24-B](./DECISIONS.md) into
+per-wrapper algorithm choice.** Plot's `SketchCanvas` default
+behaviour is *no auto-layout button*. Each wrapper opts in by setting
+`layoutAlgo`:
 
-### Behaviour (canvases that opt in)
+| Wrapper | `layoutAlgo` | Algorithm | Since |
+|---|---|---|---|
+| `FoundationCanvas` | `"tree"` | Directional tree (BFS from anchor, T/R/B/L per parent-handle) | v0.16.36 |
+| `ActorsCanvas` | `"tree"` | Directional tree (same as Foundation) | v0.24.5 |
+| `ServicesCanvas` | `"radial"` | Hub-and-spoke (BFS rings around anchor) | v0.25.0 |
+| `ServiceDetailCanvas` | `"radial"` | Hub-and-spoke (rings around the hidden root-service) | v0.25.0 |
+
+Isolation regression test:
+`viewer/tests/auto-layout-isolation.test.tsx`.
+
+### Behaviour (any canvas that opts in)
 
 - The `<Controls>` panel (bottom-left of the canvas) renders an extra
   `⊞` button labelled "Auto-layout".
-- Clicking it runs the v0.13.9 directional-tree algorithm
-  ([`viewer/src/canvases/sketch/autoLayout.ts`](../viewer/src/canvases/sketch/autoLayout.ts)):
-  - The project anchor stays fixed in place (BFS root).
-  - Spanning tree from anchor places each child in the direction
-    (T/R/B/L) of the parent-side handle on the connecting edge.
-  - Sibling spacing tracks subtree extents (Reingold-Tilford-style)
-    so no two node footprints overlap.
-  - Deterministic — ties broken by node id.
+- Clicking it runs the wrapper's chosen algorithm.
 - The new positions are dispatched via the regular `onDocChange`
   pipeline, so **`Cmd+Z` undoes the auto-layout exactly like any
   manual move**. The user-consent guarantee comes from the explicit
   button click + the undo stack — no separate preview state.
 - Auto-layout touches **positions only**. `kind`, `label`,
   `parent_id`, typed-text fields, edges — all byte-identical
-  before vs after.
+  before vs after. True for both algorithms.
 
-### Isolation contract (D-2026-05-13-L, extended D-2026-05-18-B)
+### Tree algorithm (`layoutAlgo="tree"`)
+
+Implemented in
+[`viewer/src/canvases/sketch/autoLayout.ts`](../viewer/src/canvases/sketch/autoLayout.ts):
+
+- The project anchor stays fixed in place (BFS root).
+- Spanning tree from anchor places each child in the direction
+  (T/R/B/L) of the parent-side handle on the connecting edge.
+- Sibling spacing tracks subtree extents (Reingold-Tilford-style)
+  so no two node footprints overlap.
+- Deterministic — ties broken by node id.
+
+### Radial algorithm (`layoutAlgo="radial"`)
+
+Implemented in
+[`viewer/src/canvases/sketch/radialLayout.ts`](../viewer/src/canvases/sketch/radialLayout.ts):
+
+- A single hub node is the layout origin. For `ServicesCanvas` the
+  hub is the synthetic project anchor; for `ServiceDetailCanvas`
+  (which injects no anchor) the hub is the hidden root-service node
+  (`kind === "service" && is_root === true`).
+- BFS from the hub via undirected edges assigns a ring level to every
+  reachable node (hub = 0, immediate neighbours = 1, ...).
+- Within a ring, members are sorted by id (determinism) and spaced
+  at equal angles starting from the top (-π/2): a ring with N
+  members uses 2π / N per slot.
+- Ring radius accumulates: ring 1 = `hub_half + ring1_span/2 + gap`;
+  subsequent rings add `ring_k_span + gap`. Span = the longest node
+  dimension in that ring. Gap defaults to 40 px.
+- Orphan nodes (not reachable from the hub) drop into a grid below
+  the outermost ring — same fallback shape that `autoLayout.ts`
+  uses for disconnected subtrees.
+
+### Isolation contract (D-2026-05-13-L, extended D-2026-05-18-B and D-2026-05-24-B)
 
 Four layers of defence keep auto-layout from affecting any wrapper
 that did not opt in:
 
-1. **Wrapper opt-in** — only `FoundationCanvas` + `ActorsCanvas` pass
-   `enableAutoLayout={true}` to `SketchCanvas`.
+1. **Wrapper opt-in** — each wrapper supplies its own `layoutAlgo`.
+   `SketchCanvas` itself has no default; without a wrapper there is
+   no button.
 2. **Conditional render** — `SketchCanvas` only renders the
-   `ControlButton` when `enableAutoLayout === true`.
-3. **No state mutation when disabled** — the `useAutoLayout` hook
-   is called unconditionally (React hooks rule) but its returned
-   callback is only wired to a button that doesn't exist when the
-   feature is off.
-4. **Touches positions only** — the trigger replaces `x` / `y` on
+   `ControlButton` when `layoutAlgo` is truthy.
+3. **No state mutation when disabled** — both `useAutoLayout` and
+   `useRadialLayout` are called unconditionally (React hooks rule)
+   but their returned callbacks are only wired to a button that
+   doesn't exist when `layoutAlgo` is null / undefined.
+4. **Touches positions only** — both algorithms replace `x` / `y` on
    nodes via `onDocChange`; no edges / anchor / typed-text mutation.
 
 ### History (5 prior add/remove/extend cycles)
@@ -191,6 +226,15 @@ that did not opt in:
   Bana overlap: *"액터 캔버스에 노드 정렬 기능 넣기"*. Isolation
   contract honoured (`Services` / `ServiceDetail` still off);
   same one-shot apply + `Cmd+Z` + positions-only contract.
+- **D-2026-05-24-B** — extended opt-in to `Services` + `ServiceDetail`
+  with a new **radial** algorithm (hub-and-spoke), since the
+  directional-tree algorithm assumed by D-2026-05-18-B for those
+  canvases would not match their topology. The `enableAutoLayout`
+  boolean prop is renamed `layoutAlgo: "tree" | "radial" | null`.
+  User direct request after opening Services and finding no button:
+  *"다른 캔버스에는 있는데 캔버스 정렬기능이 없다"*. The isolation
+  contract is preserved (each wrapper still chooses; SketchCanvas
+  still has no default).
 
 ---
 

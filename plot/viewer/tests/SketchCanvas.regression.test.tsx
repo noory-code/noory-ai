@@ -141,13 +141,16 @@ describe("SketchCanvas regression — pin v0.13.2 reverts", () => {
     expect(handles.length).toBe(4);
   });
 
-  it("SketchCanvas default (no enableAutoLayout prop) renders no Auto layout button", () => {
-    // D-2026-05-13-L — auto-layout re-introduced as Foundation-only
-    // opt-in via ``enableAutoLayout`` wrapper prop. SketchCanvas
-    // default behaviour stays "no auto-layout button" — only the
-    // FoundationCanvas wrapper opts in. Actors / Services /
-    // ServiceDetail wrappers must never opt in (isolation regression
-    // covered in auto-layout-isolation.test.tsx).
+  it("SketchCanvas default (no layoutAlgo prop) renders no Auto layout button", () => {
+    // D-2026-05-13-L — auto-layout re-introduced as wrapper opt-in
+    // via the ``enableAutoLayout`` boolean prop. v0.25.0
+    // (D-2026-05-24-B) generalised that into ``layoutAlgo: "tree" |
+    // "radial" | null`` so Services / ServiceDetail can opt in with a
+    // hub-spoke radial algorithm distinct from Foundation / Actors'
+    // directional tree. SketchCanvas default behaviour stays
+    // "no auto-layout button" — only wrappers that set ``layoutAlgo``
+    // get the ⊞ control. (Isolation regression covered in
+    // auto-layout-isolation.test.tsx.)
     //
     // History: D-2026-05-04-D removed (misread), D-2026-05-10-E
     // restored (directional-tree), D-2026-05-10-F button placement,

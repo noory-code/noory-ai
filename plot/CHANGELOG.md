@@ -4,6 +4,40 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.25.0] — 2026-05-24
+
+### Added
+
+- **Radial auto-layout for Services + ServiceDetail canvases**
+  ([D-2026-05-24-B](./docs/DECISIONS.md#d-2026-05-24-b--services--servicedetail-opt-into-auto-layout-with-new-radial-algorithm-v0250)).
+  ServicesCanvas and ServiceDetailCanvas now render the `⊞`
+  auto-layout button. Clicking it places nodes in concentric rings
+  around a hub (anchor on Services; hidden root-service on
+  ServiceDetail) — appropriate for the hub-and-spoke topology those
+  canvases use, where the directional-tree algorithm Foundation /
+  Actors use is not a fit. BFS from the hub assigns ring levels;
+  within a ring, id-sorted members are placed at equal angles
+  starting from the top. Orphan nodes drop into a grid below the
+  outermost ring. Pure algorithm in
+  `viewer/src/canvases/sketch/radialLayout.ts` (8 new unit tests);
+  React bridge in `viewer/src/canvases/sketch/useRadialLayout.ts`.
+
+### Changed
+
+- **`enableAutoLayout: boolean` → `layoutAlgo: "tree" | "radial" | null`**
+  prop on `SketchCanvas`. Same isolation contract (per-wrapper
+  opt-in; `Cmd+Z` undo; positions-only) — what changed is that each
+  wrapper now picks an algorithm rather than just toggling the
+  feature on. `FoundationCanvas` + `ActorsCanvas` migrate to
+  `layoutAlgo="tree"`; `ServicesCanvas` + `ServiceDetailCanvas` opt
+  in with `layoutAlgo="radial"`. SketchCanvas still has no default —
+  without a wrapper, no button.
+- `viewer/tests/auto-layout-isolation.test.tsx` — Services /
+  ServiceDetail "must NOT opt in" tests flipped to "must opt in with
+  radial" + 2 new positions-only tests covering the radial path.
+- `docs/SPEC.md` §Auto-layout — rewritten with the algo table +
+  per-algorithm behaviour sections.
+
 ## [0.24.15] — 2026-05-24
 
 ### Changed

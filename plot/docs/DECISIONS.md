@@ -6341,3 +6341,94 @@ persisted (D-2026-05-17-N principle preserved).
   `~/.claude/plans/linear-roaming-lynx.md` to keep this commit
   patch-scope and avoid the "cross-cutting bundle" anti-pattern
   ([D-2026-05-11-C](#d-2026-05-11-c)).
+
+---
+
+### D-2026-05-24-B — Services + ServiceDetail opt into auto-layout with new radial algorithm (v0.25.0)
+
+**Context:** Same 2026-05-24 Services review session that filed
+D-2026-05-24-A. After flagging the node-size issue, user asked
+*"다른 캔버스에는 있는데 캔버스 정렬기능이 없다"* — Services /
+ServiceDetail had no ⊞ button. The prior decision
+[D-2026-05-18-B](#d-2026-05-18-b) had explicitly excluded those
+canvases on the grounds that their hub-and-spoke topology does not
+suit the directional-tree algorithm (Foundation / Actors use). User's
+follow-up request was the *opposite* — give them an auto-layout button
+**with an algorithm appropriate for their topology**.
+
+**Decision:**
+
+1. **Generalise the wrapper opt-in prop** from `enableAutoLayout:
+   boolean` to `layoutAlgo: "tree" | "radial" | null`. Same default
+   (null = no button); same isolation contract (per-wrapper opt-in);
+   same `Cmd+Z` + positions-only invariants. Existing wrappers
+   migrate:
+   - `FoundationCanvas` → `layoutAlgo="tree"`
+   - `ActorsCanvas` → `layoutAlgo="tree"`
+   - `ServicesCanvas` → `layoutAlgo="radial"` (new)
+   - `ServiceDetailCanvas` → `layoutAlgo="radial"` (new)
+2. **New radial algorithm**
+   ([`viewer/src/canvases/sketch/radialLayout.ts`](../viewer/src/canvases/sketch/radialLayout.ts)).
+   Hub-and-spoke pattern:
+   - Hub = synthetic project anchor (Services) or hidden root-service
+     node (ServiceDetail). Picked by `useRadialLayout::pickHub` based
+     on whether `projectAnchor` is set.
+   - BFS from hub via undirected edges → ring level per node.
+   - Within a ring: id-sorted, equal-angle slots, starting from the
+     top (-π/2).
+   - Radius accumulates: ring 1 = `hub_half + ring1_span/2 + gap`;
+     ring k>1 adds `ring_k_span + gap`. Gap default 40 px (chosen to
+     give an 80×36 default node its own width again between siblings
+     on the inner ring per D-2026-05-24-A).
+   - Orphan nodes (not reachable from hub) → grid below outermost
+     ring, same shape as autoLayout.ts orphan fallback.
+3. **Auto-layout-isolation test flipped** for Services / Detail. Tests
+   that previously asserted `must NOT opt in` now assert `must opt in
+   with radial`. Two new positions-only tests cover both radial
+   wrappers (Services with anchor hub; ServiceDetail with hidden
+   root-service hub).
+
+**Why a new algorithm, not extend directional-tree?** The tree
+algorithm relies on parent-side handle direction (T/R/B/L) — Services'
+service-to-service relationships are bidirectional / many-to-many and
+don't carry a meaningful "direction." Radial expresses centrality
+(distance from hub = importance) which is the Services pattern.
+ServiceDetail's category / step / rule / metric / content all hang off
+*one* root service — also a clean radial fit.
+
+**Why not Detail-only or Services-only?** AskUserQuestion 2026-05-24
+preview-compare offered Services-only / Detail-only / both. User chose
+both. Both canvases share the hub-and-spoke topology — splitting
+adoption would be inconsistent.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/sketch/radialLayout.ts` | NEW — pure `computeRadialLayout` |
+| `viewer/src/canvases/sketch/useRadialLayout.ts` | NEW — React bridge + `pickHub` |
+| `viewer/src/canvases/SketchCanvas.tsx` | `enableAutoLayout: boolean` → `layoutAlgo: "tree" \| "radial" \| null`; dispatch `triggerLayout` based on algo |
+| `viewer/src/canvases/{Foundation,Actors}Canvas.tsx` | `enableAutoLayout={true}` → `layoutAlgo="tree"` |
+| `viewer/src/canvases/{Services,ServiceDetail}Canvas.tsx` | `layoutAlgo="radial"` added |
+| `viewer/tests/radialLayout.test.ts` | NEW — 8 unit tests for the pure algo |
+| `viewer/tests/auto-layout-isolation.test.tsx` | 2 "must NOT opt in" flipped to "must opt in"; 2 positions-only tests added for radial |
+| `viewer/tests/SketchCanvas.regression.test.tsx` | comment / test name updated for the new prop |
+| `docs/SPEC.md` | §Auto-layout rewritten — algo table + radial section |
+
+**Verification:**
+- Viewer vitest 560 passed (was 544 — +8 radial unit + 2 new radial
+  positions-only tests + 6 misc adjustments).
+- Server pytest 431 passed (unaffected — server has no layout code).
+- tsc clean. SketchCanvas 448 LOC vs 450 ceiling.
+
+**Approval:** Accepted by user, 2026-05-24 — AskUserQuestion option
+*"Services 전용 algorithm 신규"* + *"ServicesCanvas + ServiceDetailCanvas 둘 다"*
+selected directly.
+
+**Cross-refs:**
+- D-2026-05-13-L (Foundation-only opt-in, original isolation contract).
+- D-2026-05-18-B (Actors opt-in extension — explicitly excluded
+  Services with hub-spoke reasoning; this entry refutes that exclusion
+  by supplying the missing algorithm).
+- D-2026-05-24-A (Phase A sibling — default node size 80×36 — informs
+  the radial `ringGap = 40` choice).

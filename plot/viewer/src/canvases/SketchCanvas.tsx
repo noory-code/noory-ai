@@ -38,6 +38,7 @@ import { useInspectorRouting } from "./sketch/useInspectorRouting";
 import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
 import { useAutoLayout } from "./sketch/useAutoLayout";
+import { useRadialLayout } from "./sketch/useRadialLayout";
 import { useValueFlow } from "./sketch/useValueFlow";
 
 // v0.15 Phase 3.5 — per-kind React Flow node types come from the
@@ -119,9 +120,12 @@ export interface SketchCanvasProps {
    *  ``core_value`` / ``identity`` nodes snap to anchor-radial slots
    *  per the canonical Plot spec (Foundation only). Default false. */
   applyAnchorRadialLayout?: boolean;
-  /** v0.16.36 (D-2026-05-13-L) — Foundation-only opt-in auto-layout
-   *  button in RF Controls. Default false; wrapper opt-in. */
-  enableAutoLayout?: boolean;
+  /** v0.25.0 (D-2026-05-24-B) — wrapper opt-in for the auto-layout
+   *  button in RF Controls. Successor to ``enableAutoLayout`` (boolean).
+   *  ``"tree"`` runs ``useAutoLayout`` (Foundation / Actors); ``"radial"``
+   *  runs ``useRadialLayout`` (Services / ServiceDetail). ``null`` /
+   *  undefined hides the button entirely. */
+  layoutAlgo?: "tree" | "radial" | null;
   /** v0.18.0 Phase 3 (D-2026-05-16-E) — fire to publish a node. The
    *  Inspector renders the publish button; the callback wraps the
    *  HTTP POST + version refresh. Optional so canvases not yet wired
@@ -165,7 +169,7 @@ function SketchCanvasInner({
   showFoldButton,
   injectAnchor,
   applyAnchorRadialLayout,
-  enableAutoLayout,
+  layoutAlgo,
   onPublishNode,
   onUnpublishNode,
 }: SketchCanvasProps) {
@@ -223,7 +227,9 @@ function SketchCanvasInner({
 
   const { childIdsByParent, nodeById, nearestCollapsedAncestor, toggleCollapsed, subtreeSize } =
     useCollapsedTree(doc.nodes, docRef, onDocChange);
-  const triggerAutoLayout = useAutoLayout({ docRef, onDocChange, projectAnchor });
+  const triggerTreeLayout = useAutoLayout({ docRef, onDocChange, projectAnchor });
+  const triggerRadialLayout = useRadialLayout({ docRef, onDocChange, projectAnchor });
+  const triggerLayout = layoutAlgo === "radial" ? triggerRadialLayout : triggerTreeLayout;
 
   const nodes = useNodesMemo({
     doc,
@@ -383,7 +389,7 @@ function SketchCanvasInner({
         }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <Controls>{enableAutoLayout && <ControlButton onClick={triggerAutoLayout} aria-label="Auto-layout" title="Auto-layout">⊞</ControlButton>}</Controls>
+        <Controls>{layoutAlgo && <ControlButton onClick={triggerLayout} aria-label="Auto-layout" title="Auto-layout">⊞</ControlButton>}</Controls>
       </ReactFlow>
       {menu && (
         <SketchContextMenu
