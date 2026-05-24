@@ -16,13 +16,12 @@ export const PROJECT_ANCHOR_ID = "__project_anchor__";
  * override these in SketchStencil; the defaults are the fallback
  * applied when no preset matches.
  */
-// v0.24.2 (D-2026-05-17-N) — reduced from 180×80 to 140×60. Smaller
-// default makes Foundation / Actors / Services canvases fit more
-// nodes without scroll and reduces auto-layout overlap risk
-// (smaller footprints sit comfortably inside the existing 32 px
-// auto-layout padding). Existing nodes keep their own width/height
-// stored in canvas.json; only the next stencil-drop or pane-double-
-// click creates a 140×60 node.
-export const DEFAULT_WIDTH = 140;
-export const DEFAULT_HEIGHT = 60;
+// v0.24.15 (D-2026-05-24-A) — reduced from 140×60 to 80×36, follow-up to
+// D-2026-05-17-N. Tighter default keeps Services / ServiceDetail canvases
+// readable without overflow on hub-spoke layouts and matches the new label-
+// plus-icon-only baseline. Existing nodes keep their stored width/height in
+// canvas.json; only the next stencil-drop or pane-double-click creates an
+// 80×36 node.
+export const DEFAULT_WIDTH = 80;
+export const DEFAULT_HEIGHT = 36;
 export const DEFAULT_COLOR = "#ffffff";

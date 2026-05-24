@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.24.15] — 2026-05-24
+
+### Changed
+
+- **Default node size 140×60 → 80×36**
+  ([D-2026-05-24-A](./docs/DECISIONS.md#d-2026-05-24-a--default-node-size-14060--8036-v02415)).
+  Second tightening pass after D-2026-05-17-N (180×80 → 140×60). Tighter
+  default suits Services / ServiceDetail hub-spoke layouts without
+  overflow. Existing nodes keep their stored width / height in
+  `canvas.json`; only new stencil-drop / pane-double-click / paste
+  creates an 80×36 node. SSOT trio updated: `plot_mcp/models.py`,
+  `viewer/src/canvases/sketch/constants.ts`,
+  `viewer/src/domain/BaseFields.ts`. Auto-layout padding stays at 64
+  (set by D-2026-05-17-N) — now ~1.8× the longer node dimension, so
+  overlap risk strictly decreases.
+
 ## [0.24.14] — 2026-05-21
 
 ### Added

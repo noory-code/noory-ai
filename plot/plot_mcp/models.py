@@ -140,12 +140,13 @@ class BaseNodeFields(BaseModel):
     label: str = ""
     x: float = 0.0
     y: float = 0.0
-    # v0.24.2 (D-2026-05-17-N) — reduced from 180×80 to 140×60 to fit
-    # more nodes per canvas + give auto-layout more room. Existing
-    # nodes keep their own values in canvas.json; only nodes that omit
-    # width/height (defaults filled by Pydantic) get the new size.
-    width: float = 140.0
-    height: float = 60.0
+    # v0.24.15 (D-2026-05-24-A) — reduced from 140×60 to 80×36, follow-up
+    # to D-2026-05-17-N. Tighter default suits Services / ServiceDetail
+    # hub-spoke layouts without overflow. Existing nodes keep their own
+    # values in canvas.json; only nodes that omit width/height (defaults
+    # filled by Pydantic) get the new size.
+    width: float = 80.0
+    height: float = 36.0
     color: str = "#ffffff"
     shape: Shape = "rounded"
     icon: str | None = None

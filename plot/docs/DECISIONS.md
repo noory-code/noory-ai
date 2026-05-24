@@ -6281,3 +6281,63 @@ cache 로 swap. 편집 비활성. 헤더에 amber 배너 + "✕ 나가기" 버�
 - D-2026-05-21-B (v0.24.13 — 발행 UX, 이 entry 가 *그 결과 보기* 를
   마저 채움)
 - `git_store.py:7` 코멘트 *"future viewer UI"* 가 이 entry 로 실현됨.
+
+---
+
+### D-2026-05-24-A — Default node size 140×60 → 80×36 (v0.24.15)
+
+**Context:** User opened the Services-side review in session 2026-05-24
+*"이제 뭘하냐면 서비스 쪽 동작 리뷰하고 다듬을 거에요"* and immediately
+flagged *"일단 노드 크기가 너무 크다"*. This is the second tightening
+pass after D-2026-05-17-N (180×80 → 140×60) — Services / ServiceDetail
+canvases pack more nodes into a smaller viewport than Foundation /
+Actors, and 140×60 still wasted vertical space on hub-spoke layouts.
+
+**Decision:**
+
+1. **Default node size 140×60 → 80×36** in three places (same SSOT
+   trio as D-2026-05-17-N):
+   - `plot_mcp/models.py::BaseNodeFields.width / height` (Pydantic).
+   - `viewer/src/canvases/sketch/constants.ts::DEFAULT_WIDTH / HEIGHT`.
+   - `viewer/src/domain/BaseFields.ts::parseBaseFields` fallback.
+2. **Auto-layout padding stays at 64** (set by D-2026-05-17-N). Padding
+   is now ~1.8× the longer node dimension (was ~0.5×) — overlap risk
+   strictly decreases.
+3. **No migration.** Existing nodes keep their stored width / height in
+   `canvas.json`; only new stencil-drop / pane-double-click / paste
+   creates an 80×36 node. SSOT preserved.
+
+**Why 80×36 specifically?** AskUserQuestion preview-compare 2026-05-24
+offered 120×50 / 100×40 / 80×36. User chose 80×36 — the most aggressive
+option (~66% area reduction from 140×60). Acknowledged trade-off: some
+kinds (multi-word labels, long service titles) may need manual resize.
+The default is what the user *starts* with; per-node resize is already
+persisted (D-2026-05-17-N principle preserved).
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `plot_mcp/models.py` | width / height defaults 140 / 60 → 80 / 36; comment block updated to reference D-2026-05-24-A |
+| `viewer/src/canvases/sketch/constants.ts` | `DEFAULT_WIDTH = 80`, `DEFAULT_HEIGHT = 36`; comment updated |
+| `viewer/src/domain/BaseFields.ts` | `parseBaseFields` fallback 140 / 60 → 80 / 36 |
+| `viewer/tests/domain/base-fields.test.ts` | assertion 140 / 60 → 80 / 36 |
+| `viewer/tests/domain/round-trip.test.ts` | spread width assertion 140 → 80 |
+
+**Verification:**
+- Server pytest 431 passed, mypy clean.
+- Viewer vitest 544 passed, tsc clean.
+- Browser: new node via stencil-drop on Foundation canvas renders at
+  80×36 (per `plot-verifier` agent).
+
+**Approval:** Accepted by user, 2026-05-24 — AskUserQuestion option
+*"80×36"* selected directly.
+
+**Cross-refs:**
+- D-2026-05-17-N (v0.24.2 — prior reduction 180×80 → 140×60). This entry
+  is its successor; both follow the same SSOT-trio update pattern.
+- Phase B sibling work (Services-specific radial auto-layout) ships
+  separately as v0.25.0 per plan
+  `~/.claude/plans/linear-roaming-lynx.md` to keep this commit
+  patch-scope and avoid the "cross-cutting bundle" anti-pattern
+  ([D-2026-05-11-C](#d-2026-05-11-c)).
