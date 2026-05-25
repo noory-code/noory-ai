@@ -6724,3 +6724,60 @@ emphasises *content* + *relationships*, not chrome.
   in visual language.
 - D-2026-05-17-N — same SSOT pattern (new-node default only;
   existing stored values preserved).
+
+---
+
+### D-2026-05-25-C — ServicesCanvas opts back into radial auto-layout (v0.26.2, reverts D-2026-05-24-C)
+
+**Context:** Same session 2026-05-25 next round. User direction:
+
+> *"서비스 메인 캔버스에 정렬기능 빠져있는건 여전하고."*
+
+This refers to the same-day rollback in
+[D-2026-05-24-C](#d-2026-05-24-c--services-canvas-reverts-auto-layout-opt-in-controls-live-in-per-service-modal-v0251)
+which removed the ⊞ button from `ServicesCanvas` on the grounds that
+the main Services canvas was a "summary view" + controls belonged in
+the per-service modal. In practice the missing affordance was felt as
+a regression — the user wanted to redo the same `Services` clean-up
+work flow that Foundation / Actors enjoy.
+
+**Decision:**
+
+1. **Revert D-2026-05-24-C.** `ServicesCanvas` regains
+   `layoutAlgo="radial"` (re-uses the algorithm shipped in v0.25.0
+   per D-2026-05-24-B; no new code).
+2. `ServiceDetailCanvas` continues to use radial with the hidden
+   root-service as hub (unchanged).
+3. The "summary canvas" framing from D-2026-05-24-C is dropped from
+   the spec; the main canvas now has the same auto-layout
+   affordance as every other canvas.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/ServicesCanvas.tsx` | re-added `layoutAlgo="radial"` |
+| `viewer/tests/auto-layout-isolation.test.tsx` | ServicesCanvas test flipped back to "must opt in"; positions-only test restored; header doc updated to record the D-2026-05-25-C revert |
+| `docs/SPEC.md` | algo table — Services row back to `"radial"`; History extended with this entry |
+
+**Why a same-session re-revert?** The D-2026-05-24-C decision was a
+same-day decision based on a still-forming mental model of the
+"main canvas vs modal" split. Within the same session the user
+exercised the resulting UX and found the missing button was the
+bigger problem. Honest re-revert per *"Same-day rollbacks are
+honest"* (plot/CLAUDE.md). The radial algorithm code (shipped in
+v0.25.0) is unchanged.
+
+**Verification:**
+- Viewer vitest 562+ passed (auto-layout-isolation 9 tests green).
+- Server pytest unaffected.
+- tsc clean.
+
+**Approval:** Accepted by user, 2026-05-25 — AskUserQuestion option
+*"네, 다시 추가해주세요"* selected directly after the user direction
+above.
+
+**Cross-refs:**
+- D-2026-05-24-B (Services + ServiceDetail radial opt-in — original).
+- D-2026-05-24-C (the same-day rollback this entry reverses).
+- D-2026-05-13-L (Foundation-only opt-in, original isolation contract).

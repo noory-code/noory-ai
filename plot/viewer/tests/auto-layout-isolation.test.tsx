@@ -7,14 +7,16 @@
  *           briefly opted in too, then reverted same-day by
  *           D-2026-05-24-C — controls belong inside the per-service
  *           modal, not on the summary canvas.
+ * v0.26.2 — ServicesCanvas opts back into ``"radial"`` (D-2026-05-25-C
+ *           reverts D-2026-05-24-C). User direction was "서비스 메인
+ *           캔버스에 정렬기능 빠져있는건 여전하고".
  *
  * Pins the 4-layer isolation contract for the auto-layout feature:
  *
  *   1. Wrapper opt-in only — wrappers that opt in pass their
  *      ``layoutAlgo``: Foundation / Actors → ``"tree"``;
- *      ServiceDetail → ``"radial"``. ServicesCanvas does not opt in.
- *      SketchCanvas itself has no default — without a wrapper, no
- *      button.
+ *      Services / ServiceDetail → ``"radial"``. SketchCanvas itself
+ *      has no default — without a wrapper, no button.
  *   2. Conditional render — when ``layoutAlgo`` is null / undefined
  *      the auto-layout button is not in the DOM.
  *   3. Triggering the button mutates ``doc.nodes`` via the regular
@@ -162,7 +164,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     ).not.toBeNull();
   });
 
-  it("ServicesCanvas wrapper does NOT render the Auto-layout button (D-2026-05-24-C — main canvas is summary-only)", () => {
+  it("ServicesCanvas wrapper renders the Auto-layout button (D-2026-05-25-C, radial — D-2026-05-24-C reverted)", () => {
     const doc = makeCanvas("services", [
       makeNode({ id: "s", label: "Service", kind: "service" }),
     ]);
@@ -171,8 +173,8 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     );
     expect(
       queryByRole("button", { name: /auto.?layout/i }),
-      "ServicesCanvas must NOT render the auto-layout button — controls belong inside the per-service modal (D-2026-05-24-C reverts the Services opt-in from D-2026-05-24-B).",
-    ).toBeNull();
+      "ServicesCanvas opts back into the radial auto-layout button per D-2026-05-25-C (which reverts the D-2026-05-24-C 'main is summary-only' decision).",
+    ).not.toBeNull();
   });
 
   it("ServiceDetailCanvas wrapper renders the Auto-layout button (D-2026-05-24-B, radial)", () => {
@@ -191,6 +193,39 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       queryByRole("button", { name: /auto.?layout/i }),
       "ServiceDetailCanvas opts into the radial auto-layout button per D-2026-05-24-B.",
     ).not.toBeNull();
+  });
+
+  it("ServicesCanvas: Auto-layout touches positions only, not kind/label/typed-text (D-2026-05-25-C, radial)", () => {
+    const original = makeNode({
+      id: "s1",
+      label: "Login",
+      kind: "service",
+      x: 50,
+      y: 50,
+      what: "log in",
+      why: "auth",
+    });
+    const doc = makeCanvas("services", [
+      original,
+      makeNode({ id: "s2", label: "Logout", kind: "service", x: 200, y: 200 }),
+    ]);
+    let last: CanvasDoc | null = null;
+    const { getByRole } = render(
+      <ServicesCanvas
+        {...commonProps(doc, (d) => {
+          last = d;
+        })}
+      />,
+    );
+    fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
+    expect(last).not.toBeNull();
+    const after = (last as unknown as CanvasDoc).nodes.find((n) => n.id === "s1");
+    expect(after, "node 's1' must survive radial auto-layout").toBeTruthy();
+    if (!after) return;
+    expect(after.kind).toBe(original.kind);
+    expect(after.label).toBe(original.label);
+    expect((after as unknown as Record<string, unknown>).what).toBe("log in");
+    expect((after as unknown as Record<string, unknown>).why).toBe("auth");
   });
 
   it("ServiceDetailCanvas: Auto-layout touches positions only (D-2026-05-24-B, radial, hidden root-service as hub)", () => {

@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.26.2] — 2026-05-25
+
+### Added
+
+- **`⊞` auto-layout button on `ServicesCanvas`** restored
+  ([D-2026-05-25-C](./docs/DECISIONS.md#d-2026-05-25-c--servicescanvas-opts-back-into-radial-auto-layout-v0262-reverts-d-2026-05-24-c)).
+  Reverts the same-day-prior D-2026-05-24-C decision to remove it.
+  User feedback: *"서비스 메인 캔버스에 정렬기능 빠져있는건 여전하고"*.
+  The radial algorithm itself (shipped in v0.25.0) is unchanged;
+  ServicesCanvas now passes `layoutAlgo="radial"` again.
+
+### Changed
+
+- `viewer/tests/auto-layout-isolation.test.tsx` — ServicesCanvas test
+  flipped from "must NOT opt in" back to "must opt in with radial";
+  positions-only test restored.
+- `docs/SPEC.md` §Auto-layout table — Services row back to `"radial"`;
+  History entry for D-2026-05-25-C added.
+
 ## [0.26.1] — 2026-05-25
 
 ### Changed

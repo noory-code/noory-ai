@@ -152,7 +152,7 @@ behaviour is *no auto-layout button*. Each wrapper opts in by setting
 |---|---|---|---|
 | `FoundationCanvas` | `"tree"` | Directional tree (BFS from anchor, T/R/B/L per parent-handle) | v0.16.36 |
 | `ActorsCanvas` | `"tree"` | Directional tree (same as Foundation) | v0.24.5 |
-| `ServicesCanvas` | _(none)_ | — Summary canvas; controls live inside the per-service modal (D-2026-05-24-C). | — |
+| `ServicesCanvas` | `"radial"` | Hub-and-spoke (BFS rings around anchor) | v0.26.2 (D-2026-05-25-C reverts D-2026-05-24-C) |
 | `ServiceDetailCanvas` | `"radial"` | Hub-and-spoke (rings around the hidden root-service) | v0.25.0 |
 
 Isolation regression test:
@@ -265,6 +265,13 @@ that did not opt in:
   not on the overview. `ServiceDetailCanvas` keeps its `"radial"`
   opt-in. The `layoutAlgo` prop generalisation from D-2026-05-24-B
   is retained — only the Services wrapper's choice changed.
+- **D-2026-05-25-C** — reverts D-2026-05-24-C: `ServicesCanvas` opts
+  back into `layoutAlgo="radial"`. User direction next session
+  *"서비스 메인 캔버스에 정렬기능 빠져있는건 여전하고"* — practice
+  showed the lack of auto-layout on the main canvas hurt more than
+  the "summary canvas" framing helped. Algorithm is unchanged
+  (anchor as hub, BFS rings); `ServiceDetailCanvas` continues to use
+  the hidden root-service as its hub.
 
 ---
 
