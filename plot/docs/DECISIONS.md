@@ -6653,3 +6653,74 @@ User then chose the **maximal-cleanup** path via AskUserQuestion:
 - ``feedback_no_god_object`` memory — this entry is the dual of
   the v0.13 god-SketchNode purge: god *containment field* purge in
   favour of expressive edges.
+
+---
+
+### D-2026-05-25-B — Non-Symbol nodes default to rectangle shape (v0.26.1)
+
+**Context:** Same session 2026-05-25 after v0.26.0 ship. User direction:
+
+> *"캔버스에 앵커하고 심볼 빼고 다 사각형으로 노드를 만들죠"*
+
+The two carve-outs reflect the v0.24.11 (D-2026-05-19-D) Symbol
+concept ([[project_plot_symbol_concept]]) — Symbols are the
+cross-canvas referenceable masters (mission / core_value / identity /
+actor / sub-actor) whose visual identity carries domain meaning. The
+project anchor is the synthetic centre node. Everything else
+(category / service / actor_ref / mission_ref / value_ref /
+identity_ref / metric / step / rule / content) is "consumer plane"
+shape-wise — should read as a uniform rectangle so the canvas
+emphasises *content* + *relationships*, not chrome.
+
+**Decision:**
+
+1. **Anchor stays circle.** ``ProjectNode.shape: Shape = "circle"``
+   (already set, unchanged).
+2. **Symbol kinds keep their current shape.** No edit to
+   ``ActorNode`` (circle) / ``MissionNode`` / ``CoreValueNode`` /
+   ``IdentityNode`` (rounded). These continue to inherit
+   ``BaseNodeFields.shape: Shape = "rounded"``.
+3. **Every other kind = rectangle** at creation time. The change
+   lands in the stencil presets, not the Pydantic defaults, so:
+   - New nodes from drag-and-drop / picker / preset → rectangle.
+   - Existing nodes keep their stored shape (SSOT, per the
+     D-2026-05-17-N pattern).
+   - AI / MCP-driven node creation that omits ``shape`` still
+     inherits the Pydantic default ("rounded") — acceptable since
+     MCP node creation already specifies typed-field defaults; if
+     it later wants rectangle parity, set ``shape="rectangle"``
+     explicitly or follow up with a D entry that flips the base.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| ``viewer/src/canvases/SketchStencil.tsx`` | 9 preset shapes: ``TOP_LEVEL_CATEGORY`` / ``SERVICE_INSIDE_CATEGORY`` / metric / ``ACTOR_REF`` / ``MISSION_REF`` / ``VALUE_REF`` / ``IDENTITY_REF`` + 4 picker-driven helpers (``actorRefPresetFor`` / ``missionRefPresetFor`` / ``valueRefPresetFor`` / ``identityRefPresetFor``) — all moved to ``shape: "rectangle"``. Step was already ``rectangle``. |
+| ``plot_mcp/folder_io.py`` | 2 ``ActorRefNode`` auto-seeds in ``ensure_service_detail`` flipped from ``shape="ellipse"`` to ``shape="rectangle"`` for parity with the stencil. |
+| ``docs/SPEC.md`` | Optional: Plot Edges section already describes user-drawn nature; no spec change for shape (preset detail). |
+
+**Why stencil-only (not Pydantic base)?** Two reasons:
+1. Stencil is the single funnel for *user-driven* creation; the
+   Pydantic default fires only for raw / MCP-driven creates. Limiting
+   the change to the stencil keeps the blast radius small.
+2. Symbol kinds would otherwise need explicit ``shape`` defaults to
+   override the new base — three more model edits. Skipping that
+   keeps the change to ~10 line edits in one preset file + 2 in the
+   server.
+
+**Verification:**
+- Server pytest 433 passed; mypy clean.
+- Viewer vitest 562 passed; tsc clean.
+- Browser verify deferred to user (Playwright MCP offline this
+  session; change affects new-node visuals only — existing canvas
+  unchanged).
+
+**Approval:** Accepted by user, 2026-05-25 — direct quote
+*"캔버스에 앵커하고 심볼 빼고 다 사각형으로 노드를 만들죠"*.
+
+**Cross-refs:**
+- D-2026-05-19-D ([[project_plot_symbol_concept]]) — Symbol concept
+  formalised; this entry honours the producer/consumer plane split
+  in visual language.
+- D-2026-05-17-N — same SSOT pattern (new-node default only;
+  existing stored values preserved).

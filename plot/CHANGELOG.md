@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.26.1] — 2026-05-25
+
+### Changed
+
+- **Non-Symbol nodes default to rectangle shape** at creation time
+  ([D-2026-05-25-B](./docs/DECISIONS.md#d-2026-05-25-b--non-symbol-nodes-default-to-rectangle-shape-v0261)).
+  User direction *"캔버스에 앵커하고 심볼 빼고 다 사각형으로 노드를
+  만들죠"*. The 11 non-Symbol kinds (`category`, `service`,
+  `actor_ref`, `mission_ref`, `value_ref`, `identity_ref`, `metric`,
+  `step`, `rule`, `content`) now drop as rectangles from the stencil
+  + picker flow. Symbol kinds (`mission` / `core_value` /
+  `identity` / `actor` / sub-actor) keep their current shape
+  (rounded / circle); the project anchor stays a circle. Stencil-only
+  change — Pydantic defaults untouched, existing stored shapes
+  preserved (SSOT). 9 stencil presets + 4 picker-driven preset
+  helpers + 2 server auto-seed `ActorRefNode` instances flipped.
+
 ## [0.26.0] — 2026-05-25  ⚠ BREAKING
 
 ### Removed

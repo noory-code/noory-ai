@@ -37,7 +37,8 @@ const TOP_LEVEL_ACTOR: StencilPreset = {
 const TOP_LEVEL_CATEGORY: StencilPreset = {
   id: "category",
   labelHint: "Category",
-  shape: "rounded",
+  // v0.26.1 (D-2026-05-25-B) — non-Symbol kinds default to rectangle.
+  shape: "rectangle",
   color: "#e2e8f0",
   width: 220,
   height: 120,
@@ -49,7 +50,7 @@ const TOP_LEVEL_CATEGORY: StencilPreset = {
 const SERVICE_INSIDE_CATEGORY: StencilPreset = {
   id: "service-in-category",
   labelHint: "Service",
-  shape: "rounded",
+  shape: "rectangle",
   color: "#bae6fd",
   width: 160,
   height: 80,
@@ -106,7 +107,9 @@ const CORE_IDENTITY: StencilPreset = {
 const ACTOR_REF: StencilPreset = {
   id: "actor-ref",
   labelHint: "Actor ref",
-  shape: "ellipse",
+  // v0.26.1 (D-2026-05-25-B) — ref kinds are consumer-plane (not Symbol);
+  // they default to rectangle alongside category / service / composition.
+  shape: "rectangle",
   color: "#fce7f3",
   width: 140,
   height: 70,
@@ -123,7 +126,8 @@ const ACTOR_REF: StencilPreset = {
 const MISSION_REF: StencilPreset = {
   id: "mission-ref",
   labelHint: "Mission ref",
-  shape: "ellipse",
+  // v0.26.1 (D-2026-05-25-B) — ref kinds default to rectangle.
+  shape: "rectangle",
   color: "#fef3c7",
   width: 160,
   height: 60,
@@ -135,7 +139,7 @@ const MISSION_REF: StencilPreset = {
 const VALUE_REF: StencilPreset = {
   id: "value-ref",
   labelHint: "Value ref",
-  shape: "ellipse",
+  shape: "rectangle",
   color: "#fde68a",
   width: 160,
   height: 60,
@@ -147,7 +151,7 @@ const VALUE_REF: StencilPreset = {
 const IDENTITY_REF: StencilPreset = {
   id: "identity-ref",
   labelHint: "Identity ref",
-  shape: "ellipse",
+  shape: "rectangle",
   color: "#fed7aa",
   width: 160,
   height: 60,
@@ -174,7 +178,8 @@ const SERVICE_COMPOSITION: StencilPreset[] = [
   {
     id: "metric",
     labelHint: "Metric",
-    shape: "rounded",
+    // v0.26.1 (D-2026-05-25-B) — non-Symbol kind, rectangle default.
+    shape: "rectangle",
     color: "#d9f99d",
     width: 150,
     height: 60,
@@ -475,7 +480,8 @@ function actorRefPresetFor(a: SketchNode): StencilPreset {
   return {
     id: `actor-ref:${a.id}`,
     labelHint: a.label || a.id,
-    shape: "ellipse",
+    // v0.26.1 (D-2026-05-25-B) — ref kinds default to rectangle.
+    shape: "rectangle",
     color: side === "operator" ? "#bae6fd" : "#fce7f3",
     width: 140,
     height: 70,
@@ -490,7 +496,7 @@ function missionRefPresetFor(m: SketchNode): StencilPreset {
   return {
     id: `mission-ref:${m.id}`,
     labelHint: m.label || m.id,
-    shape: "ellipse",
+    shape: "rectangle",
     color: "#fef3c7",
     width: 160,
     height: 60,
@@ -505,7 +511,7 @@ function valueRefPresetFor(v: SketchNode): StencilPreset {
   return {
     id: `value-ref:${v.id}`,
     labelHint: v.label || v.id,
-    shape: "ellipse",
+    shape: "rectangle",
     color: "#fde68a",
     width: 160,
     height: 60,
@@ -520,7 +526,7 @@ function identityRefPresetFor(i: SketchNode): StencilPreset {
   return {
     id: `identity-ref:${i.id}`,
     labelHint: i.label || i.id,
-    shape: "ellipse",
+    shape: "rectangle",
     color: "#fed7aa",
     width: 160,
     height: 60,
