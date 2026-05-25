@@ -73,7 +73,11 @@ export function computeRadialLayout(input: RadialLayoutInput): RadialLayoutOutpu
 
   // BFS from the hub. Nodes unreachable from the hub stay out of
   // ``ringByNode`` and land in the orphan grid below.
+  // v0.26.3 (D-2026-05-25-D) — also record each node's BFS parent so
+  // ring k>=2 members can fan around their parent's angle instead of
+  // all collapsing onto -π/2 (top).
   const ringByNode = new Map<string, number>();
+  const parentOf = new Map<string, string>();
   ringByNode.set(hub.id, 0);
   const queue: string[] = [hub.id];
   while (queue.length > 0) {
@@ -83,6 +87,7 @@ export function computeRadialLayout(input: RadialLayoutInput): RadialLayoutOutpu
     for (const nb of neighbours) {
       if (ringByNode.has(nb)) continue;
       ringByNode.set(nb, curRing + 1);
+      parentOf.set(nb, cur);
       queue.push(nb);
     }
   }
@@ -104,8 +109,54 @@ export function computeRadialLayout(input: RadialLayoutInput): RadialLayoutOutpu
   for (const n of nodes) sizeById.set(n.id, { w: n.width, h: n.height });
   sizeById.set(hub.id, { w: hub.width, h: hub.height });
 
+  // v0.26.3 (D-2026-05-25-D) — two-pass placement:
+  //   pass 1 → assign each node an angle (ring 1 equal-distributed on
+  //            the full circle; ring k>=2 fans around its parent's
+  //            angle so a chain of length-1 spokes follows a single
+  //            radial line rather than all collapsing onto the top).
+  //   pass 2 → ring-by-ring radius accumulation + final positions.
   const positions = new Map<string, { x: number; y: number }>();
   const sortedRings = [...ringMembers.keys()].sort((a, b) => a - b);
+
+  const angleByNode = new Map<string, number>();
+  for (const k of sortedRings) {
+    const ids = ringMembers.get(k)!;
+    if (k === 1) {
+      const count = ids.length;
+      const angleStep = (2 * Math.PI) / count;
+      const angleStart = -Math.PI / 2;
+      ids.forEach((id, i) => {
+        angleByNode.set(id, angleStart + i * angleStep);
+      });
+      continue;
+    }
+    // Ring k>=2: group by parent + fan around parent's angle.
+    const byParent = new Map<string, string[]>();
+    for (const id of ids) {
+      const p = parentOf.get(id) ?? hub.id;
+      const arr = byParent.get(p) ?? [];
+      arr.push(id);
+      byParent.set(p, arr);
+    }
+    for (const [parentId, children] of byParent) {
+      children.sort();
+      const parentAngle = angleByNode.get(parentId) ?? -Math.PI / 2;
+      // Fan narrows as the tree deepens — π/(k+1) gives π/3, π/4, π/5
+      // for rings 2, 3, 4. Reads as a tree spreading outward without
+      // siblings from different parents colliding.
+      const fanWidth = Math.PI / (k + 1);
+      if (children.length === 1) {
+        angleByNode.set(children[0], parentAngle);
+      } else {
+        const step = fanWidth / (children.length - 1);
+        const start = parentAngle - fanWidth / 2;
+        children.forEach((id, i) => {
+          angleByNode.set(id, start + i * step);
+        });
+      }
+    }
+  }
+
   let cumulativeRadius = 0;
   for (const k of sortedRings) {
     const ids = ringMembers.get(k)!;
@@ -121,12 +172,8 @@ export function computeRadialLayout(input: RadialLayoutInput): RadialLayoutOutpu
     } else {
       cumulativeRadius += ringSpan + ringGap;
     }
-    const count = ids.length;
-    const angleStep = (2 * Math.PI) / count;
-    const angleStart = -Math.PI / 2;
-    for (let i = 0; i < count; i++) {
-      const id = ids[i];
-      const angle = angleStart + i * angleStep;
+    for (const id of ids) {
+      const angle = angleByNode.get(id)!;
       const cx = hubCx + cumulativeRadius * Math.cos(angle);
       const cy = hubCy + cumulativeRadius * Math.sin(angle);
       const s = sizeById.get(id)!;

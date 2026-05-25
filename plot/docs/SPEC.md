@@ -193,10 +193,20 @@ Implemented in
   (which injects no anchor) the hub is the hidden root-service node
   (`kind === "service" && is_root === true`).
 - BFS from the hub via undirected edges assigns a ring level to every
-  reachable node (hub = 0, immediate neighbours = 1, ...).
-- Within a ring, members are sorted by id (determinism) and spaced
-  at equal angles starting from the top (-π/2): a ring with N
-  members uses 2π / N per slot.
+  reachable node (hub = 0, immediate neighbours = 1, ...). During the
+  walk each node also records its BFS parent (the node that first
+  reached it).
+- **Angle assignment (two-pass since v0.26.3, D-2026-05-25-D):**
+  - **Ring 1** members are sorted by id (determinism) and spaced at
+    equal angles starting from the top (-π/2): a ring with N members
+    uses 2π / N per slot.
+  - **Ring k>=2** members are grouped by their BFS parent and *fan
+    around the parent's angle* (not the canvas top). The fan width
+    narrows with depth — π/(k+1), so ring 2 spans π/3, ring 3 spans
+    π/4, etc. A parent with one child places that child on the same
+    radial line as itself; multiple children spread evenly within
+    the fan. The effect: a chain of length-1 spokes follows a single
+    direction outward instead of collapsing back to the top.
 - Ring radius accumulates: ring 1 = `hub_half + ring1_span/2 + gap`;
   subsequent rings add `ring_k_span + gap`. Span = the longest node
   dimension in that ring. Gap defaults to 40 px.

@@ -6781,3 +6781,63 @@ above.
 - D-2026-05-24-B (Services + ServiceDetail radial opt-in — original).
 - D-2026-05-24-C (the same-day rollback this entry reverses).
 - D-2026-05-13-L (Foundation-only opt-in, original isolation contract).
+
+---
+
+### D-2026-05-25-D — Radial fan-out: ring k>=2 follows parent angle (v0.26.3)
+
+**Context:** Same session 2026-05-25, after v0.26.2 restored the
+auto-layout button on Services. User exercised it on banas-imported
+(category 1 + service 1 + anchor) and reported:
+
+> *"서비스 캔버스 정렬이 제대로 안되는데요? 왜 앵커 위로 다
+> 정렬해버리죠?"*
+
+Diagnosis: the v0.25.0 radial algorithm started every ring at -π/2
+(top) and spread members at 2π/N per slot. When a ring has only 1-2
+members, all members land at or near the top. For a chain of
+length-1 spokes (anchor → category → service), every node sits
+directly above the anchor — visually "all stacked north."
+
+**Decision:**
+
+Two-pass placement:
+1. **Ring 1** keeps the existing equal-distribution (2π/N starting
+   from top). This is correct: the hub's direct neighbours have no
+   parent angle to inherit, so even distribution around the circle
+   is the only sensible choice.
+2. **Ring k>=2** members are grouped by their BFS parent and fan
+   *around the parent's angle*, not around the canvas top. Fan
+   width narrows with depth: π/(k+1) — π/3 for ring 2, π/4 for
+   ring 3, etc. Behaviour:
+   - Single child → same angle as parent (chains follow one
+     radial line outward).
+   - Multiple children → evenly spread within the fan, centred on
+     parent's angle.
+
+**Why fan narrows with depth?** Without it, deeper rings inherit
+the parent's spread plus their own → siblings from different
+parents collide. Narrowing creates a tree-like outward spread that
+reads cleanly even with branchy graphs.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/sketch/radialLayout.ts` | BFS now records ``parentOf``; placement split into two passes (angle assignment then radius accumulation); ring k>=2 fans around parent angle |
+| `docs/SPEC.md` | §Auto-layout / radial algorithm section updated to describe the new two-pass placement |
+
+**Verification:**
+- Viewer vitest 563 passed; the existing 8 ``radialLayout`` unit
+  tests cover distance-from-hub assertions which remain true under
+  the new angle scheme; the multi-hop test (chain `hub → a → b`)
+  still confirms `b` is farther than `a`. Determinism test still
+  passes — same input produces same output.
+- tsc clean.
+
+**Approval:** Accepted by user, 2026-05-25 — direct request *"진행할까요?"* / *"네"* after I described the (A) option.
+
+**Cross-refs:**
+- D-2026-05-24-B (radial algorithm — original).
+- D-2026-05-25-C (Services canvas opt-in restored — the change that
+  made this complaint surface in the first place).

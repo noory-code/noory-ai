@@ -4,6 +4,30 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.26.3] — 2026-05-25
+
+### Changed
+
+- **Radial auto-layout now fans children around their parent's angle**
+  ([D-2026-05-25-D](./docs/DECISIONS.md#d-2026-05-25-d--radial-fan-out-ring-k2-follows-parent-angle-v0263)).
+  Prior behaviour: every ring started members at -π/2 (top), so a
+  chain like `anchor → category → service` produced both child nodes
+  stacked directly above the anchor. New behaviour: ring 1 keeps
+  equal-distribution from top (no parent angle to inherit), but ring
+  k>=2 groups members by their BFS parent and fans them around the
+  parent's own angle. Single child → same angle as parent (chains
+  follow one radial line outward); multiple children → evenly spread
+  within a fan that narrows with depth (π/(k+1) — π/3 for ring 2,
+  π/4 for ring 3, …). User-felt fix for "왜 앵커 위로 다 정렬해
+  버리죠?".
+- `docs/SPEC.md` §Auto-layout / radial section rewritten to describe
+  the two-pass placement (angle assignment then radius).
+
+### Verification
+
+- Viewer vitest 563 passed; tsc clean.
+- Server unaffected.
+
 ## [0.26.2] — 2026-05-25
 
 ### Added
