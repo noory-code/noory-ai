@@ -104,7 +104,6 @@ export function useNodeCreation({
           color: preset?.color ?? DEFAULT_COLOR,
           shape: preset?.shape ?? "rounded",
           icon: preset?.icon ?? null,
-          parent_id: null,
         },
         {
           ref_actor_id: preset?.ref_actor_id ?? null,
@@ -139,7 +138,6 @@ export function useNodeCreation({
           color: preset.color ?? DEFAULT_COLOR,
           shape: preset.shape ?? "rounded",
           icon: preset.icon ?? null,
-          parent_id: args.parentId,
         },
         {
           ref_actor_id: preset?.ref_actor_id ?? null,
@@ -148,27 +146,28 @@ export function useNodeCreation({
           ref_identity_id: preset?.ref_identity_id ?? null,
         },
       );
+      // v0.26.0 (D-2026-05-25-A) — every nested-drop materialises a
+      // directed edge from parent → child. This replaces the v0.25
+      // ``parent_id`` field semantics for *all* kinds (not just
+      // actor / service); rule / content / metric / step children
+      // now also carry an explicit directed edge as the structural
+      // signal.
       const current = docRef.current;
-      // Rule / content are composition: edited via the Inspector, no edge.
-      // Actor / service are hierarchy: materialise a real decomposition
-      // edge so users can edit it (label, verb, value_form).
-      const makeHierarchyEdge = preset.kind === "actor" || preset.kind === "service";
-      const newEdges = makeHierarchyEdge
-        ? [
-            ...current.edges,
-            {
-              id: freshId("e"),
-              source: args.parentId,
-              target: node.id,
-              sourceHandle: null,
-              targetHandle: null,
-              label: "decomposes",
-              style: "dashed" as const,
-              action_verb: "decomposes",
-              value_form: [],
-            },
-          ]
-        : current.edges;
+      const newEdges = [
+        ...current.edges,
+        {
+          id: freshId("e"),
+          source: args.parentId,
+          target: node.id,
+          sourceHandle: null,
+          targetHandle: null,
+          label: "decomposes",
+          style: "dashed" as const,
+          directed: true,
+          action_verb: "decomposes",
+          value_form: [],
+        },
+      ];
       onDocChange({
         ...current,
         nodes: [...current.nodes, node],
@@ -194,10 +193,27 @@ export function useNodeCreation({
         color: defaults.color,
         shape: defaults.shape,
         icon: defaults.icon,
-        parent_id: parentId,
       });
+      // v0.26.0 (D-2026-05-25-A) — composition child carries an
+      // explicit directed edge from the parent service.
       const current = docRef.current;
-      onDocChange({ ...current, nodes: [...current.nodes, node] });
+      const newEdge = {
+        id: freshId("e"),
+        source: parentId,
+        target: node.id,
+        sourceHandle: null,
+        targetHandle: null,
+        label: "",
+        style: "solid" as const,
+        directed: true,
+        action_verb: null,
+        value_form: [],
+      };
+      onDocChange({
+        ...current,
+        nodes: [...current.nodes, node],
+        edges: [...current.edges, newEdge],
+      });
     },
     [docRef, onDocChange],
   );

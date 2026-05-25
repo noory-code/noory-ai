@@ -15,7 +15,13 @@ import { DomainParseError } from "./DomainParseError";
  *  shape is always-populated — required everywhere. ``fromJson``
  *  itself still tolerates raw inputs that omit fields (uses defaults
  *  internally) but the output of ``toJson`` and the entity instances
- *  always carry every BaseFields field. */
+ *  always carry every BaseFields field.
+ *
+ *  v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed. Hierarchy is
+ *  now expressed via directed edges (``SketchEdge.directed``); see
+ *  ``useCollapsedTree`` for the new fold-source-of-truth. The v0.26
+ *  read-side server migration drops any pre-v0.26 ``parent_id`` from
+ *  raw payloads before they hit this layer. */
 export interface BaseFieldsJson {
   id: string;
   label: string;
@@ -26,7 +32,6 @@ export interface BaseFieldsJson {
   color: string;
   shape: Shape;
   icon: string | null;
-  parent_id: string | null;
   collapsed: boolean;
   is_root: boolean;
   details_path: string | null;
@@ -47,7 +52,8 @@ export interface BaseFieldsJson {
   publish_baseline?: unknown;
 }
 
-/** In-memory shape (defaults filled in). Every field present and typed. */
+/** In-memory shape (defaults filled in). Every field present and typed.
+ *  v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed. */
 export interface BaseFields {
   id: string;
   label: string;
@@ -58,7 +64,6 @@ export interface BaseFields {
   color: string;
   shape: Shape;
   icon: string | null;
-  parent_id: string | null;
   collapsed: boolean;
   is_root: boolean;
   details_path: string | null;
@@ -178,7 +183,8 @@ export function parseBaseFields(raw: unknown): BaseFields {
     color: asString(obj.color, "#ffffff", "color", raw),
     shape: asShape(obj.shape, raw),
     icon: asNullableString(obj.icon, "icon", raw),
-    parent_id: asNullableString(obj.parent_id, "parent_id", raw),
+    // v0.26.0 (D-2026-05-25-A) — parent_id removed; hierarchy is now
+    // expressed via directed edges on the canvas, not per-node fields.
     collapsed: asBoolean(obj.collapsed, false, "collapsed", raw),
     is_root: asBoolean(obj.is_root, false, "is_root", raw),
     details_path: asNullableString(obj.details_path, "details_path", raw),

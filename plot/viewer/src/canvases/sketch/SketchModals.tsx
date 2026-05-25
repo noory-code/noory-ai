@@ -61,19 +61,13 @@ export interface SketchModalsProps {
  *  it appeared twice. */
 function parentAbsolute(
   parent: DocNode,
-  nodeById: Map<string, DocNode>,
+  _nodeById: Map<string, DocNode>,
 ): { x: number; y: number } {
-  let ax = parent.x;
-  let ay = parent.y;
-  let cur: DocNode | undefined = parent;
-  while (cur?.parent_id) {
-    const p = nodeById.get(cur.parent_id);
-    if (!p) break;
-    ax += p.x;
-    ay += p.y;
-    cur = p;
-  }
-  return { x: ax, y: ay };
+  // v0.26.0 (D-2026-05-25-A) — coordinates are flat (no parent-local
+  // system anymore). A node's "absolute" position is just its own
+  // ``x`` / ``y``. The ``nodeById`` arg stays on the signature for
+  // call-site compatibility but is unused.
+  return { x: parent.x, y: parent.y };
 }
 
 export function SketchModals({

@@ -78,6 +78,7 @@ function makeProps(node: SketchNode, canvasKind: CanvasKind = "foundation") {
   return {
     node,
     allNodes: [node],
+    allEdges: [],
     onPatchNode: vi.fn(),
     onDeleteNode: vi.fn(),
     onClose: vi.fn(),

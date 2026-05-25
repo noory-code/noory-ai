@@ -7,7 +7,7 @@
 // v0.15 Phase 3.4 — the canvas_kind switch moved out to the
 // ``hideRootServiceNode`` wrapper-supplied flag. ServiceDetailCanvas
 // passes true (and supplies serviceRef); other wrappers pass false.
-import type { Edge } from "reactflow";
+import { MarkerType, type Edge } from "reactflow";
 import type { CanvasDoc } from "../../types";
 import { VALUE_FORM_COLORS } from "../SketchEdgeModal";
 
@@ -61,6 +61,20 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
       // Self-loops route through SelfLoopEdge (curved arc); regular
       // edges keep React Flow's default Bezier path.
       ...(isRealSelfLoop ? { type: "selfLoop" } : {}),
+      // v0.26.0 (D-2026-05-25-A) — directed edges render an arrowhead
+      // at the target end. Undirected edges (``directed === false``)
+      // render unadorned. The arrow colour matches the resolved stroke
+      // so value-flow recolouring stays consistent.
+      ...(e.directed
+        ? {
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 18,
+              height: 18,
+              color: stroke ?? "#64748b",
+            },
+          }
+        : {}),
       style: {
         ...(e.style === "dashed" ? { strokeDasharray: "6 4" } : {}),
         ...(stroke ? { stroke, strokeWidth: e.value_form.length } : {}),

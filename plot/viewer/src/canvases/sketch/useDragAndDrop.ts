@@ -24,6 +24,9 @@ import type { NodePreset, PendingActorRef, PendingFoundationRef } from "./types"
 
 export interface UseDragAndDropArgs {
   nodes: DocNode[];
+  /** v0.26.0 (D-2026-05-25-A) — edges needed for parent-child queries
+   *  during drop-target sibling calculation. */
+  edges: import("../../types").SketchEdge[];
   nodeById: Map<string, DocNode>;
   flowRef: MutableRefObject<ReactFlowInstance | null>;
   addNodeAt: (x: number, y: number, preset?: NodePreset) => void;
@@ -46,6 +49,7 @@ export interface UseDragAndDropResult {
 
 export function useDragAndDrop({
   nodes,
+  edges,
   nodeById,
   flowRef,
   addNodeAt,
@@ -116,23 +120,19 @@ export function useDragAndDrop({
         return;
       }
       if (resolved.parentId) {
+        // v0.26.0 (D-2026-05-25-A) — coordinates are flat (no nested
+        // parent-local system anymore). The parent's absolute
+        // position is just ``parent.x`` / ``parent.y``.
         const parent = nodeById.get(resolved.parentId)!;
-        const parentAbs = (() => {
-          let ax = parent.x;
-          let ay = parent.y;
-          let cur: DocNode | undefined = parent;
-          while (cur?.parent_id) {
-            const p = nodeById.get(cur.parent_id);
-            if (!p) break;
-            ax += p.x;
-            ay += p.y;
-            cur = p;
-          }
-          return { x: ax, y: ay };
-        })();
-        const rawLocalX = Math.max(8, pos.x - parentAbs.x - w / 2);
-        const rawLocalY = Math.max(28, pos.y - parentAbs.y - h / 2);
-        const siblings = nodes.filter((n) => n.parent_id === resolved.parentId);
+        const rawLocalX = Math.max(8, pos.x - parent.x - w / 2);
+        const rawLocalY = Math.max(28, pos.y - parent.y - h / 2);
+        // Siblings = nodes that share this parent via a directed edge.
+        const siblingIds = new Set(
+          edges
+            .filter((e) => e.directed && e.source === resolved.parentId)
+            .map((e) => e.target),
+        );
+        const siblings = nodes.filter((n) => siblingIds.has(n.id));
         const spot = findFreeSpot(rawLocalX, rawLocalY, w, h, siblings);
         addNestedNodeAt({
           parentId: resolved.parentId,
@@ -143,12 +143,16 @@ export function useDragAndDrop({
       } else {
         const rawX = pos.x - w / 2;
         const rawY = pos.y - h / 2;
-        const siblings = nodes.filter((n) => n.parent_id === null);
+        // Top-level peers = nodes that have no incoming directed edge.
+        const childIds = new Set(
+          edges.filter((e) => e.directed).map((e) => e.target),
+        );
+        const siblings = nodes.filter((n) => !childIds.has(n.id));
         const spot = findFreeSpot(rawX, rawY, w, h, siblings);
         addNodeAt(spot.x, spot.y, preset);
       }
     },
-    [flowRef, nodes, nodeById, addNodeAt, addNestedNodeAt],
+    [flowRef, nodes, edges, nodeById, addNodeAt, addNestedNodeAt],
   );
 
   return {

@@ -61,6 +61,12 @@ export function useFlowHandlers({
         targetHandle: connection.targetHandle ?? null,
         label: "",
         style: "solid",
+        // v0.26.0 (D-2026-05-25-A) — default to directed so the
+        // drag direction (source = handle the user pressed first;
+        // target = handle the user released on) becomes from→to
+        // for fold / parent-child purposes. User can toggle via
+        // edge right-click menu.
+        directed: true,
         action_verb: null,
         value_form: [],
       };

@@ -36,7 +36,6 @@ export type BlankNodeBase = Pick<
   | "color"
   | "shape"
   | "icon"
-  | "parent_id"
 >;
 
 /** Optional kind-specific overrides at creation time (e.g. drag-and-drop

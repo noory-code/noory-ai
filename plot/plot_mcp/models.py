@@ -150,7 +150,10 @@ class BaseNodeFields(BaseModel):
     color: str = "#ffffff"
     shape: Shape = "rounded"
     icon: str | None = None
-    parent_id: str | None = None
+    # v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed. Hierarchy /
+    # containment is now expressed via directed edges (``SketchEdge.directed``).
+    # The v0.26 read-time migration in ``folder_io._migrate_parent_id_to_directed_edges``
+    # converts pre-v0.26 ``parent_id`` to directed edges on first read.
     collapsed: bool = False
     is_root: bool = False
     details_path: str | None = None
@@ -536,6 +539,13 @@ class SketchEdge(BaseModel):
     label: str = ""
     style: Literal["solid", "dashed"] = "solid"
 
+    # v0.26.0 (D-2026-05-25-A) — directed edges carry parent→child
+    # semantics. When True, the renderer draws an arrowhead at the
+    # target end and the fold / hierarchy logic treats source as
+    # parent. New edges default to True; the v0.26 read-time migration
+    # converts pre-v0.26 nodes' parent_id into directed=True edges.
+    directed: bool = True
+
     # v0.2 additions
     action_verb: str | None = None
     value_form: list[ValueForm] = Field(default_factory=list)
@@ -636,26 +646,11 @@ class CanvasDoc(BaseModel):
             raise ValueError(f"edges reference unknown nodes: {missing}")
         return self
 
-    @model_validator(mode="after")
-    def _parent_ids_are_valid(self) -> CanvasDoc:
-        by_id = {n.id: n for n in self.nodes}
-        for n in self.nodes:
-            if n.parent_id is None:
-                continue
-            if n.parent_id == n.id:
-                raise ValueError(f"node {n.id!r} cannot be its own parent")
-            if n.parent_id not in by_id:
-                raise ValueError(f"node {n.id!r}.parent_id points to unknown node {n.parent_id!r}")
-        for start in self.nodes:
-            seen: set[str] = set()
-            current: str | None = start.id
-            while current is not None:
-                if current in seen:
-                    raise ValueError(f"parent chain contains a cycle at node {current!r}")
-                seen.add(current)
-                parent = by_id[current]
-                current = parent.parent_id
-        return self
+    # v0.26.0 (D-2026-05-25-A) — ``_parent_ids_are_valid`` removed
+    # alongside the ``parent_id`` field. Hierarchy invariants (no
+    # self-parent, no cycles) are now properties of the directed-edge
+    # graph; if needed, add a ``_directed_edge_acyclic`` validator
+    # later. Pre-v0.26 data is migrated read-side, not validated here.
 
     @model_validator(mode="after")
     def _kinds_allowed_on_canvas(self) -> CanvasDoc:
@@ -684,10 +679,9 @@ class CanvasDoc(BaseModel):
                 f"foundation canvas may carry at most one legacy project node; "
                 f"found {len(projects)}"
             )
-        if projects and projects[0].parent_id is not None:
-            raise ValueError(
-                f"project node {projects[0].id!r} must be top-level (parent_id = null)"
-            )
+        # v0.26.0 (D-2026-05-25-A) — parent_id checks removed alongside
+        # the field. Project-node top-levelness is now implicit (no
+        # incoming directed edge); not validated at schema level.
         missions = [n for n in self.nodes if n.kind == "mission"]
         identities = [n for n in self.nodes if n.kind == "identity"]
         if len(missions) < 1:
@@ -700,38 +694,12 @@ class CanvasDoc(BaseModel):
             )
         return self
 
-    @model_validator(mode="after")
-    def _services_canvas_rules(self) -> CanvasDoc:
-        if self.canvas_kind != "services":
-            return self
-        # v0.12 — nested nodes are now allowed (a category contains its
-        # services), but only in this specific shape:
-        #   * project anchor: top-level (parent_id is None)
-        #   * category: top-level
-        #   * service: must have parent_id set, and the parent must be a
-        #     category (services are leaves nested inside categories)
-        by_id = {n.id: n for n in self.nodes}
-        for n in self.nodes:
-            if n.kind == "service":
-                if n.parent_id is None:
-                    raise ValueError(
-                        f"service {n.id!r} on services canvas must be nested "
-                        "inside a category (parent_id required). v0.12: "
-                        "top-level services are now categories."
-                    )
-                parent = by_id.get(n.parent_id)
-                if parent is None or parent.kind != "category":
-                    parent_kind = parent.kind if parent else "missing"
-                    raise ValueError(
-                        f"service {n.id!r}'s parent must be a category, got {parent_kind!r}"
-                    )
-            elif n.kind == "category":
-                if n.parent_id is not None:
-                    raise ValueError(
-                        f"category {n.id!r} must be top-level on services "
-                        "canvas (no nested categories in v0.12)"
-                    )
-        return self
+    # v0.26.0 (D-2026-05-25-A) — ``_services_canvas_rules`` removed.
+    # The "service must be nested in a category" and "category must be
+    # top-level" invariants were enforced via ``parent_id``; with the
+    # field gone, containment is expressed via directed edges, and the
+    # canvas no longer enforces shape at the schema level. Domain
+    # guidance moves to docs (CONCEPTS.md / SPEC.md §Services).
 
     @model_validator(mode="after")
     def _detail_canvas_rules(self) -> CanvasDoc:
@@ -749,22 +717,10 @@ class CanvasDoc(BaseModel):
             raise ValueError(
                 f"service_detail canvas must contain a root service with id {self.canvas_id!r}"
             )
-        # Composition kinds must live inside a service (same rule as SketchDoc).
-        by_id = {n.id: n for n in self.nodes}
-        for n in self.nodes:
-            if n.kind not in _COMPOSITION_KINDS:
-                continue
-            if n.parent_id is None:
-                raise ValueError(
-                    f"node {n.id!r} of kind {n.kind!r} requires a parent_id "
-                    "(must live inside a service)"
-                )
-            parent = by_id.get(n.parent_id)
-            if parent is not None and parent.kind != "service":
-                raise ValueError(
-                    f"node {n.id!r} of kind {n.kind!r} must be a child of a "
-                    f"service, but parent has kind {parent.kind!r}"
-                )
+        # v0.26.0 (D-2026-05-25-A) — composition-kind parent_id checks
+        # removed alongside the field. Containment of category / step /
+        # rule / metric / content under their root-service is now
+        # expressed via directed edges; not validated at schema level.
         return self
 
     @model_validator(mode="after")

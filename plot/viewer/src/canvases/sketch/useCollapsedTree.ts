@@ -3,16 +3,31 @@
 // toggleCollapsed mutation. SC consumes all five outputs (the lookup
 // is also used by drag/drop and keyboard, hence kept here as the
 // single source rather than rebuilt elsewhere).
+//
+// v0.26.0 (D-2026-05-25-A) — parent-child relationships are now
+// derived from *directed edges* (``SketchEdge.directed === true``)
+// rather than the (removed) ``parent_id`` field. The hook's
+// signature gains an ``edges`` argument; the in-memory shape of the
+// outputs is unchanged so consumers keep working.
 import { type MutableRefObject, useCallback, useMemo } from "react";
-import type { CanvasDoc, SketchNode } from "../../types";
+import type { CanvasDoc, SketchEdge, SketchNode } from "../../types";
 
 export interface UseCollapsedTreeResult {
-  /** Parent-id → list of direct child ids. Built once per ``nodes``. */
+  /** Parent-id → list of direct child ids. Built once per
+   *  ``(nodes, edges)``. A node is a child of another iff there is a
+   *  directed edge from parent → child. */
   childIdsByParent: Map<string, string[]>;
+  /** Child-id → list of parent ids (every source of an incoming
+   *  directed edge). Used by ``nearestCollapsedAncestor`` to walk
+   *  upward without rebuilding the inverse map per call. */
+  parentIdsByChild: Map<string, string[]>;
   /** Node-id → node lookup. Built once per ``nodes``. */
   nodeById: Map<string, SketchNode>;
   /** Walk the parent chain; return the id of the first collapsed
-   *  ancestor (not counting ``nodeId`` itself), or null if none. */
+   *  ancestor (not counting ``nodeId`` itself), or null if none.
+   *  When a node has multiple parents (multi-incoming directed
+   *  edges), the walk fans out — the first collapsed ancestor on
+   *  any path is returned. */
   nearestCollapsedAncestor: (nodeId: string) => string | null;
   /** Flip the ``collapsed`` flag on the given node and persist via
    *  ``onDocChange``. Reads ``docRef.current`` so it stays fresh
@@ -25,20 +40,31 @@ export interface UseCollapsedTreeResult {
 
 export function useCollapsedTree(
   nodes: SketchNode[],
+  edges: SketchEdge[],
   docRef: MutableRefObject<CanvasDoc>,
   onDocChange: (next: CanvasDoc) => void,
 ): UseCollapsedTreeResult {
   const childIdsByParent = useMemo(() => {
     const map = new Map<string, string[]>();
-    for (const n of nodes) {
-      if (n.parent_id) {
-        const arr = map.get(n.parent_id) ?? [];
-        arr.push(n.id);
-        map.set(n.parent_id, arr);
-      }
+    for (const e of edges) {
+      if (!e.directed) continue;
+      const arr = map.get(e.source) ?? [];
+      arr.push(e.target);
+      map.set(e.source, arr);
     }
     return map;
-  }, [nodes]);
+  }, [edges]);
+
+  const parentIdsByChild = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const e of edges) {
+      if (!e.directed) continue;
+      const arr = map.get(e.target) ?? [];
+      arr.push(e.source);
+      map.set(e.target, arr);
+    }
+    return map;
+  }, [edges]);
 
   const nodeById = useMemo(() => {
     const m = new Map<string, SketchNode>();
@@ -48,15 +74,23 @@ export function useCollapsedTree(
 
   const nearestCollapsedAncestor = useCallback(
     (nodeId: string): string | null => {
-      let current = nodeById.get(nodeId);
-      while (current?.parent_id) {
-        const parent = nodeById.get(current.parent_id);
-        if (parent && parent.collapsed) return parent.id;
-        current = parent;
+      // BFS upward across all parent paths. The visited set guards
+      // any directed-edge cycle.
+      const visited = new Set<string>([nodeId]);
+      const queue = [...(parentIdsByChild.get(nodeId) ?? [])];
+      while (queue.length > 0) {
+        const cur = queue.shift()!;
+        if (visited.has(cur)) continue;
+        visited.add(cur);
+        const node = nodeById.get(cur);
+        if (node?.collapsed) return cur;
+        for (const p of parentIdsByChild.get(cur) ?? []) {
+          if (!visited.has(p)) queue.push(p);
+        }
       }
       return null;
     },
-    [nodeById],
+    [nodeById, parentIdsByChild],
   );
 
   const toggleCollapsed = useCallback(
@@ -74,13 +108,31 @@ export function useCollapsedTree(
 
   const subtreeSize = useCallback(
     (nodeId: string): number => {
-      const direct = childIdsByParent.get(nodeId) ?? [];
-      let total = direct.length;
-      for (const c of direct) total += subtreeSize(c);
+      // BFS descendant count with a visited guard (cycles possible
+      // once edges define hierarchy).
+      const visited = new Set<string>([nodeId]);
+      const queue = [...(childIdsByParent.get(nodeId) ?? [])];
+      let total = 0;
+      while (queue.length > 0) {
+        const cur = queue.shift()!;
+        if (visited.has(cur)) continue;
+        visited.add(cur);
+        total += 1;
+        for (const c of childIdsByParent.get(cur) ?? []) {
+          if (!visited.has(c)) queue.push(c);
+        }
+      }
       return total;
     },
     [childIdsByParent],
   );
 
-  return { childIdsByParent, nodeById, nearestCollapsedAncestor, toggleCollapsed, subtreeSize };
+  return {
+    childIdsByParent,
+    parentIdsByChild,
+    nodeById,
+    nearestCollapsedAncestor,
+    toggleCollapsed,
+    subtreeSize,
+  };
 }

@@ -1,41 +1,28 @@
 // Pure spatial helpers for drag/drop. No React imports — usable from
 // any module, unit-testable in isolation.
+//
+// v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed, so the parent-chain
+// walk for parent-local coordinates is gone too. Plot's coordinate
+// system is now flat: every node's ``x`` / ``y`` is absolute. The
+// ``nodeById`` parameter is kept on the signature for now (callers
+// already pass it; removing it would ripple) but is unused.
 import type { SketchNode as DocNode } from "../../types";
-
-/** Walk the parent chain to compute a node's absolute position. */
-function absolutePos(
-  n: DocNode,
-  nodeById: Map<string, DocNode>,
-): { x: number; y: number } {
-  let ax = n.x;
-  let ay = n.y;
-  let cur: DocNode | undefined = n;
-  while (cur?.parent_id) {
-    const parent = nodeById.get(cur.parent_id);
-    if (!parent) break;
-    ax += parent.x;
-    ay += parent.y;
-    cur = parent;
-  }
-  return { x: ax, y: ay };
-}
 
 /**
  * Hit-test: first node (in reverse doc order so top-rendered wins)
- * whose absolute bounding box contains the given flow point. SPEC
+ * whose bounding box contains the given flow point. SPEC
  * §Drag-and-drop "Hit-test order": last-drawn first so nested
  * containers can win over their (earlier-rendered) parents.
  */
 export function containerAtFlowPoint(
   nodes: DocNode[],
-  nodeById: Map<string, DocNode>,
+  _nodeById: Map<string, DocNode>,
   x: number,
   y: number,
 ): DocNode | null {
   for (let i = nodes.length - 1; i >= 0; i--) {
     const n = nodes[i];
-    const { x: ax, y: ay } = absolutePos(n, nodeById);
-    if (x >= ax && x <= ax + n.width && y >= ay && y <= ay + n.height) {
+    if (x >= n.x && x <= n.x + n.width && y >= n.y && y <= n.y + n.height) {
       return n;
     }
   }

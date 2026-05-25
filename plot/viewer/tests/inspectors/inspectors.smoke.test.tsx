@@ -82,10 +82,12 @@ function makeProps(
   node: SketchNode,
   canvasKind: CanvasKind = "service_detail",
   allNodes: SketchNode[] = [node],
+  allEdges: import("../../src/types").SketchEdge[] = [],
 ) {
   return {
     node,
     allNodes,
+    allEdges,
     onPatchNode: vi.fn(),
     onDeleteNode: vi.fn(),
     onClose: vi.fn(),
@@ -311,12 +313,24 @@ describe("ServiceInspector (Phase 2.9)", () => {
       id: "r1",
       kind: "rule",
       label: "GDPR",
-      parent_id: "svc-1",
       policy: "explicit consent",
     });
+    // v0.26.0 (D-2026-05-25-A) — composition is now a directed edge.
+    const compositionEdge = {
+      id: "e-svc-r1",
+      source: "svc-1",
+      target: "r1",
+      sourceHandle: null,
+      targetHandle: null,
+      label: "",
+      style: "solid" as const,
+      directed: true,
+      action_verb: null,
+      value_form: [],
+    };
     render(
       <KindInspector
-        {...makeProps(svc, "service_detail", [svc, rule])}
+        {...makeProps(svc, "service_detail", [svc, rule], [compositionEdge])}
         onAddChild={vi.fn()}
         onPatchChild={vi.fn()}
         onRemoveChild={vi.fn()}
@@ -388,8 +402,21 @@ describe("ActorInspector (Phase 2.8)", () => {
 describe("CategoryInspector (Phase 2.6)", () => {
   it("renders chrome + theme + does NOT show empty-warning when child services exist", () => {
     const cat = makeNode({ id: "cat-1", kind: "category", label: "Admin", theme: "ops" });
-    const child = makeNode({ id: "svc-1", kind: "service", label: "Manage", parent_id: "cat-1" });
-    render(<KindInspector {...makeProps(cat, "services", [cat, child])} />);
+    const child = makeNode({ id: "svc-1", kind: "service", label: "Manage" });
+    // v0.26.0 (D-2026-05-25-A) — child is now expressed via a directed edge.
+    const edge = {
+      id: "e-cat-svc",
+      source: "cat-1",
+      target: "svc-1",
+      sourceHandle: null,
+      targetHandle: null,
+      label: "",
+      style: "solid" as const,
+      directed: true,
+      action_verb: null,
+      value_form: [],
+    };
+    render(<KindInspector {...makeProps(cat, "services", [cat, child], [edge])} />);
     expect(screen.getByDisplayValue("ops")).toBeInTheDocument();
     expect(screen.queryByText(/이 카테고리에 service/)).not.toBeInTheDocument();
   });

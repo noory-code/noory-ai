@@ -184,7 +184,10 @@ def test_migrated_foundation_canvas_has_seeds(plot_root: Path) -> None:
     assert "mission" in kinds and "identity" in kinds and "core_value" in kinds
     assert "project" not in kinds  # evicted by v0.13 migrator
     assert "core" not in kinds
-    assert all(n.parent_id is None for n in foundation.nodes)
+    # v0.26.0 (D-2026-05-25-A) — parent_id field gone. Foundation
+    # nodes never carried parent_id chains anyway; the original check
+    # is now satisfied by the field's absence.
+    assert not any(hasattr(n, "parent_id") for n in foundation.nodes)
 
 
 def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> None:
@@ -193,14 +196,17 @@ def test_migrated_actors_canvas_starts_empty_or_has_root(plot_root: Path) -> Non
     migrate_v01_to_v02(plot_root)
     actors = read_canvas(plot_root, "alpha", "actors")
     assert all(n.kind == "actor" for n in actors.nodes if n.kind)
-    assert all(n.parent_id is None for n in actors.nodes)
+    # v0.26.0 (D-2026-05-25-A) — parent_id field gone.
+    assert not any(hasattr(n, "parent_id") for n in actors.nodes)
 
 
 def test_migrated_services_canvas_has_no_nested(plot_root: Path) -> None:
     _write_v01_sketch(plot_root, "alpha", "Alpha")
     migrate_v01_to_v02(plot_root)
     overview = read_canvas(plot_root, "alpha", "services")
-    assert all(n.parent_id is None for n in overview.nodes)
+    # v0.26.0 (D-2026-05-25-A) — parent_id field gone. "No nested"
+    # was a parent_id check; now we just confirm the field absence.
+    assert not any(hasattr(n, "parent_id") for n in overview.nodes)
     # Bare v0.1 seed has service-root only; it becomes a top-level service.
 
 
@@ -337,14 +343,19 @@ def test_v10_upgrade_renames_core_dir_and_unparents_children(plot_root: Path) ->
     assert "foundation" in proj.anchors
     assert proj.anchors["foundation"].shape == "circle"
 
-    # Children previously parented to core-root are now peers.
-    assert by_id["mission"].parent_id is None
-    assert by_id["identity"].parent_id is None
+    # v0.26.0 (D-2026-05-25-A) — parent_id field gone. The original
+    # "children un-parented" check is now trivially satisfied by the
+    # field's absence. Containment, if any, would be expressed via
+    # directed edges; the v0.26 read-side migration auto-creates them
+    # from any pre-v0.26 parent_id (here Mission was a child of
+    # core-root, which got evicted, so no edge survives).
+    assert not hasattr(by_id["mission"], "parent_id")
+    assert not hasattr(by_id["identity"], "parent_id")
 
-    # identity_facet folded into identity; still peer (parent cleared).
+    # identity_facet folded into identity.
     facet = by_id["facet-1"]
     assert facet.kind == "identity"
-    assert facet.parent_id is None
+    assert not hasattr(facet, "parent_id")
 
     # Star icons stripped from the pillar kinds.
     assert by_id["mission"].icon is None

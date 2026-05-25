@@ -226,7 +226,7 @@ function SketchCanvasInner({
   );
 
   const { childIdsByParent, nodeById, nearestCollapsedAncestor, toggleCollapsed, subtreeSize } =
-    useCollapsedTree(doc.nodes, docRef, onDocChange);
+    useCollapsedTree(doc.nodes, doc.edges, docRef, onDocChange);
   const triggerTreeLayout = useAutoLayout({ docRef, onDocChange, projectAnchor });
   const triggerRadialLayout = useRadialLayout({ docRef, onDocChange, projectAnchor });
   const triggerLayout = layoutAlgo === "radial" ? triggerRadialLayout : triggerTreeLayout;
@@ -329,6 +329,7 @@ function SketchCanvasInner({
     setPendingFoundationRef,
   } = useDragAndDrop({
     nodes: doc.nodes,
+    edges: doc.edges,
     nodeById,
     flowRef,
     addNodeAt,

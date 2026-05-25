@@ -25,12 +25,13 @@ export interface ActorRefPickerProps {
  */
 export function ActorRefPicker({ nodes, mode = "create", onPick, onCancel }: ActorRefPickerProps) {
   const actors = nodes.filter((n) => n.kind === "actor");
-  const byId = new Map(nodes.map((n) => [n.id, n] as const));
 
-  const parentLabel = (actor: SketchNode): string | null => {
-    const p = actor.parent_id ? byId.get(actor.parent_id) : null;
-    return p && p.kind === "actor" ? p.label ?? null : null;
-  };
+  // v0.26.0 (D-2026-05-25-A) — parent_id removed; the picker no
+  // longer surfaces a parent-chain label. Sub-actor / parent-actor
+  // hierarchy is now expressed via directed edges; threading the
+  // canvas edges through this modal is a follow-up if the omission
+  // proves annoying in practice.
+  const parentLabel = (_actor: SketchNode): string | null => null;
 
   return (
     <div

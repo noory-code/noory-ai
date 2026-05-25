@@ -21,15 +21,26 @@ import { CompositionList } from "./CompositionList";
 export function ServiceInspector(props: KindInspectorProps) {
   if (props.node.kind !== "service") return null;
   const node = props.node;
-  const { allNodes, onPatchNode, onAddChild, onPatchChild, onRemoveChild, availableActors } = props;
+  const { allNodes, allEdges, onPatchNode, onAddChild, onPatchChild, onRemoveChild, availableActors } = props;
   const { t } = useTranslation();
+  // v0.26.0 (D-2026-05-25-A) — composition children (rules / content)
+  // are now identified by directed edges from this service.
+  const childIds = useMemo(
+    () =>
+      new Set(
+        allEdges
+          .filter((e) => e.directed && e.source === node.id)
+          .map((e) => e.target),
+      ),
+    [allEdges, node.id],
+  );
   const rules = useMemo(
-    () => allNodes.filter((n) => n.parent_id === node.id && n.kind === "rule"),
-    [allNodes, node.id],
+    () => allNodes.filter((n) => childIds.has(n.id) && n.kind === "rule"),
+    [allNodes, childIds],
   );
   const contents = useMemo(
-    () => allNodes.filter((n) => n.parent_id === node.id && n.kind === "content"),
-    [allNodes, node.id],
+    () => allNodes.filter((n) => childIds.has(n.id) && n.kind === "content"),
+    [allNodes, childIds],
   );
   return (
     <BaseInspector {...props} hideDetailsSection>

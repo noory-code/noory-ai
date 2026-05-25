@@ -4,6 +4,91 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.26.0] — 2026-05-25  ⚠ BREAKING
+
+### Removed
+
+- **`BaseNodeFields.parent_id` field** ([D-2026-05-25-A](./docs/DECISIONS.md#d-2026-05-25-a--directed-edge-model--parent_id-removed-v0260-breaking)).
+  Hierarchy / containment is now expressed via directed edges
+  exclusively. Schema-level invariants that were ``parent_id``-based
+  (cycle / self-parent / service-must-have-category / category-must-
+  be-top-level / composition-kind-must-have-service-parent) have all
+  been removed from Pydantic; domain guidance moves to docs.
+- ``md_publish.py`` frontmatter ``parent_id`` key (was 1 of 7 — now
+  6 keys).
+
+### Added
+
+- **`SketchEdge.directed: bool = True`**. New default for any edge
+  created from a stencil drop, drag-to-connect, or nested-add. The
+  renderer draws an arrowhead at the target end when directed.
+- **Edge context-menu toggle** "Add direction" / "Remove direction" —
+  flips ``directed`` on the selected edge.
+- **`folder_io._migrate_parent_id_to_directed_edges`** — read-side
+  one-shot migration that converts pre-v0.26 ``parent_id`` to a
+  directed edge ``parent → child`` (id ``e_migrated_{node_id}``).
+  Idempotent. Also backfills ``directed=true`` on any pre-v0.26 edge
+  that lacks the field.
+- **`useCollapsedTree`** rewritten to derive children / parents from
+  directed edges; new ``parentIdsByChild`` output for the inverse
+  walk. Ancestor / descendant walks use a visited-set BFS so
+  user-introduced cycles in the directed-edge graph terminate
+  safely.
+- **New helper module `viewer/src/canvases/sketch/hierarchy.ts`**:
+  ``parentIdOf`` / ``parentIdsOf`` / ``childIdsOf`` / ``hasParent``
+  for consumers that need parent-child queries (Inspector child
+  count, App.tsx drill context, useDragAndDrop sibling lookup,
+  …).
+- **Propagation walk** (`plot_mcp/propagation.py`) now follows
+  incoming directed edges instead of ``parent_id``; multi-parent
+  is resolved by picking the lexicographically smallest source id.
+
+### Changed
+
+- **`useCollapsedTree` signature** — gains ``edges: SketchEdge[]``.
+  Every call site (`SketchCanvas.tsx`) updated.
+- **`useDragAndDrop` signature** — gains ``edges: SketchEdge[]``;
+  drag-to-parent calculations now use directed edges for sibling
+  lookup. The parent-local coordinate system is gone (coordinates
+  are flat across the whole canvas).
+- **`KindInspectorProps`** — gains ``allEdges: SketchEdge[]``.
+  CategoryInspector / ServiceInspector use it for child counts.
+- **`useNodeCreation`** — nested drops materialise a directed edge
+  for *every* kind, not just actor / service.
+- ``viewer/src/flow/autoLayout.ts`` — implicit ``parent_id`` →
+  decomposition-edge synthesis removed; only explicit edges drive
+  the dagre layout.
+- ``viewer/src/canvases/sketch/overlapNudge.ts`` /
+  ``SketchModals.tsx`` — parent-absolute walks simplified to
+  identity (flat coordinate system).
+- **migrate.py** (v0.1 → v0.2 legacy migrator) — drops the
+  ``parent_id`` arg from ``_v01_to_actor`` / ``_v01_to_service`` /
+  ``_v01_to_composition``. v0.1 hierarchy info is lost in the
+  migration (v0.1 data is effectively unused; the v0.26 read-side
+  migration handles any newer pre-v0.26 ``parent_id`` data on disk).
+- **`viewer/src/canvases/ActorRefPicker.tsx`** — parent-chain label
+  feature dropped (was ``parent_id``-only). Follow-up if missed in
+  practice.
+- ``viewer/tests/structural-guards.test.tsx`` — ``App.tsx`` ceiling
+  425 → 430 (D-2026-05-25-A entry recorded in the budget note) to
+  absorb the services-edges-in-drill-context wiring.
+
+### Migration notes for users
+
+- **Open every existing project once** so the read-side migration
+  fires and persists. After a single open, the project's
+  canvas.json files settle into the new model (no ``parent_id`` on
+  nodes; new directed edges with id ``e_migrated_{node_id}`` per
+  former parent_id link).
+- Inspect the resulting git diff before committing — the migration
+  is idempotent + non-destructive, but the diff is large for
+  projects with deep parent_id chains.
+
+### Verification
+
+- Server pytest **433 passed**; mypy clean.
+- Viewer vitest **562 passed**; tsc clean.
+
 ## [0.25.1] — 2026-05-24
 
 ### Removed

@@ -14,21 +14,14 @@ export function autoLayout(doc: CanvasDoc, direction: LayoutDirection = "LR"): C
   g.setGraph({ rankdir: direction, nodesep: 40, ranksep: 100, marginx: 20, marginy: 20 });
   g.setDefaultEdgeLabel(() => ({}));
 
-  const nodeIds = new Set(doc.nodes.map((n) => n.id));
   const connectedIds = new Set<string>();
-  // Explicit edges.
+  // v0.26.0 (D-2026-05-25-A) — directed edges are the only source of
+  // hierarchy. Undirected edges are still considered "connections"
+  // (so dagre can lay them out), but ``parent_id``-implicit edges no
+  // longer exist.
   for (const e of doc.edges) {
     connectedIds.add(e.source);
     connectedIds.add(e.target);
-  }
-  // ``parent_id`` acts as an implicit decomposition edge, so Core /
-  // Actors / Services-detail canvases — which rarely have explicit edges
-  // between the new node kinds — still get arranged.
-  for (const n of doc.nodes) {
-    if (n.parent_id && nodeIds.has(n.parent_id)) {
-      connectedIds.add(n.id);
-      connectedIds.add(n.parent_id);
-    }
   }
 
   for (const n of doc.nodes) {
@@ -38,11 +31,6 @@ export function autoLayout(doc: CanvasDoc, direction: LayoutDirection = "LR"): C
   for (const e of doc.edges) {
     if (g.hasNode(e.source) && g.hasNode(e.target)) {
       g.setEdge(e.source, e.target);
-    }
-  }
-  for (const n of doc.nodes) {
-    if (n.parent_id && g.hasNode(n.parent_id) && g.hasNode(n.id)) {
-      g.setEdge(n.parent_id, n.id);
     }
   }
 

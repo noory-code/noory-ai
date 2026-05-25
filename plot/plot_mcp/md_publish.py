@@ -38,14 +38,17 @@ _FRONTMATTER_KEYS: tuple[str, ...] = (
     "kind",
     "version",
     "label",
-    "parent_id",
     "canvas",
     "published_at",
 )
 
-# Fields on ``BaseNodeFields`` are graph-layer; they're carried in the
-# YAML frontmatter (``id`` / ``parent_id``) and on canvas.json itself,
-# not as MD H2 sections.
+# v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed from frontmatter
+# alongside the field. Hierarchy is now expressed via directed edges
+# on the canvas itself; per-node MD frontmatter no longer carries
+# structural relationships.
+
+# Fields on ``BaseNodeFields`` are graph-layer; they're carried on
+# canvas.json itself, not as MD H2 sections.
 _BASE_FIELD_NAMES: frozenset[str] = frozenset(BaseNodeFields.model_fields.keys())
 
 
@@ -106,7 +109,6 @@ def render_node_md(node: SketchNode, *, canvas: str) -> str:
         "kind": node.kind,
         "version": node.version,
         "label": node.label,
-        "parent_id": node.parent_id,
         "canvas": canvas,
         "published_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }

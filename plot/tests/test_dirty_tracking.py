@@ -67,8 +67,11 @@ def test_dirty_snapshot_excludes_visual_fields() -> None:
 
 
 def test_dirty_snapshot_excludes_version_and_id_and_parent() -> None:
+    """v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed from the model
+    so the "excludes parent_id" half of this test is vacuously
+    satisfied. The ``version`` exclusion still matters."""
     n_a = IdentityNode(id="id-1", label="Voice", description="warm")
-    n_b = n_a.model_copy(update={"version": "v3.0", "parent_id": "anything"})
+    n_b = n_a.model_copy(update={"version": "v3.0"})
     assert _dirty_snapshot(n_a, []) == _dirty_snapshot(n_b, [])
 
 
@@ -195,10 +198,22 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
     )
     write_canvas(plot_root, "alpha", new_actors)
 
+    # v0.26.0 (D-2026-05-25-A) — containment is now expressed via
+    # directed edges (parent_id field removed).
+    from plot_mcp.models import SketchEdge
+
+    def _edge(src: str, tgt: str) -> SketchEdge:
+        return SketchEdge(id=f"e_{src}_{tgt}", source=src, target=tgt, directed=True)
+
     services = read_canvas(plot_root, "alpha", "services")
     cat = CategoryNode(id="cat-acq", label="Acquisition")
-    svc = ServiceNode(id="svc-onboarding", label="Onboarding", parent_id="cat-acq")
-    new_services = services.model_copy(update={"nodes": [cat, svc]})
+    svc = ServiceNode(id="svc-onboarding", label="Onboarding")
+    new_services = services.model_copy(
+        update={
+            "nodes": [cat, svc],
+            "edges": [_edge("cat-acq", "svc-onboarding")],
+        }
+    )
     write_canvas(plot_root, "alpha", new_services)
 
     detail = CanvasDoc(
@@ -210,21 +225,23 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
             StepNode(
                 id="step-verify",
                 label="Verify",
-                parent_id="svc-onboarding",
                 order=1,
             ),
             ActorRefNode(
                 id="aref-user",
-                parent_id="svc-onboarding",
                 ref_actor_id="user",
                 side="user",
             ),
             ActorRefNode(
                 id="aref-op",
-                parent_id="svc-onboarding",
                 ref_actor_id="operator",
                 side="operator",
             ),
+        ],
+        edges=[
+            _edge("svc-onboarding", "step-verify"),
+            _edge("svc-onboarding", "aref-user"),
+            _edge("svc-onboarding", "aref-op"),
         ],
     )
     write_canvas(plot_root, "alpha", detail)

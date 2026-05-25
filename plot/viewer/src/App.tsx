@@ -6,6 +6,7 @@ import { FoundationCanvas } from "./canvases/FoundationCanvas";
 import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
 import { ServicesCanvas } from "./canvases/ServicesCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
+import { parentIdOf } from "./canvases/sketch/hierarchy";
 import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useAppKeyboard } from "./hooks/useAppKeyboard";
 import { useAvailableNodes } from "./hooks/useAvailableNodes";
@@ -365,12 +366,16 @@ export function App() {
       {/* v0.12 — Service detail modal. Renders on top of the services
           canvas without unmounting it. Esc / backdrop click closes. */}
       {phase === "ready" && detailServiceId && detailCanvas && detailCanvasKey && activeId && (() => {
-        const servicesNodes = canvasCache.get("services")?.nodes ?? [];
+        const servicesCanvas = canvasCache.get("services");
+        const servicesNodes = servicesCanvas?.nodes ?? [];
+        const servicesEdges = servicesCanvas?.edges ?? [];
         const svcNode = servicesNodes.find((n) => n.id === detailServiceId);
-        // v0.12.6 — surface the parent category so the modal header carries
-        // drill context. parent_id on a service points at the category.
-        const categoryNode = svcNode?.parent_id
-          ? servicesNodes.find((n) => n.id === svcNode.parent_id)
+        // v0.12.6 — surface the parent category so the modal header
+        // carries drill context. v0.26.0 (D-2026-05-25-A): parent is
+        // now the source of the first incoming directed edge.
+        const categoryId = svcNode ? parentIdOf(servicesEdges, svcNode.id) : null;
+        const categoryNode = categoryId
+          ? servicesNodes.find((n) => n.id === categoryId)
           : undefined;
         return (
         <ServiceDetailModal

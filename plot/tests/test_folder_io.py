@@ -72,7 +72,10 @@ def test_create_project_seeds_foundation_without_project_node(plot_root: Path) -
     foundation = read_canvas(plot_root, "alpha", "foundation")
     kinds = sorted({n.kind for n in foundation.nodes if n.kind is not None})
     assert kinds == ["core_value", "identity", "mission"]
-    assert all(n.parent_id is None for n in foundation.nodes)
+    # v0.26.0 (D-2026-05-25-A) — parent_id field removed; the prior
+    # "all peers" check is now trivially satisfied by the field's
+    # absence.
+    assert not any(hasattr(n, "parent_id") for n in foundation.nodes)
     assert all(n.kind != "project" for n in foundation.nodes)
 
 
@@ -790,11 +793,24 @@ def test_publish_node_creates_git_commit_with_trailers(plot_root: Path) -> None:
 def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
     """Build a Services canvas with a category + service, plus a
     matching ServiceDetail canvas with a step node. Returns
-    ``(category_id, service_id, step_id)``."""
+    ``(category_id, service_id, step_id)``.
+
+    v0.26.0 (D-2026-05-25-A) — containment is now expressed via
+    directed edges instead of ``parent_id``."""
+    from plot_mcp.models import SketchEdge
+
+    def _edge(src: str, tgt: str) -> SketchEdge:
+        return SketchEdge(id=f"e_{src}_{tgt}", source=src, target=tgt, directed=True)
+
     services = read_canvas(plot_root, "alpha", "services")
     category = CategoryNode(id="cat-acq", label="Customer Acquisition")
-    service = ServiceNode(id="svc-onboarding", label="Onboarding", parent_id="cat-acq")
-    new_services = services.model_copy(update={"nodes": [category, service]})
+    service = ServiceNode(id="svc-onboarding", label="Onboarding")
+    new_services = services.model_copy(
+        update={
+            "nodes": [category, service],
+            "edges": [_edge("cat-acq", "svc-onboarding")],
+        }
+    )
     write_canvas(plot_root, "alpha", new_services)
 
     detail = CanvasDoc(
@@ -806,21 +822,23 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
             StepNode(
                 id="step-verify",
                 label="Verify email",
-                parent_id="svc-onboarding",
                 order=1,
             ),
             ActorRefNode(
                 id="aref-user",
-                parent_id="svc-onboarding",
                 ref_actor_id="user",
                 side="user",
             ),
             ActorRefNode(
                 id="aref-op",
-                parent_id="svc-onboarding",
                 ref_actor_id="operator",
                 side="operator",
             ),
+        ],
+        edges=[
+            _edge("svc-onboarding", "step-verify"),
+            _edge("svc-onboarding", "aref-user"),
+            _edge("svc-onboarding", "aref-op"),
         ],
     )
     write_canvas(plot_root, "alpha", detail)

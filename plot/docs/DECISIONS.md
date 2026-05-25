@@ -6502,3 +6502,154 @@ is exactly where these controls were said to belong.
 - v0.16.3 `ServiceDetailModal` extraction — the pre-existing modal
   surface this entry treats as the canonical home for per-service
   controls.
+
+---
+
+### D-2026-05-25-A — Directed edge model + `parent_id` removed (v0.26.0, BREAKING)
+
+**Context:** Session 2026-05-25 Services-canvas review surfaced that
+sub-nodes had no fold button. Diagnosis: fold was ``parent_id`` based,
+but the user was thinking of nodes connected by an edge as "sub-nodes."
+After multi-round discussion the model converged on:
+
+- Edges carry a ``directed`` flag (two kinds: directed vs undirected).
+- Drawing direction → ``from`` (source) and ``to`` (target).
+- Directed edge **only** participates in hierarchy / fold derivation.
+
+User then chose the **maximal-cleanup** path via AskUserQuestion:
+
+1. ``parent_id`` **completely removed** (not coexistence). Directed
+   edges become the sole hierarchy SSOT.
+2. New edges default to **directed** (drag direction matters from the
+   first stroke).
+3. Ship as a **single v0.26.0** commit (no phased migration).
+
+**Decision (executed):**
+
+1. **Schema additions**:
+   - ``SketchEdge.directed: bool = True`` (Pydantic + TS).
+2. **Schema removals**:
+   - ``BaseNodeFields.parent_id`` field removed from Pydantic.
+   - ``BaseFieldsJson.parent_id`` / ``BaseFields.parent_id`` removed
+     from TS.
+   - All 15 entity classes (Actor / Service / Category / Content /
+     CoreValue / Identity / IdentityRef / Metric / Mission /
+     MissionRef / Project / Rule / Service / Step / ValueRef) drop
+     ``parent_id`` declarations + ``toJson`` emission.
+3. **Validators removed** (Pydantic):
+   - ``CanvasDoc._parent_ids_are_valid`` (cycle / self-parent /
+     orphan checks — obsolete).
+   - ``_foundation_canvas_rules`` parent_id check for project nodes.
+   - ``_services_canvas_rules`` (whole validator — was
+     service-must-have-category + category-must-be-top-level).
+   - ``_detail_canvas_rules`` composition-kind parent_id checks.
+4. **Read-side migration**:
+   - New ``folder_io._migrate_parent_id_to_directed_edges`` runs on
+     every ``read_canvas``. For any node carrying a non-null
+     ``parent_id``, removes the field and appends a directed edge
+     ``parent → child`` (id ``e_migrated_{node_id}``). Idempotent —
+     subsequent reads no-op. Also backfills ``directed=True`` on any
+     pre-v0.26 edge that lacks the field (matches the new default).
+5. **Edge rendering** (viewer):
+   - ``edgeTransform.ts`` emits a React-Flow ``markerEnd:
+     ArrowClosed`` only when ``edge.directed === true``. Colour
+     matches the resolved stroke (value-flow recolouring stays
+     consistent).
+6. **Edge creation default** (viewer):
+   - ``useFlowHandlers.handleConnect`` initialises new edges with
+     ``directed: true``.
+7. **Context menu** (viewer):
+   - ``useContextMenus.openEdgeMenu`` gains a "Add direction" /
+     "Remove direction" toggle entry as the first item.
+8. **Fold refactor** (viewer):
+   - ``useCollapsedTree`` signature gains ``edges: SketchEdge[]``.
+     ``childIdsByParent`` is now built from directed edges instead
+     of ``parent_id``. ``parentIdsByChild`` added; ancestor /
+     descendant walks become BFS with visited-set cycle guard.
+9. **Hierarchy helper** (viewer):
+   - New pure module ``canvases/sketch/hierarchy.ts`` exposes
+     ``parentIdOf`` / ``parentIdsOf`` / ``childIdsOf`` / ``hasParent``
+     so consumers (Inspector, drag-and-drop, App.tsx drill context,
+     etc.) express parent-child queries without reaching into Maps.
+10. **Propagation walk** (server):
+    - ``plot_mcp/propagation.py::walk_ancestors`` rewritten. Now
+      walks incoming directed edges (``edge.target == current_id``)
+      across all canvases; picks the lexicographically smallest
+      source id for multi-parent determinism.
+11. **MD publish** (server):
+    - ``parent_id`` removed from the YAML frontmatter contract (was
+      one of 7 keys; now 6).
+12. **All viewer parent_id consumers refactored**:
+    App.tsx (drill category lookup), inspectors/category /service
+    (child count via outgoing directed edges), useNodesMemo (sort:
+    nodes without incoming directed edge first), useNodeCreation
+    (drops the field; nested drops materialise an explicit directed
+    edge for *every* kind, not just actor/service), useDragAndDrop
+    (sibling discovery via directed edges; coordinate system is now
+    flat — no parent-local nesting), overlapNudge / SketchModals
+    (parent-absolute walk simplified to identity), flow/autoLayout
+    (parent_id-implicit edges removed; only explicit edges drive the
+    dagre layout), ActorRefPicker (parent-chain label feature
+    dropped — follow-up if missed).
+
+**Files changed (high level):**
+
+| Layer | Files (one-line summary) |
+|---|---|
+| Server schema | ``plot_mcp/models.py``: SketchEdge gains ``directed``; BaseNodeFields drops ``parent_id``; 4 validators removed |
+| Server migration | ``plot_mcp/folder_io.py``: new ``_migrate_parent_id_to_directed_edges``; legacy ``_wrap_legacy_services_in_default_category`` removed |
+| Server propagation | ``plot_mcp/propagation.py``: rewritten for directed-edge ancestor walk |
+| Server md_publish | ``plot_mcp/md_publish.py``: ``parent_id`` removed from frontmatter |
+| Server migrate.py (v0.1→v0.2) | drops parent_id arg from ``_v01_to_actor`` / ``_v01_to_service`` / ``_v01_to_composition`` |
+| Client schema | ``viewer/src/types.ts``: SketchEdge gains ``directed``; ``viewer/src/domain/BaseFields.ts``: parent_id removed; 15 entity classes cleaned |
+| Client domain helper | new ``viewer/src/domain/createBlankNode.ts`` drops parent_id from BlankNodeBase |
+| Client edge render | ``viewer/src/canvases/sketch/edgeTransform.ts``: markerEnd for directed |
+| Client edge create | ``viewer/src/canvases/sketch/useFlowHandlers.ts``: default directed=true |
+| Client context menu | ``viewer/src/canvases/sketch/useContextMenus.ts``: toggle direction item |
+| Client fold refactor | ``viewer/src/canvases/sketch/useCollapsedTree.ts``: edges-based |
+| Client hierarchy helper | new ``viewer/src/canvases/sketch/hierarchy.ts`` |
+| Client consumers | App.tsx, inspectors/{category,service}, useNodesMemo, useNodeCreation, useDragAndDrop, overlapNudge, SketchModals, ActorRefPicker, flow/autoLayout — all rewritten to use directed edges |
+| Tests | test_schema_parity / test_canvas_doc / test_folder_io / test_dirty_tracking / test_propagation / test_migrate / test_md_publish + viewer base-fields / round-trip / inspectors — all updated |
+| Docs | SPEC §Edges rewritten; CHANGELOG v0.26.0 + Removed/Added/Changed; this entry |
+| Plugin | ``plot/.claude-plugin/plugin.json`` 0.25.1 → 0.26.0 |
+| Structural guard | ``viewer/tests/structural-guards.test.tsx`` App.tsx ceiling 425 → 430 |
+
+**Risk acknowledgement (kept honest):**
+
+- ``parent_id`` was load-bearing across 152 occurrences in 32 files.
+  This commit is large and rewrites domain invariants — the
+  "behavior: 부분 완료 금지" rule means all of it had to land
+  together. A future session may discover a missed consumer; the
+  fallback is honest rollback (``git revert``) rather than partial
+  patching.
+- Domain enforcement that was previously schema-level (e.g. "service
+  must have a category parent") now moves out of Pydantic into docs
+  guidance. Users can construct technically-invalid canvases (e.g. a
+  step with no incoming directed edge); they'll see no validation
+  error, only a missing fold affordance. Acceptable trade-off per
+  user direction (parent_id is gone; the model is intentionally
+  permissive about hierarchy shape).
+- ``ActorRefPicker``'s parent-chain label dropped temporarily — was
+  a parent_id-only feature. Threading edges through the picker is a
+  small follow-up if the omission becomes annoying.
+
+**Verification:**
+- Server pytest **433 passed**; mypy clean.
+- Viewer vitest **562 passed**; tsc clean.
+- Read-side migration tested via the existing folder_io / dirty
+  tracking / propagation fixtures (all rebuilt to use directed
+  edges directly; the migration path itself is exercised any time a
+  pre-v0.26 fixture file is loaded).
+
+**Approval:** Accepted by user, 2026-05-25 — AskUserQuestion options
+*"parent_id 완전 폐기, directed edge 만 쓴다"* + *"directed (화살표
+기본)"* + *"한 번에 (v0.26.0 통합 ship)"* selected directly.
+
+**Cross-refs:**
+- D-2026-05-20-… (none — last hierarchy work was the v0.15 reset
+  D-2026-05-12-B which preserved ``parent_id``).
+- D-2026-05-24-B (v0.25.0 radial layout — ``useRadialLayout`` already
+  used directed edges; survives v0.26 unchanged).
+- ``feedback_no_god_object`` memory — this entry is the dual of
+  the v0.13 god-SketchNode purge: god *containment field* purge in
+  favour of expressive edges.

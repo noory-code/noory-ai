@@ -16,8 +16,15 @@ import type { KindInspectorProps } from "../types";
 export function CategoryInspector(props: KindInspectorProps) {
   if (props.node.kind !== "category") return null;
   const node = props.node;
+  // v0.26.0 (D-2026-05-25-A) — child count is now derived from
+  // directed edges (this node → service child).
+  const childIds = new Set(
+    props.allEdges
+      .filter((e) => e.directed && e.source === node.id)
+      .map((e) => e.target),
+  );
   const childCount = props.allNodes.filter(
-    (n) => n.parent_id === node.id && n.kind === "service",
+    (n) => childIds.has(n.id) && n.kind === "service",
   ).length;
   return (
     <BaseInspector {...props} hideDetailsSection>

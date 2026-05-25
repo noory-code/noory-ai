@@ -120,10 +120,30 @@ export function useContextMenus({
   const openEdgeMenu = useCallback(
     (event: ReactMouseEvent, edge: Edge) => {
       event.preventDefault();
+      // Look up the canonical doc edge for the current ``directed`` flag —
+      // ``edge`` is the React-Flow projection (which may have a derived
+      // markerEnd but doesn't carry the source ``directed`` field).
+      const docEdge = docRef.current.edges.find((e) => e.id === edge.id);
+      const isDirected = docEdge?.directed ?? true;
       setMenu({
         x: event.clientX,
         y: event.clientY,
         items: [
+          {
+            // v0.26.0 (D-2026-05-25-A) — toggle the directed flag.
+            // Directed edges show an arrowhead at the target end and
+            // participate in fold / parent-child derivation.
+            label: isDirected ? "Remove direction (→ undirected)" : "Add direction (source → target)",
+            onSelect: () => {
+              const current = docRef.current;
+              onDocChange({
+                ...current,
+                edges: current.edges.map((e) =>
+                  e.id === edge.id ? { ...e, directed: !e.directed } : e,
+                ),
+              });
+            },
+          },
           {
             label: "Toggle dashed/solid",
             onSelect: () => {

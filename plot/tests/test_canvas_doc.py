@@ -139,22 +139,23 @@ def test_core_canvas_two_projects_rejected() -> None:
 
 
 def test_core_canvas_nested_project_rejected() -> None:
-    """Project anchor must be top-level."""
-    with pytest.raises(ValueError, match="top-level"):
-        CanvasDoc(
-            canvas_id="foundation",
-            canvas_kind="foundation",
-            nodes=[
-                MissionNode(id="mission", label="M"),
-                IdentityNode(id="identity", label="I"),
-                ProjectNode(
-                    id="project",
-                    label="P",
-                    shape="circle",
-                    parent_id="mission",
-                ),
-            ],
-        )
+    """v0.26.0 (D-2026-05-25-A) — top-level project-node validator was
+    parent_id-based and is gone. The doc constructs cleanly; project
+    anchor's top-levelness is now implicit (no incoming directed edge)
+    rather than a Pydantic-enforced invariant."""
+    CanvasDoc(
+        canvas_id="foundation",
+        canvas_kind="foundation",
+        nodes=[
+            MissionNode(id="mission", label="M"),
+            IdentityNode(id="identity", label="I"),
+            ProjectNode(
+                id="project",
+                label="P",
+                shape="circle",
+            ),
+        ],
+    )
 
 
 def test_mission_node_carries_typed_fields() -> None:
@@ -337,7 +338,7 @@ def test_actors_canvas_sub_actor_via_parent_id_ok() -> None:
         canvas_kind="actors",
         nodes=[
             ActorNode(id="team", label="Team", side="user"),
-            ActorNode(id="member", parent_id="team", label="Member", side="user"),
+            ActorNode(id="member", label="Member", side="user"),
         ],
     )
 
@@ -376,33 +377,36 @@ def test_overview_top_level_services_ok() -> None:
         canvas_kind="services",
         nodes=[
             CategoryNode(id="commerce", label="Commerce"),
-            ServiceNode(id="order", parent_id="commerce", label="주문"),
-            ServiceNode(id="pay", parent_id="commerce", label="결제"),
+            ServiceNode(id="order", label="주문"),
+            ServiceNode(id="pay", label="결제"),
         ],
     )
 
 
 def test_overview_service_without_category_parent_rejected() -> None:
-    """v0.12 — service must be nested inside a category."""
-    with pytest.raises(ValueError, match="category"):
-        CanvasDoc(
-            canvas_id="services",
-            canvas_kind="services",
-            nodes=[ServiceNode(id="order", label="주문")],
-        )
+    """v0.26.0 (D-2026-05-25-A) — service-must-have-category-parent
+    invariant (formerly parent_id-based) is gone. The doc constructs
+    cleanly; user expresses containment via a directed edge from a
+    category to the service."""
+    CanvasDoc(
+        canvas_id="services",
+        canvas_kind="services",
+        nodes=[ServiceNode(id="order", label="주문")],
+    )
 
 
 def test_overview_nested_category_rejected() -> None:
-    """v0.12 — categories must be top-level (no category-of-categories)."""
-    with pytest.raises(ValueError, match="top-level"):
-        CanvasDoc(
-            canvas_id="services",
-            canvas_kind="services",
-            nodes=[
-                CategoryNode(id="parent", label="Parent"),
-                CategoryNode(id="child", parent_id="parent", label="Child"),
-            ],
-        )
+    """v0.26.0 (D-2026-05-25-A) — categories-must-be-top-level
+    invariant (formerly parent_id-based) is gone. Two categories with
+    a directed edge between them are now expressible."""
+    CanvasDoc(
+        canvas_id="services",
+        canvas_kind="services",
+        nodes=[
+            CategoryNode(id="parent", label="Parent"),
+            CategoryNode(id="child", label="Child"),
+        ],
+    )
 
 
 def test_overview_services_rejects_foundation_refs() -> None:
@@ -429,16 +433,18 @@ def test_overview_empty_canvas_ok() -> None:
 
 
 def test_overview_nested_service_rejected() -> None:
-    """Overview forbids decomposition — that's what Detail canvases are for."""
-    with pytest.raises(ValueError, match="nested"):
-        CanvasDoc(
-            canvas_id="services",
-            canvas_kind="services",
-            nodes=[
-                ServiceNode(id="order", label="주문"),
-                ServiceNode(id="order-sub", parent_id="order", label="Sub"),
-            ],
-        )
+    """v0.26.0 (D-2026-05-25-A) — services-nesting validator
+    (formerly parent_id-based) is gone. Decomposition / nesting on the
+    overview is now expressible; users still choose to keep decomposition
+    in service_detail canvases per the docs guidance."""
+    CanvasDoc(
+        canvas_id="services",
+        canvas_kind="services",
+        nodes=[
+            ServiceNode(id="order", label="주문"),
+            ServiceNode(id="order-sub", label="Sub"),
+        ],
+    )
 
 
 def test_overview_actor_rejected() -> None:
@@ -521,9 +527,9 @@ def test_detail_canvas_sub_services_rules_contents_ok() -> None:
         service_ref="order",
         nodes=[
             *_detail_seed(),
-            ServiceNode(id="sub1", parent_id="order", label="장바구니"),
-            RuleNode(id="r1", parent_id="order", label="가격 규칙"),
-            ContentNode(id="c1", parent_id="order", label="썸네일"),
+            ServiceNode(id="sub1", label="장바구니"),
+            RuleNode(id="r1", label="가격 규칙"),
+            ContentNode(id="c1", label="썸네일"),
         ],
     )
 
@@ -659,7 +665,6 @@ def test_sub_service_typed_fields_round_trip() -> None:
             ServiceNode(id="auth", label="Auth"),
             ServiceNode(
                 id="login",
-                parent_id="auth",
                 label="Login",
                 value_created="유효한 세션 토큰",
                 trigger="사용자가 로그인 버튼을 누른다",
@@ -718,13 +723,11 @@ def test_service_detail_accepts_metric_and_step() -> None:
             ServiceNode(id="auth", label="Auth"),
             MetricNode(
                 id="m1",
-                parent_id="auth",
                 label="Login success rate",
                 target=">99%",
             ),
             StepNode(
                 id="s1",
-                parent_id="auth",
                 label="Verify credentials",
                 order=1,
             ),
@@ -735,31 +738,41 @@ def test_service_detail_accepts_metric_and_step() -> None:
 
 
 def test_metric_requires_service_parent() -> None:
-    """Like rule/content, metric/step are composition kinds and must live
-    inside a service. Top-level placement is rejected."""
-    with pytest.raises(ValueError, match="parent_id"):
-        CanvasDoc(
-            canvas_id="auth",
-            canvas_kind="service_detail",
-            service_ref="auth",
-            nodes=[
-                ServiceNode(id="auth", label="Auth"),
-                MetricNode(id="m1", label="Stray"),
-            ],
-        )
+    """v0.26.0 (D-2026-05-25-A) — the parent_id-based composition
+    validator was removed alongside the field. Containment of
+    metric / step under a service is now expressed via directed
+    edges (and not validated at the schema level). The test stays as
+    a marker that this invariant moved out of Pydantic into the UI /
+    docs layer."""
+    # No-op assertion: previously this would raise. Now the doc
+    # constructs cleanly; hierarchy is the user's responsibility.
+    CanvasDoc(
+        canvas_id="auth",
+        canvas_kind="service_detail",
+        service_ref="auth",
+        nodes=[
+            ServiceNode(id="auth", label="Auth"),
+            MetricNode(id="m1", label="Stray"),
+            ActorRefNode(id="ar-op", label="→ op", ref_actor_id="op", side="operator"),
+            ActorRefNode(id="ar-u", label="→ u", ref_actor_id="u", side="user"),
+        ],
+    )
 
 
 def test_step_requires_service_parent() -> None:
-    with pytest.raises(ValueError, match="parent_id"):
-        CanvasDoc(
-            canvas_id="auth",
-            canvas_kind="service_detail",
-            service_ref="auth",
-            nodes=[
-                ServiceNode(id="auth", label="Auth"),
-                StepNode(id="s1", label="Stray"),
-            ],
-        )
+    """v0.26.0 (D-2026-05-25-A) — same as ``test_metric_requires_service_parent``;
+    parent_id validator removed; constraint moved out of the schema."""
+    CanvasDoc(
+        canvas_id="auth",
+        canvas_kind="service_detail",
+        service_ref="auth",
+        nodes=[
+            ServiceNode(id="auth", label="Auth"),
+            StepNode(id="s1", label="Stray"),
+            ActorRefNode(id="ar-op", label="→ op", ref_actor_id="op", side="operator"),
+            ActorRefNode(id="ar-u", label="→ u", ref_actor_id="u", side="user"),
+        ],
+    )
 
 
 def test_services_canvas_rejects_metric() -> None:
@@ -826,7 +839,6 @@ def test_actor_permissions_round_trip_through_canvas() -> None:
             ServiceNode(id="auth", label="Auth"),
             RuleNode(
                 id="r1",
-                parent_id="auth",
                 label="Post permissions",
                 policy="자기 글만 수정/삭제",
                 actor_permissions={
@@ -1023,12 +1035,16 @@ def test_edge_with_one_anchor_one_ghost_endpoint_reports_only_ghost() -> None:
 
 
 def test_parent_cycle_rejected() -> None:
-    with pytest.raises(ValueError, match="cycle"):
-        CanvasDoc(
-            canvas_id="actors",
-            canvas_kind="actors",
-            nodes=[
-                ActorNode(id="a", parent_id="b", label="A"),
-                ActorNode(id="b", parent_id="a", label="B"),
-            ],
-        )
+    """v0.26.0 (D-2026-05-25-A) — parent_id cycle validator removed
+    alongside the field. Directed-edge cycles are now expressible in
+    canvas.json; the propagation walk's visited-set is the runtime
+    guard. The test stays as a marker (the prior parent_id chain that
+    triggered cycle rejection no longer exists)."""
+    CanvasDoc(
+        canvas_id="actors",
+        canvas_kind="actors",
+        nodes=[
+            ActorNode(id="a", label="A"),
+            ActorNode(id="b", label="B"),
+        ],
+    )

@@ -78,6 +78,12 @@ export interface SketchEdge {
   targetHandle: string | null;
   label: string;
   style: "solid" | "dashed";
+  /** v0.26.0 (D-2026-05-25-A) — directed edges carry parent→child
+   *  semantics. When True, the renderer draws an arrowhead at the
+   *  target end and the fold / hierarchy logic treats source as
+   *  parent. New edges default to True; the v0.26 read-time migration
+   *  converts pre-v0.26 nodes' ``parent_id`` into directed=True edges. */
+  directed: boolean;
   /** v0.2: primary verb (create / pay / deliver / ...). */
   action_verb: string | null;
   /** v0.2: which forms of value flow along this edge. */

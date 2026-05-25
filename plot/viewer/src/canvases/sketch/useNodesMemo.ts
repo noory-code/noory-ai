@@ -89,10 +89,18 @@ export function useNodesMemo({
   return useMemo<Node<BaseNodeData>[]>(() => {
     // SPEC §Rendering order: parents first, children after. React
     // Flow uses array order to resolve parentNode references on the
-    // first paint.
+    // first paint. v0.26.0 (D-2026-05-25-A): parent-child is now
+    // derived from directed edges. A node is a "child" iff there's
+    // an incoming directed edge.
+    const childIds = new Set<string>();
+    for (const e of doc.edges) {
+      if (e.directed) childIds.add(e.target);
+    }
     const ordered = [...doc.nodes].sort((a, b) => {
-      if (!a.parent_id && b.parent_id) return -1;
-      if (a.parent_id && !b.parent_id) return 1;
+      const aChild = childIds.has(a.id);
+      const bChild = childIds.has(b.id);
+      if (!aChild && bChild) return -1;
+      if (aChild && !bChild) return 1;
       return 0;
     });
     const out: Node<BaseNodeData>[] = [];

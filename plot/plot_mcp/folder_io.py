@@ -198,9 +198,11 @@ def read_canvas(
     # the canvas validates on open. Same idempotent pattern.
     if canvas_kind == "services":
         raw = _drop_disallowed_services_kinds(plot_root, project_id, raw)
-        # v0.12 — wrap orphan top-level services in a default category so
-        # the new "service must be nested in a category" validator passes.
-        raw = _wrap_legacy_services_in_default_category(plot_root, project_id, raw)
+    # v0.26.0 (D-2026-05-25-A) — convert pre-v0.26 ``parent_id`` field
+    # to a directed edge from parent → child. Idempotent. Persists
+    # back to disk on first read so the file format settles into the
+    # new model without needing a write-side trigger.
+    raw = _migrate_parent_id_to_directed_edges(plot_root, project_id, canvas_kind, service_id, raw)
     # v0.23.0 (D-2026-05-17-I) — migrate legacy flat published MD layout
     # (<canvas>/published/<kind>-<slug>-v<X>.md) to the kind/slug/version.md
     # hierarchy. Idempotent.
@@ -327,48 +329,90 @@ def _migrate_published_slug_to_id(
         slug_dir.rename(id_dir)
 
 
-def _wrap_legacy_services_in_default_category(
+# v0.26.0 (D-2026-05-25-A) — ``_wrap_legacy_services_in_default_category``
+# removed. The v0.12 "service must be nested in a category" invariant
+# was enforced via ``parent_id`` (now removed). With the new directed
+# edge model, services may sit at any level; the wrapper that seeded
+# a fake default-category is no longer needed.
+
+
+def _migrate_parent_id_to_directed_edges(
     plot_root: Path,
     project_id: str,
+    canvas_kind: CanvasKind,
+    service_id: str | None,
     raw: dict[str, Any],
 ) -> dict[str, Any]:
-    """v0.12 migration helper: any service nodes on the services canvas
-    without a parent_id are legacy top-level services. Wrap them under a
-    seeded default category so v0.12's "service must be nested" validator
-    accepts them. Idempotent — only acts when orphan top-level services
-    are detected.
+    """v0.26.0 (D-2026-05-25-A) — convert pre-v0.26 ``parent_id`` field
+    to a directed edge from parent → child. Idempotent.
+
+    For each node carrying a non-null ``parent_id``:
+      1. Remove the ``parent_id`` key from the node dict.
+      2. Append a directed edge ``parent → child`` to ``edges`` (with
+         a stable id ``e_migrated_{node_id}``), unless an equivalent
+         directed edge already exists.
+
+    Also fills ``directed: True`` on any pre-v0.26 edge that lacks
+    the field — that matches the new default (``SketchEdge.directed =
+    True``) and preserves any explicit hierarchical intent from
+    earlier sessions.
+
+    On any actual change, persists back to disk so the file settles
+    into the new model. Subsequent reads are no-ops.
     """
     nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
-    orphans = [n for n in nodes if n.get("kind") == "service" and not n.get("parent_id")]
-    if not orphans:
-        return raw
-    has_default = any(
-        n.get("kind") == "category" and n.get("id") == "default-category" for n in nodes
-    )
-    rebuilt: list[dict[str, Any]] = []
-    if not has_default:
-        rebuilt.append(
+    edges: list[dict[str, Any]] = list(raw.get("edges") or [])
+
+    changed = False
+    existing_directed = {
+        (e.get("source"), e.get("target"))
+        for e in edges
+        if e.get("directed", True)
+    }
+    rebuilt_nodes: list[dict[str, Any]] = []
+    for n in nodes:
+        pid = n.get("parent_id")
+        if pid is None and "parent_id" not in n:
+            rebuilt_nodes.append(n)
+            continue
+        # Drop parent_id from the node copy.
+        new_node = {k: v for k, v in n.items() if k != "parent_id"}
+        rebuilt_nodes.append(new_node)
+        changed = True
+        if pid is None or pid == n.get("id"):
+            continue
+        key = (pid, n.get("id"))
+        if key in existing_directed:
+            continue
+        edges.append(
             {
-                **CategoryNode(
-                    id="default-category",
-                    label="Services",
-                    theme="Migrated services",
-                    x=-200,
-                    y=-50,
-                    width=200,
-                    height=100,
-                    color="#e2e8f0",
-                    shape="rounded",
-                ).model_dump(by_alias=True),
+                "id": f"e_migrated_{n.get('id')}",
+                "source": pid,
+                "target": n.get("id"),
+                "sourceHandle": None,
+                "targetHandle": None,
+                "label": "",
+                "style": "solid",
+                "directed": True,
+                "action_verb": None,
+                "value_form": [],
             }
         )
-    for n in nodes:
-        if n.get("kind") == "service" and not n.get("parent_id"):
-            rebuilt.append({**n, "parent_id": "default-category"})
+        existing_directed.add(key)
+
+    rebuilt_edges: list[dict[str, Any]] = []
+    for e in edges:
+        if "directed" not in e:
+            rebuilt_edges.append({**e, "directed": True})
+            changed = True
         else:
-            rebuilt.append(n)
-    raw = {**raw, "nodes": rebuilt}
-    _write_json(_canvas_file(plot_root, project_id, "services"), raw)
+            rebuilt_edges.append(e)
+
+    if not changed:
+        return raw
+
+    raw = {**raw, "nodes": rebuilt_nodes, "edges": rebuilt_edges}
+    _write_json(_canvas_file(plot_root, project_id, canvas_kind, service_id), raw)
     return raw
 
 
@@ -878,7 +922,10 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
             # the project's seeded actors. Users can re-pick via the
             # picker, or add more refs as the design develops.
             nodes=[
-                src.model_copy(update={"parent_id": None, "is_root": False}),
+                # v0.26.0 (D-2026-05-25-A) — parent_id field removed;
+                # service_detail root carries no structural parent
+                # (is_root marks the canvas anchor).
+                src.model_copy(update={"is_root": False}),
                 ActorRefNode(
                     id=f"{service_id}-operator-ref",
                     label="→ Operator",
@@ -990,19 +1037,20 @@ _DIRTY_VISUAL_FIELDS: frozenset[str] = frozenset(
 # Fields excluded from the dirty snapshot for non-content reasons:
 #   - id: node identity, never compared
 #   - version: moves with publish; the bump itself is not new content
-#   - parent_id: structural reparenting is intentionally NOT classified as
-#     dirty in v0.22.0 (see DECISIONS D-2026-05-17-H §Out of scope)
 #   - is_root: structural metadata; only set at creation
 #   - details_path: legacy MD path; v0.17 JSON SSOT made it inert for the
 #     10 publish-eligible kinds
 #   - owner: multi-user prep; not user content
 #   - _publish_baseline / publish_baseline: the baseline itself
 #   - _md_warnings: never persisted; server decoration only
+# v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed from this exclusion
+# list alongside the field. Structural reparenting is now expressed
+# via directed edges and *is* picked up by the dirty snapshot via the
+# incident-edge slice (already part of the snapshot).
 _DIRTY_NON_CONTENT_FIELDS: frozenset[str] = frozenset(
     {
         "id",
         "version",
-        "parent_id",
         "is_root",
         "details_path",
         "owner",
@@ -1059,8 +1107,9 @@ def _patch_node_in_canvas(
 ) -> CanvasDoc:
     """Return a copy of ``canvas`` with ``node_id``'s listed fields
     replaced via ``model_copy(update=patch)``. Preserves all other
-    fields — important for mirror sync where parent_id can differ
-    between a service's master canvas and its ServiceDetail mirror."""
+    fields — important for mirror sync where canvas-local state
+    (e.g. ``is_root`` on the ServiceDetail mirror vs ``False`` on the
+    services master) must remain canvas-specific."""
     new_nodes = [
         n.model_copy(update=patch) if n.id == node_id else n for n in canvas.nodes
     ]
@@ -1155,8 +1204,9 @@ def publish_node(
     # Step 4 — MAJOR-bump the target in every canvas it appears in
     # (mirror sync) and stamp the dirty baseline. Patch only ``version``
     # + ``publish_baseline`` so other fields stay canvas-local — most
-    # importantly ``parent_id`` (services master has parent=category,
-    # ServiceDetail mirror is is_root with parent=None).
+    # importantly ``is_root`` (services master is False, ServiceDetail
+    # mirror is True). v0.26.0 (D-2026-05-25-A): parent_id no longer
+    # in this list — containment is now per-canvas directed edges.
     version_baseline_patch: dict[str, Any] = {
         "version": to_v,
         "publish_baseline": new_baseline,

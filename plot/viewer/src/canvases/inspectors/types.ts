@@ -7,7 +7,7 @@
  * ``onRepickActorRef``) live on per-kind prop interfaces declared
  * inside each ``inspectors/{kind}/index.tsx`` file.
  */
-import type { CanvasKind, SketchNode } from "../../types";
+import type { CanvasKind, SketchEdge, SketchNode } from "../../types";
 
 export interface KindInspectorProps {
   /** Currently selected node (the per-kind component narrows on
@@ -16,6 +16,10 @@ export interface KindInspectorProps {
   /** All nodes on the canvas, so per-kind inspectors can compute
    *  derived data (e.g. CategoryInspector counts its child services). */
   allNodes: SketchNode[];
+  /** v0.26.0 (D-2026-05-25-A) — all edges on the canvas. Used by
+   *  per-kind inspectors that count children (parent-child is now
+   *  derived from directed edges, not parent_id). */
+  allEdges: SketchEdge[];
   /** Patch the selected node's own fields. */
   onPatchNode: (patch: Partial<SketchNode>) => void;
   /** Remove a node entirely (used by ``BaseInspector``'s delete button). */

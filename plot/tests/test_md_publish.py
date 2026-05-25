@@ -164,7 +164,9 @@ def test_render_mission_full_round_trip() -> None:
     assert fm["kind"] == "mission"
     assert fm["version"] == "v2.0"
     assert fm["label"] == "Tolerance"
-    assert fm["parent_id"] is None
+    # v0.26.0 (D-2026-05-25-A) — parent_id removed from frontmatter
+    # alongside the field. Hierarchy is now on canvas.json edges.
+    assert "parent_id" not in fm
     assert fm["canvas"] == "foundation"
     assert "published_at" in fm
 
@@ -238,12 +240,14 @@ def test_render_empty_typed_fields_keep_headings() -> None:
     ],
 )
 def test_render_yaml_frontmatter_has_all_7_keys(cls: type, extra: dict) -> None:
-    """Frontmatter contract: every published MD has exactly 7 YAML keys
-    in the canonical order Phase 4 / 5 parsers depend on."""
+    """Frontmatter contract: every published MD has exactly 6 YAML keys
+    in the canonical order Phase 4 / 5 parsers depend on. v0.26.0
+    (D-2026-05-25-A) dropped ``parent_id`` from this set alongside
+    the field removal."""
     node = cls(id="n1", label="L", version="v1.0", **extra)
     md = render_node_md(node, canvas="foundation")
     fm = yaml.safe_load(md.split("---", 2)[1])
-    expected = {"id", "kind", "version", "label", "parent_id", "canvas", "published_at"}
+    expected = {"id", "kind", "version", "label", "canvas", "published_at"}
     assert set(fm.keys()) == expected
 
 

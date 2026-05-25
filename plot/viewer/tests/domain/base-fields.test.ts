@@ -28,7 +28,8 @@ describe("parseBaseFields", () => {
     expect(fields.color).toBe("#ffffff");
     expect(fields.shape).toBe("rounded");
     expect(fields.icon).toBeNull();
-    expect(fields.parent_id).toBeNull();
+    // v0.26.0 (D-2026-05-25-A) — parent_id field removed.
+    expect((fields as Record<string, unknown>).parent_id).toBeUndefined();
     expect(fields.collapsed).toBe(false);
     expect(fields.is_root).toBe(false);
     expect(fields.details_path).toBeNull();
@@ -45,7 +46,6 @@ describe("parseBaseFields", () => {
       color: "#fef3c7",
       shape: "circle",
       icon: "star",
-      parent_id: "p1",
       collapsed: true,
       is_root: true,
       details_path: "foundation/mission-1/details.md",
@@ -55,7 +55,8 @@ describe("parseBaseFields", () => {
     expect(fields.color).toBe("#fef3c7");
     expect(fields.shape).toBe("circle");
     expect(fields.icon).toBe("star");
-    expect(fields.parent_id).toBe("p1");
+    // v0.26.0 (D-2026-05-25-A) — parent_id field removed.
+    expect((fields as Record<string, unknown>).parent_id).toBeUndefined();
     expect(fields.collapsed).toBe(true);
     expect(fields.is_root).toBe(true);
     expect(fields.details_path).toBe("foundation/mission-1/details.md");

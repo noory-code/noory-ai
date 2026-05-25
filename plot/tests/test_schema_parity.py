@@ -92,7 +92,8 @@ _EXPECTED_BASE_FIELDS = {
     "color",
     "shape",
     "icon",
-    "parent_id",
+    # v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed. Hierarchy
+    # moved to directed edges (``SketchEdge.directed``).
     "collapsed",
     "is_root",
     "details_path",

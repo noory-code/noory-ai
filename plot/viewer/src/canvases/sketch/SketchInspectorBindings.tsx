@@ -64,6 +64,7 @@ export function SketchInspectorBindings({
     <KindInspector
       node={node}
       allNodes={doc.nodes}
+      allEdges={doc.edges}
       availableActors={availableActors ?? doc.nodes.filter((n) => n.kind === "actor")}
       availableMissions={availableMissions}
       availableValues={availableValues}

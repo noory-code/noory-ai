@@ -99,6 +99,7 @@ describe("KindInspector — exhaustive 15-kind smoke (Phase 5.1)", () => {
         <KindInspector
           node={node}
           allNodes={[node]}
+          allEdges={[]}
           onPatchNode={vi.fn()}
           onDeleteNode={vi.fn()}
           onClose={vi.fn()}
@@ -119,6 +120,7 @@ describe("KindInspector — exhaustive 15-kind smoke (Phase 5.1)", () => {
         <KindInspector
           node={node}
           allNodes={[node]}
+          allEdges={[]}
           onPatchNode={vi.fn()}
           onDeleteNode={vi.fn()}
           onClose={vi.fn()}

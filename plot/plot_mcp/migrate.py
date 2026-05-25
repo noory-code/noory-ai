@@ -487,12 +487,13 @@ def _build_actors_canvas(
     (``_backfill_actor_sides`` / ``_ensure_minimum_actors``) operate on
     the per-kind class.
     """
-    node_ids = {n.id for n in actor_nodes}
     cleaned: list[ActorNode] = []
     for n in actor_nodes:
-        # If the parent is core-root (or anything outside the actors canvas),
-        # drop parent_id so it becomes top-level here.
-        parent_id = n.parent_id if n.parent_id in node_ids else None
+        # v0.26.0 (D-2026-05-25-A) — parent_id field removed from v0.2
+        # schema. Hierarchy is now expressed via directed edges, which
+        # the v0.26 read-side migration auto-creates from any pre-v0.26
+        # parent_id on disk. Here we just drop the field on the way
+        # into v0.2 models.
         cleaned.append(
             ActorNode(
                 id=n.id,
@@ -504,7 +505,6 @@ def _build_actors_canvas(
                 color=n.color,
                 shape=n.shape,  # type: ignore[arg-type]
                 icon=n.icon,
-                parent_id=parent_id,
                 collapsed=n.collapsed,
                 is_root=False,  # is_root meaningless across canvases
                 details_path=n.details_path,
@@ -616,12 +616,18 @@ def _ensure_minimum_actors(nodes: list[ActorNode]) -> list[ActorNode]:
     return nodes + pad
 
 
-def _v01_to_service(n: _V01SketchNode, *, parent_id: str | None) -> ServiceNode:
+def _v01_to_service(n: _V01SketchNode) -> ServiceNode:
     """Convert a legacy v0.1 ``service``-kind node into a current
     ``ServiceNode``. v0.1 did not carry the v0.10+ typed-text fields
     (``what`` / ``value_created`` / ``scope`` / ``trigger`` / ``how`` /
     ``outcome``); defaults stay empty. Drops legacy ``is_root`` /
     ``mission`` / ``core_values`` / ``identity`` god-pool fields.
+
+    v0.26.0 (D-2026-05-25-A) — parent_id field removed; the optional
+    ``parent_id`` argument is gone. Hierarchy is now expressed via
+    directed edges, auto-created by the read-side migration in
+    ``folder_io._migrate_parent_id_to_directed_edges`` for any
+    pre-v0.26 raw data that still carries ``parent_id`` on disk.
     """
     return ServiceNode(
         id=n.id,
@@ -633,7 +639,6 @@ def _v01_to_service(n: _V01SketchNode, *, parent_id: str | None) -> ServiceNode:
         color=n.color,
         shape=n.shape,  # type: ignore[arg-type]
         icon=n.icon,
-        parent_id=parent_id,
         collapsed=n.collapsed,
         is_root=False,
         details_path=n.details_path,
@@ -656,7 +661,6 @@ def _v01_to_composition(n: _V01SketchNode) -> RuleNode | ContentNode:
             color=n.color,
             shape=n.shape,  # type: ignore[arg-type]
             icon=n.icon,
-            parent_id=n.parent_id,
             collapsed=n.collapsed,
             details_path=n.details_path,
         )
@@ -671,7 +675,6 @@ def _v01_to_composition(n: _V01SketchNode) -> RuleNode | ContentNode:
             color=n.color,
             shape=n.shape,  # type: ignore[arg-type]
             icon=n.icon,
-            parent_id=n.parent_id,
             collapsed=n.collapsed,
             details_path=n.details_path,
         )
@@ -725,7 +728,12 @@ def _split_services(
             )
         )
     for n in top_level:
-        overview_nodes.append(_v01_to_service(n, parent_id="default-category"))
+        # v0.26.0 (D-2026-05-25-A) — no parent_id; v0.1 services come
+        # in as flat overview nodes. The "Migrated services" category
+        # is still seeded above as a visual grouping; relating services
+        # to it is the user's job via a directed edge once they open
+        # the canvas.
+        overview_nodes.append(_v01_to_service(n))
     overview_ids = {n.id for n in overview_nodes}
     overview_edges = [e for e in edges if e.source in overview_ids and e.target in overview_ids]
     overview = CanvasDoc(
@@ -750,10 +758,10 @@ def _split_services(
         for did in descendant_ids:
             n = by_id[did]
             if n.kind == "service":
-                # root_service itself has parent cleared; sub-services keep
-                # their intra-subtree parent_id.
-                pid = None if n.id == root_service.id else n.parent_id
-                descendants.append(_v01_to_service(n, parent_id=pid))
+                # v0.26.0 (D-2026-05-25-A) — parent_id field gone.
+                # Detail-canvas sub-service nesting is now the user's
+                # job via directed edges.
+                descendants.append(_v01_to_service(n))
             elif n.kind in ("rule", "content"):
                 descendants.append(_v01_to_composition(n))
             # v0.1 didn't have metric / step / refs / actor_ref — nothing

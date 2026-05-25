@@ -26,7 +26,6 @@ export class Content implements BaseFields {
   readonly color!: string;
   readonly shape!: BaseFields["shape"];
   readonly icon!: string | null;
-  readonly parent_id!: string | null;
   readonly collapsed!: boolean;
   readonly is_root!: boolean;
   readonly details_path!: string | null;
@@ -83,7 +82,6 @@ export class Content implements BaseFields {
       color: this.color,
       shape: this.shape,
       icon: this.icon,
-      parent_id: this.parent_id,
       collapsed: this.collapsed,
       is_root: this.is_root,
       details_path: this.details_path,
