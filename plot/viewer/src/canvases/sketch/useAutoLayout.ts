@@ -14,6 +14,7 @@
 //     ``doc.nodes`` and provides a stable layout origin.
 
 import { useCallback, type MutableRefObject } from "react";
+import { useReactFlow } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
 import { computeAutoLayout, type AutoLayoutAnchor } from "./autoLayout";
 import { PROJECT_ANCHOR_ID } from "./constants";
@@ -53,6 +54,7 @@ function pickAnchor(
 }
 
 export function useAutoLayout({ docRef, onDocChange, projectAnchor }: UseAutoLayoutInput) {
+  const rf = useReactFlow();
   return useCallback(() => {
     const doc = docRef.current;
     if (doc.nodes.length === 0) return;
@@ -70,5 +72,12 @@ export function useAutoLayout({ docRef, onDocChange, projectAnchor }: UseAutoLay
       return { ...n, x: p.x, y: p.y };
     });
     onDocChange({ ...doc, nodes: nextNodes });
-  }, [docRef, onDocChange, projectAnchor]);
+    // v0.27.6 (D-2026-05-26-J) — after layout mutates positions, the
+    // user's viewport stays put — typically meaning the newly laid-out
+    // graph lands off-screen ("정렬 누르니까 다 사라짐"). Frame the
+    // new layout in the next tick so the user always sees the result
+    // they triggered. ``setTimeout(0)`` lets the onDocChange render
+    // commit + RF measure pass complete before fitView runs.
+    setTimeout(() => rf.fitView({ padding: 0.2, duration: 250 }), 0);
+  }, [docRef, onDocChange, projectAnchor, rf]);
 }

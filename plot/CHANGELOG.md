@@ -4,6 +4,35 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.6] — 2026-05-27
+
+### Fixed
+
+- **Auto-layout `⊞` now auto-fitView so the result is always visible**
+  ([D-2026-05-26-J](./docs/DECISIONS.md#d-2026-05-26-j--auto-layout-auto-fitview-after-onDocChange-so-the-result-is-always-visible-v0276)).
+  User report: *"정렬 하면 모든 노드 싹다 사라짐"*. The layout
+  algorithm shifts nodes to new (x, y) values around the anchor,
+  but the user's viewport (whatever zoom / pan they had) stays put
+  — so the newly laid-out graph commonly lands off-screen.
+  Pre-fix the user experienced this as "nodes vanish" since the
+  fit-view button click did nothing (RF still had the post-layout
+  store state in sync with their old viewport).
+- Fix: `useAutoLayout` + `useRadialLayout` both now wrap a
+  `setTimeout(() => rf.fitView({ padding: 0.2, duration: 250 }), 0)`
+  after `onDocChange`. The setTimeout(0) lets the React commit +
+  RF measure pass complete before fitView runs. Same gate on both
+  algorithms so the behaviour is uniform across every canvas that
+  opts into auto-layout. Verified browser: zoom out to `scale(0.5)`,
+  click `⊞`, viewport returns to `scale(0.804843)` (initial fit
+  position).
+
+### Verification
+
+- Viewer vitest 563 passed; tsc clean.
+- Browser DOM probe: viewport transform changes from
+  `scale(0.5)` → `scale(0.804843)` after auto-layout click. Pre-fix
+  it stayed at `scale(0.5)` with nodes off-screen.
+
 ## [0.27.5] — 2026-05-26
 
 ### Fixed

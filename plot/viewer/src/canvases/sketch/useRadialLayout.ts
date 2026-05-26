@@ -12,6 +12,7 @@
 //     ``doc.nodes`` and provides a stable layout origin.
 
 import { useCallback, type MutableRefObject } from "react";
+import { useReactFlow } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
 import { computeRadialLayout, type RadialLayoutHub } from "./radialLayout";
 import { PROJECT_ANCHOR_ID } from "./constants";
@@ -55,6 +56,7 @@ export function useRadialLayout({
   onDocChange,
   projectAnchor,
 }: UseRadialLayoutInput) {
+  const rf = useReactFlow();
   return useCallback(() => {
     const doc = docRef.current;
     if (doc.nodes.length === 0) return;
@@ -72,5 +74,7 @@ export function useRadialLayout({
       return { ...n, x: p.x, y: p.y };
     });
     onDocChange({ ...doc, nodes: nextNodes });
-  }, [docRef, onDocChange, projectAnchor]);
+    // v0.27.6 (D-2026-05-26-J) — auto-fitView after layout (mirror useAutoLayout).
+    setTimeout(() => rf.fitView({ padding: 0.2, duration: 250 }), 0);
+  }, [docRef, onDocChange, projectAnchor, rf]);
 }

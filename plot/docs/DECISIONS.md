@@ -7570,3 +7570,113 @@ stay.
 - v0.15 Phase 3.4 (introduced `showFoldButton` per-wrapper opt-in
   — this entry narrows the case-by-case render gate one layer
   deeper).
+
+---
+
+### D-2026-05-26-J — Auto-layout auto-fitView after onDocChange so the result is always visible (v0.27.6)
+
+**Context:** Same session 2026-05-26 → 2026-05-27. User report
+after the v0.27.5 fold-button fix:
+
+> *"정렬 하면 모든 노드 싹다 사라짐"*
+
+Plus the meta-observation:
+
+> *"이런 이슈가 이전에도 있었는데 아키텍처 제대로 만들라고 갈군후에
+> 나오지 않았거든요."*
+
+**Diagnosis:** `useAutoLayout` and `useRadialLayout` compute new
+positions, dispatch `onDocChange`, and stop. The user's viewport
+(zoom + pan state) is not touched. If the new positions land
+outside the user's current viewport — which happens whenever the
+user has zoomed in / panned away from the anchor before clicking
+`⊞` — the freshly laid-out graph is off-screen and the user sees
+nothing.
+
+This is the same family of bug as v0.27.4 (visibility:hidden
+because fitView wasn't running) and v0.27.5 (root-service fold
+hiding everything) — *"the data is correct but the user sees
+nothing because the viewport doesn't follow the transformation."*
+The user is right to flag it as an architectural smell: every
+layout-mutating trigger should re-fit the viewport so the cause
+and the visible effect line up.
+
+**Decision:**
+
+Both `useAutoLayout` and `useRadialLayout` wrap their callbacks
+with a `setTimeout(() => rf.fitView({ padding: 0.2, duration: 250 }), 0)`
+after `onDocChange`. The setTimeout(0) lets the React commit
+(state → render) + RF's internal measure pass complete before
+fitView runs against the new layout. 250 ms animation makes the
+viewport change feel deliberate (not jarring); padding 0.2 keeps
+nodes off the canvas edges.
+
+```ts
+// useAutoLayout.ts (and identical pattern in useRadialLayout.ts)
+const rf = useReactFlow();
+return useCallback(() => {
+  // ... compute positions, build nextNodes, onDocChange ...
+  setTimeout(() => rf.fitView({ padding: 0.2, duration: 250 }), 0);
+}, [..., rf]);
+```
+
+**Why both hooks?** Same UX contract: clicking the layout button
+should always show the laid-out result. ServicesCanvas /
+FoundationCanvas / ActorsCanvas use tree; ServiceDetailCanvas uses
+tree (since D-2026-05-26-A); radial is currently unused but kept
+for future canvases. Patching one and not the other would re-create
+the bug the moment radial gets wired to a canvas again.
+
+**Why `setTimeout(0)` instead of `requestAnimationFrame` or
+`flushSync`?** The need is "let React flush state to DOM first,
+then ask RF to measure + fit." Both setTimeout(0) and rAF work;
+setTimeout(0) is consistent with how the v0.27.4 fallback handles
+the same race. flushSync would be wrong (it forces sync render,
+which is heavier than necessary and can cause double-renders).
+
+**Why animation duration 250 ms?** Long enough to feel like a
+deliberate camera move (not a teleport); short enough that the
+user doesn't wait. Matches typical "smooth scroll" UX timing.
+
+**Architectural note (in response to user's meta-observation):**
+Three consecutive bugs (v0.27.4 visibility:hidden after mount,
+v0.27.5 fold collapse hiding everything, v0.27.6 layout off-screen)
+share the same root: **viewport state is decoupled from data
+mutations, but the user experiences both as one thing ("did my
+click do something visible?")**. The architectural cure is the
+rule "*any user-triggered mutation that changes which nodes can be
+seen must also ensure those nodes ARE visible after the
+mutation.*" Concretely:
+- mount → fitView (D-2026-05-17-A + D-2026-05-26-H 300 ms fallback).
+- fold root → suppress (D-2026-05-26-I — can't have hidden-by-default
+  if it empties the canvas).
+- auto-layout → fitView (this decision).
+
+Future layout-mutating triggers (manual reorder, paste, import,
+…) inherit the same rule.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/sketch/useAutoLayout.ts` | imports `useReactFlow`; callback ends with `setTimeout(() => rf.fitView({ padding: 0.2, duration: 250 }), 0)` |
+| `viewer/src/canvases/sketch/useRadialLayout.ts` | identical pattern |
+
+**Verification:**
+- Viewer vitest 563 passed; tsc clean.
+- Browser: zoom out to `scale(0.5)`, click `⊞`, viewport returns
+  to `scale(0.804843)` (initial fit position).
+- Pre-fix: viewport stayed at `scale(0.5)` with nodes off-screen.
+
+**Approval:** Accepted by user, 2026-05-27 — direct bug report
+*"정렬 하면 모든 노드 싹다 사라짐"* + the meta-frustration
+*"아키텍처 제대로 만들라고 갈군후에 나오지 않았거든요"* sanctioned
+the architectural framing recorded above (in addition to the
+specific fix).
+
+**Cross-refs:**
+- D-2026-05-17-A (mount-time fitView gate — same family).
+- D-2026-05-26-H (visibility:hidden stall fallback — same family).
+- D-2026-05-26-I (root-service fold suppression — same family).
+- D-2026-05-13-L (auto-layout isolation contract — this decision
+  adds one more strand to it: layout-mutating triggers fit-view too).
