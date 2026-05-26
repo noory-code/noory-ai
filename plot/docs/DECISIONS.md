@@ -7680,3 +7680,174 @@ specific fix).
 - D-2026-05-26-I (root-service fold suppression — same family).
 - D-2026-05-13-L (auto-layout isolation contract — this decision
   adds one more strand to it: layout-mutating triggers fit-view too).
+
+---
+
+### D-2026-05-27-A — Two-MCP debug workflow when Playwright cannot reproduce a user-visible bug
+
+**Context:** During the v0.27.x ServiceDetail drag-vanish hunt the
+user reported that dragging any node inside the modal made every
+node disappear (`visibility: hidden`), and that the bug was
+reproducible in their real Chrome window but not in the assistant's
+Playwright instance. Repeatedly typing "I cannot reproduce it" while
+the user is literally looking at the bug burned a lot of trust and
+time.
+
+**Why it's structural, not tactical:** Playwright's synthetic event
+flows (`page.mouse`, `dispatchEvent`) are routinely rejected by React
+Flow's `d3-drag` / `d3-zoom` event paths — those libraries inspect
+event properties (`pointerType`, trusted flag, sequential pointer
+captures) that synthetic events don't reproduce. So a Playwright run
+that *can't* trigger the bug is not evidence the bug doesn't exist;
+it's evidence Playwright can't reach the code path.
+
+**Decision (pin the workflow):**
+
+When the user reports a UI bug that Playwright can't reproduce,
+**stop guessing** and switch to the two-MCP workflow recorded in
+`plot/CLAUDE.md` Gate 3:
+
+1. **Playwright MCP** is the scratch browser — automated regression
+   probes, before/after screenshots, drags that *do* work.
+2. **chrome-devtools MCP** bridges into the user's real Chrome —
+   `list_pages` to confirm attachment, `list_console_messages` for
+   live logs, `evaluate_script` for DOM/state probes at the moment
+   of the bug.
+
+Plant DIAG logs proactively when chasing a vanish / state-corruption
+bug at five high-value points:
+- `handleNodesChange` (SketchCanvas) — incoming changes + before/after node count.
+- `applyEdit` (useCanvasPersist) — `console.error` on `next.nodes.length < prev.nodes.length`.
+- `useNodesMemo` filter — `console.error` when `out.length === 0 && doc.nodes.length > 0`.
+- `handleExternalCanvas` (useStableHandlers) — warn when fresh < cached.
+- `useEffect` for fitView — log every run + the values it gates on.
+
+Tag each log `[DIAG vX.Y.Z (D-id)]` so they can be grep-removed
+before ship.
+
+Never claim a fix without observing it in the user's Chrome via
+chrome-devtools MCP. A Playwright pass that didn't reproduce the bug
+proves nothing about whether the fix works for the user.
+
+**Spec impact:** `plot/CLAUDE.md` Gate 3 gained a new
+"Debugging UI bugs the user sees but Playwright can't reproduce"
+section + symptom-decoder table.
+
+**Approval:** Accepted by user, 2026-05-27 — the two-MCP workflow
++ planted DIAG logs were what surfaced the v0.27.7 god-component
+remount root cause (D-2026-05-27-B). The user's quote
+*"리액트 잘 못하는 거 같은데?? 훅도 제대로 못쓰는거 같은데? 설마
+노드 움직일 때 새로운 인스턴스 계속 만드는거 아니제?"* turned out
+to be exactly right — without chrome-devtools showing four `MOUNT`
+log lines we'd have shipped another CSS bandaid.
+
+**Cross-refs:**
+- D-2026-05-27-B (god-component prop stability — the bug this
+  workflow uncovered).
+- D-2026-05-05-B (god-component architectural debt — root cause
+  family this workflow is part of paying down).
+
+---
+
+### D-2026-05-27-B — Canvas / ServiceDetailCanvas prop callbacks hoisted to `useCallback` (v0.27.7)
+
+**Context:** Following the two-MCP debug workflow from D-2026-05-27-A,
+the assistant observed in the user's real Chrome:
+
+- 22 modal-canvas nodes all `visibility: hidden` mid-drag (DOM
+  present, layout correct);
+- 4 `[DIAG SketchCanvas MOUNT]` lines + 2 `UNMOUNT` lines fired
+  during a single drag gesture;
+- `useNodesInitialized` flipped back to false on every remount,
+  cancelling the 300 ms `fitView` fallback (D-2026-05-26-H) before
+  it could un-hide the nodes.
+
+User's diagnosis (correct):
+
+> *"이건 SW 설계를 잘 못 한기다. 구조 고쳐야지."*
+
+**Root cause chain (Explore agent confirmed):**
+
+| Step | File:line | Problem |
+|---|---|---|
+| 1 | `App.tsx` line ~214 | `activeCanvas = canvasCache.get(activeCanvasKey)` — drag mutates `canvasCache`, producing a new `Map` → new `CanvasDoc` reference every frame. |
+| 2 | `App.tsx` lines 322-368 + 396-414 | `onDocChange={(next) => applyEdit(...)}` (and 8 sibling callbacks) — inline arrow functions, new closure every render. |
+| 3 | `SketchCanvas.tsx` lines 140-146 | `<ReactFlowProvider><SketchCanvasInner/></ReactFlowProvider>` — every render returned a fresh subtree whose children's props were all new references. |
+| 4 | React reconciler | The combination of (a) `SketchCanvas` re-evaluating `useReactFlow()` against a fresh provider context and (b) `useNodesInitialized` re-seeding from changing `nodes.length` triggered the modal-canvas to remount. |
+| 5 | `SketchCanvas.tsx` lines 207-223 | `useNodesInitialized` false on each remount → `fitView` fallback `setTimeout` cancelled by `useEffect` cleanup → nodes stay `visibility: hidden` indefinitely. |
+
+**Decision:**
+
+Hoist all nine inline-arrow callbacks on the Canvas /
+ServiceDetailCanvas elements (`onDocChange`, `onPublishNode`,
+`onUnpublishNode`, `onNodeDrill`, `onSelectionConsumed` × 2 surfaces)
+into `useCallback`. Stable identity prevents the cascading prop /
+subtree-identity churn that caused the remount, leaving the
+modal canvas mounted across the drag gesture so the 300 ms `fitView`
+fallback can run to completion.
+
+```ts
+// App.tsx (sketch of the pattern — actual code lives under
+// "v0.27.7 (D-2026-05-27-B)" block).
+const onMainDocChange = useCallback(
+  (next: CanvasDoc) => {
+    if (!activeCanvas) return;
+    applyEdit(activeCanvasKey, activeCanvas, next);
+  },
+  [applyEdit, activeCanvasKey, activeCanvas],
+);
+// ... 8 more callbacks for onPublishNode, onUnpublishNode,
+//     onNodeDrill, modal variants, and modal onSelectionConsumed.
+```
+
+**Alternatives considered:**
+
+1. **Hoist `<ReactFlowProvider>` up to the four canvas wrappers**
+   (Foundation/Actors/Services/ServiceDetail) so `SketchCanvas`
+   itself only returns `SketchCanvasInner`. Plan called this
+   "Decision 2." Rejected this session because Decision 1 alone
+   stopped the extra `MOUNT` log lines in chrome-devtools
+   (StrictMode base cycle only), and YAGNI says don't ship the
+   wider refactor until evidence demands it. Keep this option as
+   a follow-up if a regression reappears under a different
+   trigger.
+2. **Move callbacks into a new `useAppCallbacks` hook so App.tsx
+   stays under its 430 LOC ceiling without raising the ceiling.**
+   Rejected this session to keep the ship atomic; refactor recorded
+   as follow-up in the ceiling note (see structural-guards.test.tsx).
+
+**Spec impact:** Adds an architecture invariant —
+*"Prop callbacks passed to a Canvas element must have stable
+identity across drag / onDocChange flows."* — pinned in `SPEC.md`
+§Architecture invariants.
+
+**LOC ceiling impact:** `App.tsx` raised 430 → 485 in
+`viewer/tests/structural-guards.test.tsx` to absorb the 9 hoisted
+callbacks + comment block. Follow-up: move callbacks into a
+`useAppCallbacks` hook to reclaim LOC.
+
+**Verification:**
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 563 / 563 pass (raised ceiling is now within
+  budget; no other test regressed).
+- chrome-devtools MCP attached to the user's Chrome:
+  - Reload → ServiceDetail modal: 1 `MOUNT` + 1 `UNMOUNT` + 1
+    `MOUNT` (StrictMode dev cycle only).
+  - Auto-layout click on modal (real `onDocChange`): no extra
+    `MOUNT` lines.
+  - (60 fps drag itself could not be reproduced from chrome-devtools
+    MCP — RF d3-drag rejects synthetic pointer events — so the
+    final user-hands-on check is pending. The applyEdit/onDocChange
+    code path was exercised by auto-layout.)
+
+**Approval:** Pending — user hands-on drag check after ship.
+Code change matches the structural diagnosis the user demanded
+(*"구조 고쳐야지"*); follow-up D entry will flip Pending → Accepted
+or Rejected once the user retests in their browser.
+
+**Cross-refs:**
+- D-2026-05-27-A (the workflow that uncovered this).
+- D-2026-05-26-H (300 ms fitView fallback — the defence layer that
+  this fix lets actually run).
+- D-2026-05-05-B (god-component architectural debt — this is one
+  more strand of the long-running repayment).

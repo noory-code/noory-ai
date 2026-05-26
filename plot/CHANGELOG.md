@@ -4,6 +4,60 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.7] — 2026-05-27
+
+### Fixed
+
+- **ServiceDetail modal canvas no longer remounts mid-drag —
+  prop-callback identity stabilized**
+  ([D-2026-05-27-B](./docs/DECISIONS.md#d-2026-05-27-b--canvas--servicedetailcanvas-prop-callbacks-hoisted-to-usecallback-v0277)).
+  User report: dragging any node inside the ServiceDetail modal
+  made every node turn `visibility: hidden` (the data was intact,
+  the canvas just looked empty). User's structural diagnosis was
+  exactly right: *"이건 SW 설계를 잘 못 한기다. 구조 고쳐야지."*
+- Root cause: App.tsx passed nine inline-arrow callbacks
+  (`onDocChange`, `onPublishNode`, `onUnpublishNode`,
+  `onNodeDrill`, `onSelectionConsumed` × main + modal surfaces) to
+  the Canvas / ServiceDetailCanvas elements. Each drag event
+  produced a new `canvasCache` Map → new `CanvasDoc` reference →
+  new closures → SketchCanvas treated its `<ReactFlowProvider>`
+  subtree as a remount, which reset `useNodesInitialized` and
+  cancelled the 300 ms `fitView` fallback (D-2026-05-26-H) before
+  it could un-hide the nodes.
+- Fix: hoist all nine callbacks into `useCallback` with their real
+  dependencies. SketchCanvas instance now survives drag /
+  onDocChange flows; fitView fallback runs to completion.
+- chrome-devtools MCP verification on the user's real Chrome:
+  ServiceDetail modal mount produces 1 `MOUNT` + 1 `UNMOUNT` +
+  1 `MOUNT` (StrictMode dev cycle only); auto-layout click
+  produces no extra `MOUNT` lines. 60 fps drag could not be
+  triggered from chrome-devtools (RF d3-drag rejects synthetic
+  pointer events) — final user-hands-on check pending.
+
+### Changed
+
+- **Two-MCP debug workflow pinned to `plot/CLAUDE.md` Gate 3**
+  ([D-2026-05-27-A](./docs/DECISIONS.md#d-2026-05-27-a--two-mcp-debug-workflow-when-playwright-cannot-reproduce-a-user-visible-bug)).
+  When the user reports a UI bug that Playwright can't reproduce,
+  switch to chrome-devtools MCP (live console + DOM probes against
+  the user's real Chrome) rather than guessing or shipping CSS
+  bandaids. Five high-value DIAG plant points + symptom-decoder
+  table documented in CLAUDE.md.
+- `App.tsx` LOC ceiling raised 430 → 485 to absorb the nine
+  hoisted callbacks. Follow-up filed in the ceiling note to move
+  callbacks into a `useAppCallbacks` hook and reclaim the LOC.
+- `docs/ARCHITECTURE.md` Contracts table gained one row:
+  *"Prop callbacks passed to a Canvas / ServiceDetailCanvas element
+  must have stable identity across drag / onDocChange flows."*
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 563 / 563 pass.
+- chrome-devtools MCP — ServiceDetail modal mount + auto-layout
+  onDocChange both produce only the StrictMode base mount cycle
+  (no extra remount).
+
 ## [0.27.6] — 2026-05-27
 
 ### Fixed

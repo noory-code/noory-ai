@@ -24,6 +24,7 @@ import { ServiceDetailStencilPanel } from "./shell/ServiceDetailStencilPanel";
 import { EmptyState, ErrorPanel, Loading } from "./shell/states";
 import type {
   AnchorPlacement,
+  CanvasDoc,
   CanvasKey,
   CanvasKind,
   ProjectDoc,
@@ -228,10 +229,89 @@ export function App() {
   const { availableActors, availableMissions, availableValues, availableIdentities } =
     useAvailableNodes(canvasCache);
 
-  // v0.11.6 — download / upload toolbar buttons removed per user
-  // feedback. Save is automatic; the toolbar focuses on undo/redo +
-  // layout. Reintroducing JSON import/export should go through a
-  // dedicated import/export flow if it returns at all.
+  // v0.27.7 (D-2026-05-27-C) — inline arrow callbacks on the Canvas /
+  // ServiceDetailCanvas elements were re-created on every App render,
+  // including the 60fps drag loop. That made `<Canvas onDocChange={…}>`
+  // a new prop every frame, causing React to treat SketchCanvas's
+  // `<ReactFlowProvider>` subtree as a different element and remount it
+  // — which reset `useNodesInitialized` and left every node stuck on
+  // `visibility: hidden`. Hoist callbacks into `useCallback` so the
+  // identity only changes when their actual dependencies change.
+
+  const onMainDocChange = useCallback(
+    (next: CanvasDoc) => {
+      if (!activeCanvas) return;
+      applyEdit(activeCanvasKey, activeCanvas, next);
+    },
+    [applyEdit, activeCanvasKey, activeCanvas],
+  );
+
+  const onMainPublishNode = useCallback(
+    (id: string) => {
+      void handlePublishNode(activeCanvasKey, id);
+    },
+    [handlePublishNode, activeCanvasKey],
+  );
+
+  const onMainUnpublishNode = useCallback(
+    (id: string) => {
+      void handleUnpublishNode(activeCanvasKey, id);
+    },
+    [handleUnpublishNode, activeCanvasKey],
+  );
+
+  const onMainNodeDrill = useCallback(
+    (id: string) => {
+      if (!activeCanvas) return;
+      const n = activeCanvas.nodes.find((x) => x.id === id);
+      if (!n) return;
+      if (n.kind === "actor_ref" && n.ref_actor_id) {
+        jumpToActor(n.ref_actor_id);
+        return;
+      }
+      if (
+        activeTab === "services" &&
+        n.kind === "service" &&
+        !n.is_root
+      ) {
+        drillIntoService(id);
+      }
+    },
+    [activeCanvas, activeTab, jumpToActor, drillIntoService],
+  );
+
+  const onModalDocChange = useCallback(
+    (next: CanvasDoc) => {
+      if (!detailCanvasKey || !detailCanvas) return;
+      applyEdit(detailCanvasKey, detailCanvas, next);
+    },
+    [applyEdit, detailCanvasKey, detailCanvas],
+  );
+
+  const onModalSelectionConsumed = useCallback(() => {}, []);
+
+  const onModalNodeDrill = useCallback(
+    (id: string) => {
+      if (!detailCanvas) return;
+      const n = detailCanvas.nodes.find((x) => x.id === id);
+      if (n?.kind === "actor_ref" && n.ref_actor_id) jumpToActor(n.ref_actor_id);
+    },
+    [detailCanvas, jumpToActor],
+  );
+
+  const onModalPublishNode = useCallback(
+    (id: string) => {
+      if (detailCanvasKey) void handlePublishNode(detailCanvasKey, id);
+    },
+    [handlePublishNode, detailCanvasKey],
+  );
+
+  const onModalUnpublishNode = useCallback(
+    (id: string) => {
+      if (detailCanvasKey) void handleUnpublishNode(detailCanvasKey, id);
+    },
+    [handleUnpublishNode, detailCanvasKey],
+  );
 
   if (!projectPath) {
     return (
@@ -319,9 +399,7 @@ export function App() {
               <Canvas
                 key={`${activeId}:${activeCanvasKey}`}
                 doc={activeCanvas}
-                onDocChange={(next) => {
-                  applyEdit(activeCanvasKey, activeCanvas, next);
-                }}
+                onDocChange={onMainDocChange}
                 onUndo={handleUndo}
                 onRedo={handleRedo}
                 canUndo={history.canUndo}
@@ -342,30 +420,9 @@ export function App() {
                   summaries.find((p) => p.id === activeId)?.name ?? null
                 }
                 onAnchorChange={handleAnchorChange}
-                onPublishNode={(id) => {
-                  void handlePublishNode(activeCanvasKey, id);
-                }}
-                onUnpublishNode={(id) => {
-                  void handleUnpublishNode(activeCanvasKey, id);
-                }}
-                onNodeDrill={(id) => {
-                  const n = activeCanvas.nodes.find((x) => x.id === id);
-                  if (!n) return;
-                  if (n.kind === "actor_ref" && n.ref_actor_id) {
-                    jumpToActor(n.ref_actor_id);
-                    return;
-                  }
-                  // v0.12 — service double-click opens the detail in a
-                  // modal overlay. The services canvas stays mounted
-                  // beneath the modal.
-                  if (
-                    activeTab === "services" &&
-                    n.kind === "service" &&
-                    !n.is_root
-                  ) {
-                    drillIntoService(id);
-                  }
-                }}
+                onPublishNode={onMainPublishNode}
+                onUnpublishNode={onMainUnpublishNode}
+                onNodeDrill={onMainNodeDrill}
               />
               );
             })()}
@@ -393,7 +450,7 @@ export function App() {
           <ServiceDetailCanvas
             key={`${activeId}:${detailCanvasKey}`}
             doc={detailCanvas!}
-            onDocChange={(next) => applyEdit(detailCanvasKey!, detailCanvas!, next)}
+            onDocChange={onModalDocChange}
             onUndo={handleUndo}
             onRedo={handleRedo}
             canUndo={history.canUndo}
@@ -405,13 +462,10 @@ export function App() {
             availableValues={availableValues}
             availableIdentities={availableIdentities}
             selectNodeId={null}
-            onSelectionConsumed={() => {}}
-            onNodeDrill={(id) => {
-              const n = detailCanvas!.nodes.find((x) => x.id === id);
-              if (n?.kind === "actor_ref" && n.ref_actor_id) jumpToActor(n.ref_actor_id);
-            }}
-            onPublishNode={(id) => { void handlePublishNode(detailCanvasKey!, id); }}
-            onUnpublishNode={(id) => { if (detailCanvasKey) void handleUnpublishNode(detailCanvasKey, id); }}
+            onSelectionConsumed={onModalSelectionConsumed}
+            onNodeDrill={onModalNodeDrill}
+            onPublishNode={onModalPublishNode}
+            onUnpublishNode={onModalUnpublishNode}
           />
         </ServiceDetailModal>
       );

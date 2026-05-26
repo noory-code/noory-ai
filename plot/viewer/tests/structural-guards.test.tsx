@@ -148,8 +148,8 @@ describe("no-god-union-import (Phase 5.2)", () => {
  */
 const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   "App.tsx": {
-    ceiling: 430,
-    note: "Plan target locked in v0.16.5 (D-2026-05-12-H). v0.23.x (D-2026-05-17-J) raised 400 → 410 to wire onUnpublishNode on both SketchCanvas slots. v0.24.14 (D-2026-05-21-C) raised 410 → 425 to wire snapshot-view state (viewingTag / enterTagView / exitTagView + applyEdit guard + cache swap) into Header / Sidebar. v0.26.0 (D-2026-05-25-A) raised 425 → 430 to thread services edges into the ServiceDetailModal drill context (parent_id → directed-edge derivation).",
+    ceiling: 485,
+    note: "Plan target locked in v0.16.5 (D-2026-05-12-H). v0.23.x (D-2026-05-17-J) raised 400 → 410 to wire onUnpublishNode on both SketchCanvas slots. v0.24.14 (D-2026-05-21-C) raised 410 → 425 to wire snapshot-view state (viewingTag / enterTagView / exitTagView + applyEdit guard + cache swap) into Header / Sidebar. v0.26.0 (D-2026-05-25-A) raised 425 → 430 to thread services edges into the ServiceDetailModal drill context (parent_id → directed-edge derivation). v0.27.7 (D-2026-05-27-C) raised 430 → 485 to hoist 9 Canvas / ServiceDetailCanvas prop callbacks out of inline arrows into useCallback so SketchCanvas's <ReactFlowProvider> subtree stays mounted across drag / onDocChange flows. Follow-up: move callbacks into a useAppCallbacks hook to reclaim LOC.",
   },
   "canvases/SketchCanvas.tsx": {
     ceiling: 470,

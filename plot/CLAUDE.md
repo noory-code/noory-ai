@@ -143,7 +143,7 @@ ceiling — see `viewer/tests/structural-guards.test.tsx`.
 
 | File | LOC (2026-05-12) | Ceiling | Rule |
 |---|---:|---:|---|
-| `viewer/src/App.tsx` | 381 | 400 | Plan target locked in v0.16.5 (D-2026-05-12-H). Header / tabs / help / modal / states moved to `shell/`; URL sync / filter / keyboard hooks moved to `hooks/`. |
+| `viewer/src/App.tsx` | 478 | 485 | v0.27.7 (D-2026-05-27-B) raised 430 → 485 to hoist 9 Canvas / ServiceDetailCanvas prop callbacks out of inline arrows into useCallback. Follow-up: move callbacks into a useAppCallbacks hook to reclaim LOC. |
 | `viewer/src/canvases/SketchCanvas.tsx` | 427 | 440 | v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to thread the publish handler through to SketchInspectorBindings. **No-growth henceforth** — new responsibilities → new sketch hook or wrapper. |
 | `viewer/src/shell/*.tsx` | ≤ 90 | — | App-chrome components (Header / CanvasTabs / HelpCheatsheet / ServiceDetailModal / states). Each owns its slice of chrome JSX; new chrome → new file in `shell/`. |
 | `viewer/src/hooks/use*.ts` | varies | — | App-shell hooks (useProject / useCanvasPersist / useProjectSocket / useUrlSync / useAvailableNodes / useAppKeyboard). Per-concern; do not bundle. |
@@ -201,6 +201,62 @@ direct `.click()` calls):
 
 If you can't run a real browser this session, say so explicitly. Do
 not say "verified" if you only ran type-check.
+
+### Debugging UI bugs the user sees but Playwright can't reproduce (D-2026-05-27-A)
+
+When the user reports "노드가 사라짐" / "버튼이 안 눌림" / similar
+visual bug and Playwright synthetic events fail to reproduce it (RF's
+d3-drag / d3-zoom event paths often reject `dispatchEvent` /
+`page.mouse` flows), the bug is in the user's real Chrome process
+— not in your Playwright instance. **Do not keep guessing.**
+
+**The two-MCP debug workflow:**
+
+1. **Playwright MCP** — your scratch browser. Use for: synthetic
+   probes, automated regression runs, taking before/after screenshots,
+   simulating drags that DO work (most do). Cannot observe the user's
+   actual Chrome process.
+
+2. **chrome-devtools MCP** — bridges into a real Chrome instance.
+   Use for: reading the user's live console messages, evaluating JS
+   in their page, inspecting DOM state at the moment of the bug.
+
+**When the user says "지금 사라졌다 / 봤제?"** — do NOT reply "no, I
+can't see your browser." That is true but useless. Instead:
+
+```
+1. Confirm the user has chrome-devtools attached:
+     list_pages → should show their page (not just about:blank)
+2. Pull console + DOM immediately:
+     list_console_messages({types: ["error", "warn"]})
+     evaluate_script(() => /* DOM probe of the suspect element */)
+3. Match the captured state against the DIAG logs you planted
+   in the code earlier.
+```
+
+**Plant DIAG logs proactively when chasing a vanish / state-corruption
+bug.** Five high-value points to instrument:
+- `handleNodesChange` (SketchCanvas) — incoming changes + before/after node count.
+- `applyEdit` (useCanvasPersist) — `console.error` on `next.nodes.length < prev.nodes.length`.
+- `useNodesMemo` filter — `console.error` when `out.length === 0 && doc.nodes.length > 0`.
+- `handleExternalCanvas` (useStableHandlers) — warn when fresh < cached.
+- `useEffect` for fitView — log every run + the values it gates on.
+
+Tag each log `[DIAG vX.Y.Z (D-id)]` so they can be grep-removed before
+ship.
+
+**Symptom decoder:**
+
+| User says | Likely diagnostic class | First probe |
+|---|---|---|
+| "노드가 사라졌다" | (a) doc nodes wiped, OR (b) render filter hides them, OR (c) RF `visibility: hidden` lock, OR (d) viewport off-screen | DOM: `getComputedStyle(node).visibility` + `node.getBoundingClientRect()` vs RF rect |
+| "정렬 누르니까 사라졌다" | viewport stayed; new layout off-screen | `viewport.style.transform` before vs after; `rf.fitView` call site |
+| "드래그하니까 사라졌다" | RF `useNodesInitialized` re-flipped false; mount-time gate held | console logs of fitView effect runs; check `visibility: hidden` count |
+| "확대 후 드래그하니까 사라졌다" | same as above but more obvious because zoomed in | same |
+
+**Never claim a fix without observing it in the user's Chrome via
+chrome-devtools MCP.** A Playwright pass that didn't reproduce the bug
+proves nothing about whether your fix works for the user.
 
 ### Gate 4 — Before commit (Plot plugin change rule)
 
