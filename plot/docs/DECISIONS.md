@@ -6989,3 +6989,158 @@ two-part patch (this + D-2026-05-26-A) via *"네 둘다 진행"*.
 
 **Cross-refs:**
 - D-2026-05-26-A (sibling fix in the same session for the same canvas).
+
+---
+
+### D-2026-05-26-C — ServiceDetail = user-authored interaction graph (v0.27.1)
+
+**Context:** Same session 2026-05-26. After shipping the v0.27.0
+patch (modal mount relocated; layoutAlgo flipped to tree), the user
+reframed the canvas itself:
+
+> *"아니 인터렉션 그래프인데 사용자가 만들 수 있어야해요. 이해?
+> 사용자가 그릴수 있어야한다구요. 노드 추가하고 선 이어서 그리고 등등"*
+
+This consolidates several earlier signals (memory:
+project_plot_definition_of_service, project_plot_philosophy P10,
+project_plot_state_transitions_open) into one decision: **ServiceDetail
+is not a constrained "fill-in-the-spec" surface, it is a free
+interaction graph the user authors.**
+
+**Decision:**
+
+1. **Identity**: ServiceDetail is the canvas where the user expresses
+   "what happens inside this service" as an interaction graph — actors,
+   the things they do with / to each other, what value flows, and
+   what foundation (mission / value / identity) those interactions
+   serve. The system *does not* prescribe a meaning model.
+2. **No new kinds shipped this session.** YAGNI. The user can label
+   any existing kind (`actor_ref`, `mission_ref`, `value_ref`,
+   `identity_ref`, `step`, `metric`) with their own interpretation.
+   `interaction` / `value_token` kinds remain **OPEN** — re-evaluate
+   only after enough usage that a pattern earns dedicated chrome.
+3. **SPEC.md gets a new top-level `# ServiceDetail` section** (was
+   previously absent — Phase 1 Explore agent confirmed SPEC.md L4
+   "Services / Service-Detail follow in later expansions"). That
+   section pins this identity decision so the next session reads it
+   on session-start.
+4. **Edge model (`action_verb` / `value_form`)** is the load-bearing
+   mechanism for "interaction" semantics. UI for editing those fields
+   is a follow-up — out of scope here.
+
+**Why no new kind?** The Plot philosophy line "the user controls
+every line, every position, every colour" (PHILOSOPHY P10) and the
+"패턴 2회 이상 반복 시 추상화" rule both push against premature
+abstraction. Three different services authored without a felt need
+for a dedicated `interaction` kind = the user is already comfortable
+re-labelling. If at six services the user keeps typing the same
+verbs ("publishes", "subscribes", "pays"), revisit then.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `docs/SPEC.md` | new top-level `# ServiceDetail` section (identity, stencil, modal structure, auto-layout, edges, open questions) |
+| `docs/DECISIONS.md` | this entry + D-2026-05-26-D |
+
+**Verification:**
+- No runtime change in this entry — pure identity / SPEC pin.
+- Pair-verified with D-2026-05-26-D (modal self-containment) which
+  *is* the runtime change supporting this identity.
+
+**Approval:** Accepted by user, 2026-05-26 — direct quote captured
+above + plan approval via ExitPlanMode.
+
+**Cross-refs:**
+- D-2026-05-26-D (sibling decision: modal self-containment that gives
+  the user the room to actually author this graph).
+- D-2026-05-26-A (tree layout that makes the authored graph readable).
+- PHILOSOPHY.md P10 (user controls every line).
+- Open: state/transitions question (D-2026-05-19-B) — this decision
+  *does not* resolve it; user-authored edges may sometimes mean
+  "transition" but the model still has no explicit transition kind.
+
+---
+
+### D-2026-05-26-D — ServiceDetail modal is self-contained (v0.27.1)
+
+**Context:** Same session 2026-05-26. The v0.27.0 patch relocated
+the modal mount from the app root into the canvas container so the
+main sidebar would remain *visible*. User exercised it and reported:
+
+> *"동작이 자연스럽지 않음. 디테일 서비스 캔버스 컨트롤은 디테일
+> 서비스 컨트롤 모달 안에서 다 이뤄져야합니다."*
+
+**Diagnosis:** v0.27.0's structure shared one sidebar between two
+contexts (main Services canvas + modal-mounted ServiceDetail
+canvas) via the `stencilCanvas={... ? "service_detail" : activeTab}`
+swap in App.tsx. The modal occupied the canvas region while the
+sidebar continued to render service_detail-specific stencil — a
+split-personality layout where neither context owns its full chrome.
+User-felt verdict: "controls for the detail modal belong inside the
+detail modal."
+
+**Decision:**
+
+1. **Modal owns its own stencil column.** New shell component
+   `viewer/src/shell/ServiceDetailStencilPanel.tsx` (≤ 42 LOC)
+   renders `<SketchStencil canvas="service_detail" />` inside a
+   `w-56` aside. Same width / chrome as the main `SketchSidebar`'s
+   stencil region so the two read as the same component family.
+2. **`ServiceDetailModal` body becomes a 2-column flex row.** New
+   `stencilSlot: ReactNode` prop; body =
+   `<div className="flex flex-1 overflow-hidden">{stencilSlot}<div className="relative flex-1">{children}</div></div>`.
+3. **App.tsx removes the stencil swap.** `stencilCanvas={activeTab}`
+   always — the main sidebar never carries `service_detail` stencil.
+4. **`ServiceDetailModal`'s mount location is unchanged from
+   v0.27.0** (canvas container, `absolute inset-0`). The earlier
+   D-2026-05-26-B is preserved; this decision is the natural
+   completion of it, not a revert.
+
+**Why a new component instead of inlining?** Two reasons:
+(a) `ServiceDetailModal.tsx` would have ballooned past its
+implicit shell-component LOC budget (already ~90 LOC after the
+2-column layout). (b) The stencil panel has its own concern
+(drag sources for the detail context) distinct from the modal
+chrome (header / overlay / close handling), so SoC.
+
+**Why keep main sidebar visible behind the backdrop?** The user
+explicitly approved this in the same session ("그대로 보이는데
+모달의 크기가 화면을 다 덮겠죠?"). The modal's `bg-slate-900/40`
+backdrop visually mutes the main sidebar so there's no confusion
+about which surface is active.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/shell/ServiceDetailStencilPanel.tsx` | new component (42 LOC) — `w-56` aside wrapping `<SketchStencil canvas="service_detail" />` |
+| `viewer/src/shell/ServiceDetailModal.tsx` | new `stencilSlot: ReactNode` prop; body becomes 2-column flex |
+| `viewer/src/App.tsx` | `stencilCanvas` swap removed (`activeTab` always); modal mount passes `stencilSlot={<ServiceDetailStencilPanel ... />}` |
+| `docs/SPEC.md` | new `# ServiceDetail` section pins the modal structure |
+| `docs/DECISIONS.md` | this entry + D-2026-05-26-C |
+
+**Verification:**
+- Viewer vitest 563 passed; tsc clean.
+- Browser:
+  - Services tab — main sidebar shows ONLY Services stencil (Category,
+    Service); no ServiceDetail sections leak through.
+  - Login double-click opens the modal — modal's left column shows
+    the full service_detail stencil (COMPOSITION / ACTORS / MISSIONS
+    / CORE VALUES / IDENTITY ASPECTS).
+  - ESC closes the modal — Services canvas still renders Banas → Auth
+    → Login intact (no v0.27.0 regression "싹다 사라짐").
+- LOC: App.tsx 425 / 430 ceiling; ServiceDetailModal.tsx 92 LOC;
+  ServiceDetailStencilPanel.tsx 42 LOC.
+
+**Approval:** Accepted by user, 2026-05-26 — *"구조 제대로 잡아보세요"*
++ plan approval via ExitPlanMode + AskUserQuestion confirmations on
+layout (`w-56` fixed) and main sidebar handling ("그대로 보이는데
+모달의 크기가 화면을 다 덮겠죠").
+
+**Cross-refs:**
+- D-2026-05-26-C (sibling decision: the identity that makes
+  self-containment the right structure).
+- D-2026-05-26-B (modal mount relocation — preserved, completed by
+  this entry).
+- D-2026-05-26-A (tree layout enabling readable authored graphs).

@@ -3,6 +3,11 @@
  * on top of the still-mounted services canvas (v0.12 drill-in pattern).
  * Extracted from ``App.tsx`` (v0.16.3).
  *
+ * v0.27.1 (D-2026-05-26-D) — modal body is now a 2-column flex row:
+ * ``stencilSlot`` on the left (self-contained drag sources), canvas
+ * (``children``) on the right. The main app sidebar no longer swaps
+ * its stencil when the modal opens; the modal owns its own controls.
+ *
  * Esc / backdrop click / × button all call ``onClose``.
  */
 import { useEffect, type ReactNode } from "react";
@@ -12,6 +17,9 @@ interface ServiceDetailModalProps {
   serviceLabel: string;
   categoryLabel: string | null;
   onClose: () => void;
+  /** v0.27.1 (D-2026-05-26-D) — left stencil column rendered inside
+   *  the modal so the modal is fully self-contained. */
+  stencilSlot: ReactNode;
   children: ReactNode;
 }
 
@@ -19,6 +27,7 @@ export function ServiceDetailModal({
   serviceLabel,
   categoryLabel,
   onClose,
+  stencilSlot,
   children,
 }: ServiceDetailModalProps) {
   const { t } = useTranslation();
@@ -73,7 +82,10 @@ export function ServiceDetailModal({
             ✕
           </button>
         </header>
-        <div className="relative flex-1 overflow-hidden">{children}</div>
+        <div className="flex flex-1 overflow-hidden">
+          {stencilSlot}
+          <div className="relative flex-1 overflow-hidden">{children}</div>
+        </div>
       </div>
     </div>
   );

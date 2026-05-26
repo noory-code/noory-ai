@@ -20,6 +20,7 @@ import { CanvasTabs, type CanvasTab } from "./shell/CanvasTabs";
 import { Header } from "./shell/Header";
 import { HelpCheatsheet } from "./shell/HelpCheatsheet";
 import { ServiceDetailModal } from "./shell/ServiceDetailModal";
+import { ServiceDetailStencilPanel } from "./shell/ServiceDetailStencilPanel";
 import { EmptyState, ErrorPanel, Loading } from "./shell/states";
 import type {
   AnchorPlacement,
@@ -264,9 +265,7 @@ export function App() {
         <SketchSidebar
           projects={summaries}
           activeId={activeId}
-          stencilCanvas={
-            activeTab === "services" && detailServiceId ? "service_detail" : activeTab
-          }
+          stencilCanvas={activeTab}
           availableActors={availableActors}
           availableMissions={availableMissions}
           availableValues={availableValues}
@@ -378,6 +377,7 @@ export function App() {
                 serviceLabel={svcNode?.label ?? detailServiceId}
                 categoryLabel={categoryNode?.label ?? null}
                 onClose={backToOverview}
+                stencilSlot={<ServiceDetailStencilPanel availableActors={availableActors} availableMissions={availableMissions} availableValues={availableValues} availableIdentities={availableIdentities} />}
               >
                 <ServiceDetailCanvas
                   key={`${activeId}:${detailCanvasKey}`}

@@ -814,3 +814,115 @@ as a follow-up in [`NEXT_SESSION.md`](./NEXT_SESSION.md).
   Out of scope.
 - **Inspector "propagated by descendant X" badge.** YAGNI; queued
   for a future release if usage warrants.
+
+---
+
+# ServiceDetail
+
+## What ServiceDetail is
+
+The canvas that answers **"what happens inside this service?"** —
+opened as a modal when the user drills into a non-root service node
+on the Services canvas. The hidden root-service is the BFS root /
+auto-layout hub; the user-visible nodes are whatever the user drags
+in.
+
+**Identity (D-2026-05-26-C):** ServiceDetail is a **user-authored
+interaction graph**. The system does *not* prescribe a meaning for
+each node kind on this canvas — the user adds nodes (actor refs,
+mission / value / identity refs, composition primitives) and draws
+edges between them to express whatever interaction model fits the
+service. The stencil sections are *hints* ("here are the kinds
+worth reaching for"), not a constrained drop palette.
+
+User intent (verbatim 2026-05-26):
+> *"인터렉션 그래프인데 사용자가 만들 수 있어야해요. 사용자가 그릴수
+> 있어야한다구요. 노드 추가하고 선 이어서 그리고 등등"*
+
+This matches Plot's PHILOSOPHY P10 ("the user controls every line,
+every position, every colour") and VISION's user-authored cycle. No
+auto-edges; no auto-positioning beyond the `⊞` tree button.
+
+## Stencil
+
+Per the [`SketchStencil`](../viewer/src/canvases/SketchStencil.tsx)
+`service_detail` branch + the modal-internal `ServiceDetailStencilPanel`:
+
+| Section | Items | Source |
+|---|---|---|
+| **Composition** | `metric`, `step` | Static — defined inline. |
+| **Actors** | one preset per `actor` master | `availableActors` (Actors canvas) |
+| **Missions** | one preset per `mission` master | `availableMissions` (Foundation canvas) |
+| **Core Values** | one preset per `core_value` master | `availableValues` (Foundation canvas) |
+| **Identity aspects** | one preset per `identity` master | `availableIdentities` (Foundation canvas) |
+
+Each ref preset is generated from its master so dropping it skips
+the picker — the resulting node carries `ref_*_id` already.
+
+## Modal structure (D-2026-05-26-D)
+
+The ServiceDetail modal is **self-contained**: it owns its own left
+stencil column. The main app sidebar does *not* swap to the
+`service_detail` stencil when the modal is open; the modal owns its
+own controls so the main canvas's sidebar stays in its own context
+underneath the backdrop.
+
+```
+┌─────────────────────────────── Service Detail · Auth › Login   [×] ┐
+├──────────────┬───────────────────────────────────────────────────────┤
+│ COMPOSITION  │                                                       │
+│  Metric      │                                                       │
+│  Step        │                                                       │
+│ ACTORS       │                                                       │
+│  → Hero      │       ServiceDetailCanvas (interaction graph)         │
+│  → Fan       │                                                       │
+│ MISSIONS     │                                                       │
+│  → Mission   │                                                       │
+│ CORE VALUES  │                                                       │
+│  → Value     │                                              ⊞ ↶ ↷    │
+└──────────────┴───────────────────────────────────────────────────────┘
+   w-56 stencil          flex-1 canvas
+```
+
+Implementation:
+- `viewer/src/shell/ServiceDetailStencilPanel.tsx` — `w-56` aside
+  that renders `<SketchStencil canvas="service_detail" />` with the
+  four `available*` master lists.
+- `viewer/src/shell/ServiceDetailModal.tsx` — body is now a 2-column
+  flex (`stencilSlot` prop on the left, `children` on the right).
+  Inner panel sized at `h-[92%] w-[94%]` relative to the canvas
+  container per [D-2026-05-26-B](./DECISIONS.md).
+- `viewer/src/App.tsx` — `stencilCanvas={activeTab}` always; no
+  longer swaps to `"service_detail"` when the modal opens.
+
+ESC / backdrop click / × close paths unchanged.
+
+## Auto-layout
+
+`layoutAlgo="tree"` — same algorithm as Foundation / Actors / Services.
+`useAutoLayout`'s `pickAnchor` falls back to the hidden root-service
+node (`kind === "service" && is_root === true`) since ServiceDetail
+injects no synthetic anchor. See [§Auto-layout](#auto-layout) and
+[D-2026-05-26-A](./DECISIONS.md).
+
+## Edges
+
+Same rule as Foundation / Actors: **all edges are user-drawn**. No
+auto-edges. v0.26.0 directed-edge model (`directed`, `action_verb`,
+`value_form`) applies here too — see [§Edges](#edges). Inspector
+UI for `action_verb` / `value_form` is a follow-up.
+
+## Open questions (ServiceDetail)
+
+- **New kinds for "interaction" / "value token"?** User's working
+  vocabulary distinguishes liaison nodes (e.g. "모임 개설", "콘텐츠
+  발행") from value tokens ("전문 지식", "수익"). Current model
+  expresses both via free labels on existing kinds (`step` /
+  `metric` reinterpreted) or via `edge.value_form`. Whether a
+  dedicated `interaction` kind earns its place is **OPEN** —
+  decide after enough usage that a pattern is visible.
+- **Inspector UI for edge `action_verb` + `value_form`** — fields
+  exist on the data model since v0.26.0 but no editor yet.
+- **Composition primitives (`rule`, `content`)** — defined in
+  `CONCEPTS.md` but absent from the current stencil. Add or
+  retire — decide before next stencil work.

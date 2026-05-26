@@ -4,6 +4,56 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.1] — 2026-05-26
+
+### Added
+
+- **ServiceDetail modal is now self-contained**
+  ([D-2026-05-26-D](./docs/DECISIONS.md#d-2026-05-26-d--servicedetail-modal-is-self-contained-v0271)).
+  New `viewer/src/shell/ServiceDetailStencilPanel.tsx` (42 LOC) —
+  a `w-56` aside that wraps `<SketchStencil canvas="service_detail" />`
+  with the four `available*` master lists. Mounted inside the modal
+  as its left column; the modal body is now a 2-column flex (stencil
+  left, canvas right). User direction: *"디테일 서비스 캔버스 컨트롤은
+  디테일 서비스 컨트롤 모달 안에서 다 이뤄져야합니다."*
+- **`ServiceDetailModal` gains a `stencilSlot: ReactNode` prop**
+  so the modal stays composable — App.tsx hands it the new
+  StencilPanel, but the modal itself has no opinion about what
+  goes in the left column.
+- **New top-level `# ServiceDetail` section in `docs/SPEC.md`**
+  ([D-2026-05-26-C](./docs/DECISIONS.md#d-2026-05-26-c--servicedetail--user-authored-interaction-graph-v0271)).
+  ServiceDetail's spec was previously absent (SPEC.md L4 noted
+  "Services / Service-Detail follow in later expansions"). The
+  section pins the identity: ServiceDetail is a **user-authored
+  interaction graph**, not a constrained "fill-in-the-spec" surface.
+  User direction: *"인터렉션 그래프인데 사용자가 만들 수 있어야해요"*.
+  No new kinds shipped this round (YAGNI).
+
+### Changed
+
+- **`App.tsx` no longer swaps the main sidebar's stencil**
+  ([D-2026-05-26-D](./docs/DECISIONS.md#d-2026-05-26-d--servicedetail-modal-is-self-contained-v0271)).
+  `stencilCanvas={activeTab}` always — the previous
+  `stencilCanvas={activeTab === "services" && detailServiceId ? "service_detail" : activeTab}`
+  split-personality layout is gone. Main Services sidebar shows ONLY
+  Services stencil (Category / Service) regardless of modal state.
+- **Main sidebar stays visible behind the modal backdrop** when the
+  ServiceDetail modal is open. User-confirmed in same session:
+  *"그대로 보이는데 모달의 크기가 화면을 다 덮겠죠?"*. The modal's
+  `bg-slate-900/40` backdrop visually mutes the main sidebar without
+  unmounting it.
+
+### Verification
+
+- Viewer vitest 563 passed; tsc clean.
+- Browser: Services tab — main sidebar shows only Services stencil;
+  Login double-click opens modal with full service_detail stencil
+  (COMPOSITION / ACTORS / MISSIONS / CORE VALUES / IDENTITY ASPECTS)
+  in its own left column; ESC closes — Services canvas (Banas → Auth
+  → Login) renders intact (no v0.27.0 "싹다 사라짐" regression).
+- LOC: App.tsx 425/430; ServiceDetailModal 92 LOC; new
+  ServiceDetailStencilPanel 42 LOC.
+
 ## [0.27.0] — 2026-05-26
 
 ### Changed
