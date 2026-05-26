@@ -7307,3 +7307,95 @@ above.
   prerequisite; without it the modal would lose access to its
   drag sources when the outer sidebar becomes inert).
 - D-2026-05-26-E (sibling bug fix in the same patch).
+
+---
+
+### D-2026-05-26-G — ServiceDetail root-service is the design subject, not hidden (v0.27.3)
+
+**Context:** Same session 2026-05-26. After the seeded banas-imported
+demo graph (D-2026-05-26-C / E / F session work), the user clicked
+the `⊞` auto-layout button on the ServiceDetail canvas and reported:
+
+> *"근데 내가 정렬을 누루니까 다 사라지는데?"*
+
+Diagnosis: `useAutoLayout`'s `pickAnchor` selected the canvas's
+hidden root-service node as the BFS root. Since the seeded demo
+graph (15 nodes, 21 edges) did not connect any node to the
+root-service, BFS reached 1 node (root only) and the other 14 fell
+to the orphan grid fallback, parked off-screen to the right of the
+hidden root. fitView, seeing only the lone root node, zoomed into
+the modal and hid every other node out-of-frame.
+
+User reframed the design intent:
+
+> *"서비스를 디테일하게 설계하는 캔버스란 말입니다!"*
+
+That is: ServiceDetail is **the canvas where one service is
+designed in detail**. The service itself is the *subject* of the
+canvas — analogous to how Foundation's anchor / Actors' anchor is
+visible at the canvas centre. Hiding the root-service was wrong
+both visually (no anchor to compose around) and operationally
+(no BFS root for auto-layout, no node to draw edges into).
+
+**Decision:**
+
+1. `ServiceDetailCanvas.tsx` flips `hideRootServiceNode={true}` →
+   `false`. The root-service node is rendered alongside everything
+   else the user authors.
+2. v0.15 Phase 3.4's original justification ("modal header already
+   names the service, so the canvas node is redundant") is rolled
+   back. The two surfaces are *not* redundant:
+   - **Modal header** = navigation breadcrumb (`Service Detail ·
+     Auth › Login`).
+   - **Canvas root-service node** = the design subject the user
+     composes around.
+3. `useAutoLayout`'s `pickAnchor` fallback (root-service when
+   `projectAnchor` is null, introduced in D-2026-05-26-A) keeps
+   working as-is — but the root is now also visible, so the
+   user-drawn edges from it land in the spanning tree.
+4. `injectAnchor={false}` is unchanged. ServiceDetail does not
+   inject a *synthetic* anchor; the root-service node fulfils the
+   anchor role.
+
+**Why not a synthetic anchor instead?** A synthetic anchor would
+duplicate the root-service identity. The service node already exists
+in `doc.nodes` (with `is_root: true`, copied from the overview
+canvas's service node). Showing it directly is one source of truth;
+adding a separate synthetic anchor would force the user to compose
+around *two* "centre" nodes.
+
+**Why doesn't the user *have* to connect everything to the root?**
+They don't — disconnected nodes still grid-fallback (existing
+behaviour, unchanged). But the typical authoring flow ("Login
+involves Hero, Fan, several interaction steps, …") naturally draws
+edges from the root-service to actor-refs and interaction steps,
+which then auto-layout cleanly.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/ServiceDetailCanvas.tsx` | `hideRootServiceNode={true}` → `false`; header comment rewritten to record the v0.27.3 framing reset |
+| `docs/SPEC.md` | §ServiceDetail identity / modal-structure sections updated to mark the root-service as the design subject |
+
+**Verification:**
+- Viewer vitest 563 passed; tsc clean.
+- Browser (banas-imported / Login modal): `⚡ Login` root-service
+  node renders at the canvas centre; clicking `⊞` lays the demo
+  graph out as a tree from Login, all nodes inside fitView.
+- The user-reported "다 사라짐" symptom no longer occurs as long as
+  the user-drawn edges include any path to the root-service.
+
+**Approval:** Accepted by user, 2026-05-26 — direct *"네"* after the
+proposal *"`hideRootServiceNode=true` → `false` 로"* + the framing
+distinction (modal header = breadcrumb; canvas node = design
+subject).
+
+**Cross-refs:**
+- v0.15 Phase 3.4 (original hide decision — superseded).
+- D-2026-05-26-A (`useAutoLayout`'s root-service fallback —
+  load-bearing for this entry).
+- D-2026-05-26-C (ServiceDetail as user-authored — refined here: the
+  user authors *around the service*, not in vacuum).
+- D-2026-05-26-F (modal interaction trap — unrelated but
+  contemporaneous).

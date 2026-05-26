@@ -821,19 +821,32 @@ as a follow-up in [`NEXT_SESSION.md`](./NEXT_SESSION.md).
 
 ## What ServiceDetail is
 
-The canvas that answers **"what happens inside this service?"** —
-opened as a modal when the user drills into a non-root service node
-on the Services canvas. The hidden root-service is the BFS root /
-auto-layout hub; the user-visible nodes are whatever the user drags
-in.
+The canvas where one service is **designed in detail** — opened as
+a modal when the user drills into a non-root service node on the
+Services canvas. The service itself is the **subject** of the
+canvas: the root-service node is rendered at the centre
+(D-2026-05-26-G) and serves as both the visible composition anchor
+and the BFS root for the tree auto-layout. The user composes
+around it: actors, interactions, value flows, references to mission
+/ value / identity.
 
-**Identity (D-2026-05-26-C):** ServiceDetail is a **user-authored
-interaction graph**. The system does *not* prescribe a meaning for
-each node kind on this canvas — the user adds nodes (actor refs,
-mission / value / identity refs, composition primitives) and draws
-edges between them to express whatever interaction model fits the
-service. The stencil sections are *hints* ("here are the kinds
-worth reaching for"), not a constrained drop palette.
+**Identity (D-2026-05-26-C, refined by D-2026-05-26-G):**
+ServiceDetail is a **user-authored design canvas for one service**.
+The service is the load-bearing centre — every other node the user
+draws sits in relation to it, even if not always edge-connected.
+The system does *not* prescribe a meaning for each node kind — the
+user adds nodes (actor refs, mission / value / identity refs,
+composition primitives) and draws edges between them to express
+whatever interaction / value model fits the service. The stencil
+sections are *hints* ("here are the kinds worth reaching for"),
+not a constrained drop palette.
+
+**Modal header vs canvas root-service node:**
+- Modal header (`Service Detail · Auth › Login`) = navigation
+  breadcrumb.
+- Canvas root-service node = design subject.
+
+Two distinct surfaces, not a duplication.
 
 User intent (verbatim 2026-05-26):
 > *"인터렉션 그래프인데 사용자가 만들 수 있어야해요. 사용자가 그릴수

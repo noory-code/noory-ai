@@ -4,6 +4,39 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.3] — 2026-05-26
+
+### Changed
+
+- **ServiceDetail's root-service node is now visible at the canvas
+  centre** ([D-2026-05-26-G](./docs/DECISIONS.md#d-2026-05-26-g--servicedetail-root-service-is-the-design-subject-not-hidden-v0273)).
+  User reframe: *"서비스를 디테일하게 설계하는 캔버스란 말입니다!"*
+  ServiceDetail is the canvas where one service is designed in
+  detail; the service itself is the *subject* of the canvas —
+  analogous to Foundation / Actors' anchor — so it must be visible
+  so the user can draw edges into / out of it and so the tree
+  auto-layout has a meaningful BFS root.
+- Concretely: `ServiceDetailCanvas.tsx` flips
+  `hideRootServiceNode={true}` → `false`. v0.15 Phase 3.4's original
+  framing (the modal header already names the service, so the canvas
+  node is redundant) is rolled back. The modal header carries the
+  *navigation breadcrumb*; the canvas node carries the *design
+  subject* — two distinct surfaces.
+- Knock-on fix for the user-reported "정렬 누르면 다 사라짐"
+  symptom: the tree auto-layout now has a real root to spread from,
+  and any nodes the user draws connected to that root land in the
+  spanning tree (instead of all 14 going to the orphan grid off
+  screen). Disconnected nodes still grid-fallback per the existing
+  algorithm — unchanged.
+
+### Verification
+
+- Viewer vitest 563 passed; tsc clean.
+- Browser (banas-imported / Login modal): the `⚡ Login` node now
+  shows at the canvas centre. After clicking `⊞`, the seeded demo
+  graph (Hero / Fan / 5 인터랙션 step / 4 가치 step / refs) fans
+  out as a tree from Login, all within the fitView frame.
+
 ## [0.27.2] — 2026-05-26
 
 ### Fixed
