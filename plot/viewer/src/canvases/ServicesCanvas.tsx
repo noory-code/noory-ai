@@ -17,7 +17,7 @@ export function ServicesCanvas(props: SketchCanvasProps) {
       shouldDrill={shouldDrillService}
       showFoldButton={true}
       injectAnchor={true}
-      layoutAlgo="radial"
+      layoutAlgo="tree"
     />
   );
 }

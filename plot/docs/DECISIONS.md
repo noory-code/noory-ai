@@ -6841,3 +6841,151 @@ reads cleanly even with branchy graphs.
 - D-2026-05-24-B (radial algorithm — original).
 - D-2026-05-25-C (Services canvas opt-in restored — the change that
   made this complaint surface in the first place).
+
+---
+
+### D-2026-05-26-A — Services + ServiceDetail switch from radial to tree auto-layout (v0.27.0)
+
+**Context:** Session 2026-05-26. After v0.26.3 (D-2026-05-25-D)
+shipped the fan-out fix that was meant to stop length-1 spoke chains
+from collapsing onto a single vertical line, the user opened the
+banas-imported project and observed the same problem still present:
+anchor (Banas) → category (Auth) → service (Login) still all stacked
+above the anchor. User direction:
+
+> *"정렬은 액터 캔버스 참고하쇼."*
+
+**Diagnosis:** Even with v0.26.3's "ring k>=2 fans around the parent's
+angle" change, a chain where every parent has *exactly one child*
+degenerates: each child inherits its parent's single angle, and ring 1
+itself starts at -π/2 (top) when there is only one member. So a chain
+of length-1 spokes follows one straight line from the anchor at -π/2
+outward → visually identical to the v0.26.2 bug. Fan width helps only
+when a parent has multiple children. Actor / Foundation canvases use
+the **tree** algorithm (`autoLayout.ts`): children fan out in the
+direction (T/R/B/L) of the parent-side handle the user drew on the
+edge — so user-drawn intent drives placement rather than ring-radius
+math. That algorithm matches the user's preferred reading and never
+exhibits the chain-collapse problem.
+
+**Decision:**
+
+1. `ServicesCanvas.tsx` and `ServiceDetailCanvas.tsx` both flip
+   `layoutAlgo` from `"radial"` to `"tree"`. The radial code stays in
+   the tree (still imported by `SketchCanvas`) but is not currently
+   wired to any wrapper; it can be re-introduced for a future canvas
+   that genuinely benefits from rings.
+2. `useAutoLayout` hub selection extended to fall back to the
+   root-service node (`kind === "service" && is_root === true`) when
+   `projectAnchor` is null. ServiceDetail injects no anchor, so
+   without this fallback the tree algorithm would early-return and
+   the button would silently do nothing. The fallback mirrors
+   `useRadialLayout.pickHub` exactly so the two algorithms share the
+   same hub semantics.
+3. `auto-layout-isolation.test.tsx` updated: the Services + ServiceDetail
+   `must opt in` assertions remain (still render the button); the
+   positions-only assertions exercise the tree algorithm now. The
+   ServiceDetail positions-only test seeds a `svc-1` root-service +
+   one ring-1 spoke (kept verbatim from the v0.26.2 radial test, so
+   the only thing that changes is which algorithm runs against it).
+
+**Why keep radial code instead of deleting?** Per CLAUDE.md "AHA —
+avoid hasty deletion." `radialLayout.ts` is a working pure module
+with 8 unit tests; if a future canvas (e.g. a per-actor capability
+radar) reads as rings rather than as a directional tree, we'll want
+the code back. Cost of leaving it is minimal — one extra hook call
+that returns a callback that no wrapper currently invokes.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/ServicesCanvas.tsx` | `layoutAlgo="radial"` → `layoutAlgo="tree"` |
+| `viewer/src/canvases/ServiceDetailCanvas.tsx` | `layoutAlgo="radial"` → `layoutAlgo="tree"` |
+| `viewer/src/canvases/sketch/useAutoLayout.ts` | hub selection extended; `pickAnchor` helper falls back to root-service node when no `projectAnchor` (mirrors `useRadialLayout.pickHub`) |
+| `viewer/tests/auto-layout-isolation.test.tsx` | Services + ServiceDetail positions-only tests now run against the tree algorithm; opt-in assertions updated |
+| `docs/SPEC.md` | algo table — Services + ServiceDetail rows flipped to `"tree"`; tree-algorithm description extended to mention the root-service hub fallback; History extended with this entry |
+
+**Verification:**
+- Viewer vitest 563 passed (auto-layout-isolation 9 tests green).
+- tsc clean.
+- Browser: anchor (Banas) → Auth → Login now lays out as a clean
+  left-to-right tree on the Services canvas after clicking ⊞.
+
+**Approval:** Accepted by user, 2026-05-26 — direct request *"정렬은
+액터 캔버스 참고하쇼"* selected the tree algorithm by reference.
+
+**Cross-refs:**
+- D-2026-05-24-B (radial algorithm — original opt-in for Services / ServiceDetail).
+- D-2026-05-25-D (radial fan-out attempt — insufficient for length-1 chains).
+- D-2026-05-13-L (Foundation-only opt-in — original tree algorithm).
+- D-2026-05-18-B (Actors opt-in to tree — the reference canvas).
+
+---
+
+### D-2026-05-26-B — ServiceDetail modal coexists with the sidebar (v0.27.0)
+
+**Context:** Same session 2026-05-26. User opened the Login service
+modal on banas-imported and reported:
+
+> *"서비스디테일 캔버스에서 뭘 할 수가 없어요. 여기 액터도 있고
+> 해야하는데 그게 없네요? 설명도 넣고 해야하는데 말이죠?"*
+
+**Diagnosis:** Stencil functionality is intact — `SketchStencil.tsx`'s
+`service_detail` branch renders Composition (metric / step) + Actor
+refs (one per master) + Mission / Value / Identity refs (one per
+master). But the modal was mounted at the app root with
+`fixed inset-0 z-40` + an inner panel sized at `92vw × 90vh`. That
+covered the entire viewport including the left sidebar where every
+draggable preset lives. Stencil labels were visible only as the
+left-edge slivers that peeked past the inner panel — visually
+"nothing there." User's mental model ("ServiceDetail canvas has no
+controls") was a faithful reading of what was actually on screen.
+
+**Decision:**
+
+1. Modal mount location moves from the app root to inside the
+   `<div>` that wraps the active canvas (the same container that
+   already holds `<Loading>` / `<ErrorPanel>` / `<EmptyState>` /
+   `<Canvas>`). That `<div>` gets `relative` so absolute positioning
+   resolves to its box.
+2. `ServiceDetailModal`'s root switches from `fixed inset-0` to
+   `absolute inset-0`. Inner panel sizing changes from `h-[90vh]
+   w-[92vw] max-w-[1600px]` (viewport-relative) to
+   `h-[92%] w-[94%] max-w-[1600px]` (parent-relative), so the modal
+   fills its new container instead of the viewport.
+3. ESC + backdrop-click + × button close paths unchanged. The ESC
+   listener stays a `window` keydown — focus is inside the modal so
+   this still works.
+4. Sidebar is now fully usable while the modal is open. Drag from
+   sidebar onto canvas inside the modal works because the drag
+   payload is JSON in the dataTransfer (not DOM-dependent), and the
+   drop target (`SketchCanvas`'s root) is the modal's child.
+
+**Why not just raise the sidebar z-index above the modal?** Would
+have left the modal backdrop visually broken at the sidebar edge,
+and the modal would still nominally "own" the whole viewport for
+the purposes of ESC focus / accessibility tree. Moving the mount
+point is the structural fix — the modal *correctly* lives inside the
+canvas region because that's the only region it modifies.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/App.tsx` | modal mount block relocated from root into the canvas `<div>`; that `<div>` gets `relative` |
+| `viewer/src/shell/ServiceDetailModal.tsx` | `fixed` → `absolute`; inner panel sizing from viewport units to parent percent |
+| `docs/SPEC.md` | History extended with this entry |
+
+**Verification:**
+- Viewer vitest 563 passed.
+- tsc clean.
+- Browser: ServiceDetail modal opens with sidebar visible; COMPOSITION
+  (Metric / Step), ACTORS, MISSIONS, CORE VALUES sections all
+  draggable onto the modal canvas. ESC / backdrop / × all close.
+
+**Approval:** Accepted by user, 2026-05-26 — direct approval of the
+two-part patch (this + D-2026-05-26-A) via *"네 둘다 진행"*.
+
+**Cross-refs:**
+- D-2026-05-26-A (sibling fix in the same session for the same canvas).

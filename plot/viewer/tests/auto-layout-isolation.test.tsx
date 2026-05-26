@@ -10,6 +10,14 @@
  * v0.26.2 — ServicesCanvas opts back into ``"radial"`` (D-2026-05-25-C
  *           reverts D-2026-05-24-C). User direction was "서비스 메인
  *           캔버스에 정렬기능 빠져있는건 여전하고".
+ * v0.27.0 — Services + ServiceDetail switch from ``"radial"`` to
+ *           ``"tree"`` (D-2026-05-26-A). User direction *"정렬은 액터
+ *           캔버스 참고하쇼"*. The tree algorithm follows user-drawn
+ *           edge handle direction (T/R/B/L) and never collapses
+ *           length-1 spoke chains onto a single line the way radial
+ *           did. ``useAutoLayout`` hub selection extended to fall
+ *           back to the root-service node when ``projectAnchor`` is
+ *           null (mirrors ``useRadialLayout.pickHub``).
  *
  * Pins the 4-layer isolation contract for the auto-layout feature:
  *
@@ -164,7 +172,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     ).not.toBeNull();
   });
 
-  it("ServicesCanvas wrapper renders the Auto-layout button (D-2026-05-25-C, radial — D-2026-05-24-C reverted)", () => {
+  it("ServicesCanvas wrapper renders the Auto-layout button (D-2026-05-26-A, tree)", () => {
     const doc = makeCanvas("services", [
       makeNode({ id: "s", label: "Service", kind: "service" }),
     ]);
@@ -173,11 +181,11 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     );
     expect(
       queryByRole("button", { name: /auto.?layout/i }),
-      "ServicesCanvas opts back into the radial auto-layout button per D-2026-05-25-C (which reverts the D-2026-05-24-C 'main is summary-only' decision).",
+      "ServicesCanvas opts into the tree auto-layout button per D-2026-05-26-A (switched from radial after the v0.26.3 fan-out fix still collapsed length-1 chains).",
     ).not.toBeNull();
   });
 
-  it("ServiceDetailCanvas wrapper renders the Auto-layout button (D-2026-05-24-B, radial)", () => {
+  it("ServiceDetailCanvas wrapper renders the Auto-layout button (D-2026-05-26-A, tree)", () => {
     const doc = makeCanvas("service_detail", [
       makeNode({
         id: "svc-1",
@@ -191,11 +199,11 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     );
     expect(
       queryByRole("button", { name: /auto.?layout/i }),
-      "ServiceDetailCanvas opts into the radial auto-layout button per D-2026-05-24-B.",
+      "ServiceDetailCanvas opts into the tree auto-layout button per D-2026-05-26-A (switched from radial; root-service node serves as the BFS root via useAutoLayout's pickAnchor fallback).",
     ).not.toBeNull();
   });
 
-  it("ServicesCanvas: Auto-layout touches positions only, not kind/label/typed-text (D-2026-05-25-C, radial)", () => {
+  it("ServicesCanvas: Auto-layout touches positions only, not kind/label/typed-text (D-2026-05-26-A, tree)", () => {
     const original = makeNode({
       id: "s1",
       label: "Login",
@@ -220,7 +228,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
     expect(last).not.toBeNull();
     const after = (last as unknown as CanvasDoc).nodes.find((n) => n.id === "s1");
-    expect(after, "node 's1' must survive radial auto-layout").toBeTruthy();
+    expect(after, "node 's1' must survive tree auto-layout").toBeTruthy();
     if (!after) return;
     expect(after.kind).toBe(original.kind);
     expect(after.label).toBe(original.label);
@@ -228,7 +236,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     expect((after as unknown as Record<string, unknown>).why).toBe("auth");
   });
 
-  it("ServiceDetailCanvas: Auto-layout touches positions only (D-2026-05-24-B, radial, hidden root-service as hub)", () => {
+  it("ServiceDetailCanvas: Auto-layout touches positions only (D-2026-05-26-A, tree, hidden root-service as BFS root)", () => {
     // ServiceDetail injects no anchor; the hub is the (hidden)
     // root-service. Add one ring-1 spoke so the algorithm has work to do.
     const original = makeNode({
@@ -269,7 +277,8 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       last = d;
     });
     // ServiceDetail wrapper passes injectAnchor=false — clear projectAnchor
-    // so useRadialLayout's pickHub falls back to the root-service node.
+    // so useAutoLayout's pickAnchor falls back to the root-service node
+    // (same hub-selection shape as useRadialLayout.pickHub).
     const { getByRole } = render(
       <ServiceDetailCanvas {...props} projectAnchor={null} />,
     );
@@ -278,7 +287,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     const after = (last as unknown as CanvasDoc).nodes.find(
       (n) => n.id === "step-1",
     );
-    expect(after, "node 'step-1' must survive radial auto-layout").toBeTruthy();
+    expect(after, "node 'step-1' must survive tree auto-layout").toBeTruthy();
     if (!after) return;
     expect(after.kind).toBe(original.kind);
     expect(after.label).toBe(original.label);

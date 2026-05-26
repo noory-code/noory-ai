@@ -152,8 +152,8 @@ behaviour is *no auto-layout button*. Each wrapper opts in by setting
 |---|---|---|---|
 | `FoundationCanvas` | `"tree"` | Directional tree (BFS from anchor, T/R/B/L per parent-handle) | v0.16.36 |
 | `ActorsCanvas` | `"tree"` | Directional tree (same as Foundation) | v0.24.5 |
-| `ServicesCanvas` | `"radial"` | Hub-and-spoke (BFS rings around anchor) | v0.26.2 (D-2026-05-25-C reverts D-2026-05-24-C) |
-| `ServiceDetailCanvas` | `"radial"` | Hub-and-spoke (rings around the hidden root-service) | v0.25.0 |
+| `ServicesCanvas` | `"tree"` | Directional tree (BFS from anchor, T/R/B/L per parent-handle) | v0.27.0 (D-2026-05-26-A switches from `"radial"`) |
+| `ServiceDetailCanvas` | `"tree"` | Directional tree (BFS from hidden root-service as hub) | v0.27.0 (D-2026-05-26-A switches from `"radial"`) |
 
 Isolation regression test:
 `viewer/tests/auto-layout-isolation.test.tsx`.
@@ -176,8 +176,14 @@ Isolation regression test:
 Implemented in
 [`viewer/src/canvases/sketch/autoLayout.ts`](../viewer/src/canvases/sketch/autoLayout.ts):
 
-- The project anchor stays fixed in place (BFS root).
-- Spanning tree from anchor places each child in the direction
+- BFS root is the project anchor when the canvas injects one
+  (Foundation / Actors / Services); for `ServiceDetailCanvas`
+  (which injects no anchor) `useAutoLayout`'s `pickAnchor` falls
+  back to the hidden root-service node
+  (`kind === "service" && is_root === true`). Same shape as
+  `useRadialLayout.pickHub`.
+- The BFS root stays fixed in place.
+- Spanning tree from the root places each child in the direction
   (T/R/B/L) of the parent-side handle on the connecting edge.
 - Sibling spacing tracks subtree extents (Reingold-Tilford-style)
   so no two node footprints overlap.
@@ -282,6 +288,27 @@ that did not opt in:
   the "summary canvas" framing helped. Algorithm is unchanged
   (anchor as hub, BFS rings); `ServiceDetailCanvas` continues to use
   the hidden root-service as its hub.
+- **D-2026-05-26-A** — `ServicesCanvas` + `ServiceDetailCanvas` switch
+  from `"radial"` to `"tree"`. User direction *"정렬은 액터 캔버스
+  참고하쇼"*. Even after the v0.26.3 fan-out fix, length-1 spoke
+  chains (anchor → category → service) collapsed onto a single radial
+  line because every node inherits its parent's angle and parents only
+  have one angle. The tree algorithm follows user-drawn edge handle
+  direction (T/R/B/L) instead — same shape Actors / Foundation use.
+  `useAutoLayout`'s hub selection extended to fall back to the
+  root-service node when `projectAnchor` is null (mirrors
+  `useRadialLayout.pickHub`). The radial code stays in the tree as
+  a future option but is not currently wired to any wrapper.
+- **D-2026-05-26-B** — ServiceDetail modal mount relocated from the
+  app root into the canvas container. User direction *"서비스디테일
+  캔버스에서 뭘 할 수가 없어요. 여기 액터도 있고 해야하는데 그게
+  없네요?"*. Diagnosis: the modal's `fixed inset-0` covered the whole
+  viewport, hiding the sidebar and with it every drag-source the
+  service-detail canvas needs (composition + actor / mission / value /
+  identity refs). Fix: `<div>` wrapping the active canvas gets
+  `relative`; the modal switches to `absolute inset-0` so it overlays
+  only the canvas region. Sidebar stays visible and usable while the
+  modal is open. ESC / backdrop-click close paths unchanged.
 
 ---
 

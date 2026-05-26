@@ -4,6 +4,52 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.0] — 2026-05-26
+
+### Changed
+
+- **Services + ServiceDetail switched from `radial` to `tree` auto-layout**
+  ([D-2026-05-26-A](./docs/DECISIONS.md#d-2026-05-26-a--services--servicedetail-switch-from-radial-to-tree-auto-layout-v0270)).
+  Radial placement collapsed length-1 spoke chains onto a single
+  vertical line — visually "everything stacked north of the anchor"
+  — even after the v0.26.3 fan-out fix, because every BFS chain
+  inherits its single parent's angle all the way out. User direction
+  *"정렬은 액터 캔버스 참고하쇼"*. Both wrappers now use the same
+  mindmap-style tree layout Actors / Foundation use: children fan out
+  in the direction (T/R/B/L) of the parent-side edge handle, so chains
+  follow user-drawn intent instead of fighting it. `useAutoLayout`
+  picks the canvas's root-service node as the hub when the canvas has
+  no synthetic anchor, mirroring `useRadialLayout`'s `pickHub`.
+- **ServiceDetail modal now mounts inside the canvas container, not
+  at the root** ([D-2026-05-26-B](./docs/DECISIONS.md#d-2026-05-26-b--servicedetail-modal-coexists-with-the-sidebar-v0270)).
+  Previously the modal's `fixed inset-0` covered the entire viewport,
+  hiding the left sidebar — and with it the COMPOSITION (metric / step)
+  + Actor refs + Mission / Value / Identity ref sections that are the
+  *only* way to populate a service-detail canvas. User feedback:
+  *"서비스디테일 캔버스에서 뭘 할 수가 없어요. 여기 액터도 있고 해야하는데
+  그게 없네요?"*. The modal now `absolute inset-0`'s the canvas region
+  only; the sidebar stays visible and usable while the modal is open.
+- `useAutoLayout` hub selection extended to fall back to the
+  root-service node (`kind === "service" && is_root === true`) when
+  `projectAnchor` is null — same shape as `useRadialLayout.pickHub`.
+- `viewer/src/App.tsx` modal mount relocated; the `<div>` that wraps
+  the active canvas now carries `relative` so `absolute inset-0`
+  modal positioning resolves to the canvas region.
+- `viewer/tests/auto-layout-isolation.test.tsx` updated: Services /
+  ServiceDetail expectations now require `layoutAlgo="tree"` and the
+  position-stability assertions exercise the tree algorithm.
+- `docs/SPEC.md` §Auto-layout table — Services + ServiceDetail rows
+  flipped to `"tree"`; History extended with D-2026-05-26-A/B.
+
+### Verification
+
+- Viewer vitest 563 passed; tsc clean.
+- Browser: Services canvas auto-layout now lays out
+  anchor → category → service as a left-to-right tree (Actor-canvas
+  parity); ServiceDetail modal opens with the sidebar fully visible
+  and stencil sections (COMPOSITION / ACTORS / MISSIONS / CORE VALUES)
+  draggable onto the service-detail canvas.
+
 ## [0.26.3] — 2026-05-25
 
 ### Changed

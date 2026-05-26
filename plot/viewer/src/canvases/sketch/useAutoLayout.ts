@@ -4,10 +4,18 @@
 // then dispatches a single ``onDocChange`` so the result lands in the
 // regular history stack (one ``Cmd+Z`` reverses it). Per
 // SPEC.md §Auto-layout and DECISIONS.md D-2026-05-10-E.
+//
+// Hub selection mirrors useRadialLayout (D-2026-05-26-A):
+//   - If ``projectAnchor`` is set (Foundation / Actors / Services), use
+//     the synthetic anchor as the layout root (PROJECT_ANCHOR_ID).
+//   - Otherwise (ServiceDetail), pick the canvas's root-service node
+//     (kind === "service" && is_root === true). It is hidden from the
+//     viewport via ``hideRootServiceNode`` but still exists in
+//     ``doc.nodes`` and provides a stable layout origin.
 
 import { useCallback, type MutableRefObject } from "react";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
-import { computeAutoLayout } from "./autoLayout";
+import { computeAutoLayout, type AutoLayoutAnchor } from "./autoLayout";
 import { PROJECT_ANCHOR_ID } from "./constants";
 
 export interface UseAutoLayoutInput {
@@ -16,21 +24,44 @@ export interface UseAutoLayoutInput {
   projectAnchor: AnchorPlacement | null | undefined;
 }
 
+function pickAnchor(
+  doc: CanvasDoc,
+  projectAnchor: AnchorPlacement | null | undefined,
+): AutoLayoutAnchor | null {
+  if (projectAnchor) {
+    return {
+      id: PROJECT_ANCHOR_ID,
+      x: projectAnchor.x,
+      y: projectAnchor.y,
+      width: projectAnchor.width,
+      height: projectAnchor.height,
+    };
+  }
+  const root = doc.nodes.find(
+    (n) => n.kind === "service" && n.is_root === true,
+  );
+  if (root) {
+    return {
+      id: root.id,
+      x: root.x,
+      y: root.y,
+      width: root.width,
+      height: root.height,
+    };
+  }
+  return null;
+}
+
 export function useAutoLayout({ docRef, onDocChange, projectAnchor }: UseAutoLayoutInput) {
   return useCallback(() => {
-    if (!projectAnchor) return;
     const doc = docRef.current;
     if (doc.nodes.length === 0) return;
+    const anchor = pickAnchor(doc, projectAnchor);
+    if (!anchor) return;
     const { positions } = computeAutoLayout({
       nodes: doc.nodes,
       edges: doc.edges,
-      anchor: {
-        id: PROJECT_ANCHOR_ID,
-        x: projectAnchor.x,
-        y: projectAnchor.y,
-        width: projectAnchor.width,
-        height: projectAnchor.height,
-      },
+      anchor,
     });
     if (positions.size === 0) return;
     const nextNodes = doc.nodes.map((n) => {
