@@ -224,3 +224,84 @@ describe("registry-completeness (Phase 5.2)", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------
+// Contract 4: hot-path JSX prop callback stability
+//   (D-2026-05-27-B: SketchCanvas remounted mid-drag because App.tsx
+//    passed inline arrow callbacks to <Canvas> / <ServiceDetailCanvas>.
+//    D-2026-05-27-C pins this contract so the regression cannot ship
+//    again unnoticed.)
+// ---------------------------------------------------------------------
+
+/**
+ * Returns the JSX prop block for every top-level usage of `<TagName ... />`
+ * (self-closing) or `<TagName ...>...</TagName>` in ``src``.  Crude — just
+ * extracts text between the opening ``<TagName`` and the matching ``>``
+ * — sufficient because every hot-path Canvas slot in App.tsx is a single
+ * self-closing element.
+ */
+function extractJsxOpeningTagBlocks(src: string, tagName: string): string[] {
+  const blocks: string[] = [];
+  const pattern = new RegExp(`<${tagName}\\b`, "g");
+  let m: RegExpExecArray | null;
+  while ((m = pattern.exec(src)) !== null) {
+    const start = m.index + m[0].length;
+    // Walk forward to the matching ">" that closes the opening tag,
+    // accounting for nested `{}` (which may contain `>` inside JS).
+    let depth = 0;
+    let i = start;
+    while (i < src.length) {
+      const ch = src[i];
+      if (ch === "{") depth++;
+      else if (ch === "}") depth--;
+      else if (ch === ">" && depth === 0) break;
+      i++;
+    }
+    blocks.push(src.slice(start, i));
+  }
+  return blocks;
+}
+
+const HOT_PATH_CANVAS_TAGS = [
+  "Canvas",
+  "ServiceDetailCanvas",
+  "FoundationCanvas",
+  "ActorsCanvas",
+  "ServicesCanvas",
+] as const;
+
+describe("hot-path JSX prop stability (D-2026-05-27-B/C)", () => {
+  it.each(HOT_PATH_CANVAS_TAGS)(
+    "App.tsx never passes an inline arrow callback to <%s>",
+    (tag) => {
+      const src = stripComments(readFileSync(resolve(SRC, "App.tsx"), "utf8"));
+      const blocks = extractJsxOpeningTagBlocks(src, tag);
+      for (const block of blocks) {
+        // Inline arrow callbacks on a JSX prop look like:
+        //   prop={(args) => ...}   or   prop={() => ...}
+        // Stable references look like:
+        //   prop={handlerName}
+        // Capture the first ~6 chars of the offending value to make the
+        // failure message actionable.
+        const offending = block.match(/[a-zA-Z_]\w*=\{\s*\([^)]*\)\s*=>/g) ?? [];
+        expect(
+          offending,
+          `inline arrow callback on <${tag}> prop — hoist to useCallback per D-2026-05-27-B:\n${offending.join("\n")}`,
+        ).toEqual([]);
+      }
+    },
+  );
+
+  it("App.tsx never passes a fresh-on-every-render literal `() => {}` to a Canvas slot", () => {
+    const src = stripComments(readFileSync(resolve(SRC, "App.tsx"), "utf8"));
+    for (const tag of HOT_PATH_CANVAS_TAGS) {
+      for (const block of extractJsxOpeningTagBlocks(src, tag)) {
+        const offending = block.match(/=\{\s*\(\s*\)\s*=>\s*\{?\s*\}?\s*\}/g) ?? [];
+        expect(
+          offending,
+          `no-op inline arrow on <${tag}> — hoist to useCallback (even no-ops churn prop identity):\n${offending.join("\n")}`,
+        ).toEqual([]);
+      }
+    }
+  });
+});

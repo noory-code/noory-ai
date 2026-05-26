@@ -133,6 +133,84 @@ session that may never have had user approval. See
 "synthetic anchor is read-only" comment caused the assistant to remove
 anchor handles, which the user never agreed to.
 
+### Gate 1.5 — Test before code (TDD / BDD)
+
+Per global CLAUDE.md `methodology: TDD(Red→Green→Refactor), BDD(Given/When/Then) ... 테스트 없이 구현 먼저 작성 금지`.
+This Gate is non-negotiable. It applies to **every** code change in
+`viewer/` or `plot_mcp/`, no matter how small — bug fix, refactor,
+guard, feature.
+
+**Trigger:** the moment Gate 1 hands you a green light, before you
+open any source file (other than a test file) for editing.
+
+**Order (never skip, never reorder, never batch):**
+
+1. **Red.** Write the failing test or regression guard that pins
+   the behaviour you are about to add / restore. Run it; observe
+   the failure. For static guards (no runtime branch), simulate
+   the pre-fix code state in your head or temporarily revert the
+   suspected line to confirm the guard would have caught the bug
+   — then restore. **The test must point at the responsibility
+   that is broken, not at a side effect.**
+2. **Green.** Implement the smallest change that makes the test
+   pass. Stop the moment it passes.
+3. **Refactor.** Improve the implementation. Re-run the test
+   after every refactor.
+
+**Banned shortcuts (every one of these has been seen in this repo
+— each entry below was sanctioned by the user the first time it
+shipped without one):**
+
+- *"I'll add the regression test after shipping"* / *"테스트는 다음
+  commit 에"* — same severity as Gate 0 *"다음에 정리하겠습니다"*
+  ban. Tests added after the fact are **not** TDD; they're
+  unverified retroactive guards. If you cannot write the test
+  *first*, you do not understand the bug well enough to fix it.
+- *"It's just a static type fix / rename / comment edit"* —
+  these still need a test if they change behaviour. If they don't
+  change behaviour, the existing test suite must still pass on
+  the diff.
+- *"chrome-devtools verification covers it"* — chrome-devtools
+  MCP is a Gate 3 *verification*, not a Gate 1.5 *test*. The user
+  rebooting their browser does not run a regression in the next
+  session. **A green chrome-devtools probe without a green vitest
+  case is half a verification.**
+- *"The behaviour is too dynamic to unit-test"* — write a static
+  guard that pins the *structural cause* of the behaviour.
+  Examples: ban inline-arrow JSX prop callbacks on a hot-path
+  slot (string grep over `App.tsx`); assert that a kind exists
+  in the registry (length check over `NODE_RENDERERS`). Static
+  guards are tests too; `viewer/tests/structural-guards.test.tsx`
+  is the canonical home.
+
+**Where the test lives:**
+
+- Behaviour spec → `viewer/tests/{feature}.test.tsx` (vitest +
+  testing-library).
+- Structural / architectural guard →
+  `viewer/tests/structural-guards.test.tsx` or a sibling
+  `*-baseline.test.tsx`.
+- Server / pydantic → `plot/tests/test_*.py`.
+- Cross-cutting boundary (server ↔ viewer schema) →
+  `plot/tests/test_schema_parity.py`.
+
+**Acceptance:** Gate 4 (`Before commit`) fails the commit if the
+diff touches `src/` without a corresponding test addition or
+update under `tests/`. This is enforced by reviewer judgement
+today; a `pre_commit_gate.py` check ('any file under src/ changed
+without any file under tests/ changing') is filed as a follow-up.
+
+**Canonical regression that this Gate is named after:**
+v0.27.7 (D-2026-05-27-B) — Canvas prop callbacks hoisted to
+`useCallback` to prevent a SketchCanvas remount under drag. Shipped
+*without* either (a) the static guard banning inline-arrow JSX
+callbacks on the Canvas / ServiceDetailCanvas slot, or (b) a
+dynamic regression that mounts SketchCanvas, fires N back-to-back
+`onDocChange` calls, and asserts the mount counter stays at 1.
+User flagged the omission within minutes (*"왜자꾸 테스트를 안하려고해
+... TDD 몰라? BDD 모르냐고"*). Follow-up `D-2026-05-27-C` adds
+both tests + retro-pin to this Gate.
+
 ### Gate 2 — Before editing a file near its LOC budget
 
 Per [D-2026-05-12-F](./docs/DECISIONS.md). The v0.15 structural

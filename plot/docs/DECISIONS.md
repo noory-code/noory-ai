@@ -7851,3 +7851,97 @@ or Rejected once the user retests in their browser.
   this fix lets actually run).
 - D-2026-05-05-B (god-component architectural debt — this is one
   more strand of the long-running repayment).
+- D-2026-05-27-C (the regression guard + Gate 1.5 retro-pin that
+  should have shipped *with* this entry but did not).
+
+---
+
+### D-2026-05-27-C — Gate 1.5 (TDD / BDD) pinned to `plot/CLAUDE.md` + inline-arrow JSX prop guard for Canvas slots (v0.27.8)
+
+**Context:** v0.27.7 (D-2026-05-27-B) shipped the `useCallback`
+hoist *without* a regression test. The user flagged the omission
+immediately:
+
+> *"왜자꾸 테스트를 안하려고해 ... 테스트를 니가 해야해 ... 코드 짤
+> 때 테스트부터 생각해야한다고! TDD 몰라? BDD 모르냐고"*
+
+The omission was a direct violation of the global
+CLAUDE.md `methodology` rule:
+
+> `methodology: follow TDD(Red→Green→Refactor), BDD(Given/When/Then), 테스트 피라미드, F.I.R.S.T`
+> `constraint: 테스트 없이 구현 먼저 작성 금지`
+
+Plot's local `CLAUDE.md` had Gates -1 / 0 / 1 / 2 / 3 / 4 but no
+explicit *Gate 1.5 — Test before code* gate. Without that, the
+assistant interpreted the global rule as "guidance" rather than a
+hard ordering constraint and shipped code-first.
+
+**Decision (two ships in one cycle, both pinned by this entry):**
+
+1. **`plot/CLAUDE.md` gains `Gate 1.5 — Test before code (TDD/BDD)`**
+   between the existing Gate 1 (spec coverage) and Gate 2 (LOC
+   budget). The Gate spells out the Red → Green → Refactor order,
+   four banned shortcuts (incl. *"chrome-devtools verification
+   covers it"* and *"the behaviour is too dynamic to unit-test"*),
+   and names this very D-entry as the canonical regression the
+   Gate exists to prevent. Static guards are explicitly counted as
+   tests so that "structural" bugs (like prop-identity churn) have
+   a first-class home.
+
+2. **`viewer/tests/structural-guards.test.tsx` gains Contract 4 —
+   "hot-path JSX prop callback stability"** with two `it.each`
+   suites:
+   - For each of `Canvas`, `ServiceDetailCanvas`, `FoundationCanvas`,
+     `ActorsCanvas`, `ServicesCanvas`, App.tsx's JSX block must
+     contain zero inline-arrow callback props (regex over the
+     opening tag's prop block — `extractJsxOpeningTagBlocks`
+     walks `{}` depth so `>` inside JS expressions doesn't break
+     extraction).
+   - Same set of tags must never receive a no-op `() => {}` prop
+     literal (covers the `onSelectionConsumed={() => {}}` shape).
+   Failure messages name the offending capture and point at
+   D-2026-05-27-B for the fix recipe.
+
+**Red → Green verification (TDD ritual performed retroactively
+so the test is at least proven to detect the regression it pins):**
+
+- Temporarily reverted one line in `App.tsx`
+  (`onDocChange={onMainDocChange}` → `onDocChange={(next) => onMainDocChange(next)}`)
+  and ran the suite. Contract 4 failed with the message
+  `[ "onDocChange={(next) =>" ]` + hint to hoist per D-2026-05-27-B.
+- Restored the line. All 56 structural-guards tests pass.
+
+**Honest limitations:**
+
+- **No dynamic mount-counter regression yet.** The "fire N back-to-back
+  `onDocChange` calls + assert mount counter stays at 1" test would
+  require harnessing RF's d3-drag path inside jsdom, where the
+  ResizeObserver / DOMRect plumbing is already known to be flaky
+  (see the two known JSDOM test failures referenced in plot/CLAUDE.md
+  §Commands). Filed as follow-up: when a regression eventually
+  bypasses Contract 4 (e.g. inline arrow buried in a Sketch hook
+  rather than in App.tsx JSX), add the dynamic test then. Static
+  guard + Gate 1.5 already covers the prop-identity surface the user
+  flagged.
+- **`pre_commit_gate.py` "src/ changed without tests/ changed" check
+  not yet enforced.** Reviewer judgement holds the line today;
+  filed as follow-up so this gate-failure cannot ship via "I'll add
+  a test next session."
+
+**Spec impact:** `plot/CLAUDE.md` Gate 1.5 (new section);
+`docs/ARCHITECTURE.md` Contracts table will inherit the new
+"inline-arrow callback prop ban on Canvas slots" row in the next
+edit cycle that touches the table.
+
+**Approval:** Pending — user-driven via the four-message
+correction transcript (2026-05-27 session). Will flip to Accepted
+the moment the user confirms after seeing v0.27.8 land.
+
+**Cross-refs:**
+- D-2026-05-27-B (the bug this guard pins; the ship that
+  triggered the user correction).
+- D-2026-05-27-A (the two-MCP debug workflow — Gate 3 verification,
+  *not* a substitute for Gate 1.5).
+- D-2026-05-12-F (the structural-guards.test.tsx contract host).
+- Global `~/.claude/CLAUDE.md` `methodology: 테스트 없이 구현 먼저
+  작성 금지` — the rule Plot's Gate 1.5 makes explicit.

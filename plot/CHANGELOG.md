@@ -4,6 +4,47 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.8] — 2026-05-27
+
+### Added
+
+- **`viewer/tests/structural-guards.test.tsx` Contract 4 —
+  "hot-path JSX prop callback stability"**
+  ([D-2026-05-27-C](./docs/DECISIONS.md#d-2026-05-27-c--gate-15-tdd--bdd-pinned-to-plotclaudemd--inline-arrow-jsx-prop-guard-for-canvas-slots-v0278)).
+  Two `it.each` suites scan App.tsx and assert that no
+  `<Canvas>`, `<ServiceDetailCanvas>`, `<FoundationCanvas>`,
+  `<ActorsCanvas>`, `<ServicesCanvas>` slot receives an
+  inline-arrow callback prop or a no-op `() => {}` literal.
+  Failure messages quote the offending capture and link to
+  D-2026-05-27-B for the fix recipe.
+- **Red → Green verification:** temporarily reverted one line in
+  App.tsx (hoist → inline arrow) and confirmed the new guard
+  fails with the expected message; restored. 56/56
+  structural-guards pass.
+
+### Changed
+
+- **`plot/CLAUDE.md` gains `Gate 1.5 — Test before code (TDD / BDD)`**
+  ([D-2026-05-27-C](./docs/DECISIONS.md#d-2026-05-27-c--gate-15-tdd--bdd-pinned-to-plotclaudemd--inline-arrow-jsx-prop-guard-for-canvas-slots-v0278)).
+  Pinned between Gate 1 (spec coverage) and Gate 2 (LOC budget).
+  Spells out Red → Green → Refactor ordering, four banned shortcuts
+  (incl. *"chrome-devtools verification covers it"* and *"the
+  behaviour is too dynamic to unit-test"*), and names v0.27.7 as
+  the canonical regression the Gate exists to prevent. Static
+  guards count as tests.
+
+### Honest limitations
+
+- **No dynamic mount-counter regression yet.** The "fire N
+  back-to-back `onDocChange` calls + assert mount counter stays
+  at 1" test needs an RF + jsdom harness that is known-flaky in
+  this repo. Filed as a follow-up D-entry rather than papered
+  over. Static guard + Gate 1.5 already cover the prop-identity
+  surface the user flagged.
+- **`pre_commit_gate.py` "src/ changed without tests/ changed"
+  check not yet enforced.** Reviewer judgement holds the line
+  today.
+
 ## [0.27.7] — 2026-05-27
 
 ### Fixed
