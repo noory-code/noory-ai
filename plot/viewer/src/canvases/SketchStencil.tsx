@@ -9,10 +9,12 @@ export interface StencilPreset extends NodePreset {
   /** Shown to the user as the reason why a drop was rejected (if non-null). */
   dropHint?: string;
   /** v0.14.11: i18n key for the stencil sidebar label. Falls back to
-   *  ``labelHint`` when absent. The drop-time node label
-   *  (``label``) stays language-pinned because it becomes user data
-   *  the instant the drop lands. */
-  labelI18nKey?: string;
+   *  ``kind.${kind}`` when undefined; falls back to ``labelHint`` when
+   *  explicitly ``null`` (used by dynamic ref presets where the
+   *  master's name is the SSOT — see D-2026-05-26-E). The drop-time
+   *  node label (``label``) stays language-pinned because it becomes
+   *  user data the instant the drop lands. */
+  labelI18nKey?: string | null;
   /** v0.14.11: i18n key for the ``dropHint`` tooltip line. Falls back
    *  to ``dropHint`` when absent. */
   dropHintI18nKey?: string;
@@ -291,12 +293,19 @@ export function resolveDropTarget(
 function StencilItem({ preset }: { preset: StencilPreset }) {
   const { t } = useTranslation();
   const Icon = getIcon(preset.icon);
-  // v0.14.11: prefer the preset's explicit i18n key; fall back to
-  // ``kind.${kind}`` (covers Mission / Core value / Identity / etc.);
-  // final fallback is the English ``labelHint`` for any kind without
-  // a kind.* entry (e.g. dynamic refs that use the master's label
-  // directly).
-  const labelKey = preset.labelI18nKey ?? (preset.kind ? `kind.${preset.kind}` : "");
+  // v0.14.11 / v0.27.2 (D-2026-05-26-E): label resolution order:
+  //   1. explicit ``labelI18nKey === null`` → labelHint wins (dynamic
+  //      ref presets carry the master's name in labelHint; we must
+  //      NOT fall through to ``kind.${kind}`` which would replace
+  //      every "Hero" / "Fan" / "관용" stencil item with the generic
+  //      "Actor (ref)" / "Core value (ref)" — the pre-v0.27.2 bug).
+  //   2. explicit ``labelI18nKey`` string → use it.
+  //   3. has ``kind`` → ``kind.${kind}``.
+  //   4. fallback → labelHint.
+  const labelKey =
+    preset.labelI18nKey === null
+      ? ""
+      : (preset.labelI18nKey ?? (preset.kind ? `kind.${preset.kind}` : ""));
   const label = labelKey ? t(labelKey, { defaultValue: preset.labelHint }) : preset.labelHint;
   const dropHintText = preset.dropHintI18nKey
     ? t(preset.dropHintI18nKey)
@@ -480,6 +489,7 @@ function actorRefPresetFor(a: SketchNode): StencilPreset {
   return {
     id: `actor-ref:${a.id}`,
     labelHint: a.label || a.id,
+    labelI18nKey: null,
     // v0.26.1 (D-2026-05-25-B) — ref kinds default to rectangle.
     shape: "rectangle",
     color: side === "operator" ? "#bae6fd" : "#fce7f3",
@@ -496,6 +506,7 @@ function missionRefPresetFor(m: SketchNode): StencilPreset {
   return {
     id: `mission-ref:${m.id}`,
     labelHint: m.label || m.id,
+    labelI18nKey: null,
     shape: "rectangle",
     color: "#fef3c7",
     width: 160,
@@ -511,6 +522,7 @@ function valueRefPresetFor(v: SketchNode): StencilPreset {
   return {
     id: `value-ref:${v.id}`,
     labelHint: v.label || v.id,
+    labelI18nKey: null,
     shape: "rectangle",
     color: "#fde68a",
     width: 160,
@@ -526,6 +538,7 @@ function identityRefPresetFor(i: SketchNode): StencilPreset {
   return {
     id: `identity-ref:${i.id}`,
     labelHint: i.label || i.id,
+    labelI18nKey: null,
     shape: "rectangle",
     color: "#fed7aa",
     width: 160,

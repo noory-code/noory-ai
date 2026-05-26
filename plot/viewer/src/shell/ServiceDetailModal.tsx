@@ -50,11 +50,11 @@ export function ServiceDetailModal({
             })
           : t("serviceDetail.ariaWithoutCategory", { service: serviceLabel })
       }
-      className="absolute inset-0 z-40 flex items-center justify-center bg-slate-900/40"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40"
       onClick={onClose}
     >
       <div
-        className="flex h-[92%] w-[94%] max-w-[1600px] flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
+        className="flex h-[92vh] w-[94vw] max-w-[1600px] flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2">

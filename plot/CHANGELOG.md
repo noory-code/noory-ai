@@ -4,6 +4,62 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.2] — 2026-05-26
+
+### Fixed
+
+- **Dynamic ref stencil items now show their master's name**
+  ([D-2026-05-26-E](./docs/DECISIONS.md#d-2026-05-26-e--dynamic-ref-stencil-items-show-master-name-v0272)).
+  Previously every actor / mission / value / identity ref preset
+  showed the generic kind label ("Actor (ref)" / "Mission (ref)" /
+  "Core value (ref)" / "Identity (ref)") regardless of which master
+  it pointed at — `SketchStencil`'s label resolver fell through to
+  the `kind.${kind}` i18n key before reaching the preset's
+  `labelHint`, which already carried `master.label || master.id`.
+  Pre-v0.27.2 the ServiceDetail modal stencil read as "Actor (ref)
+  × 7 indistinguishable rows" instead of the real master names.
+  User feedback: *"왜 심볼이 제대로 안나오는거죠?"*.
+- Resolution: dynamic ref preset factories (`actorRefPresetFor`,
+  `missionRefPresetFor`, `valueRefPresetFor`, `identityRefPresetFor`)
+  now pass explicit `labelI18nKey: null`; `StencilItem` treats
+  `null` as "skip i18n, use labelHint directly". Static presets
+  (top-level Actor / Category / etc) continue to use `kind.${kind}`.
+
+### Added
+
+- **ServiceDetail modal traps interaction outside itself**
+  ([D-2026-05-26-F](./docs/DECISIONS.md#d-2026-05-26-f--servicedetail-modal-traps-interaction-via-inert-v0272)).
+  User feedback: *"서비스 디테일 모달 뜰 때 다른거 동작안되게 해야죠."*.
+  While the modal is open the root app `<div>` gets the HTML `inert`
+  attribute — no clicks, no focus, no keyboard, no drag fires
+  outside the modal. The modal sits as a sibling of the inert root
+  so it remains fully interactive.
+
+### Changed
+
+- **`ServiceDetailModal` returns to viewport-level `fixed inset-0`**
+  (was `absolute inset-0` per v0.27.0 / D-2026-05-26-B). Inert now
+  blocks the main canvas + sidebar instead of relying on physical
+  containment, so the v0.27.0 motivation (sidebar must stay
+  click-reachable) no longer applies — the modal's self-contained
+  stencil column (v0.27.1 / D-2026-05-26-D) already covers
+  reachability. Inner panel sizing returns to `h-[92vh] w-[94vw]`.
+- **App.tsx** moves the modal mount block from inside the canvas
+  container back to a root-level sibling of the main app `<div>`.
+  The root `<div>` carries `inert` whenever `modalOpen` is true.
+
+### Verification
+
+- Viewer vitest 563 passed; tsc clean.
+- Browser: open Login modal — left stencil column shows real master
+  names (Admin / Bana / Hero / Fan / Bartender / 3rd party / 미용사
+  / Mission / 관용 (Tolerance) / 지지 (Support) / 유머 (Humor) /
+  공감 (Empathy) / 다양성 (Diversity) / Tone & Manner) instead of
+  the generic "Actor (ref)" / "Mission" / "Core value (ref)".
+- Probe `document.querySelector('div.flex.h-screen').hasAttribute('inert')`
+  returns `true` while modal open, `false` after ESC.
+- ESC closes; Services canvas (Banas → Auth → Login) renders intact.
+
 ## [0.27.1] — 2026-05-26
 
 ### Added

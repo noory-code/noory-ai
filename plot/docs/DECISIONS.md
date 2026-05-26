@@ -7144,3 +7144,166 @@ layout (`w-56` fixed) and main sidebar handling ("그대로 보이는데
 - D-2026-05-26-B (modal mount relocation — preserved, completed by
   this entry).
 - D-2026-05-26-A (tree layout enabling readable authored graphs).
+
+---
+
+### D-2026-05-26-E — Dynamic ref stencil items show master name (v0.27.2)
+
+**Context:** After D-2026-05-26-D shipped the modal-internal
+stencil column, the user opened the ServiceDetail modal on
+banas-imported and immediately spotted:
+
+> *"왜 심볼이 제대로 안나오는거죠?"*
+
+Diagnosis: the ServiceDetail modal stencil rendered every actor
+ref as "Actor (ref)" (7 indistinguishable rows), every core value
+ref as "Core value (ref)" (5 rows), and the mission ref as just
+"Mission" — the real master names (Hero / Fan / Bartender / 관용
+/ 지지 / etc.) never reached the screen even though they were
+present in `availableActors` / etc. on the `App.tsx` side.
+
+Root cause: `SketchStencil.tsx::StencilItem` resolved the label
+via
+
+```js
+const labelKey = preset.labelI18nKey ?? (preset.kind ? `kind.${preset.kind}` : "");
+const label = labelKey ? t(labelKey, { defaultValue: preset.labelHint }) : preset.labelHint;
+```
+
+For dynamic ref presets (`actor-ref:${a.id}`, `mission-ref:${m.id}`,
+…) the `labelI18nKey` is undefined and `kind` is set, so the
+resolver fell through to `kind.actor_ref` → translates to "Actor
+(ref)" / "액터 (참조)". The `labelHint` (which already carries
+`master.label || master.id`) became unreachable. The pre-existing
+comment on the resolver said *"e.g. dynamic refs that use the
+master's label directly"* — the intent was correct; the
+implementation was not.
+
+**Decision:**
+
+1. Extend `StencilPreset.labelI18nKey` from `string | undefined` to
+   `string | null | undefined`. `null` is the explicit "skip i18n,
+   labelHint is the SSOT" sentinel.
+2. Each of the four dynamic ref preset factories
+   (`actorRefPresetFor`, `missionRefPresetFor`, `valueRefPresetFor`,
+   `identityRefPresetFor`) passes `labelI18nKey: null`.
+3. `StencilItem` resolver becomes:
+   ```js
+   const labelKey =
+     preset.labelI18nKey === null
+       ? ""
+       : (preset.labelI18nKey ?? (preset.kind ? `kind.${preset.kind}` : ""));
+   ```
+   `labelKey === ""` skips translation; `labelHint` wins.
+4. Static presets (TOP_LEVEL_ACTOR, CORE_MISSION, CORE_VALUE, …)
+   are unaffected — they have undefined `labelI18nKey` and a `kind`,
+   so the existing `kind.${kind}` path still applies.
+
+**Why a sentinel instead of, e.g., a `useMasterLabel: boolean`?**
+A boolean flag would duplicate the information already implied by
+"labelI18nKey explicitly says 'no i18n key'". Three-state nullable
+field is the minimum surface area for the same semantics.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/SketchStencil.tsx` | `labelI18nKey` type widened to nullable; resolver branches on `=== null`; 4 dynamic ref factories pass `labelI18nKey: null` |
+
+**Verification:**
+- tsc clean; viewer vitest 563 passed.
+- Browser: ServiceDetail modal stencil on banas-imported renders
+  Admin / Bana / Hero / Fan / Bartender / 3rd party / 미용사 (Actors
+  section), Mission, 관용 (Tolerance) / 지지 (Support) / 유머 /
+  공감 / 다양성, Tone & Manner — every preset shows its master's
+  real name.
+
+**Approval:** Accepted by user, 2026-05-26 — direct bug report
+*"왜 심볼이 제대로 안나오는거죠?"*; fix shipped same session.
+
+**Cross-refs:**
+- D-2026-05-26-D (modal self-containment that surfaced the bug).
+- v0.14.11 (original `labelI18nKey` introduction with the comment
+  that described the now-implemented behaviour).
+
+---
+
+### D-2026-05-26-F — ServiceDetail modal traps interaction via `inert` (v0.27.2)
+
+**Context:** Same session 2026-05-26. User reported:
+
+> *"서비스 디테일 모달 뜰 때 다른거 동작안되게 해야죠."*
+
+In v0.27.1 the modal was mounted inside the canvas container
+(D-2026-05-26-B) with `absolute inset-0` covering only the canvas
+region. The header / tab bar / main sidebar (PROJECTS list, SESSION
+TAGS, Services stencil, LanguageToggle, Help button, project
+inspector, etc.) all remained click-reachable + keyboard-reachable
+while the modal was up. A misclick on the sidebar could change
+projects or canvas tabs *behind* the open modal.
+
+**Decision:**
+
+1. **Mount the modal as a sibling of the main app `<div>`, not
+   inside it.** This re-locates the modal one level above where
+   D-2026-05-26-B placed it (the v0.27.0 → v0.27.1 mount inside the
+   canvas container was a valid stop along the way; this is the
+   correction).
+2. **Modal returns to `fixed inset-0`** (was `absolute inset-0`).
+   The inner panel returns to `h-[92vh] w-[94vw]` (was parent-%).
+3. **Root app `<div>` carries the HTML `inert` attribute whenever
+   `modalOpen` is true.** `inert` is the standard a11y primitive
+   for "this subtree is interaction-disabled": clicks bubble nowhere,
+   focus skips the subtree, keyboard events do not reach it,
+   ARIA/screen readers honour it. The modal sits OUTSIDE the inert
+   subtree so it remains fully interactive.
+4. **No focus-trap library, no custom keyboard handlers, no
+   pointer-events CSS hack.** `inert` is one HTML attribute and
+   does the entire job in one place.
+
+**Why move the mount back up?** D-2026-05-26-B moved the modal
+*into* the canvas container so the sidebar would stay visible (the
+v0.26.x `fixed inset-0` covered it). With v0.27.1's self-contained
+stencil column the modal no longer needs the outer sidebar for
+its controls, so the v0.26.x containment motivation is moot. The
+honest framing: D-2026-05-26-B / D were transitional decisions
+between "no self-contained modal" and "self-contained modal with
+hard interaction boundary"; this entry completes the arc.
+
+**Why `inert` instead of pointer-events / focus-trap / custom CSS?**
+- `pointer-events: none` only blocks pointer; keyboard + focus
+  still leak through.
+- A focus-trap library (e.g. focus-trap-react) adds a dependency
+  and only handles focus, not pointer.
+- `inert` has been baseline-supported across Chrome / Safari /
+  Firefox since 2023 — Plot's target browsers all support it.
+- The implementation is literally one conditional attribute:
+  ```jsx
+  <div {...(modalOpen ? { inert: "" } : {})}>
+  ```
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/App.tsx` | `modalOpen` derived; root `<div>` carries `inert` when true; modal mount block moved from inside canvas container to root-sibling; wrapping fragment added |
+| `viewer/src/shell/ServiceDetailModal.tsx` | `absolute` → `fixed`; inner panel size `h-[92%] w-[94%]` → `h-[92vh] w-[94vw]` (viewport-relative again) |
+
+**Verification:**
+- tsc clean; viewer vitest 563 passed.
+- Browser:
+  - Open Login modal — `document.querySelector('div.flex.h-screen').hasAttribute('inert')` returns `true`.
+  - Try to click main sidebar item ("Banas v0.13" project switch) — no effect.
+  - Try to press the Actors tab — no effect.
+  - ESC closes modal — inert removed; main app fully interactive again; Services canvas (Banas → Auth → Login) intact.
+
+**Approval:** Accepted by user, 2026-05-26 — direct demand quoted
+above.
+
+**Cross-refs:**
+- D-2026-05-26-B (modal mount moved into canvas container —
+  superseded by this entry).
+- D-2026-05-26-D (self-contained modal stencil — load-bearing
+  prerequisite; without it the modal would lose access to its
+  drag sources when the outer sidebar becomes inert).
+- D-2026-05-26-E (sibling bug fix in the same patch).

@@ -246,8 +246,18 @@ export function App() {
     );
   }
 
+  const modalOpen = phase === "ready" && !!detailServiceId && !!detailCanvas && !!detailCanvasKey && !!activeId;
+
   return (
-    <div className="flex h-screen min-h-screen flex-col">
+    <>
+    <div
+      className="flex h-screen min-h-screen flex-col"
+      // v0.27.2 (D-2026-05-26-F) — when the ServiceDetail modal is
+      // open, the rest of the app is inert: no clicks, no focus, no
+      // drag, no keyboard. The modal sits OUTSIDE this div (sibling
+      // below) so inert does not cascade into it.
+      {...(modalOpen ? { inert: "" as unknown as undefined } : {})}
+    >
       <Header
         projectPath={projectPath}
         error={error}
@@ -359,65 +369,54 @@ export function App() {
               />
               );
             })()}
-            {/* v0.12 — Service detail modal overlays the canvas. v0.26.4 (D-2026-05-26-B) — mounted inside the canvas container so the sidebar stays usable. */}
-            {phase === "ready" && detailServiceId && detailCanvas && detailCanvasKey && activeId && (() => {
-              const servicesCanvas = canvasCache.get("services");
-              const servicesNodes = servicesCanvas?.nodes ?? [];
-              const servicesEdges = servicesCanvas?.edges ?? [];
-              const svcNode = servicesNodes.find((n) => n.id === detailServiceId);
-              // v0.12.6 — surface the parent category so the modal header
-              // carries drill context. v0.26.0 (D-2026-05-25-A): parent is
-              // now the source of the first incoming directed edge.
-              const categoryId = svcNode ? parentIdOf(servicesEdges, svcNode.id) : null;
-              const categoryNode = categoryId
-                ? servicesNodes.find((n) => n.id === categoryId)
-                : undefined;
-              return (
-              <ServiceDetailModal
-                serviceLabel={svcNode?.label ?? detailServiceId}
-                categoryLabel={categoryNode?.label ?? null}
-                onClose={backToOverview}
-                stencilSlot={<ServiceDetailStencilPanel availableActors={availableActors} availableMissions={availableMissions} availableValues={availableValues} availableIdentities={availableIdentities} />}
-              >
-                <ServiceDetailCanvas
-                  key={`${activeId}:${detailCanvasKey}`}
-                  doc={detailCanvas}
-                  onDocChange={(next) => {
-                    applyEdit(detailCanvasKey, detailCanvas, next);
-                  }}
-                  onUndo={handleUndo}
-                  onRedo={handleRedo}
-                  canUndo={history.canUndo}
-                  canRedo={history.canRedo}
-                  projectPath={projectPath ?? ""}
-                  projectId={activeId}
-                  availableActors={availableActors}
-                  availableMissions={availableMissions}
-                  availableValues={availableValues}
-                  availableIdentities={availableIdentities}
-                  selectNodeId={null}
-                  onSelectionConsumed={() => {}}
-                  onNodeDrill={(id) => {
-                    const n = detailCanvas.nodes.find((x) => x.id === id);
-                    if (n?.kind === "actor_ref" && n.ref_actor_id) {
-                      jumpToActor(n.ref_actor_id);
-                    }
-                  }}
-                  onPublishNode={(id) => {
-                    void handlePublishNode(detailCanvasKey, id);
-                  }}
-                  onUnpublishNode={(id) => {
-                    if (!detailCanvasKey) return;
-                    void handleUnpublishNode(detailCanvasKey, id);
-                  }}
-                />
-              </ServiceDetailModal>
-              );
-            })()}
           </div>
         </main>
       </div>
     </div>
+    {/* v0.27.2 (D-2026-05-26-F) — modal sits OUTSIDE the inert root
+        div so the user can still interact with it. fixed inset-0
+        covers the whole viewport; everything behind it is inert. */}
+    {modalOpen && (() => {
+      const servicesCanvas = canvasCache.get("services");
+      const servicesNodes = servicesCanvas?.nodes ?? [];
+      const servicesEdges = servicesCanvas?.edges ?? [];
+      const svcNode = servicesNodes.find((n) => n.id === detailServiceId);
+      const categoryId = svcNode ? parentIdOf(servicesEdges, svcNode.id) : null;
+      const categoryNode = categoryId ? servicesNodes.find((n) => n.id === categoryId) : undefined;
+      return (
+        <ServiceDetailModal
+          serviceLabel={svcNode?.label ?? detailServiceId!}
+          categoryLabel={categoryNode?.label ?? null}
+          onClose={backToOverview}
+          stencilSlot={<ServiceDetailStencilPanel availableActors={availableActors} availableMissions={availableMissions} availableValues={availableValues} availableIdentities={availableIdentities} />}
+        >
+          <ServiceDetailCanvas
+            key={`${activeId}:${detailCanvasKey}`}
+            doc={detailCanvas!}
+            onDocChange={(next) => applyEdit(detailCanvasKey!, detailCanvas!, next)}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={history.canUndo}
+            canRedo={history.canRedo}
+            projectPath={projectPath ?? ""}
+            projectId={activeId!}
+            availableActors={availableActors}
+            availableMissions={availableMissions}
+            availableValues={availableValues}
+            availableIdentities={availableIdentities}
+            selectNodeId={null}
+            onSelectionConsumed={() => {}}
+            onNodeDrill={(id) => {
+              const n = detailCanvas!.nodes.find((x) => x.id === id);
+              if (n?.kind === "actor_ref" && n.ref_actor_id) jumpToActor(n.ref_actor_id);
+            }}
+            onPublishNode={(id) => { void handlePublishNode(detailCanvasKey!, id); }}
+            onUnpublishNode={(id) => { if (detailCanvasKey) void handleUnpublishNode(detailCanvasKey, id); }}
+          />
+        </ServiceDetailModal>
+      );
+    })()}
+    </>
   );
 }
 

@@ -859,13 +859,20 @@ Per the [`SketchStencil`](../viewer/src/canvases/SketchStencil.tsx)
 Each ref preset is generated from its master so dropping it skips
 the picker — the resulting node carries `ref_*_id` already.
 
-## Modal structure (D-2026-05-26-D)
+## Modal structure (D-2026-05-26-D, D-2026-05-26-F)
 
 The ServiceDetail modal is **self-contained**: it owns its own left
 stencil column. The main app sidebar does *not* swap to the
 `service_detail` stencil when the modal is open; the modal owns its
-own controls so the main canvas's sidebar stays in its own context
-underneath the backdrop.
+own controls.
+
+**Interaction trap (v0.27.2, D-2026-05-26-F):** while the modal is
+open the root app `<div>` carries the HTML `inert` attribute — no
+clicks, no focus, no keyboard reach the main canvas / sidebar /
+header / tabs. The modal sits OUTSIDE the inert subtree (sibling of
+the root `<div>`) so it remains fully interactive. Modal returns to
+`fixed inset-0` (was `absolute inset-0` in v0.27.0–v0.27.1, when
+containment-by-canvas was the trap mechanism).
 
 ```
 ┌─────────────────────────────── Service Detail · Auth › Login   [×] ┐
@@ -888,12 +895,12 @@ Implementation:
 - `viewer/src/shell/ServiceDetailStencilPanel.tsx` — `w-56` aside
   that renders `<SketchStencil canvas="service_detail" />` with the
   four `available*` master lists.
-- `viewer/src/shell/ServiceDetailModal.tsx` — body is now a 2-column
+- `viewer/src/shell/ServiceDetailModal.tsx` — body is a 2-column
   flex (`stencilSlot` prop on the left, `children` on the right).
-  Inner panel sized at `h-[92%] w-[94%]` relative to the canvas
-  container per [D-2026-05-26-B](./DECISIONS.md).
-- `viewer/src/App.tsx` — `stencilCanvas={activeTab}` always; no
-  longer swaps to `"service_detail"` when the modal opens.
+  `fixed inset-0` + inner panel `h-[92vh] w-[94vw]` (v0.27.2).
+- `viewer/src/App.tsx` — `stencilCanvas={activeTab}` always; modal
+  mounts as root-level sibling; root `<div>` is `inert` when modal
+  is open.
 
 ESC / backdrop click / × close paths unchanged.
 
