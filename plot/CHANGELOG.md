@@ -4,6 +4,35 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.5] — 2026-05-26
+
+### Fixed
+
+- **Root-service `▾` fold button hid every other node on the
+  ServiceDetail canvas** ([D-2026-05-26-I](./docs/DECISIONS.md#d-2026-05-26-i--root-service-suppresses-its-fold-button-on-servicedetail-v0275)).
+  User report: *"오 서비스 디테일에서 노드 움직이니까 그냥 사라진다.
+  모든 노드가 없어져버린다."*
+- Diagnosis: with v0.27.3's visible root-service + the seeded demo
+  graph where every node descends from the root via directed
+  edges, clicking the root's fold button (small `▾` next to the
+  label, easy to hit while reaching for the node body) collapsed
+  the entire subtree — i.e. emptied the whole canvas. The user
+  experienced this as "nodes vanish when I move things" because
+  the click target was right next to the drag handle.
+- Resolution: `useNodesMemo` suppresses the fold button on any
+  node where `kind === "service" && is_root === true`. Other
+  containers (`category`, sub-services, `actor` with sub-actors,
+  `step` with composition children, …) keep their fold buttons
+  — only the root-service (whose entire purpose IS the canvas)
+  loses its fold affordance.
+
+### Verification
+
+- Viewer vitest 563 passed; tsc clean.
+- Browser: `[data-id="n_mpkyhvsj_mjzh"] button` count = 0 (was 1
+  showing `▾`); all 14 descendant nodes stay visible while the
+  user interacts with the root-service node.
+
 ## [0.27.4] — 2026-05-26
 
 ### Fixed

@@ -182,7 +182,15 @@ export function useNodesMemo({
           onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
           // v0.15 Phase 3.4: per-canvas opt-in. Foundation lays pillars
           // out as peers and passes false; everywhere else passes true.
-          showFold: showFoldButton,
+          // v0.27.5 (D-2026-05-26-I): the root-service node on the
+          // ServiceDetail canvas is the design *subject*; folding it
+          // hides every descendant, which empties the canvas wholesale
+          // and reads to the user as "the nodes just vanished when I
+          // touched the centre node." Suppress the fold button on
+          // ``service && is_root`` regardless of the wrapper-level
+          // ``showFoldButton`` opt-in. Other service / category /
+          // actor / step containers keep their fold buttons.
+          showFold: showFoldButton && !(n.kind === "service" && n.is_root),
           mdWarnings: n._md_warnings,
         },
       });

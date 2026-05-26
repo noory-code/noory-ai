@@ -7495,3 +7495,78 @@ the autonomous diagnose-and-fix path.
 - D-2026-05-26-G (root-service visible — load-bearing for why an
   empty canvas was *especially* surprising; the user expected to
   see the demo graph immediately after reload).
+
+---
+
+### D-2026-05-26-I — Root-service suppresses its fold button on ServiceDetail (v0.27.5)
+
+**Context:** Same session 2026-05-26. After D-2026-05-26-G made
+the root-service node visible at the centre of the ServiceDetail
+canvas, the user reported:
+
+> *"오 서비스 디테일에서 노드 움직이니까 그냥 사라진다."*
+> *"모든 노드가 없어져버린다."*
+
+Repro: clicking the `▾` button rendered on the root-service node
+(rendered because `showFoldButton={true}` on the wrapper +
+`hasChildren=true` since every demo node descends from root via
+directed edges) flipped `collapsed: true`, which caused
+`useNodesMemo`'s `nearestCollapsedAncestor` check to filter every
+descendant out of the rendered node list. Result: 14-of-15 nodes
+disappear, leaving only the root.
+
+The user's mental model — "I moved a node, then nodes vanished"
+— is faithful: the `▾` button sits next to the drag handle area,
+small enough to be clicked accidentally while reaching for the
+node body. Once collapsed, dragging the (still-visible) root
+node looks like the trigger of the disappearance.
+
+**Decision:**
+
+Suppress the fold button on the root-service node. The root-service
+IS the canvas — folding it serves no user goal (it just empties
+the canvas wholesale). Other containers on ServiceDetail
+(categories, sub-services, actor refs with sub-actors, step nodes
+with composition children) keep their fold buttons unchanged.
+
+```ts
+// useNodesMemo.ts
+showFold: showFoldButton && !(n.kind === "service" && n.is_root),
+```
+
+**Why scope to `service && is_root` and not "any root"?**
+`is_root` already exists on multiple kinds (a top-level actor on
+the Actors canvas has it; the synthetic anchor never carries it).
+The harm — fold collapses the entire canvas — is specific to the
+ServiceDetail root because every other node descends from it. On
+Actors, top-level actors are siblings; folding one only hides its
+own sub-actors, which is the intended behaviour.
+
+**Why not remove fold entirely from ServiceDetail?** The user may
+legitimately fold a category subtree, an actor's sub-actors, or a
+step's composition children to declutter the canvas. Those flows
+stay.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/sketch/useNodesMemo.ts` | `showFold` resolution now ANDs `!(n.kind === "service" && n.is_root)`; comment records D id |
+
+**Verification:**
+- Viewer vitest 563 passed; tsc clean.
+- Browser (banas-imported / Login modal): DOM probe confirms
+  `[data-id="n_mpkyhvsj_mjzh"] button` count = 0 (was 1). All 14
+  descendant nodes stay visible while the user interacts with
+  the root.
+
+**Approval:** Accepted by user, 2026-05-26 — direct bug report
+*"노드 움직이니까 그냥 사라진다. 모든 노드가 없어져버린다. 버그가
+많네"*; fix shipped within the same session.
+
+**Cross-refs:**
+- D-2026-05-26-G (root-service visible — load-bearing: the bug
+  could not surface before this entry shipped the visible root).
+- v0.15 Phase 3.4 (introduced `showFoldButton` per-wrapper opt-in
+  — this entry narrows the case-by-case render gate one layer
+  deeper).
