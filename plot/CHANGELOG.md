@@ -4,6 +4,81 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.9] — 2026-05-27
+
+### Fixed (real root cause — v0.27.7/8 chased a wrong hypothesis)
+
+- **Nodes no longer turn `visibility: hidden` on drag / stencil drop**
+  ([D-2026-05-27-D](./docs/DECISIONS.md#d-2026-05-27-d--rf-createnodeinternals-loses-dimensions-without-top-level-width-on-prop-nodes-v0279)).
+  User report: dragging a node *or* dropping a new node from the
+  stencil → every other node disappears. v0.27.7's useCallback hoist
+  did not fix it (mount/remount hypothesis was wrong); chrome-devtools
+  MCP measurement of the user's real Chrome — via React fiber direct
+  access to RF's zustand store + a `subscribe` probe on
+  `nodeInternals` — confirmed: SketchCanvas mount count stays 6,
+  `useNodesInitialized` never flips, but `nodeInternals.width /
+  height / handleBounds` go to `undefined` for 48/48 entries on every
+  `setNodes` call. Source-level confirmation: RF v11's
+  `createNodeInternals` (`@reactflow/core/dist/esm/index.js:1463`)
+  builds `internals = { ...node, positionAbsolute }` into a brand-new
+  `Map` and only carries `handleBounds` forward; width/height come
+  ONLY from the prop node's top-level keys. ResizeObserver eventually
+  measures and refills nodeInternals, but the next doc change wipes
+  it again — under drag/onDocChange burst the measure cycle never
+  catches up.
+
+- **Fix:** `useNodesMemo` now emits `width` and `height` as top-level
+  keys on every node it pushes (including the synthetic project
+  anchor), not only under `style: { width, height }`. RF
+  `createNodeInternals` now carries dimensions through every
+  `setNodes` call.
+
+- **Verification (fiber-level + invariant pin):**
+  - 60-frame fiber-direct `onNodesChange` burst → `nodeInternals`
+    `undef.width=0/53`, `visibility:hidden=0/53` (was 48/48
+    immediately on the pre-fix code).
+  - `structural-guards.test.tsx` Contract 5 (`RF nodeInternals.width
+    invariant`) red→green: walks every `out.push({...})` /
+    `out.unshift({...})` in `useNodesMemo` and asserts both `width`
+    and `height` appear as top-level keys.
+
+### Honest correction
+
+- **v0.27.7 (`D-2026-05-27-B`) and v0.27.8 (`D-2026-05-27-C`) shipped
+  a fix and a guard based on a *wrong root-cause hypothesis*** —
+  "SketchCanvas remounts under drag, which resets
+  `useNodesInitialized` and cancels the fitView fallback." Real
+  measurement (this session, chrome-devtools MCP) refutes both
+  claims: mount delta = 0 across drag, `useNodesInitialized` flip
+  delta = 0. The useCallback hoist + Gate 1.5 (TDD) + Contract 4
+  (inline-arrow ban) stay — they are correct best-practice in their
+  own right — but they did not fix the visibility:hidden bug. Marked
+  as **Superseded by D-2026-05-27-D** in DECISIONS.md.
+
+### Honest limitations / follow-ups (separate from this fix)
+
+- **500 error on `GET .../nodes/demo_inter_publish/published`** — the
+  demo nodes ServiceDetailCanvas injects (the "Login" template
+  starter graph) have no storage row; the publish-version endpoint
+  returns 500. Filed as a follow-up server-side fix (skip / 404 for
+  demo IDs).
+- **Root service `n_mpmrphpa_zs8v` moved to `_archive/`** during this
+  session's chrome-devtools probing. Cause not yet traced (likely
+  `D-2026-05-25-A` `sync.archived` triggered when our injected
+  `onNodesChange` bursts hit an edge case). Filed as a follow-up
+  data-loss investigation.
+- **Node-count growth (25 → 48 → 53)** in `plot-test-v013/.plot/banas-imported/services/`
+  is the user's own stencil drops during the bug-hunt session, not
+  test pollution. No data action needed; user can manually delete.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 570 / 570 pass (569 + new Contract 5).
+- chrome-devtools MCP on the user's real Chrome — fiber-direct
+  60-frame `onNodesChange` burst → 0/53 hidden (matches the
+  pre-fix's 48/48 hidden on every burst).
+
 ## [0.27.8] — 2026-05-27
 
 ### Added

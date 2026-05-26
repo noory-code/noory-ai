@@ -7749,7 +7749,19 @@ log lines we'd have shipped another CSS bandaid.
 
 ---
 
-### D-2026-05-27-B — Canvas / ServiceDetailCanvas prop callbacks hoisted to `useCallback` (v0.27.7)
+### D-2026-05-27-B — Canvas / ServiceDetailCanvas prop callbacks hoisted to `useCallback` (v0.27.7) — **SUPERSEDED by D-2026-05-27-D**
+
+> **2026-05-27 correction:** the root-cause hypothesis below
+> ("SketchCanvas remounts under drag → useNodesInitialized resets →
+> fitView fallback cancelled → visibility:hidden lock") was **wrong**.
+> Real measurement on the user's Chrome (chrome-devtools MCP fiber probe
+> + zustand `subscribe`) showed mount-count delta 0, useNodesInitialized
+> flip delta 0 across drag. The visibility:hidden lock came from RF's
+> `createNodeInternals` losing dimensions because `useNodesMemo` emitted
+> width/height only under `style`, not at top level. **See D-2026-05-27-D
+> for the real fix.** The useCallback hoist below stays because stable
+> JSX prop identity is correct best-practice — but it did not fix the
+> drag-vanish bug.
 
 **Context:** Following the two-MCP debug workflow from D-2026-05-27-A,
 the assistant observed in the user's real Chrome:
@@ -7757,10 +7769,14 @@ the assistant observed in the user's real Chrome:
 - 22 modal-canvas nodes all `visibility: hidden` mid-drag (DOM
   present, layout correct);
 - 4 `[DIAG SketchCanvas MOUNT]` lines + 2 `UNMOUNT` lines fired
-  during a single drag gesture;
+  during a single drag gesture (this turned out to be StrictMode's
+  dev-mode double-mount cycle on initial render, **not** a per-drag
+  remount; later measurement with `__probeMounts` showed the count
+  stays at 6 across an entire drag gesture);
 - `useNodesInitialized` flipped back to false on every remount,
   cancelling the 300 ms `fitView` fallback (D-2026-05-26-H) before
-  it could un-hide the nodes.
+  it could un-hide the nodes. (**Also wrong in retrospect** — flip
+  count is 0 across drag.)
 
 User's diagnosis (correct):
 
@@ -7945,3 +7961,179 @@ the moment the user confirms after seeing v0.27.8 land.
 - D-2026-05-12-F (the structural-guards.test.tsx contract host).
 - Global `~/.claude/CLAUDE.md` `methodology: 테스트 없이 구현 먼저
   작성 금지` — the rule Plot's Gate 1.5 makes explicit.
+
+---
+
+### D-2026-05-27-D — RF `createNodeInternals` loses dimensions without top-level `width` on prop nodes (v0.27.9)
+
+**Context:** User flagged after v0.27.7 / v0.27.8 ship: *"버그는 그대로다"*
++ *"새로운 노드 캔버스에 계속 올리면 자꾸 사라지잖아요"*. The
+useCallback hoist (D-2026-05-27-B) and the inline-arrow guard
+(D-2026-05-27-C) did not change user-visible behaviour.
+
+**Real measurement that overturned the prior hypothesis** —
+chrome-devtools MCP attached to the user's real Chrome, plus a
+React-fiber walking probe that opened RF v11's zustand store and
+subscribed to `nodeInternals` mutations:
+
+| Metric across a single user drag of one modal-canvas node | Pre-fix |
+|---|---|
+| SketchCanvas mount count delta | **0** (StrictMode initial cycle only) |
+| `useNodesInitialized` flip delta | **0** |
+| RF `nodeInternals.size` | 48 (stable) |
+| **`nodeInternals.width` `undefined` count** | **48 / 48** (after each setNodes call) |
+| Inline `visibility: hidden` on modal nodes | **48 / 48** |
+
+The store-subscribe log showed `nodeInternals` mutating 6+ times
+during one drag: each mutation went `hasW=0 → hasW=1 (ResizeObserver
+caught up) → hasW=0 (next setNodes wiped it) → …` and the measure
+cycle never caught up under burst — every node stays
+`visibility: hidden` until the drag stops AND the dust settles AND
+the ResizeObserver finishes measuring AND no other doc change
+arrives mid-measure (which, under drag, never holds).
+
+Source-level trace pointed at the smoking gun
+(`@reactflow/core/dist/esm/index.js:1463`):
+
+```js
+function createNodeInternals(nodes, nodeInternals, ...) {
+  const nextNodeInternals = new Map();          // brand-new Map every call
+  nodes.forEach((node) => {
+    const currInternals = nodeInternals.get(node.id);
+    const internals = {
+      ...node,                                  // ← width comes ONLY from prop node's top-level
+      positionAbsolute: {...},
+    };
+    Object.defineProperty(internals, internalsSymbol, {
+      value: {
+        handleBounds: resetHandleBounds ? undefined : currInternals?.[internalsSymbol]?.handleBounds,
+        z,
+      },
+    });
+    nextNodeInternals.set(node.id, internals);   // overwrites entire entry
+  });
+}
+```
+
+RF v11's `setNodes` calls `createNodeInternals` to rebuild the
+`nodeInternals` Map from scratch on every prop change. The only
+keys it carries forward from the previous nodeInternals are
+`handleBounds` (and only when `node.type` is unchanged). **Width
+and height are NOT carried forward — they must come from the prop
+node's own top-level `width` / `height`.** Pre-fix `useNodesMemo`
+emitted both only under `style: { width, height }`, never as
+top-level keys, so every setNodes call wiped them.
+
+`NodeWrapper.tsx`'s visibility decision (also in the same RF dist
+file) reads `nodeInternals.get(id).width` directly; undefined ⇒
+`visibility: hidden`. So under any burst of doc changes (drag
+60 fps, stencil drop bursts, auto-layout, WS echo cascade), the
+ResizeObserver can never refill the wiped dimensions before the
+next setNodes call wipes them again. Permanent visual disappearance,
+data intact.
+
+**Decision:**
+
+`useNodesMemo` now emits `width` and `height` as top-level keys
+on every node it pushes — both the main `out.push({...})` block
+and the synthetic-anchor `out.unshift({...})` block. The pre-existing
+`style: { width, height }` is kept as well so external CSS-driven
+sizing keeps working; both layers are now in sync.
+
+```ts
+out.push({
+  id: n.id,
+  type: n.kind,
+  position: { x: n.x, y: n.y },
+  width: n.width,                // ← v0.27.9 — top-level for RF createNodeInternals
+  height: n.height,              // ← v0.27.9
+  style: { width: n.width, height: n.height },
+  data: { ... },
+});
+```
+
+**Test pin (Contract 5 in `structural-guards.test.tsx`):**
+
+The new `RF nodeInternals.width invariant (D-2026-05-27-D)` test
+walks every `out.push({...})` and `out.unshift({...})` block in
+`useNodesMemo.ts`, parses brace-depth-tracked top-level keys, and
+asserts both `width` and `height` appear at depth 1 (not nested
+inside `data` or `style`). Red-Green ritual: removed the new
+top-level keys → test failed with "top-level 'width' missing in
+out.push/unshift block"; added them back → test passed. Future
+regressions that bury width back inside `style` only will fail at
+build time with a pointer to this D-entry.
+
+**Verification on the user's real Chrome** (fiber-direct
+60-frame `onNodesChange` burst — same path as a real 60 fps drag):
+
+| Metric | Pre-fix burst | Post-fix burst |
+|---|---|---|
+| `nodeInternals` size | 53 | 53 |
+| `nodeInternals.width === undefined` count | 48 / 53 | **0 / 53** |
+| Inline `visibility:hidden` node count | 48 / 53 | **0 / 53** |
+
+**Alternatives considered:**
+
+1. **Stabilise `useNodesMemo` output identity per node** (cache
+   nodes by id, only emit a new object when the underlying doc
+   node changed). Would also work in theory but is a much bigger
+   refactor and introduces a node-cache invalidation surface that
+   has its own correctness costs. Rejected as YAGNI now that the
+   top-level width/height carry the load.
+2. **Hoist `<ReactFlowProvider>` above SketchCanvas** (D-2026-05-27-B
+   "Decision 2", deferred at the time). Would not have helped —
+   the bug is not a remount; it's RF's `setNodes` reconciliation.
+   Confirmed rejected by post-hoc measurement.
+
+**Honest correction to the record:**
+
+D-2026-05-27-B and D-2026-05-27-C are explicitly **superseded**
+by this entry for the drag-vanish bug. The work they shipped —
+useCallback hoist on App.tsx Canvas slots + Gate 1.5 (TDD) +
+Contract 4 (inline-arrow ban) — stays in the codebase because
+those are independently correct best-practices that the next
+real prop-identity regression would have demanded. But they did
+not fix what the user saw. Pinning the wrong hypothesis with
+infrastructure (Gate 1.5, Contract 4) before validating the
+hypothesis was itself a Gate 1.5 violation: the test guarded a
+*candidate cause*, not the *actual cause*. Lesson recorded for
+the next session: **a guard that catches a hypothesised regression
+is not the same as a guard that catches the actual regression.**
+
+**Spec impact:**
+
+- `docs/ARCHITECTURE.md` Contracts table gains one row:
+  *"`useNodesMemo` emits top-level `width` + `height` on every
+  pushed node (including the synthetic anchor)."* — backed by
+  `structural-guards.test.tsx` Contract 5.
+
+**Honest limitations / follow-ups (separate from this fix):**
+
+- **500 error on `GET .../nodes/demo_inter_publish/published`** —
+  ServiceDetailCanvas injects demo nodes (`demo_actor_hero`,
+  `demo_inter_meet`, …) into a freshly-opened modal for users
+  with no edits yet. These have no storage row, so the
+  publish-version endpoint returns 500. Filed as a follow-up
+  server-side fix (skip / 404 for demo IDs).
+- **Root service `n_mpmrphpa_zs8v` moved to `services/_archive/`
+  during chrome-devtools probing** (mtime 02:29 in plot-test-v013).
+  Cause not yet traced (likely `D-2026-05-25-A`'s `sync.archived`
+  path triggered when our injected `onNodesChange` bursts hit an
+  edge case). Filed as a follow-up data-loss investigation.
+
+**Approval:** Pending — user-driven via the
+*"잘테니까 고쳐놔라 테스트돌리면서 싹다 고쳐놔라"* + *"난 잔다"*
+correction transcript (2026-05-27 session). Will flip to
+Accepted on user confirmation that drag and stencil-drop no longer
+hide other nodes.
+
+**Cross-refs:**
+- D-2026-05-27-B (the wrong hypothesis this entry supersedes).
+- D-2026-05-27-C (the guard pinning a wrong-hypothesis fix; still
+  valid as a generic best-practice guard).
+- D-2026-05-27-A (the two-MCP debug workflow + DIAG plant points;
+  validated end-to-end this session by reaching the real root
+  cause via chrome-devtools fiber probe).
+- D-2026-05-26-H (the 300 ms fitView fallback — defends a
+  different vector and remains useful in its own right).

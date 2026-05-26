@@ -305,3 +305,97 @@ describe("hot-path JSX prop stability (D-2026-05-27-B/C)", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------
+// Contract 5: useNodesMemo emits top-level width/height on every node
+//   (D-2026-05-27-D: RF v11 ``createNodeInternals`` (in
+//    @reactflow/core/dist/esm/index.js:1463) builds ``internals = { ...node, positionAbsolute }``
+//    and stores it in a brand-new Map on every ``setNodes`` call.  The
+//    only place ``internals.width`` / ``internals.height`` come from is
+//    the prop node's top-level keys — they are NOT preserved from the
+//    previous nodeInternals entry.  ResizeObserver eventually measures
+//    and re-fills nodeInternals, but every subsequent doc change wipes
+//    it again, so under drag/stencil-drop burst the measure cycle never
+//    catches up and NodeWrapper renders ``visibility: hidden`` forever.
+//    The fix is to emit ``width`` and ``height`` as top-level keys on
+//    every node useNodesMemo pushes — including the synthetic anchor —
+//    so createNodeInternals can preserve them across setNodes calls.
+//    This Contract pins that invariant.)
+// ---------------------------------------------------------------------
+
+describe("RF nodeInternals.width invariant (D-2026-05-27-D)", () => {
+  it("every `out.push({...})` / `out.unshift({...})` in useNodesMemo includes top-level width + height", () => {
+    const src = stripComments(
+      readFileSync(resolve(SRC, "canvases/sketch/useNodesMemo.ts"), "utf8"),
+    );
+
+    // Walk the source manually with brace-depth tracking so we can find
+    // each `out.push({ ... })` / `out.unshift({ ... })` block and grab
+    // ONLY its top-level keys (skipping `data: { width, ... }` nested
+    // matches that are not what RF createNodeInternals reads).
+    const blocks: string[] = [];
+    const callPattern = /out\.(push|unshift)\(\{/g;
+    let m: RegExpExecArray | null;
+    while ((m = callPattern.exec(src)) !== null) {
+      const start = m.index + m[0].length - 1; // position at the opening `{`
+      let depth = 0;
+      let i = start;
+      while (i < src.length) {
+        const ch = src[i];
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth === 0) break;
+        }
+        i++;
+      }
+      blocks.push(src.slice(start, i + 1));
+    }
+
+    expect(blocks.length, "useNodesMemo must contain at least one out.push/unshift").toBeGreaterThan(0);
+
+    // For each block, parse top-level keys (depth 1 inside the outer `{}`).
+    for (const block of blocks) {
+      const topLevelKeys: string[] = [];
+      let depth = 0;
+      let buf = "";
+      for (let i = 0; i < block.length; i++) {
+        const ch = block[i];
+        if (ch === "{") depth++;
+        if (ch === "}") depth--;
+        if (depth === 1 && ch !== "{") {
+          buf += ch;
+        }
+        if (depth === 1 && (ch === "," || (ch === "{" && i === 0))) {
+          // commit buf — extract key
+          const keyMatch = buf.match(/(\w+)\s*:/g);
+          if (keyMatch) {
+            for (const k of keyMatch) {
+              const name = k.replace(/[:\s]/g, "");
+              if (!topLevelKeys.includes(name)) topLevelKeys.push(name);
+            }
+          }
+          buf = "";
+        }
+      }
+      // final flush
+      const finalMatch = buf.match(/(\w+)\s*:/g);
+      if (finalMatch) {
+        for (const k of finalMatch) {
+          const name = k.replace(/[:\s]/g, "");
+          if (!topLevelKeys.includes(name)) topLevelKeys.push(name);
+        }
+      }
+
+      const snippet = block.slice(0, 240).replace(/\s+/g, " ");
+      expect(
+        topLevelKeys,
+        `top-level "width" missing in out.push/unshift block (RF createNodeInternals reads only top-level width). Block: ${snippet}…`,
+      ).toContain("width");
+      expect(
+        topLevelKeys,
+        `top-level "height" missing in out.push/unshift block. Block: ${snippet}…`,
+      ).toContain("height");
+    }
+  });
+});

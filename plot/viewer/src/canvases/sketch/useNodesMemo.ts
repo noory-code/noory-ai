@@ -162,6 +162,13 @@ export function useNodesMemo({
         // to the per-kind renderer. Replaces the v0.14 "sketch" god type.
         type: n.kind,
         position: { x: n.x, y: n.y },
+        // v0.27.9 (D-2026-05-27-D) — RF v11's createNodeInternals reads
+        // dimensions ONLY from the prop node's top-level width/height.
+        // Without these, every setNodes call wipes nodeInternals.width
+        // and NodeWrapper renders visibility:hidden until ResizeObserver
+        // catches up — under drag/onDocChange burst it never does.
+        width: n.width,
+        height: n.height,
         style: { width: n.width, height: n.height },
         data: {
           label: visualLabel,
@@ -205,6 +212,11 @@ export function useNodesMemo({
         // v0.15 Phase 3.5 — synthetic anchor uses the ProjectNode renderer.
         type: "project",
         position: { x: projectAnchor.x, y: projectAnchor.y },
+        // v0.27.9 (D-2026-05-27-D) — top-level width/height for RF
+        // createNodeInternals; see the matching comment above on the
+        // main out.push block.
+        width: projectAnchor.width,
+        height: projectAnchor.height,
         style: { width: projectAnchor.width, height: projectAnchor.height },
         data: {
           label: projectName ?? "Project",

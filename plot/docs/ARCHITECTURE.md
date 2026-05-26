@@ -99,6 +99,7 @@ entry.
 | No god dispatch (`switch (X.kind)`) in wrappers / SketchCanvas / BaseNode / BaseInspector / KindInspector / DetailsSection / App.tsx / sketch hooks | `structural-guards.test.tsx` | [D-2026-05-12-F](./DECISIONS.md) |
 | File LOC fits the ceiling table in `CLAUDE.md §Gate 2` | `structural-guards.test.tsx` | [D-2026-05-12-F](./DECISIONS.md) |
 | Prop callbacks passed to a Canvas / ServiceDetailCanvas element must have stable identity across drag / onDocChange flows — inline arrow functions are forbidden on these slots so SketchCanvas's `<ReactFlowProvider>` subtree stays mounted | `structural-guards.test.tsx` Contract 4 | [D-2026-05-27-B](./DECISIONS.md) + [D-2026-05-27-C](./DECISIONS.md) |
+| `useNodesMemo` emits top-level `width` + `height` on every pushed node (incl. the synthetic project anchor). RF v11's `createNodeInternals` only carries these from the prop node's top-level keys; bury them under `style` only and every `setNodes` call wipes `nodeInternals.width` → every node `visibility: hidden` under drag/onDocChange burst. | `structural-guards.test.tsx` Contract 5 | [D-2026-05-27-D](./DECISIONS.md) |
 | 15-kind exhaustive Inspector + entity round-trip | `inspectors.exhaustive.test.tsx` + `round-trip.exhaustive.test.ts` + `test_node_models.py` | [D-2026-05-12-E](./DECISIONS.md) |
 | Server `SketchNode` is the 15-way discriminated union; deleted god files stay absent; no `canvas_kind` branching in `canvases/sketch/` | `hooks/pre_commit_gate.py::reset_complete_check` | [D-2026-05-12-G](./DECISIONS.md) |
 
