@@ -4,6 +4,44 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.4] — 2026-05-26
+
+### Fixed
+
+- **Canvas empty after page load even though nodes exist**
+  ([D-2026-05-26-H](./docs/DECISIONS.md#d-2026-05-26-h--fitview-fallback-unsticks-visibilityhidden-when-usenodesinitialized-stalls-v0274)).
+  Reloading the page directly onto a URL with `?detail=...` opened
+  the ServiceDetail modal, but every node mounted with
+  `visibility: hidden` and the canvas looked blank — even though
+  DOM probes confirmed 15 nodes were laid out correctly inside the
+  visible canvas region. `useNodesInitialized` was getting stuck at
+  `false` (modal's initial DOM measurement races RF's internal
+  measure pass) so the fitView gate in `SketchCanvas` never fired,
+  and RF kept the nodes hidden waiting for a measure signal that
+  never came.
+- Resolution: 300 ms `setTimeout` fallback. If
+  `useNodesInitialized` hasn't flipped by then, fire `fitView`
+  anyway — RF honours the measured DOM rects and the canvas
+  becomes visible. The cleanup function ensures the timer is
+  cancelled if the signal arrives normally first, so well-behaved
+  mounts pay no cost.
+
+### Changed
+
+- `structural-guards.test.tsx` SketchCanvas LOC ceiling raised
+  450 → 470 to absorb the 300 ms fallback effect + its rationale
+  comment.
+
+### Verification
+
+- Viewer vitest 563 passed; tsc clean.
+- Browser: hard-reload onto
+  `/?project_path=...&canvas=services&detail=n_mpkyhvsj_mjzh`
+  now shows the demo graph immediately (Login + Hero + Fan + 5
+  interactions + 4 values + 3 refs + 23 edges, all visible).
+  Previously the same URL produced a blank canvas requiring manual
+  fit-view click that did nothing.
+
 ## [0.27.3] — 2026-05-26
 
 ### Changed

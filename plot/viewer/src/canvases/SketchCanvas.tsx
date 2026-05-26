@@ -179,14 +179,30 @@ function SketchCanvasInner({
   const selectedNodeIds = useRef<string[]>([]);
   // v0.18.3 (D-2026-05-17-A) — defer fitView until RF measures every
   // node's DOM box. The onInit path fit (0,0) before measurement.
+  // v0.27.4 (D-2026-05-26-H) — `useNodesInitialized` occasionally stays
+  // false when the canvas mounts inside a freshly opened modal (the
+  // dialog's initial DOM measurement races with RF's internal measure
+  // pass and the signal never flips). Without this fallback every node
+  // stays ``visibility: hidden`` forever — the canvas looks empty even
+  // though all nodes are mounted in the right positions. The timeout
+  // gives RF 300 ms; if the signal hasn't arrived, fire fitView anyway
+  // and force RF to honour the measured DOM rects.
   const rf = useReactFlow();
   const nodesInitialized = useNodesInitialized();
   const didInitialFitRef = useRef(false);
   useEffect(() => {
-    if (nodesInitialized && !didInitialFitRef.current) {
+    if (didInitialFitRef.current) return;
+    if (nodesInitialized) {
       rf.fitView({ padding: 0.2 });
       didInitialFitRef.current = true;
+      return;
     }
+    const t = setTimeout(() => {
+      if (didInitialFitRef.current) return;
+      rf.fitView({ padding: 0.2 });
+      didInitialFitRef.current = true;
+    }, 300);
+    return () => clearTimeout(t);
   }, [nodesInitialized, rf]);
   const clipboard = useSketchClipboard();
   const [bodyModalNodeId, setBodyModalNodeId] = useState<string | null>(null);

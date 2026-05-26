@@ -7399,3 +7399,99 @@ subject).
   user authors *around the service*, not in vacuum).
 - D-2026-05-26-F (modal interaction trap — unrelated but
   contemporaneous).
+
+---
+
+### D-2026-05-26-H — fitView fallback unsticks visibility:hidden when useNodesInitialized stalls (v0.27.4)
+
+**Context:** Same session 2026-05-26. After D-2026-05-26-G shipped
+the visible root-service, the user hard-reloaded onto a URL with
+`?detail=n_mpkyhvsj_mjzh` already set. The ServiceDetail modal
+opened but the canvas was visually blank — even though every node
+was DOM-mounted with the correct transform, every `.react-flow__node`
+carried `style="visibility: hidden"`. User feedback (paraphrased):
+*"겁나 복잡하구만"* — frustration that the rendered output didn't
+match the data the system clearly held.
+
+**Diagnosis:**
+
+`SketchCanvas.tsx` defers fitView until `useNodesInitialized` flips
+to true (added in D-2026-05-17-A to fix the inverse bug where
+fitView fired against (0,0) before RF measured the nodes). React
+Flow keeps nodes at `visibility: hidden` until that signal arrives.
+
+In the modal-mounted path, the signal occasionally never arrives:
+the dialog's initial layout measurement races with RF's internal
+measure pass. The DOM rects exist (DOM probes confirmed `width: 140`
+/ `height: 70` with correct `translate(...)`), but RF's internal
+flag stays false, and the effect — gated solely on `nodesInitialized`
+— never re-runs to call fitView.
+
+Even manual fitView clicks didn't help — the visibility:hidden was
+already set as part of the initial mount and only gets cleared when
+RF's own measure cycle confirms node dimensions.
+
+**Decision:**
+
+Add a 300 ms `setTimeout` fallback to the fitView effect. If
+`nodesInitialized` hasn't flipped by then, fire `fitView` anyway.
+RF then honours the measured DOM rects and the canvas becomes
+visible. The effect's cleanup function cancels the timer if the
+signal arrives normally first, so the well-behaved path pays nothing.
+
+```ts
+useEffect(() => {
+  if (didInitialFitRef.current) return;
+  if (nodesInitialized) {
+    rf.fitView({ padding: 0.2 });
+    didInitialFitRef.current = true;
+    return;
+  }
+  const t = setTimeout(() => {
+    if (didInitialFitRef.current) return;
+    rf.fitView({ padding: 0.2 });
+    didInitialFitRef.current = true;
+  }, 300);
+  return () => clearTimeout(t);
+}, [nodesInitialized, rf]);
+```
+
+**Why 300 ms?** Long enough that a healthy mount sequence
+(node DOM measure → RF nodesInitialized → effect re-run → fitView)
+completes well before the fallback fires; short enough that a
+stalled mount becomes visible within one human reaction time
+(~250–300 ms feels instant after a hard reload).
+
+**Why not investigate the underlying race?** It is React Flow v11
+internal scheduling vs the dialog's mount. The race is reproducible
+but the root cause sits in a third-party library; a 7-line fallback
+is cheaper and more robust than trying to drive RF's measure cycle
+from outside. If RF v12 (or a later RF release) fixes the race, the
+fallback simply never fires.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `viewer/src/canvases/SketchCanvas.tsx` | fitView effect gains a 300 ms `setTimeout` fallback; cleanup cancels the timer if the normal path fires first |
+| `viewer/tests/structural-guards.test.tsx` | SketchCanvas LOC ceiling 450 → 470; note records this decision id |
+
+**Verification:**
+- Viewer vitest 563 passed (structural guard re-verified at new ceiling).
+- tsc clean.
+- Browser: hard-reload onto `?detail=...` URL now renders the
+  ServiceDetail graph immediately. Previously it produced a blank
+  canvas where even manual fit-view clicks did nothing.
+
+**Approval:** Accepted by user, 2026-05-26 — direct frustration
+*"겁나 복잡하구만"* + *"알아서 테스트 해봅시다. 고고"* sanctioned
+the autonomous diagnose-and-fix path.
+
+**Cross-refs:**
+- D-2026-05-17-A (original fitView-deferral decision — this entry
+  augments, does not revert).
+- D-2026-05-26-F (modal mount as root sibling — the structural
+  change that surfaced the race).
+- D-2026-05-26-G (root-service visible — load-bearing for why an
+  empty canvas was *especially* surprising; the user expected to
+  see the demo graph immediately after reload).
