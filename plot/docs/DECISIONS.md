@@ -8137,3 +8137,99 @@ hide other nodes.
   cause via chrome-devtools fiber probe).
 - D-2026-05-26-H (the 300 ms fitView fallback — defends a
   different vector and remains useful in its own right).
+
+---
+
+### D-2026-05-28-A — ServiceDetail composition drop is free-form (v0.27.10)
+
+**Context:** User dropped a Composition preset (metric / step) on
+empty space inside the ServiceDetail modal canvas and got the
+error message *"Drop inside a Service container"*. User flagged
+it as wrong with reference to their original ServiceDetail design
+intent (transcribed 2026-05-28):
+
+> 서비스 디테일 캔버스는 **기능 명세가 아니라 관계와 가치 흐름**을
+> 보여줘야 한다. … 인터랙션 노드 중심으로 구성.
+>
+> - **액터 노드** — 히어로(전문가), 팬
+> - **인터랙션 노드** (액터 간 접점) — 모임 개설/참여, 콘텐츠 발행/소비,
+>   후원/구독, 1:1 소통, 클래스/이벤트
+> - **가치 노드** (인터랙션에서 교환되는 것) — 전문 지식, 경험/취향,
+>   수익, 팬덤/소속감
+> - **상위 연결 노드** — 핵심가치, 미션
+>
+> 엣지 방향:
+> - 액터 → 인터랙션 → 액터 (가치 흐름)
+> - 인터랙션 → 가치 노드 (무엇이 교환되는가)
+> - 인터랙션 → 핵심가치 (어떤 가치가 실현되는가)
+> - 핵심가치 → 미션 (어떻게 미션에 기여하는가)
+
+In this model, interaction and value nodes are **peers between
+actors**, not children of a service container. The previous
+``resolveDropTarget`` enforcement (composition kinds require a
+``service`` parent) was a holdover from a prior "composition lives
+inside a service container" model and directly conflicts with
+D-2026-05-26-C ("ServiceDetail = user-authored interaction graph;
+the system does not prescribe meanings").
+
+**Decision:**
+
+``resolveDropTarget`` (in `viewer/src/canvases/SketchStencil.tsx`)
+gained an optional ``canvasKind`` parameter. When
+``canvasKind === "service_detail"``:
+- A composition drop (`metric` / `step`) on empty space resolves
+  to ``{ parentId: null }`` — lands as a top-level peer.
+- A composition drop *inside* a service container still resolves
+  to ``{ parentId: container.id }`` — backwards-compat with the
+  prior model so users who already built service-nested graphs
+  keep working.
+
+On every other canvas (``services`` / ``actors`` / ``foundation``)
+and when ``canvasKind`` is omitted, the pre-D-2026-05-28-A
+enforcement stands — composition presets still require a service
+parent. (In practice composition presets only appear in the
+ServiceDetail stencil branch today, so the other canvases never
+trigger this rule; the parameter just makes the contract explicit.)
+
+``useDragAndDrop`` now threads ``doc.canvas_kind`` through to
+``resolveDropTarget``.
+
+**Test pin:** `tests/service-detail-composition-drop.test.tsx`
+covers both directions (free on empty + still-nests on service)
+plus regressions on Services (service-in-category) and Actors
+(sub-actor) so the other enforcement paths cannot drift.
+Red→Green ritual: pre-fix the new "free on empty" test failed
+with `{ error: "Drop inside a Service container" }`; post-fix
+6/6 pass.
+
+**Alternatives considered:**
+
+1. **Remove the composition enforcement entirely.** Considered;
+   rejected as too broad — the Services canvas would lose its
+   service-in-category enforcement too. ``canvasKind`` keeps the
+   ServiceDetail change surgical.
+2. **Auto-translate the stencil labels Composition/Metric/Step
+   to Korean "인터랙션"/"가치"** to match the user's mental model.
+   Not done in this entry — labels stay i18n keys (`kind.metric`,
+   `kind.step`) so the same Plot install works for non-Korean
+   teams. Re-labeling per-canvas is a separate UX call.
+
+**Spec impact:** `SPEC.md` ServiceDetail §Stencil now documents
+the design model (actor / interaction / value / upper-link),
+the free-form rule, the four canonical edge directions, and the
+backwards-compat fork.
+
+**Approval:** Accepted by user, 2026-05-28 — user supplied the
+original design document and flagged the prior enforcement as a
+violation of their intent.
+
+**Cross-refs:**
+- D-2026-05-26-C (ServiceDetail = self-authored interaction
+  graph; this entry operationalises that for the stencil
+  drop layer).
+- D-2026-05-26-G (root-service stays visible as the design
+  subject; interaction/value peers sit around it, edges to/from
+  it remain user-drawn).
+- D-2026-05-27-D (v0.27.9 visibility-lock fix — unrelated but
+  prerequisite: without that the user would never see the
+  free-form composition working).

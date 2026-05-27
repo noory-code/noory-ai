@@ -872,6 +872,42 @@ Per the [`SketchStencil`](../viewer/src/canvases/SketchStencil.tsx)
 Each ref preset is generated from its master so dropping it skips
 the picker — the resulting node carries `ref_*_id` already.
 
+### Composition drop is free-form (D-2026-05-28-A, v0.27.10)
+
+The Composition presets (`metric`, `step`) drop **free-form** on the
+ServiceDetail canvas — they do **not** require a `service` container
+parent. This matches the user's design intent (verbatim 2026-05-28):
+
+> 서비스 디테일 캔버스는 **기능 명세가 아니라 관계와 가치 흐름**을
+> 보여줘야 한다. … 인터랙션 노드 중심으로 구성.
+
+In that model:
+- **Actor nodes** (`actor_ref`) — e.g. Hero (전문가), Fan
+- **Interaction nodes** (`step` re-purposed) — 액터 간 접점:
+  모임 개설/참여, 콘텐츠 발행/소비, 후원/구독, 1:1 소통, 클래스/이벤트
+- **Value nodes** (`metric` re-purposed) — 인터랙션에서 교환되는 것:
+  전문 지식, 경험/취향, 수익, 팬덤/소속감
+- **Upper-link nodes** (`mission_ref`, `value_ref`) —
+  개요 캔버스에서 내려오는 핵심가치 / 미션
+
+Edge directions per the user's design (no auto-emit — the user draws
+each one):
+- 액터 → 인터랙션 → 액터  (가치 흐름)
+- 인터랙션 → 가치 노드  (무엇이 교환되는가)
+- 인터랙션 → 핵심가치  (어떤 가치가 실현되는가)
+- 핵심가치 → 미션  (어떻게 미션에 기여하는가)
+
+**Backwards-compat:** dropping a composition preset *inside* a
+service container still nests it (the user can still build the
+old service-anchored composition graph if they want). The change
+is that an empty-space drop is now allowed and lands as a
+top-level peer. The previous error message *"Drop inside a Service
+container"* is no longer shown on the ServiceDetail canvas.
+
+The static guard at `viewer/tests/service-detail-composition-drop.test.tsx`
+pins both forks of this contract (free on empty + still-nests inside
+service).
+
 ## Modal structure (D-2026-05-26-D, D-2026-05-26-F)
 
 The ServiceDetail modal is **self-contained**: it owns its own left

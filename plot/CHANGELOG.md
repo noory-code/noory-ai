@@ -4,6 +4,49 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.10] — 2026-05-28
+
+### Fixed
+
+- **ServiceDetail: composition (metric / step) drop on empty space no
+  longer errors**
+  ([D-2026-05-28-A](./docs/DECISIONS.md#d-2026-05-28-a--servicedetail-composition-drop-is-free-form-v02710)).
+  User report: dropping a Composition preset on empty space in the
+  ServiceDetail modal canvas raised *"Drop inside a Service container"*
+  — directly conflicting with the user's original design intent
+  ("ServiceDetail = 관계 + 가치 흐름; 액터 / 인터랙션 / 가치 / 상위연결
+  의 자유 그래프, service container 의 자식 구조가 아님") and with
+  D-2026-05-26-C (ServiceDetail = user-authored interaction graph).
+- Fix: `resolveDropTarget` gained an optional `canvasKind` parameter.
+  When `canvasKind === "service_detail"`, composition drops on empty
+  space resolve to `{ parentId: null }` (top-level peer); composition
+  drops *inside* a service container still nest (backwards-compat).
+  Other canvases and the omitted-arg case keep the pre-v0.27.10
+  enforcement.
+
+### Added
+
+- New test file `tests/service-detail-composition-drop.test.tsx` —
+  6 cases pinning both branches of the new contract (free on empty,
+  still-nests inside service) plus Services (service-in-category)
+  and Actors (sub-actor) regression coverage.
+
+### Changed
+
+- `docs/SPEC.md` §ServiceDetail §Stencil gains a new
+  "Composition drop is free-form" subsection that transcribes the
+  user's design model (actor → interaction → actor; interaction →
+  value; interaction → core value; core value → mission).
+- `useDragAndDrop` now threads `doc.canvas_kind` through to
+  `resolveDropTarget`.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 576 / 576 pass (570 + 6 new).
+- Red → Green ritual on the new test file confirmed pre-fix
+  failure with the expected error message.
+
 ## [0.27.9] — 2026-05-27
 
 ### Fixed (real root cause — v0.27.7/8 chased a wrong hypothesis)

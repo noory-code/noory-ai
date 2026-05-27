@@ -17,7 +17,7 @@ import {
 } from "react";
 import type { ReactFlowInstance } from "reactflow";
 import type { SketchNode as DocNode } from "../../types";
-import { resolveDropTarget, type StencilPreset } from "../SketchStencil";
+import { resolveDropTarget, type StencilCanvas, type StencilPreset } from "../SketchStencil";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
 import { containerAtFlowPoint, findFreeSpot } from "./overlapNudge";
 import type { NodePreset, PendingActorRef, PendingFoundationRef } from "./types";
@@ -36,6 +36,10 @@ export interface UseDragAndDropArgs {
     localY: number;
     preset: NodePreset;
   }) => void;
+  /** v0.27.10 (D-2026-05-28-A) — the canvas kind. Used by
+   *  ``resolveDropTarget`` to apply ServiceDetail's free-form
+   *  composition rule. */
+  canvasKind?: StencilCanvas;
 }
 
 export interface UseDragAndDropResult {
@@ -54,6 +58,7 @@ export function useDragAndDrop({
   flowRef,
   addNodeAt,
   addNestedNodeAt,
+  canvasKind,
 }: UseDragAndDropArgs): UseDragAndDropResult {
   const [pendingActorRef, setPendingActorRef] = useState<PendingActorRef | null>(null);
   const [pendingFoundationRef, setPendingFoundationRef] =
@@ -88,6 +93,7 @@ export function useDragAndDrop({
       const resolved = resolveDropTarget(
         preset as StencilPreset,
         container ? { id: container.id, kind: container.kind } : null,
+        canvasKind,
       );
       if ("error" in resolved) {
         window.alert(resolved.error);
@@ -152,7 +158,7 @@ export function useDragAndDrop({
         addNodeAt(spot.x, spot.y, preset);
       }
     },
-    [flowRef, nodes, edges, nodeById, addNodeAt, addNestedNodeAt],
+    [flowRef, nodes, edges, nodeById, addNodeAt, addNestedNodeAt, canvasKind],
   );
 
   return {

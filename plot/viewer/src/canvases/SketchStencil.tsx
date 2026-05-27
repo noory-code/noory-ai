@@ -247,27 +247,40 @@ export const STENCIL_PRESETS: StencilPreset[] = [
  *
  * - Top-level kinds (actor, category) land at top.
  * - service (v0.12) requires a Category parent on the Services canvas.
- * - Composition kinds (rule, content, metric, step) require a Service
- *   parent on the Service Detail modal.
+ * - Composition kinds (metric, step):
+ *     - On the Services canvas (rare; not in stencil today) they would
+ *       require a Service parent.
+ *     - On the ServiceDetail canvas (D-2026-05-28-A) they are FREE-FORM
+ *       — the user is authoring an interaction graph: actors / value
+ *       nodes / interaction nodes live as peers, wired by edges, not
+ *       nested under the service container. Dropping inside a service
+ *       container still nests (backwards-compat) so the prior model
+ *       keeps working; dropping on empty space lands as a top-level peer.
  * - sub-actor requires an Actor parent (decomposition).
  */
 export function resolveDropTarget(
   preset: StencilPreset,
   containerAtDrop: { id: string; kind: NodeKind | null } | null,
+  /** v0.27.10 (D-2026-05-28-A) — the canvas where the drop happens.
+   *  When undefined, behaves as pre-v0.27.10 (composition requires a
+   *  service parent unconditionally). */
+  canvasKind?: StencilCanvas,
 ): { parentId: string | null } | { error: string } {
-  // v0.10 Step 5: metric + step join rule + content as composition kinds
-  // — they all require a service parent.
-  const isComposition =
-    preset.kind === "rule" ||
-    preset.kind === "content" ||
-    preset.kind === "metric" ||
-    preset.kind === "step";
+  const isComposition = preset.kind === "metric" || preset.kind === "step";
   const isSubActor = preset.id === "sub-actor";
   // v0.12: a service preset on the Services canvas drops *inside a
   // category* (services are leaves nested under a category).
   const isServiceInsideCategory = preset.id === "service-in-category";
 
   if (isComposition) {
+    // D-2026-05-28-A: ServiceDetail is a user-authored interaction
+    // graph — composition kinds (metric / step, re-purposed as
+    // value / interaction nodes by the user) drop freely. Nesting
+    // inside a service container is still honoured when the user
+    // explicitly drops on one.
+    if (canvasKind === "service_detail") {
+      return { parentId: containerAtDrop?.kind === "service" ? containerAtDrop.id : null };
+    }
     if (!containerAtDrop || containerAtDrop.kind !== "service") {
       return { error: preset.dropHint ?? "Drop inside a Service container" };
     }

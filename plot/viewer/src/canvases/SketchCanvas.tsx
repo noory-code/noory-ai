@@ -350,6 +350,9 @@ function SketchCanvasInner({
     flowRef,
     addNodeAt,
     addNestedNodeAt,
+    // v0.27.10 (D-2026-05-28-A) — drop-target resolution needs the
+    // canvas context so ServiceDetail composition drops are free-form.
+    canvasKind: doc.canvas_kind,
   });
 
   return (
