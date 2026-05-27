@@ -92,7 +92,9 @@
     "metric": "지표",
     "step": "단계",
     "rule": "규칙",
-    "content": "콘텐츠"
+    "content": "콘텐츠",
+    "interaction": "인터랙션",
+    "value": "가치"
   },
   "kindTag": {
     "project": "프로젝트",
@@ -236,6 +238,8 @@
       "actorHierarchy": "액터 계층",
       "service": "서비스",
       "composition": "구성 요소",
+      "interactions": "인터랙션",
+      "values": "가치",
       "actors": "액터",
       "missions": "미션",
       "identityAspects": "아이덴티티 측면"
@@ -246,6 +250,8 @@
       "dropOnActor": "액터 위에 놓으세요",
       "dropInsideCategory": "카테고리 안에 놓으세요",
       "compositionInsideService": "이 서비스 안의 지표 + 단계",
+      "interactionsBetweenActors": "액터 사이의 접점을 끌어 놓으세요",
+      "valuesExchanged": "인터랙션에서 교환되는 가치를 끌어 놓으세요",
       "dragActorOntoService": "이 서비스에 액터를 끌어 놓으세요",
       "dragMissionThisServiceAnswersTo": "이 서비스가 응답하는 미션을 끌어 놓으세요",
       "dragValueThisServiceEmbodies": "이 서비스가 구현하는 코어밸류를 끌어 놓으세요",

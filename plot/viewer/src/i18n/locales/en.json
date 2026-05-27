@@ -92,7 +92,9 @@
     "metric": "Metric",
     "step": "Step",
     "rule": "Rule",
-    "content": "Content"
+    "content": "Content",
+    "interaction": "Interaction",
+    "value": "Value"
   },
   "kindTag": {
     "project": "PROJECT",
@@ -236,6 +238,8 @@
       "actorHierarchy": "Actor hierarchy",
       "service": "Service",
       "composition": "Composition",
+      "interactions": "Interactions",
+      "values": "Values",
       "actors": "Actors",
       "missions": "Missions",
       "identityAspects": "Identity aspects"
@@ -246,6 +250,8 @@
       "dropOnActor": "drop on an Actor",
       "dropInsideCategory": "drop inside a Category",
       "compositionInsideService": "metrics + steps inside this service",
+      "interactionsBetweenActors": "drop an interaction (contact point between actors)",
+      "valuesExchanged": "drop a value exchanged via interactions",
       "dragActorOntoService": "drag any actor onto this service",
       "dragMissionThisServiceAnswersTo": "drag a mission this service answers to",
       "dragValueThisServiceEmbodies": "drag a value this service embodies",

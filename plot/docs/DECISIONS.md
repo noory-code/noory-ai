@@ -8233,3 +8233,240 @@ violation of their intent.
 - D-2026-05-27-D (v0.27.9 visibility-lock fix — unrelated but
   prerequisite: without that the user would never see the
   free-form composition working).
+
+---
+
+### D-2026-05-28-B — ServiceDetail canvas hides root-service node (v0.27.11)
+
+**Context:** After reconstructing the user's design transcript on
+the Login service_detail canvas, the user flagged the centred
+root-service node as wrong:
+
+> *"로그인 서비스인데 로그인 노드가 들어있는 것도 이상하고"*
+
+The 2026-05-28 ServiceDetail design statement names four node
+roles — **actor / interaction / value / upper-link** — and the
+service itself is an *implicit* subject (named only by the modal
+breadcrumb header), not a node drawn on the canvas.
+
+**Decision:** Partial revert of D-2026-05-26-G.
+`ServiceDetailCanvas` now passes `hideRootServiceNode={true}` to
+`SketchCanvas`. `doc.service_ref` stays unchanged (so
+`service_detail/<id>/detail.json` keeps its file-level identity)
+but the canvas drops the node from the rendered list via
+`useNodesMemo`'s existing `hideRootServiceNode` branch.
+
+The tree auto-layout still uses the hidden `service_ref` as the
+BFS hub — the part of D-2026-05-26-G concerning *layout anchoring*
+remains useful. Only the *visual rendering* of the service node
+flipped back to hidden.
+
+**Spec impact:** `SPEC.md` §ServiceDetail's "What ServiceDetail
+is" section needs an inline note that the root-service is now
+hidden (header carries the breadcrumb, canvas carries the peer
+graph). Done in this commit.
+
+**Approval:** Accepted by user, 2026-05-28.
+
+**Cross-refs:**
+- D-2026-05-26-G (the prior "root-service is the design subject"
+  decision this entry partially reverses).
+- D-2026-05-26-C (ServiceDetail = user-authored interaction graph
+  — this entry is operationalising that further).
+
+---
+
+### D-2026-05-28-C — ServiceDetail stencil relabels "Composition" to "Interactions" + "Values" (v0.27.11)
+
+**Context:** User report 2026-05-28: *"인터랙션이 뭐지? 어디에
+있다는거지?"* — i.e. their design model named interaction / value
+nodes but the running stencil exposed them only as generic
+"Composition: Metric / Step", which made the mental-model →
+toolbox mapping invisible.
+
+The user's design statement (2026-05-28 transcript):
+
+> - 액터 노드: Hero(전문가), Fan
+> - **인터랙션 노드** (액터 간 접점): 모임 개설/참여, 콘텐츠 발행/소비,
+>   후원/구독, 1:1 소통, 클래스/이벤트
+> - **가치 노드** (인터랙션에서 교환되는 것): 전문 지식, 경험/취향,
+>   수익, 팬덤/소속감
+> - 상위 연결 노드: 핵심가치, 미션
+
+**Decision:** ServiceDetail stencil branch (`SketchStencil`'s
+`service_detail` arm) splits the prior single "Composition" section
+into two sections:
+
+1. **"Interactions / 인터랙션"** — uses the `step` preset cloned with
+   `labelI18nKey: "kind.interaction"` and `labelHint: "Interaction"`.
+2. **"Values / 가치"** — uses the `metric` preset cloned with
+   `labelI18nKey: "kind.value"` and `labelHint: "Value"`.
+
+Section notes pin the user's mental model:
+- `stencil.note.interactionsBetweenActors`: "drop an interaction
+  (contact point between actors)" / "액터 사이의 접점을 끌어 놓으세요"
+- `stencil.note.valuesExchanged`: "drop a value exchanged via
+  interactions" / "인터랙션에서 교환되는 가치를 끌어 놓으세요"
+
+Underlying domain kinds stay `step` / `metric` (D-2026-05-26-C YAGNI
+"no new kinds" preserved); the rename lives only in the stencil UI
+and the new i18n entries. Edge model + node renderers are
+unchanged.
+
+**Alternatives considered:**
+
+- **Add `interaction` / `value` as new domain kinds.** Rejected to
+  honour D-2026-05-26-C: the user can express the new mental model
+  by re-labelling without paying the kind-explosion cost.
+- **Globally rename "Step" → "Interaction" / "Metric" → "Value"**
+  across all canvases. Rejected: on Services / Foundation the
+  Step / Metric labels still match the prior semantics and changing
+  them silently would surprise existing users.
+
+**Spec impact:** `SPEC.md` §ServiceDetail §Stencil already documents
+the section model after the v0.27.10 update; this entry updates
+the section names and the per-section notes to match the new i18n
+keys. Done in this commit.
+
+**Approval:** Accepted by user, 2026-05-28 — user picked option (a)
+explicitly when asked.
+
+**Cross-refs:**
+- D-2026-05-26-C (no new kinds; re-purpose existing).
+- D-2026-05-28-A (free-form composition drop — prerequisite for
+  these labels making sense on the canvas).
+
+---
+
+### D-2026-05-28-D — Symbol kinds always render as circles (v0.27.11)
+
+**Context:** User 2026-05-28: *"내가 분명히 심볼은 동그랗게
+나오게 해달라고 했는데 그것도 이상하고"*. Per
+[`feedback / project_plot_symbol_concept`] memory and
+[D-2026-05-19-D], Symbol = the cross-canvas referenceable masters
+(mission / core_value / identity / actor) + their refs on the
+consumer plane (mission_ref / value_ref / identity_ref / actor_ref).
+The 2026-05-25-B decision ("non-Symbol defaults to rectangle") had
+left Symbol shapes implicit; stencil presets had drifted to
+"rounded" / "rectangle" over time. On reconstruction the
+user saw rectangles where the model called for circles.
+
+**Decision (two layers):**
+
+1. **Render layer — `BaseNode` `effectiveShape`.** A
+   `SYMBOL_KINDS` set inside `BaseNode.tsx` lists the eight Symbol
+   kinds. `effectiveShape(data)` returns `"circle"` for any node
+   whose `kind` is in that set; `data.shape` is honoured only
+   for non-Symbol kinds (category, service, metric, step, rule,
+   content, project). This makes the rule visible regardless of
+   stored data — legacy `mission` nodes saved as `"rounded"`
+   snap to circle on render without any migration. `project`
+   (synthetic anchor) is intentionally excluded — its shape is a
+   user toggle.
+2. **Stencil layer — defaults.** Static `CORE_MISSION` /
+   `CORE_VALUE` / `CORE_IDENTITY` / `ACTOR_REF` / `MISSION_REF` /
+   `VALUE_REF` / `IDENTITY_REF` presets + all four dynamic
+   ref-preset factories now emit `shape: "circle"` with square
+   widths (140×140, 160×160, 120×120) so newly-dropped Symbols
+   are circles on storage too. (`TOP_LEVEL_ACTOR` and the
+   sub-actor preset were already `circle`.)
+
+`shouldShowKindTag(shape, kind?)` gains a `kind` argument and
+returns `false` for Symbol kinds — the top-left kind tag has no
+place on the circle silhouette.
+
+**LOC ceiling:** `canvases/nodes/BaseNode.tsx` raised 250 → 260
+in `structural-guards.test.tsx` (+10 LOC for `SYMBOL_KINDS` set
++ `effectiveShape` helper + the kind-aware branch of
+`shouldShowKindTag`).
+
+**Visual limitation (honest):** `effectiveShape: "circle"` only
+sets `borderRadius: 50%`; a node whose stored size has
+`width ≠ height` renders as an *ellipse*, not a perfect circle.
+Newly dropped Symbols use square stencil widths, but legacy data
+carries its old size — most master nodes from older sessions read
+as horizontal ellipses. Width = height enforcement is deferred
+because it requires either an on-render width override (visually
+correct but breaks `NodeResizer`) or a data migration (heavier
+trade-off). For now: visual reads as roundedness, not exactly
+geometric circles.
+
+**Spec impact:** SPEC.md §Rendering order (or a new
+§Symbol-shape-invariant) gains a one-line invariant. The
+ARCHITECTURE.md Contracts table gains a row pointing at
+`BaseNode`'s `SYMBOL_KINDS` constant. Done in this commit.
+
+**Approval:** Accepted by user, 2026-05-28.
+
+**Cross-refs:**
+- D-2026-05-19-D (Symbol concept SSOT).
+- D-2026-05-25-B (non-Symbol = rectangle — this entry pins the
+  *inverse* half of that contract).
+
+---
+
+### D-2026-05-28-F — Modal-internal language toggle (v0.27.11)
+
+**Context:** User 2026-05-28: *"그리고 왜 영/한 전환이 없지?"* —
+the main sidebar's EN/KO toggle is unreachable while the
+ServiceDetail modal is open because v0.27.2 (D-2026-05-26-F)
+marks the entire root `<div>` `inert` whenever the modal is up.
+
+**Decision:** `ServiceDetailStencilPanel` (the modal-internal
+stencil column) hosts its own `<LanguageToggle/>` at the bottom
+of the panel, mirroring the one in the main `SketchSidebar`. The
+panel layout becomes:
+
+```
+┌─ aside (w-56) ────────────────────┐
+│  <SketchStencil canvas=… />       │  ← flex-1, scrolls
+│  ───────────────────────────────  │
+│  EN  KO                            │  ← border-t, fixed
+└────────────────────────────────────┘
+```
+
+Same `<LanguageToggle/>` component reused (no duplication).
+
+**Spec impact:** `SPEC.md` §ServiceDetail §"Modal structure" gains
+a one-line note: the modal stencil panel hosts its own language
+toggle. Done in this commit.
+
+**Approval:** Accepted by user, 2026-05-28.
+
+**Cross-refs:**
+- D-2026-05-26-F (the `inert` trap that made this necessary).
+- D-2026-05-26-D (ServiceDetail modal self-containment — this is
+  the language-toggle slice of that principle).
+
+---
+
+### D-2026-05-28-E — Per-stencil-item descriptions (deferred, not in v0.27.11)
+
+**Context:** User 2026-05-28: *"지표/단계를 어떻게 사용해야하는지
+모르겠고… 설명을 제대로해라"*. The section-level notes
+(`stencil.note.interactionsBetweenActors`, etc.) describe each
+section's purpose at the headline level, but the user wanted
+per-item guidance — *what does "Step" mean? what about "Metric"?*
+
+**Decision:** Deferred. Two paths are viable and the trade-off is
+genuinely a UX design call:
+
+1. **Hover tooltip per stencil item** — minimal visual chrome,
+   but only discoverable on mouse-hover (low affordance on touch
+   /tablet).
+2. **One-line description rendered under each item label** —
+   high affordance, but doubles the stencil sidebar's vertical
+   density.
+
+Both depend on what copy goes there — the user has not authored
+the per-item text yet. Filed as a follow-up ship; revisit when
+the user has at least one item's copy in hand to anchor the
+pattern.
+
+**Approval:** Deferral approved by user via the scope-cut in this
+session (the user accepted "한 ship 으로 묶을까요?" with (4)
+left out).
+
+**Cross-refs:**
+- D-2026-05-28-C (the relabel — this entry would build on it with
+  per-item copy).

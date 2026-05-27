@@ -4,6 +4,96 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.11] — 2026-05-28
+
+User design pass — four corrections rolled into one ship, after the
+user transcribed their original ServiceDetail design intent and
+flagged where the running build had drifted from it.
+
+### Changed
+
+- **ServiceDetail canvas hides the root-service node**
+  ([D-2026-05-28-B](./docs/DECISIONS.md#d-2026-05-28-b--servicedetail-canvas-hides-root-service-node-v02711)).
+  Partial revert of D-2026-05-26-G: per the user's 2026-05-28
+  design statement ("로그인 서비스인데 로그인 노드가 들어있는 것도
+  이상하고") the canvas content is the actor / interaction / value /
+  upper-link peer graph; the service itself is the *implicit*
+  subject named by the modal header. `ServiceDetailCanvas` now
+  passes `hideRootServiceNode={true}`. `doc.service_ref` stays so
+  storage identity is preserved; the tree auto-layout still uses
+  the hidden service_ref as the BFS hub.
+- **ServiceDetail stencil sections rename to the user's mental model**
+  ([D-2026-05-28-C](./docs/DECISIONS.md#d-2026-05-28-c--servicedetail-stencil-relabels-composition-to-interactions--values-v02711)).
+  The `service_detail` SketchStencil branch now renders two
+  separate sections — "Interactions / 인터랙션" (the `step` preset
+  with `labelI18nKey: "kind.interaction"`) and "Values / 가치"
+  (the `metric` preset with `labelI18nKey: "kind.value"`) —
+  instead of one "Composition / 구성 요소" section. Underlying
+  domain kinds stay `step` / `metric` (D-2026-05-26-C YAGNI
+  preserved); only the user-facing labels move.
+- **Symbol kinds always render as circles**
+  ([D-2026-05-28-D](./docs/DECISIONS.md#d-2026-05-28-d--symbol-kinds-always-render-as-circles-v02711)).
+  Per D-2026-05-19-D, Symbol = `mission` / `core_value` / `identity`
+  / `actor` + their refs (`actor_ref` / `mission_ref` / `value_ref` /
+  `identity_ref`). `BaseNode` now computes an `effectiveShape` that
+  forces `"circle"` for any Symbol kind regardless of `data.shape`,
+  so legacy data (mission saved as `"rounded"` pre-v0.27.11) snaps
+  to circle on render without any data migration. STENCIL_PRESETS
+  (static + dynamic ref factories) also default to `"circle"` so
+  newly-dropped Symbols are circles on storage too. `shouldShowKindTag`
+  gains a `kind?` argument; Symbol kinds suppress the corner tag
+  because the corner falls outside the circle silhouette.
+- **Modal-internal language toggle**
+  ([D-2026-05-28-F](./docs/DECISIONS.md#d-2026-05-28-f--modal-internal-language-toggle-v02711)).
+  The main sidebar is `inert` (D-2026-05-26-F) while the
+  ServiceDetail modal is open, so its EN/KO toggle was
+  unreachable. `ServiceDetailStencilPanel` now hosts its own
+  `<LanguageToggle/>` at the bottom of the panel.
+
+### Added
+
+- `kind.interaction`, `kind.value`, `stencil.section.interactions`,
+  `stencil.section.values`, `stencil.note.interactionsBetweenActors`,
+  `stencil.note.valuesExchanged` in both `en.json` and `ko.json`
+  (i18n parity preserved).
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 576 / 576 pass.
+- chrome-devtools MCP on the user's Chrome — Login modal renders
+  18 nodes / 28 edges from the test reconstruction; Symbol nodes
+  (Hero / Fan / actor refs / core_value refs / mission ref) all
+  render as circles regardless of stored shape; "Interactions" /
+  "Values" sections visible in the modal stencil; EN/KO toggle
+  visible at the bottom-left of the modal stencil; Login service
+  node is no longer drawn on the canvas.
+
+### Honest scope cut
+
+- **(4) per-stencil-item descriptions (D-2026-05-28-E candidate)** —
+  deferred. The user flagged "지표/단계 어떻게 사용해야하는지
+  모르겠고… 설명을 제대로 해라"; the section-level note
+  ("액터 사이의 접점을 끌어 놓으세요" / "인터랙션에서 교환되는
+  가치를 끌어 놓으세요") covers the headline, but per-item hover
+  tooltips + an in-modal usage hint are a separate UX design
+  decision filed for a follow-up ship.
+
+### Honest limitations carried forward
+
+- **Symbol "동그라미" reads as an ellipse when width ≠ height.**
+  `effectiveShape="circle"` only sets `borderRadius: 50%`; nodes
+  whose stored size is non-square render as ellipses. Newly
+  dropped Symbols use square stencil widths (140×140, 160×160,
+  120×120), but legacy data carries its old size. Data migration
+  to square Symbols is deferred — the visual mostly reads as a
+  circle and forcing user data widths is a heavier decision.
+- Layout still up to the user (PHILOSOPHY P10). Per the
+  unresolved layout question from this session, the spatial
+  arrangement of the reconstruction is "edge-crossy" in
+  auto-layout; user-driven manual layout remains the canonical
+  path.
+
 ## [0.27.10] — 2026-05-28
 
 ### Fixed

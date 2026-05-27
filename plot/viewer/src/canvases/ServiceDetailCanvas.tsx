@@ -5,14 +5,21 @@
  * the synthetic anchor on the grounds that the modal header already
  * named the service.
  *
- * v0.27.3 (D-2026-05-26-G): the canvas's *subject* is the service —
- * "이 서비스를 상세하게 설계하는 캔버스". The root-service is now
- * **visible** at the centre of the canvas (analogous to Foundation /
- * Actors' anchor); it acts as the BFS root for the tree
- * auto-layout, so user-authored interaction nodes can attach to it
- * and fan out. The modal header still carries the navigation
- * breadcrumb; the canvas's root-service node carries the design
- * subject. Two distinct surfaces, not a duplication.
+ * v0.27.3 (D-2026-05-26-G): the canvas's *subject* is the service.
+ * The root-service node was made **visible** at the centre as the
+ * design subject + BFS root for tree auto-layout.
+ *
+ * v0.27.11 (D-2026-05-28-B): partial revert of D-2026-05-26-G —
+ * per the user's 2026-05-28 ServiceDetail design statement, the
+ * canvas content is **actor / interaction / value / upper-link**
+ * peers and edges between them; the service itself is the
+ * **implicit** subject named by the modal header. Showing the
+ * service as a centre node was reading as duplication ("로그인
+ * 서비스인데 로그인 노드가 들어있는 것도 이상하고" — user,
+ * 2026-05-28). The root-service stays in ``doc.service_ref`` (so
+ * `service_detail/<id>/detail.json` keeps its identity), but the
+ * canvas hides it. The tree auto-layout still uses the hidden
+ * service_ref as the BFS hub — that part of D-2026-05-26-G stays.
  *
  * Drill on actor_ref still jumps to the actor master.
  */
@@ -27,7 +34,7 @@ export function ServiceDetailCanvas(props: SketchCanvasProps) {
   return (
     <SketchCanvas
       {...props}
-      hideRootServiceNode={false}
+      hideRootServiceNode={true}
       shouldDrill={shouldDrillActorRef}
       showFoldButton={true}
       injectAnchor={false}

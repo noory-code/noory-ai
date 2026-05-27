@@ -67,13 +67,19 @@ const SERVICE_INSIDE_CATEGORY: StencilPreset = {
 // not draggable — mission / core_value / identity are the user-placed
 // pillars. In v0.5 Identity is flat N peers (one per aspect: Voice /
 // Energy / Speech style / …); identity_facet was folded into identity.
+// v0.27.11 (D-2026-05-28-D) — Symbol kinds default to circle.
+// D-2026-05-19-D defines Symbol = mission / core_value / identity / actor
+// (+ their refs in the consumer plane). Per user 2026-05-28, all Symbol
+// presets should drop as circles, not rounded rectangles, so the
+// producer/consumer plane reading is visually consistent.
+
 const CORE_MISSION: StencilPreset = {
   id: "mission",
   labelHint: "Mission",
-  shape: "rounded",
+  shape: "circle",
   color: "#fef3c7",
-  width: 200,
-  height: 90,
+  width: 160,
+  height: 160,
   icon: null,
   label: "Mission",
   kind: "mission",
@@ -82,10 +88,10 @@ const CORE_MISSION: StencilPreset = {
 const CORE_VALUE: StencilPreset = {
   id: "core-value",
   labelHint: "Core Value",
-  shape: "rounded",
+  shape: "circle",
   color: "#fde68a",
-  width: 160,
-  height: 70,
+  width: 140,
+  height: 140,
   icon: null,
   label: "Core Value",
   kind: "core_value",
@@ -94,10 +100,10 @@ const CORE_VALUE: StencilPreset = {
 const CORE_IDENTITY: StencilPreset = {
   id: "identity",
   labelHint: "Identity",
-  shape: "rounded",
+  shape: "circle",
   color: "#fed7aa",
-  width: 200,
-  height: 90,
+  width: 160,
+  height: 160,
   icon: null,
   label: "Voice",
   kind: "identity",
@@ -109,12 +115,14 @@ const CORE_IDENTITY: StencilPreset = {
 const ACTOR_REF: StencilPreset = {
   id: "actor-ref",
   labelHint: "Actor ref",
-  // v0.26.1 (D-2026-05-25-B) — ref kinds are consumer-plane (not Symbol);
-  // they default to rectangle alongside category / service / composition.
-  shape: "rectangle",
+  // v0.27.11 (D-2026-05-28-D) — ref kinds inherit the Symbol shape
+  // (circle). Pre-v0.27.11 they were rectangle per D-2026-05-25-B but
+  // that made the Symbol-vs-non-Symbol reading inconsistent on the
+  // consumer plane.
+  shape: "circle",
   color: "#fce7f3",
-  width: 140,
-  height: 70,
+  width: 120,
+  height: 120,
   icon: "user",
   label: "→ actor",
   kind: "actor_ref",
@@ -128,11 +136,11 @@ const ACTOR_REF: StencilPreset = {
 const MISSION_REF: StencilPreset = {
   id: "mission-ref",
   labelHint: "Mission ref",
-  // v0.26.1 (D-2026-05-25-B) — ref kinds default to rectangle.
-  shape: "rectangle",
+  // v0.27.11 (D-2026-05-28-D) — Symbol ref → circle.
+  shape: "circle",
   color: "#fef3c7",
-  width: 160,
-  height: 60,
+  width: 120,
+  height: 120,
   icon: "flag",
   label: "→ Mission",
   kind: "mission_ref",
@@ -141,10 +149,10 @@ const MISSION_REF: StencilPreset = {
 const VALUE_REF: StencilPreset = {
   id: "value-ref",
   labelHint: "Value ref",
-  shape: "rectangle",
+  shape: "circle",
   color: "#fde68a",
-  width: 160,
-  height: 60,
+  width: 120,
+  height: 120,
   icon: "star",
   label: "→ Value",
   kind: "value_ref",
@@ -153,10 +161,10 @@ const VALUE_REF: StencilPreset = {
 const IDENTITY_REF: StencilPreset = {
   id: "identity-ref",
   labelHint: "Identity ref",
-  shape: "rectangle",
+  shape: "circle",
   color: "#fed7aa",
-  width: 160,
-  height: 60,
+  width: 120,
+  height: 120,
   icon: "heart",
   label: "→ Identity",
   kind: "identity_ref",
@@ -445,21 +453,39 @@ export function SketchStencil({
       </div>
     );
   }
-  // service_detail (v0.12 modal) — composition + dynamic refs. Each ref
-  // preset is generated per master so drops skip the picker and the
-  // stencil reads as the project's actual cast (10 missions = 10 mission
-  // ref entries with their real labels).
+  // service_detail (v0.12 modal) — D-2026-05-28-C re-frames Composition
+  // into the user's design model: "인터랙션" (step, between actors) +
+  // "가치" (metric, exchanged via interactions). The underlying kinds
+  // stay step / metric (no new domain kinds, D-2026-05-26-C YAGNI), but
+  // the stencil section + item labels read as the user's mental model.
+  const stepPreset = SERVICE_COMPOSITION.find((p) => p.id === "step");
+  const metricPreset = SERVICE_COMPOSITION.find((p) => p.id === "metric");
+  const interactionPreset: StencilPreset | null = stepPreset
+    ? { ...stepPreset, labelI18nKey: "kind.interaction", labelHint: "Interaction" }
+    : null;
+  const valuePreset: StencilPreset | null = metricPreset
+    ? { ...metricPreset, labelI18nKey: "kind.value", labelHint: "Value" }
+    : null;
   const actorRefPresets = availableActors.map((a) => actorRefPresetFor(a));
   const missionRefPresets = availableMissions.map((m) => missionRefPresetFor(m));
   const valueRefPresets = availableValues.map((v) => valueRefPresetFor(v));
   const identityRefPresets = availableIdentities.map((i) => identityRefPresetFor(i));
   return (
     <div className="border-t border-slate-200 px-3 py-3">
-      <Section
-        title={t("stencil.section.composition")}
-        presets={SERVICE_COMPOSITION}
-        note={t("stencil.note.compositionInsideService")}
-      />
+      {interactionPreset && (
+        <Section
+          title={t("stencil.section.interactions")}
+          presets={[interactionPreset]}
+          note={t("stencil.note.interactionsBetweenActors")}
+        />
+      )}
+      {valuePreset && (
+        <Section
+          title={t("stencil.section.values")}
+          presets={[valuePreset]}
+          note={t("stencil.note.valuesExchanged")}
+        />
+      )}
       {actorRefPresets.length > 0 && (
         <Section
           title={t("stencil.section.actors")}
@@ -496,6 +522,10 @@ export function SketchStencil({
 // The preset already carries the master id, so SketchCanvas's drop
 // handler creates the ref instance directly without opening a picker.
 
+// v0.27.11 (D-2026-05-28-D) — dynamic Symbol-ref presets inherit the
+// Symbol shape (circle), matching the static MISSION_REF / VALUE_REF /
+// IDENTITY_REF / ACTOR_REF presets above.
+
 function actorRefPresetFor(a: SketchNode): StencilPreset {
   // v0.15: only actor kind has ``side``; narrow before reading.
   const side = a.kind === "actor" ? a.side : null;
@@ -503,11 +533,10 @@ function actorRefPresetFor(a: SketchNode): StencilPreset {
     id: `actor-ref:${a.id}`,
     labelHint: a.label || a.id,
     labelI18nKey: null,
-    // v0.26.1 (D-2026-05-25-B) — ref kinds default to rectangle.
-    shape: "rectangle",
+    shape: "circle",
     color: side === "operator" ? "#bae6fd" : "#fce7f3",
-    width: 140,
-    height: 70,
+    width: 120,
+    height: 120,
     icon: "user",
     label: `→ ${a.label || a.id}`,
     kind: "actor_ref",
@@ -520,10 +549,10 @@ function missionRefPresetFor(m: SketchNode): StencilPreset {
     id: `mission-ref:${m.id}`,
     labelHint: m.label || m.id,
     labelI18nKey: null,
-    shape: "rectangle",
+    shape: "circle",
     color: "#fef3c7",
-    width: 160,
-    height: 60,
+    width: 120,
+    height: 120,
     icon: "flag",
     label: `→ ${m.label || m.id}`,
     kind: "mission_ref",
@@ -536,10 +565,10 @@ function valueRefPresetFor(v: SketchNode): StencilPreset {
     id: `value-ref:${v.id}`,
     labelHint: v.label || v.id,
     labelI18nKey: null,
-    shape: "rectangle",
+    shape: "circle",
     color: "#fde68a",
-    width: 160,
-    height: 60,
+    width: 120,
+    height: 120,
     icon: "star",
     label: `→ ${v.label || v.id}`,
     kind: "value_ref",
@@ -552,10 +581,10 @@ function identityRefPresetFor(i: SketchNode): StencilPreset {
     id: `identity-ref:${i.id}`,
     labelHint: i.label || i.id,
     labelI18nKey: null,
-    shape: "rectangle",
+    shape: "circle",
     color: "#fed7aa",
-    width: 160,
-    height: 60,
+    width: 120,
+    height: 120,
     icon: "heart",
     label: `→ ${i.label || i.id}`,
     kind: "identity_ref",

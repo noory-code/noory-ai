@@ -60,6 +60,30 @@ export interface BaseNodeChromeProps {
 
 const SHAPES_WITH_VISIBLE_CORNER = new Set<Shape>(["rectangle", "rounded"]);
 
+// v0.27.11 (D-2026-05-28-D) — Symbol kinds always render as circles
+// regardless of ``data.shape``. Per D-2026-05-19-D, Symbol nodes are the
+// cross-canvas referenceable masters (mission / core_value / identity /
+// actor) plus their refs in the consumer plane; user 2026-05-28
+// confirmed they should always read as circles. Force at the renderer
+// layer so legacy data (mission saved as ``rounded`` pre-v0.27.11)
+// snaps to circle without any data migration. ``project`` (synthetic
+// anchor) is intentionally excluded — its shape is a user toggle.
+const SYMBOL_KINDS = new Set<string>([
+  "mission",
+  "core_value",
+  "identity",
+  "actor",
+  "actor_ref",
+  "mission_ref",
+  "value_ref",
+  "identity_ref",
+]);
+
+function effectiveShape(data: BaseNodeData): Shape {
+  if (data.kind && SYMBOL_KINDS.has(data.kind)) return "circle";
+  return data.shape;
+}
+
 function shapeStyle(shape: Shape): React.CSSProperties {
   switch (shape) {
     case "rectangle":
@@ -100,8 +124,13 @@ function contentPadding(shape: Shape): string {
 
 /** Convenience: per-kind renderers compose with this for the
  *  KIND_TAG_SHAPES check — the corner only renders on shapes whose
- *  top-left is inside the visible silhouette. */
-export function shouldShowKindTag(shape: Shape): boolean {
+ *  top-left is inside the visible silhouette. v0.27.11
+ *  (D-2026-05-28-D): when ``kind`` is a Symbol the renderer forces
+ *  circle, so the corner is never visible — the kind tag has no
+ *  place to render and is suppressed at this layer regardless of
+ *  the stored ``shape``. */
+export function shouldShowKindTag(shape: Shape, kind?: string | null): boolean {
+  if (kind && SYMBOL_KINDS.has(kind)) return false;
   return SHAPES_WITH_VISIBLE_CORNER.has(shape);
 }
 
@@ -118,9 +147,10 @@ export function BaseNode({
     : isAnchor
       ? "border-2 border-slate-600"
       : "border border-slate-300";
+  const renderShape = effectiveShape(data);
   const style = {
     backgroundColor: data.color,
-    ...shapeStyle(data.shape),
+    ...shapeStyle(renderShape),
   };
   const Icon = getIcon(data.icon);
   const bodyPreview = data.body;
@@ -138,7 +168,7 @@ export function BaseNode({
       />
       <div
         className={`relative h-full w-full bg-white shadow-sm ${ring} ${contentPadding(
-          data.shape,
+          renderShape,
         )}`}
         style={style}
         data-node-id={id}
