@@ -39,6 +39,13 @@ export interface KindInspectorProps {
   projectPath: string;
   projectId: string;
   canvasKind: CanvasKind;
+  /** v0.27.13 (D-2026-05-28-H) — required for the published-versions
+   *  fetch on service_detail canvases. The backend's
+   *  ``GET .../canvases/service_detail/nodes/.../published`` returns
+   *  500 when ``service_id`` is missing (read_canvas raises
+   *  ValueError); the Inspector now passes it through so the URL is
+   *  always complete. Optional on every other canvas. */
+  serviceId?: string;
   /** v0.2 multi-canvas: actors across all canvases. ActorRefInspector
    *  uses this to look up the referenced actor master + detect orphans. */
   availableActors?: SketchNode[];

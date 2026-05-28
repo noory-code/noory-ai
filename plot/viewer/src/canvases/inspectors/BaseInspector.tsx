@@ -45,6 +45,11 @@ export interface BaseInspectorProps {
   projectPath: string;
   projectId: string;
   canvasKind: CanvasKind;
+  /** v0.27.13 (D-2026-05-28-H): service_id for service_detail canvas.
+   *  Required for the published-versions fetch; the backend returns
+   *  500 without it (read_canvas raises ValueError on service_detail
+   *  without service_id). */
+  serviceId?: string;
   /** Per-kind body slot. Rendered between the label input and the
    *  DetailsSection — i.e. inside the scrollable body, after the
    *  shared chrome but before the long-form area. */
@@ -66,6 +71,7 @@ export function BaseInspector({
   projectPath,
   projectId,
   canvasKind,
+  serviceId,
   children,
   hideDetailsSection = false,
 }: BaseInspectorProps) {
@@ -225,6 +231,7 @@ export function BaseInspector({
             projectId={projectId}
             canvasKind={canvasKind}
             nodeId={node.id}
+            serviceId={serviceId}
             refreshKey={node.version}
           />
         )}

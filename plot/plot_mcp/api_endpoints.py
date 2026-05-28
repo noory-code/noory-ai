@@ -707,6 +707,12 @@ async def node_published_list_endpoint(request: Request) -> JSONResponse:
         )
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
+    except ValueError as exc:
+        # v0.27.13 (D-2026-05-28-H) — read_canvas raises ValueError when
+        # canvas_kind=="service_detail" but service_id is missing. Surface
+        # as 400 so the caller gets a useful message instead of an
+        # uncaught-exception 500.
+        return _error(str(exc), status=400)
     node = next((n for n in canvas.nodes if n.id == node_id), None)
     if node is None:
         return _error(f"node not found: {node_id}", status=404)

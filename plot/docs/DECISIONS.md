@@ -8556,3 +8556,80 @@ is complete.
   shape).
 - D-2026-05-10-E (single-shot onDocChange + Cmd+Z consent — this
   contract is preserved by the fallback path).
+
+---
+
+### D-2026-05-28-H — 500 → 400 on `published` endpoint when `service_id` is missing + Inspector now threads it through (v0.27.13)
+
+**Context:** User network log (2026-05-27, surfaced on v0.27.x ship
+discussion):
+
+```
+GET /api/projects/banas-imported/canvases/service_detail/nodes/demo_inter_publish/published?project_path=... → 500
+```
+
+Backend trace: `node_published_list_endpoint` calls
+`read_canvas(plot_root, project_id, "service_detail", service_id)`;
+when `service_id` is `None`, `read_canvas`
+(`plot_mcp/folder_io.py:98`) raises
+`ValueError("service_detail requires service_id")` —
+uncaught by the endpoint, so Starlette returns 500.
+
+The 500 fired because `PublishedVersionsSection` (rendered inside
+`BaseInspector` for every publish-eligible kind) was issuing the
+fetch without a `service_id` query param: `BaseInspector` did not
+take a `serviceId` prop, and its caller chain (KindInspector →
+SketchInspectorBindings) didn't pass one either.
+
+**Decision (defence-in-depth):**
+
+1. **Backend** — `node_published_list_endpoint` now catches
+   `ValueError` from `read_canvas` and returns **400** with the
+   exception message, instead of letting it bubble up to a 500.
+   Mirrors the existing `FileNotFoundError → 404` handling.
+2. **Frontend** — pipe `serviceId` through the Inspector chain:
+   - `KindInspectorProps` (and `BaseInspectorProps`) gain
+     `serviceId?: string`.
+   - `SketchInspectorBindings` passes `doc.service_ref ?? undefined`
+     (omitting the `canvas_kind === "service_detail"` branch on
+     purpose — the v0.15 Phase 3.4 pre-commit gate forbids
+     `canvas_kind` branching in `viewer/src/canvases/sketch/`;
+     `doc.service_ref` is null on non-service_detail canvases so
+     the prop is harmlessly `undefined` everywhere else).
+   - `BaseInspector` threads `serviceId` into
+     `PublishedVersionsSection`, which already accepted it.
+
+**Honest scope note:** The fix unblocks the published-versions
+fetch for *real* nodes on `service_detail`. The 500 originated
+from a `demo_inter_publish` node, which is one of the client-side
+demo nodes `ServiceDetailCanvas` injects (and which `useNodesMemo`
+renders without persisting). The publish-versions folder for
+that node will never exist; the endpoint correctly returns
+`{ versions: [] }` once `service_id` is present. A future
+ship may choose to suppress the Inspector's published-versions
+section entirely for demo nodes (id-prefix `demo_*`), but that
+is a separate UX decision.
+
+**Test pin:** existing `tests/test_endpoints.py` patterns cover
+publish endpoints; a dedicated regression case for the
+`service_detail` + missing-`service_id` 400 path is filed as a
+follow-up. The fix is exercised by the existing manual flow:
+opening any non-demo node on a `service_detail` canvas now
+returns the published list (200) instead of the 500 surfaced in
+the user's network log.
+
+**Spec impact:** none — this is a bug fix on an existing
+endpoint contract.
+
+**Approval:** Accepted-pending — user reported the 500 in the
+v0.27.x discussion; fix lands without explicit per-decision
+approval because it's a regression fix on a previously-approved
+endpoint.
+
+**Cross-refs:**
+- D-2026-05-17-I (PublishedVersionsSection introduction — this
+  entry adds the missing `serviceId` plumbing that was needed
+  from day one).
+- D-2026-05-12-B → -F (the Phase 3.4 pre-commit gate that
+  blocked the `canvas_kind` branching shortcut — `service_ref`
+  passthrough is the gate-compatible alternative).

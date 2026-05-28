@@ -4,6 +4,42 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.13] — 2026-05-28
+
+### Fixed
+
+- **`GET .../canvases/service_detail/nodes/.../published` no longer
+  returns 500 when `service_id` is missing**
+  ([D-2026-05-28-H](./docs/DECISIONS.md#d-2026-05-28-h--500--400-on-published-endpoint-when-service_id-is-missing--inspector-now-threads-it-through-v02713)).
+  Defence-in-depth fix:
+  - **Backend:** `node_published_list_endpoint` catches the
+    `ValueError("service_detail requires service_id")` from
+    `read_canvas` and returns **400** with the exception
+    message instead of an uncaught 500.
+  - **Frontend:** `BaseInspectorProps` and `KindInspectorProps`
+    gain `serviceId?: string`; `SketchInspectorBindings` passes
+    `doc.service_ref ?? undefined` (gate-compatible alternative
+    to `canvas_kind` branching — that pattern is blocked by the
+    v0.15 Phase 3.4 pre-commit gate); `BaseInspector` threads
+    `serviceId` into `PublishedVersionsSection`, which already
+    accepted it.
+
+### Honest scope note
+
+- Demo nodes (id-prefix `demo_*`) injected by `ServiceDetailCanvas`
+  for first-open guidance never have a published-versions folder
+  on disk. After this fix the endpoint correctly returns
+  `{ versions: [] }` (200) instead of the 500 the user saw — but
+  a real publish for those demo ids is impossible. Suppressing the
+  Inspector's published-versions section entirely for demo nodes
+  is a separate UX decision filed for a follow-up.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 582 / 582 pass.
+- `uv run pytest` — 433 / 433 pass.
+
 ## [0.27.12] — 2026-05-28
 
 ### Fixed

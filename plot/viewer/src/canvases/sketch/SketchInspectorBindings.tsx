@@ -72,6 +72,7 @@ export function SketchInspectorBindings({
       projectPath={projectPath}
       projectId={projectId}
       canvasKind={doc.canvas_kind as CanvasKind}
+      serviceId={doc.service_ref ?? undefined}
       onRepickActorRef={(nodeId) => setPendingActorRef({ mode: "rewire", nodeId })}
       onRepickFoundationRef={(nodeId) => {
         // v0.11.1 — find the orphan ref's kind and open the picker.
