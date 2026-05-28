@@ -8470,3 +8470,89 @@ left out).
 **Cross-refs:**
 - D-2026-05-28-C (the relabel — this entry would build on it with
   per-item copy).
+
+---
+
+### D-2026-05-28-G — Handle-aware dagre fallback for `⊞` when the mindmap BFS has no entry (v0.27.12)
+
+**Context:** v0.27.11's D-2026-05-28-B hid the root-service node on
+ServiceDetail. The Auto-layout `⊞` button still routes through
+`useAutoLayout` → `computeAutoLayout` (the BFS mindmap algorithm),
+which expects an anchor with at least one incident edge. After
+v0.27.11, ServiceDetail's anchor *is* the hidden root-service, and
+typical user-authored ServiceDetail graphs (actor / interaction /
+value / upper-link peer graph per D-2026-05-26-C) never connect to
+the service node directly. Result: `⊞` was a silent no-op on every
+ServiceDetail reconstruction.
+
+User report 2026-05-28:
+
+> 정렬은 연결관계에 따라서 오른쪽에 붙어있으면 오른쪽으로 정렬해야하는데
+> 오른쪽에 붙어있는걸 왼쪽에 정렬하고 이러니까 문제죠.
+
+The headline complaint is the *grid* layout the reconstruction
+landed in initially (the script's 5-layer y-banding); the deeper
+demand is that `⊞` should produce a *handle-aware* arrangement
+where a node connected via a right-side handle (`sourceHandle: "r"`)
+ends up on its parent's right side.
+
+**Decision:**
+
+1. **New pure module
+   `viewer/src/flow/handleAwareLayout.ts`** — dagre layered graph
+   layout (`rankdir: "LR"`, `nodesep: 50`, `ranksep: 100`). For each
+   edge, if `sourceHandle` starts with `l` or `t`, the source/target
+   pair is **swapped in dagre's input** so dagre's LR output still
+   matches the user's "right handle → right side" expectation.
+   Orphan nodes (no incident edges) keep their original positions.
+2. **`useAutoLayout` fallback path.** When the mindmap BFS yields
+   `positions.size === 0` (i.e. anchor disconnected, or no anchor
+   at all), call `handleAwareLayout(doc)` and dispatch via the
+   normal `onDocChange`/fitView pipeline. Foundation / Actors /
+   Services flows are unaffected (their anchor is connected to its
+   peers via the synthetic edges from `useNodesMemo`).
+
+**Honest limitations:**
+
+- Dagre is a DAG layout. Cycles are broken by dagre's internal
+  feedback-arc-set pass — one edge per cycle is silently reversed
+  for layout. Plot's typical ServiceDetail graphs contain small
+  actor → interaction → actor cycles (Hero → 모임 → Fan +
+  Fan → 후원 → Hero). The result is still readable but the
+  reversed edges may not align perfectly with their declared
+  handles.
+- `rankdir` is global. A user graph that mixes LR-style and TB-style
+  handles (some `sourceHandle: "r"`, some `sourceHandle: "b"`)
+  collapses to LR. Per-edge rankdir is not in dagre's model.
+- The fallback fires whenever BFS yields zero — including degenerate
+  cases like a single isolated node. The `moved` check at the
+  caller guards against pushing an empty `onDocChange`.
+
+**Test pin:** `viewer/tests/handle-aware-layout.test.ts` —
+6 cases (LR placement, L-source swap, 3-node chain ranking, orphan
+preservation, non-empty-positions invariant, 8-node user-shape
+reconstruction). Red→Green ritual: pre-fix `handleAwareLayout`
+module did not exist; vitest reported "no tests" / unresolved
+import.
+
+**Spec impact:** `SPEC.md` §Auto-layout §"Handle-aware fallback"
+gains a new subsection documenting the rankdir contract, the
+swap rule, the orphan rule, the cycle-handling limitation, and
+the test-pin pointer.
+
+**Approval:** Accepted-design, pending user hands-on verification
+on the reconstruction. The Chrome bridge dropped mid-session so
+the post-fix browser pass is a follow-up; the static-test ritual
+is complete.
+
+**Cross-refs:**
+- D-2026-05-28-B (hidden root-service on ServiceDetail — the trigger
+  that made the BFS path a no-op).
+- D-2026-05-26-A (`⊞` button + `layoutAlgo` props — this entry adds
+  a fallback inside the existing `"tree"` algorithm flow rather
+  than a new `layoutAlgo` value).
+- D-2026-05-26-C / D-2026-05-26-G (ServiceDetail = user-authored
+  interaction graph; this entry makes `⊞` work for that graph
+  shape).
+- D-2026-05-10-E (single-shot onDocChange + Cmd+Z consent — this
+  contract is preserved by the fallback path).

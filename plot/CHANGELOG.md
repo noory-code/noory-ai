@@ -4,6 +4,65 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.12] — 2026-05-28
+
+### Fixed
+
+- **Auto-layout `⊞` now produces a handle-aware layered arrangement on
+  ServiceDetail** (and on any other canvas where the BFS mindmap yields
+  zero positions)
+  ([D-2026-05-28-G](./docs/DECISIONS.md#d-2026-05-28-g--handle-aware-dagre-fallback-for--when-the-mindmap-bfs-has-no-entry-v02712)).
+  User report 2026-05-28: *"정렬은 연결관계에 따라서 오른쪽에
+  붙어있으면 오른쪽으로 정렬해야하는데 오른쪽에 붙어있는걸 왼쪽에
+  정렬하고 이러니까 문제죠."* Root cause: v0.27.11's D-2026-05-28-B
+  hid the root-service node on ServiceDetail; that node was the
+  mindmap BFS's only entry point, and the user-authored ServiceDetail
+  graph (actor / interaction / value peers) never connects to it.
+  BFS therefore reached zero nodes and `⊞` was a silent no-op.
+
+### Added
+
+- New pure module `viewer/src/flow/handleAwareLayout.ts` — dagre
+  layered layout (`rankdir: "LR"`) that swaps source/target in
+  dagre's input whenever the edge's `sourceHandle` faces L or T,
+  so the LR output matches "right handle → right side." Orphan
+  nodes keep their original positions.
+- `useAutoLayout` falls back to `handleAwareLayout(doc)` whenever
+  the mindmap BFS yields `positions.size === 0`. Foundation /
+  Actors / Services flows are unaffected (their anchors are
+  always connected to peers via synthetic / user-drawn edges).
+- New regression `viewer/tests/handle-aware-layout.test.ts` — 6
+  cases (LR placement, L-source swap, 3-node chain ranking,
+  orphan preservation, non-empty-positions invariant, 8-node
+  user-shape reconstruction). Red→Green ritual performed
+  before adding the module.
+
+### Changed
+
+- `docs/SPEC.md` §Auto-layout gains a new "Handle-aware fallback
+  (v0.27.12, D-2026-05-28-G)" subsection documenting the rankdir,
+  swap rule, orphan rule, cycle-handling limitation, and the
+  static-test pointer.
+
+### Honest limitations
+
+- Dagre is a DAG layout. Cycles are broken by dagre's internal
+  feedback-arc-set pass — one edge per cycle is silently
+  reversed for layout. Typical ServiceDetail graphs include
+  small actor → interaction → actor cycles (Hero → 모임 → Fan +
+  Fan → 후원 → Hero); the result is still readable but the
+  reversed edge may not align perfectly with its declared handle.
+- `rankdir` is global. A user graph mixing LR-style
+  (`sourceHandle: "r"`) and TB-style (`sourceHandle: "b"`) handles
+  collapses to LR. Per-edge rankdir is not in dagre's model.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 582 / 582 pass (576 + 6 new).
+- chrome-devtools bridge dropped mid-session — visual confirmation
+  on the user's Chrome is a follow-up.
+
 ## [0.27.11] — 2026-05-28
 
 User design pass — four corrections rolled into one ship, after the

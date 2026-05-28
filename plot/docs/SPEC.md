@@ -189,6 +189,27 @@ Implemented in
   so no two node footprints overlap.
 - Deterministic — ties broken by node id.
 
+### Handle-aware fallback (v0.27.12, D-2026-05-28-G)
+
+When the mindmap BFS yields zero positions (typical case:
+ServiceDetail's hidden root-service per D-2026-05-28-B is the
+anchor but is *intentionally* disconnected from every edge, so BFS
+has no starting neighbours), `useAutoLayout` falls back to
+[`viewer/src/flow/handleAwareLayout.ts`](../viewer/src/flow/handleAwareLayout.ts):
+
+- Dagre layered graph drawing with `rankdir: "LR"`.
+- For every edge whose `sourceHandle` faces L or T, the source/target
+  pair is **swapped in dagre's input** so dagre's LR output still
+  places nodes "right handle = on the right" per the user's mental
+  model (2026-05-28).
+- Orphan nodes (no incident edges) keep their original positions.
+- Cycle handling is dagre's internal feedback-arc-set pass: one
+  edge per cycle is silently reversed for layout. Plot's typical
+  ServiceDetail graphs contain small actor → interaction → actor
+  cycles; the result is still readable but not always pixel-perfect.
+
+Static guard: `viewer/tests/handle-aware-layout.test.ts`.
+
 ### Radial algorithm (`layoutAlgo="radial"`)
 
 Implemented in
