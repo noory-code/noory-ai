@@ -4,6 +4,55 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.14] — 2026-05-28
+
+### Added
+
+- **Archive guard for service details with user-authored content**
+  ([D-2026-05-28-I](./docs/DECISIONS.md#d-2026-05-28-i--sync-archive-guard-for-user-authored-service-details-v02714)).
+  `sync_details_with_overview` now refuses to silently archive a
+  detail folder whose `detail.json` contains:
+  - any node outside the default seed set
+    (`{sid, {sid}-operator-ref, {sid}-user-ref}`), OR
+  - any edge.
+
+  Protected details land on the new `skipped_archive` field of the
+  sync response (`{"created": [...], "archived": [...],
+  "skipped_archive": [...]}`). The PUT canvas endpoint + the MCP
+  `write_canvas` tool surface the same field. Frontend
+  `useCanvasPersist` raises a toast + `console.warn` so the user
+  immediately learns which details survived a drop in the overview.
+
+### Fixed
+
+- Closes the regression that lost `n_mpmrphpa_zs8v/detail.json`
+  during the 2026-05-27 chrome-devtools session.
+
+### Changed
+
+- `viewer/src/api.ts::PutCanvasResponse.sync` types
+  `skipped_archive?: string[]`.
+
+### Honest limitations
+
+- Guard fires only on the automated reconciliation path. A *manual*
+  deletion of `services/{sid}/` still succeeds.
+- "User content" is structural-only (extra nodes / any edges).
+  Editing the *body markdown* of a seeded node without adding new
+  structure is not caught yet; follow-up filed.
+- The skipped-archive toast reuses the error channel for a *warning*;
+  splitting errors and warnings into separate UI lanes is a UX
+  follow-up.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 582 / 582 pass.
+- `uv run pytest` — 436 / 436 pass (3 new `test_sync.py` cases:
+  protected-by-extra-node, protected-by-edge, still-archives-empty).
+- Red → Green ritual completed on the new tests before adding the
+  guard.
+
 ## [0.27.13] — 2026-05-28
 
 ### Fixed

@@ -138,7 +138,7 @@ def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) ->
     plot_root = resolve_plot_root(project_path)
     validated = CanvasDoc.model_validate(canvas)
     write_canvas(plot_root, project_id, validated)
-    sync: dict[str, list[str]] = {"created": [], "archived": []}
+    sync: dict[str, list[str]] = {"created": [], "archived": [], "skipped_archive": []}
     if validated.canvas_kind == "services":
         sync = sync_details_with_overview(plot_root, project_id)
     return {"canvas": validated.model_dump(by_alias=True), "sync": sync}

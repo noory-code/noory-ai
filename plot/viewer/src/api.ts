@@ -175,7 +175,13 @@ export async function getCanvas(
 
 export interface PutCanvasResponse {
   canvas: CanvasDoc;
-  sync: { created: string[]; archived: string[] };
+  /** v0.27.14 (D-2026-05-28-I) — ``skipped_archive`` lists service
+   *  details that the server **refused to archive** because they
+   *  carried user-authored content (a node beyond the default
+   *  seed set, or any edge). The viewer should surface these to
+   *  the user as a warning so they can decide whether to restore
+   *  the service in the overview or explicitly delete the detail. */
+  sync: { created: string[]; archived: string[]; skipped_archive?: string[] };
 }
 
 export async function putCanvas(

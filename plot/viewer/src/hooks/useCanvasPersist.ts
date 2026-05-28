@@ -108,6 +108,19 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
                 return m;
               });
             }
+            // v0.27.14 (D-2026-05-28-I) — surface protected details.
+            // The server refused to archive these because they carried
+            // user-authored content; warn so the user can intervene.
+            const skipped = res.sync.skipped_archive ?? [];
+            if (skipped.length > 0) {
+              console.warn(
+                "[plot] sync skipped archive for services with user-authored detail content; restore the service in the overview or delete the detail explicitly:",
+                skipped,
+              );
+              onErrorRef.current(
+                `Detail for ${skipped.length === 1 ? "1 service" : `${skipped.length} services`} preserved (user content present): ${skipped.join(", ")}`,
+              );
+            }
             // Reconcile Overview ↔ Detail sync the server reports.
             if (res.sync.created.length || res.sync.archived.length) {
               setServiceDetails((prev) => {

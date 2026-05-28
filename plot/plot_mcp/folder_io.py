@@ -956,9 +956,22 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
 
     archive_folder = services_folder / "_archive"
     archived: list[str] = []
+    skipped_archive: list[str] = []
     for service_id in sorted(existing_details - overview_service_ids):
-        archive_folder.mkdir(exist_ok=True)
         src_path = services_folder / service_id
+        # v0.27.14 (D-2026-05-28-I) — data-loss guard: if the disappearing
+        # detail carries user-authored content (any node outside the
+        # default seed set ``{service_id, {sid}-operator-ref,
+        # {sid}-user-ref}``, OR any edges), do NOT silently archive.
+        # The user's 2026-05-27 chrome-devtools session lost a root
+        # service + its detail to a sync archive triggered by an
+        # injected onNodesChange burst; this branch protects the
+        # next instance of that pattern. Empty / default-seeded details
+        # archive cleanly as before (existing test_sync coverage).
+        if _detail_has_user_authored_content(src_path, service_id):
+            skipped_archive.append(service_id)
+            continue
+        archive_folder.mkdir(exist_ok=True)
         dst_path = archive_folder / service_id
         # If the archive already has a folder with the same id (rare — same
         # service created, archived, and recreated), rename with a suffix.
@@ -970,7 +983,44 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
         src_path.replace(dst_path)
         archived.append(service_id)
 
-    return {"created": created, "archived": archived}
+    result: dict[str, list[str]] = {"created": created, "archived": archived}
+    if skipped_archive:
+        result["skipped_archive"] = skipped_archive
+    else:
+        result["skipped_archive"] = []
+    return result
+
+
+def _detail_has_user_authored_content(detail_dir: Path, service_id: str) -> bool:
+    """v0.27.14 (D-2026-05-28-I) — return True iff the service's
+    ``detail.json`` contains anything beyond the default seeded shape
+    (root service node + 2 actor_refs, no edges).  Used by
+    ``sync_details_with_overview`` to refuse to archive details the
+    user has invested work in.
+    """
+    detail_path = detail_dir / "detail.json"
+    if not detail_path.is_file():
+        return False
+    try:
+        doc = json.loads(detail_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # Unreadable / malformed: treat as user content to be safe.
+        return True
+    seeded_ids = {
+        service_id,
+        f"{service_id}-operator-ref",
+        f"{service_id}-user-ref",
+    }
+    nodes = doc.get("nodes") or []
+    edges = doc.get("edges") or []
+    if edges:
+        return True
+    for node in nodes:
+        if not isinstance(node, dict):
+            return True
+        if node.get("id") not in seeded_ids:
+            return True
+    return False
 
 
 # ---------------------------------------------------------------------------

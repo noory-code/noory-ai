@@ -8633,3 +8633,89 @@ endpoint.
 - D-2026-05-12-B → -F (the Phase 3.4 pre-commit gate that
   blocked the `canvas_kind` branching shortcut — `service_ref`
   passthrough is the gate-compatible alternative).
+
+---
+
+### D-2026-05-28-I — Sync archive guard for user-authored service details (v0.27.14)
+
+**Context:** The 2026-05-27 chrome-devtools investigation lost a
+root service node + its detail folder when an injected
+`onNodesChange` burst (the same code path the user exercised by
+hand) ended up triggering a `services` canvas PUT whose `nodes`
+list briefly dropped the root service. `sync_details_with_overview`
+treats *any* service that disappears from the overview as
+"archive me" and silently moved
+`services/n_mpmrphpa_zs8v/detail.json` to
+`services/_archive/n_mpmrphpa_zs8v/`. Static archive log already
+exists (the `_archive` folder is in `.gitignore`), but the user
+had no signal that work-in-progress detail content was about to
+be quarantined.
+
+**Decision:**
+
+1. **`sync_details_with_overview` archive loop gains a content
+   guard.** Before moving `services/{sid}/` to
+   `services/_archive/{sid}/`, the helper now reads
+   `detail.json` and refuses to archive when the detail contains
+   any of:
+   - a node whose id is **not** in the default seed set
+     (`{sid, {sid}-operator-ref, {sid}-user-ref}`), OR
+   - any edge.
+
+   Empty / default-seeded details archive cleanly as before
+   (existing `test_sync.py::test_sync_archives_removed_service`
+   continues to pass). Protected details land on a new
+   `skipped_archive` field in the return dict.
+
+2. **`mcp_tools.py::write_canvas_tool` + `api_endpoints.py` PUT**
+   pass the new field through (`{"created": [...], "archived":
+   [...], "skipped_archive": [...]}`) so both the MCP tool and
+   HTTP API surfaces are byte-symmetric.
+
+3. **Frontend (`useCanvasPersist`)** surfaces `skipped_archive`
+   via the existing `onError` toast channel + a `console.warn`
+   with the protected service ids. The user immediately learns
+   which detail folders survived and can decide whether to
+   restore the service node in the overview or explicitly delete
+   the detail.
+
+4. **Type pin (`viewer/src/api.ts::PutCanvasResponse`)** adds the
+   optional `skipped_archive` field with a doc comment pointing
+   at this entry.
+
+**Honest limitations:**
+
+- The guard fires only on the `sync_details_with_overview` archive
+  path. A *manual* deletion of a `services/{sid}/` folder still
+  succeeds — the guard is about silent data loss from automated
+  reconciliation, not about user-explicit destructive intent.
+- "User-authored content" is structural-only: nodes outside the
+  seed set, or any edge. Editing the *body markdown* of a seeded
+  node without adding new nodes is **not** caught and will still
+  archive. A follow-up could extend the guard to also check
+  `node.body.length > 0` or `attached *.md` files in the detail
+  folder.
+- The skipped-archive `onError` toast reuses the error channel
+  for a *warning*, which is a slight semantic stretch. Splitting
+  errors and warnings into separate channels is a UX follow-up.
+
+**Test pin:** `tests/test_sync.py` gains three regressions
+covering both branches plus the "still archives an empty
+detail" sanity check. Red→Green ritual confirmed pre-fix
+failure with the expected
+`'order' not in ['order']` assertion message.
+
+**Spec impact:** `SPEC.md` Services §Sync now documents the
+guard; the contract sentence is *"a detail that holds
+user-authored content survives a service drop and the server
+reports it under `skipped_archive`."*. Added in this commit.
+
+**Approval:** Accepted-design, retroactive — the 2026-05-27 data
+loss is the ground-truth user complaint; ship lands with the
+test pin so the regression cannot recur.
+
+**Cross-refs:**
+- D-2026-05-26-D (ServiceDetail self-containment — protected
+  details are the storage half of that principle).
+- D-2026-05-25-A (`sync.archived` path — this entry adds the
+  protection layer that v0.25 left implicit).
