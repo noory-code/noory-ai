@@ -182,6 +182,35 @@ export function useContextMenus({
             },
           },
           {
+            // v0.29.2 (D-2026-05-31-A) — flip orientation: swap
+            // source↔target so the arrowhead points the other way.
+            // Handles are typed by side (BaseNode: t/l = target-only,
+            // r/b = source-only), so the old handle ids can't carry
+            // over (a target handle can't act as a source). Null both
+            // and let RF route through each node's default valid
+            // handle. Orientation only; ``directed`` is preserved.
+            // The edge stays user-drawn — this re-orients one already
+            // drawn (Cmd+Z undoes it).
+            label: "Flip direction (swap source ↔ target)",
+            onSelect: () => {
+              const current = docRef.current;
+              onDocChange({
+                ...current,
+                edges: current.edges.map((e) =>
+                  e.id === edge.id
+                    ? {
+                        ...e,
+                        source: e.target,
+                        target: e.source,
+                        sourceHandle: null,
+                        targetHandle: null,
+                      }
+                    : e,
+                ),
+              });
+            },
+          },
+          {
             label: "Toggle dashed/solid",
             onSelect: () => {
               const current = docRef.current;

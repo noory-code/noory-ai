@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.29.2] — 2026-05-31
+
+### Added — edge "Flip direction" context-menu action
+
+- Right-click an edge → **"Flip direction (swap source ↔ target)"**
+  swaps the edge's `source`/`target` so the arrowhead points the other
+  way (D-2026-05-31-A). Resolves the open "Direction switch UI" thread,
+  and gives the user a manual tool to re-orient an edge toward the
+  anchor on the Retention canvases. Available on every canvas;
+  `directed` is preserved; Cmd+Z undoes it.
+
+### Fixed — handles are nulled on flip (not swapped)
+
+- BaseNode handles are typed by side (`t`/`l` target-only, `r`/`b`
+  source-only), so a naive `sourceHandle ↔ targetHandle` swap fed a
+  target-only handle into the source slot and React Flow dropped the
+  edge (*"Couldn't create edge for source handle id: l"*, caught in
+  live verification). Flip now nulls both handles and lets RF re-route
+  through each node's default valid handle.
+
 ## [0.29.1] — 2026-05-30
 
 ### Fixed — canvas tabs showed raw i18n keys ("변수명")

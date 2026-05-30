@@ -39,6 +39,29 @@
 
 ## Log
 
+### D-2026-05-31-A — Edge "Flip direction" context-menu action
+
+- **What:** New edge context-menu item **"Flip direction (swap source
+  ↔ target)"**. Swaps the edge's ``source``/``target`` so the arrowhead
+  points the other way; nulls ``sourceHandle``/``targetHandle`` and
+  lets React Flow re-route through each node's default valid handle.
+  ``directed`` is preserved. Available on every canvas.
+- **Why:** user asked for a way to change an edge's direction without
+  redrawing it (*"서비스 캔버스에서 연결선 방향을 바꿀 수 있는 기능도
+  들어가면 좋을 것 같아요"*). Resolves the open "Direction switch UI"
+  thread. Also the manual tool for re-orienting an edge toward the
+  anchor on the Retention canvases (the planned all-edges-toward-anchor
+  model, this session).
+- **Alternatives:** (a) swap the handle ids too — **rejected**: BaseNode
+  handles are typed by side (``t``/``l`` target-only, ``r``/``b``
+  source-only), so a target handle can't act as a source; reusing the
+  ids made RF drop the edge (verified live — *"Couldn't create edge for
+  source handle id: l"*). (b) auto-flip edges to a convention —
+  **rejected**: violates "all edges are user-drawn / user controls
+  every line". Flip is an explicit per-edge user action.
+- **Approval:** Accepted by user, 2026-05-31 (requested the feature).
+- **Spec impact:** SPEC.md §Edges — new "Flip direction" row.
+
 ### D-2026-05-04-A — No auto-edges from anchor
 
 - **What:** Renderer was emitting synthetic dashed slate-400 edges from

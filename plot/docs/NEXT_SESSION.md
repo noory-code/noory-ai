@@ -181,10 +181,10 @@
    - **Actor 계층 명시화** — Bana → Hero / Fan as mode-specialisations
      ("히어로는 바나 밑에 특수 사용자"). Currently implicit; no
      parent edges on the Actor canvas. Spatial expression open.
-   - **Direction switch UI.** Auto-layout reads direction from the
-     subject edge's `sourceHandle`. The user has no obvious knob
-     to *change* direction other than re-drawing the subject edge.
-     Worth a button? A keyboard shortcut?
+   - ~~**Direction switch UI.**~~ **RESOLVED v0.29.2 (D-2026-05-31-A)** —
+     edge right-click → "Flip direction (swap source ↔ target)" lets
+     the user re-orient any edge (incl. the subject edge) without
+     re-drawing it.
    - **Multi-actor services.** D-2026-05-28-J explicitly says
      subjects inherit down the sequence — but a service with a
      real second human role (e.g. payer + payee in a P2P
