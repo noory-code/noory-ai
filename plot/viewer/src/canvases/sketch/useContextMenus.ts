@@ -17,6 +17,7 @@ import type { CanvasDoc } from "../../types";
 import { type ContextMenuItem } from "../SketchContextMenu";
 import { type SketchClipboard } from "../useSketchClipboard";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
+import { classifyEdge } from "../../flow/edgeSemantics";
 import { groupSelected, ungroup } from "./groupActions";
 
 // v0.29.0 (D-2026-05-30-I) — fresh group id. Runtime-only app code, so
@@ -194,6 +195,13 @@ export function useContextMenus({
             label: "Flip direction (swap source ↔ target)",
             onSelect: () => {
               const current = docRef.current;
+              // v0.30.0 (D-2026-05-31-C) — flipping changes the source,
+              // so re-assign the stored ``relation`` from the new
+              // source-node kind; otherwise a flipped edge keeps a stale
+              // semantic (e.g. a backwards anchor→mission edge flipped to
+              // mission→anchor would stay "flow" instead of "injection").
+              // The new source is the *doc* edge's current target (the
+              // ``edge`` arg is the RF projection and lacks source/target).
               onDocChange({
                 ...current,
                 edges: current.edges.map((e) =>
@@ -204,6 +212,10 @@ export function useContextMenus({
                         target: e.source,
                         sourceHandle: null,
                         targetHandle: null,
+                        relation: classifyEdge(
+                          current.canvas_kind,
+                          current.nodes.find((n) => n.id === e.target)?.kind,
+                        ),
                       }
                     : e,
                 ),

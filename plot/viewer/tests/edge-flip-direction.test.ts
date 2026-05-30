@@ -41,6 +41,7 @@ function makeEdge(): SketchEdge {
     label: "",
     style: "solid",
     directed: true,
+    relation: "flow",
     action_verb: null,
     value_form: [],
   } as unknown as SketchEdge;
@@ -96,5 +97,44 @@ describe("edge flip direction", () => {
     expect(e.targetHandle).toBeNull();
     // directed flag is preserved (flip is orientation only).
     expect(e.directed).toBe(true);
+  });
+
+  it("re-assigns relation from the new source on flip (D-2026-05-31-C)", () => {
+    // A backwards foundation edge anchor→mission (source=project=flow)
+    // flipped to mission→anchor must become injection.
+    const doc = {
+      canvas_id: "f",
+      canvas_kind: "foundation",
+      nodes: [
+        { id: "anchor", kind: "project" },
+        { id: "m", kind: "mission" },
+      ],
+      edges: [
+        {
+          id: "e1",
+          source: "anchor",
+          target: "m",
+          sourceHandle: null,
+          targetHandle: null,
+          label: "",
+          style: "solid",
+          directed: true,
+          relation: "flow",
+          action_verb: null,
+          value_form: [],
+        },
+      ],
+    } as unknown as CanvasDoc;
+    const onDocChange = vi.fn();
+    const { result } = renderMenus(doc, onDocChange);
+    act(() => result.current.openEdgeMenu(fakeEvent(), { id: "e1" } as Edge));
+    const flip = (result.current.menu?.items ?? []).find((i: ContextMenuItem) =>
+      i.label.toLowerCase().includes("flip"),
+    );
+    flip!.onSelect();
+    const e = (onDocChange.mock.calls[0][0] as CanvasDoc).edges[0];
+    expect(e.source).toBe("m");
+    expect(e.target).toBe("anchor");
+    expect(e.relation).toBe("injection");
   });
 });

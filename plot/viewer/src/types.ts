@@ -72,6 +72,12 @@ export type ValueForm =
 // import from ``../types`` keep working.
 export type { SketchEntity, SketchNode } from "./domain";
 
+// v0.30.0 (D-2026-05-31-C) — edge semantic. Defined in the pure
+// ``flow/edgeSemantics`` module (the default-assigner SSOT); re-exported
+// here so wire-type consumers import it alongside ``SketchEdge``.
+export type { EdgeRelation } from "./flow/edgeSemantics";
+import type { EdgeRelation } from "./flow/edgeSemantics";
+
 export interface SketchEdge {
   id: string;
   source: string;
@@ -86,6 +92,13 @@ export interface SketchEdge {
    *  parent. New edges default to True; the v0.26 read-time migration
    *  converts pre-v0.26 nodes' ``parent_id`` into directed=True edges. */
   directed: boolean;
+  /** v0.30.0 (D-2026-05-31-C) — stored edge semantic (the SSOT read by
+   *  viewer fold/layout/styling AND server publish-propagation):
+   *  `flow` (sequence / hierarchy, source=parent), `injection` (essence
+   *  flows into the target — violet, excluded from fold), `inheritance`
+   *  (actors-canvas tree, target=superclass=parent). Default-assigned by
+   *  `classifyEdge` on creation/migration; authoritative once set. */
+  relation: EdgeRelation;
   /** v0.2: primary verb (create / pay / deliver / ...). */
   action_verb: string | null;
   /** v0.2: which forms of value flow along this edge. */

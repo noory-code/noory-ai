@@ -18,6 +18,7 @@ import type {
   ReactFlowInstance,
 } from "reactflow";
 import type { CanvasDoc, SketchEdge } from "../../types";
+import { classifyEdge } from "../../flow/edgeSemantics";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH, PROJECT_ANCHOR_ID } from "./constants";
 import type { NodePreset } from "./types";
 
@@ -53,6 +54,9 @@ export function useFlowHandlers({
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
       const current = docRef.current;
+      // v0.30.0 (D-2026-05-31-C) — default-assign the stored edge
+      // semantic from the canvas + source-node kind.
+      const sourceKind = current.nodes.find((n) => n.id === connection.source)?.kind;
       const newEdge: SketchEdge = {
         id: freshEdgeId(),
         source: connection.source,
@@ -67,6 +71,7 @@ export function useFlowHandlers({
         // for fold / parent-child purposes. User can toggle via
         // edge right-click menu.
         directed: true,
+        relation: classifyEdge(current.canvas_kind, sourceKind),
         action_verb: null,
         value_form: [],
       };

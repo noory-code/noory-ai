@@ -183,9 +183,7 @@ class BaseNodeFields(BaseModel):
     # never published (or pre-v0.22.0 migration) ⇒ treated as dirty
     # (initial publish is always allowed). Persisted in canvas.json
     # under the leading-underscore alias to mark it server-managed.
-    publish_baseline: dict[str, Any] | None = Field(
-        default=None, alias="_publish_baseline"
-    )
+    publish_baseline: dict[str, Any] | None = Field(default=None, alias="_publish_baseline")
 
     model_config = {"populate_by_name": True}
 
@@ -583,6 +581,17 @@ class SketchEdge(BaseModel):
     # parent. New edges default to True; the v0.26 read-time migration
     # converts pre-v0.26 nodes' parent_id into directed=True edges.
     directed: bool = True
+
+    # v0.30.0 (D-2026-05-31-C) — stored edge semantic. The SSOT read by
+    # both the viewer (fold / layout / styling) and the server
+    # (propagation.py publish MINOR-bump): "flow" (sequence / hierarchy,
+    # source = parent), "injection" (essence flows into the target —
+    # excluded from fold), "inheritance" (actors-canvas tree, target =
+    # superclass = parent). Default-assigned by edge_semantics.classify_edge
+    # on creation/migration; authoritative once set. Defaults to "flow"
+    # for back-compat with pre-v0.30 edges (a read-time migration assigns
+    # the correct value).
+    relation: Literal["flow", "injection", "inheritance"] = "flow"
 
     # v0.2 additions
     action_verb: str | None = None

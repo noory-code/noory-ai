@@ -38,6 +38,7 @@ from typing import Any, cast
 
 from pydantic import ValidationError
 
+from plot_mcp.edge_semantics import classify_edge
 from plot_mcp.git_store import (
     ensure_clean_working_tree,
     ensure_repo,
@@ -57,7 +58,6 @@ from plot_mcp.models import (
     ActorRefNode,
     CanvasDoc,
     CanvasKind,
-    CategoryNode,
     CoreValueNode,
     IdentityNode,
     MissionNode,
@@ -203,6 +203,10 @@ def read_canvas(
     # back to disk on first read so the file format settles into the
     # new model without needing a write-side trigger.
     raw = _migrate_parent_id_to_directed_edges(plot_root, project_id, canvas_kind, service_id, raw)
+    # v0.30.0 (D-2026-05-31-C) — assign the stored ``relation`` semantic
+    # to any pre-v0.30 edge that lacks it, via classify_edge(canvas,
+    # source-node kind). Idempotent; persists on first read.
+    raw = _migrate_assign_edge_relation(plot_root, project_id, canvas_kind, service_id, raw)
     # v0.23.0 (D-2026-05-17-I) — migrate legacy flat published MD layout
     # (<canvas>/published/<kind>-<slug>-v<X>.md) to the kind/slug/version.md
     # hierarchy. Idempotent.
@@ -220,9 +224,7 @@ def read_canvas(
 # v0.23.0+ layout groups by kind + slug: ``<canvas>/published/<kind>/<slug>/vN.M.md``.
 # Same data, better navigation: all versions of a logical document live in
 # one folder, and that folder is grouped under its kind.
-_LEGACY_PUBLISHED_FILENAME_RE = re.compile(
-    r"^(?P<kind>[a-z_]+)-(?P<slug>.+)-v(?P<v>\d+\.\d+)\.md$"
-)
+_LEGACY_PUBLISHED_FILENAME_RE = re.compile(r"^(?P<kind>[a-z_]+)-(?P<slug>.+)-v(?P<v>\d+\.\d+)\.md$")
 
 
 def _migrate_actor_isroot_to_false(raw: dict[str, Any]) -> dict[str, Any]:
@@ -285,9 +287,7 @@ def _migrate_published_flat_to_kind_slug(canvas_dir: Path) -> None:
 # are no-ops.
 
 
-def _migrate_published_slug_to_id(
-    canvas_dir: Path, raw_canvas: dict[str, Any]
-) -> None:
+def _migrate_published_slug_to_id(canvas_dir: Path, raw_canvas: dict[str, Any]) -> None:
     """Rename ``<canvas>/published/<kind>/<slug>/`` folders to
     ``<canvas>/published/<kind>/<node_id>/`` for every node whose
     id and label appear in the raw canvas. Nodes whose id already
@@ -365,9 +365,7 @@ def _migrate_parent_id_to_directed_edges(
 
     changed = False
     existing_directed = {
-        (e.get("source"), e.get("target"))
-        for e in edges
-        if e.get("directed", True)
+        (e.get("source"), e.get("target")) for e in edges if e.get("directed", True)
     }
     rebuilt_nodes: list[dict[str, Any]] = []
     for n in nodes:
@@ -412,6 +410,49 @@ def _migrate_parent_id_to_directed_edges(
         return raw
 
     raw = {**raw, "nodes": rebuilt_nodes, "edges": rebuilt_edges}
+    _write_json(_canvas_file(plot_root, project_id, canvas_kind, service_id), raw)
+    return raw
+
+
+def _migrate_assign_edge_relation(
+    plot_root: Path,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    service_id: str | None,
+    raw: dict[str, Any],
+) -> dict[str, Any]:
+    """v0.30.0 (D-2026-05-31-C) — assign the stored ``relation`` semantic
+    to any edge that lacks it. Idempotent.
+
+    For each edge with no ``relation`` key, set it to
+    ``classify_edge(canvas_kind, <source-node kind>)``. The source kind
+    is looked up from the canvas's own nodes; the synthetic project
+    anchor (not in ``nodes``) resolves to ``None`` → ``classify_edge``
+    handles it (flow, or inheritance on the actors canvas). On any
+    actual change, persists back to disk so subsequent reads are no-ops.
+    """
+    edges: list[dict[str, Any]] = list(raw.get("edges") or [])
+    if all("relation" in e for e in edges):
+        return raw
+
+    kind_by_id: dict[str, str] = {
+        n.get("id"): n.get("kind") for n in (raw.get("nodes") or []) if n.get("id")
+    }
+    rebuilt_edges: list[dict[str, Any]] = []
+    changed = False
+    for e in edges:
+        if "relation" in e:
+            rebuilt_edges.append(e)
+            continue
+        src = e.get("source")
+        source_kind = kind_by_id.get(src) if isinstance(src, str) else None
+        rebuilt_edges.append({**e, "relation": classify_edge(canvas_kind, source_kind)})
+        changed = True
+
+    if not changed:
+        return raw
+
+    raw = {**raw, "edges": rebuilt_edges}
     _write_json(_canvas_file(plot_root, project_id, canvas_kind, service_id), raw)
     return raw
 
@@ -655,9 +696,7 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
             existing_raw = _read_json(path)
             existing = CanvasDoc.model_validate(existing_raw)
             existing_baselines = {
-                n.id: n.publish_baseline
-                for n in existing.nodes
-                if n.publish_baseline is not None
+                n.id: n.publish_baseline for n in existing.nodes if n.publish_baseline is not None
             }
         except (FileNotFoundError, ValueError, ValidationError):
             existing_baselines = {}
@@ -1128,8 +1167,7 @@ def _dirty_snapshot(node: SketchNode, incident_edges: list[SketchEdge]) -> dict[
     for f in _DIRTY_VISUAL_FIELDS | _DIRTY_NON_CONTENT_FIELDS:
         node_raw.pop(f, None)
     edges_raw = [
-        {k: v for k, v in e.model_dump(by_alias=True).items() if k != "id"}
-        for e in incident_edges
+        {k: v for k, v in e.model_dump(by_alias=True).items() if k != "id"} for e in incident_edges
     ]
     edges_raw.sort(
         key=lambda d: (
@@ -1152,17 +1190,13 @@ def is_node_dirty(node: SketchNode, incident_edges: list[SketchEdge]) -> bool:
     return _dirty_snapshot(node, incident_edges) != node.publish_baseline
 
 
-def _patch_node_in_canvas(
-    canvas: CanvasDoc, node_id: str, patch: dict[str, Any]
-) -> CanvasDoc:
+def _patch_node_in_canvas(canvas: CanvasDoc, node_id: str, patch: dict[str, Any]) -> CanvasDoc:
     """Return a copy of ``canvas`` with ``node_id``'s listed fields
     replaced via ``model_copy(update=patch)``. Preserves all other
     fields — important for mirror sync where canvas-local state
     (e.g. ``is_root`` on the ServiceDetail mirror vs ``False`` on the
     services master) must remain canvas-specific."""
-    new_nodes = [
-        n.model_copy(update=patch) if n.id == node_id else n for n in canvas.nodes
-    ]
+    new_nodes = [n.model_copy(update=patch) if n.id == node_id else n for n in canvas.nodes]
     return canvas.model_copy(update={"nodes": new_nodes})
 
 
@@ -1362,16 +1396,12 @@ def unpublish_node(
     from_v = node.version
     publish_sha = find_latest_publish_commit(project_dir, node_id)
     if publish_sha is None:
-        raise UnpublishNotEligibleError(
-            f"node {node_id!r} has no publish commit to revert"
-        )
+        raise UnpublishNotEligibleError(f"node {node_id!r} has no publish commit to revert")
     revert_sha = revert_publish(project_dir, publish_sha)
     # Re-read the canvas via the regular path to get the new version
     # (the revert restored the previous value).
     canvas_after = read_canvas(plot_root, project_id, canvas_kind, service_id)
-    node_after = next(
-        (n for n in canvas_after.nodes if n.id == node_id), None
-    )
+    node_after = next((n for n in canvas_after.nodes if n.id == node_id), None)
     to_v = node_after.version if node_after else from_v
     return {
         "node_id": node_id,

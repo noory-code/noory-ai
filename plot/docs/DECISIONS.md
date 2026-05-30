@@ -39,6 +39,41 @@
 
 ## Log
 
+### D-2026-05-31-C — Stored edge `relation` semantic (flow / injection / inheritance)
+
+- **What:** New stored `SketchEdge.relation` field
+  (`"flow" | "injection" | "inheritance"`, default `"flow"`). Phase 2a
+  of the Retention-canvases work: it carries the edge's semantic so
+  *both* the viewer (fold / layout / styling, Phase 2b) and the server
+  `propagation.py` (publish MINOR-bump, Phase 2c) read one SSOT.
+  `edge_semantics.classify_edge(canvas, source_kind)` (mirrored in TS
+  `flow/edgeSemantics.ts::classifyEdge`) is the **default assigner** at
+  edge creation + a read-time migration (`_migrate_assign_edge_relation`)
+  for legacy edges. Rules: actors-canvas → `inheritance`; essence source
+  (`mission`/`core_value`/`identity` + their `*_ref`, excluding
+  `actor_ref` = subject) → `injection`; else `flow`. Edge **flip**
+  (D-2026-05-31-A) now re-assigns `relation` from the new source so it
+  never goes stale.
+- **Why:** plot-design-red-team flagged (A8) that a viewer-only derived
+  classifier would drift from `propagation.py`, which independently
+  derives parent-child from directed edges and would misread injection /
+  inheritance edges (publish would bump the wrong ancestor). A stored
+  field is the one wire SSOT both sides read (A4 — chosen over derived
+  for exactly this cross-boundary reason; user-decided 2026-05-31).
+- **Invariant pinned (red-team A2):** every directed edge on the **actors
+  canvas is `inheritance`** — the actors canvas has a single edge type
+  (user: "액터 캔버스에선 연결선이 1종류만"). `classifyEdge` encodes this.
+- **Alternatives:** (a) derived, no stored field — **rejected** (A8/A4:
+  server can't read it without a duplicate Python classifier = SSOT
+  violation across the boundary). (b) stored, plus this default-assigner
+  + parity test (`test_edge_semantics.py` locks the TS↔Python value set
+  and truth table) — **chosen**.
+- **Approval:** Accepted by user, 2026-05-31 (chose stored field via
+  AskUserQuestion after the red-team).
+- **Spec impact:** SPEC.md §Edges — `relation` row + actors-edges
+  invariant. No behaviour change yet (2a); 2b wires the viewer, 2c the
+  server.
+
 ### D-2026-05-31-B — Node shape encodes producer-vs-reference
 
 - **What:** Shape now distinguishes the original from its symbol

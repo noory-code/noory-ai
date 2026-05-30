@@ -4,6 +4,34 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.30.0] — 2026-05-31
+
+### Added — stored edge `relation` semantic (Phase 2a)
+
+- New stored `SketchEdge.relation` field
+  (`flow` | `injection` | `inheritance`, default `flow`) — the one SSOT
+  for an edge's semantic, read by both the viewer (fold / layout /
+  styling, Phase 2b) and the server `propagation.py` (publish
+  MINOR-bump, Phase 2c). D-2026-05-31-C.
+- `classifyEdge(canvas, source-kind)` default-assigner, mirrored in
+  `viewer/src/flow/edgeSemantics.ts` and `plot_mcp/edge_semantics.py`
+  with a TS↔Python parity guard (`tests/test_edge_semantics.py`):
+  actors-canvas → `inheritance`; essence source (`mission`/`core_value`/
+  `identity` + their `*_ref`, not `actor_ref`) → `injection`; else `flow`.
+- Read-time migration (`_migrate_assign_edge_relation`) assigns
+  `relation` to legacy edges on first read (idempotent).
+
+### Changed
+
+- Edge **flip** (v0.29.2) now re-assigns `relation` from the new source
+  so a flipped edge never keeps a stale semantic.
+
+### Notes
+
+- **No behaviour change yet** — this lands the field + assigner +
+  migration only. Phase 2b wires the viewer to read it; Phase 2c the
+  server. Decided via plot-design-red-team (stored over derived, A8/A4).
+
 ## [0.29.3] — 2026-05-31
 
 ### Changed — node shape encodes producer-vs-reference

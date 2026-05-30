@@ -9,6 +9,7 @@
 // ``fromJson`` so the wire shape is always canonical.
 import { type MutableRefObject, useCallback } from "react";
 import { createBlankNode } from "../../domain";
+import { classifyEdge } from "../../flow/edgeSemantics";
 import type { CanvasDoc, NodeKind, SketchNode as DocNode } from "../../types";
 import {
   anchorRadialPosition,
@@ -164,6 +165,10 @@ export function useNodeCreation({
           label: "decomposes",
           style: "dashed" as const,
           directed: true,
+          relation: classifyEdge(
+            current.canvas_kind,
+            current.nodes.find((n) => n.id === args.parentId)?.kind,
+          ),
           action_verb: "decomposes",
           value_form: [],
         },
@@ -206,6 +211,10 @@ export function useNodeCreation({
         label: "",
         style: "solid" as const,
         directed: true,
+        relation: classifyEdge(
+          current.canvas_kind,
+          current.nodes.find((n) => n.id === parentId)?.kind,
+        ),
         action_verb: null,
         value_form: [],
       };

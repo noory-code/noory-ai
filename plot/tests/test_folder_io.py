@@ -967,3 +967,69 @@ def test_publish_foundation_node_has_no_propagation(plot_root: Path) -> None:
         ln for ln in out.splitlines() if ln.startswith("Publish-Propagated-Ancestor: ")
     ]
     assert propagation_lines == []
+
+
+def test_migrate_assign_edge_relation_on_read(plot_root: Path) -> None:
+    """v0.30.0 (D-2026-05-31-C) — a pre-v0.30 edge with no ``relation``
+    key gets one assigned on first read via classify_edge(canvas,
+    source-node kind). Idempotent: a second read does not rewrite."""
+    import json
+
+    from plot_mcp.folder_io import _canvas_file
+
+    create_project(plot_root, "alpha", "Alpha")
+    # Write a raw foundation canvas.json whose edges lack ``relation``
+    # (simulating pre-v0.30 data): mission -> anchor (essence source =>
+    # injection) and a non-essence edge (=> flow).
+    path = _canvas_file(plot_root, "alpha", "foundation")
+    raw = {
+        "canvas_id": "foundation",
+        "canvas_kind": "foundation",
+        "nodes": [
+            {"id": "m", "label": "Mission", "kind": "mission"},
+            {"id": "id1", "label": "Identity", "kind": "identity"},
+        ],
+        "edges": [
+            {"id": "e1", "source": "m", "target": "id1"},
+            {"id": "e2", "source": "id1", "target": "m"},
+        ],
+    }
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    doc = read_canvas(plot_root, "alpha", "foundation")
+    by_id = {e.id: e for e in doc.edges}
+    # mission source => injection; identity source => injection too
+    # (both are essence masters on the foundation canvas).
+    assert by_id["e1"].relation == "injection"
+    assert by_id["e2"].relation == "injection"
+
+    # Idempotent: a second read leaves the file's mtime unchanged.
+    mtime = path.stat().st_mtime
+    read_canvas(plot_root, "alpha", "foundation")
+    assert path.stat().st_mtime == mtime, "second read must not rewrite"
+
+
+def test_migrate_assign_edge_relation_actors_inheritance(plot_root: Path) -> None:
+    """On the actors canvas every directed edge migrates to
+    ``inheritance`` regardless of source kind (single edge type)."""
+    import json
+
+    from plot_mcp.folder_io import _canvas_file
+
+    create_project(plot_root, "alpha", "Alpha")
+    path = _canvas_file(plot_root, "alpha", "actors")
+    raw = {
+        "canvas_id": "actors",
+        "canvas_kind": "actors",
+        "nodes": [
+            {"id": "a1", "label": "Operator", "kind": "actor"},
+            {"id": "a2", "label": "User", "kind": "actor"},
+        ],
+        "edges": [
+            {"id": "e1", "source": "a1", "target": "a2"},
+        ],
+    }
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    doc = read_canvas(plot_root, "alpha", "actors")
+    assert doc.edges[0].relation == "inheritance"

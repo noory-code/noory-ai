@@ -98,6 +98,7 @@ future node-transform refactor must preserve this property — sort by
 | **Delete** | Select + Delete/Backspace, or via context menu. |
 | **Style** | Solid by default. Dashed only when the user sets `style: "dashed"` in the edge modal. |
 | **Direction (v0.26.0)** | Each edge carries a ``directed: bool`` flag. **Default for new edges = `true`**. Directed edges render an arrowhead at the target end; undirected edges render plain. Drag direction defines the orientation: the handle the user pressed becomes ``source`` (= ``from``), the handle released on becomes ``target`` (= ``to``). |
+| **Relation (v0.30.0, D-2026-05-31-C)** | Each edge carries a stored ``relation``: ``flow`` (sequence / hierarchy — source = parent), ``injection`` (essence flows into the target — excluded from fold), ``inheritance`` (actors-canvas tree — target = superclass = parent). The **one SSOT** read by both viewer (fold / layout / styling) and server (`propagation.py` publish MINOR-bump). Default-assigned by `classifyEdge(canvas, source-kind)` on creation / migration (mirrored TS + Python); authoritative once set; re-assigned on flip. **Invariant:** every directed edge on the **actors canvas is `inheritance`** (single edge type); an essence source (`mission`/`core_value`/`identity` + their `*_ref`, not `actor_ref`) → `injection`; else `flow`. |
 
 ### Hierarchy from directed edges (v0.26.0, D-2026-05-25-A)
 
