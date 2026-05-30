@@ -929,6 +929,73 @@ The static guard at `viewer/tests/service-detail-composition-drop.test.tsx`
 pins both forks of this contract (free on empty + still-nests inside
 service).
 
+## Service composition model (D-2026-05-28-J, v0.27.15)
+
+> *"이거죠"* — user, 2026-05-28, on the Login user-interaction
+> graph (Bana-anchored, branch on method choice, join at the shared
+> "대시보드 진입" outcome).
+
+The Service is **one *purpose*, multiple *paths*** to reach it.
+ServiceDetail's canvas expresses that purpose by laying out the
+sequence of **user interactions** that bring the user to the
+service's outcome.
+
+### Definitions
+
+| Concept | Representation |
+|---|---|
+| **Service** | one *purpose* (= the outcome the user reaches). On the canvas: the modal header + the (hidden, D-2026-05-28-B) `service_ref` anchor. |
+| **Step** | a single **user-side action** — what the user does (입력, 클릭, 선택, 동의, 링크 클릭, …). System work is NOT a step; it lives inside the step's `outcome` text. |
+| **Sequence** | `step → step` directed edge (label `next` / `branch` / `join` are user copy, not new edge kinds). |
+| **Branch** | `decision` step followed by *multiple outgoing* edges to per-path first steps. Each path may have any number of further steps. |
+| **Join** | *multiple incoming* edges into one result step **when the outcome is the same**. Three OAuth flavours that all land at `대시보드 진입` should merge there — anything else over-fragments the canvas. |
+| **Result** | the final step of the service. Single result = the paths share one outcome; multiple results = the outcomes legitimately differ (different state, different next-service entry point). |
+| **Subject (actor)** | the **human** doing the steps. Wired by **one** `actor_ref → entry` subject edge — every downstream step inherits the subject by following the sequence. (No need to draw a subject edge per step; that's chrome noise.) |
+| **Subject scope** | actors are always *humans* (no `System` / `Server` master). System behaviour belongs in `step.outcome`. If the user encounters multiple human roles in the same service, draw one `actor_ref` per role and split the relevant subjects across the entry points of their sub-flows. |
+| **Spatial direction** | LR or TB — picked by the user. The auto-layout MUST preserve whichever direction the user has already established (`actor → entry` handle direction is the cue). |
+
+### What "step = user interaction" rules out
+
+- *Server verifies credentials* is **not** a step. It is the outcome
+  text on the `Submit` step.
+- *Send confirmation email* is **not** a step. It is the outcome
+  text on the *user's* triggering step.
+- An `Admin / System` actor as the subject of a "verify" step
+  is a category error: Admin is itself a user, and verification is
+  not a user action.
+
+### Why "merge on shared outcome"
+
+A service exists to deliver a specific outcome. If three login
+methods all deposit the user on the dashboard, *the dashboard
+arrival* is the service's single user-visible answer; splitting it
+into three nodes turns the canvas into an implementation diagram
+instead of a user-interaction diagram. The *paths* differ, the
+*purpose* doesn't. When two outcomes genuinely diverge (e.g. login
+vs. password reset request), you have two services (or one branch
+with two terminal results) — not a forced single result.
+
+### Worked example — Login
+
+```
+   ┌── 이메일 입력 → 비밀번호 입력 → Submit ──┐
+Bana → 진입 → 방식선택 ─┼── Google 클릭 → 권한 동의 ──────┼── 대시보드 진입
+   └── 이메일 입력 → 링크 클릭 ──────────┘
+```
+
+Live demo doc: `plot-test-v013/.plot/banas-imported/services/n_mpkyhvsj_mjzh/detail.json`.
+
+### Auto-layout responsibility
+
+Per D-2026-05-28-J, auto-layout for ServiceDetail must
+**preserve the actor anchor** and lay the step graph out from there
+along the direction the user has already chosen. The v0.27.12
+`handleAwareLayout` dagre LR fallback violates this — it rebuilds
+the whole rank ordering and sweeps the actor along with everything
+else. The replacement algorithm is filed as a follow-up
+("actor-anchored layout", v0.27.16+). Until that lands, users
+should arrange the canvas manually.
+
 ## Modal structure (D-2026-05-26-D, D-2026-05-26-F)
 
 The ServiceDetail modal is **self-contained**: it owns its own left

@@ -8719,3 +8719,108 @@ test pin so the regression cannot recur.
   details are the storage half of that principle).
 - D-2026-05-25-A (`sync.archived` path — this entry adds the
   protection layer that v0.25 left implicit).
+
+---
+
+### D-2026-05-28-J — Service composition model: one purpose, user-interaction steps, branch/join on shared outcome (v0.27.15)
+
+**Context:** Over a multi-turn 2026-05-28 design conversation the
+user walked us out of three drafts of the Login service to a model
+they accepted with *"그렇지 이거죠"*. Each draft surfaced a
+specific class of mistake:
+
+| Draft | What it had | What was wrong |
+|---|---|---|
+| v1 (reconstruction, 5-layer grid) | Banas re-cast as actors + interactions + values + core values + mission, single canvas | Layout was a y-banded grid that hid the actor/interaction/value relations. Not the design's failure — the *spatial intent* was missing. |
+| v2 (sequential login) | 5 steps including "서버 검증" + "응답" with an Admin actor as the verification subject | *"이 스텝은 사용자 인터렉션이 되어야합니다. 지금은 기능이 어떻게 동작해야하는지에 포커싱이 되어있어요."* — system implementation snuck into the canvas via the verification step + non-human subject. |
+| v3 (branching, per-path results) | Decision + 3 branches + 3 separate "대시보드 진입" results | *"마지막에 대시보드 진입이라는 하나의 결과인데 이거도 분리해뒀어요."* — three identical outcomes shouldn't be three nodes. |
+| v4 (Bana-anchored + joined) | Bana left, sequence right, all paths converge at a single "대시보드 진입" | *"그렇지 이거죠."* — accepted. |
+
+**Decision:**
+
+`SPEC.md` §ServiceDetail gains a new section **"Service composition
+model"** that locks the following contract:
+
+1. **Service = one purpose** (the outcome the user reaches).
+2. **Step = a user-side action**. System work belongs in
+   `step.outcome`, not as a separate node.
+3. **Sequence = directed `step → step` edges**. Labels (`next` /
+   `branch` / `join`) are user copy, not new edge kinds.
+4. **Branch** = decision step + multiple outgoing.
+5. **Join** = multiple incoming **when the outcome is the same**.
+   Different outcomes → different terminal steps (or different
+   services).
+6. **Subject = an actor_ref → entry single edge**. Subject inherits
+   along the sequence; no per-step subject edge needed.
+7. **Actors are always humans**. No `System` / `Server` master
+   actor.
+8. **Spatial direction = LR or TB, user's choice.** Auto-layout
+   must preserve whatever direction the user established.
+
+Banned shortcuts (each tied to one of the failed drafts above):
+
+- *"Add a System / Server actor."* The model has no non-human
+  actors. If a step's subject is unclear, the step itself is wrong:
+  it's system work, not a user interaction.
+- *"Per-path result for shared outcomes."* Three "대시보드 진입"
+  nodes is implementation diagramming, not user-interaction
+  diagramming.
+- *"Subject edge for every step."* One edge from the actor to the
+  entry step is enough; the rest is sequence inheritance.
+
+**Alternatives considered (and rejected at session-time):**
+
+1. **Steps include system work + multiple actor masters.**
+   Rejected — the user explicitly said *"기능이 어떻게 동작해야
+   하는지에 포커싱이 되어있어요"* about this shape.
+2. **One service per login method (email / Google / Magic).**
+   Rejected — the user instinctively reached for *one* service
+   ("Login") with paths inside.
+3. **No `result` node, store the outcome in the last step's
+   `outcome` text.** Briefly considered when interpreting "그럼
+   안되지" — the user immediately corrected with *"아니아니 마지막에
+   합류시키라구요"*, restoring the single-result join.
+
+**Honest follow-ups (not in this ship):**
+
+- **Auto-layout actor anchor.** v0.27.12 `handleAwareLayout`
+  (dagre LR fallback) sweeps the actor along with every other node
+  — Bana drifts to the right and the canvas becomes unreadable.
+  The replacement algorithm — *preserve the actor anchor + lay the
+  step graph out from there along the user-established direction
+  (LR / TB)* — is filed for v0.27.16.
+- **ServiceDetail invariant `≥ 2 actor_ref (operator + user)`.**
+  This entry says actors are humans + the operator side is the
+  service itself. A single user-side actor is enough for many
+  services; the invariant should drop to `≥ 1` or be removed. Filed
+  as D-2026-05-28-K candidate for v0.27.16.
+- **PUT validation toast.** A "1 validation error for CanvasDoc"
+  red toast surfaced after auto-layout in the user's browser. Root
+  cause not yet traced; filed for v0.27.16 alongside the layout
+  rework.
+- **Stencil per-item descriptions (D-2026-05-28-E).** Still
+  deferred — waits on user copy.
+
+**Spec impact:**
+
+- `SPEC.md` §ServiceDetail §"Service composition model"
+  (new section between §"Composition drop is free-form" and
+  §"Modal structure").
+- `CHANGELOG.md` v0.27.15.
+
+**Approval:** Accepted by user, 2026-05-28 (*"그렇지 이거죠"* on
+the v4 Login graph; *"네"* on the SPEC-pin proposal).
+
+**Cross-refs:**
+- D-2026-05-28-A (free-form composition drop — prerequisite for
+  user to author this shape).
+- D-2026-05-28-B (hidden root-service — the canvas centre is the
+  step graph, not the service node).
+- D-2026-05-28-C (Interactions / Values stencil relabel — same
+  redirection toward user mental model).
+- D-2026-05-28-G (handleAwareLayout — to be superseded by the
+  actor-anchored algorithm filed above).
+- D-2026-05-19-D (Symbol concept — actor and actor_ref are Symbol
+  kinds; this entry pins their role in service composition).
+- D-2026-05-04-A (no auto-edges — preserved; the user draws each
+  next/branch/join edge).

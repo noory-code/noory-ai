@@ -4,6 +4,51 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.15] — 2026-05-28
+
+### Added — Service composition model pinned
+
+- **`SPEC.md` §ServiceDetail §"Service composition model"**
+  ([D-2026-05-28-J](./docs/DECISIONS.md#d-2026-05-28-j--service-composition-model-one-purpose-user-interaction-steps-branchjoin-on-shared-outcome-v02715)).
+  Concluded over a multi-turn 2026-05-28 conversation that walked
+  the Login service through four drafts before the user accepted
+  v4 with *"그렇지 이거죠"*. Pins:
+  - **Service = one purpose** (the outcome the user reaches).
+  - **Step = user-side action**; system work belongs in
+    `step.outcome`, not as a separate node.
+  - **Sequence** = directed `step → step` edges (labels are user
+    copy, not new edge kinds).
+  - **Branch** = decision step + multiple outgoing.
+  - **Join** = multiple incoming **when the outcome is the same**.
+    Different outcomes → different terminal steps (or services).
+  - **Subject** = single `actor_ref → entry` edge. Subject
+    inherits down the sequence; no per-step subject edge.
+  - **Actors are always humans.** No `System` / `Server` master
+    actor. System behaviour lives in `step.outcome`.
+  - **Spatial direction** = LR or TB, user's choice. Auto-layout
+    must preserve the user-established direction.
+
+### Honest follow-ups (filed for v0.27.16)
+
+- **Auto-layout actor anchor.** v0.27.12 `handleAwareLayout`
+  (dagre LR fallback) sweeps the actor along with every other
+  node — Bana drifts to the right and the canvas becomes
+  unreadable. The replacement algorithm — *preserve the actor
+  anchor + lay the step graph out from there along the
+  user-established direction (LR / TB)* — is filed.
+- **ServiceDetail invariant `≥ 2 actor_ref (operator + user)`**
+  conflicts with D-2026-05-28-J (actors are humans, operator side
+  is the service itself). A single user-side actor should be
+  enough for many services.
+- **PUT validation toast** ("1 validation error for CanvasDoc")
+  surfaces after auto-layout — root cause to trace.
+- **Stencil per-item descriptions (D-2026-05-28-E)** still waits
+  on user copy.
+
+### Verification
+
+- No code change in this ship. SPEC + DECISIONS only.
+
 ## [0.27.14] — 2026-05-28
 
 ### Added
