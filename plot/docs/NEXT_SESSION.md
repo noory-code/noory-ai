@@ -9,6 +9,30 @@
 
 ## Active queue
 
+### `Retention canvases + actor inheritance — COMPLETED 2026-05-31` (done; kept so it isn't re-opened)
+
+> Shipped Plot **v0.29.2 → v0.30.4** (8 commits, decisions
+> D-2026-05-31-A…G). The Retention model is live — do NOT re-open:
+>
+> | Ship | What |
+> |---|---|
+> | v0.29.2 | Edge **flip direction** context-menu (re-assigns relation) |
+> | v0.29.3 | Shape = producer-vs-reference (master = rounded rect 네모, `*_ref` = circle) |
+> | v0.30.0–.2 | Stored **`edge.relation`** (flow/injection/inheritance) — one SSOT read by viewer fold/style/layout **and** server `propagation.py`; `classifyEdge` mirrored TS+Py (parity-tested) |
+> | v0.30.3 | **Floating edges** — every non-self-loop edge attaches border-to-border facing the other node; connection reads the same from any side (fixed the Voice→Banas loop). Handles unchanged (made irrelevant to rendering) |
+> | v0.30.4 | **Actor inheritance** — sub-actor inherits parent's common fields (computed at render, derived view, SSOT preserved); inspector shows greyed "inherited from {parent}" caption |
+>
+> Model SSOT: [[project_plot_retention_inheritance]] + DECISIONS
+> D-2026-05-31-A…G + SPEC §Edges / §Actors.
+>
+> **Deferred (YAGNI — do NOT build without a concrete consumer):**
+> - **Foundation essence aggregation** (`projectEssence` — compute a
+>   "current essence" summary from injected foundation nodes). No
+>   display/consumer yet → not built. Revisit when there's a real use.
+> - **pencil.dev-style rework + in-app MCP AI chat** (AI designs the
+>   blueprint in Plot via MCP). User: *"이건 그때하죠."* Seeds the
+>   existing "MCP-driven node creation" queue item below.
+
 ### `ServiceDetail UX / 작은 디자인 / 산출물 검토` (TOP priority, filed 2026-05-30 end-of-session)
 
 > **Trigger:** user says **"UX"** / **"디자인"** / **"작은 디자인"** /
