@@ -9247,3 +9247,37 @@ but not yet fully eliminated.
 - **Approval:** Accepted — user 2026-05-30 ("네 추천대로 합니다" on the
   essence-reorg plan).
 - **Spec impact:** SPEC §ServiceDetail Stencil — the two layer groups.
+
+### D-2026-05-30-I — Sub-flow grouping: `group` kind + collapse (v0.29.0)
+
+- **What:** a new `group` node kind (container) lets the user chunk a
+  busy ServiceDetail flow — e.g. collapse the three OAuth branches into
+  one "OAuth path" node. Membership lives on the group as
+  `member_ids: string[]` (SSOT on the group, **no new field on
+  step/decision**). Collapsing the group hides its members and shows a
+  count; expanding restores them.
+- **Membership UX (user-picked):** multi-select nodes → "Group
+  selected" (context menu) creates a `group` with `member_ids` = the
+  selection. RF `parentNode` (drag-in visual nesting) is deferred —
+  the MVP is collapse, not visual containment.
+- **Why a new kind, not a field on members:** a group is a distinct
+  *thing* (own id, own label, own collapsed state) — a container, MECE
+  with `category` (which is the Services-canvas *thematic* grouping of
+  services; `group` is a ServiceDetail *flow* chunk). Per no-god-object,
+  distinct concept = distinct class.
+- **Collapse reuses existing chrome:** the `group` node feeds BaseNode's
+  existing fold (▾/▸) + child-count UI via `hasChildren` /
+  `childCount` / `collapsed` / `onToggleCollapse` derived from
+  `member_ids`. `useNodesMemo` hides a node when it is a member of a
+  collapsed group (additive, like the polarity tint — keyed on
+  `member_ids`, not edges).
+- **Bounded context:** EssenceExecution (ServiceDetail composition).
+  Free-form drop like step/decision.
+- **Phases:** ① `group` kind (entity-template, dormant) → ② collapse-
+  by-hide → ③ membership UX (multi-select → group / ungroup).
+- **Approval:** Accepted — user 2026-05-30 ("네 좋습니다" + picked
+  multi-select membership).
+- **Spec impact:** CONCEPTS §`group`; SPEC §ServiceDetail grouping.
+- **Anti-덕지덕지:** the only structural addition is the isolated
+  `group` kind + an additive hide-rule in useNodesMemo. No new field on
+  existing kinds; no god-component flags beyond the one additive rule.

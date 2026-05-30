@@ -42,6 +42,7 @@ const NODE_KINDS = [
   "metric",
   "step",
   "decision",
+  "group",
   "category",
 ] as const satisfies readonly SketchNode["kind"][];
 

@@ -4,6 +4,63 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.29.0] — 2026-05-30
+
+Sub-flow grouping — the last deferred ServiceDetail 고도화 item. A new
+`group` kind (the 17th) chunks a busy flow and collapses it.
+[D-2026-05-30-I](./docs/DECISIONS.md).
+
+### Added — `group` kind + collapse
+
+- **`group`** container node. Multi-select ≥ 2 nodes → right-click →
+  **"Group selected (N)"** wraps them in a group placed above the
+  selection. Right-click a group → **"Ungroup"** removes it (members
+  stay). Membership is the SSOT on the group (`member_ids`) — `step` /
+  `decision` carry no group field, so it can't drift.
+- **Collapse**: the group reuses the fold (▾/▸) chrome. Collapsed →
+  its members are hidden and the group shows a member-count badge;
+  expanding restores them. E.g. collapse the three OAuth branches into
+  one "OAuth path" node.
+- MVP is collapse; RF `parentNode` (drag-in visual containment) is
+  deferred. MECE with `category` (Services-canvas thematic grouping) —
+  `group` is a ServiceDetail flow chunk.
+
+### Files (entity-template + membership)
+
+- `viewer/src/domain/Group.ts` (class, `member_ids` + `body`); union /
+  barrel / factory / `types.ts::NodeKind` (16 → 17).
+- `nodes/group/index.tsx` + registry; `inspectors/group/index.tsx` +
+  registry.
+- `viewer/src/canvases/sketch/groupCollapse.ts` (pure: hidden member
+  ids) + `groupActions.ts` (pure: group / ungroup); `useNodesMemo`
+  hides collapsed members + folds the group on `member_ids`;
+  `useContextMenus` adds the Group / Ungroup items (threaded
+  `selectedNodeIds`).
+- `plot_mcp/models.py`: `GroupNode` + `NodeKind` +
+  `_COMPOSITION_KINDS` + both unions + `service_detail` allowed-kinds.
+- i18n: `kind.group` + `inspector.group.memberCount` in en + ko.
+
+### Tests
+
+- `group-collapse.test.ts` + `group-actions.test.ts` (new, pure
+  helpers, Red→Green) + entity-roundtrip / structural-guards (16 → 17)
+  / nodes-registry / schema-parity. Green: viewer 630, server 438,
+  mypy clean.
+
+### Scope (the "덕지덕지" guarantee)
+
+The only structural additions are the isolated `group` kind + two
+additive, pure helpers wired into `useNodesMemo` /  `useContextMenus`.
+**No new field on existing kinds** (membership lives on the group);
+no LOC-ceiling bumps.
+
+### Browser verification (Playwright, Login demo doc)
+
+- A `group` ("Email path") renders with a fold button; collapsing it
+  hides exactly its members (`n_lg_em_email` + `n_lg_em_pwd`) while the
+  non-member magic-path `이메일 입력` stays; the group shows `▸ … 2`.
+  0 console errors.
+
 ## [0.28.5] — 2026-05-30
 
 ServiceDetail stencil regrouped by essence layer — the tool now reads

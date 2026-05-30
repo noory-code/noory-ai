@@ -1110,6 +1110,26 @@ controls every colour" rule. The failure *reason* is the step's label
 `decision` does not carry polarity — decisions are neutral forks, not
 outcomes.
 
+### Group (flow chunk) (v0.29.0, D-2026-05-30-I)
+
+A `group` is a container that chunks a busy flow — e.g. collapse the
+three OAuth branches into one node.
+
+- **Create**: multi-select ≥ 2 nodes → right-click → "Group selected
+  (N)". A `group` node is placed just above the selection's bounding
+  box, with `member_ids` = the selection. Right-click a group →
+  "Ungroup" removes it (members stay).
+- **Membership SSOT**: `group.member_ids` — `step` / `decision` carry
+  no group field, so membership can't drift.
+- **Collapse**: the group reuses the fold (▾/▸) chrome. Collapsed →
+  its members are hidden (`useNodesMemo` via `collapsedGroupMemberIds`)
+  and the group shows a member-count badge. Expanding restores them.
+- **MVP scope**: collapse is the feature. RF `parentNode` (drag-in
+  visual containment) is deferred — an expanded group is a labelled
+  marker, not a true visual box around its members.
+- **MECE**: distinct from `category` (the Services-canvas *thematic*
+  grouping of services). `group` is a ServiceDetail *flow* chunk.
+
 ### Decision node (v0.28.0, D-2026-05-30-C)
 
 A `decision` is a flowchart branch point, dropped from the stencil's

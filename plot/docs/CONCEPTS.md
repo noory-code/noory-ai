@@ -450,6 +450,24 @@ keeps `step` = *user action* intact: a system judgment is a
 - **Bounded context**: EssenceExecution (Service-Detail composition
   primitive, sibling of `step` / `metric` / `rule` / `content`).
 
+### `group` — flow chunk (new in v0.29.0)
+
+A **container** that chunks a busy ServiceDetail flow — e.g. collapse
+the three OAuth branches into one "OAuth path" node. See
+[D-2026-05-30-I](./DECISIONS.md).
+
+- **Asks**: which parts of this flow read as one unit?
+- **Membership**: `member_ids: string[]` — the SSOT lives on the group,
+  so `step` / `decision` carry **no** group field. Created by
+  multi-selecting nodes → "Group selected" (canvas context menu).
+- **Collapse**: the group uses BaseFields `collapsed`. Collapsed → its
+  members are hidden and the group shows a member count (reuses the
+  fold ▾/▸ chrome). MECE with `category` — `category` is the
+  Services-canvas *thematic* grouping of services; `group` is a
+  ServiceDetail *flow* chunk.
+- **Typed fields**: `member_ids`, `body`.
+- **Bounded context**: EssenceExecution.
+
 ---
 
 ## Reference kinds — the symbol/component pattern

@@ -335,6 +335,7 @@ function SketchCanvasInner({
     handleNodesDelete,
     handleEdgesDelete,
     addNodeAt,
+    selectedNodeIds,
   });
 
   useKeyboardShortcuts({

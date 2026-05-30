@@ -81,6 +81,9 @@ NodeKind = Literal[
     #   service_detail flow (user choice or system judgment). See
     #   docs/DECISIONS.md D-2026-05-30-C.
     "decision",
+    # v0.29.0: group — a container that chunks a busy service_detail flow
+    #   (collapse N branches into one). See docs/DECISIONS.md D-2026-05-30-I.
+    "group",
     # v0.12: ``category`` is a thematic grouping of services. Replaces what
     # used to be the "top-level service" idiom — categories are pure
     # containers (no value creation themselves), and the actual services
@@ -92,7 +95,8 @@ NodeKind = Literal[
 # Composition kinds: must live inside a service (applies to SketchDoc and
 # service_detail CanvasDoc alike).
 # v0.10 Step 5: metric + step join the family. v0.28.0: decision joins.
-_COMPOSITION_KINDS = {"rule", "content", "metric", "step", "decision"}
+# v0.29.0: group joins.
+_COMPOSITION_KINDS = {"rule", "content", "metric", "step", "decision", "group"}
 
 
 ValueForm = Literal[
@@ -472,6 +476,18 @@ class DecisionNode(BaseNodeFields):
     body: str = ""
 
 
+class GroupNode(BaseNodeFields):
+    """v0.29.0 (D-2026-05-30-I): ``group`` kind. A container that chunks
+    a busy service_detail flow — collapse N branches into one node.
+    Membership lives here as ``member_ids`` (SSOT on the group; step /
+    decision carry no group field). ``collapsed`` (BaseNodeFields)
+    hides the members."""
+
+    kind: Literal["group"] = "group"
+    member_ids: list[str] = Field(default_factory=list)
+    body: str = ""
+
+
 class RuleNode(BaseNodeFields):
     """v0.15 Phase 1.2: ``rule`` kind. A composition element inside a
     service expressing an enforced policy (with per-actor permissions)."""
@@ -519,6 +535,7 @@ SketchNode = Annotated[
     | MetricNode
     | StepNode
     | DecisionNode
+    | GroupNode
     | RuleNode
     | ContentNode,
     Field(discriminator="kind"),
@@ -543,6 +560,7 @@ SketchNodeAdapter: TypeAdapter[
     | MetricNode
     | StepNode
     | DecisionNode
+    | GroupNode
     | RuleNode
     | ContentNode
 ] = TypeAdapter(SketchNode)
@@ -619,6 +637,7 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
         "metric",
         "step",
         "decision",
+        "group",
         "actor_ref",
     }
     | _FOUNDATION_REFS,

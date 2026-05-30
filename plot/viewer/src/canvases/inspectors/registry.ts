@@ -18,6 +18,7 @@ import { CategoryInspector } from "./category";
 import { ContentInspector } from "./content";
 import { CoreValueInspector } from "./core_value";
 import { DecisionInspector } from "./decision";
+import { GroupInspector } from "./group";
 import { IdentityInspector } from "./identity";
 import { IdentityRefInspector } from "./identity_ref";
 import { MetricInspector } from "./metric";
@@ -37,6 +38,7 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   metric: MetricInspector,
   step: StepInspector,
   decision: DecisionInspector,
+  group: GroupInspector,
   core_value: CoreValueInspector,
   identity: IdentityInspector,
   mission: MissionInspector,

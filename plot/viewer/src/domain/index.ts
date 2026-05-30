@@ -19,6 +19,8 @@ export { Step } from "./Step";
 export type { StepJson } from "./Step";
 export { Decision } from "./Decision";
 export type { DecisionJson } from "./Decision";
+export { Group } from "./Group";
+export type { GroupJson } from "./Group";
 export { CoreValue } from "./CoreValue";
 export type { CoreValueJson } from "./CoreValue";
 export { Identity } from "./Identity";

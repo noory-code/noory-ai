@@ -26,6 +26,7 @@ import type {
 import type { BaseNodeData } from "../nodes/BaseNode";
 import { PROJECT_ANCHOR_ID } from "./constants";
 import { polarityTint } from "./polarityTint";
+import { collapsedGroupMemberIds } from "./groupCollapse";
 
 export interface UseNodesMemoArgs {
   doc: CanvasDoc;
@@ -112,10 +113,17 @@ export function useNodesMemo({
       if (aChild && !bChild) return 1;
       return 0;
     });
+    // v0.29.0 (D-2026-05-30-I) — a node inside a collapsed ``group`` is
+    // hidden; the group node itself shows the member count. Keyed on the
+    // group's ``member_ids`` SSOT (cf. the edge-derived
+    // ``nearestCollapsedAncestor`` above).
+    const collapsedGroupMembers = collapsedGroupMemberIds(doc.nodes);
     const out: Node<BaseNodeData>[] = [];
     for (const n of ordered) {
       // Hide nodes whose ancestor chain contains a collapsed container.
       if (nearestCollapsedAncestor(n.id)) continue;
+      // Hide nodes inside a collapsed group (D-2026-05-30-I).
+      if (collapsedGroupMembers.has(n.id)) continue;
       // v0.2 correction (2026-04-20): rule / content are edited
       // through the right-hand Inspector panel, never on the canvas.
       if (n.kind === "rule" || n.kind === "content") continue;
@@ -125,7 +133,12 @@ export function useNodesMemo({
       if (hideRootServiceNode && doc.service_ref && n.id === doc.service_ref) {
         continue;
       }
-      const hasChildren = (childIdsByParent.get(n.id)?.length ?? 0) > 0;
+      // v0.29.0 (D-2026-05-30-I) — a ``group`` folds on its ``member_ids``
+      // (membership SSOT), every other container folds on its directed-
+      // edge children.
+      const memberCount = n.kind === "group" ? n.member_ids.length : 0;
+      const hasChildren =
+        n.kind === "group" ? memberCount > 0 : (childIdsByParent.get(n.id)?.length ?? 0) > 0;
       const isOrphan = orphanActorRefIds.has(n.id);
       // v0.11.1 — for ref kinds, derive the displayed label from the
       // master so renames propagate without a server round-trip.
@@ -201,7 +214,7 @@ export function useNodesMemo({
           onResize: (w: number, h: number) => updateNode(n.id, { width: w, height: h }),
           hasChildren,
           collapsed: n.collapsed,
-          childCount: hasChildren ? subtreeSize(n.id) : 0,
+          childCount: n.kind === "group" ? memberCount : hasChildren ? subtreeSize(n.id) : 0,
           onToggleCollapse: hasChildren ? () => toggleCollapsed(n.id) : undefined,
           // v0.15 Phase 3.4: per-canvas opt-in. Foundation lays pillars
           // out as peers and passes false; everywhere else passes true.
