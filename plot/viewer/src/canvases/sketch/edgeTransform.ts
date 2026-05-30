@@ -71,12 +71,16 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
       id: e.id,
       source: src,
       target: tgt,
-      sourceHandle: sAncestor ? undefined : e.sourceHandle ?? undefined,
-      targetHandle: tAncestor ? undefined : e.targetHandle ?? undefined,
+      // v0.30.3 (D-2026-05-31-F) — floating edges attach to the border
+      // facing the other node, so they ignore handles entirely (and
+      // nulling them avoids RF "missing handle" warnings). Self-loops
+      // keep their handles (the arc anchors on them).
+      sourceHandle: isRealSelfLoop ? (sAncestor ? undefined : e.sourceHandle ?? undefined) : undefined,
+      targetHandle: isRealSelfLoop ? (tAncestor ? undefined : e.targetHandle ?? undefined) : undefined,
       label: e.label || undefined,
-      // Self-loops route through SelfLoopEdge (curved arc); regular
-      // edges keep React Flow's default Bezier path.
-      ...(isRealSelfLoop ? { type: "selfLoop" } : {}),
+      // Self-loops route through SelfLoopEdge (curved arc); every other
+      // edge floats border-to-border via FloatingEdge.
+      type: isRealSelfLoop ? "selfLoop" : "floating",
       // v0.28.1 (D-2026-05-30-D) — injection edges animate (marching
       // dashes flow source → target = the foundation flowing into the
       // flow node).
@@ -99,7 +103,10 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
         ...(e.style === "dashed" ? { strokeDasharray: "6 4" } : {}),
         // Injection: violet dashed stroke. Otherwise value-flow recolour.
         ...(isInjection
-          ? { stroke: INJECTION_STROKE, strokeDasharray: "4 4", strokeWidth: 1.5 }
+          ? // dash period 10 (5 on + 5 off) matches RF's animated
+            // stroke-dashoffset cycle (10) so the marching dashes loop
+            // seamlessly instead of stuttering (v0.30.3).
+            { stroke: INJECTION_STROKE, strokeDasharray: "5 5", strokeWidth: 1.5 }
           : stroke
             ? { stroke, strokeWidth: e.value_form.length }
             : {}),

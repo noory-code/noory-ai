@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.30.3] — 2026-05-31
+
+### Changed — floating edges (uniform connection from any side)
+
+- Every non-self-loop edge now renders as a **floating edge**
+  (`FloatingEdge` + pure `flow/floatingEdgeGeometry.ts`): it attaches to
+  the point on each node's border facing the other node, ignoring
+  handles, so a connection reads identically from any side
+  (D-2026-05-31-F). Fixes the awkward loop seen on the Voice→Banas
+  injection edge — it now runs straight Voice-left → Banas-right.
+  Self-loops keep `SelfLoopEdge`.
+
+### Fixed — injection animation stutter
+
+- The injection edge's marching-dash animation stuttered because the
+  inline dash period (`4 4` = 8) didn't divide RF's animated
+  `stroke-dashoffset` cycle (10). Set to `5 5` (10) so the loop is
+  seamless.
+
 ## [0.30.2] — 2026-05-31
 
 ### Changed — server publish-propagation reads `edge.relation` (Phase 2c)

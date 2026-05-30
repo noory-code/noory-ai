@@ -99,8 +99,8 @@ describe("edgeTransform — collapsed-ancestor fake self-loop (regression)", () 
   });
 });
 
-describe("edgeTransform — regular non-self-loop unchanged", () => {
-  it("emits a default-type edge for a → b", () => {
+describe("edgeTransform — regular non-self-loop is a floating edge", () => {
+  it("emits a floating-type edge for a → b (v0.30.3, D-2026-05-31-F)", () => {
     const out = edgeTransform({
       edges: [makeEdge({ source: "a", target: "b" })],
       serviceRef: null,
@@ -111,7 +111,7 @@ describe("edgeTransform — regular non-self-loop unchanged", () => {
     expect(out).toHaveLength(1);
     expect(out[0].source).toBe("a");
     expect(out[0].target).toBe("b");
-    expect(out[0].type).toBeUndefined();
+    expect(out[0].type).toBe("floating");
   });
 });
 

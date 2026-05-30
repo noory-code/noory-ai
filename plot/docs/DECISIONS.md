@@ -39,6 +39,37 @@
 
 ## Log
 
+### D-2026-05-31-F — Floating edges (border-to-border, uniform from any side)
+
+- **What:** Every non-self-loop edge now renders as a **floating edge**
+  (`canvases/edges/FloatingEdge.tsx` + pure
+  `flow/floatingEdgeGeometry.ts`): it attaches to the point on each
+  node's border that faces the other node, computed from live node
+  geometry (RF `nodeInternals`), ignoring handles. Self-loops keep
+  `SelfLoopEdge`. Also fixed the injection animation stutter: the dash
+  period is now `5 5` (10) to match RF's animated `stroke-dashoffset`
+  cycle (10), so the marching dashes loop seamlessly.
+- **Why:** the node's 4 handles are asymmetric (emit only right/bottom,
+  receive only top/left), so an edge to a node on your left/top had to
+  loop awkwardly out the wrong side (user saw it on the Voice→Banas
+  injection edge). Confirmed empirically that ConnectionMode.Loose does
+  **not** let a target-type handle act as a source (RF "couldn't create
+  edge for source handle" warning). User direction: *"노드의 4개 핸들
+  어디에서 앵커의 어떤 핸들로 연결하든 같아야 한다"* — connection must
+  read identically from any side. Floating edges deliver exactly that:
+  the handle choice becomes irrelevant to rendering.
+- **Note:** BaseNode handles are unchanged (still t/l/r/b). Drag-create
+  still uses them (Loose mode = any-to-any), but the resulting edge
+  floats, so the asymmetry no longer affects the visual. No new/changed
+  edge data; floating is render-only (Cmd+Z, persistence unaffected).
+- **Alternatives:** (a) both-source+target handles per side —
+  **rejected** (overlapping-handle drag ambiguity, still snaps to 4
+  fixed points, id migration). (b) floating edges — **chosen** (user
+  via AskUserQuestion): truly uniform, no handle gymnastics.
+- **Approval:** Accepted by user, 2026-05-31 (chose floating).
+- **Spec impact:** SPEC.md §Edges — floating-edge rendering note.
+  Tests: `floating-edge-geometry.test.ts` (border-point math).
+
 ### D-2026-05-31-E — Server propagation reads `edge.relation` (Phase 2c)
 
 - **What:** `propagation._build_parent_lookup` (publish MINOR-bump
