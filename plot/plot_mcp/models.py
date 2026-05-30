@@ -740,19 +740,24 @@ class CanvasDoc(BaseModel):
 
     @model_validator(mode="after")
     def _service_detail_actor_refs_minimum(self) -> CanvasDoc:
-        # v0.11 — every service must have ≥ 2 participating actor_refs.
-        # IDENTITY.md "Service minimum baseline": a playground with one
-        # person isn't a playground. Side-mix (operator + user explicitly)
-        # is encouraged via Inspector UI for v0.11.0 — hard side-mix
-        # validation deferred to a later release once migration is complete.
+        # v0.27.16 (D-2026-05-28-K) — loosened from ≥ 2 to ≥ 1.
+        # Per D-2026-05-28-J the operator side of a service is the
+        # *service itself* (not a separate Admin / System actor),
+        # so a single user-side actor_ref is enough. The pre-v0.27.16
+        # rule ("≥ 2: operator + user") forced an Admin placeholder
+        # on canvases that semantically had no second human actor,
+        # which the user flagged as a category error on 2026-05-28.
+        # We keep ≥ 1 because every step needs a subject (D-2026-05-28-J);
+        # zero actor_refs means there's no one doing the steps.
         if self.canvas_kind != "service_detail":
             return self
         actor_refs = [n for n in self.nodes if n.kind == "actor_ref"]
-        if len(actor_refs) < 2:
+        if len(actor_refs) < 1:
             raise ValueError(
-                f"service_detail {self.canvas_id!r} requires at least 2 "
-                f"actor_ref nodes (operator + user), got {len(actor_refs)}. "
-                "See IDENTITY.md."
+                f"service_detail {self.canvas_id!r} requires at least 1 "
+                f"actor_ref node (the subject of the service's steps), "
+                f"got 0. See SPEC.md §Service composition model "
+                f"(D-2026-05-28-J)."
             )
         return self
 

@@ -4,6 +4,89 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.16] — 2026-05-28
+
+The implementation half of D-2026-05-28-J — ServiceDetail layout
+behaves the way the user described, and the server invariant
+stops blocking single-actor docs.
+
+### Added — Actor-anchored layout
+
+- **`viewer/src/flow/actorAnchoredLayout.ts`**
+  ([D-2026-05-28-J](./docs/DECISIONS.md#d-2026-05-28-j--service-composition-model-one-purpose-user-interaction-steps-branchjoin-on-shared-outcome-v02715)).
+  Preserves the user-side `actor_ref`'s `(x, y)`, infers the
+  spatial direction from the subject edge's `sourceHandle`
+  (`r` → LR, `l` → RL, `b` → TB, `t` → BT), lays the step graph
+  out with dagre using that `rankdir`, then translates the step
+  graph so the entry sits one rank (~220 px) away from the
+  actor in the chosen direction. Orphan nodes keep their
+  positions.
+- **`useAutoLayout` priority swap.** When a doc has a user-side
+  `actor_ref` + subject edge, `actorAnchoredLayout` runs *before*
+  the mindmap BFS. (For ServiceDetail the mindmap BFS picks the
+  hidden root-service as anchor and packs every other node —
+  *including the user actor* — into the isolated-nodes grid, which
+  is exactly the bug the user flagged: *"이렇게 정렬이 되면
+  사람이 알아보겠어요???"*.)
+- **`viewer/tests/actor-anchored-layout.test.ts`** — 6 regression
+  cases (LR preservation, single-step LR alignment, TB direction,
+  branch + join graph, orphan preservation, no-actor early
+  return). Red→Green ritual completed before the source module
+  landed.
+- **`SPEC.md` §Auto-layout §"Actor-anchored layout (v0.27.16,
+  D-2026-05-28-J)"** documents the priority, the direction
+  inference, the orphan rule, and the static-test pointer.
+
+### Changed — Invariant loosened
+
+- **ServiceDetail `actor_ref` minimum drops from ≥ 2 to ≥ 1**
+  ([D-2026-05-28-K](./docs/DECISIONS.md#d-2026-05-28-k--servicedetail-actor_ref-invariant-loosened-from--2-to--1-v02716)).
+  Per D-2026-05-28-J the operator side of a service is the
+  service itself; the canvas's subject is a single user-side
+  `actor_ref`. The pre-v0.27.16 "≥ 2" rule forced an `Admin`
+  placeholder that the user 2026-05-28 immediately flagged as
+  nonsensical (*"어드민이 서버 검증을 하지는 않죠"*). Zero
+  actor_refs is still rejected — every step needs a subject.
+- `tests/test_canvas_doc.py` gains three regressions
+  (zero rejected / one-user OK / one-operator OK).
+
+### Browser verification (user's real Chrome)
+
+After the priority swap:
+- Bana (user actor) `(x, y)` preserved across ⊞ click.
+- entry sits 195 px right of Bana; decision right of entry;
+  result right of every branch terminal — Login graph reads
+  left-to-right as the user authored it.
+- Each branch (email / Google / Magic) stacks vertically as
+  expected.
+
+### Honest limitations / follow-ups
+
+- **Sync seed still creates 2 actor_refs** (`{sid}-operator-ref`,
+  `{sid}-user-ref`). The seed is the auto-fill for *new* service
+  details; users can delete the operator-side one if they don't
+  need it. Changing the seed itself is filed for a UX follow-up.
+- **`IDENTITY.md` still mentions "≥ 2 baseline"** — SPEC.md
+  §"Service composition model" (D-2026-05-28-J) is the new SSOT;
+  `IDENTITY.md` needs a follow-up edit to point there.
+- **Frontend Admin actor_ref drop bug.** During the v0.27.15
+  ship a 422 toast surfaced because the PUT body had 1 actor
+  while backend doc had 2 (Admin silently dropped between
+  reload and PUT). v0.27.16's invariant loosening makes the
+  422 disappear at the user-visible layer, but the drop bug
+  itself is still open. Filed for the next session.
+- **D-2026-05-28-E** (stencil per-item descriptions) still
+  waits on user copy.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 588 / 588 pass.
+- `uv run pytest` — 438 / 438 pass (+3 new in test_canvas_doc).
+- chrome-devtools MCP on the user's Chrome — ⊞ click on the
+  Login user-interaction graph: Bana preserved, step chain
+  layered LR, branches stacked, result on the far right.
+
 ## [0.27.15] — 2026-05-28
 
 ### Added — Service composition model pinned

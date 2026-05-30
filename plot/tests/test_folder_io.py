@@ -192,7 +192,11 @@ def test_list_service_details_empty_by_default(plot_root: Path) -> None:
 
 
 def _detail_with_actor_refs(service_id: str = "order") -> CanvasDoc:
-    """v0.11 — every service_detail needs ≥ 2 actor_refs."""
+    """v0.27.16 (D-2026-05-28-K) — service_detail invariant loosened to
+    ≥ 1 actor_ref. This fixture keeps the 2-actor seed because most
+    folder_io tests don't care about the count — they exercise sync /
+    publish / archive logic that needs *some* doc to bounce off. The
+    invariant itself is covered by ``test_canvas_doc.py``."""
     return CanvasDoc(
         canvas_id=service_id,
         canvas_kind="service_detail",

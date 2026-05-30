@@ -8824,3 +8824,67 @@ the v4 Login graph; *"네"* on the SPEC-pin proposal).
   kinds; this entry pins their role in service composition).
 - D-2026-05-04-A (no auto-edges — preserved; the user draws each
   next/branch/join edge).
+
+---
+
+### D-2026-05-28-K — ServiceDetail `actor_ref` invariant loosened from ≥ 2 to ≥ 1 (v0.27.16)
+
+**Context:** D-2026-05-28-J pinned that on a ServiceDetail canvas
+the operator side of a service is the *service itself*, and the
+canvas's subject is a single user-side actor_ref. The pre-v0.27.16
+`CanvasDoc` invariant ("≥ 2 actor_ref nodes: operator + user") was
+written in v0.11 when the seed pattern was an explicit pair. That
+pair forced canvases to carry an `Admin` placeholder for the
+operator slot — which the user 2026-05-28 immediately flagged as
+nonsensical: *"Admin은 사용자에요"* and *"어드민이 서버 검증을
+하지는 않죠"*. The Admin actor was never a real subject; it was
+invariant glue.
+
+**Decision:**
+
+`CanvasDoc._service_detail_actor_refs_minimum` in `plot_mcp/models.py`
+loosens to `≥ 1`. The error message changes to point at the new SPEC
+section rather than `IDENTITY.md`:
+
+```py
+if len(actor_refs) < 1:
+    raise ValueError(
+        f"service_detail {self.canvas_id!r} requires at least 1 "
+        f"actor_ref node (the subject of the service's steps), got 0. "
+        "See SPEC.md §Service composition model (D-2026-05-28-J)."
+    )
+```
+
+Zero actor_refs is still rejected — per D-2026-05-28-J every step
+needs a subject, and the subject is the actor_ref the entry edge
+flows from. Zero means no one is doing the steps.
+
+**Test pin:** `tests/test_canvas_doc.py` gains three regressions
+(`test_detail_canvas_zero_actor_refs_rejected`,
+`test_detail_canvas_one_user_actor_ref_ok`,
+`test_detail_canvas_operator_side_only_still_ok_for_backwards_compat`).
+Red→Green: pre-fix the one-user case failed with
+*"requires at least 2 actor_ref nodes"*; post-fix all three pass.
+
+**Honest limitations:**
+
+- The seed pattern in `sync_details_with_overview` still creates
+  two seeded actor_refs (`{sid}-operator-ref` + `{sid}-user-ref`).
+  That's the auto-seed for *new* services; users can delete the
+  operator-side one if they don't need it. Changing the seed
+  itself is a UX call filed for a follow-up.
+- `IDENTITY.md` still mentions the "≥ 2 baseline" — the doc
+  refers to a v0.11 design that this entry overrides. SPEC.md
+  §"Service composition model" (D-2026-05-28-J) is the new SSOT.
+
+**Spec impact:** `SPEC.md` §ServiceDetail §"Service composition
+model" (D-2026-05-28-J) is the SSOT; this entry is its enforcement
+half on the server.
+
+**Approval:** Accepted by user, 2026-05-28 (via D-2026-05-28-J).
+
+**Cross-refs:**
+- D-2026-05-28-J (defines Service = one purpose + user-interaction
+  steps + actor subject; this entry unblocks docs that conform).
+- D-2026-05-26-D (ServiceDetail self-containment — keeping the
+  invariant strict was preventing self-contained one-user docs).

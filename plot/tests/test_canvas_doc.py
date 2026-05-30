@@ -490,8 +490,11 @@ def test_detail_canvas_minimum_ok() -> None:
     )
 
 
-def test_detail_canvas_under_two_actor_refs_rejected() -> None:
-    """v0.11 — service_detail requires ≥ 2 actor_refs (IDENTITY.md baseline)."""
+def test_detail_canvas_zero_actor_refs_rejected() -> None:
+    """v0.27.16 (D-2026-05-28-K) — service_detail still requires at least
+    one actor_ref. ``≥ 0`` would let a canvas exist with no subject at
+    all, which contradicts D-2026-05-28-J (every step's subject is an
+    actor)."""
     with pytest.raises(ValueError, match="actor_ref"):
         CanvasDoc(
             canvas_id="order",
@@ -499,6 +502,49 @@ def test_detail_canvas_under_two_actor_refs_rejected() -> None:
             service_ref="order",
             nodes=[ServiceNode(id="order", label="주문")],
         )
+
+
+def test_detail_canvas_one_user_actor_ref_ok() -> None:
+    """v0.27.16 (D-2026-05-28-K) — per D-2026-05-28-J the operator side
+    of a service is the *service itself*; only a user-side actor_ref is
+    required. A single user-side actor_ref must produce a valid
+    service_detail (the pre-v0.27.16 ``≥ 2`` rule rejected this and
+    forced an Admin placeholder, which the user flagged as a category
+    error on 2026-05-28)."""
+    CanvasDoc(
+        canvas_id="login",
+        canvas_kind="service_detail",
+        service_ref="login",
+        nodes=[
+            ServiceNode(id="login", label="Login"),
+            ActorRefNode(
+                id="login-user",
+                label="→ Bana",
+                ref_actor_id="bana",
+                side="user",
+            ),
+        ],
+    )
+
+
+def test_detail_canvas_operator_side_only_still_ok_for_backwards_compat() -> None:
+    """v0.27.16 — accept ``side="operator"`` actor_ref on its own too;
+    don't silently break legacy docs that have only an operator actor.
+    The minimum is *one* actor_ref of any side."""
+    CanvasDoc(
+        canvas_id="ops",
+        canvas_kind="service_detail",
+        service_ref="ops",
+        nodes=[
+            ServiceNode(id="ops", label="Ops"),
+            ActorRefNode(
+                id="ops-op",
+                label="→ Admin",
+                ref_actor_id="admin",
+                side="operator",
+            ),
+        ],
+    )
 
 
 def test_detail_canvas_service_ref_must_match_canvas_id() -> None:

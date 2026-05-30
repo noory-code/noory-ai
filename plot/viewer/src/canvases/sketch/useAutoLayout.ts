@@ -17,6 +17,7 @@ import { useCallback, type MutableRefObject } from "react";
 import { useReactFlow } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
 import { computeAutoLayout, type AutoLayoutAnchor } from "./autoLayout";
+import { actorAnchoredLayout } from "../../flow/actorAnchoredLayout";
 import { handleAwareLayout } from "../../flow/handleAwareLayout";
 import { PROJECT_ANCHOR_ID } from "./constants";
 
@@ -69,6 +70,34 @@ export function useAutoLayout({ docRef, onDocChange, projectAnchor }: UseAutoLay
   return useCallback(() => {
     const doc = docRef.current;
     if (doc.nodes.length === 0) return;
+    // v0.27.16 (D-2026-05-28-J) — Actor-anchored layout takes
+    // *priority* on docs that have a user-side actor_ref wired to
+    // an entry step (the "subject edge"). The mindmap BFS path
+    // below uses the hidden root_service as its anchor for
+    // ServiceDetail; that anchor is disconnected, so BFS yields
+    // only the root_service itself and dumps every other node —
+    // including the user actor — into the isolated-nodes grid.
+    // That sweeps the actor away from its placed position, which
+    // is exactly the bug the user flagged on 2026-05-28
+    // (*"이렇게 정렬이 되면 사람이 알아보겠어요???"*).
+    const hasUserSubjectEdge = doc.nodes.some(
+      (n) =>
+        n.kind === "actor_ref" &&
+        (n as unknown as { side?: string }).side === "user" &&
+        doc.edges.some((e) => e.source === n.id),
+    );
+    if (hasUserSubjectEdge) {
+      const next = actorAnchoredLayout(doc);
+      const moved = next.nodes.some((nn, i) => {
+        const prev = doc.nodes[i];
+        return prev && (prev.x !== nn.x || prev.y !== nn.y);
+      });
+      if (moved) {
+        onDocChange(next);
+        fitNext(rf);
+        return;
+      }
+    }
     const anchor = pickAnchor(doc, projectAnchor);
     if (anchor) {
       const { positions } = computeAutoLayout({
@@ -87,13 +116,22 @@ export function useAutoLayout({ docRef, onDocChange, projectAnchor }: UseAutoLay
         return;
       }
     }
-    // v0.27.12 (D-2026-05-28-G) — Fallback: mindmap BFS yielded no
-    // positions (or there is no anchor at all). Typical case:
-    // ServiceDetail's hidden root-service per D-2026-05-28-B is the
-    // anchor but is intentionally disconnected from every edge, so
-    // BFS can't reach any node. Run a handle-aware dagre layered
-    // layout so ``⊞`` produces a visible re-arrangement that follows
-    // edge handles instead of being a no-op.
+    // v0.27.16 — Same actor-anchored layout but the doc has no
+    // user-side actor_ref. Try an operator-side one (or any
+    // actor_ref + subject edge) before falling back to dagre.
+    const actorAnchored = actorAnchoredLayout(doc);
+    const actorAnchoredMoved = actorAnchored.nodes.some((nn, i) => {
+      const prev = doc.nodes[i];
+      return prev && (prev.x !== nn.x || prev.y !== nn.y);
+    });
+    if (actorAnchoredMoved) {
+      onDocChange(actorAnchored);
+      fitNext(rf);
+      return;
+    }
+    // v0.27.12 (D-2026-05-28-G) — Final fallback: no anchor, no
+    // actor_ref subject edge. Run a handle-aware dagre layered
+    // layout so ``⊞`` produces a visible re-arrangement.
     const fallback = handleAwareLayout(doc);
     const moved = fallback.nodes.some((nn, i) => {
       const prev = doc.nodes[i];

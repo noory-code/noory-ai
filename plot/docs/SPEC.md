@@ -189,6 +189,39 @@ Implemented in
   so no two node footprints overlap.
 - Deterministic — ties broken by node id.
 
+### Actor-anchored layout (v0.27.16, D-2026-05-28-J)
+
+When the doc has a user-side `actor_ref` wired to an entry step (the
+"subject edge" — actor → entry, per D-2026-05-28-J), `useAutoLayout`
+runs `viewer/src/flow/actorAnchoredLayout.ts` **before** the mindmap
+BFS path. Behaviour:
+
+- The actor's `(x, y)` is **preserved** (it's the user-placed
+  anchor).
+- The direction (`LR` / `RL` / `TB` / `BT`) is inferred from the
+  subject edge's `sourceHandle`: `r` → LR, `l` → RL, `b` → TB,
+  `t` → BT.
+- The step graph (every edge that doesn't originate from the
+  anchor) is laid out by dagre with that `rankdir`.
+- The whole step graph is translated so the entry sits one rank
+  (≈ 220 px centre-to-centre) away from the actor in the chosen
+  direction.
+- Orphan nodes (no incident step edges — operator-side placeholder
+  actors, the hidden root-service, isolated notes) keep their
+  existing positions.
+
+Why this came before the mindmap BFS: `ServiceDetail`'s `pickAnchor`
+falls back to the hidden root-service, which is disconnected from
+every edge. `computeAutoLayout` reaches only the root and dumps every
+other node — including the user actor — into the isolated-nodes
+grid, sweeping the anchor away from its placed position. User
+2026-05-28: *"이렇게 정렬이 되면 사람이 알아보겠어요???"*. The
+priority order fixes that for any doc shaped per D-2026-05-28-J.
+
+Static guard: `viewer/tests/actor-anchored-layout.test.ts` (6 cases:
+LR preservation, single-step LR alignment, TB direction, branch
++ join graph, orphan preservation, no-actor early return).
+
 ### Handle-aware fallback (v0.27.12, D-2026-05-28-G)
 
 When the mindmap BFS yields zero positions (typical case:
