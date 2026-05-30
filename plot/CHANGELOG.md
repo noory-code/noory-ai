@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.29.1] — 2026-05-30
+
+### Fixed — canvas tabs showed raw i18n keys ("변수명")
+
+- v0.28.3 added a **second** top-level `"canvas"` block to the locale
+  files (for the direction-switch buttons) without noticing one
+  already existed. JSON keeps only the **last** duplicate key, so the
+  new block silently wiped `canvas.tabs.{foundation,actors,services}`
+  — i18next then rendered the raw key, which showed on the canvas tabs
+  as a variable-name-looking string. Merged the two blocks; tabs read
+  Foundation / Actors / Services again (D-2026-05-30-J). Honest note:
+  a regression introduced in v0.28.3.
+
+### Added — duplicate-key guard
+
+- `i18n-keys-parity.test.ts` now reads the **raw** locale text and
+  fails on any duplicate top-level key. The existing parity test
+  couldn't catch this — it imports the JSON, which the engine has
+  already de-duplicated (both locales shared the same dup, so parity
+  held). Green: viewer suite.
+
 ## [0.29.0] — 2026-05-30
 
 Sub-flow grouping — the last deferred ServiceDetail 고도화 item. A new

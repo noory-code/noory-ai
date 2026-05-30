@@ -9281,3 +9281,25 @@ but not yet fully eliminated.
 - **Anti-덕지덕지:** the only structural addition is the isolated
   `group` kind + an additive hide-rule in useNodesMemo. No new field on
   existing kinds; no god-component flags beyond the one additive rule.
+
+### D-2026-05-30-J — Fix duplicate `canvas` i18n key (canvas tabs showed raw keys) + guard (v0.29.1)
+
+- **What:** v0.28.3 added a **second** top-level `"canvas"` block to
+  `en.json` / `ko.json` (for `autoLayout` / `layoutLR` / `layoutTB`)
+  not noticing one already existed (with `canvas.tabs.*`). JSON keeps
+  only the **last** duplicate key, so the new block silently wiped
+  `canvas.tabs.{foundation,actors,services}` → i18next fell back to
+  rendering the raw key (`canvas.tabs.foundation`), which the user saw
+  as "변수명" on the canvas tabs.
+- **Fix:** merged the two blocks into one (tabs + layout keys); removed
+  the duplicate. Tabs render Foundation / Actors / Services again.
+- **Why the parity test missed it:** `i18n-keys-parity` imports the
+  JSON, which the JS engine has **already de-duplicated** — both
+  locales had the same dup, so en↔ko parity still held.
+- **Guard:** new test in `i18n-keys-parity.test.ts` reads the **raw
+  text** and fails on any duplicate top-level key (the de-dup is
+  invisible to an import-based check).
+- **Approval:** Accepted — user 2026-05-30 spotted it ("캔버스 탭
+  이름은 왜 변수명인가요?").
+- **Spec impact:** none (bug fix). Honest note: this was a regression I
+  introduced in v0.28.3.

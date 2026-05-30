@@ -39,6 +39,9 @@
   "canvas": {
     "aria": "캔버스",
     "keyboardShortcuts": "키보드 단축키",
+    "autoLayout": "자동 정렬",
+    "layoutLR": "가로 정렬 (좌 → 우)",
+    "layoutTB": "세로 정렬 (위 → 아래)",
     "tabs": {
       "foundation": "파운데이션",
       "actors": "액터",
@@ -97,11 +100,6 @@
     "content": "콘텐츠",
     "interaction": "인터랙션",
     "value": "가치"
-  },
-  "canvas": {
-    "autoLayout": "자동 정렬",
-    "layoutLR": "가로 정렬 (좌 → 우)",
-    "layoutTB": "세로 정렬 (위 → 아래)"
   },
   "node": {
     "step": {
