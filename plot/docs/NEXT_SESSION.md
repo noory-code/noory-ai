@@ -9,6 +9,47 @@
 
 ## Active queue
 
+### `현재 상태 hands-on 검토` (TOP priority — NEXT TASK, filed 2026-05-31 end-of-session)
+
+> **Trigger:** user says **"다음"** / **"검토"** / **"둘러보기"** /
+> **"리뷰"** / **"review"** as the first / near-first message.
+>
+> **Filed:** 2026-05-31 end of session. After the Retention/inheritance
+> arc shipped (v0.29.2→v0.30.4), user said: *"다음 작업은 이제 다시
+> 검토하는 겁니다. 지금 상태 더 둘러보기에요. 다음 세션에서 진행할게요."*
+> → The next task is the **user driving a hands-on review** of what was
+> just built. User-led — **wait for them to point at a piece; do NOT
+> pre-emptively change anything.**
+>
+> **What to review (the new UX from this session):**
+> - **foundation** — value-injection edges (violet, floating) converging
+>   on the Banas anchor; master nodes as rounded rectangles.
+> - **actors** — the inheritance tree `anchor ← User(base) ←
+>   {Operator, Bana}`; click a sub-actor → inspector shows
+>   "inherited from {parent}" captions.
+> - **floating edges** everywhere — connection reads the same from any
+>   side (the Voice loop is gone).
+> - edge **flip direction** (right-click an edge).
+>
+> **Live demo data already seeded** (NOT committed — it's outside the
+> repo): `plot-test-v010/.plot/proj-monmft3s` has the foundation
+> injection edges + the actor inheritance tree. Open it to review.
+>
+> **Launch:**
+> ```
+> cd plot && uv run plot-mcp-http          # MCP :5190
+> cd plot/viewer && npm run dev            # viewer :5193
+> open "http://localhost:5193/?project_path=/Users/woogis/Workspace/plot-test-v010"
+> ```
+> **Gotcha (this session's lesson):** do NOT kill/restart the dev server
+> while the user's browser is open — the app's WebSocket reconnect loop
+> looks like "리빌드 계속" churn and stutters edge animations. Keep the
+> dev server up for the whole review.
+>
+> **Approach:** polish per [[feedback_small_ships_over_big_bangs]] +
+> [[feedback_show_dont_tell]] + [[feedback_discussion_mode_brief]];
+> respond short, wait for the user's lead.
+
 ### `Retention canvases + actor inheritance — COMPLETED 2026-05-31` (done; kept so it isn't re-opened)
 
 > Shipped Plot **v0.29.2 → v0.30.4** (8 commits, decisions
