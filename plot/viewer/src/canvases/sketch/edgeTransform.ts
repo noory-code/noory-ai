@@ -22,11 +22,30 @@ export interface EdgeTransformInput {
   /** v0.15 Phase 3.4 — drop edges that touch the hidden service-root
    *  (true on ServiceDetailCanvas; false elsewhere). */
   hideRootServiceNode: boolean;
+  /** v0.28.1 (D-2026-05-30-D) — source-kind lookup for foundation-
+   *  injection styling. An edge whose source is a foundation ref
+   *  (mission_ref / value_ref / identity_ref) renders as an animated
+   *  violet "injection" edge. Optional — when omitted, no edge is
+   *  styled as injection (back-compat for non-ServiceDetail canvases). */
+  nodeKindById?: (id: string) => string | undefined;
 }
 
+// v0.28.1 (D-2026-05-30-D) — foundation refs whose outgoing edges read
+// as "this essence fires here". ``actor_ref`` is excluded: the
+// user-side actor_ref → entry subject edge is the sequence anchor, not
+// an injection.
+const FOUNDATION_REF_KINDS = new Set<string>(["mission_ref", "value_ref", "identity_ref"]);
+const INJECTION_STROKE = "#8b5cf6"; // violet-500
+
 export function edgeTransform(input: EdgeTransformInput): Edge[] {
-  const { edges, serviceRef, nearestCollapsedAncestor, valueFlowOn, hideRootServiceNode } =
-    input;
+  const {
+    edges,
+    serviceRef,
+    nearestCollapsedAncestor,
+    valueFlowOn,
+    hideRootServiceNode,
+    nodeKindById,
+  } = input;
   const isHiddenRoot = (id: string): boolean =>
     hideRootServiceNode && !!serviceRef && id === serviceRef;
   const out: Edge[] = [];
@@ -47,8 +66,15 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     //       now looks like a self-loop on the collapsed parent; drop.
     const isRealSelfLoop = e.source === e.target;
     if (src === tgt && !isRealSelfLoop) continue;
-    const stroke =
-      valueFlowOn && e.value_form && e.value_form.length > 0
+    // v0.28.1 (D-2026-05-30-D) — injection edge: source is a foundation
+    // ref. Computed from the original (pre-collapse) source so a
+    // collapsed-into-parent edge doesn't lose the signal.
+    const isInjection = nodeKindById
+      ? FOUNDATION_REF_KINDS.has(nodeKindById(e.source) ?? "")
+      : false;
+    const stroke = isInjection
+      ? INJECTION_STROKE
+      : valueFlowOn && e.value_form && e.value_form.length > 0
         ? VALUE_FORM_COLORS[e.value_form[0]]
         : undefined;
     out.push({
@@ -61,6 +87,10 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
       // Self-loops route through SelfLoopEdge (curved arc); regular
       // edges keep React Flow's default Bezier path.
       ...(isRealSelfLoop ? { type: "selfLoop" } : {}),
+      // v0.28.1 (D-2026-05-30-D) — injection edges animate (marching
+      // dashes flow source → target = the foundation flowing into the
+      // flow node).
+      ...(isInjection ? { animated: true } : {}),
       // v0.26.0 (D-2026-05-25-A) — directed edges render an arrowhead
       // at the target end. Undirected edges (``directed === false``)
       // render unadorned. The arrow colour matches the resolved stroke
@@ -77,7 +107,12 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
         : {}),
       style: {
         ...(e.style === "dashed" ? { strokeDasharray: "6 4" } : {}),
-        ...(stroke ? { stroke, strokeWidth: e.value_form.length } : {}),
+        // Injection: violet dashed stroke. Otherwise value-flow recolour.
+        ...(isInjection
+          ? { stroke: INJECTION_STROKE, strokeDasharray: "4 4", strokeWidth: 1.5 }
+          : stroke
+            ? { stroke, strokeWidth: e.value_form.length }
+            : {}),
       },
     });
   }

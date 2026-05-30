@@ -4,6 +4,43 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.28.1] — 2026-05-30
+
+Foundation-injection edges — the other half of the "ServiceDetail =
+flowchart of the service with foundation injected onto it" vision
+(pairs with v0.28.0's `decision` kind). [D-2026-05-30-D](./docs/DECISIONS.md).
+
+### Added — injection edge styling
+
+- An edge whose **source** is a foundation ref (`mission_ref` /
+  `value_ref` / `identity_ref`) renders as an **injection** edge:
+  animated (marching dashes flowing source → target) + violet stroke
+  (`#8b5cf6`) + `4 4` dash. Expresses "this mission / core value /
+  tone&manner *fires here*" at a concrete flow point — e.g. 유머
+  (Humor) → 로그인 페이지 진입.
+- **Derived from the source node kind** (like the v0.27.19 branch
+  badge is derived from the edge count) — no new edge kind, no stored
+  flag, no auto-emit. The user draws the edge (PHILOSOPHY P10); Plot
+  only styles it. `actor_ref` is excluded (it is the sequence-anchor
+  subject edge, not an injection).
+
+### Changed
+
+- `edgeTransform` gains an optional `nodeKindById` lookup;
+  `useEdgesMemo` builds it from `doc.nodes` (memoised on the node set).
+
+### Tests
+
+- `viewer/tests/edge-transform.test.ts` (new) — injection for each
+  foundation ref source, no injection for step→step or actor_ref
+  source. Red→Green before source. Full suite green: viewer 598.
+
+### Browser verification (Playwright, Login demo doc)
+
+- The user's existing `유머 (Humor) → 로그인 페이지 진입` edge now
+  renders animated violet dashed (`rgb(139, 92, 246)`); 0 console
+  errors.
+
 ## [0.28.0] — 2026-05-30
 
 New domain kind: **`decision`** — a flowchart decision diamond for the

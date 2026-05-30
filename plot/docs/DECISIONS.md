@@ -9093,3 +9093,37 @@ but not yet fully eliminated.
   phased ship.
 - **Test:** per entity-template (domain roundtrip, registry, renderer,
   inspector, schema-parity, structural guards).
+
+### D-2026-05-30-D — Foundation-injection edges (value_ref / mission_ref / identity_ref → flow node) (v0.28.1)
+
+- **What:** an edge whose **source** is a foundation ref
+  (`mission_ref` / `value_ref` / `identity_ref`) renders as an
+  **injection** edge — animated (marching dashes flowing toward the
+  target) + a distinct violet stroke — to express "this mission /
+  core value / tone&manner *fires here*" at a concrete flow point.
+  User example 2026-05-30: 유머 (Humor core_value) → 로그인 페이지
+  (entry step).
+- **Why:** the user wants the project's essence (미션 / 코어밸류 /
+  톤앤매너) **visibly activated** on the concrete service flow, not
+  just listed in a corner. An ordinary edge doesn't read as
+  "injection"; the animated violet dash does. This is the
+  "ServiceDetail = flowchart of the service with foundation injected
+  onto it" half of the same vision that produced the `decision` kind
+  (D-2026-05-30-C).
+- **Derived, not stored:** the injection look is computed from the
+  *source node kind* (like the v0.27.19 branch badge is computed from
+  the outgoing-edge count) — no new edge kind, no stored flag, no
+  auto-emit. The user draws the edge (PHILOSOPHY P10); Plot only
+  styles it.
+- **`actor_ref` excluded:** the user-side `actor_ref → entry` subject
+  edge is the sequence anchor, not a foundation injection — only the
+  three Foundation refs trigger the style.
+- **Alternatives:** (a) a chip / tag on the step listing applied
+  values — rejected, the user explicitly chose node-to-node
+  connection ("노드를 연결시켜두면 되죠"); (b) a new edge kind —
+  rejected (YAGNI + SSOT: the relationship IS the source-ref → target
+  edge, no separate flag to drift).
+- **Approval:** Accepted — user 2026-05-30 ("유머가 로그인 페이지에
+  보이면 좋겠다를 이렇게 표현할 수 있다는거구요" + "네 가시죠").
+- **Spec impact:** SPEC §ServiceDetail edges — injection edge styling.
+- **Test:** `viewer/tests/edge-transform.test.ts`.

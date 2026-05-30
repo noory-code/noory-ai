@@ -954,6 +954,19 @@ each one):
 - 인터랙션 → 핵심가치  (어떤 가치가 실현되는가)
 - 핵심가치 → 미션  (어떻게 미션에 기여하는가)
 
+### Foundation-injection edges (v0.28.1, D-2026-05-30-D)
+
+An edge whose **source** is a foundation ref (`mission_ref` /
+`value_ref` / `identity_ref`) renders as an **injection** edge:
+animated (marching dashes flowing source → target) + a violet stroke
+(`#8b5cf6`) + `4 4` dash. It expresses "this mission / core value /
+tone&manner *fires here*" at a concrete flow point (e.g. 유머
+(Humor) → 로그인 페이지 진입). Like the branch badge, the style is
+**derived from the source node kind** — no new edge kind, no stored
+flag, no auto-emit (the user draws the edge). `actor_ref` is excluded:
+the user-side `actor_ref → entry` subject edge is the sequence anchor,
+not an injection.
+
 **Backwards-compat:** dropping a composition preset *inside* a
 service container still nests it (the user can still build the
 old service-anchored composition graph if they want). The change

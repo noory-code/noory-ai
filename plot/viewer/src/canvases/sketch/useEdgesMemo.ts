@@ -22,6 +22,13 @@ export function useEdgesMemo({
   valueFlowOn,
   hideRootServiceNode,
 }: UseEdgesMemoArgs): Edge[] {
+  // v0.28.1 (D-2026-05-30-D) — source-kind lookup for foundation-
+  // injection edge styling. Rebuilt only when the node set changes.
+  const kindById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const n of doc.nodes) m.set(n.id, n.kind);
+    return m;
+  }, [doc.nodes]);
   return useMemo(
     () =>
       edgeTransform({
@@ -30,6 +37,7 @@ export function useEdgesMemo({
         nearestCollapsedAncestor,
         valueFlowOn,
         hideRootServiceNode,
+        nodeKindById: (id) => kindById.get(id),
       }),
     [
       doc.edges,
@@ -37,6 +45,7 @@ export function useEdgesMemo({
       nearestCollapsedAncestor,
       valueFlowOn,
       hideRootServiceNode,
+      kindById,
     ],
   );
 }
