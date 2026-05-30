@@ -8,6 +8,7 @@ import {
   DollarSign,
   Flag,
   Folder,
+  GitFork,
   Globe,
   Heart,
   Key,
@@ -60,6 +61,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   "shopping-cart": ShoppingCart,
   database: Database,
   "clipboard-list": ClipboardList,
+  "git-fork": GitFork,
 };
 
 export const ICON_KEYS: readonly string[] = Object.keys(ICON_MAP);

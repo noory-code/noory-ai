@@ -77,7 +77,7 @@ instance flag.
 | **Foundation** | Who are we, and why do we exist? | `project`, `mission`, `core_value`, `identity` |
 | **Actors** | Who participates? | `actor` |
 | **Services** (top) | What value do we create and exchange? | `project`, `category`, `service` |
-| **Service Detail** (modal, per-service) | How does this one service work inside? | `actor_ref`, `mission_ref`, `value_ref`, `identity_ref`, `metric`, `step`, `rule`, `content` |
+| **Service Detail** (modal, per-service) | How does this one service work inside? | `actor_ref`, `mission_ref`, `value_ref`, `identity_ref`, `metric`, `step`, `decision`, `rule`, `content` |
 
 > **v0.11.4** — `project` is also auto-seeded on Actors and Services
 > canvases (label-synced from Foundation) so every primary canvas
@@ -419,6 +419,30 @@ is a workflow more than an arena.
   - `order` — sequence number.
   - `actor` — `actor_ref` of who acts in this step.
   - `outcome` — the state after the step.
+
+### `decision` — branch point (new in v0.28.0)
+
+A flowchart **decision** (rendered as a diamond) between action
+`step`s: a fork in the service flow. Two flavours, one node — a
+**user choice** (방식 선택: email / Google / Magic) or a **system
+judgment** (검증 성공 / 실패-이유). Promoting decision to its own kind
+keeps `step` = *user action* intact: a system judgment is a
+`decision`, never a `step`. See [D-2026-05-30-C](./DECISIONS.md).
+
+- **Asks**: which way does the flow go here?
+- **Examples**: "방식 선택?" (user picks a login method), "검증?"
+  (system: success vs. wrong-password vs. no-account).
+- **Branches**: the outgoing paths are **user-drawn labelled edges**
+  (성공 / 실패 / a choice), not a stored field. Typed-failure results
+  are ordinary result `step`s the decision branches to; validation
+  rules (포맷 / 중복 / 비번 정책) are ordinary `rule` nodes.
+- **Typed fields**:
+  - `label` — the question ("검증?").
+  - `body` — optional notes (Markdown).
+- **Shape**: always a diamond, forced at the renderer (the shape *is*
+  the semantic; same pattern as Symbol kinds forcing a circle).
+- **Bounded context**: EssenceExecution (Service-Detail composition
+  primitive, sibling of `step` / `metric` / `rule` / `content`).
 
 ---
 

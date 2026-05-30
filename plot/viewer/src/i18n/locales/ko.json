@@ -91,6 +91,7 @@
     "category": "카테고리",
     "metric": "지표",
     "step": "단계",
+    "decision": "결정",
     "rule": "규칙",
     "content": "콘텐츠",
     "interaction": "인터랙션",
@@ -113,6 +114,9 @@
     "category": "카테고리"
   },
   "inspector": {
+    "decision": {
+      "branchHint": "분기는 나가는 선에 표현됩니다 — 경로마다 라벨 단 선을 그으세요 (성공 / 실패 / 선택지)."
+    },
     "label": "라벨",
     "deleteNode": "노드 삭제",
     "deleteShort": "✕ 삭제",

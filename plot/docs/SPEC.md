@@ -939,6 +939,9 @@ In that model:
 - **Actor nodes** (`actor_ref`) — e.g. Hero (전문가), Fan
 - **Interaction nodes** (`step` re-purposed) — 액터 간 접점:
   모임 개설/참여, 콘텐츠 발행/소비, 후원/구독, 1:1 소통, 클래스/이벤트
+- **Decision nodes** (`decision`, v0.28.0 D-2026-05-30-C) — 흐름의
+  분기점 (마름모): 사용자 선택 (방식 선택) 또는 시스템 판정 (검증
+  성공/실패). 분기는 사용자가 그린 라벨 엣지로 표현.
 - **Value nodes** (`metric` re-purposed) — 인터랙션에서 교환되는 것:
   전문 지식, 경험/취향, 수익, 팬덤/소속감
 - **Upper-link nodes** (`mission_ref`, `value_ref`) —
@@ -1035,6 +1038,25 @@ A `step` node on the ServiceDetail canvas renders, top-to-bottom:
   placeholder (D-2026-05-30-A). This keeps the SPEC rule "system
   work is NOT a step; it lives in `step.outcome`" legible without
   opening the Inspector.
+
+### Decision node (v0.28.0, D-2026-05-30-C)
+
+A `decision` is a flowchart branch point, dropped from the stencil's
+Interactions section alongside `step`:
+
+- **Renders as a diamond**, forced at the renderer
+  (`BaseNode.effectiveShape`) — the shape is the semantic, so a stored
+  `shape` is ignored (same pattern as Symbol kinds forcing a circle,
+  D-2026-05-28-D). No kind tag (diamond has no flat corner).
+- **One node for both flavours** — a *user choice* (방식 선택) and a
+  *system judgment* (검증 성공/실패) are both `decision`s. This keeps
+  `step` = *user action*: a system judgment is never a step.
+- **Branches are user-drawn labelled edges** (성공 / 실패 / a choice),
+  never auto-emitted (SPEC §Edges). Typed-failure results are ordinary
+  result `step`s; validation conditions are ordinary `rule` nodes.
+- **Fields**: `label` (the question) + `body` (notes). No `order` /
+  `outcome` — a decision has many labelled outcomes (the edges), not a
+  single one.
 
 ### Auto-layout responsibility
 

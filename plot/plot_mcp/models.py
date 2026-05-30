@@ -77,6 +77,10 @@ NodeKind = Literal[
     #   step   — an ordered procedural step in the service's flow.
     "metric",
     "step",
+    # v0.28.0: decision — a flowchart decision (diamond) branch point in a
+    #   service_detail flow (user choice or system judgment). See
+    #   docs/DECISIONS.md D-2026-05-30-C.
+    "decision",
     # v0.12: ``category`` is a thematic grouping of services. Replaces what
     # used to be the "top-level service" idiom — categories are pure
     # containers (no value creation themselves), and the actual services
@@ -87,8 +91,8 @@ NodeKind = Literal[
 
 # Composition kinds: must live inside a service (applies to SketchDoc and
 # service_detail CanvasDoc alike).
-# v0.10 Step 5: metric + step join the family.
-_COMPOSITION_KINDS = {"rule", "content", "metric", "step"}
+# v0.10 Step 5: metric + step join the family. v0.28.0: decision joins.
+_COMPOSITION_KINDS = {"rule", "content", "metric", "step", "decision"}
 
 
 ValueForm = Literal[
@@ -454,6 +458,17 @@ class StepNode(BaseNodeFields):
     body: str = ""
 
 
+class DecisionNode(BaseNodeFields):
+    """v0.28.0 (D-2026-05-30-C): ``decision`` kind. A flowchart decision
+    (diamond) branch point inside a service_detail flow — a user choice
+    (방식 선택) or a system judgment (검증 성공/실패). The branches are
+    user-drawn labelled outgoing edges; the node carries only the
+    question (``label``) + optional notes (``body``)."""
+
+    kind: Literal["decision"] = "decision"
+    body: str = ""
+
+
 class RuleNode(BaseNodeFields):
     """v0.15 Phase 1.2: ``rule`` kind. A composition element inside a
     service expressing an enforced policy (with per-actor permissions)."""
@@ -500,6 +515,7 @@ SketchNode = Annotated[
     | IdentityRefNode
     | MetricNode
     | StepNode
+    | DecisionNode
     | RuleNode
     | ContentNode,
     Field(discriminator="kind"),
@@ -523,6 +539,7 @@ SketchNodeAdapter: TypeAdapter[
     | IdentityRefNode
     | MetricNode
     | StepNode
+    | DecisionNode
     | RuleNode
     | ContentNode
 ] = TypeAdapter(SketchNode)
@@ -598,6 +615,7 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
         "content",
         "metric",
         "step",
+        "decision",
         "actor_ref",
     }
     | _FOUNDATION_REFS,

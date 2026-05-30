@@ -212,6 +212,22 @@ const SERVICE_COMPOSITION: StencilPreset[] = [
     dropHint: "Drop inside a Service container",
     dropHintI18nKey: "stencil.dropHintIntoService",
   },
+  {
+    // v0.28.0 (D-2026-05-30-C) — flowchart decision (diamond). Shape is
+    // forced to diamond at the renderer (BaseNode.effectiveShape), so the
+    // stored shape here is cosmetic; kept "diamond" for honesty.
+    id: "decision",
+    labelHint: "Decision",
+    shape: "diamond",
+    color: "#fde68a",
+    width: 130,
+    height: 90,
+    icon: "git-fork",
+    label: "Decision",
+    kind: "decision",
+    dropHint: "Drop inside a Service container",
+    dropHintI18nKey: "stencil.dropHintIntoService",
+  },
 ];
 
 /**
@@ -274,7 +290,8 @@ export function resolveDropTarget(
    *  service parent unconditionally). */
   canvasKind?: StencilCanvas,
 ): { parentId: string | null } | { error: string } {
-  const isComposition = preset.kind === "metric" || preset.kind === "step";
+  const isComposition =
+    preset.kind === "metric" || preset.kind === "step" || preset.kind === "decision";
   const isSubActor = preset.id === "sub-actor";
   // v0.12: a service preset on the Services canvas drops *inside a
   // category* (services are leaves nested under a category).
@@ -460,6 +477,10 @@ export function SketchStencil({
   // the stencil section + item labels read as the user's mental model.
   const stepPreset = SERVICE_COMPOSITION.find((p) => p.id === "step");
   const metricPreset = SERVICE_COMPOSITION.find((p) => p.id === "metric");
+  const decisionRaw = SERVICE_COMPOSITION.find((p) => p.id === "decision");
+  const decisionPreset: StencilPreset | null = decisionRaw
+    ? { ...decisionRaw, labelI18nKey: "kind.decision", labelHint: "Decision" }
+    : null;
   const interactionPreset: StencilPreset | null = stepPreset
     ? { ...stepPreset, labelI18nKey: "kind.interaction", labelHint: "Interaction" }
     : null;
@@ -475,7 +496,7 @@ export function SketchStencil({
       {interactionPreset && (
         <Section
           title={t("stencil.section.interactions")}
-          presets={[interactionPreset]}
+          presets={decisionPreset ? [interactionPreset, decisionPreset] : [interactionPreset]}
           note={t("stencil.note.interactionsBetweenActors")}
         />
       )}

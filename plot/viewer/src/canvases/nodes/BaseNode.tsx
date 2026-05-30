@@ -90,6 +90,9 @@ const SYMBOL_KINDS = new Set<string>([
 
 function effectiveShape(data: BaseNodeData): Shape {
   if (data.kind && SYMBOL_KINDS.has(data.kind)) return "circle";
+  // v0.28.0 (D-2026-05-30-C) — a decision is a flowchart diamond; the
+  // shape IS the semantic, so force it like Symbol kinds force circle.
+  if (data.kind === "decision") return "diamond";
   return data.shape;
 }
 

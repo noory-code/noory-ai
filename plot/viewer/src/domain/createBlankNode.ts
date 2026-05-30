@@ -13,6 +13,7 @@ import type { BaseFields } from "./BaseFields";
 import { Category } from "./Category";
 import { Content } from "./Content";
 import { CoreValue } from "./CoreValue";
+import { Decision } from "./Decision";
 import { Identity } from "./Identity";
 import { IdentityRef } from "./IdentityRef";
 import { Metric } from "./Metric";
@@ -90,6 +91,8 @@ export function createBlankNode(
       return Metric.fromJson(raw).toJson();
     case "step":
       return Step.fromJson(raw).toJson();
+    case "decision":
+      return Decision.fromJson(raw).toJson();
     case "rule":
       return Rule.fromJson(raw).toJson();
     case "content":

@@ -17,6 +17,7 @@ import { ActorRefInspector } from "./actor_ref";
 import { CategoryInspector } from "./category";
 import { ContentInspector } from "./content";
 import { CoreValueInspector } from "./core_value";
+import { DecisionInspector } from "./decision";
 import { IdentityInspector } from "./identity";
 import { IdentityRefInspector } from "./identity_ref";
 import { MetricInspector } from "./metric";
@@ -35,6 +36,7 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   // Phase 2.1+ per-kind entries land here.
   metric: MetricInspector,
   step: StepInspector,
+  decision: DecisionInspector,
   core_value: CoreValueInspector,
   identity: IdentityInspector,
   mission: MissionInspector,

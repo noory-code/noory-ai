@@ -91,6 +91,7 @@
     "category": "Category",
     "metric": "Metric",
     "step": "Step",
+    "decision": "Decision",
     "rule": "Rule",
     "content": "Content",
     "interaction": "Interaction",
@@ -113,6 +114,9 @@
     "category": "CATEGORY"
   },
   "inspector": {
+    "decision": {
+      "branchHint": "Branches live on the outgoing edges — draw a labelled edge per path (성공 / 실패 / choice)."
+    },
     "label": "Label",
     "deleteNode": "Delete node",
     "deleteShort": "✕ delete",

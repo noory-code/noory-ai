@@ -4,6 +4,64 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.28.0] — 2026-05-30
+
+New domain kind: **`decision`** — a flowchart decision diamond for the
+ServiceDetail flow. The 16th kind, added via the full
+`plot-domain-design` → `plot-entity-template` walk
+([D-2026-05-30-C](./docs/DECISIONS.md)).
+
+### Added — `decision` kind
+
+- **A branch point as its own node** (rendered as a diamond), dropped
+  from the ServiceDetail stencil's Interactions section beside `step`.
+  One node covers both a *user choice* (방식 선택) and a *system
+  judgment* (검증 성공/실패). Branches are user-drawn labelled edges;
+  typed-failure results are ordinary result `step`s; validation
+  conditions are ordinary `rule` nodes — no extra kinds.
+- **Why a new kind:** promoting decision off `step` keeps `step` = a
+  *user action* (SPEC §"Service composition model"). A system judgment
+  that branches the flow cannot live in `step.outcome` text — it needs
+  a node. This partially supersedes D-2026-05-28-J's "system work is
+  only outcome text" stance: branching system *judgments* are now
+  first-class `decision` nodes; non-branching side-effects stay in
+  `step.outcome`.
+- Fields: `BaseFields` + `body`. No `order` / `outcome` (a decision
+  has many labelled outcomes — the edges — not one). Diamond shape is
+  forced at the renderer (`BaseNode.effectiveShape`), the same pattern
+  Symbol kinds use to force a circle (D-2026-05-28-D).
+
+### Files (the entity-template walk)
+
+- `viewer/src/domain/Decision.ts` (entity class + `fromJson` boundary
+  + `registerKindParser`); union `SketchNode.ts`, barrel `index.ts`,
+  factory `createBlankNode.ts`, `types.ts::NodeKind` (15 → 16).
+- `viewer/src/canvases/nodes/decision/index.tsx` (renderer),
+  `nodes/registry.ts`; `inspectors/decision/index.tsx`,
+  `inspectors/registry.ts`.
+- `BaseNode.effectiveShape` forces diamond for `decision`.
+- `SketchStencil.tsx` Decision composition preset + free-form drop
+  rule; `SketchIcons.ts` adds `git-fork`.
+- `plot_mcp/models.py`: `DecisionNode` Pydantic model, `NodeKind`,
+  `_COMPOSITION_KINDS`, both discriminated unions, `service_detail`
+  allowed-kinds set.
+- i18n: `kind.decision`, `inspector.decision.branchHint` in en + ko.
+
+### Tests
+
+- `entity-roundtrip.test.tsx`, `structural-guards.test.tsx`
+  (`KIND_DIRS` + registry-count 15 → 16), `nodes/registry.test.tsx`,
+  server `test_schema_parity.py` all extended / auto-cover `decision`.
+  Full suites green: viewer 593, server 438, schema-parity 18,
+  pre-commit-gate 11.
+
+### Browser verification (Playwright, Login demo doc)
+
+- Stencil Interactions section shows **Interaction + Decision** tools.
+- A `decision` node renders as an amber diamond
+  (`clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)`); 0
+  console errors. (Verification node removed from the demo doc after.)
+
 ## [0.27.19] — 2026-05-30
 
 ServiceDetail step-authoring affordances — the first two items from

@@ -9049,3 +9049,47 @@ but not yet fully eliminated.
   (read only by StepNode).
 - **Test:** `viewer/tests/nodes/step.test.tsx` — badge present at
   branchCount ≥ 2, absent at < 2.
+
+### D-2026-05-30-C — `decision` becomes an independent node kind (flowchart diamond) (planned → entity-template)
+
+- **What:** Add a new domain kind `decision`, rendered as a diamond
+  (flowchart decision symbol), offered as a ServiceDetail stencil
+  composition tool. The user drops it between action steps and wires
+  labelled outgoing edges (user-choice: email / Google / Magic;
+  system-judgment: 성공 / 실패-이유). Both user-choice and
+  system-judgment branches use this one node. All edges user-drawn
+  (PHILOSOPHY P10); the system supplies only the tool + the diamond.
+- **Why:** Real services aren't a single happy path. "이메일 입력"
+  carries validation (포맷 / 중복), 비밀번호 has a policy, Submit
+  succeeds OR fails with typed reasons (단순 실패 vs 이유 있는 실패).
+  These are branch points, many system-judged — which the locked
+  model (D-2026-05-28-J) pushed into outcome TEXT, where a branching,
+  typed outcome cannot live. Promoting decision to a node lets the
+  flow express tests + multiple typed results.
+- **Why a new kind, not a step variant:** a decision is a *different
+  concept* from an action (MECE) and can be system-driven, so it
+  cannot be a `step` ("step = user action") without breaking that
+  invariant. Per the repo's no-god-object rule, a distinct concept is
+  a distinct class/kind — not a shape flag on `step`. Option (a), a
+  diamond-shaped `step` preset, was considered and rejected for
+  exactly this reason; user picked (b).
+- **Supersedes (partial):** D-2026-05-28-J's stance that "system work
+  is never a node, only `step.outcome` text." System *judgments that
+  branch the flow* are now first-class `decision` nodes. System work
+  that does NOT branch (a plain side-effect) still belongs in
+  `step.outcome`.
+- **Pairs with:** the foundation-injection thread — a `value_ref` /
+  `mission_ref` / `identity_ref` connected by a user-drawn edge to a
+  flow node expresses "this core value / mission / tone&manner fires
+  here" (user example 2026-05-30: 유머 (Humor) → 로그인 페이지). Filed
+  separately; shares the "ServiceDetail = flowchart of the service
+  with foundation injected onto it" vision.
+- **Approval:** Accepted — user 2026-05-30 ("결정을 독립 노드로 한다는
+  거죠. 그 툴도 제공한다. ㅇㅋ" + "네 저도 b에요").
+- **Spec impact:** CONCEPTS.md gains the `decision` kind (fields fixed
+  in the domain-design pass); SPEC §ServiceDetail gains the action /
+  decision / result vocabulary; palette grows 15 → 16 kinds.
+  Implementation via `plot-domain-design` → `plot-entity-template`,
+  phased ship.
+- **Test:** per entity-template (domain roundtrip, registry, renderer,
+  inspector, schema-parity, structural guards).
