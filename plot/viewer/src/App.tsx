@@ -313,6 +313,24 @@ export function App() {
     [handleUnpublishNode, detailCanvasKey],
   );
 
+  // v0.27.18 (D-2026-05-28-L) — projectAnchor was computed inline on every
+  // App render via ``resolveProjectAnchor(summaries.find(...), activeTab)``,
+  // producing a fresh object reference every time. That defeated React.memo
+  // on SketchCanvas and made the Services canvas's ReactFlow store fire
+  // a full prop-cascade update on every modal action, even though the
+  // Services canvas's underlying data was unchanged. Memoise both
+  // projectAnchor and the project summary lookup so children get a stable
+  // ref while the modal is open.
+  const activeSummary = useMemo(
+    () => summaries.find((p) => p.id === activeId) ?? null,
+    [summaries, activeId],
+  );
+  const activeProjectAnchor = useMemo(
+    () => resolveProjectAnchor(activeSummary ?? undefined, activeTab),
+    [activeSummary, activeTab],
+  );
+  const activeProjectName = activeSummary?.name ?? null;
+
   if (!projectPath) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
@@ -412,13 +430,8 @@ export function App() {
                 availableIdentities={availableIdentities}
                 selectNodeId={selectedNodeId}
                 onSelectionConsumed={consumeSelection}
-                projectAnchor={resolveProjectAnchor(
-                  summaries.find((p) => p.id === activeId),
-                  activeTab,
-                )}
-                projectName={
-                  summaries.find((p) => p.id === activeId)?.name ?? null
-                }
+                projectAnchor={activeProjectAnchor}
+                projectName={activeProjectName}
                 onAnchorChange={handleAnchorChange}
                 onPublishNode={onMainPublishNode}
                 onUnpublishNode={onMainUnpublishNode}

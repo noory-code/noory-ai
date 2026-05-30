@@ -9,7 +9,54 @@
 
 ## Active queue
 
-### `Service composition model — v0.27.16 follow-ups` (TOP priority, filed 2026-05-28)
+### `ServiceDetail 캔버스 고도화` (TOP priority, filed 2026-05-28 end-of-session)
+
+> **Trigger:** user says **"서비스 디테일 고도화"** / **"service detail
+> 고도화"** / **"디테일 캔버스"** / **"step UX"** / **"인터랙션 추가"** /
+> **"고도화"** as the first / near-first message.
+>
+> **Filed:** 2026-05-28 end of session, immediately after the
+> Service composition model got pinned (v0.27.15 D-2026-05-28-J)
+> and the actor-anchored layout shipped (v0.27.16). User: *"다음
+> 세션에서는 서비스 디테일 캔버스 고도화합니다."*
+>
+> **Why this comes first:** the *model* is locked, the
+> *baseline UX* (drop, stencil labels, hide root, EN/KO, Symbol
+> shape, auto-layout, sync guard) is shipped, but the user's
+> next focus is making the canvas itself richer — turning the
+> bare step graph into an artefact that's genuinely usable for
+> service design.
+>
+> **Scope (open — re-anchor with user at session start):** likely
+> directions, none committed:
+>
+> - **Step authoring affordances** — better inline editing of
+>   `step.label` / `step.outcome` / `step.order` so the
+>   user-interaction sequence reads naturally in-canvas without
+>   opening the Inspector for every tweak.
+> - **Decision step affordance** — `step` 노드 중 *방식 선택* 같은
+>   분기점이 한눈에 구분되게 (별도 chrome flag? icon? colour?). 현재
+>   는 일반 step 과 시각 구분이 없음.
+> - **Branch / join label semantics** — the user typed `next` /
+>   `branch` / `join` as edge labels but the canvas treats them
+>   identically. UX call: keep as labels, promote to formal
+>   `action_verb` values, or render different edge styles per
+>   semantic.
+> - **Sub-flow grouping / collapse** — a service with 10+ steps
+>   wants visual chunking (the three OAuth branches in Login could
+>   collapse into one "OAuth path" container).
+> - **State preservation across reload** — user already noticed
+>   the layout doesn't survive structural changes well.
+> - **Auto-layout direction switch UI.** Right now the only knob
+>   for LR vs TB is "redraw the subject edge with a different
+>   handle". A button or shortcut would be much more discoverable.
+>
+> **Approach:** plan-mode short + AskUserQuestion for spatial
+> anchoring (ASCII mockups, [[feedback_show_dont_tell]]); accept
+> *one* direction at a time and ship per phase
+> ([[feedback_small_ships_over_big_bangs]]).
+
+### `Service composition model — v0.27.16 / v0.27.18 follow-ups` (HIGH priority, filed 2026-05-28)
 
 > **Trigger:** user says **"서비스 정의"** / **"service model"** /
 > **"step graph"** / **"actor anchor"** / **"v0.27.17"** / **"v0.28"** /
@@ -40,8 +87,28 @@
 
 **Open follow-ups (each is its own small ship):**
 
-0. **Background canvas reactivity while modal is open** *(filed
-   2026-05-28 end-of-session, no repro symptom recorded yet).*
+0. **Remaining background-canvas re-render cascade**
+   *(partial-fixed in v0.27.18 D-2026-05-28-L; trace identified
+   the remaining culprits).*
+   v0.27.18 cut the `height` prop event (memoised projectAnchor +
+   projectName + SketchCanvas React.memo). Still 5 cascade
+   events per modal action on the Services store: `onConnect`,
+   `onNodesChange`, `onNodesDelete`, `onEdgesDelete`, and the
+   trailing `nodeInternals` Map identity flip. **Likely culprit:**
+   SketchCanvasInner builds those four ReactFlow callback props
+   with fresh function identities on every render. Fix recipe:
+   audit each of `handleConnect` / `handleNodesChange` /
+   `handleNodesDelete` / `handleEdgesDelete` inside
+   SketchCanvasInner, either hoist into `useCallback` with truly
+   stable deps or thread through a `useStableHandlers`-style
+   `latestRef.current` indirection.
+   Verification harness (paste into chrome-devtools evaluate_script):
+   the fiber-probe snippet from the 2026-05-28 trace
+   (`servicesStore.subscribe` + diff of `Object.keys` between
+   `prev` and `next`) is already documented in D-2026-05-28-L.
+
+0b. **Background canvas reactivity while modal is open** *(initial
+   filing — superseded by item 0 above; kept for cross-reference).*
    User: *"서비스 디테일 캔버스에서 뭔가 조작하면 뒤에 화면이
    반응을 하네요? 왜 그런거죠?"*
    - Confirmed at file-time: the root app `<div>` does carry

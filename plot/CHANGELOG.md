@@ -4,6 +4,52 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.18] — 2026-05-28
+
+### Fixed (partial)
+
+- **Background Services canvas no longer fires a `height` prop
+  update on every modal action**
+  ([D-2026-05-28-L](./docs/DECISIONS.md#d-2026-05-28-l--memoise-apptsx-project-anchor--name--sketchcanvas-to-dampen-background-canvas-prop-cascade-v02718)).
+  User report: *"서비스 디테일 캔버스에서 뭔가 조작하면 뒤에
+  화면이 반응을 하네요?"*. chrome-devtools MCP fiber probe on the
+  user's Chrome confirmed `inert` was applied correctly (no
+  interactive leak); the symptom was a stale-prop-identity
+  re-render cascade. App.tsx computed `projectAnchor` inline
+  on every render via `resolveProjectAnchor(summaries.find(…),
+  activeTab)`, producing a fresh object reference each time.
+
+### Changed
+
+- `App.tsx` memoises `activeSummary`, `activeProjectAnchor`,
+  `activeProjectName`.
+- `canvases/SketchCanvas.tsx` wraps with `React.memo`.
+- LOC ceilings raised in `viewer/tests/structural-guards.test.tsx`:
+  `App.tsx` 485 → 495, `canvases/SketchCanvas.tsx` 470 → 480.
+
+### Verification (chrome-devtools MCP, modal `onNodesChange` burst)
+
+| Metric | Pre-fix | Post-fix |
+|---|---:|---:|
+| Services-store update events | 6 | 5 |
+| `height` event | 1 | **0** |
+| RF callbacks (`onConnect` / `onNodesChange` / `onNodesDelete` / `onEdgesDelete`) | 4 | 4 |
+| `nodeInternals` Map identity flip | 1 | 1 |
+
+### Honest limitation — partial fix
+
+The 4 RF callback identity events + the trailing `nodeInternals`
+flip still cascade. Likely culprit: SketchCanvasInner's RF
+callbacks have stale identity. Audit + fix filed in
+`docs/NEXT_SESSION.md` as the immediate next-session task; the
+user-visible symptom should be quieter but is not yet fully
+eliminated.
+
+### Verification
+
+- `npx tsc --noEmit` clean.
+- `npx vitest run` — 588 / 588 pass.
+
 ## [0.27.17] — 2026-05-28
 
 ### Changed

@@ -148,11 +148,11 @@ describe("no-god-union-import (Phase 5.2)", () => {
  */
 const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   "App.tsx": {
-    ceiling: 485,
-    note: "Plan target locked in v0.16.5 (D-2026-05-12-H). v0.23.x (D-2026-05-17-J) raised 400 → 410 to wire onUnpublishNode on both SketchCanvas slots. v0.24.14 (D-2026-05-21-C) raised 410 → 425 to wire snapshot-view state (viewingTag / enterTagView / exitTagView + applyEdit guard + cache swap) into Header / Sidebar. v0.26.0 (D-2026-05-25-A) raised 425 → 430 to thread services edges into the ServiceDetailModal drill context (parent_id → directed-edge derivation). v0.27.7 (D-2026-05-27-C) raised 430 → 485 to hoist 9 Canvas / ServiceDetailCanvas prop callbacks out of inline arrows into useCallback so SketchCanvas's <ReactFlowProvider> subtree stays mounted across drag / onDocChange flows. Follow-up: move callbacks into a useAppCallbacks hook to reclaim LOC.",
+    ceiling: 495,
+    note: "Plan target locked in v0.16.5 (D-2026-05-12-H). v0.23.x (D-2026-05-17-J) raised 400 → 410 to wire onUnpublishNode on both SketchCanvas slots. v0.24.14 (D-2026-05-21-C) raised 410 → 425 to wire snapshot-view state (viewingTag / enterTagView / exitTagView + applyEdit guard + cache swap) into Header / Sidebar. v0.26.0 (D-2026-05-25-A) raised 425 → 430 to thread services edges into the ServiceDetailModal drill context (parent_id → directed-edge derivation). v0.27.7 (D-2026-05-27-C) raised 430 → 485 to hoist 9 Canvas / ServiceDetailCanvas prop callbacks out of inline arrows into useCallback so SketchCanvas's <ReactFlowProvider> subtree stays mounted across drag / onDocChange flows. v0.27.18 (D-2026-05-28-L) raised 485 → 495 to memoise the project summary + projectAnchor + projectName so the Services canvas behind the modal doesn't get a full prop-cascade update on every modal action.",
   },
   "canvases/SketchCanvas.tsx": {
-    ceiling: 470,
+    ceiling: 480,
     note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to absorb the onPublishNode prop wiring through to SketchInspectorBindings. v0.23.x (D-2026-05-17-J) raised 440 → 450 to add the onUnpublishNode prop wiring (same pattern). v0.27.4 (D-2026-05-26-H) raised 450 → 470 to add the 300 ms fitView fallback that unsticks visibility:hidden when useNodesInitialized stays false in a modal-mounted canvas.",
   },
   "canvases/nodes/BaseNode.tsx": {

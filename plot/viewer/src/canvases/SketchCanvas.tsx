@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -137,13 +137,21 @@ export interface SketchCanvasProps {
 }
 
 
-export function SketchCanvas(props: SketchCanvasProps) {
+// v0.27.18 (D-2026-05-28-L) — wrap with React.memo so a parent re-render
+// caused by an unrelated child (e.g. the ServiceDetail modal updating its
+// own doc cache slice) doesn't sweep this SketchCanvas through a full
+// re-render → ReactFlow prop-cascade. Combined with App.tsx's stabilised
+// projectAnchor + projectName, the Services canvas behind the modal now
+// stays quiet while the user works inside the modal.
+function SketchCanvasImpl(props: SketchCanvasProps) {
   return (
     <ReactFlowProvider>
       <SketchCanvasInner {...props} />
     </ReactFlowProvider>
   );
 }
+
+export const SketchCanvas = memo(SketchCanvasImpl);
 
 function SketchCanvasInner({
   doc,

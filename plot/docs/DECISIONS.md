@@ -8888,3 +8888,107 @@ half on the server.
   steps + actor subject; this entry unblocks docs that conform).
 - D-2026-05-26-D (ServiceDetail self-containment — keeping the
   invariant strict was preventing self-contained one-user docs).
+
+---
+
+### D-2026-05-28-L — Memoise App.tsx project anchor + name + SketchCanvas to dampen background-canvas prop cascade (v0.27.18)
+
+**Context:** User 2026-05-28 (end of session): *"서비스 디테일
+캔버스에서 뭔가 조작하면 뒤에 화면이 반응을 하네요? 왜 그런거죠?"*.
+
+`inert` is set correctly on the root `<div>` when the modal is open
+(D-2026-05-26-F) — there's no interactive leak. But chrome-devtools
+MCP fiber probing on the user's Chrome captured a 6-event prop
+cascade on the **background** Services canvas's ReactFlow store
+every time the modal canvas dispatched a single
+`onNodesChange` position update:
+
+| Event | Changed key |
+|---|---|
+| 1 | `height` (RF viewport measure prop) |
+| 2 | `onConnect` |
+| 3 | `onNodesChange` |
+| 4 | `onNodesDelete` |
+| 5 | `onEdgesDelete` |
+| 6 | `nodeInternals` Map identity (actual node positions unchanged) |
+
+Root cause: `App.tsx`'s Canvas slot computed `projectAnchor` inline
+on every render via
+`resolveProjectAnchor(summaries.find(...), activeTab)`, producing
+a fresh object reference every time. That:
+1. defeated any `React.memo` on `SketchCanvas`,
+2. cascaded into the Services canvas's `SketchCanvas` →
+   `<ReactFlow>` prop set,
+3. each RF prop with `useEffect`-based store-syncing fired in turn.
+
+The user perceived this as the background canvas "reacting" — which
+it does: it isn't an interactive leak, it's a *visual re-render
+storm* triggered by stale prop identity.
+
+**Decision (partial):**
+
+1. **`App.tsx`** — memoise three values:
+   - `activeSummary = useMemo(() => summaries.find((p) => p.id === activeId), [summaries, activeId])`
+   - `activeProjectAnchor = useMemo(() => resolveProjectAnchor(activeSummary ?? undefined, activeTab), [activeSummary, activeTab])`
+   - `activeProjectName = activeSummary?.name ?? null` (string,
+     inherits stability from `activeSummary`)
+
+   Two inline call sites collapse to these refs.
+
+2. **`canvases/SketchCanvas.tsx`** — wrap with `React.memo`:
+   ```ts
+   function SketchCanvasImpl(props: SketchCanvasProps) { ... }
+   export const SketchCanvas = memo(SketchCanvasImpl);
+   ```
+
+3. **LOC ceilings** — `App.tsx` raised 485 → 495,
+   `canvases/SketchCanvas.tsx` raised 470 → 480 in
+   `viewer/tests/structural-guards.test.tsx`.
+
+**Verification (chrome-devtools MCP, same modal-onNodesChange burst):**
+
+| Metric | Pre-fix | Post-fix |
+|---|---|---|
+| Services-store update events | **6** | **5** |
+| `height` event | 1 | **0** (eliminated) |
+| `onConnect` / `onNodesChange` / `onNodesDelete` / `onEdgesDelete` | 4 | 4 (unchanged) |
+| `nodeInternals` Map identity flip | 1 | 1 (unchanged) |
+
+**Honest limitation — this is a partial fix.**
+
+The remaining 5 events still constitute a re-render cascade. The
+likely cause: ReactFlow's `onConnect` / `onNodesChange` /
+`onNodesDelete` / `onEdgesDelete` props inside `SketchCanvasInner`
+are still created with fresh function references on every render
+(useCallback inside SketchCanvasInner exists but its deps may not
+all be stable). Hunting that down requires another round of
+fiber-probe + per-prop identity diffing. Filed as
+follow-up in `docs/NEXT_SESSION.md` and below.
+
+**Spec impact:** None — this is a perf / re-render quality fix on
+a previously-approved structure.
+
+**Approval:** Accepted-design, pending user re-test. The
+user-visible "background canvas reacts" symptom should be reduced
+but not yet fully eliminated.
+
+**Follow-up filed for the next session:**
+
+- Audit SketchCanvasInner's RF callback identity (`onConnect`,
+  `onNodesChange`, `onNodesDelete`, `onEdgesDelete`). Either
+  hoist to `useCallback` with stable deps, or wire through a
+  `useStableHandlers`-style `latestRef.current` indirection so
+  the callback identity is truly stable across the modal-driven
+  re-render cascade.
+- Confirm with chrome-devtools fiber probe that the
+  `nodeInternals` Map identity flip is downstream of those four
+  callbacks (it should be — RF re-derives nodeInternals when any
+  of those is replaced).
+
+**Cross-refs:**
+- D-2026-05-27-B (the v0.27.7 useCallback hoist on App.tsx Canvas
+  slots — same line of thinking, different layer; that pass
+  addressed mount-cycle remounts, this pass addresses
+  background-canvas prop cascade).
+- D-2026-05-26-F (`inert` trap — confirmed working; this entry
+  rules out interactive leak as the cause).
