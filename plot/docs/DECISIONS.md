@@ -39,6 +39,30 @@
 
 ## Log
 
+### D-2026-05-31-G — Actor inheritance (computed effective fields + inspector)
+
+- **What:** On the actors canvas a sub-actor inherits its parent
+  actor's common fields (motivation / pain / side / body) through the
+  inheritance edges (child→parent toward the anchor). New pure module
+  `domain/actorInheritance.ts::effectiveActorFields` resolves each field
+  `own non-empty → nearest ancestor's non-empty → empty`, with the same
+  inheritance-edge + lexicographic tie-break + cycle guard as fold /
+  propagation. The actor Inspector shows an inherited field as a greyed
+  `↳ inherited from {parent}: …` caption under the (empty) input;
+  typing overrides.
+- **Why:** the confirmed model (this session) — `anchor(project) ←
+  User(base) ← {Operator, Bana}` — where a base actor holds common
+  properties the sub-actors inherit. User chose **real/computed**
+  inheritance (over visual-only), but it stays a *derived view*:
+  nothing is written, each node's value remains the SSOT (Plot is a
+  cognition tool, not a data engine).
+- **Alternatives:** persist inherited values onto children — **rejected**
+  (duplication / drift; violates SSOT). Compute at render — **chosen**.
+- **Approval:** Accepted by user, 2026-05-31 (model + "계속").
+- **Spec impact:** SPEC.md §Actors — inheritance note. i18n
+  `inspector.inheritedFrom`. Tests: `actor-inheritance.test.ts`
+  (own / inherited / override / cycle / multi-parent tie-break).
+
 ### D-2026-05-31-F — Floating edges (border-to-border, uniform from any side)
 
 - **What:** Every non-self-loop edge now renders as a **floating edge**

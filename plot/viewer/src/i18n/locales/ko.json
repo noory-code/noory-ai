@@ -221,6 +221,7 @@
     "referencesHeader": "참조 — {{label}}",
     "rePick": "다시 고르기…",
     "unset": "(미지정)",
+    "inheritedFrom": "{{from}}에서 상속",
     "operatorOption": "operator (운영자 / 개발자)",
     "userOption": "user (사용자)",
     "operatorSideOption": "제공자",

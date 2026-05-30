@@ -649,8 +649,8 @@ so every primary canvas radiates from one centre.
 |---|---|
 | **Shape** | `rounded` (rectangle with rounded corners). |
 | **Colour** | Per-node, user-chosen via the Inspector. Default fill (when not yet set) — **TBD, see open question below.** |
-| **Hierarchy** | Top-level actor (`parent_id: null`) or sub-actor (`parent_id` = another actor's id). The stencil exposes both as separate draggables: "Actor" (top-level) and "Sub-Actor" (drop onto an existing actor). |
-| **Sub-actor visual relationship** | **TBD — see open question.** |
+| **Hierarchy** | An **inheritance tree** rooted at the project anchor: every directed edge on the actors canvas is `relation: "inheritance"` (child→parent, toward the anchor). The stencil exposes "Actor" (top-level) and "Sub-Actor" (drop onto an existing actor). |
+| **Inheritance (v0.30.4, D-2026-05-31-G)** | A sub-actor **inherits** its parent actor's common fields (motivation / pain / side / body): a field resolves `own non-empty → nearest ancestor's non-empty → empty`. Computed at render (`domain/actorInheritance.ts`); nothing is written (each node's value stays the SSOT). The Inspector shows an inherited field as a greyed `↳ inherited from {parent}` caption; typing overrides. |
 | **Inspector** | Same panel as Foundation; typed-fields per actor — **TBD which fields.** |
 | **⚠ MD-warning badge** | Same mechanism as Foundation typed-text nodes. (Per-actor MD file path: TBD — verify in code before next change.) |
 

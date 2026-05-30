@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.30.4] — 2026-05-31
+
+### Added — actor inheritance (computed) + inspector display
+
+- On the actors canvas a sub-actor inherits its parent actor's common
+  fields (motivation / pain / side / body) through the inheritance edges
+  (child→parent toward the anchor). New pure
+  `domain/actorInheritance.ts::effectiveActorFields` resolves each field
+  `own → nearest ancestor → empty`, with the same inheritance-edge +
+  lexicographic tie-break + cycle guard as fold / propagation
+  (D-2026-05-31-G).
+- The actor Inspector shows an inherited field as a greyed
+  `↳ inherited from {parent}: …` caption under the empty input; typing
+  overrides. New i18n key `inspector.inheritedFrom` (en + ko).
+- Inheritance is a **derived view** — computed at render, nothing
+  written; each node's value stays the SSOT.
+
 ## [0.30.3] — 2026-05-31
 
 ### Changed — floating edges (uniform connection from any side)
