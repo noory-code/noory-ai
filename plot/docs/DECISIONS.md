@@ -39,6 +39,31 @@
 
 ## Log
 
+### D-2026-05-31-B — Node shape encodes producer-vs-reference
+
+- **What:** Shape now distinguishes the original from its symbol
+  pointer. 원본/master kinds (`mission`, `core_value`, `identity`,
+  `actor`) render as a **rounded rectangle** (soft corners);
+  symbol-reference kinds (`mission_ref`, `value_ref`, `identity_ref`,
+  `actor_ref`) render as a **circle**. `decision` stays a diamond;
+  `project` anchor keeps its user-toggled shape (default circle).
+  Forced at the renderer via a new pure module
+  `viewer/src/canvases/sketch/nodeShape.ts::effectiveShape`.
+- **Why:** user direction (2026-05-31): *"원본캔버스는 네모, 심볼 노드는
+  동그라미"* + *"네모의 코너들을 좀 둥그스럼하게 해서 부드러운 느낌"*.
+  The shape should tell producer from reference at a glance — the real
+  node is a soft 네모, the pointer that stands in for it is a circle.
+- **Alternatives:** (a) sharp-corner rectangle (`borderRadius:0`) —
+  **rejected**, user asked for soft corners → mapped to the existing
+  `rounded` shape (8px). (b) keep D-2026-05-28-D (all Symbol kinds
+  circles) — **rejected/superseded**: it made the original and its
+  reference indistinguishable.
+- **Approval:** Accepted by user, 2026-05-31 (gave the direction +
+  confirmed `actor` is included via AskUserQuestion).
+- **Spec impact:** SPEC.md §"Node shape — producer vs reference" (new);
+  supersedes D-2026-05-28-D. Aligns with the pre-existing SPEC actor
+  shape line ("rounded — rectangle with rounded corners").
+
 ### D-2026-05-31-A — Edge "Flip direction" context-menu action
 
 - **What:** New edge context-menu item **"Flip direction (swap source

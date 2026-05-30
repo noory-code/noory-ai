@@ -446,7 +446,9 @@ keeps `step` = *user action* intact: a system judgment is a
   - `label` — the question ("검증?").
   - `body` — optional notes (Markdown).
 - **Shape**: always a diamond, forced at the renderer (the shape *is*
-  the semantic; same pattern as Symbol kinds forcing a circle).
+  the semantic; same pattern as the producer-vs-reference shape rule —
+  master kinds force a rounded rectangle, `*_ref` force a circle,
+  D-2026-05-31-B).
 - **Bounded context**: EssenceExecution (Service-Detail composition
   primitive, sibling of `step` / `metric` / `rule` / `content`).
 

@@ -1131,15 +1131,40 @@ three OAuth branches into one node.
 - **MECE**: distinct from `category` (the Services-canvas *thematic*
   grouping of services). `group` is a ServiceDetail *flow* chunk.
 
+### Node shape — producer vs reference (v0.29.3, D-2026-05-31-B)
+
+Shape encodes whether a node is the **original** or a **symbol pointer**
+to one. Forced at the renderer (`BaseNode.effectiveShape` →
+`viewer/src/canvases/sketch/nodeShape.ts`, a pure module), overriding
+the stored `shape`:
+
+| Kind group | Kinds | Shape |
+|---|---|---|
+| **원본 / master** (producer plane) | `mission`, `core_value`, `identity`, `actor` | **rounded rectangle** (soft corners) |
+| **symbol reference** (consumer plane) | `mission_ref`, `value_ref`, `identity_ref`, `actor_ref` | **circle** |
+| `decision` | — | diamond (shape is the semantic) |
+| **anchor** | `project` (synthetic) | its stored shape (user toggle; default circle) |
+| everything else | `service` / `category` / `metric` / `step` / `rule` / `content` / `group` | their stored `shape` |
+
+- The rounded-rectangle masters keep the kind corner-tag
+  (`shouldShowKindTag` derives from the *rendered* shape); circles and
+  the diamond have no flat corner so no tag.
+- **Supersedes D-2026-05-28-D** ("all Symbol kinds always render as
+  circles"). The user clarified (2026-05-31) that the original should
+  read as a 네모 with soft corners and only the *reference* pointer as a
+  circle — the shape now tells producer from reference at a glance.
+
 ### Decision node (v0.28.0, D-2026-05-30-C)
 
 A `decision` is a flowchart branch point, dropped from the stencil's
 Interactions section alongside `step`:
 
 - **Renders as a diamond**, forced at the renderer
-  (`BaseNode.effectiveShape`) — the shape is the semantic, so a stored
-  `shape` is ignored (same pattern as Symbol kinds forcing a circle,
-  D-2026-05-28-D). No kind tag (diamond has no flat corner).
+  (`BaseNode.effectiveShape` → `nodeShape.ts`) — the shape is the
+  semantic, so a stored `shape` is ignored (same pattern as the
+  producer-vs-reference shape rule below: master kinds force a rounded
+  rectangle, `*_ref` kinds force a circle, D-2026-05-31-B). No kind tag
+  (diamond has no flat corner).
 - **One node for both flavours** — a *user choice* (방식 선택) and a
   *system judgment* (검증 성공/실패) are both `decision`s. This keeps
   `step` = *user action*: a system judgment is never a step.

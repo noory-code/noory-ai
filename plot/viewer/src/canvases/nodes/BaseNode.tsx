@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import { Handle, NodeResizer, Position, type NodeProps } from "reactflow";
 import type { Shape } from "../../types";
+import { effectiveShape } from "../sketch/nodeShape";
 import { EditableText } from "../../edit/EditableText";
 import { getIcon } from "../SketchIcons";
 
@@ -69,32 +70,12 @@ export interface BaseNodeChromeProps {
 
 const SHAPES_WITH_VISIBLE_CORNER = new Set<Shape>(["rectangle", "rounded"]);
 
-// v0.27.11 (D-2026-05-28-D) — Symbol kinds always render as circles
-// regardless of ``data.shape``. Per D-2026-05-19-D, Symbol nodes are the
-// cross-canvas referenceable masters (mission / core_value / identity /
-// actor) plus their refs in the consumer plane; user 2026-05-28
-// confirmed they should always read as circles. Force at the renderer
-// layer so legacy data (mission saved as ``rounded`` pre-v0.27.11)
-// snaps to circle without any data migration. ``project`` (synthetic
-// anchor) is intentionally excluded — its shape is a user toggle.
-const SYMBOL_KINDS = new Set<string>([
-  "mission",
-  "core_value",
-  "identity",
-  "actor",
-  "actor_ref",
-  "mission_ref",
-  "value_ref",
-  "identity_ref",
-]);
-
-function effectiveShape(data: BaseNodeData): Shape {
-  if (data.kind && SYMBOL_KINDS.has(data.kind)) return "circle";
-  // v0.28.0 (D-2026-05-30-C) — a decision is a flowchart diamond; the
-  // shape IS the semantic, so force it like Symbol kinds force circle.
-  if (data.kind === "decision") return "diamond";
-  return data.shape;
-}
+// v0.29.3 (D-2026-05-31-B) — shape now encodes producer-vs-reference:
+// 원본/master kinds render a rounded rectangle (soft corners), `*_ref`
+// symbol pointers render circle, `decision` renders diamond. The
+// kind→shape policy lives in the pure ``nodeShape`` module so it stays
+// unit-testable. Supersedes the v0.27.11 (D-2026-05-28-D) "all Symbol
+// kinds are circles" rule.
 
 function shapeStyle(shape: Shape): React.CSSProperties {
   switch (shape) {
@@ -136,14 +117,16 @@ function contentPadding(shape: Shape): string {
 
 /** Convenience: per-kind renderers compose with this for the
  *  KIND_TAG_SHAPES check — the corner only renders on shapes whose
- *  top-left is inside the visible silhouette. v0.27.11
- *  (D-2026-05-28-D): when ``kind`` is a Symbol the renderer forces
- *  circle, so the corner is never visible — the kind tag has no
- *  place to render and is suppressed at this layer regardless of
- *  the stored ``shape``. */
+ *  top-left is inside the visible silhouette. The check runs against
+ *  the *rendered* shape (``effectiveShape``), so master kinds (now
+ *  rectangles, D-2026-05-31-B) show the tag while `*_ref` circles and
+ *  the `decision` diamond don't. */
 export function shouldShowKindTag(shape: Shape, kind?: string | null): boolean {
-  if (kind && SYMBOL_KINDS.has(kind)) return false;
-  return SHAPES_WITH_VISIBLE_CORNER.has(shape);
+  // Derive from the *rendered* shape: the corner tag shows only where
+  // the silhouette has a visible top-left corner. Master kinds (now
+  // rounded rectangles) get the tag; `*_ref` (circles) and `decision`
+  // (diamond) don't. (D-2026-05-31-B)
+  return SHAPES_WITH_VISIBLE_CORNER.has(effectiveShape(kind, shape));
 }
 
 export function BaseNode({
@@ -159,7 +142,7 @@ export function BaseNode({
     : isAnchor
       ? "border-2 border-slate-600"
       : "border border-slate-300";
-  const renderShape = effectiveShape(data);
+  const renderShape = effectiveShape(data.kind, data.shape);
   const style = {
     backgroundColor: data.color,
     ...shapeStyle(renderShape),

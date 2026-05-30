@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.29.3] — 2026-05-31
+
+### Changed — node shape encodes producer-vs-reference
+
+- 원본/master kinds (`mission`, `core_value`, `identity`, `actor`) now
+  render as a **rounded rectangle** (soft corners); symbol-reference
+  kinds (`*_ref`) render as a **circle** (D-2026-05-31-B). The shape
+  tells the original apart from the symbol pointer that stands in for
+  it. Masters keep their kind corner-tag. `decision` stays a diamond;
+  the `project` anchor keeps its user-toggled shape (default circle).
+- **Supersedes** the v0.27.11 (D-2026-05-28-D) "all Symbol kinds always
+  render as circles" rule, per user direction. Extracted the kind→shape
+  policy into a pure, unit-tested module
+  `viewer/src/canvases/sketch/nodeShape.ts`.
+
 ## [0.29.2] — 2026-05-31
 
 ### Added — edge "Flip direction" context-menu action
