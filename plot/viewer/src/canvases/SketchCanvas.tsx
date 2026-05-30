@@ -3,7 +3,6 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   ConnectionMode,
-  ControlButton,
   Controls,
   ReactFlowProvider,
   useNodesInitialized,
@@ -38,6 +37,7 @@ import { useInspectorRouting } from "./sketch/useInspectorRouting";
 import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
 import { useAutoLayout } from "./sketch/useAutoLayout";
+import { LayoutControls } from "./sketch/LayoutControls";
 import { useRadialLayout } from "./sketch/useRadialLayout";
 import { useValueFlow } from "./sketch/useValueFlow";
 
@@ -126,6 +126,8 @@ export interface SketchCanvasProps {
    *  runs ``useRadialLayout`` (Services / ServiceDetail). ``null`` /
    *  undefined hides the button entirely. */
   layoutAlgo?: "tree" | "radial" | null;
+  /** v0.28.3 (D-2026-05-30-F) — LR/TB direction-switch buttons (ServiceDetail). */
+  showDirectionSwitch?: boolean;
   /** v0.18.0 Phase 3 (D-2026-05-16-E) — fire to publish a node. The
    *  Inspector renders the publish button; the callback wraps the
    *  HTTP POST + version refresh. Optional so canvases not yet wired
@@ -178,6 +180,7 @@ function SketchCanvasInner({
   injectAnchor,
   applyAnchorRadialLayout,
   layoutAlgo,
+  showDirectionSwitch,
   onPublishNode,
   onUnpublishNode,
 }: SketchCanvasProps) {
@@ -251,9 +254,9 @@ function SketchCanvasInner({
 
   const { childIdsByParent, nodeById, nearestCollapsedAncestor, toggleCollapsed, subtreeSize } =
     useCollapsedTree(doc.nodes, doc.edges, docRef, onDocChange);
-  const triggerTreeLayout = useAutoLayout({ docRef, onDocChange, projectAnchor });
+  const treeLayout = useAutoLayout({ docRef, onDocChange, projectAnchor });
   const triggerRadialLayout = useRadialLayout({ docRef, onDocChange, projectAnchor });
-  const triggerLayout = layoutAlgo === "radial" ? triggerRadialLayout : triggerTreeLayout;
+  const triggerLayout = layoutAlgo === "radial" ? triggerRadialLayout : treeLayout.trigger;
 
   const nodes = useNodesMemo({
     doc,
@@ -417,7 +420,14 @@ function SketchCanvasInner({
         }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <Controls>{layoutAlgo && <ControlButton onClick={triggerLayout} aria-label="Auto-layout" title="Auto-layout">⊞</ControlButton>}</Controls>
+        <Controls>
+          <LayoutControls
+            layoutAlgo={layoutAlgo}
+            showDirectionSwitch={showDirectionSwitch}
+            onLayout={triggerLayout}
+            onDirection={treeLayout.layoutInDirection}
+          />
+        </Controls>
       </ReactFlow>
       {menu && (
         <SketchContextMenu

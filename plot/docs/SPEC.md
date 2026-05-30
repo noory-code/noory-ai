@@ -222,6 +222,19 @@ Static guard: `viewer/tests/actor-anchored-layout.test.ts` (6 cases:
 LR preservation, single-step LR alignment, TB direction, branch
 + join graph, orphan preservation, no-actor early return).
 
+#### Direction-switch buttons (v0.28.3, D-2026-05-30-F)
+
+ServiceDetail's RF `<Controls>` carry two extra buttons next to `⊞`:
+**↔ (LR)** and **↕ (TB)**. Clicking one sets the subject edge's
+handle for that direction (`setSubjectDirection`: LR → source `r` /
+target `l`; TB → `b` / `t`) and re-runs `actorAnchoredLayout` along
+it, in one undoable `onDocChange`. Direction stays the SSOT in the
+subject-edge handle — a later `⊞` re-uses it. The same
+`detectSubjectEdgeId` identifies the edge for both the layout and the
+buttons. Wrapper opt-in via `showDirectionSwitch` (ServiceDetail
+only). The button JSX lives in `viewer/src/canvases/sketch/LayoutControls.tsx`.
+Static guard: `viewer/tests/subject-direction.test.ts`.
+
 ### Handle-aware fallback (v0.27.12, D-2026-05-28-G)
 
 When the mindmap BFS yields zero positions (typical case:

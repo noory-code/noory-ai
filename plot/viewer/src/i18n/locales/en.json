@@ -97,6 +97,11 @@
     "interaction": "Interaction",
     "value": "Value"
   },
+  "canvas": {
+    "autoLayout": "Auto-layout",
+    "layoutLR": "Lay out left → right",
+    "layoutTB": "Lay out top → bottom"
+  },
   "node": {
     "step": {
       "outcomePlaceholder": "(outcome — click to add)",

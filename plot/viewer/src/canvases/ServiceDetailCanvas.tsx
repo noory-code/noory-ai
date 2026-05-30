@@ -39,6 +39,7 @@ export function ServiceDetailCanvas(props: SketchCanvasProps) {
       showFoldButton={true}
       injectAnchor={false}
       layoutAlgo="tree"
+      showDirectionSwitch={true}
     />
   );
 }

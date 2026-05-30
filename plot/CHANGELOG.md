@@ -4,6 +4,50 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.28.3] — 2026-05-30
+
+Auto-layout direction-switch buttons — the last open item from the
+2026-05-28 ServiceDetail 고도화 queue. [D-2026-05-30-F](./docs/DECISIONS.md).
+
+### Added — LR / TB direction buttons
+
+- ServiceDetail's React Flow `<Controls>` gain two buttons next to
+  `⊞`: **↔ (LR)** and **↕ (TB)**. Clicking one sets the subject
+  edge's handle for that direction and re-runs `actorAnchoredLayout`
+  along it, in one undoable `onDocChange`. Before, the only way to
+  change LR↔TB was to manually redraw the subject edge with a
+  different handle — undiscoverable.
+- **Direction stays the SSOT in the subject-edge handle** (no new
+  field) — a later `⊞` re-uses the chosen direction. The same
+  `detectSubjectEdgeId` identifies the subject edge for both the
+  layout and the buttons (one source of truth for "which edge").
+
+### Changed
+
+- `actorAnchoredLayout.ts` exports `detectSubjectEdgeId` +
+  `setSubjectDirection`; `detectAnchor` now shares `detectAnchorActor`.
+- `useAutoLayout` returns `{ trigger, layoutInDirection }` (was a bare
+  callback).
+- **New `viewer/src/canvases/sketch/LayoutControls.tsx`** holds the ⊞
+  + LR/TB button JSX + i18n — extracted so the direction-switch wiring
+  doesn't grow the `SketchCanvas` god component (the residual growth
+  there is plumbing-only; ceiling 480 → 490 per D-2026-05-30-F).
+- i18n: `canvas.autoLayout` / `canvas.layoutLR` / `canvas.layoutTB`
+  in en + ko (the `⊞` aria-label is now translated too).
+
+### Tests
+
+- `viewer/tests/subject-direction.test.ts` (new) — `detectSubjectEdgeId`
+  + `setSubjectDirection` (LR r→l, TB b→t, non-subject edges untouched,
+  no-subject-edge no-op). Red→Green. Full suite green: viewer 616.
+
+### Browser verification (Playwright, Login demo doc)
+
+- The LR / TB buttons appear on ServiceDetail only (not the background
+  canvas). Clicking ↕ stacks the step graph vertically (entry → 방식
+  선택 top-to-bottom); clicking ↔ returns it to horizontal. Clean
+  round-trip; 0 console errors.
+
 ## [0.28.2] — 2026-05-30
 
 Negative-case (failure) visual distinction — the flow can now model

@@ -9159,3 +9159,30 @@ but not yet fully eliminated.
   step rendering (negative-case tint).
 - **Test:** `viewer/tests/polarity-tint.test.ts` (pure tint fn) +
   Step round-trip (entity-roundtrip default) + schema-parity.
+
+### D-2026-05-30-F — Auto-layout direction-switch buttons (LR / TB) on ServiceDetail (v0.28.3)
+
+- **What:** two extra RF Control buttons on the ServiceDetail canvas
+  (next to `⊞` auto-layout): **↔ (LR)** and **↕ (TB)**. Clicking one
+  sets the **subject edge**'s handle (LR → sourceHandle `r` /
+  targetHandle `l`; TB → `b` / `t`) and re-runs the actor-anchored
+  layout in that direction, in one undoable `onDocChange`.
+- **Why:** `actorAnchoredLayout` already lays the step graph out along
+  the direction the subject edge handle dictates (D-2026-05-28-J), but
+  the **only** way to change direction was to manually redraw that
+  edge with a different handle — undiscoverable. The buttons make
+  LR↔TB a one-click choice (the "auto-layout direction switch UI" item
+  from the 2026-05-28 고도화 queue).
+- **SSOT preserved:** direction still lives in the subject edge handle
+  (no new direction field). The button just sets the handle the layout
+  already reads — so a later `⊞` keeps the chosen direction. Pure
+  helper `setSubjectDirection(doc, dir)` flips the handle; the same
+  `detectSubjectEdgeId` the layout uses identifies the edge (one SSOT
+  for "which edge is the subject").
+- **Scope:** ServiceDetail only (the wrapper passes
+  `showDirectionSwitch`); other canvases don't show the buttons (they
+  have no actor-anchored subject edge).
+- **Approval:** Accepted — user 2026-05-30 ("계속 합시다" + picked
+  "auto-layout 방향 전환 버튼").
+- **Spec impact:** SPEC §Auto-layout — direction-switch buttons.
+- **Test:** `viewer/tests/subject-direction.test.ts`.

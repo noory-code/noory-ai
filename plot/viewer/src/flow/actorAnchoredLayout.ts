@@ -41,15 +41,29 @@ function directionFromHandle(handle: string | null | undefined): AnchorDirection
   return "LR";
 }
 
-function detectAnchor(doc: CanvasDoc): Anchor | null {
-  // Prefer a user-side actor_ref; fall back to any actor_ref.
+/** The anchor actor_ref = the user-side one, else any actor_ref.
+ *  Single source of truth for "whose first outgoing edge is the
+ *  subject edge", shared by ``detectAnchor`` (layout) and
+ *  ``setSubjectDirection`` (the direction-switch buttons). */
+function detectAnchorActor(doc: CanvasDoc): SketchNode | null {
   const userActor = doc.nodes.find(
     (n) =>
       n.kind === "actor_ref" &&
       (n as unknown as { side?: string }).side === "user",
   );
-  const anyActor =
-    userActor ?? doc.nodes.find((n) => n.kind === "actor_ref");
+  return userActor ?? doc.nodes.find((n) => n.kind === "actor_ref") ?? null;
+}
+
+/** v0.28.3 (D-2026-05-30-F) — id of the subject edge (actor → entry),
+ *  or null. The direction-switch buttons flip this edge's handles. */
+export function detectSubjectEdgeId(doc: CanvasDoc): string | null {
+  const actor = detectAnchorActor(doc);
+  if (!actor) return null;
+  return doc.edges.find((e) => e.source === actor.id)?.id ?? null;
+}
+
+function detectAnchor(doc: CanvasDoc): Anchor | null {
+  const anyActor = detectAnchorActor(doc);
   if (!anyActor) return null;
   // First edge whose source is the anchor actor is the "subject edge".
   const subjectEdge = doc.edges.find((e) => e.source === anyActor.id);
@@ -60,6 +74,30 @@ function detectAnchor(doc: CanvasDoc): Anchor | null {
     actor: anyActor,
     entry,
     direction: directionFromHandle(subjectEdge.sourceHandle),
+  };
+}
+
+// v0.28.3 (D-2026-05-30-F) — handle pair per direction (source, target).
+const DIRECTION_HANDLES: Record<AnchorDirection, [string, string]> = {
+  LR: ["r", "l"],
+  RL: ["l", "r"],
+  TB: ["b", "t"],
+  BT: ["t", "b"],
+};
+
+/** Set the subject edge's handles so the actor-anchored layout lays
+ *  the step graph out in ``direction``. Returns the doc unchanged when
+ *  there is no subject edge. Direction stays the SSOT in the handle —
+ *  a later ``⊞`` re-uses it. */
+export function setSubjectDirection(doc: CanvasDoc, direction: AnchorDirection): CanvasDoc {
+  const eid = detectSubjectEdgeId(doc);
+  if (!eid) return doc;
+  const [sourceHandle, targetHandle] = DIRECTION_HANDLES[direction];
+  return {
+    ...doc,
+    edges: doc.edges.map((e) =>
+      e.id === eid ? { ...e, sourceHandle, targetHandle } : e,
+    ),
   };
 }
 

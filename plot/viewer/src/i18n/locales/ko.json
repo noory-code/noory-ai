@@ -97,6 +97,11 @@
     "interaction": "인터랙션",
     "value": "가치"
   },
+  "canvas": {
+    "autoLayout": "자동 정렬",
+    "layoutLR": "가로 정렬 (좌 → 우)",
+    "layoutTB": "세로 정렬 (위 → 아래)"
+  },
   "node": {
     "step": {
       "outcomePlaceholder": "(결과 — 클릭해 추가)",

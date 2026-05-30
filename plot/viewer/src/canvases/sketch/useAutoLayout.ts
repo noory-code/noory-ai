@@ -17,7 +17,11 @@ import { useCallback, type MutableRefObject } from "react";
 import { useReactFlow } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
 import { computeAutoLayout, type AutoLayoutAnchor } from "./autoLayout";
-import { actorAnchoredLayout } from "../../flow/actorAnchoredLayout";
+import {
+  actorAnchoredLayout,
+  setSubjectDirection,
+  type AnchorDirection,
+} from "../../flow/actorAnchoredLayout";
 import { handleAwareLayout } from "../../flow/handleAwareLayout";
 import { PROJECT_ANCHOR_ID } from "./constants";
 
@@ -65,9 +69,22 @@ function fitNext(rf: ReturnType<typeof useReactFlow>): void {
   setTimeout(() => rf.fitView({ padding: 0.2, duration: 250 }), 0);
 }
 
-export function useAutoLayout({ docRef, onDocChange, projectAnchor }: UseAutoLayoutInput) {
+export interface AutoLayoutHandle {
+  /** Default ⊞ auto-layout (anchor / actor-anchored / dagre fallback). */
+  trigger: () => void;
+  /** v0.28.3 (D-2026-05-30-F) — set the subject edge's direction
+   *  (LR / TB) then re-run the actor-anchored layout, in one undoable
+   *  change. No-op when the doc has no subject edge. */
+  layoutInDirection: (direction: AnchorDirection) => void;
+}
+
+export function useAutoLayout({
+  docRef,
+  onDocChange,
+  projectAnchor,
+}: UseAutoLayoutInput): AutoLayoutHandle {
   const rf = useReactFlow();
-  return useCallback(() => {
+  const trigger = useCallback(() => {
     const doc = docRef.current;
     if (doc.nodes.length === 0) return;
     // v0.27.16 (D-2026-05-28-J) — Actor-anchored layout takes
@@ -141,4 +158,21 @@ export function useAutoLayout({ docRef, onDocChange, projectAnchor }: UseAutoLay
     onDocChange(fallback);
     fitNext(rf);
   }, [docRef, onDocChange, projectAnchor, rf]);
+
+  const layoutInDirection = useCallback(
+    (direction: AnchorDirection) => {
+      const doc = docRef.current;
+      if (doc.nodes.length === 0) return;
+      // Set the subject-edge handle for the chosen direction, then lay
+      // the step graph out along it — one undoable onDocChange carrying
+      // both the handle flip and the new positions.
+      const laid = actorAnchoredLayout(setSubjectDirection(doc, direction));
+      if (laid === doc) return; // no subject edge → nothing to do
+      onDocChange(laid);
+      fitNext(rf);
+    },
+    [docRef, onDocChange, rf],
+  );
+
+  return { trigger, layoutInDirection };
 }
