@@ -19,7 +19,7 @@ export type EdgeRelation = "flow" | "injection" | "inheritance";
 /** Essence kinds whose outgoing edges inject essence into the target:
  *  the foundation masters and their consumer-plane refs. `actor_ref`
  *  is deliberately excluded — it is the sequence *subject*, not an
- *  essence overlay (mirrors `foundationRefKinds.FOUNDATION_REF_KINDS`). */
+ *  essence overlay (the sequence subject, not a foundation ref). */
 export const ESSENCE_SOURCE_KINDS: ReadonlySet<string> = new Set([
   "mission",
   "core_value",

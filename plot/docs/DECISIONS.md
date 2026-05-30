@@ -39,6 +39,39 @@
 
 ## Log
 
+### D-2026-05-31-D — Viewer reads `edge.relation` (fold / style / layout) (Phase 2b)
+
+- **What:** The viewer now derives behaviour from the stored
+  `edge.relation` (D-2026-05-31-C) instead of re-deriving from source
+  kinds. New pure module `flow/foldHierarchy.ts::foldEndpoints(edge)`:
+  `flow` → source=parent / target=child; `inheritance` → **target=parent
+  / source=child (inverted)** — collapsing a superclass hides its
+  subclasses; `injection` → `null` (excluded from fold). Consumed by
+  `useCollapsedTree` (fold maps) + `useNodesMemo` (render sort).
+  `edgeTransform` injection styling (violet + animated) now reads
+  `e.relation === "injection"`, so it fires on **every** canvas
+  (foundation essence→anchor edges now render violet, not just
+  service_detail). `actorAnchoredLayout` injection exclusion reads
+  `e.relation`. Removed the now-dead `flow/foundationRefKinds.ts`
+  (its kind-set is superseded by `edgeSemantics.ESSENCE_SOURCE_KINDS`).
+- **Why:** make the stored SSOT authoritative across the viewer (the
+  point of the stored-field decision); enable the foundation "value
+  injection toward the anchor" visual the user asked for.
+- **Behaviour change pinned:** injection (`*_ref`) edges are now
+  **excluded from the service_detail fold map** (previously every
+  directed edge — including a `mission_ref` → step — counted as a
+  parent-child fold link). Correct: a ref *injects into* a step, it
+  doesn't *contain* it. Verified no existing fixture relied on folding a
+  `_ref` (full suite green). No data migration.
+- **Alternatives:** style inheritance edges with a distinct stroke now —
+  **deferred**: the user is reviewing canvas look-and-feel (NEXT_SESSION
+  top item); picking an arbitrary inheritance colour pre-empts that.
+  Inheritance edges render as default directed edges for now; only the
+  fold semantic changed.
+- **Approval:** Accepted by user, 2026-05-31 ("계속").
+- **Spec impact:** SPEC.md §Edges relation row (already covers it);
+  fold semantics noted under Hierarchy.
+
 ### D-2026-05-31-C — Stored edge `relation` semantic (flow / injection / inheritance)
 
 - **What:** New stored `SketchEdge.relation` field

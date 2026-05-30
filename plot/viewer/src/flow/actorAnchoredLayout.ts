@@ -22,7 +22,6 @@
 
 import dagre from "dagre";
 import type { CanvasDoc, SketchNode } from "../types";
-import { FOUNDATION_REF_KINDS } from "./foundationRefKinds";
 
 // v0.28.3 (D-2026-05-30-G) — gap (centre-to-centre) from an injection
 // node to its target, in the targetHandle direction.
@@ -126,14 +125,14 @@ export function actorAnchoredLayout(doc: CanvasDoc): CanvasDoc {
   g.setDefaultEdgeLabel(() => ({}));
 
   // v0.28.3 (D-2026-05-30-G) — layout anchor priority: actor (1) > step
-  // / decision (2) > injection overlay (3). Foundation-injection edges
-  // (source = mission_ref / value_ref / identity_ref) are a 2nd-layer
-  // essence overlay, NOT part of the user-interaction sequence — so
-  // they are excluded from the dagre step rank and their source nodes
-  // are anchored beside their target by the targetHandle (below).
-  const kindById = new Map(doc.nodes.map((n) => [n.id, n.kind]));
+  // / decision (2) > injection overlay (3). Injection edges are a
+  // 2nd-layer essence overlay, NOT part of the user-interaction
+  // sequence — so they are excluded from the dagre step rank and their
+  // source nodes are anchored beside their target by the targetHandle
+  // (below). v0.30.1 (D-2026-05-31-D) — read from the stored
+  // ``relation`` SSOT (was a source-kind lookup in v0.28.3).
   const isInjectionEdge = (e: CanvasDoc["edges"][number]): boolean =>
-    FOUNDATION_REF_KINDS.has(kindById.get(e.source) ?? "");
+    e.relation === "injection";
   const injectionEdges = doc.edges.filter(isInjectionEdge);
 
   // Step-graph = every node connected by a sequence edge: not from the

@@ -24,6 +24,7 @@ import type {
   SketchNode as DocNode,
 } from "../../types";
 import type { BaseNodeData } from "../nodes/BaseNode";
+import { foldEndpoints } from "../../flow/foldHierarchy";
 import { PROJECT_ANCHOR_ID } from "./constants";
 import { polarityTint } from "./polarityTint";
 import { collapsedGroupMemberIds } from "./groupCollapse";
@@ -101,8 +102,14 @@ export function useNodesMemo({
     // edges are already in scope; only StepNode reads ``branchCount``.
     const outgoingCount = new Map<string, number>();
     for (const e of doc.edges) {
+      // v0.30.1 (D-2026-05-31-D) — "child" for the parents-before-
+      // children render sort follows the fold semantic (inheritance
+      // child = edge source; injection excluded). ``outgoingCount``
+      // (step branch badge) stays a raw directed-source count — steps
+      // are always flow.
+      const ep = foldEndpoints(e);
+      if (ep) childIds.add(ep.child);
       if (e.directed) {
-        childIds.add(e.target);
         outgoingCount.set(e.source, (outgoingCount.get(e.source) ?? 0) + 1);
       }
     }

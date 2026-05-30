@@ -22,13 +22,9 @@ export function useEdgesMemo({
   valueFlowOn,
   hideRootServiceNode,
 }: UseEdgesMemoArgs): Edge[] {
-  // v0.28.1 (D-2026-05-30-D) — source-kind lookup for foundation-
-  // injection edge styling. Rebuilt only when the node set changes.
-  const kindById = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const n of doc.nodes) m.set(n.id, n.kind);
-    return m;
-  }, [doc.nodes]);
+  // v0.30.1 (D-2026-05-31-D) — injection styling now reads the stored
+  // ``edge.relation`` SSOT inside edgeTransform, so the source-kind
+  // lookup map (v0.28.1) is no longer needed here.
   return useMemo(
     () =>
       edgeTransform({
@@ -37,7 +33,6 @@ export function useEdgesMemo({
         nearestCollapsedAncestor,
         valueFlowOn,
         hideRootServiceNode,
-        nodeKindById: (id) => kindById.get(id),
       }),
     [
       doc.edges,
@@ -45,7 +40,6 @@ export function useEdgesMemo({
       nearestCollapsedAncestor,
       valueFlowOn,
       hideRootServiceNode,
-      kindById,
     ],
   );
 }

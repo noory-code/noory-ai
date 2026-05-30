@@ -1,10 +1,12 @@
 /**
- * v0.28.1 (D-2026-05-30-D) — foundation-injection edge styling.
+ * Injection edge styling — v0.28.1 (D-2026-05-30-D), reworked
+ * v0.30.1 (D-2026-05-31-D).
  *
- * An edge whose SOURCE node is a foundation ref (mission_ref /
- * value_ref / identity_ref) renders as an "injection" edge: animated
- * (marching dashes toward the target) + violet stroke. Derived from
- * the source node kind, not a stored flag.
+ * An edge whose stored ``relation`` is ``injection`` renders animated
+ * (marching dashes toward the target) + violet stroke. The styling is
+ * now driven by the stored ``relation`` SSOT, not re-derived from the
+ * source node kind (the kind→relation mapping is covered by
+ * ``edge-semantics.test.ts``).
  */
 import { describe, expect, it } from "vitest";
 import { edgeTransform } from "../src/canvases/sketch/edgeTransform";
@@ -22,41 +24,38 @@ function makeEdge(over: Partial<SketchEdge> = {}): SketchEdge {
     label: "",
     style: "solid",
     directed: true,
+    relation: "flow",
     action_verb: null,
     value_form: [],
     ...over,
   };
 }
 
-function run(edge: SketchEdge, kindBySource: Record<string, string>) {
+function run(edge: SketchEdge) {
   return edgeTransform({
     edges: [edge],
     serviceRef: null,
     nearestCollapsedAncestor: () => null,
     valueFlowOn: false,
     hideRootServiceNode: false,
-    nodeKindById: (id) => kindBySource[id],
   });
 }
 
-describe("edgeTransform — foundation-injection styling (D-2026-05-30-D)", () => {
-  it.each(["value_ref", "mission_ref", "identity_ref"])(
-    "marks an edge from a %s source as injection (animated + violet)",
-    (refKind) => {
-      const [out] = run(makeEdge(), { src: refKind });
-      expect(out.animated).toBe(true);
-      expect(out.style?.stroke).toBe(INJECTION_STROKE);
-    },
-  );
+describe("edgeTransform — injection styling (D-2026-05-31-D)", () => {
+  it("marks an injection-relation edge as animated + violet", () => {
+    const [out] = run(makeEdge({ relation: "injection" }));
+    expect(out.animated).toBe(true);
+    expect(out.style?.stroke).toBe(INJECTION_STROKE);
+  });
 
-  it("does NOT mark an ordinary step→step edge as injection", () => {
-    const [out] = run(makeEdge(), { src: "step", tgt: "step" });
+  it("does NOT mark a flow edge as injection", () => {
+    const [out] = run(makeEdge({ relation: "flow" }));
     expect(out.animated).toBeFalsy();
     expect(out.style?.stroke).not.toBe(INJECTION_STROKE);
   });
 
-  it("does NOT treat an actor_ref source as injection (it is the subject anchor)", () => {
-    const [out] = run(makeEdge(), { src: "actor_ref" });
+  it("does NOT mark an inheritance edge as injection", () => {
+    const [out] = run(makeEdge({ relation: "inheritance" }));
     expect(out.animated).toBeFalsy();
     expect(out.style?.stroke).not.toBe(INJECTION_STROKE);
   });

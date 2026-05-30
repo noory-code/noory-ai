@@ -48,11 +48,13 @@ function edge(
   sourceHandle: string = "r",
   targetHandle: string = "l",
   label: string = "",
+  relation: SketchEdge["relation"] = "flow",
 ): SketchEdge {
   return {
     id: `e_${source}_${target}`,
     source, target, sourceHandle, targetHandle,
     label, style: "solid", directed: true,
+    relation,
     action_verb: null, value_form: [],
   };
 }
@@ -191,7 +193,7 @@ describe("actorAnchoredLayout (D-2026-05-28-J)", () => {
       [
         edge("U", "entry", "r", "l"),
         edge("entry", "s2", "r", "l"),
-        edge("hum", "entry", "b", "t"), // injection: 유머 bottom → entry top
+        edge("hum", "entry", "b", "t", "", "injection"), // injection: 유머 bottom → entry top
       ],
     );
     const out = actorAnchoredLayout(d);

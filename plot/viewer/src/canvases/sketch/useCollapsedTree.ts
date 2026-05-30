@@ -10,6 +10,7 @@
 // signature gains an ``edges`` argument; the in-memory shape of the
 // outputs is unchanged so consumers keep working.
 import { type MutableRefObject, useCallback, useMemo } from "react";
+import { foldEndpoints } from "../../flow/foldHierarchy";
 import type { CanvasDoc, SketchEdge, SketchNode } from "../../types";
 
 export interface UseCollapsedTreeResult {
@@ -47,10 +48,14 @@ export function useCollapsedTree(
   const childIdsByParent = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const e of edges) {
-      if (!e.directed) continue;
-      const arr = map.get(e.source) ?? [];
-      arr.push(e.target);
-      map.set(e.source, arr);
+      // v0.30.1 (D-2026-05-31-D) — parent/child per the edge's stored
+      // ``relation`` (flow source=parent, inheritance target=parent,
+      // injection excluded), not raw ``directed``.
+      const ep = foldEndpoints(e);
+      if (!ep) continue;
+      const arr = map.get(ep.parent) ?? [];
+      arr.push(ep.child);
+      map.set(ep.parent, arr);
     }
     return map;
   }, [edges]);
@@ -58,10 +63,11 @@ export function useCollapsedTree(
   const parentIdsByChild = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const e of edges) {
-      if (!e.directed) continue;
-      const arr = map.get(e.target) ?? [];
-      arr.push(e.source);
-      map.set(e.target, arr);
+      const ep = foldEndpoints(e);
+      if (!ep) continue;
+      const arr = map.get(ep.child) ?? [];
+      arr.push(ep.parent);
+      map.set(ep.child, arr);
     }
     return map;
   }, [edges]);

@@ -4,6 +4,36 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.30.1] — 2026-05-31
+
+### Changed — viewer reads `edge.relation` (Phase 2b)
+
+- Fold / render-sort now derive parent↔child from the stored
+  `edge.relation` via the new pure `flow/foldHierarchy.ts`: `flow`
+  source=parent, **`inheritance` target=parent (inverted)** — collapsing
+  a superclass hides its subclasses — `injection` excluded from fold
+  (D-2026-05-31-D).
+- Injection edge styling (violet + animated) now reads
+  `edge.relation === "injection"` in `edgeTransform`, so it fires on
+  **every** canvas — foundation `mission`/`core_value`/`identity` →
+  anchor edges now render as the "value injection" visual, not just
+  service_detail refs. `actorAnchoredLayout` injection exclusion reads
+  `edge.relation` too.
+
+### Removed
+
+- `flow/foundationRefKinds.ts` — dead after the switch to the stored
+  `relation` SSOT (its kind set is now `edgeSemantics.ESSENCE_SOURCE_KINDS`).
+
+### Notes — pinned behaviour change
+
+- Injection (`*_ref`) edges are now **excluded from the service_detail
+  fold map** (previously every directed edge counted). Correct — a ref
+  injects into a step, it doesn't contain it. No fixture relied on the
+  old behaviour; no data migration. Inheritance edge *styling* is
+  deferred to the user's canvas look-and-feel review (renders as a
+  default directed edge for now; only the fold semantic changed).
+
 ## [0.30.0] — 2026-05-31
 
 ### Added — stored edge `relation` semantic (Phase 2a)

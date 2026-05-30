@@ -9,7 +9,6 @@
 // passes true (and supplies serviceRef); other wrappers pass false.
 import { MarkerType, type Edge } from "reactflow";
 import type { CanvasDoc } from "../../types";
-import { FOUNDATION_REF_KINDS } from "../../flow/foundationRefKinds";
 import { VALUE_FORM_COLORS } from "../SketchEdgeModal";
 
 export interface EdgeTransformInput {
@@ -23,16 +22,11 @@ export interface EdgeTransformInput {
   /** v0.15 Phase 3.4 — drop edges that touch the hidden service-root
    *  (true on ServiceDetailCanvas; false elsewhere). */
   hideRootServiceNode: boolean;
-  /** v0.28.1 (D-2026-05-30-D) — source-kind lookup for foundation-
-   *  injection styling. An edge whose source is a foundation ref
-   *  (mission_ref / value_ref / identity_ref) renders as an animated
-   *  violet "injection" edge. Optional — when omitted, no edge is
-   *  styled as injection (back-compat for non-ServiceDetail canvases). */
-  nodeKindById?: (id: string) => string | undefined;
 }
 
-// v0.28.1 (D-2026-05-30-D) — foundation refs whose outgoing edges read
-// as "this essence fires here". Shared SSOT in flow/foundationRefKinds.
+// v0.28.1 (D-2026-05-30-D) — an injection edge ("this essence fires
+// here") renders animated violet. v0.30.1 (D-2026-05-31-D) — detected
+// from the stored ``relation`` SSOT, not a source-kind lookup.
 const INJECTION_STROKE = "#8b5cf6"; // violet-500
 
 export function edgeTransform(input: EdgeTransformInput): Edge[] {
@@ -42,7 +36,6 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     nearestCollapsedAncestor,
     valueFlowOn,
     hideRootServiceNode,
-    nodeKindById,
   } = input;
   const isHiddenRoot = (id: string): boolean =>
     hideRootServiceNode && !!serviceRef && id === serviceRef;
@@ -64,12 +57,11 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     //       now looks like a self-loop on the collapsed parent; drop.
     const isRealSelfLoop = e.source === e.target;
     if (src === tgt && !isRealSelfLoop) continue;
-    // v0.28.1 (D-2026-05-30-D) — injection edge: source is a foundation
-    // ref. Computed from the original (pre-collapse) source so a
-    // collapsed-into-parent edge doesn't lose the signal.
-    const isInjection = nodeKindById
-      ? FOUNDATION_REF_KINDS.has(nodeKindById(e.source) ?? "")
-      : false;
+    // v0.30.1 (D-2026-05-31-D) — injection read from the stored
+    // ``relation`` SSOT (was re-derived from the source kind in
+    // v0.28.1). Works on every canvas (foundation essence→anchor
+    // included) and stays correct through collapse.
+    const isInjection = e.relation === "injection";
     const stroke = isInjection
       ? INJECTION_STROKE
       : valueFlowOn && e.value_form && e.value_form.length > 0

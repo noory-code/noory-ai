@@ -107,6 +107,14 @@ from directed edges** (``edge.source`` = parent, ``edge.target`` =
 child, when ``directed === true``). The legacy ``parent_id`` field on
 nodes has been removed.
 
+> **v0.30.1 (D-2026-05-31-D) — fold reads the edge ``relation``.**
+> The parent/child for fold is resolved by ``flow/foldHierarchy.ts``
+> per the stored ``relation`` (not raw ``directed``): ``flow`` →
+> source=parent; ``inheritance`` → **target=parent (inverted)** so
+> collapsing a superclass hides its subclasses; ``injection`` →
+> excluded (an essence overlay doesn't contain its target). The same
+> rule feeds the server publish-propagation walk (Phase 2c).
+
 - Fold (▾ / ▸) button surfaces on a node iff it has at least one
   *outgoing* directed edge to another node (i.e. someone is its child).
 - Drill / nested-drag / Inspector "child count" all derive children
