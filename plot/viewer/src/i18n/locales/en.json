@@ -96,6 +96,13 @@
     "interaction": "Interaction",
     "value": "Value"
   },
+  "node": {
+    "step": {
+      "outcomePlaceholder": "(outcome — click to add)",
+      "branchLabel": "branch",
+      "branchAria": "branch point — {{count}} paths"
+    }
+  },
   "kindTag": {
     "project": "PROJECT",
     "mission": "MISSION",

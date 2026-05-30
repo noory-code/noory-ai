@@ -93,8 +93,16 @@ export function useNodesMemo({
     // derived from directed edges. A node is a "child" iff there's
     // an incoming directed edge.
     const childIds = new Set<string>();
+    // v0.27.19 (D-2026-05-30-B) — outgoing directed-edge count per
+    // node. ≥ 2 marks a branch point for step renderers (SPEC
+    // §"Service composition model"). Counted here because the doc's
+    // edges are already in scope; only StepNode reads ``branchCount``.
+    const outgoingCount = new Map<string, number>();
     for (const e of doc.edges) {
-      if (e.directed) childIds.add(e.target);
+      if (e.directed) {
+        childIds.add(e.target);
+        outgoingCount.set(e.source, (outgoingCount.get(e.source) ?? 0) + 1);
+      }
     }
     const ordered = [...doc.nodes].sort((a, b) => {
       const aChild = childIds.has(a.id);
@@ -199,6 +207,15 @@ export function useNodesMemo({
           // actor / step containers keep their fold buttons.
           showFold: showFoldButton && !(n.kind === "service" && n.is_root),
           mdWarnings: n._md_warnings,
+          // v0.27.19 (D-2026-05-30-A/-B) — step authoring affordances.
+          // Only StepNode reads these; harmless on other kinds.
+          ...(n.kind === "step"
+            ? {
+                outcome: n.outcome ?? "",
+                onOutcomeChange: (next: string) => updateNode(n.id, { outcome: next }),
+                branchCount: outgoingCount.get(n.id) ?? 0,
+              }
+            : {}),
         },
       });
     }

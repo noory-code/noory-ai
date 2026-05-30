@@ -40,6 +40,15 @@ export interface BaseNodeData {
   childCount?: number;
   mdWarnings?: string[];
   showFold?: boolean;
+  /** v0.27.19 (D-2026-05-30-A) — ServiceDetail step authoring. The
+   *  step's ``outcome`` (system-side end state) rendered on-canvas +
+   *  inline-editable. Only StepNode reads these; other kinds leave
+   *  them undefined. */
+  outcome?: string;
+  onOutcomeChange?: (next: string) => void;
+  /** v0.27.19 (D-2026-05-30-B) — count of outgoing directed edges.
+   *  ≥ 2 marks a branch point (SPEC §"Service composition model"). */
+  branchCount?: number;
 }
 
 export interface BaseNodeChromeProps {

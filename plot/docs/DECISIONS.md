@@ -8992,3 +8992,60 @@ but not yet fully eliminated.
   background-canvas prop cascade).
 - D-2026-05-26-F (`inert` trap — confirmed working; this entry
   rules out interactive leak as the cause).
+
+---
+
+### D-2026-05-30-A — ServiceDetail step `outcome` renders on-canvas + inline-editable (v0.27.19)
+
+- **What:** the `step.outcome` field (system-side end state) now
+  renders as a muted `↳ …` subtitle on the step node and is
+  inline-editable (multiline EditableText, Cmd/Ctrl+Enter commits,
+  Esc cancels). Empty steps show a `(outcome — click to add)`
+  placeholder. Previously `outcome` was visible only inside the
+  right-hand Inspector.
+- **Why:** SPEC §"Service composition model" defines a step as a
+  *user interaction* and pins system work to `step.outcome`. With
+  the outcome hidden, the canvas showed only the user-action label —
+  the reader had to open the Inspector on every node to recover what
+  the system does. Surfacing it makes the user-interaction sequence
+  read naturally in-canvas (the "step authoring affordances" item in
+  NEXT_SESSION's ServiceDetail 고도화 queue).
+- **Alternatives:** (a) render outcome as a tooltip on hover —
+  rejected, hidden affordance, fails "Don't Make Me Think"; (b)
+  show outcome only in a read-only badge — rejected, the user wants
+  to author it in place. Chosen: same EditableText pattern already
+  used for the label, so the editing model is consistent.
+- **Approval:** Accepted — user direction 2026-05-30 ("제안한 개선안
+  부터 합니다", broad go-ahead on the four ServiceDetail 고도화
+  proposals; visual specifics deferred to end-of-session review).
+- **Spec impact:** SPEC §"Service composition model" gains a
+  "Canvas rendering of a step" note. Data fields `outcome` /
+  `onOutcomeChange` added to `BaseNodeData` (read only by StepNode);
+  BaseNode LOC ceiling 260 → 270 (structural-guards note updated).
+- **Test:** `viewer/tests/nodes/step.test.tsx` — outcome renders;
+  inline edit commits via `onOutcomeChange`.
+
+### D-2026-05-30-B — ServiceDetail step branch badge (derived from outgoing edge count) (v0.27.19)
+
+- **What:** a step with ≥ 2 outgoing directed edges renders a small
+  amber `⑂ branch` badge. Derived — no new field; the outgoing
+  directed-edge count (already computed for parent/child derivation)
+  is the source of truth.
+- **Why:** SPEC §"Service composition model" defines a Branch as a
+  "`decision` step followed by multiple outgoing edges". Before this,
+  a branch point was visually identical to a linear step, so the
+  reader could not see where the flow forks (the "decision step
+  affordance" item in the NEXT_SESSION 고도화 queue).
+- **Alternatives:** (a) force a diamond `shape` on derived branch
+  points — rejected, hijacks the user's chosen shape (Rule 7: the
+  user controls every shape); (b) a dedicated `decision` boolean on
+  the step — rejected as redundant with the edge graph (SSOT: the
+  branch *is* the multiple-outgoing-edge structure, not a flag that
+  could drift from it). Chosen: a non-destructive derived badge that
+  leaves shape/colour untouched.
+- **Approval:** Accepted — same 2026-05-30 direction as D-2026-05-30-A.
+- **Spec impact:** same SPEC §"Service composition model" note as
+  D-2026-05-30-A. Data field `branchCount` added to `BaseNodeData`
+  (read only by StepNode).
+- **Test:** `viewer/tests/nodes/step.test.tsx` — badge present at
+  branchCount ≥ 2, absent at < 2.

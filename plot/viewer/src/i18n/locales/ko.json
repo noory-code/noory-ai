@@ -96,6 +96,13 @@
     "interaction": "인터랙션",
     "value": "가치"
   },
+  "node": {
+    "step": {
+      "outcomePlaceholder": "(결과 — 클릭해 추가)",
+      "branchLabel": "분기",
+      "branchAria": "분기점 — 경로 {{count}}개"
+    }
+  },
   "kindTag": {
     "project": "프로젝트",
     "mission": "미션",

@@ -4,6 +4,55 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.19] — 2026-05-30
+
+ServiceDetail step-authoring affordances — the first two items from
+the `ServiceDetail 캔버스 고도화` queue. The step graph now reads
+naturally in-canvas: each step shows what the system does and where
+the flow forks, without opening the Inspector.
+
+### Added — Step `outcome` on canvas (D-2026-05-30-A)
+
+- **`step.outcome` renders + edits in place.** The system-side end
+  state shows as a muted `↳ …` subtitle under the step label and is
+  inline-editable (multiline `EditableText`; Cmd/Ctrl+Enter commits,
+  Esc cancels). Empty steps show a `(outcome — click to add)`
+  placeholder. Was Inspector-only before. Implements SPEC §"step =
+  user interaction" (system work lives in `step.outcome`) at the
+  canvas layer.
+- New `node.step.*` i18n keys in `en.json` + `ko.json`
+  (`outcomePlaceholder`, `branchLabel`, `branchAria`).
+
+### Added — Branch badge on decision steps (D-2026-05-30-B)
+
+- **A step with ≥ 2 outgoing directed edges renders an amber
+  `⑂ branch` badge.** Derived from the edge graph (no stored flag);
+  the badge leaves the user's chosen shape and colour untouched.
+  Makes branch points visible — previously identical to a linear
+  step.
+
+### Changed
+
+- `BaseNodeData` gains `outcome` / `onOutcomeChange` / `branchCount`
+  (read only by `StepNode`). `useNodesMemo` wires them for `step`
+  kind only and counts outgoing directed edges once.
+- `BaseNode.tsx` LOC ceiling 260 → 270 (structural-guards note
+  updated; the new fields are the step-authoring data responsibility).
+
+### Tests
+
+- `viewer/tests/nodes/step.test.tsx` (new) — outcome renders, inline
+  edit commits via `onOutcomeChange`, branch badge present at
+  count ≥ 2 / absent at < 2. Red→Green ritual completed before the
+  source landed.
+
+### Browser verification (Playwright, Login demo doc)
+
+- Decision step `방식 선택` shows `⑂ branch` + outcome
+  `사용자가 email / Google / Magic link 중 하나 선택`.
+- `Submit` shows `↳ 시스템이 자격증명 검증`; empty steps show the
+  placeholder. 0 console errors.
+
 ## [0.27.18] — 2026-05-28
 
 ### Fixed (partial)

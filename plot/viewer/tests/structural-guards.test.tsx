@@ -156,8 +156,8 @@ const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
     note: "v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to absorb the onPublishNode prop wiring through to SketchInspectorBindings. v0.23.x (D-2026-05-17-J) raised 440 → 450 to add the onUnpublishNode prop wiring (same pattern). v0.27.4 (D-2026-05-26-H) raised 450 → 470 to add the 300 ms fitView fallback that unsticks visibility:hidden when useNodesInitialized stays false in a modal-mounted canvas.",
   },
   "canvases/nodes/BaseNode.tsx": {
-    ceiling: 260,
-    note: "v0.27.11 (D-2026-05-28-D) raised 250 → 260 to absorb the Symbol force-circle override (effectiveShape + SYMBOL_KINDS set + shouldShowKindTag's kind-aware branch).",
+    ceiling: 270,
+    note: "v0.27.11 (D-2026-05-28-D) raised 250 → 260 to absorb the Symbol force-circle override (effectiveShape + SYMBOL_KINDS set + shouldShowKindTag's kind-aware branch). v0.27.19 (D-2026-05-30-A/-B) raised 260 → 270 to add the step-authoring data fields (outcome / onOutcomeChange / branchCount) to the shared BaseNodeData bag — read only by StepNode for the ServiceDetail step UX.",
   },
   "canvases/inspectors/BaseInspector.tsx": {
     ceiling: 380,

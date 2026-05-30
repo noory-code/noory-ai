@@ -1018,6 +1018,24 @@ Bana → 진입 → 방식선택 ─┼── Google 클릭 → 권한 동의 �
 
 Live demo doc: `plot-test-v013/.plot/banas-imported/services/n_mpkyhvsj_mjzh/detail.json`.
 
+### Canvas rendering of a step (v0.27.19, D-2026-05-30-A/-B)
+
+A `step` node on the ServiceDetail canvas renders, top-to-bottom:
+
+- the `STEP` kind tag (existing).
+- the **label** = the user-side action (inline-editable, existing).
+- an `⑂ branch` badge **iff** the step has ≥ 2 outgoing directed
+  edges (a Branch per the table above). Derived from the edge graph,
+  not a stored flag — the branch *is* the multiple-outgoing-edge
+  structure (D-2026-05-30-B). The badge never changes the node's
+  user-chosen shape or colour.
+- the **outcome** = the system-side end state, as a muted `↳ …`
+  subtitle, **inline-editable** (multiline; Cmd/Ctrl+Enter commits,
+  Esc cancels). Empty steps show a `(outcome — click to add)`
+  placeholder (D-2026-05-30-A). This keeps the SPEC rule "system
+  work is NOT a step; it lives in `step.outcome`" legible without
+  opening the Inspector.
+
 ### Auto-layout responsibility
 
 Per D-2026-05-28-J, auto-layout for ServiceDetail must
