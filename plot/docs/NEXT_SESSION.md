@@ -40,6 +40,34 @@
 
 **Open follow-ups (each is its own small ship):**
 
+0. **Background canvas reactivity while modal is open** *(filed
+   2026-05-28 end-of-session, no repro symptom recorded yet).*
+   User: *"서비스 디테일 캔버스에서 뭔가 조작하면 뒤에 화면이
+   반응을 하네요? 왜 그런거죠?"*
+   - Confirmed at file-time: the root app `<div>` does carry
+     `inert` while the modal is open (D-2026-05-26-F), and the
+     modal sits as a sibling outside the inert subtree.
+   - `inert` blocks interactive events but does NOT block visual
+     re-renders. The likely culprits are:
+     1. React state cascade — modal `onDocChange` →
+        `useCanvasPersist.setCanvasCache` → top-level re-render
+        sweeps the Services canvas's React tree even though its
+        slice of `canvasCache` is unchanged (the Map identity flips
+        on every set).
+     2. WS echo — `service_detail` PUT broadcasts a WS event that
+        `useProjectSocket` forwards; even if `pendingWrites` swallows
+        own-writes, a cross-canvas echo could still touch the
+        Services cache.
+     3. Cross-canvas root_service node — the Services canvas holds
+        the same `id` as the modal's hidden root_service; if any
+        position update slips across, the underlying Services node
+        moves.
+   - Repro plan: open the Login modal, drag a step, watch
+     `useStableHandlers.handleExternalCanvas` + the Services
+     canvas's RF instance for unexpected updates. Decide whether
+     the fix is React.memo on the Services tree, a cache-Map
+     identity guard, or a WS echo filter.
+
 1. **Admin actor_ref silent drop bug** *(filed inside D-2026-05-28-K
    notes; user-visible 422 is gone but the drop itself is open).*
    On the 2026-05-28 reload-then-⊞ cycle, the frontend's PUT body
