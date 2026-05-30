@@ -16,6 +16,11 @@ tables byte-identical.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from plot_mcp.models import SketchEdge
+
 # Essence kinds whose outgoing edges inject essence into the target: the
 # foundation masters and their consumer-plane refs. ``actor_ref`` is
 # deliberately excluded — it is the sequence *subject*, not an overlay
@@ -43,3 +48,27 @@ def classify_edge(canvas_kind: str, source_kind: str | None) -> str:
     if source_kind is not None and source_kind in ESSENCE_SOURCE_KINDS:
         return "injection"
     return "flow"
+
+
+def fold_endpoints(edge: SketchEdge) -> tuple[str, str] | None:
+    """``(parent, child)`` for the fold / publish-propagation hierarchy,
+    per the edge's stored ``relation`` — or ``None`` if the edge defines
+    no hierarchy. Mirror of
+    ``viewer/src/flow/foldHierarchy.ts::foldEndpoints``:
+
+      - flow        → (source, target)            — source is parent.
+      - inheritance → (target, source)  INVERTED  — the arrow points
+                      child→superclass, so the *target* is the parent.
+      - injection   → None                        — an essence overlay
+                      doesn't contain its target.
+
+    Undirected edges (``directed is False``) define no hierarchy.
+    """
+    if not getattr(edge, "directed", True):
+        return None
+    relation = getattr(edge, "relation", "flow")
+    if relation == "injection":
+        return None
+    if relation == "inheritance":
+        return (edge.target, edge.source)
+    return (edge.source, edge.target)

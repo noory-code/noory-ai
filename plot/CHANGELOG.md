@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.30.2] — 2026-05-31
+
+### Changed — server publish-propagation reads `edge.relation` (Phase 2c)
+
+- `propagation._build_parent_lookup` now derives parent↔child from the
+  stored `edge.relation` via the new `edge_semantics.fold_endpoints` —
+  the Python mirror of the viewer's `foldHierarchy.foldEndpoints`. `flow`
+  source=parent, `inheritance` target=parent (inverted), `injection`
+  excluded. Viewer fold and server publish-propagation now read the same
+  SSOT (D-2026-05-31-E), closing the cross-boundary gap that motivated
+  the stored field (plot-design-red-team A8).
+
 ## [0.30.1] — 2026-05-31
 
 ### Changed — viewer reads `edge.relation` (Phase 2b)

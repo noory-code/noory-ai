@@ -29,13 +29,14 @@ from plot_mcp.models import (
 from plot_mcp.propagation import LogicalAncestor, walk_ancestors
 
 
-def _edge(source: str, target: str) -> SketchEdge:
+def _edge(source: str, target: str, relation: str = "flow") -> SketchEdge:
     """Helper: build a directed edge with a stable id."""
     return SketchEdge(
         id=f"e_{source}_{target}",
         source=source,
         target=target,
         directed=True,
+        relation=relation,  # type: ignore[arg-type]
     )
 
 
@@ -319,3 +320,44 @@ def test_walk_ancestors_picks_deterministic_parent_with_multi_in() -> None:
 
 # Keep pytest import non-orphan for any future skip use.
 _ = pytest
+
+
+# ---------------------------------------------------------------------------
+# v0.30.2 (D-2026-05-31-E) — relation-aware walk
+# ---------------------------------------------------------------------------
+
+
+def test_walk_ancestors_inheritance_edge_bumps_superclass() -> None:
+    """An inheritance edge points subclass→superclass (source=subclass,
+    target=superclass). Publishing the subclass must walk UP to the
+    superclass (the fold parent is the edge target, inverted)."""
+    actors = CanvasDoc(
+        canvas_id="actors",
+        canvas_kind="actors",
+        nodes=[
+            ActorNode(id="sub", label="Hero", side="user"),
+            ActorNode(id="sup", label="User", side="user"),
+        ],
+        edges=[_edge("sub", "sup", relation="inheritance")],
+    )
+    assert walk_ancestors("sub", {"actors": actors}) == [
+        LogicalAncestor(node_id="sup", canvas_keys=("actors",))
+    ]
+    # Publishing the superclass walks nothing (it has no fold parent).
+    assert walk_ancestors("sup", {"actors": actors}) == []
+
+
+def test_walk_ancestors_injection_edge_never_walked() -> None:
+    """Injection edges are an essence overlay, not containment — they
+    never participate in the publish-propagation walk (either direction)."""
+    foundation = CanvasDoc(
+        canvas_id="foundation",
+        canvas_kind="foundation",
+        nodes=[
+            MissionNode(id="m1", label="Mission"),
+            IdentityNode(id="id1", label="Voice"),
+        ],
+        edges=[_edge("m1", "id1", relation="injection")],
+    )
+    assert walk_ancestors("m1", {"foundation": foundation}) == []
+    assert walk_ancestors("id1", {"foundation": foundation}) == []

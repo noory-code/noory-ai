@@ -36,6 +36,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from plot_mcp.edge_semantics import fold_endpoints
 from plot_mcp.models import CanvasDoc, SketchEdge, SketchNode
 
 
@@ -117,9 +118,15 @@ def _build_parent_lookup(
     lookup: dict[str, set[str]] = {}
     for canvas in canvases.values():
         for edge in canvas.edges:
-            if not _is_directed(edge):
+            # v0.30.2 (D-2026-05-31-E) — parent/child per the edge's
+            # stored ``relation`` (flow source=parent, inheritance
+            # target=parent inverted, injection excluded), reading the
+            # same SSOT as the viewer fold (foldHierarchy.foldEndpoints).
+            ep = fold_endpoints(edge)
+            if ep is None:
                 continue
-            lookup.setdefault(edge.target, set()).add(edge.source)
+            parent, child = ep
+            lookup.setdefault(child, set()).add(parent)
     return lookup
 
 

@@ -39,6 +39,26 @@
 
 ## Log
 
+### D-2026-05-31-E — Server propagation reads `edge.relation` (Phase 2c)
+
+- **What:** `propagation._build_parent_lookup` (publish MINOR-bump
+  ancestor walk) now derives parent↔child from the stored
+  `edge.relation` via a new `edge_semantics.fold_endpoints(edge)` — the
+  Python mirror of `viewer/src/flow/foldHierarchy.ts::foldEndpoints`.
+  `flow` → source=parent; `inheritance` → target=parent (inverted);
+  `injection` → excluded. Closes the loop opened by D-2026-05-31-C/D:
+  viewer fold and server publish-propagation now read the **same** SSOT.
+- **Why:** plot-design-red-team A8 — before this, the server walked
+  every directed edge as source=parent, so publishing on a canvas with
+  inheritance edges would bump the wrong ancestor (subclass↔superclass
+  inverted) and injection edges would be walked as containment. The
+  stored-field decision (D-2026-05-31-C) exists precisely so the server
+  can read the semantic; this wires it in.
+- **Approval:** Accepted by user, 2026-05-31 ("계속").
+- **Spec impact:** SPEC.md §Edges Hierarchy note (already records the
+  shared fold rule). Tests: `test_propagation.py` — inheritance bumps
+  the superclass, injection never walked.
+
 ### D-2026-05-31-D — Viewer reads `edge.relation` (fold / style / layout) (Phase 2b)
 
 - **What:** The viewer now derives behaviour from the stored
