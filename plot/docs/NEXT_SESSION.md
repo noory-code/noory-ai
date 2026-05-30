@@ -9,52 +9,68 @@
 
 ## Active queue
 
-### `ServiceDetail 캔버스 고도화` (TOP priority, filed 2026-05-28 end-of-session)
+### `ServiceDetail UX / 작은 디자인 / 산출물 검토` (TOP priority, filed 2026-05-30 end-of-session)
 
-> **Trigger:** user says **"서비스 디테일 고도화"** / **"service detail
-> 고도화"** / **"디테일 캔버스"** / **"step UX"** / **"인터랙션 추가"** /
-> **"고도화"** as the first / near-first message.
+> **Trigger:** user says **"UX"** / **"디자인"** / **"작은 디자인"** /
+> **"산출물"** / **"세부 검토"** / **"서비스 디테일"** as the first /
+> near-first message.
 >
-> **Filed:** 2026-05-28 end of session, immediately after the
-> Service composition model got pinned (v0.27.15 D-2026-05-28-J)
-> and the actor-anchored layout shipped (v0.27.16). User: *"다음
-> 세션에서는 서비스 디테일 캔버스 고도화합니다."*
+> **Filed:** 2026-05-30 end of session, after a 9-ship day
+> (v0.27.19 → v0.29.0) that completed the entire ServiceDetail 고도화
+> model. User: *"내일은 세부적인 것들 직접 검토하겠습니다. UX 라던가.
+> 작은 디자인들하고 산출물이 어떻게 나오는지 등해서. 다 검토할거에요."*
 >
-> **Why this comes first:** the *model* is locked, the
-> *baseline UX* (drop, stencil labels, hide root, EN/KO, Symbol
-> shape, auto-layout, sync guard) is shipped, but the user's
-> next focus is making the canvas itself richer — turning the
-> bare step graph into an artefact that's genuinely usable for
-> service design.
+> **What the user will review (user-driven — wait for their lead, do
+> NOT pre-emptively redesign):**
+> - **UX / 작은 디자인** — look-and-feel of the new ServiceDetail
+>   pieces (decision diamond, polarity tints, injection edges, group
+>   collapse, 2-layer stencil). Polish, not new features.
+> - **산출물 (output / artifact)** — *how a designed service comes
+>   out*: the published MD (`plot_mcp/md_publish.py`) / folder output
+>   for a service + its detail. Does the rich flowchart (decision /
+>   polarity / group / injection) translate into a useful deliverable?
+>   (This is NOT yet verified — likely the first concrete thing to
+>   check tomorrow.)
 >
-> **Scope (open — re-anchor with user at session start):** likely
-> directions, none committed:
+> **Reference example (user-confirmed "이거지"):** the composed
+> **회원가입(Signup)** demo at
+> `plot-test-v013/.plot/banas-imported/services/n_sg_demo/detail.json`
+> (overview Auth category). 21 nodes — actor → ◇사용자 상태? →
+> per-state flow → ◇이메일 OK? / ◇검증? → 성공(green) / 실패(red)
+> results + rule nodes + "이메일 검증" group + 4 injection edges. The
+> agreed reference shape of a ServiceDetail. (Login `n_mpkyhvsj_mjzh`
+> is the user's own original — don't touch.)
 >
-> - **Step authoring affordances** — better inline editing of
->   `step.label` / `step.outcome` / `step.order` so the
->   user-interaction sequence reads naturally in-canvas without
->   opening the Inspector for every tweak.
-> - **Decision step affordance** — `step` 노드 중 *방식 선택* 같은
->   분기점이 한눈에 구분되게 (별도 chrome flag? icon? colour?). 현재
->   는 일반 step 과 시각 구분이 없음.
-> - **Branch / join label semantics** — the user typed `next` /
->   `branch` / `join` as edge labels but the canvas treats them
->   identically. UX call: keep as labels, promote to formal
->   `action_verb` values, or render different edge styles per
->   semantic.
-> - **Sub-flow grouping / collapse** — a service with 10+ steps
->   wants visual chunking (the three OAuth branches in Login could
->   collapse into one "OAuth path" container).
-> - **State preservation across reload** — user already noticed
->   the layout doesn't survive structural changes well.
-> - **Auto-layout direction switch UI.** Right now the only knob
->   for LR vs TB is "redraw the subject edge with a different
->   handle". A button or shortcut would be much more discoverable.
+> **Approach:** wait for the user to point at a specific piece; polish
+> per [[feedback_small_ships_over_big_bangs]] +
+> [[feedback_show_dont_tell]] + [[feedback_discussion_mode_brief]].
+
+### `ServiceDetail 고도화 — COMPLETED 2026-05-30` (done; kept so it isn't re-surfaced)
+
+> The 2026-05-28 고도화 queue is **fully shipped** — do NOT re-open:
 >
-> **Approach:** plan-mode short + AskUserQuestion for spatial
-> anchoring (ASCII mockups, [[feedback_show_dont_tell]]); accept
-> *one* direction at a time and ship per phase
-> ([[feedback_small_ships_over_big_bangs]]).
+> | Direction (2026-05-28 filing) | Ship |
+> |---|---|
+> | Step authoring (outcome inline) | v0.27.19 |
+> | Decision step affordance | v0.28.0 (`decision` kind ◇) |
+> | Branch/join + injection semantics | v0.28.1 (injection edges) |
+> | (new) Negative-case visual | v0.28.2 (`step.polarity` red/green) |
+> | Auto-layout direction switch | v0.28.3 (LR/TB buttons) |
+> | (new) Injection layout priority | v0.28.4 (actor>flow>injection) |
+> | (new) Essence-layer stencil | v0.28.5 (① Flow / ② injection) |
+> | Sub-flow grouping / collapse | v0.29.0 (`group` kind, 17th) |
+>
+> **Still deferred (known-open, separate from the 고도화 queue):**
+> - **group RF parentNode** — true visual containment (drag-in
+>   nesting); v0.29.0 is collapse-only.
+> - **actor state *transition*** (Guest→회원) — `decision` covers
+>   *branching* on state; true transitions still open
+>   ([[project_plot_state_transitions_open]]).
+> - **UI "new service from scratch" flow** — the 회원가입 demo was
+>   built by direct JSON edit, NOT verified via click-to-create UX.
+>
+> Model SSOT: [[project_plot_service_model_pinned]] + SPEC
+> §ServiceDetail + CONCEPTS.
 
 ### `Service composition model — v0.27.16 / v0.27.18 follow-ups` (HIGH priority, filed 2026-05-28)
 
