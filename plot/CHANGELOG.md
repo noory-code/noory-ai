@@ -4,6 +4,35 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.27.17] — 2026-05-28
+
+### Changed
+
+- **`docs/NEXT_SESSION.md` gains a top-priority "Service composition
+  model — v0.27.16 follow-ups" entry.** Captures the 2026-05-28
+  ship state (D-2026-05-28-J SPEC pin + D-2026-05-28-K invariant +
+  actor-anchored layout) and lists the open threads in priority
+  order so a fresh Claude session can pick the next move without
+  rebuilding context.
+
+### Open in the queue
+
+1. Admin actor_ref silent drop bug (user-visible 422 gone, data
+   drop still open).
+2. Auto-seed update — `sync_details_with_overview` still seeds
+   two actor_refs; consider seeding one user-side actor only.
+3. `IDENTITY.md` cleanup — still mentions the "≥ 2 baseline"
+   that v0.27.16 retired.
+4. D-2026-05-28-E (stencil per-item descriptions) — waits on
+   user copy.
+5. Bigger design questions left open mid-session — Actor
+   계층 명시화, direction switch UI, multi-actor services,
+   service 외 종류.
+
+### Verification
+
+- No code change. Docs-only ship.
+
 ## [0.27.16] — 2026-05-28
 
 The implementation half of D-2026-05-28-J — ServiceDetail layout

@@ -9,6 +9,95 @@
 
 ## Active queue
 
+### `Service composition model — v0.27.16 follow-ups` (TOP priority, filed 2026-05-28)
+
+> **Trigger:** user says **"서비스 정의"** / **"service model"** /
+> **"step graph"** / **"actor anchor"** / **"v0.27.17"** / **"v0.28"** /
+> **"admin drop"** as the first / near-first message.
+>
+> **Filed:** 2026-05-28 end of session. Across v0.27.15 → v0.27.16
+> the Service composition model got pinned to SPEC + DECISIONS
+> (D-2026-05-28-J) and the layout algorithm was rewritten to
+> respect it (actor-anchored, direction adaptive, D-2026-05-28-J/K).
+> Browser-confirmed working on the user's Login example. These are
+> the open threads from that session — every one is small and
+> independent; pick by what the user says first.
+
+**What's already done (don't redo):**
+
+| Decision | Ship | What it pinned |
+|---|---|---|
+| D-2026-05-28-A | v0.27.10 | ServiceDetail composition drop is free-form |
+| D-2026-05-28-B | v0.27.11 | ServiceDetail hides root-service node |
+| D-2026-05-28-C | v0.27.11 | Stencil section "Composition" → "Interactions" + "Values" |
+| D-2026-05-28-D | v0.27.11 | Symbol kinds always render as circles |
+| D-2026-05-28-F | v0.27.11 | Modal-internal language toggle |
+| D-2026-05-28-G | v0.27.12 | Handle-aware dagre fallback (now de-prioritised by actor-anchored, kept as final fallback) |
+| D-2026-05-28-H | v0.27.13 | Published-versions endpoint 500 → 400 + Inspector threads serviceId |
+| D-2026-05-28-I | v0.27.14 | Sync archive guard (user-authored detail content preserved) |
+| **D-2026-05-28-J** | **v0.27.15** | **Service composition model SPEC pin** (one purpose / user-interaction steps / branch-join on shared outcome / actor subject / direction adaptive) |
+| **D-2026-05-28-J impl + K** | **v0.27.16** | **Actor-anchored layout + invariant ≥ 2 → ≥ 1** |
+
+**Open follow-ups (each is its own small ship):**
+
+1. **Admin actor_ref silent drop bug** *(filed inside D-2026-05-28-K
+   notes; user-visible 422 is gone but the drop itself is open).*
+   On the 2026-05-28 reload-then-⊞ cycle, the frontend's PUT body
+   dropped the operator-side `actor_ref` even though it was present
+   in the backend doc. The 2-actor → 1-actor invariant loosening
+   makes the 422 disappear at the user level, but the underlying
+   data drop is still there — a silent loss waiting to bite a doc
+   that depends on the operator slot for something else. Live demo
+   reproduces it: `plot-test-v013/.plot/banas-imported/services/n_mpkyhvsj_mjzh`.
+   Approach: instrument `useNodesMemo` + `useAutoLayout` `onDocChange`
+   pipeline; find where `actor_ref` is filtered out between
+   `getCanvas` and the next `putCanvas`.
+2. **Auto-seed update.** `sync_details_with_overview` still seeds
+   two `actor_ref` (`{sid}-operator-ref` + `{sid}-user-ref`).
+   Per D-2026-05-28-J the operator side is the service itself,
+   so the default seed should be a single user-side actor. UX
+   call: keep both for back-compat? Or seed one and let the user
+   add an operator if they need a literal operator?
+3. **`IDENTITY.md` cleanup.** Still mentions the "≥ 2 baseline"
+   that v0.27.16 retired. Edit to point at
+   `SPEC.md §"Service composition model" (D-2026-05-28-J)` as
+   the new SSOT, or fold the doc into SPEC entirely.
+4. **D-2026-05-28-E (stencil per-item descriptions).** Still
+   deferred — needs the user's own copy ("Step 이란 무엇 / Metric
+   어떻게 써야") and a UX call between hover-tooltip vs inline
+   description.
+5. **Bigger design questions raised mid-session but not closed:**
+   - **Actor 계층 명시화** — Bana → Hero / Fan as mode-specialisations
+     ("히어로는 바나 밑에 특수 사용자"). Currently implicit; no
+     parent edges on the Actor canvas. Spatial expression open.
+   - **Direction switch UI.** Auto-layout reads direction from the
+     subject edge's `sourceHandle`. The user has no obvious knob
+     to *change* direction other than re-drawing the subject edge.
+     Worth a button? A keyboard shortcut?
+   - **Multi-actor services.** D-2026-05-28-J explicitly says
+     subjects inherit down the sequence — but a service with a
+     real second human role (e.g. payer + payee in a P2P
+     transaction) needs more than one subject edge. The current
+     `actorAnchoredLayout` ignores anything past the first
+     subject edge it finds. Filed as a "when we hit a real case"
+     follow-up.
+   - **Service 이외 종류 design.** User said *"더 남았지만.. 여기까지
+     정립시키고"* — there are more decisions queued behind the
+     Service one (Actor model, Foundation flow, …) that didn't
+     get touched.
+
+**Live test doc:** `plot-test-v013/.plot/banas-imported/services/n_mpkyhvsj_mjzh/detail.json`
+holds the user-confirmed Login graph (Bana → entry → decision →
+3 branches → single dashboard result) — reload + ⊞ on this doc
+is the smoke test for any layout change.
+
+**Ground rules carried forward:** see SPEC.md §"Service composition
+model" (D-2026-05-28-J) for what every ServiceDetail must contain;
+see DECISIONS D-2026-05-28-J for the rejected alternatives so we
+don't re-propose them next session.
+
+---
+
 ### `Research subject 백데이터 기능` (queued, lower priority, filed 2026-05-19)
 
 > **Trigger:** user says **"인터뷰 데이터"** / **"리서치 서브젝트"** /
