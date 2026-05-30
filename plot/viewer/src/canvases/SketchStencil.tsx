@@ -491,8 +491,22 @@ export function SketchStencil({
   const missionRefPresets = availableMissions.map((m) => missionRefPresetFor(m));
   const valueRefPresets = availableValues.map((v) => valueRefPresetFor(v));
   const identityRefPresets = availableIdentities.map((i) => identityRefPresetFor(i));
+  // v0.28.5 (D-2026-05-30-H) — the stencil mirrors the 2-layer essence
+  // model (VISION 3-phase): ① the concrete flow the user designs
+  // (Execution: actor → interaction → decision → value), then ② the
+  // essence injected onto it (Retention: mission / core value /
+  // identity refs). Reading top-to-bottom = "build the flow, then
+  // inject the essence."
   return (
     <div className="border-t border-slate-200 px-3 py-3">
+      <LayerHeader label={t("stencil.layer.flow")} hint={t("stencil.layer.flowHint")} />
+      {actorRefPresets.length > 0 && (
+        <Section
+          title={t("stencil.section.actors")}
+          presets={actorRefPresets}
+          note={t("stencil.note.dragActorOntoService")}
+        />
+      )}
       {interactionPreset && (
         <Section
           title={t("stencil.section.interactions")}
@@ -507,13 +521,7 @@ export function SketchStencil({
           note={t("stencil.note.valuesExchanged")}
         />
       )}
-      {actorRefPresets.length > 0 && (
-        <Section
-          title={t("stencil.section.actors")}
-          presets={actorRefPresets}
-          note={t("stencil.note.dragActorOntoService")}
-        />
-      )}
+      <LayerHeader label={t("stencil.layer.essence")} hint={t("stencil.layer.essenceHint")} />
       {missionRefPresets.length > 0 && (
         <Section
           title={t("stencil.section.missions")}
@@ -535,6 +543,18 @@ export function SketchStencil({
           note={t("stencil.note.dragIdentityAspectThisServiceExpresses")}
         />
       )}
+    </div>
+  );
+}
+
+/** v0.28.5 (D-2026-05-30-H) — a layer divider above a stencil group.
+ *  Heavier than a Section title: it names one of the two essence
+ *  layers (① concrete flow / ② essence injection). */
+function LayerHeader({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className="mb-2 mt-1 border-b-2 border-slate-300 pb-1">
+      <div className="text-[11px] font-bold tracking-wide text-slate-700">{label}</div>
+      {hint && <div className="text-[9px] italic text-slate-400">{hint}</div>}
     </div>
   );
 }

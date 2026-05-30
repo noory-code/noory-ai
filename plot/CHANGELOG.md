@@ -4,6 +4,39 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.28.5] — 2026-05-30
+
+ServiceDetail stencil regrouped by essence layer — the tool now reads
+as the 2-layer model the whole session built toward.
+[D-2026-05-30-H](./docs/DECISIONS.md).
+
+### Changed — stencil layer groups
+
+- The ServiceDetail stencil is split into two labelled groups:
+  - **① Flow (Execution)** — Actors → Interactions (`step`) + Decision
+    → Values. The concrete flow the user designs (Actors moved to the
+    top as the tier-1 subject).
+  - **② Essence injection (Retention)** — Mission / Core Value /
+    Identity refs. The essence injected onto the flow.
+  Reading top-to-bottom = "build the flow, then inject the essence."
+  This makes VISION's 3-phase cycle legible in the tool at the
+  Service-Detail altitude (Execution / Retention; Discovery is
+  upstream in Foundation).
+- New `LayerHeader` component in `SketchStencil`; i18n
+  `stencil.layer.{flow,flowHint,essence,essenceHint}` in en + ko.
+
+### Scope
+
+Render-level only — section reorder + a header component + i18n. No
+god-component flags, no LOC-ceiling bumps, no change to drop rules or
+kinds (the session's "keep it clean, not 덕지덕지" guarantee).
+
+### Browser verification (Playwright, Login demo doc)
+
+- The modal stencil shows **① Flow (Execution)** (Actors → Interactions
+  → Values) above **② Essence injection (Retention)** (Mission / Core
+  Value / Identity). 0 console errors.
+
 ## [0.28.4] — 2026-05-30
 
 Layout anchor priority — injection nodes are an overlay, not part of

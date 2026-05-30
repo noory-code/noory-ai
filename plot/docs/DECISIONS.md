@@ -9222,3 +9222,28 @@ but not yet fully eliminated.
 - **Spec impact:** SPEC §Actor-anchored layout — injection-node
   anchoring.
 - **Test:** `viewer/tests/actor-anchored-layout.test.ts` (new case).
+
+### D-2026-05-30-H — ServiceDetail stencil regrouped by essence layer (v0.28.5)
+
+- **What:** the ServiceDetail stencil is split into two labelled layer
+  groups that mirror the 2-layer essence model:
+  - **① Flow (Execution)** — Actors → Interactions (step) + Decision →
+    Values. The concrete flow the user designs.
+  - **② Essence injection (Retention)** — Mission / Core Value /
+    Identity refs. The essence injected onto the flow.
+  Reading top-to-bottom = "build the flow, then inject the essence."
+  Actors moved to the top of ① (the flow's tier-1 subject).
+- **Why:** v0.27.19–v0.28.4 built all the *pieces* of the 2-layer
+  model (flow nodes + injection edges + layout priority); this makes
+  the model **legible in the tool itself** so the user reaches for the
+  right layer's tools without thinking (UX: Don't Make Me Think). It
+  operationalises VISION's 3-phase cycle at the Service-Detail
+  altitude: ① = Execution, ② = Retention (Discovery lives upstream in
+  Foundation).
+- **Scope discipline (user's "덕지덕지" concern):** render-level only —
+  a new `LayerHeader` component + section reorder in `SketchStencil`'s
+  `service_detail` branch + i18n. No god-component flags, no LOC-ceiling
+  bumps, no behaviour change to drops/kinds.
+- **Approval:** Accepted — user 2026-05-30 ("네 추천대로 합니다" on the
+  essence-reorg plan).
+- **Spec impact:** SPEC §ServiceDetail Stencil — the two layer groups.

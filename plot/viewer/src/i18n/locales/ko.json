@@ -248,6 +248,12 @@
     "contentsSubtitle": "아티팩트 · 결과물 · 자산"
   },
   "stencil": {
+    "layer": {
+      "flow": "① 흐름 (Execution)",
+      "flowHint": "이 서비스가 어떻게 동작하나",
+      "essence": "② 본질 주입 (Retention)",
+      "essenceHint": "어떤 가치를, 누구에게, 왜"
+    },
     "subActor": "서브 액터",
     "dragOntoCanvas": "{{name}}을(를) 캔버스로 끌어 놓으세요",
     "dropHintIntoCategory": "카테고리 안에 놓으세요",

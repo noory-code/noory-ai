@@ -955,6 +955,22 @@ Per the [`SketchStencil`](../viewer/src/canvases/SketchStencil.tsx)
 Each ref preset is generated from its master so dropping it skips
 the picker — the resulting node carries `ref_*_id` already.
 
+### Layer grouping (v0.28.5, D-2026-05-30-H)
+
+The sections are grouped under two `LayerHeader`s that mirror the
+2-layer essence model (VISION 3-phase), read top-to-bottom:
+
+- **① Flow (Execution)** — Actors → Interactions (`step`) + Decision
+  (`decision`) → Values (`metric`). The concrete flow the user
+  designs. Actors sit at the top — the flow's tier-1 subject.
+- **② Essence injection (Retention)** — Mission / Core Value /
+  Identity refs. The essence injected onto the flow (rendered as the
+  violet injection edges per D-2026-05-30-D, anchored per
+  D-2026-05-30-G).
+
+"Build the flow, then inject the essence." Render-level grouping only;
+no change to drop rules or kinds.
+
 ### Composition drop is free-form (D-2026-05-28-A, v0.27.10)
 
 The Composition presets (`metric`, `step`) drop **free-form** on the

@@ -248,6 +248,12 @@
     "contentsSubtitle": "artifacts, outputs, assets"
   },
   "stencil": {
+    "layer": {
+      "flow": "① Flow (Execution)",
+      "flowHint": "how this service works",
+      "essence": "② Essence injection (Retention)",
+      "essenceHint": "which value, for whom, why"
+    },
     "subActor": "Sub-Actor",
     "dragOntoCanvas": "Drag {{name}} onto the canvas",
     "dropHintIntoCategory": "Drop inside a Category container",
