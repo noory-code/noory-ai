@@ -57,6 +57,17 @@ function edge(
   };
 }
 
+function valueRef(id: string, x: number, y: number): SketchNode {
+  return {
+    id, label: `value:${id}`,
+    x, y, width: 120, height: 60,
+    color: "#ede9fe", shape: "circle", icon: "star",
+    collapsed: false, is_root: false, details_path: null,
+    owner: null, version: "v1.0", _publish_baseline: null,
+    kind: "value_ref", ref_value_id: "core",
+  } as unknown as SketchNode;
+}
+
 function doc(nodes: SketchNode[], edges: SketchEdge[]): CanvasDoc {
   return {
     canvas_id: "test", canvas_kind: "service_detail",
@@ -172,5 +183,27 @@ describe("actorAnchoredLayout (D-2026-05-28-J)", () => {
     const out = actorAnchoredLayout(d);
     expect(out.nodes[0].x).toBe(100);
     expect(out.nodes[0].y).toBe(200);
+  });
+
+  it("anchors an injection node (foundation ref) by its targetHandle, not in the step rank (D-2026-05-30-G)", () => {
+    const d = doc(
+      [actor("U", -500, 0), step("entry", 0, 0), step("s2", 0, 0), valueRef("hum", 9999, 9999)],
+      [
+        edge("U", "entry", "r", "l"),
+        edge("entry", "s2", "r", "l"),
+        edge("hum", "entry", "b", "t"), // injection: 유머 bottom → entry top
+      ],
+    );
+    const out = actorAnchoredLayout(d);
+    const entry = out.nodes.find((n) => n.id === "entry")!;
+    const s2 = out.nodes.find((n) => n.id === "s2")!;
+    const hum = out.nodes.find((n) => n.id === "hum")!;
+    const entryCx = entry.x + entry.width / 2;
+    const humCx = hum.x + hum.width / 2;
+    // Anchored ABOVE entry (targetHandle "t"): centred on entry's column, above it.
+    expect(Math.abs(humCx - entryCx), "injection centred on target column").toBeLessThan(60);
+    expect(hum.y + hum.height, "injection sits above the target").toBeLessThanOrEqual(entry.y + 5);
+    // The step sequence is unaffected — s2 still ranks to the right of entry.
+    expect(s2.x, "entry → s2 sequence intact").toBeGreaterThan(entry.x);
   });
 });

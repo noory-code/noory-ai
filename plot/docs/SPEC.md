@@ -209,6 +209,22 @@ BFS path. Behaviour:
 - Orphan nodes (no incident step edges — operator-side placeholder
   actors, the hidden root-service, isolated notes) keep their
   existing positions.
+- **Injection nodes are anchored, not ranked (v0.28.4, D-2026-05-30-G).**
+  A foundation-injection edge (source = `mission_ref` / `value_ref` /
+  `identity_ref`, per D-2026-05-30-D) is excluded from the dagre step
+  rank; its source node is placed beside its target on the side the
+  edge's `targetHandle` dictates (`t` → above, `b` → below, `l` → left,
+  `r` → right; ≈ 160 px gap). So 유머 (Humor) drawn into the entry's
+  **top** lands *above* the entry, not swept left into the rank.
+
+  This realises the **layout anchor priority** (user 2026-05-30:
+  *"사람, 액터가 1등이고 그다음은 스텝 디시전 등이 우선순위"*):
+  **① actor** (preserved anchor) → **② step / decision** (dagre rank)
+  → **③ injection overlay** (anchored beside its target, placed last).
+  Tier 3 never displaces a tier-1 actor or a tier-2 step. This is the
+  2-layer essence model at the layout level: the concrete flow (1층 /
+  Execution) is ranked; the essence injection (2층 / Retention) is an
+  overlay anchored onto it.
 
 Why this came before the mindmap BFS: `ServiceDetail`'s `pickAnchor`
 falls back to the hidden root-service, which is disconnected from

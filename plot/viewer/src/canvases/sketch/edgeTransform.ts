@@ -9,6 +9,7 @@
 // passes true (and supplies serviceRef); other wrappers pass false.
 import { MarkerType, type Edge } from "reactflow";
 import type { CanvasDoc } from "../../types";
+import { FOUNDATION_REF_KINDS } from "../../flow/foundationRefKinds";
 import { VALUE_FORM_COLORS } from "../SketchEdgeModal";
 
 export interface EdgeTransformInput {
@@ -31,10 +32,7 @@ export interface EdgeTransformInput {
 }
 
 // v0.28.1 (D-2026-05-30-D) — foundation refs whose outgoing edges read
-// as "this essence fires here". ``actor_ref`` is excluded: the
-// user-side actor_ref → entry subject edge is the sequence anchor, not
-// an injection.
-const FOUNDATION_REF_KINDS = new Set<string>(["mission_ref", "value_ref", "identity_ref"]);
+// as "this essence fires here". Shared SSOT in flow/foundationRefKinds.
 const INJECTION_STROKE = "#8b5cf6"; // violet-500
 
 export function edgeTransform(input: EdgeTransformInput): Edge[] {

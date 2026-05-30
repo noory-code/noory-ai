@@ -22,6 +22,11 @@
 
 import dagre from "dagre";
 import type { CanvasDoc, SketchNode } from "../types";
+import { FOUNDATION_REF_KINDS } from "./foundationRefKinds";
+
+// v0.28.3 (D-2026-05-30-G) — gap (centre-to-centre) from an injection
+// node to its target, in the targetHandle direction.
+const INJECTION_GAP = 160;
 
 export type AnchorDirection = "LR" | "RL" | "TB" | "BT";
 
@@ -120,10 +125,21 @@ export function actorAnchoredLayout(doc: CanvasDoc): CanvasDoc {
   });
   g.setDefaultEdgeLabel(() => ({}));
 
-  // Step-graph = every node connected by an edge that doesn't originate
-  // from the anchor actor (those are the subject edges). The anchor
-  // itself is never sent to dagre — its position is preserved.
-  const stepEdges = doc.edges.filter((e) => e.source !== actor.id);
+  // v0.28.3 (D-2026-05-30-G) — layout anchor priority: actor (1) > step
+  // / decision (2) > injection overlay (3). Foundation-injection edges
+  // (source = mission_ref / value_ref / identity_ref) are a 2nd-layer
+  // essence overlay, NOT part of the user-interaction sequence — so
+  // they are excluded from the dagre step rank and their source nodes
+  // are anchored beside their target by the targetHandle (below).
+  const kindById = new Map(doc.nodes.map((n) => [n.id, n.kind]));
+  const isInjectionEdge = (e: CanvasDoc["edges"][number]): boolean =>
+    FOUNDATION_REF_KINDS.has(kindById.get(e.source) ?? "");
+  const injectionEdges = doc.edges.filter(isInjectionEdge);
+
+  // Step-graph = every node connected by a sequence edge: not from the
+  // anchor actor (those are subject edges) and not an injection edge.
+  // The anchor itself is never sent to dagre — its position is preserved.
+  const stepEdges = doc.edges.filter((e) => e.source !== actor.id && !isInjectionEdge(e));
   const stepConnectedIds = new Set<string>();
   for (const e of stepEdges) {
     stepConnectedIds.add(e.source);
@@ -163,18 +179,50 @@ export function actorAnchoredLayout(doc: CanvasDoc): CanvasDoc {
   const dx = targetEntryCenterX - entryDagre.x;
   const dy = targetEntryCenterY - entryDagre.y;
 
+  // Tier 1-2: final top-left positions for the dagre-placed step nodes.
+  const placedFinal = new Map<string, { x: number; y: number }>();
+  for (const n of doc.nodes) {
+    if (n.id === actor.id) continue;
+    const placed = g.node(n.id);
+    if (!placed) continue;
+    placedFinal.set(n.id, { x: placed.x + dx - n.width / 2, y: placed.y + dy - n.height / 2 });
+  }
+
+  // Final CENTRE of a target node (actor anchor / dagre-placed step /
+  // untouched orphan), used to anchor injection nodes beside it.
+  const targetCenter = (id: string): { cx: number; cy: number } | null => {
+    if (id === actor.id) return { cx: actorCenterX, cy: actorCenterY };
+    const p = placedFinal.get(id);
+    const node = doc.nodes.find((n) => n.id === id);
+    if (!node) return null;
+    if (p) return { cx: p.x + node.width / 2, cy: p.y + node.height / 2 };
+    return { cx: node.x + node.width / 2, cy: node.y + node.height / 2 };
+  };
+
+  // Tier 3: anchor each injection-source node beside its target on the
+  // side the edge's targetHandle dictates (t → above, b → below,
+  // l → left, r → right). First injection edge per source wins.
+  for (const e of injectionEdges) {
+    const src = doc.nodes.find((n) => n.id === e.source);
+    if (!src || placedFinal.has(src.id)) continue;
+    const tc = targetCenter(e.target);
+    if (!tc) continue;
+    let cx = tc.cx;
+    let cy = tc.cy;
+    const th = (e.targetHandle ?? "").toLowerCase();
+    if (th.startsWith("t")) cy = tc.cy - INJECTION_GAP;
+    else if (th.startsWith("b")) cy = tc.cy + INJECTION_GAP;
+    else if (th.startsWith("l")) cx = tc.cx - INJECTION_GAP;
+    else if (th.startsWith("r")) cx = tc.cx + INJECTION_GAP;
+    else cy = tc.cy - INJECTION_GAP; // default: above
+    placedFinal.set(src.id, { x: cx - src.width / 2, y: cy - src.height / 2 });
+  }
+
   return {
     ...doc,
     nodes: doc.nodes.map((n) => {
-      // Anchor stays put.
-      if (n.id === actor.id) return n;
-      const placed = g.node(n.id);
-      if (!placed) return n;
-      return {
-        ...n,
-        x: placed.x + dx - n.width / 2,
-        y: placed.y + dy - n.height / 2,
-      };
+      const p = placedFinal.get(n.id);
+      return p ? { ...n, x: p.x, y: p.y } : n;
     }),
   };
 }

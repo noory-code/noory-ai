@@ -4,6 +4,48 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.28.4] — 2026-05-30
+
+Layout anchor priority — injection nodes are an overlay, not part of
+the flow rank. The 2-layer essence model (concrete flow + essence
+injection) made concrete at the layout level. [D-2026-05-30-G](./docs/DECISIONS.md).
+
+### Fixed — injection nodes anchored by their handle, not ranked
+
+- In `actorAnchoredLayout`, a foundation-injection edge (source =
+  `mission_ref` / `value_ref` / `identity_ref`) is now **excluded from
+  the dagre step rank**; its source node is anchored beside its target
+  on the side the edge's `targetHandle` dictates (`t` → above,
+  `b` → below, `l` → left, `r` → right; ≈ 160 px). Before, the
+  injection node was swept into the LR rank — so 유머 (Humor) drawn
+  into the entry's top landed to the *left* of the entry instead of
+  *above* it (user: *"유머 정렬이 잘 안되죠? … 위쪽에 연결이 있는데
+  그걸 기준으로 해야죠?"*).
+- Realises the **layout anchor priority** (user: *"사람, 액터가 1등이고
+  그다음은 스텝 디시전 등이 우선순위"*): ① actor (preserved) →
+  ② step / decision (ranked) → ③ injection overlay (anchored last,
+  never displaces ① or ②).
+
+### Changed
+
+- New `viewer/src/flow/foundationRefKinds.ts` — SSOT for the three
+  foundation ref kinds, now shared by `edgeTransform` (injection
+  styling) and `actorAnchoredLayout` (injection anchoring) so they
+  never drift on what counts as an injection.
+
+### Tests
+
+- `viewer/tests/actor-anchored-layout.test.ts` — new case: an
+  injection node is anchored above its target by `targetHandle="t"`,
+  centred on the target column, while the step sequence is unaffected.
+  Red→Green. Full suite green: viewer 617.
+
+### Browser verification (Playwright, Login demo doc)
+
+- After `⊞`, 유머 lands centred above the entry (cx 690 ≈ entry cx 689;
+  bottom 572 ≤ entry top 625) — its top-connection honoured. 0 console
+  errors.
+
 ## [0.28.3] — 2026-05-30
 
 Auto-layout direction-switch buttons — the last open item from the

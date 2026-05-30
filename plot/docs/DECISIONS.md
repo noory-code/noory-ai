@@ -9186,3 +9186,39 @@ but not yet fully eliminated.
   "auto-layout 방향 전환 버튼").
 - **Spec impact:** SPEC §Auto-layout — direction-switch buttons.
 - **Test:** `viewer/tests/subject-direction.test.ts`.
+
+### D-2026-05-30-G — Injection nodes anchored to their target's handle in actor-anchored layout (v0.28.4)
+
+- **What:** in `actorAnchoredLayout`, a **foundation-injection edge**
+  (source kind = `mission_ref` / `value_ref` / `identity_ref`, per
+  D-2026-05-30-D) is **excluded from the dagre step-graph rank**.
+  Instead, the injection-source node is **anchored beside its target**
+  on the side the edge's `targetHandle` dictates: `t` → above,
+  `b` → below, `l` → left, `r` → right (centre-aligned on the other
+  axis, ≈ 160 px gap). The actor subject edge stays the layout origin.
+- **Why:** the user drew 유머 (Humor `value_ref`) above the entry
+  step, connecting 유머's bottom → entry's **top** (`tH=t`). But the
+  layout treated `유머 → entry` as a sequence edge and dagre swept 유머
+  into the LR rank to the *left* of entry, destroying the user's
+  "above" placement. User 2026-05-30: *"유머 정렬이 잘 안되죠? 로그인
+  페이지 진입의 위쪽에 연결이 있는데 그걸 기준으로 해야죠?"* +
+  *"앵커의 우선순위를 둬야겠네"* — the injection connection-anchor must
+  take priority over the dagre rank.
+- **Consistent with D-2026-05-30-D:** injection is a *cross-cutting
+  essence overlay* on the flow, not part of the user-interaction
+  sequence — so it should not be ranked with the steps. The handle the
+  user drew into is the authored intent; the layout honours it.
+- **Layout anchor priority (user 2026-05-30: *"사람, 액터가 1등이고
+  그다음은 스텝 디시전 등이 우선순위"*):**
+  1. **Actor (human)** — top priority; its `(x, y)` is the preserved
+     root anchor.
+  2. **Step / Decision** — the flow sequence; dagre-ranked from the
+     actor.
+  3. **Injection nodes** (foundation refs: `mission_ref` /
+     `value_ref` / `identity_ref`) — lowest priority; placed *after*
+     tiers 1-2, anchored beside their target by the edge handle. They
+     never displace an actor or a step.
+- **Approval:** Accepted — user 2026-05-30 (directed the fix).
+- **Spec impact:** SPEC §Actor-anchored layout — injection-node
+  anchoring.
+- **Test:** `viewer/tests/actor-anchored-layout.test.ts` (new case).
