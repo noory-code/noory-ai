@@ -456,6 +456,9 @@ class StepNode(BaseNodeFields):
     order: int | None = None
     outcome: str = ""
     body: str = ""
+    # v0.28.2 (D-2026-05-30-E): outcome valence for negative-case
+    # (failure) visual distinction. "neutral" = happy-path default.
+    polarity: Literal["positive", "negative", "neutral"] = "neutral"
 
 
 class DecisionNode(BaseNodeFields):

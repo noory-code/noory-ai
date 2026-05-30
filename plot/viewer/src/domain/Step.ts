@@ -10,11 +10,18 @@ import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
 
+/** v0.28.2 (D-2026-05-30-E) — outcome valence for negative-case
+ *  (failure) visual distinction. "neutral" = the default happy-path
+ *  step (no tint); "negative" = a failure result (red); "positive" =
+ *  a success result (green). */
+export type StepPolarity = "positive" | "negative" | "neutral";
+
 export interface StepJson extends BaseFieldsJson {
   kind: "step";
   order: number | null;
   outcome: string;
   body: string;
+  polarity: StepPolarity;
 }
 
 export class Step implements BaseFields {
@@ -38,17 +45,20 @@ export class Step implements BaseFields {
   readonly order: number | null;
   readonly outcome: string;
   readonly body: string;
+  readonly polarity: StepPolarity;
 
   private constructor(
     base: BaseFields,
     order: number | null,
     outcome: string,
     body: string,
+    polarity: StepPolarity,
   ) {
     Object.assign(this, base);
     this.order = order;
     this.outcome = outcome;
     this.body = body;
+    this.polarity = polarity;
   }
 
   static fromJson(raw: unknown): Step {
@@ -63,7 +73,8 @@ export class Step implements BaseFields {
     const order = readNullableInt(obj.order, "order", raw);
     const outcome = readOptionalString(obj.outcome, "outcome", raw);
     const body = readOptionalString(obj.body, "body", raw);
-    return new Step(base, order, outcome, body);
+    const polarity = readPolarity(obj.polarity, raw);
+    return new Step(base, order, outcome, body, polarity);
   }
 
   toJson(): StepJson {
@@ -86,8 +97,22 @@ export class Step implements BaseFields {
       order: this.order,
       outcome: this.outcome,
       body: this.body,
+      polarity: this.polarity,
     };
   }
+}
+
+const POLARITIES: ReadonlySet<string> = new Set(["positive", "negative", "neutral"]);
+
+function readPolarity(value: unknown, raw: unknown): StepPolarity {
+  if (value === undefined || value === null) return "neutral";
+  if (typeof value !== "string" || !POLARITIES.has(value)) {
+    throw new DomainParseError(
+      `Step.polarity must be one of positive|negative|neutral, got ${JSON.stringify(value)}`,
+      raw,
+    );
+  }
+  return value as StepPolarity;
 }
 
 function readNullableInt(value: unknown, field: string, raw: unknown): number | null {

@@ -419,6 +419,12 @@ is a workflow more than an arena.
   - `order` — sequence number.
   - `actor` — `actor_ref` of who acts in this step.
   - `outcome` — the state after the step.
+  - `polarity` — `positive` / `negative` / `neutral` (default
+    `neutral`), v0.28.2 (D-2026-05-30-E). Marks a **result** step's
+    valence so failure cases read at a glance: `negative` tints the
+    node red, `positive` green, `neutral` keeps the user's colour. The
+    failure *reason* is the label / `outcome` text. Lets the flow model
+    negative cases (로그인 실패 등), not just the happy path.
 
 ### `decision` — branch point (new in v0.28.0)
 

@@ -4,6 +4,47 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.28.2] — 2026-05-30
+
+Negative-case (failure) visual distinction — the flow can now model
+failure paths, not just the happy path. [D-2026-05-30-E](./docs/DECISIONS.md).
+
+### Added — `step.polarity`
+
+- New `step` field `polarity` (`positive` / `negative` / `neutral`,
+  default `neutral`). A `negative` result step renders a red tint
+  (`#fee2e2`), a `positive` step a green tint (`#dcfce7`); `neutral`
+  keeps the user's own colour. A `decision` branches to result steps;
+  marking the failure result `negative` makes success vs failure read
+  at a glance. The failure *reason* is the step's label / `outcome`
+  (no reason = 단순 실패; with = 이유 있는 실패).
+- **Opt-in, so PHILOSOPHY P10 holds:** default `neutral` overrides
+  nothing; the tint only applies once the user sets polarity.
+  Precedent: `service.target_side` tints a service node the same way.
+- The failure mark lives on the **result node**, not the edge — a
+  failure is a property of where the flow lands. `decision` does not
+  carry polarity (decisions are neutral forks).
+
+### Changed
+
+- `viewer/src/canvases/sketch/polarityTint.ts` (new pure helper);
+  `useNodesMemo` applies it to `step` nodes (beside the orphan /
+  `target_side` tints). `StepInspector` gains a polarity selector.
+- `Step` domain class + `plot_mcp/models.py::StepNode` gain `polarity`.
+- i18n: `inspector.field.polarity` + `fieldHint.polarity` +
+  `inspector.polarity.{neutral,positive,negative}` in en + ko.
+
+### Tests
+
+- `viewer/tests/polarity-tint.test.ts` (new) — tint per polarity +
+  Step parse default/round-trip. Red→Green before source. Green:
+  viewer 607, server 438, schema-parity 18, mypy clean.
+
+### Browser verification (Playwright, Login demo doc)
+
+- A `negative` result step renders red (`rgb(254, 226, 226)`); 0
+  console errors. (Verification node removed from the demo doc after.)
+
 ## [0.28.1] — 2026-05-30
 
 Foundation-injection edges — the other half of the "ServiceDetail =

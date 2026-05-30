@@ -25,6 +25,7 @@ import type {
 } from "../../types";
 import type { BaseNodeData } from "../nodes/BaseNode";
 import { PROJECT_ANCHOR_ID } from "./constants";
+import { polarityTint } from "./polarityTint";
 
 export interface UseNodesMemoArgs {
   doc: CanvasDoc;
@@ -155,6 +156,13 @@ export function useNodesMemo({
         if (n.target_side === "operator") visualColor = "#dbeafe";
         else if (n.target_side === "user") visualColor = "#fee2e2";
         else if (n.target_side === "both") visualColor = "#ede9fe";
+      }
+      // v0.28.2 (D-2026-05-30-E) — negative-case (failure) tint on a
+      // step. Opt-in: only overrides when the user set polarity away
+      // from "neutral" (polarityTint returns null otherwise).
+      if (!isOrphan && n.kind === "step") {
+        const tint = polarityTint(n.polarity);
+        if (tint) visualColor = tint;
       }
       const visualLabel = isOrphan ? `⚠ ${baseLabel}` : baseLabel;
       // v0.12.1 — kinds whose double-click should drill (not open the

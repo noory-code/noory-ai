@@ -1052,6 +1052,19 @@ A `step` node on the ServiceDetail canvas renders, top-to-bottom:
   work is NOT a step; it lives in `step.outcome`" legible without
   opening the Inspector.
 
+### Negative-case (failure) tint (v0.28.2, D-2026-05-30-E)
+
+A `step` carries `polarity` (`positive` / `negative` / `neutral`,
+default `neutral`) so the flow can model **negative cases**, not just
+the happy path. A `decision` branches to result steps; a `negative`
+result renders a **red tint** (`#fee2e2`), a `positive` result a green
+tint (`#dcfce7`). `neutral` keeps the user's own colour — the tint is
+**opt-in** (the user sets polarity), so it does not violate the "user
+controls every colour" rule. The failure *reason* is the step's label
+/ `outcome` text (no reason = "단순 실패"; with = "이유 있는 실패").
+`decision` does not carry polarity — decisions are neutral forks, not
+outcomes.
+
 ### Decision node (v0.28.0, D-2026-05-30-C)
 
 A `decision` is a flowchart branch point, dropped from the stencil's

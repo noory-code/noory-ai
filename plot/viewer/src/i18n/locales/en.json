@@ -117,6 +117,11 @@
     "decision": {
       "branchHint": "Branches live on the outgoing edges — draw a labelled edge per path (성공 / 실패 / choice)."
     },
+    "polarity": {
+      "neutral": "Neutral (default)",
+      "positive": "Positive — success",
+      "negative": "Negative — failure"
+    },
     "label": "Label",
     "deleteNode": "Delete node",
     "deleteShort": "✕ delete",
@@ -165,6 +170,7 @@
       "target": "Target",
       "measurement": "Measurement",
       "order": "Order",
+      "polarity": "Outcome",
       "gives": "Gives",
       "receives": "Receives",
       "notesInContext": "Notes (in context)",
@@ -185,6 +191,7 @@
       "trigger": "what kicks it off",
       "how": "how it works",
       "outcome": "observable end state",
+      "polarity": "success / failure / neutral — tints failure results red",
       "actorPermissionsShorthand": "C/R/U/D shorthand recommended (e.g. <code>RUD</code>)",
       "producer": "actor that creates this artifact",
       "consumer": "actor that uses this artifact",

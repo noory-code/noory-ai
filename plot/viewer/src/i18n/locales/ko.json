@@ -117,6 +117,11 @@
     "decision": {
       "branchHint": "분기는 나가는 선에 표현됩니다 — 경로마다 라벨 단 선을 그으세요 (성공 / 실패 / 선택지)."
     },
+    "polarity": {
+      "neutral": "중립 (기본)",
+      "positive": "긍정 — 성공",
+      "negative": "부정 — 실패"
+    },
     "label": "라벨",
     "deleteNode": "노드 삭제",
     "deleteShort": "✕ 삭제",
@@ -165,6 +170,7 @@
       "target": "목표",
       "measurement": "측정",
       "order": "순서",
+      "polarity": "결과",
       "gives": "주는 것",
       "receives": "받는 것",
       "notesInContext": "이 컨텍스트에서의 메모",
@@ -185,6 +191,7 @@
       "trigger": "무엇이 시작시키는가",
       "how": "어떻게 동작하는가",
       "outcome": "관찰 가능한 최종 상태",
+      "polarity": "성공 / 실패 / 중립 — 실패 결과는 빨강 틴트",
       "actorPermissionsShorthand": "C/R/U/D 약어 권장 (예: <code>RUD</code>)",
       "producer": "이 산출물을 만드는 액터",
       "consumer": "이 산출물을 사용하는 액터",

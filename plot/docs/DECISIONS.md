@@ -9127,3 +9127,35 @@ but not yet fully eliminated.
   보이면 좋겠다를 이렇게 표현할 수 있다는거구요" + "네 가시죠").
 - **Spec impact:** SPEC §ServiceDetail edges — injection edge styling.
 - **Test:** `viewer/tests/edge-transform.test.ts`.
+
+### D-2026-05-30-E — `step.polarity` for negative-case (failure) visual distinction (v0.28.2)
+
+- **What:** add a `polarity` field to `step` — `"positive"` /
+  `"negative"` / `"neutral"` (default `"neutral"`). A `negative` step
+  renders a red tint, a `positive` step a green tint; `neutral` keeps
+  the user's chosen colour (no override). The failure *reason* is the
+  step's label / `outcome` text ("단순 실패" = negative step with no
+  reason text; "이유 있는 실패" = with).
+- **Why:** the service flow must model **negative cases**, not just
+  the happy path (user 2026-05-30: *"서비스 설계가 파지티브 케이스만
+  있는데 네가티브 케이스도 있어야죠. 로그인 실패 했을 때, 등등"* +
+  *"흐름에 케이스 넣어야죠"*). A `decision` already branches to
+  failure-result steps; this gives those results a visible failure
+  mark so success vs failure reads at a glance.
+- **Where the mark lives:** on the **result node**, not the edge — a
+  failure is a property of where the flow *lands*, not of the line.
+  (Alternative B, marking the failure edge, was rejected: it reopens
+  the edge-semantics field question and is less intuitive than the
+  terminal node. User picked A.)
+- **Opt-in, so Rule 7 holds:** default `neutral` overrides nothing;
+  the tint only applies once the user sets polarity. Precedent:
+  `service.target_side` tints a service node the same way.
+- **No new kind:** a small field on the existing `step` (sibling of
+  `order` / `outcome` / `body`), via `plot-feature-tdd`, not
+  entity-template. `decision` does NOT get polarity — decisions are
+  neutral forks, not outcomes (MECE).
+- **Approval:** Accepted — user 2026-05-30 ("추천으로 갑니다").
+- **Spec impact:** CONCEPTS §`step` typed fields; SPEC §ServiceDetail
+  step rendering (negative-case tint).
+- **Test:** `viewer/tests/polarity-tint.test.ts` (pure tint fn) +
+  Step round-trip (entity-roundtrip default) + schema-parity.

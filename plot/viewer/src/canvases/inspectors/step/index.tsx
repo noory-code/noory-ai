@@ -59,6 +59,23 @@ function StepFields({ node, onPatchNode }: StepFieldsProps) {
           placeholder="이 단계 끝나면 어떤 상태?"
         />
       </label>
+      <label className="mb-2 block">
+        <span className="text-xs font-semibold text-slate-700">
+          {t("inspector.field.polarity")}
+        </span>
+        <span className="ml-1 text-[10px] text-slate-500">
+          — {t("inspector.fieldHint.polarity")}
+        </span>
+        <select
+          value={node.polarity ?? "neutral"}
+          onChange={(e) => onPatchNode({ polarity: e.target.value as StepJson["polarity"] })}
+          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        >
+          <option value="neutral">{t("inspector.polarity.neutral")}</option>
+          <option value="positive">{t("inspector.polarity.positive")}</option>
+          <option value="negative">{t("inspector.polarity.negative")}</option>
+        </select>
+      </label>
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
