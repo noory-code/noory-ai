@@ -30,6 +30,8 @@
   "sidebar": {
     "projects": "Projects",
     "newProject": "+ Add a Project",
+    "newProjectNamePrompt": "Name your new project",
+    "newProjectNamePlaceholder": "e.g. Banana",
     "rootDir": "root",
     "noProjects": "(none yet)",
     "noTagsHint": "(no tags yet)",

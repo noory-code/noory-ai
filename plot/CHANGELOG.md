@@ -4,6 +4,31 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.36.0] — 2026-05-31
+
+### Added — project creation asks WHERE + a name, on both the web viewer and via a skill
+
+- **Web viewer (D-2026-05-31-Y):** "+ Add a Project" → pick a directory →
+  now **prompts for the project name** (in-app dialog) instead of silently
+  creating "Untitled". Cancelling the name prompt aborts creation; opening an
+  existing project (the dir already holds one) does NOT prompt. New i18n keys
+  `sidebar.newProjectNamePrompt` / `newProjectNamePlaceholder` (en + ko).
+- **`/plot-new-project` skill (D-2026-05-31-Z):** a user-invocable skill that
+  creates a Plot project in a **chosen directory** and opens it. Built for the
+  monorepo case (Banas + Banana side by side): the plugin is installed once at
+  the monorepo root, but each app service gets its own `.plot/` next to its
+  code. The skill asks WHERE (which subdir) + a name, builds a unique
+  `project_id`, calls `create_project_tool`, then `open_canvas`. Never invents
+  a directory.
+
+These two share the same server foundation (`create_project` /
+`create_project_tool`); the web picker and the skill are the two front doors
+to it.
+
+Tests: 3 new `project-create-name.test.tsx` cases (prompt+create, cancel,
+open-existing-no-prompt); `create-in-dir.test.tsx` updated for the name
+prompt. viewer 714/714 green; tsc clean.
+
 ## [0.35.1] — 2026-05-31
 
 ### Fixed — "Add a Project" picker no longer shows "열기" for an empty `.plot` (D-2026-05-31-X)

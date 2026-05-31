@@ -30,6 +30,8 @@
   "sidebar": {
     "projects": "프로젝트",
     "newProject": "+ 프로젝트 추가",
+    "newProjectNamePrompt": "새 프로젝트 이름을 정하세요",
+    "newProjectNamePlaceholder": "예: 바나나",
     "rootDir": "루트",
     "noProjects": "(아직 없음)",
     "noTagsHint": "(태그 없음)",

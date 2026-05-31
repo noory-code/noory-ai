@@ -215,10 +215,17 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         void openProject(existing.id);
         return;
       }
+      // v0.36.0 (D-2026-05-31-Y) — ask for the project name instead of
+      // silently creating "Untitled". Cancelling the prompt aborts creation.
+      const name = await dialog.prompt({
+        message: t("sidebar.newProjectNamePrompt"),
+        placeholder: t("sidebar.newProjectNamePlaceholder"),
+      });
+      if (name === null) return;
       try {
         const id = `proj-${Date.now().toString(36)}`;
         const targetPath = joinWorkspaceDir(workspaceRoot, targetDir);
-        const created = await createProject(targetPath, id, "Untitled");
+        const created = await createProject(targetPath, id, name.trim() || "Untitled");
         setActiveId(created.id);
         await loadList(); // rebuilds dirMapRef incl. created.id → targetDir
         await openProject(created.id);
@@ -226,7 +233,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [workspaceRoot, summaries, loadList, openProject, onError, setActiveId],
+    [workspaceRoot, summaries, loadList, openProject, onError, setActiveId, dialog, t],
   );
 
   const rename = useCallback(

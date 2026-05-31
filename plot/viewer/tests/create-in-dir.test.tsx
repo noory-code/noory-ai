@@ -10,6 +10,13 @@ import type { ProjectHistoryApi } from "../src/canvases/useProjectHistory";
 
 vi.mock("../src/api");
 
+// v0.36.0 (D-2026-05-31-Y) — create() now prompts for a name. Stub the
+// dialog so this dir-routing test resolves a name without UI.
+const promptMock = vi.fn().mockResolvedValue("New Service");
+vi.mock("../src/shell/dialog/DialogProvider", () => ({
+  useDialog: () => ({ prompt: promptMock, confirm: vi.fn(), alert: vi.fn() }),
+}));
+
 const ROOT = "/repo";
 
 function historyStub(): ProjectHistoryApi {
@@ -53,7 +60,7 @@ describe("useProject.create(targetDir) (D-2026-05-31-N)", () => {
     expect(api.createProject).toHaveBeenCalledWith(
       "/repo/services/new-svc",
       expect.stringMatching(/^proj-/),
-      "Untitled",
+      "New Service",
     );
   });
 

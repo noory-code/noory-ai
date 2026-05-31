@@ -9911,3 +9911,39 @@ but not yet fully eliminated.
 - **Note:** pre-existing unrelated red `test_pre_commit_gate` (god-dispatch
   scan over `useFlowHandlers.ts`) is failing since before this change — not
   introduced here; tracked separately.
+
+### D-2026-05-31-Y — Creating a project prompts for its name (web viewer)
+
+- **What:** `useProject.create(targetDir)` now opens the in-app
+  `dialog.prompt` for a name before calling `createProject`, instead of the
+  hardcoded `"Untitled"`. Cancelling the prompt (`null`) aborts creation. The
+  open-existing branch (the chosen dir already holds a project) is unchanged
+  and does NOT prompt.
+- **Why:** silently naming every new project "Untitled" was poor UX; the name
+  is the first thing the user wants to set. Now that the dialog system exists
+  (D-2026-05-31-W) the prompt is one line + reuses the styled modal.
+- **Approval:** Accepted by user, 2026-05-31 (*"둘다 만들어두세요"* — the web
+  half of the project-creation workflow). Part of
+  [[project_plot_project_creation_model]].
+- **Spec impact:** none (UX). Covered by `project-create-name.test.tsx`.
+
+### D-2026-05-31-Z — `/plot-new-project` skill (create a project in a chosen dir)
+
+- **What:** new user-invocable skill `skills/plot-new-project/SKILL.md`. It
+  creates a Plot project in a directory the user picks and opens it. Steps:
+  resolve the workspace (monorepo) root → pick the target subdir (ask, or use
+  `discover_workspace_projects` to show what already exists; never invent a
+  dir) → ask a name → build a unique `project_id` → `create_project_tool` →
+  `open_canvas`. Reports the on-disk `{dir}/.plot/{id}/` location.
+- **Why:** the MCP/skill front door to project creation, mirroring the web
+  viewer's "+ Add a Project" picker. The user wants BOTH front doors
+  (*"아 둘다 있어야하는데?"*). Built for the monorepo case — plugin installed
+  once at the root, each app service (Banas + Banana) with its own `.plot/` in
+  its subdir, so the "어디에 만들까?" step is explicit.
+- **Distinct from `plot-new-sketch`:** that older skill targets the legacy
+  sketch model (`create_sketch_tool`, `.plot/sketches/`); this one targets the
+  v0.8+ project model (`create_project_tool`, `.plot/{id}/`).
+- **Approval:** Accepted by user, 2026-05-31. Part of
+  [[project_plot_project_creation_model]].
+- **Spec impact:** none (tooling). No automated test (skills are markdown;
+  matches `plot-new-sketch`).
