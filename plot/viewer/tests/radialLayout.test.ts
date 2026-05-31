@@ -218,3 +218,84 @@ describe("computeRadialLayout — ring assignment", () => {
     }
   });
 });
+
+// v0.34.8 (D-2026-05-31-V) — angleMode "preserve" is the floating-canvas
+// (Foundation + Actors) auto-layout: keep each node's CURRENT direction
+// from the hub (no swap), normalise only its distance to a BFS depth ring
+// (deeper node always sits farther out → no edge crossing). Pins option
+// (A) of the 2026-05-31 NEXT_SESSION "자동정렬 위치+깊이 재작업" task.
+describe("computeRadialLayout — angleMode 'preserve'", () => {
+  const hubCx = 40;
+  const hubCy = 18;
+  const centerOf = (positions: Map<string, { x: number; y: number }>, id: string) => {
+    const p = positions.get(id)!;
+    return { cx: p.x + 40, cy: p.y + 18 };
+  };
+  const distOf = (positions: Map<string, { x: number; y: number }>, id: string) => {
+    const { cx, cy } = centerOf(positions, id);
+    return Math.hypot(cx - hubCx, cy - hubCy);
+  };
+
+  it("enforces depth distance — a ring-2 node sits farther than its ring-1 parent even when the user placed it closer", () => {
+    // anchor ← user ← operator. The user dragged operator (depth 2) to a
+    // point CLOSER to the hub than user (depth 1). Handle-based / raw
+    // placement would let operator sit between hub and user (crossing);
+    // the depth ring must push operator out beyond user.
+    const user = mkNode("user", 200, 0); // centre (240, 18)
+    const operator = mkNode("operator", 100, 0); // centre (140, 18) — closer
+    const { positions } = computeRadialLayout({
+      nodes: [user, operator],
+      edges: [mkEdge("e1", "__hub__", "user"), mkEdge("e2", "user", "operator")],
+      hub: HUB,
+      angleMode: "preserve",
+    });
+    expect(distOf(positions, "operator")).toBeGreaterThan(distOf(positions, "user"));
+  });
+
+  it("preserves each node's side — core_value left + mission top do NOT swap", () => {
+    // Foundation: user put core_value to the LEFT, mission on TOP. The
+    // distribute mode would re-slot them to evenly spaced angles (top +
+    // bottom). Preserve must keep core on the left, mission on top.
+    const coreValue = mkNode("core", -140, 0); // centre (-100, 18) → left of hub
+    const mission = mkNode("mission", 0, -118); // centre (40, -100) → above hub
+    const { positions } = computeRadialLayout({
+      nodes: [coreValue, mission],
+      edges: [mkEdge("e1", "__hub__", "core"), mkEdge("e2", "__hub__", "mission")],
+      hub: HUB,
+      angleMode: "preserve",
+    });
+    const core = centerOf(positions, "core");
+    const miss = centerOf(positions, "mission");
+    // core stays on the left half, mission stays on the top half.
+    expect(core.cx).toBeLessThan(hubCx);
+    expect(miss.cy).toBeLessThan(hubCy);
+    // and they are roughly orthogonal — core ~horizontal, mission ~vertical.
+    expect(Math.abs(core.cy - hubCy)).toBeLessThan(Math.abs(core.cx - hubCx));
+    expect(Math.abs(miss.cx - hubCx)).toBeLessThan(Math.abs(miss.cy - hubCy));
+  });
+
+  it("normalises distance — two ring-1 nodes the user placed at different radii land on the same ring", () => {
+    const near = mkNode("near", 90, 0); // centre (130, 18) — close
+    const far = mkNode("far", 400, 0); // centre (440, 18) — far, same side
+    const { positions } = computeRadialLayout({
+      nodes: [near, far],
+      edges: [mkEdge("e1", "__hub__", "near"), mkEdge("e2", "__hub__", "far")],
+      hub: HUB,
+      angleMode: "preserve",
+    });
+    expect(Math.abs(distOf(positions, "near") - distOf(positions, "far"))).toBeLessThan(1e-6);
+  });
+
+  it("default angleMode (distribute) is unchanged — single neighbour still snaps to the top", () => {
+    // Regression guard: omitting angleMode must keep the Services /
+    // ServiceDetail behaviour byte-identical.
+    const { positions } = computeRadialLayout({
+      nodes: [mkNode("a", 500, 500)],
+      edges: [mkEdge("e1", "__hub__", "a")],
+      hub: HUB,
+    });
+    const p = positions.get("a")!;
+    expect(Math.round(p.x)).toBe(0);
+    expect(Math.round(p.y)).toBe(-120);
+  });
+});

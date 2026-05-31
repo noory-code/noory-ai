@@ -42,6 +42,17 @@ export interface RadialLayoutInput {
    *  Defaults to 40 — chosen so an 80×36 default node has roughly its
    *  own width again between siblings on the inner ring. */
   ringGap?: number;
+  /** v0.34.8 (D-2026-05-31-V) — angle source.
+   *  - ``"distribute"`` (default): ring 1 members equal-spaced on the
+   *    full circle from -π/2; ring k>=2 fans around its parent's angle.
+   *    Used by Services / ServiceDetail (``"radial"`` layout button).
+   *  - ``"preserve"``: each reachable node keeps the angle it CURRENTLY
+   *    has from the hub centre; only its distance is normalised to its
+   *    BFS depth ring. This is the floating-canvas (Foundation + Actors)
+   *    auto-layout — it preserves the side the user placed each node on
+   *    (no swap) while guaranteeing a deeper node sits farther out (no
+   *    edge crossing). See SPEC.md §Auto-layout. */
+  angleMode?: "distribute" | "preserve";
 }
 
 export interface RadialLayoutOutput {
@@ -118,41 +129,63 @@ export function computeRadialLayout(input: RadialLayoutInput): RadialLayoutOutpu
   const positions = new Map<string, { x: number; y: number }>();
   const sortedRings = [...ringMembers.keys()].sort((a, b) => a - b);
 
+  const angleMode = input.angleMode ?? "distribute";
+
+  // v0.34.8 (D-2026-05-31-V) — "preserve" mode: each reachable node
+  // keeps the angle it currently has from the hub centre. Distance is
+  // still normalised below to the BFS depth ring. A node sitting exactly
+  // on the hub centre (degenerate) falls back to -π/2 (top) so the result
+  // stays deterministic.
   const angleByNode = new Map<string, number>();
-  for (const k of sortedRings) {
-    const ids = ringMembers.get(k)!;
-    if (k === 1) {
-      const count = ids.length;
-      const angleStep = (2 * Math.PI) / count;
-      const angleStart = -Math.PI / 2;
-      ids.forEach((id, i) => {
-        angleByNode.set(id, angleStart + i * angleStep);
-      });
-      continue;
+  if (angleMode === "preserve") {
+    const centerById = new Map<string, { x: number; y: number }>();
+    for (const n of nodes) {
+      centerById.set(n.id, { x: n.x + n.width / 2, y: n.y + n.height / 2 });
     }
-    // Ring k>=2: group by parent + fan around parent's angle.
-    const byParent = new Map<string, string[]>();
-    for (const id of ids) {
-      const p = parentOf.get(id) ?? hub.id;
-      const arr = byParent.get(p) ?? [];
-      arr.push(id);
-      byParent.set(p, arr);
+    for (const k of sortedRings) {
+      for (const id of ringMembers.get(k)!) {
+        const c = centerById.get(id);
+        const dx = c ? c.x - hubCx : 0;
+        const dy = c ? c.y - hubCy : 0;
+        angleByNode.set(id, dx === 0 && dy === 0 ? -Math.PI / 2 : Math.atan2(dy, dx));
+      }
     }
-    for (const [parentId, children] of byParent) {
-      children.sort();
-      const parentAngle = angleByNode.get(parentId) ?? -Math.PI / 2;
-      // Fan narrows as the tree deepens — π/(k+1) gives π/3, π/4, π/5
-      // for rings 2, 3, 4. Reads as a tree spreading outward without
-      // siblings from different parents colliding.
-      const fanWidth = Math.PI / (k + 1);
-      if (children.length === 1) {
-        angleByNode.set(children[0], parentAngle);
-      } else {
-        const step = fanWidth / (children.length - 1);
-        const start = parentAngle - fanWidth / 2;
-        children.forEach((id, i) => {
-          angleByNode.set(id, start + i * step);
+  } else {
+    for (const k of sortedRings) {
+      const ids = ringMembers.get(k)!;
+      if (k === 1) {
+        const count = ids.length;
+        const angleStep = (2 * Math.PI) / count;
+        const angleStart = -Math.PI / 2;
+        ids.forEach((id, i) => {
+          angleByNode.set(id, angleStart + i * angleStep);
         });
+        continue;
+      }
+      // Ring k>=2: group by parent + fan around parent's angle.
+      const byParent = new Map<string, string[]>();
+      for (const id of ids) {
+        const p = parentOf.get(id) ?? hub.id;
+        const arr = byParent.get(p) ?? [];
+        arr.push(id);
+        byParent.set(p, arr);
+      }
+      for (const [parentId, children] of byParent) {
+        children.sort();
+        const parentAngle = angleByNode.get(parentId) ?? -Math.PI / 2;
+        // Fan narrows as the tree deepens — π/(k+1) gives π/3, π/4, π/5
+        // for rings 2, 3, 4. Reads as a tree spreading outward without
+        // siblings from different parents colliding.
+        const fanWidth = Math.PI / (k + 1);
+        if (children.length === 1) {
+          angleByNode.set(children[0], parentAngle);
+        } else {
+          const step = fanWidth / (children.length - 1);
+          const start = parentAngle - fanWidth / 2;
+          children.forEach((id, i) => {
+            angleByNode.set(id, start + i * step);
+          });
+        }
       }
     }
   }

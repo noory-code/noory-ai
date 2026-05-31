@@ -9,15 +9,16 @@
 
 ## Active queue
 
-### `자동정렬 위치+깊이 재작업 (플로팅 캔버스)` (TOP priority — NEXT TASK, filed 2026-05-31 end-of-session)
+### `자동정렬 위치+깊이 재작업 (플로팅 캔버스)` (DONE — option A shipped v0.34.8 + user-accepted 2026-05-31)
 
-> **Trigger:** user says **"정렬"** / **"자동정렬"** / **"레이아웃"** /
-> **"layout"** / **"플로팅"** / **"다음"** as the first / near-first message.
->
-> **Filed:** 2026-05-31 end of session. User: *"그래 해봐라 해보고
-> 리뷰하고 제거할지 볼게. 근데 다음세션에서 하자 이 작업들. 기록 잘
-> 해놔라이"* — implement **option (A)** below next session; the user will
-> then review and decide whether to instead **(B) remove floating edges**.
+> **CLOSED 2026-05-31.** **Option (A) shipped** as **v0.34.8
+> (D-2026-05-31-V)** and **user-accepted** after hands-on review in the dev
+> browser (*"괜찮게 됐네 굿!"*). `computeRadialLayout` gained
+> `angleMode: "preserve"` (angle from anchor preserved + distance normalised
+> to BFS depth ring); `useAutoLayout`'s anchor path calls it instead of the
+> handle-based tree. Floating edges kept (option B NOT taken); `autoLayout.ts`
+> retained as a dormant fallback. Do NOT re-open. Kept here so it isn't
+> re-surfaced.
 >
 > **The problem (two confirmed layout bugs on Foundation + Actors):**
 > 1. **Depth crossing** — actors `anchor ← user ← operator`; running 자동정렬

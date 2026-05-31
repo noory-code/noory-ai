@@ -4,6 +4,32 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.8] — 2026-05-31
+
+### Changed — floating-canvas auto-layout: angle-preserving depth rings (D-2026-05-31-V)
+
+- The `layoutAlgo="tree"` anchor path (Foundation + Actors directly;
+  Services + ServiceDetail as the no-subject-edge fallback) no longer runs
+  the handle-based directional tree. All edges are floating
+  (D-2026-05-31-F) so their handles are nulled — the old tree read
+  stale/arbitrary handles and (a) **swapped node sides** (Core value LEFT +
+  Mission TOP came back swapped) and (b) let a **depth-2 node land between
+  the anchor and its depth-1 parent** (edge crossing on
+  `anchor ← user ← operator`).
+- It now calls `computeRadialLayout` with a new `angleMode: "preserve"`:
+  each node keeps its **current angle** from the anchor (side preserved, no
+  swap), and its **distance is normalised to its BFS depth ring** (deeper
+  node always farther out, no crossing).
+- Implements **option (A)** of the 2026-05-31 NEXT_SESSION
+  "자동정렬 위치+깊이 재작업" task. The user will review hands-on and decide
+  whether to keep floating edges or instead **option (B)** revert them to
+  handle-based rendering — for which `autoLayout.ts` (the old tree) is
+  retained, unit-tested, as the fallback.
+- Tests: 4 new `computeRadialLayout` preserve-mode cases
+  (`viewer/tests/radialLayout.test.ts`) — depth enforced, side preserved,
+  distance normalised, distribute mode unchanged. viewer 703/703 green;
+  tsc clean.
+
 ## [0.34.7] — 2026-05-31
 
 ### Changed — blueprint version moves to the project (tab-bar); one-line status cluster (D-2026-05-31-U)

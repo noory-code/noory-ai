@@ -9810,3 +9810,45 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-05-31.
 - **Spec impact:** SPEC §"Workspace & projects" — Chrome (version with the
   project name in the tab bar).
+
+### D-2026-05-31-V — Floating-canvas auto-layout: angle-preserving depth rings (option A)
+
+- **What:** The `layoutAlgo="tree"` anchor path stops running the
+  handle-based directional tree (`autoLayout.ts`) and instead calls
+  `computeRadialLayout` with a new `angleMode: "preserve"`. Preserve mode:
+  (1) BFS from the anchor assigns each node a **depth ring**, and the ring
+  radius is its distance from the anchor — so a deeper node always sits
+  farther out (no edge crossing); (2) each node keeps its **current angle**
+  from the anchor centre — the side the user placed it on is preserved (no
+  swap). This is the shared anchor path, so it covers Foundation + Actors
+  directly and Services + ServiceDetail as their no-subject-edge fallback
+  (the actor-anchored layout still claims a doc first when it has a subject
+  edge).
+- **Why:** Two confirmed layout bugs on the floating canvases. All edges
+  are floating (D-2026-05-31-F) so their handles are nulled; the old tree
+  read stale/arbitrary handles → (a) **swap**: Core value LEFT + Mission
+  TOP came back swapped; (b) **crossing**: on `anchor ← user ← operator`
+  the depth-2 operator landed between anchor and user. Angle-preserve +
+  depth-ring fixes both by construction.
+- **Alternatives considered:**
+  - *Make `buildAdjacency` always use `inferDirection`* (minimal). Fixes
+    both reported bugs but leaves distance to the tree's subtree packing,
+    which still trusts current positions for depth. Rejected: depth-ring
+    radius is the more robust, deterministic guarantee and was the recorded
+    plan.
+  - *Option (B): revert floating edges to handle-based rendering.* Brings
+    back the asymmetric-handle awkward-loop problem (the thing floating
+    fixed in v0.30.3) and loses v0.34.4–.6. Deferred to the user's review;
+    `autoLayout.ts` is kept (unit-tested) as that fallback.
+- **Scope note (surfaced to user):** the touched gate is the shared
+  `useAutoLayout` anchor path, so the change reaches Services/ServiceDetail's
+  fallback too, not only Foundation/Actors. This is consistent — floating
+  edges are global, so handle-unreliability (the root cause) is global — but
+  it is a slightly wider blast radius than the literal "foundation + actors"
+  wording of the task.
+- **Approval:** **Accepted by user, 2026-05-31** — hands-on reviewed in the
+  dev browser on plot-test-v013, confirmed *"괜찮게 됐네 굿!"*. Option (A)
+  kept; floating edges are NOT reverted (option B not taken). `autoLayout.ts`
+  stays only as a dormant fallback.
+- **Spec impact:** SPEC §Auto-layout — table + new "Angle-preserving depth
+  rings" subsection; handle tree demoted to retained fallback.

@@ -192,10 +192,23 @@ behaviour is *no auto-layout button*. Each wrapper opts in by setting
 
 | Wrapper | `layoutAlgo` | Algorithm | Since |
 |---|---|---|---|
-| `FoundationCanvas` | `"tree"` | Directional tree (BFS from anchor, T/R/B/L per parent-handle) | v0.16.36 |
-| `ActorsCanvas` | `"tree"` | Directional tree (same as Foundation) | v0.24.5 |
-| `ServicesCanvas` | `"tree"` | Directional tree (BFS from anchor, T/R/B/L per parent-handle) | v0.27.0 (D-2026-05-26-A switches from `"radial"`) |
-| `ServiceDetailCanvas` | `"tree"` | Directional tree (BFS from hidden root-service as hub) | v0.27.0 (D-2026-05-26-A switches from `"radial"`) |
+| `FoundationCanvas` | `"tree"` | Angle-preserving depth rings (BFS from anchor) | v0.16.36; **angle-preserve since v0.34.8 (D-2026-05-31-V)** |
+| `ActorsCanvas` | `"tree"` | Angle-preserving depth rings (same as Foundation) | v0.24.5; **angle-preserve since v0.34.8** |
+| `ServicesCanvas` | `"tree"` | Actor-anchored when a subject edge exists; else angle-preserving depth rings | v0.27.0 (D-2026-05-26-A switches from `"radial"`); **angle-preserve fallback since v0.34.8** |
+| `ServiceDetailCanvas` | `"tree"` | Actor-anchored when a subject edge exists; else angle-preserving depth rings (hidden root-service as hub) | v0.27.0; **angle-preserve fallback since v0.34.8** |
+
+> **v0.34.8 (D-2026-05-31-V):** the `layoutAlgo="tree"` anchor path no
+> longer runs the handle-based directional tree (`autoLayout.ts`). All
+> edges are floating (D-2026-05-31-F), so their handles are nulled and
+> carry no reliable direction — the old tree read stale/arbitrary handles
+> and (a) swapped node sides and (b) let a depth-2 node land between the
+> anchor and its depth-1 parent (edge crossing). It now calls
+> `computeRadialLayout` with `angleMode: "preserve"` (see below). This is
+> the shared anchor path, so it covers all four `"tree"` wrappers'
+> anchor/fallback case — Foundation + Actors directly, Services +
+> ServiceDetail only when no subject edge claims the doc first.
+> `autoLayout.ts` is retained as the option-(B) fallback should floating
+> edges ever be reverted to handle-based rendering.
 
 Isolation regression test:
 `viewer/tests/auto-layout-isolation.test.tsx`.
@@ -213,23 +226,36 @@ Isolation regression test:
   `parent_id`, typed-text fields, edges — all byte-identical
   before vs after. True for both algorithms.
 
-### Tree algorithm (`layoutAlgo="tree"`)
+### Angle-preserving depth rings (`layoutAlgo="tree"` anchor path, v0.34.8, D-2026-05-31-V)
 
 Implemented in
-[`viewer/src/canvases/sketch/autoLayout.ts`](../viewer/src/canvases/sketch/autoLayout.ts):
+[`viewer/src/canvases/sketch/radialLayout.ts`](../viewer/src/canvases/sketch/radialLayout.ts)
+via `computeRadialLayout({ …, angleMode: "preserve" })`, dispatched by
+`useAutoLayout`:
 
-- BFS root is the project anchor when the canvas injects one
+- Hub is the project anchor when the canvas injects one
   (Foundation / Actors / Services); for `ServiceDetailCanvas`
   (which injects no anchor) `useAutoLayout`'s `pickAnchor` falls
   back to the hidden root-service node
-  (`kind === "service" && is_root === true`). Same shape as
-  `useRadialLayout.pickHub`.
-- The BFS root stays fixed in place.
-- Spanning tree from the root places each child in the direction
-  (T/R/B/L) of the parent-side handle on the connecting edge.
-- Sibling spacing tracks subtree extents (Reingold-Tilford-style)
-  so no two node footprints overlap.
-- Deterministic — ties broken by node id.
+  (`kind === "service" && is_root === true`).
+- The hub stays fixed in place.
+- BFS from the hub assigns each reachable node a **depth ring**
+  (hub = 0, neighbours = 1, …). A node's distance from the hub is
+  its ring radius — so a deeper node always sits farther out than a
+  shallower one (no edge crossing).
+- Each node keeps its **current angle** from the hub centre
+  (`atan2(cy − hubCy, cx − hubCx)`) — the side the user placed it on
+  is preserved (no swap). A node exactly on the hub centre falls back
+  to −π/2 (top).
+- Orphans (unreachable from hub) drop into a grid below the rings.
+- Deterministic — same input → same output.
+
+**Handle-based directional tree — retained fallback (`autoLayout.ts`).**
+Pre-v0.34.8 this was the live `"tree"` algorithm: BFS spanning tree
+placing each child T/R/B/L per the parent-side edge handle, with
+Reingold-Tilford sibling spacing. It is kept (and unit-tested) but no
+longer wired into production; it is the option-(B) path if floating
+edges are reverted to handle-based rendering.
 
 ### Actor-anchored layout (v0.27.16, D-2026-05-28-J)
 

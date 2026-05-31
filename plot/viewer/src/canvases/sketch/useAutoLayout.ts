@@ -16,7 +16,8 @@
 import { useCallback, type MutableRefObject } from "react";
 import { useReactFlow } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
-import { computeAutoLayout, type AutoLayoutAnchor } from "./autoLayout";
+import type { AutoLayoutAnchor } from "./autoLayout";
+import { computeRadialLayout } from "./radialLayout";
 import {
   actorAnchoredLayout,
   setSubjectDirection,
@@ -117,10 +118,21 @@ export function useAutoLayout({
     }
     const anchor = pickAnchor(doc, projectAnchor);
     if (anchor) {
-      const { positions } = computeAutoLayout({
+      // v0.34.8 (D-2026-05-31-V) — floating-canvas (Foundation + Actors)
+      // layout. Switched off the handle-based ``computeAutoLayout`` tree
+      // (autoLayout.ts) onto angle-preserving depth rings: floating edges
+      // null their handles, so the old tree read stale/arbitrary handles
+      // and (a) swapped node sides and (b) let a depth-2 node land between
+      // the anchor and its depth-1 parent (edge crossing). ``preserve``
+      // keeps each node's current direction from the anchor and normalises
+      // only its distance to its BFS depth ring. ``computeAutoLayout`` is
+      // retained as the option-(B) fallback if the user reverts floating
+      // edges back to handle-based rendering.
+      const { positions } = computeRadialLayout({
         nodes: doc.nodes,
         edges: doc.edges,
-        anchor,
+        hub: anchor,
+        angleMode: "preserve",
       });
       if (positions.size > 0) {
         const nextNodes = doc.nodes.map((n) => {
