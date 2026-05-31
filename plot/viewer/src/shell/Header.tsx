@@ -16,7 +16,10 @@ interface HeaderProps {
   error: string | null;
   socketStatus: SocketStatus;
   saveState: SaveState;
-  projectName: string | null;
+  /** Workspace ROOT absolute path — the "where am I" location, shown at the
+   *  very top next to PLOT (v0.34.3, D-2026-05-31-Q). The project NAME lives
+   *  in the tab-bar center instead. */
+  workspaceRoot: string;
   blueprintVersion: string | null;
   /** v0.24.14 (D-2026-05-21-C) — when set, the app is in snapshot mode at
    *  this git tag. Banner appears with an exit button; edits are blocked
@@ -31,7 +34,7 @@ export function Header({
   error,
   socketStatus,
   saveState,
-  projectName,
+  workspaceRoot,
   blueprintVersion,
   viewingTag,
   onExitTagView,
@@ -44,9 +47,9 @@ export function Header({
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold tracking-wide">PLOT</span>
-          {projectName && (
-            <span className="text-sm text-slate-700">· {projectName}</span>
-          )}
+          <span className="font-mono text-xs text-slate-500" title={workspaceRoot}>
+            {workspaceRoot}
+          </span>
           {blueprintVersion && (
             <span
               className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-slate-600"

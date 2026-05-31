@@ -363,7 +363,7 @@ export function App() {
         error={error}
         socketStatus={socketStatus}
         saveState={saveState}
-        projectName={summaries.find((p) => p.id === activeId)?.name ?? null}
+        workspaceRoot={workspaceRoot}
         blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? null}
         viewingTag={viewingTag}
         onExitTagView={exitTagView}
@@ -395,7 +395,7 @@ export function App() {
             <CanvasTabs
               active={activeTab}
               onSelect={selectTab}
-              workspaceRoot={workspaceRoot}
+              projectName={activeProjectName}
               blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? "v0.1.0"}
               onPublishBlueprint={handlePublishBlueprint}
               publishDisabled={!activeId}

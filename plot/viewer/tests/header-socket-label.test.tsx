@@ -12,7 +12,7 @@ function props(over: Partial<React.ComponentProps<typeof Header>> = {}) {
     error: null,
     socketStatus: "connected" as const,
     saveState: "idle" as const,
-    projectName: "Web",
+    workspaceRoot: "/Users/me/Workspace/repo",
     blueprintVersion: "v0.1.0",
     viewingTag: null,
     onExitTagView: vi.fn(),
@@ -22,7 +22,12 @@ function props(over: Partial<React.ComponentProps<typeof Header>> = {}) {
   };
 }
 
-describe("Header socket label (D-2026-05-31-P)", () => {
+describe("Header (D-2026-05-31-P / -Q)", () => {
+  it("shows the workspace root path next to PLOT", () => {
+    render(<Header {...props()} />);
+    expect(screen.getByText("/Users/me/Workspace/repo")).toBeInTheDocument();
+  });
+
   it("shows 'MCP: live' when connected", () => {
     render(<Header {...props({ socketStatus: "connected" })} />);
     expect(screen.getByText("MCP: live")).toBeInTheDocument();

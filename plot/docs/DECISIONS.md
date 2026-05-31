@@ -9717,3 +9717,19 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-05-31 ("필요 없고 표시한다면 탭바에
   센터에 표시하세요" + "live … MCP: live 이렇게 표시하기로 했잖아요").
 - **Spec impact:** SPEC §"Workspace & projects" — Chrome.
+
+### D-2026-05-31-Q — Swap: workspace path → header (next to PLOT); project name → tab-bar center
+
+- **What:** The **workspace root path** is shown next to the `PLOT` logo at
+  the very top (the location / "where am I"); the **active project name** is
+  shown centered in the canvas tab bar (the "what am I working on"). This
+  swaps the v0.34.2 layout (which had the root in the tab-bar center and the
+  project name in the header).
+- **Why:** User: *"PLOT 로고 옆에 나오는 프로젝트 이름에 경로를 넣고, 경로
+  나오는 곳에 프로젝트 이름 넣으라구요"* — location belongs at the very top;
+  the project name belongs centered in the tab bar.
+- **Supersedes:** D-2026-05-31-P (placement) — root no longer in the tab
+  bar; D-2026-05-31-O (header relative-dir) stays superseded. The socket
+  "MCP:" prefix from P is unchanged.
+- **Approval:** Accepted by user, 2026-05-31 (explicit swap instruction).
+- **Spec impact:** SPEC §"Workspace & projects" — Chrome.

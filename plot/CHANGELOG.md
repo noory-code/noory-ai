@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.3] — 2026-05-31
+
+### Changed — swap: workspace path in header, project name in tab-bar center (D-2026-05-31-Q)
+
+- The **workspace root path** now sits next to the `PLOT` logo at the very
+  top (location); the **active project name** sits centered in the canvas
+  tab bar. Swaps the v0.34.2 placement. The "MCP: …" socket label is
+  unchanged. Header `projectName` prop → `workspaceRoot`; CanvasTabs
+  `workspaceRoot` prop → `projectName`.
+- Covered by updated `tests/canvas-tabs-root.test.tsx` (project name) +
+  `tests/header-socket-label.test.tsx` (header shows the root path).
+
 ## [0.34.2] — 2026-05-31
 
 ### Changed — workspace root to tab-bar center; socket label "MCP: live" (D-2026-05-31-P)
