@@ -45,3 +45,21 @@
 User (2026-06-01): *"지금 던지는거 다 작업하고 내가 하는 말 못따라가겠다면
 어디 기록해둬야합니다."* → this file is that record. Work through it; don't
 drop items.
+
+## Active (surfaced 2026-06-01, not yet shipped)
+
+- 🔨 **B — Services auto-layout: cluster children near their parent**, not in
+  concentric depth-ring layers. User: *"하위노드를 왜 상위노드에 가깝게 정렬을
+  안하는거죠? 마치 레이어가 있는 것처럼 … 상위노드에 가깝게 정렬을 해야지."*
+  My v0.34.8 radial depth-ring places all depth-k nodes on one ring (anchor-
+  relative radius), so a service sits far from its category. Fix: parent-
+  relative branch placement (each subtree fans out from ITS parent at a small
+  radius) — a radial *tree*, not concentric rings. Touches
+  `computeRadialLayout`. Biggest open item; layout is sensitive (cf. the
+  v0.13/v0.34 layout saga) — confirm approach before rewriting.
+- 💡 **A — Foundation group hub needs a MODEL change.** The server rejects
+  non-`{mission,core_value,identity,project}` kinds on the Foundation canvas
+  (422 "kinds not allowed on 'foundation'"). So the user's "핵심 가치 /
+  아이덴티티 group hubs" (mission stays direct) can't be added as data — Plot
+  must either allow a grouping kind on Foundation or add a dedicated
+  foundation-group kind (+ stencil + structural/parity tests). OPEN: which.
