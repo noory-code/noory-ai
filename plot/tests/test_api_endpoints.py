@@ -925,3 +925,63 @@ def test_canvas_get_omits_dirty_for_ineligible_kinds(
     for n in canvas["nodes"]:
         if n.get("kind") == "project" or n.get("is_root"):
             assert "_dirty" not in n
+
+
+# ---------------------------------------------------------------------------
+# workspace discovery + dir-tree picker (v0.32.0)
+# ---------------------------------------------------------------------------
+
+
+def test_workspace_discover_empty(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    resp = client.get("/api/workspace/projects", params={"project_path": project_path})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["projects"] == []
+    assert "migrated" in body
+
+
+def test_workspace_discover_finds_nested(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    sub = Path(project_path) / "pkg"
+    sub.mkdir()
+    _create(client, str(sub), "proj-x", "X")
+    resp = client.get("/api/workspace/projects", params={"project_path": project_path})
+    assert resp.status_code == 200
+    projects = resp.json()["projects"]
+    assert len(projects) == 1
+    assert projects[0]["dir"] == "pkg"
+    assert projects[0]["project"]["id"] == "proj-x"
+
+
+def test_workspace_discover_missing_param(app_client: tuple[TestClient, str]) -> None:
+    client, _ = app_client
+    assert client.get("/api/workspace/projects").status_code == 400
+
+
+def test_workspace_discover_bad_root(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    resp = client.get(
+        "/api/workspace/projects",
+        params={"project_path": str(Path(project_path) / "does-not-exist")},
+    )
+    assert resp.status_code == 404
+
+
+def test_dir_tree_marks_has_plot(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    (Path(project_path) / "a").mkdir()
+    _create(client, str(Path(project_path) / "a"), "proj-a", "A")
+    (Path(project_path) / "b").mkdir()
+    resp = client.get("/api/workspace/tree", params={"project_path": project_path})
+    assert resp.status_code == 200
+    root = resp.json()["root"]
+    assert root["rel"] == "."
+    by_name = {c["name"]: c for c in root["children"]}
+    assert by_name["a"]["has_plot"] is True
+    assert by_name["b"]["has_plot"] is False
+
+
+def test_dir_tree_missing_param(app_client: tuple[TestClient, str]) -> None:
+    client, _ = app_client
+    assert client.get("/api/workspace/tree").status_code == 400

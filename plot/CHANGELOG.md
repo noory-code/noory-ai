@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.32.0] — 2026-05-31
+
+### Added — workspace discovery + dir-tree endpoints (multi-directory projects, Phase 1; D-2026-05-31-L)
+
+- `GET /api/workspace/projects?project_path=<root>` — recursively discovers
+  every Plot project anywhere under the workspace root, each with its
+  directory relative to the root (`"."` for root-level). Backing the
+  upcoming "a monorepo holds many projects, each in its own subdirectory"
+  feature.
+- `GET /api/workspace/tree?project_path=<root>` — nested directory tree
+  (`name`/`rel`/`has_plot`/`children`) for the new-project picker.
+- MCP mirror tool `discover_workspace_projects`. New pure helpers in
+  `workspace.py` (`discover_projects`, `build_dir_tree`, shared
+  `enumerate_projects`). Prune set + depth/breadth/count caps;
+  `followlinks=False`. Covered by `tests/test_workspace_discovery.py`,
+  `tests/test_dir_tree.py`, and new cases in `tests/test_api_endpoints.py`.
+- Server-only; no user-visible behaviour yet (lands in Phase 2).
+
 ## [0.31.3] — 2026-05-31
 
 ### Fixed — hide the sidebar stencil when no project is active (D-2026-05-31-K)

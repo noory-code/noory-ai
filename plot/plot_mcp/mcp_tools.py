@@ -8,6 +8,7 @@ both interchangeably.
 from __future__ import annotations
 
 import webbrowser
+from pathlib import Path
 from typing import Any, cast
 
 from fastmcp import FastMCP
@@ -34,7 +35,12 @@ from plot_mcp.git_store import (
 )
 from plot_mcp.migrate import migrate_v01_to_v02
 from plot_mcp.models import CanvasDoc, CanvasKind
-from plot_mcp.workspace import resolve_plot_root, resolved_port
+from plot_mcp.workspace import (
+    discover_projects,
+    enumerate_projects,
+    resolve_plot_root,
+    resolved_port,
+)
 
 mcp = FastMCP(
     "plot",
@@ -59,19 +65,17 @@ mcp = FastMCP(
 def list_projects(project_path: str) -> list[dict[str, Any]]:
     """List every project folder directly under ``.plot/`` (v0.8 layout)."""
     plot_root = resolve_plot_root(project_path)
-    if not plot_root.is_dir():
-        return []
-    projects: list[dict[str, Any]] = []
-    for child in sorted(plot_root.iterdir()):
-        if not child.is_dir() or child.name == "sketches":
-            continue
-        try:
-            proj = read_project(plot_root, child.name)
-        except (FileNotFoundError, ValueError):
-            continue
-        projects.append(proj.model_dump())
-    projects.sort(key=lambda p: p.get("updated", ""), reverse=True)
-    return projects
+    return [p.model_dump() for p in enumerate_projects(plot_root)]
+
+
+@mcp.tool()
+def discover_workspace_projects(project_path: str) -> list[dict[str, Any]]:
+    """Discover every Plot project anywhere under the workspace root, each with
+    its directory relative to the root (``"."`` for a root-level project).
+
+    Mirrors ``GET /api/workspace/projects`` (v0.32.0)."""
+    root = Path(project_path).expanduser().resolve()
+    return [{"project": p.model_dump(), "dir": d} for p, d in discover_projects(root)]
 
 
 @mcp.tool()

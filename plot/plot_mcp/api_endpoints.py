@@ -49,8 +49,19 @@ from plot_mcp.git_store import (
     tag_snapshot,
 )
 from plot_mcp.migrate import migrate_v01_to_v02
-from plot_mcp.models import CanvasDoc, CanvasKind
-from plot_mcp.workspace import resolve_plot_root
+from plot_mcp.models import (
+    CanvasDoc,
+    CanvasKind,
+    DirTreeResponse,
+    DiscoveredProject,
+    WorkspaceDiscoveryResponse,
+)
+from plot_mcp.workspace import (
+    build_dir_tree,
+    discover_projects,
+    enumerate_projects,
+    resolve_plot_root,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -90,6 +101,20 @@ def _require_plot_root(request: Request) -> Path:
         raise _ApiError(_error(str(exc), status=404)) from exc
 
 
+def _require_workspace_root(request: Request) -> Path:
+    """Validate ``project_path`` and return the WORKSPACE ROOT itself (not its
+    ``.plot/``) — used by the recursive discovery + dir-tree endpoints."""
+    project_path = _project_path(request)
+    if not project_path:
+        raise _ApiError(_error("project_path query param is required"))
+    base = Path(project_path).expanduser().resolve()
+    if not base.exists():
+        raise _ApiError(_error(f"project_path does not exist: {base}", status=404))
+    if not base.is_dir():
+        raise _ApiError(_error(f"project_path is not a directory: {base}", status=404))
+    return base
+
+
 # ---------------------------------------------------------------------------
 # health
 # ---------------------------------------------------------------------------
@@ -112,22 +137,35 @@ async def projects_list_endpoint(request: Request) -> JSONResponse:
     # Silently migrate any leftover v0.1 files in the (now-legacy)
     # ``sketches/`` root. Only runs if that directory still exists.
     migrated = migrate_v01_to_v02(plot_root)
-    # Enumerate project folders, newest-first by ``updated``. In the v0.8
-    # layout each project is a direct child of ``plot_root``; we skip the
-    # legacy ``sketches/`` folder (migration landing pad) and any other
-    # non-project child that has no ``project.json``.
-    projects: list[dict[str, Any]] = []
-    if plot_root.is_dir():
-        for child in sorted(plot_root.iterdir()):
-            if not child.is_dir() or child.name == "sketches":
-                continue
-            try:
-                proj = read_project(plot_root, child.name)
-            except (FileNotFoundError, ValueError):
-                continue
-            projects.append(proj.model_dump())
-    projects.sort(key=lambda p: p.get("updated", ""), reverse=True)
+    projects = [p.model_dump() for p in enumerate_projects(plot_root)]
     return JSONResponse({"projects": projects, "migrated": migrated})
+
+
+async def workspace_discover_endpoint(request: Request) -> JSONResponse:
+    """Recursively discover every Plot project anywhere under the workspace
+    root, each with its directory relative to the root (v0.32.0)."""
+    try:
+        root = _require_workspace_root(request)
+    except _ApiError as exc:
+        return exc.response
+    # Back-compat: migrate the root-level ``.plot`` only (same as the legacy
+    # list endpoint); nested projects are already v0.2+.
+    migrated = migrate_v01_to_v02(resolve_plot_root(str(root)))
+    payload = WorkspaceDiscoveryResponse(
+        projects=[DiscoveredProject(project=p, dir=d) for p, d in discover_projects(root)],
+        migrated=migrated,
+    )
+    return JSONResponse(payload.model_dump())
+
+
+async def dir_tree_endpoint(request: Request) -> JSONResponse:
+    """Return the nested directory tree (with ``has_plot`` flags) under the
+    workspace root, for the new-project picker (v0.32.0)."""
+    try:
+        root = _require_workspace_root(request)
+    except _ApiError as exc:
+        return exc.response
+    return JSONResponse(DirTreeResponse(root=build_dir_tree(root)).model_dump())
 
 
 async def project_post_endpoint(request: Request) -> JSONResponse:

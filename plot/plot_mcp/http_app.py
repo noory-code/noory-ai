@@ -12,6 +12,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from plot_mcp.api_endpoints import (
     canvas_get_endpoint,
     canvas_put_endpoint,
+    dir_tree_endpoint,
     file_get_endpoint,
     file_put_endpoint,
     file_raw_endpoint,
@@ -31,6 +32,7 @@ from plot_mcp.api_endpoints import (
     tag_delete_endpoint,
     tag_post_endpoint,
     tags_list_endpoint,
+    workspace_discover_endpoint,
 )
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.workspace import find_viewer_dist, resolve_plot_root
@@ -67,6 +69,9 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         # v0.4 project + canvas + tag surface
         Route("/api/projects", projects_list_endpoint, methods=["GET"]),
         Route("/api/projects", project_post_endpoint, methods=["POST"]),
+        # v0.32.0 — recursive workspace discovery + dir-tree picker
+        Route("/api/workspace/projects", workspace_discover_endpoint, methods=["GET"]),
+        Route("/api/workspace/tree", dir_tree_endpoint, methods=["GET"]),
         Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
         Route(
             "/api/projects/{project_id}",

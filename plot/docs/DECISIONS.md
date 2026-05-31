@@ -9592,3 +9592,37 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-05-31 ("네 고치세요").
 - **Spec impact:** Empty-state behaviour — no stencil without an active
   project.
+
+### D-2026-05-31-L — Workspace discovery + dir-tree endpoints (multi-directory projects, Phase 1)
+
+- **What:** Two read-only server endpoints backing the upcoming
+  multi-directory-projects feature (a monorepo holds many Plot projects,
+  each in its own subdirectory with its own `.plot/`):
+  - `GET /api/workspace/projects?project_path=<root>` → recursively
+    discovers every valid project anywhere under the root, each with its
+    directory relative to the root (`"."` for root-level).
+    `WorkspaceDiscoveryResponse{projects:[{project,dir}], migrated}`.
+  - `GET /api/workspace/tree?project_path=<root>` → nested `DirTreeNode`
+    tree (`name`/`rel`/`has_plot`/`children`) for the new-project picker.
+  - MCP mirror tool `discover_workspace_projects`.
+- **Why:** Decided during the hands-on empty-state walkthrough — feasible
+  now in the browser because the server already has filesystem access to
+  the launch root (selection is constrained to subdirs under it). Off-root
+  absolute paths remain a future Mac-app concern (PRODUCT_SPEC §2).
+- **Design:** TWO endpoints (different shapes + cost profiles + cadence —
+  discovery on launch/stale, tree only when the picker opens). Pure helpers
+  in `workspace.py` (`discover_projects`, `build_dir_tree`, shared
+  `enumerate_projects` — extracted from the project-scan loop that was
+  duplicated in `projects_list_endpoint` + the `list_projects` MCP tool,
+  AHA 3rd-use). Prune set `{.git, node_modules, .venv, __pycache__, dist,
+  build, .plot, .mypy_cache, .pytest_cache, .ruff_cache}` + all dotdirs;
+  `.plot` read as a marker but never descended into. Depth cap 8, project
+  cap 500, tree depth 6, tree breadth 200; `followlinks=False`. Backward-
+  compat: a single-root project at `<root>/.plot` surfaces as `dir="."`.
+- **Parity:** the new response models are NOT node-kind classes → outside
+  the 15-kind `test_schema_parity.py` harness; their TS mirrors are guarded
+  by the Phase 2 viewer vitest + tsc (documented, not auto-checked).
+- **Approval:** Accepted by user, 2026-05-31 (approved plan — "통합 탐색식
+  + 중첩 폴더 트리").
+- **Spec impact:** none yet (server-only plumbing; user-visible behaviour
+  lands in Phase 2 with the unified sidebar + effective-path refactor).
