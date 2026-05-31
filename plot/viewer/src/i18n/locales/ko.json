@@ -222,6 +222,7 @@
     "rePick": "다시 고르기…",
     "unset": "(미지정)",
     "inheritedFrom": "{{from}}에서 상속",
+    "actorBaseHint": "추상 베이스 — 역할·동기·어려움은 아래 하위 액터에서 정의합니다.",
     "operatorOption": "operator (운영자 / 개발자)",
     "userOption": "user (사용자)",
     "operatorSideOption": "제공자",

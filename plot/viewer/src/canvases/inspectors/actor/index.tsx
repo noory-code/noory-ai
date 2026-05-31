@@ -12,6 +12,7 @@ import type { ActorJson } from "../../../domain";
 import {
   effectiveActorFields,
   type EffectiveField,
+  isActorBaseSuperclass,
 } from "../../../domain/actorInheritance";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
@@ -23,9 +24,10 @@ export function ActorInspector(props: KindInspectorProps) {
   if (props.node.kind !== "actor") return null;
   const node = props.node;
   const eff = effectiveActorFields(node.id, props.allNodes, props.allEdges);
+  const isBase = isActorBaseSuperclass(node.id, props.allNodes, props.allEdges);
   return (
     <BaseInspector {...props} hideDetailsSection>
-      <ActorFields node={node} onPatchNode={props.onPatchNode} eff={eff} />
+      <ActorFields node={node} onPatchNode={props.onPatchNode} eff={eff} isBase={isBase} />
     </BaseInspector>
   );
 }
@@ -34,6 +36,9 @@ interface ActorFieldsProps {
   node: ActorJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
   eff: ReturnType<typeof effectiveActorFields>;
+  /** True when this actor is the abstract root superclass — hides
+   *  side / motivation / pain (D-2026-05-31-H). */
+  isBase: boolean;
 }
 
 /** Greyed caption shown when a field's value is inherited from a parent
@@ -49,8 +54,21 @@ function Inherited({ field }: { field: EffectiveField }) {
   );
 }
 
-function ActorFields({ node, onPatchNode, eff }: ActorFieldsProps) {
+function ActorFields({ node, onPatchNode, eff, isBase }: ActorFieldsProps) {
   const { t } = useTranslation();
+  if (isBase) {
+    // Abstract root superclass — role/motive/pain live on the concrete
+    // subclasses (D-2026-05-31-H). Only the note field remains.
+    return (
+      <div className="mb-4 rounded border border-rose-200 bg-rose-50/40 p-2">
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+          {t("kind.actor")}
+        </div>
+        <p className="mb-2 text-[10px] italic text-slate-500">{t("inspector.actorBaseHint")}</p>
+        <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
+      </div>
+    );
+  }
   return (
     <div className="mb-4 rounded border border-rose-200 bg-rose-50/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-rose-700">

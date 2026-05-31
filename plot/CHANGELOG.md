@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.31.0] — 2026-05-31
+
+### Changed — abstract root superclass hides role/motive/pain (D-2026-05-31-H)
+
+- OOP framing of the actors canvas: the **root** of an inheritance tree
+  is an *abstract* superclass and carries no concrete role/motive/pain —
+  those belong to the concrete subclasses. Its Inspector now **hides**
+  the `side` (역할) / `motivation` (동기) / `pain` (어려움) fields and
+  shows an "abstract base" caption; the `body` (노트) field stays.
+- "Has children" is **not** the test: an intermediate concrete actor
+  (e.g. Bana with Hero/Fans below it) has an actor parent, so it keeps
+  all its fields — only the tree root is abstract. New pure
+  `domain/actorInheritance.ts::isActorBaseSuperclass` (root = no actor
+  parent + ≥1 actor child), covered by
+  `tests/actor-base-superclass.test.ts`.
+- New i18n key `inspector.actorBaseHint` (en + ko). Inheritance
+  computation (`effectiveActorFields`) is unchanged — only Inspector
+  field visibility.
+
 ## [0.30.4] — 2026-05-31
 
 ### Added — actor inheritance (computed) + inspector display

@@ -9494,3 +9494,35 @@ but not yet fully eliminated.
   이름은 왜 변수명인가요?").
 - **Spec impact:** none (bug fix). Honest note: this was a regression I
   introduced in v0.28.3.
+
+### D-2026-05-31-H — Abstract root superclass: hide role/motive/pain on the actor-tree root
+
+- **What:** On the Actors canvas, the **root superclass** of an
+  inheritance tree — an actor that has **no actor parent** (its only
+  inheritance parent is the project anchor) **and** has at least one
+  actor child — is treated as an *abstract* class (OOP framing). Its
+  Inspector **hides** the `side` (역할) / `motivation` (동기) /
+  `pain` (어려움) fields. The `body` (노트) field stays.
+- **Why:** The user models actors as OOP class inheritance. An abstract
+  root superclass carries no concrete role/motive/pain — those are
+  attributes of the **concrete subclasses**. Showing them on the root
+  is contradictory (every subclass overrides them anyway). A `user`
+  with role `user`, motivation, pain, while `Operator` (a child) has
+  role `operator`, is the canonical contradiction.
+- **Scope (explicit, narrow):** Inspector field *visibility* only on
+  the tree root. The inheritance computation (`effectiveActorFields`)
+  is **not** changed in this entry — propagation behaviour stays as
+  shipped in D-2026-05-31-G; revisit only if the user asks.
+- **Not the criterion:** "has children" alone is **not** the test — an
+  intermediate concrete class (e.g. `Bana` with `Hero`/`Fans` below it)
+  has children yet keeps all its fields, because it has an actor parent
+  (`User`). Only the tree **root** is abstract.
+- **Alternatives:** (a) hide on any actor with children — rejected
+  (would wrongly abstract intermediate concretes like Bana). (b) remove
+  the fields from the actor model entirely — rejected (concrete actors
+  need them). (c) base-as-synthesis view of children — deferred (bigger
+  idea, YAGNI; no consumer yet).
+- **Approval:** Accepted by user, 2026-05-31 ("OOP 상속처럼 생각하면
+  된다 … 작업은 해야지").
+- **Spec impact:** SPEC §Actors §Nodes — new row "Abstract root
+  superclass".

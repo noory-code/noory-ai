@@ -222,6 +222,7 @@
     "rePick": "Re-pick…",
     "unset": "(unset)",
     "inheritedFrom": "inherited from {{from}}",
+    "actorBaseHint": "Abstract base — role / motivation / pain live on the sub-actors below.",
     "operatorOption": "operator (op / dev)",
     "userOption": "user",
     "operatorSideOption": "operator side",

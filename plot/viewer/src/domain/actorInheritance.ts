@@ -76,6 +76,37 @@ function ancestorChain(startId: string, parents: Map<string, string[]>): string[
   return chain;
 }
 
+/**
+ * True when the actor is the **abstract root superclass** of its
+ * inheritance tree (D-2026-05-31-H). OOP framing: the tree root carries
+ * no concrete role/motive/pain — those belong to the concrete
+ * subclasses — so the Inspector hides those fields on it.
+ *
+ * Test = the actor has **no actor parent** (its only inheritance parent
+ * is the anchor, or it has none) **and** at least one **actor** inherits
+ * from it. "Has children" alone is not enough: an intermediate concrete
+ * actor (e.g. Bana parenting Hero/Fans) has an actor parent, so it is
+ * not abstract and keeps all its fields.
+ */
+export function isActorBaseSuperclass(
+  actorId: string,
+  nodes: SketchNode[],
+  edges: SketchEdge[],
+): boolean {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const parents = buildInheritanceParents(edges);
+
+  // (1) must have no actor parent (only the anchor / nothing above).
+  const myParents = parents.get(actorId) ?? [];
+  if (myParents.some((pid) => byId.get(pid)?.kind === "actor")) return false;
+
+  // (2) must be inherited from by at least one actor.
+  for (const [childId, ps] of parents) {
+    if (ps.includes(actorId) && byId.get(childId)?.kind === "actor") return true;
+  }
+  return false;
+}
+
 export function effectiveActorFields(
   actorId: string,
   nodes: SketchNode[],
