@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.37.2] — 2026-06-01
+
+### Fixed — auto-layout no longer overlaps nodes (collision avoidance) (D-2026-06-01-A)
+
+- The angle-preserving depth-ring layout (v0.34.8) had no collision avoidance:
+  on a busy canvas (BANAS Services — 7 categories + 11 services) running
+  auto-layout collapsed many nodes onto the same ring slot — "정렬하면 노드들이
+  다 겹쳐요" (11 overlapping pairs measured).
+- ``computeRadialLayout`` now, per ring: (1) grows the ring radius so the
+  circumference fits every node without overlap (2π·r ≥ count · node-arc), and
+  (2) fans apart nodes whose angles sit closer than one node-span + gap
+  (``spreadRingAngles``) — keeping relative order and recentring on the
+  cluster's middle so the user's chosen side is preserved.
+- Verified on the BANAS Services canvas: 11 overlapping pairs → **0**. Tests: 1
+  new ``radialLayout`` collision-avoidance case. viewer 722/722; tsc clean.
+
 ## [0.37.1] — 2026-06-01
 
 ### Fixed — clicking a node now selects it and stays selected (D-2026-05-31-AD)

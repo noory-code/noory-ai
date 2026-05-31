@@ -10031,3 +10031,19 @@ but not yet fully eliminated.
 - **Approval:** Reported + fix accepted by user, 2026-05-31.
 - **LOC:** SketchCanvas ceiling 500 → 515 (selection-state plumbing; follow-up:
   extract a ``useNodeSelection`` hook). **Spec impact:** none.
+
+### D-2026-06-01-A — Auto-layout collision avoidance (no overlapping nodes)
+
+- **What:** ``computeRadialLayout`` gains per-ring collision avoidance: the ring
+  radius grows so ``2π·r ≥ count · (node-span + gap)`` (the circumference fits
+  all nodes), and ``spreadRingAngles`` fans apart any nodes closer than one
+  node-span + gap — preserving relative order, recentred on the cluster's
+  middle. Applies to both preserve and distribute modes.
+- **Why:** User: *"서비스 캔버스 너무 많은데 이거 정렬하면 노드들이 다
+  겹쳐요 … 정렬은 노드들이 겹치지 않게 되어야죠."* The v0.34.8 angle-preserving
+  depth rings had no collision avoidance; many nodes the user placed in a column
+  share an angle and collapsed onto one ring slot. Measured 11 overlapping pairs
+  on the BANAS Services canvas; → 0 after the fix.
+- **Approval:** Reported + fix accepted by user, 2026-06-01.
+- **Spec impact:** SPEC §Auto-layout — radial depth rings now guarantee
+  non-overlap. Covered by ``radialLayout.test.ts``.

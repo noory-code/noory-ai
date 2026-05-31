@@ -286,6 +286,35 @@ describe("computeRadialLayout — angleMode 'preserve'", () => {
     expect(Math.abs(distOf(positions, "near") - distOf(positions, "far"))).toBeLessThan(1e-6);
   });
 
+  it("spreads same-ring nodes sharing an angle so none overlap (collision avoidance)", () => {
+    // 6 ring-1 nodes the user stacked at nearly the same spot (same angle
+    // from the hub). Preserve mode must fan them apart so no two overlap —
+    // the BANAS Services-canvas bug ("정렬하면 노드들이 다 겹쳐요").
+    const ns = Array.from({ length: 6 }, (_, i) => mkNode(`n${i}`, 300, i * 2));
+    const edges = ns.map((n, i) => mkEdge(`e${i}`, "__hub__", n.id));
+    const { positions } = computeRadialLayout({
+      nodes: ns,
+      edges,
+      hub: HUB,
+      angleMode: "preserve",
+    });
+    const rects = ns.map((n) => {
+      const p = positions.get(n.id)!;
+      return { x: p.x, y: p.y, w: n.width, h: n.height };
+    });
+    let overlaps = 0;
+    for (let i = 0; i < rects.length; i++) {
+      for (let j = i + 1; j < rects.length; j++) {
+        const a = rects[i];
+        const b = rects[j];
+        if (a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) {
+          overlaps++;
+        }
+      }
+    }
+    expect(overlaps).toBe(0);
+  });
+
   it("default angleMode (distribute) is unchanged — single neighbour still snaps to the top", () => {
     // Regression guard: omitting angleMode must keep the Services /
     // ServiceDetail behaviour byte-identical.

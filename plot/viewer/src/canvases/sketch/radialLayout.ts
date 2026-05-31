@@ -63,6 +63,46 @@ export interface RadialLayoutOutput {
 
 const DEFAULT_RING_GAP = 40;
 
+/** v0.37.2 (D-2026-06-01-A) — enforce a minimum angular gap between the
+ *  nodes on one ring so none overlap at ``radius``. ``minArc`` is the
+ *  required centre-to-centre arc length (≈ node span + gap); the gap in
+ *  radians is ``minArc / radius``. Nodes keep their relative order (sorted
+ *  by current angle, ties by id); the fan is recentred on the cluster's
+ *  middle node so the side the user placed them on is preserved. If the
+ *  ring can't fit even around the full circle, falls back to even spacing.
+ *  Mutates ``angleByNode`` in place. */
+function spreadRingAngles(
+  ids: string[],
+  angleByNode: Map<string, number>,
+  radius: number,
+  minArc: number,
+): void {
+  if (ids.length <= 1 || radius <= 0) return;
+  const minGap = minArc / radius;
+  const sorted = ids
+    .slice()
+    .sort((a, b) => angleByNode.get(a)! - angleByNode.get(b)! || a.localeCompare(b));
+  const n = sorted.length;
+  const mid = Math.floor((n - 1) / 2);
+  const origMidAngle = angleByNode.get(sorted[mid])!;
+
+  if (n * minGap >= 2 * Math.PI) {
+    const step = (2 * Math.PI) / n;
+    sorted.forEach((id, i) => angleByNode.set(id, origMidAngle + (i - mid) * step));
+    return;
+  }
+  // Forward pass: push each node to at least minGap past its predecessor.
+  for (let i = 1; i < n; i++) {
+    const prev = angleByNode.get(sorted[i - 1])!;
+    const cur = angleByNode.get(sorted[i])!;
+    if (cur - prev < minGap) angleByNode.set(sorted[i], prev + minGap);
+  }
+  // Recentre so the middle node returns to (about) its original angle —
+  // keeps the fan on the side the user placed the cluster.
+  const shift = origMidAngle - angleByNode.get(sorted[mid])!;
+  for (const id of sorted) angleByNode.set(id, angleByNode.get(id)! + shift);
+}
+
 export function computeRadialLayout(input: RadialLayoutInput): RadialLayoutOutput {
   const ringGap = input.ringGap ?? DEFAULT_RING_GAP;
   const { hub, nodes, edges } = input;
@@ -199,12 +239,25 @@ export function computeRadialLayout(input: RadialLayoutInput): RadialLayoutOutpu
         return Math.max(s.w, s.h);
       }),
     );
+    const minArc = ringSpan + ringGap;
     if (k === 1) {
       const hubSpan = Math.max(hub.width, hub.height);
       cumulativeRadius = hubSpan / 2 + ringSpan / 2 + ringGap;
     } else {
       cumulativeRadius += ringSpan + ringGap;
     }
+    // v0.37.2 (D-2026-06-01-A) — collision avoidance, two parts:
+    // (1) the ring must be big enough for all its nodes to fit around the
+    //     circle without overlap — circumference (2π·r) ≥ count · node-arc.
+    //     Without this, a small inner ring can't hold many wide nodes even
+    //     when evenly spread (BANAS Services: 7 wide categories on ring 1).
+    // (2) fan apart nodes whose angles sit closer than one node-span + gap.
+    //     Preserve mode stacks nodes the user placed in a column onto the
+    //     same slot ("정렬하면 노드들이 다 겹쳐요"); spreadRingAngles unrolls
+    //     them, keeping relative order + recentred on the cluster's middle.
+    const requiredRadius = (ids.length * minArc) / (2 * Math.PI);
+    cumulativeRadius = Math.max(cumulativeRadius, requiredRadius);
+    spreadRingAngles(ids, angleByNode, cumulativeRadius, minArc);
     for (const id of ids) {
       const angle = angleByNode.get(id)!;
       const cx = hubCx + cumulativeRadius * Math.cos(angle);
