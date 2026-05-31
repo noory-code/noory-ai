@@ -10047,3 +10047,26 @@ but not yet fully eliminated.
 - **Approval:** Reported + fix accepted by user, 2026-06-01.
 - **Spec impact:** SPEC §Auto-layout — radial depth rings now guarantee
   non-overlap. Covered by ``radialLayout.test.ts``.
+
+### D-2026-06-01-B — Nodes auto-fit content; manual resize removed
+
+- **What:** BaseNode sizes every node to its content (rect kinds fit width
+  140–340px; round shapes incl. the anchor fit as `aspect-square`). The
+  manual `NodeResizer` is removed. A `ResizeObserver` persists the measured
+  size back to the doc (`onResize` → `updateNode`; anchor → `onAnchorChange`)
+  so `nodeInternals` (floating edges + auto-layout) and the saved blueprint
+  match the visual. `useNodesMemo` no longer sets a fixed `style.width/height`.
+- **Why:** User wanted nodes to fit their content always (no manual resize).
+  Surfaced + fixed two follow-on regressions in the same arc: floating edges
+  attached to the stale provided size (edges floated off shrunk nodes), and
+  auto-layout's collision avoidance used the stale size (over-spacing) — both
+  resolved by persisting the measured size. Plus the kind tag overlapped the
+  label on compact nodes (top-margin fix). The anchor was initially excluded
+  but the user wanted it to shrink too ("바나스 앵커는 왜 안줄이죠?").
+- **Caveat (accepted):** the on-load first measurement settles each node's
+  size through `onDocChange`, adding one undo entry per node until stable.
+  Follow-up filed: a non-history measurement-sync path + a `useAutoFitSize`
+  hook (BaseNode ceiling raised 270 → 300 meanwhile).
+- **Approval:** Reported + fixes accepted by user across 2026-06-01.
+- **Spec impact:** SPEC §Nodes — node size is content-driven (no manual
+  resize). Structural guard ceiling updated.

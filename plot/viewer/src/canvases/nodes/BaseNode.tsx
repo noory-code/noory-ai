@@ -12,9 +12,10 @@
  * point for future per-kind visual variations).
  */
 import { type ReactNode } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
-import { Handle, NodeResizer, Position, type NodeProps } from "reactflow";
+import { Handle, Position, type NodeProps } from "reactflow";
 import type { Shape } from "../../types";
 import { effectiveShape } from "../sketch/nodeShape";
 import { EditableText } from "../../edit/EditableText";
@@ -149,20 +150,52 @@ export function BaseNode({
   };
   const Icon = getIcon(data.icon);
   const bodyPreview = data.body;
+  // v0.38.0 (D-2026-06-01-B) — nodes always auto-fit their content. The
+  // manual NodeResizer is gone (user: "수동 리사이즈 없애요. 항상 자동핏").
+  // Non-anchor nodes size to content (min/max width, wrap, auto height);
+  // RF measures the DOM and the dimensions-change → doc plumbing persists
+  // the real size for layout/edges. The synthetic anchor keeps the fixed
+  // size it is given (resized via onAnchorChange), so it stays geometric.
+  // v0.38.0 (D-2026-06-01-B) — round shapes (circle/ellipse incl. the
+  // project anchor) auto-fit as a SQUARE (aspect-square) so they stay
+  // circular; rectangular kinds fit their content width. The anchor is no
+  // longer special-cased — it shrinks to its content like everything else
+  // (user: "바나스 앵커는 왜 안줄이죠?").
+  const isRound = renderShape === "circle" || renderShape === "ellipse";
+  const sizing = isRound
+    ? "w-fit aspect-square min-w-[96px] max-w-[200px]"
+    : "w-fit min-w-[140px] max-w-[340px]";
+
+  // v0.38.0 (D-2026-06-01-B) — persist the auto-fit size back to the doc so
+  // RF's nodeInternals (which floating edges + auto-layout read) and the
+  // saved blueprint all match the visual. Without this the node renders at
+  // content size but nodeInternals keeps the stale provided width, so edges
+  // attach to a phantom box ("작아지고 난 후에 연결선이 이상해졌어요"). The
+  // synthetic anchor is fixed (resized via onAnchorChange) — skip it.
+  const nodeRef = useRef<HTMLDivElement | null>(null);
+  const reportResize = data.onResize;
+  useEffect(() => {
+    if (!reportResize) return;
+    const el = nodeRef.current;
+    if (!el) return;
+    const report = () => {
+      const w = Math.round(el.offsetWidth);
+      const h = Math.round(el.offsetHeight);
+      if (w > 0 && h > 0 && (Math.abs(w - data.width) > 1 || Math.abs(h - data.height) > 1)) {
+        reportResize(w, h);
+      }
+    };
+    report();
+    const ro = new ResizeObserver(report);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [reportResize, data.width, data.height]);
+
   return (
     <>
-      <NodeResizer
-        minWidth={80}
-        minHeight={60}
-        isVisible={selected}
-        lineClassName="!border-indigo-400"
-        handleClassName="!h-2 !w-2 !border !border-indigo-500 !bg-white"
-        onResizeEnd={(_evt, params) => {
-          data.onResize?.(params.width, params.height);
-        }}
-      />
       <div
-        className={`relative h-full w-full bg-white shadow-sm ${ring} ${contentPadding(
+        ref={nodeRef}
+        className={`relative ${sizing} bg-white shadow-sm ${ring} ${contentPadding(
           renderShape,
         )}`}
         style={style}
@@ -203,7 +236,11 @@ export function BaseNode({
           </span>
         )}
 
-        <div className="flex h-full w-full flex-col items-stretch justify-center gap-1">
+        <div
+          className={`flex w-full flex-col items-stretch justify-center gap-1 ${
+            isRound ? "h-full" : ""
+          } ${showKindTag && !isAnchor ? "pt-3" : ""}`}
+        >
           <div
             className={`flex items-center gap-1.5 text-sm font-semibold text-slate-800 ${
               labelAlignLeft ? "justify-start" : "justify-center"

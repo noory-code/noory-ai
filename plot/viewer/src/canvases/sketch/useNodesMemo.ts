@@ -216,7 +216,11 @@ export function useNodesMemo({
         // catches up — under drag/onDocChange burst it never does.
         width: n.width,
         height: n.height,
-        style: { width: n.width, height: n.height },
+        // v0.38.0 (D-2026-06-01-B) — no fixed style width/height: the node
+        // sizes to its content (BaseNode), RF measures it, and the
+        // dimensions-change → doc plumbing writes the real size back. The
+        // top-level width/height above remain (RF createNodeInternals reads
+        // them) as the last-measured estimate until RF re-measures.
         data: {
           label: visualLabel,
           body: "",
@@ -273,7 +277,9 @@ export function useNodesMemo({
         // main out.push block.
         width: projectAnchor.width,
         height: projectAnchor.height,
-        style: { width: projectAnchor.width, height: projectAnchor.height },
+        // v0.38.0 (D-2026-06-01-B) — no fixed style: the anchor auto-fits
+        // its content (square, via BaseNode aspect-square) and reports the
+        // measured size back through onAnchorChange, like every other node.
         data: {
           label: projectName ?? "Project",
           body: "",

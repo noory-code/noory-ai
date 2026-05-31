@@ -4,6 +4,32 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.38.0] — 2026-06-01
+
+### Changed — nodes auto-fit their content; manual resize removed (D-2026-06-01-B)
+
+- Every node now sizes to its content (label + kind tag + body). The manual
+  ``NodeResizer`` is gone (user: *"노드 사이즈를 컨텐츠에 핏하게 … 항상
+  자동핏입니다. 수동 리사이즈 없애요."*). Rectangular kinds fit their content
+  width (140–340px, wrap); round shapes (circle/ellipse incl. the **project
+  anchor**) fit as a square (``aspect-square``) so they stay circular — the
+  anchor shrinks to its content too (user: *"바나스 앵커는 왜 안줄이죠?"*).
+- A ``ResizeObserver`` in ``BaseNode`` persists the measured size back to the
+  doc (via ``onResize`` / ``onAnchorChange``), so React Flow's
+  ``nodeInternals`` — which **floating edges** and **auto-layout** read — and
+  the saved blueprint all match the visual. Fixes two regressions the auto-fit
+  first introduced: edges attaching to a phantom old-size box (*"작아지고 난
+  후에 연결선이 이상해졌어요"*) and auto-layout's no-overlap spacing using the
+  old sizes (*"정렬이 예전 노드 사이즈를 기준으로 하는 것 같다"*).
+- The kind tag (top-left) now clears the label with a top margin on compact
+  nodes (user: *"태그하고 라벨하고 겹쳐요"*).
+- Known caveat: the first measurement of each node on load settles its size
+  through ``onDocChange`` (one undo entry per node until stable). Follow-up:
+  a non-history "measurement sync" path + extract a ``useAutoFitSize`` hook.
+- BaseNode LOC ceiling 270 → 300. viewer 722/722; tsc clean. Verified on the
+  BANAS Foundation canvas (21 nodes): content-fit, edges attach, anchor
+  circular + shrunk, auto-layout tight with 0 overlaps.
+
 ## [0.37.2] — 2026-06-01
 
 ### Fixed — auto-layout no longer overlaps nodes (collision avoidance) (D-2026-06-01-A)

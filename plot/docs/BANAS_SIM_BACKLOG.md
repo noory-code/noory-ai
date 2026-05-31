@@ -13,16 +13,11 @@
 | ✅ | "+ New folder" in Add-a-Project picker | v0.37.0 (D-2026-05-31-AC) |
 | ✅ | **Node click selection sticks** (controlled array carries `selected`) | v0.37.1 (D-2026-05-31-AD) |
 | ✅ | **Auto-layout collision avoidance** — no overlapping nodes (Services 11→0) | v0.37.2 (D-2026-06-01-A) |
+| ✅ | **Node auto-fit content** (+ anchor, edges, tag margin, layout uses real size; manual resize removed) | v0.38.0 (D-2026-06-01-B) |
 
 ## In progress
 
-- 🔨 **Node auto-size to content** — user: *"노드 사이즈를 노드 안의
-  컨텐츠에 핏하게 자동으로 … 항상 자동핏입니다. 수동 리사이즈 없애요."*
-  → **always auto-fit, remove the manual NodeResizer**. Approach: content-
-  size the BaseNode box (min/max width, wrap), let RF measure → the existing
-  `dimensions`-change → doc plumbing persists real sizes for layout/edges.
-  Anchor (`project`) stays fixed (resized via `onAnchorChange`). Build was
-  briefly broken mid-edit (NodeResizer import); reverted to green, resuming.
+- (none — node auto-fit shipped v0.38.0)
 
 ## Ideas — need design / direction
 
