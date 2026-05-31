@@ -9526,3 +9526,29 @@ but not yet fully eliminated.
   된다 … 작업은 해야지").
 - **Spec impact:** SPEC §Actors §Nodes — new row "Abstract root
   superclass".
+
+### D-2026-05-31-I — Reframe actor `side` field as "Surface / 접점" (access surface)
+
+- **What:** The actor Inspector's `side` field is relabeled from "Side /
+  역할 — which side of the value exchange / 가치 교환에서 맡는 역할" to
+  **"Surface / 접점"** — *which system the actor accesses*. Options keep
+  the operator/user values but read as surfaces: operator → admin
+  console, user → app. **i18n text only** (`inspector.field.side`,
+  `inspector.fieldHint.side`, `inspector.operatorOption`,
+  `inspector.userOption`); the stored enum (`operator`/`user`), the
+  domain model, ServiceDetail subject detection (`side === "user"`) and
+  layout are all unchanged.
+- **Why:** The operator/user split exists because the participants use
+  *different systems* — the Operator accesses the operations page to
+  manage the service; an end user (Bana) accesses the Banas app. "Role
+  in the value exchange" mislabeled that; the real distinction is the
+  access surface.
+- **Alternatives:** (a) model change — replace operator/user with named,
+  free-form systems — rejected (YAGNI; the two surfaces map 1:1 to
+  operator/user, and a model change would touch Actor/ActorRef +
+  Pydantic + schema parity + ServiceDetail layout). (b) literal label
+  "접속 시스템 / Access system" — rejected as clunky; "Surface" is the
+  established product/UX term for the interface a participant touches.
+- **Approval:** Accepted by user, 2026-05-31 ("접속 시스템으로 잡죠 …
+  이쁜 말 … 추천대로합니다").
+- **Spec impact:** SPEC §Actors §Nodes — `side` field semantics.

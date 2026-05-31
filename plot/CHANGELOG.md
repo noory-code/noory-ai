@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.31.1] — 2026-05-31
+
+### Changed — actor `side` reframed as "Surface / 접점" (D-2026-05-31-I)
+
+- The actor Inspector's `side` field is relabeled from "Side / 역할 —
+  which side of the value exchange" to **"Surface / 접점" — which system
+  the actor accesses** (operator → admin console; user → app). The
+  operator/user split exists because participants use different systems
+  (Operator → operations page; end user → Banas app), which "role in the
+  value exchange" mislabeled.
+- **i18n text only** (`inspector.field.side`, `inspector.fieldHint.side`,
+  `inspector.operatorOption`, `inspector.userOption`, en + ko). The
+  stored enum (`operator`/`user`), the domain model, ServiceDetail
+  subject detection (`side === "user"`) and layout are all unchanged.
+
 ## [0.31.0] — 2026-05-31
 
 ### Changed — abstract root superclass hides role/motive/pain (D-2026-05-31-H)
