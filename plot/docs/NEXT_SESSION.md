@@ -9,7 +9,72 @@
 
 ## Active queue
 
-### `현재 상태 hands-on 검토` (TOP priority — NEXT TASK, filed 2026-05-31 end-of-session)
+### `자동정렬 위치+깊이 재작업 (플로팅 캔버스)` (TOP priority — NEXT TASK, filed 2026-05-31 end-of-session)
+
+> **Trigger:** user says **"정렬"** / **"자동정렬"** / **"레이아웃"** /
+> **"layout"** / **"플로팅"** / **"다음"** as the first / near-first message.
+>
+> **Filed:** 2026-05-31 end of session. User: *"그래 해봐라 해보고
+> 리뷰하고 제거할지 볼게. 근데 다음세션에서 하자 이 작업들. 기록 잘
+> 해놔라이"* — implement **option (A)** below next session; the user will
+> then review and decide whether to instead **(B) remove floating edges**.
+>
+> **The problem (two confirmed layout bugs on Foundation + Actors):**
+> 1. **Depth crossing** — actors `anchor ← user ← operator`; running 자동정렬
+>    placed `operator` BETWEEN anchor and user (anchor–operator–user), so the
+>    anchor–user edge crosses over operator. Depth order not respected.
+> 2. **Direction swap** — on Foundation, user put Core value LEFT + Mission
+>    TOP, ran 정렬, and it SWAPPED them (Mission left, Core value top).
+>
+> **Root cause (verified):** `viewer/src/canvases/sketch/autoLayout.ts`
+> ::`computeAutoLayout` decides each child's placement **direction from the
+> connecting edge's handle** (`buildAdjacency` → `handleToDirection(handle)`),
+> falling back to `inferDirection(currentPositions)` when no handle. **Floating
+> edges null their handles** (so they connect from any side) → the layout has
+> no handle signal → it uses stale/arbitrary handles or current positions →
+> placement doesn't match where the user put nodes, and depth isn't honored.
+> The actors canvas also has NO `actor_ref`, so `actorAnchoredLayout` (a
+> ServiceDetail tool, `useAutoLayout.ts` step 1) no-ops; it falls to
+> `computeAutoLayout` (step 2, `pickAnchor` = project anchor).
+>
+> **Option (A) — implement this (keep floating, fix the layout):**
+> Make the floating-canvas (foundation + actors) auto-layout **ignore edge
+> handles** and place each node by:
+> - **angle** = the node's CURRENT direction from the anchor/parent (so
+>   "Core value left, Mission top" is *preserved*, no swap), AND
+> - **distance** = BFS hop-depth from the anchor (rings), so a deeper node
+>   (operator, depth 2) always sits farther out than a shallower one (user,
+>   depth 1) → no crossing.
+> Touch points: `autoLayout.ts` (add a handle-free, depth-radial mode or make
+> `buildAdjacency` use `inferDirection` always + enforce depth distance) gated
+> by a `constrainToAnchor`/canvas-kind flag threaded via `useAutoLayout.ts`.
+> TDD: a `computeAutoLayout` case where the anchor←user←operator chain lays
+> out with operator farther than user, and core/mission keep their sides.
+>
+> **Option (B) — fallback if (A) doesn't satisfy:** remove floating edges
+> (revert to handle-based rendering). **Cost the user must weigh:** brings
+> back the asymmetric-handle awkward-loop problem (the very thing floating
+> fixed in v0.30.3), and loses v0.34.4–.6 (anchor-converging arrows + bezier
+> curves + round-anchor ellipse attach). So (A) is preferred.
+>
+> **Already shipped THIS session (do NOT redo) — v0.32.0 → v0.34.6:**
+> - v0.32.0–v0.34.0: **multi-directory projects** (server discovery + dir-tree
+>   endpoints → unified-discovery sidebar + effective-path I/O → Add-a-Project
+>   directory-tree picker). D-2026-05-31-L…N.
+> - v0.34.1→.3: header/tab-bar chrome — workspace **root path** sits by PLOT
+>   (= the repo), **project name + blueprint version** centered in the tab
+>   bar, socket label **"MCP: live"**. D-2026-05-31-O/P/Q.
+> - v0.34.4: Foundation+Actors **all arrows converge on the anchor** +
+>   **symmetric (all-source) handles** (start a connection from any side
+>   identically). D-2026-05-31-R. `canvases/sketch/anchorDistance.ts`.
+> - v0.34.5: floating edges = **bezier curves**. D-2026-05-31-S.
+> - v0.34.6: round anchor uses its **ellipse border** (arrows stop floating
+>   off it). D-2026-05-31-T.
+>
+> **Note:** demo data in `plot-test-v010` was churned during verification
+> (projects created/deleted live); not authoritative.
+
+### `현재 상태 hands-on 검토` (EXECUTED 2026-05-31 — became the v0.32→v0.34.6 work above)
 
 > **Trigger:** user says **"다음"** / **"검토"** / **"둘러보기"** /
 > **"리뷰"** / **"review"** as the first / near-first message.
