@@ -18,12 +18,25 @@
  */
 import {
   BaseEdge,
-  getStraightPath,
+  getBezierPath,
+  Position,
   useStore,
   type EdgeProps,
   type ReactFlowState,
 } from "reactflow";
-import { floatingEndpoints, type NodeRect } from "../../flow/floatingEdgeGeometry";
+import {
+  borderSide,
+  floatingEndpoints,
+  type BorderSide,
+  type NodeRect,
+} from "../../flow/floatingEdgeGeometry";
+
+const TO_POSITION: Record<BorderSide, Position> = {
+  top: Position.Top,
+  right: Position.Right,
+  bottom: Position.Bottom,
+  left: Position.Left,
+};
 
 function rectOf(node: {
   positionAbsolute?: { x: number; y: number };
@@ -46,8 +59,19 @@ export function FloatingEdge({ id, source, target, markerEnd, style }: EdgeProps
 
   if (!sourceNode || !targetNode) return null;
 
-  const { sx, sy, tx, ty } = floatingEndpoints(rectOf(sourceNode), rectOf(targetNode));
-  const [path] = getStraightPath({ sourceX: sx, sourceY: sy, targetX: tx, targetY: ty });
+  const sRect = rectOf(sourceNode);
+  const tRect = rectOf(targetNode);
+  const { sx, sy, tx, ty } = floatingEndpoints(sRect, tRect);
+  // v0.34.5 — curved (bezier) instead of straight; control points leave
+  // each node perpendicular to the border side the endpoint floats to.
+  const [path] = getBezierPath({
+    sourceX: sx,
+    sourceY: sy,
+    sourcePosition: TO_POSITION[borderSide(sx, sy, sRect)],
+    targetX: tx,
+    targetY: ty,
+    targetPosition: TO_POSITION[borderSide(tx, ty, tRect)],
+  });
 
   return <BaseEdge id={id} path={path} markerEnd={markerEnd} style={style} />;
 }

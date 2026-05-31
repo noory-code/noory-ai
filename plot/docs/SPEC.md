@@ -708,6 +708,10 @@ render swaps). All four node sides are `source` handles
 identically. Services / ServiceDetail are unaffected (user-chosen
 direction).
 
+Floating edges render as **bezier curves** (v0.34.5, D-2026-05-31-S) —
+diagonal edges bow gently toward the border side each endpoint exits;
+axis-aligned edges stay straight.
+
 > The `valueFlowOn` toggle in `SketchCanvas` recolours edges by
 > ``value_form``; whether that toggle is reachable from the UI on
 > Actors specifically is **TBD** — verify before next edge work.

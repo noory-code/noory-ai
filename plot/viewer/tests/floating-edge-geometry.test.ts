@@ -5,9 +5,22 @@
  * other node, so connection behaviour is identical from any side.
  */
 import { describe, expect, it } from "vitest";
-import { nodeBorderPoint, floatingEndpoints } from "../src/flow/floatingEdgeGeometry";
+import {
+  borderSide,
+  nodeBorderPoint,
+  floatingEndpoints,
+} from "../src/flow/floatingEdgeGeometry";
 
 const A = { x: 0, y: 0, width: 100, height: 100 }; // centre (50,50)
+
+describe("borderSide (v0.34.5 — bezier control side)", () => {
+  it("classifies each border point by side", () => {
+    expect(borderSide(100, 50, A)).toBe("right");
+    expect(borderSide(0, 50, A)).toBe("left");
+    expect(borderSide(50, 0, A)).toBe("top");
+    expect(borderSide(50, 100, A)).toBe("bottom");
+  });
+});
 
 describe("nodeBorderPoint (D-2026-05-31-F)", () => {
   it("faces a node to the right → exits the right edge midpoint", () => {

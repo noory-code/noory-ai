@@ -9767,3 +9767,17 @@ but not yet fully eliminated.
   "모든 화살표가 앵커를 향해야" + "어느 연결점에서 시작해도 그렇게
   만들어져야" + "상하좌우 연결점 동작이 다 다르다").
 - **Spec impact:** SPEC §Actors §Edges (+ applies to Foundation §Edges).
+
+### D-2026-05-31-S — Floating edges render as bezier curves
+
+- **What:** ``FloatingEdge`` now draws a **bezier** path (was a straight
+  line). The control points leave each node perpendicular to the border
+  side the floating endpoint exits (computed by the new pure
+  ``floatingEdgeGeometry.borderSide``). Off-axis / diagonal edges curve
+  gently; axis-aligned edges (the bezier control points stay collinear)
+  still read straight — clean, not forced.
+- **Why:** User: floating-edge UX is good but "선이 다 직선으로만 되는데 …
+  이쁘게 좀 보이게" — straight diagonals (esp. the actor inheritance tree)
+  looked harsh.
+- **Approval:** Accepted by user, 2026-05-31.
+- **Spec impact:** SPEC §Edges (floating edges are curved).

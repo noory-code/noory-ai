@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.5] — 2026-05-31
+
+### Changed — floating edges render as bezier curves (D-2026-05-31-S)
+
+- `FloatingEdge` now draws a bezier path (was straight). Control points
+  leave each node perpendicular to the border side the floating endpoint
+  exits (new pure `floatingEdgeGeometry.borderSide`). Diagonal edges (e.g.
+  the actor inheritance tree) curve gently; axis-aligned spokes still read
+  straight (clean). Covered by a `borderSide` case in
+  `floating-edge-geometry.test.ts`.
+
 ## [0.34.4] — 2026-05-31
 
 ### Changed — Foundation + Actors: all arrows converge on the anchor; symmetric connect handles (D-2026-05-31-R)

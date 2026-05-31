@@ -51,6 +51,20 @@ export function nodeBorderPoint(node: NodeRect, target: NodeRect): { x: number; 
   };
 }
 
+export type BorderSide = "top" | "right" | "bottom" | "left";
+
+/** Which border side a point sits on, relative to `node`'s centre. Used to
+ *  aim a bezier control point perpendicular to the side the floating
+ *  endpoint exits (v0.34.5). */
+export function borderSide(px: number, py: number, node: NodeRect): BorderSide {
+  const hw = node.width / 2 || 1;
+  const hh = node.height / 2 || 1;
+  const dx = (px - (node.x + hw)) / hw;
+  const dy = (py - (node.y + hh)) / hh;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "right" : "left";
+  return dy >= 0 ? "bottom" : "top";
+}
+
 /** Both border points for an edge between `source` and `target`. */
 export function floatingEndpoints(
   source: NodeRect,
