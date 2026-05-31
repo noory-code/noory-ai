@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { patchProjectAnchor, resolveProjectPath } from "./api";
+import { patchProjectAnchor, resolveWorkspaceRoot } from "./api";
 import { applyOptimisticAnchorPatch } from "./lib/anchorOptimistic";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
@@ -61,7 +61,7 @@ function resolveProjectAnchor(
 
 
 export function App() {
-  const projectPath = useMemo(resolveProjectPath, []);
+  const workspaceRoot = useMemo(resolveWorkspaceRoot, []);
   const history = useProjectHistory();
   const [error, setError] = useState<string | null>(null);
 
@@ -96,14 +96,15 @@ export function App() {
   );
 
   const project = useProject({
-    projectPath,
+    workspaceRoot,
     history,
     initialActiveId,
     onActiveIdChange: handleActiveIdChange,
     onError: handleError,
   });
   const {
-    summaries, activeId, canvasCache: liveCanvasCache, tags, migratedToast, phase,
+    summaries, activeId, activeProjectPath, dirForId,
+    canvasCache: liveCanvasCache, tags, migratedToast, phase,
     setCanvasCache, setServiceDetails, setTags, loadList,
     create: handleCreate, rename: handleRename, remove: handleDelete,
     pick: handlePick,
@@ -121,14 +122,14 @@ export function App() {
   // synthetic anchor node keeps a stable ref.
   const handleAnchorChange = useCallback(
     (patch: Partial<AnchorPlacement>) => {
-      if (!projectPath || !activeId) return;
+      if (!activeProjectPath || !activeId) return;
       const previous = summaries.find((p) => p.id === activeId);
       if (previous) {
         project.replaceSummary(
           applyOptimisticAnchorPatch(previous, activeTab, patch),
         );
       }
-      void patchProjectAnchor(projectPath, activeId, activeTab, patch).then(
+      void patchProjectAnchor(activeProjectPath, activeId, activeTab, patch).then(
         (refreshed) => project.replaceSummary(refreshed),
         (err) => {
           if (previous) project.replaceSummary(previous);
@@ -136,7 +137,7 @@ export function App() {
         },
       );
     },
-    [projectPath, activeId, activeTab, summaries, project],
+    [activeProjectPath, activeId, activeTab, summaries, project],
   );
 
   // ------- persist + undo/redo (extracted to useCanvasPersist) -------
@@ -148,7 +149,7 @@ export function App() {
     undo: historyUndo,
     redo: historyRedo,
   } = useCanvasPersist({
-    projectPath,
+    projectPath: activeProjectPath,
     activeId,
     history,
     setCanvasCache,
@@ -161,7 +162,7 @@ export function App() {
   // the app renders the canvas state at that git tag. Edits are gated at
   // the App boundary so save / publish flows never operate on tag data.
   const { viewingTag, snapshotCache, enterTagView, exitTagView } =
-    useSnapshotView(projectPath, activeId, handleError);
+    useSnapshotView(activeProjectPath, activeId, handleError);
   const canvasCache = viewingTag ? snapshotCache : liveCanvasCache;
   const applyEdit: typeof liveApplyEdit = viewingTag
     ? (() => {}) as typeof liveApplyEdit
@@ -170,7 +171,7 @@ export function App() {
   // ------- WebSocket (extracted to useProjectSocket) -------
 
   const socketStatus = useProjectSocket({
-    projectPath,
+    projectPath: activeProjectPath,
     activeId,
     pendingWrites,
     onListStale: handleListStale,
@@ -331,7 +332,7 @@ export function App() {
   );
   const activeProjectName = activeSummary?.name ?? null;
 
-  if (!projectPath) {
+  if (!workspaceRoot) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div>
@@ -357,7 +358,7 @@ export function App() {
       {...(modalOpen ? { inert: "" as unknown as undefined } : {})}
     >
       <Header
-        projectPath={projectPath}
+        projectPath={workspaceRoot}
         error={error}
         socketStatus={socketStatus}
         saveState={saveState}
@@ -373,6 +374,7 @@ export function App() {
         <SketchSidebar
           projects={summaries}
           activeId={activeId}
+          dirForId={dirForId}
           stencilCanvas={activeTab}
           availableActors={availableActors}
           availableMissions={availableMissions}
@@ -422,7 +424,7 @@ export function App() {
                 onRedo={handleRedo}
                 canUndo={history.canUndo}
                 canRedo={history.canRedo}
-                projectPath={projectPath ?? ""}
+                projectPath={activeProjectPath ?? ""}
                 projectId={activeId}
                 availableActors={availableActors}
                 availableMissions={availableMissions}
@@ -468,7 +470,7 @@ export function App() {
             onRedo={handleRedo}
             canUndo={history.canUndo}
             canRedo={history.canRedo}
-            projectPath={projectPath ?? ""}
+            projectPath={activeProjectPath ?? ""}
             projectId={activeId!}
             availableActors={availableActors}
             availableMissions={availableMissions}

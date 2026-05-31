@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.33.0] — 2026-05-31
+
+### Added / Changed — multi-directory projects: unified discovery + effective path (Phase 2; D-2026-05-31-M)
+
+- The viewer now treats the launch `?project_path=` as the **workspace
+  root** and lists ALL projects discovered anywhere under it in one sidebar,
+  each with a muted **directory label** (root-level shows a "root" label).
+- Per-project I/O + the WebSocket use the **effective project path**
+  (`root + project dir`), so projects in different subdirectories each
+  read/write their own `.plot/`. Switching to a project in a different dir
+  reconnects the socket; same-dir switches do not.
+- The "New project" button is renamed **"Add a Project"** / "프로젝트 추가".
+  (v0.33.0 still creates at the root; the directory-tree picker lands next.)
+- New pure `lib/projectPath.ts::joinWorkspaceDir`; discovery + the id→dir map
+  folded into `useProject` (a `dirMapRef` mirrors the map synchronously for
+  the initial open). New i18n key `sidebar.rootDir`.
+- Covered by `tests/projectPath.test.ts`, `tests/effective-project-path.test.tsx`,
+  `tests/ws-reconnect-on-dir-switch.test.tsx`, `tests/sidebar-unified-list.test.tsx`.
+
 ## [0.32.0] — 2026-05-31
 
 ### Added — workspace discovery + dir-tree endpoints (multi-directory projects, Phase 1; D-2026-05-31-L)

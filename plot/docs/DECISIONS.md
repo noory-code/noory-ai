@@ -9626,3 +9626,32 @@ but not yet fully eliminated.
   + 중첩 폴더 트리").
 - **Spec impact:** none yet (server-only plumbing; user-visible behaviour
   lands in Phase 2 with the unified sidebar + effective-path refactor).
+
+### D-2026-05-31-M — Multi-directory projects: unified discovery + effective project path (Phase 2)
+
+- **What:** The viewer now treats the launch `?project_path=` as the
+  **workspace root** and lists ALL projects discovered anywhere under it in
+  one sidebar (each with its dir label). Per-project I/O + the WebSocket use
+  the **effective project path** (`root + project dir`), so projects in
+  different subdirectories each read/write their own `.plot/`. The "New
+  project" button is renamed **"Add a Project"** (en) / "프로젝트 추가" (ko).
+- **Why:** A monorepo holds many Plot projects, one per package/subdir. The
+  flat single-`.plot` model could only show one directory's projects.
+- **Key invariants:**
+  - `project_path` is no longer a page-load constant — `workspaceRoot`
+    (discovery) vs `activeProjectPath` (per-project I/O), the latter derived
+    from `activeId` + an id→dir map built by discovery.
+  - WebSocket reconnects when the effective path (dir) changes; same-dir
+    project switches do not (pinned by `ws-reconnect-on-dir-switch.test.tsx`).
+- **Implementation notes (simplifications vs the plan):**
+  - Discovery + the id→dir map are folded INTO `useProject` (no separate
+    `useWorkspace` hook) — KISS; `useProject` already owned the project
+    list, and folding avoids a cross-hook cycle. A `dirMapRef` mirrors the
+    map synchronously so the initial open reads the right dir before the
+    state re-render.
+  - URL keeps just `?project=<id>` (no `?dir=`); the dir is resolved from
+    discovery. Project ids are `proj-<base36 ts>` so cross-dir id collisions
+    are astronomically unlikely; first match wins (accepted).
+- **Approval:** Accepted by user, 2026-05-31 (approved plan; "Add a Project"
+  label confirmed mid-build).
+- **Spec impact:** SPEC §"Workspace & projects".

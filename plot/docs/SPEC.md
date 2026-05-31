@@ -11,6 +11,28 @@
 
 ---
 
+# Workspace & projects (v0.33.0, D-2026-05-31-M)
+
+A **workspace root** (the launch `?project_path=<root>`) can hold many Plot
+projects, each in its own subdirectory with its own `.plot/`. The viewer
+**recursively discovers** every project under the root (`/api/workspace/
+projects`) and shows them in ONE sidebar list, each with a muted **dir
+label** (its path relative to the root; root-level shows the localized
+"root" label).
+
+- **Effective project path** — per-project server I/O (canvas read/write,
+  anchors, tags, publish) addresses `<root>/<project dir>`, not the bare
+  root. Switching to a project in a **different directory** reconnects the
+  WebSocket to that dir's `.plot/`; switching between projects in the
+  **same directory** does not reconnect.
+- **Add a Project** — the sidebar/empty-state button is labeled "Add a
+  Project" (was "New project"). In v0.33.0 it creates at the root (dir
+  `"."`); the directory-tree picker (choose where, open-if-exists) lands in
+  a later phase.
+- **URL** — `?project_path=<root>` (workspace root) + `?project=<id>`. The
+  active project's directory is resolved from discovery (id→dir map). Off-
+  root absolute paths are out of scope (future native/desktop host).
+
 ---
 
 # Foundation

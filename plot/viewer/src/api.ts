@@ -15,6 +15,10 @@ export function resolveProjectPath(): string | null {
   return url.searchParams.get("project_path");
 }
 
+/** Alias — the launch URL param is the WORKSPACE ROOT (v0.33.0): used for
+ *  recursive discovery + the dir-tree picker, not for per-project I/O. */
+export const resolveWorkspaceRoot = resolveProjectPath;
+
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
@@ -65,6 +69,50 @@ export async function listProjects(projectPath: string): Promise<ListProjectsRes
     projectPath,
   )}`;
   return json<ListProjectsResponse>(await fetch(url));
+}
+
+// --- workspace discovery + dir-tree picker (v0.33.0, D-2026-05-31-M) ---
+// TS mirrors of the Pydantic response models (plot_mcp/models.py); kept in
+// sync by hand (outside the 15-kind schema-parity harness).
+
+export interface DiscoveredProject {
+  project: ProjectDoc;
+  /** POSIX-relative dir under the workspace root; "." for root-level. */
+  dir: string;
+}
+
+export interface WorkspaceDiscoveryResponse {
+  projects: DiscoveredProject[];
+  migrated: string[];
+}
+
+export interface DirTreeNode {
+  name: string;
+  rel: string;
+  has_plot: boolean;
+  children: DirTreeNode[];
+}
+
+export interface DirTreeResponse {
+  root: DirTreeNode;
+}
+
+/** Recursively discover every project under the workspace root. */
+export async function discoverWorkspace(
+  workspaceRoot: string,
+): Promise<WorkspaceDiscoveryResponse> {
+  const url = `${API_BASE}/api/workspace/projects?project_path=${encodeURIComponent(
+    workspaceRoot,
+  )}`;
+  return json<WorkspaceDiscoveryResponse>(await fetch(url));
+}
+
+/** Nested directory tree (with has_plot flags) for the new-project picker. */
+export async function getDirTree(workspaceRoot: string): Promise<DirTreeResponse> {
+  const url = `${API_BASE}/api/workspace/tree?project_path=${encodeURIComponent(
+    workspaceRoot,
+  )}`;
+  return json<DirTreeResponse>(await fetch(url));
 }
 
 export interface GetProjectResponse extends ProjectDoc {

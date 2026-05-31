@@ -18,7 +18,8 @@
   },
   "sidebar": {
     "projects": "Projects",
-    "newProject": "+ New project",
+    "newProject": "+ Add a Project",
+    "rootDir": "root",
     "noProjects": "(none yet)",
     "noTagsHint": "(no tags yet)",
     "rename": "Rename",

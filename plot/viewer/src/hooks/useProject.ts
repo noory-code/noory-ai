@@ -1,18 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type BlueprintBump,
   createProject,
   deleteProject,
   deleteProjectTag,
+  discoverWorkspace,
   getAllCanvases,
   getProject,
-  listProjects,
   publishNode,
   publishProject,
   unpublishNode,
   renameProject,
   tagProject,
 } from "../api";
+import { joinWorkspaceDir } from "../lib/projectPath";
 import type { ProjectHistoryApi } from "../canvases/useProjectHistory";
 import type {
   CanvasDoc,
@@ -24,7 +25,9 @@ import type {
 export type ProjectPhase = "loading" | "no-projects" | "ready" | "error";
 
 export interface UseProjectArgs {
-  projectPath: string | null;
+  /** Workspace ROOT (the launch ``?project_path=``). Per-project I/O uses
+   *  the effective path = root + the project's dir (D-2026-05-31-M). */
+  workspaceRoot: string | null;
   history: ProjectHistoryApi;
   /** URL state is owned by the App; the hook hands it the chosen id
    *  whenever the open project changes so the shell can sync ``?project=``. */
@@ -38,6 +41,12 @@ export interface UseProjectApi {
   // state
   summaries: ProjectDoc[];
   activeId: string | null;
+  /** Effective ``project_path`` for the active project (root + its dir),
+   *  or the workspace root when no project is active. Per-project consumers
+   *  (persist / socket / canvas) thread this. */
+  activeProjectPath: string | null;
+  /** The active project's dir relative to the workspace root ("." = root). */
+  dirForId: (id: string) => string;
   canvasCache: Map<CanvasKey, CanvasDoc>;
   tags: ProjectTag[];
   migratedToast: string[] | null;
@@ -86,9 +95,15 @@ export interface UseProjectApi {
  * to ``?project=`` so the concern stays at the view layer.
  */
 export function useProject(args: UseProjectArgs): UseProjectApi {
-  const { projectPath, history, onActiveIdChange, initialActiveId, onError } = args;
+  const { workspaceRoot, history, onActiveIdChange, initialActiveId, onError } = args;
 
   const [summaries, setSummaries] = useState<ProjectDoc[]>([]);
+  // ``dirMap`` (state) drives reactive render (sidebar labels +
+  // ``activeProjectPath`` memo). ``dirMapRef`` mirrors it synchronously so
+  // imperative actions that run right after ``loadList`` (e.g. the initial
+  // open) read the freshest dir before the state re-render lands.
+  const [dirMap, setDirMap] = useState<Map<string, string>>(() => new Map());
+  const dirMapRef = useRef<Map<string, string>>(new Map());
   const [migratedToast, setMigratedToast] = useState<string[] | null>(null);
   const [tags, setTags] = useState<ProjectTag[]>([]);
   const [canvasCache, setCanvasCache] = useState<Map<CanvasKey, CanvasDoc>>(
@@ -106,32 +121,52 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     [onActiveIdChange],
   );
 
+  // A project's dir relative to the workspace root ("." = root-level).
+  // Reads state so the sidebar re-renders when discovery updates it.
+  const dirForId = useCallback((id: string) => dirMap.get(id) ?? ".", [dirMap]);
+
+  // Effective server ``project_path`` for a given project = root + its dir.
+  // Reads the ref (synchronous) so an action firing immediately after
+  // ``loadList`` uses the freshest dir, not the pre-render empty map.
+  const pathFor = useCallback(
+    (id: string): string | null =>
+      workspaceRoot == null
+        ? null
+        : joinWorkspaceDir(workspaceRoot, dirMapRef.current.get(id) ?? "."),
+    [workspaceRoot],
+  );
+
+  const activeProjectPath = useMemo(
+    () => (activeId ? pathFor(activeId) : workspaceRoot),
+    [activeId, pathFor, workspaceRoot],
+  );
+
   const loadList = useCallback(async (): Promise<ProjectDoc[] | null> => {
-    if (!projectPath) return null;
+    if (!workspaceRoot) return null;
     try {
-      const { projects, migrated } = await listProjects(projectPath);
-      setSummaries(projects);
+      const { projects, migrated } = await discoverWorkspace(workspaceRoot);
+      const map = new Map(projects.map((d) => [d.project.id, d.dir]));
+      dirMapRef.current = map;
+      setSummaries(projects.map((d) => d.project));
+      setDirMap(map);
       if (migrated.length > 0) setMigratedToast(migrated);
-      return projects;
+      return projects.map((d) => d.project);
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
       setPhase("error");
       return null;
     }
-  }, [projectPath, onError]);
+  }, [workspaceRoot, onError]);
 
   const openProject = useCallback(
     async (projectId: string) => {
-      if (!projectPath) return;
+      const path = pathFor(projectId);
+      if (!path) return;
       try {
-        const proj = await getProject(projectPath, projectId);
+        const proj = await getProject(path, projectId);
         setServiceDetails(proj.service_details);
         setTags(proj.tags);
-        const cache = await getAllCanvases(
-          projectPath,
-          projectId,
-          proj.service_details,
-        );
+        const cache = await getAllCanvases(path, projectId, proj.service_details);
         setCanvasCache(cache);
         history.init();
         setPhase("ready");
@@ -140,12 +175,12 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         setPhase("error");
       }
     },
-    [projectPath, history, onError],
+    [pathFor, history, onError],
   );
 
   // Initial list + open.
   useEffect(() => {
-    if (!projectPath) return;
+    if (!workspaceRoot) return;
     void (async () => {
       const list = await loadList();
       if (!list || list.length === 0) {
@@ -158,39 +193,43 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
       void openProject(chosen);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectPath]);
+  }, [workspaceRoot]);
 
   const create = useCallback(async () => {
-    if (!projectPath) return;
+    if (!workspaceRoot) return;
     try {
+      // Phase 2: create at the workspace root (dir "."). Phase 3 adds the
+      // directory-tree picker that targets a chosen subdirectory.
       const id = `proj-${Date.now().toString(36)}`;
-      const created = await createProject(projectPath, id, "Untitled");
+      const created = await createProject(workspaceRoot, id, "Untitled");
       setActiveId(created.id);
       await loadList();
       await openProject(created.id);
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
     }
-  }, [projectPath, loadList, openProject, onError, setActiveId]);
+  }, [workspaceRoot, loadList, openProject, onError, setActiveId]);
 
   const rename = useCallback(
     async (id: string, name: string) => {
-      if (!projectPath) return;
+      const path = pathFor(id);
+      if (!path) return;
       try {
-        await renameProject(projectPath, id, name);
+        await renameProject(path, id, name);
         await loadList();
       } catch (err) {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [projectPath, loadList, onError],
+    [pathFor, loadList, onError],
   );
 
   const remove = useCallback(
     async (id: string) => {
-      if (!projectPath) return;
+      const path = pathFor(id);
+      if (!path) return;
       try {
-        await deleteProject(projectPath, id);
+        await deleteProject(path, id);
         const list = (await loadList()) ?? [];
         if (activeId === id) {
           if (list.length === 0) {
@@ -205,7 +244,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [projectPath, loadList, openProject, activeId, onError, setActiveId],
+    [pathFor, loadList, openProject, activeId, onError, setActiveId],
   );
 
   const pick = useCallback(
@@ -218,11 +257,12 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
 
   const publishBlueprint = useCallback(
     async (bump: BlueprintBump) => {
-      if (!projectPath || !activeId) return;
+      const path = activeId ? pathFor(activeId) : null;
+      if (!path || !activeId) return;
       try {
-        await publishProject(projectPath, activeId, bump);
+        await publishProject(path, activeId, bump);
         // Refresh summaries (blueprint_version) and tags.
-        const proj = await getProject(projectPath, activeId);
+        const proj = await getProject(path, activeId);
         setSummaries((prev) =>
           prev.map((p) =>
             p.id === activeId
@@ -235,80 +275,76 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [projectPath, activeId, onError],
+    [pathFor, activeId, onError],
   );
 
   const markSession = useCallback(async () => {
-    if (!projectPath || !activeId) return;
+    const path = activeId ? pathFor(activeId) : null;
+    if (!path || !activeId) return;
     const name = window.prompt("Session tag name (e.g. 'session-banas-start')");
     if (!name || !name.trim()) return;
     const message = window.prompt("Optional short message", "") || undefined;
     try {
-      await tagProject(projectPath, activeId, name.trim(), message);
-      const proj = await getProject(projectPath, activeId);
+      await tagProject(path, activeId, name.trim(), message);
+      const proj = await getProject(path, activeId);
       setTags(proj.tags);
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
     }
-  }, [projectPath, activeId, onError]);
+  }, [pathFor, activeId, onError]);
 
   const publishNodeAction = useCallback(
     async (canvasKey: CanvasKey, nodeId: string) => {
-      if (!projectPath || !activeId) return;
+      const path = activeId ? pathFor(activeId) : null;
+      if (!path || !activeId) return;
       const [canvasKind, serviceId] = canvasKey.split(":") as [string, string?];
       try {
-        await publishNode(projectPath, activeId, canvasKind, nodeId, serviceId);
+        await publishNode(path, activeId, canvasKind, nodeId, serviceId);
         // Re-read the canvas via the existing all-canvases fetch so the
         // Inspector reflects the bumped version + the new MD file on
         // disk is visible to subsequent reads.
-        const proj = await getProject(projectPath, activeId);
-        const refreshed = await getAllCanvases(
-          projectPath,
-          activeId,
-          proj.service_details,
-        );
+        const proj = await getProject(path, activeId);
+        const refreshed = await getAllCanvases(path, activeId, proj.service_details);
         setCanvasCache(refreshed);
       } catch (err) {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [projectPath, activeId, onError],
+    [pathFor, activeId, onError],
   );
 
   // v0.23.x (D-2026-05-17-J) — unpublish action mirrors publishNodeAction
   // (same refresh flow).
   const unpublishNodeAction = useCallback(
     async (canvasKey: CanvasKey, nodeId: string) => {
-      if (!projectPath || !activeId) return;
+      const path = activeId ? pathFor(activeId) : null;
+      if (!path || !activeId) return;
       const [canvasKind, serviceId] = canvasKey.split(":") as [string, string?];
       try {
-        await unpublishNode(projectPath, activeId, canvasKind, nodeId, serviceId);
-        const proj = await getProject(projectPath, activeId);
-        const refreshed = await getAllCanvases(
-          projectPath,
-          activeId,
-          proj.service_details,
-        );
+        await unpublishNode(path, activeId, canvasKind, nodeId, serviceId);
+        const proj = await getProject(path, activeId);
+        const refreshed = await getAllCanvases(path, activeId, proj.service_details);
         setCanvasCache(refreshed);
       } catch (err) {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [projectPath, activeId, onError],
+    [pathFor, activeId, onError],
   );
 
   const deleteTag = useCallback(
     async (name: string) => {
-      if (!projectPath || !activeId) return;
+      const path = activeId ? pathFor(activeId) : null;
+      if (!path || !activeId) return;
       try {
-        await deleteProjectTag(projectPath, activeId, name);
-        const proj = await getProject(projectPath, activeId);
+        await deleteProjectTag(path, activeId, name);
+        const proj = await getProject(path, activeId);
         setTags(proj.tags);
       } catch (err) {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [projectPath, activeId, onError],
+    [pathFor, activeId, onError],
   );
 
   const dismissToast = useCallback(() => setMigratedToast(null), []);
@@ -320,6 +356,8 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
   return {
     summaries,
     activeId,
+    activeProjectPath,
+    dirForId,
     canvasCache,
     tags,
     migratedToast,

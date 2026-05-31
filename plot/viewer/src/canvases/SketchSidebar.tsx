@@ -7,6 +7,10 @@ import { SketchStencil, type StencilCanvas } from "./SketchStencil";
 export interface SketchSidebarProps {
   projects: ProjectDoc[];
   activeId: string | null;
+  /** v0.33.0 — a project's dir relative to the workspace root ("." = root).
+   *  Rendered as a muted subtitle so the unified list shows where each
+   *  project lives. */
+  dirForId?: (id: string) => string;
   stencilCanvas: StencilCanvas;
   tags: ProjectTag[];
   /** v0.11.5 — masters for the dynamic ref presets on the
@@ -29,6 +33,7 @@ export interface SketchSidebarProps {
 export function SketchSidebar({
   projects,
   activeId,
+  dirForId,
   stencilCanvas,
   tags,
   availableActors,
@@ -126,10 +131,15 @@ export function SketchSidebar({
                 <button
                   type="button"
                   onClick={() => onPick(p.id)}
-                  className="block w-full truncate text-left"
+                  className="block w-full text-left"
                   title={p.name || p.id}
                 >
-                  {p.name || p.id}
+                  <span className="block truncate">{p.name || p.id}</span>
+                  {dirForId && (
+                    <span className="block truncate text-[10px] font-normal text-slate-400">
+                      {dirForId(p.id) === "." ? t("sidebar.rootDir") : dirForId(p.id)}
+                    </span>
+                  )}
                 </button>
               )}
               {!isRenaming && (

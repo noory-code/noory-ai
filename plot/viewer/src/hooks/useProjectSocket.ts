@@ -32,9 +32,12 @@ export interface UseProjectSocketArgs {
  * Holds the project-scoped WebSocket. One subscription per ``projectPath``;
  * re-subscribes only when the path itself changes.
  *
- * Project-switch inside the same ``projectPath`` does **not** reconnect —
- * the server-side subscription is already scoped to the plot root, and
- * filtering by ``activeId`` happens in the event handler.
+ * v0.33.0 (D-2026-05-31-M): ``projectPath`` is now the **effective project
+ * path** (workspace root + the active project's dir). Switching to a project
+ * in a **different directory** changes the path → the socket reconnects to
+ * that dir's plot root. Switching between projects in the **same directory**
+ * leaves the path unchanged → no reconnect; ``activeId`` filtering in the
+ * event handler still scopes events to the open project.
  */
 export function useProjectSocket(args: UseProjectSocketArgs): SocketStatus {
   const [status, setStatus] = useState<SocketStatus>("connecting");
