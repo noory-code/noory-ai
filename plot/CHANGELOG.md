@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.7] — 2026-05-31
+
+### Changed — blueprint version moves to the project (tab-bar); one-line status cluster (D-2026-05-31-U)
+
+- The blueprint version badge moves from the header (next to the workspace
+  path = the repo) to the **tab-bar center, next to the project name** — the
+  version belongs to the project, not the repo path.
+- The header status cluster (save / socket / error) drops its fixed width
+  and uses `whitespace-nowrap` + `shrink-0`, so "저장 중…" no longer wraps to
+  two lines; the error is the only flexible (truncating) item.
+
 ## [0.34.6] — 2026-05-31
 
 ### Fixed — arrows no longer float off the round anchor (D-2026-05-31-T)

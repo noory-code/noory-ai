@@ -70,8 +70,18 @@ export function CanvasTabs({
           );
         })}
       </div>
-      <span className="min-w-0 flex-1 truncate px-4 text-center text-sm font-medium text-slate-700">
-        {projectName ?? ""}
+      {/* v0.34.7 (D-2026-05-31-U) — project name + its blueprint version
+          (version belongs to the PROJECT, not the repo path in the header). */}
+      <span className="flex min-w-0 flex-1 items-center justify-center gap-2 px-4">
+        <span className="truncate text-sm font-medium text-slate-700">{projectName ?? ""}</span>
+        {projectName && (
+          <span
+            className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-slate-600"
+            title="Blueprint version"
+          >
+            {blueprintVersion}
+          </span>
+        )}
       </span>
       <BlueprintPublishButton
         currentVersion={blueprintVersion}

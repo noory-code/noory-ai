@@ -16,11 +16,12 @@ interface HeaderProps {
   error: string | null;
   socketStatus: SocketStatus;
   saveState: SaveState;
-  /** Workspace ROOT absolute path — the "where am I" location, shown at the
-   *  very top next to PLOT (v0.34.3, D-2026-05-31-Q). The project NAME lives
-   *  in the tab-bar center instead. */
+  /** Workspace ROOT absolute path — the repository the Plot plugin is
+   *  installed in. Shown at the very top next to PLOT (v0.34.3,
+   *  D-2026-05-31-Q). The project NAME + its blueprint version live in the
+   *  tab-bar center; no per-project version belongs up here next to the
+   *  repo path (v0.34.7, D-2026-05-31-U). */
   workspaceRoot: string;
-  blueprintVersion: string | null;
   /** v0.24.14 (D-2026-05-21-C) — when set, the app is in snapshot mode at
    *  this git tag. Banner appears with an exit button; edits are blocked
    *  upstream. */
@@ -35,7 +36,6 @@ export function Header({
   socketStatus,
   saveState,
   workspaceRoot,
-  blueprintVersion,
   viewingTag,
   onExitTagView,
   migratedToast,
@@ -50,27 +50,22 @@ export function Header({
           <span className="font-mono text-xs text-slate-500" title={workspaceRoot}>
             {workspaceRoot}
           </span>
-          {blueprintVersion && (
-            <span
-              className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-slate-600"
-              title="Blueprint version"
-            >
-              {blueprintVersion}
-            </span>
-          )}
         </div>
-        <div className="flex w-72 items-center justify-end gap-2 text-right text-xs">
-          <SaveIndicator state={saveState} />
-          <SocketIndicator status={socketStatus} />
+        {/* v0.34.7 (D-2026-05-31-U) — no fixed width; items stay on one line
+            (``whitespace-nowrap`` + ``shrink-0``) so "저장 중…" never wraps.
+            The error is the only flexible item and truncates. */}
+        <div className="flex min-w-0 items-center justify-end gap-3 pl-4 text-xs">
           {error && (
-            <span
-              className="truncate text-rose-600"
-              title={error}
-              aria-label="error"
-            >
+            <span className="min-w-0 truncate text-rose-600" title={error} aria-label="error">
               {error}
             </span>
           )}
+          <span className="shrink-0">
+            <SaveIndicator state={saveState} />
+          </span>
+          <span className="shrink-0">
+            <SocketIndicator status={socketStatus} />
+          </span>
         </div>
       </div>
       {viewingTag && (
@@ -120,7 +115,7 @@ function SaveIndicator({ state }: { state: SaveState }) {
   const icon =
     state === "saving" ? "💾" : state === "saved" ? "✓" : "⚠";
   return (
-    <span className={`inline-flex items-center gap-1 ${tone}`} title={label}>
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${tone}`} title={label}>
       <span aria-hidden>{icon}</span>
       <span>{label}</span>
     </span>
@@ -148,7 +143,7 @@ function SocketIndicator({ status }: { status: SocketStatus }) {
     disconnected: "text-slate-600",
   }[status];
   return (
-    <span className={`inline-flex items-center gap-1 ${tone}`} title={label}>
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${tone}`} title={label}>
       <span aria-hidden className={`h-2 w-2 rounded-full ${dot}`} />
       <span>{label}</span>
     </span>

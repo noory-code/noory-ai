@@ -9795,3 +9795,18 @@ but not yet fully eliminated.
   it: "앵커가 네모나다고 판단해서 화살표가 붕 뜨는거죠?".
 - **Approval:** Accepted by user, 2026-05-31.
 - **Spec impact:** SPEC §Edges (round anchor border).
+
+### D-2026-05-31-U — Blueprint version belongs to the project (tab-bar), not the repo path; one-line status cluster
+
+- **What:** (1) The blueprint version badge moves from the header (next to
+  the workspace path) to the **tab-bar center, next to the project name**.
+  (2) The header status cluster (save / socket / error) drops its fixed
+  ``w-72`` and uses ``whitespace-nowrap`` + ``shrink-0`` so "저장 중…" never
+  wraps to two lines; the error is the only flexible (truncating) item.
+- **Why:** User: *"프로젝트에 버전이 들어가야죠. 맨 위에 경로는 플롯
+  플러그인이 설치된 리포지토리 정도라고 생각하면…"* — the top path is the
+  REPO; a per-project version doesn't belong beside it. And: *"저장중 이거
+  두줄로 나오죠? 한줄로 나오게 넓게 가져가세요."*
+- **Approval:** Accepted by user, 2026-05-31.
+- **Spec impact:** SPEC §"Workspace & projects" — Chrome (version with the
+  project name in the tab bar).

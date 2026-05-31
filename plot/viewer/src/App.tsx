@@ -364,7 +364,6 @@ export function App() {
         socketStatus={socketStatus}
         saveState={saveState}
         workspaceRoot={workspaceRoot}
-        blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? null}
         viewingTag={viewingTag}
         onExitTagView={exitTagView}
         onDismissToast={dismissToast}
