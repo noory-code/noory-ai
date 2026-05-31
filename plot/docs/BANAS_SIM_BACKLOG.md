@@ -1,65 +1,78 @@
 # BANAS simulation — backlog
 
 > Live tracking of everything surfaced while populating the real BANAS
-> blueprint into Plot (2026-05-31 →). The user fires findings/requests
-> rapidly; nothing here is dropped. Status: ✅ done · 🔨 in-progress ·
-> 💡 idea (needs design/direction) · ⏳ awaiting user.
+> blueprint into Plot (2026-05-31 → 2026-06-01). The user fired findings
+> rapidly; nothing is dropped. User: *"못따라가겠다면 어디 기록해둬야합니다."*
+> Status: ✅ shipped · 🔨 next (designed) · 💡 idea (needs direction) · ⏳ verify.
+>
+> **Sim project:** `banas-sim/banas/.plot/banas/` (workspace
+> `/Users/woogis/Workspace/banas-sim`). Source of truth for content:
+> `project-noory/banas/workspace/{identity,concepts,catalog}`. Foundation
+> (20 nodes), Actors (6), Services (7 cat + 11 svc) are populated.
 
-## Shipped (committed + pushed)
+## ✅ Shipped (committed + pushed)
 
-| # | Item | Ship |
-|---|---|---|
-| ✅ | Category nodes render with rounded corners | v0.36.2 (D-2026-05-31-AB) |
-| ✅ | "+ New folder" in Add-a-Project picker | v0.37.0 (D-2026-05-31-AC) |
-| ✅ | **Node click selection sticks** (controlled array carries `selected`) | v0.37.1 (D-2026-05-31-AD) |
-| ✅ | **Auto-layout collision avoidance** — no overlapping nodes (Services 11→0) | v0.37.2 (D-2026-06-01-A) |
-| ✅ | **Node auto-fit content** (+ anchor, edges, tag margin, layout uses real size; manual resize removed) | v0.38.0 (D-2026-06-01-B) |
+| Item | Ship |
+|---|---|
+| Category nodes render with rounded corners | v0.36.2 (D-2026-05-31-AB) |
+| "+ New folder" in Add-a-Project picker | v0.37.0 (D-2026-05-31-AC) |
+| Node click selection sticks (controlled array carries `selected`) | v0.37.1 (D-2026-05-31-AD) |
+| Auto-layout collision avoidance — no node overlap | v0.37.2 (D-2026-06-01-A) |
+| Node auto-fit content (+ anchor, edges, tag margin; manual resize removed) | v0.38.0 (D-2026-06-01-B) |
+| Auto-layout is a TREE, not concentric circles (children near parents) | v0.39.0 (D-2026-06-01-C) |
 
-## In progress
+## 🔨 NEXT SESSION — pick up here (designed + user-confirmed)
 
-- (none — node auto-fit shipped v0.38.0)
+### 1. Mindmap-quality tree layout  (the active layout task)
+User criteria (2026-06-01), confirmed: **(1)** no node overlap, **(2)** no
+edge crossing/overlap, **(3)** each parent's children read as ONE visual
+group around the parent. The v0.39.0 cartesian tree splits a parent's
+children across T/R/B/L and lets cross-branch edges cross near the anchor.
 
-## Ideas — need design / direction
+**Approach (user-approved direction):** a recursive **mindmap radial tree**
+— new `computeMindmapLayout`, wired into `useAutoLayout` for the `"tree"`
+canvases:
+- Anchor's children fan around the circle; each gets an **angular sector**
+  sized by its subtree leaf-count.
+- Each node's children are placed **just outside the node** (parent-relative:
+  `parentRadius + gap + childRadius`), **fanned within the parent's sector**,
+  on the outward side → children cluster beside their parent.
+- Per-level radius = `max(clearance, arc-fit)` where arc-fit =
+  `Σ(childDiameter+gap) / sectorAngle` so children always fit along their arc
+  (no overlap).
+- Subtrees own **disjoint sectors** → branches never overlap or cross.
+- Acceptance test (was drafted in a removed WIP `mindmapLayout.test.ts`): no
+  node overlap; each child nearer its parent than the anchor; each branch
+  span < π (grouped, not wrapped); deterministic.
+- Keep `computeRadialLayout` (radial button) + `computeAutoLayout` (cartesian
+  tree) as-is; just swap what `useAutoLayout` calls.
 
-- 💡 **Foundation intermediate hub node** — user: *"파운데이션 … 아이덴티티
-  하고 코어밸류는 중간에 앵커 노드가 하나 더 있어야되겠다."* Today all 20
-  foundation nodes inject straight into the BANAS anchor (cluttered). Add a
-  mid-level grouping hub per cluster: `BANAS ← [핵심 가치 hub] ← {5 values}`
-  and `BANAS ← [아이덴티티 hub] ← {14 identities}` (mirrors how Services
-  groups under categories). OPEN: new foundation-group concept vs reuse an
-  existing kind; does it inject or just group.
-- 💡 **Service-scoped identity in Foundation** — some "identity" I placed in
-  Foundation is actually service-specific (디자인 톤/컬러/감정 여정 etc.).
-  Ideas given: (A) define in Foundation + a service references it via
-  `identity_ref` (scope = who references); (B) move pure service-local
-  identity into that service's body/detail; (C) design-system tokens aren't
-  "identity" — separate layer. Decision rule drafted; awaiting user pick.
+### 2. Foundation group hubs  (needs a MODEL change first)
+User: *"파운데이션에 그룹 노드 (코어밸류, 아이덴티티)가 필요합니다. 미션
+그룹 노드는 필요 없고."* Desired structure:
+`BANAS ← 미션 (direct)`, `BANAS ← [핵심 가치] ← {5 values}`,
+`BANAS ← [아이덴티티] ← {14 identities}`.
+**Blocked:** the server rejects non-`{mission,core_value,identity,project}`
+kinds on the Foundation canvas (422 "kinds not allowed on 'foundation'", the
+canvas-kind structural gate). So a hub can't be added as data.
+**Decision needed:** allow a grouping kind on Foundation (e.g. permit
+`category`/`group`) **vs** a dedicated foundation-group kind. Then: update the
+allowed-kinds gate + stencil + schema-parity + structural tests, then populate
+the BANAS Foundation (`/tmp/regroup_banas_foundation.py` has the rewiring,
+needs the kind swapped once allowed).
 
-## Awaiting user verify
+## 💡 Ideas — need direction
 
-- ⏳ **Selection fix** (v0.37.1) — confirm real clicks select & stay (my
-  synthetic probe can't fully reproduce RF's d3 click path).
+- **Service-scoped identity in Foundation** — some "identity" I placed in
+  Foundation is service-specific (디자인 톤/컬러/감정 여정 etc.). Options:
+  (A) define in Foundation + a service references it via `identity_ref` (scope
+  = who references); (B) move pure service-local identity into that service's
+  body/detail; (C) design-system tokens aren't "identity" — separate layer.
+  Decision rule drafted; user to pick.
 
-## Process note
+## ⏳ Awaiting user verify
 
-User (2026-06-01): *"지금 던지는거 다 작업하고 내가 하는 말 못따라가겠다면
-어디 기록해둬야합니다."* → this file is that record. Work through it; don't
-drop items.
-
-## Active (surfaced 2026-06-01, not yet shipped)
-
-- 🔨 **B — Services auto-layout: cluster children near their parent**, not in
-  concentric depth-ring layers. User: *"하위노드를 왜 상위노드에 가깝게 정렬을
-  안하는거죠? 마치 레이어가 있는 것처럼 … 상위노드에 가깝게 정렬을 해야지."*
-  My v0.34.8 radial depth-ring places all depth-k nodes on one ring (anchor-
-  relative radius), so a service sits far from its category. Fix: parent-
-  relative branch placement (each subtree fans out from ITS parent at a small
-  radius) — a radial *tree*, not concentric rings. Touches
-  `computeRadialLayout`. Biggest open item; layout is sensitive (cf. the
-  v0.13/v0.34 layout saga) — confirm approach before rewriting.
-- 💡 **A — Foundation group hub needs a MODEL change.** The server rejects
-  non-`{mission,core_value,identity,project}` kinds on the Foundation canvas
-  (422 "kinds not allowed on 'foundation'"). So the user's "핵심 가치 /
-  아이덴티티 group hubs" (mission stays direct) can't be added as data — Plot
-  must either allow a grouping kind on Foundation or add a dedicated
-  foundation-group kind (+ stencil + structural/parity tests). OPEN: which.
+- **Selection fix** (v0.37.1) — confirm real clicks select & stay (synthetic
+  probe can't fully reproduce RF's d3 click path).
+- **Tree layout** (v0.39.0) — a couple of cross-branch nodes can still crowd
+  near the anchor; the mindmap rewrite (#1) is the proper fix.

@@ -9,6 +9,39 @@
 
 ## Active queue
 
+### `BANAS 시뮬레이션 이어가기` (TOP — filed 2026-06-01 end-of-session)
+
+> **Trigger:** user says **"바나스"** / **"BANAS"** / **"시뮬"** /
+> **"마인드맵 정렬"** / **"그룹 노드"** / **"이어서"** / **"다음"** as the
+> first / near-first message.
+>
+> **Filed:** 2026-06-01 end of session (a long sim-driven dev run). The user
+> is populating the **real BANAS blueprint** into Plot and fixing whatever
+> breaks. Full status + designs in **`docs/BANAS_SIM_BACKLOG.md`** — read it
+> first.
+>
+> **Shipped this run:** v0.36.2 → **v0.39.0** (category corners, +new folder,
+> selection-sticks, collision-avoidance, node auto-fit, tree-not-circle
+> layout).
+>
+> **Two designed-and-confirmed tasks to do next (details in the backlog):**
+> 1. **Mindmap-quality tree layout** — new `computeMindmapLayout` (recursive
+>    parent-relative radial tree, disjoint subtree sectors): no node overlap,
+>    no edge crossing, children grouped around their parent. User-approved
+>    direction; replaces what `useAutoLayout` calls for `"tree"` canvases.
+> 2. **Foundation group hubs** (핵심 가치 / 아이덴티티; mission stays direct)
+>    — **blocked on a model change**: the Foundation canvas only allows
+>    `{mission,core_value,identity,project}` kinds (422 gate). Decide: allow a
+>    grouping kind on Foundation vs a new foundation-group kind, then populate.
+>
+> **Live env:** sim project at `/Users/woogis/Workspace/banas-sim/banas`
+> (project id `banas`). Launch: `cd plot && uv run plot-mcp-http` (:5190) +
+> `cd plot/viewer && npm run dev` (:5193), open
+> `http://localhost:5193/?project_path=/Users/woogis/Workspace/banas-sim/banas&project=banas`.
+> Content source: `project-noory/banas/workspace/{identity,concepts,catalog}`.
+> **Gotcha:** restart the MCP server after pulling server-side changes (the
+> long run hit stale-server confusion twice).
+
 ### `자동정렬 위치+깊이 재작업 (플로팅 캔버스)` (DONE — option A shipped v0.34.8 + user-accepted 2026-05-31)
 
 > **CLOSED 2026-05-31.** **Option (A) shipped** as **v0.34.8
