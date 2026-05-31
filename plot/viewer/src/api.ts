@@ -115,6 +115,25 @@ export async function getDirTree(workspaceRoot: string): Promise<DirTreeResponse
   return json<DirTreeResponse>(await fetch(url));
 }
 
+/** Create a new directory under the workspace root (v0.37.0, D-2026-05-31-AC) —
+ *  the picker's "new folder" affordance. ``rel`` is POSIX-relative + path-safe;
+ *  returns the created rel. */
+export async function createWorkspaceDir(
+  workspaceRoot: string,
+  rel: string,
+): Promise<{ rel: string }> {
+  const url = `${API_BASE}/api/workspace/dir?project_path=${encodeURIComponent(
+    workspaceRoot,
+  )}`;
+  return json<{ rel: string }>(
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rel }),
+    }),
+  );
+}
+
 export interface GetProjectResponse extends ProjectDoc {
   service_details: string[];
   tags: ProjectTag[];

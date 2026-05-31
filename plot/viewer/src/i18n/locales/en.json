@@ -21,6 +21,8 @@
   "dirPicker": {
     "title": "Add a project — choose a directory",
     "createHere": "Create here",
+    "newFolder": "+ New folder",
+    "newFolderPrompt": "New folder name (created under this directory)",
     "open": "Open",
     "hasProject": "has a project",
     "cancel": "Cancel",

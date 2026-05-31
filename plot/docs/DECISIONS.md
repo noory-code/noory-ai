@@ -9994,3 +9994,25 @@ but not yet fully eliminated.
   (shape encodes producer-vs-reference).
 - **Spec impact:** none (cosmetic render policy). Covered by
   `node-shape.test.ts`.
+
+### D-2026-05-31-AC — "+ New folder" in the Add-a-Project picker
+
+- **What:** the directory picker can create a brand-new subdirectory before
+  placing a project in it. New server endpoint `POST /api/workspace/dir`
+  (+ `workspace.create_workspace_dir`, path-safe via `resolve_safe_path`,
+  idempotent); new client `api.createWorkspaceDir`; each `DirTreePickerModal`
+  row gets a **"+ 새 폴더"** button → folder-name prompt → create → `onPick`
+  the new rel (which flows into `create()` → project-name prompt).
+- **Why:** User: *"폴더 새로 만들어서 추가할 수는 없는건가?"* — previously the
+  picker was tree-only (existing dirs only) and `resolve_plot_root` 404'd on a
+  missing dir, so a new app service's folder had to be `mkdir`'d outside Plot
+  first. The monorepo flow ([[project_plot_project_creation_model]], Banas +
+  Banana) needs to start a project in a folder that doesn't exist yet.
+- **Two prompts, one flow:** folder name, then project name. Kept separate
+  (distinct concepts) rather than one combined field; `onPick(newRel)` reuses
+  the existing create-in-dir path so there's no duplicate creation logic.
+- **Safety:** `resolve_safe_path` rejects `..`, absolute, and escaping paths;
+  `mkdir(exist_ok=True)` is idempotent. Read paths are unaffected (this is an
+  explicit create action, not the deferred lazy-`.plot` work of option B).
+- **Approval:** Accepted by user, 2026-05-31.
+- **Spec impact:** SPEC §"Workspace & projects" — picker can create a new dir.

@@ -12,6 +12,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from plot_mcp.api_endpoints import (
     canvas_get_endpoint,
     canvas_put_endpoint,
+    dir_create_endpoint,
     dir_tree_endpoint,
     file_get_endpoint,
     file_put_endpoint,
@@ -72,6 +73,7 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         # v0.32.0 — recursive workspace discovery + dir-tree picker
         Route("/api/workspace/projects", workspace_discover_endpoint, methods=["GET"]),
         Route("/api/workspace/tree", dir_tree_endpoint, methods=["GET"]),
+        Route("/api/workspace/dir", dir_create_endpoint, methods=["POST"]),
         Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
         Route(
             "/api/projects/{project_id}",

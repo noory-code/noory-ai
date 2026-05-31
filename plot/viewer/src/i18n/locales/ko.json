@@ -21,6 +21,8 @@
   "dirPicker": {
     "title": "프로젝트 추가 — 디렉토리 선택",
     "createHere": "여기 생성",
+    "newFolder": "+ 새 폴더",
+    "newFolderPrompt": "새 폴더 이름 (이 디렉토리 아래에 생성)",
     "open": "열기",
     "hasProject": "프로젝트 있음",
     "cancel": "취소",

@@ -140,6 +140,24 @@ def build_dir_tree(workspace_root: Path, max_depth: int = MAX_TREE_DEPTH) -> Dir
     return node_for(root, 0)
 
 
+def create_workspace_dir(workspace_root: Path, rel: str) -> str:
+    """Create a new directory at ``rel`` under the workspace root and return
+    its POSIX-relative path.
+
+    v0.37.0 (D-2026-05-31-AC) — backs the Add-a-Project picker's "new
+    folder" affordance: a project can start in a subdirectory that does not
+    exist yet (e.g. a fresh ``banana/`` in a monorepo). Path-safe via
+    ``resolve_safe_path`` (rejects ``..`` / absolute / escaping). Idempotent
+    (``exist_ok``) so re-creating an existing dir is a no-op.
+    """
+    from plot_mcp.file_io import resolve_safe_path
+
+    root = Path(workspace_root).expanduser().resolve()
+    target = resolve_safe_path(root, rel)
+    target.mkdir(parents=True, exist_ok=True)
+    return target.relative_to(root).as_posix()
+
+
 def resolve_plot_root(project_path: str) -> Path:
     """Resolve ``{project_path}/.plot/``, creating it on first access.
 

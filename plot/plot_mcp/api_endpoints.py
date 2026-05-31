@@ -58,6 +58,7 @@ from plot_mcp.models import (
 )
 from plot_mcp.workspace import (
     build_dir_tree,
+    create_workspace_dir,
     discover_projects,
     enumerate_projects,
     resolve_plot_root,
@@ -166,6 +167,28 @@ async def dir_tree_endpoint(request: Request) -> JSONResponse:
     except _ApiError as exc:
         return exc.response
     return JSONResponse(DirTreeResponse(root=build_dir_tree(root)).model_dump())
+
+
+async def dir_create_endpoint(request: Request) -> JSONResponse:
+    """Create a new directory under the workspace root (v0.37.0,
+    D-2026-05-31-AC) — backs the picker's "new folder" affordance. Body:
+    ``{"rel": "banana"}`` (POSIX-relative, path-safe). Returns ``{"rel": ...}``."""
+    try:
+        root = _require_workspace_root(request)
+    except _ApiError as exc:
+        return exc.response
+    try:
+        body: dict[str, Any] = await request.json()
+    except json.JSONDecodeError:
+        return _error("invalid JSON body")
+    rel = body.get("rel")
+    if not rel or not isinstance(rel, str):
+        return _error("'rel' is required and must be a string")
+    try:
+        created = create_workspace_dir(root, rel)
+    except UnsafePathError as exc:
+        return _error(str(exc), status=400)
+    return JSONResponse({"rel": created}, status_code=201)
 
 
 async def project_post_endpoint(request: Request) -> JSONResponse:
@@ -757,7 +780,9 @@ async def node_published_list_endpoint(request: Request) -> JSONResponse:
     # v0.24.3 (D-2026-05-18-A) — folder name = node id, not slug.
     from plot_mcp.folder_io import _canvas_file
 
-    canvas_dir = _canvas_file(plot_root, project_id, cast("CanvasKind", canvas_kind), service_id).parent
+    canvas_dir = _canvas_file(
+        plot_root, project_id, cast("CanvasKind", canvas_kind), service_id
+    ).parent
     node_dir = canvas_dir / "published" / node.kind / node.id
     if not node_dir.is_dir():
         return JSONResponse({"versions": []})

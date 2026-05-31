@@ -10,6 +10,11 @@ import { DirTreePickerModal } from "../src/shell/DirTreePickerModal";
 
 vi.mock("../src/api");
 
+const promptMock = vi.fn();
+vi.mock("../src/shell/dialog/DialogProvider", () => ({
+  useDialog: () => ({ prompt: promptMock, confirm: vi.fn(), alert: vi.fn() }),
+}));
+
 const TREE = {
   root: {
     name: "repo",
@@ -28,6 +33,7 @@ const TREE = {
 };
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.mocked(api.getDirTree).mockResolvedValue(TREE as never);
 });
 
@@ -64,5 +70,49 @@ describe("DirTreePickerModal (D-2026-05-31-N)", () => {
     fireEvent.click(within(row("b")).getByRole("button", { name: "expand" }));
     fireEvent.click(within(row("c")).getByText(i18n.t("dirPicker.createHere")));
     expect(onPick).toHaveBeenCalledWith("b/c");
+  });
+
+  it("creates a NEW folder under a dir and picks it (D-2026-05-31-AC)", async () => {
+    promptMock.mockResolvedValue("banana");
+    vi.mocked(api.createWorkspaceDir).mockResolvedValue({ rel: "b/banana" });
+    const onPick = vi.fn();
+    render(
+      <DirTreePickerModal open workspaceRoot="/repo" onClose={vi.fn()} onPick={onPick} />,
+    );
+    await waitFor(() => expect(screen.getByText("b")).toBeInTheDocument());
+
+    fireEvent.click(within(row("b")).getByText(i18n.t("dirPicker.newFolder")));
+    await waitFor(() =>
+      expect(api.createWorkspaceDir).toHaveBeenCalledWith("/repo", "b/banana"),
+    );
+    await waitFor(() => expect(onPick).toHaveBeenCalledWith("b/banana"));
+  });
+
+  it("creates a new folder at the workspace root (rel = bare name)", async () => {
+    promptMock.mockResolvedValue("banas");
+    vi.mocked(api.createWorkspaceDir).mockResolvedValue({ rel: "banas" });
+    const onPick = vi.fn();
+    render(
+      <DirTreePickerModal open workspaceRoot="/repo" onClose={vi.fn()} onPick={onPick} />,
+    );
+    await waitFor(() => expect(screen.getByText(i18n.t("dirPicker.root"))).toBeInTheDocument());
+
+    fireEvent.click(within(row(i18n.t("dirPicker.root"))).getByText(i18n.t("dirPicker.newFolder")));
+    await waitFor(() => expect(api.createWorkspaceDir).toHaveBeenCalledWith("/repo", "banas"));
+    await waitFor(() => expect(onPick).toHaveBeenCalledWith("banas"));
+  });
+
+  it("does not create a folder when the name prompt is cancelled", async () => {
+    promptMock.mockResolvedValue(null);
+    const onPick = vi.fn();
+    render(
+      <DirTreePickerModal open workspaceRoot="/repo" onClose={vi.fn()} onPick={onPick} />,
+    );
+    await waitFor(() => expect(screen.getByText("b")).toBeInTheDocument());
+
+    fireEvent.click(within(row("b")).getByText(i18n.t("dirPicker.newFolder")));
+    await waitFor(() => expect(promptMock).toHaveBeenCalled());
+    expect(api.createWorkspaceDir).not.toHaveBeenCalled();
+    expect(onPick).not.toHaveBeenCalled();
   });
 });

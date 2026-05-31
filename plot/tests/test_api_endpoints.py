@@ -985,3 +985,53 @@ def test_dir_tree_marks_has_plot(app_client: tuple[TestClient, str]) -> None:
 def test_dir_tree_missing_param(app_client: tuple[TestClient, str]) -> None:
     client, _ = app_client
     assert client.get("/api/workspace/tree").status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# workspace dir create — v0.37.0 (D-2026-05-31-AC): "new folder" in the
+# Add-a-Project picker so a project can start in a directory that does not
+# exist yet.
+# ---------------------------------------------------------------------------
+
+
+def test_create_workspace_dir(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    resp = client.post(
+        "/api/workspace/dir",
+        params={"project_path": project_path},
+        json={"rel": "banana"},
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["rel"] == "banana"
+    assert (Path(project_path) / "banana").is_dir()
+
+
+def test_create_workspace_dir_nested(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    resp = client.post(
+        "/api/workspace/dir",
+        params={"project_path": project_path},
+        json={"rel": "apps/admin"},
+    )
+    assert resp.status_code == 201, resp.text
+    assert (Path(project_path) / "apps" / "admin").is_dir()
+
+
+def test_create_workspace_dir_rejects_traversal(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    resp = client.post(
+        "/api/workspace/dir",
+        params={"project_path": project_path},
+        json={"rel": "../escape"},
+    )
+    assert resp.status_code == 400
+
+
+def test_create_workspace_dir_requires_rel(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    resp = client.post(
+        "/api/workspace/dir",
+        params={"project_path": project_path},
+        json={},
+    )
+    assert resp.status_code == 400

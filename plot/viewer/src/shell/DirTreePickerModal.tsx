@@ -8,7 +8,8 @@
  */
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getDirTree, type DirTreeNode } from "../api";
+import { createWorkspaceDir, getDirTree, type DirTreeNode } from "../api";
+import { useDialog } from "./dialog/DialogProvider";
 
 interface DirTreePickerModalProps {
   open: boolean;
@@ -78,7 +79,9 @@ export function DirTreePickerModal({
           {!tree && !error && (
             <p className="px-2 py-1 italic text-slate-400">{t("dirPicker.loading")}</p>
           )}
-          {tree && <TreeRow node={tree} depth={0} onPick={onPick} />}
+          {tree && (
+            <TreeRow node={tree} depth={0} onPick={onPick} workspaceRoot={workspaceRoot} />
+          )}
         </div>
       </div>
     </div>
@@ -89,14 +92,30 @@ function TreeRow({
   node,
   depth,
   onPick,
+  workspaceRoot,
 }: {
   node: DirTreeNode;
   depth: number;
   onPick: (dir: string) => void;
+  workspaceRoot: string | null;
 }) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [expanded, setExpanded] = useState(depth === 0);
   const hasChildren = node.children.length > 0;
+
+  // v0.37.0 (D-2026-05-31-AC) — create a brand-new subdirectory under this
+  // node, then pick it (the caller flows it into create() → name prompt).
+  const handleNewFolder = async () => {
+    if (!workspaceRoot) return;
+    const name = await dialog.prompt({ message: t("dirPicker.newFolderPrompt") });
+    if (name === null) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const childRel = node.rel === "." ? trimmed : `${node.rel}/${trimmed}`;
+    const { rel } = await createWorkspaceDir(workspaceRoot, childRel);
+    onPick(rel);
+  };
   return (
     <div>
       <div
@@ -125,6 +144,13 @@ function TreeRow({
         )}
         <button
           type="button"
+          onClick={handleNewFolder}
+          className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-100"
+        >
+          {t("dirPicker.newFolder")}
+        </button>
+        <button
+          type="button"
           onClick={() => onPick(node.rel)}
           className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-medium text-white hover:bg-slate-700"
         >
@@ -133,7 +159,13 @@ function TreeRow({
       </div>
       {expanded &&
         node.children.map((c) => (
-          <TreeRow key={c.rel} node={c} depth={depth + 1} onPick={onPick} />
+          <TreeRow
+            key={c.rel}
+            node={c}
+            depth={depth + 1}
+            onPick={onPick}
+            workspaceRoot={workspaceRoot}
+          />
         ))}
     </div>
   );

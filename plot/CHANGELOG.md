@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.37.0] — 2026-05-31
+
+### Added — "+ New folder" in the Add-a-Project picker (D-2026-05-31-AC)
+
+- The directory picker can now **create a brand-new subdirectory** before
+  placing a project in it — previously you could only pick an existing folder
+  (the picker was tree-only, and the server `resolve_plot_root` 404'd on a
+  missing dir). So a project can start in a folder that doesn't exist yet
+  (e.g. a fresh `banana/` in a monorepo).
+- Each tree row gets a **"+ 새 폴더"** button → prompts for the folder name →
+  creates it under that row's directory → flows straight into the project
+  name prompt. Two prompts (folder, then project), one smooth flow.
+- Server: new `POST /api/workspace/dir` endpoint + `create_workspace_dir`
+  helper, path-safe via `resolve_safe_path` (rejects `..` / absolute /
+  escaping), idempotent. Client: `api.createWorkspaceDir` + the picker button.
+- New i18n keys `dirPicker.newFolder` / `dirPicker.newFolderPrompt` (en + ko).
+- Browser-confirmed end-to-end: a brand-new `banana/` folder created from an
+  empty workspace, with the Banana project inside it. Server 481/481; viewer
+  718/718; tsc + mypy + ruff clean.
+
 ## [0.36.2] — 2026-05-31
 
 ### Changed — category nodes render with rounded corners (D-2026-05-31-AB)
