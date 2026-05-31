@@ -4,6 +4,30 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.39.0] — 2026-06-01
+
+### Changed — auto-layout is a hierarchy TREE, not concentric circles (D-2026-06-01-C)
+
+- The v0.34.8 radial depth-ring layout placed nodes in concentric circles by
+  hierarchy depth (level-1 inner ring, level-2 the ring outside that, …), so a
+  child sat far from its parent on an outer ring. User: *"원을 자꾸 만드는데요
+  … 원이 아니라 트리가 되어야죠 … 하위노드를 상위노드에 가깝게 정렬을
+  해야지."*
+- `useAutoLayout` now uses `computeAutoLayout` again — the Reingold-Tilford
+  **tree**: each child is placed adjacent to its parent (subtree-spaced so
+  branches don't overlap), so a service clusters beside its category, etc.
+  Direction is inferred from the nodes' **current positions** (not edge
+  handles), so the v0.34.8 swap/depth-crossing bugs — which came from reading
+  floating edges' nulled handles — don't return.
+- The radial `computeRadialLayout` (preserve mode + collision avoidance from
+  v0.34.8/v0.37.2) stays for the `layoutAlgo="radial"` button; the default
+  `"tree"` canvases (Foundation / Actors / Services) get the tree.
+- `autoLayout.test.ts` direction tests rewritten position-inferred. viewer
+  722/722; tsc clean. Browser-verified on BANAS Services: categories branch
+  from the anchor with their services clustered beside them (a tree).
+- Known follow-up: a couple of cross-branch nodes can still crowd near the
+  anchor — tightening filed.
+
 ## [0.38.0] — 2026-06-01
 
 ### Changed — nodes auto-fit their content; manual resize removed (D-2026-06-01-B)

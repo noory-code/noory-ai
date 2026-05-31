@@ -153,16 +153,18 @@ function buildAdjacency(
   nodeCenters: Map<string, NodeCenterPos>,
 ): Map<string, AdjEntry[]> {
   const adj = new Map<string, AdjEntry[]>();
-  const push = (parentId: string, childId: string, parentHandle: string | null) => {
+  const push = (parentId: string, childId: string, _parentHandle: string | null) => {
     if (!adj.has(parentId)) adj.set(parentId, []);
-    let dir: Direction;
-    if (parentHandle) {
-      dir = handleToDirection(parentHandle);
-    } else {
-      const parentPos = nodeCenters.get(parentId);
-      const childPos = nodeCenters.get(childId);
-      dir = parentPos && childPos ? inferDirection(parentPos, childPos) : "R";
-    }
+    // v0.39.0 (D-2026-06-01-C) — direction is always inferred from the
+    // nodes' CURRENT positions, never from the edge handle. All edges are
+    // floating (D-2026-05-31-F) so their handles are nulled / arbitrary;
+    // reading them produced the swap + depth-crossing bugs the v0.34.8
+    // radial layout was meant to dodge. The radial layout drew concentric
+    // rings instead of a tree ("원이 아니라 트리가 되어야죠"), so we return
+    // to the Reingold-Tilford tree — but keyed on position, not handle.
+    const parentPos = nodeCenters.get(parentId);
+    const childPos = nodeCenters.get(childId);
+    const dir: Direction = parentPos && childPos ? inferDirection(parentPos, childPos) : "R";
     adj.get(parentId)!.push({ neighborId: childId, parentSideDir: dir });
   };
   for (const e of edges) {

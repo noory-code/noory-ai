@@ -10070,3 +10070,24 @@ but not yet fully eliminated.
 - **Approval:** Reported + fixes accepted by user across 2026-06-01.
 - **Spec impact:** SPEC §Nodes — node size is content-driven (no manual
   resize). Structural guard ceiling updated.
+
+### D-2026-06-01-C — Auto-layout is a tree, not radial concentric rings
+
+- **What:** `useAutoLayout` reverts from the v0.34.8 radial depth-ring
+  (`computeRadialLayout` preserve) to the Reingold-Tilford tree
+  (`computeAutoLayout`). `computeAutoLayout`'s `buildAdjacency` now always
+  infers child direction from current positions (handles ignored).
+- **Why:** User: the radial laid hierarchy as concentric circles by depth so
+  children sat far from parents on outer rings (*"원이 아니라 트리가
+  되어야죠 / 상위노드에 가깝게 정렬"*). The tree places each child adjacent
+  to its parent (children cluster beside parents). Inferring direction from
+  position (not the floating edges' nulled handles) keeps the v0.34.8 fixes
+  (no swap / no depth-crossing) without the rings.
+- **Supersedes:** D-2026-05-31-V (radial preserve as the tree-canvas layout)
+  and the framing of D-2026-05-31-AA's anchor path. `computeRadialLayout`
+  remains for `layoutAlgo="radial"`.
+- **Approval:** Reported + fix accepted by user, 2026-06-01.
+- **Spec impact:** SPEC §Auto-layout — the `"tree"` canvases use the
+  position-inferred Reingold-Tilford tree. Covered by `autoLayout.test.ts`.
+- **Follow-up:** cross-branch crowding near the anchor can still occur (4
+  cardinal directions); tighten.

@@ -86,53 +86,61 @@ function mkEdge(
 
 const ANCHOR = { id: "__anchor__", x: 0, y: 0, width: 200, height: 200 };
 
-describe("computeAutoLayout — direction grouping", () => {
-  it("places R-handle child to the right of anchor", () => {
-    const nodes = [mkNode("m1")];
-    const edges = [mkEdge("e1", ANCHOR.id, "m1", "r", "l")];
+// v0.39.0 (D-2026-06-01-C) — direction is inferred from CURRENT positions
+// (not edge handles). Place a node so inferDirection(anchor centre (100,100)
+// → node centre) yields `dir`; the tree then lays its subtree out that way.
+function at(id: string, dir: "R" | "L" | "T" | "B"): SketchNode {
+  const off: Record<string, [number, number]> = {
+    R: [400, 60],
+    L: [-400, 60],
+    T: [60, -400],
+    B: [60, 400],
+  };
+  const [x, y] = off[dir];
+  return mkNode(id, x, y);
+}
+
+describe("computeAutoLayout — direction grouping (position-inferred)", () => {
+  it("places a right-positioned child to the right of anchor", () => {
+    const nodes = [at("m1", "R")];
+    const edges = [mkEdge("e1", ANCHOR.id, "m1")];
     const { positions } = computeAutoLayout({ nodes, edges, anchor: ANCHOR });
     const m1 = positions.get("m1")!;
     expect(m1.x).toBeGreaterThan(ANCHOR.x + ANCHOR.width / 2);
-    // Vertically centred on anchor → m1.y center == anchor.y center
     const m1Cy = m1.y + 80 / 2;
     const anchorCy = ANCHOR.y + ANCHOR.height / 2;
     expect(m1Cy).toBeCloseTo(anchorCy, 5);
   });
 
-  it("places T-handle child above anchor", () => {
-    const nodes = [mkNode("i1")];
-    const edges = [mkEdge("e1", ANCHOR.id, "i1", "t", "b")];
+  it("places an above-positioned child above anchor", () => {
+    const nodes = [at("i1", "T")];
+    const edges = [mkEdge("e1", ANCHOR.id, "i1")];
     const { positions } = computeAutoLayout({ nodes, edges, anchor: ANCHOR });
     const i1 = positions.get("i1")!;
     expect(i1.y + 80).toBeLessThanOrEqual(ANCHOR.y); // entire i1 above anchor
   });
 
-  it("multiple R children stack in a vertical column on the right (no overlap)", () => {
-    const nodes = [mkNode("m1"), mkNode("m2"), mkNode("m3")];
+  it("multiple right children stack in a vertical column on the right (no overlap)", () => {
+    const nodes = [at("m1", "R"), at("m2", "R"), at("m3", "R")];
     const edges = [
-      mkEdge("e1", ANCHOR.id, "m1", "r", "l"),
-      mkEdge("e2", ANCHOR.id, "m2", "r", "l"),
-      mkEdge("e3", ANCHOR.id, "m3", "r", "l"),
+      mkEdge("e1", ANCHOR.id, "m1"),
+      mkEdge("e2", ANCHOR.id, "m2"),
+      mkEdge("e3", ANCHOR.id, "m3"),
     ];
     const { positions } = computeAutoLayout({ nodes, edges, anchor: ANCHOR });
     const ps = ["m1", "m2", "m3"].map((id) => positions.get(id)!);
-    // All to the right of anchor
     for (const p of ps) expect(p.x).toBeGreaterThan(ANCHOR.x + ANCHOR.width / 2);
-    // Same x (column)
     expect(ps[0].x).toBe(ps[1].x);
     expect(ps[1].x).toBe(ps[2].x);
-    // No vertical overlap (sorted by id since all Rs)
     const sortedByY = [...ps].sort((a, b) => a.y - b.y);
     for (let i = 1; i < sortedByY.length; i++) {
       expect(sortedByY[i].y).toBeGreaterThanOrEqual(sortedByY[i - 1].y + 80);
     }
   });
 
-  it("R-connected nodes do NOT migrate downward (handle direction is strict)", () => {
-    // Five children all on R; classical mistake would push some to B
-    // when right gets crowded. Spec forbids that.
-    const nodes = ["a", "b", "c", "d", "e"].map((id) => mkNode(id));
-    const edges = nodes.map((n, i) => mkEdge(`e${i}`, ANCHOR.id, n.id, "r", "l"));
+  it("right-positioned siblings all stay on the right (no migration)", () => {
+    const nodes = ["a", "b", "c", "d", "e"].map((id) => at(id, "R"));
+    const edges = nodes.map((n, i) => mkEdge(`e${i}`, ANCHOR.id, n.id));
     const { positions } = computeAutoLayout({ nodes, edges, anchor: ANCHOR });
     for (const n of nodes) {
       const p = positions.get(n.id)!;
@@ -141,11 +149,11 @@ describe("computeAutoLayout — direction grouping", () => {
   });
 
   it("groups by direction independently — R + T + L children each in own region", () => {
-    const nodes = [mkNode("r1"), mkNode("t1"), mkNode("l1")];
+    const nodes = [at("r1", "R"), at("t1", "T"), at("l1", "L")];
     const edges = [
-      mkEdge("e1", ANCHOR.id, "r1", "r", "l"),
-      mkEdge("e2", ANCHOR.id, "t1", "t", "b"),
-      mkEdge("e3", ANCHOR.id, "l1", "l", "r"),
+      mkEdge("e1", ANCHOR.id, "r1"),
+      mkEdge("e2", ANCHOR.id, "t1"),
+      mkEdge("e3", ANCHOR.id, "l1"),
     ];
     const { positions } = computeAutoLayout({ nodes, edges, anchor: ANCHOR });
     expect(positions.get("r1")!.x).toBeGreaterThan(ANCHOR.x + ANCHOR.width / 2);
@@ -155,12 +163,13 @@ describe("computeAutoLayout — direction grouping", () => {
 });
 
 describe("computeAutoLayout — recursion + no overlap", () => {
-  it("grandchild attaches in its own incoming-handle direction", () => {
-    // Anchor -R-> mission, mission -B-> sub
-    const nodes = [mkNode("mission"), mkNode("sub")];
+  it("grandchild attaches in its own position-inferred direction", () => {
+    // mission to the right of anchor; sub below mission (centre 500,100 →
+    // sub centre 500,500 = B from mission).
+    const nodes = [at("mission", "R"), mkNode("sub", 400, 460)];
     const edges = [
-      mkEdge("e1", ANCHOR.id, "mission", "r", "l"),
-      mkEdge("e2", "mission", "sub", "b", "t"),
+      mkEdge("e1", ANCHOR.id, "mission"),
+      mkEdge("e2", "mission", "sub"),
     ];
     const { positions } = computeAutoLayout({ nodes, edges, anchor: ANCHOR });
     const mission = positions.get("mission")!;

@@ -16,8 +16,7 @@
 import { useCallback, type MutableRefObject } from "react";
 import { useReactFlow } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
-import type { AutoLayoutAnchor } from "./autoLayout";
-import { computeRadialLayout } from "./radialLayout";
+import { computeAutoLayout, type AutoLayoutAnchor } from "./autoLayout";
 import {
   actorAnchoredLayout,
   setSubjectDirection,
@@ -118,21 +117,19 @@ export function useAutoLayout({
     }
     const anchor = pickAnchor(doc, projectAnchor);
     if (anchor) {
-      // v0.34.8 (D-2026-05-31-V) — floating-canvas (Foundation + Actors)
-      // layout. Switched off the handle-based ``computeAutoLayout`` tree
-      // (autoLayout.ts) onto angle-preserving depth rings: floating edges
-      // null their handles, so the old tree read stale/arbitrary handles
-      // and (a) swapped node sides and (b) let a depth-2 node land between
-      // the anchor and its depth-1 parent (edge crossing). ``preserve``
-      // keeps each node's current direction from the anchor and normalises
-      // only its distance to its BFS depth ring. ``computeAutoLayout`` is
-      // retained as the option-(B) fallback if the user reverts floating
-      // edges back to handle-based rendering.
-      const { positions } = computeRadialLayout({
+      // v0.39.0 (D-2026-06-01-C) — TREE layout, not the v0.34.8 radial
+      // depth rings. The radial laid nodes in concentric circles by depth
+      // (1차 안쪽 / 2차 바깥 / 3차 더 바깥), so a child sat far from its
+      // parent on an outer ring. The user wants a hierarchy tree where each
+      // child clusters beside its parent ("원이 아니라 트리가 되어야죠").
+      // ``computeAutoLayout`` is the Reingold-Tilford tree (children placed
+      // adjacent to their parent, subtree-spaced so nothing overlaps); it
+      // now infers direction from current positions, not edge handles, so
+      // the v0.34.8 swap/crossing bugs don't return.
+      const { positions } = computeAutoLayout({
         nodes: doc.nodes,
         edges: doc.edges,
-        hub: anchor,
-        angleMode: "preserve",
+        anchor,
       });
       if (positions.size > 0) {
         const nextNodes = doc.nodes.map((n) => {
