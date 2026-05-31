@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.4] — 2026-05-31
+
+### Changed — Foundation + Actors: all arrows converge on the anchor; symmetric connect handles (D-2026-05-31-R)
+
+- On Foundation + Actors every directed edge's arrowhead now points at the
+  **anchor-ward endpoint** (nearer the project anchor) — elements compose
+  INTO the service; actors PARTICIPATE in it; the actor tree's child→parent
+  edges point up toward the root. Enforced at creation (`handleConnect`
+  normalizes the new edge anchor-ward) and at render (`edgeTransform`
+  re-orients the arrow for any stored edge; the doc edge stays the SSOT).
+- All four node sides are now `source` handles (`ConnectionMode.Loose`), so
+  a connection started from ANY side produces the same edge — the previous
+  asymmetry (Top/Left = target, Right/Bottom = source) made the direction
+  depend on which side you grabbed.
+- New pure `canvases/sketch/anchorDistance.ts`. Services / ServiceDetail
+  keep user-chosen direction. Covered by new `edge-transform` orientation
+  cases.
+
 ## [0.34.3] — 2026-05-31
 
 ### Changed — swap: workspace path in header, project name in tab-bar center (D-2026-05-31-Q)

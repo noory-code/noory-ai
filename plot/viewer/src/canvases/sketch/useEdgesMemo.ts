@@ -33,10 +33,15 @@ export function useEdgesMemo({
         nearestCollapsedAncestor,
         valueFlowOn,
         hideRootServiceNode,
+        // v0.34.4 (D-2026-05-31-R) — Foundation + Actors converge on the
+        // anchor (elements compose into the service; actors participate).
+        constrainArrowToAnchor:
+          doc.canvas_kind === "foundation" || doc.canvas_kind === "actors",
       }),
     [
       doc.edges,
       doc.service_ref,
+      doc.canvas_kind,
       nearestCollapsedAncestor,
       valueFlowOn,
       hideRootServiceNode,

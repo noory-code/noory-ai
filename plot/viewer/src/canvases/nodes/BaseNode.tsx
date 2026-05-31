@@ -176,8 +176,14 @@ export function BaseNode({
           }
         }}
       >
-        <Handle type="target" position={Position.Top} id="t" className="!bg-slate-400" />
-        <Handle type="target" position={Position.Left} id="l" className="!bg-slate-400" />
+        {/* v0.34.4 (D-2026-05-31-R) — all four sides are ``source`` handles
+            so a connection can be started from ANY side identically;
+            ConnectionMode.Loose lets them receive too. Floating edges
+            ignore handle ids for rendering, and edgeTransform / handleConnect
+            force the arrow toward the anchor — so which side you grab no
+            longer changes the resulting edge direction. */}
+        <Handle type="source" position={Position.Top} id="t" className="!bg-slate-400" />
+        <Handle type="source" position={Position.Left} id="l" className="!bg-slate-400" />
         <Handle type="source" position={Position.Right} id="r" className="!bg-slate-400" />
         <Handle type="source" position={Position.Bottom} id="b" className="!bg-slate-400" />
 

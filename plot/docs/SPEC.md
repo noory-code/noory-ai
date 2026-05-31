@@ -693,6 +693,21 @@ Same rule as Foundation: **all edges are user-drawn.** No auto-edges
 between anchor and actors, no auto-edges between actors. Edited via
 double-click (edge modal). Persisted in `actors/canvas.json`.
 
+**Arrows converge on the anchor (v0.34.4, D-2026-05-31-R).** On Foundation
++ Actors every directed edge's arrowhead points at the **anchor-ward
+endpoint** (the endpoint nearer the project anchor by hop-distance) —
+Foundation elements compose INTO the service; actors PARTICIPATE in it. The
+actor inheritance tree's child→parent edges therefore point *up* toward the
+root, even though they don't touch the anchor directly. This is enforced
+two ways: `handleConnect` normalizes a newly-drawn edge to point anchor-ward
+(so which side/handle you start the drag from no longer flips the
+direction), and `edgeTransform` re-orients the rendered arrow anchor-ward
+for any already-stored edge (the doc edge stays the SSOT; only the RF
+render swaps). All four node sides are `source` handles
+(`ConnectionMode.Loose`) so a connection can be started from any side
+identically. Services / ServiceDetail are unaffected (user-chosen
+direction).
+
 > The `valueFlowOn` toggle in `SketchCanvas` recolours edges by
 > ``value_form``; whether that toggle is reachable from the UI on
 > Actors specifically is **TBD** — verify before next edge work.

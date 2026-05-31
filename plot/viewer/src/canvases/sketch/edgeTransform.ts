@@ -10,6 +10,8 @@
 import { MarkerType, type Edge } from "reactflow";
 import type { CanvasDoc } from "../../types";
 import { VALUE_FORM_COLORS } from "../SketchEdgeModal";
+import { anchorDistances, sourceIsAnchorWard } from "./anchorDistance";
+import { PROJECT_ANCHOR_ID } from "./constants";
 
 export interface EdgeTransformInput {
   edges: CanvasDoc["edges"];
@@ -22,6 +24,10 @@ export interface EdgeTransformInput {
   /** v0.15 Phase 3.4 — drop edges that touch the hidden service-root
    *  (true on ServiceDetailCanvas; false elsewhere). */
   hideRootServiceNode: boolean;
+  /** v0.34.4 (D-2026-05-31-R) — Foundation + Actors only: force every
+   *  directed edge's arrowhead to point at the anchor-ward endpoint,
+   *  regardless of how the edge was drawn. */
+  constrainArrowToAnchor: boolean;
 }
 
 // v0.28.1 (D-2026-05-30-D) — an injection edge ("this essence fires
@@ -36,9 +42,13 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     nearestCollapsedAncestor,
     valueFlowOn,
     hideRootServiceNode,
+    constrainArrowToAnchor,
   } = input;
   const isHiddenRoot = (id: string): boolean =>
     hideRootServiceNode && !!serviceRef && id === serviceRef;
+  // v0.34.4 (D-2026-05-31-R) — anchor-ward orientation map (Foundation +
+  // Actors). Computed once over the raw edge graph.
+  const dist = constrainArrowToAnchor ? anchorDistances(edges, PROJECT_ANCHOR_ID) : null;
   const out: Edge[] = [];
   for (const e of edges) {
     if (isHiddenRoot(e.source) || isHiddenRoot(e.target)) continue;
@@ -57,6 +67,15 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     //       now looks like a self-loop on the collapsed parent; drop.
     const isRealSelfLoop = e.source === e.target;
     if (src === tgt && !isRealSelfLoop) continue;
+    // v0.34.4 (D-2026-05-31-R) — orient the rendered arrow toward the
+    // anchor-ward endpoint. Swap the RF source/target (visual only; the
+    // doc edge stays the SSOT) so ``markerEnd`` lands on the anchor side.
+    let rfSource = src;
+    let rfTarget = tgt;
+    if (dist && e.directed && !isRealSelfLoop && sourceIsAnchorWard(dist, src, tgt)) {
+      rfSource = tgt;
+      rfTarget = src;
+    }
     // v0.30.1 (D-2026-05-31-D) — injection read from the stored
     // ``relation`` SSOT (was re-derived from the source kind in
     // v0.28.1). Works on every canvas (foundation essence→anchor
@@ -69,8 +88,8 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
         : undefined;
     out.push({
       id: e.id,
-      source: src,
-      target: tgt,
+      source: rfSource,
+      target: rfTarget,
       // v0.30.3 (D-2026-05-31-F) — floating edges attach to the border
       // facing the other node, so they ignore handles entirely (and
       // nulling them avoids RF "missing handle" warnings). Self-loops

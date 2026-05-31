@@ -19,6 +19,7 @@ import type {
 } from "reactflow";
 import type { CanvasDoc, SketchEdge } from "../../types";
 import { classifyEdge } from "../../flow/edgeSemantics";
+import { anchorDistances, sourceIsAnchorWard } from "./anchorDistance";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH, PROJECT_ANCHOR_ID } from "./constants";
 import type { NodePreset } from "./types";
 
@@ -54,15 +55,29 @@ export function useFlowHandlers({
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
       const current = docRef.current;
+      // v0.34.4 (D-2026-05-31-R) — Foundation + Actors: normalize the new
+      // edge so it points at the anchor-ward endpoint, however the user
+      // dragged it (which side/handle they started from no longer matters).
+      let source = connection.source;
+      let target = connection.target;
+      let sourceHandle = connection.sourceHandle ?? null;
+      let targetHandle = connection.targetHandle ?? null;
+      if (current.canvas_kind === "foundation" || current.canvas_kind === "actors") {
+        const dist = anchorDistances(current.edges, PROJECT_ANCHOR_ID);
+        if (sourceIsAnchorWard(dist, source, target)) {
+          [source, target] = [target, source];
+          [sourceHandle, targetHandle] = [targetHandle, sourceHandle];
+        }
+      }
       // v0.30.0 (D-2026-05-31-C) — default-assign the stored edge
-      // semantic from the canvas + source-node kind.
-      const sourceKind = current.nodes.find((n) => n.id === connection.source)?.kind;
+      // semantic from the canvas + (post-normalization) source-node kind.
+      const sourceKind = current.nodes.find((n) => n.id === source)?.kind;
       const newEdge: SketchEdge = {
         id: freshEdgeId(),
-        source: connection.source,
-        target: connection.target,
-        sourceHandle: connection.sourceHandle ?? null,
-        targetHandle: connection.targetHandle ?? null,
+        source,
+        target,
+        sourceHandle,
+        targetHandle,
         label: "",
         style: "solid",
         // v0.26.0 (D-2026-05-25-A) — default to directed so the

@@ -38,8 +38,62 @@ function run(edge: SketchEdge) {
     nearestCollapsedAncestor: () => null,
     valueFlowOn: false,
     hideRootServiceNode: false,
+    constrainArrowToAnchor: false,
   });
 }
+
+const ANCHOR = "__project_anchor__";
+
+function runConstrained(edges: SketchEdge[]) {
+  return edgeTransform({
+    edges,
+    serviceRef: null,
+    nearestCollapsedAncestor: () => null,
+    valueFlowOn: false,
+    hideRootServiceNode: false,
+    constrainArrowToAnchor: true,
+  });
+}
+
+describe("edgeTransform — anchor-ward arrow (D-2026-05-31-R)", () => {
+  it("flips an edge drawn anchor→element so the arrow points at the anchor", () => {
+    const [out] = runConstrained([makeEdge({ source: ANCHOR, target: "voice" })]);
+    expect(out.source).toBe("voice");
+    expect(out.target).toBe(ANCHOR);
+  });
+
+  it("keeps an element→anchor edge as-is", () => {
+    const [out] = runConstrained([makeEdge({ source: "voice", target: ANCHOR })]);
+    expect(out.source).toBe("voice");
+    expect(out.target).toBe(ANCHOR);
+  });
+
+  it("actor tree: child→parent keeps the arrow at the parent (anchor-ward)", () => {
+    const out = runConstrained([
+      makeEdge({ id: "e_user_anchor", source: "user", target: ANCHOR }),
+      makeEdge({ id: "e_bana_user", source: "bana", target: "user" }),
+    ]);
+    const e = out.find((x) => x.id === "e_bana_user")!;
+    expect(e.source).toBe("bana");
+    expect(e.target).toBe("user");
+  });
+
+  it("actor tree: a backwards parent→child edge is flipped toward the parent", () => {
+    const out = runConstrained([
+      makeEdge({ id: "e_user_anchor", source: "user", target: ANCHOR }),
+      makeEdge({ id: "e_user_bana", source: "user", target: "bana" }),
+    ]);
+    const e = out.find((x) => x.id === "e_user_bana")!;
+    expect(e.source).toBe("bana");
+    expect(e.target).toBe("user");
+  });
+
+  it("does NOT reorient when unconstrained (e.g. Services)", () => {
+    const [out] = run(makeEdge({ source: ANCHOR, target: "voice" }));
+    expect(out.source).toBe(ANCHOR);
+    expect(out.target).toBe("voice");
+  });
+});
 
 describe("edgeTransform — injection styling (D-2026-05-31-D)", () => {
   it("marks an injection-relation edge as animated + violet", () => {

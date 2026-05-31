@@ -9733,3 +9733,37 @@ but not yet fully eliminated.
   "MCP:" prefix from P is unchanged.
 - **Approval:** Accepted by user, 2026-05-31 (explicit swap instruction).
 - **Spec impact:** SPEC §"Workspace & projects" — Chrome.
+
+### D-2026-05-31-R — Foundation + Actors: all arrows converge on the anchor; symmetric connect handles
+
+- **What:** On the Foundation + Actors canvases every directed edge's
+  arrowhead points at the **anchor-ward endpoint** (nearer the project
+  anchor by BFS hop-distance), however the edge was drawn. Foundation
+  elements compose INTO the service (anchor); actors PARTICIPATE in it; the
+  actor inheritance tree's child→parent edges point up toward the root.
+- **Why:** The arrows looked inconsistent / sometimes pointed away from the
+  anchor, and starting a connection from a different side of a node produced
+  edges in different directions (the node's four handles were asymmetric:
+  Top/Left = target, Right/Bottom = source). User: every arrow must point at
+  the anchor, and starting from any connection point must produce the same
+  edge.
+- **How (three parts):**
+  1. **Symmetric handles** — all four sides are now `source` handles
+     (`BaseNode`); `ConnectionMode.Loose` lets them receive too, so a drag
+     can start from any side identically. Floating edges already ignore
+     handle ids for rendering.
+  2. **Creation normalization** — `handleConnect` (Foundation/Actors) flips
+     a new edge so its `target` is the anchor-ward endpoint, then derives
+     `relation` from the post-flip source kind. Stored data is correct
+     going forward (inheritance child→parent preserved).
+  3. **Render enforcement** — `edgeTransform` swaps the RF source/target so
+     `markerEnd` lands on the anchor-ward end for ANY stored edge (fixes
+     legacy/backwards edges visually; the doc edge stays the SSOT).
+  - Shared pure helper `canvases/sketch/anchorDistance.ts`
+    (`anchorDistances` BFS + `sourceIsAnchorWard`).
+- **Scope:** Foundation + Actors only (`canvas_kind`); Services /
+  ServiceDetail keep user-chosen direction.
+- **Approval:** Accepted by user, 2026-05-31 (repeated instruction:
+  "모든 화살표가 앵커를 향해야" + "어느 연결점에서 시작해도 그렇게
+  만들어져야" + "상하좌우 연결점 동작이 다 다르다").
+- **Spec impact:** SPEC §Actors §Edges (+ applies to Foundation §Edges).
