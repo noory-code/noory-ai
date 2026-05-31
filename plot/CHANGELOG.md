@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.35.1] — 2026-05-31
+
+### Fixed — "Add a Project" picker no longer shows "열기" for an empty `.plot` (D-2026-05-31-X)
+
+- `build_dir_tree`'s `has_plot` flag now means "this dir holds a **real
+  project**", not merely "a `.plot` folder exists". A stray read can leave
+  an empty `.plot/` behind (`resolve_plot_root` + the watcher both `mkdir`
+  it); counting that as a project made the picker label the dir **열기**
+  (open), and clicking it landed in `create()` with nothing to open → a
+  phantom new project. `has_plot` now uses `enumerate_projects` (the same
+  validated scan the sidebar lists), so it matches what is actually openable.
+- This is the canonical monorepo case (e.g. Banas + Banana side by side):
+  each app service has its own `.plot/` in its subdir, and the picker's
+  열기/생성 fork is now honest per dir.
+- Deferred (option B): the empty-`.plot`-on-read *litter* itself — making
+  `.plot` creation lazy needs a watcher rework (watchdog requires the
+  watched dir to exist).
+- Tests: `test_dir_tree.py` pins empty-`.plot` → `has_plot False`, real
+  project → `True`. Server 477/477 of the affected suites green; mypy + ruff
+  clean. (Pre-existing unrelated red: `test_pre_commit_gate` god-dispatch
+  scan, failing since before this change.)
+
 ## [0.35.0] — 2026-05-31
 
 ### Added — in-app dialog system replacing native browser popups (D-2026-05-31-W)

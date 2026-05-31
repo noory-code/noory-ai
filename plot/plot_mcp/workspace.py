@@ -126,7 +126,14 @@ def build_dir_tree(workspace_root: Path, max_depth: int = MAX_TREE_DEPTH) -> Dir
         return DirTreeNode(
             name=path.name or rel,
             rel=rel,
-            has_plot=(path / ".plot").is_dir(),
+            # v0.35.1 (D-2026-05-31-X) — "has_plot" means this dir holds a
+            # REAL project, not merely that a ``.plot`` folder exists. A
+            # stray read can leave an empty ``.plot`` behind; counting that
+            # as a project made the picker label it "열기" and clicking it
+            # landed in create() with nothing to open → a phantom new
+            # project. ``enumerate_projects`` is the same validated scan the
+            # sidebar uses, so has_plot now matches what is actually openable.
+            has_plot=len(enumerate_projects(path / ".plot")) > 0,
             children=children,
         )
 

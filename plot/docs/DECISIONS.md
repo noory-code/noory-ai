@@ -9878,3 +9878,36 @@ but not yet fully eliminated.
   styled, cancel preserves the project.
 - **Spec impact:** none (UI chrome, no canvas-behaviour change). Guarded by
   `structural-guards.test.tsx` "no native browser dialogs".
+
+### D-2026-05-31-X — `has_plot` means "holds a real project", not ".plot folder exists"
+
+- **What:** `build_dir_tree`'s `has_plot` flag (Add-a-Project directory
+  picker) changes from `(path / ".plot").is_dir()` to
+  `len(enumerate_projects(path / ".plot")) > 0`.
+- **Why:** User: *"프로젝트가 만들어지는게 좀 이상해요."* A stray read
+  creates an empty `.plot/` (`resolve_plot_root` + `watcher.start` both
+  `mkdir`). With the old flag, an empty `.plot/` read as `has_plot: true`,
+  so the picker labelled the dir **열기** (open). The viewer's `create()`
+  is already an open-or-create fork (open if a matching project is in
+  `summaries`, else create), but an empty `.plot/` has no project in
+  `summaries` → the "열기" click fell through to **create**, producing a
+  phantom new project. Tying `has_plot` to the validated `enumerate_projects`
+  scan (the same one the sidebar lists) makes `has_plot` true ⟺ there is
+  something actually openable, so the 열기/생성 fork is honest.
+- **Model context:** the monorepo case ([[project_plot_project_creation_model]])
+  — Banas + Banana built side by side, each app service with its own
+  `.plot/` in its subdir. The picker must read each subdir's open/create
+  state correctly.
+- **Rejected (deferred) — option B, lazy `.plot` creation:** stop
+  `resolve_plot_root` + the watcher from `mkdir`-ing `.plot` on read, so the
+  empty-folder *litter* never appears. Deferred because watchdog requires
+  the watched dir to exist, so the watcher needs a rework (watch the parent
+  until `.plot` appears, or start lazily after first project create). Option
+  A fixes the user-visible bug without that surgery.
+- **Approval:** Accepted by user, 2026-05-31 (chose option A over B in an
+  ASCII comparison table).
+- **Spec impact:** SPEC §"Workspace & projects" — has_plot semantics (if a
+  picker subsection exists; otherwise none — server-internal flag meaning).
+- **Note:** pre-existing unrelated red `test_pre_commit_gate` (god-dispatch
+  scan over `useFlowHandlers.ts`) is failing since before this change — not
+  introduced here; tracked separately.

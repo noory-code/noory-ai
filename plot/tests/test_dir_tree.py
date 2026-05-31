@@ -25,13 +25,22 @@ def _child_names(node: DirTreeNode) -> set[str]:
     return {c.name for c in node.children}
 
 
-def test_tree_marks_has_plot(tmp_path: Path) -> None:
-    (tmp_path / "a" / ".plot").mkdir(parents=True)
-    (tmp_path / "b").mkdir()
+def test_tree_has_plot_requires_a_real_project(tmp_path: Path) -> None:
+    # v0.35.1 (D-2026-05-31-X) — ``has_plot`` means "this dir holds a real
+    # project", not merely "a ``.plot`` folder exists". An empty ``.plot``
+    # (e.g. one a stray read created) must read False, otherwise the picker
+    # labels it "열기" and clicking it lands in create() with nothing to
+    # open → a phantom new project.
+    from plot_mcp.folder_io import create_project
+
+    create_project(tmp_path / "a" / ".plot", "proj-real", "A")  # real project
+    (tmp_path / "b" / ".plot").mkdir(parents=True)  # empty .plot
+    (tmp_path / "c").mkdir()  # no .plot
     tree = build_dir_tree(tmp_path)
     by_name = {c.name: c for c in tree.children}
     assert by_name["a"].has_plot is True
     assert by_name["b"].has_plot is False
+    assert by_name["c"].has_plot is False
 
 
 def test_tree_root_rel_is_dot(tmp_path: Path) -> None:
