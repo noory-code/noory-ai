@@ -224,15 +224,19 @@ export function SketchSidebar({
           )}
         </div>
       )}
-      <div className="flex-1 overflow-y-auto">
-        <SketchStencil
-          canvas={stencilCanvas}
-          availableActors={availableActors}
-          availableMissions={availableMissions}
-          availableValues={availableValues}
-          availableIdentities={availableIdentities}
-        />
-      </div>
+      {/* Stencil is meaningful only with an active project to drop onto
+          (D-2026-05-31-K) — gated like the session-tags block above. */}
+      {activeId && (
+        <div className="flex-1 overflow-y-auto">
+          <SketchStencil
+            canvas={stencilCanvas}
+            availableActors={availableActors}
+            availableMissions={availableMissions}
+            availableValues={availableValues}
+            availableIdentities={availableIdentities}
+          />
+        </div>
+      )}
       <div className="flex items-center justify-end border-t border-slate-200 px-3 py-2">
         <LanguageToggle />
       </div>

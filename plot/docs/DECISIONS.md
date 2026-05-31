@@ -9577,3 +9577,18 @@ but not yet fully eliminated.
   `tests/inspectors/actor-inherited-surface.test.tsx`, not by the
   flaky browser clicks. A real interaction-vs-synthetic-event mismatch
   may be worth a separate look but was not diagnosed here.
+
+### D-2026-05-31-K — Hide the sidebar stencil when no project is active
+
+- **What:** The left-sidebar stencil (`SketchStencil` in `SketchSidebar`)
+  is now gated on `activeId` — with no project selected (empty workspace
+  / "No projects yet"), the stencil is hidden. Previously it rendered the
+  Foundation stencil (미션 / 코어밸류 / 아이덴티티) unconditionally, even
+  when there was no project and the main panel showed the empty state.
+- **Why:** Found during the hands-on empty-state walkthrough — the stencil
+  chips appeared as if a Foundation canvas were open, with nothing to drop
+  them onto. The session-tags block above it was already gated on
+  `activeId`; the stencil simply missed the same guard.
+- **Approval:** Accepted by user, 2026-05-31 ("네 고치세요").
+- **Spec impact:** Empty-state behaviour — no stencil without an active
+  project.

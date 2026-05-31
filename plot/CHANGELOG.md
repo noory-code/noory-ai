@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.31.3] — 2026-05-31
+
+### Fixed — hide the sidebar stencil when no project is active (D-2026-05-31-K)
+
+- The left-sidebar stencil (`SketchStencil` in `SketchSidebar`) is now
+  gated on `activeId`. With no project selected (empty workspace / "No
+  projects yet") the stencil is hidden — previously it rendered the
+  Foundation stencil (미션 / 코어밸류 / 아이덴티티) unconditionally, as
+  if a Foundation canvas were open, with nothing to drop onto. Found in
+  the hands-on empty-state walkthrough. Covered by
+  `tests/sidebar-stencil-gating.test.tsx`.
+
 ## [0.31.2] — 2026-05-31
 
 ### Fixed — inherited Surface caption shows the localized label (D-2026-05-31-J)
