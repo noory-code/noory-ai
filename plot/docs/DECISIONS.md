@@ -9655,3 +9655,30 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-05-31 (approved plan; "Add a Project"
   label confirmed mid-build).
 - **Spec impact:** SPEC §"Workspace & projects".
+
+### D-2026-05-31-N — "Add a Project" directory-tree picker (Phase 3)
+
+- **What:** The "Add a Project" button opens a `DirTreePickerModal` — a
+  drill-down folder tree rooted at the workspace root (`/api/workspace/
+  tree`), each dir flagged `has_plot`. Picking an **empty** dir creates a
+  new project there (`useProject.create(targetDir)` → `createProject` at
+  `root + dir`); picking a dir that **already holds** a project lands in
+  its most-recently-updated one (no duplicate). The button label per dir is
+  "Open" when `has_plot`, else "Create here".
+- **Why:** Completes the multi-directory feature — the user chooses WHERE a
+  project lives instead of every project landing at the root.
+- **Scope / decisions:**
+  - Tree-only (choose from existing folders); no free-text new-folder entry
+    (YAGNI; also sidesteps a path-traversal entry point).
+  - "Already has a project" → land in the most-recent (summaries are
+    newest-first); does not create a second project in the same dir even
+    though one `.plot/` can legally hold many.
+  - Open-state lives in `useDirPicker` (hook) so `App.tsx` grows only by
+    the import + hook call + `{dirPicker.modal}` render.
+- **LOC ceiling:** `App.tsx` 495 → **497** (structural-guards) for that
+  plumbing — open-state is in the hook, not App.
+- **i18n:** new top-level `dirPicker.*` block (en + ko). (First authored
+  nested under `sidebar.*`; moved to top-level when the browser showed raw
+  keys — the parity test only checks en↔ko, not key-path resolution.)
+- **Approval:** Accepted by user, 2026-05-31 (approved plan).
+- **Spec impact:** SPEC §"Workspace & projects" — Add a Project.

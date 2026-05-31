@@ -60,7 +60,10 @@ export interface UseProjectApi {
   // actions
   loadList: () => Promise<ProjectDoc[] | null>;
   openProject: (id: string) => Promise<void>;
-  create: () => Promise<void>;
+  /** Add a project in ``targetDir`` (relative to the workspace root; "." =
+   *  root). If that dir already holds a project, land in the most-recent one
+   *  instead of creating a duplicate (D-2026-05-31-N). */
+  create: (targetDir: string) => Promise<void>;
   rename: (id: string, name: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   pick: (id: string) => void;
@@ -195,20 +198,32 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceRoot]);
 
-  const create = useCallback(async () => {
-    if (!workspaceRoot) return;
-    try {
-      // Phase 2: create at the workspace root (dir "."). Phase 3 adds the
-      // directory-tree picker that targets a chosen subdirectory.
-      const id = `proj-${Date.now().toString(36)}`;
-      const created = await createProject(workspaceRoot, id, "Untitled");
-      setActiveId(created.id);
-      await loadList();
-      await openProject(created.id);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : String(err));
-    }
-  }, [workspaceRoot, loadList, openProject, onError, setActiveId]);
+  const create = useCallback(
+    async (targetDir: string) => {
+      if (!workspaceRoot) return;
+      // Land in an existing project if the chosen dir already has one
+      // (summaries are newest-first, so the first match is most-recent).
+      const existing = summaries.find(
+        (p) => (dirMapRef.current.get(p.id) ?? ".") === targetDir,
+      );
+      if (existing) {
+        setActiveId(existing.id);
+        void openProject(existing.id);
+        return;
+      }
+      try {
+        const id = `proj-${Date.now().toString(36)}`;
+        const targetPath = joinWorkspaceDir(workspaceRoot, targetDir);
+        const created = await createProject(targetPath, id, "Untitled");
+        setActiveId(created.id);
+        await loadList(); // rebuilds dirMapRef incl. created.id → targetDir
+        await openProject(created.id);
+      } catch (err) {
+        onError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [workspaceRoot, summaries, loadList, openProject, onError, setActiveId],
+  );
 
   const rename = useCallback(
     async (id: string, name: string) => {

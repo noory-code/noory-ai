@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.0] — 2026-05-31
+
+### Added — "Add a Project" directory-tree picker (Phase 3; D-2026-05-31-N)
+
+- The "Add a Project" button now opens a **directory-tree picker** (drill-
+  down, rooted at the workspace root, with a `has_plot` badge per dir).
+  Picking an empty dir creates a new project there; picking a dir that
+  already holds a project lands in its most-recently-updated one (no
+  duplicate). Tree-only — choose from existing folders (no free-text).
+- New `shell/DirTreePickerModal.tsx` + `hooks/useDirPicker.tsx` (open-state
+  in the hook). `useProject.create` now takes a `targetDir`. New top-level
+  i18n `dirPicker.*` (en + ko). App.tsx LOC ceiling 495 → 497 (plumbing).
+- Covered by `tests/dir-tree-picker.test.tsx` + `tests/create-in-dir.test.tsx`.
+
 ## [0.33.0] — 2026-05-31
 
 ### Added / Changed — multi-directory projects: unified discovery + effective path (Phase 2; D-2026-05-31-M)

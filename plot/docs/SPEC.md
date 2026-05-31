@@ -25,10 +25,12 @@ label** (its path relative to the root; root-level shows the localized
   root. Switching to a project in a **different directory** reconnects the
   WebSocket to that dir's `.plot/`; switching between projects in the
   **same directory** does not reconnect.
-- **Add a Project** — the sidebar/empty-state button is labeled "Add a
-  Project" (was "New project"). In v0.33.0 it creates at the root (dir
-  `"."`); the directory-tree picker (choose where, open-if-exists) lands in
-  a later phase.
+- **Add a Project** (v0.34.0, D-2026-05-31-N) — the sidebar/empty-state
+  "Add a Project" button opens a **directory-tree picker** (drill-down,
+  rooted at the workspace root, `has_plot` badge per dir). Picking an empty
+  dir creates a new project there; picking a dir that already holds a
+  project lands in its most-recently-updated one (no duplicate). Tree-only
+  — choose-from-existing-folders, no free-text new folder.
 - **URL** — `?project_path=<root>` (workspace root) + `?project=<id>`. The
   active project's directory is resolved from discovery (id→dir map). Off-
   root absolute paths are out of scope (future native/desktop host).

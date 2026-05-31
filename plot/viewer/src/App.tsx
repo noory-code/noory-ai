@@ -11,6 +11,7 @@ import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useAppKeyboard } from "./hooks/useAppKeyboard";
 import { useAvailableNodes } from "./hooks/useAvailableNodes";
 import { useCanvasPersist } from "./hooks/useCanvasPersist";
+import { useDirPicker } from "./hooks/useDirPicker";
 import { useSnapshotView } from "./hooks/useSnapshotView";
 import { useProject } from "./hooks/useProject";
 import { useProjectSocket } from "./hooks/useProjectSocket";
@@ -116,6 +117,7 @@ export function App() {
 
   const { handleListStale, handleExternalCanvas, handleTagsRefresh, handleExternalChange } =
     useStableHandlers({ setCanvasCache, setTags, loadList, historyClear: history.clear });
+  const dirPicker = useDirPicker({ workspaceRoot, onCreateInDir: handleCreate });
 
   // v0.16.19 (D-2026-05-12-U) — anchor change handler stable across
   // non-state-changing renders so useNodesMemo's data.onResize for the
@@ -382,7 +384,7 @@ export function App() {
           availableIdentities={availableIdentities}
           tags={tags}
           onPick={handlePick}
-          onCreate={handleCreate}
+          onCreate={dirPicker.open}
           onRename={handleRename}
           onDelete={handleDelete}
           onDeleteTag={handleDeleteTag}
@@ -402,7 +404,7 @@ export function App() {
           <div className="relative flex-1 overflow-hidden">
             {phase === "loading" && <Loading />}
             {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
-            {phase === "no-projects" && <EmptyState onCreate={handleCreate} />}
+            {phase === "no-projects" && <EmptyState onCreate={dirPicker.open} />}
             {phase === "ready" && activeCanvas && activeId && (() => {
               // v0.15 Phase 3.3 — every tab routes through its named
               // wrapper. SketchCanvas is no longer called directly from
@@ -485,6 +487,7 @@ export function App() {
         </ServiceDetailModal>
       );
     })()}
+    {dirPicker.modal}
     </>
   );
 }

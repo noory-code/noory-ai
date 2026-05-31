@@ -16,6 +16,15 @@
       "redo": "Shift+Cmd+Z"
     }
   },
+  "dirPicker": {
+    "title": "Add a project — choose a directory",
+    "createHere": "Create here",
+    "open": "Open",
+    "hasProject": "has a project",
+    "cancel": "Cancel",
+    "root": "(workspace root)",
+    "loading": "Loading directories…"
+  },
   "sidebar": {
     "projects": "Projects",
     "newProject": "+ Add a Project",

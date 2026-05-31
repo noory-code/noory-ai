@@ -16,6 +16,15 @@
       "redo": "Shift+Cmd+Z"
     }
   },
+  "dirPicker": {
+    "title": "프로젝트 추가 — 디렉토리 선택",
+    "createHere": "여기 생성",
+    "open": "열기",
+    "hasProject": "프로젝트 있음",
+    "cancel": "취소",
+    "root": "(워크스페이스 루트)",
+    "loading": "디렉토리 불러오는 중…"
+  },
   "sidebar": {
     "projects": "프로젝트",
     "newProject": "+ 프로젝트 추가",
