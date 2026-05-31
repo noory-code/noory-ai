@@ -41,5 +41,8 @@ export function effectiveShape(
   if (kind && MASTER_KINDS.has(kind)) return "rounded";
   if (kind && REFERENCE_KINDS.has(kind)) return "circle";
   if (kind === "decision") return "diamond";
+  // v0.36.2 (user 2026-05-31 "카테고리 모퉁이 둥그스럼하게") — category
+  // group headers render with soft corners regardless of stored shape.
+  if (kind === "category") return "rounded";
   return storedShape;
 }

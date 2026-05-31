@@ -9979,3 +9979,18 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-05-31 (chose option A — thread a prop —
   over relaxing the gate).
 - **Spec impact:** none (internal architecture; invariant restoration).
+
+### D-2026-05-31-AB — Category nodes render with rounded corners
+
+- **What:** `effectiveShape` (nodeShape.ts) forces `kind === "category"` to
+  `"rounded"`, regardless of stored shape — alongside the existing
+  master→rounded / ref→circle / decision→diamond render-time rules.
+- **Why:** User: *"서비스 캔버스 보면 카테고리 모퉁이 둥그스럼하게
+  만들어주세요."* Category nodes are group headers on the Services canvas;
+  the sharp-cornered rectangle looked out of place next to the soft-cornered
+  master kinds. Render-time policy keeps it SSOT and applies to existing +
+  new categories without a data migration.
+- **Approval:** Accepted by user, 2026-05-31. Extends D-2026-05-31-B
+  (shape encodes producer-vs-reference).
+- **Spec impact:** none (cosmetic render policy). Covered by
+  `node-shape.test.ts`.

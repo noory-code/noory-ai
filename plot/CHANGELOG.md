@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.36.2] — 2026-05-31
+
+### Changed — category nodes render with rounded corners (D-2026-05-31-AB)
+
+- `effectiveShape` now forces `kind === "category"` to `"rounded"` (soft
+  corners), regardless of the node's stored shape — matching the master-kind
+  look. Category nodes are group headers on the Services canvas; sharp
+  corners looked out of place. User: *"카테고리 모퉁이 둥그스럼하게"*.
+  Render-time policy (SSOT in `nodeShape.ts`), so existing + new categories
+  both round. Browser-confirmed. viewer 715/715; tsc clean.
+
 ## [0.36.1] — 2026-05-31
 
 ### Changed — restore the "no canvas_kind branching in sketch hooks" invariant (D-2026-05-31-AA)

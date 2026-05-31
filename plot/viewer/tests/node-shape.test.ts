@@ -38,6 +38,13 @@ describe("effectiveShape — producer vs reference (D-2026-05-31-B)", () => {
     expect(effectiveShape("decision", "rectangle")).toBe("diamond");
   });
 
+  it("renders category as a rounded rectangle regardless of stored shape (v0.36.1-ux)", () => {
+    // User 2026-05-31: "카테고리 모퉁이 둥그스럼하게". Categories are group
+    // headers on the Services canvas; soft corners match the master-kind look.
+    expect(effectiveShape("category", "rectangle")).toBe("rounded");
+    expect(effectiveShape("category", "circle")).toBe("rounded");
+  });
+
   it("leaves the project anchor's stored shape untouched (user toggle)", () => {
     expect(effectiveShape("project", "circle")).toBe("circle");
     expect(effectiveShape("project", "rectangle")).toBe("rectangle");
@@ -46,7 +53,7 @@ describe("effectiveShape — producer vs reference (D-2026-05-31-B)", () => {
   it("honours the stored shape for every other kind", () => {
     expect(effectiveShape("service", "circle")).toBe("circle");
     expect(effectiveShape("step", "rounded")).toBe("rounded");
-    expect(effectiveShape("category", "rounded")).toBe("rounded");
+    expect(effectiveShape("rule", "rectangle")).toBe("rectangle");
     expect(effectiveShape(undefined, "ellipse")).toBe("ellipse");
   });
 });
