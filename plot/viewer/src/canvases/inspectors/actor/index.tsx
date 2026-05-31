@@ -42,16 +42,32 @@ interface ActorFieldsProps {
 }
 
 /** Greyed caption shown when a field's value is inherited from a parent
- *  actor (own value empty). */
-function Inherited({ field }: { field: EffectiveField }) {
+ *  actor (own value empty). ``format`` maps an enum value (e.g. the
+ *  Surface ``side``) to its localized option label so the caption never
+ *  shows a raw enum the user never typed (D-2026-05-31-J). */
+function Inherited({
+  field,
+  format,
+}: {
+  field: EffectiveField;
+  format?: (raw: string) => string;
+}) {
   const { t } = useTranslation();
   if (field.source !== "inherited" || !field.value) return null;
-  const preview = field.value.length > 60 ? `${field.value.slice(0, 60)}…` : field.value;
+  const shown = format ? format(field.value) : field.value;
+  const preview = shown.length > 60 ? `${shown.slice(0, 60)}…` : shown;
   return (
     <p className="mt-0.5 text-[10px] italic text-slate-400">
       ↳ {t("inspector.inheritedFrom", { from: field.fromLabel })}: {preview}
     </p>
   );
+}
+
+/** Maps a Surface (`side`) enum value to its localized option label. */
+function surfaceLabel(t: ReturnType<typeof useTranslation>["t"], raw: string): string {
+  if (raw === "operator") return t("inspector.operatorOption");
+  if (raw === "user") return t("inspector.userOption");
+  return raw;
 }
 
 function ActorFields({ node, onPatchNode, eff, isBase }: ActorFieldsProps) {
@@ -90,7 +106,7 @@ function ActorFields({ node, onPatchNode, eff, isBase }: ActorFieldsProps) {
           <option value="operator">{t("inspector.operatorOption")}</option>
           <option value="user">{t("inspector.userOption")}</option>
         </select>
-        <Inherited field={eff.side} />
+        <Inherited field={eff.side} format={(v) => surfaceLabel(t, v)} />
       </label>
       <label className="mb-2 block">
         <span className="text-xs font-semibold text-slate-700">

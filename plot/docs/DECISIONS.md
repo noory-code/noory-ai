@@ -9552,3 +9552,28 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-05-31 ("접속 시스템으로 잡죠 …
   이쁜 말 … 추천대로합니다").
 - **Spec impact:** SPEC §Actors §Nodes — `side` field semantics.
+
+### D-2026-05-31-J — Inherited Surface caption shows the localized label, not the raw enum
+
+- **What:** When an actor inherits `side` (Surface / 접점) from a parent,
+  the greyed `↳ inherited from {parent}` caption now renders the
+  **localized option label** ("사용자 — 앱" / "user — app"), not the raw
+  enum value (`user`). `Inherited` gained an optional `format(raw)` prop;
+  the `side` field passes a mapper (operator → admin-console label, user
+  → app label). Free-text fields (motivation / pain / body) are
+  unaffected.
+- **Why:** The enum (`operator`/`user`) is an implementation detail the
+  user never typed. Hero (own Surface unset) under Bana ("사용자 — 앱")
+  should read "↳ Bana에서 상속: 사용자 — 앱", not "↳ Bana에서 상속:
+  user" — surfaced during the v0.31.1 hands-on review.
+- **Approval:** Accepted by user, 2026-05-31 ("고치세요").
+- **Spec impact:** SPEC §Actors §Nodes — Inheritance row (caption shows
+  the option label for the `side` enum).
+- **Process note (honest):** during browser verification of this change,
+  repeated synthetic node-selection clicks (chrome-devtools
+  `evaluate_script` dispatching pointer/mouse events) mutated demo-seed
+  `side` values 3× (Operator, Bana, Hero) in `plot-test-v010` (outside
+  the repo; restored each time). The fix itself is verified by
+  `tests/inspectors/actor-inherited-surface.test.tsx`, not by the
+  flaky browser clicks. A real interaction-vs-synthetic-event mismatch
+  may be worth a separate look but was not diagnosed here.

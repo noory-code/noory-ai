@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.31.2] — 2026-05-31
+
+### Fixed — inherited Surface caption shows the localized label (D-2026-05-31-J)
+
+- When an actor inherits `side` (Surface / 접점) from a parent, the
+  greyed `↳ inherited from {parent}` caption now renders the localized
+  option label ("사용자 — 앱" / "user — app") instead of the raw enum
+  (`user`). `Inherited` gained an optional `format(raw)` prop; the
+  `side` field maps operator/user → their option labels. Free-text
+  fields (motivation / pain / body) are unaffected. Covered by
+  `tests/inspectors/actor-inherited-surface.test.tsx`.
+
 ## [0.31.1] — 2026-05-31
 
 ### Changed — actor `side` reframed as "Surface / 접점" (D-2026-05-31-I)
