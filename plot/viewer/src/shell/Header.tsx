@@ -13,7 +13,11 @@ import type { SocketStatus } from "../api";
 import type { SaveState } from "../canvases/SketchToolbar";
 
 interface HeaderProps {
+  /** Workspace ROOT absolute path — shown as the hover title only. */
   projectPath: string;
+  /** Active project's dir relative to the root ("." / null = root-level).
+   *  Shown in place of the absolute path (v0.34.1, D-2026-05-31-O). */
+  projectDir: string | null;
   error: string | null;
   socketStatus: SocketStatus;
   saveState: SaveState;
@@ -30,6 +34,7 @@ interface HeaderProps {
 
 export function Header({
   projectPath,
+  projectDir,
   error,
   socketStatus,
   saveState,
@@ -47,7 +52,10 @@ export function Header({
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold tracking-wide">PLOT</span>
           <span className="font-mono text-xs text-slate-500" title={projectPath}>
-            {truncateMiddle(projectPath, 48)}
+            {truncateMiddle(
+              projectDir && projectDir !== "." ? projectDir : t("sidebar.rootDir"),
+              48,
+            )}
           </span>
           {projectName && (
             <span className="text-sm text-slate-700">· {projectName}</span>

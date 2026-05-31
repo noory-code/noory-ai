@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.1] — 2026-05-31
+
+### Changed — header shows the active project's relative dir (Phase 4; D-2026-05-31-O)
+
+- The header's path slot now shows the active project's directory relative
+  to the workspace root (e.g. `marketing`; root-level → "root" label)
+  instead of the raw absolute workspace path. The absolute root is kept as
+  the hover title. New `Header.projectDir` prop (fed `dirForId(activeId)`);
+  reuses the `sidebar.rootDir` label. App.tsx LOC ceiling 497 → 498.
+- Covered by `tests/header-project-dir.test.tsx`.
+
 ## [0.34.0] — 2026-05-31
 
 ### Added — "Add a Project" directory-tree picker (Phase 3; D-2026-05-31-N)

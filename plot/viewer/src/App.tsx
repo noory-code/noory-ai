@@ -361,6 +361,7 @@ export function App() {
     >
       <Header
         projectPath={workspaceRoot}
+        projectDir={activeId ? dirForId(activeId) : null}
         error={error}
         socketStatus={socketStatus}
         saveState={saveState}

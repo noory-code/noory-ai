@@ -9682,3 +9682,19 @@ but not yet fully eliminated.
   keys — the parity test only checks en↔ko, not key-path resolution.)
 - **Approval:** Accepted by user, 2026-05-31 (approved plan).
 - **Spec impact:** SPEC §"Workspace & projects" — Add a Project.
+
+### D-2026-05-31-O — Header shows the active project's relative dir (Phase 4)
+
+- **What:** The header's path slot shows the **active project's directory**
+  relative to the workspace root (e.g. `marketing`; `"."`/none → the
+  localized "root" label) instead of the absolute workspace path. The
+  absolute root is preserved as the hover `title`.
+- **Why:** Closes the user's original observation that the raw absolute
+  path in the header is developer clutter — the meaningful locator is which
+  project (and where) is open. New `Header.projectDir` prop, fed
+  `dirForId(activeId)`. Reuses the `sidebar.rootDir` i18n label.
+- **LOC ceiling:** `App.tsx` 497 → 498 (structural-guards) for the one
+  added prop line.
+- **Approval:** Accepted by user, 2026-05-31 (approved plan; resolves the
+  earlier "경로가 필요한가" header question).
+- **Spec impact:** SPEC §"Workspace & projects" — URL/header note.
