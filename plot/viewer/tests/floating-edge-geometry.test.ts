@@ -13,6 +13,26 @@ import {
 
 const A = { x: 0, y: 0, width: 100, height: 100 }; // centre (50,50)
 
+describe("nodeBorderPoint — ellipse shape (v0.34.6)", () => {
+  it("a diagonal endpoint sits on the circle, not the bounding-box corner", () => {
+    // 100×100 circle A (centre 50,50, r=50); target down-right (45°).
+    const target = { x: 200, y: 200, width: 100, height: 100 };
+    const rect = nodeBorderPoint(A, target, "rect");
+    const ell = nodeBorderPoint(A, target, "ellipse");
+    // Rectangle hits the corner (100,100); the ellipse hits the arc at
+    // 50 + 50/√2 ≈ 85.36 on each axis (well inside the corner).
+    expect(rect.x).toBeCloseTo(100, 5);
+    expect(rect.y).toBeCloseTo(100, 5);
+    expect(ell.x).toBeCloseTo(50 + 50 / Math.SQRT2, 4);
+    expect(ell.y).toBeCloseTo(50 + 50 / Math.SQRT2, 4);
+  });
+
+  it("an axis-aligned endpoint matches the rectangle (touches at the mid-edge)", () => {
+    const right = { x: 300, y: 0, width: 100, height: 100 };
+    expect(nodeBorderPoint(A, right, "ellipse")).toEqual({ x: 100, y: 50 });
+  });
+});
+
 describe("borderSide (v0.34.5 — bezier control side)", () => {
   it("classifies each border point by side", () => {
     expect(borderSide(100, 50, A)).toBe("right");

@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.6] — 2026-05-31
+
+### Fixed — arrows no longer float off the round anchor (D-2026-05-31-T)
+
+- `floatingEdgeGeometry.nodeBorderPoint` is shape-aware: the round project
+  anchor (and any circle/ellipse node) computes the floating endpoint on
+  its actual ellipse circumference instead of its bounding box, so the
+  arrowhead sits on the circle. Previously the box approximation — combined
+  with the v0.34.5 angled bezier approach — left the arrow floating off the
+  anchor. `FloatingEdge` reads each node's `data.shape`. Covered by new
+  ellipse cases in `floating-edge-geometry.test.ts`.
+
 ## [0.34.5] — 2026-05-31
 
 ### Changed — floating edges render as bezier curves (D-2026-05-31-S)

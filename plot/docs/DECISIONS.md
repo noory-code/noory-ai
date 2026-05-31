@@ -9781,3 +9781,17 @@ but not yet fully eliminated.
   looked harsh.
 - **Approval:** Accepted by user, 2026-05-31.
 - **Spec impact:** SPEC §Edges (floating edges are curved).
+
+### D-2026-05-31-T — Round anchor uses its ellipse border (arrows stop floating off it)
+
+- **What:** ``floatingEdgeGeometry.nodeBorderPoint`` is now shape-aware. The
+  round project anchor (and any circle/ellipse node) computes the floating
+  endpoint on its actual **ellipse circumference** (ray-from-centre ∩
+  ellipse) instead of its bounding rectangle. ``FloatingEdge`` reads each
+  node's ``data.shape`` and passes ``"ellipse"`` for circle/ellipse.
+- **Why:** With the v0.34.5 bezier curve, edges approach the round anchor at
+  an angle; the old rectangle approximation put the endpoint on the box edge
+  (off the circle), so the arrowhead **floated** off the anchor. User caught
+  it: "앵커가 네모나다고 판단해서 화살표가 붕 뜨는거죠?".
+- **Approval:** Accepted by user, 2026-05-31.
+- **Spec impact:** SPEC §Edges (round anchor border).

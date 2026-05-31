@@ -710,7 +710,10 @@ direction).
 
 Floating edges render as **bezier curves** (v0.34.5, D-2026-05-31-S) —
 diagonal edges bow gently toward the border side each endpoint exits;
-axis-aligned edges stay straight.
+axis-aligned edges stay straight. The round anchor (and any circle/ellipse
+node) attaches the edge on its **actual ellipse circumference**
+(v0.34.6, D-2026-05-31-T), not its bounding box, so the arrowhead sits on
+the circle.
 
 > The `valueFlowOn` toggle in `SketchCanvas` recolours edges by
 > ``value_form``; whether that toggle is reachable from the UI on

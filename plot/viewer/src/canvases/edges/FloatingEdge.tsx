@@ -27,6 +27,8 @@ import {
 import {
   borderSide,
   floatingEndpoints,
+  isEllipseShape,
+  type BorderShape,
   type BorderSide,
   type NodeRect,
 } from "../../flow/floatingEdgeGeometry";
@@ -61,7 +63,11 @@ export function FloatingEdge({ id, source, target, markerEnd, style }: EdgeProps
 
   const sRect = rectOf(sourceNode);
   const tRect = rectOf(targetNode);
-  const { sx, sy, tx, ty } = floatingEndpoints(sRect, tRect);
+  // v0.34.6 — honor each node's border shape so the endpoint sits on the
+  // round anchor's actual circumference, not its bounding box.
+  const sShape: BorderShape = isEllipseShape(sourceNode.data?.shape) ? "ellipse" : "rect";
+  const tShape: BorderShape = isEllipseShape(targetNode.data?.shape) ? "ellipse" : "rect";
+  const { sx, sy, tx, ty } = floatingEndpoints(sRect, tRect, sShape, tShape);
   // v0.34.5 — curved (bezier) instead of straight; control points leave
   // each node perpendicular to the border side the endpoint floats to.
   const [path] = getBezierPath({
