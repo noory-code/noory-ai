@@ -12,8 +12,10 @@ import {
   useCallback,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import type { Edge, Node, ReactFlowInstance } from "reactflow";
 import type { CanvasDoc } from "../../types";
+import { useDialog } from "../../shell/dialog/DialogProvider";
 import { type ContextMenuItem } from "../SketchContextMenu";
 import { type SketchClipboard } from "../useSketchClipboard";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
@@ -73,6 +75,8 @@ export function useContextMenus({
   addNodeAt,
   selectedNodeIds,
 }: UseContextMenusArgs): UseContextMenusResult {
+  const { t } = useTranslation();
+  const dialog = useDialog();
   const [menu, setMenu] = useState<MenuState | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
 
@@ -238,11 +242,11 @@ export function useContextMenus({
           },
           {
             label: "Set label",
-            onSelect: () => {
-              const newLabel = window.prompt(
-                "Edge label:",
-                edge.label ? String(edge.label) : "",
-              );
+            onSelect: async () => {
+              const newLabel = await dialog.prompt({
+                message: t("node.edgeLabelPrompt"),
+                defaultValue: edge.label ? String(edge.label) : "",
+              });
               if (newLabel === null) return;
               const current = docRef.current;
               onDocChange({
@@ -262,7 +266,7 @@ export function useContextMenus({
         ],
       });
     },
-    [docRef, onDocChange, handleEdgesDelete],
+    [docRef, onDocChange, handleEdgesDelete, dialog, t],
   );
 
   const openPaneMenu = useCallback(

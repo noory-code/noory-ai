@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageToggle } from "../i18n/LanguageToggle";
 import type { ProjectDoc, ProjectTag, SketchNode } from "../types";
 import { SketchStencil, type StencilCanvas } from "./SketchStencil";
+import { useDialog } from "../shell/dialog/DialogProvider";
 
 export interface SketchSidebarProps {
   projects: ProjectDoc[];
@@ -49,6 +50,7 @@ export function SketchSidebar({
   viewingTag,
 }: SketchSidebarProps) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [collapsed, setCollapsed] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -158,12 +160,13 @@ export function SketchSidebar({
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
                       if (
-                        window.confirm(
-                          t("sidebar.confirmDeleteProject", { name: p.name || p.id }),
-                        )
+                        await dialog.confirm({
+                          message: t("sidebar.confirmDeleteProject", { name: p.name || p.id }),
+                          danger: true,
+                        })
                       ) {
                         void onDelete(p.id);
                       }
@@ -217,8 +220,13 @@ export function SketchSidebar({
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm(t("sidebar.confirmDeleteTag", { name: tag.name }))) {
+                      onClick={async () => {
+                        if (
+                          await dialog.confirm({
+                            message: t("sidebar.confirmDeleteTag", { name: tag.name }),
+                            danger: true,
+                          })
+                        ) {
                           void onDeleteTag(tag.name);
                         }
                       }}

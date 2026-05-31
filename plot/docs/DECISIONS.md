@@ -9852,3 +9852,29 @@ but not yet fully eliminated.
   stays only as a dormant fallback.
 - **Spec impact:** SPEC §Auto-layout — table + new "Angle-preserving depth
   rings" subsection; handle tree demoted to retained fallback.
+
+### D-2026-05-31-W — In-app dialog system replaces native browser popups
+
+- **What:** New `viewer/src/shell/dialog/` (`DialogProvider` + `useDialog()`)
+  with a promise-based imperative API — `confirm()` → `Promise<boolean>`,
+  `prompt()` → `Promise<string|null>`, `alert()` → `Promise<void>`. One
+  styled modal renders at a time (matches DirTreePicker chrome; `danger`
+  variant = rose). Mounted around `<App>` in `main.tsx`. All 13 native
+  `window.confirm` / `window.alert` / `window.prompt` call sites migrated to
+  it; a structural guard bans the native forms in `src/` henceforth.
+- **Why:** User: *"브라우저 기본 팝업? 워닝 모달? 이거 없앱시다. 세련되지
+  않아 보여요"* — the native popups are unstyled and break the app's look.
+  Five call sites also carried hardcoded English strings; the migration
+  routes them through i18n (en + ko), closing an i18n gap at the same time
+  ([[feedback_plot_global_service]]).
+- **Design choice:** promise-based imperative API (not per-component local
+  modal state) so a call site reads almost exactly like the native call it
+  replaces (`if (await dialog.confirm(...))`), and a single provider owns
+  all styling (SSOT / consistency). Missing-provider throws only when a
+  method is *called*, not at `useDialog()` — so render-only unit tests need
+  no provider wrapper (kept the blast radius off ~90 existing tests).
+- **Approval:** Accepted by user, 2026-05-31 (*"이쁘게 따로 다이얼로그
+  만들어서 진행합시다"*). Browser-verified: delete-project confirm renders
+  styled, cancel preserves the project.
+- **Spec impact:** none (UI chrome, no canvas-behaviour change). Guarded by
+  `structural-guards.test.tsx` "no native browser dialogs".

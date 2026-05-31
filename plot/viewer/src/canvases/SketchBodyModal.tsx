@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Shape, SketchNode } from "../types";
 import { ICON_KEYS, getIcon } from "./SketchIcons";
+import { useDialog } from "../shell/dialog/DialogProvider";
 
 const PALETTE = ["#ffffff", "#fecaca", "#fed7aa", "#fef08a", "#bbf7d0", "#bae6fd", "#ddd6fe"];
 
@@ -26,6 +28,8 @@ export function SketchBodyModal({
   onClose,
   onDelete,
 }: SketchBodyModalProps) {
+  const { t } = useTranslation();
+  const dialog = useDialog();
   const [label, setLabel] = useState(node.label);
   const [color, setColor] = useState(node.color);
   const [width, setWidth] = useState(node.width);
@@ -195,8 +199,8 @@ export function SketchBodyModal({
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm("Delete this node?")) {
+            onClick={async () => {
+              if (await dialog.confirm({ message: t("node.confirmDelete"), danger: true })) {
                 onDelete();
                 onClose();
               }

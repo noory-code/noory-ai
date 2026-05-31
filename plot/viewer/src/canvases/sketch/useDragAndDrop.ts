@@ -21,6 +21,7 @@ import { resolveDropTarget, type StencilCanvas, type StencilPreset } from "../Sk
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
 import { containerAtFlowPoint, findFreeSpot } from "./overlapNudge";
 import type { NodePreset, PendingActorRef, PendingFoundationRef } from "./types";
+import { useDialog } from "../../shell/dialog/DialogProvider";
 
 export interface UseDragAndDropArgs {
   nodes: DocNode[];
@@ -60,6 +61,7 @@ export function useDragAndDrop({
   addNestedNodeAt,
   canvasKind,
 }: UseDragAndDropArgs): UseDragAndDropResult {
+  const dialog = useDialog();
   const [pendingActorRef, setPendingActorRef] = useState<PendingActorRef | null>(null);
   const [pendingFoundationRef, setPendingFoundationRef] =
     useState<PendingFoundationRef | null>(null);
@@ -96,7 +98,7 @@ export function useDragAndDrop({
         canvasKind,
       );
       if ("error" in resolved) {
-        window.alert(resolved.error);
+        void dialog.alert({ message: resolved.error });
         return;
       }
       // v0.11.5 — preset already carries the master id (common case),
@@ -158,7 +160,7 @@ export function useDragAndDrop({
         addNodeAt(spot.x, spot.y, preset);
       }
     },
-    [flowRef, nodes, edges, nodeById, addNodeAt, addNestedNodeAt, canvasKind],
+    [flowRef, nodes, edges, nodeById, addNodeAt, addNestedNodeAt, canvasKind, dialog],
   );
 
   return {

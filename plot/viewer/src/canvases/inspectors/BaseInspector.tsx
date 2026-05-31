@@ -18,6 +18,7 @@ import { canPublish } from "../../domain/publishEligibility";
 import type { CanvasKind, SketchNode } from "../../types";
 import { DetailsSection } from "./DetailsSection";
 import { PublishedVersionsSection } from "./shared/PublishedVersionsSection";
+import { useDialog } from "../../shell/dialog/DialogProvider";
 
 const WIDTH_STORAGE_KEY = "plot.inspector.width";
 type InspectorWidth = "narrow" | "wide";
@@ -76,6 +77,7 @@ export function BaseInspector({
   hideDetailsSection = false,
 }: BaseInspectorProps) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [width, setWidth] = useState<InspectorWidth>(loadWidth);
   const toggleWidth = () => {
     const next: InspectorWidth = width === "narrow" ? "wide" : "narrow";
@@ -137,9 +139,12 @@ export function BaseInspector({
           {node.kind !== "project" && !node.is_root && (
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  window.confirm(t("inspector.confirmDelete", { name: node.label || node.id }))
+                  await dialog.confirm({
+                    message: t("inspector.confirmDelete", { name: node.label || node.id }),
+                    danger: true,
+                  })
                 ) {
                   onDeleteNode(node.id);
                 }
@@ -272,16 +277,16 @@ export function BaseInspector({
               disabled={!isDirty}
               onClick={
                 isDirty
-                  ? () => {
+                  ? async () => {
                       if (
-                        window.confirm(
-                          t("inspector.confirmPublish", {
+                        await dialog.confirm({
+                          message: t("inspector.confirmPublish", {
                             kind: kindLabel,
                             label: node.label || node.id,
                             fromVersion,
                             toVersion,
                           }),
-                        )
+                        })
                       ) {
                         onPublishNode(node.id);
                       }
@@ -307,19 +312,20 @@ export function BaseInspector({
               <div className="mt-2 text-center">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     const prevMajor =
                       parseInt(fromVersion.slice(1).split(".")[0], 10) - 1;
                     const prevVersion = `v${prevMajor}.0`;
                     if (
-                      window.confirm(
-                        t("inspector.confirmUnpublish", {
+                      await dialog.confirm({
+                        message: t("inspector.confirmUnpublish", {
                           kind: kindLabel,
                           label: node.label || node.id,
                           fromVersion,
                           toVersion: prevVersion,
                         }),
-                      )
+                        danger: true,
+                      })
                     ) {
                       onUnpublishNode(node.id);
                     }

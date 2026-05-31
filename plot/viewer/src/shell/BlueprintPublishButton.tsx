@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BlueprintBump } from "../api";
+import { useDialog } from "./dialog/DialogProvider";
 
 interface BlueprintPublishButtonProps {
   currentVersion: string;
@@ -33,6 +34,7 @@ export function BlueprintPublishButton({
   disabled,
 }: BlueprintPublishButtonProps) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -47,12 +49,12 @@ export function BlueprintPublishButton({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
 
-  const handlePick = (bump: BlueprintBump) => {
+  const handlePick = async (bump: BlueprintBump) => {
     const next = bumpPreview(currentVersion, bump);
     if (
-      !window.confirm(
-        t("publishProject.confirm", { from: currentVersion, to: next }),
-      )
+      !(await dialog.confirm({
+        message: t("publishProject.confirm", { from: currentVersion, to: next }),
+      }))
     )
       return;
     setOpen(false);

@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import type { SketchNode } from "../../../types";
 import { ContentFields } from "./ContentFields";
 import { RuleFields } from "./RuleFields";
+import { useDialog } from "../../../shell/dialog/DialogProvider";
 
 export interface CompositionListProps {
   title: string;
@@ -90,6 +91,7 @@ function CompositionRow({
   onRemove,
 }: CompositionRowProps) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [expanded, setExpanded] = useState(false);
   return (
     <li className="group rounded border border-slate-200 bg-white">
@@ -114,13 +116,14 @@ function CompositionRow({
         </div>
         <button
           type="button"
-          onClick={() => {
+          onClick={async () => {
             if (
-              window.confirm(
-                t("composition.confirmRemove", {
+              await dialog.confirm({
+                message: t("composition.confirmRemove", {
                   name: item.label || t("composition.untitled"),
                 }),
-              )
+                danger: true,
+              })
             ) {
               onRemove(item.id);
             }

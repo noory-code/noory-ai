@@ -5,7 +5,9 @@
     "save": "저장",
     "delete": "삭제",
     "rename": "이름 변경",
-    "language": "언어"
+    "language": "언어",
+    "ok": "확인",
+    "confirm": "확인"
   },
   "toolbar": {
     "undo": "되돌리기",
@@ -78,7 +80,9 @@
   },
   "snapshot": {
     "viewing": "{{tag}} 시점 보기 중 — 편집 비활성화. 나가려면 우측 ✕.",
-    "exit": "나가기"
+    "exit": "나가기",
+    "tagNamePrompt": "세션 태그 이름 (예: 'session-banas-start')",
+    "tagMessagePrompt": "선택: 짧은 메모"
   },
   "serviceDetail": {
     "label": "서비스 상세",
@@ -112,6 +116,9 @@
     "value": "가치"
   },
   "node": {
+    "confirmDelete": "이 노드를 삭제할까요?",
+    "confirmDeleteArrow": "이 화살표를 삭제할까요?",
+    "edgeLabelPrompt": "엣지 라벨",
     "step": {
       "outcomePlaceholder": "(결과 — 클릭해 추가)",
       "branchLabel": "분기",

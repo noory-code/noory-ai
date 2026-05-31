@@ -4,6 +4,41 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.35.0] — 2026-05-31
+
+### Added — in-app dialog system replacing native browser popups (D-2026-05-31-W)
+
+- New `shell/dialog/` — `DialogProvider` + `useDialog()` with a promise-based
+  imperative API (`confirm` → boolean, `prompt` → string|null, `alert` →
+  void). One styled modal renders at a time, matching the DirTreePicker
+  chrome (slate backdrop, white rounded panel, `z-[60]` above other modals).
+  Destructive confirms get rose (`danger`) styling.
+- Mounted around `<App>` in `main.tsx` so every component AND hook can call
+  `useDialog()`. Missing-provider only throws when a method is *called*
+  (render-only unit tests don't need to wrap in the provider).
+
+### Changed — all 13 native `window.confirm` / `window.alert` / `window.prompt` call sites migrated
+
+- BaseInspector (delete / publish / unpublish), SketchSidebar (delete
+  project / delete tag), SketchBodyModal (delete node), SketchEdgeModal
+  (delete arrow), CompositionList (remove), BlueprintPublishButton
+  (publish), useDragAndDrop (drop error → alert), useContextMenus (edge
+  label → prompt), useProject (session tag name + message → prompt).
+- Five previously hardcoded-English strings now route through i18n
+  (`node.confirmDelete` / `node.confirmDeleteArrow` / `node.edgeLabelPrompt`
+  / `snapshot.tagNamePrompt` / `snapshot.tagMessagePrompt`) + `common.ok` /
+  `common.confirm`, added to both `en` and `ko`.
+
+### Removed — native browser dialogs
+
+- No `src/` file calls `window.confirm` / `window.alert` / `window.prompt`
+  anymore. A new structural guard (`structural-guards.test.tsx`) fails the
+  build if one creeps back.
+- Tests: 8 new `dialog.test.tsx` cases (confirm/prompt/alert resolution +
+  Escape/cancel + single-dialog invariant). viewer 711/711 green; tsc clean.
+  Browser-verified: delete-project confirm renders styled, cancel preserves
+  the project.
+
 ## [0.34.8] — 2026-05-31
 
 ### Changed — floating-canvas auto-layout: angle-preserving depth rings (D-2026-05-31-V)

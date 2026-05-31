@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SketchEdge, ValueForm } from "../types";
+import { useDialog } from "../shell/dialog/DialogProvider";
 
 const VALUE_FORMS: { id: ValueForm; label: string; hint: string; color: string }[] = [
   { id: "economic", label: "Economic", hint: "money, payment, fees", color: "#16a34a" },
@@ -46,6 +48,8 @@ export function SketchEdgeModal({
   onClose,
   onDelete,
 }: SketchEdgeModalProps) {
+  const { t } = useTranslation();
+  const dialog = useDialog();
   const [actionVerb, setActionVerb] = useState(edge.action_verb ?? "");
   const [valueForm, setValueForm] = useState<ValueForm[]>(edge.value_form ?? []);
   const [label, setLabel] = useState(edge.label);
@@ -217,8 +221,8 @@ export function SketchEdgeModal({
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm("Delete this arrow?")) {
+            onClick={async () => {
+              if (await dialog.confirm({ message: t("node.confirmDeleteArrow"), danger: true })) {
                 onDelete();
                 onClose();
               }

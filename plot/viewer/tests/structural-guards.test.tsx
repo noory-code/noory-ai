@@ -404,3 +404,53 @@ describe("RF nodeInternals.width invariant (D-2026-05-27-D)", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------
+// Contract: no native browser dialogs (D-2026-05-31-W)
+// ---------------------------------------------------------------------
+// ``window.confirm`` / ``window.alert`` / ``window.prompt`` are unstyled
+// and break the app's look. All user prompts route through the in-app
+// dialog system (``useDialog()`` → ``shell/dialog/``). This guard fails
+// the build if a native popup creeps back in.
+
+function walkSrcFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    const full = resolve(dir, entry);
+    if (statSync(full).isDirectory()) {
+      // ``shell/dialog/`` is the in-app dialog system itself — its API
+      // declares ``confirm`` / ``alert`` / ``prompt`` methods (not calls).
+      if (entry === "dialog") continue;
+      out.push(...walkSrcFiles(full));
+    } else if (/\.(ts|tsx)$/.test(entry)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+describe("no native browser dialogs (D-2026-05-31-W)", () => {
+  it("no src file calls window.confirm / window.alert / window.prompt", () => {
+    const offenders: string[] = [];
+    const banned = /\b(?:window\.)?(?:confirm|alert|prompt)\s*\(/;
+    for (const file of walkSrcFiles(SRC)) {
+      const src = stripComments(readFileSync(file, "utf8"));
+      const lines = src.split("\n");
+      lines.forEach((line, i) => {
+        // Only flag the global call forms — ``window.confirm(`` or a bare
+        // ``confirm(`` / ``alert(`` / ``prompt(``. ``dialog.confirm(`` and
+        // ``dialog.prompt(`` are member calls and are NOT matched (the
+        // preceding ``.`` defeats the ``\b...\(`` boundary via the
+        // negative lookbehind below).
+        if (/(?<![.\w])(?:window\.)?(?:confirm|alert|prompt)\s*\(/.test(line)) {
+          offenders.push(`${file.replace(SRC, "src")}:${i + 1}: ${line.trim()}`);
+        }
+      });
+    }
+    expect(
+      offenders,
+      `native browser dialog(s) found — use useDialog() (shell/dialog/) instead:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+    expect(banned.test("confirm(")).toBe(true); // self-check the matcher
+  });
+});

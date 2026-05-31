@@ -5,7 +5,9 @@
     "save": "Save",
     "delete": "Delete",
     "rename": "Rename",
-    "language": "Language"
+    "language": "Language",
+    "ok": "OK",
+    "confirm": "Confirm"
   },
   "toolbar": {
     "undo": "Undo",
@@ -78,7 +80,9 @@
   },
   "snapshot": {
     "viewing": "Viewing snapshot at {{tag}} — edits are disabled until you exit.",
-    "exit": "exit snapshot"
+    "exit": "exit snapshot",
+    "tagNamePrompt": "Session tag name (e.g. 'session-banas-start')",
+    "tagMessagePrompt": "Optional short message"
   },
   "serviceDetail": {
     "label": "Service detail",
@@ -112,6 +116,9 @@
     "value": "Value"
   },
   "node": {
+    "confirmDelete": "Delete this node?",
+    "confirmDeleteArrow": "Delete this arrow?",
+    "edgeLabelPrompt": "Edge label",
     "step": {
       "outcomePlaceholder": "(outcome — click to add)",
       "branchLabel": "branch",

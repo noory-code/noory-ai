@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   type BlueprintBump,
   createProject,
@@ -14,6 +15,7 @@ import {
   tagProject,
 } from "../api";
 import { joinWorkspaceDir } from "../lib/projectPath";
+import { useDialog } from "../shell/dialog/DialogProvider";
 import type { ProjectHistoryApi } from "../canvases/useProjectHistory";
 import type {
   CanvasDoc,
@@ -99,6 +101,8 @@ export interface UseProjectApi {
  */
 export function useProject(args: UseProjectArgs): UseProjectApi {
   const { workspaceRoot, history, onActiveIdChange, initialActiveId, onError } = args;
+  const { t } = useTranslation();
+  const dialog = useDialog();
 
   const [summaries, setSummaries] = useState<ProjectDoc[]>([]);
   // ``dirMap`` (state) drives reactive render (sidebar labels +
@@ -296,9 +300,11 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
   const markSession = useCallback(async () => {
     const path = activeId ? pathFor(activeId) : null;
     if (!path || !activeId) return;
-    const name = window.prompt("Session tag name (e.g. 'session-banas-start')");
+    const name = await dialog.prompt({ message: t("snapshot.tagNamePrompt") });
     if (!name || !name.trim()) return;
-    const message = window.prompt("Optional short message", "") || undefined;
+    const message =
+      (await dialog.prompt({ message: t("snapshot.tagMessagePrompt"), defaultValue: "" })) ||
+      undefined;
     try {
       await tagProject(path, activeId, name.trim(), message);
       const proj = await getProject(path, activeId);
@@ -306,7 +312,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
     }
-  }, [pathFor, activeId, onError]);
+  }, [pathFor, activeId, onError, dialog, t]);
 
   const publishNodeAction = useCallback(
     async (canvasKey: CanvasKey, nodeId: string) => {
