@@ -65,6 +65,13 @@ export interface UseNodesMemoArgs {
    *  top of the node list. False on ServiceDetailCanvas (the modal
    *  has its own header). */
   injectAnchor: boolean;
+  /** v0.37.1 (D-2026-05-31-AD) — ids React Flow currently has selected.
+   *  The ``nodes`` array is controlled (derived from ``doc``), so RF
+   *  resets each node's selection to whatever the prop says on every
+   *  re-render. Without carrying ``selected`` here, a click selects the
+   *  node then the next render (e.g. the Inspector opening) deselects it
+   *  — "선택되고 해제되고". Tracked as state in SketchCanvas, fed back in. */
+  selectedIds: Set<string>;
 }
 
 export function useNodesMemo({
@@ -88,6 +95,7 @@ export function useNodesMemo({
   shouldDrill,
   showFoldButton,
   injectAnchor,
+  selectedIds,
 }: UseNodesMemoArgs): Node<BaseNodeData>[] {
   return useMemo<Node<BaseNodeData>[]>(() => {
     // SPEC §Rendering order: parents first, children after. React
@@ -197,6 +205,9 @@ export function useNodesMemo({
         // SketchCanvas's ``nodeTypes`` map (NODE_RENDERERS) dispatches
         // to the per-kind renderer. Replaces the v0.14 "sketch" god type.
         type: n.kind,
+        // v0.37.1 (D-2026-05-31-AD) — carry selection in the controlled
+        // array so RF doesn't reset it on the next render.
+        selected: selectedIds.has(n.id),
         position: { x: n.x, y: n.y },
         // v0.27.9 (D-2026-05-27-D) — RF v11's createNodeInternals reads
         // dimensions ONLY from the prop node's top-level width/height.
@@ -300,5 +311,6 @@ export function useNodesMemo({
     shouldDrill,
     showFoldButton,
     injectAnchor,
+    selectedIds,
   ]);
 }

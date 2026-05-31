@@ -8,6 +8,7 @@ import ReactFlow, {
   useNodesInitialized,
   useReactFlow,
   type NodeChange,
+  type OnSelectionChangeParams,
   type ReactFlowInstance,
 } from "reactflow";
 import type {
@@ -195,6 +196,10 @@ function SketchCanvasInner({
   docRef.current = doc;
   const flowRef = useRef<ReactFlowInstance | null>(null);
   const selectedNodeIds = useRef<string[]>([]);
+  // v0.37.1 (D-2026-05-31-AD) — selection as state so the controlled
+  // ``nodes`` array (useNodesMemo) can carry ``selected``. Without this RF
+  // resets selection on every re-render and a click "선택되고 해제되고".
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   // v0.18.3 (D-2026-05-17-A) — defer fitView until RF measures every
   // node's DOM box. The onInit path fit (0,0) before measurement.
   // v0.27.4 (D-2026-05-26-H) — `useNodesInitialized` occasionally stays
@@ -286,6 +291,7 @@ function SketchCanvasInner({
     shouldDrill,
     showFoldButton: showFoldButton ?? true,
     injectAnchor: injectAnchor ?? true,
+    selectedIds,
   });
 
   const edges = useEdgesMemo({
@@ -333,6 +339,16 @@ function SketchCanvasInner({
     addNodeAt,
     convergeArrowsOnAnchor: convergeArrowsOnAnchor ?? false,
   });
+
+  // v0.37.1 (D-2026-05-31-AD) — mirror RF's selection into ``selectedIds``
+  // state so useNodesMemo carries ``selected`` on the controlled array.
+  const handleSelectionChangeSync = useCallback(
+    (sel: OnSelectionChangeParams) => {
+      handleSelectionChange(sel);
+      setSelectedIds(new Set(sel.nodes.map((n) => n.id)));
+    },
+    [handleSelectionChange],
+  );
 
   // ---------------- Context menu ----------------
 
@@ -411,7 +427,7 @@ function SketchCanvasInner({
         onConnect={handleConnect}
         onNodesDelete={handleNodesDelete}
         onEdgesDelete={handleEdgesDelete}
-        onSelectionChange={handleSelectionChange}
+        onSelectionChange={handleSelectionChangeSync}
         onNodeContextMenu={openNodeMenu}
         onEdgeContextMenu={openEdgeMenu}
         onEdgeDoubleClick={(_evt, edge) => setEdgeModalId(edge.id)}

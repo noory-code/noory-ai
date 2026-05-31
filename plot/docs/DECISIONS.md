@@ -10016,3 +10016,18 @@ but not yet fully eliminated.
   explicit create action, not the deferred lazy-`.plot` work of option B).
 - **Approval:** Accepted by user, 2026-05-31.
 - **Spec impact:** SPEC §"Workspace & projects" — picker can create a new dir.
+
+### D-2026-05-31-AD — Controlled nodes array carries ``selected`` (click selection sticks)
+
+- **What:** ``useNodesMemo`` now takes a ``selectedIds: Set<string>`` and sets
+  ``selected: selectedIds.has(n.id)`` on each emitted node. SketchCanvas tracks
+  selection as state (updated from RF's ``onSelectionChange``) and feeds it in.
+- **Why:** User: *"노드들 클릭하면 바로 선택이 안되요 … 선택되고 해제되고
+  이러네."* The ``nodes`` array is controlled (derived from ``doc``); RF resyncs
+  each node's ``selected`` to the prop on every re-render. Since the derived
+  array never set ``selected``, a click selected the node then the next render
+  (Inspector opening) deselected it. Carrying ``selected`` in the controlled
+  array is the React-Flow-correct pattern.
+- **Approval:** Reported + fix accepted by user, 2026-05-31.
+- **LOC:** SketchCanvas ceiling 500 → 515 (selection-state plumbing; follow-up:
+  extract a ``useNodeSelection`` hook). **Spec impact:** none.

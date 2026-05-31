@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.37.1] — 2026-06-01
+
+### Fixed — clicking a node now selects it and stays selected (D-2026-05-31-AD)
+
+- The controlled ``nodes`` array (``useNodesMemo``) didn't carry ``selected``,
+  so React Flow reset each node's selection to the prop on every re-render
+  (e.g. the Inspector opening). A click selected the node then the next render
+  deselected it — "선택되고 해제되고". Selection is now tracked as state in
+  SketchCanvas (``selectedIds`` from RF's ``onSelectionChange``) and
+  ``useNodesMemo`` sets ``selected: selectedIds.has(id)`` on each node, so RF
+  keeps the selection across rebuilds (the controlled-mode-correct pattern).
+- Tests: 3 new ``nodes-memo-selection.test.ts`` cases. SketchCanvas LOC
+  ceiling 500 → 515 (selection-state plumbing; follow-up: extract a
+  useNodeSelection hook). viewer 722/722; tsc clean.
+
 ## [0.37.0] — 2026-05-31
 
 ### Added — "+ New folder" in the Add-a-Project picker (D-2026-05-31-AC)
