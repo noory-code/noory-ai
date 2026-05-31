@@ -360,8 +360,6 @@ export function App() {
       {...(modalOpen ? { inert: "" as unknown as undefined } : {})}
     >
       <Header
-        projectPath={workspaceRoot}
-        projectDir={activeId ? dirForId(activeId) : null}
         error={error}
         socketStatus={socketStatus}
         saveState={saveState}
@@ -397,6 +395,7 @@ export function App() {
             <CanvasTabs
               active={activeTab}
               onSelect={selectTab}
+              workspaceRoot={workspaceRoot}
               blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? "v0.1.0"}
               onPublishBlueprint={handlePublishBlueprint}
               publishDisabled={!activeId}

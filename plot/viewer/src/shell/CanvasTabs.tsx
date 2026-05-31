@@ -29,6 +29,8 @@ interface CanvasTabsProps {
   blueprintVersion: string;
   onPublishBlueprint: (bump: BlueprintBump) => void | Promise<void>;
   publishDisabled?: boolean;
+  /** Workspace ROOT absolute path, shown centered (v0.34.2, D-2026-05-31-P). */
+  workspaceRoot: string;
 }
 
 export function CanvasTabs({
@@ -37,6 +39,7 @@ export function CanvasTabs({
   blueprintVersion,
   onPublishBlueprint,
   publishDisabled,
+  workspaceRoot,
 }: CanvasTabsProps) {
   const { t } = useTranslation();
   return (
@@ -66,6 +69,12 @@ export function CanvasTabs({
           );
         })}
       </div>
+      <span
+        className="min-w-0 flex-1 truncate px-4 text-center font-mono text-xs text-slate-400"
+        title={workspaceRoot}
+      >
+        {workspaceRoot}
+      </span>
       <BlueprintPublishButton
         currentVersion={blueprintVersion}
         onPublish={onPublishBlueprint}

@@ -9698,3 +9698,22 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-05-31 (approved plan; resolves the
   earlier "경로가 필요한가" header question).
 - **Spec impact:** SPEC §"Workspace & projects" — URL/header note.
+
+### D-2026-05-31-P — Workspace root → tab-bar center; socket label "MCP: live"
+
+- **What:** (1) The workspace root absolute path moves from the header to
+  the **center of the canvas tab bar**; the header left is just `PLOT ·
+  {project} {version}` (the active project's dir is already shown in the
+  sidebar subtitle, so it's redundant in the header). (2) The socket
+  indicator is prefixed **"MCP:"** — "MCP: live" / "MCP: connecting…" /
+  "MCP: reconnecting…" / "MCP: offline" — so it's clear the dot reflects the
+  MCP server connection, not "the project is live".
+- **Why:** User, reviewing the v0.34.1 header: the per-project dir in the
+  header is "the selected one" (redundant with the sidebar); if the root is
+  shown, put it centered in the tab bar. And the bare "live" was unclear
+  (the user didn't know what it meant) — "MCP: live" was agreed earlier.
+- **Supersedes:** D-2026-05-31-O (header relative-dir display) — that prop
+  is removed; the dir lives only in the sidebar now.
+- **Approval:** Accepted by user, 2026-05-31 ("필요 없고 표시한다면 탭바에
+  센터에 표시하세요" + "live … MCP: live 이렇게 표시하기로 했잖아요").
+- **Spec impact:** SPEC §"Workspace & projects" — Chrome.

@@ -13,11 +13,6 @@ import type { SocketStatus } from "../api";
 import type { SaveState } from "../canvases/SketchToolbar";
 
 interface HeaderProps {
-  /** Workspace ROOT absolute path — shown as the hover title only. */
-  projectPath: string;
-  /** Active project's dir relative to the root ("." / null = root-level).
-   *  Shown in place of the absolute path (v0.34.1, D-2026-05-31-O). */
-  projectDir: string | null;
   error: string | null;
   socketStatus: SocketStatus;
   saveState: SaveState;
@@ -33,8 +28,6 @@ interface HeaderProps {
 }
 
 export function Header({
-  projectPath,
-  projectDir,
   error,
   socketStatus,
   saveState,
@@ -51,12 +44,6 @@ export function Header({
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold tracking-wide">PLOT</span>
-          <span className="font-mono text-xs text-slate-500" title={projectPath}>
-            {truncateMiddle(
-              projectDir && projectDir !== "." ? projectDir : t("sidebar.rootDir"),
-              48,
-            )}
-          </span>
           {projectName && (
             <span className="text-sm text-slate-700">· {projectName}</span>
           )}
@@ -138,11 +125,12 @@ function SaveIndicator({ state }: { state: SaveState }) {
 }
 
 function SocketIndicator({ status }: { status: SocketStatus }) {
+  // The dot reflects the MCP server connection — prefix makes that explicit.
   const label = {
-    connecting: "connecting…",
-    connected: "live",
-    reconnecting: "reconnecting…",
-    disconnected: "offline",
+    connecting: "MCP: connecting…",
+    connected: "MCP: live",
+    reconnecting: "MCP: reconnecting…",
+    disconnected: "MCP: offline",
   }[status];
   const dot = {
     connecting: "bg-amber-500 animate-pulse",
@@ -157,18 +145,9 @@ function SocketIndicator({ status }: { status: SocketStatus }) {
     disconnected: "text-slate-600",
   }[status];
   return (
-    <span
-      className={`inline-flex items-center gap-1 ${tone}`}
-      title={`Server: ${label}`}
-    >
+    <span className={`inline-flex items-center gap-1 ${tone}`} title={label}>
       <span aria-hidden className={`h-2 w-2 rounded-full ${dot}`} />
       <span>{label}</span>
     </span>
   );
-}
-
-function truncateMiddle(s: string, max: number): string {
-  if (s.length <= max) return s;
-  const side = Math.floor((max - 1) / 2);
-  return `${s.slice(0, side)}…${s.slice(-side)}`;
 }

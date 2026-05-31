@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.34.2] — 2026-05-31
+
+### Changed — workspace root to tab-bar center; socket label "MCP: live" (D-2026-05-31-P)
+
+- The workspace root absolute path moves from the header to the **center of
+  the canvas tab bar**; the header left is just `PLOT · {project}` (the
+  active project's dir is already shown in the sidebar subtitle). Supersedes
+  v0.34.1's header relative-dir display (Header `projectPath`/`projectDir`
+  props removed).
+- The socket indicator now reads **"MCP: live"** / "MCP: connecting…" /
+  "MCP: reconnecting…" / "MCP: offline" so the dot clearly refers to the MCP
+  server connection.
+- Covered by `tests/canvas-tabs-root.test.tsx` + `tests/header-socket-label.test.tsx`.
+
 ## [0.34.1] — 2026-05-31
 
 ### Changed — header shows the active project's relative dir (Phase 4; D-2026-05-31-O)

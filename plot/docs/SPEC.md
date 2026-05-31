@@ -34,6 +34,12 @@ label** (its path relative to the root; root-level shows the localized
 - **URL** — `?project_path=<root>` (workspace root) + `?project=<id>`. The
   active project's directory is resolved from discovery (id→dir map). Off-
   root absolute paths are out of scope (future native/desktop host).
+- **Chrome (v0.34.2, D-2026-05-31-P)** — the workspace root absolute path is
+  shown **centered in the canvas tab bar** (not the header; the header left
+  is just `PLOT · {project}`). The socket indicator reads **"MCP: live"** /
+  "MCP: connecting…" / "MCP: reconnecting…" / "MCP: offline" so the dot
+  clearly refers to the MCP server connection. (Supersedes D-2026-05-31-O's
+  header-dir display.)
 
 ---
 
