@@ -14,6 +14,10 @@ export interface UseEdgesMemoArgs {
   nearestCollapsedAncestor: (id: string) => string | null;
   valueFlowOn: boolean;
   hideRootServiceNode: boolean;
+  /** v0.36.1 (D-2026-05-31-AA) — wrapper-supplied (Foundation + Actors):
+   *  edges converge on the project anchor. Replaces a banned
+   *  ``doc.canvas_kind`` read in this hook. */
+  convergeArrowsOnAnchor: boolean;
 }
 
 export function useEdgesMemo({
@@ -21,6 +25,7 @@ export function useEdgesMemo({
   nearestCollapsedAncestor,
   valueFlowOn,
   hideRootServiceNode,
+  convergeArrowsOnAnchor,
 }: UseEdgesMemoArgs): Edge[] {
   // v0.30.1 (D-2026-05-31-D) — injection styling now reads the stored
   // ``edge.relation`` SSOT inside edgeTransform, so the source-kind
@@ -35,16 +40,17 @@ export function useEdgesMemo({
         hideRootServiceNode,
         // v0.34.4 (D-2026-05-31-R) — Foundation + Actors converge on the
         // anchor (elements compose into the service; actors participate).
-        constrainArrowToAnchor:
-          doc.canvas_kind === "foundation" || doc.canvas_kind === "actors",
+        // v0.36.1 (D-2026-05-31-AA) — the foundation/actors decision is now
+        // a wrapper-supplied prop, not a doc.canvas_kind read in this hook.
+        constrainArrowToAnchor: convergeArrowsOnAnchor,
       }),
     [
       doc.edges,
       doc.service_ref,
-      doc.canvas_kind,
       nearestCollapsedAncestor,
       valueFlowOn,
       hideRootServiceNode,
+      convergeArrowsOnAnchor,
     ],
   );
 }

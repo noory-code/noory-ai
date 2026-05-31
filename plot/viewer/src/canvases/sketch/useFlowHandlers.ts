@@ -29,6 +29,10 @@ export interface UseFlowHandlersArgs {
   selectedNodeIds: MutableRefObject<string[]>;
   onDocChange: (next: CanvasDoc) => void;
   addNodeAt: (x: number, y: number, preset?: NodePreset) => void;
+  /** v0.36.1 (D-2026-05-31-AA) — wrapper-supplied (Foundation + Actors):
+   *  normalize a new edge to point at the anchor-ward endpoint. Replaces a
+   *  banned ``doc.canvas_kind`` read in this hook. */
+  convergeArrowsOnAnchor: boolean;
 }
 
 export interface UseFlowHandlersResult {
@@ -50,6 +54,7 @@ export function useFlowHandlers({
   selectedNodeIds,
   onDocChange,
   addNodeAt,
+  convergeArrowsOnAnchor,
 }: UseFlowHandlersArgs): UseFlowHandlersResult {
   const handleConnect = useCallback(
     (connection: Connection) => {
@@ -62,7 +67,7 @@ export function useFlowHandlers({
       let target = connection.target;
       let sourceHandle = connection.sourceHandle ?? null;
       let targetHandle = connection.targetHandle ?? null;
-      if (current.canvas_kind === "foundation" || current.canvas_kind === "actors") {
+      if (convergeArrowsOnAnchor) {
         const dist = anchorDistances(current.edges, PROJECT_ANCHOR_ID);
         if (sourceIsAnchorWard(dist, source, target)) {
           [source, target] = [target, source];
@@ -92,7 +97,7 @@ export function useFlowHandlers({
       };
       onDocChange({ ...current, edges: [...current.edges, newEdge] });
     },
-    [docRef, onDocChange],
+    [docRef, onDocChange, convergeArrowsOnAnchor],
   );
 
   const handleEdgesChange = useCallback((_changes: EdgeChange[]) => {

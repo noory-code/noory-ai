@@ -120,6 +120,12 @@ export interface SketchCanvasProps {
    *  ``core_value`` / ``identity`` nodes snap to anchor-radial slots
    *  per the canonical Plot spec (Foundation only). Default false. */
   applyAnchorRadialLayout?: boolean;
+  /** v0.36.1 (D-2026-05-31-AA) — wrapper opt-in: this canvas's edges
+   *  converge on the project anchor (Foundation + Actors). The hooks must
+   *  NOT read ``doc.canvas_kind`` to decide this (banned by the v0.15 reset
+   *  + the pre-commit gate); FoundationCanvas / ActorsCanvas pass true.
+   *  Default false. */
+  convergeArrowsOnAnchor?: boolean;
   /** v0.25.0 (D-2026-05-24-B) — wrapper opt-in for the auto-layout
    *  button in RF Controls. Successor to ``enableAutoLayout`` (boolean).
    *  ``"tree"`` runs ``useAutoLayout`` (Foundation / Actors); ``"radial"``
@@ -179,6 +185,7 @@ function SketchCanvasInner({
   showFoldButton,
   injectAnchor,
   applyAnchorRadialLayout,
+  convergeArrowsOnAnchor,
   layoutAlgo,
   showDirectionSwitch,
   onPublishNode,
@@ -286,6 +293,7 @@ function SketchCanvasInner({
     nearestCollapsedAncestor,
     valueFlowOn,
     hideRootServiceNode: hideRootServiceNode ?? false,
+    convergeArrowsOnAnchor: convergeArrowsOnAnchor ?? false,
   });
 
   // React Flow's onNodesChange must dispatch atomically per the
@@ -323,6 +331,7 @@ function SketchCanvasInner({
     selectedNodeIds,
     onDocChange,
     addNodeAt,
+    convergeArrowsOnAnchor: convergeArrowsOnAnchor ?? false,
   });
 
   // ---------------- Context menu ----------------

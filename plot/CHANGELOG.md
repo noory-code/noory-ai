@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.36.1] — 2026-05-31
+
+### Changed — restore the "no canvas_kind branching in sketch hooks" invariant (D-2026-05-31-AA)
+
+- The v0.34.4 floating-edge work (D-2026-05-31-R) re-introduced
+  `doc.canvas_kind === "foundation" || "actors"` branches in `useFlowHandlers`
+  and `useEdgesMemo` — exactly the god-dispatch the v0.15 reset banned, which
+  the `pre_commit_gate` reset-check had been flagging red.
+- Replaced both with a wrapper-supplied `convergeArrowsOnAnchor` prop
+  (FoundationCanvas + ActorsCanvas pass `true`), threaded through SketchCanvas
+  to the two hooks — the same pattern as `hideRootServiceNode` /
+  `layoutAlgo` / `showFoldButton`. The hooks no longer read `canvas_kind` to
+  branch behaviour. `classifyEdge(canvas_kind, …)` stays (it passes the kind
+  as data, not a branch).
+- Behaviour preserved: Foundation + Actors arrows still converge on the
+  project anchor (browser-confirmed). `test_pre_commit_gate` is green again
+  (server 477/477). SketchCanvas LOC ceiling 490 → 500 (plumbing-only prop
+  threading). viewer 714/714; tsc clean.
+
 ## [0.36.0] — 2026-05-31
 
 ### Added — project creation asks WHERE + a name, on both the web viewer and via a skill

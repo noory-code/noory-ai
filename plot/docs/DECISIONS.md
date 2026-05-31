@@ -9947,3 +9947,35 @@ but not yet fully eliminated.
   [[project_plot_project_creation_model]].
 - **Spec impact:** none (tooling). No automated test (skills are markdown;
   matches `plot-new-sketch`).
+
+### D-2026-05-31-AA — Restore "no canvas_kind branching in sketch hooks" via a wrapper prop
+
+- **What:** the `doc.canvas_kind === "foundation" || "actors"` branches that
+  v0.34.4 (D-2026-05-31-R) added to `useFlowHandlers` (edge normalization
+  toward the anchor) and `useEdgesMemo` (`constrainArrowToAnchor`) are replaced
+  by a wrapper-supplied boolean prop `convergeArrowsOnAnchor`. FoundationCanvas
+  + ActorsCanvas pass `true`; SketchCanvas threads it into both hooks. The
+  hooks no longer read `canvas_kind` to branch.
+- **Why:** the v0.15 structural reset (D-2026-05-12-B/G) banned hooks under
+  `viewer/src/canvases/sketch/` from branching on `canvas_kind` — canvas
+  specificity must arrive as explicit wrapper props (the pattern already used
+  by `hideRootServiceNode`, `layoutAlgo`, `showFoldButton`). The
+  `pre_commit_gate` reset-check enforces this; v0.34.4 violated it and the gate
+  test (`test_pre_commit_gate::test_reset_complete_against_current_repo`) had
+  been red since. This restores the invariant honestly instead of weakening
+  the gate.
+- **Rejected — relax the gate:** allow `canvas_kind` reads in these hooks +
+  update the gate. Rejected: the wrapper-prop pattern already exists and is
+  cheap; weakening a guard the user deliberately built ([[feedback_no_god_object]])
+  to admit a shortcut is the wrong trade.
+- **`classifyEdge(canvas_kind, sourceKind)` kept:** it passes the kind as
+  *data* to a pure classifier, not a behaviour branch in the hook — the gate
+  regex allows it, and it is not god-dispatch.
+- **Behaviour:** preserved exactly (FoundationCanvas/ActorsCanvas → true ⟺ the
+  old `foundation || actors` test). Browser-confirmed the Foundation arrows
+  still converge on the anchor; viewer 714/714 + server 477/477 green.
+- **LOC:** SketchCanvas ceiling 490 → 500 (plumbing-only prop threading;
+  `structural-guards.test.tsx` note updated).
+- **Approval:** Accepted by user, 2026-05-31 (chose option A — thread a prop —
+  over relaxing the gate).
+- **Spec impact:** none (internal architecture; invariant restoration).
