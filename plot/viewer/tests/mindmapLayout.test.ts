@@ -156,14 +156,18 @@ describe("computeMindmapLayout", () => {
     const { positions } = computeMindmapLayout({ nodes, edges, hub: HUB });
     const sz = sizes(nodes);
     const hubC = centerOf(positions, sz, "hub");
-    // every service is farther from the hub along its branch axis than its category
+    // every service is farther from the hub than its category (outward,
+    // no back-cross). Measured by Euclidean distance — the genuine
+    // "outward" criterion; per-axis max mixes axes and mis-reads a
+    // single-child branch sitting near a diagonal.
     for (const e of edges) {
       if (!e.source.startsWith("c-")) continue;
       const pc = centerOf(positions, sz, e.source);
       const cc = centerOf(positions, sz, e.target);
-      const parentReach = Math.max(Math.abs(pc.x - hubC.x), Math.abs(pc.y - hubC.y));
-      const childReach = Math.max(Math.abs(cc.x - hubC.x), Math.abs(cc.y - hubC.y));
-      expect(childReach, `${e.target} must sit beyond ${e.source}`).toBeGreaterThan(parentReach);
+      expect(
+        dist(cc, hubC),
+        `${e.target} must sit beyond ${e.source}`,
+      ).toBeGreaterThan(dist(pc, hubC));
     }
   });
 
