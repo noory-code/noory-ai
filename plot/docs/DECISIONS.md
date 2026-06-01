@@ -39,6 +39,25 @@
 
 ## Log
 
+### D-2026-06-01-G — Auto-layout: horizontal bias + short edges (v0.40.1)
+
+- **What:** Two fixes to `computeMindmapLayout`. (1) **Horizontal bias** in
+  arm assignment: a branch counts as up/down only when its centre is
+  clearly steeper than horizontal (`|dy| > 3·|dx|`), else it goes left/
+  right by sign of dx. Keeps a tall column the user dragged to one side on
+  that side instead of scattering its top/bottom nodes across three arms.
+  (2) **Short edges:** removed the per-arm own-cross-half term from `startX`
+  / `startY`, so each arm starts just beyond the perpendicular spread and
+  the first ring hugs the hub (BANAS Foundation nearest node 402px → 141px).
+- **Why:** user: "오른쪽을 다 넘겼는데 왜 다시 상하로" (scatter) and "왜
+  이렇게 연결선이 길어" (long edges). The original request was the long
+  edges; the scatter was a regression introduced while chasing it.
+- **Trade-off:** a tall column may let its top/bottom nodes splay slightly
+  past the 45° diagonal (they're still on the correct side); short edges
+  were chosen over forcing the column fully inside its quadrant.
+- **Approval:** Accepted by user, 2026-06-01 ("일단 커밋하고 선짧게").
+- **Spec impact:** docs/AUTO_LAYOUT.md §3-4; tests `mindmapLayout.test.ts`.
+
 ### D-2026-06-01-D — Services canvas = divergence (anchor → category → service)
 
 - **What:** On the Services canvas the flow runs OUT from the anchor:

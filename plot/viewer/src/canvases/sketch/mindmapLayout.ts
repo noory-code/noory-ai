@@ -147,14 +147,25 @@ export function computeMindmapLayout(input: MindmapLayoutInput): MindmapLayoutOu
   // leaf-count so a fresh graph still fans out instead of stacking.
   const buckets: Record<Dir, string[]> = { R: [], L: [], U: [], D: [] };
 
+  // Horizontal bias (D-2026-06-01-G): a node counts as left/right whenever
+  // it is meaningfully to one side, even if it sits higher/lower. Without
+  // this, a tall column the user dragged to the right (every node at the
+  // same +x but spanning a big y-range) mis-classifies its top nodes as
+  // "up" and bottom as "down" — the column scatters across three arms
+  // ("내가 오른쪽을 다 넘겼는데 왜 다시 상하로 돌아오냐"). A node is U/D
+  // only when it is clearly more vertical than horizontal (|dy| > k·|dx|);
+  // otherwise it goes L/R by the sign of dx. Mindmaps read horizontally,
+  // so the bias favours columns over rows.
+  const VERTICAL_BIAS = 3;
   const dirFromCurrent = (id: string): Dir | null => {
     const n = nodeById.get(id);
     if (!n) return null;
     const dx = n.x + (n.width ?? 160) / 2 - hubCx;
     const dy = n.y + (n.height ?? 80) / 2 - hubCy;
     if (dx === 0 && dy === 0) return null;
-    if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "R" : "L";
-    return dy >= 0 ? "D" : "U";
+    // vertical only when clearly steeper than the bias; else horizontal.
+    if (Math.abs(dy) > Math.abs(dx) * VERTICAL_BIAS) return dy >= 0 ? "D" : "U";
+    return dx >= 0 ? "R" : "L";
   };
   const load: Record<Dir, number> = { R: 0, L: 0, U: 0, D: 0 };
   const unpositioned: string[] = [];
@@ -259,8 +270,15 @@ export function computeMindmapLayout(input: MindmapLayoutInput): MindmapLayoutOu
   // padding) so the first ring sits close to the hub. The first column is
   // already short because each arm only holds the branches the user put on
   // that side, so it stays within its quadrant without pushing it far out.
-  const crossHalfRL = Math.max(res.R.crossHalf, res.L.crossHalf); // U/D clearance in Y
-  const crossHalfUD = Math.max(res.U.crossHalf, res.D.crossHalf); // R/L clearance in X
+  const crossHalfRL = Math.max(res.R.crossHalf, res.L.crossHalf); // R/L column Y-spread
+  const crossHalfUD = Math.max(res.U.crossHalf, res.D.crossHalf); // U/D row X-spread
+  // Start each axis JUST beyond the perpendicular axis's spread so the four
+  // arms don't collide near the centre — kept tight (no own-cross-half
+  // term) so the first ring hugs the hub and edges stay SHORT (user: "왜
+  // 이렇게 연결선이 길어"). A tall column may let its top/bottom nodes
+  // splay slightly past the diagonal; short edges win that trade-off. Arm
+  // ASSIGNMENT still respects the user's side via the horizontal bias
+  // above, so the column stays one group.
   const startX = Math.max(hub.width / 2 + rankGap, crossHalfUD + rankGap);
   const startY = Math.max(hub.height / 2 + rankGap, crossHalfRL + rankGap);
 

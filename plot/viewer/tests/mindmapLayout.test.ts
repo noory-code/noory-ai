@@ -171,6 +171,29 @@ describe("computeMindmapLayout", () => {
     }
   });
 
+  it("keeps a tall right column on the RIGHT (one group, D-2026-06-01-G)", () => {
+    // 14 identity nodes dragged to the right (same +x) but spanning a big
+    // y-range. The horizontal bias keeps the whole column on the right arm,
+    // so every node lands to the RIGHT of the hub (cx > hubCx). Top/bottom
+    // nodes may sit a little above/below the hub (edges are kept short, not
+    // pushed out past the diagonal) — but the group stays right, not
+    // scattered across three sides. "오른쪽을 다 넘겼는데 왜 상하로".
+    const nodes: SketchNode[] = [node("hub", 0, 0, 120, 120)];
+    const edges: SketchEdge[] = [];
+    for (let i = 0; i < 14; i++) {
+      const id = `id-${i}`;
+      nodes.push({ id, kind: "identity", label: id, x: 450 - 80, y: -560 + i * 90, width: 160, height: 60 } as SketchNode);
+      edges.push(edge("hub", id));
+    }
+    const { positions } = computeMindmapLayout({ nodes, edges, hub: HUB });
+    const sz = sizes(nodes);
+    const hubC = centerOf(positions, sz, "hub");
+    const allRight = nodes
+      .filter((n) => n.id !== "hub")
+      .every((n) => centerOf(positions, sz, n.id).x > hubC.x);
+    expect(allRight, "every identity is on the right of the hub").toBe(true);
+  });
+
   it("keeps user-grouped columns on their side (mission↑ / values← / identities→)", () => {
     // The user groups by PLACING: mission up, 5 core_value left, 14
     // identity right. Auto-layout respects each node's side — no per-kind

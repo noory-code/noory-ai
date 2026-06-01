@@ -4,6 +4,48 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.40.1] — 2026-06-01
+
+### Fixed — auto-layout: short edges + tall column stays grouped (D-2026-06-01-G)
+
+- A column the user dragged to one side (e.g. 14 identity nodes all at the
+  same +x) scattered across three arms: its top/bottom nodes were higher /
+  lower than they were to the side, so the 45° arm test mis-read them as
+  up/down. Added a **horizontal bias** (a node is up/down only when clearly
+  steeper than the side, `|dy| > 3·|dx|`) so the whole column keeps its
+  side. "오른쪽을 다 넘겼는데 왜 다시 상하로".
+- Edges were too long: the previous fix pushed each arm out by its own
+  cross-spread (a 14-node column started ~600px out). Removed that term —
+  each arm now starts **just** beyond the perpendicular spread, so the
+  first ring hugs the hub (nearest node 402px → 141px on BANAS Foundation).
+  "왜 이렇게 연결선이 길어". Trade-off: a tall column may let its top/bottom
+  nodes splay slightly past the diagonal; short edges win.
+
+## [0.40.0] — 2026-06-01
+
+### Changed — auto-layout is a mindmap 4-direction tidy tree (D-2026-06-01-F)
+
+- Replaced the radial depth-ring layout with `computeMindmapLayout`, a
+  four-direction (上下左右) tidy tree wired into `useAutoLayout` for every
+  anchor canvas. ONE arm-assignment rule, no per-kind special-casing: each
+  branch keeps the hub side its centre is on (the user groups by placement
+  — mission up / core_value left / identity right stay there). New nodes on
+  the hub spread by subtree leaf-count. Arms are tidy trees growing outward,
+  kept tight (rankGap 44, crossGap 16). Manual button (always-on cancelled).
+- New SSOT doc `docs/AUTO_LAYOUT.md` (per-canvas criteria + flow semantics).
+
+### Changed — Services canvas flow is divergence (D-2026-06-01-D)
+
+- Services edges run OUT from the anchor: `BANAS → category → service`.
+  Foundation stays convergence; Actors stays inheritance.
+
+### Removed — floating edges; edges attach to the facing side (D-2026-06-01-E)
+
+- Removed the v0.30.3 floating-edge renderer. `edgeTransform` now attaches
+  each edge end to the handle on the side facing the other node (node
+  centres via `useEdgesMemo`, anchor seeded from `projectAnchor`) — clean
+  routing from any direction, fixing the arrow tangle floating had hidden.
+
 ## [0.39.0] — 2026-06-01
 
 ### Changed — auto-layout is a hierarchy TREE, not concentric circles (D-2026-06-01-C)
