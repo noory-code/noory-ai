@@ -16,7 +16,8 @@
 import { useCallback, type MutableRefObject } from "react";
 import { useReactFlow } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
-import { computeAutoLayout, type AutoLayoutAnchor } from "./autoLayout";
+import { type AutoLayoutAnchor } from "./autoLayout";
+import { computeMindmapLayout } from "./mindmapLayout";
 import {
   actorAnchoredLayout,
   setSubjectDirection,
@@ -117,19 +118,18 @@ export function useAutoLayout({
     }
     const anchor = pickAnchor(doc, projectAnchor);
     if (anchor) {
-      // v0.39.0 (D-2026-06-01-C) — TREE layout, not the v0.34.8 radial
-      // depth rings. The radial laid nodes in concentric circles by depth
-      // (1차 안쪽 / 2차 바깥 / 3차 더 바깥), so a child sat far from its
-      // parent on an outer ring. The user wants a hierarchy tree where each
-      // child clusters beside its parent ("원이 아니라 트리가 되어야죠").
-      // ``computeAutoLayout`` is the Reingold-Tilford tree (children placed
-      // adjacent to their parent, subtree-spaced so nothing overlaps); it
-      // now infers direction from current positions, not edge handles, so
-      // the v0.34.8 swap/crossing bugs don't return.
-      const { positions } = computeAutoLayout({
+      // v0.40.0 — MINDMAP radial tree. The v0.39.0 Reingold-Tilford tree
+      // inferred T/R/B/L direction from current positions, which split one
+      // parent's children across four sides and let cross-branch edges
+      // crowd near the anchor. The mindmap layout gives each subtree a
+      // disjoint angular wedge (sized by leaf-count) and nests children
+      // inside the parent's wedge on the outward side, so every branch
+      // reads as ONE group beside its parent with no node overlap and no
+      // cross-branch edge crossing. User criteria 2026-06-01.
+      const { positions } = computeMindmapLayout({
         nodes: doc.nodes,
         edges: doc.edges,
-        anchor,
+        hub: anchor,
       });
       if (positions.size > 0) {
         const nextNodes = doc.nodes.map((n) => {

@@ -300,6 +300,7 @@ function SketchCanvasInner({
     valueFlowOn,
     hideRootServiceNode: hideRootServiceNode ?? false,
     convergeArrowsOnAnchor: convergeArrowsOnAnchor ?? false,
+    projectAnchor,
   });
 
   // React Flow's onNodesChange must dispatch atomically per the

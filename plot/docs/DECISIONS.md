@@ -39,6 +39,61 @@
 
 ## Log
 
+### D-2026-06-01-D — Services canvas = divergence (anchor → category → service)
+
+- **What:** On the Services canvas the flow runs OUT from the anchor:
+  `BANAS → category → service`. Foundation stays convergence
+  (element → anchor), Actors stays inheritance (parent → child).
+- **Why:** the service canvas reads as BANAS *decomposing* into its
+  services ("서비스는 발산입니다. 파운데이션이 수렴이고. 액터는 상속이고").
+  The BANAS-sim had category→anchor edges (convergence); flipped the 7
+  anchor-incident edges to anchor→category.
+- **Approval:** Accepted by user, 2026-06-01.
+- **Spec impact:** SPEC.md §Edges flow-semantics; docs/AUTO_LAYOUT.md §2.
+
+### D-2026-06-01-E — Floating edges removed; edges attach to the facing side
+
+- **What:** Removed the v0.30.3 floating-edge renderer (`FloatingEdge`,
+  `floatingEdgeGeometry`, registry entry). Regular edges use RF's default
+  bezier again. `edgeTransform` now attaches each end to the handle on the
+  side of the node **facing the other node** (computed from node centres
+  passed via `useEdgesMemo`, anchor seeded from `projectAnchor`), so the
+  connection reads clean from any direction without floating.
+- **Why:** user asked to remove floating ("플로팅 노드 없앱시다") and to
+  tidy the arrows ("화살표 좀 정리"). The facing-side picker fixes the
+  arrow-tangle that floating had papered over.
+- **Approval:** Accepted by user, 2026-06-01 (chose "플로팅만 제거").
+- **Spec impact:** SPEC.md §Edges; docs/AUTO_LAYOUT.md §1, §5.
+
+### D-2026-06-01-F — Auto-layout = mindmap 4-direction tidy tree, placement-respecting
+
+- **What:** Replaced the radial depth-ring layout (`computeRadialLayout`,
+  v0.34.8) with `computeMindmapLayout` — a four-direction (上下左右) tidy
+  tree wired into `useAutoLayout` for every anchor canvas. Top-level
+  branch → arm assignment is **one rule, no per-kind special-casing**:
+  each branch keeps the side of the hub its centre is currently on
+  (dominant axis wins). The user groups by WHERE they place nodes — drag
+  mission up, core_value left, identity right and they stay there.
+  Brand-new nodes sitting on the hub (no usable side) spread across the
+  emptiest arms by subtree leaf-count so a fresh graph still fans out.
+  Each arm is a tidy tree growing outward (disjoint cross bands, parent
+  centred on children); arms start just beyond the perpendicular spread,
+  kept tight (rankGap 44, crossGap 16) so the first ring sits close to
+  the hub → no node overlap, no edge crossing, short edges.
+- **Why:** every circular layout was rejected ("원이 아니라", "마인드 노드
+  참고"); user wants type-grouped, placement-respecting, non-overlapping
+  ("종류별로 나눠야지", "미션은 위 아이덴티티는 오른쪽 코어밸류는 왼쪽",
+  "선도 겹치지 않게"). MindNode-style.
+- **Alternatives:** radial / concentric rings (rejected, looped many
+  rounds); single L→R tree (rejected — wanted 4 directions); per-kind arm
+  grouping (tried, rejected — "또 카테고리별로 정렬 규칙을 만들어뒀구만요";
+  the single position-respecting rule already groups when the user groups
+  by placement); always-on auto-layout (user cancelled — manual button).
+- **Approval:** Accepted by user, 2026-06-01.
+- **Spec impact:** SPEC.md §Auto-layout (table + algorithm); full
+  criteria in **docs/AUTO_LAYOUT.md** (new SSOT). Tests:
+  `viewer/tests/mindmapLayout.test.ts`.
+
 ### D-2026-05-31-G — Actor inheritance (computed effective fields + inspector)
 
 - **What:** On the actors canvas a sub-actor inherits its parent

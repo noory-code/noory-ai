@@ -28,12 +28,57 @@ export interface EdgeTransformInput {
    *  directed edge's arrowhead to point at the anchor-ward endpoint,
    *  regardless of how the edge was drawn. */
   constrainArrowToAnchor: boolean;
+  /** v0.40.0 (D-2026-06-01-E) — render-time handle picker. Maps each
+   *  node id (incl. the synthetic project anchor, which is NOT in
+   *  doc.nodes) to its centre. When present, a non-self-loop edge
+   *  attaches to the handle on the side of each node that FACES the
+   *  other node, so the edge reads clean from any direction (floating
+   *  edges removed). Omit → handles read from the stored edge (unit
+   *  tests, and any caller without geometry). */
+  nodeCenters?: Map<string, { cx: number; cy: number }>;
+}
+
+/** The side of `from` that faces `to`; dominant axis wins. */
+function facingSide(
+  from: { cx: number; cy: number },
+  to: { cx: number; cy: number },
+): "t" | "r" | "b" | "l" {
+  const dx = to.cx - from.cx;
+  const dy = to.cy - from.cy;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "r" : "l";
+  return dy >= 0 ? "b" : "t";
 }
 
 // v0.28.1 (D-2026-05-30-D) — an injection edge ("this essence fires
 // here") renders animated violet. v0.30.1 (D-2026-05-31-D) — detected
 // from the stored ``relation`` SSOT, not a source-kind lookup.
 const INJECTION_STROKE = "#8b5cf6"; // violet-500
+
+/** Resolve {sourceHandle, targetHandle} for one rendered edge. */
+function resolveHandles(
+  rfSource: string,
+  rfTarget: string,
+  isRealSelfLoop: boolean,
+  sAncestor: string | null,
+  tAncestor: string | null,
+  e: CanvasDoc["edges"][number],
+  nodeCenters?: Map<string, { cx: number; cy: number }>,
+): { sourceHandle: string | undefined; targetHandle: string | undefined } {
+  if (!isRealSelfLoop && nodeCenters) {
+    const s = nodeCenters.get(rfSource);
+    const t = nodeCenters.get(rfTarget);
+    if (s && t) {
+      // All BaseNode handles are type="source" with ids t/r/b/l;
+      // ConnectionMode.Loose lets them receive too, so the same ids
+      // work for both ends.
+      return { sourceHandle: facingSide(s, t), targetHandle: facingSide(t, s) };
+    }
+  }
+  return {
+    sourceHandle: sAncestor ? undefined : e.sourceHandle ?? undefined,
+    targetHandle: tAncestor ? undefined : e.targetHandle ?? undefined,
+  };
+}
 
 export function edgeTransform(input: EdgeTransformInput): Edge[] {
   const {
@@ -43,6 +88,7 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     valueFlowOn,
     hideRootServiceNode,
     constrainArrowToAnchor,
+    nodeCenters,
   } = input;
   const isHiddenRoot = (id: string): boolean =>
     hideRootServiceNode && !!serviceRef && id === serviceRef;
@@ -90,16 +136,17 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
       id: e.id,
       source: rfSource,
       target: rfTarget,
-      // v0.30.3 (D-2026-05-31-F) — floating edges attach to the border
-      // facing the other node, so they ignore handles entirely (and
-      // nulling them avoids RF "missing handle" warnings). Self-loops
-      // keep their handles (the arc anchors on them).
-      sourceHandle: isRealSelfLoop ? (sAncestor ? undefined : e.sourceHandle ?? undefined) : undefined,
-      targetHandle: isRealSelfLoop ? (tAncestor ? undefined : e.targetHandle ?? undefined) : undefined,
+      // v0.40.0 (D-2026-06-01-E) — floating edges removed. When node
+      // centres are supplied, attach each end to the handle on the side
+      // facing the other node (clean routing from any direction); else
+      // fall back to the stored handles. Self-loops always keep stored
+      // handles (the arc anchors on them); handles drop when the
+      // endpoint folds into a collapsed ancestor.
+      ...resolveHandles(rfSource, rfTarget, isRealSelfLoop, sAncestor, tAncestor, e, nodeCenters),
       label: e.label || undefined,
-      // Self-loops route through SelfLoopEdge (curved arc); every other
-      // edge floats border-to-border via FloatingEdge.
-      type: isRealSelfLoop ? "selfLoop" : "floating",
+      // Self-loops route through SelfLoopEdge (curved arc); regular
+      // edges keep React Flow's default Bezier path.
+      ...(isRealSelfLoop ? { type: "selfLoop" } : {}),
       // v0.28.1 (D-2026-05-30-D) — injection edges animate (marching
       // dashes flow source → target = the foundation flowing into the
       // flow node).

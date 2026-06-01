@@ -197,18 +197,13 @@ behaviour is *no auto-layout button*. Each wrapper opts in by setting
 | `ServicesCanvas` | `"tree"` | Actor-anchored when a subject edge exists; else angle-preserving depth rings | v0.27.0 (D-2026-05-26-A switches from `"radial"`); **angle-preserve fallback since v0.34.8** |
 | `ServiceDetailCanvas` | `"tree"` | Actor-anchored when a subject edge exists; else angle-preserving depth rings (hidden root-service as hub) | v0.27.0; **angle-preserve fallback since v0.34.8** |
 
-> **v0.34.8 (D-2026-05-31-V):** the `layoutAlgo="tree"` anchor path no
-> longer runs the handle-based directional tree (`autoLayout.ts`). All
-> edges are floating (D-2026-05-31-F), so their handles are nulled and
-> carry no reliable direction — the old tree read stale/arbitrary handles
-> and (a) swapped node sides and (b) let a depth-2 node land between the
-> anchor and its depth-1 parent (edge crossing). It now calls
-> `computeRadialLayout` with `angleMode: "preserve"` (see below). This is
-> the shared anchor path, so it covers all four `"tree"` wrappers'
-> anchor/fallback case — Foundation + Actors directly, Services +
-> ServiceDetail only when no subject edge claims the doc first.
-> `autoLayout.ts` is retained as the option-(B) fallback should floating
-> edges ever be reverted to handle-based rendering.
+> **SUPERSEDED by v0.40.0 (D-2026-06-01-F) — kept for history.**
+> v0.34.8 (D-2026-05-31-V): the anchor path ran `computeRadialLayout`
+> with `angleMode: "preserve"` (depth rings). v0.39.0 (D-2026-06-01-C)
+> swapped that for the Reingold-Tilford `computeAutoLayout`. Both are now
+> replaced by `computeMindmapLayout` (see the v0.40.0 note above).
+> `computeRadialLayout` survives only behind the `layoutAlgo="radial"`
+> button; floating edges were removed in v0.40.0 (D-2026-06-01-E).
 
 Isolation regression test:
 `viewer/tests/auto-layout-isolation.test.tsx`.

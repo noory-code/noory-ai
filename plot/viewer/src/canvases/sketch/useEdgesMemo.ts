@@ -6,8 +6,9 @@
 // wrapper (ServiceDetailCanvas → true, others → false).
 import { useMemo } from "react";
 import type { Edge } from "reactflow";
-import type { CanvasDoc } from "../../types";
+import type { AnchorPlacement, CanvasDoc } from "../../types";
 import { edgeTransform } from "./edgeTransform";
+import { PROJECT_ANCHOR_ID } from "./constants";
 
 export interface UseEdgesMemoArgs {
   doc: CanvasDoc;
@@ -18,6 +19,10 @@ export interface UseEdgesMemoArgs {
    *  edges converge on the project anchor. Replaces a banned
    *  ``doc.canvas_kind`` read in this hook. */
   convergeArrowsOnAnchor: boolean;
+  /** v0.40.0 (D-2026-06-01-E) — the project anchor placement, so edges
+   *  can attach to the side facing the other node (the anchor isn't in
+   *  doc.nodes). Null on ServiceDetail (no anchor). */
+  projectAnchor: AnchorPlacement | null | undefined;
 }
 
 export function useEdgesMemo({
@@ -26,7 +31,24 @@ export function useEdgesMemo({
   valueFlowOn,
   hideRootServiceNode,
   convergeArrowsOnAnchor,
+  projectAnchor,
 }: UseEdgesMemoArgs): Edge[] {
+  // v0.40.0 (D-2026-06-01-E) — node-centre lookup so each edge attaches
+  // to the handle facing the other node (floating removed). The
+  // synthetic anchor isn't in doc.nodes, so seed it explicitly.
+  const nodeCenters = useMemo(() => {
+    const m = new Map<string, { cx: number; cy: number }>();
+    for (const n of doc.nodes) {
+      m.set(n.id, { cx: n.x + n.width / 2, cy: n.y + n.height / 2 });
+    }
+    if (projectAnchor) {
+      m.set(PROJECT_ANCHOR_ID, {
+        cx: projectAnchor.x + projectAnchor.width / 2,
+        cy: projectAnchor.y + projectAnchor.height / 2,
+      });
+    }
+    return m;
+  }, [doc.nodes, projectAnchor]);
   // v0.30.1 (D-2026-05-31-D) — injection styling now reads the stored
   // ``edge.relation`` SSOT inside edgeTransform, so the source-kind
   // lookup map (v0.28.1) is no longer needed here.
@@ -43,6 +65,7 @@ export function useEdgesMemo({
         // v0.36.1 (D-2026-05-31-AA) — the foundation/actors decision is now
         // a wrapper-supplied prop, not a doc.canvas_kind read in this hook.
         constrainArrowToAnchor: convergeArrowsOnAnchor,
+        nodeCenters,
       }),
     [
       doc.edges,
@@ -51,6 +74,7 @@ export function useEdgesMemo({
       valueFlowOn,
       hideRootServiceNode,
       convergeArrowsOnAnchor,
+      nodeCenters,
     ],
   );
 }
