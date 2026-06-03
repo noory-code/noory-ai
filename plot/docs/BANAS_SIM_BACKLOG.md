@@ -20,6 +20,15 @@
 | Auto-layout collision avoidance — no node overlap | v0.37.2 (D-2026-06-01-A) |
 | Node auto-fit content (+ anchor, edges, tag margin; manual resize removed) | v0.38.0 (D-2026-06-01-B) |
 | Auto-layout is a TREE, not concentric circles (children near parents) | v0.39.0 (D-2026-06-01-C) |
+| ServiceDetail injection (essence) refs never overlap (push along handle axis) | v0.40.1 (D-2026-06-03-A) |
+| ServiceDetail actor→entry gap scales with the entry's extent (wide auto-fit entry no longer overlaps the actor) | v0.40.2 (D-2026-06-03-B) |
+| ServiceDetail direction control is ONE state-showing toggle (↔/↕ shows current, click flips) | v0.40.3 (D-2026-06-03-C) |
+| **Service detail filled: s-onboard** (simplified journey — 닉네임 → 아이디 → 홈; 공감/UX철학/브랜드보이스 injection) | 2026-06-03 (sim data) |
+
+> **Service details done so far:** s-auth (2026-06-01/03), s-onboard
+> (2026-06-03). Remaining: s-landing, s-me, s-profile, s-profile-edit,
+> s-blocked, s-salon, s-comm, s-push, s-admin. Sources:
+> `project-noory/banas/workspace/{concepts,catalog/published/{use-case,journey}}`.
 
 ## 🔨 NEXT SESSION — pick up here (designed + user-confirmed)
 
