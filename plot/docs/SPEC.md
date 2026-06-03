@@ -319,18 +319,27 @@ Static guard: `viewer/tests/actor-anchored-layout.test.ts` (6 cases:
 LR preservation, single-step LR alignment, TB direction, branch
 + join graph, orphan preservation, no-actor early return).
 
-#### Direction-switch buttons (v0.28.3, D-2026-05-30-F)
+#### Direction toggle (v0.28.3, D-2026-05-30-F; single toggle v0.40.3, D-2026-06-03-C)
 
-ServiceDetail's RF `<Controls>` carry two extra buttons next to `⊞`:
-**↔ (LR)** and **↕ (TB)**. Clicking one sets the subject edge's
-handle for that direction (`setSubjectDirection`: LR → source `r` /
-target `l`; TB → `b` / `t`) and re-runs `actorAnchoredLayout` along
-it, in one undoable `onDocChange`. Direction stays the SSOT in the
-subject-edge handle — a later `⊞` re-uses it. The same
-`detectSubjectEdgeId` identifies the edge for both the layout and the
-buttons. Wrapper opt-in via `showDirectionSwitch` (ServiceDetail
-only). The button JSX lives in `viewer/src/canvases/sketch/LayoutControls.tsx`.
-Static guard: `viewer/tests/subject-direction.test.ts`.
+ServiceDetail's RF `<Controls>` carry **one** direction toggle next to
+`⊞`. It **shows the current layout direction** as its icon — **↔** when
+horizontal (LR/RL), **↕** when vertical (TB/BT) — and **flips** to the
+other axis on click (horizontal → TB, vertical → LR). Clicking sets the
+subject edge's handle for the target direction (`setSubjectDirection`:
+LR → source `r` / target `l`; TB → `b` / `t`) and re-runs
+`actorAnchoredLayout` along it, in one undoable `onDocChange`.
+
+The current direction is read from the subject-edge handle via
+`detectAnchorDirection` (the SSOT; `null` → treated as horizontal
+default) — so the toggle always reflects state, fixing the v0.28.3 two-
+button design that gave no indication of the current direction (user
+2026-06-03: *"누를 때마다 왔다 갔다 하는데 정렬 버튼에 어떤 상태를
+표시해주면 좋을 것 같은데"*). Direction stays the SSOT in the subject-
+edge handle — a later `⊞` re-uses it. Wrapper opt-in via
+`showDirectionSwitch` (ServiceDetail only). The button JSX lives in
+`viewer/src/canvases/sketch/LayoutControls.tsx`. Static guards:
+`viewer/tests/subject-direction.test.ts`,
+`viewer/tests/layout-controls.test.tsx`.
 
 ### Handle-aware fallback (v0.27.12, D-2026-05-28-G)
 

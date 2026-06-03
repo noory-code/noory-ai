@@ -56,8 +56,8 @@
     "aria": "캔버스",
     "keyboardShortcuts": "키보드 단축키",
     "autoLayout": "자동 정렬",
-    "layoutLR": "가로 정렬 (좌 → 우)",
-    "layoutTB": "세로 정렬 (위 → 아래)",
+    "layoutNowLR": "가로 (좌 → 우) — 눌러서 세로로",
+    "layoutNowTB": "세로 (위 → 아래) — 눌러서 가로로",
     "tabs": {
       "foundation": "파운데이션",
       "actors": "액터",

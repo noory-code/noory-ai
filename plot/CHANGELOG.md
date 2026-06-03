@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.40.3] — 2026-06-03
+
+### Changed — ServiceDetail direction control is one state-showing toggle (D-2026-06-03-C)
+
+- The two separate ↔ (LR) / ↕ (TB) layout buttons gave no indication of the
+  current direction — pressing them rotated the flow with no visible state.
+  User: *"누를 때마다 왔다 갔다 하는데 정렬 버튼에 어떤 상태를 표시해주면
+  좋을 것 같은데"*.
+- Replaced with a SINGLE toggle that shows the current direction as its icon
+  (↔ horizontal / ↕ vertical) and flips to the other axis on click
+  (horizontal → TB, vertical → LR). Current direction is read from the
+  subject-edge handle via the new `detectAnchorDirection(doc)` (SSOT).
+- `LayoutControls` takes a `doc` prop to derive the direction; `SketchCanvas`
+  passes `doc` (stays under the 515-LOC ceiling).
+
+### Removed
+
+- i18n keys `canvas.layoutLR` / `canvas.layoutTB` (replaced by
+  `canvas.layoutNowLR` / `canvas.layoutNowTB`, which name the current state).
+
 ## [0.40.2] — 2026-06-03
 
 ### Fixed — actor→entry gap scales with the entry's extent (D-2026-06-03-B)

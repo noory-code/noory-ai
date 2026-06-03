@@ -10192,3 +10192,26 @@ but not yet fully eliminated.
 - **Spec impact:** SPEC §Auto-layout — bullet "Actor→entry gap scales with the
   entry's extent (v0.40.2)". Covered by `actor-anchored-layout.test.ts`
   (wide-entry no-overlap assertion).
+
+### D-2026-06-03-C — ServiceDetail direction control is one state-showing toggle
+
+- **What:** The two separate ServiceDetail layout buttons ↔ (LR) / ↕ (TB) are
+  replaced by a SINGLE toggle that (a) displays the current layout direction as
+  its icon — ↔ horizontal (LR/RL), ↕ vertical (TB/BT) — and (b) flips to the
+  other axis on click (horizontal → TB, vertical → LR). Current direction is
+  read from the subject-edge handle via the new `detectAnchorDirection(doc)`
+  (SSOT; `null` → horizontal default). `LayoutControls` takes a `doc` prop to
+  derive it; `SketchCanvas` passes `doc` (+1 line, stays under the 515 ceiling).
+- **Why:** User 2026-06-03 — *"정렬 버튼을 누르면 어떻게 동작이 되긴 하는데
+  어떤 의미인지 잘 모르겠어요. 누를 때마다 왔다 갔다 하는데 정렬 버튼에 어떤
+  상태를 표시해주면 좋을 것 같은데"*. The old two-button design rotated the
+  flow LR↔TB with no indication of the current direction; the toggle makes the
+  current state legible (ux: Clear Feedback) and removes a button.
+- **Approval:** Approach ("방향 토글 하나로 통합") accepted by user, 2026-06-03.
+- **Supersedes:** the two-button half of [D-2026-05-30-F] (the
+  `setSubjectDirection` + `actorAnchoredLayout` re-run mechanism is unchanged).
+- **Scope:** `LayoutControls.tsx`, `actorAnchoredLayout.ts` (new
+  `detectAnchorDirection`), `SketchCanvas.tsx` (+`doc` prop), i18n
+  (`layoutLR`/`layoutTB` → `layoutNowLR`/`layoutNowTB`).
+- **Spec impact:** SPEC §"Direction toggle". Covered by
+  `layout-controls.test.tsx` (toggle reflects current direction + flips).

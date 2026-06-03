@@ -451,6 +451,7 @@ function SketchCanvasInner({
           <LayoutControls
             layoutAlgo={layoutAlgo}
             showDirectionSwitch={showDirectionSwitch}
+            doc={doc}
             onLayout={triggerLayout}
             onDirection={treeLayout.layoutInDirection}
           />

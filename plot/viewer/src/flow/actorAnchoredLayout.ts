@@ -66,6 +66,18 @@ export function detectSubjectEdgeId(doc: CanvasDoc): string | null {
   return doc.edges.find((e) => e.source === actor.id)?.id ?? null;
 }
 
+/** v0.40.3 (D-2026-06-03-C) — the current layout direction, read from
+ *  the subject edge's ``sourceHandle`` (the SSOT). ``null`` when there is
+ *  no anchor actor or no subject edge. The direction toggle in
+ *  ``LayoutControls`` displays this and flips it. */
+export function detectAnchorDirection(doc: CanvasDoc): AnchorDirection | null {
+  const actor = detectAnchorActor(doc);
+  if (!actor) return null;
+  const subjectEdge = doc.edges.find((e) => e.source === actor.id);
+  if (!subjectEdge) return null;
+  return directionFromHandle(subjectEdge.sourceHandle);
+}
+
 function detectAnchor(doc: CanvasDoc): Anchor | null {
   const anyActor = detectAnchorActor(doc);
   if (!anyActor) return null;

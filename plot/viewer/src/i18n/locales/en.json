@@ -56,8 +56,8 @@
     "aria": "Canvas",
     "keyboardShortcuts": "Keyboard shortcuts",
     "autoLayout": "Auto-layout",
-    "layoutLR": "Lay out left → right",
-    "layoutTB": "Lay out top → bottom",
+    "layoutNowLR": "Horizontal (left → right) — tap to switch to vertical",
+    "layoutNowTB": "Vertical (top → bottom) — tap to switch to horizontal",
     "tabs": {
       "foundation": "Foundation",
       "actors": "Actors",
