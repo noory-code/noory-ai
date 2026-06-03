@@ -179,4 +179,22 @@ describe("LayoutControls direction toggle (D-2026-06-03-C)", () => {
       screen.queryByRole("button", { name: i18n.t("canvas.autoLayoutTree") }),
     ).toBeNull();
   });
+
+  // D-2026-06-04-A — the ⊞ icon must be the SAME in both modes: it is an
+  // ACTION (press to auto-arrange), not a mode toggle. A mode-shaped icon
+  // made it look switchable like the direction toggle (user 2026-06-04:
+  // *"그걸 누르면 왜 정렬이 변하냐고"*). The mode lives in the tooltip TEXT
+  // (aria-label), not in the icon shape.
+  it("uses the same (mode-neutral) auto-layout icon in both modes", () => {
+    const { container: treeC } = render(
+      <LayoutControls layoutAlgo="tree" doc={docWithHandle("r")} onLayout={() => {}} onDirection={() => {}} />,
+    );
+    const treeIcon = treeC.querySelector("[data-layout-mode] svg")?.innerHTML ?? null;
+    const { container: flowC } = render(
+      <LayoutControls layoutAlgo="tree" showDirectionSwitch doc={docWithHandle("r")} onLayout={() => {}} onDirection={() => {}} />,
+    );
+    const flowIcon = flowC.querySelector("[data-layout-mode] svg")?.innerHTML ?? null;
+    expect(treeIcon, "tree-mode icon renders").toBeTruthy();
+    expect(flowIcon, "flow-mode icon identical to tree-mode icon").toBe(treeIcon);
+  });
 });

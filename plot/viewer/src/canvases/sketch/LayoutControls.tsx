@@ -19,31 +19,21 @@ import {
   type AnchorDirection,
 } from "../../flow/actorAnchoredLayout";
 
-// v0.40.4 (D-2026-06-03-D) — mode-specific ⊞ glyphs so the user can tell
-// what the auto-layout will produce. A hub-and-branches mark for the
-// mind-map layout (Foundation / Actors / Services); a left→right node
-// sequence for the flow layout (ServiceDetail). User 2026-06-03:
-// *"어떤 모드인지 아이콘이 같으니 알 수가 없네"*.
+// v0.40.5 (D-2026-06-04-A) — ONE mode-neutral "auto-arrange" mark. ⊞ is an
+// ACTION (press → run the layout), not a mode toggle. v0.40.4 gave it a
+// mode-shaped icon (tree vs flow) which made it look switchable like the
+// direction toggle — user 2026-06-04: *"그걸 누르면 왜 정렬이 변하냐고"*.
+// The mode now lives only in the tooltip TEXT (aria-label), never the icon.
 const ICON = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
-function TreeIcon() {
+function ArrangeIcon() {
+  // Descending lines = a "tidy / auto-arrange" action mark, neutral to the
+  // mind-map-vs-flow distinction (which the canvas decides, not the user).
   return (
     <svg viewBox="0 0 24 24" width="14" height="14" {...ICON}>
-      <circle cx="4" cy="12" r="2.5" />
-      <circle cx="19" cy="5" r="2" />
-      <circle cx="19" cy="12" r="2" />
-      <circle cx="19" cy="19" r="2" />
-      <path d="M6.4 11 17 5.7 M6.5 12 17 12 M6.4 13 17 18.3" />
-    </svg>
-  );
-}
-
-function FlowIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" {...ICON}>
-      <rect x="2" y="9" width="6" height="6" rx="1.5" />
-      <rect x="16" y="9" width="6" height="6" rx="1.5" />
-      <path d="M9 12 H15 M13 10 15 12 13 14" />
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="15" y2="12" />
+      <line x1="4" y1="17" x2="10" y2="17" />
     </svg>
   );
 }
@@ -87,7 +77,7 @@ export function LayoutControls({
         title={layoutLabel}
         data-layout-mode={flowMode ? "flow" : "tree"}
       >
-        {flowMode ? <FlowIcon /> : <TreeIcon />}
+        <ArrangeIcon />
       </ControlButton>
       {showDirectionSwitch && (
         <ControlButton onClick={() => onDirection(next)} aria-label={label} title={label}>

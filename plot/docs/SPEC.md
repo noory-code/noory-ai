@@ -341,20 +341,25 @@ edge handle — a later `⊞` re-uses it. Wrapper opt-in via
 `viewer/tests/subject-direction.test.ts`,
 `viewer/tests/layout-controls.test.tsx`.
 
-#### Auto-layout (⊞) button icon is mode-specific (v0.40.4, D-2026-06-03-D)
+#### Auto-layout (⊞) is one action button; mode lives in the tooltip text (v0.40.5, D-2026-06-04-A)
 
-The ⊞ button runs a different arrangement per canvas — the **mind-map
-tree** on Foundation / Actors / Services, the **actor-anchored flow** on
-ServiceDetail — but a single glyph hid which (user 2026-06-03: *"어떤
-모드인지 아이콘이 같으니 알 수가 없네"*). The button now shows a
-mode-specific icon + label: a **hub-and-branches** mark
-(`canvas.autoLayoutTree`, "마인드맵 정렬") in tree mode, a **left→right
-node sequence** mark (`canvas.autoLayoutFlow`, "흐름 정렬") in flow mode.
-Mode = `showDirectionSwitch` (true only on ServiceDetail = flow). The
-button carries `data-layout-mode="tree" | "flow"`. The mode is
-informational (the canvas decides it; the user does not pick it) — unlike
-the direction toggle, which the user controls. Static guard:
-`viewer/tests/layout-controls.test.tsx`.
+⊞ is an **action**: pressing it runs the layout (re-arranges the nodes).
+It shows **one mode-neutral "auto-arrange" icon on every canvas** — the
+icon never changes shape. The layout it produces still differs per canvas
+(mind-map tree on Foundation / Actors / Services, actor-anchored flow on
+ServiceDetail), and that mode is named in the **tooltip text only**:
+`canvas.autoLayoutTree` ("마인드맵 정렬") vs `canvas.autoLayoutFlow`
+("흐름 정렬"), chosen by `flowMode = showDirectionSwitch`. The button still
+carries `data-layout-mode` (test hook).
+
+**Supersedes the icon half of D-2026-06-03-D (v0.40.4).** That version gave
+⊞ a *mode-shaped* icon (tree vs flow), which made it look like a switchable
+mode — like the direction toggle (↔/↕), whose icon flips on click. But ⊞
+does not toggle a mode; it executes. User 2026-06-04: *"그걸 누르면 왜
+정렬이 변하냐고"* — a mode-shaped icon on an action button reads as
+contradictory. The icon is now a constant action mark; only the toggle
+(↔/↕) shows mutable state. Static guard:
+`viewer/tests/layout-controls.test.tsx` (same icon in both modes).
 
 ### Handle-aware fallback (v0.27.12, D-2026-05-28-G)
 

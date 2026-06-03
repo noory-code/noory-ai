@@ -10238,3 +10238,25 @@ but not yet fully eliminated.
   updated to `/layout/i`).
 - **Spec impact:** SPEC §"Auto-layout (⊞) button icon is mode-specific".
   Covered by `layout-controls.test.tsx` (mode label + `data-layout-mode`).
+
+### D-2026-06-04-A — Auto-layout (⊞) is one action button; mode in tooltip text only
+
+- **What:** ⊞ shows **one mode-neutral "auto-arrange" icon** on every canvas
+  (constant shape). The layout it runs still differs per canvas, but that mode
+  is named only in the **tooltip text** (`autoLayoutTree` / `autoLayoutFlow`),
+  never in the icon shape. Reverts the mode-shaped icons (`TreeIcon`/`FlowIcon`)
+  from v0.40.4 to a single `ArrangeIcon`; keeps `data-layout-mode` + the
+  mode-specific label.
+- **Why:** Giving an *action* button a *mode-shaped* icon (v0.40.4) made it
+  read like the direction toggle (↔/↕), whose icon flips on click to switch a
+  mode. So users expected clicking ⊞ to switch the mode — but it executes the
+  layout (moves nodes). User 2026-06-04: *"그걸 누르면 왜 정렬이 변하냐고"* /
+  *"정보를 표시하라구요. 근데 왜 그걸 누르면 변하는거냐구요"*. An icon that
+  looks like mutable state but is actually an action trigger is contradictory.
+  Only the toggle shows mutable state now; ⊞ is purely an action.
+- **Approval:** Approach ("액션 아이콘 하나로") accepted by user, 2026-06-04.
+- **Supersedes:** the icon half of [D-2026-06-03-D] (the mode-specific *label*
+  + `data-layout-mode` survive; the mode-specific *icon* does not).
+- **Scope:** `LayoutControls.tsx` (`TreeIcon`/`FlowIcon` → `ArrangeIcon`).
+- **Spec impact:** SPEC §"Auto-layout (⊞) is one action button…". Covered by
+  `layout-controls.test.tsx` (same icon in both modes).

@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.40.5] — 2026-06-04
+
+### Changed — auto-layout (⊞) is one action button; mode in tooltip text only (D-2026-06-04-A)
+
+- v0.40.4 gave ⊞ a mode-*shaped* icon (tree vs flow). That made it read like
+  the direction toggle (↔/↕), whose icon flips on click to switch a mode — so
+  clicking ⊞ (which executes the layout, moving nodes) felt contradictory.
+  User: *"그걸 누르면 왜 정렬이 변하냐고"*.
+- ⊞ now shows **one mode-neutral "auto-arrange" icon** on every canvas
+  (`TreeIcon`/`FlowIcon` → single `ArrangeIcon`). The layout still differs per
+  canvas, but the mode is named only in the **tooltip text**
+  (`autoLayoutTree` / `autoLayoutFlow`). Only the direction toggle shows
+  mutable state now; ⊞ is purely an action.
+- Supersedes the icon half of v0.40.4 (the mode-specific label +
+  `data-layout-mode` are kept).
+
 ## [0.40.4] — 2026-06-03
 
 ### Changed — auto-layout (⊞) button icon is mode-specific (D-2026-06-03-D)
