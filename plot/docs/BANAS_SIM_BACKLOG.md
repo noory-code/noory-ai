@@ -23,12 +23,17 @@
 | ServiceDetail injection (essence) refs never overlap (push along handle axis) | v0.40.1 (D-2026-06-03-A) |
 | ServiceDetail actor→entry gap scales with the entry's extent (wide auto-fit entry no longer overlaps the actor) | v0.40.2 (D-2026-06-03-B) |
 | ServiceDetail direction control is ONE state-showing toggle (↔/↕ shows current, click flips) | v0.40.3 (D-2026-06-03-C) |
-| **Service detail filled: s-onboard** (simplified journey — 닉네임 → 아이디 → 홈; 공감/UX철학/브랜드보이스 injection) | 2026-06-03 (sim data) |
+| **All 11 service details filled + verified** (s-auth, s-onboard, s-profile, s-profile-edit, s-landing, s-me, s-blocked, s-salon, s-comm, s-push, s-admin) | 2026-06-03 (sim data, committed 43b3fad) |
 
-> **Service details done so far:** s-auth (2026-06-01/03), s-onboard
-> (2026-06-03). Remaining: s-landing, s-me, s-profile, s-profile-edit,
-> s-blocked, s-salon, s-comm, s-push, s-admin. Sources:
+> **Service details: COMPLETE (11/11).** All follow the D-2026-05-28-J
+> composition model (subject actor_ref → entry, step = user action with
+> system work in `outcome`, decision per branch, join on shared outcome,
+> essence injection). All ⊞-laid-out with zero node overlap (verified).
+> Sim blueprint committed to its own repo (`banas-sim/banas/.plot/banas`,
+> initial commit 43b3fad). Sources:
 > `project-noory/banas/workspace/{concepts,catalog/published/{use-case,journey}}`.
+> Next sim pass: populate node bodies / sub-flows, or move to a different
+> canvas (actors state/transitions, foundation group hubs #2 below).
 
 ## 🔨 NEXT SESSION — pick up here (designed + user-confirmed)
 
