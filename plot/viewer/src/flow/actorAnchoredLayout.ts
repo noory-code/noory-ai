@@ -198,23 +198,73 @@ export function actorAnchoredLayout(doc: CanvasDoc): CanvasDoc {
     return { cx: node.x + node.width / 2, cy: node.y + node.height / 2 };
   };
 
+  // The rect (top-left + size) currently occupied by a placed node:
+  // the actor anchor (fixed) or any node already in ``placedFinal``
+  // (dagre-placed steps + injection refs settled earlier this pass).
+  const occupiedRects = (): Array<{ x: number; y: number; w: number; h: number }> => {
+    const rects = [{ x: actor.x, y: actor.y, w: actor.width, h: actor.height }];
+    for (const [id, p] of placedFinal) {
+      const node = doc.nodes.find((n) => n.id === id);
+      if (node) rects.push({ x: p.x, y: p.y, w: node.width, h: node.height });
+    }
+    return rects;
+  };
+  // Two rects overlap when their padded bounds intersect (strict <).
+  const OVERLAP_PAD = 16;
+  const hits = (
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: { x: number; y: number; w: number; h: number },
+  ): boolean =>
+    x < r.x + r.w + OVERLAP_PAD &&
+    r.x < x + w + OVERLAP_PAD &&
+    y < r.y + r.h + OVERLAP_PAD &&
+    r.y < y + h + OVERLAP_PAD;
+
   // Tier 3: anchor each injection-source node beside its target on the
   // side the edge's targetHandle dictates (t → above, b → below,
   // l → left, r → right). First injection edge per source wins.
+  // D-2026-06-03-A: when the 160px slot collides with an already-placed
+  // node, push the ref further OUT along the same handle axis (in
+  // INJECTION_GAP/2 steps) until it clears — the ref stays on its
+  // target's column/row (handle direction preserved) and never overlaps.
+  const PUSH_STEP = INJECTION_GAP / 2;
   for (const e of injectionEdges) {
     const src = doc.nodes.find((n) => n.id === e.source);
     if (!src || placedFinal.has(src.id)) continue;
     const tc = targetCenter(e.target);
     if (!tc) continue;
-    let cx = tc.cx;
-    let cy = tc.cy;
     const th = (e.targetHandle ?? "").toLowerCase();
-    if (th.startsWith("t")) cy = tc.cy - INJECTION_GAP;
-    else if (th.startsWith("b")) cy = tc.cy + INJECTION_GAP;
-    else if (th.startsWith("l")) cx = tc.cx - INJECTION_GAP;
-    else if (th.startsWith("r")) cx = tc.cx + INJECTION_GAP;
-    else cy = tc.cy - INJECTION_GAP; // default: above
-    placedFinal.set(src.id, { x: cx - src.width / 2, y: cy - src.height / 2 });
+    // Outward unit vector from the target, per handle (default: above).
+    let ux = 0;
+    let uy = -1;
+    if (th.startsWith("b")) {
+      ux = 0;
+      uy = 1;
+    } else if (th.startsWith("l")) {
+      ux = -1;
+      uy = 0;
+    } else if (th.startsWith("r")) {
+      ux = 1;
+      uy = 0;
+    } // "t" and default keep ux=0, uy=-1
+    let dist = INJECTION_GAP;
+    let x = 0;
+    let y = 0;
+    // Bounded push: at most ~24 hops keeps the ref a sane distance away
+    // even in a pathologically dense column; deterministic either way.
+    for (let hop = 0; hop < 24; hop++) {
+      const cx = tc.cx + ux * dist;
+      const cy = tc.cy + uy * dist;
+      x = cx - src.width / 2;
+      y = cy - src.height / 2;
+      const clear = !occupiedRects().some((r) => hits(x, y, src.width, src.height, r));
+      if (clear) break;
+      dist += PUSH_STEP;
+    }
+    placedFinal.set(src.id, { x, y });
   }
 
   return {

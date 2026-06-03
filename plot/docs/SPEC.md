@@ -288,6 +288,17 @@ BFS path. Behaviour:
   2-layer essence model at the layout level: the concrete flow (1층 /
   Execution) is ranked; the essence injection (2층 / Retention) is an
   overlay anchored onto it.
+- **Injection nodes never overlap (v0.40.1, D-2026-06-03-A).** The
+  ≈160 px slot in the `targetHandle` direction can collide with an
+  already-placed node — e.g. two injection refs whose targets sit in
+  the same dagre column both default to *above* and pile up. When the
+  slot intersects any placed node (the actor anchor, a dagre step, or
+  an earlier injection ref), the ref is pushed **further out along the
+  same handle axis** (in 80 px steps) until it clears. The ref stays on
+  its target's column / row — the handle direction is preserved (user
+  2026-06-03: *"적어도 노드가 겹치면 안되구요. 핸들에 연결 위치로 노드
+  위치를 정해야해요"*) — only its distance grows. Deterministic and
+  bounded (≤ 24 hops).
 
 Why this came before the mindmap BFS: `ServiceDetail`'s `pickAnchor`
 falls back to the hidden root-service, which is disconnected from

@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.40.1] — 2026-06-03
+
+### Fixed — injection (essence) nodes never overlap in actor-anchored layout (D-2026-06-03-A)
+
+- `actorAnchoredLayout` placed each injection-source ref at a fixed ≈160 px in
+  its `targetHandle` direction with no collision check. When two refs' targets
+  shared a dagre column and both defaulted to *above* (no `targetHandle`), the
+  refs piled up on each other and the steps — visible in the BANAS sim s-auth
+  detail after ⊞ (two essence circles overlapping the flow). User: *"적어도
+  노드가 겹치면 안되구요. 핸들에 연결 위치로 노드 위치를 정해야해요."*
+- Tier-3 now checks the slot against every placed node (actor anchor, dagre
+  steps, earlier refs) and, on collision, pushes the ref **further out along
+  the same handle axis** (80 px steps, ≤ 24 hops) until it clears. The ref
+  stays on its target's column / row — handle direction preserved — only its
+  distance grows. Deterministic.
+- Regression: `actor-anchored-layout.test.ts` — branch with two same-column
+  injection targets; asserts no pairwise node overlap and each ref stays on its
+  target's column.
+- Scope: `flow/actorAnchoredLayout.ts` only (ServiceDetail path); separate from
+  the uncommitted handle-based mindmap layout work.
+
 ## [0.39.0] — 2026-06-01
 
 ### Changed — auto-layout is a hierarchy TREE, not concentric circles (D-2026-06-01-C)

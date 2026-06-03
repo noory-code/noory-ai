@@ -208,4 +208,56 @@ describe("actorAnchoredLayout (D-2026-05-28-J)", () => {
     // The step sequence is unaffected — s2 still ranks to the right of entry.
     expect(s2.x, "entry → s2 sequence intact").toBeGreaterThan(entry.x);
   });
+
+  it("never overlaps injection nodes — pushes along the handle axis until clear (D-2026-06-03-A)", () => {
+    // Branch: entry → two steps stacked in the same LR column. Each step
+    // has an injection ref anchored ABOVE it (targetHandle "t"). The naive
+    // "160px directly above" slot makes the lower step's ref collide with
+    // the upper step (and the upper ref). The fix must push the colliding
+    // ref further along its handle axis (up) until no node overlaps, while
+    // keeping it on its target's column (handle direction preserved).
+    const d = doc(
+      [
+        actor("U", -500, 0),
+        step("entry", 0, 0),
+        step("top", 0, 0),
+        step("bot", 0, 0),
+        valueRef("rTop", 9999, 9999),
+        valueRef("rBot", 8888, 8888),
+      ],
+      [
+        edge("U", "entry", "r", "l"),
+        edge("entry", "top", "r", "l"),
+        edge("entry", "bot", "r", "l"),
+        edge("rTop", "top", "b", "t", "", "injection"),
+        edge("rBot", "bot", "b", "t", "", "injection"),
+      ],
+    );
+    const out = actorAnchoredLayout(d);
+    const by = (id: string) => out.nodes.find((n) => n.id === id)!;
+    const overlaps = (a: SketchNode, b: SketchNode): boolean =>
+      a.x < b.x + b.width &&
+      b.x < a.x + a.width &&
+      a.y < b.y + b.height &&
+      b.y < a.y + a.height;
+
+    // No two nodes overlap anywhere on the canvas.
+    const placed = out.nodes.filter((n) => n.id !== "U");
+    for (let i = 0; i < placed.length; i++) {
+      for (let j = i + 1; j < placed.length; j++) {
+        expect(
+          overlaps(placed[i], placed[j]),
+          `${placed[i].id} overlaps ${placed[j].id}`,
+        ).toBe(false);
+      }
+    }
+
+    // Each ref stays on its target's column (handle "t" = vertical axis).
+    const colCx = (s: SketchNode) => s.x + s.width / 2;
+    expect(Math.abs(colCx(by("rTop")) - colCx(by("top"))), "rTop on top's column").toBeLessThan(60);
+    expect(Math.abs(colCx(by("rBot")) - colCx(by("bot"))), "rBot on bot's column").toBeLessThan(60);
+    // Both refs sit above their targets (pushed up, never below).
+    expect(by("rTop").y + by("rTop").height).toBeLessThanOrEqual(by("top").y + 5);
+    expect(by("rBot").y + by("rBot").height).toBeLessThanOrEqual(by("bot").y + 5);
+  });
 });

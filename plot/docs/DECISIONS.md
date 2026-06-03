@@ -10146,3 +10146,30 @@ but not yet fully eliminated.
   position-inferred Reingold-Tilford tree. Covered by `autoLayout.test.ts`.
 - **Follow-up:** cross-branch crowding near the anchor can still occur (4
   cardinal directions); tighten.
+
+### D-2026-06-03-A — Injection (essence) nodes never overlap in actor-anchored layout
+
+- **What:** `actorAnchoredLayout` Tier-3 (injection-overlay placement) now
+  checks the ≈160 px `targetHandle`-direction slot against every already-placed
+  node (actor anchor, dagre steps, earlier injection refs). On collision it
+  pushes the ref **further out along the same handle axis** (80 px steps,
+  ≤ 24 hops) until clear. The ref stays on its target's column / row — handle
+  direction preserved — only its distance grows. Deterministic.
+- **Why:** Surfaced in the BANAS sim s-auth detail. Running ⊞ packed the steps
+  into a tight LR layout; all three essence refs defaulted to *above* their
+  target (their injection edges have no `targetHandle`), so the two refs whose
+  targets shared a column piled up on top of each other and the steps. User
+  saw the overlapping circles and required: *"적어도 노드가 겹치면 안되구요.
+  핸들에 연결 위치로 노드 위치를 정해야해요."* (no overlap; position by the
+  connection handle).
+- **Scope:** `flow/actorAnchoredLayout.ts` only — the ServiceDetail layout
+  path. Confirmed separate from the uncommitted handle-based mindmap work
+  (`canvases/sketch/mindmapLayout.ts`, reached only for projectAnchor canvases).
+- **Approval:** Approach ("핸들 축으로 밀어내기") accepted by user, 2026-06-03.
+- **Spec impact:** SPEC §Auto-layout — new bullet "Injection nodes never
+  overlap (v0.40.1)". Covered by `actor-anchored-layout.test.ts` (no-overlap
+  pairwise assertion + handle-axis preserved).
+- **Follow-up:** when a ref's target sits at the far end of its column, the
+  *above* default can push the ref past unrelated steps (long injection edge).
+  Setting the injection edge's `targetHandle` to the natural side (e.g. `b` for
+  a bottom-branch step) avoids it — a data choice, honoured by this same code.
