@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.40.4] — 2026-06-03
+
+### Changed — auto-layout (⊞) button icon is mode-specific (D-2026-06-03-D)
+
+- ⊞ runs a different arrangement per canvas — mind-map tree on Foundation /
+  Actors / Services, actor-anchored flow on ServiceDetail — but one glyph hid
+  which. User: *"어떤 모드인지 아이콘이 같으니 알 수가 없네"*.
+- The button now shows a mode-specific icon + label: a hub-and-branches mark
+  ("마인드맵 정렬" / "Mind-map layout") in tree mode, a left→right node-sequence
+  mark ("흐름 정렬" / "Flow layout") in flow mode. Mode derives from
+  `showDirectionSwitch` (ServiceDetail = flow); button carries
+  `data-layout-mode`. Same legibility logic as the v0.40.3 direction toggle.
+
+### Removed
+
+- i18n key `canvas.autoLayout` (replaced by `canvas.autoLayoutTree` /
+  `canvas.autoLayoutFlow`).
+
 ## [0.40.3] — 2026-06-03
 
 ### Changed — ServiceDetail direction control is one state-showing toggle (D-2026-06-03-C)

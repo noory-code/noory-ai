@@ -55,7 +55,8 @@
   "canvas": {
     "aria": "Canvas",
     "keyboardShortcuts": "Keyboard shortcuts",
-    "autoLayout": "Auto-layout",
+    "autoLayoutTree": "Mind-map layout (hub → branches)",
+    "autoLayoutFlow": "Flow layout (sequence of steps)",
     "layoutNowLR": "Horizontal (left → right) — tap to switch to vertical",
     "layoutNowTB": "Vertical (top → bottom) — tap to switch to horizontal",
     "tabs": {

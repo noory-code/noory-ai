@@ -133,12 +133,50 @@ describe("LayoutControls direction toggle (D-2026-06-03-C)", () => {
         onDirection={() => {}}
       />,
     );
-    // ⊞ present, no direction toggle.
+    // ⊞ present (mind-map mode), no direction toggle.
     expect(
-      screen.getByRole("button", { name: i18n.t("canvas.autoLayout") }),
+      screen.getByRole("button", { name: i18n.t("canvas.autoLayoutTree") }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: i18n.t("canvas.layoutNowLR") }),
+    ).toBeNull();
+  });
+
+  // D-2026-06-03-D — the ⊞ auto-layout button shows a MODE-specific icon so
+  // the user can tell which arrangement it produces. User 2026-06-03:
+  // *"어떤 모드인지 아이콘이 같으니 알 수가 없네"*. Mind-map mode (no
+  // direction switch = Foundation / Actors / Services) vs flow mode
+  // (showDirectionSwitch = ServiceDetail).
+  it("auto-layout button is mind-map mode when there is no direction switch", () => {
+    render(
+      <LayoutControls
+        layoutAlgo="tree"
+        doc={docWithHandle("r")}
+        onLayout={() => {}}
+        onDirection={() => {}}
+      />,
+    );
+    const btn = screen.getByRole("button", { name: i18n.t("canvas.autoLayoutTree") });
+    expect(btn).toHaveAttribute("data-layout-mode", "tree");
+    expect(
+      screen.queryByRole("button", { name: i18n.t("canvas.autoLayoutFlow") }),
+    ).toBeNull();
+  });
+
+  it("auto-layout button is flow mode on ServiceDetail (showDirectionSwitch)", () => {
+    render(
+      <LayoutControls
+        layoutAlgo="tree"
+        showDirectionSwitch
+        doc={docWithHandle("r")}
+        onLayout={() => {}}
+        onDirection={() => {}}
+      />,
+    );
+    const btn = screen.getByRole("button", { name: i18n.t("canvas.autoLayoutFlow") });
+    expect(btn).toHaveAttribute("data-layout-mode", "flow");
+    expect(
+      screen.queryByRole("button", { name: i18n.t("canvas.autoLayoutTree") }),
     ).toBeNull();
   });
 });

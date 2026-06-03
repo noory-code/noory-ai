@@ -341,6 +341,21 @@ edge handle — a later `⊞` re-uses it. Wrapper opt-in via
 `viewer/tests/subject-direction.test.ts`,
 `viewer/tests/layout-controls.test.tsx`.
 
+#### Auto-layout (⊞) button icon is mode-specific (v0.40.4, D-2026-06-03-D)
+
+The ⊞ button runs a different arrangement per canvas — the **mind-map
+tree** on Foundation / Actors / Services, the **actor-anchored flow** on
+ServiceDetail — but a single glyph hid which (user 2026-06-03: *"어떤
+모드인지 아이콘이 같으니 알 수가 없네"*). The button now shows a
+mode-specific icon + label: a **hub-and-branches** mark
+(`canvas.autoLayoutTree`, "마인드맵 정렬") in tree mode, a **left→right
+node sequence** mark (`canvas.autoLayoutFlow`, "흐름 정렬") in flow mode.
+Mode = `showDirectionSwitch` (true only on ServiceDetail = flow). The
+button carries `data-layout-mode="tree" | "flow"`. The mode is
+informational (the canvas decides it; the user does not pick it) — unlike
+the direction toggle, which the user controls. Static guard:
+`viewer/tests/layout-controls.test.tsx`.
+
 ### Handle-aware fallback (v0.27.12, D-2026-05-28-G)
 
 When the mindmap BFS yields zero positions (typical case:

@@ -154,7 +154,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       <FoundationCanvas {...commonProps(doc, () => {})} />,
     );
     expect(
-      queryByRole("button", { name: /auto.?layout/i }),
+      queryByRole("button", { name: /layout/i }),
       "FoundationCanvas must opt into the auto-layout button.",
     ).not.toBeNull();
   });
@@ -167,7 +167,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       <ActorsCanvas {...commonProps(doc, () => {})} />,
     );
     expect(
-      queryByRole("button", { name: /auto.?layout/i }),
+      queryByRole("button", { name: /layout/i }),
       "ActorsCanvas opts into the auto-layout button per D-2026-05-18-B.",
     ).not.toBeNull();
   });
@@ -180,7 +180,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       <ServicesCanvas {...commonProps(doc, () => {})} />,
     );
     expect(
-      queryByRole("button", { name: /auto.?layout/i }),
+      queryByRole("button", { name: /layout/i }),
       "ServicesCanvas opts into the tree auto-layout button per D-2026-05-26-A (switched from radial after the v0.26.3 fan-out fix still collapsed length-1 chains).",
     ).not.toBeNull();
   });
@@ -198,7 +198,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       <ServiceDetailCanvas {...commonProps(doc, () => {})} />,
     );
     expect(
-      queryByRole("button", { name: /auto.?layout/i }),
+      queryByRole("button", { name: /layout/i }),
       "ServiceDetailCanvas opts into the tree auto-layout button per D-2026-05-26-A (switched from radial; root-service node serves as the BFS root via useAutoLayout's pickAnchor fallback).",
     ).not.toBeNull();
   });
@@ -225,7 +225,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
         })}
       />,
     );
-    fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
+    fireEvent.click(getByRole("button", { name: /layout/i }));
     expect(last).not.toBeNull();
     const after = (last as unknown as CanvasDoc).nodes.find((n) => n.id === "s1");
     expect(after, "node 's1' must survive tree auto-layout").toBeTruthy();
@@ -282,7 +282,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     const { getByRole } = render(
       <ServiceDetailCanvas {...props} projectAnchor={null} />,
     );
-    fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
+    fireEvent.click(getByRole("button", { name: /layout/i }));
     expect(last).not.toBeNull();
     const after = (last as unknown as CanvasDoc).nodes.find(
       (n) => n.id === "step-1",
@@ -308,7 +308,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
         })}
       />,
     );
-    const button = getByRole("button", { name: /auto.?layout/i });
+    const button = getByRole("button", { name: /layout/i });
     fireEvent.click(button);
     expect(
       calls.length,
@@ -340,7 +340,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
         })}
       />,
     );
-    fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
+    fireEvent.click(getByRole("button", { name: /layout/i }));
     expect(last).not.toBeNull();
     const after = (last as unknown as CanvasDoc).nodes.find(
       (n) => n.id === "h",
@@ -384,7 +384,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
         })}
       />,
     );
-    fireEvent.click(getByRole("button", { name: /auto.?layout/i }));
+    fireEvent.click(getByRole("button", { name: /layout/i }));
     expect(last).not.toBeNull();
     const after = (last as unknown as CanvasDoc).nodes.find(
       (n) => n.id === "m",

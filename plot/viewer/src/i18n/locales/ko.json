@@ -55,7 +55,8 @@
   "canvas": {
     "aria": "캔버스",
     "keyboardShortcuts": "키보드 단축키",
-    "autoLayout": "자동 정렬",
+    "autoLayoutTree": "마인드맵 정렬 (허브 → 가지)",
+    "autoLayoutFlow": "흐름 정렬 (단계 순서대로)",
     "layoutNowLR": "가로 (좌 → 우) — 눌러서 세로로",
     "layoutNowTB": "세로 (위 → 아래) — 눌러서 가로로",
     "tabs": {

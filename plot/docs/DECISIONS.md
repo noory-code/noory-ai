@@ -10215,3 +10215,26 @@ but not yet fully eliminated.
   (`layoutLR`/`layoutTB` → `layoutNowLR`/`layoutNowTB`).
 - **Spec impact:** SPEC §"Direction toggle". Covered by
   `layout-controls.test.tsx` (toggle reflects current direction + flips).
+
+### D-2026-06-03-D — Auto-layout (⊞) button icon is mode-specific
+
+- **What:** The ⊞ auto-layout button shows a mode-specific icon + label: a
+  hub-and-branches mark + "마인드맵 정렬" (`canvas.autoLayoutTree`) in tree
+  mode (Foundation / Actors / Services), a left→right node-sequence mark +
+  "흐름 정렬" (`canvas.autoLayoutFlow`) in flow mode (ServiceDetail). Mode is
+  derived from `showDirectionSwitch` (true only on ServiceDetail). Button
+  carries `data-layout-mode`. Icons are inline SVG (`TreeIcon` / `FlowIcon`
+  in `LayoutControls.tsx`); i18n key `canvas.autoLayout` is replaced by the
+  two mode keys.
+- **Why:** ⊞ runs a *different* arrangement per canvas (mind-map tree vs
+  actor-anchored flow) but one glyph hid which. User 2026-06-03: *"그니까
+  봐봐 이거 뭔가 어떤 모드인지 아이콘이 같으니 알 수가 없네"*. Same
+  legibility logic as the v0.40.3 direction toggle — show the mode, don't
+  make the user guess (ux: Don't Make Me Think). NB: this mode is
+  informational (canvas-decided), not a user choice.
+- **Approval:** Approach ("모드별 아이콘") accepted by user, 2026-06-03.
+- **Scope:** `LayoutControls.tsx`, i18n (`autoLayout` → `autoLayoutTree` /
+  `autoLayoutFlow`), `auto-layout-isolation.test.tsx` (button-name query
+  updated to `/layout/i`).
+- **Spec impact:** SPEC §"Auto-layout (⊞) button icon is mode-specific".
+  Covered by `layout-controls.test.tsx` (mode label + `data-layout-mode`).
