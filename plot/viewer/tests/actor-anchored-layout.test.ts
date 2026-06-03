@@ -209,6 +209,23 @@ describe("actorAnchoredLayout (D-2026-05-28-J)", () => {
     expect(s2.x, "entry → s2 sequence intact").toBeGreaterThan(entry.x);
   });
 
+  it("never overlaps the actor with the entry, even when the entry is wide (D-2026-06-03-B)", () => {
+    // A fixed actor→entry gap (220 px centre-to-centre) overlaps when the
+    // entry is a wide auto-fit step: actor radius + entry half-width can
+    // exceed the gap. The gap must scale with the entry's extent so the
+    // entry always clears the actor. (Surfaced in BANAS sim s-onboard:
+    // the wide "닉네임 입력" entry overlapped the BANA actor circle.)
+    const wideActor = { ...actor("U", 0, 0), width: 168, height: 168 };
+    const wideEntry = { ...step("entry", 999, 999), width: 320, height: 70 };
+    const d = doc([wideActor, wideEntry], [edge("U", "entry", "r", "l")]);
+    const out = actorAnchoredLayout(d);
+    const U = out.nodes.find((n) => n.id === "U")!;
+    const e = out.nodes.find((n) => n.id === "entry")!;
+    expect(e.x, "entry left clears actor right (no overlap)").toBeGreaterThanOrEqual(
+      U.x + U.width,
+    );
+  });
+
   it("never overlaps injection nodes — pushes along the handle axis until clear (D-2026-06-03-A)", () => {
     // Branch: entry → two steps stacked in the same LR column. Each step
     // has an injection ref anchored ABOVE it (targetHandle "t"). The naive

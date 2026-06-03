@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.40.2] — 2026-06-03
+
+### Fixed — actor→entry gap scales with the entry's extent (D-2026-06-03-B)
+
+- `actorAnchoredLayout` placed the entry step at a fixed 220 px centre-to-centre
+  from the actor. A wide auto-fit entry overlapped the actor — surfaced in the
+  BANAS sim s-onboard detail, where the ~307 px "닉네임 입력" entry overlapped
+  the 168 px BANA actor circle by ~18 px after ⊞.
+- The gap is now `max(220, actorHalf + entryHalf + 40)` along the layout axis
+  (width for LR/RL, height for TB/BT). Small nodes keep the 220 px default;
+  wide entries get pushed out until they clear the actor.
+- Regression: `actor-anchored-layout.test.ts` — wide actor + wide entry; asserts
+  the entry's near edge clears the actor's far edge. Same "no overlap" principle
+  as v0.40.1, on the actor→entry tier.
+- Scope: `flow/actorAnchoredLayout.ts` only.
+
 ## [0.40.1] — 2026-06-03
 
 ### Fixed — injection (essence) nodes never overlap in actor-anchored layout (D-2026-06-03-A)

@@ -299,6 +299,13 @@ BFS path. Behaviour:
   2026-06-03: *"적어도 노드가 겹치면 안되구요. 핸들에 연결 위치로 노드
   위치를 정해야해요"*) — only its distance grows. Deterministic and
   bounded (≤ 24 hops).
+- **Actor→entry gap scales with the entry's extent (v0.40.2,
+  D-2026-06-03-B).** The entry step is placed at a centre-to-centre gap
+  from the actor of `max(220, actorHalf + entryHalf + 40)` along the
+  layout axis (width for LR/RL, height for TB/BT). The fixed 220 px gap
+  overlapped the actor when the entry was a wide auto-fit step (surfaced
+  in BANAS sim s-onboard: the wide "닉네임 입력" entry overlapped the
+  BANA actor circle). Small nodes keep the 220 px default.
 
 Why this came before the mindmap BFS: `ServiceDetail`'s `pickAnchor`
 falls back to the hidden root-service, which is disconnected from

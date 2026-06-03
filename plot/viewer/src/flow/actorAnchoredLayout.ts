@@ -105,9 +105,13 @@ export function setSubjectDirection(doc: CanvasDoc, direction: AnchorDirection):
   };
 }
 
-/** Per-direction separation between the actor and the entry step.
- *  ``actorEntryGap`` is centre-to-centre, in pixels. */
+/** Minimum centre-to-centre separation between the actor and the entry
+ *  step, in pixels. The effective gap grows with the entry's extent so a
+ *  wide auto-fit entry never overlaps the actor (D-2026-06-03-B). */
 const ACTOR_ENTRY_GAP = 220;
+/** Clear space left between the actor's and entry's near edges when the
+ *  fixed gap is too small for their combined half-extents. */
+const ACTOR_ENTRY_MARGIN = 40;
 
 export function actorAnchoredLayout(doc: CanvasDoc): CanvasDoc {
   const anchor = detectAnchor(doc);
@@ -170,10 +174,18 @@ export function actorAnchoredLayout(doc: CanvasDoc): CanvasDoc {
   const actorCenterY = actor.y + actor.height / 2;
   let targetEntryCenterX = actorCenterX;
   let targetEntryCenterY = actorCenterY;
-  if (direction === "LR") targetEntryCenterX = actorCenterX + ACTOR_ENTRY_GAP;
-  else if (direction === "RL") targetEntryCenterX = actorCenterX - ACTOR_ENTRY_GAP;
-  else if (direction === "TB") targetEntryCenterY = actorCenterY + ACTOR_ENTRY_GAP;
-  else if (direction === "BT") targetEntryCenterY = actorCenterY - ACTOR_ENTRY_GAP;
+  // D-2026-06-03-B — scale the gap by the combined half-extents along the
+  // layout axis (width for LR/RL, height for TB/BT) so a wide auto-fit
+  // entry clears the actor. Falls back to the fixed gap for small nodes.
+  const horizontal = direction === "LR" || direction === "RL";
+  const halfExtents = horizontal
+    ? actor.width / 2 + entry.width / 2
+    : actor.height / 2 + entry.height / 2;
+  const gap = Math.max(ACTOR_ENTRY_GAP, halfExtents + ACTOR_ENTRY_MARGIN);
+  if (direction === "LR") targetEntryCenterX = actorCenterX + gap;
+  else if (direction === "RL") targetEntryCenterX = actorCenterX - gap;
+  else if (direction === "TB") targetEntryCenterY = actorCenterY + gap;
+  else if (direction === "BT") targetEntryCenterY = actorCenterY - gap;
 
   const dx = targetEntryCenterX - entryDagre.x;
   const dy = targetEntryCenterY - entryDagre.y;

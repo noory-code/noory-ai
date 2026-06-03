@@ -10173,3 +10173,22 @@ but not yet fully eliminated.
   *above* default can push the ref past unrelated steps (long injection edge).
   Setting the injection edge's `targetHandle` to the natural side (e.g. `b` for
   a bottom-branch step) avoids it — a data choice, honoured by this same code.
+
+### D-2026-06-03-B — Actor→entry gap scales with the entry's extent
+
+- **What:** `actorAnchoredLayout` places the entry step at a centre-to-centre
+  gap from the actor of `max(ACTOR_ENTRY_GAP=220, actorHalf + entryHalf + 40)`
+  along the layout axis (width for LR/RL, height for TB/BT), instead of the
+  fixed 220 px. Small nodes keep 220; wide entries get pushed out so they clear
+  the actor.
+- **Why:** Surfaced in the BANAS sim s-onboard detail. The entry step "닉네임
+  입력" auto-fit to ~307 px wide; at the fixed 220 px gap the BANA actor circle
+  (168 px) overlapped it by ~18 px after ⊞. Same "no overlap" principle the
+  user set in [D-2026-06-03-A], but on the tier-1/2 (actor→entry) placement
+  rather than the tier-3 injection overlay.
+- **Scope:** `flow/actorAnchoredLayout.ts` only.
+- **Approval:** Reported during sim + fix accepted by user ("지금 수정"),
+  2026-06-03.
+- **Spec impact:** SPEC §Auto-layout — bullet "Actor→entry gap scales with the
+  entry's extent (v0.40.2)". Covered by `actor-anchored-layout.test.ts`
+  (wide-entry no-overlap assertion).
