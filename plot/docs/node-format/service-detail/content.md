@@ -36,3 +36,11 @@ status: draft   # draft → reviewing → done
 - [ ] sim 에서 content 사용 여부 확인 (미사용이면 제거 1순위)
 - [ ] producer/consumer 를 엣지로 돌릴지 (관계 표현 일관성)
 - [ ] rule 과 함께 "service 인스펙터 생성 kind" 의 존재 가치 재검토
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: format/producer_actor_id/consumer_actor_id/body). |

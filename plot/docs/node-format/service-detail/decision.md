@@ -30,3 +30,11 @@ status: draft   # draft → reviewing → done
 
 - [ ] decision 에 `condition`/`criteria` 필드 추가할지 vs body 로 충분한지
 - [ ] 분기 라벨(엣지) 형식을 별도 감사 항목으로 PLAN 에 올리기
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 1: body). |

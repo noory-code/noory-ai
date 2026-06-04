@@ -61,3 +61,12 @@ dont/body), `identity`(description/do/dont/body), `service`(10필드, 최악).
 - [ ] 마이그레이션: 기존 what_we_do/why/direction 값을 label(한 줄)+body 로 병합.
 - [ ] CONCEPTS.md mission 정의 갱신.
 - [ ] 다른 kind 재감사 (core_value·identity·service 우선).
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: what_we_do/why/direction/body). |
+| 1차 | 2026-06-04 23:38 | **검토 완료.** 산문 3필드(what_we_do/why/direction) 폐기 → label + body. status → done. |

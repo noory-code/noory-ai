@@ -42,3 +42,11 @@ status: draft   # draft → reviewing → done
 - [ ] trigger/how/outcome 을 ServiceDetail 파생으로 돌릴지 결정
 - [ ] value_created ↔ metric 관계 정리 (Q6 와 함께)
 - [ ] do/dont 3-kind 공통 결정에 포함
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 10 (최대)). |

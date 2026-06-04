@@ -32,3 +32,12 @@ status: draft   # draft → reviewing → done
 - [ ] identity vs core_value 형식 차이 만들지 / 합칠지
 - [ ] 14개 identity 이질성 — 분류 축(theme) 필요한지
 - [ ] "안티패턴" 항목과 dont 필드 중복 정리
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: description/do/dont/body). |
+| 1차 | 2026-06-05 03:24 | 검토 진행 — description 14/14, do/dont/body 0/14. label + description 잠정 (사용자 확정 대기). |

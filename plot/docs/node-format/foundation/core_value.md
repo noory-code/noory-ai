@@ -78,3 +78,12 @@ core_value
 - [ ] do/dont 일괄 컷을 identity·service 감사에 적용
 - [ ] domain/CoreValue.ts + Pydantic + 인스펙터/렌더러 + schema_parity
 - [ ] `[Be All]/[New All]` 분류 필드화 여부는 나중 결정
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: definition/do/dont/body). |
+| 1차 | 2026-06-05 02:34 | **검토 완료.** do(=definition 재진술)·dont(0/5) 컷 → definition + body. status → done. |

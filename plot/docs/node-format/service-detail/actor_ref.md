@@ -35,3 +35,11 @@ status: draft   # draft → reviewing → done
 
 - [ ] side 를 master 에서 상속(필드 제거) vs 유지
 - [ ] gives/receives 를 "가치 SSOT" 결정에 포함
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: ref_actor_id/gives/receives/side). |

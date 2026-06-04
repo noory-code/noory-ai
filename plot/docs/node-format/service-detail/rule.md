@@ -35,3 +35,11 @@ status: draft   # draft → reviewing → done
 - [ ] sim 에서 rule 사용 여부 + actor_permissions 충전율 확인
 - [ ] rule vs decision 경계 명문화
 - [ ] actor_permissions 미사용 시 제거
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: policy/enforcement/actor_permissions/body). |

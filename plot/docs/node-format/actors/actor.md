@@ -32,3 +32,11 @@ status: draft   # draft → reviewing → done
 
 - [ ] side 값 집합 불일치(actor vs service.target_side vs actor_ref) 의도 확인
 - [ ] body 충전율 — 잉여면 제거 검토
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: motivation/pain/side/body). |

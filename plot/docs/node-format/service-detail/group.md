@@ -29,3 +29,11 @@ status: draft   # draft → reviewing → done
 
 - [ ] member_ids vs RF parent 멤버십 SSOT 결정
 - [ ] group 이 도메인 kind 여야 하는지 (vs 순수 뷰 그룹) 재검토
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 2: member_ids/body). |

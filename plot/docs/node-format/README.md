@@ -64,6 +64,24 @@ node-format/
 | rule | [service-detail/rule.md](service-detail/rule.md) | 4 | actor_permissions 무거움 |
 | content | [service-detail/content.md](service-detail/content.md) | 4 | sim 미사용 — 존재 정당성 |
 
+## 검토 규칙 (review history)
+
+각 kind 문서는 끝에 **`## 검토 히스토리`** 표를 갖는다. 검토는 한 번이
+아니라 **반복**된다 — 매 검토마다 한 행을 추가한다.
+
+```
+| 검토 | 시각 (KST)        | 결과 / 바뀐 것 |
+|------|-------------------|----------------|
+| 생성 | YYYY-MM-DD HH:MM  | draft 생성 (필드 N: …). |
+| 1차  | YYYY-MM-DD HH:MM  | **검토 완료.** <무엇이 바뀜>. status → done. |
+| 2차  | …                 | <재검토에서 바뀐 것> |
+```
+
+- **시각은 추측하지 않는다** — 실제 시각(`date`) 또는 커밋 시각(`git log`)을 쓴다.
+- frontmatter `status`(draft→reviewing→done)는 *현재 상태*, 히스토리 표는
+  *변경 이력*(changelog). 둘 다 유지.
+- "검토 완료"는 그 회차 행에 굵게 표시 + status 갱신.
+
 ## 공통 필드 (BaseFields — 모든 kind 공유, 각 문서에서 반복 안 함)
 
 `id`, `label`, `x`, `y`, `width`, `height`, `color`, `shape`, `icon`,

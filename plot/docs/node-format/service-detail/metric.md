@@ -32,3 +32,11 @@ status: draft   # draft → reviewing → done
 
 - [ ] metric kind 를 "value/가치" 로 재정의할지 (이름/필드 정합)
 - [ ] value_created ↔ metric ↔ gives/receives "가치 3중복" 정리 (Q6 와 함께)
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 3: target/measurement/body). |

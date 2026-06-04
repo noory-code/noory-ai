@@ -30,3 +30,11 @@ status: draft   # draft → reviewing → done
 
 - [ ] 3 foundation ref 통합 결정에 포함 (★ mission_ref §2)
 - [ ] 체현(value_ref) vs 산출(metric) 가치 구분 명문화
+
+## 검토 히스토리
+
+> 검토는 반복된다. 매 검토마다 시각 + 바뀐 것을 changelog 로 남긴다.
+
+| 검토 | 시각 (KST) | 결과 / 바뀐 것 |
+|---|---|---|
+| 생성 | 2026-06-04 23:19 | draft 생성 (필드 2: ref_value_id/notes_in_context). |
