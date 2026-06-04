@@ -9,11 +9,36 @@
 
 ## Active queue
 
-### `BANAS 시뮬레이션 이어가기` (TOP — filed 2026-06-01 end-of-session)
+### `노드 데이터 형식 + 산출물 관리` (TOP — filed 2026-06-04)
 
+> **Trigger:** user says **"노드 데이터"** / **"문서 형식"** / **"산출물"** /
+> **"버저닝"** / **"발행 정리"** / **"이어서"** / **"다음"** as the first /
+> near-first message.
+>
+> **Filed:** 2026-06-04. User: *"각 노드들에 묶여있는 데이터들 형식(문서
+> 형식) 과 산출물 관리(버저닝 포함) … 계획 잡아두고 문서 만들어두세요."*
+>
+> **The plan is already written → read it first:**
+> **`docs/NODE_DATA_AND_ARTIFACTS_PLAN.md`**. It has the verified current
+> state (typed fields inline + `body` + publish system + blueprint
+> semver), the gaps, and **§3 open decisions to resolve with the user
+> before any code**. Next session: walk the user through §3 (Q1–Q7),
+> then execute §5 phases (A spec → B templates → C artifact spec → D
+> bundler). Planning only so far — nothing implemented.
+>
+> **Do NOT start coding** until §3 Q1/Q2/Q6 are confirmed (they decide
+> the whole shape). Q6 (what the deliverable *is*) is load-bearing.
+
+### `BANAS 시뮬레이션 이어가기` (filed 2026-06-01; service details DONE 2026-06-04)
+
+> **Update 2026-06-04:** all **11 service details** are filled + verified
+> (committed to the sim repo, `43b3fad`); ServiceDetail layout fixes
+> shipped v0.40.1–0.40.5. Remaining sim work (Foundation group hubs,
+> mindmap layout) stays in `docs/BANAS_SIM_BACKLOG.md` — lower priority
+> than the node-data/artifact plan above.
+>
 > **Trigger:** user says **"바나스"** / **"BANAS"** / **"시뮬"** /
-> **"마인드맵 정렬"** / **"그룹 노드"** / **"이어서"** / **"다음"** as the
-> first / near-first message.
+> **"마인드맵 정렬"** / **"그룹 노드"** as the first / near-first message.
 >
 > **Filed:** 2026-06-01 end of session (a long sim-driven dev run). The user
 > is populating the **real BANAS blueprint** into Plot and fixing whatever
