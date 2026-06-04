@@ -142,11 +142,77 @@
     (c) Only one axis (drop per-node publish).
 
 - **Q6 — What IS the deliverable (산출물)?** *(the load-bearing decision)*
-  - (a) the `published/*.md` set; (b) **(R?)** a **bundled blueprint
+  - (a) the `published/*.md` set; (b) a **bundled blueprint
     document** generated at 설계도 발행 (one navigable doc/site assembled
     from all canvases + published nodes, stamped with `blueprint_version`);
-    (c) a machine export (JSON bundle) for downstream tooling. **User to
-    confirm — this drives §5.**
+    (c) a machine export (JSON bundle) for downstream tooling.
+  - **→ Reframed by the recovered user intent — see §3.1 below.** The
+    format (a/b/c) is the *container*; the user already defined the
+    *content*. Resolve §3.1 first, then pick the container.
+
+### 3.1 Q6 — recovered user intent + draft (2026-06-04)
+
+> Recovered from the 2026-05-30 ServiceDetail 산출물 discussion
+> (transcript `3ab5003d`, 02:44–03:17). The user said they had explained
+> this once already; this is that explanation, reconstructed.
+
+**What the user said the deliverable is — and is NOT:**
+
+- **NOT** the screens / UI / mockups. *"각 스텝에 해당하는 화면이나
+  이런게 있을 건데 그건 표현하지는 않을거에요."* Plot does not draw the UI.
+- The deliverable is the **value story of the designed service** — two
+  distinct value relations the user explicitly separated:
+  - **체현 (embodies)** — what value the service / each step *has*:
+    the mission / core_value / tone&manner it carries, and **how that
+    foundation "발동(activates)" at each point of the flow**. *"우리가
+    정한 미션과 코어밸류, 톤앤매너가 서비스 설계에서 어떻게 발동하는가를
+    보여주고 싶은거에요."*
+  - **산출 (produces)** — what value the produced **result** *makes*:
+    *"만들어진 산출물이 어떤 가치를 지니는지, 만들어진 결과가 어떤
+    가치를 지니는지 표시."* (e.g. Login's result = 대시보드 진입 → the
+    value/purpose that service delivered.)
+- The **flow must carry both positive and negative cases** (login
+  success *and* failure paths, reasoned failures vs plain failure), and
+  branch / 결정 points render as flowchart **decision diamonds (◇)**.
+
+**What is already SHIPPED (the in-canvas half of this intent):**
+
+- 발동 → **injection edges** (foundation ref → flow node, animated
+  violet, v0.28.1).
+- 결정 분기 → **`decision` kind** (◇, v0.28.0).
+- 네거티브 케이스 → **`step.polarity`** (red/green) + result nodes
+  (v0.28.2).
+- 산출되는 가치 (instance) → **`metric`** node ("VALUES" stencil).
+
+So the *design surface* already expresses 체현·발동·산출·네거티브. The
+**open part is the OUTPUT** — when 설계도 발행 runs, does this rich
+flowchart come OUT as a useful value-centric deliverable? (Flagged
+unverified in NEXT_SESSION "산출물 검토".)
+
+**Draft definition (to confirm with user):**
+
+> **The deliverable = a per-service "value sheet" assembled at 설계도
+> 발행.** For each service, the bundle states: (1) **purpose** + the
+> **value it produces** (산출, from `metric` / result nodes); (2) the
+> **foundation it embodies** (체현) and **where that foundation
+> activates** along the flow (체현·발동, from injection edges); (3) the
+> **flow itself** — steps, decisions (◇), positive + negative results;
+> (4) per-step / per-service **tone&manner + core_value** where defined
+> (optional). Container = the bundled blueprint document (Q6b) stamped
+> with `blueprint_version`; the **content schema is this value sheet**,
+> not a flat field dump. The existing per-node `published/*.md` are the
+> raw material; the bundler composes them into the value story.
+
+**Open sub-questions for the review session:**
+- Is the deliverable **per-service** (one value sheet each) or **one
+  blueprint-wide** document with a service section each? (lean: both —
+  per-service sheets + a blueprint index.)
+- Does the value sheet need a **visual** (rendered flowchart image) or
+  is **structured text** (flow as an outline + injection/value callouts)
+  enough for v1?
+- Is 산출(produced value) read from `metric` nodes, from result-node
+  text, or a new typed field? (verify against the BANAS sim ServiceDetail
+  during the one-by-one review.)
 
 - **Q7 — Schema snapshot:** regenerate `schema/*.json` on blueprint
   publish (or drop it from the project dir if unused at runtime)? Needs a
@@ -162,10 +228,15 @@ and **extend the md template to all 15 kinds** (Q3) so every node
 publishes uniformly. Keep **two version axes** — per-node `version` for
 component evolution, `blueprint_version` for releases — and make a
 **blueprint publish snapshot the node versions** into a manifest (Q5a).
-Define the **deliverable** as a **bundled blueprint document** assembled
-at 설계도 발행 (Q6b, pending user confirm). This reuses everything already
-built (publish, propagation, blueprint semver) and only adds: a `body`
-convention, 12 missing templates, a snapshot manifest, and a bundler.
+Define the **deliverable** as a **per-service value sheet** assembled at
+설계도 발행 (Q6 reframed — see §3.1): not a flat field dump but the
+service's **value story** (purpose + 산출 produced value + 체현/발동
+embodied foundation + flow with positive/negative cases), packaged in a
+bundled blueprint document stamped with `blueprint_version`. This reuses
+everything already built (publish, propagation, blueprint semver, plus the
+already-shipped injection / decision / polarity / metric design surface)
+and only adds: a `body` convention, 12 missing templates, a snapshot
+manifest, and a value-sheet bundler.
 
 ---
 
