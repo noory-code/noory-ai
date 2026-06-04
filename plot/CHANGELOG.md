@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.41.0] — 2026-06-04
+
+### Changed — mindmap arm follows the stored hub-side handle (D-2026-06-01-H)
+
+- Mindmap auto-layout assigns each top-level branch to an arm by reading,
+  *first*, the **hub-side handle** its edge is pinned to (`t/r/b/l` →
+  `U/R/D/L`). The connection becomes the control surface: drop a line on the
+  hub's right handle and that branch lays out right, regardless of where the
+  node box currently sits. When an edge has no stored hub-side handle (legacy
+  floating-era edges), it **falls back** to the node's current side of the hub
+  (the previous D-2026-06-01-F rule). On-hub + no-handle still spreads by
+  subtree leaf-count.
+- `edgeTransform.resolveHandles` is updated symmetrically: a **stored** handle
+  wins for edge attachment, with the geometric facing-side used only when an
+  end has no stored handle — keeping the attachment side consistent with the
+  arm the layout chose.
+- Supersedes the arm-assignment half of D-2026-06-01-F (the within-arm
+  tidy-tree shape + leaf-count spread are unchanged).
+- Tests: `viewer/tests/mindmapLayout.test.ts` — hub-handle override + no-handle
+  fallback cases (10 passing). Authored 2026-06-01, shipped 2026-06-04.
+
 ## [0.40.5] — 2026-06-04
 
 ### Changed — auto-layout (⊞) is one action button; mode in tooltip text only (D-2026-06-04-A)

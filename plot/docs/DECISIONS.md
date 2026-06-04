@@ -10260,3 +10260,38 @@ but not yet fully eliminated.
 - **Scope:** `LayoutControls.tsx` (`TreeIcon`/`FlowIcon` → `ArrangeIcon`).
 - **Spec impact:** SPEC §"Auto-layout (⊞) is one action button…". Covered by
   `layout-controls.test.tsx` (same icon in both modes).
+
+### D-2026-06-01-H — Mindmap arm = stored hub-side handle (position is the fallback)
+
+- **What:** The mindmap auto-layout's top-level branch → arm assignment now
+  reads, *first*, the **hub-side handle** the branch's edge is pinned to
+  (`edge.sourceHandle` / `edge.targetHandle` on the hub end, `t/r/b/l` →
+  `U/R/D/L`). The **connection** becomes the control surface: drag a line onto
+  the hub's right handle and that branch lays out to the right, regardless of
+  where the node box currently sits. When an edge carries no stored hub-side
+  handle (legacy floating-era edges nulled to `None`), it **falls back** to the
+  node's current side of the hub (the D-2026-06-01-F rule). Truly ambiguous
+  (on the hub, no handle) → spread by subtree leaf-count, unchanged.
+  `edgeTransform.resolveHandles` is updated symmetrically: a **stored** handle
+  wins for edge attachment too, with the geometric facing-side used only when
+  an end has no stored handle.
+- **Why:** under the pure position rule (D-2026-06-01-F) the only way to move a
+  branch to another arm was to physically drag the node box across the hub.
+  Pinning the edge to a hub handle is a more direct, intent-carrying control —
+  the user says "this branch goes right" by where they attach the line, and
+  re-layout honours it even if the box drifted.
+- **Alternatives:** keep position-only (D-2026-06-01-F) — rejected, no way to
+  redirect an arm without moving the box; per-kind arm rule — already rejected
+  in F.
+- **Approval:** Design authored + tested 2026-06-01 (the prior session reserved
+  this id and wrote `mindmapLayout.ts` / `edgeTransform.ts` + the
+  `mindmapLayout.test.ts` cases but never committed or recorded it). Committed
+  2026-06-04 at the user's explicit "커밋하고 푸시" instruction. **Supersedes**
+  the arm-assignment half of [D-2026-06-01-F] (the within-arm tidy-tree shape
+  and the leaf-count spread are unchanged).
+- **Scope:** `viewer/src/canvases/sketch/mindmapLayout.ts` (`hubHandleDir`
+  primary, `dirFromCurrent` fallback), `viewer/src/canvases/sketch/edgeTransform.ts`
+  (`resolveHandles` stored-wins).
+- **Spec impact:** docs/AUTO_LAYOUT.md §3 (Arm assignment) + §5 (Edge
+  attachment). Covered by `viewer/tests/mindmapLayout.test.ts` (hub-handle
+  override + no-handle fallback cases).

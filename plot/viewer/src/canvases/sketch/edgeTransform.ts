@@ -54,7 +54,15 @@ function facingSide(
 // from the stored ``relation`` SSOT, not a source-kind lookup.
 const INJECTION_STROKE = "#8b5cf6"; // violet-500
 
-/** Resolve {sourceHandle, targetHandle} for one rendered edge. */
+/** Resolve {sourceHandle, targetHandle} for one rendered edge.
+ *
+ * v0.41.0 (D-2026-06-01-H) — STORED handles win. The handle each edge end
+ * is pinned to (``edge.sourceHandle`` / ``edge.targetHandle``) is the SSOT
+ * for where the line attaches; auto-layout reads the same field to decide
+ * the node's arm. A stored handle survives only if its endpoint hasn't
+ * folded into a collapsed ancestor. When an end has NO stored handle (e.g.
+ * a legacy floating-era edge nulled to None), fall back to the geometric
+ * facing side so the line still attaches cleanly. */
 function resolveHandles(
   rfSource: string,
   rfTarget: string,
@@ -64,19 +72,25 @@ function resolveHandles(
   e: CanvasDoc["edges"][number],
   nodeCenters?: Map<string, { cx: number; cy: number }>,
 ): { sourceHandle: string | undefined; targetHandle: string | undefined } {
+  const storedSource = sAncestor ? undefined : e.sourceHandle ?? undefined;
+  const storedTarget = tAncestor ? undefined : e.targetHandle ?? undefined;
+  // Geometric fallback only for ends with no stored handle.
+  let facingSource: string | undefined;
+  let facingTarget: string | undefined;
   if (!isRealSelfLoop && nodeCenters) {
     const s = nodeCenters.get(rfSource);
     const t = nodeCenters.get(rfTarget);
     if (s && t) {
       // All BaseNode handles are type="source" with ids t/r/b/l;
-      // ConnectionMode.Loose lets them receive too, so the same ids
-      // work for both ends.
-      return { sourceHandle: facingSide(s, t), targetHandle: facingSide(t, s) };
+      // ConnectionMode.Loose lets them receive, so the same ids serve
+      // both ends.
+      facingSource = facingSide(s, t);
+      facingTarget = facingSide(t, s);
     }
   }
   return {
-    sourceHandle: sAncestor ? undefined : e.sourceHandle ?? undefined,
-    targetHandle: tAncestor ? undefined : e.targetHandle ?? undefined,
+    sourceHandle: storedSource ?? facingSource,
+    targetHandle: storedTarget ?? facingTarget,
   };
 }
 

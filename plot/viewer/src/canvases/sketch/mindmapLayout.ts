@@ -135,17 +135,31 @@ export function computeMindmapLayout(input: MindmapLayoutInput): MindmapLayoutOu
 
   const tops = (children.get(hub.id) ?? []).slice();
 
-  // Assign each top-level branch to one of the four arms (D-2026-06-01-F).
+  // Assign each top-level branch to one of the four arms (D-2026-06-01-H).
   //
-  // ONE rule for every canvas: respect the node's CURRENT side. The arm is
-  // the direction of the node's centre from the hub centre (dominant axis
-  // wins). No per-kind special-casing — the user groups by WHERE they put
-  // nodes (mission up, core_value left, identity right → they stay there).
-  // Re-layout only tidies spacing within each arm; it never teleports a
-  // branch to a different side. A brand-new node sitting exactly on the hub
-  // has no usable side → those spread across the emptiest arms by subtree
-  // leaf-count so a fresh graph still fans out instead of stacking.
+  // PRIMARY: the HUB-side handle the branch's edge is pinned to. The hub is
+  // a node like any other with four handles (t/r/b/l); whichever one the
+  // user dropped the connection on decides the arm — drag a line to the
+  // hub's right handle and that branch lays out to the right, regardless of
+  // where the node box currently sits. This makes the *connection* the
+  // control surface, not the node position. FALLBACK: when an edge has no
+  // stored hub-side handle (legacy floating-era edges), use the node's
+  // current side from the hub centre. Truly ambiguous (on the hub, no
+  // handle) → spread by leaf-count.
   const buckets: Record<Dir, string[]> = { R: [], L: [], U: [], D: [] };
+
+  // Hub-side handle id for the edge connecting this top branch to the hub.
+  const handleToDir: Record<string, Dir> = { t: "U", r: "R", b: "D", l: "L" };
+  const hubHandleDir = (id: string): Dir | null => {
+    for (const e of edges) {
+      let hubHandle: string | null | undefined = null;
+      if (e.source === hub.id && e.target === id) hubHandle = e.sourceHandle;
+      else if (e.target === hub.id && e.source === id) hubHandle = e.targetHandle;
+      else continue;
+      if (hubHandle && handleToDir[hubHandle]) return handleToDir[hubHandle];
+    }
+    return null;
+  };
 
   const dirFromCurrent = (id: string): Dir | null => {
     const n = nodeById.get(id);
@@ -159,7 +173,7 @@ export function computeMindmapLayout(input: MindmapLayoutInput): MindmapLayoutOu
   const load: Record<Dir, number> = { R: 0, L: 0, U: 0, D: 0 };
   const unpositioned: string[] = [];
   for (const t of tops) {
-    const d = dirFromCurrent(t);
+    const d = hubHandleDir(t) ?? dirFromCurrent(t);
     if (d) {
       buckets[d].push(t);
       load[d] += leafCount.get(t) ?? 1;

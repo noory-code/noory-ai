@@ -47,21 +47,28 @@ All primary canvases use a **4-direction (上下左右) tidy tree**.
 Decision 2026-06-01 (D-2026-06-01-F): keep the 4-direction shape (not a
 single left→right tree, not a circle).
 
-### Arm assignment — ONE rule, no per-kind special-casing
+### Arm assignment — stored hub handle first, position as fallback (D-2026-06-01-H)
 - The hub = the project anchor (Foundation / Actors / Services) or the
   hidden root-service (ServiceDetail).
 - BFS spanning tree from the hub (cycle-safe, id-sorted → deterministic).
-- Each top-level branch goes to the arm matching **its current side** of
-  the hub (direction of its centre from the hub centre, dominant axis
-  wins). The user groups by WHERE they place nodes — drag mission up,
-  core_value left, identity right and re-layout keeps them there.
-- A brand-new node sitting exactly on the hub has no usable side; those
-  spread across the emptiest arms by subtree **leaf-count** so a fresh
-  graph still fans out instead of stacking on one axis.
+- Each top-level branch goes to the arm in this priority:
+  - **PRIMARY — the hub-side handle the branch's edge is pinned to**
+    (`edge.sourceHandle` / `edge.targetHandle` on the hub end,
+    `t/r/b/l` → `U/R/D/L`). The *connection* is the control surface: drag
+    a line onto the hub's right handle and that branch lays out right,
+    regardless of where the node box currently sits.
+  - **FALLBACK — the branch's current side** of the hub (direction of its
+    centre from the hub centre, dominant axis wins). Used when the edge
+    carries no stored hub-side handle (legacy floating-era edges nulled to
+    `None`). This is the original D-2026-06-01-F rule, now demoted to the
+    fallback.
+  - **AMBIGUOUS — leaf-count spread.** A brand-new node sitting exactly on
+    the hub with no handle has no usable side; those spread across the
+    emptiest arms by subtree **leaf-count** so a fresh graph still fans out
+    instead of stacking on one axis.
 - **No per-kind rule.** An earlier "one arm per kind" version was rejected
-  ("또 카테고리별로 정렬 규칙을 만들어뒀구만요") — the single
-  position-respecting rule already groups when the user groups by
-  placement.
+  ("또 카테고리별로 정렬 규칙을 만들어뒀구만요") — the handle / position
+  rules already group when the user groups by connection or placement.
 
 ### Within an arm
 - A tidy tree growing **away** from the hub. R/L grow horizontally
@@ -78,8 +85,9 @@ single left→right tree, not a circle).
 1. no two nodes overlap;
 2. every child sits beyond its parent (outward, no back-cross);
 3. top-level children spread across ≥3 directions (not one pile);
-4. branches stay on the side the user placed them (mission↑ / values← /
-   identities→ when grouped there);
+4. a branch with a stored hub-side handle lays out on the handle's side,
+   overriding its current box position (D-2026-06-01-H); a branch with no
+   stored handle stays on the side the user placed it;
 5. deterministic.
 
 ### ServiceDetail exception
@@ -114,14 +122,18 @@ Kept tight so the first ring hugs the hub (user: "거리를 왜 이렇게 멀리
 
 ## 5. Edge attachment side (`edgeTransform`)
 
-Floating edges were removed in v0.40.0 (D-2026-06-01-E). Each non-self-
-loop edge attaches to the handle on the side of each node **facing the
-other node** (computed from node centres passed via `useEdgesMemo`; the
-synthetic anchor is **not** in `doc.nodes`, so it is seeded from
-`projectAnchor`). `BaseNode`'s four handles are all `type="source"` with
-ids `t/r/b/l`; `ConnectionMode.Loose` lets them receive, so the same ids
-serve both ends. This gives clean routing from any direction (the
-"uniform from any side" goal floating had) without floating, fixing the
+Floating edges were removed in v0.40.0 (D-2026-06-01-E). For each
+non-self-loop edge `resolveHandles` picks, per end, in this order
+(D-2026-06-01-H): a **stored** handle (`edge.sourceHandle` /
+`edge.targetHandle`) wins if its endpoint hasn't folded into a collapsed
+ancestor; otherwise the **geometric facing side** — the handle on the side
+of the node facing the other node (computed from node centres passed via
+`useEdgesMemo`; the synthetic anchor is **not** in `doc.nodes`, so it is
+seeded from `projectAnchor`). `BaseNode`'s four handles are all
+`type="source"` with ids `t/r/b/l`; `ConnectionMode.Loose` lets them
+receive, so the same ids serve both ends. Stored-wins keeps the attachment
+side consistent with the arm the layout chose; the facing-side fallback
+gives clean routing from any direction for handle-less edges, fixing the
 arrow-tangle floating papered over.
 
 ---

@@ -10,6 +10,18 @@ function edge(source: string, target: string): SketchEdge {
   return { id: `${source}-${target}`, source, target, directed: true } as SketchEdge;
 }
 
+/** edge carrying a stored hub-side handle. ``hub`` is the source here, so
+ *  the handle lives on ``sourceHandle`` (t/r/b/l). */
+function edgeWithHubHandle(hub: string, target: string, handle: string): SketchEdge {
+  return {
+    id: `${hub}-${target}`,
+    source: hub,
+    target,
+    sourceHandle: handle,
+    directed: true,
+  } as SketchEdge;
+}
+
 const HUB = { id: "hub", x: 0, y: 0, width: 120, height: 120 };
 
 interface Box {
@@ -222,6 +234,54 @@ describe("computeMindmapLayout", () => {
     expect(arm("down")).toBe("D");
     expect(arm("left")).toBe("L");
     expect(arm("right")).toBe("R");
+  });
+
+  it("uses the hub-side handle for the arm, overriding node position (D-2026-06-01-H)", () => {
+    // Each node is physically placed on the LEFT, but its edge is pinned to
+    // a different hub handle. The stored handle wins — the node lays out on
+    // the handle's side, not where the box currently sits.
+    const nodes: SketchNode[] = [node("hub", 0, 0, 120, 120)];
+    const edges: SketchEdge[] = [];
+    const add = (id: string, handle: string) => {
+      // box on the far left for every node (cx = -500)
+      nodes.push({ id, kind: "category", label: id, x: -580, y: -30, width: 160, height: 60 } as SketchNode);
+      edges.push(edgeWithHubHandle("hub", id, handle));
+    };
+    add("u", "t"); // hub top handle → up
+    add("r", "r"); // hub right handle → right
+    add("d", "b"); // hub bottom handle → down
+    add("l", "l"); // hub left handle → left
+    const { positions } = computeMindmapLayout({ nodes, edges, hub: HUB });
+    const sz = sizes(nodes);
+    const hubC = centerOf(positions, sz, "hub");
+    const arm = (id: string) => {
+      const c = centerOf(positions, sz, id);
+      const dx = c.x - hubC.x;
+      const dy = c.y - hubC.y;
+      return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "R" : "L") : dy > 0 ? "D" : "U";
+    };
+    expect(arm("u")).toBe("U");
+    expect(arm("r")).toBe("R");
+    expect(arm("d")).toBe("D");
+    expect(arm("l")).toBe("L");
+  });
+
+  it("falls back to node position when an edge has no stored handle", () => {
+    // no handles on the edges → position decides (regression guard for the
+    // fallback path).
+    const nodes: SketchNode[] = [node("hub", 0, 0, 120, 120)];
+    const edges: SketchEdge[] = [];
+    const place = (id: string, cx: number, cy: number) => {
+      nodes.push({ id, kind: "category", label: id, x: cx - 80, y: cy - 30, width: 160, height: 60 } as SketchNode);
+      edges.push(edge("hub", id));
+    };
+    place("right", 620, 60);
+    place("left", -500, 60);
+    const { positions } = computeMindmapLayout({ nodes, edges, hub: HUB });
+    const sz = sizes(nodes);
+    const hubC = centerOf(positions, sz, "hub");
+    expect(centerOf(positions, sz, "right").x > hubC.x, "right by position").toBe(true);
+    expect(centerOf(positions, sz, "left").x < hubC.x, "left by position").toBe(true);
   });
 
   it("is deterministic (same input → identical output)", () => {
