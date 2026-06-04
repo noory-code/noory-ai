@@ -242,9 +242,14 @@ manifest, and a value-sheet bundler.
 
 ## 5. Phased plan (after §3 is resolved)
 
-- **Phase A — Spec the node document format.** Write a `NODE_DOCUMENT.md`
-  (or a SPEC.md section): for each of the 15 kinds, the typed fields + the
-  `body` convention + the source-link convention. Docs only, no code.
+- **Phase A — Spec the node document format.** *In progress (2026-06-04):*
+  a per-kind audit lives in **[`node-format/`](./node-format/)** — one doc
+  per node kind (16), grouped by canvas (foundation / actors / services /
+  service-detail), each listing the kind's fields + design intent + a
+  "진짜 필요/유용한가" verdict the user challenges. The audit's conclusions
+  (which fields survive, the `body` convention, the 3-ref consolidation,
+  the "가치" de-dup) roll up into CONCEPTS.md + a SPEC section. Docs only,
+  no code.
 - **Phase B — Uniform publish templates.** Add `schema/{kind}.md.template`
   for the 12 missing kinds; cover them in `md_publish.py` + the eligibility
   table. TDD against `test_schema_parity` / publish tests.
