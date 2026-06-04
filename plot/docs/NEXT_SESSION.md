@@ -28,6 +28,15 @@
 >
 > **Do NOT start coding** until §3 Q1/Q2/Q6 are confirmed (they decide
 > the whole shape). Q6 (what the deliverable *is*) is load-bearing.
+>
+> **Per-node refinement workspace (2026-06-04):** the user works node by
+> node. A manual Solera stand-in lives at
+> `banas-sim/banas/tmp/` (`README.md` + `gen_node_docs.py` +
+> `node-docs/<canvas>/<id>.md` × 117 + `INDEX.md`). Each doc = §1 snapshot
+> + §2 토론 / §3 작업정의 / §4 소스, with `status: draft→reviewing→done`.
+> Regenerate with `python3 tmp/gen_node_docs.py` (skip-if-exists — never
+> clobbers notes). Findings here feed the format spec bottom-up. Start
+> from `tmp/node-docs/INDEX.md`.
 
 ### `BANAS 시뮬레이션 이어가기` (filed 2026-06-01; service details DONE 2026-06-04)
 
