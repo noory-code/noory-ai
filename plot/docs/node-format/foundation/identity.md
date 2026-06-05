@@ -2,93 +2,87 @@
 kind: identity
 canvas: foundation
 field_count_before: 4   # description, do, dont, body
-field_count_after: TBD  # 비판으로 재오픈 — body 이중산문/14 flat/catch-all 미해결
+field_count_after: TBD  # 출력값 모델 — content 1 + provenance/evolution(구조) 설계 중
 status: reviewing   # draft → reviewing → done
 ---
 
 # identity — 아이덴티티
 
-> 브랜드/제품의 구별되는 성격을 구체적으로 표현 (보이스·비주얼·용어·감정·
-> 안티패턴). sim 14개. 정본: `viewer/src/domain/Identity.ts`.
+> **개념(정본): [`../../FOUNDATION_CONCEPT.md`](../../FOUNDATION_CONCEPT.md).**
+> 아이덴티티 = **쌓여가는 지향. 어떤 존재이고 싶은가** (미래/지향).
+> **★ 입력이 아니라 출력** — AI 가 미션+코어밸류(+누적 설계/행동)에서
+> 도출하고 계속 갱신. 필드 정본: `viewer/src/domain/Identity.ts`.
 
-## 상태 — "그대로 둔다"는 비판으로 기각, 재오픈 (2026-06-05)
+## 출력값 렌즈 — 이게 핵심 (2026-06-06)
 
-처음 "identity 는 분해 오류 없으니 그대로 두자"로 기울었으나, 비판(§자기
-비판)으로 **기각.** identity 는 깨끗하지 않다 — 미해결 3개:
+미션·코어밸류는 **입력**(인터뷰로 받음)이라 "사람이 어느 필드를 채우나"가
+질문이었다. **아이덴티티는 출력**이라 그 질문이 바뀐다 — "AI 가 무엇을
+도출·누적하고, 그걸 어떻게 추적·진화시키나."
 
-```
-identity (현재)                         미해결
-├── label                               
-├── description  14/14  ← 유지           ① body 와 이중-산문 중복
-├── do          0/14   ← do/dont 배치 컷  (description+body 둘 다 prose,
-├── dont        0/14                       body 가 죽음 → body 컷 후보)
-└── body        0/14                     ② 14개 flat 노드 = "노드 가방"
-                                            (identity=시스템인데 분류/관계 0
-                                             → facet 이 YAGNI 아닌 진짜 갭?)
-                                         ③ catch-all: 안티패턴(부정공간)·
-                                            감정여정(시간)은 identity 면이 아님
-```
+> ⚠️ **현실 caveat:** 현재 BANAS 14개 identity 는 *손으로 작성*된 것
+> (AI 도출은 아직 미구현). 아래는 **출력값 모델의 목표 설계** + 손작성으로도
+> 동작하는 graceful degradation.
 
-**확정된 것:** do/dont 컷(배치), description 은 핵심 prose 로 유지.
-**열린 것:** ①body 컷 ②facet 구조 ③catch-all 재분류 — 아래 §결정 대기.
+### 3개 열린 질문, 출력 렌즈로 재판정
 
-## 근거
+| # | 1차 비판 | 출력 렌즈 재판정 |
+|---|---|---|
+| ① body 이중산문 | description+body 중복 | **컷 유지.** 출력의 도출 내용은 단일 prose 면 충분 → `description` 하나 |
+| ② facet/14-flat | 시스템 잃은 노드가방? | **격하 → "예정된 보류".** 출력이 *쌓이므로* facet 분류는 누적 출력을 정리/재사용하는 데 쓸모가 커짐. deliverable 이 facet 묶음을 요구할 때 도입 |
+| ③ catch-all | 안티패턴·감정여정이 identity 맞나? | **해소.** *도출된* "되고 싶은 존재"는 본디 보이스·비주얼·감정·부정공간을 넘나든다. 안티패턴=도출된 *부정 공간*, 감정여정=도출된 *감정 아크*. 이질성은 결함이 아니라 누적 출력의 본성 |
 
-### 아이덴티티는 본디 다면적 (이론)
-- **Aaker, *Building Strong Brands*** (1996): 브랜드 아이덴티티 =
-  product / organization / person / symbol 4관점 시스템.
-- **Kapferer, Identity Prism** (1986): 6면(physique·personality·culture·
-  relationship·reflection·self-image).
-- ⇒ BANAS 14개는 *원래 다면적*이라 많은 게 아닐 수 있다. **그러나** 이론이
-  다면적이라는 게 *flat·무관계 14노드* 를 정당화하진 않는다 (§자기비판 2).
+### 출력이라서 새로 필요한 구조 (목표 모델)
 
-### 데이터 (14개)
+입력 kind 엔 없던, **출력이라 정당화되는 구조 필드들** (산문 아님 →
+structural-vs-prose 원칙상 자리값 있음):
+
+- **provenance (도출 출처)** — 이 identity 가 *어느 미션/코어밸류/서비스
+  설계에서* 도출됐나. 추적성 = 신뢰("AI 가 왜 이게 우리라고 하나") + 사용자
+  확인/교정의 근거. 출력의 핵심.
+- **evolution (진화 이력)** — "쌓여가는" → 언제 어떻게 갱신됐나. BaseFields.
+  version 보다 풍부한 변경 추적이 identity 에선 중심 (출력이 계속 진화).
+- **status (도출/확정)** — AI 도출 초안인지 사용자가 확인·고정했는지.
+  입력 kind 엔 없는 구분.
+
+### Graceful degradation
+AI 도출이 약하거나 미구현이어도 identity 는 **손작성으로 동작**해야 한다:
+label + description (현재 14개가 그러함). provenance/evolution/status 는
+*AI 도출이 붙을 때의 향상 레이어* — 단계적 구현.
+
+## 데이터 근거 (현재 14개, 손작성)
 | 필드 | 충전율 |
 |---|---|
-| `description` | **14/14** |
-| `do` | 0/14 |
-| `dont` | 0/14 |
-| `body` | 0/14 |
+| `description` | 14/14 |
+| `do` / `dont` / `body` | 0/14 |
 
-노드당 `description` 하나만 사용. 14개 모두 한 문단(78~147자)으로 **구조
-균일** → sub-kind 불필요.
+노드당 `description` 하나만 사용 (do/dont 컷 배치 대상, body 중복 컷).
 
-## 자기비판 (self red-team) — "그대로 두자"를 깬다
+## 자기비판 (self red-team)
+- **YAGNI 우려:** provenance/evolution/status 는 *미구현* AI 도출을 위한
+  설계 — 이르지 않나? 반박: 사용자가 "아이덴티티=출력"을 Plot 의 핵심
+  차별점으로 명시 → 목표 모델 정의는 정당, *구현은 단계적*.
+- **출력 모델이 희망사항일 위험:** AI 도출이 실전에서 약하면 identity 는
+  손작성(현재)로 회귀 → 그래서 graceful degradation 을 못박음.
+- ②facet/③catch-all 을 "출력이라 자연스럽다"로 너무 쉽게 풀었나? — facet 은
+  *예정된 보류*로 남겨 증거(누적량/deliverable 수요) 나올 때 재검토하도록 함.
 
-처음 "분해 오류 없으니 그대로"로 기울었다. 비판으로 기각한다:
+## 파운데이션 3종 종합
+| kind | 입출력 | 콘텐츠 | 추가 구조 |
+|---|---|---|---|
+| mission | 입력 | label + body | — |
+| core_value | 입력 | label + definition (+body) | — |
+| identity | **출력** | label + description | **provenance · evolution · status** (목표) |
 
-1. **이중-산문 중복.** `description`(14/14) + `body`(0/14) = prose 필드 둘,
-   하나 죽음 = core_value 의 definition+body 와 *같은 병*. "분해 오류 없다"는
-   틀렸다. → **body 컷** 후보 (단일 prose).
-2. **14 flat = "노드 가방" (appeal-to-authority 재범).** "Aaker 가 다면적이라
-   했으니 14개 OK"는 미션에서 내가 깐 권위논증의 재범. 아이덴티티가
-   *시스템*(Aaker)이면 **분류·관계 0 인 낱개 14노드는 그 시스템을 잃는다.**
-   → facet 은 YAGNI 가 아니라 *빠진 구조* 일 수 있음. 재검토 필요.
-3. **catch-all (MECE 위반).** `안티패턴`=부정 공간(우리가 *아닌* 것),
-   `감정 여정`=시간 흐름 — 둘 다 "표현(보이스/컬러/용어)"과 결이 다르다.
-   "브랜드스럽다"고 한 kind 에 욱여넣은 분류 실패.
-4. **"마이그레이션 비용 아끼자"는 설계 논거가 아니다.** YAGNI 로 위장한
-   게으름. 감사의 일은 *맞는 모델* 찾기지 *안 바꾸는 게 싼* 것 고르기가 아님.
+→ 입력 2종은 label+단일 prose 로 수렴. **출력 1종(identity)만 구조가 다르다**
+— 그게 본질(입력 vs 출력)의 차이를 정확히 반영.
 
-n=14 한 작성자 caveat 는 여전하나, ①의 body 중복은 작성자 무관 구조 문제.
-
-## 파운데이션 3종 수렴 (mission·core_value·identity 완료)
-| kind | = label + | 단일 prose 필드명 |
-|---|---|---|
-| mission | 선언 | (body) |
-| core_value | 원칙 | definition |
-| identity | 표현 | description |
-
-→ 파운데이션 개념 = **label + 단일 prose 필드** (do/dont 전멸). 남은
-cross-cutting: 이 prose 필드명을 통일(body?)할지 vs 의미명 유지. (별도 결정.)
-
-## 작업 정의 (재오픈 — 3개 열린 결정)
-- [ ] **①body 컷** — description+body 이중산문 → 단일 prose 로 (do/dont 와 함께).
-- [ ] **②facet 구조** — 14 flat 노드에 facet 분류/관계를 줄지 (시스템 보존 vs
-      YAGNI). deliverable 의 facet 묶음 수요와 함께 결정.
-- [ ] **③catch-all 재분류** — 안티패턴(부정공간)·감정여정(시간)을 identity 에
-      둘지, 다른 kind/표현으로 뺄지.
-- [ ] (확정) do/dont 컷, description 유지.
+## 작업 정의
+- [ ] (확정) do/dont/body 컷 → content = `description` 단일 prose.
+- [ ] (목표) provenance 필드/관계 설계 — 도출 출처 링크 (AI 도출 구현과 함께).
+- [ ] (목표) evolution 추적 — identity 갱신 이력 (BaseFields.version 확장 검토).
+- [ ] (목표) status(도출/확정) 플래그.
+- [ ] (보류) facet 분류 — deliverable 의 facet 묶음 수요 발생 시.
+- [ ] graceful degradation 못박기 — 손작성(label+description)만으로도 동작.
 
 ## 검토 히스토리
 
@@ -97,6 +91,7 @@ cross-cutting: 이 prose 필드명을 통일(body?)할지 vs 의미명 유지. (
 | 검토 | 시각 (KST) | 결과 / 바뀐 것 |
 |---|---|---|
 | 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: description/do/dont/body). |
-| 1차 | 2026-06-05 03:24 | 검토 — description 14/14, do/dont/body 0/14. label+description 잠정. |
-| 2차 | 2026-06-05 03:40 | "그대로 둔다"로 잠정 done 처리. |
-| 3차 | 2026-06-05 03:46 | **비판으로 기각·재오픈.** 깨끗하지 않음 — ①body 이중산문 ②14 flat=노드가방(facet 갭) ③catch-all(안티패턴/감정여정). 확정: do/dont 컷·description 유지. status done → reviewing. |
+| 1차 | 2026-06-05 03:24 | 검토 — description 14/14, do/dont/body 0/14. |
+| 2차 | 2026-06-05 03:40 | "그대로 두자"로 잠정 done. |
+| 3차 | 2026-06-05 03:46 | **비판으로 재오픈** — body 이중산문/14flat/catch-all. |
+| 4차 | 2026-06-06 | **출력값 렌즈 재정의.** ①body컷 ②facet 예정보류 ③catch-all 해소. 출력이라 provenance·evolution·status 구조 추가(목표 모델, 단계 구현). graceful degradation 못박음. |
