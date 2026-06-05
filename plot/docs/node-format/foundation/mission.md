@@ -9,8 +9,21 @@ decided: 2026-06-04
 
 # mission — 미션
 
-> 그 프로젝트가 무엇을·왜 하는가의 최상위 선언. 정본:
-> `viewer/src/domain/Mission.ts`. 공통 BaseFields 는 ../README 참조.
+> **개념(정본): [`../../FOUNDATION_CONCEPT.md`](../../FOUNDATION_CONCEPT.md).**
+> 미션 = **존재의 뿌리. 탄생의 이유. 왜 존재하는가** (과거/뿌리). 사용자에게
+> **인터뷰로 받는 입력**. 필드 정본: `viewer/src/domain/Mission.ts`.
+> 공통 BaseFields 는 ../README 참조.
+
+## 개념 (2026-06-05 프레임) — 재정의
+
+미션은 "그 프로젝트가 *왜 존재하는가*" 하나다. 시간축에서 **뿌리(과거)**,
+입출력에서 **입력**(미션 인터뷰). BANAS 예: **Be all · New all** — "나의
+일상을 함께 만드는 사람들의 공동체."
+
+이 프레임은 기존 필드 결론을 **강화**한다: 존재의 뿌리는 *하나의 뿌리
+선언*이라 쪼개지지 않는다 → label(선언) + body(뿌리 서사). what_we_do/why/
+direction 3분할 폐기 결론 그대로 (오히려 "왜 존재하는가"가 곧 선언이라
+why 를 별도 필드로 둘 이유가 더 사라진다).
 
 ## 결정 (사용자 확정 2026-06-04)
 
@@ -70,3 +83,4 @@ dont/body), `identity`(description/do/dont/body), `service`(10필드, 최악).
 |---|---|---|
 | 생성 | 2026-06-04 23:19 | draft 생성 (필드 4: what_we_do/why/direction/body). |
 | 1차 | 2026-06-04 23:38 | **검토 완료.** 산문 3필드(what_we_do/why/direction) 폐기 → label + body. status → done. |
+| 2차 | 2026-06-05 04:10 | 개념 프레임(FOUNDATION_CONCEPT) 반영 — 미션=뿌리/왜존재/입력. label+body 결론 강화(변경 없음). 개념 정의 추가. |
