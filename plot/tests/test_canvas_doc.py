@@ -220,19 +220,18 @@ def test_core_value_carries_definition_and_body() -> None:
     assert "do" not in n.model_dump() and "dont" not in n.model_dump()
 
 
-def test_identity_carries_typed_fields() -> None:
-    """v0.10 Step 2: identity nodes carry ``description`` plus the shared
-    Do/Don't pair so an LLM can mimic the persona deterministically."""
+def test_identity_carries_description_and_body() -> None:
+    """v0.43.2 (D-2026-06-06-B): identity = ``description`` + ``body``;
+    do/dont removed."""
     n = IdentityNode(
         id="id-voice",
         label="Voice",
         description="따뜻하고 진솔한 1:1 대화처럼 말한다",
-        do="이름을 부른다",
-        dont="공지글 같은 말투로 쓴다",
+        body="이름을 부른다",
     )
     assert "따뜻하고" in n.description
-    assert "이름을 부른다" in n.do
-    assert "공지글 같은" in n.dont
+    assert "이름을 부른다" in n.body
+    assert "do" not in n.model_dump() and "dont" not in n.model_dump()
 
 
 def test_value_and_identity_typed_fields_round_trip_in_canvas() -> None:
@@ -252,8 +251,7 @@ def test_value_and_identity_typed_fields_round_trip_in_canvas() -> None:
                 id="id1",
                 label="Energy",
                 description="조용하고 또렷하다",
-                do="짧고 단단하게 말한다",
-                dont="장황하게 늘어놓는다",
+                body="짧고 단단하게 말한다",
             ),
         ],
     )
@@ -263,7 +261,7 @@ def test_value_and_identity_typed_fields_round_trip_in_canvas() -> None:
     assert cv.definition.startswith("우리는 서로")
     assert cv.body == "동기를 먼저 묻는다"
     assert ident.description == "조용하고 또렷하다"
-    assert ident.dont == "장황하게 늘어놓는다"
+    assert ident.body == "짧고 단단하게 말한다"
 
 
 def test_node_details_path_absolute_rejected() -> None:

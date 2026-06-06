@@ -549,7 +549,9 @@ D-2026-05-13-O principle #2 + D-2026-05-16-A. Fields are:
 - `core_value` — `definition` + `body` (**v0.43.1, D-2026-06-06-B**: `do` /
   `dont` removed — `do` was a restatement of `definition`; old values fold
   into `body` on read, server + viewer.)
-- `identity` — `description`, `do`, `dont`, `body` *(output model pending)*
+- `identity` — `description` + `body` (**v0.43.2, D-2026-06-06-B**: `do` /
+  `dont` removed; old values fold into `body` on read.) *(output model —
+  provenance / evolution / status — still a future change.)*
 
 Every value is a Markdown-formatted string; newlines, bullets, bold,
 links survive verbatim. The viewer's per-kind Inspector renders each

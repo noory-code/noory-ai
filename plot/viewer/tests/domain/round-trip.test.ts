@@ -219,21 +219,35 @@ describe("Identity.fromJson + toJson round-trip", () => {
     const id = Identity.fromJson({ id: "id1", kind: "identity" });
     expect(id.kind).toBe("identity");
     expect(id.description).toBe("");
-    expect(id.do).toBe("");
-    expect(id.dont).toBe("");
+    expect(id.body).toBe("");
   });
 
-  it("preserves typed fields and round-trips", () => {
+  it("preserves description + body and round-trips", () => {
     const a = Identity.fromJson({
       id: "id1",
       kind: "identity",
       label: "Voice",
       description: "따뜻하고 진솔하게",
-      do: "이름을 부른다",
-      dont: "공지글 같은 말투로",
+      body: "이름을 부른다",
     });
     const b = Identity.fromJson(a.toJson());
     expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("migrates legacy do/dont → body (v0.43.2)", () => {
+    const id = Identity.fromJson({
+      id: "id1",
+      kind: "identity",
+      description: "따뜻하게",
+      do: "이름을 부른다",
+      dont: "공지글 같은 말투로",
+      body: "원래 본문",
+    });
+    expect(id.description).toBe("따뜻하게");
+    expect(id.body).toContain("원래 본문");
+    expect(id.body).toContain("이름을 부른다");
+    expect(id.body).toContain("공지글 같은 말투로");
+    expect("do" in id).toBe(false);
   });
 });
 

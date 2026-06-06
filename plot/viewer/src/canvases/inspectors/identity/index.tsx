@@ -10,7 +10,6 @@ import type { IdentityJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { BodyField } from "../shared/BodyField";
-import { DoDontFields } from "../shared/DoDontFields";
 import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
 
@@ -49,7 +48,6 @@ function IdentityFields({ node, onPatchNode }: IdentityFieldsProps) {
           placeholder="이 속성이 어떻게 드러나는가"
         />
       </label>
-      <DoDontFields node={node} onPatchNode={onPatchNode} />
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );

@@ -180,18 +180,18 @@ describe("CoreValueInspector (Phase 2.3)", () => {
 });
 
 describe("IdentityInspector (Phase 2.3)", () => {
-  it("renders with shared chrome + description + do/dont", () => {
+  it("renders with shared chrome + description + body (v0.43.2)", () => {
     const node = makeNode({
       id: "id1",
       kind: "identity",
       label: "Voice",
       description: "따뜻하고 진솔하게",
-      do: "이름을 부른다",
-      dont: "공지글 같은 말투로 쓴다",
+      body: "이름을 부른다",
     });
     render(<KindInspector {...makeProps(node, "foundation")} />);
     expect(screen.getByDisplayValue("Voice")).toBeInTheDocument();
     expect(screen.getByDisplayValue("따뜻하고 진솔하게")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("이름을 부른다")).toBeInTheDocument();
   });
 });
 

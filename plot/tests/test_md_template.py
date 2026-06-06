@@ -37,8 +37,6 @@ class TestRenderRoundTrip:
     def test_identity_round_trip(self) -> None:
         typed = {
             "description": "Warm casual honorifics.",
-            "do": "Greet first.",
-            "dont": "Use ㅋㅋ-style emoji.",
         }
         rendered = render_md_template("identity", "Voice", typed)
         parsed = parse_md_template(rendered, "identity")
@@ -47,19 +45,16 @@ class TestRenderRoundTrip:
 
 class TestLenientRead:
     def test_missing_sections_become_empty(self) -> None:
-        # uses identity (still has description/do/dont) for multi-section coverage
-        text = "# Voice\n\n## Description\n관용\n\n---\n"
+        # v0.43: foundation kinds are single typed-section (identity = description)
+        text = "# Voice\n\n---\n"  # no Description section
         parsed = parse_md_template(text, "identity")
-        assert parsed.typed_fields["description"] == "관용"
-        assert parsed.typed_fields["do"] == ""
-        assert parsed.typed_fields["dont"] == ""
-        assert any("missing" in w and "do" in w for w in parsed.warnings)
-        assert any("missing" in w and "dont" in w for w in parsed.warnings)
+        assert parsed.typed_fields["description"] == ""
+        assert any("missing" in w and "description" in w for w in parsed.warnings)
 
     def test_unknown_section_is_warning(self) -> None:
         text = "# T\n\n## Wrong heading\nfoo\n"
         parsed = parse_md_template(text, "identity")
-        assert parsed.typed_fields == {"description": "", "do": "", "dont": ""}
+        assert parsed.typed_fields == {"description": ""}
         assert any("Wrong heading" in w for w in parsed.warnings)
 
     def test_missing_h1_is_warning(self) -> None:
@@ -70,9 +65,9 @@ class TestLenientRead:
         assert parsed.typed_fields["definition"] == "관용"
 
     def test_section_headings_case_insensitive(self) -> None:
-        text = "# T\n\n## DESCRIPTION\nfoo\n\n## do\nbar\n\n## DON'T\nbaz\n"
+        text = "# T\n\n## DESCRIPTION\nfoo\n"
         parsed = parse_md_template(text, "identity")
-        assert parsed.typed_fields == {"description": "foo", "do": "bar", "dont": "baz"}
+        assert parsed.typed_fields == {"description": "foo"}
 
     def test_no_hr_treats_whole_file_as_typed(self) -> None:
         text = "# T\n\n## Definition\n관용\n"
@@ -87,23 +82,16 @@ class TestLenientRead:
 
 
 class TestStrictRender:
-    def test_canonical_section_order_per_kind(self) -> None:
-        # Render passes typed in any order; output uses the kind's canonical order.
-        rendered = render_md_template(
-            "identity",
-            "X",
-            {"dont": "z", "do": "y", "description": "x"},
-        )
-        # The literal section order in output mirrors SECTION_LABELS:
-        # description, do, don't.
-        assert rendered.index("## Description") < rendered.index("## Do")
-        assert rendered.index("## Do") < rendered.index("## Don't")
+    def test_typed_section_renders_before_free_prose(self) -> None:
+        # v0.43: foundation kinds are single typed-section. The typed section
+        # renders above the --- free-prose rule.
+        rendered = render_md_template("identity", "X", {"description": "x"}, free_prose="prose")
+        assert "## Description" in rendered
+        assert rendered.index("## Description") < rendered.index("---")
 
     def test_empty_typed_fields_render_empty_sections(self) -> None:
         rendered = render_md_template("identity", "X", {})
         assert "## Description" in rendered
-        assert "## Do" in rendered
-        assert "## Don't" in rendered
 
     def test_free_prose_preserved_below_hr(self) -> None:
         rendered = render_md_template(
@@ -137,7 +125,7 @@ class TestProjectKindHasNoTypedSections:
     [
         ("mission", {"statement": "a"}),
         ("core_value", {"definition": "a"}),
-        ("identity", {"description": "a", "do": "b", "dont": "c"}),
+        ("identity", {"description": "a"}),
     ],
 )
 def test_round_trip_all_foundation_kinds(kind: str, fields: dict[str, str]) -> None:

@@ -63,9 +63,8 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
         "definition": "Definition",
     },
     "identity": {
+        # v0.43.2 (D-2026-06-06-B): do/dont removed
         "description": "Description",
-        "do": "Do",
-        "dont": "Don't",
     },
 }
 

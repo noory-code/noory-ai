@@ -1,8 +1,9 @@
 /**
- * v0.17 Phase 1 (D-2026-05-16-A) — ``identity`` Foundation entity.
- * JSON is the sole SSOT: every typed-text field value (``description``
- * / ``do`` / ``dont`` / ``body``) is an MD-formatted string carried
- * inline. Per-node MD files are publish-output only (Phase 3+).
+ * v0.43.2 (D-2026-06-06-B) — ``identity`` Foundation entity =
+ * ``description`` + ``body``. The ``do`` / ``dont`` fields were removed
+ * (shared do/dont cut across the foundation triad). Legacy values fold
+ * into ``body`` on read (data-loss guard). The output-value model
+ * (provenance / evolution / status) is a separate future change.
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -12,9 +13,23 @@ import { registerKindParser } from "./parseEntity";
 export interface IdentityJson extends BaseFieldsJson {
   kind: "identity";
   description: string;
-  do: string;
-  dont: string;
   body: string;
+}
+
+const FOLD_LABELS: Record<string, string> = { do: "Do", dont: "Don't" };
+
+/** Fold any non-empty pre-v0.43 ``do`` / ``dont`` into ``body`` as
+ *  ``## {label}`` paragraphs, so migration loses no content. */
+function foldLegacyDoDont(obj: Record<string, unknown>, body: string): string {
+  const blocks: string[] = [];
+  for (const [key, label] of Object.entries(FOLD_LABELS)) {
+    const val = obj[key];
+    if (typeof val === "string" && val.trim()) blocks.push(`## ${label}\n${val.trim()}`);
+  }
+  if (blocks.length === 0) return body;
+  const folded = blocks.join("\n\n");
+  const trimmed = body.replace(/\s+$/, "");
+  return trimmed ? `${trimmed}\n\n${folded}` : folded;
 }
 
 export class Identity implements BaseFields {
@@ -36,21 +51,11 @@ export class Identity implements BaseFields {
   readonly kind: "identity" = "identity";
 
   readonly description: string;
-  readonly do: string;
-  readonly dont: string;
   readonly body: string;
 
-  private constructor(
-    base: BaseFields,
-    description: string,
-    doField: string,
-    dont: string,
-    body: string,
-  ) {
+  private constructor(base: BaseFields, description: string, body: string) {
     Object.assign(this, base);
     this.description = description;
-    this.do = doField;
-    this.dont = dont;
     this.body = body;
   }
 
@@ -63,12 +68,11 @@ export class Identity implements BaseFields {
         raw,
       );
     }
+    const body = readOptionalString(obj.body, "body", raw);
     return new Identity(
       base,
       readOptionalString(obj.description, "description", raw),
-      readOptionalString(obj.do, "do", raw),
-      readOptionalString(obj.dont, "dont", raw),
-      readOptionalString(obj.body, "body", raw),
+      foldLegacyDoDont(obj, body),
     );
   }
 
@@ -90,8 +94,6 @@ export class Identity implements BaseFields {
       version: this.version,
       kind: "identity",
       description: this.description,
-      do: this.do,
-      dont: this.dont,
       body: this.body,
     };
   }

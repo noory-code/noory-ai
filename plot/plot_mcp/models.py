@@ -298,16 +298,35 @@ class CoreValueNode(BaseNodeFields):
 
 
 class IdentityNode(BaseNodeFields):
-    """v0.17 Phase 1: identity kind. JSON = SSOT. Every typed-text field
-    value (``description`` / ``do`` / ``dont`` / ``body``) is an
-    MD-formatted string. Per-node MD files are publish-output only
-    (Phase 3+)."""
+    """v0.43.2 (D-2026-06-06-B): identity = ``description`` + ``body``. The
+    ``do`` / ``dont`` fields were removed (shared do/dont cut across the
+    foundation triad). Legacy values fold into ``body`` on read (data-loss
+    guard). The output-value model (provenance / evolution / status) is a
+    separate future change — see docs/node-format/foundation/identity.md."""
 
     kind: Literal["identity"] = "identity"
     description: str = ""
-    do: str = ""
-    dont: str = ""
     body: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _fold_legacy_do_dont(cls, data: object) -> object:
+        legacy = {"do": "Do", "dont": "Don't"}
+        if not isinstance(data, dict) or not any(k in data for k in legacy):
+            return data
+        out = dict(data)
+        blocks = [
+            f"## {label}\n{str(out[key]).strip()}"
+            for key, label in legacy.items()
+            if isinstance(out.get(key), str) and str(out[key]).strip()
+        ]
+        for key in legacy:
+            out.pop(key, None)
+        if blocks:
+            body = str(out.get("body") or "").rstrip()
+            folded = "\n\n".join(blocks)
+            out["body"] = f"{body}\n\n{folded}" if body else folded
+        return out
 
 
 # Discriminated union — the runtime + IDE narrows on ``kind`` automatically.
@@ -329,7 +348,7 @@ FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
     "project": [],
     "mission": ["statement"],  # v0.43.0 (D-2026-06-06-C): 3 fields → statement
     "core_value": ["definition"],  # v0.43.1 (D-2026-06-06-B): do/dont removed
-    "identity": ["description", "do", "dont"],
+    "identity": ["description"],  # v0.43.2 (D-2026-06-06-B): do/dont removed
 }
 
 # Per-kind *all-MD-syntax-fields-per-kind* map. JSON SSOT consumers
@@ -341,7 +360,7 @@ FOUNDATION_MD_FIELDS: dict[str, list[str]] = {
     "project": [],
     "mission": ["statement", "body"],  # v0.43.0 (D-2026-06-06-C)
     "core_value": ["definition", "body"],  # v0.43.1 (D-2026-06-06-B)
-    "identity": ["description", "do", "dont", "body"],
+    "identity": ["description", "body"],  # v0.43.2 (D-2026-06-06-B)
 }
 
 # v0.13 Phase 0 — the project anchor lives in ``ProjectDoc.anchors``,

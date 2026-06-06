@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.43.2] — 2026-06-06
+
+### Changed — identity kind = description + body (do/dont removed, D-2026-06-06-B)
+
+- Removed identity's `do` / `dont` typed fields (the shared do/dont cut now
+  covers the whole foundation triad); identity = `description` + `body`.
+- Migration (no data lost), server + viewer: non-empty `do` / `dont` fold
+  into `body` as `## Do` / `## Don't`. Verified on the BANAS blueprint
+  (14 identity nodes, do/dont gone, descriptions intact).
+- With all 3 foundation kinds now single typed-section, the MD-template
+  multi-section tests were updated to the single-section reality.
+- The identity **output-value model** (provenance / evolution / status) and
+  facet grouping remain a separate future change — see
+  docs/node-format/foundation/identity.md.
+- Tests: `tests/test_identity_format_migration.py` (new) + updated
+  canvas_doc / md_template / round-trip / smoke / parity. 493 server + 741
+  viewer green; tsc clean.
+
 ## [0.43.1] — 2026-06-06
 
 ### Changed — core_value kind = definition + body (do/dont removed, D-2026-06-06-B)
