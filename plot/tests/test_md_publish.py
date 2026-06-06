@@ -149,9 +149,7 @@ def test_render_mission_full_round_trip() -> None:
         id="msn_xyz789",
         label="Tolerance",
         version="v2.0",
-        what_we_do="We listen first.",
-        why="To preserve diverse opinions.",
-        direction="Listen → respond → reflect.",
+        statement="We listen first, to preserve diverse opinions.",
         body="Free-form rationale paragraph.",
     )
     md = render_node_md(node, canvas="foundation")
@@ -170,13 +168,11 @@ def test_render_mission_full_round_trip() -> None:
     assert fm["canvas"] == "foundation"
     assert "published_at" in fm
 
-    # H2 sections — 4 typed fields (what_we_do / why / direction / body)
+    # H2 sections — statement + body (v0.43.0, D-2026-06-06-C)
     body = parts[2]
-    assert "## What we do" in body
-    assert "## Why" in body
-    assert "## Direction" in body
+    assert "## Statement" in body
     assert "## Body" in body
-    assert "We listen first." in body
+    assert "We listen first" in body
     assert "Free-form rationale paragraph." in body
 
 
@@ -215,13 +211,12 @@ def test_render_empty_typed_fields_keep_headings() -> None:
     per-kind MD shape stable across publish versions."""
     node = MissionNode(id="m1", label="Mission")  # all typed fields empty
     md = render_node_md(node, canvas="foundation")
-    assert "## What we do" in md
-    assert "## Why" in md
-    assert "## Direction" in md
+    assert "## Statement" in md
     assert "## Body" in md
     # All sections present even though empty — diff-friendly invariant.
+    # v0.43.0 (D-2026-06-06-C): mission = statement + body = 2 sections.
     h2_count = md.count("\n## ")
-    assert h2_count == 4
+    assert h2_count == 2
 
 
 @pytest.mark.parametrize(

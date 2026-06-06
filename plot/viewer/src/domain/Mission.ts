@@ -1,9 +1,9 @@
 /**
- * v0.17 Phase 1 (D-2026-05-16-A) — ``mission`` Foundation entity. JSON
- * is the sole SSOT: every typed-text field value (``what_we_do`` /
- * ``why`` / ``direction`` / ``body``) is an MD-formatted string,
- * carried inline in the wire shape. Per-node MD files are
- * publish-output only (Phase 3+).
+ * v0.43.0 (D-2026-06-06-C) — ``mission`` Foundation entity = ``label``
+ * (the declaration) + ``body`` (free Markdown). The former typed fields
+ * ``what_we_do`` / ``why`` / ``direction`` were removed: a mission is one
+ * indivisible declaration, not a bag of sliced angles. Legacy values fold
+ * into ``body`` on read (data-loss guard) — see ``foldLegacyTypedFields``.
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -12,10 +12,36 @@ import { registerKindParser } from "./parseEntity";
 
 export interface MissionJson extends BaseFieldsJson {
   kind: "mission";
-  what_we_do: string;
-  why: string;
-  direction: string;
+  statement: string;
   body: string;
+}
+
+const FOLD_LABELS: Record<string, string> = { why: "Why", direction: "Direction" };
+
+/** Migrate pre-v0.43 mission data: ``what_we_do`` → ``statement``;
+ *  fold non-empty ``why`` / ``direction`` into ``body`` as ``## {label}``
+ *  paragraphs. Loses no content. Returns the migrated {statement, body}. */
+function migrateLegacy(
+  obj: Record<string, unknown>,
+  statement: string,
+  body: string,
+): { statement: string; body: string } {
+  let nextStatement = statement;
+  if (!nextStatement.trim() && typeof obj.what_we_do === "string" && obj.what_we_do.trim()) {
+    nextStatement = obj.what_we_do.trim();
+  }
+  const blocks: string[] = [];
+  for (const [key, label] of Object.entries(FOLD_LABELS)) {
+    const val = obj[key];
+    if (typeof val === "string" && val.trim()) blocks.push(`## ${label}\n${val.trim()}`);
+  }
+  let nextBody = body;
+  if (blocks.length > 0) {
+    const folded = blocks.join("\n\n");
+    const trimmed = body.replace(/\s+$/, "");
+    nextBody = trimmed ? `${trimmed}\n\n${folded}` : folded;
+  }
+  return { statement: nextStatement, body: nextBody };
 }
 
 export class Mission implements BaseFields {
@@ -36,22 +62,12 @@ export class Mission implements BaseFields {
 
   readonly kind: "mission" = "mission";
 
-  readonly what_we_do: string;
-  readonly why: string;
-  readonly direction: string;
+  readonly statement: string;
   readonly body: string;
 
-  private constructor(
-    base: BaseFields,
-    what_we_do: string,
-    why: string,
-    direction: string,
-    body: string,
-  ) {
+  private constructor(base: BaseFields, statement: string, body: string) {
     Object.assign(this, base);
-    this.what_we_do = what_we_do;
-    this.why = why;
-    this.direction = direction;
+    this.statement = statement;
     this.body = body;
   }
 
@@ -64,13 +80,12 @@ export class Mission implements BaseFields {
         raw,
       );
     }
-    return new Mission(
-      base,
-      readOptionalString(obj.what_we_do, "what_we_do", raw),
-      readOptionalString(obj.why, "why", raw),
-      readOptionalString(obj.direction, "direction", raw),
+    const migrated = migrateLegacy(
+      obj,
+      readOptionalString(obj.statement, "statement", raw),
       readOptionalString(obj.body, "body", raw),
     );
+    return new Mission(base, migrated.statement, migrated.body);
   }
 
   toJson(): MissionJson {
@@ -90,9 +105,7 @@ export class Mission implements BaseFields {
       owner: this.owner,
       version: this.version,
       kind: "mission",
-      what_we_do: this.what_we_do,
-      why: this.why,
-      direction: this.direction,
+      statement: this.statement,
       body: this.body,
     };
   }

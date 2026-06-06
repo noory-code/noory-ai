@@ -29,9 +29,7 @@ class TestRenderRoundTrip:
 
     def test_mission_round_trip(self) -> None:
         typed = {
-            "what_we_do": "We run a community.",
-            "why": "People want to belong.",
-            "direction": "Toward an everyday-hero economy.",
+            "statement": "We run a community where everyone becomes a hero.",
         }
         rendered = render_md_template("mission", "Our Mission", typed)
         parsed = parse_md_template(rendered, "mission")
@@ -138,7 +136,7 @@ class TestProjectKindHasNoTypedSections:
 @pytest.mark.parametrize(
     "kind, fields",
     [
-        ("mission", {"what_we_do": "a", "why": "b", "direction": "c"}),
+        ("mission", {"statement": "a"}),
         ("core_value", {"definition": "a", "do": "b", "dont": "c"}),
         ("identity", {"description": "a", "do": "b", "dont": "c"}),
     ],

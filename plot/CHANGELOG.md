@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.43.0] — 2026-06-06
+
+### Changed — mission kind format = label + statement + body (D-2026-06-06-C)
+
+- Implemented the mission audit conclusion. The typed fields `what_we_do` /
+  `why` / `direction` are removed; mission now carries a single
+  **`statement`** field (the mission, one sentence; display label "미션") +
+  the free `body`. A mission is one declaration, not 3 sliced angles.
+- **Migration (no data lost):** both server (`MissionNode`
+  `model_validator(mode="before")`) and viewer (`Mission.fromJson`) migrate
+  legacy nodes — `what_we_do` → `statement`, `why` / `direction` fold into
+  `body` as `## Why` / `## Direction` paragraphs. `label` is left untouched.
+  Verified end-to-end on the BANAS blueprint.
+- Publish + MD parity follow data-drivenly: `FOUNDATION_TYPED_TEXT_FIELDS`
+  / `FOUNDATION_MD_FIELDS` / `SECTION_LABELS` updated; the mission inspector
+  shows the statement field + body; i18n `inspector.field.statement` (en+ko),
+  old whatWeDo/why/direction keys removed.
+- Tests: `tests/test_mission_format_migration.py` (new) + updated
+  test_canvas_doc / test_folder_io / test_md_publish / test_md_template /
+  viewer round-trip + inspector smoke + schema parity. 485 server + 739
+  viewer green.
+
 ## [0.42.4] — 2026-06-06
 
 ### Changed — stencil ⓘ popover copy tightened to the user's wording (D-2026-06-06-A)

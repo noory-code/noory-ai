@@ -10334,3 +10334,30 @@ but not yet fully eliminated.
   (drop-hints etc.) unaffected.
 - **Spec impact:** SPEC.md §"Stencil concept info (ⓘ)". Test:
   `viewer/tests/stencil-concept-info.test.tsx` (no note text on foundation).
+
+### D-2026-06-06-C — mission kind format = label + body (typed fields removed + migration)
+
+- **What:** Implement the mission audit conclusion in code. Remove the typed
+  fields `what_we_do` / `why` / `direction` from the `mission` kind; mission
+  = `label` (the statement) + `body` (free markdown). Publish output follows
+  (data-driven via `SECTION_LABELS` / `FOUNDATION_TYPED_TEXT_FIELDS`).
+- **Migration (data-loss guard):** existing mission nodes carry values in the
+  3 removed fields. Both server (`MissionNode` `model_validator(mode="before")`)
+  and viewer (`Mission.fromJson`) **fold any non-empty what_we_do/why/direction
+  into `body`** (appended as `## {label}` paragraphs) before dropping them, so
+  no content is lost. `label` is **not** auto-rewritten (parsing risk) — the
+  one-line-statement promotion is a manual content step; new nodes get
+  label=statement via the inspector.
+- **Why:** mission is one indivisible declaration; the 3 typed fields were
+  one statement sliced by angle (over-decomposition). See
+  `docs/node-format/foundation/mission.md`.
+- **Approval:** Accepted by user, 2026-06-06 ("네 일단 들어가봅시다").
+- **Scope:** `domain/Mission.ts`, `models.py` (MissionNode +
+  FOUNDATION_TYPED_TEXT_FIELDS/FOUNDATION_MD_FIELDS), `schema_export.py`
+  (SECTION_LABELS["mission"]), `inspectors/mission`, i18n (remove
+  inspector.field.whatWeDo/why/direction + hints). nodes/mission renderer
+  unaffected. Tests: server migration + viewer roundtrip/migration +
+  test_schema_parity.
+- **Spec impact:** SPEC §"Foundation typed-text storage". Follow-ups:
+  core_value (do/dont cut), identity (output model) — same pattern, separate
+  ships.

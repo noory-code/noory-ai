@@ -175,9 +175,7 @@
     "confirmPublish": "Publish {{kind}} \"{{label}}\"?\n\nThis bumps version {{fromVersion}} → {{toVersion}}, writes a new MD file, and records a git commit. Each publish creates a new version — cancel if you didn't mean to bump.",
     "field": {
       "theme": "Theme",
-      "whatWeDo": "What we do",
-      "why": "Why",
-      "direction": "Direction",
+      "statement": "Mission",
       "targetSide": "Target side",
       "what": "What",
       "valueCreated": "Value created",
@@ -210,9 +208,7 @@
     },
     "fieldHint": {
       "theme": "common thread tying these services together",
-      "whatWeDo": "current-tense daily activity",
-      "why": "reason for being",
-      "direction": "positioning (space, not time)",
+      "statement": "in one sentence, what this project exists for",
       "targetSide": "operator side / user side / both",
       "what": "concise statement of what this service is",
       "valueCreated": "what value this service produces",

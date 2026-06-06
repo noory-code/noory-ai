@@ -198,20 +198,16 @@ describe("IdentityInspector (Phase 2.3)", () => {
 });
 
 describe("MissionInspector (Phase 2.4)", () => {
-  it("renders with shared chrome + what_we_do / why / direction", () => {
+  it("renders with shared chrome + statement (v0.43.0)", () => {
     const node = makeNode({
       id: "m1",
       kind: "mission",
       label: "M",
-      what_we_do: "우리는 매일 빛난다",
-      why: "사람들이 서로 빛나기를",
-      direction: "누구나 히어로",
+      statement: "누구나 히어로가 되는 일상을 만든다",
     });
     render(<KindInspector {...makeProps(node, "foundation")} />);
     expect(screen.getByDisplayValue("M")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("우리는 매일 빛난다")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("사람들이 서로 빛나기를")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("누구나 히어로")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("누구나 히어로가 되는 일상을 만든다")).toBeInTheDocument();
   });
 });
 

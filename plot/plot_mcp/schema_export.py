@@ -54,10 +54,9 @@ from plot_mcp.models import (
 # Canonical heading + body format used in the MD templates. Mirrored on the
 # parser side (Phase 3, ``md_template.py``).
 SECTION_LABELS: dict[str, dict[str, str]] = {
+    # mission: single statement section (v0.43.0, D-2026-06-06-C)
     "mission": {
-        "what_we_do": "What we do",
-        "why": "Why",
-        "direction": "Direction",
+        "statement": "Mission",
     },
     "core_value": {
         "definition": "Definition",

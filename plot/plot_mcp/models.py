@@ -228,17 +228,42 @@ class ProjectNode(BaseNodeFields):
 
 
 class MissionNode(BaseNodeFields):
-    """v0.17 Phase 1: mission kind. JSON = SSOT. Every typed-text field
-    value (``what_we_do`` / ``why`` / ``direction`` / ``body``) is an
-    MD-formatted string. Per-node MD files are publish-output only
-    (Phase 3+). Pre-v0.17 projects are absorbed on first read via
-    ``_absorb_md_typed_text_into_json``."""
+    """v0.43.0 (D-2026-06-06-C): mission = ``label`` (the declaration) +
+    ``body`` (free Markdown). The former typed fields ``what_we_do`` /
+    ``why`` / ``direction`` were removed — a mission is one indivisible
+    declaration, not a bag of sliced angles. Legacy values fold into
+    ``body`` on read (data-loss guard); see ``_fold_legacy_typed_fields``."""
 
     kind: Literal["mission"] = "mission"
-    what_we_do: str = ""
-    why: str = ""
-    direction: str = ""
+    statement: str = ""
     body: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy_typed_fields(cls, data: object) -> object:
+        """Pre-v0.43 mission nodes carry what_we_do/why/direction. Migrate:
+        what_we_do -> ``statement``; fold why/direction into ``body`` as
+        ``## {label}`` paragraphs. Drop the legacy keys (no content lost)."""
+        legacy = ("what_we_do", "why", "direction")
+        if not isinstance(data, dict) or not any(k in data for k in legacy):
+            return data
+        out = dict(data)
+        what = out.pop("what_we_do", None)
+        if isinstance(what, str) and what.strip() and not str(out.get("statement") or "").strip():
+            out["statement"] = what.strip()
+        fold_labels = {"why": "Why", "direction": "Direction"}
+        blocks = [
+            f"## {label}\n{str(out[key]).strip()}"
+            for key, label in fold_labels.items()
+            if isinstance(out.get(key), str) and str(out[key]).strip()
+        ]
+        for key in fold_labels:
+            out.pop(key, None)
+        if blocks:
+            body = str(out.get("body") or "").rstrip()
+            folded = "\n\n".join(blocks)
+            out["body"] = f"{body}\n\n{folded}" if body else folded
+        return out
 
 
 class CoreValueNode(BaseNodeFields):
@@ -284,7 +309,7 @@ FoundationNode = Annotated[
 # this map. Keep in sync with the subclass definitions above.
 FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
     "project": [],
-    "mission": ["what_we_do", "why", "direction"],
+    "mission": ["statement"],  # v0.43.0 (D-2026-06-06-C): 3 fields → statement
     "core_value": ["definition", "do", "dont"],
     "identity": ["description", "do", "dont"],
 }
@@ -296,7 +321,7 @@ FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
 # typed-text kinds, empty otherwise.
 FOUNDATION_MD_FIELDS: dict[str, list[str]] = {
     "project": [],
-    "mission": ["what_we_do", "why", "direction", "body"],
+    "mission": ["statement", "body"],  # v0.43.0 (D-2026-06-06-C)
     "core_value": ["definition", "do", "dont", "body"],
     "identity": ["description", "do", "dont", "body"],
 }

@@ -431,11 +431,9 @@ def _seed_foundation_with_md(
     plot_root: Path,
     project_id: str,
     *,
-    json_mission_what_we_do: str = "",
+    json_mission_statement: str = "",
     json_mission_body: str = "",
-    md_what_we_do: str | None = "We help **users** discover.\n\n- A\n- B",
-    md_why: str | None = "Because clarity matters.",
-    md_direction: str | None = "Toward shared intent.",
+    md_statement: str | None = "We help **users** discover.\n\n- A\n- B",
     md_free_prose: str | None = "Longer notes here.\n## subsection\nWith MD syntax.",
     mission_label: str = "Mission",
     json_details_path: str | None = None,
@@ -453,8 +451,8 @@ def _seed_foundation_with_md(
     create_project(plot_root, project_id, project_id.capitalize())
     canvas_path = _canvas_file(plot_root, project_id, "foundation")
     mission_dict = MissionNode(id="m", label=mission_label).model_dump()
-    if json_mission_what_we_do:
-        mission_dict["what_we_do"] = json_mission_what_we_do
+    if json_mission_statement:
+        mission_dict["statement"] = json_mission_statement
     if json_mission_body:
         mission_dict["body"] = json_mission_body
     if json_details_path is not None:
@@ -472,12 +470,8 @@ def _seed_foundation_with_md(
 
     md_path = _foundation_md_path(plot_root, project_id, "mission", "m", mission_label)
     md_chunks: list[str] = [f"# {mission_label}", ""]
-    if md_what_we_do is not None:
-        md_chunks += ["## What we do", md_what_we_do, ""]
-    if md_why is not None:
-        md_chunks += ["## Why", md_why, ""]
-    if md_direction is not None:
-        md_chunks += ["## Direction", md_direction, ""]
+    if md_statement is not None:
+        md_chunks += ["## Mission", md_statement, ""]
     if md_free_prose is not None:
         md_chunks += ["---", md_free_prose]
     md_path.parent.mkdir(parents=True, exist_ok=True)
@@ -496,9 +490,7 @@ def test_absorb_md_typed_text_into_json_basic(plot_root: Path) -> None:
     doc = read_canvas(plot_root, "alpha", "foundation")
     mission = next(n for n in doc.nodes if n.kind == "mission")
 
-    assert mission.what_we_do == "We help **users** discover.\n\n- A\n- B"
-    assert mission.why == "Because clarity matters."
-    assert mission.direction == "Toward shared intent."
+    assert mission.statement == "We help **users** discover.\n\n- A\n- B"
     # parse_md_template normalises free-prose to rstripped + trailing "\n".
     assert mission.body == "Longer notes here.\n## subsection\nWith MD syntax.\n"
     assert mission.details_path is None
@@ -516,16 +508,14 @@ def test_absorb_md_typed_text_into_json_both_populated_json_wins(plot_root: Path
     canvas_path, md_path = _seed_foundation_with_md(
         plot_root,
         "alpha",
-        json_mission_what_we_do="json-wins",
+        json_mission_statement="json-wins",
         json_mission_body="json-body-wins",
     )
 
     doc = read_canvas(plot_root, "alpha", "foundation")
     mission = next(n for n in doc.nodes if n.kind == "mission")
-    assert mission.what_we_do == "json-wins"
+    assert mission.statement == "json-wins"
     assert mission.body == "json-body-wins"
-    # Fields that JSON didn't populate fall back to MD.
-    assert mission.why == "Because clarity matters."
     assert not md_path.exists()
     legacy_md = _legacy_md_dir(plot_root, "alpha") / md_path.name
     assert legacy_md.exists(), "MD is quarantined regardless of conflict outcome"
@@ -547,7 +537,7 @@ def test_absorb_md_typed_text_into_json_no_md_file(plot_root: Path) -> None:
     ).replace("\\", "/")
 
     canvas_path = _canvas_file(plot_root, "alpha", "foundation")
-    mission_dict = MissionNode(id="m", label="Mission", what_we_do="kept").model_dump()
+    mission_dict = MissionNode(id="m", label="Mission", statement="kept").model_dump()
     mission_dict["details_path"] = canonical_rel
     raw = {
         "canvas_id": "foundation",
@@ -564,7 +554,7 @@ def test_absorb_md_typed_text_into_json_no_md_file(plot_root: Path) -> None:
 
     doc = read_canvas(plot_root, "alpha", "foundation")
     mission = next(n for n in doc.nodes if n.kind == "mission")
-    assert mission.what_we_do == "kept"
+    assert mission.statement == "kept"
     assert mission.details_path is None, "canonical-pointing details_path is cleared"
 
 
@@ -600,13 +590,13 @@ def test_absorb_md_typed_text_into_json_preserves_md_syntax(plot_root: Path) -> 
     _seed_foundation_with_md(
         plot_root,
         "alpha",
-        md_what_we_do=raw_md_value,
+        md_statement=raw_md_value,
         md_free_prose=body_md,
     )
 
     doc = read_canvas(plot_root, "alpha", "foundation")
     mission = next(n for n in doc.nodes if n.kind == "mission")
-    assert mission.what_we_do == raw_md_value
+    assert mission.statement == raw_md_value
     # parse_md_template normalises free-prose to rstripped + trailing "\n".
     assert mission.body == body_md + "\n"
 
@@ -616,14 +606,12 @@ def test_absorb_md_typed_text_into_json_post_hr_text_lands_in_body(plot_root: Pa
     _seed_foundation_with_md(
         plot_root,
         "alpha",
-        md_what_we_do="foo",
-        md_why=None,
-        md_direction=None,
+        md_statement="foo",
         md_free_prose="long notes\n## subsection",
     )
     doc = read_canvas(plot_root, "alpha", "foundation")
     mission = next(n for n in doc.nodes if n.kind == "mission")
-    assert mission.what_we_do == "foo"
+    assert mission.statement == "foo"
     assert mission.body == "long notes\n## subsection\n"
 
 

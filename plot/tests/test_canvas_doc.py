@@ -158,19 +158,18 @@ def test_core_canvas_nested_project_rejected() -> None:
     )
 
 
-def test_mission_node_carries_typed_fields() -> None:
-    """v0.10: mission nodes have ``what_we_do`` / ``why`` / ``direction``
-    typed fields stored directly on the node — Plot is the sole editor
-    so they go straight into canvas.json, not into details.md."""
+def test_mission_node_carries_statement_and_body() -> None:
+    """v0.43.0 (D-2026-06-06-C): mission = ``statement`` (the declaration,
+    display label "미션") + ``body``. The old what_we_do/why/direction
+    fields were removed (mission is one declaration)."""
     n = MissionNode(
         id="mission-1",
         label="Mission",
-        what_we_do="우리는 매일 서로의 팬이 되는 커뮤니티를 운영한다",
-        why="사람들이 서로 빛나게 하고 싶어서",
-        direction="누구나 히어로인 일상으로",
+        statement="누구나 히어로가 되는 일상을 만든다",
+        body="## 스토리\n…",
     )
-    assert n.what_we_do.startswith("우리는 매일")
-    assert "히어로" in n.direction
+    assert n.statement.startswith("누구나 히어로")
+    assert "스토리" in n.body
 
 
 def test_actor_does_not_carry_foreign_typed_fields() -> None:

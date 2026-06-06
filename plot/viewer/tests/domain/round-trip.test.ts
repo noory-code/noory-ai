@@ -474,21 +474,36 @@ describe("Mission.fromJson + toJson round-trip", () => {
   it("populates defaults", () => {
     const m = Mission.fromJson({ id: "m1", kind: "mission" });
     expect(m.kind).toBe("mission");
-    expect(m.what_we_do).toBe("");
-    expect(m.why).toBe("");
-    expect(m.direction).toBe("");
+    expect(m.statement).toBe("");
+    expect(m.body).toBe("");
   });
 
-  it("preserves typed fields and round-trips", () => {
+  it("preserves statement + body and round-trips", () => {
     const a = Mission.fromJson({
+      id: "m1",
+      kind: "mission",
+      statement: "누구나 히어로가 되는 일상을 만든다",
+      body: "## 스토리\n…",
+    });
+    const b = Mission.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("migrates legacy what_we_do → statement, folds why/direction → body", () => {
+    const m = Mission.fromJson({
       id: "m1",
       kind: "mission",
       what_we_do: "우리는 매일 …",
       why: "사람들이 …",
       direction: "누구나 … 인 일상으로",
+      body: "원래 본문",
     });
-    const b = Mission.fromJson(a.toJson());
-    expect({ ...b }).toEqual({ ...a });
+    expect(m.statement).toBe("우리는 매일 …");
+    expect(m.body).toContain("원래 본문");
+    expect(m.body).toContain("사람들이 …");
+    expect(m.body).toContain("누구나 … 인 일상으로");
+    // legacy fields are gone from the domain object
+    expect("what_we_do" in m).toBe(false);
   });
 
   it("rejects raw with the wrong kind", () => {

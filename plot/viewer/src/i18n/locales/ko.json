@@ -175,9 +175,7 @@
     "confirmPublish": "{{kind}} \"{{label}}\" 을(를) publish 하시겠습니까?\n\n버전이 {{fromVersion}} → {{toVersion}} 로 올라가고, 새 MD 파일이 생기며, git commit 이 기록됩니다. 매번 publish 마다 새 버전이 생깁니다 — 의도하지 않은 클릭이면 취소하세요.",
     "field": {
       "theme": "테마",
-      "whatWeDo": "하는 일",
-      "why": "이유",
-      "direction": "방향",
+      "statement": "미션",
       "targetSide": "대상 측",
       "what": "무엇",
       "valueCreated": "만드는 가치",
@@ -210,9 +208,7 @@
     },
     "fieldHint": {
       "theme": "이 카테고리에 묶인 서비스들의 공통 주제",
-      "whatWeDo": "현재형으로 표현한 매일의 활동",
-      "why": "존재 이유",
-      "direction": "포지셔닝 (공간이지 시간이 아님)",
+      "statement": "이 프로젝트가 무엇을 위해 존재하는지 한 문장으로",
       "targetSide": "제공자 / 사용자 / 둘 다",
       "what": "이 서비스가 무엇인지 한 문장",
       "valueCreated": "이 서비스가 만들어내는 가치",
