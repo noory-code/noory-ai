@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.42.0] — 2026-06-06
+
+### Added — Foundation stencil concept info (ⓘ popover) (D-2026-06-06-A)
+
+- Each Foundation stencil section header (Mission / Core values / Identity)
+  now shows an always-visible ⓘ icon next to the title. Clicking it opens a
+  small popover with that concept's definition, so a user who doesn't yet
+  know what mission / core value / identity mean can learn it in place:
+  - Mission — 존재의 뿌리, 왜 존재하는가
+  - Core values — 현재의 노력, 지금 어떻게 결정하는가
+  - Identity — 쌓여가는 지향, 어떤 존재가 되고 싶은가 (AI 도출)
+- ⓘ is always-visible (discoverable, not hover-only); popover opens on click
+  (works on touch). Concept SSOT = `docs/FOUNDATION_CONCEPT.md`.
+- New `viewer/src/canvases/stencil/SectionInfo.tsx`; `Section` gains an
+  optional `info` prop. i18n `stencil.info.*` (en + ko). Foundation-only.
+- Tests: `viewer/tests/stencil-concept-info.test.tsx` (3 cases).
+
 ## [0.41.0] — 2026-06-04
 
 ### Changed — mindmap arm follows the stored hub-side handle (D-2026-06-01-H)

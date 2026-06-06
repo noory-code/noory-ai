@@ -56,6 +56,30 @@ behaviour, not data model.)
 
 ---
 
+## Stencil concept info (ⓘ) (v0.42.0, D-2026-06-06-A)
+
+The Foundation stencil's three section headers (Mission / Core values /
+Identity) each carry an **always-visible ⓘ icon** next to the title.
+Clicking it opens a small **popover** with that concept's definition, so a
+user who does not yet know what mission / core value / identity mean can
+learn it in place. Concept SSOT = [`FOUNDATION_CONCEPT.md`](./FOUNDATION_CONCEPT.md);
+the popover is a short surface of it.
+
+| Section | Popover essence |
+|---|---|
+| Mission | 존재의 뿌리 — 왜 존재하는가 |
+| Core values | 현재의 노력 — 지금 어떻게 결정하는가 |
+| Identity | 쌓여가는 지향 — 어떤 존재가 되고 싶은가. AI 가 미션·코어밸류에서 도출 |
+
+- ⓘ is **always visible** (not hover-only) → the affordance is discoverable.
+- Popover opens on **click** (works on touch, unlike hover).
+- Text is i18n'd (`stencil.info.*`), English primary + Korean.
+- Implementation: `viewer/src/canvases/stencil/SectionInfo.tsx` (the ⓘ +
+  popover); `Section` gains an optional `info` prop. Foundation-only for
+  now (other canvases' sections pass no `info`).
+
+---
+
 ## Anchor-radial initial placement (D-2026-05-12-N)
 
 Per the canonical Plot spec:

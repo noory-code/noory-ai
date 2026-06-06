@@ -10295,3 +10295,26 @@ but not yet fully eliminated.
 - **Spec impact:** docs/AUTO_LAYOUT.md §3 (Arm assignment) + §5 (Edge
   attachment). Covered by `viewer/tests/mindmapLayout.test.ts` (hub-handle
   override + no-handle fallback cases).
+
+### D-2026-06-06-A — Foundation stencil: per-section concept info (ⓘ popover)
+
+- **What:** Each Foundation stencil section header (Mission / Core values /
+  Identity) gets an always-visible ⓘ icon next to the title; clicking opens a
+  small popover with that concept's definition (mission = 존재의 뿌리/왜
+  존재하는가; core_value = 현재의 노력/지금 어떻게 결정하는가; identity =
+  쌓여가는 지향/어떤 존재가 되고 싶은가, AI 도출). Concept SSOT =
+  FOUNDATION_CONCEPT.md.
+- **Why:** users who don't yet know what mission/core_value/identity mean
+  must be able to learn it where they place the nodes (VISION: "본질을
+  *모르는* 사람이 본질을 찾는다"). User asked "거기에 미션 코어밸류
+  아이덴티티가 뭔지 사용자들이 알 수 있어야 해요."
+- **Alternatives:** (A) always-visible one-line note under each item —
+  cleaner discoverability but more panel clutter; user chose (B) ⓘ popover.
+  Caveat raised (pure ⓘ has low discoverability) → mitigated: ⓘ is
+  always-visible (not hover-only) and opens on click.
+- **Approval:** Accepted by user, 2026-06-06 ("네 좋아요").
+- **Scope:** `viewer/src/canvases/stencil/SectionInfo.tsx` (new — ⓘ + click
+  popover), `SketchStencil.tsx` `Section` gains optional `info` prop,
+  i18n `stencil.info.{mission,coreValues,identity}` (en+ko). Foundation-only.
+- **Spec impact:** SPEC.md §"Stencil concept info (ⓘ)". Test:
+  `viewer/tests/stencil-concept-info.test.tsx`.

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { NodeKind, SketchNode } from "../types";
 import type { NodePreset } from "./sketch/types";
 import { getIcon } from "./SketchIcons";
+import { SectionInfo } from "./stencil/SectionInfo";
 
 export interface StencilPreset extends NodePreset {
   id: string;
@@ -430,16 +431,19 @@ export function SketchStencil({
           title={t("stencil.section.mission")}
           presets={[CORE_MISSION]}
           note={t("stencil.note.addAsManyAsYouNeed")}
+          info={t("stencil.info.mission")}
         />
         <Section
           title={t("stencil.section.coreValues")}
           presets={[CORE_VALUE]}
           note={t("stencil.note.addAsManyAsYouNeed")}
+          info={t("stencil.info.coreValues")}
         />
         <Section
           title={t("stencil.section.identity")}
           presets={[CORE_IDENTITY]}
           note={t("stencil.note.identityOnePerAspect")}
+          info={t("stencil.info.identity")}
         />
       </div>
     );
@@ -637,16 +641,19 @@ function Section({
   title,
   presets,
   note,
+  info,
 }: {
   title: string;
   presets: StencilPreset[];
   note?: string;
+  info?: string;
 }) {
   return (
     <div className="mb-3">
       <div className="mb-1 flex items-baseline justify-between">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           {title}
+          {info && <SectionInfo text={info} />}
         </div>
         {note && <div className="text-[9px] italic text-slate-400">{note}</div>}
       </div>

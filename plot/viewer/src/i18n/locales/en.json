@@ -311,6 +311,12 @@
       "dragMissionThisServiceAnswersTo": "drag a mission this service answers to",
       "dragValueThisServiceEmbodies": "drag a value this service embodies",
       "dragIdentityAspectThisServiceExpresses": "drag an identity aspect this service expresses"
+    },
+    "infoAria": "Concept info",
+    "info": {
+      "mission": "The root of existence — why it exists.",
+      "coreValues": "Present effort — how you decide right now.",
+      "identity": "Accumulating aspiration — who you want to become. Derived by AI from mission & core values, then kept updated."
     }
   }
 }
