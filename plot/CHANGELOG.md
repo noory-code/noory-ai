@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.42.1] — 2026-06-06
+
+### Fixed — stencil ⓘ popover was clipped by the sidebar scroll container (D-2026-06-06-A)
+
+- The concept popover (`w-56`) overflowed the narrow stencil sidebar and was
+  cut off by its `overflow-y-auto` container (verified: popover right edge
+  278px vs clipper 223px). Now the popover is **portaled to `document.body`**
+  and positioned with fixed coords from the ⓘ button rect (+ right-edge
+  clamp), so no parent overflow can clip it.
+- Test: `viewer/tests/stencil-concept-info.test.tsx` — asserts the popover is
+  portaled out of the stencil container.
+
 ## [0.42.0] — 2026-06-06
 
 ### Added — Foundation stencil concept info (ⓘ popover) (D-2026-06-06-A)

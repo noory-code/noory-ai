@@ -26,6 +26,15 @@ describe("Foundation stencil concept info (D-2026-06-06-A)", () => {
     expect(screen.getByText(/why it exists/i)).toBeInTheDocument();
   });
 
+  it("portals the popover to body so the stencil's overflow container can't clip it", () => {
+    const { container } = render(<SketchStencil canvas="foundation" />);
+    fireEvent.click(screen.getAllByRole("button", { name: /concept info/i })[0]);
+    const dialog = screen.getByRole("dialog");
+    // portaled out of the rendered stencil tree (which sits in an
+    // overflow-y-auto scroll container) → not a descendant of it.
+    expect(container.contains(dialog)).toBe(false);
+  });
+
   it("shows no ⓘ on non-foundation canvases (foundation-only)", () => {
     render(<SketchStencil canvas="actors" />);
     expect(screen.queryAllByRole("button", { name: /concept info/i })).toHaveLength(0);
