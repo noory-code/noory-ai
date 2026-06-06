@@ -4,6 +4,15 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.42.4] — 2026-06-06
+
+### Changed — stencil ⓘ popover copy tightened to the user's wording (D-2026-06-06-A)
+
+- Mission — "이 프로젝트가 무엇을 위해 존재하는지 한 문장으로 표현하세요."
+- Core values — "의사결정의 기준 가치예요."
+- Identity — "정체성을 나타내는 방식이에요."
+- i18n only (`stencil.info.*`, en + ko); SPEC table + test assertion updated.
+
 ## [0.42.3] — 2026-06-06
 
 ### Changed — stencil ⓘ popover copy is friendly + plain (D-2026-06-06-A)

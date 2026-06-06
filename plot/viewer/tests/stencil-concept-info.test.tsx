@@ -20,10 +20,10 @@ describe("Foundation stencil concept info (D-2026-06-06-A)", () => {
   it("opens a popover with the concept definition on click", () => {
     render(<SketchStencil canvas="foundation" />);
     // popover content not visible before click
-    expect(screen.queryByText(/why this project exists/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/what this project exists for/i)).not.toBeInTheDocument();
     // first ⓘ = mission section
     fireEvent.click(screen.getAllByRole("button", { name: /concept info/i })[0]);
-    expect(screen.getByText(/why this project exists/i)).toBeInTheDocument();
+    expect(screen.getByText(/what this project exists for/i)).toBeInTheDocument();
   });
 
   it("portals the popover to body so the stencil's overflow container can't clip it", () => {
