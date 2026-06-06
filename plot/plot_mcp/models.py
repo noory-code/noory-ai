@@ -267,16 +267,34 @@ class MissionNode(BaseNodeFields):
 
 
 class CoreValueNode(BaseNodeFields):
-    """v0.17 Phase 1: core_value kind. JSON = SSOT. Every typed-text field
-    value (``definition`` / ``do`` / ``dont`` / ``body``) is an
-    MD-formatted string. Per-node MD files are publish-output only
-    (Phase 3+)."""
+    """v0.43.1 (D-2026-06-06-B): core_value = ``definition`` (the value as a
+    decision-priority principle) + ``body``. The ``do`` / ``dont`` fields
+    were removed — ``do`` was a restatement of ``definition`` and ``dont``
+    went unused. Legacy values fold into ``body`` on read (data-loss guard)."""
 
     kind: Literal["core_value"] = "core_value"
     definition: str = ""
-    do: str = ""
-    dont: str = ""
     body: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _fold_legacy_do_dont(cls, data: object) -> object:
+        legacy = {"do": "Do", "dont": "Don't"}
+        if not isinstance(data, dict) or not any(k in data for k in legacy):
+            return data
+        out = dict(data)
+        blocks = [
+            f"## {label}\n{str(out[key]).strip()}"
+            for key, label in legacy.items()
+            if isinstance(out.get(key), str) and str(out[key]).strip()
+        ]
+        for key in legacy:
+            out.pop(key, None)
+        if blocks:
+            body = str(out.get("body") or "").rstrip()
+            folded = "\n\n".join(blocks)
+            out["body"] = f"{body}\n\n{folded}" if body else folded
+        return out
 
 
 class IdentityNode(BaseNodeFields):
@@ -310,7 +328,7 @@ FoundationNode = Annotated[
 FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
     "project": [],
     "mission": ["statement"],  # v0.43.0 (D-2026-06-06-C): 3 fields → statement
-    "core_value": ["definition", "do", "dont"],
+    "core_value": ["definition"],  # v0.43.1 (D-2026-06-06-B): do/dont removed
     "identity": ["description", "do", "dont"],
 }
 
@@ -322,7 +340,7 @@ FOUNDATION_TYPED_TEXT_FIELDS: dict[str, list[str]] = {
 FOUNDATION_MD_FIELDS: dict[str, list[str]] = {
     "project": [],
     "mission": ["statement", "body"],  # v0.43.0 (D-2026-06-06-C)
-    "core_value": ["definition", "do", "dont", "body"],
+    "core_value": ["definition", "body"],  # v0.43.1 (D-2026-06-06-B)
     "identity": ["description", "do", "dont", "body"],
 }
 

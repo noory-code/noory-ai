@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.43.1] — 2026-06-06
+
+### Changed — core_value kind = definition + body (do/dont removed, D-2026-06-06-B)
+
+- Removed core_value's `do` / `dont` typed fields; core_value = `definition`
+  (the value as a decision-priority principle) + `body`. `do` was a
+  restatement of `definition`; `dont` went unused (0/5 in the BANAS sim).
+- Migration (no data lost), server + viewer: non-empty `do` / `dont` fold
+  into `body` as `## Do` / `## Don't` paragraphs; keys dropped. Verified on
+  the BANAS blueprint (관용: definition kept, do folded into body).
+- Maps + SECTION_LABELS + inspector (DoDontFields dropped) updated; the
+  shared `do`/`dont` i18n keys stay (identity/service still use them).
+- Tests: `tests/test_core_value_format_migration.py` (new) + updated
+  canvas_doc / md_template (multi-section coverage moved to identity) /
+  round-trip / smoke / parity. 489 server + 740 viewer green; tsc clean.
+
 ## [0.43.0] — 2026-06-06
 
 ### Changed — mission kind format = label + statement + body (D-2026-06-06-C)

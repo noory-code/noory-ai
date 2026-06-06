@@ -12,8 +12,6 @@ class TestRenderRoundTrip:
     def test_core_value_round_trip(self) -> None:
         original_typed = {
             "definition": "관용. 다양한 의견 존중.",
-            "do": "- 다른 의견을 끝까지 듣는다.",
-            "dont": "- 한 사람의 발언으로 결론 내린다.",
         }
         rendered = render_md_template(
             "core_value",
@@ -49,9 +47,10 @@ class TestRenderRoundTrip:
 
 class TestLenientRead:
     def test_missing_sections_become_empty(self) -> None:
-        text = "# Tolerance\n\n## Definition\n관용\n\n---\n"
-        parsed = parse_md_template(text, "core_value")
-        assert parsed.typed_fields["definition"] == "관용"
+        # uses identity (still has description/do/dont) for multi-section coverage
+        text = "# Voice\n\n## Description\n관용\n\n---\n"
+        parsed = parse_md_template(text, "identity")
+        assert parsed.typed_fields["description"] == "관용"
         assert parsed.typed_fields["do"] == ""
         assert parsed.typed_fields["dont"] == ""
         assert any("missing" in w and "do" in w for w in parsed.warnings)
@@ -59,8 +58,8 @@ class TestLenientRead:
 
     def test_unknown_section_is_warning(self) -> None:
         text = "# T\n\n## Wrong heading\nfoo\n"
-        parsed = parse_md_template(text, "core_value")
-        assert parsed.typed_fields == {"definition": "", "do": "", "dont": ""}
+        parsed = parse_md_template(text, "identity")
+        assert parsed.typed_fields == {"description": "", "do": "", "dont": ""}
         assert any("Wrong heading" in w for w in parsed.warnings)
 
     def test_missing_h1_is_warning(self) -> None:
@@ -71,9 +70,9 @@ class TestLenientRead:
         assert parsed.typed_fields["definition"] == "관용"
 
     def test_section_headings_case_insensitive(self) -> None:
-        text = "# T\n\n## DEFINITION\nfoo\n\n## do\nbar\n\n## DON'T\nbaz\n"
-        parsed = parse_md_template(text, "core_value")
-        assert parsed.typed_fields == {"definition": "foo", "do": "bar", "dont": "baz"}
+        text = "# T\n\n## DESCRIPTION\nfoo\n\n## do\nbar\n\n## DON'T\nbaz\n"
+        parsed = parse_md_template(text, "identity")
+        assert parsed.typed_fields == {"description": "foo", "do": "bar", "dont": "baz"}
 
     def test_no_hr_treats_whole_file_as_typed(self) -> None:
         text = "# T\n\n## Definition\n관용\n"
@@ -91,18 +90,18 @@ class TestStrictRender:
     def test_canonical_section_order_per_kind(self) -> None:
         # Render passes typed in any order; output uses the kind's canonical order.
         rendered = render_md_template(
-            "core_value",
+            "identity",
             "X",
-            {"dont": "z", "do": "y", "definition": "x"},
+            {"dont": "z", "do": "y", "description": "x"},
         )
         # The literal section order in output mirrors SECTION_LABELS:
-        # definition, do, don't.
-        assert rendered.index("## Definition") < rendered.index("## Do")
+        # description, do, don't.
+        assert rendered.index("## Description") < rendered.index("## Do")
         assert rendered.index("## Do") < rendered.index("## Don't")
 
     def test_empty_typed_fields_render_empty_sections(self) -> None:
-        rendered = render_md_template("core_value", "X", {})
-        assert "## Definition" in rendered
+        rendered = render_md_template("identity", "X", {})
+        assert "## Description" in rendered
         assert "## Do" in rendered
         assert "## Don't" in rendered
 
@@ -110,7 +109,7 @@ class TestStrictRender:
         rendered = render_md_template(
             "mission",
             "M",
-            {"what_we_do": "x"},
+            {"statement": "x"},
             free_prose="A long thing.\n\nMore prose.",
         )
         assert "A long thing." in rendered
@@ -137,7 +136,7 @@ class TestProjectKindHasNoTypedSections:
     "kind, fields",
     [
         ("mission", {"statement": "a"}),
-        ("core_value", {"definition": "a", "do": "b", "dont": "c"}),
+        ("core_value", {"definition": "a"}),
         ("identity", {"description": "a", "do": "b", "dont": "c"}),
     ],
 )

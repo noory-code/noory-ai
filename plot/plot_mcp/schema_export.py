@@ -59,9 +59,8 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
         "statement": "Mission",
     },
     "core_value": {
+        # v0.43.1 (D-2026-06-06-B): do/dont removed
         "definition": "Definition",
-        "do": "Do",
-        "dont": "Don't",
     },
     "identity": {
         "description": "Description",

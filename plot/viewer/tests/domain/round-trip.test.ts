@@ -179,20 +179,34 @@ describe("CoreValue.fromJson + toJson round-trip", () => {
     const cv = CoreValue.fromJson({ id: "cv1", kind: "core_value" });
     expect(cv.kind).toBe("core_value");
     expect(cv.definition).toBe("");
-    expect(cv.do).toBe("");
-    expect(cv.dont).toBe("");
+    expect(cv.body).toBe("");
   });
 
-  it("preserves typed fields and round-trips", () => {
+  it("preserves definition + body and round-trips", () => {
     const a = CoreValue.fromJson({
+      id: "cv1",
+      kind: "core_value",
+      definition: "관용",
+      body: "판단 기준: 상대를 이해하려 했는가?",
+    });
+    const b = CoreValue.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("migrates legacy do/dont → body (v0.43.1)", () => {
+    const cv = CoreValue.fromJson({
       id: "cv1",
       kind: "core_value",
       definition: "관용",
       do: "다른 의견을 먼저 듣는다",
       dont: "비난부터 한다",
+      body: "원래 본문",
     });
-    const b = CoreValue.fromJson(a.toJson());
-    expect({ ...b }).toEqual({ ...a });
+    expect(cv.definition).toBe("관용");
+    expect(cv.body).toContain("원래 본문");
+    expect(cv.body).toContain("다른 의견을 먼저 듣는다");
+    expect(cv.body).toContain("비난부터 한다");
+    expect("do" in cv).toBe(false);
   });
 
   it("rejects raw with the wrong kind", () => {

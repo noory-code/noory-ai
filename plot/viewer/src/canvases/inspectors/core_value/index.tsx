@@ -10,7 +10,6 @@ import type { CoreValueJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { BodyField } from "../shared/BodyField";
-import { DoDontFields } from "../shared/DoDontFields";
 import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
 
@@ -49,7 +48,6 @@ function CoreValueFields({ node, onPatchNode }: CoreValueFieldsProps) {
           placeholder="한두 문장으로"
         />
       </label>
-      <DoDontFields node={node} onPatchNode={onPatchNode} />
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );

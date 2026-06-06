@@ -1,8 +1,9 @@
 /**
- * v0.17 Phase 1 (D-2026-05-16-A) — ``core_value`` Foundation entity.
- * JSON is the sole SSOT: every typed-text field value (``definition``
- * / ``do`` / ``dont`` / ``body``) is an MD-formatted string carried
- * inline. Per-node MD files are publish-output only (Phase 3+).
+ * v0.43.1 (D-2026-06-06-B) — ``core_value`` Foundation entity =
+ * ``definition`` (the value as a decision-priority principle) + ``body``.
+ * The ``do`` / ``dont`` fields were removed (``do`` was a restatement of
+ * ``definition``; ``dont`` went unused). Legacy values fold into ``body``
+ * on read (data-loss guard) — see ``foldLegacyDoDont``.
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -12,9 +13,23 @@ import { registerKindParser } from "./parseEntity";
 export interface CoreValueJson extends BaseFieldsJson {
   kind: "core_value";
   definition: string;
-  do: string;
-  dont: string;
   body: string;
+}
+
+const FOLD_LABELS: Record<string, string> = { do: "Do", dont: "Don't" };
+
+/** Fold any non-empty pre-v0.43 ``do`` / ``dont`` into ``body`` as
+ *  ``## {label}`` paragraphs, so migration loses no content. */
+function foldLegacyDoDont(obj: Record<string, unknown>, body: string): string {
+  const blocks: string[] = [];
+  for (const [key, label] of Object.entries(FOLD_LABELS)) {
+    const val = obj[key];
+    if (typeof val === "string" && val.trim()) blocks.push(`## ${label}\n${val.trim()}`);
+  }
+  if (blocks.length === 0) return body;
+  const folded = blocks.join("\n\n");
+  const trimmed = body.replace(/\s+$/, "");
+  return trimmed ? `${trimmed}\n\n${folded}` : folded;
 }
 
 export class CoreValue implements BaseFields {
@@ -36,21 +51,11 @@ export class CoreValue implements BaseFields {
   readonly kind: "core_value" = "core_value";
 
   readonly definition: string;
-  readonly do: string;
-  readonly dont: string;
   readonly body: string;
 
-  private constructor(
-    base: BaseFields,
-    definition: string,
-    doField: string,
-    dont: string,
-    body: string,
-  ) {
+  private constructor(base: BaseFields, definition: string, body: string) {
     Object.assign(this, base);
     this.definition = definition;
-    this.do = doField;
-    this.dont = dont;
     this.body = body;
   }
 
@@ -63,12 +68,11 @@ export class CoreValue implements BaseFields {
         raw,
       );
     }
+    const body = readOptionalString(obj.body, "body", raw);
     return new CoreValue(
       base,
       readOptionalString(obj.definition, "definition", raw),
-      readOptionalString(obj.do, "do", raw),
-      readOptionalString(obj.dont, "dont", raw),
-      readOptionalString(obj.body, "body", raw),
+      foldLegacyDoDont(obj, body),
     );
   }
 
@@ -90,8 +94,6 @@ export class CoreValue implements BaseFields {
       version: this.version,
       kind: "core_value",
       definition: this.definition,
-      do: this.do,
-      dont: this.dont,
       body: this.body,
     };
   }

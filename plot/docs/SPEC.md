@@ -546,8 +546,9 @@ D-2026-05-13-O principle #2 + D-2026-05-16-A. Fields are:
 - `mission` — `body` only (**v0.43.0, D-2026-06-06-C**: `what_we_do` /
   `why` / `direction` removed — mission is one declaration = `label` +
   `body`; old values fold into `body` on read, server + viewer.)
-- `core_value` — `definition`, `do`, `dont`, `body` *(do/dont cut pending —
-  D-2026-06-06-B, not yet implemented)*
+- `core_value` — `definition` + `body` (**v0.43.1, D-2026-06-06-B**: `do` /
+  `dont` removed — `do` was a restatement of `definition`; old values fold
+  into `body` on read, server + viewer.)
 - `identity` — `description`, `do`, `dont`, `body` *(output model pending)*
 
 Every value is a Markdown-formatted string; newlines, bullets, bold,

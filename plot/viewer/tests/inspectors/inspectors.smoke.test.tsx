@@ -158,20 +158,18 @@ describe("StepInspector (Phase 2.2)", () => {
 });
 
 describe("CoreValueInspector (Phase 2.3)", () => {
-  it("renders with shared chrome + definition + do/dont", () => {
+  it("renders with shared chrome + definition + body (v0.43.1)", () => {
     const node = makeNode({
       id: "cv1",
       kind: "core_value",
       label: "관용",
       definition: "다름을 인정하고 받아들임",
-      do: "다른 의견을 먼저 듣는다",
-      dont: "비난부터 한다",
+      body: "판단 기준: 상대를 이해하려 했는가?",
     });
     render(<KindInspector {...makeProps(node, "foundation")} />);
     expect(screen.getByDisplayValue("관용")).toBeInTheDocument();
     expect(screen.getByDisplayValue("다름을 인정하고 받아들임")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("다른 의견을 먼저 듣는다")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("비난부터 한다")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("판단 기준: 상대를 이해하려 했는가?")).toBeInTheDocument();
   });
 
   it("renders empty defaults without firing console.error", () => {

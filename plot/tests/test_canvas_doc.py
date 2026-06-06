@@ -206,19 +206,18 @@ def test_actor_does_not_carry_foreign_typed_fields() -> None:
         )
 
 
-def test_core_value_carries_typed_fields() -> None:
-    """v0.10 Step 2: core_value nodes carry ``definition`` plus the shared
-    ``do`` / ``dont`` AI-first pair. Stored on the node, no details.md."""
+def test_core_value_carries_definition_and_body() -> None:
+    """v0.43.1 (D-2026-06-06-B): core_value = ``definition`` (the value as a
+    decision-priority principle) + ``body``. do/dont were removed."""
     n = CoreValueNode(
         id="cv-tolerance",
         label="관용",
         definition="다름을 인정하고 있는 그대로 받아들임",
-        do="다른 의견을 먼저 듣는다",
-        dont="틀렸다고 단정한다",
+        body="판단 기준: 상대를 이해하려 했는가?",
     )
     assert n.definition.startswith("다름을 인정")
-    assert "먼저 듣는다" in n.do
-    assert "단정한다" in n.dont
+    assert "판단 기준" in n.body
+    assert "do" not in n.model_dump() and "dont" not in n.model_dump()
 
 
 def test_identity_carries_typed_fields() -> None:
@@ -247,8 +246,7 @@ def test_value_and_identity_typed_fields_round_trip_in_canvas() -> None:
                 id="cv1",
                 label="Trust",
                 definition="우리는 서로의 의도를 의심하지 않는다",
-                do="동기를 먼저 묻는다",
-                dont="비난부터 한다",
+                body="동기를 먼저 묻는다",
             ),
             IdentityNode(
                 id="id1",
@@ -263,7 +261,7 @@ def test_value_and_identity_typed_fields_round_trip_in_canvas() -> None:
     cv = next(n for n in parsed.nodes if n.id == "cv1")
     ident = next(n for n in parsed.nodes if n.id == "id1")
     assert cv.definition.startswith("우리는 서로")
-    assert cv.do == "동기를 먼저 묻는다"
+    assert cv.body == "동기를 먼저 묻는다"
     assert ident.description == "조용하고 또렷하다"
     assert ident.dont == "장황하게 늘어놓는다"
 
