@@ -65,11 +65,14 @@ user who does not yet know what mission / core value / identity mean can
 learn it in place. Concept SSOT = [`FOUNDATION_CONCEPT.md`](./FOUNDATION_CONCEPT.md);
 the popover is a short surface of it.
 
-| Section | Popover essence |
+| Section | Popover gist (friendly, plain — full text in `stencil.info.*`) |
 |---|---|
-| Mission | 존재의 뿌리 — 왜 존재하는가 |
-| Core values | 현재의 노력 — 지금 어떻게 결정하는가 |
-| Identity | 쌓여가는 지향 — 어떤 존재가 되고 싶은가. AI 가 미션·코어밸류에서 도출 |
+| Mission | 이 프로젝트가 왜 존재하는가 — 무엇을 위해 만드는지 (모든 결정의 출발점) |
+| Core values | 결정할 때 기준이 되는 가치 — "이럴 땐 이렇게 정한다" |
+| Identity | 이 제품이 갖고 싶은 성격(보이스·디자인·태도). AI 가 미션·코어밸류에서 먼저 제안하고 함께 다듬음 |
+
+Copy is **friendly + plain** (no metaphors like 뿌리/노력/지향 — D-2026-06-06-A
+copy refinement); a newcomer should understand each on first read.
 
 - ⓘ is **always visible** (not hover-only) → the affordance is discoverable.
 - Popover opens on **click** (works on touch, unlike hover).

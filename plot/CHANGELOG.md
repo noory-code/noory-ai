@@ -4,6 +4,19 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.42.3] — 2026-06-06
+
+### Changed — stencil ⓘ popover copy is friendly + plain (D-2026-06-06-A)
+
+- Rewrote the concept popover text from terse metaphors ("존재의 뿌리",
+  "쌓여가는 지향") into friendly, plain descriptions a newcomer understands
+  on first read:
+  - Mission — why the project exists / what it's built for.
+  - Core values — the values you lean on when deciding ("when X, choose Y").
+  - Identity — the character (voice/design/attitude) the product wants;
+    AI proposes a start from mission & core values, refined together.
+- i18n only (`stencil.info.*`, en + ko). SPEC gist table updated.
+
 ## [0.42.2] — 2026-06-06
 
 ### Removed — Foundation stencil inline usage-notes (D-2026-06-06-B)

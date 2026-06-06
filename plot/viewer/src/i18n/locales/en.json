@@ -312,9 +312,9 @@
     },
     "infoAria": "Concept info",
     "info": {
-      "mission": "The root of existence — why it exists.",
-      "coreValues": "Present effort — how you decide right now.",
-      "identity": "Accumulating aspiration — who you want to become. Derived by AI from mission & core values, then kept updated."
+      "mission": "Why this project exists. In one sentence, what you're building it for — the reason behind everything else.",
+      "coreValues": "The values you lean on when you make decisions. Write down the principles you'd apply when choices get hard — \"when it comes to X, we choose Y.\"",
+      "identity": "The character this product wants to have — its voice, design, and attitude. It's hard to pin down up front, so AI proposes a starting point from your mission and core values, and the two of you refine it together as the project grows."
     }
   }
 }
