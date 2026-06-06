@@ -44,6 +44,19 @@ structural-vs-prose 원칙상 자리값 있음):
 - **status (도출/확정)** — AI 도출 초안인지 사용자가 확인·고정했는지.
   입력 kind 엔 없는 구분.
 
+### 채우는 방식 — 인터뷰가 아니라 도출→확인 (2026-06-06)
+
+미션·코어밸류는 AI 가 **질문해서** 채우는 입력이지만, identity 는 **출력**이라
+방향이 반대다:
+
+- AI 가 미션+코어밸류(+누적 설계)를 읽고 **identity 초안을 도출**해 노드에
+  채운다 (사용자한테 "당신의 정체성은?"이라 묻지 않는다 — 그건 출력을 입력처럼
+  다루는 오류).
+- 사용자의 몫은 **확인·교정**: "여기 도출된 결이 맞나요? 고칠 부분은?"
+  (= status: 도출 → 확정). 이게 identity 의 "인터뷰" 등가물.
+- 캔버스 AI 대화창에서: 미션·코어밸류 인터뷰가 끝나면 AI 가 identity 를 제안,
+  사용자가 대화로 다듬음.
+
 ### Graceful degradation
 AI 도출이 약하거나 미구현이어도 identity 는 **손작성으로 동작**해야 한다:
 label + description (현재 14개가 그러함). provenance/evolution/status 는
@@ -95,3 +108,4 @@ label + description (현재 14개가 그러함). provenance/evolution/status 는
 | 2차 | 2026-06-05 03:40 | "그대로 두자"로 잠정 done. |
 | 3차 | 2026-06-05 03:46 | **비판으로 재오픈** — body 이중산문/14flat/catch-all. |
 | 4차 | 2026-06-06 | **출력값 렌즈 재정의.** ①body컷 ②facet 예정보류 ③catch-all 해소. 출력이라 provenance·evolution·status 구조 추가(목표 모델, 단계 구현). graceful degradation 못박음. |
+| 5차 | 2026-06-06 | 채우는 방식 명시 — 인터뷰(입력) 아니라 **AI 도출→사용자 확인·교정**(출력). identity 의 "인터뷰 등가물"은 확인 단계. |
