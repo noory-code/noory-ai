@@ -35,6 +35,12 @@ describe("Foundation stencil concept info (D-2026-06-06-A)", () => {
     expect(container.contains(dialog)).toBe(false);
   });
 
+  it("shows no inline usage-note on foundation sections — ⓘ replaces it (D-2026-06-06-B)", () => {
+    render(<SketchStencil canvas="foundation" />);
+    expect(screen.queryByText(/add as many as you need/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/one per aspect/i)).not.toBeInTheDocument();
+  });
+
   it("shows no ⓘ on non-foundation canvases (foundation-only)", () => {
     render(<SketchStencil canvas="actors" />);
     expect(screen.queryAllByRole("button", { name: /concept info/i })).toHaveLength(0);

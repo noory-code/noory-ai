@@ -74,6 +74,11 @@ the popover is a short surface of it.
 - ⓘ is **always visible** (not hover-only) → the affordance is discoverable.
 - Popover opens on **click** (works on touch, unlike hover).
 - Text is i18n'd (`stencil.info.*`), English primary + Korean.
+- **The old inline usage-notes are removed** (D-2026-06-06-B): the
+  Foundation sections no longer show "add as many as you need" /
+  "one per aspect — …". The ⓘ popover carries the meaning; the inline
+  note was redundant clutter. (`stencil.note.addAsManyAsYouNeed` and
+  `stencil.note.identityOnePerAspect` deleted.)
 - Implementation: `viewer/src/canvases/stencil/SectionInfo.tsx` (the ⓘ +
   popover); `Section` gains an optional `info` prop. Foundation-only for
   now (other canvases' sections pass no `info`).

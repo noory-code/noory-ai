@@ -4,6 +4,19 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.42.2] — 2026-06-06
+
+### Removed — Foundation stencil inline usage-notes (D-2026-06-06-B)
+
+- Dropped the inline `note` under the Foundation stencil sections —
+  "필요한 만큼 추가하세요" (Mission / Core values) and "속성별로 하나씩 —
+  목소리, 에너지, 말투, …" (Identity). With the ⓘ concept popover
+  (D-2026-06-06-A) carrying the meaning, the inline note was redundant
+  clutter. Deleted i18n keys `stencil.note.addAsManyAsYouNeed` +
+  `stencil.note.identityOnePerAspect`.
+- Test: `stencil-concept-info.test.tsx` asserts no note text on foundation
+  sections. Other canvases' notes (drop hints) unaffected.
+
 ## [0.42.1] — 2026-06-06
 
 ### Fixed — stencil ⓘ popover was clipped by the sidebar scroll container (D-2026-06-06-A)

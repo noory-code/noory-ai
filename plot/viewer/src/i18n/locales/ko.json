@@ -300,8 +300,6 @@
       "identityAspects": "아이덴티티 측면"
     },
     "note": {
-      "addAsManyAsYouNeed": "필요한 만큼 추가하세요",
-      "identityOnePerAspect": "속성별로 하나씩 — 목소리, 에너지, 말투, …",
       "dropOnActor": "액터 위에 놓으세요",
       "dropInsideCategory": "카테고리 안에 놓으세요",
       "compositionInsideService": "이 서비스 안의 지표 + 단계",

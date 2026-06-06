@@ -300,8 +300,6 @@
       "identityAspects": "Identity aspects"
     },
     "note": {
-      "addAsManyAsYouNeed": "add as many as you need",
-      "identityOnePerAspect": "one per aspect — Voice, Energy, Speech style, …",
       "dropOnActor": "drop on an Actor",
       "dropInsideCategory": "drop inside a Category",
       "compositionInsideService": "metrics + steps inside this service",

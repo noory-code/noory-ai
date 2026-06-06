@@ -430,19 +430,16 @@ export function SketchStencil({
         <Section
           title={t("stencil.section.mission")}
           presets={[CORE_MISSION]}
-          note={t("stencil.note.addAsManyAsYouNeed")}
           info={t("stencil.info.mission")}
         />
         <Section
           title={t("stencil.section.coreValues")}
           presets={[CORE_VALUE]}
-          note={t("stencil.note.addAsManyAsYouNeed")}
           info={t("stencil.info.coreValues")}
         />
         <Section
           title={t("stencil.section.identity")}
           presets={[CORE_IDENTITY]}
-          note={t("stencil.note.identityOnePerAspect")}
           info={t("stencil.info.identity")}
         />
       </div>

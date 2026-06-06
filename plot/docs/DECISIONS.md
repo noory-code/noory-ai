@@ -10318,3 +10318,19 @@ but not yet fully eliminated.
   i18n `stencil.info.{mission,coreValues,identity}` (en+ko). Foundation-only.
 - **Spec impact:** SPEC.md §"Stencil concept info (ⓘ)". Test:
   `viewer/tests/stencil-concept-info.test.tsx`.
+
+### D-2026-06-06-B — Remove Foundation stencil inline usage-notes (ⓘ replaces them)
+
+- **What:** Removed the inline `note` under the Foundation stencil sections —
+  "필요한 만큼 추가하세요" (Mission / Core values) and "속성별로 하나씩 —
+  목소리, 에너지, 말투, …" (Identity). Deleted i18n keys
+  `stencil.note.addAsManyAsYouNeed` + `stencil.note.identityOnePerAspect`.
+- **Why:** with the ⓘ concept popover (D-2026-06-06-A) carrying the meaning,
+  the inline note is redundant clutter. User: "옆에 필요한 만큼 추가하세요
+  이런건 없어도 될 것 같은데 아이덴티티 옆에 있는 것도 없애죠."
+- **Approval:** Accepted by user, 2026-06-06.
+- **Scope:** `SketchStencil.tsx` (3 foundation sections drop `note`),
+  `i18n/locales/{en,ko}.json` (2 keys removed). Other canvases' notes
+  (drop-hints etc.) unaffected.
+- **Spec impact:** SPEC.md §"Stencil concept info (ⓘ)". Test:
+  `viewer/tests/stencil-concept-info.test.tsx` (no note text on foundation).
