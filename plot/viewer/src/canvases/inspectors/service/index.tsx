@@ -81,15 +81,15 @@ interface ServiceFieldsProps {
 function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-sky-200 bg-sky-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-sky-700">
+    <div className="mb-4 rounded border border-info bg-info-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-info-fg">
         {t("kind.service")}
       </div>
       <label className="mb-3 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.targetSide")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.targetSide")}
         </span>
         <select
@@ -100,7 +100,7 @@ function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
               target_side: v === "operator" || v === "user" || v === "both" ? v : null,
             });
           }}
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-sky-600 focus:outline-none"
+          className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-info focus:outline-none"
         >
           <option value="">{t("inspector.unset")}</option>
           <option value="operator">{t("inspector.operatorSideOption")}</option>
@@ -167,8 +167,8 @@ interface ServiceTextareaProps {
 function ServiceTextarea({ label, hint, value, onChange, placeholder }: ServiceTextareaProps) {
   return (
     <label className="mb-2 block">
-      <span className="text-xs font-semibold text-slate-700">{label}</span>
-      <span className="ml-1 text-[10px] text-slate-500">— {hint}</span>
+      <span className="text-xs font-semibold text-fg">{label}</span>
+      <span className="ml-1 text-[10px] text-fg-muted">— {hint}</span>
       <MdTextarea value={value ?? ""} onChange={onChange} placeholder={placeholder} />
     </label>
   );

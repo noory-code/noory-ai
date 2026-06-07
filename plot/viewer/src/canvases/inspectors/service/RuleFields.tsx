@@ -24,7 +24,7 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
   return (
     <div className="text-xs">
       <label className="mb-2 block">
-        <span className="font-semibold text-slate-700">{t("inspector.field.policy")}</span>
+        <span className="font-semibold text-fg">{t("inspector.field.policy")}</span>
         <MdTextarea
           value={node.policy ?? ""}
           onChange={(v) => onPatchNode({ policy: v })}
@@ -32,7 +32,7 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
         />
       </label>
       <label className="mb-2 block">
-        <span className="font-semibold text-slate-700">{t("inspector.field.enforcement")}</span>
+        <span className="font-semibold text-fg">{t("inspector.field.enforcement")}</span>
         <MdTextarea
           value={node.enforcement ?? ""}
           onChange={(v) => onPatchNode({ enforcement: v })}
@@ -40,18 +40,18 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
         />
       </label>
       <div className="mt-2">
-        <div className="mb-1 font-semibold text-slate-700">
+        <div className="mb-1 font-semibold text-fg">
           {t("inspector.field.actorPermissions")}
         </div>
         <div
-          className="mb-1 text-[10px] italic text-slate-400"
+          className="mb-1 text-[10px] italic text-fg-faint"
           dangerouslySetInnerHTML={{
             __html: t("inspector.fieldHint.actorPermissionsShorthand"),
           }}
         />
 
         {Object.entries(permissions).length === 0 && (
-          <div className="rounded border border-dashed border-slate-200 p-1.5 text-[11px] italic text-slate-400">
+          <div className="rounded border border-dashed border-line p-1.5 text-[11px] italic text-fg-faint">
             {t("inspector.empty")}
           </div>
         )}
@@ -61,7 +61,7 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
             return (
               <li key={actorId} className="flex items-center gap-1">
                 <span
-                  className="flex-1 truncate text-[11px] text-slate-700"
+                  className="flex-1 truncate text-[11px] text-fg"
                   title={actorId}
                 >
                   {actor?.label || actorId}
@@ -78,7 +78,7 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
                     })
                   }
                   placeholder="CRUD"
-                  className="w-20 rounded border border-slate-300 px-1.5 py-0.5 text-[11px] focus:border-stone-500 focus:outline-none"
+                  className="w-20 rounded border border-line-strong px-1.5 py-0.5 text-[11px] focus:border-line-strong focus:outline-none"
                 />
                 <button
                   type="button"
@@ -87,7 +87,7 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
                     delete next[actorId];
                     onPatchNode({ actor_permissions: next });
                   }}
-                  className="rounded px-1 text-[10px] text-rose-600 hover:bg-rose-50"
+                  className="rounded px-1 text-[10px] text-danger hover:bg-danger-soft"
                   aria-label={t("inspector.permissionRemove")}
                 >
                   ✕
@@ -106,7 +106,7 @@ export function RuleFields({ node, availableActors, onPatchNode }: RuleFieldsPro
                 actor_permissions: { ...permissions, [id]: "" },
               });
             }}
-            className="mt-1 w-full rounded border border-slate-300 px-1.5 py-0.5 text-[11px] focus:border-stone-500 focus:outline-none"
+            className="mt-1 w-full rounded border border-line-strong px-1.5 py-0.5 text-[11px] focus:border-line-strong focus:outline-none"
           >
             <option value="">{t("inspector.addActorPermission")}</option>
             {candidates.map((a) => (

@@ -489,3 +489,48 @@ describe("i18n single-namespace convention (D-2026-05-11-D)", () => {
     expect(banned.test('useTranslation("shell")')).toBe(true); // self-check the matcher
   });
 });
+
+// ---------------------------------------------------------------------
+// Contract: no raw Tailwind palette colour classes (D-2026-06-07-C)
+// ---------------------------------------------------------------------
+// Colour is expressed through semantic theme tokens (`surface` / `fg*` /
+// `line*` / `accent` / `warn` / `ok` / `danger` / `info` / `special` /
+// `overlay`) defined in `styles.css` (`:root` = light, `.dark` = dark) and
+// mapped in `tailwind.config.js`. A raw palette class like `bg-white`,
+// `text-slate-700`, or `bg-rose-50` is hardcoded to ONE theme and won't flip
+// in dark mode (the v0.46 ProjectPicker / sidebar / header looked broken in
+// dark for exactly this reason). This guard fails the build if a raw palette
+// colour class returns to a component — use the semantic token instead.
+
+const PALETTE_HUES =
+  "slate|gray|zinc|neutral|stone|white|black|rose|red|orange|amber|yellow|" +
+  "lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink";
+// Tailwind colour-bearing utility prefixes.
+const COLOR_UTILS =
+  "bg|text|border|ring|ring-offset|divide|fill|stroke|outline|placeholder|" +
+  "caret|accent|decoration|from|via|to|shadow";
+const RAW_PALETTE_CLASS = new RegExp(
+  `(?<![\\w-])(?:${COLOR_UTILS})-(?:${PALETTE_HUES})(?:-\\d{1,3})?(?:/\\d{1,3})?(?![\\w-])`,
+);
+
+describe("semantic colour tokens only (D-2026-06-07-C)", () => {
+  it("no src file uses a raw Tailwind palette colour class", () => {
+    const offenders: string[] = [];
+    for (const file of walkSrcFiles(SRC)) {
+      const src = stripComments(readFileSync(file, "utf8"));
+      src.split("\n").forEach((line, i) => {
+        const m = line.match(RAW_PALETTE_CLASS);
+        if (m) offenders.push(`${file.replace(SRC, "src")}:${i + 1}: ${m[0]}`);
+      });
+    }
+    expect(
+      offenders,
+      `raw palette colour class(es) found — use a semantic theme token (bg-surface, text-fg, border-line, text-danger, …) so dark mode works:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+    // self-check the matcher catches a raw class but allows tokens
+    expect(RAW_PALETTE_CLASS.test("text-slate-700")).toBe(true);
+    expect(RAW_PALETTE_CLASS.test("bg-rose-50/40")).toBe(true);
+    expect(RAW_PALETTE_CLASS.test("text-fg-muted")).toBe(false);
+    expect(RAW_PALETTE_CLASS.test("bg-surface-inverse")).toBe(false);
+  });
+});

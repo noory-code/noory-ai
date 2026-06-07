@@ -44,6 +44,30 @@ label** (its path relative to the root; root-level shows the localized
 
 ---
 
+# Appearance — light / dark theme (v0.47.0, D-2026-06-07-C)
+
+The viewer ships **light and dark** themes. Colour is expressed through
+**semantic CSS-variable tokens** (e.g. `surface`, `text`, `text-muted`,
+`border-subtle`, `accent`) defined once in `styles.css`: `:root` holds the
+light values, `.dark` holds the dark values. Components never hardcode a raw
+palette colour (`bg-white`, `text-slate-700`, …); they use the semantic
+token classes, so a theme switch is a single CSS-variable swap. A structural
+guard fails the build if a component reintroduces a raw neutral colour class.
+
+- **Default = OS preference.** On first load, with no stored choice, the
+  theme follows `prefers-color-scheme` and tracks live OS changes.
+- **Manual override, persisted.** A theme toggle next to the language toggle
+  (sidebar footer + ServiceDetail stencil panel) sets an explicit choice
+  stored in `localStorage` (`plot:theme` = `light` | `dark` | `system`),
+  mirroring the `plot:lang` pattern. `system` reverts to following the OS.
+- **`.dark` class on `<html>`.** Tailwind runs in `darkMode: "class"`; the
+  resolved theme toggles the `dark` class on `document.documentElement`.
+- **Light appearance is unchanged.** Each token's light value equals the
+  pre-theme palette colour, so the existing light UI is preserved 1:1; only
+  dark values are new.
+
+---
+
 # Foundation
 
 ## What Foundation is

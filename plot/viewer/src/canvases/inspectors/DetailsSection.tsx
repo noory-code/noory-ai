@@ -37,7 +37,7 @@ export function DetailsSection({
 
   if (node.details_path) {
     return (
-      <div className="-mx-3 mb-4 h-[50vh] border-y border-slate-200">
+      <div className="-mx-3 mb-4 h-[50vh] border-y border-line">
         <MDFileEditor
           projectPath={projectPath}
           path={node.details_path}
@@ -70,22 +70,22 @@ export function DetailsSection({
   };
 
   return (
-    <div className="mb-4 rounded border border-dashed border-slate-300 p-2 text-xs">
-      <div className="mb-1 font-semibold text-slate-600">
+    <div className="mb-4 rounded border border-dashed border-line-strong p-2 text-xs">
+      <div className="mb-1 font-semibold text-fg-secondary">
         {t("inspector.longFormDetailsHeader")}
       </div>
-      <div className="mb-2 text-[11px] text-slate-500">
+      <div className="mb-2 text-[11px] text-fg-muted">
         {t("inspector.longFormDetailsIntro")}
       </div>
       <button
         type="button"
         onClick={onCreate}
         disabled={busy}
-        className="rounded bg-slate-900 px-2 py-1 text-[11px] font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+        className="rounded bg-surface-inverse px-2 py-1 text-[11px] font-medium text-fg-inverse hover:bg-surface-inverse disabled:cursor-not-allowed disabled:bg-fg-faint"
       >
         {busy ? t("inspector.creating") : t("inspector.createDetails")}
       </button>
-      {err && <div className="mt-2 text-[11px] text-rose-600">{err}</div>}
+      {err && <div className="mt-2 text-[11px] text-danger">{err}</div>}
     </div>
   );
 }

@@ -368,7 +368,7 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
           );
           e.dataTransfer.effectAllowed = "copy";
         }}
-        className="flex cursor-grab items-center gap-2 rounded border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 shadow-sm hover:bg-slate-50 active:cursor-grabbing"
+        className="flex cursor-grab items-center gap-2 rounded border border-line bg-surface px-2 py-1.5 text-xs text-fg shadow-sm hover:bg-surface-muted active:cursor-grabbing"
         title={dropHintText ?? t("stencil.dragOntoCanvas", { name: label })}
       >
         <span
@@ -391,7 +391,7 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
                     : undefined,
           }}
         >
-          {Icon && <Icon size={12} className="text-slate-700" aria-hidden />}
+          {Icon && <Icon size={12} className="text-fg" aria-hidden />}
         </span>
         <span className="truncate">{label}</span>
       </div>
@@ -426,7 +426,7 @@ export function SketchStencil({
   const { t } = useTranslation();
   if (canvas === "foundation") {
     return (
-      <div className="border-t border-slate-200 px-3 py-3">
+      <div className="border-t border-line px-3 py-3">
         <Section
           title={t("stencil.section.mission")}
           presets={[CORE_MISSION]}
@@ -447,7 +447,7 @@ export function SketchStencil({
   }
   if (canvas === "actors") {
     return (
-      <div className="border-t border-slate-200 px-3 py-3">
+      <div className="border-t border-line px-3 py-3">
         <Section title={t("stencil.section.topLevel")} presets={[TOP_LEVEL_ACTOR]} />
         <Section
           title={t("stencil.section.actorHierarchy")}
@@ -461,7 +461,7 @@ export function SketchStencil({
     // v0.12 — services canvas: project + category + services-inside-category.
     // The category is the top-level grouping; services are leaves.
     return (
-      <div className="border-t border-slate-200 px-3 py-3">
+      <div className="border-t border-line px-3 py-3">
         <Section title={t("stencil.section.topLevel")} presets={[TOP_LEVEL_CATEGORY]} />
         <Section
           title={t("stencil.section.service")}
@@ -499,7 +499,7 @@ export function SketchStencil({
   // identity refs). Reading top-to-bottom = "build the flow, then
   // inject the essence."
   return (
-    <div className="border-t border-slate-200 px-3 py-3">
+    <div className="border-t border-line px-3 py-3">
       <LayerHeader label={t("stencil.layer.flow")} hint={t("stencil.layer.flowHint")} />
       {actorRefPresets.length > 0 && (
         <Section
@@ -553,9 +553,9 @@ export function SketchStencil({
  *  layers (① concrete flow / ② essence injection). */
 function LayerHeader({ label, hint }: { label: string; hint?: string }) {
   return (
-    <div className="mb-2 mt-1 border-b-2 border-slate-300 pb-1">
-      <div className="text-[11px] font-bold tracking-wide text-slate-700">{label}</div>
-      {hint && <div className="text-[9px] italic text-slate-400">{hint}</div>}
+    <div className="mb-2 mt-1 border-b-2 border-line-strong pb-1">
+      <div className="text-[11px] font-bold tracking-wide text-fg">{label}</div>
+      {hint && <div className="text-[9px] italic text-fg-faint">{hint}</div>}
     </div>
   );
 }
@@ -648,11 +648,11 @@ function Section({
   return (
     <div className="mb-3">
       <div className="mb-1 flex items-baseline justify-between">
-        <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-fg-muted">
           {title}
           {info && <SectionInfo text={info} />}
         </div>
-        {note && <div className="text-[9px] italic text-slate-400">{note}</div>}
+        {note && <div className="text-[9px] italic text-fg-faint">{note}</div>}
       </div>
       <ul className="space-y-1">
         {presets.map((p) => (

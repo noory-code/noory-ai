@@ -43,11 +43,11 @@ export function Header({
 }: HeaderProps) {
   const { t } = useTranslation();
   return (
-    <header className="flex flex-col border-b border-slate-200 bg-white/80 backdrop-blur">
+    <header className="flex flex-col border-b border-line bg-surface/80 backdrop-blur">
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold tracking-wide">PLOT</span>
-          <span className="font-mono text-xs text-slate-500" title={workspaceRoot}>
+          <span className="font-mono text-xs text-fg-muted" title={workspaceRoot}>
             {workspaceRoot}
           </span>
         </div>
@@ -56,7 +56,7 @@ export function Header({
             The error is the only flexible item and truncates. */}
         <div className="flex min-w-0 items-center justify-end gap-3 pl-4 text-xs">
           {error && (
-            <span className="min-w-0 truncate text-rose-600" title={error} aria-label="error">
+            <span className="min-w-0 truncate text-danger" title={error} aria-label="error">
               {error}
             </span>
           )}
@@ -69,21 +69,21 @@ export function Header({
         </div>
       </div>
       {viewingTag && (
-        <div className="flex items-center justify-between border-t border-amber-200 bg-amber-50 px-4 py-1.5 text-xs text-amber-900">
+        <div className="flex items-center justify-between border-t border-warn-line bg-warn-soft px-4 py-1.5 text-xs text-warn-fg">
           <span>
             👁 {t("snapshot.viewing", { tag: viewingTag })}
           </span>
           <button
             type="button"
             onClick={onExitTagView}
-            className="rounded border border-amber-300 bg-white px-2 py-0.5 text-[11px] text-amber-800 hover:bg-amber-100"
+            className="rounded border border-warn-line bg-surface px-2 py-0.5 text-[11px] text-warn-fg hover:bg-warn-soft"
           >
             ✕ {t("snapshot.exit")}
           </button>
         </div>
       )}
       {migratedToast && migratedToast.length > 0 && (
-        <div className="flex items-center justify-between border-t border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs text-emerald-800">
+        <div className="flex items-center justify-between border-t border-ok-line bg-ok-soft px-4 py-1.5 text-xs text-ok-fg">
           <span>
             Migrated {migratedToast.length} v0.1 sketch
             {migratedToast.length === 1 ? "" : "es"} to v0.4 format:
@@ -92,7 +92,7 @@ export function Header({
           <button
             type="button"
             onClick={onDismissToast}
-            className="rounded px-1 text-emerald-700 hover:bg-emerald-100"
+            className="rounded px-1 text-ok-fg hover:bg-ok-soft"
           >
             ✕
           </button>
@@ -108,10 +108,10 @@ function SaveIndicator({ state }: { state: SaveState }) {
   const label = t(`header.saveState.${state}`);
   const tone =
     state === "saving"
-      ? "text-slate-500"
+      ? "text-fg-muted"
       : state === "saved"
-        ? "text-emerald-700"
-        : "text-rose-600";
+        ? "text-ok-fg"
+        : "text-danger";
   const icon =
     state === "saving" ? "💾" : state === "saved" ? "✓" : "⚠";
   return (
@@ -131,16 +131,16 @@ function SocketIndicator({ status }: { status: SocketStatus }) {
     disconnected: "MCP: offline",
   }[status];
   const dot = {
-    connecting: "bg-amber-500 animate-pulse",
-    connected: "bg-emerald-500",
-    reconnecting: "bg-amber-500 animate-pulse",
-    disconnected: "bg-slate-400",
+    connecting: "bg-warn animate-pulse",
+    connected: "bg-ok",
+    reconnecting: "bg-warn animate-pulse",
+    disconnected: "bg-fg-faint",
   }[status];
   const tone = {
-    connecting: "text-amber-700",
-    connected: "text-emerald-700",
-    reconnecting: "text-amber-700",
-    disconnected: "text-slate-600",
+    connecting: "text-warn-fg",
+    connected: "text-ok-fg",
+    reconnecting: "text-warn-fg",
+    disconnected: "text-fg-secondary",
   }[status];
   return (
     <span className={`inline-flex items-center gap-1 whitespace-nowrap ${tone}`} title={label}>

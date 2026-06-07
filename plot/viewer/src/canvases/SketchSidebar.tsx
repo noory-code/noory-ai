@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageToggle } from "../i18n/LanguageToggle";
+import { ThemeToggle } from "../shell/ThemeToggle";
 import type { ProjectDoc, ProjectTag, SketchNode } from "../types";
 import { SketchStencil, type StencilCanvas } from "./SketchStencil";
 import { useDialog } from "../shell/dialog/DialogProvider";
@@ -58,12 +59,12 @@ export function SketchSidebar({
 
   if (collapsed) {
     return (
-      <aside className="flex h-full w-8 flex-col items-center border-r border-slate-200 bg-white py-2">
+      <aside className="flex h-full w-8 flex-col items-center border-r border-line bg-surface py-2">
         <button
           type="button"
           onClick={() => setCollapsed(false)}
           aria-label={t("sidebar.expandProjectList")}
-          className="rounded px-1 py-2 text-slate-500 hover:bg-slate-100"
+          className="rounded px-1 py-2 text-fg-muted hover:bg-surface-subtle"
           title={t("sidebar.showProjects")}
         >
           ▸
@@ -73,16 +74,16 @@ export function SketchSidebar({
   }
 
   return (
-    <aside className="flex h-full w-56 flex-col border-r border-slate-200 bg-white">
-      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <aside className="flex h-full w-56 flex-col border-r border-line bg-surface">
+      <div className="flex items-center justify-between border-b border-line px-3 py-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
           {t("sidebar.projects")}
         </span>
         <button
           type="button"
           onClick={() => setCollapsed(true)}
           aria-label={t("sidebar.collapseProjectList")}
-          className="rounded px-1 text-slate-400 hover:bg-slate-100"
+          className="rounded px-1 text-fg-faint hover:bg-surface-subtle"
           title={t("sidebar.hideProjects")}
         >
           ◂
@@ -91,13 +92,13 @@ export function SketchSidebar({
       <button
         type="button"
         onClick={() => onCreate()}
-        className="mx-3 mt-3 rounded bg-slate-900 px-2 py-1 text-xs font-medium text-white hover:bg-slate-700"
+        className="mx-3 mt-3 rounded bg-surface-inverse px-2 py-1 text-xs font-medium text-fg-inverse hover:bg-surface-inverse"
       >
         {t("sidebar.newProject")}
       </button>
       <ul className="max-h-[30vh] overflow-y-auto px-2 py-3">
         {projects.length === 0 && (
-          <li className="px-2 py-2 text-xs italic text-slate-400">{t("sidebar.noProjects")}</li>
+          <li className="px-2 py-2 text-xs italic text-fg-faint">{t("sidebar.noProjects")}</li>
         )}
         {projects.map((p) => {
           const isActive = p.id === activeId;
@@ -107,8 +108,8 @@ export function SketchSidebar({
               key={p.id}
               className={`group relative mb-1 rounded px-2 py-1.5 text-sm ${
                 isActive
-                  ? "bg-indigo-50 text-indigo-900"
-                  : "text-slate-800 hover:bg-slate-100"
+                  ? "bg-accent-soft text-accent-fg"
+                  : "text-fg-strong hover:bg-surface-subtle"
               }`}
             >
               {isRenaming ? (
@@ -126,7 +127,7 @@ export function SketchSidebar({
                     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                     if (e.key === "Escape") setRenamingId(null);
                   }}
-                  className="w-full rounded border border-indigo-400 bg-white px-1 py-0.5 text-xs focus:outline-none"
+                  className="w-full rounded border border-accent bg-surface px-1 py-0.5 text-xs focus:outline-none"
                   aria-label={t("sidebar.renameProject")}
                 />
               ) : (
@@ -138,7 +139,7 @@ export function SketchSidebar({
                 >
                   <span className="block truncate">{p.name || p.id}</span>
                   {dirForId && (
-                    <span className="block truncate text-[10px] font-normal text-slate-400">
+                    <span className="block truncate text-[10px] font-normal text-fg-faint">
                       {dirForId(p.id) === "." ? t("sidebar.rootDir") : dirForId(p.id)}
                     </span>
                   )}
@@ -153,7 +154,7 @@ export function SketchSidebar({
                       setRenamingId(p.id);
                       setDraft(p.name);
                     }}
-                    className="rounded px-1 text-[10px] text-slate-500 hover:bg-slate-200"
+                    className="rounded px-1 text-[10px] text-fg-muted hover:bg-line"
                     title={t("sidebar.rename")}
                   >
                     ✎
@@ -171,7 +172,7 @@ export function SketchSidebar({
                         void onDelete(p.id);
                       }
                     }}
-                    className="rounded px-1 text-[10px] text-rose-600 hover:bg-rose-100"
+                    className="rounded px-1 text-[10px] text-danger hover:bg-danger-soft"
                     title={t("sidebar.delete")}
                   >
                     ✕
@@ -183,11 +184,11 @@ export function SketchSidebar({
         })}
       </ul>
       {activeId && (
-        <div className="border-t border-slate-200 px-3 py-2">
+        <div className="border-t border-line px-3 py-2">
           <button
             type="button"
             onClick={() => setTagsOpen((v) => !v)}
-            className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700"
+            className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-fg-muted hover:text-fg"
           >
             <span>{t("sidebar.sessionTags")}</span>
             <span>{tagsOpen ? "▾" : "▸"}</span>
@@ -195,7 +196,7 @@ export function SketchSidebar({
           {tagsOpen && (
             <ul className="mt-1 max-h-32 overflow-y-auto">
               {tags.length === 0 && (
-                <li className="px-1 py-1 text-[11px] italic text-slate-400">
+                <li className="px-1 py-1 text-[11px] italic text-fg-faint">
                   {t("sidebar.noTagsHint")}
                 </li>
               )}
@@ -204,8 +205,8 @@ export function SketchSidebar({
                 return (
                   <li
                     key={tag.name}
-                    className={`group flex items-center justify-between rounded px-1 py-0.5 text-[11px] hover:bg-slate-100 ${
-                      isViewed ? "bg-amber-100 text-amber-800" : "text-slate-700"
+                    className={`group flex items-center justify-between rounded px-1 py-0.5 text-[11px] hover:bg-surface-subtle ${
+                      isViewed ? "bg-warn-soft text-warn-fg" : "text-fg"
                     }`}
                     title={`${tag.message}\n${tag.sha.slice(0, 8)} · ${tag.ts}`}
                   >
@@ -230,7 +231,7 @@ export function SketchSidebar({
                           void onDeleteTag(tag.name);
                         }
                       }}
-                      className="hidden px-1 text-[10px] text-rose-600 hover:bg-rose-100 group-hover:inline"
+                      className="hidden px-1 text-[10px] text-danger hover:bg-danger-soft group-hover:inline"
                       title={t("sidebar.deleteTag")}
                     >
                       ✕
@@ -255,7 +256,8 @@ export function SketchSidebar({
           />
         </div>
       )}
-      <div className="flex items-center justify-end border-t border-slate-200 px-3 py-2">
+      <div className="flex items-center justify-end gap-2 border-t border-line px-3 py-2">
+        <ThemeToggle />
         <LanguageToggle />
       </div>
     </aside>

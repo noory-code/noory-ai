@@ -31,15 +31,15 @@ interface MissionFieldsProps {
 function MissionFields({ node, onPatchNode }: MissionFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+    <div className="mb-4 rounded border border-accent bg-accent-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-accent-fg">
         {t("kind.mission")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.statement")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.statement")}
         </span>
         <MdTextarea

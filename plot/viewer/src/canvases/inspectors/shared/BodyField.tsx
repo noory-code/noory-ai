@@ -17,8 +17,8 @@ export function BodyField({ value, onChange }: BodyFieldProps) {
   const { t } = useTranslation();
   return (
     <label className="mt-2 block">
-      <span className="text-xs font-semibold text-slate-700">{t("inspector.field.body")}</span>
-      <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.body")}</span>
+      <span className="text-xs font-semibold text-fg">{t("inspector.field.body")}</span>
+      <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.body")}</span>
       <MdTextarea value={value} onChange={onChange} minLines={4} />
     </label>
   );

@@ -42,13 +42,13 @@ interface CategoryFieldsProps {
 function CategoryFields({ node, childCount, onPatchNode }: CategoryFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-slate-200 bg-slate-50/60 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
+    <div className="mb-4 rounded border border-line bg-surface-muted/60 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-fg">
         {t("kind.category")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.theme")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="text-xs font-semibold text-fg">{t("inspector.field.theme")}</span>
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.theme")}
         </span>
         <MdTextarea
@@ -59,7 +59,7 @@ function CategoryFields({ node, childCount, onPatchNode }: CategoryFieldsProps) 
       </label>
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
       {childCount === 0 && (
-        <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-800">
+        <p className="mt-2 rounded border border-warn-line bg-warn-soft px-2 py-1 text-[11px] text-warn-fg">
           이 카테고리에 service 가 없습니다. category 는 service 를 묶기 위해
           존재 — 비어있으면 시각 노이즈입니다. service 를 추가하거나 카테고리를
           삭제하세요.

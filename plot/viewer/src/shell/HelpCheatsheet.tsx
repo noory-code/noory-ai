@@ -23,32 +23,32 @@ export function HelpCheatsheet({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-label="Keyboard shortcuts"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/40"
       onClick={onClose}
     >
       <div
-        className="w-[28rem] max-w-[90vw] overflow-hidden rounded-lg bg-white shadow-xl"
+        className="w-[28rem] max-w-[90vw] overflow-hidden rounded-lg bg-surface shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <div className="flex items-center justify-between border-b border-line px-4 py-3">
+          <h2 className="text-sm font-semibold text-fg-strong">
             Keyboard shortcuts
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded px-2 text-slate-400 hover:bg-slate-100"
+            className="rounded px-2 text-fg-faint hover:bg-surface-subtle"
           >
             ✕
           </button>
         </div>
-        <dl className="divide-y divide-slate-100 text-xs">
+        <dl className="divide-y divide-line text-xs">
           {items.map(([combo, desc]) => (
             <div key={combo} className="flex items-center gap-3 px-4 py-1.5">
-              <dt className="w-36 shrink-0 font-mono text-[11px] text-slate-700">
+              <dt className="w-36 shrink-0 font-mono text-[11px] text-fg">
                 {combo}
               </dt>
-              <dd className="text-slate-600">{desc}</dd>
+              <dd className="text-fg-secondary">{desc}</dd>
             </div>
           ))}
         </dl>

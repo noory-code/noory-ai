@@ -21,7 +21,7 @@ export function LanguageToggle() {
     <div
       role="group"
       aria-label={t("common.language")}
-      className="flex items-center gap-0.5 rounded-md border border-slate-200 bg-white p-0.5 text-[10px] font-medium"
+      className="flex items-center gap-0.5 rounded-md border border-line bg-surface p-0.5 text-[10px] font-medium"
     >
       {SUPPORTED_LOCALES.map((locale) => {
         const active = locale === current;
@@ -33,8 +33,8 @@ export function LanguageToggle() {
             aria-pressed={active}
             className={`rounded px-1.5 py-0.5 ${
               active
-                ? "bg-slate-900 text-white"
-                : "text-slate-500 hover:bg-slate-100"
+                ? "bg-surface-inverse text-fg-inverse"
+                : "text-fg-muted hover:bg-surface-subtle"
             }`}
           >
             {LOCALE_LABELS[locale]}

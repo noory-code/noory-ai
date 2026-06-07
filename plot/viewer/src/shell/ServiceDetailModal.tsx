@@ -50,32 +50,32 @@ export function ServiceDetailModal({
             })
           : t("serviceDetail.ariaWithoutCategory", { service: serviceLabel })
       }
-      className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-overlay/40"
       onClick={onClose}
     >
       <div
-        className="flex h-[92vh] w-[94vw] max-w-[1600px] flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
+        className="flex h-[92vh] w-[94vw] max-w-[1600px] flex-col overflow-hidden rounded-lg bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2">
+        <header className="flex items-center justify-between border-b border-line bg-surface-muted px-4 py-2">
           <div className="flex items-baseline gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-muted">
               {t("serviceDetail.label")}
             </span>
             {/* v0.12.6 — show parent category context so users always know
                 which group a service belongs to even inside the modal. */}
             {categoryLabel && (
               <>
-                <span className="text-xs text-slate-500">{categoryLabel}</span>
-                <span className="text-xs text-slate-300">›</span>
+                <span className="text-xs text-fg-muted">{categoryLabel}</span>
+                <span className="text-xs text-fg-faint">›</span>
               </>
             )}
-            <span className="text-sm font-medium text-slate-900">{serviceLabel}</span>
+            <span className="text-sm font-medium text-fg-strong">{serviceLabel}</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+            className="rounded px-2 py-1 text-xs text-fg-secondary hover:bg-surface-subtle"
             aria-label={t("shell.closeEsc")}
             title={t("shell.closeEsc")}
           >

@@ -66,18 +66,18 @@ export function DialogHost({
       role="dialog"
       aria-modal="true"
       aria-label={request.title ?? request.message}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-overlay/40"
       onClick={cancel}
     >
       <div
         data-testid="dialog-panel"
-        className="flex w-[360px] flex-col gap-3 rounded-lg bg-white p-4 shadow-2xl"
+        className="flex w-[360px] flex-col gap-3 rounded-lg bg-surface p-4 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {request.title && (
-          <h2 className="text-sm font-semibold text-slate-800">{request.title}</h2>
+          <h2 className="text-sm font-semibold text-fg-strong">{request.title}</h2>
         )}
-        <p className="whitespace-pre-line text-sm text-slate-600">{request.message}</p>
+        <p className="whitespace-pre-line text-sm text-fg-secondary">{request.message}</p>
         {request.kind === "prompt" && (
           <input
             ref={inputRef}
@@ -88,7 +88,7 @@ export function DialogHost({
             onKeyDown={(e) => {
               if (e.key === "Enter") accept();
             }}
-            className="rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-slate-500"
+            className="rounded border border-line-strong px-2 py-1 text-sm outline-none focus:border-line-strong"
           />
         )}
         <div className="mt-1 flex items-center justify-end gap-2">
@@ -97,7 +97,7 @@ export function DialogHost({
               type="button"
               data-testid="dialog-cancel"
               onClick={cancel}
-              className="rounded px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100"
+              className="rounded px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-subtle"
             >
               {request.cancelLabel ?? t("common.cancel")}
             </button>
@@ -107,10 +107,10 @@ export function DialogHost({
             data-testid="dialog-accept"
             onClick={accept}
             className={
-              "rounded px-3 py-1.5 text-sm font-medium text-white " +
+              "rounded px-3 py-1.5 text-sm font-medium text-fg-inverse " +
               (request.danger
-                ? "bg-rose-600 hover:bg-rose-500"
-                : "bg-slate-900 hover:bg-slate-700")
+                ? "bg-danger hover:bg-danger"
+                : "bg-surface-inverse hover:bg-surface-inverse")
             }
           >
             {acceptLabel}

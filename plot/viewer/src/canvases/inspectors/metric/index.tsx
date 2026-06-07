@@ -33,13 +33,13 @@ interface MetricFieldsProps {
 function MetricFields({ node, onPatchNode }: MetricFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-lime-200 bg-lime-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-lime-700">
+    <div className="mb-4 rounded border border-ok-line bg-ok-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-ok-fg">
         {t("kind.metric")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.target")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.target")}</span>
+        <span className="text-xs font-semibold text-fg">{t("inspector.field.target")}</span>
+        <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.target")}</span>
         <MdTextarea
           value={node.target ?? ""}
           onChange={(v) => onPatchNode({ target: v })}
@@ -47,10 +47,10 @@ function MetricFields({ node, onPatchNode }: MetricFieldsProps) {
         />
       </label>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.measurement")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.measurement")}
         </span>
         <MdTextarea

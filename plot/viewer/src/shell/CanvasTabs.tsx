@@ -47,7 +47,7 @@ export function CanvasTabs({
     <div
       role="tablist"
       aria-label={t("canvas.aria")}
-      className="flex items-center justify-between border-b border-slate-200 bg-white px-3"
+      className="flex items-center justify-between border-b border-line bg-surface px-3"
     >
       <div className="flex items-center gap-1">
         {CANVAS_TAB_IDS.map((id) => {
@@ -61,8 +61,8 @@ export function CanvasTabs({
               onClick={() => onSelect(id)}
               className={
                 selected
-                  ? "border-b-2 border-slate-900 px-4 py-2 text-sm font-medium text-slate-900"
-                  : "border-b-2 border-transparent px-4 py-2 text-sm text-slate-500 hover:text-slate-800"
+                  ? "border-b-2 border-fg-strong px-4 py-2 text-sm font-medium text-fg-strong"
+                  : "border-b-2 border-transparent px-4 py-2 text-sm text-fg-muted hover:text-fg-strong"
               }
             >
               {t(`canvas.tabs.${id}`)}
@@ -73,10 +73,10 @@ export function CanvasTabs({
       {/* v0.34.7 (D-2026-05-31-U) — project name + its blueprint version
           (version belongs to the PROJECT, not the repo path in the header). */}
       <span className="flex min-w-0 flex-1 items-center justify-center gap-2 px-4">
-        <span className="truncate text-sm font-medium text-slate-700">{projectName ?? ""}</span>
+        <span className="truncate text-sm font-medium text-fg">{projectName ?? ""}</span>
         {projectName && (
           <span
-            className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-slate-600"
+            className="shrink-0 rounded bg-surface-subtle px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-fg-secondary"
             title="Blueprint version"
           >
             {blueprintVersion}

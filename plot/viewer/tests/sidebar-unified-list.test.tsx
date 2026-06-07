@@ -7,6 +7,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import i18n from "../src/i18n";
 import { SketchSidebar } from "../src/canvases/SketchSidebar";
+import { ThemeProvider } from "../src/theme/ThemeProvider";
 import type { ProjectDoc } from "../src/types";
 
 function project(id: string, name: string): ProjectDoc {
@@ -32,7 +33,7 @@ function props() {
 
 describe("Sidebar unified list (D-2026-05-31-M)", () => {
   it("renders each project with its directory label", () => {
-    render(<SketchSidebar {...props()} />);
+    render(<SketchSidebar {...props()} />, { wrapper: ThemeProvider });
     expect(screen.getByText("Alpha")).toBeInTheDocument();
     expect(screen.getByText("Beta")).toBeInTheDocument();
     expect(screen.getByText("plot")).toBeInTheDocument();

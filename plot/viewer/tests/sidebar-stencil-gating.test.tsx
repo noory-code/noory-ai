@@ -10,6 +10,7 @@ import "@testing-library/jest-dom/vitest";
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SketchSidebar } from "../src/canvases/SketchSidebar";
+import { ThemeProvider } from "../src/theme/ThemeProvider";
 import type { ProjectDoc } from "../src/types";
 
 function makeProps(over: Partial<React.ComponentProps<typeof SketchSidebar>> = {}) {
@@ -33,13 +34,17 @@ const PROJECT = { id: "p1", name: "Demo" } as unknown as ProjectDoc;
 
 describe("Sidebar stencil gating (D-2026-05-31-K)", () => {
   it("hides the stencil when no project is active", () => {
-    const { container } = render(<SketchSidebar {...makeProps({ activeId: null, projects: [] })} />);
+    const { container } = render(
+      <SketchSidebar {...makeProps({ activeId: null, projects: [] })} />,
+      { wrapper: ThemeProvider },
+    );
     expect(container.querySelectorAll('[draggable="true"]')).toHaveLength(0);
   });
 
   it("shows the stencil once a project is active", () => {
     const { container } = render(
       <SketchSidebar {...makeProps({ activeId: "p1", projects: [PROJECT] })} />,
+      { wrapper: ThemeProvider },
     );
     expect(container.querySelectorAll('[draggable="true"]').length).toBeGreaterThan(0);
   });

@@ -139,10 +139,10 @@ export function BaseNode({
   const { t } = useTranslation();
   const { showKindTag, isAnchor, labelAlignLeft, bodyOverride } = chrome;
   const ring = selected
-    ? "border-2 border-indigo-500"
+    ? "border-2 border-accent"
     : isAnchor
-      ? "border-2 border-slate-600"
-      : "border border-slate-300";
+      ? "border-2 border-line-strong"
+      : "border border-line-strong";
   const renderShape = effectiveShape(data.kind, data.shape);
   const style = {
     backgroundColor: data.color,
@@ -195,7 +195,7 @@ export function BaseNode({
     <>
       <div
         ref={nodeRef}
-        className={`relative ${sizing} bg-white shadow-sm ${ring} ${contentPadding(
+        className={`relative ${sizing} bg-surface shadow-sm ${ring} ${contentPadding(
           renderShape,
         )}`}
         style={style}
@@ -215,20 +215,20 @@ export function BaseNode({
             ignore handle ids for rendering, and edgeTransform / handleConnect
             force the arrow toward the anchor — so which side you grab no
             longer changes the resulting edge direction. */}
-        <Handle type="source" position={Position.Top} id="t" className="!bg-slate-400" />
-        <Handle type="source" position={Position.Left} id="l" className="!bg-slate-400" />
-        <Handle type="source" position={Position.Right} id="r" className="!bg-slate-400" />
-        <Handle type="source" position={Position.Bottom} id="b" className="!bg-slate-400" />
+        <Handle type="source" position={Position.Top} id="t" className="!bg-fg-faint" />
+        <Handle type="source" position={Position.Left} id="l" className="!bg-fg-faint" />
+        <Handle type="source" position={Position.Right} id="r" className="!bg-fg-faint" />
+        <Handle type="source" position={Position.Bottom} id="b" className="!bg-fg-faint" />
 
         {showKindTag && data.kind && (
-          <span className="pointer-events-none absolute left-2 top-1 text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+          <span className="pointer-events-none absolute left-2 top-1 text-[9px] font-semibold uppercase tracking-wider text-fg-faint">
             {t(`kindTag.${data.kind}`)}
           </span>
         )}
 
         {data.mdWarnings && data.mdWarnings.length > 0 && (
           <span
-            className="pointer-events-none absolute right-1 top-1 rounded-full bg-white px-1.5 py-px text-[11px] font-bold leading-tight text-amber-700 shadow-sm ring-1 ring-amber-500"
+            className="pointer-events-none absolute right-1 top-1 rounded-full bg-surface px-1.5 py-px text-[11px] font-bold leading-tight text-warn-fg shadow-sm ring-1 ring-warn"
             title={`${data.mdWarnings.length} MD warning(s) — open Inspector for details`}
             aria-label={`${data.mdWarnings.length} markdown parse warnings`}
           >
@@ -242,7 +242,7 @@ export function BaseNode({
           } ${showKindTag && !isAnchor ? "pt-3" : ""}`}
         >
           <div
-            className={`flex items-center gap-1.5 text-sm font-semibold text-slate-800 ${
+            className={`flex items-center gap-1.5 text-sm font-semibold text-fg-strong ${
               labelAlignLeft ? "justify-start" : "justify-center"
             }`}
           >
@@ -253,14 +253,14 @@ export function BaseNode({
                   e.stopPropagation();
                   data.onToggleCollapse?.();
                 }}
-                className="nodrag flex shrink-0 items-center justify-center px-1 text-xl leading-none text-slate-500 hover:text-slate-900"
+                className="nodrag flex shrink-0 items-center justify-center px-1 text-xl leading-none text-fg-muted hover:text-fg-strong"
                 title={data.collapsed ? "Expand" : "Collapse"}
                 aria-label={data.collapsed ? "Expand container" : "Collapse container"}
               >
                 {data.collapsed ? "▸" : "▾"}
               </button>
             )}
-            {Icon && <Icon size={14} className="shrink-0 text-slate-600" aria-hidden />}
+            {Icon && <Icon size={14} className="shrink-0 text-fg-secondary" aria-hidden />}
             {data.onLabelChange ? (
               <EditableText
                 value={data.label}
@@ -270,12 +270,12 @@ export function BaseNode({
               />
             ) : (
               <span>
-                {data.label || <span className="italic text-slate-400">(untitled)</span>}
+                {data.label || <span className="italic text-fg-faint">(untitled)</span>}
               </span>
             )}
             {data.collapsed && data.hasChildren && (
               <span
-                className="ml-auto rounded-full bg-slate-200 px-1.5 text-[10px] text-slate-600"
+                className="ml-auto rounded-full bg-line px-1.5 text-[10px] text-fg-secondary"
                 aria-label={`${data.childCount} collapsed children`}
               >
                 {data.childCount}
@@ -284,7 +284,7 @@ export function BaseNode({
           </div>
           {bodyOverride ??
             (bodyPreview && (
-              <div className="nowheel overflow-auto text-left text-[11px] leading-snug text-slate-700 [&_a]:text-indigo-600 [&_a]:underline [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1 [&_strong]:text-slate-900">
+              <div className="nowheel overflow-auto text-left text-[11px] leading-snug text-fg [&_a]:text-accent [&_a]:underline [&_code]:rounded [&_code]:bg-surface-subtle [&_code]:px-1 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1 [&_strong]:text-fg-strong">
                 <ReactMarkdown>{bodyPreview}</ReactMarkdown>
               </div>
             ))}

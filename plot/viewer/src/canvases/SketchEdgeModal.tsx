@@ -98,36 +98,36 @@ export function SketchEdgeModal({
 
   return (
     <div
-      className="fixed inset-0 z-30 flex items-center justify-center bg-slate-900/40"
+      className="fixed inset-0 z-30 flex items-center justify-center bg-overlay/40"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
       <div
-        className="w-[520px] rounded-lg bg-white p-5 shadow-xl"
+        className="w-[520px] rounded-lg bg-surface p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-800">Edit arrow</h2>
+          <h2 className="text-sm font-semibold text-fg-strong">Edit arrow</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded px-2 text-slate-400 hover:bg-slate-100"
+            className="rounded px-2 text-fg-faint hover:bg-surface-subtle"
           >
             ✕
           </button>
         </div>
 
         <label className="mb-3 block">
-          <span className="text-xs font-semibold text-slate-600">Action (verb)</span>
+          <span className="text-xs font-semibold text-fg-secondary">Action (verb)</span>
           <input
             list="plot-verb-suggestions"
             type="text"
             value={actionVerb}
             onChange={(e) => setActionVerb(e.target.value)}
             placeholder="create · pay · deliver …"
-            className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+            className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-accent focus:outline-none"
             autoFocus
           />
           <datalist id="plot-verb-suggestions">
@@ -138,7 +138,7 @@ export function SketchEdgeModal({
         </label>
 
         <div className="mb-3">
-          <span className="mb-1 block text-xs font-semibold text-slate-600">
+          <span className="mb-1 block text-xs font-semibold text-fg-secondary">
             Value form (what flows)
           </span>
           <div className="grid grid-cols-2 gap-1">
@@ -149,23 +149,23 @@ export function SketchEdgeModal({
                   key={v.id}
                   className={`flex items-center gap-2 rounded border px-2 py-1 text-xs cursor-pointer ${
                     active
-                      ? "border-indigo-500 bg-indigo-50"
-                      : "border-slate-200 bg-white hover:bg-slate-50"
+                      ? "border-accent bg-accent-soft"
+                      : "border-line bg-surface hover:bg-surface-muted"
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={active}
                     onChange={() => toggleValue(v.id)}
-                    className="accent-indigo-600"
+                    className="accent-accent"
                   />
                   <span
                     className="inline-block h-2 w-2 rounded-full"
                     style={{ backgroundColor: v.color }}
                     aria-hidden
                   />
-                  <span className="font-medium text-slate-800">{v.label}</span>
-                  <span className="truncate text-[10px] text-slate-500">{v.hint}</span>
+                  <span className="font-medium text-fg-strong">{v.label}</span>
+                  <span className="truncate text-[10px] text-fg-muted">{v.hint}</span>
                 </label>
               );
             })}
@@ -174,14 +174,14 @@ export function SketchEdgeModal({
 
         <label className="mb-3 block">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">Label</span>
+            <span className="text-xs font-semibold text-fg-secondary">Label</span>
             <button
               type="button"
               onClick={() => {
                 setLabelWasManual(false);
                 setLabel("");
               }}
-              className="text-[10px] text-slate-500 hover:text-indigo-700"
+              className="text-[10px] text-fg-muted hover:text-accent-fg"
             >
               Reset auto
             </button>
@@ -194,12 +194,12 @@ export function SketchEdgeModal({
               setLabel(e.target.value);
             }}
             placeholder="Auto-suggested from verb + values"
-            className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+            className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-accent focus:outline-none"
           />
         </label>
 
         <div className="mb-4">
-          <span className="mb-1 block text-xs font-semibold text-slate-600">Style</span>
+          <span className="mb-1 block text-xs font-semibold text-fg-secondary">Style</span>
           <div className="flex gap-2">
             {(["solid", "dashed"] as const).map((s) => (
               <button
@@ -208,8 +208,8 @@ export function SketchEdgeModal({
                 onClick={() => setStyle(s)}
                 className={`rounded border px-3 py-1 text-xs ${
                   style === s
-                    ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                    : "border-slate-300 text-slate-700"
+                    ? "border-accent bg-accent-soft text-accent-fg"
+                    : "border-line-strong text-fg"
                 }`}
               >
                 {s}
@@ -227,7 +227,7 @@ export function SketchEdgeModal({
                 onClose();
               }
             }}
-            className="rounded px-3 py-1 text-xs text-rose-700 hover:bg-rose-50"
+            className="rounded px-3 py-1 text-xs text-danger-fg hover:bg-danger-soft"
           >
             Delete arrow
           </button>
@@ -235,14 +235,14 @@ export function SketchEdgeModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
+              className="rounded border border-line-strong px-3 py-1 text-xs text-fg hover:bg-surface-muted"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={commit}
-              className="rounded bg-slate-900 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
+              className="rounded bg-surface-inverse px-3 py-1 text-xs font-medium text-fg-inverse hover:bg-surface-inverse"
             >
               Save
             </button>

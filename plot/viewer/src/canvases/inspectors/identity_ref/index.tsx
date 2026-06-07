@@ -25,10 +25,10 @@ export function IdentityRefInspector(props: KindInspectorProps) {
         onDeleteNode={props.onDeleteNode}
       />
       <label className="mb-4 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.notesInContext")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.notesInContext")}
         </span>
         <MdTextarea

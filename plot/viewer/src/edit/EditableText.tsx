@@ -78,7 +78,7 @@ export function EditableText({
           }
         }}
       >
-        {hasValue ? value : <span className="italic text-slate-400">{placeholder ?? ""}</span>}
+        {hasValue ? value : <span className="italic text-fg-faint">{placeholder ?? ""}</span>}
       </span>
     );
   }
@@ -101,7 +101,7 @@ export function EditableText({
     "aria-label": ariaLabel,
     className:
       inputClassName ??
-      "w-full rounded border border-indigo-300 bg-white px-1.5 py-0.5 text-sm focus:border-indigo-600 focus:outline-none",
+      "w-full rounded border border-accent bg-surface px-1.5 py-0.5 text-sm focus:border-accent focus:outline-none",
   };
 
   if (multiline) {

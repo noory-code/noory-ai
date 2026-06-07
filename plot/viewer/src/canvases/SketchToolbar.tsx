@@ -19,7 +19,7 @@ export interface SketchToolbarProps {
 export function SketchToolbar({ canUndo, canRedo, onUndo, onRedo }: SketchToolbarProps) {
   const { t } = useTranslation();
   return (
-    <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2 py-1 text-xs shadow-sm backdrop-blur">
+    <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-md border border-line bg-surface/95 px-2 py-1 text-xs shadow-sm backdrop-blur">
       <IconBtn
         label={t("toolbar.undo")}
         enabled={canUndo}
@@ -59,7 +59,7 @@ function IconBtn({
       onClick={onClick}
       disabled={!enabled}
       className={`rounded px-2 py-1 ${
-        enabled ? "text-slate-700 hover:bg-slate-100" : "cursor-not-allowed text-slate-300"
+        enabled ? "text-fg hover:bg-surface-subtle" : "cursor-not-allowed text-fg-faint"
       }`}
       aria-label={label}
       title={`${label} (${hint})`}

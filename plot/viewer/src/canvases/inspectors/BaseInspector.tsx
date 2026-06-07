@@ -99,19 +99,19 @@ export function BaseInspector({
   return (
     <aside
       className={
-        "pointer-events-auto absolute right-0 top-0 z-10 flex h-full flex-col border-l border-slate-200 bg-white/95 shadow-sm backdrop-blur " +
+        "pointer-events-auto absolute right-0 top-0 z-10 flex h-full flex-col border-l border-line bg-surface/95 shadow-sm backdrop-blur " +
         (width === "wide" ? "w-[min(720px,60vw)]" : "w-80")
       }
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+      <div className="flex items-center justify-between border-b border-line px-3 py-2">
         <div className="flex items-center gap-2">
           <span
-            className="inline-block h-3 w-3 shrink-0 rounded border border-slate-300"
+            className="inline-block h-3 w-3 shrink-0 rounded border border-line-strong"
             style={{ backgroundColor: node.color || "#ffffff" }}
             aria-hidden
           />
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-muted">
             {/* v0.24.11 (D-2026-05-19-D) — actor.is_root is no longer a
                 user-visible distinction; badge is always "액터" / "Actor". */}
             {node.kind === "project"
@@ -124,7 +124,7 @@ export function BaseInspector({
               Code value (literal vMAJOR.MINOR); no i18n. */}
           {node.kind !== "project" && (
             <span
-              className="font-mono text-[10px] tabular-nums text-slate-400"
+              className="font-mono text-[10px] tabular-nums text-fg-faint"
               aria-label={`version ${node.version}`}
             >
               {node.version}
@@ -150,7 +150,7 @@ export function BaseInspector({
                 }
               }}
               aria-label={t("inspector.deleteNode")}
-              className="rounded px-2 text-[10px] text-rose-600 hover:bg-rose-50"
+              className="rounded px-2 text-[10px] text-danger hover:bg-danger-soft"
               title={t("inspector.deleteNode")}
             >
               {t("inspector.deleteShort")}
@@ -163,7 +163,7 @@ export function BaseInspector({
               width === "wide" ? t("inspector.narrowInspector") : t("inspector.widenInspector")
             }
             title={width === "wide" ? t("inspector.narrow") : t("inspector.widen")}
-            className="rounded px-2 text-slate-400 hover:bg-slate-100"
+            className="rounded px-2 text-fg-faint hover:bg-surface-subtle"
           >
             {width === "wide" ? "⇥" : "⇤"}
           </button>
@@ -171,7 +171,7 @@ export function BaseInspector({
             type="button"
             onClick={onClose}
             aria-label={t("inspector.closeInspector")}
-            className="rounded px-2 text-slate-400 hover:bg-slate-100"
+            className="rounded px-2 text-fg-faint hover:bg-surface-subtle"
           >
             ✕
           </button>
@@ -183,7 +183,7 @@ export function BaseInspector({
         {/* MD parse warnings — surfaced first so the user sees the problem
             before editing. */}
         {node._md_warnings && node._md_warnings.length > 0 && (
-          <div className="mb-3 rounded border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
+          <div className="mb-3 rounded border border-warn-line bg-warn-soft p-2 text-[11px] text-warn-fg">
             <div className="mb-1 font-semibold">{t("inspector.mdWarnings")}</div>
             <ul className="ml-4 list-disc">
               {node._md_warnings.map((w, i) => (
@@ -192,7 +192,7 @@ export function BaseInspector({
             </ul>
             {node.details_path && (
               <p
-                className="mt-1 text-[10px] text-amber-800"
+                className="mt-1 text-[10px] text-warn-fg"
                 dangerouslySetInnerHTML={{
                   __html: t("inspector.mdWarningsFixHint", { path: node.details_path }),
                 }}
@@ -203,12 +203,12 @@ export function BaseInspector({
 
         {/* Label */}
         <label className="mb-3 block">
-          <span className="text-xs font-semibold text-slate-600">{t("inspector.label")}</span>
+          <span className="text-xs font-semibold text-fg-secondary">{t("inspector.label")}</span>
           <input
             type="text"
             value={node.label}
             onChange={(e) => onPatchNode({ label: e.target.value })}
-            className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+            className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-accent focus:outline-none"
           />
         </label>
 
@@ -243,12 +243,12 @@ export function BaseInspector({
 
         {/* Actor-root toggle — only for top-level actor. */}
         {canToggleRoot && (
-          <label className="mb-4 flex items-center gap-2 text-xs text-slate-700">
+          <label className="mb-4 flex items-center gap-2 text-xs text-fg">
             <input
               type="checkbox"
               checked={node.is_root}
               onChange={(e) => onPatchNode({ is_root: e.target.checked })}
-              className="accent-indigo-600"
+              className="accent-accent"
             />
             <span>
               Mark as <strong>Actor Root</strong> (centre of its tree)
@@ -271,7 +271,7 @@ export function BaseInspector({
         const kindLabel = t(`kind.${node.kind}`);
         const hasPublishToRevert = fromVersion !== "v1.0";
         return (
-          <div className="shrink-0 border-t border-slate-200 bg-white p-3">
+          <div className="shrink-0 border-t border-line bg-surface p-3">
             <button
               type="button"
               disabled={!isDirty}
@@ -302,8 +302,8 @@ export function BaseInspector({
               className={
                 "w-full rounded-md px-3 py-2 text-sm font-semibold " +
                 (isDirty
-                  ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
-                  : "cursor-not-allowed bg-slate-100 text-slate-400")
+                  ? "bg-ok text-fg-inverse shadow-sm hover:bg-ok"
+                  : "cursor-not-allowed bg-surface-subtle text-fg-faint")
               }
             >
               {t("inspector.publishShort")} → {toVersion}
@@ -332,7 +332,7 @@ export function BaseInspector({
                   }}
                   aria-label={t("inspector.unpublish")}
                   title={t("inspector.unpublishHint")}
-                  className="text-[11px] text-amber-700 hover:underline"
+                  className="text-[11px] text-warn-fg hover:underline"
                 >
                   {t("inspector.unpublishShort")} {fromVersion}
                 </button>

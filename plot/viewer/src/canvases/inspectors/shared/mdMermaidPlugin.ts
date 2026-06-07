@@ -58,7 +58,7 @@ class MermaidWidget extends WidgetType {
   toDOM(): HTMLElement {
     const wrap = document.createElement("div");
     wrap.className =
-      "my-2 overflow-auto rounded border border-slate-200 bg-slate-50 p-2";
+      "my-2 overflow-auto rounded border border-line bg-surface-muted p-2";
     wrap.style.maxHeight = "480px";
     wrap.setAttribute("role", "img");
     wrap.setAttribute("aria-label", deriveAriaLabel(this.code));
@@ -86,7 +86,7 @@ class MermaidWidget extends WidgetType {
       wrap.innerHTML = "";
       wrap.setAttribute("data-mermaid", "error");
       wrap.className =
-        "my-2 overflow-auto rounded border border-rose-200 bg-rose-50 p-2 text-[11px] text-rose-700";
+        "my-2 overflow-auto rounded border border-danger bg-danger-soft p-2 text-[11px] text-danger-fg";
       const pre = document.createElement("pre");
       pre.textContent =
         "mermaid error: " + (err instanceof Error ? err.message : String(err));

@@ -28,13 +28,13 @@ interface StepFieldsProps {
 function StepFields({ node, onPatchNode }: StepFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-indigo-200 bg-indigo-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+    <div className="mb-4 rounded border border-accent bg-accent-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-accent-fg">
         {t("kind.step")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.order")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.order")}</span>
+        <span className="text-xs font-semibold text-fg">{t("inspector.field.order")}</span>
+        <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.order")}</span>
         <input
           type="number"
           value={node.order ?? ""}
@@ -43,14 +43,14 @@ function StepFields({ node, onPatchNode }: StepFieldsProps) {
             onPatchNode({ order: raw === "" ? null : Number(raw) });
           }}
           placeholder="1, 2, 3, …"
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-accent focus:outline-none"
         />
       </label>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.outcome")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.outcome")}
         </span>
         <MdTextarea
@@ -60,16 +60,16 @@ function StepFields({ node, onPatchNode }: StepFieldsProps) {
         />
       </label>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.polarity")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.polarity")}
         </span>
         <select
           value={node.polarity ?? "neutral"}
           onChange={(e) => onPatchNode({ polarity: e.target.value as StepJson["polarity"] })}
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+          className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-accent focus:outline-none"
         >
           <option value="neutral">{t("inspector.polarity.neutral")}</option>
           <option value="positive">{t("inspector.polarity.positive")}</option>

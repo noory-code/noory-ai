@@ -10436,3 +10436,36 @@ but not yet fully eliminated.
   :5190 `/api/health` 200; pixel screenshot blocked by screen-recording
   permission, so confirmed via shipped-bundle key check + real-bundle test).
   758 viewer tests green.
+
+### D-2026-06-07-C — light / dark theme via semantic CSS-variable tokens
+
+- **What:** Add a light/dark theme to the viewer. Colour moves from hardcoded
+  Tailwind palette classes (547 occurrences across 50 files — `bg-white`,
+  `text-slate-*`, `border-slate-*`, plus indigo/amber/emerald/violet accents)
+  to **semantic CSS-variable tokens** (`surface` / `surface-muted` /
+  `surface-subtle` / `surface-inverse` / `overlay`; `text` / `text-strong` /
+  `text-muted` / `text-faint` / `text-inverse`; `border-subtle` /
+  `border-strong`; `accent` / `warn` / `ok` / `special`). `:root` = light,
+  `.dark` = dark; Tailwind colours map to `rgb(var(--token) / <alpha-value>)`,
+  `darkMode: "class"`. Default theme follows OS `prefers-color-scheme`; a
+  header toggle sets an explicit `localStorage["plot:theme"]` = light | dark |
+  system (mirrors `plot:lang`); the resolved theme toggles `.dark` on
+  `<html>`. The dead `ink`/`paper` config colours (0 usages) are removed.
+- **Why:** Plot is a global desktop product; dark mode is table-stakes UX.
+  Semantic tokens give a single source of truth for colour (SSOT), keep the
+  light UI pixel-identical (each token's light value = its current hex), and
+  avoid `dark:`-prefix sprawl across every component.
+- **Alternatives:** (a) `dark:` prefix on all ~547 spots — Tailwind-native but
+  no SSOT, doubles class strings, every new component must remember the pair;
+  rejected for maintainability. (b) Redefine the `slate` ramp as var-backed
+  with no component edits — lowest churn but semantically fragile (white/black
+  + accent special-casing, ramp ≠ clean inversion), high risk of wrong dark
+  contrasts; rejected. (c) chosen: semantic tokens.
+- **Approval:** Accepted by user, 2026-06-07 (strategy + OS-default picked via
+  AskUserQuestion; plan approved "네 승인").
+- **Spec impact:** new SPEC §"Appearance — light / dark theme".
+- **Plan:** ①infra (tailwind darkMode + token vars + `useTheme` hook + header
+  `ThemeToggle`, TDD) → ②migrate 547 occurrences to token classes + structural
+  guard banning raw neutral colour classes → ③verify (suite + tsc + light
+  regression; dark visual check needs user eyeball — screenshot blocked by
+  screen-recording permission, dev-server discouraged per prior user direction).

@@ -42,19 +42,19 @@ export function CompositionList({
     <div className="mb-4">
       <div className="mb-1 flex items-baseline justify-between">
         <div>
-          <div className="text-xs font-semibold text-slate-700">{title}</div>
-          <div className="text-[10px] italic text-slate-400">{subtitle}</div>
+          <div className="text-xs font-semibold text-fg">{title}</div>
+          <div className="text-[10px] italic text-fg-faint">{subtitle}</div>
         </div>
         <button
           type="button"
           onClick={onAdd}
-          className="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-slate-700"
+          className="rounded bg-surface-inverse px-2 py-0.5 text-[10px] font-medium text-fg-inverse hover:bg-surface-inverse"
         >
           {t("composition.add")}
         </button>
       </div>
       {items.length === 0 ? (
-        <div className="rounded border border-dashed border-slate-200 p-2 text-[11px] italic text-slate-400">
+        <div className="rounded border border-dashed border-line p-2 text-[11px] italic text-fg-faint">
           {t("inspector.empty")}
         </div>
       ) : (
@@ -94,12 +94,12 @@ function CompositionRow({
   const dialog = useDialog();
   const [expanded, setExpanded] = useState(false);
   return (
-    <li className="group rounded border border-slate-200 bg-white">
+    <li className="group rounded border border-line bg-surface">
       <div className="flex items-start gap-1 px-2 py-1">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="rounded px-1 text-[10px] text-slate-500 hover:bg-slate-100"
+          className="rounded px-1 text-[10px] text-fg-muted hover:bg-surface-subtle"
           aria-label={expanded ? t("composition.collapse") : t("composition.expand")}
           title={expanded ? t("composition.collapse") : t("composition.expand")}
         >
@@ -111,7 +111,7 @@ function CompositionRow({
             value={item.label}
             onChange={(e) => onPatch(item.id, { label: e.target.value })}
             placeholder={t("composition.namePlaceholder")}
-            className="w-full border-none bg-transparent text-xs font-medium text-slate-800 focus:outline-none"
+            className="w-full border-none bg-transparent text-xs font-medium text-fg-strong focus:outline-none"
           />
         </div>
         <button
@@ -128,14 +128,14 @@ function CompositionRow({
               onRemove(item.id);
             }
           }}
-          className="rounded px-1 text-[10px] text-rose-600 opacity-0 hover:bg-rose-50 group-hover:opacity-100"
+          className="rounded px-1 text-[10px] text-danger opacity-0 hover:bg-danger-soft group-hover:opacity-100"
           aria-label={t("composition.remove")}
         >
           ✕
         </button>
       </div>
       {expanded && (
-        <div className="border-t border-slate-100 px-2 py-2">
+        <div className="border-t border-line px-2 py-2">
           {kind === "rule" && item.kind === "rule" && (
             <RuleFields
               node={item}

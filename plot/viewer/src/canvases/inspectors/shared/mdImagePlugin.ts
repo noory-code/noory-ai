@@ -44,7 +44,7 @@ class ImageWidget extends WidgetType {
   toDOM(): HTMLElement {
     const wrap = document.createElement("div");
     wrap.className =
-      "my-2 overflow-hidden rounded border border-slate-200 bg-slate-50";
+      "my-2 overflow-hidden rounded border border-line bg-surface-muted";
     wrap.contentEditable = "false";
     const img = document.createElement("img");
     img.src = resolveImageUrl(this.url);
@@ -58,7 +58,7 @@ class ImageWidget extends WidgetType {
       wrap.innerHTML = "";
       const err = document.createElement("pre");
       err.className =
-        "rounded border border-rose-300 bg-rose-50 p-2 text-xs text-rose-800";
+        "rounded border border-danger bg-danger-soft p-2 text-xs text-danger-fg";
       err.textContent = `image not loaded: ${this.url}`;
       wrap.appendChild(err);
     };

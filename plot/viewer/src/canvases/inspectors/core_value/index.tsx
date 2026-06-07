@@ -31,15 +31,15 @@ interface CoreValueFieldsProps {
 function CoreValueFields({ node, onPatchNode }: CoreValueFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-amber-200 bg-amber-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+    <div className="mb-4 rounded border border-warn-line bg-warn-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-warn-fg">
         {t("kind.core_value")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.definition")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.definition")}
         </span>
         <MdTextarea

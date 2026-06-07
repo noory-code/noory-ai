@@ -22,8 +22,8 @@ function StepBody({ data }: { data: BaseNodeData }) {
   const hasOutcome = (data.outcome ?? "").trim().length > 0;
   if (!isBranch && !hasOutcome && !data.onOutcomeChange) return null;
   const outcomeRow = (inner: React.ReactNode) => (
-    <div className="flex items-start gap-1 text-left text-[11px] leading-snug text-slate-500">
-      <span className="select-none text-slate-400" aria-hidden>
+    <div className="flex items-start gap-1 text-left text-[11px] leading-snug text-fg-muted">
+      <span className="select-none text-fg-faint" aria-hidden>
         ↳
       </span>
       {inner}
@@ -33,7 +33,7 @@ function StepBody({ data }: { data: BaseNodeData }) {
     <div className="flex flex-col items-stretch gap-1">
       {isBranch && (
         <span
-          className="nodrag mx-auto inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 text-[10px] font-semibold uppercase tracking-wide text-amber-700 ring-1 ring-amber-300"
+          className="nodrag mx-auto inline-flex items-center gap-1 rounded-full bg-warn-soft px-2 text-[10px] font-semibold uppercase tracking-wide text-warn-fg ring-1 ring-warn"
           aria-label={t("node.step.branchAria", { count: data.branchCount ?? 0 })}
           title={t("node.step.branchAria", { count: data.branchCount ?? 0 })}
         >
@@ -48,7 +48,7 @@ function StepBody({ data }: { data: BaseNodeData }) {
               placeholder={t("node.step.outcomePlaceholder")}
               ariaLabel={t("inspector.field.outcome")}
               className="flex-1"
-              inputClassName="w-full rounded border border-indigo-300 bg-white px-1 py-0.5 text-[11px] focus:border-indigo-600 focus:outline-none"
+              inputClassName="w-full rounded border border-accent bg-surface px-1 py-0.5 text-[11px] focus:border-accent focus:outline-none"
               multiline
             />,
           )

@@ -27,12 +27,12 @@ export function ProjectPicker() {
           <button
             data-testid="open-folder-btn"
             onClick={handleOpen}
-            className="rounded-md bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700"
+            className="rounded-md bg-surface-inverse px-4 py-2 text-sm text-fg-inverse hover:bg-surface-inverse"
           >
             {t("shell.projectPicker.openFolder")}
           </button>
         ) : (
-          <p className="text-slate-500">{t("shell.projectPicker.hint")}</p>
+          <p className="text-fg-muted">{t("shell.projectPicker.hint")}</p>
         )}
       </div>
     </div>

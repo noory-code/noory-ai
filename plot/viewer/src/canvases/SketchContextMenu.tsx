@@ -51,7 +51,7 @@ export function SketchContextMenu({ x, y, items, onClose }: SketchContextMenuPro
       // leaves behind when a right-click opens the menu — otherwise item
       // labels can appear pre-highlighted as if the user had dragged across
       // them.
-      className="fixed z-50 min-w-[180px] select-none rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+      className="fixed z-50 min-w-[180px] select-none rounded-md border border-line bg-surface py-1 shadow-lg"
       style={{ left: x, top: y }}
       onMouseDown={(e) => {
         // Swallow the mousedown so the underlying pane never starts a box
@@ -61,7 +61,7 @@ export function SketchContextMenu({ x, y, items, onClose }: SketchContextMenuPro
     >
       {items.map((item, idx) =>
         item.divider ? (
-          <div key={`div-${idx}`} className="my-1 border-t border-slate-100" />
+          <div key={`div-${idx}`} className="my-1 border-t border-line" />
         ) : (
           <button
             key={item.label}
@@ -75,10 +75,10 @@ export function SketchContextMenu({ x, y, items, onClose }: SketchContextMenuPro
             }}
             className={`block w-full px-3 py-1.5 text-left text-xs ${
               item.disabled
-                ? "cursor-not-allowed text-slate-400"
+                ? "cursor-not-allowed text-fg-faint"
                 : item.danger
-                  ? "text-rose-700 hover:bg-rose-50"
-                  : "text-slate-700 hover:bg-slate-100"
+                  ? "text-danger-fg hover:bg-danger-soft"
+                  : "text-fg hover:bg-surface-subtle"
             }`}
           >
             {item.label}

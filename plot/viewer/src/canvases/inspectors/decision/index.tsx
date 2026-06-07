@@ -33,11 +33,11 @@ interface DecisionFieldsProps {
 function DecisionFields({ node, onPatchNode }: DecisionFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-amber-200 bg-amber-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+    <div className="mb-4 rounded border border-warn-line bg-warn-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-warn-fg">
         {t("kind.decision")}
       </div>
-      <p className="mb-2 text-[11px] leading-snug text-slate-500">
+      <p className="mb-2 text-[11px] leading-snug text-fg-muted">
         {t("inspector.decision.branchHint")}
       </p>
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />

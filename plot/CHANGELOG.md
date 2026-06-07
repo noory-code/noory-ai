@@ -4,6 +4,35 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.47.0] — 2026-06-07
+
+### Added — light / dark theme (D-2026-06-07-C)
+
+- Semantic CSS-variable theme tokens in `styles.css` (`:root` = light,
+  `.dark` = dark): `surface*` / `fg*` / `line*` / `overlay` neutrals +
+  `accent` / `warn` / `ok` / `danger` / `info` / `special` status families.
+  Tailwind maps them via `rgb(var(--token) / <alpha-value>)` with
+  `darkMode: "class"`. Light values equal the pre-theme palette, so the
+  light UI is preserved.
+- `theme/ThemeProvider` + `useTheme` — resolves the choice against the OS
+  `prefers-color-scheme`, applies `.dark` on `<html>`, and persists explicit
+  choices to `localStorage["plot:theme"]` (`light` | `dark` | `system`);
+  default follows the OS and tracks live changes.
+- `shell/ThemeToggle` — Light / Dark / System pill next to the language
+  toggle (sidebar footer + ServiceDetail stencil panel); labels i18n `theme.*`.
+- Guards: `structural-guards` bans raw Tailwind palette colour classes
+  viewer-wide (forces tokens so dark mode works); `theme-tokens.test.ts`
+  pins each light token = its original palette hex; `theme*.test` cover
+  resolution / persistence / toggle.
+
+### Changed
+
+- Migrated 614 hardcoded palette colour classes across 52 components to
+  semantic tokens (text / background / border / ring / divide). Core
+  neutrals are unchanged in light; a few in-between shades and per-kind
+  reference-block tints consolidated to the nearest semantic token.
+- Removed the dead `ink` / `paper` Tailwind colours (0 usages).
+
 ## [0.46.0] — 2026-06-07
 
 ### Added — project picker (Tauri desktop entry) + i18n single-namespace guard

@@ -53,7 +53,7 @@ export function SectionInfo({ text }: { text: string }) {
         type="button"
         aria-label={t("stencil.infoAria")}
         onClick={toggle}
-        className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-slate-300 text-[8px] font-bold leading-none text-slate-400 hover:border-slate-400 hover:text-slate-600"
+        className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-line-strong text-[8px] font-bold leading-none text-fg-faint hover:border-line-strong hover:text-fg-secondary"
       >
         i
       </button>
@@ -64,7 +64,7 @@ export function SectionInfo({ text }: { text: string }) {
             ref={popRef}
             role="dialog"
             style={{ position: "fixed", top: pos.top, left: pos.left, width: POPOVER_WIDTH }}
-            className="z-[100] rounded-md border border-slate-200 bg-white p-2 text-[10px] font-normal normal-case leading-snug tracking-normal text-slate-600 shadow-lg"
+            className="z-[100] rounded-md border border-line bg-surface p-2 text-[10px] font-normal normal-case leading-snug tracking-normal text-fg-secondary shadow-lg"
           >
             {text}
           </div>,

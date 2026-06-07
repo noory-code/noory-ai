@@ -67,14 +67,14 @@ export function BlueprintPublishButton({
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
-        className="rounded border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        className="rounded border border-line-strong bg-surface px-3 py-1 text-xs text-fg hover:bg-surface-muted disabled:opacity-50"
         title={t("publishProject.hint")}
       >
         📤 {t("publishProject.label")} ▾
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 min-w-[220px] rounded border border-slate-200 bg-white p-1 text-xs shadow-lg">
-          <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-slate-400">
+        <div className="absolute right-0 z-20 mt-1 min-w-[220px] rounded border border-line bg-surface p-1 text-xs shadow-lg">
+          <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-fg-faint">
             {t("publishProject.bumpHeader", { current: currentVersion })}
           </div>
           {(["major", "minor", "patch"] as const).map((bump) => (
@@ -82,10 +82,10 @@ export function BlueprintPublishButton({
               key={bump}
               type="button"
               onClick={() => handlePick(bump)}
-              className="flex w-full items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-slate-700 hover:bg-slate-100"
+              className="flex w-full items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-fg hover:bg-surface-subtle"
             >
               <span>{t(`publishProject.${bump}`)}</span>
-              <span className="font-mono text-[10px] text-slate-500">
+              <span className="font-mono text-[10px] text-fg-muted">
                 → {bumpPreview(currentVersion, bump)}
               </span>
             </button>

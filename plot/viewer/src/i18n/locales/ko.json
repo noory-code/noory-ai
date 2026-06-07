@@ -9,6 +9,12 @@
     "ok": "확인",
     "confirm": "확인"
   },
+  "theme": {
+    "label": "테마",
+    "light": "라이트",
+    "dark": "다크",
+    "system": "시스템"
+  },
   "toolbar": {
     "undo": "되돌리기",
     "redo": "다시 실행",

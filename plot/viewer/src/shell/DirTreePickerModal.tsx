@@ -56,28 +56,28 @@ export function DirTreePickerModal({
       role="dialog"
       aria-modal="true"
       aria-label={t("dirPicker.title")}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/40"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[80vh] w-[480px] flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
+        className="flex max-h-[80vh] w-[480px] flex-col overflow-hidden rounded-lg bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-slate-200 px-4 py-2">
-          <span className="text-sm font-semibold text-slate-800">{t("dirPicker.title")}</span>
+        <header className="flex items-center justify-between border-b border-line px-4 py-2">
+          <span className="text-sm font-semibold text-fg-strong">{t("dirPicker.title")}</span>
           <button
             type="button"
             onClick={onClose}
             aria-label={t("dirPicker.cancel")}
-            className="rounded px-1.5 text-slate-400 hover:bg-slate-100"
+            className="rounded px-1.5 text-fg-faint hover:bg-surface-subtle"
           >
             ×
           </button>
         </header>
         <div className="flex-1 overflow-y-auto p-2 text-sm">
-          {error && <p className="px-2 py-1 text-rose-600">{error}</p>}
+          {error && <p className="px-2 py-1 text-danger">{error}</p>}
           {!tree && !error && (
-            <p className="px-2 py-1 italic text-slate-400">{t("dirPicker.loading")}</p>
+            <p className="px-2 py-1 italic text-fg-faint">{t("dirPicker.loading")}</p>
           )}
           {tree && (
             <TreeRow node={tree} depth={0} onPick={onPick} workspaceRoot={workspaceRoot} />
@@ -119,14 +119,14 @@ function TreeRow({
   return (
     <div>
       <div
-        className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-slate-50"
+        className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-surface-muted"
         style={{ paddingLeft: depth * 14 + 4 }}
       >
         {hasChildren ? (
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="w-4 text-slate-400"
+            className="w-4 text-fg-faint"
             aria-label={expanded ? "collapse" : "expand"}
           >
             {expanded ? "▾" : "▸"}
@@ -134,25 +134,25 @@ function TreeRow({
         ) : (
           <span className="w-4" />
         )}
-        <span className="flex-1 truncate text-slate-700">
+        <span className="flex-1 truncate text-fg">
           {node.rel === "." ? t("dirPicker.root") : node.name}
         </span>
         {node.has_plot && (
-          <span className="rounded bg-emerald-100 px-1 text-[10px] text-emerald-700">
+          <span className="rounded bg-ok-soft px-1 text-[10px] text-ok-fg">
             {t("dirPicker.hasProject")}
           </span>
         )}
         <button
           type="button"
           onClick={handleNewFolder}
-          className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-slate-100"
+          className="rounded border border-line-strong px-1.5 py-0.5 text-[10px] font-medium text-fg-secondary hover:bg-surface-subtle"
         >
           {t("dirPicker.newFolder")}
         </button>
         <button
           type="button"
           onClick={() => onPick(node.rel)}
-          className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-medium text-white hover:bg-slate-700"
+          className="rounded bg-surface-inverse px-1.5 py-0.5 text-[10px] font-medium text-fg-inverse hover:bg-surface-inverse"
         >
           {node.has_plot ? t("dirPicker.open") : t("dirPicker.createHere")}
         </button>

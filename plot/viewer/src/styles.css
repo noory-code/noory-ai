@@ -2,6 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Semantic theme tokens (D-2026-06-07-C). `:root` = light, `.dark` = dark.
+   Each var holds space-separated RGB channels so Tailwind's <alpha-value>
+   works (e.g. `bg-overlay/40`). Light values equal the pre-theme palette
+   colours so the light UI is preserved 1:1; only dark values are new.
+   Tailwind maps these in `tailwind.config.js`; `darkMode: "class"` flips
+   them via the `.dark` class on <html> (set by `theme/ThemeProvider`). */
+:root {
+  --surface: 255 255 255;        /* white */
+  --surface-muted: 248 250 252;  /* slate-50 */
+  --surface-subtle: 241 245 249; /* slate-100 */
+  --surface-inverse: 15 23 42;   /* slate-900 (dark buttons) */
+  --overlay: 15 23 42;           /* slate-900 (modal backdrop, used w/ alpha) */
+  --fg: 51 65 85;                /* slate-700 (body text) */
+  --fg-strong: 15 23 42;         /* slate-900 (headings) */
+  --fg-muted: 100 116 139;       /* slate-500 */
+  --fg-faint: 148 163 184;       /* slate-400 */
+  --fg-inverse: 255 255 255;     /* white (text on inverse surface) */
+  --line: 226 232 240;           /* slate-200 */
+  --line-strong: 203 213 225;    /* slate-300 */
+  --accent: 79 70 229;           /* indigo-600 */
+  --accent-fg: 67 56 202;        /* indigo-700 */
+  --accent-soft: 238 242 255;    /* indigo-50 */
+  --warn: 217 119 6;             /* amber-600 */
+  --warn-fg: 180 83 9;           /* amber-700 */
+  --warn-soft: 255 251 235;      /* amber-50 */
+  --warn-line: 253 230 138;      /* amber-200 */
+  --ok: 5 150 105;               /* emerald-600 */
+  --ok-fg: 4 120 87;             /* emerald-700 */
+  --ok-soft: 236 253 245;        /* emerald-50 */
+  --ok-line: 167 243 208;        /* emerald-200 */
+  --special: 124 58 237;         /* violet-600 */
+  --special-fg: 109 40 217;      /* violet-700 */
+  --special-soft: 245 243 255;   /* violet-50 */
+  --fg-secondary: 71 85 105;     /* slate-600 */
+  --danger: 225 29 72;           /* rose-600 */
+  --danger-fg: 190 18 60;        /* rose-700 */
+  --danger-soft: 255 241 242;    /* rose-50 */
+  --danger-line: 253 164 175;    /* rose-300 */
+  --info: 2 132 199;             /* sky-600 */
+  --info-fg: 3 105 161;          /* sky-700 */
+  --info-soft: 240 249 255;      /* sky-50 */
+}
+
+.dark {
+  --surface: 15 23 42;           /* slate-900 */
+  --surface-muted: 30 41 59;     /* slate-800 */
+  --surface-subtle: 51 65 85;    /* slate-700 */
+  --surface-inverse: 226 232 240;/* slate-200 (inverse flips light) */
+  --overlay: 0 0 0;              /* black */
+  --fg: 226 232 240;             /* slate-200 */
+  --fg-strong: 248 250 252;      /* slate-50 */
+  --fg-muted: 148 163 184;       /* slate-400 */
+  --fg-faint: 100 116 139;       /* slate-500 */
+  --fg-inverse: 15 23 42;        /* slate-900 (text on inverse flips dark) */
+  --line: 51 65 85;              /* slate-700 */
+  --line-strong: 71 85 105;      /* slate-600 */
+  --accent: 99 102 241;          /* indigo-500 */
+  --accent-fg: 165 180 252;      /* indigo-300 */
+  --accent-soft: 30 27 75;       /* indigo-950 */
+  --warn: 245 158 11;            /* amber-500 */
+  --warn-fg: 252 211 77;         /* amber-300 */
+  --warn-soft: 69 26 3;          /* amber-950 */
+  --warn-line: 146 64 14;        /* amber-800 */
+  --ok: 16 185 129;              /* emerald-500 */
+  --ok-fg: 110 231 183;          /* emerald-300 */
+  --ok-soft: 2 44 34;            /* emerald-950 */
+  --ok-line: 6 95 70;            /* emerald-800 */
+  --special: 139 92 246;         /* violet-500 */
+  --special-fg: 196 181 253;     /* violet-300 */
+  --special-soft: 46 16 101;     /* violet-950 */
+  --fg-secondary: 203 213 225;   /* slate-300 */
+  --danger: 244 63 94;           /* rose-500 */
+  --danger-fg: 253 164 175;      /* rose-300 */
+  --danger-soft: 76 5 25;        /* rose-950 */
+  --danger-line: 159 18 57;      /* rose-800 */
+  --info: 56 189 248;            /* sky-400 */
+  --info-fg: 125 211 252;        /* sky-300 */
+  --info-soft: 8 47 73;          /* sky-950 */
+}
+
+/* Base backdrop so unstyled areas follow the theme (white in light — same as
+   before; dark surface in dark mode). Component surfaces still set their own. */
+body {
+  background-color: rgb(var(--surface));
+}
+
 html, body, #root {
   height: 100%;
   min-height: 100vh;

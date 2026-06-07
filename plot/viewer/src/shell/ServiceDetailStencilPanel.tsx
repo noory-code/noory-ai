@@ -14,10 +14,11 @@
  * user can flip locale without closing the modal.
  *
  * Width / chrome mirror the main ``SketchSidebar``'s stencil region
- * (``w-56 border-r border-slate-200 bg-white``) so the two stencil
+ * (``w-56 border-r border-line bg-surface``) so the two stencil
  * columns read as the same component family.
  */
 import { LanguageToggle } from "../i18n/LanguageToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { SketchStencil } from "../canvases/SketchStencil";
 import type { SketchNode } from "../types";
 
@@ -35,7 +36,7 @@ export function ServiceDetailStencilPanel({
   availableIdentities,
 }: ServiceDetailStencilPanelProps) {
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white">
+    <aside className="flex h-full w-56 shrink-0 flex-col overflow-y-auto border-r border-line bg-surface">
       <div className="flex-1">
         <SketchStencil
           canvas="service_detail"
@@ -45,7 +46,8 @@ export function ServiceDetailStencilPanel({
           availableIdentities={availableIdentities}
         />
       </div>
-      <div className="border-t border-slate-200 px-3 py-2">
+      <div className="flex items-center justify-end gap-2 border-t border-line px-3 py-2">
+        <ThemeToggle />
         <LanguageToggle />
       </div>
     </aside>

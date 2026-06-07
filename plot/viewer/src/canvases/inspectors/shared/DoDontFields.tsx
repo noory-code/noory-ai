@@ -28,8 +28,8 @@ export function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
   return (
     <>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-emerald-700">{t("inspector.field.do")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.do")}</span>
+        <span className="text-xs font-semibold text-ok-fg">{t("inspector.field.do")}</span>
+        <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.do")}</span>
         <MdTextarea
           value={node.do ?? ""}
           onChange={(v) => onPatchNode({ do: v })}
@@ -37,8 +37,8 @@ export function DoDontFields({ node, onPatchNode }: DoDontFieldsProps) {
         />
       </label>
       <label className="block">
-        <span className="text-xs font-semibold text-rose-700">{t("inspector.field.dont")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.dont")}</span>
+        <span className="text-xs font-semibold text-danger-fg">{t("inspector.field.dont")}</span>
+        <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.dont")}</span>
         <MdTextarea
           value={node.dont ?? ""}
           onChange={(v) => onPatchNode({ dont: v })}

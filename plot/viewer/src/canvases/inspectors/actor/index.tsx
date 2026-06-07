@@ -57,7 +57,7 @@ function Inherited({
   const shown = format ? format(field.value) : field.value;
   const preview = shown.length > 60 ? `${shown.slice(0, 60)}…` : shown;
   return (
-    <p className="mt-0.5 text-[10px] italic text-slate-400">
+    <p className="mt-0.5 text-[10px] italic text-fg-faint">
       ↳ {t("inspector.inheritedFrom", { from: field.fromLabel })}: {preview}
     </p>
   );
@@ -76,23 +76,23 @@ function ActorFields({ node, onPatchNode, eff, isBase }: ActorFieldsProps) {
     // Abstract root superclass — role/motive/pain live on the concrete
     // subclasses (D-2026-05-31-H). Only the note field remains.
     return (
-      <div className="mb-4 rounded border border-rose-200 bg-rose-50/40 p-2">
-        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+      <div className="mb-4 rounded border border-danger bg-danger-soft/40 p-2">
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-danger-fg">
           {t("kind.actor")}
         </div>
-        <p className="mb-2 text-[10px] italic text-slate-500">{t("inspector.actorBaseHint")}</p>
+        <p className="mb-2 text-[10px] italic text-fg-muted">{t("inspector.actorBaseHint")}</p>
         <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
       </div>
     );
   }
   return (
-    <div className="mb-4 rounded border border-rose-200 bg-rose-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+    <div className="mb-4 rounded border border-danger bg-danger-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-danger-fg">
         {t("kind.actor")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.side")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.side")}</span>
+        <span className="text-xs font-semibold text-fg">{t("inspector.field.side")}</span>
+        <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.side")}</span>
         <select
           value={node.side ?? ""}
           onChange={(e) =>
@@ -100,7 +100,7 @@ function ActorFields({ node, onPatchNode, eff, isBase }: ActorFieldsProps) {
               side: e.target.value === "" ? null : (e.target.value as "operator" | "user"),
             })
           }
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-rose-600 focus:outline-none"
+          className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-danger focus:outline-none"
         >
           <option value="">{t("inspector.unset")}</option>
           <option value="operator">{t("inspector.operatorOption")}</option>
@@ -109,10 +109,10 @@ function ActorFields({ node, onPatchNode, eff, isBase }: ActorFieldsProps) {
         <Inherited field={eff.side} format={(v) => surfaceLabel(t, v)} />
       </label>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.motivation")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.motivation")}
         </span>
         <MdTextarea
@@ -123,8 +123,8 @@ function ActorFields({ node, onPatchNode, eff, isBase }: ActorFieldsProps) {
         <Inherited field={eff.motivation} />
       </label>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">{t("inspector.field.pain")}</span>
-        <span className="ml-1 text-[10px] text-slate-500">— {t("inspector.fieldHint.pain")}</span>
+        <span className="text-xs font-semibold text-fg">{t("inspector.field.pain")}</span>
+        <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.pain")}</span>
         <MdTextarea
           value={node.pain ?? ""}
           onChange={(v) => onPatchNode({ pain: v })}

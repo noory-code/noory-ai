@@ -32,11 +32,11 @@ function GroupFields({ node, onPatchNode }: GroupFieldsProps) {
   const { t } = useTranslation();
   const count = node.member_ids?.length ?? 0;
   return (
-    <div className="mb-4 rounded border border-slate-300 bg-slate-50/60 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+    <div className="mb-4 rounded border border-line-strong bg-surface-muted/60 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-fg-secondary">
         {t("kind.group")}
       </div>
-      <p className="mb-2 text-[11px] leading-snug text-slate-500">
+      <p className="mb-2 text-[11px] leading-snug text-fg-muted">
         {t("inspector.group.memberCount", { count })}
       </p>
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />

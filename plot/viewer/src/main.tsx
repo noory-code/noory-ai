@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import "reactflow/dist/style.css";
 import { App } from "./App";
 import { DialogProvider } from "./shell/dialog/DialogProvider";
+import { ThemeProvider } from "./theme/ThemeProvider";
 import "./i18n";
 import "./styles.css";
 
@@ -13,8 +14,10 @@ if (root === null) {
 
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
-    <DialogProvider>
-      <App />
-    </DialogProvider>
+    <ThemeProvider>
+      <DialogProvider>
+        <App />
+      </DialogProvider>
+    </ThemeProvider>
   </React.StrictMode>,
 );

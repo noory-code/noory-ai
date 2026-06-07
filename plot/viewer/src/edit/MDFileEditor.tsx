@@ -96,7 +96,7 @@ export function MDFileEditor({
 
   if (loadedPath !== path && error === null) {
     return (
-      <div className="p-3 text-xs italic text-slate-400">Loading…</div>
+      <div className="p-3 text-xs italic text-fg-faint">Loading…</div>
     );
   }
 
@@ -109,7 +109,7 @@ export function MDFileEditor({
         scheduleSave(next);
       }}
       spellCheck={false}
-      className="h-full w-full flex-1 resize-none border-none bg-white p-3 font-mono text-[12px] leading-relaxed text-slate-800 focus:outline-none"
+      className="h-full w-full flex-1 resize-none border-none bg-surface p-3 font-mono text-[12px] leading-relaxed text-fg-strong focus:outline-none"
       placeholder="Write freely. Use ### headings to mark Tagline / Summary / Details sections — the node preview picks up the first one. ```mermaid blocks render in Preview."
     />
   );
@@ -122,12 +122,12 @@ export function MDFileEditor({
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-1.5 text-[10px] text-slate-500">
+      <div className="flex items-center justify-between border-b border-line px-3 py-1.5 text-[10px] text-fg-muted">
         <span className="truncate font-mono" title={path}>
           📁 {path}
         </span>
         <div className="flex items-center gap-2">
-          <div className="flex rounded border border-slate-200 text-[10px]">
+          <div className="flex rounded border border-line text-[10px]">
             {(["edit", "split", "preview"] as const).map((m) => (
               <button
                 key={m}
@@ -136,8 +136,8 @@ export function MDFileEditor({
                 className={
                   "px-2 py-0.5 " +
                   (mode === m
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-500 hover:bg-slate-100")
+                    ? "bg-surface-inverse text-fg-inverse"
+                    : "text-fg-muted hover:bg-surface-subtle")
                 }
               >
                 {m}
@@ -147,11 +147,11 @@ export function MDFileEditor({
           <span
             className={
               saveState === "saving"
-                ? "text-slate-400"
+                ? "text-fg-faint"
                 : saveState === "saved"
-                  ? "text-emerald-600"
+                  ? "text-ok"
                   : saveState === "error"
-                    ? "text-rose-600"
+                    ? "text-danger"
                     : "text-transparent"
             }
           >
@@ -169,7 +169,7 @@ export function MDFileEditor({
       {mode === "preview" && preview}
       {mode === "split" && (
         <div className="flex min-h-0 flex-1">
-          <div className="flex min-h-0 flex-1 border-r border-slate-200">{editor}</div>
+          <div className="flex min-h-0 flex-1 border-r border-line">{editor}</div>
           <div className="flex min-h-0 flex-1">{preview}</div>
         </div>
       )}

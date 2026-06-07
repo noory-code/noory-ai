@@ -64,14 +64,14 @@ export function PublishedMDModal({
 
   const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/40"
       role="dialog"
       aria-modal="true"
       aria-label={`Published ${version}`}
       onClick={onClose}
     >
       <div
-        className="flex flex-col overflow-hidden rounded-lg bg-white shadow-xl"
+        className="flex flex-col overflow-hidden rounded-lg bg-surface shadow-xl"
         style={{
           width: "720px",
           height: "80vh",
@@ -83,25 +83,25 @@ export function PublishedMDModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+        <div className="flex items-center justify-between border-b border-line px-5 py-3">
           <div className="flex items-baseline gap-3">
-            <span className="font-mono text-sm font-semibold text-slate-800">
+            <span className="font-mono text-sm font-semibold text-fg-strong">
               {version}
             </span>
-            <span className="text-xs text-slate-500">{path}</span>
+            <span className="text-xs text-fg-muted">{path}</span>
           </div>
           <div className="flex items-center gap-3">
             {publishedAt && (
-              <span className="text-[11px] text-slate-500">{publishedAt}</span>
+              <span className="text-[11px] text-fg-muted">{publishedAt}</span>
             )}
             {sha && (
-              <span className="font-mono text-[11px] text-slate-400">{sha}</span>
+              <span className="font-mono text-[11px] text-fg-faint">{sha}</span>
             )}
             <button
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="rounded px-2 text-slate-400 hover:bg-slate-100"
+              className="rounded px-2 text-fg-faint hover:bg-surface-subtle"
             >
               ✕
             </button>
@@ -109,12 +109,12 @@ export function PublishedMDModal({
         </div>
         <div className="flex-1 overflow-y-auto p-5">
           {error && (
-            <pre className="rounded border border-rose-300 bg-rose-50 p-3 text-xs text-rose-800">
+            <pre className="rounded border border-danger bg-danger-soft p-3 text-xs text-danger-fg">
               {error}
             </pre>
           )}
           {content === null && !error && (
-            <div className="text-xs text-slate-400">Loading...</div>
+            <div className="text-xs text-fg-faint">Loading...</div>
           )}
           {content !== null && <MDPreview content={content} />}
         </div>

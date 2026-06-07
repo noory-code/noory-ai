@@ -37,15 +37,15 @@ interface IdentityFieldsProps {
 function IdentityFields({ node, onPatchNode }: IdentityFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-violet-200 bg-violet-50/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+    <div className="mb-4 rounded border border-special bg-special-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-special-fg">
         {t("kind.identity")}
       </div>
       <label className="mb-2 block">
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-fg">
           {t("inspector.field.description")}
         </span>
-        <span className="ml-1 text-[10px] text-slate-500">
+        <span className="ml-1 text-[10px] text-fg-muted">
           — {t("inspector.fieldHint.description")}
         </span>
         <MdTextarea
@@ -76,16 +76,16 @@ function StatusField({ value, onChange }: StatusFieldProps) {
   const { t } = useTranslation();
   return (
     <label className="mb-2 block">
-      <span className="text-xs font-semibold text-slate-700">
+      <span className="text-xs font-semibold text-fg">
         {t("inspector.field.identityStatus")}
       </span>
-      <span className="ml-1 text-[10px] text-slate-500">
+      <span className="ml-1 text-[10px] text-fg-muted">
         — {t("inspector.fieldHint.identityStatus")}
       </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as IdentityStatus)}
-        className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-indigo-600 focus:outline-none"
+        className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-accent focus:outline-none"
       >
         {STATUS_OPTIONS.map((s) => (
           <option key={s} value={s}>
@@ -116,10 +116,10 @@ function ProvenanceField({ value, onChange }: ProvenanceFieldProps) {
 
   return (
     <div className="mb-1 block">
-      <span className="text-xs font-semibold text-slate-700">
+      <span className="text-xs font-semibold text-fg">
         {t("inspector.field.provenance")}
       </span>
-      <span className="ml-1 text-[10px] text-slate-500">
+      <span className="ml-1 text-[10px] text-fg-muted">
         — {t("inspector.fieldHint.provenance")}
       </span>
       {value.length > 0 && (
@@ -127,14 +127,14 @@ function ProvenanceField({ value, onChange }: ProvenanceFieldProps) {
           {value.map((id) => (
             <span
               key={id}
-              className="inline-flex items-center gap-1 rounded bg-violet-100 px-1.5 py-0.5 text-[11px] text-violet-800"
+              className="inline-flex items-center gap-1 rounded bg-special-soft px-1.5 py-0.5 text-[11px] text-special-fg"
             >
               <span className="font-mono">{id}</span>
               <button
                 type="button"
                 onClick={() => remove(id)}
                 aria-label={t("inspector.provenance.remove", { id })}
-                className="text-violet-500 hover:text-violet-900"
+                className="text-special hover:text-special-fg"
               >
                 ×
               </button>
@@ -154,12 +154,12 @@ function ProvenanceField({ value, onChange }: ProvenanceFieldProps) {
             }
           }}
           placeholder={t("inspector.fieldPlaceholder.provenance")}
-          className="min-w-0 flex-1 rounded border border-slate-300 px-2 py-1 font-mono text-[11px] focus:border-indigo-600 focus:outline-none"
+          className="min-w-0 flex-1 rounded border border-line-strong px-2 py-1 font-mono text-[11px] focus:border-accent focus:outline-none"
         />
         <button
           type="button"
           onClick={add}
-          className="rounded border border-violet-300 px-2 py-1 text-[11px] text-violet-700 hover:bg-violet-100"
+          className="rounded border border-special px-2 py-1 text-[11px] text-special-fg hover:bg-special-soft"
         >
           {t("inspector.provenance.add")}
         </button>

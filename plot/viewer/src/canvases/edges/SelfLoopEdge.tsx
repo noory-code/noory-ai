@@ -75,7 +75,7 @@ export function SelfLoopEdge({
               pointerEvents: "all",
               fontSize: 10,
             }}
-            className="rounded bg-white/90 px-1 text-slate-700 shadow-sm"
+            className="rounded bg-surface/90 px-1 text-fg shadow-sm"
           >
             {String(label)}
           </div>

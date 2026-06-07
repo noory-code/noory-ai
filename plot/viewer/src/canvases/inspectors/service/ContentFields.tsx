@@ -20,13 +20,13 @@ export function ContentFields({ node, availableActors, onPatchNode }: ContentFie
   return (
     <div className="text-xs">
       <label className="mb-2 block">
-        <span className="font-semibold text-slate-700">{t("inspector.field.format")}</span>
+        <span className="font-semibold text-fg">{t("inspector.field.format")}</span>
         <input
           type="text"
           value={node.format ?? ""}
           onChange={(e) => onPatchNode({ format: e.target.value })}
           placeholder="JSON / MD / image / token …"
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 font-mono text-sm focus:border-violet-500 focus:outline-none"
+          className="mt-1 w-full rounded border border-line-strong px-2 py-1 font-mono text-sm focus:border-special focus:outline-none"
         />
       </label>
       <ContentActorPicker
@@ -65,12 +65,12 @@ function ContentActorPicker({
   const { t } = useTranslation();
   return (
     <label className="mb-2 block">
-      <span className="font-semibold text-slate-700">{label}</span>
-      <span className="ml-1 text-[10px] text-slate-500">— {hint}</span>
+      <span className="font-semibold text-fg">{label}</span>
+      <span className="ml-1 text-[10px] text-fg-muted">— {hint}</span>
       <select
         value={actorId ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="mt-1 w-full rounded border border-slate-300 px-2 py-1 focus:border-violet-500 focus:outline-none"
+        className="mt-1 w-full rounded border border-line-strong px-2 py-1 focus:border-special focus:outline-none"
       >
         <option value="">{t("inspector.unset")}</option>
         {availableActors.map((a) => (

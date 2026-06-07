@@ -9,6 +9,12 @@
     "ok": "OK",
     "confirm": "Confirm"
   },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
   "toolbar": {
     "undo": "Undo",
     "redo": "Redo",
