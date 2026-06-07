@@ -9,25 +9,38 @@
 
 ## Active queue
 
-### `노드 데이터 형식 + 산출물 관리` (TOP — filed 2026-06-04)
+### `노드 데이터 형식 + 산출물 관리` (TOP — filed 2026-06-04; foundation DONE 2026-06-06)
 
 > **Trigger:** user says **"노드 데이터"** / **"문서 형식"** / **"산출물"** /
 > **"버저닝"** / **"발행 정리"** / **"이어서"** / **"다음"** as the first /
 > near-first message.
 >
-> **Filed:** 2026-06-04. User: *"각 노드들에 묶여있는 데이터들 형식(문서
-> 형식) 과 산출물 관리(버저닝 포함) … 계획 잡아두고 문서 만들어두세요."*
+> **개념 정본 먼저 읽기:** [`FOUNDATION_CONCEPT.md`](./FOUNDATION_CONCEPT.md)
+> (미션=뿌리/입력, 코어밸류=현재/입력, 아이덴티티=지향/**출력**; 셋 다
+> 서비스 기획의 토대) + kind별 감사 [`node-format/`](./node-format/) +
+> 상위 계획 [`NODE_DATA_AND_ARTIFACTS_PLAN.md`](./NODE_DATA_AND_ARTIFACTS_PLAN.md).
 >
-> **The plan is already written → read it first:**
-> **`docs/NODE_DATA_AND_ARTIFACTS_PLAN.md`**. It has the verified current
-> state (typed fields inline + `body` + publish system + blueprint
-> semver), the gaps, and **§3 open decisions to resolve with the user
-> before any code**. Next session: walk the user through §3 (Q1–Q7),
-> then execute §5 phases (A spec → B templates → C artifact spec → D
-> bundler). Planning only so far — nothing implemented.
+> **✅ 완료 (2026-06-06, v0.43.0–0.43.2):** 파운데이션 3종 노드 포맷 실제
+> 구현 + 무손실 마이그레이션 (서버 Pydantic `model_validator` + 뷰어
+> `fromJson`):
+> - **mission** = label + `statement`(표시명 미션) + body. (what_we_do→
+>   statement, why/direction→body)
+> - **core_value** = `definition` + body. (do→body, dont 컷)
+> - **identity** = `description` + body. (do/dont→body)
+> - do/dont 파운데이션에서 전멸. publish/MD/schema_export data-driven 반영.
+>   BANAS 실데이터 검증 완료. 서버 493 + viewer 741 green.
 >
-> **Do NOT start coding** until §3 Q1/Q2/Q6 are confirmed (they decide
-> the whole shape). Q6 (what the deliverable *is*) is load-bearing.
+> **다음 세션 할 일 (사용자: "다음세션에서 작업"):**
+> 1. **아이덴티티 출력모델** — provenance(도출 출처) / evolution(갱신 이력)
+>    / status(도출↔확정) 필드 설계·구현. + facet 분류는 deliverable 수요 시.
+>    (identity = 출력값이라 입력 kind 와 다른 구조. node-format/foundation/
+>    identity.md 의 작업 정의 참조.)
+> 2. **인터뷰 질문 → 캔버스 AI 대화창** — kind별 인터뷰 질문 세트는 정의됨
+>    (mission "어떤 문제를 푸나요?", core_value "결정 시 우선 가치?"). 정적
+>    body 프롬프트로 깔지 / AI 챗 붙일지. (project_plot_pencil_dev_direction)
+> 3. **나머지 kind 감사** — actors / services(10필드, 감축 1순위) /
+>    service-detail (3 ref 통합, "가치" 3중복 등). node-format/ 참조.
+> 4. **산출물(deliverable, Q6)** — 서비스 "가치 시트" 번들러 (PLAN §3.1).
 >
 > **Per-node refinement workspace (2026-06-04):** the user works node by
 > node. A manual Solera stand-in lives at
