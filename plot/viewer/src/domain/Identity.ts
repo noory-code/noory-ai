@@ -1,19 +1,33 @@
 /**
- * v0.43.2 (D-2026-06-06-B) — ``identity`` Foundation entity =
- * ``description`` + ``body``. The ``do`` / ``dont`` fields were removed
- * (shared do/dont cut across the foundation triad). Legacy values fold
- * into ``body`` on read (data-loss guard). The output-value model
- * (provenance / evolution / status) is a separate future change.
+ * v0.44.0 (D-2026-06-07-A) — ``identity`` Foundation entity =
+ * ``description`` + ``body`` plus the **output-model** structural fields
+ * ``status`` + ``provenance``. identity is an output kind (AI-derived from
+ * mission + core_value), so it tracks its derivation lineage + a
+ * derive→confirm lifecycle the input kinds lack:
+ *
+ *   - ``status``     — ``manual`` (hand-authored; graceful-degradation
+ *                      default) / ``derived`` (AI draft) / ``confirmed``.
+ *   - ``provenance`` — ids of the source nodes this identity was derived from.
+ *
+ * ``evolution`` (revision history) is deferred — overlaps git + ``version``,
+ * no writer yet. v0.43.2 (D-2026-06-06-B) removed the legacy ``do`` / ``dont``
+ * (folded into ``body`` on read, data-loss guard).
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
 
+export type IdentityStatus = "manual" | "derived" | "confirmed";
+
+const IDENTITY_STATUSES: readonly IdentityStatus[] = ["manual", "derived", "confirmed"];
+
 export interface IdentityJson extends BaseFieldsJson {
   kind: "identity";
   description: string;
   body: string;
+  status: IdentityStatus;
+  provenance: string[];
 }
 
 const FOLD_LABELS: Record<string, string> = { do: "Do", dont: "Don't" };
@@ -52,11 +66,21 @@ export class Identity implements BaseFields {
 
   readonly description: string;
   readonly body: string;
+  readonly status: IdentityStatus;
+  readonly provenance: string[];
 
-  private constructor(base: BaseFields, description: string, body: string) {
+  private constructor(
+    base: BaseFields,
+    description: string,
+    body: string,
+    status: IdentityStatus,
+    provenance: string[],
+  ) {
     Object.assign(this, base);
     this.description = description;
     this.body = body;
+    this.status = status;
+    this.provenance = provenance;
   }
 
   static fromJson(raw: unknown): Identity {
@@ -73,6 +97,8 @@ export class Identity implements BaseFields {
       base,
       readOptionalString(obj.description, "description", raw),
       foldLegacyDoDont(obj, body),
+      readStatus(obj.status, raw),
+      readStringArray(obj.provenance, "provenance", raw),
     );
   }
 
@@ -95,8 +121,34 @@ export class Identity implements BaseFields {
       kind: "identity",
       description: this.description,
       body: this.body,
+      status: this.status,
+      provenance: this.provenance,
     };
   }
+}
+
+/** ``status`` defaults to ``manual`` (graceful degradation — hand-authored
+ *  nodes carry no status); any other non-enum value is a hard parse error. */
+function readStatus(value: unknown, raw: unknown): IdentityStatus {
+  if (value === undefined || value === null) return "manual";
+  if (typeof value !== "string" || !IDENTITY_STATUSES.includes(value as IdentityStatus)) {
+    throw new DomainParseError(
+      `Identity.status must be one of ${JSON.stringify(IDENTITY_STATUSES)}, got ${JSON.stringify(value)}`,
+      raw,
+    );
+  }
+  return value as IdentityStatus;
+}
+
+function readStringArray(value: unknown, field: string, raw: unknown): string[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.some((v) => typeof v !== "string")) {
+    throw new DomainParseError(
+      `Identity.${field} must be an array of strings, got ${JSON.stringify(value)}`,
+      raw,
+    );
+  }
+  return value as string[];
 }
 
 function readOptionalString(value: unknown, field: string, raw: unknown): string {

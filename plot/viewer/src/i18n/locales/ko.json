@@ -204,6 +204,8 @@
       "do": "할 것",
       "dont": "하지 말 것",
       "body": "노트 (Markdown)",
+      "identityStatus": "상태",
+      "provenance": "도출 출처",
       "longFormDetails": "장문 상세"
     },
     "fieldHint": {
@@ -233,7 +235,22 @@
       "description": "이 속성이 어떻게 드러나는가",
       "do": "구체적인 긍정 예시",
       "dont": "안티 패턴",
+      "identityStatus": "manual (손작성) / derived (AI 도출 초안) / confirmed (사용자 확정)",
+      "provenance": "이 아이덴티티가 도출된 출처 노드 (미션 / 코어밸류 / 서비스)",
       "body": "긴 형식의 노트; Markdown 문법 사용 가능"
+    },
+    "fieldPlaceholder": {
+      "identityDescription": "이 속성이 어떻게 드러나는가",
+      "provenance": "출처 노드 id (예: mission-1)"
+    },
+    "identityStatus": {
+      "manual": "Manual — 손작성",
+      "derived": "Derived — AI 도출 초안",
+      "confirmed": "Confirmed — 사용자 확정"
+    },
+    "provenance": {
+      "add": "추가",
+      "remove": "{{id}} 제거"
     },
     "valueFlowHeader": "가치 흐름 (이 서비스 ↔ 이 액터)",
     "referencesHeader": "참조 — {{label}}",

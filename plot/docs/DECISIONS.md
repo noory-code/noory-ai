@@ -10361,3 +10361,43 @@ but not yet fully eliminated.
 - **Spec impact:** SPEC §"Foundation typed-text storage". Follow-ups:
   core_value (do/dont cut), identity (output model) — same pattern, separate
   ships.
+
+### D-2026-06-07-A — identity output model: `status` + `provenance` (evolution deferred)
+
+- **What:** `identity` is an **output** kind (AI-derived from mission + core_value,
+  per `docs/FOUNDATION_CONCEPT.md`), so it carries structural output-tracking
+  fields the input kinds (mission / core_value) do not. Add two structural fields
+  to the `identity` kind:
+  - `status: "manual" | "derived" | "confirmed"` (default `"manual"`) — where the
+    node sits in the derive→confirm lifecycle. `manual` = hand-authored (the
+    current 14 BANAS nodes; graceful degradation). `derived` = AI draft, unconfirmed.
+    `confirmed` = AI-derived then user-locked.
+  - `provenance: string[]` (default `[]`) — ids of the source nodes (mission /
+    core_value / service) this identity was derived from. Traceability = the core
+    of "why does the AI say this is us".
+  Both are **structural** (not MD prose) → they live in `canvas.json` only, NOT in
+  the published `.md` typed-text split, and are NOT added to
+  `FOUNDATION_TYPED_TEXT_FIELDS` / `FOUNDATION_MD_FIELDS`.
+- **Evolution deferred:** the third proposed output field `evolution` (revision
+  history) is **not** implemented this ship. It overlaps git history + `BaseFields.version`
+  and has no writer yet (AI derivation is unimplemented). Filed for when an AI-derivation
+  writer lands. See `docs/node-format/foundation/identity.md`.
+- **Graceful degradation:** identity stays fully usable hand-authored
+  (`label` + `description` + `body`, `status="manual"`, `provenance=[]`). The output
+  fields are an enhancement layer for when AI derivation is built; they don't gate
+  manual authoring. No migration needed — Pydantic / `fromJson` supply the defaults
+  for pre-v0.44 nodes that lack the keys.
+- **Why:** the user named "identity = output" as Plot's core foundation differentiator
+  (`FOUNDATION_CONCEPT.md`, 2026-06-06); defining the target output model now is
+  justified even though the AI-derivation writer is staged later.
+- **Alternatives:** (a) finalize the doc only, no code (rejected — user chose to
+  implement the model). (b) structured `evolution: {at, change}[]` (rejected — new
+  nested-object pattern + parser for a field with no writer; YAGNI).
+- **Approval:** Accepted by user, 2026-06-07 ("출력모델까지 구현" + "보류" for evolution).
+- **Scope:** `domain/Identity.ts` (IdentityJson + class + fromJson/toJson),
+  `models.py` (IdentityNode + 2 fields), `inspectors/identity` (status selector +
+  provenance list editor), i18n (status label + 3 option labels + provenance
+  label/hint). `nodes/identity` renderer unaffected (no status badge this ship —
+  YAGNI until derived/confirmed nodes exist). Tests: server defaults/legacy/explicit
+  + viewer roundtrip + test_schema_parity.
+- **Spec impact:** SPEC §"Foundation typed-text storage" / CONCEPTS identity row.

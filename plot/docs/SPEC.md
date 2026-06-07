@@ -550,8 +550,14 @@ D-2026-05-13-O principle #2 + D-2026-05-16-A. Fields are:
   `dont` removed — `do` was a restatement of `definition`; old values fold
   into `body` on read, server + viewer.)
 - `identity` — `description` + `body` (**v0.43.2, D-2026-06-06-B**: `do` /
-  `dont` removed; old values fold into `body` on read.) *(output model —
-  provenance / evolution / status — still a future change.)*
+  `dont` removed; old values fold into `body` on read.) Plus **structural
+  output-model fields** (**v0.44.0, D-2026-06-07-A**, stored in `canvas.json`,
+  NOT in the MD split): `status` (`manual` | `derived` | `confirmed`, default
+  `manual`) + `provenance` (`string[]` of source node ids, default `[]`).
+  `identity` is an output kind (AI-derived from mission + core_value), so it
+  tracks derivation lineage + a derive→confirm lifecycle the input kinds lack.
+  `evolution` (revision history) is deferred — overlaps git + `version`, no
+  writer yet.
 
 Every value is a Markdown-formatted string; newlines, bullets, bold,
 links survive verbatim. The viewer's per-kind Inspector renders each

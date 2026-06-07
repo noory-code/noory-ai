@@ -204,6 +204,8 @@
       "do": "Do",
       "dont": "Don't",
       "body": "Notes (Markdown)",
+      "identityStatus": "Status",
+      "provenance": "Derived from",
       "longFormDetails": "Long-form details"
     },
     "fieldHint": {
@@ -233,7 +235,22 @@
       "description": "how this aspect is expressed",
       "do": "concrete positive example",
       "dont": "anti-pattern",
+      "identityStatus": "manual (hand-authored) / derived (AI draft) / confirmed (user-locked)",
+      "provenance": "source nodes (mission / core value / service) this identity was derived from",
       "body": "long-form notes; Markdown syntax supported"
+    },
+    "fieldPlaceholder": {
+      "identityDescription": "how this aspect is expressed",
+      "provenance": "source node id (e.g. mission-1)"
+    },
+    "identityStatus": {
+      "manual": "Manual — hand-authored",
+      "derived": "Derived — AI draft",
+      "confirmed": "Confirmed — user-locked"
+    },
+    "provenance": {
+      "add": "Add",
+      "remove": "Remove {{id}}"
     },
     "valueFlowHeader": "Value flow (this service ↔ this actor)",
     "referencesHeader": "References — {{label}}",

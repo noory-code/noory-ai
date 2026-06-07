@@ -249,6 +249,39 @@ describe("Identity.fromJson + toJson round-trip", () => {
     expect(id.body).toContain("공지글 같은 말투로");
     expect("do" in id).toBe(false);
   });
+
+  // Output model — status + provenance (v0.44.0, D-2026-06-07-A)
+  it("defaults the output fields (graceful degradation)", () => {
+    const id = Identity.fromJson({ id: "id1", kind: "identity" });
+    expect(id.status).toBe("manual");
+    expect(id.provenance).toEqual([]);
+  });
+
+  it("preserves + round-trips status + provenance", () => {
+    const a = Identity.fromJson({
+      id: "id1",
+      kind: "identity",
+      description: "warm",
+      status: "confirmed",
+      provenance: ["mission-1", "core_value-2"],
+    });
+    expect(a.status).toBe("confirmed");
+    expect(a.provenance).toEqual(["mission-1", "core_value-2"]);
+    const b = Identity.fromJson(a.toJson());
+    expect({ ...b }).toEqual({ ...a });
+  });
+
+  it("rejects an unknown status value", () => {
+    expect(() =>
+      Identity.fromJson({ id: "id1", kind: "identity", status: "bogus" }),
+    ).toThrow();
+  });
+
+  it("rejects a non-string-array provenance", () => {
+    expect(() =>
+      Identity.fromJson({ id: "id1", kind: "identity", provenance: [1, 2] }),
+    ).toThrow();
+  });
 });
 
 describe("parseEntity → Foundation kinds dispatch", () => {

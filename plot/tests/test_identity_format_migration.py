@@ -8,6 +8,8 @@ model — provenance / evolution / status — is a separate future change.)
 
 from __future__ import annotations
 
+import pytest
+
 from plot_mcp.models import (
     FOUNDATION_MD_FIELDS,
     FOUNDATION_TYPED_TEXT_FIELDS,
@@ -58,3 +60,58 @@ def test_empty_do_dont_do_not_pollute() -> None:
         }
     )
     assert n.body == "just the body"
+
+
+# ---------------------------------------------------------------------------
+# Output model — status + provenance (v0.44.0, D-2026-06-07-A)
+# ---------------------------------------------------------------------------
+
+
+def test_identity_output_fields_default() -> None:
+    """identity is an output kind; absent status/provenance default to the
+    graceful-degradation values (hand-authored = manual, no lineage)."""
+    n = IdentityNode(id="id-1", label="Voice", description="warm", body="x")
+    assert n.status == "manual"
+    assert n.provenance == []
+
+
+def test_legacy_identity_without_output_fields_gets_defaults() -> None:
+    """Pre-v0.44 nodes lack status/provenance keys entirely → defaults, no error."""
+    n = IdentityNode.model_validate(
+        {"id": "id-1", "kind": "identity", "label": "Voice", "description": "warm"}
+    )
+    assert n.status == "manual"
+    assert n.provenance == []
+
+
+def test_identity_explicit_output_fields_roundtrip() -> None:
+    n = IdentityNode.model_validate(
+        {
+            "id": "id-1",
+            "kind": "identity",
+            "label": "Voice",
+            "description": "warm",
+            "status": "confirmed",
+            "provenance": ["mission-1", "core_value-2"],
+        }
+    )
+    assert n.status == "confirmed"
+    assert n.provenance == ["mission-1", "core_value-2"]
+    dumped = n.model_dump()
+    assert dumped["status"] == "confirmed"
+    assert dumped["provenance"] == ["mission-1", "core_value-2"]
+
+
+def test_identity_status_rejects_unknown_value() -> None:
+    with pytest.raises(Exception):
+        IdentityNode.model_validate(
+            {"id": "id-1", "kind": "identity", "label": "Voice", "status": "bogus"}
+        )
+
+
+def test_identity_output_fields_not_in_md_maps() -> None:
+    """status/provenance are structural (canvas.json only), never MD-split."""
+    assert "status" not in FOUNDATION_TYPED_TEXT_FIELDS["identity"]
+    assert "status" not in FOUNDATION_MD_FIELDS["identity"]
+    assert "provenance" not in FOUNDATION_TYPED_TEXT_FIELDS["identity"]
+    assert "provenance" not in FOUNDATION_MD_FIELDS["identity"]

@@ -4,6 +4,38 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.44.0] — 2026-06-07
+
+### Added — identity output model: status + provenance (D-2026-06-07-A)
+
+- `identity` is an **output** kind (AI-derived from mission + core_value), so
+  it now carries two structural output-model fields, stored in `canvas.json`
+  only (NOT in the published MD typed-text split):
+  - `status` — `manual` (hand-authored; default) / `derived` (AI draft) /
+    `confirmed` (user-locked). Tracks the derive→confirm lifecycle.
+  - `provenance` — `string[]` of source node ids this identity was derived
+    from (traceability for "why does the AI say this is us").
+- Inspector: a status `<select>` + a provenance chip editor (add via Enter /
+  Add button, remove via ×). All strings routed through i18n (en + ko), incl.
+  a new `fieldPlaceholder` namespace; the previously hardcoded identity
+  description placeholder is now i18n-backed.
+- Graceful degradation: identity stays fully usable hand-authored
+  (`status="manual"`, `provenance=[]`). No migration needed — Pydantic /
+  `fromJson` supply defaults for pre-v0.44 nodes lacking the keys.
+
+### Deferred
+
+- `evolution` (revision history) is **not** implemented — it overlaps git
+  history + `BaseFields.version` and has no writer yet (AI derivation is
+  unbuilt). Filed for when an AI-derivation writer lands. See
+  docs/node-format/foundation/identity.md.
+
+### Tests
+
+- 5 new server cases (`test_identity_format_migration.py`) + 4 new viewer
+  domain cases (`round-trip.test.ts`). 498 server + 745 viewer green;
+  tsc + mypy + ruff clean. Schema parity holds.
+
 ## [0.43.2] — 2026-06-06
 
 ### Changed — identity kind = description + body (do/dont removed, D-2026-06-06-B)

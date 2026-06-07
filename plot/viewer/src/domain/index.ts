@@ -24,7 +24,7 @@ export type { GroupJson } from "./Group";
 export { CoreValue } from "./CoreValue";
 export type { CoreValueJson } from "./CoreValue";
 export { Identity } from "./Identity";
-export type { IdentityJson } from "./Identity";
+export type { IdentityJson, IdentityStatus } from "./Identity";
 export { Mission } from "./Mission";
 export type { MissionJson } from "./Mission";
 export { Project } from "./Project";

@@ -2,8 +2,8 @@
 kind: identity
 canvas: foundation
 field_count_before: 4   # description, do, dont, body
-field_count_after: TBD  # 출력값 모델 — content 1 + provenance/evolution(구조) 설계 중
-status: reviewing   # draft → reviewing → done
+field_count_after: 4    # description, body + status(enum) + provenance(string[]); evolution deferred
+status: done   # draft → reviewing → done — v0.44.0 (D-2026-06-07-A)
 ---
 
 # identity — 아이덴티티
@@ -90,12 +90,12 @@ label + description (현재 14개가 그러함). provenance/evolution/status 는
 — 그게 본질(입력 vs 출력)의 차이를 정확히 반영.
 
 ## 작업 정의
-- [ ] (확정) do/dont/body 컷 → content = `description` 단일 prose.
-- [ ] (목표) provenance 필드/관계 설계 — 도출 출처 링크 (AI 도출 구현과 함께).
-- [ ] (목표) evolution 추적 — identity 갱신 이력 (BaseFields.version 확장 검토).
-- [ ] (목표) status(도출/확정) 플래그.
+- [x] (확정) do/dont/body 컷 → content = `description` (+ body). v0.43.2.
+- [x] (구현) provenance — `string[]` 도출 출처 노드 id. v0.44.0 (D-2026-06-07-A).
+- [x] (구현) status(manual/derived/confirmed) 플래그. v0.44.0 (D-2026-06-07-A).
+- [ ] (보류) evolution 추적 — git+version 중복 + writer 부재. AI 도출 writer 착륙 시 재개.
 - [ ] (보류) facet 분류 — deliverable 의 facet 묶음 수요 발생 시.
-- [ ] graceful degradation 못박기 — 손작성(label+description)만으로도 동작.
+- [x] (못박음) graceful degradation — 손작성(label+description, status=manual, provenance=[])만으로 동작.
 
 ## 검토 히스토리
 
@@ -110,3 +110,4 @@ label + description (현재 14개가 그러함). provenance/evolution/status 는
 | 4차 | 2026-06-06 | **출력값 렌즈 재정의.** ①body컷 ②facet 예정보류 ③catch-all 해소. 출력이라 provenance·evolution·status 구조 추가(목표 모델, 단계 구현). graceful degradation 못박음. |
 | 5차 | 2026-06-06 | 채우는 방식 명시 — 인터뷰(입력) 아니라 **AI 도출→사용자 확인·교정**(출력). identity 의 "인터뷰 등가물"은 확인 단계. |
 | 6차 | 2026-06-06 | **do/dont 컷 구현 (v0.43.2).** identity = description + body. 옛 do/dont → body 로 fold. 출력모델(provenance/evolution/status)·facet 은 여전히 미래 TARGET. |
+| 7차 | 2026-06-07 | **출력모델 구현 (v0.44.0, D-2026-06-07-A).** `status`(manual/derived/confirmed, default manual) + `provenance`(string[]) 를 구조 필드로 추가 (canvas.json only, MD split 아님). **evolution 보류** — git+version 중복 + writer 부재 (YAGNI). graceful degradation: 손작성 manual 로 계속 동작. node-format **done**. |

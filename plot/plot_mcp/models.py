@@ -298,15 +298,27 @@ class CoreValueNode(BaseNodeFields):
 
 
 class IdentityNode(BaseNodeFields):
-    """v0.43.2 (D-2026-06-06-B): identity = ``description`` + ``body``. The
-    ``do`` / ``dont`` fields were removed (shared do/dont cut across the
-    foundation triad). Legacy values fold into ``body`` on read (data-loss
-    guard). The output-value model (provenance / evolution / status) is a
-    separate future change — see docs/node-format/foundation/identity.md."""
+    """v0.44.0 (D-2026-06-07-A): identity = ``description`` + ``body`` plus the
+    **output-model** structural fields ``status`` + ``provenance``. identity is
+    an output kind (AI-derived from mission + core_value), so it tracks its
+    derivation lineage and a derive→confirm lifecycle the input kinds lack:
+
+    - ``status`` — ``manual`` (hand-authored; graceful-degradation default) /
+      ``derived`` (AI draft, unconfirmed) / ``confirmed`` (AI-derived + user-locked).
+    - ``provenance`` — ids of the source nodes this identity was derived from.
+
+    Both are **structural** (not MD prose) → ``canvas.json`` only, NOT in the
+    MD typed-text split, so absent from FOUNDATION_TYPED_TEXT_FIELDS /
+    FOUNDATION_MD_FIELDS. ``evolution`` (revision history) is deferred — overlaps
+    git + ``version``, no writer yet. v0.43.2 (D-2026-06-06-B) removed the legacy
+    ``do`` / ``dont`` (folded into ``body`` on read). See
+    docs/node-format/foundation/identity.md."""
 
     kind: Literal["identity"] = "identity"
     description: str = ""
     body: str = ""
+    status: Literal["manual", "derived", "confirmed"] = "manual"
+    provenance: list[str] = Field(default_factory=list)
 
     @model_validator(mode="before")
     @classmethod
