@@ -95,7 +95,12 @@
     "ariaWithoutCategory": "Service detail — {{service}}"
   },
   "shell": {
-    "closeEsc": "Close (Esc)"
+    "closeEsc": "Close (Esc)",
+    "projectPicker": {
+      "title": "Plot",
+      "openFolder": "Open Folder",
+      "hint": "Add ?project_path=/absolute/path to the URL."
+    }
   },
   "kind": {
     "project": "Project",

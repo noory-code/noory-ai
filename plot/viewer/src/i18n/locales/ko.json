@@ -95,7 +95,12 @@
     "ariaWithoutCategory": "서비스 상세 — {{service}}"
   },
   "shell": {
-    "closeEsc": "닫기 (Esc)"
+    "closeEsc": "닫기 (Esc)",
+    "projectPicker": {
+      "title": "Plot",
+      "openFolder": "폴더 열기",
+      "hint": "URL에 ?project_path=/절대/경로를 추가하세요."
+    }
   },
   "kind": {
     "project": "프로젝트",

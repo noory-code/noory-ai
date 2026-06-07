@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { patchProjectAnchor, resolveWorkspaceRoot } from "./api";
+import { ProjectPicker } from "./shell/ProjectPicker";
 import { applyOptimisticAnchorPatch } from "./lib/anchorOptimistic";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
@@ -335,16 +336,7 @@ export function App() {
   const activeProjectName = activeSummary?.name ?? null;
 
   if (!workspaceRoot) {
-    return (
-      <div className="flex h-full items-center justify-center p-8 text-center">
-        <div>
-          <h1 className="mb-2 text-2xl font-semibold">Plot</h1>
-          <p className="text-slate-500">
-            Add <code>?project_path=/absolute/path/to/project</code> to the URL.
-          </p>
-        </div>
-      </div>
-    );
+    return <ProjectPicker />;
   }
 
   const modalOpen = phase === "ready" && !!detailServiceId && !!detailCanvas && !!detailCanvasKey && !!activeId;

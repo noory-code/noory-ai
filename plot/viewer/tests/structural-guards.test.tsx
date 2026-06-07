@@ -454,3 +454,38 @@ describe("no native browser dialogs (D-2026-05-31-W)", () => {
     expect(banned.test("confirm(")).toBe(true); // self-check the matcher
   });
 });
+
+// ---------------------------------------------------------------------
+// Contract: useTranslation() takes NO namespace argument (D-2026-05-11-D)
+// ---------------------------------------------------------------------
+// The viewer loads a SINGLE i18n namespace — ``translation`` — built from
+// ``locales/{en,ko}.json`` (see ``src/i18n/index.ts``). There is no second
+// namespace to select. Calling ``useTranslation("shell")`` (or any string
+// arg) points ``t()`` at a namespace that does not exist, so every key
+// resolves to its raw string instead of the translation. This shipped once
+// in ProjectPicker (step3, D-2026-06-07-A/B): keys like "projectPicker.title"
+// were rendered verbatim. Keys are full-path under the single bundle
+// (``t("shell.projectPicker.title")``); ``useTranslation()`` is always
+// no-arg. This guard fails the build if a namespace arg creeps back in.
+
+describe("i18n single-namespace convention (D-2026-05-11-D)", () => {
+  it("no src file passes a namespace string to useTranslation()", () => {
+    const offenders: string[] = [];
+    // Matches a string-literal first argument: useTranslation("x"),
+    // useTranslation('x'), useTranslation(`x`). Allows the no-arg form.
+    const banned = /useTranslation\(\s*["'`]/;
+    for (const file of walkSrcFiles(SRC)) {
+      const src = stripComments(readFileSync(file, "utf8"));
+      src.split("\n").forEach((line, i) => {
+        if (banned.test(line)) {
+          offenders.push(`${file.replace(SRC, "src")}:${i + 1}: ${line.trim()}`);
+        }
+      });
+    }
+    expect(
+      offenders,
+      `useTranslation() namespace arg(s) found — the viewer has one bundle, so use useTranslation() (no arg) with full-path keys like t("shell.projectPicker.title"):\n${offenders.join("\n")}`,
+    ).toEqual([]);
+    expect(banned.test('useTranslation("shell")')).toBe(true); // self-check the matcher
+  });
+});

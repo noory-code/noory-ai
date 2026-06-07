@@ -10401,3 +10401,38 @@ but not yet fully eliminated.
   YAGNI until derived/confirmed nodes exist). Tests: server defaults/legacy/explicit
   + viewer roundtrip + test_schema_parity.
 - **Spec impact:** SPEC §"Foundation typed-text storage" / CONCEPTS identity row.
+
+### D-2026-06-07-B — step3: native project folder picker (Tauri desktop app)
+
+- **Context:** Plot.app (Tauri 2) bundles viewer + plot-mcp sidecar. The viewer
+  reads `?project_path=...` from the URL; without the param it shows a dead-end
+  "add URL param" screen — unusable in a .app double-click launch where there's
+  no URL bar.
+- **Decision:** Extract the no-workspace screen into `shell/ProjectPicker.tsx`.
+  Inside Tauri (`window.__TAURI_INTERNALS__` present), render a "Open Folder" button
+  that calls `tauri-plugin-dialog` `open({ directory: true, multiple: false })`,
+  then redirects to `/?project_path=<selected>`. In browser dev mode, show the
+  existing URL-param hint unchanged.
+- **Why:** Minimum viable flow: one click → native system dialog → app loads the
+  project. No custom file-browser UI, no extra backend endpoints.
+- **App.tsx LOC note:** 495 → 487. Under the live ceiling of 498
+  (D-2026-05-28-L; an earlier draft of this entry mis-cited 485). Replacing the
+  inline placeholder with `<ProjectPicker />` nets -8 LOC.
+- **Approval:** User-directed continuation (step3); no additional confirmation needed
+  per session memory ("다음 = step3 프로젝트 선택 UI").
+- **Scope:** `shell/ProjectPicker.tsx` (new), `App.tsx` (+1 import, -9 inline lines),
+  i18n `shell.projectPicker.*` (en + ko), `Cargo.toml` + `lib.rs` +
+  `capabilities/default.json` (tauri-plugin-dialog), `@tauri-apps/plugin-dialog` npm.
+  Test: `tests/project-picker.test.tsx` (5 cases, TDD Red→Green).
+- **i18n namespace fix (2026-06-07):** ProjectPicker shipped with
+  `useTranslation("shell")` + unprefixed keys, but the viewer loads a single
+  `translation` bundle (D-2026-05-11-D) — there is no `shell` namespace, so every
+  key rendered as its raw string ("projectPicker.title" shown verbatim). Fixed to
+  `useTranslation()` + full-path keys (`t("shell.projectPicker.*")`). The original
+  `project-picker.test.tsx` mocked `t:(k)=>k` and was blind to it; added
+  `tests/project-picker-i18n.test.tsx` (real i18n bundle, asserts translated
+  text) + a structural guard banning any `useTranslation(<namespace>)` arg
+  viewer-wide. Verified: viewer dist rebuilt + `tauri build` .app launched (engine
+  :5190 `/api/health` 200; pixel screenshot blocked by screen-recording
+  permission, so confirmed via shipped-bundle key check + real-bundle test).
+  758 viewer tests green.

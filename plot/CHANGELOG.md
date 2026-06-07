@@ -4,6 +4,40 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.46.0] — 2026-06-07
+
+### Added — project picker (Tauri desktop entry) + i18n single-namespace guard
+
+- `viewer/src/shell/ProjectPicker.tsx` — the no-workspace screen. Inside Tauri
+  (`window.__TAURI_INTERNALS__` present) it shows an "Open Folder" button that
+  calls `@tauri-apps/plugin-dialog` `open({ directory: true })` and redirects to
+  `/?project_path=<selected>`; in browser dev it keeps the URL-param hint. Makes
+  a double-clicked `.app` (no URL bar) usable. (D-2026-06-07-B)
+- `viewer/tests/structural-guards.test.tsx` — new guard: no `src` file may pass
+  a namespace string to `useTranslation()`. The viewer loads one `translation`
+  bundle (D-2026-05-11-D); a namespace arg points `t()` at a non-existent
+  namespace. Pins the cause of the Fixed bug below across the whole viewer.
+- `viewer/tests/project-picker-i18n.test.tsx` — renders ProjectPicker against
+  the real i18n bundle and asserts translated text (not raw keys).
+- `@tauri-apps/plugin-dialog` dependency (viewer).
+
+### Changed
+
+- `viewer/src/App.tsx` — the inline hardcoded "Plot" / URL-hint placeholder is
+  replaced by `<ProjectPicker />` (also removes a hardcoded English string;
+  495 → 487 LOC, ceiling 498).
+- i18n: `shell.projectPicker.{title,openFolder,hint}` keys (en + ko).
+
+### Fixed — ProjectPicker i18n namespace bug
+
+- ProjectPicker called `useTranslation("shell")` and looked up keys without the
+  `shell.` prefix. The viewer loads a single `translation` namespace (per
+  D-2026-05-11-D), so there is no `shell` namespace — every key rendered as its
+  raw string ("projectPicker.title" shown verbatim). Fixed to `useTranslation()`
+  + full-path keys (`t("shell.projectPicker.*")`). The sibling
+  `project-picker.test.tsx` missed it because it mocked `t: (k) => k`; the new
+  real-bundle test + structural guard above prevent recurrence. (TDD Red→Green)
+
 ## [0.45.0] — 2026-06-07
 
 ### Added — EngineClient seam: configurable engine origin
