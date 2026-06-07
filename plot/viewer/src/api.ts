@@ -8,7 +8,12 @@ import type {
   SocketEvent,
 } from "./types";
 
-const API_BASE = "";
+// Engine HTTP base. Empty = same-origin (web / engine-served / Vite-proxied dev).
+// Set VITE_PLOT_ENGINE (e.g. "http://127.0.0.1:5190") when the frontend is
+// bundled separately from the engine (Tauri desktop app). This is the single
+// place the engine location is configured — the forward-compat seam for a
+// future remote/relocated engine (tablet).
+const API_BASE = (import.meta.env.VITE_PLOT_ENGINE as string | undefined) ?? "";
 
 export function resolveProjectPath(): string | null {
   const url = new URL(window.location.href);
@@ -605,11 +610,13 @@ export function openProjectSocket(
   const connect = () => {
     if (closed) return;
     handlers.onStatus?.("connecting");
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
+    // WS base mirrors API_BASE: when the engine is at an explicit origin
+    // (bundled desktop app), derive ws(s):// from it; else same-origin host.
+    const wsBase = API_BASE
+      ? API_BASE.replace(/^http/, "ws")
+      : `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`;
     const ws = new WebSocket(
-      `${proto}://${window.location.host}/ws?project_path=${encodeURIComponent(
-        projectPath,
-      )}`,
+      `${wsBase}/ws?project_path=${encodeURIComponent(projectPath)}`,
     );
     current = ws;
     ws.onopen = () => {

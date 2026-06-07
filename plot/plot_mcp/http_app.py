@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 
 from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import BaseRoute, Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -161,6 +163,17 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
     else:
         _log.info("viewer dist not found; HTTP server will only expose /api and /ws")
 
-    app = Starlette(routes=routes)
+    # The engine binds 127.0.0.1 only; a bundled desktop frontend (Tauri,
+    # origin tauri://localhost) calls it cross-origin, so allow any origin for
+    # the local API. Auth/token hardening is a separate follow-up.
+    middleware = [
+        Middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    ]
+    app = Starlette(routes=routes, middleware=middleware)
     app.state.hub = target_hub
     return app

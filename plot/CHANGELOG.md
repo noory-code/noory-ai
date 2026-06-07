@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.45.0] — 2026-06-07
+
+### Added — EngineClient seam: configurable engine origin
+
+- `viewer/src/api.ts` now derives the engine HTTP base from
+  `VITE_PLOT_ENGINE` (falling back to same-origin `""`), and the WebSocket
+  base mirrors it. This is the single place the engine location is set — the
+  forward-compat seam for a bundled desktop app (Tauri serves the frontend
+  from `tauri://` and calls the sidecar engine at `http://127.0.0.1:5190`)
+  and a future relocated/remote engine (tablet). Web / engine-served /
+  Vite-proxied dev are unchanged (empty base = same-origin).
+- `viewer/src/vite-env.d.ts` — types `import.meta.env.VITE_PLOT_ENGINE`.
+
+### Changed — engine allows cross-origin local calls
+
+- `plot_mcp/http_app.py` mounts `CORSMiddleware` (`allow_origins=["*"]`) so a
+  separately-bundled desktop frontend can call the `127.0.0.1` engine
+  cross-origin. The engine binds loopback only; auth/token hardening is a
+  separate follow-up.
+
 ## [0.44.0] — 2026-06-07
 
 ### Added — identity output model: status + provenance (D-2026-06-07-A)
