@@ -30,17 +30,23 @@
 > - do/dont 파운데이션에서 전멸. publish/MD/schema_export data-driven 반영.
 >   BANAS 실데이터 검증 완료. 서버 493 + viewer 741 green.
 >
-> **다음 세션 할 일 (사용자: "다음세션에서 작업"):**
-> 1. **아이덴티티 출력모델** — provenance(도출 출처) / evolution(갱신 이력)
->    / status(도출↔확정) 필드 설계·구현. + facet 분류는 deliverable 수요 시.
->    (identity = 출력값이라 입력 kind 와 다른 구조. node-format/foundation/
->    identity.md 의 작업 정의 참조.)
-> 2. **인터뷰 질문 → 캔버스 AI 대화창** — kind별 인터뷰 질문 세트는 정의됨
+> **✅ 완료 (2026-06-07, v0.44.0, D-2026-06-07-A):** **아이덴티티 출력모델**
+> — `status`(manual/derived/confirmed) + `provenance`(string[] 도출 출처)
+> 를 구조 필드로 구현 (canvas.json only, MD split 아님). 인스펙터에 status
+> select + provenance 칩 에디터. **evolution 보류** (git+version 중복, writer
+> 부재). facet 도 보류 (deliverable 수요 시). node-format/foundation/identity.md
+> = **done**. 서버 498 + viewer 745 green. → 파운데이션 3종 노드포맷 **전부 closed**.
+>
+> **다음 세션 할 일 (남은 항목):**
+> 1. **인터뷰 질문 → 캔버스 AI 대화창** — kind별 인터뷰 질문 세트는 정의됨
 >    (mission "어떤 문제를 푸나요?", core_value "결정 시 우선 가치?"). 정적
 >    body 프롬프트로 깔지 / AI 챗 붙일지. (project_plot_pencil_dev_direction)
-> 3. **나머지 kind 감사** — actors / services(10필드, 감축 1순위) /
+> 2. **나머지 kind 감사** — actors / services(10필드, 감축 1순위) /
 >    service-detail (3 ref 통합, "가치" 3중복 등). node-format/ 참조.
-> 4. **산출물(deliverable, Q6)** — 서비스 "가치 시트" 번들러 (PLAN §3.1).
+> 3. **산출물(deliverable, Q6)** — 서비스 "가치 시트" 번들러 (PLAN §3.1).
+>
+> **⚠️ 단, 사용자가 2026-06-07 "다음에 대대적 개편" 예고 — 위 잔여 항목보다
+> 그 개편이 우선일 수 있음. 새 세션 첫 메시지로 개편 범위를 확인할 것.**
 >
 > **Per-node refinement workspace (2026-06-04):** the user works node by
 > node. A manual Solera stand-in lives at
