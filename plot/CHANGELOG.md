@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.49.0] — 2026-06-08
+
+### Fixed — self-echo guard no longer leaks (D-2026-06-08-A, step 3)
+
+- Replaced the `Set<CanvasKey>` write-echo guard (shared by `useCanvasPersist`
+  and `useProjectSocket`) with `lib/echoGuard.ts` — a per-key in-flight COUNT
+  with a TTL safety net + an explicit error path. Fixes two bugs:
+  - a failed PUT left the key in the Set forever, so every later *real*
+    external change to that canvas was silently dropped as "our own echo";
+  - the Set was count-blind, so two in-flight writes to one key produced two
+    echoes but one delete → the second echo was treated as external and
+    wrongly cleared the undo history.
+- `expect()` now fires at PUT send-time (not schedule-time, so a debounced-away
+  edit isn't counted); `fail()` retires the slot on PUT error; a TTL decrement
+  retires a write whose echo never arrives.
+
 ## [0.48.0] — 2026-06-08
 
 ### Changed — theme becomes a design-token layer (D-2026-06-08-A, steps 1-2)

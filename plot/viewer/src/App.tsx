@@ -146,7 +146,7 @@ export function App() {
   // ------- persist + undo/redo (extracted to useCanvasPersist) -------
 
   const {
-    pendingWrites,
+    echoGuard,
     applyEdit: liveApplyEdit,
     saveState,
     undo: historyUndo,
@@ -176,7 +176,7 @@ export function App() {
   const socketStatus = useProjectSocket({
     projectPath: activeProjectPath,
     activeId,
-    pendingWrites,
+    echoGuard,
     onListStale: handleListStale,
     onExternalCanvas: handleExternalCanvas,
     onTagsRefresh: handleTagsRefresh,

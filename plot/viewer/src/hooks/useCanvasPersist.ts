@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { getCanvas, putCanvas } from "../api";
+import { createEchoGuard, type EchoGuard } from "../lib/echoGuard";
 import type { SaveState } from "../canvases/SketchToolbar";
 import type { ProjectHistoryApi } from "../canvases/useProjectHistory";
 import type { CanvasDoc, CanvasKey } from "../types";
@@ -25,8 +26,10 @@ export interface UseCanvasPersistArgs {
 
 export interface UseCanvasPersistApi {
   saveState: SaveState;
-  /** Shared with ``useProjectSocket`` so the WS layer can skip self-echoes. */
-  pendingWrites: React.MutableRefObject<Set<CanvasKey>>;
+  /** Shared with ``useProjectSocket`` so the WS layer can skip self-echoes.
+   *  Counts in-flight writes per key with a TTL + error path (D-2026-06-08-A,
+   *  step 3) — replaces the leak-prone `Set<CanvasKey>`. */
+  echoGuard: React.MutableRefObject<EchoGuard>;
   /** Apply a user edit: cache update + history push + debounced PUT. */
   applyEdit: (
     key: CanvasKey,
@@ -54,7 +57,7 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const saveTimer = useRef<number | null>(null);
   const savedTimer = useRef<number | null>(null);
-  const pendingWrites = useRef(new Set<CanvasKey>());
+  const echoGuard = useRef(createEchoGuard());
 
   // Refs so persist doesn't force a re-render when args mutate.
   const projectPathRef = useRef(projectPath);
@@ -71,11 +74,15 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
       const pp = projectPathRef.current;
       const pid = activeIdRef.current;
       if (!pp || !pid) return;
-      pendingWrites.current.add(key);
       setSaveState("saving");
       if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
       saveTimer.current = window.setTimeout(() => {
         saveTimer.current = null;
+        // Expect the server's self-echo for THIS write. Debounce collapses a
+        // rapid edit burst into one PUT → one expect → one echo. Expecting at
+        // send-time (not schedule-time) avoids counting a debounced-away edit.
+        // (D-2026-06-08-A step 3)
+        echoGuard.current.expect(key);
         putCanvas(pp, pid, canvas)
           .then((res) => {
             setSaveState("saved");
@@ -164,6 +171,9 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
             onListStaleRef.current();
           })
           .catch((err) => {
+            // No echo will arrive for a failed write — retire its pending slot
+            // so a later external change to this key isn't suppressed.
+            echoGuard.current.fail(key);
             setSaveState("error");
             onErrorRef.current(err instanceof Error ? err.message : String(err));
           });
@@ -216,5 +226,5 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
     return entry.canvasKey;
   }, [history, persistCanvas, setCanvasCache]);
 
-  return { saveState, pendingWrites, applyEdit, undo, redo };
+  return { saveState, echoGuard, applyEdit, undo, redo };
 }

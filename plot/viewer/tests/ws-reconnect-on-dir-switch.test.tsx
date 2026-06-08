@@ -6,7 +6,7 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../src/api";
 import { useProjectSocket } from "../src/hooks/useProjectSocket";
-import type { CanvasKey } from "../src/types";
+import { createEchoGuard } from "../src/lib/echoGuard";
 
 vi.mock("../src/api");
 
@@ -14,7 +14,7 @@ function args(path: string) {
   return {
     projectPath: path,
     activeId: "p1",
-    pendingWrites: { current: new Set<CanvasKey>() } as React.MutableRefObject<Set<CanvasKey>>,
+    echoGuard: { current: createEchoGuard() },
     onListStale: vi.fn(),
     onExternalCanvas: vi.fn(),
     onTagsRefresh: vi.fn(),

@@ -6,6 +6,7 @@ import {
   type SocketStatus,
 } from "../api";
 import { canvasKey } from "../lib/canvasKey";
+import type { EchoGuard } from "../lib/echoGuard";
 import type { CanvasDoc, CanvasKey, CanvasKind, ProjectTag } from "../types";
 
 export interface UseProjectSocketArgs {
@@ -13,9 +14,10 @@ export interface UseProjectSocketArgs {
   /** Currently open project id — live-tracked via ref so re-subscribing
    *  every tab switch isn't needed. */
   activeId: string | null;
-  /** Keys of canvases the viewer just PUT. An incoming ``project_changed``
-   *  for one of these is the server echoing our own write — skip. */
-  pendingWrites: React.MutableRefObject<Set<CanvasKey>>;
+  /** Self-echo guard shared with ``useCanvasPersist``. An incoming
+   *  ``project_changed`` that ``consume()`` accepts is the server echoing our
+   *  own write — skip it. (D-2026-06-08-A, step 3) */
+  echoGuard: React.MutableRefObject<EchoGuard>;
   /** Refresh the sidebar project list (name / updated bumps). */
   onListStale: () => void;
   /** Apply a canvas refetched because another client changed it. */
@@ -74,8 +76,7 @@ export function useProjectSocket(args: UseProjectSocketArgs): SocketStatus {
           : null;
 
         // Our own write echoing back? skip.
-        if (key && h.pendingWrites.current.has(key)) {
-          h.pendingWrites.current.delete(key);
+        if (key && h.echoGuard.current.consume(key)) {
           return;
         }
 
