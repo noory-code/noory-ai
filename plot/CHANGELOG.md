@@ -4,6 +4,16 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.50.1] — 2026-06-08
+
+### Changed — docs (D-2026-06-08-A, step 5)
+
+- Reconciled the stale `App.tsx` LOC ceiling in CLAUDE.md Gate 2 (485 → the
+  enforced 498 in `structural-guards.test.tsx`). The `useAppCallbacks` follow-up
+  is deferred: App is under the ceiling (488/498) and the upcoming TanStack
+  Query / Zustand steps move server + UI state out of App (net reduction), so
+  the extraction would be churn now — revisit only if a step pushes it over 498.
+
 ## [0.50.0] — 2026-06-08
 
 ### Changed — engine seam confined to src/app + src/hooks (D-2026-06-08-A, step 4)

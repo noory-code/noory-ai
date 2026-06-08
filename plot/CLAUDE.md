@@ -221,7 +221,7 @@ ceiling — see `viewer/tests/structural-guards.test.tsx`.
 
 | File | LOC (2026-05-12) | Ceiling | Rule |
 |---|---:|---:|---|
-| `viewer/src/App.tsx` | 478 | 485 | v0.27.7 (D-2026-05-27-B) raised 430 → 485 to hoist 9 Canvas / ServiceDetailCanvas prop callbacks out of inline arrows into useCallback. Follow-up: move callbacks into a useAppCallbacks hook to reclaim LOC. |
+| `viewer/src/App.tsx` | 488 | 498 | Enforced ceiling is **498** (see `structural-guards.test.tsx` `LOC_BUDGETS` for the raise chain: D-2026-05-27-C 430→485, D-2026-05-28-L 485→495, D-2026-05-31-O/P/Q →498). This table previously read 485 (stale). `useAppCallbacks` follow-up (D-2026-05-27-B) is **deferred** — App is under the ceiling (488/498) and D-2026-06-08-A steps 6/8 move server + UI state out of App (net reduction); extract only if a step pushes it over 498. |
 | `viewer/src/canvases/SketchCanvas.tsx` | 427 | 440 | v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to thread the publish handler through to SketchInspectorBindings. **No-growth henceforth** — new responsibilities → new sketch hook or wrapper. |
 | `viewer/src/shell/*.tsx` | ≤ 90 | — | App-chrome components (Header / CanvasTabs / HelpCheatsheet / ServiceDetailModal / states). Each owns its slice of chrome JSX; new chrome → new file in `shell/`. |
 | `viewer/src/hooks/use*.ts` | varies | — | App-shell hooks (useProject / useCanvasPersist / useProjectSocket / useUrlSync / useAvailableNodes / useAppKeyboard). Per-concern; do not bundle. |
