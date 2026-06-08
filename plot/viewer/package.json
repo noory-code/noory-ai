@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
+    "@tanstack/react-query": "^5.101.0",
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@types/dagre": "^0.7.54",
     "codemirror": "^6.0.2",

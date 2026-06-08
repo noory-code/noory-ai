@@ -4,6 +4,19 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.51.0] — 2026-06-09
+
+### Added — TanStack Query infrastructure (D-2026-06-08-A, step 6a)
+
+- `@tanstack/react-query` + `src/app/queryClient.ts` (local-engine defaults: no
+  refetch-on-focus since the WS drives external-change refresh, short retry,
+  modest staleTime) + `QueryClientProvider` at the app root (`main.tsx`). The
+  foundation for moving server state (canvases, project list, published
+  versions, dir tree) off the hand-rolled hooks onto the query/mutation cache,
+  above the `api.ts` engine seam. No behaviour change yet — nothing queries.
+- `tests/test-utils.tsx` `renderWithProviders` — a fresh, retry-disabled client
+  per render for components that read server state.
+
 ## [0.50.3] — 2026-06-08
 
 ### Added — undo regression guard (D-2026-06-08-A, step 7 regression-first)
