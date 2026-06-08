@@ -11,7 +11,7 @@
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { createFolder } from "../../api";
+import { createFolder } from "../../app/files";
 import { MDFileEditor } from "../../edit/MDFileEditor";
 import { folderSlug } from "../../lib/slug";
 import type { CanvasKind, SketchNode } from "../../types";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { readFile, writeFile } from "../api";
+import { readFile, writeFile } from "../app/files";
 import { MDPreview } from "./MDPreview";
 
 export interface MDFileEditorProps {

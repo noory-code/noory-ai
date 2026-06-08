@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.50.0] — 2026-06-08
+
+### Changed — engine seam confined to src/app + src/hooks (D-2026-06-08-A, step 4)
+
+- New application layer `viewer/src/app/{files,workspace,project,publish}.ts` —
+  the single seam over `api.ts` for presentation. Re-homed the 6 presentation
+  imports (PublishedMDModal, DetailsSection, PublishedVersionsSection,
+  DirTreePickerModal, MDFileEditor, App.tsx) + `mdImagePlugin` off `../api`
+  onto `src/app`.
+- A structural guard now fails the build if any file outside `src/app` /
+  `src/hooks` value-imports `api.ts` (type-only imports stay allowed). So when
+  the engine moves in-process (tablet, TS), only `src/app` + the data hooks
+  change, not presentation.
+
+### Fixed
+
+- `mdImagePlugin` hardcoded `/api/files/raw?…`, bypassing the `VITE_PLOT_ENGINE`
+  seam (would break a separately-bundled desktop frontend). It now builds the
+  URL via `api.rawFileUrl` (through `src/app/files`), hitting the configured
+  engine origin.
+
 ## [0.49.0] — 2026-06-08
 
 ### Fixed — self-echo guard no longer leaks (D-2026-06-08-A, step 3)

@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { listPublishedVersions, type PublishedVersion } from "../../../api";
+import { listPublishedVersions, type PublishedVersion } from "../../../app/publish";
 import { PublishedMDModal } from "../../PublishedMDModal";
 
 export interface PublishedVersionsSectionProps {

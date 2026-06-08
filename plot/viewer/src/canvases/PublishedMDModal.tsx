@@ -13,7 +13,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { readFile } from "../api";
+import { readFile } from "../app/files";
 import { MDPreview } from "../edit/MDPreview";
 
 export interface PublishedMDModalProps {

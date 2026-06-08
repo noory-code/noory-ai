@@ -26,6 +26,8 @@ import { StateEffect, StateField } from "@codemirror/state";
 import type { DecorationSet, ViewUpdate } from "@codemirror/view";
 import { Decoration, EditorView, ViewPlugin, WidgetType } from "@codemirror/view";
 
+import { rawFileUrl } from "../../../app/files";
+
 const DEBOUNCE_MS = 200;
 
 class ImageWidget extends WidgetType {
@@ -84,14 +86,11 @@ function resolveImageUrl(url: string): string {
   const projectPath = params.get("project_path");
   const projectId = params.get("project");
   if (!projectPath || !projectId) return url;
-  const qs = new URLSearchParams({
-    project_path: projectPath,
-    project_id: projectId,
-    path: url.startsWith("./") ? url.slice(2) : url,
-  });
-  // v0.24.0 (D-2026-05-17-L) — /api/files/raw serves binary bytes
-  // for image embeds (the JSON /api/files returns text, unusable for <img>).
-  return `/api/files/raw?${qs.toString()}`;
+  // /api/files/raw serves binary bytes for <img> embeds (the JSON /api/files
+  // returns text). Built via the files use-case so it goes through the
+  // API_BASE engine seam, not a hardcoded same-origin path — required for a
+  // bundled desktop frontend (tauri://). (D-2026-06-08-A step 4)
+  return rawFileUrl(projectPath, projectId, url.startsWith("./") ? url.slice(2) : url);
 }
 
 function buildImageDecorations(view: EditorView): DecorationSet {

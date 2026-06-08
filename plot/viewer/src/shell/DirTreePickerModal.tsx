@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { createWorkspaceDir, getDirTree, type DirTreeNode } from "../api";
+import { createWorkspaceDir, getDirTree, type DirTreeNode } from "../app/workspace";
 import { useDialog } from "./dialog/DialogProvider";
 
 interface DirTreePickerModalProps {

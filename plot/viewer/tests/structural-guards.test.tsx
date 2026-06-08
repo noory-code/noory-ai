@@ -539,3 +539,42 @@ describe("semantic colour tokens only (D-2026-06-07-C)", () => {
     expect(RAW_PALETTE_CLASS.test("bg-surface-inverse")).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------
+// Contract: the api.ts engine seam has ONE consumer layer (D-2026-06-08-A)
+// ---------------------------------------------------------------------
+// `api.ts` is the engine data-access seam (HTTP + WS, behind VITE_PLOT_ENGINE).
+// When the engine moves in-process (tablet, TS), only the seam's consumers
+// change — so consumers must be confined to the application layer (`src/app/`)
+// and the data-orchestration hooks (`src/hooks/`). Presentation must import
+// engine operations through `src/app`, never from `../api` directly. The
+// ARCH_REVIEW found this leaked at ~6 sites + `mdImagePlugin` (a hardcoded
+// `/api/files/raw`). Type-only imports (`import type { … } from "../api"`)
+// are allowed — types are not the runtime seam.
+
+describe("api.ts seam: only src/app + src/hooks consume it (D-2026-06-08-A)", () => {
+  it("presentation imports the engine through src/app, not src/api (value imports)", () => {
+    const offenders: string[] = [];
+    const apiValueImport = /from\s+["'](?:\.\.?\/)+api["']/;
+    for (const file of walkSrcFiles(SRC)) {
+      const rel = file.replace(SRC, "src");
+      if (rel === "src/api.ts" || rel.startsWith("src/app/") || rel.startsWith("src/hooks/")) {
+        continue; // the seam itself + its allowed consumer layers
+      }
+      const src = readFileSync(file, "utf8");
+      src.split("\n").forEach((line, i) => {
+        if (apiValueImport.test(line) && !/^\s*import\s+type\b/.test(line)) {
+          offenders.push(`${rel}:${i + 1}: ${line.trim()}`);
+        }
+      });
+    }
+    expect(
+      offenders,
+      `presentation imports api.ts directly — route it through src/app (e.g. src/app/files, src/app/workspace):\n${offenders.join("\n")}`,
+    ).toEqual([]);
+    // self-checks
+    expect(apiValueImport.test('import { readFile } from "../api"')).toBe(true);
+    expect(apiValueImport.test('import { x } from "../app/files"')).toBe(false);
+    expect(/^\s*import\s+type\b/.test('import type { SocketStatus } from "../api"')).toBe(true);
+  });
+});

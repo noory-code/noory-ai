@@ -524,6 +524,21 @@ export async function readFile(
 }
 
 /**
+ * URL for the raw bytes of a project file — used by the markdown image embed
+ * decorator (``/api/files/raw`` serves binary, unlike the JSON ``/api/files``).
+ * Built through ``API_BASE`` so a separately-bundled desktop frontend
+ * (tauri://) hits the configured engine origin, not its own. (D-2026-06-08-A)
+ */
+export function rawFileUrl(projectPath: string, projectId: string, path: string): string {
+  const params = new URLSearchParams({
+    project_path: projectPath,
+    project_id: projectId,
+    path,
+  });
+  return `${API_BASE}/api/files/raw?${params.toString()}`;
+}
+
+/**
  * Save an MD file. When ``nodeId`` is supplied for an ``index.md`` write,
  * the server also refreshes the node's summary cache so the on-canvas
  * preview stays current without a round-trip fetch.

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { patchProjectAnchor, resolveWorkspaceRoot } from "./api";
+import { patchProjectAnchor } from "./app/project";
+import { resolveWorkspaceRoot } from "./app/workspace";
 import { ProjectPicker } from "./shell/ProjectPicker";
 import { applyOptimisticAnchorPatch } from "./lib/anchorOptimistic";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
