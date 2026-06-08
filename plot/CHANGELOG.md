@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.53.0] — 2026-06-09
+
+### Changed — git moves to the workspace (.plot/) level, not per project (D-2026-06-09-C)
+
+- The per-project git repo (one `.git` per `.plot/{project_id}`) is replaced by
+  a single repo at the `.plot/` workspace level. `ensure_repo` / `tag_snapshot` /
+  `publish_snapshot` / `find_latest_publish_commit` / `revert_publish` all target
+  `.plot/`, so every project under one `.plot/` shares one history (user:
+  "워크스페이스에만 깃이 있어야 한다"). The repo sits at `.plot/`, not the launch
+  folder, so non-Plot files there are never tracked.
+- `git_store`'s `project_dir` parameter renamed to `workspace_root`; call sites
+  (`folder_io.create_project` / `publish_node` / `unpublish_node`,
+  `mcp_tools.plot_tag`) pass `plot_root`.
+- Migration: none needed (no legacy per-project `.git` in scope). New workspaces
+  init the repo at `.plot/` from the first project. Hoisting to the launch root
+  for multi-`.plot` workspaces is deferred.
+- Tests: `test_workspace_git.py` + updated `test_folder_io` git-wiring tests.
+  500 server tests green, ruff + mypy clean.
+
 ## [0.52.2] — 2026-06-09
 
 ### Removed — React Flow attribution watermark (D-2026-06-09-B)

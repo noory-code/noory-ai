@@ -258,8 +258,10 @@ def test_delete_missing_project_raises(plot_root: Path) -> None:
 
 
 def test_create_project_initialises_git_repo(plot_root: Path) -> None:
+    # D-2026-06-09-C — the repo lives at the workspace (.plot/), not per project.
     create_project(plot_root, "alpha", "Alpha")
-    assert (plot_root / "alpha" / ".git").is_dir()
+    assert (plot_root / ".git").is_dir()
+    assert not (plot_root / "alpha" / ".git").exists()
 
 
 def test_create_project_leaves_git_repo_empty(plot_root: Path) -> None:
@@ -269,7 +271,7 @@ def test_create_project_leaves_git_repo_empty(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     result = subprocess.run(
         ["git", "rev-parse", "--verify", "HEAD"],
-        cwd=plot_root / "alpha",
+        cwd=plot_root,
         capture_output=True,
         text=True,
     )
@@ -295,7 +297,7 @@ def test_write_canvas_does_not_commit(plot_root: Path) -> None:
     )
     result = subprocess.run(
         ["git", "rev-parse", "--verify", "HEAD"],
-        cwd=plot_root / "alpha",
+        cwd=plot_root,
         capture_output=True,
         text=True,
     )

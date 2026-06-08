@@ -41,6 +41,15 @@ label** (its path relative to the root; root-level shows the localized
   "MCP: connecting…" / "MCP: reconnecting…" / "MCP: offline" so the dot
   clearly refers to the MCP server connection. (Supersedes D-2026-05-31-O's
   header-dir display and D-2026-05-31-P's root-in-tab-bar placement.)
+- **Version control (v0.53.0, D-2026-06-09-C)** — git lives at the `.plot/`
+  workspace level: **one repo per `.plot/`**, not per project. `.plot/{id}` no
+  longer gets its own `.git`; `ensure_repo` / `tag_snapshot` / `publish_snapshot`
+  all target `.plot/`, so every project under one `.plot/` shares one history
+  (user: "워크스페이스에만 깃이 있어야 한다"). The repo sits at `.plot/` (Plot's
+  data root), not the launch folder, so non-Plot files in the launch folder are
+  never tracked. Session-bookmark tags and per-node publish commits live in this
+  single repo. (If multi-`.plot` roots ever need one shared history, hoisting the
+  repo to the launch root is a deferred follow-up.)
 
 ---
 

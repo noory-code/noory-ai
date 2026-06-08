@@ -1,4 +1,7 @@
-"""Per-project git repo used only for session-bookmark tags.
+"""Per-workspace git repo (at ``.plot/``) for session-bookmark tags + publish
+commits. One repo per workspace tracks every project beneath it
+(``.plot/{project_id}/``); there is no per-project repo. (D-2026-06-09-C —
+user: "워크스페이스에만 깃이 있어야 한다".)
 
 The repo is quiet by design: no automatic commits happen during
 day-to-day editing. A commit is created only when the user (or an MCP
@@ -61,24 +64,24 @@ def _git(*args: str, cwd: Path, check: bool = True) -> _RunResult:
 # ---------------------------------------------------------------------------
 
 
-def ensure_repo(project_dir: Path) -> None:
-    """Create the per-project git repo on first access.
+def ensure_repo(workspace_root: Path) -> None:
+    """Create the workspace-level git repo (``.plot/``) on first access.
 
     Idempotent: if ``.git/`` already exists, only the author config
     is re-asserted (cheap), and ``.gitignore`` stays as-is.
     """
-    dot_git = project_dir / ".git"
+    dot_git = workspace_root / ".git"
     if not dot_git.exists():
-        _git("init", "--quiet", cwd=project_dir)
+        _git("init", "--quiet", cwd=workspace_root)
     # Always (re)assert identity so a later git version change can't drop it.
-    _git("config", "--local", "user.name", "Plot", cwd=project_dir)
-    _git("config", "--local", "user.email", "plot@noory-ai.local", cwd=project_dir)
+    _git("config", "--local", "user.name", "Plot", cwd=workspace_root)
+    _git("config", "--local", "user.email", "plot@noory-ai.local", cwd=workspace_root)
     # Write .gitignore only if not already present — don't clobber user edits.
-    gi = project_dir / ".gitignore"
+    gi = workspace_root / ".gitignore"
     if not gi.exists():
         gi.write_text("*.tmp\n_archive/\n", encoding="utf-8")
     # Force LF line endings for JSON so cross-platform diffs stay clean.
-    attrs = project_dir / ".gitattributes"
+    attrs = workspace_root / ".gitattributes"
     if not attrs.exists():
         attrs.write_text("*.json text eol=lf\n", encoding="utf-8")
 
@@ -88,19 +91,19 @@ def ensure_repo(project_dir: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _tag_exists(project_dir: Path, name: str) -> bool:
+def _tag_exists(workspace_root: Path, name: str) -> bool:
     result = _git(
         "rev-parse",
         "--verify",
         "--quiet",
         f"refs/tags/{name}",
-        cwd=project_dir,
+        cwd=workspace_root,
         check=False,
     )
     return result.returncode == 0
 
 
-def tag_snapshot(project_dir: Path, name: str, message: str | None = None) -> dict[str, Any]:
+def tag_snapshot(workspace_root: Path, name: str, message: str | None = None) -> dict[str, Any]:
     """Snapshot the current working tree under an annotated git tag.
 
     Flow:
@@ -114,22 +117,22 @@ def tag_snapshot(project_dir: Path, name: str, message: str | None = None) -> di
     """
     # Self-heal projects that were created before ``ensure_repo`` was wired
     # into ``create_project`` — lets old projects still plant their first tag.
-    if not (project_dir / ".git").is_dir():
-        ensure_repo(project_dir)
+    if not (workspace_root / ".git").is_dir():
+        ensure_repo(workspace_root)
 
-    if _tag_exists(project_dir, name):
+    if _tag_exists(workspace_root, name):
         raise TagAlreadyExistsError(f"tag already exists: {name!r}")
 
     commit_message = message or name
 
-    _git("add", "-A", cwd=project_dir)
+    _git("add", "-A", cwd=workspace_root)
     # ``--allow-empty`` covers the "nothing changed since last snapshot" case.
     _git(
         "commit",
         "--allow-empty",
         "-m",
         commit_message,
-        cwd=project_dir,
+        cwd=workspace_root,
     )
     _git(
         "tag",
@@ -137,9 +140,9 @@ def tag_snapshot(project_dir: Path, name: str, message: str | None = None) -> di
         name,
         "-m",
         commit_message,
-        cwd=project_dir,
+        cwd=workspace_root,
     )
-    sha = _git("rev-parse", "HEAD", cwd=project_dir).stdout.strip()
+    sha = _git("rev-parse", "HEAD", cwd=workspace_root).stdout.strip()
     return {
         "name": name,
         "sha": sha,
@@ -153,7 +156,7 @@ def tag_snapshot(project_dir: Path, name: str, message: str | None = None) -> di
 
 
 def publish_snapshot(
-    project_dir: Path,
+    workspace_root: Path,
     *,
     node_id: str,
     kind: str,
@@ -188,8 +191,8 @@ def publish_snapshot(
     same key) are not surfaced in the returned dict — read the commit
     via ``git interpret-trailers`` instead.
     """
-    if not (project_dir / ".git").is_dir():
-        ensure_repo(project_dir)
+    if not (workspace_root / ".git").is_dir():
+        ensure_repo(workspace_root)
 
     subject = f'publish: {kind} "{label}" → {to_v}'
     trailers = {
@@ -205,9 +208,9 @@ def publish_snapshot(
     body = "\n".join(lines)
     message = f"{subject}\n\n{body}"
 
-    _git("add", "-A", cwd=project_dir)
-    _git("commit", "-m", message, cwd=project_dir)
-    sha = _git("rev-parse", "HEAD", cwd=project_dir).stdout.strip()
+    _git("add", "-A", cwd=workspace_root)
+    _git("commit", "-m", message, cwd=workspace_root)
+    sha = _git("rev-parse", "HEAD", cwd=workspace_root).stdout.strip()
     return {
         "sha": sha,
         "subject": subject,
@@ -220,7 +223,7 @@ def publish_snapshot(
 # ---------------------------------------------------------------------------
 
 
-def ensure_clean_working_tree(project_dir: Path) -> None:
+def ensure_clean_working_tree(workspace_root: Path) -> None:
     """Capture any pre-publish dirty state in its own commit.
 
     Without this, a publish that runs against an untracked / dirty
@@ -232,23 +235,23 @@ def ensure_clean_working_tree(project_dir: Path) -> None:
 
     Idempotent: no-op when the working tree is already clean.
     """
-    if not (project_dir / ".git").is_dir():
+    if not (workspace_root / ".git").is_dir():
         return
-    result = _git("status", "--porcelain", cwd=project_dir, check=False)
+    result = _git("status", "--porcelain", cwd=workspace_root, check=False)
     if not result.stdout.strip():
         return
-    _git("add", "-A", cwd=project_dir)
-    _git("commit", "-m", "chore(plot): seed pre-publish state", cwd=project_dir)
+    _git("add", "-A", cwd=workspace_root)
+    _git("commit", "-m", "chore(plot): seed pre-publish state", cwd=workspace_root)
 
 
-def find_latest_publish_commit(project_dir: Path, node_id: str) -> str | None:
+def find_latest_publish_commit(workspace_root: Path, node_id: str) -> str | None:
     """Return the short sha of the most recent publish commit for a node,
     or None when the node has never been published.
 
     Greps the git log for the ``Publish-Node-Id: <node_id>`` trailer line.
     Most-recent-first; we take the first match.
     """
-    if not (project_dir / ".git").is_dir():
+    if not (workspace_root / ".git").is_dir():
         return None
     result = _git(
         "log",
@@ -256,14 +259,14 @@ def find_latest_publish_commit(project_dir: Path, node_id: str) -> str | None:
         "--extended-regexp",
         "-1",
         "--format=%H",
-        cwd=project_dir,
+        cwd=workspace_root,
         check=False,
     )
     sha = result.stdout.strip()
     return sha or None
 
 
-def revert_publish(project_dir: Path, sha: str) -> str:
+def revert_publish(workspace_root: Path, sha: str) -> str:
     """Revert a publish commit and return the new HEAD sha.
 
     ``git revert <sha> --no-edit`` creates a new commit that undoes
@@ -271,8 +274,8 @@ def revert_publish(project_dir: Path, sha: str) -> str:
     Caller is responsible for verifying the commit was a publish
     (via the trailer) before invoking — this is a pure git op.
     """
-    _git("revert", "--no-edit", sha, cwd=project_dir)
-    return _git("rev-parse", "HEAD", cwd=project_dir).stdout.strip()
+    _git("revert", "--no-edit", sha, cwd=workspace_root)
+    return _git("rev-parse", "HEAD", cwd=workspace_root).stdout.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -283,7 +286,7 @@ def revert_publish(project_dir: Path, sha: str) -> str:
 _LIST_FORMAT = "%(refname:short)%09%(objectname)%09%(taggerdate:iso-strict)%09%(contents:subject)"
 
 
-def read_file_at_tag(project_dir: Path, tag: str, relative_path: str) -> bytes:
+def read_file_at_tag(workspace_root: Path, tag: str, relative_path: str) -> bytes:
     """v0.24.14 (D-2026-05-21-C) — read a file's bytes at the given tag.
 
     Uses ``git show <tag>:<relative_path>`` so we never touch the working
@@ -293,14 +296,14 @@ def read_file_at_tag(project_dir: Path, tag: str, relative_path: str) -> bytes:
     Raises:
         FileNotFoundError — when the tag or path doesn't exist at that tag.
     """
-    if not _tag_exists(project_dir, tag):
+    if not _tag_exists(workspace_root, tag):
         raise FileNotFoundError(f"tag not found: {tag!r}")
     # git show outputs the blob to stdout; check=False so we can craft a
     # readable error when the path is missing at that tag.
     spec = f"{tag}:{relative_path}"
     result = subprocess.run(
         ["git", "show", spec],
-        cwd=project_dir,
+        cwd=workspace_root,
         check=False,
         capture_output=True,
     )
@@ -312,7 +315,7 @@ def read_file_at_tag(project_dir: Path, tag: str, relative_path: str) -> bytes:
     return result.stdout
 
 
-def list_tags(project_dir: Path) -> list[dict[str, Any]]:
+def list_tags(workspace_root: Path) -> list[dict[str, Any]]:
     """Return all annotated tags, newest first by tagger date.
 
     Each entry: ``{name, sha, ts, message}``. ``sha`` is the commit sha
@@ -323,14 +326,14 @@ def list_tags(project_dir: Path) -> list[dict[str, Any]]:
     created by an old backend before ``ensure_repo`` was wired in, or
     the user deleted ``.git/`` by hand).
     """
-    if not (project_dir / ".git").is_dir():
+    if not (workspace_root / ".git").is_dir():
         return []
     result = _git(
         "for-each-ref",
         "--sort=-taggerdate",
         f"--format={_LIST_FORMAT}",
         "refs/tags",
-        cwd=project_dir,
+        cwd=workspace_root,
     )
     out: list[dict[str, Any]] = []
     for line in result.stdout.splitlines():
@@ -343,7 +346,7 @@ def list_tags(project_dir: Path) -> list[dict[str, Any]]:
         name = parts[0]
         ts = parts[2] if len(parts) > 2 else ""
         message = parts[3] if len(parts) > 3 else ""
-        commit_sha = _git("rev-list", "-n", "1", name, cwd=project_dir).stdout.strip()
+        commit_sha = _git("rev-list", "-n", "1", name, cwd=workspace_root).stdout.strip()
         out.append(
             {
                 "name": name,
@@ -355,8 +358,8 @@ def list_tags(project_dir: Path) -> list[dict[str, Any]]:
     return out
 
 
-def delete_tag(project_dir: Path, name: str) -> None:
+def delete_tag(workspace_root: Path, name: str) -> None:
     """Drop a tag. The commit it pointed at stays reachable via reflog."""
-    if not _tag_exists(project_dir, name):
+    if not _tag_exists(workspace_root, name):
         raise KeyError(name)
-    _git("tag", "-d", name, cwd=project_dir)
+    _git("tag", "-d", name, cwd=workspace_root)

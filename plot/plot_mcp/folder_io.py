@@ -874,10 +874,11 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     if folder.exists():
         raise FileExistsError(f"project already exists: {project_id}")
     folder.mkdir(parents=True)
-    # Initialise the project's per-folder git repo now so that
-    # ``tag_snapshot`` works later without any extra wiring. The repo
-    # stays empty until the user plants a tag.
-    ensure_repo(folder)
+    # Initialise the workspace-level git repo (at plot_root = .plot/) now so
+    # ``tag_snapshot`` works later without any extra wiring. One repo tracks
+    # every project in the workspace; it stays empty until the first tag.
+    # (D-2026-06-09-C — git lives at the workspace, not per project.)
+    ensure_repo(plot_root)
 
     now = datetime.now(UTC).isoformat()
     proj = ProjectDoc(
@@ -1243,7 +1244,7 @@ def publish_node(
     # state into its own commit so a future ``git revert`` of the
     # publish commit cannot wipe unrelated files (e.g. untracked
     # canvas.json in a fresh project).
-    ensure_clean_working_tree(project_dir)
+    ensure_clean_working_tree(plot_root)
     canvases = _load_all_canvases(plot_root, project_id)
     start_canvas_key = (
         f"service_detail:{service_id}" if canvas_kind == "service_detail" else canvas_kind
@@ -1333,7 +1334,7 @@ def publish_node(
         write_canvas(plot_root, project_id, canvas)
 
     commit = publish_snapshot(
-        project_dir,
+        plot_root,
         node_id=node.id,
         kind=node.kind,
         canvas=canvas_kind,
@@ -1388,16 +1389,16 @@ def unpublish_node(
     Raises ``KeyError`` if the node isn't on the canvas;
     ``UnpublishNotEligibleError`` if no publish commit exists for it.
     """
-    project_dir = _ensure_project(plot_root, project_id)
+    _ensure_project(plot_root, project_id)  # validate; git is workspace-level
     canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
     node = next((n for n in canvas.nodes if n.id == node_id), None)
     if node is None:
         raise KeyError(f"node {node_id!r} not on canvas {canvas_kind!r}")
     from_v = node.version
-    publish_sha = find_latest_publish_commit(project_dir, node_id)
+    publish_sha = find_latest_publish_commit(plot_root, node_id)
     if publish_sha is None:
         raise UnpublishNotEligibleError(f"node {node_id!r} has no publish commit to revert")
-    revert_sha = revert_publish(project_dir, publish_sha)
+    revert_sha = revert_publish(plot_root, publish_sha)
     # Re-read the canvas via the regular path to get the new version
     # (the revert restored the previous value).
     canvas_after = read_canvas(plot_root, project_id, canvas_kind, service_id)

@@ -10551,3 +10551,32 @@ but not yet fully eliminated.
   `structural-guards.test.tsx`.
 - **Test:** `react-flow-attribution.test.tsx` asserts `.react-flow__attribution`
   is absent. TDD Red→Green; 817 viewer green, tsc clean.
+
+### D-2026-06-09-C — git lives at the workspace (.plot/), not per project
+
+- **What:** Replace the per-project git repo (one `.git` per
+  `.plot/{project_id}`) with a single repo at the `.plot/` workspace level. All
+  `git_store` operations (`ensure_repo`, `tag_snapshot`, `publish_snapshot`,
+  `find_latest_publish_commit`, `revert_publish`) target `.plot/`; `git_store`'s
+  `project_dir` parameter is renamed `workspace_root`. Call sites
+  (`folder_io.create_project` / `publish_node` / `unpublish_node`,
+  `mcp_tools.plot_tag`) now pass `plot_root`.
+- **Why:** User: "워크스페이스에만 깃이 있어야 한다". A project is a unit
+  *inside* a workspace, not its own VCS root; one workspace = one history = N
+  projects. Per-project repos also caused a nested-git problem when the user
+  wanted a workspace-level repo.
+- **Workspace boundary:** the repo sits at `.plot/` (the direct parent of every
+  `.plot/{project_id}`) — Plot's data root — NOT the launch folder
+  (`project_path`), so the user's non-Plot files in the launch folder are never
+  tracked. SPEC §"Workspace & projects" also describes multi-`.plot` roots; if
+  those ever need one shared history, hoisting the repo to the launch root is a
+  deferred follow-up (this change collapses per-project → per-`.plot`, the
+  decisive step the user asked for).
+- **Migration:** none in scope — the user had deleted all playground projects,
+  so there were no legacy per-project `.git` dirs to fold in. New workspaces
+  init the repo at `.plot/` from the first `create_project`.
+- **Approval:** Accepted by user, 2026-06-09 (AskUserQuestion → "지금 바로 구현").
+- **Tests:** `test_workspace_git.py` (repo at `.plot/`, not per project; two
+  projects share one repo) + updated `test_folder_io` git-wiring tests. 500
+  server tests green, ruff + mypy clean.
+- **Spec impact:** SPEC §"Workspace & projects" gains the Version-control bullet.

@@ -172,7 +172,10 @@ def tag_project(
     "before-refactor") — day-to-day edits don't commit, only tags do."""
     plot_root = resolve_plot_root(project_path)
     try:
-        return tag_snapshot(plot_root / project_id, name, message=message)
+        # Workspace-level repo (D-2026-06-09-C): the tag snapshots the whole
+        # .plot/ workspace, not a single project. project_id is kept on the
+        # tool signature for call-site clarity / future per-project naming.
+        return tag_snapshot(plot_root, name, message=message)
     except TagAlreadyExistsError as exc:
         raise ValueError(str(exc)) from exc
 
