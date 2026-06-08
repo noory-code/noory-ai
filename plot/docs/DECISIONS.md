@@ -10502,3 +10502,33 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-06-08 ("전체 + 개편 트랙", "네, 권고대로 구현").
 - **Spec impact:** none yet (architecture/infra); SPEC unaffected until a
   user-visible behaviour changes.
+
+### D-2026-06-09-A — node-card text stays dark-on-light in both themes
+
+- **What:** A node card's on-card text (label, body, icon, fold toggle,
+  untitled placeholder, kind tag), the inline `code` background, and the
+  collapsed-children count-chip background no longer flip with the dark theme.
+  The card root div gets a `node-card` class; `theme/tokens.css` scopes the
+  on-card vars (`--fg`, `--fg-strong`, `--fg-secondary`, `--fg-muted`,
+  `--fg-faint`, `--surface-subtle`, `--line`) to that class at their `:root`
+  (light) values, so they resolve to the light value even under `.dark`.
+- **Why:** A card's background is the user's fixed colour (`data.color`,
+  usually a pastel), not a theme surface. In dark mode the text flipped to a
+  light foreground and vanished on the still-light card (user: "노드 안에 글자
+  색깔은 검은 색으로 그냥 가도 되는데"). Locking on-card colour to light keeps
+  the text dark-on-light in both themes with zero change to the light UI.
+- **Scope boundary:** only chrome *inside* the card is locked. Handles, the ⚠
+  markdown-warning badge, and the selection ring sit outside the card colour
+  and still follow the theme.
+- **Alternatives:** (a) new explicit `node-fg-*` tokens (7 names + Tailwind map
+  + 8 className edits) — more explicit but more surface area; rejected for
+  churn. (b) per-component `dark:` overrides on BaseNode — reintroduces the
+  raw-palette sprawl the token system removed; rejected. (c) chosen: scope the
+  existing fg/bg vars to a `node-card` class — zero className churn, light stays
+  1:1, parity-guarded. A prior session half-attempted the `node-fg-*` token
+  route and reverted it ("아키텍처 우선"); this is the completed replacement.
+- **Approval:** Accepted by user, 2026-06-09.
+- **Spec impact:** SPEC §"Appearance" gains the node-card dark-on-light bullet.
+- **Tests:** `tests/theme-tokens.test.ts` (`.node-card` vars = `:root` light
+  values — parity + light fidelity) + `tests/nodes/base-node-dark.test.tsx`
+  (card root carries `node-card`). TDD Red→Green; 816 pass, tsc clean.

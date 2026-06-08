@@ -80,3 +80,21 @@
   --info-fg: 125 211 252;        /* sky-300 */
   --info-soft: 8 47 73;          /* sky-950 */
 }
+
+/* On-card text/background — theme-LOCKED to the light values (D-2026-06-09-A).
+   A node card's background is the user's fixed colour (`data.color`, usually a
+   pastel), never a theme surface — so its text must read dark-on-light in BOTH
+   themes. Scoping these vars to the card div (class `node-card`) makes every
+   `text-fg*` / `bg-surface-subtle` (inline code) / `bg-line` (count chip)
+   *inside* the card resolve to the light value even under `.dark`. Light is
+   unchanged (these equal `:root`); `tests/theme-tokens.test.ts` pins the
+   parity, so a future :root edit can't silently desync the card. */
+.node-card {
+  --fg: 51 65 85;             /* slate-700 (body) */
+  --fg-strong: 15 23 42;      /* slate-900 (label / strong) */
+  --fg-secondary: 71 85 105;  /* slate-600 (icon) */
+  --fg-muted: 100 116 139;    /* slate-500 (fold toggle) */
+  --fg-faint: 148 163 184;    /* slate-400 (untitled / kind tag) */
+  --surface-subtle: 241 245 249; /* slate-100 (inline code bg) */
+  --line: 226 232 240;        /* slate-200 (count chip bg) */
+}

@@ -65,6 +65,15 @@ guard fails the build if a component reintroduces a raw neutral colour class.
 - **Light appearance is unchanged.** Each token's light value equals the
   pre-theme palette colour, so the existing light UI is preserved 1:1; only
   dark values are new.
+- **Node cards keep dark-on-light text in both themes.** A node card's
+  background is the user's chosen colour (`data.color`, usually a pastel), not
+  a theme surface — so flipping its text to a light foreground in dark mode
+  would make it vanish on the (still light) card. The card div (`node-card`
+  class) re-locks the on-card foreground vars + inline-code / count-chip
+  background vars to their light values, so card text reads dark-on-light
+  identically in light and dark. Chrome *outside* the card (handles, the ⚠
+  markdown-warning badge, selection ring) still follows the theme.
+  (D-2026-06-09-A)
 
 ---
 

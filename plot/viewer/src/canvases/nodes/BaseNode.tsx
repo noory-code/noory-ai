@@ -195,7 +195,7 @@ export function BaseNode({
     <>
       <div
         ref={nodeRef}
-        className={`relative ${sizing} bg-surface shadow-sm ${ring} ${contentPadding(
+        className={`node-card relative ${sizing} bg-surface shadow-sm ${ring} ${contentPadding(
           renderShape,
         )}`}
         style={style}

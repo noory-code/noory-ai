@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.52.1] — 2026-06-09
+
+### Fixed — node card text vanished on the light card in dark mode (D-2026-06-09-A)
+
+- A node card's background is the user's fixed colour (`data.color`, usually a
+  pastel), not a theme surface — so in dark mode the on-card text flipped to a
+  light foreground and disappeared on the still-light card (user: "노드 안에
+  글자 색깔은 검은 색으로 그냥 가도 되는데"). The card div now carries a
+  `node-card` class; `theme/tokens.css` re-locks the on-card foreground vars
+  (`--fg`, `--fg-strong`, `--fg-secondary`, `--fg-muted`, `--fg-faint`) plus
+  the inline-code (`--surface-subtle`) and count-chip (`--line`) backgrounds to
+  their `:root` (light) values, so card text reads dark-on-light identically in
+  both themes. Chrome *outside* the card — handles, the ⚠ markdown-warning
+  badge, the selection ring — still follows the theme.
+- Light appearance is unchanged: the locked values equal `:root`.
+- Tests: `theme-tokens.test.ts` asserts `.node-card` vars equal the `:root`
+  light values (parity + light fidelity); `nodes/base-node-dark.test.tsx`
+  asserts the card root carries `node-card`. TDD Red→Green; 816 viewer green,
+  tsc clean, .app rebuilt + launched (engine :5190 healthy).
+
 ## [0.52.0] — 2026-06-09
 
 ### Changed — canvas cache moved onto TanStack Query (D-2026-06-08-A, step 6b)

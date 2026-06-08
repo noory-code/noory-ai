@@ -59,3 +59,51 @@ describe("theme light-token fidelity (D-2026-06-07-C)", () => {
     expect(missing, `tokens missing a .dark value: ${missing.join(", ")}`).toEqual([]);
   });
 });
+
+describe("node-card on-card colours are theme-locked (D-2026-06-09-A)", () => {
+  // A node card's background is the user's fixed colour (`data.color`), not a
+  // theme surface — so its on-card text must stay dark-on-light in BOTH
+  // themes. `.node-card` re-declares the foreground + on-card background vars
+  // at the light value so the card's text/code/chip read identically in light
+  // and dark. This asserts each equals its `:root` (light) value, which both
+  // (a) keeps light 1:1 and (b) keeps dark text readable on the light card.
+  const ON_CARD = [
+    "--fg",
+    "--fg-strong",
+    "--fg-secondary",
+    "--fg-muted",
+    "--fg-faint",
+    "--surface-subtle", // inline `code` background inside the body preview
+    "--line", // collapsed-children count chip background
+  ];
+
+  const root = rootVars();
+
+  function nodeCardVars(): Record<string, string> {
+    const block = CSS.match(/\.node-card\s*\{([^}]*)\}/);
+    if (!block) throw new Error(".node-card block not found in tokens.css");
+    const out: Record<string, string> = {};
+    for (const m of block[1].matchAll(/(--[\w-]+):\s*([^;]+);/g)) {
+      out[m[1]] = m[2].trim();
+    }
+    return out;
+  }
+
+  it("defines a .node-card scope", () => {
+    expect(CSS.includes(".node-card")).toBe(true);
+  });
+
+  const card = (() => {
+    try {
+      return nodeCardVars();
+    } catch {
+      return {} as Record<string, string>;
+    }
+  })();
+
+  for (const v of ON_CARD) {
+    it(`${v} in .node-card equals the :root light value (${v} = ${root[v]})`, () => {
+      expect(card[v]).toBe(root[v]);
+    });
+  }
+});
