@@ -4,8 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Plot</title>
+    <script>
+      // Pre-paint theme (D-2026-06-08-A): apply `.dark` on <html> BEFORE React
+      // mounts, to avoid a flash of the wrong theme. This mirrors
+      // theme/ThemeProvider (readStoredChoice -> resolveTheme -> applyTheme) but
+      // cannot import the ESM module this early. The literals ("plot:theme",
+      // the media query, the "dark" class) are duplicated ON PURPOSE and pinned
+      // against the source of truth by tests/theme-fouc.test.ts.
+      (function () {
+        try {
+          var choice = localStorage.getItem("plot:theme");
+          if (choice !== "light" && choice !== "dark" && choice !== "system") choice = "system";
+          var dark =
+            choice === "dark" ||
+            (choice === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {
+          /* private mode / no matchMedia — fall back to light */
+        }
+      })();
+    </script>
   </head>
-  <body class="bg-paper text-ink">
+  <body class="bg-surface text-fg">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

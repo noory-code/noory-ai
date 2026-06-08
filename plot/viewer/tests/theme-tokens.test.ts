@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const CSS = readFileSync(resolve(__dirname, "../src/styles.css"), "utf8");
+const CSS = readFileSync(resolve(__dirname, "../src/theme/tokens.css"), "utf8");
 
 function rootVars(): Record<string, string> {
   const block = CSS.match(/:root\s*\{([^}]*)\}/);

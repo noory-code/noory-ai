@@ -514,13 +514,18 @@ const RAW_PALETTE_CLASS = new RegExp(
 );
 
 describe("semantic colour tokens only (D-2026-06-07-C)", () => {
-  it("no src file uses a raw Tailwind palette colour class", () => {
+  it("no src file (or index.html) uses a raw Tailwind palette colour class", () => {
     const offenders: string[] = [];
-    for (const file of walkSrcFiles(SRC)) {
+    // index.html is in the Tailwind content glob too — a dead `bg-paper`/
+    // `text-ink` body class survived the v0.47 token cleanup there because no
+    // guard scanned it (ARCH_REVIEW). Scan it alongside src.
+    const files = [...walkSrcFiles(SRC), resolve(SRC, "../index.html")];
+    for (const file of files) {
       const src = stripComments(readFileSync(file, "utf8"));
+      const label = file.includes("index.html") ? "index.html" : file.replace(SRC, "src");
       src.split("\n").forEach((line, i) => {
         const m = line.match(RAW_PALETTE_CLASS);
-        if (m) offenders.push(`${file.replace(SRC, "src")}:${i + 1}: ${m[0]}`);
+        if (m) offenders.push(`${label}:${i + 1}: ${m[0]}`);
       });
     }
     expect(

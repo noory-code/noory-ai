@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.48.0] — 2026-06-08
+
+### Changed — theme becomes a design-token layer (D-2026-06-08-A, steps 1-2)
+
+- Extracted the semantic theme tokens into `viewer/src/theme/tokens.css` (the
+  design-token SSOT), imported ahead of `styles.css`. Added `color-scheme`
+  (light / dark) so native UI (scrollbars, form controls) follows the theme.
+- Added a FOUC pre-paint `<head>` script in `index.html` that applies `.dark`
+  before React mounts, so there is no flash of the wrong theme. It mirrors
+  `theme/ThemeProvider`; its unavoidable duplicated literals (storage key,
+  media query, `dark` class) are pinned against the source of truth by
+  `theme-fouc.test.ts`.
+
+### Fixed
+
+- `index.html` body still used the dead `bg-paper` / `text-ink` classes
+  (removed in v0.47); replaced with the `bg-surface` / `text-fg` tokens. The
+  structural raw-palette guard now also scans `index.html`, so a dead or raw
+  colour class there fails the build.
+
 ## [0.47.0] — 2026-06-07
 
 ### Added — light / dark theme (D-2026-06-07-C)

@@ -10469,3 +10469,36 @@ but not yet fully eliminated.
   guard banning raw neutral colour classes → ③verify (suite + tsc + light
   regression; dark visual check needs user eyeball — screenshot blocked by
   screen-recording permission, dev-server discouraged per prior user direction).
+
+### D-2026-06-08-A — whole-system clean-architecture migration (per ARCH_REVIEW)
+
+- **What:** Adopt the migration plan in
+  [`../../../plot/docs/ARCH_REVIEW.md`](ARCH_REVIEW.md) across the whole system
+  (viewer + engine + overhaul direction), in this order, each step keeping the
+  app green: ①extract `theme/tokens.css` ②FOUC pre-paint `<head>` script +
+  `color-scheme` CSS + parity/`index.html` guards ③zero-dependency `pendingWrites`
+  fix (timeout + delete-on-PUT-error + echo guard) ④React-free `src/app` use-case
+  ring + "no `api.ts` import outside `src/app`" guard + fix `mdImagePlugin.ts:94`
+  seam bypass ⑤`useAppCallbacks` hook to bring `App.tsx` under its LOC ceiling
+  ⑥TanStack Query for server state ⑦undo regression-first (project-level unified
+  stack) ⑧Zustand single UI store. Overhaul track (parallel): `parseEntity` at
+  the WS boundary, C4 licensing boundary, engine `folder_io.py` (1471 LOC) split.
+- **Why:** State-management library choice (Zustand + TanStack Query above the
+  `api.ts` seam) + a React-free use-case ring make Clean Architecture easy to
+  hold as the engine moves in-process (TS, tablet); theme becomes a real
+  design-token layer. The cheap Phase-0 steps (①–⑤) retire the worst live bugs
+  with zero new dependencies before any library lands.
+- **Alternatives:** Phase-0-only (defer the libraries) — rejected by user, who
+  chose the full track including the overhaul items. Pragmatic-status-quo
+  layering + Redux/RTK Query + typed-TS token SSOT — rejected in ARCH_REVIEW.
+- **Adversarial corrections folded in:** `parseEntity` is dead (0 call sites);
+  the `api.ts` seam already leaks (5–8 presentation imports + `mdImagePlugin:94`)
+  so the use-case ring is meaningless without the import guard; `App.tsx` is
+  already 487/485 (over) so new providers add LOC before relief; the WS
+  `project_changed` echo to the originating client means an echo guard is still
+  required; undo is a project-level unified stack and needs a regression before
+  server state moves; the FOUC pre-paint literals hard-duplicate (no ESM import
+  pre-paint) and must be guarded, not eliminated.
+- **Approval:** Accepted by user, 2026-06-08 ("전체 + 개편 트랙", "네, 권고대로 구현").
+- **Spec impact:** none yet (architecture/infra); SPEC unaffected until a
+  user-visible behaviour changes.
