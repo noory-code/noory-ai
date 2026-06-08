@@ -6,6 +6,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../src/api";
 import { useProject } from "../src/hooks/useProject";
+import { makeQueryWrapper } from "./test-utils";
 import type { ProjectHistoryApi } from "../src/canvases/useProjectHistory";
 
 vi.mock("../src/api");
@@ -45,6 +46,7 @@ function mountProject() {
       onActiveIdChange: vi.fn(),
       onError: vi.fn(),
     }),
+    { wrapper: makeQueryWrapper() },
   );
 }
 

@@ -27,3 +27,12 @@ export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptio
   }
   return { client, ...render(ui, { wrapper: Wrapper, ...options }) };
 }
+
+/** A `wrapper` for `renderHook`, bound to a fresh retry-disabled client.
+ *  Use for hooks that read server state (e.g. `useProject`). */
+export function makeQueryWrapper() {
+  const client = makeTestQueryClient();
+  return function QueryWrapper({ children }: { children: ReactNode }) {
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  };
+}

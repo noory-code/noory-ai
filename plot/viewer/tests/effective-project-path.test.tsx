@@ -9,6 +9,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../src/api";
 import { useProject } from "../src/hooks/useProject";
+import { makeQueryWrapper } from "./test-utils";
 import type { ProjectHistoryApi } from "../src/canvases/useProjectHistory";
 
 vi.mock("../src/api");
@@ -47,6 +48,7 @@ describe("useProject effective project path (D-2026-05-31-M)", () => {
         onActiveIdChange: vi.fn(),
         onError: vi.fn(),
       }),
+      { wrapper: makeQueryWrapper() },
     );
     await waitFor(() => expect(api.getProject).toHaveBeenCalled());
     expect(api.getProject).toHaveBeenCalledWith("/repo/a", "p1");
@@ -61,6 +63,7 @@ describe("useProject effective project path (D-2026-05-31-M)", () => {
         onActiveIdChange: vi.fn(),
         onError: vi.fn(),
       }),
+      { wrapper: makeQueryWrapper() },
     );
     await waitFor(() => expect(api.getProject).toHaveBeenCalledWith("/repo/a", "p1"));
 

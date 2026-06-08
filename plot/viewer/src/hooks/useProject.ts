@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   type BlueprintBump,
@@ -91,18 +92,43 @@ export interface UseProjectApi {
   replaceSummary: (next: ProjectDoc) => void;
 }
 
+/** The active project's canvases + its metadata — one TanStack Query entry
+ *  per [path, id] (D-2026-06-08-A, step 6). */
+interface CanvasesData {
+  canvases: Map<CanvasKey, CanvasDoc>;
+  /** Full project read (includes ``tags`` + ``service_details``, which the
+   *  ``ProjectDoc`` summary type omits). */
+  project: Awaited<ReturnType<typeof getProject>>;
+}
+
+const EMPTY_CANVAS_CACHE: Map<CanvasKey, CanvasDoc> = new Map();
+
+function canvasesQueryKey(path: string | null, id: string | null) {
+  return ["canvases", path, id] as const;
+}
+
 /**
  * Owns everything project-scoped: the sidebar list, the currently open
  * project's metadata, the canvas cache, the tag list, and the actions
  * that mutate any of them.
  *
- * The hook does NOT touch the URL — the App wires ``onActiveIdChange``
- * to ``?project=`` so the concern stays at the view layer.
+ * v0.51 (D-2026-06-08-A, step 6): the canvas cache now lives in a TanStack
+ * Query (``["canvases", path, id]``) instead of ``useState`` — above the
+ * ``api.ts`` engine seam, so a future in-process engine swaps the transport
+ * with no cache-layer change. ``setCanvasCache`` is preserved as a setter
+ * backed by ``queryClient.setQueryData`` so every mutation call site
+ * (useCanvasPersist edits / undo / redo, useProjectSocket external changes,
+ * publish/unpublish) is unchanged. The WebSocket still drives external-change
+ * refresh, so the query is ``staleTime: Infinity`` (no background refetch).
+ *
+ * The hook does NOT touch the URL — the App wires ``onActiveIdChange`` to
+ * ``?project=`` so the concern stays at the view layer.
  */
 export function useProject(args: UseProjectArgs): UseProjectApi {
   const { workspaceRoot, history, onActiveIdChange, initialActiveId, onError } = args;
   const { t } = useTranslation();
   const dialog = useDialog();
+  const queryClient = useQueryClient();
 
   const [summaries, setSummaries] = useState<ProjectDoc[]>([]);
   // ``dirMap`` (state) drives reactive render (sidebar labels +
@@ -113,9 +139,6 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
   const dirMapRef = useRef<Map<string, string>>(new Map());
   const [migratedToast, setMigratedToast] = useState<string[] | null>(null);
   const [tags, setTags] = useState<ProjectTag[]>([]);
-  const [canvasCache, setCanvasCache] = useState<Map<CanvasKey, CanvasDoc>>(
-    () => new Map(),
-  );
   const [, setServiceDetails] = useState<string[]>([]);
   const [activeId, _setActiveId] = useState<string | null>(initialActiveId ?? null);
   const [phase, setPhase] = useState<ProjectPhase>("loading");
@@ -148,6 +171,96 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     [activeId, pathFor, workspaceRoot],
   );
 
+  // --- canvas cache as a TanStack Query (step 6) ------------------------
+  // Keyed on the effective path + id; switching project changes the key and
+  // loads that project's canvases. The query fetches the project metadata
+  // (for service_details) + all canvases together.
+  const canvasesQuery = useQuery<CanvasesData>({
+    queryKey: canvasesQueryKey(activeProjectPath, activeId),
+    enabled: !!activeProjectPath && !!activeId,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const path = activeProjectPath as string;
+      const id = activeId as string;
+      const project = await getProject(path, id);
+      const canvases = await getAllCanvases(path, id, project.service_details);
+      return { canvases, project };
+    },
+  });
+  const canvasCache = canvasesQuery.data?.canvases ?? EMPTY_CANVAS_CACHE;
+
+  // Mutation seam: every edit / undo / WS-refresh / publish writes through
+  // here. Backed by the query cache so the same ``setCanvasCache`` API the
+  // other hooks already use keeps working unchanged.
+  const activeProjectPathRef = useRef(activeProjectPath);
+  activeProjectPathRef.current = activeProjectPath;
+  const activeIdRef = useRef(activeId);
+  activeIdRef.current = activeId;
+  const setCanvasCache = useCallback<
+    React.Dispatch<React.SetStateAction<Map<CanvasKey, CanvasDoc>>>
+  >(
+    (updater) => {
+      queryClient.setQueryData<CanvasesData>(
+        canvasesQueryKey(activeProjectPathRef.current, activeIdRef.current),
+        (prev) => {
+          if (!prev) return prev; // nothing loaded yet — ignore stray writes
+          const next =
+            typeof updater === "function"
+              ? (updater as (m: Map<CanvasKey, CanvasDoc>) => Map<CanvasKey, CanvasDoc>)(
+                  prev.canvases,
+                )
+              : updater;
+          return { ...prev, canvases: next };
+        },
+      );
+    },
+    [queryClient],
+  );
+
+  // Sync the open project's metadata + reset undo ONLY when the project
+  // identity changes (a switch / fresh load) — not on every canvas edit
+  // (those keep the same project, so optimistic setTags / setServiceDetails
+  // are not clobbered). Mirrors the old ``openProject`` side effects.
+  const syncedProjectRef = useRef<string | null>(null);
+  useEffect(() => {
+    const data = canvasesQuery.data;
+    if (data && syncedProjectRef.current !== data.project.id) {
+      syncedProjectRef.current = data.project.id;
+      setTags(data.project.tags);
+      setServiceDetails(data.project.service_details);
+      history.init();
+    }
+  }, [canvasesQuery.data, history]);
+
+  // Derive phase from the list + the canvas query (replaces the imperative
+  // setPhase calls scattered through the old openProject flow).
+  useEffect(() => {
+    if (!workspaceRoot) {
+      setPhase("loading");
+      return;
+    }
+    if (canvasesQuery.isError) {
+      setPhase("error");
+      return;
+    }
+    if (activeId && canvasesQuery.isSuccess) {
+      setPhase("ready");
+      return;
+    }
+    if (activeId) {
+      setPhase("loading");
+    }
+  }, [workspaceRoot, activeId, canvasesQuery.isError, canvasesQuery.isSuccess]);
+
+  // Surface a fetch error through the App's error channel too.
+  useEffect(() => {
+    if (canvasesQuery.error) {
+      const e = canvasesQuery.error;
+      onError(e instanceof Error ? e.message : String(e));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasesQuery.error]);
+
   const loadList = useCallback(async (): Promise<ProjectDoc[] | null> => {
     if (!workspaceRoot) return null;
     try {
@@ -165,24 +278,14 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     }
   }, [workspaceRoot, onError]);
 
+  // Opening a project now just makes it active — the canvas query fetches
+  // (and the metadata-sync effect resets tags / undo) when the key changes.
   const openProject = useCallback(
     async (projectId: string) => {
-      const path = pathFor(projectId);
-      if (!path) return;
-      try {
-        const proj = await getProject(path, projectId);
-        setServiceDetails(proj.service_details);
-        setTags(proj.tags);
-        const cache = await getAllCanvases(path, projectId, proj.service_details);
-        setCanvasCache(cache);
-        history.init();
-        setPhase("ready");
-      } catch (err) {
-        onError(err instanceof Error ? err.message : String(err));
-        setPhase("error");
-      }
+      if (!pathFor(projectId)) return;
+      setActiveId(projectId);
     },
-    [pathFor, history, onError],
+    [pathFor, setActiveId],
   );
 
   // Initial list + open.
@@ -197,7 +300,6 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
       const chosen =
         (activeId && list.find((p) => p.id === activeId)?.id) ?? list[0].id;
       setActiveId(chosen);
-      void openProject(chosen);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceRoot]);
@@ -212,7 +314,6 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
       );
       if (existing) {
         setActiveId(existing.id);
-        void openProject(existing.id);
         return;
       }
       // v0.36.0 (D-2026-05-31-Y) — ask for the project name instead of
@@ -226,14 +327,13 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         const id = `proj-${Date.now().toString(36)}`;
         const targetPath = joinWorkspaceDir(workspaceRoot, targetDir);
         const created = await createProject(targetPath, id, name.trim() || "Untitled");
-        setActiveId(created.id);
         await loadList(); // rebuilds dirMapRef incl. created.id → targetDir
-        await openProject(created.id);
+        setActiveId(created.id);
       } catch (err) {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [workspaceRoot, summaries, loadList, openProject, onError, setActiveId, dialog, t],
+    [workspaceRoot, summaries, loadList, onError, setActiveId, dialog, t],
   );
 
   const rename = useCallback(
@@ -263,22 +363,20 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
             setActiveId(null);
           } else {
             setActiveId(list[0].id);
-            void openProject(list[0].id);
           }
         }
       } catch (err) {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [pathFor, loadList, openProject, activeId, onError, setActiveId],
+    [pathFor, loadList, activeId, onError, setActiveId],
   );
 
   const pick = useCallback(
     (id: string) => {
       setActiveId(id);
-      void openProject(id);
     },
-    [openProject, setActiveId],
+    [setActiveId],
   );
 
   const publishBlueprint = useCallback(
@@ -338,7 +436,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [pathFor, activeId, onError],
+    [pathFor, activeId, onError, setCanvasCache],
   );
 
   // v0.23.x (D-2026-05-17-J) — unpublish action mirrors publishNodeAction
@@ -357,7 +455,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [pathFor, activeId, onError],
+    [pathFor, activeId, onError, setCanvasCache],
   );
 
   const deleteTag = useCallback(

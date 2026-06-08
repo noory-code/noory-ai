@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.52.0] — 2026-06-09
+
+### Changed — canvas cache moved onto TanStack Query (D-2026-06-08-A, step 6b)
+
+- `useProject`'s canvas cache (`Map<CanvasKey, CanvasDoc>`) now lives in a
+  TanStack Query (`["canvases", path, id]`) instead of `useState`, above the
+  `api.ts` engine seam. `setCanvasCache` is preserved as a `setQueryData`-backed
+  setter, so every mutation call site is unchanged (useCanvasPersist
+  edits/undo/redo, useProjectSocket external changes, publish/unpublish).
+  `openProject` is now `setActiveId` (the query loads on key change);
+  tags/service_details + the undo reset sync on project *switch* only.
+  `staleTime: Infinity` — the WebSocket drives external-change refresh.
+- Tests: the 3 `useProject` tests are wrapped with `QueryClientProvider`
+  (`makeQueryWrapper`). 807 viewer green; tsc clean; build OK.
+- ⚠ Visual verification of live editing / save / undo / project-switch is
+  pending — the test suite passes but does not exercise those interactions.
+
 ## [0.51.0] — 2026-06-09
 
 ### Added — TanStack Query infrastructure (D-2026-06-08-A, step 6a)
