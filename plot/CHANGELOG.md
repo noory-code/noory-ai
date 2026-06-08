@@ -4,6 +4,13 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.53.1] — 2026-06-09
+
+### Fixed
+
+- Sorted imports in `tests/test_sync.py` (ruff I001) — pre-existing lint, no
+  behaviour change. Restores a clean `ruff check` across `plot_mcp/` + `tests/`.
+
 ## [0.53.0] — 2026-06-09
 
 ### Changed — git moves to the workspace (.plot/) level, not per project (D-2026-06-09-C)

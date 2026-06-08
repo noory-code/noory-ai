@@ -89,7 +89,7 @@ def test_sync_on_empty_overview_is_noop(plot_root: Path) -> None:
 def test_sync_skips_archive_when_detail_has_user_authored_nodes(
     plot_root: Path,
 ) -> None:
-    from plot_mcp.folder_io import _write_json, _canvas_file
+    from plot_mcp.folder_io import _canvas_file, _write_json
     create_project(plot_root, "alpha", "Alpha")
     write_canvas(plot_root, "alpha", _overview_with({"order": "주문"}))
     sync_details_with_overview(plot_root, "alpha")  # seeds order detail
@@ -123,7 +123,7 @@ def test_sync_skips_archive_when_detail_has_user_authored_nodes(
 def test_sync_skips_archive_when_detail_has_user_authored_edges(
     plot_root: Path,
 ) -> None:
-    from plot_mcp.folder_io import _write_json, _canvas_file
+    from plot_mcp.folder_io import _canvas_file, _write_json
     create_project(plot_root, "alpha", "Alpha")
     write_canvas(plot_root, "alpha", _overview_with({"order": "주문"}))
     sync_details_with_overview(plot_root, "alpha")
