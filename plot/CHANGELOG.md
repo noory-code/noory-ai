@@ -4,6 +4,15 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.50.3] — 2026-06-08
+
+### Added — undo regression guard (D-2026-06-08-A, step 7 regression-first)
+
+- `tests/project-history.test.ts` pins the project-level unified undo stack
+  (cross-canvas LIFO, redo-frontier clear on push, reset on project switch /
+  external change, 50-entry cap) — the weakest seam for the server-state
+  migration. Any later step that regresses undo now fails the build.
+
 ## [0.50.2] — 2026-06-08
 
 ### Fixed — empty-state headings invisible in dark mode
