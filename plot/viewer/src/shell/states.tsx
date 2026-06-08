@@ -31,7 +31,7 @@ export function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex h-full items-center justify-center p-8 text-center">
       <div>
-        <h1 className="mb-2 text-2xl font-semibold">No projects yet</h1>
+        <h1 className="mb-2 text-2xl font-semibold text-fg-strong">No projects yet</h1>
         <p className="mb-6 text-fg-muted">
           Create your first Plot project to start mapping.
         </p>

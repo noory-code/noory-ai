@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.50.2] — 2026-06-08
+
+### Fixed — empty-state headings invisible in dark mode
+
+- `EmptyState` ("No projects yet") and the `ProjectPicker` title had no colour
+  class — they relied on the body default. In dark mode (and on any build where
+  the body's colour token is missing) they rendered dark-on-dark / invisible.
+  Pinned both headings to `text-fg-strong` so they theme explicitly rather than
+  via inheritance (inheritance is exactly what broke here). The raw-palette
+  guard can't catch a *missing* colour, so this was caught by user testing.
+
 ## [0.50.1] — 2026-06-08
 
 ### Changed — docs (D-2026-06-08-A, step 5)

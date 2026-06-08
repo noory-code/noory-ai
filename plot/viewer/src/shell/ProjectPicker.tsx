@@ -22,7 +22,7 @@ export function ProjectPicker() {
   return (
     <div className="flex h-full items-center justify-center p-8 text-center">
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">{t("shell.projectPicker.title")}</h1>
+        <h1 className="text-2xl font-semibold text-fg-strong">{t("shell.projectPicker.title")}</h1>
         {inTauri ? (
           <button
             data-testid="open-folder-btn"
