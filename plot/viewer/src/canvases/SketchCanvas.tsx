@@ -410,6 +410,7 @@ function SketchCanvasInner({
         onToggleValueFlow={toggleValueFlow}
       />
       <ReactFlow
+        proOptions={{ hideAttribution: true }}
         nodes={nodes}
         edges={edges}
         nodeTypes={NODE_TYPES}

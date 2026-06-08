@@ -74,6 +74,11 @@ guard fails the build if a component reintroduces a raw neutral colour class.
   identically in light and dark. Chrome *outside* the card (handles, the ⚠
   markdown-warning badge, selection ring) still follows the theme.
   (D-2026-06-09-A)
+- **No third-party watermark on the canvas.** The React Flow attribution badge
+  (bottom-right "React Flow" link) is hidden via `proOptions={{ hideAttribution:
+  true }}` on the canvas. `reactflow` is MIT-licensed, so removing the
+  attribution (which xyflow recommends but does not require) is permitted; Plot
+  ships as a commercial desktop app. (D-2026-06-09-B)
 
 ---
 

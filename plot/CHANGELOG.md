@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.52.2] — 2026-06-09
+
+### Removed — React Flow attribution watermark (D-2026-06-09-B)
+
+- The canvas no longer shows the bottom-right "React Flow" attribution badge.
+  Added `proOptions={{ hideAttribution: true }}` to the `<ReactFlow>` in
+  `SketchCanvas`. `reactflow` is MIT-licensed, so hiding the attribution (which
+  xyflow recommends but does not require) is permitted; Plot ships as a
+  commercial desktop app.
+- SketchCanvas LOC ceiling 515 → 516 (the single added prop); pinned in
+  `structural-guards.test.tsx`.
+- Test: `react-flow-attribution.test.tsx` asserts `.react-flow__attribution`
+  is absent. TDD Red→Green; 817 viewer green, tsc clean.
+
 ## [0.52.1] — 2026-06-09
 
 ### Fixed — node card text vanished on the light card in dark mode (D-2026-06-09-A)

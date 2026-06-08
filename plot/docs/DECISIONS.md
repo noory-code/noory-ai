@@ -10532,3 +10532,22 @@ but not yet fully eliminated.
 - **Tests:** `tests/theme-tokens.test.ts` (`.node-card` vars = `:root` light
   values — parity + light fidelity) + `tests/nodes/base-node-dark.test.tsx`
   (card root carries `node-card`). TDD Red→Green; 816 pass, tsc clean.
+
+### D-2026-06-09-B — hide the React Flow attribution watermark
+
+- **What:** Hide the bottom-right "React Flow" attribution badge on the canvas
+  via `proOptions={{ hideAttribution: true }}` on the `<ReactFlow>` element in
+  `SketchCanvas`.
+- **Why:** Plot ships as a commercial desktop app (OVERHAUL R1/R5/R6); a
+  third-party watermark on the user's canvas is off-brand. User asked to remove
+  it ("오른쪽 하단에 react flow 라고 나오는거 그거 없앨 수 없나요?").
+- **Licence:** `reactflow` (xyflow) is MIT. xyflow *recommends* keeping the
+  attribution but does not *require* it; hiding it via the official
+  `hideAttribution` option is permitted. Recorded here so the OVERHAUL licence
+  audit sees the call was deliberate, not an oversight.
+- **Approval:** Accepted by user, 2026-06-09.
+- **Spec impact:** SPEC §"Appearance" gains the no-watermark bullet.
+- **LOC:** SketchCanvas ceiling 515 → 516 (one added prop); pinned in
+  `structural-guards.test.tsx`.
+- **Test:** `react-flow-attribution.test.tsx` asserts `.react-flow__attribution`
+  is absent. TDD Red→Green; 817 viewer green, tsc clean.
