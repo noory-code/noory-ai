@@ -10580,3 +10580,26 @@ but not yet fully eliminated.
   projects share one repo) + updated `test_folder_io` git-wiring tests. 500
   server tests green, ruff + mypy clean.
 - **Spec impact:** SPEC §"Workspace & projects" gains the Version-control bullet.
+
+### D-2026-06-09-D — dev-only debug channel for WKWebView introspection
+
+- **What:** A dev-only `/api/debug` engine endpoint (GET/POST, in-memory) + a
+  viewer probe (`lib/debugProbe.ts`) that collects on-screen state (theme, React
+  Flow watermark presence, per-node computed colour + layout rect) and POSTs it.
+  `startDebugProbe()` (wired in `main.tsx`) auto-posts on debounced DOM mutations
+  when enabled (`VITE_PLOT_DEBUG=1` or `?debug`). An external agent GETs
+  `/api/debug` to read what the screen actually shows.
+- **Why:** CDP tools (chrome-devtools, Playwright) cannot attach to the Tauri
+  **WKWebView** on macOS, and `tauri-driver` does not support macOS — so the
+  assistant could not verify computed colours / layout in the .app (only the
+  user's eyes could). This channel bridges that: the viewer reports
+  `getComputedStyle` / `getBoundingClientRect` through the engine. (User: "플레이
+  라이트나 크롬데브툴 같은 디버깅 툴 제공 안하나?")
+- **Boundary:** in-memory, localhost-bound, NOT part of the product surface;
+  separate `debug_endpoints.py` module (does not grow the 965-LOC god
+  `api_endpoints.py`). Probe is a no-op unless explicitly enabled.
+- **Approval:** Accepted by user, 2026-06-09 (AskUserQuestion → "둘 다 (채널 먼저,
+  스크린샷 다음)"). A Tauri screenshot command is the next step (Phase 2).
+- **Tests:** `test_debug_endpoint.py` (POST/GET roundtrip, overwrite, bad json) +
+  `debugProbe.test.ts` (theme / watermark / node collection). 504 server + 820
+  viewer green; ruff + mypy + tsc clean.

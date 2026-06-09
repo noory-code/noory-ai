@@ -38,6 +38,7 @@ from plot_mcp.api_endpoints import (
     workspace_discover_endpoint,
 )
 from plot_mcp.broadcast import BroadcastHub
+from plot_mcp.debug_endpoints import debug_get_endpoint, debug_post_endpoint
 from plot_mcp.workspace import find_viewer_dist, resolve_plot_root
 
 _log = logging.getLogger(__name__)
@@ -69,6 +70,11 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
 
     routes: list[BaseRoute] = [
         Route("/api/health", health_endpoint),
+        # v0.54.0 (D-2026-06-09-D) — dev-only debug channel: the viewer POSTs a
+        # screen snapshot; an external agent GETs it (WKWebView introspection,
+        # since CDP tools can't attach to the Tauri webview on macOS).
+        Route("/api/debug", debug_get_endpoint, methods=["GET"]),
+        Route("/api/debug", debug_post_endpoint, methods=["POST"]),
         # v0.4 project + canvas + tag surface
         Route("/api/projects", projects_list_endpoint, methods=["GET"]),
         Route("/api/projects", project_post_endpoint, methods=["POST"]),

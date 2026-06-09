@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.54.0] — 2026-06-09
+
+### Added — dev-only debug channel for WKWebView introspection (D-2026-06-09-D)
+
+- New `/api/debug` engine endpoint (GET/POST, in-memory, dev-only) in a separate
+  `debug_endpoints.py` module. The viewer's `lib/debugProbe.ts` collects
+  on-screen state (theme, React Flow watermark presence, per-node computed colour
+  + layout rect) and POSTs it; `startDebugProbe()` (wired in `main.tsx`)
+  auto-posts on debounced DOM mutations when enabled (`VITE_PLOT_DEBUG=1` or
+  `?debug`). An external agent GETs `/api/debug` to introspect the Tauri
+  WKWebView, which CDP tools (chrome-devtools, Playwright) can't attach to on
+  macOS.
+- Not part of the product surface; no-op unless explicitly enabled.
+- Tests: `test_debug_endpoint.py` + `debugProbe.test.ts`. 504 server + 820 viewer
+  green; ruff + mypy + tsc clean.
+
 ## [0.53.1] — 2026-06-09
 
 ### Fixed
