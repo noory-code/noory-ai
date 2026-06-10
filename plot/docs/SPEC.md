@@ -188,6 +188,7 @@ project name (e.g. "Banas v0.13").
 | **Handles (4 sides)** | Visible. User may draw edges from / to the anchor like any other node. |
 | **Inspector on click** | **TBD — open question, see below.** |
 | **Visual differentiation** | 2 px slate-600 **border** so users tell it apart from same-colour Service circles on other canvases. (Border, not outline — outline paints outside the hit-box and caused cursor flicker on slow hover; see [D-2026-05-08-G](./DECISIONS.md). Regular nodes use a 1 px slate-300 border, selected nodes 2 px indigo-500.) |
+| **Sizing** | Auto-fits content as a SQUARE (round shapes use `aspect-square`, with the card itself as a flex column so vertical centering works without a percentage-height child). [D-2026-06-11-A](./DECISIONS.md#d-2026-06-11-a--round-cards-use-flex-column-not-h-full-on-the-inner-webkit-aspect-ratio-fix) corrected the 96×132 anchor produced by the Tauri WKWebView under the prior `h-full` inner. |
 
 ### Open questions (not yet decided)
 

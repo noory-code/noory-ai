@@ -62,6 +62,48 @@ describe("collectProbe", () => {
     expect(typeof snap.nodes[0].aspect).toBe("string");
     expect(snap.nodes[0].parent).toHaveProperty("w");
   });
+
+  // Anchor-ellipse diagnosis (N-1): the 96×132 measurement matches neither
+  // border-box (96×96) nor content-box (148×132) aspect-ratio resolution.
+  // The remaining suspects need three more facts from the live WKWebView:
+  // computed box-sizing, the in-flow inner (h-full) child's box — a
+  // percentage-height/aspect-ratio cycle would show as inner.h == rect.h
+  // minus padding+border grown past the square — and the real RF zoom
+  // (the ×2 was an assumption).
+  it("collects box-sizing and the in-flow inner child box per node", () => {
+    const card = document.createElement("div");
+    card.setAttribute("data-node-id", "n1");
+    const handle = document.createElement("div");
+    handle.className = "react-flow__handle source";
+    card.appendChild(handle);
+    const inner = document.createElement("div");
+    inner.className = "flex h-full";
+    card.appendChild(inner);
+    document.body.appendChild(card);
+    const probe = collectProbe().nodes[0];
+    expect(typeof probe.boxSizing).toBe("string");
+    expect(probe.inner).toHaveProperty("w");
+    expect(probe.inner).toHaveProperty("h");
+  });
+
+  it("inner is null when the card has no non-handle div child", () => {
+    const card = document.createElement("div");
+    card.setAttribute("data-node-id", "n1");
+    const handle = document.createElement("div");
+    handle.className = "react-flow__handle source";
+    card.appendChild(handle);
+    document.body.appendChild(card);
+    expect(collectProbe().nodes[0].inner).toBeNull();
+  });
+
+  it("reports the React Flow viewport zoom (null without a viewport)", () => {
+    expect(collectProbe().zoom).toBeNull();
+    const vp = document.createElement("div");
+    vp.className = "react-flow__viewport";
+    vp.style.transform = "translate(10px, 20px) scale(1.5)";
+    document.body.appendChild(vp);
+    expect(collectProbe().zoom).toBe(1.5);
+  });
 });
 
 describe("debugEnabled (flavor gating)", () => {

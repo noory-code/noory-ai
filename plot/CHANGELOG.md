@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.59.2] — 2026-06-11
+
+### Fixed — anchor rendered 96×132 instead of 96×96 in the Tauri WKWebView (D-2026-06-11-A)
+
+- `BaseNode`'s round-shape sizing now puts `flex flex-col justify-center` on
+  the card root itself and drops `h-full` from the inner content div.
+  WebKit resolved `width:fit-content + min-width + aspect-ratio + h-full
+  child` into a non-square box (132 = 96 + 32 py-4 + 4 border-2). With the
+  card as its own flex container the aspect-ratio resolves cleanly to
+  96×96. Static guards in `tests/nodes/round-card-no-percent-height.test.tsx`
+  pin both invariants per shape.
+- Diagnosed via the debug probe (D-2026-06-09-D), which now reports
+  `boxSizing`, the first non-handle inner child's `{w,h}`, and the React
+  Flow viewport `zoom`. These three fields narrowed the cause from the
+  box-sizing / browser-bug hypotheses to the `h-full ↔ aspect-ratio` loop.
+  859 viewer tests green.
+
 ## [0.59.1] — 2026-06-10
 
 ### Fixed — tag / at-tag / blueprint-publish still used per-project git (D-2026-06-10-H)

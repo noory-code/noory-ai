@@ -10793,3 +10793,32 @@ but not yet fully eliminated.
   layout work. New regression tests assert the ABSENCE of a per-project
   `.git` after endpoint-driven tagging + an at-tag round-trip.
 - **Approval:** bug fix under the pinned D-2026-06-09-C decision, 2026-06-10.
+
+### D-2026-06-11-A — Round cards use flex column, not `h-full` on the inner (WebKit aspect-ratio fix)
+
+- **What:** `BaseNode`'s round-shape sizing (`circle`/`ellipse`, incl. the
+  project anchor) now puts `flex flex-col justify-center` on the card root
+  itself and drops `h-full` from the inner content div. Vertical centering
+  is enforced by the card's flex layout, with zero percentage-height
+  dependency. Static guards in
+  `viewer/tests/nodes/round-card-no-percent-height.test.tsx` pin both (card
+  carries the flex classes; no descendant uses `h-full`) per shape.
+- **Why:** Tauri's WKWebView resolved
+  `width:fit-content + min-width + aspect-ratio + h-full child`
+  into a non-square box — the anchor measured 96×132 instead of 96×96
+  (`132 = 96 + 32 py-4 + 4 border-2`). Live evidence from the debug probe:
+  `box-sizing: border-box` (so border-box was NOT the cause), `aspect-ratio:
+  1/1`, `inner.h = 96`. The `h-full` percentage child fed content-height
+  back into the aspect resolution loop. Making the card itself the flex
+  container breaks the loop; aspect-ratio then resolves cleanly to 96×96.
+- **Probe extensions used to confirm:** `collectProbe` now reports
+  `boxSizing`, the first non-handle inner child's `{w,h}`, and the React
+  Flow viewport `zoom` (parsed from the `.react-flow__viewport` transform).
+  Without these the cause space could not be narrowed.
+- **Scope:** viewer only; no engine changes. Persisted anchor sizes from
+  prior renders (96×132) self-correct on next render via the existing
+  ResizeObserver → `onAnchorChange` plumbing — no migration needed.
+- **Approval:** reported by user "고쳐진거는 확인했구요", 2026-06-11.
+- **Spec impact:** SPEC §Anchor — new Sizing row added pointing at this
+  entry. Pinned by `round-card-no-percent-height.test.tsx`.
+

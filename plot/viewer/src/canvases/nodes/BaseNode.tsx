@@ -156,14 +156,14 @@ export function BaseNode({
   // RF measures the DOM and the dimensions-change → doc plumbing persists
   // the real size for layout/edges. The synthetic anchor keeps the fixed
   // size it is given (resized via onAnchorChange), so it stays geometric.
-  // v0.38.0 (D-2026-06-01-B) — round shapes (circle/ellipse incl. the
-  // project anchor) auto-fit as a SQUARE (aspect-square) so they stay
-  // circular; rectangular kinds fit their content width. The anchor is no
-  // longer special-cased — it shrinks to its content like everything else
-  // (user: "바나스 앵커는 왜 안줄이죠?").
+  // Round shapes (circle/ellipse incl. project anchor) auto-fit as a SQUARE;
+  // rectangular kinds fit their content width. The card itself is a flex
+  // column with justify-center so vertical centering works without a
+  // percentage-height child — `h-full` on the inner re-introduced a WebKit
+  // aspect-ratio loop (96×132 anchors). D-2026-06-01-B + D-2026-06-11-A.
   const isRound = renderShape === "circle" || renderShape === "ellipse";
   const sizing = isRound
-    ? "w-fit aspect-square min-w-[96px] max-w-[200px]"
+    ? "flex flex-col justify-center w-fit aspect-square min-w-[96px] max-w-[200px]"
     : "w-fit min-w-[140px] max-w-[340px]";
 
   // v0.38.0 (D-2026-06-01-B) — persist the auto-fit size back to the doc so
@@ -238,8 +238,8 @@ export function BaseNode({
 
         <div
           className={`flex w-full flex-col items-stretch justify-center gap-1 ${
-            isRound ? "h-full" : ""
-          } ${showKindTag && !isAnchor ? "pt-3" : ""}`}
+            showKindTag && !isAnchor ? "pt-3" : ""
+          }`}
         >
           <div
             className={`flex items-center gap-1.5 text-sm font-semibold text-fg-strong ${

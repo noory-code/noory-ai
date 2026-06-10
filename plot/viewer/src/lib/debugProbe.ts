@@ -34,6 +34,14 @@ export interface NodeProbe {
    *  is imposed from outside (wrapper) or grown from inside (content). */
   inline: string;
   aspect: string;
+  /** Computed `box-sizing` — N-1: distinguishes border-box (96×96 expected)
+   *  from content-box (148×132). If WKWebView reports `border-box` and the
+   *  rect is still 96×132, the box-sizing hypothesis is dead. */
+  boxSizing: string;
+  /** The first non-handle direct child of the card — the in-flow `h-full`
+   *  flex column. A percentage-height vs aspect-ratio cycle would show as
+   *  inner.h driving rect.h taller than the min-width square. */
+  inner: { w: number; h: number } | null;
   parent: { w: number; h: number; inline: string } | null;
 }
 
@@ -43,8 +51,33 @@ export interface ProbeSnapshot {
   watermark: boolean;
   nodeCount: number;
   nodes: NodeProbe[];
+  /** React Flow viewport zoom — read from `.react-flow__viewport` transform.
+   *  The earlier session assumed ×2 from the persisted anchor size; this
+   *  ground-truths it. `null` outside a canvas (e.g. on ProjectPicker). */
+  zoom: number | null;
   /** Absolute path of the latest window PNG (Tauri shell only). */
   screenshotPath?: string;
+}
+
+/** First child `<div>` that isn't a React Flow handle — the in-flow content
+ *  wrapper. A `h-full` percentage height resolves against this box. */
+function innerChildBox(card: HTMLElement): { w: number; h: number } | null {
+  for (const child of Array.from(card.children)) {
+    if (!(child instanceof HTMLElement)) continue;
+    if (child.classList.contains("react-flow__handle")) continue;
+    if (child.tagName !== "DIV") continue;
+    const r = child.getBoundingClientRect();
+    return { w: Math.round(r.width), h: Math.round(r.height) };
+  }
+  return null;
+}
+
+/** Parse `scale(n)` out of the React Flow viewport's transform. */
+function readViewportZoom(): number | null {
+  const vp = document.querySelector<HTMLElement>(".react-flow__viewport");
+  if (!vp) return null;
+  const m = vp.style.transform.match(/scale\(([-0-9.]+)\)/);
+  return m ? Number(m[1]) : null;
 }
 
 /** Read the current screen state into a serialisable snapshot. */
@@ -64,6 +97,8 @@ export function collectProbe(): ProbeSnapshot {
       classes: el.className,
       inline: el.getAttribute("style") ?? "",
       aspect: cs.aspectRatio,
+      boxSizing: cs.boxSizing,
+      inner: innerChildBox(el),
       parent: el.parentElement
         ? {
             w: Math.round(el.parentElement.getBoundingClientRect().width),
@@ -79,6 +114,7 @@ export function collectProbe(): ProbeSnapshot {
     watermark,
     nodeCount: nodes.length,
     nodes,
+    zoom: readViewportZoom(),
   };
 }
 
