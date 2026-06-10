@@ -10603,3 +10603,53 @@ but not yet fully eliminated.
 - **Tests:** `test_debug_endpoint.py` (POST/GET roundtrip, overwrite, bad json) +
   `debugProbe.test.ts` (theme / watermark / node collection). 504 server + 820
   viewer green; ruff + mypy + tsc clean.
+
+### D-2026-06-10-A — debug/release flavor split gates every debug surface
+
+- **What:** All debug tooling is flavor-gated at build time, on all three
+  layers. **Engine:** `/api/debug` routes register only when `PLOT_DEBUG=1`
+  (release = 404). **Viewer:** the probe is enabled only when the bundle was
+  built with `VITE_PLOT_DEBUG=1`; the `?debug` URL runtime escape is REMOVED
+  (release bundles tree-shake the probe out entirely — verified by grepping the
+  built assets). **Shell:** `tauri-plugin-screenshots` becomes an optional
+  Cargo dependency behind a `debug-tools` feature; the debug flavor overlay
+  `tauri.debug.conf.json` (productName "Plot Debug", identifier
+  `me.noory.plot.debug`, frontendDist `dist-debug`, inline `screenshots:default`
+  capability) + `-- --features debug-tools` selects it, and the shell spawns the
+  sidecar with `PLOT_DEBUG=1` only under that feature.
+  - Release: `npx tauri build --bundles app`
+  - Debug:   `npx tauri build --bundles app --config src-tauri/tauri.debug.conf.json -- --features debug-tools`
+- **Why:** User: "플레이버하고 디버그 릴리즈 모드를 제공해야 디버깅 툴 활성화를
+  결정하는건데" — a commercial release binary must carry ZERO debug surface
+  (code, routes, permissions), not just a disabled flag. The separate TCC
+  identity also keeps the Screen Recording grant off the release app.
+- **Capability note:** the debug capability is INLINE in the overlay config
+  (not a `capabilities/*.json` file) so release ACL validation never sees a
+  permission of the uncompiled screenshots plugin.
+- **Approval:** Accepted by user, 2026-06-10 ("그거 까지 고려해서 개발하나요?" →
+  구현 지시).
+- **Tests:** `test_debug_endpoint.py::test_debug_routes_absent_without_flag`
+  (release 404/405) + `debugProbe.test.ts` "?debug does NOT enable" + both
+  cargo flavors compile (`cargo check` / `--features debug-tools`).
+
+### D-2026-06-10-B — debug boot beacon in index.html (module-graph-independent)
+
+- **What:** An inline `<head>` script in `index.html`, gated on the build-time
+  `%VITE_PLOT_DEBUG%` HTML env replacement, that POSTs `{beacon:"boot"}` on
+  page parse and wires `error` / `unhandledrejection` reporters to
+  `/api/debug`. Additions to the module-graph probe in the same change: a 10s
+  heartbeat (the first POST can race the sidecar's startup and POSTs are
+  fire-and-forget; a static screen would otherwise never re-post) and a 1.5s
+  time-box on the screenshot call (without a TCC grant the plugin call can
+  stall — it must not hold the numeric probe hostage). Probe also gained
+  sizing-diagnosis fields (`inline` style, computed `aspect`, parent wrapper
+  box) and the on-card `classes` string.
+- **Why:** During flavor bring-up the channel stayed silent and the cause was
+  indistinguishable between "page never loaded", "bundle crashed at import",
+  and "engine down". A beacon independent of the module graph splits those
+  cases without needing eyes on the window.
+- **Approval:** Accepted by user, 2026-06-10 (디버깅 툴 트랙 일괄 승인 하에).
+- **Tests:** `debug-beacon.test.ts` (gated inline script present, posts boot +
+  error reports) + `debugProbe.test.ts` heartbeat + hanging-capture cases.
+  End-to-end verified in the debug-flavor .app: boot beacon + 10s heartbeats
+  received, screenshot captured under the `me.noory.plot.debug` identity.

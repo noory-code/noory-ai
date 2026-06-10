@@ -25,6 +25,44 @@
         }
       })();
     </script>
+    <script>
+      // Debug-flavor boot beacon (D-2026-06-10-B): posts page-boot + JS errors
+      // to the engine debug channel INDEPENDENTLY of the module graph, so a
+      // failed bundle import is distinguishable from a dead engine. The
+      // %VITE_*% tokens are replaced at build time; in release builds the
+      // guard is false (or the token survives verbatim) and nothing runs.
+      (function () {
+        if ("%VITE_PLOT_DEBUG%" !== "1") return;
+        var base = "%VITE_PLOT_ENGINE%";
+        if (base.indexOf("%") !== -1) base = "";
+        var post = function (payload) {
+          try {
+            fetch(base + "/api/debug", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify(payload),
+            }).catch(function () {});
+          } catch (e) {
+            /* beacon must never break the page */
+          }
+        };
+        window.addEventListener("error", function (e) {
+          post({
+            beacon: "error",
+            message: String(e.message || e),
+            source: String(e.filename || ""),
+            line: e.lineno || 0,
+          });
+        });
+        window.addEventListener("unhandledrejection", function (e) {
+          post({
+            beacon: "rejection",
+            message: String((e.reason && e.reason.message) || e.reason),
+          });
+        });
+        post({ beacon: "boot", href: location.href, ua: navigator.userAgent });
+      })();
+    </script>
   </head>
   <body class="bg-surface text-fg">
     <div id="root"></div>

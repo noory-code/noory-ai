@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.55.0] — 2026-06-10
+
+### Added — debug/release flavor split + window screenshots + boot beacon (D-2026-06-10-A / D-2026-06-10-B / D-2026-06-09-D phase 2)
+
+- **Flavor gating on all three layers.** Engine: `/api/debug` registers only
+  under `PLOT_DEBUG=1` (release = 404). Viewer: probe enabled only when built
+  with `VITE_PLOT_DEBUG=1`; the `?debug` runtime escape is removed and release
+  bundles tree-shake the probe out (verified in built assets). Shell:
+  `tauri-plugin-screenshots` is an optional Cargo dep behind a `debug-tools`
+  feature; `tauri.debug.conf.json` (productName "Plot Debug", identifier
+  `me.noory.plot.debug`, frontendDist `dist-debug`, inline screenshots
+  capability) selects the debug flavor and spawns the sidecar with
+  `PLOT_DEBUG=1`.
+- **Window screenshots in the debug probe.** `captureScreenshot()` finds the
+  Plot window (`pickPlotWindow`) and saves a PNG via tauri-plugin-screenshots;
+  the path rides on the snapshot as `screenshotPath`. Time-boxed (1.5s) so a
+  missing Screen Recording grant cannot stall the numeric probe.
+- **Boot beacon** (inline `index.html` script, `%VITE_PLOT_DEBUG%`-gated):
+  posts `{beacon:"boot"}` at page parse + error/unhandledrejection reports —
+  a bundle-crash is now distinguishable from a dead engine without eyes on
+  the window.
+- **10s probe heartbeat** — survives the first-POST race against sidecar
+  startup; a static screen keeps re-posting.
+- Probe snapshots now carry sizing-diagnosis fields (`inline`, `aspect`,
+  parent wrapper box, `classes`) — used to chase the anchor-ellipse bug.
+- Tests: `test_debug_endpoint.py` (incl. release-404), `debugProbe.test.ts`
+  (10 cases incl. hanging-capture + heartbeat), `debug-beacon.test.ts`.
+  505 server + viewer suite green; ruff + mypy + tsc clean. End-to-end
+  verified in the debug-flavor .app (boot beacon + heartbeats + screenshot
+  received through the channel).
+
 ## [0.54.0] — 2026-06-09
 
 ### Added — dev-only debug channel for WKWebView introspection (D-2026-06-09-D)

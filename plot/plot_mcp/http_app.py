@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -70,11 +71,6 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
 
     routes: list[BaseRoute] = [
         Route("/api/health", health_endpoint),
-        # v0.54.0 (D-2026-06-09-D) — dev-only debug channel: the viewer POSTs a
-        # screen snapshot; an external agent GETs it (WKWebView introspection,
-        # since CDP tools can't attach to the Tauri webview on macOS).
-        Route("/api/debug", debug_get_endpoint, methods=["GET"]),
-        Route("/api/debug", debug_post_endpoint, methods=["POST"]),
         # v0.4 project + canvas + tag surface
         Route("/api/projects", projects_list_endpoint, methods=["GET"]),
         Route("/api/projects", project_post_endpoint, methods=["POST"]),
@@ -163,6 +159,12 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         ),
         WebSocketRoute("/ws", ws_endpoint),
     ]
+    # v0.55.0 (D-2026-06-09-D / flavor gating) — the debug channel exists ONLY
+    # in the debug flavor: the shell's debug build spawns the sidecar with
+    # PLOT_DEBUG=1. Release builds never register the surface (404).
+    if os.environ.get("PLOT_DEBUG") == "1":
+        routes.append(Route("/api/debug", debug_get_endpoint, methods=["GET"]))
+        routes.append(Route("/api/debug", debug_post_endpoint, methods=["POST"]))
     viewer_dist = find_viewer_dist()
     if viewer_dist is not None:
         routes.append(Mount("/", app=StaticFiles(directory=viewer_dist, html=True)))

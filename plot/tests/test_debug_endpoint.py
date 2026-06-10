@@ -8,6 +8,7 @@ WKWebView on macOS). In-memory, not part of the product surface.
 
 from __future__ import annotations
 
+import pytest
 from starlette.testclient import TestClient
 
 from plot_mcp.broadcast import BroadcastHub
@@ -15,8 +16,25 @@ from plot_mcp.debug_endpoints import reset_debug_store
 from plot_mcp.http_app import create_http_app
 
 
+@pytest.fixture(autouse=True)
+def _enable_debug(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The debug channel is flavor-gated: routes exist only when PLOT_DEBUG=1
+    (set by the shell's debug flavor when spawning the sidecar)."""
+    monkeypatch.setenv("PLOT_DEBUG", "1")
+
+
 def _client() -> TestClient:
     return TestClient(create_http_app(hub=BroadcastHub(enable_watchers=False)))
+
+
+def test_debug_routes_absent_without_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Release flavor (no PLOT_DEBUG): the debug surface must not exist."""
+    monkeypatch.delenv("PLOT_DEBUG", raising=False)
+    client = _client()
+    assert client.get("/api/debug").status_code == 404
+    # 405 when the viewer-dist StaticFiles mount swallows the path — either
+    # way the debug handler is not registered.
+    assert client.post("/api/debug", json={"x": 1}).status_code in (404, 405)
 
 
 def test_debug_store_empty_initially() -> None:
