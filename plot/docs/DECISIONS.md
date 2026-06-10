@@ -10729,3 +10729,27 @@ but not yet fully eliminated.
   (ROADMAP Track 2.1).
 - **Tests:** +3 server (snapshot match / shape / monorepo sync), +18 viewer
   (base + 15 kinds + union size + drift self-check).
+
+### D-2026-06-10-F — R8 build guard + commercial licence audit
+
+- **What (R8 guard):** `tests/test_r8_independence.py` AST-parses every
+  `plot_mcp/*.py` import and fails on any root in {viewer, app, src_tauri,
+  tauri, evonest, distill, solera, solera_mcp}; also bans `src-tauri` path
+  literals. The one forbidden dependency direction (plugin → app, OVERHAUL R8)
+  is now machine-enforced on the engine side, mirroring the viewer's
+  structural-guards. `workspace.find_viewer_dist()` stays allowed — optional
+  asset discovery with an API-only fallback, not a code dependency.
+- **What (licence audit):** `scripts/license_audit.py` (cross-platform Python)
+  runs pip-licenses (engine) + `npx license-checker --production --failOn
+  GPL;AGPL;LGPL` (viewer). First execution: engine 84 deps / viewer 286
+  production deps — **zero blocking copyleft**. Allowlist (verified by hand):
+  docutils (tri-licensed, BSD elected), caio (metadata gap, upstream
+  Apache-2.0). UNKNOWN licences fail the audit so new gaps can't slip in.
+- **Why:** TECH_REVIEW steps 2 + 6 — the MIT/proprietary boundary is defended
+  by build guards (file layout can't), and dependency permissiveness was
+  believed but never machine-verified. Both now are.
+- **Out of scope:** the single-owner CLA (blocked on D-4 법인 주체); replicating
+  the R8 guard into evonest/distill/solera packages (each is an independent
+  package — ROADMAP 2.2 note); CI wiring (no pipeline infra in the repo yet).
+- **Approval:** executed autonomously 2026-06-10 under "트랙0,1,2 쭉"
+  (ROADMAP Tracks 2.2 / 2.6).

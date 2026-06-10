@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.58.0] — 2026-06-10
+
+### Added — R8 build guard + commercial licence audit (D-2026-06-10-F)
+
+- `tests/test_r8_independence.py`: AST import guard — the plugin can never
+  import the viewer / Tauri shell / app repo / sibling plugins (the one
+  forbidden direction, OVERHAUL R8), plus a `src-tauri` path-literal ban and
+  a synthetic-violation self-check.
+- `scripts/license_audit.py`: engine (pip-licenses) + viewer (`license-checker
+  --production --failOn GPL;AGPL;LGPL`) audit. First run: 84 + 286 deps,
+  zero blocking copyleft; hand-verified allowlist (docutils tri-license,
+  caio metadata gap); UNKNOWN licences fail.
+- Out of scope: single-owner CLA (blocked on the legal-entity decision),
+  per-plugin guard replication, CI wiring (no pipeline yet).
+
 ## [0.57.0] — 2026-06-10
 
 ### Added — wire-contract snapshot: schema parity that survives the repo split (D-2026-06-10-E)
