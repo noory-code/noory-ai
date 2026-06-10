@@ -46,7 +46,7 @@ mcp = FastMCP(
     "plot",
     instructions=(
         "Plot stores projects as folders of per-canvas JSON files under "
-        "``.plot/sketches/{project}/``. Use ``list_projects`` / ``get_project`` "
+        "``.noory/plot/{project}/``. Use ``list_projects`` / ``get_project`` "
         "to discover state, ``get_canvas`` / ``update_canvas`` to read or write "
         "a single canvas (``core`` / ``actors`` / ``services_overview`` / "
         "``service_detail``), and ``tag_project`` to plant a named milestone "
@@ -63,7 +63,7 @@ mcp = FastMCP(
 
 @mcp.tool()
 def list_projects(project_path: str) -> list[dict[str, Any]]:
-    """List every project folder directly under ``.plot/`` (v0.8 layout)."""
+    """List every project folder directly under ``.noory/plot/`` (R9 layout)."""
     plot_root = resolve_plot_root(project_path)
     return [p.model_dump() for p in enumerate_projects(plot_root)]
 
@@ -173,7 +173,7 @@ def tag_project(
     plot_root = resolve_plot_root(project_path)
     try:
         # Workspace-level repo (D-2026-06-09-C): the tag snapshots the whole
-        # .plot/ workspace, not a single project. project_id is kept on the
+        # .noory/plot/ workspace, not a single project. project_id is kept on the
         # tool signature for call-site clarity / future per-project naming.
         return tag_snapshot(plot_root, name, message=message)
     except TagAlreadyExistsError as exc:

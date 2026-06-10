@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.59.0] — 2026-06-10
+
+### Changed — data root moves to `<workspace>/.noory/plot/` (R9, D-2026-06-10-G)
+
+- `resolve_plot_root` resolves `.noory/plot/` (was `.plot/`); a legacy
+  `.plot/` root migrates lazily on first access (one `shutil.move`). If both
+  roots exist, `.noory/plot` wins and `.plot` is left for the user to
+  reconcile. Discovery + `has_plot` check the new root and peek read-only at
+  legacy roots so never-opened workspaces stay visible; `.noory` is pruned
+  from descent. Plugin description + MCP tool docs updated.
+- Scope: plot engine only — distill / evonest / solera follow per package
+  (ROADMAP Track 2.3); distill's global `~/.distill` tier does not move.
+- Tests: `test_noory_migration.py` (root location, lazy move, no-clobber,
+  discovery incl. legacy). 519 server green, ruff + mypy clean.
+
 ## [0.58.0] — 2026-06-10
 
 ### Added — R8 build guard + commercial licence audit (D-2026-06-10-F)

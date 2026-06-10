@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import socket
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -35,6 +36,7 @@ PRUNE_DIRS: frozenset[str] = frozenset(
         "dist",
         "build",
         ".plot",
+        ".noory",
         ".mypy_cache",
         ".pytest_cache",
         ".ruff_cache",
@@ -44,6 +46,19 @@ MAX_DISCOVERY_DEPTH = 8
 MAX_DISCOVERY_PROJECTS = 500
 MAX_TREE_DEPTH = 6
 MAX_TREE_CHILDREN = 200
+
+
+def _existing_data_root(directory: Path) -> Path | None:
+    """The directory's Plot data root, if it has one: ``.noory/plot`` (R9),
+    else the legacy ``.plot`` (read-only peek — migration happens when the
+    workspace is actually opened via ``resolve_plot_root``)."""
+    noory = directory / ".noory" / "plot"
+    if noory.is_dir():
+        return noory
+    legacy = directory / ".plot"
+    if legacy.is_dir():
+        return legacy
+    return None
 
 
 def _should_prune(name: str) -> bool:
@@ -86,9 +101,10 @@ def discover_projects(workspace_root: Path) -> list[tuple[ProjectDoc, str]]:
     for current, dirs, _files in os.walk(root, followlinks=False):
         cur = Path(current)
         depth = len(cur.relative_to(root).parts)
-        if (cur / ".plot").is_dir():
+        data_root = _existing_data_root(cur)
+        if data_root is not None:
             rel = cur.relative_to(root).as_posix() or "."
-            for proj in enumerate_projects(cur / ".plot"):
+            for proj in enumerate_projects(data_root):
                 results.append((proj, rel))
             if len(results) >= MAX_DISCOVERY_PROJECTS:
                 dirs[:] = []
@@ -133,7 +149,9 @@ def build_dir_tree(workspace_root: Path, max_depth: int = MAX_TREE_DEPTH) -> Dir
             # landed in create() with nothing to open → a phantom new
             # project. ``enumerate_projects`` is the same validated scan the
             # sidebar uses, so has_plot now matches what is actually openable.
-            has_plot=len(enumerate_projects(path / ".plot")) > 0,
+            has_plot=(lambda dr: dr is not None and len(enumerate_projects(dr)) > 0)(
+                _existing_data_root(path)
+            ),
             children=children,
         )
 
@@ -159,20 +177,30 @@ def create_workspace_dir(workspace_root: Path, rel: str) -> str:
 
 
 def resolve_plot_root(project_path: str) -> Path:
-    """Resolve ``{project_path}/.plot/``, creating it on first access.
+    """Resolve ``{project_path}/.noory/plot/``, creating it on first access.
 
-    Plot is schema-free — any project directory can host projects. The only
-    convention is the ``.plot/`` dotfolder; each project lives at
-    ``.plot/{project_id}/`` with its canvas folders beneath. v0.8 dropped
-    the former ``sketches/`` intermediate directory.
+    R9 (D-2026-06-10-G): every plugin's per-project artifacts consolidate
+    under ONE ``.noory/`` dotfolder (``.noory/plot/``, ``.noory/distill/``,
+    …) so plugin mode and app mode share artifacts continuously. Each
+    project lives at ``.noory/plot/{project_id}/``.
+
+    A legacy pre-R9 ``.plot/`` root is migrated lazily on first access: one
+    ``shutil.move`` (same volume, atomic-ish). If BOTH roots exist
+    (half-migrated / user-restored), ``.noory/plot`` wins and ``.plot`` is
+    left untouched for the user to reconcile — never merged blindly.
     """
     base = Path(project_path).expanduser().resolve()
     if not base.exists():
         raise FileNotFoundError(f"project_path does not exist: {base}")
     if not base.is_dir():
         raise NotADirectoryError(f"project_path is not a directory: {base}")
-    root = base / ".plot"
-    root.mkdir(exist_ok=True)
+    root = base / ".noory" / "plot"
+    legacy = base / ".plot"
+    if legacy.is_dir() and not root.exists():
+        root.parent.mkdir(exist_ok=True)
+        shutil.move(str(legacy), str(root))
+        _log.info("migrated legacy %s -> %s (R9)", legacy, root)
+    root.mkdir(parents=True, exist_ok=True)
     return root
 
 

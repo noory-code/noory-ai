@@ -10753,3 +10753,28 @@ but not yet fully eliminated.
   package — ROADMAP 2.2 note); CI wiring (no pipeline infra in the repo yet).
 - **Approval:** executed autonomously 2026-06-10 under "트랙0,1,2 쭉"
   (ROADMAP Tracks 2.2 / 2.6).
+
+### D-2026-06-10-G — R9: plot data root moves to `<workspace>/.noory/plot/`
+
+- **What:** `resolve_plot_root` now resolves `{project_path}/.noory/plot/`
+  (was `{project_path}/.plot/`). A legacy `.plot/` root is migrated lazily on
+  first access via one `shutil.move`; if BOTH roots exist (half-migrated /
+  user-restored), `.noory/plot` wins and `.plot` is left untouched — never
+  merged blindly. Workspace discovery + the dir-tree `has_plot` badge check
+  `.noory/plot` first and peek read-only at legacy `.plot` (a never-opened
+  workspace still shows its projects; migration happens on open). `.noory` is
+  pruned from discovery descent. User-facing strings (plugin description, MCP
+  tool docs, monorepo CLAUDE.md) updated.
+- **Why:** OVERHAUL R9 (pinned) — all plugin artifacts consolidate under ONE
+  `.noory/` dotfolder per workspace so plugin mode and app mode share
+  artifacts continuously. Option A (per TECH_REVIEW): resolver change + lazy
+  migrate-on-read.
+- **Scope:** plot engine only in this change. distill (`PROJECT_SUBDIR` ~9
+  sites; global `~/.distill` tier does NOT move), evonest (8–10 leak sites),
+  solera (single resolver) follow as separate per-package changes (ROADMAP
+  Track 2.3).
+- **Approval:** executed autonomously 2026-06-10 under "트랙0,1,2 쭉"
+  (ROADMAP Track 2.3; R9 + Option A + distill-global-tier pinned earlier).
+- **Tests:** `tests/test_noory_migration.py` — new root location, lazy
+  migration moves (not copies), no-clobber when both exist, discovery sees
+  new + legacy-only roots. 519 server green, ruff + mypy clean.

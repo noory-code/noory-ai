@@ -1,0 +1,68 @@
+"""R9 — plugin artifacts live under `<project>/.noory/plot/` (D-2026-06-10-G).
+
+OVERHAUL R9: every plugin's per-project output consolidates under ONE
+`.noory/` dotfolder (`.noory/plot/`, `.noory/distill/`, …) so plugin mode and
+app mode share artifacts continuously. The legacy `.plot/` root is migrated
+lazily on first access (one `shutil.move`, same volume).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from plot_mcp.project_io import create_project
+from plot_mcp.workspace import discover_projects, resolve_plot_root
+
+
+def test_plot_root_lives_under_noory(tmp_path: Path) -> None:
+    root = resolve_plot_root(str(tmp_path))
+    assert root == tmp_path / ".noory" / "plot"
+    assert root.is_dir()
+
+
+def test_legacy_dot_plot_migrates_on_first_access(tmp_path: Path) -> None:
+    """A pre-R9 workspace (`.plot/proj-x`) is moved wholesale to
+    `.noory/plot/proj-x` the first time the engine touches it."""
+    legacy = tmp_path / ".plot"
+    legacy.mkdir()
+    (legacy / "proj-x").mkdir()
+    (legacy / "proj-x" / "project.json").write_text(
+        '{"id": "proj-x", "name": "X", "version": 3}', encoding="utf-8"
+    )
+
+    root = resolve_plot_root(str(tmp_path))
+
+    assert root == tmp_path / ".noory" / "plot"
+    assert (root / "proj-x" / "project.json").is_file()
+    assert not legacy.exists(), "legacy .plot must be moved, not copied"
+
+
+def test_legacy_migration_never_clobbers_existing_noory(tmp_path: Path) -> None:
+    """If BOTH exist (half-migrated / user-restored), .noory/plot wins and
+    .plot is left untouched for the user to reconcile — never merged blindly."""
+    (tmp_path / ".plot" / "proj-old").mkdir(parents=True)
+    (tmp_path / ".noory" / "plot" / "proj-new").mkdir(parents=True)
+
+    root = resolve_plot_root(str(tmp_path))
+
+    assert (root / "proj-new").is_dir()
+    assert (tmp_path / ".plot" / "proj-old").is_dir(), "must not destroy legacy data"
+
+
+def test_discovery_sees_noory_projects(tmp_path: Path) -> None:
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "proj-a", "A")
+    found = discover_projects(Path(str(tmp_path)))
+    assert [p.id for p, _rel in found] == ["proj-a"]
+
+
+def test_discovery_sees_legacy_only_workspaces(tmp_path: Path) -> None:
+    """A workspace that was never opened post-R9 still shows its projects in
+    discovery (read-only peek at `.plot/`) — migration happens on open."""
+    legacy = tmp_path / "sub" / ".plot" / "proj-l"
+    legacy.mkdir(parents=True)
+    (legacy / "project.json").write_text(
+        '{"id": "proj-l", "name": "L", "version": 3}', encoding="utf-8"
+    )
+    found = discover_projects(Path(str(tmp_path)))
+    assert [p.id for p, _rel in found] == ["proj-l"]
