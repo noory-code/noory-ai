@@ -418,7 +418,7 @@ async def tags_list_endpoint(request: Request) -> JSONResponse:
     folder = plot_root / project_id
     if not folder.is_dir():
         return _error(f"project not found: {project_id}", status=404)
-    return JSONResponse({"tags": list_tags(folder)})
+    return JSONResponse({"tags": list_tags(plot_root)})
 
 
 async def tag_post_endpoint(request: Request) -> JSONResponse:
@@ -439,7 +439,7 @@ async def tag_post_endpoint(request: Request) -> JSONResponse:
     if not isinstance(name, str) or not name.strip():
         return _error("'name' is required and must be a non-empty string")
     try:
-        result = tag_snapshot(folder, name, message=message)
+        result = tag_snapshot(plot_root, name, message=message)
     except TagAlreadyExistsError as exc:
         return _error(str(exc), status=409)
     return JSONResponse(result, status_code=201)
@@ -485,7 +485,7 @@ async def project_at_tag_endpoint(request: Request) -> JSONResponse:
 
     def _read_canvas_json(rel: str) -> dict[str, Any] | None:
         try:
-            raw = read_file_at_tag(folder, tag, rel)
+            raw = read_file_at_tag(plot_root, tag, f"{project_id}/{rel}")
         except FileNotFoundError:
             return None
         try:
@@ -592,7 +592,7 @@ async def project_publish_endpoint(request: Request) -> JSONResponse:
     bumped = project.model_copy(update={"blueprint_version": to_version})
     write_project(plot_root, bumped)
     try:
-        tag = tag_snapshot(folder, to_version, message=message or to_version)
+        tag = tag_snapshot(plot_root, to_version, message=message or to_version)
     except TagAlreadyExistsError as exc:
         # Roll back the project version on tag collision.
         write_project(plot_root, project)
@@ -823,7 +823,7 @@ async def tag_delete_endpoint(request: Request) -> JSONResponse:
     if not folder.is_dir():
         return _error(f"project not found: {project_id}", status=404)
     try:
-        delete_tag(folder, name)
+        delete_tag(plot_root, name)
     except KeyError as exc:
         return _error(f"tag not found: {exc.args[0]}", status=404)
     return JSONResponse({"ok": True})

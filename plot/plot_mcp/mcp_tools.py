@@ -86,7 +86,7 @@ def get_project(project_path: str, project_id: str) -> dict[str, Any]:
     return {
         **proj.model_dump(),
         "service_details": list_service_details(plot_root, project_id),
-        "tags": list_tags(plot_root / project_id),
+        "tags": list_tags(plot_root),
     }
 
 
@@ -225,7 +225,7 @@ def publish_node_tool(
 def list_project_tags(project_path: str, project_id: str) -> list[dict[str, Any]]:
     """Return tags for a project, newest first."""
     plot_root = resolve_plot_root(project_path)
-    return list_tags(plot_root / project_id)
+    return list_tags(plot_root)
 
 
 @mcp.tool()
@@ -233,7 +233,7 @@ def delete_project_tag(project_path: str, project_id: str, name: str) -> str:
     """Drop a tag from a project. The commit it pointed at stays reachable."""
     plot_root = resolve_plot_root(project_path)
     try:
-        delete_tag(plot_root / project_id, name)
+        delete_tag(plot_root, name)
     except KeyError as exc:
         raise ValueError(f"tag not found: {exc.args[0]}") from exc
     return f"deleted tag {name}"

@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.59.1] — 2026-06-10
+
+### Fixed — tag / at-tag / blueprint-publish still used per-project git (D-2026-06-10-H)
+
+- v0.53.0 moved git to the workspace level but missed 8 call sites: the tag
+  list/create/delete endpoints, the at-tag reader, the blueprint-publish tag,
+  and three MCP tool paths still passed `plot_root / project_id` — and
+  `tag_snapshot`'s self-heal silently re-created a per-project repo. All git
+  operations now target the workspace repo; the at-tag reader prefixes file
+  paths with `{project_id}/`. Regression tests pin both (no per-project
+  `.git` may appear; at-tag round-trip). 521 server green.
+
 ## [0.59.0] — 2026-06-10
 
 ### Changed — data root moves to `<workspace>/.noory/plot/` (R9, D-2026-06-10-G)

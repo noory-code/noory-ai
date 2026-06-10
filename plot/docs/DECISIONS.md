@@ -10778,3 +10778,18 @@ but not yet fully eliminated.
 - **Tests:** `tests/test_noory_migration.py` — new root location, lazy
   migration moves (not copies), no-clobber when both exist, discovery sees
   new + legacy-only roots. 519 server green, ruff + mypy clean.
+
+### D-2026-06-10-H — finish the workspace-git move (8 missed call sites)
+
+- **What:** The tag list/create/delete endpoints, the at-tag reader, the
+  blueprint-publish tag, and three MCP tool paths still passed
+  `plot_root / project_id` to git ops after D-2026-06-09-C — and
+  `tag_snapshot`'s self-heal silently re-created a per-project repo,
+  re-introducing the layout the user had retired. All git operations now
+  target the workspace repo; the at-tag reader prefixes paths with
+  `{project_id}/` (files in the workspace repo sit under the project dir).
+- **Why missed:** v0.53.0's tests only pinned `create_project`'s repo
+  location; the endpoints kept passing because the self-heal made the old
+  layout work. New regression tests assert the ABSENCE of a per-project
+  `.git` after endpoint-driven tagging + an at-tag round-trip.
+- **Approval:** bug fix under the pinned D-2026-06-09-C decision, 2026-06-10.
