@@ -23,7 +23,7 @@ def test_defaults() -> None:
 def test_load_from_project(tmp_project: Path) -> None:
     config = EvonestConfig.load(tmp_project)
     assert config.model == "sonnet"
-    assert config._config_path == tmp_project / ".evonest" / "config.json"
+    assert config._config_path == tmp_project / ".noory" / "evonest" / "config.json"
 
 
 def test_load_with_overrides(tmp_project: Path) -> None:
@@ -33,7 +33,7 @@ def test_load_with_overrides(tmp_project: Path) -> None:
 
 
 def test_load_project_config(tmp_project: Path) -> None:
-    cfg_path = tmp_project / ".evonest" / "config.json"
+    cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
     data = json.loads(cfg_path.read_text())
     data["model"] = "haiku"
     data["verify"] = {"build": "make build", "test": "make test"}
@@ -46,7 +46,7 @@ def test_load_project_config(tmp_project: Path) -> None:
 
 
 def test_override_beats_project_config(tmp_project: Path) -> None:
-    cfg_path = tmp_project / ".evonest" / "config.json"
+    cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
     data = json.loads(cfg_path.read_text())
     data["model"] = "haiku"
     cfg_path.write_text(json.dumps(data))
@@ -184,7 +184,7 @@ def test_validate_active_level_invalid() -> None:
 
 def test_validate_active_level_custom(tmp_project: Path) -> None:
     """A custom level defined in levels dict should be valid."""
-    cfg_path = tmp_project / ".evonest" / "config.json"
+    cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
     data = json.loads(cfg_path.read_text())
     data["levels"]["ultra"] = {"model": "opus", "observe_mode": "deep"}
     data["active_level"] = "ultra"
@@ -245,7 +245,7 @@ def test_set_dotted_adversarials(tmp_project: Path) -> None:
 
 def test_legacy_disabled_personas_migration(tmp_project: Path) -> None:
     """Old config with disabled_personas is automatically migrated."""
-    cfg_path = tmp_project / ".evonest" / "config.json"
+    cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
     data = json.loads(cfg_path.read_text())
     # Write old format
     data.pop("personas", None)
@@ -263,7 +263,7 @@ def test_legacy_disabled_personas_migration(tmp_project: Path) -> None:
 
 def test_legacy_migration_save_removes_old_keys(tmp_project: Path) -> None:
     """After migration and save, old keys are gone."""
-    cfg_path = tmp_project / ".evonest" / "config.json"
+    cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
     data = json.loads(cfg_path.read_text())
     data.pop("personas", None)
     data.pop("adversarials", None)

@@ -20,6 +20,8 @@ import logging
 import sys
 from pathlib import Path
 
+from evonest.core.data_root import evonest_data_root
+
 
 def _setup_logging(log_path: Path) -> None:
     """Configure root evonest logger to write to log_path (overwrite each run)."""
@@ -119,7 +121,7 @@ def main() -> None:
     args = parser.parse_args()
 
     project = Path(args.project)
-    log_path = project / ".evonest" / "logs" / "current.log"
+    log_path = evonest_data_root(project) / "logs" / "current.log"
     _setup_logging(log_path)
 
     logger = logging.getLogger("evonest")

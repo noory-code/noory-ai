@@ -25,8 +25,8 @@ from evonest.core.repositories import (
 def paths(tmp_path: Path) -> EvonestPaths:
     project = tmp_path / "proj"
     project.mkdir()
-    root = project / ".evonest"
-    root.mkdir()
+    root = project / ".noory" / "evonest"
+    root.mkdir(parents=True)
     return EvonestPaths(project, root)
 
 

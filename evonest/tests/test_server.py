@@ -50,10 +50,10 @@ async def test_tool_init(tmp_path: Path) -> None:
 
     result = await evonest_init(str(tmp_path))
     assert "Initialized" in result
-    assert (tmp_path / ".evonest" / "config.json").exists()
-    assert (tmp_path / ".evonest" / "identity.md").exists()
-    assert (tmp_path / ".evonest" / "progress.json").exists()
-    assert (tmp_path / ".evonest" / "backlog.json").exists()
+    assert (tmp_path / ".noory" / "evonest" / "config.json").exists()
+    assert (tmp_path / ".noory" / "evonest" / "identity.md").exists()
+    assert (tmp_path / ".noory" / "evonest" / "progress.json").exists()
+    assert (tmp_path / ".noory" / "evonest" / "backlog.json").exists()
 
 
 @pytest.mark.asyncio
@@ -170,7 +170,7 @@ async def test_tool_stimuli(tmp_project: Path) -> None:
     assert "Stimulus saved" in result
 
     # Verify file exists
-    stimuli_dir = tmp_project / ".evonest" / "stimuli"
+    stimuli_dir = tmp_project / ".noory" / "evonest" / "stimuli"
     files = list(stimuli_dir.glob("stimulus-*.md"))
     assert len(files) == 1
     assert "Focus on security" in files[0].read_text()
@@ -185,7 +185,7 @@ async def test_tool_decide(tmp_project: Path) -> None:
     assert "Decision saved" in result
 
     # Verify file exists
-    decisions_dir = tmp_project / ".evonest" / "decisions"
+    decisions_dir = tmp_project / ".noory" / "evonest" / "decisions"
     files = list(decisions_dir.glob("decision-*.md"))
     assert len(files) == 1
     assert "PostgreSQL" in files[0].read_text()
@@ -292,7 +292,7 @@ async def test_tool_identity_corrupted_file(tmp_project: Path) -> None:
     """Test the identity tool with a corrupted identity.md file."""
     from evonest.tools.identity import evonest_identity
 
-    identity_path = tmp_project / ".evonest" / "identity.md"
+    identity_path = tmp_project / ".noory" / "evonest" / "identity.md"
     identity_path.write_text(
         "\x00\xff\xfe" + "corrupted content", encoding="utf-8", errors="ignore"
     )

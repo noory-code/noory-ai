@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from evonest.core.data_root import evonest_data_root
 from evonest.server import mcp
 
 
@@ -67,7 +68,7 @@ async def evonest_evolve(
     if level:
         cmd += ["--level", level]
 
-    log_path = Path(project) / ".evonest" / "logs" / "current.log"
+    log_path = evonest_data_root(Path(project)) / "logs" / "current.log"
     popen_kwargs: dict[str, object] = {
         "stdout": subprocess.DEVNULL,
         "stderr": subprocess.DEVNULL,

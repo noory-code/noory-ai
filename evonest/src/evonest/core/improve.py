@@ -1,7 +1,7 @@
 """Improve engine — select a proposal and apply it (Execute + Verify + commit).
 
 This module is the core of the `evonest improve` mode:
-1. Select a proposal from .evonest/proposals/ (auto or explicit)
+1. Select a proposal from .noory/evonest/proposals/ (auto or explicit)
 2. Use the proposal content as the plan
 3. Run Execute + Verify
 4. Commit/PR on success, revert on failure
@@ -94,7 +94,7 @@ async def run_improve(
     Steps:
       1. Select proposal (by proposal_id or auto by priority+age)
       2. Load proposal content as the "plan"
-      3. Write it to .evonest/plan.md (so run_execute() can read it)
+      3. Write it to .noory/evonest/plan.md (so run_execute() can read it)
       4. Run Execute + Verify
       5. Commit or PR on success, revert on failure
       6. Mark proposal as done

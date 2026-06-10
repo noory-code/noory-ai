@@ -2,6 +2,26 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.1.0] — 2026-06-10
+
+### Changed
+
+- **Data root moves to `<project>/.noory/evonest/`** (noory-ai overhaul R9).
+  New `core/data_root.py` is the single location resolver: lazy migration of
+  a legacy `.evonest/` (one move; if both exist the new root wins and legacy
+  is preserved), side-effect-free read path, and `has_data_root()` for the
+  CLI walk-up (which now finds both layouts). `init` writes a SCOPED
+  gitignore entry `.noory/evonest/` — never a blanket `.noory/`, which would
+  silently untrack sibling plugins' source-of-truth data (e.g. plot
+  canvases). All path construction (state, initializer, tools, runner)
+  resolves through the new module; user-facing doc strings updated.
+- Tests: `tests/test_noory_migration.py` (7 cases) + suite-wide path updates.
+  Pre-existing intermittent flake + 4 pre-existing mypy errors (Popen
+  overload ignores in evolve/analyze) are unchanged — verified identical on
+  the unmodified tree.
+
+**436 tests passing**
+
 ## [1.0.6] — 2026-03-20
 
 ### Fixed

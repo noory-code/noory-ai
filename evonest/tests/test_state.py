@@ -13,7 +13,7 @@ from evonest.core.state import ProjectState
 def test_init_valid_project(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
     assert state.project == tmp_project.resolve()
-    assert state.root == tmp_project / ".evonest"
+    assert state.root == tmp_project / ".noory" / "evonest"
 
 
 def test_init_missing_dir(tmp_path: Path) -> None:
@@ -28,17 +28,17 @@ def test_init_not_initialized(tmp_path: Path) -> None:
 
 def test_path_properties(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
-    assert state.config_path == tmp_project / ".evonest" / "config.json"
-    assert state.identity_path == tmp_project / ".evonest" / "identity.md"
-    assert state.progress_path == tmp_project / ".evonest" / "progress.json"
-    assert state.backlog_path == tmp_project / ".evonest" / "backlog.json"
-    assert state.lock_path == tmp_project / ".evonest" / "lock"
-    assert state.history_dir == tmp_project / ".evonest" / "history"
-    assert state.stimuli_dir == tmp_project / ".evonest" / "stimuli"
-    assert state.decisions_dir == tmp_project / ".evonest" / "decisions"
-    assert state.advice_path == tmp_project / ".evonest" / "advice.json"
-    assert state.environment_path == tmp_project / ".evonest" / "environment.json"
-    assert state.proposals_dir == tmp_project / ".evonest" / "proposals"
+    assert state.config_path == tmp_project / ".noory" / "evonest" / "config.json"
+    assert state.identity_path == tmp_project / ".noory" / "evonest" / "identity.md"
+    assert state.progress_path == tmp_project / ".noory" / "evonest" / "progress.json"
+    assert state.backlog_path == tmp_project / ".noory" / "evonest" / "backlog.json"
+    assert state.lock_path == tmp_project / ".noory" / "evonest" / "lock"
+    assert state.history_dir == tmp_project / ".noory" / "evonest" / "history"
+    assert state.stimuli_dir == tmp_project / ".noory" / "evonest" / "stimuli"
+    assert state.decisions_dir == tmp_project / ".noory" / "evonest" / "decisions"
+    assert state.advice_path == tmp_project / ".noory" / "evonest" / "advice.json"
+    assert state.environment_path == tmp_project / ".noory" / "evonest" / "environment.json"
+    assert state.proposals_dir == tmp_project / ".noory" / "evonest" / "proposals"
 
 
 def test_read_write_json(tmp_project: Path) -> None:

@@ -43,7 +43,7 @@ def test_cli_init(tmp_path: Path) -> None:
     result = _run_cli("init", str(tmp_path))
     assert result.returncode == 0
     assert "Initialized" in result.stdout
-    assert (tmp_path / ".evonest" / "config.json").exists()
+    assert (tmp_path / ".noory" / "evonest" / "config.json").exists()
 
 
 def test_cli_init_already_initialized(tmp_path: Path) -> None:

@@ -9,6 +9,8 @@ import os
 import sys
 from pathlib import Path
 
+from evonest.core.data_root import has_data_root
+
 
 def cli_main() -> None:
     """CLI entry point."""
@@ -27,7 +29,7 @@ def cli_main() -> None:
     sub = parser.add_subparsers(dest="command")
 
     # init
-    init_p = sub.add_parser("init", help="Initialize .evonest/ in a project")
+    init_p = sub.add_parser("init", help="Initialize .noory/evonest/ in a project")
     init_p.add_argument("path", help="Path to the target project")
     init_p.add_argument(
         "--level",
@@ -237,9 +239,9 @@ def _resolve_project(project: str | None) -> str:
     Priority:
     1. Explicit argument
     2. EVONEST_PROJECT environment variable
-    3. Walk up from cwd looking for .evonest/
+    3. Walk up from cwd looking for a data root (.noory/evonest/ or legacy .evonest/)
 
-    Raises FileNotFoundError if no .evonest/ found.
+    Raises FileNotFoundError if no data root found.
     """
     if project is not None:
         return project
@@ -248,10 +250,11 @@ def _resolve_project(project: str | None) -> str:
         return env
     current = Path.cwd()
     for parent in [current, *current.parents]:
-        if (parent / ".evonest").is_dir():
+        if has_data_root(parent):
             return str(parent)
     raise FileNotFoundError(
-        "No .evonest/ found in current directory or any parent. Run: evonest init <path>"
+        "No evonest data root (.noory/evonest/ or legacy .evonest/) found in "
+        "current directory or any parent. Run: evonest init <path>"
     )
 
 

@@ -2,7 +2,7 @@
 
 Resolution order:
 1. Engine defaults (this dataclass)
-2. Project config (.evonest/config.json)
+2. Project config (.noory/evonest/config.json)
 3. Runtime overrides (MCP tool args / CLI flags)
 """
 
@@ -349,7 +349,7 @@ class EvonestConfig:
             raise ValueError(f"Unknown config key: {key}")
 
     def save(self) -> None:
-        """Write config back to .evonest/config.json."""
+        """Write config back to .noory/evonest/config.json."""
         if self._config_path is None:
             raise RuntimeError("Config path not set — load from a project first")
         data = self.to_dict()

@@ -7,13 +7,14 @@ import logging
 import sys
 from pathlib import Path
 
+from evonest.core.data_root import evonest_data_root
 from evonest.server import mcp
 
 logger = logging.getLogger(__name__)
 
 
 def _pending_count(project: str) -> int:
-    proposals_dir = Path(project) / ".evonest" / "proposals"
+    proposals_dir = evonest_data_root(Path(project)) / "proposals"
     if not proposals_dir.is_dir():
         return 0
     return sum(1 for f in proposals_dir.iterdir() if f.suffix == ".md" and f.is_file())
@@ -49,7 +50,7 @@ async def _run_one(project: str, proposal_id: str | None) -> str:
     if proposal_id:
         cmd += ["--proposal-id", proposal_id]
 
-    log_path = Path(project) / ".evonest" / "logs" / "current.log"
+    log_path = evonest_data_root(Path(project)) / "logs" / "current.log"
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,

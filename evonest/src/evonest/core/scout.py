@@ -4,7 +4,7 @@ Analyzes project identity to extract keywords, searches externally for
 relevant developments, scores findings against project alignment, and
 injects high-scoring findings as stimuli for the next evolution cycle.
 
-Results are cached in .evonest/scout.json to prevent duplicate injection.
+Results are cached in .noory/evonest/scout.json to prevent duplicate injection.
 """
 
 from __future__ import annotations

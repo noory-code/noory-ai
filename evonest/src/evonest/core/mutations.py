@@ -1,7 +1,7 @@
 """Mutation selection — merge built-in + project extensions, weighted random.
 
 Built-in mutations live in the package's mutations/ directory (read-only).
-Project-specific dynamic mutations live in .evonest/dynamic-*.json.
+Project-specific dynamic mutations live in .noory/evonest/dynamic-*.json.
 At runtime, both are merged and weighted random selection picks one.
 """
 

@@ -7,7 +7,7 @@ from evonest.server import mcp
 
 @mcp.tool()
 async def evonest_identity(project: str, content: str | None = None) -> str:
-    """View or replace the project identity document (.evonest/identity.md)."""
+    """View or replace the project identity document (.noory/evonest/identity.md)."""
     from evonest.core.state import ProjectState
 
     state = ProjectState(project)

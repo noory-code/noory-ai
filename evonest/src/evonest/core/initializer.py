@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from importlib import resources
 from pathlib import Path
 
+from evonest.core.data_root import GITIGNORE_ENTRY, evonest_data_root
+
 logger = logging.getLogger("evonest")
 
 
@@ -76,7 +78,7 @@ def init_project(path: str | Path, level: str = "standard") -> str:
     if not project.is_dir():
         raise FileNotFoundError(f"Directory not found: {project}")
 
-    evonest_dir = project / ".evonest"
+    evonest_dir = evonest_data_root(project, create=True)
     created_files: list[str] = []
 
     # Create directories
@@ -158,11 +160,11 @@ def init_project(path: str | Path, level: str = "standard") -> str:
     gitignore = project / ".gitignore"
     if gitignore.exists():
         content = gitignore.read_text(encoding="utf-8")
-        if ".evonest" not in content:
+        if GITIGNORE_ENTRY not in content:
             with open(gitignore, "a", encoding="utf-8") as f:
-                f.write("\n# Evonest evolution data\n.evonest/\n")
+                f.write(f"\n# Evonest evolution data\n{GITIGNORE_ENTRY}\n")
     else:
-        gitignore.write_text("# Evonest evolution data\n.evonest/\n", encoding="utf-8")
+        gitignore.write_text(f"# Evonest evolution data\n{GITIGNORE_ENTRY}\n", encoding="utf-8")
 
     lines = [f"Initialized: {evonest_dir}"]
     if created_files:

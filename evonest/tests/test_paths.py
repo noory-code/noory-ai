@@ -11,14 +11,14 @@ from evonest.core.paths import EvonestPaths
 def paths(tmp_path: Path) -> EvonestPaths:
     project = tmp_path / "myproject"
     project.mkdir()
-    root = project / ".evonest"
-    root.mkdir()
+    root = project / ".noory" / "evonest"
+    root.mkdir(parents=True)
     return EvonestPaths(project, root)
 
 
 def test_project_and_root(paths: EvonestPaths, tmp_path: Path) -> None:
     assert paths.project == tmp_path / "myproject"
-    assert paths.root == tmp_path / "myproject" / ".evonest"
+    assert paths.root == tmp_path / "myproject" / ".noory" / "evonest"
 
 
 def test_config_path(paths: EvonestPaths) -> None:

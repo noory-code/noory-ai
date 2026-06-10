@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from evonest.core.data_root import evonest_data_root
 from evonest.core.paths import EvonestPaths
 from evonest.core.repositories import (
     AdviceRepository,
@@ -62,7 +63,7 @@ class ProjectState:
         if not project.is_dir():
             raise FileNotFoundError(f"Project directory not found: {project}")
 
-        root = project / ".evonest"
+        root = evonest_data_root(project)
         if not root.is_dir():
             raise FileNotFoundError(f"Project not initialized. Run: evonest init {project}")
 

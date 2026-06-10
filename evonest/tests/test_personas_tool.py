@@ -33,7 +33,9 @@ async def test_disable_persona(tmp_project: Path) -> None:
     assert "Disabled: security-auditor" in result
 
     # Verify config.json was updated
-    config = json.loads((tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8"))
+    config = json.loads(
+        (tmp_project / ".noory" / "evonest" / "config.json").read_text(encoding="utf-8")
+    )
     assert config["personas"]["security-auditor"] is False
 
 
@@ -45,7 +47,9 @@ async def test_enable_persona(tmp_project: Path) -> None:
     result = await evonest_personas(str(tmp_project), action="enable", ids=["security-auditor"])
     assert "Enabled: security-auditor" in result
 
-    config = json.loads((tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8"))
+    config = json.loads(
+        (tmp_project / ".noory" / "evonest" / "config.json").read_text(encoding="utf-8")
+    )
     assert config["personas"]["security-auditor"] is True
 
 
@@ -54,7 +58,9 @@ async def test_disable_adversarial(tmp_project: Path) -> None:
     result = await evonest_personas(str(tmp_project), action="disable", ids=["break-interfaces"])
     assert "Disabled: break-interfaces" in result
 
-    config = json.loads((tmp_project / ".evonest" / "config.json").read_text(encoding="utf-8"))
+    config = json.loads(
+        (tmp_project / ".noory" / "evonest" / "config.json").read_text(encoding="utf-8")
+    )
     assert config["adversarials"]["break-interfaces"] is False
 
 
