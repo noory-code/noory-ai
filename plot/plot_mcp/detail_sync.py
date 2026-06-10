@@ -1,0 +1,170 @@
+"""Service-detail canvases kept in sync with the services overview.
+
+Split out of the folder_io god-module (D-2026-06-10-D). folder_io.py re-exports
+everything, so import sites and tests are unchanged.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from plot_mcp.canvas_io import list_service_details, read_canvas, write_canvas  # noqa: F401
+from plot_mcp.models import (
+    ActorRefNode,
+    CanvasDoc,
+)
+from plot_mcp.storage import (  # noqa: F401
+    _canvas_file,
+    _ensure_project,
+    _project_dir,
+    _project_file,
+    _read_json,
+    _write_json,
+)
+
+# ---------------------------------------------------------------------------
+# Overview ↔ Detail sync
+# ---------------------------------------------------------------------------
+
+
+def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, list[str]]:
+    """Ensure ``services/{sid}/detail.json`` exists for every service in the
+    top-view ``services`` canvas.
+
+    Services that disappear from the top view have their whole folder moved
+    to ``services/_archive/{sid}/`` — a destructive delete would throw away
+    user work (``index.md``, attachments) on a stray click. Called
+    opportunistically after writes to the services canvas.
+
+    Returns ``{"created": [...], "archived": [...]}`` for telemetry.
+    """
+    _ensure_project(plot_root, project_id)
+    try:
+        overview = read_canvas(plot_root, project_id, "services")
+    except FileNotFoundError:
+        return {"created": [], "archived": []}
+    overview_service_ids = {n.id for n in overview.nodes if n.kind == "service"}
+    services_folder = _project_dir(plot_root, project_id) / "services"
+    services_folder.mkdir(exist_ok=True)
+    # Existing service folders: every immediate subdir that isn't ``_archive``
+    # and has its own ``detail.json``.
+    existing_details: set[str] = set()
+    if services_folder.is_dir():
+        for child in services_folder.iterdir():
+            if child.is_dir() and child.name != "_archive" and (child / "detail.json").is_file():
+                existing_details.add(child.name)
+
+    created: list[str] = []
+    for service_id in sorted(overview_service_ids - existing_details):
+        src = next(n for n in overview.nodes if n.id == service_id)
+        detail = CanvasDoc(
+            canvas_id=service_id,
+            canvas_kind="service_detail",
+            service_ref=service_id,
+            # v0.11 — every service_detail needs ≥ 2 actor_refs (operator +
+            # user) per IDENTITY.md. Auto-seed two stub refs that point at
+            # the project's seeded actors. Users can re-pick via the
+            # picker, or add more refs as the design develops.
+            nodes=[
+                # v0.26.0 (D-2026-05-25-A) — parent_id field removed;
+                # service_detail root carries no structural parent
+                # (is_root marks the canvas anchor).
+                src.model_copy(update={"is_root": False}),
+                ActorRefNode(
+                    id=f"{service_id}-operator-ref",
+                    label="→ Operator",
+                    ref_actor_id="operator",
+                    side="operator",
+                    color="#bae6fd",
+                    shape="rectangle",
+                    width=140,
+                    height=70,
+                ),
+                ActorRefNode(
+                    id=f"{service_id}-user-ref",
+                    label="→ User",
+                    ref_actor_id="user",
+                    side="user",
+                    color="#fecaca",
+                    shape="rectangle",
+                    width=140,
+                    height=70,
+                ),
+            ],
+        )
+        _write_json(
+            _canvas_file(plot_root, project_id, "service_detail", service_id=service_id),
+            detail.model_dump(by_alias=True),
+        )
+        created.append(service_id)
+
+    archive_folder = services_folder / "_archive"
+    archived: list[str] = []
+    skipped_archive: list[str] = []
+    for service_id in sorted(existing_details - overview_service_ids):
+        src_path = services_folder / service_id
+        # v0.27.14 (D-2026-05-28-I) — data-loss guard: if the disappearing
+        # detail carries user-authored content (any node outside the
+        # default seed set ``{service_id, {sid}-operator-ref,
+        # {sid}-user-ref}``, OR any edges), do NOT silently archive.
+        # The user's 2026-05-27 chrome-devtools session lost a root
+        # service + its detail to a sync archive triggered by an
+        # injected onNodesChange burst; this branch protects the
+        # next instance of that pattern. Empty / default-seeded details
+        # archive cleanly as before (existing test_sync coverage).
+        if _detail_has_user_authored_content(src_path, service_id):
+            skipped_archive.append(service_id)
+            continue
+        archive_folder.mkdir(exist_ok=True)
+        dst_path = archive_folder / service_id
+        # If the archive already has a folder with the same id (rare — same
+        # service created, archived, and recreated), rename with a suffix.
+        if dst_path.exists():
+            n = 2
+            while (archive_folder / f"{service_id}-{n}").exists():
+                n += 1
+            dst_path = archive_folder / f"{service_id}-{n}"
+        src_path.replace(dst_path)
+        archived.append(service_id)
+
+    result: dict[str, list[str]] = {"created": created, "archived": archived}
+    if skipped_archive:
+        result["skipped_archive"] = skipped_archive
+    else:
+        result["skipped_archive"] = []
+    return result
+
+
+def _detail_has_user_authored_content(detail_dir: Path, service_id: str) -> bool:
+    """v0.27.14 (D-2026-05-28-I) — return True iff the service's
+    ``detail.json`` contains anything beyond the default seeded shape
+    (root service node + 2 actor_refs, no edges).  Used by
+    ``sync_details_with_overview`` to refuse to archive details the
+    user has invested work in.
+    """
+    detail_path = detail_dir / "detail.json"
+    if not detail_path.is_file():
+        return False
+    try:
+        doc = json.loads(detail_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # Unreadable / malformed: treat as user content to be safe.
+        return True
+    seeded_ids = {
+        service_id,
+        f"{service_id}-operator-ref",
+        f"{service_id}-user-ref",
+    }
+    nodes = doc.get("nodes") or []
+    edges = doc.get("edges") or []
+    if edges:
+        return True
+    for node in nodes:
+        if not isinstance(node, dict):
+            return True
+        if node.get("id") not in seeded_ids:
+            return True
+    return False
+
+

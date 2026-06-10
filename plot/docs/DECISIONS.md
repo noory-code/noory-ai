@@ -10676,3 +10676,31 @@ but not yet fully eliminated.
   levels deep) or the tablet shell sharing UI state across surfaces.
 - **Approval:** decided autonomously 2026-06-10 under the user's "트랙0,1,2 쭉"
   directive; recorded for explicit user review (override = reopen ARCH step 8).
+
+### D-2026-06-10-D — folder_io god-module split (1413 → facade + 6 modules)
+
+- **What:** `folder_io.py` (1413 lines, 3x the monorepo 500-line rule) is split
+  along its own section headers into `storage.py` (paths + atomic JSON +
+  ProjectDoc read/write), `canvas_migrations.py` (read-path healing: lazy
+  migrations, foundation-MD absorb, legacy anchor eviction),
+  `canvas_io.py` (read/write_canvas, list_service_details), `project_io.py`
+  (seeds, create/rename/delete), `detail_sync.py`, `node_publish.py`
+  (publish/unpublish). `folder_io.py` becomes a pure re-export facade — every
+  name, including the private helpers tests/endpoints import, keeps its
+  import path; zero call-site changes.
+- **Why:** SoC rule (review/split at 500 lines) + ARCH_REVIEW deferred-track
+  item. Dependency shape is now one-way: storage ← migrations ← canvas_io ←
+  {project_io, detail_sync, node_publish}. `read_project`/`write_project`
+  moved into `storage.py` to keep that acyclic (canvas healing needs them).
+- **Guard:** new `tests/test_module_size.py` — every engine module ≤ 500
+  lines; the facade ≤ 180 (re-exports only); pre-existing god modules
+  (`models.py` 993, `api_endpoints.py` 965, `migrate.py` 916) are
+  GRANDFATHERED as a ratchet (may shrink, never grow) with a companion test
+  that forces removing the ratchet entry once a module is split — tracked in
+  ROADMAP Track 1.4.
+- **Behaviour change:** none — pure refactor; 508 server tests green
+  (505 + 3 new guards), ruff + mypy clean. Sidecar rebuild not required
+  (no behaviour change); the new modules ride the import graph on the next
+  PyInstaller build.
+- **Approval:** executed autonomously 2026-06-10 under "트랙0,1,2 쭉"
+  (ROADMAP Track 1.4 item).

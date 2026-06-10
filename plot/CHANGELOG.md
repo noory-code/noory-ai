@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.56.0] — 2026-06-10
+
+### Changed — folder_io god-module split into a facade + six modules (D-2026-06-10-D)
+
+- `folder_io.py` (1413 lines) split along its section headers into
+  `storage.py`, `canvas_migrations.py`, `canvas_io.py`, `project_io.py`,
+  `detail_sync.py`, `node_publish.py`; `folder_io.py` is now a pure re-export
+  facade (every public + test-imported private name keeps its path — zero
+  call-site changes). Dependency shape: storage ← migrations ← canvas_io ←
+  {project_io, detail_sync, node_publish}; `read_project`/`write_project`
+  live in `storage.py` to keep it acyclic.
+- New guard `tests/test_module_size.py`: every engine module ≤ 500 lines,
+  facade ≤ 180; `models.py`/`api_endpoints.py`/`migrate.py` grandfathered as
+  a no-growth ratchet with a forced-cleanup companion test (debt in ROADMAP
+  Track 1.4).
+- Pure refactor — no behaviour change. 508 server tests green, ruff + mypy
+  clean.
+
 ## [0.55.1] — 2026-06-10
 
 ### Removed — ARCH step 8 (Zustand) + 6c (useMutation) retired (D-2026-06-10-C)
