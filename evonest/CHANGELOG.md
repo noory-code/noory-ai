@@ -2,6 +2,23 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.1.1] — 2026-06-10
+
+### Fixed
+
+- **Migration now carries the gitignore intent.** Moving `.evonest/` →
+  `.noory/evonest/` left a project's existing `.evonest/` ignore entry
+  pointing at nothing, so the next blanket `git add` silently tracked
+  runtime data (this exact accident hit evonest's own dogfooded data —
+  ~190 files briefly pushed, verified free of secrets, now untracked).
+  `evonest_data_root()` appends the scoped `.noory/evonest/` entry when the
+  legacy entry exists; projects that never ignored their data are left
+  alone. Evonest's own dogfood data is untracked again and the repo
+  `.gitignore` carries the new entry.
+
+**439 tests passing** (two CLI subprocess tests can time out under
+full-suite load; they pass in isolation — pre-existing contention flake)
+
 ## [1.1.0] — 2026-06-10
 
 ### Changed

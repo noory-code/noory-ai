@@ -39,3 +39,4 @@ secrets*
 # Evonest evolution data
 .evonest/
 .mcp.json
+.noory/evonest/

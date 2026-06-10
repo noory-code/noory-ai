@@ -63,3 +63,24 @@ def test_has_data_root_sees_both_layouts(tmp_path: Path) -> None:
     assert not has_data_root(tmp_path)
     (tmp_path / ".evonest").mkdir()
     assert has_data_root(tmp_path), "legacy layout must be discoverable"
+
+
+def test_migration_carries_the_gitignore_intent(tmp_path: Path) -> None:
+    """A project that ignored `.evonest/` must keep ignoring the data after
+    the move — otherwise the next blanket `git add` silently tracks runtime
+    data (this exact accident happened to evonest's own dogfood data)."""
+    (tmp_path / ".evonest").mkdir()
+    (tmp_path / ".gitignore").write_text("# data\n.evonest/\n", encoding="utf-8")
+
+    evonest_data_root(tmp_path)
+
+    content = (tmp_path / ".gitignore").read_text(encoding="utf-8")
+    assert ".noory/evonest/" in content
+
+
+def test_migration_leaves_gitignore_alone_when_user_never_ignored(tmp_path: Path) -> None:
+    """No `.gitignore`, or one without the legacy entry → do not invent
+    ignore policy for the user."""
+    (tmp_path / ".evonest").mkdir()
+    evonest_data_root(tmp_path)
+    assert not (tmp_path / ".gitignore").exists()
