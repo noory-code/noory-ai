@@ -10704,3 +10704,28 @@ but not yet fully eliminated.
   PyInstaller build.
 - **Approval:** executed autonomously 2026-06-10 under "트랙0,1,2 쭉"
   (ROADMAP Track 1.4 item).
+
+### D-2026-06-10-E — wire-contract snapshot: split-survivable schema parity
+
+- **What:** The server↔viewer wire contract (base fields + full field set of
+  each of the 15 kinds, Pydantic = SSOT) is exported as a diffable JSON
+  snapshot, committed TWICE: `plot_mcp/wire_contract.json` (engine) and
+  `viewer/src/schema/wire-contract.json` (viewer). Each side verifies its own
+  sources against its own copy — engine: `tests/test_wire_contract.py`
+  (generated == committed); viewer: `tests/wire-contract.test.ts` (TS `XxxJson`
+  interfaces == committed, regex parser ported from the Python test, plus a
+  drift self-check). Regenerate: `uv run python -m plot_mcp.schema_export
+  --wire`. A monorepo-only test pins the two copies byte-identical; at repo
+  split it moves to the release pipeline.
+- **Why:** TECH_REVIEW separation-sequence step 1 — `test_schema_parity.py`
+  reads BOTH sides from disk and silently dies when `viewer/` leaves the
+  monorepo. The snapshot makes the contract survive the repo boundary. The
+  old test stays alive while the monorepo lasts (belt + braces).
+- **Scope note:** the edge-semantics / publish-eligibility *rule* mirrors are
+  NOT in the snapshot — they are logic (pinned by each side's own behaviour
+  tests, nothing dies at split). Extracting them as data tables is a separate
+  follow-up if rule drift ever bites.
+- **Approval:** executed autonomously 2026-06-10 under "트랙0,1,2 쭉"
+  (ROADMAP Track 2.1).
+- **Tests:** +3 server (snapshot match / shape / monorepo sync), +18 viewer
+  (base + 15 kinds + union size + drift self-check).

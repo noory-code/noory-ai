@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.57.0] — 2026-06-10
+
+### Added — wire-contract snapshot: schema parity that survives the repo split (D-2026-06-10-E)
+
+- `schema_export.wire_contract()` + `--wire` CLI export the server↔viewer wire
+  contract (base fields + all 15 kind field sets, Pydantic = SSOT) into two
+  committed snapshots: `plot_mcp/wire_contract.json` and
+  `viewer/src/schema/wire-contract.json`. Engine and viewer each verify their
+  own sources against their own copy (`test_wire_contract.py` /
+  `wire-contract.test.ts`), so the parity guard no longer depends on both
+  codebases sharing a repo. Monorepo-only sync test pins the copies identical.
+- Rule mirrors (edge semantics, publish eligibility) stay behaviour-pinned per
+  side — out of snapshot scope.
+
 ## [0.56.0] — 2026-06-10
 
 ### Changed — folder_io god-module split into a facade + six modules (D-2026-06-10-D)

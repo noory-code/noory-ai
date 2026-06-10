@@ -203,3 +203,46 @@ def export_all_schemas(project_root: Path, project_id: str) -> None:
             schema_dir / f"{kind}.md.template",
             _render_md_template(kind),
         )
+
+
+# ---------------------------------------------------------------------------
+# Wire-contract snapshot (D-2026-06-10-E) — split-survivable parity artifact
+# ---------------------------------------------------------------------------
+
+
+def wire_contract() -> dict[str, Any]:
+    """The server↔viewer wire contract as a plain, diffable dict.
+
+    Pydantic is the SSOT: base fields + the full field set of each of the
+    15 kind classes. Committed twice (``plot_mcp/wire_contract.json`` and
+    ``viewer/src/schema/wire-contract.json``) so each side can verify its
+    own sources against its own copy after the repo split
+    (``tests/test_wire_contract.py`` / viewer ``tests/wire-contract.test.ts``).
+    """
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "base_fields": sorted(BaseNodeFields.model_fields.keys()),
+        "kinds": {
+            kind: sorted(cls.model_fields.keys())
+            for kind, cls in sorted(_ALL_KIND_CLASSES.items())
+        },
+    }
+
+
+def _write_wire_snapshots() -> None:
+    root = Path(__file__).resolve().parent.parent
+    payload = json.dumps(wire_contract(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    for target in (
+        root / "plot_mcp" / "wire_contract.json",
+        root / "viewer" / "src" / "schema" / "wire-contract.json",
+    ):
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+        print(f"wrote {target}")
+
+
+if __name__ == "__main__":
+    import sys
+
+    if "--wire" in sys.argv:
+        _write_wire_snapshots()
