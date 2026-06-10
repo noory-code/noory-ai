@@ -27,9 +27,9 @@ def _loc(path: Path) -> int:
 # RATCHET: they may shrink, never grow. Splitting them is tracked debt
 # (plot/docs/ROADMAP.md Track 1.4). Remove an entry once its module is split.
 GRANDFATHERED: dict[str, int] = {
-    "models.py": 993,
-    "api_endpoints.py": 965,
-    "migrate.py": 916,
+    # All three god modules (models.py, api_endpoints.py, migrate.py) split on
+    # 2026-06-11 (D-2026-06-11-B); facades now under FACADE_CEILING. The
+    # ratchet stays empty as a guard against a future regression.
 }
 
 
@@ -50,3 +50,18 @@ def test_grandfathered_entries_are_still_needed() -> None:
 
 def test_folder_io_is_a_thin_facade() -> None:
     assert _loc(PKG / "folder_io.py") <= FACADE_CEILING
+
+
+def test_models_is_a_thin_facade() -> None:
+    """models.py only re-exports the split modules — no logic re-enters."""
+    assert _loc(PKG / "models.py") <= FACADE_CEILING
+
+
+def test_api_endpoints_is_a_thin_facade() -> None:
+    """api_endpoints.py only re-exports per-area endpoint modules."""
+    assert _loc(PKG / "api_endpoints.py") <= FACADE_CEILING
+
+
+def test_migrate_is_a_thin_facade() -> None:
+    """migrate.py only re-exports the two public migration entry points."""
+    assert _loc(PKG / "migrate.py") <= FACADE_CEILING

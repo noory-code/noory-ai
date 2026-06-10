@@ -4,6 +4,48 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.60.0] — 2026-06-11
+
+Minor. Splits the three remaining god modules in `plot_mcp/` so every
+engine module sits under the 500-line monorepo SoC rule. The grandfather
+ratchet in `tests/test_module_size.py` is now empty.
+
+### Changed — god modules split (D-2026-06-11-B)
+
+- `models.py` (993 LOC) → 7 modules + facade: `models_kinds.py`
+  (Shape / NodeKind / ValueForm / BaseNodeFields), `models_foundation.py`
+  (Foundation 4 + FoundationNode + PROJECT_ANCHOR_ID + FOUNDATION_* maps),
+  `models_actors.py` (actor / actor_ref / service / category + 3 ref kinds),
+  `models_composition.py` (metric / step / decision / group / rule / content),
+  `models_union.py` (15-way SketchNode union + SketchEdge),
+  `models_canvas.py` (CanvasDoc + AnchorPlacement + ProjectDoc),
+  `models_discovery.py` (DiscoveredProject + DirTree models).
+- `api_endpoints.py` (965 LOC) → 6 modules + facade: `endpoints_common.py`
+  (`_require_plot_root` / `_ApiError` / `_parse_canvas_kind` / health),
+  `endpoints_projects.py` (projects + workspace + dir tree),
+  `endpoints_canvases.py` (canvas GET/PUT with `_dirty` + `_md_warnings`),
+  `endpoints_tags.py` (tags + read-only at-tag snapshot),
+  `endpoints_publish.py` (project + per-node publish/unpublish + published-list),
+  `endpoints_files.py` (file get/raw/put + folder post).
+- `migrate.py` (916 LOC) → 4 modules + facade: `migrate_v01_models.py`
+  (legacy `_V01SketchDoc` + `_V01SketchNode` + `_normalise_legacy_node_kinds`),
+  `migrate_builders.py` (per-canvas builders),
+  `migrate_v01.py` (top-level v0.1 → v0.2 loop),
+  `migrate_foundation.py` (inline Foundation upgrade).
+- Pre-commit gate (`hooks/pre_commit_gate.py`) — the SketchNode union check
+  now scans every `plot_mcp/*.py` instead of `models.py` only (the union
+  body lives in `models_union.py` after the split).
+
+### Notes
+
+- 524 server tests green; mypy + ruff clean. Each public import (in
+  `http_app.py`, `mcp_tools.py`, `canvas_io.py`, `endpoints_projects.py`,
+  every test file) keeps using the facade names — zero call-site changes.
+- New per-facade guards in `tests/test_module_size.py`
+  (`test_models_is_a_thin_facade`, `test_api_endpoints_is_a_thin_facade`,
+  `test_migrate_is_a_thin_facade`) pin every facade ≤ 180 LOC so a
+  refactor cannot quietly re-merge the god module.
+
 ## [0.59.2] — 2026-06-11
 
 ### Fixed — anchor rendered 96×132 instead of 96×96 in the Tauri WKWebView (D-2026-06-11-A)

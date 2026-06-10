@@ -10822,3 +10822,39 @@ but not yet fully eliminated.
 - **Spec impact:** SPEC §Anchor — new Sizing row added pointing at this
   entry. Pinned by `round-card-no-percent-height.test.tsx`.
 
+### D-2026-06-11-B — God-module split (models.py + api_endpoints.py + migrate.py)
+
+- **What:** The three remaining `plot_mcp/` god modules (993 + 965 + 916
+  LOC = 2874 lines) split along their own section headers into focused
+  modules + a thin facade that re-exports every public name. Every engine
+  module now sits under the 500-line monorepo SoC rule. The grandfather
+  ratchet in `tests/test_module_size.py` is empty as a guard against
+  regression. Per-facade tests pin each at ≤ 180 LOC. Call sites
+  (`http_app.py`, `canvas_io.py`, `mcp_tools.py`, `endpoints_projects.py`,
+  every test file) keep using the facade names — zero import changes.
+- **Splits:**
+  - `models.py` → `models_kinds.py` / `_foundation.py` / `_actors.py` /
+    `_composition.py` / `_union.py` / `_canvas.py` / `_discovery.py`
+    (7 modules, each cohesive around one slice of the 15-kind schema).
+  - `api_endpoints.py` → `endpoints_common.py` / `_projects.py` /
+    `_canvases.py` / `_tags.py` / `_publish.py` / `_files.py`
+    (6 modules, one per URL group).
+  - `migrate.py` → `migrate_v01_models.py` / `_builders.py` / `_v01.py` /
+    `_foundation.py` (4 modules: legacy schema, builders, top-level loop,
+    inline Foundation upgrade).
+- **Pre-commit gate update:** `hooks/pre_commit_gate.py` previously
+  searched `plot_mcp/models.py` for the SketchNode union body. After the
+  split that body lives in `models_union.py`; the gate now scans every
+  `plot_mcp/*.py` so the v0.15 structural reset stays enforced.
+- **Why:** Folder_io's v0.56.0 split (D-2026-06-10-D) installed
+  `tests/test_module_size.py` as a permanent guard but grandfathered
+  these three at their then-size. ROADMAP Track 1.4 listed them as next
+  to split; user chose this in tonight's session ("N-3 god 모듈 3개
+  분해"). The ratchet was the existence proof — the design call had been
+  made; this is execution.
+- **Verification:** 524 server tests green; mypy clean (44 source files);
+  ruff clean. Each module under 500 LOC; max engine module now is
+  `canvas_migrations.py` (483, pre-existing, untouched).
+- **Approval:** executed under the user-approved N-3 plan
+  ("N-3 god 모듈 3개 분해"), 2026-06-11.
+

@@ -112,13 +112,9 @@ def reset_complete_check(
 
     failures: list[str] = []
 
-    # 1) Server: SketchNode is the 15-way discriminated union.
-    models_path = plot_root / "plot_mcp" / "models.py"
-    try:
-        models_src = models_path.read_text(encoding="utf-8")
-    except OSError as exc:  # pragma: no cover — repo guarantees presence
-        return f"reset_complete_check: cannot read {models_path}: {exc}"
-
+    # 1) Server: SketchNode is the 15-way discriminated union. The union body
+    # may live in any module under ``plot_mcp/`` — models.py is a facade since
+    # the v0.59.3 split (D-2026-06-11-B).
     # Match both forms the codebase + tests use:
     #   SketchNode = Annotated[Union[...], Field(discriminator="kind")]
     #   SketchNode = Annotated[X | Y | ..., Field(discriminator="kind")]
@@ -127,9 +123,18 @@ def reset_complete_check(
         r"SketchNode\s*=\s*Annotated\[.*?\bField\s*\(\s*discriminator\s*=\s*[\"']kind[\"']",
         re.DOTALL,
     )
-    if not union_re.search(models_src):
+    plot_mcp_dir = plot_root / "plot_mcp"
+    union_defined_somewhere = False
+    try:
+        for py in plot_mcp_dir.glob("*.py"):
+            if union_re.search(py.read_text(encoding="utf-8")):
+                union_defined_somewhere = True
+                break
+    except OSError as exc:  # pragma: no cover — repo guarantees presence
+        return f"reset_complete_check: cannot scan {plot_mcp_dir}: {exc}"
+    if not union_defined_somewhere:
         failures.append(
-            "1) ``plot_mcp/models.py`` no longer exposes ``SketchNode = "
+            "1) No module under ``plot_mcp/`` exposes ``SketchNode = "
             "Annotated[Union[...]]`` (the 15-way discriminated union). "
             "Reverting to a god ``SketchNode`` class violates "
             "D-2026-05-12-B Phase 1."
