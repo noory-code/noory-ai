@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.55.1] — 2026-06-10
+
+### Removed — ARCH step 8 (Zustand) + 6c (useMutation) retired (D-2026-06-10-C)
+
+- Docs-only. ARCH_REVIEW step 8's premise ("UI state scattered across App")
+  no longer holds: App.tsx carries two raw UI useStates (error, helpOpen),
+  one level deep; URL-synced state stays in useUrlSync where the URL is the
+  SSOT. A store dependency for two booleans is YAGNI; mirroring URL state
+  would dual-source it. Re-open trigger: ≥3-level prop drilling or the
+  tablet shell. Step 6c (canvas PUT useMutation) likewise closed.
+
 ## [0.55.0] — 2026-06-10
 
 ### Added — debug/release flavor split + window screenshots + boot beacon (D-2026-06-10-A / D-2026-06-10-B / D-2026-06-09-D phase 2)

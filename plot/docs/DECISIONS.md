@@ -10653,3 +10653,26 @@ but not yet fully eliminated.
   error reports) + `debugProbe.test.ts` heartbeat + hanging-capture cases.
   End-to-end verified in the debug-flavor .app: boot beacon + 10s heartbeats
   received, screenshot captured under the `me.noory.plot.debug` identity.
+
+### D-2026-06-10-C — ARCH step 8 (Zustand UI store) retired: premise no longer holds
+
+- **What:** Do NOT adopt Zustand. ARCH_REVIEW (D-2026-06-08-A) step 8 — "one
+  UI store, last" — is closed as obsolete rather than implemented.
+- **Why (measured, not guessed):** the step's premise was "UI state scattered
+  across App.tsx". After steps 4–6 the audit shows App.tsx holds exactly TWO
+  raw UI `useState`s — `error` (line 69) and `helpOpen` (line 200) — each
+  consumed one level deep. Everything ARCH_REVIEW listed for the store
+  (`activeTab` / `detailServiceId` / `selectedNodeId` / `viewingTag`) already
+  lives in `useUrlSync` / `useSnapshotView` where **the URL is the SSOT**;
+  mirroring URL-synced state into a store would create a second source of
+  truth (SSOT violation), and a new dependency for two booleans is YAGNI.
+  ARCH_REVIEW itself flagged the risk: "Two new deps under YAGNI — defer
+  until tablet justifies."
+- **Also closed:** step 6c (canvas PUT → `useMutation` optimistic/rollback)
+  stays NOT-adopted — the debounced `putCanvas` + echoGuard + project-level
+  undo stack already cover its value; revisit only if a real rollback gap
+  appears.
+- **Re-open trigger:** real prop-drilling pain (a leaf needing App state ≥ 3
+  levels deep) or the tablet shell sharing UI state across surfaces.
+- **Approval:** decided autonomously 2026-06-10 under the user's "트랙0,1,2 쭉"
+  directive; recorded for explicit user review (override = reopen ARCH step 8).
