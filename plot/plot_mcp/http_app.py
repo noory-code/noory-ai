@@ -37,6 +37,7 @@ from plot_mcp.api_endpoints import (
     tag_post_endpoint,
     tags_list_endpoint,
     workspace_discover_endpoint,
+    workspace_git_init_endpoint,
 )
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.debug_endpoints import debug_get_endpoint, debug_post_endpoint
@@ -78,6 +79,8 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         Route("/api/workspace/projects", workspace_discover_endpoint, methods=["GET"]),
         Route("/api/workspace/tree", dir_tree_endpoint, methods=["GET"]),
         Route("/api/workspace/dir", dir_create_endpoint, methods=["POST"]),
+        # D-2026-06-11-D — explicit user consent to `git init` at the workspace
+        Route("/api/workspace/git-init", workspace_git_init_endpoint, methods=["POST"]),
         Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
         Route(
             "/api/projects/{project_id}",

@@ -28,8 +28,22 @@ from plot_mcp.folder_io import (
     publish_node,
     unpublish_node,
 )
-from plot_mcp.git_store import TagAlreadyExistsError, tag_snapshot
+from plot_mcp.git_store import GitNotInitializedError, TagAlreadyExistsError, tag_snapshot
 from plot_mcp.models import CanvasKind
+from plot_mcp.workspace import workspace_root_from_plot_root
+
+
+def _git_not_initialized_response(workspace_root: object) -> JSONResponse:
+    """Structured 409 the viewer turns into the 'Initialize git repo?' modal
+    (D-2026-06-11-D)."""
+    return JSONResponse(
+        {
+            "error": "git not initialized in workspace",
+            "needs_git_init": True,
+            "workspace_root": str(workspace_root),
+        },
+        status_code=409,
+    )
 
 # ---------------------------------------------------------------------------
 # v0.24.13 (D-2026-05-21-B) — project-level blueprint publish endpoint
@@ -103,8 +117,12 @@ async def project_publish_endpoint(request: Request) -> JSONResponse:
         return _error(str(exc))
     bumped = project.model_copy(update={"blueprint_version": to_version})
     write_project(plot_root, bumped)
+    workspace_root = workspace_root_from_plot_root(plot_root)
     try:
-        tag = tag_snapshot(plot_root, to_version, message=message or to_version)
+        tag = tag_snapshot(workspace_root, to_version, message=message or to_version)
+    except GitNotInitializedError:
+        write_project(plot_root, project)
+        return _git_not_initialized_response(workspace_root)
     except TagAlreadyExistsError as exc:
         # Roll back the project version on tag collision.
         write_project(plot_root, project)
@@ -154,6 +172,8 @@ async def node_publish_endpoint(request: Request) -> JSONResponse:
         return _error(str(exc), status=404)
     except KeyError as exc:
         return _error(str(exc.args[0]), status=404)
+    except GitNotInitializedError:
+        return _git_not_initialized_response(workspace_root_from_plot_root(plot_root))
     except PublishNotEligibleError as exc:
         return _error(str(exc), status=409)
     return JSONResponse(result, status_code=201)
@@ -198,6 +218,8 @@ async def node_unpublish_endpoint(request: Request) -> JSONResponse:
         return _error(str(exc), status=404)
     except KeyError as exc:
         return _error(str(exc.args[0]), status=404)
+    except GitNotInitializedError:
+        return _git_not_initialized_response(workspace_root_from_plot_root(plot_root))
     except UnpublishNotEligibleError as exc:
         return _error(str(exc), status=409)
     return JSONResponse(result, status_code=201)

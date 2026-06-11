@@ -11,9 +11,6 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 from plot_mcp.canvas_io import list_service_details, read_canvas, write_canvas  # noqa: F401
-from plot_mcp.git_store import (
-    ensure_repo,
-)
 from plot_mcp.models import (
     ActorNode,
     CanvasDoc,
@@ -172,11 +169,10 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     if folder.exists():
         raise FileExistsError(f"project already exists: {project_id}")
     folder.mkdir(parents=True)
-    # Initialise the workspace-level git repo (at plot_root = .plot/) now so
-    # ``tag_snapshot`` works later without any extra wiring. One repo tracks
-    # every project in the workspace; it stays empty until the first tag.
-    # (D-2026-06-09-C — git lives at the workspace, not per project.)
-    ensure_repo(plot_root)
+    # D-2026-06-11-D: Plot never silently runs ``git init``. The first
+    # tag/publish on a workspace without a repo replies needs_git_init=true;
+    # the user accepts via POST /api/workspace/git-init. Project creation
+    # leaves git untouched.
 
     now = datetime.now(UTC).isoformat()
     proj = ProjectDoc(

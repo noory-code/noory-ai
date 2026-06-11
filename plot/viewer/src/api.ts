@@ -28,11 +28,29 @@ export const resolveWorkspaceRoot = resolveProjectPath;
 // helpers
 // ---------------------------------------------------------------------------
 
+/** Thrown when the engine reports the workspace has no `.git/` yet
+ *  (D-2026-06-11-D). The viewer surfaces the "Initialize git repo at
+ *  `<workspace>`?" modal; an explicit Yes calls {@link initWorkspaceGit}. */
+export class GitNotInitializedError extends Error {
+  constructor(public readonly workspaceRoot: string) {
+    super("git not initialized in workspace");
+    this.name = "GitNotInitializedError";
+  }
+}
+
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res
       .json()
       .catch(() => ({ error: `HTTP ${res.status}` }));
+    if (
+      res.status === 409 &&
+      typeof body === "object" && body !== null &&
+      (body as { needs_git_init?: unknown }).needs_git_init === true
+    ) {
+      const ws = (body as { workspace_root?: unknown }).workspace_root;
+      throw new GitNotInitializedError(typeof ws === "string" ? ws : "");
+    }
     throw new Error(body?.error ?? `HTTP ${res.status}`);
   }
   return (await res.json()) as T;
@@ -45,6 +63,17 @@ async function ok(res: Response): Promise<void> {
       .catch(() => ({ error: `HTTP ${res.status}` }));
     throw new Error(body?.error ?? `HTTP ${res.status}`);
   }
+}
+
+/** D-2026-06-11-D — explicit user consent to `git init` at the workspace
+ *  root. Idempotent: a workspace that already has `.git/` returns ok. */
+export async function initWorkspaceGit(projectPath: string): Promise<void> {
+  const url = `${API_BASE}/api/workspace/git-init?project_path=${encodeURIComponent(
+    projectPath,
+  )}`;
+  await json<{ ok: true; created: boolean; workspace_root: string }>(
+    await fetch(url, { method: "POST" }),
+  );
 }
 
 function canvasPath(

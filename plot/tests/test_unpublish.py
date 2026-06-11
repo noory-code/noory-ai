@@ -20,9 +20,13 @@ from plot_mcp.http_app import create_http_app
 
 @pytest.fixture()
 def plot_root(tmp_path: Path) -> Path:
-    plot = tmp_path / ".plot"
-    plot.mkdir()
-    return plot
+    # D-2026-06-11-C/D: workspace is the user's opened folder and IS the
+    # git repo; .noory/plot/ lives inside it. Plot never auto-inits — but
+    # tests that exercise publish/tag need a real repo, so we init here.
+    from plot_mcp.git_store import init_workspace_repo
+    from plot_mcp.workspace import resolve_plot_root
+    init_workspace_repo(tmp_path)
+    return resolve_plot_root(str(tmp_path))
 
 
 @pytest.fixture()
@@ -127,11 +131,11 @@ def test_unpublish_endpoint_round_trip(
     mid = _foundation_mission_id(plot_root, "alpha")
     client.post(
         f"/api/projects/alpha/canvases/foundation/nodes/{mid}/publish",
-        params={"project_path": str(plot_root.parent)},
+        params={"project_path": str(plot_root.parent.parent)},
     )
     resp = client.post(
         f"/api/projects/alpha/canvases/foundation/nodes/{mid}/unpublish",
-        params={"project_path": str(plot_root.parent)},
+        params={"project_path": str(plot_root.parent.parent)},
     )
     assert resp.status_code == 201
     body = resp.json()
@@ -148,7 +152,7 @@ def test_unpublish_endpoint_409_when_no_publish_to_revert(
     mid = _foundation_mission_id(plot_root, "alpha")
     resp = client.post(
         f"/api/projects/alpha/canvases/foundation/nodes/{mid}/unpublish",
-        params={"project_path": str(plot_root.parent)},
+        params={"project_path": str(plot_root.parent.parent)},
     )
     assert resp.status_code == 409
 
@@ -159,6 +163,6 @@ def test_unpublish_endpoint_404_for_unknown_node(
     create_project(plot_root, "alpha", "Alpha")
     resp = client.post(
         "/api/projects/alpha/canvases/foundation/nodes/ghost/unpublish",
-        params={"project_path": str(plot_root.parent)},
+        params={"project_path": str(plot_root.parent.parent)},
     )
     assert resp.status_code == 404

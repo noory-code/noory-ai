@@ -29,7 +29,7 @@ from plot_mcp.folder_io import (
     rename_project,
     write_project,
 )
-from plot_mcp.git_store import list_tags
+from plot_mcp.git_store import init_workspace_repo, list_tags
 from plot_mcp.migrate import migrate_v01_to_v02
 from plot_mcp.models import DirTreeResponse, DiscoveredProject, WorkspaceDiscoveryResponse
 from plot_mcp.workspace import (
@@ -38,6 +38,7 @@ from plot_mcp.workspace import (
     discover_projects,
     enumerate_projects,
     resolve_plot_root,
+    workspace_root_from_plot_root,
 )
 
 
@@ -135,7 +136,7 @@ async def project_get_endpoint(request: Request) -> JSONResponse:
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
     details = list_service_details(plot_root, project_id)
-    tags = list_tags(plot_root / project_id)
+    tags = list_tags(workspace_root_from_plot_root(plot_root))
     return JSONResponse(
         {
             **proj.model_dump(),
@@ -209,3 +210,22 @@ async def project_delete_endpoint(request: Request) -> Response:
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
     return JSONResponse({"ok": True})
+
+
+async def workspace_git_init_endpoint(request: Request) -> JSONResponse:
+    """``POST /api/workspace/git-init`` — explicit user consent to create
+    a git repo at the workspace root (D-2026-06-11-D).
+
+    Idempotent: a workspace that already has ``.git/`` gets a 200 no-op
+    so the viewer can retry-then-init without checking twice. A fresh
+    init returns 201.
+    """
+    try:
+        root = _require_workspace_root(request)
+    except _ApiError as exc:
+        return exc.response
+    created = init_workspace_repo(root)
+    return JSONResponse(
+        {"ok": True, "created": created, "workspace_root": str(root)},
+        status_code=201 if created else 200,
+    )

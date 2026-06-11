@@ -95,6 +95,12 @@
     "tagNamePrompt": "세션 태그 이름 (예: 'session-banas-start')",
     "tagMessagePrompt": "선택: 짧은 메모"
   },
+  "gitConsent": {
+    "title": "git 저장소를 만들까요?",
+    "message": "이 워크스페이스({{workspace}})는 아직 git 저장소가 아닙니다. 태그·발행은 git이 필요합니다. 여기에 만드시겠습니까?\n\nPlot은 자기 데이터(.noory/plot/)만 스테이지합니다. 다른 파일은 건드리지 않습니다.",
+    "confirm": "만들기",
+    "cancel": "나중에"
+  },
   "serviceDetail": {
     "label": "서비스 상세",
     "ariaWithCategory": "서비스 상세 — {{category}} › {{service}}",

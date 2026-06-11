@@ -188,6 +188,12 @@ def resolve_plot_root(project_path: str) -> Path:
     ``shutil.move`` (same volume, atomic-ish). If BOTH roots exist
     (half-migrated / user-restored), ``.noory/plot`` wins and ``.plot`` is
     left untouched for the user to reconcile — never merged blindly.
+
+    Also performs the one-shot v0.59→v0.60 git-location migration (see
+    :func:`migrate_legacy_git_to_workspace`): if the workspace was last
+    opened under the design that put ``.git`` inside ``.noory/plot/``, the
+    repo moves up to the workspace root — but only when no ``.git/`` is
+    already there (the user could legitimately have their own).
     """
     base = Path(project_path).expanduser().resolve()
     if not base.exists():
@@ -201,7 +207,44 @@ def resolve_plot_root(project_path: str) -> Path:
         shutil.move(str(legacy), str(root))
         _log.info("migrated legacy %s -> %s (R9)", legacy, root)
     root.mkdir(parents=True, exist_ok=True)
+    migrate_legacy_git_to_workspace(base)
     return root
+
+
+def workspace_root_from_plot_root(plot_root: Path) -> Path:
+    """Recover the workspace root (= the user's opened folder) from the
+    resolved Plot data root. ``plot_root`` is ``<workspace>/.noory/plot``;
+    the user's workspace is two levels up.
+
+    Used by endpoints that need to talk to git (which lives at the
+    workspace root after D-2026-06-11-C/D), while still receiving the
+    Plot data root from ``_require_plot_root``.
+    """
+    return plot_root.parent.parent
+
+
+def migrate_legacy_git_to_workspace(workspace_root: Path) -> bool:
+    """v0.59→v0.60 (D-2026-06-11-C/D): move ``.noory/plot/.git/`` up to
+    the workspace root when it's safe.
+
+    Safe = the workspace doesn't already have its own ``.git/``. If the
+    user has their own repo at the workspace root, leave both alone:
+    merging histories is the user's call, not Plot's. Returns True iff
+    the repo moved.
+    """
+    legacy_git = workspace_root / ".noory" / "plot" / ".git"
+    new_git = workspace_root / ".git"
+    if not legacy_git.is_dir():
+        return False
+    if new_git.exists():
+        _log.warning(
+            "legacy .noory/plot/.git at %s left in place — workspace already "
+            "has %s (user-owned)", legacy_git, new_git,
+        )
+        return False
+    shutil.move(str(legacy_git), str(new_git))
+    _log.info("migrated %s -> %s (workspace-git, D-2026-06-11-C)", legacy_git, new_git)
+    return True
 
 
 def resolved_port() -> int:

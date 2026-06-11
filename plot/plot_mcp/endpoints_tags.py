@@ -15,7 +15,25 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.endpoints_common import _ApiError, _error, _require_plot_root
-from plot_mcp.git_store import TagAlreadyExistsError, delete_tag, list_tags, tag_snapshot
+from plot_mcp.git_store import (
+    GitNotInitializedError,
+    TagAlreadyExistsError,
+    delete_tag,
+    list_tags,
+    tag_snapshot,
+)
+from plot_mcp.workspace import workspace_root_from_plot_root
+
+
+def _git_not_initialized_response(workspace_root: object) -> JSONResponse:
+    return JSONResponse(
+        {
+            "error": "git not initialized in workspace",
+            "needs_git_init": True,
+            "workspace_root": str(workspace_root),
+        },
+        status_code=409,
+    )
 
 
 async def tags_list_endpoint(request: Request) -> JSONResponse:
@@ -27,7 +45,7 @@ async def tags_list_endpoint(request: Request) -> JSONResponse:
     folder = plot_root / project_id
     if not folder.is_dir():
         return _error(f"project not found: {project_id}", status=404)
-    return JSONResponse({"tags": list_tags(plot_root)})
+    return JSONResponse({"tags": list_tags(workspace_root_from_plot_root(plot_root))})
 
 
 async def tag_post_endpoint(request: Request) -> JSONResponse:
@@ -47,8 +65,11 @@ async def tag_post_endpoint(request: Request) -> JSONResponse:
     message = body.get("message")
     if not isinstance(name, str) or not name.strip():
         return _error("'name' is required and must be a non-empty string")
+    workspace_root = workspace_root_from_plot_root(plot_root)
     try:
-        result = tag_snapshot(plot_root, name, message=message)
+        result = tag_snapshot(workspace_root, name, message=message)
+    except GitNotInitializedError:
+        return _git_not_initialized_response(workspace_root)
     except TagAlreadyExistsError as exc:
         return _error(str(exc), status=409)
     return JSONResponse(result, status_code=201)
@@ -65,7 +86,7 @@ async def tag_delete_endpoint(request: Request) -> JSONResponse:
     if not folder.is_dir():
         return _error(f"project not found: {project_id}", status=404)
     try:
-        delete_tag(plot_root, name)
+        delete_tag(workspace_root_from_plot_root(plot_root), name)
     except KeyError as exc:
         return _error(f"tag not found: {exc.args[0]}", status=404)
     return JSONResponse({"ok": True})
@@ -109,9 +130,14 @@ async def project_at_tag_endpoint(request: Request) -> JSONResponse:
 
     from plot_mcp.git_store import read_file_at_tag
 
+    workspace_root = workspace_root_from_plot_root(plot_root)
+    # Files in the workspace repo live under ``.noory/plot/{project_id}/…``
+    # (the data root inside the repo).
+    plot_data_prefix = f".noory/plot/{project_id}"
+
     def _read_canvas_json(rel: str) -> dict[str, Any] | None:
         try:
-            raw = read_file_at_tag(plot_root, tag, f"{project_id}/{rel}")
+            raw = read_file_at_tag(workspace_root, tag, f"{plot_data_prefix}/{rel}")
         except FileNotFoundError:
             return None
         try:

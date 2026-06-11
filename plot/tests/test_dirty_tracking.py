@@ -38,9 +38,13 @@ from plot_mcp.models import (
 
 @pytest.fixture()
 def plot_root(tmp_path: Path) -> Path:
-    plot = tmp_path / ".plot"
-    plot.mkdir()
-    return plot
+    # D-2026-06-11-C/D: workspace is the user's opened folder and IS the
+    # git repo; .noory/plot/ lives inside it. Plot never auto-inits — but
+    # tests that exercise publish/tag need a real repo, so we init here.
+    from plot_mcp.git_store import init_workspace_repo
+    from plot_mcp.workspace import resolve_plot_root
+    init_workspace_repo(tmp_path)
+    return resolve_plot_root(str(tmp_path))
 
 
 # ---------------------------------------------------------------------------

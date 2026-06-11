@@ -19,9 +19,13 @@ from plot_mcp.http_app import create_http_app
 
 @pytest.fixture()
 def plot_root(tmp_path: Path) -> Path:
-    plot = tmp_path / ".plot"
-    plot.mkdir()
-    return plot
+    # D-2026-06-11-C/D: workspace is the user's opened folder and IS the
+    # git repo; .noory/plot/ lives inside it. Plot never auto-inits — but
+    # tests that exercise publish/tag need a real repo, so we init here.
+    from plot_mcp.git_store import init_workspace_repo
+    from plot_mcp.workspace import resolve_plot_root
+    init_workspace_repo(tmp_path)
+    return resolve_plot_root(str(tmp_path))
 
 
 @pytest.fixture()
@@ -192,7 +196,7 @@ def test_published_endpoint_empty_when_never_published(
     mid = _foundation_mission_id(plot_root, "alpha")
     resp = client.get(
         f"/api/projects/alpha/canvases/foundation/nodes/{mid}/published",
-        params={"project_path": str(plot_root.parent)},
+        params={"project_path": str(plot_root.parent.parent)},
     )
     assert resp.status_code == 200
     assert resp.json() == {"versions": []}
@@ -209,7 +213,7 @@ def test_published_endpoint_returns_versions_newest_first(
 
     resp = client.get(
         f"/api/projects/alpha/canvases/foundation/nodes/{mid}/published",
-        params={"project_path": str(plot_root.parent)},
+        params={"project_path": str(plot_root.parent.parent)},
     )
     assert resp.status_code == 200
     versions = resp.json()["versions"]
@@ -225,7 +229,7 @@ def test_published_endpoint_entries_carry_path_published_at_size(
 
     resp = client.get(
         f"/api/projects/alpha/canvases/foundation/nodes/{mid}/published",
-        params={"project_path": str(plot_root.parent)},
+        params={"project_path": str(plot_root.parent.parent)},
     )
     entry = resp.json()["versions"][0]
     assert entry["version"] == "v2.0"
@@ -242,6 +246,6 @@ def test_published_endpoint_404_for_unknown_node(
     create_project(plot_root, "alpha", "Alpha")
     resp = client.get(
         "/api/projects/alpha/canvases/foundation/nodes/ghost/published",
-        params={"project_path": str(plot_root.parent)},
+        params={"project_path": str(plot_root.parent.parent)},
     )
     assert resp.status_code == 404

@@ -1,26 +1,26 @@
-"""Per-workspace git repo (at ``.plot/``) for session-bookmark tags + publish
-commits. One repo per workspace tracks every project beneath it
-(``.plot/{project_id}/``); there is no per-project repo. (D-2026-06-09-C —
-user: "워크스페이스에만 깃이 있어야 한다".)
+"""Per-workspace git repo for session-bookmark tags + per-node publish commits.
 
-The repo is quiet by design: no automatic commits happen during
-day-to-day editing. A commit is created only when the user (or an MCP
-tool) asks for a tagged snapshot — typically at the start or end of a
-work session. The tag gives them a durable name to jump back to later
-with ``git checkout <tag>`` or a future viewer UI.
+D-2026-06-11-C/D — the workspace is the user's opened folder, and that folder
+IS the git repo. Plot never silently runs ``git init``; the first tag/publish
+on a workspace without ``.git/`` raises :class:`GitNotInitializedError` and
+the endpoint surfaces a structured 409 the viewer turns into a modal. Only an
+explicit ``init_workspace_repo`` call (driven by the user's Yes) actually
+creates the repo.
 
-Undo/redo inside a session is handled in-memory on the viewer and does
-not touch git.
+Identity for Plot-authored commits is passed **inline** (``git -c
+user.name=Plot -c user.email=plot@noory-ai.local …``) so the user's
+repo-level config stays untouched even when Plot initialised the repo
+itself. Staging is **path-scoped to** ``.noory/plot/`` so the user's
+working-tree edits outside Plot's data root are never folded into a
+Plot commit.
 
 Implementation notes
 --------------------
 
 - ``subprocess.run(["git", …])`` end-to-end — no third-party git binding,
   keeps the plugin install lean and works on any platform with git.
-- ``user.name`` / ``user.email`` are configured **locally** (per-repo)
-  so the project doesn't inherit the user's global identity.
-- The repo starts with zero commits; ``git rev-parse HEAD`` fails
-  until the first ``tag_snapshot``.
+- The repo starts with zero commits; ``git rev-parse HEAD`` fails until
+  the first ``tag_snapshot``.
 """
 
 from __future__ import annotations
@@ -33,6 +33,27 @@ from typing import Any
 
 class TagAlreadyExistsError(ValueError):
     """Raised when ``tag_snapshot`` is called with a name that's already taken."""
+
+
+class GitNotInitializedError(Exception):
+    """Raised when a git op runs on a workspace without ``.git/``.
+
+    Endpoints catch this and respond ``409 {needs_git_init: true,
+    workspace_root: …}`` so the viewer can offer to initialise the repo.
+    """
+
+
+# Plot-authored commits carry their identity inline so the user's repo-level
+# ``user.name`` / ``user.email`` stay untouched, even on a workspace Plot
+# initialised itself.
+_PLOT_IDENTITY = (
+    "-c", "user.name=Plot",
+    "-c", "user.email=plot@noory-ai.local",
+)
+
+# Plot's tag/publish commits stage ONLY the Plot data root. The user's
+# working-tree edits outside this path are never folded into a Plot commit.
+_PLOT_PATHSPEC = ".noory/plot"
 
 
 @dataclass
@@ -59,31 +80,45 @@ def _git(*args: str, cwd: Path, check: bool = True) -> _RunResult:
     return _RunResult(result.stdout, result.stderr, result.returncode)
 
 
+def _git_as_plot(*args: str, cwd: Path) -> _RunResult:
+    """Run a git subcommand with Plot's inline identity. Used for commit/tag."""
+    return _git(*_PLOT_IDENTITY, *args, cwd=cwd)
+
+
 # ---------------------------------------------------------------------------
-# ensure_repo
+# repo lifecycle
 # ---------------------------------------------------------------------------
 
 
-def ensure_repo(workspace_root: Path) -> None:
-    """Create the workspace-level git repo (``.plot/``) on first access.
+def is_workspace_repo(workspace_root: Path) -> bool:
+    """True iff ``workspace_root/.git/`` already exists."""
+    return (workspace_root / ".git").is_dir()
 
-    Idempotent: if ``.git/`` already exists, only the author config
-    is re-asserted (cheap), and ``.gitignore`` stays as-is.
+
+def assert_repo_initialized(workspace_root: Path) -> None:
+    """Raise :class:`GitNotInitializedError` when ``workspace_root`` has no
+    ``.git/``. Endpoint code calls this before any git op that would
+    otherwise fail with an inscrutable subprocess error."""
+    if not is_workspace_repo(workspace_root):
+        raise GitNotInitializedError(
+            f"git not initialized at workspace root {workspace_root}"
+        )
+
+
+def init_workspace_repo(workspace_root: Path) -> bool:
+    """Run ``git init`` at the workspace root. Idempotent — returns False
+    when a repo already exists, True when one was newly created. Never
+    writes ``.gitignore`` / ``.gitattributes`` / repo-level ``user.name`` /
+    ``user.email`` (the user's territory).
+
+    Plot calls this only in response to an explicit user "Yes" on the
+    "Initialize git repo at <workspace>?" modal (D-2026-06-11-D).
     """
-    dot_git = workspace_root / ".git"
-    if not dot_git.exists():
-        _git("init", "--quiet", cwd=workspace_root)
-    # Always (re)assert identity so a later git version change can't drop it.
-    _git("config", "--local", "user.name", "Plot", cwd=workspace_root)
-    _git("config", "--local", "user.email", "plot@noory-ai.local", cwd=workspace_root)
-    # Write .gitignore only if not already present — don't clobber user edits.
-    gi = workspace_root / ".gitignore"
-    if not gi.exists():
-        gi.write_text("*.tmp\n_archive/\n", encoding="utf-8")
-    # Force LF line endings for JSON so cross-platform diffs stay clean.
-    attrs = workspace_root / ".gitattributes"
-    if not attrs.exists():
-        attrs.write_text("*.json text eol=lf\n", encoding="utf-8")
+    if is_workspace_repo(workspace_root):
+        return False
+    workspace_root.mkdir(parents=True, exist_ok=True)
+    _git("init", "--quiet", cwd=workspace_root)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -104,37 +139,36 @@ def _tag_exists(workspace_root: Path, name: str) -> bool:
 
 
 def tag_snapshot(workspace_root: Path, name: str, message: str | None = None) -> dict[str, Any]:
-    """Snapshot the current working tree under an annotated git tag.
+    """Snapshot the Plot data root under an annotated git tag.
 
     Flow:
-      1. ``git add -A``
-      2. ``git commit -m <message or name>`` (``--allow-empty`` so we can
-         tag even when nothing changed between snapshots — end-of-session
-         markers on an otherwise untouched project).
-      3. ``git tag -a <name> -m <message or name>``
+      1. ``git add -A -- .noory/plot/`` (path-scoped: only Plot's data)
+      2. ``git -c user.name=Plot … commit --allow-empty -m <message>``
+         (inline identity; ``--allow-empty`` covers end-of-session tags on
+         an otherwise untouched project)
+      3. ``git tag -a <name> -m <message>``
 
-    Raises ``TagAlreadyExistsError`` if ``name`` already exists as a tag.
+    Raises:
+      :class:`GitNotInitializedError` — when the workspace has no ``.git/``.
+        Endpoints catch this and reply 409 ``needs_git_init=true``.
+      :class:`TagAlreadyExistsError` — when ``name`` already exists.
     """
-    # Self-heal projects that were created before ``ensure_repo`` was wired
-    # into ``create_project`` — lets old projects still plant their first tag.
-    if not (workspace_root / ".git").is_dir():
-        ensure_repo(workspace_root)
-
+    assert_repo_initialized(workspace_root)
     if _tag_exists(workspace_root, name):
         raise TagAlreadyExistsError(f"tag already exists: {name!r}")
 
     commit_message = message or name
 
-    _git("add", "-A", cwd=workspace_root)
+    _git("add", "-A", "--", _PLOT_PATHSPEC, cwd=workspace_root)
     # ``--allow-empty`` covers the "nothing changed since last snapshot" case.
-    _git(
+    _git_as_plot(
         "commit",
         "--allow-empty",
         "-m",
         commit_message,
         cwd=workspace_root,
     )
-    _git(
+    _git_as_plot(
         "tag",
         "-a",
         name,
@@ -176,23 +210,17 @@ def publish_snapshot(
     ``propagated`` carries Phase 4 (D-2026-05-17-C) MINOR propagation
     records as ``(ancestor_id, from_v, to_v)`` tuples; one
     ``Publish-Propagated-Ancestor: <id> <from>→<to>`` trailer is
-    appended per ancestor. Empty list / None → no propagation trailers
-    (the publish target had no parent chain to bump).
+    appended per ancestor. Empty list / None → no propagation trailers.
 
     Flow:
-      1. ``git add -A`` — picks up the canvas.json bump(s) and the new
-         ``published/<file>.md``.
-      2. ``git commit -m <subject>\\n\\n<trailers>`` — no
-         ``--allow-empty``; a publish must change the version field
-         so an empty diff is a bug.
-
-    Returns ``{sha, subject, trailers}``. ``trailers`` is a dict for
-    the 5 base trailers; propagation trailers (which can repeat the
-    same key) are not surfaced in the returned dict — read the commit
-    via ``git interpret-trailers`` instead.
+      1. ``git add -A -- .noory/plot/`` — picks up the canvas.json bump(s)
+         and the new ``published/<file>.md``; user edits elsewhere stay
+         out.
+      2. ``git -c user.name=Plot … commit -m <subject>\\n\\n<trailers>``
+         (no ``--allow-empty``; a publish must change the version field
+         so an empty diff is a bug).
     """
-    if not (workspace_root / ".git").is_dir():
-        ensure_repo(workspace_root)
+    assert_repo_initialized(workspace_root)
 
     subject = f'publish: {kind} "{label}" → {to_v}'
     trailers = {
@@ -208,8 +236,8 @@ def publish_snapshot(
     body = "\n".join(lines)
     message = f"{subject}\n\n{body}"
 
-    _git("add", "-A", cwd=workspace_root)
-    _git("commit", "-m", message, cwd=workspace_root)
+    _git("add", "-A", "--", _PLOT_PATHSPEC, cwd=workspace_root)
+    _git_as_plot("commit", "-m", message, cwd=workspace_root)
     sha = _git("rev-parse", "HEAD", cwd=workspace_root).stdout.strip()
     return {
         "sha": sha,
@@ -224,24 +252,32 @@ def publish_snapshot(
 
 
 def ensure_clean_working_tree(workspace_root: Path) -> None:
-    """Capture any pre-publish dirty state in its own commit.
+    """Capture any pre-publish dirty state in ``.noory/plot/`` in its own commit.
 
-    Without this, a publish that runs against an untracked / dirty
-    working tree (e.g. the very first publish in a fresh project, or
-    after an offline-edit session) would bundle unrelated files into
-    the publish commit. A later ``git revert`` of that publish would
-    then wipe canvas.json + every other untracked file, leaving the
-    project broken.
+    Without this, a publish that runs against an untracked / dirty Plot
+    data root (e.g. the very first publish in a fresh project, or after an
+    offline-edit session) would bundle unrelated Plot files into the
+    publish commit. A later ``git revert`` of that publish would then wipe
+    canvas.json + every other untracked Plot file, leaving the project
+    broken.
 
-    Idempotent: no-op when the working tree is already clean.
+    Path-scoped to ``.noory/plot/`` so the user's working-tree edits
+    elsewhere stay where they are. Idempotent: no-op when the Plot data
+    root is already clean. Quietly returns when the workspace has no
+    ``.git/`` (caller's job to gate via the endpoint flow).
     """
-    if not (workspace_root / ".git").is_dir():
+    if not is_workspace_repo(workspace_root):
         return
-    result = _git("status", "--porcelain", cwd=workspace_root, check=False)
+    result = _git(
+        "status", "--porcelain", "--", _PLOT_PATHSPEC,
+        cwd=workspace_root, check=False,
+    )
     if not result.stdout.strip():
         return
-    _git("add", "-A", cwd=workspace_root)
-    _git("commit", "-m", "chore(plot): seed pre-publish state", cwd=workspace_root)
+    _git("add", "-A", "--", _PLOT_PATHSPEC, cwd=workspace_root)
+    _git_as_plot(
+        "commit", "-m", "chore(plot): seed pre-publish state", cwd=workspace_root,
+    )
 
 
 def find_latest_publish_commit(workspace_root: Path, node_id: str) -> str | None:
@@ -251,7 +287,7 @@ def find_latest_publish_commit(workspace_root: Path, node_id: str) -> str | None
     Greps the git log for the ``Publish-Node-Id: <node_id>`` trailer line.
     Most-recent-first; we take the first match.
     """
-    if not (workspace_root / ".git").is_dir():
+    if not is_workspace_repo(workspace_root):
         return None
     result = _git(
         "log",
@@ -274,12 +310,13 @@ def revert_publish(workspace_root: Path, sha: str) -> str:
     Caller is responsible for verifying the commit was a publish
     (via the trailer) before invoking — this is a pure git op.
     """
-    _git("revert", "--no-edit", sha, cwd=workspace_root)
+    assert_repo_initialized(workspace_root)
+    _git_as_plot("revert", "--no-edit", sha, cwd=workspace_root)
     return _git("rev-parse", "HEAD", cwd=workspace_root).stdout.strip()
 
 
 # ---------------------------------------------------------------------------
-# list_tags / delete_tag
+# list_tags / delete_tag / read_file_at_tag
 # ---------------------------------------------------------------------------
 
 
@@ -290,12 +327,15 @@ def read_file_at_tag(workspace_root: Path, tag: str, relative_path: str) -> byte
     """v0.24.14 (D-2026-05-21-C) — read a file's bytes at the given tag.
 
     Uses ``git show <tag>:<relative_path>`` so we never touch the working
-    tree (no checkout). ``relative_path`` is repo-relative (e.g.
-    ``foundation/canvas.json``).
+    tree (no checkout). ``relative_path`` is **repo-root-relative** (e.g.
+    ``.noory/plot/{project_id}/foundation/canvas.json``).
 
     Raises:
-        FileNotFoundError — when the tag or path doesn't exist at that tag.
+        FileNotFoundError — when the tag or path doesn't exist at that tag,
+          OR when the workspace has no ``.git/`` (no tags possible).
     """
+    if not is_workspace_repo(workspace_root):
+        raise FileNotFoundError(f"git not initialized at workspace {workspace_root}")
     if not _tag_exists(workspace_root, tag):
         raise FileNotFoundError(f"tag not found: {tag!r}")
     # git show outputs the blob to stdout; check=False so we can craft a
@@ -320,46 +360,45 @@ def list_tags(workspace_root: Path) -> list[dict[str, Any]]:
 
     Each entry: ``{name, sha, ts, message}``. ``sha`` is the commit sha
     the tag points at (not the tag object's own sha), so it's the same
-    sha ``tag_snapshot`` returned.
-
-    Returns ``[]`` if the project has no git repo yet (e.g. folder was
-    created by an old backend before ``ensure_repo`` was wired in, or
-    the user deleted ``.git/`` by hand).
+    sha ``tag_snapshot`` returned. Returns ``[]`` when the workspace has
+    no ``.git/`` (no tags possible).
     """
-    if not (workspace_root / ".git").is_dir():
+    if not is_workspace_repo(workspace_root):
         return []
     result = _git(
         "for-each-ref",
         "--sort=-taggerdate",
         f"--format={_LIST_FORMAT}",
-        "refs/tags",
+        "refs/tags/",
         cwd=workspace_root,
+        check=False,
     )
-    out: list[dict[str, Any]] = []
+    tags: list[dict[str, Any]] = []
     for line in result.stdout.splitlines():
-        if not line.strip():
-            continue
         parts = line.split("\t")
-        # ``objectname`` on a tag ref is the tag-object sha; we want the
-        # commit sha instead so it matches the sha returned by
-        # ``tag_snapshot``. Resolve via rev-list.
-        name = parts[0]
-        ts = parts[2] if len(parts) > 2 else ""
-        message = parts[3] if len(parts) > 3 else ""
-        commit_sha = _git("rev-list", "-n", "1", name, cwd=workspace_root).stdout.strip()
-        out.append(
+        if len(parts) != 4:
+            continue
+        name, _tag_sha, ts, message = parts
+        commit_sha = _git(
+            "rev-list", "-n", "1", name, cwd=workspace_root, check=False,
+        ).stdout.strip()
+        tags.append(
             {
                 "name": name,
-                "sha": commit_sha,
+                "sha": commit_sha or _tag_sha,
                 "ts": ts,
                 "message": message,
             }
         )
-    return out
+    return tags
 
 
 def delete_tag(workspace_root: Path, name: str) -> None:
-    """Drop a tag. The commit it pointed at stays reachable via reflog."""
-    if not _tag_exists(workspace_root, name):
+    """Delete an annotated tag by name.
+
+    Raises:
+        KeyError — when no such tag exists (or the workspace has no repo).
+    """
+    if not is_workspace_repo(workspace_root) or not _tag_exists(workspace_root, name):
         raise KeyError(name)
     _git("tag", "-d", name, cwd=workspace_root)

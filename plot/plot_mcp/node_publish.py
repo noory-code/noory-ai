@@ -38,6 +38,7 @@ from plot_mcp.storage import (  # noqa: F401
     _read_json,
     _write_json,
 )
+from plot_mcp.workspace import workspace_root_from_plot_root
 
 # ---------------------------------------------------------------------------
 # v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
@@ -216,11 +217,13 @@ def publish_node(
     ``PublishNotEligibleError`` if the kind/role disallows publish.
     """
     project_dir = _ensure_project(plot_root, project_id)
+    workspace_root = workspace_root_from_plot_root(plot_root)
     # v0.23.x (D-2026-05-17-J) — snapshot any pre-publish working-tree
     # state into its own commit so a future ``git revert`` of the
     # publish commit cannot wipe unrelated files (e.g. untracked
-    # canvas.json in a fresh project).
-    ensure_clean_working_tree(plot_root)
+    # canvas.json in a fresh project). Scoped to .noory/plot/ since
+    # D-2026-06-11-D.
+    ensure_clean_working_tree(workspace_root)
     canvases = _load_all_canvases(plot_root, project_id)
     start_canvas_key = (
         f"service_detail:{service_id}" if canvas_kind == "service_detail" else canvas_kind
@@ -310,7 +313,7 @@ def publish_node(
         write_canvas(plot_root, project_id, canvas)
 
     commit = publish_snapshot(
-        plot_root,
+        workspace_root,
         node_id=node.id,
         kind=node.kind,
         canvas=canvas_kind,
@@ -366,15 +369,16 @@ def unpublish_node(
     ``UnpublishNotEligibleError`` if no publish commit exists for it.
     """
     _ensure_project(plot_root, project_id)  # validate; git is workspace-level
+    workspace_root = workspace_root_from_plot_root(plot_root)
     canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
     node = next((n for n in canvas.nodes if n.id == node_id), None)
     if node is None:
         raise KeyError(f"node {node_id!r} not on canvas {canvas_kind!r}")
     from_v = node.version
-    publish_sha = find_latest_publish_commit(plot_root, node_id)
+    publish_sha = find_latest_publish_commit(workspace_root, node_id)
     if publish_sha is None:
         raise UnpublishNotEligibleError(f"node {node_id!r} has no publish commit to revert")
-    revert_sha = revert_publish(plot_root, publish_sha)
+    revert_sha = revert_publish(workspace_root, publish_sha)
     # Re-read the canvas via the regular path to get the new version
     # (the revert restored the previous value).
     canvas_after = read_canvas(plot_root, project_id, canvas_kind, service_id)

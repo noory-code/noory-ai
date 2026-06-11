@@ -13,9 +13,13 @@ from plot_mcp.http_app import create_http_app
 
 @pytest.fixture()
 def plot_root(tmp_path: Path) -> Path:
-    plot = tmp_path / ".plot"
-    plot.mkdir()
-    return plot
+    # D-2026-06-11-C/D: workspace is the user's opened folder and IS the
+    # git repo; .noory/plot/ lives inside it. Plot never auto-inits — but
+    # tests that exercise publish/tag need a real repo, so we init here.
+    from plot_mcp.git_store import init_workspace_repo
+    from plot_mcp.workspace import resolve_plot_root
+    init_workspace_repo(tmp_path)
+    return resolve_plot_root(str(tmp_path))
 
 
 @pytest.fixture()
@@ -46,7 +50,7 @@ def test_raw_endpoint_serves_png_bytes(
     resp = client.get(
         "/api/files/raw",
         params={
-            "project_path": str(plot_root.parent),
+            "project_path": str(plot_root.parent.parent),
             "project_id": "alpha",
             "path": "img/test.png",
         },
@@ -63,7 +67,7 @@ def test_raw_endpoint_404_for_missing_file(
     resp = client.get(
         "/api/files/raw",
         params={
-            "project_path": str(plot_root.parent),
+            "project_path": str(plot_root.parent.parent),
             "project_id": "alpha",
             "path": "img/ghost.png",
         },
@@ -80,7 +84,7 @@ def test_raw_endpoint_400_for_disallowed_extension(
     resp = client.get(
         "/api/files/raw",
         params={
-            "project_path": str(plot_root.parent),
+            "project_path": str(plot_root.parent.parent),
             "project_id": "alpha",
             "path": "notes.md",
         },
@@ -95,7 +99,7 @@ def test_raw_endpoint_400_for_path_traversal(
     resp = client.get(
         "/api/files/raw",
         params={
-            "project_path": str(plot_root.parent),
+            "project_path": str(plot_root.parent.parent),
             "project_id": "alpha",
             "path": "../../../etc/passwd",
         },

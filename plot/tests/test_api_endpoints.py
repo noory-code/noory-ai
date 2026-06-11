@@ -18,6 +18,12 @@ from plot_mcp.http_app import create_http_app
 
 @pytest.fixture
 def app_client(tmp_path: Path) -> tuple[TestClient, str]:
+    # D-2026-06-11-D — Plot never auto-inits, but tests that exercise
+    # tag/publish need a real repo, so the test seeds one. Endpoint tests
+    # that exercise the needs_git_init path use a fresh tmp_path manually.
+    from plot_mcp.git_store import init_workspace_repo
+
+    init_workspace_repo(tmp_path)
     hub = BroadcastHub(enable_watchers=False)
     app = create_http_app(hub=hub)
     return TestClient(app), str(tmp_path)

@@ -43,6 +43,11 @@ from plot_mcp.workspace import resolve_plot_root
 
 @pytest.fixture
 def plot_root(tmp_path: Path) -> Path:
+    # D-2026-06-11-C/D: workspace = tmp_path IS the git repo. Plot never
+    # auto-inits, but publish tests need a real repo, so we init here.
+    from plot_mcp.git_store import init_workspace_repo
+
+    init_workspace_repo(tmp_path)
     return resolve_plot_root(str(tmp_path))
 
 
@@ -257,21 +262,26 @@ def test_delete_missing_project_raises(plot_root: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_create_project_initialises_git_repo(plot_root: Path) -> None:
-    # D-2026-06-09-C — the repo lives at the workspace (.plot/), not per project.
+def test_create_project_does_not_init_git_at_plot_root(plot_root: Path) -> None:
+    """D-2026-06-11-D — Plot never auto-inits. The workspace fixture initialised
+    the repo at the workspace root (`tmp_path`, not `plot_root`); create_project
+    must not synthesise a nested `.git/` under `.noory/plot/`."""
     create_project(plot_root, "alpha", "Alpha")
-    assert (plot_root / ".git").is_dir()
+    # No nested repo at the plot data root or under a project.
+    assert not (plot_root / ".git").exists()
     assert not (plot_root / "alpha" / ".git").exists()
 
 
-def test_create_project_leaves_git_repo_empty(plot_root: Path) -> None:
-    """Quiet-repo principle: no automatic commits, HEAD doesn't resolve."""
+def test_create_project_leaves_workspace_repo_empty(plot_root: Path) -> None:
+    """Quiet-repo principle: project creation does not commit. The workspace
+    repo (initialised by the fixture) stays at zero commits."""
     import subprocess
 
     create_project(plot_root, "alpha", "Alpha")
+    workspace = plot_root.parent.parent
     result = subprocess.run(
         ["git", "rev-parse", "--verify", "HEAD"],
-        cwd=plot_root,
+        cwd=workspace,
         capture_output=True,
         text=True,
     )

@@ -45,11 +45,33 @@ label** (its path relative to the root; root-level shows the localized
   workspace level: **one repo per `.noory/plot/`**, not per project. `.noory/plot/{id}` no
   longer gets its own `.git`; `ensure_repo` / `tag_snapshot` / `publish_snapshot`
   all target `.noory/plot/`, so every project under one `.noory/plot/` shares one history
-  (user: "워크스페이스에만 깃이 있어야 한다"). The repo sits at `.noory/plot/` (Plot's
-  data root), not the launch folder, so non-Plot files in the launch folder are
-  never tracked. Session-bookmark tags and per-node publish commits live in this
-  single repo. (If multi-`.plot` roots ever need one shared history, hoisting the
-  repo to the launch root is a deferred follow-up.)
+  (user: "워크스페이스에만 깃이 있어야 한다"). Session-bookmark tags and per-node
+  publish commits live in this single repo.
+
+- **Workspace = git repo (D-2026-06-11-C)** — the **workspace is the user's
+  opened folder**, and that folder IS the git repo. `.noory/plot/` lives
+  *inside* the workspace repo (alongside the user's own source / docs / `.env`
+  / whatever they keep in that folder); Plot does not create its own `.git`
+  under `.noory/plot/`. Consequence: tracking decisions (`.gitignore`) are the
+  user's. If the user wants Plot's data tracked, it just is; if not, they
+  add `.noory/plot/` to their `.gitignore`. Plot itself never auto-adds an
+  ignore entry for its own data (the v0.53.0 → v0.59.x design that scoped
+  the repo to `.noory/plot/` is superseded — see DECISIONS.md
+  [D-2026-06-11-C](./DECISIONS.md#d-2026-06-11-c--workspace--git-repo-not-noory-plot)).
+
+- **Git consent (D-2026-06-11-D)** — Plot **never silently runs `git init`** on
+  the workspace. If `.git/` already exists, Plot uses it as-is (never touches
+  `user.name` / `user.email` / `.gitignore` / `.gitattributes`). If `.git/`
+  does NOT exist, the first tag/publish call replies with
+  `{error: "git not initialized", needs_git_init: true}` and the viewer
+  surfaces an **"Initialize git repo at `<workspace>`?"** modal; only an
+  explicit Yes triggers `POST /api/workspace/git-init`. Plot-authored commits
+  carry identity inline (`git -c user.name=Plot -c user.email=plot@noory-ai.local
+  …`) so the user's repo-level config stays untouched. Plot's tag/publish
+  stages **only `.noory/plot/`** (`git add -A -- .noory/plot/`) so the user's
+  working-tree edits outside that path are never folded into a Plot commit.
+  See DECISIONS.md
+  [D-2026-06-11-D](./DECISIONS.md#d-2026-06-11-d--git-init-requires-explicit-user-consent-plot-never-auto-creates-git).
 
 - **Data root = `.noory/plot/` (v0.59.0, D-2026-06-10-G, OVERHAUL R9)** — every
   plugin's per-project artifacts consolidate under ONE `.noory/` dotfolder per

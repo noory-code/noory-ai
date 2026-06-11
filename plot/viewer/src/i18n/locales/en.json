@@ -95,6 +95,12 @@
     "tagNamePrompt": "Session tag name (e.g. 'session-banas-start')",
     "tagMessagePrompt": "Optional short message"
   },
+  "gitConsent": {
+    "title": "Initialize git repo?",
+    "message": "This workspace ({{workspace}}) is not a git repo yet. Plot needs git to create tags and publish snapshots. Initialize one here?\n\nPlot only stages its own data (.noory/plot/); your other files stay untouched.",
+    "confirm": "Initialize",
+    "cancel": "Not now"
+  },
   "serviceDetail": {
     "label": "Service detail",
     "ariaWithCategory": "Service detail — {{category}} › {{service}}",

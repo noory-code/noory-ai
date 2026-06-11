@@ -10858,3 +10858,92 @@ but not yet fully eliminated.
 - **Approval:** executed under the user-approved N-3 plan
   ("N-3 god 모듈 3개 분해"), 2026-06-11.
 
+### D-2026-06-11-C — Workspace = git repo (not `.noory/plot/`)
+
+- **What:** The **workspace is the user's opened folder**, and that folder
+  IS the git repo. `.noory/plot/` lives *inside* the workspace repo (alongside
+  the user's own source / docs / `.env` / whatever they keep there); Plot
+  does NOT create its own `.git` under `.noory/plot/`. `ensure_repo` /
+  `tag_snapshot` / `publish_snapshot` / blueprint-publish all target the
+  workspace root (the path passed as `?project_path=…`), not its
+  `.noory/plot/` child.
+- **Why (user):** "git은 프로젝트가 아니라 워크스페이스 당 1개에요. .plot/
+  에 두는게 아니라 워크스페이스 자체가 깃 레포여야한다." (2026-06-11). The
+  v0.53.0 → v0.59.x design that scoped the repo to `.noory/plot/` reasoned
+  from "protect non-Plot files in the launch folder"; the user's revised
+  position is that workspace = git repo by definition, and tracking
+  decisions (`.gitignore`) belong to the user, not to Plot.
+- **Supersedes:** D-2026-06-09-C (repo at `.noory/plot/`) — partially. The
+  "one repo per workspace, not per project" half stays correct; the "repo
+  inside `.noory/plot/`" half flips to "repo at the workspace root."
+- **Consequence — gitignore is the user's call:** Plot does NOT auto-add an
+  ignore entry for its own data. If the user wants `.noory/plot/` tracked,
+  it just is; if not, they add `.noory/plot/` to their workspace
+  `.gitignore`. (Sibling plugin migrations — evonest v1.1.1, solera v5.2.0 —
+  carry the user's prior intent forward but do not invent ignore policy for
+  projects that tracked their data on purpose; the same principle applies
+  here.)
+- **Implementation outline (not yet shipped):** rename `workspace_root` →
+  `repo_root` semantically (kept name OK, but the path it carries shifts
+  from `<launch>/.noory/plot` to `<launch>`); `plot_root` (= `repo_root /
+  ".noory/plot"`) still drives data I/O. `tag_snapshot` / per-node publish
+  pass `repo_root` to git. Lazy migration: on first open of a workspace that
+  has a `.noory/plot/.git` (the prior design), move it up to the workspace
+  root *only if* no `.git` already exists at the workspace root — otherwise
+  leave both alone and surface a one-time hint, since merging histories is
+  the user's call.
+- **Approval:** Accepted by user, 2026-06-11. Spec pinned at SPEC.md
+  §Workspace & projects → "Workspace = git repo (D-2026-06-11-C)".
+
+### D-2026-06-11-D — Git init requires explicit user consent (Plot never auto-creates `.git`)
+
+- **What:** When the workspace folder already contains a `.git/`, Plot uses
+  that repo as-is — never touches `user.name`/`user.email`, never writes
+  `.gitignore` or `.gitattributes`, never silently runs `git init`. When the
+  workspace folder does NOT contain a `.git/`, Plot also does NOT silently
+  init one. Instead, the first tag/publish call that needs git replies with
+  a structured error (`{error: "git not initialized in workspace",
+  needs_git_init: true, workspace_root: "..."}`) and the viewer surfaces a
+  modal **"Initialize git repo at `<workspace>`?"** with **Yes / No**.
+  Only an explicit Yes triggers `POST /api/workspace/git-init`, which runs
+  `git init` at the workspace root.
+- **Why (user):** "근데 원래 깃일 경우도 있구요. 깃 레포가 아니면
+  깃레포여야하는데 추가할거냐고 물어봐야합니다." (2026-06-11). Two
+  invariants pulled from one sentence:
+  1. **Existing git wins.** If the user already has a repo there, Plot must
+     stay out of it. No `git config` writes, no `.gitignore` injection.
+  2. **No surprise repos.** If there's no repo, Plot proposing tag/publish
+     is fine, but creating the actual `.git/` requires the user clicking
+     Yes — `git init` on a directory the user opened is a *visible* change
+     that needs consent like any other destructive-ish action.
+- **Identity (`user.name`/`user.email`) for Plot-authored commits:** instead
+  of writing repo-level config, every Plot commit/tag passes its identity
+  inline (`git -c user.name=Plot -c user.email=plot@noory-ai.local commit
+  …`). That way Plot commits are identifiable in `git log --author`, but the
+  user's repo-level `user.name` stays whatever they had before, even on a
+  freshly-init-by-Plot repo (so their next non-Plot commit is authored as
+  themselves, not as "Plot").
+- **Path-scoped staging:** Plot's tag/publish commits stage only
+  `.noory/plot/` (i.e. `git add -A -- .noory/plot/`), never the whole
+  workspace. The user's working tree changes outside `.noory/plot/` are
+  never folded into a Plot commit by accident. (The user can always
+  `git add` other paths themselves and Plot's next `git add` won't touch
+  them.)
+- **Migration on first open of a workspace that has the prior `.noory/plot/.git`:**
+  - if the workspace also already has its own `.git/` → leave both alone,
+    log a one-line note (the user reconciles; merging histories is their
+    call);
+  - if the workspace has NO `.git/` → move `.noory/plot/.git/` up to the
+    workspace root (one `shutil.move`, same volume). The history carries
+    over with no rewrite. After the move, the workspace IS the repo.
+- **Implementation outline (not yet shipped):** new endpoint
+  `POST /api/workspace/git-init` (idempotent — second call on an existing
+  repo is a no-op success). `git_store.ensure_repo` becomes
+  `git_store.assert_repo_initialized(workspace_root)` and raises a new
+  `GitNotInitializedError` instead of silently creating; tag/publish
+  endpoints catch it and surface the structured 409. New
+  `git_store.init_workspace_repo(workspace_root)` is the only function
+  that actually runs `git init`.
+- **Approval:** Accepted by user, 2026-06-11. Spec pinned at SPEC.md
+  §Workspace & projects → "Git consent (D-2026-06-11-D)".
+

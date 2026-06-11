@@ -4,6 +4,59 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.61.0] — 2026-06-11
+
+Minor. Workspace = git repo (D-2026-06-11-C/D). Git lives at the user's
+opened folder, not inside `.noory/plot/`. Plot never silently runs
+`git init` — the first tag/publish without a repo asks the user via a
+modal first.
+
+### Changed (D-2026-06-11-C/D)
+
+- `git_store`: workspace-root semantics throughout. `ensure_repo` removed
+  (it silently inited); replaced by `assert_repo_initialized`
+  (raises `GitNotInitializedError`) + `init_workspace_repo` (the only
+  function that runs `git init`, called from the new
+  `POST /api/workspace/git-init` endpoint).
+- Plot-authored commits carry identity inline (`git -c user.name=Plot
+  -c user.email=plot@noory-ai.local …`) so the user's repo-level config
+  stays untouched, even on a workspace Plot initialised. `.gitignore` /
+  `.gitattributes` writes removed (user's territory).
+- `tag_snapshot` + `publish_snapshot` stage only `.noory/plot/`
+  (`git add -A -- .noory/plot/`) so the user's working-tree edits outside
+  that path are never folded into a Plot commit.
+- `ensure_clean_working_tree` is path-scoped to `.noory/plot/`.
+- `read_file_at_tag` paths shift from `{project_id}/…` to
+  `.noory/plot/{project_id}/…` (the new file location inside the repo).
+- `create_project` no longer auto-inits git.
+- One-shot migration: `migrate_legacy_git_to_workspace` moves
+  `.noory/plot/.git/` up to the workspace root when safe (no existing
+  workspace `.git/`). Called from `resolve_plot_root`.
+
+### Added
+
+- `POST /api/workspace/git-init` — explicit user-consent endpoint. 201 on
+  new init, 200 on existing repo (idempotent).
+- Viewer: `GitNotInitializedError` (custom error class), `initWorkspaceGit`
+  client, `withGitConsent` wrapper in `useProject`. Tag / blueprint
+  publish / per-node publish / unpublish all route through it: on
+  `GitNotInitializedError` they surface the "Initialize git repo at
+  `<workspace>`?" confirm dialog, then call `initWorkspaceGit`, then
+  retry. i18n keys (`gitConsent.title|message|confirm|cancel`) in en + ko.
+
+### Tests
+
+- New `tests/test_workspace_git.py` (rewritten end to end, 9 tests) pins:
+  no auto-init, structured 409 with `needs_git_init=true`, idempotent
+  `POST /api/workspace/git-init`, existing user `.git/` reused untouched
+  (config + .gitignore preserved), Plot commit author is `Plot`,
+  path-scoped staging, legacy `.noory/plot/.git` → workspace migration
+  with no-clobber guard.
+- `tests/test_git_store.py` rewritten for workspace-root semantics
+  (20 tests).
+- 534 server tests green; mypy + ruff clean. 859 viewer tests green;
+  tsc clean.
+
 ## [0.60.0] — 2026-06-11
 
 Minor. Splits the three remaining god modules in `plot_mcp/` so every

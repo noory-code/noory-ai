@@ -9,6 +9,8 @@ import {
   discoverWorkspace,
   getAllCanvases,
   getProject,
+  GitNotInitializedError,
+  initWorkspaceGit,
   publishNode,
   publishProject,
   unpublishNode,
@@ -379,12 +381,36 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     [setActiveId],
   );
 
+  // D-2026-06-11-D — wrap any git op so the first call without `.git/` shows
+  // the "Initialize git repo at <workspace>?" modal instead of bubbling the
+  // raw error. On Yes, run `git init` and retry once; on No, give up quietly.
+  const withGitConsent = useCallback(
+    async <T,>(projectPath: string, fn: () => Promise<T>): Promise<T | null> => {
+      try {
+        return await fn();
+      } catch (err) {
+        if (!(err instanceof GitNotInitializedError)) throw err;
+        const accepted = await dialog.confirm({
+          title: t("gitConsent.title"),
+          message: t("gitConsent.message", { workspace: err.workspaceRoot }),
+          confirmLabel: t("gitConsent.confirm"),
+          cancelLabel: t("gitConsent.cancel"),
+        });
+        if (!accepted) return null;
+        await initWorkspaceGit(projectPath);
+        return await fn();
+      }
+    },
+    [dialog, t],
+  );
+
   const publishBlueprint = useCallback(
     async (bump: BlueprintBump) => {
       const path = activeId ? pathFor(activeId) : null;
       if (!path || !activeId) return;
       try {
-        await publishProject(path, activeId, bump);
+        const done = await withGitConsent(path, () => publishProject(path, activeId, bump));
+        if (done === null) return;
         // Refresh summaries (blueprint_version) and tags.
         const proj = await getProject(path, activeId);
         setSummaries((prev) =>
@@ -399,7 +425,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [pathFor, activeId, onError],
+    [pathFor, activeId, onError, withGitConsent],
   );
 
   const markSession = useCallback(async () => {
@@ -411,13 +437,16 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
       (await dialog.prompt({ message: t("snapshot.tagMessagePrompt"), defaultValue: "" })) ||
       undefined;
     try {
-      await tagProject(path, activeId, name.trim(), message);
+      const done = await withGitConsent(path, () =>
+        tagProject(path, activeId, name.trim(), message),
+      );
+      if (done === null) return;
       const proj = await getProject(path, activeId);
       setTags(proj.tags);
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
     }
-  }, [pathFor, activeId, onError, dialog, t]);
+  }, [pathFor, activeId, onError, dialog, t, withGitConsent]);
 
   const publishNodeAction = useCallback(
     async (canvasKey: CanvasKey, nodeId: string) => {
@@ -425,7 +454,10 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
       if (!path || !activeId) return;
       const [canvasKind, serviceId] = canvasKey.split(":") as [string, string?];
       try {
-        await publishNode(path, activeId, canvasKind, nodeId, serviceId);
+        const done = await withGitConsent(path, () =>
+          publishNode(path, activeId, canvasKind, nodeId, serviceId),
+        );
+        if (done === null) return;
         // Re-read the canvas via the existing all-canvases fetch so the
         // Inspector reflects the bumped version + the new MD file on
         // disk is visible to subsequent reads.
@@ -436,7 +468,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [pathFor, activeId, onError, setCanvasCache],
+    [pathFor, activeId, onError, setCanvasCache, withGitConsent],
   );
 
   // v0.23.x (D-2026-05-17-J) — unpublish action mirrors publishNodeAction
@@ -447,7 +479,10 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
       if (!path || !activeId) return;
       const [canvasKind, serviceId] = canvasKey.split(":") as [string, string?];
       try {
-        await unpublishNode(path, activeId, canvasKind, nodeId, serviceId);
+        const done = await withGitConsent(path, () =>
+          unpublishNode(path, activeId, canvasKind, nodeId, serviceId),
+        );
+        if (done === null) return;
         const proj = await getProject(path, activeId);
         const refreshed = await getAllCanvases(path, activeId, proj.service_details);
         setCanvasCache(refreshed);
@@ -455,7 +490,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         onError(err instanceof Error ? err.message : String(err));
       }
     },
-    [pathFor, activeId, onError, setCanvasCache],
+    [pathFor, activeId, onError, setCanvasCache, withGitConsent],
   );
 
   const deleteTag = useCallback(
