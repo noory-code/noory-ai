@@ -4,6 +4,33 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.62.2] — 2026-06-12
+
+Patch. Closes ROADMAP Track 1.4 — the last remaining item, semantic
+theme tokens SSOT (D-2026-06-12-C).
+
+### Added
+
+- `src/theme/tokens.ts` — `SEMANTIC_TOKENS` const array + `SemanticToken`
+  union type + Tailwind utility-class type helpers
+  (`TokenTextClass` / `TokenBgClass` / `TokenBorderClass` /
+  `TokenRingClass`). Single source of truth for the *names* of every
+  semantic token.
+- `tests/theme-tokens-ssot.test.ts` (3 tests) — parses
+  `src/theme/tokens.css` (`:root` + `.dark` blocks) and
+  `tailwind.config.js` (`colors` map), asserts each side declares
+  exactly the same token name set as `SEMANTIC_TOKENS`. Catches
+  silent drift where a token landed in only two of the three places.
+
+### Notes
+
+- No call site changes. Components still use Tailwind utility names
+  (`bg-surface`, `text-fg-strong`) directly; the union type is
+  available as an opt-in for typed props.
+- The existing token set (~30) is already in sync across all three
+  artefacts — guards pass 3/3 on day one.
+- 867 viewer tests green (+3); tsc clean.
+
 ## [0.62.1] — 2026-06-12
 
 Patch. Activates `parseEntity` at the viewer's wire boundary

@@ -11082,3 +11082,29 @@ but not yet fully eliminated.
 - **Approval:** Executed under user-approved Track 1.4 plan
   ("parseEntity WS 경계"), 2026-06-12.
 
+### D-2026-06-12-C — Semantic theme tokens SSOT (Track 1.4 final)
+
+- **What:** `src/theme/tokens.ts` becomes the single source of truth for
+  the *names* of every semantic theme token (`SEMANTIC_TOKENS` const
+  array + `SemanticToken` union type + Tailwind utility-class type
+  helpers). `tests/theme-tokens-ssot.test.ts` parses
+  `src/theme/tokens.css` (`:root` + `.dark` blocks) and
+  `tailwind.config.js` (`colors` map), then asserts each side declares
+  exactly the same token name set as `SEMANTIC_TOKENS` — no
+  extras, no omissions.
+- **Why:** Until this commit, three artefacts had to be hand-synced when
+  adding a token: the CSS var, the `.dark` override, the Tailwind
+  `colors` map entry. A forgotten entry produced a silent failure
+  (Tailwind class compiles but `var(--missing)` falls back to `inherit`
+  / 0 / `rgba(0 0 0 / 0)`). The guard catches the drift at test time.
+- **What stays the same:** No call site changes. Components still use
+  Tailwind utility names (`bg-surface`, `text-fg-strong`) directly — the
+  union type is available for components that want to accept a token
+  through a typed prop, but it's opt-in. The light-token *value*
+  fidelity guard (`tests/theme-tokens.test.ts`, D-2026-06-07-C) keeps
+  guarding the actual RGB channels.
+- **Sanity check now passing 3/3:** the existing token set (~30) was
+  already in sync across all three artefacts.
+- **Approval:** Executed under user-approved Track 1.4 plan ("테마 타입
+  SSOT"), 2026-06-12. ROADMAP Track 1.4 fully closed with this.
+
