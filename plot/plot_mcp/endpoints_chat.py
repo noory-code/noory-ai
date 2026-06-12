@@ -28,6 +28,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.broadcast import BroadcastHub
+from plot_mcp.chat_provider import read_selection
 from plot_mcp.chat_session import ChatProvider, ChatSessionRegistry, chat_registry
 from plot_mcp.workspace import resolve_plot_root
 
@@ -112,6 +113,16 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     except (FileNotFoundError, NotADirectoryError) as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
 
+    # The workspace's persisted CLI choice drives which provider runs the
+    # turn. Without a choice the dock should be in its "pick a CLI" state
+    # anyway — surface a 400 so a misbehaving viewer can't silently spawn a
+    # default we never agreed on.
+    selection = read_selection(plot_root)
+    if selection.provider is None:
+        return JSONResponse(
+            {"error": "no chat provider selected"}, status_code=400
+        )
+
     hub = _hub_from_request(request)
     if hub is None:
         return JSONResponse(
@@ -119,7 +130,7 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
         )
 
     registry = _registry_from_request(request)
-    provider = registry.get_or_create(plot_root)
+    provider = registry.get_or_create(plot_root, selection.provider)
 
     asyncio.create_task(stream_chat_turn(provider, hub, plot_root, message))
     return JSONResponse({"accepted": True}, status_code=202)

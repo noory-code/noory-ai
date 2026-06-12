@@ -4,6 +4,85 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.64.1] — 2026-06-12
+
+Patch. **D-2 Phase C breadth** — Codex and Gemini join Claude Code as
+fully-streaming R7 chat providers, and `/api/chat/send` now dispatches
+to whichever CLI the workspace selected (D-2026-06-11-E Phase B step
+B3) instead of always running Claude. Architecture pin lives at
+[D-2026-06-12-E](docs/DECISIONS.md). No viewer-facing changes.
+
+### Added
+
+- `plot_mcp/chat_providers/` subpackage — split out from the
+  v0.64.0 `chat_session.py` so each per-CLI file owns one provider's
+  quirks (command shape, JSONL event names, session-id capture,
+  resume semantics). Members: `base.py` (ChatStreamEvent +
+  ChatProvider ABC + `_SubprocessChatProvider` spawn-loop +
+  `_decode_jsonl`), `claude_code.py` (ClaudeCodeProvider +
+  `_parse_claude_line`), `codex.py` (CodexProvider), `gemini.py`
+  (GeminiProvider). `chat_session.py` becomes a thin facade that
+  re-exports the same public names plus the registry, so existing
+  imports keep linking.
+- `CodexProvider` — `codex exec --json --skip-git-repo-check`.
+  Captures `thread_id` from the `thread.started` event and resumes
+  via `codex exec resume <id>` on later turns. If the first turn
+  never emits `thread.started` (CLI crash, parse skip), the next
+  turn falls back to a fresh `exec` so we never call `resume None`.
+- `GeminiProvider` — `gemini -y --output-format stream-json -p
+  <prompt>`. Captures `session_id` from the `init` event and resumes
+  via `--resume <id>` on later turns. `-y` (YOLO) skips per-action
+  approvals — Plot is the canvas surface that owns user trust.
+- Registry keying — `(workspace, provider_name)` not just
+  `workspace`, so a user who flips Claude → Codex → Claude in one
+  session resumes both conversations cleanly. New
+  `ChatSessionRegistry.reset(workspace, provider_name=None)` drops
+  one provider's session (or every provider's session for the
+  workspace if `provider_name` is `None`). The endpoint's
+  `/api/chat/reset` keeps the wipe-all semantics.
+- `plot_mcp/endpoints_chat.py::chat_send_endpoint` reads
+  `<workspace>/.noory/plot/chat-provider` to pick the provider. No
+  selection → 400 (was: silent Claude default in v0.64.0). Plot
+  doesn't pick a default AI for the user; the dock's "Pick a chat
+  CLI above to start" state is the only valid entry point.
+- 11 new chat_session tests pin per-provider command shape (`exec`
+  vs `exec resume`, `--session-id` vs `--resume`, `-y` /
+  `--output-format` / `-p`), session-id capture from the right event,
+  and per-provider event filtering (codex `agent_message` text,
+  gemini `assistant` content, both with non-message frames silently
+  dropped). 4 new endpoint tests pin no-selection → 400, per-provider
+  dispatch, all-providers reset, and an integration sanity that walks
+  the registry through two provider switches.
+- 3 new default-factory tests pin that `ChatSessionRegistry()` builds
+  a `ClaudeCodeProvider` / `CodexProvider` / `GeminiProvider`
+  depending on `provider_name`.
+
+### Changed
+
+- `chat_session.py` shrinks from 567 LOC → ~130 LOC (facade only)
+  because the per-CLI code moved into `chat_providers/`. Stays under
+  the engine's 500-LOC module rule
+  (`test_module_size.py::test_no_engine_module_exceeds_the_500_line_rule`).
+- `ChatSessionRegistry.get_or_create(workspace)` →
+  `ChatSessionRegistry.get_or_create(workspace, provider_name)`. A
+  call-site update; v0.64.0 tests + endpoints pass `"claude-code"`
+  explicitly. The old single-arg form has no usable default (the
+  registry doesn't know which CLI the workspace picked) so a runtime
+  error is preferable to a silent default.
+- `/api/chat/send` returns 400 `{"error": "no chat provider
+  selected"}` when the workspace has no persisted selection. v0.64.0
+  shipped without this guard.
+
+### Decisions
+
+- [D-2026-06-12-E](docs/DECISIONS.md#d-2026-06-12-e--r7-chat-codex--gemini-providers-land-alongside-claude)
+  — pins the per-provider command shapes (`--skip-git-repo-check`,
+  `-y`, etc.), the session-id capture strategy per CLI, the
+  `(workspace, provider)` registry key, the no-selection → 400
+  policy, and the chat_providers/ subpackage split. No new
+  user-facing surface — D-2026-06-11-E + D-2026-06-12-D already
+  pinned the dock copy and the engine-side architecture.
+
 ## [0.64.0] — 2026-06-12
 
 Minor. **D-2 (R7 native chat panel) Phase C** — subprocess streaming

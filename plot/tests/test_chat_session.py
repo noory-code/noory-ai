@@ -28,6 +28,8 @@ from plot_mcp.chat_session import (
     ChatSessionRegistry,
     ChatStreamEvent,
     ClaudeCodeProvider,
+    CodexProvider,
+    GeminiProvider,
     _parse_stream_line,
 )
 
@@ -113,61 +115,105 @@ def test_parse_stream_line_drops_tool_use_message() -> None:
 class _FakeProvider:
     """Stand-in for ClaudeCodeProvider — counts how often it was constructed."""
 
-    def __init__(self, workspace_root: Path) -> None:
+    def __init__(self, workspace_root: Path, provider_name: str = "claude-code") -> None:
         self.workspace_root = workspace_root
+        self.provider_name = provider_name
 
 
-def test_registry_returns_same_provider_for_same_workspace(tmp_path: Path) -> None:
-    created: list[Path] = []
+def test_registry_returns_same_provider_for_same_workspace_and_name(
+    tmp_path: Path,
+) -> None:
+    created: list[tuple[Path, str]] = []
 
-    def factory(root: Path) -> Any:
-        created.append(root)
-        return _FakeProvider(root)
+    def factory(root: Path, name: str) -> Any:
+        created.append((root, name))
+        return _FakeProvider(root, name)
 
     registry = ChatSessionRegistry(factory=factory)
     ws = tmp_path / "ws"
     ws.mkdir()
 
-    first = registry.get_or_create(ws)
-    second = registry.get_or_create(ws)
+    first = registry.get_or_create(ws, "claude-code")
+    second = registry.get_or_create(ws, "claude-code")
     assert first is second
-    assert created == [ws.resolve()]
+    assert created == [(ws.resolve(), "claude-code")]
 
 
 def test_registry_keys_by_resolved_path(tmp_path: Path) -> None:
     """Two distinct strings that point at the same directory share a session."""
-    created: list[Path] = []
+    created: list[tuple[Path, str]] = []
 
-    def factory(root: Path) -> Any:
-        created.append(root)
-        return _FakeProvider(root)
+    def factory(root: Path, name: str) -> Any:
+        created.append((root, name))
+        return _FakeProvider(root, name)
 
     registry = ChatSessionRegistry(factory=factory)
     ws = tmp_path / "ws"
     ws.mkdir()
     alias = tmp_path / "ws" / "."  # same dir, different string form
 
-    first = registry.get_or_create(ws)
-    second = registry.get_or_create(alias)
+    first = registry.get_or_create(ws, "claude-code")
+    second = registry.get_or_create(alias, "claude-code")
     assert first is second
     assert len(created) == 1
 
 
-def test_registry_reset_drops_provider(tmp_path: Path) -> None:
-    created: list[Path] = []
+def test_registry_keeps_separate_sessions_per_provider(tmp_path: Path) -> None:
+    """Switching CLI must not overwrite the other CLI's session."""
+    created: list[tuple[Path, str]] = []
 
-    def factory(root: Path) -> Any:
-        created.append(root)
-        return _FakeProvider(root)
+    def factory(root: Path, name: str) -> Any:
+        created.append((root, name))
+        return _FakeProvider(root, name)
 
     registry = ChatSessionRegistry(factory=factory)
     ws = tmp_path / "ws"
     ws.mkdir()
 
-    registry.get_or_create(ws)
-    registry.reset(ws)
-    registry.get_or_create(ws)
-    assert len(created) == 2  # one before reset, one after
+    claude = registry.get_or_create(ws, "claude-code")
+    codex = registry.get_or_create(ws, "codex")
+    assert claude is not codex
+    # Resume Claude after touching Codex — must be the original instance.
+    claude_again = registry.get_or_create(ws, "claude-code")
+    assert claude_again is claude
+
+
+def test_registry_reset_one_provider_keeps_others(tmp_path: Path) -> None:
+    created: list[tuple[Path, str]] = []
+
+    def factory(root: Path, name: str) -> Any:
+        created.append((root, name))
+        return _FakeProvider(root, name)
+
+    registry = ChatSessionRegistry(factory=factory)
+    ws = tmp_path / "ws"
+    ws.mkdir()
+
+    claude = registry.get_or_create(ws, "claude-code")
+    codex = registry.get_or_create(ws, "codex")
+    registry.reset(ws, "claude-code")
+
+    assert registry.get_or_create(ws, "claude-code") is not claude  # new
+    assert registry.get_or_create(ws, "codex") is codex  # untouched
+
+
+def test_registry_reset_all_providers_for_workspace(tmp_path: Path) -> None:
+    created: list[tuple[Path, str]] = []
+
+    def factory(root: Path, name: str) -> Any:
+        created.append((root, name))
+        return _FakeProvider(root, name)
+
+    registry = ChatSessionRegistry(factory=factory)
+    ws = tmp_path / "ws"
+    ws.mkdir()
+
+    claude = registry.get_or_create(ws, "claude-code")
+    codex = registry.get_or_create(ws, "codex")
+    registry.reset(ws)  # no provider_name → wipe all for this workspace
+
+    assert registry.get_or_create(ws, "claude-code") is not claude
+    assert registry.get_or_create(ws, "codex") is not codex
 
 
 # ---------------------------------------------------------------------------
@@ -417,10 +463,246 @@ def test_default_registry_factory_builds_claude_provider(tmp_path: Path) -> None
     registry = ChatSessionRegistry()
     ws = tmp_path / "ws"
     ws.mkdir()
-    provider = registry.get_or_create(ws)
+    provider = registry.get_or_create(ws, "claude-code")
     assert isinstance(provider, ClaudeCodeProvider)
+
+
+def test_default_registry_factory_builds_codex_provider(tmp_path: Path) -> None:
+    from plot_mcp.chat_session import CodexProvider
+
+    registry = ChatSessionRegistry()
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    provider = registry.get_or_create(ws, "codex")
+    assert isinstance(provider, CodexProvider)
+
+
+def test_default_registry_factory_builds_gemini_provider(tmp_path: Path) -> None:
+    from plot_mcp.chat_session import GeminiProvider
+
+    registry = ChatSessionRegistry()
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    provider = registry.get_or_create(ws, "gemini")
+    assert isinstance(provider, GeminiProvider)
 
 
 @pytest.fixture(autouse=True)
 def _isolate_event_loop() -> Any:
     yield
+
+
+# ---------------------------------------------------------------------------
+# CodexProvider — `codex exec --json` parsing + resume command shape
+# ---------------------------------------------------------------------------
+
+
+async def test_codex_stream_yields_agent_message_text_and_captures_thread_id(
+    tmp_path: Path,
+) -> None:
+    process = _FakeProcess(
+        stdout_lines=[
+            json.dumps({"type": "thread.started", "thread_id": "tid-abc"}).encode()
+            + b"\n",
+            json.dumps({"type": "turn.started"}).encode() + b"\n",
+            # Tool work — should be dropped, not surfaced as a delta.
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "id": "item_1",
+                        "type": "command_execution",
+                        "command": "ls",
+                        "status": "completed",
+                    },
+                }
+            ).encode()
+            + b"\n",
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "id": "item_2",
+                        "type": "agent_message",
+                        "text": "Repo has docs and src.",
+                    },
+                }
+            ).encode()
+            + b"\n",
+            json.dumps(
+                {"type": "turn.completed", "usage": {"input_tokens": 100}}
+            ).encode()
+            + b"\n",
+        ],
+        returncode=0,
+    )
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    provider = CodexProvider(
+        workspace_root=ws,
+        cli_path="codex",
+        subprocess_factory=_build_fake_factory(process),
+    )
+    events = await _drain(provider, "describe the repo")
+    types = [e.type for e in events]
+    assert types == ["turn_start", "delta", "turn_complete"]
+    assert events[1].text == "Repo has docs and src."
+    assert provider.session_id == "tid-abc"
+
+
+async def test_codex_second_turn_uses_exec_resume_with_captured_thread_id(
+    tmp_path: Path,
+) -> None:
+    captured_a = _FakeProcess(
+        stdout_lines=[
+            json.dumps({"type": "thread.started", "thread_id": "tid-xyz"}).encode()
+            + b"\n",
+        ],
+        returncode=0,
+    )
+    captured_b = _FakeProcess(stdout_lines=[], returncode=0)
+    queue = [captured_a, captured_b]
+
+    async def factory(*cmd: str, cwd: str | None = None, **_: Any) -> _FakeProcess:
+        proc = queue.pop(0)
+        proc.spawn_args = list(cmd)
+        proc.spawn_cwd = cwd
+        return proc
+
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    provider = CodexProvider(
+        workspace_root=ws, cli_path="codex", subprocess_factory=factory
+    )
+    await _drain(provider, "first")
+    await _drain(provider, "second")
+
+    assert "exec" in captured_a.spawn_args
+    assert "resume" not in captured_a.spawn_args
+    assert "first" in captured_a.spawn_args
+
+    assert "resume" in captured_b.spawn_args
+    assert "tid-xyz" in captured_b.spawn_args
+    assert "second" in captured_b.spawn_args
+
+
+async def test_codex_first_turn_falls_back_to_fresh_exec_when_no_thread_id(
+    tmp_path: Path,
+) -> None:
+    """If the first turn never emits thread.started (CLI crash, parse skip),
+    the next turn must NOT call ``resume`` with ``None`` — fall through and
+    start a fresh session instead."""
+    a = _FakeProcess(stdout_lines=[], returncode=0)
+    b = _FakeProcess(stdout_lines=[], returncode=0)
+    queue = [a, b]
+
+    async def factory(*cmd: str, cwd: str | None = None, **_: Any) -> _FakeProcess:
+        proc = queue.pop(0)
+        proc.spawn_args = list(cmd)
+        proc.spawn_cwd = cwd
+        return proc
+
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    provider = CodexProvider(workspace_root=ws, subprocess_factory=factory)
+    await _drain(provider, "first")
+    await _drain(provider, "second")
+
+    assert "resume" not in b.spawn_args
+    assert provider.session_id is None
+
+
+# ---------------------------------------------------------------------------
+# GeminiProvider — `gemini -y --output-format stream-json` parsing + resume
+# ---------------------------------------------------------------------------
+
+
+async def test_gemini_stream_yields_assistant_content_and_captures_session_id(
+    tmp_path: Path,
+) -> None:
+    process = _FakeProcess(
+        stdout_lines=[
+            json.dumps(
+                {
+                    "type": "init",
+                    "session_id": "sid-9",
+                    "model": "gemini-2.0-flash-exp",
+                }
+            ).encode()
+            + b"\n",
+            # User-echo event should NOT surface — user message is already in
+            # the panel from optimistic render.
+            json.dumps(
+                {"type": "message", "role": "user", "content": "List files"}
+            ).encode()
+            + b"\n",
+            json.dumps(
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": "Here ",
+                    "delta": True,
+                }
+            ).encode()
+            + b"\n",
+            json.dumps(
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": "are the files.",
+                    "delta": True,
+                }
+            ).encode()
+            + b"\n",
+            json.dumps({"type": "result", "status": "success"}).encode() + b"\n",
+        ],
+        returncode=0,
+    )
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    provider = GeminiProvider(
+        workspace_root=ws,
+        cli_path="gemini",
+        subprocess_factory=_build_fake_factory(process),
+    )
+    events = await _drain(provider, "list files")
+    types = [e.type for e in events]
+    assert types == ["turn_start", "delta", "delta", "turn_complete"]
+    assert events[1].text == "Here "
+    assert events[2].text == "are the files."
+    assert events[3].text == "Here are the files."
+    assert provider.session_id == "sid-9"
+
+
+async def test_gemini_second_turn_uses_resume_with_captured_session_id(
+    tmp_path: Path,
+) -> None:
+    a = _FakeProcess(
+        stdout_lines=[
+            json.dumps({"type": "init", "session_id": "sid-7"}).encode() + b"\n",
+        ],
+        returncode=0,
+    )
+    b = _FakeProcess(stdout_lines=[], returncode=0)
+    queue = [a, b]
+
+    async def factory(*cmd: str, cwd: str | None = None, **_: Any) -> _FakeProcess:
+        proc = queue.pop(0)
+        proc.spawn_args = list(cmd)
+        proc.spawn_cwd = cwd
+        return proc
+
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    provider = GeminiProvider(
+        workspace_root=ws, cli_path="gemini", subprocess_factory=factory
+    )
+    await _drain(provider, "first")
+    await _drain(provider, "second")
+
+    assert "--resume" not in a.spawn_args
+    assert "--output-format" in a.spawn_args
+    assert "stream-json" in a.spawn_args
+
+    assert "--resume" in b.spawn_args
+    assert "sid-7" in b.spawn_args

@@ -11166,3 +11166,64 @@ but not yet fully eliminated.
 - **Spec impact:** SPEC.md §R7 chat — new "Subprocess host" row added
   to the behaviour table pointing at this decision.
 
+### D-2026-06-12-E — R7 chat: Codex + Gemini providers land alongside Claude
+
+- **What:** v0.64.1 adds two concrete subclasses of the
+  ``_SubprocessChatProvider`` base shipped in v0.64.0:
+  ``CodexProvider`` (``codex exec --json``) and ``GeminiProvider``
+  (``gemini -y --output-format stream-json``). The
+  ``ChatSessionRegistry`` is now keyed by ``(workspace, provider_name)``
+  so switching CLIs in one session doesn't overwrite the other CLI's
+  conversation, and ``/api/chat/send`` reads the workspace's persisted
+  provider selection (D-2026-06-11-E Phase B step B3) to dispatch.
+  Sending with no selection now returns **400** instead of silently
+  spawning a default CLI the user didn't choose.
+- **Per-provider quirks pinned here (so they're not buried in code
+  comments — gates 1 + spec triumph over comments):**
+  - **Claude Code:** Plot mints the ``--session-id`` (uuid4) on the
+    first turn, then ``--resume <id>``. Plot is the only party that
+    knows the id from the very first call. (Unchanged from v0.64.0.)
+  - **Codex:** the CLI emits ``thread.started`` with ``thread_id`` on
+    the first turn — we capture it and pass it to
+    ``codex exec resume <thread_id>`` on later turns. Plot does NOT
+    mint a UUID up-front (Codex doesn't accept one). If the first
+    turn never emits ``thread.started`` (CLI crash, parse skip), the
+    next turn falls back to a fresh ``codex exec`` so we never call
+    ``resume None``. ``--skip-git-repo-check`` is always on because
+    R7 must work on a freshly-opened folder before D-2026-06-11-D's
+    git-init consent kicks in.
+  - **Gemini:** the CLI emits ``init`` with ``session_id`` on the
+    first turn — we capture it and pass ``--resume <session_id>`` on
+    later turns. ``-y`` (YOLO mode) is always on because Plot is the
+    canvas surface that owns user trust; the inner tool calls don't
+    need a second confirmation layer (matches how IDE plugins like
+    Cursor / Zed embed agentic CLIs).
+- **Registry keying — why (workspace, provider) not just workspace:**
+  the user's natural flow is "ask Claude to draft, switch to Codex to
+  refactor, switch back to Claude to review". A single-key registry
+  would either lose Claude's first session when Codex was selected, or
+  require a manual "save / restore" affordance. Keying on the pair
+  costs one extra tuple slot per active session and keeps both
+  conversations alive.
+- **No-selection → 400 (not auto-default):** v0.64.0 silently fell
+  back to ClaudeCodeProvider whenever the workspace had no persisted
+  selection. That contradicts D-2026-06-11-E's Pencil-model
+  invariants — Plot is supposed to host the canvas, not pick a default
+  AI for the user. The 400 surfaces a clean error to the dock which is
+  already showing the "Pick a chat CLI above to start" empty state.
+- **Module-size discipline:** v0.64.0 shipped one ~370-LOC
+  ``chat_session.py``. Three providers + the base + the registry was
+  going to push past the engine's 500-LOC rule (test_module_size). To
+  stay legible AND under the rule, the per-CLI quirks moved into
+  ``plot_mcp/chat_providers/{base,claude_code,codex,gemini}.py``
+  and ``chat_session.py`` became a thin facade (~130 LOC) that
+  re-exports the public names. Old imports keep linking.
+- **Approval:** Executed under D-2026-06-11-E + D-2026-06-12-D
+  ("multi-provider abstraction" was already pinned there as the goal);
+  this entry documents the per-CLI implementation choices that
+  shipping forced. No new user-facing surface decisions — the dock
+  copy is unchanged.
+- **Spec impact:** none — SPEC.md §R7 chat's "Provider selection"
+  row already describes the auto-detect + persistence flow this
+  endpoint dispatch reads.
+

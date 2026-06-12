@@ -142,13 +142,26 @@ def fake_provider() -> _CannedProvider:
 
 @pytest.fixture
 def app_client(fake_provider: _CannedProvider) -> TestClient:
-    registry = ChatSessionRegistry(factory=lambda _root: fake_provider)
+    # ``(_root, _name) -> provider`` — same fake regardless of which CLI the
+    # workspace selected; that's enough for the endpoint-wiring tests.
+    registry = ChatSessionRegistry(factory=lambda _root, _name: fake_provider)
     return TestClient(
         create_http_app(
             hub=BroadcastHub(enable_watchers=False),
             chat_registry_instance=registry,
         )
     )
+
+
+def _select_provider(client: TestClient, workspace: Path, name: str) -> None:
+    """Persist the workspace's chat-CLI choice via the public API so /send
+    can dispatch to the right provider. v0.64.1: /send now reads
+    `<workspace>/.noory/plot/chat-provider` and 400s when missing."""
+    resp = client.put(
+        f"/api/chat/provider?project_path={workspace}",
+        json={"provider": name},
+    )
+    assert resp.status_code == 200, resp.text
 
 
 def test_chat_send_requires_project_path(app_client: TestClient) -> None:
@@ -177,9 +190,24 @@ def test_chat_send_rejects_invalid_json(app_client: TestClient) -> None:
     assert resp.status_code == 400
 
 
+def test_chat_send_400s_when_no_provider_selected(
+    app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
+) -> None:
+    """v0.64.1 — without a persisted selection, /send must 400 instead of
+    silently spawning a default CLI the user didn't agree to."""
+    resp = app_client.post(
+        "/api/chat/send",
+        json={"project_path": str(workspace), "message": "explain plot"},
+    )
+    assert resp.status_code == 400
+    assert "provider" in resp.json()["error"]
+    assert fake_provider.calls == []
+
+
 def test_chat_send_accepts_valid_request_and_calls_provider(
     app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
 ) -> None:
+    _select_provider(app_client, workspace, "claude-code")
     resp = app_client.post(
         "/api/chat/send",
         json={"project_path": str(workspace), "message": "explain plot"},
@@ -191,9 +219,49 @@ def test_chat_send_accepts_valid_request_and_calls_provider(
     assert fake_provider.calls == ["explain plot"]
 
 
-def test_chat_reset_drops_session(
+def test_chat_send_dispatches_each_provider_to_its_own_session(
+    workspace: Path,
+) -> None:
+    """Two workspaces with two different selected CLIs land at two distinct
+    provider rows in the registry — the dispatch is by (workspace, name),
+    not just workspace."""
+    calls: list[tuple[Path, str]] = []
+
+    class _RecordingProvider(ChatProvider):
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        async def stream_turn(self, user_message: str) -> Any:
+            calls.append((Path(user_message[:1]), self.name))
+            if False:
+                yield  # pragma: no cover — async generator marker
+
+    registry = ChatSessionRegistry(
+        factory=lambda _root, name: _RecordingProvider(name)
+    )
+    client = TestClient(
+        create_http_app(
+            hub=BroadcastHub(enable_watchers=False),
+            chat_registry_instance=registry,
+        )
+    )
+    _select_provider(client, workspace, "codex")
+    client.post(
+        "/api/chat/send",
+        json={"project_path": str(workspace), "message": "a"},
+    )
+    _select_provider(client, workspace, "gemini")
+    client.post(
+        "/api/chat/send",
+        json={"project_path": str(workspace), "message": "b"},
+    )
+    assert [name for (_, name) in calls] == ["codex", "gemini"]
+
+
+def test_chat_reset_drops_all_provider_sessions_for_workspace(
     app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
 ) -> None:
+    _select_provider(app_client, workspace, "claude-code")
     # Prime the registry.
     app_client.post(
         "/api/chat/send",
