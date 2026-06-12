@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.61.1] — 2026-06-12
+
+Docs-only. Pins two product decisions from tonight's session — no code
+changes.
+
+### Changed
+
+- **SPEC §R7 chat** (new section, D-2026-06-11-E) — R7 in-app chat ships
+  as a native panel inside Plot (option A out of native-panel /
+  thin-launcher / staged). The brain is the user's external CLI
+  (Claude Code / Codex / Gemini), spawned as a subprocess; Plot owns
+  the chat shell, the CLI owns auth / model / billing. Multi-provider
+  abstraction via per-CLI adapter classes. Implementation sequenced
+  after Track 2.5 R7 MCP registration.
+- **SPEC §Workspace & projects** (rewritten opening, D-2026-06-12-A) —
+  pins the "why" behind the workspace-holds-many-projects shape:
+  **workspace = monorepo, project = one service inside it.** Two apps
+  in `apps/web/` and `apps/mobile/` are two separate Plot projects in
+  one workspace. User-facing "project" copy means "one service",
+  workspace-level affordances refer to the monorepo.
+
 ## [0.61.0] — 2026-06-11
 
 Minor. Workspace = git repo (D-2026-06-11-C/D). Git lives at the user's

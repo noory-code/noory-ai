@@ -13,12 +13,20 @@
 
 # Workspace & projects (v0.33.0, D-2026-05-31-M)
 
-A **workspace root** (the launch `?project_path=<root>`) can hold many Plot
-projects, each in its own subdirectory with its own `.plot/`. The viewer
-**recursively discovers** every project under the root (`/api/workspace/
-projects`) and shows them in ONE sidebar list, each with a muted **dir
-label** (its path relative to the root; root-level shows the localized
-"root" label).
+A **workspace is a monorepo, and a project is one service inside it**
+(D-2026-06-12-A). Two apps in `apps/web/` and `apps/mobile/`, or two
+services in `services/api/` and `services/billing/`, are two **separate
+projects** in Plot — each with its own Foundation / Actors / Services /
+Service-Detail canvases — sitting inside ONE workspace that shares ONE
+git repo (D-2026-06-11-C/D) and ONE `.noory/` dotfolder (R9). The viewer
+**recursively discovers** every project under the launch root
+(`/api/workspace/projects`) and shows them in ONE sidebar list, each with
+a muted **dir label** (its path relative to the workspace root; root-level
+shows the localized "root" label).
+
+The term **"project"** in user-facing strings means "one service in the
+monorepo" — not "the monorepo as a whole". Workspace-level affordances
+("open another workspace", "the workspace path") refer to the monorepo.
 
 - **Effective project path** — per-project server I/O (canvas read/write,
   anchors, tags, publish) addresses `<root>/<project dir>`, not the bare
@@ -81,6 +89,31 @@ label** (its path relative to the root; root-level shows the localized
   `shutil.move`); if BOTH roots exist, `.noory/plot` wins and `.plot` is left
   untouched for the user to reconcile. Workspace discovery also peeks at
   legacy `.plot/` roots (read-only) so never-opened workspaces stay visible.
+
+---
+
+# R7 chat — in-app AI panel (D-2026-06-11-E)
+
+The R7 chat surface ships as a **native panel** inside Plot, not a thin
+"open Claude Code" launcher. The panel renders the conversation, the input,
+and the message history in Plot's own chrome; the *brain* is the user's
+external CLI (Claude Code / Codex / Gemini), which Plot drives as a
+subprocess.
+
+| Aspect | Behaviour |
+|---|---|
+| **Brain** | The user's external CLI. Plot spawns it (`claude` / `codex` / `gemini`) inside the workspace folder, writes the user message to stdin, parses streamed output. |
+| **API keys / billing** | Never Plot's job. The CLI is responsible for auth (`claude login`, etc.); token usage bills the user's Anthropic / OpenAI / Google account. Plot exposes no key-management UI. |
+| **Provider selection** | Auto-detected at workspace open (which CLIs are on `$PATH` + logged in). User picks one when several are present; choice persists in `.noory/plot/chat-provider`. |
+| **Model selection** | The CLI's own configuration drives the model. Plot may show a read-only "current model" indicator; no model picker. |
+| **MCP wiring** | Plot's MCP server is registered with each CLI separately (Track 2.5: `~/.claude.json` / `~/.codex/config.toml` / `~/.gemini/settings.json`). The canvas ↔ chat feedback loop runs through MCP. |
+| **UI** | Right-side dock, collapsible. Uses the existing `dialog` / `shell` chrome conventions. |
+| **No CLI installed** | Panel surfaces per-CLI install + login guidance instead of an input box (`brew install claude` / `npm i -g @openai/codex` / etc.). |
+
+See DECISIONS.md
+[D-2026-06-11-E](./DECISIONS.md#d-2026-06-11-e--r7-in-app-chat--native-panel-with-external-cli-subprocess)
+for the design discussion (option A vs B vs C, Pencil-model
+invariants, multi-provider abstraction, sequencing).
 
 ---
 

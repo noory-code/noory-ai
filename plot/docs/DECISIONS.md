@@ -10947,3 +10947,97 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-06-11. Spec pinned at SPEC.md
   §Workspace & projects → "Git consent (D-2026-06-11-D)".
 
+### D-2026-06-11-E — R7 in-app chat = native panel (with external-CLI subprocess)
+
+- **What:** R7's in-app chat surface ships as a **native panel** inside
+  Plot (not a thin "open Claude Code" launcher). The panel renders the
+  conversation, the input box, the message history, the per-message
+  status — all in Plot's own UI. The underlying *brain* is still the
+  user's external CLI (Claude Code / Codex / Gemini), which Plot drives
+  as a subprocess: Plot writes the user's message to the CLI's stdin,
+  parses streamed output back, and shows it in the panel. The CLI owns
+  API keys, model selection, billing — Plot owns the canvas + the chat
+  shell.
+- **Why (user choice, 2026-06-11):** Option A out of three (A = native
+  panel, B = thin launcher, C = ship B first then add A). The user
+  picked A directly. Native panel keeps the canvas-and-conversation
+  context together (no context switching to a terminal) while staying
+  inside the pinned Pencil model — Plot still doesn't host an AI, it
+  just gives the user's own agent a unified surface to work through.
+- **Pencil model invariants preserved:**
+  - Plot never holds API keys or credentials. Auth is the CLI's job
+    (`claude login`, `codex login`, etc.); Plot spawns an
+    already-authenticated CLI.
+  - Plot never bills the user. Token usage shows up on the user's
+    Anthropic / OpenAI / Google account.
+  - Plot doesn't expose model selection. The CLI uses whichever model
+    is configured (its own settings file). Plot may surface a read-only
+    "current model" indicator in the panel chrome.
+- **Multi-provider abstraction:** one Provider interface (start
+  subprocess, write message, read streamed output, kill on close) with
+  per-CLI adapters: ClaudeCodeProvider, CodexProvider, GeminiProvider.
+  Provider auto-detection at workspace open (which CLIs are on
+  `$PATH` + which are logged in). User picks one when more than one is
+  available; selection persists in `.noory/plot/chat-provider`. Per-CLI
+  install/login guidance kicks in when nothing is detected.
+- **Implementation outline (separate session):**
+  - Track 2.5 R7 MCP registration ships first (per-CLI MCP config
+    edits — `~/.claude.json` / `~/.codex/config.toml` / `~/.gemini/
+    settings.json`) so the CLI knows how to call Plot's MCP server.
+    *Then* the native panel can be wired up, since the canvas ↔ chat
+    feedback loop relies on the CLI calling Plot's MCP tools.
+  - Provider interface + ClaudeCodeProvider first (most mature MCP
+    support), then CodexProvider + GeminiProvider as their MCP stories
+    settle. Streamed-output parsing per provider.
+  - Panel UI as a right-side dock that the user can collapse; uses
+    the existing `dialog`/`shell` chrome conventions.
+  - Path-scoped: Plot subprocesses the CLI inside the workspace folder
+    so the CLI sees the same `?project_path=` Plot is opened on.
+- **Approval:** Accepted by user, 2026-06-11. Spec pinned at SPEC.md
+  §R7 chat (D-2026-06-11-E).
+
+### D-2026-06-12-A — Workspace = monorepo, project = one service inside it
+
+- **What:** The "why" behind the workspace-holds-many-projects shape is
+  named: **a workspace is a monorepo, and each project is a distinct
+  service (or app) inside that monorepo.** The user's quote:
+  > "모노레포를 생각해봐요. 거기에 앱이 두 개 있어요. 서로다른 서비스죠.
+  > 그래서 워크스페이스는 모노레포인거고 프로젝트는 서로다른 서비스인거에요."
+  Two apps in `apps/web/` and `apps/mobile/` (or `services/api/` and
+  `services/billing/`) are two **separate projects** in Plot — each with
+  its own Foundation / Actors / Services / Service-Detail canvases —
+  but they sit inside ONE workspace (= the monorepo) that shares ONE
+  git repo (D-2026-06-11-C/D), ONE `.noory/` dotfolder (R9), and ONE
+  sidebar listing them.
+- **What this answers vs. what it doesn't:**
+  - **Answers** "why does a workspace need to hold multiple projects?"
+    → because real codebases ship more than one service in one repo;
+    each service is its own bounded context with its own domain map.
+  - **Does NOT change** any current code: the discovery / dir-tree
+    pickers already do recursive scan, so a project at
+    `apps/web/.noory/plot/{id}/` is already discoverable. The R9
+    `.noory/plot/{id}/` layout already supports flat-or-nested project
+    placement. This decision pins the *meaning* on top of the existing
+    plumbing.
+  - **Leaves open** cross-project linkage (a service that depends on
+    another service's identity / actors). Not in scope for v1 — every
+    project remains a self-contained graph. Future work if real
+    monorepos surface this need.
+- **Naming implication (UI copy):** the term **"project"** in
+  user-facing strings means "one service in the monorepo" (not "the
+  monorepo as a whole"). Workspace-level affordances ("open another
+  workspace", "the workspace path") refer to the monorepo. Sidebar
+  list = "projects in this workspace" = services in this monorepo.
+- **Disk layout (unchanged):**
+  - `<monorepo>/.noory/plot/{project_id}/` — one Plot project's data
+    (canvases, published MD, etc.). The `{project_id}` is opaque
+    (UUID-ish); the user-facing name is `ProjectDoc.name`.
+  - Recursive discovery picks up nested `.noory/plot/` roots too, so
+    `<monorepo>/apps/web/.noory/plot/{id}/` and
+    `<monorepo>/services/api/.noory/plot/{id}/` both show in the
+    sidebar. The dir-label chip tells which monorepo subfolder each
+    project lives in.
+- **Approval:** Accepted by user, 2026-06-12. Spec pinned at SPEC.md
+  §Workspace & projects → opening paragraph rewritten to name the
+  monorepo / service relationship explicitly.
+
