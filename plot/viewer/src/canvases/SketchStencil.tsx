@@ -329,6 +329,28 @@ export function resolveDropTarget(
   return { parentId: null };
 }
 
+/** The slice of a stencil preset that crosses the dataTransfer wire on a
+ *  drag. Display-only fields (``labelHint`` / ``dropHint`` / the i18n keys)
+ *  are dropped — they are sidebar chrome, not node data. ``id`` is KEPT on
+ *  purpose: ``resolveDropTarget`` keys the sub-actor / service-in-category
+ *  nesting rules off it. Stripping ``id`` here regressed every such drop to
+ *  a silent top-level node, bypassing the pinned D-2026-05-28-A contract. */
+export type TransferPreset = Omit<
+  StencilPreset,
+  "labelHint" | "dropHint" | "labelI18nKey" | "dropHintI18nKey"
+>;
+
+export function toTransferPreset(preset: StencilPreset): TransferPreset {
+  const {
+    labelHint: _lh,
+    dropHint: _dh,
+    labelI18nKey: _lk,
+    dropHintI18nKey: _dk,
+    ...rest
+  } = preset;
+  return rest;
+}
+
 function StencilItem({ preset }: { preset: StencilPreset }) {
   const { t } = useTranslation();
   const Icon = getIcon(preset.icon);
@@ -354,17 +376,9 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
       <div
         draggable
         onDragStart={(e) => {
-          const {
-            id: _id,
-            labelHint: _lh,
-            dropHint: _dh,
-            labelI18nKey: _lk,
-            dropHintI18nKey: _dk,
-            ...inner
-          } = preset;
           e.dataTransfer.setData(
             "application/plot-preset",
-            JSON.stringify(inner),
+            JSON.stringify(toTransferPreset(preset)),
           );
           e.dataTransfer.effectAllowed = "copy";
         }}

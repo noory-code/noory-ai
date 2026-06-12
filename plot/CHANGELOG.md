@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.65.1] — 2026-06-13
+
+Patch. **Fix: stencil drops lost `preset.id`, breaking nesting rules.**
+`StencilItem.onDragStart` stripped `id` from the dataTransfer payload,
+but `resolveDropTarget` keys the sub-actor / service-in-category
+*nesting* rules off `id`. With `id` gone, every such drop fell through
+to a silent top-level node — bypassing the pinned D-2026-05-28-A
+contract (Service must nest in a Category; sub-actor must nest in an
+Actor). The unit pin `service-detail-composition-drop.test` never
+caught it because it calls `resolveDropTarget` with the preset directly,
+skipping the lossy wire round-trip. Restores the contract at runtime;
+no SPEC change. See [D-2026-06-13-A](docs/DECISIONS.md).
+
+### Fixed
+
+- `viewer/src/canvases/SketchStencil.tsx` — extracted `toTransferPreset()`
+  (exported): drops the four display-only fields (`labelHint` /
+  `dropHint` / `labelI18nKey` / `dropHintI18nKey`) but **keeps `id`**.
+  `onDragStart` now serializes via it. Service-in-category / sub-actor
+  drops once again require (and nest under) their container; dropping on
+  empty space surfaces the guard message instead of dumping a stray
+  top-level node.
+
+### Added
+
+- `viewer/tests/stencil-transfer-preset.test.tsx` (3 tests) — pins the
+  dataTransfer round-trip: `toTransferPreset` keeps `id` + drops display
+  fields; service-in-category and sub-actor still require their parent
+  after `JSON.parse(JSON.stringify(...))`. Red→Green verified by
+  reverting the `id` strip.
+
 ## [0.65.0] — 2026-06-12
 
 Minor. **Track 3.5 — engine auth seam.** TABLET_ARCH §"지금 만들 것"

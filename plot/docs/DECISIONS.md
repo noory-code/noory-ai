@@ -11302,3 +11302,29 @@ but not yet fully eliminated.
   entry — "env-gated, Bearer for HTTP, ?auth= for WS, /api/health
   open, dev parity preserved when env unset."
 
+### D-2026-06-13-A — Stencil dataTransfer payload must keep `preset.id`
+
+- **What:** `StencilItem.onDragStart` no longer strips `id` from the
+  serialized drag payload. Extracted `toTransferPreset()` (exported)
+  that drops only the four display-only fields (`labelHint` /
+  `dropHint` / `labelI18nKey` / `dropHintI18nKey`) and keeps `id`.
+- **Why:** `resolveDropTarget` keys the sub-actor / service-in-category
+  *nesting* rules off `preset.id` (`id === "sub-actor"`, `id ===
+  "service-in-category"`). With `id` stripped at serialization, those
+  branches never fired, so a Service / sub-actor dropped anywhere fell
+  through to a silent top-level node — bypassing the D-2026-05-28-A
+  contract (Service nests in Category; sub-actor nests in Actor). Found
+  while diagnosing a user report that nodes "won't place" on the
+  Services canvas. (The headline symptom — *no node at all* in the
+  bundled WKWebView `.app` — is a separate, WKWebView-only issue still
+  under investigation; this fix is orthogonal correctness.)
+- **Alternatives:** (a) add a dedicated `dropInto?: NodeKind` field and
+  switch `resolveDropTarget` off it instead of `id` — cleaner but a
+  wider design change for no extra behaviour; rejected per YAGNI/AHA.
+  (b) Leave it (top-level drops) — rejected, violates the pinned
+  nesting contract.
+- **Approval:** Accepted by user, 2026-06-13 (chose "id-stripping 버그
+  먼저").
+- **Spec impact:** none — restores already-specced D-2026-05-28-A
+  runtime behaviour. Pinned by `viewer/tests/stencil-transfer-preset.test.tsx`.
+
