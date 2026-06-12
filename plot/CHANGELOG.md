@@ -4,6 +4,46 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.62.0] — 2026-06-12
+
+Minor. R7 multi-provider MCP registration backend (Track 2.5,
+D-2026-06-11-E). Plot can now write its own `mcp_servers.plot` entry into
+the user's external CLI configs (Claude Code / Codex / Gemini) so the CLI
+can talk to Plot's MCP tools. No viewer UI yet — the R7 native chat panel
+will plug into these endpoints in a separate session.
+
+### Added
+
+- `plot_mcp/mcp_registration.py` — provider-neutral register / unregister /
+  detect API:
+  - Claude Code → `~/.claude.json` (JSON), `mcpServers.plot`,
+    `{type: "stdio"}` extra key.
+  - Codex → `~/.codex/config.toml` (TOML), `[mcp_servers.plot]`.
+  - Gemini → `~/.gemini/settings.json` (JSON), `mcpServers.plot`.
+  - Every write preserves sibling MCP server entries (e.g. `pencil`) and
+    unrelated top-level keys.
+  - Plot entry points at `uv run --directory <plugin_root> python -m
+    plot_mcp` so each CLI gets its own stdio instance (independent of the
+    desktop app's HTTP sidecar).
+- `plot_mcp/endpoints_mcp.py` — three HTTP endpoints:
+  - `GET /api/mcp/providers` → list of `{name, installed, registered,
+    config_path}` for all three providers.
+  - `POST /api/mcp/providers/{name}/register` (201 / idempotent).
+  - `POST /api/mcp/providers/{name}/unregister` (200 / idempotent).
+- `tomli-w >= 1.0` added to plot's dependencies (Codex's TOML config
+  needs writes; stdlib `tomllib` reads only).
+
+### Tests
+
+- `tests/test_mcp_registration.py` (23 tests) — per-provider
+  create-when-missing / preserve-siblings / idempotent / unregister,
+  detection both with and without CLIs on PATH, unknown provider raises.
+- `tests/test_endpoints_mcp.py` (8 tests) — HTTP-layer parity, unknown
+  provider returns 404.
+- Tests isolate `$HOME` via `monkeypatch` so the real user config files
+  are never touched.
+- 565 server tests green; mypy + ruff clean.
+
 ## [0.61.1] — 2026-06-12
 
 Docs-only. Pins two product decisions from tonight's session — no code

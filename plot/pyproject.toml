@@ -13,6 +13,9 @@ dependencies = [
     "watchdog>=4.0",
     "pydantic>=2.0",
     "pyyaml>=6.0",
+    # Track 2.5 (D-2026-06-11-E) — write external CLI configs (Codex uses
+    # TOML; stdlib's `tomllib` reads but does not write).
+    "tomli-w>=1.0",
 ]
 
 [project.scripts]

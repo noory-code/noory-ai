@@ -41,6 +41,11 @@ from plot_mcp.api_endpoints import (
 )
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.debug_endpoints import debug_get_endpoint, debug_post_endpoint
+from plot_mcp.endpoints_mcp import (
+    mcp_providers_endpoint,
+    mcp_register_endpoint,
+    mcp_unregister_endpoint,
+)
 from plot_mcp.workspace import find_viewer_dist, resolve_plot_root
 
 _log = logging.getLogger(__name__)
@@ -81,6 +86,18 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         Route("/api/workspace/dir", dir_create_endpoint, methods=["POST"]),
         # D-2026-06-11-D — explicit user consent to `git init` at the workspace
         Route("/api/workspace/git-init", workspace_git_init_endpoint, methods=["POST"]),
+        # Track 2.5 (D-2026-06-11-E) — register Plot MCP server with external CLIs
+        Route("/api/mcp/providers", mcp_providers_endpoint, methods=["GET"]),
+        Route(
+            "/api/mcp/providers/{provider}/register",
+            mcp_register_endpoint,
+            methods=["POST"],
+        ),
+        Route(
+            "/api/mcp/providers/{provider}/unregister",
+            mcp_unregister_endpoint,
+            methods=["POST"],
+        ),
         Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
         Route(
             "/api/projects/{project_id}",
