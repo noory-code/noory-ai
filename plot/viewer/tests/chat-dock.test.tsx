@@ -101,22 +101,23 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
 
   // ---- Phase B step B2: message-area frame (visual only — Phase C streams) ----
 
-  it("renders a message log frame with an empty-state caption when expanded", async () => {
+  it("renders a message log frame with the no-workspace caption when no workspace is given", async () => {
     render(<ChatDock onError={() => {}} />);
     await waitFor(() => screen.getByText("Claude Code"));
     const log = screen.getByRole("log", { name: /chat messages/i });
     expect(log).toBeTruthy();
-    // Empty state caption is inside the log region.
-    expect(screen.getByText(/no messages yet/i)).toBeTruthy();
+    // Phase C: without a workspace there is no chat session — the empty-state
+    // caption prompts the user to open one, not "no messages yet".
+    expect(screen.getByText(/open a workspace/i)).toBeTruthy();
   });
 
-  it("renders a disabled input + send button so Phase C can wire streaming later", async () => {
+  it("keeps the input disabled until a workspace + active CLI are both present (Phase C)", async () => {
     render(<ChatDock onError={() => {}} />);
     await waitFor(() => screen.getByText("Claude Code"));
     const input = screen.getByRole("textbox", { name: /message input/i }) as HTMLTextAreaElement;
+    // No workspace → input stays disabled + placeholder prompts the user to pick a CLI.
     expect(input.disabled).toBe(true);
-    // Placeholder names the phase that turns it on, so the user understands the inert state.
-    expect(input.placeholder.toLowerCase()).toContain("phase c");
+    expect(input.placeholder.toLowerCase()).toContain("pick a chat cli");
     const send = screen.getByRole("button", { name: /^send$/i }) as HTMLButtonElement;
     expect(send.disabled).toBe(true);
   });

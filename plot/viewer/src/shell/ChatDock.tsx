@@ -1,23 +1,24 @@
 /**
- * R7 chat dock (D-2026-06-11-E, Phase B).
+ * R7 chat dock (D-2026-06-11-E + D-2026-06-12-D, Phase B → C).
  *
  * Right-side collapsible container that hosts the chat surface. Phase B
- * step B1 wired up the dock chrome + collapse persistence + mounted the
- * existing `ChatProvidersPanel` inside. Step B2 added the message-list
- * frame; step B3 loads + persists the workspace's active chat-CLI
- * choice through `/api/chat/provider`. Phase C plugs subprocess
- * streaming into the same surface.
+ * landed the chrome + providers panel + persisted CLI selection; Phase C
+ * (this file) wires the message frame to the engine's
+ * ``/api/chat/send`` + ``chat_stream_event`` WS, so user input lands as a
+ * real CLI turn and assistant deltas stream in live.
  *
  * Collapse state persists across reloads via
- * `localStorage["plot:chatDockCollapsed"]` ("1" = collapsed, "0" =
- * expanded). When collapsed, the embedded panels unmount — keeps the
- * screen-reader tree honest and skips the provider fetch.
+ * ``localStorage["plot:chatDockCollapsed"]`` (``"1"`` = collapsed). When
+ * collapsed, both the providers panel and the chat-stream subscription
+ * unmount — keeps the screen-reader tree honest and avoids an idle WS.
  */
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { getChatProvider, setChatProvider, type McpProviderName } from "../app/mcp";
+import { useChatStream, type ChatMessage } from "../hooks/useChatStream";
 import { ChatProvidersPanel } from "./ChatProvidersPanel";
+import { useDialog } from "./dialog/DialogProvider";
 
 const COLLAPSE_STORAGE_KEY = "plot:chatDockCollapsed";
 
@@ -32,9 +33,10 @@ function readInitialCollapsed(): boolean {
 export interface ChatDockProps {
   onError: (message: string) => void;
   /** When defined, the dock loads + persists the workspace's chat-CLI
-   * choice through `/api/chat/provider`. Tests omit it to verify the dock
-   * stays inert without a workspace (e.g. during the ProjectPicker
-   * phase, though in practice App.tsx unmounts the dock there). */
+   * choice through `/api/chat/provider` and opens a chat stream on
+   * `<workspace>/.noory/plot/`. Tests omit it to verify the dock stays
+   * inert without a workspace (e.g. during the ProjectPicker phase, though
+   * in practice App.tsx unmounts the dock there). */
   workspaceRoot?: string;
 }
 
@@ -111,50 +113,208 @@ export function ChatDock({ onError, workspaceRoot }: ChatDockProps) {
           <div className="overflow-y-auto border-b border-line p-3">
             <ChatProvidersPanel onError={onError} {...selectionProps} />
           </div>
-          <ChatMessageFrame />
+          <ChatMessageFrame
+            workspaceRoot={workspaceRoot}
+            activeProvider={activeProvider}
+            onError={onError}
+          />
         </div>
       )}
     </aside>
   );
 }
 
+interface ChatMessageFrameProps {
+  workspaceRoot?: string;
+  activeProvider: McpProviderName | null;
+  onError: (message: string) => void;
+}
+
 /**
- * Visual frame for the chat surface. Phase B step B2 — no message
- * state, no submit handler, no streaming. The textarea + send button
- * land disabled with copy that names Phase C as the activation step,
- * so the user sees the empty surface but understands it's intentionally
- * inert until Phase C wires up the CLI subprocess.
+ * Live message surface — Phase C activation. Renders the chat list, the
+ * input + Send button, and a one-line connection / streaming status bar.
+ * The data-state attributes are stable hooks for the e2e smoke test.
  */
-function ChatMessageFrame() {
+function ChatMessageFrame({
+  workspaceRoot,
+  activeProvider,
+  onError,
+}: ChatMessageFrameProps) {
   const { t } = useTranslation();
+  const dialog = useDialog();
+  const { messages, socketStatus, isStreaming, send, reset, lastSendError } =
+    useChatStream(workspaceRoot);
+  const [draft, setDraft] = useState("");
+
+  const providerLabel = activeProvider
+    ? t(`chat.providers.${activeProvider}`)
+    : "";
+  const placeholder = activeProvider
+    ? t("chat.inputPlaceholder", { provider: providerLabel })
+    : t("chat.inputPlaceholderUnselected");
+  const canSubmit =
+    Boolean(workspaceRoot) &&
+    activeProvider !== null &&
+    !isStreaming &&
+    draft.trim().length > 0;
+
+  useEffect(() => {
+    if (lastSendError) onError(lastSendError);
+  }, [lastSendError, onError]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!canSubmit) return;
+      const text = draft;
+      setDraft("");
+      await send(text);
+    },
+    [canSubmit, draft, send],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Enter sends; Shift+Enter inserts a newline.
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (canSubmit) {
+          const text = draft;
+          setDraft("");
+          void send(text);
+        }
+      }
+    },
+    [canSubmit, draft, send],
+  );
+
+  const handleReset = useCallback(async () => {
+    if (!workspaceRoot) return;
+    const ok = await dialog.confirm({ message: t("chat.confirmReset") });
+    if (!ok) return;
+    await reset();
+  }, [dialog, reset, t, workspaceRoot]);
+
   return (
     <>
       <div
         role="log"
         aria-label={t("chat.messagesLogLabel")}
-        className="flex-1 overflow-y-auto p-3 text-xs text-fg-muted"
+        data-streaming={isStreaming ? "1" : "0"}
+        className="flex-1 space-y-3 overflow-y-auto p-3 text-xs"
       >
-        <p>{t("chat.emptyMessages")}</p>
+        {!workspaceRoot ? (
+          <p className="text-fg-muted">{t("chat.noWorkspace")}</p>
+        ) : messages.length === 0 ? (
+          <p className="text-fg-muted">{t("chat.emptyMessages")}</p>
+        ) : (
+          messages.map((m) => <ChatMessageRow key={m.id} message={m} />)
+        )}
       </div>
+      <ChatStatusBar
+        socketStatus={socketStatus}
+        isStreaming={isStreaming}
+        canReset={Boolean(workspaceRoot) && messages.length > 0}
+        onReset={handleReset}
+      />
       <form
         className="flex flex-col gap-2 border-t border-line p-3"
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={handleSubmit}
       >
         <textarea
           aria-label={t("chat.inputLabel")}
-          placeholder={t("chat.inputPlaceholder")}
-          disabled
+          placeholder={placeholder}
+          disabled={!workspaceRoot || activeProvider === null}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
           rows={2}
           className="resize-none rounded border border-line bg-surface-muted p-2 text-sm text-fg disabled:opacity-60"
         />
         <button
           type="submit"
-          disabled
+          disabled={!canSubmit}
+          data-state={isStreaming ? "streaming" : "idle"}
           className="self-end rounded border border-line-strong px-3 py-1 text-xs font-medium text-fg disabled:opacity-50"
         >
           {t("chat.send")}
         </button>
       </form>
     </>
+  );
+}
+
+function ChatMessageRow({ message }: { message: ChatMessage }) {
+  const { t } = useTranslation();
+  const roleLabel =
+    message.role === "user" ? t("chat.you") : t("chat.assistant");
+  const isError = message.status === "error";
+  return (
+    <div
+      data-role={message.role}
+      data-status={message.status}
+      className={
+        message.role === "user"
+          ? "rounded border border-line-strong bg-surface-muted p-2"
+          : "rounded border border-line bg-surface p-2"
+      }
+    >
+      <div className="mb-1 flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-fg-muted">
+        <span>{roleLabel}</span>
+        {message.status === "streaming" && (
+          <span aria-live="polite">{t("chat.streamingHint")}</span>
+        )}
+      </div>
+      <p
+        className={
+          isError
+            ? "whitespace-pre-wrap text-fg-strong"
+            : "whitespace-pre-wrap text-fg-strong"
+        }
+      >
+        {message.text}
+      </p>
+      {isError && message.errorMessage && (
+        <p className="mt-1 text-[11px] text-fg-muted">
+          {t("chat.errorPrefix")}
+          {message.errorMessage}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ChatStatusBar({
+  socketStatus,
+  isStreaming,
+  canReset,
+  onReset,
+}: {
+  socketStatus: ReturnType<typeof useChatStream>["socketStatus"];
+  isStreaming: boolean;
+  canReset: boolean;
+  onReset: () => void | Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const showDisconnected =
+    socketStatus === "reconnecting" || socketStatus === "disconnected";
+  return (
+    <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-1 text-[10px] text-fg-muted">
+      <span aria-live="polite">
+        {showDisconnected
+          ? t("chat.socketDisconnected")
+          : isStreaming
+            ? t("chat.streamingHint")
+            : ""}
+      </span>
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={!canReset}
+        className="rounded px-2 py-0.5 text-fg-muted hover:bg-surface-muted hover:text-fg-strong disabled:opacity-40"
+      >
+        {t("chat.resetSession")}
+      </button>
+    </div>
   );
 }

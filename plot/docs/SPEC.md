@@ -103,6 +103,7 @@ subprocess.
 | Aspect | Behaviour |
 |---|---|
 | **Brain** | The user's external CLI. Plot spawns it (`claude` / `codex` / `gemini`) inside the workspace folder, writes the user message to stdin, parses streamed output. |
+| **Subprocess host (D-2026-06-12-D)** | The CLI subprocess lives in the **plot_mcp engine** (Python), not the Tauri shell. Viewer talks to it through `POST /api/chat/send` + `WS /ws/chat?project_path=…` — the same HTTP/WS transport every other Plot operation uses. Dev mode (browser at `:5193`) and the bundled `.app` therefore take identical code paths. |
 | **API keys / billing** | Never Plot's job. The CLI is responsible for auth (`claude login`, etc.); token usage bills the user's Anthropic / OpenAI / Google account. Plot exposes no key-management UI. |
 | **Provider selection** | Auto-detected at workspace open (which CLIs are on `$PATH` + logged in). User picks one when several are present via a radio per registered row; choice persists in `<workspace>/.noory/plot/chat-provider` (JSON `{"provider": "claude-code" \| "codex" \| "gemini" \| null}`). HTTP surface: `GET /api/chat/provider?project_path=…` reads, `PUT` writes. Unregistering the active provider clears the selection automatically so the persisted choice can never name a CLI Plot can't reach. |
 | **Model selection** | The CLI's own configuration drives the model. Plot may show a read-only "current model" indicator; no model picker. |

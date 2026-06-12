@@ -4,6 +4,125 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.64.0] — 2026-06-12
+
+Minor. **D-2 (R7 native chat panel) Phase C** — subprocess streaming
+lands. The user picks a chat CLI, types a message, and Plot drives the
+external `claude` (Codex / Gemini next) via `--print --output-format
+stream-json`, fanning the streamed assistant text back to the dock over
+the workspace WS. Per the new pin [D-2026-06-12-D](docs/DECISIONS.md):
+the CLI subprocess lives in the **plot_mcp engine** (not the Tauri
+shell), so dev mode (browser at `:5193`) and the bundled `.app` take the
+same code path.
+
+### Added
+
+- `plot_mcp/chat_session.py` — `ChatProvider` ABC +
+  `ClaudeCodeProvider` (one subprocess per turn, conversation
+  continuity via `--session-id` then `--resume`) + permissive
+  stream-json parser that emits `ChatStreamEvent`s
+  (`turn_start` → `delta` × N → `turn_complete` / `error`) +
+  `ChatSessionRegistry` (one provider per resolved workspace path,
+  drop on `reset`). Subprocess invocation is injected so tests stay
+  hermetic — real CLI calls live in the end-to-end smoke.
+- `plot_mcp/endpoints_chat.py` — `POST /api/chat/send` (validate
+  body, schedule streaming task, 202) + `POST /api/chat/reset`
+  (drop cached provider). The streaming bridge `stream_chat_turn`
+  is exported so unit tests exercise it without going through
+  HTTP. Provider crashes are caught + broadcast as an `error`
+  event so the viewer always surfaces them.
+- `plot_mcp/broadcast.py::notify_event` — generalises `notify` to
+  take an event name. The workspace WS room is now shared between
+  `project_changed` and `chat_stream_event`; the viewer
+  demultiplexes on `event`.
+- `tests/test_chat_session.py` (13 tests) — stream-json parsing
+  (assistant message, partial-delta, system init, invalid JSON,
+  tool_use), registry identity + path canonicalisation + reset,
+  subprocess lifecycle (success, first-turn vs resume command
+  shape, non-zero exit → error, cancel kills the process).
+- `tests/test_endpoints_chat.py` (9 tests) — bridge unit
+  (broadcast each event, broadcast error on crash), HTTP
+  validation (400 missing project_path / message, invalid JSON),
+  202 wiring (registry returns the fake provider, message lands
+  in `calls`), reset endpoint, `notify_event` fidelity end-to-end.
+- `viewer/src/app/chat.ts` — application-layer re-export of
+  `sendChatMessage` / `resetChatSession` / `ChatStreamPayload`
+  (presentation rule: shell components never import from
+  `../api` directly; the api-seam structural guard enforces).
+- `viewer/src/hooks/useChatStream.ts` — opens one WS per
+  workspace via `openProjectSocket`, demultiplexes
+  `chat_stream_event` payloads through a pure `applyChatEvent`
+  reducer (extracted + exported for tests), exposes
+  `messages` / `send` / `reset` / `isStreaming` / `socketStatus`
+  / `lastSendError`. User messages append optimistically on
+  `send`; assistant messages land on `turn_start` and grow with
+  each `delta`; late deltas for unknown turns are dropped
+  silently.
+- `viewer/tests/use-chat-stream.test.ts` (7 tests) — reducer
+  pins: `turn_start` appends streaming row + flips
+  `isStreaming`, `delta` only touches the matching turn,
+  `turn_complete` reconciles engine text against streamed text,
+  `error` marks the row + surfaces the message (including
+  error-before-turn-start), unknown turn id drops silently.
+- New i18n keys (en + ko, in lockstep): `chat.you` /
+  `chat.assistant` / `chat.streamingHint` / `chat.errorPrefix`
+  / `chat.resetSession` / `chat.confirmReset` /
+  `chat.noWorkspace` / `chat.socketDisconnected` /
+  `chat.inputPlaceholderUnselected` plus a parameterised
+  `chat.inputPlaceholder` (`"Ask {{provider}}…"` /
+  `"{{provider}}에게 묻기…"`).
+- `plot/src-tauri/src/lib.rs::probe_login_shell_path` —
+  best-effort PATH inheritance from the user's login shell
+  (`$SHELL -ilc 'printf %s "$PATH"'`). Why: macOS `.app`
+  launched from Finder inherits a four-entry launchd PATH that
+  doesn't include `/opt/homebrew/bin`, `~/.local/bin`, or
+  `~/.npm-global/bin` — so the engine sidecar would fail to
+  find `claude`. The probe runs once at setup, propagates the
+  result via `sidecar.env("PATH", …)`, and falls through
+  silently when the shell rejects the command so degraded mode
+  is never worse than today's behaviour. Dev mode (terminal
+  launch) is unaffected.
+
+### Changed
+
+- `plot_mcp/http_app.py::create_http_app` accepts an optional
+  `chat_registry_instance` so tests can inject a registry whose
+  factory returns a fake `ChatProvider`. Production paths pass
+  `None` and the module-level singleton is used. The hub +
+  registry now sit on `app.state.broadcast_hub` /
+  `app.state.chat_registry` (the legacy `app.state.hub` alias
+  is preserved for backwards compat). Two new routes:
+  `POST /api/chat/send` + `POST /api/chat/reset`.
+- `viewer/src/types.ts::SocketEvent` gains the
+  `chat_stream_event` variant; the generic string fallback
+  stays so future event names don't break compilation.
+- `viewer/src/shell/ChatDock.tsx` activates the message frame:
+  the disabled Phase-B textarea is replaced with a live input
+  (Enter sends, Shift+Enter newline), the message log renders
+  user + assistant turns with streaming indicators, the status
+  bar surfaces socket reconnect + a Reset button (uses the
+  in-app `useDialog().confirm` per the
+  `no-window-dialog` structural guard), the no-workspace
+  empty state prompts the user to open one, the no-active-CLI
+  state names the gating step. Error events surface inline
+  under the assistant row that errored.
+- Stale Phase-B test (`renders a disabled input + send
+  button so Phase C can wire streaming later`) replaced with
+  Phase-C expectation (input stays disabled until both
+  workspace + active CLI are present; placeholder names the
+  gating step).
+
+### Decisions
+
+- [D-2026-06-12-D](docs/DECISIONS.md#d-2026-06-12-d--r7-chat-subprocess-lives-in-plot_mcp-not-tauri)
+  — Subprocess host is the engine, not Tauri. Three forces
+  (dev parity, transport SSOT, existing WS plumbing) all point
+  the same direction; the alternative (Tauri spawn) lost on
+  dev parity (chat dead in dev mode) + transport split. Spec
+  impact: SPEC.md §R7 chat gains a "Subprocess host" row.
+  Tauri-side PATH inheritance is a smaller follow-up beneath
+  this decision rather than a competing one.
+
 ## [0.63.3] — 2026-06-12
 
 Patch. D-2 (R7 native chat panel) Phase B step B3 — closes Phase B.

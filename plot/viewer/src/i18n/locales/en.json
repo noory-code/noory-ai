@@ -121,9 +121,18 @@
     "messagesLogLabel": "Chat messages",
     "emptyMessages": "No messages yet.",
     "inputLabel": "Message input",
-    "inputPlaceholder": "Streaming arrives in Phase C.",
+    "inputPlaceholder": "Ask {{provider}}…",
+    "inputPlaceholderUnselected": "Pick a chat CLI above to start.",
     "send": "Send",
-    "selectActive": "Use {{name}} as the active chat CLI"
+    "selectActive": "Use {{name}} as the active chat CLI",
+    "you": "You",
+    "assistant": "Assistant",
+    "streamingHint": "streaming…",
+    "errorPrefix": "Error: ",
+    "resetSession": "Start a new conversation",
+    "confirmReset": "Drop the current conversation and start a new one?",
+    "noWorkspace": "Open a workspace to start chatting.",
+    "socketDisconnected": "Chat connection lost — reconnecting…"
   },
   "serviceDetail": {
     "label": "Service detail",

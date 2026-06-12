@@ -121,9 +121,18 @@
     "messagesLogLabel": "채팅 메시지",
     "emptyMessages": "아직 메시지가 없습니다.",
     "inputLabel": "메시지 입력",
-    "inputPlaceholder": "스트리밍은 Phase C에서 연결됩니다.",
+    "inputPlaceholder": "{{provider}}에게 묻기…",
+    "inputPlaceholderUnselected": "위에서 채팅 CLI를 선택해 시작하세요.",
     "send": "보내기",
-    "selectActive": "{{name}}를 활성 채팅 CLI로 사용"
+    "selectActive": "{{name}}를 활성 채팅 CLI로 사용",
+    "you": "사용자",
+    "assistant": "어시스턴트",
+    "streamingHint": "응답 중…",
+    "errorPrefix": "오류: ",
+    "resetSession": "새 대화 시작",
+    "confirmReset": "현재 대화를 종료하고 새로 시작할까요?",
+    "noWorkspace": "워크스페이스를 열어야 채팅할 수 있습니다.",
+    "socketDisconnected": "채팅 연결 끊김 — 재연결 중…"
   },
   "serviceDetail": {
     "label": "서비스 상세",

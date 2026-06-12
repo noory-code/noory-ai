@@ -798,3 +798,51 @@ export async function setChatProvider(
     ),
   );
 }
+
+// ---------------------------------------------------------------------------
+// R7 chat — subprocess streaming (D-2026-06-12-D, Phase C)
+// ---------------------------------------------------------------------------
+//
+// POST schedules an assistant turn against the workspace's chat provider; the
+// streamed events arrive on the same per-workspace WS as project_changed
+// events, demultiplexed by ``event === "chat_stream_event"``.
+
+export type ChatStreamEventType =
+  | "turn_start"
+  | "delta"
+  | "turn_complete"
+  | "error";
+
+export interface ChatStreamPayload {
+  type: ChatStreamEventType;
+  turn_id: string;
+  text: string;
+  error_message: string | null;
+}
+
+/** Schedule one assistant turn. Returns when the engine has accepted the
+ *  request (202); the actual streamed output arrives via the WS. */
+export async function sendChatMessage(
+  projectPath: string,
+  message: string,
+): Promise<void> {
+  await ok(
+    await fetch(`${API_BASE}/api/chat/send`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ project_path: projectPath, message }),
+    }),
+  );
+}
+
+/** Drop the engine's cached CLI session for this workspace so the next
+ *  ``sendChatMessage`` mints a fresh ``--session-id``. */
+export async function resetChatSession(projectPath: string): Promise<void> {
+  await ok(
+    await fetch(`${API_BASE}/api/chat/reset`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ project_path: projectPath }),
+    }),
+  );
+}

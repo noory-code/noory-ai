@@ -40,7 +40,9 @@ from plot_mcp.api_endpoints import (
     workspace_git_init_endpoint,
 )
 from plot_mcp.broadcast import BroadcastHub
+from plot_mcp.chat_session import ChatSessionRegistry, chat_registry
 from plot_mcp.debug_endpoints import debug_get_endpoint, debug_post_endpoint
+from plot_mcp.endpoints_chat import chat_reset_endpoint, chat_send_endpoint
 from plot_mcp.endpoints_mcp import (
     chat_provider_get_endpoint,
     chat_provider_put_endpoint,
@@ -53,9 +55,22 @@ from plot_mcp.workspace import find_viewer_dist, resolve_plot_root
 _log = logging.getLogger(__name__)
 
 
-def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
-    """Build the Starlette application exposing the browser-facing API."""
+def create_http_app(
+    hub: BroadcastHub | None = None,
+    chat_registry_instance: ChatSessionRegistry | None = None,
+) -> Starlette:
+    """Build the Starlette application exposing the browser-facing API.
+
+    ``chat_registry_instance`` lets tests inject a registry whose factory
+    returns a fake :class:`ChatProvider`; production paths leave it ``None``
+    and the module-level singleton is used.
+    """
     target_hub = hub if hub is not None else BroadcastHub()
+    target_registry = (
+        chat_registry_instance
+        if chat_registry_instance is not None
+        else chat_registry()
+    )
 
     async def ws_endpoint(ws: WebSocket) -> None:
         await ws.accept()
@@ -103,6 +118,11 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
         # D-2026-06-11-E Phase B step B3 — workspace-scoped chat-CLI choice
         Route("/api/chat/provider", chat_provider_get_endpoint, methods=["GET"]),
         Route("/api/chat/provider", chat_provider_put_endpoint, methods=["PUT"]),
+        # D-2026-06-12-D Phase C — subprocess streaming (POST schedules a
+        # turn; the assistant output arrives on the workspace WS as
+        # ``chat_stream_event`` payloads).
+        Route("/api/chat/send", chat_send_endpoint, methods=["POST"]),
+        Route("/api/chat/reset", chat_reset_endpoint, methods=["POST"]),
         Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
         Route(
             "/api/projects/{project_id}",
@@ -209,4 +229,6 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
     ]
     app = Starlette(routes=routes, middleware=middleware)
     app.state.hub = target_hub
+    app.state.broadcast_hub = target_hub
+    app.state.chat_registry = target_registry
     return app

@@ -103,7 +103,22 @@ class BroadcastHub:
         descriptor produced by ``_describe_change``. ``None`` is treated
         as a generic project-level event.
         """
-        body: dict[str, Any] = {"event": "project_changed"}
+        await self.notify_event(plot_root, "project_changed", payload)
+
+    async def notify_event(
+        self,
+        plot_root: Path,
+        event_name: str,
+        payload: dict[str, Any] | None = None,
+    ) -> None:
+        """Broadcast an arbitrary event to subscribers of ``plot_root``.
+
+        Generalisation of :meth:`notify` introduced for R7 chat
+        (D-2026-06-12-D): the WS room is shared between project-change
+        events and chat-stream events, demultiplexed by ``event`` on the
+        viewer side.
+        """
+        body: dict[str, Any] = {"event": event_name}
         if payload:
             body.update(payload)
         async with self._lock:

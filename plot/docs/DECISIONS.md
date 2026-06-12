@@ -11108,3 +11108,61 @@ but not yet fully eliminated.
 - **Approval:** Executed under user-approved Track 1.4 plan ("테마 타입
   SSOT"), 2026-06-12. ROADMAP Track 1.4 fully closed with this.
 
+### D-2026-06-12-D — R7 chat subprocess lives in plot_mcp, not Tauri
+
+- **What:** The CLI subprocess that drives the R7 chat panel
+  (`claude` / `codex` / `gemini`) is spawned, fed, and reaped by the
+  **plot_mcp engine** (Python). The viewer reaches it through the same
+  HTTP/WS transport it already uses for every other Plot operation
+  (`POST /api/chat/send`, `WS /ws/chat?project_path=…`). The Tauri shell
+  does *not* spawn or stream the chat CLI; its only role stays "host the
+  engine sidecar".
+- **Why:** Three forces, all pointing the same direction:
+  1. **Dev parity.** The dev workflow is `cd plot && uv run plot-mcp-http`
+     + `cd plot/viewer && npm run dev` opened in a regular browser at
+     `:5193`. A browser tab has no `__TAURI__` context, so a Tauri-side
+     subprocess would silently disable chat in dev. Keeping the CLI
+     subprocess in the engine means dev and bundled `.app` take the same
+     code path.
+  2. **Transport SSOT.** `viewer/src/api.ts` already centralises every
+     server call (D-2026-05-10's `EngineClient` seam preparation). Adding
+     a Tauri-only IPC channel would split the transport into two paths
+     and pre-empt the still-unbuilt EngineClient interface.
+  3. **Existing WS plumbing.** `plot_mcp/broadcast.py` + the `/ws`
+     endpoint already fan messages out per workspace. The chat stream
+     reuses the same pattern — one new room key, no new framework.
+- **What this does NOT decide:** the **PATH inheritance** problem for
+  bundled-mode is a separate Tauri-side concern — `.app` launched from
+  Finder gets `PATH=/usr/bin:/bin:/usr/sbin:/sbin` and won't find
+  `/opt/homebrew/bin/claude` or `~/.local/bin/codex`. The fix (read the
+  user's login-shell PATH and pass it down to the engine sidecar env in
+  `src-tauri/src/lib.rs`) is the only Tauri-side change Phase C needs,
+  and it sits below this decision rather than overturning it.
+- **Implementation outline:**
+  - `plot_mcp/chat_session.py` — `ChatProvider` ABC + `ClaudeCodeProvider`
+    concrete. One session per workspace root, keyed by absolute path.
+    Each user turn invokes `claude --print --output-format stream-json
+    --include-partial-messages --session-id <uuid>` so the CLI emits
+    chunked JSON events to stdout; the session reuses a single
+    `--session-id` across turns to keep the conversation persistent in
+    the CLI's own session store.
+  - `plot_mcp/endpoints_chat.py` — `POST /api/chat/send` (workspace_root,
+    message text) writes the user turn + spawns the subprocess; the
+    streamed stdout flows out through `WS /ws/chat?project_path=…`
+    using the same Broadcaster pattern as `/ws`. `POST /api/chat/reset`
+    drops the in-memory session.
+  - Viewer: `ChatMessageFrame` lights up — `submit` calls `sendChat`,
+    the dock opens a chat-WS connection per workspace, messages render
+    in the existing `role="log"` frame.
+  - i18n: existing `chat.*` keys carry; new keys for streaming /
+    error states added to en + ko in lockstep (`i18n-keys-parity` test).
+- **Alternatives considered + rejected:**
+  - **Tauri spawns.** Lost on dev parity (chat dead in dev mode) +
+    transport split. See "Why" above.
+  - **HTTP signal, Tauri spawn.** Two-process orchestration just to keep
+    process tree in Rust — solves a problem that doesn't exist (the
+    engine already reaps subprocesses cleanly on its own exit).
+- **Approval:** User-picked option A via AskUserQuestion, 2026-06-12.
+- **Spec impact:** SPEC.md §R7 chat — new "Subprocess host" row added
+  to the behaviour table pointing at this decision.
+

@@ -176,6 +176,14 @@ export interface ProjectChangedPayload {
   service_id?: string;
 }
 
+export interface ChatStreamSocketPayload {
+  type: "turn_start" | "delta" | "turn_complete" | "error";
+  turn_id: string;
+  text: string;
+  error_message: string | null;
+}
+
 export type SocketEvent =
   | ({ event: "project_changed" } & ProjectChangedPayload)
+  | ({ event: "chat_stream_event" } & ChatStreamSocketPayload)
   | { event: string };
