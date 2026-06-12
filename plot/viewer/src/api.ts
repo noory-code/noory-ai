@@ -723,3 +723,41 @@ export function openProjectSocket(
 }
 
 export type { ProjectChangedPayload };
+
+// ---------------------------------------------------------------------------
+// R7 MCP registration — Track 2.5 / D-2026-06-11-E
+// ---------------------------------------------------------------------------
+
+export type McpProviderName = "claude-code" | "codex" | "gemini";
+
+export interface McpProviderStatus {
+  name: McpProviderName;
+  installed: boolean;
+  registered: boolean;
+  config_path: string;
+}
+
+export async function getMcpProviders(): Promise<McpProviderStatus[]> {
+  const body = await json<{ providers: McpProviderStatus[] }>(
+    await fetch(`${API_BASE}/api/mcp/providers`),
+  );
+  return body.providers;
+}
+
+export async function registerMcpProvider(name: McpProviderName): Promise<void> {
+  await json<{ ok: true }>(
+    await fetch(
+      `${API_BASE}/api/mcp/providers/${encodeURIComponent(name)}/register`,
+      { method: "POST" },
+    ),
+  );
+}
+
+export async function unregisterMcpProvider(name: McpProviderName): Promise<void> {
+  await json<{ ok: true }>(
+    await fetch(
+      `${API_BASE}/api/mcp/providers/${encodeURIComponent(name)}/unregister`,
+      { method: "POST" },
+    ),
+  );
+}

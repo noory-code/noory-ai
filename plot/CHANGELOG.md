@@ -4,6 +4,40 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.63.0] — 2026-06-12
+
+Minor. D-2 (R7 native chat panel) Phase A — provider-management UI on
+top of v0.62.0's MCP-registration backend. Two more phases follow:
+Phase B (chat surface + provider selection persistence), Phase C
+(Tauri subprocess streaming of the chosen CLI).
+
+### Added
+
+- `src/app/mcp.ts` — application-layer seam over `/api/mcp/*`
+  (`getMcpProviders` / `registerMcpProvider` / `unregisterMcpProvider`
+  + `McpProviderName` / `McpProviderStatus`). Presentation imports MCP
+  ops from here, matching the existing api.ts-seam rule.
+- `src/shell/ChatProvidersPanel.tsx` — provider list component. Renders
+  one row per provider (Claude Code / Codex / Gemini), shows install +
+  registration state, surfaces a one-click `Register Plot` /
+  `Unregister` button per row. Loading state, error bubble-up via
+  `onError`. Not mounted yet — Phase B wires it into the chat dock.
+- i18n keys `chat.providersTitle` / `chat.providersHint` /
+  `chat.providers.<name>` / `chat.providerInstalled` /
+  `chat.providerNotInstalled` / `chat.providerRegistered` /
+  `chat.register` / `chat.unregister` / `chat.loadingProviders` in
+  en + ko.
+- `tests/chat-providers-panel.test.tsx` (4 tests) — renders one row per
+  provider, badges per status, register click → API call → refresh,
+  error path surfaces via `onError`.
+
+### Notes
+
+- `ChatProvidersPanel` imports through `src/app/mcp`, not `src/api`
+  directly, so `structural-guards.test.tsx`'s api-seam rule stays
+  green.
+- 871 viewer tests green (+4); tsc clean.
+
 ## [0.62.2] — 2026-06-12
 
 Patch. Closes ROADMAP Track 1.4 — the last remaining item, semantic

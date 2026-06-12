@@ -101,6 +101,21 @@
     "confirm": "Initialize",
     "cancel": "Not now"
   },
+  "chat": {
+    "providersTitle": "Connect your AI agent",
+    "providersHint": "Plot is a canvas + MCP server. Pick which external CLI handles the AI brain.",
+    "providers": {
+      "claude-code": "Claude Code",
+      "codex": "Codex",
+      "gemini": "Gemini"
+    },
+    "providerNotInstalled": "Not installed",
+    "providerInstalled": "Installed",
+    "providerRegistered": "Registered",
+    "register": "Register Plot",
+    "unregister": "Unregister",
+    "loadingProviders": "Loading providers…"
+  },
   "serviceDetail": {
     "label": "Service detail",
     "ariaWithCategory": "Service detail — {{category}} › {{service}}",

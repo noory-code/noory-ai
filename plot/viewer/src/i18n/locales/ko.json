@@ -101,6 +101,21 @@
     "confirm": "만들기",
     "cancel": "나중에"
   },
+  "chat": {
+    "providersTitle": "AI 에이전트 연결",
+    "providersHint": "Plot은 캔버스 + MCP 서버를 제공합니다. 외부 CLI 중 AI 두뇌를 담당할 도구를 선택하세요.",
+    "providers": {
+      "claude-code": "Claude Code",
+      "codex": "Codex",
+      "gemini": "Gemini"
+    },
+    "providerNotInstalled": "미설치",
+    "providerInstalled": "설치됨",
+    "providerRegistered": "등록됨",
+    "register": "Plot 등록",
+    "unregister": "해제",
+    "loadingProviders": "프로바이더 확인 중…"
+  },
   "serviceDetail": {
     "label": "서비스 상세",
     "ariaWithCategory": "서비스 상세 — {{category}} › {{service}}",
