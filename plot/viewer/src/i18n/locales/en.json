@@ -117,7 +117,12 @@
     "loadingProviders": "Loading providers…",
     "dockTitle": "Chat",
     "collapse": "Collapse chat",
-    "expand": "Expand chat"
+    "expand": "Expand chat",
+    "messagesLogLabel": "Chat messages",
+    "emptyMessages": "No messages yet.",
+    "inputLabel": "Message input",
+    "inputPlaceholder": "Streaming arrives in Phase C.",
+    "send": "Send"
   },
   "serviceDetail": {
     "label": "Service detail",

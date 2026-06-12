@@ -4,6 +4,38 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.63.2] — 2026-06-12
+
+Patch. D-2 Phase B step B2 — message-log frame + disabled input frame
+inside the dock. Visual only; no streaming, no state. Phase C wires up
+subprocess streaming and flips the textarea / send button on.
+
+### Added
+
+- `ChatMessageFrame` (private to `src/shell/ChatDock.tsx`) — message log
+  region (`role="log"`, aria-labelled), empty-state caption, and a
+  bottom-anchored form with a disabled `<textarea>` (aria-labelled
+  "Message input", placeholder names Phase C) + disabled Send button.
+  Form has `onSubmit={preventDefault}` so accidental Enter on the
+  (already-disabled) textarea is a no-op.
+- i18n keys `chat.messagesLogLabel` / `chat.emptyMessages` /
+  `chat.inputLabel` / `chat.inputPlaceholder` / `chat.send` in en + ko.
+- `tests/chat-dock.test.tsx` — 3 new cases pin the frame contract: log
+  role + empty-state caption when expanded, textarea + send button are
+  `disabled` and the placeholder names Phase C, frame absent when
+  collapsed.
+
+### Changed
+
+- `docs/SPEC.md` §R7 chat — UI row extended with the three-section dock
+  layout (providers / log / input) and the disabled-until-Phase-C rule.
+
+### Notes
+
+- 879 viewer tests green (+3); tsc clean. `ChatDock.tsx` 127 LOC (no
+  structural-guards ceiling on `shell/*.tsx`; the LOC column in CLAUDE.md
+  is historical). App.tsx unchanged.
+
 ## [0.63.1] — 2026-06-12
 
 Patch. D-2 (R7 native chat panel) Phase B step B1 — the right-side

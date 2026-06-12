@@ -74,10 +74,54 @@ export function ChatDock({ onError }: ChatDockProps) {
         </button>
       </header>
       {!collapsed && (
-        <div className="flex-1 overflow-y-auto p-3">
-          <ChatProvidersPanel onError={onError} />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="overflow-y-auto border-b border-line p-3">
+            <ChatProvidersPanel onError={onError} />
+          </div>
+          <ChatMessageFrame />
         </div>
       )}
     </aside>
+  );
+}
+
+/**
+ * Visual frame for the chat surface. Phase B step B2 — no message
+ * state, no submit handler, no streaming. The textarea + send button
+ * land disabled with copy that names Phase C as the activation step,
+ * so the user sees the empty surface but understands it's intentionally
+ * inert until Phase C wires up the CLI subprocess.
+ */
+function ChatMessageFrame() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <div
+        role="log"
+        aria-label={t("chat.messagesLogLabel")}
+        className="flex-1 overflow-y-auto p-3 text-xs text-fg-muted"
+      >
+        <p>{t("chat.emptyMessages")}</p>
+      </div>
+      <form
+        className="flex flex-col gap-2 border-t border-line p-3"
+        onSubmit={(e) => e.preventDefault()}
+      >
+        <textarea
+          aria-label={t("chat.inputLabel")}
+          placeholder={t("chat.inputPlaceholder")}
+          disabled
+          rows={2}
+          className="resize-none rounded border border-line bg-surface-muted p-2 text-sm text-fg disabled:opacity-60"
+        />
+        <button
+          type="submit"
+          disabled
+          className="self-end rounded border border-line-strong px-3 py-1 text-xs font-medium text-fg disabled:opacity-50"
+        >
+          {t("chat.send")}
+        </button>
+      </form>
+    </>
   );
 }

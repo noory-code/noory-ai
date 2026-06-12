@@ -117,7 +117,12 @@
     "loadingProviders": "프로바이더 확인 중…",
     "dockTitle": "채팅",
     "collapse": "채팅 접기",
-    "expand": "채팅 펼치기"
+    "expand": "채팅 펼치기",
+    "messagesLogLabel": "채팅 메시지",
+    "emptyMessages": "아직 메시지가 없습니다.",
+    "inputLabel": "메시지 입력",
+    "inputPlaceholder": "스트리밍은 Phase C에서 연결됩니다.",
+    "send": "보내기"
   },
   "serviceDetail": {
     "label": "서비스 상세",

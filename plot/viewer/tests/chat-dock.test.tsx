@@ -98,4 +98,33 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
     render(<ChatDock onError={onError} />);
     await waitFor(() => expect(onError).toHaveBeenCalled());
   });
+
+  // ---- Phase B step B2: message-area frame (visual only — Phase C streams) ----
+
+  it("renders a message log frame with an empty-state caption when expanded", async () => {
+    render(<ChatDock onError={() => {}} />);
+    await waitFor(() => screen.getByText("Claude Code"));
+    const log = screen.getByRole("log", { name: /chat messages/i });
+    expect(log).toBeTruthy();
+    // Empty state caption is inside the log region.
+    expect(screen.getByText(/no messages yet/i)).toBeTruthy();
+  });
+
+  it("renders a disabled input + send button so Phase C can wire streaming later", async () => {
+    render(<ChatDock onError={() => {}} />);
+    await waitFor(() => screen.getByText("Claude Code"));
+    const input = screen.getByRole("textbox", { name: /message input/i }) as HTMLTextAreaElement;
+    expect(input.disabled).toBe(true);
+    // Placeholder names the phase that turns it on, so the user understands the inert state.
+    expect(input.placeholder.toLowerCase()).toContain("phase c");
+    const send = screen.getByRole("button", { name: /^send$/i }) as HTMLButtonElement;
+    expect(send.disabled).toBe(true);
+  });
+
+  it("does not render the message frame when collapsed", () => {
+    localStorage.setItem("plot:chatDockCollapsed", "1");
+    render(<ChatDock onError={() => {}} />);
+    expect(screen.queryByRole("log", { name: /chat messages/i })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: /message input/i })).toBeNull();
+  });
 });

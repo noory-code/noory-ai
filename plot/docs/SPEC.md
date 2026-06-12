@@ -107,7 +107,7 @@ subprocess.
 | **Provider selection** | Auto-detected at workspace open (which CLIs are on `$PATH` + logged in). User picks one when several are present; choice persists in `.noory/plot/chat-provider`. |
 | **Model selection** | The CLI's own configuration drives the model. Plot may show a read-only "current model" indicator; no model picker. |
 | **MCP wiring** | Plot's MCP server is registered with each CLI separately (Track 2.5: `~/.claude.json` / `~/.codex/config.toml` / `~/.gemini/settings.json`). The canvas ↔ chat feedback loop runs through MCP. |
-| **UI** | Right-side dock, collapsible. Uses the existing `dialog` / `shell` chrome conventions. Collapse state persists across reloads in `localStorage["plot:chatDockCollapsed"]` (`"1"` = collapsed). When collapsed, the panel content unmounts (no off-screen fetches). |
+| **UI** | Right-side dock, collapsible. Uses the existing `dialog` / `shell` chrome conventions. Collapse state persists across reloads in `localStorage["plot:chatDockCollapsed"]` (`"1"` = collapsed). When collapsed, the panel content unmounts (no off-screen fetches). When expanded, the dock stacks: provider list on top, message log frame (`role="log"`) in the middle, message textarea + Send button at the bottom. The textarea and Send button stay `disabled` with copy that names Phase C as the activation step until subprocess streaming lands. |
 | **No CLI installed** | Panel surfaces per-CLI install + login guidance instead of an input box (`brew install claude` / `npm i -g @openai/codex` / etc.). |
 
 See DECISIONS.md
