@@ -7,6 +7,9 @@ import type {
   ProjectTag,
   SocketEvent,
 } from "./types";
+// Side-effect import of the per-kind entity barrel so every kind's
+// ``registerKindParser`` runs before ``parseEntity`` dispatches.
+import { parseEntity } from "./domain";
 
 // Engine HTTP base. Empty = same-origin (web / engine-served / Vite-proxied dev).
 // Set VITE_PLOT_ENGINE (e.g. "http://127.0.0.1:5190") when the frontend is
@@ -63,6 +66,22 @@ async function ok(res: Response): Promise<void> {
       .catch(() => ({ error: `HTTP ${res.status}` }));
     throw new Error(body?.error ?? `HTTP ${res.status}`);
   }
+}
+
+/** D-2026-06-12-B — run every node in ``canvas.nodes`` through the
+ *  discriminated-union ``parseEntity`` validator. Returns the same
+ *  ``CanvasDoc`` reference (no clone, no class-instance leak) so React
+ *  Flow keeps working on the plain JSON shapes per
+ *  `domain/SketchNode.ts`'s prototype-strip warning. Throws
+ *  ``DomainParseError`` on the first malformed node — wire boundary
+ *  fail-fast so a contract breach can't leak past `api.ts`. */
+export function validateCanvas(canvas: CanvasDoc): CanvasDoc {
+  for (const node of canvas.nodes) {
+    // parseEntity returns a class instance which we deliberately discard;
+    // the side effect we want is its throw on invariant violation.
+    parseEntity(node);
+  }
+  return canvas;
 }
 
 /** D-2026-06-11-D — explicit user consent to `git init` at the workspace
@@ -269,8 +288,10 @@ export async function getCanvas(
   kind: CanvasKind,
   serviceId?: string | null,
 ): Promise<CanvasDoc> {
-  return json<CanvasDoc>(
-    await fetch(canvasPath(projectPath, projectId, kind, serviceId)),
+  return validateCanvas(
+    await json<CanvasDoc>(
+      await fetch(canvasPath(projectPath, projectId, kind, serviceId)),
+    ),
   );
 }
 
@@ -292,7 +313,7 @@ export async function putCanvas(
 ): Promise<PutCanvasResponse> {
   const serviceId =
     canvas.canvas_kind === "service_detail" ? canvas.service_ref : null;
-  return json<PutCanvasResponse>(
+  const resp = await json<PutCanvasResponse>(
     await fetch(
       canvasPath(projectPath, projectId, canvas.canvas_kind, serviceId),
       {
@@ -302,6 +323,8 @@ export async function putCanvas(
       },
     ),
   );
+  validateCanvas(resp.canvas);
+  return resp;
 }
 
 /** Load every canvas the project currently has. Used on project open. */

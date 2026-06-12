@@ -11041,3 +11041,44 @@ but not yet fully eliminated.
   §Workspace & projects → opening paragraph rewritten to name the
   monorepo / service relationship explicitly.
 
+### D-2026-06-12-B — Wire-boundary domain validation via parseEntity (Track 1.4)
+
+- **What:** Every ``CanvasDoc`` arriving across the HTTP wire is now
+  validated through ``parseEntity`` before it leaks deeper into the
+  viewer. ``api.ts::validateCanvas(canvas)`` iterates ``canvas.nodes``
+  and runs each through the discriminated-union dispatch; any malformed
+  node throws ``DomainParseError`` at the boundary instead of crashing
+  the React Flow render path or the Inspector.
+- **Where it's wired:** ``getCanvas``, ``getAllCanvases``, and the
+  ``putCanvas`` response (server's mutating decorations — ``_md_warnings``
+  + ``_dirty`` — preserved; pure validation, no clone). ``getCanvas`` is
+  also what ``useProjectSocket`` calls after a WS ``project_changed``
+  event, so external-write paths land in the same gate.
+- **Why now:** Until v0.62, ``parseEntity`` had zero call sites — the
+  dispatch table was assembled (every domain class self-registers via
+  ``registerKindParser``) but never invoked outside tests. ARCH_REVIEW.md
+  flagged this as Track 1.4's "parseEntity dead, 0 calls → fromJson
+  activation / fail-fast" item. Wire boundary is the right place: server
+  Pydantic enforces the same invariants on write, so a client-side
+  ``DomainParseError`` is a contract breach (drift between server-side
+  Pydantic and viewer-side per-kind classes, or a hand-edited canvas.json)
+  — fail-fast surfaces it before it corrupts in-memory state.
+- **Fail-fast vs fail-soft:** strict throw. The risk flagged in
+  ROADMAP ("관용 데이터 거부 가능") is real for hand-edited canvas.json,
+  but: (a) the server already rejects on read via Pydantic, so any
+  canvas that reaches the wire is already type-valid by server schema;
+  (b) tests cover all 17 kinds round-tripping through ``parseEntity``
+  (``entity-roundtrip.test.tsx``); (c) the per-kind ``fromJson``
+  validators are deliberately lenient on optional-empty fields (e.g.
+  ``actor_ref.ref_actor_id = ""`` passes viewer-side because server
+  Pydantic catches that on write).
+- **What's NOT touched:** React Flow keeps working on the plain JSON
+  shapes — ``validateCanvas`` returns the input ``CanvasDoc`` reference
+  unchanged, and the class instances produced by ``parseEntity`` are
+  deliberately discarded. The viewer never leaks class-instance prototypes
+  into ``applyNodeChanges`` (which would strip them via ``{...node}``);
+  the prototype-strip warning at the top of ``domain/SketchNode.ts``
+  still holds.
+- **Approval:** Executed under user-approved Track 1.4 plan
+  ("parseEntity WS 경계"), 2026-06-12.
+

@@ -4,6 +4,47 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.62.1] — 2026-06-12
+
+Patch. Activates `parseEntity` at the viewer's wire boundary
+(D-2026-06-12-B / ROADMAP Track 1.4). Until this commit, the
+discriminated-union dispatch table assembled itself (every domain class
+self-registered via `registerKindParser`) but had zero call sites — the
+entity round-trip guard was the only thing exercising it. Now every
+`CanvasDoc` arriving from the HTTP wire is validated before it leaks
+deeper into the viewer.
+
+### Added
+
+- `api.ts::validateCanvas(canvas)` — runs every `canvas.nodes[i]` through
+  `parseEntity`. Throws `DomainParseError` at the boundary on
+  malformed nodes (unknown discriminator, type-incorrect required field,
+  failed invariant). Returns the input reference unchanged so React Flow
+  keeps working on the plain JSON shape (the class instances produced
+  by `parseEntity` are deliberately discarded — see the prototype-strip
+  warning at the top of `domain/SketchNode.ts`).
+- `tests/wire-validate.test.ts` — 5 tests pin the invariant: valid input
+  passes through (same reference), unknown kind / missing kind / type-bad
+  field throw `DomainParseError`, empty `nodes` array is a no-op.
+
+### Wired through
+
+- `getCanvas` — initial canvas load + external-write refetch driven by
+  `useProjectSocket`'s `project_changed` event.
+- `getAllCanvases` — project-open multi-canvas load (via the `getCanvas`
+  internally).
+- `putCanvas` — server's mutated response (the `_md_warnings` +
+  `_dirty` decorations) validated too; sync envelope preserved.
+
+### Notes
+
+- Server-side Pydantic enforces the same invariants on write, so any
+  canvas that reaches the wire is already type-valid by server schema —
+  a client-side `DomainParseError` is a real contract breach (drift
+  between server Pydantic + viewer per-kind classes, or a hand-edited
+  canvas.json that bypassed the server).
+- 864 viewer tests green (+5); tsc clean.
+
 ## [0.62.0] — 2026-06-12
 
 Minor. R7 multi-provider MCP registration backend (Track 2.5,
