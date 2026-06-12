@@ -4,6 +4,29 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.66.0] — 2026-06-13
+
+Minor. **Flavor badge — `DEBUG` chip in non-release builds.** A small
+amber `DEBUG` chip next to the `PLOT` logo makes a debug-flavor build
+visually obvious; the release flavor shows nothing. Gated by the same
+BUILD-TIME flag as the debug probe (`debugEnabled()` →
+`VITE_PLOT_DEBUG === "1"`, D-2026-06-09-D), so there is no runtime
+escape hatch. See [D-2026-06-13-B](docs/DECISIONS.md), SPEC.md §Chrome.
+
+### Added
+
+- `viewer/src/shell/FlavorBadge.tsx` — renders the `DEBUG` chip when
+  `debugEnabled()` is true, `null` otherwise. A build identifier, not
+  localizable copy, so it stays out of i18n (mirrors the hardcoded
+  `PLOT` / "MCP: live" technical labels beside it).
+- `viewer/tests/flavor-badge.test.tsx` (2 tests) — DEBUG shown when
+  `VITE_PLOT_DEBUG=1`; empty render when unset.
+
+### Changed
+
+- `viewer/src/shell/Header.tsx` — mounts `<FlavorBadge />` immediately
+  after the `PLOT` wordmark.
+
 ## [0.65.1] — 2026-06-13
 
 Patch. **Fix: stencil drops lost `preset.id`, breaking nesting rules.**

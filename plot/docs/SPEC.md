@@ -49,6 +49,13 @@ monorepo" — not "the monorepo as a whole". Workspace-level affordances
   "MCP: connecting…" / "MCP: reconnecting…" / "MCP: offline" so the dot
   clearly refers to the MCP server connection. (Supersedes D-2026-05-31-O's
   header-dir display and D-2026-05-31-P's root-in-tab-bar placement.)
+- **Flavor badge (v0.66.0, D-2026-06-13-B)** — a small amber **`DEBUG`**
+  chip sits next to the `PLOT` logo **only in the debug flavor**
+  (`VITE_PLOT_DEBUG=1`). The release flavor renders nothing. Same
+  BUILD-TIME gate as the debug probe (`debugEnabled()`, D-2026-06-09-D) —
+  no runtime escape hatch, so a release build can never light it up. It
+  is a build identifier, not localizable copy, so (like `PLOT` / "MCP:
+  live") it stays out of i18n.
 - **Version control (v0.53.0, D-2026-06-09-C)** — git lives at the `.noory/plot/`
   workspace level: **one repo per `.noory/plot/`**, not per project. `.noory/plot/{id}` no
   longer gets its own `.git`; `ensure_repo` / `tag_snapshot` / `publish_snapshot`

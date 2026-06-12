@@ -11328,3 +11328,23 @@ but not yet fully eliminated.
 - **Spec impact:** none — restores already-specced D-2026-05-28-A
   runtime behaviour. Pinned by `viewer/tests/stencil-transfer-preset.test.tsx`.
 
+### D-2026-06-13-B — Debug-flavor `DEBUG` badge in the header
+
+- **What:** a small amber `DEBUG` chip renders next to the `PLOT`
+  wordmark **only** in the debug flavor (`VITE_PLOT_DEBUG=1`); the
+  release flavor shows nothing. New `viewer/src/shell/FlavorBadge.tsx`
+  gated by `debugEnabled()`.
+- **Why:** user asked for the build flavor to be visible in the app, and
+  hidden in the official release ("앱에 플레이버 표시되었으면해요" + "정식
+  버전일 때는 안보이게 하고", 2026-06-12). Reuses the existing BUILD-TIME
+  debug gate (D-2026-06-09-D) so the release bundle can never expose it —
+  no runtime `?debug` escape hatch.
+- **Alternatives:** (a) show flavor + version string — rejected per YAGNI
+  (user asked for flavor only). (b) Route "DEBUG" through i18n — rejected;
+  it is a build identifier, not product copy, and sits beside other
+  hardcoded technical labels (`PLOT`, "MCP: live").
+- **Approval:** Accepted by user, 2026-06-12 (feature request); committed
+  2026-06-13.
+- **Spec impact:** SPEC.md §Chrome — new "Flavor badge" bullet. Pinned by
+  `viewer/tests/flavor-badge.test.tsx`.
+

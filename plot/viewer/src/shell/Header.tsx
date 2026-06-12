@@ -11,6 +11,7 @@
 import { useTranslation } from "react-i18next";
 import type { SocketStatus } from "../api";
 import type { SaveState } from "../canvases/SketchToolbar";
+import { FlavorBadge } from "./FlavorBadge";
 
 interface HeaderProps {
   error: string | null;
@@ -47,6 +48,7 @@ export function Header({
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold tracking-wide">PLOT</span>
+          <FlavorBadge />
           <span className="font-mono text-xs text-fg-muted" title={workspaceRoot}>
             {workspaceRoot}
           </span>
