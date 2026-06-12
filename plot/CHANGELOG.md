@@ -4,6 +4,46 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.63.1] — 2026-06-12
+
+Patch. D-2 (R7 native chat panel) Phase B step B1 — the right-side
+collapsible dock shell. ChatProvidersPanel (from v0.63.0) is now mounted
+inside the dock at `App.tsx`; collapse state persists across reloads in
+`localStorage["plot:chatDockCollapsed"]`. B2 (message-list frame) and B3
+(provider selection persistence at `.noory/plot/chat-provider`) follow
+in the next two patches; Phase C (subprocess streaming) closes the
+panel.
+
+### Added
+
+- `src/shell/ChatDock.tsx` — right-side aside, w-80 expanded / w-10
+  collapsed, header + collapse / expand button (aria-labelled). Mounts
+  `ChatProvidersPanel` only when expanded so the screen-reader tree
+  stays honest and the provider fetch doesn't fire off-screen.
+- i18n keys `chat.dockTitle` / `chat.collapse` / `chat.expand` in
+  en + ko.
+- `tests/chat-dock.test.tsx` (5 tests) — default-expanded render,
+  collapse toggle removes the panel + persists `"1"`, second toggle
+  re-expands + persists `"0"`, initial-collapsed reads from
+  localStorage (provider fetch not called), `onError` forwards into the
+  embedded panel.
+
+### Changed
+
+- `src/App.tsx` (488 → 490 LOC) — imports `ChatDock` and renders it as
+  the trailing sibling of `<main>` inside the existing horizontal flex
+  row. `handleError` (already memoised) is the error sink. No other
+  layout change; sidebar + main canvas / modal positions unchanged.
+- `docs/SPEC.md` §R7 chat — UI row extended with the collapse
+  persistence rule (`localStorage["plot:chatDockCollapsed"]`, unmount
+  on collapse).
+
+### Notes
+
+- 876 viewer tests green (+5); tsc clean. App.tsx 490/498 (ceiling
+  unchanged; ChatDock takes the layout responsibility so the dock
+  internals don't bloat App).
+
 ## [0.63.0] — 2026-06-12
 
 Minor. D-2 (R7 native chat panel) Phase A — provider-management UI on

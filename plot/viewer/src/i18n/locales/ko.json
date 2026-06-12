@@ -114,7 +114,10 @@
     "providerRegistered": "등록됨",
     "register": "Plot 등록",
     "unregister": "해제",
-    "loadingProviders": "프로바이더 확인 중…"
+    "loadingProviders": "프로바이더 확인 중…",
+    "dockTitle": "채팅",
+    "collapse": "채팅 접기",
+    "expand": "채팅 펼치기"
   },
   "serviceDetail": {
     "label": "서비스 상세",

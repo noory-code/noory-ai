@@ -114,7 +114,10 @@
     "providerRegistered": "Registered",
     "register": "Register Plot",
     "unregister": "Unregister",
-    "loadingProviders": "Loading providers…"
+    "loadingProviders": "Loading providers…",
+    "dockTitle": "Chat",
+    "collapse": "Collapse chat",
+    "expand": "Expand chat"
   },
   "serviceDetail": {
     "label": "Service detail",

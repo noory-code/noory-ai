@@ -20,6 +20,7 @@ import { useProjectSocket } from "./hooks/useProjectSocket";
 import { useStableHandlers } from "./hooks/useStableHandlers";
 import { useUrlSync } from "./hooks/useUrlSync";
 import { CanvasTabs, type CanvasTab } from "./shell/CanvasTabs";
+import { ChatDock } from "./shell/ChatDock";
 import { Header } from "./shell/Header";
 import { HelpCheatsheet } from "./shell/HelpCheatsheet";
 import { ServiceDetailModal } from "./shell/ServiceDetailModal";
@@ -437,6 +438,7 @@ export function App() {
             })()}
           </div>
         </main>
+        <ChatDock onError={handleError} />
       </div>
     </div>
     {/* v0.27.2 (D-2026-05-26-F) — modal sits OUTSIDE the inert root
