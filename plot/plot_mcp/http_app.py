@@ -39,6 +39,7 @@ from plot_mcp.api_endpoints import (
     workspace_discover_endpoint,
     workspace_git_init_endpoint,
 )
+from plot_mcp.auth import WS_TOKEN_PARAM, AuthMiddleware, check_ws_token, configured_token
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.chat_session import ChatSessionRegistry, chat_registry
 from plot_mcp.debug_endpoints import debug_get_endpoint, debug_post_endpoint
@@ -74,6 +75,14 @@ def create_http_app(
 
     async def ws_endpoint(ws: WebSocket) -> None:
         await ws.accept()
+        # D-2026-06-12-F — same env-gated rule as the HTTP middleware. When
+        # ``PLOT_AUTH_TOKEN`` is unset (dev), any client may subscribe; when
+        # set (bundled Tauri / future remote), the viewer attaches
+        # ``?auth=<token>`` and a missing / wrong value closes the socket.
+        presented = ws.query_params.get(WS_TOKEN_PARAM)
+        if not check_ws_token(presented):
+            await ws.close(code=1008, reason="auth token required")
+            return
         project_path = ws.query_params.get("project_path")
         if not project_path:
             await ws.close(code=1008, reason="project_path query param required")
@@ -227,6 +236,12 @@ def create_http_app(
             allow_headers=["*"],
         )
     ]
+    # D-2026-06-12-F — auth middleware sits ABOVE CORS so a preflight that
+    # passes CORS still has to satisfy the token check. The middleware is
+    # only mounted when ``PLOT_AUTH_TOKEN`` is set; the dev path stays
+    # latency-identical to v0.64.x.
+    if configured_token() is not None:
+        middleware.append(Middleware(AuthMiddleware))
     app = Starlette(routes=routes, middleware=middleware)
     app.state.hub = target_hub
     app.state.broadcast_hub = target_hub

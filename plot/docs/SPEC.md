@@ -118,6 +118,30 @@ invariants, multi-provider abstraction, sequencing).
 
 ---
 
+# Engine auth (v0.65.0, D-2026-06-12-F)
+
+Plot's engine exposes one auth seam — env-gated, Bearer for HTTP,
+``?auth=`` query parameter for WebSocket. TABLET_ARCH §"지금 만들 것"
+pinned this as a build-now item so a future bundled / remote / tablet
+delivery doesn't break every consumer with a wire-shape change.
+
+| Aspect | Behaviour |
+|---|---|
+| **Trigger** | The env var ``PLOT_AUTH_TOKEN``. Unset → enforcement off (every request passes through; today's dev parity). Set to a non-empty string → enforcement on. |
+| **HTTP** | ``Authorization: Bearer <token>`` required on every ``/api/*`` request when enforcement is on. Missing → 401 ``{"error": "auth token required"}``. Wrong → 401 ``{"error": "invalid auth token"}``. Comparison is constant-time (``hmac.compare_digest``). |
+| **WebSocket** | The handshake reads ``?auth=<token>`` (Starlette middleware can't ride ``WebSocketRoute``; the param is the only path). Missing or wrong → close 1008 with reason ``"auth token required"``. |
+| **Always-open paths** | ``/api/health`` only, so the Tauri shell can probe the engine before the invoke command is registered. Every other endpoint is post-boot and must respect enforcement. |
+| **Token shape** | 32 bytes of OS RNG → 64 lowercase hex chars (canonical webhook-secret shape). Bundled Tauri builds mint one per launch; the shell exports it into the sidecar's env and serves it to the viewer via the ``plot_auth_token`` invoke command. |
+| **Dev parity** | Unset env → middleware NOT mounted at all (zero latency cost). The dev workflow (``uv run plot-mcp-http`` + browser at ``:5193``) stays byte-identical to v0.64.x. |
+
+See DECISIONS.md
+[D-2026-06-12-F](./DECISIONS.md#d-2026-06-12-f--engine-auth-seam-track-35-tablet_arch-지금-만들-것)
+for the design discussion (env-gated vs always-on, per-launch token vs
+stored secret, why constant-time compare on loopback, why
+``/api/health`` is the only open endpoint).
+
+---
+
 # Appearance — light / dark theme (v0.47.0, D-2026-06-07-C)
 
 The viewer ships **light and dark** themes. Colour is expressed through

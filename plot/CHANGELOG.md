@@ -4,6 +4,76 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.65.0] — 2026-06-12
+
+Minor. **Track 3.5 — engine auth seam.** TABLET_ARCH §"지금 만들 것"
+pinned this as a build-now item: pre-wire an ``Authorization`` header
++ ``?auth=`` query param across the engine + viewer + Tauri shell so a
+future bundled / remote / tablet delivery can flip enforcement on with
+one env var. Today's dev mode (env unset) is byte-identical to v0.64.x.
+Architecture pin at
+[D-2026-06-12-F](docs/DECISIONS.md). Spec section added at
+SPEC.md §Engine auth.
+
+### Added
+
+- `plot_mcp/auth.py` — env reader (`configured_token`,
+  `PLOT_AUTH_TOKEN`), `AuthMiddleware` (Starlette
+  `BaseHTTPMiddleware` over `/api/*` only), `check_ws_token` (helper
+  the WS endpoint calls — middleware can't ride `WebSocketRoute`),
+  `extract_bearer` (case-insensitive scheme + whitespace-tolerant),
+  `is_authorized` (constant-time via `hmac.compare_digest`).
+  `/api/health` is the only always-open path; the Tauri shell probes
+  it before injecting the token.
+- `tests/test_auth.py` (16 tests) — pure helpers (env read every
+  call, bearer extraction edge cases, constant-time compare),
+  middleware behaviour through a real Starlette app (env unset →
+  pass-through, env set + missing → 401, env set + wrong → 401, env
+  set + good → through, `/api/health` always open), and WS helper
+  parity.
+- `viewer/src/api.ts` — `setEngineAuthToken` + `engineFetch` wrapper
+  + `appendWsAuth` helper. All 30 `await fetch(...)` sites rewrote
+  to `await engineFetch(...)` so the seam is a single place — flip
+  the token, every call is authenticated. `openProjectSocket`
+  appends `?auth=<token>` when the token is set.
+- `viewer/src/app/auth.ts::initEngineAuth` — resolves the token at
+  app boot. Source priority: Tauri `invoke('plot_auth_token')` →
+  `import.meta.env.VITE_PLOT_AUTH_TOKEN` → null. Errors from the
+  invoke are swallowed (the engine's 401 is louder than a thrown
+  promise here would be).
+- `viewer/src/main.tsx` calls `initEngineAuth()` once before
+  ReactDOM render so React-effect-triggered fetches see the token
+  by the time they evaluate.
+- `viewer/tests/engine-auth.test.ts` (7 tests) — header injection
+  on/off, `null` clearing, empty string treated as null, Tauri
+  invoke first / dev env fallback / Tauri error swallow.
+- Plot Tauri shell (separate `plot` repo): `mint_auth_token()`
+  uses `rand::rngs::OsRng` to fill 32 bytes + hex-encode (64 lower
+  hex chars). Stored in a Tauri `State` so the
+  `#[tauri::command] plot_auth_token` returns it. The sidecar
+  spawns with `.env("PLOT_AUTH_TOKEN", &token)`. 2 Rust unit tests
+  pin hex shape + per-call uniqueness.
+
+### Changed
+
+- `plot_mcp/http_app.py::create_http_app` mounts `AuthMiddleware`
+  in front of `CORSMiddleware` when `PLOT_AUTH_TOKEN` is set; when
+  unset, the middleware is NOT mounted (zero latency cost on dev).
+  `ws_endpoint` checks the `?auth=` param via `check_ws_token`
+  before accepting the subscription.
+- 30 `await fetch(...)` sites in `viewer/src/api.ts` route through
+  `engineFetch` instead. Outside-of-engine code is unaffected — the
+  wrapper is `api.ts`-internal so the structural-guard rule ("only
+  `src/app/` + `src/hooks/` may import from `api`") still holds.
+
+### Decisions
+
+- [D-2026-06-12-F](docs/DECISIONS.md#d-2026-06-12-f--engine-auth-seam-track-35-tablet_arch-지금-만들-것)
+  pins the env-gated design (vs always-on, vs stored secret), the
+  per-launch token shape, constant-time comparison rationale, and
+  the open-list-of-one for `/api/health`. SPEC.md §Engine auth is
+  the user-facing summary.
+
 ## [0.64.1] — 2026-06-12
 
 Patch. **D-2 Phase C breadth** — Codex and Gemini join Claude Code as

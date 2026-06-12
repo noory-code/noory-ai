@@ -11227,3 +11227,78 @@ but not yet fully eliminated.
   row already describes the auto-detect + persistence flow this
   endpoint dispatch reads.
 
+### D-2026-06-12-F — Engine auth seam (Track 3.5, TABLET_ARCH §"지금 만들 것")
+
+- **What:** Plot ships an env-gated auth seam at every engine entry
+  point. ``PLOT_AUTH_TOKEN`` unset → every request passes through
+  (today's dev parity). ``PLOT_AUTH_TOKEN`` set → ``/api/*`` requires
+  ``Authorization: Bearer <token>`` and the ``/ws`` handshake requires
+  ``?auth=<token>``. ``/api/health`` is always open so the shell can
+  probe before injecting the token. Bundled Tauri builds mint a fresh
+  32-byte (64-hex) token per launch, export it into the sidecar's env,
+  and surface it to the viewer via the ``plot_auth_token`` invoke
+  command so the viewer attaches the header on every fetch and the
+  param on every WS connect.
+- **Why now (TABLET_ARCH was explicit):** the pin under §"지금 만들
+  것" reads — *"tokenless API에 나중에 auth 추가 = 전 엔드포인트
+  breaking change; 지금 pass-through 훅 = 미들웨어 1개."* The hooks
+  go in **before** any consumer locks the wire shape: when the
+  bundled shell flips enforcement on, we change one env var; when
+  the tablet ships, the same seam already enforces. Adding the
+  middleware after a remote engine ships would require a
+  coordinated client + server release with breakage on every old
+  client in between.
+- **Why env-gated (not always-on):** the dev loop runs the engine
+  in a terminal (``uv run plot-mcp-http``) and the viewer in a
+  browser (``npm run dev``); forcing a token there means every
+  contributor juggles env vars + restarts. The pin in TABLET_ARCH is
+  *"오늘은 no-op/loopback"* — env-gated keeps it no-op for dev and
+  flips to enforced the moment the bundled shell sets the variable.
+- **Why per-launch token, not stored secret:** the threat model on
+  loopback is *another process on the same machine*. A long-lived
+  on-disk secret would survive uninstall residue (Mac uninstalls
+  rarely scrub user data); a per-launch token lives only in the
+  shell's process memory and dies with it.
+- **Why constant-time compare (``hmac.compare_digest``):** even on
+  loopback, naïve string equality leaks timing information that
+  same-machine attackers can use to brute-force the token byte by
+  byte. ``hmac.compare_digest`` runs in O(n) regardless of where
+  the mismatch starts.
+- **Why open-list keeps ``/api/health`` only:** the shell's bootstrap
+  needs to probe the engine before the invoke command is registered
+  (Tauri's setup-hook ordering). Every other endpoint is post-boot
+  and must respect enforcement. Adding more open paths inflates the
+  attack surface for no operational gain.
+- **What this does NOT decide:** the workspace_id seam, REST DTO
+  parity, ``/api/v1`` versioning — the other three contract items
+  TABLET_ARCH §"지금 만들 것" names. Those land as follow-up D
+  entries; v0.65.0 is just the auth seam.
+- **Implementation outline:**
+  - Engine: ``plot_mcp/auth.py`` — env reader + ``AuthMiddleware``
+    (Starlette ``BaseHTTPMiddleware`` over ``/api/*`` only) +
+    ``check_ws_token`` (called from ``ws_endpoint`` inside
+    ``http_app.py`` because middleware can't ride ``WebSocketRoute``).
+    16 tests pin: env unset = pass-through, env set + missing → 401,
+    env set + wrong → 401, env set + good → through, ``/api/health``
+    always open, WS check mirrors HTTP.
+  - Viewer: ``api.ts`` gains ``setEngineAuthToken`` + ``engineFetch``
+    (30 ``await fetch(...)`` sites rewritten — single seam over
+    every engine call). ``openProjectSocket`` appends ``?auth=...``
+    when set. New ``src/app/auth.ts::initEngineAuth`` resolves the
+    token: Tauri ``invoke('plot_auth_token')`` first, then
+    ``import.meta.env.VITE_PLOT_AUTH_TOKEN`` for dev opt-in, then
+    fall through to ``null``. Called once from ``main.tsx`` before
+    render. 7 tests pin header injection on/off, ``null`` clearing,
+    Tauri invoke first / dev env fallback / Tauri error swallow.
+  - Tauri shell: ``mint_auth_token()`` uses ``rand::rngs::OsRng`` to
+    fill 32 bytes, hex-encodes. Stored in a ``State`` so the
+    ``#[tauri::command] plot_auth_token`` returns it. Sidecar
+    spawned with ``.env("PLOT_AUTH_TOKEN", &token)``. 2 Rust tests
+    pin hex shape + per-call uniqueness.
+- **Approval:** Executed under TABLET_ARCH §"지금 만들 것" plan,
+  2026-06-12. The "build now" line item literally says "auth seam …
+  미리 심기."
+- **Spec impact:** new SPEC.md §Engine auth section pointing at this
+  entry — "env-gated, Bearer for HTTP, ?auth= for WS, /api/health
+  open, dev parity preserved when env unset."
+

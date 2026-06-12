@@ -18,6 +18,54 @@ import { parseEntity } from "./domain";
 // future remote/relocated engine (tablet).
 const API_BASE = (import.meta.env.VITE_PLOT_ENGINE as string | undefined) ?? "";
 
+// ---------------------------------------------------------------------------
+// Engine auth seam (D-2026-06-12-F + TABLET_ARCH §"지금 만들 것")
+// ---------------------------------------------------------------------------
+//
+// Token holder + ``engineFetch`` wrapper. ``app/auth.ts`` sets the token at
+// boot (Tauri ``invoke('plot_auth_token')`` for the bundled shell or
+// ``import.meta.env.VITE_PLOT_AUTH_TOKEN`` for dev opt-in). Every engine
+// HTTP call routes through ``engineFetch`` so a future enforcement flip on
+// the server side requires zero edits to call sites. The WS URL builder
+// inside ``openProjectSocket`` appends ``&auth=<token>`` the same way.
+//
+// When the token is ``null`` (today's dev default), every fetch behaves
+// identically to a bare ``fetch`` — no header added, byte-identical to
+// v0.64.x.
+
+let _engineAuthToken: string | null = null;
+
+/** Called once at app boot from ``src/app/auth.ts``. Pass ``null`` to
+ *  clear (used by tests). */
+export function setEngineAuthToken(token: string | null): void {
+  _engineAuthToken = token && token.length > 0 ? token : null;
+}
+
+/** Test-only — peek at the current token. Not exported through
+ *  ``app/*`` so production code can't read it back. */
+export function _peekEngineAuthToken(): string | null {
+  return _engineAuthToken;
+}
+
+async function engineFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  if (_engineAuthToken === null) return fetch(input, init);
+  const headers = new Headers(init?.headers ?? {});
+  headers.set("Authorization", `Bearer ${_engineAuthToken}`);
+  return fetch(input, { ...init, headers });
+}
+
+/** Append the auth query param to a WS URL when enforcement is on. The
+ *  engine's ``ws_endpoint`` reads ``?auth=<token>`` (the HTTP middleware
+ *  can't run on a WebSocketRoute, so the param is the only path). */
+function appendWsAuth(url: string): string {
+  if (_engineAuthToken === null) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}auth=${encodeURIComponent(_engineAuthToken)}`;
+}
+
 export function resolveProjectPath(): string | null {
   const url = new URL(window.location.href);
   return url.searchParams.get("project_path");
@@ -91,7 +139,7 @@ export async function initWorkspaceGit(projectPath: string): Promise<void> {
     projectPath,
   )}`;
   await json<{ ok: true; created: boolean; workspace_root: string }>(
-    await fetch(url, { method: "POST" }),
+    await engineFetch(url, { method: "POST" }),
   );
 }
 
@@ -121,7 +169,7 @@ export async function listProjects(projectPath: string): Promise<ListProjectsRes
   const url = `${API_BASE}/api/projects?project_path=${encodeURIComponent(
     projectPath,
   )}`;
-  return json<ListProjectsResponse>(await fetch(url));
+  return json<ListProjectsResponse>(await engineFetch(url));
 }
 
 // --- workspace discovery + dir-tree picker (v0.33.0, D-2026-05-31-M) ---
@@ -157,7 +205,7 @@ export async function discoverWorkspace(
   const url = `${API_BASE}/api/workspace/projects?project_path=${encodeURIComponent(
     workspaceRoot,
   )}`;
-  return json<WorkspaceDiscoveryResponse>(await fetch(url));
+  return json<WorkspaceDiscoveryResponse>(await engineFetch(url));
 }
 
 /** Nested directory tree (with has_plot flags) for the new-project picker. */
@@ -165,7 +213,7 @@ export async function getDirTree(workspaceRoot: string): Promise<DirTreeResponse
   const url = `${API_BASE}/api/workspace/tree?project_path=${encodeURIComponent(
     workspaceRoot,
   )}`;
-  return json<DirTreeResponse>(await fetch(url));
+  return json<DirTreeResponse>(await engineFetch(url));
 }
 
 /** Create a new directory under the workspace root (v0.37.0, D-2026-05-31-AC) —
@@ -179,7 +227,7 @@ export async function createWorkspaceDir(
     workspaceRoot,
   )}`;
   return json<{ rel: string }>(
-    await fetch(url, {
+    await engineFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rel }),
@@ -199,7 +247,7 @@ export async function getProject(
   const url = `${API_BASE}/api/projects/${encodeURIComponent(
     projectId,
   )}?project_path=${encodeURIComponent(projectPath)}`;
-  return json<GetProjectResponse>(await fetch(url));
+  return json<GetProjectResponse>(await engineFetch(url));
 }
 
 export async function createProject(
@@ -211,7 +259,7 @@ export async function createProject(
     projectPath,
   )}`;
   return json<ProjectDoc>(
-    await fetch(url, {
+    await engineFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: projectId, name }),
@@ -228,7 +276,7 @@ export async function renameProject(
     projectId,
   )}?project_path=${encodeURIComponent(projectPath)}`;
   return json<ProjectDoc>(
-    await fetch(url, {
+    await engineFetch(url, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -243,7 +291,7 @@ export async function deleteProject(
   const url = `${API_BASE}/api/projects/${encodeURIComponent(
     projectId,
   )}?project_path=${encodeURIComponent(projectPath)}`;
-  return ok(await fetch(url, { method: "DELETE" }));
+  return ok(await engineFetch(url, { method: "DELETE" }));
 }
 
 /**
@@ -270,7 +318,7 @@ export async function patchProjectAnchor(
     projectPath,
   )}`;
   return json<ProjectDoc>(
-    await fetch(url, {
+    await engineFetch(url, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
@@ -290,7 +338,7 @@ export async function getCanvas(
 ): Promise<CanvasDoc> {
   return validateCanvas(
     await json<CanvasDoc>(
-      await fetch(canvasPath(projectPath, projectId, kind, serviceId)),
+      await engineFetch(canvasPath(projectPath, projectId, kind, serviceId)),
     ),
   );
 }
@@ -314,7 +362,7 @@ export async function putCanvas(
   const serviceId =
     canvas.canvas_kind === "service_detail" ? canvas.service_ref : null;
   const resp = await json<PutCanvasResponse>(
-    await fetch(
+    await engineFetch(
       canvasPath(projectPath, projectId, canvas.canvas_kind, serviceId),
       {
         method: "PUT",
@@ -364,7 +412,7 @@ export async function listProjectTags(
   const url = `${API_BASE}/api/projects/${encodeURIComponent(
     projectId,
   )}/tags?project_path=${encodeURIComponent(projectPath)}`;
-  const body = await json<{ tags: ProjectTag[] }>(await fetch(url));
+  const body = await json<{ tags: ProjectTag[] }>(await engineFetch(url));
   return body.tags;
 }
 
@@ -378,7 +426,7 @@ export async function tagProject(
     projectId,
   )}/tags?project_path=${encodeURIComponent(projectPath)}`;
   return json<ProjectTag>(
-    await fetch(url, {
+    await engineFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, message }),
@@ -404,7 +452,7 @@ export async function getProjectAtTag(
   const url = `${API_BASE}/api/projects/${encodeURIComponent(
     projectId,
   )}/at-tag/${encodeURIComponent(tag)}?project_path=${encodeURIComponent(projectPath)}`;
-  return json<ProjectAtTagResponse>(await fetch(url));
+  return json<ProjectAtTagResponse>(await engineFetch(url));
 }
 
 // ---------------------------------------------------------------------------
@@ -430,7 +478,7 @@ export async function publishProject(
     projectId,
   )}/publish?project_path=${encodeURIComponent(projectPath)}`;
   return json<PublishProjectResponse>(
-    await fetch(url, {
+    await engineFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bump, message }),
@@ -478,7 +526,7 @@ export async function publishNode(
     `/canvases/${encodeURIComponent(canvasKind)}` +
     `/nodes/${encodeURIComponent(nodeId)}/publish?${params.toString()}`;
   return json<PublishNodeResponse>(
-    await fetch(url, { method: "POST" }),
+    await engineFetch(url, { method: "POST" }),
   );
 }
 
@@ -504,7 +552,7 @@ export async function unpublishNode(
     `${API_BASE}/api/projects/${encodeURIComponent(projectId)}` +
     `/canvases/${encodeURIComponent(canvasKind)}` +
     `/nodes/${encodeURIComponent(nodeId)}/unpublish?${params.toString()}`;
-  return json<UnpublishNodeResponse>(await fetch(url, { method: "POST" }));
+  return json<UnpublishNodeResponse>(await engineFetch(url, { method: "POST" }));
 }
 
 /** v0.23.0 (D-2026-05-17-I) — one published version's metadata. */
@@ -534,7 +582,7 @@ export async function listPublishedVersions(
     `${API_BASE}/api/projects/${encodeURIComponent(projectId)}` +
     `/canvases/${encodeURIComponent(canvasKind)}` +
     `/nodes/${encodeURIComponent(nodeId)}/published?${params.toString()}`;
-  const resp = await json<PublishedVersionsResponse>(await fetch(url));
+  const resp = await json<PublishedVersionsResponse>(await engineFetch(url));
   return resp.versions;
 }
 
@@ -548,7 +596,7 @@ export async function deleteProjectTag(
   )}/tags/${encodeURIComponent(name)}?project_path=${encodeURIComponent(
     projectPath,
   )}`;
-  return ok(await fetch(url, { method: "DELETE" }));
+  return ok(await engineFetch(url, { method: "DELETE" }));
 }
 
 // ---------------------------------------------------------------------------
@@ -571,7 +619,7 @@ export async function readFile(
     path,
   });
   const url = `${API_BASE}/api/files?${params.toString()}`;
-  const body = await json<{ content: string }>(await fetch(url));
+  const body = await json<{ content: string }>(await engineFetch(url));
   return body.content;
 }
 
@@ -614,7 +662,7 @@ export async function writeFile(
   if (hint?.canvasKind) params.set("canvas_kind", hint.canvasKind);
   const url = `${API_BASE}/api/files?${params.toString()}`;
   const resp = await json<{ preview?: string | null }>(
-    await fetch(url, {
+    await engineFetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
@@ -637,7 +685,7 @@ export async function createFolder(
     projectPath,
   )}`;
   const body = await json<{ path: string }>(
-    await fetch(url, {
+    await engineFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project_id: projectId, path }),
@@ -683,7 +731,9 @@ export function openProjectSocket(
       ? API_BASE.replace(/^http/, "ws")
       : `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`;
     const ws = new WebSocket(
-      `${wsBase}/ws?project_path=${encodeURIComponent(projectPath)}`,
+      appendWsAuth(
+        `${wsBase}/ws?project_path=${encodeURIComponent(projectPath)}`,
+      ),
     );
     current = ws;
     ws.onopen = () => {
@@ -739,14 +789,14 @@ export interface McpProviderStatus {
 
 export async function getMcpProviders(): Promise<McpProviderStatus[]> {
   const body = await json<{ providers: McpProviderStatus[] }>(
-    await fetch(`${API_BASE}/api/mcp/providers`),
+    await engineFetch(`${API_BASE}/api/mcp/providers`),
   );
   return body.providers;
 }
 
 export async function registerMcpProvider(name: McpProviderName): Promise<void> {
   await json<{ ok: true }>(
-    await fetch(
+    await engineFetch(
       `${API_BASE}/api/mcp/providers/${encodeURIComponent(name)}/register`,
       { method: "POST" },
     ),
@@ -755,7 +805,7 @@ export async function registerMcpProvider(name: McpProviderName): Promise<void> 
 
 export async function unregisterMcpProvider(name: McpProviderName): Promise<void> {
   await json<{ ok: true }>(
-    await fetch(
+    await engineFetch(
       `${API_BASE}/api/mcp/providers/${encodeURIComponent(name)}/unregister`,
       { method: "POST" },
     ),
@@ -777,7 +827,7 @@ export async function getChatProvider(
   projectPath: string,
 ): Promise<ChatProviderSelection> {
   return json<ChatProviderSelection>(
-    await fetch(
+    await engineFetch(
       `${API_BASE}/api/chat/provider?project_path=${encodeURIComponent(projectPath)}`,
     ),
   );
@@ -788,7 +838,7 @@ export async function setChatProvider(
   provider: McpProviderName | null,
 ): Promise<ChatProviderSelection> {
   return json<ChatProviderSelection>(
-    await fetch(
+    await engineFetch(
       `${API_BASE}/api/chat/provider?project_path=${encodeURIComponent(projectPath)}`,
       {
         method: "PUT",
@@ -827,7 +877,7 @@ export async function sendChatMessage(
   message: string,
 ): Promise<void> {
   await ok(
-    await fetch(`${API_BASE}/api/chat/send`, {
+    await engineFetch(`${API_BASE}/api/chat/send`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ project_path: projectPath, message }),
@@ -839,7 +889,7 @@ export async function sendChatMessage(
  *  ``sendChatMessage`` mints a fresh ``--session-id``. */
 export async function resetChatSession(projectPath: string): Promise<void> {
   await ok(
-    await fetch(`${API_BASE}/api/chat/reset`, {
+    await engineFetch(`${API_BASE}/api/chat/reset`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ project_path: projectPath }),
