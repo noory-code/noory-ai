@@ -127,4 +127,61 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
     expect(screen.queryByRole("log", { name: /chat messages/i })).toBeNull();
     expect(screen.queryByRole("textbox", { name: /message input/i })).toBeNull();
   });
+
+  // ---- Phase B step B3: workspace-scoped active-provider persistence ----
+
+  it("does not call /api/chat/provider when workspaceRoot is not provided", async () => {
+    render(<ChatDock onError={() => {}} />);
+    await waitFor(() => screen.getByText("Claude Code"));
+    const calls = fetchSpy.mock.calls.map((c) => String(c[0]));
+    expect(calls.some((u) => u.includes("/api/chat/provider"))).toBe(false);
+  });
+
+  it("loads the persisted chat provider from the server on mount when workspaceRoot is given", async () => {
+    fetchSpy.mockReset();
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH))
+      .mockResolvedValueOnce(jsonResponse({ provider: "claude-code" }));
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    await waitFor(() => {
+      const calls = fetchSpy.mock.calls.map((c) => String(c[0]));
+      expect(
+        calls.some((u) => u.includes("/api/chat/provider") && u.includes("project_path=")),
+      ).toBe(true);
+    });
+  });
+
+  it("PUTs the new selection to the server when a radio is clicked", async () => {
+    fetchSpy.mockReset();
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
+      .mockResolvedValueOnce(jsonResponse({ provider: null }))
+      .mockResolvedValueOnce(jsonResponse({ provider: "claude-code" }));
+    const user = userEvent.setup();
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    await waitFor(() => screen.getByText("Claude Code"));
+    const radios = await screen.findAllByRole("radio");
+    const claude = (radios as HTMLInputElement[]).find((r) => r.value === "claude-code")!;
+    await user.click(claude);
+    await waitFor(() => {
+      const calls = fetchSpy.mock.calls;
+      const put = calls.find(
+        (c) =>
+          String(c[0]).includes("/api/chat/provider") &&
+          c[1] &&
+          (c[1] as RequestInit).method === "PUT",
+      );
+      expect(put).toBeDefined();
+      const body = JSON.parse(String((put![1] as RequestInit).body));
+      expect(body).toEqual({ provider: "claude-code" });
+    });
+  });
 });
+
+const PROVIDERS_FRESH_REGISTERED = {
+  providers: [
+    { name: "claude-code", installed: true, registered: true, config_path: "~/.claude.json" },
+    { name: "codex", installed: true, registered: true, config_path: "~/.codex/config.toml" },
+    { name: "gemini", installed: false, registered: false, config_path: "~/.gemini/settings.json" },
+  ],
+};

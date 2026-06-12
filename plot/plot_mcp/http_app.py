@@ -42,6 +42,8 @@ from plot_mcp.api_endpoints import (
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.debug_endpoints import debug_get_endpoint, debug_post_endpoint
 from plot_mcp.endpoints_mcp import (
+    chat_provider_get_endpoint,
+    chat_provider_put_endpoint,
     mcp_providers_endpoint,
     mcp_register_endpoint,
     mcp_unregister_endpoint,
@@ -98,6 +100,9 @@ def create_http_app(hub: BroadcastHub | None = None) -> Starlette:
             mcp_unregister_endpoint,
             methods=["POST"],
         ),
+        # D-2026-06-11-E Phase B step B3 — workspace-scoped chat-CLI choice
+        Route("/api/chat/provider", chat_provider_get_endpoint, methods=["GET"]),
+        Route("/api/chat/provider", chat_provider_put_endpoint, methods=["PUT"]),
         Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
         Route(
             "/api/projects/{project_id}",

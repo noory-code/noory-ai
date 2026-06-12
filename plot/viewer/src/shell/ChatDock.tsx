@@ -2,18 +2,21 @@
  * R7 chat dock (D-2026-06-11-E, Phase B).
  *
  * Right-side collapsible container that hosts the chat surface. Phase B
- * step B1 wires up the dock chrome + collapse persistence + mounts the
- * existing `ChatProvidersPanel` inside. Step B2 adds the message-list
- * frame; Phase C plugs the subprocess streaming in.
+ * step B1 wired up the dock chrome + collapse persistence + mounted the
+ * existing `ChatProvidersPanel` inside. Step B2 added the message-list
+ * frame; step B3 loads + persists the workspace's active chat-CLI
+ * choice through `/api/chat/provider`. Phase C plugs subprocess
+ * streaming into the same surface.
  *
  * Collapse state persists across reloads via
  * `localStorage["plot:chatDockCollapsed"]` ("1" = collapsed, "0" =
  * expanded). When collapsed, the embedded panels unmount — keeps the
  * screen-reader tree honest and skips the provider fetch.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { getChatProvider, setChatProvider, type McpProviderName } from "../app/mcp";
 import { ChatProvidersPanel } from "./ChatProvidersPanel";
 
 const COLLAPSE_STORAGE_KEY = "plot:chatDockCollapsed";
@@ -28,11 +31,18 @@ function readInitialCollapsed(): boolean {
 
 export interface ChatDockProps {
   onError: (message: string) => void;
+  /** When defined, the dock loads + persists the workspace's chat-CLI
+   * choice through `/api/chat/provider`. Tests omit it to verify the dock
+   * stays inert without a workspace (e.g. during the ProjectPicker
+   * phase, though in practice App.tsx unmounts the dock there). */
+  workspaceRoot?: string;
 }
 
-export function ChatDock({ onError }: ChatDockProps) {
+export function ChatDock({ onError, workspaceRoot }: ChatDockProps) {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState<boolean>(readInitialCollapsed);
+  const [activeProvider, setActiveProvider] =
+    useState<McpProviderName | null>(null);
 
   const toggle = useCallback(() => {
     setCollapsed((prev) => {
@@ -46,6 +56,29 @@ export function ChatDock({ onError }: ChatDockProps) {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    if (!workspaceRoot || collapsed) return;
+    void getChatProvider(workspaceRoot).then(
+      (sel) => setActiveProvider(sel.provider),
+      (err) => onError(err instanceof Error ? err.message : String(err)),
+    );
+  }, [workspaceRoot, collapsed, onError]);
+
+  const handleSelectProvider = useCallback(
+    (provider: McpProviderName | null) => {
+      setActiveProvider(provider);
+      if (!workspaceRoot) return;
+      void setChatProvider(workspaceRoot, provider).catch((err) =>
+        onError(err instanceof Error ? err.message : String(err)),
+      );
+    },
+    [workspaceRoot, onError],
+  );
+
+  const selectionProps = workspaceRoot
+    ? { activeProvider, onSelectProvider: handleSelectProvider }
+    : {};
 
   return (
     <aside
@@ -76,7 +109,7 @@ export function ChatDock({ onError }: ChatDockProps) {
       {!collapsed && (
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="overflow-y-auto border-b border-line p-3">
-            <ChatProvidersPanel onError={onError} />
+            <ChatProvidersPanel onError={onError} {...selectionProps} />
           </div>
           <ChatMessageFrame />
         </div>

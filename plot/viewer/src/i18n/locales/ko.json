@@ -122,7 +122,8 @@
     "emptyMessages": "아직 메시지가 없습니다.",
     "inputLabel": "메시지 입력",
     "inputPlaceholder": "스트리밍은 Phase C에서 연결됩니다.",
-    "send": "보내기"
+    "send": "보내기",
+    "selectActive": "{{name}}를 활성 채팅 CLI로 사용"
   },
   "serviceDetail": {
     "label": "서비스 상세",

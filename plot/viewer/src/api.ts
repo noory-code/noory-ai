@@ -761,3 +761,40 @@ export async function unregisterMcpProvider(name: McpProviderName): Promise<void
     ),
   );
 }
+
+// ---------------------------------------------------------------------------
+// R7 chat provider selection — D-2026-06-11-E Phase B step B3
+// ---------------------------------------------------------------------------
+//
+// Workspace-scoped selection of which CLI drives the chat panel. The choice
+// persists on disk at `<workspace>/.noory/plot/chat-provider`.
+
+export interface ChatProviderSelection {
+  provider: McpProviderName | null;
+}
+
+export async function getChatProvider(
+  projectPath: string,
+): Promise<ChatProviderSelection> {
+  return json<ChatProviderSelection>(
+    await fetch(
+      `${API_BASE}/api/chat/provider?project_path=${encodeURIComponent(projectPath)}`,
+    ),
+  );
+}
+
+export async function setChatProvider(
+  projectPath: string,
+  provider: McpProviderName | null,
+): Promise<ChatProviderSelection> {
+  return json<ChatProviderSelection>(
+    await fetch(
+      `${API_BASE}/api/chat/provider?project_path=${encodeURIComponent(projectPath)}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ provider }),
+      },
+    ),
+  );
+}

@@ -4,6 +4,68 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.63.3] — 2026-06-12
+
+Patch. D-2 (R7 native chat panel) Phase B step B3 — closes Phase B.
+Workspace-scoped chat-CLI selection persists at
+`<workspace>/.noory/plot/chat-provider`. The user's pick survives
+across reloads; unregistering the active provider auto-clears the
+selection so the persisted choice can never name a CLI Plot can't
+reach. Phase C (subprocess streaming) follows.
+
+### Added
+
+- `plot_mcp/chat_provider.py` — pydantic `ChatProviderSelection`
+  (`provider: ProviderName | None`) + `read_selection` /
+  `write_selection`. Missing or unreadable file → null selection (a
+  corrupt file is never surfaced as a panel error; the next PUT
+  overwrites cleanly). `mcp_registration.ProviderName` is the same
+  literal union the rest of R7 uses, so unknown provider strings are
+  rejected at the boundary.
+- `plot_mcp/endpoints_mcp.py::chat_provider_get_endpoint` +
+  `chat_provider_put_endpoint` — `GET /api/chat/provider` + `PUT
+  /api/chat/provider` (workspace-scoped via `project_path`). Pydantic
+  ValidationError → 422; missing `project_path` → 400. Routed in
+  `http_app.py`.
+- `tests/test_chat_provider.py` (7 tests) — fresh workspace → null,
+  PUT persists + GET round-trips, PUT null clears, unknown provider →
+  422, missing `project_path` → 400 on both verbs, workspace
+  isolation (ws A's choice never leaks into ws B).
+- `src/api.ts` — `getChatProvider(projectPath)` /
+  `setChatProvider(projectPath, provider)` + `ChatProviderSelection`
+  type. Re-exported through `src/app/mcp.ts` (application-layer seam
+  rule).
+- i18n key `chat.selectActive` in en + ko.
+- `tests/chat-providers-panel.test.tsx` — 5 new cases pin the radio
+  contract: panel hides the radio when selection props are omitted,
+  shows one radio per row when present, checks the active row,
+  disables radios on not-installed rows, dispatches `onSelectProvider`
+  on click, auto-clears when the active row is unregistered.
+- `tests/chat-dock.test.tsx` — 3 new cases pin the dock-level
+  persistence: no `/api/chat/provider` call without `workspaceRoot`,
+  GET fires on mount when `workspaceRoot` is given, clicking a radio
+  PUTs the new selection.
+
+### Changed
+
+- `src/shell/ChatProvidersPanel.tsx` (163 → 196 LOC) — optional
+  `activeProvider` + `onSelectProvider` props enable a per-row radio
+  (`name="chat-active-provider"`, aria-labelled `chat.selectActive`,
+  disabled on not-registered rows). Unregister handler auto-clears
+  the selection if the row being unregistered was active.
+- `src/shell/ChatDock.tsx` (127 → 160 LOC) — optional `workspaceRoot`
+  prop. When present, loads `getChatProvider` on expand and PUTs the
+  user's pick via `setChatProvider`. `App.tsx` always passes it; tests
+  omit it to exercise the inert path.
+- `src/App.tsx` — passes `workspaceRoot` into `<ChatDock>`.
+- `docs/SPEC.md` §R7 chat — Provider-selection row expanded with the
+  HTTP surface + auto-clear-on-unregister rule.
+
+### Notes
+
+- Server: 572 pytest green (+7); mypy clean. Viewer: 887 vitest green
+  (+8); tsc clean. App.tsx 490/498.
+
 ## [0.63.2] — 2026-06-12
 
 Patch. D-2 Phase B step B2 — message-log frame + disabled input frame

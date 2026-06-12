@@ -1,11 +1,12 @@
 /**
- * R7 chat provider panel (D-2026-06-11-E, Phase A).
+ * R7 chat provider panel (D-2026-06-11-E, Phase A + Phase B step B3).
  *
  * Lists the three external CLIs Plot can drive (Claude Code / Codex /
  * Gemini), surfaces install state + Plot-registration state, and exposes
- * one-click register / unregister buttons. Phase B (the chat surface
- * itself) and Phase C (subprocess streaming) plug into the same
- * provider state machine in follow-up commits.
+ * one-click register / unregister buttons. Phase B step B3 adds an
+ * optional active-provider radio per row (controlled by the parent —
+ * persistence lives at the dock level so the panel stays a presentation
+ * component).
  */
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,12 +20,23 @@ import {
 
 export interface ChatProvidersPanelProps {
   onError: (message: string) => void;
+  /** When defined together with `onSelectProvider`, the panel shows a radio
+   * per row for active-provider selection. Omit both to suppress the
+   * selection UI (Phase A backwards-compat). */
+  activeProvider?: McpProviderName | null;
+  onSelectProvider?: (name: McpProviderName | null) => void;
 }
 
-export function ChatProvidersPanel({ onError }: ChatProvidersPanelProps) {
+export function ChatProvidersPanel({
+  onError,
+  activeProvider,
+  onSelectProvider,
+}: ChatProvidersPanelProps) {
   const { t } = useTranslation();
   const [providers, setProviders] = useState<McpProviderStatus[] | null>(null);
   const [busy, setBusy] = useState<McpProviderName | null>(null);
+
+  const selectionEnabled = activeProvider !== undefined && onSelectProvider !== undefined;
 
   const refresh = async () => {
     try {
@@ -57,6 +69,12 @@ export function ChatProvidersPanel({ onError }: ChatProvidersPanelProps) {
     setBusy(name);
     try {
       await unregisterMcpProvider(name);
+      // If the row we just unregistered was the active provider, clear
+      // the selection — the active choice must remain valid against the
+      // user's current set of registered CLIs.
+      if (selectionEnabled && activeProvider === name) {
+        onSelectProvider!(null);
+      }
       await refresh();
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
@@ -90,11 +108,27 @@ export function ChatProvidersPanel({ onError }: ChatProvidersPanelProps) {
             key={p.name}
             className="flex items-center justify-between gap-2 rounded border border-line bg-surface px-3 py-2"
           >
-            <div>
-              <div className="text-sm font-medium text-fg-strong">
-                {t(`chat.providers.${p.name}`)}
+            <div className="flex items-center gap-2">
+              {selectionEnabled && (
+                <input
+                  type="radio"
+                  name="chat-active-provider"
+                  value={p.name}
+                  checked={activeProvider === p.name}
+                  disabled={!p.registered}
+                  onChange={() => onSelectProvider!(p.name)}
+                  aria-label={t("chat.selectActive", {
+                    name: t(`chat.providers.${p.name}`),
+                  })}
+                  className="h-3.5 w-3.5"
+                />
+              )}
+              <div>
+                <div className="text-sm font-medium text-fg-strong">
+                  {t(`chat.providers.${p.name}`)}
+                </div>
+                <ProviderStatusBadge status={p} />
               </div>
-              <ProviderStatusBadge status={p} />
             </div>
             <ProviderActions
               status={p}

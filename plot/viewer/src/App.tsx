@@ -438,7 +438,7 @@ export function App() {
             })()}
           </div>
         </main>
-        <ChatDock onError={handleError} />
+        <ChatDock onError={handleError} workspaceRoot={workspaceRoot} />
       </div>
     </div>
     {/* v0.27.2 (D-2026-05-26-F) — modal sits OUTSIDE the inert root

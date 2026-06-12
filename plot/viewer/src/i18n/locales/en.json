@@ -122,7 +122,8 @@
     "emptyMessages": "No messages yet.",
     "inputLabel": "Message input",
     "inputPlaceholder": "Streaming arrives in Phase C.",
-    "send": "Send"
+    "send": "Send",
+    "selectActive": "Use {{name}} as the active chat CLI"
   },
   "serviceDetail": {
     "label": "Service detail",

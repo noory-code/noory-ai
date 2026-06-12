@@ -7,9 +7,12 @@
  * the api-seam guard in `structural-guards.test.tsx`.
  */
 export {
+  getChatProvider,
   getMcpProviders,
   registerMcpProvider,
+  setChatProvider,
   unregisterMcpProvider,
+  type ChatProviderSelection,
   type McpProviderName,
   type McpProviderStatus,
 } from "../api";

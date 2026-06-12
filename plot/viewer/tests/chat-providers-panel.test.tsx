@@ -94,4 +94,82 @@ describe("ChatProvidersPanel (D-2026-06-11-E Phase A)", () => {
     render(<ChatProvidersPanel onError={onError} />);
     await waitFor(() => expect(onError).toHaveBeenCalled());
   });
+
+  // ---- Phase B step B3: active-provider selection radio ----
+
+  it("renders no selection radio when activeProvider / onSelectProvider are omitted", async () => {
+    fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_ALL_FRESH));
+    render(<ChatProvidersPanel onError={() => {}} />);
+    await waitFor(() => screen.getByText("Claude Code"));
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+  });
+
+  it("renders a radio per row when selection props are present + checks the active row", async () => {
+    fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_AFTER_REGISTER));
+    render(
+      <ChatProvidersPanel
+        onError={() => {}}
+        activeProvider="claude-code"
+        onSelectProvider={() => {}}
+      />,
+    );
+    await waitFor(() => screen.getByText("Claude Code"));
+    const radios = screen.getAllByRole("radio") as HTMLInputElement[];
+    expect(radios).toHaveLength(3);
+    const claude = radios.find((r) => r.value === "claude-code");
+    expect(claude?.checked).toBe(true);
+  });
+
+  it("disables the radio on a not-installed provider", async () => {
+    fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_ALL_FRESH));
+    render(
+      <ChatProvidersPanel
+        onError={() => {}}
+        activeProvider={null}
+        onSelectProvider={() => {}}
+      />,
+    );
+    await waitFor(() => screen.getByText("Gemini"));
+    const radios = screen.getAllByRole("radio") as HTMLInputElement[];
+    const gemini = radios.find((r) => r.value === "gemini");
+    expect(gemini?.disabled).toBe(true);
+  });
+
+  it("calls onSelectProvider when an enabled radio is clicked", async () => {
+    fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_AFTER_REGISTER));
+    const onSelectProvider = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChatProvidersPanel
+        onError={() => {}}
+        activeProvider={null}
+        onSelectProvider={onSelectProvider}
+      />,
+    );
+    await waitFor(() => screen.getByText("Claude Code"));
+    const radios = screen.getAllByRole("radio") as HTMLInputElement[];
+    const claude = radios.find((r) => r.value === "claude-code")!;
+    await user.click(claude);
+    expect(onSelectProvider).toHaveBeenCalledWith("claude-code");
+  });
+
+  it("clears the active selection when the active provider is unregistered", async () => {
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_AFTER_REGISTER))
+      .mockResolvedValueOnce(jsonResponse({ ok: true, provider: "claude-code" }))
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_ALL_FRESH));
+    const onSelectProvider = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChatProvidersPanel
+        onError={() => {}}
+        activeProvider="claude-code"
+        onSelectProvider={onSelectProvider}
+      />,
+    );
+    await waitFor(() => screen.getByText("Claude Code"));
+    const unregister = screen.getByRole("button", { name: "Unregister" });
+    await user.click(unregister);
+    await waitFor(() => expect(onSelectProvider).toHaveBeenCalledWith(null));
+  });
 });
