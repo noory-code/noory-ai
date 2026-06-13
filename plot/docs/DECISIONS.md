@@ -11437,3 +11437,45 @@ but not yet fully eliminated.
   available via the auto-layout button).
 - **Spec impact:** SPEC.md §Drag-and-drop "Free drop" bullet.
 
+### D-2026-06-13-H — Chat is MCP-first; in-app chat is a Codex/Gemini-only convenience (design pinned, impl follow-up)
+
+- **What (two coexisting paths):**
+  - **Primary — MCP-only.** Plot is an MCP server; the user connects their
+    OWN interactive agent (Claude Code / Codex / Gemini, already running on
+    their account/subscription, as in an IDE) to it. Plot does NOT host or
+    drive the AI. The R7 MCP registration (v0.62) is the keeper.
+  - **Secondary — in-app chat for Codex + Gemini ONLY.** The in-app panel
+    (engine spawns the CLI) stays for users who configured Codex/Gemini.
+    **`claude-code` is removed from the in-app chat provider selection**
+    (it remains in the MCP-registration list).
+  - Chat conversations are **scoped per canvas type** (foundation / actors
+    / services / service_detail) **plus one shared "project" scope** for
+    cross-canvas work — the chat follows the active canvas tab; the project
+    scope is always reachable. Applies to the in-app chat threads and to
+    the MCP context handed to the agent.
+- **Why:** the CLI agents ARE interactive chats — running `claude`
+  (no `-p`) IS a chat session, on the account subscription, like the
+  VSCode Claude Code extension. Plot's in-app chat uses `claude -p`
+  (headless), which Anthropic bills SEPARATELY from the Claude
+  subscription → a Claude user **pays twice** (subscription + `-p`). The
+  user already runs their agent; Plot embedding/driving it via `-p` is
+  redundant + costly. So Plot should be the MCP surface their existing
+  agent connects to, not a chat host. Codex/Gemini in-app stays as a
+  convenience for users who set those up (user: "둘 다 할거라고").
+- **Alternatives:** (a) drive the *interactive* (subscription) CLI via a
+  PTY to dodge `-p` billing — rejected for now: fragile (parsing a
+  human-facing TUI the CLIs deliberately don't expose for automation) and
+  billing/ToS-uncertain. Verify before ever revisiting. (b) in-app API key
+  / Plot-hosted AI — both violate the pinned Pencil model + double-charge.
+- **Revises:** D-2026-06-11-E ("R7 in-app chat = native panel + external
+  CLI subprocess") — the subprocess in-app chat is **demoted** to a
+  Codex/Gemini-only secondary; MCP-only is primary. Reframes the
+  per-canvas-chat idea from "in-app threads" toward "per-canvas MCP
+  context + (secondary) per-scope Codex/Gemini threads".
+- **Approval:** Accepted by user, 2026-06-13 ("둘 다 할거라고"). Design
+  pinned; **implementation is a follow-up** (engine: scope-keyed sessions
+  + drop claude-code from chat selection; viewer: scope-aware dock +
+  MCP-connect affordance; schema parity for the `scope` field). Run via
+  plot-feature-tdd.
+- **Spec impact:** TBD on implementation — will update SPEC §R7 / chat.
+

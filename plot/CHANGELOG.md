@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.67.1] — 2026-06-13
+
+Patch (docs). Pin the chat-architecture decision after in-app chat
+verification surfaced a `claude -p` double-billing problem.
+
+### Changed
+
+- `docs/DECISIONS.md` — D-2026-06-13-H: **chat is MCP-first.** Primary
+  path = Plot is an MCP server the user's own interactive agent (Claude
+  Code / Codex / Gemini, on their subscription) connects to; Plot does not
+  host/drive the AI. Secondary = in-app chat for **Codex/Gemini only**
+  (`claude-code` removed from in-app chat selection, kept in MCP
+  registration) because `claude -p` bills separately from the Claude
+  subscription (double-pay). Adds per-canvas-type + shared "project" chat
+  scoping. Revises D-2026-06-11-E. Design pinned; implementation is a
+  follow-up (engine scope-keyed sessions + viewer scope-aware dock +
+  `scope` schema parity).
+
 ## [0.67.0] — 2026-06-13
 
 Minor. **Stencil drag-and-drop works in the desktop app, and behaves as
