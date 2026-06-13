@@ -1,18 +1,21 @@
-// Stencil → canvas drag/drop orchestration. Owns:
-// - the dataTransfer dragover guard (only "application/plot-preset"),
-// - the drop handler that hits-tests, nudges off siblings, and
-//   either creates the node directly or stashes a "pending ref"
-//   for the picker modal,
+// Stencil → canvas placement orchestration. Owns:
+// - ``placePresetAt(preset, clientX, clientY)``: hit-tests the drop
+//   point, nudges off siblings, and either creates the node directly or
+//   stashes a "pending ref" for the picker modal,
 // - the two pending-ref states themselves.
 //
-// SPEC §Drag-and-drop owns the canonical hit-test / nudge /
-// hierarchy-edge / picker rules.
+// The drag GESTURE is captured by the pointer channel
+// (``StencilDragContext``, D-2026-06-13-C) — WKWebView does not fire
+// HTML5 ``drop`` — which calls ``placePresetAt`` on pointer release over
+// a registered canvas pane. SPEC §Drag-and-drop owns the canonical
+// hit-test / nudge / hierarchy-edge / picker rules.
 import {
   type Dispatch,
-  type DragEvent as ReactDragEvent,
   type MutableRefObject,
+  type RefObject,
   type SetStateAction,
   useCallback,
+  useRef,
   useState,
 } from "react";
 import type { ReactFlowInstance } from "reactflow";
@@ -20,6 +23,7 @@ import type { SketchNode as DocNode } from "../../types";
 import { resolveDropTarget, type StencilCanvas, type StencilPreset } from "../SketchStencil";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
 import { containerAtFlowPoint, findFreeSpot } from "./overlapNudge";
+import { useStencilDropTarget } from "./StencilDragContext";
 import type { NodePreset, PendingActorRef, PendingFoundationRef } from "./types";
 import { useDialog } from "../../shell/dialog/DialogProvider";
 
@@ -44,8 +48,9 @@ export interface UseDragAndDropArgs {
 }
 
 export interface UseDragAndDropResult {
-  handleDragOver: (event: ReactDragEvent) => void;
-  handleDrop: (event: ReactDragEvent) => void;
+  /** Attach to the canvas pane element. Registered with the pointer-drag
+   *  channel so a stencil released over it places a node here. */
+  paneRef: RefObject<HTMLDivElement>;
   pendingActorRef: PendingActorRef | null;
   setPendingActorRef: Dispatch<SetStateAction<PendingActorRef | null>>;
   pendingFoundationRef: PendingFoundationRef | null;
@@ -66,34 +71,18 @@ export function useDragAndDrop({
   const [pendingFoundationRef, setPendingFoundationRef] =
     useState<PendingFoundationRef | null>(null);
 
-  const handleDragOver = useCallback((event: ReactDragEvent) => {
-    if (event.dataTransfer.types.includes("application/plot-preset")) {
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "copy";
-    }
-  }, []);
-
-  const handleDrop = useCallback(
-    (event: ReactDragEvent) => {
+  const placePresetAt = useCallback(
+    (preset: StencilPreset, clientX: number, clientY: number) => {
       if (!flowRef.current) return;
-      const raw = event.dataTransfer.getData("application/plot-preset");
-      if (!raw) return;
-      event.preventDefault();
-      let preset: NodePreset;
-      try {
-        preset = JSON.parse(raw) as NodePreset;
-      } catch {
-        return;
-      }
       const pos = flowRef.current.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
+        x: clientX,
+        y: clientY,
       });
       const w = preset.width ?? DEFAULT_WIDTH;
       const h = preset.height ?? DEFAULT_HEIGHT;
       const container = containerAtFlowPoint(nodes, nodeById, pos.x, pos.y);
       const resolved = resolveDropTarget(
-        preset as StencilPreset,
+        preset,
         container ? { id: container.id, kind: container.kind } : null,
         canvasKind,
       );
@@ -163,9 +152,13 @@ export function useDragAndDrop({
     [flowRef, nodes, edges, nodeById, addNodeAt, addNestedNodeAt, canvasKind, dialog],
   );
 
+  // Register the pane with the pointer-drag channel (D-2026-06-13-C). The
+  // channel calls ``placePresetAt`` on pointer release over ``paneRef``.
+  const paneRef = useRef<HTMLDivElement>(null);
+  useStencilDropTarget(paneRef, placePresetAt);
+
   return {
-    handleDragOver,
-    handleDrop,
+    paneRef,
     pendingActorRef,
     setPendingActorRef,
     pendingFoundationRef,

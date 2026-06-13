@@ -375,8 +375,9 @@ function SketchCanvasInner({
   });
 
   const {
-    handleDragOver,
-    handleDrop,
+    // D-2026-06-13-C — paneRef is registered with the pointer-drag channel
+    // inside the hook; a stencil drop released over it lands on this canvas.
+    paneRef,
     pendingActorRef,
     setPendingActorRef,
     pendingFoundationRef,
@@ -395,11 +396,10 @@ function SketchCanvasInner({
 
   return (
     <div
+      ref={paneRef}
       className="relative h-full w-full"
       onDoubleClick={handlePaneDoubleClick}
       onClick={closeMenu}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
     >
       <SketchToolbar
         canUndo={canUndo}

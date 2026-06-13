@@ -4,6 +4,48 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.67.0] — 2026-06-13
+
+Minor. **Stencil drag-and-drop works in the desktop app, and behaves as
+the user expects.** WKWebView (the bundled Tauri `.app`) never fired
+HTML5 `drop`, so stencil drops created no node on any canvas. The drag is
+now captured with pointer events, plus the drop behaviour the user asked
+for during in-app verification. See D-2026-06-13-C/D/E/F/G.
+
+### Added
+
+- `viewer/src/canvases/sketch/StencilDragContext.tsx` — pointer-drag
+  channel: `StencilDragProvider` + `useStencilDrag` (begin a drag from a
+  stencil item's `onPointerDown`) + `useStencilDropTarget` (register a
+  canvas pane + `place` callback). A ghost chip follows the pointer.
+  WebKit implicit-capture handled via `elementFromPoint`.
+- `viewer/tests/stencil-pointer-drag.test.tsx` (5) + `nested-drop-edge.test.tsx` (1).
+
+### Changed
+
+- `viewer/src/canvases/sketch/useDragAndDrop.ts` — `handleDrop`/`handleDragOver`
+  replaced by `placePresetAt(preset, clientX, clientY)`; the hook owns the
+  pane ref + registers it with the channel. `SketchStencil` items use
+  `onPointerDown` + `data-stencil-item`; `SketchCanvas` attaches the pane
+  ref (no more `onDrop`/`onDragOver`); `App` mounts `StencilDragProvider`.
+- `viewer/src/canvases/SketchStencil.tsx` — **category is optional**: a
+  `service` dropped outside a category lands top-level instead of being
+  rejected (D-2026-06-13-D, supersedes the D-2026-05-28-A requirement).
+- `viewer/src/canvases/FoundationCanvas.tsx` — drops land at the cursor,
+  not snapped to an anchor-radial slot (D-2026-06-13-G).
+- `viewer/src/canvases/sketch/useNodeCreation.ts` — the nesting edge
+  carries no visible "decomposes" label (D-2026-06-13-E).
+- `viewer/src/canvases/sketch/LayoutControls.tsx` — arrange icon stroke
+  is a fixed dark `#1a1a1a` (was `currentColor`, invisible on the light RF
+  controls bar in dark theme) (D-2026-06-13-F).
+
+### Removed
+
+- `viewer/src/canvases/SketchStencil.tsx` `toTransferPreset` + its test —
+  superseded by the pointer channel passing the full in-memory preset
+  (no serialization, so `preset.id` can never be lost; D-2026-06-13-A's
+  intent is now structural).
+
 ## [0.66.0] — 2026-06-13
 
 Minor. **Flavor badge — `DEBUG` chip in non-release builds.** A small

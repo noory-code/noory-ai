@@ -38,7 +38,7 @@ describe("Sidebar stencil gating (D-2026-05-31-K)", () => {
       <SketchSidebar {...makeProps({ activeId: null, projects: [] })} />,
       { wrapper: ThemeProvider },
     );
-    expect(container.querySelectorAll('[draggable="true"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-stencil-item]')).toHaveLength(0);
   });
 
   it("shows the stencil once a project is active", () => {
@@ -46,6 +46,6 @@ describe("Sidebar stencil gating (D-2026-05-31-K)", () => {
       <SketchSidebar {...makeProps({ activeId: "p1", projects: [PROJECT] })} />,
       { wrapper: ThemeProvider },
     );
-    expect(container.querySelectorAll('[draggable="true"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-stencil-item]').length).toBeGreaterThan(0);
   });
 });

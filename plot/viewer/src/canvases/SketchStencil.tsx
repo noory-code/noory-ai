@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { NodeKind, SketchNode } from "../types";
 import type { NodePreset } from "./sketch/types";
+import { useStencilDrag } from "./sketch/StencilDragContext";
 import { getIcon } from "./SketchIcons";
 import { SectionInfo } from "./stencil/SectionInfo";
 
@@ -313,10 +314,13 @@ export function resolveDropTarget(
     return { parentId: containerAtDrop.id };
   }
   if (isServiceInsideCategory) {
-    if (!containerAtDrop || containerAtDrop.kind !== "category") {
-      return { error: preset.dropHint ?? "Drop inside a Category container" };
-    }
-    return { parentId: containerAtDrop.id };
+    // D-2026-06-13-D — category is an OPTIONAL grouping. A service dropped
+    // onto a category nests under it; dropped anywhere else it lands
+    // top-level (no longer rejected). User: "카테고리는 옵셔널 할 수 있습니다".
+    // Supersedes the D-2026-05-28-A "service must nest in a Category" rule.
+    return {
+      parentId: containerAtDrop?.kind === "category" ? containerAtDrop.id : null,
+    };
   }
   if (isSubActor) {
     if (!containerAtDrop || containerAtDrop.kind !== "actor") {
@@ -329,30 +333,9 @@ export function resolveDropTarget(
   return { parentId: null };
 }
 
-/** The slice of a stencil preset that crosses the dataTransfer wire on a
- *  drag. Display-only fields (``labelHint`` / ``dropHint`` / the i18n keys)
- *  are dropped — they are sidebar chrome, not node data. ``id`` is KEPT on
- *  purpose: ``resolveDropTarget`` keys the sub-actor / service-in-category
- *  nesting rules off it. Stripping ``id`` here regressed every such drop to
- *  a silent top-level node, bypassing the pinned D-2026-05-28-A contract. */
-export type TransferPreset = Omit<
-  StencilPreset,
-  "labelHint" | "dropHint" | "labelI18nKey" | "dropHintI18nKey"
->;
-
-export function toTransferPreset(preset: StencilPreset): TransferPreset {
-  const {
-    labelHint: _lh,
-    dropHint: _dh,
-    labelI18nKey: _lk,
-    dropHintI18nKey: _dk,
-    ...rest
-  } = preset;
-  return rest;
-}
-
 function StencilItem({ preset }: { preset: StencilPreset }) {
   const { t } = useTranslation();
+  const { beginDrag } = useStencilDrag();
   const Icon = getIcon(preset.icon);
   // v0.14.11 / v0.27.2 (D-2026-05-26-E): label resolution order:
   //   1. explicit ``labelI18nKey === null`` → labelHint wins (dynamic
@@ -374,15 +357,9 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
   return (
     <li>
       <div
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData(
-            "application/plot-preset",
-            JSON.stringify(toTransferPreset(preset)),
-          );
-          e.dataTransfer.effectAllowed = "copy";
-        }}
-        className="flex cursor-grab items-center gap-2 rounded border border-line bg-surface px-2 py-1.5 text-xs text-fg shadow-sm hover:bg-surface-muted active:cursor-grabbing"
+        data-stencil-item={preset.id}
+        onPointerDown={(e) => beginDrag(preset, e)}
+        className="flex cursor-grab touch-none select-none items-center gap-2 rounded border border-line bg-surface px-2 py-1.5 text-xs text-fg shadow-sm hover:bg-surface-muted active:cursor-grabbing"
         title={dropHintText ?? t("stencil.dragOntoCanvas", { name: label })}
       >
         <span

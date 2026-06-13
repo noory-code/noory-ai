@@ -8,6 +8,7 @@ import { FoundationCanvas } from "./canvases/FoundationCanvas";
 import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
 import { ServicesCanvas } from "./canvases/ServicesCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
+import { StencilDragProvider } from "./canvases/sketch/StencilDragContext";
 import { parentIdOf } from "./canvases/sketch/hierarchy";
 import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useAppKeyboard } from "./hooks/useAppKeyboard";
@@ -344,7 +345,7 @@ export function App() {
   const modalOpen = phase === "ready" && !!detailServiceId && !!detailCanvas && !!detailCanvasKey && !!activeId;
 
   return (
-    <>
+    <StencilDragProvider>
     <div
       className="flex h-screen min-h-screen flex-col"
       // v0.27.2 (D-2026-05-26-F) — when the ServiceDetail modal is
@@ -482,7 +483,7 @@ export function App() {
       );
     })()}
     {dirPicker.modal}
-    </>
+    </StencilDragProvider>
   );
 }
 

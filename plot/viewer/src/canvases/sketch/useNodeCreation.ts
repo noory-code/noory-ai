@@ -162,14 +162,17 @@ export function useNodeCreation({
           target: node.id,
           sourceHandle: null,
           targetHandle: null,
-          label: "decomposes",
+          // D-2026-06-13-E — the nesting edge carries no visible verb
+          // label (user: clutter). The directed edge + relation still
+          // carry the parent→child structure.
+          label: "",
           style: "dashed" as const,
           directed: true,
           relation: classifyEdge(
             current.canvas_kind,
             current.nodes.find((n) => n.id === args.parentId)?.kind,
           ),
-          action_verb: "decomposes",
+          action_verb: null,
           value_form: [],
         },
       ];

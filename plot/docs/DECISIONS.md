@@ -11348,3 +11348,92 @@ but not yet fully eliminated.
 - **Spec impact:** SPEC.md §Chrome — new "Flavor badge" bullet. Pinned by
   `viewer/tests/flavor-badge.test.tsx`.
 
+### D-2026-06-13-C — Stencil drag uses pointer events, not HTML5 DnD
+
+- **What:** the stencil → canvas drag is captured with pointer events
+  (`pointerdown` on the stencil item → window `pointerup` over a
+  registered canvas pane), replacing HTML5 `draggable` + `dataTransfer` +
+  `onDrop`. New `viewer/src/canvases/sketch/StencilDragContext.tsx`
+  (provider + `useStencilDrag` / `useStencilDropTarget`); `useDragAndDrop`
+  exposes `placePresetAt(preset, clientX, clientY)` + registers the pane;
+  `SketchStencil` items use `onPointerDown`. A ghost chip follows the
+  pointer for feedback.
+- **Why:** WKWebView (the bundled Tauri `.app` — Plot's only product
+  surface) does **not** fire HTML5 `dragstart` / `drop`. Confirmed in-app
+  via the debug channel: a top-level drop never changed `nodeCount`. So
+  stencil drops created no node on ANY canvas in the desktop app, while
+  Chromium dev worked. Pointer events fire identically in both.
+  - WKWebView quirk handled: it implicitly captures the pointer to the
+    source item, so `pointerup.target` is the SOURCE, not the drop
+    element. The drop pane is resolved by `elementFromPoint(clientX,
+    clientY)` OR `e.target` (jsdom has no `elementFromPoint`).
+  - Supersedes the toTransferPreset mechanism of D-2026-06-13-A: the
+    channel passes the full in-memory `StencilPreset` (no serialization),
+    so `preset.id` can never be lost — the nesting-rule intent of A is now
+    structural. `toTransferPreset` + its test were removed.
+- **Root cause of the multi-hour mis-diagnosis:** the debug `.app` embeds
+  `viewer/dist-debug`, but the viewer was being built to `dist`; and
+  Tauri does not recompile the binary when only the frontend changes. So
+  every `.app` test ran STALE (yesterday's) frontend. Fix = build
+  `dist-debug` + `touch src-tauri` to force re-embed (see
+  `project_debug_app_build` memory).
+- **Alternatives:** (a) click-to-place — rejected, changes the drag UX.
+  (b) coax HTML5 DnD to work in WKWebView — rejected, fragile and the web
+  product is retired so there's no reason to keep HTML5 DnD.
+- **Approval:** Accepted by user, 2026-06-13 ("포인터 드래그로 교체"); drop
+  verified working in the WKWebView `.app` (placed: true via debug trace).
+- **Spec impact:** SPEC.md §Drag-and-drop "Capture mechanism" bullet.
+  Pinned by `viewer/tests/stencil-pointer-drag.test.tsx` (channel routing,
+  WebKit-capture via elementFromPoint, pointercancel) +
+  `sidebar-stencil-gating.test.tsx`.
+
+### D-2026-06-13-D — Category is an optional grouping on the Services canvas
+
+- **What:** `resolveDropTarget` no longer rejects a `service` dropped
+  outside a `category`. Dropped on a category → nests; dropped elsewhere →
+  top-level.
+- **Why:** user: "카테고리는 옵셔널 할 수 있습니다" (2026-06-13). The "every
+  service belongs to one category" model was a constraint, not a law, and
+  did not match the user's mental model.
+- **Alternatives:** keep the requirement (rejected by user); make
+  sub-actor optional too (out of scope — user spoke only about category).
+- **Approval:** Accepted by user, 2026-06-13.
+- **Spec impact:** SPEC.md §Drag-and-drop "Optional category" bullet.
+  Supersedes D-2026-05-28-A's service rule. Pinned by
+  `viewer/tests/service-detail-composition-drop.test.tsx`.
+
+### D-2026-06-13-E — Nesting edge carries no visible verb label
+
+- **What:** the directed parent→child edge a nested drop materialises now
+  uses `label: ""` / `action_verb: null` (was `"decomposes"`).
+- **Why:** user: the "decomposes" label was visual clutter (2026-06-13).
+  The directed edge + `relation` still carry the parent→child structure.
+- **Approval:** Accepted by user, 2026-06-13.
+- **Spec impact:** SPEC.md §Drag-and-drop "Hierarchy edge" bullet. Pinned
+  by `viewer/tests/nested-drop-edge.test.tsx`.
+
+### D-2026-06-13-F — Arrange icon uses a fixed dark stroke, not currentColor
+
+- **What:** `LayoutControls` `ArrangeIcon` stroke is `#1a1a1a` (was
+  `currentColor`).
+- **Why:** the React Flow Controls bar has a light background in every
+  theme; `currentColor` inherited the app's (light, in dark theme) text
+  colour, making the arrange icon invisible. User: "정렬 아이콘이 잘 보이지
+  않습니다. 아이콘 색깔을 검은 색으로 해주세요" (2026-06-13).
+- **Approval:** Accepted by user, 2026-06-13.
+- **Spec impact:** none (cosmetic; the controls bar is RF default chrome).
+
+### D-2026-06-13-G — Foundation drops land at the cursor (no radial snap)
+
+- **What:** `FoundationCanvas` no longer passes `applyAnchorRadialLayout`;
+  a dropped mission / core_value / identity lands at the cursor like every
+  other canvas, instead of snapping to an anchor-radial slot.
+- **Why:** user: "사용자가 드롭을 한 곳에 노드가 생성되게 해주세요. 지금 자동
+  정렬을 하려고 엄청 먼곳에 두는것 같아요" (2026-06-13). The drop-time radial
+  snap (D-2026-05-12-O) placed nodes far from the cursor. The ⊞
+  auto-layout button still arranges on demand.
+- **Approval:** Accepted by user, 2026-06-13. Supersedes the drop-time
+  behaviour of D-2026-05-12-O (the radial layout algorithm itself stays
+  available via the auto-layout button).
+- **Spec impact:** SPEC.md §Drag-and-drop "Free drop" bullet.
+

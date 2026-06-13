@@ -798,6 +798,13 @@ min-h-screen` on the root and `min-height: 100dvh` fallback on
 The canvas accepts drag-and-drop from the sidebar stencil. Drop
 behaviour:
 
+- **Capture mechanism (v0.67.0, D-2026-06-13-C):** the drag gesture is
+  captured with **pointer events** (`pointerdown` on the stencil item →
+  window `pointerup` over a canvas pane), NOT HTML5 `draggable` /
+  `dataTransfer`. WKWebView — the bundled Tauri `.app`, Plot's only
+  product surface — does not fire HTML5 `dragstart` / `drop`, so the old
+  mechanism created no node on any canvas. The drop placement / hit-test /
+  nudge / picker rules below are unchanged; only the gesture capture moved.
 - **Hit-test order:** when computing which node "contains" the drop
   point, iterate the doc nodes in **reverse** order so later-drawn
   (visually on-top) nodes win over earlier-drawn parents. Without
@@ -806,15 +813,26 @@ behaviour:
 - **Free drop (no container):** the new node lands at the cursor
   flow-point, centred. If it would overlap an existing top-level
   sibling, slide it diagonally by 32 px steps (max 24 tries) until
-  free.
+  free. **(v0.67.0, D-2026-06-13-G)** This applies on **every** canvas
+  including Foundation — a dropped mission / core_value / identity lands
+  where the user released, not snapped to an anchor-radial slot (the old
+  drop-time radial snap is removed; the ⊞ auto-layout button still
+  arranges on demand).
 - **Nested drop (inside a container):** the new node uses
   parent-local coordinates relative to the container's top-left. If
   it overlaps a sibling, the same 32 px diagonal nudge applies among
   parent's direct children.
-- **Hierarchy edge:** dropping `actor` or `service` kind onto an
-  existing container also creates a dashed `decomposes` edge
-  parent→child so the user can edit the relationship like any other
-  edge.
+- **Optional category (v0.67.0, D-2026-06-13-D):** on the Services
+  canvas a `service` is **not** required to nest in a `category`.
+  Dropped onto a category it nests under it; dropped on empty space it
+  lands top-level. Category is an optional thematic grouping, not a
+  mandatory parent. (Supersedes the D-2026-05-28-A "service must nest in
+  a Category" rule. Sub-actor still requires an Actor parent.)
+- **Hierarchy edge:** dropping a kind onto an existing container also
+  creates a dashed directed edge parent→child so the user can edit the
+  relationship like any other edge. **(v0.67.0, D-2026-06-13-E)** the
+  edge carries **no visible verb label** (the old "decomposes" label was
+  clutter); the direction + relation still encode the structure.
 - **Reference kinds (`actor_ref`, `mission_ref`, `value_ref`,
   `identity_ref`)** with no preset target id open a picker modal
   before the node is created. Presets that already carry the master

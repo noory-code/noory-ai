@@ -24,7 +24,10 @@ import {
 // mode-shaped icon (tree vs flow) which made it look switchable like the
 // direction toggle — user 2026-06-04: *"그걸 누르면 왜 정렬이 변하냐고"*.
 // The mode now lives only in the tooltip TEXT (aria-label), never the icon.
-const ICON = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+// D-2026-06-13-F — fixed near-black stroke (not ``currentColor``). The RF
+// Controls bar has a light background in every theme; inheriting the app's
+// (light, in dark theme) text colour made the arrange icon invisible.
+const ICON = { fill: "none", stroke: "#1a1a1a", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
 function ArrangeIcon() {
   // Descending lines = a "tidy / auto-arrange" action mark, neutral to the

@@ -57,22 +57,18 @@ describe("resolveDropTarget — ServiceDetail composition is free-form (D-2026-0
     },
   );
 
-  it("Services canvas: service-in-category still requires a Category parent (unchanged)", () => {
+  it("Services canvas: category is OPTIONAL — service nests if dropped on one, else top-level (D-2026-06-13-D)", () => {
     const preset = findPreset("service-in-category");
-    const onEmpty = resolveDropTarget(preset, null, "services");
-    expect(onEmpty).toHaveProperty("error");
-    const onService = resolveDropTarget(
-      preset,
-      { id: "n_svc", kind: "service" },
-      "services",
-    );
-    expect(onService).toHaveProperty("error");
-    const onCategory = resolveDropTarget(
-      preset,
-      { id: "n_cat", kind: "category" },
-      "services",
-    );
-    expect(onCategory).toEqual({ parentId: "n_cat" });
+    // Empty space → top-level (no error; supersedes D-2026-05-28-A).
+    expect(resolveDropTarget(preset, null, "services")).toEqual({ parentId: null });
+    // Dropped on a non-category container → still top-level.
+    expect(
+      resolveDropTarget(preset, { id: "n_svc", kind: "service" }, "services"),
+    ).toEqual({ parentId: null });
+    // Dropped on a category → nests under it.
+    expect(
+      resolveDropTarget(preset, { id: "n_cat", kind: "category" }, "services"),
+    ).toEqual({ parentId: "n_cat" });
   });
 
   it("Actors canvas: sub-actor still requires an Actor parent (unchanged)", () => {
