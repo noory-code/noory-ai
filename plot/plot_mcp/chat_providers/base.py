@@ -20,6 +20,24 @@ from pydantic import BaseModel
 
 ChatStreamEventType = Literal["turn_start", "delta", "turn_complete", "error"]
 
+# Conversation scope (D-2026-06-13-H). Chat threads are partitioned per
+# canvas kind plus one shared ``project`` scope for cross-canvas work. The
+# viewer sends the active scope on each turn and demultiplexes incoming
+# events on it; the engine keys sessions on (workspace, provider, scope).
+# Parity with the TS ``ChatScope`` union is pinned by
+# ``tests/test_chat_scope_parity.py``.
+ChatScope = Literal[
+    "project",
+    "foundation",
+    "actors",
+    "services",
+    "service_detail",
+]
+
+# Scope assumed when a client omits it on the wire (Postel's Law,
+# D-2026-06-13-H Q1) — cross-canvas work lands in the shared bucket.
+DEFAULT_CHAT_SCOPE: ChatScope = "project"
+
 
 class ChatStreamEvent(BaseModel):
     """One streamed event in a chat turn.
@@ -28,12 +46,16 @@ class ChatStreamEvent(BaseModel):
     ``delta`` appends ``text`` to the active turn, ``turn_complete`` carries
     the full accumulated text (so a late-joining subscriber can reconcile),
     and ``error`` aborts the turn and surfaces ``error_message`` in the UI.
+
+    ``scope`` echoes which conversation bucket the turn belongs to so the
+    viewer can route the event to the matching canvas thread (D-2026-06-13-H).
     """
 
     type: ChatStreamEventType
     turn_id: str
     text: str = ""
     error_message: str | None = None
+    scope: ChatScope = DEFAULT_CHAT_SCOPE
 
 
 class _SubprocessFactory(Protocol):

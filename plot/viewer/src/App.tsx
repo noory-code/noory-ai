@@ -439,7 +439,12 @@ export function App() {
             })()}
           </div>
         </main>
-        <ChatDock onError={handleError} workspaceRoot={workspaceRoot} />
+        {/* Chat follows the active canvas; modal → service_detail (D-2026-06-13-H). */}
+        <ChatDock
+          onError={handleError}
+          workspaceRoot={workspaceRoot}
+          activeScope={modalOpen ? "service_detail" : tabToKind(activeTab)}
+        />
       </div>
     </div>
     {/* v0.27.2 (D-2026-05-26-F) — modal sits OUTSIDE the inert root

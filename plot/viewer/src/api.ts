@@ -2,6 +2,7 @@ import type {
   CanvasDoc,
   CanvasKey,
   CanvasKind,
+  ChatScope,
   ProjectChangedPayload,
   ProjectDoc,
   ProjectTag,
@@ -868,31 +869,39 @@ export interface ChatStreamPayload {
   turn_id: string;
   text: string;
   error_message: string | null;
+  /** Conversation bucket this turn belongs to (D-2026-06-13-H). */
+  scope: ChatScope;
 }
 
-/** Schedule one assistant turn. Returns when the engine has accepted the
- *  request (202); the actual streamed output arrives via the WS. */
+/** Schedule one assistant turn in ``scope``. Returns when the engine has
+ *  accepted the request (202); the streamed output arrives via the WS,
+ *  tagged with the same scope so the viewer routes it to the right thread. */
 export async function sendChatMessage(
   projectPath: string,
   message: string,
+  scope: ChatScope,
 ): Promise<void> {
   await ok(
     await engineFetch(`${API_BASE}/api/chat/send`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ project_path: projectPath, message }),
+      body: JSON.stringify({ project_path: projectPath, message, scope }),
     }),
   );
 }
 
-/** Drop the engine's cached CLI session for this workspace so the next
- *  ``sendChatMessage`` mints a fresh ``--session-id``. */
-export async function resetChatSession(projectPath: string): Promise<void> {
+/** Drop the engine's cached CLI session for ``scope`` so the next
+ *  ``sendChatMessage`` in that scope mints a fresh ``--session-id``. Other
+ *  scopes' sessions are untouched (D-2026-06-13-H). */
+export async function resetChatSession(
+  projectPath: string,
+  scope: ChatScope,
+): Promise<void> {
   await ok(
     await engineFetch(`${API_BASE}/api/chat/reset`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ project_path: projectPath }),
+      body: JSON.stringify({ project_path: projectPath, scope }),
     }),
   );
 }

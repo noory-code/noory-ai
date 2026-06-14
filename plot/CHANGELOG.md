@@ -4,6 +4,46 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.68.0] — 2026-06-14
+
+Minor (feature). Implement the chat redesign pinned in D-2026-06-13-H:
+per-canvas conversation scope + claude-code excluded from in-app chat.
+TDD across the engine + viewer, six lock-step steps.
+
+### Added
+
+- **`ChatScope` wire enum** (`project` / `foundation` / `actors` /
+  `services` / `service_detail`) defined on both sides — Python
+  `plot_mcp/chat_providers/base.py`, TS `viewer/src/types.ts` — and
+  parity-guarded by `tests/test_chat_scope_parity.py`.
+- **Per-canvas chat scope.** Engine sessions are keyed on
+  `(workspace, provider, scope)`; `ChatStreamEvent` carries `scope`;
+  `POST /api/chat/send` + `POST /api/chat/reset` accept `scope`. The
+  viewer's `useChatStream` keeps a separate thread per scope (an
+  in-flight turn in one canvas keeps streaming while the user is on
+  another), and the dock follows the active canvas.
+- **Scope switcher.** A segmented control in the dock pins the shared
+  `project` thread vs the active-canvas thread (explicit toggle, only
+  shown when the active canvas is itself non-project).
+
+### Changed
+
+- **In-app chat excludes `claude-code` (D-2026-06-13-H).** Driving it
+  via `claude -p` double-charges a Claude subscriber, so: the chat
+  selection radio is suppressed on the claude-code row (its MCP
+  register/unregister controls stay), the dock coerces a legacy
+  persisted `claude-code` choice to no-selection, and
+  `POST /api/chat/send` 400s a `claude-code` selection as the
+  server-side backstop. `claude-code` remains in the MCP-registration
+  list — the MCP path is the intended way to use Claude.
+- **`sendChatMessage` / `resetChatSession`** now take a `scope`
+  argument; `chat_stream_event` payloads carry `scope`.
+- **`docs/SPEC.md` §R7** — rewritten for MCP-first framing, the
+  claude-code exclusion, and the conversation-scope model.
+- Scope decisions: a missing `scope` defaults to `project` (Postel);
+  the `project` scope is reached by explicit toggle; `Reset` clears the
+  active scope only.
+
 ## [0.67.1] — 2026-06-13
 
 Patch (docs). Pin the chat-architecture decision after in-app chat

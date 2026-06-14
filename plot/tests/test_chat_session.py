@@ -216,6 +216,63 @@ def test_registry_reset_all_providers_for_workspace(tmp_path: Path) -> None:
     assert registry.get_or_create(ws, "codex") is not codex
 
 
+# --- scope keying (D-2026-06-13-H) ----------------------------------------
+
+
+def test_registry_keeps_separate_sessions_per_scope(tmp_path: Path) -> None:
+    """Same workspace + provider but different canvas scopes must keep
+    independent conversations — switching canvases and back resumes the
+    original session, not a shared one."""
+
+    def factory(root: Path, name: str) -> Any:
+        return _FakeProvider(root, name)
+
+    registry = ChatSessionRegistry(factory=factory)
+    ws = tmp_path / "ws"
+    ws.mkdir()
+
+    foundation = registry.get_or_create(ws, "codex", "foundation")
+    actors = registry.get_or_create(ws, "codex", "actors")
+    assert foundation is not actors
+    # Resume foundation after touching actors — must be the original.
+    assert registry.get_or_create(ws, "codex", "foundation") is foundation
+
+
+def test_registry_default_scope_is_project(tmp_path: Path) -> None:
+    """An omitted scope resolves to the shared ``project`` bucket so legacy
+    two-arg callers keep working (Postel's Law, Q1)."""
+
+    def factory(root: Path, name: str) -> Any:
+        return _FakeProvider(root, name)
+
+    registry = ChatSessionRegistry(factory=factory)
+    ws = tmp_path / "ws"
+    ws.mkdir()
+
+    implicit = registry.get_or_create(ws, "codex")
+    explicit = registry.get_or_create(ws, "codex", "project")
+    assert implicit is explicit
+
+
+def test_registry_reset_one_scope_keeps_other_scopes(tmp_path: Path) -> None:
+    """Reset of one scope leaves other scopes' sessions intact (Q3 — the
+    dock's Reset button wipes the current canvas thread only)."""
+
+    def factory(root: Path, name: str) -> Any:
+        return _FakeProvider(root, name)
+
+    registry = ChatSessionRegistry(factory=factory)
+    ws = tmp_path / "ws"
+    ws.mkdir()
+
+    foundation = registry.get_or_create(ws, "codex", "foundation")
+    actors = registry.get_or_create(ws, "codex", "actors")
+    registry.reset(ws, scope="foundation")
+
+    assert registry.get_or_create(ws, "codex", "foundation") is not foundation
+    assert registry.get_or_create(ws, "codex", "actors") is actors
+
+
 # ---------------------------------------------------------------------------
 # ClaudeCodeProvider.stream_turn (with a fake subprocess factory)
 # ---------------------------------------------------------------------------

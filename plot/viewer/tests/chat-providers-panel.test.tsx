@@ -104,20 +104,50 @@ describe("ChatProvidersPanel (D-2026-06-11-E Phase A)", () => {
     expect(screen.queryAllByRole("radio")).toHaveLength(0);
   });
 
-  it("renders a radio per row when selection props are present + checks the active row", async () => {
+  it("renders a radio for each selectable row + checks the active row (claude-code excluded)", async () => {
+    // codex is the active chat provider; claude-code carries no radio.
+    fetchSpy.mockResolvedValue(
+      jsonResponse({
+        providers: [
+          { name: "claude-code", installed: true, registered: true, config_path: "~/.claude.json" },
+          { name: "codex", installed: true, registered: true, config_path: "~/.codex/config.toml" },
+          { name: "gemini", installed: true, registered: true, config_path: "~/.gemini/settings.json" },
+        ],
+      }),
+    );
+    render(
+      <ChatProvidersPanel
+        onError={() => {}}
+        activeProvider="codex"
+        onSelectProvider={() => {}}
+      />,
+    );
+    await waitFor(() => screen.getByText("Codex"));
+    const radios = screen.getAllByRole("radio") as HTMLInputElement[];
+    // Two selectable CLIs (codex, gemini); claude-code is excluded.
+    expect(radios).toHaveLength(2);
+    const codex = radios.find((r) => r.value === "codex");
+    expect(codex?.checked).toBe(true);
+  });
+
+  it("omits the selection radio on the claude-code row but keeps its row + register controls (D-2026-06-13-H)", async () => {
     fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_AFTER_REGISTER));
     render(
       <ChatProvidersPanel
         onError={() => {}}
-        activeProvider="claude-code"
+        activeProvider={null}
         onSelectProvider={() => {}}
       />,
     );
     await waitFor(() => screen.getByText("Claude Code"));
     const radios = screen.getAllByRole("radio") as HTMLInputElement[];
-    expect(radios).toHaveLength(3);
-    const claude = radios.find((r) => r.value === "claude-code");
-    expect(claude?.checked).toBe(true);
+    const values = radios.map((r) => r.value);
+    // claude-code is excluded from in-app chat selection...
+    expect(values).not.toContain("claude-code");
+    expect(values).toEqual(expect.arrayContaining(["codex", "gemini"]));
+    // ...but its row + MCP register/unregister controls stay.
+    expect(screen.getByText("Claude Code")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Unregister" })).toBeTruthy();
   });
 
   it("disables the radio on a not-installed provider", async () => {
@@ -136,7 +166,15 @@ describe("ChatProvidersPanel (D-2026-06-11-E Phase A)", () => {
   });
 
   it("calls onSelectProvider when an enabled radio is clicked", async () => {
-    fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_AFTER_REGISTER));
+    fetchSpy.mockResolvedValue(
+      jsonResponse({
+        providers: [
+          { name: "claude-code", installed: true, registered: true, config_path: "~/.claude.json" },
+          { name: "codex", installed: true, registered: true, config_path: "~/.codex/config.toml" },
+          { name: "gemini", installed: false, registered: false, config_path: "~/.gemini/settings.json" },
+        ],
+      }),
+    );
     const onSelectProvider = vi.fn();
     const user = userEvent.setup();
     render(
@@ -146,11 +184,11 @@ describe("ChatProvidersPanel (D-2026-06-11-E Phase A)", () => {
         onSelectProvider={onSelectProvider}
       />,
     );
-    await waitFor(() => screen.getByText("Claude Code"));
+    await waitFor(() => screen.getByText("Codex"));
     const radios = screen.getAllByRole("radio") as HTMLInputElement[];
-    const claude = radios.find((r) => r.value === "claude-code")!;
-    await user.click(claude);
-    expect(onSelectProvider).toHaveBeenCalledWith("claude-code");
+    const codex = radios.find((r) => r.value === "codex")!;
+    await user.click(codex);
+    expect(onSelectProvider).toHaveBeenCalledWith("codex");
   });
 
   it("clears the active selection when the active provider is unregistered", async () => {

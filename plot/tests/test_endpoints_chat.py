@@ -99,6 +99,41 @@ async def test_stream_chat_turn_broadcasts_each_event(tmp_path: Path) -> None:
     assert last_payload["text"] == "hi there"
 
 
+async def test_stream_chat_turn_stamps_scope_on_every_event(
+    tmp_path: Path,
+) -> None:
+    """The bridge overrides each event's ``scope`` with the turn's scope so a
+    provider that defaults to ``project`` still routes to the right canvas
+    thread (D-2026-06-13-H)."""
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    hub = _FakeHub()
+    provider = _CannedProvider(
+        [
+            ChatStreamEvent(type="turn_start", turn_id="t1"),
+            ChatStreamEvent(type="delta", turn_id="t1", text="hi"),
+            ChatStreamEvent(type="turn_complete", turn_id="t1", text="hi"),
+        ]
+    )
+
+    await stream_chat_turn(provider, hub, ws, "hello", scope="actors")  # type: ignore[arg-type]
+
+    scopes = [payload["scope"] for (_, _, payload) in hub.events]  # type: ignore[index]
+    assert scopes == ["actors", "actors", "actors"]
+
+
+async def test_stream_chat_turn_error_carries_scope(tmp_path: Path) -> None:
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    hub = _FakeHub()
+
+    await stream_chat_turn(_ExplodingProvider(), hub, ws, "hi", scope="services")  # type: ignore[arg-type]
+
+    payload = hub.events[0][2]
+    assert payload is not None
+    assert payload["scope"] == "services"
+
+
 async def test_stream_chat_turn_broadcasts_error_on_provider_crash(
     tmp_path: Path,
 ) -> None:
@@ -204,10 +239,26 @@ def test_chat_send_400s_when_no_provider_selected(
     assert fake_provider.calls == []
 
 
+def test_chat_send_400s_for_claude_code_selection(
+    app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
+) -> None:
+    """In-app chat excludes claude-code (D-2026-06-13-H): running it via
+    ``claude -p`` double-charges a Claude subscriber. The MCP-registration
+    list still keeps claude-code; only the in-app chat send rejects it."""
+    _select_provider(app_client, workspace, "claude-code")
+    resp = app_client.post(
+        "/api/chat/send",
+        json={"project_path": str(workspace), "message": "explain plot"},
+    )
+    assert resp.status_code == 400
+    assert "claude-code" in resp.json()["error"]
+    assert fake_provider.calls == []
+
+
 def test_chat_send_accepts_valid_request_and_calls_provider(
     app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
 ) -> None:
-    _select_provider(app_client, workspace, "claude-code")
+    _select_provider(app_client, workspace, "codex")
     resp = app_client.post(
         "/api/chat/send",
         json={"project_path": str(workspace), "message": "explain plot"},
@@ -261,7 +312,7 @@ def test_chat_send_dispatches_each_provider_to_its_own_session(
 def test_chat_reset_drops_all_provider_sessions_for_workspace(
     app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
 ) -> None:
-    _select_provider(app_client, workspace, "claude-code")
+    _select_provider(app_client, workspace, "codex")
     # Prime the registry.
     app_client.post(
         "/api/chat/send",
@@ -279,6 +330,107 @@ def test_chat_reset_drops_all_provider_sessions_for_workspace(
 def test_chat_reset_requires_project_path(app_client: TestClient) -> None:
     resp = app_client.post("/api/chat/reset", json={})
     assert resp.status_code == 400
+
+
+# --- scope routing (D-2026-06-13-H) ---------------------------------------
+
+
+def _scope_aware_client(
+    workspace: Path,
+) -> tuple[TestClient, ChatSessionRegistry]:
+    """A client whose registry counts sessions so scope keying is observable."""
+    registry = ChatSessionRegistry(
+        factory=lambda _root, name: _CannedProvider(
+            [ChatStreamEvent(type="turn_complete", turn_id="t", text="ok")]
+        )
+    )
+    client = TestClient(
+        create_http_app(
+            hub=BroadcastHub(enable_watchers=False),
+            chat_registry_instance=registry,
+        )
+    )
+    return client, registry
+
+
+def test_chat_send_keys_session_by_scope(workspace: Path) -> None:
+    """Two sends to the same workspace+provider but different scopes create
+    two distinct registry sessions."""
+    client, registry = _scope_aware_client(workspace)
+    _select_provider(client, workspace, "codex")
+
+    client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "a",
+            "scope": "foundation",
+        },
+    )
+    client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "b",
+            "scope": "actors",
+        },
+    )
+    assert registry.session_count() == 2
+
+
+def test_chat_send_defaults_missing_scope_to_project(workspace: Path) -> None:
+    """A send with no ``scope`` lands in the shared ``project`` bucket (Q1)."""
+    client, registry = _scope_aware_client(workspace)
+    _select_provider(client, workspace, "codex")
+
+    client.post(
+        "/api/chat/send",
+        json={"project_path": str(workspace), "message": "a"},
+    )
+    # Re-sending with explicit "project" must reuse the same session.
+    client.post(
+        "/api/chat/send",
+        json={"project_path": str(workspace), "message": "b", "scope": "project"},
+    )
+    assert registry.session_count() == 1
+
+
+def test_chat_send_rejects_invalid_scope(workspace: Path) -> None:
+    """A scope outside the ChatScope set is a 400 (Fail Fast on a typo)."""
+    client, _ = _scope_aware_client(workspace)
+    _select_provider(client, workspace, "codex")
+    resp = client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "a",
+            "scope": "bogus",
+        },
+    )
+    assert resp.status_code == 400
+    assert "scope" in resp.json()["error"]
+
+
+def test_chat_reset_scopes_to_given_scope(workspace: Path) -> None:
+    """Reset wipes only the named scope's session; other scopes survive (Q3)."""
+    client, registry = _scope_aware_client(workspace)
+    _select_provider(client, workspace, "codex")
+    client.post(
+        "/api/chat/send",
+        json={"project_path": str(workspace), "message": "a", "scope": "foundation"},
+    )
+    client.post(
+        "/api/chat/send",
+        json={"project_path": str(workspace), "message": "b", "scope": "actors"},
+    )
+    assert registry.session_count() == 2
+
+    resp = client.post(
+        "/api/chat/reset",
+        json={"project_path": str(workspace), "scope": "foundation"},
+    )
+    assert resp.status_code == 200
+    assert registry.session_count() == 1
 
 
 # ---------------------------------------------------------------------------

@@ -15,7 +15,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 from plot_mcp.chat_providers.base import (
+    DEFAULT_CHAT_SCOPE,
     ChatProvider,
+    ChatScope,
     ChatStreamEvent,
     ChatStreamEventType,
 )
@@ -32,7 +34,9 @@ _parse_stream_line = _parse_claude_line
 
 
 __all__ = [
+    "DEFAULT_CHAT_SCOPE",
     "ChatProvider",
+    "ChatScope",
     "ChatSessionRegistry",
     "ChatStreamEvent",
     "ChatStreamEventType",
@@ -68,24 +72,32 @@ def _default_provider_factory(
     raise ValueError(f"unsupported chat provider: {provider_name!r}")
 
 
-class ChatSessionRegistry:
-    """One ``ChatProvider`` instance per (resolved workspace path, provider).
+_SessionKey = tuple[Path, ProviderName, ChatScope]
 
-    Keying on the pair (not just the path) means a user who switches Claude
-    → Codex → Claude in one session resumes both Claude and Codex
-    conversations cleanly, instead of overwriting whichever was cached. The
-    registry's only responsibility is identity continuity — call
-    ``get_or_create`` twice with the same pair and you get the same provider.
+
+class ChatSessionRegistry:
+    """One ``ChatProvider`` instance per (resolved workspace, provider, scope).
+
+    Keying on the triple (not just path, not just path+provider) means a user
+    who switches Claude → Codex → Claude, or who hops between the Foundation
+    and Actors canvases, resumes each conversation cleanly instead of
+    overwriting whichever was cached. ``scope`` partitions threads per canvas
+    kind plus the shared ``project`` bucket (D-2026-06-13-H). The registry's
+    only responsibility is identity continuity — call ``get_or_create`` twice
+    with the same triple and you get the same provider.
     """
 
     def __init__(self, *, factory: ProviderFactory | None = None) -> None:
-        self._sessions: dict[tuple[Path, ProviderName], ChatProvider] = {}
+        self._sessions: dict[_SessionKey, ChatProvider] = {}
         self._factory: ProviderFactory = factory or _default_provider_factory
 
     def get_or_create(
-        self, workspace_root: Path, provider_name: ProviderName
+        self,
+        workspace_root: Path,
+        provider_name: ProviderName,
+        scope: ChatScope = DEFAULT_CHAT_SCOPE,
     ) -> ChatProvider:
-        key = (workspace_root.resolve(), provider_name)
+        key: _SessionKey = (workspace_root.resolve(), provider_name, scope)
         provider = self._sessions.get(key)
         if provider is None:
             provider = self._factory(key[0], provider_name)
@@ -96,20 +108,32 @@ class ChatSessionRegistry:
         self,
         workspace_root: Path,
         provider_name: ProviderName | None = None,
+        *,
+        scope: ChatScope | None = None,
     ) -> None:
-        """Drop one provider's session — or every provider's session for the
-        workspace if ``provider_name`` is ``None``. The endpoint's
-        ``/api/chat/reset`` calls the all-providers form by default so the
-        user gets a single "wipe my chat state" affordance instead of a
-        per-CLI matrix in the dock.
+        """Drop the sessions matching the given filters for ``workspace_root``.
+
+        ``provider_name`` / ``scope`` are independent narrowing filters — a
+        ``None`` filter matches every value of that axis. The dock's Reset
+        button passes ``scope=<active canvas>`` so it wipes only the current
+        canvas thread (Q3); ``reset(ws)`` with both ``None`` wipes the whole
+        workspace.
         """
         resolved = workspace_root.resolve()
-        if provider_name is None:
-            self._sessions = {
-                k: v for k, v in self._sessions.items() if k[0] != resolved
-            }
-        else:
-            self._sessions.pop((resolved, provider_name), None)
+
+        def drop(key: _SessionKey) -> bool:
+            ws, prov, scp = key
+            if ws != resolved:
+                return False
+            if provider_name is not None and prov != provider_name:
+                return False
+            if scope is not None and scp != scope:
+                return False
+            return True
+
+        self._sessions = {
+            k: v for k, v in self._sessions.items() if not drop(k)
+        }
 
     def session_count(self) -> int:
         return len(self._sessions)

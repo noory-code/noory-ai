@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 
 import { getChatProvider, setChatProvider, type McpProviderName } from "../app/mcp";
 import { useChatStream, type ChatMessage } from "../hooks/useChatStream";
+import type { ChatScope } from "../types";
 import { ChatProvidersPanel } from "./ChatProvidersPanel";
 import { useDialog } from "./dialog/DialogProvider";
 
@@ -38,13 +39,29 @@ export interface ChatDockProps {
    * inert without a workspace (e.g. during the ProjectPicker phase, though
    * in practice App.tsx unmounts the dock there). */
   workspaceRoot?: string;
+  /** The canvas-derived chat scope the dock follows (D-2026-06-13-H). App
+   * passes the active canvas kind (or `service_detail` when the modal is
+   * open); the user can override it to the shared `project` scope via the
+   * in-dock switcher. Defaults to `project` so workspace-less / test mounts
+   * stay coherent. */
+  activeScope?: ChatScope;
 }
 
-export function ChatDock({ onError, workspaceRoot }: ChatDockProps) {
+export function ChatDock({
+  onError,
+  workspaceRoot,
+  activeScope = "project",
+}: ChatDockProps) {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState<boolean>(readInitialCollapsed);
   const [activeProvider, setActiveProvider] =
     useState<McpProviderName | null>(null);
+  // "canvas" follows the active canvas; "project" pins the shared cross-canvas
+  // thread (Q2 — explicit toggle, not auto). The canvas mode resolves to
+  // ``activeScope``; project mode always to ``project``.
+  const [scopeMode, setScopeMode] = useState<"canvas" | "project">("canvas");
+  const effectiveScope: ChatScope =
+    scopeMode === "project" ? "project" : activeScope;
 
   const toggle = useCallback(() => {
     setCollapsed((prev) => {
@@ -62,7 +79,11 @@ export function ChatDock({ onError, workspaceRoot }: ChatDockProps) {
   useEffect(() => {
     if (!workspaceRoot || collapsed) return;
     void getChatProvider(workspaceRoot).then(
-      (sel) => setActiveProvider(sel.provider),
+      // claude-code is excluded from in-app chat (D-2026-06-13-H); a legacy
+      // persisted choice of it counts as no active CLI so the input stays
+      // disabled until the user picks codex / gemini.
+      (sel) =>
+        setActiveProvider(sel.provider === "claude-code" ? null : sel.provider),
       (err) => onError(err instanceof Error ? err.message : String(err)),
     );
   }, [workspaceRoot, collapsed, onError]);
@@ -113,9 +134,17 @@ export function ChatDock({ onError, workspaceRoot }: ChatDockProps) {
           <div className="overflow-y-auto border-b border-line p-3">
             <ChatProvidersPanel onError={onError} {...selectionProps} />
           </div>
+          {activeScope !== "project" && (
+            <ChatScopeSwitcher
+              canvasScope={activeScope}
+              mode={scopeMode}
+              onModeChange={setScopeMode}
+            />
+          )}
           <ChatMessageFrame
             workspaceRoot={workspaceRoot}
             activeProvider={activeProvider}
+            scope={effectiveScope}
             onError={onError}
           />
         </div>
@@ -124,9 +153,53 @@ export function ChatDock({ onError, workspaceRoot }: ChatDockProps) {
   );
 }
 
+/**
+ * Segmented switcher between the active-canvas thread and the shared
+ * ``project`` thread (D-2026-06-13-H Q2 — explicit, not auto). Only rendered
+ * when the active canvas is itself non-project, so the two segments are
+ * always distinct.
+ */
+function ChatScopeSwitcher({
+  canvasScope,
+  mode,
+  onModeChange,
+}: {
+  canvasScope: ChatScope;
+  mode: "canvas" | "project";
+  onModeChange: (mode: "canvas" | "project") => void;
+}) {
+  const { t } = useTranslation();
+  const segment = (value: "canvas" | "project", label: string) => (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={mode === value}
+      onClick={() => onModeChange(value)}
+      className={
+        mode === value
+          ? "flex-1 rounded px-2 py-1 text-[11px] font-medium bg-surface-muted text-fg-strong"
+          : "flex-1 rounded px-2 py-1 text-[11px] text-fg-muted hover:text-fg-strong"
+      }
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div
+      role="tablist"
+      aria-label={t("chat.scopeLabel")}
+      className="flex gap-1 border-b border-line px-3 py-2"
+    >
+      {segment("canvas", t(`chat.scope.${canvasScope}`))}
+      {segment("project", t("chat.scope.project"))}
+    </div>
+  );
+}
+
 interface ChatMessageFrameProps {
   workspaceRoot?: string;
   activeProvider: McpProviderName | null;
+  scope: ChatScope;
   onError: (message: string) => void;
 }
 
@@ -138,12 +211,13 @@ interface ChatMessageFrameProps {
 function ChatMessageFrame({
   workspaceRoot,
   activeProvider,
+  scope,
   onError,
 }: ChatMessageFrameProps) {
   const { t } = useTranslation();
   const dialog = useDialog();
   const { messages, socketStatus, isStreaming, send, reset, lastSendError } =
-    useChatStream(workspaceRoot);
+    useChatStream(workspaceRoot, scope);
   const [draft, setDraft] = useState("");
 
   const providerLabel = activeProvider

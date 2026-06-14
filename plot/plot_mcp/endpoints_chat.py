@@ -22,21 +22,43 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.chat_provider import read_selection
+from plot_mcp.chat_providers.base import DEFAULT_CHAT_SCOPE, ChatScope
 from plot_mcp.chat_session import ChatProvider, ChatSessionRegistry, chat_registry
 from plot_mcp.workspace import resolve_plot_root
+
+_VALID_SCOPES: frozenset[str] = frozenset(get_args(ChatScope))
+
+
+def _read_scope(body: dict[str, Any]) -> ChatScope | None:
+    """Pull ``scope`` from a request body.
+
+    Missing → the shared ``project`` bucket (Postel, Q1). Present but not a
+    known scope → ``None`` to signal the caller should 400 (Fail Fast on a
+    typo before it silently creates an unreachable session).
+    """
+    raw = body.get("scope")
+    if raw is None:
+        return DEFAULT_CHAT_SCOPE
+    if isinstance(raw, str) and raw in _VALID_SCOPES:
+        return raw  # type: ignore[return-value]
+    return None
 
 _log = logging.getLogger(__name__)
 
 # Event name carried on the WS payload. Viewer demultiplexes on ``event``;
 # the existing project_changed payload uses ``"project_changed"``.
 _CHAT_EVENT = "chat_stream_event"
+
+# Provider that the in-app chat refuses to spawn (D-2026-06-13-H). Kept in
+# the MCP-registration surface, dropped from chat send.
+_CHAT_EXCLUDED_PROVIDER = "claude-code"
 
 
 def _hub_from_request(request: Request) -> BroadcastHub | None:
@@ -56,20 +78,21 @@ async def stream_chat_turn(
     hub: BroadcastHub,
     plot_root: Path,
     user_message: str,
+    scope: ChatScope = DEFAULT_CHAT_SCOPE,
 ) -> None:
     """Pull stream events from ``provider`` and fan them out to ``plot_root``.
 
-    Lives outside the endpoint so it stays directly testable. Errors are
+    Lives outside the endpoint so it stays directly testable. Each event is
+    stamped with ``scope`` (overriding the provider's default) so the viewer
+    can route it to the matching canvas thread (D-2026-06-13-H). Errors are
     caught + broadcast as an ``error`` event so the viewer can surface them
     instead of silently truncating the turn.
     """
     try:
         async for event in provider.stream_turn(user_message):
-            await hub.notify_event(
-                plot_root,
-                _CHAT_EVENT,
-                event.model_dump(),
-            )
+            payload = event.model_dump()
+            payload["scope"] = scope
+            await hub.notify_event(plot_root, _CHAT_EVENT, payload)
     except Exception as exc:  # noqa: BLE001 — boundary catch
         _log.exception("chat turn crashed for %s", plot_root)
         await hub.notify_event(
@@ -79,6 +102,7 @@ async def stream_chat_turn(
                 "type": "error",
                 "turn_id": "",
                 "error_message": f"chat turn crashed: {exc}",
+                "scope": scope,
             },
         )
 
@@ -108,6 +132,10 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     if not isinstance(message, str) or not message.strip():
         return JSONResponse({"error": "message required"}, status_code=400)
 
+    scope = _read_scope(body)
+    if scope is None:
+        return JSONResponse({"error": "invalid chat scope"}, status_code=400)
+
     try:
         plot_root = resolve_plot_root(project_path)
     except (FileNotFoundError, NotADirectoryError) as exc:
@@ -122,6 +150,22 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
         return JSONResponse(
             {"error": "no chat provider selected"}, status_code=400
         )
+    # claude-code is excluded from the in-app chat (D-2026-06-13-H): driving
+    # it via ``claude -p`` bills a Claude subscriber a second time on top of
+    # their subscription. It stays in the MCP-registration list so the user
+    # can connect their own interactive Claude session — Plot just won't host
+    # it. A viewer that never offers claude-code in the chat radio can't reach
+    # here; this guard is the server-side backstop.
+    if selection.provider == _CHAT_EXCLUDED_PROVIDER:
+        return JSONResponse(
+            {
+                "error": (
+                    "claude-code is not available for in-app chat; connect it "
+                    "via MCP instead"
+                )
+            },
+            status_code=400,
+        )
 
     hub = _hub_from_request(request)
     if hub is None:
@@ -130,9 +174,11 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
         )
 
     registry = _registry_from_request(request)
-    provider = registry.get_or_create(plot_root, selection.provider)
+    provider = registry.get_or_create(plot_root, selection.provider, scope)
 
-    asyncio.create_task(stream_chat_turn(provider, hub, plot_root, message))
+    asyncio.create_task(
+        stream_chat_turn(provider, hub, plot_root, message, scope)
+    )
     return JSONResponse({"accepted": True}, status_code=202)
 
 
@@ -147,10 +193,15 @@ async def chat_reset_endpoint(request: Request) -> JSONResponse:
         return JSONResponse(
             {"error": "project_path required"}, status_code=400
         )
+    scope = _read_scope(body)
+    if scope is None:
+        return JSONResponse({"error": "invalid chat scope"}, status_code=400)
     try:
         plot_root = resolve_plot_root(project_path)
     except (FileNotFoundError, NotADirectoryError) as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
     registry = _registry_from_request(request)
-    registry.reset(plot_root)
+    # Wipe only the active canvas thread across all providers (Q3); other
+    # scopes' conversations survive.
+    registry.reset(plot_root, scope=scope)
     return JSONResponse({"reset": True})

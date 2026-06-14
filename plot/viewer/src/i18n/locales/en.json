@@ -132,7 +132,15 @@
     "resetSession": "Start a new conversation",
     "confirmReset": "Drop the current conversation and start a new one?",
     "noWorkspace": "Open a workspace to start chatting.",
-    "socketDisconnected": "Chat connection lost — reconnecting…"
+    "socketDisconnected": "Chat connection lost — reconnecting…",
+    "scopeLabel": "Conversation",
+    "scope": {
+      "project": "Project",
+      "foundation": "Foundation",
+      "actors": "Actors",
+      "services": "Services",
+      "service_detail": "Service detail"
+    }
   },
   "serviceDetail": {
     "label": "Service detail",

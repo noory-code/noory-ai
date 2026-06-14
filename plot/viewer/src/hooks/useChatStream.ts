@@ -23,7 +23,14 @@ import {
   sendChatMessage as sendChatMessageApi,
 } from "../app/chat";
 import { openProjectSocket, type SocketStatus } from "../api";
-import type { ChatStreamSocketPayload, SocketEvent } from "../types";
+import type {
+  ChatScope,
+  ChatStreamSocketPayload,
+  SocketEvent,
+} from "../types";
+
+const DEFAULT_SCOPE: ChatScope = "project";
+const EMPTY_MESSAGES: ChatMessage[] = [];
 
 export type ChatMessageRole = "user" | "assistant";
 
@@ -51,36 +58,87 @@ export interface UseChatStreamResult {
 
 export function useChatStream(
   workspaceRoot: string | null | undefined,
+  scope: ChatScope = DEFAULT_SCOPE,
 ): UseChatStreamResult {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Conversations are partitioned per scope (D-2026-06-13-H). A turn that
+  // streams in one canvas keeps accumulating in its bucket while the user is
+  // on another canvas, so switching back shows the finished answer instead of
+  // losing it.
+  const [messagesByScope, setMessagesByScope] = useState<
+    Record<string, ChatMessage[]>
+  >({});
+  const [streamingByScope, setStreamingByScope] = useState<
+    Record<string, boolean>
+  >({});
   const [socketStatus, setSocketStatus] =
     useState<SocketStatus>("connecting");
-  const [isStreaming, setIsStreaming] = useState(false);
   const [lastSendError, setLastSendError] = useState<string | null>(null);
 
-  // Tracks which turn id is currently streaming so we always update the
-  // right assistant row even if the user submits a new turn before the
-  // previous one closes (rare but possible — the engine queues).
-  const streamingTurnRef = useRef<string | null>(null);
+  // One streaming-turn ref per scope so concurrent turns in different scopes
+  // don't clobber each other's "currently streaming" pointer.
+  const streamingTurnByScope = useRef<
+    Record<string, React.MutableRefObject<string | null>>
+  >({});
+  const refFor = useCallback((s: string) => {
+    let ref = streamingTurnByScope.current[s];
+    if (!ref) {
+      ref = { current: null };
+      streamingTurnByScope.current[s] = ref;
+    }
+    return ref;
+  }, []);
+
+  const scopedSetMessages = useCallback(
+    (s: string): React.Dispatch<React.SetStateAction<ChatMessage[]>> =>
+      (updater) =>
+        setMessagesByScope((prev) => {
+          const cur = prev[s] ?? EMPTY_MESSAGES;
+          const next =
+            typeof updater === "function"
+              ? (updater as (p: ChatMessage[]) => ChatMessage[])(cur)
+              : updater;
+          return { ...prev, [s]: next };
+        }),
+    [],
+  );
+
+  const scopedSetStreaming = useCallback(
+    (s: string): React.Dispatch<React.SetStateAction<boolean>> =>
+      (updater) =>
+        setStreamingByScope((prev) => {
+          const cur = prev[s] ?? false;
+          const next =
+            typeof updater === "function"
+              ? (updater as (p: boolean) => boolean)(cur)
+              : updater;
+          return { ...prev, [s]: next };
+        }),
+    [],
+  );
 
   useEffect(() => {
     if (!workspaceRoot) return;
-    streamingTurnRef.current = null;
+    streamingTurnByScope.current = {};
     setSocketStatus("connecting");
     const handle = openProjectSocket(workspaceRoot, {
       onStatus: setSocketStatus,
       onEvent: (event: SocketEvent) => {
         if (event.event !== "chat_stream_event") return;
-        applyChatEvent(event as SocketEvent & ChatStreamSocketPayload, {
-          setMessages,
-          streamingTurnRef,
-          setIsStreaming,
+        const payload = event as SocketEvent & ChatStreamSocketPayload;
+        const evScope = payload.scope ?? DEFAULT_SCOPE;
+        applyChatEvent(payload, {
+          setMessages: scopedSetMessages(evScope),
+          streamingTurnRef: refFor(evScope),
+          setIsStreaming: scopedSetStreaming(evScope),
         });
       },
       onError: (err) => setLastSendError(err),
     });
     return () => handle.close();
-  }, [workspaceRoot]);
+  }, [workspaceRoot, refFor, scopedSetMessages, scopedSetStreaming]);
+
+  const messages = messagesByScope[scope] ?? EMPTY_MESSAGES;
+  const isStreaming = streamingByScope[scope] ?? false;
 
   const send = useCallback(
     async (message: string) => {
@@ -89,40 +147,40 @@ export function useChatStream(
       if (!trimmed) return;
       setLastSendError(null);
       const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      setMessages((prev) => [
+      scopedSetMessages(scope)((prev) => [
         ...prev,
         { id: userId, role: "user", text: trimmed, status: "complete" },
       ]);
-      setIsStreaming(true);
+      scopedSetStreaming(scope)(true);
       try {
-        await sendChatMessageApi(workspaceRoot, trimmed);
+        await sendChatMessageApi(workspaceRoot, trimmed, scope);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setLastSendError(msg);
-        setIsStreaming(false);
-        setMessages((prev) =>
+        scopedSetStreaming(scope)(false);
+        scopedSetMessages(scope)((prev) =>
           prev.map((m) =>
             m.id === userId ? { ...m, status: "error", errorMessage: msg } : m,
           ),
         );
       }
     },
-    [workspaceRoot],
+    [workspaceRoot, scope, scopedSetMessages, scopedSetStreaming],
   );
 
   const reset = useCallback(async () => {
     if (!workspaceRoot) return;
     try {
-      await resetChatSessionApi(workspaceRoot);
-      setMessages([]);
-      streamingTurnRef.current = null;
-      setIsStreaming(false);
+      await resetChatSessionApi(workspaceRoot, scope);
+      scopedSetMessages(scope)([]);
+      refFor(scope).current = null;
+      scopedSetStreaming(scope)(false);
       setLastSendError(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setLastSendError(msg);
     }
-  }, [workspaceRoot]);
+  }, [workspaceRoot, scope, refFor, scopedSetMessages, scopedSetStreaming]);
 
   return { messages, socketStatus, isStreaming, send, reset, lastSendError };
 }

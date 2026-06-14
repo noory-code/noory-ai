@@ -153,17 +153,18 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
   });
 
   it("PUTs the new selection to the server when a radio is clicked", async () => {
+    // claude-code carries no chat radio (D-2026-06-13-H) — exercise codex.
     fetchSpy.mockReset();
     fetchSpy
       .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
       .mockResolvedValueOnce(jsonResponse({ provider: null }))
-      .mockResolvedValueOnce(jsonResponse({ provider: "claude-code" }));
+      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
     const user = userEvent.setup();
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    await waitFor(() => screen.getByText("Claude Code"));
+    await waitFor(() => screen.getByText("Codex"));
     const radios = await screen.findAllByRole("radio");
-    const claude = (radios as HTMLInputElement[]).find((r) => r.value === "claude-code")!;
-    await user.click(claude);
+    const codex = (radios as HTMLInputElement[]).find((r) => r.value === "codex")!;
+    await user.click(codex);
     await waitFor(() => {
       const calls = fetchSpy.mock.calls;
       const put = calls.find(
@@ -174,8 +175,73 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
       );
       expect(put).toBeDefined();
       const body = JSON.parse(String((put![1] as RequestInit).body));
-      expect(body).toEqual({ provider: "claude-code" });
+      expect(body).toEqual({ provider: "codex" });
     });
+  });
+  it("coerces a persisted claude-code chat selection to no-selection (D-2026-06-13-H)", async () => {
+    // Legacy workspaces may have claude-code persisted; in-app chat excludes
+    // it, so the dock must treat it as no active CLI (input stays disabled).
+    fetchSpy.mockReset();
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
+      .mockResolvedValueOnce(jsonResponse({ provider: "claude-code" }));
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    await waitFor(() => screen.getByText("Codex"));
+    const input = screen.getByRole("textbox", {
+      name: /message input/i,
+    }) as HTMLTextAreaElement;
+    expect(input.disabled).toBe(true);
+    expect(input.placeholder.toLowerCase()).toContain("pick a chat cli");
+  });
+
+  // ---- D-2026-06-13-H: per-canvas scope switcher ----
+
+  it("shows the scope switcher with the canvas + project segments when a canvas scope is active", async () => {
+    fetchSpy.mockReset();
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
+      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+    render(
+      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="foundation" />,
+    );
+    const tablist = await screen.findByRole("tablist", { name: /conversation/i });
+    expect(tablist).toBeTruthy();
+    const tabs = screen.getAllByRole("tab");
+    const labels = tabs.map((t) => t.textContent);
+    expect(labels).toContain("Foundation");
+    expect(labels).toContain("Project");
+    // Canvas segment is selected by default (follows the active canvas).
+    const foundationTab = tabs.find((t) => t.textContent === "Foundation")!;
+    expect(foundationTab.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("switches the selected segment to project on click", async () => {
+    fetchSpy.mockReset();
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
+      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+    const user = userEvent.setup();
+    render(
+      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="actors" />,
+    );
+    const projectTab = await screen.findByRole("tab", { name: "Project" });
+    await user.click(projectTab);
+    expect(projectTab.getAttribute("aria-selected")).toBe("true");
+    expect(
+      screen.getByRole("tab", { name: "Actors" }).getAttribute("aria-selected"),
+    ).toBe("false");
+  });
+
+  it("omits the scope switcher when the active scope is already project", async () => {
+    fetchSpy.mockReset();
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
+      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+    render(
+      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="project" />,
+    );
+    await waitFor(() => screen.getByText("Codex"));
+    expect(screen.queryByRole("tablist", { name: /conversation/i })).toBeNull();
   });
 });
 

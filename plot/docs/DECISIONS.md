@@ -11477,5 +11477,13 @@ but not yet fully eliminated.
   + drop claude-code from chat selection; viewer: scope-aware dock +
   MCP-connect affordance; schema parity for the `scope` field). Run via
   plot-feature-tdd.
-- **Spec impact:** TBD on implementation — will update SPEC §R7 / chat.
+- **Spec impact:** SPEC §R7 chat — updated in v0.68.0 (this implementation):
+  claude-code excluded from in-app chat (radio suppressed + `/api/chat/send`
+  400 backstop + dock coerces legacy selection to none); per-canvas
+  conversation scope (`foundation`/`actors`/`services`/`service_detail` +
+  shared `project`), engine sessions keyed on `(workspace, provider, scope)`,
+  viewer scope-aware dock + segmented switcher, `ChatScope` wire enum
+  parity-guarded by `tests/test_chat_scope_parity.py`. Decisions:
+  scope omitted → `project` (Postel); `project` scope = explicit toggle;
+  `Reset` = current scope only.
 
