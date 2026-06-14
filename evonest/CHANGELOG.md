@@ -2,6 +2,19 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.1.2] — 2026-06-15
+
+### Added
+
+- **R8 independence build guard** (`tests/test_r8_independence.py`). AST-checks
+  every `src/evonest/` module for imports of the Plot app (viewer / Tauri shell)
+  or any sibling plugin, and bans `src-tauri` path literals. Mirrors
+  `plot/tests/test_r8_independence.py` — the MIT-plugin / proprietary-app
+  licence boundary is defended by this structural guard, not by file layout
+  (noory-ai overhaul R8 / Track 2.2).
+
+**3 tests passing** (guard); full suite green.
+
 ## [1.1.1] — 2026-06-10
 
 ### Fixed
