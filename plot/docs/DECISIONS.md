@@ -39,6 +39,33 @@
 
 ## Log
 
+### D-2026-06-14-E — Resizable workspace layout; chat dock moved to the leftmost panel
+
+- **What:** The workspace is now three **horizontally-resizable panels** —
+  **chat (leftmost) | project sidebar | canvas** — via `react-resizable-panels`
+  (v4, `Group`/`Panel`/`Separator`), in a new `viewer/src/shell/WorkspacePanels.tsx`.
+  Each panel has a **minimum width** (chat 14%, sidebar 10%, canvas 30% — the
+  canvas can never be squeezed away). Chat + sidebar are collapsible (drag to
+  the edge / double-click the separator). Layout persists across reloads via
+  `useDefaultLayout` (localStorage, id `plot:workspaceLayout`). The chat dock's
+  own collapse-to-rail toggle AND the sidebar's own w-8/w-56 collapse toggle
+  are **removed** — the panel owns width/collapse now (the user preferred free
+  resizing over per-panel collapse buttons).
+- **Why:** user feedback — "채팅 창을 제일 왼쪽으로", "각 패널들 가로 사이즈
+  자유롭게 조정", "접기 펼치기보다 그게(리사이즈) 나은 거 같은데". One
+  resize mechanism instead of three bespoke collapse toggles.
+- **Approval:** Accepted by user, 2026-06-14 (chose: standard library +
+  enforced minimums + resize-replaces-collapse).
+- **Spec impact:** SPEC §R7 chat (dock is now the leftmost resizable panel).
+  Verified by `tests/chat-dock.test.tsx` (collapse tests removed; dock fills
+  its panel) + full viewer suite green; ChatDock/App stay under LOC ceilings.
+- **Dependency:** adds `react-resizable-panels` (MIT) — the first runtime UI
+  dependency beyond reactflow; standard, widely-used, accepted by the user.
+- **Follow-up:** unused i18n keys left behind by the removed collapse toggles
+  (`chat.collapse`/`chat.expand`, `sidebar.{expand,collapse}ProjectList`,
+  `sidebar.{show,hide}Projects`) — harmless (en/ko parity intact); prune in a
+  later i18n sweep.
+
 ### D-2026-06-14-D — Chat dock: provider connection behind a compact bar (collapsed by default)
 
 - **What:** The "Connect your AI agent" provider panel no longer occupies the

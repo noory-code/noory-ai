@@ -22,6 +22,7 @@ import { useStableHandlers } from "./hooks/useStableHandlers";
 import { useUrlSync } from "./hooks/useUrlSync";
 import { CanvasTabs, type CanvasTab } from "./shell/CanvasTabs";
 import { ChatDock } from "./shell/ChatDock";
+import { WorkspacePanels } from "./shell/WorkspacePanels";
 import { Header } from "./shell/Header";
 import { HelpCheatsheet } from "./shell/HelpCheatsheet";
 import { ServiceDetailModal } from "./shell/ServiceDetailModal";
@@ -365,7 +366,9 @@ export function App() {
         migratedToast={migratedToast}
       />
       {helpOpen && <HelpCheatsheet onClose={() => setHelpOpen(false)} />}
-      <div className="flex flex-1 overflow-hidden">
+      <WorkspacePanels
+        chat={<ChatDock onError={handleError} workspaceRoot={workspaceRoot} activeScope={modalOpen ? "service_detail" : tabToKind(activeTab)} />}
+        sidebar={
         <SketchSidebar
           projects={summaries}
           activeId={activeId}
@@ -384,7 +387,9 @@ export function App() {
           onViewTag={enterTagView}
           viewingTag={viewingTag}
         />
-        <main className="flex flex-1 flex-col overflow-hidden">
+        }
+        canvas={
+        <main className="flex h-full flex-col overflow-hidden">
           {phase === "ready" && (
             <CanvasTabs
               active={activeTab}
@@ -439,13 +444,8 @@ export function App() {
             })()}
           </div>
         </main>
-        {/* Chat follows the active canvas; modal → service_detail (D-2026-06-13-H). */}
-        <ChatDock
-          onError={handleError}
-          workspaceRoot={workspaceRoot}
-          activeScope={modalOpen ? "service_detail" : tabToKind(activeTab)}
-        />
-      </div>
+        }
+      />
     </div>
     {/* v0.27.2 (D-2026-05-26-F) — modal sits OUTSIDE the inert root
         div so the user can still interact with it. fixed inset-0

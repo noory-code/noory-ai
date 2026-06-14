@@ -21,16 +21,6 @@ import type { ChatScope } from "../types";
 import { ChatProvidersPanel } from "./ChatProvidersPanel";
 import { useDialog } from "./dialog/DialogProvider";
 
-const COLLAPSE_STORAGE_KEY = "plot:chatDockCollapsed";
-
-function readInitialCollapsed(): boolean {
-  try {
-    return localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 export interface ChatDockProps {
   onError: (message: string) => void;
   /** When defined, the dock loads + persists the workspace's chat-CLI
@@ -53,7 +43,6 @@ export function ChatDock({
   activeScope = "project",
 }: ChatDockProps) {
   const { t } = useTranslation();
-  const [collapsed, setCollapsed] = useState<boolean>(readInitialCollapsed);
   const [activeProvider, setActiveProvider] =
     useState<McpProviderName | null>(null);
   // "canvas" follows the active canvas; "project" pins the shared cross-canvas
@@ -68,28 +57,15 @@ export function ChatDock({
   // without expanding.
   const [providersOpen, setProvidersOpen] = useState(false);
 
-  const toggle = useCallback(() => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
-      } catch {
-        // localStorage unavailable (private mode, quota) — keep the
-        // session-level state; persistence is best-effort.
-      }
-      return next;
-    });
-  }, []);
-
   useEffect(() => {
-    if (!workspaceRoot || collapsed) return;
+    if (!workspaceRoot) return;
     void getChatProvider(workspaceRoot).then(
       // claude-code is selectable for in-app chat again (D-2026-06-14-B); the
       // double-billing tradeoff is surfaced as a warning banner, not a block.
       (sel) => setActiveProvider(sel.provider),
       (err) => onError(err instanceof Error ? err.message : String(err)),
     );
-  }, [workspaceRoot, collapsed, onError]);
+  }, [workspaceRoot, onError]);
 
   const handleSelectProvider = useCallback(
     (provider: McpProviderName | null) => {
@@ -109,31 +85,14 @@ export function ChatDock({
   return (
     <aside
       aria-label={t("chat.dockTitle")}
-      data-collapsed={collapsed ? "1" : "0"}
-      className={
-        collapsed
-          ? "flex w-10 flex-none flex-col border-l border-line bg-surface"
-          : "flex w-80 flex-none flex-col border-l border-line bg-surface"
-      }
+      className="flex h-full w-full flex-col border-r border-line bg-surface"
     >
-      <header className="flex items-center justify-between gap-2 border-b border-line px-2 py-2">
-        {!collapsed && (
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
-            {t("chat.dockTitle")}
-          </h2>
-        )}
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={collapsed ? t("chat.expand") : t("chat.collapse")}
-          title={collapsed ? t("chat.expand") : t("chat.collapse")}
-          className="rounded p-1 text-fg-muted hover:bg-surface-muted hover:text-fg-strong"
-        >
-          <span aria-hidden>{collapsed ? "‹" : "›"}</span>
-        </button>
+      <header className="flex items-center gap-2 border-b border-line px-3 py-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+          {t("chat.dockTitle")}
+        </h2>
       </header>
-      {!collapsed && (
-        <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden">
           <button
             type="button"
             aria-label={t("chat.providersBarLabel")}
@@ -166,8 +125,7 @@ export function ChatDock({
             scope={effectiveScope}
             onError={onError}
           />
-        </div>
-      )}
+      </div>
     </aside>
   );
 }

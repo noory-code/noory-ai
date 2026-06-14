@@ -52,42 +52,19 @@ export function SketchSidebar({
 }: SketchSidebarProps) {
   const { t } = useTranslation();
   const dialog = useDialog();
-  const [collapsed, setCollapsed] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [tagsOpen, setTagsOpen] = useState(true);
 
-  if (collapsed) {
-    return (
-      <aside className="flex h-full w-8 flex-col items-center border-r border-line bg-surface py-2">
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          aria-label={t("sidebar.expandProjectList")}
-          className="rounded px-1 py-2 text-fg-muted hover:bg-surface-subtle"
-          title={t("sidebar.showProjects")}
-        >
-          ▸
-        </button>
-      </aside>
-    );
-  }
-
+  // D-2026-06-14-E — width + collapse are owned by the resizable panel
+  // (WorkspacePanels); the sidebar fills its panel. The old self-managed
+  // w-8 rail / w-56 expand toggle is gone.
   return (
-    <aside className="flex h-full w-56 flex-col border-r border-line bg-surface">
+    <aside className="flex h-full w-full flex-col border-r border-line bg-surface">
       <div className="flex items-center justify-between border-b border-line px-3 py-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
           {t("sidebar.projects")}
         </span>
-        <button
-          type="button"
-          onClick={() => setCollapsed(true)}
-          aria-label={t("sidebar.collapseProjectList")}
-          className="rounded px-1 text-fg-faint hover:bg-surface-subtle"
-          title={t("sidebar.hideProjects")}
-        >
-          ◂
-        </button>
       </div>
       <button
         type="button"

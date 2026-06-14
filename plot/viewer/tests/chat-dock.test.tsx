@@ -111,32 +111,6 @@ describe("ChatDock — dock + compact provider bar", () => {
     await waitFor(() => expect(bar.textContent).toContain("Codex"));
   });
 
-  it("collapses the whole dock on the header toggle (compact bar gone)", async () => {
-    const user = userEvent.setup();
-    render(<ChatDock onError={() => {}} />);
-    await screen.findByRole("button", { name: /ai agent/i });
-    await user.click(screen.getByRole("button", { name: /collapse chat/i }));
-    expect(screen.queryByRole("button", { name: /ai agent/i })).toBeNull();
-    expect(localStorage.getItem("plot:chatDockCollapsed")).toBe("1");
-  });
-
-  it("re-expands the dock on a second toggle + clears the persisted flag", async () => {
-    const user = userEvent.setup();
-    localStorage.setItem("plot:chatDockCollapsed", "1");
-    render(<ChatDock onError={() => {}} />);
-    expect(screen.queryByRole("button", { name: /ai agent/i })).toBeNull();
-    await user.click(screen.getByRole("button", { name: /expand chat/i }));
-    await screen.findByRole("button", { name: /ai agent/i });
-    expect(localStorage.getItem("plot:chatDockCollapsed")).toBe("0");
-  });
-
-  it("starts collapsed when localStorage says so (no fetch)", () => {
-    localStorage.setItem("plot:chatDockCollapsed", "1");
-    render(<ChatDock onError={() => {}} />);
-    expect(screen.queryByRole("button", { name: /ai agent/i })).toBeNull();
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
   it("forwards a provider-fetch error to onError when the panel is opened", async () => {
     const onError = vi.fn();
     fetchSpy.mockImplementation((url: unknown) => {
@@ -172,12 +146,6 @@ describe("ChatDock — message frame", () => {
     ).toBe(true);
   });
 
-  it("does not render the message frame when collapsed", () => {
-    localStorage.setItem("plot:chatDockCollapsed", "1");
-    render(<ChatDock onError={() => {}} />);
-    expect(screen.queryByRole("log", { name: /chat messages/i })).toBeNull();
-    expect(screen.queryByRole("textbox", { name: /message input/i })).toBeNull();
-  });
 });
 
 describe("ChatDock — provider selection", () => {

@@ -4,6 +4,33 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.72.0] — 2026-06-15
+
+Minor (UX). Resizable workspace layout; chat dock moved to the leftmost
+panel (D-2026-06-14-E).
+
+### Added
+
+- **Resizable workspace** (`WorkspacePanels`, `react-resizable-panels`):
+  three horizontally-resizable panels — **chat (leftmost) | project sidebar |
+  canvas** — with enforced minimum widths (canvas can't be squeezed away).
+  Chat + sidebar collapse by dragging the separator. Layout persists across
+  reloads (localStorage `plot:workspaceLayout`).
+
+### Changed
+
+- Chat dock moved from the right edge to the **leftmost** panel.
+
+### Removed
+
+- The chat dock's own collapse-to-rail toggle and the sidebar's own
+  w-8/w-56 collapse toggle — the resizable panel owns width/collapse now
+  (one mechanism instead of three bespoke toggles).
+
+### Dependencies
+
+- Add `react-resizable-panels` (MIT) — first runtime UI dep beyond reactflow.
+
 ## [0.71.0] — 2026-06-14
 
 Minor (UX). Tidy the chat dock: provider connection behind a compact bar
