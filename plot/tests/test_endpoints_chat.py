@@ -23,7 +23,11 @@ from plot_mcp.chat_session import (
     ChatSessionRegistry,
     ChatStreamEvent,
 )
-from plot_mcp.endpoints_chat import build_context_preamble, stream_chat_turn
+from plot_mcp.endpoints_chat import (
+    build_context_preamble,
+    build_framing_preamble,
+    stream_chat_turn,
+)
 from plot_mcp.http_app import create_http_app
 
 # ---------------------------------------------------------------------------
@@ -205,9 +209,7 @@ def test_chat_send_requires_project_path(app_client: TestClient) -> None:
     assert "project_path" in resp.json()["error"]
 
 
-def test_chat_send_requires_message(
-    app_client: TestClient, workspace: Path
-) -> None:
+def test_chat_send_requires_message(app_client: TestClient, workspace: Path) -> None:
     resp = app_client.post(
         "/api/chat/send",
         json={"project_path": str(workspace), "message": ""},
@@ -286,9 +288,7 @@ def test_chat_send_dispatches_each_provider_to_its_own_session(
             if False:
                 yield  # pragma: no cover — async generator marker
 
-    registry = ChatSessionRegistry(
-        factory=lambda _root, name: _RecordingProvider(name)
-    )
+    registry = ChatSessionRegistry(factory=lambda _root, name: _RecordingProvider(name))
     client = TestClient(
         create_http_app(
             hub=BroadcastHub(enable_watchers=False),
@@ -319,9 +319,7 @@ def test_chat_reset_drops_all_provider_sessions_for_workspace(
     )
     assert fake_provider.calls == ["first"]
 
-    resp = app_client.post(
-        "/api/chat/reset", json={"project_path": str(workspace)}
-    )
+    resp = app_client.post("/api/chat/reset", json={"project_path": str(workspace)})
     assert resp.status_code == 200
     assert resp.json() == {"reset": True}
 
@@ -335,21 +333,14 @@ def test_chat_reset_requires_project_path(app_client: TestClient) -> None:
 
 
 def test_preamble_includes_canvas_and_selection() -> None:
-    p = build_context_preamble(
-        "foundation", [{"id": "n1", "kind": "core_value", "label": "Trust"}]
-    )
+    p = build_context_preamble("foundation", [{"id": "n1", "kind": "core_value", "label": "Trust"}])
     assert "foundation" in p
     assert "core_value" in p and "Trust" in p and "n1" in p
 
 
 def test_preamble_empty_for_project_scope() -> None:
     # project scope injects no canvas/selection context (decision 6).
-    assert (
-        build_context_preamble(
-            "project", [{"id": "n1", "kind": "x", "label": "y"}]
-        )
-        == ""
-    )
+    assert build_context_preamble("project", [{"id": "n1", "kind": "x", "label": "y"}]) == ""
 
 
 def test_preamble_empty_when_no_selection() -> None:
@@ -382,6 +373,52 @@ def test_chat_send_prepends_selection_preamble(
     assert "core_value" in sent and "Trust" in sent  # context prepended
 
 
+# --- Layer 3: per-canvas system framing (CHAT_ARCH.md) --------------------
+
+
+def test_framing_maps_each_canvas_to_its_vision_phase() -> None:
+    """Each base scope carries its VISION-phase framing (CHAT_ARCH Layer 3):
+    Foundation→Discovery, Actors/Services→Planning, Service-Detail→Execution."""
+    assert "Discovery" in build_framing_preamble("foundation")
+    assert "Planning" in build_framing_preamble("actors")
+    assert "Planning" in build_framing_preamble("services")
+    assert "Execution" in build_framing_preamble("service_detail:svc_1")
+
+
+def test_framing_empty_for_project_scope() -> None:
+    """The cross-canvas ``project`` thread gets no canvas framing (decision 6)."""
+    assert build_framing_preamble("project") == ""
+
+
+def test_framing_uses_base_scope_for_parametric_service_detail() -> None:
+    """A parametric ``service_detail:<id>`` resolves to the service_detail
+    framing — the id never leaks a per-instance (missing) key."""
+    a = build_framing_preamble("service_detail:svc_one")
+    b = build_framing_preamble("service_detail:svc_two")
+    assert a == b and a != ""
+
+
+def test_chat_send_prepends_framing_before_context_and_message(
+    app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
+) -> None:
+    """A send assembles framing → context → user message, in that order."""
+    _select_provider(app_client, workspace, "codex")
+    app_client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "fix this",
+            "scope": "foundation",
+            "selection": [{"id": "n1", "kind": "core_value", "label": "Trust"}],
+        },
+    )
+    sent = fake_provider.calls[0]
+    framing_at = sent.index("Discovery")
+    context_at = sent.index("Trust")
+    message_at = sent.index("fix this")
+    assert framing_at < context_at < message_at
+
+
 def test_chat_send_malformed_selection_is_ignored(
     app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
 ) -> None:
@@ -396,7 +433,9 @@ def test_chat_send_malformed_selection_is_ignored(
         },
     )
     assert resp.status_code == 202
-    assert fake_provider.calls == ["hi"]  # bare message, no crash
+    sent = fake_provider.calls[0]
+    assert "hi" in sent  # user message survives, no crash
+    assert "core_value" not in sent  # malformed selection injected nothing
 
 
 # --- scope routing (D-2026-06-13-H) ---------------------------------------

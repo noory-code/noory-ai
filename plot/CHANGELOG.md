@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.75.0] — 2026-06-15
+
+Minor. In-app chat Layer 3 — per-canvas system framing (D-2026-06-15-C).
+Final layer of CHAT_ARCH.md's three-layer chat redesign.
+
+### Added
+
+- **Canvas-appropriate chat framing.** Each turn now prepends a system framing
+  tied to the canvas's VISION phase — Foundation → Discovery, Actors / Services
+  → Planning, Service-Detail → Execution. The `project` scope gets none. The
+  engine assembles the CLI prompt as framing → selection context → user message
+  (empty parts skipped); a parametric `service_detail:<id>` resolves to the
+  shared `service_detail` framing. Framing is code constants (`_SCOPE_FRAMING`),
+  not `.noory/`-editable.
+
+### Notes
+
+- In-app only — the primary MCP path is unaffected. Completes the chat redesign
+  (Layers 2 → 1 → 3 shipped v0.73.0 → v0.74.0 → v0.75.0). Follow-up: selection
+  + framing over the MCP path (viewer→engine bridge + MCP resource).
+
 ## [0.74.0] — 2026-06-15
 
 Minor. In-app chat Layer 1 — per-service-instance conversation threads

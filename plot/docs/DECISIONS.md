@@ -39,6 +39,31 @@
 
 ## Log
 
+### D-2026-06-15-C — In-app chat Layer 3: per-canvas system framing
+
+- **What:** Each chat turn now carries a **canvas-appropriate system framing**
+  prepended to the CLI message (CHAT_ARCH.md Layer 3, the last of the three
+  sequenced layers). The base scope maps to its VISION.md phase: Foundation →
+  Discovery ("surface/sharpen the essence"), Actors / Services → Planning
+  ("design the value-creation machinery"), Service-Detail → Execution ("break
+  the plan into concrete steps"). The cross-canvas `project` scope gets no
+  framing. Engine assembles the prompt as **framing → Layer 2 context →
+  user message** (empty parts skipped). A parametric `service_detail:<id>`
+  resolves to the shared `service_detail` framing (base extraction).
+- **Committed defaults (CHAT_ARCH.md decision 4):** framing lives in **code
+  constants** (`_SCOPE_FRAMING` in `endpoints_chat.py`), not `.noory/`-editable.
+  **In-app only** — the primary MCP path doesn't receive this framing (named
+  follow-up: a viewer→engine bridge + MCP resource).
+- **Why:** user — "각 캔버스마다 있는 채팅창은 각 캔버스에 맞게 동작을 해야할 것
+  같아요"; per-canvas behaviour that matches Plot's three-phase cycle.
+- **Alternatives:** `.noory/`-editable framing (rejected as YAGNI until asked);
+  no framing / rely on selection alone (rejected — the agent needs to know
+  *how* to help on each canvas, not just *what* is selected).
+- **Approval:** Accepted by user, 2026-06-15.
+- **Spec impact:** SPEC §R7 chat — new Per-canvas framing row. Verified by
+  `tests/test_endpoints_chat.py` (per-phase framing, base extraction, project
+  empty, framing→context→message order).
+
 ### D-2026-06-15-B — In-app chat Layer 1: per-service-instance conversation threads
 
 - **What:** `service_detail` becomes a **parametric** chat scope — on the wire
