@@ -34,6 +34,7 @@ import { useFlowHandlers } from "./sketch/useFlowHandlers";
 import { useNodeCreation } from "./sketch/useNodeCreation";
 import { useCollapsedTree } from "./sketch/useCollapsedTree";
 import { useEdgesMemo } from "./sketch/useEdgesMemo";
+import type { AnchorArrowMode } from "./sketch/edgeTransform";
 import { useInspectorRouting } from "./sketch/useInspectorRouting";
 import { useNodesMemo } from "./sketch/useNodesMemo";
 import { useOrphanActorRefs } from "./sketch/useOrphanActorRefs";
@@ -121,12 +122,11 @@ export interface SketchCanvasProps {
    *  ``core_value`` / ``identity`` nodes snap to anchor-radial slots
    *  per the canonical Plot spec (Foundation only). Default false. */
   applyAnchorRadialLayout?: boolean;
-  /** v0.36.1 (D-2026-05-31-AA) — wrapper opt-in: this canvas's edges
-   *  converge on the project anchor (Foundation + Actors). The hooks must
-   *  NOT read ``doc.canvas_kind`` to decide this (banned by the v0.15 reset
-   *  + the pre-commit gate); FoundationCanvas / ActorsCanvas pass true.
-   *  Default false. */
-  convergeArrowsOnAnchor?: boolean;
+  /** Wrapper-supplied anchor-relative arrow orientation (D-2026-05-31-AA +
+   *  D-2026-06-14-C). Foundation/Actors ``"converge"``, Services
+   *  ``"diverge"``, ServiceDetail/default ``"none"``. (No ``doc.canvas_kind``
+   *  read — banned by the v0.15 reset + pre-commit gate.) */
+  anchorArrowMode?: AnchorArrowMode;
   /** v0.25.0 (D-2026-05-24-B) — wrapper opt-in for the auto-layout
    *  button in RF Controls. Successor to ``enableAutoLayout`` (boolean).
    *  ``"tree"`` runs ``useAutoLayout`` (Foundation / Actors); ``"radial"``
@@ -186,7 +186,7 @@ function SketchCanvasInner({
   showFoldButton,
   injectAnchor,
   applyAnchorRadialLayout,
-  convergeArrowsOnAnchor,
+  anchorArrowMode,
   layoutAlgo,
   showDirectionSwitch,
   onPublishNode,
@@ -299,7 +299,7 @@ function SketchCanvasInner({
     nearestCollapsedAncestor,
     valueFlowOn,
     hideRootServiceNode: hideRootServiceNode ?? false,
-    convergeArrowsOnAnchor: convergeArrowsOnAnchor ?? false,
+    anchorArrowMode: anchorArrowMode ?? "none",
     projectAnchor,
   });
 
@@ -338,7 +338,7 @@ function SketchCanvasInner({
     selectedNodeIds,
     onDocChange,
     addNodeAt,
-    convergeArrowsOnAnchor: convergeArrowsOnAnchor ?? false,
+    anchorArrowMode: anchorArrowMode ?? "none",
   });
 
   // v0.37.1 (D-2026-05-31-AD) — mirror RF's selection into ``selectedIds``

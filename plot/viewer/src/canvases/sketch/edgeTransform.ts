@@ -13,6 +13,13 @@ import { VALUE_FORM_COLORS } from "../SketchEdgeModal";
 import { anchorDistances, sourceIsAnchorWard } from "./anchorDistance";
 import { PROJECT_ANCHOR_ID } from "./constants";
 
+/** Anchor-relative arrow orientation mode (D-2026-06-14-C). */
+export type AnchorArrowMode = "converge" | "diverge" | "none";
+
+/** Invisible click band around each edge path so thin edges are easy to
+ *  select (D-2026-06-14-C). React Flow's default is 20; widen it. */
+export const EDGE_INTERACTION_WIDTH = 28;
+
 export interface EdgeTransformInput {
   edges: CanvasDoc["edges"];
   serviceRef: CanvasDoc["service_ref"];
@@ -24,10 +31,15 @@ export interface EdgeTransformInput {
   /** v0.15 Phase 3.4 — drop edges that touch the hidden service-root
    *  (true on ServiceDetailCanvas; false elsewhere). */
   hideRootServiceNode: boolean;
-  /** v0.34.4 (D-2026-05-31-R) — Foundation + Actors only: force every
-   *  directed edge's arrowhead to point at the anchor-ward endpoint,
-   *  regardless of how the edge was drawn. */
-  constrainArrowToAnchor: boolean;
+  /** Anchor-relative arrow orientation (D-2026-05-31-R + D-2026-06-14-C):
+   *  - ``"converge"`` — Foundation + Actors: force every directed edge's
+   *    arrowhead toward the anchor-ward endpoint (elements compose into /
+   *    participate in the service).
+   *  - ``"diverge"`` — Services: force the arrowhead AWAY from the anchor
+   *    (anchor → category → service flows outward), regardless of how the
+   *    edge was drawn.
+   *  - ``"none"`` — leave the drawn direction (ServiceDetail, no anchor). */
+  anchorArrowMode: AnchorArrowMode;
   /** v0.40.0 (D-2026-06-01-E) — render-time handle picker. Maps each
    *  node id (incl. the synthetic project anchor, which is NOT in
    *  doc.nodes) to its centre. When present, a non-self-loop edge
@@ -101,14 +113,17 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     nearestCollapsedAncestor,
     valueFlowOn,
     hideRootServiceNode,
-    constrainArrowToAnchor,
+    anchorArrowMode,
     nodeCenters,
   } = input;
   const isHiddenRoot = (id: string): boolean =>
     hideRootServiceNode && !!serviceRef && id === serviceRef;
-  // v0.34.4 (D-2026-05-31-R) — anchor-ward orientation map (Foundation +
-  // Actors). Computed once over the raw edge graph.
-  const dist = constrainArrowToAnchor ? anchorDistances(edges, PROJECT_ANCHOR_ID) : null;
+  // v0.34.4 (D-2026-05-31-R) + D-2026-06-14-C — anchor-relative orientation
+  // map. Computed once over the raw edge graph when any anchor mode is on.
+  const dist =
+    anchorArrowMode !== "none"
+      ? anchorDistances(edges, PROJECT_ANCHOR_ID)
+      : null;
   const out: Edge[] = [];
   for (const e of edges) {
     if (isHiddenRoot(e.source) || isHiddenRoot(e.target)) continue;
@@ -127,14 +142,22 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
     //       now looks like a self-loop on the collapsed parent; drop.
     const isRealSelfLoop = e.source === e.target;
     if (src === tgt && !isRealSelfLoop) continue;
-    // v0.34.4 (D-2026-05-31-R) — orient the rendered arrow toward the
-    // anchor-ward endpoint. Swap the RF source/target (visual only; the
-    // doc edge stays the SSOT) so ``markerEnd`` lands on the anchor side.
+    // v0.34.4 (D-2026-05-31-R) + D-2026-06-14-C — orient the rendered arrow
+    // relative to the anchor. Swap the RF source/target (visual only; the doc
+    // edge stays the SSOT) so ``markerEnd`` lands on the wanted end:
+    //   converge → arrowhead at the anchor-ward endpoint
+    //   diverge  → arrowhead at the non-anchor (outward) endpoint
     let rfSource = src;
     let rfTarget = tgt;
-    if (dist && e.directed && !isRealSelfLoop && sourceIsAnchorWard(dist, src, tgt)) {
-      rfSource = tgt;
-      rfTarget = src;
+    if (dist && e.directed && !isRealSelfLoop) {
+      const shouldSwap =
+        anchorArrowMode === "converge"
+          ? sourceIsAnchorWard(dist, src, tgt) // arrowhead → anchor
+          : sourceIsAnchorWard(dist, tgt, src); // diverge: arrowhead → away
+      if (shouldSwap) {
+        rfSource = tgt;
+        rfTarget = src;
+      }
     }
     // v0.30.1 (D-2026-05-31-D) — injection read from the stored
     // ``relation`` SSOT (was re-derived from the source kind in
@@ -150,6 +173,9 @@ export function edgeTransform(input: EdgeTransformInput): Edge[] {
       id: e.id,
       source: rfSource,
       target: rfTarget,
+      // D-2026-06-14-C — wider invisible hit band so thin edges are easy to
+      // click/select (RF default 20).
+      interactionWidth: EDGE_INTERACTION_WIDTH,
       // v0.40.0 (D-2026-06-01-E) — floating edges removed. When node
       // centres are supplied, attach each end to the handle on the side
       // facing the other node (clean routing from any direction); else

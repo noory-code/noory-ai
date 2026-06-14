@@ -21,6 +21,7 @@ import type { CanvasDoc, SketchEdge } from "../../types";
 import { classifyEdge } from "../../flow/edgeSemantics";
 import { anchorDistances, sourceIsAnchorWard } from "./anchorDistance";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH, PROJECT_ANCHOR_ID } from "./constants";
+import type { AnchorArrowMode } from "./edgeTransform";
 import type { NodePreset } from "./types";
 
 export interface UseFlowHandlersArgs {
@@ -29,10 +30,11 @@ export interface UseFlowHandlersArgs {
   selectedNodeIds: MutableRefObject<string[]>;
   onDocChange: (next: CanvasDoc) => void;
   addNodeAt: (x: number, y: number, preset?: NodePreset) => void;
-  /** v0.36.1 (D-2026-05-31-AA) — wrapper-supplied (Foundation + Actors):
-   *  normalize a new edge to point at the anchor-ward endpoint. Replaces a
-   *  banned ``doc.canvas_kind`` read in this hook. */
-  convergeArrowsOnAnchor: boolean;
+  /** Wrapper-supplied anchor-relative arrow orientation (D-2026-05-31-AA +
+   *  D-2026-06-14-C): normalize a new edge so its arrow points toward the
+   *  anchor (``"converge"``) or away from it (``"diverge"``); ``"none"``
+   *  keeps the drawn direction. Replaces a banned ``doc.canvas_kind`` read. */
+  anchorArrowMode: AnchorArrowMode;
 }
 
 export interface UseFlowHandlersResult {
@@ -54,22 +56,30 @@ export function useFlowHandlers({
   selectedNodeIds,
   onDocChange,
   addNodeAt,
-  convergeArrowsOnAnchor,
+  anchorArrowMode,
 }: UseFlowHandlersArgs): UseFlowHandlersResult {
   const handleConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
       const current = docRef.current;
-      // v0.34.4 (D-2026-05-31-R) — Foundation + Actors: normalize the new
-      // edge so it points at the anchor-ward endpoint, however the user
-      // dragged it (which side/handle they started from no longer matters).
+      // D-2026-05-31-R + D-2026-06-14-C — normalize the new edge's direction
+      // relative to the anchor, however the user dragged it (which side/handle
+      // they started from no longer matters):
+      //   converge → arrow points toward the anchor-ward endpoint
+      //   diverge  → arrow points away from the anchor (outward)
       let source = connection.source;
       let target = connection.target;
       let sourceHandle = connection.sourceHandle ?? null;
       let targetHandle = connection.targetHandle ?? null;
-      if (convergeArrowsOnAnchor) {
+      if (anchorArrowMode !== "none") {
         const dist = anchorDistances(current.edges, PROJECT_ANCHOR_ID);
-        if (sourceIsAnchorWard(dist, source, target)) {
+        // converge: swap when source is anchor-ward (so target ends anchor-ward)
+        // diverge:  swap when target is anchor-ward (so the arrow points out)
+        const swap =
+          anchorArrowMode === "converge"
+            ? sourceIsAnchorWard(dist, source, target)
+            : sourceIsAnchorWard(dist, target, source);
+        if (swap) {
           [source, target] = [target, source];
           [sourceHandle, targetHandle] = [targetHandle, sourceHandle];
         }
@@ -97,7 +107,7 @@ export function useFlowHandlers({
       };
       onDocChange({ ...current, edges: [...current.edges, newEdge] });
     },
-    [docRef, onDocChange, convergeArrowsOnAnchor],
+    [docRef, onDocChange, anchorArrowMode],
   );
 
   const handleEdgesChange = useCallback((_changes: EdgeChange[]) => {

@@ -39,6 +39,40 @@
 
 ## Log
 
+### D-2026-06-14-C — Services arrows diverge from the anchor; edges easier to select + selection highlighted
+
+Three edge changes (one batch):
+
+- **Services canvas = forced divergence.** The anchor-relative arrow control
+  generalises from a boolean (`convergeArrowsOnAnchor`) to a mode
+  `anchorArrowMode: "converge" | "diverge" | "none"`. Foundation/Actors =
+  `"converge"` (arrow toward anchor, unchanged); **Services = `"diverge"`**
+  (arrow points AWAY from the anchor, so the anchor → category → service flow
+  always reads outward regardless of how the edge was drawn); ServiceDetail /
+  default = `"none"`. Applies to both render orientation (`edgeTransform`) and
+  creation normalisation (`useFlowHandlers`). This enforces the
+  D-2026-06-01-D services-divergence spec at render time instead of relying on
+  the stored edge direction.
+- **Edges easier to select.** `edgeTransform` sets `interactionWidth: 28` on
+  every edge (RF default is 20) — a wider invisible click band.
+- **Selected edge highlighted.** `edgeTransform` writes the edge stroke
+  inline (value-flow recolour), which beats RF's default `.selected` class
+  styling, so selection showed no visual change. Added a styles.css rule
+  (`.react-flow__edge.selected .react-flow__edge-path { stroke: accent !important; stroke-width: 3 !important }`)
+  that overrides the inline stroke. Not a cursor rule → the cursor-baseline
+  guard is unaffected.
+
+- **Why:** user feedback while reviewing the v0.69.0 app — services arrows
+  must flow outward from the anchor; edges were hard to click; selecting an
+  edge gave no feedback.
+- **Approval:** Accepted by user, 2026-06-14.
+- **Spec impact:** SPEC §Services (divergence now render-enforced) + §Edges
+  (interaction width + selection highlight). Verified by
+  `tests/edge-transform.test.ts` (diverge orientation + interactionWidth),
+  `tests/edge-selection-style.test.ts` (selected-edge `!important` rule).
+- **LOC:** SketchCanvas stayed under its 516 ceiling (515) — the mode rename
+  is net-neutral; no ceiling change.
+
 ### D-2026-06-14-B — Re-include claude-code in in-app chat, with a billing warning (reverses D-2026-06-13-H exclusion)
 
 - **What:** claude-code is selectable for in-app chat again. The three

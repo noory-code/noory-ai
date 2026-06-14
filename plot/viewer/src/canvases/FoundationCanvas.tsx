@@ -17,7 +17,7 @@ export function FoundationCanvas(props: SketchCanvasProps) {
       shouldDrill={undefined}
       showFoldButton={false}
       injectAnchor={true}
-      convergeArrowsOnAnchor={true}
+      anchorArrowMode="converge"
       layoutAlgo="tree"
     />
   );

@@ -53,3 +53,14 @@ body { margin: 0; }
   right: -7px;
   bottom: -7px;
 }
+
+/* D-2026-06-14-C: selected-edge highlight. edgeTransform sets each edge's
+   stroke INLINE (value-flow recolour), which beats RF's default .selected
+   class styling — so a selected edge would show no visual change. !important
+   restores selection feedback (accent stroke + thicker line) over the inline
+   value. Not a cursor rule, so the cursor-baseline guard is unaffected. */
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path {
+  stroke: rgb(var(--accent)) !important;
+  stroke-width: 3 !important;
+}

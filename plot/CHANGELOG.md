@@ -4,6 +4,30 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.70.0] — 2026-06-14
+
+Minor. Edge improvements (D-2026-06-14-C): services arrows diverge from the
+anchor, edges easier to select, selection highlighted.
+
+### Changed
+
+- **Services canvas arrows diverge from the anchor.** The anchor-relative
+  arrow control generalised from `convergeArrowsOnAnchor: boolean` to
+  `anchorArrowMode: "converge" | "diverge" | "none"`. Foundation/Actors keep
+  `"converge"`; Services now uses `"diverge"` so the `anchor → category →
+  service` flow always renders outward regardless of how the edge was drawn
+  (render-enforces the D-2026-06-01-D divergence spec). Applied in both
+  `edgeTransform` (render) and `useFlowHandlers` (creation normalisation).
+
+### Added
+
+- **Edges easier to select** — `interactionWidth: 28` on every edge (RF
+  default 20), a wider invisible click band.
+- **Selected-edge highlight** — styles.css rule giving a selected edge an
+  accent stroke + 3 px width (`!important`, to override the inline value-flow
+  stroke that otherwise hid RF's `.selected` styling). Pinned by
+  `tests/edge-selection-style.test.ts`.
+
 ## [0.69.0] — 2026-06-14
 
 Minor (behavior change). Re-include claude-code in in-app chat with a

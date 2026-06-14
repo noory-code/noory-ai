@@ -11,7 +11,7 @@ export function ActorsCanvas(props: SketchCanvasProps) {
       shouldDrill={undefined}
       showFoldButton={true}
       injectAnchor={true}
-      convergeArrowsOnAnchor={true}
+      anchorArrowMode="converge"
       layoutAlgo="tree"
     />
   );

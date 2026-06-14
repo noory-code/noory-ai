@@ -7,7 +7,7 @@
 import { useMemo } from "react";
 import type { Edge } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
-import { edgeTransform } from "./edgeTransform";
+import { edgeTransform, type AnchorArrowMode } from "./edgeTransform";
 import { PROJECT_ANCHOR_ID } from "./constants";
 
 export interface UseEdgesMemoArgs {
@@ -15,10 +15,11 @@ export interface UseEdgesMemoArgs {
   nearestCollapsedAncestor: (id: string) => string | null;
   valueFlowOn: boolean;
   hideRootServiceNode: boolean;
-  /** v0.36.1 (D-2026-05-31-AA) — wrapper-supplied (Foundation + Actors):
-   *  edges converge on the project anchor. Replaces a banned
+  /** Wrapper-supplied anchor-relative arrow orientation (D-2026-05-31-AA +
+   *  D-2026-06-14-C): Foundation/Actors ``"converge"``, Services
+   *  ``"diverge"``, ServiceDetail ``"none"``. Replaces a banned
    *  ``doc.canvas_kind`` read in this hook. */
-  convergeArrowsOnAnchor: boolean;
+  anchorArrowMode: AnchorArrowMode;
   /** v0.40.0 (D-2026-06-01-E) — the project anchor placement, so edges
    *  can attach to the side facing the other node (the anchor isn't in
    *  doc.nodes). Null on ServiceDetail (no anchor). */
@@ -30,7 +31,7 @@ export function useEdgesMemo({
   nearestCollapsedAncestor,
   valueFlowOn,
   hideRootServiceNode,
-  convergeArrowsOnAnchor,
+  anchorArrowMode,
   projectAnchor,
 }: UseEdgesMemoArgs): Edge[] {
   // v0.40.0 (D-2026-06-01-E) — node-centre lookup so each edge attaches
@@ -60,11 +61,10 @@ export function useEdgesMemo({
         nearestCollapsedAncestor,
         valueFlowOn,
         hideRootServiceNode,
-        // v0.34.4 (D-2026-05-31-R) — Foundation + Actors converge on the
-        // anchor (elements compose into the service; actors participate).
-        // v0.36.1 (D-2026-05-31-AA) — the foundation/actors decision is now
-        // a wrapper-supplied prop, not a doc.canvas_kind read in this hook.
-        constrainArrowToAnchor: convergeArrowsOnAnchor,
+        // D-2026-05-31-AA + D-2026-06-14-C — anchor-relative arrow mode is a
+        // wrapper-supplied prop (converge / diverge / none), not a
+        // doc.canvas_kind read in this hook.
+        anchorArrowMode,
         nodeCenters,
       }),
     [
@@ -73,7 +73,7 @@ export function useEdgesMemo({
       nearestCollapsedAncestor,
       valueFlowOn,
       hideRootServiceNode,
-      convergeArrowsOnAnchor,
+      anchorArrowMode,
       nodeCenters,
     ],
   );
