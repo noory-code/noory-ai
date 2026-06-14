@@ -22,19 +22,16 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any, get_args
+from typing import Any
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.chat_provider import read_selection
-from plot_mcp.chat_providers.base import DEFAULT_CHAT_SCOPE, ChatScope
+from plot_mcp.chat_providers.base import DEFAULT_CHAT_SCOPE, is_valid_scope
 from plot_mcp.chat_session import ChatProvider, ChatSessionRegistry, chat_registry
 from plot_mcp.workspace import resolve_plot_root
-
-_VALID_SCOPES: frozenset[str] = frozenset(get_args(ChatScope))
-
 
 # Layer 2 (CHAT_ARCH.md) — how many selected nodes to spell out in the
 # preamble before falling back to ids-only, so the prompt stays bounded.
@@ -58,34 +55,34 @@ def build_context_preamble(scope: str, selection: Any) -> str:
         return ""
     detailed = nodes[:_SELECTION_DETAIL_CAP]
     rendered = ", ".join(
-        f'{n.get("kind", "?")} "{n.get("label", "")}" ({n.get("id", "")})'
-        for n in detailed
+        f'{n.get("kind", "?")} "{n.get("label", "")}" ({n.get("id", "")})' for n in detailed
     )
     lines = [
         f"[Plot context] Active canvas: {scope}.",
         f"Selected ({len(nodes)}): {rendered}",
     ]
     if len(nodes) > _SELECTION_DETAIL_CAP:
-        overflow = ", ".join(
-            str(n.get("id", "")) for n in nodes[_SELECTION_DETAIL_CAP:]
-        )
+        overflow = ", ".join(str(n.get("id", "")) for n in nodes[_SELECTION_DETAIL_CAP:])
         lines.append(f"…and {len(nodes) - _SELECTION_DETAIL_CAP} more: {overflow}")
     return "\n".join(lines)
 
 
-def _read_scope(body: dict[str, Any]) -> ChatScope | None:
+def _read_scope(body: dict[str, Any]) -> str | None:
     """Pull ``scope`` from a request body.
 
     Missing → the shared ``project`` bucket (Postel, Q1). Present but not a
-    known scope → ``None`` to signal the caller should 400 (Fail Fast on a
-    typo before it silently creates an unreachable session).
+    well-formed scope → ``None`` to signal the caller should 400 (Fail Fast on
+    a typo before it silently creates an unreachable session). A valid scope is
+    a base member or a parametric ``service_detail:<id>`` (Layer 1,
+    D-2026-06-15-B), returned verbatim as the session key.
     """
     raw = body.get("scope")
     if raw is None:
         return DEFAULT_CHAT_SCOPE
-    if isinstance(raw, str) and raw in _VALID_SCOPES:
-        return raw  # type: ignore[return-value]
+    if isinstance(raw, str) and is_valid_scope(raw):
+        return raw
     return None
+
 
 _log = logging.getLogger(__name__)
 
@@ -111,7 +108,7 @@ async def stream_chat_turn(
     hub: BroadcastHub,
     plot_root: Path,
     user_message: str,
-    scope: ChatScope = DEFAULT_CHAT_SCOPE,
+    scope: str = DEFAULT_CHAT_SCOPE,
 ) -> None:
     """Pull stream events from ``provider`` and fan them out to ``plot_root``.
 
@@ -159,9 +156,7 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     project_path = body.get("project_path")
     message = body.get("message")
     if not isinstance(project_path, str) or not project_path:
-        return JSONResponse(
-            {"error": "project_path required"}, status_code=400
-        )
+        return JSONResponse({"error": "project_path required"}, status_code=400)
     if not isinstance(message, str) or not message.strip():
         return JSONResponse({"error": "message required"}, status_code=400)
 
@@ -180,9 +175,7 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     # default we never agreed on.
     selection = read_selection(plot_root)
     if selection.provider is None:
-        return JSONResponse(
-            {"error": "no chat provider selected"}, status_code=400
-        )
+        return JSONResponse({"error": "no chat provider selected"}, status_code=400)
     # claude-code is allowed for in-app chat (D-2026-06-14-B, reversing
     # D-2026-06-13-H). Running it via ``claude -p`` bills separately from the
     # Claude subscription; that tradeoff is surfaced as a UI warning rather
@@ -190,9 +183,7 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
 
     hub = _hub_from_request(request)
     if hub is None:
-        return JSONResponse(
-            {"error": "broadcast hub not configured"}, status_code=500
-        )
+        return JSONResponse({"error": "broadcast hub not configured"}, status_code=500)
 
     registry = _registry_from_request(request)
     provider = registry.get_or_create(plot_root, selection.provider, scope)
@@ -202,9 +193,7 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     preamble = build_context_preamble(scope, body.get("selection"))
     full_message = f"{preamble}\n\n{message}" if preamble else message
 
-    asyncio.create_task(
-        stream_chat_turn(provider, hub, plot_root, full_message, scope)
-    )
+    asyncio.create_task(stream_chat_turn(provider, hub, plot_root, full_message, scope))
     return JSONResponse({"accepted": True}, status_code=202)
 
 
@@ -216,9 +205,7 @@ async def chat_reset_endpoint(request: Request) -> JSONResponse:
         return JSONResponse({"error": "invalid JSON body"}, status_code=400)
     project_path = body.get("project_path")
     if not isinstance(project_path, str) or not project_path:
-        return JSONResponse(
-            {"error": "project_path required"}, status_code=400
-        )
+        return JSONResponse({"error": "project_path required"}, status_code=400)
     scope = _read_scope(body)
     if scope is None:
         return JSONResponse({"error": "invalid chat scope"}, status_code=400)

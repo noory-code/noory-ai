@@ -112,19 +112,23 @@ export interface SketchEdge {
 export type CanvasKind = "foundation" | "actors" | "services" | "service_detail";
 
 /**
- * Conversation scope for the R7 chat (D-2026-06-13-H). Threads are
- * partitioned per canvas kind plus one shared ``project`` scope for
- * cross-canvas work. The viewer sends the active scope on every turn and
- * demultiplexes incoming ``chat_stream_event`` payloads on it; the engine
- * keys sessions on (workspace, provider, scope). Parity with the Python
- * ``ChatScope`` literal is pinned by ``tests/test_chat_scope_parity.py``.
+ * Conversation scope for the R7 chat (D-2026-06-13-H; Layer 1 per-instance
+ * refinement D-2026-06-15-B). Threads are partitioned per canvas kind plus one
+ * shared ``project`` scope for cross-canvas work. ``service_detail`` is the one
+ * parametric member: each service-detail canvas keys its own thread as
+ * ``service_detail:<service_id>``, so the scope set equals ``CanvasKey |
+ * "project"`` — chat threads and canvas state key the same way. The viewer
+ * sends the active scope on every turn and demultiplexes incoming
+ * ``chat_stream_event`` payloads on it; the engine keys sessions on
+ * (workspace, provider, scope). Parity with the Python ``ChatScope`` base
+ * members is pinned by ``tests/test_chat_scope_parity.py``.
  */
 export type ChatScope =
   | "project"
   | "foundation"
   | "actors"
   | "services"
-  | "service_detail";
+  | `service_detail:${string}`;
 
 /**
  * One selected node summary sent with a chat turn (CHAT_ARCH Layer 2,

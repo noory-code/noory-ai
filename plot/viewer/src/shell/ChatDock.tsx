@@ -151,6 +151,11 @@ function ChatScopeSwitcher({
   onModeChange: (mode: "canvas" | "project") => void;
 }) {
   const { t } = useTranslation();
+  // A parametric ``service_detail:<id>`` scope has no per-instance i18n key;
+  // label it with its base scope (Layer 1, D-2026-06-15-B).
+  const baseScope = canvasScope.startsWith("service_detail:")
+    ? "service_detail"
+    : canvasScope;
   const segment = (value: "canvas" | "project", label: string) => (
     <button
       type="button"
@@ -172,7 +177,7 @@ function ChatScopeSwitcher({
       aria-label={t("chat.scopeLabel")}
       className="flex gap-1 border-b border-line px-3 py-2"
     >
-      {segment("canvas", t(`chat.scope.${canvasScope}`))}
+      {segment("canvas", t(`chat.scope.${baseScope}`))}
       {segment("project", t("chat.scope.project"))}
     </div>
   );

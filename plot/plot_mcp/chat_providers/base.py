@@ -20,11 +20,16 @@ from pydantic import BaseModel
 
 ChatStreamEventType = Literal["turn_start", "delta", "turn_complete", "error"]
 
-# Conversation scope (D-2026-06-13-H). Chat threads are partitioned per
-# canvas kind plus one shared ``project`` scope for cross-canvas work. The
-# viewer sends the active scope on each turn and demultiplexes incoming
-# events on it; the engine keys sessions on (workspace, provider, scope).
-# Parity with the TS ``ChatScope`` union is pinned by
+# Conversation scope (D-2026-06-13-H, Layer 1 per-instance refinement
+# D-2026-06-15-B). Chat threads are partitioned per canvas kind plus one
+# shared ``project`` scope for cross-canvas work. ``service_detail`` is the
+# one *parametric* member: on the wire it carries the service instance id as
+# ``service_detail:<id>`` so each service-detail canvas gets its own thread.
+# This ``ChatScope`` literal is the **base** member set (the parity SSOT vs
+# the TS ``CanvasKind ∪ {project}``); the full wire value is a plain ``str``
+# validated by :func:`is_valid_scope`. The viewer sends the active scope on
+# each turn and demultiplexes incoming events on it; the engine keys sessions
+# on (workspace, provider, scope). Parity is pinned by
 # ``tests/test_chat_scope_parity.py``.
 ChatScope = Literal[
     "project",
@@ -38,6 +43,29 @@ ChatScope = Literal[
 # D-2026-06-13-H Q1) — cross-canvas work lands in the shared bucket.
 DEFAULT_CHAT_SCOPE: ChatScope = "project"
 
+# Singleton scopes are valid bare on the wire; ``service_detail`` is the one
+# member that requires a ``:<id>`` suffix to name a specific service thread.
+_SERVICE_DETAIL_PREFIX = "service_detail:"
+_SINGLETON_SCOPES: frozenset[str] = frozenset({"project", "foundation", "actors", "services"})
+
+
+def is_valid_scope(raw: str) -> bool:
+    """True for a well-formed wire scope (Layer 1, CHAT_ARCH.md).
+
+    A scope is either a singleton base member (``project`` / ``foundation`` /
+    ``actors`` / ``services``) or the parametric ``service_detail:<id>`` with a
+    non-empty instance id. Bare ``service_detail`` (no id) is rejected — it
+    names no specific service thread (Fail Fast). The engine keys sessions on
+    the full string, so an unknown id simply gets its own (orphaned) thread;
+    resolving stale ids back to the ``services`` scope is the viewer's job
+    (CHAT_ARCH.md decision 6).
+    """
+    if raw in _SINGLETON_SCOPES:
+        return True
+    if raw.startswith(_SERVICE_DETAIL_PREFIX):
+        return bool(raw[len(_SERVICE_DETAIL_PREFIX) :])
+    return False
+
 
 class ChatStreamEvent(BaseModel):
     """One streamed event in a chat turn.
@@ -49,13 +77,15 @@ class ChatStreamEvent(BaseModel):
 
     ``scope`` echoes which conversation bucket the turn belongs to so the
     viewer can route the event to the matching canvas thread (D-2026-06-13-H).
+    It is a plain ``str`` so it can carry a parametric ``service_detail:<id>``
+    value (Layer 1, D-2026-06-15-B), not just a base ``ChatScope`` member.
     """
 
     type: ChatStreamEventType
     turn_id: str
     text: str = ""
     error_message: str | None = None
-    scope: ChatScope = DEFAULT_CHAT_SCOPE
+    scope: str = DEFAULT_CHAT_SCOPE
 
 
 class _SubprocessFactory(Protocol):
@@ -116,9 +146,7 @@ class _SubprocessChatProvider(ChatProvider):
         self._first_turn = True
         self._session_id: str | None = None
         self._spawn: _SubprocessFactory = (
-            subprocess_factory
-            if subprocess_factory is not None
-            else _default_spawn
+            subprocess_factory if subprocess_factory is not None else _default_spawn
         )
 
     @property
@@ -133,9 +161,7 @@ class _SubprocessChatProvider(ChatProvider):
         self, turn_id: str, line: bytes, accumulator: list[str]
     ) -> ChatStreamEvent | None: ...
 
-    async def stream_turn(
-        self, user_message: str
-    ) -> AsyncIterator[ChatStreamEvent]:
+    async def stream_turn(self, user_message: str) -> AsyncIterator[ChatStreamEvent]:
         turn_id = str(uuid4())
         cmd = self._build_command(user_message)
 
@@ -167,8 +193,7 @@ class _SubprocessChatProvider(ChatProvider):
                 yield ChatStreamEvent(
                     type="error",
                     turn_id=turn_id,
-                    error_message=stderr_text
-                    or f"{self._cli_path} exited {rc}",
+                    error_message=stderr_text or f"{self._cli_path} exited {rc}",
                 )
             else:
                 yield ChatStreamEvent(

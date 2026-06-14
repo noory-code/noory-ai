@@ -231,6 +231,23 @@ describe("ChatDock — scope switcher (D-2026-06-13-H)", () => {
     ).toBe("true");
   });
 
+  it("labels a parametric service_detail scope with its base label (Layer 1)", async () => {
+    selectionValue = { provider: "codex" };
+    render(
+      <ChatDock
+        onError={() => {}}
+        workspaceRoot="/tmp/ws"
+        activeScope="service_detail:svc_one"
+      />,
+    );
+    await screen.findByRole("tablist", { name: /conversation/i });
+    const labels = screen.getAllByRole("tab").map((t) => t.textContent);
+    // The raw ``service_detail:svc_one`` has no i18n key — the segment must
+    // fall back to the base ``service_detail`` label, never the raw key.
+    expect(labels).toContain("Service detail");
+    expect(labels).not.toContain("service_detail:svc_one");
+  });
+
   it("switches the selected segment to project on click", async () => {
     selectionValue = { provider: "codex" };
     const user = userEvent.setup();

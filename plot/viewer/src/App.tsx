@@ -36,7 +36,7 @@ import type {
   ProjectDoc,
 } from "./types";
 
-function tabToKind(tab: CanvasTab): CanvasKind {
+function tabToKind(tab: CanvasTab): Exclude<CanvasKind, "service_detail"> {
   if (tab === "foundation") return "foundation";
   if (tab === "actors") return "actors";
   return "services";
@@ -368,7 +368,7 @@ export function App() {
       />
       {helpOpen && <HelpCheatsheet onClose={() => setHelpOpen(false)} />}
       <WorkspacePanels
-        chat={<ChatDock onError={handleError} workspaceRoot={workspaceRoot} activeScope={modalOpen ? "service_detail" : tabToKind(activeTab)} selection={(activeCanvas?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
+        chat={<ChatDock onError={handleError} workspaceRoot={workspaceRoot} activeScope={modalOpen ? (detailServiceId ? `service_detail:${detailServiceId}` : "services") : tabToKind(activeTab)} selection={(activeCanvas?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
         sidebar={
         <SketchSidebar
           projects={summaries}

@@ -462,6 +462,57 @@ def test_chat_send_defaults_missing_scope_to_project(workspace: Path) -> None:
     assert registry.session_count() == 1
 
 
+def test_chat_send_keys_session_per_service_instance(workspace: Path) -> None:
+    """Layer 1 (CHAT_ARCH.md): two service-detail canvases get their own
+    threads — ``service_detail:<id>`` keys a distinct session per service."""
+    client, registry = _scope_aware_client(workspace)
+    _select_provider(client, workspace, "codex")
+
+    client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "a",
+            "scope": "service_detail:svc_one",
+        },
+    )
+    client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "b",
+            "scope": "service_detail:svc_two",
+        },
+    )
+    assert registry.session_count() == 2
+
+    # Re-sending to the first service reuses its thread, not a third one.
+    client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "c",
+            "scope": "service_detail:svc_one",
+        },
+    )
+    assert registry.session_count() == 2
+
+
+def test_chat_send_accepts_service_detail_instance_scope(workspace: Path) -> None:
+    """A parametric ``service_detail:<id>`` scope is accepted (202), not 400."""
+    client, _ = _scope_aware_client(workspace)
+    _select_provider(client, workspace, "codex")
+    resp = client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "a",
+            "scope": "service_detail:svc_42",
+        },
+    )
+    assert resp.status_code == 202
+
+
 def test_chat_send_rejects_invalid_scope(workspace: Path) -> None:
     """A scope outside the ChatScope set is a 400 (Fail Fast on a typo)."""
     client, _ = _scope_aware_client(workspace)

@@ -90,6 +90,39 @@ describe("useChatStream scope routing (D-2026-06-13-H)", () => {
     expect(result.current.messages.map((m) => m.text)).toEqual(["F answer"]);
   });
 
+  it("keeps a separate thread per service-detail instance (Layer 1)", () => {
+    // Two service-detail canvases share the ``service_detail`` kind but have
+    // distinct ids — each is its own conversation bucket.
+    const { result, rerender } = renderHook(
+      ({ scope }) => useChatStream("/ws", scope),
+      { initialProps: { scope: "service_detail:svc_one" as const } },
+    );
+
+    act(() => {
+      turn("service_detail:svc_one", "one answer").forEach((e) => emit!(e));
+      turn("service_detail:svc_two", "two answer").forEach((e) => emit!(e));
+    });
+
+    expect(result.current.messages.map((m) => m.text)).toEqual(["one answer"]);
+    rerender({ scope: "service_detail:svc_two" as const } as never);
+    expect(result.current.messages.map((m) => m.text)).toEqual(["two answer"]);
+  });
+
+  it("send carries a parametric service-detail scope to the engine", async () => {
+    const { result } = renderHook(() =>
+      useChatStream("/ws", "service_detail:svc_42"),
+    );
+    await act(async () => {
+      await result.current.send("hello");
+    });
+    expect(sendSpy).toHaveBeenCalledWith(
+      "/ws",
+      "hello",
+      "service_detail:svc_42",
+      [],
+    );
+  });
+
   it("send carries the active scope to the engine", async () => {
     const { result } = renderHook(() => useChatStream("/ws", "services"));
     await act(async () => {

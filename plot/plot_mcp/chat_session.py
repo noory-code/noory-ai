@@ -57,9 +57,7 @@ __all__ = [
 ProviderFactory = Callable[[Path, ProviderName], ChatProvider]
 
 
-def _default_provider_factory(
-    workspace_root: Path, provider_name: ProviderName
-) -> ChatProvider:
+def _default_provider_factory(workspace_root: Path, provider_name: ProviderName) -> ChatProvider:
     if provider_name == "claude-code":
         return ClaudeCodeProvider(workspace_root=workspace_root)
     if provider_name == "codex":
@@ -72,7 +70,11 @@ def _default_provider_factory(
     raise ValueError(f"unsupported chat provider: {provider_name!r}")
 
 
-_SessionKey = tuple[Path, ProviderName, ChatScope]
+# ``scope`` is the full wire value — a base ``ChatScope`` member or a
+# parametric ``service_detail:<id>`` (Layer 1, D-2026-06-15-B) — so a ``str``,
+# not the base literal. Keyed on the triple, two service-detail canvases get
+# their own threads.
+_SessionKey = tuple[Path, ProviderName, str]
 
 
 class ChatSessionRegistry:
@@ -95,7 +97,7 @@ class ChatSessionRegistry:
         self,
         workspace_root: Path,
         provider_name: ProviderName,
-        scope: ChatScope = DEFAULT_CHAT_SCOPE,
+        scope: str = DEFAULT_CHAT_SCOPE,
     ) -> ChatProvider:
         key: _SessionKey = (workspace_root.resolve(), provider_name, scope)
         provider = self._sessions.get(key)
@@ -109,7 +111,7 @@ class ChatSessionRegistry:
         workspace_root: Path,
         provider_name: ProviderName | None = None,
         *,
-        scope: ChatScope | None = None,
+        scope: str | None = None,
     ) -> None:
         """Drop the sessions matching the given filters for ``workspace_root``.
 
@@ -131,9 +133,7 @@ class ChatSessionRegistry:
                 return False
             return True
 
-        self._sessions = {
-            k: v for k, v in self._sessions.items() if not drop(k)
-        }
+        self._sessions = {k: v for k, v in self._sessions.items() if not drop(k)}
 
     def session_count(self) -> int:
         return len(self._sessions)

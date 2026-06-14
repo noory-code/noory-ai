@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.74.0] — 2026-06-15
+
+Minor. In-app chat Layer 1 — per-service-instance conversation threads
+(D-2026-06-15-B). Second of CHAT_ARCH.md's three sequenced layers.
+
+### Added
+
+- **Per-service chat threads.** `service_detail` is now a parametric scope:
+  each service-detail canvas keys its own conversation as
+  `service_detail:<service_id>`, so two services no longer share one mixed
+  thread. The chat scope set now equals `CanvasKey ∪ {project}` — chat threads
+  and canvas state key the same way. New engine helper `is_valid_scope`
+  (base member OR `service_detail:<id>` with non-empty id).
+
+### Changed
+
+- `ChatStreamEvent.scope` (engine) + `ChatScope` (viewer) widened to carry the
+  `service_detail:<id>` suffix; the session registry keys on the full scope
+  string. App passes the open service's parametric scope (falling back to
+  `services` when none is resolved); the scope switcher labels a parametric
+  scope with its base `service_detail` i18n key.
+- `tests/test_chat_scope_parity.py` now also parses the TS template-literal
+  member and asserts `service_detail` accepts an id suffix.
+
+### Notes
+
+- In-app only — the primary MCP path is unaffected. Bare `service_detail`
+  (no id) is rejected server-side (Fail Fast); a deleted service's thread is
+  left orphaned (cleared on engine restart). Next: Layer 3 — per-canvas system
+  framing.
+
 ## [0.73.0] — 2026-06-15
 
 Minor. In-app chat Layer 2 — per-turn canvas + selection context injection

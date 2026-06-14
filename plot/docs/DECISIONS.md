@@ -39,6 +39,41 @@
 
 ## Log
 
+### D-2026-06-15-B — In-app chat Layer 1: per-service-instance conversation threads
+
+- **What:** `service_detail` becomes a **parametric** chat scope — on the wire
+  it carries the service instance id as `service_detail:<service_id>`, so each
+  service-detail canvas keys its own conversation thread (CHAT_ARCH.md Layer 1,
+  the second of the three sequenced layers). The scope set now equals
+  `CanvasKey ∪ {project}`, so chat threads and canvas state key the same way.
+  Engine: `ChatStreamEvent.scope` widened to `str`; the session registry key
+  `(workspace, provider, scope)` carries the full string; `_read_scope`
+  validates via a new `is_valid_scope` (base member OR `service_detail:<id>`
+  with non-empty id). Viewer: `ChatScope` widened to
+  `… | \`service_detail:${string}\``; App passes the active service's parametric
+  scope (falling back to `services` when no service is resolved); the scope
+  switcher labels a parametric scope with its base `service_detail` i18n key.
+- **Committed defaults (post red-team, CHAT_ARCH.md):** thread keyed by stable
+  `service_id` (survives rename); on service delete the thread is left orphaned
+  (in-memory, cleared on engine restart) — no eager cleanup; an unresolved
+  `service_detail:<id>` degrades to the `services` scope; bare `service_detail`
+  (no id) is rejected server-side (Fail Fast). **In-app only** — the primary MCP
+  path is unaffected.
+- **Why:** user — "각 캔버스마다 있는 채팅창은 각 캔버스에 맞게 동작을 해야할 것
+  같아요" + "Services: 서비스(서비스-디테일 캔버스)마다 채팅 하나".
+- **Alternatives:** keep a single shared `service_detail` thread (rejected —
+  mixes unrelated services' contexts, breaks the CLI's resumed-session
+  continuity). Tradeoff named (CHAT_ARCH.md A7): per-instance threads fragment
+  cross-area continuity; Layer 2 selection injection partly mitigates.
+- **Approval:** Accepted by user, 2026-06-15.
+- **Spec impact:** SPEC §R7 chat — Conversation-scope row (per-instance
+  service_detail). Verified by `tests/test_chat_scope_parity.py`
+  (`is_valid_scope` suffix + TS template-literal parity),
+  `tests/test_endpoints_chat.py` (per-service session keying + parametric
+  accept), `viewer/tests/use-chat-stream-scope.test.ts` (per-instance routing)
+  + `viewer/tests/chat-dock.test.tsx` (base-label fallback).
+- **LOC:** App stayed at 498 (narrowed `tabToKind` return type, no new lines).
+
 ### D-2026-06-15-A — In-app chat Layer 2: per-turn canvas + selection context injection
 
 - **What:** Every in-app chat turn now carries the active canvas + the live
