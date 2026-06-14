@@ -299,3 +299,61 @@ def test_is_plot_registered_false_after_unregister(
 def test_unknown_provider_raises(fake_home: Path, plugin_root: Path) -> None:
     with pytest.raises(KeyError):
         register_plot("notarealcli", plugin_root)  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# frozen (bundled .app) registration — D-2026-06-14-A
+# ---------------------------------------------------------------------------
+#
+# In a dev checkout the MCP entry is ``uv run --directory <src> python -m
+# plot_mcp``. Inside the PyInstaller-frozen .app that command is broken: the
+# plugin root resolves to the ephemeral ``_MEIxxxx`` extraction dir (gone once
+# the app exits, and not a uv project even while alive). When frozen we must
+# register a STABLE command instead — the bundled binary itself in stdio-MCP
+# mode (``sys.executable --mcp-stdio``).
+
+
+def test_plot_entry_uses_uv_when_not_frozen(plugin_root: Path) -> None:
+    from plot_mcp.mcp_registration import _plot_entry, _spec_for
+
+    entry = _plot_entry(plugin_root, _spec_for("codex"))
+    assert entry["command"] == "uv"
+    assert "--directory" in entry["args"]
+    assert str(plugin_root) in entry["args"]
+
+
+def test_plot_entry_uses_bundled_binary_when_frozen(
+    plugin_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sys
+
+    from plot_mcp.mcp_registration import _plot_entry, _spec_for
+
+    exe = "/Applications/Plot.app/Contents/MacOS/plot-mcp"
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", exe, raising=False)
+
+    entry = _plot_entry(plugin_root, _spec_for("codex"))
+    assert entry["command"] == exe
+    assert entry["args"] == ["--mcp-stdio"]
+    # The ephemeral plugin root must NOT leak into the frozen command.
+    assert "uv" not in entry["command"]
+    assert str(plugin_root) not in entry["args"]
+
+
+def test_register_codex_when_frozen_writes_stable_command(
+    fake_home: Path, plugin_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sys
+
+    exe = "/Applications/Plot.app/Contents/MacOS/plot-mcp"
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", exe, raising=False)
+
+    register_plot("codex", plugin_root)
+    cfg = tomllib.loads(
+        (fake_home / ".codex" / "config.toml").read_text(encoding="utf-8")
+    )
+    plot = cfg["mcp_servers"]["plot"]
+    assert plot["command"] == exe
+    assert plot["args"] == ["--mcp-stdio"]

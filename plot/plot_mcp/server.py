@@ -21,6 +21,7 @@ from plot_mcp.workspace import (
 
 __all__ = [
     "run",
+    "run_mcp_stdio",
     "run_http_only",
     "create_http_app",
     "BroadcastHub",
@@ -81,6 +82,22 @@ def run() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     try:
         asyncio.run(_serve())
+    except KeyboardInterrupt:
+        pass
+
+
+def run_mcp_stdio() -> None:
+    """Run ONLY the stdio MCP transport — no HTTP server.
+
+    This is the entry the bundled ``.app`` binary uses when an external CLI
+    (codex / gemini / claude) launches it as a registered MCP server
+    (D-2026-06-14-A: ``plot-mcp --mcp-stdio``). The HTTP sidecar already runs
+    separately on :5190, so starting another HTTP server here would collide on
+    the port and is unnecessary for a stdio client.
+    """
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    try:
+        asyncio.run(mcp.run_stdio_async())
     except KeyboardInterrupt:
         pass
 

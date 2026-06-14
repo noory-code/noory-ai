@@ -39,6 +39,41 @@
 
 ## Log
 
+### D-2026-06-14-A — Bundled .app registers Plot MCP via `<binary> --mcp-stdio` (frozen-aware)
+
+- **What:** The MCP-registration entry Plot writes into each CLI config
+  (`~/.claude.json` / `~/.codex/config.toml` / `~/.gemini/settings.json`)
+  now has two shapes:
+  - **dev checkout** — unchanged: `uv run --directory <src> python -m plot_mcp`.
+  - **frozen .app** — `command = sys.executable` (the stable bundled binary
+    path inside `Plot.app/Contents/MacOS/plot-mcp`), `args = ["--mcp-stdio"]`.
+  The bundled binary gains a `--mcp-stdio` mode (`plot_mcp.server.run_mcp_stdio`,
+  stdio MCP transport only — no HTTP). Dispatch lives in the sidecar entry
+  `plot/src-tauri/sidecar-build/plot_mcp_entry.py`.
+- **Why (the bug):** `_plot_entry` built the command from
+  `plot_plugin_root()` = `Path(__file__).parent.parent`. Inside the
+  PyInstaller-frozen `.app`, `__file__` resolves to the ephemeral `_MEIxxxx`
+  onefile extraction dir — deleted on app exit, and not a uv project even
+  while alive. So an agent launching the registered `plot` MCP ran
+  `uv run --directory <_MEIxxxx> …`, which times out. Observed live
+  (2026-06-14): codex failed the turn (`MCP client for 'plot' failed to
+  start: request timed out`); gemini ignored the failed MCP and answered
+  anyway. This broke the **primary** chat path (D-2026-06-13-H: the agent
+  connects to Plot over MCP) in the actual product. The HTTP sidecar was
+  also HTTP-only (`run_http_only`), so even a corrected path had no stdio
+  MCP mode to point at — hence both halves of this fix.
+- **Alternatives:** (a) register an HTTP/SSE MCP transport at the running
+  sidecar (:5190) — rejected for now: needs the sidecar up when the agent
+  connects, per-CLI HTTP-MCP config differs, and the `PLOT_AUTH_TOKEN` seam
+  would have to be threaded. The stdio path keeps the model each CLI already
+  expects. (b) frozen-guard only (refuse to write a broken entry) — rejected:
+  leaves the .app with no working MCP registration.
+- **Approval:** Accepted by user, 2026-06-14 ("stdio 모드 추가" 선택).
+- **Spec impact:** SPEC §R7 chat — MCP wiring row notes the dev vs bundled
+  command. Verified by `tests/test_mcp_registration.py` (frozen branch) +
+  `tests/test_server.py` (stdio-only transport). End-to-end .app verification
+  needs a sidecar rebuild (PyInstaller) — pending.
+
 ### D-2026-06-01-D — Services canvas = divergence (anchor → category → service)
 
 - **What:** On the Services canvas the flow runs OUT from the anchor:

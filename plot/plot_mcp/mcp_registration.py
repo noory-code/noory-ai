@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -104,12 +105,37 @@ def _config_path(spec: _ProviderSpec) -> Path:
 
 
 def _plot_entry(plugin_root: Path, spec: _ProviderSpec) -> dict[str, Any]:
-    """Build the Plot mcp-server entry for one provider."""
-    entry: dict[str, Any] = {
-        "command": "uv",
-        "args": ["run", "--directory", str(plugin_root), "python", "-m", "plot_mcp"],
-        "env": {},
-    }
+    """Build the Plot mcp-server entry for one provider.
+
+    Two shapes (D-2026-06-14-A):
+
+    * **dev checkout** — ``uv run --directory <src> python -m plot_mcp``. The
+      source tree is a real uv project, so this gives a stdio MCP server.
+    * **frozen .app** — ``<bundled binary> --mcp-stdio``. Under PyInstaller,
+      ``plugin_root`` would resolve to the ephemeral ``_MEIxxxx`` extraction
+      dir (deleted on app exit, not a uv project), so ``uv run`` there times
+      out. ``sys.executable`` is the stable bundled binary path inside the
+      ``.app``; ``--mcp-stdio`` selects its stdio-MCP mode.
+    """
+    if getattr(sys, "frozen", False):
+        entry: dict[str, Any] = {
+            "command": sys.executable,
+            "args": ["--mcp-stdio"],
+            "env": {},
+        }
+    else:
+        entry = {
+            "command": "uv",
+            "args": [
+                "run",
+                "--directory",
+                str(plugin_root),
+                "python",
+                "-m",
+                "plot_mcp",
+            ],
+            "env": {},
+        }
     entry.update(spec.extra_entry_keys)
     return entry
 

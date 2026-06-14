@@ -4,6 +4,35 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.68.1] — 2026-06-14
+
+Patch (fix). The bundled `.app` registered a broken Plot MCP command into
+external CLI configs, breaking the primary (MCP) chat path in the actual
+product. Root-caused live: codex failed the turn with `MCP client for
+'plot' failed to start: request timed out`; gemini ignored the failed MCP
+and answered anyway. (D-2026-06-14-A.)
+
+### Fixed
+
+- **MCP registration in the bundled `.app`.** `_plot_entry` built the
+  command from `plot_plugin_root()` (`__file__`-based), which under
+  PyInstaller resolves to the ephemeral `_MEIxxxx` onefile extraction dir —
+  deleted on app exit, not a uv project even while alive — so
+  `uv run --directory <_MEIxxxx> …` timed out. When frozen, registration now
+  writes the stable bundled binary instead: `command = sys.executable`,
+  `args = ["--mcp-stdio"]`. Dev checkouts keep the `uv run` command.
+
+### Added
+
+- **`plot_mcp.server.run_mcp_stdio()`** — stdio MCP transport only (no HTTP),
+  the mode the bundled binary runs when an external CLI launches it as a
+  registered MCP server.
+- **`--mcp-stdio` dispatch** in the sidecar entry
+  (`plot/src-tauri/sidecar-build/plot_mcp_entry.py`): default = HTTP sidecar,
+  `--mcp-stdio` = stdio MCP server.
+- Root [`ARCHITECTURE.md`](../../ARCHITECTURE.md) documenting how the `.app`,
+  Plot MCP, and the user's VSCode-hosted agent mesh.
+
 ## [0.68.0] — 2026-06-14
 
 Minor (feature). Implement the chat redesign pinned in D-2026-06-13-H:
