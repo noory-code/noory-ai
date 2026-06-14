@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 
 import { getChatProvider, setChatProvider, type McpProviderName } from "../app/mcp";
 import { useChatStream, type ChatMessage } from "../hooks/useChatStream";
-import type { ChatScope } from "../types";
+import type { ChatScope, ChatSelectionNode } from "../types";
 import { ChatProvidersPanel } from "./ChatProvidersPanel";
 import { useDialog } from "./dialog/DialogProvider";
 
@@ -35,12 +35,16 @@ export interface ChatDockProps {
    * in-dock switcher. Defaults to `project` so workspace-less / test mounts
    * stay coherent. */
   activeScope?: ChatScope;
+  /** Live canvas selection, injected as per-turn chat context (Layer 2,
+   * D-2026-06-15-A). */
+  selection?: ChatSelectionNode[];
 }
 
 export function ChatDock({
   onError,
   workspaceRoot,
   activeScope = "project",
+  selection = [],
 }: ChatDockProps) {
   const { t } = useTranslation();
   const [activeProvider, setActiveProvider] =
@@ -123,6 +127,7 @@ export function ChatDock({
             workspaceRoot={workspaceRoot}
             activeProvider={activeProvider}
             scope={effectiveScope}
+            selection={selection}
             onError={onError}
           />
       </div>
@@ -177,6 +182,7 @@ interface ChatMessageFrameProps {
   workspaceRoot?: string;
   activeProvider: McpProviderName | null;
   scope: ChatScope;
+  selection: ChatSelectionNode[];
   onError: (message: string) => void;
 }
 
@@ -189,12 +195,13 @@ function ChatMessageFrame({
   workspaceRoot,
   activeProvider,
   scope,
+  selection,
   onError,
 }: ChatMessageFrameProps) {
   const { t } = useTranslation();
   const dialog = useDialog();
   const { messages, socketStatus, isStreaming, send, reset, lastSendError } =
-    useChatStream(workspaceRoot, scope);
+    useChatStream(workspaceRoot, scope, selection);
   const [draft, setDraft] = useState("");
 
   const providerLabel = activeProvider

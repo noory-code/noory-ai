@@ -1,10 +1,10 @@
-# Plot — in-app chat architecture (DRAFT for red-team)
+# Plot — in-app chat architecture
 
-> Status: **draft proposal**, 2026-06-14. Not yet pinned to SPEC/DECISIONS.
-> Builds on D-2026-06-13-H (per-canvas scope) + D-2026-06-14-B (claude
-> re-included). To be adversarially reviewed (plot-design-red-team) before
-> any code. Pairs with VISION.md (3-phase cycle) and DOMAIN.md
-> (AICollaboration is cross-cutting).
+> Status: **red-teamed + decisions committed**, 2026-06-15 (verdict was
+> revise-first; revised below). Builds on D-2026-06-13-H (per-canvas scope) +
+> D-2026-06-14-B (claude re-included). Implementation proceeds by the sequence
+> below (Layer 2 first); each layer pins to SPEC/DECISIONS as it lands. Pairs
+> with VISION.md (3-phase cycle) and DOMAIN.md (AICollaboration cross-cut).
 
 ## The ask (user, 2026-06-14)
 
@@ -74,7 +74,7 @@ This layer is independent of threading and is the high-value, low-cost win.
 selection) needs a viewer→engine selection bridge + an MCP resource/tool —
 deferred.
 
-### Layer 3 — Per-canvas system framing (canvas-appropriate behaviour)
+### Layer 3 — Per-canvas system framing (canvas-appropriate behaviour) — IN-APP ONLY
 
 Each scope maps to a VISION phase, which sets the agent's framing:
 
@@ -84,9 +84,15 @@ Each scope maps to a VISION phase, which sets the agent's framing:
 | Actors / Services | Planning | Design the value-creation machinery |
 | Service-Detail | Execution | Break the plan into concrete steps |
 
-How the framing is delivered (preamble text vs system prompt vs suggested
-prompts) and **where it's configured** (code constants vs `.noory/plot/`
-user-editable) is an open question for red-team — see below.
+**Scope honesty (red-team A1):** Layers 2–3 make the **in-app** chat
+canvas-aware. The *primary* path is MCP (the user's own agent), which does NOT
+receive this framing/selection yet — that's a named follow-up (a viewer→engine
+selection bridge + an MCP resource). This doc does not claim the primary path
+is covered.
+
+Framing is delivered as a **preamble prepended to the CLI message**, configured
+in **code constants** (committed below — `.noory/`-editable framing is YAGNI
+until asked).
 
 ## Relation to other tracks
 
@@ -99,22 +105,40 @@ user-editable) is an open question for red-team — see below.
   path already gives the external agent canvas access via tools; selection
   awareness over MCP is the deferred extension of Layer 2.
 
-## Open questions (for plot-design-red-team)
+## Decisions (committed 2026-06-15, post red-team)
 
-1. **Scope as a parametric string vs enum.** Widening `ChatScope` from a fixed
-   5-member literal to `CanvasKey | "project"` (parametric `service_detail:<id>`)
-   breaks the current parity test (`test_chat_scope_parity.py` asserts a fixed
-   set). What's the new parity contract? (Likely: the prefix set + a
-   `service_detail:` pattern.)
-2. **Service-detail thread lifecycle.** A service can be renamed/deleted. Does
-   its thread persist by `service_id` (stable) — yes — but what happens to the
-   thread when the service is deleted? Orphan cleanup vs keep.
-3. **Selection preamble size.** "All selected nodes + data" could be large
-   (multi-select of N nodes). Cap? Summarise? Send ids + let the agent fetch
-   via MCP?
-4. **Layer 3 config location.** Per-canvas framing in code (YAGNI, ships now)
-   vs `.noory/plot/` user-editable (flexible, more surface). Start where?
-5. **Selection freshness.** Per-turn snapshot at send time (simple) vs live
-   sync (the agent always has current selection even mid-conversation).
-6. **project scope + selection.** On the `project` thread the active canvas is
-   ambiguous — what canvas/selection context does it inject?
+1. **Scope parity contract.** `ChatScope` widens to `CanvasKind ∪ {project}`,
+   with `service_detail` the one parametric member (`service_detail:<id>`).
+   `test_chat_scope_parity.py` asserts the **base member set** = Python
+   `ChatScope` prefixes == TS `CanvasKind ∪ {project}`, and that
+   `service_detail` accepts an id suffix.
+2. **Service-detail thread lifecycle.** Keyed by `service_id` (stable across
+   rename). On delete, the thread is **left orphaned** (in-memory only; cleared
+   on engine restart) — no eager cleanup. An unresolved id falls back to the
+   `services` scope (see 6).
+3. **Selection preamble cap.** Send up to **20** selected nodes as
+   `{id, kind, label}`; beyond that, send the count + ids only. Full node data
+   is the agent's to fetch via MCP if needed (keeps the prompt bounded).
+4. **Layer 3 config = code constants.** No `.noory/`-editable framing yet.
+5. **Selection freshness = per-turn snapshot** at send time. No live sync.
+6. **project scope context.** The `project` thread injects **no canvas/selection
+   context** (it's explicitly cross-canvas). An unresolved `service_detail:<id>`
+   degrades to `services`.
+
+## Implementation sequence (red-team A8 — three steps, not one)
+
+1. **Layer 2 — context injection (do FIRST; cheapest high-value).** Viewer
+   lifts the active canvas's selection → sends `{scope, selection}` on
+   `/api/chat/send`; engine prepends a preamble (canvas + selected nodes, cap
+   20) to the CLI message. In-app only.
+2. **Layer 1 — per-instance scope.** Widen `service_detail` to
+   `service_detail:<id>`; engine session key + viewer routing + parity (1).
+3. **Layer 3 — per-canvas framing.** Code-constant preamble per scope.
+
+## Tradeoff named (red-team A7)
+
+Per-area threads keep each conversation coherent but **fragment continuity** —
+a fresh `service_detail:<id>` thread has no memory of the foundation discussion
+that motivated the service. Layer 2 selection injection partly mitigates (the
+agent knows *what* is selected, not *why*). A future cross-thread "essence
+summary" preamble could close the gap; not built now.

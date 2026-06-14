@@ -39,6 +39,32 @@
 
 ## Log
 
+### D-2026-06-15-A — In-app chat Layer 2: per-turn canvas + selection context injection
+
+- **What:** Every in-app chat turn now carries the active canvas + the live
+  node selection, so the agent can resolve "이거 / fix this" against what the
+  user has selected (CHAT_ARCH.md Layer 2, the first of the three sequenced
+  layers). Flow: `SketchCanvas` reports its multi-selection upward
+  (`onSelectionChange`) → App lifts it + maps ids → `{id, kind, label}` from
+  the active canvas → `ChatDock` → `useChatStream.send` → `POST /api/chat/send`
+  `selection` field → engine `build_context_preamble(scope, selection)`
+  prepends a `[Plot context] Active canvas / Selected …` preamble to the CLI
+  message.
+- **Committed defaults (post red-team, CHAT_ARCH.md):** per-turn snapshot at
+  send time (no live sync); `project` scope injects nothing; selection capped
+  at 20 detailed nodes (rest = ids only) so a large multi-select can't blow the
+  prompt; framing in code (no `.noory/`-editable config). **In-app only** — the
+  primary MCP path doesn't get selection yet (named follow-up).
+- **Why:** user — "노드를 선택한 상태에서 선택된 노드를 채팅에서 인지" +
+  "앱에서 어떤 게 선택되어 있는지 다 연동".
+- **Approval:** Accepted by user, 2026-06-15.
+- **Spec impact:** SPEC §R7 chat — context-injection row. Verified by
+  `tests/test_endpoints_chat.py` (preamble unit + cap + integration) +
+  `tests/use-chat-stream-scope.test.ts` (send forwards selection).
+- **LOC:** raised `SketchCanvas` ceiling 516 → 522 (the `onSelectionChange`
+  lift — plumbing-only; follow-up: extract a `useNodeSelection` hook). App
+  stayed at 498.
+
 ### D-2026-06-14-E — Resizable workspace layout; chat dock moved to the leftmost panel
 
 - **What:** The workspace is now three **horizontally-resizable panels** —

@@ -3,6 +3,7 @@ import type {
   CanvasKey,
   CanvasKind,
   ChatScope,
+  ChatSelectionNode,
   ProjectChangedPayload,
   ProjectDoc,
   ProjectTag,
@@ -880,12 +881,13 @@ export async function sendChatMessage(
   projectPath: string,
   message: string,
   scope: ChatScope,
+  selection: ChatSelectionNode[] = [],
 ): Promise<void> {
   await ok(
     await engineFetch(`${API_BASE}/api/chat/send`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ project_path: projectPath, message, scope }),
+      body: JSON.stringify({ project_path: projectPath, message, scope, selection }),
     }),
   );
 }

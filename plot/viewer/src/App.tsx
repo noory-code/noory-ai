@@ -201,6 +201,7 @@ export function App() {
   }, [historyRedo]);
 
   const [helpOpen, setHelpOpen] = useState(false);
+  const [canvasSelectionIds, setCanvasSelectionIds] = useState<string[]>([]); // chat ctx (D-2026-06-15-A)
 
   useAppKeyboard({
     onUndo: handleUndo,
@@ -367,7 +368,7 @@ export function App() {
       />
       {helpOpen && <HelpCheatsheet onClose={() => setHelpOpen(false)} />}
       <WorkspacePanels
-        chat={<ChatDock onError={handleError} workspaceRoot={workspaceRoot} activeScope={modalOpen ? "service_detail" : tabToKind(activeTab)} />}
+        chat={<ChatDock onError={handleError} workspaceRoot={workspaceRoot} activeScope={modalOpen ? "service_detail" : tabToKind(activeTab)} selection={(activeCanvas?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
         sidebar={
         <SketchSidebar
           projects={summaries}
@@ -432,7 +433,7 @@ export function App() {
                 availableValues={availableValues}
                 availableIdentities={availableIdentities}
                 selectNodeId={selectedNodeId}
-                onSelectionConsumed={consumeSelection}
+                onSelectionConsumed={consumeSelection} onSelectionChange={setCanvasSelectionIds}
                 projectAnchor={activeProjectAnchor}
                 projectName={activeProjectName}
                 onAnchorChange={handleAnchorChange}

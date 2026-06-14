@@ -23,7 +23,7 @@ from plot_mcp.chat_session import (
     ChatSessionRegistry,
     ChatStreamEvent,
 )
-from plot_mcp.endpoints_chat import stream_chat_turn
+from plot_mcp.endpoints_chat import build_context_preamble, stream_chat_turn
 from plot_mcp.http_app import create_http_app
 
 # ---------------------------------------------------------------------------
@@ -329,6 +329,74 @@ def test_chat_reset_drops_all_provider_sessions_for_workspace(
 def test_chat_reset_requires_project_path(app_client: TestClient) -> None:
     resp = app_client.post("/api/chat/reset", json={})
     assert resp.status_code == 400
+
+
+# --- Layer 2: selection/canvas context injection (CHAT_ARCH.md) ------------
+
+
+def test_preamble_includes_canvas_and_selection() -> None:
+    p = build_context_preamble(
+        "foundation", [{"id": "n1", "kind": "core_value", "label": "Trust"}]
+    )
+    assert "foundation" in p
+    assert "core_value" in p and "Trust" in p and "n1" in p
+
+
+def test_preamble_empty_for_project_scope() -> None:
+    # project scope injects no canvas/selection context (decision 6).
+    assert (
+        build_context_preamble(
+            "project", [{"id": "n1", "kind": "x", "label": "y"}]
+        )
+        == ""
+    )
+
+
+def test_preamble_empty_when_no_selection() -> None:
+    assert build_context_preamble("foundation", []) == ""
+
+
+def test_preamble_caps_at_20_nodes() -> None:
+    sel = [{"id": f"n{i}", "kind": "k", "label": f"L{i}"} for i in range(25)]
+    p = build_context_preamble("services", sel)
+    assert "25" in p  # total count surfaced
+    assert "n24" in p  # overflow ids still listed
+
+
+def test_chat_send_prepends_selection_preamble(
+    app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
+) -> None:
+    _select_provider(app_client, workspace, "codex")
+    app_client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "fix this",
+            "scope": "foundation",
+            "selection": [{"id": "n1", "kind": "core_value", "label": "Trust"}],
+        },
+    )
+    assert len(fake_provider.calls) == 1
+    sent = fake_provider.calls[0]
+    assert "fix this" in sent  # the user message survives
+    assert "core_value" in sent and "Trust" in sent  # context prepended
+
+
+def test_chat_send_malformed_selection_is_ignored(
+    app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
+) -> None:
+    _select_provider(app_client, workspace, "codex")
+    resp = app_client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "hi",
+            "scope": "foundation",
+            "selection": "not-a-list",
+        },
+    )
+    assert resp.status_code == 202
+    assert fake_provider.calls == ["hi"]  # bare message, no crash
 
 
 # --- scope routing (D-2026-06-13-H) ---------------------------------------

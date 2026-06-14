@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.73.0] — 2026-06-15
+
+Minor. In-app chat Layer 2 — per-turn canvas + selection context injection
+(D-2026-06-15-A); chat-architecture design red-teamed + committed.
+
+### Added
+
+- **Selection-aware chat.** Each in-app chat turn carries the active canvas +
+  the live node selection; the engine prepends a `[Plot context]` preamble so
+  the agent resolves "fix this" against what's selected. SketchCanvas reports
+  its selection upward (`onSelectionChange`), App lifts it, ChatDock forwards
+  it. Per-turn snapshot; `project` scope injects nothing; selection capped at
+  20 detailed nodes. In-app only (MCP path is a follow-up).
+- `docs/CHAT_ARCH.md` — red-teamed (verdict revise-first) then revised:
+  committed defaults + three-layer implementation sequence (Layer 2 first).
+
+### Removed
+
+- Unused i18n keys left by earlier collapse-toggle removals
+  (`chat.collapse`/`expand`, `sidebar.{show,hide}Projects`,
+  `sidebar.{expand,collapse}ProjectList`).
+
 ## [0.72.0] — 2026-06-15
 
 Minor (UX). Resizable workspace layout; chat dock moved to the leftmost

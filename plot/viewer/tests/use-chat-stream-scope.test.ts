@@ -95,7 +95,18 @@ describe("useChatStream scope routing (D-2026-06-13-H)", () => {
     await act(async () => {
       await result.current.send("hello");
     });
-    expect(sendSpy).toHaveBeenCalledWith("/ws", "hello", "services");
+    expect(sendSpy).toHaveBeenCalledWith("/ws", "hello", "services", []);
+  });
+
+  it("send carries the current selection to the engine (Layer 2)", async () => {
+    const sel = [{ id: "n1", kind: "core_value", label: "Trust" }];
+    const { result } = renderHook(() =>
+      useChatStream("/ws", "foundation", sel),
+    );
+    await act(async () => {
+      await result.current.send("fix this");
+    });
+    expect(sendSpy).toHaveBeenCalledWith("/ws", "fix this", "foundation", sel);
   });
 
   it("reset carries the active scope to the engine and clears only it", async () => {

@@ -36,6 +36,43 @@ from plot_mcp.workspace import resolve_plot_root
 _VALID_SCOPES: frozenset[str] = frozenset(get_args(ChatScope))
 
 
+# Layer 2 (CHAT_ARCH.md) — how many selected nodes to spell out in the
+# preamble before falling back to ids-only, so the prompt stays bounded.
+_SELECTION_DETAIL_CAP = 20
+
+
+def build_context_preamble(scope: str, selection: Any) -> str:
+    """Build the per-turn context preamble prepended to the CLI message.
+
+    Tells the agent which canvas the user is on and what they have selected, so
+    "fix this" resolves to the selected node (Layer 2). Returns "" when there's
+    nothing to inject: the ``project`` scope is explicitly cross-canvas
+    (decision 6), and an empty/malformed selection adds nothing. Selection is
+    capped at ``_SELECTION_DETAIL_CAP`` detailed nodes; the rest are listed as
+    ids only so a large multi-select can't blow the context window (red-team A3).
+    """
+    if scope == "project" or not isinstance(selection, list) or not selection:
+        return ""
+    nodes = [n for n in selection if isinstance(n, dict)]
+    if not nodes:
+        return ""
+    detailed = nodes[:_SELECTION_DETAIL_CAP]
+    rendered = ", ".join(
+        f'{n.get("kind", "?")} "{n.get("label", "")}" ({n.get("id", "")})'
+        for n in detailed
+    )
+    lines = [
+        f"[Plot context] Active canvas: {scope}.",
+        f"Selected ({len(nodes)}): {rendered}",
+    ]
+    if len(nodes) > _SELECTION_DETAIL_CAP:
+        overflow = ", ".join(
+            str(n.get("id", "")) for n in nodes[_SELECTION_DETAIL_CAP:]
+        )
+        lines.append(f"…and {len(nodes) - _SELECTION_DETAIL_CAP} more: {overflow}")
+    return "\n".join(lines)
+
+
 def _read_scope(body: dict[str, Any]) -> ChatScope | None:
     """Pull ``scope`` from a request body.
 
@@ -160,8 +197,13 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     registry = _registry_from_request(request)
     provider = registry.get_or_create(plot_root, selection.provider, scope)
 
+    # Layer 2 — prepend the active-canvas + selection context so the agent
+    # resolves "this" / "fix it" against what the user has selected.
+    preamble = build_context_preamble(scope, body.get("selection"))
+    full_message = f"{preamble}\n\n{message}" if preamble else message
+
     asyncio.create_task(
-        stream_chat_turn(provider, hub, plot_root, message, scope)
+        stream_chat_turn(provider, hub, plot_root, full_message, scope)
     )
     return JSONResponse({"accepted": True}, status_code=202)
 

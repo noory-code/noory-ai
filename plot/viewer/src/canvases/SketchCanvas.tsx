@@ -92,6 +92,9 @@ export interface SketchCanvasProps {
    */
   selectNodeId?: string | null;
   onSelectionConsumed?: () => void;
+  /** D-2026-06-15-A — report the live multi-selection upward so the chat dock
+   *  can inject the selected nodes as per-turn context (CHAT_ARCH Layer 2). */
+  onSelectionChange?: (ids: string[]) => void;
   /**
    * v0.13 Phase 0: per-canvas project anchor. The anchor is rendered as a
    * synthetic node injected by SketchCanvas (it does NOT live in
@@ -178,6 +181,7 @@ function SketchCanvasInner({
   availableIdentities,
   selectNodeId,
   onSelectionConsumed,
+  onSelectionChange,
   projectAnchor,
   projectName,
   onAnchorChange,
@@ -346,9 +350,11 @@ function SketchCanvasInner({
   const handleSelectionChangeSync = useCallback(
     (sel: OnSelectionChangeParams) => {
       handleSelectionChange(sel);
-      setSelectedIds(new Set(sel.nodes.map((n) => n.id)));
+      const ids = sel.nodes.map((n) => n.id);
+      setSelectedIds(new Set(ids));
+      onSelectionChange?.(ids);
     },
-    [handleSelectionChange],
+    [handleSelectionChange, onSelectionChange],
   );
 
   // ---------------- Context menu ----------------

@@ -25,6 +25,7 @@ import {
 import { openProjectSocket, type SocketStatus } from "../api";
 import type {
   ChatScope,
+  ChatSelectionNode,
   ChatStreamSocketPayload,
   SocketEvent,
 } from "../types";
@@ -59,6 +60,7 @@ export interface UseChatStreamResult {
 export function useChatStream(
   workspaceRoot: string | null | undefined,
   scope: ChatScope = DEFAULT_SCOPE,
+  selection: ChatSelectionNode[] = [],
 ): UseChatStreamResult {
   // Conversations are partitioned per scope (D-2026-06-13-H). A turn that
   // streams in one canvas keeps accumulating in its bucket while the user is
@@ -153,7 +155,7 @@ export function useChatStream(
       ]);
       scopedSetStreaming(scope)(true);
       try {
-        await sendChatMessageApi(workspaceRoot, trimmed, scope);
+        await sendChatMessageApi(workspaceRoot, trimmed, scope, selection);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setLastSendError(msg);
@@ -165,7 +167,7 @@ export function useChatStream(
         );
       }
     },
-    [workspaceRoot, scope, scopedSetMessages, scopedSetStreaming],
+    [workspaceRoot, scope, selection, scopedSetMessages, scopedSetStreaming],
   );
 
   const reset = useCallback(async () => {

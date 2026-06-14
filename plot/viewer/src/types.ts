@@ -127,6 +127,16 @@ export type ChatScope =
   | "service_detail";
 
 /**
+ * One selected node summary sent with a chat turn (CHAT_ARCH Layer 2,
+ * D-2026-06-15-A) so the agent can resolve "this" against the selection.
+ */
+export interface ChatSelectionNode {
+  id: string;
+  kind: string;
+  label: string;
+}
+
+/**
  * Cache key for a loaded canvas inside the viewer. Singleton canvases use
  * just the kind; service-detail uses ``service_detail:{service_id}``.
  */
