@@ -239,20 +239,19 @@ def test_chat_send_400s_when_no_provider_selected(
     assert fake_provider.calls == []
 
 
-def test_chat_send_400s_for_claude_code_selection(
+def test_chat_send_accepts_claude_code_selection(
     app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
 ) -> None:
-    """In-app chat excludes claude-code (D-2026-06-13-H): running it via
-    ``claude -p`` double-charges a Claude subscriber. The MCP-registration
-    list still keeps claude-code; only the in-app chat send rejects it."""
+    """claude-code is allowed for in-app chat again (D-2026-06-14-B, reversing
+    D-2026-06-13-H). The double-billing tradeoff is surfaced as a UI warning
+    rather than a hard server-side block."""
     _select_provider(app_client, workspace, "claude-code")
     resp = app_client.post(
         "/api/chat/send",
         json={"project_path": str(workspace), "message": "explain plot"},
     )
-    assert resp.status_code == 400
-    assert "claude-code" in resp.json()["error"]
-    assert fake_provider.calls == []
+    assert resp.status_code == 202
+    assert fake_provider.calls == ["explain plot"]
 
 
 def test_chat_send_accepts_valid_request_and_calls_provider(

@@ -109,18 +109,23 @@ external CLI, which Plot drives as a subprocess.
 **Primary path is MCP, not the in-app panel (D-2026-06-13-H).** Plot is an
 MCP server; the user connects their OWN interactive agent (Claude Code /
 Codex / Gemini, already on their subscription) to it. The in-app subprocess
-panel is the **secondary** convenience and supports **Codex + Gemini only** —
-`claude-code` is excluded from in-app chat because driving it via `claude -p`
-double-charges a Claude subscriber on top of their subscription. `claude-code`
-stays in the MCP-registration list so the user can wire their own interactive
-Claude session.
+panel is the **secondary** convenience.
+
+**claude-code in-app: allowed, with a billing warning (D-2026-06-14-B,
+reversing the D-2026-06-13-H exclusion).** All three CLIs — Codex, Gemini,
+and Claude Code — are selectable for in-app chat. Because driving Claude Code
+in-app uses `claude -p` (headless), which Anthropic bills **separately** from
+the Claude subscription, selecting it shows a warning banner in the chat
+frame (`chat.claudeBillingWarning`) pointing the user to the non-double-charged
+MCP path. There is no server-side block; the user opts in with the warning
+visible.
 
 | Aspect | Behaviour |
 |---|---|
-| **Brain** | The user's external CLI. For in-app chat Plot spawns `codex` / `gemini` inside the workspace folder, writes the user message to stdin, parses streamed output. `claude-code` is MCP-only (not spawned in-app). |
+| **Brain** | The user's external CLI. For in-app chat Plot spawns `codex` / `gemini` / `claude` (`claude -p`) inside the workspace folder and parses streamed output. Claude Code in-app shows a billing warning (D-2026-06-14-B) since `claude -p` bills separately from the subscription. |
 | **Subprocess host (D-2026-06-12-D)** | The CLI subprocess lives in the **plot_mcp engine** (Python), not the Tauri shell. Viewer talks to it through `POST /api/chat/send` + `WS /ws/chat?project_path=…` — the same HTTP/WS transport every other Plot operation uses. Dev mode (browser at `:5193`) and the bundled `.app` therefore take identical code paths. |
 | **API keys / billing** | Never Plot's job. The CLI is responsible for auth (`claude login`, etc.); token usage bills the user's Anthropic / OpenAI / Google account. Plot exposes no key-management UI. |
-| **Provider selection** | Auto-detected at workspace open (which CLIs are on `$PATH` + logged in). User picks one when several are present via a radio per registered row; choice persists in `<workspace>/.noory/plot/chat-provider` (JSON `{"provider": "claude-code" \| "codex" \| "gemini" \| null}`). HTTP surface: `GET /api/chat/provider?project_path=…` reads, `PUT` writes. **`claude-code` carries no in-app chat radio (D-2026-06-13-H)** — its row + register/unregister controls stay, but it can't be chosen as the in-app chat CLI; a legacy persisted `claude-code` choice is treated as no selection. `POST /api/chat/send` 400s a `claude-code` selection as the server-side backstop. Unregistering the active provider clears the selection automatically so the persisted choice can never name a CLI Plot can't reach. |
+| **Provider selection** | Auto-detected at workspace open (which CLIs are on `$PATH` + logged in). User picks one when several are present via a radio per registered row; choice persists in `<workspace>/.noory/plot/chat-provider` (JSON `{"provider": "claude-code" \| "codex" \| "gemini" \| null}`). HTTP surface: `GET /api/chat/provider?project_path=…` reads, `PUT` writes. All three CLIs carry an in-app chat radio (D-2026-06-14-B); selecting `claude-code` shows the billing warning. Unregistering the active provider clears the selection automatically so the persisted choice can never name a CLI Plot can't reach. |
 | **Conversation scope (D-2026-06-13-H)** | Chat threads are partitioned per canvas scope — `foundation` / `actors` / `services` / `service_detail` — plus one shared `project` scope. The dock follows the active canvas (the service-detail modal scopes to `service_detail`); a segmented switcher lets the user pin the shared `project` thread (explicit, not automatic). The engine keys sessions on `(workspace, provider, scope)`; the viewer sends the active scope on `POST /api/chat/send` and demultiplexes `chat_stream_event` payloads on their `scope`. `Reset` wipes only the active scope's session; other scopes survive. A send / reset that omits `scope` defaults to `project`; an unknown scope is a 400. The `ChatScope` wire enum is parity-guarded (Python ↔ TS) by `tests/test_chat_scope_parity.py`. |
 | **Model selection** | The CLI's own configuration drives the model. Plot may show a read-only "current model" indicator; no model picker. |
 | **MCP wiring** | Plot's MCP server is registered with each CLI separately (Track 2.5: `~/.claude.json` / `~/.codex/config.toml` / `~/.gemini/settings.json`). The canvas ↔ chat feedback loop runs through MCP. **Registered command shape (D-2026-06-14-A):** in a dev checkout, `uv run --directory <src> python -m plot_mcp`; in the bundled `.app` (PyInstaller-frozen), `<bundled binary> --mcp-stdio` (`command = sys.executable`) — the dev `uv run` command points at the ephemeral `_MEIxxxx` extraction dir and times out, so the frozen path registers the stable bundled binary in its stdio-MCP mode instead. |

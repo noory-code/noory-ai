@@ -39,6 +39,39 @@
 
 ## Log
 
+### D-2026-06-14-B — Re-include claude-code in in-app chat, with a billing warning (reverses D-2026-06-13-H exclusion)
+
+- **What:** claude-code is selectable for in-app chat again. The three
+  exclusion points added in v0.68.0 are removed: the `/api/chat/send`
+  400 backstop, the suppressed selection radio on the claude-code row, and
+  the dock's coercion of a persisted claude-code choice to no-selection.
+  In their place, when claude-code is the active chat CLI the chat frame
+  shows a **billing-warning banner** (`chat.claudeBillingWarning`): "Claude
+  Code runs headless (`claude -p`), billed separately from your Claude
+  subscription — connect over MCP to avoid double-charging." The per-canvas
+  scope model (D-2026-06-13-H) is unchanged.
+- **Why:** the user chose to make claude-code available in-app despite the
+  double-billing tradeoff, surfaced as an informed-consent warning rather
+  than a hard block ("일단 넣어요. 오늘 결정을 바꿉니다" + "경고표시하고
+  넣기"). The MCP path remains the recommended, non-double-charged way to use
+  Claude; the warning points users to it.
+- **Alternatives:** (a) keep the hard exclusion (D-2026-06-13-H) — rejected
+  by the user. (b) silent re-include with no warning — rejected: the
+  double-billing cost must stay visible (the warning is the whole point of
+  re-including it safely).
+- **Approval:** Accepted by user, 2026-06-14.
+- **Spec impact:** SPEC §R7 chat — updated: claude-code selectable in-app
+  with a billing warning; the exclusion language is removed. Verified by
+  `tests/test_endpoints_chat.py` (claude-code send → 202),
+  `tests/chat-providers-panel.test.tsx` (claude-code radio present),
+  `tests/chat-dock.test.tsx` (warning banner on claude-code, absent on codex).
+- **Follow-up (pinned, not yet built):** a dedicated **Settings surface**
+  (separate from the inline chat dock) holding provider + **model selection**
+  + the claude billing acknowledgment, stored across **two tiers** — global
+  `~/.noory/plot/settings.json` (new) for user defaults (preferred model,
+  billing ack) and per-workspace `<ws>/.noory/plot/` overrides
+  (provider/model per project). Design via plot-design-red-team before code.
+
 ### D-2026-06-14-A — Bundled .app registers Plot MCP via `<binary> --mcp-stdio` (frozen-aware)
 
 - **What:** The MCP-registration entry Plot writes into each CLI config

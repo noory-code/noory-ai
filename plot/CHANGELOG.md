@@ -4,6 +4,32 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.69.0] — 2026-06-14
+
+Minor (behavior change). Re-include claude-code in in-app chat with a
+billing warning, reversing the v0.68.0 exclusion (D-2026-06-14-B). The
+per-canvas scope model from v0.68.0 is unchanged.
+
+### Changed
+
+- **claude-code is selectable for in-app chat again.** The v0.68.0
+  exclusion is removed: `/api/chat/send` no longer 400s a claude-code
+  selection, the claude-code row regains its selection radio, and the dock
+  no longer coerces a persisted claude-code choice to no-selection.
+
+### Added
+
+- **Billing-warning banner** in the chat frame when claude-code is the
+  active CLI (`chat.claudeBillingWarning`, en + ko): Claude Code runs
+  headless via `claude -p`, billed separately from the Claude subscription;
+  the banner points the user to the non-double-charged MCP path.
+
+### Notes
+
+- Follow-up (pinned, not built): a dedicated Settings surface (provider +
+  model selection + billing ack) stored across two tiers — global
+  `~/.noory/plot/settings.json` + per-workspace overrides. Design first.
+
 ## [0.68.1] — 2026-06-14
 
 Patch (fix). The bundled `.app` registered a broken Plot MCP command into

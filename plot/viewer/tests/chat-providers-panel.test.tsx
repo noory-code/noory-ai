@@ -104,33 +104,24 @@ describe("ChatProvidersPanel (D-2026-06-11-E Phase A)", () => {
     expect(screen.queryAllByRole("radio")).toHaveLength(0);
   });
 
-  it("renders a radio for each selectable row + checks the active row (claude-code excluded)", async () => {
-    // codex is the active chat provider; claude-code carries no radio.
-    fetchSpy.mockResolvedValue(
-      jsonResponse({
-        providers: [
-          { name: "claude-code", installed: true, registered: true, config_path: "~/.claude.json" },
-          { name: "codex", installed: true, registered: true, config_path: "~/.codex/config.toml" },
-          { name: "gemini", installed: true, registered: true, config_path: "~/.gemini/settings.json" },
-        ],
-      }),
-    );
+  it("renders a radio per row when selection props are present + checks the active row", async () => {
+    fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_AFTER_REGISTER));
     render(
       <ChatProvidersPanel
         onError={() => {}}
-        activeProvider="codex"
+        activeProvider="claude-code"
         onSelectProvider={() => {}}
       />,
     );
-    await waitFor(() => screen.getByText("Codex"));
+    await waitFor(() => screen.getByText("Claude Code"));
     const radios = screen.getAllByRole("radio") as HTMLInputElement[];
-    // Two selectable CLIs (codex, gemini); claude-code is excluded.
-    expect(radios).toHaveLength(2);
-    const codex = radios.find((r) => r.value === "codex");
-    expect(codex?.checked).toBe(true);
+    // All three rows carry a radio again (claude-code re-included, D-2026-06-14-B).
+    expect(radios).toHaveLength(3);
+    const claude = radios.find((r) => r.value === "claude-code");
+    expect(claude?.checked).toBe(true);
   });
 
-  it("omits the selection radio on the claude-code row but keeps its row + register controls (D-2026-06-13-H)", async () => {
+  it("renders a selection radio on the claude-code row (D-2026-06-14-B re-include)", async () => {
     fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_AFTER_REGISTER));
     render(
       <ChatProvidersPanel
@@ -142,12 +133,9 @@ describe("ChatProvidersPanel (D-2026-06-11-E Phase A)", () => {
     await waitFor(() => screen.getByText("Claude Code"));
     const radios = screen.getAllByRole("radio") as HTMLInputElement[];
     const values = radios.map((r) => r.value);
-    // claude-code is excluded from in-app chat selection...
-    expect(values).not.toContain("claude-code");
-    expect(values).toEqual(expect.arrayContaining(["codex", "gemini"]));
-    // ...but its row + MCP register/unregister controls stay.
-    expect(screen.getByText("Claude Code")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Unregister" })).toBeTruthy();
+    // claude-code is selectable for in-app chat again (with a billing warning
+    // shown in the chat frame).
+    expect(values).toContain("claude-code");
   });
 
   it("disables the radio on a not-installed provider", async () => {

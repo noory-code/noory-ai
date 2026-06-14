@@ -79,11 +79,9 @@ export function ChatDock({
   useEffect(() => {
     if (!workspaceRoot || collapsed) return;
     void getChatProvider(workspaceRoot).then(
-      // claude-code is excluded from in-app chat (D-2026-06-13-H); a legacy
-      // persisted choice of it counts as no active CLI so the input stays
-      // disabled until the user picks codex / gemini.
-      (sel) =>
-        setActiveProvider(sel.provider === "claude-code" ? null : sel.provider),
+      // claude-code is selectable for in-app chat again (D-2026-06-14-B); the
+      // double-billing tradeoff is surfaced as a warning banner, not a block.
+      (sel) => setActiveProvider(sel.provider),
       (err) => onError(err instanceof Error ? err.message : String(err)),
     );
   }, [workspaceRoot, collapsed, onError]);
@@ -271,6 +269,15 @@ function ChatMessageFrame({
 
   return (
     <>
+      {activeProvider === "claude-code" && (
+        <p
+          role="note"
+          data-warning="claude-billing"
+          className="border-b border-warn-line bg-warn-soft px-3 py-2 text-[11px] text-warn-fg"
+        >
+          {t("chat.claudeBillingWarning")}
+        </p>
+      )}
       <div
         role="log"
         aria-label={t("chat.messagesLogLabel")}

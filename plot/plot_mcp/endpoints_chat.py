@@ -56,10 +56,6 @@ _log = logging.getLogger(__name__)
 # the existing project_changed payload uses ``"project_changed"``.
 _CHAT_EVENT = "chat_stream_event"
 
-# Provider that the in-app chat refuses to spawn (D-2026-06-13-H). Kept in
-# the MCP-registration surface, dropped from chat send.
-_CHAT_EXCLUDED_PROVIDER = "claude-code"
-
 
 def _hub_from_request(request: Request) -> BroadcastHub | None:
     hub = getattr(request.app.state, "broadcast_hub", None)
@@ -150,22 +146,10 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
         return JSONResponse(
             {"error": "no chat provider selected"}, status_code=400
         )
-    # claude-code is excluded from the in-app chat (D-2026-06-13-H): driving
-    # it via ``claude -p`` bills a Claude subscriber a second time on top of
-    # their subscription. It stays in the MCP-registration list so the user
-    # can connect their own interactive Claude session — Plot just won't host
-    # it. A viewer that never offers claude-code in the chat radio can't reach
-    # here; this guard is the server-side backstop.
-    if selection.provider == _CHAT_EXCLUDED_PROVIDER:
-        return JSONResponse(
-            {
-                "error": (
-                    "claude-code is not available for in-app chat; connect it "
-                    "via MCP instead"
-                )
-            },
-            status_code=400,
-        )
+    # claude-code is allowed for in-app chat (D-2026-06-14-B, reversing
+    # D-2026-06-13-H). Running it via ``claude -p`` bills separately from the
+    # Claude subscription; that tradeoff is surfaced as a UI warning rather
+    # than a hard server-side block, so the user opts in with eyes open.
 
     hub = _hub_from_request(request)
     if hub is None:

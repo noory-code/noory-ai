@@ -178,20 +178,34 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
       expect(body).toEqual({ provider: "codex" });
     });
   });
-  it("coerces a persisted claude-code chat selection to no-selection (D-2026-06-13-H)", async () => {
-    // Legacy workspaces may have claude-code persisted; in-app chat excludes
-    // it, so the dock must treat it as no active CLI (input stays disabled).
+  it("enables input + shows the billing warning for a claude-code selection (D-2026-06-14-B)", async () => {
+    // claude-code is selectable for in-app chat again; the input is enabled
+    // and a billing-warning banner is shown (not blocked).
     fetchSpy.mockReset();
     fetchSpy
       .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
       .mockResolvedValueOnce(jsonResponse({ provider: "claude-code" }));
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    await waitFor(() => screen.getByText("Codex"));
+    await waitFor(() => screen.getByText("Claude Code"));
     const input = screen.getByRole("textbox", {
       name: /message input/i,
     }) as HTMLTextAreaElement;
-    expect(input.disabled).toBe(true);
-    expect(input.placeholder.toLowerCase()).toContain("pick a chat cli");
+    // Input is enabled now (workspace + active CLI present).
+    await waitFor(() => expect(input.disabled).toBe(false));
+    // The double-billing warning banner is visible.
+    const warning = await screen.findByRole("note");
+    expect(warning.getAttribute("data-warning")).toBe("claude-billing");
+    expect(warning.textContent?.toLowerCase()).toContain("claude -p");
+  });
+
+  it("shows no billing warning for a codex selection", async () => {
+    fetchSpy.mockReset();
+    fetchSpy
+      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
+      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    await waitFor(() => screen.getByText("Codex"));
+    expect(screen.queryByRole("note")).toBeNull();
   });
 
   // ---- D-2026-06-13-H: per-canvas scope switcher ----

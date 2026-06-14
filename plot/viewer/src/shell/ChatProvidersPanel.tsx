@@ -18,12 +18,6 @@ import {
   type McpProviderStatus,
 } from "../app/mcp";
 
-// claude-code is excluded from the in-app chat provider SELECTION
-// (D-2026-06-13-H): driving it via ``claude -p`` double-charges a Claude
-// subscriber. Its row stays so the user can still MCP-register it and connect
-// their own interactive Claude session — only the chat radio is suppressed.
-const CHAT_SELECTION_EXCLUDED: McpProviderName = "claude-code";
-
 export interface ChatProvidersPanelProps {
   onError: (message: string) => void;
   /** When defined together with `onSelectProvider`, the panel shows a radio
@@ -115,7 +109,7 @@ export function ChatProvidersPanel({
             className="flex items-center justify-between gap-2 rounded border border-line bg-surface px-3 py-2"
           >
             <div className="flex items-center gap-2">
-              {selectionEnabled && p.name !== CHAT_SELECTION_EXCLUDED && (
+              {selectionEnabled && (
                 <input
                   type="radio"
                   name="chat-active-provider"

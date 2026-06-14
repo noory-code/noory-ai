@@ -133,6 +133,7 @@
     "confirmReset": "Drop the current conversation and start a new one?",
     "noWorkspace": "Open a workspace to start chatting.",
     "socketDisconnected": "Chat connection lost — reconnecting…",
+    "claudeBillingWarning": "Claude Code runs headless (claude -p), billed separately from your Claude subscription. To avoid double-charging, connect Claude Code over MCP instead.",
     "scopeLabel": "Conversation",
     "scope": {
       "project": "Project",
