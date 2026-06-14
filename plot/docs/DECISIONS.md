@@ -39,6 +39,26 @@
 
 ## Log
 
+### D-2026-06-14-D — Chat dock: provider connection behind a compact bar (collapsed by default)
+
+- **What:** The "Connect your AI agent" provider panel no longer occupies the
+  top of the chat dock permanently. It's now behind a **compact one-line bar**
+  showing the active CLI (or "Connect your AI agent" when none) + a ▸/▾
+  chevron; clicking it reveals the full `ChatProvidersPanel`. Collapsed by
+  default. The active-CLI label loads on mount (so the bar is informative
+  without expanding); the provider *list* (`getMcpProviders`) only fetches when
+  expanded.
+- **Why:** user feedback — "커넥트 유어 AI agent 너무 커요. 이걸 매번 보고
+  있을 이유가 없을 것 같은데?" Provider connection is a setup step, not
+  something to stare at while chatting. This is the first slice of the larger
+  Settings surface (D-2026-06-14-B follow-up) — provider/model config will
+  eventually live in a dedicated Settings area; the compact bar is the
+  reversible interim.
+- **Approval:** Accepted by user, 2026-06-14 ("컴팩트 바 + 접기").
+- **Spec impact:** SPEC §R7 chat — UI row updated (provider panel behind a
+  compact bar). Verified by `tests/chat-dock.test.tsx` (collapsed-by-default,
+  expand-on-click, active-label-on-bar).
+
 ### D-2026-06-14-C — Services arrows diverge from the anchor; edges easier to select + selection highlighted
 
 Three edge changes (one batch):

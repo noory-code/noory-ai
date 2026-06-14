@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.71.0] — 2026-06-14
+
+Minor (UX). Tidy the chat dock: provider connection behind a compact bar
+(D-2026-06-14-D).
+
+### Changed
+
+- The "Connect your AI agent" provider panel no longer sits open at the top
+  of the chat dock. It's now behind a **compact one-line bar** showing the
+  active CLI (or "Connect your AI agent" when none) + a chevron; click to
+  reveal the full provider list. Collapsed by default — provider connection
+  is a setup step, not something to keep on screen while chatting. The
+  active-CLI label loads without expanding; the provider list fetches only
+  when opened. First slice of the planned Settings surface.
+
 ## [0.70.0] — 2026-06-14
 
 Minor. Edge improvements (D-2026-06-14-C): services arrows diverge from the

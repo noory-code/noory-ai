@@ -103,6 +103,7 @@
   },
   "chat": {
     "providersTitle": "AI 에이전트 연결",
+    "providersBarLabel": "AI 에이전트",
     "providersHint": "Plot은 캔버스 + MCP 서버를 제공합니다. 외부 CLI 중 AI 두뇌를 담당할 도구를 선택하세요.",
     "providers": {
       "claude-code": "Claude Code",

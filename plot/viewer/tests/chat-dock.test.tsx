@@ -1,17 +1,18 @@
 /**
- * R7 chat dock (D-2026-06-11-E, Phase B step B1).
+ * R7 chat dock (D-2026-06-11-E … D-2026-06-14-D).
  *
  * The dock is the right-side collapsible container that holds the chat
- * surface (provider list now; message frame + input in B2; CLI streaming
- * in Phase C). Behaviour pinned here:
+ * surface. Behaviour pinned here:
  *
- *   - Expanded by default; the provider panel renders inside.
- *   - A toggle button collapses / expands the dock.
- *   - Collapse state persists across reloads via
- *     `localStorage["plot:chatDockCollapsed"]` ("1" = collapsed).
- *   - `onError` is forwarded to the embedded `ChatProvidersPanel`.
- *   - When collapsed, the provider list is removed from the DOM (we hide
- *     by unmount, not by CSS — keeps the screen-reader tree honest).
+ *   - Dock collapses/expands; collapse persists in localStorage.
+ *   - Provider connection lives behind a COMPACT BAR, collapsed by default
+ *     (D-2026-06-14-D) — clicking it reveals the full ChatProvidersPanel.
+ *   - The compact bar shows the active CLI label.
+ *   - claude-code is selectable with a billing warning (D-2026-06-14-B).
+ *   - Per-canvas scope switcher (D-2026-06-13-H).
+ *
+ * Fetch is mocked by URL (not call order) so it's robust to which surface
+ * fetches first.
  */
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -36,9 +37,35 @@ const PROVIDERS_FRESH = {
   ],
 };
 
+const PROVIDERS_FRESH_REGISTERED = {
+  providers: [
+    { name: "claude-code", installed: true, registered: true, config_path: "~/.claude.json" },
+    { name: "codex", installed: true, registered: true, config_path: "~/.codex/config.toml" },
+    { name: "gemini", installed: false, registered: false, config_path: "~/.gemini/settings.json" },
+  ],
+};
+
+// Mutable per-test fixtures the URL router serves.
+let selectionValue: { provider: string | null };
+let providersValue: unknown;
+
 beforeEach(() => {
   fetchSpy.mockReset();
-  fetchSpy.mockResolvedValue(jsonResponse(PROVIDERS_FRESH));
+  selectionValue = { provider: null };
+  providersValue = PROVIDERS_FRESH;
+  fetchSpy.mockImplementation((url: unknown, init?: RequestInit) => {
+    const u = String(url);
+    if (u.includes("/api/chat/provider")) {
+      if (init && init.method === "PUT") {
+        return Promise.resolve(jsonResponse({ ok: true }));
+      }
+      return Promise.resolve(jsonResponse(selectionValue));
+    }
+    if (u.includes("/api/mcp/providers")) {
+      return Promise.resolve(jsonResponse(providersValue));
+    }
+    return Promise.resolve(jsonResponse({}));
+  });
   vi.stubGlobal("fetch", fetchSpy);
   localStorage.clear();
 });
@@ -48,78 +75,101 @@ afterEach(() => {
   localStorage.clear();
 });
 
-describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
-  it("renders the provider panel inside when expanded by default", async () => {
-    render(<ChatDock onError={() => {}} />);
-    await waitFor(() => screen.getByText("Claude Code"));
-    expect(screen.getByText("Claude Code")).toBeTruthy();
-    expect(screen.getByText("Codex")).toBeTruthy();
+async function expandProviders(user: ReturnType<typeof userEvent.setup>) {
+  const bar = await screen.findByRole("button", { name: /ai agent/i });
+  await user.click(bar);
+  return bar;
+}
+
+describe("ChatDock — dock + compact provider bar", () => {
+  it("keeps the provider panel collapsed behind a compact bar by default", async () => {
+    selectionValue = { provider: "codex" };
+    providersValue = PROVIDERS_FRESH_REGISTERED;
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    const bar = await screen.findByRole("button", { name: /ai agent/i });
+    expect(bar.getAttribute("aria-expanded")).toBe("false");
+    // Full provider list (register buttons / radios) is NOT mounted.
+    expect(screen.queryByRole("button", { name: /register plot/i })).toBeNull();
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
   });
 
-  it("collapses on toggle click and removes the provider panel from the DOM", async () => {
+  it("reveals the provider panel when the compact bar is clicked", async () => {
+    providersValue = PROVIDERS_FRESH_REGISTERED;
+    const user = userEvent.setup();
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    const bar = await expandProviders(user);
+    await waitFor(() => screen.getByText("Codex"));
+    expect(bar.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("Claude Code")).toBeTruthy();
+  });
+
+  it("shows the active provider label on the compact bar", async () => {
+    selectionValue = { provider: "codex" };
+    providersValue = PROVIDERS_FRESH_REGISTERED;
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    const bar = await screen.findByRole("button", { name: /ai agent/i });
+    await waitFor(() => expect(bar.textContent).toContain("Codex"));
+  });
+
+  it("collapses the whole dock on the header toggle (compact bar gone)", async () => {
     const user = userEvent.setup();
     render(<ChatDock onError={() => {}} />);
-    await waitFor(() => screen.getByText("Claude Code"));
-
-    const toggle = screen.getByRole("button", { name: /collapse chat/i });
-    await user.click(toggle);
-
-    expect(screen.queryByText("Claude Code")).toBeNull();
+    await screen.findByRole("button", { name: /ai agent/i });
+    await user.click(screen.getByRole("button", { name: /collapse chat/i }));
+    expect(screen.queryByRole("button", { name: /ai agent/i })).toBeNull();
     expect(localStorage.getItem("plot:chatDockCollapsed")).toBe("1");
   });
 
-  it("expands again on a second toggle click and clears persisted collapsed flag", async () => {
+  it("re-expands the dock on a second toggle + clears the persisted flag", async () => {
     const user = userEvent.setup();
     localStorage.setItem("plot:chatDockCollapsed", "1");
     render(<ChatDock onError={() => {}} />);
-
-    // Starts collapsed → provider panel never rendered, so no fetch yet.
-    expect(screen.queryByText("Claude Code")).toBeNull();
-
-    const expand = screen.getByRole("button", { name: /expand chat/i });
-    await user.click(expand);
-
-    await waitFor(() => screen.getByText("Claude Code"));
+    expect(screen.queryByRole("button", { name: /ai agent/i })).toBeNull();
+    await user.click(screen.getByRole("button", { name: /expand chat/i }));
+    await screen.findByRole("button", { name: /ai agent/i });
     expect(localStorage.getItem("plot:chatDockCollapsed")).toBe("0");
   });
 
-  it("starts collapsed when localStorage says so", () => {
+  it("starts collapsed when localStorage says so (no fetch)", () => {
     localStorage.setItem("plot:chatDockCollapsed", "1");
     render(<ChatDock onError={() => {}} />);
-    expect(screen.queryByText("Claude Code")).toBeNull();
-    // The provider fetch must NOT have fired — panel was never mounted.
+    expect(screen.queryByRole("button", { name: /ai agent/i })).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("forwards onError to the embedded ChatProvidersPanel", async () => {
+  it("forwards a provider-fetch error to onError when the panel is opened", async () => {
     const onError = vi.fn();
-    fetchSpy.mockReset();
-    fetchSpy.mockResolvedValueOnce(jsonResponse({ error: "engine offline" }, 500));
+    fetchSpy.mockImplementation((url: unknown) => {
+      if (String(url).includes("/api/mcp/providers")) {
+        return Promise.resolve(jsonResponse({ error: "engine offline" }, 500));
+      }
+      return Promise.resolve(jsonResponse({ provider: null }));
+    });
+    const user = userEvent.setup();
     render(<ChatDock onError={onError} />);
+    await expandProviders(user);
     await waitFor(() => expect(onError).toHaveBeenCalled());
   });
+});
 
-  // ---- Phase B step B2: message-area frame (visual only — Phase C streams) ----
-
-  it("renders a message log frame with the no-workspace caption when no workspace is given", async () => {
+describe("ChatDock — message frame", () => {
+  it("renders the message log frame with the no-workspace caption", async () => {
     render(<ChatDock onError={() => {}} />);
-    await waitFor(() => screen.getByText("Claude Code"));
-    const log = screen.getByRole("log", { name: /chat messages/i });
+    const log = await screen.findByRole("log", { name: /chat messages/i });
     expect(log).toBeTruthy();
-    // Phase C: without a workspace there is no chat session — the empty-state
-    // caption prompts the user to open one, not "no messages yet".
     expect(screen.getByText(/open a workspace/i)).toBeTruthy();
   });
 
-  it("keeps the input disabled until a workspace + active CLI are both present (Phase C)", async () => {
+  it("keeps the input disabled until a workspace + active CLI are present", async () => {
     render(<ChatDock onError={() => {}} />);
-    await waitFor(() => screen.getByText("Claude Code"));
-    const input = screen.getByRole("textbox", { name: /message input/i }) as HTMLTextAreaElement;
-    // No workspace → input stays disabled + placeholder prompts the user to pick a CLI.
+    const input = (await screen.findByRole("textbox", {
+      name: /message input/i,
+    })) as HTMLTextAreaElement;
     expect(input.disabled).toBe(true);
     expect(input.placeholder.toLowerCase()).toContain("pick a chat cli");
-    const send = screen.getByRole("button", { name: /^send$/i }) as HTMLButtonElement;
-    expect(send.disabled).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: /^send$/i }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   it("does not render the message frame when collapsed", () => {
@@ -128,21 +178,20 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
     expect(screen.queryByRole("log", { name: /chat messages/i })).toBeNull();
     expect(screen.queryByRole("textbox", { name: /message input/i })).toBeNull();
   });
+});
 
-  // ---- Phase B step B3: workspace-scoped active-provider persistence ----
-
+describe("ChatDock — provider selection", () => {
   it("does not call /api/chat/provider when workspaceRoot is not provided", async () => {
+    const user = userEvent.setup();
     render(<ChatDock onError={() => {}} />);
-    await waitFor(() => screen.getByText("Claude Code"));
+    await expandProviders(user);
+    await waitFor(() => screen.getByText("Codex"));
     const calls = fetchSpy.mock.calls.map((c) => String(c[0]));
     expect(calls.some((u) => u.includes("/api/chat/provider"))).toBe(false);
   });
 
-  it("loads the persisted chat provider from the server on mount when workspaceRoot is given", async () => {
-    fetchSpy.mockReset();
-    fetchSpy
-      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH))
-      .mockResolvedValueOnce(jsonResponse({ provider: "claude-code" }));
+  it("loads the persisted chat provider on mount when workspaceRoot is given", async () => {
+    selectionValue = { provider: "claude-code" };
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
     await waitFor(() => {
       const calls = fetchSpy.mock.calls.map((c) => String(c[0]));
@@ -153,87 +202,69 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
   });
 
   it("PUTs the new selection to the server when a radio is clicked", async () => {
-    // claude-code carries no chat radio (D-2026-06-13-H) — exercise codex.
-    fetchSpy.mockReset();
-    fetchSpy
-      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
-      .mockResolvedValueOnce(jsonResponse({ provider: null }))
-      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+    // claude-code carries a radio (D-2026-06-14-B), but exercise codex here.
+    providersValue = PROVIDERS_FRESH_REGISTERED;
     const user = userEvent.setup();
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    await waitFor(() => screen.getByText("Codex"));
+    await expandProviders(user);
     const radios = await screen.findAllByRole("radio");
     const codex = (radios as HTMLInputElement[]).find((r) => r.value === "codex")!;
     await user.click(codex);
     await waitFor(() => {
-      const calls = fetchSpy.mock.calls;
-      const put = calls.find(
+      const put = fetchSpy.mock.calls.find(
         (c) =>
           String(c[0]).includes("/api/chat/provider") &&
           c[1] &&
           (c[1] as RequestInit).method === "PUT",
       );
       expect(put).toBeDefined();
-      const body = JSON.parse(String((put![1] as RequestInit).body));
-      expect(body).toEqual({ provider: "codex" });
+      expect(JSON.parse(String((put![1] as RequestInit).body))).toEqual({
+        provider: "codex",
+      });
     });
   });
-  it("enables input + shows the billing warning for a claude-code selection (D-2026-06-14-B)", async () => {
-    // claude-code is selectable for in-app chat again; the input is enabled
-    // and a billing-warning banner is shown (not blocked).
-    fetchSpy.mockReset();
-    fetchSpy
-      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
-      .mockResolvedValueOnce(jsonResponse({ provider: "claude-code" }));
+
+  it("enables input + shows the billing warning for a claude-code selection", async () => {
+    selectionValue = { provider: "claude-code" };
+    providersValue = PROVIDERS_FRESH_REGISTERED;
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    await waitFor(() => screen.getByText("Claude Code"));
-    const input = screen.getByRole("textbox", {
+    const input = (await screen.findByRole("textbox", {
       name: /message input/i,
-    }) as HTMLTextAreaElement;
-    // Input is enabled now (workspace + active CLI present).
+    })) as HTMLTextAreaElement;
     await waitFor(() => expect(input.disabled).toBe(false));
-    // The double-billing warning banner is visible.
     const warning = await screen.findByRole("note");
     expect(warning.getAttribute("data-warning")).toBe("claude-billing");
     expect(warning.textContent?.toLowerCase()).toContain("claude -p");
   });
 
   it("shows no billing warning for a codex selection", async () => {
-    fetchSpy.mockReset();
-    fetchSpy
-      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
-      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+    selectionValue = { provider: "codex" };
+    providersValue = PROVIDERS_FRESH_REGISTERED;
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    await waitFor(() => screen.getByText("Codex"));
+    const bar = await screen.findByRole("button", { name: /ai agent/i });
+    await waitFor(() => expect(bar.textContent).toContain("Codex"));
     expect(screen.queryByRole("note")).toBeNull();
   });
+});
 
-  // ---- D-2026-06-13-H: per-canvas scope switcher ----
-
-  it("shows the scope switcher with the canvas + project segments when a canvas scope is active", async () => {
-    fetchSpy.mockReset();
-    fetchSpy
-      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
-      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+describe("ChatDock — scope switcher (D-2026-06-13-H)", () => {
+  it("shows the canvas + project segments when a canvas scope is active", async () => {
+    selectionValue = { provider: "codex" };
     render(
       <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="foundation" />,
     );
-    const tablist = await screen.findByRole("tablist", { name: /conversation/i });
-    expect(tablist).toBeTruthy();
+    await screen.findByRole("tablist", { name: /conversation/i });
     const tabs = screen.getAllByRole("tab");
     const labels = tabs.map((t) => t.textContent);
     expect(labels).toContain("Foundation");
     expect(labels).toContain("Project");
-    // Canvas segment is selected by default (follows the active canvas).
-    const foundationTab = tabs.find((t) => t.textContent === "Foundation")!;
-    expect(foundationTab.getAttribute("aria-selected")).toBe("true");
+    expect(
+      tabs.find((t) => t.textContent === "Foundation")!.getAttribute("aria-selected"),
+    ).toBe("true");
   });
 
   it("switches the selected segment to project on click", async () => {
-    fetchSpy.mockReset();
-    fetchSpy
-      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
-      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+    selectionValue = { provider: "codex" };
     const user = userEvent.setup();
     render(
       <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="actors" />,
@@ -247,22 +278,12 @@ describe("ChatDock (D-2026-06-11-E Phase B step B1)", () => {
   });
 
   it("omits the scope switcher when the active scope is already project", async () => {
-    fetchSpy.mockReset();
-    fetchSpy
-      .mockResolvedValueOnce(jsonResponse(PROVIDERS_FRESH_REGISTERED))
-      .mockResolvedValueOnce(jsonResponse({ provider: "codex" }));
+    selectionValue = { provider: "codex" };
     render(
       <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="project" />,
     );
-    await waitFor(() => screen.getByText("Codex"));
+    const bar = await screen.findByRole("button", { name: /ai agent/i });
+    await waitFor(() => expect(bar.textContent).toContain("Codex"));
     expect(screen.queryByRole("tablist", { name: /conversation/i })).toBeNull();
   });
 });
-
-const PROVIDERS_FRESH_REGISTERED = {
-  providers: [
-    { name: "claude-code", installed: true, registered: true, config_path: "~/.claude.json" },
-    { name: "codex", installed: true, registered: true, config_path: "~/.codex/config.toml" },
-    { name: "gemini", installed: false, registered: false, config_path: "~/.gemini/settings.json" },
-  ],
-};

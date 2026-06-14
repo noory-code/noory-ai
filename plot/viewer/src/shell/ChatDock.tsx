@@ -62,6 +62,11 @@ export function ChatDock({
   const [scopeMode, setScopeMode] = useState<"canvas" | "project">("canvas");
   const effectiveScope: ChatScope =
     scopeMode === "project" ? "project" : activeScope;
+  // D-2026-06-14-D — provider connection is a setup step, not something to
+  // stare at while chatting; keep it behind a compact bar, collapsed by
+  // default. The bar shows the active CLI so the user knows what's connected
+  // without expanding.
+  const [providersOpen, setProvidersOpen] = useState(false);
 
   const toggle = useCallback(() => {
     setCollapsed((prev) => {
@@ -129,9 +134,25 @@ export function ChatDock({
       </header>
       {!collapsed && (
         <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="overflow-y-auto border-b border-line p-3">
-            <ChatProvidersPanel onError={onError} {...selectionProps} />
-          </div>
+          <button
+            type="button"
+            aria-label={t("chat.providersBarLabel")}
+            aria-expanded={providersOpen}
+            onClick={() => setProvidersOpen((o) => !o)}
+            className="flex items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-fg-muted hover:bg-surface-muted hover:text-fg-strong"
+          >
+            <span className="truncate">
+              {activeProvider
+                ? t(`chat.providers.${activeProvider}`)
+                : t("chat.providersTitle")}
+            </span>
+            <span aria-hidden>{providersOpen ? "▾" : "▸"}</span>
+          </button>
+          {providersOpen && (
+            <div className="overflow-y-auto border-b border-line p-3">
+              <ChatProvidersPanel onError={onError} {...selectionProps} />
+            </div>
+          )}
           {activeScope !== "project" && (
             <ChatScopeSwitcher
               canvasScope={activeScope}
