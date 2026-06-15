@@ -6,6 +6,7 @@ import { applyOptimisticAnchorPatch } from "./lib/anchorOptimistic";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
 import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
+import { ServiceDetailInspectorHost } from "./canvases/inspectors/ServiceDetailInspectorHost";
 import { ServicesCanvas } from "./canvases/ServicesCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import { StencilDragProvider } from "./canvases/sketch/StencilDragContext";
@@ -238,6 +239,24 @@ export function App() {
     return svc?.label ?? detailServiceId;
   }, [canvasCache, detailServiceId]);
 
+  // D-2026-06-15-O — ServiceDetail's default right panel = the subject
+  // service's read-only inspector (cross-doc; read from the Services canvas).
+  // Memoised so the ServiceDetailCanvas prop identity stays stable across
+  // App re-renders (the canvas is React.memo'd — an inline node would defeat
+  // it and remount on every drag, see D-2026-05-27-C).
+  const detailFallbackInspector = useMemo(
+    () =>
+      detailServiceId ? (
+        <ServiceDetailInspectorHost
+          serviceId={detailServiceId}
+          servicesCanvas={canvasCache.get("services") ?? null}
+          projectPath={activeProjectPath ?? ""}
+          projectId={activeId ?? ""}
+        />
+      ) : null,
+    [detailServiceId, canvasCache, activeProjectPath, activeId],
+  );
+
   // v0.10 Step 3 / v0.16.5 — cross-canvas "available master" lists for
   // pickers + orphan detection. Foundation canvas feeds the three
   // foundation-kind pickers; Actors canvas feeds the ActorRefPicker
@@ -435,6 +454,7 @@ export function App() {
                 onNodeDrill={onModalNodeDrill}
                 onPublishNode={onModalPublishNode}
                 onUnpublishNode={onModalUnpublishNode}
+                fallbackInspector={detailFallbackInspector}
               />
             )}
             {phase === "ready" && activeCanvas && activeId && !detailReady && (() => {

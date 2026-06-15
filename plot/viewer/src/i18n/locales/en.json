@@ -314,6 +314,7 @@
     "referencesHeader": "References — {{label}}",
     "rePick": "Re-pick…",
     "unset": "(unset)",
+    "readOnlyEmpty": "No details captured yet on the Services canvas.",
     "inheritedFrom": "inherited from {{from}}",
     "actorBaseHint": "Abstract base — the concrete Surface lives on the sub-actors below.",
     "operatorOption": "operator — admin console",

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -150,6 +150,10 @@ export interface SketchCanvasProps {
   /** v0.23.x (D-2026-05-17-J) — fire to unpublish (git revert) a node's
    *  most recent publish. Optional. */
   onUnpublishNode?: (nodeId: string) => void;
+  /** D-2026-06-15-O — rendered by SketchInspectorBindings when no node is
+   *  selected. ServiceDetail passes the subject service's read-only
+   *  inspector so the detail canvas's default panel shows the service. */
+  fallbackInspector?: ReactNode;
 }
 
 
@@ -200,6 +204,7 @@ function SketchCanvasInner({
   showDirectionSwitch,
   onPublishNode,
   onUnpublishNode,
+  fallbackInspector,
 }: SketchCanvasProps) {
   const docRef = useRef<CanvasDoc>(doc);
   docRef.current = doc;
@@ -522,6 +527,7 @@ function SketchCanvasInner({
         projectId={projectId}
         onPublishNode={onPublishNode}
         onUnpublishNode={onUnpublishNode}
+        fallbackInspector={fallbackInspector}
       />
     </div>
   );

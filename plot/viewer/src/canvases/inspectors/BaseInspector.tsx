@@ -60,6 +60,11 @@ export interface BaseInspectorProps {
    *  content has been absorbed into JSON SSOT typed fields (currently
    *  Foundation mission / core_value / identity). Default false. */
   hideDetailsSection?: boolean;
+  /** D-2026-06-15-O — render the shared chrome read-only: label input
+   *  becomes non-editable, and the delete / close / publish / details
+   *  affordances are hidden. The per-kind body slot is responsible for
+   *  rendering its own fields read-only. Default false. */
+  readOnly?: boolean;
 }
 
 export function BaseInspector({
@@ -75,6 +80,7 @@ export function BaseInspector({
   serviceId,
   children,
   hideDetailsSection = false,
+  readOnly = false,
 }: BaseInspectorProps) {
   const { t } = useTranslation();
   const dialog = useDialog();
@@ -135,8 +141,9 @@ export function BaseInspector({
           {/* v0.23.2 (D-2026-05-17-K) — publish/unpublish buttons moved
               from this header cluster to the sticky footer below.
               Header now only carries chrome (delete / widen / close). */}
-          {/* Delete — hidden for the Project anchor and for Actor/Service roots. */}
-          {node.kind !== "project" && !node.is_root && (
+          {/* Delete — hidden for the Project anchor and for Actor/Service roots.
+              Also hidden in read-only mode (D-2026-06-15-O). */}
+          {!readOnly && node.kind !== "project" && !node.is_root && (
             <button
               type="button"
               onClick={async () => {
@@ -167,14 +174,19 @@ export function BaseInspector({
           >
             {width === "wide" ? "⇥" : "⇤"}
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("inspector.closeInspector")}
-            className="rounded px-2 text-fg-faint hover:bg-surface-subtle"
-          >
-            ✕
-          </button>
+          {/* Close — hidden in read-only mode: the fallback inspector is the
+              detail canvas's default panel, so there is nothing to close
+              (D-2026-06-15-O). */}
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("inspector.closeInspector")}
+              className="rounded px-2 text-fg-faint hover:bg-surface-subtle"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
@@ -208,7 +220,11 @@ export function BaseInspector({
             type="text"
             value={node.label}
             onChange={(e) => onPatchNode({ label: e.target.value })}
-            className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-accent focus:outline-none"
+            readOnly={readOnly}
+            className={
+              "mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-accent focus:outline-none" +
+              (readOnly ? " cursor-default bg-surface-subtle text-fg-secondary" : "")
+            }
           />
         </label>
 
@@ -217,8 +233,10 @@ export function BaseInspector({
 
         {/* Long-form details.md (chrome SSOT — every kind gets it,
             except Foundation typed-text kinds whose long-form content
-            lives in JSON SSOT typed fields since v0.17 Phase 1). */}
-        {!hideDetailsSection && (
+            lives in JSON SSOT typed fields since v0.17 Phase 1). Hidden in
+            read-only mode — the MD editor is an editing surface
+            (D-2026-06-15-O). */}
+        {!hideDetailsSection && !readOnly && (
           <DetailsSection
             node={node}
             projectPath={projectPath}
@@ -229,8 +247,10 @@ export function BaseInspector({
         )}
 
         {/* v0.23.0 (D-2026-05-17-I) — Published versions list +
-            click-to-open MD modal. Only for publish-eligible kinds. */}
-        {canPublish(node) && (
+            click-to-open MD modal. Only for publish-eligible kinds. Hidden
+            in read-only mode — keeps the always-mounted ServiceDetail
+            fallback panel from firing a publish-history fetch (D-2026-06-15-O). */}
+        {!readOnly && canPublish(node) && (
           <PublishedVersionsSection
             projectPath={projectPath}
             projectId={projectId}
@@ -262,7 +282,7 @@ export function BaseInspector({
           when there's something to revert. Only rendered for
           publish-eligible kinds; the footer disappears entirely for
           project / is_root / *_ref nodes. */}
-      {onPublishNode && canPublish(node) && (() => {
+      {!readOnly && onPublishNode && canPublish(node) && (() => {
         const isDirty = node._dirty ?? true;
         const fromVersion = node.version;
         const nextMajor =

@@ -810,7 +810,10 @@ all times — RF default `width: 6px; height: 6px; background: #1a192b`.
 ## Inspector (right panel)
 
 Appears as an `<aside>` overlaying the right edge of the canvas when a
-node is selected. Hidden when nothing is selected.
+node is selected. Hidden when nothing is selected — **except** on the
+ServiceDetail canvas, which renders the subject service's read-only
+inspector as a fallback when no detail node is selected (see
+[ServiceDetail → Right panel](#right-panel-option-1-d-2026-06-15-o)).
 
 | Aspect | Behaviour |
 |---|---|
@@ -818,6 +821,7 @@ node is selected. Hidden when nothing is selected.
 | **Width** | Toggle: 320 px ("narrow") ↔ `min(720, 60vw)` ("wide"). Choice persists in `localStorage`. |
 | **Sections (Foundation)** | Header (kind, delete, width-toggle, close) → `_md_warnings` list (if any) → Label field → Typed-field forms per kind → MD-template editor (edit / split / preview). |
 | **Close** | × button in header, or click empty canvas (pane click clears selection). |
+| **Read-only mode (D-2026-06-15-O)** | `KindInspector` / `BaseInspector` accept `readOnly`: the label input is non-editable, and the delete / close / publish / published-versions / details-MD affordances are hidden. The per-kind body renders its fields read-only (Service shows a problem-first summary of non-empty typed fields). Used by the ServiceDetail fallback. |
 
 ---
 
@@ -1331,6 +1335,32 @@ User intent (verbatim 2026-05-26):
 This matches Plot's PHILOSOPHY P10 ("the user controls every line,
 every position, every colour") and VISION's user-authored cycle. No
 auto-edges; no auto-positioning beyond the `⊞` tree button.
+
+## Right panel (Option 1, D-2026-06-15-O)
+
+The detail canvas's right panel follows a three-state rule so the user
+always knows "what am I looking at / editing":
+
+| State | Panel shows |
+|---|---|
+| **Default** (no detail node selected) | The **subject service's read-only inspector** — its typed fields (problem-first), read cross-doc from the Services canvas. The service is the canvas's implicit subject (it has no node here, D-2026-05-28-B), so this is where the user reads "what is this service" without leaving the detail canvas. |
+| **A detail node selected** | That node's **editable** inspector (actor_ref motivation/pain, step, rule, content, …) — the normal per-kind inspector. |
+| **Empty space clicked** | Back to the service (pane click clears the selection → fallback). |
+
+The service is read **cross-doc**: it lives on the Services canvas, so
+`ServiceDetailInspectorHost` resolves it from the cached Services
+`CanvasDoc` (App holds it) by `doc.service_ref`. If the service has been
+deleted on the Services canvas (the detail tab can outlive it), the
+fallback renders nothing — no crash. The service is **read-only here**
+(editing happens on the Services canvas, the service's home); the
+read-only inspector hides every edit affordance (see
+[Inspector → Read-only mode](#inspector-right-panel)).
+
+Seam: `SketchInspectorBindings` renders a `fallbackInspector` render-prop
+in place of its old empty `return null`; `SketchCanvas` threads it; only
+the ServiceDetailCanvas wrapper is given one (via App's memoised
+`detailFallbackInspector`). Pinned by
+`viewer/tests/service-detail-fallback-inspector.test.tsx`.
 
 ## Stencil
 

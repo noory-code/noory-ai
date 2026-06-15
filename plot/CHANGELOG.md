@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.82.0] — 2026-06-15
+
+### Added
+
+- **ServiceDetail right panel shows the subject service (Option 1)**
+  (D-2026-06-15-O). The detail canvas's right panel now has three states:
+  by default (nothing selected) it shows the **subject service's read-only
+  inspector** — its typed fields, problem-first, read cross-doc from the
+  Services canvas; selecting a detail node shows that node's editable
+  inspector; clicking empty space returns to the service. The service is
+  read-only here (its home is the Services canvas). Implemented via a
+  `fallbackInspector` render-prop on `SketchInspectorBindings` + a new
+  `ServiceDetailInspectorHost`; `KindInspector` / `BaseInspector` /
+  `ServiceInspector` gained a `readOnly` mode. Guards a deleted/unknown
+  service (renders nothing). Pinned by
+  `viewer/tests/service-detail-fallback-inspector.test.tsx`.
+
 ## [0.81.1] — 2026-06-15
 
 ### Fixed

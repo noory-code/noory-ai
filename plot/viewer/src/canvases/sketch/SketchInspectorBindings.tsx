@@ -6,7 +6,7 @@
 // ``SketchInspector`` (1491 LOC at v0.14.18) was deleted as part of
 // the v0.15 structural reset Phase 2.9 once every kind had its own
 // per-kind inspector under ``inspectors/{kind}/``.
-import { type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import { type Dispatch, type MutableRefObject, type ReactNode, type SetStateAction } from "react";
 import type { Node } from "reactflow";
 import type { CanvasDoc, CanvasKind, SketchNode as DocNode } from "../../types";
 import { KindInspector } from "../inspectors/KindInspector";
@@ -35,6 +35,11 @@ export interface SketchInspectorBindingsProps {
   onPublishNode?: (nodeId: string) => void;
   /** v0.23.x (D-2026-05-17-J) — unpublish handler. */
   onUnpublishNode?: (nodeId: string) => void;
+  /** D-2026-06-15-O — rendered in place of the empty panel when no node is
+   *  selected (or the selected node vanished). ServiceDetail passes the
+   *  subject service's read-only inspector here; other canvases pass
+   *  nothing (the panel stays hidden, as before). */
+  fallbackInspector?: ReactNode;
 }
 
 export function SketchInspectorBindings({
@@ -56,10 +61,11 @@ export function SketchInspectorBindings({
   projectId,
   onPublishNode,
   onUnpublishNode,
+  fallbackInspector,
 }: SketchInspectorBindingsProps) {
-  if (!inspectorNodeId) return null;
+  if (!inspectorNodeId) return <>{fallbackInspector ?? null}</>;
   const node = doc.nodes.find((n) => n.id === inspectorNodeId) ?? null;
-  if (!node) return null;
+  if (!node) return <>{fallbackInspector ?? null}</>;
   return (
     <KindInspector
       node={node}

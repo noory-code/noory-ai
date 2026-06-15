@@ -39,6 +39,42 @@
 
 ## Log
 
+### D-2026-06-15-O — ServiceDetail right panel = the subject service, read-only (Option 1)
+
+- **What:** The ServiceDetail canvas's right panel now has three states:
+  (1) **default** (no detail node selected) → the subject service's
+  **read-only** inspector, read cross-doc from the Services canvas
+  (problem-first); (2) a **detail node selected** → that node's editable
+  inspector; (3) **empty-space click** → back to the service. Implemented
+  with a `fallbackInspector` render-prop on `SketchInspectorBindings`
+  (replacing its empty `return null`), threaded through `SketchCanvas`;
+  App builds a memoised `<ServiceDetailInspectorHost>` (resolves the service
+  from the cached Services `CanvasDoc` by `doc.service_ref`, renders the
+  read-only `KindInspector`) and passes it only to the ServiceDetailCanvas
+  wrapper. `KindInspector` / `BaseInspector` / `ServiceInspector` gained a
+  `readOnly` flag (non-editable label; hidden delete / close / publish /
+  published-versions / details-MD; Service body becomes a problem-first
+  read-only summary).
+- **Why:** the detail canvas's subject IS the service, but the service has
+  no node on the canvas (D-2026-05-28-B), so there was nowhere to *see* the
+  service's own definition (problem / what / value) while working in its
+  detail canvas. The right panel sat empty until a node was clicked. This
+  was the originally requested behaviour; it had been designed (workflow
+  diagnosis) but not implemented across the v0.79–v0.81 domain detour.
+- **Alternatives:** (a) put the service back as a centre node — rejected,
+  read as duplication ("로그인 서비스인데 로그인 노드가 들어있는 것도
+  이상하고", D-2026-05-28-B). (b) a bespoke read-only summary component
+  instead of reusing `KindInspector` — rejected; reusing the per-kind
+  inspector keeps the displayed fields identical to what the user edits on
+  the Services canvas (one SSOT for "what a service looks like").
+- **Approval:** Accepted by user, 2026-06-15 (chose "다음 1: Option 1
+  패널" — the original request).
+- **Spec impact:** [`SPEC.md` ServiceDetail → Right panel](./SPEC.md#right-panel-option-1-d-2026-06-15-o)
+  + Inspector read-only mode. Pinned by
+  `viewer/tests/service-detail-fallback-inspector.test.tsx`. LOC:
+  SketchCanvas 530 → 537, App 498 → 510 (`structural-guards.test.tsx`),
+  both plumbing-only.
+
 ### D-2026-06-15-N — Context menu never opens on a drag-release (trackpad contextmenu tail)
 
 - **What:** `useContextMenus` arms a one-shot suppression flag on React

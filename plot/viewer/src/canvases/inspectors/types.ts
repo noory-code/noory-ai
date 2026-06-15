@@ -35,6 +35,12 @@ export interface KindInspectorProps {
   onUnpublishNode?: (nodeId: string) => void;
   /** Close the panel (used by ``BaseInspector``'s close button). */
   onClose: () => void;
+  /** D-2026-06-15-O — render the inspector read-only (no editable inputs,
+   *  no delete / publish / close / composition affordances). Used by the
+   *  ServiceDetail fallback inspector, which shows the subject service's
+   *  fields cross-doc without letting the user edit them from the detail
+   *  canvas. Default false. */
+  readOnly?: boolean;
   /** v0.7: needed for the MD editor's file paths + preview-cache hints. */
   projectPath: string;
   projectId: string;

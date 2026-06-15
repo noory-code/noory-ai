@@ -21,7 +21,7 @@ import { CompositionList } from "./CompositionList";
 export function ServiceInspector(props: KindInspectorProps) {
   if (props.node.kind !== "service") return null;
   const node = props.node;
-  const { allNodes, allEdges, onPatchNode, onAddChild, onPatchChild, onRemoveChild, availableActors } = props;
+  const { allNodes, allEdges, onPatchNode, onAddChild, onPatchChild, onRemoveChild, availableActors, readOnly } = props;
   const { t } = useTranslation();
   // v0.26.0 (D-2026-05-25-A) — composition children (rules / content)
   // are now identified by directed edges from this service.
@@ -44,8 +44,8 @@ export function ServiceInspector(props: KindInspectorProps) {
   );
   return (
     <BaseInspector {...props} hideDetailsSection>
-      <ServiceFields node={node} onPatchNode={onPatchNode} />
-      {onAddChild && onPatchChild && onRemoveChild && (
+      <ServiceFields node={node} onPatchNode={onPatchNode} readOnly={readOnly} />
+      {!readOnly && onAddChild && onPatchChild && onRemoveChild && (
         <>
           <CompositionList
             title={t("composition.rules")}
@@ -76,10 +76,14 @@ export function ServiceInspector(props: KindInspectorProps) {
 interface ServiceFieldsProps {
   node: ServiceJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
+  /** D-2026-06-15-O — render the typed fields as a read-only summary
+   *  (problem-centric) for the ServiceDetail fallback inspector. */
+  readOnly?: boolean;
 }
 
-function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
+function ServiceFields({ node, onPatchNode, readOnly }: ServiceFieldsProps) {
   const { t } = useTranslation();
+  if (readOnly) return <ServiceFieldsReadonly node={node} />;
   return (
     <div className="mb-4 rounded border border-info bg-info-soft/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-info-fg">
@@ -159,6 +163,51 @@ function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
       />
       <DoDontFields node={node} onPatchNode={onPatchNode} />
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
+    </div>
+  );
+}
+
+/** Read-only summary of a service's typed fields (D-2026-06-15-O). Shows
+ *  only the fields that carry content, problem first — the service is the
+ *  anchor of the problem-solving process (D-2026-06-15-K). */
+function ServiceFieldsReadonly({ node }: { node: ServiceJson }) {
+  const { t } = useTranslation();
+  const sideLabel = node.target_side
+    ? t(
+        node.target_side === "operator"
+          ? "inspector.operatorSideOption"
+          : node.target_side === "user"
+            ? "inspector.userSideOption"
+            : "inspector.bothSideOption",
+      )
+    : "";
+  const rows = (
+    [
+      [t("inspector.field.problem"), node.problem ?? ""],
+      [t("inspector.field.targetSide"), sideLabel],
+      [t("inspector.field.what"), node.what ?? ""],
+      [t("inspector.field.valueCreated"), node.value_created ?? ""],
+      [t("inspector.field.scope"), node.scope ?? ""],
+      [t("inspector.field.trigger"), node.trigger ?? ""],
+      [t("inspector.field.how"), node.how ?? ""],
+      [t("inspector.field.outcome"), node.outcome ?? ""],
+    ] as Array<[string, string]>
+  ).filter(([, v]) => v.trim() !== "");
+  return (
+    <div className="mb-4 rounded border border-info bg-info-soft/40 p-2">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-info-fg">
+        {t("kind.service")}
+      </div>
+      {rows.length === 0 ? (
+        <div className="text-xs text-fg-muted">{t("inspector.readOnlyEmpty")}</div>
+      ) : (
+        rows.map(([label, value]) => (
+          <div key={label} className="mb-2">
+            <div className="text-xs font-semibold text-fg">{label}</div>
+            <div className="mt-0.5 whitespace-pre-wrap text-sm text-fg-secondary">{value}</div>
+          </div>
+        ))
+      )}
     </div>
   );
 }
