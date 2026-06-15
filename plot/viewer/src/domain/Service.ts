@@ -1,7 +1,9 @@
 /**
  * v0.15 Phase 2.9 — ``service`` entity. The value-creating hub
- * (PHILOSOPHY P5). Carries target_side + 6 typed fields (what /
- * value_created / scope / trigger / how / outcome) + do/dont.
+ * (PHILOSOPHY P5). D-2026-06-15-K: carries ``problem`` (the one-line
+ * need it solves — a service is the process of solving a problem) +
+ * target_side + 6 typed fields (what / value_created / scope / trigger /
+ * how / outcome) + do/dont.
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -10,6 +12,7 @@ import { registerKindParser } from "./parseEntity";
 
 export interface ServiceJson extends BaseFieldsJson {
   kind: "service";
+  problem: string;
   target_side: "operator" | "user" | "both" | null;
   what: string;
   value_created: string;
@@ -40,6 +43,7 @@ export class Service implements BaseFields {
 
   readonly kind: "service" = "service";
 
+  readonly problem: string;
   readonly target_side: "operator" | "user" | "both" | null;
   readonly what: string;
   readonly value_created: string;
@@ -55,6 +59,7 @@ export class Service implements BaseFields {
     base: BaseFields,
     target_side: "operator" | "user" | "both" | null,
     typed: {
+      problem: string;
       what: string;
       value_created: string;
       scope: string;
@@ -67,6 +72,7 @@ export class Service implements BaseFields {
     },
   ) {
     Object.assign(this, base);
+    this.problem = typed.problem;
     this.target_side = target_side;
     this.what = typed.what;
     this.value_created = typed.value_created;
@@ -89,6 +95,7 @@ export class Service implements BaseFields {
       );
     }
     return new Service(base, readTargetSide(obj.target_side, raw), {
+      problem: readOptionalString(obj.problem, "problem", raw),
       what: readOptionalString(obj.what, "what", raw),
       value_created: readOptionalString(obj.value_created, "value_created", raw),
       scope: readOptionalString(obj.scope, "scope", raw),
@@ -118,6 +125,7 @@ export class Service implements BaseFields {
       owner: this.owner,
       version: this.version,
       kind: "service",
+      problem: this.problem,
       target_side: this.target_side,
       what: this.what,
       value_created: this.value_created,

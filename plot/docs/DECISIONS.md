@@ -39,6 +39,38 @@
 
 ## Log
 
+### D-2026-06-15-K — Service gains a one-line `problem` field (the need it solves)
+
+- **What:** The `service` kind gains a one-line `problem` typed field —
+  the need / lack the service exists to solve. Rendered as the **first**
+  field in the service inspector, above `target_side` / `what`. Optional
+  (defaults `""`, like every other service field).
+- **Why:** the service definition reached this session — *"서비스의 본질은
+  문제해결이죠 … 문제해결의 과정이 서비스에요"* (user, 2026-06-15). A
+  service is the process of solving a problem; the existing fields
+  (`what` / `value_created` / `outcome`) are all the **solution** side —
+  the problem itself had no home. `problem` is the anchor the detail
+  canvas (the solving process) sits under (Retention).
+- **Distinct from (MECE):** (a) an **overview** — *"문제와 개요는 다르다"*
+  (user): an overview ≈ the existing `what` field, so an overview field
+  would duplicate `what`; `problem` (the need) is the genuinely missing
+  piece. (b) `actor_ref.pain` (D-2026-06-15-J) — that is per-(actor ×
+  service) friction; `service.problem` is the single headline problem for
+  the whole service. The actors' pains are the per-participant detail of
+  the same problem.
+- **Alternatives:** add an "overview" field — rejected (duplicates
+  `what`). Derive the problem from the actors' pains only — rejected (the
+  user wants an explicit one-line headline at the service level).
+- **Approval:** Accepted by user, 2026-06-15 (*"문제 한 줄 좋죠!"* +
+  *"문제와 개요는 다르다는 관점 좋아요"*).
+- **Spec impact:** SPEC.md §Typed text + body fields — new "Service
+  `problem`" paragraph.
+- **Lock-step (one commit):** engine `models_actors.py` (ServiceNode +=
+  `problem`); viewer `domain/Service.ts` (interface/ctor/fromJson/toJson);
+  service inspector (problem field first); i18n `inspector.field.problem`
+  + `inspector.fieldHint.problem` (en + ko); regen `--wire`; guards
+  (schema-parity, wire-contract, entity-roundtrip, i18n-parity).
+
 ### D-2026-06-15-J — Actor motivation/pain become per-service-context (move to actor_ref); refines D-2026-05-31-G/H
 
 - **What:** `motivation` and `pain` move OFF the global actor entity and

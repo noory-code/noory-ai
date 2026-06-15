@@ -282,6 +282,7 @@
       "label",
       "outcome",
       "owner",
+      "problem",
       "publish_baseline",
       "scope",
       "shape",

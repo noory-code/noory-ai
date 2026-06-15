@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.80.0] — 2026-06-15
+
+Minor. The `service` kind gains a one-line **`problem`** field
+(D-2026-06-15-K) — the need / lack the service exists to solve. A service
+is the process of solving a problem (user, 2026-06-15); the existing fields
+(`what` / `value_created` / `outcome`) are all solution-side, so the
+problem now has an explicit home. Distinct from an "overview" (which `what`
+already covers) and from per-actor `actor_ref.pain` (per-participant
+friction, D-2026-06-15-J) — `service.problem` is the single headline
+problem for the whole service.
+
+### Added
+
+- **`service.problem`** (Pydantic `ServiceNode` + TS `Service`), rendered
+  as the **first** field in the service inspector (above `target_side` /
+  `what`). New i18n keys `inspector.field.problem` +
+  `inspector.fieldHint.problem` (en + ko).
+
 ## [0.79.0] — 2026-06-15
 
 Minor. Domain remodel: an actor's **motivation / pain become per-service**

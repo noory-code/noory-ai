@@ -1095,6 +1095,19 @@ editor** in the Inspector (headings / lists / bold / italic / code
 edits). The legacy DetailsSection MD-file editor is hidden for all
 10 publish-eligible kinds — JSON SSOT.
 
+**Service `problem` (v0.80.0, [D-2026-06-15-K](./DECISIONS.md)).** The
+`service` kind carries a one-line `problem` field — the need / lack the
+service exists to solve — rendered as the **first** field in the service
+inspector (above `target_side` / `what`). Per the service definition *"a
+service is the process of solving a problem"* (PHILOSOPHY P5 + user,
+2026-06-15), the problem is the anchor; `what` / `value_created` /
+`outcome` are the solution side. It is **distinct from an "overview"**
+(which `what` already covers — adding an overview field would duplicate
+`what`) and from per-actor `actor_ref.pain` (per-(actor × service)
+friction, D-2026-06-15-J): `service.problem` is the single headline
+problem for the whole service, the actors' pains are the per-participant
+detail.
+
 **Mermaid Live Preview (v0.21.0+, [D-2026-05-17-D](./DECISIONS.md)):**
 Any ``` ```mermaid``` ``` fenced block inside the MdTextarea renders
 as an inline SVG widget below the closing fence, 200 ms after the

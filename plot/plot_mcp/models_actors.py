@@ -57,9 +57,14 @@ class ActorRefNode(BaseNodeFields):
 class ServiceNode(BaseNodeFields):
     """v0.15 Phase 1: ``service`` kind. The value-creating hub
     (PHILOSOPHY P5). Top-level (parent_id None) and sub-service share
-    the same shape — the Inspector surfaces different fields per role."""
+    the same shape — the Inspector surfaces different fields per role.
+
+    D-2026-06-15-K: ``problem`` is the one-line need the service solves
+    (a service is the process of solving a problem). It is the anchor;
+    ``what`` / ``value_created`` / ``outcome`` are the solution side."""
 
     kind: Literal["service"] = "service"
+    problem: str = ""
     target_side: Literal["operator", "user", "both"] | None = None
     what: str = ""
     value_created: str = ""

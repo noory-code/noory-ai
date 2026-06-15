@@ -85,6 +85,13 @@ function ServiceFields({ node, onPatchNode }: ServiceFieldsProps) {
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-info-fg">
         {t("kind.service")}
       </div>
+      <ServiceTextarea
+        label={t("inspector.field.problem")}
+        hint={t("inspector.fieldHint.problem")}
+        value={node.problem ?? ""}
+        onChange={(v) => onPatchNode({ problem: v })}
+        placeholder="이 서비스가 푸는 문제 / 결핍"
+      />
       <label className="mb-3 block">
         <span className="text-xs font-semibold text-fg">
           {t("inspector.field.targetSide")}

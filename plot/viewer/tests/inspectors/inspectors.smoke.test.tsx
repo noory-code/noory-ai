@@ -304,6 +304,7 @@ describe("ServiceInspector (Phase 2.9)", () => {
       id: "svc-1",
       kind: "service",
       label: "Sign-up",
+      problem: "가입이 너무 번거롭다",
       target_side: "user",
       what: "신규 가입",
       value_created: "access",
@@ -336,6 +337,7 @@ describe("ServiceInspector (Phase 2.9)", () => {
       />,
     );
     expect(screen.getByDisplayValue("Sign-up")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("가입이 너무 번거롭다")).toBeInTheDocument(); // D-2026-06-15-K problem
     expect(screen.getByDisplayValue("신규 가입")).toBeInTheDocument();
     expect(screen.getByDisplayValue("access")).toBeInTheDocument();
     // Rule child label shows in the rules CompositionList

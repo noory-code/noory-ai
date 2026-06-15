@@ -231,6 +231,7 @@
     "field": {
       "theme": "Theme",
       "statement": "Mission",
+      "problem": "Problem",
       "targetSide": "Target side",
       "what": "What",
       "valueCreated": "Value created",
@@ -266,6 +267,7 @@
     "fieldHint": {
       "theme": "common thread tying these services together",
       "statement": "in one sentence, what this project exists for",
+      "problem": "the need / lack this service solves",
       "targetSide": "operator side / user side / both",
       "what": "concise statement of what this service is",
       "valueCreated": "what value this service produces",

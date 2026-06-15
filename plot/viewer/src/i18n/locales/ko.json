@@ -231,6 +231,7 @@
     "field": {
       "theme": "테마",
       "statement": "미션",
+      "problem": "문제",
       "targetSide": "대상 측",
       "what": "무엇",
       "valueCreated": "만드는 가치",
@@ -266,6 +267,7 @@
     "fieldHint": {
       "theme": "이 카테고리에 묶인 서비스들의 공통 주제",
       "statement": "이 프로젝트가 무엇을 위해 존재하는지 한 문장으로",
+      "problem": "이 서비스가 푸는 문제 / 결핍",
       "targetSide": "제공자 / 사용자 / 둘 다",
       "what": "이 서비스가 무엇인지 한 문장",
       "valueCreated": "이 서비스가 만들어내는 가치",
