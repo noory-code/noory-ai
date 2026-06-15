@@ -1,16 +1,18 @@
 /**
- * Regression: a node drag that ends on a macOS trackpad emits a trailing
+ * Regression: a drag that ends on a macOS trackpad emits a trailing
  * ``contextmenu`` event AFTER pointerup. React Flow's d3-drag only
  * suppresses ``contextmenu`` WHILE a drag is active, so the trailing event
  * leaks to ``onNodeContextMenu`` / ``onPaneContextMenu`` and the sketch
  * context menu pops up at the release point — the "drag a node, let go, it
  * acts like a right-click" bug (user report 2026-06-15).
  *
- * The fix (D-2026-06-15-N): ``useContextMenus`` arms a one-shot suppression
- * flag on ``onNodeDragStop``; the next ``contextmenu`` that arrives is
- * swallowed. A genuine right-click first fires ``pointerdown`` (button 2),
- * which disarms the flag, so deliberate right-clicks after a drag still open
- * the menu.
+ * The fix (D-2026-06-15-N, broadened D-2026-06-16-A): ``useContextMenus``
+ * watches the raw pointer gesture at the window level — a ``pointerup`` that
+ * moved more than a few px from its ``pointerdown`` is a DRAG, so the next
+ * ``contextmenu`` is swallowed. This is kind- and canvas-agnostic (it does
+ * NOT depend on React Flow firing ``onNodeDragStop`` per node), so it covers
+ * services, categories, groups, and every detail canvas uniformly. A real
+ * right-click never moves, so its menu still opens.
  */
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -53,20 +55,33 @@ function fakeEvent() {
   } as unknown as ReactMouseEvent;
 }
 
+/** Simulate a press at (x,y) then release at (x2,y2) at the window level. */
+function gesture(x: number, y: number, x2: number, y2: number) {
+  window.dispatchEvent(new MouseEvent("pointerdown", { clientX: x, clientY: y }));
+  window.dispatchEvent(new MouseEvent("pointerup", { clientX: x2, clientY: y2 }));
+}
+
 const NODE = { id: "n1" } as Node;
 const EDGE = { id: "e1" } as Edge;
 
-describe("context-menu drag suppression (D-2026-06-15-N)", () => {
+describe("context-menu drag suppression (D-2026-06-15-N / D-2026-06-16-A)", () => {
   it("opens the node menu on a plain right-click (no preceding drag)", () => {
     const { result } = renderHook(() => useContextMenus(makeArgs()));
     act(() => result.current.openNodeMenu(fakeEvent(), NODE));
     expect(result.current.menu).not.toBeNull();
   });
 
-  it("suppresses the trailing contextmenu fired right after a node drag", () => {
+  it("opens the menu when the press did not move (a click, not a drag)", () => {
+    const { result } = renderHook(() => useContextMenus(makeArgs()));
+    act(() => gesture(40, 40, 41, 41)); // 1px — below threshold
+    act(() => result.current.openNodeMenu(fakeEvent(), NODE));
+    expect(result.current.menu).not.toBeNull();
+  });
+
+  it("suppresses the trailing contextmenu after a drag gesture (any node kind)", () => {
     const { result } = renderHook(() => useContextMenus(makeArgs()));
     const evt = fakeEvent();
-    act(() => result.current.onNodeDragStop());
+    act(() => gesture(10, 10, 90, 90)); // moved well past threshold
     act(() => result.current.openNodeMenu(evt, NODE));
     expect(evt.preventDefault).toHaveBeenCalled();
     expect(result.current.menu).toBeNull();
@@ -74,34 +89,35 @@ describe("context-menu drag suppression (D-2026-06-15-N)", () => {
 
   it("suppresses a trailing pane contextmenu after a drag too", () => {
     const { result } = renderHook(() => useContextMenus(makeArgs()));
-    act(() => result.current.onNodeDragStop());
+    act(() => gesture(10, 10, 90, 90));
     act(() => result.current.openPaneMenu(fakeEvent()));
+    expect(result.current.menu).toBeNull();
+  });
+
+  it("suppresses a trailing edge contextmenu after a drag too", () => {
+    const { result } = renderHook(() => useContextMenus(makeArgs()));
+    act(() => gesture(10, 10, 90, 90));
+    act(() => result.current.openEdgeMenu(fakeEvent(), EDGE));
     expect(result.current.menu).toBeNull();
   });
 
   it("only swallows ONE contextmenu — a second attempt opens normally", () => {
     const { result } = renderHook(() => useContextMenus(makeArgs()));
-    act(() => result.current.onNodeDragStop());
+    act(() => gesture(10, 10, 90, 90));
     act(() => result.current.openNodeMenu(fakeEvent(), NODE)); // swallowed
     act(() => result.current.openNodeMenu(fakeEvent(), NODE)); // opens
     expect(result.current.menu).not.toBeNull();
   });
 
-  it("a deliberate right-click after a drag opens (pointerdown disarms)", () => {
+  it("a deliberate right-click after a drag opens (its pointerdown disarms)", () => {
     const { result } = renderHook(() => useContextMenus(makeArgs()));
-    act(() => result.current.onNodeDragStop());
-    // A real right-click fires pointerdown before contextmenu — this disarms
-    // the one-shot suppression.
+    act(() => gesture(10, 10, 90, 90)); // drag → armed
+    // A real right-click fires pointerdown (no movement) before contextmenu,
+    // which disarms the one-shot suppression.
     act(() => {
-      window.dispatchEvent(new Event("pointerdown"));
+      window.dispatchEvent(new MouseEvent("pointerdown", { clientX: 90, clientY: 90 }));
     });
     act(() => result.current.openNodeMenu(fakeEvent(), NODE));
-    expect(result.current.menu).not.toBeNull();
-  });
-
-  it("does not suppress the edge menu after a drag-unrelated open", () => {
-    const { result } = renderHook(() => useContextMenus(makeArgs()));
-    act(() => result.current.openEdgeMenu(fakeEvent(), EDGE));
     expect(result.current.menu).not.toBeNull();
   });
 });

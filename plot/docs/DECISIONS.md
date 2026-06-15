@@ -39,6 +39,29 @@
 
 ## Log
 
+### D-2026-06-16-A — Drag-release context-menu suppression is gesture-based (kind/canvas-agnostic)
+
+- **What:** Replaces the v0.81.1 (D-2026-06-15-N) implementation. Instead of
+  arming on React Flow's per-node `onNodeDragStop`, `useContextMenus` now
+  watches the raw pointer gesture at the window level (capture-phase
+  `pointerdown` / `pointerup`): a `pointerup` that moved > ~5 px from its
+  `pointerdown` is a drag → the next `contextmenu` is swallowed. The
+  `onNodeDragStop` prop wiring on `SketchCanvas` is removed.
+- **Why:** user — "서비스 노드만 고쳤네 카테고리는? 서비스 디테일 안에는?"
+  The `onNodeDragStop` signal did not cover every case (category / group /
+  container nodes, and nodes inside the service-detail canvas), so the menu
+  still popped there. The gesture watcher is independent of React Flow's
+  per-node callbacks, so it covers every node kind on every canvas
+  uniformly. Same user-facing behaviour as D-2026-06-15-N, broader coverage.
+- **Alternatives:** keep `onNodeDragStop` + add more RF drag hooks — rejected;
+  brittle and still RF-coupled. A global `contextmenu` `preventDefault` —
+  rejected; kills legitimate right-clicks.
+- **Approval:** Accepted by user, 2026-06-16 (reported the v0.81.1 gap).
+- **Spec impact:** updated [`SPEC.md` → Context menu](./SPEC.md#context-menu).
+  Pinned by `viewer/tests/context-menu-drag-suppression.test.tsx` (now
+  drives the suppression with window pointer events, not a mocked
+  `onNodeDragStop`).
+
 ### D-2026-06-15-O — ServiceDetail right panel = the subject service, read-only (Option 1)
 
 - **What:** The ServiceDetail canvas's right panel now has three states:

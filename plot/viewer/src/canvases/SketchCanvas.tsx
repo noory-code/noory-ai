@@ -371,7 +371,7 @@ function SketchCanvasInner({
 
   // ---------------- Context menu ----------------
 
-  const { menu, closeMenu, openNodeMenu, openEdgeMenu, openPaneMenu, onNodeDragStop } = useContextMenus({
+  const { menu, closeMenu, openNodeMenu, openEdgeMenu, openPaneMenu } = useContextMenus({
     docRef,
     flowRef,
     onDocChange,
@@ -451,7 +451,6 @@ function SketchCanvasInner({
         onNodeContextMenu={openNodeMenu}
         onEdgeContextMenu={openEdgeMenu}
         onEdgeDoubleClick={(_evt, edge) => setEdgeModalId(edge.id)}
-        onNodeDragStop={onNodeDragStop}
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}
         onPaneClick={handlePaneClick}

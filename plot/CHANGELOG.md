@@ -4,6 +4,19 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.82.1] — 2026-06-16
+
+### Fixed
+
+- **Drag-release context menu still popped on category / group nodes and
+  inside the service-detail canvas** (D-2026-06-16-A). The v0.81.1 fix armed
+  on React Flow's per-node `onNodeDragStop`, which didn't fire for every node
+  kind / canvas, so the menu still leaked there (user report). Replaced with
+  a window-level pointer-gesture watcher: a `pointerup` that moved > ~5 px
+  from its `pointerdown` is a drag → the next `contextmenu` is swallowed.
+  Kind- and canvas-agnostic; the `onNodeDragStop` wiring on `SketchCanvas`
+  was removed. Right-clicks (no movement) still open the menu.
+
 ## [0.82.0] — 2026-06-15
 
 ### Added

@@ -55,12 +55,6 @@ export interface UseContextMenusResult {
   openNodeMenu: (event: ReactMouseEvent, node: Node) => void;
   openEdgeMenu: (event: ReactMouseEvent, edge: Edge) => void;
   openPaneMenu: (event: ReactMouseEvent) => void;
-  /** D-2026-06-15-N — wire to React Flow's ``onNodeDragStop``. Arms a
-   *  one-shot suppression so the trailing ``contextmenu`` WebKit emits
-   *  after a trackpad drag-release (d3-drag only blocks contextmenu WHILE
-   *  dragging, not the tail) doesn't pop the menu. A real right-click
-   *  fires ``pointerdown`` first, which disarms the flag. */
-  onNodeDragStop: () => void;
 }
 
 const COLOR_PALETTE = [
@@ -88,21 +82,42 @@ export function useContextMenus({
   const [menu, setMenu] = useState<MenuState | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
 
-  // D-2026-06-15-N — one-shot guard against the trailing ``contextmenu``
-  // WebKit emits after a trackpad drag-release. Armed by ``onNodeDragStop``;
-  // disarmed by any genuine pointerdown (a real right-click fires
-  // pointerdown before its contextmenu, so deliberate right-clicks still
-  // open the menu) and consumed by the first contextmenu that follows.
+  // D-2026-06-15-N (broadened D-2026-06-16-A) — one-shot guard against the
+  // trailing ``contextmenu`` WebKit emits after a macOS-trackpad
+  // drag-release. We watch the RAW pointer gesture at the window level: a
+  // ``pointerup`` that moved more than a few px from its ``pointerdown`` is a
+  // DRAG, so the next ``contextmenu`` is swallowed. This is kind- and
+  // canvas-agnostic — it does NOT depend on React Flow firing
+  // ``onNodeDragStop`` per node (which left categories / detail canvases
+  // uncovered). A real right-click never moves, so its menu still opens; and
+  // each fresh pointerdown re-enables the menu (disarms).
   const suppressNextContextMenuRef = useRef(false);
-  const onNodeDragStop = useCallback(() => {
-    suppressNextContextMenuRef.current = true;
-  }, []);
+  const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
-    const disarm = () => {
+    const DRAG_THRESHOLD_PX = 5;
+    const onDown = (e: PointerEvent) => {
+      pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
       suppressNextContextMenuRef.current = false;
     };
-    window.addEventListener("pointerdown", disarm, true);
-    return () => window.removeEventListener("pointerdown", disarm, true);
+    const onUp = (e: PointerEvent) => {
+      const start = pointerDownPosRef.current;
+      pointerDownPosRef.current = null;
+      if (!start) return;
+      const moved =
+        Math.hypot(e.clientX - start.x, e.clientY - start.y) > DRAG_THRESHOLD_PX;
+      if (moved) suppressNextContextMenuRef.current = true;
+    };
+    const onCancel = () => {
+      pointerDownPosRef.current = null;
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("pointercancel", onCancel, true);
+    return () => {
+      window.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("pointercancel", onCancel, true);
+    };
   }, []);
   const consumeDragSuppression = useCallback((event: ReactMouseEvent): boolean => {
     if (!suppressNextContextMenuRef.current) return false;
@@ -332,5 +347,5 @@ export function useContextMenus({
     [docRef, flowRef, addNodeAt, clipboard, onDocChange, consumeDragSuppression],
   );
 
-  return { menu, closeMenu, openNodeMenu, openEdgeMenu, openPaneMenu, onNodeDragStop };
+  return { menu, closeMenu, openNodeMenu, openEdgeMenu, openPaneMenu };
 }

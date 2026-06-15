@@ -777,16 +777,20 @@ The node / edge / pane context menu opens on a **genuine secondary
 click only** (right-click, Ctrl+click, or two-finger trackpad click).
 A **drag-release must never open it.**
 
-> **Why (D-2026-06-15-N):** on a macOS trackpad, a one-finger
-> press-drag-release of a node emits a trailing `contextmenu` event
-> *after* pointerup. React Flow's d3-drag only suppresses `contextmenu`
-> *while* a drag is active, so the tail leaked to `onNodeContextMenu` /
-> `onPaneContextMenu` and the menu popped at the release point ("drag a
-> node, let go, it acts like a right-click" — user report 2026-06-15).
-> `useContextMenus` now arms a one-shot suppression on `onNodeDragStop`;
-> the next `contextmenu` is swallowed. A real right-click fires
-> `pointerdown` first, which disarms the flag, so deliberate
-> right-clicks after a drag still open the menu. Pinned by
+> **Why (D-2026-06-15-N, broadened D-2026-06-16-A):** on a macOS
+> trackpad, a one-finger press-drag-release emits a trailing `contextmenu`
+> event *after* pointerup. React Flow's d3-drag only suppresses
+> `contextmenu` *while* a drag is active, so the tail leaked to
+> `onNodeContextMenu` / `onPaneContextMenu` and the menu popped at the
+> release point ("drag a node, let go, it acts like a right-click" — user
+> report 2026-06-15). `useContextMenus` watches the **raw pointer gesture
+> at the window level**: a `pointerup` that moved more than ~5 px from its
+> `pointerdown` is a drag, so the next `contextmenu` is swallowed. This is
+> **kind- and canvas-agnostic** — it does NOT depend on React Flow firing
+> `onNodeDragStop` per node, which left categories / group nodes / detail
+> canvases uncovered in the first cut (v0.81.1, user-reported 2026-06-16).
+> A real right-click never moves, so its menu still opens; each fresh
+> `pointerdown` re-enables the menu. Pinned by
 > `viewer/tests/context-menu-drag-suppression.test.tsx`.
 
 ## Hover behaviour
