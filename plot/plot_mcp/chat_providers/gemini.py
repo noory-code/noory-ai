@@ -37,6 +37,7 @@ class GeminiProvider(_SubprocessChatProvider):
 
     def _build_command(self, user_message: str) -> list[str]:
         cmd = [self._cli_path, "-y", "--output-format", "stream-json"]
+        cmd += self._model_args()
         if not self._first_turn and self._session_id is not None:
             cmd += ["--resume", self._session_id]
         cmd += ["-p", user_message]

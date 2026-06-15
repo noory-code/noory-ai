@@ -28,9 +28,16 @@ class ChatProviderSelection(BaseModel):
     cleared it). The literal union mirrors ``ProviderName`` from
     ``mcp_registration``; pydantic rejects any other string at the boundary
     so malformed disk state can't leak past this module.
+
+    ``model`` (D-2026-06-16-C) is the optional CLI model override for the
+    chosen provider — ``None`` / empty means "let the CLI use its own
+    configured default". Passed to the provider as ``--model <model>`` (all
+    three CLIs accept it). Reset to ``None`` when the provider changes (a
+    model valid for one CLI is meaningless for another).
     """
 
     provider: ProviderName | None = None
+    model: str | None = None
 
 
 def selection_path(plot_root: Path) -> Path:

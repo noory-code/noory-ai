@@ -47,6 +47,7 @@ class CodexProvider(_SubprocessChatProvider):
                 "exec",
                 "--json",
                 "--skip-git-repo-check",
+                *self._model_args(),
                 user_message,
             ]
         return [
@@ -56,6 +57,7 @@ class CodexProvider(_SubprocessChatProvider):
             self._session_id,
             "--json",
             "--skip-git-repo-check",
+            *self._model_args(),
             user_message,
         ]
 

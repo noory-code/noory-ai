@@ -823,6 +823,10 @@ export async function unregisterMcpProvider(name: McpProviderName): Promise<void
 
 export interface ChatProviderSelection {
   provider: McpProviderName | null;
+  /** D-2026-06-16-C — optional CLI model override for the chosen provider;
+   *  null / "" means the CLI's own configured default. Passed to the CLI as
+   *  ``--model``. */
+  model: string | null;
 }
 
 export async function getChatProvider(
@@ -838,6 +842,7 @@ export async function getChatProvider(
 export async function setChatProvider(
   projectPath: string,
   provider: McpProviderName | null,
+  model: string | null = null,
 ): Promise<ChatProviderSelection> {
   return json<ChatProviderSelection>(
     await engineFetch(
@@ -845,7 +850,7 @@ export async function setChatProvider(
       {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ provider }),
+        body: JSON.stringify({ provider, model }),
       },
     ),
   );

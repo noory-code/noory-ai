@@ -205,6 +205,7 @@ describe("ChatDock — provider selection", () => {
       expect(put).toBeDefined();
       expect(JSON.parse(String((put![1] as RequestInit).body))).toEqual({
         provider: "codex",
+        model: null, // selecting a provider clears any model (D-2026-06-16-C)
       });
     });
   });

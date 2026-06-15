@@ -117,6 +117,16 @@ class ChatProvider(ABC):
         """
         ...
 
+    def set_model(self, model: str | None) -> None:
+        """Set the CLI model override for subsequent turns (D-2026-06-16-C).
+
+        Default no-op so fakes / future non-subprocess providers don't have to
+        implement it. The send endpoint calls this each turn with the
+        workspace's persisted choice; an empty / ``None`` value means "use the
+        CLI's own configured default".
+        """
+        ...
+
 
 class _SubprocessChatProvider(ChatProvider):
     """Shared spawn → parse → yield loop for every CLI-backed provider.
@@ -145,6 +155,7 @@ class _SubprocessChatProvider(ChatProvider):
         self._cli_path = cli_path
         self._first_turn = True
         self._session_id: str | None = None
+        self._model: str | None = None
         self._spawn: _SubprocessFactory = (
             subprocess_factory if subprocess_factory is not None else _default_spawn
         )
@@ -152,6 +163,19 @@ class _SubprocessChatProvider(ChatProvider):
     @property
     def session_id(self) -> str | None:
         return self._session_id
+
+    def set_model(self, model: str | None) -> None:
+        """Store the CLI model override (D-2026-06-16-C). Empty → unset."""
+        self._model = model or None
+
+    def _model_args(self) -> list[str]:
+        """``["--model", <model>]`` when a model is set, else ``[]``.
+
+        Every supported CLI (``claude`` / ``codex`` / ``gemini``) accepts
+        ``--model`` (verified against the installed binaries), so the flag name
+        is shared; concrete providers splice this into their argv.
+        """
+        return ["--model", self._model] if self._model else []
 
     @abstractmethod
     def _build_command(self, user_message: str) -> list[str]: ...

@@ -166,6 +166,9 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
 
     registry = _registry_from_request(request)
     provider = registry.get_or_create(plot_root, selection.provider, scope)
+    # Apply the workspace's model override (D-2026-06-16-C) before the turn —
+    # ``None`` / empty leaves the CLI on its own configured default.
+    provider.set_model(selection.model)
 
     # Assemble the CLI prompt: Layer 3 per-canvas framing → Layer 2 active-canvas
     # + selection context → the user's message, in that order. Either preamble is

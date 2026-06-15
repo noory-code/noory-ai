@@ -49,6 +49,7 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             "stream-json",
             "--include-partial-messages",
             "--verbose",  # stream-json requires verbose mode
+            *self._model_args(),
         ]
         if self._first_turn:
             assert self._session_id is not None  # ctor guarantees this

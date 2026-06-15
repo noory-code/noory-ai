@@ -39,6 +39,34 @@
 
 ## Log
 
+### D-2026-06-16-C — Chat model is shown + selectable (per-workspace, per-provider)
+
+- **What:** The chat dock now shows which model the active CLI will use (on the
+  provider bar, `Provider · model`) and lets the user set it via a model field
+  (free-text + a `<datalist>` of suggestions). The choice persists per
+  workspace alongside the provider (`chat-provider` JSON gains `model`),
+  resets when the provider changes, and is passed to the CLI as
+  `--model <model>` (engine: `ChatProviderSelection.model` →
+  `ChatProvider.set_model` → each provider splices `--model` into its argv).
+  Empty = the CLI's own default. Supersedes the prior SPEC line ("no model
+  picker").
+- **Why:** user (2026-06-16) — "채팅에 어떤 모델을 쓰는지 보여야 하고, 지원하는
+  모델을 선택할 수 있어야 합니다."
+- **Alternatives:** (a) curated dropdown of model ids per CLI — rejected for
+  codex/gemini: their model ids are vendor/version-specific and Plot would
+  ship a stale, fabricated list (honesty: don't invent specs). Free-text +
+  best-effort suggestions (only the `claude` CLI's own documented aliases,
+  read from its `--help`) avoids that. (b) parse the model from the CLI's
+  stream init event — rejected; not all CLIs report it, and the user wants to
+  *choose*, not just observe. (c) a separate global Settings surface
+  (CHAT_ARCH.md note) — deferred; the in-dock field is what was asked for.
+- **Approval:** Accepted by user, 2026-06-16 (requested). This is a Gate 0
+  SPEC change (the old "no model picker" line is replaced).
+- **Spec impact:** rewrote the [`SPEC.md` → R7 chat "Model selection"
+  row](./SPEC.md). All three CLIs' `--model` flag verified against the
+  installed binaries. Pinned by `tests/test_chat_model.py` +
+  `viewer/tests/chat-model-selection.test.tsx`.
+
 ### D-2026-06-16-B — Chat shows a live streaming activity indicator (not frozen)
 
 - **What:** While a chat turn streams, the dock renders a live activity

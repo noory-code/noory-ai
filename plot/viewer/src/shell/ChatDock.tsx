@@ -23,6 +23,17 @@ import type { ChatScope, ChatSelectionNode } from "../types";
 import { ChatProvidersPanel } from "./ChatProvidersPanel";
 import { useDialog } from "./dialog/DialogProvider";
 
+// D-2026-06-16-C — model suggestions per CLI for the model field's datalist.
+// The field is free-text (you can type any model your CLI accepts); these are
+// only autocomplete hints. We list ONLY values we can stand behind: the
+// ``claude`` CLI documents these aliases in its own --help; codex / gemini
+// model ids are version-specific and vendor-owned, so we offer no hardcoded
+// (potentially stale) suggestions there — the user types the id their CLI
+// supports. Empty selection = the CLI's own default.
+const MODEL_SUGGESTIONS: Partial<Record<McpProviderName, string[]>> = {
+  "claude-code": ["fable", "opus", "sonnet"],
+};
+
 export interface ChatDockProps {
   onError: (message: string) => void;
   /** When defined, the dock loads + persists the workspace's chat-CLI
@@ -62,6 +73,9 @@ export function ChatDock({
   useViewerContextBridge(workspaceRoot, activeScope, selection);
   const [activeProvider, setActiveProvider] =
     useState<McpProviderName | null>(null);
+  // D-2026-06-16-C — the CLI model override for the active provider. null = the
+  // CLI's own configured default. Reset to null when the provider changes.
+  const [activeModel, setActiveModel] = useState<string | null>(null);
   // The chat switcher has exactly two tabs: the selected canvas | project
   // (D-2026-06-13-H). "canvas" mode follows the active canvas tab; "project"
   // pins the shared cross-canvas thread. (The v0.77.0 full picker was reverted
@@ -80,7 +94,10 @@ export function ChatDock({
     void getChatProvider(workspaceRoot).then(
       // claude-code is selectable for in-app chat again (D-2026-06-14-B); the
       // double-billing tradeoff is surfaced as a warning banner, not a block.
-      (sel) => setActiveProvider(sel.provider),
+      (sel) => {
+        setActiveProvider(sel.provider);
+        setActiveModel(sel.model ?? null);
+      },
       (err) => onError(err instanceof Error ? err.message : String(err)),
     );
   }, [workspaceRoot, onError]);
@@ -88,12 +105,27 @@ export function ChatDock({
   const handleSelectProvider = useCallback(
     (provider: McpProviderName | null) => {
       setActiveProvider(provider);
+      // A model valid for one CLI is meaningless for another — clear it so the
+      // new provider starts on its own default (D-2026-06-16-C).
+      setActiveModel(null);
       if (!workspaceRoot) return;
-      void setChatProvider(workspaceRoot, provider).catch((err) =>
+      void setChatProvider(workspaceRoot, provider, null).catch((err) =>
         onError(err instanceof Error ? err.message : String(err)),
       );
     },
     [workspaceRoot, onError],
+  );
+
+  const handleSelectModel = useCallback(
+    (model: string | null) => {
+      const normalized = model && model.trim() ? model.trim() : null;
+      setActiveModel(normalized);
+      if (!workspaceRoot || !activeProvider) return;
+      void setChatProvider(workspaceRoot, activeProvider, normalized).catch((err) =>
+        onError(err instanceof Error ? err.message : String(err)),
+      );
+    },
+    [workspaceRoot, activeProvider, onError],
   );
 
   const selectionProps = workspaceRoot
@@ -140,7 +172,7 @@ export function ChatDock({
                 }
               >
                 {activeProvider
-                  ? t(`chat.providers.${activeProvider}`)
+                  ? `${t(`chat.providers.${activeProvider}`)}${activeModel ? ` · ${activeModel}` : ""}`
                   : t("chat.providersTitle")}
               </span>
             </span>
@@ -150,6 +182,13 @@ export function ChatDock({
             <div className="overflow-y-auto border-b border-line p-3">
               <ChatProvidersPanel onError={onError} {...selectionProps} />
             </div>
+          )}
+          {activeProvider && workspaceRoot && (
+            <ChatModelRow
+              provider={activeProvider}
+              model={activeModel}
+              onChange={handleSelectModel}
+            />
           )}
           {activeScope !== "project" && (
             <ChatScopeSwitcher
@@ -168,6 +207,59 @@ export function ChatDock({
           />
       </div>
     </aside>
+  );
+}
+
+/**
+ * Model field for the active provider (D-2026-06-16-C). A free-text input
+ * with a datalist of per-CLI suggestions — the user can pick a suggestion or
+ * type any model id their CLI accepts. Empty commits ``null`` (the CLI's own
+ * default). Commits on blur / Enter so a half-typed id isn't sent mid-stroke.
+ */
+function ChatModelRow({
+  provider,
+  model,
+  onChange,
+}: {
+  provider: McpProviderName;
+  model: string | null;
+  onChange: (model: string | null) => void;
+}) {
+  const { t } = useTranslation();
+  const [draft, setDraft] = useState(model ?? "");
+  useEffect(() => setDraft(model ?? ""), [model]);
+  const listId = `chat-models-${provider}`;
+  const suggestions = MODEL_SUGGESTIONS[provider] ?? [];
+  const commit = () => {
+    const next = draft.trim() || null;
+    if (next !== (model ?? null)) onChange(next);
+  };
+  return (
+    <div className="flex items-center gap-2 border-b border-line px-3 py-2 text-[11px]">
+      <label htmlFor={`${listId}-input`} className="shrink-0 text-fg-muted">
+        {t("chat.modelLabel")}
+      </label>
+      <input
+        id={`${listId}-input`}
+        list={listId}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          }
+        }}
+        placeholder={t("chat.modelPlaceholder")}
+        className="min-w-0 flex-1 rounded border border-line bg-surface-muted px-2 py-1 text-fg"
+      />
+      <datalist id={listId}>
+        {suggestions.map((s) => (
+          <option key={s} value={s} />
+        ))}
+      </datalist>
+    </div>
   );
 }
 

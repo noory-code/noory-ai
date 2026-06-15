@@ -1,0 +1,71 @@
+"""Chat model selection (D-2026-06-16-C).
+
+Every CLI provider accepts ``--model`` (verified against the installed
+``claude`` / ``codex`` / ``gemini`` CLIs). The persisted selection carries an
+optional ``model``; the send endpoint applies it to the cached provider via
+``set_model`` before each turn, and each provider splices ``--model <value>``
+into its argv when set.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from plot_mcp.chat_provider import (
+    ChatProviderSelection,
+    read_selection,
+    write_selection,
+)
+from plot_mcp.chat_providers.claude_code import ClaudeCodeProvider
+from plot_mcp.chat_providers.codex import CodexProvider
+from plot_mcp.chat_providers.gemini import GeminiProvider
+
+
+def test_selection_roundtrips_model(tmp_path: Path) -> None:
+    write_selection(tmp_path, ChatProviderSelection(provider="codex", model="o3"))
+    back = read_selection(tmp_path)
+    assert back.provider == "codex"
+    assert back.model == "o3"
+
+
+def test_selection_model_defaults_none(tmp_path: Path) -> None:
+    write_selection(tmp_path, ChatProviderSelection(provider="codex"))
+    assert read_selection(tmp_path).model is None
+
+
+def test_codex_command_includes_model_when_set(tmp_path: Path) -> None:
+    p = CodexProvider(workspace_root=tmp_path)
+    p.set_model("o3")
+    cmd = p._build_command("hi")
+    assert "--model" in cmd
+    assert "o3" in cmd
+    # message is still the last arg.
+    assert cmd[-1] == "hi"
+
+
+def test_codex_command_omits_model_when_unset(tmp_path: Path) -> None:
+    p = CodexProvider(workspace_root=tmp_path)
+    assert "--model" not in p._build_command("hi")
+
+
+def test_gemini_command_includes_model_when_set(tmp_path: Path) -> None:
+    p = GeminiProvider(workspace_root=tmp_path)
+    p.set_model("gemini-2.5-pro")
+    cmd = p._build_command("hi")
+    assert "--model" in cmd
+    assert "gemini-2.5-pro" in cmd
+
+
+def test_claude_command_includes_model_when_set(tmp_path: Path) -> None:
+    p = ClaudeCodeProvider(workspace_root=tmp_path)
+    p.set_model("opus")
+    cmd = p._build_command("hi")
+    assert "--model" in cmd
+    assert "opus" in cmd
+    assert cmd[-1] == "hi"
+
+
+def test_set_model_empty_string_is_treated_as_unset(tmp_path: Path) -> None:
+    p = CodexProvider(workspace_root=tmp_path)
+    p.set_model("")
+    assert "--model" not in p._build_command("hi")

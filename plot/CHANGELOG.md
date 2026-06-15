@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.84.0] — 2026-06-16
+
+### Added
+
+- **Chat model display + selection** (D-2026-06-16-C). The dock shows which
+  model the active CLI will use (provider bar: `Provider · model`) and offers
+  a model field to set it — free-text with a `<datalist>` of suggestions
+  (only the `claude` CLI's own documented aliases `fable`/`opus`/`sonnet` are
+  pre-listed; codex/gemini ids are free-text, not a hardcoded stale list).
+  Persists per workspace + provider (`chat-provider` JSON gains `model`),
+  resets on provider change, passed to the CLI as `--model <model>` (all three
+  CLIs accept it). Empty = the CLI's own default. Pinned by
+  `tests/test_chat_model.py` + `viewer/tests/chat-model-selection.test.tsx`.
+
+### Changed
+
+- The `GET`/`PUT /api/chat/provider` responses now carry `model` alongside
+  `provider`.
+
 ## [0.83.0] — 2026-06-16
 
 ### Added

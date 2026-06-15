@@ -42,7 +42,7 @@ def test_get_chat_provider_returns_null_on_fresh_workspace(
 ) -> None:
     resp = client.get("/api/chat/provider", params={"project_path": str(workspace)})
     assert resp.status_code == 200, resp.text
-    assert resp.json() == {"provider": None}
+    assert resp.json() == {"provider": None, "model": None}
 
 
 def test_put_chat_provider_persists_and_returns_value(
@@ -54,14 +54,14 @@ def test_put_chat_provider_persists_and_returns_value(
         json={"provider": "claude-code"},
     )
     assert resp.status_code == 200, resp.text
-    assert resp.json() == {"provider": "claude-code"}
+    assert resp.json() == {"provider": "claude-code", "model": None}
 
     on_disk = (workspace / ".noory" / "plot" / "chat-provider").read_text(encoding="utf-8")
-    assert json.loads(on_disk) == {"provider": "claude-code"}
+    assert json.loads(on_disk) == {"provider": "claude-code", "model": None}
 
     # Round-trip: GET reads it back.
     again = client.get("/api/chat/provider", params={"project_path": str(workspace)})
-    assert again.json() == {"provider": "claude-code"}
+    assert again.json() == {"provider": "claude-code", "model": None}
 
 
 def test_put_chat_provider_null_clears_selection(
@@ -78,9 +78,9 @@ def test_put_chat_provider_null_clears_selection(
         json={"provider": None},
     )
     assert resp.status_code == 200, resp.text
-    assert resp.json() == {"provider": None}
+    assert resp.json() == {"provider": None, "model": None}
     after = client.get("/api/chat/provider", params={"project_path": str(workspace)})
-    assert after.json() == {"provider": None}
+    assert after.json() == {"provider": None, "model": None}
 
 
 def test_put_chat_provider_unknown_name_is_422(
@@ -119,7 +119,7 @@ def test_chat_provider_is_workspace_scoped(
     # ws_b stays empty.
     assert client.get(
         "/api/chat/provider", params={"project_path": str(ws_b)}
-    ).json() == {"provider": None}
+    ).json() == {"provider": None, "model": None}
     assert client.get(
         "/api/chat/provider", params={"project_path": str(ws_a)}
-    ).json() == {"provider": "claude-code"}
+    ).json() == {"provider": "claude-code", "model": None}

@@ -107,7 +107,7 @@ async def chat_provider_get_endpoint(request: Request) -> JSONResponse:
     except _ApiError as exc:
         return exc.response
     sel = read_selection(plot_root)
-    return JSONResponse({"provider": sel.provider})
+    return JSONResponse({"provider": sel.provider, "model": sel.model})
 
 
 async def chat_provider_put_endpoint(request: Request) -> JSONResponse:
@@ -131,4 +131,4 @@ async def chat_provider_put_endpoint(request: Request) -> JSONResponse:
     except ValidationError as exc:
         return _error(str(exc), status=422)
     write_selection(plot_root, selection)
-    return JSONResponse({"provider": selection.provider})
+    return JSONResponse({"provider": selection.provider, "model": selection.model})

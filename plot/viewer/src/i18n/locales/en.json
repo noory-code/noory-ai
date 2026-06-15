@@ -126,6 +126,8 @@
     "streamingHint": "streaming…",
     "working": "Working…",
     "elapsedSeconds": "{{seconds}}s",
+    "modelLabel": "Model",
+    "modelPlaceholder": "Default (CLI setting)",
     "errorPrefix": "Error: ",
     "resetSession": "Start a new conversation",
     "confirmReset": "Drop the current conversation and start a new one?",
