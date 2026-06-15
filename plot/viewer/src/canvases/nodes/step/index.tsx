@@ -48,7 +48,7 @@ function StepBody({ data }: { data: BaseNodeData }) {
               placeholder={t("node.step.outcomePlaceholder")}
               ariaLabel={t("inspector.field.outcome")}
               className="flex-1"
-              inputClassName="w-full rounded border border-accent bg-surface px-1 py-0.5 text-[11px] focus:border-accent focus:outline-none"
+              inputClassName="w-full rounded border border-accent bg-surface-subtle px-1 py-0.5 text-[11px] text-fg-strong focus:border-accent focus:outline-none"
               multiline
             />,
           )

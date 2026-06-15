@@ -21,21 +21,18 @@
  * canvas hides it. The tree auto-layout still uses the hidden
  * service_ref as the BFS hub — that part of D-2026-05-26-G stays.
  *
- * Drill on actor_ref still jumps to the actor master.
+ * D-2026-06-15-L — actor_ref is NOT drillable here: clicking a
+ * user/actor opens its inspector (per-service motivation/pain, D-2026-06-15-J)
+ * and never navigates away to the Actors canvas. (The old double-click
+ * jump-to-master was unwanted; reach the master via the Actors tab.)
  */
 import { SketchCanvas, type SketchCanvasProps } from "./SketchCanvas";
-import type { SketchNode } from "../types";
-
-function shouldDrillActorRef(n: SketchNode): boolean {
-  return n.kind === "actor_ref";
-}
 
 export function ServiceDetailCanvas(props: SketchCanvasProps) {
   return (
     <SketchCanvas
       {...props}
       hideRootServiceNode={true}
-      shouldDrill={shouldDrillActorRef}
       showFoldButton={true}
       injectAnchor={false}
       layoutAlgo="tree"

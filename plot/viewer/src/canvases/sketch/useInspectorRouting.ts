@@ -97,9 +97,17 @@ export function useInspectorRouting({
   const onNodeDoubleClick = useCallback(
     (_evt: unknown, n: Node) => {
       if (n.id === PROJECT_ANCHOR_ID) return;
+      // D-2026-06-15-L — double-click drills ONLY nodes the canvas marks
+      // drillable (shouldDrill). A non-drillable node (e.g. actor_ref in
+      // ServiceDetail, which no longer sets shouldDrill) must NOT navigate
+      // away on a body double-click — the click stays put so its inspector
+      // (per-service motivation/pain) remains. The old unconditional call
+      // jumped to the actor master and was the bug.
+      const node = nodes.find((x) => x.id === n.id);
+      if (!node || !shouldDrill?.(node)) return;
       onNodeDrill?.(n.id);
     },
-    [onNodeDrill],
+    [nodes, shouldDrill, onNodeDrill],
   );
 
   const onPaneClick = useCallback(() => setInspectorNodeId(null), []);

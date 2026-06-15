@@ -78,7 +78,28 @@ describe("useInspectorRouting — selectOpensDrill (D-2026-06-15-H)", () => {
     expect(result.current.inspectorNodeId).toBe("a1");
   });
 
-  it("double-click still drills regardless of selectOpensDrill", () => {
+  it("double-click drills a DRILLABLE node (e.g. service → detail)", () => {
+    const onNodeDrill = vi.fn();
+    const { result } = renderHook(() =>
+      useInspectorRouting({
+        nodes: [svc],
+        flowRef,
+        selectNodeId: null,
+        onSelectionConsumed: undefined,
+        onNodeDrill,
+        shouldDrill: isService,
+        selectOpensDrill: false,
+      }),
+    );
+    act(() => result.current.onNodeDoubleClick({}, clickNode("s1")));
+    expect(onNodeDrill).toHaveBeenCalledWith("s1");
+  });
+
+  it("double-click does NOT drill a NON-drillable node — no jump-away (D-2026-06-15-L)", () => {
+    // actor_ref is not drillable here → double-clicking it must NOT navigate
+    // to the actor master; it stays put so the inspector (motivation/pain)
+    // remains. This is the regression the old unconditional onNodeDoubleClick
+    // missed (it called onNodeDrill for every node).
     const onNodeDrill = vi.fn();
     const { result } = renderHook(() =>
       useInspectorRouting({
@@ -87,11 +108,28 @@ describe("useInspectorRouting — selectOpensDrill (D-2026-06-15-H)", () => {
         selectNodeId: null,
         onSelectionConsumed: undefined,
         onNodeDrill,
-        shouldDrill: (n) => n.kind === "actor_ref",
+        shouldDrill: isService, // actor_ref NOT drillable
         selectOpensDrill: false,
       }),
     );
     act(() => result.current.onNodeDoubleClick({}, clickNode("a1")));
-    expect(onNodeDrill).toHaveBeenCalledWith("a1");
+    expect(onNodeDrill).not.toHaveBeenCalled();
+  });
+
+  it("double-click does NOT drill when the canvas sets no shouldDrill", () => {
+    const onNodeDrill = vi.fn();
+    const { result } = renderHook(() =>
+      useInspectorRouting({
+        nodes: [actorRef],
+        flowRef,
+        selectNodeId: null,
+        onSelectionConsumed: undefined,
+        onNodeDrill,
+        shouldDrill: undefined,
+        selectOpensDrill: false,
+      }),
+    );
+    act(() => result.current.onNodeDoubleClick({}, clickNode("a1")));
+    expect(onNodeDrill).not.toHaveBeenCalled();
   });
 });

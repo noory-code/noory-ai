@@ -101,10 +101,12 @@ export function EditableText({
     "aria-label": ariaLabel,
     className:
       inputClassName ??
-      // ``text-fg-strong`` is explicit: without it the input inherits the node
-      // card's label colour (often light on a saturated card) and renders
-      // invisible on ``bg-surface`` (D-2026-06-15-I).
-      "w-full rounded border border-accent bg-surface px-1.5 py-0.5 text-sm text-fg-strong focus:border-accent focus:outline-none",
+      // On-card editor: ``text-fg-strong`` is light-locked to slate-900 inside
+      // ``.node-card`` (tokens.css), so the background MUST also be a card-locked
+      // surface — ``bg-surface-subtle`` (slate-100 in both themes) — not the
+      // theme-following ``bg-surface`` (dark in dark mode → dark-on-dark,
+      // invisible). D-2026-06-15-I fixed light only; this fixes dark too.
+      "w-full rounded border border-accent bg-surface-subtle px-1.5 py-0.5 text-sm text-fg-strong focus:border-accent focus:outline-none",
   };
 
   if (multiline) {

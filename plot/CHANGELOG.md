@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.81.0] — 2026-06-15
+
+Two user-reported ServiceDetail bugs fixed — both were *claimed* fixed in
+v0.78 (D-2026-06-15-H / -I) but the fixes were incomplete; root-caused via
+adversarial diagnosis.
+
+### Fixed
+
+- **Node-label editor invisible in dark mode** (D-2026-06-15-M). The inline
+  label editor and the StepNode `outcome` editor used the theme-following
+  `bg-surface`, but inside `.node-card` `text-fg-strong` is locked dark in both
+  themes → dark-on-dark. Now use the card-locked `bg-surface-subtle` (+ explicit
+  `text-fg-strong` on the StepNode editor). D-2026-06-15-I fixed light mode only.
+- **Clicking a user/actor in ServiceDetail jumped to the Actors canvas**
+  (D-2026-06-15-L). `actor_ref` is no longer drillable on the detail canvas, and
+  `useInspectorRouting` double-click now drills only `shouldDrill` nodes (it was
+  unconditional — the jump fired through two ungated paths). Clicking an actor
+  now opens its inspector to edit per-service motivation/pain;
+  `useUrlSync.jumpToActor` also clears `detailActive`. Supersedes the actor_ref
+  double-click → actor-master jump from D-2026-06-15-H #2.
+
 ## [0.80.0] — 2026-06-15
 
 Minor. The `service` kind gains a one-line **`problem`** field

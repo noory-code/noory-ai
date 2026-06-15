@@ -119,6 +119,7 @@ export function useUrlSync(): UrlSync {
     (actorId: string) => {
       setActiveTab("actors");
       setDetailServiceId(null);
+      setDetailActive(false); // leaving the detail tab — keep tab state in sync (D-2026-06-15-L)
       setSelectedNodeId(actorId);
       syncUrl({ canvas: "actors", detail: null, select: actorId });
     },

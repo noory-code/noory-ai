@@ -39,6 +39,55 @@
 
 ## Log
 
+### D-2026-06-15-M — On-card inline editors are readable in dark mode (surface-subtle, not surface)
+
+- **What:** The inline node-label editor (`EditableText` default input) and
+  the StepNode `outcome` editor now use `bg-surface-subtle` (not
+  `bg-surface`) for the input background. Inside `.node-card`, `text-fg-strong`
+  is locked to slate-900 in **both** themes (D-2026-06-09-A), while
+  `bg-surface` follows the theme (dark in dark mode) → dark-text-on-dark =
+  invisible. `bg-surface-subtle` is card-locked to slate-100 in both themes,
+  so the editor reads dark-on-light everywhere. StepNode's editor also gained
+  the missing `text-fg-strong`.
+- **Why:** user — "노드에 라벨 편집할 때 다크/라이트 테마 적용 안 되어서 글씨가
+  보이지도 않는다." D-2026-06-15-I fixed light mode only (where bg-surface =
+  white) and missed dark mode — the real invariant is "on-card surfaces must
+  use card-locked tokens (surface-subtle), never theme-following ones
+  (surface)." Found by the workflow diagnosis, 2026-06-15.
+- **Approval:** Accepted by user, 2026-06-15 (reported bug).
+- **Spec impact:** none (contrast fix). Guarded by
+  `viewer/tests/editable-text-contrast.test.tsx`.
+
+### D-2026-06-15-L — actor_ref click never jumps away in ServiceDetail (supersedes D-2026-06-15-H #2 drill)
+
+- **What:** On a ServiceDetail canvas, clicking a user/actor (`actor_ref`) —
+  single OR double — opens its inspector (to edit per-service motivation/pain,
+  D-2026-06-15-J) and **never** navigates to the Actors canvas. Two changes:
+  (1) `ServiceDetailCanvas` marks **no** node drillable (removed
+  `shouldDrill={actor_ref}`); (2) `useInspectorRouting.onNodeDoubleClick` now
+  drills only `shouldDrill` nodes (it was unconditional — the latent bug).
+  Also `useUrlSync.jumpToActor` now sets `detailActive=false` so any
+  navigation to the actor master leaves the detail-tab state consistent.
+- **Why:** user — "서비스 디테일에서 유저 혹은 액터 누르면 액터 캔버스로
+  가버리는거 수정 안 했고." D-2026-06-15-H #2 declared single=inspector /
+  double=jump, but the fix only touched the routing hook's single-click path;
+  the double-click jump fired through TWO ungated paths (the hook's
+  unconditional `onNodeDoubleClick` AND `BaseNode`'s DOM `onDoubleClick` →
+  `data.onDrill`). With actor_ref now the primary editing target in
+  ServiceDetail (D-2026-06-15-J), jumping away on a body click is wrong;
+  reach the master via the Actors tab.
+- **Alternatives:** keep double-click=jump but make it reliable — rejected
+  (the user does not want a body-click jump now that motivation/pain are
+  edited here). Add an explicit "Go to actor master →" button — deferred
+  (YAGNI; the Actors tab already reaches it; revisit if asked).
+- **Approval:** Accepted by user, 2026-06-15 (reported bug + repeated intent
+  to edit motivation/pain in place).
+- **Spec impact:** SPEC §ServiceDetail — new "`actor_ref` click — no jump"
+  row. Supersedes the drill portion of D-2026-06-15-H #2. Guarded by
+  `viewer/tests/use-inspector-routing-drill.test.ts` (double-click drills only
+  drillable nodes) + `use-url-sync-detail-tab.test.ts` (jumpToActor clears
+  detailActive).
+
 ### D-2026-06-15-K — Service gains a one-line `problem` field (the need it solves)
 
 - **What:** The `service` kind gains a one-line `problem` typed field —
@@ -127,6 +176,10 @@
 
 ### D-2026-06-15-I — Node label edit input has an explicit readable text colour
 
+> **REFINED by [D-2026-06-15-M].** This fixed light mode only; the input's
+> `bg-surface` still went dark-on-dark in dark mode. M switches it to the
+> card-locked `bg-surface-subtle`.
+
 - **What:** The inline node-label editor (`EditableText`) input now sets
   `text-fg-strong`. Without it the input inherited the node card's label colour
   (often light on a saturated card) and rendered invisible on its `bg-surface`
@@ -136,6 +189,11 @@
 - **Spec impact:** none (contrast fix). Guarded by the explicit class.
 
 ### D-2026-06-15-H — Service-detail opens as a dynamic canvas tab; chat switcher reverts to two tabs (supersedes D-2026-06-15-E)
+
+> **#2 drill SUPERSEDED by [D-2026-06-15-L].** H #2 said actor_ref jumps to
+> the actor master on double-click; the fix only covered the routing hook's
+> single-click path, so the jump still fired via two ungated double-click
+> paths. L removes the actor_ref body-jump entirely (click → inspector).
 
 - **What:** Three linked changes to the service-detail / chat UX:
   1. **Service-detail is a dynamic canvas tab, not a modal.** Selecting a

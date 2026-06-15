@@ -47,4 +47,16 @@ describe("useUrlSync — service-detail tab (D-2026-06-15-H)", () => {
     expect(result.current.detailServiceId).toBeNull();
     expect(result.current.detailActive).toBe(false);
   });
+
+  it("jumpToActor deactivates the detail tab (no stale detailActive on the actors canvas)", () => {
+    // Bug (workflow diagnosis 2026-06-15): jumpToActor switched to the actors
+    // canvas but left detailActive=true → stencil/chat/tab desynced. Leaving a
+    // service-detail for the actor master must deactivate the detail tab, like
+    // selectTab does.
+    const { result } = renderHook(() => useUrlSync());
+    act(() => result.current.drillIntoService("svc_1"));
+    act(() => result.current.jumpToActor("actor_9"));
+    expect(result.current.activeTab).toBe("actors");
+    expect(result.current.detailActive).toBe(false);
+  });
 });
