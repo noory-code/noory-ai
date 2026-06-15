@@ -1,7 +1,10 @@
 /**
  * Per-kind inspector for ``actor_ref`` nodes — references an actor
- * master on the Actors canvas. Renders gives / receives value-flow
- * fields plus a reference display (or orphan-warning + re-pick when
+ * master on the Actors canvas. Renders the actor's **per-service
+ * stake**: gives / receives (value flow) + motivation / pain
+ * (D-2026-06-15-J — why this actor participates in THIS service / what
+ * hurts here; per PHILOSOPHY P3 these are service-scoped, not actor
+ * identity), plus a reference display (or orphan-warning + re-pick when
  * the master is missing).
  *
  * v0.15 Phase 2.7.
@@ -74,34 +77,65 @@ interface ActorRefFieldsProps {
 function ActorRefFields({ node, onPatchNode }: ActorRefFieldsProps) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 rounded border border-special bg-special-soft/40 p-2">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-special-fg">
-        {t("inspector.valueFlowHeader")}
+    <>
+      <div className="mb-4 rounded border border-special bg-special-soft/40 p-2">
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-special-fg">
+          {t("inspector.valueFlowHeader")}
+        </div>
+        <label className="mb-2 block">
+          <span className="text-xs font-semibold text-ok-fg">
+            {t("inspector.field.gives")}
+          </span>
+          <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.gives")}</span>
+          <MdTextarea
+            value={node.gives ?? ""}
+            onChange={(v) => onPatchNode({ gives: v })}
+            placeholder="콘텐츠 / 시간 / 결제 / 주의 …"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs font-semibold text-special-fg">
+            {t("inspector.field.receives")}
+          </span>
+          <span className="ml-1 text-[10px] text-fg-muted">
+            — {t("inspector.fieldHint.receives")}
+          </span>
+          <MdTextarea
+            value={node.receives ?? ""}
+            onChange={(v) => onPatchNode({ receives: v })}
+            placeholder="피드백 / 신뢰 / 접근권 / 즐거움 …"
+          />
+        </label>
       </div>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-ok-fg">
-          {t("inspector.field.gives")}
-        </span>
-        <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.gives")}</span>
-        <MdTextarea
-          value={node.gives ?? ""}
-          onChange={(v) => onPatchNode({ gives: v })}
-          placeholder="콘텐츠 / 시간 / 결제 / 주의 …"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-semibold text-special-fg">
-          {t("inspector.field.receives")}
-        </span>
-        <span className="ml-1 text-[10px] text-fg-muted">
-          — {t("inspector.fieldHint.receives")}
-        </span>
-        <MdTextarea
-          value={node.receives ?? ""}
-          onChange={(v) => onPatchNode({ receives: v })}
-          placeholder="피드백 / 신뢰 / 접근권 / 즐거움 …"
-        />
-      </label>
-    </div>
+      <div className="mb-4 rounded border border-danger bg-danger-soft/40 p-2">
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-danger-fg">
+          {t("inspector.perServiceStakeHeader")}
+        </div>
+        <label className="mb-2 block">
+          <span className="text-xs font-semibold text-fg">
+            {t("inspector.field.motivation")}
+          </span>
+          <span className="ml-1 text-[10px] text-fg-muted">
+            — {t("inspector.fieldHint.motivation")}
+          </span>
+          <MdTextarea
+            value={node.motivation ?? ""}
+            onChange={(v) => onPatchNode({ motivation: v })}
+            placeholder="이 서비스에서 무엇을 얻으려 하는가"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs font-semibold text-fg">{t("inspector.field.pain")}</span>
+          <span className="ml-1 text-[10px] text-fg-muted">
+            — {t("inspector.fieldHint.pain")}
+          </span>
+          <MdTextarea
+            value={node.pain ?? ""}
+            onChange={(v) => onPatchNode({ pain: v })}
+            placeholder="이 서비스에서 겪는 어려움"
+          />
+        </label>
+      </div>
+    </>
   );
 }

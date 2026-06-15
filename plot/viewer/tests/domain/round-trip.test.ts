@@ -351,18 +351,25 @@ describe("ActorRef.fromJson + toJson round-trip", () => {
     expect(r.ref_actor_id).toBeNull();
     expect(r.gives).toBe("");
     expect(r.receives).toBe("");
+    // D-2026-06-15-J: per-service stake fields default empty.
+    expect(r.motivation).toBe("");
+    expect(r.pain).toBe("");
     expect(r.side).toBeNull();
   });
 
-  it("preserves ref + gives/receives/side and round-trips", () => {
+  it("preserves ref + gives/receives/motivation/pain/side and round-trips", () => {
     const a = ActorRef.fromJson({
       id: "ref-1",
       kind: "actor_ref",
       ref_actor_id: "operator",
       gives: "moderation",
       receives: "reputation",
+      motivation: "이 서비스를 안전하게 운영하고 싶다",
+      pain: "신고가 너무 많아 다 못 본다",
       side: "operator",
     });
+    expect(a.motivation).toBe("이 서비스를 안전하게 운영하고 싶다");
+    expect(a.pain).toBe("신고가 너무 많아 다 못 본다");
     const b = ActorRef.fromJson(a.toJson());
     expect({ ...b }).toEqual({ ...a });
   });
@@ -490,12 +497,15 @@ describe("parseEntity → service / rule / content dispatch", () => {
 });
 
 describe("Actor.fromJson + toJson round-trip", () => {
-  it("populates defaults", () => {
+  // D-2026-06-15-J: actor carries identity only (side + body). motivation
+  // / pain moved to actor_ref (per-service stake).
+  it("populates defaults (identity only)", () => {
     const a = Actor.fromJson({ id: "a1", kind: "actor" });
     expect(a.kind).toBe("actor");
-    expect(a.motivation).toBe("");
-    expect(a.pain).toBe("");
     expect(a.side).toBeNull();
+    expect(a.body).toBe("");
+    expect("motivation" in a.toJson()).toBe(false);
+    expect("pain" in a.toJson()).toBe(false);
   });
 
   it("preserves typed fields and round-trips", () => {
@@ -503,9 +513,8 @@ describe("Actor.fromJson + toJson round-trip", () => {
       id: "a1",
       kind: "actor",
       label: "Operator",
-      motivation: "운영 부담",
-      pain: "탭이 너무 많다",
       side: "operator",
+      body: "운영자 페르소나",
     });
     const y = Actor.fromJson(x.toJson());
     expect({ ...y }).toEqual({ ...x });

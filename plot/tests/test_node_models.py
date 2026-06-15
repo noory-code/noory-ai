@@ -43,23 +43,27 @@ from plot_mcp.models import (
 
 
 def test_actor_round_trip() -> None:
+    # D-2026-06-15-J: actor is identity-only (side + body).
     n = ActorNode(
         id="actor-1",
         label="Operator",
-        motivation="run the show",
-        pain="too many tabs",
         side="operator",
+        body="운영자 페르소나",
     )
     assert ActorNode.model_validate(n.model_dump()) == n
 
 
 def test_actor_ref_round_trip() -> None:
+    # D-2026-06-15-J: actor_ref carries per-service stake (motivation/pain)
+    # alongside the value flow (gives/receives).
     n = ActorRefNode(
         id="ref-1",
         label="Operator instance",
         ref_actor_id="actor-1",
         gives="moderation",
         receives="reputation",
+        motivation="이 서비스를 안전하게 운영",
+        pain="신고가 너무 많다",
     )
     assert ActorRefNode.model_validate(n.model_dump()) == n
 
@@ -137,14 +141,16 @@ def test_identity_ref_without_ref_identity_id_rejected() -> None:
 
 
 def test_actor_defaults_match_sketchnode_actor_defaults() -> None:
-    """An ActorNode with only id+kind set must serialise the same typed
-    fields (motivation/pain/side) that god SketchNode emits for an actor.
+    """An ActorNode with only id+kind set serialises identity-only typed
+    fields (side/body). D-2026-06-15-J: motivation/pain are no longer
+    actor fields — they moved to actor_ref as per-service stake.
     """
     n = ActorNode(id="actor-min", label="Actor")
     dumped = n.model_dump()
-    assert dumped["motivation"] == ""
-    assert dumped["pain"] == ""
     assert dumped["side"] is None
+    assert dumped["body"] == ""
+    assert "motivation" not in dumped
+    assert "pain" not in dumped
 
 
 def test_service_defaults_match_sketchnode_service_defaults() -> None:

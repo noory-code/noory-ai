@@ -1,7 +1,9 @@
 /**
  * v0.15 Phase 2.8 — ``actor`` entity. A class of people in the value
- * economy. Carries motivation + pain (persona-design pair) + side
- * (operator vs user, partitioning the value exchange).
+ * economy. D-2026-06-15-J: carries **identity only** — side (Surface,
+ * operator vs user) + body. motivation/pain are NOT here: per
+ * PHILOSOPHY P3 (Participation is Asymmetric) they vary per service, so
+ * they live on ``actor_ref`` (per-service stake), not the actor master.
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -10,8 +12,6 @@ import { registerKindParser } from "./parseEntity";
 
 export interface ActorJson extends BaseFieldsJson {
   kind: "actor";
-  motivation: string;
-  pain: string;
   side: "operator" | "user" | null;
   body: string;
 }
@@ -34,21 +34,15 @@ export class Actor implements BaseFields {
 
   readonly kind: "actor" = "actor";
 
-  readonly motivation: string;
-  readonly pain: string;
   readonly side: "operator" | "user" | null;
   readonly body: string;
 
   private constructor(
     base: BaseFields,
-    motivation: string,
-    pain: string,
     side: "operator" | "user" | null,
     body: string,
   ) {
     Object.assign(this, base);
-    this.motivation = motivation;
-    this.pain = pain;
     this.side = side;
     this.body = body;
   }
@@ -64,8 +58,6 @@ export class Actor implements BaseFields {
     }
     return new Actor(
       base,
-      readOptionalString(obj.motivation, "motivation", raw),
-      readOptionalString(obj.pain, "pain", raw),
       readSide(obj.side, raw),
       readOptionalString(obj.body, "body", raw),
     );
@@ -88,8 +80,6 @@ export class Actor implements BaseFields {
       owner: this.owner,
       version: this.version,
       kind: "actor",
-      motivation: this.motivation,
-      pain: this.pain,
       side: this.side,
       body: this.body,
     };

@@ -18,26 +18,33 @@ from plot_mcp.models_kinds import BaseNodeFields
 
 class ActorNode(BaseNodeFields):
     """v0.15 Phase 1: ``actor`` kind. A class of people in the value
-    economy (PHILOSOPHY P5, IDENTITY.md ``Actor as class``)."""
+    economy (PHILOSOPHY P5, IDENTITY.md ``Actor as class``).
+
+    D-2026-06-15-J: the actor entity carries **identity only** — ``side``
+    (Surface) + ``body``. ``motivation`` / ``pain`` are NOT here: per
+    PHILOSOPHY P3 (Participation is Asymmetric) they are defined by the
+    service and now live on ``actor_ref`` (per-service stake)."""
 
     kind: Literal["actor"] = "actor"
-    motivation: str = ""
-    pain: str = ""
     side: Literal["operator", "user"] | None = None
     body: str = ""
 
 
 class ActorRefNode(BaseNodeFields):
     """v0.15 Phase 1: ``actor_ref`` kind. References an actor master that
-    lives on the Actors canvas. ``gives`` / ``receives`` capture the
-    per-actor-per-service value flow (PHILOSOPHY P6 weakened form).
-    ``side`` mirrors the referenced actor's side so the canvas can
-    colour-code without dereferencing the master each render."""
+    lives on the Actors canvas. Carries the actor's **per-service stake**:
+    ``gives`` / ``receives`` (value flow, PHILOSOPHY P6 weakened form) +
+    ``motivation`` / ``pain`` (why this actor participates here / what
+    hurts here — D-2026-06-15-J, PHILOSOPHY P3). ``side`` mirrors the
+    referenced actor's side so the canvas can colour-code without
+    dereferencing the master each render (identity, not authored here)."""
 
     kind: Literal["actor_ref"] = "actor_ref"
     ref_actor_id: str | None = None
     gives: str = ""
     receives: str = ""
+    motivation: str = ""
+    pain: str = ""
     side: Literal["operator", "user"] | None = None
 
     @model_validator(mode="after")

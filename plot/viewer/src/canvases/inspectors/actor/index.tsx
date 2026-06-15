@@ -1,6 +1,9 @@
 /**
  * Per-kind inspector for ``actor`` nodes — class of people in the
- * value economy. Carries side (operator vs user) + motivation + pain.
+ * value economy. D-2026-06-15-J: carries **identity only** — side
+ * (Surface) + body. motivation/pain moved to the actor_ref inspector
+ * (per-service stake), since per PHILOSOPHY P3 they are defined by the
+ * service, not the actor.
  *
  * v0.15 Phase 2.8. v0.30.4 (D-2026-05-31-G): shows fields **inherited**
  * from the actor's parent (via inheritance edges) as a greyed caption,
@@ -17,7 +20,6 @@ import {
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
 import { BodyField } from "../shared/BodyField";
-import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
 
 export function ActorInspector(props: KindInspectorProps) {
@@ -107,30 +109,6 @@ function ActorFields({ node, onPatchNode, eff, isBase }: ActorFieldsProps) {
           <option value="user">{t("inspector.userOption")}</option>
         </select>
         <Inherited field={eff.side} format={(v) => surfaceLabel(t, v)} />
-      </label>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-fg">
-          {t("inspector.field.motivation")}
-        </span>
-        <span className="ml-1 text-[10px] text-fg-muted">
-          — {t("inspector.fieldHint.motivation")}
-        </span>
-        <MdTextarea
-          value={node.motivation ?? ""}
-          onChange={(v) => onPatchNode({ motivation: v })}
-          placeholder="이 액터가 무엇을 얻으려 하는가"
-        />
-        <Inherited field={eff.motivation} />
-      </label>
-      <label className="mb-2 block">
-        <span className="text-xs font-semibold text-fg">{t("inspector.field.pain")}</span>
-        <span className="ml-1 text-[10px] text-fg-muted">— {t("inspector.fieldHint.pain")}</span>
-        <MdTextarea
-          value={node.pain ?? ""}
-          onChange={(v) => onPatchNode({ pain: v })}
-          placeholder="겪는 어려움 / 좌절"
-        />
-        <Inherited field={eff.pain} />
       </label>
       <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
       <Inherited field={eff.body} />

@@ -218,7 +218,7 @@ describe("ProjectInspector (Phase 2.5)", () => {
 });
 
 describe("ActorRefInspector (Phase 2.7)", () => {
-  it("renders gives/receives + reference display when actor master exists", () => {
+  it("renders gives/receives + motivation/pain + reference display when actor master exists", () => {
     const actor = makeNode({ id: "operator", kind: "actor", label: "Operator", side: "operator" });
     const ref = makeNode({
       id: "ref-1",
@@ -227,6 +227,8 @@ describe("ActorRefInspector (Phase 2.7)", () => {
       ref_actor_id: "operator",
       gives: "mod",
       receives: "rep",
+      motivation: "안전하게 운영",
+      pain: "신고 폭주",
     });
     render(
       <KindInspector
@@ -235,6 +237,9 @@ describe("ActorRefInspector (Phase 2.7)", () => {
       />,
     );
     expect(screen.getByDisplayValue("mod")).toBeInTheDocument();
+    // D-2026-06-15-J: per-service stake fields live on the actor_ref inspector.
+    expect(screen.getByDisplayValue("안전하게 운영")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("신고 폭주")).toBeInTheDocument();
     expect(screen.getByText(/Operator/)).toBeInTheDocument();
   });
 
@@ -372,19 +377,22 @@ describe("RuleInspector + ContentInspector (Phase 2.9)", () => {
 });
 
 describe("ActorInspector (Phase 2.8)", () => {
-  it("renders side select + motivation + pain", () => {
+  it("renders identity only — side + body, NOT motivation/pain (D-2026-06-15-J)", () => {
     const node = makeNode({
       id: "a1",
       kind: "actor",
       label: "User",
       side: "user",
+      body: "일상의 주인공",
       motivation: "수다",
       pain: "외로움",
     });
     render(<KindInspector {...makeProps(node, "actors")} />);
     expect(screen.getByDisplayValue("User")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("수다")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("외로움")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("일상의 주인공")).toBeInTheDocument();
+    // motivation/pain moved to the actor_ref inspector — absent here.
+    expect(screen.queryByDisplayValue("수다")).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue("외로움")).not.toBeInTheDocument();
   });
 
   // v0.24.11 (D-2026-05-19-D) — ActorCompositionPlaceholder removed.

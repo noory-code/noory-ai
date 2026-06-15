@@ -39,6 +39,60 @@
 
 ## Log
 
+### D-2026-06-15-J — Actor motivation/pain become per-service-context (move to actor_ref); refines D-2026-05-31-G/H
+
+- **What:** `motivation` and `pain` move OFF the global actor entity and
+  ONTO `actor_ref` (the actor's appearance inside one service_detail). The
+  actor inspector becomes **identity-only** (`side` + `body`); the
+  `actor_ref` inspector gains `motivation` + `pain` editors alongside the
+  existing `gives` / `receives`. Scope is **motivation/pain only** —
+  `side` stays on the actor as identity (still a denormalized mirror on
+  actor_ref); `value` is explicitly NOT added (gives/receives already
+  cover per-service exchange). Refines D-2026-05-31-G (`INHERITABLE_FIELDS`
+  drops to `[side, body]`) and D-2026-05-31-H (abstract-root now hides
+  `side` only).
+- **Why:** PHILOSOPHY.md P3 (Participation is Asymmetric) defines
+  motive/pain BY the service — the same human is a Hero in one service, a
+  Fan in another. A global actor-level motivation forces one answer across
+  every service = the doctrine's own counterexample collapsed into one box,
+  and invites Retention drift (VISION). User: *"동기와 어려움 … 이건 너무
+  작은 스코프 … 분리되어야 … 서비스 디테일에서 액터 인스펙터와 액터
+  캔버스에서 액터 인스펙터."* DDD: motivation/pain have no cross-service
+  identity → value-object fields on actor_ref (the same category as
+  gives/receives), not entity fields on actor.
+- **Fork (pinned):** PURE per-service (no global baseline on the actor),
+  chosen over baseline+override. The actor's general character lives in
+  `body`/identity; motivation/pain are written fresh per context. Accepted
+  tradeoff: an actor not yet placed in any service has **no home** for
+  motivation/pain (by design — per P3 there is no participation-motivation
+  yet). Verified safe to do NOW: all existing actors carry empty
+  motivation/pain (zero data loss); doing it before users author real text
+  avoids the unsafe cross-file fan-out migration later.
+- **Alternatives:** (a) baseline+override (master default + actor_ref
+  override) — rejected: keeps motivation/pain in BOTH inspectors (not the
+  separation the user asked), two-axis 3-source resolution, contradicts
+  P3's "no global motive". (b) copy-master→all-refs-then-clear migration —
+  rejected: lossy for orphan actors, irreversible (Pydantic extra=ignore),
+  cross-file-infeasible via read-time migration. (c) also move `side` / add
+  `value` — rejected: side is load-bearing for ServiceDetail subject
+  detection (D-2026-05-31-I/K); value is scope creep (gives/receives exist).
+- **Approval:** Accepted by user, 2026-06-15 (chose "순수 per-service";
+  "개념이 가장 잘 해결되는 방향으로, 어려워도, 지금").
+- **Spec impact:** SPEC.md §Nodes—actor (Inheritance / Abstract-root /
+  Inspector rows refined) + §ServiceDetail (new "Per-service stake
+  (actor_ref)" row).
+- **Lock-step (부분 완료 금지, one commit):** engine `models_actors.py`
+  (ActorRefNode += motivation/pain, ActorNode -=); viewer
+  `domain/ActorRef.ts` (+= interface/ctor/fromJson/toJson) +
+  `domain/Actor.ts` (-=) + `createBlankNode.ts` (actor_ref defaults);
+  `domain/actorInheritance.ts` (INHERITABLE_FIELDS → [side, body];
+  EffectiveActorFields contraction); inspectors `actor/index.tsx` (remove
+  motivation/pain + captions) + `actor_ref/index.tsx` (add motivation/pain);
+  regen `--wire`; tests: schema-parity, entity-roundtrip, structural-guards,
+  rewrite actor-inheritance / actor-inherited-surface / actor-base-superclass,
+  new actor_ref-context-fields. i18n keys `inspector.field.motivation/pain`
+  already exist; reword actor-centric hint copy for per-service context.
+
 ### D-2026-06-15-I — Node label edit input has an explicit readable text colour
 
 - **What:** The inline node-label editor (`EditableText`) input now sets
@@ -496,6 +550,11 @@ Three edge changes (one batch):
   `viewer/tests/mindmapLayout.test.ts`.
 
 ### D-2026-05-31-G — Actor inheritance (computed effective fields + inspector)
+
+> **REFINED by [D-2026-06-15-J].** `motivation` / `pain` left the actor
+> for per-service-context `actor_ref`, so `INHERITABLE_FIELDS` shrinks
+> from `[motivation, pain, side, body]` to `[side, body]`. The resolver
+> machinery (own → ancestor → empty, actor-tree axis) is unchanged.
 
 - **What:** On the actors canvas a sub-actor inherits its parent
   actor's common fields (motivation / pain / side / body) through the
@@ -9952,6 +10011,11 @@ but not yet fully eliminated.
   introduced in v0.28.3.
 
 ### D-2026-05-31-H — Abstract root superclass: hide role/motive/pain on the actor-tree root
+
+> **REFINED by [D-2026-06-15-J].** `motivation` / `pain` are no longer
+> actor fields, so the abstract root now hides only `side` (`body`
+> stays). `isActorBaseSuperclass` is unchanged; only the hidden field
+> set shrinks.
 
 - **What:** On the Actors canvas, the **root superclass** of an
   inheritance tree — an actor that has **no actor parent** (its only

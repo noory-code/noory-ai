@@ -146,8 +146,10 @@ def _build_actors_canvas(
                 collapsed=n.collapsed,
                 is_root=False,  # is_root meaningless across canvases
                 details_path=n.details_path,
-                motivation=n.motivation,
-                pain=n.pain,
+                # D-2026-06-15-J: actor is identity-only. motivation/pain
+                # are per-service now (actor_ref), so a legacy v0.1 actor's
+                # motivation/pain are not carried onto the v0.2 actor
+                # master (accepted tradeoff; realistic legacy data is empty).
                 side=n.side,
             )
         )

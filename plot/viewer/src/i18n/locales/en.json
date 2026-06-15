@@ -308,11 +308,12 @@
       "remove": "Remove {{id}}"
     },
     "valueFlowHeader": "Value flow (this service ↔ this actor)",
+    "perServiceStakeHeader": "Stake in this service (motivation / pain)",
     "referencesHeader": "References — {{label}}",
     "rePick": "Re-pick…",
     "unset": "(unset)",
     "inheritedFrom": "inherited from {{from}}",
-    "actorBaseHint": "Abstract base — role / motivation / pain live on the sub-actors below.",
+    "actorBaseHint": "Abstract base — the concrete Surface lives on the sub-actors below.",
     "operatorOption": "operator — admin console",
     "userOption": "user — app",
     "operatorSideOption": "operator side",

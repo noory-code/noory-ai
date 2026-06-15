@@ -30,15 +30,16 @@ export interface EffectiveField {
 }
 
 export interface EffectiveActorFields {
-  motivation: EffectiveField;
-  pain: EffectiveField;
-  body: EffectiveField;
   side: EffectiveField;
+  body: EffectiveField;
 }
 
-/** Inheritable actor fields. ``side`` is operator|user|null; the rest
- *  are Markdown strings. */
-const INHERITABLE_FIELDS = ["motivation", "pain", "body", "side"] as const;
+/** Inheritable actor **identity** fields (D-2026-06-15-J). ``side`` is
+ *  operator|user|null; ``body`` is a Markdown string. ``motivation`` /
+ *  ``pain`` are no longer here — they moved to ``actor_ref`` as
+ *  per-service stake (PHILOSOPHY P3), so they never inherit down the
+ *  actor tree. */
+const INHERITABLE_FIELDS = ["side", "body"] as const;
 
 function fieldValue(node: SketchNode, field: string): string {
   const raw = (node as unknown as Record<string, unknown>)[field];
@@ -131,9 +132,7 @@ export function effectiveActorFields(
   };
 
   return {
-    motivation: resolve("motivation"),
-    pain: resolve("pain"),
-    body: resolve("body"),
     side: resolve("side"),
+    body: resolve("body"),
   } satisfies Record<(typeof INHERITABLE_FIELDS)[number], EffectiveField>;
 }

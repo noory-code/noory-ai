@@ -308,11 +308,12 @@
       "remove": "{{id}} 제거"
     },
     "valueFlowHeader": "가치 흐름 (이 서비스 ↔ 이 액터)",
+    "perServiceStakeHeader": "이 서비스에서의 이해관계 (동기 / 어려움)",
     "referencesHeader": "참조 — {{label}}",
     "rePick": "다시 고르기…",
     "unset": "(미지정)",
     "inheritedFrom": "{{from}}에서 상속",
-    "actorBaseHint": "추상 베이스 — 역할·동기·어려움은 아래 하위 액터에서 정의합니다.",
+    "actorBaseHint": "추상 베이스 — 구체적 접점(Surface)은 아래 하위 액터에서 정의합니다.",
     "operatorOption": "운영자 — 관리 콘솔",
     "userOption": "사용자 — 앱",
     "operatorSideOption": "제공자",

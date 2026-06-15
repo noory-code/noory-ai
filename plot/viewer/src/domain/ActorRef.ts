@@ -1,8 +1,10 @@
 /**
- * v0.15 Phase 2.7 — ``actor_ref`` entity. References an actor master
- * on the Actors canvas. Carries gives + receives (per-actor-per-service
- * value flow) + side (mirrors the referenced actor for canvas-local
- * colour coding).
+ * v0.15 Phase 2.7 — ``actor_ref`` entity. References an actor master on
+ * the Actors canvas. Carries the actor's **per-service stake**: gives +
+ * receives (value flow) and — D-2026-06-15-J — motivation + pain (why
+ * this actor participates in THIS service / what hurts here; PHILOSOPHY
+ * P3, participation is asymmetric). side mirrors the referenced actor's
+ * identity side for canvas-local colour coding (not authored here).
  */
 import type { BaseFields, BaseFieldsJson } from "./BaseFields";
 import { parseBaseFields } from "./BaseFields";
@@ -14,6 +16,8 @@ export interface ActorRefJson extends BaseFieldsJson {
   ref_actor_id: string | null;
   gives: string;
   receives: string;
+  motivation: string;
+  pain: string;
   side: "operator" | "user" | null;
 }
 
@@ -38,6 +42,8 @@ export class ActorRef implements BaseFields {
   readonly ref_actor_id: string | null;
   readonly gives: string;
   readonly receives: string;
+  readonly motivation: string;
+  readonly pain: string;
   readonly side: "operator" | "user" | null;
 
   private constructor(
@@ -45,12 +51,16 @@ export class ActorRef implements BaseFields {
     ref_actor_id: string | null,
     gives: string,
     receives: string,
+    motivation: string,
+    pain: string,
     side: "operator" | "user" | null,
   ) {
     Object.assign(this, base);
     this.ref_actor_id = ref_actor_id;
     this.gives = gives;
     this.receives = receives;
+    this.motivation = motivation;
+    this.pain = pain;
     this.side = side;
   }
 
@@ -68,6 +78,8 @@ export class ActorRef implements BaseFields {
       readNullableString(obj.ref_actor_id, "ref_actor_id", raw),
       readOptionalString(obj.gives, "gives", raw),
       readOptionalString(obj.receives, "receives", raw),
+      readOptionalString(obj.motivation, "motivation", raw),
+      readOptionalString(obj.pain, "pain", raw),
       readSide(obj.side, raw),
     );
   }
@@ -92,6 +104,8 @@ export class ActorRef implements BaseFields {
       ref_actor_id: this.ref_actor_id,
       gives: this.gives,
       receives: this.receives,
+      motivation: this.motivation,
+      pain: this.pain,
       side: this.side,
     };
   }

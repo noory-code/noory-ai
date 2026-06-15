@@ -1,13 +1,17 @@
 /**
  * Actor inheritance — computed effective fields — v0.30.4
- * (D-2026-05-31-G).
+ * (D-2026-05-31-G), REFINED by D-2026-06-15-J.
  *
  * On the actors canvas a sub-actor inherits its parent actor's common
- * fields (motivation / pain / side / body). The relationship is an
- * inheritance edge child→parent (source=subclass, target=superclass).
- * A field resolves to: own non-empty value → nearest ancestor's
- * non-empty value → empty. Override = the child sets its own value.
- * Computed at render; nothing is written (SSOT stays on each node).
+ * **identity** fields (side / body). The relationship is an inheritance
+ * edge child→parent (source=subclass, target=superclass). A field
+ * resolves to: own non-empty value → nearest ancestor's non-empty value
+ * → empty. Override = the child sets its own value. Computed at render;
+ * nothing is written (SSOT stays on each node).
+ *
+ * D-2026-06-15-J: motivation / pain are no longer actor fields (they
+ * moved to actor_ref as per-service stake), so they never inherit down
+ * the actor tree — only side / body do.
  */
 import { describe, expect, it } from "vitest";
 import { effectiveActorFields } from "../src/domain/actorInheritance";
@@ -30,8 +34,6 @@ function actor(id: string, over: Partial<Record<string, unknown>> = {}): SketchN
     owner: null,
     version: "v1.0",
     kind: "actor",
-    motivation: "",
-    pain: "",
     side: null,
     body: "",
     ...over,
@@ -56,39 +58,37 @@ function inheritEdge(child: string, parent: string): SketchEdge {
 
 // anchor(project) ← User(base) ← { Op, Bana }
 const NODES: SketchNode[] = [
-  actor("user", { label: "User", motivation: "be served well", pain: "friction", side: "user" }),
-  actor("op", { label: "Operator", side: "operator" }), // inherits motivation/pain from User
-  actor("bana", { label: "Bana", motivation: "create + share" }), // overrides motivation
+  actor("user", { label: "User", body: "served well", side: "user" }),
+  actor("op", { label: "Operator", side: "operator" }), // inherits body from User
+  actor("bana", { label: "Bana", body: "create + share" }), // overrides body; inherits side
 ];
 const EDGES: SketchEdge[] = [inheritEdge("op", "user"), inheritEdge("bana", "user")];
 
-describe("effectiveActorFields (D-2026-05-31-G)", () => {
+describe("effectiveActorFields (D-2026-05-31-G; D-2026-06-15-J identity-only)", () => {
   it("a base actor's fields are all own", () => {
     const eff = effectiveActorFields("user", NODES, EDGES);
-    expect(eff.motivation).toEqual({ value: "be served well", source: "own" });
-    expect(eff.pain.source).toBe("own");
+    expect(eff.body).toEqual({ value: "served well", source: "own" });
+    expect(eff.side.source).toBe("own");
   });
 
   it("a sub-actor inherits empty fields from its parent", () => {
     const eff = effectiveActorFields("op", NODES, EDGES);
-    expect(eff.motivation).toEqual({
-      value: "be served well",
+    expect(eff.body).toEqual({
+      value: "served well",
       source: "inherited",
       fromId: "user",
       fromLabel: "User",
     });
-    expect(eff.pain.value).toBe("friction");
-    expect(eff.pain.source).toBe("inherited");
     // own side overrides
     expect(eff.side).toEqual({ value: "operator", source: "own" });
   });
 
   it("a sub-actor's own non-empty field overrides the inherited one", () => {
     const eff = effectiveActorFields("bana", NODES, EDGES);
-    expect(eff.motivation).toEqual({ value: "create + share", source: "own" });
-    // pain is empty on Bana → inherited from User
-    expect(eff.pain).toEqual({
-      value: "friction",
+    expect(eff.body).toEqual({ value: "create + share", source: "own" });
+    // side is empty on Bana → inherited from User
+    expect(eff.side).toEqual({
+      value: "user",
       source: "inherited",
       fromId: "user",
       fromLabel: "User",
@@ -97,25 +97,25 @@ describe("effectiveActorFields (D-2026-05-31-G)", () => {
 
   it("empty everywhere → empty own value", () => {
     const lone = effectiveActorFields("x", [actor("x")], []);
-    expect(lone.motivation).toEqual({ value: "", source: "own" });
+    expect(lone.body).toEqual({ value: "", source: "own" });
   });
 
   it("survives an inheritance cycle without infinite loop", () => {
-    const cyc = [actor("a"), actor("b", { motivation: "B" })];
+    const cyc = [actor("a"), actor("b", { body: "B" })];
     const edges = [inheritEdge("a", "b"), inheritEdge("b", "a")];
     const eff = effectiveActorFields("a", cyc, edges);
-    expect(eff.motivation.value).toBe("B");
+    expect(eff.body.value).toBe("B");
   });
 
   it("multiple parents → lexicographically smallest id wins (deterministic)", () => {
     const nodes = [
       actor("child"),
-      actor("p2", { motivation: "from p2" }),
-      actor("p1", { motivation: "from p1" }),
+      actor("p2", { body: "from p2" }),
+      actor("p1", { body: "from p1" }),
     ];
     const edges = [inheritEdge("child", "p2"), inheritEdge("child", "p1")];
     const eff = effectiveActorFields("child", nodes, edges);
-    expect(eff.motivation).toEqual({
+    expect(eff.body).toEqual({
       value: "from p1",
       source: "inherited",
       fromId: "p1",

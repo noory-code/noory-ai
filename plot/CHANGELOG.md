@@ -4,6 +4,42 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.79.0] — 2026-06-15
+
+Minor. Domain remodel: an actor's **motivation / pain become per-service**
+(D-2026-06-15-J). They move off the global actor entity (now identity-only:
+side + body) onto `actor_ref`, where each service-detail authors the actor's
+stake *in that service* — per PHILOSOPHY P3 (Participation is Asymmetric), the
+same human is a Hero in one service and a Fan in another, so motive/pain are
+defined by the service, not globally. PURE per-service (no actor baseline).
+
+### Added
+
+- **`actor_ref.motivation` / `actor_ref.pain`** (D-2026-06-15-J) — per-service
+  stake fields, alongside the existing `gives` / `receives`. The actor_ref
+  inspector gains a "Stake in this service" box; a brand-new actor_ref starts
+  blank, surfacing the per-service Discovery question where the participation
+  is drawn. New i18n key `inspector.perServiceStakeHeader` (en + ko).
+
+### Changed
+
+- **The actor entity is identity-only** — `side` (Surface) + `body`. The actor
+  inspector no longer shows motivation / pain (moved to actor_ref).
+- **Actor inheritance refined** (refines D-2026-05-31-G): `INHERITABLE_FIELDS`
+  shrinks from `[motivation, pain, side, body]` to `[side, body]`; the
+  resolver machinery is unchanged.
+- **Abstract-root superclass refined** (refines D-2026-05-31-H): the abstract
+  tree root now hides only `side` (motivation / pain are no longer actor
+  fields). `actorBaseHint` reworded.
+
+### Removed
+
+- `ActorNode.motivation` / `ActorNode.pain` (Python) and `Actor.motivation` /
+  `Actor.pain` (TS). A legacy v0.1 actor's motivation/pain are not carried onto
+  the v0.2 actor master on migration (accepted tradeoff; realistic data empty).
+  No backfill — the move ships while existing data is empty, avoiding an unsafe
+  cross-file fan-out migration later.
+
 ## [0.78.0] — 2026-06-15
 
 Minor. Service-detail becomes a dynamic canvas tab; auth-boot fix; chat
