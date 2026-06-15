@@ -28,82 +28,22 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.broadcast import BroadcastHub
+from plot_mcp.chat_context import build_context_preamble, build_framing_preamble
 from plot_mcp.chat_provider import read_selection
 from plot_mcp.chat_providers.base import DEFAULT_CHAT_SCOPE, is_valid_scope
 from plot_mcp.chat_session import ChatProvider, ChatSessionRegistry, chat_registry
 from plot_mcp.workspace import resolve_plot_root
 
-# Layer 2 (CHAT_ARCH.md) — how many selected nodes to spell out in the
-# preamble before falling back to ids-only, so the prompt stays bounded.
-_SELECTION_DETAIL_CAP = 20
-
-# Layer 3 (CHAT_ARCH.md) — per-canvas system framing. Each base scope maps to a
-# VISION.md phase, which sets how the agent should help on that canvas. Code
-# constants, not ``.noory/``-editable (decision 4). The cross-canvas ``project``
-# scope has no canvas framing (decision 6) and so is absent from this map.
-_SCOPE_FRAMING: dict[str, str] = {
-    "foundation": (
-        "You are collaborating inside Plot's Foundation canvas (Discovery "
-        "phase). Help the user surface and sharpen the project's essence — its "
-        "core values, mission, and identity."
-    ),
-    "actors": (
-        "You are collaborating inside Plot's Actors canvas (Planning phase). "
-        "Help the user design the value-creation machinery — who acts and how "
-        "value flows between them."
-    ),
-    "services": (
-        "You are collaborating inside Plot's Services canvas (Planning phase). "
-        "Help the user design the value-creation machinery — the services that "
-        "deliver the mission and how they relate."
-    ),
-    "service_detail": (
-        "You are collaborating inside Plot's Service-Detail canvas (Execution "
-        "phase). Help the user break the plan into concrete steps, decisions, "
-        "and rules for this one service."
-    ),
-}
-
-
-def build_framing_preamble(scope: str) -> str:
-    """Return the per-canvas system framing for ``scope`` (Layer 3).
-
-    Maps the *base* scope to its VISION-phase framing, so a parametric
-    ``service_detail:<id>`` resolves to the shared service-detail framing rather
-    than a missing per-instance key. The cross-canvas ``project`` scope (and any
-    unknown base) gets no framing.
-    """
-    base = scope.split(":", 1)[0]
-    return _SCOPE_FRAMING.get(base, "")
-
-
-def build_context_preamble(scope: str, selection: Any) -> str:
-    """Build the per-turn context preamble prepended to the CLI message.
-
-    Tells the agent which canvas the user is on and what they have selected, so
-    "fix this" resolves to the selected node (Layer 2). Returns "" when there's
-    nothing to inject: the ``project`` scope is explicitly cross-canvas
-    (decision 6), and an empty/malformed selection adds nothing. Selection is
-    capped at ``_SELECTION_DETAIL_CAP`` detailed nodes; the rest are listed as
-    ids only so a large multi-select can't blow the context window (red-team A3).
-    """
-    if scope == "project" or not isinstance(selection, list) or not selection:
-        return ""
-    nodes = [n for n in selection if isinstance(n, dict)]
-    if not nodes:
-        return ""
-    detailed = nodes[:_SELECTION_DETAIL_CAP]
-    rendered = ", ".join(
-        f'{n.get("kind", "?")} "{n.get("label", "")}" ({n.get("id", "")})' for n in detailed
-    )
-    lines = [
-        f"[Plot context] Active canvas: {scope}.",
-        f"Selected ({len(nodes)}): {rendered}",
-    ]
-    if len(nodes) > _SELECTION_DETAIL_CAP:
-        overflow = ", ".join(str(n.get("id", "")) for n in nodes[_SELECTION_DETAIL_CAP:])
-        lines.append(f"…and {len(nodes) - _SELECTION_DETAIL_CAP} more: {overflow}")
-    return "\n".join(lines)
+# Re-exported for back-compat — callers/tests historically import these two
+# builders from this module; the SSOT now lives in ``chat_context`` so the MCP
+# path can share them without importing the HTTP layer (D-2026-06-15-D).
+__all__ = [
+    "build_context_preamble",
+    "build_framing_preamble",
+    "chat_send_endpoint",
+    "chat_reset_endpoint",
+    "stream_chat_turn",
+]
 
 
 def _read_scope(body: dict[str, Any]) -> str | None:

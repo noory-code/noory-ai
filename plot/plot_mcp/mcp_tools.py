@@ -7,6 +7,7 @@ both interchangeably.
 
 from __future__ import annotations
 
+import time
 import webbrowser
 from pathlib import Path
 from typing import Any, cast
@@ -36,6 +37,7 @@ from plot_mcp.git_store import (
 )
 from plot_mcp.migrate import migrate_v01_to_v02
 from plot_mcp.models import CanvasDoc, CanvasKind
+from plot_mcp.viewer_context import read_viewer_context
 from plot_mcp.workspace import (
     discover_projects,
     enumerate_projects,
@@ -264,6 +266,31 @@ def migrate_v01_sketches(project_path: str) -> list[str]:
     """
     plot_root = resolve_plot_root(project_path)
     return migrate_v01_to_v02(plot_root)
+
+
+@mcp.tool()
+def get_viewer_context(project_path: str) -> dict[str, Any]:
+    """Read what the Plot viewer is currently showing (D-2026-06-15-D).
+
+    Returns the user's live canvas context so you can resolve "this" / "fix it"
+    against what they have on screen, the same way the in-app chat does::
+
+        {
+          "active_canvas": "<scope>" | null,   # e.g. "foundation",
+                                                # "service_detail:<id>"
+          "selection": [{"id", "kind", "label"}, ...],
+          "framing": "<per-canvas guidance>",   # how to help on this canvas
+          "updated_at": <epoch seconds> | null,
+          "stale": <bool>,                       # report older than the TTL
+          "has_viewer": <bool>                   # a live viewer is reporting
+        }
+
+    When ``has_viewer`` is false (no viewer open, or the last report is stale)
+    ``active_canvas`` is null and ``selection`` is empty — do NOT treat an old
+    selection as the user's current one.
+    """
+    plot_root = resolve_plot_root(project_path)
+    return read_viewer_context(plot_root, now=time.time())
 
 
 @mcp.tool()

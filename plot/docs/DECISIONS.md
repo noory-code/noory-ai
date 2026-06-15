@@ -39,6 +39,66 @@
 
 ## Log
 
+### D-2026-06-15-D — Chat MCP path: viewer context (selection + framing) for the external agent
+
+- **What:** The PRIMARY chat path — the user's own agent connected via the
+  `plot_mcp` sidecar — gains the same canvas context the in-app chat already
+  has (CHAT_ARCH.md "Scope honesty" follow-up to Layers 1–3). A new read-only
+  MCP tool `get_viewer_context(project_path)` returns
+  `{active_canvas, selection, framing, updated_at, stale, has_viewer}`. It is
+  fed by a viewer→engine push: the viewer `POST`s `/api/viewer/context`
+  `{project_path, scope, selection, updated_at}` (debounced, from a single
+  `App` effect watching the already-lifted `[activeScope, selection]`) into a
+  **project-keyed in-memory** store (sibling to `ChatSessionRegistry`). Framing
+  reuses the same per-canvas constants as the in-app path.
+- **Pinned decisions (post design red-team, 2026-06-15; store mechanism
+  revised after a topology finding — see below):**
+  - **Store = filesystem rendezvous file, project-keyed.** The bundled MCP
+    server runs as a SEPARATE `--mcp-stdio` process from the HTTP sidecar
+    (D-2026-06-14-A); they share only the filesystem, so an in-memory store is
+    invisible across the boundary (the originally-pinned "in-memory" was
+    physically impossible — caught at implementation). The HTTP process writes
+    a small JSON file at a deterministic path derived from the resolved
+    `plot_root` (a sha256-keyed file under `tempfile.gettempdir()`); the MCP
+    process reads it. **OS temp, not `.noory/`** — truly ephemeral (cleared on
+    reboot), no gitignore management, no user-folder pollution; the "no
+    user-state contamination" intent is preserved (this is runtime cache, not
+    user content). Project-keyed by `plot_root` (NOT `workspace_root` — a
+    monorepo holds N projects, D-2026-06-12-A). Writes are atomic
+    (temp-file + `os.replace`).
+  - **Exposure = MCP tool**, not a resource (universal client support;
+    consistent with the tools-only surface). A resource is YAGNI.
+  - **Liveness = timestamp TTL (same machine → shared clock, no skew).** The
+    HTTP process stamps `updated_at` (server `time.time()`); the MCP tool
+    compares to its own `time.time()`. A report older than the TTL (90s) is
+    `stale`. The viewer bridge sends a heartbeat (~30s) in addition to
+    on-change posts, so an idle-but-open viewer stays fresh and `stale`
+    genuinely means "no live viewer." Stale / no file → `has_viewer: false`,
+    `active_canvas: null`, `selection: []` — the agent never asserts stale
+    context as current. (The WS-hub liveness idea is dropped — also invisible
+    cross-process.)
+  - **Multi-viewer** = last-writer-wins (the later atomic write overwrites the
+    file), disambiguated by `updated_at`; documented (Plot is single-viewer per
+    project in practice; per-window tracking is YAGNI).
+  - **Framing SSOT** = `build_framing_preamble` + `SCOPE_FRAMING` +
+    `build_context_preamble` move to a neutral `plot_mcp/chat_context.py` that
+    BOTH `endpoints_chat.py` and `mcp_tools.py` import (no MCP→HTTP dependency).
+  - **Reverse engine→agent push** (real-time nav) = CUT (YAGNI; pull-on-demand
+    via the tool is enough).
+- **Why:** CHAT_ARCH.md is explicit that Layers 1–3 cover only the **in-app**
+  chat; the Pencil model makes the external agent the primary path, so context
+  parity belongs there. user — "각 캔버스마다 맞게 동작" applies to the agent the
+  user actually drives.
+- **Alternatives:** persisted store (rejected — reversibility / contamination);
+  MCP resource (rejected — client support / YAGNI); keying by workspace_root
+  (rejected — loses project granularity); reverse push (rejected — YAGNI).
+- **Approval:** Accepted by user, 2026-06-15 (design red-team verdict was
+  REVISE-FIRST; all four Majors resolved in the pins above before approval).
+- **Spec impact:** SPEC §R7 chat — new MCP-path context rows. Verified by
+  `tests/test_chat_context.py` (shared extraction), `tests/test_viewer_context.py`
+  (store + bridge endpoint + liveness), `tests/test_mcp_tools.py`
+  (`get_viewer_context`), viewer `useViewerContextBridge` test.
+
 ### D-2026-06-15-C — In-app chat Layer 3: per-canvas system framing
 
 - **What:** Each chat turn now carries a **canvas-appropriate system framing**

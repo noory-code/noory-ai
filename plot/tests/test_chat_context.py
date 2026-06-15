@@ -1,0 +1,52 @@
+"""Shared chat-context builders — canonical home (D-2026-06-15-D).
+
+``build_framing_preamble`` + ``build_context_preamble`` moved out of the HTTP
+endpoint module into ``plot_mcp.chat_context`` so the MCP path can share them
+without importing the HTTP layer. These tests pin the SSOT at its new home;
+``test_endpoints_chat.py`` continues to cover the in-app wiring through the
+re-export.
+"""
+
+from __future__ import annotations
+
+from plot_mcp.chat_context import (
+    SCOPE_FRAMING,
+    SELECTION_DETAIL_CAP,
+    build_context_preamble,
+    build_framing_preamble,
+)
+
+
+def test_framing_maps_each_canvas_to_its_vision_phase() -> None:
+    assert "Discovery" in build_framing_preamble("foundation")
+    assert "Planning" in build_framing_preamble("actors")
+    assert "Planning" in build_framing_preamble("services")
+    assert "Execution" in build_framing_preamble("service_detail:svc_1")
+
+
+def test_framing_empty_for_project_and_unknown_scope() -> None:
+    assert build_framing_preamble("project") == ""
+    assert build_framing_preamble("nope") == ""
+
+
+def test_framing_uses_base_scope_for_parametric_service_detail() -> None:
+    assert build_framing_preamble("service_detail:a") == SCOPE_FRAMING["service_detail"]
+    assert build_framing_preamble("service_detail:a") == build_framing_preamble("service_detail:b")
+
+
+def test_context_preamble_lists_selection() -> None:
+    p = build_context_preamble("foundation", [{"id": "n1", "kind": "core_value", "label": "Trust"}])
+    assert "foundation" in p and "core_value" in p and "Trust" in p and "n1" in p
+
+
+def test_context_preamble_empty_for_project_and_empty_selection() -> None:
+    assert build_context_preamble("project", [{"id": "n1", "kind": "x", "label": "y"}]) == ""
+    assert build_context_preamble("foundation", []) == ""
+    assert build_context_preamble("foundation", "not-a-list") == ""
+
+
+def test_context_preamble_caps_detailed_nodes() -> None:
+    sel = [{"id": f"n{i}", "kind": "k", "label": f"L{i}"} for i in range(SELECTION_DETAIL_CAP + 5)]
+    p = build_context_preamble("services", sel)
+    assert str(SELECTION_DETAIL_CAP + 5) in p  # total count surfaced
+    assert f"n{SELECTION_DETAIL_CAP + 4}" in p  # overflow ids still listed

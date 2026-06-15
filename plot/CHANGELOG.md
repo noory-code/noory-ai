@@ -4,6 +4,44 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.76.0] — 2026-06-15
+
+Minor. Chat MCP path — the external agent gets the viewer's live context
+(D-2026-06-15-D). The CHAT_ARCH.md "Scope honesty" follow-up to Layers 1–3:
+the *primary* path (the user's own CLI via the `plot_mcp` sidecar) now sees the
+same active canvas + selection + framing the in-app chat got.
+
+### Added
+
+- **`get_viewer_context(project_path)` MCP tool** → `{active_canvas, selection,
+  framing, updated_at, stale, has_viewer}`. The agent resolves "fix this"
+  against what's on screen; when no viewer is live it returns
+  `has_viewer: false` / empty so the agent never treats stale context as
+  current.
+- **`POST /api/viewer/context`** — the viewer reports `{project_path, scope,
+  selection}`; the engine stamps `updated_at` and writes a rendezvous file.
+- **`useViewerContextBridge`** (viewer) — one mount in `ChatDock` over the
+  active canvas + selection; debounced on-change post + ~30s heartbeat so an
+  idle-but-open viewer stays "live".
+- `plot_mcp/viewer_context.py` (filesystem rendezvous store) +
+  `plot_mcp/endpoints_viewer.py`.
+
+### Changed
+
+- **Shared `plot_mcp/chat_context.py`** — `build_framing_preamble` +
+  `SCOPE_FRAMING` + `build_context_preamble` moved out of the HTTP endpoint
+  module so the MCP path shares them without importing the HTTP layer (SSOT;
+  no MCP→HTTP dependency). `endpoints_chat.py` re-exports for back-compat.
+
+### Notes
+
+- The bundled MCP server is a **separate `--mcp-stdio` process** from the HTTP
+  sidecar (D-2026-06-14-A), so context crosses the boundary via a
+  `tempfile.gettempdir()` file keyed by `sha256(plot_root)` — ephemeral, atomic
+  write, project-keyed. Liveness uses the shared machine clock (90s TTL). The
+  originally-pinned "in-memory" store was physically impossible across that
+  boundary; revised to filesystem after the topology finding.
+
 ## [0.75.0] — 2026-06-15
 
 Minor. In-app chat Layer 3 — per-canvas system framing (D-2026-06-15-C).

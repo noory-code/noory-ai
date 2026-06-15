@@ -907,3 +907,21 @@ export async function resetChatSession(
     }),
   );
 }
+
+/** Report the viewer's current canvas context (active scope + selection) to the
+ *  engine so the external MCP agent can read it via ``get_viewer_context``
+ *  (D-2026-06-15-D). Fire-and-forget — the engine stamps ``updated_at`` and
+ *  writes a rendezvous file the separate ``--mcp-stdio`` process reads. */
+export async function reportViewerContext(
+  projectPath: string,
+  scope: ChatScope,
+  selection: ChatSelectionNode[],
+): Promise<void> {
+  await ok(
+    await engineFetch(`${API_BASE}/api/viewer/context`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ project_path: projectPath, scope, selection }),
+    }),
+  );
+}

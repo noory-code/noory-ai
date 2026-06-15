@@ -51,6 +51,7 @@ from plot_mcp.endpoints_mcp import (
     mcp_register_endpoint,
     mcp_unregister_endpoint,
 )
+from plot_mcp.endpoints_viewer import viewer_context_endpoint
 from plot_mcp.workspace import find_viewer_dist, resolve_plot_root
 
 _log = logging.getLogger(__name__)
@@ -132,6 +133,7 @@ def create_http_app(
         # ``chat_stream_event`` payloads).
         Route("/api/chat/send", chat_send_endpoint, methods=["POST"]),
         Route("/api/chat/reset", chat_reset_endpoint, methods=["POST"]),
+        Route("/api/viewer/context", viewer_context_endpoint, methods=["POST"]),
         Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
         Route(
             "/api/projects/{project_id}",

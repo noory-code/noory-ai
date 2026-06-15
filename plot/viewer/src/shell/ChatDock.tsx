@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 
 import { getChatProvider, setChatProvider, type McpProviderName } from "../app/mcp";
 import { useChatStream, type ChatMessage } from "../hooks/useChatStream";
+import { useViewerContextBridge } from "../hooks/useViewerContextBridge";
 import type { ChatScope, ChatSelectionNode } from "../types";
 import { ChatProvidersPanel } from "./ChatProvidersPanel";
 import { useDialog } from "./dialog/DialogProvider";
@@ -47,6 +48,12 @@ export function ChatDock({
   selection = [],
 }: ChatDockProps) {
   const { t } = useTranslation();
+  // Report the canvas the user is looking at + their selection to the engine so
+  // the external MCP agent can read it (D-2026-06-15-D). Uses ``activeScope``
+  // (the canvas), not the chat-thread toggle — the agent wants what's on
+  // screen. ChatDock stays mounted whenever a workspace is open (the panel
+  // collapses to width 0, it does not unmount), so it is the bridge's home.
+  useViewerContextBridge(workspaceRoot, activeScope, selection);
   const [activeProvider, setActiveProvider] =
     useState<McpProviderName | null>(null);
   // "canvas" follows the active canvas; "project" pins the shared cross-canvas
