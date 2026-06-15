@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.83.0] — 2026-06-16
+
+### Added
+
+- **Live chat streaming indicator** (D-2026-06-16-B). While a turn streams,
+  the dock shows three bouncing dots + an elapsed-seconds counter
+  (`role="status"`) so it never looks frozen — including the gap between send
+  and the first token, where the assistant bubble is still empty. A blinking
+  caret trails the streaming text once it arrives. `ChatActivityIndicator` +
+  `useElapsedSeconds`, pinned by `viewer/tests/chat-activity-indicator.test.tsx`.
+
 ## [0.82.1] — 2026-06-16
 
 ### Fixed

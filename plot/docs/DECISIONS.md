@@ -39,6 +39,25 @@
 
 ## Log
 
+### D-2026-06-16-B — Chat shows a live streaming activity indicator (not frozen)
+
+- **What:** While a chat turn streams, the dock renders a live activity
+  indicator — three bouncing dots + an elapsed-seconds counter
+  (`ChatActivityIndicator` + `useElapsedSeconds`) — in the status bar and
+  inside an assistant bubble that has no text yet. A blinking caret trails
+  the streaming text once it arrives.
+- **Why:** user — "채팅 과정이 좀 더 다이나믹하게, 사람들이 기다리지만 멈추지
+  않은 것처럼 보여야 해요." Between send and the first token the CLI is
+  spawning / thinking and the panel looked frozen (only a static
+  "streaming…" label, and the assistant bubble was empty).
+- **Alternatives:** static text only (status quo) — rejected, reads as
+  frozen. A full token-rate / spinner overlay — YAGNI; dots + elapsed convey
+  liveness cheaply.
+- **Approval:** Accepted by user, 2026-06-16 (requested).
+- **Spec impact:** new "Streaming feedback" row under
+  [`SPEC.md` → R7 chat](./SPEC.md). Pinned by
+  `viewer/tests/chat-activity-indicator.test.tsx`.
+
 ### D-2026-06-16-A — Drag-release context-menu suppression is gesture-based (kind/canvas-agnostic)
 
 - **What:** Replaces the v0.81.1 (D-2026-06-15-N) implementation. Instead of

@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { ChatActivityIndicator } from "./ChatActivityIndicator";
 import { getChatProvider, setChatProvider, type McpProviderName } from "../app/mcp";
 import { useChatStream, type ChatMessage } from "../hooks/useChatStream";
 import { useViewerContextBridge } from "../hooks/useViewerContextBridge";
@@ -375,15 +376,20 @@ function ChatMessageRow({ message }: { message: ChatMessage }) {
           <span aria-live="polite">{t("chat.streamingHint")}</span>
         )}
       </div>
-      <p
-        className={
-          isError
-            ? "whitespace-pre-wrap text-fg-strong"
-            : "whitespace-pre-wrap text-fg-strong"
-        }
-      >
-        {message.text}
-      </p>
+      {message.status === "streaming" && message.text === "" ? (
+        // No tokens yet — the CLI is spawning / thinking. Show the live
+        // activity indicator so the turn never looks frozen (D-2026-06-16-B).
+        <ChatActivityIndicator />
+      ) : (
+        <p className="whitespace-pre-wrap text-fg-strong">
+          {message.text}
+          {message.status === "streaming" && (
+            <span aria-hidden className="ml-0.5 inline-block animate-pulse">
+              ▍
+            </span>
+          )}
+        </p>
+      )}
       {isError && message.errorMessage && (
         <p className="mt-1 text-[11px] text-fg-muted">
           {t("chat.errorPrefix")}
@@ -411,11 +417,13 @@ function ChatStatusBar({
   return (
     <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-1 text-[10px] text-fg-muted">
       <span aria-live="polite">
-        {showDisconnected
-          ? t("chat.socketDisconnected")
-          : isStreaming
-            ? t("chat.streamingHint")
-            : ""}
+        {showDisconnected ? (
+          t("chat.socketDisconnected")
+        ) : isStreaming ? (
+          <ChatActivityIndicator />
+        ) : (
+          ""
+        )}
       </span>
       <button
         type="button"
