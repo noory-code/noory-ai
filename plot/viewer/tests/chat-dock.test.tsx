@@ -232,37 +232,41 @@ describe("ChatDock — provider selection", () => {
   });
 });
 
-describe("ChatDock — scope switcher (D-2026-06-13-H, full picker D-2026-06-15-E)", () => {
-  it("always shows the four canvas-thread segments", async () => {
+describe("ChatDock — scope switcher (D-2026-06-13-H; 2-tab, D-2026-06-15-H)", () => {
+  it("shows the [active canvas | project] two segments", async () => {
     selectionValue = { provider: "codex" };
     render(
       <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="foundation" />,
     );
     await screen.findByRole("tablist", { name: /conversation/i });
     const labels = screen.getAllByRole("tab").map((t) => t.textContent);
-    for (const seg of ["Foundation", "Actors", "Services", "Project"]) {
-      expect(labels).toContain(seg);
-    }
-    // The active canvas is the default-selected thread.
+    expect(labels).toContain("Foundation");
+    expect(labels).toContain("Project");
+    // Exactly two tabs — the full F/A/S picker was reverted (v0.78.0).
+    expect(labels).not.toContain("Actors");
     expect(
       screen.getByRole("tab", { name: "Foundation" }).getAttribute("aria-selected"),
     ).toBe("true");
   });
 
-  it("shows the full picker even when the active scope is project", async () => {
+  it("labels a service-detail canvas tab with the service NAME", async () => {
     selectionValue = { provider: "codex" };
     render(
-      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="project" />,
+      <ChatDock
+        onError={() => {}}
+        workspaceRoot="/tmp/ws"
+        activeScope="service_detail:svc_one"
+        activeScopeLabel="Login service"
+      />,
     );
     await screen.findByRole("tablist", { name: /conversation/i });
     const labels = screen.getAllByRole("tab").map((t) => t.textContent);
-    expect(labels).toContain("Foundation");
-    expect(
-      screen.getByRole("tab", { name: "Project" }).getAttribute("aria-selected"),
-    ).toBe("true");
+    expect(labels).toContain("Login service"); // the service name, not "Service detail"
+    expect(labels).not.toContain("Service detail");
+    expect(labels).not.toContain("service_detail:svc_one");
   });
 
-  it("appends a {ServiceDetail} segment (selected) when a service-detail is active", async () => {
+  it("falls back to the base label when no service name is given", async () => {
     selectionValue = { provider: "codex" };
     render(
       <ChatDock
@@ -273,39 +277,31 @@ describe("ChatDock — scope switcher (D-2026-06-13-H, full picker D-2026-06-15-
     );
     await screen.findByRole("tablist", { name: /conversation/i });
     const labels = screen.getAllByRole("tab").map((t) => t.textContent);
-    // F/A/S/Project still present + the SD segment, labelled with its base key
-    // (never the raw ``service_detail:svc_one``).
-    for (const seg of ["Foundation", "Actors", "Services", "Project", "Service detail"]) {
-      expect(labels).toContain(seg);
-    }
+    expect(labels).toContain("Service detail");
     expect(labels).not.toContain("service_detail:svc_one");
-    // Opening a service-detail moves the chat to its thread.
-    expect(
-      screen.getByRole("tab", { name: "Service detail" }).getAttribute("aria-selected"),
-    ).toBe("true");
   });
 
-  it("clicking a segment switches the selected thread", async () => {
+  it("switches the selected segment to project on click", async () => {
     selectionValue = { provider: "codex" };
     const user = userEvent.setup();
     render(
       <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="actors" />,
     );
-    const foundationTab = await screen.findByRole("tab", { name: "Foundation" });
-    await user.click(foundationTab);
-    expect(foundationTab.getAttribute("aria-selected")).toBe("true");
+    const projectTab = await screen.findByRole("tab", { name: "Project" });
+    await user.click(projectTab);
+    expect(projectTab.getAttribute("aria-selected")).toBe("true");
     expect(
       screen.getByRole("tab", { name: "Actors" }).getAttribute("aria-selected"),
     ).toBe("false");
   });
 
-  it("hides the {ServiceDetail} segment for non-service-detail canvases", async () => {
+  it("omits the scope switcher when the active scope is already project", async () => {
     selectionValue = { provider: "codex" };
     render(
-      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="actors" />,
+      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="project" />,
     );
-    await screen.findByRole("tablist", { name: /conversation/i });
-    const labels = screen.getAllByRole("tab").map((t) => t.textContent);
-    expect(labels).not.toContain("Service detail");
+    const bar = await screen.findByRole("button", { name: /ai agent/i });
+    await waitFor(() => expect(bar.textContent).toContain("Codex"));
+    expect(screen.queryByRole("tablist", { name: /conversation/i })).toBeNull();
   });
 });

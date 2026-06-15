@@ -101,7 +101,10 @@ export function EditableText({
     "aria-label": ariaLabel,
     className:
       inputClassName ??
-      "w-full rounded border border-accent bg-surface px-1.5 py-0.5 text-sm focus:border-accent focus:outline-none",
+      // ``text-fg-strong`` is explicit: without it the input inherits the node
+      // card's label colour (often light on a saturated card) and renders
+      // invisible on ``bg-surface`` (D-2026-06-15-I).
+      "w-full rounded border border-accent bg-surface px-1.5 py-0.5 text-sm text-fg-strong focus:border-accent focus:outline-none",
   };
 
   if (multiline) {

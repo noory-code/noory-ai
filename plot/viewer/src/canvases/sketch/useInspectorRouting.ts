@@ -28,6 +28,13 @@ export interface UseInspectorRoutingArgs {
   selectNodeId: string | null | undefined;
   onSelectionConsumed: (() => void) | undefined;
   onNodeDrill: ((nodeId: string) => void) | undefined;
+  shouldDrill?: (n: SketchNode) => boolean;
+  /** When true, SELECTING (single-click) a ``shouldDrill`` node opens its
+   *  detail tab instead of the right inspector (D-2026-06-15-H). Only the
+   *  Services canvas sets this; the Service-Detail canvas keeps actor_ref
+   *  drill on DOUBLE-click (jump to the actor master), so a single click there
+   *  still opens the node's inspector. */
+  selectOpensDrill?: boolean;
 }
 
 export interface UseInspectorRoutingResult {
@@ -44,6 +51,8 @@ export function useInspectorRouting({
   selectNodeId,
   onSelectionConsumed,
   onNodeDrill,
+  shouldDrill,
+  selectOpensDrill,
 }: UseInspectorRoutingArgs): UseInspectorRoutingResult {
   const [inspectorNodeId, setInspectorNodeId] = useState<string | null>(null);
 
@@ -62,18 +71,28 @@ export function useInspectorRouting({
     onSelectionConsumed?.();
   }, [selectNodeId, nodes, onSelectionConsumed, flowRef]);
 
-  const onNodeClick = useCallback((_evt: unknown, n: Node) => {
-    // v0.17.1 (D-2026-05-16-B): synthetic anchor has no Inspector, and
-    // clicking it also closes any currently-open Inspector — anchor
-    // click reads as a deselect for the user. Treating it as a no-op
-    // (the v0.13 behaviour) left stale inspector content visible after
-    // the user moved focus to the anchor.
-    if (n.id === PROJECT_ANCHOR_ID) {
-      setInspectorNodeId(null);
-      return;
-    }
-    setInspectorNodeId(n.id);
-  }, []);
+  const onNodeClick = useCallback(
+    (_evt: unknown, n: Node) => {
+      // v0.17.1 (D-2026-05-16-B): synthetic anchor has no Inspector, and
+      // clicking it also closes any currently-open Inspector — anchor
+      // click reads as a deselect for the user.
+      if (n.id === PROJECT_ANCHOR_ID) {
+        setInspectorNodeId(null);
+        return;
+      }
+      // D-2026-06-15-H — selecting a drillable service node opens its detail
+      // TAB instead of the right inspector (the service's content lives in the
+      // detail canvas, not a side panel).
+      const node = nodes.find((x) => x.id === n.id);
+      if (selectOpensDrill && onNodeDrill && node && shouldDrill?.(node)) {
+        setInspectorNodeId(null);
+        onNodeDrill(n.id);
+        return;
+      }
+      setInspectorNodeId(n.id);
+    },
+    [nodes, onNodeDrill, shouldDrill, selectOpensDrill],
+  );
 
   const onNodeDoubleClick = useCallback(
     (_evt: unknown, n: Node) => {

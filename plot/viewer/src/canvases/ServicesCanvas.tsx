@@ -15,6 +15,7 @@ export function ServicesCanvas(props: SketchCanvasProps) {
       {...props}
       hideRootServiceNode={false}
       shouldDrill={shouldDrillService}
+      selectOpensDrill={true}
       showFoldButton={true}
       injectAnchor={true}
       anchorArrowMode="diverge"

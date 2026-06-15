@@ -36,6 +36,10 @@ export interface ChatDockProps {
    * in-dock switcher. Defaults to `project` so workspace-less / test mounts
    * stay coherent. */
   activeScope?: ChatScope;
+  /** Human label for a parametric ``service_detail:<id>`` scope — the service's
+   * name, shown on the switcher's canvas tab instead of the generic "Service
+   * detail" (D-2026-06-15-H). Ignored for non-service-detail scopes. */
+  activeScopeLabel?: string | null;
   /** Live canvas selection, injected as per-turn chat context (Layer 2,
    * D-2026-06-15-A). */
   selection?: ChatSelectionNode[];
@@ -45,6 +49,7 @@ export function ChatDock({
   onError,
   workspaceRoot,
   activeScope = "project",
+  activeScopeLabel,
   selection = [],
 }: ChatDockProps) {
   const { t } = useTranslation();
@@ -56,15 +61,13 @@ export function ChatDock({
   useViewerContextBridge(workspaceRoot, activeScope, selection);
   const [activeProvider, setActiveProvider] =
     useState<McpProviderName | null>(null);
-  // The chat thread shown. The switcher is a full picker (D-2026-06-15-E):
-  // the selection defaults to + follows the active canvas (opening a
-  // service-detail moves the chat there), but a click overrides until the next
-  // canvas change. Switching threads never navigates the canvas.
-  const [selectedScope, setSelectedScope] = useState<ChatScope>(activeScope);
-  useEffect(() => {
-    setSelectedScope(activeScope);
-  }, [activeScope]);
-  const effectiveScope: ChatScope = selectedScope;
+  // The chat switcher has exactly two tabs: the selected canvas | project
+  // (D-2026-06-13-H). "canvas" mode follows the active canvas tab; "project"
+  // pins the shared cross-canvas thread. (The v0.77.0 full picker was reverted
+  // — the canvas tabs, not the chat dock, are where the user picks a canvas.)
+  const [scopeMode, setScopeMode] = useState<"canvas" | "project">("canvas");
+  const effectiveScope: ChatScope =
+    scopeMode === "project" ? "project" : activeScope;
   // D-2026-06-14-D — provider connection is a setup step, not something to
   // stare at while chatting; keep it behind a compact bar, collapsed by
   // default. The bar shows the active CLI so the user knows what's connected
@@ -147,11 +150,14 @@ export function ChatDock({
               <ChatProvidersPanel onError={onError} {...selectionProps} />
             </div>
           )}
-          <ChatScopeSwitcher
-            activeScope={activeScope}
-            selected={selectedScope}
-            onSelect={setSelectedScope}
-          />
+          {activeScope !== "project" && (
+            <ChatScopeSwitcher
+              canvasScope={activeScope}
+              canvasLabel={activeScopeLabel}
+              mode={scopeMode}
+              onModeChange={setScopeMode}
+            />
+          )}
           <ChatMessageFrame
             workspaceRoot={workspaceRoot}
             activeProvider={activeProvider}
@@ -164,43 +170,38 @@ export function ChatDock({
   );
 }
 
-// The fixed canvas threads, always offered (D-2026-06-15-E).
-const FIXED_SCOPES: ChatScope[] = ["foundation", "actors", "services", "project"];
-
 /**
- * Full chat-thread picker (D-2026-06-15-E). Fixed segments
- * Foundation · Actors · Services · Project, plus a ``{ServiceDetail}`` segment
- * (after a ``|`` separator) while a service-detail is the active canvas.
- * Selecting a segment switches the chat thread only — it never navigates the
- * canvas. The active canvas is the default-selected thread.
+ * Two-tab chat scope switcher: the selected canvas | project
+ * (D-2026-06-13-H). The "canvas" tab follows the active canvas tab; "project"
+ * pins the shared cross-canvas thread. A parametric ``service_detail:<id>``
+ * canvas is labelled with its base ``service_detail`` label (D-2026-06-15-B).
  */
 function ChatScopeSwitcher({
-  activeScope,
-  selected,
-  onSelect,
+  canvasScope,
+  canvasLabel,
+  mode,
+  onModeChange,
 }: {
-  activeScope: ChatScope;
-  selected: ChatScope;
-  onSelect: (scope: ChatScope) => void;
+  canvasScope: ChatScope;
+  canvasLabel?: string | null;
+  mode: "canvas" | "project";
+  onModeChange: (mode: "canvas" | "project") => void;
 }) {
   const { t } = useTranslation();
-  // The active service-detail (if any) is the one parametric segment. Its
-  // ``service_detail:<id>`` has no per-instance i18n key, so it's labelled with
-  // the base ``service_detail`` label (Layer 1, D-2026-06-15-B).
-  const serviceDetail: ChatScope | null = activeScope.startsWith(
-    "service_detail:",
-  )
-    ? activeScope
-    : null;
-  const segment = (scope: ChatScope, label: string) => (
+  const isServiceDetail = canvasScope.startsWith("service_detail:");
+  // A service-detail tab shows the service's NAME (D-2026-06-15-H), falling
+  // back to the generic label only when the name isn't available.
+  const canvasTabLabel = isServiceDetail
+    ? canvasLabel || t("chat.scope.service_detail")
+    : t(`chat.scope.${canvasScope}`);
+  const segment = (value: "canvas" | "project", label: string) => (
     <button
-      key={scope}
       type="button"
       role="tab"
-      aria-selected={selected === scope}
-      onClick={() => onSelect(scope)}
+      aria-selected={mode === value}
+      onClick={() => onModeChange(value)}
       className={
-        selected === scope
+        mode === value
           ? "flex-1 rounded px-2 py-1 text-[11px] font-medium bg-surface-muted text-fg-strong"
           : "flex-1 rounded px-2 py-1 text-[11px] text-fg-muted hover:text-fg-strong"
       }
@@ -212,17 +213,10 @@ function ChatScopeSwitcher({
     <div
       role="tablist"
       aria-label={t("chat.scopeLabel")}
-      className="flex items-center gap-1 border-b border-line px-3 py-2"
+      className="flex gap-1 border-b border-line px-3 py-2"
     >
-      {FIXED_SCOPES.map((scope) => segment(scope, t(`chat.scope.${scope}`)))}
-      {serviceDetail && (
-        <>
-          <span aria-hidden className="px-0.5 text-fg-muted">
-            |
-          </span>
-          {segment(serviceDetail, t("chat.scope.service_detail"))}
-        </>
-      )}
+      {segment("canvas", canvasTabLabel)}
+      {segment("project", t("chat.scope.project"))}
     </div>
   );
 }

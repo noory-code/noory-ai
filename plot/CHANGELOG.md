@@ -4,6 +4,44 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.78.0] — 2026-06-15
+
+Minor. Service-detail becomes a dynamic canvas tab; auth-boot fix; chat
+switcher reverts to two tabs; several UX fixes (verified live in the `.app`).
+
+### Added
+
+- **Service-detail dynamic canvas tab** (D-2026-06-15-H). Selecting a
+  (non-root) service node on the Services canvas appends a `{ServiceName}` tab
+  after `Foundation | Actors | Services` and renders the detail canvas inline
+  (was a modal overlay). Switching to an F/A/S tab keeps the tab; its × closes
+  it.
+
+### Changed
+
+- **Single-click a service node opens its detail tab** instead of the right
+  inspector (`selectOpensDrill`, Services canvas only). On the Service-Detail
+  canvas a single click still opens the inspector — actor_ref drill stays on
+  double-click, so clicking an actor no longer jumps to the Actors canvas.
+- **Chat scope switcher reverts to two tabs** — `[selected canvas | project]`
+  (the v0.77.0 full F/A/S picker, D-2026-06-15-E, is **superseded**). A
+  service-detail canvas tab shows the **service's name**, not "Service detail".
+
+### Fixed
+
+- **Workspace failed to load under the bundled/dev shell** (D-2026-06-15-G):
+  `main.tsx` now awaits the engine auth token before the first render — the
+  fire-and-forget call lost the race against the first `/api/projects`,
+  yielding a 401 and an empty workspace.
+- **Node label edit text was invisible** (D-2026-06-15-I): the editor input now
+  sets an explicit `text-fg-strong` instead of inheriting the card's (often
+  light) label colour.
+
+### Removed
+
+- The ServiceDetail **modal overlay** (and its inert backdrop) — replaced by the
+  inline dynamic tab above.
+
 ## [0.77.0] — 2026-06-15
 
 Minor. Chat dock UX — full thread picker (D-2026-06-15-E) + always-legible

@@ -39,6 +39,70 @@
 
 ## Log
 
+### D-2026-06-15-I — Node label edit input has an explicit readable text colour
+
+- **What:** The inline node-label editor (`EditableText`) input now sets
+  `text-fg-strong`. Without it the input inherited the node card's label colour
+  (often light on a saturated card) and rendered invisible on its `bg-surface`
+  background.
+- **Why:** user — "노드 라벨 편집모드에서 글씨 안보인다 … 테마 잘못 만든거 같은데?"
+- **Approval:** Accepted by user, 2026-06-15.
+- **Spec impact:** none (contrast fix). Guarded by the explicit class.
+
+### D-2026-06-15-H — Service-detail opens as a dynamic canvas tab; chat switcher reverts to two tabs (supersedes D-2026-06-15-E)
+
+- **What:** Three linked changes to the service-detail / chat UX:
+  1. **Service-detail is a dynamic canvas tab, not a modal.** Selecting a
+     (non-root) service node on the Services canvas appends a `{ServiceName}`
+     tab after `Foundation | Actors | Services`; it renders the detail canvas
+     **inline** (no overlay/inert). Switching to an F/A/S tab keeps the detail
+     tab; its × closes it. State lives in `useUrlSync` (`detailActive` +
+     `activateDetail` / `closeDetail`); the stencil switches to `service_detail`
+     while the detail tab is active.
+  2. **Single-click on a service node opens its detail tab** instead of the
+     right inspector (`selectOpensDrill`, Services canvas only). On the
+     Service-Detail canvas a single click still opens the inspector — actor_ref
+     drill stays on DOUBLE-click, so clicking an actor no longer jumps away.
+  3. **Chat scope switcher reverts to two tabs** — `[selected canvas |
+     project]` (the v0.77.0 full F/A/S picker, D-2026-06-15-E, is **superseded**
+     — the canvas tabs, not the chat dock, are where the user picks a canvas).
+     A service-detail canvas tab shows the **service's name**, not the generic
+     "Service detail".
+- **Why:** user — "서비스 디테일이 모달로 뜨는데 캔버스 탭이 동적으로 추가되게";
+  "서비스 노드 선택하면 오른쪽 서비스 설명 없애고 디테일 탭에서 보이게"; "채팅창 탭은
+  선택한 캔버스 | 프로젝트 두 개"; "채팅창에 서비스 상세 말고 서비스 이름으로".
+- **Alternatives:** keep the modal (rejected — user wants a tab); full F/A/S
+  chat picker (D-2026-06-15-E, rejected — duplicates the canvas tabs).
+- **Approval:** Accepted by user, 2026-06-15 (iterated live in the running
+  `.app`).
+- **Spec impact:** SPEC §R7 chat (Conversation-scope row → 2-tab + service name)
+  + a Service-Detail canvas-tab note. Verified by
+  `viewer/tests/chat-dock.test.tsx` (2-tab + service-name),
+  `viewer/tests/canvas-tabs-root.test.tsx` (detail tab + close),
+  `viewer/tests/use-url-sync-detail-tab.test.ts` (tab lifecycle),
+  `viewer/tests/use-inspector-routing-drill.test.ts` (select-opens-drill scope).
+- **LOC:** raised `SketchCanvas` ceiling 522 → 529 (selectOpensDrill plumbing).
+- **Follow-up (not yet built):** the Service-Detail page's right panel should
+  default to the **service's own inspector** and switch to a node's inspector
+  on selection (user-approved "Option 1", 2026-06-15) — deferred; it needs a
+  cross-doc inspector (the service node lives in the Services doc).
+
+### D-2026-06-15-G — Engine auth token is awaited before the first render
+
+- **What:** `main.tsx` now `await`s `initEngineAuth()` before mounting React
+  (inside a `boot()` async fn) instead of fire-and-forget. The Tauri
+  `invoke('plot_auth_token')` is an IPC round-trip; firing it without awaiting
+  lost the race against the first `/api/projects` effect under the bundled/dev
+  shell → **401 → the workspace never loaded**. Awaiting trades a brief
+  pre-token blank for a correct boot.
+- **Why:** observed live in `tauri dev` — `/api/projects` returned 401 then
+  `/api/workspace/tree` 200 one second later (token resolved in between). User —
+  "워크스페이스 잘 못 잡혔어요".
+- **Approval:** Accepted by user, 2026-06-15.
+- **Spec impact:** none (boot-ordering correctness). The old comment's claim
+  that "effects run after render so they always see the token" was false for
+  the IPC path.
+
 ### D-2026-06-15-F — Connected agent is legible on the compact provider bar without expanding
 
 - **What:** The compact provider bar (D-2026-06-14-D) gains a persistent
@@ -54,7 +118,7 @@
   `viewer/tests/chat-dock.test.tsx` (`data-connected` 1/0, name visible while
   collapsed).
 
-### D-2026-06-15-E — Chat scope switcher becomes a full thread picker
+### D-2026-06-15-E — Chat scope switcher becomes a full thread picker — ⚠️ SUPERSEDED by D-2026-06-15-H (reverted to 2-tab same day)
 
 - **What:** The in-dock chat scope switcher changes from a 2-way
   `[active canvas | project]` toggle to a **full thread picker**: fixed

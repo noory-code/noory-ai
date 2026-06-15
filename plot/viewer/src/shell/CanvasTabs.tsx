@@ -32,6 +32,15 @@ interface CanvasTabsProps {
   /** Active project NAME, shown centered in the tab bar (v0.34.3,
    *  D-2026-05-31-Q). The workspace root path lives in the header instead. */
   projectName: string | null;
+  /** Dynamic service-detail tab (D-2026-06-15-H). When a service node is
+   *  selected on the Services canvas, a ``{label}`` tab is appended after
+   *  Services; ``detailActive`` says it's the current view, and the × removes
+   *  it. Omitted / ``null`` id = no detail tab. */
+  detailServiceId?: string | null;
+  detailLabel?: string | null;
+  detailActive?: boolean;
+  onSelectDetail?: () => void;
+  onCloseDetail?: () => void;
 }
 
 export function CanvasTabs({
@@ -41,6 +50,11 @@ export function CanvasTabs({
   onPublishBlueprint,
   publishDisabled,
   projectName,
+  detailServiceId,
+  detailLabel,
+  detailActive,
+  onSelectDetail,
+  onCloseDetail,
 }: CanvasTabsProps) {
   const { t } = useTranslation();
   return (
@@ -51,7 +65,9 @@ export function CanvasTabs({
     >
       <div className="flex items-center gap-1">
         {CANVAS_TAB_IDS.map((id) => {
-          const selected = id === active;
+          // An F/A/S tab is selected only when the detail tab isn't the
+          // active view (D-2026-06-15-H).
+          const selected = id === active && !detailActive;
           return (
             <button
               key={id}
@@ -69,6 +85,34 @@ export function CanvasTabs({
             </button>
           );
         })}
+        {detailServiceId && (
+          <span
+            className={
+              detailActive
+                ? "flex items-center gap-1 border-b-2 border-fg-strong pl-4 pr-2 py-2 text-sm font-medium text-fg-strong"
+                : "flex items-center gap-1 border-b-2 border-transparent pl-4 pr-2 py-2 text-sm text-fg-muted hover:text-fg-strong"
+            }
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={detailActive}
+              onClick={onSelectDetail}
+              className="max-w-[12rem] truncate"
+              title={detailLabel ?? undefined}
+            >
+              {detailLabel || t("canvas.tabs.services")}
+            </button>
+            <button
+              type="button"
+              aria-label={t("canvas.closeDetailTab")}
+              onClick={onCloseDetail}
+              className="shrink-0 rounded px-1 text-xs text-fg-muted hover:bg-surface-muted hover:text-fg-strong"
+            >
+              ✕
+            </button>
+          </span>
+        )}
       </div>
       {/* v0.34.7 (D-2026-05-31-U) — project name + its blueprint version
           (version belongs to the PROJECT, not the repo path in the header). */}

@@ -115,6 +115,10 @@ export interface SketchCanvasProps {
    *  drill. Each canvas wrapper supplies its own. Default ``undefined``
    *  = no drilling. */
   shouldDrill?: (node: DocNode) => boolean;
+  /** D-2026-06-15-H — when true, a single click on a ``shouldDrill`` node opens
+   *  its detail tab (Services canvas). Default false = single click selects
+   *  (opens the inspector); drill stays on double-click. */
+  selectOpensDrill?: boolean;
   /** v0.15 Phase 3.4 — render the fold (▾/▸) button on container
    *  nodes. Default true; FoundationCanvas passes false. */
   showFoldButton?: boolean;
@@ -187,6 +191,7 @@ function SketchCanvasInner({
   onAnchorChange,
   hideRootServiceNode,
   shouldDrill,
+  selectOpensDrill,
   showFoldButton,
   injectAnchor,
   applyAnchorRadialLayout,
@@ -247,6 +252,8 @@ function SketchCanvasInner({
     selectNodeId,
     onSelectionConsumed,
     onNodeDrill,
+    shouldDrill,
+    selectOpensDrill,
   });
 
   const orphanActorRefIds = useOrphanActorRefs(doc.nodes, availableActors);

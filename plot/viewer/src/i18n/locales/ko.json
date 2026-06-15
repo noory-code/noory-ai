@@ -65,7 +65,8 @@
       "foundation": "파운데이션",
       "actors": "액터",
       "services": "서비스"
-    }
+    },
+    "closeDetailTab": "서비스 상세 탭 닫기"
   },
   "header": {
     "markSession": "세션 기록…",

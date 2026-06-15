@@ -65,7 +65,8 @@
       "foundation": "Foundation",
       "actors": "Actors",
       "services": "Services"
-    }
+    },
+    "closeDetailTab": "Close service-detail tab"
   },
   "header": {
     "markSession": "Mark session…",

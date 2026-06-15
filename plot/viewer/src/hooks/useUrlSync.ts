@@ -18,12 +18,20 @@ import type { CanvasKey } from "../types";
 export interface UrlSync {
   activeTab: CanvasTab;
   detailServiceId: string | null;
+  /** Whether the service-detail tab is the active view (D-2026-06-15-H). The
+   *  ``{ServiceDetail}`` tab exists whenever ``detailServiceId`` is set; this
+   *  flag says it's the one currently showing (vs an F/A/S tab). */
+  detailActive: boolean;
   selectedNodeId: string | null;
   /** Generic URL writer — also used by App.tsx to sync the
    *  ``?project=<id>`` param when ``useProject`` changes activeId. */
   syncUrl: (updates: Record<string, string | null | undefined>) => void;
   selectTab: (tab: CanvasTab) => void;
   drillIntoService: (serviceId: string) => void;
+  /** Re-activate the existing service-detail tab (click its tab). */
+  activateDetail: () => void;
+  /** Remove the service-detail tab entirely (its × button). */
+  closeDetail: () => void;
   backToOverview: () => void;
   jumpToActor: (actorId: string) => void;
   consumeSelection: () => void;
@@ -46,6 +54,11 @@ export function useUrlSync(): UrlSync {
   const [detailServiceId, setDetailServiceId] = useState<string | null>(() =>
     readInitial("detail"),
   );
+  // On load, a present ``?detail`` means the detail tab opens active (matches
+  // the pre-v0.78 modal-auto-open behaviour).
+  const [detailActive, setDetailActive] = useState<boolean>(
+    () => readInitial("detail") !== null,
+  );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(() =>
     readInitial("select"),
   );
@@ -64,24 +77,41 @@ export function useUrlSync(): UrlSync {
 
   const selectTab = useCallback(
     (tab: CanvasTab) => {
+      // Switching to an F/A/S tab deactivates the detail view but KEEPS the
+      // ``{ServiceDetail}`` tab around (D-2026-06-15-H) — it's closed only via
+      // its × button. ``detail`` URL param is left intact so the tab persists.
       setActiveTab(tab);
-      setDetailServiceId(null);
-      syncUrl({ canvas: tab, detail: null, select: null });
+      setDetailActive(false);
+      syncUrl({ canvas: tab, select: null });
     },
     [syncUrl],
   );
 
   const drillIntoService = useCallback(
     (serviceId: string) => {
+      // Selecting a service node adds the detail tab and makes it the active
+      // view (D-2026-06-15-H — was a modal pre-v0.78).
       setActiveTab("services");
       setDetailServiceId(serviceId);
+      setDetailActive(true);
       syncUrl({ canvas: "services", detail: serviceId });
     },
     [syncUrl],
   );
 
+  const activateDetail = useCallback(() => {
+    setDetailActive(true);
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setDetailServiceId(null);
+    setDetailActive(false);
+    syncUrl({ detail: null });
+  }, [syncUrl]);
+
   const backToOverview = useCallback(() => {
     setDetailServiceId(null);
+    setDetailActive(false);
     syncUrl({ detail: null });
   }, [syncUrl]);
 
@@ -118,6 +148,7 @@ export function useUrlSync(): UrlSync {
         const sid = key.slice("service_detail:".length);
         setActiveTab("services");
         setDetailServiceId(sid);
+        setDetailActive(true);
         syncUrl({ canvas: "services", detail: sid });
       }
     },
@@ -127,10 +158,13 @@ export function useUrlSync(): UrlSync {
   return {
     activeTab,
     detailServiceId,
+    detailActive,
     selectedNodeId,
     syncUrl,
     selectTab,
     drillIntoService,
+    activateDetail,
+    closeDetail,
     backToOverview,
     jumpToActor,
     consumeSelection,

@@ -9,7 +9,6 @@ import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
 import { ServicesCanvas } from "./canvases/ServicesCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import { StencilDragProvider } from "./canvases/sketch/StencilDragContext";
-import { parentIdOf } from "./canvases/sketch/hierarchy";
 import { useProjectHistory } from "./canvases/useProjectHistory";
 import { useAppKeyboard } from "./hooks/useAppKeyboard";
 import { useAvailableNodes } from "./hooks/useAvailableNodes";
@@ -25,8 +24,6 @@ import { ChatDock } from "./shell/ChatDock";
 import { WorkspacePanels } from "./shell/WorkspacePanels";
 import { Header } from "./shell/Header";
 import { HelpCheatsheet } from "./shell/HelpCheatsheet";
-import { ServiceDetailModal } from "./shell/ServiceDetailModal";
-import { ServiceDetailStencilPanel } from "./shell/ServiceDetailStencilPanel";
 import { EmptyState, ErrorPanel, Loading } from "./shell/states";
 import type {
   AnchorPlacement,
@@ -76,11 +73,13 @@ export function App() {
   const {
     activeTab,
     detailServiceId,
+    detailActive,
     selectedNodeId,
     syncUrl,
     selectTab,
     drillIntoService,
-    backToOverview,
+    activateDetail,
+    closeDetail,
     jumpToActor,
     consumeSelection,
     focusCanvas,
@@ -223,13 +222,21 @@ export function App() {
 
   const activeCanvas = canvasCache.get(activeCanvasKey) ?? null;
 
-  // v0.12 — service detail (modal). Separate cache lookup so the modal
-  // and the underlying services canvas can render simultaneously.
+  // v0.12 — service detail. Separate cache lookup so the detail canvas and the
+  // underlying services canvas can both stay loaded. v0.78 (D-2026-06-15-H) —
+  // rendered inline as a dynamic tab instead of a modal overlay.
   const detailCanvasKey: CanvasKey | null = useMemo(() => {
     if (!detailServiceId) return null;
     return `service_detail:${detailServiceId}` as CanvasKey;
   }, [detailServiceId]);
   const detailCanvas = detailCanvasKey ? canvasCache.get(detailCanvasKey) ?? null : null;
+  // Label for the {ServiceDetail} tab = the service node's label on the
+  // Services canvas (falls back to the id).
+  const detailLabel = useMemo(() => {
+    if (!detailServiceId) return null;
+    const svc = (canvasCache.get("services")?.nodes ?? []).find((n) => n.id === detailServiceId);
+    return svc?.label ?? detailServiceId;
+  }, [canvasCache, detailServiceId]);
 
   // v0.10 Step 3 / v0.16.5 — cross-canvas "available master" lists for
   // pickers + orphan detection. Foundation canvas feeds the three
@@ -344,18 +351,14 @@ export function App() {
     return <ProjectPicker />;
   }
 
-  const modalOpen = phase === "ready" && !!detailServiceId && !!detailCanvas && !!detailCanvasKey && !!activeId;
+  // v0.78 (D-2026-06-15-H) — the service-detail canvas renders inline as a
+  // dynamic tab, so it's "ready" when its tab is the active view and its doc
+  // is loaded. (No more modal / inert backdrop.)
+  const detailReady = detailActive && !!detailCanvas && !!detailCanvasKey;
 
   return (
     <StencilDragProvider>
-    <div
-      className="flex h-screen min-h-screen flex-col"
-      // v0.27.2 (D-2026-05-26-F) — when the ServiceDetail modal is
-      // open, the rest of the app is inert: no clicks, no focus, no
-      // drag, no keyboard. The modal sits OUTSIDE this div (sibling
-      // below) so inert does not cascade into it.
-      {...(modalOpen ? { inert: "" as unknown as undefined } : {})}
-    >
+    <div className="flex h-screen min-h-screen flex-col">
       <Header
         error={error}
         socketStatus={socketStatus}
@@ -368,13 +371,13 @@ export function App() {
       />
       {helpOpen && <HelpCheatsheet onClose={() => setHelpOpen(false)} />}
       <WorkspacePanels
-        chat={<ChatDock onError={handleError} workspaceRoot={workspaceRoot} activeScope={modalOpen ? (detailServiceId ? `service_detail:${detailServiceId}` : "services") : tabToKind(activeTab)} selection={(activeCanvas?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
+        chat={<ChatDock onError={handleError} workspaceRoot={workspaceRoot} activeScope={detailActive ? (detailServiceId ? `service_detail:${detailServiceId}` : "services") : tabToKind(activeTab)} activeScopeLabel={detailActive ? detailLabel : undefined} selection={(activeCanvas?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
         sidebar={
         <SketchSidebar
           projects={summaries}
           activeId={activeId}
           dirForId={dirForId}
-          stencilCanvas={activeTab}
+          stencilCanvas={detailActive ? "service_detail" : activeTab}
           availableActors={availableActors}
           availableMissions={availableMissions}
           availableValues={availableValues}
@@ -399,18 +402,44 @@ export function App() {
               blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? "v0.1.0"}
               onPublishBlueprint={handlePublishBlueprint}
               publishDisabled={!activeId}
+              detailServiceId={detailServiceId}
+              detailLabel={detailLabel}
+              detailActive={detailActive}
+              onSelectDetail={activateDetail}
+              onCloseDetail={closeDetail}
             />
           )}
           <div className="relative flex-1 overflow-hidden">
             {phase === "loading" && <Loading />}
             {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
             {phase === "no-projects" && <EmptyState onCreate={dirPicker.open} />}
-            {phase === "ready" && activeCanvas && activeId && (() => {
-              // v0.15 Phase 3.3 — every tab routes through its named
-              // wrapper. SketchCanvas is no longer called directly from
-              // App.tsx; the wrappers each delegate to it for now and
-              // Phase 3.4 / 3.5 absorbs the canvas-kind-specific
-              // behaviour.
+            {phase === "ready" && activeId && detailReady && (
+              // v0.78 (D-2026-06-15-H) — the service-detail canvas renders
+              // inline when its dynamic tab is active (was a modal overlay).
+              <ServiceDetailCanvas
+                key={`${activeId}:${detailCanvasKey}`}
+                doc={detailCanvas!}
+                onDocChange={onModalDocChange}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                canUndo={history.canUndo}
+                canRedo={history.canRedo}
+                projectPath={activeProjectPath ?? ""}
+                projectId={activeId}
+                availableActors={availableActors}
+                availableMissions={availableMissions}
+                availableValues={availableValues}
+                availableIdentities={availableIdentities}
+                selectNodeId={null}
+                onSelectionConsumed={onModalSelectionConsumed}
+                onNodeDrill={onModalNodeDrill}
+                onPublishNode={onModalPublishNode}
+                onUnpublishNode={onModalUnpublishNode}
+              />
+            )}
+            {phase === "ready" && activeCanvas && activeId && !detailReady && (() => {
+              // v0.15 Phase 3.3 — every F/A/S tab routes through its named
+              // wrapper. SketchCanvas is no longer called directly from App.
               const Canvas =
                 activeTab === "foundation"
                   ? FoundationCanvas
@@ -448,46 +477,6 @@ export function App() {
         }
       />
     </div>
-    {/* v0.27.2 (D-2026-05-26-F) — modal sits OUTSIDE the inert root
-        div so the user can still interact with it. fixed inset-0
-        covers the whole viewport; everything behind it is inert. */}
-    {modalOpen && (() => {
-      const servicesCanvas = canvasCache.get("services");
-      const servicesNodes = servicesCanvas?.nodes ?? [];
-      const servicesEdges = servicesCanvas?.edges ?? [];
-      const svcNode = servicesNodes.find((n) => n.id === detailServiceId);
-      const categoryId = svcNode ? parentIdOf(servicesEdges, svcNode.id) : null;
-      const categoryNode = categoryId ? servicesNodes.find((n) => n.id === categoryId) : undefined;
-      return (
-        <ServiceDetailModal
-          serviceLabel={svcNode?.label ?? detailServiceId!}
-          categoryLabel={categoryNode?.label ?? null}
-          onClose={backToOverview}
-          stencilSlot={<ServiceDetailStencilPanel availableActors={availableActors} availableMissions={availableMissions} availableValues={availableValues} availableIdentities={availableIdentities} />}
-        >
-          <ServiceDetailCanvas
-            key={`${activeId}:${detailCanvasKey}`}
-            doc={detailCanvas!}
-            onDocChange={onModalDocChange}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={history.canUndo}
-            canRedo={history.canRedo}
-            projectPath={activeProjectPath ?? ""}
-            projectId={activeId!}
-            availableActors={availableActors}
-            availableMissions={availableMissions}
-            availableValues={availableValues}
-            availableIdentities={availableIdentities}
-            selectNodeId={null}
-            onSelectionConsumed={onModalSelectionConsumed}
-            onNodeDrill={onModalNodeDrill}
-            onPublishNode={onModalPublishNode}
-            onUnpublishNode={onModalUnpublishNode}
-          />
-        </ServiceDetailModal>
-      );
-    })()}
     {dirPicker.modal}
     </StencilDragProvider>
   );
