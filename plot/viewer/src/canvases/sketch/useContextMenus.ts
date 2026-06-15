@@ -10,6 +10,8 @@ import {
   type MutableRefObject,
   type MouseEvent as ReactMouseEvent,
   useCallback,
+  useEffect,
+  useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -53,6 +55,12 @@ export interface UseContextMenusResult {
   openNodeMenu: (event: ReactMouseEvent, node: Node) => void;
   openEdgeMenu: (event: ReactMouseEvent, edge: Edge) => void;
   openPaneMenu: (event: ReactMouseEvent) => void;
+  /** D-2026-06-15-N — wire to React Flow's ``onNodeDragStop``. Arms a
+   *  one-shot suppression so the trailing ``contextmenu`` WebKit emits
+   *  after a trackpad drag-release (d3-drag only blocks contextmenu WHILE
+   *  dragging, not the tail) doesn't pop the menu. A real right-click
+   *  fires ``pointerdown`` first, which disarms the flag. */
+  onNodeDragStop: () => void;
 }
 
 const COLOR_PALETTE = [
@@ -80,9 +88,33 @@ export function useContextMenus({
   const [menu, setMenu] = useState<MenuState | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
 
+  // D-2026-06-15-N — one-shot guard against the trailing ``contextmenu``
+  // WebKit emits after a trackpad drag-release. Armed by ``onNodeDragStop``;
+  // disarmed by any genuine pointerdown (a real right-click fires
+  // pointerdown before its contextmenu, so deliberate right-clicks still
+  // open the menu) and consumed by the first contextmenu that follows.
+  const suppressNextContextMenuRef = useRef(false);
+  const onNodeDragStop = useCallback(() => {
+    suppressNextContextMenuRef.current = true;
+  }, []);
+  useEffect(() => {
+    const disarm = () => {
+      suppressNextContextMenuRef.current = false;
+    };
+    window.addEventListener("pointerdown", disarm, true);
+    return () => window.removeEventListener("pointerdown", disarm, true);
+  }, []);
+  const consumeDragSuppression = useCallback((event: ReactMouseEvent): boolean => {
+    if (!suppressNextContextMenuRef.current) return false;
+    suppressNextContextMenuRef.current = false;
+    event.preventDefault();
+    return true;
+  }, []);
+
   const openNodeMenu = useCallback(
     (event: ReactMouseEvent, node: Node) => {
       event.preventDefault();
+      if (consumeDragSuppression(event)) return;
       const docNode = docRef.current.nodes.find((n) => n.id === node.id);
       const isProject = docNode?.kind === "project";
       const isGroup = docNode?.kind === "group";
@@ -156,12 +188,13 @@ export function useContextMenus({
         ],
       });
     },
-    [docRef, onDocChange, clipboard, handleNodesDelete, selectedNodeIds],
+    [docRef, onDocChange, clipboard, handleNodesDelete, selectedNodeIds, consumeDragSuppression],
   );
 
   const openEdgeMenu = useCallback(
     (event: ReactMouseEvent, edge: Edge) => {
       event.preventDefault();
+      if (consumeDragSuppression(event)) return;
       // Look up the canonical doc edge for the current ``directed`` flag —
       // ``edge`` is the React-Flow projection (which may have a derived
       // markerEnd but doesn't carry the source ``directed`` field).
@@ -266,12 +299,13 @@ export function useContextMenus({
         ],
       });
     },
-    [docRef, onDocChange, handleEdgesDelete, dialog, t],
+    [docRef, onDocChange, handleEdgesDelete, dialog, t, consumeDragSuppression],
   );
 
   const openPaneMenu = useCallback(
     (event: ReactMouseEvent) => {
       event.preventDefault();
+      if (consumeDragSuppression(event)) return;
       if (!flowRef.current) return;
       const flowPos = flowRef.current.screenToFlowPosition({
         x: event.clientX,
@@ -295,8 +329,8 @@ export function useContextMenus({
         ],
       });
     },
-    [docRef, flowRef, addNodeAt, clipboard, onDocChange],
+    [docRef, flowRef, addNodeAt, clipboard, onDocChange, consumeDragSuppression],
   );
 
-  return { menu, closeMenu, openNodeMenu, openEdgeMenu, openPaneMenu };
+  return { menu, closeMenu, openNodeMenu, openEdgeMenu, openPaneMenu, onNodeDragStop };
 }

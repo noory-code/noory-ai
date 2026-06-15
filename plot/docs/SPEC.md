@@ -771,6 +771,24 @@ drag pans, plain drag on a node moves the node.
 > click that doesn't move = nothing happens; a click that moves =
 > pan). See [D-2026-05-10-A](./DECISIONS.md).
 
+## Context menu
+
+The node / edge / pane context menu opens on a **genuine secondary
+click only** (right-click, Ctrl+click, or two-finger trackpad click).
+A **drag-release must never open it.**
+
+> **Why (D-2026-06-15-N):** on a macOS trackpad, a one-finger
+> press-drag-release of a node emits a trailing `contextmenu` event
+> *after* pointerup. React Flow's d3-drag only suppresses `contextmenu`
+> *while* a drag is active, so the tail leaked to `onNodeContextMenu` /
+> `onPaneContextMenu` and the menu popped at the release point ("drag a
+> node, let go, it acts like a right-click" — user report 2026-06-15).
+> `useContextMenus` now arms a one-shot suppression on `onNodeDragStop`;
+> the next `contextmenu` is swallowed. A real right-click fires
+> `pointerdown` first, which disarms the flag, so deliberate
+> right-clicks after a drag still open the menu. Pinned by
+> `viewer/tests/context-menu-drag-suppression.test.tsx`.
+
 ## Hover behaviour
 
 Hover behaviour is **React Flow defaults, no overrides**. All four

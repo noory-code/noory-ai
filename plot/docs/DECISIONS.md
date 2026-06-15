@@ -39,6 +39,34 @@
 
 ## Log
 
+### D-2026-06-15-N — Context menu never opens on a drag-release (trackpad contextmenu tail)
+
+- **What:** `useContextMenus` arms a one-shot suppression flag on React
+  Flow's `onNodeDragStop`; the next `contextmenu` (node / edge / pane) is
+  swallowed instead of opening the menu. The flag is disarmed by any
+  `pointerdown` (capture, window-level) so a genuine right-click — which
+  fires `pointerdown` before its `contextmenu` — still opens the menu.
+  `SketchCanvas` wires `onNodeDragStop` to the hook.
+- **Why:** user — "노드 드래그 하고 마우스 놓으면 오른쪽 클릭한 것처럼
+  동작합니다." On a macOS trackpad a one-finger press-drag-release emits a
+  trailing `contextmenu` *after* pointerup. d3-drag (React Flow) only blocks
+  `contextmenu` *while* a drag is active, not the tail, so it leaked to
+  `onNodeContextMenu` / `onPaneContextMenu` and popped the menu at the
+  release point.
+- **Alternatives:** (a) time-window suppression (suppress contextmenu within
+  N ms of dragStop) — rejected as fragile / timing-dependent; the
+  pointerdown-disarm flag is deterministic and self-clears on the next real
+  interaction. (b) `preventDefault` on a global `contextmenu` listener —
+  rejected; would also kill legitimate right-clicks.
+- **Approval:** Accepted by user, 2026-06-15 (reported bug; gesture +
+  symptom confirmed via clarifying question — one-finger trackpad, no
+  modifier; context menu appears).
+- **Spec impact:** new "Context menu" section in
+  [`SPEC.md`](./SPEC.md#context-menu). Pinned by
+  `viewer/tests/context-menu-drag-suppression.test.tsx`. LOC: SketchCanvas
+  ceiling 529 → 530 (`structural-guards.test.tsx`) for the `onNodeDragStop`
+  prop wiring (plumbing-only).
+
 ### D-2026-06-15-M — On-card inline editors are readable in dark mode (surface-subtle, not surface)
 
 - **What:** The inline node-label editor (`EditableText` default input) and

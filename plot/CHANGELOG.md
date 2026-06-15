@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.81.1] — 2026-06-15
+
+### Fixed
+
+- **Context menu popped after a node drag-release** (D-2026-06-15-N). On a
+  macOS trackpad, a one-finger press-drag-release of a node emitted a
+  trailing `contextmenu` event after pointerup; React Flow's d3-drag only
+  blocks `contextmenu` *while* dragging, so the tail leaked to
+  `onNodeContextMenu` / `onPaneContextMenu` and the menu opened at the
+  release point ("drag a node, let go, it acts like a right-click").
+  `useContextMenus` now arms a one-shot suppression on `onNodeDragStop`,
+  disarmed by the next `pointerdown` so deliberate right-clicks still work.
+  Pinned by `viewer/tests/context-menu-drag-suppression.test.tsx`.
+
 ## [0.81.0] — 2026-06-15
 
 Two user-reported ServiceDetail bugs fixed — both were *claimed* fixed in
