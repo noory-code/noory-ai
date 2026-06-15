@@ -39,6 +39,48 @@
 
 ## Log
 
+### D-2026-06-15-F — Connected agent is legible on the compact provider bar without expanding
+
+- **What:** The compact provider bar (D-2026-06-14-D) gains a persistent
+  connection indicator so the user sees *which* agent is connected at a glance
+  without expanding the panel: a filled status dot + the agent name in a
+  readable colour (`text-fg-strong`, medium weight) when connected; a hollow
+  dot + the muted "Connect your AI agent" prompt when not. A `data-connected`
+  attribute (`"1"`/`"0"`) pins the state for tests. The bar already showed the
+  name as muted toggle text; this makes "connected: X" unmistakable.
+- **Why:** user — "현재 연결된 AI 에이전트[를] 펼치지 않아도 볼 수 있게 해주세요."
+- **Approval:** Accepted by user, 2026-06-15.
+- **Spec impact:** SPEC §R7 chat — UI row (compact provider bar). Verified by
+  `viewer/tests/chat-dock.test.tsx` (`data-connected` 1/0, name visible while
+  collapsed).
+
+### D-2026-06-15-E — Chat scope switcher becomes a full thread picker
+
+- **What:** The in-dock chat scope switcher changes from a 2-way
+  `[active canvas | project]` toggle to a **full thread picker**: fixed
+  segments **Foundation · Actors · Services · Project** are always shown, plus a
+  **{ServiceDetail}** segment (after a `|` separator) while a service-detail is
+  the active canvas (`activeScope` is `service_detail:<id>`). Selecting a
+  segment switches **only the chat thread** — it does NOT navigate the canvas.
+  The selection defaults to and follows the active canvas (so opening a
+  service-detail moves the chat there), but a click overrides until the next
+  canvas change. This refines D-2026-06-13-H's "dock follows the active canvas"
+  + the project toggle.
+- **Why:** user — "각 캔버스마다 있는 채팅창 … 서비스 디테일은 선택되면
+  Foundation Actors Services | {ServiceDetail} 이렇게 … 채팅을 계속 쓸 수 있게."
+  Inside a service-detail the old toggle collapsed to `[Service detail |
+  Project]`, hiding the other canvas threads; the picker keeps every thread
+  reachable so chat stays usable across canvases.
+- **Alternatives:** keep the 2-way toggle (rejected — hides threads); make the
+  switcher navigate the canvas on click (rejected — the user wants thread-only
+  switching, no canvas jump); persist multiple service-detail segments
+  (rejected — only the active drill's segment shows; multi-pin is YAGNI).
+- **Approval:** Accepted by user, 2026-06-15 (chose "full scope picker +
+  service-detail").
+- **Spec impact:** SPEC §R7 chat — Conversation-scope + UI rows. Verified by
+  `viewer/tests/chat-dock.test.tsx` (segments present, SD segment appears,
+  click switches thread, follows active canvas).
+
 ### D-2026-06-15-D — Chat MCP path: viewer context (selection + framing) for the external agent
 
 - **What:** The PRIMARY chat path — the user's own agent connected via the

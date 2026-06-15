@@ -111,6 +111,23 @@ describe("ChatDock — dock + compact provider bar", () => {
     await waitFor(() => expect(bar.textContent).toContain("Codex"));
   });
 
+  it("marks the bar connected (status indicator) when an agent is active, without expanding", async () => {
+    selectionValue = { provider: "codex" };
+    providersValue = PROVIDERS_FRESH_REGISTERED;
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    const bar = await screen.findByRole("button", { name: /ai agent/i });
+    await waitFor(() => expect(bar.getAttribute("data-connected")).toBe("1"));
+    expect(bar.getAttribute("aria-expanded")).toBe("false"); // not expanded
+    expect(bar.textContent).toContain("Codex");
+  });
+
+  it("marks the bar disconnected when no agent is selected", async () => {
+    selectionValue = { provider: null };
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    const bar = await screen.findByRole("button", { name: /ai agent/i });
+    await waitFor(() => expect(bar.getAttribute("data-connected")).toBe("0"));
+  });
+
   it("forwards a provider-fetch error to onError when the panel is opened", async () => {
     const onError = vi.fn();
     fetchSpy.mockImplementation((url: unknown) => {
@@ -215,23 +232,37 @@ describe("ChatDock — provider selection", () => {
   });
 });
 
-describe("ChatDock — scope switcher (D-2026-06-13-H)", () => {
-  it("shows the canvas + project segments when a canvas scope is active", async () => {
+describe("ChatDock — scope switcher (D-2026-06-13-H, full picker D-2026-06-15-E)", () => {
+  it("always shows the four canvas-thread segments", async () => {
     selectionValue = { provider: "codex" };
     render(
       <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="foundation" />,
     );
     await screen.findByRole("tablist", { name: /conversation/i });
-    const tabs = screen.getAllByRole("tab");
-    const labels = tabs.map((t) => t.textContent);
-    expect(labels).toContain("Foundation");
-    expect(labels).toContain("Project");
+    const labels = screen.getAllByRole("tab").map((t) => t.textContent);
+    for (const seg of ["Foundation", "Actors", "Services", "Project"]) {
+      expect(labels).toContain(seg);
+    }
+    // The active canvas is the default-selected thread.
     expect(
-      tabs.find((t) => t.textContent === "Foundation")!.getAttribute("aria-selected"),
+      screen.getByRole("tab", { name: "Foundation" }).getAttribute("aria-selected"),
     ).toBe("true");
   });
 
-  it("labels a parametric service_detail scope with its base label (Layer 1)", async () => {
+  it("shows the full picker even when the active scope is project", async () => {
+    selectionValue = { provider: "codex" };
+    render(
+      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="project" />,
+    );
+    await screen.findByRole("tablist", { name: /conversation/i });
+    const labels = screen.getAllByRole("tab").map((t) => t.textContent);
+    expect(labels).toContain("Foundation");
+    expect(
+      screen.getByRole("tab", { name: "Project" }).getAttribute("aria-selected"),
+    ).toBe("true");
+  });
+
+  it("appends a {ServiceDetail} segment (selected) when a service-detail is active", async () => {
     selectionValue = { provider: "codex" };
     render(
       <ChatDock
@@ -242,33 +273,39 @@ describe("ChatDock — scope switcher (D-2026-06-13-H)", () => {
     );
     await screen.findByRole("tablist", { name: /conversation/i });
     const labels = screen.getAllByRole("tab").map((t) => t.textContent);
-    // The raw ``service_detail:svc_one`` has no i18n key — the segment must
-    // fall back to the base ``service_detail`` label, never the raw key.
-    expect(labels).toContain("Service detail");
+    // F/A/S/Project still present + the SD segment, labelled with its base key
+    // (never the raw ``service_detail:svc_one``).
+    for (const seg of ["Foundation", "Actors", "Services", "Project", "Service detail"]) {
+      expect(labels).toContain(seg);
+    }
     expect(labels).not.toContain("service_detail:svc_one");
+    // Opening a service-detail moves the chat to its thread.
+    expect(
+      screen.getByRole("tab", { name: "Service detail" }).getAttribute("aria-selected"),
+    ).toBe("true");
   });
 
-  it("switches the selected segment to project on click", async () => {
+  it("clicking a segment switches the selected thread", async () => {
     selectionValue = { provider: "codex" };
     const user = userEvent.setup();
     render(
       <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="actors" />,
     );
-    const projectTab = await screen.findByRole("tab", { name: "Project" });
-    await user.click(projectTab);
-    expect(projectTab.getAttribute("aria-selected")).toBe("true");
+    const foundationTab = await screen.findByRole("tab", { name: "Foundation" });
+    await user.click(foundationTab);
+    expect(foundationTab.getAttribute("aria-selected")).toBe("true");
     expect(
       screen.getByRole("tab", { name: "Actors" }).getAttribute("aria-selected"),
     ).toBe("false");
   });
 
-  it("omits the scope switcher when the active scope is already project", async () => {
+  it("hides the {ServiceDetail} segment for non-service-detail canvases", async () => {
     selectionValue = { provider: "codex" };
     render(
-      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="project" />,
+      <ChatDock onError={() => {}} workspaceRoot="/tmp/ws" activeScope="actors" />,
     );
-    const bar = await screen.findByRole("button", { name: /ai agent/i });
-    await waitFor(() => expect(bar.textContent).toContain("Codex"));
-    expect(screen.queryByRole("tablist", { name: /conversation/i })).toBeNull();
+    await screen.findByRole("tablist", { name: /conversation/i });
+    const labels = screen.getAllByRole("tab").map((t) => t.textContent);
+    expect(labels).not.toContain("Service detail");
   });
 });

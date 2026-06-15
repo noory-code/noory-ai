@@ -56,12 +56,15 @@ export function ChatDock({
   useViewerContextBridge(workspaceRoot, activeScope, selection);
   const [activeProvider, setActiveProvider] =
     useState<McpProviderName | null>(null);
-  // "canvas" follows the active canvas; "project" pins the shared cross-canvas
-  // thread (Q2 — explicit toggle, not auto). The canvas mode resolves to
-  // ``activeScope``; project mode always to ``project``.
-  const [scopeMode, setScopeMode] = useState<"canvas" | "project">("canvas");
-  const effectiveScope: ChatScope =
-    scopeMode === "project" ? "project" : activeScope;
+  // The chat thread shown. The switcher is a full picker (D-2026-06-15-E):
+  // the selection defaults to + follows the active canvas (opening a
+  // service-detail moves the chat there), but a click overrides until the next
+  // canvas change. Switching threads never navigates the canvas.
+  const [selectedScope, setSelectedScope] = useState<ChatScope>(activeScope);
+  useEffect(() => {
+    setSelectedScope(activeScope);
+  }, [activeScope]);
+  const effectiveScope: ChatScope = selectedScope;
   // D-2026-06-14-D — provider connection is a setup step, not something to
   // stare at while chatting; keep it behind a compact bar, collapsed by
   // default. The bar shows the active CLI so the user knows what's connected
@@ -108,13 +111,34 @@ export function ChatDock({
             type="button"
             aria-label={t("chat.providersBarLabel")}
             aria-expanded={providersOpen}
+            data-connected={activeProvider ? "1" : "0"}
             onClick={() => setProvidersOpen((o) => !o)}
             className="flex items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-fg-muted hover:bg-surface-muted hover:text-fg-strong"
           >
-            <span className="truncate">
-              {activeProvider
-                ? t(`chat.providers.${activeProvider}`)
-                : t("chat.providersTitle")}
+            {/* Persistent connection indicator so the connected agent is
+                legible at a glance without expanding the panel
+                (D-2026-06-15-F): a filled dot + the agent name in a readable
+                colour when connected; a hollow dot + muted prompt when not. */}
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                aria-hidden
+                className={
+                  activeProvider
+                    ? "h-1.5 w-1.5 shrink-0 rounded-full bg-fg-strong"
+                    : "h-1.5 w-1.5 shrink-0 rounded-full border border-fg-muted"
+                }
+              />
+              <span
+                className={
+                  activeProvider
+                    ? "truncate font-medium text-fg-strong"
+                    : "truncate"
+                }
+              >
+                {activeProvider
+                  ? t(`chat.providers.${activeProvider}`)
+                  : t("chat.providersTitle")}
+              </span>
             </span>
             <span aria-hidden>{providersOpen ? "▾" : "▸"}</span>
           </button>
@@ -123,13 +147,11 @@ export function ChatDock({
               <ChatProvidersPanel onError={onError} {...selectionProps} />
             </div>
           )}
-          {activeScope !== "project" && (
-            <ChatScopeSwitcher
-              canvasScope={activeScope}
-              mode={scopeMode}
-              onModeChange={setScopeMode}
-            />
-          )}
+          <ChatScopeSwitcher
+            activeScope={activeScope}
+            selected={selectedScope}
+            onSelect={setSelectedScope}
+          />
           <ChatMessageFrame
             workspaceRoot={workspaceRoot}
             activeProvider={activeProvider}
@@ -142,35 +164,43 @@ export function ChatDock({
   );
 }
 
+// The fixed canvas threads, always offered (D-2026-06-15-E).
+const FIXED_SCOPES: ChatScope[] = ["foundation", "actors", "services", "project"];
+
 /**
- * Segmented switcher between the active-canvas thread and the shared
- * ``project`` thread (D-2026-06-13-H Q2 — explicit, not auto). Only rendered
- * when the active canvas is itself non-project, so the two segments are
- * always distinct.
+ * Full chat-thread picker (D-2026-06-15-E). Fixed segments
+ * Foundation · Actors · Services · Project, plus a ``{ServiceDetail}`` segment
+ * (after a ``|`` separator) while a service-detail is the active canvas.
+ * Selecting a segment switches the chat thread only — it never navigates the
+ * canvas. The active canvas is the default-selected thread.
  */
 function ChatScopeSwitcher({
-  canvasScope,
-  mode,
-  onModeChange,
+  activeScope,
+  selected,
+  onSelect,
 }: {
-  canvasScope: ChatScope;
-  mode: "canvas" | "project";
-  onModeChange: (mode: "canvas" | "project") => void;
+  activeScope: ChatScope;
+  selected: ChatScope;
+  onSelect: (scope: ChatScope) => void;
 }) {
   const { t } = useTranslation();
-  // A parametric ``service_detail:<id>`` scope has no per-instance i18n key;
-  // label it with its base scope (Layer 1, D-2026-06-15-B).
-  const baseScope = canvasScope.startsWith("service_detail:")
-    ? "service_detail"
-    : canvasScope;
-  const segment = (value: "canvas" | "project", label: string) => (
+  // The active service-detail (if any) is the one parametric segment. Its
+  // ``service_detail:<id>`` has no per-instance i18n key, so it's labelled with
+  // the base ``service_detail`` label (Layer 1, D-2026-06-15-B).
+  const serviceDetail: ChatScope | null = activeScope.startsWith(
+    "service_detail:",
+  )
+    ? activeScope
+    : null;
+  const segment = (scope: ChatScope, label: string) => (
     <button
+      key={scope}
       type="button"
       role="tab"
-      aria-selected={mode === value}
-      onClick={() => onModeChange(value)}
+      aria-selected={selected === scope}
+      onClick={() => onSelect(scope)}
       className={
-        mode === value
+        selected === scope
           ? "flex-1 rounded px-2 py-1 text-[11px] font-medium bg-surface-muted text-fg-strong"
           : "flex-1 rounded px-2 py-1 text-[11px] text-fg-muted hover:text-fg-strong"
       }
@@ -182,10 +212,17 @@ function ChatScopeSwitcher({
     <div
       role="tablist"
       aria-label={t("chat.scopeLabel")}
-      className="flex gap-1 border-b border-line px-3 py-2"
+      className="flex items-center gap-1 border-b border-line px-3 py-2"
     >
-      {segment("canvas", t(`chat.scope.${baseScope}`))}
-      {segment("project", t("chat.scope.project"))}
+      {FIXED_SCOPES.map((scope) => segment(scope, t(`chat.scope.${scope}`)))}
+      {serviceDetail && (
+        <>
+          <span aria-hidden className="px-0.5 text-fg-muted">
+            |
+          </span>
+          {segment(serviceDetail, t("chat.scope.service_detail"))}
+        </>
+      )}
     </div>
   );
 }

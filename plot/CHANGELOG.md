@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.77.0] — 2026-06-15
+
+Minor. Chat dock UX — full thread picker (D-2026-06-15-E) + always-legible
+connected agent (D-2026-06-15-F).
+
+### Changed
+
+- **Scope switcher is now a full thread picker.** Fixed segments
+  Foundation · Actors · Services · Project are always shown; a `{ServiceDetail}`
+  segment (after a `|` separator) appears while a service-detail is the active
+  canvas. Selecting a segment switches the chat thread only — never navigates
+  the canvas; the selection defaults to + follows the active canvas, a click
+  overrides until the next canvas change. Replaces the 2-way
+  `[active canvas | project]` toggle, which hid the other threads inside a
+  service-detail.
+- **Compact provider bar shows the connected agent at a glance.** A persistent
+  connection indicator (filled dot + agent name in a readable colour when
+  connected; hollow dot + prompt when not; `data-connected` 1/0) makes the
+  connected CLI legible without expanding the panel.
+
 ## [0.76.0] — 2026-06-15
 
 Minor. Chat MCP path — the external agent gets the viewer's live context
