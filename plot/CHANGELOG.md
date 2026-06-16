@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.86.0] — 2026-06-16
+
+### Changed
+
+- **Chat now syncs to the active project (× canvas)** (D-2026-06-16-G).
+  `ChatDock` is keyed on the active project's path instead of the workspace
+  root, so switching projects in a monorepo workspace switches the chat's
+  threads + provider + model (each project owns its `.noory/plot`). Previously
+  the chat was workspace-wide and didn't follow the project.
+
+### Fixed
+
+- **Chat selection context was inert on the service-detail canvas**
+  (D-2026-06-16-F). The detail canvas now reports its selection
+  (`onSelectionChange`) and the dock reads the active detail canvas's nodes, so
+  the per-turn selection context (Layer 2) resolves against a selected detail
+  node. Both guarded by `viewer/tests/chat-selection-detail.test.ts`.
+
 ## [0.85.1] — 2026-06-16
 
 ### Fixed

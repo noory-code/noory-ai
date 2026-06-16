@@ -390,7 +390,7 @@ export function App() {
       />
       {helpOpen && <HelpCheatsheet onClose={() => setHelpOpen(false)} />}
       <WorkspacePanels
-        chat={<ChatDock onError={handleError} workspaceRoot={workspaceRoot} activeScope={detailActive ? (detailServiceId ? `service_detail:${detailServiceId}` : "services") : tabToKind(activeTab)} activeScopeLabel={detailActive ? detailLabel : undefined} selection={(activeCanvas?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
+        chat={<ChatDock onError={handleError} workspaceRoot={activeProjectPath ?? undefined} activeScope={detailActive ? (detailServiceId ? `service_detail:${detailServiceId}` : "services") : tabToKind(activeTab)} activeScopeLabel={detailActive ? detailLabel : undefined} selection={((detailActive ? detailCanvas : activeCanvas)?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
         sidebar={
         <SketchSidebar
           projects={summaries}
@@ -451,6 +451,7 @@ export function App() {
                 availableIdentities={availableIdentities}
                 selectNodeId={null}
                 onSelectionConsumed={onModalSelectionConsumed}
+                onSelectionChange={setCanvasSelectionIds}
                 onNodeDrill={onModalNodeDrill}
                 onPublishNode={onModalPublishNode}
                 onUnpublishNode={onModalUnpublishNode}

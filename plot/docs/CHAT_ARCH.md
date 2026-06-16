@@ -42,9 +42,13 @@ scope; here it becomes **per-service-instance**. The scope set then equals
 (`viewer/src/types.ts` `CanvasKey`), so chat threads and canvas state key the
 same way (one mental model).
 
-- Engine session registry key becomes `(workspace, provider, scope)` where
+- Engine session registry key becomes `(plot_root, provider, scope)` where
   `scope` is a `CanvasKey | "project"` string (already the shape, just widening
-  the `service_detail` member to carry the id).
+  the `service_detail` member to carry the id). **D-2026-06-16-G:** `plot_root`
+  is resolved from the **active project's** path (the viewer keys `ChatDock` on
+  `activeProjectPath`), so the chat is per **(project × canvas)** — in a
+  monorepo workspace each project owns its own threads + provider/model in its
+  `.noory/plot`. (Originally workspace-wide; refined to per-project.)
 - Rationale for NOT collapsing to a single chat: a single thread mixes
   unrelated contexts (foundation discovery vs one service's flow), breaking the
   CLI's resumed-session continuity and confusing the agent. Per-area threads

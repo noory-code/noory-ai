@@ -39,6 +39,43 @@
 
 ## Log
 
+### D-2026-06-16-G — Chat is scoped to the active project (× canvas), not the whole workspace
+
+- **What:** `ChatDock` is now keyed on the **active project's path**
+  (`activeProjectPath`) instead of the workspace root. So the chat's threads,
+  provider, and model are **per-project × per-canvas** — switching projects in
+  a monorepo workspace switches the chat to that project's `.noory/plot`. The
+  engine already keys sessions on the resolved `plot_root`; the viewer just
+  sends the project path now (previously the workspace/monorepo root, frozen
+  at mount via `useMemo(resolveWorkspaceRoot, [])`).
+- **Why:** user (2026-06-16) — "채팅 창은 프로젝트에 싱크되어야 합니다. 내가
+  어떤 프로젝트인지, 프로젝트에서 어떤 캔버스에 있는지로 싱크돼야 해요." The
+  chat was workspace-wide, so it didn't follow the active project.
+- **Alternatives:** add a project dimension to the wire `scope` instead of
+  re-keying the path — rejected; the per-project `.noory/plot` already IS the
+  natural boundary (each project owns its chat config + history), so keying on
+  the project path is simpler and consistent with the rest of the app
+  (canvases already load per `activeProjectPath`).
+- **Approval:** Accepted by user, 2026-06-16 (requested).
+- **Spec impact:** updated [`SPEC.md` → R7 chat](./SPEC.md) Provider-selection
+  + Conversation-scope rows + [`CHAT_ARCH.md`](./CHAT_ARCH.md). Guarded by
+  `viewer/tests/chat-selection-detail.test.ts`.
+
+### D-2026-06-16-F — Chat selection context works on the service-detail canvas
+
+- **What:** The service-detail `<ServiceDetailCanvas>` now reports its node
+  selection up via `onSelectionChange`, and the `ChatDock` selection prop
+  reads the **active detail canvas's** nodes (not just the main canvas). So
+  while editing inside a service-detail canvas, the chat's per-turn selection
+  context (Layer 2) resolves "이거 고쳐줘" against the selected detail node.
+- **Why:** the selection context was inert on service-detail — App wired
+  `onSelectionChange` only on the main F/A/S `<Canvas>`, and the dock read
+  `activeCanvas` (Services), so detail-canvas selections were invisible to the
+  agent (sweep finding).
+- **Approval:** Accepted by user, 2026-06-16 (chose the theme/state follow-ups).
+- **Spec impact:** [`SPEC.md` → R7 chat Context-injection row](./SPEC.md).
+  Guarded by `viewer/tests/chat-selection-detail.test.ts`.
+
 ### D-2026-06-16-E — Inspector MD editor (CodeMirror) follows the app theme
 
 - **What:** `MdTextarea`'s CodeMirror `baseTheme` now uses Plot's CSS tokens
