@@ -56,6 +56,14 @@ describe("ChatDock — model display + selection (D-2026-06-16-C)", () => {
     expect(bar.textContent).toContain("Codex");
   });
 
+  it("shows 'default' on the bar when no model override is set", async () => {
+    selectionValue = { provider: "codex", model: null };
+    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
+    const bar = await screen.findByRole("button", { name: /ai agent/i });
+    await waitFor(() => expect(bar.textContent).toContain("Codex"));
+    expect(bar.textContent).toContain("default"); // model state always visible
+  });
+
   it("renders a model field that reflects the persisted model", async () => {
     selectionValue = { provider: "codex", model: "o3" };
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);

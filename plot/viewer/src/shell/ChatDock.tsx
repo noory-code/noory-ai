@@ -172,7 +172,7 @@ export function ChatDock({
                 }
               >
                 {activeProvider
-                  ? `${t(`chat.providers.${activeProvider}`)}${activeModel ? ` · ${activeModel}` : ""}`
+                  ? `${t(`chat.providers.${activeProvider}`)} · ${activeModel ?? t("chat.modelDefaultShort")}`
                   : t("chat.providersTitle")}
               </span>
             </span>

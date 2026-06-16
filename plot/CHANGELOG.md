@@ -4,6 +4,14 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.84.1] — 2026-06-16
+
+### Changed
+
+- The chat provider bar now always shows the model state (`Provider · <model>`
+  or `Provider · default` when no override) so "which model is in use" is
+  visible at a glance even before a model is picked — completes D-2026-06-16-C ①.
+
 ## [0.84.0] — 2026-06-16
 
 ### Added

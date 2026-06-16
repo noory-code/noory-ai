@@ -128,6 +128,7 @@
     "elapsedSeconds": "{{seconds}}초",
     "modelLabel": "모델",
     "modelPlaceholder": "기본값 (CLI 설정)",
+    "modelDefaultShort": "기본값",
     "errorPrefix": "오류: ",
     "resetSession": "새 대화 시작",
     "confirmReset": "현재 대화를 종료하고 새로 시작할까요?",
