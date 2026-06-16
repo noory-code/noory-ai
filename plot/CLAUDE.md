@@ -219,19 +219,25 @@ and `SketchNode.tsx` (Phase 3.5); the remaining oversize file is
 `App.tsx`. Every canvas-internal file has a runtime-enforced LOC
 ceiling — see `viewer/tests/structural-guards.test.tsx`.
 
-| File | LOC (2026-05-12) | Ceiling | Rule |
-|---|---:|---:|---|
-| `viewer/src/App.tsx` | 488 | 498 | Enforced ceiling is **498** (see `structural-guards.test.tsx` `LOC_BUDGETS` for the raise chain: D-2026-05-27-C 430→485, D-2026-05-28-L 485→495, D-2026-05-31-O/P/Q →498). This table previously read 485 (stale). `useAppCallbacks` follow-up (D-2026-05-27-B) is **deferred** — App is under the ceiling (488/498) and D-2026-06-08-A steps 6/8 move server + UI state out of App (net reduction); extract only if a step pushes it over 498. |
-| `viewer/src/canvases/SketchCanvas.tsx` | 427 | 440 | v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to thread the publish handler through to SketchInspectorBindings. **No-growth henceforth** — new responsibilities → new sketch hook or wrapper. |
-| `viewer/src/shell/*.tsx` | ≤ 90 | — | App-chrome components (Header / CanvasTabs / HelpCheatsheet / ServiceDetailModal / states). Each owns its slice of chrome JSX; new chrome → new file in `shell/`. |
-| `viewer/src/hooks/use*.ts` | varies | — | App-shell hooks (useProject / useCanvasPersist / useProjectSocket / useUrlSync / useAvailableNodes / useAppKeyboard). Per-concern; do not bundle. |
-| `viewer/src/canvases/nodes/BaseNode.tsx` | 227 | 250 | Chrome SSOT for all 15 per-kind node renderers. New visual responsibilities → per-kind file. |
-| `viewer/src/canvases/inspectors/BaseInspector.tsx` | 256 | 270 | v0.18.0 Phase 3 (D-2026-05-16-E) raised 220 → 270 to absorb the version badge + publish button + confirm-dialog handler. Chrome SSOT for all 15 per-kind inspectors. New chrome → here; new typed-field body → per-kind file. |
-| `viewer/src/canvases/{Foundation,Actors,Services,ServiceDetail}Canvas.tsx` | 16-23 | 150 | Props-only thin shells. **Never** put behaviour here — push it into a sketch hook or BaseNode chrome flag. |
-| `viewer/src/canvases/nodes/{kind}/index.tsx` × 15 | ≤ 19 | 100 | Per-kind node renderer; wraps `BaseNode` with kind-specific chrome flags + body override. |
-| `viewer/src/canvases/inspectors/{kind}/index.tsx` × 15 | ≤ 167 | 250 | Per-kind inspector; renders inside `BaseInspector`'s slot. |
-| ~~`viewer/src/canvases/SketchInspector.tsx`~~ | — | absent | **DELETED** in v0.15.0 (Phase 2.10). Re-creating fails `structural-guards.test.tsx`. |
-| ~~`viewer/src/canvases/SketchNode.tsx`~~ | — | absent | **DELETED** in v0.15.5 (Phase 3.5). Re-creating fails `structural-guards.test.tsx`. |
+The per-file **responsibility rule** lives here; the **current LOC + enforced
+ceiling** are the SSOT of `viewer/tests/structural-guards.test.tsx`
+`LOC_BUDGETS` — numbers drift, the test doesn't (this table used to carry
+LOC/Ceiling columns and went stale). **Check the test for the number before
+editing near a budget.**
+
+| File | Responsibility rule |
+|---|---|
+| `viewer/src/App.tsx` | Largest remaining file. `useAppCallbacks` follow-up (D-2026-05-27-B) is **deferred**; D-2026-06-08-A steps 6/8 move server + UI state out of App (net reduction). Extract only if a step pushes it over the ceiling. |
+| `viewer/src/canvases/SketchCanvas.tsx` | v0.18.0 Phase 3 (D-2026-05-16-E) absorbed the publish-handler thread to SketchInspectorBindings. **No-growth henceforth** — new responsibilities → new sketch hook or wrapper. |
+| `viewer/src/shell/*.tsx` | App-chrome components (Header / CanvasTabs / HelpCheatsheet / ServiceDetailModal / states). Each owns its slice of chrome JSX; new chrome → new file in `shell/`. |
+| `viewer/src/hooks/use*.ts` | App-shell hooks (useProject / useCanvasPersist / useProjectSocket / useUrlSync / useAvailableNodes / useAppKeyboard). Per-concern; do not bundle. |
+| `viewer/src/canvases/nodes/BaseNode.tsx` | Chrome SSOT for all 15 per-kind node renderers. New visual responsibilities → per-kind file. |
+| `viewer/src/canvases/inspectors/BaseInspector.tsx` | Chrome SSOT for all 15 per-kind inspectors. New chrome → here; new typed-field body → per-kind file. |
+| `viewer/src/canvases/{Foundation,Actors,Services,ServiceDetail}Canvas.tsx` | Props-only thin shells. **Never** put behaviour here — push it into a sketch hook or BaseNode chrome flag. |
+| `viewer/src/canvases/nodes/{kind}/index.tsx` × 15 | Per-kind node renderer; wraps `BaseNode` with kind-specific chrome flags + body override. |
+| `viewer/src/canvases/inspectors/{kind}/index.tsx` × 15 | Per-kind inspector; renders inside `BaseInspector`'s slot. |
+| ~~`viewer/src/canvases/SketchInspector.tsx`~~ | **DELETED** in v0.15.0 (Phase 2.10). Re-creating fails `structural-guards.test.tsx`. |
+| ~~`viewer/src/canvases/SketchNode.tsx`~~ | **DELETED** in v0.15.5 (Phase 3.5). Re-creating fails `structural-guards.test.tsx`. |
 
 **Raising a ceiling** = open a fresh `D-YYYY-MM-DD-X` entry that
 either (a) names the new responsibility the file legitimately
@@ -370,7 +376,7 @@ Per `noory-ai/CLAUDE.md` plugin rule:
 | `thinking: MECE` | Before adding a node kind, an edge kind, or a new canvas, audit the existing ones. New ≠ overlap with existing. New + existing must cover every case the user described. |
 | `design: YAGNI` | If the user didn't ask for it, don't add it. The auto-edges in v0.13.2 violated YAGNI and were rolled back same day. |
 | `design: 패턴 2회+ 시 추상화` | First time you write something, leave it. Second time, copy it. Third time, abstract — and only if the abstraction reads cleaner than the duplication. (AHA: Avoid Hasty Abstraction.) |
-| `design: SOLID/SRP` | Hard signal: any single file > 500 LOC violates the project rule. SketchCanvas at 1476 violates it 3×. See Gate 2. |
+| `design: SOLID/SRP` | Hard signal: any single file > 500 LOC violates the project rule. (The pre-v0.15 god SketchCanvas hit 1476 — 3× over — and was structurally reset; files are now budget-enforced.) See Gate 2. |
 | `architecture: Clean Architecture` | New domain logic (transforms, math, graph queries) goes in pure modules without React imports. UI files import from domain, never the reverse. |
 | `ux: User-Centricity` | Test against the user's stated workflow. "User selects node → Inspector appears" is a workflow; verify it end-to-end after every relevant change. |
 | `ux: Don't Make Me Think` | If a user has to ask "what is this badge?", you have a UX bug, not a knowledge gap. Either the visual or the spec is missing. |
@@ -473,7 +479,7 @@ cd plot && uv run ruff format plot_mcp/ tests/
 | **Add features that nobody asked for** | v0.13.2 auto-edges between anchor and Foundation children | Gate 1: ask first, get approval, log decision. |
 | **Treat code comments as spec** | "synthetic anchor is read-only" → hid anchor handles | "Code comments are not spec" rule. Verify against SPEC.md. |
 | **CSS-only fixes for behaviour bugs** | Hover handle tone-down via CSS opacity | "임시 통과 금지" trigger: find the responsible component, fix the responsibility. |
-| **Editing god components further** | Adding a 30-line auto-edge block to the 1476-line SketchCanvas | Gate 2: hold or reduce LOC; new responsibilities go in new files. |
+| **Editing god components further** | Adding a 30-line auto-edge block to the then-1476-line SketchCanvas | Gate 2: hold or reduce LOC; new responsibilities go in new files. |
 | **Claiming "verified" without browser** | Type-check passes ≠ feature works | Gate 3: open the URL, click the thing. |
 | **Silently rolling user-visible state** | (Hypothetical) Auto-rebalance Foundation nodes radially | Rule 7: any automated change to user-visible state needs explicit consent. |
 | **Burying decisions in commit messages** | (Past pattern) "fix anchor click → no Inspector" with no DECISIONS entry | Gate 4: every user-visible decision = a `D-YYYY-MM-DD-X` entry. |
