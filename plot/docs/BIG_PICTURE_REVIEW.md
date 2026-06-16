@@ -47,6 +47,36 @@ Execution (Actors → Services → Service-Detail + MCP). Reversible
 
 ---
 
+## 1.5 진행 상태 — Foundation 토론 시작됨 (2026-06-16, 다음 세션 계속)
+
+토론을 Foundation부터 시작함. 아래 3개 쟁점 + 조수(Claude) 입장까지 나옴.
+**아직 사용자 결정 없음 (전부 미결).** 다음 세션은 여기서 이어감 — 쟁점 1부터.
+
+근거 사실(이번에 확인): **인터뷰/Discovery 흐름은 코드에 전혀 구현 안 됨**
+(`grep -ri interview viewer/src plot_mcp` → 0건). Foundation = 현재 타입드 폼
+(project + mission + core_value + identity) + ⓘ 개념 팝오버(`FOUNDATION_CONCEPT.md`).
+
+- **쟁점 F1 — Foundation의 정체: "발견" vs "폼 채우기".** VISION 첫 문장은
+  "본질을 *모르는* 사람이 *찾게*"인데 현재는 아는 사람이 채우는 폼. 인터뷰 미구현.
+  - (A) 발견을 실제로 짓는다 — Pencil 모델이니 외부 에이전트가 MCP로 인터뷰
+    (Plot 스킬/MCP 프롬프트). VISION 첫 문장 사수, Notion과 차별점. 비용=인터뷰 설계.
+  - (B) "발견" 주장 내림 — Foundation = 본질을 *안 놓치게 붙잡는* 곳(Retention 중심).
+    폼이 정직해짐. 비용=VISION 첫 문장 약화.
+  - _조수 입장(미결): (A) MCP 인터뷰._
+- **쟁점 F2 — "본질(本質)"이 빠진 1급 개념인가?** Foundation에 본질 노드 없음;
+  mission/value/identity에 흩어져 암시됨. 본질 = mission인가, mission 위 무엇인가?
+  후보 ① mission.why/direction가 사실상 본질(추가불요) ② project 앵커가 본질 한 문장 품음.
+  _조수 입장(미결): 1급으로 올릴 가치 있음, ①/② 중 미정._
+- **쟁점 F3 — Pencil 모델에서 identity의 자리.** identity="에이전트가 모방할
+  보이스/톤"인데 이제 에이전트는 사용자 외부 에이전트(MCP). _조수 입장(미결): identity
+  유지(보이스≠decision-value, 외부 에이전트 카피에 고가치), 단 프레이밍 전환("내장 AI
+  페르소나"→"누구든 맞출 브랜드 보이스") = 작은 문서 수정._
+- **쟁점 F4 — 단일 캔버스 vs 청중 분리.** _조수 입장: 현행 유지(가벼움)._
+
+> 다음 세션 진행: F1 사용자 결정 → F2 → F3 → §11 로그 + `D-` 엔트리. 그 다음 캔버스(Actors)로.
+
+---
+
 ## 2. T1 — Plot's philosophy & identity
 
 **현 상태:**
