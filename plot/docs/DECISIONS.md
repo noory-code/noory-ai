@@ -39,6 +39,288 @@
 
 ## Log
 
+### D-2026-06-16-R — F4 resolved: Foundation stays a single canvas (no audience split)
+
+- **What:** Foundation remains **one canvas** holding mission + core_value +
+  identity together. The proposed audience split (mission/core_value for humans,
+  identity for the agent) is **rejected**.
+- **Why:** Big-picture review F4 (2026-06-16). D-2026-06-16-Q makes it decisive: the
+  essence is the **emergent composition** of the three concepts around the anchor —
+  splitting them across canvases would break that single visual statement ("our
+  service = this mission + this core_value + these identities"). Also, identity is
+  now a brand voice (D-2026-06-16-N, F3 reframe) that humans read too, so the
+  "agent-only surface" rationale no longer holds.
+- **Alternatives:** (a) split Foundation by audience — rejected (breaks the
+  composition; identity is no longer agent-only).
+- **Approval:** Accepted by user, 2026-06-16 ("단일 캔버스죠. … 맞아요. 시각적 묶음! 근본!").
+- **Spec impact:** Resolves big-picture review **F4**. **Closes the §1.5 Foundation
+  review (F1–F4 all resolved).** No code change — Foundation is already a single canvas.
+
+### D-2026-06-16-Q — F2 resolved: essence is the emergent Foundation composition, not a node; anchor = name only
+
+- **What:** Foundation needs **no separate "essence (본질)" node**. The essence is
+  the **emergent whole** of the three Foundation concepts — "our service is made of
+  *this* mission + *this* core_value + *these* identities" — and its irreducible core
+  is **mission** (the root of existence). The essence has **no dedicated container**
+  (neither a node nor text on the anchor); to read the one-line essence, read the
+  mission node. The essence is conveyed **visually by the composition itself** (the
+  three concepts arranged around the project centre) — that arrangement *is* the
+  statement of what the service is. The **project anchor carries only the project /
+  service name** — it is a **visual-grouping device**, not a content holder.
+- **Why:** Big-picture review F2 (2026-06-16). Essence is a *whole*, so a sibling
+  node would demote the whole to a part. mission already carries its core
+  (D-2026-06-16-K = "존재의 뿌리"). The anchor's job is visual cohesion (Retention —
+  the project stays centred/visible); putting essence text on it misuses a visual
+  device. Making "service = these concepts" legible is a *visualisation* job for the
+  Foundation canvas, not a new node.
+- **Alternatives:** (a) a dedicated essence node — rejected (whole-as-part). (b) a
+  one-line essence on the anchor — rejected (anchor = visual grouping, not content).
+- **Approval:** Accepted by user, 2026-06-16.
+- **Spec impact:** Resolves big-picture review **F2**. Anchor stays name-only
+  (affirms SPEC §Anchor — no content fields added). Feeds the Foundation-canvas
+  visualisation topic (the composition must be legible). §1.5 remaining: **F4** only.
+
+### D-2026-06-16-P — Everything in Plot is created through discussion (AI coach + human confirm), never silent
+
+- **What:** The universal interaction model: **every concept / node on every canvas
+  is created through discussion** — the AI is an active coach that interviews /
+  proposes, and the human reviews, refines, and confirms. This holds for input kinds
+  (the user brings raw material, the AI questions and shapes — discover→filter) and
+  output kinds (the AI drafts first, then discusses and the user confirms — e.g.
+  identity). **Two anti-modes are excluded:** (1) a lonely **blank form** the user
+  fills with no AI, and (2) **silent auto-generation** the AI commits without the
+  user. The human always retains direct control (can edit any line directly —
+  PHILOSOPHY co-drawing) and is always the confirmer.
+- **Why:** User principle (2026-06-16): "모두 모두 토론을 통해서 만들어지는 거에요."
+  Generalises D-2026-06-16-H (per-canvas active coach) and D-2026-06-16-I (Plot = AI
+  builds context + human reviews) into one rule, and matches FOUNDATION_CONCEPT's
+  "채우는 방식 = AI 대화창(인터뷰)" — now scoped to *all* canvases, not just
+  Foundation. It is the through-line of today's whole Foundation discussion.
+- **Alternatives:** (a) blank-form data entry — rejected (the Notion-like form the
+  VISION reframe moved away from). (b) silent AI auto-fill — rejected (violates
+  human-in-the-loop, D-I).
+- **Approval:** Accepted by user, 2026-06-16 ("맞죠?" — affirmed).
+- **Spec impact:** Plot-wide principle; concretely realised by the per-canvas coach
+  guides + interview question sets (skill, ROADMAP 5.7). FOUNDATION_CONCEPT "Plot
+  작동 전제" already states it for Foundation; this lifts it to a Plot-wide rule.
+
+### D-2026-06-16-O — identity inspector = name + action-rule list now; output-metadata deferred to the derive flow
+
+- **What:** The identity inspector is reduced to **two items now — name (`label`) +
+  the action-rule list** (the rules are the content; `description` is dropped,
+  folding into the rules). The output-model fields **`status` and `provenance` are
+  deferred** until the AI-derive flow exists (ROADMAP 5.7): both are inert today (no
+  producer auto-sets `derived`/`confirmed` or auto-fills provenance; hand-typing
+  node ids is the wrong UX). `evolution` stays covered by git/version.
+  **Clarification:** identity being "AI-derived" does **not** mean silent
+  auto-generation — the AI drafts the first rules from mission + core_value, then
+  **interviews / discusses** with the user to refine, and the user confirms. (That
+  derive → discuss → confirm loop is exactly what `status` will track once the flow
+  ships.)
+- **Why:** Big-picture inspector review (2026-06-16). `status`/`provenance` were
+  built ahead of their workflow (v0.44.0) and are confusing while inert — the user,
+  designing it, could not tell what `status` was (the Don't-Make-Me-Think signal).
+  YAGNI: surface them when the derive flow gives them meaning. For now identity
+  matches mission/core_value (name + body→rules). The "derived is still a
+  discussion, never silent" point keeps identity inside the human-in-the-loop
+  principle (D-2026-06-16-I).
+- **Alternatives:** (a) keep status/provenance now — rejected; inert + confusing.
+  (b) keep description + body separate — rejected; same redundancy as core_value (D-M).
+- **Approval:** Accepted by user, 2026-06-16 ("좋습니다").
+- **Spec impact:** viewer identity inspector (drop `description`; render rules list;
+  remove status/provenance inputs for now) + `Identity.ts` are a TDD follow-up.
+  status/provenance return with ROADMAP 5.7 (AI-derive interview). Completes the
+  Foundation node/inspector pass (mission J / core_value M / identity O). Pairs with
+  D-2026-06-16-N.
+
+### D-2026-06-16-N — identity definition: standing execution/expression rules (not value-conflict judgment)
+
+- **What:** identity = the service's **consistent execution / expression standards,
+  captured as action-rules** ("we design / speak / behave like ~") that accumulate
+  into the service's character. It is **not** value-conflict judgment: core_value
+  resolves *which value wins when goods conflict* (a conflict-triggered tie-breaker),
+  while identity rules are **always-applied standing standards** for how every
+  output looks, sounds, and behaves (e.g. "design = vivid, appetising"). If the two
+  ever collide, core_value adjudicates (it is the tie-breaker by definition). The
+  per-service `rule` kind is different again (operational policy / SLA). identity is
+  an **output** kind — AI-derived from mission + core_value (+ accumulated behaviour)
+  and evolving.
+- **Why:** Big-picture discussion (2026-06-16), research-grounded. The user reframed
+  identity from abstract personality to executable action-rules; validated by
+  identity-as-practice scholarship (identity is enacted through "doing," not "being"
+  — Oliver & Vough 2020; Brown 2022) and brand-voice practice (personality is
+  operationalised as Do/Don't rules; Aaker 1997's five dimensions are the *summary*,
+  the rules are the usable form). Fluid/evolving identity is the adaptive norm
+  (Gioia, Schultz & Corley 2000). The action-rule form is also exactly what an
+  external agent can match — resolving F3 (identity under the Pencil model = a brand
+  voice anyone's agent can match, not an embedded persona).
+- **Alternatives:** (a) identity = abstract brand personality (adjectives) —
+  rejected; not executable, and action-rules are what agents/teams actually use.
+  (b) fold identity into core_value — rejected; identity is standing expression,
+  core_value is conflict judgment — different jobs (MECE).
+- **Approval:** Accepted by user, 2026-06-16 ("좋아요. 멋져!").
+- **Spec impact:** FOUNDATION_CONCEPT.md identity section rewritten. Resolves
+  big-picture review **F3**. Next: identity node/inspector reviewed as an
+  **action-rule list (facet)** model (current inspector = label + description + body
+  + status + provenance — to reconcile). Feeds the interview-skill (ROADMAP 5.7).
+
+### D-2026-06-16-M — core_value node collapses to name (label) + body (no separate definition)
+
+- **What:** The core_value entity's three editable text slots (`label` +
+  `definition` + `body`) collapse to **two — the value's name (`label`) + `body`**.
+  The separate `definition` field is removed (folded into `body` on read). The
+  inspector shows **name + body**, where body carries the value's meaning *and the
+  trade-off it makes* (what it chooses / what it sacrifices). The node chip keeps
+  showing the name — unchanged.
+- **Why:** Big-picture inspector-items discussion (2026-06-16). Same 3-slot
+  redundancy as mission (D-J), but the redundant pair differs: for mission it was
+  label ≈ statement (both the one sentence); for core_value the name (`label`) and
+  the meaning are genuinely distinct, so the redundant pair is **`definition` vs
+  `body`** (both explain the value). The name is load-bearing — it is referenced in
+  decisions ("by '관용과 지지' we…") — so it stays; the overlapping `definition`
+  goes.
+- **Alternatives:** (a) copy mission's fix verbatim (merge label + definition) —
+  rejected; name and meaning are not duplicates for a value. (b) make core_value a
+  single decision-principle declaration like mission — rejected; a value needs a
+  short, referenceable name distinct from its full meaning.
+- **Approval:** Accepted by user, 2026-06-16 ("네 그렇게 두 개로 합시다").
+- **Spec impact:** CONCEPTS.md core_value fields + SPEC.md to be brought current;
+  viewer `CoreValue.ts` (drop `definition`, fold to body) + core_value inspector +
+  migration are a TDD follow-up (code unchanged today). Mirrors D-2026-06-16-J
+  (mission). Pairs with D-2026-06-16-L (core_value concept).
+
+### D-2026-06-16-L — core_value definition + Foundation "discover → filter" interview structure
+
+- **What:** Two things. **(1) core_value** = the value that *wins when decisions
+  conflict* — the decision criterion you actually run on *now* (not the
+  future-facing identity). **(2)** Every Foundation concept's interview runs in
+  **two stages — Discovery → Refinement — grounded in the user's concrete service
+  intent**, not abstract values talk. For core_value: *Discovery* surfaces
+  candidates from the decisions the intended service will force (frequent decisions
+  → instinctive lean → what you'd reject that competitors accept); *Refinement*
+  filters candidates by three tests: forces a trade-off (Schwartz 1992), held even
+  at a competitive disadvantage (Collins & Porras; Lencioni's core vs
+  permission-to-play), and lived not merely espoused (Bourne & Jenkins 2013).
+  **Mission is refined to match** — its interview now leads with Discovery (what
+  change / for whom / why-you-now) before the sustainability filter.
+- **Why:** User insight (2026-06-16): the quality tests answer "what should a core
+  value be *like*?" but skip the prior question — "what could even *be* my values?"
+  Discovery must precede filtering, and values are not invented in a vacuum; they
+  are excavated from the service you intend to build. Abstract "what are your
+  values?" yields decoration ("integrity"); decision-grounded discovery yields real
+  candidates. The structure generalises across Foundation.
+- **Alternatives:** (a) keep only the quality filter — rejected; no way to
+  *generate* candidates. (b) discover values abstractly — rejected; yields generic,
+  non-deciding values.
+- **Approval:** Accepted by user, 2026-06-16 ("네. 미션도 잘 다듬어주고요").
+- **Spec impact:** FOUNDATION_CONCEPT.md core_value section rewritten (2-stage) +
+  mission section reordered (discovery-first); refines D-2026-06-16-K. Feeds the
+  interview-question-set skill (ROADMAP 5.7). Identity likely differs (it is
+  AI-*derived*, not user-input) — to confirm when identity is reviewed.
+
+### D-2026-06-16-K — Mission definition: root change + sustainability test (theory-grounded)
+
+- **What:** "What a mission *is*" is defined as: **the fundamental change the
+  service intends to make for the world / its people (the root of its
+  existence)** — a Massive Transformative Purpose. Its decisive test is
+  **sustainability**, with two engines: **(a)** it solves a *recurring* problem
+  (demand never dries up — Jobs-to-be-Done) and **(b)** it delivers *value that did
+  not exist before* (hard to replace — Value Innovation / Blue Ocean, = PHILOSOPHY's
+  "value that didn't exist"). Its success state is when the innovation **becomes
+  everyday** (absorbed into the culture — Rogers' Diffusion of Innovations). This
+  yields the **mission interview question set**: (1) Does this problem keep
+  recurring? (2) Is this value new to the world? (3) How does the world change once
+  it's everyday?
+- **Why:** Big-picture discussion (2026-06-16), research-informed. The user's
+  framing maps onto established strategy / innovation theory; naming it sharpens the
+  definition and gives the AI a concrete, defensible interview. The question set is
+  the operational form of D-2026-06-16-H (per-canvas active coach), mission edition.
+- **Alternatives:** (a) mission = "왜 존재하는가" alone — kept but judged too soft
+  (answerable at feature level); the sustainability test was added to force depth.
+  (b) leave it untheorised — rejected; the user asked for grounding, and the AI
+  coach needs explicit criteria.
+- **Approval:** Accepted by user, 2026-06-16 ("매우 좋아요").
+- **Spec impact:** FOUNDATION_CONCEPT.md 미션 section enriched. The interview
+  question sets across Foundation kinds are to be packaged as a **skill / MCP
+  prompt** (the active-coach implementation) — logged as a deferred (🅿) item in
+  ROADMAP. Pairs with D-2026-06-16-H / J. Refined by D-2026-06-16-L (interview
+  reordered to discovery-first).
+
+### D-2026-06-16-J — Mission node collapses to a single declaration + body (no separate label/statement)
+
+- **What:** The mission entity's two short text slots (`label` + `statement`)
+  collapse into **one declaration field** — the single one-sentence statement that
+  *is* the node's primary text on the canvas — plus the free-form `body`. The
+  mission inspector then shows exactly: **declaration (one sentence) + body**.
+- **Why:** Big-picture inspector-items discussion (2026-06-16). Lens: each
+  inspector item must earn its place by helping **define** the concept (= good AI
+  context + human clarity). A mission is one indivisible declaration
+  (D-2026-06-06-C); two short fields made the user hesitate ("where do I write
+  it?") — a Don't-Make-Me-Think violation — and `label` as a separate slot is just
+  a canvas handle, redundant with the declaration. `label` stays the right "name"
+  slot for kinds whose content is a name (actor / service); mission is special
+  because its content *is* a sentence.
+- **Alternatives:** (a) keep label + statement separate (label = short nickname,
+  statement = sentence) — rejected; a mission has no useful nickname distinct from
+  its declaration. (b) drop label entirely — rejected at the data layer (every node
+  needs a label for the chip + references); instead the single declaration
+  populates `label`, and legacy `statement` folds into it (or into `body`) on read.
+- **Approval:** Accepted by user, 2026-06-16 ("받아들입니다").
+- **Spec impact:** CONCEPTS.md mission fields + SPEC.md Foundation/mission inspector
+  to be brought current in the T3 doc-sync; viewer `Mission.ts` + mission inspector
+  + migration are a TDD follow-up (code unchanged today). Pairs with D-2026-06-06-C.
+  Likely applies to core_value / identity too — **not decided here** (separate
+  per-node review).
+
+### D-2026-06-16-I — VISION essence sentence reframed to Plot's purpose (AI context + human acceleration)
+
+- **What:** The VISION first sentence (the essence) is rewritten to: **"Plot is a
+  collaboration tool where a person and AI together structure and define a
+  service's essence and concepts — so the AI works better on that shared structure,
+  and the person thinks faster and deeper."** The three-phase cycle (Discovery →
+  Retention → Execution) is unchanged and becomes the *how* under this purpose.
+- **Why:** Big-picture discussion (2026-06-16). The user reframed Plot's purpose:
+  Plot builds good **context for the AI to work well** and **accelerates the
+  human's thinking** (with human review). The canvas — structured concepts + their
+  definitions / relationships — is the single artefact that delivers both. The old
+  sentence cast the human as a solo essence-seeker and a typed form as the surface;
+  the new one names the actual job. Pairs with D-2026-06-16-H (per-canvas active
+  coach).
+- **Alternatives:** (a) keep the old sentence, add the purpose elsewhere — rejected;
+  the essence sentence is the override-everything anchor, so it must carry the
+  purpose. (b) drop essence/"본질" from the sentence — rejected; essence stays a
+  central concept (its first-class status is open as F2). (c) replace the
+  three-phase cycle too — rejected; the cycle is the still-valid workflow.
+- **Approval:** Accepted by user, 2026-06-16 ("박으세요").
+- **Spec impact:** VISION.md essence sentence + English mirror rewritten; three-
+  phase cycle section unchanged. Downstream docs (PRODUCT_SPEC §9 interview-first,
+  PHILOSOPHY) to be reconciled as the big-picture review continues.
+
+### D-2026-06-16-H — Each canvas's chat is an active discussion coach, not a passive topic-setter
+
+- **What:** Each canvas's in-app chat carries an **active** per-canvas guide that
+  shapes the user's own AI into a high-level discussion partner for that canvas's
+  job: (1) organise that canvas's concepts and their relationships, and (2) propose
+  higher-order concepts / methodologies the user has not considered. This
+  **strengthens CHAT_ARCH Layer 3** from a passive topic-setter ("Help surface the
+  essence") to an active coach. The AI remains the user's **external** agent
+  (Pencil model); Plot shapes its behaviour through the per-window guide, not by
+  owning the model.
+- **Why:** This session's big-picture discussion (2026-06-16) reframed Plot's
+  purpose: Plot builds good **context for the AI to work well** and **accelerates
+  the human's thinking** (with human review). The canvas — structured concepts +
+  their definitions / relationships — is the single artefact that serves both. For
+  that to hold, the per-canvas AI must actively organise concepts and propose what
+  the human missed, not hand over a blank form.
+- **Alternatives:** (a) one generic chat guide across all canvases — rejected; each
+  canvas has a different job. (b) keep Layer 3's weak topic-setter framing —
+  rejected as too passive. (c) build the AI into Plot — rejected; contradicts the
+  pinned Pencil model (AI is the user's external agent).
+- **Approval:** Accepted by user, 2026-06-16.
+- **Spec impact:** CHAT_ARCH.md Layer 3 (design intent strengthened). SPEC.md R7
+  unchanged until implemented — today's in-app framing is still the weak
+  topic-setter; the active-coach guide is a named follow-up.
+
 ### D-2026-06-16-G — Chat is scoped to the active project (× canvas), not the whole workspace
 
 - **What:** `ChatDock` is now keyed on the **active project's path**

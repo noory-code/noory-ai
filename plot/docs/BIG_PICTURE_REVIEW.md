@@ -47,10 +47,11 @@ Execution (Actors → Services → Service-Detail + MCP). Reversible
 
 ---
 
-## 1.5 진행 상태 — Foundation 토론 시작됨 (2026-06-16, 다음 세션 계속)
+## 1.5 진행 상태 — Foundation 토론 **완료** (2026-06-16)
 
-토론을 Foundation부터 시작함. 아래 3개 쟁점 + 조수(Claude) 입장까지 나옴.
-**아직 사용자 결정 없음 (전부 미결).** 다음 세션은 여기서 이어감 — 쟁점 1부터.
+토론을 Foundation부터 시작해 **F1~F4를 전부 해결**하고, mission·core_value·identity의
+**개념 + 노드/인스펙터까지 박았다** (`D-2026-06-16-H ~ R`). 상세 = 아래 각 쟁점의 '해결'
+표기 + §11 로그 + [FOUNDATION_CONCEPT.md](./FOUNDATION_CONCEPT.md). 다음 캔버스 = Actors.
 
 근거 사실(이번에 확인): **인터뷰/Discovery 흐름은 코드에 전혀 구현 안 됨**
 (`grep -ri interview viewer/src plot_mcp` → 0건). Foundation = 현재 타입드 폼
@@ -66,14 +67,37 @@ Execution (Actors → Services → Service-Detail + MCP). Reversible
 - **쟁점 F2 — "본질(本質)"이 빠진 1급 개념인가?** Foundation에 본질 노드 없음;
   mission/value/identity에 흩어져 암시됨. 본질 = mission인가, mission 위 무엇인가?
   후보 ① mission.why/direction가 사실상 본질(추가불요) ② project 앵커가 본질 한 문장 품음.
-  _조수 입장(미결): 1급으로 올릴 가치 있음, ①/② 중 미정._
+  _조수 입장(미결): 1급으로 올릴 가치 있음, ①/② 중 미정._ → **해결 `D-2026-06-16-Q`:**
+  본질 = Foundation 3종의 *창발적 전체*(핵=mission), 별도 노드 없음. 본질은 구성(앵커 주위 배치)으로
+  *시각적*으로 드러남. 앵커 = 프로젝트/서비스 이름만(시각 묶음 도구, 내용 그릇 아님).
 - **쟁점 F3 — Pencil 모델에서 identity의 자리.** identity="에이전트가 모방할
   보이스/톤"인데 이제 에이전트는 사용자 외부 에이전트(MCP). _조수 입장(미결): identity
   유지(보이스≠decision-value, 외부 에이전트 카피에 고가치), 단 프레이밍 전환("내장 AI
-  페르소나"→"누구든 맞출 브랜드 보이스") = 작은 문서 수정._
-- **쟁점 F4 — 단일 캔버스 vs 청중 분리.** _조수 입장: 현행 유지(가벼움)._
+  페르소나"→"누구든 맞출 브랜드 보이스") = 작은 문서 수정._ → **해결 `D-2026-06-16-N`:**
+  identity = 항상 적용되는 일관 실행·표현 액션 룰(가치 충돌 판단 아님), 외부 에이전트가 맞출 브랜드 보이스.
+- **쟁점 F4 — 단일 캔버스 vs 청중 분리.** _조수 입장: 현행 유지(가벼움)._ → **해결
+  `D-2026-06-16-R`:** 단일 캔버스 확정(청중 분리 기각). 구성=시각적 진술이라 쪼개면 깨짐 + identity도 사람이 보는 브랜드 보이스.
 
 > 다음 세션 진행: F1 사용자 결정 → F2 → F3 → §11 로그 + `D-` 엔트리. 그 다음 캔버스(Actors)로.
+
+### 갱신 (2026-06-16 이어진 토론) — Foundation을 넘어 *목적* 재정의로 확장
+
+토론이 F1을 넘어 Plot의 목적 자체로 올라갔다. 사용자 정리:
+
+- **Plot의 목적 = ① AI가 일할 좋은 컨텍스트를 만든다 + ② 사람의 생각이 속도를 낸다(사람 검토 포함).**
+  캔버스(= 구조화된 개념 + 그 정의/관계)가 이 둘을 한 번에 달성한다.
+- **Plot의 AI = 똑똑하고 토론을 즐기는 상대.** 할 일: (1) 개념과 관계를 정리, (2) 사람이 못 떠올린
+  고차원 개념·방법론을 제안. AI는 **사용자 외부 에이전트((가), Pencil 모델 유지)** — Plot은 모델을
+  소유하지 않고 *창별 가이드*로 그 행동을 만든다.
+- **결정 `D-2026-06-16-H` (Accepted):** 캔버스별 채팅 가이드 = "적극적 토론 코치"(약한 주제 안내 X).
+  CHAT_ARCH Layer 3 강화. (구현은 후속.)
+
+**F1에 대한 함의:** "발견 vs 폼"은 해소됨 — Foundation = AI가 초안한 컨텍스트를 사람이 검토·확정하는
+곳(순수 발견도, 빈 폼도 아님). **`D-2026-06-16-I` (Accepted, 2026-06-16, "박으세요"):** VISION 첫 문장을
+목적 중심으로 재작성함 — 사람+AI가 본질·개념을 함께 구조화·정의 → AI 컨텍스트 + 사람 사고 가속.
+3-phase 사이클은 그대로 = *how*.
+
+> 다음: 인스펙터 항목 논의(노드별) 진행 중 — Foundation/mission부터. 그 뒤 F2(본질 1급 개념).
 
 ---
 
@@ -382,7 +406,23 @@ flowchart LR
 
 | # | Topic | Decision | Rationale | D-id / doc updated |
 |---|---|---|---|---|
-| _(none yet — discussion is next session)_ | | | | |
+| 1 | Per-canvas chat = active discussion coach | 각 캔버스 채팅 가이드를 "적극적 토론 코치"로 강화 (개념·관계 정리 + 고차원 개념/방법론 제안); AI는 외부 에이전트 유지 | Plot 목적 = AI 컨텍스트 구축 + 사람 사고 가속; 캔버스가 둘 다 달성 | `D-2026-06-16-H` / CHAT_ARCH.md Layer 3 |
+| 2 | VISION essence reframed to purpose | 첫 문장을 "사람+AI가 본질·개념을 구조화·정의 → AI 컨텍스트 + 사람 사고 가속"으로 재작성; 3-phase는 how로 유지 | Plot 목적 재정의(2026-06-16 토론) | `D-2026-06-16-I` / VISION.md |
+| 3 | Mission node = single declaration + body | label/statement 두 짧은 칸을 "선언 한 문장" 하나로 합침; 인스펙터 = 선언 + 본문 | 미션은 쪼개지 않는 한 덩어리 선언; label은 정의에 기여 안 함(Don't-Make-Me-Think) | `D-2026-06-16-J` / CONCEPTS+SPEC (구현 후속) |
+| 4 | Mission definition (theory-grounded) | 미션 = 세상에 일으킬 근본 변화(MTP) + 지속가능성 2엔진(계속 생기는 문제=JTBD / 세상에 없던 가치=Blue Ocean) + 성공=혁신의 일상화(Diffusion); 인터뷰 3질문 도출 | 사용자 직관이 정립된 전략·혁신 이론과 일치; AI 코치에 명시 기준 필요 | `D-2026-06-16-K` / FOUNDATION_CONCEPT.md |
+| 5 | core_value def + Foundation "발견→거르기" 구조 | core_value=결정 갈릴 때 이기는 가치; Foundation 인터뷰=발견(서비스가 강제할 결정에서 후보 캐기)→거르기(트레이드오프/불리해도 지킴/실제로 삶 — Schwartz·Collins·Lencioni·Bourne); 미션도 발견-먼저로 재정렬 | 좋은 가치 "기준"만으론 후보 생성 불가; 가치는 추상이 아니라 서비스 결정에서 캐냄 | `D-2026-06-16-L` / FOUNDATION_CONCEPT.md |
+| 6 | core_value node = name(label) + body | `definition` 칸 제거(→body 흡수); 인스펙터 = 이름 + 본문(의미 + 트레이드오프). 미션과 달리 중복쌍은 definition↔body(이름은 참조용이라 유지) | 이름(참조)≠의미; 겹치는 건 definition/body | `D-2026-06-16-M` / CONCEPTS+코드(후속) |
+| 7 | identity 정의 = 일관 실행 룰(≠충돌 판단) | identity=항상 적용되는 실행·표현 액션 룰("이렇게 한다")의 누적, 출력+진화; core_value(충돌 tie-breaker)·rule(per-service)과 구분; **F3 해결** | identity-as-practice(doing not being) + 브랜드 보이스 Do/Don't; 외부 에이전트가 맞출 형태 | `D-2026-06-16-N` / FOUNDATION_CONCEPT.md |
+| 8 | identity 인스펙터 = 이름 + 액션 룰(지금 2개) | description 제거; status/provenance는 inert라 AI 도출 흐름(5.7)과 함께로 연기; evolution=git/version. AI 도출=토론(초안 제안→확정), silent 아님 | status/provenance가 워크플로보다 먼저 만들어져 혼란(YAGNI); 출력도 사람 검토 루프 | `D-2026-06-16-O` / 코드(후속) |
+| 9 | 모든 것은 토론으로 생성(AI 코치 + 사람 확정) | 모든 캔버스·노드가 토론으로 — 입력kind=발견→거르기, 출력kind=AI 초안→토론→확정; 빈 폼❌·silent 자동생성❌; 사람이 늘 직접편집 가능+최종 확정자 | H(코치)+I(사람 검토)의 일반화; 오늘 Foundation 토론 전체의 관통선 | `D-2026-06-16-P` / 원칙(전 캔버스) |
+
+| 10 | F2 해결: 본질 = 창발적 구성(노드 아님), 앵커 = 이름만 | 별도 본질 노드 없음(전체를 부분으로 격하 X); 핵=mission; 본질 전용 그릇 없음(앵커에도 안 박음); 본질은 3종 구성으로 *시각적*으로 드러남; 앵커=프로젝트/서비스 이름만(시각 묶음) | 본질은 전체라 노드화 부적절; 앵커는 시각 도구 | `D-2026-06-16-Q` / 원칙 + SPEC §Anchor |
+| 11 | F4 해결: Foundation 단일 캔버스 유지 | 청중 분리 기각; mission+core_value+identity 한 캔버스 | Q의 "구성=시각적 진술"을 쪼개면 깨짐; identity도 사람이 보는 브랜드 보이스 | `D-2026-06-16-R` / 현행 유지 |
+
+> **실행 follow-ups (중복 금지 — 상세는 각 SSOT):**
+> - Foundation 코드화(D-J/M/O) → [`FOUNDATION_PLAN.md`](./FOUNDATION_PLAN.md) (TDD, smallest-first).
+> - 보류 → ROADMAP `5.7`(캔버스별 인터뷰 질문 세트 = 스킬/MCP) · `5.8`(PHILOSOPHY S-D Logic 보강).
+> - 결정 원문 → [DECISIONS.md](./DECISIONS.md) `D-2026-06-16-H ~ P`. 개념 SSOT → [FOUNDATION_CONCEPT.md](./FOUNDATION_CONCEPT.md).
 
 ---
 

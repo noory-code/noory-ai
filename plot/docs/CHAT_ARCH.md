@@ -88,6 +88,17 @@ Each scope maps to a VISION phase, which sets the agent's framing:
 | Actors / Services | Planning | Design the value-creation machinery |
 | Service-Detail | Execution | Break the plan into concrete steps |
 
+> **D-2026-06-16-H — active coach, not topic-setter.** The phase mapping above is
+> the *minimum* (which phase). The per-canvas guide is **active**: it makes the
+> user's own AI a high-level discussion partner that (1) organises that canvas's
+> concepts + their relationships and (2) proposes higher-order concepts /
+> methodologies the user has not considered — not a passive blank-form filler.
+> Rationale: Plot's purpose (2026-06-16 big-picture discussion) is to build good
+> **context for the AI to work** and **accelerate the human's thinking**; the
+> canvas (structured concepts + definitions) serves both, which requires an active
+> partner per canvas. **Not yet implemented** — current Layer 3 ships only the weak
+> topic-setter preamble.
+
 **Scope honesty (red-team A1):** Layers 2–3 make the **in-app** chat
 canvas-aware. The *primary* path is MCP (the user's own agent), which does NOT
 receive this framing/selection yet — that's a named follow-up (a viewer→engine

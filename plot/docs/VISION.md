@@ -8,13 +8,20 @@
 
 ## The essence — one sentence
 
-**Plot 은 본질을 모르는 사람이 본질을 찾고, 그걸 놓치지 않으면서, 그
-본질 아래에서 서비스를 쉽게 기획·개발할 수 있게 AI 와 협업하는
-툴이다.**
+**Plot 은 사람과 AI 가 서비스의 본질과 개념들을 함께 구조화하고
+정의해서, AI 는 그 위에서 더 잘 일하고 사람은 더 빠르고 깊게
+생각하도록 돕는 협업 툴이다.**
 
-(English mirror: Plot is a tool for people who don't know their essence to
-discover it, retain it without drift, and plan + develop services under
-that essence — with AI as a continuous collaborator.)
+(English mirror: Plot is a collaboration tool where a person and AI together
+structure and define a service's essence and concepts — so the AI works
+better on top of that shared structure, and the person thinks faster and
+deeper.)
+
+> Reframed 2026-06-16 (`D-2026-06-16-I`): the *purpose* is good working
+> context for the AI + accelerated, reviewed human thinking. The prior
+> framing ("a person who doesn't know their essence discovers it, retains
+> it, plans under it") is preserved as the three-phase cycle below
+> (Discovery → Retention → Execution) — that cycle is the *how*.
 
 This is the only sentence that overrides every other priority. If a
 proposed change does not serve this essence, it should not ship. When
