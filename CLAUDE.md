@@ -8,19 +8,19 @@ Python monorepo with two independent MCP (Model Context Protocol) servers. Each 
 
 ```
 noory-ai/
-├── evonest/            — Autonomous code evolution engine (v1.0.6)
-├── distill/            — Knowledge distillation from Claude conversations (v1.7.4)
-├── solera/             — AI project workflow + mindmap canvas (v5.1.0)
+├── evonest/            — Autonomous code evolution engine
+├── distill/            — Knowledge distillation from Claude conversations
+├── solera/             — AI project workflow + mindmap canvas
 │   ├── skills/            — markdown skills (Claude Code plugin)
 │   ├── solera_mcp/        — Python MCP server (reads .solera/)
 │   ├── viewer/            — React canvas (Actors / Plan / Build / Live)
 │   └── vscode-extension/  — VSCode wrapper (bundles MCP + viewer)
-├── plot/               — React Flow mindmap editor + MCP (v0.1.0)
+├── plot/               — React Flow mindmap editor + MCP
 │   ├── plot_mcp/          — Python MCP + HTTP server (reads .noory/plot/)
 │   ├── viewer/            — React Flow canvas (all free features)
 │   └── .claude-plugin/    — Claude Code plugin manifest + skills
-├── flutter-cask/       — Flutter package guide skills (v1.2.5)
-└── pencil_m3_flutter/  — Flutter M3 design system automation (v1.0.2)
+├── flutter-cask/       — Flutter package guide skills
+└── pencil_m3_flutter/  — Flutter M3 design system automation
 ```
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
