@@ -1,9 +1,9 @@
 /**
- * Chat model display + selection (D-2026-06-16-C).
+ * Chat model display + selection (D-2026-06-16-C; top dropdown D-2026-06-16-D).
  *
- *   ① the active model is shown (on the provider bar + in the model field);
- *   ② the user can set a model, which PUTs {provider, model} to the engine;
- *   switching provider clears the model.
+ *   ① the active model is shown (the top dropdown reflects it);
+ *   ② the user selects a model from the dropdown, which PUTs {provider, model};
+ *   the selector is absent until an agent is connected.
  */
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -20,6 +20,14 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+const PROVIDERS_REGISTERED = {
+  providers: [
+    { name: "claude-code", installed: true, registered: true, config_path: "~/.claude.json" },
+    { name: "codex", installed: true, registered: true, config_path: "~/.codex/config.toml" },
+    { name: "gemini", installed: false, registered: false, config_path: "~/.gemini/settings.json" },
+  ],
+};
+
 let selectionValue: { provider: string | null; model: string | null };
 
 beforeEach(() => {
@@ -34,7 +42,7 @@ beforeEach(() => {
       return Promise.resolve(jsonResponse(selectionValue));
     }
     if (u.includes("/api/mcp/providers")) {
-      return Promise.resolve(jsonResponse({ providers: [] }));
+      return Promise.resolve(jsonResponse(PROVIDERS_REGISTERED));
     }
     return Promise.resolve(jsonResponse({}));
   });
@@ -47,38 +55,27 @@ afterEach(() => {
   localStorage.clear();
 });
 
-describe("ChatDock — model display + selection (D-2026-06-16-C)", () => {
-  it("shows the active model on the provider bar", async () => {
+describe("ChatDock — model display + selection (D-2026-06-16-C/D)", () => {
+  it("shows the active model in the top dropdown", async () => {
     selectionValue = { provider: "codex", model: "o3" };
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    const bar = await screen.findByRole("button", { name: /ai agent/i });
-    await waitFor(() => expect(bar.textContent).toContain("o3"));
-    expect(bar.textContent).toContain("Codex");
+    const select = (await screen.findByLabelText(/model/i)) as HTMLSelectElement;
+    await waitFor(() => expect(select.value).toBe("o3"));
   });
 
-  it("shows 'default' on the bar when no model override is set", async () => {
+  it("shows 'default' selected when no model override is set", async () => {
     selectionValue = { provider: "codex", model: null };
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    const bar = await screen.findByRole("button", { name: /ai agent/i });
-    await waitFor(() => expect(bar.textContent).toContain("Codex"));
-    expect(bar.textContent).toContain("default"); // model state always visible
+    const select = (await screen.findByLabelText(/model/i)) as HTMLSelectElement;
+    await waitFor(() => expect(select.value).toBe("")); // "" = default option
   });
 
-  it("renders a model field that reflects the persisted model", async () => {
-    selectionValue = { provider: "codex", model: "o3" };
-    render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    const field = (await screen.findByLabelText(/model/i)) as HTMLInputElement;
-    await waitFor(() => expect(field.value).toBe("o3"));
-  });
-
-  it("PUTs {provider, model} when the user sets a model", async () => {
-    selectionValue = { provider: "codex", model: null };
+  it("PUTs {provider, model} when the user picks a model from the dropdown", async () => {
+    selectionValue = { provider: "claude-code", model: null };
     const user = userEvent.setup();
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
-    const field = (await screen.findByLabelText(/model/i)) as HTMLInputElement;
-    await user.click(field);
-    await user.type(field, "o3");
-    await user.tab(); // blur → commit
+    const select = (await screen.findByLabelText(/model/i)) as HTMLSelectElement;
+    await user.selectOptions(select, "opus");
     await waitFor(() => {
       const put = fetchSpy.mock.calls.find(
         (c) =>
@@ -88,13 +85,13 @@ describe("ChatDock — model display + selection (D-2026-06-16-C)", () => {
       );
       expect(put).toBeDefined();
       expect(JSON.parse(String((put![1] as RequestInit).body))).toEqual({
-        provider: "codex",
-        model: "o3",
+        provider: "claude-code",
+        model: "opus",
       });
     });
   });
 
-  it("does not show a model field when no provider is selected", async () => {
+  it("does not show a model selector when no provider is connected", async () => {
     selectionValue = { provider: null, model: null };
     render(<ChatDock onError={() => {}} workspaceRoot="/tmp/ws" />);
     await screen.findByRole("button", { name: /ai agent/i });

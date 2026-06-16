@@ -129,6 +129,7 @@
     "modelLabel": "Model",
     "modelPlaceholder": "Default (CLI setting)",
     "modelDefaultShort": "default",
+    "modelCustom": "Custom…",
     "errorPrefix": "Error: ",
     "resetSession": "Start a new conversation",
     "confirmReset": "Drop the current conversation and start a new one?",

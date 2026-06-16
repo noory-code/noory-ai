@@ -1,16 +1,14 @@
 /**
- * R7 chat dock (D-2026-06-11-E + D-2026-06-12-D, Phase B → C).
+ * R7 chat dock (D-2026-06-11-E … D-2026-06-16-D).
  *
- * Right-side collapsible container that hosts the chat surface. Phase B
- * landed the chrome + providers panel + persisted CLI selection; Phase C
- * (this file) wires the message frame to the engine's
- * ``/api/chat/send`` + ``chat_stream_event`` WS, so user input lands as a
- * real CLI turn and assistant deltas stream in live.
- *
- * Collapse state persists across reloads via
- * ``localStorage["plot:chatDockCollapsed"]`` (``"1"`` = collapsed). When
- * collapsed, both the providers panel and the chat-stream subscription
- * unmount — keeps the screen-reader tree honest and avoids an idle WS.
+ * Left-side resizable panel hosting the chat surface. v0.85.0 (D-2026-06-16-D)
+ * reshaped the chrome to read like a modern chat app: a top conversation bar
+ * with the **model selector** as the prominent control + a compact provider
+ * chip, left/right-aligned message bubbles, and a single rounded composer with
+ * an integrated send button. All prior behaviour is preserved — provider
+ * connection (`/api/chat/provider`), per-canvas scope (2-tab), the
+ * `chat_stream_event` stream (`useChatStream`), and the per-provider model
+ * override (`set` via PUT).
  */
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,34 +21,29 @@ import type { ChatScope, ChatSelectionNode } from "../types";
 import { ChatProvidersPanel } from "./ChatProvidersPanel";
 import { useDialog } from "./dialog/DialogProvider";
 
-// D-2026-06-16-C — model suggestions per CLI for the model field's datalist.
-// The field is free-text (you can type any model your CLI accepts); these are
-// only autocomplete hints. We list ONLY values we can stand behind: the
-// ``claude`` CLI documents these aliases in its own --help; codex / gemini
-// model ids are version-specific and vendor-owned, so we offer no hardcoded
-// (potentially stale) suggestions there — the user types the id their CLI
-// supports. Empty selection = the CLI's own default.
+// D-2026-06-16-C — model suggestions per CLI for the model dropdown. The
+// control is a dropdown + "Custom…" free-text fallback, so these are only the
+// pre-listed options. We list ONLY values we can stand behind: the ``claude``
+// CLI documents these aliases in its own --help; codex / gemini model ids are
+// version-specific and vendor-owned, so there are no hardcoded (potentially
+// stale) options there — the user picks "Custom…" and types the id their CLI
+// supports. Empty = the CLI's own default.
 const MODEL_SUGGESTIONS: Partial<Record<McpProviderName, string[]>> = {
   "claude-code": ["fable", "opus", "sonnet"],
 };
+
+const CUSTOM_MODEL_OPTION = "__custom__";
 
 export interface ChatDockProps {
   onError: (message: string) => void;
   /** When defined, the dock loads + persists the workspace's chat-CLI
    * choice through `/api/chat/provider` and opens a chat stream on
    * `<workspace>/.noory/plot/`. Tests omit it to verify the dock stays
-   * inert without a workspace (e.g. during the ProjectPicker phase, though
-   * in practice App.tsx unmounts the dock there). */
+   * inert without a workspace. */
   workspaceRoot?: string;
-  /** The canvas-derived chat scope the dock follows (D-2026-06-13-H). App
-   * passes the active canvas kind (or `service_detail` when the modal is
-   * open); the user can override it to the shared `project` scope via the
-   * in-dock switcher. Defaults to `project` so workspace-less / test mounts
-   * stay coherent. */
+  /** The canvas-derived chat scope the dock follows (D-2026-06-13-H). */
   activeScope?: ChatScope;
-  /** Human label for a parametric ``service_detail:<id>`` scope — the service's
-   * name, shown on the switcher's canvas tab instead of the generic "Service
-   * detail" (D-2026-06-15-H). Ignored for non-service-detail scopes. */
+  /** Human label for a parametric ``service_detail:<id>`` scope (D-2026-06-15-H). */
   activeScopeLabel?: string | null;
   /** Live canvas selection, injected as per-turn chat context (Layer 2,
    * D-2026-06-15-A). */
@@ -65,35 +58,26 @@ export function ChatDock({
   selection = [],
 }: ChatDockProps) {
   const { t } = useTranslation();
-  // Report the canvas the user is looking at + their selection to the engine so
-  // the external MCP agent can read it (D-2026-06-15-D). Uses ``activeScope``
-  // (the canvas), not the chat-thread toggle — the agent wants what's on
-  // screen. ChatDock stays mounted whenever a workspace is open (the panel
-  // collapses to width 0, it does not unmount), so it is the bridge's home.
+  // Report the canvas + selection to the engine so the external MCP agent can
+  // read it (D-2026-06-15-D). Uses ``activeScope`` (the canvas), not the
+  // chat-thread toggle.
   useViewerContextBridge(workspaceRoot, activeScope, selection);
   const [activeProvider, setActiveProvider] =
     useState<McpProviderName | null>(null);
-  // D-2026-06-16-C — the CLI model override for the active provider. null = the
-  // CLI's own configured default. Reset to null when the provider changes.
+  // D-2026-06-16-C — CLI model override for the active provider. null = the
+  // CLI's own default. Reset when the provider changes.
   const [activeModel, setActiveModel] = useState<string | null>(null);
-  // The chat switcher has exactly two tabs: the selected canvas | project
-  // (D-2026-06-13-H). "canvas" mode follows the active canvas tab; "project"
-  // pins the shared cross-canvas thread. (The v0.77.0 full picker was reverted
-  // — the canvas tabs, not the chat dock, are where the user picks a canvas.)
+  // Two-tab scope: the selected canvas | project (D-2026-06-13-H).
   const [scopeMode, setScopeMode] = useState<"canvas" | "project">("canvas");
   const effectiveScope: ChatScope =
     scopeMode === "project" ? "project" : activeScope;
-  // D-2026-06-14-D — provider connection is a setup step, not something to
-  // stare at while chatting; keep it behind a compact bar, collapsed by
-  // default. The bar shows the active CLI so the user knows what's connected
-  // without expanding.
+  // Provider connection is a setup step kept behind a compact chip, collapsed
+  // by default (D-2026-06-14-D).
   const [providersOpen, setProvidersOpen] = useState(false);
 
   useEffect(() => {
     if (!workspaceRoot) return;
     void getChatProvider(workspaceRoot).then(
-      // claude-code is selectable for in-app chat again (D-2026-06-14-B); the
-      // double-billing tradeoff is surfaced as a warning banner, not a block.
       (sel) => {
         setActiveProvider(sel.provider);
         setActiveModel(sel.model ?? null);
@@ -105,8 +89,7 @@ export function ChatDock({
   const handleSelectProvider = useCallback(
     (provider: McpProviderName | null) => {
       setActiveProvider(provider);
-      // A model valid for one CLI is meaningless for another — clear it so the
-      // new provider starts on its own default (D-2026-06-16-C).
+      // A model valid for one CLI is meaningless for another (D-2026-06-16-C).
       setActiveModel(null);
       if (!workspaceRoot) return;
       void setChatProvider(workspaceRoot, provider, null).catch((err) =>
@@ -132,91 +115,88 @@ export function ChatDock({
     ? { activeProvider, onSelectProvider: handleSelectProvider }
     : {};
 
+  const connected = Boolean(activeProvider && workspaceRoot);
+
   return (
     <aside
       aria-label={t("chat.dockTitle")}
-      className="flex h-full w-full flex-col border-r border-line bg-surface"
+      className="flex h-full w-full flex-col bg-surface"
     >
-      <header className="flex items-center gap-2 border-b border-line px-3 py-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
-          {t("chat.dockTitle")}
-        </h2>
-      </header>
-      <div className="flex flex-1 flex-col overflow-hidden">
-          <button
-            type="button"
-            aria-label={t("chat.providersBarLabel")}
-            aria-expanded={providersOpen}
-            data-connected={activeProvider ? "1" : "0"}
-            onClick={() => setProvidersOpen((o) => !o)}
-            className="flex items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-fg-muted hover:bg-surface-muted hover:text-fg-strong"
-          >
-            {/* Persistent connection indicator so the connected agent is
-                legible at a glance without expanding the panel
-                (D-2026-06-15-F): a filled dot + the agent name in a readable
-                colour when connected; a hollow dot + muted prompt when not. */}
-            <span className="flex min-w-0 items-center gap-2">
-              <span
-                aria-hidden
-                className={
-                  activeProvider
-                    ? "h-1.5 w-1.5 shrink-0 rounded-full bg-fg-strong"
-                    : "h-1.5 w-1.5 shrink-0 rounded-full border border-fg-muted"
-                }
-              />
-              <span
-                className={
-                  activeProvider
-                    ? "truncate font-medium text-fg-strong"
-                    : "truncate"
-                }
-              >
-                {activeProvider
-                  ? `${t(`chat.providers.${activeProvider}`)} · ${activeModel ?? t("chat.modelDefaultShort")}`
-                  : t("chat.providersTitle")}
-              </span>
-            </span>
-            <span aria-hidden>{providersOpen ? "▾" : "▸"}</span>
-          </button>
-          {providersOpen && (
-            <div className="overflow-y-auto border-b border-line p-3">
-              <ChatProvidersPanel onError={onError} {...selectionProps} />
-            </div>
-          )}
-          {activeProvider && workspaceRoot && (
-            <ChatModelRow
-              provider={activeProvider}
-              model={activeModel}
-              onChange={handleSelectModel}
-            />
-          )}
-          {activeScope !== "project" && (
-            <ChatScopeSwitcher
-              canvasScope={activeScope}
-              canvasLabel={activeScopeLabel}
-              mode={scopeMode}
-              onModeChange={setScopeMode}
-            />
-          )}
-          <ChatMessageFrame
-            workspaceRoot={workspaceRoot}
-            activeProvider={activeProvider}
-            scope={effectiveScope}
-            selection={selection}
-            onError={onError}
+      {/* Top conversation bar — model selector (the prominent control, like a
+          modern chat app) on the left, the provider connection chip on the
+          right. When no agent is connected the chip fills the bar as the
+          call-to-connect. */}
+      <div className="flex items-center gap-2 border-b border-line px-3 py-2">
+        {connected && (
+          <ChatModelSelector
+            provider={activeProvider!}
+            model={activeModel}
+            onChange={handleSelectModel}
           />
+        )}
+        <button
+          type="button"
+          aria-label={t("chat.providersBarLabel")}
+          aria-expanded={providersOpen}
+          data-connected={activeProvider ? "1" : "0"}
+          onClick={() => setProvidersOpen((o) => !o)}
+          className={
+            "flex items-center gap-2 rounded-md px-2 py-1 text-[11px] text-fg-muted hover:bg-surface-muted hover:text-fg-strong " +
+            (connected ? "ml-auto shrink-0" : "w-full justify-between")
+          }
+          title={t("chat.providersBarLabel")}
+        >
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span
+              aria-hidden
+              className={
+                activeProvider
+                  ? "h-1.5 w-1.5 shrink-0 rounded-full bg-ok"
+                  : "h-1.5 w-1.5 shrink-0 rounded-full border border-fg-muted"
+              }
+            />
+            <span className={activeProvider ? "truncate font-medium text-fg-strong" : "truncate"}>
+              {activeProvider ? t(`chat.providers.${activeProvider}`) : t("chat.providersTitle")}
+            </span>
+          </span>
+          <span aria-hidden className="text-fg-faint">{providersOpen ? "▾" : "▸"}</span>
+        </button>
       </div>
+
+      {providersOpen && (
+        <div className="overflow-y-auto border-b border-line p-3">
+          <ChatProvidersPanel onError={onError} {...selectionProps} />
+        </div>
+      )}
+
+      {activeScope !== "project" && (
+        <ChatScopeSwitcher
+          canvasScope={activeScope}
+          canvasLabel={activeScopeLabel}
+          mode={scopeMode}
+          onModeChange={setScopeMode}
+        />
+      )}
+
+      <ChatMessageFrame
+        workspaceRoot={workspaceRoot}
+        activeProvider={activeProvider}
+        scope={effectiveScope}
+        selection={selection}
+        onError={onError}
+      />
     </aside>
   );
 }
 
 /**
- * Model field for the active provider (D-2026-06-16-C). A free-text input
- * with a datalist of per-CLI suggestions — the user can pick a suggestion or
- * type any model id their CLI accepts. Empty commits ``null`` (the CLI's own
- * default). Commits on blur / Enter so a half-typed id isn't sent mid-stroke.
+ * Model selector (D-2026-06-16-C, reshaped as a top dropdown D-2026-06-16-D).
+ * A dropdown of per-CLI suggestions + a "Custom…" entry that swaps to a
+ * free-text input (so any model id the CLI accepts can be typed). The current
+ * model — even a custom one — is always an option so the dropdown reflects it.
+ * Empty = the CLI's own default.
  */
-function ChatModelRow({
+function ChatModelSelector({
   provider,
   model,
   onChange,
@@ -226,48 +206,63 @@ function ChatModelRow({
   onChange: (model: string | null) => void;
 }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState(model ?? "");
-  useEffect(() => setDraft(model ?? ""), [model]);
-  const listId = `chat-models-${provider}`;
   const suggestions = MODEL_SUGGESTIONS[provider] ?? [];
-  const commit = () => {
-    const next = draft.trim() || null;
-    if (next !== (model ?? null)) onChange(next);
-  };
-  return (
-    <div className="flex items-center gap-2 border-b border-line px-3 py-2 text-[11px]">
-      <label htmlFor={`${listId}-input`} className="shrink-0 text-fg-muted">
-        {t("chat.modelLabel")}
-      </label>
+  const [customMode, setCustomMode] = useState(false);
+  // Leaving custom mode whenever the provider changes keeps the control honest.
+  useEffect(() => setCustomMode(false), [provider]);
+
+  if (customMode) {
+    const commit = (raw: string) => {
+      setCustomMode(false);
+      onChange(raw.trim() || null);
+    };
+    return (
       <input
-        id={`${listId}-input`}
-        list={listId}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
+        aria-label={t("chat.modelLabel")}
+        autoFocus
+        defaultValue={model ?? ""}
+        placeholder={t("chat.modelPlaceholder")}
+        onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            commit();
+            commit((e.target as HTMLInputElement).value);
+          } else if (e.key === "Escape") {
+            setCustomMode(false);
           }
         }}
-        placeholder={t("chat.modelPlaceholder")}
-        className="min-w-0 flex-1 rounded border border-line bg-surface-muted px-2 py-1 text-fg"
+        className="min-w-0 max-w-[60%] flex-1 rounded-md border border-line bg-surface-muted px-2 py-1 text-[11px] text-fg focus:border-accent focus:outline-none"
       />
-      <datalist id={listId}>
-        {suggestions.map((s) => (
-          <option key={s} value={s} />
-        ))}
-      </datalist>
-    </div>
+    );
+  }
+
+  return (
+    <select
+      aria-label={t("chat.modelLabel")}
+      value={model ?? ""}
+      onChange={(e) => {
+        if (e.target.value === CUSTOM_MODEL_OPTION) {
+          setCustomMode(true);
+          return;
+        }
+        onChange(e.target.value || null);
+      }}
+      className="min-w-0 max-w-[60%] rounded-md border border-line bg-surface-muted px-2 py-1 text-[11px] font-medium text-fg-strong hover:bg-surface-subtle focus:border-accent focus:outline-none"
+    >
+      <option value="">{t("chat.modelDefaultShort")}</option>
+      {suggestions.map((s) => (
+        <option key={s} value={s}>
+          {s}
+        </option>
+      ))}
+      {model && !suggestions.includes(model) && <option value={model}>{model}</option>}
+      <option value={CUSTOM_MODEL_OPTION}>{t("chat.modelCustom")}</option>
+    </select>
   );
 }
 
 /**
- * Two-tab chat scope switcher: the selected canvas | project
- * (D-2026-06-13-H). The "canvas" tab follows the active canvas tab; "project"
- * pins the shared cross-canvas thread. A parametric ``service_detail:<id>``
- * canvas is labelled with its base ``service_detail`` label (D-2026-06-15-B).
+ * Two-tab chat scope switcher: the selected canvas | project (D-2026-06-13-H).
  */
 function ChatScopeSwitcher({
   canvasScope,
@@ -282,8 +277,6 @@ function ChatScopeSwitcher({
 }) {
   const { t } = useTranslation();
   const isServiceDetail = canvasScope.startsWith("service_detail:");
-  // A service-detail tab shows the service's NAME (D-2026-06-15-H), falling
-  // back to the generic label only when the name isn't available.
   const canvasTabLabel = isServiceDetail
     ? canvasLabel || t("chat.scope.service_detail")
     : t(`chat.scope.${canvasScope}`);
@@ -323,9 +316,8 @@ interface ChatMessageFrameProps {
 }
 
 /**
- * Live message surface — Phase C activation. Renders the chat list, the
- * input + Send button, and a one-line connection / streaming status bar.
- * The data-state attributes are stable hooks for the e2e smoke test.
+ * Live message surface — the bubble list, the composer, and a thin status
+ * line. The data-state / data-streaming attributes are stable e2e hooks.
  */
 function ChatMessageFrame({
   workspaceRoot,
@@ -340,9 +332,7 @@ function ChatMessageFrame({
     useChatStream(workspaceRoot, scope, selection);
   const [draft, setDraft] = useState("");
 
-  const providerLabel = activeProvider
-    ? t(`chat.providers.${activeProvider}`)
-    : "";
+  const providerLabel = activeProvider ? t(`chat.providers.${activeProvider}`) : "";
   const placeholder = activeProvider
     ? t("chat.inputPlaceholder", { provider: providerLabel })
     : t("chat.inputPlaceholderUnselected");
@@ -356,15 +346,19 @@ function ChatMessageFrame({
     if (lastSendError) onError(lastSendError);
   }, [lastSendError, onError]);
 
+  const submit = useCallback(() => {
+    if (!canSubmit) return;
+    const text = draft;
+    setDraft("");
+    void send(text);
+  }, [canSubmit, draft, send]);
+
   const handleSubmit = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
+    (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      if (!canSubmit) return;
-      const text = draft;
-      setDraft("");
-      await send(text);
+      submit();
     },
-    [canSubmit, draft, send],
+    [submit],
   );
 
   const handleKeyDown = useCallback(
@@ -372,14 +366,10 @@ function ChatMessageFrame({
       // Enter sends; Shift+Enter inserts a newline.
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        if (canSubmit) {
-          const text = draft;
-          setDraft("");
-          void send(text);
-        }
+        submit();
       }
     },
-    [canSubmit, draft, send],
+    [submit],
   );
 
   const handleReset = useCallback(async () => {
@@ -404,12 +394,16 @@ function ChatMessageFrame({
         role="log"
         aria-label={t("chat.messagesLogLabel")}
         data-streaming={isStreaming ? "1" : "0"}
-        className="flex-1 space-y-3 overflow-y-auto p-3 text-xs"
+        className="flex flex-1 flex-col gap-3 overflow-y-auto p-3"
       >
         {!workspaceRoot ? (
-          <p className="text-fg-muted">{t("chat.noWorkspace")}</p>
+          <p className="m-auto max-w-[80%] text-center text-xs text-fg-muted">
+            {t("chat.noWorkspace")}
+          </p>
         ) : messages.length === 0 ? (
-          <p className="text-fg-muted">{t("chat.emptyMessages")}</p>
+          <p className="m-auto max-w-[80%] text-center text-xs text-fg-muted">
+            {t("chat.emptyMessages")}
+          </p>
         ) : (
           messages.map((m) => <ChatMessageRow key={m.id} message={m} />)
         )}
@@ -420,28 +414,33 @@ function ChatMessageFrame({
         canReset={Boolean(workspaceRoot) && messages.length > 0}
         onReset={handleReset}
       />
-      <form
-        className="flex flex-col gap-2 border-t border-line p-3"
-        onSubmit={handleSubmit}
-      >
-        <textarea
-          aria-label={t("chat.inputLabel")}
-          placeholder={placeholder}
-          disabled={!workspaceRoot || activeProvider === null}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={2}
-          className="resize-none rounded border border-line bg-surface-muted p-2 text-sm text-fg disabled:opacity-60"
-        />
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          data-state={isStreaming ? "streaming" : "idle"}
-          className="self-end rounded border border-line-strong px-3 py-1 text-xs font-medium text-fg disabled:opacity-50"
-        >
-          {t("chat.send")}
-        </button>
+      <form className="border-t border-line p-3" onSubmit={handleSubmit}>
+        <div className="flex items-end gap-2 rounded-2xl border border-line bg-surface-muted p-2 focus-within:border-accent">
+          <textarea
+            aria-label={t("chat.inputLabel")}
+            placeholder={placeholder}
+            disabled={!workspaceRoot || activeProvider === null}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            className="max-h-40 min-h-[1.75rem] flex-1 resize-none bg-transparent px-1 py-1 text-sm text-fg placeholder:text-fg-faint focus:outline-none disabled:opacity-60"
+          />
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            aria-label={t("chat.send")}
+            data-state={isStreaming ? "streaming" : "idle"}
+            className={
+              "grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold transition-opacity " +
+              (canSubmit
+                ? "bg-surface-inverse text-fg-inverse hover:opacity-90"
+                : "cursor-not-allowed bg-surface-subtle text-fg-faint")
+            }
+          >
+            <span aria-hidden>↑</span>
+          </button>
+        </div>
       </form>
     </>
   );
@@ -449,45 +448,44 @@ function ChatMessageFrame({
 
 function ChatMessageRow({ message }: { message: ChatMessage }) {
   const { t } = useTranslation();
-  const roleLabel =
-    message.role === "user" ? t("chat.you") : t("chat.assistant");
+  const isUser = message.role === "user";
   const isError = message.status === "error";
+  const bubble = isUser
+    ? "rounded-br-sm bg-surface-inverse text-fg-inverse"
+    : isError
+      ? "rounded-bl-sm border border-warn-line bg-warn-soft text-warn-fg"
+      : "rounded-bl-sm border border-line bg-surface-muted text-fg-strong";
   return (
     <div
       data-role={message.role}
       data-status={message.status}
-      className={
-        message.role === "user"
-          ? "rounded border border-line-strong bg-surface-muted p-2"
-          : "rounded border border-line bg-surface p-2"
-      }
+      className={"flex flex-col " + (isUser ? "items-end" : "items-start")}
     >
-      <div className="mb-1 flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide text-fg-muted">
-        <span>{roleLabel}</span>
-        {message.status === "streaming" && (
-          <span aria-live="polite">{t("chat.streamingHint")}</span>
+      <span className="mb-0.5 px-1 text-[10px] font-medium uppercase tracking-wide text-fg-faint">
+        {isUser ? t("chat.you") : t("chat.assistant")}
+      </span>
+      <div className={"max-w-[88%] rounded-2xl px-3 py-2 text-xs leading-relaxed " + bubble}>
+        {message.status === "streaming" && message.text === "" ? (
+          // No tokens yet — the CLI is spawning / thinking. Keep it alive
+          // (D-2026-06-16-B).
+          <ChatActivityIndicator />
+        ) : (
+          <p className="whitespace-pre-wrap break-words">
+            {message.text}
+            {message.status === "streaming" && (
+              <span aria-hidden className="ml-0.5 inline-block animate-pulse">
+                ▍
+              </span>
+            )}
+          </p>
+        )}
+        {isError && message.errorMessage && (
+          <p className="mt-1 text-[11px] opacity-80">
+            {t("chat.errorPrefix")}
+            {message.errorMessage}
+          </p>
         )}
       </div>
-      {message.status === "streaming" && message.text === "" ? (
-        // No tokens yet — the CLI is spawning / thinking. Show the live
-        // activity indicator so the turn never looks frozen (D-2026-06-16-B).
-        <ChatActivityIndicator />
-      ) : (
-        <p className="whitespace-pre-wrap text-fg-strong">
-          {message.text}
-          {message.status === "streaming" && (
-            <span aria-hidden className="ml-0.5 inline-block animate-pulse">
-              ▍
-            </span>
-          )}
-        </p>
-      )}
-      {isError && message.errorMessage && (
-        <p className="mt-1 text-[11px] text-fg-muted">
-          {t("chat.errorPrefix")}
-          {message.errorMessage}
-        </p>
-      )}
     </div>
   );
 }
@@ -507,7 +505,7 @@ function ChatStatusBar({
   const showDisconnected =
     socketStatus === "reconnecting" || socketStatus === "disconnected";
   return (
-    <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-1 text-[10px] text-fg-muted">
+    <div className="flex items-center justify-between gap-2 px-3 pb-0 pt-1 text-[10px] text-fg-muted">
       <span aria-live="polite">
         {showDisconnected ? (
           t("chat.socketDisconnected")

@@ -4,6 +4,19 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.85.0] — 2026-06-16
+
+### Changed
+
+- **Chat dock reshaped to a modern chat-app layout** (D-2026-06-16-D). The
+  **model selector is now the prominent control at the top** of the chat (a
+  dropdown + "Custom…" fallback), with provider connection as a compact chip
+  beside it. The message log is now **left/right-aligned bubbles** (assistant
+  left, user right, error tinted) instead of full-width boxes, and the input
+  is a single **rounded composer** with an integrated circular send button.
+  Familiar chat UX within Plot's existing theme tokens (no hardcoded colours,
+  no new font); all behaviour, a11y, and i18n preserved.
+
 ## [0.84.1] — 2026-06-16
 
 ### Changed

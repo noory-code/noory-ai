@@ -39,6 +39,31 @@
 
 ## Log
 
+### D-2026-06-16-D — Chat dock reshaped to a modern chat-app layout (model selector on top)
+
+- **What:** Restructured `ChatDock.tsx` to read like ChatGPT / Claude desktop:
+  (1) a **top conversation bar** whose prominent control is the **model
+  selector** (dropdown + "Custom…" fallback) on the left, with the provider
+  connection as a compact chip on the right (it fills the bar as the
+  call-to-connect when no agent is connected); (2) the message log as
+  **left/right-aligned bubbles** (assistant left, user right, error tinted)
+  instead of full-width boxes; (3) a single **rounded composer** with an
+  integrated circular send button (`↑`). Behaviour, accessible names/roles,
+  `data-*` hooks, i18n, and theme tokens are all preserved.
+- **Why:** user (2026-06-16) — "다른 채팅처럼 했으면 하는데… 채팅 창 위에 모델
+  선택하게" and "UX는 잘 못하네요." The previous layout buried the model field
+  under the provider bar and used boxy full-width rows that didn't read as a
+  chat. The model selector is now the top control, as asked.
+- **Alternatives:** a bold/distinctive aesthetic (per the frontend-design
+  skill) — rejected: Plot has an established design system (theme tokens,
+  shared font), and the user wants *familiar* chat UX, so the right move is a
+  refined, conventional chat layout executed precisely within Plot's tokens,
+  not a new visual language. No hardcoded colours (tokens only); no new font.
+- **Approval:** Accepted by user, 2026-06-16 (requested + direction given).
+- **Spec impact:** rewrote the [`SPEC.md` → R7 chat "UI" row](./SPEC.md).
+  Viewer-only. Tests: `chat-dock.test.tsx` + `chat-model-selection.test.tsx`
+  (model selector is now a top dropdown).
+
 ### D-2026-06-16-C — Chat model is shown + selectable (per-workspace, per-provider)
 
 - **What:** The chat dock now shows which model the active CLI will use (on the
