@@ -31,22 +31,36 @@ export interface MdTextareaProps {
   minLines?: number;
 }
 
+// D-2026-06-16-E — theme via Plot's CSS tokens (``rgb(var(--…))``) so the
+// editor follows light/dark like the rest of the app. A hardcoded white
+// surface + slate/indigo border literals made it a white island in dark mode.
+// CSS vars resolve against the element's computed style, which inherits the
+// ``.dark`` class on <html>.
 const baseTheme = EditorView.theme({
   "&": {
     fontSize: "13px",
     fontFamily:
       "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
     borderRadius: "0.25rem",
-    border: "1px solid rgb(203 213 225)" /* slate-300 */,
-    backgroundColor: "white",
+    border: "1px solid rgb(var(--line-strong))",
+    backgroundColor: "rgb(var(--surface))",
+    color: "rgb(var(--fg))",
   },
   "&.cm-focused": {
     outline: "none",
-    borderColor: "rgb(79 70 229)" /* indigo-600 */,
+    borderColor: "rgb(var(--accent))",
   },
   ".cm-content": {
     padding: "0.25rem 0.5rem",
+    caretColor: "rgb(var(--fg))",
   },
+  ".cm-cursor, .cm-dropCursor": {
+    borderLeftColor: "rgb(var(--fg))",
+  },
+  "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
+    {
+      backgroundColor: "rgb(var(--accent-soft))",
+    },
   ".cm-line": {
     padding: "0 2px",
   },

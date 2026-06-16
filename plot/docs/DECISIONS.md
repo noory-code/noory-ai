@@ -39,6 +39,21 @@
 
 ## Log
 
+### D-2026-06-16-E — Inspector MD editor (CodeMirror) follows the app theme
+
+- **What:** `MdTextarea`'s CodeMirror `baseTheme` now uses Plot's CSS tokens
+  (`rgb(var(--surface))` / `--fg` / `--line-strong` / `--accent` / caret +
+  selection) instead of a hardcoded white surface + slate/indigo literals. So
+  every typed-text field in the Inspector (service problem/what/…, decision,
+  etc.) is readable in dark mode instead of a white island.
+- **Why:** dark-mode "흰 섬" — the edit-inspector textareas stayed white with
+  dark text + wrong border/caret colours under `.dark` (sweep finding +
+  user-visible). Mirrors D-2026-06-15-M (on-card editors) for the MD editor.
+- **Approval:** Accepted by user, 2026-06-16 (chose the theme/state follow-ups).
+- **Spec impact:** none (contrast/theme fix). Guarded by
+  `viewer/tests/md-textarea-theme.test.ts` (source guard: tokens used, no
+  hardcoded colours).
+
 ### D-2026-06-16-D — Chat dock reshaped to a modern chat-app layout (model selector on top)
 
 - **What:** Restructured `ChatDock.tsx` to read like ChatGPT / Claude desktop:

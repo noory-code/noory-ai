@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.85.1] — 2026-06-16
+
+### Fixed
+
+- **Inspector MD editor was a white island in dark mode** (D-2026-06-16-E).
+  `MdTextarea`'s CodeMirror theme hardcoded a white background + slate/indigo
+  border/focus colours; it now uses Plot's CSS tokens (`rgb(var(--surface))` /
+  `--fg` / `--line-strong` / `--accent` + themed caret/selection), so every
+  typed-text field in the Inspector reads correctly in dark mode. Guarded by
+  `viewer/tests/md-textarea-theme.test.ts`.
+
 ## [0.85.0] — 2026-06-16
 
 ### Changed
