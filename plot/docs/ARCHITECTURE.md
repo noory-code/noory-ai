@@ -67,7 +67,7 @@ viewer/src/
       {kind}/index.tsx × 15       - per-kind typed-field body
       registry.ts                 - NodeKind → component map (size 15)
 
-    {Foundation,Actors,Services,ServiceDetail}Canvas.tsx
+    {Foundation,Actors,Services,ServiceDetail}Canvas.tsx   (★ pending rename: ServiceDetail→Feature canvas + new Entities canvas + drill service→feature, D-2026-06-17-D/G/I; current code keeps these names until that ships)
                                   - 16-23 LOC wrappers. Each supplies four
                                     props to a shared SketchCanvas:
                                     hideRootServiceNode, shouldDrill,
@@ -119,6 +119,24 @@ entry.
   future work in [D-2026-05-12-B](./DECISIONS.md).
 
 ### How to add a 16th kind (post-reset)
+
+> **Pending palette growth (2026-06-17 big-picture marathon).** The
+> "15-kind" count in this doc is about to move: three new kinds are
+> pinned but **not yet landed** — `feature` (capability under a
+> service on the Services overview, [D-2026-06-17-D](./DECISIONS.md)),
+> `note` (edgeless, canvas-global context on the feature canvas,
+> [D-2026-06-17-F](./DECISIONS.md)), and `entity` (project-wide data
+> object on the new AI-maintained Entities canvas,
+> [D-2026-06-17-I](./DECISIONS.md)). In the same redesign,
+> `mission_ref` / `value_ref` / `identity_ref` / `metric` / `content`
+> / `group` are slated for **retirement** from the feature canvas
+> (the old Service-Detail) — `group`'s chunking role moves to the
+> `feature` level and folding becomes a view affordance, not a node
+> kind ([D-2026-06-17-H](./DECISIONS.md)). Each landing/retirement is
+> a full lock-step (plot-entity-template) + guard update; the final
+> kind count is the SSOT of the registries, not this prose. Treat the
+> steps below as the per-kind procedure regardless of the running
+> total.
 
 1. **Server:** new `XNode(BaseNodeFields)` in
    `plot_mcp/models.py`, add to `SketchNode = Annotated[Union[...]]`,
@@ -350,8 +368,12 @@ In strict dependency order — never do step N before N-1 is green:
 1. **Fix the broken smoke tests** so we have a baseline. (Pre-existing
    localStorage / import failures.)
 2. **Add a "render Foundation with N children + auto-edges = 0"
-   regression test.** Today's session would have flagged the
-   auto-edge addition immediately.
+   regression test** — scoped **Foundation-local**, not a global law
+   ([D-2026-06-17-J](./DECISIONS.md) removed the blanket
+   "all edges are user-drawn / never auto-emit" rule; edges are now
+   governed by their *definition*, and Foundation keeps its
+   user-draw-only behaviour as a per-canvas choice). Today's session
+   would have flagged the auto-edge addition immediately.
 3. **Split `SketchInspector.tsx` per-kind first** (lowest risk; wins
    under-500 quickly; no React Flow interaction).
 4. **Split `SketchStencil.tsx`** (also low risk).

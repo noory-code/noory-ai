@@ -1,5 +1,18 @@
 # Node Data Format & Artifact Management — PLAN
 
+> **⚠ SUPERSEDED-IN-PART (pre-marathon plan) — 2026-06-18.** This plan
+> predates the 2026-06-16~17 big-picture marathon (`D-2026-06-16-H..R`,
+> `D-2026-06-17-A..L`). The marathon **redefined** the concepts, fields,
+> and kind palette this plan assumes — mission/core_value/identity fields,
+> the Service typed fields, the `metric`/`content`/`*_ref` kinds, the
+> "15/16-kind" count, the Service-Detail canvas, and the foundation-ref
+> injection edges have all changed. Its **concept/field/kind assumptions
+> are SUPERSEDED** and **must be reconciled against DECISIONS
+> `D-2026-06-16-H..R` / `D-2026-06-17-A..L` (and DOC_SYNC.md §16 델타)
+> before any phase here executes.** This is a **PARK**: the plan body is
+> intentionally left intact below; inline `> **Superseded by D-…**` notes
+> mark each stale passage. Re-plan, do not re-author, when work starts.
+>
 > **Status:** PLANNING ONLY — nothing here is implemented yet. Filed
 > 2026-06-04 at the user's request (*"각 노드들에 묶여있는 데이터들
 > 형식(문서 형식) 과 산출물 관리(버저닝 포함) … 계획 잡아두고 문서
@@ -34,6 +47,14 @@
     `outcome`, `do`, `dont`, `body`, `target_side`
   - `step` → `order`, `outcome`, `body`, `polarity`
   - `decision` → `body`; `actor` → `motivation`/`pain`/`side`/`body`; etc.
+
+  > **Superseded by D-2026-06-16-J/K/M/L/N/O + D-2026-06-17-A/B/H.** This
+  > field list is the *pre-marathon* model. The marathon collapsed
+  > `mission` → declaration + `body`, `core_value` → label + `body`,
+  > `identity` → label + action-rule list (description/do/dont gone), the
+  > Service 9-field set → the 5-question inspector (`target_side` deleted),
+  > and `actor` → a relational role. Re-read the current fields off
+  > CONCEPTS.md before acting on this list.
 - **`body`** is a **free-markdown** field present on most kinds. It IS used
   (e.g. the BANAS mission node's `body` holds a "## 미션 한 줄 …" block) but
   has **no defined structure or convention** — it's whatever was typed.
@@ -80,6 +101,9 @@
   what belongs in `body` vs a typed field. Inconsistent across the sim.
 - **G2.** md templates exist for only 3/15 kinds → publish output is
   uneven; `step` / `service` / `decision` / `actor` etc. have no template.
+  *(Superseded count — "15" is the pre-marathon palette; D-17-D/F/H/I added
+  feature/note/entity & retired metric/content/group/*_ref, and `service` is
+  now the 5-question inspector, not a template kind. See top banner.)*
 - **G3.** No SSOT policy for **long-form** content: inline JSON `body` vs a
   separate `.md` file (the v0.13 split) vs `details_path`. Three half-built
   mechanisms, none authoritative.
@@ -110,6 +134,12 @@
 > Do not implement before the user picks.
 
 - **Q1 — What is `body` for?**
+  > **Superseded by D-2026-06-16-J/K/M/L/N/O.** The marathon already
+  > re-scoped `body`: mission/core_value collapse to a single declaration/
+  > label + `body`, and identity to a label + action-rule list. The
+  > "structured typed fields vs free `body`" framing below assumes the old
+  > multi-field model; re-evaluate `body`'s role against the **per-kind
+  > field model** in CONCEPTS.md before picking an option.
   - (a) **(R)** `body` = free human narrative (markdown); typed fields stay
     the structured/machine layer. *Reason: matches current usage + keeps
     the two-layer split (structured vs prose) the publish md already
@@ -128,6 +158,10 @@
 
 - **Q3 — Extend md.template to all 15 kinds?** (R) **Yes** — uniform
   publish output. Blocked-by nothing; mechanical once Q1/Q2 are fixed.
+  > **Superseded by D-2026-06-17-D/F/H/I.** The "15 kinds" count is stale:
+  > the marathon added `feature`/`note`/`entity` and retired
+  > `metric`/`content`/`group` (+ the `*_ref` kinds). Recount the live
+  > palette off the registry/CONCEPTS.md before scoping templates.
 
 - **Q4 — Node ↔ source-doc link?**
   - (a) store a `source_ref` (path/URL) per node; (b) **(R)** keep source
@@ -177,6 +211,16 @@
 
 **What is already SHIPPED (the in-canvas half of this intent):**
 
+> **Superseded by D-2026-06-17-B/D/G/H.** Two load-bearing assumptions
+> here are now stale: (1) **산출(produced value) read from `metric`** —
+> `metric` is retired on the feature canvas (D-2026-06-17-H), so the
+> output source must be re-derived; (2) **체현/발동 via foundation-ref +
+> injection edges** — core_value/identity now live as **inspector chips/
+> references** (D-2026-06-17-B/H), not as `*_ref` nodes with injection
+> edges, so 체현 is read from the inspector, not from edges. The
+> Service-Detail canvas itself is now the **feature canvas** (a behavior
+> flowchart, D-2026-06-17-G). Re-source 산출·체현 before building Phase D.
+
 - 발동 → **injection edges** (foundation ref → flow node, animated
   violet, v0.28.1).
 - 결정 분기 → **`decision` kind** (◇, v0.28.0).
@@ -222,6 +266,14 @@ unverified in NEXT_SESSION "산출물 검토".)
 
 ## 4. Recommended direction (one-paragraph thesis, to confirm)
 
+> **Superseded by D-2026-06-16-J..O + D-2026-06-17-B/D/G/H.** This thesis
+> bundles several stale assumptions: the **per-kind field model** (Q1/Q2)
+> changed; **"all 15 kinds"** must be recounted (feature/note/entity added,
+> metric/content/group retired); and the deliverable's **체현/발동** now
+> reads from inspector chips, not injection edges, with **산출** no longer
+> sourced from `metric`. Re-derive the thesis against §16 델타 / CONCEPTS.md
+> before confirming it.
+
 Keep **inline typed fields + a free-markdown `body`** as the single
 source of truth (Q1a, Q2a). Treat **`.md` strictly as publish output**,
 and **extend the md template to all 15 kinds** (Q3) so every node
@@ -246,12 +298,22 @@ manifest, and a value-sheet bundler.
   a per-kind audit lives in **[`node-format/`](./node-format/)** — one doc
   per node kind (16), grouped by canvas (foundation / actors / services /
   service-detail), each listing the kind's fields + design intent + a
-  "진짜 필요/유용한가" verdict the user challenges. The audit's conclusions
+  "진짜 필요/유용한가" verdict the user challenges.
+  > **Superseded by D-2026-06-17-D/G/H/F/I.** The "(16)" kind count and the
+  > **service-detail** canvas grouping are stale: service-detail is now the
+  > **feature canvas** (D-2026-06-17-G, kinds = step/decision/edge/note/
+  > rule/actor_ref), `feature`/`note`/`entity` were added, and
+  > `metric`/`content`/`group`/`*_ref` were retired. Recompute the kind
+  > inventory + canvas grouping off the registry/CONCEPTS.md before the
+  > audit resumes.
+  The audit's conclusions
   (which fields survive, the `body` convention, the 3-ref consolidation,
   the "가치" de-dup) roll up into CONCEPTS.md + a SPEC section. Docs only,
   no code.
 - **Phase B — Uniform publish templates.** Add `schema/{kind}.md.template`
-  for the 12 missing kinds; cover them in `md_publish.py` + the eligibility
+  for the missing kinds *(the "12"/"15" count is the stale pre-marathon
+  palette — recompute per D-17-D/F/H/I; see top banner)*; cover them in
+  `md_publish.py` + the eligibility
   table. TDD against `test_schema_parity` / publish tests.
 - **Phase C — Artifact model spec.** Pin Q5/Q6 in SPEC + DECISIONS:
   version-axis relationship, blueprint snapshot manifest shape, deliverable

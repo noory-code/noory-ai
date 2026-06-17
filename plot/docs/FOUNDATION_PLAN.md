@@ -53,8 +53,10 @@ Every kind change touches all of these together (schema parity is enforced):
 
 ### 4. CONCEPTS.md doc-sync (Foundation slice only)
 - Update the mission / core_value / identity rows to the new field sets. (The
-  full CONCEPTS refresh — 17 kinds, actor identity-only, service.problem — is the
-  wider T3 task; here only the Foundation fields.)
+  full CONCEPTS refresh — the expanded kind palette, actor as a relational role
+  / identity-only (`D-2026-06-17-A`), and the Services-overview 5-field
+  question-titled service inspector (`D-2026-06-17-B`) — is the wider T3 task;
+  here only the Foundation fields.)
 
 ## Out of scope (separate, already tracked)
 

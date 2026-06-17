@@ -4,7 +4,11 @@ The implementation order for the major release lines. Each step is
 an independent, ship-ready commit (Python green, viewer green, plugin
 patch bumped, pushed). Together they realise the design captured in
 [`VISION.md`](VISION.md), [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md),
-[`IDENTITY.md`](IDENTITY.md) and [`CONCEPTS.md`](CONCEPTS.md).
+[`IDENTITY.md`](IDENTITY.md) and [`CONCEPTS.md`](CONCEPTS.md). The
+2026-06-16~17 big-picture marathon — [`BIG_PICTURE_REVIEW.md`](BIG_PICTURE_REVIEW.md)
++ `DECISIONS.md` `D-2026-06-16-H..R` / `D-2026-06-17-A..L` — re-defined
+Foundation / Actors / Services / Feature / Entities; the queued tracks
+below carry those decisions inline.
 
 > Status legend: `[ ]` not started · `[~]` in progress · `[x]` shipped.
 
@@ -120,9 +124,13 @@ plan → execution.
    - Option α: ``.plot/{project}/userstories/{id}.json`` +
      ``.plot/{project}/tasks/{id}.json`` (parallel data plane).
    - Option β: new ``userstory`` + ``task`` kinds inside the canvas
-     (so they appear AS nodes). Would extend the 15-way union to
-     17 — breaks the structural-guards 15-kind invariant unless
-     loosened.
+     (so they appear AS nodes). Would extend the kind union further —
+     the palette has already grown past 15 (``feature`` / ``note`` /
+     ``entity`` per ``D-2026-06-17-D`` / ``-F`` / ``-I``), so the count
+     is now SSOT'd by the registry, not a fixed "15-kind invariant";
+     the structural-guards check is a per-kind-file lock-step, not a
+     length cap. Adding work-item kinds still needs each to land as a
+     full per-kind class.
    - Recommend **Option α** (separate data plane) — keeps the
      canvas spatial / work-items temporal split clean. Pin first.
 
@@ -130,7 +138,7 @@ plan → execution.
    what? Recommend:
    ```
    origin: {
-     service_id: string;
+     feature_id: string;    // services overview now drills service → feature (D-2026-06-17-D)
      actor_ref_ids: string[];
      interview_session_id: string;
      snapshot_sha: string;   // from A)
@@ -149,7 +157,11 @@ plan → execution.
    comments / attachments / …). Cut to Phase 1: ``title``,
    ``story_text`` (markdown), ``origin``, ``status`` (free string,
    not enum, until usage patterns clarify), ``owner`` (re-uses
-   ``BaseNodeFields.owner`` shape from D-2026-05-12-P).
+   ``BaseNodeFields.owner`` shape from D-2026-05-12-P). The MVP draft
+   is **not silently emitted** — like every concept in Plot it is
+   built through discussion (AI proposes from the interview, user
+   confirms) per ``D-2026-06-16-P``; ``create_userstory_draft`` seeds
+   the proposal, the user refines/confirms before it persists.
 
 Minor findings:
 - (A3) Interview session re-runs producing duplicate userstories
@@ -164,7 +176,7 @@ Minor findings:
 - New MCP tools: ``create_userstory_draft`` (from service
   interview), ``derive_tasks`` (from userstory), ``snapshot_attach``
   (tie a task to a commit).
-- Viewer: new "Work" tab or panel — separate from the 4 canvases.
+- Viewer: new "Work" tab or panel — separate from the 5 canvases (Foundation / Actors / Services / Feature / Entities, D-2026-06-17-I).
 
 **Expected sizing:** 1-2 weeks after A lands.
 
@@ -222,21 +234,34 @@ agent does not actually use.
 
 **Phase plan:**
 
-- **Phase 1 (near-term, Plot-internal only)** — `context_envelope(node_id)`
-  MCP tool returning ancestor chain + Symbol resolves (Identity) +
-  N-hop neighbours. Skill rule: the agent must call it before
-  starting work on a node. Interview pattern
-  ([`PRODUCT_SPEC.md` §9](./PRODUCT_SPEC.md)) surfaces the envelope
-  result as the interview's opening context. Sizing: days. No new
-  deps; no embedding / vector DB.
+- **Phase 1 (near-term, Plot-internal only)** — the AI-chat context
+  envelope, now pinned by [D-2026-06-17-L](./DECISIONS.md): per-turn
+  the AI sees (1) the **active canvas** (full), (2) **current
+  selection**, (3) an **upstream-canvas summary** (essence + key nodes
+  of the earlier canvases in Foundation → Actors → Services → Feature →
+  Entities order — not a full dump), (4) the **entity registry** (names
+  + one-line, for strong dedup + references per
+  [D-2026-06-17-K](./DECISIONS.md)), and (5) **deeper detail on
+  demand**. Delivery sits **behind a context-provider seam**, **CAG-first**
+  (cache the stable project skeleton as a prompt-cached prefix; append
+  dynamic turn data as the uncached suffix), with **RAG slotted in
+  behind the same seam only when scale forces it** (large user project
+  / small-window agent). The playbook depends only on the abstraction
+  ("what the AI sees"), never on the mechanism. Skill rule: the agent
+  must load the envelope before starting work. Sizing: days for the
+  seam + CAG-first impl; RAG is later / YAGNI.
 - **Phase 2 (post Distill port)** — crystallize accumulated
   interview transcripts + decision log into implicit Identity /
   tone signals. Reuses the existing Distill ``fastembed`` +
   ``sqlite-vec`` stack (same monorepo).
 - **Phase 3 (post Evonest port)** — automated forest-consistency
-  check on agent output (LLM-as-judge against Identity tone +
-  Mission alignment + sibling-service contradictions). Sits at the
-  PR-style merge gate ([`PRODUCT_SPEC.md` §11](./PRODUCT_SPEC.md)).
+  check on agent output (LLM-as-judge against **identity action-rule
+  compliance** (identity = standing execution/expression rules, not
+  "tone" — [D-2026-06-16-N](./DECISIONS.md) / [-O](./DECISIONS.md)) +
+  **Mission grounding** (the root-of-existence change,
+  [D-2026-06-16-K](./DECISIONS.md)) + sibling-service contradictions).
+  Sits at the PR-style merge gate
+  ([`PRODUCT_SPEC.md` §11](./PRODUCT_SPEC.md)).
 
 **Design red-team verdict:** not yet run. Before Phase 1 starts,
 re-enter plan mode and run ``plot-design-red-team`` to surface at
@@ -267,7 +292,7 @@ Distill / Evonest porting and not standalone-sized here.
 
 | Phase | Decision | Ship |
 |---|---|---|
-| **A** Actor model | class of people, side ∈ {operator, user}, motivation/pain typed fields, ≥ 2 actors per project, ≥ 2 actor_refs per service | v0.10.7 docs + v0.11.0 |
+| **A** Actor model | class of people, side ∈ {operator, user}, motivation/pain typed fields, ≥ 2 actors per project, ≥ 2 actor_refs per service _(superseded — actor = a **relational role** in a hierarchy, not a class of people, with two edge types on the Actors canvas per D-2026-06-17-A; the hard ≥2 actor + "≥2 with operator" service baseline is relaxed per D-2026-06-18-A, service actor_ref ≥1 kept)_ | v0.10.7 docs + v0.11.0 |
 | **B** Ref orphan UX | foundation refs join actor_ref's orphan UI; ref labels auto-sync from masters | v0.11.1 |
 | **C** Service polish | services-canvas anchor hard validator; actor_ref `gives` / `receives` value-flow fields | v0.11.2 |
 | **D** Compatibility | time-axis (Mode 2) compatibility verified; v0.11 closes; infrastructure deferred to Mode 2 | (no code) |
@@ -296,6 +321,9 @@ The smallest contained change, so it can land before anything else.
   - `what_we_do: str = ""`
   - `why: str = ""`
   - `direction: str = ""`
+  - _Superseded by D-2026-06-16-J/K: mission collapses to a single
+    `declaration` (one sentence) + `body`; `what_we_do` / `why` /
+    `direction` are gone._
 
 **Viewer**
 - `CanvasKind` / `CanvasKey` types: `"core"` → `"foundation"`.
@@ -317,15 +345,28 @@ The smallest contained change, so it can land before anything else.
   - `description: str = ""` (identity)
   - `do: str = ""` (shared)
   - `dont: str = ""` (shared)
+- _Superseded by D-2026-06-16-M/N/O/L: core_value = `label` + `body`
+  (`definition` dropped); identity = `label` + an **action-rule list**
+  (`description` dropped, `status`/`provenance` inert until the AI-derive
+  flow). The shared `do` / `dont` pair is removed from both._
 
 **Viewer**
 - Inspector form maps:
   - `core_value` → label · definition · do · dont
   - `identity` → label · description · do · dont
+  - _Superseded (D-2026-06-16-M/N/O): `core_value` → label · body;
+    `identity` → label · action-rule list._
 
 **Tests**: round-trip + Inspector field rendering.
 
 ## Step 3 — Reference kinds (mission_ref / value_ref / identity_ref)  `[x]`
+
+> _Superseded by D-2026-06-17-B/H: `value_ref` / `identity_ref` are no
+> longer canvas node kinds — a service holds its core_value / identity
+> references as **selectable chips inside the 5-field service inspector**
+> (picked from Foundation, multi-select). `mission_ref` / `value_ref` /
+> `identity_ref` are dropped from the feature (old Service-Detail) canvas
+> and likely retired entirely. `actor_ref` stays._
 
 Generalise the existing `actor_ref` symbol pattern to Foundation.
 
@@ -351,6 +392,16 @@ Generalise the existing `actor_ref` symbol pattern to Foundation.
 
 ## Step 4 — Service typed fields (top vs sub)  `[x]`
 
+> _Superseded by D-2026-06-17-B/D: the service inspector is now **5
+> question-titled fields** — 누가 참여하나? (actor refs) · 왜 필요한가?
+> (typed) · 뭐가 좋아지나? (typed) · 뭘 양보 못 하나? (core_value refs) ·
+> 어떤 결로 다가가나? (identity refs). The old `what` / `scope` / `trigger`
+> / `how` / `outcome` / `do` / `dont` / `target_side` / `body` fields are
+> **deleted**. The top-vs-sub split is gone: the Services overview is now
+> 카테고리 → 서비스 → **기능(feature)**, where selecting a service shows its
+> inspector and a `feature` is the drill target (the old "sub-service" is
+> retired)._
+
 **Python**
 - `SketchNode`: add service-relevant typed fields.
   - Shared: `what`, `value_created`, `scope`, `do`, `dont`.
@@ -371,6 +422,10 @@ Generalise the existing `actor_ref` symbol pattern to Foundation.
 
 ## Step 5 — New composition kinds (metric, step)  `[x]`
 
+> _Superseded by D-2026-06-17-H: `metric` is **dropped** from the feature
+> (old Service-Detail) canvas (not needed). `step` stays as the feature
+> canvas's 행동 node._
+
 **Python**
 - `NodeKind`: add `"metric"`, `"step"`.
 - `_ALLOWED_KINDS_BY_CANVAS["service_detail"]` includes both.
@@ -388,6 +443,12 @@ Generalise the existing `actor_ref` symbol pattern to Foundation.
 **Tests**: round-trip + visual stencil load.
 
 ## Step 6 — rule / content typed-field polish  `[x]`
+
+> _Superseded by D-2026-06-17-E/H: `rule` stays as a **per-feature
+> operational constraint** (password length, validation, limits — a
+> concrete policy, **not** identity or core_value). `content` is **dropped**
+> from the feature canvas; project-wide data objects now live as the new
+> `entity` kind on the AI-maintained Entities canvas (D-2026-06-17-I)._
 
 The composition kinds that already exist gain richer typed fields.
 

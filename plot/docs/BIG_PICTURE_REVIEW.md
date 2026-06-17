@@ -97,7 +97,7 @@ Execution (Actors → Services → Service-Detail + MCP). Reversible
 목적 중심으로 재작성함 — 사람+AI가 본질·개념을 함께 구조화·정의 → AI 컨텍스트 + 사람 사고 가속.
 3-phase 사이클은 그대로 = *how*.
 
-> 다음 세션: **Services 캔버스(오버뷰 + 디테일)**. Foundation ✅ + Actors ✅ 완료 (`D-2026-06-16-H~R`, `D-2026-06-17-A`).
+> **다음 논의 = 캔버스별 AI 채팅 플레이북** (사용자 지정 2026-06-17 "AI 채팅으로 가야"; ROADMAP `5.10`). Foundation ✅ + Actors ✅ + **Services 오버뷰·기능 캔버스·엔티티(B1~B5 전부 해소) ✅ 완전 종료** (`D-2026-06-16-H~R`, `D-2026-06-17-A~K`). 오버뷰=카테고리·서비스·기능 3종+5칸 인스펙터; 기능 캔버스=액터 앵커 행동 플로우차트; 엔티티=프로젝트 전체 AI 유지 개념 맵(강한 중복인식·역참조·채팅중 제안·가벼운 인스펙터). 선 룰 폐기(D-J). **잔여 작은 것:** 기능 노드 선택 인스펙터(D-D), 교차 정책(D-E 보류). **플랜:** SERVICES/FEATURE_CANVAS/ENTITIES_PLAN.md. 오버뷰 인스펙터 = 타이핑2(왜 필요한가·뭐가 좋아지나) + 고르기3(참여 액터·코어밸류·아이덴티티), 옛 칸 전부 삭제(D-B); 서비스 간 선 없음(D-C, §S2). 함께 정리된 원칙: 서비스 경계는 **가치로** 가른다(화면 수 ≠ 서비스 수; 운영자는 모든 서비스의 기본 참여자라 "관리 페이지"는 그 서비스의 운영자 화면), 빌드 순서는 별도 레이어(미구현 시간축 작업항목).
 
 ---
 
@@ -373,11 +373,15 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  F[Foundation] --> proj[project] & mis[mission] & cv[core_value] & idn[identity]
-  A[Actors] --> act[actor]
-  S[Services] --> cat[category] --> svc[service]
-  svc -.double/single-click drill.-> SD[Service-Detail tab]
-  SD --> ar[actor_ref] & fr[mission/value/identity_ref] & st[step] & dc[decision] & mt[metric] & rl[rule] & ct[content] & gp[group]
+  P[project anchor — name only]
+  F[Foundation — why exist] --> mis[mission] & cv[core_value] & idn[identity]
+  A[Actors — who] --> act[actor + hierarchy; two edge types]
+  E[Entities — what data, AI-maintained] --> ent[entity — concept map, pre-normalisation]
+  S[Services overview — what value] --> cat[category — visual group] --> svc[service — 5-field inspector] --> feat[feature — capability]
+  feat -.click drill.-> FC[Feature canvas — behaviour flowchart]
+  FC --> st[step] & dc[decision] & nt[note] & rl[rule] & arf[actor_ref]
+  feat -.AI surfaces.-> ent
+  %% 2026-06-17 redesign: feature node + drill rewire (D-17-D); retired from feature canvas = mission_ref/value_ref/identity_ref/metric/content/group (D-17-H); no service-to-service edge (D-17-C); foundation refs are chips on the service inspector (D-17-B); Entities is a new AI-maintained canvas (D-17-I/K)
 ```
 
 ### Symbol (master → reference) flow
@@ -419,10 +423,21 @@ flowchart LR
 | 10 | F2 해결: 본질 = 창발적 구성(노드 아님), 앵커 = 이름만 | 별도 본질 노드 없음(전체를 부분으로 격하 X); 핵=mission; 본질 전용 그릇 없음(앵커에도 안 박음); 본질은 3종 구성으로 *시각적*으로 드러남; 앵커=프로젝트/서비스 이름만(시각 묶음) | 본질은 전체라 노드화 부적절; 앵커는 시각 도구 | `D-2026-06-16-Q` / 원칙 + SPEC §Anchor |
 | 11 | F4 해결: Foundation 단일 캔버스 유지 | 청중 분리 기각; mission+core_value+identity 한 캔버스 | Q의 "구성=시각적 진술"을 쪼개면 깨짐; identity도 사람이 보는 브랜드 보이스 | `D-2026-06-16-R` / 현행 유지 |
 | 12 | Actor = 관계적 역할(계층); 선 2종(계층/관계) | actor=역할(사람·퍼소나 아님)·주고받음; 계층 트리(운영/사용→하위, 상속); 액터 캔버스=**선 2종**[계층(분류, 가치 없음) + 관계(가치·방향 담은 화살표, 왕복=2개)]; 일반 가치는 액터·구체 교환은 서비스상세 | 역할은 관계로 정의됨; 분류≠교환 구분 필요 | `D-2026-06-17-A` / 노드 무변경, **엣지 구현 필요**, CONCEPTS 후속 |
+| 13 | Services 오버뷰 인스펙터 = 타이핑2 + 고르기3, 옛 칸 삭제 | 서비스 인스펙터 5칸(질문형 제목=인터뷰 질문): **누가 참여하나?**(액터 고르기) → **왜 필요한가?**(타이핑, 옛 problem 개명) → **뭐가 좋아지나?**(타이핑, 옛 value_created 개명) → **뭘 양보 못 하나?**(코어밸류 고르기) → **어떤 결로 다가가나?**(아이덴티티 고르기). 코어밸류·아이덴티티도 액터처럼 앞 캔버스에서 **선택**. 옛 칸 `target_side/what/scope/trigger/how/outcome/do/dont/body` **전부 삭제**(디테일 노드+actor_ref가 이미 함); 참여자별 행위=actor_ref | 9칸은 너무 무겁고 디테일과 중복; 서비스=참여자가 가치 만드는 곳→오버뷰는 누가·왜·무엇이 좋아지나+작동 가치/결, 나머지는 안쪽 | `D-2026-06-17-B` / CONCEPTS·SPEC·코드 후속 |
+| 21 | 엔티티 열린질문 B1~B5 전부 해소 | B1=선 룰 폐기로 AI 관계선 허용(D-J); B2=중복인식 완전 똑똑(강한 의미매칭, 애매시만 질문, 무음 합치기·중복 금지); B3=역참조 보임(읽기); B4=채팅 중 제안(자동스캔X); B5=인스펙터=이름+무엇담나+어디쓰이나+거친관계 | 엔티티 설계 완결; 전 원칙(AI 제안/사람 확정·개념 고도) 부합 | `D-2026-06-17-K`(+J) / B2·B4=AI 플레이북 5.10 책무, B3·B5=entity 인스펙터 |
+| 20 | 엔티티 = 프로젝트 전체 관리, AI가 기능/서비스 만들며 창발·유지(개념 맵, 정규화 전) | 새 프로젝트 레벨 캔버스 "엔티티"(액터=누가↔엔티티=무엇); 데이터 객체(글·댓글·사용자) 전체 관리. **사용자가 직접 안 만듦** — AI가 기능/서비스 설계하며 창발시켜 자동 등록(사람 검토·확정). 형태=**개념 엔티티 맵**(거친 관계 OK, ERD/정규화/타입❌=AI몫). 순서=맨 끝(파생). 기능 행동이 참조 | 엔티티는 여러 기능 공유→전체 관리; 먼저 모델링❌ 행동 설계 중 창발; 정규화 전 추상이라 물리 ERD 아님 | `D-2026-06-17-I` / 새 캔버스+kind `entity`, AI 자동유지, 코드 후속 |
+| 19 | 기능 캔버스 노드 inventory 확정 | 유지=행동·분기·흐름선·노트·룰·액터참조. 제거=미션/가치/아이덴티티 참조(서비스 인스펙터에 이미 칩으로)·지표·내용(구현물=AI몫, 사용자산출물=행동/엣지에 묻음)·묶음(기능이 묶는 역할 대체, 접기는 view). 제거 kind들은 유일 거처가 디테일이라 사실상 폐기(구현 시 확정) | 플로우차트 가볍게·행동 고도 유지; 제거분=서비스레벨 중복/고도 아래/기능에 흡수 | `D-2026-06-17-H` / kind 폐기 audit·가드, 코드 후속 |
+| 18 | 기능 캔버스 = 행동 플로우차트(행동 고도, 서비스 철학 계승) | 기능의 구체 동작을 플로우차트로(행동→분기→결과); **맨 바닥 한 층만** 흐름도라 IDENTITY "플로우차트 툴 아님"과 안 부딪힘; 고도=사용자 행동 흐름까지(구현 로직❌=AI 몫, Plot 밖); 마른 도형 아님=액터 앵커·가치 지향(P5/P6 계승). 노드=행동+분기+흐름선+노트+룰 | "어떻게 도나"는 사람이 이해·조종해야→구체 형태 필요; 액터/가치 앵커로 위층과 연속 | `D-2026-06-17-G` / 노드 inventory(참조·지표·내용·묶음 적합성) 후속 |
+| 17 | 노트 노드 = 연결선 없는 캔버스 전역 맥락(기능 캔버스) | 새 kind `note`: 엣지 없음(불변), 캔버스 전체에 적용되는 떠있는 맥락/메모; 사람이 읽고 AI도 늘 깔고 작업(전역 framing 주입); 기능 캔버스 우선, 여러 개 OK 다 전역, 다른 캔버스 확장은 나중 | 기능 전체에 걸리는 맥락은 한 노드에 못 잇고 떠있어야; ambient라 엣지 없음 | `D-2026-06-17-F` / 새 kind `note`(엣지없음 불변), AI맥락 훅, 코드 후속 |
+| 16 | 룰은 각 기능 안에(잠정); 정책≠아이덴티티 | 운영 룰("패스워드 N자 이상")은 각 기능 캔버스 안에·기능별(잠정, YAGNI); 교차 정책은 미구현(나중). 정책=구체 운영 제약(아이덴티티·가치 무관, 조수 비유 오류 정정). 파운데이션엔 안 넣음=본질은 안정·정책은 수시 변동 | 교차 정책 자리 불명→성급한 새 개념 금지; 안정 앵커에 변동 룰 섞으면 오염 | `D-2026-06-17-E` / rule kind 기능별 유지, 교차정책 ROADMAP 보류 |
+| 15 | Services 오버뷰 = 카테고리·서비스·기능 3종; 기능이 디테일로 드릴 | 오버뷰 노드 3종(카테고리=무지성 묶음 / 서비스=5칸 인스펙터 / **기능**=서비스 아래 능력). 서비스 선택=인스펙터만(드릴 X), **기능 클릭=현재 서비스디테일 캔버스가 "기능 캔버스"로 뜸**. 계층=카테고리→서비스→기능(오버뷰)→행동/룰(디테일). AI 인터뷰로 위→아래(의도→서비스 5칸→기능 제안, 사람 확정); 기능이 다중행위자 가치교환 되면 서비스로 승격 | 글쓰기 등은 서비스 아님=능력; 활동/행위/조작 3층(동기/목표/조건); 인간이 이해·수정해야 하니 캔버스 필요 | `D-2026-06-17-D` / **새 kind `feature`**, 드릴 재배선, group 재감사, CONCEPTS·SPEC·코드 후속 |
+| 14 | §S2 해결: 서비스→서비스 선 없음 | 서비스 간 1급 엣지 개념 없음; PRODUCT_SPEC §7 "유저 여정 선" 폐기; 가치흐름은 액터(역할)·actor_ref(참여자별)에 이미 있음, 여정 선은 흐름도화→IDENTITY 위반. 일반 사용자-드로잉 선은 의미 없이 가능하나 제공 기능 아님 | 셋(순서/가치/의존) 다 불필요·중복·니치; 오버뷰는 서비스 자체 정의이지 배선 아님 | `D-2026-06-17-C` / PRODUCT_SPEC §7·§8 폐기 후속 |
 
 > **실행 follow-ups (중복 금지 — 상세는 각 SSOT):**
 > - Foundation 코드화(D-J/M/O) → [`FOUNDATION_PLAN.md`](./FOUNDATION_PLAN.md).
 > - Actors 코드화(D-2026-06-17-A, 선 2종) → [`ACTORS_PLAN.md`](./ACTORS_PLAN.md).
+> - Services 오버뷰·기능 캔버스·엔티티 코드화 → 플랜 파일 **작성됨**(2026-06-17): [`SERVICES_PLAN.md`](./SERVICES_PLAN.md)(D-B/C/D), [`FEATURE_CANVAS_PLAN.md`](./FEATURE_CANVAS_PLAN.md)(D-E/G/H), [`ENTITIES_PLAN.md`](./ENTITIES_PLAN.md)(D-I, 열린질문 표기). CONCEPTS/SPEC doc-sync 동반. 선행 블로커: 15/17 kind-count drift 정합.
+> - 선 룰 폐기(D-2026-06-17-J: "모든 선 사용자가" 삭제 → 선은 정의로 governed, AI 그리기 허용) → 흩어진 per-canvas 서술 doc-sync 잔여.
 > - 보류 → ROADMAP `5.7`(인터뷰 질문 세트=스킬) · `5.8`(PHILOSOPHY S-D Logic) · `5.9`(Actors 선 2종).
 > - 결정 원문 → [DECISIONS.md](./DECISIONS.md) `D-2026-06-16-H ~ R`, `D-2026-06-17-A`. 개념 → [FOUNDATION_CONCEPT.md](./FOUNDATION_CONCEPT.md).
 

@@ -29,13 +29,16 @@ spelling between locales, files, or commits.
 | Identity | **아이덴티티** | NOT 정체성 — user product spec. |
 | Actor | **액터** | NOT 행위자 (corrected v0.14.6). |
 | Service | **서비스** | |
+| Feature | **기능** | services-overview drill target (D-2026-06-17-D). |
 | Category | **카테고리** | |
 | Project | **프로젝트** | |
+| Entity | **엔티티** | AI-maintained data object; 액터=누가 ↔ 엔티티=무엇 (D-2026-06-17-I). |
+| Note | **노트** | edgeless canvas-global context node (D-2026-06-17-F). |
 | Metric | **지표** | |
 | Step | **단계** | |
 | Rule | **규칙** | |
 | Content | **콘텐츠** | NOT 컨텐츠. |
-| User journey | **유저저니** | per user product spec §6. |
+| ~~User journey~~ | ~~유저저니~~ | **RETIRED — service→service "유저저니" edges dropped (D-2026-06-17-C).** |
 | Symbol | **심볼** | |
 | Instance | **인스턴스** | |
 | Snapshot | **스냅샷** | |
@@ -104,8 +107,8 @@ commits.
 |---|---|---|---|---|
 | 2026-05-11 | Foundation (tab) | 토대 | **파운데이션** | user direction during v0.14.7 |
 | 2026-05-11 | Actors (tab) | 행위자 | **액터** | user product spec |
-| 2026-05-12 | "one per aspect — Voice, Energy, Speech style, …" | 측면별로 하나씩 — 목소리, 에너지, 말투, … | **속성별로 하나씩 — 목소리, 에너지, 말투, …** | user pointed out 측면 is unnatural; user picked 속성 |
-| 2026-05-12 | "이 측면이 어떻게 드러나는가" (Identity description hint) | 이 측면이 어떻게 드러나는가 | **이 속성이 어떻게 드러나는가** | follows the 측면→속성 rule above |
+| 2026-05-12 | "one per aspect — Voice, Energy, Speech style, …" | 측면별로 하나씩 — 목소리, 에너지, 말투, … | **속성별로 하나씩 — 목소리, 에너지, 말투, …** | user pointed out 측면 is unnatural; user picked 속성. (측면→속성 rule still applies. ⚠ The identity "facet/aspect" framing this hint described is **superseded**: identity is now a **standing execution/expression action-rule list**, not per-aspect attributes — D-2026-06-16-N/O.) |
+| 2026-05-12 | "이 측면이 어떻게 드러나는가" (Identity description hint) | 이 측면이 어떻게 드러나는가 | **이 속성이 어떻게 드러나는가** | follows the 측면→속성 rule above. ⚠ **STALE — the identity `description` field is removed** (inspector = name + action-rule list, D-2026-06-16-O); this hint string no longer exists. Kept for audit trail. |
 
 ## 5. When this file changes
 

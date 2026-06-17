@@ -63,7 +63,7 @@ required to enable it.
 | Source of truth | JSON | [`CONCEPTS.md`](./CONCEPTS.md) |
 | Source-data version control | **isomorphic-git** | §5 below |
 | Free-text rendering | Markdown | [`SPEC.md`](./SPEC.md) §Foundation |
-| Diagram rendering | Mermaid | (queued for Service-Detail visualisation) |
+| Diagram rendering | Mermaid | (queued for feature-canvas visualisation, D-2026-06-17-G) |
 | Agent connection | MCP | [`DOMAIN.md`](./DOMAIN.md) AICollaboration |
 
 ## 5. Data structure principles
@@ -86,8 +86,10 @@ required to enable it.
 - **Every node carries an `owner` field.** Currently unused;
   reserved for the multi-user expansion in §13.
 - **Cycles allowed.** Plot's data model is a graph, not a tree.
-  Self-loops (`Service A → Service A`) and cycles
-  (`A → B → A`) are legal.
+  Self-loops (`Node A → Node A`) and cycles (`A → B → A`) are
+  legal. (This is a graph-engine property only — there is **no**
+  first-class service→service edge concept; that "user journey"
+  edge was dropped, D-2026-06-17-C.)
 - **Export targets:** Markdown, Mermaid, MCP. (MCP "export" =
   exposing the sketch as agent context, not file output.)
 
@@ -150,30 +152,43 @@ reference at render time.
 - Mission, Core value, Identity (the Foundation triad).
 - Actor.
 - Service.
+- Feature (a capability nested under a service; D-2026-06-17-D).
+- Entity (a project-wide data object; D-2026-06-17-I).
 
-**Service-to-service edges = User journey.** A path
-`Service A → Service B → Service C` IS the user journey. Rendered
-on the main Services canvas as connection lines. Self-loops
-(`Service A → Service A`) ARE expressible — useful when a
-service's output feeds back to its own input (feedback loop in
-the user journey itself).
+Core value and Identity are also **referenced from a service's
+inspector** (the 누가/왜/뭐가 좋아지나 + 코어밸류/아이덴티티
+question fields, D-2026-06-17-B) — picked from the Foundation
+canvas as chips, exactly like actors.
+
+**No first-class service→service edge (D-2026-06-17-C).** The
+previously-specced "Service-to-service edges = User journey" is
+**dropped** — Plot does not build journey / value-flow edge
+semantics between services. Value flow is already captured at the
+role level (Actors relationship edges, D-2026-06-17-A) and
+per-participant (`actor_ref` on the feature canvas). Generic
+user-drawn edges remain technically possible but carry no special
+inter-service meaning and are not a provided feature.
 
 ## 8. Canvas layers (spatial)
 
-Three canvases. The audience (human / agent) is encoded *inside*
-the canvases rather than as canvas boundaries.
+Project-level canvases. The audience (human / agent) is encoded
+*inside* the canvases rather than as canvas boundaries.
 
 | # | Canvas | Defines |
 |---|---|---|
-| 1 | **Mission / Core value / Identity** (one canvas) | All three on a single Foundation canvas. Mission = *why we exist* (human-facing). Core value = *what drives us* (human-facing). Identity = *tone & manner* (agent-facing). The visual layout connects Mission → Core value → Identity as a flow. |
-| 2 | **Actor** | Stakeholder map: actors, their relations, pain points. |
-| 3 | **Service** | Categorised services. Main canvas = service overview + user-journey edges. Double-click a service → modal canvas with: related actors (symbol references), actor relations / actions / constraints, diagram visualisation, agent-driven definition. **Service-detail starts empty.** The agent-interview + user-story flow fills it bottom-up; it is a *living* document, not a designed-up-front spec. |
+| 1 | **Mission / Core value / Identity** (one canvas) | All three on a single Foundation canvas. Mission = *why we exist*. Core value = *the value that wins when decisions conflict* (D-2026-06-16-L). Identity = the service's **consistent execution / expression action-rules** ("we design / speak / behave like ~"), AI-derived from mission + core value and human-confirmed (D-2026-06-16-N/O). The visual composition of the three around the project anchor *is* the essence (D-2026-06-16-Q). |
+| 2 | **Actor** | Roles in the service's value economy — **relational roles, not people / personas** (D-2026-06-17-A). Actors form a hierarchy (operator vs user at the top, inherited down). The canvas carries **two edge types**: a quiet hierarchy edge ("is-a-kind-of", no value) and a directed, labelled relationship arrow ("gives value to"; reciprocal = two arrows). |
+| 3 | **Entity** | A project-wide map of the product's **data objects** (글 · 댓글 · 사용자), **AI-maintained**, born as a byproduct of designing features / services (D-2026-06-17-I). A conceptual entity map (rough relationships OK), **not a physical ERD** — name + one-line "무엇을 담나" only; schema / field types / normalisation are the user's AI agent's job, outside Plot. |
+| 4 | **Service** | Categorised services. The overview holds **카테고리 → 서비스 → 기능** (D-2026-06-17-D): a `category` is visual grouping only; a `service` shows its **5-field inspector** (누가 참여하나 / 왜 필요한가 / 뭐가 좋아지나 + 코어밸류·아이덴티티 references, D-2026-06-17-B) **and does not drill**; a `feature` (a capability nested under a service) **drills to the feature canvas.** |
+| 5 | **Feature** (per-feature detail) | The behaviour flowchart for one feature (the former Service-Detail canvas), at action-altitude, inheriting the service philosophy (actor-anchored, value-oriented) (D-2026-06-17-G). Nodes: 행동(`step`) + 분기(`decision`) + flow edges + 노트(`note`, D-2026-06-17-F) + 룰(`rule`, per-feature, D-2026-06-17-E) + 액터 참조(`actor_ref`). It is a *living* document, filled bottom-up through AI discussion (D-2026-06-16-P). |
 
 **Resolution of the earlier "split Mission/Core-value vs Identity"
 open question (v0.14.7 §16):** the user decided 2026-05-12 to
-keep them on a single canvas — the audience distinction is real
-but it does not need a canvas boundary. The visual flow inside
-the Foundation canvas carries the meaning.
+keep them on a single canvas, reaffirmed 2026-06-16
+(D-2026-06-16-R). The decisive reason is no longer "audience" but
+that the essence is the **emergent composition** of the three
+concepts around the anchor (D-2026-06-16-Q) — splitting them
+would break that single visual statement of what the service is.
 
 ## 9. Core UX pattern — canvas via conversation
 
@@ -190,15 +205,18 @@ empty canvas
   → human approves / edits
 ```
 
-**The Service interview produces two artefacts at once:**
+**The feature interview produces two artefacts at once:**
 
-- **Service-Detail content** (design / intent) → goes onto the
-  canvas.
+- **Feature-canvas content** (the behaviour flowchart: actions /
+  branches / rules, D-2026-06-17-G) → goes onto the canvas.
 - **User-story draft** → goes into the work-item layer (§10).
 
-The interview covers actors, actions, constraints AND the
-concrete user scenarios that motivate the service. The two
-artefacts share provenance from the same interview transcript.
+The interview covers the feature's actions, branches, and
+constraints AND the concrete user scenarios that motivate it. The
+two artefacts share provenance from the same interview transcript.
+The upstream foundation references (core value / identity) are
+**not** re-collected here — they are inherited from the service's
+inspector chips (D-2026-06-17-B/H).
 
 **Context flow between canvases:**
 
@@ -214,15 +232,15 @@ Retention → Execution). See [`VISION.md`](./VISION.md).
 
 Distinct from the canvases (which are spatial).
 
-- Service interview generates the user-story draft alongside the
-  service-detail content (§9).
+- The feature interview generates the user-story draft alongside
+  the feature-canvas content (§9).
 - User stories → tasks (derived).
-- Each task carries **provenance metadata**: which service +
+- Each task carries **provenance metadata**: which feature +
   which actor relation it came from.
 - **During execution, discoveries flow back as PRs.** When a
   user-story task reveals new design constraints, the agent
-  proposes those as canvas-change branches against the
-  service-detail node.
+  proposes those as canvas-change branches against the feature
+  canvas.
 - **Snapshot model:** snapshot ≡ git commit (§6). When work
   starts on a task, the agent's context pins to the commit SHA
   at task start; subsequent canvas edits do not invalidate the
@@ -258,7 +276,7 @@ based gate ships when §6 (isomorphic-git) lands.
 - **GitHub integration** — surface the internal git history (§6)
   to an external GitHub remote when the user wants public /
   collaborative version control.
-- Mermaid Service-Detail diagram rendering.
+- Mermaid feature-canvas diagram rendering (D-2026-06-17-G).
 
 ## 14. Cross-references
 
@@ -335,9 +353,9 @@ implementation clarity. Logged here so they don't get lost.
 4. **Snapshot work-item layer** (§10) — net-new subsystem. Schema
    for `tasks/`, `user_stories/`, provenance links to commit
    SHAs.
-5. **Mermaid Service-Detail rendering** — Service-Detail canvas
-   needs a diagram-export view. Decision: in-modal toggle?
-   Separate panel?
+5. **Mermaid feature-canvas rendering** (D-2026-06-17-G) — the
+   feature canvas needs a diagram-export view. Decision: in-modal
+   toggle? Separate panel?
 6. **i18n string lifecycle skill** — adding new translations is
    handled (Glossary §3 workflow); **removing unused keys** is
    not. User flagged 2026-05-12 *"사용되지 않는 것들 삭제하고

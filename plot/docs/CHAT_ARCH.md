@@ -13,9 +13,11 @@
 Concretely:
 1. Foundation and Actors each have **one chat**, with context matching that
    canvas.
-2. Services: **one chat per service-detail canvas** (i.e. per service), with
-   that service's context. The services overview canvas also gets its own
-   chat (cross-service planning).
+2. Services: **one chat per feature detail canvas**, with that detail's context.
+   (As of `D-2026-06-17-D` the detail canvas drills from a **feature**, not a
+   service — so this is per-**feature** detail; the service itself shows an
+   inspector and no longer drills.) The services overview canvas also gets its
+   own chat (cross-service planning).
 3. When a node is selected, the chat should **know the selection** — "everything
    selected in the app should be synced so it's natural to talk about it."
 
@@ -42,6 +44,15 @@ scope; here it becomes **per-service-instance**. The scope set then equals
 (`viewer/src/types.ts` `CanvasKey`), so chat threads and canvas state key the
 same way (one mental model).
 
+> **⚠ Pending (2026-06-18, doc-sync).** `D-2026-06-17-D/G` rewired the drill: the
+> detail canvas now opens from a **feature**, not a service (the service shows an
+> inspector and no longer drills). Whether the per-instance detail **thread** therefore
+> keys per-**feature** instead of per-**service** (`service_detail:<service_id>`) is
+> **not yet pinned** — the scope/wire identifiers in this Layer 1 (and in the Decisions
+> + Implementation-sequence sections below) still use the service-keyed form. **Resolve
+> with the AI-chat playbook work (ROADMAP 5.10);** do not treat the service-keyed keys
+> as final.
+
 - Engine session registry key becomes `(plot_root, provider, scope)` where
   `scope` is a `CanvasKey | "project"` string (already the shape, just widening
   the `service_detail` member to carry the id). **D-2026-06-16-G:** `plot_root`
@@ -60,6 +71,15 @@ Every chat turn carries a **context preamble** built from live viewer state:
 - **Active canvas** (the scope).
 - **Current selection** — ALL selected node ids + their kind + their data
   (user: "다 연동"). Multi-select supported.
+
+> **Extended by `D-2026-06-17-L` (2026-06-17).** The envelope also carries (3) an
+> **upstream-canvas SUMMARY** (essence + key nodes of canvases earlier in the
+> Foundation→Actors→Services→Feature→Entities order — not a full dump) and (4) the
+> **entity registry** (names + one-line, for strong dedup + references); deeper
+> detail is fetched on demand. **Delivery = CAG-first:** the stable project skeleton
+> is a **prompt-cached prefix**; active-canvas detail + selection + message are the
+> dynamic suffix. **RAG only at scale** (skeleton exceeds budget / deep content /
+> cross-project). Core of the AI chat playbook (ROADMAP 5.10).
 
 The viewer already tracks selection (`SketchCanvas` `selectedIds`, App
 `selectedNodeId`). On `POST /api/chat/send` the viewer includes
@@ -85,8 +105,8 @@ Each scope maps to a VISION phase, which sets the agent's framing:
 | Canvas | VISION phase | Chat framing |
 |---|---|---|
 | Foundation | Discovery | Help surface / sharpen the essence |
-| Actors / Services | Planning | Design the value-creation machinery |
-| Service-Detail | Execution | Break the plan into concrete steps |
+| Actors / Services | Planning | Design the value-creation machinery (the Services overview is the category→service→feature drill layer per `D-2026-06-17-D`; the feature drill target is the Feature canvas below) |
+| Feature (feature detail) | Execution | Break the plan into concrete steps |
 
 > **D-2026-06-16-H — active coach, not topic-setter.** The phase mapping above is
 > the *minimum* (which phase). The per-canvas guide is **active**: it makes the

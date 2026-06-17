@@ -44,11 +44,16 @@ flowchart LR
 ### 1. EssenceDiscovery — finding the essence
 - **VISION phase:** Discovery (#1)
 - **Surfaces:** Foundation canvas (mission / core_value / identity nodes),
-  the Inspector's typed-text fields, the per-node `foundation/{kind}-{id}.md`
-  templates.
-- **Owns:** prompts that elicit the user's essence-language, the section
-  schemas that ensure each typed field is captured, the ⚠ badge that
-  flags missing sections.
+  the Inspector's reduced fields (mission = declaration + body
+  [D-2026-06-16-J](./DECISIONS.md); core_value = label + body
+  [D-2026-06-16-M](./DECISIONS.md); identity = label + action-rule list
+  [D-2026-06-16-N](./DECISIONS.md)/[O](./DECISIONS.md)), the per-canvas
+  AI coach that interviews / proposes (every node is built through
+  discussion, never a blank form or silent auto-fill —
+  [D-2026-06-16-P](./DECISIONS.md)).
+- **Owns:** the active-coach prompts that elicit the user's
+  essence-language (discover → filter), the per-kind field schemas, the
+  ⚠ badge that flags missing content.
 - **Does NOT own:** how the discovered essence is rendered on later
   canvases (that's Retention) or how services derived from it are
   designed (that's Planning).
@@ -59,13 +64,17 @@ flowchart LR
 ### 2. EssenceRetention — keeping it visible
 - **VISION phase:** Retention (#2)
 - **Surfaces:** the synthetic project anchor injected on every primary
-  canvas (Foundation / Actors / Services), the Foundation refs
-  (`mission_ref`, `value_ref`, `identity_ref`) that point back from
-  Actors / Services nodes, the cross-canvas link semantics.
+  canvas (Foundation / Actors / Services), the Foundation references
+  now carried as **inspector chips on the service** (core_value +
+  identity picked from Foundation, like actors —
+  [D-2026-06-17-B](./DECISIONS.md)), the cross-canvas link semantics.
 - **Owns:** anchor placement (`ProjectDoc.anchors[canvasKind]`), anchor
   visual differentiation (border, never outline — see D-2026-05-08-G),
   the anchor mutation routing through `onAnchorChange` (never through
-  `onDocChange`), the read-side `*_ref` resolution.
+  `onDocChange`), the read-side resolution of the service inspector's
+  Foundation chips. The per-node `mission_ref` / `value_ref` /
+  `identity_ref` kinds are retired — references live on the service
+  inspector, not as canvas nodes ([D-2026-06-17-B](./DECISIONS.md)/[H](./DECISIONS.md)).
 - **Does NOT own:** anchor's edit Inspector (that's Discovery's typed
   text), anchor click behaviour (open question per SPEC).
 - **Code home (current):** `viewer/src/canvases/sketch/useNodesMemo.ts`
@@ -74,32 +83,48 @@ flowchart LR
 
 ### 3. EssencePlanning — designing the value-creation machinery
 - **VISION phase:** Execution (#3, planning portion)
-- **Surfaces:** Actors canvas (who participates), Services canvas
-  (which value-creation hubs exist), the value-flow toggle that
+- **Surfaces:** Actors canvas (who participates — relational roles in
+  a hierarchy, [D-2026-06-17-A](./DECISIONS.md)), Services overview
+  (category / service / feature; selecting a service shows its 5-field
+  inspector, a feature drills to detail —
+  [D-2026-06-17-D](./DECISIONS.md)), the value-flow toggle that
   colours edges by `value_form`.
-- **Owns:** actor / service / category kinds, the `gives` / `receives`
-  fields, the `target_side` classification, the value-flow visual,
-  the auto-layout algorithm (the "see the structure of the planned
-  essence" gesture).
-- **Does NOT own:** how individual services are decomposed (that's
-  Execution / Service-Detail), how the user's free-form connections
-  become formal exchange relationships (that's a future skill).
+- **Owns:** actor / service / category / feature kinds, the actor
+  hierarchy + its two edge types (hierarchy "is-a-kind-of" vs
+  directed value-carrying relationship, [D-2026-06-17-A](./DECISIONS.md)),
+  the service inspector's references (actors / core_values / identities)
+  + typed "왜 필요한가?" / "뭐가 좋아지나?" ([D-2026-06-17-B](./DECISIONS.md)),
+  the value-flow visual, the auto-layout algorithm (the "see the
+  structure of the planned essence" gesture). There is no
+  service→service edge concept ([D-2026-06-17-C](./DECISIONS.md)).
+- **Does NOT own:** how individual features are decomposed (that's
+  Execution / the feature canvas), how the user's free-form
+  connections become formal exchange relationships (that's a future
+  skill).
 - **Code home (current):** `viewer/src/canvases/sketch/autoLayout.ts`,
   `viewer/src/canvases/sketch/useEdgesMemo.ts`,
   `plot_mcp/canvases/actors/`, `plot_mcp/canvases/services/`.
 
 ### 4. EssenceExecution — turning plans into reality
 - **VISION phase:** Execution (#3, build portion)
-- **Surfaces:** Service-Detail (modal canvas per service), the steps /
-  metrics / rules / contents primitives, the MCP tools (`read`,
-  `extend`, `reshape`) that let Claude operate on sketches as a
-  collaborator while writing actual code.
-- **Owns:** Service-Detail canvas, composition primitives (step,
-  metric, rule, content), `actor_ref` decomposition, the MCP tool
-  surface that exposes sketch graphs to Claude Code agents.
+- **Surfaces:** the feature canvas (what is today Service-Detail —
+  the drill target moved from service to feature,
+  [D-2026-06-17-D](./DECISIONS.md)/[G](./DECISIONS.md)) rendered as an
+  actor-anchored behaviour flowchart, the step / decision / flow-edge /
+  note / rule / actor_ref primitives, the MCP tools (`read`, `extend`,
+  `reshape`) that let Claude operate on sketches as a collaborator
+  while writing actual code.
+- **Owns:** the feature canvas, its behaviour-flowchart primitives
+  (`step`, `decision`, flow edges, `note`, `rule`),
+  `actor_ref` decomposition, the MCP tool surface that exposes sketch
+  graphs to Claude Code agents. The old `metric` / `content` / `group`
+  primitives are retired ([D-2026-06-17-H](./DECISIONS.md)); `rule` is
+  a per-feature operational constraint ([D-2026-06-17-E](./DECISIONS.md)).
 - **Does NOT own:** the actual application code being built (that
   lives outside Plot). Plot's job ends at "Claude has the right
-  context to write the code."
+  context to write the code." Internal implementation logic (storage /
+  queries / rendering) is below action-altitude — the user's AI
+  agent's job ([D-2026-06-17-G](./DECISIONS.md)).
 - **Code home (current):** `plot_mcp/canvases/service_detail/`,
   `plot_mcp/server.py` (MCP tool registration),
   `viewer/src/canvases/sketch/SketchModals.tsx` (drill modal).
@@ -134,14 +159,17 @@ contexts, rename the loser.
 | **Node** | A graph entity in `CanvasDoc.nodes[]` (`SketchNode`). | Not a DOM node, not a React Flow internal node, not a `ReactFlow.Node` (which we call **rf-node** if it must be referenced). |
 | **rf-node** | The React Flow runtime representation (`{ id, position, data }`). | Distinct from our `SketchNode`. The `useNodesMemo` hook is the boundary that converts one to the other. |
 | **Anchor** | The synthetic project node injected by `useNodesMemo`, identified by `PROJECT_ANCHOR_ID` (`__project_anchor__`). | Not stored in `canvas.json`. Position lives in `ProjectDoc.anchors[canvasKind]`. |
-| **Canvas** | One of the four canvas kinds (`foundation`, `actors`, `services`, `service_detail`). | Not the HTML canvas element. |
+| **Canvas** | One of the canvas kinds — project-level `foundation`, `actors`, `services` (overview), `entities` ([D-2026-06-17-I](./DECISIONS.md)), plus the per-feature `feature` detail canvas (what was `service_detail` — the drill target moved from service to feature, [D-2026-06-17-D](./DECISIONS.md)/[G](./DECISIONS.md)). | Not the HTML canvas element. |
 | **Edge** | A connection in `CanvasDoc.edges[]` (`SketchEdge`). | Not the React Flow `rf-edge` (the runtime form). |
-| **Service** | A `kind: "service"` node — the value-creation hub. | Not "REST service" or "microservice." |
-| **Actor** | A `kind: "actor"` node — a participant in services. | Not a software actor (Akka-style). |
+| **Service** | A `kind: "service"` node — the value-creation hub; shows a 5-field inspector ([D-2026-06-17-B](./DECISIONS.md)). | Not "REST service" or "microservice." |
+| **Feature** | A `kind: "feature"` node nested under a service on the overview — a capability the service offers; the **drill target** ([D-2026-06-17-D](./DECISIONS.md)). | Not a `service` (a feature is not a multi-actor value exchange). |
+| **Actor** | A `kind: "actor"` node — a relational role (not a person) in a hierarchy ([D-2026-06-17-A](./DECISIONS.md)). | Not a software actor (Akka-style), not a persona. |
+| **Note** | A `kind: "note"` node — edgeless, canvas-global context read by the human and injected into the AI framing ([D-2026-06-17-F](./DECISIONS.md)). | Not a `content` node; it never gains an edge. |
+| **Entity** | A `kind: "entity"` node on the AI-maintained Entities canvas — a project-wide data object (name + one-line "무엇을 담나"), [D-2026-06-17-I](./DECISIONS.md). | Not an ERD table; no fields / FKs / cardinality. |
 | **Essence** | The user's articulated mission / core_value / identity, captured on Foundation. | Not a generic "vision" or "purpose." Specifically what Foundation surfaces. |
 | **Hub** | A service node, per PHILOSOPHY P5. | Synonym for "service node," not for "anchor." |
 | **Discovery / Retention / Execution** | The three phases of the VISION cycle. | Not generic software-development phases. |
-| **Drill** | Drill into a service to open its Service-Detail canvas. | Not "drill down" in a generic UI sense. |
+| **Drill** | Drill into a **feature** to open its detail (behaviour-flowchart) canvas. Selecting a **service** shows its 5-field inspector — it no longer drills ([D-2026-06-17-D](./DECISIONS.md)). | Not "drill down" in a generic UI sense. |
 
 ---
 
@@ -206,7 +234,7 @@ prioritised in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 | MCP tool registration | EssenceExecution + AICollaboration | `plot_mcp/server.py` | OK — tool surface IS the boundary | None |
 | Inspector typed-text forms (Foundation) | EssenceDiscovery | `viewer/src/canvases/SketchInspector.tsx` (1422 LOC, mixed kinds) | `EssenceDiscovery` (Foundation slice) + `EssencePlanning` (Actors/Services slice) | High — the SI split is on the architecture roadmap |
 | Service-Detail modal | EssenceExecution | `viewer/src/canvases/sketch/SketchModals.tsx` | `EssenceExecution` ✓ | Low — colocated with other modals; acceptable |
-| Foundation refs (`mission_ref`, etc.) | EssenceRetention (read side) | scattered across `useNodesMemo`, picker components | `EssenceRetention` (own module) | Med — scattered references are fragile |
+| Foundation refs (`mission_ref`, etc.) | EssenceRetention (read side) | scattered across `useNodesMemo`, picker components | Retired as node kinds; references move to the **service inspector chips** ([D-2026-06-17-B](./DECISIONS.md)/[H](./DECISIONS.md)) | Med — migration pending; remove the scattered `*_ref` node reads when the new inspector lands |
 
 ---
 

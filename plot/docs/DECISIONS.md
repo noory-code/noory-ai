@@ -39,6 +39,428 @@
 
 ## Log
 
+### D-2026-06-18-A — Hard actor/service count floors relaxed (the ≥2 validators are dropped; count is emergent from the role hierarchy)
+
+- **What:** The pre-marathon hard count validators are relaxed during doc-sync:
+  - **actor "≥ 2 per project"** — the hard validator is **dropped.** Under the new
+    actor model (`D-2026-06-17-A`) operator/user sit at the top of the role
+    hierarchy, so a project naturally carries ≥2 roles; the count is an **emergent
+    property** of the hierarchy, not a separately enforced floor.
+  - **service "≥ 2 actor_ref (operator included)"** — already loosened to **≥ 1** by
+    `D-2026-05-28-K`; the "≥2 with operator" requirement is formally dropped. Under
+    `D-2026-06-17-B` the operator is the **default participant** of every service
+    ("누가 참여하나?" multi-select), so an explicit ≥2-with-operator floor is
+    redundant. The service keeps the current **≥ 1** participant minimum.
+- **Why:** Doc-sync of the 2026-06-16~17 marathon (`DOC_SYNC.md` 결정 1). CONCEPTS.md /
+  IDENTITY.md still asserted the old ≥2 floors as hard validators, contradicting the
+  new role model. The floors are not behaviour the new model needs enforced — they
+  fall out of the operator/user hierarchy + operator-as-default-participant.
+- **Alternatives:** (a) keep the ≥2 hard validators — rejected (contradicts
+  emergent-from-hierarchy; redundant). (b) drop all minimums incl. service ≥1 — not
+  taken (a ≥1 named participant is a reasonable floor; revisit only if a real
+  zero-participant case appears).
+- **Approval:** Accepted by user, 2026-06-18 ("네 제안대로 일단 가봅시다" — provisional).
+- **Spec impact:** CONCEPTS.md actor/service baseline lines + IDENTITY.md service
+  min-baseline → reworded (no hard ≥2 validator; service ≥1). Resolves `DOC_SYNC.md`
+  결정 1. Code-side validator changes (if any) are a separate follow-up.
+
+### D-2026-06-17-L — AI chat context envelope + delivery behind a CAG/RAG seam (CAG-first, any-size user project)
+
+- **What:** The AI chat's per-turn context ("what the AI sees" — playbook layer 1)
+  = (1) **active canvas** (full), (2) **current selection** (`D-2026-06-16-F`), (3)
+  **upstream-canvas SUMMARY** — the essence + key nodes of the canvases earlier in
+  the dependency order (Foundation → Actors → Services → Feature → Entities), **not a
+  full dump**, (4) **entity registry** (names + one-line, for strong dedup
+  `D-2026-06-17-K`-B2 + references), (5) **deeper detail fetched on demand.**
+  Delivery = **CAG-first** (Cache-Augmented): preload the **stable project skeleton**
+  as a **prompt-cached prefix**; append the **dynamic** turn data (active-canvas
+  detail, selection, user message) as the uncached suffix. **RAG only when scale
+  forces it** — if the skeleton exceeds the agent's context window, or deep node
+  content / published artifacts / cross-project material must be pulled.
+- **Abstraction seam (user, 2026-06-17 — the load-bearing refinement):** delivery
+  (CAG vs RAG) sits **behind a context-provider abstraction**; the **playbook depends
+  only on the abstraction** ("what the AI sees"), never on the mechanism. Plot's
+  **primary path = the user's own external agent (Pencil model)** = **any model**
+  (only Opus has a 1M window; most Claude models are smaller) running against a
+  **user project of any size** → a 1M-context CAG **cannot be assumed.** The seam
+  picks **CAG** (skeleton fits the window) or **RAG** (it doesn't — large user
+  project and/or small-window agent), **at runtime.** **Build the seam now + CAG-first
+  impl; slot RAG in behind the same seam later (YAGNI).** Because the playbook only
+  touches the abstraction, **playbook design continues now**, unblocked by the
+  CAG/RAG implementation choice.
+- **Why:** Big-picture review, AI playbook §1 (2026-06-17). Everything in the new
+  design **references upstream canvases** ("뒤 캔버스가 앞을 참조") and the **entity
+  registry** (strong dedup), so the AI must see more than today's active-canvas +
+  selection (CHAT_ARCH Layer 2). **The "project" here = the USER's project built with
+  Plot, NOT Plot itself — it can be ANY size** (Plot is a general tool: some users'
+  projects are tiny, some enormous; Plot can't assume small). So **CAG cannot be
+  assumed to fit.** When the user's skeleton fits the agent's window, a cached preload
+  (CAG) is simpler / faster / avoids retrieval error; when it doesn't, **RAG is
+  required** — RAG-readiness is a real requirement behind the seam, not a distant edge
+  case. Prompt caching (Claude) makes the CAG stable-prefix reuse cheap across turns.
+- **Alternatives:** (a) full upstream dump every turn — rejected (heavy, costly). (b)
+  full RAG / vector store from the start — rejected (YAGNI; CAG covers user projects
+  that fit the agent window; build the seam so RAG slots in for large projects /
+  small-window models — lighter than committing to graph-RAG-lite, Track 5.4, up
+  front). (c) keep today's active-canvas-only context — rejected (AI can't reference
+  upstream / dedup). (d) assume CAG always fits — **rejected** (the user's project can
+  be any size; Plot can't assume small).
+- **Approval:** Accepted by user, 2026-06-17 ("좋아요. 좋습니다." + asked for the
+  CAG/RAG judgment → CAG-first).
+- **Spec impact:** Extends **CHAT_ARCH Layer 2** — add upstream-summary +
+  entity-registry to the context preamble; structure as **cached prefix (stable
+  skeleton) + dynamic suffix**. Refines **Track 5.4** ("graph-RAG-lite"): start CAG,
+  add RAG-lite only at scale. Core of the **AI chat playbook** (ROADMAP 5.10).
+  Implementation follow-up.
+
+### D-2026-06-17-K — Entity open questions resolved (dedup / back-reference / AI-surfacing / inspector)
+
+- **What:** The four open entity questions (`D-2026-06-17-I` §B; B1 already resolved
+  by `D-2026-06-17-J`) are closed:
+  - **B2 — dedup = fully smart, first-class.** Before creating an entity the AI must
+    **strongly semantic-match** the candidate against the existing registry (글 =
+    게시물 = 포스트 → **one** entity, never duplicated). Only genuinely ambiguous
+    cases go to the user ("이거 기존 '글'과 같은가요?"). **Never silent-merge, never
+    silent-duplicate.** This is a **1급 duty of the AI chat playbook** (ROADMAP 5.10).
+  - **B3 — back-reference = shown (read-only).** Selecting an entity shows which
+    features/actions reference it (글 → "글쓰기 · 글편집 · 글보기에서 쓰임").
+    Derived, read-only — core to project-wide management.
+  - **B4 — AI-surfacing = in-chat proposal, not auto-scan.** During feature-design
+    chat, when an action handles a "thing," the AI proposes the entity ("이건 '글'
+    엔티티네요 — 등록할까요?") → user confirms → it registers on the Entities canvas.
+    No silent background scan. (Part of the AI chat playbook.)
+  - **B5 — entity inspector (when selected) = lean, conceptual.** 이름 + **"무엇을
+    담나?"** (one line, rough fields 제목·본문·작성자 — no types/FK) + **어디서
+    쓰이나** (B3 back-ref, read-only) + **거친 관계** (rough relationships to other
+    entities).
+- **Why:** Big-picture review, entity close (2026-06-17). Completes the Entities
+  canvas design (`D-2026-06-17-I`). All four follow the project principles: AI
+  proposes / user confirms (`D-2026-06-16-P`), high-altitude conceptual (no physical
+  schema, D-I), project-wide managed.
+- **Approval:** Accepted by user, 2026-06-17 (B2 "완전 똑똑해야죠"; B3/B4/B5 "추천대로
+  / 네 좋습니다. 좋아요!").
+- **Spec impact:** Resolves `ENTITIES_PLAN.md` §B (B2–B5). **B2 (strong dedup) + B4
+  (in-chat surfacing) are core duties of the AI chat playbook** (ROADMAP 5.10); B3/B5
+  are entity-inspector content (lock-step with the `entity` kind). **Closes the
+  Entities topic** of the big-picture review.
+
+### D-2026-06-17-J — Remove the "all edges are user-drawn / never auto-emit" rule; edges are governed by their definition, not authorship
+
+- **What:** Plot's blanket rule **"All edges are user-drawn / never auto-emit
+  edges"** (`D-2026-05-04-A`, SPEC §Edges, `plot/CLAUDE.md` during-action rule #5)
+  is **removed.** What governs an edge is its **definition (semantics)** — its
+  `relation` (flow / injection / inheritance / …) + payload (`directed`,
+  `action_verb`, `value_form`, label) — **not who draws it.** The AI **may propose
+  / draw edges**, especially on **AI-maintained canvases** (the Entities canvas,
+  `D-2026-06-17-I`, where AI surfaces entities **and their relationships**). The old
+  rule conflated *ownership* (who draws) with *meaning* (what the edge is); only
+  meaning matters. (User: "선에 대한 정의가 제대로 잡혀있으면 이제 크게 문제가
+  없습니다.")
+- **Why:** Big-picture review (2026-06-17). The original ban (`D-2026-05-04-A`) came
+  from v0.13.2 **silently** auto-emitting *uneditable, meaningless* anchor→child
+  edges — the real harm was **silent / unowned / uneditable** lines, **not** "AI
+  drawing edges." Under the Pencil + AI-maintained-canvas model the AI must be able
+  to express relationships (entity ↔ entity, etc.); with a proper edge **definition**
+  in place (the v0.30.0 `relation` taxonomy + payload), AI-drawn edges are safe and
+  the user can always edit / delete them.
+- **Does NOT mandate auto-edges anywhere.** A canvas may still be user-draw-only by
+  its own spec — Foundation / Actors / Services keep their current behaviour as a
+  **per-canvas choice, not a global law.** Never emit a *meaningless* or
+  *silently-uneditable* line (that specific harm stays banned).
+- **Alternatives:** (a) keep the blanket ban — rejected (blocks AI-maintained entity
+  relationships; conflates ownership with meaning). (b) narrow to "AI proposes, user
+  confirms; no silent finalize" — considered; user chose **full removal** ("통째로
+  삭제"), with the edge-**definition** requirement as the real guard.
+- **Approval:** Accepted by user, 2026-06-17 ("통채로 삭제하세요" + "선에 대한
+  정의가 제대로 잡혀있으면 이제 크게 문제가 없습니다").
+- **Spec impact:** **Supersedes the blanket-ban portion of `D-2026-05-04-A`** (the
+  specific anchor→child auto-edge rejection survives only as a *Foundation-local*
+  behaviour, not a global rule). Rewrote SPEC §Edges "Source of edges" + the "Why no
+  auto-edges" blockquote; removed `plot/CLAUDE.md` during-action rule #5; annotated
+  the VISION anti-pattern. **Doc-sync follow-up:** scattered per-canvas "all edges
+  user-drawn" mentions (SPEC Foundation/Actors/Services/feature sections,
+  ARCHITECTURE no-auto-edge smoke test, CLAUDE.md YAGNI/anti-pattern examples) →
+  reword to "edges defined by semantics; per-canvas authorship is a canvas choice."
+
+### D-2026-06-17-I — Entity = project-wide data object on an AI-maintained Entities canvas, born from feature/service design
+
+- **What:** A new **project-level "Entities" canvas** (symmetric to Actors —
+  **액터 = 누가 / 엔티티 = 무엇**) holds the product's **data objects** (글 ·
+  댓글 · 사용자), **managed project-wide in one place.** **The user does NOT author
+  it manually.** Entities are **created by the AI together with the user as a
+  byproduct of designing features / services** — when a feature's action produces
+  or uses a "thing," the AI surfaces it as an entity and **auto-registers it on the
+  Entities canvas.** The user reviews / refines / confirms (D-2026-06-16-P — not
+  silent), but never starts from a blank entity canvas. **Bottom-up creation** (in
+  feature work) **+ top-down management** (project registry). **Altitude guard:**
+  Plot holds only **name + one-line "무엇을 담나"** (rough shape); detailed schema /
+  field types / relations / indexes = the user's AI agent's job, **outside Plot**
+  (else Plot becomes an ERD / DB-modelling tool — identity violation). Feature
+  actions **reference** entities ("발행 → 글 생성").
+- **Form — conceptual entity map, NOT a physical ERD (user, 2026-06-17):** these
+  are **abstract, pre-normalisation** entities ("정규화 전의 추상적 엔티티"). The
+  surface is a **graph/canvas** that may show entities **+ rough relationships**
+  (사용자 ─쓴다─▶ 글 ─달린다─▶ 댓글), but **stops at the conceptual level** — no
+  normalisation, no foreign keys, no cardinality, no field types. Those (physical
+  schema) are the AI agent's job, below the altitude. So it is *ERD-like in shape*
+  but explicitly **not a technical ERD**.
+- **Sequence:** entities are **populated last** in the design flow — they emerge
+  from feature/service work — so the Entities canvas is a **derived surface that
+  accumulates at the end** (even though it is managed project-wide).
+- **Why:** Big-picture review (2026-06-17). Entities are shared across
+  features/services → need one project-wide home; but you don't model them upfront
+  — they **emerge from designing behaviour** ("기능 만들면서 엔티티가 만들어진다"),
+  and the **AI**, not the user, maintains them. Keeps the value/behaviour-tool
+  identity while giving the building AI a clean entity context.
+- **Alternatives:** (a) per-service entities — rejected (project-wide). (b) user
+  manually authors entities upfront — rejected (waterfall/ERD; they emerge from
+  feature work). (c) no surface, AI infers entirely — rejected (user wants them
+  explicit + managed). (d) full data-model canvas — rejected (ERD tool, identity
+  violation). Re-homes the deleted `content` (D-B/H) at project level,
+  AI-maintained, high-altitude.
+- **Approval:** Accepted by user, 2026-06-17 ("엔티티는 관리되어야 해요. 전체에서"
+  + "캔버스 형태면 좋긴한데 … 사용자가 만들 필요가 없잖아요. AI가 사용자와 같이
+  기능을 만들면서 혹은 서비스를 정의하면서 만들어지는 것").
+- **Spec impact:** **NEW project-level canvas "Entities" + NEW kind `entity`**
+  (lock-step via plot-entity-template). AI-maintained / auto-populated from
+  feature/service design; user can edit/confirm. A feature `step`/action gains a
+  **reference relation to an `entity`**. Implementation + doc-sync = follow-up
+  (`ENTITIES_PLAN.md`). **Open:** the AI-surfacing UX (how/when AI proposes an
+  entity), the action↔entity reference mechanism.
+
+### D-2026-06-17-H — Feature canvas node inventory: keep step/decision/edge/note/rule/actor_ref; drop the rest
+
+- **What:** The feature canvas (D-2026-06-17-G) holds exactly: **행동 (`step`) +
+  분기 (`decision`) + 흐름선 (flow edges) + 노트 (`note`, D-F) + 룰 (`rule`,
+  D-E, per-feature) + 액터 참조 (`actor_ref`)**. **Removed** from the old
+  Service-Detail set: **`mission_ref` / `value_ref` / `identity_ref`** (already
+  held on the service inspector as chips, D-B — the feature *inherits* them;
+  duplicating on the canvas is redundant), **`metric`** (not needed), **`content`**
+  (implementation artifacts = below action-altitude = AI's job; user-facing
+  artifacts are implied by the producing action or carried by the flow edge —
+  redundant), **`group`** (its chunking role is now the "feature" level; folding a
+  busy flow is a **view affordance, not a node kind**).
+- **Why:** Big-picture review, feature-canvas inventory (2026-06-17). Keep the
+  behaviour flowchart lean and at action-altitude; everything removed was either
+  redundant with the service level, below the altitude (implementation), or
+  superseded by the new `feature` concept.
+- **Alternatives:** (a) keep refs per-feature — rejected (redundant with service
+  inspector). (b) keep metric/content — rejected (not needed / below altitude). (c)
+  keep group as a node — rejected (feature replaces its role; folding is a view).
+- **Approval:** Accepted by user, 2026-06-17 ("네 빼죠" + "네 일단 정리하시고요").
+- **Spec impact:** Feature-canvas allowed-kinds = `step`, `decision`, flow edges,
+  `note`, `rule`, `actor_ref`. **MECE / retirement audit (follow-up):**
+  `mission_ref` / `value_ref` / `identity_ref` are likely **retired entirely**
+  (their job moved to the service inspector chips, D-B); `metric` / `content` /
+  `group` removed from their only home (Service-Detail) → likely **retired** too —
+  confirm during implementation, each retirement gets its own lock-step + guard
+  update. CONCEPTS / SPEC doc-sync. `SERVICES_PLAN.md`.
+
+### D-2026-06-17-G — Feature canvas = a behavior flowchart, at action-altitude, inheriting the service philosophy
+
+- **What:** The feature canvas presents the feature's **concrete behaviour as a
+  flowchart** (행동 → 분기 → 결과). This is the **deepest layer only** — Plot's
+  upper layers (service / feature value map) stay non-flowchart, so it does **not**
+  break IDENTITY.md's "NOT a flowchart tool" (the flow is the floor, not the whole
+  building). **Altitude guard:** the flow shows **user actions → branches →
+  results** (the behaviour a human designs); it does **NOT** descend into internal
+  implementation logic (storage / queries / rendering) — that is the user's AI
+  agent's job, **outside Plot**. Crossing that line would make Plot an engineering
+  spec tool. The flowchart **inherits the service philosophy** — it is
+  **actor-anchored and value-oriented** (the flow is participants doing actions
+  that create / exchange value — PHILOSOPHY P5/P6), not a dry abstract diagram.
+- **Why:** Big-picture review, feature canvas (2026-06-17). The feature's "how it
+  works" needs a concrete, human-readable form so the human can understand + steer
+  the AI's draft; a flowchart at action-altitude is that form, and anchoring it to
+  actors/value keeps it continuous with the service above it.
+- **Alternatives:** (a) prose / form instead of a flowchart — rejected (behaviour
+  reads clearest as a flow). (b) full implementation flowchart — rejected (altitude
+  guard: that is the AI agent's job, breaks identity). (c) abstract boxes, no actor
+  anchor — rejected (loses the service philosophy).
+- **Approval:** Accepted by user, 2026-06-17 ("서비스의 철학을 이어받아서 정리가
+  되어야겠죠. 물론." + altitude agreement).
+- **Spec impact:** Confirms the feature canvas (old Service-Detail) as an
+  actor-anchored behaviour flowchart. Nodes: 행동(step) + 분기(decision) +
+  흐름선(flow edges) + 노트(D-F) + 룰(D-E, per-feature). Old detail's remaining
+  kinds (refs / metric / content / group) — **fit-to-flowchart = open** (node
+  inventory follow-up). Existing actor-anchored ServiceDetail layout already
+  matches; doc-sync + the feature-rename are follow-ups (`SERVICES_PLAN.md`).
+
+### D-2026-06-17-F — `note` node: edgeless, canvas-global context on the feature canvas
+
+- **What:** A new **`note` node** lives on the feature canvas (the old
+  service-detail). It carries **no edges** — it never connects to other nodes —
+  and applies to the **entire canvas globally** (an ambient context/memo for
+  everything on that canvas, e.g. "이 기능은 모바일 우선 · 본문 500자 제한"). It
+  is **read by the human** (guidance) **and is always-on context the AI takes into
+  account** when it designs / proposes on that canvas (the canvas is a co-design
+  surface — D-2026-06-16-P). Introduced on the **feature canvas now**; reusable to
+  other canvases later **if** a need shows (not forced everywhere — YAGNI). One or
+  more allowed; each applies globally.
+- **Why:** Big-picture review, Services overview → feature canvas (2026-06-17).
+  Even when the AI can draft a feature, the human must understand + steer, and some
+  context applies to the **whole feature** rather than one node. An edgeless,
+  canvas-global note pins that without wiring it to every node. Edgeless because it
+  is **ambient**, not a participant in the flow.
+- **Alternatives:** (a) attach context to each node via edges — rejected (it is
+  canvas-wide, not node-specific). (b) reuse a regular `content` node — rejected
+  (content is a node among others in the flow; the note is deliberately
+  edgeless + global). (c) human-only memo — narrowed (it is also AI context, since
+  the canvas is co-designed).
+- **Approval:** Accepted by user, 2026-06-17 ("기능 캔버스에 노트 같은 걸 하나 …
+  연결선 없이 그 캔버스 전역에 영향" + "노트 노드"). Dual human+AI purpose and
+  feature-canvas-first scope were assistant-proposed defaults, open to correction.
+- **Spec impact:** **NEW kind `note`** — lock-step via plot-entity-template, with
+  an **edgeless invariant** (never gains an edge) + canvas-global semantics + an
+  AI-context hook (the note is injected into the per-canvas AI framing). On the
+  feature canvas for now (extensible). Implementation = follow-up (`SERVICES_PLAN.md`).
+
+### D-2026-06-17-E — Operational rules live inside each feature (provisional); "policy" = a concrete constraint, not identity
+
+- **What:** Operational rules / constraints — e.g. "password must be ≥ N chars",
+  field validation, limits — live **inside each feature's canvas** (the feature
+  detail), **per feature.** This is **provisional** ("일단 / 가장 확실"): how a
+  genuinely **cross-cutting** policy (spanning multiple features or services)
+  should be modelled is unknown, so it is **not built yet** (YAGNI). No separate
+  "policy" kind, no service-level rule home for now — revisit only when a concrete
+  cross-cutting constraint actually shows up.
+- **Clarification (user correction):** "정책 / policy" here means a **concrete
+  operational/functional constraint** (password length, validation, limits) — it
+  is **NOT** related to identity or core_value. The assistant's earlier "policy ≈
+  identity cousin" framing was **wrong** and user-corrected. This anchors the
+  existing `rule` kind as a per-feature operational constraint, plainly distinct
+  from identity (brand voice / expression) and core_value (tie-breaker value).
+- **Why:** Big-picture review, Services overview (2026-06-17). The cross-cutting
+  case ("모든 글은 검수를 거친다") is real but its home is unclear; forcing a new
+  policy concept now would be premature. Per-feature rules are the most certain
+  placement today.
+- **Alternatives:** (a) service-level rules — deferred (only needed once a
+  cross-service policy appears). (b) standalone referenced "policy" kind —
+  deferred (new kind + reference machinery, premature). (c) policy in Foundation
+  beside value/identity — **rejected (user, 2026-06-17): Foundation holds the
+  stable essence (mission/value/identity — the anchor that must not drift), but a
+  policy changes frequently ("수시로 바뀔 수 있어서"). Putting a volatile
+  operational rule into the stable anchor pollutes it.** A password rule is
+  operational, not a project-wide commitment, and not identity.
+- **Approval:** Accepted by user, 2026-06-17 ("일단은 각 펑션에 넣습니다 … 이게
+  지금으로서는 가장 확실해요").
+- **Spec impact:** Closes the rule-placement question raised under D-2026-06-17-D.
+  `rule` kind stays per-feature (operational). Cross-cutting policy = parked
+  (ROADMAP). Revisit trigger: a constraint that genuinely spans features/services.
+
+### D-2026-06-17-D — Services overview gains a "feature" node; service shows inspector, feature drills to detail
+
+- **What:** The Services overview canvas holds **three node kinds** (+ the project
+  anchor): **category** (visual grouping only — "무지성" low-friction, no value),
+  **service** (value description, the 5-field inspector from D-2026-06-17-B), and a
+  **NEW `feature` node nested under a service** (a capability the service offers —
+  글쓰기 / 글편집 / 이모지 반응 …). **Selecting a service shows its 5-field
+  inspector — it no longer drills.** **Clicking a `feature` opens what is today the
+  Service-Detail canvas** (that feature's actions/rules) — the feature is the
+  **drill target**, so the current "service detail" becomes effectively "feature
+  detail." Hierarchy: **카테고리 → 서비스 → 기능** (overview) → **행동 / 룰**
+  (detail). Built top-down by AI interview: rough intent → service (5-field
+  interview) → **AI-proposed features (human confirms)**; a proposed feature that
+  turns out to carry its **own multi-actor value exchange is promoted to a
+  service** (the value-exchange test).
+- **Why:** Big-picture review, Services overview (2026-06-17). 글쓰기/편집/삭제 등은
+  서비스가 아니라 서비스가 제공하는 **능력(기능)**. A service = value description;
+  features = capabilities under it; actions/rules = inside a feature (detail). The
+  three-tier shape (service / feature / action) is the same decomposition found in
+  activity→action→operation, story-map activity→task→detail, and JTBD job→feature
+  — levels distinguished by **동기 / 목표 / 조건**, not by size.
+- **Alternatives:** (a) keep service as the drill target, no feature layer —
+  rejected (features are real units between service and steps). (b) features as
+  sub-services on the overview — rejected (resurrects the removed sub-service;
+  features aren't multi-actor value exchanges). (c) reuse `group` for features —
+  superseded (feature = the named capability; `group` = visual fold, to be
+  re-audited/retired). (d) fully recursive value-node — rejected (unbounded
+  nesting; Plot's sub-service lesson + JTBD over-granularity warning).
+- **Approval:** Accepted by user, 2026-06-17 ("네 맞아요!").
+- **Spec impact:** **NEW kind `feature`** — full lock-step via plot-entity-template
+  (domain class, Pydantic model, node renderer, inspector, i18n, schema-parity,
+  structural guards). Overview allowed-kinds += `feature`; **drill rewires**
+  (service = inspector only; feature = drill to detail) — supersedes the
+  service-as-detail-subject drill (D-2026-05-28-B + D-2026-06-15-H drill portion).
+  `group` MECE re-audit. CONCEPTS / SPEC doc-sync. All implementation =
+  follow-up (`SERVICES_PLAN.md`). **Open:** the `feature` node's own inspector
+  content when selected (leaning small inspector = name + action summary).
+
+### D-2026-06-17-C — No first-class service→service edge on the Services overview (drop "user journey" edges)
+
+- **What:** The Services overview has **no first-class service→service edge
+  concept.** The previously-specced **"Service-to-service edges = User journey"**
+  (PRODUCT_SPEC §7) is **dropped** — Plot will not build journey / value-flow
+  edge semantics between services. The overview is about **each service's own
+  definition** (D-2026-06-17-B: 누가·왜·뭐가 좋아지나 + 작동 코어밸류/아이덴티티),
+  not about wiring services together. (Generic user-drawn edges remain technically
+  possible per the "all edges are user-drawn" rule, but carry no special
+  inter-service meaning and are not a provided/encouraged feature; revisit only on
+  a concrete need — YAGNI.)
+- **Why:** Big-picture review, Services overview §S2 (2026-06-17). A
+  service→service line could only mean (a) **순서/여정** — but that is per-actor
+  (different participants take different paths) and turns the overview into a
+  flowchart, which fights IDENTITY.md ("NOT a diagram / flowchart tool"); (b)
+  **가치 흐름** — already captured at the **role level** (Actors relationship
+  edges, D-2026-06-17-A) and **per-participant** (`actor_ref` on Service-Detail),
+  so a third rendering is redundant (MECE); (c) **의존** — too niche to elevate.
+  User confirmed the doubt: "서비스 간의 선은 없애죠."
+- **Alternatives:** (a) build "user journey" edges per PRODUCT_SPEC §7 — rejected
+  (flowchart, fights identity). (b) build "value-flow" edges — rejected (redundant
+  with actor / actor_ref value flow). (c) keep as a special optional edge type —
+  rejected (YAGNI; no concrete need named).
+- **Approval:** Accepted by user, 2026-06-17 ("ㅇㅋ 서비스 간의 선은 없애죠").
+- **Spec impact:** **Retire / rewrite PRODUCT_SPEC §7** "Service-to-service edges
+  = User journey" + the §8 row 3 "user-journey edges" mention (doc-sync follow-up).
+  Closes big-picture review **§S2**. With D-2026-06-17-B, the **Services overview
+  topic is fully resolved.**
+
+### D-2026-06-17-B — Services-overview service inspector = 2 typed + 3 selectable references; old service text fields deleted
+
+- **What:** The Services-overview **service inspector** is redefined to **5
+  question-titled fields**, in order — (1) **"누가 참여하나?"** selectable
+  **actor** references, (2) **"왜 필요한가?"** typed (the gap/need the service
+  fills — renames + reframes the old `problem`, dropping the negative "문제"
+  framing), (3) **"뭐가 좋아지나?"** typed (the improvement it creates — renames
+  `value_created`), (4) **"뭘 양보 못 하나?"** selectable **core_value**
+  references, (5) **"어떤 결로 다가가나?"** selectable **identity** references.
+  Field titles are **question-form** so each doubles as the AI interview prompt
+  (D-2026-06-16-P — everything built through discussion). Core values and
+  identities are **picked from the Foundation canvas exactly like actors** (chips,
+  not free-typed) — the "뒤 캔버스가 앞을 참조" principle. **All three reference
+  pickers are multi-select** (복수 선택): one service can hold several actors,
+  several core_values, and several identities (rendered as multiple chips). The old service text
+  fields — **`what`, `scope`, `trigger`, `how`, `outcome`, `do`, `dont`** — are
+  **DELETED (not moved to detail):** their substance already lives on the
+  Service-Detail canvas as nodes (`step` = "how", `rule` = "do/dont") and the
+  **per-participant behaviour** (하는 일 / 받는 것 / 페인 — which varies per
+  participant) lives on each **`actor_ref`** on the detail canvas, not as a flat
+  service field. Also deleted: **`target_side`** (redundant — participants are now
+  shown directly via "누가 참여하나?", and each actor carries its own side) and
+  **`body`** (free memo — the 5 structured fields replace it).
+- **Why:** Big-picture review, Services overview (2026-06-17). 9 typed fields made
+  the overview heavy and duplicated detail-canvas nodes. A service = where
+  participants interact and value arises (user) → the overview should show **who
+  participates + why-needed + what-improves + which foundation values/identity
+  operate**, with the upstream concepts as **references** and the per-participant
+  detail pushed inside.
+- **Alternatives:** (a) keep the 9 fields — rejected (heavy, duplicates detail).
+  (b) move old fields to detail instead of deleting — **rejected by user**
+  ("옛것들 다지워야죠"); detail nodes + `actor_ref` already cover them. (c)
+  free-type core value / identity — rejected; they are references picked from
+  Foundation, like actors. (d) title "푸는 문제" / "목적" — rejected (too
+  negative / too stiff); question-form "왜 필요한가?" chosen.
+- **Approval:** Accepted by user, 2026-06-17 ("네네 맞아요. 좋아요. 굿" +
+  "옛것들 다지워야죠").
+- **Spec impact:** Replaces the v0.12 "Service typed fields" set in CONCEPTS.md +
+  the SPEC service inspector. **Follow-ups (not this turn):** doc-sync
+  (CONCEPTS / SPEC), and code (Service domain class, Pydantic model, service
+  inspector — typed×2 + reference-picker×3, i18n, schema-parity, structural
+  guards) — logged in ROADMAP. `target_side` + `body` deletion **confirmed by
+  user 2026-06-17** ("누구쪽 없애고 새롭게 정의한거 씁시다. 그리고 자유 메모
+  없애요"). Builds on D-2026-06-15-K (`problem`), D-2026-06-15-J
+  (`actor_ref` per-service stake), D-2026-06-16-P (build-through-discussion).
+
 ### D-2026-06-17-A — Actor = a relational role in a hierarchy; two edge types on the Actors canvas
 
 - **What:** An **actor = a role / class of participant** in the service's value
@@ -1367,6 +1789,13 @@ Three edge changes (one batch):
 - **Spec impact:** SPEC.md §Edges — new "Flip direction" row.
 
 ### D-2026-05-04-A — No auto-edges from anchor
+
+> ⚠️ **Blanket-ban portion SUPERSEDED by `D-2026-06-17-J` (2026-06-17).** The global
+> "all edges are user-drawn / never auto-emit" rule is removed — edges are governed
+> by their *definition*, and AI may draw/propose edges (esp. AI-maintained canvases).
+> What survives from this entry: the *specific* Foundation anchor→child auto-edges
+> were rejected (silent + uneditable), and **silent/meaningless/uneditable** lines
+> stay banned. AI-proposed, editable, well-defined edges are now allowed.
 
 - **What:** Renderer was emitting synthetic dashed slate-400 edges from
   the project anchor to every top-level Mission / CoreValue / Identity

@@ -231,11 +231,11 @@ editing near a budget.**
 | `viewer/src/canvases/SketchCanvas.tsx` | v0.18.0 Phase 3 (D-2026-05-16-E) absorbed the publish-handler thread to SketchInspectorBindings. **No-growth henceforth** — new responsibilities → new sketch hook or wrapper. |
 | `viewer/src/shell/*.tsx` | App-chrome components (Header / CanvasTabs / HelpCheatsheet / ServiceDetailModal / states). Each owns its slice of chrome JSX; new chrome → new file in `shell/`. |
 | `viewer/src/hooks/use*.ts` | App-shell hooks (useProject / useCanvasPersist / useProjectSocket / useUrlSync / useAvailableNodes / useAppKeyboard). Per-concern; do not bundle. |
-| `viewer/src/canvases/nodes/BaseNode.tsx` | Chrome SSOT for all 15 per-kind node renderers. New visual responsibilities → per-kind file. |
-| `viewer/src/canvases/inspectors/BaseInspector.tsx` | Chrome SSOT for all 15 per-kind inspectors. New chrome → here; new typed-field body → per-kind file. |
+| `viewer/src/canvases/nodes/BaseNode.tsx` | Chrome SSOT for every per-kind node renderer (count = the registry SSOT, `NODE_RENDERERS`; palette is expanding per D-2026-06-17-D/F/I — `feature` / `note` / `entity`, with `group` re-audited for retirement — so never hardcode the count here). New visual responsibilities → per-kind file. |
+| `viewer/src/canvases/inspectors/BaseInspector.tsx` | Chrome SSOT for every per-kind inspector (count = the registry SSOT, not this table). New chrome → here; new typed-field body → per-kind file. |
 | `viewer/src/canvases/{Foundation,Actors,Services,ServiceDetail}Canvas.tsx` | Props-only thin shells. **Never** put behaviour here — push it into a sketch hook or BaseNode chrome flag. |
-| `viewer/src/canvases/nodes/{kind}/index.tsx` × 15 | Per-kind node renderer; wraps `BaseNode` with kind-specific chrome flags + body override. |
-| `viewer/src/canvases/inspectors/{kind}/index.tsx` × 15 | Per-kind inspector; renders inside `BaseInspector`'s slot. |
+| `viewer/src/canvases/nodes/{kind}/index.tsx` (one per registered kind) | Per-kind node renderer; wraps `BaseNode` with kind-specific chrome flags + body override. Kind count = `NODE_RENDERERS` registry SSOT (expanding per D-2026-06-17-D/F/I), not a fixed 15. |
+| `viewer/src/canvases/inspectors/{kind}/index.tsx` (one per registered kind) | Per-kind inspector; renders inside `BaseInspector`'s slot. |
 | ~~`viewer/src/canvases/SketchInspector.tsx`~~ | **DELETED** in v0.15.0 (Phase 2.10). Re-creating fails `structural-guards.test.tsx`. |
 | ~~`viewer/src/canvases/SketchNode.tsx`~~ | **DELETED** in v0.15.5 (Phase 3.5). Re-creating fails `structural-guards.test.tsx`. |
 
@@ -401,11 +401,17 @@ Per `noory-ai/CLAUDE.md` plugin rule:
    visually distinguishable from a yellow Service circle on every
    canvas it appears on. Per
    [SPEC §Anchor](./docs/SPEC.md#anchor-the-centre-node).
-5. **All edges are user-drawn.** Never auto-emit edges. If the
-   relationship between two nodes is implicit, leave it implicit
-   visually — the user will draw the edge if they want it shown.
-   Per [SPEC §Edges](./docs/SPEC.md#edges) and
-   [D-2026-05-04-A](./docs/DECISIONS.md).
+5. **Edges are governed by their definition, not by who draws them**
+   ([D-2026-06-17-J](./docs/DECISIONS.md), which removed the former
+   "all edges are user-drawn" ban [D-2026-05-04-A](./docs/DECISIONS.md)).
+   Every edge means something — its `relation` (flow / injection /
+   inheritance) + payload (direction, `action_verb`, `value_form`,
+   label). The AI **may propose / draw edges** (especially on
+   AI-maintained canvases like Entities); the user may edit or delete
+   any edge. What must hold is the edge's *definition* — **never emit a
+   meaningless or silently-uneditable line.** A canvas may still be
+   user-draw-only by its own spec (Foundation / Actors / Services
+   currently are). Per [SPEC §Edges](./docs/SPEC.md#edges).
 6. **Auto-layout is Foundation-only opt-in.** The
    `FoundationCanvas` wrapper passes `enableAutoLayout={true}` to
    `SketchCanvas`; no other wrapper may. The trigger touches
@@ -415,9 +421,17 @@ Per `noory-ai/CLAUDE.md` plugin rule:
    is pinned by `viewer/tests/auto-layout-isolation.test.tsx` —
    never opt other wrappers in without a fresh `D-` entry that
    updates that test.
-7. **The user controls every line, every position, every colour.**
-   The canvas is a co-drawing surface (Plot's PHILOSOPHY.md). Any
-   automated change to user-visible state needs explicit consent.
+7. **No silent automated change to user-visible state.** The canvas is a
+   co-drawing surface (Plot's PHILOSOPHY.md). The AI **may propose / draw**
+   edges and entities — especially on **AI-maintained canvases** (the
+   Entities canvas, [D-2026-06-17-I](./docs/DECISIONS.md), where AI surfaces
+   entities **and their relationships**; edges are governed by definition,
+   not authorship, [D-2026-06-17-J](./docs/DECISIONS.md)). What is banned is
+   *silent* finalization: every AI-originated change surfaces for the user to
+   review / edit / delete (build-through-discussion, never silent —
+   [D-2026-06-16-P](./docs/DECISIONS.md)). A canvas may still be
+   user-draw-only by its own spec (Foundation / Actors / Services currently
+   are).
 
 ### Commands you'll use often
 
@@ -456,8 +470,10 @@ cd plot && uv run ruff format plot_mcp/ tests/
    Don't explain three options when one is clearly right; just ask
    which they want.
 3. **Show evidence, not opinion.** "Mission node Inspector shows
-   `_md_warnings: ['missing or empty section for typed field
-   what_we_do']`" beats "I think the badge means missing fields".
+   `_md_warnings: ['missing or empty section for declaration']`"
+   beats "I think the badge means missing fields". (Mission is one
+   `declaration` + `body` since [D-2026-06-16-J](./docs/DECISIONS.md);
+   the former `what_we_do` / `why` / `direction` fields are gone.)
 4. **Don't expand scope silently.** If the user says "remove X",
    remove X. If removing X needs Y to also change, *ask first*. Don't
    ship X+Y as one commit unless you've named both.
@@ -487,7 +503,7 @@ cd plot && uv run ruff format plot_mcp/ tests/
 | **Adding any cursor / handle / pan override on top of RF defaults** | v0.13.3 → v0.13.5 stacked six rounds of cursor / handle interventions; each fix introduced or revealed the next round's bug, ending with a full reset in v0.13.6 (see D-2026-05-10-C) | Default to React Flow vendor CSS (`reactflow/dist/style.css`, `@reactflow/node-resizer/dist/style.css`). To deviate, open a fresh `D-YYYY-MM-DD-X` entry, get user approval, and add the rule to `styles.css` with an `!important` comment naming the decision id. The override stack itself is the regression engine — never grow it without an audit trail. |
 | **Bundling a cross-cutting visual change with a feature change in one commit** | v0.13.10 shipped `styles.css` cursor patch + auto-layout button move together. The visual fix turned out to address a latent RF v11 + Tailwind preflight bug that had existed since v0.13.0; the auto-layout feature commit became the cognitive scapegoat for ~6 cursor rounds (see D-2026-05-11-C). | Pre-commit gate (`pre_commit_gate.py::cross_cutting_bundle_check`) blocks. Split into two atomic commits: visual fix first (own D-id), feature second. The static guard `viewer/tests/styles-cursor-baseline.test.tsx` further locks `styles.css` to zero cursor rules. |
 | **Hardcoding user-facing UI text in a viewer component** | Plot is a global service (user direction 2026-05-10: *"이건 글로벌 서비스가 될거거든요"*). A hardcoded English or Korean string in a `.tsx` file bypasses the i18n resource bundle and creates per-component sprawl that resists later migration. | Route every user-facing string through `useTranslation()` + `t("namespace.key")`, with the value added to BOTH `viewer/src/i18n/locales/en.json` (primary) and `viewer/src/i18n/locales/ko.json` (Korean). The `i18n-keys-parity.test.tsx` static guard fails the build if locales drift. See D-2026-05-11-D. |
-| **Treating raw JSON as a domain entity (no `fromJson` boundary)** | Pre-v0.15 god `SketchNode` interface: UI code read `.what_we_do` directly off the wire shape, no class, no invariant check, no normalisation. The v0.15 reset (D-2026-05-12-B) retired this by introducing 15 per-kind classes in `viewer/src/domain/{Kind}.ts` with `fromJson` / `toJson` / invariant boundaries. Adding a 16th kind without the class is the new shape of the old mistake. | Every new kind lands as a domain class via [`plot-entity-template`](./skills/plot-entity-template/SKILL.md) (14-step walk). The `fromJson` method is the **JSON↔domain boundary** — invariants throw `DomainParseError` there, not in UI validation. Three static guards enforce no regression: `no-god-import.test.tsx` (Phase C, types.ts re-export only + per-kind file exists + `{Kind}Json` exported + `registerKindParser` called), `entity-roundtrip.test.tsx` (Phase D, `fromJson` ∘ `toJson` is identity for every kind), and server-side `test_schema_parity.py` (Pydantic ↔ TS interface drift). See D-2026-05-13-D / E. |
+| **Treating raw JSON as a domain entity (no `fromJson` boundary)** | Pre-v0.15 god `SketchNode` interface: UI code read `.what_we_do` directly off the wire shape, no class, no invariant check, no normalisation. The v0.15 reset (D-2026-05-12-B) retired this by introducing per-kind classes in `viewer/src/domain/{Kind}.ts` with `fromJson` / `toJson` / invariant boundaries (15 at the time; the palette is expanding per D-2026-06-17-D/F/I — `feature` / `note` / `entity`). Adding **any new kind** without the class is the new shape of the old mistake. | Every new kind lands as a domain class via [`plot-entity-template`](./skills/plot-entity-template/SKILL.md) (14-step walk). The `fromJson` method is the **JSON↔domain boundary** — invariants throw `DomainParseError` there, not in UI validation. Three static guards enforce no regression: `no-god-import.test.tsx` (Phase C, types.ts re-export only + per-kind file exists + `{Kind}Json` exported + `registerKindParser` called), `entity-roundtrip.test.tsx` (Phase D, `fromJson` ∘ `toJson` is identity for every kind), and server-side `test_schema_parity.py` (Pydantic ↔ TS interface drift). See D-2026-05-13-D / E. |
 
 ---
 

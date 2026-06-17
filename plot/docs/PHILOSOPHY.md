@@ -37,20 +37,26 @@ A service is not a simple exchange. It's a *transformation*. When Fan spends $10
 ### P5. A Service is a Hub, Not a Wire
 The service itself is not the relation — it's the **field / mechanism** where relations are enabled. It's visualized as a **node**, not an edge. Participant nodes sit around it; arrows flow in and out, carrying inputs and outputs.
 
-### P6. Arrows Carry Both Action and Value
-Every arrow bundles three things:
+### P6. Value-Carrying Arrows Bundle Action and Value
+A **value-carrying (relationship) arrow** bundles three things:
 
 - **Verb**: what was done (create, deliver, pay, mediate, consume, ...)
 - **Value form**: what kind of value flowed (money, attention, fame, ...)
 - **Direction**: from whom to whom
 
-### P7. Two Conceptual Planes (not spatial layers)
-There are two conceptual planes of thinking:
+Not every line carries value, though. The Actors canvas (D-2026-06-17-A)
+distinguishes two edge types: a **relationship edge** ("gives value to") is the
+directed, labelled, value-carrying arrow above; a **hierarchy edge**
+("is-a-kind-of") is structure only — it carries no value and is a quiet line.
+This principle governs the former, not the latter.
+
+### P7. Distinct Planes of Thinking, on Distinct Canvases
+There are distinct planes of thinking:
 
 - **Actors plane** — who participates and how they relate.
 - **Services plane** — what value-creating machinery they interact through.
 
-Originally this was sketched as a spatial top/bottom split on the canvas. The clearer framing is that the two planes **coexist in the same 2D space**; kind (shape, colour, icon) distinguishes actors from services, not y-position. Edges running between kinds carry value flow; same-kind edges capture auxiliary relationships. Users drag freely without positional constraints.
+Originally this was sketched as a spatial top/bottom split on the canvas, then reframed as two kinds coexisting in one 2D space. The current model gives **each plane its own canvas** (D-2026-06-16-R, D-2026-06-17-C): Foundation, Actors, and Services are separate canvases, not bands or kinds sharing one space — Foundation stays a single canvas whose three concepts compose the essence (D-2026-06-16-R), and the Services overview has no first-class service→service edge (D-2026-06-17-C). Within a canvas users drag freely without positional constraints; edges are governed by their definition, not by y-position.
 
 ### P8. CE Before ME
 When designing the set of primitives, **coverage (Collectively Exhaustive)** is the primary criterion. Strict non-overlap (Mutually Exclusive) is relaxed — some overlap between primitive types is acceptable and left to user judgement.
@@ -76,7 +82,7 @@ How we arrived at this philosophy (2026-04-20 session):
 7. **Value-nature discussion**: Relational value, plural forms, asymmetric I/O.
 8. **"Service = edge" misread**: AI interpreted "service must be a relation" as "service is an edge." User corrected.
 9. **"Service = hub node" confirmed**: User: "Service is a node — a node that creates value and enables relationships."
-10. **Two-layer structure**: User: "Not 2D, but 2 *layers*." Final visual model.
+10. **Two-layer structure**: User: "Not 2D, but 2 *layers*." (Superseded by D-2026-06-16-R / D-2026-06-17-C: the model is now **separate canvases per plane**, not layers/bands in one space.)
 
 ---
 
@@ -84,12 +90,12 @@ How we arrived at this philosophy (2026-04-20 session):
 
 | Principle | Implementation |
 |---|---|
-| P1, P2, P6 | Edges carry `value_form` (plural select) + `action_verb` |
-| P3 | Actor nodes optionally list `inputs` / `outputs` profiles |
+| P1, P2, P6 | Relationship edges carry `value_form` (plural select) + `action_verb`; hierarchy edges carry neither (D-2026-06-17-A) |
+| P3 | Actor nodes are identity-only (`side` + body + inheritance); per-service asymmetric I/O lives on `actor_ref` in the feature canvas (D-2026-06-17-A/G) |
 | P4 | AI skill detects positive-sum patterns |
 | P5 | Services are a node kind (not edge) |
-| P7 | Canvas has two bands; kind determines layer |
-| P8 | 3 node kinds only (actor/service/note); free labels everywhere |
+| P7 | Separate canvases per plane (Foundation / Actors / Services), not bands in one space (D-2026-06-16-R, D-2026-06-17-C) |
+| P8 | Multiple node kinds across canvases; the kind set is the registry's SSOT (D-2026-06-17-D/F/I added `feature` / `note` / `entity`); free labels everywhere |
 | P9 | No BANAS-specific terms in Plot |
 | P10 | Stencil = hint only; labels and connections free |
 
@@ -102,7 +108,7 @@ Plot's model borrows from:
 - **Event Storming** (Brandolini) — the "actions as first-class" idea; we absorbed Command + Domain Event into a unified `action_verb`.
 - **Domain Storytelling** (Hofer & Schwentner) — the "actors connected by labeled arrows" sentence grammar.
 - **Jobs-to-be-Done** (Ulwick, Christensen) — the "value statement" vocabulary for describing what flows.
-- **Service Blueprint** (Shostack) — the layer-of-visibility idea, generalized to our two-layer split.
+- **Service Blueprint** (Shostack) — the layer-of-visibility idea, generalized across our separate canvases (Foundation / Actors / Services / Feature, D-2026-06-16-R).
 
 But Plot is **not** any of these. It's a synthesis centered on the Added Value principle.
 

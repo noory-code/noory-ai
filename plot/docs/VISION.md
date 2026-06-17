@@ -39,14 +39,14 @@ three phases.
 
 | # | Phase | What it does | Where it happens | AI collaboration mode |
 |---|---|---|---|---|
-| 1 | **Discovery** | Surfaces the user's not-yet-articulated essence. | Foundation canvas (mission / core_value / identity) | Claude *interviews* the user; the resulting language is captured in typed-text MD templates and rendered as nodes. |
+| 1 | **Discovery** | Surfaces the user's not-yet-articulated essence. | Foundation canvas (mission / core_value / identity) | Claude is an *active discussion coach* (`D-2026-06-16-H`): it interviews / proposes, the user reviews and confirms, and every node is built through that discussion — never a blank form, never silent auto-fill (`D-2026-06-16-P`). |
 | 2 | **Retention** | Keeps the discovered essence visible and load-bearing as the project moves. | Anchor (project node) injected on every primary canvas; Foundation references threaded through Actors / Services. | Claude *anchors* every later suggestion to the Discovery output — never proposes a service that contradicts the mission. |
-| 3 | **Execution** | Plans and develops the services that realise the essence. | Actors → Services → Service-Detail; MCP tools (`read`, `extend`, `reshape`) drive code-level work. | Claude *participates* in planning (proposes actors, services, value flows) AND development (writes code that the user reviews against the essence). |
+| 3 | **Execution** | Plans and develops the services that realise the essence. | Actors → Services overview (category → service → feature) → feature canvas (행동 / 룰); MCP tools (`read`, `extend`, `reshape`) drive code-level work. (`D-2026-06-17-D` — service shows its inspector, a feature drills to its detail canvas.) | Claude *participates* in planning (proposes actors, services, features, value flows) AND development (writes code that the user reviews against the essence). |
 
 > **The cycle is not linear.** A user often discovers part of the essence
 > only after attempting Execution and realising what's missing. Plot
-> must support drilling back from Service-Detail to Foundation without
-> losing context.
+> must support drilling back from the feature canvas (`D-2026-06-17-G`,
+> the old Service-Detail) to Foundation without losing context.
 
 ---
 
@@ -71,7 +71,7 @@ cycle. The check has two questions:
 1. **Which of the three phases does this serve?** If none, ask the
    user before doing anything.
 2. **Does it preserve the cycle's reversibility?** Drilling backward
-   (e.g. Service-Detail → Foundation to fix a typo in mission) must
+   (e.g. feature canvas → Foundation to fix a typo in mission) must
    keep working.
 
 If either answer is unclear, **stop and re-read this file's first
@@ -84,7 +84,7 @@ sentence**.
 | Drift example | Why it violates this VISION |
 |---|---|
 | Spending six rounds on a cursor flicker without first asking *"is the cursor blocking the user from seeing their essence?"* | Reduced VISION to UI mechanics; missed that the canvas's job is to make the essence visible. |
-| Auto-emitting edges between anchor and children (D-2026-05-04-A) | Removed user authorship from a graph that is supposed to capture the user's essence-language. |
+| *Silently* auto-emitting *uneditable* edges (the v0.13.2 anchor→child case, D-2026-05-04-A; the blanket "no auto-edges" rule was later removed by **D-2026-06-17-J**, but silent / uneditable lines stay wrong) | A meaningless line the user can't control removes user authorship. AI may *propose* well-defined, editable edges; it may not *silently impose uneditable* ones. |
 | Treating Foundation as "form fields" rather than "interview output" | Lost Phase 1 (Discovery — interview-driven) and reduced it to data entry. |
 | Removing the Auto-layout button (D-2026-05-04-D, since reverted) | Removed the "see your essence's shape" gesture entirely. |
 | Deferring SPEC.md updates after a confirmed user decision | Broke Phase 2 Retention — the next session loses the just-discovered language. |
