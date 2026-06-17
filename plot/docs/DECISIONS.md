@@ -39,6 +39,44 @@
 
 ## Log
 
+### D-2026-06-17-A — Actor = a relational role in a hierarchy; two edge types on the Actors canvas
+
+- **What:** An **actor = a role / class of participant** in the service's value
+  economy — defined by position and resources, **not a person / persona** (no demographics; one person can
+  occupy several actor-roles, and roles can switch). Every actor both **gives and
+  receives** value. Actors form a **hierarchy (tree)**: the top split is operator vs
+  user (`side`), inherited down to child roles (user → hero, fan; operator →
+  super-admin, manager) — actor inheritance is **core, not optional**. A role is
+  **relational** (a role alone is meaningless), so the **Actors canvas shows
+  relationships** and carries **two distinct edge types** that must never be
+  confused: (1) a **hierarchy edge** ("is-a-kind-of") — structure only, no value, a
+  quiet line; (2) a **relationship edge** ("gives value to") — a **directed,
+  labelled arrow** carrying *what value flows from which role to which* (hero
+  →expertise→ fan); a reciprocal relationship is **two arrows** (hero →expertise→
+  fan; fan →support→ hero). The Actors canvas shows the **general / role-defining**
+  value flow; the **concrete per-service exchange** (specific value, steps, metrics,
+  motivation/pain) lives in **Service-Detail** (`actor_ref`). Two levels: abstract
+  (Actors) → concrete (Service-Detail).
+- **Why:** Big-picture review, Actors (2026-06-17). User: roles are hierarchical
+  (operator/user at top, specific roles below) and relational (cannot be a role
+  alone). The current model already matches — actor is identity-only (`side` +
+  `body`) with inheritance; per-service stake (gives/receives, motivation/pain) is
+  on `actor_ref` (PHILOSOPHY P3 — participation is asymmetric, varies per service).
+- **Alternatives:** (a) actor = a person/persona — rejected (it's a role). (b)
+  inheritance is YAGNI — rejected (hierarchy is core). (c) relationships only in Services
+  (Actors = cast + hierarchy) — **rejected**; a role's defining relationship is
+  service-independent and must show on Actors (the concrete per-service exchange
+  still lives in Service-Detail). (d) one bidirectional edge with two labels —
+  rejected for two directed arrows (clearer "from where to where").
+- **Approval:** Accepted by user, 2026-06-17 — role + hierarchy + two-edge-type
+  design ("이거 기술적으로 잘 만들어야합니다. 좋습니다").
+- **Spec impact:** Node/inspector unchanged (label + `side` + body + inheritance).
+  **Edge work IS needed** — render two visually-distinct edge types on Actors
+  (hierarchy vs value-carrying relationship arrow; relationship edges carry value +
+  direction; reciprocal = two arrows). Logged in ROADMAP. CONCEPTS.md / SPEC Actors
+  section to be brought current (doc-sync follow-up). Builds on D-2026-06-15-J (actor
+  identity-only) + actor_ref per-service stake.
+
 ### D-2026-06-16-R — F4 resolved: Foundation stays a single canvas (no audience split)
 
 - **What:** Foundation remains **one canvas** holding mission + core_value +

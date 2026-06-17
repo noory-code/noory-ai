@@ -97,7 +97,7 @@ Execution (Actors → Services → Service-Detail + MCP). Reversible
 목적 중심으로 재작성함 — 사람+AI가 본질·개념을 함께 구조화·정의 → AI 컨텍스트 + 사람 사고 가속.
 3-phase 사이클은 그대로 = *how*.
 
-> 다음: 인스펙터 항목 논의(노드별) 진행 중 — Foundation/mission부터. 그 뒤 F2(본질 1급 개념).
+> 다음 세션: **Services 캔버스(오버뷰 + 디테일)**. Foundation ✅ + Actors ✅ 완료 (`D-2026-06-16-H~R`, `D-2026-06-17-A`).
 
 ---
 
@@ -418,11 +418,13 @@ flowchart LR
 
 | 10 | F2 해결: 본질 = 창발적 구성(노드 아님), 앵커 = 이름만 | 별도 본질 노드 없음(전체를 부분으로 격하 X); 핵=mission; 본질 전용 그릇 없음(앵커에도 안 박음); 본질은 3종 구성으로 *시각적*으로 드러남; 앵커=프로젝트/서비스 이름만(시각 묶음) | 본질은 전체라 노드화 부적절; 앵커는 시각 도구 | `D-2026-06-16-Q` / 원칙 + SPEC §Anchor |
 | 11 | F4 해결: Foundation 단일 캔버스 유지 | 청중 분리 기각; mission+core_value+identity 한 캔버스 | Q의 "구성=시각적 진술"을 쪼개면 깨짐; identity도 사람이 보는 브랜드 보이스 | `D-2026-06-16-R` / 현행 유지 |
+| 12 | Actor = 관계적 역할(계층); 선 2종(계층/관계) | actor=역할(사람·퍼소나 아님)·주고받음; 계층 트리(운영/사용→하위, 상속); 액터 캔버스=**선 2종**[계층(분류, 가치 없음) + 관계(가치·방향 담은 화살표, 왕복=2개)]; 일반 가치는 액터·구체 교환은 서비스상세 | 역할은 관계로 정의됨; 분류≠교환 구분 필요 | `D-2026-06-17-A` / 노드 무변경, **엣지 구현 필요**, CONCEPTS 후속 |
 
 > **실행 follow-ups (중복 금지 — 상세는 각 SSOT):**
-> - Foundation 코드화(D-J/M/O) → [`FOUNDATION_PLAN.md`](./FOUNDATION_PLAN.md) (TDD, smallest-first).
-> - 보류 → ROADMAP `5.7`(캔버스별 인터뷰 질문 세트 = 스킬/MCP) · `5.8`(PHILOSOPHY S-D Logic 보강).
-> - 결정 원문 → [DECISIONS.md](./DECISIONS.md) `D-2026-06-16-H ~ P`. 개념 SSOT → [FOUNDATION_CONCEPT.md](./FOUNDATION_CONCEPT.md).
+> - Foundation 코드화(D-J/M/O) → [`FOUNDATION_PLAN.md`](./FOUNDATION_PLAN.md).
+> - Actors 코드화(D-2026-06-17-A, 선 2종) → [`ACTORS_PLAN.md`](./ACTORS_PLAN.md).
+> - 보류 → ROADMAP `5.7`(인터뷰 질문 세트=스킬) · `5.8`(PHILOSOPHY S-D Logic) · `5.9`(Actors 선 2종).
+> - 결정 원문 → [DECISIONS.md](./DECISIONS.md) `D-2026-06-16-H ~ R`, `D-2026-06-17-A`. 개념 → [FOUNDATION_CONCEPT.md](./FOUNDATION_CONCEPT.md).
 
 ---
 
