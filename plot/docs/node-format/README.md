@@ -8,11 +8,11 @@
 > **목적:** Plot 노드 데이터 모델을 kind 단위로 감사 → 발행/산출물(Q6)을
 > 올리기 전에 형식을 의도적으로 다시 정한다.
 >
-> **개념 정본:** [`../FOUNDATION_CONCEPT.md`](../FOUNDATION_CONCEPT.md) —
+> **개념 정본:** [`../FOUNDATION_CONCEPT.md`](../../../../docs/FOUNDATION_CONCEPT.md) —
 > 미션(뿌리/입력)→코어밸류(현재/입력)→아이덴티티(지향/**출력**). 파운데이션
 > kind 의 *형식*은 이 *개념*에서 따라 나온다. 형식 감사 전에 개념을 본다.
 >
-> **상위 계획:** [`../NODE_DATA_AND_ARTIFACTS_PLAN.md`](../NODE_DATA_AND_ARTIFACTS_PLAN.md) §3.
+> **상위 계획:** [`../NODE_DATA_AND_ARTIFACTS_PLAN.md`](../../../../docs/NODE_DATA_AND_ARTIFACTS_PLAN.md) §3.
 > 이 폴더의 결론이 그 계획의 §5 Phase A(format spec) + `../CONCEPTS.md` 로 올라간다.
 >
 > **필드 정본(SSOT):** `plot/viewer/src/domain/<Kind>.ts`

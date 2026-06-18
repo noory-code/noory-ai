@@ -1,6 +1,6 @@
 # Plot — DOMAIN model (bounded contexts, ubiquitous language, dependency direction)
 
-> **Read after [`VISION.md`](./VISION.md).** This file translates the
+> **Read after [`VISION.md`](../../../docs/VISION.md).** This file translates the
 > three-phase essence cycle (Discovery / Retention / Execution) into
 > bounded contexts that the code is organised around. When in doubt
 > about *where* a piece of behaviour belongs, this file decides.
@@ -25,7 +25,7 @@ it's most convenient at the moment.
 
 ## Bounded contexts (5)
 
-Each context corresponds to a phase of the [`VISION.md`](./VISION.md)
+Each context corresponds to a phase of the [`VISION.md`](../../../docs/VISION.md)
 cycle plus one cross-cutting context for the AI collaboration that
 threads through every phase.
 
@@ -242,7 +242,7 @@ prioritised in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 When implementing a feature or fixing a bug, apply this checklist:
 
-1. **Re-read [VISION.md](./VISION.md)'s first sentence.**
+1. **Re-read [VISION.md](../../../docs/VISION.md)'s first sentence.**
 2. **Identify the phase** (Discovery / Retention / Planning / Execution
    / cross-cutting AICollaboration).
 3. **Look up the bounded context** in this file's "Bounded contexts" section.

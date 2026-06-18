@@ -9,39 +9,36 @@
 
 ## Active queue
 
-### `큰그림 리뷰 — 층 2: 캔버스별 AI 플레이북 내용` (★ TOP — filed 2026-06-17)
+### `AI 채팅 코치 — 캔버스별 토론` (★ TOP — filed 2026-06-17, updated 2026-06-18)
 
-> **Trigger:** user says **"큰그림"** / **"층 2"** / **"플레이북"** /
-> **"AI 채팅"** / **"이어가자"** / **"다음"** as the first / near-first message.
+> **Trigger:** user says **"AI 채팅"** / **"채팅 토론"** / **"플레이북"** /
+> **"코치"** / **"큰그림"** / **"이어가자"** / **"다음"** as the first / near-first message.
 >
-> **먼저 읽기 (순서):** [`BIG_PICTURE_REVIEW.md`](./BIG_PICTURE_REVIEW.md)
-> §1.5(진행 포인터) + §10(구조도) + §11(결정 로그). 메모리
-> `project-big-picture-review` 도 같은 상태.
+> **⚠ 다음에 이어갈 것 = 토론이다 (구현 아님).** (사용자 지시 2026-06-18.)
 >
-> **✅ 완료 (2026-06-17 마라톤, `D-2026-06-17-A ~ L` 12개):** 개념 골격
-> **구조 토론 전부 종료** —
-> - Foundation · Actors(선 2종)
-> - **Services 오버뷰** = 노드 3종(category 시각묶음 · service 5칸 질문형
->   인스펙터 · **feature** 신규); feature 클릭=드릴; 서비스간 선 없음; 옛 칸 9개 삭제
-> - **Feature 캔버스**(=옛 ServiceDetail) = 액터 앵커 **행동 플로우차트**
->   (step·decision·flow·note·rule·actor_ref); 옛 kind(mission/value/identity_ref·
->   metric·content·group) 폐기
-> - **Entities**(신규 프로젝트 레벨 캔버스) = AI가 기능작업 중 창발·유지, 개념 맵
->   (정규화 전), 강한 dedup·역참조 (B1~B5)
-> - **선 룰 폐기**(`D-J`) — "모든 선 사용자가" 삭제 → 선은 정의로 governed, AI 그리기 OK
-> - **AI 플레이북 구조**(#1 컨텍스트 봉투+**CAG/RAG seam** `D-L` / #2 코드상수 먼저 /
->   #3 적극 코치)
+> **먼저 읽기:** [`AI_CHAT_PLAYBOOK.md`](../../../docs/AI_CHAT_PLAYBOOK.md) — 채팅 관련 내용 전부 +
+> 토론 안건을 한곳에 모은 밑자료(2026-06-18 정리). 메모리 `project-big-picture-review`
+> 도 같은 상태.
 >
-> **다음 할 일 = 층 2:** 캔버스마다 AI가 던질 **질문·제안을 실제로 써내려가기**
-> (구조 아닌 콘텐츠 authoring). → ROADMAP `5.7` + `5.10`.
+> **토론 순서:** Foundation → Actors → Services → 기능(Feature). (Entities = 가로지름.)
 >
-> **⚠️ 구현 들어갈 땐 선행 블로커:** **15/17 kind-count drift**(서버 parity 15 vs
-> 뷰어 가드 17) 먼저 정합. 플랜 = [`SERVICES_PLAN.md`](./SERVICES_PLAN.md) ·
-> [`FEATURE_CANVAS_PLAN.md`](./FEATURE_CANVAS_PLAN.md) ·
-> [`ENTITIES_PLAN.md`](./ENTITIES_PLAN.md).
+> **✅ 완료:**
+> - 2026-06-17 마라톤(`D-2026-06-17-A~L`): 개념 골격 구조 토론 전부 종료(Foundation ·
+>   Actors 선2종 · Services 오버뷰 3종+5칸 인스펙터 · Feature 행동 플로우차트 ·
+>   Entities · 선룰 폐기 · 플레이북 구조).
+> - 2026-06-18 **doc-sync**: 마라톤 결정을 전 문서 17개에 전파(worklist=[`DOC_SYNC.md`](../../../docs/DOC_SYNC.md)),
+>   하드 플로어 완화(`D-2026-06-18-A`). 커밋+푸시 `f0fa50ce`.
 >
-> **아래 큐 항목들(노드 데이터·BANAS 등)은 개편/큰그림에 우선순위 밀림** (2026-06-07
-> 사용자 "대대적 개편" 예고 이후). 큰그림이 현재 활성 트랙.
+> **토론 안건 (AI_CHAT_PLAYBOOK §3):** A) 주경로 = 인터뷰먼저 vs 외부에이전트(충돌) ·
+> B) 스레드 keying service vs feature · C) 컨텍스트 봉투 주경로 도달 · D) 적극 코치 *내용*
+> (**Actors 인터뷰 질문 아예 없음 = 써야 함**; Foundation/Services 질문은 있음) ·
+> E) Entities 코치 신뢰성.
+>
+> **⚠ 코드 *구현* 선행 블로커:** 15/17 kind-count drift 정합. 단 플레이북 *내용 토론*은
+> 추상 seam(`D-2026-06-17-L`)에만 의존해 **지금 가능**. 플랜 = [`SERVICES_PLAN.md`](../../../docs/SERVICES_PLAN.md) ·
+> [`FEATURE_CANVAS_PLAN.md`](../../../docs/FEATURE_CANVAS_PLAN.md) · [`ENTITIES_PLAN.md`](../../../docs/ENTITIES_PLAN.md).
+>
+> **아래 큐 항목들(노드 데이터·BANAS 등)은 큰그림/채팅 트랙에 우선순위 밀림.**
 
 ### `노드 데이터 형식 + 산출물 관리` (filed 2026-06-04; foundation DONE 2026-06-06)
 
@@ -49,10 +46,10 @@
 > **"버저닝"** / **"발행 정리"** / **"이어서"** / **"다음"** as the first /
 > near-first message.
 >
-> **개념 정본 먼저 읽기:** [`FOUNDATION_CONCEPT.md`](./FOUNDATION_CONCEPT.md)
+> **개념 정본 먼저 읽기:** [`FOUNDATION_CONCEPT.md`](../../../docs/FOUNDATION_CONCEPT.md)
 > (미션=뿌리/입력, 코어밸류=현재/입력, 아이덴티티=지향/**출력**; 셋 다
 > 서비스 기획의 토대) + kind별 감사 [`node-format/`](./node-format/) +
-> 상위 계획 [`NODE_DATA_AND_ARTIFACTS_PLAN.md`](./NODE_DATA_AND_ARTIFACTS_PLAN.md).
+> 상위 계획 [`NODE_DATA_AND_ARTIFACTS_PLAN.md`](../../../docs/NODE_DATA_AND_ARTIFACTS_PLAN.md).
 >
 > **✅ 완료 (2026-06-06, v0.43.0–0.43.2):** 파운데이션 3종 노드 포맷 실제
 > 구현 + 무손실 마이그레이션 (서버 Pydantic `model_validator` + 뷰어

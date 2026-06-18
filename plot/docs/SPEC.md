@@ -228,7 +228,7 @@ The Foundation stencil's three section headers (Mission / Core values /
 Identity) each carry an **always-visible ⓘ icon** next to the title.
 Clicking it opens a small **popover** with that concept's definition, so a
 user who does not yet know what mission / core value / identity mean can
-learn it in place. Concept SSOT = [`FOUNDATION_CONCEPT.md`](./FOUNDATION_CONCEPT.md);
+learn it in place. Concept SSOT = [`FOUNDATION_CONCEPT.md`](../../../docs/FOUNDATION_CONCEPT.md);
 the popover is a short surface of it.
 
 | Section | Popover text (full text in `stencil.info.*`) |

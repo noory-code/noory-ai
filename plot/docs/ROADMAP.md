@@ -3,9 +3,9 @@
 The implementation order for the major release lines. Each step is
 an independent, ship-ready commit (Python green, viewer green, plugin
 patch bumped, pushed). Together they realise the design captured in
-[`VISION.md`](VISION.md), [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md),
-[`IDENTITY.md`](IDENTITY.md) and [`CONCEPTS.md`](CONCEPTS.md). The
-2026-06-16~17 big-picture marathon — [`BIG_PICTURE_REVIEW.md`](BIG_PICTURE_REVIEW.md)
+[`VISION.md`](../../../docs/VISION.md), [`PRODUCT_SPEC.md`](../../../plot/docs/PRODUCT_SPEC.md),
+[`IDENTITY.md`](../../../docs/IDENTITY.md) and [`CONCEPTS.md`](CONCEPTS.md). The
+2026-06-16~17 big-picture marathon — [`BIG_PICTURE_REVIEW.md`](../../../docs/BIG_PICTURE_REVIEW.md)
 + `DECISIONS.md` `D-2026-06-16-H..R` / `D-2026-06-17-A..L` — re-defined
 Foundation / Actors / Services / Feature / Entities; the queued tracks
 below carry those decisions inline.
@@ -218,7 +218,7 @@ session (see [D-2026-05-16-D](./DECISIONS.md)). Frames the
 faithfully but misses the surrounding Identity / tone / sibling-
 service coherence that the canvas already captures.
 
-**Why it matters:** Plot's essence ([`VISION.md`](./VISION.md))
+**Why it matters:** Plot's essence ([`VISION.md`](../../../docs/VISION.md))
 hinges on AI work staying anchored to the discovered essence.
 Without explicit forest-injection mechanics, Retention (Phase 2) and
 Execution (Phase 3) drift apart — the canvas captures intent the
@@ -261,7 +261,7 @@ agent does not actually use.
   **Mission grounding** (the root-of-existence change,
   [D-2026-06-16-K](./DECISIONS.md)) + sibling-service contradictions).
   Sits at the PR-style merge gate
-  ([`PRODUCT_SPEC.md` §11](./PRODUCT_SPEC.md)).
+  ([`PRODUCT_SPEC.md` §11](../../../plot/docs/PRODUCT_SPEC.md)).
 
 **Design red-team verdict:** not yet run. Before Phase 1 starts,
 re-enter plan mode and run ``plot-design-red-team`` to surface at

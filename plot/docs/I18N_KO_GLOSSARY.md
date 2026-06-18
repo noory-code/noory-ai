@@ -11,7 +11,7 @@
 > **Pairs with:**
 > - [`feedback_plot_global_service.md`](../../.claude/projects/-Users-woogis-Workspace-repo-noory-ai/memory/feedback_plot_global_service.md)
 >   — the rule "Plot is a global service, i18n is non-negotiable".
-> - [`PRODUCT_SPEC.md`](./PRODUCT_SPEC.md) — the canonical vocabulary
+> - [`PRODUCT_SPEC.md`](../../../plot/docs/PRODUCT_SPEC.md) — the canonical vocabulary
 >   for Plot kinds.
 
 ---

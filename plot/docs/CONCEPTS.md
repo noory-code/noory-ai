@@ -6,7 +6,7 @@ that both human users and the AI tooling (Claude, MCP) consult when
 they need to know "what is a `service`?" or "where does a `feature`
 live?".
 
-> **Read [`IDENTITY.md`](IDENTITY.md) first** if you haven't. It defines
+> **Read [`IDENTITY.md`](../../../docs/IDENTITY.md) first** if you haven't. It defines
 > what Plot *is* (a strategic operations design + alignment tool, not a
 > mindmap) and the four use purposes every kind below ultimately serves.
 >

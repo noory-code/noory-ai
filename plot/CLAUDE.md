@@ -14,15 +14,15 @@
 >   the others, this file is wrong — fix this file, not the others.
 >
 > **Pairs with (read in this order on session start):**
-> 1. [`docs/VISION.md`](./docs/VISION.md) — **the essence** + 3-phase cycle. Single source of truth above everything else. Read first, every session.
-> 2. [`docs/PRODUCT_SPEC.md`](./docs/PRODUCT_SPEC.md) — **product-level decisions** (platforms, business model, MVP scope, symbol system, canvas inventory, future / out-of-scope). Read second; it is the framing every other doc sits inside.
+> 1. [`docs/VISION.md`](../../docs/VISION.md) — **the essence** + 3-phase cycle. Single source of truth above everything else. Read first, every session.
+> 2. [`docs/PRODUCT_SPEC.md`](../../plot/docs/PRODUCT_SPEC.md) — **product-level decisions** (platforms, business model, MVP scope, symbol system, canvas inventory, future / out-of-scope). Read second; it is the framing every other doc sits inside.
 > 3. [`docs/DOMAIN.md`](./docs/DOMAIN.md) — bounded contexts, ubiquitous language, dependency direction. Use to decide *where* code goes.
 > 4. [`docs/SPEC.md`](./docs/SPEC.md) — what Plot should *do* per canvas.
 > 5. [`docs/DECISIONS.md`](./docs/DECISIONS.md) — *why* it does what it does, and what was tried and rejected (last 5 entries auto-surfaced by the SessionStart hook).
 > 6. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — what shape the code is in and how to fix it.
 > 7. [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — data model (kinds / fields).
 > 8. [`docs/CURSOR.md`](./docs/CURSOR.md) — canvas cursor SSOT.
-> 9. [`docs/PHILOSOPHY.md`](./docs/PHILOSOPHY.md) — value-flow / 10 principles.
+> 9. [`docs/PHILOSOPHY.md`](../../docs/PHILOSOPHY.md) — value-flow / 10 principles.
 > 10. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — release order.
 
 ---
@@ -45,7 +45,7 @@ behaviour question from memory or from code comments alone.**
 ### Gate -1 — Re-anchor to the essence (every session, before answering anything)
 
 The single rule that keeps every other rule honest. Plot's essence
-(from [`docs/VISION.md`](./docs/VISION.md)):
+(from [`docs/VISION.md`](../../docs/VISION.md)):
 
 > **Plot 은 본질을 모르는 사람이 본질을 찾고, 그걸 놓치지 않으면서, 그
 > 본질 아래에서 서비스를 쉽게 기획·개발할 수 있게 AI 와 협업하는

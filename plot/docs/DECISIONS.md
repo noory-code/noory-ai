@@ -39,6 +39,43 @@
 
 ## Log
 
+### D-2026-06-18-B — Per-canvas coach is phase-split: in-app coach runs the design-canvas interviews; the external MCP agent owns execution (resolves §9-E)
+
+- **What:** The "interview-first vs Pencil MCP-first" conflict (BIG_PICTURE §9-E,
+  feeds T1/T4) is resolved by **splitting along the VISION phase boundary**, not by
+  picking one narrative:
+  - **Discovery / Planning (Foundation, Actors, Services design canvases)** → the
+    **in-app coach runs the interview directly.** This keeps PRODUCT_SPEC §9's
+    "empty canvas → interview → draft → approve" loop for exactly these canvases.
+    The in-app chat is **not** merely a thin launcher here; it is the coach.
+  - **Execution (actual building / code)** → the **user's external MCP agent**
+    (Pencil model). The in-app chat does not try to match an interactive coding
+    agent (it structurally can't — `project_chat_architecture`); building is the
+    external agent's job, fed by the canvas context envelope (`D-2026-06-17-L`).
+- **Why:** AI_CHAT_PLAYBOOK §3-A (the biggest cross-cutting fork — decides whether
+  the coach is the *entrance* or a *sidekick*, which gates the F→A→S→feature
+  discussion order). The two docs only *appeared* to conflict because both claimed
+  the "primary loop"; they are about different phases. Interview is primary for
+  authoring the design canvases; the external agent is primary for execution.
+- **Alternatives:** (a) Pure thin-launcher / MCP-first — rejected: would push the
+  Foundation/Services interview question sets out to an external agent via framing
+  only, giving the in-app surface no guided-authoring UX, which is heavier than the
+  interview it replaces. (b) Interview-first everywhere (in-app coach owns
+  execution too) — rejected: in-app chat is a strict subset of an interactive
+  coding agent (`project_chat_architecture`); full parity for *building* is only
+  reachable MCP-first.
+- **Open (deferred to the `기능` agenda, last in the F→A→S→feature order):** the
+  **Feature canvas boundary** — authoring the behaviour flowchart is *design*
+  (in-app coach), but VISION places the Feature/Service-Detail canvas in the
+  *Execution* phase ("Execution — Service-Detail + MCP"). Exactly where the in-app
+  coach hands off to the external agent on the feature canvas is settled when the
+  discussion reaches `기능`. Relates to agenda B (thread keying, `D-2026-06-17-D`).
+- **Approval:** Accepted by user, 2026-06-18 (AskUserQuestion — "단계로 나눔" chosen
+  over thin-launcher / interview-first).
+- **Spec impact:** PRODUCT_SPEC §9 gains a reconciling note (interview loop scoped
+  to the design canvases; external agent owns execution). BIG_PICTURE §9-E marked
+  resolved + §11 log row. AI_CHAT_PLAYBOOK §3-A resolved.
+
 ### D-2026-06-18-A — Hard actor/service count floors relaxed (the ≥2 validators are dropped; count is emergent from the role hierarchy)
 
 - **What:** The pre-marathon hard count validators are relaxed during doc-sync:
@@ -2912,7 +2949,7 @@ in the same browser-verification round:
   PR-style feedback loop, MVP scope, future / out-of-scope.
 
   Per user direction *"이건 잘 정리해두세요. 작업 다 끝나고"*, the
-  spec is pinned to [`plot/docs/PRODUCT_SPEC.md`](./PRODUCT_SPEC.md)
+  spec is pinned to [`plot/docs/PRODUCT_SPEC.md`](../../../plot/docs/PRODUCT_SPEC.md)
   as a new canonical document. Translated to English (per
   noory-ai CLAUDE.md "Language" rule), reorganised into AI-First
   structured sections with cross-references to existing docs.
@@ -5999,13 +6036,13 @@ in the same browser-verification round:
     + Symbol resolves + N-hop neighbours), a Plot skill rule
     forcing the agent to call it before starting node-scoped work,
     and the existing interview pattern
-    ([`PRODUCT_SPEC.md` §9](./PRODUCT_SPEC.md)) surfacing the
+    ([`PRODUCT_SPEC.md` §9](../../../plot/docs/PRODUCT_SPEC.md)) surfacing the
     envelope result as the interview's opening context.
   - **Layer 3 — Output side / verification loop.** Large. Cannot
     be closed by the agent alone — the agent reading the forest
     does not guarantee the forest shaping its output. Today this is
     human PR review at the merge gate
-    ([`PRODUCT_SPEC.md` §11](./PRODUCT_SPEC.md)); automation
+    ([`PRODUCT_SPEC.md` §11](../../../plot/docs/PRODUCT_SPEC.md)); automation
     arrives later with the Distill (crystallize transcripts → implicit
     Identity) and Evonest (LLM-as-judge consistency check) ports.
 
@@ -6065,11 +6102,11 @@ in the same browser-verification round:
 - **Cross-refs:**
   - [`ROADMAP.md` §D](./ROADMAP.md) — queued item that this
     framing parents.
-  - [`PRODUCT_SPEC.md` §9](./PRODUCT_SPEC.md) — interview pattern
+  - [`PRODUCT_SPEC.md` §9](../../../plot/docs/PRODUCT_SPEC.md) — interview pattern
     that Layer 2 strengthens.
-  - [`PRODUCT_SPEC.md` §11](./PRODUCT_SPEC.md) — PR-style merge
+  - [`PRODUCT_SPEC.md` §11](../../../plot/docs/PRODUCT_SPEC.md) — PR-style merge
     gate that Layer 3 inhabits.
-  - [`VISION.md`](./VISION.md) — the essence the forest-anchoring
+  - [`VISION.md`](../../../docs/VISION.md) — the essence the forest-anchoring
     serves (Retention + Execution phases).
 
 ---
@@ -6173,7 +6210,7 @@ in the same browser-verification round:
     MD, #5 per-node version, #7 folder hierarchy (Phase 5).
   - [D-2026-05-16-A](./DECISIONS.md) — Phase 1 ship (v0.17.0).
   - [D-2026-05-16-C](./DECISIONS.md) — Phase 2 ship (v0.17.2).
-  - [PSPEC §6](./PRODUCT_SPEC.md) — v0.17.4 clarifier that aligned
+  - [PSPEC §6](../../../plot/docs/PRODUCT_SPEC.md) — v0.17.4 clarifier that aligned
     the git-event spec with v0.17/v0.18 reality.
 
 ---
@@ -11988,7 +12025,7 @@ but not yet fully eliminated.
 ### D-2026-06-08-A — whole-system clean-architecture migration (per ARCH_REVIEW)
 
 - **What:** Adopt the migration plan in
-  [`../../../plot/docs/ARCH_REVIEW.md`](ARCH_REVIEW.md) across the whole system
+  [`../../../plot/docs/ARCH_REVIEW.md`](../../../plot/docs/ARCH_REVIEW.md) across the whole system
   (viewer + engine + overhaul direction), in this order, each step keeping the
   app green: ①extract `theme/tokens.css` ②FOUC pre-paint `<head>` script +
   `color-scheme` CSS + parity/`index.html` guards ③zero-dependency `pendingWrites`
