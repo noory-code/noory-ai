@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.87.1] — 2026-06-20
+
+### Added
+
+- **Transport-isolation guards** (`tests/test_transport_isolation.py`, migration
+  Phase B, D-2026-06-20-A). TECH_REVIEW C2 confirmed the engine's headless
+  4-layer seam but flagged that no test pinned it. Three guards now lock it: the
+  pure-domain modules import no transport library (verified in a fresh
+  interpreter so transitive leaks are caught); `mcp_tools` does not import the
+  HTTP-for-viewer stack; and `create_http_app()` builds with no viewer dist
+  present (the headless path Phase C — the viewer move — depends on). No
+  behaviour change; the engine already degraded gracefully without a viewer
+  dist (`http_app.py:224-228`).
+
 ## [0.87.0] — 2026-06-20
 
 ### Changed
