@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.86.2] — 2026-06-20
+
+### Fixed
+
+- **`decision` / `group` registered in the schema-export map** (migration
+  Phase A, D-2026-06-20-A). Both kinds had shipped in the `SketchNode` Pydantic
+  union + the viewer for months while missing from
+  `schema_export._ALL_KIND_CLASSES` (the "15/17 drift") — so they were absent
+  from generated `schema/` files and unguarded by schema-parity. The export map
+  is now the registered projection of the union (17 kinds), and
+  `tests/test_schema_parity.py::test_export_map_covers_union` guards against
+  re-omission. `wire_contract.json` (both copies) regenerated to 17 kinds. This
+  is the registration half only; **`group` retirement is a separate concept
+  decision** (Chunk 2.0), not done here.
+
 ## [0.86.1] — 2026-06-20
 
 ### Fixed

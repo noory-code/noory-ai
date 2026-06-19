@@ -39,6 +39,8 @@ from plot_mcp.models import (
     CategoryNode,
     ContentNode,
     CoreValueNode,
+    DecisionNode,
+    GroupNode,
     IdentityNode,
     IdentityRefNode,
     MetricNode,
@@ -68,11 +70,15 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
     },
 }
 
-SCHEMA_VERSION = 2  # v0.15.3 — extended to all 15 kinds
+SCHEMA_VERSION = 2  # v0.15.3 — extended to all 17 kinds (decision/group registered)
 PLOT_VERSION = "0.14.18"
 
-# v0.15.3 — full 15-kind map. Replaces the v0.13 ``_FOUNDATION_KIND_CLASSES``
-# Foundation-only subset.
+# Full 17-kind map = the registered projection of the ``SketchNode`` union
+# (``models_union.py``). It MUST cover every union member — ``decision`` /
+# ``group`` shipped in the union + viewer while missing here for months
+# (the "15/17 drift"); ``tests/test_schema_parity.py::test_export_map_covers_union``
+# now guards against re-omission. (``group`` retirement is a separate
+# *concept* decision — Chunk 2.0 — not this registration.)
 _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     # Foundation (4) — typed text lives in MD template
     "project": ProjectNode,
@@ -89,9 +95,11 @@ _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     "mission_ref": MissionRefNode,
     "value_ref": ValueRefNode,
     "identity_ref": IdentityRefNode,
-    # Composition inside service_detail (4)
+    # Composition inside service_detail (6)
     "metric": MetricNode,
     "step": StepNode,
+    "decision": DecisionNode,
+    "group": GroupNode,
     "rule": RuleNode,
     "content": ContentNode,
 }

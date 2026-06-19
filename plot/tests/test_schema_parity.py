@@ -26,7 +26,10 @@ from pathlib import Path
 
 import pytest
 
+import typing
+
 from plot_mcp.models import BaseNodeFields
+from plot_mcp.models_union import SketchNode
 from plot_mcp.schema_export import _ALL_KIND_CLASSES
 
 _PLOT_ROOT = Path(__file__).resolve().parent.parent
@@ -163,7 +166,37 @@ def test_per_kind_field_parity(kind: str) -> None:
     )
 
 
+def _union_member_kinds() -> set[str]:
+    """The ``kind`` discriminator of every member of the ``SketchNode``
+    discriminated union — the SSOT of "what kinds exist at the wire."
+
+    ``SketchNode`` is ``Annotated[A | B | ..., Field(discriminator=...)]``;
+    the first ``get_args`` element is the union, whose ``get_args`` are the
+    per-kind classes.
+    """
+    union = typing.get_args(SketchNode)[0]
+    members = typing.get_args(union)
+    return {m.model_fields["kind"].default for m in members}
+
+
+def test_export_map_covers_union() -> None:
+    """``schema_export._ALL_KIND_CLASSES`` must register EVERY member of the
+    ``SketchNode`` union — no kind may exist at the wire (and on the viewer)
+    while silently missing from the schema-export / parity machinery.
+
+    This guard exists because ``decision`` / ``group`` shipped in the union
+    + viewer for months while omitted from ``_ALL_KIND_CLASSES`` (the
+    "15/17 drift"); the export map is a *checked projection* of the union,
+    not a hand-maintained parallel list."""
+    assert set(_ALL_KIND_CLASSES.keys()) == _union_member_kinds(), (
+        "schema-export map drifted from the SketchNode union: "
+        f"missing={_union_member_kinds() - set(_ALL_KIND_CLASSES.keys())}, "
+        f"extra={set(_ALL_KIND_CLASSES.keys()) - _union_member_kinds()}"
+    )
+
+
 def test_all_kinds_covered() -> None:
-    """Sanity: the parametrised parity test runs exactly 15 times,
-    matching the discriminated union size."""
-    assert len(_ALL_KIND_CLASSES) == 15
+    """Sanity: the parametrised parity test runs once per union member,
+    matching the discriminated union size (17 as of decision/group
+    registration)."""
+    assert len(_ALL_KIND_CLASSES) == len(_union_member_kinds()) == 17

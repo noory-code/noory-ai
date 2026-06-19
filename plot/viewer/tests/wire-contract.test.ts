@@ -55,8 +55,8 @@ describe("wire contract — viewer side (D-2026-06-10-E)", () => {
     });
   }
 
-  it("covers exactly the 15-kind union", () => {
-    expect(Object.keys(contract.kinds)).toHaveLength(15);
+  it("covers exactly the 17-kind union", () => {
+    expect(Object.keys(contract.kinds)).toHaveLength(17);
   });
 
   it("self-check: the parser would catch a drifted contract", () => {
