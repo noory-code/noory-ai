@@ -39,6 +39,306 @@
 
 ## Log
 
+### D-2026-06-20-A — Plot system architecture = open-core (open plugin engines / closed paid app); the visual canvas is app-exclusive
+
+- **What:** Plot's system architecture is pinned as **open-core**:
+  - **Open-source plugins (MIT)** — each is a **headless MCP engine** (+ Claude Code glue: skills/agents/hooks). They produce **structured data + text/markdown artifacts** only; **no visual canvas.** (`plot_mcp` = the canvas/sketch engine; `solera_mcp` = the project-workflow engine; …)
+  - **Closed, paid Plot app** — an **MCP host + visual canvas + composition shell.** The **visual canvas is the app's exclusive paid value**; if a plugin shipped the canvas the app would have no differentiated value.
+  - **Shared open data** — `.noory/` JSON, read/written by both. The app's moat = **visual experience / UX / composition quality**, NOT data lock-in (the format is open).
+  - **Dependency = one-way:** app → plugin engines (the app hosts/consumes them); the engine never imports the app (R8). Plugins run standalone (Claude Code + MCP) without the app.
+  - **Value split = VISION's physical division of labour:** the AI works the *structure* (plugin), the human thinks via the *visual* (app), over the shared `.noory/` data.
+  - **Composition vision (deferred):** the app may host multiple engines (plot_mcp + solera_mcp + …) as one product; the unified-canvas UX is unspecified for now (engines are MCP, so wiring stays open).
+- **Why:** Settling the structure before implementation (user, 2026-06-19~20). The plugin/app/engine arrangement was scattered; the load-bearing question — where the canvas lives — is answered by the value boundary: the canvas must be app-only or the paid app has no value, so the open plugin stays text/structured-only.
+- **Alternatives:** (a) the plugin ships the visual canvas — rejected (collapses the app's paid value). (b) keep the viewer in noory-ai / a web canvas — rejected (canvas = app-exclusive; the web product is dropped). (c) close the engine into the app — rejected (loses the open MCP value: any agent can drive Plot).
+- **Approval:** Accepted by user, 2026-06-20 (open-core boundary + canvas = app-exclusive + plugin = text artifacts, confirmed across the structure discussion).
+- **Spec impact:** NEW `repos-plot/docs/ARCHITECTURE.md` (system architecture SSOT) + index. Migration prereq: viewer → `plot/` (app); `viewer/types.ts` → a `schema_export.py`-generated artifact **before** the move (schema-parity guard, TECH_REVIEW step 1); `plot_mcp` headless. ROADMAP Track 2. Builds on the Pencil model (OVERHAUL R7) + the viewer→app overhaul direction.
+
+### D-2026-06-19-J — Design/definition/spec docs consolidated into a single source (`repos-plot/docs/`)
+
+- **What:** Plot's scattered, mutually-conflicting concept/definition/spec docs are consolidated into **one directory `repos-plot/docs/`** as the single source: `index.md` (canonical map) + `VISION.md` (essence + 3-phase + identity) + `concepts/` (canvases / kinds / ai-collaboration — meaning) + `specs/` (canvas-behavior / kinds-fields / edges / storage-publish / domain — behavior). Old root docs absorbed + deleted (`IDENTITY.md` → VISION §identity; `FOUNDATION_CONCEPT.md` → ai-collaboration §2.1 + VISION; `AI_CHAT_PLAYBOOK.md` → ai-collaboration; `BIG_PICTURE_REVIEW.md` → open topics to ROADMAP, decision log already mirrored here; `DOC_SYNC.md`, old `README.md` → index.md). `noory-ai/plot/docs/{SPEC,CONCEPTS,DOMAIN}.md` get a redirect header pointing at the root source (code-near mechanics — CURSOR / AUTO_LAYOUT / PUBLISH / ARCHITECTURE — stay in noory-ai). `DECISIONS.md` (this log) stays in noory-ai (D-id log, hook-wired).
+- **Why:** The AI (in-app coach + external coding agents) was referencing scattered docs whose definitions disagreed (e.g. IDENTITY "NOT a mindmap" vs PRODUCT_SPEC "mindmap-based"; 15/17 kind drift; feature concept unreconciled), producing bad context. A single coherent new-concept source is the prerequisite for resuming development.
+- **Alternatives:** (a) leave docs split, fix conflicts in place — rejected (root cause is scattering). (b) one big file — rejected (one *directory* with concepts/ + specs/ reads better). (c) move everything incl. DECISIONS/code-near out of noory-ai — rejected (breaks hooks/skills; DECISIONS is the hook-wired D-log).
+- **Approval:** Accepted by user, 2026-06-19 ("싹다 새로운 개념으로 정리... SSOT... index.md... 다해요 4개 다").
+- **Spec impact:** New SSOT = `repos-plot/docs/`. `session_start.py` paths fixed (VISION from root docs/, DECISIONS/NEXT_SESSION from plugin docs/). Skills + `noory-ai/plot/CLAUDE.md` doc links repointed. This log + SPEC/CONCEPTS/DOMAIN bodies remain for code-near reference behind redirect headers.
+
+### D-2026-06-19-I — Feature-canvas `actor_ref` = read-only anchor; per-service exchange fields retired
+
+- **What:** On the Feature canvas, `actor_ref` is a **read-only anchor** that marks the flow's subject ("who starts / who can"), **not** a value-exchange editor. Its former per-(actor×service) fields — `gives` / `receives` / `motivation` / `pain` — are **retired** (supersedes the `D-2026-06-15-J` move that put motivation/pain on actor_ref). Value now lives at two existing places only: **Actors** (role-level relationship edges) and the **service inspector** "뭐가 좋아지나?" (the aggregate). Role identity is edited on Actors; permissions on `rule.actor_permissions`.
+- **Why:** Big-picture review (2026-06-19). A feature is a behaviour grouping, not a value-exchange unit (`D-2026-06-19-H`), so granular per-actor exchange on the feature canvas duplicated what Actors edges + the service 5-field already capture (redundant). The user confirmed actor_ref is "표현하는 수단" (display) and not editable there.
+- **Alternatives:** (a) keep gives/receives on actor_ref — rejected (redundant). (b) move the per-service exchange to the service inspector as new fields — not taken now (Actors role-level + service aggregate suffice; revisit only if a concrete need for per-actor granularity appears).
+- **Approval:** Accepted by user, 2026-06-19 ("네네 좋아요" on read-only anchor + retire).
+- **Spec impact:** `actor_ref` field-set → `ref_actor_id` + denormalized read-only `side` only; drop `gives`/`receives`/`motivation`/`pain` (loss-free migration; code = `plans/`). `specs/kinds-fields.md`, `concepts/kinds.md`. Supersedes `D-2026-06-15-J` actor_ref payload.
+
+### D-2026-06-19-H — `feature` = a service-level capability / behaviour grouping (not an independent value unit); Feature canvas = UX flowchart
+
+- **What:** A `feature` is a **capability the service offers** (글쓰기 / 편집) = a **behaviour grouping under a service**, NOT an independent value unit. **Value exchange is a property of the *service*** (multiple actors create/exchange value — PHILOSOPHY), not of a feature; a feature that grows its own multi-actor value exchange is **promoted to a service** (the promotion test). The **Feature canvas** (the old Service-Detail) is a **UX flowchart** (행동 → 분기 → 결과) at **action altitude** only; implementation below it (저장·쿼리·렌더) is the external agent's job.
+- **Why:** Big-picture review (2026-06-19). The `feature` kind (`D-2026-06-17-D`) and `actor_ref`'s "per-service" semantics were unreconciled after the drill target moved service→feature. Anchoring on "value = service property" resolves it cleanly: feature = behaviour grouping, so the Feature canvas is a UX flow and its actors are anchors (`D-2026-06-19-I`), not value participants.
+- **Alternatives:** (a) feature = independent value unit (own actors/value) — rejected (then it is indistinguishable from a service; the promotion test becomes meaningless). (b) leave the service/feature boundary fuzzy — rejected (it caused the actor_ref placement confusion).
+- **Approval:** Accepted by user, 2026-06-19 (UX-흐름도 + 행동 묶음 reading confirmed, "네네 좋아요").
+- **Spec impact:** `concepts/kinds.md` (`feature`, `service`), `concepts/canvases.md` (Feature canvas = UX 흐름도), `specs/canvas-behavior.md`. Builds on `D-2026-06-17-D/G`.
+
+### D-2026-06-19-G — Identity SSOT consolidated to VISION; "mindmap" dropped as the user-facing word
+
+- **What:** Plot's identity statement has **one source = `VISION.md` §identity** (absorbing the old `IDENTITY.md`); other docs reference it, never restate it. The **"mindmap" framing is dropped** — both the old PRODUCT_SPEC "mindmap-based planning tool" claim and the user-facing "mindmap" word are retired. Plot is a **structured, opinionated, coach-led design tool**, the opposite of free-association brainstorming; post-marathon (interview-driven canvases) the word actively miscues.
+- **Why:** Three docs defined Plot's identity in conflicting words (IDENTITY "NOT a mindmap" / PRODUCT_SPEC "mindmap-based" / VISION's purpose sentence) — an SSOT violation flagged but never resolved (BIG_PICTURE §9-A / T1, decision slot empty). Dropping "mindmap" auto-reconciles all three (only PRODUCT_SPEC asserted it; VISION + IDENTITY already say "not a mindmap").
+- **Alternatives:** (a) keep "mindmap" as the friendly user word — rejected (requires overriding IDENTITY + carries the free-association miscue post-marathon). (b) formal "strategic design tool" everywhere — rejected (too stiff for the user-facing surface).
+- **Approval:** Accepted by user, 2026-06-19 ("좋아요" on the consolidated VISION).
+- **Spec impact:** `VISION.md` §정체성 (IS/IS NOT, mindmap retired). `IDENTITY.md` deleted (absorbed). PRODUCT_SPEC §1 "mindmap" claim superseded (partial supersede of `D-2026-05-12-A`).
+
+### D-2026-06-19-F — The external agent gets selection-awareness + context over MCP (required, not deferred) — fulfills the Layer-2 selection requirement for the R7 primary path
+
+- **What:** The external agent (the user's own Claude Code / Codex / Gemini, connected
+  over **MCP** — the R7 primary path) must receive **selection-awareness** and the
+  **context envelope** (`D-2026-06-17-L`: active canvas + current selection + upstream
+  summary + entity registry + per-canvas framing) **through MCP** — the same connection it
+  already uses. The agent pulls it the way it reads everything else. Internally Plot needs a
+  **viewer→engine selection bridge** so the engine knows the current viewer selection and
+  can report it via the MCP context tool (`get_viewer_context`).
+- **Required, not deferred.** This corrects CHAT_ARCH Layer 2's "MCP path … deferred"
+  (selection-awareness): the original requirement — "the chat must **know the selection**;
+  everything selected synced" (user 2026-06-14) — **plus** `OVERHAUL` R7 (the external agent
+  is the **primary** AI path) make external selection-awareness a **requirement**, not an
+  option. The primary path must not be more context-starved than the in-app chat.
+- **Double-billing set aside** per user (2026-06-19, "일단 이중 과금 생각하지 맙시다") — C
+  does not hinge on it.
+- **Why:** Agenda C (playbook §3-C). The Pencil model makes the external agent primary
+  (R7); the selection-awareness requirement (Layer 2) must therefore cover it. User: "MCP로
+  이게 된다며 그렇게 바깥에도 제공해주면 됩니다" — the mechanism already exists (the agent is
+  on MCP); expose selection + envelope through it.
+- **Alternatives:** (a) keep MCP selection deferred / external agent works canvas-content-only
+  (user names things by hand) — rejected (the primary path must be first-class). (b) push to
+  the external agent — not possible (it is outside Plot; it pulls via MCP).
+- **Approval:** Accepted by user, 2026-06-19 ("그렇게 바깥에도 제공해주면 됩니다").
+- **Spec impact:** CHAT_ARCH Layer 2 (un-defer MCP selection-awareness → required) + the MCP
+  context tool (`get_viewer_context` returns selection + the `D-2026-06-17-L` envelope) + a
+  viewer→engine selection bridge. Playbook §3-C resolved. Code = follow-up. Builds on
+  CHAT_ARCH Layer 2 (2026-06-14 ask), `D-2026-06-17-L` (envelope), `OVERHAUL` R7.
+
+### D-2026-06-19-E — Chat thread keying is selection-driven: a selected service / feature node keys its own thread (resolves agenda B / CHAT_ARCH Layer-1 pending)
+
+- **What:** In the Services/Feature area the chat **thread** is keyed by the **selected
+  node instance**, not just by the canvas:
+  - A selected **service** node → thread `service:<service_id>` (that service's design
+    conversation — the 5-field interview, which features it holds).
+  - A drilled / selected **feature** → thread `feature:<feature_id>` (that feature's
+    behaviour-flowchart conversation).
+  - **Nothing relevant selected** → the canvas-level thread (overview `services`; or
+    `foundation` / `actors` / `entities` / `project`).
+  - **Only `service` and `feature` nodes key a thread.** Other selections (step,
+    decision, actor, …) stay **context-injection** (CHAT_ARCH Layer 2), not separate
+    threads — avoids thread-per-node sprawl.
+- This **refines CHAT_ARCH Layer 1**: the prior model keyed *thread = canvas*, with the
+  selection merely *injected* as context. Now a selected service/feature node keys its
+  **own per-instance thread**. It **replaces the single `service_detail:<service_id>`
+  parametric scope with two — `service:<id>` + `feature:<id>`** (the feature one follows
+  `D-2026-06-17-D`'s drill-from-feature rewire).
+- **Why:** Agenda B (playbook §3-B), explicitly flagged unpinned in CHAT_ARCH Layer 1
+  (the ⚠ Pending note) to resolve with the 5.10 playbook work. User: each **service** AND
+  each **feature** needs its own conversation, and **the selected node decides which**
+  ("선택한 서비스 노드가 있다면 그렇게 해야"). A service's design talk and a feature's
+  flowchart talk are distinct histories and must not share one thread.
+- **Alternatives:** (a) feature-only (assistant's first proposal) — rejected by user
+  (service also needs its own thread). (b) service-only / keep `service_detail` keyed by
+  service — rejected (drill is now per-feature; features need their own threads). (c)
+  thread-per-any-selected-node — not taken (sprawl; only service/feature are design units).
+- **Approval:** Accepted by user, 2026-06-19 ("네").
+- **Spec impact:** CHAT_ARCH Layer 1 (thread table + resolve the ⚠ Pending note) + the
+  Decisions / Implementation-sequence scope identifiers (`service_detail` → `service` +
+  `feature`). `test_chat_scope_parity` + engine session key `(plot_root, provider, scope)`
+  follow. Playbook §3-B resolved. Code = follow-up (scope rename/split + viewer thread
+  routing keyed on the selected service/feature). Builds on `D-2026-06-17-D` (drill from
+  feature), CHAT_ARCH Layer 1/2.
+
+### D-2026-06-19-D — Concept-registry integrity is strict from the start (hybrid: code guards + LLM matching), NOT YAGNI-deferred
+
+- **What:** The **concept registry** — entities (`D-2026-06-17-I/K`) **plus** the referenced
+  masters actor / core_value / identity (`D-2026-06-19-C` unified them) — is the **SSOT for
+  domain concepts**, so its integrity is designed **strict from the start** (global CLAUDE.md:
+  *YAGNI exception for 도메인 경계 / SSOT*). Reliability is **not playbook-trust-only**; it is a
+  **hybrid** (the entity-resolution / MDM standard = deterministic + probabilistic):
+  1. **Deterministic uniqueness guard (code):** a normalized-name collision is **blocked** — the
+     system cannot silently create a second master with the same name. (Kills the cheap, common
+     *silent split*.)
+  2. **Mandatory match-before-create:** every create is checked against the in-context registry
+     (`D-2026-06-17-L`) first — **not optional.**
+  3. **Naming ≠ identity (sharpens `D-2026-06-17-K`-B2):** match on **identity** ("같은
+     것인가?"), not name similarity — so 글/게시물/포스트 merge (same identity, different names)
+     while 글/댓글 do **not** (similar name, different identity). (KG warning: collapsing naming
+     and identity into one fuzzy check is what corrupts the graph.)
+  4. **No silent merge / finalize:** the LLM **proposes**, the user **confirms** (B2/B4).
+  5. **Correction path = stewardship (do NOT defer):** because no matching is perfect, the
+     registry must be **correctable** — **merge** (two that turned out the same) / **split** (one
+     wrongly merged) + **survivorship** (which values survive; user picks). Surfaced on the
+     **Entities canvas** (no separate review-queue workflow — disproportionate).
+  6. **Applies to all references (`D-2026-06-19-C`):** actor / core_value / identity masters get
+     the same integrity, not just entities.
+  This **revises `D-2026-06-17-K`-B2's "this is a playbook responsibility, not code"** → split:
+  **semantic matching = playbook (LLM); integrity guards (uniqueness, mandatory match, merge/split
+  correction) = code.**
+- **Why:** Agenda E (playbook §3-E). Without guards, one wrong LLM match silently fragments the
+  registry (글/게시물/포스트 as three) or wrongly merges distinct concepts — corrupting the domain
+  SSOT. User: "YAGNI로 판단하면 안 됩니다 … 처음부터 확실하게 하세요." Grounded in entity resolution
+  (hybrid deterministic+probabilistic, human-in-the-loop on ambiguous via a confidence threshold),
+  MDM (golden record / survivorship / stewardship), and the knowledge-graph naming≠identity warning.
+- **Alternatives:** (a) playbook-trust-only + revisit on drift (the assistant's earlier YAGNI
+  recommendation) — **rejected by user** (registry integrity is an SSOT matter, not YAGNI). (b)
+  full review-queue MDM workflow — not taken (disproportionate; in-context registry + confirm +
+  canvas merge/split suffices).
+- **Approval:** Accepted by user, 2026-06-19 ("처음부터 확실하게 하세요").
+- **Spec impact:** Playbook §2.5 (Entities reliability), §0 reference principle (`D-2026-06-19-C`
+  gains the integrity layer), §3-E resolved. Revises `D-2026-06-17-K`-B2 (playbook→hybrid). Code
+  = follow-up on the registry (deterministic name-uniqueness guard, mandatory match-before-create,
+  merge/split + survivorship affordance) — ROADMAP. Builds on `D-2026-06-17-I/K`, `D-2026-06-19-C`,
+  `D-2026-06-17-L`.
+
+### D-2026-06-19-C — Reference fields are pick-OR-create (match → pick, else create the master upstream), unified with entity surfacing
+
+- **What:** Every coach field that *references an upstream concept* — the Services
+  inspector's 3 reference fields (누가 참여하나?=actor, 뭘 양보 못 하나?=core_value,
+  어떤 결로 다가가나?=identity, `D-2026-06-17-B`) and the Feature canvas's actor anchor,
+  and any later-canvas→earlier-canvas reference — is **not pick-only.** It is
+  **pick-OR-create**, and the mechanism is **the SAME rule as entity surfacing**
+  (`D-2026-06-17-K` B2/B4), now applied to actor / core_value / identity too:
+  1. **The user answers in natural language** (does not manually open a picker).
+  2. **The coach semantically matches** the answer against existing upstream masters —
+     the strong-dedup matching of `D-2026-06-17-K`-B2 (글=게시물=포스트 → one).
+  3. **Match → pick:** the coach proposes the existing master ("그거 '관용과 지지'랑
+     같죠? 그걸로 달게요") → on confirm, a **chip** is added.
+  4. **No match → create upstream:** the coach proposes creating it ("'초보 환대'를
+     Foundation에 새로 넣고 여기 달까요?") → on confirm, a **real master node is created
+     on its home canvas (Foundation / Actors)** and a chip references it here.
+  5. **"Create" is NOT free-typing** — it makes a real upstream node, so `D-2026-06-17-B`'s
+     "references are picked, not free-typed" ban is preserved. The result is always a chip
+     pointing at a real master, never inline free text.
+  6. **The new master is created lightweight (name + one line), flagged incomplete (⚠);
+     its deep definition is filled later by its home-canvas coach** (mission/core_value =
+     `D-2026-06-16-K/L`, etc.) — so the current interview flow is **not derailed**.
+  7. **Never silent** — the coach proposes, the user confirms (`D-2026-06-16-P`).
+  8. This opens the **backward direction** of "뒤 캔버스가 앞을 참조" (downstream fills
+     upstream), consistent with VISION's **non-linear, reversible cycle** and `D-2026-06-17-I`
+     (entities born during downstream design and registered upstream).
+- **Why:** User: "우리는 액터·코어밸류·아이덴티티를 이미 가지고 있거나 … 새롭게 필요하다면
+  만들어서 사용해야 한다." `D-2026-06-17-B` only specified *pick* (chips, not free-typed); it
+  never covered the needed-but-missing case. Forcing pick-only would make the user either pick
+  a wrong existing concept or leave the flow to go create one manually (which is exactly what
+  the current pre-D-17-B pickers do — "Add one on the Foundation canvas first"). Unifying with
+  the entity rule keeps it one mechanism, not a second one.
+- **Alternatives:** (a) pick-only — rejected (can't reference a missing concept without
+  leaving the flow). (b) free-type the new reference inline — rejected (violates `D-2026-06-17-B`;
+  create a real master instead). (c) run the full master mini-interview inline on create —
+  not taken now: lightweight stub + later deepening on the home canvas, to avoid derailing the
+  current interview.
+- **Approval:** Provisional — user, 2026-06-19 ("그래요 일단 해봅시다"). Emphasis: pin the full
+  discussed content, lose nothing ("토론을 한 내용을 빼면 안 되요. 그게 핵심이에요").
+- **Spec impact:** AI playbook §0 (common reference principle), §2.3 (Services 3 refs), §2.4
+  (Feature actor anchor). Extends `D-2026-06-17-B`; unifies with `D-2026-06-17-K` (B2 match /
+  B4 propose). Code = follow-up (the D-17-B chip inspector + create-upstream affordance are not
+  yet built — the pre-D-17-B pickers are pick-only; ROADMAP / 5.7).
+
+### D-2026-06-19-B — Feature-canvas coach content (happy-path-first) + hand-off point = the altitude guard (resolves D-2026-06-18-B's deferred item)
+
+- **What:** Feature-canvas coach content (AI playbook §2.4), grounded in behavior-flow
+  methods (user story mapping / use case scenarios / UX user flows — sources in playbook):
+  1. **Coach flow** (§0 gentle tone + **"happy path first"**, which all three methods agree
+     on): **anchor** on actor + goal → **happy path first** ("잘 풀릴 때 처음부터 끝까지 뭘
+     하나요") → **then branches** ("중간에 갈리는 데 있을까요", condition→branch) → **outcome**
+     ("마지막엔 어떻게 끝나나요").
+  2. **Altitude guard as coach behavior**: when the user drifts into implementation
+     (저장·쿼리·렌더), the coach redirects up — "그건 만들 때 에이전트 몫, 여기선 사람이 뭘
+     하는지에 머물러요."
+  3. **note** (`D-2026-06-17-F`, edgeless ambient) + **rule** (`D-2026-06-17-E`, per-feature
+     constraint) prompts.
+  4. **Hand-off point (resolves `D-2026-06-18-B`'s deferred Feature item):** the **altitude
+     guard (`D-2026-06-17-G`) IS the hand-off line** — no new decision needed. In-app coach
+     owns the behavior flowchart (at/above user-action altitude = *design*); the external MCP
+     agent owns everything below (저장·쿼리·렌더 = *execution / build*). This composes
+     `D-2026-06-17-G` (altitude) + `D-2026-06-18-B` (in-app coach designs, external agent
+     executes) cleanly.
+- **Why:** AI playbook §2.4 / §3-D (ROADMAP 5.10), continuing the F→A→S→기능 order. User
+  directed grounding in expert method. `D-2026-06-18-B` explicitly deferred "where the in-app
+  coach hands off to the external agent on the feature canvas" to this 기능 discussion; it falls
+  out of the existing altitude guard rather than needing a fresh fork.
+- **Alternatives:** (a) a separate, new hand-off boundary distinct from the altitude guard —
+  rejected (redundant; the altitude guard already draws exactly that line). (b) elicit branches
+  before the happy path — rejected (story mapping / use case / user-flow all say map the happy
+  path first, then alternates).
+- **Approval:** Accepted by user, 2026-06-19 ("네 좋습니다" on the draft).
+- **Spec impact:** Playbook §2.4 (Feature coach + hand-off) + §3-D. Resolves the open note in
+  `D-2026-06-18-B`. Remaining = code: `chat_context.py` feature framing text (the altitude
+  guard) + `service_detail`→`feature` scope-key rename (5.7 / implementation). Builds on
+  `D-2026-06-17-G` (altitude), `D-2026-06-17-F/H` (note / inventory), `D-2026-06-18-B/C`.
+
+### D-2026-06-19-A — Services coach content: 5-field interview voiced gently + JTBD technique (no "why", ask "what/how"), feature-proposal + promotion test
+
+- **What:** Services-overview coach content (AI playbook §2.3), grounded in
+  value-proposition / JTBD / service-design methods (sources in the playbook):
+  1. The 5 inspector fields (`D-2026-06-17-B`) are **labels**; the coach delivers them
+     in the §0 gentle tone (`D-2026-06-18-C`) as a top-down interview (intent → 5 fields
+     → feature proposal).
+  2. **"왜 필요한가?" is elicited via JTBD's rule — do NOT ask "why" directly** (people
+     rationalize/мислead on why); ask **what/how about the struggling moment** ("이게
+     없을 때 뭘 하느라 답답했나, 마지막으로 안 풀렸던 순간"). "뭐가 좋아지나" = the gain,
+     asked concretely from the user's perspective.
+  3. **Feature proposal**: once the 5 fields are filled, the coach proposes concrete
+     capabilities ("이 안에서 뭘 할 수 있을까요") for the user to pick/confirm.
+  4. **Promotion test (feature → service)**: when a feature becomes a *multi-actor
+     value exchange*, the coach gently asks whether to promote it to its own service —
+     grounded in Plot's own definition (a service = new value via multiple-actor
+     interaction, PHILOSOPHY P1/P5). AI may draw the chip reference line (`D-2026-06-17-J`).
+- **Why:** AI playbook §2.3 / §3-D (ROADMAP 5.10). User directed grounding the coach in
+  expert method (as with Actors). The load-bearing finding: JTBD's "ask what/how, not
+  why" both sharpens "왜 필요한가" and reinforces the §0 gentle, non-defensive tone.
+- **Alternatives:** (a) ask "why do you need this?" literally — rejected (JTBD: why →
+  rationalized, misleading answers). (b) re-list the 5 fields verbatim as the coach
+  script — rejected; the fields are inspector labels, the coach voices them per §0 tone.
+- **Approval:** Accepted by user, 2026-06-19 ("네 넘어갑시다" after reviewing the draft).
+- **Spec impact:** Playbook §2.3 (Services coach content + sources), §3-D agenda. The 5
+  fields themselves are unchanged (`D-2026-06-17-B`). No code (prompt wiring = 5.7🅿).
+  Builds on `D-2026-06-17-B/D` (5 fields, feature node, promotion), `D-2026-06-18-C`
+  (gentle tone), `D-2026-06-18-B` (in-app coach runs design-canvas interviews).
+
+### D-2026-06-18-C — Coach tone-and-manner (gentle, courage + ease) + research-grounded Actors interview question set + Foundation questions re-voiced
+
+- **What:** Three things, all in the per-canvas coach playbook
+  ([`AI_CHAT_PLAYBOOK.md`](../../../docs/AI_CHAT_PLAYBOOK.md), now root `docs/`):
+  1. **Tone-and-manner principle (§0, ALL canvases):** every coach question must let
+     the person speak **with courage, at ease** (용기 내어 여유 있게) — sharp questions
+     make people defensively "guess the right answer." Five rules: ① lay out "no right
+     answer" first ("막연해도 괜찮아요"), ② one thing at a time with room to think, ③ no
+     assertions / interrogation → invitational endings ("~떠오르세요?"), ④ accept before
+     correcting (affirm → then gently reframe), ⑤ follow the user's own words (no forced
+     jargon).
+  2. **Actors interview question set (§2.2)** — was empty (only the actor *model* was
+     pinned in `D-2026-06-17-A`). Grounded in established actor/role-identification
+     methods (sources in the playbook). Structure mirrors Foundation (발견 → 거르기).
+     Research-driven additions vs the naive draft: **separate the "producer" role**
+     (who *makes* the core value, distinct from operator and pure consumer — CATWOE's
+     doer≠beneficiary≠owner + platform 4-roles), **surface owner/governance + supplier
+     + regulator + settlement roles** (stakeholder coverage), and a **role≠persona
+     guard** (drift to "a specific person" → reframe to the role).
+  3. **Foundation questions re-voiced** to the same gentle tone in
+     [`FOUNDATION_CONCEPT.md`](../../../docs/FOUNDATION_CONCEPT.md) (mission +
+     core_value). **Substance unchanged** — `D-2026-06-16-K/L` intact; tone only, per
+     the user's "모든 질문이 동일[한 톤]".
+- **Why:** AI playbook §2/§3-D (ROADMAP 5.10 — define the layer-2 per-canvas coach
+  content). User: "질문 좋습니다. 부드럽게 해야해요. 사람들이 자신의 의사를 용기내어서
+  여유있게 말할 수 있게" → tone is cross-cutting, so pinned as a §0 common principle and
+  applied uniformly to all question sets. The Actors content was the genuine gap; the
+  user directed grounding it in how experts actually identify actors ("전문가들이 하는
+  방식 ... 논문이나 인터넷 서칭해보면서").
+- **Alternatives:** (a) operator/user binary only (naive draft) — rejected: misses the
+  producer role (the value-maker, e.g. BANAS hero). (b) tone as Actors-only — rejected:
+  user said "모든 질문이 동일", so it is a global §0 principle. (c) re-list Foundation
+  questions in the playbook — rejected: playbook §2.1 points to FOUNDATION_CONCEPT (SSOT)
+  to avoid duplicate drift; Actors lives in §2.2 (no separate concept doc).
+- **Approval:** Accepted by user, 2026-06-18 (substance "질문 좋습니다"; tone directive +
+  "모든 질문이 동일[한 톤]").
+- **Spec impact:** Playbook §0 (tone), §2.1 (Foundation → SSOT pointer + tone + delivery),
+  §2.2 (Actors question set + sources), §3-D (agenda marked progressing). FOUNDATION_CONCEPT
+  mission/core_value re-voiced. No code yet (packaging into skill/MCP = ROADMAP 5.7🅿;
+  Actors edge model = 5.9). Builds on `D-2026-06-16-H` (active coach), `D-2026-06-18-B`
+  (in-app coach runs design-canvas interviews), `D-2026-06-17-A` (actor model).
+
 ### D-2026-06-18-B — Per-canvas coach is phase-split: in-app coach runs the design-canvas interviews; the external MCP agent owns execution (resolves §9-E)
 
 - **What:** The "interview-first vs Pencil MCP-first" conflict (BIG_PICTURE §9-E,
@@ -64,12 +364,12 @@
   execution too) — rejected: in-app chat is a strict subset of an interactive
   coding agent (`project_chat_architecture`); full parity for *building* is only
   reachable MCP-first.
-- **Open (deferred to the `기능` agenda, last in the F→A→S→feature order):** the
-  **Feature canvas boundary** — authoring the behaviour flowchart is *design*
-  (in-app coach), but VISION places the Feature/Service-Detail canvas in the
-  *Execution* phase ("Execution — Service-Detail + MCP"). Exactly where the in-app
-  coach hands off to the external agent on the feature canvas is settled when the
-  discussion reaches `기능`. Relates to agenda B (thread keying, `D-2026-06-17-D`).
+- **Open (deferred to the `기능` agenda) — ✅ RESOLVED by `D-2026-06-19-B`:** the
+  **Feature canvas hand-off point** = the **altitude guard (`D-2026-06-17-G`)**. In-app
+  coach owns the behaviour flowchart (at/above user-action altitude = design); the external
+  MCP agent owns implementation below it (저장·쿼리·렌더 = execution). No new boundary needed
+  — it composes the altitude guard + this entry. (Still relates to agenda B thread keying,
+  `D-2026-06-17-D`.)
 - **Approval:** Accepted by user, 2026-06-18 (AskUserQuestion — "단계로 나눔" chosen
   over thin-launcher / interview-first).
 - **Spec impact:** PRODUCT_SPEC §9 gains a reconciling note (interview loop scoped

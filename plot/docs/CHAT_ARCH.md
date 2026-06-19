@@ -1,5 +1,8 @@
 # Plot — in-app chat architecture
 
+> ⚠ **정본 이전 (2026-06-19, `D-2026-06-19-J`):** 채팅 구조(스레드·컨텍스트·프레이밍)는
+> `repos-plot/docs/concepts/ai-collaboration.md` §1로 통합. 이 파일은 이력 레퍼런스.
+
 > Status: **red-teamed + decisions committed**, 2026-06-15 (verdict was
 > revise-first; revised below). Builds on D-2026-06-13-H (per-canvas scope) +
 > D-2026-06-14-B (claude re-included). Implementation proceeds by the sequence
@@ -28,14 +31,19 @@ either/or.
 
 ### Layer 1 — Thread partitioning (how many conversation histories)
 
-**Thread = `CanvasKey` + a shared `project` scope.**
+**Thread = the selected service/feature node instance, else the canvas.**
+(`D-2026-06-19-E` — selection-driven: a selected `service` or `feature` node keys its own
+thread; with nothing relevant selected, the thread is the canvas scope. Only `service` /
+`feature` nodes key threads — other selections stay Layer-2 context, not threads.)
 
 | Scope key | Thread |
 |---|---|
 | `foundation` | Foundation discovery |
 | `actors` | Actors design |
-| `services` | Services overview — cross-service planning |
-| `service_detail:<service_id>` | One specific service's design/execution |
+| `services` | Services overview — cross-service planning (no service/feature selected) |
+| `service:<service_id>` | One **selected service** — its design (5-field interview, its features) |
+| `feature:<feature_id>` | One **drilled/selected feature** — its behaviour-flowchart |
+| `entities` | Entities — project-wide concept registry (`D-2026-06-17-I`) |
 | `project` | Cross-canvas / workspace-wide |
 
 This **refines D-2026-06-13-H**: today `service_detail` is a single shared
@@ -44,14 +52,12 @@ scope; here it becomes **per-service-instance**. The scope set then equals
 (`viewer/src/types.ts` `CanvasKey`), so chat threads and canvas state key the
 same way (one mental model).
 
-> **⚠ Pending (2026-06-18, doc-sync).** `D-2026-06-17-D/G` rewired the drill: the
-> detail canvas now opens from a **feature**, not a service (the service shows an
-> inspector and no longer drills). Whether the per-instance detail **thread** therefore
-> keys per-**feature** instead of per-**service** (`service_detail:<service_id>`) is
-> **not yet pinned** — the scope/wire identifiers in this Layer 1 (and in the Decisions
-> + Implementation-sequence sections below) still use the service-keyed form. **Resolve
-> with the AI-chat playbook work (ROADMAP 5.10);** do not treat the service-keyed keys
-> as final.
+> **✅ Resolved 2026-06-19 (`D-2026-06-19-E`).** The old single `service_detail:<service_id>`
+> is **split into two selection-keyed threads — `service:<id>` + `feature:<id>`** (per the
+> table above). A selected **service** node keys its own thread; a drilled/selected
+> **feature** keys its own; nothing selected → the canvas scope. The Decisions +
+> Implementation-sequence sections below still say `service_detail:<service_id>` — those
+> identifiers are **superseded by `service:<id>` + `feature:<id>`** (code rename = follow-up).
 
 - Engine session registry key becomes `(plot_root, provider, scope)` where
   `scope` is a `CanvasKey | "project"` string (already the shape, just widening
@@ -95,8 +101,12 @@ reference (Clear Feedback — the user sees what the chat "sees").
 
 This layer is independent of threading and is the high-value, low-cost win.
 **In-app first** (engine-side preamble). The MCP path (external agent knowing
-selection) needs a viewer→engine selection bridge + an MCP resource/tool —
-deferred.
+selection) needs a viewer→engine selection bridge + an MCP resource/tool — **required,
+not deferred (`D-2026-06-19-F`)**: the external agent is the **primary** AI path (R7), so
+the "chat must know the selection" requirement (the 2026-06-14 ask) **must** cover it. The
+agent already talks to Plot over MCP, so selection + the `D-2026-06-17-L` envelope are
+exposed through the MCP context tool (`get_viewer_context`) — the agent pulls them. Code =
+follow-up.
 
 ### Layer 3 — Per-canvas system framing (canvas-appropriate behaviour) — IN-APP ONLY
 

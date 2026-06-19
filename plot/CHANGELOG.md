@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.86.1] — 2026-06-20
+
+### Fixed
+
+- **SessionStart hook resolved no docs** (D-2026-06-19-J). `session_start.py`
+  assumed VISION.md, DECISIONS.md, NEXT_SESSION.md share one `docs/` dir, but
+  after the 2026-06-18 doc move VISION lives in the cross-repo root `docs/`
+  while DECISIONS/NEXT_SESSION stay in the plugin `docs/`. The hook now resolves
+  the two roots separately and matches the Korean `## 본질` essence heading, so
+  the session anchor (essence + last 5 decisions) surfaces again.
+
+### Changed
+
+- **Design/definition/spec docs consolidated to `repos-plot/docs/`** (single
+  SSOT — D-2026-06-19-J / D-2026-06-20-A). `SPEC.md` / `CONCEPTS.md` /
+  `DOMAIN.md` / `CHAT_ARCH.md` / `node-format/` now carry a redirect header
+  pointing at the root canonical source (definitions live there; these stay for
+  code-near / historical reference). `plot/CLAUDE.md` gains a canonical-source
+  pointer. New decisions D-2026-06-19-G…J + D-2026-06-20-A (mindmap dropped /
+  `feature` = behaviour grouping / `actor_ref` = read-only anchor / docs
+  consolidated / open-core system architecture).
+
 ## [0.86.0] — 2026-06-16
 
 ### Changed

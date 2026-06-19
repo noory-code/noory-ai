@@ -1,5 +1,10 @@
 # Plot Concepts (v0.12)
 
+> ⚠ **정본 이전 (2026-06-19, `D-2026-06-19-J`):** kind·캔버스 *의미* 정본 =
+> `repos-plot/docs/concepts/` (kinds.md · canvases.md), *와이어 필드* =
+> `repos-plot/docs/specs/kinds-fields.md`. 충돌 시 root가 이긴다. 이 파일은 이력
+> 레퍼런스 (마라톤 전 본문 — feature/note/entity 추가·6종 폐기 미반영).
+
 The conceptual reference for Plot — what each canvas, kind, and design
 principle means, with examples. This document is the source of truth
 that both human users and the AI tooling (Claude, MCP) consult when

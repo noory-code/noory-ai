@@ -1,5 +1,10 @@
 # SPEC — Plot canvases
 
+> ⚠ **정본 이전 (2026-06-19, `D-2026-06-19-J`):** Plot 정의·개념·동작 스펙의
+> **단일 출처 = `repos-plot/docs/`** (맵 `index.md` · 의미 `concepts/` · 동작
+> `specs/`). 정의가 충돌하면 **root가 이긴다.** 이 파일은 코드-near 동작 세부·이력
+> 레퍼런스로 남는다 (커서/오토레이아웃 등 코드 메커니즘 + 마라톤 전 본문).
+
 > **Scope (v0.13.x):** behaviour spec for **Foundation** and **Actors**.
 > The Services overview, the **feature** canvas (the renamed Service-Detail —
 > a service's feature drills into it, D-2026-06-17-D/G), and the new

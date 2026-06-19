@@ -14,6 +14,12 @@
 >   the others, this file is wrong — fix this file, not the others.
 >
 > **Pairs with (read in this order on session start):**
+>
+> ⚠ **정본 단일화 (2026-06-19, `D-2026-06-19-J`):** Plot 정의·개념·동작 스펙의 단일
+> 출처 = `repos-plot/docs/` (맵 `index.md` · 의미 `concepts/` · 동작 `specs/`). 아래
+> 3·4·7 (DOMAIN/SPEC/CONCEPTS)은 리다이렉트 헤더로 root를 가리킨다 — 정의는 root가
+> 정본, 이 파일들엔 코드-near 동작·이력만 남는다.
+>
 > 1. [`docs/VISION.md`](../../docs/VISION.md) — **the essence** + 3-phase cycle. Single source of truth above everything else. Read first, every session.
 > 2. [`docs/PRODUCT_SPEC.md`](../../plot/docs/PRODUCT_SPEC.md) — **product-level decisions** (platforms, business model, MVP scope, symbol system, canvas inventory, future / out-of-scope). Read second; it is the framing every other doc sits inside.
 > 3. [`docs/DOMAIN.md`](./docs/DOMAIN.md) — bounded contexts, ubiquitous language, dependency direction. Use to decide *where* code goes.

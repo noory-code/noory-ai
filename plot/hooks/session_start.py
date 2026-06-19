@@ -5,6 +5,12 @@ Prints the project essence (VISION.md first sentence) and the last 5
 DECISIONS.md entries to additionalContext so every Plot session begins
 with the user's anchor in the assistant's working set.
 
+Doc homes (2026-06-19 consolidation, D-2026-06-19-J):
+  - VISION.md          → the cross-repo root docs/ (repos-plot/docs/VISION.md)
+  - DECISIONS.md       → the plugin docs/ (noory-ai/plot/docs/DECISIONS.md)
+  - NEXT_SESSION.md    → the plugin docs/ (noory-ai/plot/docs/NEXT_SESSION.md)
+These two roots differ, so the hook resolves them separately.
+
 Cross-platform (macOS, Linux, Windows) — pure Python stdlib only.
 """
 
@@ -17,70 +23,69 @@ import sys
 from pathlib import Path
 
 
-def find_plot_root() -> Path | None:
-    """Locate plot/ relative to this hook script.
-
-    The hook is registered with command
-    ``python3 ${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py``
-    so ``CLAUDE_PLUGIN_ROOT`` (== ``plot/``) is the parent of the hooks
-    directory containing this file.
-    """
+def find_plugin_root() -> Path | None:
+    """Locate the plugin dir (noory-ai/plot/) holding docs/DECISIONS.md."""
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
     if plugin_root:
         candidate = Path(plugin_root)
-        if (candidate / "docs" / "VISION.md").exists():
+        if (candidate / "docs" / "DECISIONS.md").exists():
             return candidate
-    # Fallback: walk up from this file
+    # Fallback: the hook lives at <plugin>/hooks/session_start.py
     here = Path(__file__).resolve()
-    for parent in [here.parent.parent, here.parent.parent.parent]:
-        if (parent / "docs" / "VISION.md").exists():
-            return parent
+    candidate = here.parent.parent
+    if (candidate / "docs" / "DECISIONS.md").exists():
+        return candidate
     return None
 
 
-def read_vision_essence(plot_root: Path) -> str:
-    """Extract the bolded one-sentence essence from VISION.md."""
-    vision_path = plot_root / "docs" / "VISION.md"
-    if not vision_path.exists():
+def find_vision() -> Path | None:
+    """VISION.md lives in the cross-repo root docs/ (repos-plot/docs/).
+
+    Walk up from this file until a docs/VISION.md is found.
+    """
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        vision = parent / "docs" / "VISION.md"
+        if vision.exists():
+            return vision
+    return None
+
+
+def read_vision_essence(vision_path: Path | None) -> str:
+    """Extract the bolded one-sentence essence from VISION.md (§본질)."""
+    if vision_path is None or not vision_path.exists():
         return "(VISION.md not found)"
     text = vision_path.read_text(encoding="utf-8")
-    # The essence is the first **bolded** paragraph after "## The essence"
-    match = re.search(
-        r"## The essence.*?\*\*(.*?)\*\*",
-        text,
-        re.DOTALL,
-    )
+    # The essence is the first **bolded** block after the "## 본질" heading.
+    match = re.search(r"##\s*본질.*?\*\*(.*?)\*\*", text, re.DOTALL)
     if match:
-        return match.group(1).strip()
+        return re.sub(r"\s+", " ", match.group(1)).strip()
     return "(essence sentence not found in VISION.md)"
 
 
-def read_recent_decisions(plot_root: Path, n: int = 5) -> list[str]:
+def read_recent_decisions(plugin_root: Path | None, n: int = 5) -> list[str]:
     """Return the headings of the last N DECISIONS entries."""
-    decisions_path = plot_root / "docs" / "DECISIONS.md"
+    if plugin_root is None:
+        return ["(DECISIONS.md not found)"]
+    decisions_path = plugin_root / "docs" / "DECISIONS.md"
     if not decisions_path.exists():
         return ["(DECISIONS.md not found)"]
     text = decisions_path.read_text(encoding="utf-8")
     headings = re.findall(r"^### (D-\d{4}-\d{2}-\d{2}-[A-Z]+ — .+)$", text, re.MULTILINE)
     if not headings:
         return ["(no decisions found)"]
-    return headings[-n:]
+    # Entries are newest-first in the log, so the most recent are at the top.
+    return headings[:n]
 
 
-def read_next_session_queue(plot_root: Path) -> list[tuple[str, str]]:
-    """Return [(trigger_keyword, short_title)] for every active queue item.
-
-    NEXT_SESSION.md format:
-    ## Active queue
-    ### `<TRIGGER>` — <short title>
-    ...
-    ## Completed
-    """
-    next_path = plot_root / "docs" / "NEXT_SESSION.md"
+def read_next_session_queue(plugin_root: Path | None) -> list[tuple[str, str]]:
+    """Return [(trigger_keyword, short_title)] for every active queue item."""
+    if plugin_root is None:
+        return []
+    next_path = plugin_root / "docs" / "NEXT_SESSION.md"
     if not next_path.exists():
         return []
     text = next_path.read_text(encoding="utf-8")
-    # Slice between "## Active queue" and "## Completed"
     active_match = re.search(
         r"^## Active queue\s*\n(.*?)(?=^## Completed|\Z)",
         text,
@@ -98,15 +103,16 @@ def read_next_session_queue(plot_root: Path) -> list[tuple[str, str]]:
 
 
 def main() -> int:
-    plot_root = find_plot_root()
-    if plot_root is None:
+    plugin_root = find_plugin_root()
+    vision_path = find_vision()
+    if plugin_root is None and vision_path is None:
         # Silently no-op outside a Plot context
         print(json.dumps({"continue": True}))
         return 0
 
-    essence = read_vision_essence(plot_root)
-    recent = read_recent_decisions(plot_root, n=5)
-    queue = read_next_session_queue(plot_root)
+    essence = read_vision_essence(vision_path)
+    recent = read_recent_decisions(plugin_root, n=5)
+    queue = read_next_session_queue(plugin_root)
 
     additional_context_lines = [
         "# Plot session anchor",
@@ -115,7 +121,10 @@ def main() -> int:
         "",
         f"> {essence}",
         "",
-        "Source of truth: `plot/docs/VISION.md`. Three phases: Discovery (Foundation) → Retention (anchor) → Execution (Actors / Services / Service-Detail) with AICollaboration cross-cutting.",
+        "Source of truth: `repos-plot/docs/` (map: `index.md`; essence: `VISION.md`; "
+        "meaning: `concepts/`; behavior: `specs/`). Three phases: Discovery (Foundation) "
+        "→ Retention (anchor) → Execution (Actors / Services / Feature) with "
+        "AICollaboration cross-cutting.",
         "",
         "**Recent decisions (last 5):**",
         "",
@@ -125,7 +134,7 @@ def main() -> int:
     additional_context_lines.extend(
         [
             "",
-            "Source: `plot/docs/DECISIONS.md`. Always read the full entry before re-proposing related work.",
+            "Source: `noory-ai/plot/docs/DECISIONS.md`. Always read the full entry before re-proposing related work.",
         ]
     )
 
@@ -133,7 +142,7 @@ def main() -> int:
         additional_context_lines.extend(
             [
                 "",
-                "**Queued tasks for next session — trigger by user keyword (read `plot/docs/NEXT_SESSION.md` for full scope):**",
+                "**Queued tasks for next session — trigger by user keyword (read `noory-ai/plot/docs/NEXT_SESSION.md` for full scope):**",
                 "",
             ]
         )
@@ -144,7 +153,7 @@ def main() -> int:
         additional_context_lines.append("")
         additional_context_lines.append(
             "If the user's first message contains one of the trigger keywords above, "
-            "open `plot/docs/NEXT_SESSION.md` and execute the matching item before any "
+            "open `noory-ai/plot/docs/NEXT_SESSION.md` and execute the matching item before any "
             "other work."
         )
 
@@ -153,8 +162,8 @@ def main() -> int:
             "",
             "**Pre-action gates active:**",
             "- Gate -1: read VISION.md essence (auto-loaded above).",
-            "- Gate 0: user confirmation pins SPEC.md immediately.",
-            "- Gate 1: SPEC-covered changes only; otherwise stop + ask.",
+            "- Gate 0: user confirmation pins the spec immediately.",
+            "- Gate 1: spec-covered changes only; otherwise stop + ask.",
             "- Gate 2: do not grow SketchCanvas / SketchInspector / App / SketchStencil.",
             "- Gate 3: browser-verify UI changes via the `plot-verifier` sub-agent.",
             "- Gate 4: bump version + CHANGELOG + commit + push together.",
