@@ -3,18 +3,11 @@
  * service_detail canvas as a child of a service. Carries a format
  * hint + producer/consumer actor master ids.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { ContentJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface ContentJson extends BaseFieldsJson {
-  kind: "content";
-  format: string;
-  producer_actor_id: string | null;
-  consumer_actor_id: string | null;
-  body: string;
-}
 
 export class Content implements BaseFields {
   readonly id!: string;

@@ -5,16 +5,11 @@
  * indivisible declaration, not a bag of sliced angles. Legacy values fold
  * into ``body`` on read (data-loss guard) — see ``foldLegacyTypedFields``.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { MissionJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface MissionJson extends BaseFieldsJson {
-  kind: "mission";
-  statement: string;
-  body: string;
-}
 
 const FOLD_LABELS: Record<string, string> = { why: "Why", direction: "Direction" };
 

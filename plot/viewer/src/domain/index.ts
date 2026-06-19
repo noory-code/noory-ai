@@ -7,46 +7,55 @@
  * registers itself via ``registerKindParser`` on module load.
  */
 export { DomainParseError } from "./DomainParseError";
-export type { BaseFields, BaseFieldsJson } from "./BaseFields";
+export type { BaseFields } from "./BaseFields";
 export { parseBaseFields } from "./BaseFields";
 export { parseEntity, registerKindParser, registeredKinds } from "./parseEntity";
 
+// Wire-shape interfaces are GENERATED — single SSOT in ``wire.gen.ts``
+// (Pydantic models, Phase A / D-2026-06-20-A). Re-exported here so the
+// existing ``from "../domain"`` barrel import sites keep resolving.
+export type {
+  ActorJson,
+  ActorRefJson,
+  BaseFieldsJson,
+  CategoryJson,
+  ContentJson,
+  CoreValueJson,
+  DecisionJson,
+  GroupJson,
+  IdentityJson,
+  IdentityRefJson,
+  MetricJson,
+  MissionJson,
+  MissionRefJson,
+  ProjectJson,
+  RuleJson,
+  ServiceJson,
+  StepJson,
+  ValueRefJson,
+} from "./wire.gen";
+
 // Per-kind entity classes (Phase 2.1+). Importing this barrel registers
 // every kind's parser with parseEntity via module-load side effects.
+// Hand-written type aliases (not wire shapes) stay with their class.
 export { Metric } from "./Metric";
-export type { MetricJson } from "./Metric";
 export { Step } from "./Step";
-export type { StepJson } from "./Step";
 export { Decision } from "./Decision";
-export type { DecisionJson } from "./Decision";
 export { Group } from "./Group";
-export type { GroupJson } from "./Group";
 export { CoreValue } from "./CoreValue";
-export type { CoreValueJson } from "./CoreValue";
 export { Identity } from "./Identity";
-export type { IdentityJson, IdentityStatus } from "./Identity";
+export type { IdentityStatus } from "./Identity";
 export { Mission } from "./Mission";
-export type { MissionJson } from "./Mission";
 export { Project } from "./Project";
-export type { ProjectJson } from "./Project";
 export { Category } from "./Category";
-export type { CategoryJson } from "./Category";
 export { ActorRef } from "./ActorRef";
-export type { ActorRefJson } from "./ActorRef";
 export { MissionRef } from "./MissionRef";
-export type { MissionRefJson } from "./MissionRef";
 export { ValueRef } from "./ValueRef";
-export type { ValueRefJson } from "./ValueRef";
 export { IdentityRef } from "./IdentityRef";
-export type { IdentityRefJson } from "./IdentityRef";
 export { Actor } from "./Actor";
-export type { ActorJson } from "./Actor";
 export { Service } from "./Service";
-export type { ServiceJson } from "./Service";
 export { Rule } from "./Rule";
-export type { RuleJson } from "./Rule";
 export { Content } from "./Content";
-export type { ContentJson } from "./Content";
 
 // v0.15 Phase 2.10 — discriminated-union SketchNode (replaces the
 // god ``SketchNode`` interface that lived in ``viewer/src/types.ts``).

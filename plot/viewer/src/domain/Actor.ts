@@ -5,16 +5,11 @@
  * PHILOSOPHY P3 (Participation is Asymmetric) they vary per service, so
  * they live on ``actor_ref`` (per-service stake), not the actor master.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { ActorJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface ActorJson extends BaseFieldsJson {
-  kind: "actor";
-  side: "operator" | "user" | null;
-  body: string;
-}
 
 export class Actor implements BaseFields {
   readonly id!: string;

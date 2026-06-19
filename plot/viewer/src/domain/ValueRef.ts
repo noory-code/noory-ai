@@ -2,17 +2,11 @@
  * v0.15 Phase 2.7 — ``value_ref`` entity. References a Foundation
  * CoreValue master.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { ValueRefJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface ValueRefJson extends BaseFieldsJson {
-  kind: "value_ref";
-  ref_value_id: string | null;
-  /** v0.24.x (D-2026-05-17-M) — service-context notes (4-ref symmetry). */
-  notes_in_context: string;
-}
 
 export class ValueRef implements BaseFields {
   readonly id!: string;

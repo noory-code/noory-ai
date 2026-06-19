@@ -2,17 +2,11 @@
  * v0.15 Phase 2.7 — ``mission_ref`` entity. References a Foundation
  * Mission master; lets a service declare which Mission it answers to.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { MissionRefJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface MissionRefJson extends BaseFieldsJson {
-  kind: "mission_ref";
-  ref_mission_id: string | null;
-  /** v0.24.x (D-2026-05-17-M) — service-context notes (4-ref symmetry). */
-  notes_in_context: string;
-}
 
 export class MissionRef implements BaseFields {
   readonly id!: string;

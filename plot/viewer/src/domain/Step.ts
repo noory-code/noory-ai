@@ -5,7 +5,8 @@
  * (int | null) + ``outcome``. ``order`` is null for unordered /
  * parallel branches.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { StepJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
@@ -15,14 +16,6 @@ import { registerKindParser } from "./parseEntity";
  *  step (no tint); "negative" = a failure result (red); "positive" =
  *  a success result (green). */
 export type StepPolarity = "positive" | "negative" | "neutral";
-
-export interface StepJson extends BaseFieldsJson {
-  kind: "step";
-  order: number | null;
-  outcome: string;
-  body: string;
-  polarity: StepPolarity;
-}
 
 export class Step implements BaseFields {
   readonly id!: string;

@@ -13,7 +13,8 @@
  * no writer yet. v0.43.2 (D-2026-06-06-B) removed the legacy ``do`` / ``dont``
  * (folded into ``body`` on read, data-loss guard).
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { IdentityJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
@@ -21,14 +22,6 @@ import { registerKindParser } from "./parseEntity";
 export type IdentityStatus = "manual" | "derived" | "confirmed";
 
 const IDENTITY_STATUSES: readonly IdentityStatus[] = ["manual", "derived", "confirmed"];
-
-export interface IdentityJson extends BaseFieldsJson {
-  kind: "identity";
-  description: string;
-  body: string;
-  status: IdentityStatus;
-  provenance: string[];
-}
 
 const FOLD_LABELS: Record<string, string> = { do: "Do", dont: "Don't" };
 

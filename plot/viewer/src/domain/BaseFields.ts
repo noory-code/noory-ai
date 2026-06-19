@@ -10,47 +10,12 @@
 import type { Shape } from "../types";
 import { DomainParseError } from "./DomainParseError";
 
-/** Wire shape (what the server sends). The server-side Pydantic
- *  layer always populates every field with its default, so the wire
- *  shape is always-populated — required everywhere. ``fromJson``
- *  itself still tolerates raw inputs that omit fields (uses defaults
- *  internally) but the output of ``toJson`` and the entity instances
- *  always carry every BaseFields field.
- *
- *  v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed. Hierarchy is
- *  now expressed via directed edges (``SketchEdge.directed``); see
- *  ``useCollapsedTree`` for the new fold-source-of-truth. The v0.26
- *  read-side server migration drops any pre-v0.26 ``parent_id`` from
- *  raw payloads before they hit this layer. */
-export interface BaseFieldsJson {
-  id: string;
-  label: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  color: string;
-  shape: Shape;
-  icon: string | null;
-  collapsed: boolean;
-  is_root: boolean;
-  details_path: string | null;
-  /** v0.16.12 — owner identifier for multi-user prep. ``null`` when
-   *  authored by an anonymous / single-user session. Server fills
-   *  from session context once multi-user lands. */
-  owner: string | null;
-  /** v0.17.2 Phase 2 (D-2026-05-16-C) — per-node version. Format
-   *  ``v<MAJOR>.<MINOR>`` (e.g. ``v1.0`` / ``v2.3``). Pre-Phase-2
-   *  canvases auto-fill ``"v1.0"`` on read. Phase 3 increments on
-   *  Publish; Phase 4 propagates up the ancestor chain. */
-  version: string;
-  /** v0.22.0 (D-2026-05-17-H) — publish dirty baseline (server-managed).
-   *  Wire key is ``_publish_baseline``. Captures the content snapshot at
-   *  the most recent publish so the server can compute ``_dirty`` on
-   *  GET. The client does NOT round-trip this field; ``write_canvas``
-   *  preserves it from the disk state when a PUT payload omits it. */
-  publish_baseline?: unknown;
-}
+/** Wire shape (what the server sends) — GENERATED. The canonical
+ *  ``BaseFieldsJson`` now lives in ``wire.gen.ts`` (Pydantic SSOT, Phase A
+ *  / D-2026-06-20-A); re-exported here so existing ``./BaseFields`` import
+ *  sites keep resolving. The in-memory ``BaseFields`` (below) stays
+ *  hand-written — it is the defaults-filled runtime shape, not the wire. */
+export type { BaseFieldsJson } from "./wire.gen";
 
 /** In-memory shape (defaults filled in). Every field present and typed.
  *  v0.26.0 (D-2026-05-25-A) — ``parent_id`` removed. */

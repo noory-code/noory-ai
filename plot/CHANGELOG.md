@@ -4,6 +4,37 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.87.0] — 2026-06-20
+
+### Changed
+
+- **Viewer wire types are now GENERATED from the engine schema** (migration
+  Phase A, D-2026-06-20-A, TECH_REVIEW step 1). New `plot_mcp/ts_codegen.py`
+  emits `viewer/src/domain/wire.gen.ts` (`BaseFieldsJson` + one `{Kind}Json`
+  per kind) from the Pydantic models; every per-kind domain class now imports
+  its wire interface from `./wire.gen` instead of hand-declaring it inline. The
+  hand-written domain *classes* (`fromJson` / `toJson` / invariants) are
+  untouched — only the wire shape is generated. This makes the server↔viewer
+  contract survive the repo split: the old cross-side regex parity
+  (`test_schema_parity.py::test_per_kind_field_parity`) read both repos and
+  died on split; the generated artifact travels with the viewer and the app
+  build regenerates it from the pinned engine.
+
+### Added
+
+- `tests/test_ts_codegen.py` — pins committed `wire.gen.ts` byte-for-byte
+  against fresh generation (a model change without `uv run python -m
+  plot_mcp.ts_codegen` fails here).
+
+### Removed
+
+- `test_schema_parity.py` cross-side regex parity (`test_per_kind_field_parity`
+  + `test_base_fields_ts_matches_canonical_set`) — superseded by codegen drift +
+  the viewer `wire-contract.test.ts` (both repointed at `wire.gen.ts`). The file
+  keeps the Python-only guards (`test_export_map_covers_union`, base-field
+  anchor). `no-god-import.test.tsx` invariant 3 now verifies the generated
+  interface + class consumption + no inline re-declaration.
+
 ## [0.86.2] — 2026-06-20
 
 ### Fixed

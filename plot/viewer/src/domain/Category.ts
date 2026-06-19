@@ -4,16 +4,11 @@
  * typed field is ``theme`` — a one-line statement of the common
  * thread that ties this category's services together.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { CategoryJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface CategoryJson extends BaseFieldsJson {
-  kind: "category";
-  theme: string;
-  body: string;
-}
 
 export class Category implements BaseFields {
   readonly id!: string;

@@ -10,17 +10,11 @@
  * load, so any code path that imports ``parseEntity`` (or its barrel
  * via ``../domain``) automatically picks up metric-kind dispatch.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { MetricJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface MetricJson extends BaseFieldsJson {
-  kind: "metric";
-  target: string;
-  measurement: string;
-  body: string;
-}
 
 export class Metric implements BaseFields {
   // BaseFields slice — populated from ``parseBaseFields`` in fromJson.

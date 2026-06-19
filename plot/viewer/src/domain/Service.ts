@@ -5,25 +5,11 @@
  * target_side + 6 typed fields (what / value_created / scope / trigger /
  * how / outcome) + do/dont.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { ServiceJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface ServiceJson extends BaseFieldsJson {
-  kind: "service";
-  problem: string;
-  target_side: "operator" | "user" | "both" | null;
-  what: string;
-  value_created: string;
-  scope: string;
-  trigger: string;
-  how: string;
-  outcome: string;
-  do: string;
-  dont: string;
-  body: string;
-}
 
 export class Service implements BaseFields {
   readonly id!: string;

@@ -8,14 +8,11 @@
  *
  * No typed fields — only BaseFields + the kind discriminator.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { ProjectJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface ProjectJson extends BaseFieldsJson {
-  kind: "project";
-}
 
 export class Project implements BaseFields {
   readonly id!: string;

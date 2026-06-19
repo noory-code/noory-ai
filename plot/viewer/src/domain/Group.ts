@@ -10,16 +10,11 @@
  * Mirrors ``plot_mcp/models.py::GroupNode``: BaseNodeFields +
  * ``member_ids`` + ``body``.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { GroupJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface GroupJson extends BaseFieldsJson {
-  kind: "group";
-  member_ids: string[];
-  body: string;
-}
 
 export class Group implements BaseFields {
   readonly id!: string;

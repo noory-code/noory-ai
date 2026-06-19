@@ -8,15 +8,19 @@
  *      interface (must be a re-export from ``domain/``).
  *   2. Every ``NodeKind`` discriminator value has a corresponding
  *      ``domain/{Kind}.ts`` entity class file.
- *   3. Every domain class exports its JSON wire interface
- *      ``{Kind}Json``.
+ *   3. The GENERATED ``domain/wire.gen.ts`` declares each ``{Kind}Json``
+ *      wire interface, the class file CONSUMES it from ``./wire.gen``,
+ *      and the class file does NOT re-declare an inline ``{Kind}Json``
+ *      (codegen Phase A, D-2026-06-20-A — inline interfaces retired;
+ *      re-introducing one is the new shape of the god regression).
  *   4. Every domain class registers its parser via
  *      ``registerKindParser("{kind}", {Kind}.fromJson)``.
  *
  * pre_commit_gate.py runs vitest on every viewer commit; a failure here
- * blocks the commit. Together with ``test_schema_parity.py`` (server
- * side) and ``entity-roundtrip.test.tsx`` (Phase D), the three guards
- * keep the discriminated-union pattern intact.
+ * blocks the commit. Together with ``test_ts_codegen.py`` (server-side
+ * codegen drift) + ``wire-contract.test.ts`` (viewer snapshot) and
+ * ``entity-roundtrip.test.tsx`` (Phase D), these guards keep the
+ * discriminated-union pattern intact.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -41,8 +45,15 @@ const NODE_KINDS = [
   "identity_ref",
   "metric",
   "step",
+  "decision",
+  "group",
   "category",
 ] as const;
+
+const WIRE_GEN = readFileSync(
+  resolve(VIEWER_SRC, "domain", "wire.gen.ts"),
+  "utf8",
+);
 
 // kebab / snake_case → PascalCase. ``actor_ref`` → ``ActorRef``.
 const toClassName = (kind: string): string =>
@@ -82,23 +93,43 @@ describe("no-god-import: domain layer integrity", () => {
   );
 
   test.each(NODE_KINDS)(
-    "domain/%s.ts exports its {Kind}Json wire interface",
+    "%s: wire.gen.ts declares {Kind}Json, the class consumes it, no inline god interface",
     (kind) => {
       const className = toClassName(kind);
+      // 3a — the GENERATED wire interface exists (the JSON↔domain boundary).
+      expect(
+        WIRE_GEN,
+        `wire.gen.ts must declare 'interface ${className}Json' — the generated ` +
+          `wire-shape interface mirroring the Pydantic model ` +
+          `(regenerate: uv run python -m plot_mcp.ts_codegen).`,
+      ).toMatch(new RegExp(`export\\s+interface\\s+${className}Json\\b`));
+
       const file = resolve(VIEWER_SRC, "domain", `${className}.ts`);
       if (!existsSync(file)) {
-        // Already reported by the previous test; skip the secondary assertion.
-        return;
+        return; // already reported by the file-exists test
       }
       const src = readFileSync(file, "utf8");
-      const jsonInterfaceRe = new RegExp(
-        `export\\s+interface\\s+${className}Json\\b`,
-      );
+
+      // 3b — the hand-written class file CONSUMES the generated wire shape
+      // (so toJson() is typed by it), importing from ./wire.gen.
       expect(
         src,
-        `domain/${className}.ts must export 'interface ${className}Json' ` +
-          `(the wire-shape interface that mirrors the Pydantic model).`,
-      ).toMatch(jsonInterfaceRe);
+        `domain/${className}.ts must import '${className}Json' from './wire.gen' ` +
+          `— the generated wire shape (inline interfaces were retired in Phase A).`,
+      ).toMatch(
+        new RegExp(
+          `import\\s+type\\s*\\{[^}]*\\b${className}Json\\b[^}]*\\}\\s*from\\s*["']\\./wire\\.gen["']`,
+        ),
+      );
+
+      // 3c — the class file must NOT re-declare an inline interface (that is
+      // the new shape of the god regression: a hand-edited wire type that
+      // drifts from the Pydantic SSOT, bypassing the codegen guard).
+      expect(
+        src,
+        `domain/${className}.ts must NOT declare 'export interface ${className}Json' ` +
+          `inline — the wire shape is generated in wire.gen.ts (single SSOT).`,
+      ).not.toMatch(new RegExp(`export\\s+interface\\s+${className}Json\\b`));
     },
   );
 

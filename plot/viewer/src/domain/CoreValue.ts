@@ -5,16 +5,11 @@
  * ``definition``; ``dont`` went unused). Legacy values fold into ``body``
  * on read (data-loss guard) — see ``foldLegacyDoDont``.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { CoreValueJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface CoreValueJson extends BaseFieldsJson {
-  kind: "core_value";
-  definition: string;
-  body: string;
-}
 
 const FOLD_LABELS: Record<string, string> = { do: "Do", dont: "Don't" };
 

@@ -23,23 +23,44 @@
  * return type and anywhere that holds fully-validated entities (rare
  * in the viewer; common in tests).
  */
-import type { Actor, ActorJson } from "./Actor";
-import type { ActorRef, ActorRefJson } from "./ActorRef";
-import type { Category, CategoryJson } from "./Category";
-import type { Content, ContentJson } from "./Content";
-import type { CoreValue, CoreValueJson } from "./CoreValue";
-import type { Decision, DecisionJson } from "./Decision";
-import type { Group, GroupJson } from "./Group";
-import type { Identity, IdentityJson } from "./Identity";
-import type { IdentityRef, IdentityRefJson } from "./IdentityRef";
-import type { Metric, MetricJson } from "./Metric";
-import type { Mission, MissionJson } from "./Mission";
-import type { MissionRef, MissionRefJson } from "./MissionRef";
-import type { Project, ProjectJson } from "./Project";
-import type { Rule, RuleJson } from "./Rule";
-import type { Service, ServiceJson } from "./Service";
-import type { Step, StepJson } from "./Step";
-import type { ValueRef, ValueRefJson } from "./ValueRef";
+// Class-instance imports (hand-written domain classes) stay per-file.
+import type { Actor } from "./Actor";
+import type { ActorRef } from "./ActorRef";
+import type { Category } from "./Category";
+import type { Content } from "./Content";
+import type { CoreValue } from "./CoreValue";
+import type { Decision } from "./Decision";
+import type { Group } from "./Group";
+import type { Identity } from "./Identity";
+import type { IdentityRef } from "./IdentityRef";
+import type { Metric } from "./Metric";
+import type { Mission } from "./Mission";
+import type { MissionRef } from "./MissionRef";
+import type { Project } from "./Project";
+import type { Rule } from "./Rule";
+import type { Service } from "./Service";
+import type { Step } from "./Step";
+import type { ValueRef } from "./ValueRef";
+// Wire-shape interfaces are GENERATED — single SSOT in ``wire.gen.ts``.
+import type {
+  ActorJson,
+  ActorRefJson,
+  CategoryJson,
+  ContentJson,
+  CoreValueJson,
+  DecisionJson,
+  GroupJson,
+  IdentityJson,
+  IdentityRefJson,
+  MetricJson,
+  MissionJson,
+  MissionRefJson,
+  ProjectJson,
+  RuleJson,
+  ServiceJson,
+  StepJson,
+  ValueRefJson,
+} from "./wire.gen";
 
 /** Class-instance union — used by ``parseEntity`` and entity-class
  *  call sites (round-trip tests, fromJson validators). */

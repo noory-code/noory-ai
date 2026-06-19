@@ -6,20 +6,11 @@
  * P3, participation is asymmetric). side mirrors the referenced actor's
  * identity side for canvas-local colour coding (not authored here).
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { ActorRefJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface ActorRefJson extends BaseFieldsJson {
-  kind: "actor_ref";
-  ref_actor_id: string | null;
-  gives: string;
-  receives: string;
-  motivation: string;
-  pain: string;
-  side: "operator" | "user" | null;
-}
 
 export class ActorRef implements BaseFields {
   readonly id!: string;

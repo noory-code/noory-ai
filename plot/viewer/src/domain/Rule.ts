@@ -3,18 +3,11 @@
  * service_detail canvas as a child of a service. Carries policy +
  * enforcement + an actor-id → permission-string map (e.g. RUD/CRUD).
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { RuleJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface RuleJson extends BaseFieldsJson {
-  kind: "rule";
-  policy: string;
-  enforcement: string;
-  actor_permissions: Record<string, string>;
-  body: string;
-}
 
 export class Rule implements BaseFields {
   readonly id!: string;

@@ -15,15 +15,11 @@
  * Self-registers its ``fromJson`` parser with ``parseEntity`` on
  * module load.
  */
-import type { BaseFields, BaseFieldsJson } from "./BaseFields";
+import type { BaseFields } from "./BaseFields";
+import type { DecisionJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
-
-export interface DecisionJson extends BaseFieldsJson {
-  kind: "decision";
-  body: string;
-}
 
 export class Decision implements BaseFields {
   // BaseFields slice — populated from ``parseBaseFields`` in fromJson.
