@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.7] — 2026-06-21
+
+### Fixed
+
+- **In-app Claude Code chat doubled every reply** (**D-2026-06-21-B**). The
+  `stream-json` parser counted text from both the partial `content_block_delta`
+  frames AND the full `assistant` recap message; with `--include-partial-messages`
+  both arrive, doubling the text ("…살펴볼게요.…살펴볼게요."). The partials are now
+  the single streaming source; the recap is ignored. Pinned by
+  `test_claude_stream_parse` + updated `test_chat_session` fixtures.
+
 ## [0.98.6] — 2026-06-20
 
 ### Changed

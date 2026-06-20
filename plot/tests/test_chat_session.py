@@ -38,7 +38,11 @@ from plot_mcp.chat_session import (
 # ---------------------------------------------------------------------------
 
 
-def test_parse_stream_line_extracts_text_from_assistant_message() -> None:
+def test_parse_stream_line_ignores_full_assistant_recap_message() -> None:
+    """D-2026-06-21-B — with --include-partial-messages the CLI emits text
+    twice (partials + a full ``assistant`` recap). The recap is NOT a text
+    source; counting it doubled the reply. So an assistant message yields no
+    delta and leaves the accumulator untouched."""
     accumulator: list[str] = []
     line = json.dumps(
         {
@@ -47,10 +51,8 @@ def test_parse_stream_line_extracts_text_from_assistant_message() -> None:
         }
     ).encode()
     event = _parse_stream_line("turn-1", line, accumulator)
-    assert event is not None
-    assert event.type == "delta"
-    assert event.text == "Hello, world!"
-    assert accumulator == ["Hello, world!"]
+    assert event is None
+    assert accumulator == []
 
 
 def test_parse_stream_line_extracts_text_from_content_block_delta() -> None:
@@ -354,19 +356,30 @@ async def test_stream_turn_yields_start_delta_complete_on_success(
             + b"\n",
             json.dumps(
                 {
-                    "type": "assistant",
-                    "message": {
-                        "content": [{"type": "text", "text": "Hello "}]
+                    "type": "stream_event",
+                    "event": {
+                        "type": "content_block_delta",
+                        "delta": {"type": "text_delta", "text": "Hello "},
                     },
                 }
             ).encode()
             + b"\n",
             json.dumps(
                 {
-                    "type": "assistant",
-                    "message": {
-                        "content": [{"type": "text", "text": "world."}]
+                    "type": "stream_event",
+                    "event": {
+                        "type": "content_block_delta",
+                        "delta": {"type": "text_delta", "text": "world."},
                     },
+                }
+            ).encode()
+            + b"\n",
+            # the full assistant recap of the same text — must NOT re-append
+            # (D-2026-06-21-B), so the reply is not doubled.
+            json.dumps(
+                {
+                    "type": "assistant",
+                    "message": {"content": [{"type": "text", "text": "Hello world."}]},
                 }
             ).encode()
             + b"\n",
@@ -386,6 +399,8 @@ async def test_stream_turn_yields_start_delta_complete_on_success(
     assert [e.type for e in events] == ["turn_start", "delta", "delta", "turn_complete"]
     assert events[1].text == "Hello "
     assert events[2].text == "world."
+    # the recap did not produce a 3rd delta nor double the accumulated text
+    assert events[3].text == "Hello world."
     assert events[3].text == "Hello world."  # accumulated
     # Spawn command uses --session-id on the first turn + cwd is the workspace.
     assert process.spawn_cwd == str(ws)
@@ -460,8 +475,11 @@ async def test_stream_turn_kills_process_on_cancel(tmp_path: Path) -> None:
     # Infinite-ish stream of delta lines — we'll cancel after one.
     payload = json.dumps(
         {
-            "type": "assistant",
-            "message": {"content": [{"type": "text", "text": "chunk"}]},
+            "type": "stream_event",
+            "event": {
+                "type": "content_block_delta",
+                "delta": {"type": "text_delta", "text": "chunk"},
+            },
         }
     ).encode() + b"\n"
 

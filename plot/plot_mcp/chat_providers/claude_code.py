@@ -71,13 +71,14 @@ def _parse_claude_line(
 ) -> ChatStreamEvent | None:
     """Decode one Claude Code ``stream-json`` line into a ``delta`` event.
 
-    Two text-bearing shapes survive the filter:
+    Streaming text comes from the **partial** frames only (D-2026-06-21-B):
+      ``{"type":"stream_event", "event":{"type":"content_block_delta",
+         "delta":{"type":"text_delta", "text":"..."}}}``
 
-      1. Full assistant message:
-         ``{"type":"assistant", "message":{"content":[{"type":"text",...}]}}``
-      2. Partial delta (``--include-partial-messages``):
-         ``{"type":"stream_event", "event":{"type":"content_block_delta",
-            "delta":{"type":"text_delta", "text":"..."}}}``
+    With ``--include-partial-messages`` the CLI ALSO emits a final full
+    ``assistant`` recap message carrying the same complete block text. Counting
+    both doubles the reply ("살펴볼게요.살펴볼게요."), so the recap is ignored
+    here — the partials are the single source of the streamed text.
     """
     obj = _decode_jsonl(line)
     if obj is None:
@@ -90,22 +91,11 @@ def _parse_claude_line(
 
 
 def _extract_anthropic_text(obj: dict[str, Any]) -> str:
-    """Pull text out of any of Anthropic's assistant-text frame shapes."""
-    msg = obj.get("message")
-    if isinstance(msg, dict):
-        content = msg.get("content")
-        if isinstance(content, list):
-            parts: list[str] = []
-            for item in content:
-                if not isinstance(item, dict):
-                    continue
-                if item.get("type") != "text":
-                    continue
-                t = item.get("text")
-                if isinstance(t, str):
-                    parts.append(t)
-            if parts:
-                return "".join(parts)
+    """Streamed text from a partial ``content_block_delta`` frame, or ``""``.
+
+    The full ``assistant`` recap message is intentionally NOT a source — the
+    partials already carry the complete text, and counting the recap doubles
+    the reply (D-2026-06-21-B)."""
     event = obj.get("event")
     if isinstance(event, dict):
         delta = event.get("delta")
