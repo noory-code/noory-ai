@@ -30,10 +30,9 @@ from plot_mcp.models_union import SketchEdge, SketchNode
 
 CanvasKind = Literal["foundation", "actors", "services", "service_detail"]
 
-# v0.10 Step 3: Foundation refs are admitted on the Services overview *and*
-# Service-Detail canvases — services can declare which Mission / Value /
-# Identity they answer to without leaving the canvas.
-_FOUNDATION_REFS = {"mission_ref", "value_ref", "identity_ref"}
+# Foundation refs (mission_ref / value_ref / identity_ref) retired 2026-06-20
+# (D-2026-06-17-H / D-2026-06-20-G) — moved to the service inspector chips.
+_FOUNDATION_REFS: set[str] = set()
 
 _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     "foundation": {"project", "mission", "core_value", "identity"},

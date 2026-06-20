@@ -23,13 +23,6 @@ export interface NodePreset {
    * resolved which actor in the Actor canvas this node points at.
    */
   ref_actor_id?: string | null;
-  /**
-   * v0.10 Step 3: set on Foundation ref drops once the picker resolves
-   * the master node from the Foundation canvas.
-   */
-  ref_mission_id?: string | null;
-  ref_value_id?: string | null;
-  ref_identity_id?: string | null;
 }
 
 /**
@@ -46,16 +39,5 @@ export type PendingActorRef =
     }
   | { mode: "rewire"; nodeId: string };
 
-export type PendingFoundationRef =
-  | {
-      mode: "create";
-      refKind: "mission_ref" | "value_ref" | "identity_ref";
-      preset: NodePreset;
-      pos: { x: number; y: number };
-      resolved: { parentId: string | null };
-    }
-  | {
-      mode: "rewire";
-      refKind: "mission_ref" | "value_ref" | "identity_ref";
-      nodeId: string;
-    };
+// PendingFoundationRef removed 2026-06-20 (D-2026-06-20-G) — the foundation
+// refs + their picker are retired; refs are service-inspector chips now.

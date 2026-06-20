@@ -66,13 +66,9 @@ NodeKind = Literal[
     "feature",
     "rule",
     "content",
-    # v0.10 Step 3: Foundation symbol refs (Symbol/Component pattern). The
-    # masters live on the Foundation canvas; instances can be placed on
-    # Services and Service-Detail canvases to declare which Foundation
-    # commitment a service answers to. See docs/CONCEPTS.md.
-    "mission_ref",
-    "value_ref",
-    "identity_ref",
+    # mission_ref / value_ref / identity_ref retired 2026-06-20
+    # (D-2026-06-17-H / D-2026-06-20-G): Foundation references moved to the
+    # service inspector's chip pickers (ref_value_ids / ref_identity_ids).
     # v0.10 Step 5: composition kinds inside a service_detail canvas.
     #   metric — how the service is measured (KPI, success rate, latency).
     #   step   — an ordered procedural step in the service's flow.

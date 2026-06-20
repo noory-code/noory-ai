@@ -20,17 +20,14 @@ import { CoreValueInspector } from "./core_value";
 import { DecisionInspector } from "./decision";
 import { FeatureInspector } from "./feature";
 import { IdentityInspector } from "./identity";
-import { IdentityRefInspector } from "./identity_ref";
 import { MetricInspector } from "./metric";
 import { MissionInspector } from "./mission";
-import { MissionRefInspector } from "./mission_ref";
 import { NoteInspector } from "./note";
 import { ProjectInspector } from "./project";
 import { RuleInspector } from "./rule";
 import { ServiceInspector } from "./service";
 import { StepInspector } from "./step";
 import type { KindInspectorProps } from "./types";
-import { ValueRefInspector } from "./value_ref";
 
 export type KindInspectorComponent = FC<KindInspectorProps>;
 
@@ -46,9 +43,6 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   project: ProjectInspector,
   category: CategoryInspector,
   actor_ref: ActorRefInspector,
-  mission_ref: MissionRefInspector,
-  value_ref: ValueRefInspector,
-  identity_ref: IdentityRefInspector,
   actor: ActorInspector,
   service: ServiceInspector,
   feature: FeatureInspector,

@@ -52,7 +52,9 @@ from plot_mcp.storage import (  # noqa: F401
 # nodes). Lives here (not canvas_migrations.py, which is at its 500-line
 # ceiling) as a read-path helper tightly bound to ``read_canvas``. The set
 # grows as each kind is retired.
-RETIRED_KINDS: frozenset[str] = frozenset({"group"})
+RETIRED_KINDS: frozenset[str] = frozenset(
+    {"group", "mission_ref", "value_ref", "identity_ref"}
+)
 
 
 def _drop_retired_kinds(

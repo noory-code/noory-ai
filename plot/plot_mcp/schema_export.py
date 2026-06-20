@@ -42,16 +42,13 @@ from plot_mcp.models import (
     DecisionNode,
     FeatureNode,
     IdentityNode,
-    IdentityRefNode,
     MetricNode,
     MissionNode,
-    MissionRefNode,
     NoteNode,
     ProjectNode,
     RuleNode,
     ServiceNode,
     StepNode,
-    ValueRefNode,
 )
 
 # Canonical heading + body format used in the MD templates. Mirrored on the
@@ -94,10 +91,6 @@ _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     "feature": FeatureNode,
     # Grouping (1)
     "category": CategoryNode,
-    # Foundation refs (3)
-    "mission_ref": MissionRefNode,
-    "value_ref": ValueRefNode,
-    "identity_ref": IdentityRefNode,
     # Composition inside service_detail (5)
     "metric": MetricNode,
     "step": StepNode,

@@ -106,12 +106,7 @@ export function useNodeCreation({
           shape: preset?.shape ?? "rounded",
           icon: preset?.icon ?? null,
         },
-        {
-          ref_actor_id: preset?.ref_actor_id ?? null,
-          ref_mission_id: preset?.ref_mission_id ?? null,
-          ref_value_id: preset?.ref_value_id ?? null,
-          ref_identity_id: preset?.ref_identity_id ?? null,
-        },
+        { ref_actor_id: preset?.ref_actor_id ?? null },
       );
       onDocChange({ ...current, nodes: [...current.nodes, node] });
     },
@@ -140,12 +135,7 @@ export function useNodeCreation({
           shape: preset.shape ?? "rounded",
           icon: preset.icon ?? null,
         },
-        {
-          ref_actor_id: preset?.ref_actor_id ?? null,
-          ref_mission_id: preset?.ref_mission_id ?? null,
-          ref_value_id: preset?.ref_value_id ?? null,
-          ref_identity_id: preset?.ref_identity_id ?? null,
-        },
+        { ref_actor_id: preset?.ref_actor_id ?? null },
       );
       // v0.26.0 (D-2026-05-25-A) — every nested-drop materialises a
       // directed edge from parent → child. This replaces the v0.25

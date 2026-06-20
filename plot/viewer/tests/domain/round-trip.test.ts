@@ -20,16 +20,13 @@ import {
   CoreValue,
   DomainParseError,
   Identity,
-  IdentityRef,
   Metric,
   Mission,
-  MissionRef,
   parseEntity,
   Project,
   Rule,
   Service,
   Step,
-  ValueRef,
 } from "../../src/domain";
 
 describe("Metric.fromJson + toJson round-trip", () => {
@@ -381,32 +378,7 @@ describe("ActorRef.fromJson + toJson round-trip (read-only anchor, D-2026-06-19-
   });
 });
 
-describe("Foundation refs (Mission/Value/Identity) round-trip", () => {
-  it("MissionRef preserves ref_mission_id", () => {
-    const m = MissionRef.fromJson({
-      id: "mref-1",
-      kind: "mission_ref",
-      ref_mission_id: "mission-1",
-    });
-    expect(m.kind).toBe("mission_ref");
-    expect(m.ref_mission_id).toBe("mission-1");
-    expect(MissionRef.fromJson(m.toJson())).toEqual(m);
-  });
-
-  it("ValueRef preserves ref_value_id", () => {
-    const v = ValueRef.fromJson({ id: "vref-1", kind: "value_ref", ref_value_id: "cv-1" });
-    expect(v.ref_value_id).toBe("cv-1");
-  });
-
-  it("IdentityRef preserves ref_identity_id", () => {
-    const i = IdentityRef.fromJson({
-      id: "iref-1",
-      kind: "identity_ref",
-      ref_identity_id: "id-1",
-    });
-    expect(i.ref_identity_id).toBe("id-1");
-  });
-});
+// mission_ref / value_ref / identity_ref retired 2026-06-20 (D-2026-06-20-G).
 
 describe("Service.fromJson + toJson round-trip (5-field model, D-2026-06-20-F)", () => {
   it("populates defaults", () => {
@@ -543,11 +515,10 @@ describe("Actor.fromJson + toJson round-trip", () => {
 });
 
 describe("parseEntity → ref kinds dispatch", () => {
-  it("dispatches each ref kind to its class", () => {
-    expect(parseEntity({ id: "1", kind: "actor_ref" })).toBeInstanceOf(ActorRef);
-    expect(parseEntity({ id: "2", kind: "mission_ref" })).toBeInstanceOf(MissionRef);
-    expect(parseEntity({ id: "3", kind: "value_ref" })).toBeInstanceOf(ValueRef);
-    expect(parseEntity({ id: "4", kind: "identity_ref" })).toBeInstanceOf(IdentityRef);
+  it("dispatches actor_ref (the only surviving standalone ref) to its class", () => {
+    expect(parseEntity({ id: "1", kind: "actor_ref", ref_actor_id: "a1" })).toBeInstanceOf(
+      ActorRef,
+    );
   });
 });
 

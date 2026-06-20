@@ -24,16 +24,13 @@ export type {
   DecisionJson,
   FeatureJson,
   IdentityJson,
-  IdentityRefJson,
   MetricJson,
   MissionJson,
-  MissionRefJson,
   NoteJson,
   ProjectJson,
   RuleJson,
   ServiceJson,
   StepJson,
-  ValueRefJson,
 } from "./wire.gen";
 
 // Per-kind entity classes (Phase 2.1+). Importing this barrel registers
@@ -50,9 +47,6 @@ export { Mission } from "./Mission";
 export { Project } from "./Project";
 export { Category } from "./Category";
 export { ActorRef } from "./ActorRef";
-export { MissionRef } from "./MissionRef";
-export { ValueRef } from "./ValueRef";
-export { IdentityRef } from "./IdentityRef";
 export { Actor } from "./Actor";
 export { Service } from "./Service";
 export { Feature } from "./Feature";

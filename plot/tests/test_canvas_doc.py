@@ -16,10 +16,8 @@ from plot_mcp.models import (
     ContentNode,
     CoreValueNode,
     IdentityNode,
-    IdentityRefNode,
     MetricNode,
     MissionNode,
-    MissionRefNode,
     NoteNode,
     ProjectNode,
     RuleNode,
@@ -28,7 +26,6 @@ from plot_mcp.models import (
     SketchNode,
     SketchNodeAdapter,
     StepNode,
-    ValueRefNode,
 )
 
 # ---------------------------------------------------------------------------
@@ -405,24 +402,6 @@ def test_overview_nested_category_rejected() -> None:
     )
 
 
-def test_overview_services_rejects_foundation_refs() -> None:
-    """v0.11.5 — services canvas no longer admits foundation refs (they
-    moved to service_detail)."""
-    with pytest.raises(ValueError, match="not allowed"):
-        CanvasDoc(
-            canvas_id="services",
-            canvas_kind="services",
-            nodes=[
-                ServiceNode(id="order", label="주문"),
-                MissionRefNode(
-                    id="mr",
-                    ref_mission_id="mission",
-                    label="→ M",
-                ),
-            ],
-        )
-
-
 def test_overview_empty_canvas_ok() -> None:
     """An empty services canvas (no services yet) is fine."""
     CanvasDoc(canvas_id="services", canvas_kind="services", nodes=[])
@@ -605,75 +584,9 @@ def test_detail_canvas_actor_ref_without_ref_id_rejected() -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# v0.10 Step 3 — Foundation reference kinds (Symbol/Component pattern)
-# ---------------------------------------------------------------------------
-
-
-def test_mission_ref_requires_ref_mission_id() -> None:
-    with pytest.raises(ValueError, match="ref_mission_id"):
-        MissionRefNode(id="mr", label="→ Mission")
-
-
-def test_value_ref_requires_ref_value_id() -> None:
-    with pytest.raises(ValueError, match="ref_value_id"):
-        ValueRefNode(id="vr", label="→ Trust")
-
-
-def test_identity_ref_requires_ref_identity_id() -> None:
-    with pytest.raises(ValueError, match="ref_identity_id"):
-        IdentityRefNode(id="ir", label="→ Voice")
-
-
-def test_foundation_refs_valid_when_id_set() -> None:
-    MissionRefNode(id="mr", label="→ M", ref_mission_id="m1")
-    ValueRefNode(id="vr", label="→ V", ref_value_id="cv1")
-    IdentityRefNode(id="ir", label="→ I", ref_identity_id="id1")
-
-
-def test_services_canvas_rejects_foundation_refs_v0_11_5() -> None:
-    """v0.11.5 — foundation refs no longer admitted on the services top
-    view. Use service_detail for alignment ownership."""
-    with pytest.raises(ValueError, match="not allowed"):
-        CanvasDoc(
-            canvas_id="services",
-            canvas_kind="services",
-            nodes=[
-                ServiceNode(id="auth", label="Auth"),
-                MissionRefNode(id="mr1", label="→ M", ref_mission_id="m1"),
-            ],
-        )
-
-
-def test_service_detail_accepts_foundation_refs() -> None:
-    """Sub-service composition canvas accepts the four ref kinds together."""
-    CanvasDoc(
-        canvas_id="auth",
-        canvas_kind="service_detail",
-        service_ref="auth",
-        nodes=[
-            ServiceNode(id="auth", label="Auth"),
-            ActorRefNode(id="ar1", label="→ user", ref_actor_id="user", side="user"),
-            ActorRefNode(id="ar2", label="→ op", ref_actor_id="operator", side="operator"),
-            MissionRefNode(id="mr1", label="→ M", ref_mission_id="m1"),
-            ValueRefNode(id="vr1", label="→ Trust", ref_value_id="cv1"),
-            IdentityRefNode(id="ir1", label="→ Voice", ref_identity_id="id1"),
-        ],
-    )
-
-
-def test_actors_canvas_rejects_foundation_refs() -> None:
-    """Foundation refs only make sense on Services-side canvases."""
-    with pytest.raises(ValueError, match="not allowed"):
-        CanvasDoc(
-            canvas_id="actors",
-            canvas_kind="actors",
-            nodes=[
-                ActorNode(id="user", label="U", side="user"),
-                ActorNode(id="op", label="O", side="operator"),
-                MissionRefNode(id="mr", label="→ M", ref_mission_id="m1"),
-            ],
-        )
+# mission_ref / value_ref / identity_ref retired 2026-06-20 (D-2026-06-20-G):
+# Foundation references are now the service-inspector chips, not standalone
+# nodes. The Foundation-reference-kind tests were removed with the kinds.
 
 
 def test_service_node_carries_5_fields() -> None:
@@ -892,19 +805,6 @@ def test_actor_permissions_round_trip_through_canvas() -> None:
     rule = next(n for n in parsed.nodes if n.id == "r1")
     assert rule.actor_permissions["user"] == "RUD-self"
     assert rule.actor_permissions["admin"] == "CRUD-all"
-
-
-def test_foundation_canvas_rejects_foundation_refs() -> None:
-    """Masters live on the Foundation canvas; refs would be a self-loop."""
-    with pytest.raises(ValueError, match="not allowed"):
-        CanvasDoc(
-            canvas_id="foundation",
-            canvas_kind="foundation",
-            nodes=[
-                *_core_seed_nodes(),
-                MissionRefNode(id="mr", label="→ M", ref_mission_id="mission"),
-            ],
-        )
 
 
 def test_detail_canvas_actor_kind_rejected() -> None:

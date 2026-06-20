@@ -397,8 +397,6 @@ function SketchCanvasInner({
     paneRef,
     pendingActorRef,
     setPendingActorRef,
-    pendingFoundationRef,
-    setPendingFoundationRef,
   } = useDragAndDrop({
     nodes: doc.nodes,
     edges: doc.edges,
@@ -497,14 +495,9 @@ function SketchCanvasInner({
         setBodyModalNodeId={setBodyModalNodeId}
         edgeModalId={edgeModalId}
         setEdgeModalId={setEdgeModalId}
-        pendingFoundationRef={pendingFoundationRef}
-        setPendingFoundationRef={setPendingFoundationRef}
         pendingActorRef={pendingActorRef}
         setPendingActorRef={setPendingActorRef}
         availableActors={availableActors}
-        availableMissions={availableMissions}
-        availableValues={availableValues}
-        availableIdentities={availableIdentities}
       />
       <SketchInspectorBindings
         doc={doc}
@@ -516,9 +509,7 @@ function SketchCanvasInner({
         handleNodesDelete={handleNodesDelete}
         addCompositionChild={addCompositionChild}
         setPendingActorRef={setPendingActorRef}
-        setPendingFoundationRef={setPendingFoundationRef}
         availableActors={availableActors}
-        availableMissions={availableMissions}
         availableValues={availableValues}
         availableIdentities={availableIdentities}
         projectPath={projectPath}

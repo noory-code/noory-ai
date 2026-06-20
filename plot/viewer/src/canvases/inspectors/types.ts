@@ -55,16 +55,12 @@ export interface KindInspectorProps {
   /** v0.2 multi-canvas: actors across all canvases. ActorRefInspector
    *  uses this to look up the referenced actor master + detect orphans. */
   availableActors?: SketchNode[];
-  /** v0.10 Step 3: foundation masters used by the *_ref inspectors to
-   *  display the referenced master's label + detect orphans. */
-  availableMissions?: SketchNode[];
+  /** D-2026-06-17-B — core_value + identity masters for the service
+   *  inspector's reference chips (뭘 양보 못 하나 / 어떤 결로). */
   availableValues?: SketchNode[];
   availableIdentities?: SketchNode[];
   /** v0.11 — open ActorRefPicker in rewire mode for an orphan actor_ref. */
   onRepickActorRef?: (nodeId: string) => void;
-  /** v0.11.1 — open FoundationRefPicker in rewire mode for an orphan
-   *  mission_ref / value_ref / identity_ref. */
-  onRepickFoundationRef?: (nodeId: string) => void;
   /** v0.10 Step 6: ServiceInspector composition list — create a rule
    *  or content child under the parent service. */
   onAddChild?: (parentId: string, kind: "rule" | "content") => void;

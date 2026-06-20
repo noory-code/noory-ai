@@ -167,44 +167,8 @@ const ACTOR_REF: StencilPreset = {
 // Distinct hue per kind so the canvas reads at a glance: yellow = Mission,
 // amber = Value, orange = Identity (matching the Foundation stencil tints).
 // Each carries its specific ref_*_id once the picker resolves the target.
-const MISSION_REF: StencilPreset = {
-  id: "mission-ref",
-  labelHint: "Mission ref",
-  // v0.27.11 (D-2026-05-28-D) — Symbol ref → circle.
-  shape: "circle",
-  color: "#fef3c7",
-  width: 120,
-  height: 120,
-  icon: "flag",
-  label: "→ Mission",
-  kind: "mission_ref",
-};
-
-const VALUE_REF: StencilPreset = {
-  id: "value-ref",
-  labelHint: "Value ref",
-  shape: "circle",
-  color: "#fde68a",
-  width: 120,
-  height: 120,
-  icon: "star",
-  label: "→ Value",
-  kind: "value_ref",
-};
-
-const IDENTITY_REF: StencilPreset = {
-  id: "identity-ref",
-  labelHint: "Identity ref",
-  shape: "circle",
-  color: "#fed7aa",
-  width: 120,
-  height: 120,
-  icon: "heart",
-  label: "→ Identity",
-  kind: "identity_ref",
-};
-
-const FOUNDATION_REFS: StencilPreset[] = [MISSION_REF, VALUE_REF, IDENTITY_REF];
+// MISSION_REF / VALUE_REF / IDENTITY_REF presets retired 2026-06-20
+// (D-2026-06-20-G) — Foundation references are service-inspector chips now.
 
 /**
  * Service internals visible on the canvas = decomposition only.
@@ -297,7 +261,6 @@ export const STENCIL_PRESETS: StencilPreset[] = [
   CORE_VALUE,
   CORE_IDENTITY,
   ACTOR_REF,
-  ...FOUNDATION_REFS,
 ];
 
 /**
@@ -442,21 +405,15 @@ export type StencilCanvas = "foundation" | "actors" | "services" | "service_deta
 
 interface SketchStencilProps {
   canvas: StencilCanvas;
-  /** v0.11.5 — masters for the dynamic ref presets shown on the
-   *  service_detail stencil. Each master becomes its own draggable
-   *  preset that drops directly (no picker round-trip). */
+  /** v0.11.5 — actor masters for the dynamic actor_ref presets shown on the
+   *  service_detail stencil. Each becomes its own draggable preset that drops
+   *  directly. (The Foundation-ref presets were retired — D-2026-06-20-G.) */
   availableActors?: SketchNode[];
-  availableMissions?: SketchNode[];
-  availableValues?: SketchNode[];
-  availableIdentities?: SketchNode[];
 }
 
 export function SketchStencil({
   canvas,
   availableActors = [],
-  availableMissions = [],
-  availableValues = [],
-  availableIdentities = [],
 }: SketchStencilProps) {
   const { t } = useTranslation();
   if (canvas === "foundation") {
@@ -529,15 +486,8 @@ export function SketchStencil({
     ? { ...metricPreset, labelI18nKey: "kind.value", labelHint: "Value" }
     : null;
   const actorRefPresets = availableActors.map((a) => actorRefPresetFor(a));
-  const missionRefPresets = availableMissions.map((m) => missionRefPresetFor(m));
-  const valueRefPresets = availableValues.map((v) => valueRefPresetFor(v));
-  const identityRefPresets = availableIdentities.map((i) => identityRefPresetFor(i));
-  // v0.28.5 (D-2026-05-30-H) — the stencil mirrors the 2-layer essence
-  // model (VISION 3-phase): ① the concrete flow the user designs
-  // (Execution: actor → interaction → decision → value), then ② the
-  // essence injected onto it (Retention: mission / core value /
-  // identity refs). Reading top-to-bottom = "build the flow, then
-  // inject the essence."
+  // The flow layer (actor → interaction → value); the former essence-injection
+  // layer (mission/value/identity refs) was retired (D-2026-06-20-G).
   return (
     <div className="border-t border-line px-3 py-3">
       <LayerHeader label={t("stencil.layer.flow")} hint={t("stencil.layer.flowHint")} />
@@ -562,28 +512,9 @@ export function SketchStencil({
           note={t("stencil.note.valuesExchanged")}
         />
       )}
-      <LayerHeader label={t("stencil.layer.essence")} hint={t("stencil.layer.essenceHint")} />
-      {missionRefPresets.length > 0 && (
-        <Section
-          title={t("stencil.section.missions")}
-          presets={missionRefPresets}
-          note={t("stencil.note.dragMissionThisServiceAnswersTo")}
-        />
-      )}
-      {valueRefPresets.length > 0 && (
-        <Section
-          title={t("stencil.section.coreValues")}
-          presets={valueRefPresets}
-          note={t("stencil.note.dragValueThisServiceEmbodies")}
-        />
-      )}
-      {identityRefPresets.length > 0 && (
-        <Section
-          title={t("stencil.section.identityAspects")}
-          presets={identityRefPresets}
-          note={t("stencil.note.dragIdentityAspectThisServiceExpresses")}
-        />
-      )}
+      {/* Foundation-ref injection layer removed 2026-06-20 (D-2026-06-20-G):
+          mission / value / identity references are the service-inspector
+          chips now, not standalone nodes on the Feature canvas. */}
       <Section
         title={t("stencil.section.note")}
         presets={[NOTE_AMBIENT]}
@@ -631,53 +562,8 @@ function actorRefPresetFor(a: SketchNode): StencilPreset {
   };
 }
 
-function missionRefPresetFor(m: SketchNode): StencilPreset {
-  return {
-    id: `mission-ref:${m.id}`,
-    labelHint: m.label || m.id,
-    labelI18nKey: null,
-    shape: "circle",
-    color: "#fef3c7",
-    width: 120,
-    height: 120,
-    icon: "flag",
-    label: `→ ${m.label || m.id}`,
-    kind: "mission_ref",
-    ref_mission_id: m.id,
-  };
-}
-
-function valueRefPresetFor(v: SketchNode): StencilPreset {
-  return {
-    id: `value-ref:${v.id}`,
-    labelHint: v.label || v.id,
-    labelI18nKey: null,
-    shape: "circle",
-    color: "#fde68a",
-    width: 120,
-    height: 120,
-    icon: "star",
-    label: `→ ${v.label || v.id}`,
-    kind: "value_ref",
-    ref_value_id: v.id,
-  };
-}
-
-function identityRefPresetFor(i: SketchNode): StencilPreset {
-  return {
-    id: `identity-ref:${i.id}`,
-    labelHint: i.label || i.id,
-    labelI18nKey: null,
-    shape: "circle",
-    color: "#fed7aa",
-    width: 120,
-    height: 120,
-    icon: "heart",
-    label: `→ ${i.label || i.id}`,
-    kind: "identity_ref",
-    ref_identity_id: i.id,
-  };
-}
+// missionRefPresetFor / valueRefPresetFor / identityRefPresetFor retired
+// 2026-06-20 (D-2026-06-20-G) — Foundation refs are service-inspector chips.
 
 function Section({
   title,

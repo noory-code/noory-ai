@@ -79,24 +79,6 @@ export interface CategoryJson extends BaseFieldsJson {
   body: string;
 }
 
-export interface MissionRefJson extends BaseFieldsJson {
-  kind: "mission_ref";
-  ref_mission_id: string | null;
-  notes_in_context: string;
-}
-
-export interface ValueRefJson extends BaseFieldsJson {
-  kind: "value_ref";
-  ref_value_id: string | null;
-  notes_in_context: string;
-}
-
-export interface IdentityRefJson extends BaseFieldsJson {
-  kind: "identity_ref";
-  ref_identity_id: string | null;
-  notes_in_context: string;
-}
-
 export interface MetricJson extends BaseFieldsJson {
   kind: "metric";
   target: string;

@@ -150,18 +150,6 @@ export function useNodesMemo({
           const m = (availableActors ?? doc.nodes).find((a) => a.id === n.ref_actor_id);
           if (m) return `→ ${m.label || m.id}`;
         }
-        if (n.kind === "mission_ref" && n.ref_mission_id) {
-          const m = (availableMissions ?? []).find((a) => a.id === n.ref_mission_id);
-          if (m) return `→ ${m.label || m.id}`;
-        }
-        if (n.kind === "value_ref" && n.ref_value_id) {
-          const m = (availableValues ?? []).find((a) => a.id === n.ref_value_id);
-          if (m) return `→ ${m.label || m.id}`;
-        }
-        if (n.kind === "identity_ref" && n.ref_identity_id) {
-          const m = (availableIdentities ?? []).find((a) => a.id === n.ref_identity_id);
-          if (m) return `→ ${m.label || m.id}`;
-        }
         return null;
       })();
       const baseLabel = masterDerivedLabel ?? n.label;

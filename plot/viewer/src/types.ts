@@ -44,17 +44,15 @@ export type NodeKind =
   | "feature"
   | "rule"
   | "content"
-  | "mission_ref"
-  | "value_ref"
-  | "identity_ref"
   | "metric"
   | "step"
   | "decision"
   | "note"
   | "category";
 
-/** v0.10 Step 3: the four ref kinds form a uniform family. */
-export type RefKind = "actor_ref" | "mission_ref" | "value_ref" | "identity_ref";
+/** ``actor_ref`` is the only surviving standalone reference node (the
+ *  mission/value/identity refs were retired 2026-06-20, D-2026-06-20-G). */
+export type RefKind = "actor_ref";
 
 /**
  * Plural forms of value that can flow along an edge. See PHILOSOPHY.md (P2).

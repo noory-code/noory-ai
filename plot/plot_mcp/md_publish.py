@@ -159,7 +159,9 @@ def published_md_path(canvas_dir: Path, *, kind: str, node_id: str, version: str
 # ---------------------------------------------------------------------------
 
 
-_REF_KINDS: frozenset[str] = frozenset({"actor_ref", "mission_ref", "value_ref", "identity_ref"})
+# mission_ref / value_ref / identity_ref retired 2026-06-20 (D-2026-06-20-G);
+# actor_ref is the only surviving standalone reference node.
+_REF_KINDS: frozenset[str] = frozenset({"actor_ref"})
 
 
 def can_publish(node: SketchNode) -> bool:

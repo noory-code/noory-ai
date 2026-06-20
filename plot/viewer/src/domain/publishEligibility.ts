@@ -20,12 +20,9 @@
  */
 import type { SketchNode } from "./SketchNode";
 
-const REF_KINDS = new Set<string>([
-  "actor_ref",
-  "mission_ref",
-  "value_ref",
-  "identity_ref",
-]);
+// actor_ref is the only surviving standalone reference node (mission/value/
+// identity refs retired 2026-06-20, D-2026-06-20-G).
+const REF_KINDS = new Set<string>(["actor_ref"]);
 
 export function canPublish(node: SketchNode): boolean {
   if (node.kind === "project") return false;

@@ -27,14 +27,12 @@ from plot_mcp.models import (
     ActorRefNode,
     CategoryNode,
     ContentNode,
-    IdentityRefNode,
     MetricNode,
-    MissionRefNode,
+    MissionNode,
     RuleNode,
     ServiceNode,
     SketchNodeAdapter,
     StepNode,
-    ValueRefNode,
 )
 
 # ---------------------------------------------------------------------------
@@ -86,19 +84,7 @@ def test_category_round_trip() -> None:
     assert CategoryNode.model_validate(n.model_dump()) == n
 
 
-def test_mission_ref_round_trip() -> None:
-    n = MissionRefNode(id="mref-1", label="Mission ref", ref_mission_id="m-1")
-    assert MissionRefNode.model_validate(n.model_dump()) == n
-
-
-def test_value_ref_round_trip() -> None:
-    n = ValueRefNode(id="vref-1", label="Value ref", ref_value_id="cv-1")
-    assert ValueRefNode.model_validate(n.model_dump()) == n
-
-
-def test_identity_ref_round_trip() -> None:
-    n = IdentityRefNode(id="iref-1", label="Identity ref", ref_identity_id="id-1")
-    assert IdentityRefNode.model_validate(n.model_dump()) == n
+# mission_ref / value_ref / identity_ref retired 2026-06-20 (D-2026-06-20-G).
 
 
 # ---------------------------------------------------------------------------
@@ -116,19 +102,7 @@ def test_actor_ref_with_blank_ref_actor_id_rejected() -> None:
         ActorRefNode(id="ref-1", label="Orphan", ref_actor_id="")
 
 
-def test_mission_ref_without_ref_mission_id_rejected() -> None:
-    with pytest.raises(ValueError, match="ref_mission_id"):
-        MissionRefNode(id="mref-1", label="Orphan")
-
-
-def test_value_ref_without_ref_value_id_rejected() -> None:
-    with pytest.raises(ValueError, match="ref_value_id"):
-        ValueRefNode(id="vref-1", label="Orphan")
-
-
-def test_identity_ref_without_ref_identity_id_rejected() -> None:
-    with pytest.raises(ValueError, match="ref_identity_id"):
-        IdentityRefNode(id="iref-1", label="Orphan")
+# mission/value/identity_ref orphan-rejection tests removed with the kinds.
 
 
 # ---------------------------------------------------------------------------
@@ -260,46 +234,19 @@ def test_adapter_rejects_missing_kind() -> None:
 # ---------------------------------------------------------------------------
 
 
-from plot_mcp.models import (  # noqa: E402  (kept at bottom for clarity)
-    CoreValueNode,
-    IdentityNode,
-    MissionNode,
-    ProjectNode,
-)
-
-_ALL_KIND_CLASSES = {
-    "project": ProjectNode,
-    "mission": MissionNode,
-    "core_value": CoreValueNode,
-    "identity": IdentityNode,
-    "actor": ActorNode,
-    "actor_ref": ActorRefNode,
-    "service": ServiceNode,
-    "category": CategoryNode,
-    "mission_ref": MissionRefNode,
-    "value_ref": ValueRefNode,
-    "identity_ref": IdentityRefNode,
-    "metric": MetricNode,
-    "step": StepNode,
-    "rule": RuleNode,
-    "content": ContentNode,
-}
+# Use the schema-export map as the SSOT (was a hand-maintained copy that
+# drifted; D-2026-06-20-G removed the foundation refs so it must follow).
+from plot_mcp.schema_export import _ALL_KIND_CLASSES  # noqa: E402
 
 
 def _make_minimal(kind: str):
-    """Build the smallest valid instance for a given kind. Ref kinds
-    need a non-empty discriminator id (per the ref-validator), so we
-    supply the minimum payload each kind enforces."""
+    """Build the smallest valid instance for a given kind. ``actor_ref`` needs
+    a non-empty ``ref_actor_id`` (per its validator); every other kind builds
+    from defaults."""
     cls = _ALL_KIND_CLASSES[kind]
     base = {"id": f"{kind}-1", "label": kind}
     if kind == "actor_ref":
         return cls(**base, ref_actor_id=f"{kind}-master")
-    if kind == "mission_ref":
-        return cls(**base, ref_mission_id=f"{kind}-master")
-    if kind == "value_ref":
-        return cls(**base, ref_value_id=f"{kind}-master")
-    if kind == "identity_ref":
-        return cls(**base, ref_identity_id=f"{kind}-master")
     return cls(**base)
 
 
@@ -327,11 +274,10 @@ def test_every_kind_round_trip_idempotent(kind: str) -> None:
     assert second == instance
 
 
-def test_union_covers_all_15_kinds() -> None:
-    """Sanity: the adapter's discriminated union exposes 15 distinct
-    classes (catches a drop / duplicate during a future refactor)."""
-    assert len(_ALL_KIND_CLASSES) == 15
-    assert len({c.__name__ for c in _ALL_KIND_CLASSES.values()}) == 15
+def test_union_exposes_distinct_classes() -> None:
+    """Sanity: the adapter's discriminated union exposes one distinct class
+    per kind (catches a drop / duplicate during a future refactor)."""
+    assert len({c.__name__ for c in _ALL_KIND_CLASSES.values()}) == len(_ALL_KIND_CLASSES)
 
 
 # ---------------------------------------------------------------------------

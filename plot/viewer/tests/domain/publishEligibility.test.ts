@@ -49,13 +49,8 @@ describe("canPublish", () => {
     expect(canPublish(makeNode("actor", { is_root: true }))).toBe(true);
   });
 
-  it.each([
-    "actor_ref",
-    "mission_ref",
-    "value_ref",
-    "identity_ref",
-  ] as const)("rejects ref alias kind '%s'", (kind) => {
-    expect(canPublish(makeNode(kind))).toBe(false);
+  it("rejects the actor_ref kind (the only surviving standalone ref)", () => {
+    expect(canPublish(makeNode("actor_ref"))).toBe(false);
   });
 
   it.each([

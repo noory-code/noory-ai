@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-20-G — `mission_ref` / `value_ref` / `identity_ref` kinds retired (Foundation references → service-inspector chips)
+
+- **What:** The three Foundation-reference kinds are **retired** (implementing `D-2026-06-17-H`). Foundation references are now the service inspector's chip pickers (`ref_value_ids` / `ref_identity_ids`, `D-2026-06-20-F`), not standalone nodes; `actor_ref` is the only surviving standalone reference node. Removed across the stack: server `MissionRefNode` / `ValueRefNode` / `IdentityRefNode` + `_FOUNDATION_REFS`; the viewer domain classes / node renderers / inspectors / registries / stencil presets; and the **whole FoundationRefPicker machinery** (the picker modal + the `pendingFoundationRef` drag-drop state thread across App / SketchCanvas / SketchModals / SketchInspectorBindings / useDragAndDrop + the `availableMissions` chain). ESSENCE_SOURCE_KINDS / publish-eligibility / edge-classification ref entries trim to the masters + `actor_ref`. `_drop_retired_kinds` strips the 3 from older canvases on read (loss-free). Palette = **15 kinds**.
+- **Why:** A service declares which Foundation commitments it answers to via the 5-field inspector's reference chips; a separate standalone ref node per commitment duplicated that and cluttered the Feature canvas. One mechanism (chips) beats two.
+- **Alternatives:** (a) keep the ref nodes alongside the chips — rejected (duplication). (b) keep the picker for orphan-rewire — rejected (no ref nodes left to rewire).
+- **Approval:** Accepted by user via the approved Chunk-2 plan (implements the pinned `D-2026-06-17-H`).
+- **Spec impact:** Palette − 3 (15 kinds). `concepts/kinds.md` / `specs/kinds-fields.md` already list them retired. `RETIRED_KINDS` gains the 3. The now-unused stencil/inspector i18n keys for the refs are left (symmetric; cleaned at doc-sync).
+
 ### D-2026-06-20-F — Service inspector = 5 question-titled fields (2 typed + 3 ref-chip lists, Option B); legacy 9 fields discarded
 
 - **What:** The `service` inspector is redesigned to **5 question-titled fields** (`D-2026-06-17-B`): 2 typed-text — 왜 필요한가? (`problem`) / 뭐가 좋아지나? (`value_created`) — + 3 **multi-select reference chip lists** — 누가 참여하나? (`ref_actor_ids` → actors) / 뭘 양보 못 하나? (`ref_value_ids` → core_values) / 어떤 결로 다가가나? (`ref_identity_ids` → identities). References are **id arrays on `ServiceNode` (Option B)**, rendered as removable chips picked from the upstream masters (pick-only; pick-OR-create `D-2026-06-19-C` is a follow-up). The old **9 free-text fields** (target_side / what / scope / trigger / how / outcome / do / dont / body) are **deleted and discarded** — no loss-free migration (Pydantic drops the old extras on read). The service inspector's composition (rules / contents) panels are removed (composition lives on the Feature canvas); the `target_side` color tint + the shared `DoDontFields` component are deleted.

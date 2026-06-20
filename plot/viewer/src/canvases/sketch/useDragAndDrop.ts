@@ -24,7 +24,7 @@ import { resolveDropTarget, type StencilCanvas, type StencilPreset } from "../Sk
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
 import { containerAtFlowPoint, findFreeSpot } from "./overlapNudge";
 import { useStencilDropTarget } from "./StencilDragContext";
-import type { NodePreset, PendingActorRef, PendingFoundationRef } from "./types";
+import type { NodePreset, PendingActorRef } from "./types";
 import { useDialog } from "../../shell/dialog/DialogProvider";
 
 export interface UseDragAndDropArgs {
@@ -53,8 +53,6 @@ export interface UseDragAndDropResult {
   paneRef: RefObject<HTMLDivElement>;
   pendingActorRef: PendingActorRef | null;
   setPendingActorRef: Dispatch<SetStateAction<PendingActorRef | null>>;
-  pendingFoundationRef: PendingFoundationRef | null;
-  setPendingFoundationRef: Dispatch<SetStateAction<PendingFoundationRef | null>>;
 }
 
 export function useDragAndDrop({
@@ -68,8 +66,6 @@ export function useDragAndDrop({
 }: UseDragAndDropArgs): UseDragAndDropResult {
   const dialog = useDialog();
   const [pendingActorRef, setPendingActorRef] = useState<PendingActorRef | null>(null);
-  const [pendingFoundationRef, setPendingFoundationRef] =
-    useState<PendingFoundationRef | null>(null);
 
   const placePresetAt = useCallback(
     (preset: StencilPreset, clientX: number, clientY: number) => {
@@ -90,30 +86,11 @@ export function useDragAndDrop({
         void dialog.alert({ message: resolved.error });
         return;
       }
-      // v0.11.5 — preset already carries the master id (common case),
-      // skip picker. Picker is reserved for orphan rewire flow.
-      const presetHasRefId =
-        (preset.kind === "actor_ref" && preset.ref_actor_id) ||
-        (preset.kind === "mission_ref" && preset.ref_mission_id) ||
-        (preset.kind === "value_ref" && preset.ref_value_id) ||
-        (preset.kind === "identity_ref" && preset.ref_identity_id);
+      // v0.11.5 — an actor_ref preset already carries the master id (common
+      // case); skip the picker. The picker is reserved for orphan rewire.
+      const presetHasRefId = preset.kind === "actor_ref" && preset.ref_actor_id;
       if (preset.kind === "actor_ref" && !presetHasRefId) {
         setPendingActorRef({ mode: "create", preset, pos, resolved });
-        return;
-      }
-      if (
-        (preset.kind === "mission_ref" ||
-          preset.kind === "value_ref" ||
-          preset.kind === "identity_ref") &&
-        !presetHasRefId
-      ) {
-        setPendingFoundationRef({
-          mode: "create",
-          refKind: preset.kind,
-          preset,
-          pos,
-          resolved,
-        });
         return;
       }
       if (resolved.parentId) {
@@ -161,7 +138,5 @@ export function useDragAndDrop({
     paneRef,
     pendingActorRef,
     setPendingActorRef,
-    pendingFoundationRef,
-    setPendingFoundationRef,
   };
 }

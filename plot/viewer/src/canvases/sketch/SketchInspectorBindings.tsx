@@ -10,7 +10,7 @@ import { type Dispatch, type MutableRefObject, type ReactNode, type SetStateActi
 import type { Node } from "reactflow";
 import type { CanvasDoc, CanvasKind, SketchNode as DocNode } from "../../types";
 import { KindInspector } from "../inspectors/KindInspector";
-import type { PendingActorRef, PendingFoundationRef } from "./types";
+import type { PendingActorRef } from "./types";
 
 export interface SketchInspectorBindingsProps {
   doc: CanvasDoc;
@@ -22,9 +22,7 @@ export interface SketchInspectorBindingsProps {
   handleNodesDelete: (deleted: Node[]) => void;
   addCompositionChild: (parentId: string, kind: "rule" | "content") => void;
   setPendingActorRef: Dispatch<SetStateAction<PendingActorRef | null>>;
-  setPendingFoundationRef: Dispatch<SetStateAction<PendingFoundationRef | null>>;
   availableActors: DocNode[] | undefined;
-  availableMissions: DocNode[] | undefined;
   availableValues: DocNode[] | undefined;
   availableIdentities: DocNode[] | undefined;
   projectPath: string;
@@ -52,9 +50,7 @@ export function SketchInspectorBindings({
   handleNodesDelete,
   addCompositionChild,
   setPendingActorRef,
-  setPendingFoundationRef,
   availableActors,
-  availableMissions,
   availableValues,
   availableIdentities,
   projectPath,
@@ -72,7 +68,6 @@ export function SketchInspectorBindings({
       allNodes={doc.nodes}
       allEdges={doc.edges}
       availableActors={availableActors ?? doc.nodes.filter((n) => n.kind === "actor")}
-      availableMissions={availableMissions}
       availableValues={availableValues}
       availableIdentities={availableIdentities}
       projectPath={projectPath}
@@ -80,19 +75,6 @@ export function SketchInspectorBindings({
       canvasKind={doc.canvas_kind as CanvasKind}
       serviceId={doc.service_ref ?? undefined}
       onRepickActorRef={(nodeId) => setPendingActorRef({ mode: "rewire", nodeId })}
-      onRepickFoundationRef={(nodeId) => {
-        // v0.11.1 — find the orphan ref's kind and open the picker.
-        const target = doc.nodes.find((n) => n.id === nodeId);
-        if (
-          !target ||
-          (target.kind !== "mission_ref" &&
-            target.kind !== "value_ref" &&
-            target.kind !== "identity_ref")
-        ) {
-          return;
-        }
-        setPendingFoundationRef({ mode: "rewire", refKind: target.kind, nodeId });
-      }}
       onDeleteNode={(nodeId) => handleNodesDelete([{ id: nodeId } as Node])}
       onPatchNode={(patch) => {
         if (!inspectorNodeId) return;

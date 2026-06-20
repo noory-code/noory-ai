@@ -16,17 +16,14 @@ import { CoreValue } from "./CoreValue";
 import { Decision } from "./Decision";
 import { Feature } from "./Feature";
 import { Identity } from "./Identity";
-import { IdentityRef } from "./IdentityRef";
 import { Metric } from "./Metric";
 import { Mission } from "./Mission";
-import { MissionRef } from "./MissionRef";
 import { Note } from "./Note";
 import { Project } from "./Project";
 import { Rule } from "./Rule";
 import { Service } from "./Service";
 import type { SketchNode } from "./SketchNode";
 import { Step } from "./Step";
-import { ValueRef } from "./ValueRef";
 
 export type BlankNodeBase = Pick<
   BaseFields,
@@ -45,9 +42,6 @@ export type BlankNodeBase = Pick<
  *  presets that pre-fill ``ref_actor_id`` for an actor_ref preset). */
 export interface CreateNodeOverrides {
   ref_actor_id?: string | null;
-  ref_mission_id?: string | null;
-  ref_value_id?: string | null;
-  ref_identity_id?: string | null;
 }
 
 /** Build a wire-shape node for the given kind. Every per-kind typed
@@ -85,12 +79,6 @@ export function createBlankNode(
       return Feature.fromJson(raw).toJson();
     case "category":
       return Category.fromJson(raw).toJson();
-    case "mission_ref":
-      return MissionRef.fromJson(raw).toJson();
-    case "value_ref":
-      return ValueRef.fromJson(raw).toJson();
-    case "identity_ref":
-      return IdentityRef.fromJson(raw).toJson();
     case "metric":
       return Metric.fromJson(raw).toJson();
     case "step":

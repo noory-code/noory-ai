@@ -249,46 +249,8 @@ describe("ActorRefInspector (read-only anchor, D-2026-06-19-I)", () => {
   });
 });
 
-describe("Foundation ref inspectors (Phase 2.7)", () => {
-  it("MissionRefInspector renders the master label when present", () => {
-    const master = makeNode({ id: "m1", kind: "mission", label: "Plot 미션" });
-    const ref = makeNode({
-      id: "mref-1",
-      kind: "mission_ref",
-      label: "Plot 미션 참조",
-      ref_mission_id: "m1",
-    });
-    render(
-      <KindInspector
-        {...makeProps(ref, "service_detail", [ref])}
-        availableMissions={[master]}
-      />,
-    );
-    expect(screen.getByText(/Plot 미션/)).toBeInTheDocument();
-  });
-
-  it("ValueRefInspector renders master-not-found when orphan", () => {
-    const ref = makeNode({ id: "vref-1", kind: "value_ref", label: "?", ref_value_id: "ghost" });
-    render(
-      <KindInspector {...makeProps(ref, "service_detail", [ref])} availableValues={[]} />,
-    );
-    // i18n key inspector.masterNotFound — check by class on red rose text
-    expect(screen.getByText(/id: ghost/)).toBeInTheDocument();
-  });
-
-  it("IdentityRefInspector renders without firing console.error", () => {
-    const ref = makeNode({
-      id: "iref-1",
-      kind: "identity_ref",
-      label: "Voice ref",
-      ref_identity_id: "i1",
-    });
-    render(
-      <KindInspector {...makeProps(ref, "service_detail", [ref])} availableIdentities={[]} />,
-    );
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
-});
+// Foundation-ref inspectors (mission_ref / value_ref / identity_ref) retired
+// 2026-06-20 (D-2026-06-20-G) — references are service-inspector chips now.
 
 describe("ServiceInspector (5-field model, D-2026-06-20-F)", () => {
   it("renders the 2 typed fields + actor chips (refs)", () => {

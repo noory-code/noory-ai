@@ -72,15 +72,12 @@ const KIND_DIRS = [
   "content",
   "core_value",
   "identity",
-  "identity_ref",
   "metric",
   "mission",
-  "mission_ref",
   "project",
   "rule",
   "service",
   "step",
-  "value_ref",
 ] as const;
 
 function listKindIndexFiles(parent: string): string[] {
@@ -165,8 +162,8 @@ const ALL_CANVAS_FILES: readonly string[] = [
 
 describe("Canvas-internal cursor baseline (D-2026-05-12-D)", () => {
   it("the registry covers all 15 per-kind node and 15 per-kind inspector files", () => {
-    expect(PER_KIND_NODE_FILES.length).toBe(15);
-    expect(PER_KIND_INSPECTOR_FILES.length).toBe(15);
+    expect(PER_KIND_NODE_FILES.length).toBe(12);
+    expect(PER_KIND_INSPECTOR_FILES.length).toBe(12);
   });
 
   it("no canvas-internal file is empty (sanity)", () => {

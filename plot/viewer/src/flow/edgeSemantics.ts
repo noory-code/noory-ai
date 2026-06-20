@@ -20,13 +20,12 @@ export type EdgeRelation = "flow" | "injection" | "inheritance";
  *  the foundation masters and their consumer-plane refs. `actor_ref`
  *  is deliberately excluded — it is the sequence *subject*, not an
  *  essence overlay (the sequence subject, not a foundation ref). */
+// mission_ref / value_ref / identity_ref retired 2026-06-20 (D-2026-06-20-G);
+// only the Foundation masters remain essence sources.
 export const ESSENCE_SOURCE_KINDS: ReadonlySet<string> = new Set([
   "mission",
   "core_value",
   "identity",
-  "mission_ref",
-  "value_ref",
-  "identity_ref",
 ]);
 
 /** Default relation for an edge, from its canvas + source-node kind.

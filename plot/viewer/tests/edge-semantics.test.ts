@@ -31,11 +31,8 @@ describe("classifyEdge (D-2026-05-31-C)", () => {
     }
   });
 
-  it("classifies service_detail foundation-ref sources as injection", () => {
-    for (const k of ["mission_ref", "value_ref", "identity_ref"]) {
-      expect(classifyEdge("service_detail", k)).toBe("injection");
-    }
-  });
+  // mission_ref / value_ref / identity_ref retired 2026-06-20 (D-2026-06-20-G);
+  // their injection-edge classification went with them.
 
   it("treats actor_ref (the subject) as flow, not injection", () => {
     expect(classifyEdge("service_detail", "actor_ref")).toBe("flow");

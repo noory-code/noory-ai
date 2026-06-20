@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.93.0] — 2026-06-20
+
+### Removed
+
+- **`mission_ref` / `value_ref` / `identity_ref` kinds retired** (Chunk 2.1,
+  D-2026-06-20-G, implementing D-2026-06-17-H). Foundation references are the
+  service inspector's chip pickers now (D-2026-06-20-F), not standalone nodes;
+  `actor_ref` is the only surviving standalone reference node. Removed server
+  models + `_FOUNDATION_REFS`, the viewer domain classes / renderers /
+  inspectors / registries / stencil presets, and the **entire FoundationRefPicker
+  machinery** (the picker modal + the `pendingFoundationRef` drag-drop state
+  thread + the `availableMissions` chain). `_drop_retired_kinds` strips the 3
+  from older canvases on read. Palette = **15 kinds**.
+
 ## [0.92.0] — 2026-06-20
 
 ### Changed

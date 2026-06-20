@@ -32,16 +32,13 @@ import type { CoreValue } from "./CoreValue";
 import type { Decision } from "./Decision";
 import type { Feature } from "./Feature";
 import type { Identity } from "./Identity";
-import type { IdentityRef } from "./IdentityRef";
 import type { Metric } from "./Metric";
 import type { Mission } from "./Mission";
-import type { MissionRef } from "./MissionRef";
 import type { Note } from "./Note";
 import type { Project } from "./Project";
 import type { Rule } from "./Rule";
 import type { Service } from "./Service";
 import type { Step } from "./Step";
-import type { ValueRef } from "./ValueRef";
 // Wire-shape interfaces are GENERATED — single SSOT in ``wire.gen.ts``.
 import type {
   ActorJson,
@@ -52,16 +49,13 @@ import type {
   DecisionJson,
   FeatureJson,
   IdentityJson,
-  IdentityRefJson,
   MetricJson,
   MissionJson,
-  MissionRefJson,
   NoteJson,
   ProjectJson,
   RuleJson,
   ServiceJson,
   StepJson,
-  ValueRefJson,
 } from "./wire.gen";
 
 /** Class-instance union — used by ``parseEntity`` and entity-class
@@ -76,9 +70,6 @@ export type SketchEntity =
   | Service
   | Feature
   | Category
-  | MissionRef
-  | ValueRef
-  | IdentityRef
   | Metric
   | Step
   | Decision
@@ -100,9 +91,6 @@ export type SketchNode = (
   | ServiceJson
   | FeatureJson
   | CategoryJson
-  | MissionRefJson
-  | ValueRefJson
-  | IdentityRefJson
   | MetricJson
   | StepJson
   | DecisionJson

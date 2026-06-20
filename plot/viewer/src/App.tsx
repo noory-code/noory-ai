@@ -398,9 +398,6 @@ export function App() {
           dirForId={dirForId}
           stencilCanvas={detailActive ? "service_detail" : activeTab}
           availableActors={availableActors}
-          availableMissions={availableMissions}
-          availableValues={availableValues}
-          availableIdentities={availableIdentities}
           tags={tags}
           onPick={handlePick}
           onCreate={dirPicker.open}

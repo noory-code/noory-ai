@@ -25,15 +25,12 @@ from plot_mcp.models import (
     ContentNode,
     CoreValueNode,
     IdentityNode,
-    IdentityRefNode,
     MetricNode,
     MissionNode,
-    MissionRefNode,
     ProjectNode,
     RuleNode,
     ServiceNode,
     StepNode,
-    ValueRefNode,
 )
 
 # ---------------------------------------------------------------------------
@@ -115,14 +112,10 @@ def test_can_publish_accepts_is_root_actor() -> None:
     assert can_publish(ActorNode(id="actor-root", is_root=True)) is True
 
 
-@pytest.mark.parametrize(
-    "ref_cls",
-    [ActorRefNode, MissionRefNode, ValueRefNode, IdentityRefNode],
-)
-def test_can_publish_rejects_ref_kinds(ref_cls: type) -> None:
-    # ref nodes require their ``ref_*_id`` field; supply a placeholder.
-    kw = {f: "target-id" for f in ref_cls.model_fields if f.startswith("ref_")}
-    node = ref_cls(id="ref-1", **kw)
+def test_can_publish_rejects_ref_kinds() -> None:
+    # actor_ref is the only surviving standalone reference node (the
+    # mission/value/identity refs were retired 2026-06-20, D-2026-06-20-G).
+    node = ActorRefNode(id="ref-1", ref_actor_id="target-id")
     assert can_publish(node) is False
 
 

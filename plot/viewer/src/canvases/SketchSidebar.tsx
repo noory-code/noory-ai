@@ -15,12 +15,9 @@ export interface SketchSidebarProps {
   dirForId?: (id: string) => string;
   stencilCanvas: StencilCanvas;
   tags: ProjectTag[];
-  /** v0.11.5 — masters for the dynamic ref presets on the
-   *  service_detail stencil (each master = its own draggable). */
+  /** v0.11.5 — actor masters for the dynamic actor_ref presets on the
+   *  service_detail stencil (each actor = its own draggable). */
   availableActors?: SketchNode[];
-  availableMissions?: SketchNode[];
-  availableValues?: SketchNode[];
-  availableIdentities?: SketchNode[];
   onPick: (id: string) => void;
   onCreate: () => Promise<void> | void;
   onRename: (id: string, name: string) => Promise<void> | void;
@@ -39,9 +36,6 @@ export function SketchSidebar({
   stencilCanvas,
   tags,
   availableActors,
-  availableMissions,
-  availableValues,
-  availableIdentities,
   onPick,
   onCreate,
   onRename,
@@ -224,13 +218,7 @@ export function SketchSidebar({
           (D-2026-05-31-K) — gated like the session-tags block above. */}
       {activeId && (
         <div className="flex-1 overflow-y-auto">
-          <SketchStencil
-            canvas={stencilCanvas}
-            availableActors={availableActors}
-            availableMissions={availableMissions}
-            availableValues={availableValues}
-            availableIdentities={availableIdentities}
-          />
+          <SketchStencil canvas={stencilCanvas} availableActors={availableActors} />
         </div>
       )}
       <div className="flex items-center justify-end gap-2 border-t border-line px-3 py-2">

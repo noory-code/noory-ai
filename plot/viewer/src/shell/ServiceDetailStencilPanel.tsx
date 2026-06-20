@@ -24,27 +24,13 @@ import type { SketchNode } from "../types";
 
 interface ServiceDetailStencilPanelProps {
   availableActors: SketchNode[];
-  availableMissions: SketchNode[];
-  availableValues: SketchNode[];
-  availableIdentities: SketchNode[];
 }
 
-export function ServiceDetailStencilPanel({
-  availableActors,
-  availableMissions,
-  availableValues,
-  availableIdentities,
-}: ServiceDetailStencilPanelProps) {
+export function ServiceDetailStencilPanel({ availableActors }: ServiceDetailStencilPanelProps) {
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col overflow-y-auto border-r border-line bg-surface">
       <div className="flex-1">
-        <SketchStencil
-          canvas="service_detail"
-          availableActors={availableActors}
-          availableMissions={availableMissions}
-          availableValues={availableValues}
-          availableIdentities={availableIdentities}
-        />
+        <SketchStencil canvas="service_detail" availableActors={availableActors} />
       </div>
       <div className="flex items-center justify-end gap-2 border-t border-line px-3 py-2">
         <ThemeToggle />

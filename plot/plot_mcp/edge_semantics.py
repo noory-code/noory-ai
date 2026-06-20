@@ -25,14 +25,14 @@ if TYPE_CHECKING:
 # foundation masters and their consumer-plane refs. ``actor_ref`` is
 # deliberately excluded — it is the sequence *subject*, not an overlay
 # (mirrors ``foundationRefKinds.FOUNDATION_REF_KINDS`` on the viewer).
+# mission_ref / value_ref / identity_ref retired 2026-06-20 (D-2026-06-20-G):
+# the masters (mission / core_value / identity) remain essence sources; the
+# standalone ref nodes are gone (Foundation refs are service-inspector chips).
 ESSENCE_SOURCE_KINDS: frozenset[str] = frozenset(
     {
         "mission",
         "core_value",
         "identity",
-        "mission_ref",
-        "value_ref",
-        "identity_ref",
     }
 )
 

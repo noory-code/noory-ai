@@ -15,10 +15,7 @@ from plot_mcp.models_actors import (
     ActorRefNode,
     CategoryNode,
     FeatureNode,
-    IdentityRefNode,
-    MissionRefNode,
     ServiceNode,
-    ValueRefNode,
 )
 from plot_mcp.models_composition import (
     ContentNode,
@@ -55,9 +52,6 @@ SketchNode = Annotated[
     | ServiceNode
     | FeatureNode
     | CategoryNode
-    | MissionRefNode
-    | ValueRefNode
-    | IdentityRefNode
     | MetricNode
     | StepNode
     | DecisionNode
@@ -81,9 +75,6 @@ SketchNodeAdapter: TypeAdapter[
     | ServiceNode
     | FeatureNode
     | CategoryNode
-    | MissionRefNode
-    | ValueRefNode
-    | IdentityRefNode
     | MetricNode
     | StepNode
     | DecisionNode

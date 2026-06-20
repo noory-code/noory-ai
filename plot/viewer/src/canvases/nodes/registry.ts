@@ -24,16 +24,13 @@ import { CoreValueNode } from "./core_value";
 import { DecisionNode } from "./decision";
 import { FeatureNode } from "./feature";
 import { IdentityNode } from "./identity";
-import { IdentityRefNode } from "./identity_ref";
 import { MetricNode } from "./metric";
 import { MissionNode } from "./mission";
-import { MissionRefNode } from "./mission_ref";
 import { NoteNode } from "./note";
 import { ProjectNode } from "./project";
 import { RuleNode } from "./rule";
 import { ServiceNode } from "./service";
 import { StepNode } from "./step";
-import { ValueRefNode } from "./value_ref";
 
 export type NodeRendererComponent = ComponentType<NodeProps<BaseNodeData>>;
 
@@ -49,9 +46,6 @@ export const NODE_RENDERERS: Record<NodeKind, NodeRendererComponent> = {
   service: ServiceNode,
   feature: FeatureNode,
   category: CategoryNode,
-  mission_ref: MissionRefNode,
-  value_ref: ValueRefNode,
-  identity_ref: IdentityRefNode,
   metric: MetricNode,
   step: StepNode,
   decision: DecisionNode,

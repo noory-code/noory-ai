@@ -45,16 +45,7 @@ from plot_mcp.models_actors import (
     FeatureNode as FeatureNode,
 )
 from plot_mcp.models_actors import (
-    IdentityRefNode as IdentityRefNode,
-)
-from plot_mcp.models_actors import (
-    MissionRefNode as MissionRefNode,
-)
-from plot_mcp.models_actors import (
     ServiceNode as ServiceNode,
-)
-from plot_mcp.models_actors import (
-    ValueRefNode as ValueRefNode,
 )
 from plot_mcp.models_canvas import (
     _ALLOWED_KINDS_BY_CANVAS as _ALLOWED_KINDS_BY_CANVAS,

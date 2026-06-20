@@ -101,50 +101,7 @@ class CategoryNode(BaseNodeFields):
     body: str = ""
 
 
-class MissionRefNode(BaseNodeFields):
-    """v0.15 Phase 1: ``mission_ref`` kind. References a Foundation
-    Mission master; lets a service declare which Mission it answers to.
-    v0.24.x (D-2026-05-17-M): ``notes_in_context`` for service-context
-    typed notes (4-ref symmetry with ActorRefNode's gives/receives)."""
-
-    kind: Literal["mission_ref"] = "mission_ref"
-    ref_mission_id: str | None = None
-    notes_in_context: str = ""
-
-    @model_validator(mode="after")
-    def _ref_mission_id_required(self) -> MissionRefNode:
-        if not self.ref_mission_id:
-            raise ValueError(f"node {self.id!r} of kind 'mission_ref' requires ref_mission_id")
-        return self
-
-
-class ValueRefNode(BaseNodeFields):
-    """v0.15 Phase 1: ``value_ref`` kind. References a Foundation
-    CoreValue master; lets a service declare which Core Value it
-    answers to. v0.24.x (D-2026-05-17-M): ``notes_in_context``."""
-
-    kind: Literal["value_ref"] = "value_ref"
-    ref_value_id: str | None = None
-    notes_in_context: str = ""
-
-    @model_validator(mode="after")
-    def _ref_value_id_required(self) -> ValueRefNode:
-        if not self.ref_value_id:
-            raise ValueError(f"node {self.id!r} of kind 'value_ref' requires ref_value_id")
-        return self
-
-
-class IdentityRefNode(BaseNodeFields):
-    """v0.15 Phase 1: ``identity_ref`` kind. References a Foundation
-    Identity master; lets a service declare which Identity aspect it
-    expresses. v0.24.x (D-2026-05-17-M): ``notes_in_context``."""
-
-    kind: Literal["identity_ref"] = "identity_ref"
-    ref_identity_id: str | None = None
-    notes_in_context: str = ""
-
-    @model_validator(mode="after")
-    def _ref_identity_id_required(self) -> IdentityRefNode:
-        if not self.ref_identity_id:
-            raise ValueError(f"node {self.id!r} of kind 'identity_ref' requires ref_identity_id")
-        return self
+# mission_ref / value_ref / identity_ref retired 2026-06-20 (D-2026-06-17-H /
+# D-2026-06-20-G): Foundation references moved to the service inspector's chip
+# pickers (core_value + identity) — they were redundant standalone nodes. The
+# only surviving standalone reference node is `actor_ref` (read-only anchor).

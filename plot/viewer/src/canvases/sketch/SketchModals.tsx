@@ -16,16 +16,10 @@ import {
 import { type Edge, type Node } from "reactflow";
 import type { CanvasDoc, SketchNode as DocNode } from "../../types";
 import { ActorRefPicker } from "../ActorRefPicker";
-import {
-  FoundationRefPicker,
-  type FoundationRefMasterKind,
-  masterKindForRef,
-  refIdFieldForKind,
-} from "../FoundationRefPicker";
 import { SketchBodyModal } from "../SketchBodyModal";
 import { SketchEdgeModal } from "../SketchEdgeModal";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
-import type { NodePreset, PendingActorRef, PendingFoundationRef } from "./types";
+import type { NodePreset, PendingActorRef } from "./types";
 
 export interface SketchModalsProps {
   doc: CanvasDoc;
@@ -46,14 +40,9 @@ export interface SketchModalsProps {
   setBodyModalNodeId: Dispatch<SetStateAction<string | null>>;
   edgeModalId: string | null;
   setEdgeModalId: Dispatch<SetStateAction<string | null>>;
-  pendingFoundationRef: PendingFoundationRef | null;
-  setPendingFoundationRef: Dispatch<SetStateAction<PendingFoundationRef | null>>;
   pendingActorRef: PendingActorRef | null;
   setPendingActorRef: Dispatch<SetStateAction<PendingActorRef | null>>;
   availableActors: DocNode[] | undefined;
-  availableMissions: DocNode[] | undefined;
-  availableValues: DocNode[] | undefined;
-  availableIdentities: DocNode[] | undefined;
 }
 
 /** Compute the absolute position of ``parent`` by walking its
@@ -84,14 +73,9 @@ export function SketchModals({
   setBodyModalNodeId,
   edgeModalId,
   setEdgeModalId,
-  pendingFoundationRef,
-  setPendingFoundationRef,
   pendingActorRef,
   setPendingActorRef,
   availableActors,
-  availableMissions,
-  availableValues,
-  availableIdentities,
 }: SketchModalsProps) {
   return (
     <>
@@ -126,60 +110,6 @@ export function SketchModals({
               }}
               onClose={() => setEdgeModalId(null)}
               onDelete={() => handleEdgesDelete([{ id: target.id } as Edge])}
-            />
-          );
-        })()}
-      {pendingFoundationRef &&
-        (() => {
-          const masterKind: FoundationRefMasterKind | null = masterKindForRef(
-            pendingFoundationRef.refKind,
-          );
-          if (!masterKind) return null;
-          const masters =
-            masterKind === "mission"
-              ? availableMissions ?? []
-              : masterKind === "core_value"
-                ? availableValues ?? []
-                : availableIdentities ?? [];
-          const idField = refIdFieldForKind(pendingFoundationRef.refKind);
-          if (!idField) return null;
-          return (
-            <FoundationRefPicker
-              masterKind={masterKind}
-              masters={masters}
-              mode={pendingFoundationRef.mode}
-              onCancel={() => setPendingFoundationRef(null)}
-              onPick={(master) => {
-                if (pendingFoundationRef.mode === "rewire") {
-                  updateNode(pendingFoundationRef.nodeId, {
-                    [idField]: master.id,
-                    label: `→ ${master.label || master.id}`,
-                  } as Partial<DocNode>);
-                  setPendingFoundationRef(null);
-                  return;
-                }
-                const { preset, pos, resolved } = pendingFoundationRef;
-                const w = preset.width ?? DEFAULT_WIDTH;
-                const h = preset.height ?? DEFAULT_HEIGHT;
-                const resolvedPreset: NodePreset = {
-                  ...preset,
-                  label: `→ ${master.label || master.id}`,
-                  [idField]: master.id,
-                };
-                if (resolved.parentId) {
-                  const parent = nodeById.get(resolved.parentId)!;
-                  const { x: ax, y: ay } = parentAbsolute(parent, nodeById);
-                  addNestedNodeAt({
-                    parentId: resolved.parentId,
-                    localX: Math.max(8, pos.x - ax - w / 2),
-                    localY: Math.max(28, pos.y - ay - h / 2),
-                    preset: resolvedPreset,
-                  });
-                } else {
-                  addNodeAt(pos.x - w / 2, pos.y - h / 2, resolvedPreset);
-                }
-                setPendingFoundationRef(null);
-              }}
             />
           );
         })()}
