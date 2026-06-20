@@ -46,6 +46,7 @@ from plot_mcp.models import (
     MetricNode,
     MissionNode,
     MissionRefNode,
+    NoteNode,
     ProjectNode,
     RuleNode,
     ServiceNode,
@@ -101,6 +102,7 @@ _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     "metric": MetricNode,
     "step": StepNode,
     "decision": DecisionNode,
+    "note": NoteNode,
     "rule": RuleNode,
     "content": ContentNode,
 }

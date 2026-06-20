@@ -65,6 +65,21 @@ const SERVICE_INSIDE_CATEGORY: StencilPreset = {
   dropHintI18nKey: "stencil.dropHintIntoCategory",
 };
 
+// D-2026-06-17-F — an ambient canvas-global memo on the Feature canvas
+// (edgeless). Yellow sticky; drops freely (no parent).
+const NOTE_AMBIENT: StencilPreset = {
+  id: "note",
+  labelHint: "Note",
+  labelI18nKey: "kind.note",
+  shape: "rectangle",
+  color: "#fef9c3",
+  width: 180,
+  height: 80,
+  icon: null,
+  label: "Note",
+  kind: "note",
+};
+
 // D-2026-06-17-D — a ``feature`` is a capability nested under a service (the
 // sole drill target). Lighter tint than a service; drops inside a Service.
 const FEATURE_INSIDE_SERVICE: StencilPreset = {
@@ -275,6 +290,7 @@ export const STENCIL_PRESETS: StencilPreset[] = [
   TOP_LEVEL_CATEGORY,
   SERVICE_INSIDE_CATEGORY,
   FEATURE_INSIDE_SERVICE,
+  NOTE_AMBIENT,
   ...SERVICE_COMPOSITION,
   ...ACTOR_INTERNAL,
   CORE_MISSION,
@@ -568,6 +584,11 @@ export function SketchStencil({
           note={t("stencil.note.dragIdentityAspectThisServiceExpresses")}
         />
       )}
+      <Section
+        title={t("stencil.section.note")}
+        presets={[NOTE_AMBIENT]}
+        note={t("stencil.note.ambient")}
+      />
     </div>
   );
 }

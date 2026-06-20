@@ -127,6 +127,11 @@ export interface DecisionJson extends BaseFieldsJson {
   body: string;
 }
 
+export interface NoteJson extends BaseFieldsJson {
+  kind: "note";
+  body: string;
+}
+
 export interface RuleJson extends BaseFieldsJson {
   kind: "rule";
   policy: string;

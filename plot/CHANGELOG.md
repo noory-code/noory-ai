@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.90.0] — 2026-06-20
+
+### Added
+
+- **`note` kind** (Chunk 2.3, D-2026-06-20-E, implementing D-2026-06-17-F). A
+  canvas-global ambient memo on the Feature canvas ("모바일 우선·본문 500자") —
+  a human-read guide. **Edgeless invariant:** a note never participates in an
+  edge, enforced both viewer-side (`handleConnect` rejects note endpoints) and
+  server-side (`CanvasDoc._notes_are_edgeless`). Field `body`. Full lock-step:
+  `NoteNode` + generated `NoteJson` + viewer `Note` class / renderer / inspector
+  / registries / i18n (en+ko) / a yellow ambient stencil preset + the edgeless
+  guards (`tests/test_canvas_doc.py`). Palette = 18 kinds. The AI-framing
+  injection (note bodies → per-canvas `chat_context` framing) is a tracked
+  follow-up.
+
 ## [0.89.0] — 2026-06-20
 
 ### Added

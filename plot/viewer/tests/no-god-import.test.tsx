@@ -47,6 +47,7 @@ const NODE_KINDS = [
   "metric",
   "step",
   "decision",
+  "note",
   "category",
 ] as const;
 

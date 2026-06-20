@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-20-E — `note` kind added (edgeless canvas-global ambient memo on the Feature canvas)
+
+- **What:** New `note` node kind (implements `D-2026-06-17-F`). A canvas-global ambient memo on the Feature canvas ("모바일 우선·본문 500자") — a human-read guide. **Edgeless invariant:** a note NEVER participates in an edge (ambient, not a flow participant), enforced **both** viewer-side (`handleConnect` rejects note endpoints) and server-side (`CanvasDoc._notes_are_edgeless` rejects any edge incident to a note). Field: `body`. Full lock-step: `NoteNode` + generated `NoteJson` + viewer `Note` class / renderer / inspector / registries / i18n / a yellow ambient stencil preset + guards. Palette = 18 kinds.
+- **Why:** A feature flow often carries cross-cutting context the human should always see and the AI should always work under, but that isn't a flow step. A dedicated edgeless kind captures it without polluting the flow graph. The edgeless rule is load-bearing — a note in an edge would imply it participates in the flow, which it must not.
+- **Alternatives:** (a) a free-text field on the canvas — rejected (not an addressable node the AI framing can enumerate). (b) allow edges from notes — rejected (`D-2026-06-17-F`: ambient context is not a flow participant).
+- **Approval:** Accepted by user via the approved Chunk-2 plan (implements the pinned `D-2026-06-17-F`).
+- **Spec impact:** Palette + `note` (18 kinds). Allowed on the `service_detail`/Feature canvas. Edgeless invariant pinned by `tests/test_canvas_doc.py` (server) + the `handleConnect` guard (viewer). **Follow-up (ROADMAP):** the AI-framing injection (note bodies appended to the per-canvas `chat_context` framing) — the "AI가 늘 깔고 작업" half — is deferred; the human-read memo + edgeless invariant ship now.
+
 ### D-2026-06-20-D — `feature` kind added (capability under a service; the sole drill target)
 
 - **What:** New `feature` node kind (implements `D-2026-06-17-D` / `D-2026-06-19-H`). A feature is a **capability the service offers** (글쓰기 / 편집) — a behaviour grouping under a service, **not** an independent value unit (value exchange is a property of the *service*; a feature that grows its own multi-actor exchange is promoted to a service). It is the **sole drill target**. Field: `proposed` — the one-line "무엇을 할 수 있나?" summary. Nests under a service via a directed edge (service→feature), placed from the services stencil. Full lock-step: Pydantic `FeatureNode` + generated `FeatureJson` + viewer `Feature` class / renderer / inspector / registries / i18n / stencil preset + drop-into-service resolver + guards (palette = 17 kinds).

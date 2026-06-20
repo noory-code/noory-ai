@@ -20,6 +20,7 @@ import { IdentityRef } from "./IdentityRef";
 import { Metric } from "./Metric";
 import { Mission } from "./Mission";
 import { MissionRef } from "./MissionRef";
+import { Note } from "./Note";
 import { Project } from "./Project";
 import { Rule } from "./Rule";
 import { Service } from "./Service";
@@ -96,6 +97,8 @@ export function createBlankNode(
       return Step.fromJson(raw).toJson();
     case "decision":
       return Decision.fromJson(raw).toJson();
+    case "note":
+      return Note.fromJson(raw).toJson();
     case "rule":
       return Rule.fromJson(raw).toJson();
     case "content":

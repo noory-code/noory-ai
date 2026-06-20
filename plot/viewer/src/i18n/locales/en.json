@@ -176,6 +176,7 @@
     "metric": "Metric",
     "step": "Step",
     "decision": "Decision",
+    "note": "Note",
     "rule": "Rule",
     "content": "Content",
     "interaction": "Interaction",
@@ -201,6 +202,9 @@
     "category": "CATEGORY"
   },
   "inspector": {
+    "note": {
+      "ambientHint": "Canvas-wide context — a guide you read AND context the AI always works under. A note never connects to anything (edgeless)."
+    },
     "feature": {
       "proposed": "What can you do here?",
       "proposedHint": "one capability the service offers, in a line",
@@ -374,6 +378,7 @@
       "actorHierarchy": "Actor hierarchy",
       "service": "Service",
       "feature": "Feature",
+      "note": "Note",
       "composition": "Composition",
       "interactions": "Interactions",
       "values": "Values",
@@ -385,6 +390,7 @@
       "dropOnActor": "drop on an Actor",
       "dropInsideCategory": "drop inside a Category",
       "dropInsideService": "drop inside a Service (it becomes a drill target)",
+      "ambient": "drop anywhere — a canvas-wide note (edgeless)",
       "compositionInsideService": "metrics + steps inside this service",
       "interactionsBetweenActors": "drop an interaction (contact point between actors)",
       "valuesExchanged": "drop a value exchanged via interactions",

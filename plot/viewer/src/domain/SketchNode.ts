@@ -36,6 +36,7 @@ import type { IdentityRef } from "./IdentityRef";
 import type { Metric } from "./Metric";
 import type { Mission } from "./Mission";
 import type { MissionRef } from "./MissionRef";
+import type { Note } from "./Note";
 import type { Project } from "./Project";
 import type { Rule } from "./Rule";
 import type { Service } from "./Service";
@@ -55,6 +56,7 @@ import type {
   MetricJson,
   MissionJson,
   MissionRefJson,
+  NoteJson,
   ProjectJson,
   RuleJson,
   ServiceJson,
@@ -80,6 +82,7 @@ export type SketchEntity =
   | Metric
   | Step
   | Decision
+  | Note
   | Rule
   | Content;
 
@@ -103,6 +106,7 @@ export type SketchNode = (
   | MetricJson
   | StepJson
   | DecisionJson
+  | NoteJson
   | RuleJson
   | ContentJson
 ) & {

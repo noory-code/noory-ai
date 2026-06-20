@@ -87,6 +87,9 @@ from plot_mcp.models_composition import (
     MetricNode as MetricNode,
 )
 from plot_mcp.models_composition import (
+    NoteNode as NoteNode,
+)
+from plot_mcp.models_composition import (
     RuleNode as RuleNode,
 )
 from plot_mcp.models_composition import (

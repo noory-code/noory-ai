@@ -59,6 +59,7 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
         "metric",
         "step",
         "decision",
+        "note",
         "actor_ref",
     }
     | _FOUNDATION_REFS,
@@ -112,6 +113,27 @@ class CanvasDoc(BaseModel):
     # self-parent, no cycles) are now properties of the directed-edge
     # graph; if needed, add a ``_directed_edge_acyclic`` validator
     # later. Pre-v0.26 data is migrated read-side, not validated here.
+
+    @model_validator(mode="after")
+    def _notes_are_edgeless(self) -> CanvasDoc:
+        """D-2026-06-17-F — a ``note`` is ambient canvas-global context, NOT a
+        flow participant, so it NEVER takes an edge. Reject any edge whose
+        source or target is a note node (mirrors the viewer ``handleConnect``
+        guard so a hand-edited / MCP-written doc can't smuggle one in)."""
+        note_ids = {n.id for n in self.nodes if n.kind == "note"}
+        if not note_ids:
+            return self
+        offending = sorted(
+            {
+                ep
+                for e in self.edges
+                for ep in (e.source, e.target)
+                if ep in note_ids
+            }
+        )
+        if offending:
+            raise ValueError(f"note nodes must be edgeless; edges touch notes: {offending}")
+        return self
 
     @model_validator(mode="after")
     def _kinds_allowed_on_canvas(self) -> CanvasDoc:

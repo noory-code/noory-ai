@@ -24,6 +24,7 @@ import { IdentityRefInspector } from "./identity_ref";
 import { MetricInspector } from "./metric";
 import { MissionInspector } from "./mission";
 import { MissionRefInspector } from "./mission_ref";
+import { NoteInspector } from "./note";
 import { ProjectInspector } from "./project";
 import { RuleInspector } from "./rule";
 import { ServiceInspector } from "./service";
@@ -38,6 +39,7 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   metric: MetricInspector,
   step: StepInspector,
   decision: DecisionInspector,
+  note: NoteInspector,
   core_value: CoreValueInspector,
   identity: IdentityInspector,
   mission: MissionInspector,

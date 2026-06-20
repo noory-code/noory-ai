@@ -50,6 +50,7 @@ export type NodeKind =
   | "metric"
   | "step"
   | "decision"
+  | "note"
   | "category";
 
 /** v0.10 Step 3: the four ref kinds form a uniform family. */

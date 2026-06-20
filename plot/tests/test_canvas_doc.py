@@ -20,6 +20,7 @@ from plot_mcp.models import (
     MetricNode,
     MissionNode,
     MissionRefNode,
+    NoteNode,
     ProjectNode,
     RuleNode,
     ServiceNode,
@@ -1089,3 +1090,37 @@ def test_parent_cycle_rejected() -> None:
             ActorNode(id="b", label="B"),
         ],
     )
+
+
+# ---------------------------------------------------------------------------
+# note edgeless invariant (D-2026-06-17-F)
+# ---------------------------------------------------------------------------
+
+
+def _detail_with_note(edges: list[SketchEdge]) -> CanvasDoc:
+    """A minimal valid service_detail canvas carrying a note node."""
+    return CanvasDoc(
+        canvas_id="svc1",
+        canvas_kind="service_detail",
+        service_ref="svc1",
+        nodes=[
+            ServiceNode(id="svc1", label="S"),
+            ActorRefNode(id="ar1", label="→A", ref_actor_id="a1"),
+            NoteNode(id="n1", label="ctx", body="mobile-first, body ≤ 500 chars"),
+        ],
+        edges=edges,
+    )
+
+
+def test_note_without_edges_is_valid() -> None:
+    _detail_with_note(edges=[])  # no raise
+
+
+def test_note_as_edge_target_is_rejected() -> None:
+    with pytest.raises(ValueError, match="note nodes must be edgeless"):
+        _detail_with_note(edges=[SketchEdge(id="e1", source="ar1", target="n1")])
+
+
+def test_note_as_edge_source_is_rejected() -> None:
+    with pytest.raises(ValueError, match="note nodes must be edgeless"):
+        _detail_with_note(edges=[SketchEdge(id="e1", source="n1", target="ar1")])

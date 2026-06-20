@@ -62,6 +62,11 @@ export function useFlowHandlers({
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
       const current = docRef.current;
+      // D-2026-06-17-F — a ``note`` is edgeless ambient context; never let it
+      // gain an edge (mirrors the server ``CanvasDoc._notes_are_edgeless``).
+      const srcKind = current.nodes.find((n) => n.id === connection.source)?.kind;
+      const tgtKind = current.nodes.find((n) => n.id === connection.target)?.kind;
+      if (srcKind === "note" || tgtKind === "note") return;
       // D-2026-05-31-R + D-2026-06-14-C — normalize the new edge's direction
       // relative to the anchor, however the user dragged it (which side/handle
       // they started from no longer matters):

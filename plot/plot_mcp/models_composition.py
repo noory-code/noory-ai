@@ -48,6 +48,20 @@ class DecisionNode(BaseNodeFields):
     body: str = ""
 
 
+class NoteNode(BaseNodeFields):
+    """``note`` kind (D-2026-06-17-F). A canvas-global ambient memo on the
+    Feature canvas ("모바일 우선·본문 500자") — a human-read guide AND context
+    the AI always lays under its work (injected into the per-canvas framing).
+
+    **Edgeless invariant:** a ``note`` NEVER participates in an edge (it is
+    ambient, not a flow participant). Enforced both viewer-side (handleConnect)
+    and server-side (``CanvasDoc._notes_are_edgeless``). Field: ``body`` (the
+    memo text); ``label`` (BaseNodeFields) is its short title."""
+
+    kind: Literal["note"] = "note"
+    body: str = ""
+
+
 class RuleNode(BaseNodeFields):
     """v0.15 Phase 1.2: ``rule`` kind. A composition element inside a
     service expressing an enforced policy (with per-actor permissions)."""

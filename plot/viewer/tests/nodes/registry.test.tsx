@@ -8,7 +8,7 @@ import { NODE_RENDERERS } from "../../src/canvases/nodes/registry";
 import { shouldShowKindTag } from "../../src/canvases/nodes/BaseNode";
 
 describe("nodes/registry", () => {
-  it("registers all 17 NodeKind entries", () => {
+  it("registers all 18 NodeKind entries", () => {
     expect(Object.keys(NODE_RENDERERS).sort()).toEqual(
       [
         "actor",
@@ -23,6 +23,7 @@ describe("nodes/registry", () => {
         "metric",
         "mission",
         "mission_ref",
+        "note",
         "project",
         "rule",
         "service",

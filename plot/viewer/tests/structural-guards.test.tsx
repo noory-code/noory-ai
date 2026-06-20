@@ -64,6 +64,7 @@ const KIND_DIRS = [
   "metric",
   "mission",
   "mission_ref",
+  "note",
   "project",
   "rule",
   "service",
@@ -223,7 +224,7 @@ describe("registry-completeness (Phase 5.2)", () => {
     }
   });
 
-  it("NODE_RENDERERS registry contains exactly the 17 kinds", () => {
+  it("NODE_RENDERERS registry contains exactly the 18 kinds", () => {
     expect(Object.keys(NODE_RENDERERS).sort()).toEqual(
       KIND_DIRS.slice().sort() as unknown as string[],
     );

@@ -176,6 +176,7 @@
     "metric": "지표",
     "step": "단계",
     "decision": "결정",
+    "note": "노트",
     "rule": "규칙",
     "content": "콘텐츠",
     "interaction": "인터랙션",
@@ -201,6 +202,9 @@
     "category": "카테고리"
   },
   "inspector": {
+    "note": {
+      "ambientHint": "캔버스 전역 맥락 — 사람이 읽는 가이드이자 AI가 늘 깔고 작업하는 맥락입니다. 노트는 아무것과도 연결되지 않습니다(엣지 없음)."
+    },
     "feature": {
       "proposed": "여기서 무엇을 할 수 있나요?",
       "proposedHint": "이 서비스가 제공하는 능력 한 줄",
@@ -374,6 +378,7 @@
       "actorHierarchy": "액터 계층",
       "service": "서비스",
       "feature": "기능",
+      "note": "노트",
       "composition": "구성 요소",
       "interactions": "인터랙션",
       "values": "가치",
@@ -385,6 +390,7 @@
       "dropOnActor": "액터 위에 놓으세요",
       "dropInsideCategory": "카테고리 안에 놓으세요",
       "dropInsideService": "서비스 안에 놓으세요 (드릴 타겟이 됩니다)",
+      "ambient": "아무 데나 놓으세요 — 캔버스 전역 노트 (엣지 없음)",
       "compositionInsideService": "이 서비스 안의 지표 + 단계",
       "interactionsBetweenActors": "액터 사이의 접점을 끌어 놓으세요",
       "valuesExchanged": "인터랙션에서 교환되는 가치를 끌어 놓으세요",

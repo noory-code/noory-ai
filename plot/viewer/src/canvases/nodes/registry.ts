@@ -28,6 +28,7 @@ import { IdentityRefNode } from "./identity_ref";
 import { MetricNode } from "./metric";
 import { MissionNode } from "./mission";
 import { MissionRefNode } from "./mission_ref";
+import { NoteNode } from "./note";
 import { ProjectNode } from "./project";
 import { RuleNode } from "./rule";
 import { ServiceNode } from "./service";
@@ -54,6 +55,7 @@ export const NODE_RENDERERS: Record<NodeKind, NodeRendererComponent> = {
   metric: MetricNode,
   step: StepNode,
   decision: DecisionNode,
+  note: NoteNode,
   rule: RuleNode,
   content: ContentNode,
 };

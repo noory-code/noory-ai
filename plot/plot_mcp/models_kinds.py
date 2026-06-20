@@ -82,6 +82,9 @@ NodeKind = Literal[
     #   service_detail flow (user choice or system judgment). See
     #   docs/DECISIONS.md D-2026-05-30-C.
     "decision",
+    # note — canvas-global ambient memo on the Feature canvas (D-2026-06-17-F).
+    #   Edgeless (never participates in an edge); injected into the AI framing.
+    "note",
     # v0.12: ``category`` is a thematic grouping of services. Replaces what
     # used to be the "top-level service" idiom — categories are pure
     # containers (no value creation themselves), and the actual services
