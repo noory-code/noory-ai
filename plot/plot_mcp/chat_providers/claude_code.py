@@ -49,6 +49,15 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             "stream-json",
             "--include-partial-messages",
             "--verbose",  # stream-json requires verbose mode
+            # D-2026-06-21-C — auto-allow the user's own Plot MCP tools. Headless
+            # ``-p`` can't show a permission prompt, so without this the agent
+            # dead-ends ("press Allow" with nothing to press). Scoped to
+            # ``mcp__plot__*`` ONLY — Bash / Write / filesystem keep default
+            # behaviour, so the in-app agent can't silently touch anything
+            # outside the user's .noory/plot data (which is git-recoverable and
+            # surfaced on the canvas per build-through-discussion).
+            "--allowedTools",
+            "mcp__plot__*",
             *self._model_args(),
         ]
         if self._first_turn:

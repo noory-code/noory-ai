@@ -4,6 +4,25 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.8] — 2026-06-21
+
+### Fixed
+
+- **In-app Claude Code dead-ended on Plot MCP tool permissions** (**D-2026-06-21-C**).
+  Headless `claude -p` can't show a permission prompt, so the agent narrated
+  "press Allow" with nothing to press whenever it called a Plot tool. The spawn
+  now passes `--allowedTools mcp__plot__*` — auto-approving the user's **own**
+  Plot MCP tools (scoped; Bash / Write / filesystem keep default behaviour, so
+  the agent can't silently touch anything outside `.noory/plot`). Verified flag
+  against `claude --help` 2.1.176 + the permissions docs. Pinned by
+  `test_chat_session`.
+
+### Removed
+
+- **The in-app Claude Code dual-billing warning banner** (**D-2026-06-21-D**,
+  app-repo UI). Removed per user request; the per-token billing fact is
+  unchanged, just no longer surfaced as a persistent banner.
+
 ## [0.98.7] — 2026-06-21
 
 ### Fixed

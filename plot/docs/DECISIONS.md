@@ -39,6 +39,23 @@
 
 ## Log
 
+### D-2026-06-21-D — the in-app Claude Code dual-billing warning banner is removed
+
+- **What:** The `ChatDock` banner shown for a `claude-code` selection ("Claude Code runs headless (claude -p), billed separately… connect over MCP instead.") is **removed** — the JSX block + the `chat.claudeBillingWarning` i18n keys (en + ko). Supersedes the warning added by `D-2026-06-14-B`.
+- **Why:** User request, 2026-06-21 ("이거 없애죠"). The banner was noisy on every claude-code turn.
+- **Note (fact still holds):** in-app `claude -p` IS billed per-token (API), separate from a Claude subscription — that cost reality is unchanged; it is simply no longer surfaced as a persistent banner. The MCP-first path (the user's own agent over `mcp__plot`) remains the no-double-charge route.
+- **Approval:** Accepted by user, 2026-06-21.
+- **Spec impact:** App-repo UI only (`plot/viewer/src/shell/ChatDock.tsx` + i18n). `chat-dock` test updated: a claude-code selection now enables input with **no** `role="note"` warning. No engine change.
+
+### D-2026-06-21-C — in-app Claude Code auto-allows the user's own Plot MCP tools (`--allowedTools mcp__plot__*`)
+
+- **What:** The engine's `claude -p` spawn (`claude_code._build_command`) now passes **`--allowedTools mcp__plot__*`**. Headless `-p` cannot show an interactive permission prompt, so when the in-app agent called a Plot MCP tool (`mcp__plot__list_projects`, …) the call dead-ended and the model narrated "press Allow" with nothing to press. The flag auto-approves **all Plot MCP tools** so the in-app coach actually works.
+- **Why:** User report 2026-06-21 (the agent kept telling the user to approve a prompt that can't appear in headless mode; "이런건 처리가 되어야죠… 알아서 되던"). The exact flag was verified against `claude --help` (2.1.176) + the permissions docs (an MCP allow-rule must be anchored: `mcp__plot__*`, not bare `mcp__plot`).
+- **Scope / safety:** Auto-allow is **scoped to `mcp__plot__*` only** — Bash / Write / Read / filesystem keep their default behaviour, so the in-app agent **cannot silently touch anything outside the user's `.noory/plot` data**. Plot tools operate only on that data, which is git-recoverable and surfaced on the canvas (build-through-discussion, PHILOSOPHY rule 7), so auto-approving them — including mutating ones — is consistent with Plot's "AI proposes, user sees it on the canvas" model. The meaningful boundary (no silent filesystem/shell access) is preserved.
+- **Alternatives:** (a) `--dangerously-skip-permissions` / `--permission-mode bypassPermissions` — rejected (auto-allows Bash/Write to the whole machine; defeats the boundary). (b) enumerate only read Plot tools — rejected (brittle vs the tool list; the coach also edits canvases, and Plot mutations are reviewable + recoverable). (c) a setup/permission UI in the chat — deferred (the user's primary ask was "알아서 되던" / just-work; the scoped auto-allow delivers that with no new UI).
+- **Approval:** Accepted by user, 2026-06-21.
+- **Spec impact:** In-app chat (claude-code) now invokes Plot MCP tools without a dead-end prompt. Pinned by `test_chat_session` (the spawn command carries `--allowedTools mcp__plot__*`). Codex / Gemini providers have their own permission models — not touched (separate, if reported). Engine **658 green**.
+
 ### D-2026-06-21-B — in-app Claude Code chat doubled every reply; the `stream-json` parser counted text twice
 
 - **What:** The in-app chat (claude-code provider) rendered each reply **doubled** ("바나스 파운데이션 캔버스를 살펴볼게요.바나스 파운데이션 캔버스를 살펴볼게요."). Cause: `claude_code._extract_anthropic_text` pulled text from **two** frame shapes — the partial `content_block_delta` stream AND the full `assistant` recap message. With `--include-partial-messages` (always on) **both** arrive for the same block, so the engine's accumulator (and each viewer delta) counted the text twice. Fix: the partials are the single streaming source; the full `assistant` recap is **ignored** for text. Now an `assistant` message yields no delta and the accumulated turn text equals the produced text exactly once.
