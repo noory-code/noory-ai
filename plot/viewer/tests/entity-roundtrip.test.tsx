@@ -36,8 +36,6 @@ const NODE_KINDS = [
   "service",
   "feature",
   "rule",
-  "content",
-  "metric",
   "step",
   "decision",
   "note",

@@ -173,30 +173,15 @@ const ACTOR_REF: StencilPreset = {
 /**
  * Service internals visible on the canvas = decomposition only.
  *
- * rule / content remain Inspector-only (they're small structured items
- * edited via the "+ Add" button, not dragged), but v0.10 Step 5 adds
- * metric / step as canvas-first composition: an ordered procedural
- * flow (steps) and explicit success indicators (metrics) make more
- * sense visually on the Service-Detail canvas than buried in a list.
+ * rule remains Inspector-only (content / metric retired 2026-06-20,
+ * D-2026-06-20-H). step / decision are canvas-first composition: an
+ * ordered procedural flow (steps) + branch points (decisions) make
+ * more sense visually on the Feature canvas than buried in a list.
  */
 // v0.12 — sub-service is gone. Service is a leaf inside a category;
 // nothing nests inside a service on the Services canvas.
 
 const SERVICE_COMPOSITION: StencilPreset[] = [
-  {
-    id: "metric",
-    labelHint: "Metric",
-    // v0.26.1 (D-2026-05-25-B) — non-Symbol kind, rectangle default.
-    shape: "rectangle",
-    color: "#d9f99d",
-    width: 150,
-    height: 60,
-    icon: "target",
-    label: "Metric",
-    kind: "metric",
-    dropHint: "Drop inside a Service container",
-    dropHintI18nKey: "stencil.dropHintIntoService",
-  },
   {
     id: "step",
     labelHint: "Step",
@@ -270,7 +255,7 @@ export const STENCIL_PRESETS: StencilPreset[] = [
  *
  * - Top-level kinds (actor, category) land at top.
  * - service (v0.12) requires a Category parent on the Services canvas.
- * - Composition kinds (metric, step):
+ * - Composition kinds (step, decision):
  *     - On the Services canvas (rare; not in stencil today) they would
  *       require a Service parent.
  *     - On the ServiceDetail canvas (D-2026-05-28-A) they are FREE-FORM
@@ -289,8 +274,7 @@ export function resolveDropTarget(
    *  service parent unconditionally). */
   canvasKind?: StencilCanvas,
 ): { parentId: string | null } | { error: string } {
-  const isComposition =
-    preset.kind === "metric" || preset.kind === "step" || preset.kind === "decision";
+  const isComposition = preset.kind === "step" || preset.kind === "decision";
   const isSubActor = preset.id === "sub-actor";
   // v0.12: a service preset on the Services canvas drops *inside a
   // category* (services are leaves nested under a category).
@@ -300,9 +284,8 @@ export function resolveDropTarget(
   const isFeatureInsideService = preset.id === "feature-in-service";
 
   if (isComposition) {
-    // D-2026-05-28-A: ServiceDetail is a user-authored interaction
-    // graph — composition kinds (metric / step, re-purposed as
-    // value / interaction nodes by the user) drop freely. Nesting
+    // D-2026-05-28-A: the Feature canvas is a user-authored interaction
+    // graph — composition kinds (step / decision) drop freely. Nesting
     // inside a service container is still honoured when the user
     // explicitly drops on one.
     if (canvasKind === "service_detail") {
@@ -468,22 +451,19 @@ export function SketchStencil({
       </div>
     );
   }
-  // service_detail (v0.12 modal) — D-2026-05-28-C re-frames Composition
+  // Feature canvas (v0.12 modal) — D-2026-05-28-C re-frames Composition
   // into the user's design model: "인터랙션" (step, between actors) +
-  // "가치" (metric, exchanged via interactions). The underlying kinds
-  // stay step / metric (no new domain kinds, D-2026-05-26-C YAGNI), but
-  // the stencil section + item labels read as the user's mental model.
+  // branch points (decision). The underlying kinds stay step / decision
+  // (no new domain kinds, D-2026-05-26-C YAGNI); the stencil section +
+  // item labels read as the user's mental model. (Value lives on the
+  // service-inspector chips now — metric retired 2026-06-20, D-2026-06-20-H.)
   const stepPreset = SERVICE_COMPOSITION.find((p) => p.id === "step");
-  const metricPreset = SERVICE_COMPOSITION.find((p) => p.id === "metric");
   const decisionRaw = SERVICE_COMPOSITION.find((p) => p.id === "decision");
   const decisionPreset: StencilPreset | null = decisionRaw
     ? { ...decisionRaw, labelI18nKey: "kind.decision", labelHint: "Decision" }
     : null;
   const interactionPreset: StencilPreset | null = stepPreset
     ? { ...stepPreset, labelI18nKey: "kind.interaction", labelHint: "Interaction" }
-    : null;
-  const valuePreset: StencilPreset | null = metricPreset
-    ? { ...metricPreset, labelI18nKey: "kind.value", labelHint: "Value" }
     : null;
   const actorRefPresets = availableActors.map((a) => actorRefPresetFor(a));
   // The flow layer (actor → interaction → value); the former essence-injection
@@ -503,13 +483,6 @@ export function SketchStencil({
           title={t("stencil.section.interactions")}
           presets={decisionPreset ? [interactionPreset, decisionPreset] : [interactionPreset]}
           note={t("stencil.note.interactionsBetweenActors")}
-        />
-      )}
-      {valuePreset && (
-        <Section
-          title={t("stencil.section.values")}
-          presets={[valuePreset]}
-          note={t("stencil.note.valuesExchanged")}
         />
       )}
       {/* Foundation-ref injection layer removed 2026-06-20 (D-2026-06-20-G):

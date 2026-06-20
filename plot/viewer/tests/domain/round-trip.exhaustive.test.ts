@@ -1,10 +1,10 @@
 /**
- * Exhaustive 15-kind entity round-trip — Phase 5.1 (D-2026-05-12-B).
+ * Exhaustive 13-kind entity round-trip — Phase 5.1 (D-2026-05-12-B).
  *
  * Companion to ``round-trip.test.ts`` (per-kind hand-written asserts
  * built up Phase 2.1 → 2.10). This file is the structural sweep:
  *
- *   For every NodeKind in the 15-way discriminated union:
+ *   For every NodeKind in the 13-way discriminated union:
  *
  *     1. ``parseEntity(raw)`` dispatches to a class instance.
  *     2. ``Class.fromJson(entity.toJson()).toJson()`` is deeply
@@ -29,11 +29,12 @@ const ALL_KINDS: NodeKind[] = [
   "actor",
   "actor_ref",
   "service",
+  "feature",
   "category",
-  "metric",
   "step",
+  "decision",
+  "note",
   "rule",
-  "content",
 ];
 
 function defaultRaw(kind: NodeKind) {
@@ -51,7 +52,7 @@ function defaultRaw(kind: NodeKind) {
   });
 }
 
-describe("parseEntity → 15-kind dispatch (Phase 5.1)", () => {
+describe("parseEntity → 13-kind dispatch (Phase 5.1)", () => {
   it.each(ALL_KINDS)("returns a class instance for kind=%s", (kind) => {
     const raw = defaultRaw(kind);
     const node = parseEntity(raw);
@@ -60,7 +61,7 @@ describe("parseEntity → 15-kind dispatch (Phase 5.1)", () => {
   });
 });
 
-describe("Entity round-trip — 15-kind idempotence (Phase 5.1)", () => {
+describe("Entity round-trip — 13-kind idempotence (Phase 5.1)", () => {
   it.each(ALL_KINDS)(
     "fromJson(toJson()) is deeply equal to toJson() for kind=%s",
     (kind) => {

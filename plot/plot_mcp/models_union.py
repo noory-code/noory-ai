@@ -18,9 +18,7 @@ from plot_mcp.models_actors import (
     ServiceNode,
 )
 from plot_mcp.models_composition import (
-    ContentNode,
     DecisionNode,
-    MetricNode,
     NoteNode,
     RuleNode,
     StepNode,
@@ -52,12 +50,10 @@ SketchNode = Annotated[
     | ServiceNode
     | FeatureNode
     | CategoryNode
-    | MetricNode
     | StepNode
     | DecisionNode
     | NoteNode
-    | RuleNode
-    | ContentNode,
+    | RuleNode,
     Field(discriminator="kind"),
 ]
 
@@ -75,12 +71,10 @@ SketchNodeAdapter: TypeAdapter[
     | ServiceNode
     | FeatureNode
     | CategoryNode
-    | MetricNode
     | StepNode
     | DecisionNode
     | NoteNode
     | RuleNode
-    | ContentNode
 ] = TypeAdapter(SketchNode)
 
 

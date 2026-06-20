@@ -22,12 +22,12 @@
  *      *Raise* via decision (the file outgrew its single responsibility
  *      and needs a split), never via test edit.
  *
- *   3. ``registry-completeness``: the 15 per-kind directories
+ *   3. ``registry-completeness``: the 13 per-kind directories
  *      (``canvases/nodes/{kind}/`` + ``canvases/inspectors/{kind}/``)
  *      must each exist, and the runtime registries must enumerate
- *      all 15. Catches a kind drop / addition during refactor.
+ *      all 13. Catches a kind drop / addition during refactor.
  *
- * Adding a 16th kind requires touching the registries and the
+ * Adding a 14th kind requires touching the registries and the
  * ``KIND_DIRS`` SSOTs in both this file and
  * ``styles-cursor-baseline.test.tsx`` — the friction is intentional.
  */
@@ -55,12 +55,10 @@ const KIND_DIRS = [
   "actor",
   "actor_ref",
   "category",
-  "content",
   "core_value",
   "decision",
   "feature",
   "identity",
-  "metric",
   "mission",
   "note",
   "project",
@@ -221,7 +219,7 @@ describe("registry-completeness (Phase 5.2)", () => {
     }
   });
 
-  it("NODE_RENDERERS registry contains exactly the 15 kinds", () => {
+  it("NODE_RENDERERS registry contains exactly the 13 kinds", () => {
     expect(Object.keys(NODE_RENDERERS).sort()).toEqual(
       KIND_DIRS.slice().sort() as unknown as string[],
     );

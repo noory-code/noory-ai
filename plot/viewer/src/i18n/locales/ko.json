@@ -167,20 +167,14 @@
     "identity": "아이덴티티",
     "actor": "액터",
     "actor_ref": "액터 (참조)",
-    "mission_ref": "미션 (참조)",
-    "value_ref": "코어밸류 (참조)",
-    "identity_ref": "아이덴티티 (참조)",
     "service": "서비스",
     "feature": "기능",
     "category": "카테고리",
-    "metric": "지표",
     "step": "단계",
     "decision": "결정",
     "note": "노트",
     "rule": "규칙",
-    "content": "콘텐츠",
-    "interaction": "인터랙션",
-    "value": "가치"
+    "interaction": "인터랙션"
   },
   "node": {
     "confirmDelete": "이 노드를 삭제할까요?",
@@ -197,7 +191,6 @@
     "mission": "미션",
     "core_value": "코어밸류",
     "identity": "아이덴티티",
-    "metric": "지표",
     "step": "단계",
     "category": "카테고리"
   },
@@ -375,19 +368,6 @@
     "createDetails": "📁 상세 만들기",
     "creating": "생성 중…"
   },
-  "composition": {
-    "add": "+ 추가",
-    "expand": "펼치기",
-    "collapse": "접기",
-    "namePlaceholder": "이름",
-    "remove": "삭제",
-    "confirmRemove": "\"{{name}}\" 을(를) 삭제할까요?",
-    "untitled": "(이름 없음)",
-    "rules": "규칙",
-    "rulesSubtitle": "정책 · 제약 · SLA · 권한",
-    "contents": "콘텐츠",
-    "contentsSubtitle": "아티팩트 · 결과물 · 자산"
-  },
   "stencil": {
     "layer": {
       "flow": "① 흐름 (Execution)",
@@ -409,25 +389,16 @@
       "service": "서비스",
       "feature": "기능",
       "note": "노트",
-      "composition": "구성 요소",
       "interactions": "인터랙션",
-      "values": "가치",
-      "actors": "액터",
-      "missions": "미션",
-      "identityAspects": "아이덴티티 측면"
+      "actors": "액터"
     },
     "note": {
       "dropOnActor": "액터 위에 놓으세요",
       "dropInsideCategory": "카테고리 안에 놓으세요",
       "dropInsideService": "서비스 안에 놓으세요 (드릴 타겟이 됩니다)",
       "ambient": "아무 데나 놓으세요 — 캔버스 전역 노트 (엣지 없음)",
-      "compositionInsideService": "이 서비스 안의 지표 + 단계",
       "interactionsBetweenActors": "액터 사이의 접점을 끌어 놓으세요",
-      "valuesExchanged": "인터랙션에서 교환되는 가치를 끌어 놓으세요",
-      "dragActorOntoService": "이 서비스에 액터를 끌어 놓으세요",
-      "dragMissionThisServiceAnswersTo": "이 서비스가 응답하는 미션을 끌어 놓으세요",
-      "dragValueThisServiceEmbodies": "이 서비스가 구현하는 코어밸류를 끌어 놓으세요",
-      "dragIdentityAspectThisServiceExpresses": "이 서비스가 표현하는 아이덴티티 측면을 끌어 놓으세요"
+      "dragActorOntoService": "이 서비스에 액터를 끌어 놓으세요"
     },
     "infoAria": "개념 설명",
     "info": {

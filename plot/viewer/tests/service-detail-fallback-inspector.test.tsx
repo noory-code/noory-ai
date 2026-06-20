@@ -117,7 +117,7 @@ describe("SketchInspectorBindings fallbackInspector (D-2026-06-15-O)", () => {
   });
 
   it("renders the selected node's inspector — NOT the fallback", () => {
-    const node = makeNode({ kind: "metric", id: "m1", label: "Latency" });
+    const node = makeNode({ kind: "step", id: "m1", label: "Latency" });
     const doc = {
       canvas_kind: "service_detail",
       service_ref: "svc-1",

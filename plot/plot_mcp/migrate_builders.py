@@ -22,7 +22,6 @@ from plot_mcp.models import (
     ActorRefNode,
     CanvasDoc,
     CategoryNode,
-    ContentNode,
     CoreValueNode,
     IdentityNode,
     MissionNode,
@@ -285,27 +284,13 @@ def _v01_to_service(n: _V01SketchNode) -> ServiceNode:
     )
 
 
-def _v01_to_composition(n: _V01SketchNode) -> RuleNode | ContentNode:
-    """Convert a legacy v0.1 ``rule`` / ``content`` node into the
-    current per-kind class. Typed fields stay at their defaults because
-    v0.1 only carried label + position, not v0.10+ structured fields.
-    """
+def _v01_to_composition(n: _V01SketchNode) -> RuleNode:
+    """Convert a legacy v0.1 ``rule`` node into the current ``RuleNode``.
+    Typed fields stay at their defaults (v0.1 only carried label + position).
+    (``content`` retired 2026-06-20 — D-2026-06-20-H — so it is dropped, not
+    converted, by the caller.)"""
     if n.kind == "rule":
         return RuleNode(
-            id=n.id,
-            label=n.label,
-            x=n.x,
-            y=n.y,
-            width=n.width,
-            height=n.height,
-            color=n.color,
-            shape=n.shape,  # type: ignore[arg-type]
-            icon=n.icon,
-            collapsed=n.collapsed,
-            details_path=n.details_path,
-        )
-    if n.kind == "content":
-        return ContentNode(
             id=n.id,
             label=n.label,
             x=n.x,
@@ -402,10 +387,10 @@ def _split_services(
                 # Detail-canvas sub-service nesting is now the user's
                 # job via directed edges.
                 descendants.append(_v01_to_service(n))
-            elif n.kind in ("rule", "content"):
+            elif n.kind == "rule":
                 descendants.append(_v01_to_composition(n))
-            # v0.1 didn't have metric / step / refs / actor_ref — nothing
-            # else needs translation here.
+            # v0.1 ``content`` nodes are dropped (content retired 2026-06-20,
+            # D-2026-06-20-H). v0.1 had no metric / step / refs / actor_ref.
         ids = {n.id for n in descendants}
         scoped_edges = [e for e in edges if e.source in ids and e.target in ids]
         # v0.11 — pad with operator + user actor_refs so the new

@@ -58,10 +58,8 @@ describe("canPublish", () => {
     "core_value",
     "identity",
     "category",
-    "metric",
     "step",
     "rule",
-    "content",
   ] as const)("accepts typed kind '%s'", (kind) => {
     expect(canPublish(makeNode(kind))).toBe(true);
   });

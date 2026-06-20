@@ -26,8 +26,6 @@ from plot_mcp.models import (
     ActorNode,
     ActorRefNode,
     CategoryNode,
-    ContentNode,
-    MetricNode,
     MissionNode,
     RuleNode,
     ServiceNode,
@@ -146,9 +144,6 @@ def test_category_defaults_match_sketchnode_category_defaults() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_metric_round_trip() -> None:
-    n = MetricNode(id="m1", label="Latency", target="<200ms", measurement="p95")
-    assert MetricNode.model_validate(n.model_dump()) == n
 
 
 def test_step_round_trip_with_order() -> None:
@@ -174,15 +169,6 @@ def test_rule_round_trip() -> None:
     assert RuleNode.model_validate(n.model_dump()) == n
 
 
-def test_content_round_trip() -> None:
-    n = ContentNode(
-        id="c1",
-        label="Receipt",
-        format="application/json",
-        producer_actor_id="checkout",
-        consumer_actor_id="user",
-    )
-    assert ContentNode.model_validate(n.model_dump()) == n
 
 
 # ---------------------------------------------------------------------------
@@ -197,11 +183,6 @@ def test_adapter_dispatches_actor() -> None:
     assert parsed.side == "user"
 
 
-def test_adapter_dispatches_metric() -> None:
-    raw = MetricNode(id="m", label="M", target="x", measurement="y").model_dump()
-    parsed = SketchNodeAdapter.validate_python(raw)
-    assert isinstance(parsed, MetricNode)
-    assert parsed.target == "x"
 
 
 def test_adapter_dispatches_actor_ref_with_validator() -> None:

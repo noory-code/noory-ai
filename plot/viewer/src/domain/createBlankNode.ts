@@ -11,12 +11,10 @@ import { Actor } from "./Actor";
 import { ActorRef } from "./ActorRef";
 import type { BaseFields } from "./BaseFields";
 import { Category } from "./Category";
-import { Content } from "./Content";
 import { CoreValue } from "./CoreValue";
 import { Decision } from "./Decision";
 import { Feature } from "./Feature";
 import { Identity } from "./Identity";
-import { Metric } from "./Metric";
 import { Mission } from "./Mission";
 import { Note } from "./Note";
 import { Project } from "./Project";
@@ -79,8 +77,6 @@ export function createBlankNode(
       return Feature.fromJson(raw).toJson();
     case "category":
       return Category.fromJson(raw).toJson();
-    case "metric":
-      return Metric.fromJson(raw).toJson();
     case "step":
       return Step.fromJson(raw).toJson();
     case "decision":
@@ -89,7 +85,5 @@ export function createBlankNode(
       return Note.fromJson(raw).toJson();
     case "rule":
       return Rule.fromJson(raw).toJson();
-    case "content":
-      return Content.fromJson(raw).toJson();
   }
 }

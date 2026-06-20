@@ -139,7 +139,7 @@ describe("parseEntity dispatch", () => {
 
   it("dispatches to a registered parser when one exists", () => {
     // Sanity wiring test using a test-only kind so we don't collide
-    // with the auto-registered per-kind classes (metric, etc.).
+    // with the auto-registered per-kind classes (rule, step, etc.).
     const FAKE_KIND = "__test_only_kind__";
     let called = false;
     registerKindParser(FAKE_KIND, (raw) => {
@@ -155,8 +155,8 @@ describe("parseEntity dispatch", () => {
 
   it("registers per-kind parsers as their entity-class modules import", () => {
     // Importing the domain barrel side-effect-loads every per-kind
-    // entity class (Metric, in Phase 2.1). The registry should reflect
+    // entity class (Rule, Step, …). The registry should reflect
     // that without the test having to call ``registerKindParser`` itself.
-    expect(registeredKinds()).toContain("metric");
+    expect(registeredKinds()).toContain("rule");
   });
 });

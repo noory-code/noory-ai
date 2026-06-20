@@ -27,12 +27,10 @@
 import type { Actor } from "./Actor";
 import type { ActorRef } from "./ActorRef";
 import type { Category } from "./Category";
-import type { Content } from "./Content";
 import type { CoreValue } from "./CoreValue";
 import type { Decision } from "./Decision";
 import type { Feature } from "./Feature";
 import type { Identity } from "./Identity";
-import type { Metric } from "./Metric";
 import type { Mission } from "./Mission";
 import type { Note } from "./Note";
 import type { Project } from "./Project";
@@ -44,12 +42,10 @@ import type {
   ActorJson,
   ActorRefJson,
   CategoryJson,
-  ContentJson,
   CoreValueJson,
   DecisionJson,
   FeatureJson,
   IdentityJson,
-  MetricJson,
   MissionJson,
   NoteJson,
   ProjectJson,
@@ -70,12 +66,10 @@ export type SketchEntity =
   | Service
   | Feature
   | Category
-  | Metric
   | Step
   | Decision
   | Note
   | Rule
-  | Content;
 
 /** Wire-shape union (no class methods) — used by everything that
  *  treats nodes as plain data: React Flow state, Inspector props,
@@ -91,12 +85,10 @@ export type SketchNode = (
   | ServiceJson
   | FeatureJson
   | CategoryJson
-  | MetricJson
   | StepJson
   | DecisionJson
   | NoteJson
   | RuleJson
-  | ContentJson
 ) & {
   _md_warnings?: string[];
   /** v0.22.0 (D-2026-05-17-H) — server-decorated dirty signal.

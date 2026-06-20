@@ -15,12 +15,10 @@ import type { NodeKind } from "../../types";
 import { ActorInspector } from "./actor";
 import { ActorRefInspector } from "./actor_ref";
 import { CategoryInspector } from "./category";
-import { ContentInspector } from "./content";
 import { CoreValueInspector } from "./core_value";
 import { DecisionInspector } from "./decision";
 import { FeatureInspector } from "./feature";
 import { IdentityInspector } from "./identity";
-import { MetricInspector } from "./metric";
 import { MissionInspector } from "./mission";
 import { NoteInspector } from "./note";
 import { ProjectInspector } from "./project";
@@ -33,7 +31,6 @@ export type KindInspectorComponent = FC<KindInspectorProps>;
 
 export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> = {
   // Phase 2.1+ per-kind entries land here.
-  metric: MetricInspector,
   step: StepInspector,
   decision: DecisionInspector,
   note: NoteInspector,
@@ -47,7 +44,6 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   service: ServiceInspector,
   feature: FeatureInspector,
   rule: RuleInspector,
-  content: ContentInspector,
 };
 
 /** Look up the registered inspector for a kind, or ``undefined`` while

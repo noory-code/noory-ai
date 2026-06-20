@@ -43,8 +43,6 @@ export type NodeKind =
   | "service"
   | "feature"
   | "rule"
-  | "content"
-  | "metric"
   | "step"
   | "decision"
   | "note"

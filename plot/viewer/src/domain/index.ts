@@ -19,12 +19,10 @@ export type {
   ActorRefJson,
   BaseFieldsJson,
   CategoryJson,
-  ContentJson,
   CoreValueJson,
   DecisionJson,
   FeatureJson,
   IdentityJson,
-  MetricJson,
   MissionJson,
   NoteJson,
   ProjectJson,
@@ -36,7 +34,6 @@ export type {
 // Per-kind entity classes (Phase 2.1+). Importing this barrel registers
 // every kind's parser with parseEntity via module-load side effects.
 // Hand-written type aliases (not wire shapes) stay with their class.
-export { Metric } from "./Metric";
 export { Step } from "./Step";
 export { Decision } from "./Decision";
 export { Note } from "./Note";
@@ -51,7 +48,6 @@ export { Actor } from "./Actor";
 export { Service } from "./Service";
 export { Feature } from "./Feature";
 export { Rule } from "./Rule";
-export { Content } from "./Content";
 
 // v0.15 Phase 2.10 — discriminated-union SketchNode (replaces the
 // god ``SketchNode`` interface that lived in ``viewer/src/types.ts``).

@@ -94,10 +94,15 @@ def test_non_foundation_json_schema_includes_typed_fields(tmp_path: Path) -> Non
     for gone in ("target_side", "what", "scope", "do", "dont"):
         assert gone not in service_props, f"service.json must NOT expose retired {gone!r}"
 
-    metric_schema = json.loads((schema_dir / "metric.json").read_text(encoding="utf-8"))
-    metric_props = metric_schema.get("properties", {})
-    for field in ("target", "measurement"):
-        assert field in metric_props, f"metric.json must expose {field!r}"
+    # metric / content retired 2026-06-20 (D-2026-06-20-H) — no schema files.
+    assert not (schema_dir / "metric.json").exists()
+    assert not (schema_dir / "content.json").exists()
+
+    # rule (kept) exposes its typed fields.
+    rule_schema = json.loads((schema_dir / "rule.json").read_text(encoding="utf-8"))
+    rule_props = rule_schema.get("properties", {})
+    for field in ("policy", "enforcement", "actor_permissions"):
+        assert field in rule_props, f"rule.json must expose {field!r}"
 
 
 def test_meta_json_lists_every_kind(tmp_path: Path) -> None:

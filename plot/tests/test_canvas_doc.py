@@ -13,10 +13,8 @@ from plot_mcp.models import (
     ActorRefNode,
     CanvasDoc,
     CategoryNode,
-    ContentNode,
     CoreValueNode,
     IdentityNode,
-    MetricNode,
     MissionNode,
     NoteNode,
     ProjectNode,
@@ -541,7 +539,7 @@ def test_detail_canvas_service_ref_required() -> None:
         )
 
 
-def test_detail_canvas_sub_services_rules_contents_ok() -> None:
+def test_detail_canvas_sub_services_rules_ok() -> None:
     CanvasDoc(
         canvas_id="order",
         canvas_kind="service_detail",
@@ -550,7 +548,6 @@ def test_detail_canvas_sub_services_rules_contents_ok() -> None:
             *_detail_seed(),
             ServiceNode(id="sub1", label="장바구니"),
             RuleNode(id="r1", label="가격 규칙"),
-            ContentNode(id="c1", label="썸네일"),
         ],
     )
 
@@ -637,15 +634,6 @@ def test_service_refs_round_trip_through_canvas() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_metric_node_carries_typed_fields() -> None:
-    n = MetricNode(
-        id="m-login-rate",
-        label="Login success rate",
-        target=">99%",
-        measurement="OK 응답 / 전체 요청 (5분 윈도우)",
-    )
-    assert n.target == ">99%"
-    assert "OK 응답" in n.measurement
 
 
 def test_step_node_carries_typed_fields() -> None:
@@ -665,18 +653,13 @@ def test_step_order_optional() -> None:
     assert n.order is None
 
 
-def test_service_detail_accepts_metric_and_step() -> None:
+def test_service_detail_accepts_step() -> None:
     CanvasDoc(
         canvas_id="auth",
         canvas_kind="service_detail",
         service_ref="auth",
         nodes=[
             ServiceNode(id="auth", label="Auth"),
-            MetricNode(
-                id="m1",
-                label="Login success rate",
-                target=">99%",
-            ),
             StepNode(
                 id="s1",
                 label="Verify credentials",
@@ -688,26 +671,6 @@ def test_service_detail_accepts_metric_and_step() -> None:
     )
 
 
-def test_metric_requires_service_parent() -> None:
-    """v0.26.0 (D-2026-05-25-A) — the parent_id-based composition
-    validator was removed alongside the field. Containment of
-    metric / step under a service is now expressed via directed
-    edges (and not validated at the schema level). The test stays as
-    a marker that this invariant moved out of Pydantic into the UI /
-    docs layer."""
-    # No-op assertion: previously this would raise. Now the doc
-    # constructs cleanly; hierarchy is the user's responsibility.
-    CanvasDoc(
-        canvas_id="auth",
-        canvas_kind="service_detail",
-        service_ref="auth",
-        nodes=[
-            ServiceNode(id="auth", label="Auth"),
-            MetricNode(id="m1", label="Stray"),
-            ActorRefNode(id="ar-op", label="→ op", ref_actor_id="op", side="operator"),
-            ActorRefNode(id="ar-u", label="→ u", ref_actor_id="u", side="user"),
-        ],
-    )
 
 
 def test_step_requires_service_parent() -> None:
@@ -726,15 +689,15 @@ def test_step_requires_service_parent() -> None:
     )
 
 
-def test_services_canvas_rejects_metric() -> None:
-    """metric/step belong inside service_detail, not on the overview."""
+def test_services_canvas_rejects_step() -> None:
+    """step belongs inside service_detail, not on the overview."""
     with pytest.raises(ValueError, match="not allowed"):
         CanvasDoc(
             canvas_id="services",
             canvas_kind="services",
             nodes=[
                 ServiceNode(id="auth", label="Auth"),
-                MetricNode(id="m1", label="Stray"),
+                StepNode(id="s1", label="Stray"),
             ],
         )
 
@@ -757,17 +720,6 @@ def test_rule_typed_fields_round_trip() -> None:
     assert n.actor_permissions == {"user": "RUD", "admin": "CRUD"}
 
 
-def test_content_typed_fields_round_trip() -> None:
-    n = ContentNode(
-        id="c-session",
-        label="Session token",
-        format="JWT (HS256)",
-        producer_actor_id="auth-service",
-        consumer_actor_id="user",
-    )
-    assert n.format == "JWT (HS256)"
-    assert n.producer_actor_id == "auth-service"
-    assert n.consumer_actor_id == "user"
 
 
 def test_actor_permissions_default_empty() -> None:

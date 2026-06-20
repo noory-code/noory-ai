@@ -107,33 +107,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-describe("MetricInspector (Phase 2.1)", () => {
-  it("renders with shared chrome + metric typed fields", () => {
-    const node = makeNode({
-      id: "m1",
-      kind: "metric",
-      label: "Latency",
-      target: ">99% under 200ms",
-      measurement: "p95 from server timing-API",
-    });
-    render(<KindInspector {...makeProps(node)} />);
-
-    // Shared chrome — label input populated from node.label
-    const labelInput = screen.getByDisplayValue("Latency");
-    expect(labelInput).toBeInTheDocument();
-
-    // Metric typed fields — target + measurement values rendered
-    expect(screen.getByDisplayValue(">99% under 200ms")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("p95 from server timing-API")).toBeInTheDocument();
-  });
-
-  it("renders without firing console.error", () => {
-    const node = makeNode({ id: "m1", kind: "metric" });
-    render(<KindInspector {...makeProps(node)} />);
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
-
-});
+// MetricInspector retired 2026-06-20 (D-2026-06-20-H).
 
 describe("StepInspector (Phase 2.2)", () => {
   it("renders with shared chrome + ordered step typed fields", () => {
@@ -280,7 +254,7 @@ describe("ServiceInspector (5-field model, D-2026-06-20-F)", () => {
   });
 });
 
-describe("RuleInspector + ContentInspector (Phase 2.9)", () => {
+describe("RuleInspector (Phase 2.9)", () => {
   it("RuleInspector renders policy + enforcement + permissions", () => {
     const r = makeNode({
       id: "r1",
@@ -294,16 +268,7 @@ describe("RuleInspector + ContentInspector (Phase 2.9)", () => {
     expect(screen.getByDisplayValue("checkbox")).toBeInTheDocument();
   });
 
-  it("ContentInspector renders format + producer/consumer pickers", () => {
-    const c = makeNode({
-      id: "c1",
-      kind: "content",
-      label: "Receipt",
-      format: "application/json",
-    });
-    render(<KindInspector {...makeProps(c, "service_detail")} />);
-    expect(screen.getByDisplayValue("application/json")).toBeInTheDocument();
-  });
+  // ContentInspector retired 2026-06-20 (D-2026-06-20-H).
 });
 
 describe("ActorInspector (Phase 2.8)", () => {

@@ -37,12 +37,10 @@ from plot_mcp.models import (
     ActorRefNode,
     BaseNodeFields,
     CategoryNode,
-    ContentNode,
     CoreValueNode,
     DecisionNode,
     FeatureNode,
     IdentityNode,
-    MetricNode,
     MissionNode,
     NoteNode,
     ProjectNode,
@@ -92,12 +90,10 @@ _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     # Grouping (1)
     "category": CategoryNode,
     # Composition inside service_detail (5)
-    "metric": MetricNode,
     "step": StepNode,
     "decision": DecisionNode,
     "note": NoteNode,
     "rule": RuleNode,
-    "content": ContentNode,
 }
 
 

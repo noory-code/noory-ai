@@ -167,20 +167,14 @@
     "identity": "Identity",
     "actor": "Actor",
     "actor_ref": "Actor (ref)",
-    "mission_ref": "Mission (ref)",
-    "value_ref": "Core value (ref)",
-    "identity_ref": "Identity (ref)",
     "service": "Service",
     "feature": "Feature",
     "category": "Category",
-    "metric": "Metric",
     "step": "Step",
     "decision": "Decision",
     "note": "Note",
     "rule": "Rule",
-    "content": "Content",
-    "interaction": "Interaction",
-    "value": "Value"
+    "interaction": "Interaction"
   },
   "node": {
     "confirmDelete": "Delete this node?",
@@ -197,7 +191,6 @@
     "mission": "MISSION",
     "core_value": "CORE VALUE",
     "identity": "IDENTITY",
-    "metric": "METRIC",
     "step": "STEP",
     "category": "CATEGORY"
   },
@@ -375,19 +368,6 @@
     "createDetails": "📁 Create details",
     "creating": "Creating…"
   },
-  "composition": {
-    "add": "+ Add",
-    "expand": "Expand",
-    "collapse": "Collapse",
-    "namePlaceholder": "Name",
-    "remove": "Remove",
-    "confirmRemove": "Remove \"{{name}}\"?",
-    "untitled": "(untitled)",
-    "rules": "Rules",
-    "rulesSubtitle": "policies, constraints, SLAs, permissions",
-    "contents": "Contents",
-    "contentsSubtitle": "artifacts, outputs, assets"
-  },
   "stencil": {
     "layer": {
       "flow": "① Flow (Execution)",
@@ -409,25 +389,16 @@
       "service": "Service",
       "feature": "Feature",
       "note": "Note",
-      "composition": "Composition",
       "interactions": "Interactions",
-      "values": "Values",
-      "actors": "Actors",
-      "missions": "Missions",
-      "identityAspects": "Identity aspects"
+      "actors": "Actors"
     },
     "note": {
       "dropOnActor": "drop on an Actor",
       "dropInsideCategory": "drop inside a Category",
       "dropInsideService": "drop inside a Service (it becomes a drill target)",
       "ambient": "drop anywhere — a canvas-wide note (edgeless)",
-      "compositionInsideService": "metrics + steps inside this service",
       "interactionsBetweenActors": "drop an interaction (contact point between actors)",
-      "valuesExchanged": "drop a value exchanged via interactions",
-      "dragActorOntoService": "drag any actor onto this service",
-      "dragMissionThisServiceAnswersTo": "drag a mission this service answers to",
-      "dragValueThisServiceEmbodies": "drag a value this service embodies",
-      "dragIdentityAspectThisServiceExpresses": "drag an identity aspect this service expresses"
+      "dragActorOntoService": "drag any actor onto this service"
     },
     "infoAria": "Concept info",
     "info": {

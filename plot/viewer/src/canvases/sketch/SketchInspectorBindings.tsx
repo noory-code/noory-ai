@@ -6,7 +6,7 @@
 // ``SketchInspector`` (1491 LOC at v0.14.18) was deleted as part of
 // the v0.15 structural reset Phase 2.9 once every kind had its own
 // per-kind inspector under ``inspectors/{kind}/``.
-import { type Dispatch, type MutableRefObject, type ReactNode, type SetStateAction } from "react";
+import { type Dispatch, type ReactNode, type SetStateAction } from "react";
 import type { Node } from "reactflow";
 import type { CanvasDoc, CanvasKind, SketchNode as DocNode } from "../../types";
 import { KindInspector } from "../inspectors/KindInspector";
@@ -14,13 +14,10 @@ import type { PendingActorRef } from "./types";
 
 export interface SketchInspectorBindingsProps {
   doc: CanvasDoc;
-  docRef: MutableRefObject<CanvasDoc>;
-  onDocChange: (next: CanvasDoc) => void;
   inspectorNodeId: string | null;
   setInspectorNodeId: Dispatch<SetStateAction<string | null>>;
   updateNode: (id: string, patch: Partial<DocNode>) => void;
   handleNodesDelete: (deleted: Node[]) => void;
-  addCompositionChild: (parentId: string, kind: "rule" | "content") => void;
   setPendingActorRef: Dispatch<SetStateAction<PendingActorRef | null>>;
   availableActors: DocNode[] | undefined;
   availableValues: DocNode[] | undefined;
@@ -42,13 +39,10 @@ export interface SketchInspectorBindingsProps {
 
 export function SketchInspectorBindings({
   doc,
-  docRef,
-  onDocChange,
   inspectorNodeId,
   setInspectorNodeId,
   updateNode,
   handleNodesDelete,
-  addCompositionChild,
   setPendingActorRef,
   availableActors,
   availableValues,
@@ -79,15 +73,6 @@ export function SketchInspectorBindings({
       onPatchNode={(patch) => {
         if (!inspectorNodeId) return;
         updateNode(inspectorNodeId, patch);
-      }}
-      onAddChild={addCompositionChild}
-      onPatchChild={(childId, patch) => updateNode(childId, patch)}
-      onRemoveChild={(childId) => {
-        const current = docRef.current;
-        onDocChange({
-          ...current,
-          nodes: current.nodes.filter((n) => n.id !== childId),
-        });
       }}
       onClose={() => setInspectorNodeId(null)}
       onPublishNode={onPublishNode}

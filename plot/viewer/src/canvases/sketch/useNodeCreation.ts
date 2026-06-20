@@ -1,7 +1,6 @@
 // Node-creation helpers: addNodeAt for top-level nodes,
 // addNestedNodeAt for sub-actor / sub-service drops onto an existing
-// container, addCompositionChild for Inspector-driven rule / content
-// children.
+// container.
 //
 // v0.15 Phase 2.10 — uses the per-kind ``createBlankNode`` factory
 // from ``../../domain`` instead of inlining the god-style 47-field
@@ -39,10 +38,6 @@ export interface UseNodeCreationResult {
     localY: number;
     preset: NodePreset;
   }) => void;
-  /** Inspector "+ child" action. Creates a rule / content composition
-   *  child of ``parentId`` with kind-specific defaults (shape / colour /
-   *  icon / dimensions). No edge — composition is data-only. */
-  addCompositionChild: (parentId: string, kind: "rule" | "content") => void;
 }
 
 function freshId(prefix: "n" | "e"): string {
@@ -175,50 +170,5 @@ export function useNodeCreation({
     [docRef, onDocChange],
   );
 
-  const addCompositionChild = useCallback(
-    (parentId: string, kind: "rule" | "content") => {
-      const defaults =
-        kind === "rule"
-          ? { shape: "rectangle" as const, color: "#e7e5e4", icon: "shield" }
-          : { shape: "hexagon" as const, color: "#ddd6fe", icon: "package" };
-      const node: DocNode = createBlankNode(kind, {
-        id: freshId("n"),
-        label: kind === "rule" ? "New rule" : "New content",
-        x: 0,
-        y: 0,
-        width: 140,
-        height: 60,
-        color: defaults.color,
-        shape: defaults.shape,
-        icon: defaults.icon,
-      });
-      // v0.26.0 (D-2026-05-25-A) — composition child carries an
-      // explicit directed edge from the parent service.
-      const current = docRef.current;
-      const newEdge = {
-        id: freshId("e"),
-        source: parentId,
-        target: node.id,
-        sourceHandle: null,
-        targetHandle: null,
-        label: "",
-        style: "solid" as const,
-        directed: true,
-        relation: classifyEdge(
-          current.canvas_kind,
-          current.nodes.find((n) => n.id === parentId)?.kind,
-        ),
-        action_verb: null,
-        value_form: [],
-      };
-      onDocChange({
-        ...current,
-        nodes: [...current.nodes, node],
-        edges: [...current.edges, newEdge],
-      });
-    },
-    [docRef, onDocChange],
-  );
-
-  return { addNodeAt, addNestedNodeAt, addCompositionChild };
+  return { addNodeAt, addNestedNodeAt };
 }

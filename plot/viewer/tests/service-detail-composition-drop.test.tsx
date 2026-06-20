@@ -14,8 +14,8 @@
 // model and forced step/metric/rule/content drops to require a
 // ``service`` parent.  That conflicts directly with the
 // D-2026-05-26-C ServiceDetail = self-authored interaction graph
-// decision: the user must be able to drop an interaction (step) or
-// value (metric) on empty space and wire it up themselves.
+// decision: the user must be able to drop an interaction (step) or a
+// branch point (decision) on empty space and wire it up themselves.
 //
 // This file pins the new contract.  The test uses ``resolveDropTarget``
 // directly because that single pure function is the gate that decides
@@ -30,10 +30,11 @@ function findPreset(id: string): StencilPreset {
 }
 
 describe("resolveDropTarget — ServiceDetail composition is free-form (D-2026-05-28-A)", () => {
-  // rule + content are not in STENCIL_PRESETS (inspector-only kinds —
-  // SPEC §Foundation typed-text storage); only metric + step are the
-  // canvas-droppable composition presets.
-  const COMPOSITION_IDS = ["step", "metric"];
+  // rule is not in STENCIL_PRESETS (inspector-only kind —
+  // SPEC §Foundation typed-text storage); only step + decision are the
+  // canvas-droppable composition presets (metric / content retired
+  // 2026-06-20, D-2026-06-20-H).
+  const COMPOSITION_IDS = ["step", "decision"];
 
   it.each(COMPOSITION_IDS)(
     "ServiceDetail: %s drop on empty space resolves to top-level (no service parent required)",

@@ -53,7 +53,7 @@ from plot_mcp.storage import (  # noqa: F401
 # ceiling) as a read-path helper tightly bound to ``read_canvas``. The set
 # grows as each kind is retired.
 RETIRED_KINDS: frozenset[str] = frozenset(
-    {"group", "mission_ref", "value_ref", "identity_ref"}
+    {"group", "mission_ref", "value_ref", "identity_ref", "metric", "content"}
 )
 
 

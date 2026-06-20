@@ -13,15 +13,8 @@ from pydantic import Field
 
 from plot_mcp.models_kinds import BaseNodeFields
 
-
-class MetricNode(BaseNodeFields):
-    """v0.15 Phase 1.2: ``metric`` kind. How a service is measured
-    (KPI, success rate, latency)."""
-
-    kind: Literal["metric"] = "metric"
-    target: str = ""
-    measurement: str = ""
-    body: str = ""
+# metric retired 2026-06-20 (D-2026-06-20-H): below action altitude / not
+# needed; produced value is implied by the result node + flow edge.
 
 
 class StepNode(BaseNodeFields):
@@ -73,13 +66,6 @@ class RuleNode(BaseNodeFields):
     body: str = ""
 
 
-class ContentNode(BaseNodeFields):
-    """v0.15 Phase 1.2: ``content`` kind. A produced / consumed artifact
-    inside a service (JSON / MD / image, with producer + consumer actor
-    masters by id)."""
-
-    kind: Literal["content"] = "content"
-    format: str = ""
-    producer_actor_id: str | None = None
-    consumer_actor_id: str | None = None
-    body: str = ""
+# content retired 2026-06-20 (D-2026-06-20-H): implementation artifacts are
+# below action altitude (the external agent's job); user-facing artifacts are
+# implied by the producing action / carried by the flow edge.

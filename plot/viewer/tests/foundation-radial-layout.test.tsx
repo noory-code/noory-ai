@@ -50,8 +50,8 @@ describe("isFoundationRadialKind", () => {
     expect(isFoundationRadialKind("project")).toBe(false);
     expect(isFoundationRadialKind("actor")).toBe(false);
     expect(isFoundationRadialKind("service")).toBe(false);
-    expect(isFoundationRadialKind("mission_ref")).toBe(false);
-    expect(isFoundationRadialKind("metric")).toBe(false);
+    expect(isFoundationRadialKind("actor_ref")).toBe(false);
+    expect(isFoundationRadialKind("step")).toBe(false);
   });
 });
 

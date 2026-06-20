@@ -69,13 +69,7 @@ from plot_mcp.models_canvas import (
     _default_anchors as _default_anchors,
 )
 from plot_mcp.models_composition import (
-    ContentNode as ContentNode,
-)
-from plot_mcp.models_composition import (
     DecisionNode as DecisionNode,
-)
-from plot_mcp.models_composition import (
-    MetricNode as MetricNode,
 )
 from plot_mcp.models_composition import (
     NoteNode as NoteNode,

@@ -4,6 +4,46 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.94.0] — 2026-06-20
+
+### Removed
+
+- **`metric` / `content` kinds retired** (Chunk 2.1, D-2026-06-20-H). Both sit
+  below Plot's action altitude: a `metric` is implied by a flow's result node +
+  edge, and `content` (implementation / user-facing artifacts) is the external
+  agent's job or is carried by the producing action's edge. Removed across the
+  stack: server `MetricNode` / `ContentNode`, the union + `NodeKind` Literal +
+  `_ALL_KIND_CLASSES` + `schema_export` map + `models.py` re-exports +
+  `migrate_builders` content branch; the viewer `Metric.ts` / `Content.ts`
+  domain classes, their node renderers + inspectors, `CompositionList.tsx` +
+  `ContentFields.tsx`, the `createBlankNode` cases, both registries, the
+  `SketchNode` unions, `types.ts` `NodeKind`, the SERVICE_COMPOSITION metric
+  stencil preset, and the service_detail "Value" stencil section (value is the
+  service-inspector `ref_value_ids` chips now). `_drop_retired_kinds` strips
+  both on read (loss-free). Palette = **13 kinds**.
+- **Dead composition-child affordance removed.** `addCompositionChild` and its
+  `onAddChild` / `onPatchChild` / `onRemoveChild` prop thread (through
+  `useNodeCreation` → `SketchCanvas` → `SketchInspectorBindings` →
+  `inspectors/types.ts`) were orphaned when `CompositionList` was deleted in
+  v0.93.0; removed here rather than left narrowed-but-dead.
+- **Retired-kind i18n swept (en + ko).** Completes the cleanup D-2026-06-20-G
+  deferred to doc-sync: the `kind.*` labels for all retired kinds
+  (`mission_ref` / `value_ref` / `identity_ref` / `metric` / `content` / the
+  `value` relabel) + `kindTag.metric`, the whole dead `composition` object, and
+  the orphaned `stencil.section.{composition,values,missions,identityAspects}` +
+  `stencil.note.{compositionInsideService,valuesExchanged,dragMission…,dragValue…,dragIdentityAspect…}`
+  keys. No retired-kind i18n debt remains.
+
+### Changed
+
+- Codegen artifacts regenerated to the 13-kind contract: `wire.gen.ts`,
+  `plot_mcp/wire_contract.json`, and the viewer snapshot copy.
+- Test kind-list / count fixtures reconciled to 13 across `structural-guards`,
+  `styles-cursor-baseline`, `cursor-sweep`, `no-god-import`, `entity-roundtrip`,
+  `wire-contract`, `nodes/registry`, the two `inspectors.*`, and the
+  `domain/round-trip*` suites (several were silently stale, missing
+  `feature` / `note` / `decision`; corrected to the true palette).
+
 ## [0.93.0] — 2026-06-20
 
 ### Removed

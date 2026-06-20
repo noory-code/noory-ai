@@ -79,13 +79,6 @@ export interface CategoryJson extends BaseFieldsJson {
   body: string;
 }
 
-export interface MetricJson extends BaseFieldsJson {
-  kind: "metric";
-  target: string;
-  measurement: string;
-  body: string;
-}
-
 export interface StepJson extends BaseFieldsJson {
   kind: "step";
   order: number | null;
@@ -109,13 +102,5 @@ export interface RuleJson extends BaseFieldsJson {
   policy: string;
   enforcement: string;
   actor_permissions: Record<string, string>;
-  body: string;
-}
-
-export interface ContentJson extends BaseFieldsJson {
-  kind: "content";
-  format: string;
-  producer_actor_id: string | null;
-  consumer_actor_id: string | null;
   body: string;
 }

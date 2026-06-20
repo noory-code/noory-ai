@@ -4,7 +4,7 @@
  * Companion to ``inspectors.smoke.test.tsx`` (the per-kind asserts
  * built up Phase 2.1 → 2.10). This file is the structural sweep:
  *
- *   For every NodeKind in the 15-way discriminated union, build a
+ *   For every NodeKind in the 13-way discriminated union, build a
  *   synthetic node via ``createBlankNode`` (the domain SSOT), mount
  *   ``KindInspector``, and assert:
  *
@@ -32,11 +32,12 @@ const ALL_KINDS: NodeKind[] = [
   "actor",
   "actor_ref",
   "service",
+  "feature",
   "category",
-  "metric",
   "step",
+  "decision",
+  "note",
   "rule",
-  "content",
 ];
 
 /** A reasonable default canvas for each kind. The KindInspector
@@ -87,7 +88,7 @@ afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
 
-describe("KindInspector — exhaustive 15-kind smoke (Phase 5.1)", () => {
+describe("KindInspector — exhaustive 13-kind smoke (Phase 5.1)", () => {
   it.each(ALL_KINDS)(
     "renders a non-null tree for kind=%s",
     (kind) => {

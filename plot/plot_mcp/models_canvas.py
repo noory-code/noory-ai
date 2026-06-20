@@ -54,8 +54,6 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     "service_detail": {
         "service",
         "rule",
-        "content",
-        "metric",
         "step",
         "decision",
         "note",

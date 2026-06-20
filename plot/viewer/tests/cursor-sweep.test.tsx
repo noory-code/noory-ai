@@ -94,11 +94,12 @@ const ALL_KINDS: NodeKind[] = [
   "actor",
   "actor_ref",
   "service",
+  "feature",
   "category",
-  "metric",
   "step",
+  "decision",
+  "note",
   "rule",
-  "content",
 ];
 
 function seedAllKinds(): SketchNode[] {
@@ -139,7 +140,7 @@ describe("cursor-sweep: zero inline cursor assignments", () => {
     expect(inlineCursors(container)).toEqual([]);
   });
 
-  it("all 4 wrappers — no inline cursor when seeded with all 15 kinds", () => {
+  it("all 4 wrappers — no inline cursor when seeded with all 13 kinds", () => {
     const seeded = seedAllKinds();
     for (const { name, Comp } of WRAPPERS) {
       const { container } = render(<Comp doc={makeDoc(seeded)} />);

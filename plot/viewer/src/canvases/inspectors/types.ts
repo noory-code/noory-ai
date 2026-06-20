@@ -2,10 +2,9 @@
  * Props the per-kind inspector wrappers consume. A subset of the
  * legacy ``SketchInspectorProps`` — only what every kind body needs.
  *
- * Kind-specific extras (e.g. Service's ``onAddChild`` /
- * ``availableActors`` for the composition list, ActorRef's
- * ``onRepickActorRef``) live on per-kind prop interfaces declared
- * inside each ``inspectors/{kind}/index.tsx`` file.
+ * Kind-specific extras (e.g. ActorRef's ``onRepickActorRef``) live on
+ * per-kind prop interfaces declared inside each
+ * ``inspectors/{kind}/index.tsx`` file.
  */
 import type { CanvasKind, SketchEdge, SketchNode } from "../../types";
 
@@ -61,11 +60,4 @@ export interface KindInspectorProps {
   availableIdentities?: SketchNode[];
   /** v0.11 — open ActorRefPicker in rewire mode for an orphan actor_ref. */
   onRepickActorRef?: (nodeId: string) => void;
-  /** v0.10 Step 6: ServiceInspector composition list — create a rule
-   *  or content child under the parent service. */
-  onAddChild?: (parentId: string, kind: "rule" | "content") => void;
-  /** v0.10 Step 6: edit a composition child (rule / content) in place. */
-  onPatchChild?: (childId: string, patch: Partial<SketchNode>) => void;
-  /** v0.10 Step 6: remove a composition child. */
-  onRemoveChild?: (childId: string) => void;
 }

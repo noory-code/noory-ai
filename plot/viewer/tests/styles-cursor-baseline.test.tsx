@@ -12,8 +12,8 @@
  *      a fresh ``D-YYYY-MM-DD-X`` decision (per D-2026-05-11-A).
  *
  *   2. Every canvas-internal source file (wrappers, BaseNode, the
- *      15 per-kind node renderers, BaseInspector, KindInspector, the
- *      15 per-kind inspectors, inspectors/shared/*, all sketch hooks)
+ *      13 per-kind node renderers, BaseInspector, KindInspector, the
+ *      13 per-kind inspectors, inspectors/shared/*, all sketch hooks)
  *      contains ZERO raw ``cursor:`` declarations and ZERO JS-side
  *      ``style.cursor`` assignments. Combined with contract #1, this
  *      guarantees per-canvas cursor drift is structurally impossible:
@@ -62,18 +62,20 @@ function styleCursorAssignMatches(src: string): string[] {
   return stripComments(src).match(/\bstyle\s*\.\s*cursor\s*=/g) ?? [];
 }
 
-/** Per-kind directory names. The 15-way structural reset
- *  (D-2026-05-12-B) pins these as the SSOT for node-kind enumeration;
- *  any drift is caught by the count assertion below. */
+/** Per-kind directory names. The structural reset (D-2026-05-12-B)
+ *  pins these as the SSOT for node-kind enumeration; any drift is
+ *  caught by the count assertion below. 13-kind palette as of
+ *  2026-06-20 (metric / content retired, D-2026-06-20-H). */
 const KIND_DIRS = [
   "actor",
   "actor_ref",
   "category",
-  "content",
   "core_value",
+  "decision",
+  "feature",
   "identity",
-  "metric",
   "mission",
+  "note",
   "project",
   "rule",
   "service",
@@ -161,9 +163,9 @@ const ALL_CANVAS_FILES: readonly string[] = [
 ];
 
 describe("Canvas-internal cursor baseline (D-2026-05-12-D)", () => {
-  it("the registry covers all 15 per-kind node and 15 per-kind inspector files", () => {
-    expect(PER_KIND_NODE_FILES.length).toBe(12);
-    expect(PER_KIND_INSPECTOR_FILES.length).toBe(12);
+  it("the registry covers all 13 per-kind node and 13 per-kind inspector files", () => {
+    expect(PER_KIND_NODE_FILES.length).toBe(13);
+    expect(PER_KIND_INSPECTOR_FILES.length).toBe(13);
   });
 
   it("no canvas-internal file is empty (sanity)", () => {

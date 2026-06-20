@@ -22,10 +22,8 @@ from plot_mcp.models import (
     ActorNode,
     ActorRefNode,
     CategoryNode,
-    ContentNode,
     CoreValueNode,
     IdentityNode,
-    MetricNode,
     MissionNode,
     ProjectNode,
     RuleNode,
@@ -126,10 +124,8 @@ def test_can_publish_accepts_typical_kinds() -> None:
     assert can_publish(ActorNode(id="a1", is_root=False)) is True
     assert can_publish(ServiceNode(id="s1", is_root=False)) is True
     assert can_publish(CategoryNode(id="c1")) is True
-    assert can_publish(MetricNode(id="metric1")) is True
     assert can_publish(StepNode(id="step1")) is True
     assert can_publish(RuleNode(id="r1")) is True
-    assert can_publish(ContentNode(id="cn1")) is True
 
 
 # ---------------------------------------------------------------------------
@@ -221,10 +217,8 @@ def test_render_empty_typed_fields_keep_headings() -> None:
         (ActorNode, {}),
         (ServiceNode, {}),
         (CategoryNode, {}),
-        (MetricNode, {}),
         (StepNode, {}),
         (RuleNode, {}),
-        (ContentNode, {}),
     ],
 )
 def test_render_yaml_frontmatter_has_all_7_keys(cls: type, extra: dict) -> None:

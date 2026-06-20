@@ -131,9 +131,9 @@ export function useNodesMemo({
     for (const n of ordered) {
       // Hide nodes whose ancestor chain contains a collapsed container.
       if (nearestCollapsedAncestor(n.id)) continue;
-      // v0.2 correction (2026-04-20): rule / content are edited
-      // through the right-hand Inspector panel, never on the canvas.
-      if (n.kind === "rule" || n.kind === "content") continue;
+      // v0.2 correction (2026-04-20): rule is edited through the right-hand
+      // Inspector panel, never on the canvas. (content retired 2026-06-20.)
+      if (n.kind === "rule") continue;
       // v0.12.2: inside the service-detail modal the service-root
       // is redundant — the modal header already names it. Wrapper
       // (ServiceDetailCanvas) opts in via ``hideRootServiceNode``.

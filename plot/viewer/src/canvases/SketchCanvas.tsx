@@ -335,7 +335,7 @@ function SketchCanvasInner({
     [onDocChange, onAnchorChange],
   );
 
-  const { addNodeAt, addNestedNodeAt, addCompositionChild } = useNodeCreation({
+  const { addNodeAt, addNestedNodeAt } = useNodeCreation({
     docRef,
     onDocChange,
     applyAnchorRadialLayout: applyAnchorRadialLayout ?? false,
@@ -501,13 +501,10 @@ function SketchCanvasInner({
       />
       <SketchInspectorBindings
         doc={doc}
-        docRef={docRef}
-        onDocChange={onDocChange}
         inspectorNodeId={inspectorNodeId}
         setInspectorNodeId={setInspectorNodeId}
         updateNode={updateNode}
         handleNodesDelete={handleNodesDelete}
-        addCompositionChild={addCompositionChild}
         setPendingActorRef={setPendingActorRef}
         availableActors={availableActors}
         availableValues={availableValues}
