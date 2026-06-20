@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-21-H — initial Foundation layout = Mission top / Core Value left / Identity right, with anchor edges
+
+- **What:** A new project's seeded **Foundation** canvas now arranges its three pillars around the centre project anchor (0,0): **Mission on top** (centred above), **Core Value on the left**, **Identity on the right**, and a directed **edge from the project anchor out to each** (relation `flow`). Previously Core Value was seeded on top and Mission on the left, with no edges.
+- **Why:** User request 2026-06-21 ("미션이 위, 코어밸류가 왼쪽, 아이덴티티가 오른쪽 + 연결선도"). A clear, conventional foundation arrangement read top-down (the mission crowns the values + identity), with the connecting lines showing the three are one structure radiating from the project.
+- **Note:** The edge seeding **revisits the v0.13.2 auto-edge rollback** (D-2026-05-04-A era) — that was rejected as *unrequested* (YAGNI); it is now *explicitly requested*, so the seed draws them. Edges target the synthetic `PROJECT_ANCHOR_ID`, which `CanvasDoc._edges_reference_nodes` already accepts as a valid endpoint. **Seed-only:** existing projects keep their current Foundation layout (loss-free; this only changes what a *new* project starts with).
+- **Approval:** Accepted by user, 2026-06-21.
+- **Spec impact:** `_seed_foundation_canvas` positions + 3 anchor edges. Pinned by `test_create_project_foundation_layout_and_anchor_edges`. Engine **659 green**. The Foundation canvas stays user-editable (the seed is just the starting point).
+
 ### D-2026-06-21-G — chat composer redesign: controls under the input (VS Code-style) + auto-scroll + auto-grow input
 
 - **What:** Three chat-surface UX changes (all `ChatMessageFrame`, one user thread): (1) **controls move from a top bar into a control row directly under the composer input** (VS Code / Pencil pattern, user-chosen "VS Code-style") — provider chip, model selector, scope toggle on the left + send on the right; the messages log fills the freed top space; the providers register/connect panel expands just above the composer when the provider chip is toggled; `ChatScopeSwitcher` gains a `compact` inline variant. (2) **auto-scroll** — the log follows the conversation (new message / streaming delta scrolls to bottom) **only when the user is already near the bottom** (`chatScroll.isNearBottom`, 80px), so reading history isn't yanked down. (3) **auto-grow input** — the textarea grows with its content up to the `max-h-40` cap and shrinks back when cleared.

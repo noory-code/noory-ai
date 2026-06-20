@@ -4,6 +4,16 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.9] — 2026-06-21
+
+### Changed
+
+- **Initial Foundation layout** (**D-2026-06-21-H**) — a new project seeds Mission
+  on top, Core Value on the left, Identity on the right (around the centre
+  anchor), with a directed edge from the project anchor to each. Was: Core Value
+  on top, Mission on the left, no edges. Seed-only — existing projects keep
+  their layout.
+
 ## [0.98.8] — 2026-06-21
 
 ### Fixed

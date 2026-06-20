@@ -84,6 +84,32 @@ def test_create_project_seeds_foundation_without_project_node(plot_root: Path) -
     assert all(n.kind != "project" for n in foundation.nodes)
 
 
+def test_create_project_foundation_layout_and_anchor_edges(plot_root: Path) -> None:
+    """D-2026-06-21-H — initial Foundation layout = Mission on top, Core Value
+    on the left, Identity on the right, with an edge from the project anchor to
+    each (around the centre anchor at 0,0)."""
+    from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
+
+    create_project(plot_root, "alpha", "Alpha")
+    f = read_canvas(plot_root, "alpha", "foundation")
+    by_id = {n.id: n for n in f.nodes}
+    mission, cv, identity = by_id["mission"], by_id["core-value-1"], by_id["identity"]
+
+    def cx(n: object) -> float:
+        return n.x + n.width / 2  # type: ignore[attr-defined]
+
+    def cy(n: object) -> float:
+        return n.y + n.height / 2  # type: ignore[attr-defined]
+
+    # Mission is the topmost (smallest centre-y = highest on screen).
+    assert cy(mission) < cy(cv) and cy(mission) < cy(identity)
+    # Core Value is left of Identity; Mission is centred between them.
+    assert cx(cv) < cx(mission) < cx(identity)
+    # Edges radiate from the project anchor to each foundation node.
+    targets = {e.target for e in f.edges if e.source == PROJECT_ANCHOR_ID}
+    assert targets == {"mission", "core-value-1", "identity"}
+
+
 def test_create_project_seeds_actors_canvas(plot_root: Path) -> None:
     """v0.13 Phase 0: actors canvas seeds Operator + User only (no project node)."""
     create_project(plot_root, "alpha", "Alpha")

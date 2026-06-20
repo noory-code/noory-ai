@@ -18,7 +18,9 @@ from plot_mcp.models import (
     IdentityNode,
     MissionNode,
     ProjectDoc,
+    SketchEdge,
 )
+from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
 from plot_mcp.storage import (  # noqa: F401
     _canvas_file,
     _ensure_project,
@@ -69,6 +71,10 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
     display time. ``project_name`` argument retained for signature stability
     but unused.
     """
+    # D-2026-06-21-H — initial layout around the centre anchor (0,0): Mission on
+    # top, Core Value on the left, Identity on the right, with an edge from the
+    # project anchor out to each. (Revisits the v0.13.2 auto-edge rollback — now
+    # explicitly user-requested, no longer YAGNI.)
     return CanvasDoc(
         canvas_id="foundation",
         canvas_kind="foundation",
@@ -76,8 +82,8 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
             MissionNode(
                 id="mission",
                 label="Mission",
-                x=-360,
-                y=-45,
+                x=-100,
+                y=-220,
                 width=200,
                 height=90,
                 color="#fef3c7",
@@ -86,8 +92,8 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
             CoreValueNode(
                 id="core-value-1",
                 label="Core value",
-                x=-90,
-                y=-260,
+                x=-340,
+                y=-40,
                 width=180,
                 height=80,
                 color="#fde68a",
@@ -96,13 +102,23 @@ def _seed_foundation_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
             IdentityNode(
                 id="identity",
                 label="Voice",
-                x=160,
+                x=140,
                 y=-45,
                 width=200,
                 height=90,
                 color="#fed7aa",
                 shape="rounded",
             ),
+        ],
+        edges=[
+            SketchEdge(
+                id=f"anchor-{target}",
+                source=PROJECT_ANCHOR_ID,
+                target=target,
+                directed=True,
+                relation="flow",
+            )
+            for target in ("mission", "core-value-1", "identity")
         ],
     )
 
