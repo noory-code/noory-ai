@@ -104,7 +104,7 @@ def read_canvas(
     # v0.13 Phase 0 — project anchor moved to ``ProjectDoc.anchors``. If an
     # old canvas still carries a ``project`` kind node, evict it: copy its
     # position/visual to ProjectDoc.anchors[canvas] and remove from nodes.
-    if canvas_kind in ("foundation", "actors", "services"):
+    if canvas_kind in ("foundation", "actors", "services", "entities"):
         raw = _evict_legacy_project_anchor(plot_root, project_id, canvas_kind, raw)
     # v0.24.11 (D-2026-05-19-D) — actor.is_root semantic deprecated; reset
     # any pre-v0.24.11 ``is_root=true`` on actor nodes to False on first

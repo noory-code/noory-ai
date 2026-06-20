@@ -17,7 +17,7 @@ from plot_mcp.models import CanvasKind
 from plot_mcp.workspace import resolve_plot_root
 
 _ALLOWED_CANVAS_KINDS: frozenset[str] = frozenset(
-    ("foundation", "actors", "services", "feature"),
+    ("foundation", "actors", "services", "entities", "feature"),
 )
 
 

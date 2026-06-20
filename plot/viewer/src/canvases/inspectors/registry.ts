@@ -17,6 +17,7 @@ import { ActorRefInspector } from "./actor_ref";
 import { CategoryInspector } from "./category";
 import { CoreValueInspector } from "./core_value";
 import { DecisionInspector } from "./decision";
+import { EntityInspector } from "./entity";
 import { FeatureInspector } from "./feature";
 import { IdentityInspector } from "./identity";
 import { MissionInspector } from "./mission";
@@ -44,6 +45,7 @@ export const KIND_INSPECTORS: Partial<Record<NodeKind, KindInspectorComponent>> 
   service: ServiceInspector,
   feature: FeatureInspector,
   rule: RuleInspector,
+  entity: EntityInspector,
 };
 
 /** Look up the registered inspector for a kind, or ``undefined`` while

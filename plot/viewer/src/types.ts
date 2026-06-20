@@ -32,6 +32,8 @@ export type Shape =
  *   rule / content  — composition element inside a service (modal only).
  *   metric / step   — composition KPI / procedural step (modal only).
  *   mission_ref / value_ref / identity_ref — Foundation references.
+ *   entity          — product data object on the Entities canvas
+ *                     (D-2026-06-17-I); symmetric to ``actor``.
  */
 export type NodeKind =
   | "project"
@@ -46,7 +48,8 @@ export type NodeKind =
   | "step"
   | "decision"
   | "note"
-  | "category";
+  | "category"
+  | "entity";
 
 /** ``actor_ref`` is the only surviving standalone reference node (the
  *  mission/value/identity refs were retired 2026-06-20, D-2026-06-20-G). */
@@ -106,7 +109,7 @@ export interface SketchEdge {
 // v0.4 multi-canvas — project folder layout
 // ---------------------------------------------------------------------------
 
-export type CanvasKind = "foundation" | "actors" | "services" | "feature";
+export type CanvasKind = "foundation" | "actors" | "services" | "entities" | "feature";
 
 /**
  * Conversation scope for the R7 chat (D-2026-06-13-H; Layer 1 per-instance
@@ -125,6 +128,7 @@ export type ChatScope =
   | "foundation"
   | "actors"
   | "services"
+  | "entities"
   | `feature:${string}`;
 
 /**
@@ -145,6 +149,7 @@ export type CanvasKey =
   | "foundation"
   | "actors"
   | "services"
+  | "entities"
   | `feature:${string}`;
 
 import type { SketchNode } from "./domain";

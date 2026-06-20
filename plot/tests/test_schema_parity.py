@@ -78,9 +78,10 @@ def test_export_map_covers_union() -> None:
 
 
 def test_all_kinds_covered() -> None:
-    """Sanity: the export map size matches the union size (15 after the
-    2026-06-20 churn: −`group` +`feature` +`note` −3 foundation refs −metric −content)."""
-    assert len(_ALL_KIND_CLASSES) == len(_union_member_kinds()) == 13
+    """Sanity: the export map size matches the union size (14 after the
+    2026-06-20 churn: −`group` +`feature` +`note` −3 foundation refs −metric
+    −content; +`entity` for the Entities canvas, D-2026-06-17-I)."""
+    assert len(_ALL_KIND_CLASSES) == len(_union_member_kinds()) == 14
 
 
 def test_base_fields_pydantic_matches_canonical_set() -> None:

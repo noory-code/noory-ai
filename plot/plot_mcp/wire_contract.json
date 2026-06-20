@@ -116,6 +116,25 @@
       "x",
       "y"
     ],
+    "entity": [
+      "collapsed",
+      "color",
+      "details_path",
+      "height",
+      "icon",
+      "id",
+      "is_root",
+      "kind",
+      "label",
+      "owner",
+      "publish_baseline",
+      "shape",
+      "summary",
+      "version",
+      "width",
+      "x",
+      "y"
+    ],
     "feature": [
       "collapsed",
       "color",

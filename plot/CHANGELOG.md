@@ -4,6 +4,31 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.97.0] — 2026-06-20
+
+### Added
+
+- **`entity` kind + `entities` canvas** (Chunk 2.4, D-2026-06-20-K, implementing
+  D-2026-06-17-I / -K). Entities are the product data objects the services act
+  on (글 / 댓글 / 결제내역 …) — an AI-maintained registry, populated last.
+  - **Kind `entity`** — `EntityNode` with one kind-specific field `summary`
+    (the "무엇을 담나?" one-liner; `label` is the name). No ERD fields, no
+    relationship fields. Rounded node, pale-cyan `#cffafe`, `database` icon.
+    Lean inspector: `label` + `summary`, both writable. Palette = **14 kinds**.
+  - **Canvas `entities`** — singleton, allows `{project, entity}`, seeded empty
+    (AI-derived / populated last), 4th main tab. `ChatScope` / `CanvasKey` +
+    Python ↔ TS scope-parity extended. Canvas kinds = **5**.
+  - Full lock-step: Pydantic model, domain class (consumes generated
+    `EntityJson`), renderer, inspector, registries, i18n (en + ko), codegen
+    regenerated, structural / parity / round-trip guards bumped.
+
+### Notes
+
+- Deferred to follow-ups (out of this scope): the AI-surfacing in-chat proposal
+  UI (only the scope framing + wiring landed), feature-action → entity
+  references (blocked on FEATURE-canvas work), entity↔entity relationship edges,
+  and the read-only back-reference / rough-relationship inspector views.
+
 ## [0.96.0] — 2026-06-20
 
 ### Changed

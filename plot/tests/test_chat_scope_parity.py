@@ -39,6 +39,7 @@ _EXPECTED_SCOPES = {
     "foundation",
     "actors",
     "services",
+    "entities",
     "feature",
 }
 
@@ -65,8 +66,9 @@ def test_chat_scope_parity() -> None:
 
 
 def test_chat_scope_is_project_plus_canvas_kinds() -> None:
-    """The scope set is exactly ``project`` + the four canvas kinds —
-    pins the member set so neither side can quietly add a sixth."""
+    """The scope set is exactly ``project`` + the five canvas kinds
+    (foundation / actors / services / entities / feature) — pins the member
+    set so neither side can quietly add another."""
     assert set(get_args(ChatScope)) == _EXPECTED_SCOPES
 
 
@@ -77,7 +79,7 @@ def test_feature_scope_accepts_id_suffix() -> None:
     assert is_valid_scope("feature:svc_123")
     assert is_valid_scope("feature:any-id-shape")
     # Singleton base scopes stay valid bare.
-    for base in ("project", "foundation", "actors", "services"):
+    for base in ("project", "foundation", "actors", "services", "entities"):
         assert is_valid_scope(base)
     # An empty id is not a real instance, and a typo is still rejected.
     assert not is_valid_scope("feature:")

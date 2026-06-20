@@ -149,7 +149,7 @@ async def project_at_tag_endpoint(request: Request) -> JSONResponse:
     if project_raw is None:
         return _error(f"project.json not at tag {tag!r}", status=404)
     canvases: dict[str, dict[str, Any]] = {}
-    for kind in ("foundation", "actors", "services"):
+    for kind in ("foundation", "actors", "services", "entities"):
         c = _read_canvas_json(f"{kind}/canvas.json")
         if c is not None:
             canvases[kind] = c

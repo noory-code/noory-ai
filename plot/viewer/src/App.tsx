@@ -4,6 +4,7 @@ import { resolveWorkspaceRoot } from "./app/workspace";
 import { ProjectPicker } from "./shell/ProjectPicker";
 import { applyOptimisticAnchorPatch } from "./lib/anchorOptimistic";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
+import { EntitiesCanvas } from "./canvases/EntitiesCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
 import { FeatureDetailCanvas } from "./canvases/FeatureDetailCanvas";
 import { FeatureDetailInspectorHost } from "./canvases/inspectors/FeatureDetailInspectorHost";
@@ -37,6 +38,7 @@ import type {
 function tabToKind(tab: CanvasTab): Exclude<CanvasKind, "feature"> {
   if (tab === "foundation") return "foundation";
   if (tab === "actors") return "actors";
+  if (tab === "entities") return "entities";
   return "services";
 }
 
@@ -455,14 +457,16 @@ export function App() {
               />
             )}
             {phase === "ready" && activeCanvas && activeId && !detailReady && (() => {
-              // v0.15 Phase 3.3 — every F/A/S tab routes through its named
+              // v0.15 Phase 3.3 — every F/A/S/E tab routes through its named
               // wrapper. SketchCanvas is no longer called directly from App.
               const Canvas =
                 activeTab === "foundation"
                   ? FoundationCanvas
                   : activeTab === "actors"
                     ? ActorsCanvas
-                    : ServicesCanvas;
+                    : activeTab === "entities"
+                      ? EntitiesCanvas
+                      : ServicesCanvas;
               return (
               <Canvas
                 key={`${activeId}:${activeCanvasKey}`}

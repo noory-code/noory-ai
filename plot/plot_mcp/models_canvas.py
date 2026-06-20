@@ -5,13 +5,16 @@ container with all the structural validators; ``ProjectDoc`` is the
 project-level metadata and anchor SSOT; ``AnchorPlacement`` is the
 per-canvas-kind anchor visual.
 
-A project is split into four canvas kinds:
+A project is split into five canvas kinds:
   foundation        — project / mission / core_value / identity (singleton).
                       v0.10 renamed from ``core``.
   actors            — Actor definitions (singleton, SSOT for actor identities)
   services          — top-level services (singleton). v0.8 renamed from
                       ``services_overview``; paired with ``feature``
                       for the per-service drill-down.
+  entities          — product data objects the services act on (singleton,
+                      D-2026-06-17-I). AI-maintained conceptual map; symmetric
+                      to ``actors`` (who acts vs what is acted on).
   feature    — per-service drill-down (one per service in overview)
 
 Each ``CanvasDoc`` enforces its own allowed ``NodeKind`` set and structural
@@ -28,7 +31,7 @@ from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
 from plot_mcp.models_kinds import Shape
 from plot_mcp.models_union import SketchEdge, SketchNode
 
-CanvasKind = Literal["foundation", "actors", "services", "feature"]
+CanvasKind = Literal["foundation", "actors", "services", "entities", "feature"]
 
 # Foundation refs (mission_ref / value_ref / identity_ref) retired 2026-06-20
 # (D-2026-06-17-H / D-2026-06-20-G) — moved to the service inspector chips.
@@ -51,6 +54,11 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     # directed edge; it is the sole drill target. All sub-service / refs /
     # composition still live in feature.
     "services": {"project", "category", "service", "feature"},
+    # D-2026-06-17-I — the Entities canvas carries the product data objects the
+    # services act on (글 / 댓글 / 사용자): the project anchor (centre) + entity
+    # nodes. AI-maintained; seeded EMPTY (like services). Feature-action →
+    # entity *reference* kinds are blocked-on-open (FEATURE canvas, separate).
+    "entities": {"project", "entity"},
     # D-2026-06-17-D — the detail canvas drills into a **feature** (its
     # actions / rules), not a service. The root anchor is the feature node;
     # the wire ``canvas_kind`` stays ``feature`` until the canvas-string
@@ -277,6 +285,7 @@ def _default_anchors() -> dict[str, AnchorPlacement]:
         "foundation": AnchorPlacement(),
         "actors": AnchorPlacement(),
         "services": AnchorPlacement(),
+        "entities": AnchorPlacement(),
     }
 
 

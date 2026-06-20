@@ -59,13 +59,14 @@ def _load_all_canvases(plot_root: Path, project_id: str) -> dict[str, CanvasDoc]
       - ``"foundation"`` → foundation canvas
       - ``"actors"`` → actors canvas
       - ``"services"`` → services canvas
+      - ``"entities"`` → entities canvas (D-2026-06-17-I)
       - ``"feature:<service_id>"`` → per-service detail canvas
 
     Used by Phase 4 (D-2026-05-17-C) propagation walk; the walk only
     requires the keys to be unique within the returned dict.
     """
     canvases: dict[str, CanvasDoc] = {}
-    fixed_kinds: tuple[CanvasKind, ...] = ("foundation", "actors", "services")
+    fixed_kinds: tuple[CanvasKind, ...] = ("foundation", "actors", "services", "entities")
     for kind in fixed_kinds:
         try:
             canvases[kind] = read_canvas(plot_root, project_id, kind)

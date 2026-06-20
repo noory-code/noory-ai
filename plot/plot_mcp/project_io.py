@@ -155,8 +155,22 @@ def _seed_services_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
     )
 
 
+def _seed_entities_canvas(project_name: str) -> CanvasDoc:  # noqa: ARG001
+    """D-2026-06-17-I: entities canvas starts EMPTY (project anchor lives in
+    ``ProjectDoc.anchors``). Entities are populated last — an AI-maintained,
+    derived surface — never hand-authored at create time (settled: symmetric
+    to services seeding).
+    """
+    return CanvasDoc(
+        canvas_id="entities",
+        canvas_kind="entities",
+        nodes=[],
+    )
+
+
 def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
-    """Create a fresh project folder, seeded with Core / Actors / Services.
+    """Create a fresh project folder, seeded with Foundation / Actors /
+    Services / Entities.
 
     v0.8 layout: one folder per project (``.plot/{project_id}/``) with a
     subfolder per canvas kind. Each canvas folder holds a ``canvas.json``.
@@ -195,6 +209,10 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     _write_json(
         _canvas_file(plot_root, project_id, "services"),
         _seed_services_canvas(proj.name).model_dump(by_alias=True),
+    )
+    _write_json(
+        _canvas_file(plot_root, project_id, "entities"),
+        _seed_entities_canvas(proj.name).model_dump(by_alias=True),
     )
     # v0.13 Phase 2 — write per-kind JSON Schema + MD template files into
     # ``.plot/{proj}/schema/`` so external tools (Obsidian YAML LSP, custom

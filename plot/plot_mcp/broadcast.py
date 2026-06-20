@@ -10,7 +10,7 @@ from starlette.websockets import WebSocket
 
 from plot_mcp.watcher import WorkspaceWatcher
 
-_SINGLETON_CANVAS_KINDS = {"foundation", "actors", "services"}
+_SINGLETON_CANVAS_KINDS = {"foundation", "actors", "services", "entities"}
 
 
 def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | None:

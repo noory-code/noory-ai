@@ -104,3 +104,8 @@ export interface RuleJson extends BaseFieldsJson {
   actor_permissions: Record<string, string>;
   body: string;
 }
+
+export interface EntityJson extends BaseFieldsJson {
+  kind: "entity";
+  summary: string;
+}

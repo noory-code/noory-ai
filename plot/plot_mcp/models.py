@@ -11,7 +11,8 @@ site changes:
     models_actors.py       — actor / actor_ref / service / category +
                               mission_ref / value_ref / identity_ref
     models_composition.py  — metric / step / decision / group / rule / content
-    models_union.py        — SketchNode (15-way union) + SketchNodeAdapter
+    models_entity.py       — entity (Entities canvas, D-2026-06-17-I)
+    models_union.py        — SketchNode (14-way union) + SketchNodeAdapter
                               + SketchEdge
     models_canvas.py       — CanvasDoc + AnchorPlacement + ProjectDoc
                               + CanvasKind + _ALLOWED_KINDS_BY_CANVAS
@@ -91,6 +92,9 @@ from plot_mcp.models_discovery import (
 )
 from plot_mcp.models_discovery import (
     WorkspaceDiscoveryResponse as WorkspaceDiscoveryResponse,
+)
+from plot_mcp.models_entity import (
+    EntityNode as EntityNode,
 )
 from plot_mcp.models_foundation import (
     FOUNDATION_MD_FIELDS as FOUNDATION_MD_FIELDS,

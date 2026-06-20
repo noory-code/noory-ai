@@ -2,7 +2,7 @@
  * URL ⟷ tab/drill/selection state — single source of truth for the
  * three browser-URL query params Plot keeps in sync:
  *
- *   ``?canvas=foundation|actors|services``   ← activeTab
+ *   ``?canvas=foundation|actors|services|entities``  ← activeTab
  *   ``?detail=<serviceId>``                 ← detailFeatureId
  *   ``?select=<nodeId>``                    ← selectedNodeId
  *
@@ -145,6 +145,10 @@ export function useUrlSync(): UrlSync {
         setActiveTab("services");
         setDetailFeatureId(null);
         syncUrl({ canvas: "services", detail: null });
+      } else if (key === "entities") {
+        setActiveTab("entities");
+        setDetailFeatureId(null);
+        syncUrl({ canvas: "entities", detail: null });
       } else {
         const sid = key.slice("feature:".length);
         setActiveTab("services");

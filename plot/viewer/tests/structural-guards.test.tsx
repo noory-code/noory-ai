@@ -57,6 +57,7 @@ const KIND_DIRS = [
   "category",
   "core_value",
   "decision",
+  "entity",
   "feature",
   "identity",
   "mission",
@@ -83,11 +84,12 @@ const GOD_FILES_ABSENT = [
 function listForbiddenSwitchFiles(): string[] {
   const out: string[] = [];
 
-  // 4 canvas wrappers + shared shell
+  // 5 canvas wrappers + shared shell
   out.push(
     "canvases/FoundationCanvas.tsx",
     "canvases/ActorsCanvas.tsx",
     "canvases/ServicesCanvas.tsx",
+    "canvases/EntitiesCanvas.tsx",
     "canvases/FeatureDetailCanvas.tsx",
     "canvases/SketchCanvas.tsx",
     "canvases/nodes/BaseNode.tsx",
@@ -164,6 +166,7 @@ const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   "canvases/FoundationCanvas.tsx": { ceiling: 150 },
   "canvases/ActorsCanvas.tsx": { ceiling: 150 },
   "canvases/ServicesCanvas.tsx": { ceiling: 150 },
+  "canvases/EntitiesCanvas.tsx": { ceiling: 150 },
   "canvases/FeatureDetailCanvas.tsx": { ceiling: 150 },
 };
 
@@ -219,7 +222,7 @@ describe("registry-completeness (Phase 5.2)", () => {
     }
   });
 
-  it("NODE_RENDERERS registry contains exactly the 13 kinds", () => {
+  it("NODE_RENDERERS registry contains exactly the 14 kinds", () => {
     expect(Object.keys(NODE_RENDERERS).sort()).toEqual(
       KIND_DIRS.slice().sort() as unknown as string[],
     );
@@ -269,6 +272,7 @@ const HOT_PATH_CANVAS_TAGS = [
   "FoundationCanvas",
   "ActorsCanvas",
   "ServicesCanvas",
+  "EntitiesCanvas",
 ] as const;
 
 describe("hot-path JSX prop stability (D-2026-05-27-B/C)", () => {

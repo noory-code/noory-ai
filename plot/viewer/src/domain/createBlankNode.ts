@@ -13,6 +13,7 @@ import type { BaseFields } from "./BaseFields";
 import { Category } from "./Category";
 import { CoreValue } from "./CoreValue";
 import { Decision } from "./Decision";
+import { Entity } from "./Entity";
 import { Feature } from "./Feature";
 import { Identity } from "./Identity";
 import { Mission } from "./Mission";
@@ -85,5 +86,7 @@ export function createBlankNode(
       return Note.fromJson(raw).toJson();
     case "rule":
       return Rule.fromJson(raw).toJson();
+    case "entity":
+      return Entity.fromJson(raw).toJson();
   }
 }

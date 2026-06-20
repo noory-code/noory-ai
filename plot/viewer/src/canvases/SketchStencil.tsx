@@ -97,6 +97,22 @@ const FEATURE_INSIDE_SERVICE: StencilPreset = {
   dropHintI18nKey: "stencil.dropHintIntoService",
 };
 
+// D-2026-06-17-I — an ``entity`` is a product data object on the Entities
+// canvas (글 / 댓글 / 사용자). Pale cyan + a database glyph so it reads
+// distinctly from every other kind's hue; drops freely (top-level, no parent).
+const ENTITY_PRESET: StencilPreset = {
+  id: "entity",
+  labelHint: "Entity",
+  labelI18nKey: "kind.entity",
+  shape: "rounded",
+  color: "#cffafe",
+  width: 160,
+  height: 72,
+  icon: "database",
+  label: "Entity",
+  kind: "entity",
+};
+
 // Core-canvas presets. The Project anchor at the centre is auto-seeded,
 // not draggable — mission / core_value / identity are the user-placed
 // pillars. In v0.5 Identity is flat N peers (one per aspect: Voice /
@@ -384,7 +400,7 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
  *  v0.12 — services-side surfaces:
  *  ``services`` (top view: project + categories + their service leaves) and
  *  ``feature`` (per-service modal: composition + dynamic refs). */
-export type StencilCanvas = "foundation" | "actors" | "services" | "feature";
+export type StencilCanvas = "foundation" | "actors" | "services" | "entities" | "feature";
 
 interface SketchStencilProps {
   canvas: StencilCanvas;
@@ -447,6 +463,20 @@ export function SketchStencil({
           title={t("stencil.section.feature")}
           presets={[FEATURE_INSIDE_SERVICE]}
           note={t("stencil.note.dropInsideService")}
+        />
+      </div>
+    );
+  }
+  if (canvas === "entities") {
+    // D-2026-06-17-I — entities canvas: project anchor + entity nodes. The
+    // entity drops top-level (no parent); relationships between entities are
+    // drawn as edges, not nested.
+    return (
+      <div className="border-t border-line px-3 py-3">
+        <Section
+          title={t("stencil.section.entities")}
+          presets={[ENTITY_PRESET]}
+          info={t("stencil.info.entities")}
         />
       </div>
     );

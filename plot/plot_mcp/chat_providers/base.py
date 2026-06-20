@@ -36,6 +36,7 @@ ChatScope = Literal[
     "foundation",
     "actors",
     "services",
+    "entities",
     "feature",
 ]
 
@@ -46,15 +47,17 @@ DEFAULT_CHAT_SCOPE: ChatScope = "project"
 # Singleton scopes are valid bare on the wire; ``feature`` is the one
 # member that requires a ``:<id>`` suffix to name a specific service thread.
 _SERVICE_DETAIL_PREFIX = "feature:"
-_SINGLETON_SCOPES: frozenset[str] = frozenset({"project", "foundation", "actors", "services"})
+_SINGLETON_SCOPES: frozenset[str] = frozenset(
+    {"project", "foundation", "actors", "services", "entities"}
+)
 
 
 def is_valid_scope(raw: str) -> bool:
     """True for a well-formed wire scope (Layer 1, CHAT_ARCH.md).
 
     A scope is either a singleton base member (``project`` / ``foundation`` /
-    ``actors`` / ``services``) or the parametric ``feature:<id>`` with a
-    non-empty instance id. Bare ``feature`` (no id) is rejected — it
+    ``actors`` / ``services`` / ``entities``) or the parametric ``feature:<id>``
+    with a non-empty instance id. Bare ``feature`` (no id) is rejected — it
     names no specific service thread (Fail Fast). The engine keys sessions on
     the full string, so an unknown id simply gets its own (orphaned) thread;
     resolving stale ids back to the ``services`` scope is the viewer's job

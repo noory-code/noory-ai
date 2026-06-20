@@ -1,5 +1,5 @@
 /**
- * Top-of-canvas tab strip — Foundation / Actors / Services.
+ * Top-of-canvas tab strip — Foundation / Actors / Services / Entities.
  * Extracted from ``App.tsx`` (v0.16.2).
  *
  * v0.24.13 (D-2026-05-21-B) — right-side "Mark session…" button replaced
@@ -15,12 +15,13 @@ import { useTranslation } from "react-i18next";
 import type { BlueprintBump } from "../api";
 import { BlueprintPublishButton } from "./BlueprintPublishButton";
 
-export type CanvasTab = "foundation" | "actors" | "services";
+export type CanvasTab = "foundation" | "actors" | "services" | "entities";
 
 export const CANVAS_TAB_IDS: readonly CanvasTab[] = [
   "foundation",
   "actors",
   "services",
+  "entities",
 ];
 
 interface CanvasTabsProps {

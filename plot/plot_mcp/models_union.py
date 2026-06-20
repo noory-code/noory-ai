@@ -23,6 +23,9 @@ from plot_mcp.models_composition import (
     RuleNode,
     StepNode,
 )
+from plot_mcp.models_entity import (
+    EntityNode,
+)
 from plot_mcp.models_foundation import (
     CoreValueNode,
     IdentityNode,
@@ -53,7 +56,8 @@ SketchNode = Annotated[
     | StepNode
     | DecisionNode
     | NoteNode
-    | RuleNode,
+    | RuleNode
+    | EntityNode,
     Field(discriminator="kind"),
 ]
 
@@ -75,6 +79,7 @@ SketchNodeAdapter: TypeAdapter[
     | DecisionNode
     | NoteNode
     | RuleNode
+    | EntityNode
 ] = TypeAdapter(SketchNode)
 
 

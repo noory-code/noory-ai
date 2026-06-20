@@ -64,7 +64,8 @@
     "tabs": {
       "foundation": "Foundation",
       "actors": "Actors",
-      "services": "Services"
+      "services": "Services",
+      "entities": "Entities"
     },
     "closeDetailTab": "Close feature-detail tab"
   },
@@ -174,6 +175,7 @@
     "decision": "Decision",
     "note": "Note",
     "rule": "Rule",
+    "entity": "Entity",
     "interaction": "Interaction"
   },
   "node": {
@@ -233,6 +235,13 @@
       "proposedHint": "one capability the service offers, in a line",
       "proposedPlaceholder": "e.g. write a post / leave a comment / react with an emoji",
       "drillHint": "Click to open this feature's UX flow (its Feature canvas)."
+    },
+    "entity": {
+      "field": {
+        "summary": "What does it hold?",
+        "summaryHint": "one line — what this entity contains, roughly (no field types / keys)",
+        "summaryPlaceholder": "e.g. a post: title, body, author, written-at"
+      }
     },
     "decision": {
       "branchHint": "Branches live on the outgoing edges — draw a labelled edge per path (성공 / 실패 / choice)."
@@ -390,7 +399,8 @@
       "feature": "Feature",
       "note": "Note",
       "interactions": "Interactions",
-      "actors": "Actors"
+      "actors": "Actors",
+      "entities": "Entities"
     },
     "note": {
       "dropOnActor": "drop on an Actor",
@@ -404,7 +414,8 @@
     "info": {
       "mission": "Express, in one sentence, what this project exists for.",
       "coreValues": "The value criteria you use for decisions.",
-      "identity": "How the project expresses its identity."
+      "identity": "How the project expresses its identity.",
+      "entities": "The data objects the services act on (post / comment / user)."
     }
   }
 }

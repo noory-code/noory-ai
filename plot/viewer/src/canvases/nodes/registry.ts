@@ -21,6 +21,7 @@ import { ActorRefNode } from "./actor_ref";
 import { CategoryNode } from "./category";
 import { CoreValueNode } from "./core_value";
 import { DecisionNode } from "./decision";
+import { EntityNode } from "./entity";
 import { FeatureNode } from "./feature";
 import { IdentityNode } from "./identity";
 import { MissionNode } from "./mission";
@@ -48,4 +49,5 @@ export const NODE_RENDERERS: Record<NodeKind, NodeRendererComponent> = {
   decision: DecisionNode,
   note: NoteNode,
   rule: RuleNode,
+  entity: EntityNode,
 };

@@ -39,6 +39,7 @@ from plot_mcp.models import (
     CategoryNode,
     CoreValueNode,
     DecisionNode,
+    EntityNode,
     FeatureNode,
     IdentityNode,
     MissionNode,
@@ -69,12 +70,12 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
 SCHEMA_VERSION = 2  # v0.15.3 — extended to all 17 kinds (decision/group registered)
 PLOT_VERSION = "0.14.18"
 
-# Full 17-kind map = the registered projection of the ``SketchNode`` union
+# Full 14-kind map = the registered projection of the ``SketchNode`` union
 # (``models_union.py``). It MUST cover every union member — ``decision`` /
 # ``group`` shipped in the union + viewer while missing here for months
-# (the "15/17 drift"); ``tests/test_schema_parity.py::test_export_map_covers_union``
-# now guards against re-omission. (``group`` retirement is a separate
-# *concept* decision — Chunk 2.0 — not this registration.)
+# (the historical "15/17 drift"); ``tests/test_schema_parity.py::test_export_map_covers_union``
+# now guards against re-omission. (``group`` is retired; ``entity`` was added
+# 2026-06-17 for the Entities canvas, D-2026-06-17-I.)
 _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     # Foundation (4) — typed text lives in MD template
     "project": ProjectNode,
@@ -94,6 +95,9 @@ _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     "decision": DecisionNode,
     "note": NoteNode,
     "rule": RuleNode,
+    # Entities canvas (1) — product data object the services act on
+    # (D-2026-06-17-I). Symmetric to ``actor``; AI-maintained conceptual map.
+    "entity": EntityNode,
 }
 
 

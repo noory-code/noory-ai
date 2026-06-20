@@ -21,6 +21,7 @@ export type {
   CategoryJson,
   CoreValueJson,
   DecisionJson,
+  EntityJson,
   FeatureJson,
   IdentityJson,
   MissionJson,
@@ -48,6 +49,7 @@ export { Actor } from "./Actor";
 export { Service } from "./Service";
 export { Feature } from "./Feature";
 export { Rule } from "./Rule";
+export { Entity } from "./Entity";
 
 // v0.15 Phase 2.10 — discriminated-union SketchNode (replaces the
 // god ``SketchNode`` interface that lived in ``viewer/src/types.ts``).

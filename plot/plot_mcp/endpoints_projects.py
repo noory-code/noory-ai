@@ -179,7 +179,7 @@ async def project_anchor_patch_endpoint(request: Request) -> JSONResponse:
         return exc.response
     project_id = request.path_params["project_id"]
     canvas = request.path_params["canvas"]
-    if canvas not in {"foundation", "actors", "services"}:
+    if canvas not in {"foundation", "actors", "services", "entities"}:
         return _error(f"unknown canvas {canvas!r}", status=400)
     try:
         body: dict[str, Any] = await request.json()

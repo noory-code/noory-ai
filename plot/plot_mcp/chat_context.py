@@ -40,6 +40,20 @@ SCOPE_FRAMING: dict[str, str] = {
         "Help the user design the value-creation machinery — the services that "
         "deliver the mission and how they relate."
     ),
+    "entities": (
+        "You are collaborating inside Plot's Entities canvas (Planning phase), "
+        "an AI-maintained conceptual map of the product's data objects (글 / "
+        "댓글 / 사용자) — what the services act on. Surface and maintain entities "
+        "as a byproduct of feature/service design: each entity holds only a "
+        "name + a one-line 'what does it hold?' summary, plus rough "
+        "relationships drawn as edges. Stay above the altitude of normalisation "
+        "/ foreign keys / cardinality / field types — those are the external "
+        "agent's job, not Plot's. Before adding an entity, strongly match it "
+        "against the existing registry so 글 / 게시물 / 포스트 collapse into one; "
+        "ask the user on genuinely ambiguous cases, and never silently merge or "
+        "duplicate. Propose entities for the user to review — never finalise "
+        "silently."
+    ),
     "feature": (
         "You are collaborating inside Plot's Service-Detail canvas (Execution "
         "phase). Help the user break the plan into concrete steps, decisions, "

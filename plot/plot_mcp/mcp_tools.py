@@ -52,10 +52,10 @@ mcp = FastMCP(
         "Plot stores projects as folders of per-canvas JSON files under "
         "``.noory/plot/{project}/``. Use ``list_projects`` / ``get_project`` "
         "to discover state, ``get_canvas`` / ``update_canvas`` to read or write "
-        "a single canvas (``core`` / ``actors`` / ``services_overview`` / "
-        "``feature``), and ``tag_project`` to plant a named milestone "
-        "in the project's git repo. Edits are never auto-committed — only the "
-        "tag tools touch git."
+        "a single canvas (``foundation`` / ``actors`` / ``services`` / "
+        "``entities`` / ``feature``), and ``tag_project`` to plant a named "
+        "milestone in the project's git repo. Edits are never auto-committed — "
+        "only the tag tools touch git."
     ),
 )
 
@@ -130,8 +130,8 @@ def get_canvas(
     canvas_kind: CanvasKind,
     service_id: str | None = None,
 ) -> dict[str, Any]:
-    """Read a single canvas. ``canvas_kind`` ∈ ``core`` / ``actors`` /
-    ``services_overview`` / ``feature``. ``service_id`` is
+    """Read a single canvas. ``canvas_kind`` ∈ ``foundation`` / ``actors`` /
+    ``services`` / ``entities`` / ``feature``. ``service_id`` is
     required when ``canvas_kind == "feature"``."""
     plot_root = resolve_plot_root(project_path)
     canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
@@ -140,9 +140,9 @@ def get_canvas(
 
 @mcp.tool()
 def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) -> dict[str, Any]:
-    """Overwrite a canvas. Writing ``services_overview`` auto-creates /
-    archives Detail canvases so Overview and Detail stay 1:1. The
-    response reports the reconciliation."""
+    """Overwrite a canvas. Writing ``services`` auto-creates / archives
+    Detail canvases so the Services overview and its feature Details stay
+    1:1. The response reports the reconciliation."""
     plot_root = resolve_plot_root(project_path)
     validated = CanvasDoc.model_validate(canvas)
     write_canvas(plot_root, project_id, validated)

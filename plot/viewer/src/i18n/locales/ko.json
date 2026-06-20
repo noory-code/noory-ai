@@ -64,7 +64,8 @@
     "tabs": {
       "foundation": "파운데이션",
       "actors": "액터",
-      "services": "서비스"
+      "services": "서비스",
+      "entities": "엔티티"
     },
     "closeDetailTab": "기능 상세 탭 닫기"
   },
@@ -174,6 +175,7 @@
     "decision": "결정",
     "note": "노트",
     "rule": "규칙",
+    "entity": "엔티티",
     "interaction": "인터랙션"
   },
   "node": {
@@ -233,6 +235,13 @@
       "proposedHint": "이 서비스가 제공하는 능력 한 줄",
       "proposedPlaceholder": "예: 글 쓰기 / 댓글 달기 / 이모지 반응",
       "drillHint": "클릭하면 이 기능의 UX 흐름(Feature 캔버스)이 열립니다."
+    },
+    "entity": {
+      "field": {
+        "summary": "무엇을 담나요?",
+        "summaryHint": "이 엔티티가 담는 내용을 한 줄로 (필드 타입·키 없이 대략)",
+        "summaryPlaceholder": "예: 글 — 제목, 본문, 작성자, 작성일시"
+      }
     },
     "decision": {
       "branchHint": "분기는 나가는 선에 표현됩니다 — 경로마다 라벨 단 선을 그으세요 (성공 / 실패 / 선택지)."
@@ -390,7 +399,8 @@
       "feature": "기능",
       "note": "노트",
       "interactions": "인터랙션",
-      "actors": "액터"
+      "actors": "액터",
+      "entities": "엔티티"
     },
     "note": {
       "dropOnActor": "액터 위에 놓으세요",
@@ -404,7 +414,8 @@
     "info": {
       "mission": "이 프로젝트가 무엇을 위해 존재하는지 한 문장으로 표현하세요.",
       "coreValues": "의사결정의 기준 가치예요.",
-      "identity": "정체성을 나타내는 방식이에요."
+      "identity": "정체성을 나타내는 방식이에요.",
+      "entities": "서비스가 다루는 데이터 객체예요 (글 / 댓글 / 사용자)."
     }
   }
 }

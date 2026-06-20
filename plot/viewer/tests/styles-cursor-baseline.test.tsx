@@ -64,14 +64,16 @@ function styleCursorAssignMatches(src: string): string[] {
 
 /** Per-kind directory names. The structural reset (D-2026-05-12-B)
  *  pins these as the SSOT for node-kind enumeration; any drift is
- *  caught by the count assertion below. 13-kind palette as of
- *  2026-06-20 (metric / content retired, D-2026-06-20-H). */
+ *  caught by the count assertion below. 14-kind palette as of
+ *  2026-06-20 (metric / content retired, D-2026-06-20-H; entity added
+ *  for the Entities canvas, D-2026-06-17-I). */
 const KIND_DIRS = [
   "actor",
   "actor_ref",
   "category",
   "core_value",
   "decision",
+  "entity",
   "feature",
   "identity",
   "mission",
@@ -134,6 +136,7 @@ const WRAPPER_FILES = [
   "canvases/FoundationCanvas.tsx",
   "canvases/ActorsCanvas.tsx",
   "canvases/ServicesCanvas.tsx",
+  "canvases/EntitiesCanvas.tsx",
   "canvases/FeatureDetailCanvas.tsx",
 ] as const;
 
@@ -163,9 +166,9 @@ const ALL_CANVAS_FILES: readonly string[] = [
 ];
 
 describe("Canvas-internal cursor baseline (D-2026-05-12-D)", () => {
-  it("the registry covers all 13 per-kind node and 13 per-kind inspector files", () => {
-    expect(PER_KIND_NODE_FILES.length).toBe(13);
-    expect(PER_KIND_INSPECTOR_FILES.length).toBe(13);
+  it("the registry covers all 14 per-kind node and 14 per-kind inspector files", () => {
+    expect(PER_KIND_NODE_FILES.length).toBe(14);
+    expect(PER_KIND_INSPECTOR_FILES.length).toBe(14);
   });
 
   it("no canvas-internal file is empty (sanity)", () => {
