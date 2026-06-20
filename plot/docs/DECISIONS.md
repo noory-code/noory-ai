@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-21-K — chat scope tabs = canvas-name | project-name, moved above the input; provider/LLM panel no inner scroll
+
+- **What:** Three chat-dock tweaks: (1) the scope switcher's **project tab now shows the project NAME** (e.g. "Banas") instead of the generic word "Project" (the canvas tab already showed the canvas name); a new `projectName` prop threads it from `App` (`activeProjectName`). (2) the **scope switcher moves ABOVE the input box** (its own row inside the composer, just above the textarea) — out of the control row, which now holds only the provider chip + model selector + send. (3) the **provider / LLM register panel no longer scrolls internally** (dropped `max-h-64 overflow-y-auto` → sizes to its content).
+- **Why:** User request 2026-06-21 — "캔버스|프로젝트 는 캔버스 이름 | 프로젝트 이름 으로 하고 위치는 채팅 입력창 위로" + "LLM 선택하는거 스크롤 안되게."
+- **Note on the "scroll" item:** interpreted as the provider/LLM register panel (the CSS-controllable scroll). The model `<select>` is a native control whose dropdown scroll is OS-managed (not CSS-disableable) — if that was meant, it's a separate change (a custom non-native dropdown). To be confirmed with the user.
+- **Approval:** Accepted by user, 2026-06-21.
+- **Spec impact:** App-repo viewer (`ChatDock` — `projectName` prop, `scopeBar` above the input, panel no-scroll; `App` passes `projectName`). Pinned by `chat-dock` test (project tab shows the name). Composer-layout + project-name tests green (964 viewer). **Follow-up unchanged:** `ChatDock.tsx` is >500 LOC — extract `ChatComposer`.
+
 ### D-2026-06-21-J — chat bubbles render Markdown (assistant replies); user input stays literal
 
 - **What:** Assistant chat replies now render as **Markdown** (reusing the inspector's `MDPreview` — react-markdown + remark-gfm + fenced-mermaid + the same prose styling), so headings / lists / bold / code / tables / links format properly in the bubble. The streaming caret renders after the rendered MD. The **user's own input** and **error text** stay **literal** (plain `whitespace-pre-wrap`) — what the user typed isn't transformed, and the user bubble's inverse background keeps its own text colour.
