@@ -298,57 +298,31 @@ describe("Foundation ref inspectors (Phase 2.7)", () => {
   });
 });
 
-describe("ServiceInspector (Phase 2.9)", () => {
-  it("renders Service typed fields + composition lists", () => {
+describe("ServiceInspector (5-field model, D-2026-06-20-F)", () => {
+  it("renders the 2 typed fields + actor chips (refs)", () => {
+    const actor = makeNode({ id: "a1", kind: "actor", label: "Reader" });
     const svc = makeNode({
       id: "svc-1",
       kind: "service",
       label: "Sign-up",
       problem: "가입이 너무 번거롭다",
-      target_side: "user",
-      what: "신규 가입",
-      value_created: "access",
+      value_created: "빠른 접근권",
+      ref_actor_ids: ["a1"],
     });
-    const rule = makeNode({
-      id: "r1",
-      kind: "rule",
-      label: "GDPR",
-      policy: "explicit consent",
-    });
-    // v0.26.0 (D-2026-05-25-A) — composition is now a directed edge.
-    const compositionEdge = {
-      id: "e-svc-r1",
-      source: "svc-1",
-      target: "r1",
-      sourceHandle: null,
-      targetHandle: null,
-      label: "",
-      style: "solid" as const,
-      directed: true,
-      action_verb: null,
-      value_form: [],
-    };
     render(
-      <KindInspector
-        {...makeProps(svc, "service_detail", [svc, rule], [compositionEdge])}
-        onAddChild={vi.fn()}
-        onPatchChild={vi.fn()}
-        onRemoveChild={vi.fn()}
-      />,
+      <KindInspector {...makeProps(svc, "services", [svc])} availableActors={[actor]} />,
     );
     expect(screen.getByDisplayValue("Sign-up")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("가입이 너무 번거롭다")).toBeInTheDocument(); // D-2026-06-15-K problem
-    expect(screen.getByDisplayValue("신규 가입")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("access")).toBeInTheDocument();
-    // Rule child label shows in the rules CompositionList
-    expect(screen.getByDisplayValue("GDPR")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("가입이 너무 번거롭다")).toBeInTheDocument(); // 왜 필요한가?
+    expect(screen.getByDisplayValue("빠른 접근권")).toBeInTheDocument(); // 뭐가 좋아지나?
+    // the picked actor master renders as a chip showing its label
+    expect(screen.getByText("Reader")).toBeInTheDocument();
   });
 
-  it("hides composition lists when child callbacks are unset", () => {
+  it("no longer renders the legacy composition (rules / contents) panels", () => {
     const svc = makeNode({ id: "svc-1", kind: "service", label: "Bare" });
-    render(<KindInspector {...makeProps(svc, "service_detail", [svc])} />);
-    // No "Add" button when callbacks aren't wired
-    expect(screen.queryByText(/composition\.add/i)).not.toBeInTheDocument();
+    render(<KindInspector {...makeProps(svc, "services", [svc])} />);
+    expect(screen.queryByText(/composition\./i)).not.toBeInTheDocument();
   });
 });
 

@@ -165,14 +165,9 @@ export function useNodesMemo({
         return null;
       })();
       const baseLabel = masterDerivedLabel ?? n.label;
-      // v0.11.4 — service.target_side tints the body so operator-
-      // facing services and user-facing services read at a glance.
+      // D-2026-06-20-F — service.target_side removed; services use their own
+      // color (the operator/user tint went with the old 9-field model).
       let visualColor: string = isOrphan ? "#fee2e2" : n.color;
-      if (!isOrphan && n.kind === "service" && n.target_side != null) {
-        if (n.target_side === "operator") visualColor = "#dbeafe";
-        else if (n.target_side === "user") visualColor = "#fee2e2";
-        else if (n.target_side === "both") visualColor = "#ede9fe";
-      }
       // v0.28.2 (D-2026-05-30-E) — negative-case (failure) tint on a
       // step. Opt-in: only overrides when the user set polarity away
       // from "neutral" (polarityTint returns null otherwise).

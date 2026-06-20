@@ -81,10 +81,14 @@ def test_non_foundation_json_schema_includes_typed_fields(tmp_path: Path) -> Non
     for field in ("gives", "receives", "motivation", "pain", "side"):
         assert field in actor_ref_props, f"actor_ref.json must expose {field!r}"
 
+    # D-2026-06-20-F — service is the 5-field model: problem + value_created
+    # (typed) + 3 ref-id arrays. The old 9 free-text fields are gone.
     service_schema = json.loads((schema_dir / "service.json").read_text(encoding="utf-8"))
     service_props = service_schema.get("properties", {})
-    for field in ("target_side", "what", "value_created", "scope", "do", "dont"):
+    for field in ("problem", "value_created", "ref_actor_ids", "ref_value_ids", "ref_identity_ids"):
         assert field in service_props, f"service.json must expose {field!r}"
+    for gone in ("target_side", "what", "scope", "do", "dont"):
+        assert gone not in service_props, f"service.json must NOT expose retired {gone!r}"
 
     metric_schema = json.loads((schema_dir / "metric.json").read_text(encoding="utf-8"))
     metric_props = metric_schema.get("properties", {})

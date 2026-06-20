@@ -202,6 +202,28 @@
     "category": "카테고리"
   },
   "inspector": {
+    "service": {
+      "q": {
+        "participants": "누가 참여하나요?",
+        "participantsHint": "여기서 가치를 만들고 주고받는 액터들",
+        "problem": "왜 필요한가요?",
+        "problemHint": "이 서비스가 답하는 결핍 / 필요",
+        "problemPlaceholder": "이 서비스가 푸는 문제 / 결핍",
+        "valueCreated": "뭐가 좋아지나요?",
+        "valueCreatedHint": "이 서비스가 만들어내는 가치",
+        "valueCreatedPlaceholder": "참여자에게 무엇이 나아지나",
+        "values": "뭘 양보 못 하나요?",
+        "valuesHint": "이 서비스가 어겨선 안 되는 코어밸류",
+        "identities": "어떤 결로 다가가나요?",
+        "identitiesHint": "이 서비스가 드러내는 아이덴티티"
+      }
+    },
+    "refChips": {
+      "empty": "아직 없음",
+      "add": "+ 추가…",
+      "remove": "제거",
+      "missing": "(없어짐)"
+    },
     "note": {
       "ambientHint": "캔버스 전역 맥락 — 사람이 읽는 가이드이자 AI가 늘 깔고 작업하는 맥락입니다. 노트는 아무것과도 연결되지 않습니다(엣지 없음)."
     },

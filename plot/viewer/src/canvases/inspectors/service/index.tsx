@@ -1,73 +1,47 @@
 /**
  * Per-kind inspector for ``service`` nodes — the value-creating hub
- * (PHILOSOPHY P5). Renders Service typed fields + two CompositionList
- * panels (rules + contents) for the service's children.
- *
- * v0.15 Phase 2.9 — final per-kind vertical slice. Phase 2.10 then
- * deletes the legacy ``SketchInspector`` and retires the god types.ts
- * interface.
+ * (PHILOSOPHY P5). D-2026-06-17-B / D-2026-06-20-F: **5 question-titled
+ * fields** — 2 typed-text (왜 필요한가? / 뭐가 좋아지나?) + 3 multi-select
+ * reference chip lists (누가 참여하나? = actors, 뭘 양보 못 하나? = core_values,
+ * 어떤 결로 다가가나? = identities). The old 9 free-text fields + the
+ * composition (rules / contents) panels are gone — composition lives on the
+ * Feature canvas, value-exchange detail is the service's 5 fields.
  */
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ServiceJson } from "../../../domain";
 import type { SketchNode } from "../../../types";
 import { BaseInspector } from "../BaseInspector";
-import { BodyField } from "../shared/BodyField";
-import { DoDontFields } from "../shared/DoDontFields";
 import { MdTextarea } from "../shared/MdTextarea";
 import type { KindInspectorProps } from "../types";
-import { CompositionList } from "./CompositionList";
+import { RefChips } from "./RefChips";
 
 export function ServiceInspector(props: KindInspectorProps) {
   if (props.node.kind !== "service") return null;
   const node = props.node;
-  const { allNodes, allEdges, onPatchNode, onAddChild, onPatchChild, onRemoveChild, availableActors, readOnly } = props;
-  const { t } = useTranslation();
-  // v0.26.0 (D-2026-05-25-A) — composition children (rules / content)
-  // are now identified by directed edges from this service.
-  const childIds = useMemo(
-    () =>
-      new Set(
-        allEdges
-          .filter((e) => e.directed && e.source === node.id)
-          .map((e) => e.target),
-      ),
-    [allEdges, node.id],
-  );
-  const rules = useMemo(
-    () => allNodes.filter((n) => childIds.has(n.id) && n.kind === "rule"),
-    [allNodes, childIds],
-  );
-  const contents = useMemo(
-    () => allNodes.filter((n) => childIds.has(n.id) && n.kind === "content"),
-    [allNodes, childIds],
-  );
+  const {
+    onPatchNode,
+    readOnly,
+    availableActors = [],
+    availableValues = [],
+    availableIdentities = [],
+  } = props;
   return (
     <BaseInspector {...props} hideDetailsSection>
-      <ServiceFields node={node} onPatchNode={onPatchNode} readOnly={readOnly} />
-      {!readOnly && onAddChild && onPatchChild && onRemoveChild && (
-        <>
-          <CompositionList
-            title={t("composition.rules")}
-            subtitle={t("composition.rulesSubtitle")}
-            items={rules}
-            onAdd={() => onAddChild(node.id, "rule")}
-            onPatch={onPatchChild}
-            onRemove={onRemoveChild}
-            kind="rule"
-            availableActors={availableActors}
-          />
-          <CompositionList
-            title={t("composition.contents")}
-            subtitle={t("composition.contentsSubtitle")}
-            items={contents}
-            onAdd={() => onAddChild(node.id, "content")}
-            onPatch={onPatchChild}
-            onRemove={onRemoveChild}
-            kind="content"
-            availableActors={availableActors}
-          />
-        </>
+      {readOnly ? (
+        <ServiceFieldsReadonly
+          node={node}
+          availableActors={availableActors}
+          availableValues={availableValues}
+          availableIdentities={availableIdentities}
+        />
+      ) : (
+        <ServiceFields
+          node={node}
+          onPatchNode={onPatchNode}
+          availableActors={availableActors}
+          availableValues={availableValues}
+          availableIdentities={availableIdentities}
+        />
       )}
     </BaseInspector>
   );
@@ -76,121 +50,101 @@ export function ServiceInspector(props: KindInspectorProps) {
 interface ServiceFieldsProps {
   node: ServiceJson;
   onPatchNode: (patch: Partial<SketchNode>) => void;
-  /** D-2026-06-15-O — render the typed fields as a read-only summary
-   *  (problem-centric) for the ServiceDetail fallback inspector. */
-  readOnly?: boolean;
+  availableActors: SketchNode[];
+  availableValues: SketchNode[];
+  availableIdentities: SketchNode[];
 }
 
-function ServiceFields({ node, onPatchNode, readOnly }: ServiceFieldsProps) {
+function ServiceFields({
+  node,
+  onPatchNode,
+  availableActors,
+  availableValues,
+  availableIdentities,
+}: ServiceFieldsProps) {
   const { t } = useTranslation();
-  if (readOnly) return <ServiceFieldsReadonly node={node} />;
   return (
     <div className="mb-4 rounded border border-info bg-info-soft/40 p-2">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-info-fg">
         {t("kind.service")}
       </div>
+      {/* ① 누가 참여하나? — actors */}
+      <RefChips
+        label={t("inspector.service.q.participants")}
+        hint={t("inspector.service.q.participantsHint")}
+        ids={node.ref_actor_ids ?? []}
+        available={availableActors}
+        onChange={(ids) => onPatchNode({ ref_actor_ids: ids })}
+      />
+      {/* ② 왜 필요한가? — problem (typed) */}
       <ServiceTextarea
-        label={t("inspector.field.problem")}
-        hint={t("inspector.fieldHint.problem")}
+        label={t("inspector.service.q.problem")}
+        hint={t("inspector.service.q.problemHint")}
         value={node.problem ?? ""}
         onChange={(v) => onPatchNode({ problem: v })}
-        placeholder="이 서비스가 푸는 문제 / 결핍"
+        placeholder={t("inspector.service.q.problemPlaceholder")}
       />
-      <label className="mb-3 block">
-        <span className="text-xs font-semibold text-fg">
-          {t("inspector.field.targetSide")}
-        </span>
-        <span className="ml-1 text-[10px] text-fg-muted">
-          — {t("inspector.fieldHint.targetSide")}
-        </span>
-        <select
-          value={node.target_side ?? ""}
-          onChange={(e) => {
-            const v = e.target.value;
-            onPatchNode({
-              target_side: v === "operator" || v === "user" || v === "both" ? v : null,
-            });
-          }}
-          className="mt-1 w-full rounded border border-line-strong px-2 py-1 text-sm focus:border-info focus:outline-none"
-        >
-          <option value="">{t("inspector.unset")}</option>
-          <option value="operator">{t("inspector.operatorSideOption")}</option>
-          <option value="user">{t("inspector.userSideOption")}</option>
-          <option value="both">{t("inspector.bothSideOption")}</option>
-        </select>
-      </label>
+      {/* ③ 뭐가 좋아지나? — value_created (typed) */}
       <ServiceTextarea
-        label={t("inspector.field.what")}
-        hint={t("inspector.fieldHint.what")}
-        value={node.what ?? ""}
-        onChange={(v) => onPatchNode({ what: v })}
-        placeholder="이 서비스는…"
-      />
-      <ServiceTextarea
-        label={t("inspector.field.valueCreated")}
-        hint={t("inspector.fieldHint.valueCreated")}
+        label={t("inspector.service.q.valueCreated")}
+        hint={t("inspector.service.q.valueCreatedHint")}
         value={node.value_created ?? ""}
         onChange={(v) => onPatchNode({ value_created: v })}
-        placeholder="만들어내는 가치"
+        placeholder={t("inspector.service.q.valueCreatedPlaceholder")}
       />
-      <ServiceTextarea
-        label={t("inspector.field.scope")}
-        hint={t("inspector.fieldHint.scope")}
-        value={node.scope ?? ""}
-        onChange={(v) => onPatchNode({ scope: v })}
-        placeholder="포함/제외 범위"
+      {/* ④ 뭘 양보 못 하나? — core_values */}
+      <RefChips
+        label={t("inspector.service.q.values")}
+        hint={t("inspector.service.q.valuesHint")}
+        ids={node.ref_value_ids ?? []}
+        available={availableValues}
+        onChange={(ids) => onPatchNode({ ref_value_ids: ids })}
       />
-      <ServiceTextarea
-        label={t("inspector.field.trigger")}
-        hint={t("inspector.fieldHint.trigger")}
-        value={node.trigger ?? ""}
-        onChange={(v) => onPatchNode({ trigger: v })}
-        placeholder="언제/무엇으로 시작?"
+      {/* ⑤ 어떤 결로 다가가나? — identities */}
+      <RefChips
+        label={t("inspector.service.q.identities")}
+        hint={t("inspector.service.q.identitiesHint")}
+        ids={node.ref_identity_ids ?? []}
+        available={availableIdentities}
+        onChange={(ids) => onPatchNode({ ref_identity_ids: ids })}
       />
-      <ServiceTextarea
-        label={t("inspector.field.how")}
-        hint={t("inspector.fieldHint.how")}
-        value={node.how ?? ""}
-        onChange={(v) => onPatchNode({ how: v })}
-        placeholder="어떻게 동작?"
-      />
-      <ServiceTextarea
-        label={t("inspector.field.outcome")}
-        hint={t("inspector.fieldHint.outcome")}
-        value={node.outcome ?? ""}
-        onChange={(v) => onPatchNode({ outcome: v })}
-        placeholder="끝나면 어떤 상태?"
-      />
-      <DoDontFields node={node} onPatchNode={onPatchNode} />
-      <BodyField value={node.body ?? ""} onChange={(body) => onPatchNode({ body })} />
     </div>
   );
 }
 
-/** Read-only summary of a service's typed fields (D-2026-06-15-O). Shows
- *  only the fields that carry content, problem first — the service is the
- *  anchor of the problem-solving process (D-2026-06-15-K). */
-function ServiceFieldsReadonly({ node }: { node: ServiceJson }) {
+interface ServiceFieldsReadonlyProps {
+  node: ServiceJson;
+  availableActors: SketchNode[];
+  availableValues: SketchNode[];
+  availableIdentities: SketchNode[];
+}
+
+/** Read-only summary of the 5 fields (D-2026-06-15-O) — the ServiceDetail
+ *  fallback inspector. Shows only fields that carry content. */
+function ServiceFieldsReadonly({
+  node,
+  availableActors,
+  availableValues,
+  availableIdentities,
+}: ServiceFieldsReadonlyProps) {
   const { t } = useTranslation();
-  const sideLabel = node.target_side
-    ? t(
-        node.target_side === "operator"
-          ? "inspector.operatorSideOption"
-          : node.target_side === "user"
-            ? "inspector.userSideOption"
-            : "inspector.bothSideOption",
-      )
-    : "";
+  const names = (ids: string[], pool: SketchNode[]): string => {
+    const byId = new Map(pool.map((n) => [n.id, n]));
+    return ids
+      .map((id) => byId.get(id)?.label?.trim() || id)
+      .filter(Boolean)
+      .join(", ");
+  };
   const rows = (
     [
-      [t("inspector.field.problem"), node.problem ?? ""],
-      [t("inspector.field.targetSide"), sideLabel],
-      [t("inspector.field.what"), node.what ?? ""],
-      [t("inspector.field.valueCreated"), node.value_created ?? ""],
-      [t("inspector.field.scope"), node.scope ?? ""],
-      [t("inspector.field.trigger"), node.trigger ?? ""],
-      [t("inspector.field.how"), node.how ?? ""],
-      [t("inspector.field.outcome"), node.outcome ?? ""],
+      [t("inspector.service.q.participants"), names(node.ref_actor_ids ?? [], availableActors)],
+      [t("inspector.service.q.problem"), node.problem ?? ""],
+      [t("inspector.service.q.valueCreated"), node.value_created ?? ""],
+      [t("inspector.service.q.values"), names(node.ref_value_ids ?? [], availableValues)],
+      [
+        t("inspector.service.q.identities"),
+        names(node.ref_identity_ids ?? [], availableIdentities),
+      ],
     ] as Array<[string, string]>
   ).filter(([, v]) => v.trim() !== "");
   return (

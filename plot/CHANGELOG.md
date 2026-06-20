@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.91.0] — 2026-06-20
+
+### Changed
+
+- **Service inspector → 5 question-titled fields** (Chunk 2.5, D-2026-06-20-F,
+  implementing D-2026-06-17-B). 2 typed-text (왜 필요한가? = `problem`, 뭐가
+  좋아지나? = `value_created`) + 3 multi-select reference chip lists (누가
+  참여하나? = `ref_actor_ids`, 뭘 양보 못 하나? = `ref_value_ids`, 어떤 결로
+  다가가나? = `ref_identity_ids`). References are id arrays on the service
+  (Option B), rendered as removable chips via the new
+  `inspectors/service/RefChips.tsx` (pick-only; pick-OR-create is a follow-up).
+
+### Removed
+
+- **The legacy 9 service fields** (`target_side` / `what` / `scope` / `trigger`
+  / `how` / `outcome` / `do` / `dont` / `body`) — **discarded**, no migration
+  (no project uses Plot yet; Pydantic drops the old extras on read,
+  D-2026-06-20-F). The service inspector's composition (rules / contents) panels,
+  the `target_side` color tint, and the shared `DoDontFields` component are gone.
+
 ## [0.90.0] — 2026-06-20
 
 ### Added

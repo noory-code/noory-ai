@@ -676,29 +676,27 @@ def test_actors_canvas_rejects_foundation_refs() -> None:
         )
 
 
-def test_service_node_carries_typed_fields() -> None:
-    """v0.10 Step 4: service nodes carry shared (what / value_created / scope
-    / do / dont) and sub-service-only (trigger / how / outcome) typed fields.
-    The model accepts every field on every service; the Inspector decides
-    which ones to surface for top-level vs sub-service."""
+def test_service_node_carries_5_fields() -> None:
+    """D-2026-06-20-F — service = 2 typed (problem / value_created) + 3 ref-id
+    arrays (Option B). The old 9 free-text fields are gone."""
     n = ServiceNode(
         id="auth",
         label="Auth",
-        what="외부 사용자가 자기 ID로 들어올 수 있게 하는 서비스",
+        problem="외부 사용자가 자기 ID로 들어올 길이 없다",
         value_created="신원 확인된 세션",
-        scope="ID/PW + OAuth + MFA. 세션 발급까지.",
-        do="실패 메시지를 일반화한다",
-        dont="ID 존재 여부를 누설한다",
+        ref_actor_ids=["operator", "user"],
+        ref_value_ids=["cv-trust"],
+        ref_identity_ids=["id-secure"],
     )
-    assert n.what.startswith("외부 사용자")
+    assert n.problem.startswith("외부 사용자")
     assert n.value_created == "신원 확인된 세션"
-    assert "MFA" in n.scope
-    assert "일반화" in n.do
-    assert "누설" in n.dont
+    assert n.ref_actor_ids == ["operator", "user"]
+    assert n.ref_value_ids == ["cv-trust"]
 
 
-def test_sub_service_typed_fields_round_trip() -> None:
-    """Sub-service-specific fields persist and are readable by id."""
+def test_service_refs_round_trip_through_canvas() -> None:
+    """Service ref-id arrays persist + are readable by id after a CanvasDoc
+    round-trip."""
     detail = CanvasDoc(
         canvas_id="auth",
         canvas_kind="service_detail",
@@ -708,19 +706,17 @@ def test_sub_service_typed_fields_round_trip() -> None:
             ServiceNode(
                 id="login",
                 label="Login",
+                problem="로그인이 번거롭다",
                 value_created="유효한 세션 토큰",
-                trigger="사용자가 로그인 버튼을 누른다",
-                how="ID/PW 검증 후 세션 발급",
-                outcome="홈 화면으로 리다이렉트",
+                ref_actor_ids=["user"],
             ),
-            ActorRefNode(id="ar-op", label="→ op", ref_actor_id="operator", side="operator"),
             ActorRefNode(id="ar-user", label="→ user", ref_actor_id="user", side="user"),
         ],
     )
     parsed = CanvasDoc.model_validate(detail.model_dump())
     login = next(n for n in parsed.nodes if n.id == "login")
-    assert login.trigger.startswith("사용자가")
-    assert login.outcome == "홈 화면으로 리다이렉트"
+    assert login.problem.startswith("로그인이")
+    assert login.ref_actor_ids == ["user"]
 
 
 # ---------------------------------------------------------------------------

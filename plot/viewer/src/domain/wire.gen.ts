@@ -66,16 +66,10 @@ export interface ActorRefJson extends BaseFieldsJson {
 export interface ServiceJson extends BaseFieldsJson {
   kind: "service";
   problem: string;
-  target_side: "operator" | "user" | "both" | null;
-  what: string;
   value_created: string;
-  scope: string;
-  trigger: string;
-  how: string;
-  outcome: string;
-  do: string;
-  dont: string;
-  body: string;
+  ref_actor_ids: string[];
+  ref_value_ids: string[];
+  ref_identity_ids: string[];
 }
 
 export interface FeatureJson extends BaseFieldsJson {

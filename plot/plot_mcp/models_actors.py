@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from plot_mcp.models_kinds import BaseNodeFields
 
@@ -55,26 +55,28 @@ class ActorRefNode(BaseNodeFields):
 
 
 class ServiceNode(BaseNodeFields):
-    """v0.15 Phase 1: ``service`` kind. The value-creating hub
-    (PHILOSOPHY P5). Top-level (parent_id None) and sub-service share
-    the same shape — the Inspector surfaces different fields per role.
+    """``service`` kind — the value-creating hub (PHILOSOPHY P5). A place where
+    several actors create + exchange value (value exchange is a property of the
+    *service*, not a feature).
 
-    D-2026-06-15-K: ``problem`` is the one-line need the service solves
-    (a service is the process of solving a problem). It is the anchor;
-    ``what`` / ``value_created`` / ``outcome`` are the solution side."""
+    D-2026-06-17-B / D-2026-06-20-F — the inspector is **5 question-titled
+    fields**: 2 typed-text (왜 필요한가? = ``problem``; 뭐가 좋아지나? =
+    ``value_created``) + 3 multi-select **reference** lists rendered as chips
+    (누가 참여하나? = ``ref_actor_ids`` → actors; 뭘 양보 못 하나? =
+    ``ref_value_ids`` → core_values; 어떤 결로 다가가나? = ``ref_identity_ids``
+    → identities). The old 9 free-text fields (target_side / what / scope /
+    trigger / how / outcome / do / dont / body) are **deleted** (discard, no
+    migration — no production data yet, D-2026-06-20-F). Refs are id arrays on
+    the service (Option B), not separate ``*_ref`` nodes."""
 
     kind: Literal["service"] = "service"
     problem: str = ""
-    target_side: Literal["operator", "user", "both"] | None = None
-    what: str = ""
     value_created: str = ""
-    scope: str = ""
-    trigger: str = ""
-    how: str = ""
-    outcome: str = ""
-    do: str = ""
-    dont: str = ""
-    body: str = ""
+    # Reference picks (Option B, D-2026-06-20-F) — ids of master nodes the chips
+    # point at: actors (Actors canvas), core_values + identities (Foundation).
+    ref_actor_ids: list[str] = Field(default_factory=list)
+    ref_value_ids: list[str] = Field(default_factory=list)
+    ref_identity_ids: list[str] = Field(default_factory=list)
 
 
 class FeatureNode(BaseNodeFields):

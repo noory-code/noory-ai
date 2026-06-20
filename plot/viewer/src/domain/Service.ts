@@ -1,15 +1,18 @@
 /**
- * v0.15 Phase 2.9 — ``service`` entity. The value-creating hub
- * (PHILOSOPHY P5). D-2026-06-15-K: carries ``problem`` (the one-line
- * need it solves — a service is the process of solving a problem) +
- * target_side + 6 typed fields (what / value_created / scope / trigger /
- * how / outcome) + do/dont.
+ * ``service`` entity — the value-creating hub (PHILOSOPHY P5).
+ *
+ * D-2026-06-17-B / D-2026-06-20-F — 5 question-titled inspector fields:
+ * 2 typed-text (``problem`` = 왜 필요한가?, ``value_created`` = 뭐가 좋아지나?)
+ * + 3 multi-select reference lists rendered as chips (``ref_actor_ids`` /
+ * ``ref_value_ids`` / ``ref_identity_ids`` — ids of master nodes, Option B).
+ * The old 9 free-text fields (target_side / what / scope / trigger / how /
+ * outcome / do / dont / body) were deleted (discard, no production data yet).
  */
 import type { BaseFields } from "./BaseFields";
-import type { ServiceJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
+import type { ServiceJson } from "./wire.gen";
 
 export class Service implements BaseFields {
   readonly id!: string;
@@ -30,45 +33,27 @@ export class Service implements BaseFields {
   readonly kind: "service" = "service";
 
   readonly problem: string;
-  readonly target_side: "operator" | "user" | "both" | null;
-  readonly what: string;
   readonly value_created: string;
-  readonly scope: string;
-  readonly trigger: string;
-  readonly how: string;
-  readonly outcome: string;
-  readonly do: string;
-  readonly dont: string;
-  readonly body: string;
+  readonly ref_actor_ids: string[];
+  readonly ref_value_ids: string[];
+  readonly ref_identity_ids: string[];
 
   private constructor(
     base: BaseFields,
-    target_side: "operator" | "user" | "both" | null,
     typed: {
       problem: string;
-      what: string;
       value_created: string;
-      scope: string;
-      trigger: string;
-      how: string;
-      outcome: string;
-      doField: string;
-      dont: string;
-      body: string;
+      ref_actor_ids: string[];
+      ref_value_ids: string[];
+      ref_identity_ids: string[];
     },
   ) {
     Object.assign(this, base);
     this.problem = typed.problem;
-    this.target_side = target_side;
-    this.what = typed.what;
     this.value_created = typed.value_created;
-    this.scope = typed.scope;
-    this.trigger = typed.trigger;
-    this.how = typed.how;
-    this.outcome = typed.outcome;
-    this.do = typed.doField;
-    this.dont = typed.dont;
-    this.body = typed.body;
+    this.ref_actor_ids = typed.ref_actor_ids;
+    this.ref_value_ids = typed.ref_value_ids;
+    this.ref_identity_ids = typed.ref_identity_ids;
   }
 
   static fromJson(raw: unknown): Service {
@@ -80,17 +65,12 @@ export class Service implements BaseFields {
         raw,
       );
     }
-    return new Service(base, readTargetSide(obj.target_side, raw), {
+    return new Service(base, {
       problem: readOptionalString(obj.problem, "problem", raw),
-      what: readOptionalString(obj.what, "what", raw),
       value_created: readOptionalString(obj.value_created, "value_created", raw),
-      scope: readOptionalString(obj.scope, "scope", raw),
-      trigger: readOptionalString(obj.trigger, "trigger", raw),
-      how: readOptionalString(obj.how, "how", raw),
-      outcome: readOptionalString(obj.outcome, "outcome", raw),
-      doField: readOptionalString(obj.do, "do", raw),
-      dont: readOptionalString(obj.dont, "dont", raw),
-      body: readOptionalString(obj.body, "body", raw),
+      ref_actor_ids: readStringArray(obj.ref_actor_ids, "ref_actor_ids", raw),
+      ref_value_ids: readStringArray(obj.ref_value_ids, "ref_value_ids", raw),
+      ref_identity_ids: readStringArray(obj.ref_identity_ids, "ref_identity_ids", raw),
     });
   }
 
@@ -112,16 +92,10 @@ export class Service implements BaseFields {
       version: this.version,
       kind: "service",
       problem: this.problem,
-      target_side: this.target_side,
-      what: this.what,
       value_created: this.value_created,
-      scope: this.scope,
-      trigger: this.trigger,
-      how: this.how,
-      outcome: this.outcome,
-      do: this.do,
-      dont: this.dont,
-      body: this.body,
+      ref_actor_ids: this.ref_actor_ids,
+      ref_value_ids: this.ref_value_ids,
+      ref_identity_ids: this.ref_identity_ids,
     };
   }
 }
@@ -137,13 +111,15 @@ function readOptionalString(value: unknown, field: string, raw: unknown): string
   return value;
 }
 
-function readTargetSide(value: unknown, raw: unknown): "operator" | "user" | "both" | null {
-  if (value === undefined || value === null) return null;
-  if (value === "operator" || value === "user" || value === "both") return value;
-  throw new DomainParseError(
-    `Service.target_side must be "operator" / "user" / "both" / null; got ${JSON.stringify(value)}`,
-    raw,
-  );
+function readStringArray(value: unknown, field: string, raw: unknown): string[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.some((v) => typeof v !== "string")) {
+    throw new DomainParseError(
+      `Service.${field} must be an array of strings, got ${JSON.stringify(value)}`,
+      raw,
+    );
+  }
+  return value as string[];
 }
 
 registerKindParser("service", (raw) => Service.fromJson(raw) as never);

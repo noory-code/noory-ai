@@ -408,36 +408,47 @@ describe("Foundation refs (Mission/Value/Identity) round-trip", () => {
   });
 });
 
-describe("Service.fromJson + toJson round-trip", () => {
+describe("Service.fromJson + toJson round-trip (5-field model, D-2026-06-20-F)", () => {
   it("populates defaults", () => {
     const s = Service.fromJson({ id: "svc-1", kind: "service" });
     expect(s.kind).toBe("service");
-    expect(s.target_side).toBeNull();
-    expect(s.what).toBe("");
+    expect(s.problem).toBe("");
+    expect(s.value_created).toBe("");
+    expect(s.ref_actor_ids).toEqual([]);
+    expect(s.ref_value_ids).toEqual([]);
+    expect(s.ref_identity_ids).toEqual([]);
   });
 
-  it("preserves all 6 typed fields + do/dont and round-trips", () => {
+  it("preserves the 2 typed fields + 3 ref arrays and round-trips", () => {
     const a = Service.fromJson({
       id: "svc-1",
       kind: "service",
       label: "Sign-up",
-      target_side: "user",
-      what: "신규 가입",
-      value_created: "접근권",
-      scope: "이메일/패스워드",
-      trigger: "/signup 진입",
-      how: "이메일 + 비번",
-      outcome: "계정 생성",
-      do: "진행 표시",
-      dont: "불필요 필드 묻기",
+      problem: "가입이 너무 번거롭다",
+      value_created: "빠른 접근권",
+      ref_actor_ids: ["a1", "a2"],
+      ref_value_ids: ["cv1"],
+      ref_identity_ids: ["id1"],
     });
     const b = Service.fromJson(a.toJson());
     expect({ ...b }).toEqual({ ...a });
   });
 
-  it("rejects invalid target_side", () => {
+  it("drops legacy 9-field content (discard, no migration)", () => {
+    const s = Service.fromJson({
+      id: "x",
+      kind: "service",
+      target_side: "user",
+      what: "legacy",
+      scope: "legacy",
+    });
+    expect(s.toJson()).not.toHaveProperty("target_side");
+    expect(s.toJson()).not.toHaveProperty("what");
+  });
+
+  it("rejects a non-array ref field", () => {
     expect(() =>
-      Service.fromJson({ id: "x", kind: "service", target_side: "bot" }),
+      Service.fromJson({ id: "x", kind: "service", ref_actor_ids: "a1" }),
     ).toThrow(DomainParseError);
   });
 });

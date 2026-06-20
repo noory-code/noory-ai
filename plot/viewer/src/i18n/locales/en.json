@@ -202,6 +202,28 @@
     "category": "CATEGORY"
   },
   "inspector": {
+    "service": {
+      "q": {
+        "participants": "Who takes part?",
+        "participantsHint": "the actors who create / exchange value here",
+        "problem": "Why is it needed?",
+        "problemHint": "the gap / need this service answers",
+        "problemPlaceholder": "the problem or lack this service addresses",
+        "valueCreated": "What gets better?",
+        "valueCreatedHint": "the value this service creates",
+        "valueCreatedPlaceholder": "what improves for the participants",
+        "values": "What can't you give up?",
+        "valuesHint": "the core values this service must not violate",
+        "identities": "In what tone do you approach it?",
+        "identitiesHint": "the identities this service expresses"
+      }
+    },
+    "refChips": {
+      "empty": "none yet",
+      "add": "+ add…",
+      "remove": "remove",
+      "missing": "(missing)"
+    },
     "note": {
       "ambientHint": "Canvas-wide context — a guide you read AND context the AI always works under. A note never connects to anything (edgeless)."
     },

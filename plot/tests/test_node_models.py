@@ -72,15 +72,11 @@ def test_service_round_trip() -> None:
     n = ServiceNode(
         id="svc-1",
         label="Sign-up",
-        target_side="user",
-        what="onboard new users",
-        value_created="access",
-        scope="end-to-end onboarding",
-        trigger="user lands on /signup",
-        how="email + password",
-        outcome="account exists",
-        do="show progress",
-        dont="ask for irrelevant fields",
+        problem="가입이 너무 번거롭다",
+        value_created="빠른 접근권",
+        ref_actor_ids=["a1", "a2"],
+        ref_value_ids=["cv1"],
+        ref_identity_ids=["id1"],
     )
     assert ServiceNode.model_validate(n.model_dump()) == n
 
@@ -154,11 +150,16 @@ def test_actor_defaults_match_sketchnode_actor_defaults() -> None:
 
 
 def test_service_defaults_match_sketchnode_service_defaults() -> None:
+    """D-2026-06-20-F — 5-field model: problem + value_created (typed) +
+    3 ref-id arrays. The old 9 free-text fields are gone."""
     n = ServiceNode(id="svc-min", label="Service")
     dumped = n.model_dump()
-    for key in ("what", "value_created", "scope", "trigger", "how", "outcome", "do", "dont"):
-        assert dumped[key] == ""
-    assert dumped["target_side"] is None
+    assert dumped["problem"] == ""
+    assert dumped["value_created"] == ""
+    for key in ("ref_actor_ids", "ref_value_ids", "ref_identity_ids"):
+        assert dumped[key] == []
+    for gone in ("what", "scope", "trigger", "how", "outcome", "do", "dont", "target_side", "body"):
+        assert gone not in dumped
 
 
 def test_category_defaults_match_sketchnode_category_defaults() -> None:
