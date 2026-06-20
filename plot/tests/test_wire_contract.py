@@ -46,7 +46,7 @@ def test_contract_shape() -> None:
     c = wire_contract()
     assert c["schema_version"] >= 1
     assert "base_fields" in c and "id" in c["base_fields"]
-    assert len(c["kinds"]) == 16
+    assert len(c["kinds"]) == 17
     for kind, fields in c["kinds"].items():
         assert "kind" in fields, f"{kind} must carry its discriminator"
         assert fields == sorted(fields), f"{kind} fields must be sorted (stable diffs)"

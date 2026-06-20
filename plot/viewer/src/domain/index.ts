@@ -22,6 +22,7 @@ export type {
   ContentJson,
   CoreValueJson,
   DecisionJson,
+  FeatureJson,
   IdentityJson,
   IdentityRefJson,
   MetricJson,
@@ -52,6 +53,7 @@ export { ValueRef } from "./ValueRef";
 export { IdentityRef } from "./IdentityRef";
 export { Actor } from "./Actor";
 export { Service } from "./Service";
+export { Feature } from "./Feature";
 export { Rule } from "./Rule";
 export { Content } from "./Content";
 

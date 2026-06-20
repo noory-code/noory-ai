@@ -171,6 +171,7 @@
     "value_ref": "Core value (ref)",
     "identity_ref": "Identity (ref)",
     "service": "Service",
+    "feature": "Feature",
     "category": "Category",
     "metric": "Metric",
     "step": "Step",
@@ -200,6 +201,12 @@
     "category": "CATEGORY"
   },
   "inspector": {
+    "feature": {
+      "proposed": "What can you do here?",
+      "proposedHint": "one capability the service offers, in a line",
+      "proposedPlaceholder": "e.g. write a post / leave a comment / react with an emoji",
+      "drillHint": "Click to open this feature's UX flow (its Feature canvas)."
+    },
     "decision": {
       "branchHint": "Branches live on the outgoing edges — draw a labelled edge per path (성공 / 실패 / choice)."
     },
@@ -366,6 +373,7 @@
       "topLevel": "Top-level",
       "actorHierarchy": "Actor hierarchy",
       "service": "Service",
+      "feature": "Feature",
       "composition": "Composition",
       "interactions": "Interactions",
       "values": "Values",
@@ -376,6 +384,7 @@
     "note": {
       "dropOnActor": "drop on an Actor",
       "dropInsideCategory": "drop inside a Category",
+      "dropInsideService": "drop inside a Service (it becomes a drill target)",
       "compositionInsideService": "metrics + steps inside this service",
       "interactionsBetweenActors": "drop an interaction (contact point between actors)",
       "valuesExchanged": "drop a value exchanged via interactions",

@@ -14,6 +14,7 @@ import { Category } from "./Category";
 import { Content } from "./Content";
 import { CoreValue } from "./CoreValue";
 import { Decision } from "./Decision";
+import { Feature } from "./Feature";
 import { Identity } from "./Identity";
 import { IdentityRef } from "./IdentityRef";
 import { Metric } from "./Metric";
@@ -79,6 +80,8 @@ export function createBlankNode(
       return ActorRef.fromJson(raw).toJson();
     case "service":
       return Service.fromJson(raw).toJson();
+    case "feature":
+      return Feature.fromJson(raw).toJson();
     case "category":
       return Category.fromJson(raw).toJson();
     case "mission_ref":

@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.89.0] — 2026-06-20
+
+### Added
+
+- **`feature` kind** (Chunk 2.2, D-2026-06-20-D, implementing D-2026-06-17-D /
+  D-2026-06-19-H). A capability the service offers (글쓰기 / 편집) — a behaviour
+  grouping under a service, the **sole drill target**, not an independent value
+  unit. Field `proposed` (one-line "무엇을 할 수 있나?"). Full lock-step:
+  Pydantic `FeatureNode` + generated `FeatureJson` + viewer `Feature` class /
+  renderer / inspector / registries / i18n (en+ko) / a "Feature" stencil preset
+  that nests under a service (directed edge service→feature) + the drop-target
+  resolver + structural / round-trip / registry guards. Palette = 17 kinds. The
+  drill rewire (service→feature) + the `service_detail`→Feature-canvas rename
+  ship separately (Chunk 2.7).
+
 ## [0.88.0] — 2026-06-20
 
 ### Removed

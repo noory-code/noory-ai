@@ -78,6 +78,11 @@ export interface ServiceJson extends BaseFieldsJson {
   body: string;
 }
 
+export interface FeatureJson extends BaseFieldsJson {
+  kind: "feature";
+  proposed: string;
+}
+
 export interface CategoryJson extends BaseFieldsJson {
   kind: "category";
   theme: string;

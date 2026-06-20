@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-20-D — `feature` kind added (capability under a service; the sole drill target)
+
+- **What:** New `feature` node kind (implements `D-2026-06-17-D` / `D-2026-06-19-H`). A feature is a **capability the service offers** (글쓰기 / 편집) — a behaviour grouping under a service, **not** an independent value unit (value exchange is a property of the *service*; a feature that grows its own multi-actor exchange is promoted to a service). It is the **sole drill target**. Field: `proposed` — the one-line "무엇을 할 수 있나?" summary. Nests under a service via a directed edge (service→feature), placed from the services stencil. Full lock-step: Pydantic `FeatureNode` + generated `FeatureJson` + viewer `Feature` class / renderer / inspector / registries / i18n / stencil preset + drop-into-service resolver + guards (palette = 17 kinds).
+- **Why:** The services-overview redesign pivots on `feature` as the drill target: selecting a service opens its 5-field inspector (never drills), while the behaviour flow belongs to a *capability*. A feature is the right altitude for that flow — fine enough to drill into, coarse enough to stay above implementation. Anchored to VISION: the feature/service split keeps "value = service property" honest.
+- **Alternatives:** (a) keep `service` as the drill target — rejected (`D-2026-06-17-D`: a service shows its inspector, never drills). (b) `feature` = independent value unit (own actors/value) — rejected (`D-2026-06-19-H`: then it is indistinguishable from a service; the promotion test becomes meaningless).
+- **Approval:** Accepted by user via the approved Chunk-2 plan (implements the pinned `D-2026-06-17-D` / `D-2026-06-19-H`).
+- **Spec impact:** Palette + `feature` (17 kinds). `concepts/kinds.md` / `specs/kinds-fields.md` already define it. Allowed on the `services` canvas. The **drill rewire** (service→feature) + the **`service_detail`→Feature canvas rename** are a separate step (Chunk 2.7).
+
 ### D-2026-06-20-C — `group` kind retired (folding = a future view affordance, not a node kind); retired-kind drop-on-read added
 
 - **What:** The `group` node kind is **retired** from the palette (server + viewer), implementing `D-2026-06-19-H`. Its chunking role moves to the **feature** level; folding a busy flow becomes a **view affordance** (deferred to ROADMAP), not a node kind. Removed: `GroupNode` (Pydantic) + the viewer `Group` class / node / inspector / registries / i18n + the group-folding feature (`groupActions` / `groupCollapse`, the Group/Ungroup context menu, the group-membership fold path in `useNodesMemo`). Added a general **retired-kind drop-on-read** migration (`canvas_io._drop_retired_kinds` + `RETIRED_KINDS`): a node of a retired kind (and any edge incident to it) is stripped when an older `canvas.json` is read, so pre-retirement projects keep loading — loss-free (only the group container goes, never its member step/decision nodes).

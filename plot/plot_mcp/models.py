@@ -42,6 +42,9 @@ from plot_mcp.models_actors import (
     CategoryNode as CategoryNode,
 )
 from plot_mcp.models_actors import (
+    FeatureNode as FeatureNode,
+)
+from plot_mcp.models_actors import (
     IdentityRefNode as IdentityRefNode,
 )
 from plot_mcp.models_actors import (

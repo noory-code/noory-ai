@@ -77,6 +77,21 @@ class ServiceNode(BaseNodeFields):
     body: str = ""
 
 
+class FeatureNode(BaseNodeFields):
+    """``feature`` kind (D-2026-06-17-D / D-2026-06-19-H). A capability the
+    service offers (글쓰기 / 편집) — a **behaviour grouping under a service**,
+    NOT an independent value unit (value exchange is a property of the
+    *service*; a feature that grows its own multi-actor exchange is promoted
+    to a service). The **sole drill target**: clicking a feature opens its
+    Feature canvas (a UX flowchart). Nested under a service via a directed
+    edge (the same child mechanism category→service uses).
+
+    ``proposed`` = the one-line "무엇을 할 수 있나?" capability summary."""
+
+    kind: Literal["feature"] = "feature"
+    proposed: str = ""
+
+
 class CategoryNode(BaseNodeFields):
     """v0.15 Phase 1: ``category`` kind. Thematic grouping of services on
     the Services canvas; a pure container with no value creation of its

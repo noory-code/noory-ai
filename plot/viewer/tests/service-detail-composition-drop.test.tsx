@@ -71,6 +71,20 @@ describe("resolveDropTarget — ServiceDetail composition is free-form (D-2026-0
     ).toEqual({ parentId: "n_cat" });
   });
 
+  it("Services canvas: a feature nests under a service when dropped on one, else top-level (D-2026-06-17-D)", () => {
+    const preset = findPreset("feature-in-service");
+    // Empty space → top-level (optional nesting).
+    expect(resolveDropTarget(preset, null, "services")).toEqual({ parentId: null });
+    // Dropped on a non-service container → top-level.
+    expect(
+      resolveDropTarget(preset, { id: "n_cat", kind: "category" }, "services"),
+    ).toEqual({ parentId: null });
+    // Dropped on a service → nests under it (directed edge service→feature).
+    expect(
+      resolveDropTarget(preset, { id: "n_svc", kind: "service" }, "services"),
+    ).toEqual({ parentId: "n_svc" });
+  });
+
   it("Actors canvas: sub-actor still requires an Actor parent (unchanged)", () => {
     const preset = findPreset("sub-actor");
     const onEmpty = resolveDropTarget(preset, null, "actors");

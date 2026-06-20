@@ -65,6 +65,23 @@ const SERVICE_INSIDE_CATEGORY: StencilPreset = {
   dropHintI18nKey: "stencil.dropHintIntoCategory",
 };
 
+// D-2026-06-17-D — a ``feature`` is a capability nested under a service (the
+// sole drill target). Lighter tint than a service; drops inside a Service.
+const FEATURE_INSIDE_SERVICE: StencilPreset = {
+  id: "feature-in-service",
+  labelHint: "Feature",
+  labelI18nKey: "kind.feature",
+  shape: "rectangle",
+  color: "#e0f2fe",
+  width: 150,
+  height: 64,
+  icon: null,
+  label: "Feature",
+  kind: "feature",
+  dropHint: "Drop inside a Service",
+  dropHintI18nKey: "stencil.dropHintIntoService",
+};
+
 // Core-canvas presets. The Project anchor at the centre is auto-seeded,
 // not draggable — mission / core_value / identity are the user-placed
 // pillars. In v0.5 Identity is flat N peers (one per aspect: Voice /
@@ -257,6 +274,7 @@ export const STENCIL_PRESETS: StencilPreset[] = [
   TOP_LEVEL_ACTOR,
   TOP_LEVEL_CATEGORY,
   SERVICE_INSIDE_CATEGORY,
+  FEATURE_INSIDE_SERVICE,
   ...SERVICE_COMPOSITION,
   ...ACTOR_INTERNAL,
   CORE_MISSION,
@@ -298,6 +316,9 @@ export function resolveDropTarget(
   // v0.12: a service preset on the Services canvas drops *inside a
   // category* (services are leaves nested under a category).
   const isServiceInsideCategory = preset.id === "service-in-category";
+  // D-2026-06-17-D — a feature nests under a service (the drill target lives
+  // one level below its service).
+  const isFeatureInsideService = preset.id === "feature-in-service";
 
   if (isComposition) {
     // D-2026-05-28-A: ServiceDetail is a user-authored interaction
@@ -320,6 +341,13 @@ export function resolveDropTarget(
     // Supersedes the D-2026-05-28-A "service must nest in a Category" rule.
     return {
       parentId: containerAtDrop?.kind === "category" ? containerAtDrop.id : null,
+    };
+  }
+  if (isFeatureInsideService) {
+    // D-2026-06-17-D — a feature dropped onto a service nests under it
+    // (directed edge service→feature); dropped elsewhere it lands top-level.
+    return {
+      parentId: containerAtDrop?.kind === "service" ? containerAtDrop.id : null,
     };
   }
   if (isSubActor) {
@@ -458,6 +486,11 @@ export function SketchStencil({
           title={t("stencil.section.service")}
           presets={[SERVICE_INSIDE_CATEGORY]}
           note={t("stencil.note.dropInsideCategory")}
+        />
+        <Section
+          title={t("stencil.section.feature")}
+          presets={[FEATURE_INSIDE_SERVICE]}
+          note={t("stencil.note.dropInsideService")}
         />
       </div>
     );

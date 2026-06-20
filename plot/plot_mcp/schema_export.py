@@ -40,6 +40,7 @@ from plot_mcp.models import (
     ContentNode,
     CoreValueNode,
     DecisionNode,
+    FeatureNode,
     IdentityNode,
     IdentityRefNode,
     MetricNode,
@@ -88,6 +89,8 @@ _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     "actor": ActorNode,
     "actor_ref": ActorRefNode,
     "service": ServiceNode,
+    # feature — capability under a service; the sole drill target
+    "feature": FeatureNode,
     # Grouping (1)
     "category": CategoryNode,
     # Foundation refs (3)

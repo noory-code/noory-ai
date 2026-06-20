@@ -142,6 +142,25 @@
       "x",
       "y"
     ],
+    "feature": [
+      "collapsed",
+      "color",
+      "details_path",
+      "height",
+      "icon",
+      "id",
+      "is_root",
+      "kind",
+      "label",
+      "owner",
+      "proposed",
+      "publish_baseline",
+      "shape",
+      "version",
+      "width",
+      "x",
+      "y"
+    ],
     "identity": [
       "body",
       "collapsed",

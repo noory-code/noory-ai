@@ -171,6 +171,7 @@
     "value_ref": "코어밸류 (참조)",
     "identity_ref": "아이덴티티 (참조)",
     "service": "서비스",
+    "feature": "기능",
     "category": "카테고리",
     "metric": "지표",
     "step": "단계",
@@ -200,6 +201,12 @@
     "category": "카테고리"
   },
   "inspector": {
+    "feature": {
+      "proposed": "여기서 무엇을 할 수 있나요?",
+      "proposedHint": "이 서비스가 제공하는 능력 한 줄",
+      "proposedPlaceholder": "예: 글 쓰기 / 댓글 달기 / 이모지 반응",
+      "drillHint": "클릭하면 이 기능의 UX 흐름(Feature 캔버스)이 열립니다."
+    },
     "decision": {
       "branchHint": "분기는 나가는 선에 표현됩니다 — 경로마다 라벨 단 선을 그으세요 (성공 / 실패 / 선택지)."
     },
@@ -366,6 +373,7 @@
       "topLevel": "최상위",
       "actorHierarchy": "액터 계층",
       "service": "서비스",
+      "feature": "기능",
       "composition": "구성 요소",
       "interactions": "인터랙션",
       "values": "가치",
@@ -376,6 +384,7 @@
     "note": {
       "dropOnActor": "액터 위에 놓으세요",
       "dropInsideCategory": "카테고리 안에 놓으세요",
+      "dropInsideService": "서비스 안에 놓으세요 (드릴 타겟이 됩니다)",
       "compositionInsideService": "이 서비스 안의 지표 + 단계",
       "interactionsBetweenActors": "액터 사이의 접점을 끌어 놓으세요",
       "valuesExchanged": "인터랙션에서 교환되는 가치를 끌어 놓으세요",

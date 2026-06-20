@@ -48,8 +48,10 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     #   - category (thematic grouping)
     #   - service (leaf, child of a category via parent_id)
     # Categories sit at the top level; services are nested inside them.
-    # All sub-service / refs / composition still live in service_detail.
-    "services": {"project", "category", "service"},
+    # D-2026-06-17-D — a ``feature`` (capability) nests under a service via a
+    # directed edge; it is the sole drill target. All sub-service / refs /
+    # composition still live in service_detail.
+    "services": {"project", "category", "service", "feature"},
     "service_detail": {
         "service",
         "rule",

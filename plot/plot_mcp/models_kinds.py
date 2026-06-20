@@ -60,6 +60,10 @@ NodeKind = Literal[
     "actor",
     "actor_ref",
     "service",
+    # feature — a capability the service offers (D-2026-06-17-D /
+    #   D-2026-06-19-H). Behaviour grouping under a service; the sole drill
+    #   target (opens its Feature canvas). NOT an independent value unit.
+    "feature",
     "rule",
     "content",
     # v0.10 Step 3: Foundation symbol refs (Symbol/Component pattern). The

@@ -22,6 +22,7 @@ import { CategoryNode } from "./category";
 import { ContentNode } from "./content";
 import { CoreValueNode } from "./core_value";
 import { DecisionNode } from "./decision";
+import { FeatureNode } from "./feature";
 import { IdentityNode } from "./identity";
 import { IdentityRefNode } from "./identity_ref";
 import { MetricNode } from "./metric";
@@ -45,6 +46,7 @@ export const NODE_RENDERERS: Record<NodeKind, NodeRendererComponent> = {
   actor: ActorNode,
   actor_ref: ActorRefNode,
   service: ServiceNode,
+  feature: FeatureNode,
   category: CategoryNode,
   mission_ref: MissionRefNode,
   value_ref: ValueRefNode,

@@ -34,6 +34,7 @@ const NODE_KINDS = [
   "actor",
   "actor_ref",
   "service",
+  "feature",
   "rule",
   "content",
   "mission_ref",
