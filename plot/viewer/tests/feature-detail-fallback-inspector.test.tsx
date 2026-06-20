@@ -1,5 +1,5 @@
 /**
- * ServiceDetail right-panel = Option 1 (D-2026-06-15-O).
+ * FeatureDetail right-panel = Option 1 (D-2026-06-15-O).
  *
  *   ① detail tab default = the subject service's READ-ONLY inspector
  *      (cross-doc — read from the Services canvas; problem-centric).
@@ -8,14 +8,14 @@
  *
  * The seam: ``SketchInspectorBindings`` renders ``fallbackInspector`` in
  * place of the empty panel (its old ``return null``) when no node is
- * selected (or the selected node vanished). ``ServiceDetailInspectorHost``
+ * selected (or the selected node vanished). ``FeatureDetailInspectorHost``
  * builds the read-only service ``KindInspector`` from the Services canvas.
  */
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SketchInspectorBindings } from "../src/canvases/sketch/SketchInspectorBindings";
-import { ServiceDetailInspectorHost } from "../src/canvases/inspectors/ServiceDetailInspectorHost";
+import { FeatureDetailInspectorHost } from "../src/canvases/inspectors/FeatureDetailInspectorHost";
 import type { CanvasDoc, SketchNode } from "../src/types";
 
 interface MakeNodeOverrides extends Partial<SketchNode> {
@@ -80,8 +80,8 @@ function makeNode(overrides: MakeNodeOverrides): SketchNode {
 
 function bindingsProps(over: Record<string, unknown> = {}) {
   const doc = {
-    canvas_kind: "service_detail",
-    service_ref: "svc-1",
+    canvas_kind: "feature",
+    feature_ref: "svc-1",
     nodes: [] as SketchNode[],
     edges: [],
   } as unknown as CanvasDoc;
@@ -119,8 +119,8 @@ describe("SketchInspectorBindings fallbackInspector (D-2026-06-15-O)", () => {
   it("renders the selected node's inspector — NOT the fallback", () => {
     const node = makeNode({ kind: "step", id: "m1", label: "Latency" });
     const doc = {
-      canvas_kind: "service_detail",
-      service_ref: "svc-1",
+      canvas_kind: "feature",
+      feature_ref: "svc-1",
       nodes: [node],
       edges: [],
     } as unknown as CanvasDoc;
@@ -151,7 +151,7 @@ describe("SketchInspectorBindings fallbackInspector (D-2026-06-15-O)", () => {
   });
 });
 
-describe("ServiceDetailInspectorHost (D-2026-06-15-O)", () => {
+describe("FeatureDetailInspectorHost (D-2026-06-15-O)", () => {
   const svc = makeNode({
     kind: "service",
     id: "svc-1",
@@ -167,7 +167,7 @@ describe("ServiceDetailInspectorHost (D-2026-06-15-O)", () => {
 
   it("renders the subject service read-only (label not editable, problem shown, no edit controls)", () => {
     render(
-      <ServiceDetailInspectorHost
+      <FeatureDetailInspectorHost
         serviceId="svc-1"
         servicesCanvas={servicesCanvas}
         projectPath="/tmp/p"
@@ -185,7 +185,7 @@ describe("ServiceDetailInspectorHost (D-2026-06-15-O)", () => {
 
   it("renders nothing when the service is missing (deleted / unknown id)", () => {
     const { container } = render(
-      <ServiceDetailInspectorHost
+      <FeatureDetailInspectorHost
         serviceId="ghost"
         servicesCanvas={servicesCanvas}
         projectPath="/tmp/p"

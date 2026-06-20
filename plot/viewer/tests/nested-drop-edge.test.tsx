@@ -26,7 +26,7 @@ describe("nested drop edge (D-2026-06-13-E)", () => {
     const doc: CanvasDoc = {
       canvas_id: "services",
       canvas_kind: "services",
-      service_ref: null,
+      feature_ref: null,
       nodes: [parent],
       edges: [],
     };

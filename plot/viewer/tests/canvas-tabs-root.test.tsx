@@ -24,8 +24,8 @@ describe("CanvasTabs project name (D-2026-05-31-Q)", () => {
   });
 });
 
-describe("CanvasTabs — dynamic service-detail tab (D-2026-06-15-H)", () => {
-  it("appends the {ServiceDetail} tab (by service name) and closes it", async () => {
+describe("CanvasTabs — dynamic feature tab (D-2026-06-15-H)", () => {
+  it("appends the {FeatureDetail} tab (by service name) and closes it", async () => {
     const user = userEvent.setup();
     const onSelectDetail = vi.fn();
     const onCloseDetail = vi.fn();
@@ -36,7 +36,7 @@ describe("CanvasTabs — dynamic service-detail tab (D-2026-06-15-H)", () => {
         blueprintVersion="v0.1.0"
         onPublishBlueprint={vi.fn()}
         projectName="Banas"
-        detailServiceId="svc_1"
+        detailFeatureId="svc_1"
         detailLabel="Login service"
         detailActive
         onSelectDetail={onSelectDetail}

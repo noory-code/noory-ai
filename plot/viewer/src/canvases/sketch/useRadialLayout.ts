@@ -6,7 +6,7 @@
 // Hub selection:
 //   - If ``projectAnchor`` is set (Services canvas), use the synthetic
 //     anchor as the hub (PROJECT_ANCHOR_ID).
-//   - Otherwise (ServiceDetail), pick the canvas's root-service node
+//   - Otherwise (FeatureDetail), pick the canvas's root-service node
 //     (kind === "service" && is_root === true). It is hidden from the
 //     viewport via ``hideRootServiceNode`` but still exists in
 //     ``doc.nodes`` and provides a stable layout origin.

@@ -122,7 +122,7 @@ def test_project_get_returns_details_and_tags(
     assert resp.status_code == 200
     body = resp.json()
     assert body["id"] == "alpha"
-    assert body["service_details"] == []
+    assert body["feature_details"] == []
     assert body["tags"] == []
 
 
@@ -452,11 +452,11 @@ def test_canvas_put_overview_auto_creates_detail(
     assert resp.status_code == 200
     assert resp.json()["sync"]["created"] == ["order"]
     detail = client.get(
-        "/api/projects/alpha/canvases/service_detail",
+        "/api/projects/alpha/canvases/feature",
         params={"project_path": project_path, "service_id": "order"},
     )
     assert detail.status_code == 200
-    assert detail.json()["service_ref"] == "order"
+    assert detail.json()["feature_ref"] == "order"
 
 
 def test_canvas_get_unknown_kind_is_400(

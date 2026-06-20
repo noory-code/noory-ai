@@ -174,7 +174,7 @@ describe("computeRadialLayout — ring assignment", () => {
   });
 
   it("works when the hub also appears in nodes (hidden root-service case)", () => {
-    // ServiceDetail's hub is the hidden root-service node, which lives
+    // FeatureDetail's hub is the hidden root-service node, which lives
     // inside ``doc.nodes``. The algorithm must still skip it.
     const hub: RadialLayoutHub = {
       id: "svc-root",
@@ -317,7 +317,7 @@ describe("computeRadialLayout — angleMode 'preserve'", () => {
 
   it("default angleMode (distribute) is unchanged — single neighbour still snaps to the top", () => {
     // Regression guard: omitting angleMode must keep the Services /
-    // ServiceDetail behaviour byte-identical.
+    // FeatureDetail behaviour byte-identical.
     const { positions } = computeRadialLayout({
       nodes: [mkNode("a", 500, 500)],
       edges: [mkEdge("e1", "__hub__", "a")],

@@ -134,7 +134,7 @@ const WRAPPER_FILES = [
   "canvases/FoundationCanvas.tsx",
   "canvases/ActorsCanvas.tsx",
   "canvases/ServicesCanvas.tsx",
-  "canvases/ServiceDetailCanvas.tsx",
+  "canvases/FeatureDetailCanvas.tsx",
 ] as const;
 
 const SHARED_SHELL_FILES = [

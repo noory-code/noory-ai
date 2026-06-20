@@ -52,7 +52,7 @@ def _read_scope(body: dict[str, Any]) -> str | None:
     Missing → the shared ``project`` bucket (Postel, Q1). Present but not a
     well-formed scope → ``None`` to signal the caller should 400 (Fail Fast on
     a typo before it silently creates an unreachable session). A valid scope is
-    a base member or a parametric ``service_detail:<id>`` (Layer 1,
+    a base member or a parametric ``feature:<id>`` (Layer 1,
     D-2026-06-15-B), returned verbatim as the session key.
     """
     raw = body.get("scope")

@@ -4,6 +4,33 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.96.0] — 2026-06-20
+
+### Changed
+
+- **Wire-string rename `service_detail` → `feature`** (Chunk 2.7 finish,
+  D-2026-06-20-J). Completes the rename the v0.95.0 drill rewire deferred. Pure
+  rename, no behavioural change. Renamed everywhere across engine + viewer
+  (112+ files, zero leftovers):
+  - `canvas_kind` value `service_detail` → `feature` (Python `CanvasKind`
+    Literal + TS `CanvasKind`).
+  - Scope / cache key prefix `service_detail:` → `feature:` (`ChatScope`,
+    `CanvasKey`; Python ↔ TS parity green).
+  - CanvasDoc field `service_ref` → `feature_ref`; helper
+    `list_service_details` → `list_feature_details`.
+  - Viewer `detailServiceId` → `detailFeatureId`, `drillIntoService` →
+    `drillIntoFeature`.
+  - i18n keys `serviceDetail` → `featureDetail`,
+    `canvas.tabs.service_detail` → `canvas.tabs.feature` (en + ko symmetric).
+  - Components `ServiceDetail{Canvas,Modal,InspectorHost,StencilPanel}` →
+    `FeatureDetail*` (files renamed via `git mv`).
+
+### Notes
+
+- The on-disk storage path `services/{id}/detail.json` is unchanged (it never
+  contained the `service_detail` string), so no data migration. The `?detail=`
+  URL param and the `service` kind / `services` overview are untouched.
+
 ## [0.95.0] — 2026-06-20
 
 ### Changed

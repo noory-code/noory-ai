@@ -1,6 +1,6 @@
 /**
  * Per-kind inspector for ``decision`` nodes (flowchart decision /
- * branch point inside a service_detail canvas). v0.28.0
+ * branch point inside a feature canvas). v0.28.0
  * (D-2026-05-30-C).
  *
  * A decision carries only the question (``label``, edited via the

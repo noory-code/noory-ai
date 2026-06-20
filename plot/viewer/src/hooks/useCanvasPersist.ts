@@ -17,8 +17,8 @@ export interface UseCanvasPersistArgs {
   setCanvasCache: React.Dispatch<
     React.SetStateAction<Map<CanvasKey, CanvasDoc>>
   >;
-  /** Track which service-detail canvases the server says exist right now. */
-  setServiceDetails: React.Dispatch<React.SetStateAction<string[]>>;
+  /** Track which feature canvases the server says exist right now. */
+  setFeatureDetails: React.Dispatch<React.SetStateAction<string[]>>;
   /** After a successful PUT the sidebar's ``updated`` stamp changes. */
   onListStale: () => void;
   onError: (err: string) => void;
@@ -49,7 +49,7 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
     activeId,
     history,
     setCanvasCache,
-    setServiceDetails,
+    setFeatureDetails,
     onListStale,
     onError,
   } = args;
@@ -130,7 +130,7 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
             }
             // Reconcile Overview ↔ Detail sync the server reports.
             if (res.sync.created.length || res.sync.archived.length) {
-              setServiceDetails((prev) => {
+              setFeatureDetails((prev) => {
                 const s = new Set(prev);
                 for (const n of res.sync.created) s.add(n);
                 for (const n of res.sync.archived) s.delete(n);
@@ -140,10 +140,10 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
                 void (async () => {
                   for (const sid of res.sync.created) {
                     try {
-                      const d = await getCanvas(pp, pid, "service_detail", sid);
+                      const d = await getCanvas(pp, pid, "feature", sid);
                       setCanvasCache((prev) => {
                         const next = new Map(prev);
-                        next.set(`service_detail:${sid}`, d);
+                        next.set(`feature:${sid}`, d);
                         return next;
                       });
                     } catch {
@@ -156,7 +156,7 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
                 setCanvasCache((prev) => {
                   const next = new Map(prev);
                   for (const sid of res.sync.archived) {
-                    next.delete(`service_detail:${sid}`);
+                    next.delete(`feature:${sid}`);
                   }
                   return next;
                 });
@@ -179,7 +179,7 @@ export function useCanvasPersist(args: UseCanvasPersistArgs): UseCanvasPersistAp
           });
       }, DEBOUNCE_MS);
     },
-    [setCanvasCache, setServiceDetails],
+    [setCanvasCache, setFeatureDetails],
   );
 
   const applyEdit = useCallback(

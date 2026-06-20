@@ -1,7 +1,7 @@
 """Composition-kind node classes (D-2026-06-11-B).
 
 Extracted from the models.py god module. Composition kinds live inside
-``service_detail`` canvases — metric / step / decision / group / rule /
+``feature`` canvases — metric / step / decision / group / rule /
 content. Each captures one slice of how a service is realised.
 """
 
@@ -32,7 +32,7 @@ class StepNode(BaseNodeFields):
 
 class DecisionNode(BaseNodeFields):
     """v0.28.0 (D-2026-05-30-C): ``decision`` kind. A flowchart decision
-    (diamond) branch point inside a service_detail flow — a user choice
+    (diamond) branch point inside a feature flow — a user choice
     (방식 선택) or a system judgment (검증 성공/실패). The branches are
     user-drawn labelled outgoing edges; the node carries only the
     question (``label``) + optional notes (``body``)."""

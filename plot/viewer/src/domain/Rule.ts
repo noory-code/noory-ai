@@ -1,6 +1,6 @@
 /**
  * v0.15 Phase 2.9 — ``rule`` composition entity. Lives inside a
- * service_detail canvas as a child of a service. Carries policy +
+ * feature canvas as a child of a service. Carries policy +
  * enforcement + an actor-id → permission-string map (e.g. RUD/CRUD).
  */
 import type { BaseFields } from "./BaseFields";

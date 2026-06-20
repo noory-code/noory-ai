@@ -24,7 +24,7 @@ function historyStub(): ProjectHistoryApi {
 }
 
 function proj(id: string, name = id) {
-  return { id, name, service_details: [], tags: [], blueprint_version: "v0.1.0" };
+  return { id, name, feature_details: [], tags: [], blueprint_version: "v0.1.0" };
 }
 
 beforeEach(() => {

@@ -25,10 +25,10 @@ _CASES = [
     ("foundation", "identity", "injection"),
     # (mission_ref / value_ref / identity_ref retired 2026-06-20 — D-2026-06-20-G)
     # actor_ref (the subject) is flow, not injection
-    ("service_detail", "actor_ref", "flow"),
+    ("feature", "actor_ref", "flow"),
     # step / decision / service / category -> flow
-    ("service_detail", "step", "flow"),
-    ("service_detail", "decision", "flow"),
+    ("feature", "step", "flow"),
+    ("feature", "decision", "flow"),
     ("services", "service", "flow"),
     ("services", "category", "flow"),
     # unknown / None sources -> flow

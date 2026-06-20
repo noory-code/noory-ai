@@ -60,7 +60,7 @@ export interface UseProjectApi {
   setCanvasCache: React.Dispatch<
     React.SetStateAction<Map<CanvasKey, CanvasDoc>>
   >;
-  setServiceDetails: React.Dispatch<React.SetStateAction<string[]>>;
+  setFeatureDetails: React.Dispatch<React.SetStateAction<string[]>>;
   setTags: React.Dispatch<React.SetStateAction<ProjectTag[]>>;
   // actions
   loadList: () => Promise<ProjectDoc[] | null>;
@@ -98,7 +98,7 @@ export interface UseProjectApi {
  *  per [path, id] (D-2026-06-08-A, step 6). */
 interface CanvasesData {
   canvases: Map<CanvasKey, CanvasDoc>;
-  /** Full project read (includes ``tags`` + ``service_details``, which the
+  /** Full project read (includes ``tags`` + ``feature_details``, which the
    *  ``ProjectDoc`` summary type omits). */
   project: Awaited<ReturnType<typeof getProject>>;
 }
@@ -141,7 +141,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
   const dirMapRef = useRef<Map<string, string>>(new Map());
   const [migratedToast, setMigratedToast] = useState<string[] | null>(null);
   const [tags, setTags] = useState<ProjectTag[]>([]);
-  const [, setServiceDetails] = useState<string[]>([]);
+  const [, setFeatureDetails] = useState<string[]>([]);
   const [activeId, _setActiveId] = useState<string | null>(initialActiveId ?? null);
   const [phase, setPhase] = useState<ProjectPhase>("loading");
 
@@ -176,7 +176,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
   // --- canvas cache as a TanStack Query (step 6) ------------------------
   // Keyed on the effective path + id; switching project changes the key and
   // loads that project's canvases. The query fetches the project metadata
-  // (for service_details) + all canvases together.
+  // (for feature_details) + all canvases together.
   const canvasesQuery = useQuery<CanvasesData>({
     queryKey: canvasesQueryKey(activeProjectPath, activeId),
     enabled: !!activeProjectPath && !!activeId,
@@ -185,7 +185,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
       const path = activeProjectPath as string;
       const id = activeId as string;
       const project = await getProject(path, id);
-      const canvases = await getAllCanvases(path, id, project.service_details);
+      const canvases = await getAllCanvases(path, id, project.feature_details);
       return { canvases, project };
     },
   });
@@ -221,7 +221,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
 
   // Sync the open project's metadata + reset undo ONLY when the project
   // identity changes (a switch / fresh load) — not on every canvas edit
-  // (those keep the same project, so optimistic setTags / setServiceDetails
+  // (those keep the same project, so optimistic setTags / setFeatureDetails
   // are not clobbered). Mirrors the old ``openProject`` side effects.
   const syncedProjectRef = useRef<string | null>(null);
   useEffect(() => {
@@ -229,7 +229,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     if (data && syncedProjectRef.current !== data.project.id) {
       syncedProjectRef.current = data.project.id;
       setTags(data.project.tags);
-      setServiceDetails(data.project.service_details);
+      setFeatureDetails(data.project.feature_details);
       history.init();
     }
   }, [canvasesQuery.data, history]);
@@ -462,7 +462,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         // Inspector reflects the bumped version + the new MD file on
         // disk is visible to subsequent reads.
         const proj = await getProject(path, activeId);
-        const refreshed = await getAllCanvases(path, activeId, proj.service_details);
+        const refreshed = await getAllCanvases(path, activeId, proj.feature_details);
         setCanvasCache(refreshed);
       } catch (err) {
         onError(err instanceof Error ? err.message : String(err));
@@ -484,7 +484,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
         );
         if (done === null) return;
         const proj = await getProject(path, activeId);
-        const refreshed = await getAllCanvases(path, activeId, proj.service_details);
+        const refreshed = await getAllCanvases(path, activeId, proj.feature_details);
         setCanvasCache(refreshed);
       } catch (err) {
         onError(err instanceof Error ? err.message : String(err));
@@ -524,7 +524,7 @@ export function useProject(args: UseProjectArgs): UseProjectApi {
     migratedToast,
     phase,
     setCanvasCache,
-    setServiceDetails,
+    setFeatureDetails,
     setTags,
     loadList,
     openProject,

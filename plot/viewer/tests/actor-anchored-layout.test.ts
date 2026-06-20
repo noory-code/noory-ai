@@ -1,6 +1,6 @@
 // D-2026-05-28-J (auto-layout responsibility) + D-2026-05-28-G follow-up.
 //
-// Actor-anchored layout: when a ServiceDetail canvas has a user-side
+// Actor-anchored layout: when a FeatureDetail canvas has a user-side
 // ``actor_ref`` wired to an entry step (the "subject edge"), the layout
 // algorithm must:
 //
@@ -72,8 +72,8 @@ function valueRef(id: string, x: number, y: number): SketchNode {
 
 function doc(nodes: SketchNode[], edges: SketchEdge[]): CanvasDoc {
   return {
-    canvas_id: "test", canvas_kind: "service_detail",
-    service_ref: null, nodes, edges,
+    canvas_id: "test", canvas_kind: "feature",
+    feature_ref: null, nodes, edges,
   } as CanvasDoc;
 }
 

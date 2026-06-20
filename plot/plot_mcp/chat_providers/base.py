@@ -22,9 +22,9 @@ ChatStreamEventType = Literal["turn_start", "delta", "turn_complete", "error"]
 
 # Conversation scope (D-2026-06-13-H, Layer 1 per-instance refinement
 # D-2026-06-15-B). Chat threads are partitioned per canvas kind plus one
-# shared ``project`` scope for cross-canvas work. ``service_detail`` is the
+# shared ``project`` scope for cross-canvas work. ``feature`` is the
 # one *parametric* member: on the wire it carries the service instance id as
-# ``service_detail:<id>`` so each service-detail canvas gets its own thread.
+# ``feature:<id>`` so each feature canvas gets its own thread.
 # This ``ChatScope`` literal is the **base** member set (the parity SSOT vs
 # the TS ``CanvasKind ∪ {project}``); the full wire value is a plain ``str``
 # validated by :func:`is_valid_scope`. The viewer sends the active scope on
@@ -36,16 +36,16 @@ ChatScope = Literal[
     "foundation",
     "actors",
     "services",
-    "service_detail",
+    "feature",
 ]
 
 # Scope assumed when a client omits it on the wire (Postel's Law,
 # D-2026-06-13-H Q1) — cross-canvas work lands in the shared bucket.
 DEFAULT_CHAT_SCOPE: ChatScope = "project"
 
-# Singleton scopes are valid bare on the wire; ``service_detail`` is the one
+# Singleton scopes are valid bare on the wire; ``feature`` is the one
 # member that requires a ``:<id>`` suffix to name a specific service thread.
-_SERVICE_DETAIL_PREFIX = "service_detail:"
+_SERVICE_DETAIL_PREFIX = "feature:"
 _SINGLETON_SCOPES: frozenset[str] = frozenset({"project", "foundation", "actors", "services"})
 
 
@@ -53,8 +53,8 @@ def is_valid_scope(raw: str) -> bool:
     """True for a well-formed wire scope (Layer 1, CHAT_ARCH.md).
 
     A scope is either a singleton base member (``project`` / ``foundation`` /
-    ``actors`` / ``services``) or the parametric ``service_detail:<id>`` with a
-    non-empty instance id. Bare ``service_detail`` (no id) is rejected — it
+    ``actors`` / ``services``) or the parametric ``feature:<id>`` with a
+    non-empty instance id. Bare ``feature`` (no id) is rejected — it
     names no specific service thread (Fail Fast). The engine keys sessions on
     the full string, so an unknown id simply gets its own (orphaned) thread;
     resolving stale ids back to the ``services`` scope is the viewer's job
@@ -77,7 +77,7 @@ class ChatStreamEvent(BaseModel):
 
     ``scope`` echoes which conversation bucket the turn belongs to so the
     viewer can route the event to the matching canvas thread (D-2026-06-13-H).
-    It is a plain ``str`` so it can carry a parametric ``service_detail:<id>``
+    It is a plain ``str`` so it can carry a parametric ``feature:<id>``
     value (Layer 1, D-2026-06-15-B), not just a base ``ChatScope`` member.
     """
 

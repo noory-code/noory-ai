@@ -10,7 +10,7 @@ import shutil
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from plot_mcp.canvas_io import list_service_details, read_canvas, write_canvas  # noqa: F401
+from plot_mcp.canvas_io import list_feature_details, read_canvas, write_canvas  # noqa: F401
 from plot_mcp.models import (
     ActorNode,
     CanvasDoc,

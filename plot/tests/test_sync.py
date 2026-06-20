@@ -8,7 +8,7 @@ import pytest
 
 from plot_mcp.folder_io import (
     create_project,
-    list_service_details,
+    list_feature_details,
     read_canvas,
     sync_details_with_overview,
     write_canvas,
@@ -47,9 +47,9 @@ def test_sync_creates_detail_for_new_feature(plot_root: Path) -> None:
     write_canvas(plot_root, "alpha", _overview_with({"order": "주문"}))
     result = sync_details_with_overview(plot_root, "alpha")
     assert result["created"] == ["order"]
-    assert list_service_details(plot_root, "alpha") == ["order"]
-    detail = read_canvas(plot_root, "alpha", "service_detail", service_id="order")
-    assert detail.service_ref == "order"
+    assert list_feature_details(plot_root, "alpha") == ["order"]
+    detail = read_canvas(plot_root, "alpha", "feature", service_id="order")
+    assert detail.feature_ref == "order"
     assert any(n.id == "order" for n in detail.nodes)
 
 
@@ -62,7 +62,7 @@ def test_sync_archives_removed_feature(plot_root: Path) -> None:
     result = sync_details_with_overview(plot_root, "alpha")
     assert result["archived"] == ["pay"]
     # pay detail moved to _archive, no longer listed as a live detail
-    assert "pay" not in list_service_details(plot_root, "alpha")
+    assert "pay" not in list_feature_details(plot_root, "alpha")
     # v0.8: archived service folder moves to ``services/_archive/{sid}/``
     # with its ``detail.json`` (and any ``index.md``) intact.
     archive = plot_root / "alpha" / "services" / "_archive" / "pay" / "detail.json"
@@ -85,7 +85,7 @@ def test_sync_on_empty_overview_is_noop(plot_root: Path) -> None:
 
 # v0.27.14 (D-2026-05-28-I) — data-loss guard: when a service disappears
 # from the overview but its detail.json carries user-authored content
-# (nodes beyond the default seeded service_ref + 2 actor_refs, or any
+# (nodes beyond the default seeded feature_ref + 2 actor_refs, or any
 # edges), the sync MUST NOT archive it silently. The user's 2026-05-27
 # chrome-devtools session lost a root-service node + its detail because
 # the previous sync wiped the folder without checking content; this test
@@ -98,13 +98,13 @@ def test_sync_skips_archive_when_detail_has_user_authored_nodes(
     write_canvas(plot_root, "alpha", _overview_with({"order": "주문"}))
     sync_details_with_overview(plot_root, "alpha")  # seeds order detail
     # Mutate the detail to include a user-authored extra node.
-    detail = read_canvas(plot_root, "alpha", "service_detail", service_id="order")
+    detail = read_canvas(plot_root, "alpha", "feature", service_id="order")
     extra = detail.nodes[0].model_copy(
         update={"id": "user_authored_extra", "label": "added by user"}
     )
     detail = detail.model_copy(update={"nodes": list(detail.nodes) + [extra]})
     _write_json(
-        _canvas_file(plot_root, "alpha", "service_detail", service_id="order"),
+        _canvas_file(plot_root, "alpha", "feature", service_id="order"),
         detail.model_dump(by_alias=True),
     )
     # Now drop "order" from the overview.
@@ -132,7 +132,7 @@ def test_sync_skips_archive_when_detail_has_user_authored_edges(
     write_canvas(plot_root, "alpha", _overview_with({"order": "주문"}))
     sync_details_with_overview(plot_root, "alpha")
     # Add a user-drawn edge between the two seeded actor refs.
-    detail = read_canvas(plot_root, "alpha", "service_detail", service_id="order")
+    detail = read_canvas(plot_root, "alpha", "feature", service_id="order")
     edge_doc = detail.model_dump(by_alias=True)
     edge_doc["edges"] = [
         {
@@ -149,7 +149,7 @@ def test_sync_skips_archive_when_detail_has_user_authored_edges(
         }
     ]
     _write_json(
-        _canvas_file(plot_root, "alpha", "service_detail", service_id="order"),
+        _canvas_file(plot_root, "alpha", "feature", service_id="order"),
         edge_doc,
     )
     write_canvas(plot_root, "alpha", _overview_with({}))

@@ -40,7 +40,7 @@ def test_drop_retired_kinds_strips_group_and_incident_edges(plot_root: Path) -> 
         ],
         "edges": [{"id": "e1", "source": "g1", "target": "s1"}],
     }
-    out = _drop_retired_kinds(plot_root, "alpha", "service_detail", "svc1", raw)
+    out = _drop_retired_kinds(plot_root, "alpha", "feature", "svc1", raw)
     assert "group" not in {n["kind"] for n in out["nodes"]}, "retired group node dropped"
     assert [n["id"] for n in out["nodes"]] == ["s1"], "member step survives (loss-free)"
     assert out["edges"] == [], "edge incident to the dropped group is removed"
@@ -48,5 +48,5 @@ def test_drop_retired_kinds_strips_group_and_incident_edges(plot_root: Path) -> 
 
 def test_drop_retired_kinds_is_noop_without_retired_nodes(plot_root: Path) -> None:
     raw = {"nodes": [{"id": "s1", "kind": "step"}], "edges": []}
-    out = _drop_retired_kinds(plot_root, "alpha", "service_detail", "svc1", raw)
+    out = _drop_retired_kinds(plot_root, "alpha", "feature", "svc1", raw)
     assert out == raw, "a canvas with no retired kinds is returned unchanged"

@@ -1,7 +1,7 @@
 /**
  * v0.28.0 (D-2026-05-30-C) — ``decision`` entity class.
  *
- * A flowchart decision (diamond) inside a service_detail canvas: a
+ * A flowchart decision (diamond) inside a feature canvas: a
  * branch point between action steps, either a user choice (방식 선택)
  * or a system judgment (검증 성공/실패). The branches themselves are
  * user-drawn labelled edges; the node only carries the question

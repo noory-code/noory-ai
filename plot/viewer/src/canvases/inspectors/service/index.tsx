@@ -119,7 +119,7 @@ interface ServiceFieldsReadonlyProps {
   availableIdentities: SketchNode[];
 }
 
-/** Read-only summary of the 5 fields (D-2026-06-15-O) — the ServiceDetail
+/** Read-only summary of the 5 fields (D-2026-06-15-O) — the FeatureDetail
  *  fallback inspector. Shows only fields that carry content. */
 function ServiceFieldsReadonly({
   node,

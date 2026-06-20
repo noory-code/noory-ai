@@ -5,8 +5,8 @@ import { ProjectPicker } from "./shell/ProjectPicker";
 import { applyOptimisticAnchorPatch } from "./lib/anchorOptimistic";
 import { ActorsCanvas } from "./canvases/ActorsCanvas";
 import { FoundationCanvas } from "./canvases/FoundationCanvas";
-import { ServiceDetailCanvas } from "./canvases/ServiceDetailCanvas";
-import { ServiceDetailInspectorHost } from "./canvases/inspectors/ServiceDetailInspectorHost";
+import { FeatureDetailCanvas } from "./canvases/FeatureDetailCanvas";
+import { FeatureDetailInspectorHost } from "./canvases/inspectors/FeatureDetailInspectorHost";
 import { ServicesCanvas } from "./canvases/ServicesCanvas";
 import { SketchSidebar } from "./canvases/SketchSidebar";
 import { StencilDragProvider } from "./canvases/sketch/StencilDragContext";
@@ -34,7 +34,7 @@ import type {
   ProjectDoc,
 } from "./types";
 
-function tabToKind(tab: CanvasTab): Exclude<CanvasKind, "service_detail"> {
+function tabToKind(tab: CanvasTab): Exclude<CanvasKind, "feature"> {
   if (tab === "foundation") return "foundation";
   if (tab === "actors") return "actors";
   return "services";
@@ -73,12 +73,12 @@ export function App() {
 
   const {
     activeTab,
-    detailServiceId,
+    detailFeatureId,
     detailActive,
     selectedNodeId,
     syncUrl,
     selectTab,
-    drillIntoService,
+    drillIntoFeature,
     activateDetail,
     closeDetail,
     jumpToActor,
@@ -111,7 +111,7 @@ export function App() {
   const {
     summaries, activeId, activeProjectPath, dirForId,
     canvasCache: liveCanvasCache, tags, migratedToast, phase,
-    setCanvasCache, setServiceDetails, setTags, loadList,
+    setCanvasCache, setFeatureDetails, setTags, loadList,
     create: handleCreate, rename: handleRename, remove: handleDelete,
     pick: handlePick,
     publishBlueprint: handlePublishBlueprint,
@@ -160,7 +160,7 @@ export function App() {
     activeId,
     history,
     setCanvasCache,
-    setServiceDetails,
+    setFeatureDetails,
     onListStale: handleListStale,
     onError: handleError,
   });
@@ -212,7 +212,7 @@ export function App() {
 
   // ------- current canvas selection -------
 
-  // v0.12 — services-tab + detailServiceId no longer swaps the main
+  // v0.12 — services-tab + detailFeatureId no longer swaps the main
   // canvas. The services canvas stays mounted; service detail opens
   // in a modal overlay instead. activeCanvasKey reflects only the
   // top-level tab choice.
@@ -227,34 +227,34 @@ export function App() {
   // underlying services canvas can both stay loaded. v0.78 (D-2026-06-15-H) —
   // rendered inline as a dynamic tab instead of a modal overlay.
   const detailCanvasKey: CanvasKey | null = useMemo(() => {
-    if (!detailServiceId) return null;
-    return `service_detail:${detailServiceId}` as CanvasKey;
-  }, [detailServiceId]);
+    if (!detailFeatureId) return null;
+    return `feature:${detailFeatureId}` as CanvasKey;
+  }, [detailFeatureId]);
   const detailCanvas = detailCanvasKey ? canvasCache.get(detailCanvasKey) ?? null : null;
-  // Label for the {ServiceDetail} tab = the service node's label on the
+  // Label for the {FeatureDetail} tab = the service node's label on the
   // Services canvas (falls back to the id).
   const detailLabel = useMemo(() => {
-    if (!detailServiceId) return null;
-    const svc = (canvasCache.get("services")?.nodes ?? []).find((n) => n.id === detailServiceId);
-    return svc?.label ?? detailServiceId;
-  }, [canvasCache, detailServiceId]);
+    if (!detailFeatureId) return null;
+    const svc = (canvasCache.get("services")?.nodes ?? []).find((n) => n.id === detailFeatureId);
+    return svc?.label ?? detailFeatureId;
+  }, [canvasCache, detailFeatureId]);
 
-  // D-2026-06-15-O — ServiceDetail's default right panel = the subject
+  // D-2026-06-15-O — FeatureDetail's default right panel = the subject
   // service's read-only inspector (cross-doc; read from the Services canvas).
-  // Memoised so the ServiceDetailCanvas prop identity stays stable across
+  // Memoised so the FeatureDetailCanvas prop identity stays stable across
   // App re-renders (the canvas is React.memo'd — an inline node would defeat
   // it and remount on every drag, see D-2026-05-27-C).
   const detailFallbackInspector = useMemo(
     () =>
-      detailServiceId ? (
-        <ServiceDetailInspectorHost
-          serviceId={detailServiceId}
+      detailFeatureId ? (
+        <FeatureDetailInspectorHost
+          serviceId={detailFeatureId}
           servicesCanvas={canvasCache.get("services") ?? null}
           projectPath={activeProjectPath ?? ""}
           projectId={activeId ?? ""}
         />
       ) : null,
-    [detailServiceId, canvasCache, activeProjectPath, activeId],
+    [detailFeatureId, canvasCache, activeProjectPath, activeId],
   );
 
   // v0.10 Step 3 / v0.16.5 — cross-canvas "available master" lists for
@@ -265,7 +265,7 @@ export function App() {
     useAvailableNodes(canvasCache);
 
   // v0.27.7 (D-2026-05-27-C) — inline arrow callbacks on the Canvas /
-  // ServiceDetailCanvas elements were re-created on every App render,
+  // FeatureDetailCanvas elements were re-created on every App render,
   // including the 60fps drag loop. That made `<Canvas onDocChange={…}>`
   // a new prop every frame, causing React to treat SketchCanvas's
   // `<ReactFlowProvider>` subtree as a different element and remount it
@@ -305,13 +305,13 @@ export function App() {
         return;
       }
       // D-2026-06-17-D — the feature is the drill target; a service shows its
-      // inspector (no drill). drillIntoService still names the wire string
-      // ``service_detail``; the id it carries is now a feature id.
+      // inspector (no drill). drillIntoFeature still names the wire string
+      // ``feature``; the id it carries is now a feature id.
       if (activeTab === "services" && n.kind === "feature") {
-        drillIntoService(id);
+        drillIntoFeature(id);
       }
     },
-    [activeCanvas, activeTab, jumpToActor, drillIntoService],
+    [activeCanvas, activeTab, jumpToActor, drillIntoFeature],
   );
 
   const onModalDocChange = useCallback(
@@ -369,7 +369,7 @@ export function App() {
     return <ProjectPicker />;
   }
 
-  // v0.78 (D-2026-06-15-H) — the service-detail canvas renders inline as a
+  // v0.78 (D-2026-06-15-H) — the feature canvas renders inline as a
   // dynamic tab, so it's "ready" when its tab is the active view and its doc
   // is loaded. (No more modal / inert backdrop.)
   const detailReady = detailActive && !!detailCanvas && !!detailCanvasKey;
@@ -389,13 +389,13 @@ export function App() {
       />
       {helpOpen && <HelpCheatsheet onClose={() => setHelpOpen(false)} />}
       <WorkspacePanels
-        chat={<ChatDock onError={handleError} workspaceRoot={activeProjectPath ?? undefined} activeScope={detailActive ? (detailServiceId ? `service_detail:${detailServiceId}` : "services") : tabToKind(activeTab)} activeScopeLabel={detailActive ? detailLabel : undefined} selection={((detailActive ? detailCanvas : activeCanvas)?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
+        chat={<ChatDock onError={handleError} workspaceRoot={activeProjectPath ?? undefined} activeScope={detailActive ? (detailFeatureId ? `feature:${detailFeatureId}` : "services") : tabToKind(activeTab)} activeScopeLabel={detailActive ? detailLabel : undefined} selection={((detailActive ? detailCanvas : activeCanvas)?.nodes ?? []).filter((n) => canvasSelectionIds.includes(n.id)).map((n) => ({ id: n.id, kind: n.kind, label: n.label ?? "" }))} />}
         sidebar={
         <SketchSidebar
           projects={summaries}
           activeId={activeId}
           dirForId={dirForId}
-          stencilCanvas={detailActive ? "service_detail" : activeTab}
+          stencilCanvas={detailActive ? "feature" : activeTab}
           availableActors={availableActors}
           tags={tags}
           onPick={handlePick}
@@ -417,7 +417,7 @@ export function App() {
               blueprintVersion={summaries.find((p) => p.id === activeId)?.blueprint_version ?? "v0.1.0"}
               onPublishBlueprint={handlePublishBlueprint}
               publishDisabled={!activeId}
-              detailServiceId={detailServiceId}
+              detailFeatureId={detailFeatureId}
               detailLabel={detailLabel}
               detailActive={detailActive}
               onSelectDetail={activateDetail}
@@ -429,9 +429,9 @@ export function App() {
             {phase === "error" && <ErrorPanel message={error ?? "unknown"} />}
             {phase === "no-projects" && <EmptyState onCreate={dirPicker.open} />}
             {phase === "ready" && activeId && detailReady && (
-              // v0.78 (D-2026-06-15-H) — the service-detail canvas renders
+              // v0.78 (D-2026-06-15-H) — the feature canvas renders
               // inline when its dynamic tab is active (was a modal overlay).
-              <ServiceDetailCanvas
+              <FeatureDetailCanvas
                 key={`${activeId}:${detailCanvasKey}`}
                 doc={detailCanvas!}
                 onDocChange={onModalDocChange}

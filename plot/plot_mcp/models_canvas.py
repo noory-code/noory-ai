@@ -10,9 +10,9 @@ A project is split into four canvas kinds:
                       v0.10 renamed from ``core``.
   actors            — Actor definitions (singleton, SSOT for actor identities)
   services          — top-level services (singleton). v0.8 renamed from
-                      ``services_overview``; paired with ``service_detail``
+                      ``services_overview``; paired with ``feature``
                       for the per-service drill-down.
-  service_detail    — per-service drill-down (one per service in overview)
+  feature    — per-service drill-down (one per service in overview)
 
 Each ``CanvasDoc`` enforces its own allowed ``NodeKind`` set and structural
 rules; shared validators (edge refs, parent cycles, unique ids) still apply.
@@ -28,7 +28,7 @@ from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
 from plot_mcp.models_kinds import Shape
 from plot_mcp.models_union import SketchEdge, SketchNode
 
-CanvasKind = Literal["foundation", "actors", "services", "service_detail"]
+CanvasKind = Literal["foundation", "actors", "services", "feature"]
 
 # Foundation refs (mission_ref / value_ref / identity_ref) retired 2026-06-20
 # (D-2026-06-17-H / D-2026-06-20-G) — moved to the service inspector chips.
@@ -49,13 +49,13 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     # Categories sit at the top level; services are nested inside them.
     # D-2026-06-17-D — a ``feature`` (capability) nests under a service via a
     # directed edge; it is the sole drill target. All sub-service / refs /
-    # composition still live in service_detail.
+    # composition still live in feature.
     "services": {"project", "category", "service", "feature"},
     # D-2026-06-17-D — the detail canvas drills into a **feature** (its
     # actions / rules), not a service. The root anchor is the feature node;
-    # the wire ``canvas_kind`` stays ``service_detail`` until the canvas-string
+    # the wire ``canvas_kind`` stays ``feature`` until the canvas-string
     # rename (product-gated).
-    "service_detail": {
+    "feature": {
         "feature",
         "rule",
         "step",
@@ -75,11 +75,11 @@ class CanvasDoc(BaseModel):
 
     canvas_id: str = Field(..., min_length=1)
     canvas_kind: CanvasKind
-    # service_detail only: the ``feature`` node id this detail canvas drills into
+    # feature only: the ``feature`` node id this detail canvas drills into
     # (D-2026-06-17-D — feature is the drill target). Must equal ``canvas_id`` to
     # keep the 1:1 pairing with the Overview node. The field name + wire kind keep
     # the ``service`` prefix until the canvas-string rename (product-gated).
-    service_ref: str | None = None
+    feature_ref: str | None = None
     nodes: list[SketchNode] = Field(default_factory=list)
     edges: list[SketchEdge] = Field(default_factory=list)
 
@@ -189,13 +189,13 @@ class CanvasDoc(BaseModel):
 
     @model_validator(mode="after")
     def _detail_canvas_rules(self) -> CanvasDoc:
-        if self.canvas_kind != "service_detail":
+        if self.canvas_kind != "feature":
             return self
-        if not self.service_ref:
-            raise ValueError("service_detail canvas requires service_ref")
-        if self.service_ref != self.canvas_id:
+        if not self.feature_ref:
+            raise ValueError("feature canvas requires feature_ref")
+        if self.feature_ref != self.canvas_id:
             raise ValueError(
-                f"service_detail service_ref {self.service_ref!r} must match "
+                f"feature feature_ref {self.feature_ref!r} must match "
                 f"canvas_id {self.canvas_id!r}"
             )
         # D-2026-06-17-D — the detail canvas drills into a **feature**, so its
@@ -203,7 +203,7 @@ class CanvasDoc(BaseModel):
         root_features = [n for n in self.nodes if n.kind == "feature" and n.id == self.canvas_id]
         if not root_features:
             raise ValueError(
-                f"service_detail canvas must contain a root feature with id {self.canvas_id!r}"
+                f"feature canvas must contain a root feature with id {self.canvas_id!r}"
             )
         # v0.26.0 (D-2026-05-25-A) — composition-kind parent_id checks
         # removed alongside the field. Containment of step / rule / decision /
@@ -227,7 +227,7 @@ class CanvasDoc(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _service_detail_actor_refs_minimum(self) -> CanvasDoc:
+    def _feature_actor_refs_minimum(self) -> CanvasDoc:
         # v0.27.16 (D-2026-05-28-K) — loosened from ≥ 2 to ≥ 1.
         # Per D-2026-05-28-J the operator side of a service is the
         # *service itself* (not a separate Admin / System actor),
@@ -237,12 +237,12 @@ class CanvasDoc(BaseModel):
         # which the user flagged as a category error on 2026-05-28.
         # We keep ≥ 1 because every step needs a subject (D-2026-05-28-J);
         # zero actor_refs means there's no one doing the steps.
-        if self.canvas_kind != "service_detail":
+        if self.canvas_kind != "feature":
             return self
         actor_refs = [n for n in self.nodes if n.kind == "actor_ref"]
         if len(actor_refs) < 1:
             raise ValueError(
-                f"service_detail {self.canvas_id!r} requires at least 1 "
+                f"feature {self.canvas_id!r} requires at least 1 "
                 f"actor_ref node (the subject of the service's steps), "
                 f"got 0. See SPEC.md §Service composition model "
                 f"(D-2026-05-28-J)."

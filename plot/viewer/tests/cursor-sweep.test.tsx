@@ -7,7 +7,7 @@
  *     사용되는 커서 컨트롤이 다릅니다."* (2026-05-12)
  *
  * After Phases 1+2+3 every canvas wrapper (Foundation / Actors /
- * Services / ServiceDetail) routes through the same SketchCanvas +
+ * Services / FeatureDetail) routes through the same SketchCanvas +
  * NODE_RENDERERS + BaseNode pipeline. This test pins the empirical
  * consequence: with the same seeded doc, all 4 wrappers produce an
  * identical set of cursor-determining DOM hooks, and zero element
@@ -27,7 +27,7 @@ import { render, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ActorsCanvas } from "../src/canvases/ActorsCanvas";
 import { FoundationCanvas } from "../src/canvases/FoundationCanvas";
-import { ServiceDetailCanvas } from "../src/canvases/ServiceDetailCanvas";
+import { FeatureDetailCanvas } from "../src/canvases/FeatureDetailCanvas";
 import { ServicesCanvas } from "../src/canvases/ServicesCanvas";
 import { createBlankNode } from "../src/domain/createBlankNode";
 import type { CanvasDoc, NodeKind, SketchNode } from "../src/types";
@@ -83,7 +83,7 @@ const WRAPPERS: { name: string; Comp: typeof FoundationCanvas }[] = [
   { name: "FoundationCanvas", Comp: FoundationCanvas },
   { name: "ActorsCanvas", Comp: ActorsCanvas },
   { name: "ServicesCanvas", Comp: ServicesCanvas },
-  { name: "ServiceDetailCanvas", Comp: ServiceDetailCanvas },
+  { name: "FeatureDetailCanvas", Comp: FeatureDetailCanvas },
 ];
 
 const ALL_KINDS: NodeKind[] = [
@@ -135,8 +135,8 @@ describe("cursor-sweep: zero inline cursor assignments", () => {
     expect(inlineCursors(container)).toEqual([]);
   });
 
-  it("ServiceDetailCanvas — no element has inline style.cursor (empty doc)", () => {
-    const { container } = render(<ServiceDetailCanvas doc={makeDoc()} />);
+  it("FeatureDetailCanvas — no element has inline style.cursor (empty doc)", () => {
+    const { container } = render(<FeatureDetailCanvas doc={makeDoc()} />);
     expect(inlineCursors(container)).toEqual([]);
   });
 

@@ -54,8 +54,8 @@ function doc(): CanvasDoc {
   return {
     id: "d",
     name: "d",
-    canvas_kind: "service_detail",
-    service_ref: null,
+    canvas_kind: "feature",
+    feature_ref: null,
     nodes: [
       node("bana", "actor_ref", { side: "user" }),
       node("entry", "step"),

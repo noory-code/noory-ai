@@ -42,7 +42,7 @@ export interface BaseNodeData {
   childCount?: number;
   mdWarnings?: string[];
   showFold?: boolean;
-  /** v0.27.19 (D-2026-05-30-A) — ServiceDetail step authoring. The
+  /** v0.27.19 (D-2026-05-30-A) — FeatureDetail step authoring. The
    *  step's ``outcome`` (system-side end state) rendered on-canvas +
    *  inline-editable. Only StepNode reads these; other kinds leave
    *  them undefined. */

@@ -2,7 +2,7 @@
 //
 // Per SPEC.md §Auto-layout and DECISIONS.md D-2026-05-24-B:
 // - A single hub node is the layout origin (anchor for Services; the
-//   hidden root-service for ServiceDetail). The hub itself is never
+//   hidden root-service for FeatureDetail). The hub itself is never
 //   moved.
 // - BFS from the hub via undirected edges assigns a ring level to every
 //   reachable node (hub = 0, immediate neighbours = 1, …).
@@ -45,7 +45,7 @@ export interface RadialLayoutInput {
   /** v0.34.8 (D-2026-05-31-V) — angle source.
    *  - ``"distribute"`` (default): ring 1 members equal-spaced on the
    *    full circle from -π/2; ring k>=2 fans around its parent's angle.
-   *    Used by Services / ServiceDetail (``"radial"`` layout button).
+   *    Used by Services / FeatureDetail (``"radial"`` layout button).
    *  - ``"preserve"``: each reachable node keeps the angle it CURRENTLY
    *    has from the hub centre; only its distance is normalised to its
    *    BFS depth ring. This is the floating-canvas (Foundation + Actors)

@@ -250,13 +250,13 @@ describe("ChatDock — scope switcher (D-2026-06-13-H; 2-tab, D-2026-06-15-H)", 
     ).toBe("true");
   });
 
-  it("labels a service-detail canvas tab with the service NAME", async () => {
+  it("labels a feature canvas tab with the service NAME", async () => {
     selectionValue = { provider: "codex" };
     render(
       <ChatDock
         onError={() => {}}
         workspaceRoot="/tmp/ws"
-        activeScope="service_detail:svc_one"
+        activeScope="feature:svc_one"
         activeScopeLabel="Login service"
       />,
     );
@@ -264,7 +264,7 @@ describe("ChatDock — scope switcher (D-2026-06-13-H; 2-tab, D-2026-06-15-H)", 
     const labels = screen.getAllByRole("tab").map((t) => t.textContent);
     expect(labels).toContain("Login service"); // the service name, not "Service detail"
     expect(labels).not.toContain("Service detail");
-    expect(labels).not.toContain("service_detail:svc_one");
+    expect(labels).not.toContain("feature:svc_one");
   });
 
   it("falls back to the base label when no service name is given", async () => {
@@ -273,13 +273,13 @@ describe("ChatDock — scope switcher (D-2026-06-13-H; 2-tab, D-2026-06-15-H)", 
       <ChatDock
         onError={() => {}}
         workspaceRoot="/tmp/ws"
-        activeScope="service_detail:svc_one"
+        activeScope="feature:svc_one"
       />,
     );
     await screen.findByRole("tablist", { name: /conversation/i });
     const labels = screen.getAllByRole("tab").map((t) => t.textContent);
     expect(labels).toContain("Feature detail");
-    expect(labels).not.toContain("service_detail:svc_one");
+    expect(labels).not.toContain("feature:svc_one");
   });
 
   it("switches the selected segment to project on click", async () => {

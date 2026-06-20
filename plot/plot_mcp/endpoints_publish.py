@@ -141,7 +141,7 @@ async def project_publish_endpoint(request: Request) -> JSONResponse:
 async def node_publish_endpoint(request: Request) -> JSONResponse:
     """``POST /api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/publish``
 
-    Optional query parameter ``service_id`` for service_detail canvases.
+    Optional query parameter ``service_id`` for feature canvases.
     Returns ``{node_id, from_version, to_version, md_path, sha,
     propagated}``. ``propagated`` (v0.20.0 / D-2026-05-17-C) is the
     list of ancestor nodes whose MINOR version was bumped — each item
@@ -191,7 +191,7 @@ async def node_unpublish_endpoint(request: Request) -> JSONResponse:
     Returns ``{node_id, from_version, to_version, reverted_sha,
     revert_commit_sha}``.
 
-    Optional ``service_id`` for service_detail canvases.
+    Optional ``service_id`` for feature canvases.
     Errors:
       - 404 if project / canvas / node not found
       - 409 if the node has no publish commit to revert
@@ -302,7 +302,7 @@ async def node_published_list_endpoint(request: Request) -> JSONResponse:
         return _error(str(exc), status=404)
     except ValueError as exc:
         # v0.27.13 (D-2026-05-28-H) — read_canvas raises ValueError when
-        # canvas_kind=="service_detail" but service_id is missing. Surface
+        # canvas_kind=="feature" but service_id is missing. Surface
         # as 400 so the caller gets a useful message instead of an
         # uncaught-exception 500.
         return _error(str(exc), status=400)

@@ -1,7 +1,7 @@
 /**
  * v0.16.36 — Auto-layout isolation regression (D-2026-05-13-L).
  * v0.24.5 — Actor opt-in (D-2026-05-18-B).
- * v0.25.0 — ServiceDetail opt-in with radial algorithm
+ * v0.25.0 — FeatureDetail opt-in with radial algorithm
  *           (D-2026-05-24-B). ``enableAutoLayout`` boolean generalised
  *           to ``layoutAlgo: "tree" | "radial" | null``. ServicesCanvas
  *           briefly opted in too, then reverted same-day by
@@ -10,7 +10,7 @@
  * v0.26.2 — ServicesCanvas opts back into ``"radial"`` (D-2026-05-25-C
  *           reverts D-2026-05-24-C). User direction was "서비스 메인
  *           캔버스에 정렬기능 빠져있는건 여전하고".
- * v0.27.0 — Services + ServiceDetail switch from ``"radial"`` to
+ * v0.27.0 — Services + FeatureDetail switch from ``"radial"`` to
  *           ``"tree"`` (D-2026-05-26-A). User direction *"정렬은 액터
  *           캔버스 참고하쇼"*. The tree algorithm follows user-drawn
  *           edge handle direction (T/R/B/L) and never collapses
@@ -23,7 +23,7 @@
  *
  *   1. Wrapper opt-in only — wrappers that opt in pass their
  *      ``layoutAlgo``: Foundation / Actors → ``"tree"``;
- *      Services / ServiceDetail → ``"radial"``. SketchCanvas itself
+ *      Services / FeatureDetail → ``"radial"``. SketchCanvas itself
  *      has no default — without a wrapper, no button.
  *   2. Conditional render — when ``layoutAlgo`` is null / undefined
  *      the auto-layout button is not in the DOM.
@@ -44,7 +44,7 @@ import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ActorsCanvas } from "../src/canvases/ActorsCanvas";
 import { FoundationCanvas } from "../src/canvases/FoundationCanvas";
-import { ServiceDetailCanvas } from "../src/canvases/ServiceDetailCanvas";
+import { FeatureDetailCanvas } from "../src/canvases/FeatureDetailCanvas";
 import { ServicesCanvas } from "../src/canvases/ServicesCanvas";
 import type {
   AnchorPlacement,
@@ -114,7 +114,7 @@ function makeCanvas(kind: CanvasKind, nodes: SketchNode[]): CanvasDoc {
   return {
     canvas_id: kind,
     canvas_kind: kind,
-    service_ref: kind === "service_detail" ? "svc-1" : null,
+    feature_ref: kind === "feature" ? "svc-1" : null,
     nodes,
     edges: [],
   };
@@ -185,8 +185,8 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     ).not.toBeNull();
   });
 
-  it("ServiceDetailCanvas wrapper renders the Auto-layout button (D-2026-05-26-A, tree)", () => {
-    const doc = makeCanvas("service_detail", [
+  it("FeatureDetailCanvas wrapper renders the Auto-layout button (D-2026-05-26-A, tree)", () => {
+    const doc = makeCanvas("feature", [
       makeNode({
         id: "svc-1",
         label: "Service Root",
@@ -195,11 +195,11 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       }),
     ]);
     const { queryByRole } = render(
-      <ServiceDetailCanvas {...commonProps(doc, () => {})} />,
+      <FeatureDetailCanvas {...commonProps(doc, () => {})} />,
     );
     expect(
       queryByRole("button", { name: /layout/i }),
-      "ServiceDetailCanvas opts into the tree auto-layout button per D-2026-05-26-A (switched from radial; root-service node serves as the BFS root via useAutoLayout's pickAnchor fallback).",
+      "FeatureDetailCanvas opts into the tree auto-layout button per D-2026-05-26-A (switched from radial; root-service node serves as the BFS root via useAutoLayout's pickAnchor fallback).",
     ).not.toBeNull();
   });
 
@@ -236,8 +236,8 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     expect((after as unknown as Record<string, unknown>).why).toBe("auth");
   });
 
-  it("ServiceDetailCanvas: Auto-layout touches positions only (D-2026-05-26-A, tree, hidden root-service as BFS root)", () => {
-    // ServiceDetail injects no anchor; the hub is the (hidden)
+  it("FeatureDetailCanvas: Auto-layout touches positions only (D-2026-05-26-A, tree, hidden root-service as BFS root)", () => {
+    // FeatureDetail injects no anchor; the hub is the (hidden)
     // root-service. Add one ring-1 spoke so the algorithm has work to do.
     const original = makeNode({
       id: "step-1",
@@ -248,7 +248,7 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
       how: "do thing",
       outcome: "thing-done",
     });
-    const doc = makeCanvas("service_detail", [
+    const doc = makeCanvas("feature", [
       makeNode({
         id: "svc-1",
         label: "Login",
@@ -276,11 +276,11 @@ describe("auto-layout isolation (D-2026-05-13-L)", () => {
     const props = commonProps(doc, (d) => {
       last = d;
     });
-    // ServiceDetail wrapper passes injectAnchor=false — clear projectAnchor
+    // FeatureDetail wrapper passes injectAnchor=false — clear projectAnchor
     // so useAutoLayout's pickAnchor falls back to the root-service node
     // (same hub-selection shape as useRadialLayout.pickHub).
     const { getByRole } = render(
-      <ServiceDetailCanvas {...props} projectAnchor={null} />,
+      <FeatureDetailCanvas {...props} projectAnchor={null} />,
     );
     fireEvent.click(getByRole("button", { name: /layout/i }));
     expect(last).not.toBeNull();

@@ -3,7 +3,7 @@
 //
 // v0.15 Phase 3.4 — the doc.canvas_kind read is gone; the
 // ``hideRootServiceNode`` decision now flows in from the canvas
-// wrapper (ServiceDetailCanvas → true, others → false).
+// wrapper (FeatureDetailCanvas → true, others → false).
 import { useMemo } from "react";
 import type { Edge } from "reactflow";
 import type { AnchorPlacement, CanvasDoc } from "../../types";
@@ -17,12 +17,12 @@ export interface UseEdgesMemoArgs {
   hideRootServiceNode: boolean;
   /** Wrapper-supplied anchor-relative arrow orientation (D-2026-05-31-AA +
    *  D-2026-06-14-C): Foundation/Actors ``"converge"``, Services
-   *  ``"diverge"``, ServiceDetail ``"none"``. Replaces a banned
+   *  ``"diverge"``, FeatureDetail ``"none"``. Replaces a banned
    *  ``doc.canvas_kind`` read in this hook. */
   anchorArrowMode: AnchorArrowMode;
   /** v0.40.0 (D-2026-06-01-E) — the project anchor placement, so edges
    *  can attach to the side facing the other node (the anchor isn't in
-   *  doc.nodes). Null on ServiceDetail (no anchor). */
+   *  doc.nodes). Null on FeatureDetail (no anchor). */
   projectAnchor: AnchorPlacement | null | undefined;
 }
 
@@ -57,7 +57,7 @@ export function useEdgesMemo({
     () =>
       edgeTransform({
         edges: doc.edges,
-        serviceRef: doc.service_ref,
+        serviceRef: doc.feature_ref,
         nearestCollapsedAncestor,
         valueFlowOn,
         hideRootServiceNode,
@@ -69,7 +69,7 @@ export function useEdgesMemo({
       }),
     [
       doc.edges,
-      doc.service_ref,
+      doc.feature_ref,
       nearestCollapsedAncestor,
       valueFlowOn,
       hideRootServiceNode,

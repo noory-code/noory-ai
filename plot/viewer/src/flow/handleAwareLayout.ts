@@ -1,6 +1,6 @@
 // D-2026-05-28-G — Handle-aware dagre layered layout.
 //
-// Built for ServiceDetail's "no hub" reconstruction graph (where the
+// Built for FeatureDetail's "no hub" reconstruction graph (where the
 // root-service node is hidden + disconnected per D-2026-05-28-B, so the
 // mindmap BFS algorithm in ``canvases/sketch/autoLayout.ts`` has no
 // entry point). Wraps dagre with a single twist: for every edge whose
@@ -14,7 +14,7 @@
 // - dagre is a DAG layout. Cycles are broken by dagre's internal
 //   feedback-arc-set pass; one edge of every cycle is silently
 //   reversed for layout. Visual ordering on cycles may not match
-//   handles exactly. Plot's ServiceDetail graphs are typically
+//   handles exactly. Plot's FeatureDetail graphs are typically
 //   actor → interaction → actor pairs (small cycles); the result
 //   is still readable but not always pixel-perfect.
 // - Orphan nodes (no incident edges) keep their original positions.

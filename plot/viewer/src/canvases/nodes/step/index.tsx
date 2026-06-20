@@ -2,7 +2,7 @@
  * Step composition node renderer.
  *
  * v0.15 Phase 3.1 — bare BaseNode + kind tag.
- * v0.27.19 (D-2026-05-30-A / -B) — ServiceDetail step authoring:
+ * v0.27.19 (D-2026-05-30-A / -B) — FeatureDetail step authoring:
  *  - ``outcome`` (system-side end state) renders below the label and
  *    is inline-editable, so the user-interaction sequence reads
  *    naturally in-canvas without opening the Inspector (SPEC §"step =

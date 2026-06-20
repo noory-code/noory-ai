@@ -68,12 +68,12 @@ NodeKind = Literal[
     # mission_ref / value_ref / identity_ref retired 2026-06-20
     # (D-2026-06-17-H / D-2026-06-20-G): Foundation references moved to the
     # service inspector's chip pickers (ref_value_ids / ref_identity_ids).
-    # v0.10 Step 5: composition kinds inside a service_detail canvas.
+    # v0.10 Step 5: composition kinds inside a feature canvas.
     #   metric — how the service is measured (KPI, success rate, latency).
     #   step   — an ordered procedural step in the service's flow.
     "step",
     # v0.28.0: decision — a flowchart decision (diamond) branch point in a
-    #   service_detail flow (user choice or system judgment). See
+    #   feature flow (user choice or system judgment). See
     #   docs/DECISIONS.md D-2026-05-30-C.
     "decision",
     # note — canvas-global ambient memo on the Feature canvas (D-2026-06-17-F).
@@ -88,7 +88,7 @@ NodeKind = Literal[
 ]
 
 # Composition kinds: must live inside a service (applies to SketchDoc and
-# service_detail CanvasDoc alike).
+# feature CanvasDoc alike).
 # v0.10 Step 5: metric + step join the family. v0.28.0: decision joins.
 # v0.29.0 group joined; retired 2026-06-20 (D-2026-06-19-H — chunking = feature
 # level + folding is a view affordance, not a node kind).
@@ -133,7 +133,7 @@ class BaseNodeFields(BaseModel):
     x: float = 0.0
     y: float = 0.0
     # v0.24.15 (D-2026-05-24-A) — reduced from 140×60 to 80×36, follow-up
-    # to D-2026-05-17-N. Tighter default suits Services / ServiceDetail
+    # to D-2026-05-17-N. Tighter default suits Services / FeatureDetail
     # hub-spoke layouts without overflow. Existing nodes keep their own
     # values in canvas.json; only nodes that omit width/height (defaults
     # filled by Pydantic) get the new size.

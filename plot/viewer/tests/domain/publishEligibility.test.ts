@@ -41,7 +41,7 @@ describe("canPublish", () => {
     expect(canPublish(makeNode("project"))).toBe(false);
   });
 
-  it("rejects is_root service (ServiceDetail mirror)", () => {
+  it("rejects is_root service (FeatureDetail mirror)", () => {
     expect(canPublish(makeNode("service", { is_root: true }))).toBe(false);
   });
 

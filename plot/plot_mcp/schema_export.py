@@ -89,7 +89,7 @@ _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     "feature": FeatureNode,
     # Grouping (1)
     "category": CategoryNode,
-    # Composition inside service_detail (5)
+    # Composition inside feature (5)
     "step": StepNode,
     "decision": DecisionNode,
     "note": NoteNode,

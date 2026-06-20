@@ -5,7 +5,7 @@
 // here but not in nodeTransform (see D-2026-05-08-B).
 //
 // v0.15 Phase 3.4 — the canvas_kind switch moved out to the
-// ``hideRootServiceNode`` wrapper-supplied flag. ServiceDetailCanvas
+// ``hideRootServiceNode`` wrapper-supplied flag. FeatureDetailCanvas
 // passes true (and supplies serviceRef); other wrappers pass false.
 import { MarkerType, type Edge } from "reactflow";
 import type { CanvasDoc } from "../../types";
@@ -22,14 +22,14 @@ export const EDGE_INTERACTION_WIDTH = 28;
 
 export interface EdgeTransformInput {
   edges: CanvasDoc["edges"];
-  serviceRef: CanvasDoc["service_ref"];
+  serviceRef: CanvasDoc["feature_ref"];
   /** Walk the parent chain; return the id of the first collapsed
    *  ancestor (not counting ``id`` itself), or null if none. */
   nearestCollapsedAncestor: (id: string) => string | null;
   /** When on, edges are recoloured by their first value_form entry. */
   valueFlowOn: boolean;
   /** v0.15 Phase 3.4 — drop edges that touch the hidden service-root
-   *  (true on ServiceDetailCanvas; false elsewhere). */
+   *  (true on FeatureDetailCanvas; false elsewhere). */
   hideRootServiceNode: boolean;
   /** Anchor-relative arrow orientation (D-2026-05-31-R + D-2026-06-14-C):
    *  - ``"converge"`` — Foundation + Actors: force every directed edge's
@@ -38,7 +38,7 @@ export interface EdgeTransformInput {
    *  - ``"diverge"`` — Services: force the arrowhead AWAY from the anchor
    *    (anchor → category → service flows outward), regardless of how the
    *    edge was drawn.
-   *  - ``"none"`` — leave the drawn direction (ServiceDetail, no anchor). */
+   *  - ``"none"`` — leave the drawn direction (FeatureDetail, no anchor). */
   anchorArrowMode: AnchorArrowMode;
   /** v0.40.0 (D-2026-06-01-E) — render-time handle picker. Maps each
    *  node id (incl. the synthetic project anchor, which is NOT in

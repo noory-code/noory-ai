@@ -8,7 +8,7 @@
 // Hub selection mirrors useRadialLayout (D-2026-05-26-A):
 //   - If ``projectAnchor`` is set (Foundation / Actors / Services), use
 //     the synthetic anchor as the layout root (PROJECT_ANCHOR_ID).
-//   - Otherwise (ServiceDetail), pick the canvas's root-service node
+//   - Otherwise (FeatureDetail), pick the canvas's root-service node
 //     (kind === "service" && is_root === true). It is hidden from the
 //     viewport via ``hideRootServiceNode`` but still exists in
 //     ``doc.nodes`` and provides a stable layout origin.
@@ -92,7 +92,7 @@ export function useAutoLayout({
     // *priority* on docs that have a user-side actor_ref wired to
     // an entry step (the "subject edge"). The mindmap BFS path
     // below uses the hidden root_service as its anchor for
-    // ServiceDetail; that anchor is disconnected, so BFS yields
+    // FeatureDetail; that anchor is disconnected, so BFS yields
     // only the root_service itself and dumps every other node —
     // including the user actor — into the isolated-nodes grid.
     // That sweeps the actor away from its placed position, which

@@ -35,12 +35,12 @@ describe("classifyEdge (D-2026-05-31-C)", () => {
   // their injection-edge classification went with them.
 
   it("treats actor_ref (the subject) as flow, not injection", () => {
-    expect(classifyEdge("service_detail", "actor_ref")).toBe("flow");
+    expect(classifyEdge("feature", "actor_ref")).toBe("flow");
   });
 
   it("classifies step / service / category edges as flow", () => {
-    expect(classifyEdge("service_detail", "step")).toBe("flow");
-    expect(classifyEdge("service_detail", "decision")).toBe("flow");
+    expect(classifyEdge("feature", "step")).toBe("flow");
+    expect(classifyEdge("feature", "decision")).toBe("flow");
     expect(classifyEdge("services", "service")).toBe("flow");
     expect(classifyEdge("services", "category")).toBe("flow");
   });

@@ -1,6 +1,6 @@
 /**
  * Per-kind inspector for ``step`` nodes (procedural step inside a
- * service_detail canvas). v0.15 Phase 2.2.
+ * feature canvas). v0.15 Phase 2.2.
  */
 import { useTranslation } from "react-i18next";
 import type { StepJson } from "../../../domain";

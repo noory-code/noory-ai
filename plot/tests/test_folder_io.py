@@ -11,7 +11,7 @@ Layout
         canvas.json                  — top-view (canvas_kind = "services")
         {service_id}/
           index.md                   — Service node long-form (opt-in)
-          detail.json                — CanvasDoc (canvas_kind = "service_detail")
+          detail.json                — CanvasDoc (canvas_kind = "feature")
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ import pytest
 from plot_mcp.folder_io import (
     create_project,
     delete_project,
-    list_service_details,
+    list_feature_details,
     publish_node,
     read_canvas,
     read_project,
@@ -183,7 +183,7 @@ def test_read_missing_canvas_raises(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     # Valid project, but no such detail canvas
     with pytest.raises(FileNotFoundError):
-        read_canvas(plot_root, "alpha", "service_detail", service_id="nope")
+        read_canvas(plot_root, "alpha", "feature", service_id="nope")
 
 
 # ---------------------------------------------------------------------------
@@ -191,13 +191,13 @@ def test_read_missing_canvas_raises(plot_root: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_list_service_details_empty_by_default(plot_root: Path) -> None:
+def test_list_feature_details_empty_by_default(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
-    assert list_service_details(plot_root, "alpha") == []
+    assert list_feature_details(plot_root, "alpha") == []
 
 
 def _detail_with_actor_refs(service_id: str = "order") -> CanvasDoc:
-    """v0.27.16 (D-2026-05-28-K) — service_detail invariant loosened to
+    """v0.27.16 (D-2026-05-28-K) — feature invariant loosened to
     ≥ 1 actor_ref. This fixture keeps the 2-actor seed because most
     folder_io tests don't care about the count — they exercise sync /
     publish / archive logic that needs *some* doc to bounce off. The
@@ -207,8 +207,8 @@ def _detail_with_actor_refs(service_id: str = "order") -> CanvasDoc:
     feature, not a service)."""
     return CanvasDoc(
         canvas_id=service_id,
-        canvas_kind="service_detail",
-        service_ref=service_id,
+        canvas_kind="feature",
+        feature_ref=service_id,
         nodes=[
             FeatureNode(id=service_id, label="주문"),
             ActorRefNode(
@@ -227,13 +227,13 @@ def _detail_with_actor_refs(service_id: str = "order") -> CanvasDoc:
     )
 
 
-def test_write_and_list_service_detail(plot_root: Path) -> None:
+def test_write_and_list_feature(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     detail = _detail_with_actor_refs("order")
     write_canvas(plot_root, "alpha", detail)
-    assert list_service_details(plot_root, "alpha") == ["order"]
-    loaded = read_canvas(plot_root, "alpha", "service_detail", service_id="order")
-    assert loaded.service_ref == "order"
+    assert list_feature_details(plot_root, "alpha") == ["order"]
+    loaded = read_canvas(plot_root, "alpha", "feature", service_id="order")
+    assert loaded.feature_ref == "order"
     assert loaded.nodes[0].id == "order"
 
 
@@ -410,7 +410,7 @@ def test_orphan_non_anchor_edges_still_stripped(plot_root: Path) -> None:
     raw = {
         "canvas_id": "foundation",
         "canvas_kind": "foundation",
-        "service_ref": None,
+        "feature_ref": None,
         "nodes": [
             MissionNode(id="m", label="M").model_dump(),
             CoreValueNode(id="cv", label="CV").model_dump(),
@@ -477,7 +477,7 @@ def _seed_foundation_with_md(
     raw = {
         "canvas_id": "foundation",
         "canvas_kind": "foundation",
-        "service_ref": None,
+        "feature_ref": None,
         "nodes": [mission_dict, core_value_dict, identity_dict],
         "edges": [],
     }
@@ -557,7 +557,7 @@ def test_absorb_md_typed_text_into_json_no_md_file(plot_root: Path) -> None:
     raw = {
         "canvas_id": "foundation",
         "canvas_kind": "foundation",
-        "service_ref": None,
+        "feature_ref": None,
         "nodes": [
             mission_dict,
             CoreValueNode(id="cv", label="Value").model_dump(),
@@ -653,7 +653,7 @@ def test_absorb_md_typed_text_into_json_duplicate_slug_collision(plot_root: Path
             {
                 "canvas_id": "foundation",
                 "canvas_kind": "foundation",
-                "service_ref": None,
+                "feature_ref": None,
                 "nodes": [
                     mission_dict,
                     CoreValueNode(id="cv", label="Value").model_dump(),
@@ -799,7 +799,7 @@ def test_publish_node_creates_git_commit_with_trailers(plot_root: Path) -> None:
 
 def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
     """Build a Services canvas with a category + feature, plus a
-    matching ServiceDetail canvas drilling into that feature with a step
+    matching FeatureDetail canvas drilling into that feature with a step
     node. Returns ``(category_id, feature_id, step_id)``.
 
     v0.26.0 (D-2026-05-25-A) — containment is now expressed via
@@ -825,8 +825,8 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
 
     detail = CanvasDoc(
         canvas_id="svc-onboarding",
-        canvas_kind="service_detail",
-        service_ref="svc-onboarding",
+        canvas_kind="feature",
+        feature_ref="svc-onboarding",
         nodes=[
             FeatureNode(id="svc-onboarding", label="Onboarding"),
             StepNode(
@@ -865,13 +865,13 @@ def test_publish_step_propagates_minor_to_service_and_category(
     create_project(plot_root, "alpha", "Alpha")
     _cat, sid, step_id = _seed_services_with_step(plot_root)
 
-    result = publish_node(plot_root, "alpha", "service_detail", step_id, service_id=sid)
+    result = publish_node(plot_root, "alpha", "feature", step_id, service_id=sid)
 
     assert result["from_version"] == "v1.0"
     assert result["to_version"] == "v2.0"
 
     # Step itself: MAJOR-bumped in detail.json.
-    detail = read_canvas(plot_root, "alpha", "service_detail", service_id=sid)
+    detail = read_canvas(plot_root, "alpha", "feature", service_id=sid)
     step = next(n for n in detail.nodes if n.id == step_id)
     assert step.version == "v2.0"
 
@@ -896,7 +896,7 @@ def test_publish_step_writes_single_commit_with_propagation_trailers(
 
     create_project(plot_root, "alpha", "Alpha")
     _cat, sid, step_id = _seed_services_with_step(plot_root)
-    publish_node(plot_root, "alpha", "service_detail", step_id, service_id=sid)
+    publish_node(plot_root, "alpha", "feature", step_id, service_id=sid)
 
     project_dir = plot_root / "alpha"
     # Single commit since the seed (no commit), then publish (one commit).
@@ -912,7 +912,7 @@ def test_publish_step_writes_single_commit_with_propagation_trailers(
     # Base trailers (5) intact.
     assert "Publish-Node-Id: step-verify" in out
     assert "Publish-Kind: step" in out
-    assert "Publish-Canvas: service_detail" in out
+    assert "Publish-Canvas: feature" in out
     assert "Publish-Version-From: v1.0" in out
     assert "Publish-Version-To: v2.0" in out
     # New propagation trailers — one per logical ancestor.
@@ -929,7 +929,7 @@ def test_publish_step_writes_single_commit_with_propagation_trailers(
 
 def test_publish_service_propagates_to_category_only(plot_root: Path) -> None:
     """Publishing a service (not a step) MAJOR-bumps the service in both
-    its files (Services master + ServiceDetail mirror) and MINOR-bumps
+    its files (Services master + FeatureDetail mirror) and MINOR-bumps
     the category."""
     create_project(plot_root, "alpha", "Alpha")
     _cat, sid, _step = _seed_services_with_step(plot_root)
@@ -943,7 +943,7 @@ def test_publish_service_propagates_to_category_only(plot_root: Path) -> None:
     assert master.version == "v2.0"
 
     # Service mirror in detail.json: MAJOR-bumped (kept in sync).
-    detail = read_canvas(plot_root, "alpha", "service_detail", service_id=sid)
+    detail = read_canvas(plot_root, "alpha", "feature", service_id=sid)
     mirror = next(n for n in detail.nodes if n.id == sid)
     assert mirror.version == "v2.0"
 

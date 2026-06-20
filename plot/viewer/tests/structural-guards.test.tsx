@@ -88,7 +88,7 @@ function listForbiddenSwitchFiles(): string[] {
     "canvases/FoundationCanvas.tsx",
     "canvases/ActorsCanvas.tsx",
     "canvases/ServicesCanvas.tsx",
-    "canvases/ServiceDetailCanvas.tsx",
+    "canvases/FeatureDetailCanvas.tsx",
     "canvases/SketchCanvas.tsx",
     "canvases/nodes/BaseNode.tsx",
     "canvases/inspectors/BaseInspector.tsx",
@@ -140,22 +140,22 @@ describe("no-god-union-import (Phase 5.2)", () => {
  *
  * App.tsx: the plan target ``≤ 400`` is now live as of v0.16.5
  * (App.tsx 381 LOC). Header / CanvasTabs / HelpCheatsheet /
- * ServiceDetailModal / states moved to ``viewer/src/shell/``;
+ * FeatureDetailModal / states moved to ``viewer/src/shell/``;
  * useUrlSync / useAvailableNodes / useAppKeyboard moved to
  * ``viewer/src/hooks/``.
  */
 const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   "App.tsx": {
     ceiling: 510,
-    note: "v0.34.2 (D-2026-05-31-P) moved the workspace root from the header to the CanvasTabs center + dropped the Header projectPath/projectDir props (net -1 LOC); ceiling kept at 498 as headroom. v0.34.1 (D-2026-05-31-O) raised 497 → 498 for the Header projectDir prop (later removed in v0.34.2). v0.34.0 (D-2026-05-31-N) raised 495 → 497 to wire the Add-a-Project directory-tree picker (useDirPicker import + hook call + {dirPicker.modal} sibling render). Open-state lives in useDirPicker, not here — this is plumbing-only growth. Plan target locked in v0.16.5 (D-2026-05-12-H). v0.23.x (D-2026-05-17-J) raised 400 → 410 to wire onUnpublishNode on both SketchCanvas slots. v0.24.14 (D-2026-05-21-C) raised 410 → 425 to wire snapshot-view state (viewingTag / enterTagView / exitTagView + applyEdit guard + cache swap) into Header / Sidebar. v0.26.0 (D-2026-05-25-A) raised 425 → 430 to thread services edges into the ServiceDetailModal drill context (parent_id → directed-edge derivation). v0.27.7 (D-2026-05-27-C) raised 430 → 485 to hoist 9 Canvas / ServiceDetailCanvas prop callbacks out of inline arrows into useCallback so SketchCanvas's <ReactFlowProvider> subtree stays mounted across drag / onDocChange flows. v0.27.18 (D-2026-05-28-L) raised 485 → 495 to memoise the project summary + projectAnchor + projectName so the Services canvas behind the modal doesn't get a full prop-cascade update on every modal action. v0.82.0 (D-2026-06-15-O) raised 498 → 510 to wire the ServiceDetail read-only fallback inspector (ServiceDetailInspectorHost import + memoised detailFallbackInspector element + fallbackInspector prop on the ServiceDetailCanvas slot) — plumbing-only growth.",
+    note: "v0.34.2 (D-2026-05-31-P) moved the workspace root from the header to the CanvasTabs center + dropped the Header projectPath/projectDir props (net -1 LOC); ceiling kept at 498 as headroom. v0.34.1 (D-2026-05-31-O) raised 497 → 498 for the Header projectDir prop (later removed in v0.34.2). v0.34.0 (D-2026-05-31-N) raised 495 → 497 to wire the Add-a-Project directory-tree picker (useDirPicker import + hook call + {dirPicker.modal} sibling render). Open-state lives in useDirPicker, not here — this is plumbing-only growth. Plan target locked in v0.16.5 (D-2026-05-12-H). v0.23.x (D-2026-05-17-J) raised 400 → 410 to wire onUnpublishNode on both SketchCanvas slots. v0.24.14 (D-2026-05-21-C) raised 410 → 425 to wire snapshot-view state (viewingTag / enterTagView / exitTagView + applyEdit guard + cache swap) into Header / Sidebar. v0.26.0 (D-2026-05-25-A) raised 425 → 430 to thread services edges into the FeatureDetailModal drill context (parent_id → directed-edge derivation). v0.27.7 (D-2026-05-27-C) raised 430 → 485 to hoist 9 Canvas / FeatureDetailCanvas prop callbacks out of inline arrows into useCallback so SketchCanvas's <ReactFlowProvider> subtree stays mounted across drag / onDocChange flows. v0.27.18 (D-2026-05-28-L) raised 485 → 495 to memoise the project summary + projectAnchor + projectName so the Services canvas behind the modal doesn't get a full prop-cascade update on every modal action. v0.82.0 (D-2026-06-15-O) raised 498 → 510 to wire the FeatureDetail read-only fallback inspector (FeatureDetailInspectorHost import + memoised detailFallbackInspector element + fallbackInspector prop on the FeatureDetailCanvas slot) — plumbing-only growth.",
   },
   "canvases/SketchCanvas.tsx": {
     ceiling: 537,
-    note: "v0.78.0 (D-2026-06-15-H) raised 522 → 529 to thread the selectOpensDrill prop (interface + destructure + useInspectorRouting arg) so a single click on a drillable service node opens its detail tab instead of the inspector — plumbing-only growth; follow-up: extract a useNodeSelection hook. v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to absorb the onPublishNode prop wiring through to SketchInspectorBindings. v0.23.x (D-2026-05-17-J) raised 440 → 450 to add the onUnpublishNode prop wiring (same pattern). v0.27.4 (D-2026-05-26-H) raised 450 → 470 to add the 300 ms fitView fallback that unsticks visibility:hidden when useNodesInitialized stays false in a modal-mounted canvas. v0.28.3 (D-2026-05-30-F) raised 480 → 490 to wire the direction-switch buttons (showDirectionSwitch prop + treeLayout.layoutInDirection + <LayoutControls> in <Controls>). The button JSX + i18n itself lives in the extracted LayoutControls.tsx, NOT here — this is plumbing-only growth. v0.36.1 (D-2026-05-31-AA) raised 490 → 500 to thread the convergeArrowsOnAnchor prop (interface + destructure + two hook args) that replaces a banned doc.canvas_kind read in useFlowHandlers / useEdgesMemo — plumbing-only growth. v0.37.1 (D-2026-05-31-AD) raised 500 → 515 to add selection state (selectedIds + handleSelectionChangeSync) so the controlled nodes array carries `selected` — plumbing-only growth; follow-up: extract a useNodeSelection hook. v0.52.2 (D-2026-06-09-B) raised 515 → 516 to add `proOptions={{ hideAttribution: true }}` — removing the React Flow watermark (reactflow is MIT; Plot ships as a commercial desktop app). v0.73.0 (D-2026-06-15-A) raised 516 → 522 to lift the live multi-selection upward (onSelectionChange prop + interface + call in handleSelectionChangeSync) for the chat dock's per-turn context injection (CHAT_ARCH Layer 2) — plumbing-only growth; follow-up: extract a useNodeSelection hook (already noted under v0.37.1). v0.81.1 (D-2026-06-15-N) raised 529 → 530 to wire React Flow's onNodeDragStop to useContextMenus' one-shot drag-suppression guard (fixes the macOS-trackpad drag-release contextmenu leak) — plumbing-only growth. v0.82.0 (D-2026-06-15-O) raised 530 → 537 to thread the fallbackInspector render-prop (interface + destructure + pass-through to SketchInspectorBindings) so ServiceDetail's default panel shows the subject service read-only — plumbing-only growth; follow-up: extract a useNodeSelection hook. v0.82.1 (D-2026-06-16-A) removed the onNodeDragStop prop wiring (drag-release context-menu suppression moved to a window-level pointer-gesture watcher inside useContextMenus — kind/canvas-agnostic); ceiling left at 537 as headroom.",
+    note: "v0.78.0 (D-2026-06-15-H) raised 522 → 529 to thread the selectOpensDrill prop (interface + destructure + useInspectorRouting arg) so a single click on a drillable service node opens its detail tab instead of the inspector — plumbing-only growth; follow-up: extract a useNodeSelection hook. v0.18.0 Phase 3 (D-2026-05-16-E) raised 420 → 440 to absorb the onPublishNode prop wiring through to SketchInspectorBindings. v0.23.x (D-2026-05-17-J) raised 440 → 450 to add the onUnpublishNode prop wiring (same pattern). v0.27.4 (D-2026-05-26-H) raised 450 → 470 to add the 300 ms fitView fallback that unsticks visibility:hidden when useNodesInitialized stays false in a modal-mounted canvas. v0.28.3 (D-2026-05-30-F) raised 480 → 490 to wire the direction-switch buttons (showDirectionSwitch prop + treeLayout.layoutInDirection + <LayoutControls> in <Controls>). The button JSX + i18n itself lives in the extracted LayoutControls.tsx, NOT here — this is plumbing-only growth. v0.36.1 (D-2026-05-31-AA) raised 490 → 500 to thread the convergeArrowsOnAnchor prop (interface + destructure + two hook args) that replaces a banned doc.canvas_kind read in useFlowHandlers / useEdgesMemo — plumbing-only growth. v0.37.1 (D-2026-05-31-AD) raised 500 → 515 to add selection state (selectedIds + handleSelectionChangeSync) so the controlled nodes array carries `selected` — plumbing-only growth; follow-up: extract a useNodeSelection hook. v0.52.2 (D-2026-06-09-B) raised 515 → 516 to add `proOptions={{ hideAttribution: true }}` — removing the React Flow watermark (reactflow is MIT; Plot ships as a commercial desktop app). v0.73.0 (D-2026-06-15-A) raised 516 → 522 to lift the live multi-selection upward (onSelectionChange prop + interface + call in handleSelectionChangeSync) for the chat dock's per-turn context injection (CHAT_ARCH Layer 2) — plumbing-only growth; follow-up: extract a useNodeSelection hook (already noted under v0.37.1). v0.81.1 (D-2026-06-15-N) raised 529 → 530 to wire React Flow's onNodeDragStop to useContextMenus' one-shot drag-suppression guard (fixes the macOS-trackpad drag-release contextmenu leak) — plumbing-only growth. v0.82.0 (D-2026-06-15-O) raised 530 → 537 to thread the fallbackInspector render-prop (interface + destructure + pass-through to SketchInspectorBindings) so FeatureDetail's default panel shows the subject service read-only — plumbing-only growth; follow-up: extract a useNodeSelection hook. v0.82.1 (D-2026-06-16-A) removed the onNodeDragStop prop wiring (drag-release context-menu suppression moved to a window-level pointer-gesture watcher inside useContextMenus — kind/canvas-agnostic); ceiling left at 537 as headroom.",
   },
   "canvases/nodes/BaseNode.tsx": {
     ceiling: 300,
-    note: "v0.27.11 (D-2026-05-28-D) raised 250 → 260 to absorb the Symbol force-circle override (effectiveShape + SYMBOL_KINDS set + shouldShowKindTag's kind-aware branch). v0.27.19 (D-2026-05-30-A/-B) raised 260 → 270 to add the step-authoring data fields (outcome / onOutcomeChange / branchCount) to the shared BaseNodeData bag — read only by StepNode for the ServiceDetail step UX. v0.38.0 (D-2026-06-01-B) raised 270 → 300 for content auto-fit: the ResizeObserver that persists the measured size + the round/rect sizing logic (manual NodeResizer removed). Follow-up: extract a useAutoFitSize hook.",
+    note: "v0.27.11 (D-2026-05-28-D) raised 250 → 260 to absorb the Symbol force-circle override (effectiveShape + SYMBOL_KINDS set + shouldShowKindTag's kind-aware branch). v0.27.19 (D-2026-05-30-A/-B) raised 260 → 270 to add the step-authoring data fields (outcome / onOutcomeChange / branchCount) to the shared BaseNodeData bag — read only by StepNode for the FeatureDetail step UX. v0.38.0 (D-2026-06-01-B) raised 270 → 300 for content auto-fit: the ResizeObserver that persists the measured size + the round/rect sizing logic (manual NodeResizer removed). Follow-up: extract a useAutoFitSize hook.",
   },
   "canvases/inspectors/BaseInspector.tsx": {
     ceiling: 380,
@@ -164,7 +164,7 @@ const LOC_BUDGETS: Record<string, { ceiling: number; note?: string }> = {
   "canvases/FoundationCanvas.tsx": { ceiling: 150 },
   "canvases/ActorsCanvas.tsx": { ceiling: 150 },
   "canvases/ServicesCanvas.tsx": { ceiling: 150 },
-  "canvases/ServiceDetailCanvas.tsx": { ceiling: 150 },
+  "canvases/FeatureDetailCanvas.tsx": { ceiling: 150 },
 };
 
 function perKindFiles(parent: string): string[] {
@@ -229,7 +229,7 @@ describe("registry-completeness (Phase 5.2)", () => {
 // ---------------------------------------------------------------------
 // Contract 4: hot-path JSX prop callback stability
 //   (D-2026-05-27-B: SketchCanvas remounted mid-drag because App.tsx
-//    passed inline arrow callbacks to <Canvas> / <ServiceDetailCanvas>.
+//    passed inline arrow callbacks to <Canvas> / <FeatureDetailCanvas>.
 //    D-2026-05-27-C pins this contract so the regression cannot ship
 //    again unnoticed.)
 // ---------------------------------------------------------------------
@@ -265,7 +265,7 @@ function extractJsxOpeningTagBlocks(src: string, tagName: string): string[] {
 
 const HOT_PATH_CANVAS_TAGS = [
   "Canvas",
-  "ServiceDetailCanvas",
+  "FeatureDetailCanvas",
   "FoundationCanvas",
   "ActorsCanvas",
   "ServicesCanvas",

@@ -1,10 +1,10 @@
 /**
- * ServiceDetailStencilPanel — modal-internal stencil column.
+ * FeatureDetailStencilPanel — modal-internal stencil column.
  *
- * Per D-2026-05-26-D: the ServiceDetail modal is self-contained.
+ * Per D-2026-05-26-D: the FeatureDetail modal is self-contained.
  * Its left column is this component (drag sources for actors / refs /
  * composition). The main app sidebar no longer swaps to the
- * service_detail stencil when the modal is open — the modal owns
+ * feature stencil when the modal is open — the modal owns
  * its own controls so it can sit on top of the main canvas without
  * fighting for the same sidebar real estate.
  *
@@ -22,15 +22,15 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SketchStencil } from "../canvases/SketchStencil";
 import type { SketchNode } from "../types";
 
-interface ServiceDetailStencilPanelProps {
+interface FeatureDetailStencilPanelProps {
   availableActors: SketchNode[];
 }
 
-export function ServiceDetailStencilPanel({ availableActors }: ServiceDetailStencilPanelProps) {
+export function FeatureDetailStencilPanel({ availableActors }: FeatureDetailStencilPanelProps) {
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col overflow-y-auto border-r border-line bg-surface">
       <div className="flex-1">
-        <SketchStencil canvas="service_detail" availableActors={availableActors} />
+        <SketchStencil canvas="feature" availableActors={availableActors} />
       </div>
       <div className="flex items-center justify-end gap-2 border-t border-line px-3 py-2">
         <ThemeToggle />

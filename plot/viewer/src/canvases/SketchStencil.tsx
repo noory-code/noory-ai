@@ -258,7 +258,7 @@ export const STENCIL_PRESETS: StencilPreset[] = [
  * - Composition kinds (step, decision):
  *     - On the Services canvas (rare; not in stencil today) they would
  *       require a Service parent.
- *     - On the ServiceDetail canvas (D-2026-05-28-A) they are FREE-FORM
+ *     - On the FeatureDetail canvas (D-2026-05-28-A) they are FREE-FORM
  *       — the user is authoring an interaction graph: actors / value
  *       nodes / interaction nodes live as peers, wired by edges, not
  *       nested under the service container. Dropping inside a service
@@ -288,7 +288,7 @@ export function resolveDropTarget(
     // graph — composition kinds (step / decision) drop freely. Nesting
     // inside a service container is still honoured when the user
     // explicitly drops on one.
-    if (canvasKind === "service_detail") {
+    if (canvasKind === "feature") {
       return { parentId: containerAtDrop?.kind === "service" ? containerAtDrop.id : null };
     }
     if (!containerAtDrop || containerAtDrop.kind !== "service") {
@@ -383,13 +383,13 @@ function StencilItem({ preset }: { preset: StencilPreset }) {
 /** v0.2 multi-canvas: the tab that owns the presets shown in the stencil.
  *  v0.12 — services-side surfaces:
  *  ``services`` (top view: project + categories + their service leaves) and
- *  ``service_detail`` (per-service modal: composition + dynamic refs). */
-export type StencilCanvas = "foundation" | "actors" | "services" | "service_detail";
+ *  ``feature`` (per-service modal: composition + dynamic refs). */
+export type StencilCanvas = "foundation" | "actors" | "services" | "feature";
 
 interface SketchStencilProps {
   canvas: StencilCanvas;
   /** v0.11.5 — actor masters for the dynamic actor_ref presets shown on the
-   *  service_detail stencil. Each becomes its own draggable preset that drops
+   *  feature stencil. Each becomes its own draggable preset that drops
    *  directly. (The Foundation-ref presets were retired — D-2026-06-20-G.) */
   availableActors?: SketchNode[];
 }

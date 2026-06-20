@@ -382,7 +382,7 @@ def test_framing_maps_each_canvas_to_its_vision_phase() -> None:
     assert "Discovery" in build_framing_preamble("foundation")
     assert "Planning" in build_framing_preamble("actors")
     assert "Planning" in build_framing_preamble("services")
-    assert "Execution" in build_framing_preamble("service_detail:svc_1")
+    assert "Execution" in build_framing_preamble("feature:svc_1")
 
 
 def test_framing_empty_for_project_scope() -> None:
@@ -390,11 +390,11 @@ def test_framing_empty_for_project_scope() -> None:
     assert build_framing_preamble("project") == ""
 
 
-def test_framing_uses_base_scope_for_parametric_service_detail() -> None:
-    """A parametric ``service_detail:<id>`` resolves to the service_detail
+def test_framing_uses_base_scope_for_parametric_feature() -> None:
+    """A parametric ``feature:<id>`` resolves to the feature
     framing — the id never leaks a per-instance (missing) key."""
-    a = build_framing_preamble("service_detail:svc_one")
-    b = build_framing_preamble("service_detail:svc_two")
+    a = build_framing_preamble("feature:svc_one")
+    b = build_framing_preamble("feature:svc_two")
     assert a == b and a != ""
 
 
@@ -502,8 +502,8 @@ def test_chat_send_defaults_missing_scope_to_project(workspace: Path) -> None:
 
 
 def test_chat_send_keys_session_per_service_instance(workspace: Path) -> None:
-    """Layer 1 (CHAT_ARCH.md): two service-detail canvases get their own
-    threads — ``service_detail:<id>`` keys a distinct session per service."""
+    """Layer 1 (CHAT_ARCH.md): two feature canvases get their own
+    threads — ``feature:<id>`` keys a distinct session per service."""
     client, registry = _scope_aware_client(workspace)
     _select_provider(client, workspace, "codex")
 
@@ -512,7 +512,7 @@ def test_chat_send_keys_session_per_service_instance(workspace: Path) -> None:
         json={
             "project_path": str(workspace),
             "message": "a",
-            "scope": "service_detail:svc_one",
+            "scope": "feature:svc_one",
         },
     )
     client.post(
@@ -520,7 +520,7 @@ def test_chat_send_keys_session_per_service_instance(workspace: Path) -> None:
         json={
             "project_path": str(workspace),
             "message": "b",
-            "scope": "service_detail:svc_two",
+            "scope": "feature:svc_two",
         },
     )
     assert registry.session_count() == 2
@@ -531,14 +531,14 @@ def test_chat_send_keys_session_per_service_instance(workspace: Path) -> None:
         json={
             "project_path": str(workspace),
             "message": "c",
-            "scope": "service_detail:svc_one",
+            "scope": "feature:svc_one",
         },
     )
     assert registry.session_count() == 2
 
 
-def test_chat_send_accepts_service_detail_instance_scope(workspace: Path) -> None:
-    """A parametric ``service_detail:<id>`` scope is accepted (202), not 400."""
+def test_chat_send_accepts_feature_instance_scope(workspace: Path) -> None:
+    """A parametric ``feature:<id>`` scope is accepted (202), not 400."""
     client, _ = _scope_aware_client(workspace)
     _select_provider(client, workspace, "codex")
     resp = client.post(
@@ -546,7 +546,7 @@ def test_chat_send_accepts_service_detail_instance_scope(workspace: Path) -> Non
         json={
             "project_path": str(workspace),
             "message": "a",
-            "scope": "service_detail:svc_42",
+            "scope": "feature:svc_42",
         },
     )
     assert resp.status_code == 202

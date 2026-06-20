@@ -36,9 +36,9 @@ def _canvas_file(
     service_id: str | None = None,
 ) -> Path:
     folder = _project_dir(plot_root, project_id)
-    if canvas_kind == "service_detail":
+    if canvas_kind == "feature":
         if not service_id:
-            raise ValueError("service_detail requires service_id")
+            raise ValueError("feature requires service_id")
         return folder / "services" / service_id / "detail.json"
     return folder / canvas_kind / "canvas.json"
 

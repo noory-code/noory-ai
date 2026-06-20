@@ -99,7 +99,7 @@ def test_can_publish_rejects_project_anchor() -> None:
 
 
 def test_can_publish_rejects_is_root_service() -> None:
-    """ServiceDetail mirror — master gets published, mirror follows."""
+    """FeatureDetail mirror — master gets published, mirror follows."""
     assert can_publish(ServiceNode(id="svc-root", is_root=True)) is False
 
 

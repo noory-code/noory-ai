@@ -1,4 +1,4 @@
-"""Canvas read/write + service-detail listing.
+"""Canvas read/write + feature listing.
 
 Split out of the folder_io god-module (D-2026-06-10-D). folder_io.py re-exports
 everything, so import sites and tests are unchanged.
@@ -109,7 +109,7 @@ def read_canvas(
     # v0.24.11 (D-2026-05-19-D) — actor.is_root semantic deprecated; reset
     # any pre-v0.24.11 ``is_root=true`` on actor nodes to False on first
     # read. Service.is_root is preserved (still meaningful as the
-    # ServiceDetail anchor marker). See [[project_plot_symbol_concept]].
+    # FeatureDetail anchor marker). See [[project_plot_symbol_concept]].
     if canvas_kind == "actors":
         raw = _migrate_actor_isroot_to_false(raw)
     # v0.17 Phase 1 (D-2026-05-16-A) — JSON is the single SSOT for
@@ -122,7 +122,7 @@ def read_canvas(
     if canvas_kind == "foundation":
         raw = _absorb_md_typed_text_into_json(plot_root, project_id, raw)
     # v0.11.5 — services canvas no longer accepts Foundation refs (they
-    # moved to service_detail). Drop any stale ones from older projects so
+    # moved to feature). Drop any stale ones from older projects so
     # the canvas validates on open. Same idempotent pattern.
     if canvas_kind == "services":
         raw = _drop_disallowed_services_kinds(plot_root, project_id, raw)
@@ -158,7 +158,7 @@ def read_canvas(
 # one folder, and that folder is grouped under its kind.
 def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
     _ensure_project(plot_root, project_id)
-    service_id = canvas.service_ref if canvas.canvas_kind == "service_detail" else None
+    service_id = canvas.feature_ref if canvas.canvas_kind == "feature" else None
     path = _canvas_file(plot_root, project_id, canvas.canvas_kind, service_id)
     # v0.22.0 (D-2026-05-17-H) — preserve server-managed
     # ``_publish_baseline`` across PUTs. The client doesn't round-trip
@@ -201,7 +201,7 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
     write_project(plot_root, meta)
 
 
-def list_service_details(plot_root: Path, project_id: str) -> list[str]:
+def list_feature_details(plot_root: Path, project_id: str) -> list[str]:
     """Return the service ids for which a Detail canvas exists.
     v0.8 layout: each service lives at ``services/{sid}/`` and its detail
     canvas is the sibling ``detail.json`` alongside ``index.md``. Folders

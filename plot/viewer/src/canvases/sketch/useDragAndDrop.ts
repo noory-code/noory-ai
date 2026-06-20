@@ -42,7 +42,7 @@ export interface UseDragAndDropArgs {
     preset: NodePreset;
   }) => void;
   /** v0.27.10 (D-2026-05-28-A) — the canvas kind. Used by
-   *  ``resolveDropTarget`` to apply ServiceDetail's free-form
+   *  ``resolveDropTarget`` to apply FeatureDetail's free-form
    *  composition rule. */
   canvasKind?: StencilCanvas;
 }

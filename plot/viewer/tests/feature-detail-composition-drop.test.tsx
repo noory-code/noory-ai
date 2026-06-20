@@ -1,4 +1,4 @@
-// D-2026-05-28-A — ServiceDetail = user-authored interaction graph
+// D-2026-05-28-A — FeatureDetail = user-authored interaction graph
 // (relations + value flow, NOT a service-container hierarchy).  User's
 // own design intent (transcribed 2026-05-28):
 //
@@ -13,7 +13,7 @@
 // holdover from a prior "composition lives inside a service container"
 // model and forced step/metric/rule/content drops to require a
 // ``service`` parent.  That conflicts directly with the
-// D-2026-05-26-C ServiceDetail = self-authored interaction graph
+// D-2026-05-26-C FeatureDetail = self-authored interaction graph
 // decision: the user must be able to drop an interaction (step) or a
 // branch point (decision) on empty space and wire it up themselves.
 //
@@ -29,7 +29,7 @@ function findPreset(id: string): StencilPreset {
   return p;
 }
 
-describe("resolveDropTarget — ServiceDetail composition is free-form (D-2026-05-28-A)", () => {
+describe("resolveDropTarget — FeatureDetail composition is free-form (D-2026-05-28-A)", () => {
   // rule is not in STENCIL_PRESETS (inspector-only kind —
   // SPEC §Foundation typed-text storage); only step + decision are the
   // canvas-droppable composition presets (metric / content retired
@@ -37,22 +37,22 @@ describe("resolveDropTarget — ServiceDetail composition is free-form (D-2026-0
   const COMPOSITION_IDS = ["step", "decision"];
 
   it.each(COMPOSITION_IDS)(
-    "ServiceDetail: %s drop on empty space resolves to top-level (no service parent required)",
+    "FeatureDetail: %s drop on empty space resolves to top-level (no service parent required)",
     (id) => {
       const preset = findPreset(id);
-      const resolved = resolveDropTarget(preset, null, "service_detail");
-      expect(resolved, `${id} drop on empty in service_detail`).toEqual({ parentId: null });
+      const resolved = resolveDropTarget(preset, null, "feature");
+      expect(resolved, `${id} drop on empty in feature`).toEqual({ parentId: null });
     },
   );
 
   it.each(COMPOSITION_IDS)(
-    "ServiceDetail: %s drop inside a service container still nests (backwards-compat)",
+    "FeatureDetail: %s drop inside a service container still nests (backwards-compat)",
     (id) => {
       const preset = findPreset(id);
       const resolved = resolveDropTarget(
         preset,
         { id: "n_svc", kind: "service" },
-        "service_detail",
+        "feature",
       );
       expect(resolved).toEqual({ parentId: "n_svc" });
     },

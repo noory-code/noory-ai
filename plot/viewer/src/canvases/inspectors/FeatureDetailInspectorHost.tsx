@@ -1,7 +1,7 @@
 /**
- * ServiceDetail fallback inspector host (D-2026-06-15-O).
+ * FeatureDetail fallback inspector host (D-2026-06-15-O).
  *
- * The ServiceDetail canvas's default right panel = the subject service's
+ * The FeatureDetail canvas's default right panel = the subject service's
  * READ-ONLY inspector. The service node itself lives on the **Services**
  * canvas (the detail canvas only holds its actor/interaction/value peers —
  * D-2026-05-28-B), so this host reads it cross-doc from the Services
@@ -23,8 +23,8 @@ import { KindInspector } from "./KindInspector";
 
 const NOOP = (): void => {};
 
-export interface ServiceDetailInspectorHostProps {
-  /** Id of the service this detail canvas belongs to (``doc.service_ref``). */
+export interface FeatureDetailInspectorHostProps {
+  /** Id of the service this detail canvas belongs to (``doc.feature_ref``). */
   serviceId: string;
   /** The cached Services ``CanvasDoc`` (App holds it; null while loading). */
   servicesCanvas: CanvasDoc | null;
@@ -32,12 +32,12 @@ export interface ServiceDetailInspectorHostProps {
   projectId: string;
 }
 
-export function ServiceDetailInspectorHost({
+export function FeatureDetailInspectorHost({
   serviceId,
   servicesCanvas,
   projectPath,
   projectId,
-}: ServiceDetailInspectorHostProps) {
+}: FeatureDetailInspectorHostProps) {
   const nodes: SketchNode[] = servicesCanvas?.nodes ?? [];
   const service = nodes.find((n) => n.id === serviceId && n.kind === "service") ?? null;
   if (!service) return null;

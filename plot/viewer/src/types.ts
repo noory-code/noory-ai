@@ -106,14 +106,14 @@ export interface SketchEdge {
 // v0.4 multi-canvas — project folder layout
 // ---------------------------------------------------------------------------
 
-export type CanvasKind = "foundation" | "actors" | "services" | "service_detail";
+export type CanvasKind = "foundation" | "actors" | "services" | "feature";
 
 /**
  * Conversation scope for the R7 chat (D-2026-06-13-H; Layer 1 per-instance
  * refinement D-2026-06-15-B). Threads are partitioned per canvas kind plus one
- * shared ``project`` scope for cross-canvas work. ``service_detail`` is the one
- * parametric member: each service-detail canvas keys its own thread as
- * ``service_detail:<service_id>``, so the scope set equals ``CanvasKey |
+ * shared ``project`` scope for cross-canvas work. ``feature`` is the one
+ * parametric member: each feature canvas keys its own thread as
+ * ``feature:<service_id>``, so the scope set equals ``CanvasKey |
  * "project"`` — chat threads and canvas state key the same way. The viewer
  * sends the active scope on every turn and demultiplexes incoming
  * ``chat_stream_event`` payloads on it; the engine keys sessions on
@@ -125,7 +125,7 @@ export type ChatScope =
   | "foundation"
   | "actors"
   | "services"
-  | `service_detail:${string}`;
+  | `feature:${string}`;
 
 /**
  * One selected node summary sent with a chat turn (CHAT_ARCH Layer 2,
@@ -139,20 +139,20 @@ export interface ChatSelectionNode {
 
 /**
  * Cache key for a loaded canvas inside the viewer. Singleton canvases use
- * just the kind; service-detail uses ``service_detail:{service_id}``.
+ * just the kind; feature uses ``feature:{service_id}``.
  */
 export type CanvasKey =
   | "foundation"
   | "actors"
   | "services"
-  | `service_detail:${string}`;
+  | `feature:${string}`;
 
 import type { SketchNode } from "./domain";
 
 export interface CanvasDoc {
   canvas_id: string;
   canvas_kind: CanvasKind;
-  service_ref: string | null;
+  feature_ref: string | null;
   nodes: SketchNode[];
   edges: SketchEdge[];
 }

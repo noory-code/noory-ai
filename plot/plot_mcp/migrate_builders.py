@@ -7,7 +7,7 @@ Extracted from the migrate.py god module. Converts a parsed legacy v0.1
     nodes and plants the v0.5 Project anchor in the centre.
   * Actors    — actor subtree, parent chain cleaned, ≥2 actor pad.
   * Services  — top-level services wrapped under a default category.
-  * service_detail per top-level service — descendants converted to
+  * feature per top-level service — descendants converted to
     per-kind classes, with the v0.11 actor_ref seeds (operator + user).
 
 Each helper takes ``_V01SketchNode`` instances and returns current

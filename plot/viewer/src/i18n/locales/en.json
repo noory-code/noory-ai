@@ -142,10 +142,10 @@
       "foundation": "Foundation",
       "actors": "Actors",
       "services": "Services",
-      "service_detail": "Feature detail"
+      "feature": "Feature detail"
     }
   },
-  "serviceDetail": {
+  "featureDetail": {
     "label": "Feature detail",
     "ariaWithCategory": "Feature detail — {{category}} › {{service}}",
     "ariaWithoutCategory": "Feature detail — {{service}}"

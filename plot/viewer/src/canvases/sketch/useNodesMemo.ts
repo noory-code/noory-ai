@@ -1,7 +1,7 @@
 // Doc → React Flow nodes transform. Owns:
 //  - the parents-before-children sort (SPEC §Rendering order)
 //  - hidden-node rules (collapsed ancestor, rule/content kinds, the
-//    service-detail's redundant root)
+//    feature's redundant root)
 //  - orphan-actor_ref visual override (red tint + ⚠ prefix)
 //  - master-derived label sync for ref kinds
 //  - service.target_side body tint
@@ -48,12 +48,12 @@ export interface UseNodesMemoArgs {
     | undefined;
   setBodyModalNodeId: Dispatch<SetStateAction<string | null>>;
   /** v0.15 Phase 3.4 — drop the canvas's root-service node from the
-   *  rendered list (true on ServiceDetailCanvas where the modal
+   *  rendered list (true on FeatureDetailCanvas where the modal
    *  header already names the service). */
   hideRootServiceNode: boolean;
   /** v0.15 Phase 3.4 — predicate the wrapper supplies to opt nodes
    *  into double-click drill. ServicesCanvas: ``service && !is_root``;
-   *  ServiceDetailCanvas: ``actor_ref``. Foundation / Actors leave
+   *  FeatureDetailCanvas: ``actor_ref``. Foundation / Actors leave
    *  this undefined so no node drills. */
   shouldDrill: ((node: DocNode) => boolean) | undefined;
   /** v0.15 Phase 3.4 — render the fold (▾/▸) button on container
@@ -61,7 +61,7 @@ export interface UseNodesMemoArgs {
    *  meaning there. */
   showFoldButton: boolean;
   /** v0.15 Phase 3.4 — inject the synthetic project anchor at the
-   *  top of the node list. False on ServiceDetailCanvas (the modal
+   *  top of the node list. False on FeatureDetailCanvas (the modal
    *  has its own header). */
   injectAnchor: boolean;
   /** v0.37.1 (D-2026-05-31-AD) — ids React Flow currently has selected.
@@ -134,10 +134,10 @@ export function useNodesMemo({
       // v0.2 correction (2026-04-20): rule is edited through the right-hand
       // Inspector panel, never on the canvas. (content retired 2026-06-20.)
       if (n.kind === "rule") continue;
-      // v0.12.2: inside the service-detail modal the service-root
+      // v0.12.2: inside the feature modal the service-root
       // is redundant — the modal header already names it. Wrapper
-      // (ServiceDetailCanvas) opts in via ``hideRootServiceNode``.
-      if (hideRootServiceNode && doc.service_ref && n.id === doc.service_ref) {
+      // (FeatureDetailCanvas) opts in via ``hideRootServiceNode``.
+      if (hideRootServiceNode && doc.feature_ref && n.id === doc.feature_ref) {
         continue;
       }
       // Containers fold on their directed-edge children.
@@ -212,7 +212,7 @@ export function useNodesMemo({
           // v0.15 Phase 3.4: per-canvas opt-in. Foundation lays pillars
           // out as peers and passes false; everywhere else passes true.
           // v0.27.5 (D-2026-05-26-I): the root-service node on the
-          // ServiceDetail canvas is the design *subject*; folding it
+          // FeatureDetail canvas is the design *subject*; folding it
           // hides every descendant, which empties the canvas wholesale
           // and reads to the user as "the nodes just vanished when I
           // touched the centre node." Suppress the fold button on
@@ -235,7 +235,7 @@ export function useNodesMemo({
     }
     // SPEC §Anchor — synthetic project anchor. v0.15 Phase 3.4: each
     // wrapper opts in via ``injectAnchor`` (true on Foundation /
-    // Actors / Services; false on ServiceDetailCanvas). Mutation
+    // Actors / Services; false on FeatureDetailCanvas). Mutation
     // routes via onAnchorChange, NEVER via onDocChange.
     if (projectAnchor && injectAnchor) {
       out.unshift({
@@ -268,7 +268,7 @@ export function useNodesMemo({
     return out;
   }, [
     doc.nodes,
-    doc.service_ref,
+    doc.feature_ref,
     childIdsByParent,
     nearestCollapsedAncestor,
     subtreeSize,

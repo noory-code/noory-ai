@@ -238,7 +238,7 @@ export async function createWorkspaceDir(
 }
 
 export interface GetProjectResponse extends ProjectDoc {
-  service_details: string[];
+  feature_details: string[];
   tags: ProjectTag[];
 }
 
@@ -362,7 +362,7 @@ export async function putCanvas(
   canvas: CanvasDoc,
 ): Promise<PutCanvasResponse> {
   const serviceId =
-    canvas.canvas_kind === "service_detail" ? canvas.service_ref : null;
+    canvas.canvas_kind === "feature" ? canvas.feature_ref : null;
   const resp = await json<PutCanvasResponse>(
     await engineFetch(
       canvasPath(projectPath, projectId, canvas.canvas_kind, serviceId),
@@ -381,7 +381,7 @@ export async function putCanvas(
 export async function getAllCanvases(
   projectPath: string,
   projectId: string,
-  serviceDetails: string[],
+  featureDetails: string[],
 ): Promise<Map<CanvasKey, CanvasDoc>> {
   const entries: [CanvasKey, Promise<CanvasDoc>][] = [
     ["foundation", getCanvas(projectPath, projectId, "foundation")],
@@ -391,10 +391,10 @@ export async function getAllCanvases(
       getCanvas(projectPath, projectId, "services"),
     ],
   ];
-  for (const sid of serviceDetails) {
+  for (const sid of featureDetails) {
     entries.push([
-      `service_detail:${sid}`,
-      getCanvas(projectPath, projectId, "service_detail", sid),
+      `feature:${sid}`,
+      getCanvas(projectPath, projectId, "feature", sid),
     ]);
   }
   const resolved = await Promise.all(entries.map(([, p]) => p));
@@ -498,7 +498,7 @@ export interface PublishPropagatedAncestor {
   from_version: string;
   to_version: string;
   /** Canvas keys this ancestor has file-presence in (e.g. ``services``,
-   * ``service_detail:<sid>``). All canvases were bumped in lockstep. */
+   * ``feature:<sid>``). All canvases were bumped in lockstep. */
   canvases: string[];
 }
 

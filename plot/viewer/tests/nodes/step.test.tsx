@@ -1,5 +1,5 @@
 /**
- * v0.27.19 (D-2026-05-30-A / D-2026-05-30-B) — ServiceDetail step
+ * v0.27.19 (D-2026-05-30-A / D-2026-05-30-B) — FeatureDetail step
  * authoring affordances.
  *
  * Phase A (D-2026-05-30-A): ``step.outcome`` renders on the canvas

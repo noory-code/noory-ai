@@ -17,7 +17,7 @@ export const PROJECT_ANCHOR_ID = "__project_anchor__";
  * applied when no preset matches.
  */
 // v0.24.15 (D-2026-05-24-A) — reduced from 140×60 to 80×36, follow-up to
-// D-2026-05-17-N. Tighter default keeps Services / ServiceDetail canvases
+// D-2026-05-17-N. Tighter default keeps Services / FeatureDetail canvases
 // readable without overflow on hub-spoke layouts and matches the new label-
 // plus-icon-only baseline. Existing nodes keep their stored width/height in
 // canvas.json; only the next stencil-drop or pane-double-click creates an

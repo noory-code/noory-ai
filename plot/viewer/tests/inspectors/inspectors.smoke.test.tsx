@@ -80,7 +80,7 @@ function makeNode(overrides: MakeNodeOverrides): SketchNode {
 
 function makeProps(
   node: SketchNode,
-  canvasKind: CanvasKind = "service_detail",
+  canvasKind: CanvasKind = "feature",
   allNodes: SketchNode[] = [node],
   allEdges: import("../../src/types").SketchEdge[] = [],
 ) {
@@ -201,7 +201,7 @@ describe("ActorRefInspector (read-only anchor, D-2026-06-19-I)", () => {
       ref_actor_id: "operator",
     });
     render(
-      <KindInspector {...makeProps(ref, "service_detail", [ref, actor])} availableActors={[actor]} />,
+      <KindInspector {...makeProps(ref, "feature", [ref, actor])} availableActors={[actor]} />,
     );
     // shows which actor master it anchors
     expect(screen.getByText(/Operator/)).toBeInTheDocument();
@@ -217,7 +217,7 @@ describe("ActorRefInspector (read-only anchor, D-2026-06-19-I)", () => {
       ref_actor_id: "ghost",
     });
     render(
-      <KindInspector {...makeProps(ref, "service_detail", [ref])} availableActors={[]} />,
+      <KindInspector {...makeProps(ref, "feature", [ref])} availableActors={[]} />,
     );
     expect(screen.getByText(/Orphan/i)).toBeInTheDocument();
   });
@@ -263,7 +263,7 @@ describe("RuleInspector (Phase 2.9)", () => {
       policy: "consent",
       enforcement: "checkbox",
     });
-    render(<KindInspector {...makeProps(r, "service_detail")} />);
+    render(<KindInspector {...makeProps(r, "feature")} />);
     expect(screen.getByDisplayValue("consent")).toBeInTheDocument();
     expect(screen.getByDisplayValue("checkbox")).toBeInTheDocument();
   });

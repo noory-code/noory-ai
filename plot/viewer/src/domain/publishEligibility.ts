@@ -8,7 +8,7 @@
  *
  * Rules:
  * - ``project`` (anchor): false — mirrors ``ProjectDoc.name`` only.
- * - ``service`` (is_root): false — ServiceDetail mirror of a Services-
+ * - ``service`` (is_root): false — FeatureDetail mirror of a Services-
  *   canvas master; the master gets published, the mirror follows.
  * - ``actor`` (is_root): true — masters like Bana / Admin / Guest hold
  *   their own typed text and own their own version (D-2026-05-19-C).

@@ -59,7 +59,7 @@ function nativeCanvasFor(kind: NodeKind): CanvasKind {
     case "category":
       return "services";
     default:
-      return "service_detail";
+      return "feature";
   }
 }
 

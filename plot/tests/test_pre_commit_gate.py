@@ -135,7 +135,7 @@ def test_reset_fails_when_god_sketch_node_returns(tmp_path: Path) -> None:
 def test_reset_fails_when_canvas_kind_branching_returns(tmp_path: Path) -> None:
     root = _make_minimal_plot_tree(tmp_path)
     (root / "viewer" / "src" / "canvases" / "sketch" / "useEdgesMemo.ts").write_text(
-        'if (doc.canvas_kind === "service_detail") { /* branch */ }\n',
+        'if (doc.canvas_kind === "feature") { /* branch */ }\n',
         encoding="utf-8",
     )
     msg = _GATE.reset_complete_check(_staged_viewer(), root)

@@ -24,7 +24,7 @@ from plot_mcp.file_io import UnsafePathError
 from plot_mcp.folder_io import (
     create_project,
     delete_project,
-    list_service_details,
+    list_feature_details,
     read_project,
     rename_project,
     write_project,
@@ -135,12 +135,12 @@ async def project_get_endpoint(request: Request) -> JSONResponse:
         proj = read_project(plot_root, project_id)
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
-    details = list_service_details(plot_root, project_id)
+    details = list_feature_details(plot_root, project_id)
     tags = list_tags(workspace_root_from_plot_root(plot_root))
     return JSONResponse(
         {
             **proj.model_dump(),
-            "service_details": details,
+            "feature_details": details,
             "tags": tags,
         }
     )

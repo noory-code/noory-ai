@@ -3,7 +3,7 @@
  * direction toggle v0.40.3 (D-2026-06-03-C).
  *
  * Rendered as children of React Flow's ``<Controls>``. Owns the ⊞
- * auto-layout button and — on ServiceDetail (``showDirectionSwitch``)
+ * auto-layout button and — on FeatureDetail (``showDirectionSwitch``)
  * — a SINGLE direction toggle that shows the current layout direction
  * (↔ horizontal / ↕ vertical, derived from the subject edge handle via
  * ``detectAnchorDirection``) and flips horizontal ↔ vertical on click.
@@ -60,7 +60,7 @@ export function LayoutControls({
 }: LayoutControlsProps) {
   const { t } = useTranslation();
   if (!layoutAlgo) return null;
-  // ⊞ runs the flow layout on ServiceDetail (the only canvas with a
+  // ⊞ runs the flow layout on FeatureDetail (the only canvas with a
   // direction switch) and the mind-map tree everywhere else. The icon +
   // label reflect that so the user can tell the mode at a glance.
   const flowMode = showDirectionSwitch === true;

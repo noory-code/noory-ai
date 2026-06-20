@@ -1,13 +1,13 @@
 /**
  * Regression (D-2026-06-16-F): the chat's per-turn selection context (Layer 2,
- * D-2026-06-15-A) was inert on the service-detail canvas — App wired
+ * D-2026-06-15-A) was inert on the feature canvas — App wired
  * ``onSelectionChange`` only on the main F/A/S ``<Canvas>`` slot, and the
  * ``ChatDock`` selection was read from ``activeCanvas`` (the Services canvas),
- * not the active detail canvas. So while editing inside a service-detail
+ * not the active detail canvas. So while editing inside a feature
  * canvas, "이거 고쳐줘" couldn't resolve the selected node.
  *
  * Static guard (App wiring is integration-heavy): pin that (1) the
- * ServiceDetailCanvas slot reports its selection up, and (2) the ChatDock
+ * FeatureDetailCanvas slot reports its selection up, and (2) the ChatDock
  * selection source is detail-aware.
  */
 import { readFileSync } from "node:fs";
@@ -23,9 +23,9 @@ function jsxBlock(tag: string): string {
   return src.slice(start, end === -1 ? undefined : end);
 }
 
-describe("chat selection on service-detail (D-2026-06-16-F)", () => {
-  it("ServiceDetailCanvas reports its selection upward", () => {
-    expect(jsxBlock("ServiceDetailCanvas")).toContain("onSelectionChange");
+describe("chat selection on feature (D-2026-06-16-F)", () => {
+  it("FeatureDetailCanvas reports its selection upward", () => {
+    expect(jsxBlock("FeatureDetailCanvas")).toContain("onSelectionChange");
   });
 
   it("ChatDock selection reads the active detail canvas, not just activeCanvas", () => {

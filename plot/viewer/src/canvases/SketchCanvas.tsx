@@ -108,7 +108,7 @@ export interface SketchCanvasProps {
   /** v0.13 Phase 0: callback when the user drags / resizes the anchor. */
   onAnchorChange?: (patch: Partial<import("../types").AnchorPlacement>) => void;
   /** v0.15 Phase 3.4 — drop the canvas's root-service node from
-   *  the rendered list (true on ServiceDetailCanvas where the
+   *  the rendered list (true on FeatureDetailCanvas where the
    *  modal header already names the service). Default false. */
   hideRootServiceNode?: boolean;
   /** v0.15 Phase 3.4 — predicate that opts nodes into double-click
@@ -123,7 +123,7 @@ export interface SketchCanvasProps {
    *  nodes. Default true; FoundationCanvas passes false. */
   showFoldButton?: boolean;
   /** v0.15 Phase 3.4 — inject the synthetic project anchor at the top
-   *  of the node list. Default true; ServiceDetailCanvas passes false. */
+   *  of the node list. Default true; FeatureDetailCanvas passes false. */
   injectAnchor?: boolean;
   /** v0.16.12 (D-2026-05-12-O) — when true, new ``mission`` /
    *  ``core_value`` / ``identity`` nodes snap to anchor-radial slots
@@ -131,16 +131,16 @@ export interface SketchCanvasProps {
   applyAnchorRadialLayout?: boolean;
   /** Wrapper-supplied anchor-relative arrow orientation (D-2026-05-31-AA +
    *  D-2026-06-14-C). Foundation/Actors ``"converge"``, Services
-   *  ``"diverge"``, ServiceDetail/default ``"none"``. (No ``doc.canvas_kind``
+   *  ``"diverge"``, FeatureDetail/default ``"none"``. (No ``doc.canvas_kind``
    *  read — banned by the v0.15 reset + pre-commit gate.) */
   anchorArrowMode?: AnchorArrowMode;
   /** v0.25.0 (D-2026-05-24-B) — wrapper opt-in for the auto-layout
    *  button in RF Controls. Successor to ``enableAutoLayout`` (boolean).
    *  ``"tree"`` runs ``useAutoLayout`` (Foundation / Actors); ``"radial"``
-   *  runs ``useRadialLayout`` (Services / ServiceDetail). ``null`` /
+   *  runs ``useRadialLayout`` (Services / FeatureDetail). ``null`` /
    *  undefined hides the button entirely. */
   layoutAlgo?: "tree" | "radial" | null;
-  /** v0.28.3 (D-2026-05-30-F) — LR/TB direction-switch buttons (ServiceDetail). */
+  /** v0.28.3 (D-2026-05-30-F) — LR/TB direction-switch buttons (FeatureDetail). */
   showDirectionSwitch?: boolean;
   /** v0.18.0 Phase 3 (D-2026-05-16-E) — fire to publish a node. The
    *  Inspector renders the publish button; the callback wraps the
@@ -151,14 +151,14 @@ export interface SketchCanvasProps {
    *  most recent publish. Optional. */
   onUnpublishNode?: (nodeId: string) => void;
   /** D-2026-06-15-O — rendered by SketchInspectorBindings when no node is
-   *  selected. ServiceDetail passes the subject service's read-only
+   *  selected. FeatureDetail passes the subject service's read-only
    *  inspector so the detail canvas's default panel shows the service. */
   fallbackInspector?: ReactNode;
 }
 
 
 // v0.27.18 (D-2026-05-28-L) — wrap with React.memo so a parent re-render
-// caused by an unrelated child (e.g. the ServiceDetail modal updating its
+// caused by an unrelated child (e.g. the FeatureDetail modal updating its
 // own doc cache slice) doesn't sweep this SketchCanvas through a full
 // re-render → ReactFlow prop-cascade. Combined with App.tsx's stabilised
 // projectAnchor + projectName, the Services canvas behind the modal now
@@ -405,7 +405,7 @@ function SketchCanvasInner({
     addNodeAt,
     addNestedNodeAt,
     // v0.27.10 (D-2026-05-28-A) — drop-target resolution needs the
-    // canvas context so ServiceDetail composition drops are free-form.
+    // canvas context so FeatureDetail composition drops are free-form.
     canvasKind: doc.canvas_kind,
   });
 

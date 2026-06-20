@@ -78,7 +78,7 @@ function makeCanvas(
   return {
     canvas_id: kind === "foundation" ? "foundation" : kind === "actors" ? "actors" : "services",
     canvas_kind: kind,
-    service_ref: null,
+    feature_ref: null,
     nodes,
     edges,
   };
@@ -145,7 +145,7 @@ describe("SketchCanvas regression — pin v0.13.2 reverts", () => {
     // D-2026-05-13-L — auto-layout re-introduced as wrapper opt-in
     // via the ``enableAutoLayout`` boolean prop. v0.25.0
     // (D-2026-05-24-B) generalised that into ``layoutAlgo: "tree" |
-    // "radial" | null`` so Services / ServiceDetail can opt in with a
+    // "radial" | null`` so Services / FeatureDetail can opt in with a
     // hub-spoke radial algorithm distinct from Foundation / Actors'
     // directional tree. SketchCanvas default behaviour stays
     // "no auto-layout button" — only wrappers that set ``layoutAlgo``

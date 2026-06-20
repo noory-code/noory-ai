@@ -43,7 +43,7 @@ export interface ChatDockProps {
   workspaceRoot?: string;
   /** The canvas-derived chat scope the dock follows (D-2026-06-13-H). */
   activeScope?: ChatScope;
-  /** Human label for a parametric ``service_detail:<id>`` scope (D-2026-06-15-H). */
+  /** Human label for a parametric ``feature:<id>`` scope (D-2026-06-15-H). */
   activeScopeLabel?: string | null;
   /** Live canvas selection, injected as per-turn chat context (Layer 2,
    * D-2026-06-15-A). */
@@ -276,9 +276,9 @@ function ChatScopeSwitcher({
   onModeChange: (mode: "canvas" | "project") => void;
 }) {
   const { t } = useTranslation();
-  const isServiceDetail = canvasScope.startsWith("service_detail:");
-  const canvasTabLabel = isServiceDetail
-    ? canvasLabel || t("chat.scope.service_detail")
+  const isFeatureDetail = canvasScope.startsWith("feature:");
+  const canvasTabLabel = isFeatureDetail
+    ? canvasLabel || t("chat.scope.feature")
     : t(`chat.scope.${canvasScope}`);
   const segment = (value: "canvas" | "project", label: string) => (
     <button

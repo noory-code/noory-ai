@@ -18,7 +18,7 @@ from plot_mcp.folder_io import (
     PublishNotEligibleError,
     create_project,
     delete_project,
-    list_service_details,
+    list_feature_details,
     publish_node,
     read_canvas,
     read_project,
@@ -53,7 +53,7 @@ mcp = FastMCP(
         "``.noory/plot/{project}/``. Use ``list_projects`` / ``get_project`` "
         "to discover state, ``get_canvas`` / ``update_canvas`` to read or write "
         "a single canvas (``core`` / ``actors`` / ``services_overview`` / "
-        "``service_detail``), and ``tag_project`` to plant a named milestone "
+        "``feature``), and ``tag_project`` to plant a named milestone "
         "in the project's git repo. Edits are never auto-committed — only the "
         "tag tools touch git."
     ),
@@ -84,12 +84,12 @@ def discover_workspace_projects(project_path: str) -> list[dict[str, Any]]:
 
 @mcp.tool()
 def get_project(project_path: str, project_id: str) -> dict[str, Any]:
-    """Read a project's metadata + its service-detail ids + tags."""
+    """Read a project's metadata + its feature ids + tags."""
     plot_root = resolve_plot_root(project_path)
     proj = read_project(plot_root, project_id)
     return {
         **proj.model_dump(),
-        "service_details": list_service_details(plot_root, project_id),
+        "feature_details": list_feature_details(plot_root, project_id),
         "tags": list_tags(workspace_root_from_plot_root(plot_root)),
     }
 
@@ -131,8 +131,8 @@ def get_canvas(
     service_id: str | None = None,
 ) -> dict[str, Any]:
     """Read a single canvas. ``canvas_kind`` ∈ ``core`` / ``actors`` /
-    ``services_overview`` / ``service_detail``. ``service_id`` is
-    required when ``canvas_kind == "service_detail"``."""
+    ``services_overview`` / ``feature``. ``service_id`` is
+    required when ``canvas_kind == "feature"``."""
     plot_root = resolve_plot_root(project_path)
     canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
     return canvas.model_dump(by_alias=True)
@@ -156,7 +156,7 @@ def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) ->
 def list_detail_canvases(project_path: str, project_id: str) -> list[str]:
     """Return the service ids that have their own Detail canvas."""
     plot_root = resolve_plot_root(project_path)
-    return list_service_details(plot_root, project_id)
+    return list_feature_details(plot_root, project_id)
 
 
 # ---------------------------------------------------------------------------
@@ -210,7 +210,7 @@ def publish_node_tool(
     base trailers + one ``Publish-Propagated-Ancestor:`` trailer per
     bumped ancestor.
 
-    Eligibility: project anchor / ``service`` is_root (ServiceDetail
+    Eligibility: project anchor / ``service`` is_root (FeatureDetail
     mirror) / ``*_ref`` kinds are rejected with ValueError. All other
     kinds are publish-eligible — including ``actor`` is_root masters
     like Bana / Admin / Guest (v0.24.10 / D-2026-05-19-C).
@@ -277,7 +277,7 @@ def get_viewer_context(project_path: str) -> dict[str, Any]:
 
         {
           "active_canvas": "<scope>" | null,   # e.g. "foundation",
-                                                # "service_detail:<id>"
+                                                # "feature:<id>"
           "selection": [{"id", "kind", "label"}, ...],
           "framing": "<per-canvas guidance>",   # how to help on this canvas
           "updated_at": <epoch seconds> | null,

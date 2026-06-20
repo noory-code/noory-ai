@@ -3,7 +3,7 @@
  * three browser-URL query params Plot keeps in sync:
  *
  *   ``?canvas=foundation|actors|services``   ← activeTab
- *   ``?detail=<serviceId>``                 ← detailServiceId
+ *   ``?detail=<serviceId>``                 ← detailFeatureId
  *   ``?select=<nodeId>``                    ← selectedNodeId
  *
  * Extracted from ``App.tsx`` (v0.16.4) so the App component no
@@ -17,9 +17,9 @@ import type { CanvasKey } from "../types";
 
 export interface UrlSync {
   activeTab: CanvasTab;
-  detailServiceId: string | null;
-  /** Whether the service-detail tab is the active view (D-2026-06-15-H). The
-   *  ``{ServiceDetail}`` tab exists whenever ``detailServiceId`` is set; this
+  detailFeatureId: string | null;
+  /** Whether the feature tab is the active view (D-2026-06-15-H). The
+   *  ``{FeatureDetail}`` tab exists whenever ``detailFeatureId`` is set; this
    *  flag says it's the one currently showing (vs an F/A/S tab). */
   detailActive: boolean;
   selectedNodeId: string | null;
@@ -27,10 +27,10 @@ export interface UrlSync {
    *  ``?project=<id>`` param when ``useProject`` changes activeId. */
   syncUrl: (updates: Record<string, string | null | undefined>) => void;
   selectTab: (tab: CanvasTab) => void;
-  drillIntoService: (serviceId: string) => void;
-  /** Re-activate the existing service-detail tab (click its tab). */
+  drillIntoFeature: (serviceId: string) => void;
+  /** Re-activate the existing feature tab (click its tab). */
   activateDetail: () => void;
-  /** Remove the service-detail tab entirely (its × button). */
+  /** Remove the feature tab entirely (its × button). */
   closeDetail: () => void;
   backToOverview: () => void;
   jumpToActor: (actorId: string) => void;
@@ -51,7 +51,7 @@ function readInitial(param: string): string | null {
 
 export function useUrlSync(): UrlSync {
   const [activeTab, setActiveTab] = useState<CanvasTab>(readInitialTab);
-  const [detailServiceId, setDetailServiceId] = useState<string | null>(() =>
+  const [detailFeatureId, setDetailFeatureId] = useState<string | null>(() =>
     readInitial("detail"),
   );
   // On load, a present ``?detail`` means the detail tab opens active (matches
@@ -78,7 +78,7 @@ export function useUrlSync(): UrlSync {
   const selectTab = useCallback(
     (tab: CanvasTab) => {
       // Switching to an F/A/S tab deactivates the detail view but KEEPS the
-      // ``{ServiceDetail}`` tab around (D-2026-06-15-H) — it's closed only via
+      // ``{FeatureDetail}`` tab around (D-2026-06-15-H) — it's closed only via
       // its × button. ``detail`` URL param is left intact so the tab persists.
       setActiveTab(tab);
       setDetailActive(false);
@@ -87,12 +87,12 @@ export function useUrlSync(): UrlSync {
     [syncUrl],
   );
 
-  const drillIntoService = useCallback(
+  const drillIntoFeature = useCallback(
     (serviceId: string) => {
       // Selecting a service node adds the detail tab and makes it the active
       // view (D-2026-06-15-H — was a modal pre-v0.78).
       setActiveTab("services");
-      setDetailServiceId(serviceId);
+      setDetailFeatureId(serviceId);
       setDetailActive(true);
       syncUrl({ canvas: "services", detail: serviceId });
     },
@@ -104,13 +104,13 @@ export function useUrlSync(): UrlSync {
   }, []);
 
   const closeDetail = useCallback(() => {
-    setDetailServiceId(null);
+    setDetailFeatureId(null);
     setDetailActive(false);
     syncUrl({ detail: null });
   }, [syncUrl]);
 
   const backToOverview = useCallback(() => {
-    setDetailServiceId(null);
+    setDetailFeatureId(null);
     setDetailActive(false);
     syncUrl({ detail: null });
   }, [syncUrl]);
@@ -118,7 +118,7 @@ export function useUrlSync(): UrlSync {
   const jumpToActor = useCallback(
     (actorId: string) => {
       setActiveTab("actors");
-      setDetailServiceId(null);
+      setDetailFeatureId(null);
       setDetailActive(false); // leaving the detail tab — keep tab state in sync (D-2026-06-15-L)
       setSelectedNodeId(actorId);
       syncUrl({ canvas: "actors", detail: null, select: actorId });
@@ -135,20 +135,20 @@ export function useUrlSync(): UrlSync {
     (key: CanvasKey) => {
       if (key === "foundation") {
         setActiveTab("foundation");
-        setDetailServiceId(null);
+        setDetailFeatureId(null);
         syncUrl({ canvas: "foundation", detail: null });
       } else if (key === "actors") {
         setActiveTab("actors");
-        setDetailServiceId(null);
+        setDetailFeatureId(null);
         syncUrl({ canvas: "actors", detail: null });
       } else if (key === "services") {
         setActiveTab("services");
-        setDetailServiceId(null);
+        setDetailFeatureId(null);
         syncUrl({ canvas: "services", detail: null });
       } else {
-        const sid = key.slice("service_detail:".length);
+        const sid = key.slice("feature:".length);
         setActiveTab("services");
-        setDetailServiceId(sid);
+        setDetailFeatureId(sid);
         setDetailActive(true);
         syncUrl({ canvas: "services", detail: sid });
       }
@@ -158,12 +158,12 @@ export function useUrlSync(): UrlSync {
 
   return {
     activeTab,
-    detailServiceId,
+    detailFeatureId,
     detailActive,
     selectedNodeId,
     syncUrl,
     selectTab,
-    drillIntoService,
+    drillIntoFeature,
     activateDetail,
     closeDetail,
     backToOverview,

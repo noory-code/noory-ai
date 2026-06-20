@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from plot_mcp.canvas_io import list_service_details, read_canvas, write_canvas  # noqa: F401
+from plot_mcp.canvas_io import list_feature_details, read_canvas, write_canvas  # noqa: F401
 from plot_mcp.git_store import (
     ensure_clean_working_tree,
     find_latest_publish_commit,
@@ -59,7 +59,7 @@ def _load_all_canvases(plot_root: Path, project_id: str) -> dict[str, CanvasDoc]
       - ``"foundation"`` → foundation canvas
       - ``"actors"`` → actors canvas
       - ``"services"`` → services canvas
-      - ``"service_detail:<service_id>"`` → per-service detail canvas
+      - ``"feature:<service_id>"`` → per-service detail canvas
 
     Used by Phase 4 (D-2026-05-17-C) propagation walk; the walk only
     requires the keys to be unique within the returned dict.
@@ -71,10 +71,10 @@ def _load_all_canvases(plot_root: Path, project_id: str) -> dict[str, CanvasDoc]
             canvases[kind] = read_canvas(plot_root, project_id, kind)
         except FileNotFoundError:
             continue
-    for sid in list_service_details(plot_root, project_id):
+    for sid in list_feature_details(plot_root, project_id):
         try:
-            canvases[f"service_detail:{sid}"] = read_canvas(
-                plot_root, project_id, "service_detail", service_id=sid
+            canvases[f"feature:{sid}"] = read_canvas(
+                plot_root, project_id, "feature", service_id=sid
             )
         except FileNotFoundError:
             continue
@@ -172,7 +172,7 @@ def _patch_node_in_canvas(canvas: CanvasDoc, node_id: str, patch: dict[str, Any]
     """Return a copy of ``canvas`` with ``node_id``'s listed fields
     replaced via ``model_copy(update=patch)``. Preserves all other
     fields — important for mirror sync where canvas-local state
-    (e.g. ``is_root`` on the ServiceDetail mirror vs ``False`` on the
+    (e.g. ``is_root`` on the FeatureDetail mirror vs ``False`` on the
     services master) must remain canvas-specific."""
     new_nodes = [n.model_copy(update=patch) if n.id == node_id else n for n in canvas.nodes]
     return canvas.model_copy(update={"nodes": new_nodes})
@@ -195,7 +195,7 @@ def publish_node(
       3. Compute ``from_v`` / ``to_v`` (MAJOR bump for the target).
       4. MAJOR-bump the target's ``version`` in **every** canvas it
          appears in (mirror sync — e.g. a service node has presences
-         in both Services and ServiceDetail).
+         in both Services and FeatureDetail).
       5. Render the published MD content via ``render_node_md`` and
          write to ``<canvas_dir>/published/{kind}-{slug}-{to_v}.md``.
          The MD anchor canvas is the one the user published from
@@ -226,7 +226,7 @@ def publish_node(
     ensure_clean_working_tree(workspace_root)
     canvases = _load_all_canvases(plot_root, project_id)
     start_canvas_key = (
-        f"service_detail:{service_id}" if canvas_kind == "service_detail" else canvas_kind
+        f"feature:{service_id}" if canvas_kind == "feature" else canvas_kind
     )
     start_canvas = canvases.get(start_canvas_key)
     if start_canvas is None:
@@ -259,7 +259,7 @@ def publish_node(
     # v0.22.0 (D-2026-05-17-H) — compute the post-publish dirty baseline
     # using the bumped node + incident edges of the canvas the user
     # published from. Publish-eligible nodes only exist in a single
-    # canvas (service masters live in ``services``; their ServiceDetail
+    # canvas (service masters live in ``services``; their FeatureDetail
     # mirror is ``is_root`` and therefore publish-ineligible), so the
     # start_canvas's edges are the right baseline source.
     incident = _incident_edges(start_canvas.edges, node_id)
@@ -268,7 +268,7 @@ def publish_node(
     # Step 4 — MAJOR-bump the target in every canvas it appears in
     # (mirror sync) and stamp the dirty baseline. Patch only ``version``
     # + ``publish_baseline`` so other fields stay canvas-local — most
-    # importantly ``is_root`` (services master is False, ServiceDetail
+    # importantly ``is_root`` (services master is False, FeatureDetail
     # mirror is True). v0.26.0 (D-2026-05-25-A): parent_id no longer
     # in this list — containment is now per-canvas directed edges.
     version_baseline_patch: dict[str, Any] = {

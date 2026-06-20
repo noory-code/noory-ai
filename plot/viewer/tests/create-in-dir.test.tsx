@@ -24,7 +24,7 @@ function historyStub(): ProjectHistoryApi {
   return { init: vi.fn(), clear: vi.fn() } as unknown as ProjectHistoryApi;
 }
 function proj(id: string) {
-  return { id, name: id, service_details: [], tags: [], blueprint_version: "v0.1.0" };
+  return { id, name: id, feature_details: [], tags: [], blueprint_version: "v0.1.0" };
 }
 
 beforeEach(() => {

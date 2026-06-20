@@ -36,7 +36,7 @@ export interface KindInspectorProps {
   onClose: () => void;
   /** D-2026-06-15-O — render the inspector read-only (no editable inputs,
    *  no delete / publish / close / composition affordances). Used by the
-   *  ServiceDetail fallback inspector, which shows the subject service's
+   *  FeatureDetail fallback inspector, which shows the subject service's
    *  fields cross-doc without letting the user edit them from the detail
    *  canvas. Default false. */
   readOnly?: boolean;
@@ -45,8 +45,8 @@ export interface KindInspectorProps {
   projectId: string;
   canvasKind: CanvasKind;
   /** v0.27.13 (D-2026-05-28-H) — required for the published-versions
-   *  fetch on service_detail canvases. The backend's
-   *  ``GET .../canvases/service_detail/nodes/.../published`` returns
+   *  fetch on feature canvases. The backend's
+   *  ``GET .../canvases/feature/nodes/.../published`` returns
    *  500 when ``service_id`` is missing (read_canvas raises
    *  ValueError); the Inspector now passes it through so the URL is
    *  always complete. Optional on every other canvas. */

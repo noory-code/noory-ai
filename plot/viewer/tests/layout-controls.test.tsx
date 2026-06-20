@@ -20,8 +20,8 @@ import type { CanvasDoc } from "../src/types";
 function docWithHandle(sourceHandle: string | null): CanvasDoc {
   return {
     canvas_id: "t",
-    canvas_kind: "service_detail",
-    service_ref: null,
+    canvas_kind: "feature",
+    feature_ref: null,
     nodes: [
       {
         id: "a",
@@ -146,7 +146,7 @@ describe("LayoutControls direction toggle (D-2026-06-03-C)", () => {
   // the user can tell which arrangement it produces. User 2026-06-03:
   // *"어떤 모드인지 아이콘이 같으니 알 수가 없네"*. Mind-map mode (no
   // direction switch = Foundation / Actors / Services) vs flow mode
-  // (showDirectionSwitch = ServiceDetail).
+  // (showDirectionSwitch = FeatureDetail).
   it("auto-layout button is mind-map mode when there is no direction switch", () => {
     render(
       <LayoutControls
@@ -163,7 +163,7 @@ describe("LayoutControls direction toggle (D-2026-06-03-C)", () => {
     ).toBeNull();
   });
 
-  it("auto-layout button is flow mode on ServiceDetail (showDirectionSwitch)", () => {
+  it("auto-layout button is flow mode on FeatureDetail (showDirectionSwitch)", () => {
     render(
       <LayoutControls
         layoutAlgo="tree"

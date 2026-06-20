@@ -142,10 +142,10 @@
       "foundation": "파운데이션",
       "actors": "액터",
       "services": "서비스",
-      "service_detail": "기능 상세"
+      "feature": "기능 상세"
     }
   },
-  "serviceDetail": {
+  "featureDetail": {
     "label": "기능 상세",
     "ariaWithCategory": "기능 상세 — {{category}} › {{service}}",
     "ariaWithoutCategory": "기능 상세 — {{service}}"

@@ -2,7 +2,7 @@
  * Plot theme toggle (D-2026-06-07-C).
  *
  * Compact Light / Dark / System pill, rendered next to `LanguageToggle`
- * (sidebar footer + ServiceDetail stencil panel). Reads + writes the choice
+ * (sidebar footer + FeatureDetail stencil panel). Reads + writes the choice
  * through `useTheme`; `system` follows the OS `prefers-color-scheme`. Labels
  * route through i18n (`theme.*`). Styled with semantic theme tokens so the
  * pill itself themes correctly in both modes.

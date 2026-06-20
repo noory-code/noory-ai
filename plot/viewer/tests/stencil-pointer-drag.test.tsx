@@ -8,7 +8,7 @@
  *   - a drag begun on a stencil item, released over a registered pane,
  *     calls that pane's `place(preset, clientX, clientY)`;
  *   - a release OUTSIDE any registered pane places nothing;
- *   - when two panes are registered (main canvas + service-detail modal),
+ *   - when two panes are registered (main canvas + feature modal),
  *     the pane that actually contains the release point gets it.
  */
 import "@testing-library/jest-dom/vitest";

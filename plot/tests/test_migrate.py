@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from plot_mcp.folder_io import list_service_details, read_canvas, read_project
+from plot_mcp.folder_io import list_feature_details, read_canvas, read_project
 from plot_mcp.migrate import migrate_v01_to_v02
 from plot_mcp.workspace import resolve_plot_root
 
@@ -234,7 +234,7 @@ def test_v10_upgrade_renames_core_dir_and_unparents_children(plot_root: Path) ->
             {
                 "canvas_id": "core",
                 "canvas_kind": "core",
-                "service_ref": None,
+                "feature_ref": None,
                 "edges": [],
                 "nodes": [
                     {
@@ -458,7 +458,7 @@ def test_v01_services_migrate_to_overview_without_details(plot_root: Path) -> No
     # v0.1 service decomposition (the "장바구니" sub-service that used to seed
     # order's detail) is dropped — the user re-authors it as a feature after
     # migrating, and the live sync seeds that feature's detail on first open.
-    assert list_service_details(plot_root, "alpha") == []
+    assert list_feature_details(plot_root, "alpha") == []
     assert "장바구니" not in labels
 
 
@@ -548,7 +548,7 @@ def test_upgrade_foundation_is_idempotent_when_anchor_in_project_doc(
         {
             "canvas_id": "foundation",
             "canvas_kind": "foundation",
-            "service_ref": None,
+            "feature_ref": None,
             "nodes": [
                 {
                     "id": "m1",
@@ -625,7 +625,7 @@ def test_upgrade_foundation_still_synthesises_anchor_for_pre_v013_project(
         {
             "canvas_id": "foundation",
             "canvas_kind": "foundation",
-            "service_ref": None,
+            "feature_ref": None,
             "nodes": [],
             "edges": [],
         },

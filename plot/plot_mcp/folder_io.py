@@ -7,9 +7,9 @@ helpers that tests/endpoints import) so no import site changes:
     storage.py            — path layout + atomic JSON read/write
     canvas_migrations.py  — read-path healing (lazy migrations, MD absorb,
                             legacy anchor eviction)
-    canvas_io.py          — read_canvas / write_canvas / list_service_details
+    canvas_io.py          — read_canvas / write_canvas / list_feature_details
     project_io.py         — ProjectDoc read/write, seeds, create/rename/delete
-    detail_sync.py        — service-detail ↔ services-overview sync
+    detail_sync.py        — feature ↔ services-overview sync
     node_publish.py       — per-node publish/unpublish (dirty detection,
                             version bumps, git snapshots)
 
@@ -21,7 +21,7 @@ Disk layout (unchanged)
         foundation/canvas.json           — CanvasDoc (canvas_kind = "foundation")
         actors/canvas.json
         services/canvas.json             — top-view (canvas_kind = "services")
-        services/{service_id}/detail.json— CanvasDoc (canvas_kind = "service_detail")
+        services/{service_id}/detail.json— CanvasDoc (canvas_kind = "feature")
 
 `tests/test_module_size.py` pins every module (and this facade) under the
 monorepo 500-line rule so the god module cannot re-grow.
@@ -30,7 +30,7 @@ monorepo 500-line rule so the god module cannot re-grow.
 from __future__ import annotations
 
 from plot_mcp.canvas_io import (
-    list_service_details as list_service_details,
+    list_feature_details as list_feature_details,
 )
 from plot_mcp.canvas_io import (
     read_canvas as read_canvas,

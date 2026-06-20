@@ -410,7 +410,7 @@ def test_overview_nested_service_rejected() -> None:
     """v0.26.0 (D-2026-05-25-A) — services-nesting validator
     (formerly parent_id-based) is gone. Decomposition / nesting on the
     overview is now expressible; users still choose to keep decomposition
-    in service_detail canvases per the docs guidance."""
+    in feature canvases per the docs guidance."""
     CanvasDoc(
         canvas_id="services",
         canvas_kind="services",
@@ -431,12 +431,12 @@ def test_overview_actor_rejected() -> None:
 
 
 # ---------------------------------------------------------------------------
-# service_detail canvas
+# feature canvas
 # ---------------------------------------------------------------------------
 
 
 def _detail_seed(canvas_id: str = "order") -> list[SketchNode]:
-    """Minimum valid service_detail content: root feature (the drill
+    """Minimum valid feature content: root feature (the drill
     target — D-2026-06-17-D) + two actor_refs (operator + user) to
     satisfy IDENTITY.md baseline."""
     return [
@@ -459,22 +459,22 @@ def _detail_seed(canvas_id: str = "order") -> list[SketchNode]:
 def test_detail_canvas_minimum_ok() -> None:
     CanvasDoc(
         canvas_id="order",
-        canvas_kind="service_detail",
-        service_ref="order",
+        canvas_kind="feature",
+        feature_ref="order",
         nodes=_detail_seed(),
     )
 
 
 def test_detail_canvas_zero_actor_refs_rejected() -> None:
-    """v0.27.16 (D-2026-05-28-K) — service_detail still requires at least
+    """v0.27.16 (D-2026-05-28-K) — feature still requires at least
     one actor_ref. ``≥ 0`` would let a canvas exist with no subject at
     all, which contradicts D-2026-05-28-J (every step's subject is an
     actor)."""
     with pytest.raises(ValueError, match="actor_ref"):
         CanvasDoc(
             canvas_id="order",
-            canvas_kind="service_detail",
-            service_ref="order",
+            canvas_kind="feature",
+            feature_ref="order",
             nodes=[ServiceNode(id="order", label="주문")],
         )
 
@@ -483,13 +483,13 @@ def test_detail_canvas_one_user_actor_ref_ok() -> None:
     """v0.27.16 (D-2026-05-28-K) — per D-2026-05-28-J the operator side
     of a service is the *service itself*; only a user-side actor_ref is
     required. A single user-side actor_ref must produce a valid
-    service_detail (the pre-v0.27.16 ``≥ 2`` rule rejected this and
+    feature (the pre-v0.27.16 ``≥ 2`` rule rejected this and
     forced an Admin placeholder, which the user flagged as a category
     error on 2026-05-28)."""
     CanvasDoc(
         canvas_id="login",
-        canvas_kind="service_detail",
-        service_ref="login",
+        canvas_kind="feature",
+        feature_ref="login",
         nodes=[
             FeatureNode(id="login", label="Login"),
             ActorRefNode(
@@ -508,8 +508,8 @@ def test_detail_canvas_operator_side_only_still_ok_for_backwards_compat() -> Non
     The minimum is *one* actor_ref of any side."""
     CanvasDoc(
         canvas_id="ops",
-        canvas_kind="service_detail",
-        service_ref="ops",
+        canvas_kind="feature",
+        feature_ref="ops",
         nodes=[
             FeatureNode(id="ops", label="Ops"),
             ActorRefNode(
@@ -522,21 +522,21 @@ def test_detail_canvas_operator_side_only_still_ok_for_backwards_compat() -> Non
     )
 
 
-def test_detail_canvas_service_ref_must_match_canvas_id() -> None:
-    with pytest.raises(ValueError, match="service_ref"):
+def test_detail_canvas_feature_ref_must_match_canvas_id() -> None:
+    with pytest.raises(ValueError, match="feature_ref"):
         CanvasDoc(
             canvas_id="order",
-            canvas_kind="service_detail",
-            service_ref="pay",  # mismatch
+            canvas_kind="feature",
+            feature_ref="pay",  # mismatch
             nodes=_detail_seed(),
         )
 
 
-def test_detail_canvas_service_ref_required() -> None:
-    with pytest.raises(ValueError, match="service_ref"):
+def test_detail_canvas_feature_ref_required() -> None:
+    with pytest.raises(ValueError, match="feature_ref"):
         CanvasDoc(
             canvas_id="order",
-            canvas_kind="service_detail",
+            canvas_kind="feature",
             nodes=_detail_seed(),
         )
 
@@ -547,8 +547,8 @@ def test_detail_canvas_sub_features_rules_ok() -> None:
     # here, so the former sub-service is now a sub-feature).
     CanvasDoc(
         canvas_id="order",
-        canvas_kind="service_detail",
-        service_ref="order",
+        canvas_kind="feature",
+        feature_ref="order",
         nodes=[
             *_detail_seed(),
             FeatureNode(id="sub1", label="장바구니"),
@@ -560,8 +560,8 @@ def test_detail_canvas_sub_features_rules_ok() -> None:
 def test_detail_canvas_actor_ref_ok() -> None:
     CanvasDoc(
         canvas_id="order",
-        canvas_kind="service_detail",
-        service_ref="order",
+        canvas_kind="feature",
+        feature_ref="order",
         nodes=[
             *_detail_seed(),
             ActorRefNode(
@@ -577,8 +577,8 @@ def test_detail_canvas_actor_ref_without_ref_id_rejected() -> None:
     with pytest.raises(ValueError, match="ref_actor_id"):
         CanvasDoc(
             canvas_id="order",
-            canvas_kind="service_detail",
-            service_ref="order",
+            canvas_kind="feature",
+            feature_ref="order",
             nodes=[
                 *_detail_seed(),
                 ActorRefNode(id="bad-ref", label="Orphan"),
@@ -609,10 +609,10 @@ def test_service_node_carries_5_fields() -> None:
     assert n.ref_value_ids == ["cv-trust"]
 
 
-def test_service_refs_round_trip_through_canvas() -> None:
+def test_feature_refs_round_trip_through_canvas() -> None:
     """Service ref-id arrays persist + are readable by id after a CanvasDoc
     round-trip. ``service`` lives on the Services canvas (D-2026-06-17-D
-    removed it from the feature-rooted service_detail), so the round-trip
+    removed it from the feature-rooted feature), so the round-trip
     is exercised there."""
     services = CanvasDoc(
         canvas_id="services",
@@ -658,11 +658,11 @@ def test_step_order_optional() -> None:
     assert n.order is None
 
 
-def test_service_detail_accepts_step() -> None:
+def test_feature_accepts_step() -> None:
     CanvasDoc(
         canvas_id="auth",
-        canvas_kind="service_detail",
-        service_ref="auth",
+        canvas_kind="feature",
+        feature_ref="auth",
         nodes=[
             FeatureNode(id="auth", label="Auth"),
             StepNode(
@@ -685,8 +685,8 @@ def test_step_requires_service_parent() -> None:
     feature)."""
     CanvasDoc(
         canvas_id="auth",
-        canvas_kind="service_detail",
-        service_ref="auth",
+        canvas_kind="feature",
+        feature_ref="auth",
         nodes=[
             FeatureNode(id="auth", label="Auth"),
             StepNode(id="s1", label="Stray"),
@@ -697,7 +697,7 @@ def test_step_requires_service_parent() -> None:
 
 
 def test_services_canvas_rejects_step() -> None:
-    """step belongs inside service_detail, not on the overview."""
+    """step belongs inside feature, not on the overview."""
     with pytest.raises(ValueError, match="not allowed"):
         CanvasDoc(
             canvas_id="services",
@@ -743,8 +743,8 @@ def test_actor_permissions_round_trip_through_canvas() -> None:
     """Permission dict survives a full CanvasDoc serialise/parse cycle."""
     canvas = CanvasDoc(
         canvas_id="auth",
-        canvas_kind="service_detail",
-        service_ref="auth",
+        canvas_kind="feature",
+        feature_ref="auth",
         nodes=[
             FeatureNode(id="auth", label="Auth"),
             RuleNode(
@@ -771,8 +771,8 @@ def test_detail_canvas_actor_kind_rejected() -> None:
     with pytest.raises(ValueError, match="not allowed"):
         CanvasDoc(
             canvas_id="order",
-            canvas_kind="service_detail",
-            service_ref="order",
+            canvas_kind="feature",
+            feature_ref="order",
             nodes=[
                 *_detail_seed(),
                 ActorNode(id="a1", label="Raw actor"),
@@ -786,8 +786,8 @@ def test_detail_canvas_missing_root_feature_rejected() -> None:
     with pytest.raises(ValueError, match="root feature"):
         CanvasDoc(
             canvas_id="order",
-            canvas_kind="service_detail",
-            service_ref="order",
+            canvas_kind="feature",
+            feature_ref="order",
             nodes=[],
         )
 
@@ -955,11 +955,11 @@ def test_parent_cycle_rejected() -> None:
 
 
 def _detail_with_note(edges: list[SketchEdge]) -> CanvasDoc:
-    """A minimal valid service_detail canvas carrying a note node."""
+    """A minimal valid feature canvas carrying a note node."""
     return CanvasDoc(
         canvas_id="svc1",
-        canvas_kind="service_detail",
-        service_ref="svc1",
+        canvas_kind="feature",
+        feature_ref="svc1",
         nodes=[
             FeatureNode(id="svc1", label="S"),
             ActorRefNode(id="ar1", label="→A", ref_actor_id="a1"),

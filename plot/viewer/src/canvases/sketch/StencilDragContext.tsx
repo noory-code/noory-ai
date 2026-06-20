@@ -50,7 +50,7 @@ interface ActiveDrag {
 
 export function StencilDragProvider({ children }: { children: ReactNode }) {
   // Registered drop targets, in registration order. Last-registered (e.g.
-  // the service-detail modal, mounted over the main canvas) is tried first.
+  // the feature modal, mounted over the main canvas) is tried first.
   const targetsRef = useRef<DropTarget[]>([]);
   // ``active`` drives the ghost render; ``activeRef`` is the synchronous
   // source of truth for the window pointerup handler. The ref is set in the

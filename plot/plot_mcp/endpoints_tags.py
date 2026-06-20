@@ -110,7 +110,7 @@ async def project_at_tag_endpoint(request: Request) -> JSONResponse:
             "foundation": CanvasDoc,
             "actors": CanvasDoc,
             "services": CanvasDoc,
-            "service_detail:<id>": CanvasDoc,
+            "feature:<id>": CanvasDoc,
             ...
         }
     }``
@@ -153,7 +153,7 @@ async def project_at_tag_endpoint(request: Request) -> JSONResponse:
         c = _read_canvas_json(f"{kind}/canvas.json")
         if c is not None:
             canvases[kind] = c
-    # service_detail canvases live under services/<service_id>/detail.json —
+    # feature canvases live under services/<service_id>/detail.json —
     # discover by listing the services canvas's category/service nodes.
     services_canvas = canvases.get("services")
     if isinstance(services_canvas, dict):
@@ -167,5 +167,5 @@ async def project_at_tag_endpoint(request: Request) -> JSONResponse:
                 continue
             d = _read_canvas_json(f"services/{sid}/detail.json")
             if d is not None:
-                canvases[f"service_detail:{sid}"] = d
+                canvases[f"feature:{sid}"] = d
     return JSONResponse({"project": project_raw, "canvases": canvases})

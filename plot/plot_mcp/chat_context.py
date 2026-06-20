@@ -40,7 +40,7 @@ SCOPE_FRAMING: dict[str, str] = {
         "Help the user design the value-creation machinery — the services that "
         "deliver the mission and how they relate."
     ),
-    "service_detail": (
+    "feature": (
         "You are collaborating inside Plot's Service-Detail canvas (Execution "
         "phase). Help the user break the plan into concrete steps, decisions, "
         "and rules for this one service."
@@ -52,7 +52,7 @@ def build_framing_preamble(scope: str) -> str:
     """Return the per-canvas system framing for ``scope`` (Layer 3).
 
     Maps the *base* scope to its VISION-phase framing, so a parametric
-    ``service_detail:<id>`` resolves to the shared service-detail framing rather
+    ``feature:<id>`` resolves to the shared feature framing rather
     than a missing per-instance key. The cross-canvas ``project`` scope (and any
     unknown base) gets no framing.
     """

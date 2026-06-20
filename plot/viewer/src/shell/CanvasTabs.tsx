@@ -32,11 +32,11 @@ interface CanvasTabsProps {
   /** Active project NAME, shown centered in the tab bar (v0.34.3,
    *  D-2026-05-31-Q). The workspace root path lives in the header instead. */
   projectName: string | null;
-  /** Dynamic service-detail tab (D-2026-06-15-H). When a service node is
+  /** Dynamic feature tab (D-2026-06-15-H). When a service node is
    *  selected on the Services canvas, a ``{label}`` tab is appended after
    *  Services; ``detailActive`` says it's the current view, and the × removes
    *  it. Omitted / ``null`` id = no detail tab. */
-  detailServiceId?: string | null;
+  detailFeatureId?: string | null;
   detailLabel?: string | null;
   detailActive?: boolean;
   onSelectDetail?: () => void;
@@ -50,7 +50,7 @@ export function CanvasTabs({
   onPublishBlueprint,
   publishDisabled,
   projectName,
-  detailServiceId,
+  detailFeatureId,
   detailLabel,
   detailActive,
   onSelectDetail,
@@ -85,7 +85,7 @@ export function CanvasTabs({
             </button>
           );
         })}
-        {detailServiceId && (
+        {detailFeatureId && (
           <span
             className={
               detailActive

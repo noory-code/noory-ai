@@ -38,7 +38,7 @@ def _migrate_actor_isroot_to_false(raw: dict[str, Any]) -> dict[str, Any]:
     that every actor is a Symbol candidate (referenceable from the
     Service canvas via ``actor_ref``), so the boolean distinguishes
     nothing. Actor.is_root is now deprecated; service.is_root remains
-    (ServiceDetail anchor marker).
+    (FeatureDetail anchor marker).
     """
     nodes = raw.get("nodes")
     if not isinstance(nodes, list):
@@ -266,7 +266,7 @@ def _drop_disallowed_services_kinds(
 ) -> dict[str, Any]:
     """v0.11.5 migration helper: silently drop ``mission_ref`` / ``value_ref``
     / ``identity_ref`` (and any other now-disallowed kinds) from the services
-    top view. They live in ``service_detail`` from v0.11.5 onwards.
+    top view. They live in ``feature`` from v0.11.5 onwards.
     Idempotent.
 
     v0.12 update: read the live ``_ALLOWED_KINDS_BY_CANVAS`` so future

@@ -16,7 +16,7 @@ export interface SketchSidebarProps {
   stencilCanvas: StencilCanvas;
   tags: ProjectTag[];
   /** v0.11.5 — actor masters for the dynamic actor_ref presets on the
-   *  service_detail stencil (each actor = its own draggable). */
+   *  feature stencil (each actor = its own draggable). */
   availableActors?: SketchNode[];
   onPick: (id: string) => void;
   onCreate: () => Promise<void> | void;

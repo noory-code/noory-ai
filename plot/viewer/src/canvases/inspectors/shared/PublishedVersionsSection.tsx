@@ -17,7 +17,7 @@ export interface PublishedVersionsSectionProps {
   projectId: string;
   canvasKind: string;
   nodeId: string;
-  /** Service id for service_detail canvases (mirrors publishNode arg). */
+  /** Service id for feature canvases (mirrors publishNode arg). */
   serviceId?: string;
   /** Bumps a refresh; parent passes ``node.version`` so the list
    *  re-fetches after a publish. */

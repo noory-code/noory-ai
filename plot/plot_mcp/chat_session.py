@@ -71,8 +71,8 @@ def _default_provider_factory(workspace_root: Path, provider_name: ProviderName)
 
 
 # ``scope`` is the full wire value — a base ``ChatScope`` member or a
-# parametric ``service_detail:<id>`` (Layer 1, D-2026-06-15-B) — so a ``str``,
-# not the base literal. Keyed on the triple, two service-detail canvases get
+# parametric ``feature:<id>`` (Layer 1, D-2026-06-15-B) — so a ``str``,
+# not the base literal. Keyed on the triple, two feature canvases get
 # their own threads.
 _SessionKey = tuple[Path, ProviderName, str]
 

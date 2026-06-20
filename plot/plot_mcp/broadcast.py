@@ -42,7 +42,7 @@ def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | No
     if len(parts) == 3 and parts[2] == "canvas.json" and parts[1] in _SINGLETON_CANVAS_KINDS:
         descriptor["canvas_kind"] = parts[1]
     elif len(parts) == 4 and parts[1] == "services" and parts[3] == "detail.json":
-        descriptor["canvas_kind"] = "service_detail"
+        descriptor["canvas_kind"] = "feature"
         descriptor["service_id"] = parts[2]
     elif len(parts) == 4 and parts[3] == "details.md" and parts[1] in _SINGLETON_CANVAS_KINDS:
         # v0.9 per-node details.md: a viewer that has the parent canvas

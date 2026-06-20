@@ -21,7 +21,7 @@ def test_framing_maps_each_canvas_to_its_vision_phase() -> None:
     assert "Discovery" in build_framing_preamble("foundation")
     assert "Planning" in build_framing_preamble("actors")
     assert "Planning" in build_framing_preamble("services")
-    assert "Execution" in build_framing_preamble("service_detail:svc_1")
+    assert "Execution" in build_framing_preamble("feature:svc_1")
 
 
 def test_framing_empty_for_project_and_unknown_scope() -> None:
@@ -29,9 +29,9 @@ def test_framing_empty_for_project_and_unknown_scope() -> None:
     assert build_framing_preamble("nope") == ""
 
 
-def test_framing_uses_base_scope_for_parametric_service_detail() -> None:
-    assert build_framing_preamble("service_detail:a") == SCOPE_FRAMING["service_detail"]
-    assert build_framing_preamble("service_detail:a") == build_framing_preamble("service_detail:b")
+def test_framing_uses_base_scope_for_parametric_feature() -> None:
+    assert build_framing_preamble("feature:a") == SCOPE_FRAMING["feature"]
+    assert build_framing_preamble("feature:a") == build_framing_preamble("feature:b")
 
 
 def test_context_preamble_lists_selection() -> None:

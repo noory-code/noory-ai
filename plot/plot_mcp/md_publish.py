@@ -169,7 +169,7 @@ def can_publish(node: SketchNode) -> bool:
 
     Hidden (returns False) for:
     - ``project`` anchor (mirrors ProjectDoc.name, not its own SSOT).
-    - ``service`` with ``is_root`` (ServiceDetail mirror of a
+    - ``service`` with ``is_root`` (FeatureDetail mirror of a
       Services-canvas master; the master gets published, the mirror
       follows). v0.24.10 / D-2026-05-19-C narrowed this from
       "all is_root" to "service is_root only" so that actor masters

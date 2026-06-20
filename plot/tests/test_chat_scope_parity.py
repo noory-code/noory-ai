@@ -29,7 +29,7 @@ _TYPES_TS = _PLOT_ROOT / "viewer" / "src" / "types.ts"
 # first semicolon, members extracted from the quoted literals.
 _SCOPE_RE = re.compile(r"export\s+type\s+ChatScope\s*=([^;]*);", re.DOTALL)
 _MEMBER_RE = re.compile(r'"([a-z_]+)"')
-# The one parametric member is a template literal — ``service_detail`` carries
+# The one parametric member is a template literal — ``feature`` carries
 # an instance id suffix (Layer 1, CHAT_ARCH.md). Match the base prefix so the
 # parity check compares the same *base* set on both sides.
 _TEMPLATE_MEMBER_RE = re.compile(r"`([a-z_]+):\$\{string\}`")
@@ -39,7 +39,7 @@ _EXPECTED_SCOPES = {
     "foundation",
     "actors",
     "services",
-    "service_detail",
+    "feature",
 }
 
 
@@ -70,15 +70,15 @@ def test_chat_scope_is_project_plus_canvas_kinds() -> None:
     assert set(get_args(ChatScope)) == _EXPECTED_SCOPES
 
 
-def test_service_detail_scope_accepts_id_suffix() -> None:
-    """Layer 1 (CHAT_ARCH.md): ``service_detail`` is the one parametric
+def test_feature_scope_accepts_id_suffix() -> None:
+    """Layer 1 (CHAT_ARCH.md): ``feature`` is the one parametric
     member — a wire scope carries the service instance id as
-    ``service_detail:<id>`` so each service gets its own thread."""
-    assert is_valid_scope("service_detail:svc_123")
-    assert is_valid_scope("service_detail:any-id-shape")
+    ``feature:<id>`` so each service gets its own thread."""
+    assert is_valid_scope("feature:svc_123")
+    assert is_valid_scope("feature:any-id-shape")
     # Singleton base scopes stay valid bare.
     for base in ("project", "foundation", "actors", "services"):
         assert is_valid_scope(base)
     # An empty id is not a real instance, and a typo is still rejected.
-    assert not is_valid_scope("service_detail:")
+    assert not is_valid_scope("feature:")
     assert not is_valid_scope("bogus")

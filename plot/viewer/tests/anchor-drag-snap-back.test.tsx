@@ -42,7 +42,7 @@ function makeProject(overrides: Partial<ProjectDoc> = {}): ProjectDoc {
       },
     },
     tags: [],
-    service_details: [],
+    feature_details: [],
     ...overrides,
   } as ProjectDoc;
 }

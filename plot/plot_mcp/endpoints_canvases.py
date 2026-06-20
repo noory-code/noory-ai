@@ -30,8 +30,8 @@ async def canvas_get_endpoint(request: Request) -> JSONResponse:
     if canvas_kind is None:
         return _error(f"unknown canvas kind: {kind_raw!r}")
     service_id = request.query_params.get("service_id")
-    if canvas_kind == "service_detail" and not service_id:
-        return _error("service_id query param required for service_detail")
+    if canvas_kind == "feature" and not service_id:
+        return _error("service_id query param required for feature")
     try:
         canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
     except FileNotFoundError as exc:

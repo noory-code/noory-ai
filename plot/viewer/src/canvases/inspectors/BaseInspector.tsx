@@ -46,9 +46,9 @@ export interface BaseInspectorProps {
   projectPath: string;
   projectId: string;
   canvasKind: CanvasKind;
-  /** v0.27.13 (D-2026-05-28-H): service_id for service_detail canvas.
+  /** v0.27.13 (D-2026-05-28-H): service_id for feature canvas.
    *  Required for the published-versions fetch; the backend returns
-   *  500 without it (read_canvas raises ValueError on service_detail
+   *  500 without it (read_canvas raises ValueError on feature
    *  without service_id). */
   serviceId?: string;
   /** Per-kind body slot. Rendered between the label input and the
@@ -99,7 +99,7 @@ export function BaseInspector({
   // Every actor is a Symbol candidate (referenceable from Service canvas
   // via actor_ref); the boolean toggle no longer distinguishes anything
   // for the user. Toggle removed entirely. Service.is_root stays as the
-  // ServiceDetail anchor marker (set by create flow, not user toggle).
+  // FeatureDetail anchor marker (set by create flow, not user toggle).
   const canToggleRoot = false;
 
   return (
@@ -248,7 +248,7 @@ export function BaseInspector({
 
         {/* v0.23.0 (D-2026-05-17-I) — Published versions list +
             click-to-open MD modal. Only for publish-eligible kinds. Hidden
-            in read-only mode — keeps the always-mounted ServiceDetail
+            in read-only mode — keeps the always-mounted FeatureDetail
             fallback panel from firing a publish-history fetch (D-2026-06-15-O). */}
         {!readOnly && canPublish(node) && (
           <PublishedVersionsSection

@@ -2,7 +2,7 @@
  * Services-canvas wrapper. v0.15 Phase 3.4 — fold on, anchor on.
  * Drill rewire (D-2026-06-17-D): the **feature** is the sole drill target —
  * selecting a service shows its inspector (no drill); clicking a feature drills
- * into its detail (what is wire-named ``service_detail`` until the canvas-string
+ * into its detail (what is wire-named ``feature`` until the canvas-string
  * rename). Supersedes the service-as-drill-target predicate.
  */
 import { SketchCanvas, type SketchCanvasProps } from "./SketchCanvas";

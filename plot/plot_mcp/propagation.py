@@ -12,12 +12,12 @@ directed-edge model):
 1. From the start id, follow incoming directed edges (``target ==
    current_id`` and ``edge.directed is True``) across all canvases.
    The ``source`` of such an edge is the structural parent.
-2. When the same id appears in multiple canvases (e.g. ServiceDetail
+2. When the same id appears in multiple canvases (e.g. FeatureDetail
    root service ↔ Services master service), every canvas's edges are
    considered together — bumping must update every file the parent
    appears in. Mirror crossing happens implicitly via id-matching.
 3. Undirected edges, ``actor_ref`` / ``mission_ref`` / ``value_ref``
-   / ``identity_ref`` fields, and ``CanvasDoc.service_ref`` are
+   / ``identity_ref`` fields, and ``CanvasDoc.feature_ref`` are
    *never* walked. They are link relationships, not parent–child.
 4. If a node has multiple incoming directed edges (multi-parent), the
    walk picks the lexicographically smallest source id — deterministic
@@ -46,7 +46,7 @@ class LogicalAncestor:
 
     A single logical node may have file-presence in multiple canvases
     when an id is mirrored (e.g. a service's root mirror in its
-    ServiceDetail canvas + the master in the Services canvas). All
+    FeatureDetail canvas + the master in the Services canvas). All
     presences must be bumped in lockstep to keep the mirrors
     consistent.
 
@@ -67,7 +67,7 @@ def walk_ancestors(
     The returned list is ordered from immediate parent to root.
     ``canvases`` keys are arbitrary identifiers chosen by the caller
     (typically ``"foundation"``, ``"actors"``, ``"services"``,
-    ``"service_detail:<service_id>"``); the walk only needs them to be
+    ``"feature:<service_id>"``); the walk only needs them to be
     unique within the dict.
     """
     node_index = _build_id_index(canvases)

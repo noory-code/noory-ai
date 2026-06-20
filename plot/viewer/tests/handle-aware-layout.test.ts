@@ -1,9 +1,9 @@
-// D-2026-05-28-G — handle-aware layered layout for ServiceDetail.
+// D-2026-05-28-G — handle-aware layered layout for FeatureDetail.
 //
 // User report 2026-05-28: *"정렬은 연결관계에 따라서 오른쪽에 붙어있으면
 // 오른쪽으로 정렬해야하는데 오른쪽에 붙어있는걸 왼쪽에 정렬하고 이러니까
 // 문제죠"*. The pre-existing ``useAutoLayout`` mindmap BFS algorithm
-// requires an *anchor with at least one edge* — on the ServiceDetail
+// requires an *anchor with at least one edge* — on the FeatureDetail
 // canvas the anchor is the hidden root-service node (D-2026-05-28-B)
 // which is intentionally disconnected, so BFS yields zero positions and
 // ``⊞`` is a no-op. This file pins the contract for the new
@@ -62,8 +62,8 @@ function e(
 function doc(nodes: SketchNode[], edges: SketchEdge[]): CanvasDoc {
   return {
     canvas_id: "test",
-    canvas_kind: "service_detail",
-    service_ref: null,
+    canvas_kind: "feature",
+    feature_ref: null,
     nodes,
     edges,
   } as CanvasDoc;
@@ -119,7 +119,7 @@ describe("handleAwareLayout (D-2026-05-28-G)", () => {
     expect(A.x !== 0 || A.y !== 0 || B.x !== 0 || B.y !== 0).toBe(true);
   });
 
-  it("works on the user's ServiceDetail reconstruction shape (8-node sample)", () => {
+  it("works on the user's FeatureDetail reconstruction shape (8-node sample)", () => {
     // Hero → 모임 → Fan, Hero → 콘텐츠 → Fan, plus 가치 + 핵심가치 fan-out
     const nodes = [
       n("hero"), n("fan"),

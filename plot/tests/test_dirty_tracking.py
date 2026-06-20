@@ -189,7 +189,7 @@ def test_incident_edges_filters_both_endpoints() -> None:
 
 
 def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
-    # Actors canvas needs both user + operator referents for service_detail's
+    # Actors canvas needs both user + operator referents for feature's
     # 2-actor_ref requirement.
     actors = read_canvas(plot_root, "alpha", "actors")
     new_actors = actors.model_copy(
@@ -225,8 +225,8 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
 
     detail = CanvasDoc(
         canvas_id="svc-onboarding",
-        canvas_kind="service_detail",
-        service_ref="svc-onboarding",
+        canvas_kind="feature",
+        feature_ref="svc-onboarding",
         nodes=[
             FeatureNode(id="svc-onboarding", label="Onboarding"),
             StepNode(
@@ -270,13 +270,13 @@ def test_publish_node_stamps_baseline_on_target(plot_root: Path) -> None:
 
 
 def test_publish_node_stamps_baseline_on_mirror(plot_root: Path) -> None:
-    """ServiceDetail mirror gets the same baseline so it stays clean too."""
+    """FeatureDetail mirror gets the same baseline so it stays clean too."""
     create_project(plot_root, "alpha", "Alpha")
     _, sid, _ = _seed_services_with_step(plot_root)
 
     publish_node(plot_root, "alpha", "services", sid)
 
-    detail = read_canvas(plot_root, "alpha", "service_detail", service_id=sid)
+    detail = read_canvas(plot_root, "alpha", "feature", service_id=sid)
     mirror = next(n for n in detail.nodes if n.id == sid)
     assert mirror.publish_baseline is not None
 
@@ -297,7 +297,7 @@ def test_publish_node_ancestor_baseline_unchanged(plot_root: Path) -> None:
     baseline_before = cat_before.publish_baseline
 
     # Now publish a descendant; Phase 4 minor-bumps the category.
-    publish_node(plot_root, "alpha", "service_detail", step_id, service_id="svc-onboarding")
+    publish_node(plot_root, "alpha", "feature", step_id, service_id="svc-onboarding")
 
     services_after = read_canvas(plot_root, "alpha", "services")
     cat_after = next(n for n in services_after.nodes if n.id == cat_id)

@@ -142,6 +142,6 @@ def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
     )
     for detail in detail_canvases:
         _write_json(
-            _canvas_file(plot_root, doc.id, "service_detail", service_id=detail.canvas_id),
+            _canvas_file(plot_root, doc.id, "feature", service_id=detail.canvas_id),
             detail.model_dump(by_alias=True),
         )

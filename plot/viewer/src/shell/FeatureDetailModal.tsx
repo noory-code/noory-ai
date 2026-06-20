@@ -1,5 +1,5 @@
 /**
- * Service-detail modal — overlay that mounts the ServiceDetailCanvas
+ * Service-detail modal — overlay that mounts the FeatureDetailCanvas
  * on top of the still-mounted services canvas (v0.12 drill-in pattern).
  * Extracted from ``App.tsx`` (v0.16.3).
  *
@@ -13,7 +13,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-interface ServiceDetailModalProps {
+interface FeatureDetailModalProps {
   serviceLabel: string;
   categoryLabel: string | null;
   onClose: () => void;
@@ -23,13 +23,13 @@ interface ServiceDetailModalProps {
   children: ReactNode;
 }
 
-export function ServiceDetailModal({
+export function FeatureDetailModal({
   serviceLabel,
   categoryLabel,
   onClose,
   stencilSlot,
   children,
-}: ServiceDetailModalProps) {
+}: FeatureDetailModalProps) {
   const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -44,11 +44,11 @@ export function ServiceDetailModal({
       aria-modal="true"
       aria-label={
         categoryLabel
-          ? t("serviceDetail.ariaWithCategory", {
+          ? t("featureDetail.ariaWithCategory", {
               category: categoryLabel,
               service: serviceLabel,
             })
-          : t("serviceDetail.ariaWithoutCategory", { service: serviceLabel })
+          : t("featureDetail.ariaWithoutCategory", { service: serviceLabel })
       }
       className="fixed inset-0 z-40 flex items-center justify-center bg-overlay/40"
       onClick={onClose}
@@ -60,7 +60,7 @@ export function ServiceDetailModal({
         <header className="flex items-center justify-between border-b border-line bg-surface-muted px-4 py-2">
           <div className="flex items-baseline gap-2">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-muted">
-              {t("serviceDetail.label")}
+              {t("featureDetail.label")}
             </span>
             {/* v0.12.6 — show parent category context so users always know
                 which group a service belongs to even inside the modal. */}

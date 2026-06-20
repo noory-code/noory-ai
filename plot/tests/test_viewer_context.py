@@ -94,16 +94,16 @@ def test_distinct_projects_dont_collide(tmp_path: Path) -> None:
     assert read_viewer_context(b, now=1.0, base_dir=base)["active_canvas"] == "actors"
 
 
-def test_service_detail_scope_framing(tmp_path: Path) -> None:
+def test_feature_scope_framing(tmp_path: Path) -> None:
     plot_root = tmp_path / "proj"
     plot_root.mkdir()
     base = tmp_path / "rt"
     base.mkdir()
     write_viewer_context(
-        plot_root, scope="service_detail:svc_1", selection=[], now=1.0, base_dir=base
+        plot_root, scope="feature:svc_1", selection=[], now=1.0, base_dir=base
     )
     ctx = read_viewer_context(plot_root, now=1.0, base_dir=base)
-    assert ctx["active_canvas"] == "service_detail:svc_1"
+    assert ctx["active_canvas"] == "feature:svc_1"
     assert "Execution" in ctx["framing"]
 
 
@@ -175,12 +175,12 @@ def test_mcp_tool_reads_what_the_viewer_posted(tmp_path: Path) -> None:
         "/api/viewer/context",
         json={
             "project_path": str(tmp_path),
-            "scope": "service_detail:svc_9",
+            "scope": "feature:svc_9",
             "selection": _SEL,
         },
     )
     ctx = get_viewer_context(str(tmp_path))
-    assert ctx["active_canvas"] == "service_detail:svc_9"
+    assert ctx["active_canvas"] == "feature:svc_9"
     assert ctx["selection"] == _SEL
     assert ctx["has_viewer"] is True
     assert "Execution" in ctx["framing"]

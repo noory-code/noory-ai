@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from plot_mcp.canvas_io import list_service_details, read_canvas, write_canvas  # noqa: F401
+from plot_mcp.canvas_io import list_feature_details, read_canvas, write_canvas  # noqa: F401
 from plot_mcp.models import (
     ActorRefNode,
     CanvasDoc,
@@ -36,7 +36,7 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
     shows its inspector; clicking a feature drills into its detail). So detail
     canvases seed per feature, not per service; a service with no features has
     nothing to drill into and gets no detail. The detail's wire ``canvas_kind``
-    stays ``service_detail`` until the canvas-string rename (product-gated).
+    stays ``feature`` until the canvas-string rename (product-gated).
 
     Features that disappear from the top view have their whole folder moved
     to ``services/_archive/{fid}/`` — a destructive delete would throw away
@@ -66,15 +66,15 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
         src = next(n for n in overview.nodes if n.id == feature_id)
         detail = CanvasDoc(
             canvas_id=feature_id,
-            canvas_kind="service_detail",
-            service_ref=feature_id,
-            # v0.11 — every service_detail needs ≥ 2 actor_refs (operator +
+            canvas_kind="feature",
+            feature_ref=feature_id,
+            # v0.11 — every feature needs ≥ 2 actor_refs (operator +
             # user) per IDENTITY.md. Auto-seed two stub refs that point at
             # the project's seeded actors. Users can re-pick via the
             # picker, or add more refs as the design develops.
             nodes=[
                 # v0.26.0 (D-2026-05-25-A) — parent_id field removed;
-                # service_detail root carries no structural parent
+                # feature root carries no structural parent
                 # (is_root marks the canvas anchor).
                 src.model_copy(update={"is_root": False}),
                 ActorRefNode(
@@ -100,7 +100,7 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
             ],
         )
         _write_json(
-            _canvas_file(plot_root, project_id, "service_detail", service_id=feature_id),
+            _canvas_file(plot_root, project_id, "feature", service_id=feature_id),
             detail.model_dump(by_alias=True),
         )
         created.append(feature_id)

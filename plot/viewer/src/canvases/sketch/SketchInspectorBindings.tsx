@@ -31,7 +31,7 @@ export interface SketchInspectorBindingsProps {
   /** v0.23.x (D-2026-05-17-J) — unpublish handler. */
   onUnpublishNode?: (nodeId: string) => void;
   /** D-2026-06-15-O — rendered in place of the empty panel when no node is
-   *  selected (or the selected node vanished). ServiceDetail passes the
+   *  selected (or the selected node vanished). FeatureDetail passes the
    *  subject service's read-only inspector here; other canvases pass
    *  nothing (the panel stays hidden, as before). */
   fallbackInspector?: ReactNode;
@@ -67,7 +67,7 @@ export function SketchInspectorBindings({
       projectPath={projectPath}
       projectId={projectId}
       canvasKind={doc.canvas_kind as CanvasKind}
-      serviceId={doc.service_ref ?? undefined}
+      serviceId={doc.feature_ref ?? undefined}
       onRepickActorRef={(nodeId) => setPendingActorRef({ mode: "rewire", nodeId })}
       onDeleteNode={(nodeId) => handleNodesDelete([{ id: nodeId } as Node])}
       onPatchNode={(patch) => {

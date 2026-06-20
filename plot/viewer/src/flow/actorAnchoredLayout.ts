@@ -1,6 +1,6 @@
 // D-2026-05-28-J (auto-layout responsibility) + D-2026-05-28-G follow-up.
 //
-// Actor-anchored layered layout for ServiceDetail canvases:
+// Actor-anchored layered layout for FeatureDetail canvases:
 //
 //   - The user-side actor_ref is the anchor. Its position is preserved.
 //   - The "subject edge" (actor → entry step) tells us which direction
@@ -14,7 +14,7 @@
 //     root-service, the operator-side actor_ref placeholder if any)
 //     keep their existing positions.
 //
-// Replaces ``handleAwareLayout`` for ServiceDetail's typical user-
+// Replaces ``handleAwareLayout`` for FeatureDetail's typical user-
 // authored interaction graphs. ``handleAwareLayout`` (dagre LR over
 // every connected node) swept the anchor along with everything else;
 // the user flagged that as unreadable on 2026-05-28
