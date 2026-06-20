@@ -15,8 +15,27 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.endpoints_common import _ApiError, _error, _parse_canvas_kind, _require_plot_root
+from plot_mcp.entity_refs import entity_usage
 from plot_mcp.folder_io import read_canvas, sync_details_with_overview, write_canvas
 from plot_mcp.models import CanvasDoc
+
+
+async def entity_usage_endpoint(request: Request) -> JSONResponse:
+    """GET — the read-only "어디서 쓰이나" back-reference for an entity
+    (D-2026-06-20-Q): the features whose ``step.ref_entity_ids`` reference it.
+    Scans all feature canvases server-side (the viewer can't — it loads
+    canvases lazily)."""
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    entity_id = request.path_params["entity_id"]
+    try:
+        usages = entity_usage(plot_root, project_id, entity_id)
+    except FileNotFoundError as exc:
+        return _error(str(exc), status=404)
+    return JSONResponse({"entity_id": entity_id, "usages": usages})
 
 
 async def canvas_get_endpoint(request: Request) -> JSONResponse:

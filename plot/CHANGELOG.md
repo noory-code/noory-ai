@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.5] — 2026-06-20
+
+### Added
+
+- **Entity back-reference endpoint** `GET /api/projects/{id}/entities/{entity_id}/usage`
+  (entity follow-up step 6, **D-2026-06-20-Q**) — the read-only "어디서 쓰이나":
+  which features (and their steps) reference an entity. New `entity_refs.entity_usage`
+  scans every feature detail canvas's `step.ref_entity_ids` server-side (the viewer
+  loads canvases lazily, so a complete reverse index can't be computed client-side).
+  Pure derived projection; nothing is authored.
+
+### Notes
+
+- Engine **653 tests green**. The viewer half (entity inspector "어디서 쓰이나"
+  view) ships in the `plot` app repo.
+
 ## [0.98.4] — 2026-06-20
 
 ### Added

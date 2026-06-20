@@ -35,6 +35,9 @@ from plot_mcp.endpoints_canvases import (
 from plot_mcp.endpoints_canvases import (
     canvas_put_endpoint as canvas_put_endpoint,
 )
+from plot_mcp.endpoints_canvases import (
+    entity_usage_endpoint as entity_usage_endpoint,
+)
 from plot_mcp.endpoints_common import (
     health_endpoint as health_endpoint,
 )

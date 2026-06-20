@@ -17,6 +17,7 @@ from plot_mcp.api_endpoints import (
     canvas_put_endpoint,
     dir_create_endpoint,
     dir_tree_endpoint,
+    entity_usage_endpoint,
     file_get_endpoint,
     file_put_endpoint,
     file_raw_endpoint,
@@ -160,6 +161,11 @@ def create_http_app(
             "/api/projects/{project_id}/canvases/{kind}",
             canvas_put_endpoint,
             methods=["PUT"],
+        ),
+        Route(
+            "/api/projects/{project_id}/entities/{entity_id}/usage",
+            entity_usage_endpoint,
+            methods=["GET"],
         ),
         # v0.7 file + folder surface (for Inspector MD editor)
         Route("/api/files", file_get_endpoint, methods=["GET"]),
