@@ -28,6 +28,11 @@ class StepNode(BaseNodeFields):
     # v0.28.2 (D-2026-05-30-E): outcome valence for negative-case
     # (failure) visual distinction. "neutral" = happy-path default.
     polarity: Literal["positive", "negative", "neutral"] = "neutral"
+    # D-2026-06-20-Q: the entities this action operates on (ids → the entities
+    # registry), rendered as chips in the step inspector. AI-maintained derived
+    # data map — NOT flow visualisation. The entity "어디서 쓰이나" back-ref scans
+    # this field across all feature canvases.
+    ref_entity_ids: list[str] = Field(default_factory=list)
 
 
 class DecisionNode(BaseNodeFields):

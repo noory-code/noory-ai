@@ -158,6 +158,17 @@ def test_step_round_trip_without_order() -> None:
     assert StepNode.model_validate(n.model_dump()) == n
 
 
+def test_step_ref_entity_ids_default_empty_and_round_trip() -> None:
+    """D-2026-06-20-Q — a step (action) references the entities it operates on
+    via ``ref_entity_ids`` (chips → entities registry). Default empty; the AI /
+    user adds ids. The entity back-ref ("어디서 쓰이나") scans this field."""
+    n = StepNode(id="s1", label="Write a post")
+    assert n.ref_entity_ids == []
+    n2 = StepNode(id="s2", label="Write", ref_entity_ids=["ent_post", "ent_draft"])
+    assert StepNode.model_validate(n2.model_dump()) == n2
+    assert n2.ref_entity_ids == ["ent_post", "ent_draft"]
+
+
 def test_rule_round_trip() -> None:
     n = RuleNode(
         id="r1",

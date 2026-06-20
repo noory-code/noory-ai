@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.4] — 2026-06-20
+
+### Added
+
+- **`step.ref_entity_ids`** (entity follow-up, **D-2026-06-20-Q**) — a feature
+  action references the entities it operates on via an id-array (chips →
+  entities registry), mirroring the service inspector's `ref_*_ids`. Purpose =
+  AI-maintained derived data map ("what data the product has + 어디서 쓰이나"),
+  not flow visualisation; the reference is a lightweight declaration on the
+  action, not a flow-participant node. Additive wire field (loss-free default
+  `[]`); codegen regenerated (`StepJson`). The viewer half (chip picker +
+  entity back-reference view) ships in the `plot` app repo.
+
+### Notes
+
+- Engine **649 tests green**. Entity edges (step 7) + the back-ref view land
+  next.
+
 ## [0.98.3] — 2026-06-20
 
 ### Added

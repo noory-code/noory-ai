@@ -294,6 +294,7 @@
       "owner",
       "polarity",
       "publish_baseline",
+      "ref_entity_ids",
       "shape",
       "version",
       "width",
