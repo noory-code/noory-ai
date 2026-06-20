@@ -56,10 +56,6 @@ export interface ActorJson extends BaseFieldsJson {
 export interface ActorRefJson extends BaseFieldsJson {
   kind: "actor_ref";
   ref_actor_id: string | null;
-  gives: string;
-  receives: string;
-  motivation: string;
-  pain: string;
   side: "operator" | "user" | null;
 }
 

@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.92.0] — 2026-06-20
+
+### Changed
+
+- **`actor_ref` = read-only anchor** (Chunk 2.6, implementing D-2026-06-19-I).
+  On the Feature canvas an actor_ref now only marks the flow's subject ("who
+  starts / who can"); its inspector shows which actor master it points at (+
+  side) read-only, with an orphan re-pick / delete path. Role is edited on the
+  Actors canvas; permissions on a `rule`.
+
+### Removed
+
+- **`actor_ref` per-service stake fields** `gives` / `receives` / `motivation`
+  / `pain` (supersedes D-2026-06-15-J). Role-level value lives on the Actors
+  relationship edges; aggregate value on the service "뭐가 좋아지나?". Discarded
+  (no migration). The 4 editor textareas are gone from the actor_ref inspector.
+
 ## [0.91.0] — 2026-06-20
 
 ### Changed

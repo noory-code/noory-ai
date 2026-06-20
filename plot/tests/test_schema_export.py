@@ -76,10 +76,14 @@ def test_non_foundation_json_schema_includes_typed_fields(tmp_path: Path) -> Non
     for field in ("motivation", "pain"):
         assert field not in actor_props, f"actor.json must NOT expose {field!r} (now actor_ref)"
 
+    # D-2026-06-19-I: actor_ref is a read-only anchor — ref_actor_id + side
+    # only; the per-service stake (gives/receives/motivation/pain) is retired.
     actor_ref_schema = json.loads((schema_dir / "actor_ref.json").read_text(encoding="utf-8"))
     actor_ref_props = actor_ref_schema.get("properties", {})
-    for field in ("gives", "receives", "motivation", "pain", "side"):
+    for field in ("ref_actor_id", "side"):
         assert field in actor_ref_props, f"actor_ref.json must expose {field!r}"
+    for gone in ("gives", "receives", "motivation", "pain"):
+        assert gone not in actor_ref_props, f"actor_ref.json must NOT expose retired {gone!r}"
 
     # D-2026-06-20-F — service is the 5-field model: problem + value_created
     # (typed) + 3 ref-id arrays. The old 9 free-text fields are gone.

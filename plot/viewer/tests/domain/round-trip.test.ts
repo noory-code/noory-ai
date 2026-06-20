@@ -344,32 +344,32 @@ describe("Category.fromJson + toJson round-trip", () => {
   });
 });
 
-describe("ActorRef.fromJson + toJson round-trip", () => {
-  it("populates defaults", () => {
+describe("ActorRef.fromJson + toJson round-trip (read-only anchor, D-2026-06-19-I)", () => {
+  it("populates defaults (ref_actor_id + side only)", () => {
     const r = ActorRef.fromJson({ id: "ref-1", kind: "actor_ref" });
     expect(r.kind).toBe("actor_ref");
     expect(r.ref_actor_id).toBeNull();
-    expect(r.gives).toBe("");
-    expect(r.receives).toBe("");
-    // D-2026-06-15-J: per-service stake fields default empty.
-    expect(r.motivation).toBe("");
-    expect(r.pain).toBe("");
     expect(r.side).toBeNull();
   });
 
-  it("preserves ref + gives/receives/motivation/pain/side and round-trips", () => {
+  it("preserves ref + side and round-trips; drops retired stake fields", () => {
     const a = ActorRef.fromJson({
       id: "ref-1",
       kind: "actor_ref",
       ref_actor_id: "operator",
+      // legacy per-service stake — dropped on read
       gives: "moderation",
       receives: "reputation",
-      motivation: "이 서비스를 안전하게 운영하고 싶다",
-      pain: "신고가 너무 많아 다 못 본다",
+      motivation: "x",
+      pain: "y",
       side: "operator",
     });
-    expect(a.motivation).toBe("이 서비스를 안전하게 운영하고 싶다");
-    expect(a.pain).toBe("신고가 너무 많아 다 못 본다");
+    expect(a.ref_actor_id).toBe("operator");
+    expect(a.side).toBe("operator");
+    const json = a.toJson() as Record<string, unknown>;
+    for (const gone of ["gives", "receives", "motivation", "pain"]) {
+      expect(gone in json).toBe(false);
+    }
     const b = ActorRef.fromJson(a.toJson());
     expect({ ...b }).toEqual({ ...a });
   });

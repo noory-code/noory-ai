@@ -31,20 +31,17 @@ class ActorNode(BaseNodeFields):
 
 
 class ActorRefNode(BaseNodeFields):
-    """v0.15 Phase 1: ``actor_ref`` kind. References an actor master that
-    lives on the Actors canvas. Carries the actor's **per-service stake**:
-    ``gives`` / ``receives`` (value flow, PHILOSOPHY P6 weakened form) +
-    ``motivation`` / ``pain`` (why this actor participates here / what
-    hurts here — D-2026-06-15-J, PHILOSOPHY P3). ``side`` mirrors the
-    referenced actor's side so the canvas can colour-code without
-    dereferencing the master each render (identity, not authored here)."""
+    """``actor_ref`` kind — a **read-only anchor** (D-2026-06-19-I). On the
+    Feature canvas it marks the flow's subject ("who starts / who can"); it is
+    NOT a value-exchange editor. Its former per-(actor×service) fields —
+    ``gives`` / ``receives`` / ``motivation`` / ``pain`` — are **retired**
+    (supersedes `D-2026-06-15-J`): role-level value lives on the Actors
+    relationship edges, aggregate value on the service "뭐가 좋아지나?". Carries
+    only ``ref_actor_id`` (the master it points at) + ``side`` (denormalized
+    from that master for colour-coding without a per-render dereference)."""
 
     kind: Literal["actor_ref"] = "actor_ref"
     ref_actor_id: str | None = None
-    gives: str = ""
-    receives: str = ""
-    motivation: str = ""
-    pain: str = ""
     side: Literal["operator", "user"] | None = None
 
     @model_validator(mode="after")

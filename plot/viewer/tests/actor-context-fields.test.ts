@@ -46,29 +46,25 @@ function inheritEdge(child: string, parent: string): SketchEdge {
   } as SketchEdge;
 }
 
-describe("D-2026-06-15-J — motivation/pain are per-service (actor_ref)", () => {
-  it("actor_ref carries + round-trips motivation and pain", () => {
+describe("D-2026-06-19-I — actor_ref = read-only anchor (per-service stake retired)", () => {
+  it("actor_ref carries only ref_actor_id + side; gives/receives/motivation/pain are gone", () => {
     const ref = ActorRef.fromJson({
       ...BASE,
       kind: "actor_ref",
       ref_actor_id: "a1",
+      // legacy per-service-stake fields — must be DROPPED on read (discard)
       gives: "time",
       receives: "fame",
       motivation: "wants reach here",
       pain: "upload is slow",
       side: "user",
     });
-    expect((ref as unknown as { motivation: string }).motivation).toBe("wants reach here");
-    expect((ref as unknown as { pain: string }).pain).toBe("upload is slow");
-    const json = ref.toJson() as unknown as { motivation: string; pain: string };
-    expect(json.motivation).toBe("wants reach here");
-    expect(json.pain).toBe("upload is slow");
-  });
-
-  it("actor_ref defaults motivation/pain to empty string", () => {
-    const ref = ActorRef.fromJson({ ...BASE, kind: "actor_ref", ref_actor_id: "a1" });
-    expect((ref as unknown as { motivation: string }).motivation).toBe("");
-    expect((ref as unknown as { pain: string }).pain).toBe("");
+    expect(ref.ref_actor_id).toBe("a1");
+    expect(ref.side).toBe("user");
+    const json = ref.toJson() as Record<string, unknown>;
+    for (const gone of ["gives", "receives", "motivation", "pain"]) {
+      expect(gone in json).toBe(false);
+    }
   });
 
   it("actor no longer carries motivation/pain (identity only: side + body)", () => {

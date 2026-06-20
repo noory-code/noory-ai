@@ -1,16 +1,17 @@
 /**
- * v0.15 Phase 2.7 — ``actor_ref`` entity. References an actor master on
- * the Actors canvas. Carries the actor's **per-service stake**: gives +
- * receives (value flow) and — D-2026-06-15-J — motivation + pain (why
- * this actor participates in THIS service / what hurts here; PHILOSOPHY
- * P3, participation is asymmetric). side mirrors the referenced actor's
- * identity side for canvas-local colour coding (not authored here).
+ * ``actor_ref`` entity — a **read-only anchor** (D-2026-06-19-I). On the
+ * Feature canvas it marks the flow's subject ("who starts / who can"); it is
+ * NOT a value-exchange editor. Its former per-(actor×service) fields —
+ * ``gives`` / ``receives`` / ``motivation`` / ``pain`` — are retired (role-level
+ * value lives on Actors edges, aggregate value on the service "뭐가 좋아지나?").
+ * Carries only ``ref_actor_id`` + ``side`` (denormalized from the master for
+ * canvas-local colour coding, not authored here).
  */
 import type { BaseFields } from "./BaseFields";
-import type { ActorRefJson } from "./wire.gen";
 import { parseBaseFields } from "./BaseFields";
 import { DomainParseError } from "./DomainParseError";
 import { registerKindParser } from "./parseEntity";
+import type { ActorRefJson } from "./wire.gen";
 
 export class ActorRef implements BaseFields {
   readonly id!: string;
@@ -31,27 +32,15 @@ export class ActorRef implements BaseFields {
   readonly kind: "actor_ref" = "actor_ref";
 
   readonly ref_actor_id: string | null;
-  readonly gives: string;
-  readonly receives: string;
-  readonly motivation: string;
-  readonly pain: string;
   readonly side: "operator" | "user" | null;
 
   private constructor(
     base: BaseFields,
     ref_actor_id: string | null,
-    gives: string,
-    receives: string,
-    motivation: string,
-    pain: string,
     side: "operator" | "user" | null,
   ) {
     Object.assign(this, base);
     this.ref_actor_id = ref_actor_id;
-    this.gives = gives;
-    this.receives = receives;
-    this.motivation = motivation;
-    this.pain = pain;
     this.side = side;
   }
 
@@ -67,10 +56,6 @@ export class ActorRef implements BaseFields {
     return new ActorRef(
       base,
       readNullableString(obj.ref_actor_id, "ref_actor_id", raw),
-      readOptionalString(obj.gives, "gives", raw),
-      readOptionalString(obj.receives, "receives", raw),
-      readOptionalString(obj.motivation, "motivation", raw),
-      readOptionalString(obj.pain, "pain", raw),
       readSide(obj.side, raw),
     );
   }
@@ -93,24 +78,9 @@ export class ActorRef implements BaseFields {
       version: this.version,
       kind: "actor_ref",
       ref_actor_id: this.ref_actor_id,
-      gives: this.gives,
-      receives: this.receives,
-      motivation: this.motivation,
-      pain: this.pain,
       side: this.side,
     };
   }
-}
-
-function readOptionalString(value: unknown, field: string, raw: unknown): string {
-  if (value === undefined || value === null) return "";
-  if (typeof value !== "string") {
-    throw new DomainParseError(
-      `ActorRef.${field} must be a string, got ${JSON.stringify(value)}`,
-      raw,
-    );
-  }
-  return value;
 }
 
 function readNullableString(value: unknown, field: string, raw: unknown): string | null {

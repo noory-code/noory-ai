@@ -202,6 +202,14 @@
     "category": "카테고리"
   },
   "inspector": {
+    "actorRef": {
+      "anchorHeader": "앵커 (읽기 전용)",
+      "actor": "액터",
+      "readOnlyHint": "읽기 전용 — 이 흐름의 주체가 누구인지만 표시합니다. 역할은 Actors 캔버스에서, 권한은 rule에서 편집하세요.",
+      "orphan": "⚠ 고아 — 액터를 찾을 수 없음",
+      "repick": "다시 고르기…",
+      "delete": "삭제"
+    },
     "service": {
       "q": {
         "participants": "누가 참여하나요?",

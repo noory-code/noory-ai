@@ -217,30 +217,22 @@ describe("ProjectInspector (Phase 2.5)", () => {
   });
 });
 
-describe("ActorRefInspector (Phase 2.7)", () => {
-  it("renders gives/receives + motivation/pain + reference display when actor master exists", () => {
+describe("ActorRefInspector (read-only anchor, D-2026-06-19-I)", () => {
+  it("renders the referenced actor as a read-only anchor; no stake editors", () => {
     const actor = makeNode({ id: "operator", kind: "actor", label: "Operator", side: "operator" });
     const ref = makeNode({
       id: "ref-1",
       kind: "actor_ref",
       label: "→ Op",
       ref_actor_id: "operator",
-      gives: "mod",
-      receives: "rep",
-      motivation: "안전하게 운영",
-      pain: "신고 폭주",
     });
     render(
-      <KindInspector
-        {...makeProps(ref, "service_detail", [ref, actor])}
-        availableActors={[actor]}
-      />,
+      <KindInspector {...makeProps(ref, "service_detail", [ref, actor])} availableActors={[actor]} />,
     );
-    expect(screen.getByDisplayValue("mod")).toBeInTheDocument();
-    // D-2026-06-15-J: per-service stake fields live on the actor_ref inspector.
-    expect(screen.getByDisplayValue("안전하게 운영")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("신고 폭주")).toBeInTheDocument();
+    // shows which actor master it anchors
     expect(screen.getByText(/Operator/)).toBeInTheDocument();
+    // no per-service-stake editors (gives/receives/motivation/pain retired)
+    expect(screen.queryByPlaceholderText(/콘텐츠|피드백|얻으려|어려움/)).not.toBeInTheDocument();
   });
 
   it("renders the orphan warning when ref_actor_id is unknown", () => {

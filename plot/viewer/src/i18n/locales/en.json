@@ -202,6 +202,14 @@
     "category": "CATEGORY"
   },
   "inspector": {
+    "actorRef": {
+      "anchorHeader": "Anchor (read-only)",
+      "actor": "Actor",
+      "readOnlyHint": "Read-only — this only marks who the flow's subject is. Edit the role on the Actors canvas; set permissions on a rule.",
+      "orphan": "⚠ Orphan — actor not found",
+      "repick": "Re-pick…",
+      "delete": "Delete"
+    },
     "service": {
       "q": {
         "participants": "Who takes part?",
