@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-21-J — chat bubbles render Markdown (assistant replies); user input stays literal
+
+- **What:** Assistant chat replies now render as **Markdown** (reusing the inspector's `MDPreview` — react-markdown + remark-gfm + fenced-mermaid + the same prose styling), so headings / lists / bold / code / tables / links format properly in the bubble. The streaming caret renders after the rendered MD. The **user's own input** and **error text** stay **literal** (plain `whitespace-pre-wrap`) — what the user typed isn't transformed, and the user bubble's inverse background keeps its own text colour.
+- **Why:** User request 2026-06-21 ("채팅 버블이 MD 포멧을 지원해주면 참 좋겠네"). Agents reply in Markdown; rendering it makes long structured answers readable instead of a wall of `**` / `#` / `-` characters.
+- **Alternatives:** (a) render the user bubble as MD too — rejected (transforms their literal input + clashes with the inverse-bg text colour; VS Code-style keeps user input plain). (b) a chat-specific MD renderer — rejected (DRY: `MDPreview` already does GFM + mermaid + themed prose).
+- **Approval:** Accepted by user, 2026-06-21.
+- **Spec impact:** App-repo viewer (`ChatDock.ChatMessageRow` → `MDPreview` for assistant). Pinned by `chat-md` test (assistant `**bold**`→`<strong>`, lists render, user input stays literal). **Follow-up (SoC):** `ChatDock.tsx` is now 589 LOC — the `ChatComposer` extraction (D-2026-06-21-G follow-up) is overdue.
+
 ### D-2026-06-21-I — in-app chat is grounded ONLY in the workspace (no parent/global CLAUDE.md, no auto-memory)
 
 - **What:** The in-app Claude Code agent was pulling context from **outside the workspace** — the parent-directory `CLAUDE.md` files (e.g. the Plot repo's own dev instructions, since a user workspace can live under the Plot tree), the global `~/.claude/CLAUDE.md`, and the user's auto-memory. The `claude -p` spawn now isolates it: command flags **`--setting-sources local`** (load only the workspace's `.claude/settings.local.json` — no user/project scope, so no parent / global CLAUDE.md auto-discovery) + **`--exclude-dynamic-system-prompt-sections`** (keep cwd / env / memory-paths / git-status out of the system prompt), and the spawn env sets **`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`** (fully disables auto-memory). A new `ChatProvider._spawn_env()` hook (default `None` = inherit) threads the env through `stream_turn` → `_spawn` → `_default_spawn`.
