@@ -38,7 +38,22 @@ def test_health(app_client: tuple[TestClient, str]) -> None:
     client, _ = app_client
     resp = client.get("/api/health")
     assert resp.status_code == 200
-    assert resp.json() == {"status": "ok", "service": "plot"}
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["service"] == "plot"
+
+
+def test_health_exposes_compat_versions(app_client: tuple[TestClient, str]) -> None:
+    """The runtime compat banner (D-2026-06-20-N Phase D part c) reads the
+    engine's wire ``schema_version`` + ``engine_version`` from /api/health and
+    compares schema_version against the viewer's committed wire-contract."""
+    from plot_mcp import __version__
+    from plot_mcp.schema_export import SCHEMA_VERSION
+
+    client, _ = app_client
+    body = client.get("/api/health").json()
+    assert body["schema_version"] == SCHEMA_VERSION
+    assert body["engine_version"] == __version__
 
 
 def test_list_empty(app_client: tuple[TestClient, str]) -> None:

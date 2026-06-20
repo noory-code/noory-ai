@@ -69,4 +69,17 @@ def _parse_canvas_kind(raw: str) -> CanvasKind | None:
 
 
 async def health_endpoint(_request: Request) -> JSONResponse:
-    return JSONResponse({"status": "ok", "service": "plot"})
+    # ``schema_version`` + ``engine_version`` feed the viewer's boot-time compat
+    # banner (D-2026-06-20-N Phase D part c): the app compares the engine's wire
+    # schema_version against its committed wire-contract and warns on mismatch.
+    from plot_mcp import __version__
+    from plot_mcp.schema_export import SCHEMA_VERSION
+
+    return JSONResponse(
+        {
+            "status": "ok",
+            "service": "plot",
+            "schema_version": SCHEMA_VERSION,
+            "engine_version": __version__,
+        }
+    )

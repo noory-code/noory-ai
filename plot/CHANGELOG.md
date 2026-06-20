@@ -4,6 +4,24 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.3] — 2026-06-20
+
+### Added
+
+- **`/api/health` exposes `schema_version` + `engine_version`** (Phase D part c,
+  **D-2026-06-20-O**) — additive, backward-compatible fields alongside
+  `status`/`service`. They feed the app's boot-time wire-compat banner: the
+  viewer compares the engine's `schema_version` against its committed
+  `wire-contract.json` and warns on mismatch (a version-skewed `.app` would
+  otherwise silently mis-parse canvases). Engine-unreachable does **not** fire
+  the banner; an older engine that omits the field is treated as a mismatch.
+
+### Notes
+
+- Engine **648 tests green** (+`test_health_exposes_compat_versions`). The
+  viewer half (compat check + banner + i18n) ships in the `plot` app repo.
+  Phase D part (b) sidecar git-tag pin + `engine_version` build stamp remains.
+
 ## [0.98.2] — 2026-06-20
 
 ### Changed
