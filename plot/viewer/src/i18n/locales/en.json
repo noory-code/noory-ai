@@ -66,7 +66,7 @@
       "actors": "Actors",
       "services": "Services"
     },
-    "closeDetailTab": "Close service-detail tab"
+    "closeDetailTab": "Close feature-detail tab"
   },
   "header": {
     "markSession": "Mark session…",
@@ -142,13 +142,13 @@
       "foundation": "Foundation",
       "actors": "Actors",
       "services": "Services",
-      "service_detail": "Service detail"
+      "service_detail": "Feature detail"
     }
   },
   "serviceDetail": {
-    "label": "Service detail",
-    "ariaWithCategory": "Service detail — {{category}} › {{service}}",
-    "ariaWithoutCategory": "Service detail — {{service}}"
+    "label": "Feature detail",
+    "ariaWithCategory": "Feature detail — {{category}} › {{service}}",
+    "ariaWithoutCategory": "Feature detail — {{service}}"
   },
   "shell": {
     "closeEsc": "Close (Esc)",

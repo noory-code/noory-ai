@@ -19,14 +19,12 @@ from __future__ import annotations
 from plot_mcp.migrate_v01_models import _V01SketchNode
 from plot_mcp.models import (
     ActorNode,
-    ActorRefNode,
     CanvasDoc,
     CategoryNode,
     CoreValueNode,
     IdentityNode,
     MissionNode,
     ProjectNode,
-    RuleNode,
     ServiceNode,
     SketchEdge,
     SketchNode,
@@ -168,37 +166,6 @@ def _build_actors_canvas(
     )
 
 
-def _detail_actor_ref_seeds(service_id: str) -> list[ActorRefNode]:
-    """v0.11 — auto-seed two stub actor_refs (operator + user) when a
-    migrated service_detail otherwise has zero. Mirrors
-    ``folder_io.sync_details_with_overview``'s seeding so behaviour is
-    consistent whether the canvas was created via migration or via auto
-    sync.
-    """
-    return [
-        ActorRefNode(
-            id=f"{service_id}-operator-ref",
-            label="→ Operator",
-            ref_actor_id="operator",
-            side="operator",
-            color="#bae6fd",
-            shape="ellipse",
-            width=140,
-            height=70,
-        ),
-        ActorRefNode(
-            id=f"{service_id}-user-ref",
-            label="→ User",
-            ref_actor_id="user",
-            side="user",
-            color="#fecaca",
-            shape="ellipse",
-            width=140,
-            height=70,
-        ),
-    ]
-
-
 def _backfill_actor_sides(nodes: list[ActorNode]) -> list[ActorNode]:
     """v0.11 migration helper: legacy actor nodes have ``side = None``.
     Default them to ``"user"`` so the model is self-consistent. Users can
@@ -284,28 +251,6 @@ def _v01_to_service(n: _V01SketchNode) -> ServiceNode:
     )
 
 
-def _v01_to_composition(n: _V01SketchNode) -> RuleNode:
-    """Convert a legacy v0.1 ``rule`` node into the current ``RuleNode``.
-    Typed fields stay at their defaults (v0.1 only carried label + position).
-    (``content`` retired 2026-06-20 — D-2026-06-20-H — so it is dropped, not
-    converted, by the caller.)"""
-    if n.kind == "rule":
-        return RuleNode(
-            id=n.id,
-            label=n.label,
-            x=n.x,
-            y=n.y,
-            width=n.width,
-            height=n.height,
-            color=n.color,
-            shape=n.shape,  # type: ignore[arg-type]
-            icon=n.icon,
-            collapsed=n.collapsed,
-            details_path=n.details_path,
-        )
-    raise ValueError(f"unsupported v0.1 composition kind: {n.kind!r}")
-
-
 def _split_services(
     service_nodes: list[_V01SketchNode],
     service_root: _V01SketchNode | None,
@@ -318,7 +263,6 @@ def _split_services(
     Converts legacy v0.1 ``_V01SketchNode`` instances into current
     per-kind classes at the boundary.
     """
-    by_id = {n.id: n for n in service_nodes}
     service_root_id = service_root.id if service_root else None
 
     # Top-level = direct children of service-root, OR a service that has no
@@ -368,42 +312,10 @@ def _split_services(
         edges=overview_edges,
     )
 
-    # Detail per top-level service.
-    details: list[CanvasDoc] = []
-    for root_service in top_level:
-        descendant_ids: set[str] = set()
-        stack = [root_service.id]
-        while stack:
-            cur = stack.pop()
-            descendant_ids.add(cur)
-            for child in service_nodes:
-                if child.parent_id == cur and child.id not in descendant_ids:
-                    stack.append(child.id)
-        descendants: list[SketchNode] = []
-        for did in descendant_ids:
-            n = by_id[did]
-            if n.kind == "service":
-                # v0.26.0 (D-2026-05-25-A) — parent_id field gone.
-                # Detail-canvas sub-service nesting is now the user's
-                # job via directed edges.
-                descendants.append(_v01_to_service(n))
-            elif n.kind == "rule":
-                descendants.append(_v01_to_composition(n))
-            # v0.1 ``content`` nodes are dropped (content retired 2026-06-20,
-            # D-2026-06-20-H). v0.1 had no metric / step / refs / actor_ref.
-        ids = {n.id for n in descendants}
-        scoped_edges = [e for e in edges if e.source in ids and e.target in ids]
-        # v0.11 — pad with operator + user actor_refs so the new
-        # ≥ 2 actor_ref validator accepts migrated detail canvases.
-        descendants = descendants + list(_detail_actor_ref_seeds(root_service.id))
-        details.append(
-            CanvasDoc(
-                canvas_id=root_service.id,
-                canvas_kind="service_detail",
-                service_ref=root_service.id,
-                nodes=descendants,
-                edges=scoped_edges,
-            )
-        )
-
-    return overview, details
+    # D-2026-06-17-D — detail canvases are per **feature** now (the drill
+    # target), and v0.1 predates the feature kind. So migration produces the
+    # overview only; v0.1 service decomposition (sub-services / rules that used
+    # to seed a per-service detail) is dropped — the user re-authors it as
+    # features after migrating, and the live overview↔detail sync seeds each
+    # feature's detail on first open.
+    return overview, []

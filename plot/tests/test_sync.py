@@ -13,7 +13,7 @@ from plot_mcp.folder_io import (
     sync_details_with_overview,
     write_canvas,
 )
-from plot_mcp.models import CanvasDoc, CategoryNode, ServiceNode, SketchNode
+from plot_mcp.models import CanvasDoc, CategoryNode, FeatureNode, ServiceNode, SketchNode
 from plot_mcp.workspace import resolve_plot_root
 
 
@@ -22,14 +22,18 @@ def plot_root(tmp_path: Path) -> Path:
     return resolve_plot_root(str(tmp_path))
 
 
-def _overview_with(service_labels: dict[str, str]) -> CanvasDoc:
-    """v0.12 — services canvas: services nested under a single default category."""
+def _overview_with(feature_labels: dict[str, str]) -> CanvasDoc:
+    """v0.94+ (D-2026-06-17-D) — services canvas: features nested under a single
+    default service under a single default category. Detail canvases now seed
+    per **feature** (the drill target), not per service — selecting a service
+    shows its inspector, clicking a feature drills into its detail."""
     nodes: list[SketchNode] = [
         CategoryNode(id="default-cat", label="Default"),
+        ServiceNode(id="default-svc", parent_id="default-cat", label="Default service"),
     ]
     nodes.extend(
-        ServiceNode(id=sid, parent_id="default-cat", label=label)
-        for sid, label in service_labels.items()
+        FeatureNode(id=fid, parent_id="default-svc", label=label)
+        for fid, label in feature_labels.items()
     )
     return CanvasDoc(
         canvas_id="services",
@@ -38,7 +42,7 @@ def _overview_with(service_labels: dict[str, str]) -> CanvasDoc:
     )
 
 
-def test_sync_creates_detail_for_new_service(plot_root: Path) -> None:
+def test_sync_creates_detail_for_new_feature(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     write_canvas(plot_root, "alpha", _overview_with({"order": "주문"}))
     result = sync_details_with_overview(plot_root, "alpha")
@@ -49,7 +53,7 @@ def test_sync_creates_detail_for_new_service(plot_root: Path) -> None:
     assert any(n.id == "order" for n in detail.nodes)
 
 
-def test_sync_archives_removed_service(plot_root: Path) -> None:
+def test_sync_archives_removed_feature(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     write_canvas(plot_root, "alpha", _overview_with({"order": "주문", "pay": "결제"}))
     sync_details_with_overview(plot_root, "alpha")

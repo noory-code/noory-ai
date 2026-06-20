@@ -51,8 +51,12 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
     # directed edge; it is the sole drill target. All sub-service / refs /
     # composition still live in service_detail.
     "services": {"project", "category", "service", "feature"},
+    # D-2026-06-17-D — the detail canvas drills into a **feature** (its
+    # actions / rules), not a service. The root anchor is the feature node;
+    # the wire ``canvas_kind`` stays ``service_detail`` until the canvas-string
+    # rename (product-gated).
     "service_detail": {
-        "service",
+        "feature",
         "rule",
         "step",
         "decision",
@@ -71,8 +75,10 @@ class CanvasDoc(BaseModel):
 
     canvas_id: str = Field(..., min_length=1)
     canvas_kind: CanvasKind
-    # service_detail only: the ``service`` node id this detail canvas drills into.
-    # Must equal ``canvas_id`` to keep the 1:1 pairing with the Overview node.
+    # service_detail only: the ``feature`` node id this detail canvas drills into
+    # (D-2026-06-17-D — feature is the drill target). Must equal ``canvas_id`` to
+    # keep the 1:1 pairing with the Overview node. The field name + wire kind keep
+    # the ``service`` prefix until the canvas-string rename (product-gated).
     service_ref: str | None = None
     nodes: list[SketchNode] = Field(default_factory=list)
     edges: list[SketchEdge] = Field(default_factory=list)
@@ -192,15 +198,17 @@ class CanvasDoc(BaseModel):
                 f"service_detail service_ref {self.service_ref!r} must match "
                 f"canvas_id {self.canvas_id!r}"
             )
-        root_services = [n for n in self.nodes if n.kind == "service" and n.id == self.canvas_id]
-        if not root_services:
+        # D-2026-06-17-D — the detail canvas drills into a **feature**, so its
+        # root anchor is the feature node (was a ``service`` pre-overhaul).
+        root_features = [n for n in self.nodes if n.kind == "feature" and n.id == self.canvas_id]
+        if not root_features:
             raise ValueError(
-                f"service_detail canvas must contain a root service with id {self.canvas_id!r}"
+                f"service_detail canvas must contain a root feature with id {self.canvas_id!r}"
             )
         # v0.26.0 (D-2026-05-25-A) — composition-kind parent_id checks
-        # removed alongside the field. Containment of category / step /
-        # rule / metric / content under their root-service is now
-        # expressed via directed edges; not validated at schema level.
+        # removed alongside the field. Containment of step / rule / decision /
+        # note under their root-feature is expressed via directed edges; not
+        # validated at schema level.
         return self
 
     @model_validator(mode="after")

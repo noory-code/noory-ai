@@ -407,7 +407,7 @@ def test_identity_fields_promoted_to_nodes(plot_root: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_top_level_services_get_detail_canvases(plot_root: Path) -> None:
+def test_v01_services_migrate_to_overview_without_details(plot_root: Path) -> None:
     nodes = _v01_seed_nodes()
     nodes.extend(
         [
@@ -450,17 +450,16 @@ def test_top_level_services_get_detail_canvases(plot_root: Path) -> None:
     migrate_v01_to_v02(plot_root)
     overview = read_canvas(plot_root, "alpha", "services")
     labels = {n.label for n in overview.nodes}
+    # Top-level v0.1 services land on the overview.
     assert "주문" in labels and "결제" in labels
 
-    # Detail canvases exist for both top-level services
-    details = set(list_service_details(plot_root, "alpha"))
-    assert {"order", "pay"} <= details
-
-    # Order detail contains its sub-service and the decomposes edge
-    order_detail = read_canvas(plot_root, "alpha", "service_detail", service_id="order")
-    sub_labels = {n.label for n in order_detail.nodes}
-    assert "장바구니" in sub_labels and "주문" in sub_labels
-    assert any(e.id == "e-order-cart" for e in order_detail.edges)
+    # D-2026-06-17-D — detail canvases are per **feature** now, and v0.1
+    # predates the feature kind, so migration creates NO detail canvases. The
+    # v0.1 service decomposition (the "장바구니" sub-service that used to seed
+    # order's detail) is dropped — the user re-authors it as a feature after
+    # migrating, and the live sync seeds that feature's detail on first open.
+    assert list_service_details(plot_root, "alpha") == []
+    assert "장바구니" not in labels
 
 
 # ---------------------------------------------------------------------------

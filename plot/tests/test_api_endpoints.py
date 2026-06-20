@@ -418,8 +418,12 @@ def test_canvas_put_overview_auto_creates_detail(
                 "ref_actor_id": None,
             },
             {
+                # D-2026-06-17-D — the detail canvas drills into a *feature*
+                # (the sole drill target), so auto-create keys off features,
+                # not services. The drill-target node on the overview is a
+                # feature.
                 "id": "order",
-                "kind": "service",
+                "kind": "feature",
                 "label": "주문",
                 "body": "",
                 "x": 0,

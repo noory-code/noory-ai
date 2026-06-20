@@ -35,7 +35,7 @@ from plot_mcp.models import (
     ActorRefNode,
     CanvasDoc,
     CategoryNode,
-    ServiceNode,
+    FeatureNode,
     StepNode,
 )
 from plot_mcp.workspace import resolve_plot_root
@@ -201,13 +201,16 @@ def _detail_with_actor_refs(service_id: str = "order") -> CanvasDoc:
     ≥ 1 actor_ref. This fixture keeps the 2-actor seed because most
     folder_io tests don't care about the count — they exercise sync /
     publish / archive logic that needs *some* doc to bounce off. The
-    invariant itself is covered by ``test_canvas_doc.py``."""
+    invariant itself is covered by ``test_canvas_doc.py``.
+
+    Root is a feature (D-2026-06-17-D — the detail canvas drills into a
+    feature, not a service)."""
     return CanvasDoc(
         canvas_id=service_id,
         canvas_kind="service_detail",
         service_ref=service_id,
         nodes=[
-            ServiceNode(id=service_id, label="주문"),
+            FeatureNode(id=service_id, label="주문"),
             ActorRefNode(
                 id=f"{service_id}-op",
                 label="→ op",
@@ -795,12 +798,15 @@ def test_publish_node_creates_git_commit_with_trailers(plot_root: Path) -> None:
 
 
 def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
-    """Build a Services canvas with a category + service, plus a
-    matching ServiceDetail canvas with a step node. Returns
-    ``(category_id, service_id, step_id)``.
+    """Build a Services canvas with a category + feature, plus a
+    matching ServiceDetail canvas drilling into that feature with a step
+    node. Returns ``(category_id, feature_id, step_id)``.
 
     v0.26.0 (D-2026-05-25-A) — containment is now expressed via
-    directed edges instead of ``parent_id``."""
+    directed edges instead of ``parent_id``.
+    D-2026-06-17-D — the detail canvas drills into a *feature* (the sole
+    drill target), so the mirrored node (root in detail, master in the
+    overview) is a feature, not a service."""
     from plot_mcp.models import SketchEdge
 
     def _edge(src: str, tgt: str) -> SketchEdge:
@@ -808,10 +814,10 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
 
     services = read_canvas(plot_root, "alpha", "services")
     category = CategoryNode(id="cat-acq", label="Customer Acquisition")
-    service = ServiceNode(id="svc-onboarding", label="Onboarding")
+    feature = FeatureNode(id="svc-onboarding", label="Onboarding")
     new_services = services.model_copy(
         update={
-            "nodes": [category, service],
+            "nodes": [category, feature],
             "edges": [_edge("cat-acq", "svc-onboarding")],
         }
     )
@@ -822,7 +828,7 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
         canvas_kind="service_detail",
         service_ref="svc-onboarding",
         nodes=[
-            ServiceNode(id="svc-onboarding", label="Onboarding"),
+            FeatureNode(id="svc-onboarding", label="Onboarding"),
             StepNode(
                 id="step-verify",
                 label="Verify email",

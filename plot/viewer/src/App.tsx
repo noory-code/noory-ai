@@ -304,11 +304,10 @@ export function App() {
         jumpToActor(n.ref_actor_id);
         return;
       }
-      if (
-        activeTab === "services" &&
-        n.kind === "service" &&
-        !n.is_root
-      ) {
+      // D-2026-06-17-D — the feature is the drill target; a service shows its
+      // inspector (no drill). drillIntoService still names the wire string
+      // ``service_detail``; the id it carries is now a feature id.
+      if (activeTab === "services" && n.kind === "feature") {
         drillIntoService(id);
       }
     },

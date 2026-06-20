@@ -20,6 +20,7 @@ from plot_mcp.models import (
     ActorRefNode,
     CanvasDoc,
     CategoryNode,
+    FeatureNode,
     IdentityNode,
     MissionNode,
     ServiceNode,
@@ -100,10 +101,11 @@ def test_walk_ancestors_walks_service_to_category_same_canvas() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_walk_ancestors_crosses_to_services_via_root_service_mirror() -> None:
+def test_walk_ancestors_crosses_to_services_via_root_feature_mirror() -> None:
     """A step in a service_detail canvas has an incoming directed edge
-    from the root_service. The root service node (in service_detail)
-    has no incoming edge, but the master service node (same id, in
+    from the root feature (D-2026-06-17-D — the detail canvas drills into
+    a feature, not a service). The root feature node (in service_detail)
+    has no incoming edge, but the mirror feature node (same id, in the
     Services canvas) has an incoming edge from the category. The walk
     crosses via id-matching only — ``service_ref`` is never read."""
     services = CanvasDoc(
@@ -111,7 +113,7 @@ def test_walk_ancestors_crosses_to_services_via_root_service_mirror() -> None:
         canvas_kind="services",
         nodes=[
             CategoryNode(id="cat-1", label="Customer Acquisition"),
-            ServiceNode(id="svc-onboarding", label="Onboarding"),
+            FeatureNode(id="svc-onboarding", label="Onboarding"),
         ],
         edges=[_edge("cat-1", "svc-onboarding")],
     )
@@ -120,8 +122,8 @@ def test_walk_ancestors_crosses_to_services_via_root_service_mirror() -> None:
         canvas_kind="service_detail",
         service_ref="svc-onboarding",
         nodes=[
-            # Root service mirror.
-            ServiceNode(id="svc-onboarding", label="Onboarding"),
+            # Root feature mirror.
+            FeatureNode(id="svc-onboarding", label="Onboarding"),
             # Step is the leaf being published.
             StepNode(id="step-1", label="Verify email"),
             # Two actor_refs satisfy the service-minimum-baseline validator.
@@ -146,26 +148,26 @@ def test_walk_ancestors_crosses_to_services_via_root_service_mirror() -> None:
 
     ancestors = walk_ancestors("step-1", canvases)
 
-    # Two logical ancestors: root service (mirrored in 2 canvases) + category (1 canvas).
+    # Two logical ancestors: root feature (mirrored in 2 canvases) + category (1 canvas).
     assert len(ancestors) == 2
-    # The root service appears in BOTH the service_detail canvas and Services.
+    # The root feature appears in BOTH the service_detail canvas and Services.
     assert ancestors[0].node_id == "svc-onboarding"
     assert set(ancestors[0].canvas_keys) == {"services", "service_detail:svc-onboarding"}
     # The category appears in Services only.
     assert ancestors[1] == LogicalAncestor(node_id="cat-1", canvas_keys=("services",))
 
 
-def test_walk_ancestors_from_service_in_services_canvas_propagates_to_category() -> None:
-    """Publishing a service from the Services canvas (not a step) should
-    still propagate to the category. The starting node has presences in
-    both Services and the ServiceDetail mirror; the walk picks any
-    incoming directed edge across all presences."""
+def test_walk_ancestors_from_feature_in_services_canvas_propagates_to_category() -> None:
+    """Publishing the drill-target feature from the Services canvas (not a
+    step) should still propagate to the category. The starting node has
+    presences in both Services and the ServiceDetail mirror; the walk
+    picks any incoming directed edge across all presences."""
     services = CanvasDoc(
         canvas_id="services",
         canvas_kind="services",
         nodes=[
             CategoryNode(id="cat-1", label="Customer Acquisition"),
-            ServiceNode(id="svc-onboarding", label="Onboarding"),
+            FeatureNode(id="svc-onboarding", label="Onboarding"),
         ],
         edges=[_edge("cat-1", "svc-onboarding")],
     )
@@ -174,7 +176,7 @@ def test_walk_ancestors_from_service_in_services_canvas_propagates_to_category()
         canvas_kind="service_detail",
         service_ref="svc-onboarding",
         nodes=[
-            ServiceNode(id="svc-onboarding", label="Onboarding"),
+            FeatureNode(id="svc-onboarding", label="Onboarding"),
             ActorRefNode(
                 id="aref-user",
                 ref_actor_id="actor-user",
@@ -221,7 +223,7 @@ def test_walk_ancestors_ignores_actor_ref_pointer() -> None:
         canvas_kind="services",
         nodes=[
             CategoryNode(id="cat-1", label="C"),
-            ServiceNode(id="svc-1", label="Onboarding"),
+            FeatureNode(id="svc-1", label="Onboarding"),
         ],
         edges=[_edge("cat-1", "svc-1")],
     )
@@ -230,7 +232,7 @@ def test_walk_ancestors_ignores_actor_ref_pointer() -> None:
         canvas_kind="service_detail",
         service_ref="svc-1",
         nodes=[
-            ServiceNode(id="svc-1", label="Onboarding"),
+            FeatureNode(id="svc-1", label="Onboarding"),
             ActorRefNode(
                 id="aref-1",
                 ref_actor_id="actor-customer",

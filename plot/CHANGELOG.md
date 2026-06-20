@@ -4,6 +4,38 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.95.0] — 2026-06-20
+
+### Changed
+
+- **Drill rewire — `feature` is the drill target** (Chunk 2.7, D-2026-06-20-I,
+  implementing D-2026-06-17-D). On the Services overview, selecting a service
+  shows its inspector (no drill); clicking a `feature` drills into its detail.
+  `ServicesCanvas` hands `shouldDrillFeature` to the routing brain;
+  `App.onMainNodeDrill` drills on `feature`.
+- **Detail canvas re-rooted service → feature.** `_ALLOWED_KINDS_BY_CANVAS`
+  swaps `service`→`feature` on the detail canvas; the `_detail_canvas_rules`
+  validator now requires a root **feature**; `detail_sync` seeds/archives one
+  detail **per feature** (was per service) — a service with no features gets no
+  detail. Propagation is unchanged (the ancestor walk crosses canvases by
+  id-matching, so a feature-rooted detail propagates step → feature → service →
+  category automatically). User-facing copy reads **"Feature detail" / "기능
+  상세"** (en + ko).
+- **v0.1 → v0.2 migration is now overview-only.** v0.1 predates the `feature`
+  kind, so the migrator (`_split_services`) produces the services overview and
+  creates **no** detail canvases; the legacy sub-service / rule decomposition is
+  dropped (re-authored as features post-migration, whose details the live sync
+  seeds on open). Removed the now-dead `_detail_actor_ref_seeds` /
+  `_v01_to_composition` migrator helpers.
+
+### Notes
+
+- The persisted wire string stays **`service_detail`** (canvas kind, `service_ref`
+  field, `service_detail:<id>` keys, `?detail=` param) — now carrying a *feature*
+  id. The cosmetic full rename `service_detail`→`feature` is deferred
+  (product-gated) to avoid a half-renamed churn; no existing projects ⇒ no data
+  migration when it lands.
+
 ## [0.94.0] — 2026-06-20
 
 ### Removed

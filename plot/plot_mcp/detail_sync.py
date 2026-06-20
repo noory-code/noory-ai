@@ -29,11 +29,17 @@ from plot_mcp.storage import (  # noqa: F401
 
 
 def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, list[str]]:
-    """Ensure ``services/{sid}/detail.json`` exists for every service in the
+    """Ensure ``services/{fid}/detail.json`` exists for every **feature** in the
     top-view ``services`` canvas.
 
-    Services that disappear from the top view have their whole folder moved
-    to ``services/_archive/{sid}/`` — a destructive delete would throw away
+    D-2026-06-17-D — the **feature** is the drill target (selecting a service
+    shows its inspector; clicking a feature drills into its detail). So detail
+    canvases seed per feature, not per service; a service with no features has
+    nothing to drill into and gets no detail. The detail's wire ``canvas_kind``
+    stays ``service_detail`` until the canvas-string rename (product-gated).
+
+    Features that disappear from the top view have their whole folder moved
+    to ``services/_archive/{fid}/`` — a destructive delete would throw away
     user work (``index.md``, attachments) on a stray click. Called
     opportunistically after writes to the services canvas.
 
@@ -44,10 +50,10 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
         overview = read_canvas(plot_root, project_id, "services")
     except FileNotFoundError:
         return {"created": [], "archived": []}
-    overview_service_ids = {n.id for n in overview.nodes if n.kind == "service"}
+    overview_feature_ids = {n.id for n in overview.nodes if n.kind == "feature"}
     services_folder = _project_dir(plot_root, project_id) / "services"
     services_folder.mkdir(exist_ok=True)
-    # Existing service folders: every immediate subdir that isn't ``_archive``
+    # Existing detail folders: every immediate subdir that isn't ``_archive``
     # and has its own ``detail.json``.
     existing_details: set[str] = set()
     if services_folder.is_dir():
@@ -56,12 +62,12 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
                 existing_details.add(child.name)
 
     created: list[str] = []
-    for service_id in sorted(overview_service_ids - existing_details):
-        src = next(n for n in overview.nodes if n.id == service_id)
+    for feature_id in sorted(overview_feature_ids - existing_details):
+        src = next(n for n in overview.nodes if n.id == feature_id)
         detail = CanvasDoc(
-            canvas_id=service_id,
+            canvas_id=feature_id,
             canvas_kind="service_detail",
-            service_ref=service_id,
+            service_ref=feature_id,
             # v0.11 — every service_detail needs ≥ 2 actor_refs (operator +
             # user) per IDENTITY.md. Auto-seed two stub refs that point at
             # the project's seeded actors. Users can re-pick via the
@@ -72,7 +78,7 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
                 # (is_root marks the canvas anchor).
                 src.model_copy(update={"is_root": False}),
                 ActorRefNode(
-                    id=f"{service_id}-operator-ref",
+                    id=f"{feature_id}-operator-ref",
                     label="→ Operator",
                     ref_actor_id="operator",
                     side="operator",
@@ -82,7 +88,7 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
                     height=70,
                 ),
                 ActorRefNode(
-                    id=f"{service_id}-user-ref",
+                    id=f"{feature_id}-user-ref",
                     label="→ User",
                     ref_actor_id="user",
                     side="user",
@@ -94,39 +100,39 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
             ],
         )
         _write_json(
-            _canvas_file(plot_root, project_id, "service_detail", service_id=service_id),
+            _canvas_file(plot_root, project_id, "service_detail", service_id=feature_id),
             detail.model_dump(by_alias=True),
         )
-        created.append(service_id)
+        created.append(feature_id)
 
     archive_folder = services_folder / "_archive"
     archived: list[str] = []
     skipped_archive: list[str] = []
-    for service_id in sorted(existing_details - overview_service_ids):
-        src_path = services_folder / service_id
+    for feature_id in sorted(existing_details - overview_feature_ids):
+        src_path = services_folder / feature_id
         # v0.27.14 (D-2026-05-28-I) — data-loss guard: if the disappearing
         # detail carries user-authored content (any node outside the
-        # default seed set ``{service_id, {sid}-operator-ref,
-        # {sid}-user-ref}``, OR any edges), do NOT silently archive.
+        # default seed set ``{feature_id, {fid}-operator-ref,
+        # {fid}-user-ref}``, OR any edges), do NOT silently archive.
         # The user's 2026-05-27 chrome-devtools session lost a root
-        # service + its detail to a sync archive triggered by an
+        # node + its detail to a sync archive triggered by an
         # injected onNodesChange burst; this branch protects the
         # next instance of that pattern. Empty / default-seeded details
         # archive cleanly as before (existing test_sync coverage).
-        if _detail_has_user_authored_content(src_path, service_id):
-            skipped_archive.append(service_id)
+        if _detail_has_user_authored_content(src_path, feature_id):
+            skipped_archive.append(feature_id)
             continue
         archive_folder.mkdir(exist_ok=True)
-        dst_path = archive_folder / service_id
+        dst_path = archive_folder / feature_id
         # If the archive already has a folder with the same id (rare — same
-        # service created, archived, and recreated), rename with a suffix.
+        # feature created, archived, and recreated), rename with a suffix.
         if dst_path.exists():
             n = 2
-            while (archive_folder / f"{service_id}-{n}").exists():
+            while (archive_folder / f"{feature_id}-{n}").exists():
                 n += 1
-            dst_path = archive_folder / f"{service_id}-{n}"
+            dst_path = archive_folder / f"{feature_id}-{n}"
         src_path.replace(dst_path)
-        archived.append(service_id)
+        archived.append(feature_id)
 
     result: dict[str, list[str]] = {"created": created, "archived": archived}
     if skipped_archive:
@@ -136,10 +142,10 @@ def sync_details_with_overview(plot_root: Path, project_id: str) -> dict[str, li
     return result
 
 
-def _detail_has_user_authored_content(detail_dir: Path, service_id: str) -> bool:
-    """v0.27.14 (D-2026-05-28-I) — return True iff the service's
+def _detail_has_user_authored_content(detail_dir: Path, feature_id: str) -> bool:
+    """v0.27.14 (D-2026-05-28-I) — return True iff the feature's
     ``detail.json`` contains anything beyond the default seeded shape
-    (root service node + 2 actor_refs, no edges).  Used by
+    (root feature node + 2 actor_refs, no edges).  Used by
     ``sync_details_with_overview`` to refuse to archive details the
     user has invested work in.
     """
@@ -152,9 +158,9 @@ def _detail_has_user_authored_content(detail_dir: Path, service_id: str) -> bool
         # Unreadable / malformed: treat as user content to be safe.
         return True
     seeded_ids = {
-        service_id,
-        f"{service_id}-operator-ref",
-        f"{service_id}-user-ref",
+        feature_id,
+        f"{feature_id}-operator-ref",
+        f"{feature_id}-user-ref",
     }
     nodes = doc.get("nodes") or []
     edges = doc.get("edges") or []

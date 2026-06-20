@@ -66,7 +66,7 @@
       "actors": "액터",
       "services": "서비스"
     },
-    "closeDetailTab": "서비스 상세 탭 닫기"
+    "closeDetailTab": "기능 상세 탭 닫기"
   },
   "header": {
     "markSession": "세션 기록…",
@@ -142,13 +142,13 @@
       "foundation": "파운데이션",
       "actors": "액터",
       "services": "서비스",
-      "service_detail": "서비스 상세"
+      "service_detail": "기능 상세"
     }
   },
   "serviceDetail": {
-    "label": "서비스 상세",
-    "ariaWithCategory": "서비스 상세 — {{category}} › {{service}}",
-    "ariaWithoutCategory": "서비스 상세 — {{service}}"
+    "label": "기능 상세",
+    "ariaWithCategory": "기능 상세 — {{category}} › {{service}}",
+    "ariaWithoutCategory": "기능 상세 — {{service}}"
   },
   "shell": {
     "closeEsc": "닫기 (Esc)",

@@ -49,7 +49,7 @@ describe("CanvasTabs — dynamic service-detail tab (D-2026-06-15-H)", () => {
     expect(
       screen.getByRole("tab", { name: /services/i }).getAttribute("aria-selected"),
     ).toBe("false");
-    await user.click(screen.getByRole("button", { name: /close service-detail/i }));
+    await user.click(screen.getByRole("button", { name: /close feature-detail/i }));
     expect(onCloseDetail).toHaveBeenCalled();
   });
 
@@ -63,6 +63,6 @@ describe("CanvasTabs — dynamic service-detail tab (D-2026-06-15-H)", () => {
         projectName="Banas"
       />,
     );
-    expect(screen.queryByRole("button", { name: /close service-detail/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /close feature-detail/i })).toBeNull();
   });
 });

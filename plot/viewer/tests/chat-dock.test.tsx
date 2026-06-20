@@ -278,7 +278,7 @@ describe("ChatDock — scope switcher (D-2026-06-13-H; 2-tab, D-2026-06-15-H)", 
     );
     await screen.findByRole("tablist", { name: /conversation/i });
     const labels = screen.getAllByRole("tab").map((t) => t.textContent);
-    expect(labels).toContain("Service detail");
+    expect(labels).toContain("Feature detail");
     expect(labels).not.toContain("service_detail:svc_one");
   });
 

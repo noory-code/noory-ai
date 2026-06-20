@@ -14,6 +14,7 @@ from plot_mcp.models import (
     CanvasDoc,
     CategoryNode,
     CoreValueNode,
+    FeatureNode,
     IdentityNode,
     MissionNode,
     NoteNode,
@@ -435,10 +436,11 @@ def test_overview_actor_rejected() -> None:
 
 
 def _detail_seed(canvas_id: str = "order") -> list[SketchNode]:
-    """Minimum valid service_detail content (v0.11): root service + two
-    actor_refs (operator + user) to satisfy IDENTITY.md baseline."""
+    """Minimum valid service_detail content: root feature (the drill
+    target — D-2026-06-17-D) + two actor_refs (operator + user) to
+    satisfy IDENTITY.md baseline."""
     return [
-        ServiceNode(id=canvas_id, label="주문"),
+        FeatureNode(id=canvas_id, label="주문"),
         ActorRefNode(
             id=f"{canvas_id}-op-ref",
             label="→ operator",
@@ -489,7 +491,7 @@ def test_detail_canvas_one_user_actor_ref_ok() -> None:
         canvas_kind="service_detail",
         service_ref="login",
         nodes=[
-            ServiceNode(id="login", label="Login"),
+            FeatureNode(id="login", label="Login"),
             ActorRefNode(
                 id="login-user",
                 label="→ Bana",
@@ -509,7 +511,7 @@ def test_detail_canvas_operator_side_only_still_ok_for_backwards_compat() -> Non
         canvas_kind="service_detail",
         service_ref="ops",
         nodes=[
-            ServiceNode(id="ops", label="Ops"),
+            FeatureNode(id="ops", label="Ops"),
             ActorRefNode(
                 id="ops-op",
                 label="→ Admin",
@@ -539,14 +541,17 @@ def test_detail_canvas_service_ref_required() -> None:
         )
 
 
-def test_detail_canvas_sub_services_rules_ok() -> None:
+def test_detail_canvas_sub_features_rules_ok() -> None:
+    # D-2026-06-17-D — the detail canvas drills into a feature; sub-features
+    # + rules are legitimate extra nodes (``service`` is no longer allowed
+    # here, so the former sub-service is now a sub-feature).
     CanvasDoc(
         canvas_id="order",
         canvas_kind="service_detail",
         service_ref="order",
         nodes=[
             *_detail_seed(),
-            ServiceNode(id="sub1", label="장바구니"),
+            FeatureNode(id="sub1", label="장바구니"),
             RuleNode(id="r1", label="가격 규칙"),
         ],
     )
@@ -606,11 +611,12 @@ def test_service_node_carries_5_fields() -> None:
 
 def test_service_refs_round_trip_through_canvas() -> None:
     """Service ref-id arrays persist + are readable by id after a CanvasDoc
-    round-trip."""
-    detail = CanvasDoc(
-        canvas_id="auth",
-        canvas_kind="service_detail",
-        service_ref="auth",
+    round-trip. ``service`` lives on the Services canvas (D-2026-06-17-D
+    removed it from the feature-rooted service_detail), so the round-trip
+    is exercised there."""
+    services = CanvasDoc(
+        canvas_id="services",
+        canvas_kind="services",
         nodes=[
             ServiceNode(id="auth", label="Auth"),
             ServiceNode(
@@ -620,10 +626,9 @@ def test_service_refs_round_trip_through_canvas() -> None:
                 value_created="유효한 세션 토큰",
                 ref_actor_ids=["user"],
             ),
-            ActorRefNode(id="ar-user", label="→ user", ref_actor_id="user", side="user"),
         ],
     )
-    parsed = CanvasDoc.model_validate(detail.model_dump())
+    parsed = CanvasDoc.model_validate(services.model_dump())
     login = next(n for n in parsed.nodes if n.id == "login")
     assert login.problem.startswith("로그인이")
     assert login.ref_actor_ids == ["user"]
@@ -659,7 +664,7 @@ def test_service_detail_accepts_step() -> None:
         canvas_kind="service_detail",
         service_ref="auth",
         nodes=[
-            ServiceNode(id="auth", label="Auth"),
+            FeatureNode(id="auth", label="Auth"),
             StepNode(
                 id="s1",
                 label="Verify credentials",
@@ -675,13 +680,15 @@ def test_service_detail_accepts_step() -> None:
 
 def test_step_requires_service_parent() -> None:
     """v0.26.0 (D-2026-05-25-A) — same as ``test_metric_requires_service_parent``;
-    parent_id validator removed; constraint moved out of the schema."""
+    parent_id validator removed; constraint moved out of the schema.
+    Root is a feature (D-2026-06-17-D — the detail canvas drills into a
+    feature)."""
     CanvasDoc(
         canvas_id="auth",
         canvas_kind="service_detail",
         service_ref="auth",
         nodes=[
-            ServiceNode(id="auth", label="Auth"),
+            FeatureNode(id="auth", label="Auth"),
             StepNode(id="s1", label="Stray"),
             ActorRefNode(id="ar-op", label="→ op", ref_actor_id="op", side="operator"),
             ActorRefNode(id="ar-u", label="→ u", ref_actor_id="u", side="user"),
@@ -739,7 +746,7 @@ def test_actor_permissions_round_trip_through_canvas() -> None:
         canvas_kind="service_detail",
         service_ref="auth",
         nodes=[
-            ServiceNode(id="auth", label="Auth"),
+            FeatureNode(id="auth", label="Auth"),
             RuleNode(
                 id="r1",
                 label="Post permissions",
@@ -773,8 +780,10 @@ def test_detail_canvas_actor_kind_rejected() -> None:
         )
 
 
-def test_detail_canvas_missing_root_service_rejected() -> None:
-    with pytest.raises(ValueError, match="root service"):
+def test_detail_canvas_missing_root_feature_rejected() -> None:
+    # D-2026-06-17-D — the detail canvas drills into a root *feature*; an
+    # empty (or root-less) canvas is rejected for lacking it.
+    with pytest.raises(ValueError, match="root feature"):
         CanvasDoc(
             canvas_id="order",
             canvas_kind="service_detail",
@@ -952,7 +961,7 @@ def _detail_with_note(edges: list[SketchEdge]) -> CanvasDoc:
         canvas_kind="service_detail",
         service_ref="svc1",
         nodes=[
-            ServiceNode(id="svc1", label="S"),
+            FeatureNode(id="svc1", label="S"),
             ActorRefNode(id="ar1", label="→A", ref_actor_id="a1"),
             NoteNode(id="n1", label="ctx", body="mobile-first, body ≤ 500 chars"),
         ],

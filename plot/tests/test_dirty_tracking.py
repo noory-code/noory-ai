@@ -29,8 +29,8 @@ from plot_mcp.models import (
     ActorRefNode,
     CanvasDoc,
     CategoryNode,
+    FeatureNode,
     IdentityNode,
-    ServiceNode,
     SketchEdge,
     StepNode,
 )
@@ -209,12 +209,15 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
     def _edge(src: str, tgt: str) -> SketchEdge:
         return SketchEdge(id=f"e_{src}_{tgt}", source=src, target=tgt, directed=True)
 
+    # D-2026-06-17-D — the detail canvas drills into a feature, so the
+    # mirrored node (root in detail, master in the overview) is now a
+    # feature under the category.
     services = read_canvas(plot_root, "alpha", "services")
     cat = CategoryNode(id="cat-acq", label="Acquisition")
-    svc = ServiceNode(id="svc-onboarding", label="Onboarding")
+    feature = FeatureNode(id="svc-onboarding", label="Onboarding")
     new_services = services.model_copy(
         update={
-            "nodes": [cat, svc],
+            "nodes": [cat, feature],
             "edges": [_edge("cat-acq", "svc-onboarding")],
         }
     )
@@ -225,7 +228,7 @@ def _seed_services_with_step(plot_root: Path) -> tuple[str, str, str]:
         canvas_kind="service_detail",
         service_ref="svc-onboarding",
         nodes=[
-            ServiceNode(id="svc-onboarding", label="Onboarding"),
+            FeatureNode(id="svc-onboarding", label="Onboarding"),
             StepNode(
                 id="step-verify",
                 label="Verify",
