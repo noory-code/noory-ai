@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-21-G — chat composer redesign: controls under the input (VS Code-style) + auto-scroll + auto-grow input
+
+- **What:** Three chat-surface UX changes (all `ChatMessageFrame`, one user thread): (1) **controls move from a top bar into a control row directly under the composer input** (VS Code / Pencil pattern, user-chosen "VS Code-style") — provider chip, model selector, scope toggle on the left + send on the right; the messages log fills the freed top space; the providers register/connect panel expands just above the composer when the provider chip is toggled; `ChatScopeSwitcher` gains a `compact` inline variant. (2) **auto-scroll** — the log follows the conversation (new message / streaming delta scrolls to bottom) **only when the user is already near the bottom** (`chatScroll.isNearBottom`, 80px), so reading history isn't yanked down. (3) **auto-grow input** — the textarea grows with its content up to the `max-h-40` cap and shrinks back when cleared.
+- **Why:** User request 2026-06-21 — "컨트롤이 채팅 입력창 근처에 몰려 있어야하지 않겠습니까?" (controls should cluster near the input). Don't-Make-Me-Think + Visual Hierarchy: the controls that shape a message belong next to where you type it, not in a separate bar at the far end. The user picked the VS Code-style (control row under the box) over the Pencil-style (controls inside the box) via an AskUserQuestion mockup.
+- **Alternatives:** (a) Pencil-style (controls inside the rounded input card) — offered, user chose VS Code-style. (b) keep the top bar — rejected (the user's whole point).
+- **Approval:** Accepted by user, 2026-06-21 (AskUserQuestion → "VS Code식 — 입력박스 아래 별도 줄").
+- **Spec impact:** App-repo viewer only (`ChatDock.tsx`). Behaviour preserved (provider connect / model select / scope / send / stream all unchanged) — pure layout. Pinned by `chat-dock` test (the messages `role="log"` now precedes the scope tablist + input in DOM order). **Follow-up (SoC):** `ChatDock.tsx` is 546 LOC (>500); extract a `ChatComposer` component (the composer + control row) — tracked, not blocking.
+
 ### D-2026-06-21-F — engine sidecar tag convention = `plot-mcp-v{version}` on `noory-ai`, pushed at build
 
 - **What:** The git-tag that pins a built sidecar (the Phase-D-b reproducible build, `D-2026-06-20-Q` / `build_sidecar.py --engine-tag`) is named **`plot-mcp-v{__version__}`** on the **`noory-ai`** repo (the engine's home). Tags are **pushed to `origin`** (outward-facing — they're public on `github.com/noory-code/noory-ai`). First pushed: `plot-mcp-v0.98.6`, `plot-mcp-v0.98.8` (2026-06-21).
