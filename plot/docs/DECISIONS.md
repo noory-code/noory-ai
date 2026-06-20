@@ -39,6 +39,15 @@
 
 ## Log
 
+### D-2026-06-21-E — default canvas focus = Foundation; a returning project resumes its last-worked canvas
+
+- **What:** On open, the app focuses the **Foundation** tab by default (was **Services** — `readInitialTab` fallback). If the user has worked a project before, it reopens on the **canvas they last had active**. "Last worked" = the last active tab, persisted **per project** in `localStorage` (`plot:lastCanvas:<projectId>`), restored once the project id is known (`useLastCanvas`). An explicit `?canvas=` deep-link still wins (it sets the initial tab before the resume runs).
+- **Why:** User request, 2026-06-21 — the standalone `.app` (URL = `tauri://localhost`, no `?canvas`) always landed on Services; the user wanted Foundation by default (start at the essence, VISION) and a resume-where-I-left-off for returning projects.
+- **Design:** last-active-tab (focus), not last-*edited* — the intuitive "reopen where I was". Stored in `localStorage` (machine-local UI state, survives app restarts in the WKWebView data store), not in the project doc — it's a per-machine view preference, not portable project data (no wire/schema change). Fresh project (nothing stored) → Foundation.
+- **Alternatives:** (a) derive from canvas-file mtimes server-side — rejected (fresh-project mtimes are ambiguous; needs a content/creation heuristic; localStorage is unambiguous and zero-engine-change). (b) persist `last_active_canvas` in the ProjectDoc (travels across machines) — rejected for now (wire/schema churn + an extra write per tab switch; "which tab I last viewed" is machine-local UI state). (c) resume on last-*edited* (server-stamp on canvas PUT) — rejected (the user said "작업했던 곳" = where I was; last-active is the intuitive resume).
+- **Approval:** Accepted by user, 2026-06-21.
+- **Spec impact:** App-repo viewer only. `useUrlSync.readInitialTab` default `services`→`foundation`; new `useLastCanvas` hook (persist on tab change / resume once per project); App wires it (one import + one call). Pinned by `use-last-canvas.test` (7 cases) + `structural-guards` App ceiling 510→512 (plumbing-only). No engine change.
+
 ### D-2026-06-21-D — the in-app Claude Code dual-billing warning banner is removed
 
 - **What:** The `ChatDock` banner shown for a `claude-code` selection ("Claude Code runs headless (claude -p), billed separately… connect over MCP instead.") is **removed** — the JSX block + the `chat.claudeBillingWarning` i18n keys (en + ko). Supersedes the warning added by `D-2026-06-14-B`.
