@@ -42,32 +42,18 @@ def test_classify_edge(canvas_kind: str, source_kind: str | None, expected: str)
     assert classify_edge(canvas_kind, source_kind) == expected
 
 
-def test_relation_value_set_matches_viewer() -> None:
-    """SSOT guard: the Pydantic ``SketchEdge.relation`` Literal values
-    must equal the viewer ``EdgeRelation`` union. The stored field is
-    read on both sides (D-2026-05-31-C); the value sets must not drift.
-    """
-    import re
+def test_relation_value_set_is_the_pinned_three() -> None:
+    """SSOT guard for the engine half of ``SketchEdge.relation``.
+
+    The stored ``relation`` field is read on both sides (D-2026-05-31-C).
+    After the open-core cut (D-2026-06-20-L / -M) the viewer ``EdgeRelation``
+    union moved to the app repo, so the former cross-repo regex parity is
+    re-homed in the app's vitest (``edge-semantics.test.ts``). This pins the
+    engine value set explicitly so neither half can quietly drift from the
+    agreed three relations."""
     import typing
-    from pathlib import Path
 
     from plot_mcp.models import SketchEdge
 
     py_values = set(typing.get_args(SketchEdge.model_fields["relation"].annotation))
-
-    ts_path = (
-        Path(__file__).resolve().parents[1]
-        / "viewer"
-        / "src"
-        / "flow"
-        / "edgeSemantics.ts"
-    )
-    ts_src = ts_path.read_text(encoding="utf-8")
-    match = re.search(r"export type EdgeRelation\s*=\s*([^;]+);", ts_src)
-    assert match is not None, "EdgeRelation union not found in edgeSemantics.ts"
-    ts_values = set(re.findall(r'"([a-z_]+)"', match.group(1)))
-
-    assert py_values == ts_values, (
-        f"SketchEdge.relation value set drift — "
-        f"py-only={py_values - ts_values}, ts-only={ts_values - py_values}"
-    )
+    assert py_values == {"flow", "injection", "inheritance"}

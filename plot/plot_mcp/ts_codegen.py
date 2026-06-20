@@ -24,6 +24,7 @@ Regenerate after a deliberate model change:
 from __future__ import annotations
 
 import json
+import os
 import types as _types
 import typing
 from pathlib import Path
@@ -32,12 +33,22 @@ from typing import Any, Literal
 from plot_mcp.models_kinds import BaseNodeFields
 from plot_mcp.schema_export import _ALL_KIND_CLASSES
 
-# Generated file location (viewer-side). Path is relative to this module's
-# parent (the plot/ package root) so the same generator works before and
-# after the viewer moves into the app repo (the app build repoints this).
-_GEN_PATH = (
-    Path(__file__).resolve().parent.parent / "viewer" / "src" / "domain" / "wire.gen.ts"
-)
+# Viewer write-target. After the open-core cut (D-2026-06-20-L / -M) the viewer
+# lives in the proprietary app repo, so this MIT engine no longer hardcodes the
+# app's path. The dev cross-repo regen passes ``PLOT_VIEWER_ROOT`` pointing at
+# the app's ``viewer/`` dir; unset → the viewer artifact is not this repo's
+# concern and the write is a clean no-op (the engine keeps only its own
+# ``wire_contract.json`` self-copy, written by ``schema_export``).
+#   PLOT_VIEWER_ROOT=/abs/path/to/plot/viewer uv run python -m plot_mcp.ts_codegen
+_VIEWER_REL = Path("src") / "domain" / "wire.gen.ts"
+
+
+def wire_ts_path() -> Path | None:
+    """Resolved ``wire.gen.ts`` target under ``PLOT_VIEWER_ROOT``, or ``None``."""
+    root = os.environ.get("PLOT_VIEWER_ROOT")
+    if not root:
+        return None
+    return Path(root).resolve() / _VIEWER_REL
 
 # Base-field names live on ``BaseFieldsJson`` (the interface each ``XxxJson``
 # extends), so they are excluded from the per-kind interface bodies.
@@ -150,14 +161,23 @@ def generate_wire_ts() -> str:
     return "\n".join(blocks) + "\n"
 
 
-def write_wire_ts() -> Path:
-    """Write the generated file to disk; return its path."""
+def write_wire_ts() -> Path | None:
+    """Write ``wire.gen.ts`` under ``PLOT_VIEWER_ROOT``; return its path.
+
+    Returns ``None`` (a no-op) when the env var is unset — an engine-alone
+    checkout has no viewer to write to."""
+    target = wire_ts_path()
+    if target is None:
+        return None
     content = generate_wire_ts()
-    _GEN_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _GEN_PATH.write_text(content, encoding="utf-8")
-    return _GEN_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    return target
 
 
 if __name__ == "__main__":
     path = write_wire_ts()
-    print(f"wrote {path}")
+    if path is None:
+        print("PLOT_VIEWER_ROOT unset — skipped wire.gen.ts (engine-alone checkout)")
+    else:
+        print(f"wrote {path}")

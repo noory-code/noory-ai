@@ -27,6 +27,7 @@ The export is idempotent: same content yields no rewrite.
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -233,16 +234,33 @@ def wire_contract() -> dict[str, Any]:
     }
 
 
+def viewer_contract_path() -> Path | None:
+    """Resolved viewer ``wire-contract.json`` target under ``PLOT_VIEWER_ROOT``.
+
+    ``None`` when the env var is unset (post-cut: the viewer copy lives in the
+    app repo — see ``ts_codegen.wire_ts_path`` for the same contract)."""
+    root = os.environ.get("PLOT_VIEWER_ROOT")
+    if not root:
+        return None
+    return Path(root).resolve() / "src" / "schema" / "wire-contract.json"
+
+
 def _write_wire_snapshots() -> None:
-    root = Path(__file__).resolve().parent.parent
+    """Write the engine self-copy always; the viewer copy only when
+    ``PLOT_VIEWER_ROOT`` is set (dev cross-repo regen). After the open-core cut
+    (D-2026-06-20-L / -M) the viewer copy is committed in the app repo."""
+    engine_copy = Path(__file__).resolve().parent.parent / "plot_mcp" / "wire_contract.json"
     payload = json.dumps(wire_contract(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    for target in (
-        root / "plot_mcp" / "wire_contract.json",
-        root / "viewer" / "src" / "schema" / "wire-contract.json",
-    ):
+    targets = [engine_copy]
+    viewer_copy = viewer_contract_path()
+    if viewer_copy is not None:
+        targets.append(viewer_copy)
+    for target in targets:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(payload, encoding="utf-8")
         print(f"wrote {target}")
+    if viewer_copy is None:
+        print("PLOT_VIEWER_ROOT unset — skipped viewer wire-contract.json (engine-alone)")
 
 
 if __name__ == "__main__":

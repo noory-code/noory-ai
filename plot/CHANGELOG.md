@@ -4,6 +4,41 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.0] — 2026-06-20
+
+### Removed
+
+- **`noory-ai/plot/viewer` (295 files)** — the irreversible open-core cut
+  (**D-2026-06-20-M**, executing **D-2026-06-20-L**). The visual canvas is the
+  paid app's value and now lives only in the proprietary `plot/` repo; this
+  MIT engine is headless. `find_viewer_dist()` already returns `None`
+  gracefully (headless mode), so no runtime change was needed.
+
+### Changed
+
+- **Codegen viewer-write is env-only.** `ts_codegen.write_wire_ts` and
+  `schema_export._write_wire_snapshots` no longer hardcode the app's path —
+  they resolve the viewer target only from `PLOT_VIEWER_ROOT` (new
+  `ts_codegen.wire_ts_path()` / `schema_export.viewer_contract_path()`, `None`
+  when unset). Unset → no-op for the viewer artifact; the engine still always
+  writes its own `plot_mcp/wire_contract.json` self-copy. Dev cross-repo regen:
+  `PLOT_VIEWER_ROOT=/abs/path/to/plot/viewer uv run python -m plot_mcp.ts_codegen`
+  (+ `… schema_export --wire`) — verified idempotent against the committed
+  `plot/viewer` artifacts.
+- **Four viewer-reading parity tests re-homed** (they die once the viewer
+  leaves): `test_ts_codegen` (now an engine-side per-kind interface guard),
+  `test_wire_contract` (dropped the monorepo byte-identity test; keeps the
+  engine self-copy guard), `test_chat_scope_parity` (engine member-set pin),
+  `test_edge_semantics` (engine `{flow, injection, inheritance}` pin). The
+  viewer half is guarded by the app repo's vitest against the committed
+  artifacts. New `test_codegen_target` pins the env-only resolver.
+
+### Notes
+
+- Engine **643 tests green** after the cut. Phase D (engine version
+  unification + sidecar git-tag pin + runtime `schema_version` compat banner)
+  is next.
+
 ## [0.97.1] — 2026-06-20
 
 ### Docs

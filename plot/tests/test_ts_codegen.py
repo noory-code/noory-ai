@@ -1,35 +1,37 @@
-"""Codegen drift guard — committed ``wire.gen.ts`` must equal fresh output.
+"""Engine-side codegen guard — ``generate_wire_ts`` covers every kind.
 
 Migration Phase A (D-2026-06-20-A). ``plot_mcp/ts_codegen.py`` generates the
-viewer's ``XxxJson`` wire interfaces from the Pydantic models. The generated
-file is committed (so the viewer builds without a Python step) and consumed by
-every per-kind domain class. This test pins the committed file byte-for-byte
-against fresh generation: a model change without ``uv run python -m
-plot_mcp.ts_codegen`` fails here loudly. It replaces the cross-side regex
-parity (``test_schema_parity.py::test_per_kind_field_parity``) that died the
-moment the viewer left the repo — the generated artifact survives the split,
-the regex did not.
+viewer's ``XxxJson`` wire interfaces from the Pydantic models. After the
+open-core cut (D-2026-06-20-L / -M) the *committed* ``wire.gen.ts`` lives in
+the proprietary app repo, so the byte-for-byte freshness check is re-homed in
+the app's vitest (``wire-validate`` / ``wire-contract``). What stays here is
+the engine-side invariant: the generator runs, is deterministic, and emits one
+interface per registered kind — so a Pydantic model change is always reflected
+and a kind added without codegen support fails loudly on this side too.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-
+from plot_mcp.schema_export import _ALL_KIND_CLASSES
 from plot_mcp.ts_codegen import generate_wire_ts
 
-_GEN_PATH = (
-    Path(__file__).resolve().parent.parent / "viewer" / "src" / "domain" / "wire.gen.ts"
-)
+
+def _to_interface_name(kind: str) -> str:
+    """``core_value`` → ``CoreValueJson`` — the generated interface name
+    (mirror of ``ts_codegen._kind_interface``)."""
+    return "".join(part.capitalize() for part in kind.split("_")) + "Json"
 
 
-def test_generated_file_is_committed_and_current() -> None:
-    """The committed ``wire.gen.ts`` must equal what the models generate NOW.
-    Drift = a Pydantic model changed without regenerating the TS wire types."""
-    assert _GEN_PATH.is_file(), (
-        f"missing {_GEN_PATH} — run: uv run python -m plot_mcp.ts_codegen"
-    )
-    committed = _GEN_PATH.read_text(encoding="utf-8")
-    assert committed == generate_wire_ts(), (
-        "wire.gen.ts is stale — a model changed without regenerating. "
-        "Run: uv run python -m plot_mcp.ts_codegen"
-    )
+def test_generator_is_deterministic() -> None:
+    assert generate_wire_ts() == generate_wire_ts()
+
+
+def test_generator_emits_base_and_every_kind_interface() -> None:
+    out = generate_wire_ts()
+    assert "interface BaseFieldsJson" in out
+    for kind in _ALL_KIND_CLASSES:
+        name = _to_interface_name(kind)
+        assert f"interface {name}" in out, (
+            f"{name} missing from wire.gen.ts — a kind without codegen support. "
+            "Run: PLOT_VIEWER_ROOT=<app>/viewer uv run python -m plot_mcp.ts_codegen"
+        )
