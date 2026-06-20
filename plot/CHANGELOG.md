@@ -4,6 +4,16 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.1] — 2026-06-20
+
+### Changed
+
+- The generated `wire.gen.ts` header now documents the **cross-repo** regen
+  command (`PLOT_VIEWER_ROOT=<app>/viewer uv run python -m plot_mcp.ts_codegen`)
+  — the bare `uv run python -m plot_mcp.ts_codegen` is a no-op post-cut
+  (D-2026-06-20-M). Paired regen of the committed app artifact verified
+  idempotent; the app's vitest stays green (929) against the new header.
+
 ## [0.98.0] — 2026-06-20
 
 ### Removed
