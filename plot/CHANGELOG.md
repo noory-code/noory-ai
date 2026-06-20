@@ -4,6 +4,19 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.97.1] — 2026-06-20
+
+### Docs
+
+- Pinned **D-2026-06-20-L** — the viewer physical migration `noory-ai/plot/viewer`
+  → `plot/viewer` (open-core boundary): approach (codegen = artifacts committed
+  to the `plot` repo; engine pin = git-tag) + the staged execution. Phase-C-
+  additive (viewer copied into `plot/viewer`, verified `npm ci` + `tsc` + 928
+  vitest green there; `plot` `frontendDist` repointed + LICENSE) landed in the
+  `plot` repo. The irreversible cut (remove `noory-ai/plot/viewer`, repoint
+  `ts_codegen` / `schema_export` to the committed artifacts, R8 guard) + Phase D
+  (engine version alignment + sidecar git-tag pin + runtime compat) follow.
+
 ## [0.97.0] — 2026-06-20
 
 ### Added
