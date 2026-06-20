@@ -32,6 +32,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from plot_mcp import __version__
 from plot_mcp.models import (
     FOUNDATION_TYPED_TEXT_FIELDS,
     ActorNode,
@@ -68,8 +69,9 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
     },
 }
 
-SCHEMA_VERSION = 2  # v0.15.3 — extended to all 17 kinds (decision/group registered)
-PLOT_VERSION = "0.14.18"
+SCHEMA_VERSION = 2  # wire-contract schema version — decoupled from the package
+# version on purpose (the runtime compat banner gates on THIS, D-2026-06-20-N).
+PLOT_VERSION = __version__  # single source = plot_mcp/__init__.py (D-2026-06-20-N)
 
 # Full 14-kind map = the registered projection of the ``SketchNode`` union
 # (``models_union.py``). It MUST cover every union member — ``decision`` /

@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.2] — 2026-06-20
+
+### Changed
+
+- **Engine version is now a single source** (Phase D part a, **D-2026-06-20-N**).
+  The four stale copies (`pyproject` `0.1.0`, `__init__` `0.1.0`,
+  `schema_export.PLOT_VERSION` `0.14.18`, `plugin.json`) collapse to
+  `plot_mcp/__init__.py::__version__`. `pyproject` derives it via hatchling
+  (`dynamic = ["version"]`); `PLOT_VERSION` re-exports it; `plugin.json` is
+  pinned equal by `tests/test_version_parity.py`. Gate 4 bumps `__init__` +
+  `plugin.json` together going forward. `_meta.json plot_version` now reflects
+  the real version (was stamping `0.14.18`).
+- **`SCHEMA_VERSION` stays decoupled** from the package version on purpose —
+  it is the wire-contract schema version (`2`), the value the upcoming runtime
+  compat banner (Phase D part c) gates on, and changes on its own cadence.
+
+### Notes
+
+- Engine **647 tests green**. Phase D parts (b) sidecar git-tag pin +
+  `engine_version` stamp and (c) runtime `schema_version` compat banner follow.
+
 ## [0.98.1] — 2026-06-20
 
 ### Changed
