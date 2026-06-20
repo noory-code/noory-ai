@@ -319,6 +319,7 @@ class _FakeProcess:
         self.killed = False
         self.spawn_args: list[str] = []
         self.spawn_cwd: str | None = None
+        self.spawn_env: dict[str, str] = {}
 
     async def wait(self) -> int:
         self.returncode = self._returncode
@@ -333,9 +334,10 @@ def _build_fake_factory(
 ) -> Any:
     """Return a coroutine matching ``asyncio.create_subprocess_exec`` shape."""
 
-    async def factory(*cmd: str, cwd: str | None = None, **_kwargs: Any) -> _FakeProcess:
+    async def factory(*cmd: str, cwd: str | None = None, **kwargs: Any) -> _FakeProcess:
         process.spawn_args = list(cmd)
         process.spawn_cwd = cwd
+        process.spawn_env = kwargs.get("env") or {}
         return process
 
     return factory
@@ -416,6 +418,12 @@ async def test_stream_turn_yields_start_delta_complete_on_success(
     assert "--allowedTools" in process.spawn_args
     i = process.spawn_args.index("--allowedTools")
     assert process.spawn_args[i + 1] == "mcp__plot__*"
+    # D-2026-06-21-I — the in-app agent is grounded ONLY in the workspace: no
+    # parent / global CLAUDE.md auto-discovery, no auto-memory (OAuth intact).
+    src = process.spawn_args.index("--setting-sources")
+    assert process.spawn_args[src + 1] == "local"
+    assert "--exclude-dynamic-system-prompt-sections" in process.spawn_args
+    assert process.spawn_env.get("CLAUDE_CODE_DISABLE_AUTO_MEMORY") == "1"
 
 
 async def test_stream_turn_resumes_on_second_turn(tmp_path: Path) -> None:

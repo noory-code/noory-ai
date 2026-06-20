@@ -9,6 +9,7 @@ loads its persisted transcript and the conversation continues naturally.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -58,6 +59,17 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             # surfaced on the canvas per build-through-discussion).
             "--allowedTools",
             "mcp__plot__*",
+            # D-2026-06-21-I — ground the in-app agent ONLY in the workspace:
+            # load only workspace-local settings (no parent / global CLAUDE.md
+            # auto-discovery, no user-scope config) and keep the memory paths /
+            # cwd / env out of the system prompt. OAuth subscription auth is
+            # untouched (this is NOT --bare, which would force an API key). The
+            # ``plot`` MCP still loads (it lives in ~/.claude.json, read
+            # independently of --setting-sources). Auto-memory is killed via the
+            # ``CLAUDE_CODE_DISABLE_AUTO_MEMORY`` env (see ``_spawn_env``).
+            "--setting-sources",
+            "local",
+            "--exclude-dynamic-system-prompt-sections",
             *self._model_args(),
         ]
         if self._first_turn:
@@ -68,6 +80,12 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             cmd += ["--resume", self._session_id]
         cmd.append(user_message)
         return cmd
+
+    def _spawn_env(self) -> dict[str, str] | None:
+        # D-2026-06-21-I — disable Claude Code auto-memory for the in-app agent
+        # so it can't pull in the user's saved memories from outside the
+        # workspace. Merge over the inherited env (None would REPLACE it).
+        return {**os.environ, "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
 
     def _parse_line(
         self, turn_id: str, line: bytes, accumulator: list[str]

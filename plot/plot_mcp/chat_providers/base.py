@@ -102,6 +102,7 @@ class _SubprocessFactory(Protocol):
         self,
         *cmd: str,
         cwd: str | None = ...,
+        env: dict[str, str] | None = ...,
         stdout: int | None = ...,
         stderr: int | None = ...,
     ) -> Awaitable[Any]: ...
@@ -188,6 +189,14 @@ class _SubprocessChatProvider(ChatProvider):
         self, turn_id: str, line: bytes, accumulator: list[str]
     ) -> ChatStreamEvent | None: ...
 
+    def _spawn_env(self) -> dict[str, str] | None:
+        """Environment for the CLI subprocess. ``None`` inherits the parent
+        env (the default for every provider). A provider may override to add
+        vars (e.g. claude-code's memory-disable, D-2026-06-21-I) — it must
+        return the FULL env (``{**os.environ, ...}``), since a dict replaces it.
+        """
+        return None
+
     async def stream_turn(self, user_message: str) -> AsyncIterator[ChatStreamEvent]:
         turn_id = str(uuid4())
         cmd = self._build_command(user_message)
@@ -195,6 +204,7 @@ class _SubprocessChatProvider(ChatProvider):
         proc = await self._spawn(
             *cmd,
             cwd=str(self._workspace),
+            env=self._spawn_env(),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -239,15 +249,18 @@ class _SubprocessChatProvider(ChatProvider):
 async def _default_spawn(
     *cmd: str,
     cwd: str | None = None,
+    env: dict[str, str] | None = None,
     stdout: int | None = None,
     stderr: int | None = None,
 ) -> asyncio.subprocess.Process:
     """Thin wrapper around ``asyncio.create_subprocess_exec`` so the type of
     the default factory exactly matches the ``_SubprocessFactory`` protocol.
+    ``env=None`` inherits the parent environment.
     """
     return await asyncio.create_subprocess_exec(
         *cmd,
         cwd=cwd,
+        env=env,
         stdout=stdout,
         stderr=stderr,
     )

@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.10] — 2026-06-21
+
+### Fixed
+
+- **In-app chat is grounded only in the workspace** (**D-2026-06-21-I**). The
+  `claude -p` agent was pulling in parent / global `CLAUDE.md` (incl. the Plot
+  repo's own dev instructions) + the user's auto-memory. The spawn now passes
+  `--setting-sources local` + `--exclude-dynamic-system-prompt-sections` and
+  sets `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`. OAuth/subscription auth + the `plot`
+  MCP are preserved (this is NOT `--bare`). New `ChatProvider._spawn_env()` hook
+  threads the env through the spawn.
+
 ## [0.98.9] — 2026-06-21
 
 ### Changed

@@ -39,6 +39,15 @@
 
 ## Log
 
+### D-2026-06-21-I — in-app chat is grounded ONLY in the workspace (no parent/global CLAUDE.md, no auto-memory)
+
+- **What:** The in-app Claude Code agent was pulling context from **outside the workspace** — the parent-directory `CLAUDE.md` files (e.g. the Plot repo's own dev instructions, since a user workspace can live under the Plot tree), the global `~/.claude/CLAUDE.md`, and the user's auto-memory. The `claude -p` spawn now isolates it: command flags **`--setting-sources local`** (load only the workspace's `.claude/settings.local.json` — no user/project scope, so no parent / global CLAUDE.md auto-discovery) + **`--exclude-dynamic-system-prompt-sections`** (keep cwd / env / memory-paths / git-status out of the system prompt), and the spawn env sets **`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`** (fully disables auto-memory). A new `ChatProvider._spawn_env()` hook (default `None` = inherit) threads the env through `stream_turn` → `_spawn` → `_default_spawn`.
+- **Why:** User report 2026-06-21 — "워크스페이스 밖의 것들을 보고 있는 것 같은데… 워크스페이스 안의 것들만으로 대화가 되어야합니다." The in-app coach must reason about the user's project (its `.noory/plot` data via the `plot` MCP), not the Plot codebase / the user's global Claude config / saved memories.
+- **OAuth + MCP preserved (the key constraint):** this is **NOT** `--bare` (which sets `CLAUDE_CODE_SIMPLE=1` and forces `ANTHROPIC_API_KEY`, breaking the user's subscription). The chosen flags keep OAuth/subscription auth, and the `plot` MCP still loads because it lives in `~/.claude.json` (read independently of `--setting-sources`). Flags verified against `claude --help` 2.1.176 + the permissions/settings docs.
+- **Alternatives:** (a) `--bare` — rejected (breaks OAuth). (b) only `--exclude-dynamic-system-prompt-sections` — insufficient (it relocates memory paths but doesn't disable memory, and doesn't stop CLAUDE.md loading). (c) set the env process-wide on the engine — rejected (global side-effect; the per-spawn `_spawn_env` hook is scoped + clean).
+- **Approval:** Accepted by user, 2026-06-21.
+- **Spec impact:** `claude_code._build_command` (+2 flags) + `_spawn_env` + base `ChatProvider._spawn_env` + `_default_spawn`/protocol `env` param. Pinned by `test_chat_session` (spawn argv carries the flags; `spawn_env` carries the memory-disable). **Known limitation (per Claude Code docs):** `--setting-sources local` stops *loading* discovered parent CLAUDE.md but the discovery *walk* itself isn't suppressible without `--bare`; harmless (found files aren't loaded). Codex / Gemini have their own context models — untouched. Engine **659 green**. Needs live `.app` verification (build = AI, visual = user).
+
 ### D-2026-06-21-H — initial Foundation layout = Mission top / Core Value left / Identity right, with anchor edges
 
 - **What:** A new project's seeded **Foundation** canvas now arranges its three pillars around the centre project anchor (0,0): **Mission on top** (centred above), **Core Value on the left**, **Identity on the right**, and a directed **edge from the project anchor out to each** (relation `flow`). Previously Core Value was seeded on top and Mission on the left, with no edges.
