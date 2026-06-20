@@ -39,6 +39,13 @@
 
 ## Log
 
+### D-2026-06-21-F — engine sidecar tag convention = `plot-mcp-v{version}` on `noory-ai`, pushed at build
+
+- **What:** The git-tag that pins a built sidecar (the Phase-D-b reproducible build, `D-2026-06-20-Q` / `build_sidecar.py --engine-tag`) is named **`plot-mcp-v{__version__}`** on the **`noory-ai`** repo (the engine's home). Tags are **pushed to `origin`** (outward-facing — they're public on `github.com/noory-code/noory-ai`). First pushed: `plot-mcp-v0.98.6`, `plot-mcp-v0.98.8` (2026-06-21).
+- **Why:** `noory-ai` is a monorepo (evonest / distill / solera / plot / …), so an engine release tag needs a **package prefix** to disambiguate — hence `plot-mcp-` (the package name) + `v{semver}`. The version is the single-source engine version (`plot_mcp/__init__.__version__`, `D-2026-06-20-N`). The build script verifies HEAD is exactly the tag before building, so the bundled binary corresponds 1:1 to a public, reproducible commit.
+- **Approval:** Accepted by user, 2026-06-21 ("푸시 하세요" — confirmed pushing the held tags + the `plot-mcp-v{version}` convention).
+- **Spec impact:** Release process — each sidecar build tags `noory-ai` `plot-mcp-v{version}` and pushes it. `repos-plot/CLAUDE.md` §빌드 파이프라인 already references `--engine-tag plot-mcp-v<ver>`; the "⚠ 태그 push 는 사용자 확인 후" note now has a standing yes for this convention (the *act* of pushing a specific release can still be a judgement call, but the naming + push-to-origin policy is settled).
+
 ### D-2026-06-21-E — default canvas focus = Foundation; a returning project resumes its last-worked canvas
 
 - **What:** On open, the app focuses the **Foundation** tab by default (was **Services** — `readInitialTab` fallback). If the user has worked a project before, it reopens on the **canvas they last had active**. "Last worked" = the last active tab, persisted **per project** in `localStorage` (`plot:lastCanvas:<projectId>`), restored once the project id is known (`useLastCanvas`). An explicit `?canvas=` deep-link still wins (it sets the initial tab before the resume runs).
