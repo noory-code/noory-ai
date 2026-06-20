@@ -142,26 +142,6 @@
       "x",
       "y"
     ],
-    "group": [
-      "body",
-      "collapsed",
-      "color",
-      "details_path",
-      "height",
-      "icon",
-      "id",
-      "is_root",
-      "kind",
-      "label",
-      "member_ids",
-      "owner",
-      "publish_baseline",
-      "shape",
-      "version",
-      "width",
-      "x",
-      "y"
-    ],
     "identity": [
       "body",
       "collapsed",

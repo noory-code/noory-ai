@@ -122,12 +122,6 @@ export interface DecisionJson extends BaseFieldsJson {
   body: string;
 }
 
-export interface GroupJson extends BaseFieldsJson {
-  kind: "group";
-  member_ids: string[];
-  body: string;
-}
-
 export interface RuleJson extends BaseFieldsJson {
   kind: "rule";
   policy: string;

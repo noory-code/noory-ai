@@ -175,7 +175,6 @@
     "metric": "Metric",
     "step": "Step",
     "decision": "Decision",
-    "group": "Group",
     "rule": "Rule",
     "content": "Content",
     "interaction": "Interaction",
@@ -203,9 +202,6 @@
   "inspector": {
     "decision": {
       "branchHint": "Branches live on the outgoing edges — draw a labelled edge per path (성공 / 실패 / choice)."
-    },
-    "group": {
-      "memberCount": "{{count}} member(s). Edit membership on the canvas: select nodes → Group."
     },
     "polarity": {
       "neutral": "Neutral (default)",

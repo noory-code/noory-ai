@@ -22,7 +22,6 @@ import { CategoryNode } from "./category";
 import { ContentNode } from "./content";
 import { CoreValueNode } from "./core_value";
 import { DecisionNode } from "./decision";
-import { GroupNode } from "./group";
 import { IdentityNode } from "./identity";
 import { IdentityRefNode } from "./identity_ref";
 import { MetricNode } from "./metric";
@@ -36,8 +35,8 @@ import { ValueRefNode } from "./value_ref";
 
 export type NodeRendererComponent = ComponentType<NodeProps<BaseNodeData>>;
 
-/** Full 17-kind registry. Canvas wrappers (Phase 3.2+) construct
- *  React Flow ``nodeTypes`` maps from a SUBSET of these keys. */
+/** Full kind registry. Canvas wrappers (Phase 3.2+) construct React Flow
+ *  ``nodeTypes`` maps from a SUBSET of these keys. */
 export const NODE_RENDERERS: Record<NodeKind, NodeRendererComponent> = {
   project: ProjectNode,
   mission: MissionNode,
@@ -53,7 +52,6 @@ export const NODE_RENDERERS: Record<NodeKind, NodeRendererComponent> = {
   metric: MetricNode,
   step: StepNode,
   decision: DecisionNode,
-  group: GroupNode,
   rule: RuleNode,
   content: ContentNode,
 };

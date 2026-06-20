@@ -22,7 +22,6 @@ export type {
   ContentJson,
   CoreValueJson,
   DecisionJson,
-  GroupJson,
   IdentityJson,
   IdentityRefJson,
   MetricJson,
@@ -41,7 +40,6 @@ export type {
 export { Metric } from "./Metric";
 export { Step } from "./Step";
 export { Decision } from "./Decision";
-export { Group } from "./Group";
 export { CoreValue } from "./CoreValue";
 export { Identity } from "./Identity";
 export type { IdentityStatus } from "./Identity";

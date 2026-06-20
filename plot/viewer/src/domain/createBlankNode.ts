@@ -14,7 +14,6 @@ import { Category } from "./Category";
 import { Content } from "./Content";
 import { CoreValue } from "./CoreValue";
 import { Decision } from "./Decision";
-import { Group } from "./Group";
 import { Identity } from "./Identity";
 import { IdentityRef } from "./IdentityRef";
 import { Metric } from "./Metric";
@@ -94,8 +93,6 @@ export function createBlankNode(
       return Step.fromJson(raw).toJson();
     case "decision":
       return Decision.fromJson(raw).toJson();
-    case "group":
-      return Group.fromJson(raw).toJson();
     case "rule":
       return Rule.fromJson(raw).toJson();
     case "content":

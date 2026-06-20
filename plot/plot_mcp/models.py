@@ -81,9 +81,6 @@ from plot_mcp.models_composition import (
     DecisionNode as DecisionNode,
 )
 from plot_mcp.models_composition import (
-    GroupNode as GroupNode,
-)
-from plot_mcp.models_composition import (
     MetricNode as MetricNode,
 )
 from plot_mcp.models_composition import (

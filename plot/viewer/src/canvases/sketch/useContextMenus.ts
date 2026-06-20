@@ -22,13 +22,6 @@ import { type ContextMenuItem } from "../SketchContextMenu";
 import { type SketchClipboard } from "../useSketchClipboard";
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from "./constants";
 import { classifyEdge } from "../../flow/edgeSemantics";
-import { groupSelected, ungroup } from "./groupActions";
-
-// v0.29.0 (D-2026-05-30-I) — fresh group id. Runtime-only app code, so
-// Date.now / Math.random are fine here (mirrors useNodeCreation.freshId).
-function freshGroupId(): string {
-  return `g_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-}
 
 export interface MenuState {
   x: number;
@@ -44,9 +37,6 @@ export interface UseContextMenusArgs {
   handleNodesDelete: (deleted: Node[]) => void;
   handleEdgesDelete: (deleted: Edge[]) => void;
   addNodeAt: (x: number, y: number) => void;
-  /** v0.29.0 (D-2026-05-30-I) — current canvas selection, for the
-   *  "Group selected" action. */
-  selectedNodeIds: MutableRefObject<string[]>;
 }
 
 export interface UseContextMenusResult {
@@ -75,7 +65,6 @@ export function useContextMenus({
   handleNodesDelete,
   handleEdgesDelete,
   addNodeAt,
-  selectedNodeIds,
 }: UseContextMenusArgs): UseContextMenusResult {
   const { t } = useTranslation();
   const dialog = useDialog();
@@ -132,36 +121,10 @@ export function useContextMenus({
       if (consumeDragSuppression(event)) return;
       const docNode = docRef.current.nodes.find((n) => n.id === node.id);
       const isProject = docNode?.kind === "project";
-      const isGroup = docNode?.kind === "group";
-      // v0.29.0 (D-2026-05-30-I) — "Group selected" appears when ≥ 2
-      // nodes are selected; the right-clicked node is included if the
-      // selection somehow missed it.
-      const selection = Array.from(
-        new Set([...selectedNodeIds.current, node.id]),
-      );
-      const canGroup = selection.length >= 2;
-      const groupItems: ContextMenuItem[] = [];
-      if (canGroup) {
-        groupItems.push({
-          label: `Group selected (${selection.length})`,
-          onSelect: () =>
-            onDocChange(groupSelected(docRef.current, selection, freshGroupId())),
-        });
-      }
-      if (isGroup) {
-        groupItems.push({
-          label: "Ungroup",
-          onSelect: () => onDocChange(ungroup(docRef.current, node.id)),
-        });
-      }
-      if (groupItems.length > 0) {
-        groupItems.push({ label: "", divider: true, onSelect: () => {} });
-      }
       setMenu({
         x: event.clientX,
         y: event.clientY,
         items: [
-          ...groupItems,
           {
             label: "Duplicate",
             disabled: isProject,
@@ -203,7 +166,7 @@ export function useContextMenus({
         ],
       });
     },
-    [docRef, onDocChange, clipboard, handleNodesDelete, selectedNodeIds, consumeDragSuppression],
+    [docRef, onDocChange, clipboard, handleNodesDelete, consumeDragSuppression],
   );
 
   const openEdgeMenu = useCallback(

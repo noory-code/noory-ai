@@ -40,7 +40,6 @@ from plot_mcp.models import (
     ContentNode,
     CoreValueNode,
     DecisionNode,
-    GroupNode,
     IdentityNode,
     IdentityRefNode,
     MetricNode,
@@ -95,11 +94,10 @@ _ALL_KIND_CLASSES: dict[str, type[BaseNodeFields]] = {
     "mission_ref": MissionRefNode,
     "value_ref": ValueRefNode,
     "identity_ref": IdentityRefNode,
-    # Composition inside service_detail (6)
+    # Composition inside service_detail (5)
     "metric": MetricNode,
     "step": StepNode,
     "decision": DecisionNode,
-    "group": GroupNode,
     "rule": RuleNode,
     "content": ContentNode,
 }

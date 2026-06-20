@@ -175,7 +175,6 @@
     "metric": "지표",
     "step": "단계",
     "decision": "결정",
-    "group": "그룹",
     "rule": "규칙",
     "content": "콘텐츠",
     "interaction": "인터랙션",
@@ -203,9 +202,6 @@
   "inspector": {
     "decision": {
       "branchHint": "분기는 나가는 선에 표현됩니다 — 경로마다 라벨 단 선을 그으세요 (성공 / 실패 / 선택지)."
-    },
-    "group": {
-      "memberCount": "멤버 {{count}}개. 멤버십은 캔버스에서 편집: 노드 선택 → 그룹으로 묶기."
     },
     "polarity": {
       "neutral": "중립 (기본)",

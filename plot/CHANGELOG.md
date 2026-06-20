@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.88.0] — 2026-06-20
+
+### Removed
+
+- **`group` kind retired** (Chunk 2.0, D-2026-06-20-C, implementing
+  D-2026-06-19-H). Its chunking role moves to the `feature` level; folding a
+  busy flow becomes a future **view affordance**, not a node kind. Removed
+  server `GroupNode` + the viewer `Group` class / node / inspector / registry
+  entries / i18n, and the whole group-folding feature (`groupActions`,
+  `groupCollapse`, the Group/Ungroup context menu, the group-membership fold
+  path in `useNodesMemo`). The palette is now **16 kinds**, reconciled across
+  `_ALL_KIND_CLASSES` + the viewer `KIND_DIRS`/`NODE_RENDERERS`.
+
+### Added
+
+- **Retired-kind drop-on-read migration** (`canvas_io._drop_retired_kinds` +
+  `RETIRED_KINDS`). A node of a retired kind (and any edge incident to it) is
+  stripped when an older `canvas.json` is read, so projects authored before a
+  kind's retirement keep loading — loss-free (retiring `group` drops only the
+  container, never its member step/decision nodes). Reused by the remaining
+  retirements. Pinned by `tests/test_retired_kinds.py`.
+
 ## [0.87.2] — 2026-06-20
 
 ### Changed

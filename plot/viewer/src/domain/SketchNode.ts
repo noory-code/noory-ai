@@ -30,7 +30,6 @@ import type { Category } from "./Category";
 import type { Content } from "./Content";
 import type { CoreValue } from "./CoreValue";
 import type { Decision } from "./Decision";
-import type { Group } from "./Group";
 import type { Identity } from "./Identity";
 import type { IdentityRef } from "./IdentityRef";
 import type { Metric } from "./Metric";
@@ -49,7 +48,6 @@ import type {
   ContentJson,
   CoreValueJson,
   DecisionJson,
-  GroupJson,
   IdentityJson,
   IdentityRefJson,
   MetricJson,
@@ -79,7 +77,6 @@ export type SketchEntity =
   | Metric
   | Step
   | Decision
-  | Group
   | Rule
   | Content;
 
@@ -102,7 +99,6 @@ export type SketchNode = (
   | MetricJson
   | StepJson
   | DecisionJson
-  | GroupJson
   | RuleJson
   | ContentJson
 ) & {

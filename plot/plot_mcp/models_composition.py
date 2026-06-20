@@ -48,18 +48,6 @@ class DecisionNode(BaseNodeFields):
     body: str = ""
 
 
-class GroupNode(BaseNodeFields):
-    """v0.29.0 (D-2026-05-30-I): ``group`` kind. A container that chunks
-    a busy service_detail flow — collapse N branches into one node.
-    Membership lives here as ``member_ids`` (SSOT on the group; step /
-    decision carry no group field). ``collapsed`` (BaseNodeFields)
-    hides the members."""
-
-    kind: Literal["group"] = "group"
-    member_ids: list[str] = Field(default_factory=list)
-    body: str = ""
-
-
 class RuleNode(BaseNodeFields):
     """v0.15 Phase 1.2: ``rule`` kind. A composition element inside a
     service expressing an enforced policy (with per-actor permissions)."""

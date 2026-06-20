@@ -78,9 +78,9 @@ def test_export_map_covers_union() -> None:
 
 
 def test_all_kinds_covered() -> None:
-    """Sanity: the export map size matches the union size (17 as of
-    decision/group registration)."""
-    assert len(_ALL_KIND_CLASSES) == len(_union_member_kinds()) == 17
+    """Sanity: the export map size matches the union size (16 after the
+    2026-06-20 `group` retirement, D-2026-06-19-H)."""
+    assert len(_ALL_KIND_CLASSES) == len(_union_member_kinds()) == 16
 
 
 def test_base_fields_pydantic_matches_canonical_set() -> None:

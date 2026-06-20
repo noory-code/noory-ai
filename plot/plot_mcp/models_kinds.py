@@ -78,9 +78,6 @@ NodeKind = Literal[
     #   service_detail flow (user choice or system judgment). See
     #   docs/DECISIONS.md D-2026-05-30-C.
     "decision",
-    # v0.29.0: group — a container that chunks a busy service_detail flow
-    #   (collapse N branches into one). See docs/DECISIONS.md D-2026-05-30-I.
-    "group",
     # v0.12: ``category`` is a thematic grouping of services. Replaces what
     # used to be the "top-level service" idiom — categories are pure
     # containers (no value creation themselves), and the actual services
@@ -92,8 +89,9 @@ NodeKind = Literal[
 # Composition kinds: must live inside a service (applies to SketchDoc and
 # service_detail CanvasDoc alike).
 # v0.10 Step 5: metric + step join the family. v0.28.0: decision joins.
-# v0.29.0: group joins.
-_COMPOSITION_KINDS = {"rule", "content", "metric", "step", "decision", "group"}
+# v0.29.0 group joined; retired 2026-06-20 (D-2026-06-19-H — chunking = feature
+# level + folding is a view affordance, not a node kind).
+_COMPOSITION_KINDS = {"rule", "content", "metric", "step", "decision"}
 
 
 ValueForm = Literal[

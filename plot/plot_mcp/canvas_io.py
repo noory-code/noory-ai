@@ -44,6 +44,42 @@ from plot_mcp.storage import (  # noqa: F401
 # canvas-level IO
 # ---------------------------------------------------------------------------
 
+# Kinds removed from the palette (D-2026-06-19-G…J / D-2026-06-20-*). A node of
+# a retired kind in an older canvas.json would fail ``CanvasDoc.model_validate``
+# (its discriminant is gone from the union), so ``_drop_retired_kinds`` strips
+# it (and any edge incident to it) on read — loss-free for surviving content
+# (retiring ``group`` drops only the container, never its member step/decision
+# nodes). Lives here (not canvas_migrations.py, which is at its 500-line
+# ceiling) as a read-path helper tightly bound to ``read_canvas``. The set
+# grows as each kind is retired.
+RETIRED_KINDS: frozenset[str] = frozenset({"group"})
+
+
+def _drop_retired_kinds(
+    plot_root: Path,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    service_id: str | None,
+    raw: dict[str, Any],
+) -> dict[str, Any]:
+    """Drop nodes whose ``kind`` was retired, plus any edge incident to a
+    dropped node, so a project authored before the retirement keeps loading.
+    Idempotent; persists the healed canvas on first read."""
+    nodes: list[dict[str, Any]] = list(raw.get("nodes") or [])
+    retired_ids = {n.get("id") for n in nodes if n.get("kind") in RETIRED_KINDS}
+    if not retired_ids:
+        return raw
+    kept_nodes = [n for n in nodes if n.get("kind") not in RETIRED_KINDS]
+    edges: list[dict[str, Any]] = list(raw.get("edges") or [])
+    kept_edges = [
+        e
+        for e in edges
+        if e.get("source") not in retired_ids and e.get("target") not in retired_ids
+    ]
+    raw = {**raw, "nodes": kept_nodes, "edges": kept_edges}
+    _write_json(_canvas_file(plot_root, project_id, canvas_kind, service_id), raw)
+    return raw
+
 
 def read_canvas(
     plot_root: Path,
@@ -106,6 +142,10 @@ def read_canvas(
     # Reads node id↔label from the raw canvas so we can compute the
     # old slug folder name and rename it to the node id.
     _migrate_published_slug_to_id(canvas_dir, raw)
+    # 2026-06-20 (D-2026-06-19-H …) — drop nodes of retired kinds (e.g. group)
+    # + their incident edges so projects authored before a kind's retirement
+    # still validate. Loss-free for surviving content. Applies to every canvas.
+    raw = _drop_retired_kinds(plot_root, project_id, canvas_kind, service_id, raw)
     return CanvasDoc.model_validate(raw)
 
 

@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-20-C — `group` kind retired (folding = a future view affordance, not a node kind); retired-kind drop-on-read added
+
+- **What:** The `group` node kind is **retired** from the palette (server + viewer), implementing `D-2026-06-19-H`. Its chunking role moves to the **feature** level; folding a busy flow becomes a **view affordance** (deferred to ROADMAP), not a node kind. Removed: `GroupNode` (Pydantic) + the viewer `Group` class / node / inspector / registries / i18n + the group-folding feature (`groupActions` / `groupCollapse`, the Group/Ungroup context menu, the group-membership fold path in `useNodesMemo`). Added a general **retired-kind drop-on-read** migration (`canvas_io._drop_retired_kinds` + `RETIRED_KINDS`): a node of a retired kind (and any edge incident to it) is stripped when an older `canvas.json` is read, so pre-retirement projects keep loading — loss-free (only the group container goes, never its member step/decision nodes).
+- **Why:** Marathon + 2026-06-19 review (`D-2026-06-19-H`): a `feature` is a behaviour grouping, so a separate `group` chunking kind is redundant at the feature altitude; folding is a UI view concern, not a domain kind. Anchored to VISION — fewer, sharper kinds keep the structure the user/AI reason over honest.
+- **Alternatives:** (a) keep `group` for canvas folding — rejected (folding is a view feature; baking it into the domain palette conflates UI with domain). (b) drop `group` but keep the folding code dead — rejected (YAGNI; the future view affordance is designed fresh, tracked in ROADMAP).
+- **Approval:** Accepted by user via the approved Chunk-2 plan (implements the pinned `D-2026-06-19-H`).
+- **Spec impact:** Palette − `group` (16 kinds; server `_ALL_KIND_CLASSES` + viewer registries/`KIND_DIRS` reconciled to 16). `concepts/kinds.md` / `specs/kinds-fields.md` already list `group` as retired. Folding-as-view → ROADMAP. New read-path migration `_drop_retired_kinds` is reused by the remaining retirements (metric / content / refs).
+
 ### D-2026-06-20-B — Migration physical move (viewer → app repo) resequenced to AFTER the Chunk-2 concept code; concepts land in-monorepo first
 
 - **What:** The viewer's physical move into the `plot/` app repo (+ the app→versioned-engine dependency), pinned by `D-2026-06-20-A` as a prerequisite *before* concept implementation, is **resequenced to land AFTER the Chunk-2 concept code** (retire `group` + the 5 doomed `*_ref` / `metric` / `content` kinds; add `feature` / `note` / `entity`; service 5-field chip inspector; actor_ref reform; drill rewire). Concepts are done **in the monorepo first**; the move follows. Landing path when it happens = `plot/viewer/`.

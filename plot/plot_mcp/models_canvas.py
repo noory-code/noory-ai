@@ -57,7 +57,6 @@ _ALLOWED_KINDS_BY_CANVAS: dict[str, set[str]] = {
         "metric",
         "step",
         "decision",
-        "group",
         "actor_ref",
     }
     | _FOUNDATION_REFS,
