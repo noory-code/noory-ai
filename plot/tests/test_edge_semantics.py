@@ -31,6 +31,9 @@ _CASES = [
     ("feature", "decision", "flow"),
     ("services", "service", "flow"),
     ("services", "category", "flow"),
+    # entity↔entity rough relationship (entities canvas) -> flow
+    # (D-2026-06-20-Q step 7 / D-2026-06-17-J)
+    ("entities", "entity", "flow"),
     # unknown / None sources -> flow
     ("foundation", None, "flow"),
     ("services", "bogus", "flow"),
@@ -40,6 +43,14 @@ _CASES = [
 @pytest.mark.parametrize("canvas_kind,source_kind,expected", _CASES)
 def test_classify_edge(canvas_kind: str, source_kind: str | None, expected: str) -> None:
     assert classify_edge(canvas_kind, source_kind) == expected
+
+
+def test_entity_edges_default_to_flow() -> None:
+    """D-2026-06-20-Q step 7 — an entity↔entity edge is a rough, directed
+    conceptual link (flow), editable; never a meaningless / FK / cardinality
+    line. Pins the documented fallthrough so a future classify change can't
+    silently re-route entity edges."""
+    assert classify_edge("entities", "entity") == "flow"
 
 
 def test_relation_value_set_is_the_pinned_three() -> None:

@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.98.6] — 2026-06-20
+
+### Changed
+
+- **Entity↔entity edges pinned to `flow`** (entity follow-up step 7,
+  **D-2026-06-20-Q** / D-2026-06-17-J) — an edge on the entities canvas is a
+  rough, directed conceptual link (사용자 —쓴다→ 글), no FK / cardinality, user-
+  editable. No behaviour change (it already took the `flow` fallthrough);
+  `classify_edge` now documents the intent and `test_edge_semantics` pins it so
+  a future classify change can't silently re-route entity edges. (Mirror in the
+  app's `edgeSemantics.ts` + vitest.) **Entity follow-up complete** — chips
+  (step 6 authoring) + back-ref endpoint + edges (step 7); AI-surfacing (step 8)
+  was already wired (D-2026-06-20-K).
+
 ## [0.98.5] — 2026-06-20
 
 ### Added

@@ -42,6 +42,13 @@ def classify_edge(canvas_kind: str, source_kind: str | None) -> str:
 
     Order matters: actors-canvas edges are always inheritance (single
     edge type), then essence sources are injection, else flow.
+
+    Entity↔entity edges (entities canvas, D-2026-06-20-Q step 7 / D-2026-06-17-J)
+    intentionally take the ``flow`` fallthrough: a rough, directed conceptual
+    link (사용자 —쓴다→ 글) — NO normalisation / FK / cardinality (below
+    altitude, D-2026-06-17-I). The user may edit / delete it; it is never
+    meaningless or silently uneditable (D-2026-06-20-J). Pinned by
+    ``tests/test_edge_semantics.py::test_entity_edges_default_to_flow``.
     """
     if canvas_kind == "actors":
         return "inheritance"
