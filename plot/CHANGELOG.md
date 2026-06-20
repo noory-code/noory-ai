@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.87.2] — 2026-06-20
+
+### Changed
+
+- **Migration resequenced** (D-2026-06-20-B): the viewer's physical move into
+  the `plot/` app repo is deferred until AFTER the Chunk-2 concept code (kind
+  add/remove/reform), which now lands in the monorepo first. The schema-parity
+  blocker that required move-first is resolved by the v0.87.0 codegen, so the
+  concept churn is safer/faster single-repo (rich guards alive, no cross-repo
+  paired commits). Landing path when the move happens = `plot/viewer/`. No
+  architecture change — only the order of realizing it.
+
 ## [0.87.1] — 2026-06-20
 
 ### Added

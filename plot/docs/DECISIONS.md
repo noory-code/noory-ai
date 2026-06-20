@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-20-B — Migration physical move (viewer → app repo) resequenced to AFTER the Chunk-2 concept code; concepts land in-monorepo first
+
+- **What:** The viewer's physical move into the `plot/` app repo (+ the app→versioned-engine dependency), pinned by `D-2026-06-20-A` as a prerequisite *before* concept implementation, is **resequenced to land AFTER the Chunk-2 concept code** (retire `group` + the 5 doomed `*_ref` / `metric` / `content` kinds; add `feature` / `note` / `entity`; service 5-field chip inspector; actor_ref reform; drill rewire). Concepts are done **in the monorepo first**; the move follows. Landing path when it happens = `plot/viewer/`.
+- **Why:** The migration's schema-parity blocker — the reason it had to precede implementation — is **already resolved**: v0.87.0 made the viewer wire types a generated artifact (`ts_codegen.py` → `wire.gen.ts`) alongside the `wire_contract.json` snapshot, both split-survivable. With parity secured, the heavy concept churn (≈9 kind add/remove/reform, each a lock-step across Pydantic model + TS class + renderer + inspector + i18n + tests) is **safer and faster in one repo**: the rich guards stay alive, there is no cross-repo paired-commit lock-step, and iteration is single-tree. Anchored to VISION — the concept code directly serves the essence (the structure users define), so doing it first delivers essence value sooner; the move serves the open-core/business boundary and loses nothing by following.
+- **Alternatives:** (a) physical move first per `D-2026-06-20-A` literal order — not taken (every later kind change becomes a cross-repo paired commit; friction with no parity benefit now that codegen secured it). (b) skip the move entirely — rejected (the open-core boundary is still required; only deferred, not dropped).
+- **Approval:** Accepted by user, 2026-06-20 (AskUserQuestion — "개념을 모노레포에서 먼저"; landing path "plot/viewer/").
+- **Spec impact:** Resequences `D-2026-06-20-A`'s migration-prereq clause (the move is now post-concept, not pre-implementation). No change to the architecture itself (open-core boundary, canvas = app-exclusive) — only the *order* of realizing it. ROADMAP Track 2 ordering.
+
 ### D-2026-06-20-A — Plot system architecture = open-core (open plugin engines / closed paid app); the visual canvas is app-exclusive
 
 - **What:** Plot's system architecture is pinned as **open-core**:
