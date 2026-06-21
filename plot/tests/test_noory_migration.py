@@ -66,3 +66,29 @@ def test_discovery_sees_legacy_only_workspaces(tmp_path: Path) -> None:
     )
     found = discover_projects(Path(str(tmp_path)))
     assert [p.id for p, _rel in found] == ["proj-l"]
+
+
+def test_resolve_plot_root_guards_against_double_nesting(tmp_path: Path) -> None:
+    """D-2026-06-21-W — passing a path that ALREADY points at a `.noory/plot`
+    data root must NOT append another `.noory/plot`. Regression for the
+    orphaned-project bug where an MCP caller produced
+    `.noory/plot/.noory/plot/{id}` (invisible to discovery)."""
+    data_root = tmp_path / ".noory" / "plot"
+    data_root.mkdir(parents=True)
+    resolved = resolve_plot_root(str(data_root))
+    assert resolved == data_root
+    # no second nesting created
+    assert not (data_root / ".noory").exists()
+
+
+def test_resolve_plot_root_double_nest_then_create_lands_correctly(
+    tmp_path: Path,
+) -> None:
+    """A project created after resolving a `.noory/plot` path lands at
+    `.noory/plot/{id}`, not `.noory/plot/.noory/plot/{id}`."""
+    data_root = tmp_path / ".noory" / "plot"
+    data_root.mkdir(parents=True)
+    root = resolve_plot_root(str(data_root))
+    create_project(root, "banas", "Banas")
+    assert (data_root / "banas" / "project.json").is_file()
+    assert not (data_root / ".noory").exists()

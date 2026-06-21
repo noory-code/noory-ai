@@ -200,6 +200,16 @@ def resolve_plot_root(project_path: str) -> Path:
         raise FileNotFoundError(f"project_path does not exist: {base}")
     if not base.is_dir():
         raise NotADirectoryError(f"project_path is not a directory: {base}")
+    # D-2026-06-21-W — guard against double-nesting. If the caller passes a
+    # path that ALREADY points at a ``.noory/plot`` data root (seen from MCP
+    # callers — it created an orphaned project under
+    # ``.noory/plot/.noory/plot/{id}``, invisible to discovery), use it
+    # directly instead of appending another ``.noory/plot``. The workspace
+    # root is then two levels up.
+    if base.name == "plot" and base.parent.name == ".noory":
+        base.mkdir(parents=True, exist_ok=True)
+        migrate_legacy_git_to_workspace(base.parent.parent)
+        return base
     root = base / ".noory" / "plot"
     legacy = base / ".plot"
     if legacy.is_dir() and not root.exists():
