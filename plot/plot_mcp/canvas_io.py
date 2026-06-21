@@ -29,6 +29,7 @@ from plot_mcp.models import (
     CanvasDoc,
     CanvasKind,
 )
+from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
 from plot_mcp.storage import (  # noqa: F401
     _canvas_file,
     _ensure_project,
@@ -79,6 +80,32 @@ def _drop_retired_kinds(
         if e.get("source") not in retired_ids and e.get("target") not in retired_ids
     ]
     raw = {**raw, "nodes": kept_nodes, "edges": kept_edges}
+    _write_json(_canvas_file(plot_root, project_id, canvas_kind, service_id), raw)
+    return raw
+
+
+def _drop_dangling_edges(
+    plot_root: Path,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    service_id: str | None,
+    raw: dict[str, Any],
+) -> dict[str, Any]:
+    """Drop edges whose source or target node is absent, so a canvas.json
+    corrupted on disk (a node removed without its incident edges) loads instead
+    of 400'ing on GET (``CanvasDoc`` hard-rejects ``edges reference unknown
+    nodes``). The synthetic project anchor (``PROJECT_ANCHOR_ID``) lives in
+    ``ProjectDoc.anchors``, not ``nodes``, but is a valid endpoint
+    (D-2026-05-04-B), so an edge to it is kept. The *write* path still rejects
+    dangling edges — the viewer prunes before save (D-2026-06-21-R); this heals
+    only already-persisted corruption. Idempotent; persists the healed canvas on
+    first read. (D-2026-06-21-X)"""
+    node_ids = {n.get("id") for n in (raw.get("nodes") or [])} | {PROJECT_ANCHOR_ID}
+    edges: list[dict[str, Any]] = list(raw.get("edges") or [])
+    kept = [e for e in edges if e.get("source") in node_ids and e.get("target") in node_ids]
+    if len(kept) == len(edges):
+        return raw
+    raw = {**raw, "edges": kept}
     _write_json(_canvas_file(plot_root, project_id, canvas_kind, service_id), raw)
     return raw
 
@@ -148,6 +175,11 @@ def read_canvas(
     # + their incident edges so projects authored before a kind's retirement
     # still validate. Loss-free for surviving content. Applies to every canvas.
     raw = _drop_retired_kinds(plot_root, project_id, canvas_kind, service_id, raw)
+    # D-2026-06-21-X — drop edges whose endpoint node is absent (corrupted on
+    # disk) so the canvas opens instead of 400'ing. Runs last so it catches a
+    # dangling edge regardless of which migration above produced it. The write
+    # path still rejects them (viewer prunes pre-save, D-2026-06-21-R).
+    raw = _drop_dangling_edges(plot_root, project_id, canvas_kind, service_id, raw)
     return CanvasDoc.model_validate(raw)
 
 

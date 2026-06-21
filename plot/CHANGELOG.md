@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.99.0] — 2026-06-21
+
+### Added
+
+- **Chat shows the CLI's actual default model when it reports one** (**D-2026-06-21-Z**).
+  The model selector's "default" option now reads e.g. `default · claude-opus-4-8`
+  instead of a bare `default`, once the CLI reports its model. The claude-code
+  provider parses the stream-json `system`/`init` frame's `model` and emits a new
+  `ChatStreamEvent(type="meta", model=…)`; the viewer records it and relabels the
+  default option. Asymmetric by design — only claude-code reports its model, so
+  codex / gemini keep a plain `default`. Known after the first turn; reset on
+  provider change; an explicit override is unaffected.
+
+### Fixed
+
+- **A canvas with a dangling edge on disk now opens instead of 400'ing**
+  (**D-2026-06-21-X**, follow-up to D-2026-06-21-R). `read_canvas` strips any edge
+  whose endpoint node is absent (`_drop_dangling_edges`) before validation, so a
+  `canvas.json` corrupted by a node removed without its incident edges still
+  loads. The synthetic project anchor stays a valid endpoint. The write path is
+  unchanged — it still rejects dangling edges (the viewer prunes pre-save).
+
 ## [0.98.10] — 2026-06-21
 
 ### Fixed

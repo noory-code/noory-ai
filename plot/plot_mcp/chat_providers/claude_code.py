@@ -110,11 +110,31 @@ def _parse_claude_line(
     obj = _decode_jsonl(line)
     if obj is None:
         return None
+    # The first line is a ``system`` / ``init`` frame naming the model the CLI
+    # loaded — surface it as a ``meta`` event so the viewer can show the real
+    # default (D-2026-06-21-Z). It carries no reply text, so report it before
+    # the text path.
+    model = _extract_anthropic_model(obj)
+    if model:
+        return ChatStreamEvent(type="meta", turn_id=turn_id, model=model)
     text = _extract_anthropic_text(obj)
     if not text:
         return None
     accumulator.append(text)
     return ChatStreamEvent(type="delta", turn_id=turn_id, text=text)
+
+
+def _extract_anthropic_model(obj: dict[str, Any]) -> str | None:
+    """The model id from the ``system`` / ``init`` frame, or ``None``.
+
+    Claude Code's first stream-json line is
+    ``{"type":"system","subtype":"init",...,"model":"claude-..."}`` (D-2026-06-21-Z).
+    """
+    if obj.get("type") == "system" and obj.get("subtype") == "init":
+        model = obj.get("model")
+        if isinstance(model, str) and model:
+            return model
+    return None
 
 
 def _extract_anthropic_text(obj: dict[str, Any]) -> str:

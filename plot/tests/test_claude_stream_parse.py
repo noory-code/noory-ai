@@ -49,3 +49,33 @@ def test_full_assistant_message_alone_yields_no_text_event() -> None:
     ev = _parse_claude_line("t1", _assistant_full("recap only"), acc)
     assert ev is None
     assert acc == []
+
+
+# --- init `model` reporting (D-2026-06-21-Z) -------------------------------
+# Claude Code's first stream-json line is a ``system`` / ``init`` frame that
+# names the model the CLI actually loaded. Plot surfaces it so the viewer can
+# show the real default (codex / gemini don't report theirs).
+
+
+def _init(model: str) -> bytes:
+    return json.dumps(
+        {"type": "system", "subtype": "init", "session_id": "s", "model": model}
+    ).encode()
+
+
+def test_init_frame_yields_a_meta_event_with_the_model() -> None:
+    acc: list[str] = []
+    ev = _parse_claude_line("t1", _init("claude-opus-4-8"), acc)
+    assert ev is not None
+    assert ev.type == "meta"
+    assert ev.model == "claude-opus-4-8"
+    assert ev.text == "", "a meta event carries no streamed text"
+    assert acc == [], "the init frame is not accumulated as reply text"
+
+
+def test_init_frame_without_model_yields_nothing() -> None:
+    acc: list[str] = []
+    ev = _parse_claude_line(
+        "t1", json.dumps({"type": "system", "subtype": "init"}).encode(), acc
+    )
+    assert ev is None

@@ -18,7 +18,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel
 
-ChatStreamEventType = Literal["turn_start", "delta", "turn_complete", "error"]
+ChatStreamEventType = Literal["turn_start", "delta", "turn_complete", "error", "meta"]
 
 # Conversation scope (D-2026-06-13-H, Layer 1 per-instance refinement
 # D-2026-06-15-B). Chat threads are partitioned per canvas kind plus one
@@ -77,6 +77,10 @@ class ChatStreamEvent(BaseModel):
     ``delta`` appends ``text`` to the active turn, ``turn_complete`` carries
     the full accumulated text (so a late-joining subscriber can reconcile),
     and ``error`` aborts the turn and surfaces ``error_message`` in the UI.
+    A ``meta`` event carries no streamed text — it reports the model the CLI
+    actually loaded in ``model`` (D-2026-06-21-Z), so the viewer can show the
+    real default when the user hasn't overridden it. Only providers whose CLI
+    reports the model emit it (claude-code does; codex / gemini don't).
 
     ``scope`` echoes which conversation bucket the turn belongs to so the
     viewer can route the event to the matching canvas thread (D-2026-06-13-H).
@@ -89,6 +93,8 @@ class ChatStreamEvent(BaseModel):
     text: str = ""
     error_message: str | None = None
     scope: str = DEFAULT_CHAT_SCOPE
+    # Set only on ``meta`` events — the model id the CLI reported (D-2026-06-21-Z).
+    model: str | None = None
 
 
 class _SubprocessFactory(Protocol):
