@@ -51,6 +51,7 @@ class Log:
         *,
         status: Status = "accepted",
         supersedes: str | None = None,
+        about: list[str] | None = None,
     ) -> Decision:
         """Append a new decision and return it. Never edits an existing one."""
         decision = Decision(
@@ -58,14 +59,22 @@ class Log:
             title=title,
             status=status,
             supersedes=supersedes,
+            about=about or [],
             body=body,
         )
         self.root.mkdir(parents=True, exist_ok=True)
         self.decision_path(decision.id).write_text(dump_decision(decision))
         return decision
 
-    def in_force(self) -> list[Decision]:
-        """Accepted decisions that no accepted decision supersedes (derived)."""
+    def in_force(self, *, about: str | None = None) -> list[Decision]:
+        """Accepted decisions that no accepted decision supersedes (derived).
+
+        ``about`` filters to decisions that tag the given id — the link a
+        decision-type work-item's gate checks ("a decision about this leaf").
+        """
         accepted = [d for d in self.decisions() if d.status == "accepted"]
         retired = {d.supersedes for d in accepted if d.supersedes is not None}
-        return [d for d in accepted if d.id not in retired]
+        standing = [d for d in accepted if d.id not in retired]
+        if about is None:
+            return standing
+        return [d for d in standing if about in d.about]

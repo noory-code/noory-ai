@@ -49,12 +49,18 @@ We will use Postgres.
 ## CLI
 
 ```bash
-cairn --root "$PWD" record "Use Postgres" --status accepted   # -> CAIRN-001
+cairn --root "$PWD" record "Use Postgres" --status accepted --about auth-stack  # -> CAIRN-001
 cairn --root "$PWD" list                                      # all decisions
-cairn --root "$PWD" in-force                                  # the ones still standing
+cairn --root "$PWD" in-force [--about auth-stack]             # the ones still standing
 cairn --root "$PWD" show CAIRN-001                            # one decision
+cairn --root "$PWD" check --about auth-stack                  # gate: exit 0 if decided, else 1
 ```
 
 `--root` is the project directory; `.noory/cairn/` lives under it.
+
+The **`about`** tag links a decision to what it governs — a Solera decision-type
+work-item names a topic (e.g. `auth-stack`) and gates on
+`cairn check --about auth-stack`; a human's `cairn record … --about auth-stack`
+makes that gate pass.
 
 MIT licensed.

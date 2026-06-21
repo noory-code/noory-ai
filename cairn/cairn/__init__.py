@@ -10,4 +10,4 @@ they point at decisions by stable id (by value). It runs standalone over plain
 files under ``.noory/cairn/``.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

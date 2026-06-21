@@ -72,3 +72,17 @@ def test_round_trips() -> None:
     for text, did in ((ACCEPTED, "CAIRN-001"), (SUPERSEDING, "CAIRN-002")):
         dec = parse_decision(text, decision_id=did)
         assert parse_decision(dump_decision(dec), decision_id=did) == dec
+
+
+def test_about_tags_parsed_and_round_trip() -> None:
+    text = (
+        "---\ntitle: Use Postgres\nstatus: accepted\nsupersedes: null\n"
+        "about:\n  - ACT-005\n  - feature/login\n---\n## Decision\nPostgres.\n"
+    )
+    dec = parse_decision(text, decision_id="CAIRN-001")
+    assert dec.about == ["ACT-005", "feature/login"]
+    assert parse_decision(dump_decision(dec), decision_id="CAIRN-001") == dec
+
+
+def test_about_defaults_empty() -> None:
+    assert parse_decision(ACCEPTED, decision_id="CAIRN-001").about == []

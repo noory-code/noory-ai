@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any, Literal, TypeVar
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from .errors import FormatError
 
@@ -53,6 +53,7 @@ class Decision(BaseModel):
     title: str
     status: Status
     supersedes: str | None
+    about: list[str] = Field(default_factory=list)
     body: str
 
     _check_title = field_validator("title")(_require_nonempty)
@@ -71,7 +72,12 @@ def parse_decision(text: str, *, decision_id: str) -> Decision:
 def dump_decision(decision: Decision) -> str:
     """Serialize a decision back to file text. Inverse of :func:`parse_decision`."""
     fm = yaml.safe_dump(
-        {"title": decision.title, "status": decision.status, "supersedes": decision.supersedes},
+        {
+            "title": decision.title,
+            "status": decision.status,
+            "supersedes": decision.supersedes,
+            "about": list(decision.about),
+        },
         sort_keys=False,
         default_flow_style=False,
     ).strip()

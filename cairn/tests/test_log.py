@@ -52,3 +52,18 @@ def test_proposed_supersede_does_not_retire_until_accepted(tmp_path: Path) -> No
 
 def test_list_empty(tmp_path: Path) -> None:
     assert _log(tmp_path).list_ids() == []
+
+
+def test_in_force_about_filter(tmp_path: Path) -> None:
+    log = _log(tmp_path)
+    log.record("Postgres", "b", about=["ACT-005"])  # CAIRN-001
+    log.record("Naming convention", "b", about=["ACT-009"])  # CAIRN-002
+    assert [d.id for d in log.in_force(about="ACT-005")] == ["CAIRN-001"]
+    assert log.in_force(about="ACT-404") == []
+
+
+def test_in_force_about_respects_supersession(tmp_path: Path) -> None:
+    log = _log(tmp_path)
+    log.record("Postgres", "b", about=["ACT-005"])  # CAIRN-001
+    log.record("Cockroach", "b", about=["ACT-005"], supersedes="CAIRN-001")  # CAIRN-002
+    assert [d.id for d in log.in_force(about="ACT-005")] == ["CAIRN-002"]

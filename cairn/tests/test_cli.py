@@ -39,3 +39,12 @@ def test_show_prints_body(tmp_path: Path, capsys) -> None:  # type: ignore[no-un
     assert _run(tmp_path, "show", "CAIRN-001") == 0
     out = capsys.readouterr().out
     assert "Use Postgres" in out and "Postgres it is." in out
+
+
+def test_record_with_about_and_check(tmp_path: Path, capsys) -> None:  # type: ignore[no-untyped-def]
+    _run(tmp_path, "record", "Use Postgres", "--about", "ACT-005", "--body", "x")
+    capsys.readouterr()
+    # check is a gate: 0 when an in-force decision tags the id, 1 otherwise
+    assert _run(tmp_path, "check", "--about", "ACT-005") == 0
+    capsys.readouterr()
+    assert _run(tmp_path, "check", "--about", "ACT-404") == 1

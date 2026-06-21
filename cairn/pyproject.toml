@@ -1,6 +1,6 @@
 [project]
 name = "cairn"
-version = "0.1.0"
+version = "0.2.0"
 description = "Cairn — an append-only decision log. A shared substrate both Plot and Solera point at by id: each decision records its context, choice, alternatives, and consequences, and supersession is a relation between entries, never an edit. Standalone, plain files under .noory/cairn/."
 readme = "README.md"
 license = "MIT"
