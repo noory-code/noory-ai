@@ -29,11 +29,17 @@ from plot_mcp.file_io import (
 
 
 def _project_scoped_root(plot_root: Path, project_id: str) -> Path:
-    """v0.8: everything a project owns lives under ``.plot/{project_id}/``.
-    File/folder API paths are relative to this scope so a request can't
-    climb up into another project (or outside ``.plot/``).
+    """Directory a project owns; File/folder API paths are relative to this
+    scope so a request can't climb out of it.
+
+    S2 (D-2026-06-21-AB): flat layout — ``_project_dir`` returns ``plot_root``
+    itself for the lone project (or the legacy nested ``{project_id}/`` while it
+    survives). Callers must confirm the project exists via
+    ``project.json`` (``plot_root`` always ``is_dir``).
     """
-    return plot_root / project_id
+    from plot_mcp.folder_io import _project_dir
+
+    return _project_dir(plot_root, project_id)
 
 
 async def file_get_endpoint(request: Request) -> JSONResponse:
@@ -48,7 +54,7 @@ async def file_get_endpoint(request: Request) -> JSONResponse:
     if not rel_path:
         return _error("'path' query param is required")
     project_root = _project_scoped_root(plot_root, project_id)
-    if not project_root.is_dir():
+    if not (project_root / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     try:
         content = read_text_file(project_root, rel_path)
@@ -80,7 +86,7 @@ async def file_raw_endpoint(request: Request) -> Response:
     if not rel_path:
         return _error("'path' query param is required")
     project_root = _project_scoped_root(plot_root, project_id)
-    if not project_root.is_dir():
+    if not (project_root / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     try:
         target = resolve_safe_path(project_root, rel_path)
@@ -115,7 +121,7 @@ async def file_put_endpoint(request: Request) -> JSONResponse:
     if not isinstance(content, str):
         return _error("'content' must be a string")
     project_root = _project_scoped_root(plot_root, project_id)
-    if not project_root.is_dir():
+    if not (project_root / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     try:
         write_text_file(project_root, rel_path, content)
@@ -149,7 +155,7 @@ async def folder_post_endpoint(request: Request) -> JSONResponse:
     if not isinstance(desired, str) or not desired.strip():
         return _error("'path' is required and must be a non-empty string")
     project_root = _project_scoped_root(plot_root, project_id)
-    if not project_root.is_dir():
+    if not (project_root / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     try:
         actual = uniquify_folder(project_root, desired)

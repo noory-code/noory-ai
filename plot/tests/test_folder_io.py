@@ -56,17 +56,28 @@ def plot_root(tmp_path: Path) -> Path:
 # ---------------------------------------------------------------------------
 
 
-def test_create_project_builds_folder_layout(plot_root: Path) -> None:
+def test_create_project_builds_flat_layout(plot_root: Path) -> None:
+    """S2 (D-2026-06-21-AB): one project per .noory/plot, stored **flat** —
+    project.json + canvas dirs land directly under the root, with no
+    intermediate {project_id}/ folder."""
     proj = create_project(plot_root, "alpha", "Alpha")
     assert proj.id == "alpha"
     assert proj.name == "Alpha"
     assert proj.version == 3  # v0.13 Phase 0
-    folder = plot_root / "alpha"
-    assert folder.is_dir()
-    assert (folder / "project.json").is_file()
-    assert (folder / "foundation" / "canvas.json").is_file()
-    assert (folder / "actors" / "canvas.json").is_file()
-    assert (folder / "services" / "canvas.json").is_file()
+    assert (plot_root / "project.json").is_file()
+    assert (plot_root / "foundation" / "canvas.json").is_file()
+    assert (plot_root / "actors" / "canvas.json").is_file()
+    assert (plot_root / "services" / "canvas.json").is_file()
+    # no nested {project_id}/ layer
+    assert not (plot_root / "alpha").exists()
+
+
+def test_read_project_with_wrong_id_raises(plot_root: Path) -> None:
+    """Flat layout addresses the lone project by the root, so a mismatched
+    id must still 404 rather than silently returning the only project."""
+    create_project(plot_root, "alpha", "Alpha")
+    with pytest.raises(FileNotFoundError):
+        read_project(plot_root, "bravo")
 
 
 def test_create_project_seeds_foundation_without_project_node(plot_root: Path) -> None:
@@ -294,7 +305,7 @@ def test_detail_canvas_path_uses_service_id(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     detail = _detail_with_actor_refs("order")
     write_canvas(plot_root, "alpha", detail)
-    assert (plot_root / "alpha" / "services" / "order" / "detail.json").is_file()
+    assert (plot_root / "services" / "order" / "detail.json").is_file()
 
 
 # ---------------------------------------------------------------------------
@@ -305,7 +316,11 @@ def test_detail_canvas_path_uses_service_id(plot_root: Path) -> None:
 def test_delete_project_removes_folder(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     delete_project(plot_root, "alpha")
-    assert not (plot_root / "alpha").exists()
+    # S2 flat layout: the .noory/plot root survives (empty "create here"
+    # slot), but the project's files are gone.
+    assert plot_root.is_dir()
+    assert not (plot_root / "project.json").exists()
+    assert not (plot_root / "foundation").exists()
 
 
 def test_delete_missing_project_raises(plot_root: Path) -> None:
@@ -323,9 +338,9 @@ def test_create_project_does_not_init_git_at_plot_root(plot_root: Path) -> None:
     the repo at the workspace root (`tmp_path`, not `plot_root`); create_project
     must not synthesise a nested `.git/` under `.noory/plot/`."""
     create_project(plot_root, "alpha", "Alpha")
-    # No nested repo at the plot data root or under a project.
+    # No nested repo at the plot data root (flat layout — the project IS
+    # the root's contents).
     assert not (plot_root / ".git").exists()
-    assert not (plot_root / "alpha" / ".git").exists()
 
 
 def test_create_project_leaves_workspace_repo_empty(plot_root: Path) -> None:
@@ -600,7 +615,7 @@ def test_absorb_md_typed_text_into_json_no_md_file(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     canonical_rel = str(
         _foundation_md_path(plot_root, "alpha", "mission", "m", "Mission").relative_to(
-            plot_root / "alpha"
+            plot_root
         )
     ).replace("\\", "/")
 
@@ -750,7 +765,7 @@ def test_publish_node_writes_md_at_expected_path(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     mid = _foundation_mission_id(plot_root, "alpha")
     result = publish_node(plot_root, "alpha", "foundation", mid)
-    md_full = plot_root / "alpha" / result["md_path"]
+    md_full = plot_root / result["md_path"]
     assert md_full.is_file()
     assert md_full.name == "v2.0.md"
     # Path: foundation/published/mission/<slug>/v2.0.md
@@ -783,8 +798,8 @@ def test_publish_node_always_bumps_on_repeat_writes_distinct_files(
     mid = _foundation_mission_id(plot_root, "alpha")
     r1 = publish_node(plot_root, "alpha", "foundation", mid)
     r2 = publish_node(plot_root, "alpha", "foundation", mid)
-    p1 = plot_root / "alpha" / r1["md_path"]
-    p2 = plot_root / "alpha" / r2["md_path"]
+    p1 = plot_root / r1["md_path"]
+    p2 = plot_root / r2["md_path"]
     assert p1.is_file() and p2.is_file()
     assert p1 != p2  # distinct filenames per publish version
     assert r1["sha"] != r2["sha"]
@@ -829,7 +844,7 @@ def test_publish_node_creates_git_commit_with_trailers(plot_root: Path) -> None:
     create_project(plot_root, "alpha", "Alpha")
     mid = _foundation_mission_id(plot_root, "alpha")
     publish_node(plot_root, "alpha", "foundation", mid)
-    project_dir = plot_root / "alpha"
+    project_dir = plot_root
     out = subprocess.run(
         ["git", "log", "--format=%s%n%b", "-1"],
         cwd=project_dir,
@@ -951,7 +966,7 @@ def test_publish_step_writes_single_commit_with_propagation_trailers(
     _cat, sid, step_id = _seed_services_with_step(plot_root)
     publish_node(plot_root, "alpha", "feature", step_id, service_id=sid)
 
-    project_dir = plot_root / "alpha"
+    project_dir = plot_root
     # Single commit since the seed (no commit), then publish (one commit).
     # Inspect the latest commit message.
     out = subprocess.run(
@@ -1014,7 +1029,7 @@ def test_publish_foundation_node_has_no_propagation(plot_root: Path) -> None:
     mid = _foundation_mission_id(plot_root, "alpha")
     publish_node(plot_root, "alpha", "foundation", mid)
 
-    project_dir = plot_root / "alpha"
+    project_dir = plot_root
     out = subprocess.run(
         ["git", "log", "--format=%s%n%b", "-1"],
         cwd=project_dir,

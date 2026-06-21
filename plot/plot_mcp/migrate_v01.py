@@ -57,9 +57,12 @@ def migrate_v01_to_v02(plot_root: Path) -> list[str]:
             doc = _read_v01_sketch(path)
         except (ValueError, json.JSONDecodeError):
             continue
-        folder = _project_dir(plot_root, doc.id)
-        if folder.exists():
-            # Already migrated — back up the leftover file and move on.
+        # S2 (D-2026-06-21-AB): flat layout — ``_project_dir`` returns the
+        # root for a fresh project, so "already migrated" is a project.json
+        # check, not folder existence (the root always exists). One project per
+        # root (D-2026-06-21-AA): a second sketch under the same root is skipped
+        # rather than stacked.
+        if _project_file(plot_root, doc.id).exists() or (plot_root / "project.json").is_file():
             _backup(path)
             continue
         _migrate_one(plot_root, doc)
@@ -75,7 +78,7 @@ def _backup(path: Path) -> None:
 
 def _migrate_one(plot_root: Path, doc: _V01SketchDoc) -> None:
     folder = _project_dir(plot_root, doc.id)
-    folder.mkdir(parents=True)
+    folder.mkdir(parents=True, exist_ok=True)
     # v0.8: no longer seed a ``services-detail/`` folder — detail canvases
     # live alongside their service under ``services/{sid}/detail.json``
     # and are created lazily by ``sync_details_with_overview``.

@@ -65,7 +65,7 @@ def test_sync_archives_removed_feature(plot_root: Path) -> None:
     assert "pay" not in list_feature_details(plot_root, "alpha")
     # v0.8: archived service folder moves to ``services/_archive/{sid}/``
     # with its ``detail.json`` (and any ``index.md``) intact.
-    archive = plot_root / "alpha" / "services" / "_archive" / "pay" / "detail.json"
+    archive = plot_root / "services" / "_archive" / "pay" / "detail.json"
     assert archive.is_file()
 
 
@@ -120,7 +120,7 @@ def test_sync_skips_archive_when_detail_has_user_authored_nodes(
         "overview's wishes so the caller can warn the user"
     )
     # Live detail still present on disk.
-    live = plot_root / "alpha" / "services" / "order" / "detail.json"
+    live = plot_root / "services" / "order" / "detail.json"
     assert live.is_file()
 
 

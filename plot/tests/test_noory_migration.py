@@ -21,8 +21,9 @@ def test_plot_root_lives_under_noory(tmp_path: Path) -> None:
 
 
 def test_legacy_dot_plot_migrates_on_first_access(tmp_path: Path) -> None:
-    """A pre-R9 workspace (`.plot/proj-x`) is moved wholesale to
-    `.noory/plot/proj-x` the first time the engine touches it."""
+    """A pre-R9 workspace (`.plot/proj-x`) is moved wholesale to `.noory/plot`
+    the first time the engine touches it, then flattened (S2) since it holds a
+    single project — so `project.json` lands directly under the root."""
     legacy = tmp_path / ".plot"
     legacy.mkdir()
     (legacy / "proj-x").mkdir()
@@ -33,7 +34,8 @@ def test_legacy_dot_plot_migrates_on_first_access(tmp_path: Path) -> None:
     root = resolve_plot_root(str(tmp_path))
 
     assert root == tmp_path / ".noory" / "plot"
-    assert (root / "proj-x" / "project.json").is_file()
+    assert (root / "project.json").is_file()
+    assert not (root / "proj-x").exists()
     assert not legacy.exists(), "legacy .plot must be moved, not copied"
 
 
@@ -84,6 +86,42 @@ def test_discovery_sees_legacy_only_workspaces(tmp_path: Path) -> None:
     assert [p.id for p, _rel in found] == ["proj-l"]
 
 
+def test_resolve_flattens_single_nested_project(tmp_path: Path) -> None:
+    """S2 (D-2026-06-21-AB): a legacy nested `.noory/plot/{id}/` project is
+    migrated up to the root on open, so its files sit directly under
+    `.noory/plot/`. The {id}/ folder is removed."""
+    nested = tmp_path / ".noory" / "plot" / "alpha"
+    (nested / "foundation").mkdir(parents=True)
+    (nested / "project.json").write_text(
+        '{"id": "alpha", "name": "Alpha", "version": 3}', encoding="utf-8"
+    )
+    (nested / "foundation" / "canvas.json").write_text(
+        '{"canvas_id": "foundation", "canvas_kind": "foundation", "nodes": [], "edges": []}',
+        encoding="utf-8",
+    )
+    root = resolve_plot_root(str(tmp_path))
+    assert (root / "project.json").is_file()
+    assert (root / "foundation" / "canvas.json").is_file()
+    assert not (root / "alpha").exists()
+
+
+def test_resolve_leaves_multiple_nested_projects_untouched(tmp_path: Path) -> None:
+    """The forbidden stacking case (two projects under one root) is NOT
+    auto-flattened — that would have to pick a winner. They are left in place
+    for the user to reconcile (handoff S5); discovery still reads both."""
+    plot_root = tmp_path / ".noory" / "plot"
+    for pid in ("alpha", "beta"):
+        d = plot_root / pid
+        d.mkdir(parents=True)
+        (d / "project.json").write_text(
+            f'{{"id": "{pid}", "name": "{pid}", "version": 3}}', encoding="utf-8"
+        )
+    root = resolve_plot_root(str(tmp_path))
+    assert (root / "alpha" / "project.json").is_file()
+    assert (root / "beta" / "project.json").is_file()
+    assert not (root / "project.json").exists()
+
+
 def test_resolve_plot_root_guards_against_double_nesting(tmp_path: Path) -> None:
     """D-2026-06-21-W — passing a path that ALREADY points at a `.noory/plot`
     data root must NOT append another `.noory/plot`. Regression for the
@@ -100,11 +138,11 @@ def test_resolve_plot_root_guards_against_double_nesting(tmp_path: Path) -> None
 def test_resolve_plot_root_double_nest_then_create_lands_correctly(
     tmp_path: Path,
 ) -> None:
-    """A project created after resolving a `.noory/plot` path lands at
-    `.noory/plot/{id}`, not `.noory/plot/.noory/plot/{id}`."""
+    """A project created after resolving a `.noory/plot` path lands flat at
+    `.noory/plot/project.json` (S2), not `.noory/plot/.noory/plot/{id}`."""
     data_root = tmp_path / ".noory" / "plot"
     data_root.mkdir(parents=True)
     root = resolve_plot_root(str(data_root))
     create_project(root, "banas", "Banas")
-    assert (data_root / "banas" / "project.json").is_file()
+    assert (data_root / "project.json").is_file()
     assert not (data_root / ".noory").exists()

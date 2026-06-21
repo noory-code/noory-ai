@@ -33,7 +33,7 @@ _TYPED_TEXT_MD_KINDS = {k for k, v in FOUNDATION_TYPED_TEXT_FIELDS.items() if v}
 
 def test_export_writes_all_15_kind_schemas(tmp_path: Path) -> None:
     export_all_schemas(tmp_path, "proj-1")
-    schema_dir = tmp_path / "proj-1" / "schema"
+    schema_dir = tmp_path / "schema"
     for kind in _ALL_KIND_CLASSES:
         assert (schema_dir / f"{kind}.json").is_file(), f"missing {kind}.json"
 
@@ -44,7 +44,7 @@ def test_export_writes_md_template_only_for_foundation_typed_text_kinds(
     """Only 3 Foundation kinds split typed text into MD (mission /
     core_value / identity). The other 12 kinds get no MD template."""
     export_all_schemas(tmp_path, "proj-1")
-    schema_dir = tmp_path / "proj-1" / "schema"
+    schema_dir = tmp_path / "schema"
     md_files = sorted(p.name for p in schema_dir.glob("*.md.template"))
     expected = sorted(f"{k}.md.template" for k in _TYPED_TEXT_MD_KINDS)
     assert md_files == expected
@@ -54,7 +54,7 @@ def test_foundation_json_schema_strips_typed_text_fields(tmp_path: Path) -> None
     """A foundation kind's canvas.json schema must NOT expose typed-text
     fields — they live in the MD template, not in JSON."""
     export_all_schemas(tmp_path, "proj-1")
-    schema_dir = tmp_path / "proj-1" / "schema"
+    schema_dir = tmp_path / "schema"
     mission_schema = json.loads((schema_dir / "mission.json").read_text(encoding="utf-8"))
     props = mission_schema.get("properties", {})
     for typed in FOUNDATION_TYPED_TEXT_FIELDS["mission"]:
@@ -65,7 +65,7 @@ def test_non_foundation_json_schema_includes_typed_fields(tmp_path: Path) -> Non
     """A non-Foundation kind's typed fields live in JSON, so its schema
     must expose them (e.g. ActorNode.side, ServiceNode.target_side)."""
     export_all_schemas(tmp_path, "proj-1")
-    schema_dir = tmp_path / "proj-1" / "schema"
+    schema_dir = tmp_path / "schema"
 
     # D-2026-06-15-J: actor is identity-only (side + body); motivation/pain
     # moved to actor_ref (per-service stake).
@@ -107,7 +107,7 @@ def test_non_foundation_json_schema_includes_typed_fields(tmp_path: Path) -> Non
 
 def test_meta_json_lists_every_kind(tmp_path: Path) -> None:
     export_all_schemas(tmp_path, "proj-1")
-    meta = json.loads((tmp_path / "proj-1" / "schema" / "_meta.json").read_text(encoding="utf-8"))
+    meta = json.loads((tmp_path / "schema" / "_meta.json").read_text(encoding="utf-8"))
     assert meta["schema_version"] == SCHEMA_VERSION
     assert meta["plot_version"] == PLOT_VERSION
     assert sorted(meta["kinds"]) == sorted(_ALL_KIND_CLASSES.keys())
@@ -117,7 +117,7 @@ def test_export_is_idempotent_no_byte_rewrite(tmp_path: Path) -> None:
     """A second call with no model change must keep mtimes intact —
     git diffs / fs watchers don't churn on rerun."""
     export_all_schemas(tmp_path, "proj-1")
-    schema_dir = tmp_path / "proj-1" / "schema"
+    schema_dir = tmp_path / "schema"
     actor_schema_path = schema_dir / "actor.json"
     mtime_before = actor_schema_path.stat().st_mtime_ns
     export_all_schemas(tmp_path, "proj-1")
@@ -130,7 +130,7 @@ def test_each_kind_schema_round_trips_through_pydantic(tmp_path: Path) -> None:
     the kind in its description / title path (catches accidental
     truncation / merge errors during the v0.15.3 expansion)."""
     export_all_schemas(tmp_path, "proj-1")
-    schema_dir = tmp_path / "proj-1" / "schema"
+    schema_dir = tmp_path / "schema"
     for kind in _ALL_KIND_CLASSES:
         raw = json.loads((schema_dir / f"{kind}.json").read_text(encoding="utf-8"))
         assert isinstance(raw, dict)

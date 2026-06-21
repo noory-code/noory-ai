@@ -159,9 +159,9 @@ def test_migrates_bare_v01_sketch(plot_root: Path) -> None:
     migrated = migrate_v01_to_v02(plot_root)
     assert migrated == ["alpha"]
 
-    # v0.8 layout: project folder is directly under plot_root.
-    folder = plot_root / "alpha"
-    assert folder.is_dir()
+    # S2 flat layout: the project's files sit directly under plot_root.
+    folder = plot_root
+    assert (folder / "project.json").is_file()
 
     # v0.1 file was backed up in the (still-legacy) sketches/ drop-zone.
     assert (plot_root / "sketches" / "alpha.json.v01.bak").is_file()
@@ -219,15 +219,18 @@ def test_v10_upgrade_renames_core_dir_and_unparents_children(plot_root: Path) ->
     5. Children of the legacy core anchor get ``parent_id=None`` so the
        small anchor doesn't visually trap them.
     """
-    from plot_mcp.folder_io import write_project
     from plot_mcp.migrate import upgrade_foundation_canvas_if_needed
     from plot_mcp.models import ProjectDoc
 
-    folder = plot_root / "alpha"
-    folder.mkdir(parents=True)
-    (folder / "core").mkdir()
-    # Seed project.json so the upgrader can read the authoritative name.
-    write_project(plot_root, ProjectDoc(id="alpha", name="Alpha v1", version=3))
+    # S2 flat layout: the project's files sit directly under plot_root.
+    folder = plot_root
+    (folder / "core").mkdir(parents=True, exist_ok=True)
+    # Seed project.json directly (the pre-v0.10 on-disk state) so the upgrader
+    # can read the authoritative name.
+    (folder / "project.json").write_text(
+        json.dumps(ProjectDoc(id="alpha", name="Alpha v1", version=3).model_dump()),
+        encoding="utf-8",
+    )
 
     (folder / "core" / "canvas.json").write_text(
         json.dumps(

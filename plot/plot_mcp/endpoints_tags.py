@@ -15,6 +15,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.endpoints_common import _ApiError, _error, _require_plot_root
+from plot_mcp.folder_io import _project_dir
 from plot_mcp.git_store import (
     GitNotInitializedError,
     TagAlreadyExistsError,
@@ -42,8 +43,8 @@ async def tags_list_endpoint(request: Request) -> JSONResponse:
     except _ApiError as exc:
         return exc.response
     project_id = request.path_params["project_id"]
-    folder = plot_root / project_id
-    if not folder.is_dir():
+    folder = _project_dir(plot_root, project_id)
+    if not (folder / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     return JSONResponse({"tags": list_tags(workspace_root_from_plot_root(plot_root))})
 
@@ -54,8 +55,8 @@ async def tag_post_endpoint(request: Request) -> JSONResponse:
     except _ApiError as exc:
         return exc.response
     project_id = request.path_params["project_id"]
-    folder = plot_root / project_id
-    if not folder.is_dir():
+    folder = _project_dir(plot_root, project_id)
+    if not (folder / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     try:
         body: dict[str, Any] = await request.json()
@@ -82,8 +83,8 @@ async def tag_delete_endpoint(request: Request) -> JSONResponse:
         return exc.response
     project_id = request.path_params["project_id"]
     name = request.path_params["tag_name"]
-    folder = plot_root / project_id
-    if not folder.is_dir():
+    folder = _project_dir(plot_root, project_id)
+    if not (folder / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     try:
         delete_tag(workspace_root_from_plot_root(plot_root), name)
@@ -124,16 +125,18 @@ async def project_at_tag_endpoint(request: Request) -> JSONResponse:
         return exc.response
     project_id = request.path_params["project_id"]
     tag = request.path_params["tag"]
-    folder = plot_root / project_id
-    if not folder.is_dir():
+    folder = _project_dir(plot_root, project_id)
+    if not (folder / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
 
     from plot_mcp.git_store import read_file_at_tag
 
     workspace_root = workspace_root_from_plot_root(plot_root)
-    # Files in the workspace repo live under ``.noory/plot/{project_id}/…``
-    # (the data root inside the repo).
-    plot_data_prefix = f".noory/plot/{project_id}"
+    # Files in the workspace repo live under the project's data dir. S2
+    # (D-2026-06-21-AB) flattens this to ``.noory/plot`` (no ``{project_id}``
+    # segment); a legacy nested project keeps ``.noory/plot/{project_id}``.
+    # Derive the prefix from the resolved dir so git-show paths match disk.
+    plot_data_prefix = folder.relative_to(workspace_root).as_posix()
 
     def _read_canvas_json(rel: str) -> dict[str, Any] | None:
         try:

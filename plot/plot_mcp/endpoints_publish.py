@@ -25,6 +25,7 @@ from plot_mcp.endpoints_common import (
 from plot_mcp.folder_io import (
     PublishNotEligibleError,
     UnpublishNotEligibleError,
+    _project_dir,
     publish_node,
     unpublish_node,
 )
@@ -90,8 +91,8 @@ async def project_publish_endpoint(request: Request) -> JSONResponse:
     except _ApiError as exc:
         return exc.response
     project_id = request.path_params["project_id"]
-    folder = plot_root / project_id
-    if not folder.is_dir():
+    folder = _project_dir(plot_root, project_id)
+    if not (folder / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     try:
         body: dict[str, Any] = await request.json()
@@ -288,8 +289,8 @@ async def node_published_list_endpoint(request: Request) -> JSONResponse:
     if canvas_kind not in _ALLOWED_CANVAS_KINDS:
         return _error(f"invalid canvas_kind: {canvas_kind}", status=400)
     service_id = request.query_params.get("service_id") or None
-    project_dir = plot_root / project_id
-    if not project_dir.is_dir():
+    project_dir = _project_dir(plot_root, project_id)
+    if not (project_dir / "project.json").is_file():
         return _error(f"project not found: {project_id}", status=404)
     # Resolve the canvas to locate the node + derive its kind.
     from plot_mcp.folder_io import read_canvas

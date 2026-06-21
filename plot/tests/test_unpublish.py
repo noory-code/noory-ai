@@ -63,7 +63,7 @@ def test_unpublish_removes_the_published_md_file(plot_root: Path) -> None:
     mid = _foundation_mission_id(plot_root, "alpha")
     publish_node(plot_root, "alpha", "foundation", mid)
     md_path = (
-        plot_root / "alpha" / "foundation" / "published" / "mission" / "mission" / "v2.0.md"
+        plot_root / "foundation" / "published" / "mission" / "mission" / "v2.0.md"
     )
     assert md_path.is_file()
 
@@ -76,7 +76,7 @@ def test_unpublish_writes_a_revert_commit(plot_root: Path) -> None:
     mid = _foundation_mission_id(plot_root, "alpha")
     publish_node(plot_root, "alpha", "foundation", mid)
 
-    project_dir = plot_root / "alpha"
+    project_dir = plot_root
     sha_before = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=project_dir,

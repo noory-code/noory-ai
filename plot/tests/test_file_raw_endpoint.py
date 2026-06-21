@@ -37,7 +37,7 @@ _TINY_PNG = bytes.fromhex(
 
 def _seed_image(plot_root: Path, project_id: str, rel_path: str) -> Path:
     create_project(plot_root, project_id, project_id)
-    target = plot_root / project_id / rel_path
+    target = plot_root / rel_path
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(_TINY_PNG)
     return target
@@ -80,7 +80,7 @@ def test_raw_endpoint_400_for_disallowed_extension(
 ) -> None:
     """Only image extensions are served by /api/files/raw."""
     create_project(plot_root, "alpha", "alpha")
-    (plot_root / "alpha" / "notes.md").write_text("# md", encoding="utf-8")
+    (plot_root / "notes.md").write_text("# md", encoding="utf-8")
     resp = client.get(
         "/api/files/raw",
         params={

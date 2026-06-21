@@ -67,16 +67,35 @@ def _should_prune(name: str) -> bool:
 
 
 def enumerate_projects(plot_root: Path) -> list[ProjectDoc]:
-    """Read every valid project directly under a ``.plot/`` root, newest first.
+    """Read the valid project(s) under a Plot data root, newest first.
+
+    S2 (D-2026-06-21-AB): the canonical layout is **flat** — one project per
+    root with ``project.json`` directly under it, so this returns a single-item
+    list. The legacy nested ``{project_id}/`` scan is kept for un-migrated
+    ``.plot`` roots (read-only discovery) and the forbidden stacking case a user
+    hasn't reconciled, so those projects stay visible. The guard on
+    ``create_project`` (D-2026-06-21-AA) is what keeps a *new* root single.
 
     Shared by ``projects_list_endpoint``, the ``list_projects`` MCP tool, and
     ``discover_projects`` (DRY — the scan loop used to be duplicated).
     """
     from plot_mcp.folder_io import read_project
+    from plot_mcp.storage import _read_json
 
     out: list[ProjectDoc] = []
     if not plot_root.is_dir():
         return out
+    # Flat layout: project.json sits directly under the root.
+    flat = plot_root / "project.json"
+    if flat.is_file():
+        try:
+            pid = _read_json(flat).get("id")
+            if isinstance(pid, str):
+                return [read_project(plot_root, pid)]
+        except (FileNotFoundError, ValueError):
+            pass
+        return out
+    # Legacy nested: one project per child dir.
     for child in sorted(plot_root.iterdir()):
         if not child.is_dir() or child.name == "sketches":
             continue
@@ -208,6 +227,7 @@ def resolve_plot_root(project_path: str) -> Path:
     # root is then two levels up.
     if base.name == "plot" and base.parent.name == ".noory":
         base.mkdir(parents=True, exist_ok=True)
+        flatten_nested_project(base)
         migrate_legacy_git_to_workspace(base.parent.parent)
         return base
     root = base / ".noory" / "plot"
@@ -217,8 +237,37 @@ def resolve_plot_root(project_path: str) -> Path:
         shutil.move(str(legacy), str(root))
         _log.info("migrated legacy %s -> %s (R9)", legacy, root)
     root.mkdir(parents=True, exist_ok=True)
+    flatten_nested_project(root)
     migrate_legacy_git_to_workspace(base)
     return root
+
+
+def flatten_nested_project(plot_root: Path) -> bool:
+    """S2 (D-2026-06-21-AB): migrate a legacy nested ``{project_id}/`` project
+    up to ``plot_root`` so one ``.noory/plot`` holds the project's files
+    directly (one-project-per-dir, flat).
+
+    Acts only when the root is **not already flat** (no ``project.json`` under
+    it) AND holds **exactly one** nested project. The forbidden stacking case
+    (multiple nested projects) is left untouched — auto-flattening would have to
+    pick a winner; the user reconciles it (handoff S5). Returns True iff a
+    project moved.
+    """
+    if (plot_root / "project.json").exists():
+        return False  # already flat
+    nested = [
+        c
+        for c in plot_root.iterdir()
+        if c.is_dir() and c.name != "sketches" and (c / "project.json").is_file()
+    ]
+    if len(nested) != 1:
+        return False
+    src = nested[0]
+    for item in src.iterdir():
+        shutil.move(str(item), str(plot_root / item.name))
+    src.rmdir()
+    _log.info("flattened nested project %s -> %s (S2, D-2026-06-21-AB)", src, plot_root)
+    return True
 
 
 def workspace_root_from_plot_root(plot_root: Path) -> Path:

@@ -22,7 +22,19 @@ from plot_mcp.models import (
 
 
 def _project_dir(plot_root: Path, project_id: str) -> Path:
-    return plot_root / project_id
+    """Directory holding ``project_id``'s files.
+
+    S2 (D-2026-06-21-AB): one project per ``.noory/plot`` root, stored **flat**
+    — its files live directly under ``plot_root``. A legacy nested
+    ``{project_id}/`` folder is honoured only while it still physically holds a
+    ``project.json`` (un-migrated ``.plot`` read by discovery, or a multi-project
+    root the user hasn't reconciled). ``resolve_plot_root`` migrates a single
+    nested project up to the root lazily on open.
+    """
+    nested = plot_root / project_id
+    if (nested / "project.json").exists():
+        return nested
+    return plot_root
 
 
 def _project_file(plot_root: Path, project_id: str) -> Path:
@@ -45,7 +57,14 @@ def _canvas_file(
 
 def _ensure_project(plot_root: Path, project_id: str) -> Path:
     folder = _project_dir(plot_root, project_id)
-    if not folder.is_dir():
+    pf = folder / "project.json"
+    if not pf.exists():
+        raise FileNotFoundError(f"project not found: {project_id}")
+    # Flat layout (folder == plot_root) addresses the lone project by the
+    # root, so a mismatched id would otherwise silently address it. Verify
+    # the stored id. Nested layout encodes the id in the folder name, so it
+    # is already unambiguous (no extra read).
+    if folder == plot_root and _read_json(pf).get("id") != project_id:
         raise FileNotFoundError(f"project not found: {project_id}")
     return folder
 

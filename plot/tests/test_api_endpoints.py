@@ -783,9 +783,10 @@ def test_folder_post_creates_unique_path(
     assert second.status_code == 201
     assert second.json()["path"] == "core/mission-mission-2"
     # index.md is seeded inside the created folder (under the project scope).
-    # R9 (D-2026-06-10-G): artifacts live under .noory/plot/.
+    # R9 (D-2026-06-10-G): artifacts live under .noory/plot/. S2: flat layout —
+    # no {project_id} segment.
     assert (
-        Path(project_path) / ".noory/plot/alpha/core/mission-mission/index.md"
+        Path(project_path) / ".noory/plot/core/mission-mission/index.md"
     ).is_file()
 
 

@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.101.0] — 2026-06-22
+
+### Changed
+
+- **Flat storage: drop the `{project_id}/` folder layer** (**D-2026-06-21-AB**,
+  builds on D-2026-06-21-AA). The lone project's files now live directly under
+  `.noory/plot` (`.noory/plot/project.json`, `.noory/plot/foundation/canvas.json`,
+  …) — no intermediate `{project_id}/` folder. The layout concentrates in
+  `storage._project_dir` (returns the root itself when no nested `project.json`
+  exists; honours a legacy nested folder only while it survives), so every
+  derived path followed once the few self-built paths were routed through it.
+  `resolve_plot_root` lazily flattens a single nested project up to the root on
+  open; a forbidden multi-project root is left for the user to reconcile.
+  `_ensure_project` now verifies the stored `id` matches the requested one (flat
+  addresses the lone project by the root, so a wrong id 404s instead of
+  leaking it). **Requires sidecar rebuild** for the `.app`.
+
 ## [0.100.0] — 2026-06-21
 
 ### Changed

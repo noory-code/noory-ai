@@ -48,7 +48,7 @@ def test_publish_node_writes_to_kind_slug_version_layout(plot_root: Path) -> Non
     create_project(plot_root, "alpha", "Alpha")
     mid = _foundation_mission_id(plot_root, "alpha")
     publish_node(plot_root, "alpha", "foundation", mid)
-    expected = plot_root / "alpha" / "foundation" / "published" / "mission" / "mission" / "v2.0.md"
+    expected = plot_root / "foundation" / "published" / "mission" / "mission" / "v2.0.md"
     assert expected.is_file()
 
 
@@ -58,7 +58,7 @@ def test_publish_node_three_times_creates_three_version_files(plot_root: Path) -
     publish_node(plot_root, "alpha", "foundation", mid)
     publish_node(plot_root, "alpha", "foundation", mid)
     publish_node(plot_root, "alpha", "foundation", mid)
-    slug_dir = plot_root / "alpha" / "foundation" / "published" / "mission" / "mission"
+    slug_dir = plot_root / "foundation" / "published" / "mission" / "mission"
     versions = sorted(p.name for p in slug_dir.iterdir())
     assert versions == ["v2.0.md", "v3.0.md", "v4.0.md"]
 
@@ -71,7 +71,7 @@ def test_publish_node_three_times_creates_three_version_files(plot_root: Path) -
 def test_migration_moves_legacy_flat_files(plot_root: Path) -> None:
     """A pre-v0.23.0 layout (<canvas>/published/<kind>-<slug>-vN.M.md) is
     moved to <canvas>/published/<kind>/<slug>/vN.M.md on first call."""
-    canvas_dir = plot_root / "alpha" / "foundation"
+    canvas_dir = plot_root / "foundation"
     pub = canvas_dir / "published"
     pub.mkdir(parents=True)
     (pub / "mission-mission-v2.0.md").write_text("old", encoding="utf-8")
@@ -89,7 +89,7 @@ def test_migration_moves_legacy_flat_files(plot_root: Path) -> None:
 
 
 def test_migration_is_idempotent(plot_root: Path) -> None:
-    canvas_dir = plot_root / "alpha" / "foundation"
+    canvas_dir = plot_root / "foundation"
     pub = canvas_dir / "published"
     pub.mkdir(parents=True)
     (pub / "mission-mission-v2.0.md").write_text("old", encoding="utf-8")
@@ -103,7 +103,7 @@ def test_migration_is_idempotent(plot_root: Path) -> None:
 def test_migration_skips_when_destination_exists(plot_root: Path) -> None:
     """If the new layout already has a file for the same version, the
     legacy file is left in place (no overwrite)."""
-    canvas_dir = plot_root / "alpha" / "foundation"
+    canvas_dir = plot_root / "foundation"
     pub = canvas_dir / "published"
     (pub / "mission" / "mission").mkdir(parents=True)
     (pub / "mission" / "mission" / "v2.0.md").write_text("new", encoding="utf-8")
@@ -118,7 +118,7 @@ def test_migration_skips_when_destination_exists(plot_root: Path) -> None:
 
 def test_slug_to_id_migration_renames_folders(plot_root: Path) -> None:
     """v0.24.3 (D-2026-05-18-A): slug-folder layout → id-folder layout."""
-    canvas_dir = plot_root / "alpha" / "foundation"
+    canvas_dir = plot_root / "foundation"
     pub = canvas_dir / "published"
     # Seed pre-v0.24.3 layout: published/core_value/<slug>/v2.0.md
     (pub / "core_value" / "관용").mkdir(parents=True)
@@ -136,7 +136,7 @@ def test_slug_to_id_migration_renames_folders(plot_root: Path) -> None:
 
 
 def test_slug_to_id_migration_is_noop_when_id_equals_slug(plot_root: Path) -> None:
-    canvas_dir = plot_root / "alpha" / "foundation"
+    canvas_dir = plot_root / "foundation"
     pub = canvas_dir / "published"
     (pub / "mission" / "mission").mkdir(parents=True)
     (pub / "mission" / "mission" / "v2.0.md").write_text("existing", encoding="utf-8")
@@ -154,7 +154,7 @@ def test_slug_to_id_migration_is_noop_when_id_equals_slug(plot_root: Path) -> No
 def test_slug_to_id_migration_skips_when_id_folder_exists(plot_root: Path) -> None:
     """When both slug-folder and id-folder exist, leave slug in place
     for audit (don't merge / overwrite)."""
-    canvas_dir = plot_root / "alpha" / "foundation"
+    canvas_dir = plot_root / "foundation"
     pub = canvas_dir / "published"
     (pub / "core_value" / "관용").mkdir(parents=True)
     (pub / "core_value" / "관용" / "v2.0.md").write_text("slug-side", encoding="utf-8")
@@ -172,7 +172,7 @@ def test_slug_to_id_migration_skips_when_id_folder_exists(plot_root: Path) -> No
 
 
 def test_migration_ignores_non_matching_files(plot_root: Path) -> None:
-    canvas_dir = plot_root / "alpha" / "foundation"
+    canvas_dir = plot_root / "foundation"
     pub = canvas_dir / "published"
     pub.mkdir(parents=True)
     (pub / "README.md").write_text("docs", encoding="utf-8")

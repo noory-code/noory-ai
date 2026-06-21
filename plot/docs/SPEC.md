@@ -104,8 +104,10 @@ monorepo" — not "the monorepo as a whole". Workspace-level affordances
 - **Data root = `.noory/plot/` (v0.59.0, D-2026-06-10-G, OVERHAUL R9)** — every
   plugin's per-project artifacts consolidate under ONE `.noory/` dotfolder per
   workspace (`.noory/plot/`, `.noory/distill/`, …), so plugin mode and app mode
-  share artifacts continuously. Projects live at `.noory/plot/{project_id}/`.
-  A legacy pre-R9 `.plot/` root is migrated lazily on first open (one
+  share artifacts continuously. A project lives **flat** directly under
+  `.noory/plot/` (`project.json` + canvas dirs, no `{project_id}/` layer —
+  one project per dir, D-2026-06-21-AB); a legacy nested `{project_id}/` is
+  flattened up on open. A legacy pre-R9 `.plot/` root is migrated lazily on first open (one
   `shutil.move`); if BOTH roots exist, `.noory/plot` wins and `.plot` is left
   untouched for the user to reconcile. Workspace discovery also peeks at
   legacy `.plot/` roots (read-only) so never-opened workspaces stay visible.

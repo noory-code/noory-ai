@@ -208,10 +208,11 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
             f"D-2026-06-21-AA): {plot_root} already holds {existing[0].id!r}. "
             "Create the new project in a sibling directory."
         )
+    # S2 (D-2026-06-21-AB): flat layout — project files land directly under
+    # ``plot_root`` (``_project_dir`` returns it when no nested project.json
+    # exists). The one-per-dir guard above subsumes the old nested dup-id check.
     folder = _project_dir(plot_root, project_id)
-    if folder.exists():
-        raise FileExistsError(f"project already exists: {project_id}")
-    folder.mkdir(parents=True)
+    folder.mkdir(parents=True, exist_ok=True)
     # D-2026-06-11-D: Plot never silently runs ``git init``. The first
     # tag/publish on a workspace without a repo replies needs_git_init=true;
     # the user accepts via POST /api/workspace/git-init. Project creation
@@ -253,9 +254,17 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
 
 
 def delete_project(plot_root: Path, project_id: str) -> None:
-    folder = _project_dir(plot_root, project_id)
-    if not folder.exists():
-        raise FileNotFoundError(f"project not found: {project_id}")
-    shutil.rmtree(folder)
+    folder = _ensure_project(plot_root, project_id)
+    if folder == plot_root:
+        # S2 flat layout: the project IS the root's contents. Wipe them but
+        # keep the ``.noory/plot`` dir itself, so the dir picker shows it as an
+        # empty "create here" slot rather than a vanished workspace.
+        for child in plot_root.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+    else:
+        shutil.rmtree(folder)
 
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from plot_mcp.folder_io import _canvas_file, _project_file, _write_json
+from plot_mcp.folder_io import _canvas_file, _project_dir, _project_file, _write_json
 from plot_mcp.migrate_v01_models import _normalise_legacy_node_kinds
 from plot_mcp.models import ProjectNode
 
@@ -36,7 +36,7 @@ def upgrade_foundation_canvas_if_needed(plot_root: Path, project_id: str) -> boo
       4. If no Project anchor exists, synthesise one at centre using the
          project's ``ProjectDoc.name`` as label.
     """
-    project_dir = plot_root / project_id
+    project_dir = _project_dir(plot_root, project_id)
     legacy_dir = project_dir / "core"
     new_dir = project_dir / "foundation"
 
