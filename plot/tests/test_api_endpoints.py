@@ -678,10 +678,12 @@ def test_file_cannot_climb_into_other_project(
     app_client: tuple[TestClient, str],
 ) -> None:
     """v0.8 scoping: a file API call for project ``alpha`` can't walk up
-    to ``beta`` via ``../beta/...``."""
+    out of its own directory via ``../beta/...``. The escaping path is
+    rejected by ``resolve_safe_path`` regardless of whether the climbed-to
+    target exists — under one-project-per-dir (D-2026-06-21-AA) a sibling
+    ``beta`` can't even share ``alpha``'s root, so only ``alpha`` is created."""
     client, project_path = app_client
     _create(client, project_path, "alpha", "Alpha")
-    _create(client, project_path, "beta", "Beta")
     resp = client.get(
         "/api/files",
         params={

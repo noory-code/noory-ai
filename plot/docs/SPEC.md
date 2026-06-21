@@ -28,11 +28,14 @@ A **workspace is a monorepo, and a project is one service inside it**
 services in `services/api/` and `services/billing/`, are two **separate
 projects** in Plot — each with its own Foundation / Actors / Services /
 Service-Detail canvases — sitting inside ONE workspace that shares ONE
-git repo (D-2026-06-11-C/D) and ONE `.noory/` dotfolder (R9). The viewer
-**recursively discovers** every project under the launch root
-(`/api/workspace/projects`) and shows them in ONE sidebar list, each with
-a muted **dir label** (its path relative to the workspace root; root-level
-shows the localized "root" label).
+git repo at its root (D-2026-06-11-C/D). Under **one-project-per-dir**
+(D-2026-06-21-AA) each service lives in its **own** directory with its
+**own** `.noory/plot` (R9) holding exactly one project — `create_project`
+rejects a second project under a root that already has one
+(`FileExistsError` → 409). The viewer **recursively discovers** every
+project under the launch root (`/api/workspace/projects`) and shows them
+in ONE sidebar list, each with a muted **dir label** (its path relative to
+the workspace root; root-level shows the localized "root" label).
 
 The term **"project"** in user-facing strings means "one service in the
 monorepo" — not "the monorepo as a whole". Workspace-level affordances

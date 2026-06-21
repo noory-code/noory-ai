@@ -56,6 +56,22 @@ def test_discovery_sees_noory_projects(tmp_path: Path) -> None:
     assert [p.id for p, _rel in found] == ["proj-a"]
 
 
+def test_discovery_sees_sibling_dir_projects(tmp_path: Path) -> None:
+    """One-project-per-dir (D-2026-06-21-AA): two services live in sibling
+    directories, each with its own `.noory/plot`. Recursive discovery still
+    surfaces both — the guard is on the create *write* path, not on the
+    discovery *read* path (S4 coherence)."""
+    web = tmp_path / "apps" / "web"
+    api = tmp_path / "services" / "api"
+    web.mkdir(parents=True)
+    api.mkdir(parents=True)
+    create_project(resolve_plot_root(str(web)), "web", "Web")
+    create_project(resolve_plot_root(str(api)), "api", "Api")
+    found = discover_projects(Path(str(tmp_path)))
+    assert {p.id for p, _rel in found} == {"web", "api"}
+    assert {rel for _p, rel in found} == {"apps/web", "services/api"}
+
+
 def test_discovery_sees_legacy_only_workspaces(tmp_path: Path) -> None:
     """A workspace that was never opened post-R9 still shows its projects in
     discovery (read-only peek at `.plot/`) — migration happens on open."""

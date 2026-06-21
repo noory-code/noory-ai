@@ -143,6 +143,33 @@ def test_create_duplicate_raises(plot_root: Path) -> None:
         create_project(plot_root, "alpha", "Again")
 
 
+def test_create_second_project_in_same_root_rejected(plot_root: Path) -> None:
+    """One project per ``.noory/plot`` dir (one-project-per-dir, S3 /
+    D-2026-06-21-AA). Creating a *second* project — even with a fresh id —
+    under a root that already holds one is rejected. ``FileExistsError`` is
+    what the HTTP create endpoint maps to 409. Multiple services live in
+    sibling directories, each with its own ``.noory/plot``.
+    """
+    create_project(plot_root, "alpha", "Alpha")
+    with pytest.raises(FileExistsError):
+        create_project(plot_root, "beta", "Beta")
+
+
+def test_create_in_sibling_dirs_is_allowed(tmp_path: Path) -> None:
+    """Two projects in sibling workspace directories — each with its own
+    ``.noory/plot`` — both succeed. The one-per-dir guard is per-root, not
+    per-workspace (D-2026-06-21-AA / D-2026-06-12-A narrowed).
+    """
+    (tmp_path / "web").mkdir()
+    (tmp_path / "api").mkdir()
+    root_a = resolve_plot_root(str(tmp_path / "web"))
+    root_b = resolve_plot_root(str(tmp_path / "api"))
+    create_project(root_a, "web", "Web")
+    create_project(root_b, "api", "Api")
+    assert read_project(root_a, "web").id == "web"
+    assert read_project(root_b, "api").id == "api"
+
+
 # ---------------------------------------------------------------------------
 # read / write
 # ---------------------------------------------------------------------------

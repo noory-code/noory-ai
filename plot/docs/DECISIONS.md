@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-21-AA — one project per `.noory/plot` dir (one-project-per-dir); multiple services = sibling directories
+
+- **What:** `create_project` now rejects creating a *second* project under a `.noory/plot` root that already holds one — even with a fresh id. The guard is `enumerate_projects(plot_root)` non-empty → `FileExistsError`, which the HTTP create endpoint already maps to **409**. `create_project` is the single chokepoint, so this covers both the viewer (`POST /api/projects`) and the MCP tool (`create_project_tool`). Multiple services in a monorepo go in **sibling directories**, each with its own `.noory/plot` (e.g. `apps/web/.noory/plot/{id}` + `services/api/.noory/plot/{id}`). The guard is on the **write** path only — `enumerate_projects` / `discover_projects` still read N projects under a root, so pre-existing multi-project roots and recursive discovery of sibling-dir projects keep working unchanged.
+- **Why:** Stacking multiple `project_id` folders under one `.noory/plot` (e.g. `Banas/.noory/plot/{banas, proj-mqmtt316}`) was confusing and let stray/orphaned projects accumulate invisibly. Pinning "one project per dir" makes each project's home unambiguous (its own directory) while leaving the monorepo-of-services model intact via sibling dirs. The user fixed this at a moment with no live data at risk ("지금 아니면 못 하는, 사용자 없을 때 깨는 변경").
+- **Alternatives:** (a) keep allowing N projects per root (status quo) — rejected: the stacking confusion is the problem being solved. (b) Also flatten the `{project_id}/` folder layer now so a root holds the canvases directly (S2) — deferred: a large migration touching every storage path + schema export; the handoff recommends weighing cost separately. The 409 guard stands on its own regardless of internal layout. (c) Enforce on `enumerate_projects`/discovery too — rejected: would break reading legacy multi-project roots and recursive sibling discovery; the write-path guard is sufficient and non-destructive.
+- **Approval:** Accepted by user, 2026-06-21 (handoff `docs/plans/one-project-per-dir-handoff.md` §사용자 결정; this session implements it). Narrows **D-2026-06-12-A**.
+- **Spec impact:** Engine `plot_mcp/project_io.py::create_project` (guard). Root `docs/specs/storage-publish.md` §저장 레이아웃 + this repo's `SPEC.md` §Workspace & projects gain the one-per-dir line. Pinned by `tests/test_folder_io.py::test_create_second_project_in_same_root_rejected` / `::test_create_in_sibling_dirs_is_allowed` and `tests/test_noory_migration.py::test_discovery_sees_sibling_dir_projects`. Engine 669 green, mypy + ruff clean. **Requires sidecar rebuild** (S7) for the `.app`.
+
 ### D-2026-06-21-Z — chat shows the CLI's actual default model when it reports one (claude-code only)
 
 - **What:** The chat model selector's "default" option now shows the model the CLI actually loaded — e.g. `default · claude-opus-4-8` — instead of a bare `default`, **when** the CLI reports it. Mechanics: the engine's claude-code provider parses the stream-json `system`/`init` frame's `model` and emits a new `ChatStreamEvent(type="meta", model=…)`; `useChatStream` records it as `reportedModel`; `ChatDock` lifts it into the `ChatModelSelector`'s default-option label. **Asymmetry by design:** only claude-code reports its model, so codex / gemini keep a plain `default`. **Timing:** the value is only known *after the first turn* of a session (the init frame), and is reset on provider change so a stale model can't leak across CLIs. An explicit user override is unchanged (the picked model stays selected; `meta` only relabels the default option).
@@ -13239,6 +13247,13 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-06-12. Spec pinned at SPEC.md
   §Workspace & projects → opening paragraph rewritten to name the
   monorepo / service relationship explicitly.
+- **NARROWED by D-2026-06-21-AA (2026-06-21):** "a monorepo holds N
+  projects" no longer means N `project_id` folders *under one
+  `.noory/plot`*. Each project gets its **own** directory with its own
+  `.noory/plot` (one project per dir); the N services of a monorepo are
+  **sibling directories** discovered recursively. The meaning here (a
+  workspace = a monorepo of services) is unchanged — only the disk
+  packing is narrowed from "stack-or-sibling" to "sibling only".
 
 ### D-2026-06-12-B — Wire-boundary domain validation via parseEntity (Track 1.4)
 

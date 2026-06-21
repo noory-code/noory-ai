@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.100.0] — 2026-06-21
+
+### Changed
+
+- **One project per `.noory/plot` dir (one-project-per-dir)** (**D-2026-06-21-AA**,
+  narrows D-2026-06-12-A). `create_project` now rejects a *second* project under a
+  root that already holds one — `enumerate_projects(plot_root)` non-empty →
+  `FileExistsError`, which the create endpoint maps to **409**. It is the single
+  chokepoint, so this covers both the viewer (`POST /api/projects`) and the MCP
+  `create_project_tool`. Multiple services in a monorepo go in **sibling
+  directories**, each with its own `.noory/plot`. The guard is on the **write**
+  path only — `enumerate_projects` / `discover_projects` still read N projects, so
+  pre-existing multi-project roots and recursive sibling-dir discovery are
+  unaffected. **Requires sidecar rebuild** for the `.app`.
+
 ## [0.99.0] — 2026-06-21
 
 ### Added

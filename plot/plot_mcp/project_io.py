@@ -193,8 +193,21 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     Service-detail canvases join the relevant service folder later via
     ``sync_details_with_overview``.
 
-    Raises ``FileExistsError`` if ``project_id`` is taken.
+    Raises ``FileExistsError`` if ``project_id`` is taken, or — per
+    one-project-per-dir (D-2026-06-21-AA, narrowing D-2026-06-12-A) — if
+    ``plot_root`` already holds *any* project. A second service goes in a
+    sibling directory with its own ``.noory/plot``. The HTTP create endpoint
+    maps both cases to 409; this is the single chokepoint covering viewer + MCP.
     """
+    from plot_mcp.workspace import enumerate_projects
+
+    existing = enumerate_projects(plot_root)
+    if existing:
+        raise FileExistsError(
+            "one project per .noory/plot dir (one-project-per-dir, "
+            f"D-2026-06-21-AA): {plot_root} already holds {existing[0].id!r}. "
+            "Create the new project in a sibling directory."
+        )
     folder = _project_dir(plot_root, project_id)
     if folder.exists():
         raise FileExistsError(f"project already exists: {project_id}")
