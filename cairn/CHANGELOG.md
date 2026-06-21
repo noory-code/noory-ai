@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0] — 2026-06-21
+
+Cairn is now a Claude Code plugin, so agents can discover and use it.
+
+### Added
+
+- **Plugin manifest** (`.claude-plugin/plugin.json`).
+- **Skills** — `cairn-help` (what it is + commands) and `cairn-record` (how to
+  write a well-formed decision: context / decision / alternatives / consequences,
+  status, about, supersedes).
+
 ## [0.2.0] — 2026-06-21
 
 Adds the link a decision-type work-item's gate needs.
