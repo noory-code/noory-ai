@@ -32,7 +32,11 @@ from typing import Any, Literal, cast
 
 import tomli_w
 
-ProviderName = Literal["claude-code", "codex", "gemini"]
+# gemini (agy) chat transport temporarily removed 2026-06-23 — re-add in October
+# (untestable for now, user direction). The provider impl lives in git history
+# (chat_providers/gemini.py + the agy model branch); restore the literal + the
+# _PROVIDERS entry + GeminiProvider wiring to bring it back.
+ProviderName = Literal["claude-code", "codex"]
 
 _PLOT_SERVER_NAME = "plot"
 
@@ -65,19 +69,6 @@ _PROVIDERS: dict[ProviderName, _ProviderSpec] = {
         config_relative=(".codex", "config.toml"),
         config_format="toml",
         servers_path=("mcp_servers",),
-        extra_entry_keys={},
-    ),
-    "gemini": _ProviderSpec(
-        name="gemini",
-        # Chat transport is the `agy` (Antigravity) CLI (D-2026-06-22-A), so the
-        # presence check looks for `agy`, not the legacy `gemini` binary.
-        cli_command="agy",
-        # NOTE: MCP registration still targets the legacy `.gemini/settings.json`.
-        # Registering Plot's MCP server into agy (via `agy mcp`) is a separate
-        # follow-up — D-2026-06-22-A covers the chat transport only.
-        config_relative=(".gemini", "settings.json"),
-        config_format="json",
-        servers_path=("mcpServers",),
         extra_entry_keys={},
     ),
 }

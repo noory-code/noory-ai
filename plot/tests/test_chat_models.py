@@ -1,14 +1,14 @@
 """Per-provider model catalogue parsing (D-2026-06-22-B).
 
 The chat model selector is populated from each CLI's own live catalogue
-instead of a hardcoded list (reverses D-2026-06-16-C for codex/gemini):
+instead of a hardcoded list (reverses D-2026-06-16-C for codex):
 
-  * gemini → ``agy models`` plain-text lines (effort baked into the label,
-    passed verbatim to ``--model``).
   * codex  → ``~/.codex/models_cache.json`` (``visibility == "list"`` and
     ``supported_in_api``).
   * claude → the CLI's own documented aliases (still static — claude
     publishes stable aliases, D-2026-06-16-C).
+
+(gemini → ``agy models`` temporarily removed 2026-06-23, re-add in October.)
 """
 
 from __future__ import annotations
@@ -17,21 +17,8 @@ from plot_mcp.chat_models import (
     CLAUDE_MODELS,
     ModelOption,
     list_models,
-    parse_agy_models,
     parse_codex_models,
 )
-
-
-def test_parse_agy_models_one_option_per_nonempty_line() -> None:
-    out = parse_agy_models(
-        "Gemini 3.5 Flash (Medium)\nGemini 3.1 Pro (Low)\n\n  \nGemini 3 Flash\n"
-    )
-    # id == label: agy accepts the effort-laden label verbatim as --model.
-    assert out == [
-        ModelOption(id="Gemini 3.5 Flash (Medium)", label="Gemini 3.5 Flash (Medium)"),
-        ModelOption(id="Gemini 3.1 Pro (Low)", label="Gemini 3.1 Pro (Low)"),
-        ModelOption(id="Gemini 3 Flash", label="Gemini 3 Flash"),
-    ]
 
 
 def _codex_entry(
@@ -105,18 +92,6 @@ def test_claude_models_are_the_documented_aliases() -> None:
     assert [m.id for m in CLAUDE_MODELS] == ["fable", "opus", "sonnet"]
 
 
-def test_list_models_gemini_runs_agy_and_parses(tmp_path) -> None:
-    calls: list[list[str]] = []
-
-    def fake_runner(cmd: list[str]) -> str:
-        calls.append(cmd)
-        return "Gemini 3.5 Flash (Medium)\nGemini 3 Flash\n"
-
-    out = list_models("gemini", agy_runner=fake_runner)
-    assert calls == [["agy", "models"]]
-    assert [m.id for m in out] == ["Gemini 3.5 Flash (Medium)", "Gemini 3 Flash"]
-
-
 def test_list_models_codex_reads_cache(tmp_path) -> None:
     cache_file = tmp_path / "models_cache.json"
     cache_file.write_text(
@@ -131,13 +106,6 @@ def test_list_models_codex_reads_cache(tmp_path) -> None:
 def test_list_models_codex_missing_cache_returns_empty(tmp_path) -> None:
     out = list_models("codex", codex_cache_path=tmp_path / "nope.json")
     assert out == []
-
-
-def test_list_models_gemini_runner_failure_returns_empty() -> None:
-    def boom(cmd: list[str]) -> str:
-        raise FileNotFoundError("agy not found")
-
-    assert list_models("gemini", agy_runner=boom) == []
 
 
 def test_list_models_claude_is_static() -> None:

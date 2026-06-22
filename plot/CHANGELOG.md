@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.109.0] — 2026-06-23
+
+### Removed
+
+- **Gemini (agy) chat provider temporarily removed** (**D-2026-06-23-A**), re-add
+  in October — untestable for now (user direction). Dropped from the engine:
+  `ProviderName` literal + `_PROVIDERS` entry (`mcp_registration`), the
+  `chat_providers/gemini.py` driver, `GeminiProvider` wiring (`chat_session`),
+  the `agy models` catalogue branch + `parse_agy_models` (`chat_models`), and
+  the gemini cases in the mcp/chat endpoint validation sets. The provider impl
+  lives in git history; restoring the literal + `_PROVIDERS` entry +
+  `GeminiProvider` brings it back. Claude Code + Codex unaffected.
+  Engine 596 green, mypy strict + ruff clean.
+
 ## [0.108.0] — 2026-06-23
 
 ### Removed

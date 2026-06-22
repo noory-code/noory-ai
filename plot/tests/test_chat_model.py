@@ -18,7 +18,6 @@ from plot_mcp.chat_provider import (
 )
 from plot_mcp.chat_providers.claude_code import ClaudeCodeProvider
 from plot_mcp.chat_providers.codex import CodexProvider
-from plot_mcp.chat_providers.gemini import GeminiProvider
 
 
 def test_selection_roundtrips_model(tmp_path: Path) -> None:
@@ -76,14 +75,6 @@ def test_codex_unknown_suffix_is_not_treated_as_effort(tmp_path: Path) -> None:
     cmd = p._build_command("hi")
     assert cmd[cmd.index("--model") + 1] == "some:thing"
     assert "model_reasoning_effort" not in " ".join(cmd)
-
-
-def test_gemini_command_includes_model_when_set(tmp_path: Path) -> None:
-    p = GeminiProvider(workspace_root=tmp_path)
-    p.set_model("gemini-2.5-pro")
-    cmd = p._build_command("hi")
-    assert "--model" in cmd
-    assert "gemini-2.5-pro" in cmd
 
 
 def test_claude_command_includes_model_when_set(tmp_path: Path) -> None:

@@ -29,7 +29,6 @@ from plot_mcp.chat_session import (
     ChatStreamEvent,
     ClaudeCodeProvider,
     CodexProvider,
-    GeminiProvider,
     _parse_stream_line,
 )
 
@@ -566,16 +565,6 @@ def test_default_registry_factory_builds_codex_provider(tmp_path: Path) -> None:
     assert isinstance(provider, CodexProvider)
 
 
-def test_default_registry_factory_builds_gemini_provider(tmp_path: Path) -> None:
-    from plot_mcp.chat_session import GeminiProvider
-
-    registry = ChatSessionRegistry()
-    ws = tmp_path / "ws"
-    ws.mkdir()
-    provider = registry.get_or_create(ws, "gemini")
-    assert isinstance(provider, GeminiProvider)
-
-
 @pytest.fixture(autouse=True)
 def _isolate_event_loop() -> Any:
     yield
@@ -699,68 +688,3 @@ async def test_codex_first_turn_falls_back_to_fresh_exec_when_no_thread_id(
 
     assert "resume" not in b.spawn_args
     assert provider.session_id is None
-
-
-# ---------------------------------------------------------------------------
-# GeminiProvider — `agy -p` plain-text passthrough + stateless (D-2026-06-22-A)
-# ---------------------------------------------------------------------------
-
-
-async def test_gemini_agy_stream_passes_through_plain_text_lines(
-    tmp_path: Path,
-) -> None:
-    # agy -p prints plain text (no stream-json); each stdout line is a delta,
-    # newline preserved so the reassembled turn keeps its line structure.
-    process = _FakeProcess(
-        stdout_lines=[b"Here \n", b"are the files.\n"],
-        returncode=0,
-    )
-    ws = tmp_path / "ws"
-    ws.mkdir()
-    provider = GeminiProvider(
-        workspace_root=ws,
-        cli_path="agy",
-        subprocess_factory=_build_fake_factory(process),
-    )
-    events = await _drain(provider, "list files")
-    types = [e.type for e in events]
-    assert types == ["turn_start", "delta", "delta", "turn_complete"]
-    assert events[1].text == "Here \n"
-    assert events[2].text == "are the files.\n"
-    assert events[3].text == "Here \nare the files.\n"
-    # agy emits no session id on stdout — the provider stays stateless.
-    assert provider.session_id is None
-
-
-async def test_gemini_agy_command_shape_and_no_resume(tmp_path: Path) -> None:
-    a = _FakeProcess(stdout_lines=[b"ok\n"], returncode=0)
-    b = _FakeProcess(stdout_lines=[b"ok2\n"], returncode=0)
-    queue = [a, b]
-
-    async def factory(*cmd: str, cwd: str | None = None, **_: Any) -> _FakeProcess:
-        proc = queue.pop(0)
-        proc.spawn_args = list(cmd)
-        proc.spawn_cwd = cwd
-        return proc
-
-    ws = tmp_path / "ws"
-    ws.mkdir()
-    provider = GeminiProvider(
-        workspace_root=ws, cli_path="agy", subprocess_factory=factory
-    )
-    await _drain(provider, "first")
-    await _drain(provider, "second")
-
-    # `agy -p --dangerously-skip-permissions <prompt>` — no stream-json frame.
-    assert a.spawn_args[0] == "agy"
-    assert "-p" in a.spawn_args
-    assert "--dangerously-skip-permissions" in a.spawn_args
-    assert "--output-format" not in a.spawn_args
-    assert "stream-json" not in a.spawn_args
-    assert a.spawn_args[-1] == "first"
-
-    # Stateless: no resume flag carried into the second turn (D-2026-06-22-A) —
-    # agy's --continue is most-recent-global and would cross per-scope threads.
-    assert "--continue" not in b.spawn_args
-    assert "--resume" not in b.spawn_args
-    assert b.spawn_args[-1] == "second"

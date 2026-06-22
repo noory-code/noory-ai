@@ -29,14 +29,14 @@ def client() -> TestClient:
     return TestClient(create_http_app(hub=BroadcastHub(enable_watchers=False)))
 
 
-def test_providers_endpoint_lists_all_three(
+def test_providers_endpoint_lists_all(
     fake_home: Path, client: TestClient
 ) -> None:
     resp = client.get("/api/mcp/providers")
     assert resp.status_code == 200, resp.text
     body = resp.json()
     names = [p["name"] for p in body["providers"]]
-    assert sorted(names) == ["claude-code", "codex", "gemini"]
+    assert sorted(names) == ["claude-code", "codex"]
 
 
 def test_providers_endpoint_reports_unregistered_on_fresh_home(
@@ -65,17 +65,6 @@ def test_register_endpoint_writes_codex_config(
         (fake_home / ".codex" / "config.toml").read_text(encoding="utf-8")
     )
     assert "plot" in cfg["mcp_servers"]
-
-
-def test_register_endpoint_writes_gemini_config(
-    fake_home: Path, client: TestClient
-) -> None:
-    resp = client.post("/api/mcp/providers/gemini/register")
-    assert resp.status_code == 201, resp.text
-    cfg = json.loads(
-        (fake_home / ".gemini" / "settings.json").read_text(encoding="utf-8")
-    )
-    assert "plot" in cfg["mcpServers"]
 
 
 def test_unregister_endpoint_removes_entry(

@@ -50,7 +50,7 @@ __all__ = [
 
 # Runtime guard for the `provider` query param (ProviderName is a static
 # Literal, so this is its runtime mirror).
-_MODEL_PROVIDERS: frozenset[str] = frozenset({"claude-code", "codex", "gemini"})
+_MODEL_PROVIDERS: frozenset[str] = frozenset({"claude-code", "codex"})
 
 
 async def chat_models_endpoint(request: Request) -> JSONResponse:

@@ -23,7 +23,6 @@ from plot_mcp.chat_providers.base import (
 )
 from plot_mcp.chat_providers.claude_code import ClaudeCodeProvider, _parse_claude_line
 from plot_mcp.chat_providers.codex import CodexProvider
-from plot_mcp.chat_providers.gemini import GeminiProvider
 from plot_mcp.mcp_registration import ProviderName
 
 # Back-compat alias — v0.64.0 tests imported ``_parse_stream_line`` from
@@ -42,7 +41,6 @@ __all__ = [
     "ChatStreamEventType",
     "ClaudeCodeProvider",
     "CodexProvider",
-    "GeminiProvider",
     "chat_registry",
     "_parse_stream_line",
 ]
@@ -62,8 +60,6 @@ def _default_provider_factory(workspace_root: Path, provider_name: ProviderName)
         return ClaudeCodeProvider(workspace_root=workspace_root)
     if provider_name == "codex":
         return CodexProvider(workspace_root=workspace_root)
-    if provider_name == "gemini":
-        return GeminiProvider(workspace_root=workspace_root)
     # ``ProviderName`` is a Literal — mypy enforces; this is the runtime
     # safety net for an unexpected value (corrupt selection file, future
     # provider added to the literal but not here).

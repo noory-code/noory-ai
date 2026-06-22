@@ -300,12 +300,12 @@ def test_chat_send_dispatches_each_provider_to_its_own_session(
         "/api/chat/send",
         json={"project_path": str(workspace), "message": "a"},
     )
-    _select_provider(client, workspace, "gemini")
+    _select_provider(client, workspace, "claude-code")
     client.post(
         "/api/chat/send",
         json={"project_path": str(workspace), "message": "b"},
     )
-    assert [name for (_, name) in calls] == ["codex", "gemini"]
+    assert [name for (_, name) in calls] == ["codex", "claude-code"]
 
 
 def test_chat_reset_drops_all_provider_sessions_for_workspace(

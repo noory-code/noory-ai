@@ -55,7 +55,7 @@ async def mcp_providers_endpoint(_request: Request) -> JSONResponse:
     )
 
 
-_VALID_PROVIDERS: frozenset[str] = frozenset({"claude-code", "codex", "gemini"})
+_VALID_PROVIDERS: frozenset[str] = frozenset({"claude-code", "codex"})
 
 
 def _provider_from_path(request: Request) -> ProviderName | None:
@@ -64,8 +64,6 @@ def _provider_from_path(request: Request) -> ProviderName | None:
         return "claude-code"
     if raw == "codex":
         return "codex"
-    if raw == "gemini":
-        return "gemini"
     return None
 
 

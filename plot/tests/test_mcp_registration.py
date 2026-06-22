@@ -59,7 +59,7 @@ def test_detect_reports_missing_when_cli_absent(
 ) -> None:
     monkeypatch.setenv("PATH", "/nonexistent")
     statuses = detect_providers()
-    for name in ("claude-code", "codex", "gemini"):
+    for name in ("claude-code", "codex"):
         assert statuses[name].installed is False
         assert statuses[name].registered is False
 
@@ -69,36 +69,14 @@ def test_detect_reports_installed_when_cli_on_path(
 ) -> None:
     bin_dir = fake_home / ".bin"
     bin_dir.mkdir(exist_ok=True)
-    # The gemini provider's chat transport is `agy` (D-2026-06-22-A), so its
-    # presence is the `agy` binary, not `gemini`.
-    for cli in ("claude", "codex", "agy"):
+    for cli in ("claude", "codex"):
         _ensure_cli(fake_home, cli)
     monkeypatch.setenv("PATH", f"{bin_dir}:/usr/bin")
     statuses = detect_providers()
-    for name in ("claude-code", "codex", "gemini"):
+    for name in ("claude-code", "codex"):
         assert statuses[name].installed is True
         # Nothing registered yet.
         assert statuses[name].registered is False
-
-
-def test_gemini_detection_targets_agy_transport(
-    fake_home: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    # D-2026-06-22-A: gemini chat runs through `agy`, so a machine with `agy`
-    # but no legacy `gemini` binary must still show the gemini provider as
-    # installed (and vice-versa: bare `gemini` with no `agy` is NOT usable).
-    bin_dir = fake_home / ".bin"
-    bin_dir.mkdir(exist_ok=True)
-    _ensure_cli(fake_home, "agy")
-    monkeypatch.setenv("PATH", f"{bin_dir}:/usr/bin")
-    assert detect_providers()["gemini"].installed is True
-
-    bin_dir2 = fake_home / ".bin2"
-    bin_dir2.mkdir(exist_ok=True)
-    (bin_dir2 / "gemini").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-    (bin_dir2 / "gemini").chmod(0o755)
-    monkeypatch.setenv("PATH", f"{bin_dir2}:/usr/bin")
-    assert detect_providers()["gemini"].installed is False
 
 
 # ---------------------------------------------------------------------------
@@ -227,81 +205,18 @@ def test_unregister_codex_removes_plot_only(
 
 
 # ---------------------------------------------------------------------------
-# Gemini (~/.gemini/settings.json)
-# ---------------------------------------------------------------------------
-
-
-def test_register_gemini_creates_config_when_missing(
-    fake_home: Path, plugin_root: Path
-) -> None:
-    register_plot("gemini", plugin_root)
-    cfg = json.loads(
-        (fake_home / ".gemini" / "settings.json").read_text(encoding="utf-8")
-    )
-    plot = cfg["mcpServers"]["plot"]
-    assert plot["command"] == "uv"
-    assert isinstance(plot["args"], list)
-    assert str(plugin_root) in plot["args"]
-
-
-def test_register_gemini_preserves_sibling_entries(
-    fake_home: Path, plugin_root: Path
-) -> None:
-    cfg_path = fake_home / ".gemini" / "settings.json"
-    cfg_path.parent.mkdir(parents=True)
-    cfg_path.write_text(
-        json.dumps(
-            {
-                "mcpServers": {
-                    "pencil": {"command": "/usr/local/bin/pencil-mcp", "env": {}}
-                },
-                "theme": "dark",
-            }
-        ),
-        encoding="utf-8",
-    )
-    register_plot("gemini", plugin_root)
-    cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
-    assert cfg["mcpServers"]["pencil"]["command"] == "/usr/local/bin/pencil-mcp"
-    assert cfg["mcpServers"]["plot"]["command"] == "uv"
-    assert cfg["theme"] == "dark"
-
-
-def test_unregister_gemini_removes_plot_only(
-    fake_home: Path, plugin_root: Path
-) -> None:
-    cfg_path = fake_home / ".gemini" / "settings.json"
-    cfg_path.parent.mkdir(parents=True)
-    cfg_path.write_text(
-        json.dumps(
-            {
-                "mcpServers": {
-                    "pencil": {"command": "/usr/local/bin/pencil-mcp"},
-                    "plot": {"command": "uv"},
-                },
-            }
-        ),
-        encoding="utf-8",
-    )
-    unregister_plot("gemini")
-    cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
-    assert "plot" not in cfg["mcpServers"]
-    assert "pencil" in cfg["mcpServers"]
-
-
-# ---------------------------------------------------------------------------
 # is_plot_registered — used by detect
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("provider", ["claude-code", "codex", "gemini"])
+@pytest.mark.parametrize("provider", ["claude-code", "codex"])
 def test_is_plot_registered_false_when_no_config(
     fake_home: Path, provider: ProviderName
 ) -> None:
     assert is_plot_registered(provider) is False
 
 
-@pytest.mark.parametrize("provider", ["claude-code", "codex", "gemini"])
+@pytest.mark.parametrize("provider", ["claude-code", "codex"])
 def test_is_plot_registered_true_after_register(
     fake_home: Path, plugin_root: Path, provider: ProviderName
 ) -> None:
@@ -309,7 +224,7 @@ def test_is_plot_registered_true_after_register(
     assert is_plot_registered(provider) is True
 
 
-@pytest.mark.parametrize("provider", ["claude-code", "codex", "gemini"])
+@pytest.mark.parametrize("provider", ["claude-code", "codex"])
 def test_is_plot_registered_false_after_unregister(
     fake_home: Path, plugin_root: Path, provider: ProviderName
 ) -> None:

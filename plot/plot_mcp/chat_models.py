@@ -1,13 +1,9 @@
 """Per-provider chat model catalogue (D-2026-06-22-B).
 
 Populates the in-app chat model selector from each CLI's own live catalogue
-instead of a hardcoded list (reverses D-2026-06-16-C for codex/gemini, which
-went stale immediately as vendors shipped new models):
+instead of a hardcoded list (reverses D-2026-06-16-C for codex, which went
+stale immediately as vendors shipped new models):
 
-  * gemini → ``agy models`` plain-text lines. agy prints model×effort labels
-    ("Gemini 3.5 Flash (Medium)") which it also accepts verbatim as
-    ``--model`` (verified), so ``id == label`` and effort needs no separate
-    knob for gemini.
   * codex  → ``~/.codex/models_cache.json`` (every ``visibility == "list"`` +
     ``supported_in_api`` model; codex keeps it fresh). Each model is expanded
     into one combined entry per ``supported_reasoning_levels`` (D-2026-06-22-C):
@@ -17,15 +13,15 @@ went stale immediately as vendors shipped new models):
   * claude → the CLI's own documented aliases (still static — claude publishes
     stable aliases, D-2026-06-16-C).
 
-Fail-soft: any source error (agy absent, cache missing / unreadable) yields an
-empty list so the selector falls back to its Custom… free-text entry.
+(gemini → ``agy models`` temporarily removed 2026-06-23, re-add in October.)
+
+Fail-soft: any source error (cache missing / unreadable) yields an empty list
+so the selector falls back to its Custom… free-text entry.
 """
 
 from __future__ import annotations
 
 import json
-import subprocess
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -55,8 +51,6 @@ _DEFAULT_CODEX_CACHE = Path.home() / ".codex" / "models_cache.json"
 # plain capitalize for any level the cache adds later.
 _EFFORT_LABEL = {"low": "Low", "medium": "Medium", "high": "High", "xhigh": "xHigh"}
 
-AgyRunner = Callable[[list[str]], str]
-
 
 def _codex_reasoning_efforts(entry: dict[str, Any]) -> list[str]:
     """The effort levels a codex model supports, in cache order."""
@@ -69,16 +63,6 @@ def _codex_reasoning_efforts(entry: dict[str, Any]) -> list[str]:
             effort = level.get("effort")
             if isinstance(effort, str) and effort:
                 out.append(effort)
-    return out
-
-
-def parse_agy_models(stdout: str) -> list[ModelOption]:
-    """One option per non-blank line; id == label (agy takes the label verbatim)."""
-    out: list[ModelOption] = []
-    for raw in stdout.splitlines():
-        line = raw.strip()
-        if line:
-            out.append(ModelOption(id=line, label=line))
     return out
 
 
@@ -116,26 +100,14 @@ def parse_codex_models(cache: dict[str, Any]) -> list[ModelOption]:
     return out
 
 
-def _default_agy_runner(cmd: list[str]) -> str:
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=True).stdout
-
-
 def list_models(
     provider: ProviderName,
     *,
-    agy_runner: AgyRunner | None = None,
     codex_cache_path: Path | None = None,
 ) -> list[ModelOption]:
     """The model catalogue for one provider (fail-soft → ``[]`` on any error)."""
     if provider == "claude-code":
         return list(CLAUDE_MODELS)
-    if provider == "gemini":
-        runner = agy_runner if agy_runner is not None else _default_agy_runner
-        try:
-            stdout = runner(["agy", "models"])
-        except (OSError, subprocess.SubprocessError):
-            return []
-        return parse_agy_models(stdout)
     if provider == "codex":
         path = codex_cache_path if codex_cache_path is not None else _DEFAULT_CODEX_CACHE
         try:

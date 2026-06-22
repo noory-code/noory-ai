@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-23-A — Gemini (agy) chat provider temporarily removed (re-add October)
+
+- **What:** The gemini chat provider is removed from the product for now — engine (`ProviderName` literal, `_PROVIDERS`, `chat_providers/gemini.py`, `GeminiProvider`, the `agy models` catalogue branch, mcp/chat endpoint validation sets) and viewer (`McpProviderName`, the `chat.providers.gemini` i18n label, stale test fixtures). Claude Code + Codex are unaffected. The full impl stays in git history.
+- **Why:** user direction — gemini (via the `agy` CLI) is untestable in the current setup, so it's pulled rather than left half-verified, and slated to return in October. Removing the literal cascades cleanly (mypy-enforced); a half-removal (keeping `gemini.py` dormant) would leave dangling references.
+- **Restore (October):** add `"gemini"` back to `ProviderName` + the `_PROVIDERS` entry + `GeminiProvider` wiring (`chat_session`) + the `agy` model branch (`chat_models`) + the viewer `McpProviderName` / i18n label. git history has the deleted `chat_providers/gemini.py` and the removed tests.
+- **Approval:** Accepted by user, 2026-06-23 ("제미나이 빼버리죠 … 제미나이는 10월에 넣읍시다").
+- **Spec impact:** none (provider set is not a wire-contract field). Guards: the chat/mcp tests now pin claude-code + codex only.
+
 ### D-2026-06-22-H — publish UI is format F: 설계도 발행 → vP, service publish → vS, per-node publish retired
 
 - **What:** The viewer's publish surface is repointed at format F (INT-g ⓑ + ⓒ), **reusing the existing buttons** — no net-new publish UI:
