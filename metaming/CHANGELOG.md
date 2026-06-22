@@ -1,0 +1,17 @@
+# Changelog
+
+All notable changes to the metaming plugin are documented here.
+
+## [1.0.0] - 2026-06-23
+
+### Added
+- Initial release. A `UserPromptSubmit` hook (`hooks/metaming_hook.py`) that
+  injects an answer & question discipline reminder on every user turn:
+  - **Explaining** — abstract to the right level (no raw name/identifier dumps,
+    no empty `A`/`B` placeholders), pitch the abstraction to what the listener
+    will do, and keep it short.
+  - **Asking** — judge "must I actually ask this?" first; never ask about task
+    order; ask only when the choice criterion or the data to decide is missing;
+    confirm anything hard to reverse or outward-facing regardless.
+  - **Scope** — governs the answer the user reads, not the model's private
+    reasoning.

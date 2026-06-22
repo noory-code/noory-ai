@@ -1,0 +1,16 @@
+{
+  "description": "Inject metaming answer/question discipline on every user turn",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/metaming_hook.py"
+          }
+        ]
+      }
+    ]
+  }
+}

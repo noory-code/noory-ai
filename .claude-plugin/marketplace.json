@@ -28,6 +28,11 @@
       "name": "pencil-m3-flutter",
       "source": "./pencil_m3_flutter",
       "description": "Flutter Material Design 3 design system automation — init, design, seed color, logo via Pencil MCP"
+    },
+    {
+      "name": "metaming",
+      "source": "./metaming",
+      "description": "Answer & question discipline — abstract to the right level, keep it short, and ask only when truly needed"
     }
   ]
 }
