@@ -4,6 +4,44 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.106.0] — 2026-06-22
+
+### Added
+
+- **vS bundle now carries its features + UX flows** (completes INT-2, **D-2026-06-22-E**).
+  `publish_service` previously froze only the service node into a `vS` release;
+  it now also emits every feature nested under the service (directed edge
+  `service → feature`) as an owned element (`feature/{slug}`, `flow: true`) with
+  a `design/features/{slug}.md` rendering the feature's detail-canvas **UX flow**
+  (참여자 + 행동(ordered steps, negative-polarity marked) + 분기(decisions →
+  branch-labelled edges) + 참고(ambient notes)). A Solera `realizes: feature/login`
+  now resolves into a real Execution-handoff flow instead of a name-only stub.
+
+### Changed
+
+- **Service-release refs roll up entity usage.** The features' steps'
+  `ref_entity_ids` collect into the release `refs.entities` (resolved to `vP`
+  entity slugs, not copied). The refs-integrity gate (format-f.md §1.4) now also
+  covers those entity refs, and all ref validation runs **before any file is
+  written** (validate-before-write — a dangling ref refuses the publish cleanly).
+- **Richer format F design rendering, for the external agent reading it**
+  (**D-2026-06-22-F**). The published `design/*.md` files now carry the actual
+  content, not stubs:
+  - **foundation.md** renders each node's *primary* typed field
+    (`mission.statement` / `core_value.definition` / `identity.description`) —
+    not only `body` — grouped under 미션 / 코어 밸류 / 아이덴티티 sections with a
+    framing header. The element hash now includes that primary field, so an
+    essence change is caught by the ID-diff.
+  - **entities/{slug}.md** renders `summary` (the '무엇을 담나' line). The old
+    code read a non-existent `body`, so entity files (and their hashes) were
+    **empty** — a latent bug fixed here.
+  - **actors.md** adds a 관계 (주고받음) section rendering the edges between
+    actor nodes (label / action_verb), so the agent sees the value economy, not
+    just the cast.
+  - **service.md** surfaces what the service stands on in its `vP` (참여 액터 /
+    지키는 가치 / 정체성 결, by slug), so the file reads standalone.
+  Engine 708 green, mypy strict + ruff clean.
+
 ## [0.104.0] — 2026-06-22
 
 ### Added
