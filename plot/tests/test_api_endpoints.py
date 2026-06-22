@@ -899,6 +899,102 @@ def test_publish_endpoint_actor_root_succeeds(
 
 
 # ---------------------------------------------------------------------------
+# format F publish over HTTP (INT-g, D-2026-06-22-G) — mirrors the MCP tools
+# ---------------------------------------------------------------------------
+
+
+def _add_service_via_store(project_path: str, service_id: str) -> None:
+    """Drop a bare service node onto the services canvas through the store
+    (the viewer would do this via PUT; the endpoint test only needs the node)."""
+    from plot_mcp.folder_io import read_canvas, write_canvas
+    from plot_mcp.models import ServiceNode
+    from plot_mcp.workspace import resolve_plot_root
+
+    plot_root = resolve_plot_root(project_path)
+    services = read_canvas(plot_root, "alpha", "services")
+    write_canvas(
+        plot_root,
+        "alpha",
+        services.model_copy(update={"nodes": [ServiceNode(id=service_id, label="Svc")]}),
+    )
+
+
+def test_format_f_snapshot_endpoint(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    resp = client.post(
+        "/api/projects/alpha/publish/snapshot",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["scope"] == "project"
+    assert body["release"] == "vP1"
+    assert body["format_f_version"] == 1
+
+
+def test_format_f_snapshot_unknown_project_is_404(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    resp = client.post(
+        "/api/projects/ghost/publish/snapshot",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 404
+
+
+def test_format_f_service_publish_endpoint(app_client: tuple[TestClient, str]) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    client.post(
+        "/api/projects/alpha/publish/snapshot",
+        params={"project_path": project_path},
+    )  # vP1 (bootstrap)
+    _add_service_via_store(project_path, "svc1")
+    resp = client.post(
+        "/api/projects/alpha/services/svc1/publish",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["scope"] == "service"
+    assert body["based_on"] == "vP1"
+    assert body["service"].startswith("service/")
+
+
+def test_format_f_service_without_snapshot_is_409(
+    app_client: tuple[TestClient, str],
+) -> None:
+    """Bootstrap invariant surfaced over HTTP: a vS without a vP is a 409."""
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    _add_service_via_store(project_path, "svc1")
+    resp = client.post(
+        "/api/projects/alpha/services/svc1/publish",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 409, resp.text
+    assert "snapshot" in resp.json()["error"]
+
+
+def test_format_f_service_unknown_service_is_404(
+    app_client: tuple[TestClient, str],
+) -> None:
+    client, project_path = app_client
+    _create(client, project_path, "alpha", "Alpha")
+    client.post(
+        "/api/projects/alpha/publish/snapshot",
+        params={"project_path": project_path},
+    )
+    resp = client.post(
+        "/api/projects/alpha/services/ghost/publish",
+        params={"project_path": project_path},
+    )
+    assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
 # v0.22.0 (D-2026-05-17-H) — _dirty decoration in canvas GET response
 # ---------------------------------------------------------------------------
 

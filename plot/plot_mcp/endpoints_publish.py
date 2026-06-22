@@ -135,6 +135,61 @@ async def project_publish_endpoint(request: Request) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# format F publish over HTTP (INT-g, D-2026-06-22-G) — the viewer-facing surface
+# mirroring the MCP tools (publish_project_snapshot_tool / publish_service_tool).
+# format F itself is defined in ``format_f.py`` + ``docs/specs/format-f.md``.
+# ---------------------------------------------------------------------------
+
+
+async def format_f_snapshot_endpoint(request: Request) -> JSONResponse:
+    """``POST /api/projects/{project_id}/publish/snapshot``
+
+    Freeze the project's shared structure (foundation / actors / entities) into
+    a format F ``vP`` snapshot (D-2026-06-22-D). Returns the manifest.
+    404 if the project is unknown.
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    from plot_mcp.format_f import publish_project_snapshot
+
+    try:
+        manifest = publish_project_snapshot(plot_root, project_id)
+    except FileNotFoundError as exc:
+        return _error(str(exc), status=404)
+    return JSONResponse(manifest, status_code=201)
+
+
+async def format_f_service_publish_endpoint(request: Request) -> JSONResponse:
+    """``POST /api/projects/{project_id}/services/{service_id}/publish``
+
+    Freeze one service into a format F ``vS`` release — refs the latest ``vP``,
+    bootstrap + refs-integrity gated (D-2026-06-22-D/E). Returns the manifest.
+    Errors:
+      - 404 if the project or service is not found
+      - 409 if there is no ``vP`` yet (bootstrap) or a ref does not resolve in
+        the based_on ``vP`` (refs-integrity) — both are write-boundary gates.
+    """
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    service_id = request.path_params["service_id"]
+    from plot_mcp.format_f import publish_service
+
+    try:
+        manifest = publish_service(plot_root, project_id, service_id)
+    except FileNotFoundError as exc:
+        return _error(str(exc), status=404)
+    except ValueError as exc:
+        return _error(str(exc), status=409)
+    return JSONResponse(manifest, status_code=201)
+
+
+# ---------------------------------------------------------------------------
 # v0.18.0 Phase 3 (D-2026-05-16-E) — publish endpoint
 # ---------------------------------------------------------------------------
 

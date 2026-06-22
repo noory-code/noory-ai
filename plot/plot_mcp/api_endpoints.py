@@ -84,6 +84,12 @@ from plot_mcp.endpoints_projects import (
     workspace_git_init_endpoint as workspace_git_init_endpoint,
 )
 from plot_mcp.endpoints_publish import (
+    format_f_service_publish_endpoint as format_f_service_publish_endpoint,
+)
+from plot_mcp.endpoints_publish import (
+    format_f_snapshot_endpoint as format_f_snapshot_endpoint,
+)
+from plot_mcp.endpoints_publish import (
     node_publish_endpoint as node_publish_endpoint,
 )
 from plot_mcp.endpoints_publish import (

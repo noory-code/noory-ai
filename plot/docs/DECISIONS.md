@@ -39,6 +39,15 @@
 
 ## Log
 
+### D-2026-06-22-G — format F publish reachable over HTTP (INT-g first step; viewer UI + per-node retirement still gated)
+
+- **What:** Two POST endpoints expose the format F write half on the HTTP surface, mirroring the existing MCP tools: `POST /api/projects/{id}/publish/snapshot` (→ `vP` project snapshot) and `POST /api/projects/{id}/services/{service_id}/publish` (→ `vS` service release). Thin wrappers over the tested `format_f.publish_project_snapshot` / `publish_service`. Error mapping: 404 (project/service not found), **409** for the two write-boundary gates — bootstrap (no `vP` yet) and refs-integrity (a ref does not resolve in the based_on `vP`).
+- **Why:** the MCP path is the 주경로, but the .app is the product (VISION) and its viewer talks to the engine over HTTP — so a format F publish button needs an HTTP endpoint. This is the decision-free precursor to INT-g (the endpoint is needed regardless of where the button lands). User chose "엔진 HTTP 먼저" (2026-06-22).
+- **Still gated (NOT done here):** the viewer publish **UI** (button placement / modal / flow — proprietary `plot/` repo, UX decision) and the **per-node publish retirement** (removing `node_publish` + per-node `version` + the old `published/{kind}/{node}/v*.md` layout + 📤). Removing per-node now would delete the only user-facing publish UI before format F has one — so the UI lands first.
+- **Alternatives:** build the full INT-g (endpoints + viewer UI + retirement) in one go — deferred (crosses repos, needs UX decisions). Skip HTTP and keep format F MCP-only — rejected (the viewer can't reach MCP tools; an in-app publish needs HTTP).
+- **Approval:** Accepted by user, 2026-06-22 (AskUserQuestion "INT-g 접근" → "엔진 HTTP 먼저"). Engine 714 green, mypy strict + ruff clean.
+- **Spec impact:** none new — the neutral contract (`format-f.md`) is unchanged; HTTP is a Plot-internal trigger. Guards: `tests/test_api_endpoints.py::{test_format_f_snapshot_endpoint, test_format_f_snapshot_unknown_project_is_404, test_format_f_service_publish_endpoint, test_format_f_service_without_snapshot_is_409, test_format_f_service_unknown_service_is_404}`.
+
 ### D-2026-06-22-F — format F design files render the real content (richer vP/vS rendering; entity-summary bug fixed)
 
 - **What:** The published `design/*.md` files now carry the actual design content the external agent reads, not stubs. **foundation.md** renders each node's *primary* typed field (`mission.statement` / `core_value.definition` / `identity.description`) in addition to `body`, grouped under 미션 / 코어 밸류 / 아이덴티티 sections under a framing header; the element hash now folds in that primary field (so an essence change registers in the ID-diff). **entities/{slug}.md** renders `summary` (the '무엇을 담나' line) with `id`/`kind` frontmatter. **actors.md** adds a 관계 (주고받음) section rendering edges between actor nodes (label / action_verb). **service.md** surfaces the service's vP refs (참여 액터 / 지키는 가치 / 정체성 결, by slug) so it reads standalone.

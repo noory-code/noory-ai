@@ -22,6 +22,8 @@ from plot_mcp.api_endpoints import (
     file_put_endpoint,
     file_raw_endpoint,
     folder_post_endpoint,
+    format_f_service_publish_endpoint,
+    format_f_snapshot_endpoint,
     health_endpoint,
     node_publish_endpoint,
     node_published_list_endpoint,
@@ -205,6 +207,18 @@ def create_http_app(
             "/api/projects/{project_id}/at-tag/{tag}",
             project_at_tag_endpoint,
             methods=["GET"],
+        ),
+        # format F publish over HTTP (INT-g, D-2026-06-22-G) — vP snapshot +
+        # vS service release, mirroring the MCP tools for the viewer surface.
+        Route(
+            "/api/projects/{project_id}/publish/snapshot",
+            format_f_snapshot_endpoint,
+            methods=["POST"],
+        ),
+        Route(
+            "/api/projects/{project_id}/services/{service_id}/publish",
+            format_f_service_publish_endpoint,
+            methods=["POST"],
         ),
         # v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
         Route(

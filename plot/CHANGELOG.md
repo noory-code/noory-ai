@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.107.0] — 2026-06-22
+
+### Added
+
+- **format F publish reachable over HTTP** (INT-g first step, **D-2026-06-22-G**).
+  Two POST endpoints mirror the existing MCP tools so the viewer / any HTTP
+  client can trigger a format F publish:
+  - `POST /api/projects/{id}/publish/snapshot` → freezes the `vP` project
+    snapshot, returns the manifest (404 if the project is unknown).
+  - `POST /api/projects/{id}/services/{service_id}/publish` → freezes a `vS`
+    service release (404 project/service not found; **409** for the bootstrap
+    gate "no vP yet" and the refs-integrity gate "ref does not resolve in the
+    based_on vP").
+  Thin wrappers over the tested `format_f` functions; the viewer publish UI and
+  per-node publish retirement remain the gated follow-on. Engine 714 green,
+  mypy strict + ruff clean.
+
 ## [0.106.0] — 2026-06-22
 
 ### Added
