@@ -4,6 +4,26 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.103.0] — 2026-06-22
+
+### Added
+
+- **format F export engine — Plot "write" half of the Plot↔Solera contract**
+  (Phase P / INT-2, walking-skeleton scope). New `plot_mcp/format_f.py` writes
+  the 2-layer published bundle defined in `repos-plot/docs/specs/format-f.md`:
+  - `publish_project_snapshot` → `published/_project/vP{N}/` freezes the shared
+    structure (本質 / Actors / Entities).
+  - `publish_service` → `published/{slug}/vS{N}/` freezes one service (5칸 +
+    refs), pinning `based_on: vP` and referencing shared elements **by slug, not
+    by copy**.
+  - **Slug minting** via a per-project `_slugs.json` registry (P-4 = explicit
+    slug): keyed on node id, so a slug is stable across label changes.
+  - Two write-boundary gates: **bootstrap** (a `vS` requires a `vP`) and
+    **refs-integrity** (every ref must resolve in the based_on `vP`).
+  Built **alongside** the existing per-node publish (`node_publish.py`), not a
+  replacement — per-node retirement + the formal DECISIONS pin land later
+  (INT-1c). 6 tests in `tests/test_format_f.py`; engine 697 green.
+
 ## [0.102.0] — 2026-06-22
 
 ### Changed
