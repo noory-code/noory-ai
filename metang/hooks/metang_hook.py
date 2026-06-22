@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""metaming — inject answer & question discipline on every user turn.
+"""metang — inject answer & question discipline on every user turn.
 
 Wired as a Claude Code ``UserPromptSubmit`` command hook. Reads the hook
 JSON from stdin (content unused), then emits the discipline reminder via
@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import sys
 
-RULE = """[metaming — answer & question discipline]
+RULE = """[metang — answer & question discipline]
 
 Scope: this governs the ANSWER the user reads, not your private reasoning. Think as freely, long, and raw as you need — apply the discipline only to what you output.
 

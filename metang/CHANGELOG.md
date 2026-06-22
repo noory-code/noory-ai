@@ -1,11 +1,11 @@
 # Changelog
 
-All notable changes to the metaming plugin are documented here.
+All notable changes to the metang plugin are documented here.
 
 ## [1.0.0] - 2026-06-23
 
 ### Added
-- Initial release. A `UserPromptSubmit` hook (`hooks/metaming_hook.py`) that
+- Initial release. A `UserPromptSubmit` hook (`hooks/metang_hook.py`) that
   injects an answer & question discipline reminder on every user turn:
   - **Explaining** — abstract to the right level (no raw name/identifier dumps,
     no empty `A`/`B` placeholders), pitch the abstraction to what the listener

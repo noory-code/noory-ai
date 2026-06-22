@@ -1,4 +1,4 @@
-# metaming
+# metang
 
 A Claude Code plugin that injects **answer & question discipline** into every
 user turn, so the model explains clearly and stops asking questions it could
@@ -33,7 +33,7 @@ reasoning. Thinking stays free.
 ## How it works
 
 `hooks/hooks.json` wires a `UserPromptSubmit` command hook to
-`hooks/metaming_hook.py`. The script reads the hook JSON from stdin (content
+`hooks/metang_hook.py`. The script reads the hook JSON from stdin (content
 unused) and returns the rule via `hookSpecificOutput.additionalContext`, which
 Claude Code adds to context before the model responds. The rule text lives in
 that one script — its single source.
@@ -43,13 +43,13 @@ that one script — its single source.
 Local (development):
 
 ```
-/install-plugin /absolute/path/to/noory-ai/metaming
+/install-plugin /absolute/path/to/noory-ai/metang
 ```
 
 From the marketplace, once published to `noory-ai`:
 
 ```
-/plugin   →  enable  metaming@noory-ai
+/plugin   →  enable  metang@noory-ai
 ```
 
 Hooks load at session start, so enable it, then start a new session.
