@@ -158,6 +158,23 @@ def test_manifest_contract_shape_is_pinned(plot_root: Path) -> None:
     assert set(vs["refs"]) >= {"anchors", "actors", "entities"}
 
 
+def test_publish_reachable_via_mcp_surface(tmp_path: Path) -> None:
+    """format F is reachable on the MCP surface — the primary integration path
+    per VISION ('주경로 = 사용자 에이전트가 MCP로 붙음'). The tools take a
+    workspace path (not a plot_root)."""
+    from plot_mcp.mcp_tools import (
+        create_project_tool,
+        publish_project_snapshot_tool,
+        publish_service_tool,
+    )
+
+    create_project_tool(str(tmp_path), "alpha", "Alpha")
+    vp = publish_project_snapshot_tool(str(tmp_path), "alpha")
+    assert vp["scope"] == "project"
+    assert vp["release"] == "vP1"
+    assert callable(publish_service_tool)
+
+
 def test_minted_slug_is_stable_across_label_change(plot_root: Path) -> None:
     """Explicit-slug invariant: once minted (keyed on node id), the slug does
     not move when the label changes — that is what makes it a stable contract."""

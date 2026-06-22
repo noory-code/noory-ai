@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.104.0] — 2026-06-22
+
+### Added
+
+- **format F reachable on the MCP surface** (INT-f) — `publish_project_snapshot_tool`
+  and `publish_service_tool` expose the format F write half on the agent-facing
+  MCP path (VISION's 주경로). Thin wrappers over the tested `format_f` functions;
+  reachability smoke-tested. The viewer/HTTP trigger + per-node publish
+  retirement remain a follow-on (they would otherwise remove the only
+  user-facing publish UI before format F has one). Engine 699 green.
+
 ## [0.103.1] — 2026-06-22
 
 ### Added

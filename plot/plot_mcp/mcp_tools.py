@@ -103,6 +103,26 @@ def create_project_tool(project_path: str, project_id: str, name: str = "") -> d
 
 
 @mcp.tool()
+def publish_project_snapshot_tool(project_path: str, project_id: str) -> dict[str, Any]:
+    """Freeze the project's shared structure (foundation / actors / entities)
+    into a format F ``vP`` snapshot. Returns the manifest. (D-2026-06-22-D.)"""
+    from plot_mcp.format_f import publish_project_snapshot
+
+    plot_root = resolve_plot_root(project_path)
+    return publish_project_snapshot(plot_root, project_id)
+
+
+@mcp.tool()
+def publish_service_tool(project_path: str, project_id: str, service_id: str) -> dict[str, Any]:
+    """Freeze one service into a format F ``vS`` release (refs the latest ``vP``;
+    bootstrap + refs-integrity gated). Returns the manifest. (D-2026-06-22-D.)"""
+    from plot_mcp.format_f import publish_service
+
+    plot_root = resolve_plot_root(project_path)
+    return publish_service(plot_root, project_id, service_id)
+
+
+@mcp.tool()
 def rename_project(project_path: str, project_id: str, name: str) -> dict[str, Any]:
     """Update a project's ``name`` and mirror it onto the Core canvas's
     Project anchor label in one shot."""
