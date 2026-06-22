@@ -45,9 +45,15 @@ WS_TOKEN_PARAM = "auth"
 _BEARER_PREFIX = "Bearer "
 
 # Endpoints that don't carry app secrets and must remain callable without a
-# token — primarily ``/api/health`` so the Tauri shell can probe the engine
-# before it has finished injecting the token. Keep tiny.
-_OPEN_PATHS: frozenset[str] = frozenset({"/api/health"})
+# token. Keep tiny:
+#   - ``/api/health`` — the Tauri shell probes it before injecting the token.
+#   - ``/api/debug`` — the dev-only introspection channel (registered ONLY under
+#     PLOT_DEBUG=1; in-memory, localhost). The viewer's debug probe POSTs
+#     snapshots with a plain fetch and the agent GETs them, neither carrying the
+#     per-launch token; the auth seam (added after the channel) must not break
+#     it. Harmless in release builds — the route isn't registered there
+#     (D-2026-06-23-C).
+_OPEN_PATHS: frozenset[str] = frozenset({"/api/health", "/api/debug"})
 
 
 def configured_token() -> str | None:

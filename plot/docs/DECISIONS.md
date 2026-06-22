@@ -39,6 +39,15 @@
 
 ## Log
 
+### D-2026-06-23-C — debug channel (`/api/debug`) is auth-exempt (restore the WKWebView introspection bridge)
+
+- **What:** `/api/debug` is added to the auth middleware's open-paths set (alongside `/api/health`), so it is callable without the `PLOT_AUTH_TOKEN`.
+- **Why:** the auth seam (later than the debug channel, D-2026-06-09-D) gated everything except `/api/health`. The viewer's debug probe (`debugProbe.postProbe`) POSTs snapshots with a **plain unauthenticated** `fetch`, and the agent GETs them — neither carries the per-launch token the shell mints. So the probe was 401'd, no snapshot landed, and the only WKWebView introspection bridge (CDP can't attach to a Tauri WebView on macOS) was dead. Discovered while trying to visually verify the format F publish UI.
+- **Safety:** `/api/debug` is **dev-only** — registered only under `PLOT_DEBUG=1` (the debug-flavor shell sets it), in-memory (cleared on restart), localhost-bound, and NOT product surface. In a release build the route isn't registered, so exempting the path is harmless there.
+- **Alternatives:** route the probe through the token (`engineFetch`) — rejected: it fixes the POST but the *agent's GET* still needs the token, which is per-launch and not extractable (macOS hides process env). Exempting the path makes both sides work.
+- **Approval:** Accepted by user, 2026-06-23 (chose to fix the debug channel to verify in-app).
+- **Spec impact:** none. Guard: `tests/test_auth.py::test_debug_channel_open_without_token_in_debug_flavor`.
+
 ### D-2026-06-23-B — codex reasoning effort is a SEPARATE control (reverses D-2026-06-22-C combined entries)
 
 - **What:** Model and reasoning effort are chosen with two distinct dropdowns, not one combined `<slug>:<effort>` model entry. Engine: `parse_codex_models` emits ONE bare `ModelOption` per model (`id` = slug) carrying its `supported_reasoning_levels` as a separate `efforts` list. Viewer: `ChatModelSelector` shows a model dropdown + (when the selected model has efforts) a separate effort dropdown, splitting any stored `<slug>:<effort>` apart for display and recombining the pick into `<slug>:<effort>`.

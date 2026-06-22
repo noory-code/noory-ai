@@ -4,6 +4,19 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.111.0] — 2026-06-23
+
+### Fixed
+
+- **Debug channel (`/api/debug`) restored under the auth seam** (**D-2026-06-23-C**).
+  The `PLOT_AUTH_TOKEN` enforcement gated everything except `/api/health`, so the
+  viewer's debug probe (a plain unauthenticated `fetch`) was 401'd and snapshots
+  never landed — the WKWebView introspection bridge was dead. `/api/debug` is now
+  in the auth open-paths set: it's dev-only (registered only under `PLOT_DEBUG=1`),
+  in-memory, and localhost-bound, so the probe POST + the agent's GET work without
+  the per-launch token. Harmless in release builds (the route isn't registered).
+  Engine 597 green.
+
 ## [0.110.0] — 2026-06-23
 
 ### Changed

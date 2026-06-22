@@ -181,6 +181,25 @@ def test_health_endpoint_is_always_open(
     assert resp.status_code == 200
 
 
+def test_debug_channel_open_without_token_in_debug_flavor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The dev-only debug channel (``/api/debug``, registered only under
+    PLOT_DEBUG=1) must stay callable WITHOUT the auth token: the viewer's debug
+    probe POSTs snapshots with a plain fetch and the agent GETs them — neither
+    carries the per-launch token. The auth seam (added later) must not break the
+    WKWebView introspection bridge (D-2026-06-23-C)."""
+    monkeypatch.setenv("PLOT_DEBUG", "1")
+    monkeypatch.setenv(ENV_VAR, "secret-tok")
+    client = _client()  # built with PLOT_DEBUG=1 → /api/debug is registered
+    # POST a snapshot with NO Authorization header → accepted (probe is unauthed).
+    post = client.post("/api/debug", json={"ts": 1, "theme": "dark", "nodeCount": 0, "nodes": []})
+    assert post.status_code == 200
+    # GET it back with NO token → 200 (not 401), so the agent can read the screen.
+    got = client.get("/api/debug")
+    assert got.status_code == 200
+
+
 # ---------------------------------------------------------------------------
 # WS auth — exercised at the helper level. The full WS handshake is e2e and
 # not flake-friendly under TestClient + asyncio + monkeypatched env, so we
