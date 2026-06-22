@@ -69,7 +69,9 @@ def test_detect_reports_installed_when_cli_on_path(
 ) -> None:
     bin_dir = fake_home / ".bin"
     bin_dir.mkdir(exist_ok=True)
-    for cli in ("claude", "codex", "gemini"):
+    # The gemini provider's chat transport is `agy` (D-2026-06-22-A), so its
+    # presence is the `agy` binary, not `gemini`.
+    for cli in ("claude", "codex", "agy"):
         _ensure_cli(fake_home, cli)
     monkeypatch.setenv("PATH", f"{bin_dir}:/usr/bin")
     statuses = detect_providers()
@@ -77,6 +79,26 @@ def test_detect_reports_installed_when_cli_on_path(
         assert statuses[name].installed is True
         # Nothing registered yet.
         assert statuses[name].registered is False
+
+
+def test_gemini_detection_targets_agy_transport(
+    fake_home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # D-2026-06-22-A: gemini chat runs through `agy`, so a machine with `agy`
+    # but no legacy `gemini` binary must still show the gemini provider as
+    # installed (and vice-versa: bare `gemini` with no `agy` is NOT usable).
+    bin_dir = fake_home / ".bin"
+    bin_dir.mkdir(exist_ok=True)
+    _ensure_cli(fake_home, "agy")
+    monkeypatch.setenv("PATH", f"{bin_dir}:/usr/bin")
+    assert detect_providers()["gemini"].installed is True
+
+    bin_dir2 = fake_home / ".bin2"
+    bin_dir2.mkdir(exist_ok=True)
+    (bin_dir2 / "gemini").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    (bin_dir2 / "gemini").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bin_dir2}:/usr/bin")
+    assert detect_providers()["gemini"].installed is False
 
 
 # ---------------------------------------------------------------------------

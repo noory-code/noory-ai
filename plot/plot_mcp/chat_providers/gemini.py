@@ -1,10 +1,18 @@
-"""Gemini CLI driver (``gemini -y --output-format stream-json``).
+"""Gemini chat driver — transport is the ``agy`` (Antigravity) CLI (D-2026-06-22-A).
 
-The ``init`` event carries ``session_id`` which we capture, so later
-turns can pass ``--resume <id>``. ``-y`` (YOLO mode) skips per-action
-approvals — Plot is the canvas surface that owns user trust, so the
-inner tool calls don't need a second confirmation layer. (Mirrors how
-every interactive CLI behaves when run inside an IDE plugin.)
+Google is consolidating Gemini onto Antigravity, so the in-app ``gemini``
+provider drives ``agy -p`` rather than the ``gemini`` binary. ``agy`` has no
+``--output-format stream-json`` mode: ``agy -p`` prints the assistant's reply
+as plain text, so each stdout line is passed straight through as a ``delta``
+(newline preserved). ``--dangerously-skip-permissions`` auto-approves inner
+tool calls — Plot is the canvas surface that owns user trust, so the CLI
+doesn't need a second confirmation layer (the role gemini's ``-y`` played).
+
+**Stateless:** agy emits no session id on stdout, and its ``--continue``
+resumes the *most-recent* conversation globally — which would cross Plot's
+per-(project × scope) thread isolation (D-2026-06-13-H). So this provider does
+not resume; every turn is an independent ``agy -p`` call. In-scope multi-turn
+continuity is a filed follow-up (D-2026-06-22-A).
 """
 
 from __future__ import annotations
@@ -13,20 +21,19 @@ from pathlib import Path
 
 from plot_mcp.chat_providers.base import (
     ChatStreamEvent,
-    _decode_jsonl,
     _SubprocessChatProvider,
     _SubprocessFactory,
 )
 
 
 class GeminiProvider(_SubprocessChatProvider):
-    """``gemini -y --output-format stream-json -p <prompt>`` driver."""
+    """``agy -p --dangerously-skip-permissions [--model <m>] <prompt>`` driver."""
 
     def __init__(
         self,
         workspace_root: Path,
         *,
-        cli_path: str = "gemini",
+        cli_path: str = "agy",
         subprocess_factory: _SubprocessFactory | None = None,
     ) -> None:
         super().__init__(
@@ -36,30 +43,22 @@ class GeminiProvider(_SubprocessChatProvider):
         )
 
     def _build_command(self, user_message: str) -> list[str]:
-        cmd = [self._cli_path, "-y", "--output-format", "stream-json"]
+        cmd = [self._cli_path, "-p", "--dangerously-skip-permissions"]
         cmd += self._model_args()
-        if not self._first_turn and self._session_id is not None:
-            cmd += ["--resume", self._session_id]
-        cmd += ["-p", user_message]
+        # Stateless: no resume flag. agy's --continue is most-recent-global,
+        # which would cross per-scope threads (D-2026-06-22-A); agy emits no
+        # session id to resume a specific thread either. Prompt is positional.
+        cmd += [user_message]
         return cmd
 
     def _parse_line(
         self, turn_id: str, line: bytes, accumulator: list[str]
     ) -> ChatStreamEvent | None:
-        obj = _decode_jsonl(line)
-        if obj is None:
+        # Plain-text passthrough: agy -p has no stream-json. Each stdout line
+        # (newline preserved) is one delta; the base joins the accumulator for
+        # the turn_complete recap.
+        text = line.decode("utf-8", errors="replace")
+        if not text:
             return None
-        event_type = obj.get("type")
-        if event_type == "init":
-            sid = obj.get("session_id")
-            if isinstance(sid, str) and sid:
-                self._session_id = sid
-            return None
-        if event_type == "message" and obj.get("role") == "assistant":
-            content = obj.get("content")
-            if isinstance(content, str) and content:
-                accumulator.append(content)
-                return ChatStreamEvent(
-                    type="delta", turn_id=turn_id, text=content
-                )
-        return None
+        accumulator.append(text)
+        return ChatStreamEvent(type="delta", turn_id=turn_id, text=text)

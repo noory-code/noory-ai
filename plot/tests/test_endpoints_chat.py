@@ -620,3 +620,28 @@ async def test_broadcast_notify_event_uses_supplied_event_name(
         {"event": "chat_stream_event", "type": "delta", "text": "x"},
         {"event": "project_changed"},
     ]
+
+
+# ---------------------------------------------------------------------------
+# GET /api/chat/models — per-provider model catalogue (D-2026-06-22-B)
+# ---------------------------------------------------------------------------
+
+
+def test_chat_models_missing_provider_param_400(app_client: TestClient) -> None:
+    resp = app_client.get("/api/chat/models")
+    assert resp.status_code == 400
+
+
+def test_chat_models_unknown_provider_400(app_client: TestClient) -> None:
+    resp = app_client.get("/api/chat/models?provider=bogus")
+    assert resp.status_code == 400
+
+
+def test_chat_models_claude_returns_static_aliases(app_client: TestClient) -> None:
+    # claude-code is the source-free deterministic case; codex/gemini source
+    # parsing is covered by tests/test_chat_models.py with injected sources.
+    resp = app_client.get("/api/chat/models?provider=claude-code")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert [m["id"] for m in body["models"]] == ["fable", "opus", "sonnet"]
+    assert [m["label"] for m in body["models"]] == ["fable", "opus", "sonnet"]

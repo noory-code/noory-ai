@@ -44,7 +44,11 @@ from plot_mcp.auth import WS_TOKEN_PARAM, AuthMiddleware, check_ws_token, config
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.chat_session import ChatSessionRegistry, chat_registry
 from plot_mcp.debug_endpoints import debug_get_endpoint, debug_post_endpoint
-from plot_mcp.endpoints_chat import chat_reset_endpoint, chat_send_endpoint
+from plot_mcp.endpoints_chat import (
+    chat_models_endpoint,
+    chat_reset_endpoint,
+    chat_send_endpoint,
+)
 from plot_mcp.endpoints_mcp import (
     chat_provider_get_endpoint,
     chat_provider_put_endpoint,
@@ -132,6 +136,7 @@ def create_http_app(
         # D-2026-06-12-D Phase C — subprocess streaming (POST schedules a
         # turn; the assistant output arrives on the workspace WS as
         # ``chat_stream_event`` payloads).
+        Route("/api/chat/models", chat_models_endpoint, methods=["GET"]),
         Route("/api/chat/send", chat_send_endpoint, methods=["POST"]),
         Route("/api/chat/reset", chat_reset_endpoint, methods=["POST"]),
         Route("/api/viewer/context", viewer_context_endpoint, methods=["POST"]),

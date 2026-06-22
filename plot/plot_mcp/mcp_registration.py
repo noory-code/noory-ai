@@ -69,7 +69,12 @@ _PROVIDERS: dict[ProviderName, _ProviderSpec] = {
     ),
     "gemini": _ProviderSpec(
         name="gemini",
-        cli_command="gemini",
+        # Chat transport is the `agy` (Antigravity) CLI (D-2026-06-22-A), so the
+        # presence check looks for `agy`, not the legacy `gemini` binary.
+        cli_command="agy",
+        # NOTE: MCP registration still targets the legacy `.gemini/settings.json`.
+        # Registering Plot's MCP server into agy (via `agy mcp`) is a separate
+        # follow-up — D-2026-06-22-A covers the chat transport only.
         config_relative=(".gemini", "settings.json"),
         config_format="json",
         servers_path=("mcpServers",),

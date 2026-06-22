@@ -22,16 +22,18 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.chat_context import build_context_preamble, build_framing_preamble
+from plot_mcp.chat_models import list_models
 from plot_mcp.chat_provider import read_selection
 from plot_mcp.chat_providers.base import DEFAULT_CHAT_SCOPE, is_valid_scope
 from plot_mcp.chat_session import ChatProvider, ChatSessionRegistry, chat_registry
+from plot_mcp.mcp_registration import ProviderName
 from plot_mcp.workspace import resolve_plot_root
 
 # Re-exported for back-compat — callers/tests historically import these two
@@ -42,8 +44,30 @@ __all__ = [
     "build_framing_preamble",
     "chat_send_endpoint",
     "chat_reset_endpoint",
+    "chat_models_endpoint",
     "stream_chat_turn",
 ]
+
+# Runtime guard for the `provider` query param (ProviderName is a static
+# Literal, so this is its runtime mirror).
+_MODEL_PROVIDERS: frozenset[str] = frozenset({"claude-code", "codex", "gemini"})
+
+
+async def chat_models_endpoint(request: Request) -> JSONResponse:
+    """``GET /api/chat/models?provider=<name>`` — the model catalogue for one
+    provider (D-2026-06-22-B), pulled live from the CLI's own source
+    (``agy models`` / codex cache) or the static claude aliases. Fail-soft: a
+    bad / absent source yields ``{"models": []}`` so the selector falls back to
+    its Custom… entry. Unknown / missing provider → 400.
+    """
+    raw = request.query_params.get("provider", "")
+    if raw not in _MODEL_PROVIDERS:
+        return JSONResponse({"error": f"unknown chat provider: {raw!r}"}, status_code=400)
+    provider = cast(ProviderName, raw)
+    # list_models may shell out (gemini → `agy models`) or read a file (codex
+    # cache), so run it off the event loop.
+    models = await asyncio.to_thread(list_models, provider)
+    return JSONResponse({"models": [m.model_dump() for m in models]})
 
 
 def _read_scope(body: dict[str, Any]) -> str | None:

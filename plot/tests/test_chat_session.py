@@ -702,77 +702,39 @@ async def test_codex_first_turn_falls_back_to_fresh_exec_when_no_thread_id(
 
 
 # ---------------------------------------------------------------------------
-# GeminiProvider — `gemini -y --output-format stream-json` parsing + resume
+# GeminiProvider — `agy -p` plain-text passthrough + stateless (D-2026-06-22-A)
 # ---------------------------------------------------------------------------
 
 
-async def test_gemini_stream_yields_assistant_content_and_captures_session_id(
+async def test_gemini_agy_stream_passes_through_plain_text_lines(
     tmp_path: Path,
 ) -> None:
+    # agy -p prints plain text (no stream-json); each stdout line is a delta,
+    # newline preserved so the reassembled turn keeps its line structure.
     process = _FakeProcess(
-        stdout_lines=[
-            json.dumps(
-                {
-                    "type": "init",
-                    "session_id": "sid-9",
-                    "model": "gemini-2.0-flash-exp",
-                }
-            ).encode()
-            + b"\n",
-            # User-echo event should NOT surface — user message is already in
-            # the panel from optimistic render.
-            json.dumps(
-                {"type": "message", "role": "user", "content": "List files"}
-            ).encode()
-            + b"\n",
-            json.dumps(
-                {
-                    "type": "message",
-                    "role": "assistant",
-                    "content": "Here ",
-                    "delta": True,
-                }
-            ).encode()
-            + b"\n",
-            json.dumps(
-                {
-                    "type": "message",
-                    "role": "assistant",
-                    "content": "are the files.",
-                    "delta": True,
-                }
-            ).encode()
-            + b"\n",
-            json.dumps({"type": "result", "status": "success"}).encode() + b"\n",
-        ],
+        stdout_lines=[b"Here \n", b"are the files.\n"],
         returncode=0,
     )
     ws = tmp_path / "ws"
     ws.mkdir()
     provider = GeminiProvider(
         workspace_root=ws,
-        cli_path="gemini",
+        cli_path="agy",
         subprocess_factory=_build_fake_factory(process),
     )
     events = await _drain(provider, "list files")
     types = [e.type for e in events]
     assert types == ["turn_start", "delta", "delta", "turn_complete"]
-    assert events[1].text == "Here "
-    assert events[2].text == "are the files."
-    assert events[3].text == "Here are the files."
-    assert provider.session_id == "sid-9"
+    assert events[1].text == "Here \n"
+    assert events[2].text == "are the files.\n"
+    assert events[3].text == "Here \nare the files.\n"
+    # agy emits no session id on stdout — the provider stays stateless.
+    assert provider.session_id is None
 
 
-async def test_gemini_second_turn_uses_resume_with_captured_session_id(
-    tmp_path: Path,
-) -> None:
-    a = _FakeProcess(
-        stdout_lines=[
-            json.dumps({"type": "init", "session_id": "sid-7"}).encode() + b"\n",
-        ],
-        returncode=0,
-    )
-    b = _FakeProcess(stdout_lines=[], returncode=0)
+async def test_gemini_agy_command_shape_and_no_resume(tmp_path: Path) -> None:
+    a = _FakeProcess(stdout_lines=[b"ok\n"], returncode=0)
+    b = _FakeProcess(stdout_lines=[b"ok2\n"], returncode=0)
     queue = [a, b]
 
     async def factory(*cmd: str, cwd: str | None = None, **_: Any) -> _FakeProcess:
@@ -784,14 +746,21 @@ async def test_gemini_second_turn_uses_resume_with_captured_session_id(
     ws = tmp_path / "ws"
     ws.mkdir()
     provider = GeminiProvider(
-        workspace_root=ws, cli_path="gemini", subprocess_factory=factory
+        workspace_root=ws, cli_path="agy", subprocess_factory=factory
     )
     await _drain(provider, "first")
     await _drain(provider, "second")
 
-    assert "--resume" not in a.spawn_args
-    assert "--output-format" in a.spawn_args
-    assert "stream-json" in a.spawn_args
+    # `agy -p --dangerously-skip-permissions <prompt>` — no stream-json frame.
+    assert a.spawn_args[0] == "agy"
+    assert "-p" in a.spawn_args
+    assert "--dangerously-skip-permissions" in a.spawn_args
+    assert "--output-format" not in a.spawn_args
+    assert "stream-json" not in a.spawn_args
+    assert a.spawn_args[-1] == "first"
 
-    assert "--resume" in b.spawn_args
-    assert "sid-7" in b.spawn_args
+    # Stateless: no resume flag carried into the second turn (D-2026-06-22-A) —
+    # agy's --continue is most-recent-global and would cross per-scope threads.
+    assert "--continue" not in b.spawn_args
+    assert "--resume" not in b.spawn_args
+    assert b.spawn_args[-1] == "second"

@@ -48,6 +48,36 @@ def test_codex_command_omits_model_when_unset(tmp_path: Path) -> None:
     assert "--model" not in p._build_command("hi")
 
 
+def test_codex_composite_model_splits_into_model_and_effort(tmp_path: Path) -> None:
+    # D-2026-06-22-C: a "<slug>:<effort>" selection → --model <slug>
+    # -c model_reasoning_effort=<effort>.
+    p = CodexProvider(workspace_root=tmp_path)
+    p.set_model("gpt-5.5:high")
+    cmd = p._build_command("hi")
+    assert cmd[cmd.index("--model") + 1] == "gpt-5.5"
+    assert "-c" in cmd
+    assert "model_reasoning_effort=high" in cmd
+    assert cmd[-1] == "hi"
+
+
+def test_codex_bare_model_has_no_effort_flag(tmp_path: Path) -> None:
+    # A plain slug (no ":effort") stays a bare --model with no -c override.
+    p = CodexProvider(workspace_root=tmp_path)
+    p.set_model("gpt-5.5")
+    cmd = p._build_command("hi")
+    assert cmd[cmd.index("--model") + 1] == "gpt-5.5"
+    assert "model_reasoning_effort" not in " ".join(cmd)
+
+
+def test_codex_unknown_suffix_is_not_treated_as_effort(tmp_path: Path) -> None:
+    # A colon with a non-effort suffix is passed through verbatim as the model.
+    p = CodexProvider(workspace_root=tmp_path)
+    p.set_model("some:thing")
+    cmd = p._build_command("hi")
+    assert cmd[cmd.index("--model") + 1] == "some:thing"
+    assert "model_reasoning_effort" not in " ".join(cmd)
+
+
 def test_gemini_command_includes_model_when_set(tmp_path: Path) -> None:
     p = GeminiProvider(workspace_root=tmp_path)
     p.set_model("gemini-2.5-pro")

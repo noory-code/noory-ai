@@ -20,6 +20,12 @@ from plot_mcp.chat_providers.base import (
     _SubprocessFactory,
 )
 
+# Reasoning levels codex accepts via `-c model_reasoning_effort=<level>`. The
+# chat model selector encodes the user's pick as "<slug>:<effort>"
+# (D-2026-06-22-C); this set lets the provider split a known effort suffix back
+# out from the slug. Mirrors the labels in ``chat_models._EFFORT_LABEL``.
+_CODEX_EFFORTS = frozenset({"low", "medium", "high", "xhigh"})
+
 
 class CodexProvider(_SubprocessChatProvider):
     """``codex exec --json`` driver with thread-id continuity."""
@@ -36,6 +42,17 @@ class CodexProvider(_SubprocessChatProvider):
             cli_path=cli_path,
             subprocess_factory=subprocess_factory,
         )
+
+    def _model_args(self) -> list[str]:
+        # Split the composite "<slug>:<effort>" the selector produces
+        # (D-2026-06-22-C): a known effort suffix becomes a separate
+        # ``-c model_reasoning_effort=`` override; anything else is a bare model.
+        if not self._model:
+            return []
+        slug, sep, effort = self._model.rpartition(":")
+        if sep and slug and effort in _CODEX_EFFORTS:
+            return ["--model", slug, "-c", f"model_reasoning_effort={effort}"]
+        return ["--model", self._model]
 
     def _build_command(self, user_message: str) -> list[str]:
         # Until we've captured a thread_id, every turn starts a fresh session
@@ -79,7 +96,5 @@ class CodexProvider(_SubprocessChatProvider):
                 text = item.get("text")
                 if isinstance(text, str) and text:
                     accumulator.append(text)
-                    return ChatStreamEvent(
-                        type="delta", turn_id=turn_id, text=text
-                    )
+                    return ChatStreamEvent(type="delta", turn_id=turn_id, text=text)
         return None

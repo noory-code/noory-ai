@@ -4,6 +4,34 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.102.0] — 2026-06-22
+
+### Changed
+
+- **In-app chat: gemini transport → `agy` (Antigravity)** (**D-2026-06-22-A**).
+  The `gemini` provider now drives `agy -p --dangerously-skip-permissions`
+  (plain-text passthrough, no `stream-json`) and is **stateless** — agy exposes
+  no per-thread resume on stdout and `--continue` is most-recent-global (would
+  cross Plot's per-scope threads). The provider name stays `gemini`; presence
+  detection now looks for the `agy` binary.
+- **Chat model selector is populated from each CLI's live catalogue**
+  (**D-2026-06-22-B**, reverses D-2026-06-16-C, which went stale on arrival).
+  New `GET /api/chat/models?provider=`: codex → `~/.codex/models_cache.json`,
+  gemini → `agy models`, claude → its static aliases. Fail-soft to an empty
+  list (selector still offers default + Custom…). `plot_mcp/chat_models.py`.
+- **Codex reasoning effort as combined model×effort entries**
+  (**D-2026-06-22-C**). The codex catalogue expands each model per
+  `supported_reasoning_levels` (id `<slug>:<effort>`, e.g. `gpt-5.5:high`);
+  `CodexProvider` splits it into `--model <slug> -c model_reasoning_effort=`.
+
+### Notes
+
+- **Requires a sidecar rebuild** for the standalone `.app`.
+- The viewer half ships in the `plot` app repo (selector fetches the catalogue;
+  `MODEL_SUGGESTIONS` removed; plus the `chat.scope.entities` i18n fix).
+- Follow-ups filed (ROADMAP): agy multi-turn continuity, agy MCP registration
+  (`agy mcp`), codex cache private-format coupling.
+
 ## [0.101.0] — 2026-06-22
 
 ### Changed
