@@ -90,15 +90,6 @@ from plot_mcp.endpoints_publish import (
     format_f_snapshot_endpoint as format_f_snapshot_endpoint,
 )
 from plot_mcp.endpoints_publish import (
-    node_publish_endpoint as node_publish_endpoint,
-)
-from plot_mcp.endpoints_publish import (
-    node_published_list_endpoint as node_published_list_endpoint,
-)
-from plot_mcp.endpoints_publish import (
-    node_unpublish_endpoint as node_unpublish_endpoint,
-)
-from plot_mcp.endpoints_publish import (
     project_publish_endpoint as project_publish_endpoint,
 )
 from plot_mcp.endpoints_tags import (

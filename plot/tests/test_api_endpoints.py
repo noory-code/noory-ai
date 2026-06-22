@@ -370,39 +370,6 @@ def test_project_publish_invalid_bump_is_400(
         json={"bump": "huge"},
     )
     assert resp.status_code == 400
-
-
-def test_canvas_put_response_includes_dirty_decoration(
-    app_client: tuple[TestClient, str],
-) -> None:
-    """v0.24.12 (D-2026-05-21-A) — PUT response must carry per-node
-    ``_dirty`` so the viewer's publish-button gate updates without a
-    separate GET. Pre-v0.24.12 the response was a bare canvas and the
-    publish button stayed stale until a full reload."""
-    client, project_path = app_client
-    _create(client, project_path, "alpha", "Alpha")
-    canvas = client.get(
-        "/api/projects/alpha/canvases/actors",
-        params={"project_path": project_path},
-    ).json()
-    # Mutate one publish-eligible actor (the seeded ones from
-    # create_project are non-root publishable actors).
-    actor_node = next(n for n in canvas["nodes"] if n["kind"] == "actor")
-    actor_node["motivation"] = "dirty marker"
-    resp = client.put(
-        "/api/projects/alpha/canvases/actors",
-        params={"project_path": project_path},
-        json=canvas,
-    )
-    assert resp.status_code == 200
-    body = resp.json()
-    response_node = next(
-        n for n in body["canvas"]["nodes"] if n["id"] == actor_node["id"]
-    )
-    assert "_dirty" in response_node, "PUT response missing _dirty decoration"
-    assert response_node["_dirty"] is True
-
-
 def test_canvas_put_overview_auto_creates_detail(
     app_client: tuple[TestClient, str],
 ) -> None:
@@ -824,81 +791,6 @@ def test_list_migrates_v01_sketches_silently(
 
 
 # ---------------------------------------------------------------------------
-# v0.18.0 Phase 3 (D-2026-05-16-E) — publish endpoint
-# ---------------------------------------------------------------------------
-
-
-def _mission_id(client: TestClient, project_path: str, pid: str) -> str:
-    canvas = client.get(
-        f"/api/projects/{pid}/canvases/foundation",
-        params={"project_path": project_path},
-    ).json()
-    return next(n["id"] for n in canvas["nodes"] if n["kind"] == "mission")
-
-
-def test_publish_endpoint_round_trip(app_client: tuple[TestClient, str]) -> None:
-    client, project_path = app_client
-    _create(client, project_path, "alpha", "Alpha")
-    mid = _mission_id(client, project_path, "alpha")
-    resp = client.post(
-        f"/api/projects/alpha/canvases/foundation/nodes/{mid}/publish",
-        params={"project_path": project_path},
-    )
-    assert resp.status_code == 201
-    body = resp.json()
-    assert body["from_version"] == "v1.0"
-    assert body["to_version"] == "v2.0"
-    assert body["md_path"].startswith("foundation/published/")
-    assert len(body["sha"]) == 40
-
-
-def test_publish_endpoint_unknown_node_is_404(
-    app_client: tuple[TestClient, str],
-) -> None:
-    client, project_path = app_client
-    _create(client, project_path, "alpha", "Alpha")
-    resp = client.post(
-        "/api/projects/alpha/canvases/foundation/nodes/ghost/publish",
-        params={"project_path": project_path},
-    )
-    assert resp.status_code == 404
-
-
-def test_publish_endpoint_actor_root_succeeds(
-    app_client: tuple[TestClient, str],
-) -> None:
-    """D-2026-05-19-C — actor master publishes via the endpoint
-    directly. Replaces the pre-v0.24.10 409 guard test."""
-    client, project_path = app_client
-    _create(client, project_path, "alpha", "Alpha")
-    actors = client.get(
-        "/api/projects/alpha/canvases/actors",
-        params={"project_path": project_path},
-    ).json()
-    actors["nodes"].append(
-        {
-            "id": "root-actor",
-            "kind": "actor",
-            "label": "Root",
-            "is_root": True,
-        }
-    )
-    put = client.put(
-        "/api/projects/alpha/canvases/actors",
-        params={"project_path": project_path},
-        json=actors,
-    )
-    assert put.status_code in (200, 201)
-    resp = client.post(
-        "/api/projects/alpha/canvases/actors/nodes/root-actor/publish",
-        params={"project_path": project_path},
-    )
-    assert resp.status_code in (200, 201)
-    body = resp.json()
-    assert body["to_version"] == "v2.0"
-
-
-# ---------------------------------------------------------------------------
 # format F publish over HTTP (INT-g, D-2026-06-22-G) — mirrors the MCP tools
 # ---------------------------------------------------------------------------
 
@@ -992,66 +884,6 @@ def test_format_f_service_unknown_service_is_404(
         params={"project_path": project_path},
     )
     assert resp.status_code == 404
-
-
-# ---------------------------------------------------------------------------
-# v0.22.0 (D-2026-05-17-H) — _dirty decoration in canvas GET response
-# ---------------------------------------------------------------------------
-
-
-def test_canvas_get_marks_unpublished_node_dirty(
-    app_client: tuple[TestClient, str],
-) -> None:
-    """A freshly-seeded node (never published, publish_baseline=None)
-    must surface as ``_dirty: true`` so the Inspector enables the
-    publish button for the initial release."""
-    client, project_path = app_client
-    _create(client, project_path, "alpha", "Alpha")
-    canvas = client.get(
-        "/api/projects/alpha/canvases/foundation",
-        params={"project_path": project_path},
-    ).json()
-    mission = next(n for n in canvas["nodes"] if n["kind"] == "mission")
-    assert mission["_dirty"] is True
-
-
-def test_canvas_get_marks_just_published_node_clean(
-    app_client: tuple[TestClient, str],
-) -> None:
-    """After publish, GET-ing the canvas must return ``_dirty: false`` —
-    the Inspector should disable the publish button."""
-    client, project_path = app_client
-    _create(client, project_path, "alpha", "Alpha")
-    mid = _mission_id(client, project_path, "alpha")
-    client.post(
-        f"/api/projects/alpha/canvases/foundation/nodes/{mid}/publish",
-        params={"project_path": project_path},
-    )
-    canvas = client.get(
-        "/api/projects/alpha/canvases/foundation",
-        params={"project_path": project_path},
-    ).json()
-    mission = next(n for n in canvas["nodes"] if n["id"] == mid)
-    assert mission["_dirty"] is False
-
-
-def test_canvas_get_omits_dirty_for_ineligible_kinds(
-    app_client: tuple[TestClient, str],
-) -> None:
-    """``project`` anchor (and other publish-ineligible kinds) don't
-    carry a ``_dirty`` field — there's no publish button to gate."""
-    client, project_path = app_client
-    _create(client, project_path, "alpha", "Alpha")
-    canvas = client.get(
-        "/api/projects/alpha/canvases/foundation",
-        params={"project_path": project_path},
-    ).json()
-    # Foundation may not include a project-kind node post-v0.13 (anchor
-    # is synthetic), but if any ineligible kinds are present, they must
-    # not have ``_dirty``.
-    for n in canvas["nodes"]:
-        if n.get("kind") == "project" or n.get("is_root"):
-            assert "_dirty" not in n
 
 
 # ---------------------------------------------------------------------------

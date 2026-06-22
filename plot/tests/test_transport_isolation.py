@@ -30,15 +30,14 @@ from plot_mcp.http_app import create_http_app
 _MCP_TOOLS = Path(http_app_mod.__file__).resolve().parent / "mcp_tools.py"
 
 # The pure-domain layer (TECH_REVIEW: folder_io / models / git_store /
-# propagation / md_publish / edge_semantics + the per-area model modules).
+# edge_semantics + the per-area model modules).
 # ``folder_io`` is a facade, so importing it transitively pulls storage /
-# canvas_io / project_io / detail_sync / node_publish too.
+# canvas_io / project_io / detail_sync too. (Per-node publish — node_publish /
+# md_publish / propagation — retired in D-2026-06-22-H.)
 _PURE_DOMAIN_MODULES = (
     "folder_io",
     "models",
     "git_store",
-    "propagation",
-    "md_publish",
     "edge_semantics",
     "models_kinds",
     "models_foundation",

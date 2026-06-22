@@ -39,6 +39,19 @@
 
 ## Log
 
+### D-2026-06-22-H — publish UI is format F: 설계도 발행 → vP, service publish → vS, per-node publish retired
+
+- **What:** The viewer's publish surface is repointed at format F (INT-g ⓑ + ⓒ), **reusing the existing buttons** — no net-new publish UI:
+  - **vP (project snapshot)** ← the existing Header **`📤 설계도 발행`** action. It still bumps `blueprint_version` + git-tags (the freeze mechanism), and now **also** writes the format F `vP` snapshot (manifest + design). D-2026-06-22-D: "vP = blueprint_version의 진짜 정체."
+  - **vS (service release)** ← publishing a **service** node. The inspector publish footer, when the selected node is a `service`, calls the format F `vS` endpoint (the whole service bundle: 5칸 + features + UX flows) instead of a per-node MD.
+  - **per-node publish retired (ⓒ)** — every other kind (mission / core_value / identity / actor / feature / entity / step / …) is no longer individually publishable: in format F it is an *element inside* `vP`/`vS`, not its own release. The per-node publish footer, unpublish link, and published-versions history are removed for non-service kinds; the engine's `node_publish` / `node_unpublish` / `node_published_list` endpoints + `node_publish.py` + per-node `version` / `_publish_baseline` fields + the old `published/{kind}/{node}/v*.md` layout are retired.
+- **Why:** anchored to VISION + D-2026-06-22-D/E/F/G — the deliverable the external agent reads is the *frozen bundle*, and the bundle is 2-layer (vP project-shared + vS service). Per-node publish was the pre-overhaul model; keeping it alongside format F means two publish mental models for the same canvas. The user confirmed the existing buttons already cover the two layers, so this is a **rewire + demolition**, not new UI.
+- **Sequence:** ⓑ rewire first (additive: vP + vS reach format F), then ⓒ retire per-node (viewer UI → engine backend), each as atomic green commits — so the publish UI is never left with zero working triggers.
+- **Shipped:** ⓐ HTTP endpoints (v0.107.0, D-22-G) · ⓑ viewer rewire (plot `c1a218a`) · ⓒ viewer UI retirement (plot `cd61993`) · ⓒ engine backend retirement (v0.108.0 — `node_publish.py` / `md_publish.py` / `propagation.py` + per-node endpoints + `publish_node_tool` + `_dirty` decoration + orphaned git helpers deleted). **Deferred (no user value, wire-breaking):** removing the vestigial node `version` / `_publish_baseline` fields — a schema-regen change tracked separately; the fields stay (default-valued, unused) for now.
+- **Alternatives:** add separate format F buttons beside the per-node ones — rejected (redundant UI, two mental models). Keep per-node publish as well — rejected (MECE: a node is published *as part of* its vP/vS, not standalone).
+- **Approval:** Accepted by user, 2026-06-22 ("C로 갑시다" = full ⓑ+ⓒ, after confirming the buttons already exist). Builds on D-2026-06-22-G.
+- **Spec impact:** `storage-publish.md §발행` — the publish model is now format F 2-layer (per-node section retired). Guards land per-step in `plot/viewer/tests/*` (rewire + eligibility) and `noory-ai/plot/tests/*` (endpoint removal).
+
 ### D-2026-06-22-G — format F publish reachable over HTTP (INT-g first step; viewer UI + per-node retirement still gated)
 
 - **What:** Two POST endpoints expose the format F write half on the HTTP surface, mirroring the existing MCP tools: `POST /api/projects/{id}/publish/snapshot` (→ `vP` project snapshot) and `POST /api/projects/{id}/services/{service_id}/publish` (→ `vS` service release). Thin wrappers over the tested `format_f.publish_project_snapshot` / `publish_service`. Error mapping: 404 (project/service not found), **409** for the two write-boundary gates — bootstrap (no `vP` yet) and refs-integrity (a ref does not resolve in the based_on `vP`).

@@ -10,16 +10,14 @@ from __future__ import annotations
 import time
 import webbrowser
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from fastmcp import FastMCP
 
 from plot_mcp.folder_io import (
-    PublishNotEligibleError,
     create_project,
     delete_project,
     list_feature_details,
-    publish_node,
     read_canvas,
     read_project,
     sync_details_with_overview,
@@ -209,47 +207,6 @@ def tag_project(
             "git repo' prompt, or run `git init` there manually."
         ) from exc
     except TagAlreadyExistsError as exc:
-        raise ValueError(str(exc)) from exc
-
-
-@mcp.tool()
-def publish_node_tool(
-    project_path: str,
-    project_id: str,
-    canvas_kind: str,
-    node_id: str,
-    service_id: str | None = None,
-) -> dict[str, Any]:
-    """Publish a single node (D-2026-05-16-E + D-2026-05-17-C).
-
-    Bumps the node's ``version`` MAJOR component (``v1.0`` → ``v2.0``),
-    writes a per-node MD file at
-    ``<canvas>/published/{kind}-{slug}-{version}.md``, MINOR-propagates
-    the bump up the ``parent_id`` chain (v0.20.0 / D-2026-05-17-C), and
-    creates a single git commit with machine-readable ``Publish-*:``
-    base trailers + one ``Publish-Propagated-Ancestor:`` trailer per
-    bumped ancestor.
-
-    Eligibility: project anchor / ``service`` is_root (FeatureDetail
-    mirror) / ``*_ref`` kinds are rejected with ValueError. All other
-    kinds are publish-eligible — including ``actor`` is_root masters
-    like Bana / Admin / Guest (v0.24.10 / D-2026-05-19-C).
-
-    Returns ``{node_id, from_version, to_version, md_path, sha,
-    propagated}``. ``propagated`` is the list of ancestor records
-    (``{node_id, from_version, to_version, canvases}``) so the caller
-    can refresh affected views without a separate request.
-    """
-    plot_root = resolve_plot_root(project_path)
-    try:
-        return publish_node(
-            plot_root,
-            project_id,
-            cast("CanvasKind", canvas_kind),
-            node_id,
-            service_id=service_id,
-        )
-    except PublishNotEligibleError as exc:
         raise ValueError(str(exc)) from exc
 
 

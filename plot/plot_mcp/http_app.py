@@ -25,9 +25,6 @@ from plot_mcp.api_endpoints import (
     format_f_service_publish_endpoint,
     format_f_snapshot_endpoint,
     health_endpoint,
-    node_publish_endpoint,
-    node_published_list_endpoint,
-    node_unpublish_endpoint,
     project_anchor_patch_endpoint,
     project_at_tag_endpoint,
     project_delete_endpoint,
@@ -218,24 +215,6 @@ def create_http_app(
         Route(
             "/api/projects/{project_id}/services/{service_id}/publish",
             format_f_service_publish_endpoint,
-            methods=["POST"],
-        ),
-        # v0.18.0 Phase 3 (D-2026-05-16-E) — per-node publish
-        Route(
-            "/api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/publish",
-            node_publish_endpoint,
-            methods=["POST"],
-        ),
-        # v0.23.0 (D-2026-05-17-I) — list a node's published versions
-        Route(
-            "/api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/published",
-            node_published_list_endpoint,
-            methods=["GET"],
-        ),
-        # v0.23.x (D-2026-05-17-J) — unpublish (git revert most recent publish)
-        Route(
-            "/api/projects/{project_id}/canvases/{canvas_kind}/nodes/{node_id}/unpublish",
-            node_unpublish_endpoint,
             methods=["POST"],
         ),
         WebSocketRoute("/ws", ws_endpoint),

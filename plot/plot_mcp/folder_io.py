@@ -10,8 +10,6 @@ helpers that tests/endpoints import) so no import site changes:
     canvas_io.py          — read_canvas / write_canvas / list_feature_details
     project_io.py         — ProjectDoc read/write, seeds, create/rename/delete
     detail_sync.py        — feature ↔ services-overview sync
-    node_publish.py       — per-node publish/unpublish (dirty detection,
-                            version bumps, git snapshots)
 
 Disk layout (unchanged)
 -----------------------
@@ -79,42 +77,6 @@ from plot_mcp.detail_sync import (
 )
 from plot_mcp.detail_sync import (
     sync_details_with_overview as sync_details_with_overview,
-)
-from plot_mcp.node_publish import (
-    _DIRTY_NON_CONTENT_FIELDS as _DIRTY_NON_CONTENT_FIELDS,
-)
-from plot_mcp.node_publish import (
-    _DIRTY_VISUAL_FIELDS as _DIRTY_VISUAL_FIELDS,
-)
-from plot_mcp.node_publish import (
-    PublishNotEligibleError as PublishNotEligibleError,
-)
-from plot_mcp.node_publish import (
-    UnpublishNotEligibleError as UnpublishNotEligibleError,
-)
-from plot_mcp.node_publish import (
-    _bump_node_version_in_canvas as _bump_node_version_in_canvas,
-)
-from plot_mcp.node_publish import (
-    _dirty_snapshot as _dirty_snapshot,
-)
-from plot_mcp.node_publish import (
-    _incident_edges as _incident_edges,
-)
-from plot_mcp.node_publish import (
-    _load_all_canvases as _load_all_canvases,
-)
-from plot_mcp.node_publish import (
-    _patch_node_in_canvas as _patch_node_in_canvas,
-)
-from plot_mcp.node_publish import (
-    is_node_dirty as is_node_dirty,
-)
-from plot_mcp.node_publish import (
-    publish_node as publish_node,
-)
-from plot_mcp.node_publish import (
-    unpublish_node as unpublish_node,
 )
 from plot_mcp.project_io import (
     _seed_actors_canvas as _seed_actors_canvas,

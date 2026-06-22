@@ -4,6 +4,27 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.108.0] — 2026-06-23
+
+### Removed
+
+- **Per-node publish backend retired** (INT-g ⓒ engine, **D-2026-06-22-H**). In
+  format F a node is published as an element inside its `vP` / `vS` bundle, never
+  on its own, so the whole per-node publish subsystem is gone:
+  - deleted modules `node_publish.py` (publish/unpublish/dirty/version-bump),
+    `md_publish.py` (per-node MD + `can_publish`), `propagation.py` (MINOR
+    propagation walk).
+  - removed HTTP endpoints `POST …/nodes/{id}/publish`, `POST …/nodes/{id}/unpublish`,
+    `GET …/nodes/{id}/published`, the MCP `publish_node_tool`, and the canvas
+    GET/PUT `_dirty` response decoration.
+  - removed the now-orphaned git helpers `publish_snapshot` / `ensure_clean_working_tree`
+    / `find_latest_publish_commit` / `revert_publish`.
+  - dropped ~100 obsolete tests across 7 files; engine 611 green, mypy strict + ruff clean.
+- **Kept (deferred):** the vestigial node `version` / `_publish_baseline` fields stay
+  for now — removing them is a wire-contract change (schema regen across repos) with no
+  user value, tracked separately. The blueprint publish (`POST …/publish`, semver + git
+  tag) stays — it is the `vP` freeze mechanism.
+
 ## [0.107.0] — 2026-06-22
 
 ### Added

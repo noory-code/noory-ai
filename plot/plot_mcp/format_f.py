@@ -1,9 +1,9 @@
 """format F export (INT-2) — vP project snapshot + vS service release.
 
 Implements the neutral published-bundle contract in ``docs/specs/format-f.md``.
-**Walking-skeleton scope (D-2026-06-22, "워킹 스켈레톤 먼저"):** this is written
-*alongside* the existing per-node publish (``node_publish.py``), not a
-replacement yet — the per-node retirement is a separate later migration.
+format F is now the **sole** publish model (D-2026-06-22-H): the project snapshot
+``vP`` (via the Header "설계도 발행" button) + a service release ``vS`` (per
+service). The old per-node publish (``node_publish.py``) is retired.
 
 Slugs are minted into a per-project registry ``_slugs.json`` (P-4 = explicit
 slug field): keyed on node id, so a slug is **stable across label changes** and
