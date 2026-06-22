@@ -432,7 +432,16 @@ def publish_service(plot_root: Path, project_id: str, service_id: str) -> dict[s
         "git_sha": _git_sha(plot_root),
         "elements": elements,
         "refs": {
-            "anchors": {"core_values": value_slugs, "identity": identity_slugs},
+            # Every service stands on the project's single mission — the essence
+            # (VISION). Anchoring to it makes a mission change propagate to the
+            # services that realize it (refs = the propagation surface, §5). The
+            # foundation invariant guarantees a mission, so the guard only ever
+            # falls through for a malformed vP.
+            "anchors": {
+                **({"mission": "mission"} if "mission" in vp_ids else {}),
+                "core_values": value_slugs,
+                "identity": identity_slugs,
+            },
             "actors": actor_slugs,
             "entities": entity_slugs,
         },

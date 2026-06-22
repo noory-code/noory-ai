@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.112.0] — 2026-06-23
+
+### Fixed
+
+- **Service releases (`vS`) now anchor to the project mission** (**D-2026-06-23-D**).
+  `publish_service` built `refs.anchors` from only `core_values` + `identity`, never
+  the mission — so a mission change in a `vP+1` snapshot would propagate to no
+  service at all, even though the mission is the project's single essence (VISION)
+  that every service stands on. The manifest now always carries
+  `anchors.mission = "mission"` (guarded by `"mission" in vP`, which the foundation
+  invariant — ≥1 mission node — guarantees). Aligns the code with the format-f.md
+  §3.2 example, which already showed the mission anchor. Surfaced by the Plot↔Solera
+  pipeline dogfood. `format_f_version` stays 1 (additive). Engine 598 green.
+
 ## [0.111.0] — 2026-06-23
 
 ### Fixed

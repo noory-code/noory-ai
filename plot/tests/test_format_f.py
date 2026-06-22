@@ -181,6 +181,20 @@ def test_service_design_surfaces_refs(plot_root: Path) -> None:
     assert any(v in md for v in m["refs"]["anchors"]["core_values"])
 
 
+def test_service_refs_anchor_to_project_mission(plot_root: Path) -> None:
+    """Every service stands on the project's single mission — the essence (VISION).
+    The vS refs must anchor to it so a mission change propagates to the services
+    that realize it; refs is the propagation surface (format-f.md §5)."""
+    from plot_mcp.format_f import publish_project_snapshot, publish_service
+
+    create_project(plot_root, "alpha", "Alpha")
+    _add_service_referencing_seeds(plot_root)
+    vp = publish_project_snapshot(plot_root, "alpha")
+    assert any(e["id"] == "mission" for e in vp["elements"])  # mission lives in vP
+    m = publish_service(plot_root, "alpha", "svc-auth")
+    assert m["refs"]["anchors"]["mission"] == "mission"
+
+
 def test_snapshot_release_bumps(plot_root: Path) -> None:
     from plot_mcp.format_f import publish_project_snapshot
 

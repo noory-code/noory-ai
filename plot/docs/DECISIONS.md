@@ -39,6 +39,15 @@
 
 ## Log
 
+### D-2026-06-23-D — every service release (`vS`) anchors to the project mission (format F refs)
+
+- **What:** `publish_service` now always includes `refs.anchors.mission = "mission"` in the `vS` manifest (guarded by `"mission" in vP`). Previously `anchors` carried only `core_values` + `identity`, both selected per-service via the service node's `ref_*_ids`; the mission was never anchored.
+- **Why:** anchored to the essence (VISION) — the mission is the project's **single** essence, and every service stands on it. `refs` is the **propagation surface** (format-f.md §5: a `vP+1` element change reaches only the `vS` that *reference* it). With the mission absent from every `vS`, a mission change would propagate to **no** service — the most fundamental possible change reaching nothing, which contradicts "본질을 놓치지 않는다." Unlike `core_value`/`identity` (referenced selectively), the mission is singular with no per-service selection field, so it is anchored universally.
+- **Code or spec?** The user asked which fit the purpose. The format-f.md §3.2 example already showed `"mission": "mission"`; the **code** was the side out of step. Fixed the code to match the spec, not the reverse.
+- **Compat:** additive — `format_f_version` stays 1 (Solera's intake copies the bundle; an extra anchor key is tolerated). The foundation invariant guarantees ≥1 mission node, so the `"mission" in vP` guard only ever falls through for a malformed `vP`.
+- **Approval:** Accepted by user, 2026-06-23 (delegated the code-vs-spec judgment; chose to align with purpose). Surfaced by the Plot↔Solera pipeline dogfood.
+- **Spec impact:** `docs/specs/format-f.md §3.2` field rules note that mission is always anchored. Guard: `tests/test_format_f.py::test_service_refs_anchor_to_project_mission`.
+
 ### D-2026-06-23-C — debug channel (`/api/debug`) is auth-exempt (restore the WKWebView introspection bridge)
 
 - **What:** `/api/debug` is added to the auth middleware's open-paths set (alongside `/api/health`), so it is callable without the `PLOT_AUTH_TOKEN`.
