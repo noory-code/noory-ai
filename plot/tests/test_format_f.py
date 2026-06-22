@@ -131,6 +131,33 @@ def test_publish_service_with_dangling_ref_is_rejected(plot_root: Path) -> None:
         publish_service(plot_root, "alpha", "svc-x")
 
 
+def test_manifest_contract_shape_is_pinned(plot_root: Path) -> None:
+    """Cross-repo contract guard (INT-1c, write side): the manifests Plot emits
+    carry exactly the keys Solera's reader expects. Pinned here so a producer
+    change that drops a field fails before it reaches Solera. The version is
+    pinned in lock-step with ``intake.SUPPORTED_FORMAT_F_VERSION``."""
+    from plot_mcp.format_f import (
+        FORMAT_F_VERSION,
+        publish_project_snapshot,
+        publish_service,
+    )
+
+    assert FORMAT_F_VERSION == 1
+
+    create_project(plot_root, "alpha", "Alpha")
+    _add_service_referencing_seeds(plot_root)
+    vp = publish_project_snapshot(plot_root, "alpha")
+    assert set(vp) >= {"format_f_version", "scope", "release", "git_sha", "elements"}
+    assert vp["format_f_version"] == FORMAT_F_VERSION
+    assert all(set(e) >= {"id", "kind", "hash"} for e in vp["elements"])
+
+    vs = publish_service(plot_root, "alpha", "svc-auth")
+    assert set(vs) >= {
+        "format_f_version", "scope", "service", "release", "based_on", "elements", "refs",
+    }
+    assert set(vs["refs"]) >= {"anchors", "actors", "entities"}
+
+
 def test_minted_slug_is_stable_across_label_change(plot_root: Path) -> None:
     """Explicit-slug invariant: once minted (keyed on node id), the slug does
     not move when the label changes — that is what makes it a stable contract."""

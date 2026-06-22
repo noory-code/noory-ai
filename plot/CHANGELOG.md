@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.103.1] — 2026-06-22
+
+### Added
+
+- **format F write-side contract guard + Phase P pinned** (INT-1c, **D-2026-06-22-D**).
+  `tests/test_format_f.py::test_manifest_contract_shape_is_pinned` pins the
+  manifest shape + `FORMAT_F_VERSION` Plot emits, in lock-step with Solera's
+  `intake.SUPPORTED_FORMAT_F_VERSION` (a producer change that drops a field now
+  fails before it reaches Solera). The 2-layer publish decision (vP project
+  snapshot + vS service release, slug-referenced, per-node coexists/retires
+  later) is pinned in `DECISIONS.md` D-2026-06-22-D; the contract spec lives in
+  `repos-plot/docs/specs/format-f.md` and `storage-publish.md` gains a format F
+  section.
+
 ## [0.103.0] — 2026-06-22
 
 ### Added
