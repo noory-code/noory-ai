@@ -5,11 +5,12 @@ instead of a hardcoded list (reverses D-2026-06-16-C for codex, which went
 stale immediately as vendors shipped new models):
 
   * codex  → ``~/.codex/models_cache.json`` (every ``visibility == "list"`` +
-    ``supported_in_api`` model; codex keeps it fresh). Each model is expanded
-    into one combined entry per ``supported_reasoning_levels`` (D-2026-06-22-C):
-    ``id`` is ``"<slug>:<effort>"``, ``label`` is ``"<display> (<Effort>)"``;
-    ``CodexProvider`` splits the id back into ``--model`` + a
-    ``-c model_reasoning_effort=`` override. A model with no levels stays bare.
+    ``supported_in_api`` model; codex keeps it fresh). Each model is ONE bare
+    entry (``id`` = slug) carrying its ``supported_reasoning_levels`` as a
+    separate ``efforts`` list (D-2026-06-23-B, reverses the D-2026-06-22-C
+    combined entry). The viewer picks model + effort independently and
+    recombines them into the ``"<slug>:<effort>"`` form ``CodexProvider`` splits
+    into ``--model`` + a ``-c model_reasoning_effort=`` override.
   * claude → the CLI's own documented aliases (still static — claude publishes
     stable aliases, D-2026-06-16-C).
 
@@ -25,17 +26,22 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from plot_mcp.mcp_registration import ProviderName
 
 
 class ModelOption(BaseModel):
-    """One selectable chat model. ``id`` is passed to the CLI as ``--model``;
-    ``label`` is what the selector shows."""
+    """One selectable chat model. ``id`` is the bare model slug passed to the CLI
+    as ``--model``; ``label`` is what the selector shows. ``efforts`` are the
+    reasoning levels this model supports (codex only; ``[]`` otherwise) — the
+    viewer renders them as a *separate* effort control (D-2026-06-23-B reverses
+    the D-2026-06-22-C combined ``<slug>:<effort>`` entry) and recombines the
+    pick into the ``<slug>:<effort>`` form ``CodexProvider`` splits."""
 
     id: str
     label: str
+    efforts: list[str] = Field(default_factory=list)
 
 
 # claude publishes stable aliases, so this stays static (D-2026-06-16-C).
@@ -46,10 +52,6 @@ CLAUDE_MODELS: list[ModelOption] = [
 ]
 
 _DEFAULT_CODEX_CACHE = Path.home() / ".codex" / "models_cache.json"
-
-# Pretty labels for codex reasoning levels (D-2026-06-22-C); fall back to a
-# plain capitalize for any level the cache adds later.
-_EFFORT_LABEL = {"low": "Low", "medium": "Medium", "high": "High", "xhigh": "xHigh"}
 
 
 def _codex_reasoning_efforts(entry: dict[str, Any]) -> list[str]:
@@ -88,15 +90,11 @@ def parse_codex_models(cache: dict[str, Any]) -> list[ModelOption]:
             continue
         display = entry.get("display_name")
         label = display if isinstance(display, str) and display else slug
-        efforts = _codex_reasoning_efforts(entry)
-        if efforts:
-            # One combined entry per level (D-2026-06-22-C). id "<slug>:<effort>"
-            # is split back by CodexProvider into --model + reasoning-effort.
-            for effort in efforts:
-                pretty = _EFFORT_LABEL.get(effort, effort.capitalize())
-                out.append(ModelOption(id=f"{slug}:{effort}", label=f"{label} ({pretty})"))
-        else:
-            out.append(ModelOption(id=slug, label=label))
+        # One bare entry per model, carrying its reasoning levels separately
+        # (D-2026-06-23-B): the viewer shows a distinct effort control and
+        # recombines the pick into the "<slug>:<effort>" form CodexProvider
+        # splits — model and effort are chosen independently.
+        out.append(ModelOption(id=slug, label=label, efforts=_codex_reasoning_efforts(entry)))
     return out
 
 

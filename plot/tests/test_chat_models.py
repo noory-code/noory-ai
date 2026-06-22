@@ -61,9 +61,10 @@ def test_parse_codex_models_label_falls_back_to_slug() -> None:
     assert out == [ModelOption(id="gpt-x", label="gpt-x")]
 
 
-def test_parse_codex_models_expands_reasoning_levels() -> None:
-    # D-2026-06-22-C: a model with supported_reasoning_levels becomes one
-    # combined entry per level — id "<slug>:<effort>", label "<display> (<Effort>)".
+def test_parse_codex_models_carries_reasoning_levels_separately() -> None:
+    # D-2026-06-23-B (reverses D-2026-06-22-C): a model with
+    # supported_reasoning_levels is ONE bare entry carrying its efforts as a
+    # separate list — the viewer renders model + effort as distinct controls.
     cache = {
         "models": [
             {
@@ -80,11 +81,8 @@ def test_parse_codex_models_expands_reasoning_levels() -> None:
         ]
     }
     out = parse_codex_models(cache)
-    assert [m.id for m in out] == ["gpt-5.5:low", "gpt-5.5:high", "gpt-5.5:xhigh"]
-    assert [m.label for m in out] == [
-        "GPT-5.5 (Low)",
-        "GPT-5.5 (High)",
-        "GPT-5.5 (xHigh)",
+    assert out == [
+        ModelOption(id="gpt-5.5", label="GPT-5.5", efforts=["low", "high", "xhigh"])
     ]
 
 

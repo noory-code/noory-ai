@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-23-B — codex reasoning effort is a SEPARATE control (reverses D-2026-06-22-C combined entries)
+
+- **What:** Model and reasoning effort are chosen with two distinct dropdowns, not one combined `<slug>:<effort>` model entry. Engine: `parse_codex_models` emits ONE bare `ModelOption` per model (`id` = slug) carrying its `supported_reasoning_levels` as a separate `efforts` list. Viewer: `ChatModelSelector` shows a model dropdown + (when the selected model has efforts) a separate effort dropdown, splitting any stored `<slug>:<effort>` apart for display and recombining the pick into `<slug>:<effort>`.
+- **Why:** user direction ("effort 는 분리하는게 맞는거 같아요. 모델 따로 에포트 따로"). The combined entries (D-2026-06-22-C) multiplied the model list by its effort levels and coupled two independent choices into one control.
+- **Design:** persistence stays `<slug>:<effort>` so **`CodexProvider` is unchanged** (it already splits that into `--model` + `-c model_reasoning_effort=`); only the catalogue shape (per-model `efforts`) and the viewer UI change. A bare slug (default effort) round-trips as before.
+- **Approval:** Accepted by user, 2026-06-23.
+- **Spec impact:** none (the `/api/chat/models` response + selector are runtime, not wire-contract). Guards: `tests/test_chat_models.py::test_parse_codex_models_carries_reasoning_levels_separately` (engine); `viewer/tests/chat-effort-control.test.tsx` (viewer split / recombine / no-effort cases).
+
 ### D-2026-06-23-A — Gemini (agy) chat provider temporarily removed (re-add October)
 
 - **What:** The gemini chat provider is removed from the product for now — engine (`ProviderName` literal, `_PROVIDERS`, `chat_providers/gemini.py`, `GeminiProvider`, the `agy models` catalogue branch, mcp/chat endpoint validation sets) and viewer (`McpProviderName`, the `chat.providers.gemini` i18n label, stale test fixtures). Claude Code + Codex are unaffected. The full impl stays in git history.

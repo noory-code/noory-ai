@@ -4,6 +4,18 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.110.0] — 2026-06-23
+
+### Changed
+
+- **Codex reasoning effort is a separate control, not baked into the model id**
+  (**D-2026-06-23-B**, reverses D-2026-06-22-C). `parse_codex_models` now emits
+  ONE bare entry per model (`id` = slug) carrying its `supported_reasoning_levels`
+  as a separate `ModelOption.efforts` list, instead of expanding into combined
+  `<slug>:<effort>` entries. The viewer picks model + effort independently and
+  recombines them into the `<slug>:<effort>` form `CodexProvider` already splits
+  — so `CodexProvider` is unchanged. Engine 596 green, mypy strict + ruff clean.
+
 ## [0.109.0] — 2026-06-23
 
 ### Removed
