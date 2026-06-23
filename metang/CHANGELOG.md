@@ -2,6 +2,14 @@
 
 All notable changes to the metang plugin are documented here.
 
+## [1.1.0] - 2026-06-23
+
+### Added
+- Optional `.metang.json` config (project root overriding `~/.metang.json`):
+  - `enabled: false` mutes the reminder without uninstalling.
+  - `explainRules` / `askRules` replace the default bullets in either section.
+  - No config file → built-in defaults, unchanged behavior.
+
 ## [1.0.1] - 2026-06-23
 
 ### Fixed

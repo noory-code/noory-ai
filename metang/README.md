@@ -30,6 +30,24 @@ hook re-injects it on **every** turn instead, right before the model answers.
 **Scope** — this governs the *answer the user reads*, not the model's private
 reasoning. Thinking stays free.
 
+## Configuration
+
+Optional. Drop a `.metang.json` in your project root (Claude Code passes it as
+`$CLAUDE_PROJECT_DIR`); a `~/.metang.json` acts as a global default, and the
+project file overrides it. With no file present, the built-in defaults apply.
+
+```json
+{
+  "enabled": true,
+  "explainRules": "- your own explaining rules, replacing the defaults",
+  "askRules": "- your own asking rules, replacing the defaults"
+}
+```
+
+- `enabled: false` — mute the reminder without uninstalling.
+- `explainRules` / `askRules` — replace the bullets in that section. Omit a key
+  to keep its defaults. The scope line (answer-only, not reasoning) always stays.
+
 ## How it works
 
 `hooks/hooks.json` wires a `UserPromptSubmit` command hook to
