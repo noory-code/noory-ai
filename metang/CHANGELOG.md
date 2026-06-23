@@ -2,6 +2,13 @@
 
 All notable changes to the metang plugin are documented here.
 
+## [1.0.1] - 2026-06-23
+
+### Fixed
+- Removed the `hooks` field from the manifest. The standard `hooks/hooks.json`
+  is loaded automatically, so referencing it in the manifest caused a
+  "Duplicate hooks file detected" load error.
+
 ## [1.0.0] - 2026-06-23
 
 ### Added
