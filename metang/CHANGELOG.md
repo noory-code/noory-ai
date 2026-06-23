@@ -2,6 +2,17 @@
 
 All notable changes to the metang plugin are documented here.
 
+## [1.3.0] - 2026-06-23
+
+### Added
+- Per-section toggles: `explainEnabled` / `askEnabled` in `.metang.json`, with
+  `/metang:config explain on|off` and `ask on|off`. Turning one off drops just
+  that section from the reminder; the other stays.
+
+### Removed
+- The whole-plugin `enabled` flag (and `/metang:config on|off`). It duplicated
+  Claude Code's own plugin enable/disable — use that to silence metang entirely.
+
 ## [1.2.0] - 2026-06-23
 
 ### Added

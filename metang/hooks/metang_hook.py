@@ -9,8 +9,9 @@ answers.
 Optional config: ``.metang.json`` in the project root (``$CLAUDE_PROJECT_DIR``)
 overriding ``~/.metang.json``. Recognised keys:
 
-- ``enabled`` (bool, default ``true``) — set ``false`` to mute the reminder
-  without uninstalling the plugin.
+- ``explainEnabled`` / ``askEnabled`` (bool, default ``true``) — set ``false``
+  to drop that section from the reminder. (To silence metang entirely, disable
+  the plugin in Claude Code; that switch already exists.)
 - ``explainRules`` (str) — replaces the default "Explaining" bullets.
 - ``askRules`` (str) — replaces the default "Asking" bullets.
 
@@ -62,21 +63,29 @@ def load_config() -> dict[str, object]:
 
 
 def build_rule(cfg: dict[str, object]) -> str:
-    explain = cfg.get("explainRules") or DEFAULT_EXPLAIN
-    ask = cfg.get("askRules") or DEFAULT_ASK
-    return (
-        "[metang — answer & question discipline]\n\n"
-        f"{SCOPE}\n\n"
-        f"Explaining:\n{explain}\n\n"
-        f"Asking:\n{ask}"
-    )
+    """Assemble the reminder from whichever sections are enabled. Returns an
+    empty string when every section is off — the caller then injects nothing."""
+    sections: list[str] = []
+    if cfg.get("explainEnabled", True) is not False:
+        sections.append("Explaining:\n" + str(cfg.get("explainRules") or DEFAULT_EXPLAIN))
+    if cfg.get("askEnabled", True) is not False:
+        sections.append("Asking:\n" + str(cfg.get("askRules") or DEFAULT_ASK))
+    if not sections:
+        return ""
+    body = "\n\n".join(sections)
+    return f"[metang — answer & question discipline]\n\n{SCOPE}\n\n{body}"
 
 
 def dump_defaults() -> str:
     """The built-in config a user can seed and then edit. This script is the
     single source of the default rule text."""
     return json.dumps(
-        {"enabled": True, "explainRules": DEFAULT_EXPLAIN, "askRules": DEFAULT_ASK},
+        {
+            "explainEnabled": True,
+            "askEnabled": True,
+            "explainRules": DEFAULT_EXPLAIN,
+            "askRules": DEFAULT_ASK,
+        },
         ensure_ascii=False,
         indent=2,
     )
@@ -92,14 +101,15 @@ def main() -> None:
     except Exception:
         pass
     cfg = load_config()
-    if cfg.get("enabled", True) is False:
-        sys.exit(0)  # muted: emit nothing, inject nothing
+    rule = build_rule(cfg)
+    if not rule:
+        sys.exit(0)  # every section off: inject nothing
     sys.stdout.write(
         json.dumps(
             {
                 "hookSpecificOutput": {
                     "hookEventName": "UserPromptSubmit",
-                    "additionalContext": build_rule(cfg),
+                    "additionalContext": rule,
                 }
             },
             ensure_ascii=False,

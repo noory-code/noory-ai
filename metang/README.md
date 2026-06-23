@@ -36,29 +36,33 @@ Use the **`/metang:config`** command — it edits `.metang.json` for you:
 
 ```
 /metang:config status            # show current state
-/metang:config off               # mute without uninstalling
-/metang:config on
-/metang:config init              # seed the current defaults as an editable starting point
+/metang:config explain off       # drop the explaining section
+/metang:config explain on
+/metang:config ask off           # drop the asking section
+/metang:config ask on
 /metang:config explain <text>    # replace the explaining rules
 /metang:config ask <text>        # replace the asking rules
+/metang:config init              # seed the current defaults as an editable starting point
 /metang:config reset             # back to built-in defaults
 ```
 
-Add `global` (e.g. `/metang:config off global`) to target `~/.metang.json`
-instead of the project. The hook reads the file **every turn**, so changes apply
-on the next message — no restart needed.
+Add `global` (e.g. `/metang:config explain off global`) to target
+`~/.metang.json` instead of the project. The hook reads the file **every turn**,
+so changes apply on the next message — no restart needed. To silence metang
+entirely, disable the plugin in Claude Code (that switch already exists).
 
 The file it manages, if you prefer editing by hand:
 
 ```json
 {
-  "enabled": true,
+  "explainEnabled": true,
+  "askEnabled": true,
   "explainRules": "- your own explaining rules, replacing the defaults",
   "askRules": "- your own asking rules, replacing the defaults"
 }
 ```
 
-- `enabled: false` — mute the reminder without uninstalling.
+- `explainEnabled` / `askEnabled: false` — drop that section from the reminder.
 - `explainRules` / `askRules` — replace the bullets in that section. Omit a key
   to keep its defaults. The scope line (answer-only, not reasoning) always stays.
 - The project `.metang.json` overrides `~/.metang.json`; with no file, defaults apply.

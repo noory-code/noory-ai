@@ -1,6 +1,6 @@
 ---
-description: View or change metang settings — toggle on/off, seed the current defaults, customize the explaining/asking rules, or reset
-argument-hint: "[on|off|status|init|reset|explain <text>|ask <text>] [global]"
+description: View or change metang settings — toggle each section (explaining/asking) on/off, seed defaults, customize rules, or reset
+argument-hint: "[status|init|reset|explain on|off|<text>|ask on|off|<text>] [global]"
 ---
 
 The plugin's current built-in defaults (single source — the hook script):
@@ -20,14 +20,15 @@ Manage the metang plugin's `.metang.json` config based on the arguments: `$ARGUM
 1. Pick the target file per the rule above. If it exists, read it (it is JSON); otherwise treat the current config as `{}`.
 
 2. Interpret the first argument (ignore a trailing `global`):
-   - empty or `status` → Do NOT edit. Report: target file path, whether it exists, the effective `enabled` value (default `true` when unset), and whether `explainRules` / `askRules` are customized. Then stop.
-   - `on` → set `"enabled": true`.
-   - `off` → set `"enabled": false`.
+   - empty or `status` → Do NOT edit. Report: target file path, whether it exists, the effective `explainEnabled` / `askEnabled` values (default `true` when unset), and whether `explainRules` / `askRules` are customized. Then stop.
    - `init` → write the current built-in defaults (shown above) into the target file, so the user has the live behavior as an editable starting point. Overwrite the file with that JSON.
-   - `reset` → delete the `enabled`, `explainRules`, and `askRules` keys (restore built-in defaults).
-   - `explain` → set `"explainRules"` to the text that follows the word `explain`.
-   - `ask` → set `"askRules"` to the text that follows the word `ask`.
+   - `reset` → delete the `explainEnabled`, `askEnabled`, `explainRules`, and `askRules` keys (restore built-in defaults).
+   - `explain on` → set `"explainEnabled": true`. `explain off` → set `"explainEnabled": false`.
+   - `ask on` → set `"askEnabled": true`. `ask off` → set `"askEnabled": false`.
+   - `explain <other text>` → set `"explainRules"` to that text. `ask <other text>` → set `"askRules"` to that text.
    - anything else → list the valid actions and stop.
+
+   (There is no whole-plugin on/off here — to silence metang entirely, disable the plugin in Claude Code.)
 
 3. For an edit action: write the merged JSON back to the target file, 2-space indented, preserving any keys you did not touch.
 
