@@ -1,6 +1,6 @@
 {
   "name": "metang",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Injects answer & question discipline on every user turn: abstract to the right level (no raw-name dumps, no empty placeholders), keep it short, and ask only when the choice criterion or the data to decide is genuinely missing. Governs the answer, not the model's private reasoning.",
   "homepage": "https://github.com/noory-code/noory-ai/tree/main/metang",
   "repository": "https://github.com/noory-code/noory-ai",
@@ -15,5 +15,6 @@
   "author": {
     "name": "noory-code",
     "url": "https://github.com/noory-code"
-  }
+  },
+  "commands": ["./commands/config.md"]
 }

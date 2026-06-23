@@ -2,6 +2,17 @@
 
 All notable changes to the metang plugin are documented here.
 
+## [1.2.0] - 2026-06-23
+
+### Added
+- `/metang:config` slash command — a real interface for the config instead of
+  hand-editing JSON: `on` / `off` / `status` / `init` / `reset` /
+  `explain <text>` / `ask <text>`, with an optional `global` target. The hook
+  reads the config every turn, so changes apply on the next message.
+- `init` seeds `.metang.json` with the current built-in defaults as an editable
+  starting point, sourced live from the hook via a new `--dump-defaults` mode
+  (the hook script stays the single source of the default rule text).
+
 ## [1.1.0] - 2026-06-23
 
 ### Added

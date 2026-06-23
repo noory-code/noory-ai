@@ -32,9 +32,23 @@ reasoning. Thinking stays free.
 
 ## Configuration
 
-Optional. Drop a `.metang.json` in your project root (Claude Code passes it as
-`$CLAUDE_PROJECT_DIR`); a `~/.metang.json` acts as a global default, and the
-project file overrides it. With no file present, the built-in defaults apply.
+Use the **`/metang:config`** command — it edits `.metang.json` for you:
+
+```
+/metang:config status            # show current state
+/metang:config off               # mute without uninstalling
+/metang:config on
+/metang:config init              # seed the current defaults as an editable starting point
+/metang:config explain <text>    # replace the explaining rules
+/metang:config ask <text>        # replace the asking rules
+/metang:config reset             # back to built-in defaults
+```
+
+Add `global` (e.g. `/metang:config off global`) to target `~/.metang.json`
+instead of the project. The hook reads the file **every turn**, so changes apply
+on the next message — no restart needed.
+
+The file it manages, if you prefer editing by hand:
 
 ```json
 {
@@ -47,6 +61,7 @@ project file overrides it. With no file present, the built-in defaults apply.
 - `enabled: false` — mute the reminder without uninstalling.
 - `explainRules` / `askRules` — replace the bullets in that section. Omit a key
   to keep its defaults. The scope line (answer-only, not reasoning) always stays.
+- The project `.metang.json` overrides `~/.metang.json`; with no file, defaults apply.
 
 ## How it works
 

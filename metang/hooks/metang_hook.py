@@ -72,7 +72,20 @@ def build_rule(cfg: dict[str, object]) -> str:
     )
 
 
+def dump_defaults() -> str:
+    """The built-in config a user can seed and then edit. This script is the
+    single source of the default rule text."""
+    return json.dumps(
+        {"enabled": True, "explainRules": DEFAULT_EXPLAIN, "askRules": DEFAULT_ASK},
+        ensure_ascii=False,
+        indent=2,
+    )
+
+
 def main() -> None:
+    if "--dump-defaults" in sys.argv:
+        sys.stdout.write(dump_defaults())
+        sys.exit(0)
     # Drain stdin so the hook pipe closes cleanly; the prompt content is unused.
     try:
         sys.stdin.read()
