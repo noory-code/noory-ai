@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.112.2] — 2026-06-23
+
+### Fixed
+
+- **In-app Codex chat no longer hangs with no response** (**D-2026-06-23-F**).
+  The chat subprocess spawn set `stdout`/`stderr` but left `stdin` inherited, so
+  the child got the engine sidecar's stdin (never at EOF). `codex exec` reads
+  stdin for "additional input" even when the prompt is an arg ("Reading
+  additional input from stdin..."), so it blocked forever → the turn produced no
+  response. Spawn now passes `stdin=DEVNULL`, giving every provider an immediate
+  EOF (the prompt is always an arg; no provider should read stdin). Independent
+  of the v0.112.1 Claude flag bug — that one errored, this one silently hung.
+  Verified `codex exec --json` itself returns fine + the parser already matches
+  its event shape; the hang was purely the open stdin. Engine 599 green.
+
 ## [0.112.1] — 2026-06-23
 
 ### Fixed

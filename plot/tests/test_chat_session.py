@@ -319,6 +319,7 @@ class _FakeProcess:
         self.spawn_args: list[str] = []
         self.spawn_cwd: str | None = None
         self.spawn_env: dict[str, str] = {}
+        self.spawn_stdin: Any = "UNSET"
 
     async def wait(self) -> int:
         self.returncode = self._returncode
@@ -337,6 +338,7 @@ def _build_fake_factory(
         process.spawn_args = list(cmd)
         process.spawn_cwd = cwd
         process.spawn_env = kwargs.get("env") or {}
+        process.spawn_stdin = kwargs.get("stdin", "UNSET")
         return process
 
     return factory
@@ -428,6 +430,25 @@ async def test_stream_turn_yields_start_delta_complete_on_success(
     # env; this flag was only a token nicety. Must stay out of the spawn args.
     assert "--exclude-dynamic-system-prompt-sections" not in process.spawn_args
     assert process.spawn_env.get("CLAUDE_CODE_DISABLE_AUTO_MEMORY") == "1"
+
+
+async def test_stream_turn_closes_child_stdin(tmp_path: Path) -> None:
+    """The prompt is passed as an arg, so the child must NOT read stdin. Without
+    an explicit EOF the child inherits the engine sidecar's stdin and blocks —
+    `codex exec` does exactly this ("Reading additional input from stdin...") and
+    produces no response. Spawn with stdin=DEVNULL so every provider gets EOF.
+    D-2026-06-23-F."""
+    process = _FakeProcess(stdout_lines=[], returncode=0)
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    provider = ClaudeCodeProvider(
+        workspace_root=ws,
+        session_id="s",
+        cli_path="claude",
+        subprocess_factory=_build_fake_factory(process),
+    )
+    await _drain(provider, "hi")
+    assert process.spawn_stdin == asyncio.subprocess.DEVNULL
 
 
 async def test_stream_turn_resumes_on_second_turn(tmp_path: Path) -> None:

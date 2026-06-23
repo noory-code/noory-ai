@@ -39,6 +39,15 @@
 
 ## Log
 
+### D-2026-06-23-F — chat subprocess spawns with `stdin=DEVNULL` (fixes in-app Codex no-response hang)
+
+- **What:** `ChatProvider.stream_turn`'s subprocess spawn (and the `_SubprocessFactory` protocol + `_default_spawn`) now pass `stdin=asyncio.subprocess.DEVNULL`.
+- **Why:** the spawn set `stdout`/`stderr=PIPE` but never set `stdin`, so the child inherited the engine sidecar's stdin, which is not at EOF. `codex exec` reads stdin for "additional input" even when the prompt is passed as a positional arg (it prints `Reading additional input from stdin...` to stderr), so it blocked indefinitely and the turn yielded **no response** — exactly the "코덱스는 응답이 없고" the user reported. Reproduced directly: `codex exec --json` returns a clean `agent_message` and the engine parser already matches its event shape (`thread.started` / `item.completed`+`agent_message` / `turn.completed`), so the only fault was the open stdin.
+- **Scope:** shared base, so it covers claude / codex / (future) providers. The prompt is always an arg; no provider is meant to read stdin, so DEVNULL is universally correct.
+- **Relation to D-2026-06-23-E:** independent bug. E was Claude erroring on a bogus flag (loud failure); F is Codex silently hanging on stdin (quiet failure). Both surfaced in the same in-app chat test session.
+- **Approval:** user-reported bug, 2026-06-23 ("코덱스는 응답이 없고.."), user chose to investigate Codex before rebuilding.
+- **Spec impact:** none. Guard: `tests/test_chat_session.py::test_stream_turn_closes_child_stdin`.
+
 ### D-2026-06-23-E — remove the bogus `--exclude-dynamic-system-prompt-sections` claude flag (it broke all in-app Claude chat)
 
 - **What:** The `claude -p` spawn (`chat_providers/claude_code.py::_build_command`) no longer passes `--exclude-dynamic-system-prompt-sections`.

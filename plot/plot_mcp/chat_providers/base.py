@@ -111,6 +111,7 @@ class _SubprocessFactory(Protocol):
         env: dict[str, str] | None = ...,
         stdout: int | None = ...,
         stderr: int | None = ...,
+        stdin: int | None = ...,
     ) -> Awaitable[Any]: ...
 
 
@@ -213,6 +214,12 @@ class _SubprocessChatProvider(ChatProvider):
             env=self._spawn_env(),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            # The prompt is passed as an arg, so the child must never read stdin.
+            # Without an explicit EOF it inherits the engine sidecar's stdin and
+            # blocks — `codex exec` does exactly this ("Reading additional input
+            # from stdin...") and yields no response. DEVNULL gives every provider
+            # an immediate EOF. D-2026-06-23-F.
+            stdin=asyncio.subprocess.DEVNULL,
         )
 
         # Flip the first-turn flag before reading output so a crash mid-stream
@@ -258,6 +265,7 @@ async def _default_spawn(
     env: dict[str, str] | None = None,
     stdout: int | None = None,
     stderr: int | None = None,
+    stdin: int | None = None,
 ) -> asyncio.subprocess.Process:
     """Thin wrapper around ``asyncio.create_subprocess_exec`` so the type of
     the default factory exactly matches the ``_SubprocessFactory`` protocol.
@@ -269,6 +277,7 @@ async def _default_spawn(
         env=env,
         stdout=stdout,
         stderr=stderr,
+        stdin=stdin,
     )
 
 
