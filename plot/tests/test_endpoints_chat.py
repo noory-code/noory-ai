@@ -461,6 +461,37 @@ def test_chat_send_injects_selected_node_content(
     assert "Make planning effortless" in sent  # the mission TEXT, not just the label
 
 
+def test_chat_send_injects_actor_registry_on_feature_scope(
+    app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
+) -> None:
+    """Phase 2b — on a feature scope the message lists existing actors so the
+    agent references them instead of reinventing."""
+    from plot_mcp.folder_io import create_project, write_canvas
+    from plot_mcp.models import ActorNode, CanvasDoc, SketchNode
+    from plot_mcp.workspace import resolve_plot_root
+
+    plot_root = resolve_plot_root(str(workspace))
+    create_project(plot_root, "alpha", "Alpha")
+    actors: list[SketchNode] = [
+        ActorNode(id="a1", label="Operator"),
+        ActorNode(id="a2", label="Reader"),
+    ]
+    write_canvas(
+        plot_root, "alpha", CanvasDoc(canvas_id="actors", canvas_kind="actors", nodes=actors)
+    )
+    _select_provider(app_client, workspace, "codex")
+    app_client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "add a comment feature",
+            "scope": "feature:svc1",
+        },
+    )
+    sent = fake_provider.calls[0]
+    assert "Operator" in sent and "Reader" in sent
+
+
 def test_chat_send_malformed_selection_is_ignored(
     app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
 ) -> None:

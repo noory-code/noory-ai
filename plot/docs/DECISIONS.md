@@ -39,6 +39,22 @@
 
 ## Log
 
+### D-2026-06-24-D — cross-canvas registry: list existing actors / entities on feature & services chat scopes (chat-quality Phase 2b)
+
+- **What:** On the `feature` and `services` scopes, the in-app chat message lists the **existing** actors (`"label" (id)`) and entities (`"label" (id): summary`), read from their canvases engine-side (`render_cross_canvas_registry`). Each list capped at 40; other scopes inject nothing.
+- **Why:** those scopes design things that *reference* actors / entities (a feature step carries `actor_ref` + `ref_entity_ids`; a service carries `ref_actor_ids`). Without the existing list in front of it, the agent reinvents — minting 글 / 게시물 / 포스트 as three entities instead of referencing the one that exists. This is the D-2026-06-17-L "entity registry" envelope piece, scoped to where the reference actually happens.
+- **Alternatives:** (a) inject the registry on every scope — rejected: foundation / actors / project don't cross-reference, so it's pure context-window cost there. (b) inject once per session instead of per turn — deferred: simpler to send per turn under a cap; per-session caching is a budget optimisation for later. (c) full canvas content rather than a label/summary list — rejected: the list is the dedup signal; deep content is the agent's MCP fetch.
+- **Approval:** Accepted by user, 2026-06-24 (chat-quality push, "다음 작업하죠").
+- **Spec impact:** SPEC.md R7 chat → "Cross-canvas registry" row. Guards: `tests/test_chat_selection_detail.py` (registry cases), `tests/test_endpoints_chat.py::test_chat_send_injects_actor_registry_on_feature_scope`.
+
+### D-2026-06-24-C — active canvas map: inject the whole current canvas (not just the selection) into in-app chat (chat-quality Phase 2a)
+
+- **What:** The in-app chat message now leads with a compact `[Canvas: <scope>] N node(s):` map of **every** node on the active canvas (`kind "label" (id)`, selected ones marked), read engine-side (`render_canvas_map`). It replaces the former wire-label selection header when the canvas reads cleanly, and falls back to that header otherwise. Labels only; capped at 60 nodes.
+- **Why:** the agent saw only the *selected* nodes, so it was blind to the rest of the screen it was helping with — neighbours, siblings, what's already on the canvas. The map gives it the whole current surface cheaply (labels only), while bodies stay in the selection-content block (Lever 1a) and deep reads stay the agent's MCP-fetch job (the inject-small / fetch-large boundary, `docs/idea/chat/01-levers.md`).
+- **Alternatives:** (a) keep only the selection header — rejected, leaves the agent blind to context it's clearly working within. (b) inject full node bodies for the whole canvas — rejected: blows the window on a large canvas; the cap + labels-only keeps it bounded, deep content is fetched. (c) add the map *alongside* the selection header — rejected as redundant; the map marks the selection, so it subsumes the header (MECE).
+- **Approval:** Accepted by user, 2026-06-24 (same chat-quality push).
+- **Spec impact:** SPEC.md R7 chat → "Active canvas map" row. Guards: `tests/test_chat_selection_detail.py` (canvas-map cases).
+
 ### D-2026-06-24-A — in-app chat framing delivered as an authoritative system prompt + hallucination guard (chat-quality Lever 2)
 
 - **What:** The per-canvas Layer-3 framing moves out of the user message into a real **system prompt**, and a constant **hallucination guard** is prepended to it on every scope. `plot_mcp/chat_context.build_system_prompt(scope)` composes `HALLUCINATION_GUARD` + the scope's framing; `ChatProvider.set_system_prompt` carries it; claude maps it to `--append-system-prompt`, codex (no system-prompt flag) prepends it to the message. The user message is now `context → selection detail → user text` (framing removed from it).

@@ -4,6 +4,30 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.114.0] — 2026-06-24
+
+Chat quality, Phase 2 — the context envelope (`docs/idea/chat/`). Phase 1 fed the
+agent the selected node + a read-the-canvas guard; Phase 2 gives it the rest of
+the picture it's working within, bounded so a large project can't blow the window.
+
+### Added
+
+- **Active canvas map** (**D-2026-06-24-C**, Phase 2a). The chat message now
+  leads with a compact map of **every** node on the active canvas (`kind "label"
+  (id)`, selected ones marked), read engine-side, so the agent sees the whole
+  current screen — not just the selection. Labels only (bodies stay in the
+  selection block; deep reads are the agent's MCP-fetch job); capped at 60 nodes.
+  Replaces the wire-label selection header when the canvas reads cleanly.
+- **Cross-canvas registry** (**D-2026-06-24-D**, Phase 2b). On the `feature` and
+  `services` scopes — where design work references actors / entities — the
+  message lists the **existing** actors and entities (label + entity summary) so
+  the agent references them instead of minting a duplicate (글 / 게시물 / 포스트
+  as three entities). Capped at 40 each; other scopes skip it to spare the window.
+
+### Notes
+
+- Engine 623 green, mypy / ruff clean. In-app only; MCP-path parity is Phase 3.
+
 ## [0.113.0] — 2026-06-24
 
 Chat quality, Phase 1 — feed the starving in-app agent (`docs/idea/chat/`). The

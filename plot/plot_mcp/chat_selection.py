@@ -23,8 +23,13 @@ from typing import Any
 
 from plot_mcp.canvas_io import read_canvas
 from plot_mcp.chat_context import SELECTION_DETAIL_CAP
-from plot_mcp.models_canvas import CanvasKind
+from plot_mcp.models_canvas import CanvasDoc, CanvasKind
 from plot_mcp.workspace import enumerate_projects
+
+# Layer 1b (docs/idea/chat/01-levers.md) — how many nodes of the active canvas
+# to list in the map before truncating, so a large canvas can't blow the
+# context window. Labels only (cheap), so this can be looser than the detail cap.
+CANVAS_MAP_CAP = 60
 
 # Graph-level / visual / server-managed fields shared by every node kind
 # (``BaseNodeFields``). They carry no project *meaning* — id + label are already
@@ -56,6 +61,18 @@ _STRUCTURAL_FIELDS: frozenset[str] = frozenset(
 _VALID_CANVAS_KINDS: frozenset[str] = frozenset(
     {"foundation", "actors", "services", "entities", "feature"}
 )
+
+# Phase 2b (docs/idea/chat/01-levers.md, Lever 1c) — scopes whose design work
+# *references* actors / entities, so the agent must see the existing ones to
+# reference rather than reinvent them (dedup). A feature's steps carry
+# ``actor_ref`` + ``ref_entity_ids``; a service carries ``ref_actor_ids``. The
+# other scopes don't cross-reference, so they skip the registry to spare the
+# context window.
+_REGISTRY_SCOPES: frozenset[str] = frozenset({"feature", "services"})
+
+# Phase 2b — cap on how many actors / entities to list, so a large project's
+# registry can't blow the context window.
+REGISTRY_CAP = 40
 
 
 def render_node_content(node: dict[str, Any]) -> str:
@@ -93,18 +110,8 @@ def render_selection_detail(plot_root: Path, scope: str, selection: Any) -> str:
     """
     if scope == "project" or not isinstance(selection, list) or not selection:
         return ""
-    base, _, service_id = scope.partition(":")
-    if base not in _VALID_CANVAS_KINDS:
-        return ""
-
-    projects = enumerate_projects(plot_root)
-    if not projects:
-        return ""
-    project_id = projects[0].id
-
-    try:
-        canvas = read_canvas(plot_root, project_id, _as_canvas_kind(base), service_id or None)
-    except Exception:  # noqa: BLE001 — a corrupt / missing canvas must not break a turn
+    canvas = _read_active_canvas(plot_root, scope)
+    if canvas is None:
         return ""
 
     by_id = {n.id: n for n in canvas.nodes}
@@ -126,6 +133,111 @@ def render_selection_detail(plot_root: Path, scope: str, selection: Any) -> str:
     if not blocks:
         return ""
     return "[Selected node details]\n" + "\n\n".join(blocks)
+
+
+def render_canvas_map(plot_root: Path, scope: str, selection: Any) -> str:
+    """Render the active canvas as a compact node map (Lever 1b / Phase 2a).
+
+    Lists every node on the active canvas as ``kind "label" (id)``, marking the
+    ones in ``selection`` so the agent sees the **whole current screen**, not just
+    what's selected — and which of those nodes "this" refers to. Labels only (no
+    bodies — those ride in :func:`render_selection_detail` for the selected
+    subset, and the agent fetches the rest via its MCP tools). Capped at
+    :data:`CANVAS_MAP_CAP` nodes. Returns ``""`` for the cross-canvas ``project``
+    scope and every unresolvable-canvas case, so the caller can fall back to the
+    cheap wire-label header.
+    """
+    if scope == "project":
+        return ""
+    canvas = _read_active_canvas(plot_root, scope)
+    if canvas is None or not canvas.nodes:
+        return ""
+
+    selected_ids = {
+        s.get("id") for s in selection if isinstance(s, dict) and isinstance(s.get("id"), str)
+    }
+    lines = [f"[Canvas: {scope}] {len(canvas.nodes)} node(s):"]
+    for node in canvas.nodes[:CANVAS_MAP_CAP]:
+        mark = " [selected]" if node.id in selected_ids else ""
+        lines.append(f'- {node.kind} "{node.label}" ({node.id}){mark}')
+    if len(canvas.nodes) > CANVAS_MAP_CAP:
+        lines.append(f"…and {len(canvas.nodes) - CANVAS_MAP_CAP} more")
+    return "\n".join(lines)
+
+
+def render_cross_canvas_registry(plot_root: Path, scope: str) -> str:
+    """Render the existing actors + entities as a compact reference (Phase 2b).
+
+    On a scope whose design work references actors / entities (``feature`` /
+    ``services``), the agent must see what already exists so it references them
+    instead of minting a duplicate (글 / 게시물 / 포스트 as three entities). Lists
+    actors by label and entities by ``label: summary``, both capped at
+    :data:`REGISTRY_CAP`. Returns ``""`` for every other scope and when nothing
+    is resolvable / present.
+    """
+    base = scope.split(":", 1)[0]
+    if base not in _REGISTRY_SCOPES:
+        return ""
+    project_id = _resolve_project_id(plot_root)
+    if project_id is None:
+        return ""
+
+    blocks: list[str] = []
+    actors = _safe_read_canvas(plot_root, project_id, "actors")
+    if actors is not None:
+        actor_nodes = [n for n in actors.nodes if n.kind == "actor"][:REGISTRY_CAP]
+        if actor_nodes:
+            listed = ", ".join(f'"{n.label}" ({n.id})' for n in actor_nodes)
+            blocks.append(f"[Existing actors] {listed}")
+    entities = _safe_read_canvas(plot_root, project_id, "entities")
+    if entities is not None:
+        entity_nodes = [n for n in entities.nodes if n.kind == "entity"][:REGISTRY_CAP]
+        if entity_nodes:
+            listed = ", ".join(_render_entity_ref(n) for n in entity_nodes)
+            blocks.append(f"[Existing entities] {listed}")
+    return "\n".join(blocks)
+
+
+def _render_entity_ref(node: Any) -> str:
+    """``"label" (id): summary`` — or without the summary when it's empty."""
+    summary = str(getattr(node, "summary", "") or "").strip()
+    head = f'"{node.label}" ({node.id})'
+    return f"{head}: {summary}" if summary else head
+
+
+def _read_active_canvas(plot_root: Path, scope: str) -> CanvasDoc | None:
+    """Read the active canvas for ``scope`` from the single project under the
+    data root, or ``None`` for ``project`` scope / unknown base / no project /
+    a corrupt or missing canvas (every failure mode is graceful — a chat turn
+    must never break on a read).
+    """
+    if scope == "project":
+        return None
+    base, _, service_id = scope.partition(":")
+    if base not in _VALID_CANVAS_KINDS:
+        return None
+    project_id = _resolve_project_id(plot_root)
+    if project_id is None:
+        return None
+    return _safe_read_canvas(plot_root, project_id, _as_canvas_kind(base), service_id or None)
+
+
+def _resolve_project_id(plot_root: Path) -> str | None:
+    """The single project under the data root, or ``None`` (one-project-per-root,
+    D-2026-06-21-AB; newest first when a legacy multi-project root survives)."""
+    projects = enumerate_projects(plot_root)
+    return projects[0].id if projects else None
+
+
+def _safe_read_canvas(
+    plot_root: Path, project_id: str, kind: CanvasKind, service_id: str | None = None
+) -> CanvasDoc | None:
+    """``read_canvas`` that swallows every error to ``None`` — a corrupt / missing
+    canvas must never break a chat turn."""
+    try:
+        return read_canvas(plot_root, project_id, kind, service_id)
+    except Exception:  # noqa: BLE001 — graceful: a bad canvas yields no context
+        return None
 
 
 def _as_canvas_kind(base: str) -> CanvasKind:

@@ -36,7 +36,11 @@ from plot_mcp.chat_context import (
 from plot_mcp.chat_models import list_models
 from plot_mcp.chat_provider import read_selection
 from plot_mcp.chat_providers.base import DEFAULT_CHAT_SCOPE, is_valid_scope
-from plot_mcp.chat_selection import render_selection_detail
+from plot_mcp.chat_selection import (
+    render_canvas_map,
+    render_cross_canvas_registry,
+    render_selection_detail,
+)
 from plot_mcp.chat_session import ChatProvider, ChatSessionRegistry, chat_registry
 from plot_mcp.mcp_registration import ProviderName
 from plot_mcp.workspace import resolve_plot_root
@@ -210,9 +214,17 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     # when it has nothing to add (e.g. the cross-canvas ``project`` scope), so
     # only non-empty parts are joined.
     selection_nodes = body.get("selection")
-    context = build_context_preamble(scope, selection_nodes)
+    # Layer 2 map: the whole active canvas (all nodes, selected ones marked) read
+    # engine-side, so the agent sees the current screen — not just the selection
+    # (Phase 2a). Falls back to the cheap wire-label header when the canvas can't
+    # be read. Then the selected nodes' actual content (Lever 1a), then user text.
+    canvas_map = render_canvas_map(plot_root, scope, selection_nodes)
+    context = canvas_map or build_context_preamble(scope, selection_nodes)
+    # On scopes that reference actors / entities (feature / services), list the
+    # existing ones so the agent references rather than reinvents them (Phase 2b).
+    existing_registry = render_cross_canvas_registry(plot_root, scope)
     detail = render_selection_detail(plot_root, scope, selection_nodes)
-    full_message = "\n\n".join(p for p in (context, detail, message) if p)
+    full_message = "\n\n".join(p for p in (context, existing_registry, detail, message) if p)
 
     asyncio.create_task(stream_chat_turn(provider, hub, plot_root, full_message, scope))
     return JSONResponse({"accepted": True}, status_code=202)
