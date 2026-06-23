@@ -4,6 +4,21 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.112.1] — 2026-06-23
+
+### Fixed
+
+- **In-app Claude chat no longer dies on an unknown CLI flag** (**D-2026-06-23-E**).
+  The `claude -p` spawn passed `--exclude-dynamic-system-prompt-sections`, which
+  is **not a real claude CLI flag** — it was assumed by D-2026-06-21-I and never
+  verified. The installed CLI (2.1.17) rejected it with `error: unknown option`,
+  so every Claude chat turn (any model, incl. Opus) failed before producing
+  output. Removed the flag. Workspace grounding (the actual goal of D-2026-06-21-I)
+  is unaffected: it rides on `--setting-sources local` + the
+  `CLAUDE_CODE_DISABLE_AUTO_MEMORY` spawn env; the removed flag was only a token
+  nicety (keeping cwd/env/git out of the system prompt) the CLI can't do. All
+  other spawn flags verified against `claude --help`. Engine 598 green.
+
 ## [0.112.0] — 2026-06-23
 
 ### Fixed

@@ -39,6 +39,15 @@
 
 ## Log
 
+### D-2026-06-23-E — remove the bogus `--exclude-dynamic-system-prompt-sections` claude flag (it broke all in-app Claude chat)
+
+- **What:** The `claude -p` spawn (`chat_providers/claude_code.py::_build_command`) no longer passes `--exclude-dynamic-system-prompt-sections`.
+- **Why:** that flag does not exist in the claude CLI. It was introduced by D-2026-06-21-I to "keep cwd / env / memory-paths / git-status out of the system prompt," but was **never verified against the CLI** (an honesty-rule violation — 추측/지어내기 금지 for CLI flags). The installed CLI (2.1.17) rejects it (`error: unknown option '--exclude-dynamic-system-prompt-sections'`), so **every** Claude chat turn — any model, Opus included — died before emitting output. The user hit it the moment they chatted with Claude Opus in the debug `.app`.
+- **Impact on D-2026-06-21-I's goal:** none. The real isolation is `--setting-sources local` (no parent/global CLAUDE.md discovery) + `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` (no auto-memory). The removed flag was only a token/privacy nicety; the CLI offers no equivalent, so it is dropped, not replaced.
+- **Verification:** every remaining spawn flag (`--print` / `--output-format` / `--include-partial-messages` / `--verbose` / `--allowedTools` / `--setting-sources` / `--session-id` / `--resume` / `--model`) was checked against `claude --help` and is supported — so the next turn won't hit a different unknown option.
+- **Approval:** user-reported bug, 2026-06-23 ("클로드 오푸스로 하니 에러나네 … unknown option '--exclude-dynamic-system-prompt-sections'"). Corrects D-2026-06-21-I.
+- **Spec impact:** none. Guard: `tests/test_chat_session.py::test_stream_turn_yields_start_delta_complete_on_success` now asserts the flag is **absent**.
+
 ### D-2026-06-23-D — every service release (`vS`) anchors to the project mission (format F refs)
 
 - **What:** `publish_service` now always includes `refs.anchors.mission = "mission"` in the `vS` manifest (guarded by `"mission" in vP`). Previously `anchors` carried only `core_values` + `identity`, both selected per-service via the service node's `ref_*_ids`; the mission was never anchored.

@@ -69,7 +69,11 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             # ``CLAUDE_CODE_DISABLE_AUTO_MEMORY`` env (see ``_spawn_env``).
             "--setting-sources",
             "local",
-            "--exclude-dynamic-system-prompt-sections",
+            # NOTE: do NOT add `--exclude-dynamic-system-prompt-sections` here.
+            # It is not a real claude CLI flag (D-2026-06-21-I assumed it without
+            # verifying); the CLI rejects it with "unknown option" and the whole
+            # chat turn dies. Workspace grounding is carried by --setting-sources
+            # local + CLAUDE_CODE_DISABLE_AUTO_MEMORY (see _spawn_env). D-2026-06-23-E.
             *self._model_args(),
         ]
         if self._first_turn:

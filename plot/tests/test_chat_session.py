@@ -421,7 +421,12 @@ async def test_stream_turn_yields_start_delta_complete_on_success(
     # parent / global CLAUDE.md auto-discovery, no auto-memory (OAuth intact).
     src = process.spawn_args.index("--setting-sources")
     assert process.spawn_args[src + 1] == "local"
-    assert "--exclude-dynamic-system-prompt-sections" in process.spawn_args
+    # D-2026-06-23-E — `--exclude-dynamic-system-prompt-sections` is NOT a real
+    # claude CLI flag; it was assumed by D-2026-06-21-I and never verified, so
+    # the CLI rejected it ("unknown option") and every claude chat turn died.
+    # Workspace grounding survives on --setting-sources local + the disable-memory
+    # env; this flag was only a token nicety. Must stay out of the spawn args.
+    assert "--exclude-dynamic-system-prompt-sections" not in process.spawn_args
     assert process.spawn_env.get("CLAUDE_CODE_DISABLE_AUTO_MEMORY") == "1"
 
 
