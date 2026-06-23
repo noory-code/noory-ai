@@ -4,6 +4,43 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.113.0] — 2026-06-24
+
+Chat quality, Phase 1 — feed the starving in-app agent (`docs/idea/chat/`). The
+in-app `-p` agent hallucinates because it is context-starved, not because of the
+`-p` mode; these two levers give it authority + the project's actual content.
+
+### Added
+
+- **Selected-node content injection** (**D-2026-06-24-B**, Lever 1a). The engine
+  now reads the selected nodes' actual typed text (mission statement / body,
+  core_value definition, …) and injects a `[Selected node details]` block into
+  the chat message, so "polish this mission" reaches the agent **with the mission
+  text** instead of inventing one. Read engine-side (`plot_mcp/chat_selection.py`)
+  via `read_canvas`, keyed off the single project under the data root; the
+  renderer is generic (non-empty, non-structural text fields) so new kinds need
+  no per-kind branch. Fails safe — no project / missing canvas / absent id all
+  yield nothing rather than a wrong detail. In-app only.
+
+### Changed
+
+- **Per-canvas framing is now an authoritative system prompt + hallucination
+  guard** (**D-2026-06-24-A**, Lever 2). The Layer-3 framing moved out of the
+  user message into a real system prompt, and a constant guard ("ground every
+  claim in the given context; read the canvas with your Plot MCP tools or ask;
+  never invent project details; resolve 'this' to the selected node") now ships
+  on every scope. claude delivers it via `--append-system-prompt`; codex (no
+  such flag) prepends it to the message. The user message is now
+  `context → selection detail → user text`. This is the cheapest, highest-leverage
+  anti-hallucination lever. In-app only — MCP-path parity is a Phase-3 follow-up.
+
+### Notes
+
+- Engine 614 green, mypy / ruff clean. Verification of the actual hallucination
+  drop needs a real CLI in the debug `.app` (Gate 3) + the Phase-0 adversarial
+  set; the unit tests pin the structural causes (command assembly + content
+  injection).
+
 ## [0.112.2] — 2026-06-23
 
 ### Fixed

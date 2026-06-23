@@ -69,6 +69,12 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             # ``CLAUDE_CODE_DISABLE_AUTO_MEMORY`` env (see ``_spawn_env``).
             "--setting-sources",
             "local",
+            # Lever 2 (docs/idea/chat/01-levers.md) — deliver the Layer-3
+            # framing + hallucination guard as an authoritative system prompt
+            # rather than gluing it into the user message. claude has a native
+            # flag for exactly this; ``--append-system-prompt`` augments (not
+            # replaces) claude's own system prompt.
+            *(["--append-system-prompt", self._system_prompt] if self._system_prompt else []),
             # NOTE: do NOT add `--exclude-dynamic-system-prompt-sections` here.
             # It is not a real claude CLI flag (D-2026-06-21-I assumed it without
             # verifying); the CLI rejects it with "unknown option" and the whole
@@ -97,9 +103,7 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
         return _parse_claude_line(turn_id, line, accumulator)
 
 
-def _parse_claude_line(
-    turn_id: str, line: bytes, accumulator: list[str]
-) -> ChatStreamEvent | None:
+def _parse_claude_line(turn_id: str, line: bytes, accumulator: list[str]) -> ChatStreamEvent | None:
     """Decode one Claude Code ``stream-json`` line into a ``delta`` event.
 
     Streaming text comes from the **partial** frames only (D-2026-06-21-B):

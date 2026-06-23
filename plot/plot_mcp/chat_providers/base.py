@@ -138,6 +138,16 @@ class ChatProvider(ABC):
         """
         ...
 
+    def set_system_prompt(self, text: str | None) -> None:
+        """Set the Layer-3 system prompt for subsequent turns (Lever 2).
+
+        Default no-op for the same reason as :meth:`set_model`. The send
+        endpoint calls this each turn with the scope's framing + hallucination
+        guard (:func:`plot_mcp.chat_context.build_system_prompt`); an empty /
+        ``None`` value means "no system prompt".
+        """
+        ...
+
 
 class _SubprocessChatProvider(ChatProvider):
     """Shared spawn → parse → yield loop for every CLI-backed provider.
@@ -167,6 +177,7 @@ class _SubprocessChatProvider(ChatProvider):
         self._first_turn = True
         self._session_id: str | None = None
         self._model: str | None = None
+        self._system_prompt: str | None = None
         self._spawn: _SubprocessFactory = (
             subprocess_factory if subprocess_factory is not None else _default_spawn
         )
@@ -178,6 +189,22 @@ class _SubprocessChatProvider(ChatProvider):
     def set_model(self, model: str | None) -> None:
         """Store the CLI model override (D-2026-06-16-C). Empty → unset."""
         self._model = model or None
+
+    def set_system_prompt(self, text: str | None) -> None:
+        """Store the Layer-3 system prompt (Lever 2). Empty → unset."""
+        self._system_prompt = text or None
+
+    def _prepend_system(self, user_message: str) -> str:
+        """Fallback delivery for CLIs without a system-prompt flag.
+
+        Providers whose CLI takes the prompt as a bare positional arg (codex
+        ``exec``) have no equivalent of claude's ``--append-system-prompt``, so
+        the system prompt rides in front of the user message. Returns the
+        message unchanged when no system prompt is set.
+        """
+        if not self._system_prompt:
+            return user_message
+        return f"{self._system_prompt}\n\n{user_message}"
 
     def _model_args(self) -> list[str]:
         """``["--model", <model>]`` when a model is set, else ``[]``.

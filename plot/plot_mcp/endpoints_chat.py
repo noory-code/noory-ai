@@ -28,10 +28,15 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.chat_context import build_context_preamble, build_framing_preamble
+from plot_mcp.chat_context import (
+    build_context_preamble,
+    build_framing_preamble,
+    build_system_prompt,
+)
 from plot_mcp.chat_models import list_models
 from plot_mcp.chat_provider import read_selection
 from plot_mcp.chat_providers.base import DEFAULT_CHAT_SCOPE, is_valid_scope
+from plot_mcp.chat_selection import render_selection_detail
 from plot_mcp.chat_session import ChatProvider, ChatSessionRegistry, chat_registry
 from plot_mcp.mcp_registration import ProviderName
 from plot_mcp.workspace import resolve_plot_root
@@ -193,14 +198,21 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     # Apply the workspace's model override (D-2026-06-16-C) before the turn —
     # ``None`` / empty leaves the CLI on its own configured default.
     provider.set_model(selection.model)
+    # Lever 2 (docs/idea/chat/01-levers.md) — the Layer-3 framing + hallucination
+    # guard go to the CLI as an authoritative system prompt, not glued into the
+    # user message. The provider maps it per CLI (claude flag / codex prepend).
+    provider.set_system_prompt(build_system_prompt(scope))
 
-    # Assemble the CLI prompt: Layer 3 per-canvas framing → Layer 2 active-canvas
-    # + selection context → the user's message, in that order. Either preamble is
-    # "" when it has nothing to add (e.g. the cross-canvas ``project`` scope), so
+    # The user message carries Layer 2 ahead of the user's text: the selection
+    # header (which canvas + what is selected) followed by the selected nodes'
+    # actual content read engine-side (Lever 1a) so "polish this" resolves to the
+    # real node text rather than something the agent invents. Each builder is ""
+    # when it has nothing to add (e.g. the cross-canvas ``project`` scope), so
     # only non-empty parts are joined.
-    framing = build_framing_preamble(scope)
-    context = build_context_preamble(scope, body.get("selection"))
-    full_message = "\n\n".join(p for p in (framing, context, message) if p)
+    selection_nodes = body.get("selection")
+    context = build_context_preamble(scope, selection_nodes)
+    detail = render_selection_detail(plot_root, scope, selection_nodes)
+    full_message = "\n\n".join(p for p in (context, detail, message) if p)
 
     asyncio.create_task(stream_chat_turn(provider, hub, plot_root, full_message, scope))
     return JSONResponse({"accepted": True}, status_code=202)

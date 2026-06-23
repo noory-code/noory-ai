@@ -56,6 +56,10 @@ class _CannedProvider(ChatProvider):
     def __init__(self, events: list[ChatStreamEvent]) -> None:
         self._events = events
         self.calls: list[str] = []
+        self.system_prompts: list[str | None] = []
+
+    def set_system_prompt(self, text: str | None) -> None:
+        self.system_prompts.append(text)
 
     async def stream_turn(self, user_message: str) -> Any:
         self.calls.append(user_message)
@@ -398,10 +402,11 @@ def test_framing_uses_base_scope_for_parametric_feature() -> None:
     assert a == b and a != ""
 
 
-def test_chat_send_prepends_framing_before_context_and_message(
+def test_chat_send_routes_framing_to_system_prompt_context_to_message(
     app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
 ) -> None:
-    """A send assembles framing → context → user message, in that order."""
+    """Framing (Layer 3) goes to the system prompt; the user message carries
+    only Layer-2 context → user text, in that order (Lever 2)."""
     _select_provider(app_client, workspace, "codex")
     app_client.post(
         "/api/chat/send",
@@ -412,11 +417,48 @@ def test_chat_send_prepends_framing_before_context_and_message(
             "selection": [{"id": "n1", "kind": "core_value", "label": "Trust"}],
         },
     )
+    # Layer 3 (per-canvas framing + the hallucination guard) → system prompt.
+    sysprompt = fake_provider.system_prompts[0]
+    assert sysprompt is not None
+    assert "Discovery" in sysprompt
+    assert "Never invent project details" in sysprompt
+    # The user message has only Layer-2 context ahead of the user's text — no
+    # framing leaks into it.
     sent = fake_provider.calls[0]
-    framing_at = sent.index("Discovery")
-    context_at = sent.index("Trust")
-    message_at = sent.index("fix this")
-    assert framing_at < context_at < message_at
+    assert "Discovery" not in sent
+    assert sent.index("Trust") < sent.index("fix this")
+
+
+def test_chat_send_injects_selected_node_content(
+    app_client: TestClient, workspace: Path, fake_provider: _CannedProvider
+) -> None:
+    """Lever 1a — the selected node's actual text (read engine-side) rides in
+    the user message, not just its label."""
+    from plot_mcp.folder_io import create_project, write_canvas
+    from plot_mcp.models import CanvasDoc, IdentityNode, MissionNode, SketchNode
+    from plot_mcp.workspace import resolve_plot_root
+
+    plot_root = resolve_plot_root(str(workspace))
+    create_project(plot_root, "alpha", "Alpha")
+    nodes: list[SketchNode] = [
+        MissionNode(id="m1", label="Our mission", statement="Make planning effortless"),
+        IdentityNode(id="i1", label="Identity"),
+    ]
+    write_canvas(
+        plot_root, "alpha", CanvasDoc(canvas_id="foundation", canvas_kind="foundation", nodes=nodes)
+    )
+    _select_provider(app_client, workspace, "codex")
+    app_client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "polish this",
+            "scope": "foundation",
+            "selection": [{"id": "m1", "kind": "mission", "label": "Our mission"}],
+        },
+    )
+    sent = fake_provider.calls[0]
+    assert "Make planning effortless" in sent  # the mission TEXT, not just the label
 
 
 def test_chat_send_malformed_selection_is_ignored(

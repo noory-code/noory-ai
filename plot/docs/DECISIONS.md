@@ -39,6 +39,22 @@
 
 ## Log
 
+### D-2026-06-24-A — in-app chat framing delivered as an authoritative system prompt + hallucination guard (chat-quality Lever 2)
+
+- **What:** The per-canvas Layer-3 framing moves out of the user message into a real **system prompt**, and a constant **hallucination guard** is prepended to it on every scope. `plot_mcp/chat_context.build_system_prompt(scope)` composes `HALLUCINATION_GUARD` + the scope's framing; `ChatProvider.set_system_prompt` carries it; claude maps it to `--append-system-prompt`, codex (no system-prompt flag) prepends it to the message. The user message is now `context → selection detail → user text` (framing removed from it).
+- **Why:** the in-app `-p` agent hallucinates because it is **context-starved**, not because of the `-p` mode (`docs/idea/chat/00-problem.md`). The framing sat inside the user message, where the model treats it as conversation, not a binding instruction — and nothing told the agent to *read* the canvas rather than invent. A system-prompt-delivered guard ("ground every claim in the given context; read the canvas with your Plot MCP tools or ask; never invent mission text / values / actors / entities; resolve 'this' to the selected node") is the single cheapest, highest-leverage anti-hallucination lever (`docs/idea/chat/01-levers.md`, Lever 2).
+- **Alternatives:** (a) keep framing in the user message — rejected, weak authority, the status quo that drifts. (b) force a `get_viewer_context` call every turn instead of a guard — deferred (extra round-trip; `-p` adherence unverified; can combine later). (c) a claude-only flag with no codex path — rejected, both providers must carry the framing, so codex falls back to message-prepend.
+- **Approval:** Accepted by user, 2026-06-24 (chat-quality work, "설계미결 해결하고 채팅 품질 잡읍시다"; plan SSOT `docs/idea/chat/`).
+- **Spec impact:** SPEC.md R7 chat → "Per-canvas framing + hallucination guard" row. Guards: `tests/test_chat_system_prompt.py`, `tests/test_endpoints_chat.py::test_chat_send_routes_framing_to_system_prompt_context_to_message`.
+
+### D-2026-06-24-B — inject the selected node's actual content into the in-app chat context (chat-quality Lever 1a)
+
+- **What:** The engine now reads the selected nodes' **typed text** (mission statement / body, core_value definition, …) and injects a `[Selected node details]` block into the user message, in addition to the existing kind/label/id header. Read engine-side via `read_canvas` in the new `plot_mcp/chat_selection.py`, keyed off the single project under the data root; the renderer is generic (dumps non-empty, non-structural text fields).
+- **Why:** the selection header named the node but never carried its content, so "polish this mission" reached the agent without the mission text and it invented one — the concrete face of context starvation (`docs/idea/chat/00-problem.md`, Lever 1a).
+- **Alternatives:** (a) have the viewer send node bodies in the `selection` payload — rejected: bloats the wire, the viewer doesn't hold every typed field, and it wouldn't serve the MCP path. Engine-side read keeps the canvas the SSOT (D-2026-06-15-D) and fails safe. (b) per-kind content renderers — rejected as premature; a generic field dump (drop structural / visual / server keys) is MECE and auto-covers new kinds. (c) inject the whole active canvas now — deferred to the Phase-2 context envelope; Lever 1a is the cheap, bounded first cut (selected nodes only).
+- **Approval:** Accepted by user, 2026-06-24 (same chat-quality push).
+- **Spec impact:** SPEC.md R7 chat → "Selected-node content injection" row. Guards: `tests/test_chat_selection_detail.py`, `tests/test_endpoints_chat.py::test_chat_send_injects_selected_node_content`.
+
 ### D-2026-06-23-F — chat subprocess spawns with `stdin=DEVNULL` (fixes in-app Codex no-response hang)
 
 - **What:** `ChatProvider.stream_turn`'s subprocess spawn (and the `_SubprocessFactory` protocol + `_default_spawn`) now pass `stdin=asyncio.subprocess.DEVNULL`.

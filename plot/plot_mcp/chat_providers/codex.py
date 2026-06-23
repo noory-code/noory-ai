@@ -58,6 +58,10 @@ class CodexProvider(_SubprocessChatProvider):
         # Until we've captured a thread_id, every turn starts a fresh session
         # — this also covers the "first turn never emitted thread.started"
         # crash-recovery path so we don't try to ``resume None``.
+        # codex exec has no system-prompt flag — the prompt is the trailing
+        # positional arg — so the Layer-3 system prompt (Lever 2) rides in front
+        # of the user message via the base ``_prepend_system`` fallback.
+        message = self._prepend_system(user_message)
         if self._first_turn or self._session_id is None:
             return [
                 self._cli_path,
@@ -65,7 +69,7 @@ class CodexProvider(_SubprocessChatProvider):
                 "--json",
                 "--skip-git-repo-check",
                 *self._model_args(),
-                user_message,
+                message,
             ]
         return [
             self._cli_path,
@@ -75,7 +79,7 @@ class CodexProvider(_SubprocessChatProvider):
             "--json",
             "--skip-git-repo-check",
             *self._model_args(),
-            user_message,
+            message,
         ]
 
     def _parse_line(
