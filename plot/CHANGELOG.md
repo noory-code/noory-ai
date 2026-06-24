@@ -4,6 +4,20 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.117.0] — 2026-06-24
+
+### Added
+
+- **Node name-search** (**D-2026-06-24-I**) — new MCP tool
+  `search_project_nodes(project_path, project_id, query)`: a case-insensitive
+  label scan over **every** canvas (singletons + feature details), returning up
+  to 20 `{id, kind, label, canvas}` hits. The "name" leg of the context
+  entry-point chain (selection → map → **name** → semantic; D-2026-06-20-P §1.2),
+  so the agent can jump to "the comment feature" even when it's on another
+  canvas. The hallucination guard now names the tool. A plain label index, not
+  vector search (the data is already a graph). Engine 648 green.
+  `plot_mcp/node_search.py` + `tests/test_node_search.py` (6).
+
 ## [0.116.1] — 2026-06-24
 
 ### Changed

@@ -35,6 +35,7 @@ from plot_mcp.git_store import (
 )
 from plot_mcp.migrate import migrate_v01_to_v02
 from plot_mcp.models import CanvasDoc, CanvasKind
+from plot_mcp.node_search import search_nodes
 from plot_mcp.viewer_context import read_viewer_context
 from plot_mcp.workspace import (
     discover_projects,
@@ -175,6 +176,20 @@ def list_detail_canvases(project_path: str, project_id: str) -> list[str]:
     """Return the service ids that have their own Detail canvas."""
     plot_root = resolve_plot_root(project_path)
     return list_feature_details(plot_root, project_id)
+
+
+@mcp.tool()
+def search_project_nodes(
+    project_path: str, project_id: str, query: str
+) -> list[dict[str, Any]]:
+    """Find nodes by name across all of a project's canvases (the "name" lookup
+    entry point). Use this to resolve a node the user names but that isn't on the
+    canvas you're looking at — e.g. "the comment feature", "the Reader actor".
+    Case-insensitive label substring match; returns up to 20
+    ``{id, kind, label, canvas}`` hits (``canvas`` is the scope: ``foundation`` …
+    or ``feature:<service_id>``). Then ``get_canvas`` that scope to read details."""
+    plot_root = resolve_plot_root(project_path)
+    return search_nodes(plot_root, project_id, query)
 
 
 # ---------------------------------------------------------------------------

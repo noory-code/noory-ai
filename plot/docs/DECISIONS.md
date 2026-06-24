@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-24-I — node name-search entry point: `search_project_nodes` MCP tool (the "name" leg of D-2026-06-20-P)
+
+- **What:** A new MCP tool `search_project_nodes(project_path, project_id, query)` + the `node_search.search_nodes` it wraps: a case-insensitive label substring scan over **every** canvas of a project (singletons + feature details), returning up to 20 `{id, kind, label, canvas}` hits. The hallucination guard now names it so the agent reaches for it when the user references a node by name that isn't on the active canvas.
+- **Why:** D-2026-06-20-P §1.2 fixed the context entry-point chain as **selection → map → name → (last) semantic search**, and said the title/id index (name lookup) is the thing to "build early". Selection (Lever 1a) + map (Phase 2a) shipped; this is the **name** leg — so the agent can jump to "the comment feature" / "the Reader actor" even when it's on another canvas, instead of guessing.
+- **Alternatives:** (a) vector / embedding search — rejected now (the data is already a graph; a plain label index suffices until text drifts outside the graph — vector stays a later option behind the same seam). (b) HTTP endpoint instead of MCP — not needed: both the in-app `-p` agent and the external agent reach it through `mcp__plot__*`, one surface for both.
+- **Approval:** Implements pinned D-2026-06-20-P (no new product decision); built in the 2026-06-24 autonomous push.
+- **Spec impact:** SPEC.md R7 context. Guard: `tests/test_node_search.py` (6).
+
 ### D-2026-06-24-H — context-provider seam landed: `build_turn_preamble` is the single per-turn assembly point (implements D-2026-06-17-L)
 
 - **What:** The in-app chat endpoint's per-turn Layer-2 assembly (active-canvas map → cross-canvas registry → selected-node detail) moves out of `endpoints_chat.py` into one function `chat_selection.build_turn_preamble(plot_root, scope, selection)`. Behavior-preserving refactor — same output, one named home.

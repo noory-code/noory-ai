@@ -126,11 +126,12 @@ SCOPE_FRAMING: dict[str, str] = {
 # how "this" resolves (to the selected node). Lever 2, docs/idea/chat/01-levers.md.
 HALLUCINATION_GUARD = (
     "Ground every statement in the Plot project context you are given and the "
-    "canvas you can read with your Plot MCP tools (e.g. get_viewer_context). If "
-    "you do not know something specific about THIS project — its mission text, "
-    "core values, actors, services, features, or entities — read it with those "
-    "tools or ask the user. Never invent project details. When the user says "
-    '"this" / "it", resolve it to the node listed as selected in the context.'
+    "canvas you can read with your Plot MCP tools (search_project_nodes to find a "
+    "node by name, get_viewer_context for the live selection, get_canvas to read "
+    "a scope). If you do not know something specific about THIS project — its "
+    "mission text, core values, actors, services, features, or entities — read it "
+    "with those tools or ask the user. Never invent project details. When the "
+    'user says "this" / "it", resolve it to the node listed as selected in the context.'
 )
 
 
