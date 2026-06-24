@@ -4,6 +4,23 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.117.1] — 2026-06-24
+
+Docs-only (engine binary unchanged) — logs a viewer-side fix + extension that
+shipped in the `plot` repo. See **D-2026-06-24-G** follow-up.
+
+### Fixed (viewer, plot repo)
+
+- Service-inspector pick-OR-create was wired to the wrong canvas instance
+  (FeatureDetailCanvas, not the main ServicesCanvas), so the inline "create"
+  never appeared on the service inspector. Now wired to the main canvas.
+
+### Added (viewer, plot repo)
+
+- The Feature canvas's **actor anchor** (`ActorRefPicker`) gains the same inline
+  "create a new actor" affordance (D-2026-06-19-C), via the masters endpoint —
+  no more "create one on the Actors canvas first" dead-end. Viewer 1017 green.
+
 ## [0.117.0] — 2026-06-24
 
 ### Added
