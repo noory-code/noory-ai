@@ -15,6 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from plot_mcp.chat_selection import (
+    build_turn_preamble,
     render_canvas_map,
     render_cross_canvas_registry,
     render_node_content,
@@ -227,3 +228,35 @@ def test_registry_empty_on_foundation_scope(tmp_path: Path) -> None:
 def test_registry_empty_when_no_project(tmp_path: Path) -> None:
     plot_root = resolve_plot_root(str(tmp_path))
     assert render_cross_canvas_registry(plot_root, "feature:x") == ""
+
+
+# --- context-provider seam (D-2026-06-17-L) --------------------------------
+
+
+def test_turn_preamble_composes_map_registry_and_detail(tmp_path: Path) -> None:
+    """The single per-turn assembly point: active-canvas map → cross-canvas
+    registry → selected-node detail, in that order."""
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "alpha", "Alpha")
+    write_canvas(plot_root, "alpha", _mission_canvas())
+    write_canvas(plot_root, "alpha", _actors_canvas())
+    sel = [{"id": "m1", "kind": "mission", "label": "Our mission"}]
+    out = build_turn_preamble(plot_root, "services", sel)
+    # registry (services scope) appears; for a feature/services scope the
+    # actor registry is present, and the canvas map header leads.
+    assert "[Canvas: services]" in out or "[Plot context]" in out
+    assert "Existing actors" in out  # registry composed in
+
+
+def test_turn_preamble_empty_for_project_scope_without_selection(tmp_path: Path) -> None:
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "alpha", "Alpha")
+    write_canvas(plot_root, "alpha", _mission_canvas())
+    assert build_turn_preamble(plot_root, "project", []) == ""
+
+
+def test_turn_preamble_includes_selected_detail(tmp_path: Path) -> None:
+    plot_root = _setup(tmp_path)  # foundation with the mission node
+    sel = [{"id": "m1", "kind": "mission", "label": "Our mission"}]
+    out = build_turn_preamble(plot_root, "foundation", sel)
+    assert "Make planning effortless" in out  # the selected node's body

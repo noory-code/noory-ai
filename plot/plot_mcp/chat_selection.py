@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from plot_mcp.canvas_io import read_canvas
-from plot_mcp.chat_context import SELECTION_DETAIL_CAP
+from plot_mcp.chat_context import SELECTION_DETAIL_CAP, build_context_preamble
 from plot_mcp.models_canvas import CanvasDoc, CanvasKind
 from plot_mcp.workspace import enumerate_projects
 
@@ -73,6 +73,27 @@ _REGISTRY_SCOPES: frozenset[str] = frozenset({"feature", "services"})
 # Phase 2b — cap on how many actors / entities to list, so a large project's
 # registry can't blow the context window.
 REGISTRY_CAP = 40
+
+
+def build_turn_preamble(plot_root: Path, scope: str, selection: Any) -> str:
+    """Assemble the per-turn user-message context — the context-provider seam.
+
+    Single place that builds "what the agent should see this turn" (D-2026-06-17-L):
+    active-canvas map → cross-canvas registry → selected-node detail, joined in
+    that order (empty parts skipped). The Layer-3 system prompt is delivered
+    separately (``build_system_prompt``); this is the Layer-2 user-message body.
+
+    This is the **CAG** implementation (inject everything, bounded by caps). A
+    future RAG / graph-traversal provider (D-2026-06-20-P) replaces the body of
+    this one function for large projects — callers (the in-app endpoint) don't
+    change. The canvas map falls back to the cheap wire-label header when the
+    canvas can't be read engine-side.
+    """
+    canvas_map = render_canvas_map(plot_root, scope, selection)
+    context = canvas_map or build_context_preamble(scope, selection)
+    registry = render_cross_canvas_registry(plot_root, scope)
+    detail = render_selection_detail(plot_root, scope, selection)
+    return "\n\n".join(p for p in (context, registry, detail) if p)
 
 
 def render_node_content(node: dict[str, Any]) -> str:

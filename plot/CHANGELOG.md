@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.116.1] — 2026-06-24
+
+### Changed
+
+- **Context-provider seam landed** (**D-2026-06-24-H**, implements D-2026-06-17-L).
+  The per-turn Layer-2 assembly (canvas map → cross-canvas registry → selected
+  detail) is now one function `build_turn_preamble`; the chat endpoint shrinks to
+  "build preamble + system prompt". Behavior-preserving — the current body is the
+  CAG implementation; a future RAG / graph-traversal provider (D-2026-06-20-P)
+  swaps this one function's internals without touching callers. Engine 642 green.
+
 ## [0.116.0] — 2026-06-24
 
 Pick-OR-create reference masters (D-2026-06-24-G, wiring D-2026-06-19-C). The

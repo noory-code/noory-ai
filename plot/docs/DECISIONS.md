@@ -39,6 +39,13 @@
 
 ## Log
 
+### D-2026-06-24-H — context-provider seam landed: `build_turn_preamble` is the single per-turn assembly point (implements D-2026-06-17-L)
+
+- **What:** The in-app chat endpoint's per-turn Layer-2 assembly (active-canvas map → cross-canvas registry → selected-node detail) moves out of `endpoints_chat.py` into one function `chat_selection.build_turn_preamble(plot_root, scope, selection)`. Behavior-preserving refactor — same output, one named home.
+- **Why:** D-2026-06-17-L specified a **context-provider abstract seam** so the delivery strategy can swap (CAG now → RAG / graph-traversal for large projects, D-2026-06-20-P) without touching callers. This lands that seam: the current body is the CAG implementation (inject everything, bounded by caps); a future RAG provider replaces this one function's internals. The endpoint shrinks to "build preamble + system prompt".
+- **Approval:** Implements pinned D-2026-06-17-L / D-2026-06-20-P (no new product decision); done in the 2026-06-24 chat-quality push.
+- **Spec impact:** none (internal). Guard: `tests/test_chat_selection_detail.py` (turn-preamble composition).
+
 ### D-2026-06-24-G — pick-OR-create reference masters wired (engine endpoint + service-inspector affordance)
 
 - **What:** Implements the manual side of D-2026-06-19-C. A new engine endpoint `POST /api/projects/{id}/masters` `{kind, label}` (kind ∈ actor / core_value / identity) creates a **lightweight master** (name only) on its **home canvas** — actor → Actors, core_value / identity → Foundation — positioned so fresh ones don't stack, and returns its id (`plot_mcp/masters.py`). The Services inspector's reference chips (`RefChips`) gain an inline "create" input; on submit the viewer calls the endpoint, appends the new id to the field, and refreshes the master's home canvas so the chip resolves. The home-canvas + positioning logic lives **only in the engine** so the viewer never writes across the canvas boundary.
