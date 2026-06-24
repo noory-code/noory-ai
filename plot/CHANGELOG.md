@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.116.0] — 2026-06-24
+
+Pick-OR-create reference masters (D-2026-06-24-G, wiring D-2026-06-19-C). The
+Services inspector's reference chips can now create a missing actor / core_value
+/ identity inline, instead of forcing the user to leave the flow and draw it on
+the upstream canvas first.
+
+### Added
+
+- **`POST /api/projects/{id}/masters`** `{kind, label}` (kind ∈ actor /
+  core_value / identity) — creates a **lightweight master** (name only, deepened
+  later by its home-canvas coach) on its home canvas (actor → Actors, core_value
+  / identity → Foundation), positioned so fresh ones don't stack, and returns its
+  id. The engine owns the home-canvas + positioning (`plot_mcp/masters.py`) so
+  the viewer never writes across the canvas boundary. `tests/test_masters.py` (8).
+
+### Notes
+
+- Viewer half (RefChips inline-create + threading + cache refresh) ships in the
+  `plot` repo. Engine 639 green (8 new), mypy / ruff clean. Full click-loop
+  verification in the debug `.app` is the user's hands (Gate 3).
+
 ## [0.115.0] — 2026-06-24
 
 Chat quality, Phase 3 — the coaching playbooks (`docs/idea/chat/`, Lever 3). The

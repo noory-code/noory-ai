@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-24-G — pick-OR-create reference masters wired (engine endpoint + service-inspector affordance)
+
+- **What:** Implements the manual side of D-2026-06-19-C. A new engine endpoint `POST /api/projects/{id}/masters` `{kind, label}` (kind ∈ actor / core_value / identity) creates a **lightweight master** (name only) on its **home canvas** — actor → Actors, core_value / identity → Foundation — positioned so fresh ones don't stack, and returns its id (`plot_mcp/masters.py`). The Services inspector's reference chips (`RefChips`) gain an inline "create" input; on submit the viewer calls the endpoint, appends the new id to the field, and refreshes the master's home canvas so the chip resolves. The home-canvas + positioning logic lives **only in the engine** so the viewer never writes across the canvas boundary.
+- **Why:** D-2026-06-17-B made references pick-only; D-2026-06-19-C said they must be pick-OR-create (reference a needed-but-missing concept without leaving the flow), but only the chat-coach side shipped (Phase 3 playbook). This adds the **direct-edit** path so a user editing the inspector manually isn't forced to "go create it on the Foundation canvas first". The created master is name-only + incomplete (deepened later by its home-canvas coach), so the current flow isn't derailed (D-2026-06-19-C step 6).
+- **Alternatives:** (a) viewer reads the upstream canvas, adds the node, writes it back — rejected: cross-canvas write juggling in the viewer, two SSOTs for "where a master lives". The engine endpoint encapsulates it + is fully unit-tested. (b) free-type the reference — rejected (D-2026-06-17-B ban; create a real master instead). (c) run the full master interview inline — rejected (derails the flow; lightweight stub + later deepening).
+- **Approval:** Builds on D-2026-06-19-C (Provisional, user 2026-06-19 "그래요 일단 해봅시다"); implemented in the 2026-06-24 viewer-UI push ("뷰어 UI 해야죠?"). Full click-loop verification in the debug `.app` is the user's hands (Gate 3).
+- **Spec impact:** SPEC.md R7 / Services inspector. Guards: engine `tests/test_masters.py` (8); viewer `tests/inspectors/ref-chips-create.test.tsx` (3).
+
 ### D-2026-06-24-F — MCP-path parity: the external agent gets the same coaching system prompt as in-app (chat-quality Phase 3)
 
 - **What:** `get_viewer_context` (the external-agent MCP path) now returns `build_system_prompt(scope)` — guard + coach tone + the canvas playbook — as its `framing` field, instead of the bare one-line `build_framing_preamble`. The two delivery layers now share one SSOT for the canvas coaching prompt.

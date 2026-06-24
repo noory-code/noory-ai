@@ -17,6 +17,7 @@ from starlette.responses import JSONResponse
 from plot_mcp.endpoints_common import _ApiError, _error, _parse_canvas_kind, _require_plot_root
 from plot_mcp.entity_refs import entity_usage
 from plot_mcp.folder_io import read_canvas, sync_details_with_overview, write_canvas
+from plot_mcp.masters import create_master
 from plot_mcp.models import CanvasDoc
 
 
@@ -36,6 +37,35 @@ async def entity_usage_endpoint(request: Request) -> JSONResponse:
     except FileNotFoundError as exc:
         return _error(str(exc), status=404)
     return JSONResponse({"entity_id": entity_id, "usages": usages})
+
+
+async def master_create_endpoint(request: Request) -> JSONResponse:
+    """POST — create a lightweight upstream master from a downstream reference
+    (D-2026-06-19-C, pick-OR-create). Body ``{kind, label}`` with ``kind`` in
+    ``actor`` / ``core_value`` / ``identity``; the engine creates the master on
+    its home canvas (Actors / Foundation) and returns its id so the caller can
+    add the chip. Encapsulates the home-canvas + positioning logic so the viewer
+    never has to write across the canvas boundary itself."""
+    try:
+        plot_root = _require_plot_root(request)
+    except _ApiError as exc:
+        return exc.response
+    project_id = request.path_params["project_id"]
+    try:
+        body: dict[str, Any] = await request.json()
+    except json.JSONDecodeError:
+        return _error("invalid JSON body")
+    kind = body.get("kind")
+    label = body.get("label")
+    if not isinstance(kind, str) or not isinstance(label, str):
+        return _error("kind and label are required strings")
+    try:
+        new_id = create_master(plot_root, project_id, kind, label)
+    except ValueError as exc:
+        return _error(str(exc))
+    except FileNotFoundError as exc:
+        return _error(str(exc), status=404)
+    return JSONResponse({"id": new_id, "kind": kind}, status_code=201)
 
 
 async def canvas_get_endpoint(request: Request) -> JSONResponse:

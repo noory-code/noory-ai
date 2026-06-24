@@ -38,6 +38,9 @@ from plot_mcp.endpoints_canvases import (
 from plot_mcp.endpoints_canvases import (
     entity_usage_endpoint as entity_usage_endpoint,
 )
+from plot_mcp.endpoints_canvases import (
+    master_create_endpoint as master_create_endpoint,
+)
 from plot_mcp.endpoints_common import (
     health_endpoint as health_endpoint,
 )

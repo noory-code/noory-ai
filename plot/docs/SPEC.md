@@ -1171,6 +1171,16 @@ from Foundation, like actors, not free-typed. The field titles are
 question-form so each doubles as the AI interview prompt
 (D-2026-06-16-P — everything built through discussion).
 
+Each reference picker is **pick-OR-create** (D-2026-06-19-C, wired
+D-2026-06-24-G): an inline "create" input makes a real master on its home
+canvas — actor → Actors, core_value / identity → Foundation — via
+`POST /api/projects/{id}/masters` `{kind, label}`, which returns the new id so
+the chip resolves once that canvas refreshes. The master is created lightweight
+(name only, deepened later by its home-canvas coach); creating is **not**
+free-typing — it always yields a chip pointing at a real upstream node. The
+engine owns the home-canvas + positioning (`plot_mcp/masters.py`) so the viewer
+never writes across the canvas boundary.
+
 The old service text fields — **`what`, `scope`, `trigger`, `how`,
 `outcome`, `do`, `dont`** — are **DELETED** (their substance lives on the
 feature canvas as nodes: `step` = "how", `rule` = "do/dont", and the

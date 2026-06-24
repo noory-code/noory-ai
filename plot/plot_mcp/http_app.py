@@ -25,6 +25,7 @@ from plot_mcp.api_endpoints import (
     format_f_service_publish_endpoint,
     format_f_snapshot_endpoint,
     health_endpoint,
+    master_create_endpoint,
     project_anchor_patch_endpoint,
     project_at_tag_endpoint,
     project_delete_endpoint,
@@ -170,6 +171,11 @@ def create_http_app(
             "/api/projects/{project_id}/entities/{entity_id}/usage",
             entity_usage_endpoint,
             methods=["GET"],
+        ),
+        Route(
+            "/api/projects/{project_id}/masters",
+            master_create_endpoint,
+            methods=["POST"],
         ),
         # v0.7 file + folder surface (for Inspector MD editor)
         Route("/api/files", file_get_endpoint, methods=["GET"]),
