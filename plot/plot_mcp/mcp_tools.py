@@ -256,7 +256,9 @@ def get_viewer_context(project_path: str) -> dict[str, Any]:
           "active_canvas": "<scope>" | null,   # e.g. "foundation",
                                                 # "feature:<id>"
           "selection": [{"id", "kind", "label"}, ...],
-          "framing": "<per-canvas guidance>",   # how to help on this canvas
+          "framing": "<canvas coaching system prompt>",  # guard + tone +
+                                                # the canvas's coaching playbook
+                                                # (same as in-app, Phase 3)
           "updated_at": <epoch seconds> | null,
           "stale": <bool>,                       # report older than the TTL
           "has_viewer": <bool>                   # a live viewer is reporting

@@ -16,12 +16,67 @@ from __future__ import annotations
 from pathlib import Path
 
 from plot_mcp.chat_context import (
+    COACH_TONE,
     HALLUCINATION_GUARD,
     build_framing_preamble,
     build_system_prompt,
 )
 from plot_mcp.chat_providers.claude_code import ClaudeCodeProvider
 from plot_mcp.chat_providers.codex import CodexProvider
+
+# --- per-canvas coaching playbooks (Phase 3, sourced from ----------------
+# --- docs/concepts/ai-collaboration.md §2) -------------------------------
+
+
+def test_foundation_framing_runs_the_essence_interview() -> None:
+    f = build_framing_preamble("foundation").lower()
+    assert "discovery" in f
+    for signal in ("mission", "core value", "identity", "trade-off"):
+        assert signal in f, signal
+
+
+def test_actors_framing_covers_role_families_and_actor_not_person() -> None:
+    f = build_framing_preamble("actors").lower()
+    assert "planning" in f
+    assert "role" in f
+    assert "not a person" in f or "not a persona" in f  # actor ≠ persona
+    assert "benefit" in f  # one of the three role families
+
+
+def test_services_framing_uses_five_slots_and_jtbd() -> None:
+    f = build_framing_preamble("services").lower()
+    assert "planning" in f
+    assert "five" in f or "5" in f  # the 5 inspector slots
+    assert "without it" in f  # JTBD: ask what's frustrating without it, not 'why'
+    assert "promotion" in f  # the feature→service promotion test
+
+
+def test_feature_framing_is_happy_path_first_with_altitude_guard() -> None:
+    f = build_framing_preamble("feature:svc1").lower()
+    assert "execution" in f
+    assert "happy path" in f
+    assert "build agent" in f  # altitude guard hands implementation to the build agent
+
+
+def test_entities_framing_enforces_identity_dedup() -> None:
+    f = build_framing_preamble("entities").lower()
+    # match by identity, not name (글=게시물=포스트 collapse; 글≠댓글 stay)
+    assert "identity" in f and "name" in f
+    assert "summary" in f
+    assert "never" in f  # never finalise silently / never auto-scan
+
+
+def test_system_prompt_includes_coach_tone_on_canvas_scopes() -> None:
+    sp = build_system_prompt("foundation")
+    assert COACH_TONE in sp
+    assert HALLUCINATION_GUARD in sp
+
+
+def test_system_prompt_project_scope_has_guard_only_no_tone() -> None:
+    sp = build_system_prompt("project")
+    assert HALLUCINATION_GUARD in sp
+    assert COACH_TONE not in sp  # tone is for canvas coaching, not cross-canvas
+
 
 # --- build_system_prompt (chat_context SSOT) -------------------------------
 

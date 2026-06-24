@@ -4,6 +4,32 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.115.0] — 2026-06-24
+
+Chat quality, Phase 3 — the coaching playbooks (`docs/idea/chat/`, Lever 3). The
+whole product is built through the chat coach, so the per-canvas coaching script
+is the load-bearing content; this wires the already-decided interviews into the
+system prompt and gives the external-agent path the same prompt as in-app.
+
+### Changed
+
+- **Per-canvas framing is now the full coaching playbook + a shared coach tone**
+  (**D-2026-06-24-E**). Each canvas system prompt carries its actual interview —
+  Foundation (mission / core-value / identity), Actors (three role families,
+  actor≠persona), Services (5-slot JTBD + promotion test), Feature (happy-path-first
+  flow + altitude guard), Entities (identity-not-name dedup) — prefixed by a gentle
+  one-question-at-a-time tone + the pick-or-create reference principle. Content
+  SSOT: `docs/concepts/ai-collaboration.md` §0–§2.
+- **The external-agent MCP path now returns the same coaching system prompt as
+  in-app** (**D-2026-06-24-F**). `get_viewer_context`'s `framing` is now
+  `build_system_prompt(scope)` (guard + tone + playbook), not a bare one-liner —
+  the primary (MCP-first) path is no longer context-poorer than the in-app panel.
+
+### Notes
+
+- Engine 631 green, mypy / ruff clean. Resolves the "Actors coaching set" and
+  "MCP-path selection-awareness" design-undecided items.
+
 ## [0.114.0] — 2026-06-24
 
 Chat quality, Phase 2 — the context envelope (`docs/idea/chat/`). Phase 1 fed the

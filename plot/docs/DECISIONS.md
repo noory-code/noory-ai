@@ -39,6 +39,22 @@
 
 ## Log
 
+### D-2026-06-24-F — MCP-path parity: the external agent gets the same coaching system prompt as in-app (chat-quality Phase 3)
+
+- **What:** `get_viewer_context` (the external-agent MCP path) now returns `build_system_prompt(scope)` — guard + coach tone + the canvas playbook — as its `framing` field, instead of the bare one-line `build_framing_preamble`. The two delivery layers now share one SSOT for the canvas coaching prompt.
+- **Why:** the MCP path is the **primary** path (CHAT_ARCH MCP-first), so it must not be context-poorer than the in-app convenience panel (D-2026-06-19-F). Before this, the external agent saw only a one-liner while in-app got the full guard + playbook — backwards.
+- **Alternatives:** (a) leave the MCP path on the one-liner — rejected, inverts the primary/convenience relationship. (b) a separate, lighter MCP framing — rejected (two SSOTs drift; the playbook is the product's coaching content and should be identical on both paths).
+- **Approval:** Accepted by user, 2026-06-24 (chat-quality push; resolves the named "MCP 경로 선택-인지" design-undecided item).
+- **Spec impact:** SPEC.md R7 chat → "MCP-path context" row. Guard: `tests/test_viewer_context.py::test_framing_carries_full_coaching_system_prompt`.
+
+### D-2026-06-24-E — expand per-canvas framing into full coaching playbooks (chat-quality Phase 3)
+
+- **What:** `SCOPE_FRAMING` grows from a one-sentence-per-canvas stub into the canvas's full coaching interview, and a shared `COACH_TONE` (gentle, one-question-at-a-time, follow-the-user's-words + pick-or-create reference principle) now prefixes every canvas system prompt. Foundation = mission/core-value/identity interview; Actors = three-role-family elicitation, actor≠persona; Services = 5-slot JTBD interview + promotion test; Feature = actor-anchored happy-path-first flow + altitude guard; Entities = identity-not-name dedup + propose-don't-finalise. Content sourced verbatim-in-intent from `docs/concepts/ai-collaboration.md` §0–§2.
+- **Why:** the whole product is built *through the chat coach* (D-2026-06-16-P), so the per-canvas coaching instructions are the load-bearing content — a one-line stub can't run the interviews the design (`D-2026-06-16-K/L/N`, `D-2026-06-17-B/D/G/I`, `D-2026-06-18-C`, `D-19-A/B/D`) calls for. This wires the already-decided coaching script into the code constant (the "code constants first, editable later" home, YAGNI). Resolves the "Actors 코칭 질문 세트 비어있음" design-undecided item.
+- **Alternatives:** (a) keep one-liners — rejected, the coach can't actually coach. (b) put the playbooks in `.noory/`-editable files now — deferred (YAGNI; code constants until a user wants to edit them). (c) invent the questions — forbidden (honesty); they are sourced from the ai-collaboration.md SSOT.
+- **Approval:** Accepted by user, 2026-06-24 (chat-quality push, "설계미결 해결").
+- **Spec impact:** SPEC.md R7 chat → "Per-canvas framing + hallucination guard" row. Guards: `tests/test_chat_system_prompt.py` (per-canvas playbook signals + coach-tone composition).
+
 ### D-2026-06-24-D — cross-canvas registry: list existing actors / entities on feature & services chat scopes (chat-quality Phase 2b)
 
 - **What:** On the `feature` and `services` scopes, the in-app chat message lists the **existing** actors (`"label" (id)`) and entities (`"label" (id): summary`), read from their canvases engine-side (`render_cross_canvas_registry`). Each list capped at 40; other scopes inject nothing.

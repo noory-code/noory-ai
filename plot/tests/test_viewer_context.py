@@ -38,7 +38,23 @@ def test_write_then_read_returns_fresh_context(tmp_path: Path) -> None:
     assert ctx["has_viewer"] is True
     assert ctx["stale"] is False
     assert ctx["updated_at"] == 1000.0
-    assert "Discovery" in ctx["framing"]  # framing reuses build_framing_preamble
+    assert "Discovery" in ctx["framing"]  # framing carries the canvas playbook
+
+
+def test_framing_carries_full_coaching_system_prompt(tmp_path: Path) -> None:
+    """MCP-path parity (Phase 3): the external agent sees the same system prompt
+    the in-app path uses — guard + tone + the canvas's coaching playbook — not a
+    bare one-liner (D-2026-06-19-F: the primary path must not be context-poorer
+    than in-app)."""
+    plot_root = tmp_path / "proj"
+    plot_root.mkdir()
+    base = tmp_path / "rt"
+    base.mkdir()
+    write_viewer_context(plot_root, scope="services", selection=_SEL, now=1000.0, base_dir=base)
+    ctx = read_viewer_context(plot_root, now=1001.0, base_dir=base)
+    framing = ctx["framing"]
+    assert "Never invent project details" in framing  # the hallucination guard
+    assert "without it" in framing.lower()  # the Services JTBD playbook
 
 
 def test_read_missing_file_is_empty_and_stale(tmp_path: Path) -> None:

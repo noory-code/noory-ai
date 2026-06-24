@@ -26,7 +26,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from plot_mcp.chat_context import build_framing_preamble
+from plot_mcp.chat_context import build_system_prompt
 
 # A report older than this (server clock vs reader clock — same machine) counts
 # as stale. The viewer heartbeat (~30s) keeps an open viewer well inside it.
@@ -112,7 +112,11 @@ def read_viewer_context(
     return {
         "active_canvas": scope,
         "selection": selection,
-        "framing": build_framing_preamble(scope),
+        # MCP-path parity (Phase 3): hand the external agent the SAME system
+        # prompt the in-app path uses — guard + coach tone + the canvas's
+        # coaching playbook — so the primary path is never context-poorer than
+        # in-app (D-2026-06-19-F).
+        "framing": build_system_prompt(scope),
         "updated_at": float(updated_at),
         "stale": False,
         "has_viewer": True,
