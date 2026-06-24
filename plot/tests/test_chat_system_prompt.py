@@ -78,6 +78,26 @@ def test_system_prompt_project_scope_has_guard_only_no_tone() -> None:
     assert COACH_TONE not in sp  # tone is for canvas coaching, not cross-canvas
 
 
+def test_guard_keeps_read_ask_machinery_silent() -> None:
+    # Regression (D-2026-06-24-J): the in-app coach narrated its plumbing — "the
+    # tool call was cancelled, I couldn't read the body, here's what I'm certain
+    # of". The guard must instruct it to keep that machinery out of sight, and the
+    # rule is universal (present even on the cross-canvas ``project`` scope).
+    for scope in ("foundation", "project"):
+        g = build_system_prompt(scope).lower()
+        assert "narrate" in g, scope  # never narrate tools / a read that didn't land
+        assert "fresh start" in g, scope  # empty canvas = invite, not a gap to announce
+
+
+def test_coach_tone_keeps_warmth_light_not_stacked() -> None:
+    # Regression (D-2026-06-24-J): the coach piled reassurance on reassurance into
+    # a wall. The tone principle: warmth is one light touch led by the question,
+    # not stacked caveats. Canvas scopes only (tone is absent from ``project``).
+    t = build_system_prompt("foundation").lower()
+    assert "warmth" in t
+    assert "reassurance" in t  # "don't pile reassurance on reassurance"
+
+
 # --- build_system_prompt (chat_context SSOT) -------------------------------
 
 

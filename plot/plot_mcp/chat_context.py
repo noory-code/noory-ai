@@ -24,6 +24,7 @@ SELECTION_DETAIL_CAP = 20
 # *canvas* system prompt (not the cross-canvas ``project`` scope). A sharp
 # question makes people defensive and "guess the right answer"; this keeps the
 # coach gentle so real essence surfaces. Sourced from ai-collaboration.md §0.1.
+# Warmth-is-light (don't stack reassurances, lead with the question) — D-2026-06-24-J.
 COACH_TONE = (
     "Coaching tone, on every question: there are no wrong answers — say up front "
     "that vague is fine. Ask ONE thing at a time, leaving room to think. Invite "
@@ -33,7 +34,10 @@ COACH_TONE = (
     "actor, a core value, an identity): the user answers in natural language, you "
     "match it by meaning to an existing master (strong dedup), pick it if it "
     "exists, else create a real master on the upstream canvas and register it — "
-    "never free text, never silently."
+    "never free text, never silently. Let the warmth be light — lead with the "
+    "one question and trust it to carry; don't pile reassurance on reassurance or "
+    "narrate how you'll proceed. The gentleness lives in the invitation, not in "
+    "stacked caveats."
 )
 
 # Layer 3 (CHAT_ARCH.md) — per-canvas system framing. Each base scope maps to a
@@ -124,6 +128,8 @@ SCOPE_FRAMING: dict[str, str] = {
 # ground every claim in the provided context, READ the canvas via its Plot MCP
 # tools when it doesn't know, and otherwise ask — never fabricate. It also pins
 # how "this" resolves (to the selected node). Lever 2, docs/idea/chat/01-levers.md.
+# It also keeps that read/ask machinery silent (no mechanism narration) and frames
+# an empty canvas as a fresh start, not a gap to announce — D-2026-06-24-J.
 HALLUCINATION_GUARD = (
     "Ground every statement in the Plot project context you are given and the "
     "canvas you can read with your Plot MCP tools (search_project_nodes to find a "
@@ -131,7 +137,11 @@ HALLUCINATION_GUARD = (
     "a scope). If you do not know something specific about THIS project — its "
     "mission text, core values, actors, services, features, or entities — read it "
     "with those tools or ask the user. Never invent project details. When the "
-    'user says "this" / "it", resolve it to the node listed as selected in the context.'
+    'user says "this" / "it", resolve it to the node listed as selected in the '
+    "context. Keep this machinery out of sight — never narrate your tools, a "
+    'read that did not land, or what you can or cannot "see"; speak as if you '
+    "simply know the project, or simply need to hear it from the user. An empty "
+    "canvas is a fresh start to invite, not a gap to announce."
 )
 
 

@@ -4,6 +4,19 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.117.2] — 2026-06-24
+
+### Changed
+
+- **Coach output hygiene** — the in-app / MCP coaching system prompt gains two
+  guideline principles (not scripted lines). The agent now keeps its read/ask
+  machinery out of sight: it no longer narrates its tools, a read that didn't
+  land, or "what I'm certain of" (the mechanism leak seen on the first Gate-3
+  dogfood), and it frames an empty canvas as a fresh start rather than a gap to
+  announce. Warmth is kept light — it leads with the one question instead of
+  stacking reassurances. Content SSOT = `docs/concepts/ai-collaboration.md` §0.1
+  (⑥⑦). See **D-2026-06-24-J**.
+
 ## [0.117.1] — 2026-06-24
 
 Docs-only (engine binary unchanged) — logs a viewer-side fix + extension that

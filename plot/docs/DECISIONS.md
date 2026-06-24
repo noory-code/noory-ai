@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-24-J — coach output hygiene: keep the read/ask machinery silent + warmth light
+
+- **What:** Two guideline principles added to the coaching system prompt (`HALLUCINATION_GUARD` + `COACH_TONE` in `plot_mcp/chat_context.py`): (1) keep the read/ask machinery out of sight — never narrate tools, a read that didn't land, or "what I'm certain of"; speak as if you simply know the project or simply need to hear it; an empty canvas is a fresh start to invite, not a gap to announce. (2) warmth is light — lead with the one question, don't stack reassurance on reassurance. Guideline form (principles the coach reasons from), not scripts or sentence-count mechanics.
+- **Why:** First Gate-3 dogfood of the chat-quality work (Phases 1–3) on an empty project: the coach did NOT invent a mission (the core anti-hallucination goal held), but it (a) leaked its plumbing — "the tool call was cancelled, I couldn't read the body, here's what I'm certain of" — and (b) stacked reassurances into a verbose wall. Both were unconstrained: no rule told it to operate silently or to keep it brief.
+- **Alternatives:** (a) Hardcode the user's example phrasing / a canned opener — rejected: scripts make the coach brittle and off-context; a principle the model reasons from generalises (user direction, 2026-06-24: pin a guideline, not the dialogue). (b) A rigid length cap ("2–3 sentences") — softened to a principle (lead with the question, don't stack caveats) so mechanical curtness doesn't undercut the gentle-coach purpose.
+- **Approval:** Accepted by user, 2026-06-24 (previewed via a live `claude -p` run before landing; "그대로 진행하세요").
+- **Spec impact:** Content SSOT = `docs/concepts/ai-collaboration.md` §0.1 ⑥⑦. Guard: `tests/test_chat_system_prompt.py` (`test_guard_keeps_read_ask_machinery_silent`, `test_coach_tone_keeps_warmth_light_not_stacked`).
+
 ### D-2026-06-24-I — node name-search entry point: `search_project_nodes` MCP tool (the "name" leg of D-2026-06-20-P)
 
 - **What:** A new MCP tool `search_project_nodes(project_path, project_id, query)` + the `node_search.search_nodes` it wraps: a case-insensitive label substring scan over **every** canvas of a project (singletons + feature details), returning up to 20 `{id, kind, label, canvas}` hits. The hallucination guard now names it so the agent reaches for it when the user references a node by name that isn't on the active canvas.
