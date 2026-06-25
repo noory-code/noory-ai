@@ -34,6 +34,15 @@ def test_framing_uses_base_scope_for_parametric_feature() -> None:
     assert build_framing_preamble("feature:a") == build_framing_preamble("feature:b")
 
 
+def test_per_service_thread_gets_value_framing() -> None:
+    """Per-service thread (D-2026-06-26-A): a ``service:<id>`` scope coaches the
+    value-level big picture — the same Planning framing as the Services canvas
+    (DRY, no duplicate string), parallel to ``feature:<id>``'s Execution framing."""
+    assert "Planning" in build_framing_preamble("service:svc_1")
+    assert build_framing_preamble("service:svc_1") == SCOPE_FRAMING["services"]
+    assert build_framing_preamble("service:a") == build_framing_preamble("service:b")
+
+
 def test_context_preamble_lists_selection() -> None:
     p = build_context_preamble("foundation", [{"id": "n1", "kind": "core_value", "label": "Trust"}])
     assert "foundation" in p and "core_value" in p and "Trust" in p and "n1" in p

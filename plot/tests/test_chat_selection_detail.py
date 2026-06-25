@@ -29,6 +29,7 @@ from plot_mcp.models import (
     EntityNode,
     IdentityNode,
     MissionNode,
+    ServiceNode,
     SketchNode,
 )
 from plot_mcp.workspace import resolve_plot_root
@@ -228,6 +229,32 @@ def test_registry_empty_on_foundation_scope(tmp_path: Path) -> None:
 def test_registry_empty_when_no_project(tmp_path: Path) -> None:
     plot_root = resolve_plot_root(str(tmp_path))
     assert render_cross_canvas_registry(plot_root, "feature:x") == ""
+
+
+def test_registry_lists_actors_on_service_scope(tmp_path: Path) -> None:
+    """Per-service thread (D-2026-06-26-A): a ``service:<id>`` thread references
+    its actors, so it gets the same registry as the ``services`` canvas."""
+    plot_root = _setup_registry(tmp_path)
+    out = render_cross_canvas_registry(plot_root, "service:svc1")
+    assert "Operator" in out
+
+
+def test_canvas_map_for_service_scope_reads_services_canvas(tmp_path: Path) -> None:
+    """A ``service:<id>`` thread sits on the Services canvas, so its canvas map
+    shows that canvas (the id names the selected service, not a sub-canvas)."""
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "alpha", "Alpha")
+    write_canvas(
+        plot_root,
+        "alpha",
+        CanvasDoc(
+            canvas_id="services",
+            canvas_kind="services",
+            nodes=[ServiceNode(id="svc1", label="Publishing")],
+        ),
+    )
+    out = render_canvas_map(plot_root, "service:svc1", [])
+    assert "Publishing" in out
 
 
 # --- context-provider seam (D-2026-06-17-L) --------------------------------

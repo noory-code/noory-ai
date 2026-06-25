@@ -48,3 +48,13 @@ def test_feature_scope_accepts_id_suffix() -> None:
     # An empty id is not a real instance, and a typo is still rejected.
     assert not is_valid_scope("feature:")
     assert not is_valid_scope("bogus")
+
+
+def test_service_scope_accepts_id_suffix() -> None:
+    """Per-service thread (D-2026-06-26-A): ``service`` is a second
+    parametric member — selecting a single service keys ``service:<id>``,
+    parallel to ``feature:<id>``. Bare ``service`` with no id is rejected
+    (Fail Fast), same as bare ``feature``."""
+    assert is_valid_scope("service:svc_123")
+    assert is_valid_scope("service:any-id-shape")
+    assert not is_valid_scope("service:")

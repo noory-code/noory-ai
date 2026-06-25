@@ -68,7 +68,7 @@ _VALID_CANVAS_KINDS: frozenset[str] = frozenset(
 # ``actor_ref`` + ``ref_entity_ids``; a service carries ``ref_actor_ids``. The
 # other scopes don't cross-reference, so they skip the registry to spare the
 # context window.
-_REGISTRY_SCOPES: frozenset[str] = frozenset({"feature", "services"})
+_REGISTRY_SCOPES: frozenset[str] = frozenset({"feature", "services", "service"})
 
 # Phase 2b — cap on how many actors / entities to list, so a large project's
 # registry can't blow the context window.
@@ -235,6 +235,11 @@ def _read_active_canvas(plot_root: Path, scope: str) -> CanvasDoc | None:
     if scope == "project":
         return None
     base, _, service_id = scope.partition(":")
+    if base == "service":
+        # A per-service thread (D-2026-06-26-A) sits on the Services canvas; show
+        # that canvas. The id names the selected service, not a sub-canvas, so it
+        # is dropped (services is not a per-instance canvas).
+        base, service_id = "services", ""
     if base not in _VALID_CANVAS_KINDS:
         return None
     project_id = _resolve_project_id(plot_root)

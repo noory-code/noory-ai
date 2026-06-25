@@ -168,10 +168,14 @@ def build_framing_preamble(scope: str) -> str:
 
     Maps the *base* scope to its VISION-phase framing, so a parametric
     ``feature:<id>`` resolves to the shared feature framing rather
-    than a missing per-instance key. The cross-canvas ``project`` scope (and any
-    unknown base) gets no framing.
+    than a missing per-instance key. A per-service ``service:<id>`` thread
+    (D-2026-06-26-A) coaches the value-level big picture, so its base maps to
+    the ``services`` Planning framing (DRY — no duplicate string). The
+    cross-canvas ``project`` scope (and any unknown base) gets no framing.
     """
     base = scope.split(":", 1)[0]
+    if base == "service":
+        base = "services"
     return SCOPE_FRAMING.get(base, "")
 
 

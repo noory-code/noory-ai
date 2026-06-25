@@ -4,6 +4,28 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.118.0] — 2026-06-26
+
+### Added
+
+- **Per-service chat thread** (`D-2026-06-26-A`) — selecting a single service on
+  the Services canvas now opens that service's own conversation (`service:<id>`),
+  alongside the existing per-feature thread. A service is the value-level big
+  picture; a feature is its flow design — different conversations, so they key
+  different threads and get different coaching: the per-service thread inherits
+  the Services Planning/value framing, the per-feature thread keeps its Execution
+  flow framing. Drilling into a feature still keys `feature:<id>`; deselecting
+  returns to the canvas-wide `services` thread. The chat tab shows the service's
+  name. Engine: `service:<id>` accepted by `is_valid_scope`; framing,
+  cross-canvas registry, and active-canvas map extended to the `service` base.
+  Viewer: scope derivation in `lib/chatScope.ts` (pure, unit-tested), `ChatScope`
+  type, and the per-service tab label.
+
+### Changed
+
+- SPEC conversation-scope section corrected the stale `service_detail` naming to
+  the current `feature:<id>` wire scope (renamed in D-2026-06-20-J).
+
 ## [0.117.2] — 2026-06-24
 
 ### Changed

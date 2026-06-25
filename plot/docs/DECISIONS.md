@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-26-A — per-service chat thread: `service:<id>` alongside `feature:<id>`
+
+- **What:** Chat threads gain a second parametric scope `service:<id>`. Selecting a single service on the Services canvas keys that service's own thread; drilling into one of its features keys `feature:<id>`; deselecting returns to the canvas-wide `services` thread. The engine accepts `service:<id>` in `is_valid_scope` (bare `service` with no id → invalid, same Fail-Fast rule as `feature`), and `build_framing_preamble` maps the base `service` to the existing `services` (Planning/value) framing so a per-service thread coaches the value-level big picture. The selected service node's typed text already injects via selected-node content (D-2026-06-24-B), so no per-service envelope path is added.
+- **Why:** User (2026-06-26): a service and its features are *different conversations* — a service is the value-centred big picture ("what value, for whom"), a feature is its flowchart ("how it actually runs"). The shipped model only had a per-feature thread plus the whole-`services`-canvas thread; selecting one service still used the canvas-wide thread, so a single service had no conversation of its own. Both granularities should exist, each with its matching coaching.
+- **Alternatives:** (a) Keep as-is (per-feature + whole-canvas only) — rejected: the user identified the missing middle (no per-service thread). (b) Make `service` a base canvas-kind member of the `ChatScope` literal — rejected: a service is not a canvas (selecting one shows an inspector, not a canvas), so it stays a parametric instance scope parallel to `feature:<id>`, keeping the base set = `project` + canvas kinds (MECE). (c) A dedicated per-service framing string — rejected as duplication; the `services` Planning framing ("intent → five slots → propose features") already fits one service (DRY).
+- **Approval:** Accepted by user, 2026-06-26 ("승인합니다").
+- **Spec impact:** `SPEC.md` Conversation-scope section — adds the **Per-service thread (D-2026-06-26-A)** row and corrects the stale `service_detail` naming to `feature:<id>`. Guards: `tests/test_chat_scope_parity.py` (service scope validity), `tests/test_chat_system_prompt.py` (per-service framing = services framing).
+
 ### D-2026-06-24-J — coach output hygiene: keep the read/ask machinery silent + warmth light
 
 - **What:** Two guideline principles added to the coaching system prompt (`HALLUCINATION_GUARD` + `COACH_TONE` in `plot_mcp/chat_context.py`): (1) keep the read/ask machinery out of sight — never narrate tools, a read that didn't land, or "what I'm certain of"; speak as if you simply know the project or simply need to hear it; an empty canvas is a fresh start to invite, not a gap to announce. (2) warmth is light — lead with the one question, don't stack reassurance on reassurance. Guideline form (principles the coach reasons from), not scripts or sentence-count mechanics.
