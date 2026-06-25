@@ -50,3 +50,34 @@ def test_drop_retired_kinds_is_noop_without_retired_nodes(plot_root: Path) -> No
     raw = {"nodes": [{"id": "s1", "kind": "step"}], "edges": []}
     out = _drop_retired_kinds(plot_root, "alpha", "feature", "svc1", raw)
     assert out == raw, "a canvas with no retired kinds is returned unchanged"
+
+
+@pytest.mark.parametrize("kind", sorted(RETIRED_KINDS))
+def test_every_retired_kind_is_dropped_on_read(plot_root: Path, kind: str) -> None:
+    """Every member of ``RETIRED_KINDS`` — not only ``group`` — is stripped on read,
+    with surrounding live content (and only the incident edge) removed. Parametrising
+    over the set itself means a future retirement is covered the moment the kind is
+    added to ``RETIRED_KINDS``."""
+    raw = {
+        "nodes": [
+            {"id": "live", "kind": "step", "label": "keep"},
+            {"id": "dead", "kind": kind, "label": "retired"},
+        ],
+        "edges": [{"id": "e1", "source": "dead", "target": "live"}],
+    }
+    out = _drop_retired_kinds(plot_root, "alpha", "feature", "svc1", raw)
+    surviving = {n["id"] for n in out["nodes"]}
+    assert "dead" not in surviving, f"retired kind {kind!r} not dropped on read"
+    assert surviving == {"live"}, "live content survives (loss-free)"
+    assert out["edges"] == [], "edge incident to the dropped node is removed"
+
+
+def test_retired_kinds_membership_is_pinned() -> None:
+    """The retired set must not silently *shrink* — re-admitting a kind to the live
+    union without a deliberate un-retirement would let old canvases fail validation
+    again. Parametrising over the set (above) cannot catch a kind dropped FROM it, so
+    pin the known retirements explicitly. Adding a new retirement = update this set +
+    this assertion together (intentional friction, mirrors the kind-count guards)."""
+    assert RETIRED_KINDS == frozenset(
+        {"group", "mission_ref", "value_ref", "identity_ref", "metric", "content"}
+    )
