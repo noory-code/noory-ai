@@ -10,20 +10,26 @@ produced and asks a cheap model whether it obeyed the discipline. A clear
 violation blocks the stop with a reason, forcing a plain-language rewrite; a
 pass lets the turn end.
 
-Reads the Stop payload from stdin (``transcript_path`` + ``stop_hook_active``),
-pulls the last assistant text from the transcript, and asks ``claude -p`` (the
-user's own subscription auth — no API key, not separately billed) for a
-one-line verdict.
+Targeting (why the answer is anchored to the last user turn): a ``Stop`` hook
+can fire a beat before the just-finished assistant message is flushed to the
+transcript. Reading "the last assistant message" then grabs the *previous*
+turn's answer (the off-by-one seen in 1.4.0). So the gate judges only an
+assistant reply that sits **after** the most recent user message, and briefly
+polls for it to appear; if it never does, it skips (fail open) rather than judge
+a stale turn.
 
-**Fails OPEN on every error.** A broken judge, missing CLI, timeout, or
-malformed transcript must never trap the conversation — when in doubt, allow.
+Asks ``claude -p`` (the user's own subscription auth — no API key, not
+separately billed) for a one-line verdict.
+
+**Fails OPEN on every error.** A broken judge, missing CLI, timeout, malformed
+transcript, or an un-flushed reply must never trap the conversation — when in
+doubt, allow.
 
 Guards against runaway:
 - ``METANG_GATE_ACTIVE`` env set → no-op. The judge itself runs ``claude``,
-  which may load this very hook; the env sentinel (set on the judge subprocess)
-  stops it judging its own output.
-- ``stop_hook_active`` true → no-op. One bounce per turn; never loop. If the
-  rewrite still fails, it ships rather than spin.
+  which may load this very hook; the env sentinel stops it judging its own
+  output.
+- ``stop_hook_active`` true → no-op. One bounce per turn; never loop.
 - ``gateEnabled: false`` in config → no-op.
 - ``METANG_GATE_FAKE_VERDICT`` env → skip the model call and use that string as
   the verdict (test seam).
@@ -31,6 +37,8 @@ Guards against runaway:
 Config (merged ~/.metang.json then project ``.metang.json``, project wins):
 - ``gateEnabled`` (bool, default ``true``)
 - ``gateModel`` (str, default ``"haiku"``)
+- ``gateDebug`` (bool, default ``false``) — append one diagnostic line per fire
+  to ``<tempdir>/metang_gate.log``.
 """
 from __future__ import annotations
 
@@ -38,6 +46,8 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 # Reuse the discipline text + config loader so the rule has a single home
@@ -54,6 +64,8 @@ except Exception:  # pragma: no cover — import must never crash the gate
 
 
 JUDGE_TIMEOUT = 45.0  # seconds — a haiku one-shot is ~3-4s; headroom for cold start
+POLL_TOTAL = 2.0  # seconds — wait this long for the just-finished reply to flush
+POLL_STEP = 0.15
 
 
 def _allow() -> None:
@@ -67,44 +79,60 @@ def _block(reason: str) -> None:
     sys.exit(0)
 
 
-def _text_of(content: object) -> str:
-    """Concatenate the text blocks of a transcript message's ``content``."""
+def _text_blocks(content: object) -> list[str]:
     if isinstance(content, str):
-        return content
+        return [content] if content else []
     if isinstance(content, list):
-        parts = [
-            b.get("text", "")
+        return [
+            b["text"]
             for b in content
-            if isinstance(b, dict) and b.get("type") == "text"
+            if isinstance(b, dict) and b.get("type") == "text" and b.get("text")
         ]
-        return "\n".join(p for p in parts if p)
-    return ""
+    return []
 
 
-def _last_messages(transcript_path: str) -> tuple[str, str]:
-    """(last_user_text, last_assistant_text) from the JSONL transcript; empty
-    strings when absent or unreadable."""
+def _all_text(content: object) -> str:
+    return "\n".join(_text_blocks(content))
+
+
+def _first_text(content: object) -> str:
+    """The user's real prompt is the first text block; later blocks are appended
+    hook context (the metang reminder, system notes) — drop them."""
+    blocks = _text_blocks(content)
+    return blocks[0] if blocks else ""
+
+
+def _scan(transcript_path: str) -> tuple[str, str, bool]:
+    """Return (user_prompt, answer, answer_is_current).
+
+    ``answer_is_current`` is True when, scanning from the end, the first
+    text-bearing message is the assistant's — i.e. the reply to the latest user
+    turn is already on disk. When the first text-bearing message is the user's,
+    the reply has not flushed yet (the off-by-one window)."""
     try:
         lines = Path(transcript_path).read_text(encoding="utf-8").splitlines()
     except OSError:
-        return "", ""
-    user_text = assistant_text = ""
+        return "", "", False
+    user_prompt = answer = ""
+    first_text_type: str | None = None
     for ln in reversed(lines):
         try:
             obj = json.loads(ln)
         except ValueError:
             continue
-        text = _text_of((obj.get("message") or {}).get("content"))
-        if not text:
+        content = (obj.get("message") or {}).get("content")
+        if not _text_blocks(content):
             continue
         kind = obj.get("type")
-        if kind == "assistant" and not assistant_text:
-            assistant_text = text
-        elif kind == "user" and not user_text:
-            user_text = text
-        if assistant_text and user_text:
+        if first_text_type is None:
+            first_text_type = kind
+        if kind == "assistant" and not answer:
+            answer = _all_text(content)
+        elif kind == "user" and not user_prompt:
+            user_prompt = _first_text(content)
+        if answer and user_prompt:
             break
-    return user_text, assistant_text
+    return user_prompt, answer, first_text_type == "assistant"
 
 
 def _rule_text() -> str:
@@ -118,15 +146,17 @@ def _rule_text() -> str:
 
 def _judge_prompt(user_text: str, answer: str) -> str:
     return (
-        "You are a strict reviewer enforcing a reply-writing discipline on an "
-        "assistant.\n\n"
+        "You are a strict reviewer of HOW an assistant wrote one reply — not "
+        "whether its topic is expected.\n\n"
         "THE DISCIPLINE:\n" + _rule_text() + "\n\n"
-        "THE USER ASKED:\n" + (user_text[:2000] or "(unknown)") + "\n\n"
-        "THE ASSISTANT REPLY (judge THIS, not the user):\n" + answer[:6000] + "\n\n"
-        "Fail ONLY a clear violation the user would notice: jargon or raw "
-        "identifiers dumped without plain meaning; rambling or far longer than "
-        "needed; dodging with empty abstractions; or asking something it should "
-        "have just decided. Be lenient on borderline cases — when unsure, PASS.\n"
+        "THE USER ASKED:\n" + (user_text[:1500] or "(unknown)") + "\n\n"
+        "THE ASSISTANT REPLY (judge THIS):\n" + answer[:6000] + "\n\n"
+        "Judge ONLY the writing: jargon or raw identifiers dumped without plain "
+        "meaning; rambling or far longer than needed; dodging with empty "
+        "abstractions; or asking something it should have just decided. The user "
+        "may have steered the subject — do NOT fail a reply for changing topic, "
+        "for being brief, or for content you lack the backstory on. When unsure, "
+        "PASS.\n"
         "Answer with ONE line and nothing else:\n"
         "PASS\n"
         "or\n"
@@ -176,6 +206,17 @@ def _verdict(prompt: str, model: str) -> str:
     return proc.stdout.strip()
 
 
+def _debug(cfg: dict[str, object], msg: str) -> None:
+    if not cfg.get("gateDebug"):
+        return
+    try:
+        log = Path(tempfile.gettempdir()) / "metang_gate.log"
+        with log.open("a", encoding="utf-8") as fh:
+            fh.write(msg + "\n")
+    except OSError:
+        pass
+
+
 def main() -> None:
     # Guard 1 — never run inside the judge's own claude invocation.
     if os.environ.get("METANG_GATE_ACTIVE"):
@@ -184,8 +225,7 @@ def main() -> None:
         payload = json.loads(sys.stdin.read() or "{}")
     except ValueError:
         _allow()
-    # Guard 2 — one bounce per turn. If we already blocked once this turn, let
-    # the (rewritten) answer through rather than risk a loop.
+    # Guard 2 — one bounce per turn; if we already blocked once, let it through.
     if payload.get("stop_hook_active"):
         _allow()
 
@@ -193,16 +233,27 @@ def main() -> None:
     if cfg.get("gateEnabled", True) is False:
         _allow()
 
-    user_text, answer = _last_messages(str(payload.get("transcript_path") or ""))
-    if not answer.strip():
-        _allow()  # no final text to judge
+    path = str(payload.get("transcript_path") or "")
+    # Anchor to the reply that sits AFTER the latest user message, polling for it
+    # to flush. If it never appears, skip (don't judge the previous turn).
+    waited = 0.0
+    user_prompt, answer, current = _scan(path)
+    while not current and waited < POLL_TOTAL:
+        time.sleep(POLL_STEP)
+        waited += POLL_STEP
+        user_prompt, answer, current = _scan(path)
+    if not current or not answer.strip():
+        _debug(cfg, f"skip current={current} waited={waited:.2f} ans={len(answer)}")
+        _allow()
 
     model = str(cfg.get("gateModel") or "haiku")
     try:
-        verdict = _verdict(_judge_prompt(user_text, answer), model)
-    except Exception:
-        _allow()  # judge failed → fail open
+        verdict = _verdict(_judge_prompt(user_prompt, answer), model)
+    except Exception as exc:  # judge failed → fail open
+        _debug(cfg, f"judge-error {type(exc).__name__} waited={waited:.2f}")
+        _allow()
 
+    _debug(cfg, f"verdict={verdict[:60]!r} waited={waited:.2f} ans0={answer[:40]!r}")
     if verdict[:4].upper() == "FAIL":
         note = verdict.split(":", 1)[1].strip() if ":" in verdict else "broke the answer discipline"
         _block(

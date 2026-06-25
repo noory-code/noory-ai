@@ -2,6 +2,24 @@
 
 All notable changes to the metang plugin are documented here.
 
+## [1.4.1] - 2026-06-25
+
+### Fixed
+- **Off-by-one targeting.** A `Stop` hook can fire just before the finished
+  reply is flushed to the transcript, so the gate read the *previous* turn's
+  answer and judged the wrong reply (flagging a jargon dump one turn late, or
+  faulting a fresh reply for something the earlier turn did). The gate now
+  judges only an assistant reply that sits **after** the latest user message,
+  and briefly polls (≤2s) for it to flush; if it never appears it skips (fails
+  open) rather than judge a stale turn.
+- **Judge scope.** The verdict now grades only *how* a reply is written
+  (clarity, length, jargon, needless questions), not whether its topic is
+  expected — a user-steered subject change is no longer mistaken for dodging.
+
+### Added
+- `gateDebug` config (default `false`) — one diagnostic line per fire to
+  `<tempdir>/metang_gate.log`.
+
 ## [1.4.0] - 2026-06-25
 
 ### Added
