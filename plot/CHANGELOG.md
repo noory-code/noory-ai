@@ -4,6 +4,22 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.119.0] — 2026-06-26
+
+### Added
+
+- **Chat conversations persist to disk** (`D-2026-06-26-B`) — every chat is now
+  saved under the project at `.noory/plot/chat/<scope>.json`, one append-only log
+  per scope, written **engine-side** (the user turn when a message is sent, the
+  assistant turn on `turn_complete`). So conversations survive an engine/app
+  restart, travel with the project, and restore on another machine — closing the
+  gap where an in-memory chat was lost when the app restarted. Two new read
+  endpoints, `GET /api/chat/conversations` (list, newest first) and
+  `GET /api/chat/conversations/{scope}` (full log), back the viewer's
+  conversation list + reopen. Engine half this release; the dock list/reopen UI
+  pairs with it. **Known limit:** reopening restores the transcript for reading,
+  not the live CLI session (continuing starts a fresh turn) — named follow-up.
+
 ## [0.118.0] — 2026-06-26
 
 ### Added

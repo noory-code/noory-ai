@@ -23,6 +23,7 @@ import asyncio
 import logging
 from pathlib import Path
 from typing import Any, cast
+from uuid import uuid4
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -38,8 +39,14 @@ from plot_mcp.chat_provider import read_selection
 from plot_mcp.chat_providers.base import DEFAULT_CHAT_SCOPE, is_valid_scope
 from plot_mcp.chat_selection import build_turn_preamble
 from plot_mcp.chat_session import ChatProvider, ChatSessionRegistry, chat_registry
+from plot_mcp.chat_store import (
+    append_assistant,
+    append_user,
+    list_conversations,
+    read_conversation,
+)
 from plot_mcp.mcp_registration import ProviderName
-from plot_mcp.workspace import resolve_plot_root
+from plot_mcp.workspace import enumerate_projects, resolve_plot_root
 
 # Re-exported for back-compat — callers/tests historically import these two
 # builders from this module; the SSOT now lives in ``chat_context`` so the MCP
@@ -50,8 +57,19 @@ __all__ = [
     "chat_send_endpoint",
     "chat_reset_endpoint",
     "chat_models_endpoint",
+    "chat_conversations_list_endpoint",
+    "chat_conversation_get_endpoint",
     "stream_chat_turn",
 ]
+
+
+def _project_id_for(plot_root: Path) -> str | None:
+    """The single project under a data root, or ``None`` (one-project-per-root,
+    D-2026-06-21-AB). Used to key persisted conversations; ``None`` means there
+    is nothing to persist against, so chat persistence quietly no-ops."""
+    projects = enumerate_projects(plot_root)
+    return projects[0].id if projects else None
+
 
 # Runtime guard for the `provider` query param (ProviderName is a static
 # Literal, so this is its runtime mirror).
@@ -117,6 +135,8 @@ async def stream_chat_turn(
     plot_root: Path,
     user_message: str,
     scope: str = DEFAULT_CHAT_SCOPE,
+    project_id: str | None = None,
+    provider_name: str = "",
 ) -> None:
     """Pull stream events from ``provider`` and fan them out to ``plot_root``.
 
@@ -125,12 +145,28 @@ async def stream_chat_turn(
     can route it to the matching canvas thread (D-2026-06-13-H). Errors are
     caught + broadcast as an ``error`` event so the viewer can surface them
     instead of silently truncating the turn.
+
+    When ``project_id`` is set, the assistant turn is persisted on
+    ``turn_complete`` (D-2026-06-26-B) — best-effort, so a write failure never
+    breaks the live turn.
     """
     try:
         async for event in provider.stream_turn(user_message):
             payload = event.model_dump()
             payload["scope"] = scope
             await hub.notify_event(plot_root, _CHAT_EVENT, payload)
+            if event.type == "turn_complete" and project_id:
+                try:
+                    append_assistant(
+                        plot_root,
+                        project_id,
+                        scope,
+                        provider_name,
+                        event.turn_id or f"turn_{uuid4().hex[:12]}",
+                        event.text,
+                    )
+                except Exception:  # noqa: BLE001 — persistence must not break chat
+                    _log.exception("chat persist (assistant) failed for %s", plot_root)
     except Exception as exc:  # noqa: BLE001 — boundary catch
         _log.exception("chat turn crashed for %s", plot_root)
         await hub.notify_event(
@@ -213,8 +249,68 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     preamble = build_turn_preamble(plot_root, scope, selection_nodes)
     full_message = "\n\n".join(p for p in (preamble, message) if p)
 
-    asyncio.create_task(stream_chat_turn(provider, hub, plot_root, full_message, scope))
+    # Persist the user's turn before scheduling (D-2026-06-26-B) — the raw
+    # ``message`` (not the context-injected ``full_message``), engine-side so it
+    # survives a viewer crash. Best-effort: a write failure never blocks the turn.
+    project_id = _project_id_for(plot_root)
+    if project_id is not None:
+        try:
+            append_user(
+                plot_root,
+                project_id,
+                scope,
+                selection.provider,
+                f"user_{uuid4().hex[:12]}",
+                message,
+            )
+        except Exception:  # noqa: BLE001 — persistence must not break chat
+            _log.exception("chat persist (user) failed for %s", plot_root)
+
+    asyncio.create_task(
+        stream_chat_turn(
+            provider, hub, plot_root, full_message, scope, project_id, selection.provider
+        )
+    )
     return JSONResponse({"accepted": True}, status_code=202)
+
+
+async def chat_conversations_list_endpoint(request: Request) -> JSONResponse:
+    """``GET /api/chat/conversations?project_path=…`` — saved conversations as
+    metadata rows, newest-updated first (D-2026-06-26-B). Empty list when the
+    project has no saved chat yet."""
+    project_path = request.query_params.get("project_path", "")
+    if not project_path:
+        return JSONResponse({"error": "project_path required"}, status_code=400)
+    try:
+        plot_root = resolve_plot_root(project_path)
+    except (FileNotFoundError, NotADirectoryError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    project_id = _project_id_for(plot_root)
+    rows = list_conversations(plot_root, project_id) if project_id is not None else []
+    return JSONResponse({"conversations": rows})
+
+
+async def chat_conversation_get_endpoint(request: Request) -> JSONResponse:
+    """``GET /api/chat/conversations/{scope}?project_path=…`` — one conversation's
+    full message log (D-2026-06-26-B). 400 on a bad scope, 404 when none saved."""
+    project_path = request.query_params.get("project_path", "")
+    scope = request.path_params.get("scope", "")
+    if not project_path:
+        return JSONResponse({"error": "project_path required"}, status_code=400)
+    if not is_valid_scope(scope):
+        return JSONResponse({"error": "invalid chat scope"}, status_code=400)
+    try:
+        plot_root = resolve_plot_root(project_path)
+    except (FileNotFoundError, NotADirectoryError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    project_id = _project_id_for(plot_root)
+    if project_id is None:
+        return JSONResponse({"error": "conversation not found"}, status_code=404)
+    try:
+        doc = read_conversation(plot_root, project_id, scope)
+    except FileNotFoundError:
+        return JSONResponse({"error": "conversation not found"}, status_code=404)
+    return JSONResponse(doc.model_dump())
 
 
 async def chat_reset_endpoint(request: Request) -> JSONResponse:

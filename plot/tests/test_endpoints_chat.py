@@ -23,12 +23,15 @@ from plot_mcp.chat_session import (
     ChatSessionRegistry,
     ChatStreamEvent,
 )
+from plot_mcp.chat_store import append_user, read_conversation
 from plot_mcp.endpoints_chat import (
     build_context_preamble,
     build_framing_preamble,
     stream_chat_turn,
 )
 from plot_mcp.http_app import create_http_app
+from plot_mcp.project_io import create_project
+from plot_mcp.workspace import resolve_plot_root
 
 # ---------------------------------------------------------------------------
 # Fakes
@@ -718,3 +721,92 @@ def test_chat_models_claude_returns_static_aliases(app_client: TestClient) -> No
     body = resp.json()
     assert [m["id"] for m in body["models"]] == ["fable", "opus", "sonnet"]
     assert [m["label"] for m in body["models"]] == ["fable", "opus", "sonnet"]
+
+
+# ---------------------------------------------------------------------------
+# Conversation persistence (D-2026-06-26-B)
+# ---------------------------------------------------------------------------
+
+
+async def test_stream_chat_turn_persists_assistant_on_turn_complete(tmp_path: Path) -> None:
+    """With a project_id, the assistant turn is written to disk on
+    ``turn_complete`` so it survives an engine restart."""
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "alpha", "Alpha")
+    append_user(plot_root, "alpha", "foundation", "codex", "user_1", "hello")
+    hub = _FakeHub()
+    provider = _CannedProvider(
+        [ChatStreamEvent(type="turn_complete", turn_id="t1", text="hi there")]
+    )
+    await stream_chat_turn(
+        provider,
+        hub,
+        plot_root,
+        "hello",
+        scope="foundation",  # type: ignore[arg-type]
+        project_id="alpha",
+        provider_name="codex",
+    )
+    doc = read_conversation(plot_root, "alpha", "foundation")
+    assert [m.role for m in doc.messages] == ["user", "assistant"]
+    assert doc.messages[-1].text == "hi there"
+
+
+def test_chat_send_persists_user_message(app_client: TestClient, workspace: Path) -> None:
+    """The user's turn is persisted synchronously before the turn is scheduled,
+    so it is on disk by the time /send returns."""
+    plot_root = resolve_plot_root(str(workspace))
+    create_project(plot_root, "alpha", "Alpha")
+    _select_provider(app_client, workspace, "codex")
+    resp = app_client.post(
+        "/api/chat/send",
+        json={
+            "project_path": str(workspace),
+            "message": "define the mission",
+            "scope": "foundation",
+            "selection": [],
+        },
+    )
+    assert resp.status_code == 202
+    doc = read_conversation(plot_root, "alpha", "foundation")
+    assert doc.messages[0].role == "user"
+    assert doc.messages[0].text == "define the mission"
+    assert doc.title == "define the mission"
+
+
+def test_conversations_list_endpoint(app_client: TestClient, workspace: Path) -> None:
+    plot_root = resolve_plot_root(str(workspace))
+    create_project(plot_root, "alpha", "Alpha")
+    append_user(plot_root, "alpha", "services", "codex", "user_1", "the refund flow")
+    resp = app_client.get(f"/api/chat/conversations?project_path={workspace}")
+    assert resp.status_code == 200
+    rows = resp.json()["conversations"]
+    assert len(rows) == 1
+    assert rows[0]["scope"] == "services"
+    assert rows[0]["title"] == "the refund flow"
+
+
+def test_conversations_list_requires_project_path(app_client: TestClient) -> None:
+    resp = app_client.get("/api/chat/conversations")
+    assert resp.status_code == 400
+
+
+def test_conversation_get_endpoint(app_client: TestClient, workspace: Path) -> None:
+    plot_root = resolve_plot_root(str(workspace))
+    create_project(plot_root, "alpha", "Alpha")
+    append_user(plot_root, "alpha", "foundation", "codex", "user_1", "hello")
+    resp = app_client.get(f"/api/chat/conversations/foundation?project_path={workspace}")
+    assert resp.status_code == 200
+    assert resp.json()["messages"][0]["text"] == "hello"
+
+
+def test_conversation_get_invalid_scope_400(app_client: TestClient, workspace: Path) -> None:
+    resp = app_client.get(f"/api/chat/conversations/bogus?project_path={workspace}")
+    assert resp.status_code == 400
+
+
+def test_conversation_get_missing_404(app_client: TestClient, workspace: Path) -> None:
+    plot_root = resolve_plot_root(str(workspace))
+    create_project(plot_root, "alpha", "Alpha")
+    resp = app_client.get(f"/api/chat/conversations/entities?project_path={workspace}")
+    assert resp.status_code == 404

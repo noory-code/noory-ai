@@ -45,6 +45,8 @@ from plot_mcp.broadcast import BroadcastHub
 from plot_mcp.chat_session import ChatSessionRegistry, chat_registry
 from plot_mcp.debug_endpoints import debug_get_endpoint, debug_post_endpoint
 from plot_mcp.endpoints_chat import (
+    chat_conversation_get_endpoint,
+    chat_conversations_list_endpoint,
     chat_models_endpoint,
     chat_reset_endpoint,
     chat_send_endpoint,
@@ -139,6 +141,17 @@ def create_http_app(
         Route("/api/chat/models", chat_models_endpoint, methods=["GET"]),
         Route("/api/chat/send", chat_send_endpoint, methods=["POST"]),
         Route("/api/chat/reset", chat_reset_endpoint, methods=["POST"]),
+        # Persisted conversations (D-2026-06-26-B) — list + reopen one.
+        Route(
+            "/api/chat/conversations",
+            chat_conversations_list_endpoint,
+            methods=["GET"],
+        ),
+        Route(
+            "/api/chat/conversations/{scope}",
+            chat_conversation_get_endpoint,
+            methods=["GET"],
+        ),
         Route("/api/viewer/context", viewer_context_endpoint, methods=["POST"]),
         Route("/api/projects/{project_id}", project_get_endpoint, methods=["GET"]),
         Route(
