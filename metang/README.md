@@ -40,6 +40,8 @@ Use the **`/metang:config`** command — it edits `.metang.json` for you:
 /metang:config explain on
 /metang:config ask off           # drop the asking section
 /metang:config ask on
+/metang:config gate off          # turn off the Stop-hook answer-check
+/metang:config gate on
 /metang:config explain <text>    # replace the explaining rules
 /metang:config ask <text>        # replace the asking rules
 /metang:config init              # seed the current defaults as an editable starting point
@@ -58,13 +60,17 @@ The file it manages, if you prefer editing by hand:
   "explainEnabled": true,
   "askEnabled": true,
   "explainRules": "- your own explaining rules, replacing the defaults",
-  "askRules": "- your own asking rules, replacing the defaults"
+  "askRules": "- your own asking rules, replacing the defaults",
+  "gateEnabled": true,
+  "gateModel": "haiku"
 }
 ```
 
 - `explainEnabled` / `askEnabled: false` — drop that section from the reminder.
 - `explainRules` / `askRules` — replace the bullets in that section. Omit a key
   to keep its defaults. The scope line (answer-only, not reasoning) always stays.
+- `gateEnabled: false` — turn off the Stop-hook answer-check (the start-of-turn
+  reminder stays). `gateModel` — which model judges the answer (default `haiku`).
 - The project `.metang.json` overrides `~/.metang.json`; with no file, defaults apply.
 
 ## How it works
@@ -74,6 +80,15 @@ The file it manages, if you prefer editing by hand:
 unused) and returns the rule via `hookSpecificOutput.additionalContext`, which
 Claude Code adds to context before the model responds. The rule text lives in
 that one script — its single source.
+
+The same file also wires a `Stop` hook to `hooks/metang_gate.py`, which runs
+when the turn is about to end. It pulls the answer just written from the
+transcript and asks a cheap model (`claude -p`, the user's own auth — no API
+key) whether it followed the discipline; a clear violation blocks the stop with
+a short reason so the model rewrites, anything borderline passes. It **fails
+open** — any error allows the turn through — and never loops (one bounce per
+turn). This catches what the start-of-turn reminder misses once it has drifted
+out of the model's recent context. Toggle with `gateEnabled` / `gateModel`.
 
 ## Install
 

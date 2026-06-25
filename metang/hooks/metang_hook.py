@@ -85,6 +85,8 @@ def dump_defaults() -> str:
             "askEnabled": True,
             "explainRules": DEFAULT_EXPLAIN,
             "askRules": DEFAULT_ASK,
+            "gateEnabled": True,
+            "gateModel": "haiku",
         },
         ensure_ascii=False,
         indent=2,
