@@ -39,6 +39,13 @@
 
 ## Log
 
+### D-2026-06-26-C — chat: memoise message rows (fix resize-during-stream) + copy assistant replies
+
+- **What:** (1) `ChatMessageRow` is `memo`'d and a streaming assistant turn renders **plain text** (Markdown only once the turn completes). Previously every token re-rendered the whole thread and re-parsed **every** prior reply's Markdown, starving the main thread — the panel-resize drag went dead while the AI was streaming. (2) Each completed assistant reply gets a **Copy** button (`navigator.clipboard`).
+- **Why:** User dogfood (2026-06-26): "AI 생각 중에 좌측 패널 사이즈 조정이 안 먹는다" (perf), and "AI 답변을 복사할 수 있게 해달라". The memo is safe because `useChatStream`'s delta update keeps completed messages' object identity (only the streaming message is replaced), so reference-equal rows skip re-render.
+- **Approval:** Accepted by user, 2026-06-26.
+- **Spec impact:** none (viewer rendering). Guards: `plot/viewer/tests/chat-md.test.tsx` (copy calls clipboard; streaming stays plain, no Markdown parse / no copy button).
+
 ### D-2026-06-26-B — persist chat conversations to `.noory/plot/chat/<scope>.json`, engine-side, one-per-scope
 
 - **What:** Chat is saved to disk under the project at `chat/<scope>.json` — one append-only `ChatConversationDoc` per scope (`feature:<id>`→`feature__<id>.json`). The **engine** is the sole writer, appending the user message when a turn is sent (`chat_send_endpoint`) and the assistant message on `turn_complete` (`stream_chat_turn`), via the existing atomic `storage._write_json`. Two new read endpoints — `GET /api/chat/conversations` (list metadata, `updated` desc) and `GET /api/chat/conversations/{scope}` (full messages) — feed a new `ChatConversationsPanel` in the dock; reopening hydrates `messagesByScope[scope]`. `title` = first user message (≤60 chars), set once.
