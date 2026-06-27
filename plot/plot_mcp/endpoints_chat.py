@@ -44,6 +44,7 @@ from plot_mcp.chat_store import (
     append_user,
     list_conversations,
     read_conversation,
+    read_recent_transcript,
 )
 from plot_mcp.mcp_registration import ProviderName
 from plot_mcp.workspace import enumerate_projects, resolve_plot_root
@@ -246,13 +247,26 @@ async def chat_send_endpoint(request: Request) -> JSONResponse:
     # The seam is "" when it has nothing to add (e.g. ``project`` scope with no
     # selection); the user's text follows.
     selection_nodes = body.get("selection")
-    preamble = build_turn_preamble(plot_root, scope, selection_nodes)
-    full_message = "\n\n".join(p for p in (preamble, message) if p)
+    # ``project_path`` rides into the preamble so the agent gets the exact ids
+    # ``update_node`` needs to save a confirmed change into the selected node
+    # (D-2026-06-26-D) — the in-app agent's MCP server is stateless and never
+    # otherwise learns the open project's path.
+    preamble = build_turn_preamble(plot_root, scope, selection_nodes, project_path=project_path)
+
+    project_id = _project_id_for(plot_root)
+    # D-2026-06-26-F — re-feed the saved transcript on a FRESH CLI session. An app
+    # / engine restart wipes the in-memory session registry, so the next turn's
+    # coach starts with zero memory and re-asks what was already decided (and, with
+    # nothing concrete to write, fabricates a save). Resume keeps memory within a
+    # live session, so only the first turn of a fresh provider needs the history.
+    history = ""
+    if project_id is not None and provider.is_first_turn:
+        history = read_recent_transcript(plot_root, project_id, scope)
+    full_message = "\n\n".join(p for p in (history, preamble, message) if p)
 
     # Persist the user's turn before scheduling (D-2026-06-26-B) — the raw
     # ``message`` (not the context-injected ``full_message``), engine-side so it
     # survives a viewer crash. Best-effort: a write failure never blocks the turn.
-    project_id = _project_id_for(plot_root)
     if project_id is not None:
         try:
             append_user(

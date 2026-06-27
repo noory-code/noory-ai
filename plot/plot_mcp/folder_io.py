@@ -28,10 +28,22 @@ monorepo 500-line rule so the god module cannot re-grow.
 from __future__ import annotations
 
 from plot_mcp.canvas_io import (
+    creatable_kinds as creatable_kinds,
+)
+from plot_mcp.canvas_io import (
+    create_node as create_node,
+)
+from plot_mcp.canvas_io import (
     list_feature_details as list_feature_details,
 )
 from plot_mcp.canvas_io import (
     read_canvas as read_canvas,
+)
+from plot_mcp.canvas_io import (
+    update_node as update_node,
+)
+from plot_mcp.canvas_io import (
+    writable_node_fields as writable_node_fields,
 )
 from plot_mcp.canvas_io import (
     write_canvas as write_canvas,

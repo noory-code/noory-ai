@@ -437,7 +437,12 @@ Per `noory-ai/CLAUDE.md` plugin rule:
    review / edit / delete (build-through-discussion, never silent —
    [D-2026-06-16-P](./docs/DECISIONS.md)). A canvas may still be
    user-draw-only by its own spec (Foundation / Actors / Services currently
-   are).
+   are). **The in-app coach writing a confirmed value into the selected node
+   via `update_node` is NOT a violation of this rule**
+   ([D-2026-06-26-D](./docs/DECISIONS.md)): a write that lands *after* an
+   explicit user confirmation is the *completion* of build-through-discussion,
+   not silent finalization. The line this rule draws is "never write *without*
+   a confirmation" — confirmation → write is exactly the model.
 
 ### Commands you'll use often
 

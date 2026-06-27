@@ -1,8 +1,10 @@
 """FastMCP tool surface for Plot (v0.4).
 
-Claude Code uses these tools to read and mutate a Plot project. The
-surface mirrors the HTTP API one-to-one so a session can move between
-both interchangeably.
+Claude Code uses these tools to read and mutate a Plot project. The surface
+overlaps the HTTP API for project / canvas CRUD so a session can move between
+both; it is not one-to-one — some tools are MCP-only (``search_project_nodes``,
+``update_node``) and some HTTP routes have no tool (entity usage, masters,
+anchors).
 """
 
 from __future__ import annotations
@@ -15,6 +17,9 @@ from typing import Any
 from fastmcp import FastMCP
 
 from plot_mcp.folder_io import (
+    create_node as _create_node,
+)
+from plot_mcp.folder_io import (
     create_project,
     delete_project,
     list_feature_details,
@@ -25,6 +30,9 @@ from plot_mcp.folder_io import (
 )
 from plot_mcp.folder_io import (
     rename_project as rename_project_folder,
+)
+from plot_mcp.folder_io import (
+    update_node as _update_node,
 )
 from plot_mcp.git_store import (
     GitNotInitializedError,
@@ -52,9 +60,10 @@ mcp = FastMCP(
         "``.noory/plot/{project}/``. Use ``list_projects`` / ``get_project`` "
         "to discover state, ``get_canvas`` / ``update_canvas`` to read or write "
         "a single canvas (``foundation`` / ``actors`` / ``services`` / "
-        "``entities`` / ``feature``), and ``tag_project`` to plant a named "
-        "milestone in the project's git repo. Edits are never auto-committed — "
-        "only the tag tools touch git."
+        "``entities`` / ``feature``), ``update_node`` to patch one node's content "
+        "fields clobber-safely (preferred over ``update_canvas`` for a single-node "
+        "edit), and ``tag_project`` to plant a named milestone in the project's "
+        "git repo. Edits are never auto-committed — only the tag tools touch git."
     ),
 )
 
@@ -172,6 +181,73 @@ def update_canvas(project_path: str, project_id: str, canvas: dict[str, Any]) ->
 
 
 @mcp.tool()
+def update_node(
+    project_path: str,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    node_id: str,
+    fields: dict[str, Any],
+    service_id: str | None = None,
+) -> dict[str, Any]:
+    """Save content into ONE node — the clobber-safe way to write a single node.
+
+    Prefer this over ``update_canvas`` when the user has confirmed a value for the
+    node they have selected: it patches only that node's *content* fields (its
+    ``label`` plus the kind's typed text, e.g. a mission's ``statement`` /
+    ``body``) and leaves every other node + edge untouched, so a concurrent edit
+    elsewhere is never lost. ``fields`` is ``{<field name>: <value>}`` using the
+    writable field names shown for the selected node. Visual / structural fields
+    (position, size, colour, ``kind``, ``id``) are NOT writable here and are
+    returned under ``rejected_fields``. ``canvas_kind`` ∈ ``foundation`` /
+    ``actors`` / ``services`` / ``entities`` / ``feature``; ``service_id`` is
+    required when ``canvas_kind == "feature"``. Errors if ``node_id`` is absent
+    (the project anchor is not a node). Only call this after the user confirms —
+    never to finalise something they haven't agreed to."""
+    plot_root = resolve_plot_root(project_path)
+    return _update_node(plot_root, project_id, canvas_kind, node_id, fields, service_id)
+
+
+@mcp.tool()
+def create_node(
+    project_path: str,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    kind: str,
+    fields: dict[str, Any] | None = None,
+    service_id: str | None = None,
+) -> dict[str, Any]:
+    """Add ONE new node to a canvas — the clobber-safe way to create a node.
+
+    Use this (not ``update_canvas``) when the user has confirmed something
+    genuinely NEW that is not yet on the canvas (a new core value, actor, entity,
+    step, …). It appends a single node and leaves every other node + edge
+    untouched, so it never clobbers a concurrent edit or drops a field on a large
+    JSON round-trip. The id and position are minted **server-side** — do NOT pass
+    them. ``kind`` is the new node's kind; ``fields`` is ``{<field>: <value>}``
+    using the kind's writable field names (``label`` plus its typed text, e.g. a
+    ``core_value``'s ``definition`` / ``body``) — structural / visual fields are
+    rejected and returned under ``rejected_fields``.
+
+    Creatable kinds per canvas: foundation → ``mission`` / ``core_value`` /
+    ``identity``; actors → ``actor``; services → ``category`` / ``service`` /
+    ``feature``; entities → ``entity``; feature → ``step`` / ``decision`` /
+    ``rule`` / ``note`` / ``actor_ref``. The synthetic project anchor
+    (``project``) is never a node, and a ``feature`` is never created on the
+    feature canvas (its root already exists) — both raise. The node is added
+    **bare** (no edges); draw any relationship separately. To reference something
+    that lives on another canvas (an actor from a service), use the reference
+    pick-or-create flow, not this. ``canvas_kind`` ∈ ``foundation`` / ``actors`` /
+    ``services`` / ``entities`` / ``feature``; ``service_id`` is required when
+    ``canvas_kind == "feature"``. Only call this after the user confirms the new
+    node — never to add something they haven't agreed to.
+
+    Returns ``{"node": <new node dict>, "rejected_fields": [...]}``.
+    """
+    plot_root = resolve_plot_root(project_path)
+    return _create_node(plot_root, project_id, canvas_kind, kind, fields, service_id)
+
+
+@mcp.tool()
 def list_detail_canvases(project_path: str, project_id: str) -> list[str]:
     """Return the service ids that have their own Detail canvas."""
     plot_root = resolve_plot_root(project_path)
@@ -179,9 +255,7 @@ def list_detail_canvases(project_path: str, project_id: str) -> list[str]:
 
 
 @mcp.tool()
-def search_project_nodes(
-    project_path: str, project_id: str, query: str
-) -> list[dict[str, Any]]:
+def search_project_nodes(project_path: str, project_id: str, query: str) -> list[dict[str, Any]]:
     """Find nodes by name across all of a project's canvases (the "name" lookup
     entry point). Use this to resolve a node the user names but that isn't on the
     canvas you're looking at — e.g. "the comment feature", "the Reader actor".

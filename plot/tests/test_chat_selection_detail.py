@@ -20,6 +20,7 @@ from plot_mcp.chat_selection import (
     render_cross_canvas_registry,
     render_node_content,
     render_selection_detail,
+    render_write_target,
 )
 from plot_mcp.folder_io import create_project, write_canvas
 from plot_mcp.models import (
@@ -287,3 +288,106 @@ def test_turn_preamble_includes_selected_detail(tmp_path: Path) -> None:
     sel = [{"id": "m1", "kind": "mission", "label": "Our mission"}]
     out = build_turn_preamble(plot_root, "foundation", sel)
     assert "Make planning effortless" in out  # the selected node's body
+
+
+# --- writable-field schema (D-2026-06-26-D) --------------------------------
+
+
+def test_selection_detail_lists_writable_fields(tmp_path: Path) -> None:
+    """The agent must know which fields it can write into the selected node."""
+    plot_root = _setup(tmp_path)
+    out = render_selection_detail(
+        plot_root, "foundation", [{"id": "m1", "kind": "mission", "label": "Our mission"}]
+    )
+    assert "writable" in out.lower()
+    assert "statement" in out and "body" in out
+
+
+def test_selection_detail_shows_empty_node_writable_fields(tmp_path: Path) -> None:
+    """A BLANK selected node (the exact 'mission won't fill' case) renders no
+    content, but must still announce its writable fields so the coach can fill
+    it — otherwise the agent has no field names to write to."""
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "alpha", "Alpha")
+    write_canvas(
+        plot_root,
+        "alpha",
+        CanvasDoc(
+            canvas_id="foundation",
+            canvas_kind="foundation",
+            nodes=[
+                MissionNode(id="m1", label=""),  # blank mission
+                IdentityNode(id="i1", label="Identity"),
+            ],
+        ),
+    )
+    out = render_selection_detail(
+        plot_root, "foundation", [{"id": "m1", "kind": "mission", "label": ""}]
+    )
+    assert "m1" in out  # the blank node still appears
+    assert "statement" in out and "body" in out  # its writable fields are named
+
+
+# --- write target (D-2026-06-26-D) -----------------------------------------
+
+
+def test_turn_preamble_write_target_carries_ids(tmp_path: Path) -> None:
+    plot_root = _setup(tmp_path)
+    sel = [{"id": "m1", "kind": "mission", "label": "Our mission"}]
+    out = build_turn_preamble(plot_root, "foundation", sel, project_path=str(tmp_path))
+    assert "[Write target]" in out
+    assert "update_node" in out
+
+
+def test_write_target_block_names_each_id(tmp_path: Path) -> None:
+    """Scope the id assertions to the write-target block itself — a substring
+    check over the whole preamble would also pass on the canvas-map header, so it
+    couldn't catch the block dropping an id."""
+    plot_root = _setup(tmp_path)
+    block = render_write_target(plot_root, "foundation", str(tmp_path))
+    assert block.startswith("[Write target]")
+    assert "project_id='alpha'" in block
+    assert "canvas_kind='foundation'" in block
+    assert f"project_path={str(tmp_path)!r}" in block
+
+
+def test_render_write_target_bare_feature_is_empty(tmp_path: Path) -> None:
+    """Bare ``feature`` (no service_id) names no canvas — emit nothing rather than
+    an instruction update_node would reject."""
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "alpha", "Alpha")
+    assert render_write_target(plot_root, "feature", str(tmp_path)) == ""
+
+
+def test_render_write_target_feature_scope_includes_service_id(tmp_path: Path) -> None:
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "alpha", "Alpha")
+    block = render_write_target(plot_root, "feature:svc1", str(tmp_path))
+    assert "canvas_kind='feature'" in block
+    assert "service_id='svc1'" in block
+
+
+def test_turn_preamble_write_target_absent_without_project_path(tmp_path: Path) -> None:
+    """No project_path passed (e.g. older caller) → no write-target block, never
+    a half-formed one the agent can't use."""
+    plot_root = _setup(tmp_path)
+    sel = [{"id": "m1", "kind": "mission", "label": "Our mission"}]
+    out = build_turn_preamble(plot_root, "foundation", sel)
+    assert "[Write target]" not in out
+
+
+def test_turn_preamble_write_target_absent_on_project_scope(tmp_path: Path) -> None:
+    """The cross-canvas project scope has no single target canvas."""
+    plot_root = _setup(tmp_path)
+    out = build_turn_preamble(plot_root, "project", [], project_path=str(tmp_path))
+    assert "[Write target]" not in out
+
+
+def test_turn_preamble_write_target_feature_scope_has_service_id(tmp_path: Path) -> None:
+    """A feature canvas write needs service_id; the parametric scope carries it."""
+    plot_root = resolve_plot_root(str(tmp_path))
+    create_project(plot_root, "alpha", "Alpha")
+    out = build_turn_preamble(plot_root, "feature:svc1", [], project_path=str(tmp_path))
+    assert "[Write target]" in out
+    assert "feature" in out
+    assert "svc1" in out  # service_id

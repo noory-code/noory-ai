@@ -234,6 +234,23 @@ def register_plot(provider: ProviderName, plugin_root: Path) -> None:
     _write_config(spec, data)
 
 
+def plot_mcp_config(plugin_root: Path | None = None) -> dict[str, Any]:
+    """``--mcp-config`` payload that attaches the Plot stdio MCP server directly
+    to an in-app CLI turn (D-2026-06-26-E).
+
+    The in-app coach used to inherit the ``plot`` server from the user's GLOBAL
+    registration (``~/.claude.json``). That pointer drifts — it can name a
+    deleted / older app build, silently leaving the coach with no canvas tools
+    (the "in-app chat can't write to the canvas" failure). Passing this payload
+    via ``--mcp-config`` + ``--strict-mcp-config`` makes the coach always carry
+    *this* engine's own Plot tools, regardless of (and ignoring) the global
+    registration. Reuses the same frozen/dev command resolution as
+    :func:`register_plot`, so the spawned stdio server is the running build.
+    """
+    root = plugin_root or plot_plugin_root()
+    return {"mcpServers": {_PLOT_SERVER_NAME: _plot_entry(root, _spec_for("claude-code"))}}
+
+
 def unregister_plot(provider: ProviderName) -> None:
     """Remove the Plot MCP server entry from ``provider``'s config.
 

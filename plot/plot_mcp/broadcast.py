@@ -9,6 +9,7 @@ from typing import Any
 from starlette.websockets import WebSocket
 
 from plot_mcp.watcher import WorkspaceWatcher
+from plot_mcp.workspace import enumerate_projects
 
 _SINGLETON_CANVAS_KINDS = {"foundation", "actors", "services", "entities"}
 
@@ -16,12 +17,18 @@ _SINGLETON_CANVAS_KINDS = {"foundation", "actors", "services", "entities"}
 def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | None:
     """Map a changed file to ``{project_id, canvas_kind?, service_id?}``.
 
-    v0.8 layout:
-      - ``{project_id}/{canvas_kind}/canvas.json`` for singleton canvases
-      - ``{project_id}/services/{service_id}/detail.json`` for details
-      - ``{project_id}/project.json`` for project metadata
+    Flat layout (D-2026-06-21-AB) — paths are relative to the project's own
+    data root (``.noory/plot/``), so the leading segment is the **canvas
+    kind**, not a project id (which no longer appears in the path):
+      - ``{canvas_kind}/canvas.json`` for singleton canvases
+      - ``services/{service_id}/detail.json`` for feature details
+      - ``project.json`` for project metadata
+      - ``foundation/{node}.md`` / ``{canvas_kind}/{node}/details.md`` for
+        per-node typed text
 
-    Returns ``None`` for anything else (attachments, leftover files, etc.).
+    The project id is resolved from the root's ``project.json`` (one project
+    per root) rather than read off the path. Returns ``None`` for anything
+    outside the root (attachments, leftover files, etc.).
     """
     try:
         rel = changed_path.relative_to(plot_root)
@@ -30,37 +37,46 @@ def _describe_change(plot_root: Path, changed_path: Path) -> dict[str, Any] | No
     parts = rel.parts
     if not parts:
         return None
-    project_id = parts[0]
-    descriptor: dict[str, Any] = {"project_id": project_id}
-    # parts examples:
-    #   ("alpha", "project.json")
-    #   ("alpha", "foundation", "canvas.json")
-    #   ("alpha", "services", "canvas.json")
-    #   ("alpha", "services", "order", "detail.json")
-    #   ("alpha", "foundation", "mission-1", "details.md")
-    #   ("alpha", "services", "order", "details.md")
-    if len(parts) == 3 and parts[2] == "canvas.json" and parts[1] in _SINGLETON_CANVAS_KINDS:
-        descriptor["canvas_kind"] = parts[1]
-    elif len(parts) == 4 and parts[1] == "services" and parts[3] == "detail.json":
+    descriptor: dict[str, Any] = {}
+    project_id = _project_id_for(plot_root)
+    if project_id is not None:
+        descriptor["project_id"] = project_id
+    # parts examples (flat — relative to the project's own data root):
+    #   ("project.json",)
+    #   ("foundation", "canvas.json")
+    #   ("services", "canvas.json")
+    #   ("services", "order", "detail.json")
+    #   ("foundation", "mission-1", "details.md")
+    #   ("services", "order", "details.md")
+    #   ("foundation", "mission-m1.md")
+    if len(parts) == 2 and parts[1] == "canvas.json" and parts[0] in _SINGLETON_CANVAS_KINDS:
+        descriptor["canvas_kind"] = parts[0]
+    elif len(parts) == 3 and parts[0] == "services" and parts[2] == "detail.json":
         descriptor["canvas_kind"] = "feature"
-        descriptor["service_id"] = parts[2]
-    elif len(parts) == 4 and parts[3] == "details.md" and parts[1] in _SINGLETON_CANVAS_KINDS:
-        # v0.9 per-node details.md: a viewer that has the parent canvas
-        # open should reload to pick up external edits.
-        descriptor["canvas_kind"] = parts[1]
-    elif len(parts) == 4 and parts[1] == "services" and parts[3] == "details.md":
+        descriptor["service_id"] = parts[1]
+    elif len(parts) == 3 and parts[2] == "details.md" and parts[0] == "services":
         # services/{sid}/details.md — service node's long-form. Reloading
         # the services top-view is enough because the details file is
         # only fetched lazily by the Inspector when the service is selected.
         descriptor["canvas_kind"] = "services"
-    elif len(parts) == 3 and parts[1] == "foundation" and parts[2].endswith(".md"):
-        # v0.13 Phase 4: per-node MD template under foundation/ — any
-        # .md file directly under the foundation/ folder belongs to a
-        # foundation node. Reloading the foundation canvas is enough
-        # since the API merges typed text from these files on read.
+    elif len(parts) == 3 and parts[2] == "details.md" and parts[0] in _SINGLETON_CANVAS_KINDS:
+        # per-node details.md under a singleton canvas: a viewer that has the
+        # parent canvas open should reload to pick up external edits.
+        descriptor["canvas_kind"] = parts[0]
+    elif len(parts) == 2 and parts[0] == "foundation" and parts[1].endswith(".md"):
+        # Per-node MD template directly under foundation/ — any .md file
+        # there belongs to a foundation node. Reloading the foundation canvas
+        # is enough since the API merges typed text from these files on read.
         descriptor["canvas_kind"] = "foundation"
     # project.json and anything else → project-level event without canvas_kind
     return descriptor
+
+
+def _project_id_for(plot_root: Path) -> str | None:
+    """The single project under a data root (one-project-per-root,
+    D-2026-06-21-AB), or ``None`` when the root has no project yet."""
+    projects = enumerate_projects(plot_root)
+    return projects[0].id if projects else None
 
 
 class BroadcastHub:

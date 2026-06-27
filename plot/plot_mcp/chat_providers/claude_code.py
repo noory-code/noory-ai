@@ -9,7 +9,10 @@ loads its persisted transcript and the conversation continues naturally.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
+import tempfile
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -20,6 +23,7 @@ from plot_mcp.chat_providers.base import (
     _SubprocessChatProvider,
     _SubprocessFactory,
 )
+from plot_mcp.mcp_registration import plot_mcp_config
 
 
 class ClaudeCodeProvider(_SubprocessChatProvider):
@@ -59,14 +63,25 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             # surfaced on the canvas per build-through-discussion).
             "--allowedTools",
             "mcp__plot__*",
+            # D-2026-06-26-E — attach THIS engine's own Plot MCP server directly,
+            # and use ONLY it. The in-app coach used to inherit ``plot`` from the
+            # user's global ``~/.claude.json``; that pointer drifts (a deleted /
+            # older app build) and silently leaves the coach with no canvas tools
+            # — the "in-app chat can't write to the canvas" failure. ``--mcp-config``
+            # injects the running build's stdio server; ``--strict-mcp-config``
+            # ignores every other MCP source, so the coach carries exactly Plot's
+            # tools (and none of the user's unrelated servers), never depending on
+            # the global registration.
+            "--mcp-config",
+            self._mcp_config_path(),
+            "--strict-mcp-config",
             # D-2026-06-21-I — ground the in-app agent ONLY in the workspace:
             # load only workspace-local settings (no parent / global CLAUDE.md
             # auto-discovery, no user-scope config) and keep the memory paths /
             # cwd / env out of the system prompt. OAuth subscription auth is
-            # untouched (this is NOT --bare, which would force an API key). The
-            # ``plot`` MCP still loads (it lives in ~/.claude.json, read
-            # independently of --setting-sources). Auto-memory is killed via the
-            # ``CLAUDE_CODE_DISABLE_AUTO_MEMORY`` env (see ``_spawn_env``).
+            # untouched (this is NOT --bare, which would force an API key).
+            # Auto-memory is killed via the ``CLAUDE_CODE_DISABLE_AUTO_MEMORY``
+            # env (see ``_spawn_env``).
             "--setting-sources",
             "local",
             # Lever 2 (docs/idea/chat/01-levers.md) — deliver the Layer-3
@@ -90,6 +105,23 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             cmd += ["--resume", self._session_id]
         cmd.append(user_message)
         return cmd
+
+    def _mcp_config_path(self) -> str:
+        """Write the in-app Plot MCP config to a temp file and return its path
+        (D-2026-06-26-E). Passed to claude via ``--mcp-config`` so the coach
+        always carries this build's Plot tools.
+
+        Content is stable per install (the engine's own stdio command), so the
+        file is content-addressed under the OS temp dir — idempotent across turns
+        and safe if a dev + frozen build ever run side by side (different hash →
+        different file). Cross-platform: ``tempfile.gettempdir()`` (never a
+        hardcoded ``/tmp``)."""
+        raw = json.dumps(plot_mcp_config(), indent=2)
+        digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
+        path = Path(tempfile.gettempdir()) / f"plot-inapp-mcp-{digest}.json"
+        if not path.is_file() or path.read_text(encoding="utf-8") != raw:
+            path.write_text(raw, encoding="utf-8")
+        return str(path)
 
     def _spawn_env(self) -> dict[str, str] | None:
         # D-2026-06-21-I — disable Claude Code auto-memory for the in-app agent

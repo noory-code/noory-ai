@@ -131,6 +131,17 @@ class ChatProvider(ABC):
         """
         ...
 
+    @property
+    def is_first_turn(self) -> bool:
+        """Whether this provider has yet to run a turn (D-2026-06-26-F).
+
+        Default ``False`` so fakes / non-subprocess providers don't trigger a
+        transcript re-feed. Subprocess providers override it to report real CLI
+        session freshness, so the send endpoint re-feeds the saved transcript
+        only on a genuinely fresh session.
+        """
+        return False
+
     def set_model(self, model: str | None) -> None:
         """Set the CLI model override for subsequent turns (D-2026-06-16-C).
 
@@ -188,6 +199,13 @@ class _SubprocessChatProvider(ChatProvider):
     @property
     def session_id(self) -> str | None:
         return self._session_id
+
+    @property
+    def is_first_turn(self) -> bool:
+        """True before this provider has run any turn. A fresh provider (e.g. after
+        an engine restart wiped the in-memory registry) has no CLI session memory,
+        so the caller re-feeds the saved transcript on this turn (D-2026-06-26-F)."""
+        return self._first_turn
 
     def set_model(self, model: str | None) -> None:
         """Store the CLI model override (D-2026-06-16-C). Empty → unset."""

@@ -4,6 +4,93 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.121.0] — 2026-06-28
+
+### Added
+
+- **The coach can ADD a node, not just fill one** (`D-2026-06-27-B`) — new clobber-safe
+  `create_node` MCP tool, mirroring `update_node`: it validates the kind is creatable on the
+  canvas, mints the id and position server-side, applies only the kind's writable content
+  fields, and appends one node via an atomic whole-canvas re-validate + write. Generalizes the
+  former `create_master` into one creation SSOT. The write playbook gains a create branch —
+  propose first, create only on an explicit yes. Guard: `tests/test_create_node.py`.
+
+### Fixed
+
+- **External canvas changes refresh the screen automatically again** (`D-2026-06-28-A`) — a
+  coach write (or an edit from an external editor) landed on disk but the open canvas didn't
+  update. The file-watcher's change descriptor still assumed the pre-`D-2026-06-21-AB` folder
+  layout, so on the current flat layout it mislabeled every change (the project id carried the
+  canvas kind; the canvas kind was dropped) and the viewer skipped the refetch. It now reads
+  the flat layout and resolves the project id from `project.json`. This corrects the "reload
+  already worked" premise of `D-2026-06-26-D`. The function had **zero tests** — now pinned by
+  `tests/test_broadcast_describe.py`.
+
+## [0.120.3] — 2026-06-27
+
+### Changed
+
+- **No need to select a node first for a unique kind** (`D-2026-06-27-A`) — asked
+  "why must I pick the circle?". The coach now writes to the node you *mean*: the
+  selected one, or, for a kind there's only one of (the mission, the identity), it
+  finds it itself — no manual selection. It only asks "which one?" when several of
+  the same kind exist (e.g. core values) and none is selected. Confirmation is
+  unchanged: it still writes only after your explicit yes.
+
+## [0.120.2] — 2026-06-27
+
+### Fixed
+
+- **Coach no longer forgets the conversation or fakes a save** (`D-2026-06-26-F`)
+  — first real dogfood surfaced two trust-killers. (1) After an app restart the
+  coach lost all memory and **re-asked questions already answered** ("who/what
+  does it change" repeatedly), because the saved transcript was never re-fed to
+  the fresh session; now a fresh session re-feeds the recent transcript so it
+  continues from what's already agreed. (2) The coach **announced "saved ✓"
+  while the node was actually empty** (even citing a fake file line); the guard
+  now forbids claiming a save unless the write tool truly ran this turn, and
+  forbids inventing file paths / "refresh to see it" (the canvas auto-updates).
+  Guards: `test_chat_store` (transcript re-feed), `test_chat_system_prompt`.
+
+## [0.120.1] — 2026-06-26
+
+### Fixed
+
+- **In-app coach now actually carries Plot's canvas tools** (`D-2026-06-26-E`) —
+  the write tool added in 0.120.0 was unreachable in practice. The coach
+  inherited its Plot tool connection from the user's global CLI config, which can
+  point at a deleted / older app build — silently leaving the coach with **no**
+  canvas tools (exactly the "in-app chat can't write to the canvas" failure).
+  The coach is now spawned with the running build's own Plot server attached
+  directly (`--mcp-config` + `--strict-mcp-config`), so it always has the canvas
+  tools regardless of the global registration, and no longer sees the user's
+  unrelated MCP servers. Guard: `test_claude_attaches_own_plot_mcp_strictly`.
+
+## [0.120.0] — 2026-06-26
+
+### Added
+
+- **The in-app coach writes a confirmed value into the selected node**
+  (`D-2026-06-26-D`) — closes the load-bearing gap where the coach could only
+  *talk*: it proposed a mission / value / step and told the user to paste it,
+  because nothing let it write. New MCP tool **`update_node`** patches one node's
+  content (`label` + the kind's typed text) clobber-safely (read → merge writable
+  fields → re-validate against the kind → atomic whole-canvas write; visual /
+  structural / server fields are rejected; every other node + edge is untouched;
+  an absent node id — including the project anchor, which is not a node — errors).
+  The per-turn chat context now carries a `[Write target]` block (the ids the
+  stateless in-app agent needs) and each selected node's **writable field names**
+  (so a *blank* node still tells the coach what to fill — the "mission won't fill"
+  case). A `WRITE_PLAYBOOK` in the canvas-scope system prompt tells the coach to
+  save on an **explicit** confirmation, then confirm in one line what it saved —
+  never before the yes, and ask when nothing / several nodes are selected. Writing
+  *after* a confirmation is the completion of build-through-discussion
+  (`D-2026-06-16-P`), not silent finalisation. Engine half this release; the file
+  watcher already reloads the open canvas on the write. **Known limit:** a coach
+  write reaches the viewer as an external change and clears its undo stack
+  (recover via git / re-edit). Guards: `tests/test_update_node.py`,
+  `tests/test_chat_selection_detail.py`, `tests/test_chat_system_prompt.py`.
+
 ## [0.119.0] — 2026-06-26
 
 ### Added

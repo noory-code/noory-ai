@@ -18,6 +18,7 @@ from pathlib import Path
 from plot_mcp.chat_context import (
     COACH_TONE,
     HALLUCINATION_GUARD,
+    WRITE_PLAYBOOK,
     build_framing_preamble,
     build_system_prompt,
 )
@@ -78,6 +79,38 @@ def test_system_prompt_project_scope_has_guard_only_no_tone() -> None:
     assert COACH_TONE not in sp  # tone is for canvas coaching, not cross-canvas
 
 
+def test_write_playbook_present_on_canvas_scopes(tmp_path: Path) -> None:
+    # D-2026-06-26-D: on a canvas scope the coach must know to SAVE a confirmed
+    # value into the selected node (close the load-bearing gap), gated on an
+    # explicit yes, and to ask when the target is ambiguous.
+    sp = build_system_prompt("foundation")
+    assert WRITE_PLAYBOOK in sp
+    low = sp.lower()
+    assert "update_node" in low  # the write tool is named
+    assert "confirm" in low  # gated on explicit confirmation
+    assert "ask which" in low or "several nodes" in low  # empty/multi-select → ask
+
+
+def test_write_playbook_has_create_branch(tmp_path: Path) -> None:
+    # D-2026-06-27-B: the coach ADDS a genuinely-new node via create_node — gated on
+    # the same explicit confirmation as filling (propose first, create on the yes),
+    # never by rewriting the whole canvas.
+    sp = build_system_prompt("foundation")
+    low = sp.lower()
+    assert "create_node" in low  # the add tool is named
+    assert "new" in low  # adding is scoped to something genuinely new
+    # gated: propose before creating, never silently
+    assert "propose" in low or "shall i add" in low or "만들까요" in sp
+
+
+def test_write_playbook_absent_on_project_scope() -> None:
+    # Cross-canvas project scope has no single selected target → no write playbook
+    # (mirrors COACH_TONE being canvas-only).
+    sp = build_system_prompt("project")
+    assert WRITE_PLAYBOOK not in sp
+    assert "update_node" not in sp.lower()
+
+
 def test_guard_keeps_read_ask_machinery_silent() -> None:
     # Regression (D-2026-06-24-J): the in-app coach narrated its plumbing — "the
     # tool call was cancelled, I couldn't read the body, here's what I'm certain
@@ -135,6 +168,22 @@ def test_claude_command_carries_system_prompt_as_flag(tmp_path: Path) -> None:
 def test_claude_command_omits_system_prompt_flag_when_unset(tmp_path: Path) -> None:
     p = ClaudeCodeProvider(workspace_root=tmp_path)
     assert "--append-system-prompt" not in p._build_command("hi")
+
+
+def test_claude_attaches_own_plot_mcp_strictly(tmp_path: Path) -> None:
+    # D-2026-06-26-E: the coach must carry THIS build's Plot tools directly, not
+    # inherit a drift-prone global registration. So the command injects an
+    # --mcp-config naming the plot server AND --strict-mcp-config to ignore all
+    # other MCP sources (incl. a stale ~/.claude.json plot entry).
+    import json
+
+    p = ClaudeCodeProvider(workspace_root=tmp_path)
+    cmd = p._build_command("hi")
+    assert "--strict-mcp-config" in cmd
+    assert "--mcp-config" in cmd
+    cfg = json.loads(Path(cmd[cmd.index("--mcp-config") + 1]).read_text(encoding="utf-8"))
+    assert "plot" in cfg["mcpServers"]  # the engine's own stdio Plot server
+    assert cmd[-1] == "hi"  # user message still trails
 
 
 # --- codex: no system-prompt flag → prepend to the message -----------------

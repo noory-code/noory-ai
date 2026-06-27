@@ -123,6 +123,39 @@ def read_conversation(plot_root: Path, project_id: str, scope: str) -> ChatConve
     return ChatConversationDoc.model_validate(_read_json(path))
 
 
+def read_recent_transcript(
+    plot_root: Path, project_id: str, scope: str, max_chars: int = 8000
+) -> str:
+    """Render the saved transcript for ``scope`` as a plain ``role: text`` block,
+    most-recent-bounded to ``max_chars`` (D-2026-06-26-F).
+
+    Re-fed to a FRESH coach session so it continues from what's already decided
+    instead of re-asking. Returns ``""`` when no conversation is saved yet (a
+    brand-new thread genuinely starts from scratch). Keeps the newest messages
+    when over budget — the tail is what the next turn builds on.
+    """
+    try:
+        doc = read_conversation(plot_root, project_id, scope)
+    except FileNotFoundError:
+        return ""
+    if not doc.messages:
+        return ""
+    picked: list[str] = []
+    total = 0
+    for m in reversed(doc.messages):
+        line = f"{m.role}: {m.text.strip()}"
+        if total + len(line) > max_chars and picked:
+            break
+        picked.append(line)
+        total += len(line)
+    picked.reverse()
+    header = (
+        "[Earlier in this conversation — continue from here; what is already "
+        "agreed below is settled, do not re-ask it]"
+    )
+    return header + "\n" + "\n".join(picked)
+
+
 def list_conversations(plot_root: Path, project_id: str) -> list[dict[str, Any]]:
     """Saved conversations as metadata rows, newest-updated first. A corrupt /
     old-schema file is skipped rather than breaking the whole list."""

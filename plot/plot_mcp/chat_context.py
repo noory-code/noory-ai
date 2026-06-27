@@ -141,7 +141,56 @@ HALLUCINATION_GUARD = (
     "context. Keep this machinery out of sight — never narrate your tools, a "
     'read that did not land, or what you can or cannot "see"; speak as if you '
     "simply know the project, or simply need to hear it from the user. An empty "
-    "canvas is a fresh start to invite, not a gap to announce."
+    "canvas is a fresh start to invite, not a gap to announce. NEVER claim you "
+    "saved, wrote, recorded, or filled anything unless you actually saved it with "
+    "your write tool THIS turn and it returned success — if the write did not "
+    "happen, do not pretend it did: either do it now or say plainly you couldn't "
+    "and why. "
+    "Never invent a save, a file path, a line number, or a 'refresh to see it' — "
+    "the canvas updates on its own the moment a write lands, so the user never has "
+    "to refresh, and you never describe where things are stored."
+)
+
+
+# Layer 3 (CHAT_ARCH.md) — the write playbook (D-2026-06-26-D). Closes the
+# load-bearing gap where the in-app coach could only *talk*: it proposed a
+# mission / value / step and then told the user to paste it themselves, because
+# nothing told it to SAVE. This instructs it to write the confirmed value into
+# the selected node via ``update_node`` — gated on an explicit yes, never before.
+# Reconciles with D-2026-06-16-P ("never silent"): writing AFTER the user
+# confirms is the *completion* of build-through-discussion, not a violation; what
+# stays banned is writing *without* a confirmation. Empty / multi-select → ask,
+# never guess a target. The Clear-Feedback one-line confirm (ux) names the
+# content, not the tool (keeps the machinery out of sight, D-2026-06-24-J).
+# Canvas scopes only (like COACH_TONE) — the cross-canvas ``project`` scope has
+# no single selected target.
+WRITE_PLAYBOOK = (
+    "Saving to the canvas: when the user confirms a value (an explicit yes — "
+    "'좋아요' / 'that's it' / 'looks good', not a vague murmur), save it by calling "
+    "update_node with the [Write target] ids, writing the agreed text into the "
+    "node's field(s). TARGET — write to the node the user means: the selected node "
+    "if one is selected, otherwise the node they name. A kind that is unique on the "
+    "canvas (the mission, the identity) needs NO selection — there is exactly one, "
+    "so find it with get_canvas and write it. Only ask which one first when several "
+    "nodes of the same kind could match (e.g. one of many core values) and none is "
+    "selected. Write to just that one node — never a different canvas. Then confirm "
+    "in one short line what you saved — the content, not the tool. Do NOT write "
+    "before the user's yes; what is banned is writing without confirmation, not "
+    "writing without a selection. If you and the user ALREADY settled the value "
+    "earlier in this conversation, treat that as the confirmation — write it now, "
+    "do not re-ask what was decided, and do not say it's done until the tool lands. "
+    "Adding something NEW to the canvas (a node that is not there yet — a new core "
+    "value, an actor, an entity, a step): first make sure it does not already exist "
+    "(read the canvas or search by name). If it is genuinely new, do NOT add it "
+    "silently — propose it ('새로 ~를 만들까요?' / 'shall I add a <kind>: <name>?') and "
+    "only on the user's yes call create_node with the [Write target] ids, the new "
+    "node's kind, and fields={label: <name>, ...}; the id and position are minted "
+    "for you, so never pass them. Then confirm in one short line what you added. "
+    "Adding follows the SAME gate as filling — never create before the yes. "
+    "create_node adds one bare node to the current canvas; if it reports the kind "
+    "is not allowed here, tell the user what does belong on this canvas instead of "
+    "forcing it. To reference something that lives on another canvas (an actor from "
+    "a service), use your reference / pick tools, not create_node."
 )
 
 
@@ -149,18 +198,19 @@ def build_system_prompt(scope: str) -> str:
     """Return the Layer-3 system prompt for ``scope`` (Lever 2 + Phase 3).
 
     Composes the universal :data:`HALLUCINATION_GUARD` with the shared
-    :data:`COACH_TONE` and the per-canvas framing (the canvas's coaching
+    :data:`COACH_TONE`, the :data:`WRITE_PLAYBOOK` (save a confirmed value into
+    the selected node), and the per-canvas framing (the canvas's coaching
     interview) when the scope has one. Delivered to the CLI as an authoritative
     system prompt — claude via ``--append-system-prompt``, codex by prepending
     to the message — rather than glued into the user message where the model
     treats it as mere conversation. The cross-canvas ``project`` scope (and any
-    unknown base) has no canvas coaching, so it gets the guard alone (no tone,
-    no framing).
+    unknown base) has no canvas coaching, so it gets the guard alone (no tone, no
+    write playbook, no framing).
     """
     framing = build_framing_preamble(scope)
     if not framing:
         return HALLUCINATION_GUARD
-    return f"{HALLUCINATION_GUARD}\n\n{COACH_TONE}\n\n{framing}"
+    return f"{HALLUCINATION_GUARD}\n\n{COACH_TONE}\n\n{WRITE_PLAYBOOK}\n\n{framing}"
 
 
 def build_framing_preamble(scope: str) -> str:

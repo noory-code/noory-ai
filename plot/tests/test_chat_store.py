@@ -14,6 +14,7 @@ from plot_mcp.chat_store import (
     append_user,
     list_conversations,
     read_conversation,
+    read_recent_transcript,
 )
 from plot_mcp.project_io import create_project
 from plot_mcp.workspace import resolve_plot_root
@@ -34,6 +35,38 @@ def test_append_user_creates_file_with_title(tmp_path):
     assert doc.title == "Define the mission"  # first user message
     assert doc.created == doc.updated
     assert [(m.role, m.text) for m in doc.messages] == [("user", "Define the mission")]
+
+
+def test_recent_transcript_empty_when_no_conversation(tmp_path):
+    # A brand-new thread genuinely starts from scratch — no history block.
+    plot_root, pid = _project(tmp_path)
+    assert read_recent_transcript(plot_root, pid, "foundation") == ""
+
+
+def test_recent_transcript_carries_decided_value_and_roles(tmp_path):
+    # D-2026-06-26-F: a fresh session must see what was already settled so it
+    # doesn't re-ask (the user's repeated "I already wrote it above" complaint).
+    plot_root, pid = _project(tmp_path)
+    append_user(
+        plot_root, pid, "foundation", "claude-code", "u1", "미션은 '혼자 만드는 사람을 돕는다'"
+    )
+    append_assistant(plot_root, pid, "foundation", "claude-code", "a1", "좋아요, 그렇게 잡을게요")
+    out = read_recent_transcript(plot_root, pid, "foundation")
+    assert "혼자 만드는 사람을 돕는다" in out  # the settled value survives
+    assert "user:" in out and "assistant:" in out
+    assert "do not re-ask" in out  # the header instructs continuation
+
+
+def test_recent_transcript_keeps_newest_under_budget(tmp_path):
+    plot_root, pid = _project(tmp_path)
+    for i in range(50):
+        append_user(
+            plot_root, pid, "foundation", "claude-code", f"u{i}", f"message number {i} " + "x" * 200
+        )
+    out = read_recent_transcript(plot_root, pid, "foundation", max_chars=1000)
+    assert len(out) < 2000  # bounded
+    assert "message number 49" in out  # newest kept
+    assert "message number 0" not in out  # oldest dropped
 
 
 def test_append_assistant_appends_and_bumps_updated(tmp_path):

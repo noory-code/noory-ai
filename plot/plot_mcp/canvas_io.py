@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from pydantic import ValidationError
 
@@ -26,10 +27,12 @@ from plot_mcp.canvas_migrations import (  # noqa: F401
     collect_foundation_md_warnings,
 )
 from plot_mcp.models import (
+    _ALLOWED_KINDS_BY_CANVAS,
     CanvasDoc,
     CanvasKind,
 )
 from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
+from plot_mcp.models_union import SketchNode, SketchNodeAdapter
 from plot_mcp.storage import (  # noqa: F401
     _canvas_file,
     _ensure_project,
@@ -233,6 +236,223 @@ def write_canvas(plot_root: Path, project_id: str, canvas: CanvasDoc) -> None:
     write_project(plot_root, meta)
 
 
+# ---------------------------------------------------------------------------
+# single-node content patch (D-2026-06-26-D)
+# ---------------------------------------------------------------------------
+
+# Per-kind *content* fields a coach may write via ``update_node`` — the kind's
+# free-text prose only. This is an **allow-list, not a deny-list** (the first cut
+# was `model_fields - base_fields`, which silently let every per-kind
+# structural / reference / lifecycle field through as "writable" — a coach could
+# repoint a service's actor references, lock an identity's derive→confirm
+# lifecycle, or rewrite a rule's permission map; D-2026-06-26-D red-team). An
+# allow-list is **fail-safe**: a field absent here is NOT writable, so a new kind
+# (or a new structural field on an existing kind) defaults to protected until
+# someone classifies it. Deliberately ABSENT and therefore protected: ``ref_*``
+# id arrays + ``actor_ref.ref_actor_id`` (cross-node references — set via the
+# pick-or-create flow, not free text), ``status`` / ``provenance`` (identity
+# derive→confirm lifecycle), ``polarity`` / ``order`` (step structure), ``side``
+# (actor classification), ``actor_permissions`` (rule permission map). ``label``
+# (the node's name) is always writable, added separately. Mirrors the existing
+# per-kind content maps (``FOUNDATION_TYPED_TEXT_FIELDS``). Every union kind must
+# have an entry — pinned by ``tests/test_update_node.py`` so a new kind forces
+# the content-vs-structural decision instead of silently leaking.
+_WRITABLE_CONTENT_FIELDS: dict[str, tuple[str, ...]] = {
+    "project": (),
+    "mission": ("statement", "body"),
+    "core_value": ("definition", "body"),
+    "identity": ("description", "body"),
+    "actor": ("body",),
+    "actor_ref": (),
+    "service": ("problem", "value_created"),
+    "feature": ("proposed",),
+    "category": ("theme", "body"),
+    "step": ("outcome", "body"),
+    "decision": ("body",),
+    "note": ("body",),
+    "rule": ("policy", "enforcement", "body"),
+    "entity": ("summary",),
+}
+
+# Always writable on every kind: the node's name / title.
+_WRITABLE_LABEL = "label"
+
+
+def writable_node_fields(node: SketchNode) -> list[str]:
+    """The content fields a coach may patch on ``node``: ``label`` + the kind's
+    free-text prose (the per-kind allow-list :data:`_WRITABLE_CONTENT_FIELDS`).
+
+    The SSOT for "what is writable" — used both by :func:`update_node` (to filter
+    a patch) and by the chat context builder (to tell the agent which fields an
+    empty selected node accepts, so it can fill a blank node). Structural /
+    reference / lifecycle fields are **not** writable (set through their own
+    flows, never a free-text content patch — Rule 7); the allow-list is fail-safe
+    for future kinds. Deterministic order: ``label`` first, then the kind's
+    content fields that actually exist on the model.
+    """
+    content = _WRITABLE_CONTENT_FIELDS.get(node.kind, ())
+    model_fields = type(node).model_fields
+    return [_WRITABLE_LABEL, *(f for f in content if f in model_fields)]
+
+
+def update_node(
+    plot_root: Path,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    node_id: str,
+    fields: dict[str, Any],
+    service_id: str | None = None,
+) -> dict[str, Any]:
+    """Patch ONE node's content fields in place (read-modify-write).
+
+    Reads the canvas, finds ``node_id``, merges only the writable content fields
+    (see :func:`writable_node_fields`) from ``fields``, re-validates the patched
+    node against its kind, then re-validates the **whole** ``CanvasDoc`` and
+    writes it atomically via :func:`write_canvas` (which also preserves the
+    server-managed publish baseline). Re-validating the whole doc — not just the
+    one node — keeps every canvas-level invariant (unique ids, edge refs, kind
+    allow-list, per-canvas minimums) honest after the patch.
+
+    Within this read-modify-write only the target node's content changes; every
+    other node and all edges are written back unchanged. It is **not** a
+    transactional lock, though — like every Plot write it is last-write-wins, so a
+    user edit to a *different* node landing between this read and its write is not
+    merged (the window is one synchronous tool call; fine at human pace).
+
+    Protected / unknown keys in ``fields`` are dropped and returned under
+    ``rejected_fields`` (Fail-soft on a partly-valid patch, but Fail-Fast in the
+    response so the caller sees a typo'd or non-writable field). Raises
+    ``ValueError`` when the node is absent (this also covers the synthetic project
+    anchor, which lives in ``ProjectDoc.anchors`` not ``nodes``) or when no
+    writable field is supplied. A wrong field *type* raises through re-validation.
+
+    Returns ``{"node": <updated node dict>, "rejected_fields": [...]}``.
+    """
+    canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
+    target = next((n for n in canvas.nodes if n.id == node_id), None)
+    if target is None:
+        raise ValueError(
+            f"node not found on {canvas_kind} canvas: {node_id!r} "
+            "(the project anchor is not a node — it lives in ProjectDoc.anchors)"
+        )
+    allowed = set(writable_node_fields(target))
+    patch = {k: v for k, v in fields.items() if k in allowed}
+    rejected = sorted(set(fields) - allowed)
+    if not patch:
+        raise ValueError(
+            f"no writable fields in patch for {target.kind} node {node_id!r}; "
+            f"writable: {sorted(allowed)}, got: {sorted(fields)}"
+        )
+    merged = {**target.model_dump(), **patch}
+    new_node = SketchNodeAdapter.validate_python(merged)
+    new_nodes = [new_node if n.id == node_id else n for n in canvas.nodes]
+    # model_copy does not re-run validators (pydantic v2) — round-trip through
+    # model_validate so the whole-canvas invariants are enforced before the write.
+    updated = CanvasDoc.model_validate(
+        canvas.model_copy(update={"nodes": new_nodes}).model_dump(by_alias=True)
+    )
+    write_canvas(plot_root, project_id, updated)
+    return {"node": new_node.model_dump(by_alias=True), "rejected_fields": rejected}
+
+
+# Server-side placement for a freshly created node — a column staggered down by
+# how many of its kind already exist, so successive creates don't stack on the
+# anchor (generalised from the old masters.py drop zone). The user drags it after.
+_FRESH_X = 160.0
+_FRESH_Y0 = 120.0
+_FRESH_DY = 80.0
+
+
+def _compute_fresh_position(existing: list[SketchNode], kind: str) -> tuple[float, float]:
+    """Where a new ``kind`` node is dropped on a canvas that already holds
+    ``existing`` nodes. Staggered by the count of its own kind so two creates
+    don't land on top of each other (best-effort — last-write-wins means two
+    *concurrent* creates can still collide; named limit, D-2026-06-27-B)."""
+    rank = sum(1 for n in existing if n.kind == kind)
+    return _FRESH_X, _FRESH_Y0 + _FRESH_DY * rank
+
+
+def creatable_kinds(canvas_kind: str) -> set[str]:
+    """The kinds :func:`create_node` may append to ``canvas_kind``.
+
+    The canvas allow-list (:data:`_ALLOWED_KINDS_BY_CANVAS`) minus two it must
+    never mint as a fresh node: ``project`` (the synthetic anchor lives in
+    ``ProjectDoc.anchors``, present in some allow-lists only vestigially) and,
+    on the feature canvas, ``feature`` (its root feature is bootstrapped
+    exogenously — the canvas validator requires it to already exist, so a second
+    feature is never appended). D-2026-06-27-B.
+    """
+    allowed = set(_ALLOWED_KINDS_BY_CANVAS.get(canvas_kind, set())) - {"project"}
+    if canvas_kind == "feature":
+        allowed -= {"feature"}
+    return allowed
+
+
+def create_node(
+    plot_root: Path,
+    project_id: str,
+    canvas_kind: CanvasKind,
+    kind: str,
+    fields: dict[str, Any] | None = None,
+    service_id: str | None = None,
+) -> dict[str, Any]:
+    """Append ONE new node — the clobber-safe way to add a node, and the single
+    SSOT for node creation (D-2026-06-27-B).
+
+    The mirror of :func:`update_node` for *adding* instead of editing: validate
+    ``kind`` is creatable on ``canvas_kind`` (see :func:`creatable_kinds`), mint a
+    unique id and auto-position the node **server-side** (never from the caller),
+    apply only the kind's *writable content* fields from ``fields`` (the same
+    :func:`writable_node_fields` allow-list ``update_node`` uses — ``label`` + the
+    kind's typed text; structural / visual / reference / server fields are
+    rejected and returned under ``rejected_fields``), then ``read_canvas`` →
+    append the one node → re-validate the **whole** ``CanvasDoc`` (unique ids,
+    kind allow-list, per-canvas minimums, edge refs) → atomic :func:`write_canvas`.
+    Every other node and all edges are written back unchanged (clobber-safe).
+
+    The node is **bare**: it carries no edges and no containment — those are
+    drawn separately (directed-edge-only since v0.26.0), never auto-wired here.
+    A cross-canvas master (e.g. a new actor referenced from a service) is minted
+    via the reference pick-or-create flow (:func:`plot_mcp.masters.create_master`,
+    which now delegates here), not by calling this on the wrong canvas.
+
+    Like every Plot write this is **last-write-wins** at human pace (same as
+    ``update_node``): a concurrent edit to another node on the same canvas, or two
+    concurrent same-kind creates, may collide / be lost. The write also reaches
+    the viewer via the file watcher, which clears the undo stack (same limit as
+    D-2026-06-26-D). ``canvas_kind`` ∈ ``foundation`` / ``actors`` / ``services``
+    / ``entities`` / ``feature``; ``service_id`` is required when
+    ``canvas_kind == "feature"``. Raises ``ValueError`` when ``kind`` is not
+    creatable on the canvas.
+
+    Returns ``{"node": <new node dict>, "rejected_fields": [...]}`` — the same
+    shape as :func:`update_node`.
+    """
+    allowed = creatable_kinds(canvas_kind)
+    if kind not in allowed:
+        raise ValueError(
+            f"cannot create a {kind!r} node on the {canvas_kind!r} canvas; "
+            f"creatable kinds: {sorted(allowed)}"
+        )
+    canvas = read_canvas(plot_root, project_id, canvas_kind, service_id)
+    node_id = f"{kind}_{uuid4().hex[:8]}"
+    x, y = _compute_fresh_position(canvas.nodes, kind)
+    base = SketchNodeAdapter.validate_python({"id": node_id, "kind": kind, "x": x, "y": y})
+    allowed_fields = set(writable_node_fields(base))
+    incoming = fields or {}
+    patch = {k: v for k, v in incoming.items() if k in allowed_fields}
+    rejected = sorted(set(incoming) - allowed_fields)
+    merged = {**base.model_dump(), **patch}
+    new_node = SketchNodeAdapter.validate_python(merged)
+    # Re-validate the WHOLE doc (not just the node) so a fresh node can never
+    # break a canvas-level invariant — the same guard update_node relies on.
+    updated = CanvasDoc.model_validate(
+        canvas.model_copy(update={"nodes": [*canvas.nodes, new_node]}).model_dump(by_alias=True)
+    )
+    write_canvas(plot_root, project_id, updated)
+    return {"node": new_node.model_dump(by_alias=True), "rejected_fields": rejected}
+
+
 def list_feature_details(plot_root: Path, project_id: str) -> list[str]:
     """Return the service ids for which a Detail canvas exists.
     v0.8 layout: each service lives at ``services/{sid}/`` and its detail
@@ -248,5 +468,3 @@ def list_feature_details(plot_root: Path, project_id: str) -> list[str]:
         for sid in services_folder.iterdir()
         if sid.is_dir() and (sid / "detail.json").is_file()
     )
-
-

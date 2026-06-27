@@ -21,7 +21,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from plot_mcp.canvas_io import read_canvas
+from plot_mcp.canvas_io import read_canvas, writable_node_fields
 from plot_mcp.chat_context import SELECTION_DETAIL_CAP, build_context_preamble
 from plot_mcp.models_canvas import CanvasDoc, CanvasKind
 from plot_mcp.workspace import enumerate_projects
@@ -75,13 +75,22 @@ _REGISTRY_SCOPES: frozenset[str] = frozenset({"feature", "services", "service"})
 REGISTRY_CAP = 40
 
 
-def build_turn_preamble(plot_root: Path, scope: str, selection: Any) -> str:
+def build_turn_preamble(
+    plot_root: Path, scope: str, selection: Any, project_path: str | None = None
+) -> str:
     """Assemble the per-turn user-message context — the context-provider seam.
 
     Single place that builds "what the agent should see this turn" (D-2026-06-17-L):
-    active-canvas map → cross-canvas registry → selected-node detail, joined in
-    that order (empty parts skipped). The Layer-3 system prompt is delivered
-    separately (``build_system_prompt``); this is the Layer-2 user-message body.
+    active-canvas map → cross-canvas registry → write target → selected-node
+    detail, joined in that order (empty parts skipped). The Layer-3 system prompt
+    is delivered separately (``build_system_prompt``); this is the Layer-2
+    user-message body.
+
+    ``project_path`` is the workspace path the caller resolved ``plot_root`` from;
+    when set (the in-app endpoint passes it), a ``[Write target]`` block names the
+    exact ids the agent must hand ``update_node`` to save a confirmed change into
+    the selected node (D-2026-06-26-D). Without it (e.g. a bare test caller) the
+    block is omitted — never half-formed.
 
     This is the **CAG** implementation (inject everything, bounded by caps). A
     future RAG / graph-traversal provider (D-2026-06-20-P) replaces the body of
@@ -92,8 +101,62 @@ def build_turn_preamble(plot_root: Path, scope: str, selection: Any) -> str:
     canvas_map = render_canvas_map(plot_root, scope, selection)
     context = canvas_map or build_context_preamble(scope, selection)
     registry = render_cross_canvas_registry(plot_root, scope)
+    target = render_write_target(plot_root, scope, project_path)
     detail = render_selection_detail(plot_root, scope, selection)
-    return "\n\n".join(p for p in (context, registry, detail) if p)
+    return "\n\n".join(p for p in (context, registry, target, detail) if p)
+
+
+def render_write_target(plot_root: Path, scope: str, project_path: str | None) -> str:
+    """Render the ``[Write target]`` block — the exact ids ``update_node`` needs
+    (D-2026-06-26-D).
+
+    The in-app agent talks to a stateless Plot MCP server with no notion of the
+    open project, and every write tool's first args are ``project_path`` +
+    ``project_id`` (+ ``canvas_kind`` / ``service_id``). Those are never otherwise
+    in the agent's context, so without this block the write path is unreachable.
+    This names them for the active canvas. The *when* (only after the user
+    confirms) lives in the system prompt, not here — this block is facts.
+
+    Returns ``""`` for the cross-canvas ``project`` scope (no single target
+    canvas), when no ``project_path`` was supplied, or when no project resolves.
+    """
+    if scope == "project" or not project_path:
+        return ""
+    base, _, sid = scope.partition(":")
+    if base == "service":
+        # A per-service thread sits on the Services canvas (D-2026-06-26-A); the
+        # id names the service, not a sub-canvas, so it is not a write service_id.
+        base, sid = "services", ""
+    if base not in _VALID_CANVAS_KINDS:
+        return ""
+    # A feature write needs a service_id (the feature canvas id). A bare
+    # ``feature`` scope (no ``:<id>``) names no specific canvas, so emit nothing
+    # rather than an instruction update_node would reject — the live path 400s a
+    # bare ``feature`` upstream anyway; this is the defensive mirror.
+    if base == "feature" and not sid:
+        return ""
+    project_id = _resolve_project_id(plot_root)
+    if project_id is None:
+        return ""
+    parts = [
+        f"project_path={project_path!r}",
+        f"project_id={project_id!r}",
+        f"canvas_kind={base!r}",
+    ]
+    if base == "feature":
+        parts.append(f"service_id={sid!r}")
+    shared = ", ".join(parts)
+    return (
+        "[Write target] To save a value into an EXISTING node, call update_node with "
+        + shared
+        + ", node_id=<the target node — the selected node, or look it up with "
+        "get_canvas when the user names a unique one like the mission>, "
+        "fields={<field name>: <value>}. "
+        "To ADD a NEW node instead, call create_node with "
+        + shared
+        + ", kind=<the new node's kind>, fields={label: <name>, ...} "
+        "(no node_id — the id and position are minted for you)."
+    )
 
 
 def render_node_content(node: dict[str, Any]) -> str:
@@ -146,10 +209,16 @@ def render_selection_detail(plot_root: Path, scope: str, selection: Any) -> str:
         node = by_id.get(node_id)
         if node is None:
             continue
+        lines = [f'{node.kind} "{node.label}" ({node.id}):']
         content = render_node_content(node.model_dump())
-        if not content:
-            continue
-        blocks.append(f'{node.kind} "{node.label}" ({node.id}):\n{content}')
+        if content:
+            lines.append(content)
+        # Name the fields a coach may write into this node, so a BLANK node (no
+        # content above) still tells the agent what to fill — without this the
+        # agent has no field names for an empty mission and can't write it
+        # (D-2026-06-26-D).
+        lines.append(f"(writable fields: {', '.join(writable_node_fields(node))})")
+        blocks.append("\n".join(lines))
 
     if not blocks:
         return ""
