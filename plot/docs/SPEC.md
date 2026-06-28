@@ -246,8 +246,8 @@ The Foundation stencil's three section headers (Mission / Core values /
 Identity) each carry an **always-visible ⓘ icon** next to the title.
 Clicking it opens a small **popover** with that concept's definition, so a
 user who does not yet know what mission / core value / identity mean can
-learn it in place. Concept SSOT = [`FOUNDATION_CONCEPT.md`](../../../docs/FOUNDATION_CONCEPT.md);
-the popover is a short surface of it.
+learn it in place. Concept SSOT = [`concepts/kinds.md`](../../../docs/concepts/kinds.md)
+(absorbed the old FOUNDATION_CONCEPT); the popover is a short surface of it.
 
 | Section | Popover text (full text in `stencil.info.*`) |
 |---|---|
@@ -449,7 +449,7 @@ Isolation regression test:
 ### Angle-preserving depth rings (`layoutAlgo="tree"` anchor path, v0.34.8, D-2026-05-31-V)
 
 Implemented in
-[`viewer/src/canvases/sketch/radialLayout.ts`](../viewer/src/canvases/sketch/radialLayout.ts)
+`viewer/src/canvases/sketch/radialLayout.ts`
 via `computeRadialLayout({ …, angleMode: "preserve" })`, dispatched by
 `useAutoLayout`:
 
@@ -592,7 +592,7 @@ When the mindmap BFS yields zero positions (typical case:
 ServiceDetail's hidden root-service per D-2026-05-28-B is the
 anchor but is *intentionally* disconnected from every edge, so BFS
 has no starting neighbours), `useAutoLayout` falls back to
-[`viewer/src/flow/handleAwareLayout.ts`](../viewer/src/flow/handleAwareLayout.ts):
+`viewer/src/flow/handleAwareLayout.ts`:
 
 - Dagre layered graph drawing with `rankdir: "LR"`.
 - For every edge whose `sourceHandle` faces L or T, the source/target
@@ -610,7 +610,7 @@ Static guard: `viewer/tests/handle-aware-layout.test.ts`.
 ### Radial algorithm (`layoutAlgo="radial"`)
 
 Implemented in
-[`viewer/src/canvases/sketch/radialLayout.ts`](../viewer/src/canvases/sketch/radialLayout.ts):
+`viewer/src/canvases/sketch/radialLayout.ts`:
 
 - A single hub node is the layout origin. For `ServicesCanvas` the
   hub is the synthetic project anchor; for `ServiceDetailCanvas`
@@ -1461,7 +1461,7 @@ the ServiceDetailCanvas wrapper is given one (via App's memoised
 > and `Identity aspects` sections are slated for removal in the
 > feature-canvas implementation.
 
-Per the [`SketchStencil`](../viewer/src/canvases/SketchStencil.tsx)
+Per the `SketchStencil` (`viewer/src/canvases/SketchStencil.tsx`)
 `service_detail` branch + the modal-internal `ServiceDetailStencilPanel`:
 
 | Section | Items | Source |
