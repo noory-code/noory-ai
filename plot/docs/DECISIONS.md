@@ -39,6 +39,14 @@
 
 ## Log
 
+### D-2026-06-28-B — doc homes: shared conceptual model → root single canon; engine docs keep code-near + point to root
+
+- **What:** Resolve the standing root↔noory canon-*direction* conflict. The conceptual model — canvas behaviour / kind meaning / bounded contexts — lived in BOTH `repos-plot/docs/{concepts,specs}` and `noory-ai/plot/docs/{SPEC,CONCEPTS,DOMAIN}` with contradictory "who is canon" headers. Reframed by the user around the **two products** built in this workspace: the open MIT engine (`noory-ai/` plugins) and the commercial app (`plot/`). The shared *conceptual model* both products build on becomes **root `docs/` single canon**; the engine docs keep only **code-near implementation detail** (code homes, wire-field schema, code-to-domain gap lists) and point to root for the model; the commercial-app docs reference root. `index.md` routes it: **concept = root · implementation = noory · business = plot**.
+- **Why:** The model is one shared spec both products implement; duplicating it produced drift and mutually-contradictory canon claims (e.g. root `concepts/kinds.md` carried the post-marathon model while noory `CONCEPTS.md` still described the retired `gives/receives` actor_ref model as current). One home kills the drift. Root is the right home because the model is what BOTH products agree on, not engine-private; the engine *implements* it.
+- **Alternatives:** (a) noory stays canon, root → pointers — rejected: root already held the *newer* articulation, and the model is shared, not engine-private. (b) leave the split — rejected: it is the drift source. (c) duplicate the model in each repo — rejected (SSOT).
+- **Approval:** Accepted by user, 2026-06-28.
+- **Spec impact:** Doc-home restructure, executed in stages (DOMAIN → CONCEPTS → SPEC → rewire index/gates/pointer-tables). Tradeoff accepted: a standalone MIT clone of `noory-ai/` sees a pointer to the workspace-root model, not the full body. Updates `index.md` §3/§4, the doc-home sections of the `CLAUDE.md` files, and the `PRODUCT_SPEC` pointer tables.
+
 ### D-2026-06-28-A — external canvas changes refresh the screen again (watcher broadcast descriptor fixed for the flat layout)
 
 - **What:** Fixed `_describe_change` (broadcast layer) to read the **flat** one-project-per-root layout (`.noory/plot/{canvas_kind}/canvas.json`, `D-2026-06-21-AB`): the leading path segment is the **canvas kind**, and the project id is resolved from the root's `project.json` (via `enumerate_projects`), not read off the path. Before, it still assumed the legacy `{project_id}/{canvas_kind}/…` shape and read `parts[0]` as the project id — so on the flat layout every external write produced `{project_id: "<canvas_kind>"}` with **no** `canvas_kind`. The viewer then treated it as "some other project changed" and skipped the canvas refetch.
