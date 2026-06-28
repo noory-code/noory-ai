@@ -3,10 +3,10 @@
 The implementation order for the major release lines. Each step is
 an independent, ship-ready commit (Python green, viewer green, plugin
 patch bumped, pushed). Together they realise the design captured in
-[`VISION.md`](../../../docs/VISION.md), [`PRODUCT_SPEC.md`](../../../plot/docs/PRODUCT_SPEC.md),
-[`IDENTITY.md`](../../../docs/IDENTITY.md) and [`CONCEPTS.md`](CONCEPTS.md). The
-2026-06-16~17 big-picture marathon — [`BIG_PICTURE_REVIEW.md`](../../../docs/BIG_PICTURE_REVIEW.md)
-+ `DECISIONS.md` `D-2026-06-16-H..R` / `D-2026-06-17-A..L` — re-defined
+[`VISION.md`](../../../docs/VISION.md), [`PRODUCT_SPEC.md`](../../../plot/docs/PRODUCT_SPEC.md)
+and [`CONCEPTS.md`](CONCEPTS.md) (IDENTITY → VISION에 흡수). The
+2026-06-16~17 big-picture marathon — `DECISIONS.md` `D-2026-06-16-H..R` /
+`D-2026-06-17-A..L` (옛 BIG_PICTURE_REVIEW → ROADMAP+DECISIONS에 흡수) — re-defined
 Foundation / Actors / Services / Feature / Entities; the queued tracks
 below carry those decisions inline.
 

@@ -1,9 +1,10 @@
 # Plot Concepts (v0.12)
 
-> ⚠ **정본 이전 (2026-06-19, `D-2026-06-19-J`):** kind·캔버스 *의미* 정본 =
-> `repos-plot/docs/concepts/` (kinds.md · canvases.md), *와이어 필드* =
-> `repos-plot/docs/specs/kinds-fields.md`. 충돌 시 root가 이긴다. 이 파일은 이력
-> 레퍼런스 (마라톤 전 본문 — feature/note/entity 추가·6종 폐기 미반영).
+> **정본 (코드-near):** 이 파일이 kind·캔버스 *의미*의 **코드-near 정본**(실제 내용)이다.
+> root `docs/concepts/`(kinds.md · canvases.md)·`docs/specs/kinds-fields.md`에는 세 레포를
+> 가로지르는 비전·요약만 둔다. 정의를 찾거나 바꿀 때 이 파일을 본다.
+> (마라톤 전 본문이 일부 남아 있음 — feature/note/entity 추가·6종 폐기 등 최신 결정은
+> `DECISIONS.md` `D-2026-06-16-H~`·`D-2026-06-17-A~L`을 우선.)
 
 The conceptual reference for Plot — what each canvas, kind, and design
 principle means, with examples. This document is the source of truth
@@ -11,14 +12,15 @@ that both human users and the AI tooling (Claude, MCP) consult when
 they need to know "what is a `service`?" or "where does a `feature`
 live?".
 
-> **Read [`IDENTITY.md`](../../../docs/IDENTITY.md) first** if you haven't. It defines
+> **Read [`VISION.md`](../../../docs/VISION.md) first** if you haven't. It defines
 > what Plot *is* (a strategic operations design + alignment tool, not a
 > mindmap) and the four use purposes every kind below ultimately serves.
+> (옛 `IDENTITY.md` → `VISION.md` 에 흡수 — 본문의 `IDENTITY.md` 언급은 모두 VISION 을 가리킨다.)
 >
 > Sibling docs:
-> - `IDENTITY.md` — what Plot is and is not (the "why and for whom").
-> - `PHILOSOPHY.md` — the underlying value-flow / two-layer thesis.
-> - `ROADMAP.md` — the implementation order in which v0.10 is being built.
+> - [`VISION.md`](../../../docs/VISION.md) — what Plot is and is not (the "why and for whom"; 옛 IDENTITY).
+> - [`PHILOSOPHY.md`](../../../docs/PHILOSOPHY.md) — the underlying value-flow / two-layer thesis.
+> - [`ROADMAP.md`](./ROADMAP.md) — the implementation order in which v0.10 is being built.
 
 ## Symbol — the cross-canvas referenceable master (v0.24.11, D-2026-05-19-D)
 

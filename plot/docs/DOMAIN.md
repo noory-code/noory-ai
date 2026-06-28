@@ -1,7 +1,8 @@
 # Plot — DOMAIN model (bounded contexts, ubiquitous language, dependency direction)
 
-> ⚠ **정본 이전 (2026-06-19, `D-2026-06-19-J`):** 바운디드 컨텍스트 정본 =
-> `repos-plot/docs/specs/domain.md`. 충돌 시 root가 이긴다. 이 파일은 이력 레퍼런스.
+> **정본 (코드-near):** 이 파일이 바운디드 컨텍스트 정의의 **코드-near 정본**(실제 내용)이다.
+> root `docs/specs/domain.md`에는 세 레포를 가로지르는 요약만 둔다. 코드를 어디 둘지
+> 판단할 때 이 파일을 본다.
 
 > **Read after [`VISION.md`](../../../docs/VISION.md).** This file translates the
 > three-phase essence cycle (Discovery / Retention / Execution) into

@@ -1,9 +1,9 @@
 # SPEC — Plot canvases
 
-> ⚠ **정본 이전 (2026-06-19, `D-2026-06-19-J`):** Plot 정의·개념·동작 스펙의
-> **단일 출처 = `repos-plot/docs/`** (맵 `index.md` · 의미 `concepts/` · 동작
-> `specs/`). 정의가 충돌하면 **root가 이긴다.** 이 파일은 코드-near 동작 세부·이력
-> 레퍼런스로 남는다 (커서/오토레이아웃 등 코드 메커니즘 + 마라톤 전 본문).
+> **정본 (코드-near):** 이 파일이 Plot 캔버스 동작 스펙의 **코드-near 정본**이다 —
+> 실제 동작 정의가 여기 있다. root `docs/`(맵 `index.md` · 의미 `concepts/` · 동작
+> `specs/`)에는 세 레포를 가로지르는 비전·요약만 두며, 상세 동작은 이 파일에서 관리한다.
+> 정의를 찾거나 바꿀 때 이 파일을 본다.
 
 > **Scope (v0.13.x):** behaviour spec for **Foundation** and **Actors**.
 > The Services overview, the **feature** canvas (the renamed Service-Detail —
