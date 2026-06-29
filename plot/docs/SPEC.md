@@ -1,23 +1,19 @@
 # SPEC — Plot canvases
 
-> **정본 (코드-near):** 이 파일이 Plot 캔버스 동작 스펙의 **코드-near 정본**이다 —
-> 실제 동작 정의가 여기 있다. root `docs/`(맵 `index.md` · 의미 `concepts/` · 동작
-> `specs/`)에는 세 레포를 가로지르는 비전·요약만 두며, 상세 동작은 이 파일에서 관리한다.
-> 정의를 찾거나 바꿀 때 이 파일을 본다.
+> **동작 RULE 정본은 root** (`D-2026-06-28-B`) — [`docs/specs/canvas-behavior.md`](../../../docs/specs/canvas-behavior.md)
+> · [`edges.md`](../../../docs/specs/edges.md) · [`kinds-fields.md`](../../../docs/specs/kinds-fields.md).
+> "무엇이 어떻게 작동하나"의 *현행 규칙*은 거기 있다(두 제품이 공유하는 동작 약속). 이 파일은
+> 그 규칙의 **상세 구현·메커니즘·엣지케이스**(렌더 세부, 레이아웃, 인스펙터 상태, 워크스페이스/
+> 프로젝트 구조 등)를 보유한다. **규칙이 충돌하면 root가 우선** — 이 파일엔 마라톤 전 잔재
+> (폐기된 actor_ref `gives`/`receives`, 옛 kind 표기 등)가 일부 남아 있으니, 동작의 *현행 정의*는
+> root에서 확인한다. 코드 메커니즘 세부(오토레이아웃·커서)는 `AUTO_LAYOUT`/`CURSOR`/`ARCHITECTURE`.
 
-> **Scope (v0.13.x):** behaviour spec for **Foundation** and **Actors**.
-> The Services overview, the **feature** canvas (the renamed Service-Detail —
-> a service's feature drills into it, D-2026-06-17-D/G), and the new
-> project-level **Entities** canvas (D-2026-06-17-I/K) are pinned by the
-> 2026-06-16~17 big-picture marathon (`D-2026-06-16-H..R`,
-> `D-2026-06-17-A..L`); their full per-canvas behaviour spec follows in
-> later expansions, but their model is no longer implementation-defined —
-> see the §Services / §ServiceDetail (→ feature) / §Entities notes below.
+> **Scope:** 상세 동작이 가장 깊은 곳은 Foundation·Actors이고, Services 오버뷰·**feature**
+> 캔버스(옛 Service-Detail — 서비스의 feature가 드릴해 들어감)·**Entities**는 모델만 핀,
+> 상세 per-canvas 동작은 later expansion.
 
-> **Status of this file:** the canonical answer to "how should Foundation
-> behave?". Code, comments, and prior decisions are *not* spec — only
-> what is written here, with explicit user approval, counts. When this
-> file disagrees with the code, the code is wrong, not the spec.
+> **Status:** 코드·주석·옛 결정은 spec이 아니다 — root 규칙 + 명시 승인만 권위. 이 파일이
+> 코드와 다르면 코드가 틀린 것; 이 파일이 root 규칙과 다르면 이 파일(낡음)이 틀린 것.
 
 ---
 

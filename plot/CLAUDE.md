@@ -15,18 +15,19 @@
 >
 > **Pairs with (read in this order on session start):**
 >
-> ⚠ **정본 단일화 (2026-06-19, `D-2026-06-19-J`):** Plot 정의·개념·동작 스펙의 단일
-> 출처 = `repos-plot/docs/` (맵 `index.md` · 의미 `concepts/` · 동작 `specs/`). 아래
-> 3·4·7 (DOMAIN/SPEC/CONCEPTS)은 리다이렉트 헤더로 root를 가리킨다 — 정의는 root가
-> 정본, 이 파일들엔 코드-near 동작·이력만 남는다.
+> ⚠ **정본 거처 (2026-06-28, `D-2026-06-28-B` — `D-19-J` 실현):** 두 제품(오픈 엔진·상용
+> 앱)이 공유하는 Plot 개념·동작 규칙의 단일 출처 = `repos-plot/docs/`(맵 `index.md` · 의미
+> `concepts/` · 동작 규칙 `specs/`). 아래 3·7 (DOMAIN/CONCEPTS)은 root를 가리키는 **포인터**
+> + 엔진 코드-near(코드 거처·스키마)만 남고, 4 (SPEC)는 **상세 구현·메커니즘**을 보유하되
+> *동작 규칙*은 root `specs/` 가 정본(충돌 시 root 우선).
 >
 > 1. [`docs/VISION.md`](../../docs/VISION.md) — **the essence** + 3-phase cycle. Single source of truth above everything else. Read first, every session.
 > 2. [`docs/PRODUCT_SPEC.md`](../../plot/docs/PRODUCT_SPEC.md) — **product-level decisions** (platforms, business model, MVP scope, symbol system, canvas inventory, future / out-of-scope). Read second; it is the framing every other doc sits inside.
-> 3. [`docs/DOMAIN.md`](./docs/DOMAIN.md) — bounded contexts, ubiquitous language, dependency direction. Use to decide *where* code goes.
-> 4. [`docs/SPEC.md`](./docs/SPEC.md) — what Plot should *do* per canvas.
+> 3. [`docs/DOMAIN.md`](./docs/DOMAIN.md) — engine code-to-domain map (per-context code homes). Concept canon = root [`specs/domain.md`](../../docs/specs/domain.md).
+> 4. [`docs/SPEC.md`](./docs/SPEC.md) — detailed behaviour implementation / mechanism / edge cases. The *rules* (what Plot does per canvas) are canon at root [`specs/canvas-behavior.md`](../../docs/specs/canvas-behavior.md) — root wins on conflict.
 > 5. [`docs/DECISIONS.md`](./docs/DECISIONS.md) — *why* it does what it does, and what was tried and rejected (last 5 entries auto-surfaced by the SessionStart hook).
 > 6. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — what shape the code is in and how to fix it.
-> 7. [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — data model (kinds / fields).
+> 7. [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — pointer to root concepts/. Kind / canvas *meaning* canon = root [`concepts/kinds.md`](../../docs/concepts/kinds.md); wire schema = root [`specs/kinds-fields.md`](../../docs/specs/kinds-fields.md).
 > 8. [`docs/CURSOR.md`](./docs/CURSOR.md) — canvas cursor SSOT.
 > 9. [`docs/PHILOSOPHY.md`](../../docs/PHILOSOPHY.md) — value-flow / 10 principles.
 > 10. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — release order.
@@ -88,11 +89,13 @@ when this gate is missing.)
    the user's message + the immediately preceding context what,
    precisely, was just approved. Write it as one declarative line —
    the same shape that would go into SPEC.md.
-2. **Locate the behaviour in [`docs/SPEC.md`](./docs/SPEC.md).**
+2. **Locate the behaviour RULE in root [`specs/canvas-behavior.md`](../../docs/specs/canvas-behavior.md)**
+   (the shared-model rule canon since `D-2026-06-28-B`; detailed mechanism /
+   edge cases live in engine [`SPEC.md`](./docs/SPEC.md)).
    - YES, it exists there → verify the existing text matches the
-     confirmed behaviour exactly. If it diverges, edit SPEC.md
+     confirmed behaviour exactly. If it diverges, edit the rule doc
      immediately so the spec text and the confirmed behaviour are
-     pixel-identical.
+     pixel-identical (and update engine `SPEC.md` if a detail changed).
    - NO, it does not exist → add a new line / table row / section
      to the appropriate canvas. If the location is genuinely
      unclear, ask the user where it goes — never invent a section.
