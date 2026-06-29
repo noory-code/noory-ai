@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import pytest
 
-from plot_mcp.edge_semantics import classify_edge
+from plot_mcp.edge_semantics import classify_edge, fold_endpoints
+from plot_mcp.models import SketchEdge
 
 # (canvas_kind, source_kind) -> expected relation. Mirror of the TS
 # vitest cases exactly.
@@ -68,3 +69,45 @@ def test_relation_value_set_is_the_pinned_three() -> None:
 
     py_values = set(typing.get_args(SketchEdge.model_fields["relation"].annotation))
     assert py_values == {"flow", "injection", "inheritance"}
+
+
+# --- fold_endpoints: the parent/child the fold + publish hierarchy walks ------
+#
+# fold_endpoints derives (parent, child) from the edge's STORED relation. It is
+# the server-side mirror of viewer/src/flow/foldHierarchy.ts::foldEndpoints and
+# feeds fold + publish MINOR-bump propagation. A silent break here inverts or
+# drops a hierarchy edge → wrong fold / wrong publish baseline, with no error.
+
+
+def _edge(source: str, target: str, **kw: object) -> SketchEdge:
+    return SketchEdge(id=f"{source}->{target}", source=source, target=target, **kw)
+
+
+def test_fold_flow_source_is_parent() -> None:
+    # flow: the source is the parent (source → target).
+    assert fold_endpoints(_edge("p", "c", relation="flow")) == ("p", "c")
+
+
+def test_fold_inheritance_is_inverted_target_is_parent() -> None:
+    # inheritance: the arrow points child → superclass, so the *target* is the
+    # parent. This inversion is the easy thing to regress.
+    assert fold_endpoints(_edge("child", "super", relation="inheritance")) == (
+        "super",
+        "child",
+    )
+
+
+def test_fold_injection_defines_no_hierarchy() -> None:
+    # injection: an essence overlay does not contain its target → no hierarchy.
+    assert fold_endpoints(_edge("mission", "svc", relation="injection")) is None
+
+
+def test_fold_undirected_edge_defines_no_hierarchy() -> None:
+    assert fold_endpoints(_edge("a", "b", relation="flow", directed=False)) is None
+
+
+def test_fold_defaults_to_flow_hierarchy() -> None:
+    # A bare edge (relation defaulting on the model) folds as flow (source parent),
+    # so a created-but-unclassified edge still participates correctly.
+    e = _edge("a", "b")
+    assert fold_endpoints(e) == ("a", "b")
