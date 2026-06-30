@@ -16,7 +16,7 @@ noory-ai/
 │   ├── viewer/            — React canvas (Actors / Plan / Build / Live)
 │   └── vscode-extension/  — VSCode wrapper (bundles MCP + viewer)
 ├── plot/               — React Flow mindmap editor + MCP
-│   ├── plot_mcp/          — Python MCP + HTTP server (reads .noory/plot/)
+│   ├── mashbill/          — Python MCP + HTTP server (reads .noory/plot/)
 │   ├── viewer/            — React Flow canvas (all free features)
 │   └── .claude-plugin/    — Claude Code plugin manifest + skills
 ├── flutter-cask/       — Flutter package guide skills
