@@ -7,8 +7,8 @@ alternatives / consequences as free Markdown.
 
 import pytest
 
-from cairn.errors import FormatError
-from cairn.formats import Decision, dump_decision, parse_decision
+from proof.errors import FormatError
+from proof.formats import Decision, dump_decision, parse_decision
 
 ACCEPTED = """\
 ---
@@ -24,7 +24,7 @@ SUPERSEDING = """\
 ---
 title: Move to CockroachDB
 status: accepted
-supersedes: CAIRN-001
+supersedes: PROOF-001
 ---
 ## Decision
 Replace Postgres with CockroachDB for multi-region.
@@ -32,9 +32,9 @@ Replace Postgres with CockroachDB for multi-region.
 
 
 def test_parse_accepted_decision() -> None:
-    dec = parse_decision(ACCEPTED, decision_id="CAIRN-001")
+    dec = parse_decision(ACCEPTED, decision_id="PROOF-001")
     assert isinstance(dec, Decision)
-    assert dec.id == "CAIRN-001"
+    assert dec.id == "PROOF-001"
     assert dec.title == "Use Postgres for the primary store"
     assert dec.status == "accepted"
     assert dec.supersedes is None
@@ -42,13 +42,13 @@ def test_parse_accepted_decision() -> None:
 
 
 def test_parse_superseding_decision() -> None:
-    dec = parse_decision(SUPERSEDING, decision_id="CAIRN-002")
-    assert dec.supersedes == "CAIRN-001"
+    dec = parse_decision(SUPERSEDING, decision_id="PROOF-002")
+    assert dec.supersedes == "PROOF-001"
 
 
 def test_proposed_status_allowed() -> None:
     text = "---\ntitle: Maybe Redis\nstatus: proposed\nsupersedes: null\n---\nAn option.\n"
-    assert parse_decision(text, decision_id="CAIRN-003").status == "proposed"
+    assert parse_decision(text, decision_id="PROOF-003").status == "proposed"
 
 
 @pytest.mark.parametrize(
@@ -69,7 +69,7 @@ def test_rejects_malformed(text: str) -> None:
 
 
 def test_round_trips() -> None:
-    for text, did in ((ACCEPTED, "CAIRN-001"), (SUPERSEDING, "CAIRN-002")):
+    for text, did in ((ACCEPTED, "PROOF-001"), (SUPERSEDING, "PROOF-002")):
         dec = parse_decision(text, decision_id=did)
         assert parse_decision(dump_decision(dec), decision_id=did) == dec
 
@@ -79,10 +79,10 @@ def test_about_tags_parsed_and_round_trip() -> None:
         "---\ntitle: Use Postgres\nstatus: accepted\nsupersedes: null\n"
         "about:\n  - ACT-005\n  - feature/login\n---\n## Decision\nPostgres.\n"
     )
-    dec = parse_decision(text, decision_id="CAIRN-001")
+    dec = parse_decision(text, decision_id="PROOF-001")
     assert dec.about == ["ACT-005", "feature/login"]
-    assert parse_decision(dump_decision(dec), decision_id="CAIRN-001") == dec
+    assert parse_decision(dump_decision(dec), decision_id="PROOF-001") == dec
 
 
 def test_about_defaults_empty() -> None:
-    assert parse_decision(ACCEPTED, decision_id="CAIRN-001").about == []
+    assert parse_decision(ACCEPTED, decision_id="PROOF-001").about == []

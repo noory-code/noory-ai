@@ -1,6 +1,6 @@
-"""The Cairn command line — record and query decisions.
+"""The Proof command line — record and query decisions.
 
-``--root`` is the project directory; the log lives at ``.noory/cairn/`` under it.
+``--root`` is the project directory; the log lives at ``.noory/proof/`` under it.
 A decision's body (the prose) is passed with ``--body`` or piped on stdin.
 """
 
@@ -10,12 +10,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from .errors import CairnError
+from .errors import ProofError
 from .log import Log
 
 
 def _log(root: Path) -> Log:
-    return Log(root / ".noory" / "cairn")
+    return Log(root / ".noory" / "proof")
 
 
 def _cmd_record(log: Log, args: argparse.Namespace) -> int:
@@ -62,7 +62,7 @@ def _cmd_show(log: Log, args: argparse.Namespace) -> int:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="cairn", description="An append-only decision log.")
+    parser = argparse.ArgumentParser(prog="proof", description="An append-only decision log.")
     parser.add_argument("--root", type=Path, default=Path.cwd(), help="project directory")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -98,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         result: int = args.func(_log(Path(args.root)), args)
-    except CairnError as exc:
+    except ProofError as exc:
         print(f"error: {exc}")
         return 1
     return result

@@ -1,4 +1,4 @@
-"""The append-only decision log over ``.noory/cairn/``.
+"""The append-only decision log over ``.noory/proof/``.
 
 A :class:`Log` records decisions and never edits them. Each ``record`` writes a
 new immutable file; to change a decision you record a new one that supersedes the
@@ -13,11 +13,11 @@ from pathlib import Path
 
 from .formats import Decision, Status, dump_decision, parse_decision
 
-_ID_RE = re.compile(r"^CAIRN-(\d+)$")
+_ID_RE = re.compile(r"^PROOF-(\d+)$")
 
 
 class Log:
-    """A ``.noory/cairn/`` directory of decision files."""
+    """A ``.noory/proof/`` directory of decision files."""
 
     def __init__(self, root: Path) -> None:
         self.root = Path(root)
@@ -42,7 +42,7 @@ class Log:
             match = _ID_RE.match(decision_id)
             if match:
                 highest = max(highest, int(match.group(1)))
-        return f"CAIRN-{highest + 1:03d}"
+        return f"PROOF-{highest + 1:03d}"
 
     def record(
         self,

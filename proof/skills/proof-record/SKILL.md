@@ -1,17 +1,17 @@
 ---
-name: cairn-record
+name: proof-record
 user-invocable: true
-description: Record a well-formed decision in cairn — context, decision, alternatives, consequences.
+description: Record a well-formed decision in proof — context, decision, alternatives, consequences.
 metadata:
   version: "0.3.0"
   category: decision
   type: unit
   style: procedure
-  triggers: [cairn record, record a decision, log this decision, write an ADR]
+  triggers: [proof record, record a decision, log this decision, write an ADR]
   uses: []
 ---
 
-# cairn-record
+# proof-record
 
 Append a decision to the log. A good decision entry is short but complete: a
 later reader (or agent) should understand not just *what* was chosen but *why*,
@@ -26,7 +26,7 @@ after they have decided (see Solera's `solera-decide`).
 ## Procedure
 
 ```bash
-uv run --directory "${CLAUDE_PLUGIN_ROOT}" cairn --root "$PWD" \
+uv run --directory "${CLAUDE_PLUGIN_ROOT}" proof --root "$PWD" \
   record "Use Postgres for the primary store" \
   --status accepted \
   --about auth-stack \
@@ -47,7 +47,7 @@ EOF
 )"
 ```
 
-It prints the new id (e.g. `CAIRN-001`).
+It prints the new id (e.g. `PROOF-001`).
 
 ## Fields
 

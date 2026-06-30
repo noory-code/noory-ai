@@ -1,4 +1,4 @@
-"""``python -m cairn`` entry point."""
+"""``python -m proof`` entry point."""
 
 import sys
 

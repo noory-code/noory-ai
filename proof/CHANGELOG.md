@@ -1,13 +1,30 @@
 # Changelog
 
+## [0.4.0] — 2026-06-30
+
+### Changed
+
+- **Renamed `cairn` → `proof`** as part of the project-wide naming overhaul
+  (consumer app → "novel", engine → "mashbill", this decision log → "proof").
+  The distilling metaphor: proof is the verified strength of the result.
+  Package `cairn`→`proof`, CLI `cairn`→`proof`, decision-id prefix
+  `CAIRN-`→`PROOF-`, data directory `.noory/cairn/`→`.noory/proof/`, skills
+  `cairn-help`/`cairn-record`→`proof-help`/`proof-record`.
+
+### Removed
+
+- Backward compatibility with `.noory/cairn/` data and `CAIRN-` ids. This is a
+  pre-release clean rename; any existing decision files must be re-pathed and
+  re-prefixed by hand.
+
 ## [0.3.0] — 2026-06-21
 
-Cairn is now a Claude Code plugin, so agents can discover and use it.
+Proof is now a Claude Code plugin, so agents can discover and use it.
 
 ### Added
 
 - **Plugin manifest** (`.claude-plugin/plugin.json`).
-- **Skills** — `cairn-help` (what it is + commands) and `cairn-record` (how to
+- **Skills** — `proof-help` (what it is + commands) and `proof-record` (how to
   write a well-formed decision: context / decision / alternatives / consequences,
   status, about, supersedes).
 
@@ -33,10 +50,10 @@ integration comes later).
 - **`Decision`** — a Markdown file with frontmatter (title, status, supersedes)
   plus a prose body (context / decision / alternatives / consequences). Identity
   is the file name; fail-fast parser (`FormatError`).
-- **`Log`** — append-only store under `.noory/cairn/`. `record` writes a new
+- **`Log`** — append-only store under `.noory/proof/`. `record` writes a new
   immutable decision (never edits); `in_force` is **derived** — an accepted
   decision that no accepted decision supersedes. Supersession is a relation, not
   an edit, so history is preserved.
-- **CLI** — `cairn record / list / in-force / show`. Body via `--body` or stdin.
-- **Independence guard** — cairn imports neither Plot nor Solera; they point at
+- **CLI** — `proof record / list / in-force / show`. Body via `--body` or stdin.
+- **Independence guard** — proof imports neither Plot nor Solera; they point at
   decisions by id (by value), one-way dependency.

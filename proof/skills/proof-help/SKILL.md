@@ -1,36 +1,36 @@
 ---
-name: cairn-help
+name: proof-help
 user-invocable: true
-description: Explain what Cairn is — an append-only decision log — and its commands.
+description: Explain what Proof is — an append-only decision log — and its commands.
 metadata:
   version: "0.3.0"
   category: meta
   type: unit
   style: guide
-  triggers: [what is cairn, cairn help, decision log, how to use cairn, record a decision]
-  uses: [cairn-record]
+  triggers: [what is proof, proof help, decision log, how to use proof, record a decision]
+  uses: [proof-record]
 ---
 
-# Cairn
+# Proof
 
-Cairn is an **append-only decision log**. Significant choices — a tech stack, an
+Proof is an **append-only decision log**. Significant choices — a tech stack, an
 architecture, a convention — are recorded once and **never edited**. To change a
 decision you record a new one that **supersedes** it, so the history (what was
 decided, why, and what it replaced) is preserved.
 
-Cairn is a **shared substrate**: other tools (Plot, Solera) point at decisions by
+Proof is a **shared substrate**: other tools (Plot, Solera) point at decisions by
 **id, by value** — they never import it. It runs standalone over plain files under
-`.noory/cairn/` in the project directory.
+`.noory/proof/` in the project directory.
 
 ## Commands
 
 ```bash
-uv run --directory "${CLAUDE_PLUGIN_ROOT}" cairn --root "$PWD" <command>
+uv run --directory "${CLAUDE_PLUGIN_ROOT}" proof --root "$PWD" <command>
 ```
 
 | Command | What it does |
 |---|---|
-| `record "<title>" [--status …] [--about …] [--supersedes …] --body "…"` | Append a decision. See **cairn-record**. |
+| `record "<title>" [--status …] [--about …] [--supersedes …] --body "…"` | Append a decision. See **proof-record**. |
 | `list` | Every decision, with status. |
 | `in-force [--about <id>]` | Decisions still standing (accepted, not superseded). |
 | `check --about <id>` | Gate: exit 0 if an in-force decision tags the id, else 1. |

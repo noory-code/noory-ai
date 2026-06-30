@@ -1,19 +1,19 @@
-# Cairn
+# Proof
 
 **An append-only decision log.**
 
-A cairn is a stack of stones left to mark a path for those who come after. Cairn
+A proof is a stack of stones left to mark a path for those who come after. Proof
 does the same for decisions: each significant choice — a tech stack, an
 architecture, a convention — is recorded once and **never edited**. To change a
 decision you record a new one that **supersedes** the old; the history stays, so
 anyone (or any agent) arriving later can see not just *what* was decided but
 *why*, and what it replaced.
 
-Cairn is a **shared substrate**. It is the home for the decisions that govern a
+Proof is a **shared substrate**. It is the home for the decisions that govern a
 project's work. Tools like [Plot](https://github.com/noory-code/noory-ai/tree/main/plot)
 and [Solera](https://github.com/noory-code/noory-ai/tree/main/solera) do not own
 it and do not import it — they point at decisions by stable **id, by value**.
-Cairn runs **standalone** over plain files under `.noory/cairn/`.
+Proof runs **standalone** over plain files under `.noory/proof/`.
 
 ## A decision
 
@@ -49,18 +49,18 @@ We will use Postgres.
 ## CLI
 
 ```bash
-cairn --root "$PWD" record "Use Postgres" --status accepted --about auth-stack  # -> CAIRN-001
-cairn --root "$PWD" list                                      # all decisions
-cairn --root "$PWD" in-force [--about auth-stack]             # the ones still standing
-cairn --root "$PWD" show CAIRN-001                            # one decision
-cairn --root "$PWD" check --about auth-stack                  # gate: exit 0 if decided, else 1
+proof --root "$PWD" record "Use Postgres" --status accepted --about auth-stack  # -> PROOF-001
+proof --root "$PWD" list                                      # all decisions
+proof --root "$PWD" in-force [--about auth-stack]             # the ones still standing
+proof --root "$PWD" show PROOF-001                            # one decision
+proof --root "$PWD" check --about auth-stack                  # gate: exit 0 if decided, else 1
 ```
 
-`--root` is the project directory; `.noory/cairn/` lives under it.
+`--root` is the project directory; `.noory/proof/` lives under it.
 
 The **`about`** tag links a decision to what it governs — a Solera decision-type
 work-item names a topic (e.g. `auth-stack`) and gates on
-`cairn check --about auth-stack`; a human's `cairn record … --about auth-stack`
+`proof check --about auth-stack`; a human's `proof record … --about auth-stack`
 makes that gate pass.
 
 MIT licensed.

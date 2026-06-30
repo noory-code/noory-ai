@@ -1,14 +1,14 @@
-"""Cairn is a lower-layer substrate: it imports neither Plot nor Solera.
+"""Proof is a lower-layer substrate: it imports neither Plot nor Solera.
 
 Plot and Solera point at decisions by id (by value); the dependency runs one way
-(they depend on cairn, cairn depends on neither). This guard fails if any source
+(they depend on proof, proof depends on neither). This guard fails if any source
 file imports a plot or solera module.
 """
 
 import ast
 from pathlib import Path
 
-PKG = Path(__file__).resolve().parent.parent / "cairn"
+PKG = Path(__file__).resolve().parent.parent / "proof"
 FORBIDDEN_TOP_MODULES = {"plot", "plot_mcp", "solera"}
 
 
