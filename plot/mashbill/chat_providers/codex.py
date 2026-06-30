@@ -4,7 +4,7 @@ Codex emits JSONL events with ``thread.started`` / ``turn.started`` /
 ``item.completed`` / ``turn.completed``. The first event of the first
 turn carries ``thread_id`` — we capture it so later turns can
 ``codex exec resume <id>``. ``--skip-git-repo-check`` keeps Codex from
-refusing to run when the user opened Plot on a folder that isn't a git
+refusing to run when the user opened Novel on a folder that isn't a git
 repo (yet). The working directory is set via ``cwd=`` on the spawn, not
 Codex's ``-C`` flag, so every provider shares one root-resolution path.
 """

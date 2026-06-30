@@ -2,7 +2,7 @@
 (v0.32.0, D-2026-05-31-L). Extracted from the models.py god module
 (D-2026-06-11-B).
 
-A monorepo (the workspace root) can hold many Plot projects, each in its own
+A monorepo (the workspace root) can hold many Novel projects, each in its own
 subdirectory with its own ``.plot/``. These response models back the two new
 read-only endpoints: recursive discovery (unified sidebar list) and the
 nested directory tree (new-project picker). They are NOT node-kind classes,
@@ -33,7 +33,7 @@ class WorkspaceDiscoveryResponse(BaseModel):
 class DirTreeNode(BaseModel):
     """A directory in the workspace tree picker. ``rel`` is POSIX-relative to
     the workspace root (``"."`` for the root); ``has_plot`` flags an existing
-    ``.plot/`` (i.e. the directory already holds Plot project(s))."""
+    ``.plot/`` (i.e. the directory already holds Novel project(s))."""
 
     name: str
     rel: str

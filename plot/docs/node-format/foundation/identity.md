@@ -72,7 +72,7 @@ label + description (현재 14개가 그러함). provenance/evolution/status 는
 
 ## 자기비판 (self red-team)
 - **YAGNI 우려:** provenance/evolution/status 는 *미구현* AI 도출을 위한
-  설계 — 이르지 않나? 반박: 사용자가 "아이덴티티=출력"을 Plot 의 핵심
+  설계 — 이르지 않나? 반박: 사용자가 "아이덴티티=출력"을 Novel 의 핵심
   차별점으로 명시 → 목표 모델 정의는 정당, *구현은 단계적*.
 - **출력 모델이 희망사항일 위험:** AI 도출이 실전에서 약하면 identity 는
   손작성(현재)로 회귀 → 그래서 graceful degradation 을 못박음.

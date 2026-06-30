@@ -413,7 +413,7 @@ async def test_stream_turn_yields_start_delta_complete_on_success(
     assert "--output-format" in process.spawn_args
     assert "stream-json" in process.spawn_args
     assert "say hi" in process.spawn_args
-    # D-2026-06-21-C — auto-allow the user's own Plot MCP tools so the headless
+    # D-2026-06-21-C — auto-allow the user's own mashbill MCP tools so the headless
     # agent doesn't dead-end on a permission prompt it can't show. Scoped to
     # mcp__plot__* (NOT Bash/Write/filesystem — that boundary stays default).
     assert "--allowedTools" in process.spawn_args

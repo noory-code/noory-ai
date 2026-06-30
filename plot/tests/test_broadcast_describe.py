@@ -1,4 +1,4 @@
-"""``_describe_change`` — map a changed file under a Plot data root to the
+"""``_describe_change`` — map a changed file under a Novel data root to the
 ``{project_id, canvas_kind?, service_id?}`` descriptor the viewer keys its
 refetch on.
 

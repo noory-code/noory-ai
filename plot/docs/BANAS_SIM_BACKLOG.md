@@ -1,7 +1,7 @@
 # BANAS simulation — backlog
 
 > Live tracking of everything surfaced while populating the real BANAS
-> blueprint into Plot (2026-05-31 → 2026-06-01). The user fired findings
+> blueprint into Novel (2026-05-31 → 2026-06-01). The user fired findings
 > rapidly; nothing is dropped. User: *"못따라가겠다면 어디 기록해둬야합니다."*
 > Status: ✅ shipped · 🔨 next (designed) · 💡 idea (needs direction) · ⏳ verify.
 >

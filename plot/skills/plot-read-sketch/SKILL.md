@@ -1,7 +1,7 @@
 ---
 name: plot-read-sketch
 user-invocable: true
-description: Read the current Plot sketch and describe what is drawn — nodes, edges, and visible relationships.
+description: Read the current Novel sketch and describe what is drawn — nodes, edges, and visible relationships.
 metadata:
   version: "0.1.0"
   category: analysis
@@ -13,7 +13,7 @@ metadata:
 
 # /plot-read-sketch
 
-Fetch the active Plot sketch and give the user a concise summary of what's drawn.
+Fetch the active Novel sketch and give the user a concise summary of what's drawn.
 
 ## When to run
 

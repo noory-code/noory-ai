@@ -1,9 +1,9 @@
 """Per-workspace git repo for session-bookmark tags.
 
 D-2026-06-11-C/D — git lives at the workspace root (the user's opened
-folder), and Plot never silently runs `git init`. Identity is passed inline
-on each commit (`git -c user.name=Plot …`) so the user's repo-level config
-stays untouched. Plot's tag/publish commits stage only `.noory/plot/`.
+folder), and Novel never silently runs `git init`. Identity is passed inline
+on each commit (`git -c user.name=Novel …`) so the user's repo-level config
+stays untouched. Novel's tag/publish commits stage only `.noory/plot/`.
 
 These tests exercise `git_store` directly with workspace-root semantics.
 The fixture sets up a real `.noory/plot/` folder under the workspace so
@@ -61,7 +61,7 @@ def test_init_workspace_repo_is_idempotent(workspace: Path) -> None:
 
 
 def test_init_does_not_write_gitignore_or_gitattributes(workspace: Path) -> None:
-    """Plot's territory is .noory/plot/, not the workspace root. Init must
+    """Novel's territory is .noory/plot/, not the workspace root. Init must
     not write user-territory files (D-2026-06-11-D)."""
     init_workspace_repo(workspace)
     assert not (workspace / ".gitignore").exists()
@@ -69,7 +69,7 @@ def test_init_does_not_write_gitignore_or_gitattributes(workspace: Path) -> None
 
 
 def test_init_does_not_set_local_user_config(workspace: Path) -> None:
-    """No repo-level `user.name` / `user.email` writes — Plot uses inline
+    """No repo-level `user.name` / `user.email` writes — Novel uses inline
     identity per commit instead."""
     init_workspace_repo(workspace)
     name = subprocess.run(
@@ -112,7 +112,7 @@ def test_tag_snapshot_creates_commit_and_tag(workspace: Path) -> None:
 
 
 def test_tag_snapshot_uses_inline_plot_identity(workspace: Path) -> None:
-    """Plot's commit is authored as `Plot <plot@noory-ai.local>` regardless
+    """Novel's commit is authored as `Novel <plot@noory-ai.local>` regardless
     of repo / global config, because identity is passed inline."""
     init_workspace_repo(workspace)
     tag_snapshot(workspace, "v1")
@@ -122,7 +122,7 @@ def test_tag_snapshot_uses_inline_plot_identity(workspace: Path) -> None:
         capture_output=True,
         text=True,
     ).stdout.strip()
-    assert author == "Plot plot@noory-ai.local"
+    assert author == "Novel plot@noory-ai.local"
 
 
 def test_tag_snapshot_uses_message_when_given(workspace: Path) -> None:
@@ -162,7 +162,7 @@ def test_tag_snapshot_captures_latest_plot_data(workspace: Path) -> None:
 
 
 def test_tag_snapshot_only_stages_noory_plot(workspace: Path) -> None:
-    """Files outside .noory/plot/ stay untracked across a Plot tag."""
+    """Files outside .noory/plot/ stay untracked across a Novel tag."""
     init_workspace_repo(workspace)
     user_file = workspace / "user_notes.md"
     user_file.write_text("user's own working-tree", encoding="utf-8")

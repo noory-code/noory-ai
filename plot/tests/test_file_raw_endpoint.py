@@ -14,7 +14,7 @@ from mashbill.http_app import create_http_app
 @pytest.fixture()
 def plot_root(tmp_path: Path) -> Path:
     # D-2026-06-11-C/D: workspace is the user's opened folder and IS the
-    # git repo; .noory/plot/ lives inside it. Plot never auto-inits — but
+    # git repo; .noory/plot/ lives inside it. Novel never auto-inits — but
     # tests that exercise publish/tag need a real repo, so we init here.
     from mashbill.git_store import init_workspace_repo
     from mashbill.workspace import resolve_plot_root

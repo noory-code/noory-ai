@@ -120,7 +120,7 @@ def create_http_app(
         Route("/api/workspace/dir", dir_create_endpoint, methods=["POST"]),
         # D-2026-06-11-D — explicit user consent to `git init` at the workspace
         Route("/api/workspace/git-init", workspace_git_init_endpoint, methods=["POST"]),
-        # Track 2.5 (D-2026-06-11-E) — register Plot MCP server with external CLIs
+        # Track 2.5 (D-2026-06-11-E) — register mashbill MCP server with external CLIs
         Route("/api/mcp/providers", mcp_providers_endpoint, methods=["GET"]),
         Route(
             "/api/mcp/providers/{provider}/register",

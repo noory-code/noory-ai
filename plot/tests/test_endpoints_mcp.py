@@ -1,4 +1,4 @@
-"""HTTP layer for Track 2.5 / D-2026-06-11-E — Plot MCP registration in
+"""HTTP layer for Track 2.5 / D-2026-06-11-E — mashbill MCP registration in
 external CLI configs.
 
 Each test isolates ``$HOME`` so the real user configs are never touched.

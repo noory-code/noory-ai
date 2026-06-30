@@ -1,6 +1,6 @@
 """External-CLI MCP registration endpoints (D-2026-06-11-E, Track 2.5).
 
-Three URLs back the R7 chat panel's "connect Plot to your CLI" UX:
+Three URLs back the R7 chat panel's "connect Novel to your CLI" UX:
 
     GET  /api/mcp/providers              — list providers + status
     POST /api/mcp/providers/{name}/register
@@ -68,7 +68,7 @@ def _provider_from_path(request: Request) -> ProviderName | None:
 
 
 async def mcp_register_endpoint(request: Request) -> JSONResponse:
-    """``POST /api/mcp/providers/{provider}/register`` — add the Plot mcp
+    """``POST /api/mcp/providers/{provider}/register`` — add the Novel mcp
     server entry to the named provider's config. Idempotent."""
     provider = _provider_from_path(request)
     if provider is None:
@@ -81,7 +81,7 @@ async def mcp_register_endpoint(request: Request) -> JSONResponse:
 
 
 async def mcp_unregister_endpoint(request: Request) -> JSONResponse:
-    """``POST /api/mcp/providers/{provider}/unregister`` — drop the Plot
+    """``POST /api/mcp/providers/{provider}/unregister`` — drop the Novel
     entry from the provider's config. Idempotent."""
     provider = _provider_from_path(request)
     if provider is None:
@@ -113,7 +113,7 @@ async def chat_provider_put_endpoint(request: Request) -> JSONResponse:
 
     Body: ``{"provider": ProviderName | null}``. ``null`` clears the choice
     without removing the file (keeps a single SSOT on disk: presence of the
-    file = "Plot has seen this workspace"). Pydantic rejects unknown
+    file = "Novel has seen this workspace"). Pydantic rejects unknown
     provider strings with 422 so corrupt input never reaches disk.
     """
     try:

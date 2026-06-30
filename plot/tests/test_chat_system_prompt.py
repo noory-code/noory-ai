@@ -171,7 +171,7 @@ def test_claude_command_omits_system_prompt_flag_when_unset(tmp_path: Path) -> N
 
 
 def test_claude_attaches_own_mashbill_strictly(tmp_path: Path) -> None:
-    # D-2026-06-26-E: the coach must carry THIS build's Plot tools directly, not
+    # D-2026-06-26-E: the coach must carry THIS build's Novel tools directly, not
     # inherit a drift-prone global registration. So the command injects an
     # --mcp-config naming the plot server AND --strict-mcp-config to ignore all
     # other MCP sources (incl. a stale ~/.claude.json plot entry).
@@ -182,7 +182,7 @@ def test_claude_attaches_own_mashbill_strictly(tmp_path: Path) -> None:
     assert "--strict-mcp-config" in cmd
     assert "--mcp-config" in cmd
     cfg = json.loads(Path(cmd[cmd.index("--mcp-config") + 1]).read_text(encoding="utf-8"))
-    assert "plot" in cfg["mcpServers"]  # the engine's own stdio Plot server
+    assert "plot" in cfg["mcpServers"]  # the engine's own stdio Novel server
     assert cmd[-1] == "hi"  # user message still trails
 
 

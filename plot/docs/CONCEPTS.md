@@ -1,4 +1,4 @@
-# Plot Concepts → 정본은 root
+# Novel Concepts → 정본은 root
 
 > **개념 정본은 root** (`D-2026-06-28-B`). kind·캔버스의 *의미*는 두 제품(오픈 엔진·상용
 > 앱)이 공유하는 모델이라 root `docs/`가 단일 출처다. 이 파일은 더 이상 본문을 들지 않는다.

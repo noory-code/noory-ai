@@ -110,7 +110,7 @@ def render_write_target(plot_root: Path, scope: str, project_path: str | None) -
     """Render the ``[Write target]`` block — the exact ids ``update_node`` needs
     (D-2026-06-26-D).
 
-    The in-app agent talks to a stateless Plot MCP server with no notion of the
+    The in-app agent talks to a stateless mashbill MCP server with no notion of the
     open project, and every write tool's first args are ``project_path`` +
     ``project_id`` (+ ``canvas_kind`` / ``service_id``). Those are never otherwise
     in the agent's context, so without this block the write path is unreachable.

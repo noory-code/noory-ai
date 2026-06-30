@@ -1,7 +1,7 @@
 ---
 name: plot-new-project
 user-invocable: true
-description: Create a new Plot project (blueprint) in a chosen directory and open it. Asks WHERE to create it — built for monorepos where several app services (e.g. Banas + Banana) are designed side by side, each with its own .plot/ next to its code.
+description: Create a new Novel project (blueprint) in a chosen directory and open it. Asks WHERE to create it — built for monorepos where several app services (e.g. Banas + Banana) are designed side by side, each with its own .plot/ next to its code.
 metadata:
   version: "0.1.0"
   category: action
@@ -13,10 +13,10 @@ metadata:
 
 # /plot-new-project
 
-Create a fresh Plot **project** (a blueprint: Foundation + Actors + Services
+Create a fresh Novel **project** (a blueprint: Foundation + Actors + Services
 canvases) under `{target_dir}/.plot/{project_id}/` and open the viewer on it.
 
-A Plot project's `.plot/` lives **next to the code it describes**, not at the
+A Novel project's `.plot/` lives **next to the code it describes**, not at the
 monorepo root. The plugin is installed once at the monorepo root, but each app
 service gets its own `.plot/` in its own subdirectory. Example: building
 **Banas** and **Banana** at once →
@@ -27,7 +27,7 @@ viewer's "+ Add a Project" picker does the same job from the UI.
 
 ## When to run
 
-The user says "new project", "make me a Plot project", "바나나 프로젝트
+The user says "new project", "make me a Novel project", "바나나 프로젝트
 만들어줘", "설계도 만들어" — or starts designing a service that does not yet
 have a `.plot/` project.
 

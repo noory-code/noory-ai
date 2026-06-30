@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Plot are documented in this file.
+All notable changes to Novel are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
@@ -67,12 +67,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- **In-app coach now actually carries Plot's canvas tools** (`D-2026-06-26-E`) —
+- **In-app coach now actually carries Novel's canvas tools** (`D-2026-06-26-E`) —
   the write tool added in 0.120.0 was unreachable in practice. The coach
-  inherited its Plot tool connection from the user's global CLI config, which can
+  inherited its Novel tool connection from the user's global CLI config, which can
   point at a deleted / older app build — silently leaving the coach with **no**
   canvas tools (exactly the "in-app chat can't write to the canvas" failure).
-  The coach is now spawned with the running build's own Plot server attached
+  The coach is now spawned with the running build's own Novel server attached
   directly (`--mcp-config` + `--strict-mcp-config`), so it always has the canvas
   tools regardless of the global registration, and no longer sees the user's
   unrelated MCP servers. Guard: `test_claude_attaches_own_mashbill_strictly`.
@@ -290,7 +290,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 - **Per-canvas framing is now an authoritative system prompt + hallucination
   guard** (**D-2026-06-24-A**, Lever 2). The Layer-3 framing moved out of the
   user message into a real system prompt, and a constant guard ("ground every
-  claim in the given context; read the canvas with your Plot MCP tools or ask;
+  claim in the given context; read the canvas with your mashbill MCP tools or ask;
   never invent project details; resolve 'this' to the selected node") now ships
   on every scope. claude delivers it via `--append-system-prompt`; codex (no
   such flag) prepends it to the message. The user message is now
@@ -345,7 +345,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
   that every service stands on. The manifest now always carries
   `anchors.mission = "mission"` (guarded by `"mission" in vP`, which the foundation
   invariant — ≥1 mission node — guarantees). Aligns the code with the format-f.md
-  §3.2 example, which already showed the mission anchor. Surfaced by the Plot↔Solera
+  §3.2 example, which already showed the mission anchor. Surfaced by the mashbill↔Solera
   pipeline dogfood. `format_f_version` stays 1 (additive). Engine 598 green.
 
 ## [0.111.0] — 2026-06-23
@@ -480,7 +480,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 
 - **format F write-side contract guard + Phase P pinned** (INT-1c, **D-2026-06-22-D**).
   `tests/test_format_f.py::test_manifest_contract_shape_is_pinned` pins the
-  manifest shape + `FORMAT_F_VERSION` Plot emits, in lock-step with Solera's
+  manifest shape + `FORMAT_F_VERSION` mashbill emits, in lock-step with Solera's
   `intake.SUPPORTED_FORMAT_F_VERSION` (a producer change that drops a field now
   fails before it reaches Solera). The 2-layer publish decision (vP project
   snapshot + vS service release, slug-referenced, per-node coexists/retires
@@ -492,7 +492,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 
 ### Added
 
-- **format F export engine — Plot "write" half of the Plot↔Solera contract**
+- **format F export engine — mashbill "write" half of the mashbill↔Solera contract**
   (Phase P / INT-2, walking-skeleton scope). New `mashbill/format_f.py` writes
   the 2-layer published bundle defined in `repos-plot/docs/specs/format-f.md`:
   - `publish_project_snapshot` → `published/_project/vP{N}/` freezes the shared
@@ -516,7 +516,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
   The `gemini` provider now drives `agy -p --dangerously-skip-permissions`
   (plain-text passthrough, no `stream-json`) and is **stateless** — agy exposes
   no per-thread resume on stdout and `--continue` is most-recent-global (would
-  cross Plot's per-scope threads). The provider name stays `gemini`; presence
+  cross Novel's per-scope threads). The provider name stays `gemini`; presence
   detection now looks for the `agy` binary.
 - **Chat model selector is populated from each CLI's live catalogue**
   (**D-2026-06-22-B**, reverses D-2026-06-16-C, which went stale on arrival).
@@ -595,7 +595,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 ### Fixed
 
 - **In-app chat is grounded only in the workspace** (**D-2026-06-21-I**). The
-  `claude -p` agent was pulling in parent / global `CLAUDE.md` (incl. the Plot
+  `claude -p` agent was pulling in parent / global `CLAUDE.md` (incl. the Novel
   repo's own dev instructions) + the user's auto-memory. The spawn now passes
   `--setting-sources local` + `--exclude-dynamic-system-prompt-sections` and
   sets `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`. OAuth/subscription auth + the `plot`
@@ -616,11 +616,11 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 
 ### Fixed
 
-- **In-app Claude Code dead-ended on Plot MCP tool permissions** (**D-2026-06-21-C**).
+- **In-app Claude Code dead-ended on mashbill MCP tool permissions** (**D-2026-06-21-C**).
   Headless `claude -p` can't show a permission prompt, so the agent narrated
-  "press Allow" with nothing to press whenever it called a Plot tool. The spawn
+  "press Allow" with nothing to press whenever it called a Novel tool. The spawn
   now passes `--allowedTools mcp__plot__*` — auto-approving the user's **own**
-  Plot MCP tools (scoped; Bash / Write / filesystem keep default behaviour, so
+  mashbill MCP tools (scoped; Bash / Write / filesystem keep default behaviour, so
   the agent can't silently touch anything outside `.noory/plot`). Verified flag
   against `claude --help` 2.1.176 + the permissions docs. Pinned by
   `test_chat_session`.
@@ -876,7 +876,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 ### Removed
 
 - **`metric` / `content` kinds retired** (Chunk 2.1, D-2026-06-20-H). Both sit
-  below Plot's action altitude: a `metric` is implied by a flow's result node +
+  below Novel's action altitude: a `metric` is implied by a flow's result node +
   edge, and `content` (implementation / user-facing artifacts) is the external
   agent's job or is carried by the producing action's edge. Removed across the
   stack: server `MetricNode` / `ContentNode`, the union + `NodeKind` Literal +
@@ -958,7 +958,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 
 - **The legacy 9 service fields** (`target_side` / `what` / `scope` / `trigger`
   / `how` / `outcome` / `do` / `dont` / `body`) — **discarded**, no migration
-  (no project uses Plot yet; Pydantic drops the old extras on read,
+  (no project uses Novel yet; Pydantic drops the old extras on read,
   D-2026-06-20-F). The service inspector's composition (rules / contents) panels,
   the `target_side` color tint, and the shared `DoDontFields` component are gone.
 
@@ -1132,7 +1132,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 
 - **Inspector MD editor was a white island in dark mode** (D-2026-06-16-E).
   `MdTextarea`'s CodeMirror theme hardcoded a white background + slate/indigo
-  border/focus colours; it now uses Plot's CSS tokens (`rgb(var(--surface))` /
+  border/focus colours; it now uses Novel's CSS tokens (`rgb(var(--surface))` /
   `--fg` / `--line-strong` / `--accent` + themed caret/selection), so every
   typed-text field in the Inspector reads correctly in dark mode. Guarded by
   `viewer/tests/md-textarea-theme.test.ts`.
@@ -1147,7 +1147,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
   beside it. The message log is now **left/right-aligned bubbles** (assistant
   left, user right, error tinted) instead of full-width boxes, and the input
   is a single **rounded composer** with an integrated circular send button.
-  Familiar chat UX within Plot's existing theme tokens (no hardcoded colours,
+  Familiar chat UX within Novel's existing theme tokens (no hardcoded colours,
   no new font); all behaviour, a11y, and i18n preserved.
 
 ## [0.84.1] — 2026-06-16
@@ -1463,7 +1463,7 @@ Minor. In-app chat Layer 2 — per-turn canvas + selection context injection
 ### Added
 
 - **Selection-aware chat.** Each in-app chat turn carries the active canvas +
-  the live node selection; the engine prepends a `[Plot context]` preamble so
+  the live node selection; the engine prepends a `[Novel context]` preamble so
   the agent resolves "fix this" against what's selected. SketchCanvas reports
   its selection upward (`onSelectionChange`), App lifts it, ChatDock forwards
   it. Per-turn snapshot; `project` scope injects nothing; selection capped at
@@ -1571,7 +1571,7 @@ per-canvas scope model from v0.68.0 is unchanged.
 
 ## [0.68.1] — 2026-06-14
 
-Patch (fix). The bundled `.app` registered a broken Plot MCP command into
+Patch (fix). The bundled `.app` registered a broken mashbill MCP command into
 external CLI configs, breaking the primary (MCP) chat path in the actual
 product. Root-caused live: codex failed the turn with `MCP client for
 'plot' failed to start: request timed out`; gemini ignored the failed MCP
@@ -1596,7 +1596,7 @@ and answered anyway. (D-2026-06-14-A.)
   (`plot/src-tauri/sidecar-build/mashbill_entry.py`): default = HTTP sidecar,
   `--mcp-stdio` = stdio MCP server.
 - Root [`ARCHITECTURE.md`](../../ARCHITECTURE.md) documenting how the `.app`,
-  Plot MCP, and the user's VSCode-hosted agent mesh.
+  mashbill MCP, and the user's VSCode-hosted agent mesh.
 
 ## [0.68.0] — 2026-06-14
 
@@ -1646,8 +1646,8 @@ verification surfaced a `claude -p` double-billing problem.
 ### Changed
 
 - `docs/DECISIONS.md` — D-2026-06-13-H: **chat is MCP-first.** Primary
-  path = Plot is an MCP server the user's own interactive agent (Claude
-  Code / Codex / Gemini, on their subscription) connects to; Plot does not
+  path = Novel is an MCP server the user's own interactive agent (Claude
+  Code / Codex / Gemini, on their subscription) connects to; Novel does not
   host/drive the AI. Secondary = in-app chat for **Codex/Gemini only**
   (`claude-code` removed from in-app chat selection, kept in MCP
   registration) because `claude -p` bills separately from the Claude
@@ -1795,7 +1795,7 @@ SPEC.md §Engine auth.
 - `viewer/tests/engine-auth.test.ts` (7 tests) — header injection
   on/off, `null` clearing, empty string treated as null, Tauri
   invoke first / dev env fallback / Tauri error swallow.
-- Plot Tauri shell (separate `plot` repo): `mint_auth_token()`
+- Novel Tauri shell (separate `plot` repo): `mint_auth_token()`
   uses `rand::rngs::OsRng` to fill 32 bytes + hex-encode (64 lower
   hex chars). Stored in a Tauri `State` so the
   `#[tauri::command] plot_auth_token` returns it. The sidecar
@@ -1850,7 +1850,7 @@ B3) instead of always running Claude. Architecture pin lives at
 - `GeminiProvider` — `gemini -y --output-format stream-json -p
   <prompt>`. Captures `session_id` from the `init` event and resumes
   via `--resume <id>` on later turns. `-y` (YOLO) skips per-action
-  approvals — Plot is the canvas surface that owns user trust.
+  approvals — Novel is the canvas surface that owns user trust.
 - Registry keying — `(workspace, provider_name)` not just
   `workspace`, so a user who flips Claude → Codex → Claude in one
   session resumes both conversations cleanly. New
@@ -1860,7 +1860,7 @@ B3) instead of always running Claude. Architecture pin lives at
   `/api/chat/reset` keeps the wipe-all semantics.
 - `mashbill/endpoints_chat.py::chat_send_endpoint` reads
   `<workspace>/.noory/plot/chat-provider` to pick the provider. No
-  selection → 400 (was: silent Claude default in v0.64.0). Plot
+  selection → 400 (was: silent Claude default in v0.64.0). Novel
   doesn't pick a default AI for the user; the dock's "Pick a chat
   CLI above to start" state is the only valid entry point.
 - 11 new chat_session tests pin per-provider command shape (`exec`
@@ -1904,7 +1904,7 @@ B3) instead of always running Claude. Architecture pin lives at
 ## [0.64.0] — 2026-06-12
 
 Minor. **D-2 (R7 native chat panel) Phase C** — subprocess streaming
-lands. The user picks a chat CLI, types a message, and Plot drives the
+lands. The user picks a chat CLI, types a message, and Novel drives the
 external `claude` (Codex / Gemini next) via `--print --output-format
 stream-json`, fanning the streamed assistant text back to the dock over
 the workspace WS. Per the new pin [D-2026-06-12-D](docs/DECISIONS.md):
@@ -2026,7 +2026,7 @@ Patch. D-2 (R7 native chat panel) Phase B step B3 — closes Phase B.
 Workspace-scoped chat-CLI selection persists at
 `<workspace>/.noory/plot/chat-provider`. The user's pick survives
 across reloads; unregistering the active provider auto-clears the
-selection so the persisted choice can never name a CLI Plot can't
+selection so the persisted choice can never name a CLI Novel can't
 reach. Phase C (subprocess streaming) follows.
 
 ### Added
@@ -2169,7 +2169,7 @@ Phase B (chat surface + provider selection persistence), Phase C
   ops from here, matching the existing api.ts-seam rule.
 - `src/shell/ChatProvidersPanel.tsx` — provider list component. Renders
   one row per provider (Claude Code / Codex / Gemini), shows install +
-  registration state, surfaces a one-click `Register Plot` /
+  registration state, surfaces a one-click `Register Novel` /
   `Unregister` button per row. Loading state, error bubble-up via
   `onError`. Not mounted yet — Phase B wires it into the chat dock.
 - i18n keys `chat.providersTitle` / `chat.providersHint` /
@@ -2259,9 +2259,9 @@ deeper into the viewer.
 ## [0.62.0] — 2026-06-12
 
 Minor. R7 multi-provider MCP registration backend (Track 2.5,
-D-2026-06-11-E). Plot can now write its own `mcp_servers.plot` entry into
+D-2026-06-11-E). Novel can now write its own `mcp_servers.plot` entry into
 the user's external CLI configs (Claude Code / Codex / Gemini) so the CLI
-can talk to Plot's MCP tools. No viewer UI yet — the R7 native chat panel
+can talk to Novel's MCP tools. No viewer UI yet — the R7 native chat panel
 will plug into these endpoints in a separate session.
 
 ### Added
@@ -2274,7 +2274,7 @@ will plug into these endpoints in a separate session.
   - Gemini → `~/.gemini/settings.json` (JSON), `mcpServers.plot`.
   - Every write preserves sibling MCP server entries (e.g. `pencil`) and
     unrelated top-level keys.
-  - Plot entry points at `uv run --directory <plugin_root> python -m
+  - Novel entry points at `uv run --directory <plugin_root> python -m
     mashbill` so each CLI gets its own stdio instance (independent of the
     desktop app's HTTP sidecar).
 - `mashbill/endpoints_mcp.py` — three HTTP endpoints:
@@ -2304,23 +2304,23 @@ changes.
 ### Changed
 
 - **SPEC §R7 chat** (new section, D-2026-06-11-E) — R7 in-app chat ships
-  as a native panel inside Plot (option A out of native-panel /
+  as a native panel inside Novel (option A out of native-panel /
   thin-launcher / staged). The brain is the user's external CLI
-  (Claude Code / Codex / Gemini), spawned as a subprocess; Plot owns
+  (Claude Code / Codex / Gemini), spawned as a subprocess; Novel owns
   the chat shell, the CLI owns auth / model / billing. Multi-provider
   abstraction via per-CLI adapter classes. Implementation sequenced
   after Track 2.5 R7 MCP registration.
 - **SPEC §Workspace & projects** (rewritten opening, D-2026-06-12-A) —
   pins the "why" behind the workspace-holds-many-projects shape:
   **workspace = monorepo, project = one service inside it.** Two apps
-  in `apps/web/` and `apps/mobile/` are two separate Plot projects in
+  in `apps/web/` and `apps/mobile/` are two separate Novel projects in
   one workspace. User-facing "project" copy means "one service",
   workspace-level affordances refer to the monorepo.
 
 ## [0.61.0] — 2026-06-11
 
 Minor. Workspace = git repo (D-2026-06-11-C/D). Git lives at the user's
-opened folder, not inside `.noory/plot/`. Plot never silently runs
+opened folder, not inside `.noory/plot/`. Novel never silently runs
 `git init` — the first tag/publish without a repo asks the user via a
 modal first.
 
@@ -2331,13 +2331,13 @@ modal first.
   (raises `GitNotInitializedError`) + `init_workspace_repo` (the only
   function that runs `git init`, called from the new
   `POST /api/workspace/git-init` endpoint).
-- Plot-authored commits carry identity inline (`git -c user.name=Plot
+- Novel-authored commits carry identity inline (`git -c user.name=Novel
   -c user.email=plot@noory-ai.local …`) so the user's repo-level config
-  stays untouched, even on a workspace Plot initialised. `.gitignore` /
+  stays untouched, even on a workspace Novel initialised. `.gitignore` /
   `.gitattributes` writes removed (user's territory).
 - `tag_snapshot` + `publish_snapshot` stage only `.noory/plot/`
   (`git add -A -- .noory/plot/`) so the user's working-tree edits outside
-  that path are never folded into a Plot commit.
+  that path are never folded into a Novel commit.
 - `ensure_clean_working_tree` is path-scoped to `.noory/plot/`.
 - `read_file_at_tag` paths shift from `{project_id}/…` to
   `.noory/plot/{project_id}/…` (the new file location inside the repo).
@@ -2362,7 +2362,7 @@ modal first.
 - New `tests/test_workspace_git.py` (rewritten end to end, 9 tests) pins:
   no auto-init, structured 409 with `needs_git_init=true`, idempotent
   `POST /api/workspace/git-init`, existing user `.git/` reused untouched
-  (config + .gitignore preserved), Plot commit author is `Plot`,
+  (config + .gitignore preserved), Novel commit author is `Novel`,
   path-scoped staging, legacy `.noory/plot/.git` → workspace migration
   with no-clobber guard.
 - `tests/test_git_store.py` rewritten for workspace-root semantics
@@ -2523,12 +2523,12 @@ ratchet in `tests/test_module_size.py` is now empty.
   with `VITE_PLOT_DEBUG=1`; the `?debug` runtime escape is removed and release
   bundles tree-shake the probe out (verified in built assets). Shell:
   `tauri-plugin-screenshots` is an optional Cargo dep behind a `debug-tools`
-  feature; `tauri.debug.conf.json` (productName "Plot Debug", identifier
+  feature; `tauri.debug.conf.json` (productName "Novel Debug", identifier
   `me.noory.plot.debug`, frontendDist `dist-debug`, inline screenshots
   capability) selects the debug flavor and spawns the sidecar with
   `PLOT_DEBUG=1`.
 - **Window screenshots in the debug probe.** `captureScreenshot()` finds the
-  Plot window (`pickPlotWindow`) and saves a PNG via tauri-plugin-screenshots;
+  Novel window (`pickPlotWindow`) and saves a PNG via tauri-plugin-screenshots;
   the path rides on the snapshot as `screenshotPath`. Time-boxed (1.5s) so a
   missing Screen Recording grant cannot stall the numeric probe.
 - **Boot beacon** (inline `index.html` script, `%VITE_PLOT_DEBUG%`-gated):
@@ -2577,7 +2577,7 @@ ratchet in `tests/test_module_size.py` is now empty.
   `publish_snapshot` / `find_latest_publish_commit` / `revert_publish` all target
   `.plot/`, so every project under one `.plot/` shares one history (user:
   "워크스페이스에만 깃이 있어야 한다"). The repo sits at `.plot/`, not the launch
-  folder, so non-Plot files there are never tracked.
+  folder, so non-Novel files there are never tracked.
 - `git_store`'s `project_dir` parameter renamed to `workspace_root`; call sites
   (`folder_io.create_project` / `publish_node` / `unpublish_node`,
   `mcp_tools.plot_tag`) pass `plot_root`.
@@ -2594,7 +2594,7 @@ ratchet in `tests/test_module_size.py` is now empty.
 - The canvas no longer shows the bottom-right "React Flow" attribution badge.
   Added `proOptions={{ hideAttribution: true }}` to the `<ReactFlow>` in
   `SketchCanvas`. `reactflow` is MIT-licensed, so hiding the attribution (which
-  xyflow recommends but does not require) is permitted; Plot ships as a
+  xyflow recommends but does not require) is permitted; Novel ships as a
   commercial desktop app.
 - SketchCanvas LOC ceiling 515 → 516 (the single added prop); pinned in
   `structural-guards.test.tsx`.
@@ -2786,7 +2786,7 @@ ratchet in `tests/test_module_size.py` is now empty.
 
 ### Changed
 
-- `viewer/src/App.tsx` — the inline hardcoded "Plot" / URL-hint placeholder is
+- `viewer/src/App.tsx` — the inline hardcoded "Novel" / URL-hint placeholder is
   replaced by `<ProjectPicker />` (also removes a hardcoded English string;
   495 → 487 LOC, ceiling 498).
 - i18n: `shell.projectPicker.{title,openFolder,hint}` keys (en + ko).
@@ -3226,7 +3226,7 @@ ratchet in `tests/test_module_size.py` is now empty.
   existing project (the dir already holds one) does NOT prompt. New i18n keys
   `sidebar.newProjectNamePrompt` / `newProjectNamePlaceholder` (en + ko).
 - **`/plot-new-project` skill (D-2026-05-31-Z):** a user-invocable skill that
-  creates a Plot project in a **chosen directory** and opens it. Built for the
+  creates a Novel project in a **chosen directory** and opens it. Built for the
   monorepo case (Banas + Banana side by side): the plugin is installed once at
   the monorepo root, but each app service gets its own `.plot/` next to its
   code. The skill asks WHERE (which subdir) + a name, builds a unique
@@ -3451,7 +3451,7 @@ prompt. viewer 714/714 green; tsc clean.
 ### Added — workspace discovery + dir-tree endpoints (multi-directory projects, Phase 1; D-2026-05-31-L)
 
 - `GET /api/workspace/projects?project_path=<root>` — recursively discovers
-  every Plot project anywhere under the workspace root, each with its
+  every Novel project anywhere under the workspace root, each with its
   directory relative to the root (`"."` for root-level). Backing the
   upcoming "a monorepo holds many projects, each in its own subdirectory"
   feature.
@@ -3917,7 +3917,7 @@ flowchart of the service with foundation injected onto it" vision
   (Humor) → 로그인 페이지 진입.
 - **Derived from the source node kind** (like the v0.27.19 branch
   badge is derived from the edge count) — no new edge kind, no stored
-  flag, no auto-emit. The user draws the edge (PHILOSOPHY P10); Plot
+  flag, no auto-emit. The user draws the edge (PHILOSOPHY P10); Novel
   only styles it. `actor_ref` is excluded (it is the sequence-anchor
   subject edge, not an injection).
 
@@ -5229,7 +5229,7 @@ flagged where the running build had drifted from it.
 ### Added
 
 - **설계도 발행 (project-level semver)**
-  ([D-2026-05-21-B](./docs/DECISIONS.md)). Plot's output is now framed
+  ([D-2026-05-21-B](./docs/DECISIONS.md)). Novel's output is now framed
   as a *설계도 (design blueprint)* — the whole project at one
   coherent point. Each project carries a `blueprint_version`
   (default `v0.1.0`); the user bumps major / minor / patch from the
@@ -5264,7 +5264,7 @@ flagged where the running build had drifted from it.
   dot: 💾 saving… / ✓ saved / ⚠ save failed (hidden when idle).
   `useCanvasPersist` already computed `saveState` but no shell
   component rendered it — silent success was a bug per
-  Plot's *"Clear Feedback"* UX rule. i18n keys
+  Novel's *"Clear Feedback"* UX rule. i18n keys
   `header.saveState.{saving,saved,error}` for en + ko.
 
 ### Fixed
@@ -5394,7 +5394,7 @@ User direct quotes locking the change: *"모든 액터는 다른 캔버스에
 
 - `viewer/tests/auto-layout-isolation.test.tsx` — Actor
   positions-only assertion was using `side: "consumer"` (shipped in
-  v0.24.5), which is not a valid Plot enum value. Pydantic
+  v0.24.5), which is not a valid Novel enum value. Pydantic
   `ActorNode.side` is `Literal["operator", "user"] | None`; TS
   test slipped through because of an `as SketchNode` cast in
   `makeNode`. Replaced with `side: "operator"` (matches Hero's
@@ -5433,7 +5433,7 @@ No code or behaviour change.
   mode → vertical). Real interview subjects (김유정, 박태식 등) live
   in the actor's `body` Markdown under a `## 인터뷰 대상자` section
   — no new typed field, no new kind, no new canvas. YAGNI per
-  global CLAUDE.md `design: YAGNI > others` + Plot's v0.13 god
+  global CLAUDE.md `design: YAGNI > others` + Novel's v0.13 god
   SketchNode lesson. `fromJson` + `test_schema_parity.py` keep
   all future trajectories (new field / new canvas / external tool)
   backward-compat. Revisit trigger filed in NEXT_SESSION queue
@@ -5477,7 +5477,7 @@ No code or behaviour change.
   entry **"Foundation 정리 + Actor 정리"** (user-filed at session
   end 2026-05-18: *"다음에는 파운데이션 정리 한번하고 액터 정리로
   갈거에요"*). Target = the `banas-imported` test project; scope
-  open for re-anchor at next session start. Plot-space-vs-time rule
+  open for re-anchor at next session start. Novel-space-vs-time rule
   ([[feedback_plot_space_vs_time]]) applies — only spatial
   (relations/structure) content gets imported; vision / roadmap /
   sprint are explicitly out.
@@ -5492,7 +5492,7 @@ No code or behaviour change.
   ([D-2026-05-18-A](./docs/DECISIONS.md)). v0.23.0 used
   ``slugify(label)`` which preserved Korean / CJK characters,
   producing folder names like ``published/core_value/관용-tolerance/``.
-  v0.24.3 switches to ``node.id`` (ASCII per Plot's id policy):
+  v0.24.3 switches to ``node.id`` (ASCII per Novel's id policy):
   ``published/core_value/core-tolerance/v2.0.md``. Bonus: label
   rename no longer renames the folder (id is stable).
 
@@ -5971,7 +5971,7 @@ font-size / list bullet / image embed decorations) build on the
 
 - ``viewer/src/canvases/inspectors/shared/MdTextarea.tsx`` — **new**
   shared component. ~110 LOC. CodeMirror 6 + markdown extension +
-  ``EditorView.lineWrapping`` + history + base theme matching Plot's
+  ``EditorView.lineWrapping`` + history + base theme matching Novel's
   existing slate-300 border / indigo-600 focus chrome. Mounts once,
   syncs external ``value`` prop via replace transactions. Hidden
   ``<textarea>`` mirror keeps RTL ``getByDisplayValue`` queries
@@ -6103,7 +6103,7 @@ implementation. No code changes.
 - `docs/ROADMAP.md` §D — **Forest-anchored AI context (graph-RAG-lite
   + verification loop)**. Adds a queued item alongside A
   (isomorphic-git), B (work-item layer), C (repo split). Phased plan
-  (Phase 1 Plot-internal `context_envelope` MCP tool + skill rule +
+  (Phase 1 Novel-internal `context_envelope` MCP tool + skill rule +
   interview pattern strengthening; Phase 2 post-Distill port for
   transcript crystallization; Phase 3 post-Evonest port for output
   consistency verification). Design red-team not yet run; checklist
@@ -6112,7 +6112,7 @@ implementation. No code changes.
 - `docs/DECISIONS.md` D-2026-05-16-D — **AI-context architecture:
   "tree-in-forest" 3-layer framing**. Records the framing that
   splits the problem into (1) data structural connection — free
-  via Plot's typed user-authored graph, (2) input-side call
+  via Novel's typed user-authored graph, (2) input-side call
   enforcement — small effort, and (3) output-side verification —
   large, downstream of Distill / Evonest ports. Includes the i18n
   global-service regression as the concrete failure case proving
@@ -6163,7 +6163,7 @@ queued in ``docs/NEXT_SESSION.md``.
 
 The PSPEC §6 "canvas auto-commit" line was clarified in
 **v0.17.4** ahead of this commit to avoid bundling a cross-cutting
-docs fix into the feature commit (Plot CLAUDE.md anti-pattern).
+docs fix into the feature commit (Novel CLAUDE.md anti-pattern).
 
 ### Added
 
@@ -6246,7 +6246,7 @@ docs fix into the feature commit (Plot CLAUDE.md anti-pattern).
     publish-prop threading; no-growth henceforth).
   - ``canvases/inspectors/BaseInspector.tsx``: 220 → 270 (publish
     button + version badge + confirm dialog handler).
-  Plot CLAUDE.md Gate 2 LOC table updated to match.
+  Novel CLAUDE.md Gate 2 LOC table updated to match.
 - ``plot/docs/NEXT_SESSION.md`` — Phase 3 entry → Completed;
   surfaced Phase 4 (MINOR propagation) as new Active queue head;
   surfaced v0.18.x ``Unpublish button`` follow-up.
@@ -6256,7 +6256,7 @@ docs fix into the feature commit (Plot CLAUDE.md anti-pattern).
 
 Docs-only PSPEC §6 clarifier. Lands ahead of v0.18.0 Phase 3 so
 that the cross-cutting docs fix is **not bundled** into the
-feature commit (per Plot CLAUDE.md anti-pattern: "Bundling a
+feature commit (per Novel CLAUDE.md anti-pattern: "Bundling a
 cross-cutting visual change with a feature change in one commit",
 v0.13.10 cursor saga precedent).
 
@@ -6838,16 +6838,16 @@ release.
 
 ## [0.16.31] — 2026-05-13
 
-Skill classification correction. Plot's plugin-skill directory
+Skill classification correction. Novel's plugin-skill directory
 ``plot/skills/`` is meant for **end-user** skills that trigger in
-the *consumer's* project after installing the Plot plugin. Seven
+the *consumer's* project after installing the mashbill plugin. Seven
 of the eight skills there were actually **dev-facing** — they
-trigger during Plot's *own* development and have no meaning to a
+trigger during Novel's *own* development and have no meaning to a
 plugin consumer. Moving them to the monorepo-level
 ``noory-ai/.claude/skills/`` aligns the boundary: the plugin
 manifest exposes only what a consumer actually needs; the dev-tool
 procedures live in the monorepo's Claude Code workspace where they
-trigger when working *on* Plot. (D-2026-05-13-G)
+trigger when working *on* Novel. (D-2026-05-13-G)
 
 ### Removed (moved out of plot/skills/)
 
@@ -6864,7 +6864,7 @@ The following moved to ``noory-ai/.claude/skills/`` via
 
 ### Retained in plot/skills/ (end-user facing)
 
-- ``plot-help/`` — Plot usage explanation.
+- ``plot-help/`` — Novel usage explanation.
 - ``plot-new-sketch/`` — consumer creates a new sketch.
 - ``plot-read-sketch/`` — consumer reads an existing sketch.
 
@@ -7105,7 +7105,7 @@ Plugin patch bump 0.16.18 → 0.16.19.
 ## [0.16.18] — 2026-05-12
 
 Bug fix — fitView gating. ReactFlow's ``fitView`` prop re-fits
-whenever the ``nodes`` reference changes; Plot's ``useNodesMemo``
+whenever the ``nodes`` reference changes; Novel's ``useNodesMemo``
 returns a fresh array every render, so the user's manual zoom/pan
 was reset mid-session by every unrelated state update. Fix: drop
 the prop, call ``inst.fitView({ padding: 0.2 })`` once inside
@@ -7297,7 +7297,7 @@ of the v0.16 ship.
   - **B) Work-item layer (userstory + task)** — hard dep on A.
     4 Major findings (file locations / origin-metadata schema /
     orphan handling / MVP schema cut). 1-2 weeks after A.
-  - **C) Plot repository split** — product decision the user
+  - **C) Novel repository split** — product decision the user
     owns. Technical side: 🟢 READY (one-time ``git filter-repo``).
 
 ### Changed — plot/docs/NEXT_SESSION.md
@@ -7335,7 +7335,7 @@ to ``BaseNodeFields`` (Pydantic) and ``BaseFieldsJson`` / ``BaseFields``
 (TS). Inherited by all 15 entity classes. Wire-format only — no UI,
 no permission logic, no migration. Single-user sessions write
 ``null``; server will fill from session context once multi-user
-ships. Canonical Plot spec §"데이터 구조 원칙":
+ships. Canonical Novel spec §"데이터 구조 원칙":
 > "owner 필드 포함 (멀티유저 확장 대비)."
 (D-2026-05-12-P)
 
@@ -7497,7 +7497,7 @@ serves that role; no panel work needed.
 
 Self-loop visual rendering — user-drawn edges with
 ``source === target`` now render as a curved Bezier arc instead of
-being silently dropped. The canonical Plot spec
+being silently dropped. The canonical Novel spec
 (*"셀프 피드백 루프 표현 가능 (서비스 A → 서비스 A)"*) explicitly
 permitted them; the previous ``edgeTransform.ts:40`` filter was a
 spec violation. Plan ``~/.claude/plans/dazzling-inventing-boole.md``,
@@ -7543,7 +7543,7 @@ decision **D-2026-05-12-M**.
 ### Changed — docs/SPEC.md §Edges
 
 - New "Self-loops (source === target)" subsection citing the canonical
-  Plot spec mandate + D-2026-05-12-M.
+  Novel spec mandate + D-2026-05-12-M.
 
 ### Verification
 
@@ -7614,7 +7614,7 @@ Plugin patch bump 0.16.8 → 0.16.9.
 ## [0.16.8] — 2026-05-12
 
 New skill — ``plot-design-red-team`` runs 8 adversarial attacks
-against a Plot proposal BEFORE implementation. Sister skill to
+against a Novel proposal BEFORE implementation. Sister skill to
 ``plot-code-red-team`` (v0.16.7). Reads a SPEC change draft, a
 DECISIONS entry draft, a plan file, or a verbal proposal and
 attacks the *idea*, not the code. (D-2026-05-12-K)
@@ -7639,7 +7639,7 @@ Output verdict: ✅ READY TO IMPLEMENT / 🟡 REVISE FIRST /
 
 ### Why the two-skill split
 
-Code reviews catch bad code; they don't catch bad ideas. Plot's
+Code reviews catch bad code; they don't catch bad ideas. Novel's
 v0.13.2 auto-edges were good code that the user rolled back
 same-day — the idea was wrong. D-2026-05-10-E auto-layout shipped
 twice and was rejected twice. Catching these at the *proposal*
@@ -7647,7 +7647,7 @@ stage is cheaper than catching them at the diff.
 
 The two skills together close the review loop end-to-end (proposal
 → code). Together with the v0.16.0 reset's structural guards +
-v0.16.6 schema parity test, Plot now has:
+v0.16.6 schema parity test, Novel now has:
 
 - **Structural** review (8 acceptance gates + kill-switch from
   v0.16.0).
@@ -7674,7 +7674,7 @@ Plugin patch bump 0.16.7 → 0.16.8.
 ## [0.16.7] — 2026-05-12
 
 New skill — ``plot-code-red-team`` runs 9 adversarial attacks
-against a Plot branch / commit set / PR. Triggers on Korean (리뷰 /
+against a Novel branch / commit set / PR. Triggers on Korean (리뷰 /
 코드리뷰 / 공격적으로 / 비판적으로) and English (review / red-team)
 phrases. Output: structured report with evidence (file:line) → rule
 violated → severity → suggested fix → verdict. (D-2026-05-12-J)
@@ -7820,7 +7820,7 @@ canvas wiring now; tab/drill/selection live in the hook.
 
 ### Added — viewer/src/hooks/useUrlSync.ts
 
-A hook that owns the three browser-URL query params Plot keeps in
+A hook that owns the three browser-URL query params Novel keeps in
 sync (``?canvas`` / ``?detail`` / ``?select``) and exposes:
 
 - State: ``activeTab`` / ``detailServiceId`` / ``selectedNodeId``.
@@ -8820,7 +8820,7 @@ v0.15 structural reset Phase 2.2 — ``step`` kind vertical slice
 - ``npx tsc --noEmit`` — clean.
 - ``npx vitest run`` — 47 / 47 passed (39 prior + 8 new).
 
-Plugin patch bump 0.14.20 → 0.14.21 per the Plot plugin rule.
+Plugin patch bump 0.14.20 → 0.14.21 per the mashbill plugin rule.
 
 ## [0.14.20] — 2026-05-12
 
@@ -8884,7 +8884,7 @@ Phase 2.10 retires it atomically (mirrors v0.14.17's god-class flip).
 - ``npx tsc --noEmit`` — clean.
 - ``npx vitest run`` — 39 / 39 passed (27 prior + 12 new).
 
-Plugin patch bump 0.14.19 → 0.14.20 per the Plot plugin rule.
+Plugin patch bump 0.14.19 → 0.14.20 per the mashbill plugin rule.
 
 ## [0.14.19] — 2026-05-12
 
@@ -8968,7 +8968,7 @@ so the user sees no UI change at any commit boundary.
 - Existing `i18n-keys-parity.test.ts` and
   `styles-cursor-baseline.test.tsx` static guards still pass.
 
-Plugin patch bump 0.14.18 → 0.14.19 per the Plot plugin rule.
+Plugin patch bump 0.14.18 → 0.14.19 per the mashbill plugin rule.
 
 ## [0.14.18] — 2026-05-12
 
@@ -9252,7 +9252,7 @@ remain valid but should not be picked up before Phase A above:
 
 - i18n audit skill, owner field on SketchNode, Mermaid
   Service-Detail rendering, self-loop visual, Foundation flow
-  visual, Plot repository split, isomorphic-git integration,
+  visual, Novel repository split, isomorphic-git integration,
   MD-as-export migration (user-deferred regardless), snapshot
   work-item layer, v0.15 Actors model migration.
 
@@ -9294,7 +9294,7 @@ Small wins:
 5. Foundation single-canvas flow visual check
 
 Meta decisions:
-6. Plot repository split (extract `plot/` from noory-ai
+6. Novel repository split (extract `plot/` from noory-ai
    monorepo — AI recommends; user decision)
 
 Mid-size:
@@ -9315,7 +9315,7 @@ Mid-size:
 User delivered a substantially revised product spec. The new
 material:
 
-- **Language split:** Plot is a "mindmap" to users, "graph"
+- **Language split:** Novel is a "mindmap" to users, "graph"
   internally. Cycles + self-loops are part of the model.
 - **`isomorphic-git`** added to the tech stack.
 - **Source-data version control** is now an explicit subsystem
@@ -9344,7 +9344,7 @@ split. Added:
 - isomorphic-git integration timing.
 - i18n string lifecycle skill (delete unused keys) — user
   flagged *"사용되지 않는 것들 삭제하고 하는 거 관리되어야해요."*
-- Plot repository split (move out of noory-ai monorepo) — user
+- Novel repository split (move out of noory-ai monorepo) — user
   flagged for analysis.
 
 ### Not changed (deliberate)
@@ -9526,7 +9526,7 @@ Translated to natural Korean per the new
 
 New doc capturing:
 
-1. Canonical Plot vocabulary (Korean spellings the project
+1. Canonical Novel vocabulary (Korean spellings the project
    commits to — 미션 / 코어밸류 / 아이덴티티 / 액터 / 서비스 /
    파운데이션 / 등).
 2. UI-context fragments (Undo / Redo / Delete / etc.).
@@ -9589,7 +9589,7 @@ Continues the v0.14.4 → v0.14.6 i18n rollout. This is **Phase A**
 of the Inspector migration. Two more phases follow (typed-field
 section labels per kind, then composition items / modals / misc).
 
-**New `kind.*` namespace** — canonical Plot kind names per
+**New `kind.*` namespace** — canonical Novel kind names per
 locale. Korean follows the user-provided product spec's canonical
 vocabulary (2026-05-11):
 
@@ -9673,7 +9673,7 @@ that get the visual badge per `KIND_TAG_KINDS`: project / mission
 
 ### Added — `plot/docs/PRODUCT_SPEC.md` (D-2026-05-11-E)
 
-User delivered a Plot product spec mid-session covering platforms,
+User delivered a Novel product spec mid-session covering platforms,
 business model, tech stack, data principles, Figma-style symbol
 system, four canvas layers, agent-interview UX, snapshot work-item
 layer, PR-style feedback loop, MVP scope, future items. Per user
@@ -9685,7 +9685,7 @@ VISION = the essence; PRODUCT_SPEC = how the essence becomes a
 shippable product (platforms, business model, MVP scope).
 
 **Translation:** Korean source → English per noory-ai CLAUDE.md
-"Language" rule. Korean vocabulary preserved where it's a Plot
+"Language" rule. Korean vocabulary preserved where it's a Novel
 term (Mission / Core value / Identity / Actor / Service / User
 journey / Snapshot).
 
@@ -9727,7 +9727,7 @@ Continues v0.14.5. Migrates the SketchStencil's per-canvas section
 labels and helper notes across all four canvases (Foundation /
 Actors / Services / Service-Detail).
 
-Korean translations align with the canonical Plot vocabulary
+Korean translations align with the canonical Novel vocabulary
 provided by the user 2026-05-11:
 
 > 심볼 종류: 미션, 코어밸류, 아이덴티티 / 액터 / 서비스
@@ -9777,7 +9777,7 @@ NOT a literal "정체성" / "행위자" / "핵심 가치" translation.
 
 - Inspector form labels (largest single migration surface; will
   land as its own commit / session).
-- Plot product spec → `plot/docs/PRODUCT_SPEC.md` consolidation
+- Novel product spec → `plot/docs/PRODUCT_SPEC.md` consolidation
   per user direction 2026-05-11 ("이건 잘 정리해두세요. 작업 다
   끝나고").
 - "❀ ❀ ❀" MD preview font fallback investigation.
@@ -9823,7 +9823,7 @@ header / aria-label / close-button.
 - Investigation: Inspector MD preview renders `* * *` separators
   as "❀ ❀ ❀" — looks like a font fallback issue, queued for
   separate diagnosis.
-- Decision: Plot kind labels (Mission, Core Value, Identity,
+- Decision: Novel kind labels (Mission, Core Value, Identity,
   Actor, Service, Category, …) shown inside nodes — stay English
   as canonical kind names vs. localise? Will surface as an
   AskUserQuestion before the v0.14.6 Stencil migration lands.
@@ -9832,7 +9832,7 @@ header / aria-label / close-button.
 
 ### Added — i18n infrastructure (English primary, Korean locale) — D-2026-05-11-D
 
-Plot is being positioned as a global service (user direction
+Novel is being positioned as a global service (user direction
 2026-05-10: *"이건 글로벌 서비스가 될거거든요"*). This release
 boots the i18n stack and migrates the most visible UI strings.
 Remaining hardcoded text (Inspector forms, Stencil, modals,
@@ -9976,7 +9976,7 @@ User: *"다음세션에서 심층적으로 검토하고 개선할 수 있게 해
 다음세선서 '다음' 이라고 하면 이거 해야해요."*
 
 A new `plot/docs/NEXT_SESSION.md` file holds keyword-triggered tasks
-that the assistant should pick up at the next Plot session start.
+that the assistant should pick up at the next Novel session start.
 The first queued item: **`다음`** ⇒ architectural review of how
 auto-layout work bled into cursor code (see D-2026-05-11-B for
 context, NEXT_SESSION.md for full scope).
@@ -10019,7 +10019,7 @@ User cost/benefit call: *"근데 auto layout 빼야겠네 문제가 너무 많�
 
 The feature added across v0.13.8 (spec) → v0.13.9 (impl) → v0.13.10
 (button placement) carried more debugging / verification load than
-its current value justified. Plot has no users with complex
+its current value justified. Novel has no users with complex
 multi-actor / multi-service graphs yet; the layout-readability
 benefit is theoretical at this stage. Re-introduction in the future
 needs a fresh decision id with concrete user workflows in evidence.
@@ -10033,7 +10033,7 @@ RF v11 sets `role="button"` on `.react-flow__node`; Tailwind preflight
 matches that selector and overrides the RF default `cursor: grab`.
 The Tailwind preflight cancellation rule in `viewer/src/styles.css`
 fixes the flicker independently of auto-layout's existence. This
-removal therefore does not undo any cursor fix — Plot v0.14.1 still
+removal therefore does not undo any cursor fix — Novel v0.14.1 still
 has uniform `grab` on pane and nodes, no flicker.
 
 ### Files removed
@@ -10077,7 +10077,7 @@ has uniform `grab` on pane and nodes, no flicker.
 
 ## [0.14.0] — 2026-05-10
 
-### Added — Plot dev infrastructure (the "AI develops Plot reliably" milestone)
+### Added — Novel dev infrastructure (the "AI develops Novel reliably" milestone)
 
 After two weeks of tactical fixes (six rounds on cursor; auto-layout
 misattributed; SPEC drift across sessions), the user's diagnosis cut
@@ -10094,12 +10094,12 @@ environment instead of starting from "be careful next time."
 
 The one sentence that overrides every other priority:
 
-> **Plot 은 본질을 모르는 사람이 본질을 찾고, 그걸 놓치지 않으면서, 그
+> **Novel 은 본질을 모르는 사람이 본질을 찾고, 그걸 놓치지 않으면서, 그
 > 본질 아래에서 서비스를 쉽게 기획·개발할 수 있게 AI 와 협업하는
 > 툴이다.**
 
 Plus the three-phase cycle (Discovery / Retention / Execution with
-AICollaboration cross-cutting), who Plot is for, the feature-decision
+AICollaboration cross-cutting), who Novel is for, the feature-decision
 checklist, and a banned-pattern table calibrated to past drift
 (cursor 6 rounds; auto-edges D-2026-05-04-A; auto-layout removal
 D-2026-05-04-D).
@@ -10118,7 +10118,7 @@ Each context names its surfaces, what it owns vs not, current code
 home (with file paths), and where current code violates the model
 (refactor candidates with severity).
 
-Plus the ubiquitous language table that disambiguates Plot terms
+Plus the ubiquitous language table that disambiguates Novel terms
 ("Node" vs "rf-node" vs DOM node, "Service" vs REST service, etc.),
 the entity-vs-VO classification, and the dependency-direction
 mermaid that codifies "EssenceExecution may read EssenceDiscovery
@@ -10141,7 +10141,7 @@ hit-test / flicker / 깜빡` keywords. 10 mandatory steps:
 9. Confirmation screenshot.
 10. Update SPEC + CURSOR + DECISIONS per Gate 0.
 
-Banned shortcuts table (5 patterns) + quick-reference for common Plot
+Banned shortcuts table (5 patterns) + quick-reference for common Novel
 cursor bug patterns.
 
 #### `skills/plot-feature-tdd` (new) — essence-anchored test-first
@@ -10166,7 +10166,7 @@ never auto-emit user-visible state).
 
 #### `hooks/session_start.py` (new) — surface VISION + recent DECISIONS
 
-Runs on every Claude Code session start when the Plot plugin is
+Runs on every Claude Code session start when the mashbill plugin is
 loaded. Emits an `additionalContext` payload that prepends to the
 assistant's system prompt:
 
@@ -10236,8 +10236,8 @@ the canvas (mutations belong to the parent assistant).
 
 The product UX is unchanged. What changed is the assistant's
 operating environment — the rules / tools / procedures by which
-future Plot work happens. By the user's framing, this is the
-"AI develops Plot reliably" milestone, which conceptually opens a
+future Novel work happens. By the user's framing, this is the
+"AI develops Novel reliably" milestone, which conceptually opens a
 new release line. v0.14.x will iterate on this infrastructure as
 real sessions surface gaps.
 
@@ -11067,7 +11067,7 @@ Detail keep the v0.12 layout for now and join the new model in v0.14+.
 
 ### BREAKING — file layout
 
-The first time Plot reads a v0.12 project, it migrates Foundation in
+The first time Novel reads a v0.12 project, it migrates Foundation in
 place:
 
   .plot/{project}/
@@ -11642,7 +11642,7 @@ front-load so the docs are accurate before any model moves.
   one of those `actor_ref`s. The reasoning is moderation: services
   are playgrounds, freedom needs alignment-keepers, and *which*
   operator owns alignment for *which* service must be visible —
-  exactly Plot's stated purpose.
+  exactly Novel's stated purpose.
 - A "Why these are philosophy, not just rules" subsection explains
   that loosening any of these floors changes the product, not just
   the schema.
@@ -11670,12 +11670,12 @@ front-load so the docs are accurate before any model moves.
 
 ## [0.10.6] — 2026-04-28
 
-Docs-only patch ahead of v0.11. Captures Plot's product identity in
+Docs-only patch ahead of v0.11. Captures Novel's product identity in
 permanent storage so future sessions (human or AI) can ground their
-decisions in what Plot actually is — and is not.
+decisions in what Novel actually is — and is not.
 
 ### Added — **`docs/IDENTITY.md`**
-- New canonical document stating what Plot is (a strategic operations
+- New canonical document stating what Novel is (a strategic operations
   design + alignment tool) and what it is not (a simple mindmap or
   brainstorming tool).
 - The four use purposes: concrete service planning, direction alignment,
@@ -11911,7 +11911,7 @@ remaining kinds where the domain has clearly distinct facets.
 ### Added — **Mission typed fields** (AI-first)
 - `SketchNode.what_we_do`, `SketchNode.why`, `SketchNode.direction` (all `str`,
   default `""`). These three facets are stored directly on the `mission` node
-  in `canvas.json` — Plot is the sole editor. Long-form prose still lives in
+  in `canvas.json` — Novel is the sole editor. Long-form prose still lives in
   `details.md`. Other kinds also carry the fields as empty strings; only the
   Inspector for `kind === "mission"` exposes a typed form.
   ([`mashbill/models.py`](mashbill/models.py),
@@ -11945,7 +11945,7 @@ remaining kinds where the domain has clearly distinct facets.
 ## [0.9.0] — 2026-04-26
 
 ### Changed — **typed JSON fields + per-node `details.md`** (no more sync conflicts)
-- **JSON and MD now hold different data.** Typed short fields live on the node in `canvas.json` and are written/read only by Plot; long prose lives in a per-node `details.md` and Plot reads/writes that file just like any other editor (Obsidian, VS Code) can. Same content is never duplicated, so the sync question that haunted v0.7 / v0.8 disappears entirely. ([`mashbill/models.py`](mashbill/models.py))
+- **JSON and MD now hold different data.** Typed short fields live on the node in `canvas.json` and are written/read only by Novel; long prose lives in a per-node `details.md` and Novel reads/writes that file just like any other editor (Obsidian, VS Code) can. Same content is never duplicated, so the sync question that haunted v0.7 / v0.8 disappears entirely. ([`mashbill/models.py`](mashbill/models.py))
 - **`SketchNode` typed fields**: `tagline`, `audience`, `method`, `goal`, `summary`, `criteria`. All optional; Inspector renders kind-specific subsets (Mission → Tagline/Audience/Method/Goal, CoreValue → Summary/Criteria, Identity / Project → Summary).
 - **`SketchNode.body` is gone.** Its preview-cache role is moot (typed fields are direct), and its long-form-edit role moves to `details.md`. v0.1 migration drops legacy `mission` text into `tagline`, `identity` text into `summary`.
 - **`SketchNode.folder_path` → `SketchNode.details_path`.** Same path-traversal validator, clearer name (it points at the node's `details.md`, not a generic folder).
@@ -11962,7 +11962,7 @@ remaining kinds where the domain has clearly distinct facets.
 
 ### Notes
 - **No automatic migration from v0.8.** User confirmed no production data; v0.9 is a clean break.
-- `details.md` is intentionally never parsed by Plot. Use whatever Markdown layout you like — `# Heading`, tables, Mermaid blocks, etc.
+- `details.md` is intentionally never parsed by Novel. Use whatever Markdown layout you like — `# Heading`, tables, Mermaid blocks, etc.
 
 ## [0.8.0] — 2026-04-23
 
@@ -12024,7 +12024,7 @@ remaining kinds where the domain has clearly distinct facets.
 
 ### Added
 - **Markdown body rendering.** `SketchNode` now renders its body through `react-markdown`, so Inspector template fields (`### Tagline`, `### Summary`, …) appear as small uppercase section labels inside the node, and bold / italic / lists / links stay readable. Left-aligned body text reads naturally once multiple sections are stacked; the label keeps its centred treatment. ([`viewer/src/canvases/SketchNode.tsx`](viewer/src/canvases/SketchNode.tsx))
-- **References field in Inspector templates.** Mission / Core Value / Identity / Project each pick up a `References` field for wiki-style links (e.g. `[[workspace/identity/mission.md]]`) pointing at long-form narrative docs. Plot stays the structural SSOT; MD files stay the narrative SSOT — no auto-sync. ([`viewer/src/canvases/SketchInspector.tsx`](viewer/src/canvases/SketchInspector.tsx))
+- **References field in Inspector templates.** Mission / Core Value / Identity / Project each pick up a `References` field for wiki-style links (e.g. `[[workspace/identity/mission.md]]`) pointing at long-form narrative docs. Novel stays the structural SSOT; MD files stay the narrative SSOT — no auto-sync. ([`viewer/src/canvases/SketchInspector.tsx`](viewer/src/canvases/SketchInspector.tsx))
 
 ## [0.5.1] — 2026-04-22
 
@@ -12092,8 +12092,8 @@ remaining kinds where the domain has clearly distinct facets.
 - `useSketchHistory` viewer hook.
 
 ### Notes
-- **Nested git repo.** `.plot/sketches/{id}/.git/` sits inside whatever project directory you're pointing Plot at. git naturally stops at inner `.git/` boundaries, so the parent repo sees `.plot/` as untracked. Recommended: add `.plot/` to your project's top-level `.gitignore`.
-- Identity configured per-repo as `user.name=Plot`, `user.email=plot@noory-ai.local` so Plot commits don't inherit your global git identity.
+- **Nested git repo.** `.plot/sketches/{id}/.git/` sits inside whatever project directory you're pointing Novel at. git naturally stops at inner `.git/` boundaries, so the parent repo sees `.plot/` as untracked. Recommended: add `.plot/` to your project's top-level `.gitignore`.
+- Identity configured per-repo as `user.name=Novel`, `user.email=plot@noory-ai.local` so Novel commits don't inherit your global git identity.
 - Undo/redo is in-memory only; tags are the durable history mechanism.
 
 ## [0.3.0] — 2026-04-21

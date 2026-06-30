@@ -1,11 +1,11 @@
 """D-2026-06-11-C/D — git lives at the workspace root (the user's opened
-folder), not inside `.noory/plot/`. And Plot never auto-creates `.git/` —
+folder), not inside `.noory/plot/`. And Novel never auto-creates `.git/` —
 the first tag/publish on a workspace without a repo replies
 `needs_git_init=true` and the user must explicitly confirm via
 `POST /api/workspace/git-init`.
 
 Supersedes D-2026-06-09-C (repo at `.noory/plot/`) — the workspace-singleton
-half stays correct; the location flips up one level so non-Plot files in the
+half stays correct; the location flips up one level so non-Novel files in the
 workspace become part of the same repo (user's choice via `.gitignore`).
 
 This file pins:
@@ -15,7 +15,7 @@ This file pins:
   - `POST /api/workspace/git-init` (idempotent) creates the workspace repo.
   - After consent, tag/at-tag/publish all target `<workspace>/.git`, and
     file paths inside the repo are `.noory/plot/{project_id}/…`.
-  - When the workspace already has a user `.git/`, Plot reuses it and never
+  - When the workspace already has a user `.git/`, Novel reuses it and never
     touches `user.name` / `user.email` / `.gitignore`.
   - Legacy `.noory/plot/.git/` is migrated up to the workspace root when
     safe (no existing `.git/`).
@@ -36,7 +36,7 @@ def _workspace_root(plot_root: Path) -> Path:
 
 
 def test_create_project_does_not_auto_init_git(tmp_path: Path) -> None:
-    """D-2026-06-11-D: Plot never silently runs `git init`. Creating a
+    """D-2026-06-11-D: Novel never silently runs `git init`. Creating a
     project just resolves the data root; no `.git/` appears anywhere."""
     plot_root = resolve_plot_root(str(tmp_path))
     create_project(plot_root, "proj-a", "A")
@@ -137,7 +137,7 @@ def test_tag_after_consent_lands_in_workspace_repo(tmp_path: Path) -> None:
 
 def test_plot_does_not_touch_existing_user_git(tmp_path: Path) -> None:
     """When the workspace already is a git repo with the user's identity,
-    Plot must reuse it and not overwrite `user.name` / `user.email` /
+    Novel must reuse it and not overwrite `user.name` / `user.email` /
     `.gitignore` / `.gitattributes`."""
     from starlette.testclient import TestClient
 
@@ -191,8 +191,8 @@ def test_plot_does_not_touch_existing_user_git(tmp_path: Path) -> None:
 
 
 def test_plot_commit_author_is_plot_even_on_users_repo(tmp_path: Path) -> None:
-    """Plot commits carry their own author identity inline, so the user can
-    still grep `git log --author Plot` even when the repo's local config
+    """Novel commits carry their own author identity inline, so the user can
+    still grep `git log --author Novel` even when the repo's local config
     points at the user."""
     from starlette.testclient import TestClient
 
@@ -224,12 +224,12 @@ def test_plot_commit_author_is_plot_even_on_users_repo(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
     ).stdout.strip()
-    assert log == "Plot plot@noory-ai.local"
+    assert log == "Novel plot@noory-ai.local"
 
 
 def test_tag_only_stages_plot_data_paths(tmp_path: Path) -> None:
-    """Plot's tag commits must stage only `.noory/plot/`. A user file
-    edited outside that path stays uncommitted across a Plot tag."""
+    """Novel's tag commits must stage only `.noory/plot/`. A user file
+    edited outside that path stays uncommitted across a Novel tag."""
     from starlette.testclient import TestClient
 
     from mashbill.broadcast import BroadcastHub
@@ -248,7 +248,7 @@ def test_tag_only_stages_plot_data_paths(tmp_path: Path) -> None:
         params={"project_path": str(tmp_path)},
         json={"name": "session-1"},
     )
-    # `user_notes.md` is still untracked after the Plot tag.
+    # `user_notes.md` is still untracked after the Novel tag.
     status = subprocess.run(
         ["git", "status", "--porcelain", "user_notes.md"],
         cwd=tmp_path,
@@ -261,7 +261,7 @@ def test_tag_only_stages_plot_data_paths(tmp_path: Path) -> None:
 
 def test_legacy_dotnoory_plot_git_migrates_up_to_workspace(tmp_path: Path) -> None:
     """A workspace last opened under the v0.59.x design has `.noory/plot/.git/`.
-    On first open under the new model, Plot moves it up to the workspace root
+    On first open under the new model, Novel moves it up to the workspace root
     — but ONLY if the workspace doesn't already have a `.git/` (the user could
     have their own repo there)."""
     # Seed the legacy layout: a real git repo at .noory/plot/.
@@ -299,7 +299,7 @@ def test_legacy_dotnoory_plot_git_migrates_up_to_workspace(tmp_path: Path) -> No
 def test_legacy_migration_skipped_when_workspace_already_has_git(tmp_path: Path) -> None:
     """If the user already has their own `.git/` at the workspace root, the
     legacy `.noory/plot/.git/` migration is a no-op — merging histories is the
-    user's call, not Plot's."""
+    user's call, not Novel's."""
     plot_root = resolve_plot_root(str(tmp_path))
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(["git", "init", "-q"], cwd=plot_root, check=True)

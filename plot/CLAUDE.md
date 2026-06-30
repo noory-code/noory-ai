@@ -1,4 +1,4 @@
-# CLAUDE.md — Plot operational guide
+# CLAUDE.md — Novel operational guide
 
 > **Audience:** Claude Code (or any assistant) working inside `plot/`.
 >
@@ -8,7 +8,7 @@
 > - `noory-ai/CLAUDE.md` — monorepo *rules* (500-line split, atomic
 >   commits, plugin change rule, AI-First Docs banned phrases, …).
 >   Theory + monorepo conventions.
-> - **This file** — Plot-local *practical triggers, checklists, and
+> - **This file** — Novel-local *practical triggers, checklists, and
 >   commands*. The other two files tell you *what* to value; this one
 >   tells you *exactly what to do, when*. When this file disagrees with
 >   the others, this file is wrong — fix this file, not the others.
@@ -16,7 +16,7 @@
 > **Pairs with (read in this order on session start):**
 >
 > ⚠ **정본 거처 (2026-06-28, `D-2026-06-28-B` — `D-19-J` 실현):** 두 제품(오픈 엔진·상용
-> 앱)이 공유하는 Plot 개념·동작 규칙의 단일 출처 = `repos-plot/docs/`(맵 `index.md` · 의미
+> 앱)이 공유하는 Novel 개념·동작 규칙의 단일 출처 = `repos-plot/docs/`(맵 `index.md` · 의미
 > `concepts/` · 동작 규칙 `specs/`). 아래 3·7 (DOMAIN/CONCEPTS)은 root를 가리키는 **포인터**
 > + 엔진 코드-near(코드 거처·스키마)만 남고, 4 (SPEC)는 **상세 구현·메커니즘**을 보유하되
 > *동작 규칙*은 root `specs/` 가 정본(충돌 시 root 우선).
@@ -24,7 +24,7 @@
 > 1. [`docs/VISION.md`](../../docs/VISION.md) — **the essence** + 3-phase cycle. Single source of truth above everything else. Read first, every session.
 > 2. [`docs/PRODUCT_SPEC.md`](../../plot/docs/PRODUCT_SPEC.md) — **product-level decisions** (platforms, business model, MVP scope, symbol system, canvas inventory, future / out-of-scope). Read second; it is the framing every other doc sits inside.
 > 3. [`docs/DOMAIN.md`](./docs/DOMAIN.md) — engine code-to-domain map (per-context code homes). Concept canon = root [`specs/domain.md`](../../docs/specs/domain.md).
-> 4. [`docs/SPEC.md`](./docs/SPEC.md) — detailed behaviour implementation / mechanism / edge cases. The *rules* (what Plot does per canvas) are canon at root [`specs/canvas-behavior.md`](../../docs/specs/canvas-behavior.md) — root wins on conflict.
+> 4. [`docs/SPEC.md`](./docs/SPEC.md) — detailed behaviour implementation / mechanism / edge cases. The *rules* (what Novel does per canvas) are canon at root [`specs/canvas-behavior.md`](../../docs/specs/canvas-behavior.md) — root wins on conflict.
 > 5. [`docs/DECISIONS.md`](./docs/DECISIONS.md) — *why* it does what it does, and what was tried and rejected (last 5 entries auto-surfaced by the SessionStart hook).
 > 6. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — what shape the code is in and how to fix it.
 > 7. [`docs/CONCEPTS.md`](./docs/CONCEPTS.md) — pointer to root concepts/. Kind / canvas *meaning* canon = root [`concepts/kinds.md`](../../docs/concepts/kinds.md); wire schema = root [`specs/kinds-fields.md`](../../docs/specs/kinds-fields.md).
@@ -51,10 +51,10 @@ behaviour question from memory or from code comments alone.**
 
 ### Gate -1 — Re-anchor to the essence (every session, before answering anything)
 
-The single rule that keeps every other rule honest. Plot's essence
+The single rule that keeps every other rule honest. Novel's essence
 (from [`docs/VISION.md`](../../docs/VISION.md)):
 
-> **Plot 은 본질을 모르는 사람이 본질을 찾고, 그걸 놓치지 않으면서, 그
+> **Novel 은 본질을 모르는 사람이 본질을 찾고, 그걸 놓치지 않으면서, 그
 > 본질 아래에서 서비스를 쉽게 기획·개발할 수 있게 AI 와 협업하는
 > 툴이다.**
 
@@ -351,7 +351,7 @@ ship.
 chrome-devtools MCP.** A Playwright pass that didn't reproduce the bug
 proves nothing about whether your fix works for the user.
 
-### Gate 4 — Before commit (Plot plugin change rule)
+### Gate 4 — Before commit (mashbill plugin change rule)
 
 Per `noory-ai/CLAUDE.md` plugin rule:
 
@@ -373,9 +373,9 @@ Per `noory-ai/CLAUDE.md` plugin rule:
 
 ## During-action rules
 
-### Translate the global principles into Plot triggers
+### Translate the global principles into Novel triggers
 
-| Global principle | Plot trigger |
+| Global principle | Novel trigger |
 |---|---|
 | `honesty: 추측 금지` | Don't guess what a function does. `grep` for it. Click the button in the browser. If you can't verify in this session, write "I don't know — verify before next change" in your reply. |
 | `behavior: 임시 통과 금지` | No CSS-only fixes for behaviour bugs. Find the component that owns the responsibility, fix the responsibility. (Today's hover bug is the canonical example: CSS tone-down was a bandaid; the real cause is the SketchCanvas god component — see ARCHITECTURE.md.) |
@@ -394,7 +394,7 @@ Per `noory-ai/CLAUDE.md` plugin rule:
 | `ux: Accessibility` | The ⚠ badge must hit ≥ 4.5:1 contrast against **every** card colour in the Foundation palette (cream / pastel-orange / pastel-yellow). Verify before changing the badge. |
 | `methodology: TDD` | Bug fix without a test = the bug will return. Write the regression test first (Red), make it pass (Green), then refactor. |
 
-### Plot-specific operational rules
+### Novel-specific operational rules
 
 1. **Code comments are not spec.** If you read a comment that says
    "X is read-only" or "X is auto-generated", you may *act on it*
@@ -431,7 +431,7 @@ Per `noory-ai/CLAUDE.md` plugin rule:
    never opt other wrappers in without a fresh `D-` entry that
    updates that test.
 7. **No silent automated change to user-visible state.** The canvas is a
-   co-drawing surface (Plot's PHILOSOPHY.md). The AI **may propose / draw**
+   co-drawing surface (Novel's PHILOSOPHY.md). The AI **may propose / draw**
    edges and entities — especially on **AI-maintained canvases** (the
    Entities canvas, [D-2026-06-17-I](./docs/DECISIONS.md), where AI surfaces
    entities **and their relationships**; edges are governed by definition,
@@ -516,7 +516,7 @@ cd plot && uv run ruff format mashbill/ tests/
 | **Decorating a node with paint-outside-box CSS** | `outline` + `outline-offset-2` + `ring-1` on the project anchor — clicks on the visible decoration passed through to the pane (see D-2026-05-08-G) | Use `border` (part of border-box, hit-tested). Inset `box-shadow` is OK; outset isn't. Visual extent and click target of an interactive node must coincide. |
 | **Adding any cursor / handle / pan override on top of RF defaults** | v0.13.3 → v0.13.5 stacked six rounds of cursor / handle interventions; each fix introduced or revealed the next round's bug, ending with a full reset in v0.13.6 (see D-2026-05-10-C) | Default to React Flow vendor CSS (`reactflow/dist/style.css`, `@reactflow/node-resizer/dist/style.css`). To deviate, open a fresh `D-YYYY-MM-DD-X` entry, get user approval, and add the rule to `styles.css` with an `!important` comment naming the decision id. The override stack itself is the regression engine — never grow it without an audit trail. |
 | **Bundling a cross-cutting visual change with a feature change in one commit** | v0.13.10 shipped `styles.css` cursor patch + auto-layout button move together. The visual fix turned out to address a latent RF v11 + Tailwind preflight bug that had existed since v0.13.0; the auto-layout feature commit became the cognitive scapegoat for ~6 cursor rounds (see D-2026-05-11-C). | Pre-commit gate (`pre_commit_gate.py::cross_cutting_bundle_check`) blocks. Split into two atomic commits: visual fix first (own D-id), feature second. The static guard `viewer/tests/styles-cursor-baseline.test.tsx` further locks `styles.css` to zero cursor rules. |
-| **Hardcoding user-facing UI text in a viewer component** | Plot is a global service (user direction 2026-05-10: *"이건 글로벌 서비스가 될거거든요"*). A hardcoded English or Korean string in a `.tsx` file bypasses the i18n resource bundle and creates per-component sprawl that resists later migration. | Route every user-facing string through `useTranslation()` + `t("namespace.key")`, with the value added to BOTH `viewer/src/i18n/locales/en.json` (primary) and `viewer/src/i18n/locales/ko.json` (Korean). The `i18n-keys-parity.test.tsx` static guard fails the build if locales drift. See D-2026-05-11-D. |
+| **Hardcoding user-facing UI text in a viewer component** | Novel is a global service (user direction 2026-05-10: *"이건 글로벌 서비스가 될거거든요"*). A hardcoded English or Korean string in a `.tsx` file bypasses the i18n resource bundle and creates per-component sprawl that resists later migration. | Route every user-facing string through `useTranslation()` + `t("namespace.key")`, with the value added to BOTH `viewer/src/i18n/locales/en.json` (primary) and `viewer/src/i18n/locales/ko.json` (Korean). The `i18n-keys-parity.test.tsx` static guard fails the build if locales drift. See D-2026-05-11-D. |
 | **Treating raw JSON as a domain entity (no `fromJson` boundary)** | Pre-v0.15 god `SketchNode` interface: UI code read `.what_we_do` directly off the wire shape, no class, no invariant check, no normalisation. The v0.15 reset (D-2026-05-12-B) retired this by introducing per-kind classes in `viewer/src/domain/{Kind}.ts` with `fromJson` / `toJson` / invariant boundaries (15 at the time; the palette is expanding per D-2026-06-17-D/F/I — `feature` / `note` / `entity`). Adding **any new kind** without the class is the new shape of the old mistake. | Every new kind lands as a domain class via [`plot-entity-template`](./skills/plot-entity-template/SKILL.md) (14-step walk). The `fromJson` method is the **JSON↔domain boundary** — invariants throw `DomainParseError` there, not in UI validation. Three static guards enforce no regression: `no-god-import.test.tsx` (Phase C, types.ts re-export only + per-kind file exists + `{Kind}Json` exported + `registerKindParser` called), `entity-roundtrip.test.tsx` (Phase D, `fromJson` ∘ `toJson` is identity for every kind), and server-side `test_schema_parity.py` (Pydantic ↔ TS interface drift). See D-2026-05-13-D / E. |
 
 ---

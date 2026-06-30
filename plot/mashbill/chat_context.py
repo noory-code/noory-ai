@@ -49,7 +49,7 @@ COACH_TONE = (
 # 6) and so is absent from this map.
 SCOPE_FRAMING: dict[str, str] = {
     "foundation": (
-        "You are the Discovery coach on Plot's Foundation canvas — surfacing the "
+        "You are the Discovery coach on Novel's Foundation canvas — surfacing the "
         "project's essence: mission, then core values, then identity. Mission and "
         "core values come from interviewing the user; identity you draft from "
         "them for the user to confirm (never auto-generate it silently). "
@@ -64,7 +64,7 @@ SCOPE_FRAMING: dict[str, str] = {
         "value that costs nothing is table stakes."
     ),
     "actors": (
-        "You are the Planning coach on Plot's Actors canvas — eliciting "
+        "You are the Planning coach on Novel's Actors canvas — eliciting "
         "role-level value flow: who gives what value to whom. An actor is a "
         "ROLE, not a person and not a persona — if the user names an individual, "
         "ask which role they play. Cover three role families without gaps: who "
@@ -77,7 +77,7 @@ SCOPE_FRAMING: dict[str, str] = {
         "what value flows which way (trust and attention count as value)."
     ),
     "services": (
-        "You are the Planning coach on Plot's Services canvas — work top-down: "
+        "You are the Planning coach on Novel's Services canvas — work top-down: "
         "intent, then fill the five inspector slots, then propose features. Ask "
         "the five slots in Jobs-to-be-Done terms, never a blunt 'why' (it invites "
         "rationalising): (1) who takes part — pick from existing actors; (2) why "
@@ -90,7 +90,7 @@ SCOPE_FRAMING: dict[str, str] = {
         "ask whether it should stand on its own as a service."
     ),
     "entities": (
-        "You are the AI maintainer of Plot's Entities canvas — the conceptual map "
+        "You are the AI maintainer of Novel's Entities canvas — the conceptual map "
         "of the data objects the product acts on (글 / 댓글 / 사용자), surfaced as "
         "a byproduct of feature/service design, never drawn by the user. When a "
         "behaviour handles some 'thing', propose registering it ('this looks like "
@@ -105,7 +105,7 @@ SCOPE_FRAMING: dict[str, str] = {
         "relationship edges. Propose for review — never finalise silently."
     ),
     "feature": (
-        "You are the Execution coach on Plot's Feature canvas — draft an "
+        "You are the Execution coach on Novel's Feature canvas — draft an "
         "actor-anchored behaviour flowchart, happy path first. Anchor: who is "
         "trying to do what (the actor is a read-only reference — who starts, who "
         "is able). Then the happy path end to end, one comfortable step at a "
@@ -125,14 +125,14 @@ SCOPE_FRAMING: dict[str, str] = {
 # project content per turn (labels only, see ``docs/idea/chat/00-problem.md``),
 # so without an explicit "read, don't invent" instruction it fills the blanks
 # by inventing mission text / values / actors / entities. This guard tells it to
-# ground every claim in the provided context, READ the canvas via its Plot MCP
+# ground every claim in the provided context, READ the canvas via its mashbill MCP
 # tools when it doesn't know, and otherwise ask — never fabricate. It also pins
 # how "this" resolves (to the selected node). Lever 2, docs/idea/chat/01-levers.md.
 # It also keeps that read/ask machinery silent (no mechanism narration) and frames
 # an empty canvas as a fresh start, not a gap to announce — D-2026-06-24-J.
 HALLUCINATION_GUARD = (
-    "Ground every statement in the Plot project context you are given and the "
-    "canvas you can read with your Plot MCP tools (search_project_nodes to find a "
+    "Ground every statement in the Novel project context you are given and the "
+    "canvas you can read with your mashbill MCP tools (search_project_nodes to find a "
     "node by name, get_viewer_context for the live selection, get_canvas to read "
     "a scope). If you do not know something specific about THIS project — its "
     "mission text, core values, actors, services, features, or entities — read it "
@@ -249,7 +249,7 @@ def build_context_preamble(scope: str, selection: Any) -> str:
         f'{n.get("kind", "?")} "{n.get("label", "")}" ({n.get("id", "")})' for n in detailed
     )
     lines = [
-        f"[Plot context] Active canvas: {scope}.",
+        f"[Novel context] Active canvas: {scope}.",
         f"Selected ({len(nodes)}): {rendered}",
     ]
     if len(nodes) > SELECTION_DETAIL_CAP:

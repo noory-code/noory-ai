@@ -1,4 +1,4 @@
-# Plot — NEXT SESSION queue
+# Novel — NEXT SESSION queue
 
 > **Surfaced automatically by the SessionStart hook
 > (`plot/hooks/session_start.py`) at every new session start.**
@@ -58,7 +58,7 @@
 > **Trigger:** user says **"바나스"** / **"BANAS"** / **"시뮬"** /
 > **"마인드맵 정렬"** / **"그룹 노드"** as the first / near-first message.
 >
-> 사용자가 **real BANAS blueprint**를 Plot에 채우며 깨지는 것을 고친다. 전체 상태 +
+> 사용자가 **real BANAS blueprint**를 Novel에 채우며 깨지는 것을 고친다. 전체 상태 +
 > 설계 = **[`BANAS_SIM_BACKLOG.md`](./BANAS_SIM_BACKLOG.md)** (먼저 읽기).
 >
 > **다음 할 두 작업 (백로그에 상세):**
@@ -154,7 +154,7 @@ alternatives.
 > - Actor 간 관계 edge (Hero ↔ Fan: 양방향 지지).
 > - Bana = Hero + Fan 의 union 이라는 의미를 시각적으로 표현 (parent_id 또는 edge 로).
 >
-> **Plot 의 본질 기준 — 공간 기반만 다루기. 시간 / 단계 / 마일스톤 류는 안 들임.**
+> **Novel 의 본질 기준 — 공간 기반만 다루기. 시간 / 단계 / 마일스톤 류는 안 들임.**
 > **Approach:** plan-mode 짧게 + AskUserQuestion 으로 lock (시각자료 활용).
 
 ---
@@ -243,7 +243,7 @@ The remaining big-scope work is filed in
   need `DECISIONS.md` answers before any code.
 - **B) Work-item layer (userstory + task)** — spec-mandated; hard dependency on A;
   4 Major findings.
-- **C) Plot repository split** — product decision the user owns.
+- **C) Novel repository split** — product decision the user owns.
 - **D) Forest-anchored AI context (graph-RAG-lite + verification loop)** — Phase 1
   pinned by `D-2026-06-17-L`; no hard dependency on A/B/C.
 

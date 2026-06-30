@@ -7,7 +7,7 @@ service). The old per-node publish (``node_publish.py``) is retired.
 
 Slugs are minted into a per-project registry ``_slugs.json`` (P-4 = explicit
 slug field): keyed on node id, so a slug is **stable across label changes** and
-decoupled from the label — the connective tissue of the Plot↔Solera pipeline.
+decoupled from the label — the connective tissue of the mashbill↔Solera pipeline.
 """
 
 from __future__ import annotations

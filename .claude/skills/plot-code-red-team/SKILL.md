@@ -1,6 +1,6 @@
 ---
 name: plot-code-red-team
-description: Adversarial code review for a Plot branch / commit set / PR. Reads code with red-team eyes — bad-faith input, hidden coupling, rotted comments, stale spec, principle violations against the CLAUDE.md trifecta + Plot's structural guards. Triggers on review / 리뷰 / 코드리뷰 / "review the code" / "check this branch" / "I just shipped" / "before I push" plus a Plot context. Use after code is written (not before — use plot-design-red-team for pre-implementation reviews).
+description: Adversarial code review for a Novel branch / commit set / PR. Reads code with red-team eyes — bad-faith input, hidden coupling, rotted comments, stale spec, principle violations against the CLAUDE.md trifecta + Novel's structural guards. Triggers on review / 리뷰 / 코드리뷰 / "review the code" / "check this branch" / "I just shipped" / "before I push" plus a Novel context. Use after code is written (not before — use plot-design-red-team for pre-implementation reviews).
 metadata:
   version: "1.0.0"
   category: review
@@ -13,7 +13,7 @@ metadata:
 # plot-code-red-team — adversarial code review
 
 > **Why this skill exists.** Reviews that nod along miss the things
-> Plot has been bitten by: the god `SketchNode` (1491 LOC, 8 months
+> Novel has been bitten by: the god `SketchNode` (1491 LOC, 8 months
 > living before v0.15 caught it); cursor overrides stacking through
 > six rounds because each fix was reviewed in isolation; the
 > `outline` / `ring` decoration that painted outside the click target
@@ -96,7 +96,7 @@ breaks the code.
 
 ### Attack 3 — Code-as-spec violations
 
-Plot's [Gate 1](../../plot/CLAUDE.md) is non-negotiable: **comments are
+Novel's [Gate 1](../../plot/CLAUDE.md) is non-negotiable: **comments are
 not spec.** For every user-visible behaviour the diff changes,
 verify there is a SPEC.md line or a `D-YYYY-MM-DD-X` entry in
 DECISIONS.md that approved it.
@@ -255,7 +255,7 @@ After the review lands, watch what the user does:
 - User merges as-is and the change works → next review is calibrated.
 - User asks for fixes you flagged → next review trusts your bar.
 - User pushes back on a finding ("that's not what this means") →
-  update your model. The user knows Plot better than the skill
+  update your model. The user knows Novel better than the skill
   does; bring back the receipts before insisting.
 
 The skill stays useful as long as findings convert to changes. If

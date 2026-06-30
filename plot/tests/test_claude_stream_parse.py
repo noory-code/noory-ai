@@ -53,7 +53,7 @@ def test_full_assistant_message_alone_yields_no_text_event() -> None:
 
 # --- init `model` reporting (D-2026-06-21-Z) -------------------------------
 # Claude Code's first stream-json line is a ``system`` / ``init`` frame that
-# names the model the CLI actually loaded. Plot surfaces it so the viewer can
+# names the model the CLI actually loaded. Novel surfaces it so the viewer can
 # show the real default (codex / gemini don't report theirs).
 
 

@@ -1,6 +1,6 @@
 ---
 name: plot-frontend-bug-diagnosis
-description: Diagnose Plot canvas UI bugs (cursor flicker, hover wrong, hit-test wrong, click not firing, button not visible) by running Playwright DOM probes BEFORE proposing any code change. Triggers on cursor / hover / pointer / hit-test / flicker / 깜빡 / button doesn't / 안 눌려 / click 안 됨 / 호버 / 손가락 / grab / crosshair keywords plus a Plot canvas context.
+description: Diagnose Novel canvas UI bugs (cursor flicker, hover wrong, hit-test wrong, click not firing, button not visible) by running Playwright DOM probes BEFORE proposing any code change. Triggers on cursor / hover / pointer / hit-test / flicker / 깜빡 / button doesn't / 안 눌려 / click 안 됨 / 호버 / 손가락 / grab / crosshair keywords plus a Novel canvas context.
 metadata:
   version: "1.0.0"
   category: dev-process
@@ -12,7 +12,7 @@ metadata:
 
 # plot-frontend-bug-diagnosis — probe before fix
 
-> **Why this skill exists.** Plot v0.13.3 → v0.13.10 burned ~6 cursor
+> **Why this skill exists.** Novel v0.13.3 → v0.13.10 burned ~6 cursor
 > rounds of round-trip with the user because the assistant theorised
 > from CSS files first, fixed based on the theory, shipped, the user
 > reported the same bug. Each round was 5-10 minutes of human time
@@ -25,7 +25,7 @@ metadata:
 
 ## Trigger
 
-Activate when the user reports a Plot canvas UI behaviour that
+Activate when the user reports a Novel canvas UI behaviour that
 disagrees with [`SPEC.md`](../../plot/docs/SPEC.md) or
 [`CURSOR.md`](../../plot/docs/CURSOR.md):
 
@@ -219,7 +219,7 @@ and add a `D-YYYY-MM-DD-X` entry in
 
 ---
 
-## Quick reference — common Plot cursor bug patterns
+## Quick reference — common Novel cursor bug patterns
 
 | Symptom | Likely source (probe first to confirm) |
 |---|---|

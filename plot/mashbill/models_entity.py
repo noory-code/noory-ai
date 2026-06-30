@@ -5,10 +5,10 @@ The ``entity`` kind is the product data object the services act on (글 /
 *what* is acted on). It lives on the project-level **Entities** canvas, an
 AI-maintained conceptual map (NOT a physical ERD).
 
-**Altitude guard (D-2026-06-17-I):** Plot holds only ``label`` (= the entity
+**Altitude guard (D-2026-06-17-I):** Novel holds only ``label`` (= the entity
 name) + a one-line ``summary`` ("무엇을 담나?"). NO normalisation / FK /
 cardinality / field types — those are the external AI agent's job, below
-Plot's altitude. Relationships between entities are **edges** (B1 /
+Novel's altitude. Relationships between entities are **edges** (B1 /
 D-2026-06-17-J), not fields on the node.
 """
 

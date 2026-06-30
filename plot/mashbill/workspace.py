@@ -1,4 +1,4 @@
-"""Project path → Plot root resolution + HTTP port helpers.
+"""Project path → Novel root resolution + HTTP port helpers.
 
 Pure module: no I/O at import time, no asyncio, no Starlette. Every other
 module in the package depends on ``resolve_plot_root``; isolating it keeps
@@ -49,7 +49,7 @@ MAX_TREE_CHILDREN = 200
 
 
 def _existing_data_root(directory: Path) -> Path | None:
-    """The directory's Plot data root, if it has one: ``.noory/plot`` (R9),
+    """The directory's Novel data root, if it has one: ``.noory/plot`` (R9),
     else the legacy ``.plot`` (read-only peek — migration happens when the
     workspace is actually opened via ``resolve_plot_root``)."""
     noory = directory / ".noory" / "plot"
@@ -67,7 +67,7 @@ def _should_prune(name: str) -> bool:
 
 
 def enumerate_projects(plot_root: Path) -> list[ProjectDoc]:
-    """Read the valid project(s) under a Plot data root, newest first.
+    """Read the valid project(s) under a Novel data root, newest first.
 
     S2 (D-2026-06-21-AB): the canonical layout is **flat** — one project per
     root with ``project.json`` directly under it, so this returns a single-item
@@ -272,12 +272,12 @@ def flatten_nested_project(plot_root: Path) -> bool:
 
 def workspace_root_from_plot_root(plot_root: Path) -> Path:
     """Recover the workspace root (= the user's opened folder) from the
-    resolved Plot data root. ``plot_root`` is ``<workspace>/.noory/plot``;
+    resolved Novel data root. ``plot_root`` is ``<workspace>/.noory/plot``;
     the user's workspace is two levels up.
 
     Used by endpoints that need to talk to git (which lives at the
     workspace root after D-2026-06-11-C/D), while still receiving the
-    Plot data root from ``_require_plot_root``.
+    Novel data root from ``_require_plot_root``.
     """
     return plot_root.parent.parent
 
@@ -288,7 +288,7 @@ def migrate_legacy_git_to_workspace(workspace_root: Path) -> bool:
 
     Safe = the workspace doesn't already have its own ``.git/``. If the
     user has their own repo at the workspace root, leave both alone:
-    merging histories is the user's call, not Plot's. Returns True iff
+    merging histories is the user's call, not Novel's. Returns True iff
     the repo moved.
     """
     legacy_git = workspace_root / ".noory" / "plot" / ".git"

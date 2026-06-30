@@ -1,18 +1,18 @@
 """Per-workspace git repo for blueprint-publish tags + at-tag reads.
 
 D-2026-06-11-C/D — the workspace is the user's opened folder, and that folder
-IS the git repo. Plot never silently runs ``git init``; the first tag/publish
+IS the git repo. Novel never silently runs ``git init``; the first tag/publish
 on a workspace without ``.git/`` raises :class:`GitNotInitializedError` and
 the endpoint surfaces a structured 409 the viewer turns into a modal. Only an
 explicit ``init_workspace_repo`` call (driven by the user's Yes) actually
 creates the repo.
 
-Identity for Plot-authored commits is passed **inline** (``git -c
-user.name=Plot -c user.email=plot@noory-ai.local …``) so the user's
-repo-level config stays untouched even when Plot initialised the repo
+Identity for Novel-authored commits is passed **inline** (``git -c
+user.name=Novel -c user.email=plot@noory-ai.local …``) so the user's
+repo-level config stays untouched even when Novel initialised the repo
 itself. Staging is **path-scoped to** ``.noory/plot/`` so the user's
-working-tree edits outside Plot's data root are never folded into a
-Plot commit.
+working-tree edits outside Novel's data root are never folded into a
+Novel commit.
 
 Implementation notes
 --------------------
@@ -43,16 +43,16 @@ class GitNotInitializedError(Exception):
     """
 
 
-# Plot-authored commits carry their identity inline so the user's repo-level
-# ``user.name`` / ``user.email`` stay untouched, even on a workspace Plot
+# Novel-authored commits carry their identity inline so the user's repo-level
+# ``user.name`` / ``user.email`` stay untouched, even on a workspace Novel
 # initialised itself.
 _PLOT_IDENTITY = (
-    "-c", "user.name=Plot",
+    "-c", "user.name=Novel",
     "-c", "user.email=plot@noory-ai.local",
 )
 
-# Plot's tag/publish commits stage ONLY the Plot data root. The user's
-# working-tree edits outside this path are never folded into a Plot commit.
+# Novel's tag/publish commits stage ONLY the Novel data root. The user's
+# working-tree edits outside this path are never folded into a Novel commit.
 _PLOT_PATHSPEC = ".noory/plot"
 
 
@@ -81,7 +81,7 @@ def _git(*args: str, cwd: Path, check: bool = True) -> _RunResult:
 
 
 def _git_as_plot(*args: str, cwd: Path) -> _RunResult:
-    """Run a git subcommand with Plot's inline identity. Used for commit/tag."""
+    """Run a git subcommand with Novel's inline identity. Used for commit/tag."""
     return _git(*_PLOT_IDENTITY, *args, cwd=cwd)
 
 
@@ -111,7 +111,7 @@ def init_workspace_repo(workspace_root: Path) -> bool:
     writes ``.gitignore`` / ``.gitattributes`` / repo-level ``user.name`` /
     ``user.email`` (the user's territory).
 
-    Plot calls this only in response to an explicit user "Yes" on the
+    Novel calls this only in response to an explicit user "Yes" on the
     "Initialize git repo at <workspace>?" modal (D-2026-06-11-D).
     """
     if is_workspace_repo(workspace_root):
@@ -139,11 +139,11 @@ def _tag_exists(workspace_root: Path, name: str) -> bool:
 
 
 def tag_snapshot(workspace_root: Path, name: str, message: str | None = None) -> dict[str, Any]:
-    """Snapshot the Plot data root under an annotated git tag.
+    """Snapshot the Novel data root under an annotated git tag.
 
     Flow:
-      1. ``git add -A -- .noory/plot/`` (path-scoped: only Plot's data)
-      2. ``git -c user.name=Plot … commit --allow-empty -m <message>``
+      1. ``git add -A -- .noory/plot/`` (path-scoped: only Novel's data)
+      2. ``git -c user.name=Novel … commit --allow-empty -m <message>``
          (inline identity; ``--allow-empty`` covers end-of-session tags on
          an otherwise untouched project)
       3. ``git tag -a <name> -m <message>``

@@ -1,4 +1,4 @@
-"""Folder-based project store for Plot — facade (D-2026-06-10-D).
+"""Folder-based project store for Novel — facade (D-2026-06-10-D).
 
 The 1413-line god-module was split along its own section headers into
 focused modules; this file re-exports every name (public AND the private

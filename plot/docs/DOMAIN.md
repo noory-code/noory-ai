@@ -1,4 +1,4 @@
-# Plot 엔진 — 코드-도메인 맵 (구현 거처)
+# mashbill 엔진 — 코드-도메인 맵 (구현 거처)
 
 > **개념 정본은 root** — [`docs/specs/domain.md`](../../../docs/specs/domain.md) (`D-2026-06-28-B`).
 > 바운디드 컨텍스트의 *의미·경계·의존 방향·entity vs value-object·공유 용어*는 거기 있다(오픈

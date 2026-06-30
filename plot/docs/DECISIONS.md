@@ -1,6 +1,6 @@
-# DECISIONS — Plot UX / behaviour log
+# DECISIONS — Novel UX / behaviour log
 
-> Every decision that shapes how Plot **looks or behaves** belongs here.
+> Every decision that shapes how Novel **looks or behaves** belongs here.
 > If a UI / behaviour change is not represented by an entry below (or
 > by an explicit line in [`SPEC.md`](./SPEC.md)), it was not properly
 > agreed and should be reverted.
@@ -58,7 +58,7 @@
 ### D-2026-06-27-B — in-app coach ADDS a node via a clobber-safe `create_node` (one SSOT for node creation)
 
 - **What:** New MCP tool `create_node(project_path, project_id, canvas_kind, kind, fields?, service_id?)` — a clobber-safe single-node *append* mirroring `update_node`: validate `kind` is creatable on `canvas_kind`, mint the id server-side, auto-position server-side, apply only the kind's writable content fields (reuse `writable_node_fields`), `read_canvas → append one node → re-validate the whole CanvasDoc → atomic write_canvas`, return `{node, rejected_fields}`. It **generalizes** the former `create_master` (`masters.py`) into one creation SSOT: `create_master` is now a thin reference-flow wrapper that resolves the master's home canvas and calls `create_node` (the pick-or-create endpoint, D-2026-06-19-C, is behaviourally unchanged). The `WRITE_PLAYBOOK` gains a create branch: for something genuinely **new** (not an existing node), the coach reads/searches first, then **proposes** ("새로 ~를 만들까요?") and only on an explicit yes calls `create_node`, then confirms in one line — adding a node follows the same consent gate as filling (never create before the yes).
-- **Why:** Empirically reproduced (2026-06-27, the real frozen-binary coach driven against a copy of a live project): **filling an existing node works reliably**, but **adding** a new node had *no* dedicated tool, so the coach fell back to `update_canvas` — rewriting the WHOLE canvas to slip one node in, with an **LLM-guessed position**. That is the clobber-unsafe path `D-2026-06-26-D` explicitly rejected (drops a concurrent edit / risks the model dropping fields on a large JSON round-trip, on the load-bearing path). A safe single-node append closes it. This is the missing half of Plot's core promise (the AI fills the canvas through discussion).
+- **Why:** Empirically reproduced (2026-06-27, the real frozen-binary coach driven against a copy of a live project): **filling an existing node works reliably**, but **adding** a new node had *no* dedicated tool, so the coach fell back to `update_canvas` — rewriting the WHOLE canvas to slip one node in, with an **LLM-guessed position**. That is the clobber-unsafe path `D-2026-06-26-D` explicitly rejected (drops a concurrent edit / risks the model dropping fields on a large JSON round-trip, on the load-bearing path). A safe single-node append closes it. This is the missing half of Novel's core promise (the AI fills the canvas through discussion).
 - **Accepted kinds per canvas** (verified against `_ALLOWED_KINDS_BY_CANVAS` + each validator): foundation → mission / core_value / identity; actors → actor; services → category / service / feature (the feature *node* = drill anchor; the detail canvas is a separate orchestration); entities → entity; feature → step / decision / rule / note / actor_ref. **Rejected everywhere:** `project` (the synthetic anchor lives in `ProjectDoc.anchors`, not as a node). **Rejected on the feature canvas:** `feature` (its validator requires the root feature to already exist — bootstrap, not append). The tool adds a **bare** node only; containment/edges are user/coach-drawn separately (parent_id is gone since v0.26.0 / D-2026-05-25-A — containment is directed-edge-only), never auto-wired silently. A cross-canvas master (e.g. a new actor referenced from a service) uses the existing reference pick-or-create flow, not `create_node`.
 - **Alternatives:** (a) keep adding via `update_canvas` with better playbook guidance — rejected: clobber-unsafe on the load-bearing path (the reproduced failure mode). (b) a singleton guard that errors when a mission/identity already exists — rejected as **backwards**: the schema enforces only a *minimum* of one (`_foundation_canvas_rules` checks `< 1`, never `> 1`), and `D-2026-06-27-A`'s playbook already routes a unique kind to *find-and-update*, never re-create; `create_node` does not second-guess create-vs-update — the playbook owns it. (c) 409-conflict / file-lock / count-gate concurrency machinery — rejected as out of scope: `create_node` inherits `update_node`'s last-write-wins semantics, which the user already accepted at human pace (`D-2026-06-26-D`); only the limit is named, no machinery added.
 - **Known limits (named, inherited):** last-write-wins (same as `update_node`) — a concurrent edit to another node on the same canvas, or two concurrent same-kind creates, may collide/be lost; acceptable at human pace. Undo-stack clear (same as `D-2026-06-26-D`) — a coach create lands via the file watcher, treated as an external change, so it clears the undo stack (recover via git / re-edit).
@@ -80,18 +80,18 @@
 - **Approval:** User direction, 2026-06-26/27 ("대화 내용을 개선해 나아가야 합니다", "미션을 못 넣잖아요", "기억 문제도 있고").
 - **Spec impact:** `SPEC.md` §R7 chat — a fresh session re-feeds the saved transcript; the coach never claims a save it didn't make, and never narrates files / refresh. Guards: `tests/test_chat_store.py` (`read_recent_transcript`), `tests/test_chat_system_prompt.py`.
 
-### D-2026-06-26-E — in-app coach attaches its OWN Plot MCP server (`--mcp-config` + `--strict-mcp-config`)
+### D-2026-06-26-E — in-app coach attaches its OWN mashbill MCP server (`--mcp-config` + `--strict-mcp-config`)
 
-- **What:** The in-app chat provider now spawns `claude` with `--mcp-config <file>` naming THIS engine's own Plot stdio server (built via the existing frozen/dev resolution, now exposed as `mcp_registration.mashbill_config`) plus `--strict-mcp-config`, so claude uses ONLY that server and ignores every other MCP source. Previously the coach inherited the `plot` server from the user's global `~/.claude.json` registration.
-- **Why:** First real dogfood of `D-2026-06-26-D` (2026-06-26): the coach reported it had no canvas tools at all. Root cause — the global `plot` registration pointed at a **deleted older app build**, so the spawned coach loaded a missing binary and silently got zero Plot tools. That is the literal "in-app chat can't write to the canvas" failure: even with `update_node` shipped, the coach could never call it because the tool was never attached. Binding the coach to the *running build's own* server removes the dependency on a drift-prone global pointer; `--strict-mcp-config` also means the in-app coach no longer sees the user's unrelated servers (Gmail / Notion / Supabase …), tightening the workspace grounding from `D-2026-06-21-I`.
+- **What:** The in-app chat provider now spawns `claude` with `--mcp-config <file>` naming THIS engine's own Novel stdio server (built via the existing frozen/dev resolution, now exposed as `mcp_registration.mashbill_config`) plus `--strict-mcp-config`, so claude uses ONLY that server and ignores every other MCP source. Previously the coach inherited the `plot` server from the user's global `~/.claude.json` registration.
+- **Why:** First real dogfood of `D-2026-06-26-D` (2026-06-26): the coach reported it had no canvas tools at all. Root cause — the global `plot` registration pointed at a **deleted older app build**, so the spawned coach loaded a missing binary and silently got zero Novel tools. That is the literal "in-app chat can't write to the canvas" failure: even with `update_node` shipped, the coach could never call it because the tool was never attached. Binding the coach to the *running build's own* server removes the dependency on a drift-prone global pointer; `--strict-mcp-config` also means the in-app coach no longer sees the user's unrelated servers (Gmail / Notion / Supabase …), tightening the workspace grounding from `D-2026-06-21-I`.
 - **Alternatives:** (a) keep relying on the global registration + re-register on app launch — rejected: still drifts, and re-registration silently rewrites the user's global config (the safety layer also blocks an agent from touching it). (b) inline JSON for `--mcp-config` — deferred: a content-addressed temp file under the OS temp dir (cross-platform, idempotent) is unambiguously supported.
 - **Approval:** Accepted by user, 2026-06-26 (approach delegated: "문제 해결을 어떻게 해야 할지는 너의 몫").
-- **Spec impact:** `SPEC.md` §R7 chat (MCP wiring) — the in-app coach carries the running build's Plot tools via `--mcp-config` + `--strict-mcp-config`, not the global registration. Guard: `tests/test_chat_system_prompt.py::test_claude_attaches_own_mashbill_strictly`.
+- **Spec impact:** `SPEC.md` §R7 chat (MCP wiring) — the in-app coach carries the running build's Novel tools via `--mcp-config` + `--strict-mcp-config`, not the global registration. Guard: `tests/test_chat_system_prompt.py::test_claude_attaches_own_mashbill_strictly`.
 
 ### D-2026-06-26-D — in-app coach writes a confirmed value into the selected node (`update_node`)
 
 - **What:** Closes the load-bearing gap that the in-app chat coach could only *talk* — it proposed a mission / value / step and told the user to paste it, because nothing let it write. Three parts: (1) new MCP tool **`update_node`** (`project_path, project_id, canvas_kind, node_id, fields, service_id?`) — a clobber-safe single-node content patch: read canvas → merge only *writable content* fields (`label` + the kind's typed text; visual / structural / server fields are rejected, reported under `rejected_fields`) → re-validate against the node's kind → write the whole canvas atomically via `write_canvas`, leaving every other node + edge untouched. An absent node id (including the synthetic project anchor, which is not a node) → error. (2) The per-turn chat context now injects a **`[Write target]`** block (the `project_path` / `project_id` / `canvas_kind` / `service_id` the agent must pass — the in-app agent's MCP server is stateless and never otherwise learns the open project) plus, for every selected node, its **writable field names** (so a *blank* node — the exact "mission won't fill" case — still tells the coach what to write). (3) New **`WRITE_PLAYBOOK`** in the canvas-scope system prompt: on an explicit user yes, save the value into the selected node via `update_node`, then confirm in one line what was saved; never write before the yes, and ask when the target is empty / ambiguous.
-- **Why:** User dogfood (2026-06-26): confirming a mission didn't fill the mission node — the coach said "I can't write, paste it yourself", breaking Plot's core promise (the AI fills the canvas). Root cause was two independent gaps: the playbook never told the coach to write (Gap A), and even if it tried, every write tool needs `project_path` / `project_id` which were never in its context and which the sandboxed agent had no allowed way to discover (Gap B — the write path was architecturally unreachable). Reload already worked (file watcher → WS broadcast → viewer refetch), and Foundation typed text has been a single JSON SSOT since `D-2026-05-16-A`, so only A + B needed closing. Design red-teamed before code; that surfaced the empty-node field-schema need, the structural-field write-guard, the anchor-is-not-a-node guard, and the confirmation-gate risk.
+- **Why:** User dogfood (2026-06-26): confirming a mission didn't fill the mission node — the coach said "I can't write, paste it yourself", breaking Novel's core promise (the AI fills the canvas). Root cause was two independent gaps: the playbook never told the coach to write (Gap A), and even if it tried, every write tool needs `project_path` / `project_id` which were never in its context and which the sandboxed agent had no allowed way to discover (Gap B — the write path was architecturally unreachable). Reload already worked (file watcher → WS broadcast → viewer refetch), and Foundation typed text has been a single JSON SSOT since `D-2026-05-16-A`, so only A + B needed closing. Design red-teamed before code; that surfaced the empty-node field-schema need, the structural-field write-guard, the anchor-is-not-a-node guard, and the confirmation-gate risk.
 - **Relation to `D-2026-06-16-P` ("everything through discussion, never silent"):** This does **not** weaken P. P bans (a) a blank form and (b) silent auto-generation the AI commits *without* the user. Writing *after* an explicit confirmation is the *completion* of build-through-discussion, with the human as the confirmer — exactly what P mandates. The guardrail is unchanged in force, sharpened in wording: never write *without* a confirmation. Rule 7 in `CLAUDE.md` ("no silent automated change to user-visible state") gets the same caveat.
 - **Alternatives:** (a) reuse whole-canvas `update_canvas` (agent does get → mutate → put) — rejected: clobbers a concurrent user edit and risks the LLM dropping fields on a large JSON round-trip, on the load-bearing path. (b) a two-step "propose on canvas → user clicks accept" — rejected for v1 (more build; the verbal confirm + the visible result + the git backstop are enough; revisit if false-positive writes bite). (c) give the agent the open project via server state — rejected: the in-app agent's MCP server is a separate, stateless process with no shared open-project binding.
 - **Known limit (named):** a coach write lands via the file watcher, which the viewer treats as an external change and so **clears the undo stack** — Cmd+Z does not undo a coach write (recover via git / re-edit). Acceptable for a *confirmed* write; the one-line "saved" confirm makes a mistake visible immediately. An undo-preserving write path is a follow-up if it bites.
@@ -108,7 +108,7 @@
 ### D-2026-06-26-B — persist chat conversations to `.noory/plot/chat/<scope>.json`, engine-side, one-per-scope
 
 - **What:** Chat is saved to disk under the project at `chat/<scope>.json` — one append-only `ChatConversationDoc` per scope (`feature:<id>`→`feature__<id>.json`). The **engine** is the sole writer, appending the user message when a turn is sent (`chat_send_endpoint`) and the assistant message on `turn_complete` (`stream_chat_turn`), via the existing atomic `storage._write_json`. Two new read endpoints — `GET /api/chat/conversations` (list metadata, `updated` desc) and `GET /api/chat/conversations/{scope}` (full messages) — feed a new `ChatConversationsPanel` in the dock; reopening hydrates `messagesByScope[scope]`. `title` = first user message (≤60 chars), set once.
-- **Why:** In-memory chat died on an app restart and the user lost real work (defining Plot's own mission via the coach). Persisting inside `.noory/` (git-tracked) makes conversations travel with the project and restore on another machine. **Engine-side capture is the load-bearing choice** — it survives a viewer crash *and* an engine restart, the actual failure. The engine already sees the full user message (`chat_send_endpoint`) and the assembled assistant turn (`turn_complete`), so capture costs two `_write_json`s per turn with zero new transport.
+- **Why:** In-memory chat died on an app restart and the user lost real work (defining Novel's own mission via the coach). Persisting inside `.noory/` (git-tracked) makes conversations travel with the project and restore on another machine. **Engine-side capture is the load-bearing choice** — it survives a viewer crash *and* an engine restart, the actual failure. The engine already sees the full user message (`chat_send_endpoint`) and the assembled assistant turn (`turn_complete`), so capture costs two `_write_json`s per turn with zero new transport.
 - **Alternatives:** (a) Viewer-side save (localStorage/IndexedDB) — rejected: doesn't travel with the project, doesn't survive a viewer crash, and `.noory/` is the established persistence home. (b) Persist the CLI `--session-id` and rehydrate live sessions on restart — deferred: codex has no session_id ctor param and claude's resume reattaches CLI state we don't own; v1 restores the transcript for reading only. (c) Multiple conversations per scope (archival branching) — deferred (YAGNI); one-per-scope mirrors the existing one-session-per-scope registry.
 - **Known limits (named, not v1 blockers):** whole-file rewrite per turn (O(n), fine at human pace); orphaned files on service deletion / scope rename left as harmless history (no prune in v1); **reopen is a half-restore** — it revives what was said, not the CLI session behind it, so continuing a reopened conversation silently starts a fresh CLI turn with the old turns as visible history only. Full fix (persist + rehydrate session ids per provider) is the real follow-up.
 - **Approval:** Accepted by user, 2026-06-26 ("기능 추가해주세요"), after the real data loss.
@@ -189,7 +189,7 @@
 ### D-2026-06-24-A — in-app chat framing delivered as an authoritative system prompt + hallucination guard (chat-quality Lever 2)
 
 - **What:** The per-canvas Layer-3 framing moves out of the user message into a real **system prompt**, and a constant **hallucination guard** is prepended to it on every scope. `mashbill/chat_context.build_system_prompt(scope)` composes `HALLUCINATION_GUARD` + the scope's framing; `ChatProvider.set_system_prompt` carries it; claude maps it to `--append-system-prompt`, codex (no system-prompt flag) prepends it to the message. The user message is now `context → selection detail → user text` (framing removed from it).
-- **Why:** the in-app `-p` agent hallucinates because it is **context-starved**, not because of the `-p` mode (`docs/idea/chat/00-problem.md`). The framing sat inside the user message, where the model treats it as conversation, not a binding instruction — and nothing told the agent to *read* the canvas rather than invent. A system-prompt-delivered guard ("ground every claim in the given context; read the canvas with your Plot MCP tools or ask; never invent mission text / values / actors / entities; resolve 'this' to the selected node") is the single cheapest, highest-leverage anti-hallucination lever (`docs/idea/chat/01-levers.md`, Lever 2).
+- **Why:** the in-app `-p` agent hallucinates because it is **context-starved**, not because of the `-p` mode (`docs/idea/chat/00-problem.md`). The framing sat inside the user message, where the model treats it as conversation, not a binding instruction — and nothing told the agent to *read* the canvas rather than invent. A system-prompt-delivered guard ("ground every claim in the given context; read the canvas with your mashbill MCP tools or ask; never invent mission text / values / actors / entities; resolve 'this' to the selected node") is the single cheapest, highest-leverage anti-hallucination lever (`docs/idea/chat/01-levers.md`, Lever 2).
 - **Alternatives:** (a) keep framing in the user message — rejected, weak authority, the status quo that drifts. (b) force a `get_viewer_context` call every turn instead of a guard — deferred (extra round-trip; `-p` adherence unverified; can combine later). (c) a claude-only flag with no codex path — rejected, both providers must carry the framing, so codex falls back to message-prepend.
 - **Approval:** Accepted by user, 2026-06-24 (chat-quality work, "설계미결 해결하고 채팅 품질 잡읍시다"; plan SSOT `docs/idea/chat/`).
 - **Spec impact:** SPEC.md R7 chat → "Per-canvas framing + hallucination guard" row. Guards: `tests/test_chat_system_prompt.py`, `tests/test_endpoints_chat.py::test_chat_send_routes_framing_to_system_prompt_context_to_message`.
@@ -226,7 +226,7 @@
 - **Why:** anchored to the essence (VISION) — the mission is the project's **single** essence, and every service stands on it. `refs` is the **propagation surface** (format-f.md §5: a `vP+1` element change reaches only the `vS` that *reference* it). With the mission absent from every `vS`, a mission change would propagate to **no** service — the most fundamental possible change reaching nothing, which contradicts "본질을 놓치지 않는다." Unlike `core_value`/`identity` (referenced selectively), the mission is singular with no per-service selection field, so it is anchored universally.
 - **Code or spec?** The user asked which fit the purpose. The format-f.md §3.2 example already showed `"mission": "mission"`; the **code** was the side out of step. Fixed the code to match the spec, not the reverse.
 - **Compat:** additive — `format_f_version` stays 1 (Solera's intake copies the bundle; an extra anchor key is tolerated). The foundation invariant guarantees ≥1 mission node, so the `"mission" in vP` guard only ever falls through for a malformed `vP`.
-- **Approval:** Accepted by user, 2026-06-23 (delegated the code-vs-spec judgment; chose to align with purpose). Surfaced by the Plot↔Solera pipeline dogfood.
+- **Approval:** Accepted by user, 2026-06-23 (delegated the code-vs-spec judgment; chose to align with purpose). Surfaced by the mashbill↔Solera pipeline dogfood.
 - **Spec impact:** `docs/specs/format-f.md §3.2` field rules note that mission is always anchored. Guard: `tests/test_format_f.py::test_service_refs_anchor_to_project_mission`.
 
 ### D-2026-06-23-C — debug channel (`/api/debug`) is auth-exempt (restore the WKWebView introspection bridge)
@@ -274,7 +274,7 @@
 - **Still gated (NOT done here):** the viewer publish **UI** (button placement / modal / flow — proprietary `plot/` repo, UX decision) and the **per-node publish retirement** (removing `node_publish` + per-node `version` + the old `published/{kind}/{node}/v*.md` layout + 📤). Removing per-node now would delete the only user-facing publish UI before format F has one — so the UI lands first.
 - **Alternatives:** build the full INT-g (endpoints + viewer UI + retirement) in one go — deferred (crosses repos, needs UX decisions). Skip HTTP and keep format F MCP-only — rejected (the viewer can't reach MCP tools; an in-app publish needs HTTP).
 - **Approval:** Accepted by user, 2026-06-22 (AskUserQuestion "INT-g 접근" → "엔진 HTTP 먼저"). Engine 714 green, mypy strict + ruff clean.
-- **Spec impact:** none new — the neutral contract (`format-f.md`) is unchanged; HTTP is a Plot-internal trigger. Guards: `tests/test_api_endpoints.py::{test_format_f_snapshot_endpoint, test_format_f_snapshot_unknown_project_is_404, test_format_f_service_publish_endpoint, test_format_f_service_without_snapshot_is_409, test_format_f_service_unknown_service_is_404}`.
+- **Spec impact:** none new — the neutral contract (`format-f.md`) is unchanged; HTTP is a Novel-internal trigger. Guards: `tests/test_api_endpoints.py::{test_format_f_snapshot_endpoint, test_format_f_snapshot_unknown_project_is_404, test_format_f_service_publish_endpoint, test_format_f_service_without_snapshot_is_409, test_format_f_service_unknown_service_is_404}`.
 
 ### D-2026-06-22-F — format F design files render the real content (richer vP/vS rendering; entity-summary bug fixed)
 
@@ -295,14 +295,14 @@
 
 ### D-2026-06-22-D — Phase P: 2-layer format F publish (vP project snapshot + vS service release); per-node publish coexists, retires later
 
-- **What:** The Plot→Solera publish contract is a **2-layer frozen bundle** (= "format F", design SSOT `repos-plot/docs/plans/phase-p-format-f.md`, spec `repos-plot/docs/specs/format-f.md`). **`vP` (project snapshot)** freezes the *shared structure* — 본질(Foundation) + Actors + Entities — under `published/_project/vP{N}/`. **`vS` (service release)** freezes one service (5칸 + features + category) under `published/{slug}/vS{N}/`, pins `based_on: vP`, and references shared elements **by stable slug, not by copy** (so re-publishing one service can't fork the shared entities — the v1 single-layer draft's fatal flaw, caught by plot-design-red-team). Stable ids are **slugs** minted into a per-project `_slugs.json` registry, keyed on node id so a slug survives a label change (P-4 = explicit slug). Versioning collapses the old 3 axes to **2 semantic axes (vP, vS) + git tag (the freeze mechanism) + content-hash ID-diff (changed/removed/added, derived)** — per-node `version` numbers are not used by format F. Two write-boundary gates: **bootstrap** (a `vS` requires a `vP`) and **refs-integrity** (every ref must resolve in the based_on `vP`). The reverse channel (feedback / retro) uses the same slug vocabulary; Plot reflection stays human-in-the-loop (no code auto-import — R8).
+- **What:** The mashbill→Solera publish contract is a **2-layer frozen bundle** (= "format F", design SSOT `repos-plot/docs/plans/phase-p-format-f.md`, spec `repos-plot/docs/specs/format-f.md`). **`vP` (project snapshot)** freezes the *shared structure* — 본질(Foundation) + Actors + Entities — under `published/_project/vP{N}/`. **`vS` (service release)** freezes one service (5칸 + features + category) under `published/{slug}/vS{N}/`, pins `based_on: vP`, and references shared elements **by stable slug, not by copy** (so re-publishing one service can't fork the shared entities — the v1 single-layer draft's fatal flaw, caught by plot-design-red-team). Stable ids are **slugs** minted into a per-project `_slugs.json` registry, keyed on node id so a slug survives a label change (P-4 = explicit slug). Versioning collapses the old 3 axes to **2 semantic axes (vP, vS) + git tag (the freeze mechanism) + content-hash ID-diff (changed/removed/added, derived)** — per-node `version` numbers are not used by format F. Two write-boundary gates: **bootstrap** (a `vS` requires a `vP`) and **refs-integrity** (every ref must resolve in the based_on `vP`). The reverse channel (feedback / retro) uses the same slug vocabulary; mashbill reflection stays human-in-the-loop (no code auto-import — R8).
 - **§7 sub-decisions (user, 2026-06-22):** A single vP (shared structure moves as one); B service-granular publish with feature-standalone as an exception; C release-dirty + publish-eligibility + refs-integrity gate; D clean migration cut (no live per-node published data).
-- **Scope shipped (INT-1a/2/3/4):** `mashbill/format_f.py` (write half: `publish_project_snapshot` / `publish_service` / `mint_slug`, v0.103.0) + `noory-ai/solera/solera/intake.py` (read half: `import_release` / `diff_releases` + `format_f_version` guard, solera v7.3.0). Walking-skeleton e2e proven: Plot publish → Solera import → plan → run → gate PASS, with neither package importing the other. Built **alongside** the existing per-node publish (`node_publish.py` + `project_publish` blueprint_version) — **not yet a replacement.**
+- **Scope shipped (INT-1a/2/3/4):** `mashbill/format_f.py` (write half: `publish_project_snapshot` / `publish_service` / `mint_slug`, v0.103.0) + `noory-ai/solera/solera/intake.py` (read half: `import_release` / `diff_releases` + `format_f_version` guard, solera v7.3.0). Walking-skeleton e2e proven: mashbill publish → Solera import → plan → run → gate PASS, with neither package importing the other. Built **alongside** the existing per-node publish (`node_publish.py` + `project_publish` blueprint_version) — **not yet a replacement.**
 - **Not yet done (follow-on):** retire per-node publish (`node_publish.py`, per-node `version` field, the old `published/{kind}/{node}/v*.md` layout) + wire a `realizes` field through the Solera CLI. Tracked in `workspace/solera-redesign.md` (INT follow-on).
 - **Why:** anchored to VISION — the canvas IS the deliverable the external agent reads, a *service* is the Execution handoff unit, and 본질·개념(Foundation·Actors·Entities) are project-shared. So the publish shape *is* 2-layer; forcing it to one layer forks shared structure. Foundation built first-principles + adversarially verified (2× red-team) over a YAGNI-minimal patch, per user direction.
 - **Alternatives:** single-layer per-service bundle (v1 draft) — rejected (entity/actor fork). Keep 3 versioning axes — rejected (vP=blueprint_version reinterpreted; per-node retired). label-slugify or node.id slugs — rejected for explicit slug (stability vs readability).
 - **Approval:** Accepted by user, 2026-06-22 (§7 AskUserQuestion + "마무리로 갑시다"). Design = `phase-p-format-f.md` (red-team v1→v2). Narrows D-2026-06-12-A / builds on D-2026-06-21-AB.
-- **Spec impact:** `repos-plot/docs/specs/format-f.md` (new, the contract) + `storage-publish.md` §발행 gains a format F section. Engine guard `tests/test_format_f.py::test_manifest_contract_shape_is_pinned`; reader guard `solera tests/test_intake.py::test_import_rejects_unsupported_format_f_version`. Plot 698 green, Solera 101 green, both mypy + ruff clean.
+- **Spec impact:** `repos-plot/docs/specs/format-f.md` (new, the contract) + `storage-publish.md` §발행 gains a format F section. Engine guard `tests/test_format_f.py::test_manifest_contract_shape_is_pinned`; reader guard `solera tests/test_intake.py::test_import_rejects_unsupported_format_f_version`. mashbill 698 green, Solera 101 green, both mypy + ruff clean.
 
 ### D-2026-06-22-C — codex reasoning effort: model×effort combined entries (composite `<slug>:<effort>` id)
 
@@ -315,16 +315,16 @@
 ### D-2026-06-22-B — chat model selector is populated from each CLI's live catalogue (reverses D-2026-06-16-C)
 
 - **What:** The in-app chat model dropdown is no longer a hardcoded per-CLI list. It is fetched from a new engine endpoint `GET /api/chat/models?provider=<name>` (`mashbill/chat_models.py`): **codex** → `~/.codex/models_cache.json` (slug + display_name of every `visibility == "list"` + `supported_in_api` model); **gemini** → `agy models` (plain-text labels, used **verbatim** as `--model`, with effort baked into the label); **claude** → its static documented aliases (`fable`/`opus`/`sonnet` — claude publishes stable aliases). The viewer (`ChatModelSelector`) renders one `<option>` per returned `{id, label}` (`id` → `--model`, `label` shown), keeps the current model as an option even when absent from the list, and keeps the **Custom…** free-text fallback. **Fail-soft:** any source error (agy missing / cache unreadable) → empty list → the selector still offers default + Custom…. `ChatModelOption` is hand-mirrored Python↔TS (chat types aren't codegen'd, per D-2026-06-21-Z), so no wire-artifact regen.
-- **Why:** The hardcoded approach (D-2026-06-16-C: claude aliases only; codex/gemini blank) showed the user an empty `default / Custom…` — read as "no models" — and was stale on arrival: within this window the live gemini list had already moved 2.5 → 3.1/3.5 + gemma-4, codex to gpt-5.5/5.4. Each CLI already curates its own short, fresh model list; reading that is both more honest and lower-maintenance than a list Plot must chase.
+- **Why:** The hardcoded approach (D-2026-06-16-C: claude aliases only; codex/gemini blank) showed the user an empty `default / Custom…` — read as "no models" — and was stale on arrival: within this window the live gemini list had already moved 2.5 → 3.1/3.5 + gemma-4, codex to gpt-5.5/5.4. Each CLI already curates its own short, fresh model list; reading that is both more honest and lower-maintenance than a list Novel must chase.
 - **Alternatives:** (a) keep hardcoding (D-16-C) — rejected: stale + opaque (the user demonstrated the staleness live). (b) query the vendor API (`/v1/models` / Google ListModels) — rejected: needs keys + auth, and returns a messy full catalogue vs the CLI's curated short list. (c) codex via its private cache is a coupling risk — accepted with fail-soft fallback (a format change yields `[]`, never a crash).
 - **Approval:** Accepted by user, 2026-06-22 ("0123 다 해야한다 … 고고"; chose dynamic after seeing the hardcoded list go stale live).
 - **Spec impact:** SPEC §R7 "Model selection" row (was D-2026-06-16-C). Engine `mashbill/chat_models.py` + `endpoints_chat.chat_models_endpoint` + `/api/chat/models` route. App viewer `api.ts` (`fetchChatModels` + `ChatModelOption`), `app/mcp.ts` seam, `ChatDock` (fetch + `models` prop; `MODEL_SUGGESTIONS` removed). Pinned by `tests/test_chat_models.py`, `tests/test_endpoints_chat.py` (models endpoint), `viewer/tests/chat-model-catalogue.test.tsx`. Engine 687 green, viewer 1006 green. **Requires sidecar rebuild.**
 
 ### D-2026-06-22-A — in-app gemini chat transport: `gemini` CLI → `agy` (Antigravity); stateless per-turn
 
-- **What:** The in-app chat's `gemini` provider now drives the **`agy` (Antigravity) CLI** instead of `gemini`. The provider **name stays `gemini`** — the user-facing identity is the model family; `agy` is only the transport. Command shape: `agy -p --dangerously-skip-permissions [--model <m>] <prompt>`. agy has **no `--output-format stream-json`**, so the JSONL parser is replaced by **plain-text line passthrough** (each stdout line becomes a `delta`). `--dangerously-skip-permissions` replaces gemini's `-y` (auto-approve, same role inside an IDE shell). **Stateless:** agy emits no session id on stdout and its `--continue` resumes the *most-recent* conversation globally, which would cross Plot's per-(project×scope) thread isolation (D-2026-06-13-H) — a silent contamination bug — so the provider **does not resume**; each turn is an independent `agy -p` call.
+- **What:** The in-app chat's `gemini` provider now drives the **`agy` (Antigravity) CLI** instead of `gemini`. The provider **name stays `gemini`** — the user-facing identity is the model family; `agy` is only the transport. Command shape: `agy -p --dangerously-skip-permissions [--model <m>] <prompt>`. agy has **no `--output-format stream-json`**, so the JSONL parser is replaced by **plain-text line passthrough** (each stdout line becomes a `delta`). `--dangerously-skip-permissions` replaces gemini's `-y` (auto-approve, same role inside an IDE shell). **Stateless:** agy emits no session id on stdout and its `--continue` resumes the *most-recent* conversation globally, which would cross Novel's per-(project×scope) thread isolation (D-2026-06-13-H) — a silent contamination bug — so the provider **does not resume**; each turn is an independent `agy -p` call.
 - **Why:** `agy` is the surface Google is consolidating Gemini onto (user-confirmed, 2026-06-22 — "agy 로 동작하게 된다네요. 통합하는 것 같습니다"); the `gemini` binary's `-p` path is being superseded. Plain-text passthrough is the only honest reading of agy's output (verified: `agy -p` prints text, not JSONL). Stateless is the only **correct** option given agy exposes no per-thread resume handle to stdout — the alternatives either contaminate scopes or depend on Antigravity's private on-disk store.
-- **Alternatives:** (a) keep the `gemini` CLI — rejected: superseded transport. (b) `--continue` for multi-turn — rejected: most-recent-global, breaks per-scope isolation (silent bug, banned). (c) `--conversation <id>` by mining `~/.antigravity` for a per-scope id — rejected for now: depends on Antigravity's undocumented private format (brittle). (d) Plot replays prior turns into the prompt for continuity — deferred (session-layer change, token cost).
+- **Alternatives:** (a) keep the `gemini` CLI — rejected: superseded transport. (b) `--continue` for multi-turn — rejected: most-recent-global, breaks per-scope isolation (silent bug, banned). (c) `--conversation <id>` by mining `~/.antigravity` for a per-scope id — rejected for now: depends on Antigravity's undocumented private format (brittle). (d) Novel replays prior turns into the prompt for continuity — deferred (session-layer change, token cost).
 - **Approval:** Accepted by user, 2026-06-22 ("0123 다 해야한다 … 이름은 유지 좋습니다. 고고"). **Known regression filed:** in-scope multi-turn continuity (old gemini had `--resume`) is lost under agy; resume is a follow-up (option c/d).
 - **Spec impact:** SPEC §R7 chat — the gemini transport line + the provider table's "Brain" row (`gemini` → `agy`). Engine `chat_providers/gemini.py` (command + plain-text `_parse_line`, no session capture). Pinned by `tests/test_chat_session.py` (agy command shape + plain-text delta + no-resume) + `tests/test_chat_model.py` (`--model` still spliced). **Requires sidecar rebuild** for the `.app`.
 
@@ -486,8 +486,8 @@
 
 ### D-2026-06-21-I — in-app chat is grounded ONLY in the workspace (no parent/global CLAUDE.md, no auto-memory)
 
-- **What:** The in-app Claude Code agent was pulling context from **outside the workspace** — the parent-directory `CLAUDE.md` files (e.g. the Plot repo's own dev instructions, since a user workspace can live under the Plot tree), the global `~/.claude/CLAUDE.md`, and the user's auto-memory. The `claude -p` spawn now isolates it: command flags **`--setting-sources local`** (load only the workspace's `.claude/settings.local.json` — no user/project scope, so no parent / global CLAUDE.md auto-discovery) + **`--exclude-dynamic-system-prompt-sections`** (keep cwd / env / memory-paths / git-status out of the system prompt), and the spawn env sets **`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`** (fully disables auto-memory). A new `ChatProvider._spawn_env()` hook (default `None` = inherit) threads the env through `stream_turn` → `_spawn` → `_default_spawn`.
-- **Why:** User report 2026-06-21 — "워크스페이스 밖의 것들을 보고 있는 것 같은데… 워크스페이스 안의 것들만으로 대화가 되어야합니다." The in-app coach must reason about the user's project (its `.noory/plot` data via the `plot` MCP), not the Plot codebase / the user's global Claude config / saved memories.
+- **What:** The in-app Claude Code agent was pulling context from **outside the workspace** — the parent-directory `CLAUDE.md` files (e.g. the Novel repo's own dev instructions, since a user workspace can live under the Novel tree), the global `~/.claude/CLAUDE.md`, and the user's auto-memory. The `claude -p` spawn now isolates it: command flags **`--setting-sources local`** (load only the workspace's `.claude/settings.local.json` — no user/project scope, so no parent / global CLAUDE.md auto-discovery) + **`--exclude-dynamic-system-prompt-sections`** (keep cwd / env / memory-paths / git-status out of the system prompt), and the spawn env sets **`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`** (fully disables auto-memory). A new `ChatProvider._spawn_env()` hook (default `None` = inherit) threads the env through `stream_turn` → `_spawn` → `_default_spawn`.
+- **Why:** User report 2026-06-21 — "워크스페이스 밖의 것들을 보고 있는 것 같은데… 워크스페이스 안의 것들만으로 대화가 되어야합니다." The in-app coach must reason about the user's project (its `.noory/plot` data via the `plot` MCP), not the Novel codebase / the user's global Claude config / saved memories.
 - **OAuth + MCP preserved (the key constraint):** this is **NOT** `--bare` (which sets `CLAUDE_CODE_SIMPLE=1` and forces `ANTHROPIC_API_KEY`, breaking the user's subscription). The chosen flags keep OAuth/subscription auth, and the `plot` MCP still loads because it lives in `~/.claude.json` (read independently of `--setting-sources`). Flags verified against `claude --help` 2.1.176 + the permissions/settings docs.
 - **Alternatives:** (a) `--bare` — rejected (breaks OAuth). (b) only `--exclude-dynamic-system-prompt-sections` — insufficient (it relocates memory paths but doesn't disable memory, and doesn't stop CLAUDE.md loading). (c) set the env process-wide on the engine — rejected (global side-effect; the per-spawn `_spawn_env` hook is scoped + clean).
 - **Approval:** Accepted by user, 2026-06-21.
@@ -533,14 +533,14 @@
 - **Approval:** Accepted by user, 2026-06-21.
 - **Spec impact:** App-repo UI only (`plot/viewer/src/shell/ChatDock.tsx` + i18n). `chat-dock` test updated: a claude-code selection now enables input with **no** `role="note"` warning. No engine change.
 
-### D-2026-06-21-C — in-app Claude Code auto-allows the user's own Plot MCP tools (`--allowedTools mcp__plot__*`)
+### D-2026-06-21-C — in-app Claude Code auto-allows the user's own mashbill MCP tools (`--allowedTools mcp__plot__*`)
 
-- **What:** The engine's `claude -p` spawn (`claude_code._build_command`) now passes **`--allowedTools mcp__plot__*`**. Headless `-p` cannot show an interactive permission prompt, so when the in-app agent called a Plot MCP tool (`mcp__plot__list_projects`, …) the call dead-ended and the model narrated "press Allow" with nothing to press. The flag auto-approves **all Plot MCP tools** so the in-app coach actually works.
+- **What:** The engine's `claude -p` spawn (`claude_code._build_command`) now passes **`--allowedTools mcp__plot__*`**. Headless `-p` cannot show an interactive permission prompt, so when the in-app agent called a mashbill MCP tool (`mcp__plot__list_projects`, …) the call dead-ended and the model narrated "press Allow" with nothing to press. The flag auto-approves **all mashbill MCP tools** so the in-app coach actually works.
 - **Why:** User report 2026-06-21 (the agent kept telling the user to approve a prompt that can't appear in headless mode; "이런건 처리가 되어야죠… 알아서 되던"). The exact flag was verified against `claude --help` (2.1.176) + the permissions docs (an MCP allow-rule must be anchored: `mcp__plot__*`, not bare `mcp__plot`).
-- **Scope / safety:** Auto-allow is **scoped to `mcp__plot__*` only** — Bash / Write / Read / filesystem keep their default behaviour, so the in-app agent **cannot silently touch anything outside the user's `.noory/plot` data**. Plot tools operate only on that data, which is git-recoverable and surfaced on the canvas (build-through-discussion, PHILOSOPHY rule 7), so auto-approving them — including mutating ones — is consistent with Plot's "AI proposes, user sees it on the canvas" model. The meaningful boundary (no silent filesystem/shell access) is preserved.
-- **Alternatives:** (a) `--dangerously-skip-permissions` / `--permission-mode bypassPermissions` — rejected (auto-allows Bash/Write to the whole machine; defeats the boundary). (b) enumerate only read Plot tools — rejected (brittle vs the tool list; the coach also edits canvases, and Plot mutations are reviewable + recoverable). (c) a setup/permission UI in the chat — deferred (the user's primary ask was "알아서 되던" / just-work; the scoped auto-allow delivers that with no new UI).
+- **Scope / safety:** Auto-allow is **scoped to `mcp__plot__*` only** — Bash / Write / Read / filesystem keep their default behaviour, so the in-app agent **cannot silently touch anything outside the user's `.noory/plot` data**. Novel tools operate only on that data, which is git-recoverable and surfaced on the canvas (build-through-discussion, PHILOSOPHY rule 7), so auto-approving them — including mutating ones — is consistent with Novel's "AI proposes, user sees it on the canvas" model. The meaningful boundary (no silent filesystem/shell access) is preserved.
+- **Alternatives:** (a) `--dangerously-skip-permissions` / `--permission-mode bypassPermissions` — rejected (auto-allows Bash/Write to the whole machine; defeats the boundary). (b) enumerate only read Novel tools — rejected (brittle vs the tool list; the coach also edits canvases, and Novel mutations are reviewable + recoverable). (c) a setup/permission UI in the chat — deferred (the user's primary ask was "알아서 되던" / just-work; the scoped auto-allow delivers that with no new UI).
 - **Approval:** Accepted by user, 2026-06-21.
-- **Spec impact:** In-app chat (claude-code) now invokes Plot MCP tools without a dead-end prompt. Pinned by `test_chat_session` (the spawn command carries `--allowedTools mcp__plot__*`). Codex / Gemini providers have their own permission models — not touched (separate, if reported). Engine **658 green**.
+- **Spec impact:** In-app chat (claude-code) now invokes mashbill MCP tools without a dead-end prompt. Pinned by `test_chat_session` (the spawn command carries `--allowedTools mcp__plot__*`). Codex / Gemini providers have their own permission models — not touched (separate, if reported). Engine **658 green**.
 
 ### D-2026-06-21-B — in-app Claude Code chat doubled every reply; the `stream-json` parser counted text twice
 
@@ -552,7 +552,7 @@
 
 ### D-2026-06-21-A — standalone `.app` ATS exception (`NSAllowsLocalNetworking`) so the WKWebView reaches the loopback engine
 
-- **What:** The bundled `Plot.app`'s viewer showed **"Load failed"** on every engine request. Root cause (evidence-based, alternatives eliminated — engine healthy via curl, CORS correct incl. on 401, CSP `null`, frontend embedded, sidecar spawned): the **bundle `Info.plist` carried no `NSAppTransportSecurity` key**, so default App Transport Security blocked the viewer (a `tauri://` secure origin) from fetching the engine over **cleartext `http://127.0.0.1:5190`** — WebKit rejects the fetch at the network layer (`TypeError: Load failed`, not an HTTP status). Fix: a committed `plot/src-tauri/Info.plist` (Tauri v2 merges it at bundle time) with `NSAppTransportSecurity → NSAllowsLocalNetworking = true` — re-permits **loopback / local** cleartext only, **not** arbitrary public cleartext (`NSAllowsArbitraryLoads` rejected as too broad). Verified: rebuilt `.app` → Info.plist carries the key → relaunch → **user confirmed the viewer loads ("제대로 떴네요")**.
+- **What:** The bundled `Novel.app`'s viewer showed **"Load failed"** on every engine request. Root cause (evidence-based, alternatives eliminated — engine healthy via curl, CORS correct incl. on 401, CSP `null`, frontend embedded, sidecar spawned): the **bundle `Info.plist` carried no `NSAppTransportSecurity` key**, so default App Transport Security blocked the viewer (a `tauri://` secure origin) from fetching the engine over **cleartext `http://127.0.0.1:5190`** — WebKit rejects the fetch at the network layer (`TypeError: Load failed`, not an HTTP status). Fix: a committed `plot/src-tauri/Info.plist` (Tauri v2 merges it at bundle time) with `NSAppTransportSecurity → NSAllowsLocalNetworking = true` — re-permits **loopback / local** cleartext only, **not** arbitrary public cleartext (`NSAllowsArbitraryLoads` rejected as too broad). Verified: rebuilt `.app` → Info.plist carries the key → relaunch → **user confirmed the viewer loads ("제대로 떴네요")**.
 - **Why it was latent:** every prior `.app` verification used `tauri dev` (the viewer served from an `http://localhost:5193` origin + a same-origin Vite proxy to `/api`), so requests were same-origin http→http and never triggered ATS. The **standalone bundle's** webview→cleartext-engine path (absolute `http://127.0.0.1:5190`, baked via `VITE_PLOT_ENGINE`) was never exercised end-to-end until now — the first real standalone-bundle run surfaced it.
 - **Alternatives:** (a) `NSAllowsArbitraryLoads = true` — rejected (opens all public cleartext; the exception must be scoped to loopback). (b) serve the sidecar over HTTPS — rejected (self-signed-cert hassle for a loopback backend). (c) route fetches through the Tauri HTTP plugin (Rust-proxied, bypasses webview ATS) — rejected for now (rewrites `api.ts`'s fetch/WS seam; the ATS exception is the minimal correct fix). (d) switch `127.0.0.1` → `localhost` — not needed (`NSAllowsLocalNetworking` covers loopback IPs); kept on file as a fallback if a future macOS tightens raw-IP handling.
 - **Approval:** Accepted by user, 2026-06-21 ("제대로 떴네요" after the ATS-fixed rebuild).
@@ -562,15 +562,15 @@
 
 - **What:** Unblocks the entity follow-ups (`D-2026-06-17-K` step 6/7; `D-2026-06-20-K` deferred them "no data source until feature→entity refs exist"). A **feature action references the entities it operates on** via `ref_entity_ids: list[str]` — an id-array **chip picker on the `step` node** (the action), picking from the `entities` registry, mirroring the service inspector's `ref_actor_ids` / `ref_value_ids` chips (`D-2026-06-20-F`) and reusing `RefChips.tsx` + a new `availableEntities` source in `useAvailableNodes`. The entity inspector's **"어디서 쓰이나" back-reference** (step 6) is **derived read-only** by scanning every feature canvas's `step` nodes for the entity id (the reverse index the plan flagged as missing). Edges (step 7) stay separate (entity↔entity rough relationships on the entities canvas).
 - **Why (purpose-anchored — user's call, 2026-06-20):** The reference's purpose is the **AI-maintained derived data map** — letting the user see *what data the product has and where each is used*, as a byproduct of feature design, **without ERD work** (`D-2026-06-17-I`: entities are AI-maintained, populated last). It is **NOT** for visualizing data plumbing in the flow (that is below action-altitude — the external coding agent's job, `D-2026-06-17-G`). Because the reference is a lightweight AI-written *declaration* on the action (not a flow participant), it lives as a **chip on the action**, not as a placed `entity_ref` node — keeping the feature flow about *actor behaviour*, and yielding the back-ref for free (scan `step.ref_entity_ids`). This follows the recent "chips beat ref-nodes for derived/declared references" direction (`D-2026-06-20-G`).
-- **Alternatives:** (a) `entity_ref` **node** on the feature canvas (mirrors `actor_ref`) — rejected: a node renders the entity as a *flow participant* (purpose 2, data-flow visualization), which contradicts the AI-maintained-byproduct purpose and clutters the behaviour flow. (b) a cross-canvas **edge** action→entity — rejected: Plot cross-canvas references use id-matching, not edges; an edge would also read as flow-visualization. (c) put `ref_entity_ids` on the `feature` node, not `step` — rejected: the *action* (step) is what touches data; feature-level would lose which action uses what (and weaken the back-ref granularity).
+- **Alternatives:** (a) `entity_ref` **node** on the feature canvas (mirrors `actor_ref`) — rejected: a node renders the entity as a *flow participant* (purpose 2, data-flow visualization), which contradicts the AI-maintained-byproduct purpose and clutters the behaviour flow. (b) a cross-canvas **edge** action→entity — rejected: Novel cross-canvas references use id-matching, not edges; an edge would also read as flow-visualization. (c) put `ref_entity_ids` on the `feature` node, not `step` — rejected: the *action* (step) is what touches data; feature-level would lose which action uses what (and weaken the back-ref granularity).
 - **Approval:** Accepted by user, 2026-06-20 (purpose-1 confirmed: "그렇게 가보죠" after agreeing the reference exists for the derived data-map + 어디서-쓰이나, not flow visualization).
 - **Spec impact:** New additive wire field `step.ref_entity_ids` (loss-free default `[]`); palette/canvas counts unchanged. `entity` inspector gains the read-only "어디서 쓰이나" derived view. Root `docs/plans/ENTITIES_PLAN.md` step 6 unblocked; `docs/specs/kinds-fields.md` (step fields) + `docs/specs/edges.md` (entity edges, step 7). Cross-repo lock-step: engine field + codegen regen (the wire half) then viewer domain/inspector/back-ref. Guards: schema-parity / wire-contract auto-bump; new step-inspector + back-ref + entity-edge tests.
 
 ### D-2026-06-20-P — Context layer "find" side: graph traversal + entry-point resolution + title/id index (vector deferred); headroom rejected
 
-- **What:** Completes the context layer's *retrieval* ("find") half — the complement to `D-2026-06-17-L`'s *delivery* ("envelope" + CAG/RAG) half. (1) **Retrieval = graph traversal.** A Plot project's data *is* a graph (canvases / nodes / edges / actor_ref), so the agent locates context by following edges from a foothold — **no vector DB is needed** for the primary case (connection beats similarity; the user drew the edges deliberately). (2) **Entry-point resolution order = selection → map → name → (last resort) semantic search.** Plot is a canvas app, so the current selection/scope is usually the foothold for free; whole-project questions start from the overview/map; named targets resolve via a lookup; only vague-with-no-anchor queries need similarity. The in-app path is selection-rich; the external-agent path (no canvas selection) leans on map + name. (3) **Build early: a title/id index** for name lookup — a lightweight index, **not** a vector store. (4) **Vector / RAG-for-find = deferred behind the same context-provider seam** (`D-2026-06-17-L`) — earned only by blind no-anchor search or by text that escapes the graph. (5) **headroom (token-saving LLM proxy) = rejected for Plot** — measured ~0.1% net savings on real Claude Code transcripts because Plot's AI is Claude Code, which already uses Anthropic prompt-cache; the headline 50–90% comes from provider prompt-cache reuse Claude Code already exploits.
+- **What:** Completes the context layer's *retrieval* ("find") half — the complement to `D-2026-06-17-L`'s *delivery* ("envelope" + CAG/RAG) half. (1) **Retrieval = graph traversal.** A Novel project's data *is* a graph (canvases / nodes / edges / actor_ref), so the agent locates context by following edges from a foothold — **no vector DB is needed** for the primary case (connection beats similarity; the user drew the edges deliberately). (2) **Entry-point resolution order = selection → map → name → (last resort) semantic search.** Novel is a canvas app, so the current selection/scope is usually the foothold for free; whole-project questions start from the overview/map; named targets resolve via a lookup; only vague-with-no-anchor queries need similarity. The in-app path is selection-rich; the external-agent path (no canvas selection) leans on map + name. (3) **Build early: a title/id index** for name lookup — a lightweight index, **not** a vector store. (4) **Vector / RAG-for-find = deferred behind the same context-provider seam** (`D-2026-06-17-L`) — earned only by blind no-anchor search or by text that escapes the graph. (5) **headroom (token-saving LLM proxy) = rejected for Novel** — measured ~0.1% net savings on real Claude Code transcripts because Novel's AI is Claude Code, which already uses Anthropic prompt-cache; the headline 50–90% comes from provider prompt-cache reuse Claude Code already exploits.
 - **Why:** Session discussion 2026-06-20. `D-2026-06-17-L` settled what the AI *sees* and how it is *delivered*, but not how the layer *finds* the right slice as a user's project grows large. Graph-native retrieval keeps the layer **concept-independent** (it does not depend on which kinds/canvases exist), so it is safe to record now while the concept/structure rework runs in another session.
-- **Alternatives:** (a) vector DB / RAG from the start — rejected (YAGNI; data is already a graph, traversal covers the primary case; vector slots behind the seam later). (b) treat main-vs-secondary AI path as decisive for retrieval — rejected (both paths are the same `claude` binary on the same `.noory` data; what differs is who configures it). (c) adopt headroom for token savings — rejected (measured ~0.1% net for Plot).
+- **Alternatives:** (a) vector DB / RAG from the start — rejected (YAGNI; data is already a graph, traversal covers the primary case; vector slots behind the seam later). (b) treat main-vs-secondary AI path as decisive for retrieval — rejected (both paths are the same `claude` binary on the same `.noory` data; what differs is who configures it). (c) adopt headroom for token savings — rejected (measured ~0.1% net for Novel).
 - **Open:** **Connectedness invariant** — every new artifact (work-item / design file / Solera / Evonest output) must enter the graph *with an edge to what it implements*; floating unlinked text is what would eventually force vector. Needs a pinned decision + confirmation against Solera/Evonest's actual data shape. Tracked in ROADMAP 5.11.
 - **Approval:** Accepted by user, 2026-06-20.
 - **Spec impact:** Consolidated into `docs/concepts/ai-collaboration.md` §1.2 (adds the "찾기" paragraph beside the existing "전달" envelope). Refines Track 5.4 (graph-RAG-lite → deferred behind the seam) and ROADMAP 5.11. No code yet.
@@ -621,7 +621,7 @@
 
 - **What:** The detail canvas's wire string is renamed everywhere: the persisted **`canvas_kind` value** `service_detail`→`feature` (Python `CanvasKind` Literal + TS `CanvasKind`); the **runtime / scope key** prefix `service_detail:`→`feature:` (cache keys, `ChatScope`, `CanvasKey` — Python ↔ TS parity green); the **CanvasDoc field** `service_ref`→`feature_ref`; the helper `list_service_details`→`list_feature_details`; the viewer state `detailServiceId`→`detailFeatureId` / `drillIntoService`→`drillIntoFeature`; the i18n keys `serviceDetail`→`featureDetail` + `canvas.tabs.service_detail`→`canvas.tabs.feature` (en + ko symmetric); and the four `ServiceDetail*` components → `FeatureDetail*` (files `git mv`-renamed). Kebab prose comments swept too. `_ALLOWED_KINDS_BY_CANVAS["feature"]` correctly holds the `feature` root node kind (canvas-kind and node-kind are different fields — no collision). **112+ files, zero leftover tokens** (snake / camel / Pascal / kebab all verified clean).
 - **Kept (not renamed):** the on-disk storage path `services/{id}/detail.json` (the `services/` folder is the services-area; the detail nests by id — the path never contained the `service_detail` string, so it needs no change and no data migration); the `?detail=` URL param (already generic); the `service` node kind / `services` overview canvas / `ServiceNode` / `ServicesCanvas`.
-- **Why:** Supersedes the "wire string kept (interim)" decision in `D-2026-06-20-I`. The interim left `service_ref` / `service_detail:` carrying *feature* ids — misleading. With the drill rewire shipped (v0.95.0) and **no projects using Plot yet** (zero data-migration risk), the user gated the full rename (2026-06-20, "wire-string rename 마저"). One coherent rename beats a permanent misnomer.
+- **Why:** Supersedes the "wire string kept (interim)" decision in `D-2026-06-20-I`. The interim left `service_ref` / `service_detail:` carrying *feature* ids — misleading. With the drill rewire shipped (v0.95.0) and **no projects using Novel yet** (zero data-migration risk), the user gated the full rename (2026-06-20, "wire-string rename 마저"). One coherent rename beats a permanent misnomer.
 - **Alternatives:** (a) keep the `service_detail` wire string permanently — rejected (misnomer; the canvas is a feature's detail). (b) also rename the storage folder `services/`→`features/` — rejected (the folder holds the services overview *and* the per-feature details nested under it; splitting them out is a structural change with no payoff, and the path carries no `service_detail` string).
 - **Approval:** Accepted by user, 2026-06-20 (explicit "wire-string rename 마저" gate, lifting the product-gate noted in `D-I`).
 - **Spec impact:** Canvas-kind enum value is now `feature` (root design SSOT `specs/canvas-behavior.md` describes the feature canvas). No behavioural change vs v0.95.0 — pure rename; engine 635 + viewer 914 + parity/schema/wire guards all green.
@@ -638,7 +638,7 @@
 ### D-2026-06-20-H — `metric` / `content` kinds retired (below action altitude); retired-kind i18n swept
 
 - **What:** The two service-composition kinds are **retired**. `metric` (a KPI / success-indicator node) and `content` (an implementation-artifact node) are removed across the stack: server `MetricNode` / `ContentNode` (`models_composition`) + the two `models_union` unions + `NodeKind` Literal + `_ALL_KIND_CLASSES` + `schema_export` map + `models.py` re-exports + `migrate_builders` v0.1 content branch; the viewer `Metric.ts` / `Content.ts` domain classes, their node renderers + inspectors, `CompositionList.tsx` + `ContentFields.tsx`, the `createBlankNode` cases, both registries, `SketchNode` unions, `types.ts` `NodeKind`, and the SERVICE_COMPOSITION metric stencil preset + the service_detail "Value" stencil section (value is the service-inspector `ref_value_ids` chips now, `D-2026-06-20-F`). The dead **composition-child affordance thread** (`addCompositionChild` → `onAddChild` / `onPatchChild` / `onRemoveChild`, orphaned when `CompositionList` was removed in `D-2026-06-20-F`) is removed with them. `_drop_retired_kinds` strips both from older canvases on read (loss-free). Codegen (`wire.gen.ts` + `wire_contract.json` ×2) regenerated. **Also sweeps the retired-kind i18n that `D-2026-06-20-G` left for doc-sync:** the `kind.{mission_ref,value_ref,identity_ref,metric,content,value}` + `kindTag.metric` labels, the whole dead `composition` object, and the orphaned `stencil.section.{composition,values,missions,identityAspects}` + `stencil.note.{compositionInsideService,valuesExchanged,dragMission…,dragValue…,dragIdentityAspect…}` keys (en + ko, symmetric). Palette = **13 kinds**.
-- **Why:** Both kinds sit **below action altitude** — the level Plot operates at (service → feature → flow). A `metric` is implied by a flow's result node + edge; `content` (implementation artifacts / user-facing outputs) is the external agent's job or is carried by the producing action's edge. Neither earns a standalone node in the 본질→서비스 model. Retiring them keeps the Feature canvas about *what flows between actors*, not *how it is built*.
+- **Why:** Both kinds sit **below action altitude** — the level Novel operates at (service → feature → flow). A `metric` is implied by a flow's result node + edge; `content` (implementation artifacts / user-facing outputs) is the external agent's job or is carried by the producing action's edge. Neither earns a standalone node in the 본질→서비스 model. Retiring them keeps the Feature canvas about *what flows between actors*, not *how it is built*.
 - **Alternatives:** (a) keep `metric` as a visible "Value" node — rejected (value is the service inspector's `ref_value_ids` chips; one mechanism beats two). (b) keep `content` for artifact tracking — rejected (below altitude; the external coding agent owns artifacts). (c) keep the `addCompositionChild` primitive narrowed to `rule` for a future creation path — rejected (dead-wiring = `임시 통과`; rule is AI-creatable via MCP, and a user-direct rule-creation affordance is a fresh design when needed).
 - **Approval:** Accepted by user via the approved Chunk-2 plan (the "정리 폐기 5종" mandate: `group` + 3 refs + `metric` + `content`).
 - **Spec impact:** Palette − 2 (13 kinds). `concepts/kinds.md` / `specs/kinds-fields.md` already list both retired (root design SSOT led the code). `RETIRED_KINDS` already holds both. The deferred refs/composition i18n cleanup from `D-2026-06-20-G` is now done — no i18n debt remains for any retired kind.
@@ -654,7 +654,7 @@
 ### D-2026-06-20-F — Service inspector = 5 question-titled fields (2 typed + 3 ref-chip lists, Option B); legacy 9 fields discarded
 
 - **What:** The `service` inspector is redesigned to **5 question-titled fields** (`D-2026-06-17-B`): 2 typed-text — 왜 필요한가? (`problem`) / 뭐가 좋아지나? (`value_created`) — + 3 **multi-select reference chip lists** — 누가 참여하나? (`ref_actor_ids` → actors) / 뭘 양보 못 하나? (`ref_value_ids` → core_values) / 어떤 결로 다가가나? (`ref_identity_ids` → identities). References are **id arrays on `ServiceNode` (Option B)**, rendered as removable chips picked from the upstream masters (pick-only; pick-OR-create `D-2026-06-19-C` is a follow-up). The old **9 free-text fields** (target_side / what / scope / trigger / how / outcome / do / dont / body) are **deleted and discarded** — no loss-free migration (Pydantic drops the old extras on read). The service inspector's composition (rules / contents) panels are removed (composition lives on the Feature canvas); the `target_side` color tint + the shared `DoDontFields` component are deleted.
-- **Why:** The service is the value-exchange hub; the 5 questions ARE the AI interview ("제목이 곧 질문"). The old 9 fields were a flat free-text bag that didn't encode the value-exchange model; 2 typed + 3 references capture it sharply (who / why / what-improves / what-can't-give-up / what-tone). Option B (id arrays) is forced by the marathon's retirement of the `value_ref` / `identity_ref` kinds — the chips can't be those nodes, so they are ids on the service. Discard is safe: **no project uses Plot yet**, and Pydantic ignores removed fields on read.
+- **Why:** The service is the value-exchange hub; the 5 questions ARE the AI interview ("제목이 곧 질문"). The old 9 fields were a flat free-text bag that didn't encode the value-exchange model; 2 typed + 3 references capture it sharply (who / why / what-improves / what-can't-give-up / what-tone). Option B (id arrays) is forced by the marathon's retirement of the `value_ref` / `identity_ref` kinds — the chips can't be those nodes, so they are ids on the service. Discard is safe: **no project uses Novel yet**, and Pydantic ignores removed fields on read.
 - **Alternatives:** (a) keep `body` as a hidden migration sink for the deleted content — not taken (no data to preserve; YAGNI). (b) Option A (refs as separate `*_ref` nodes + edges) — rejected (those ref kinds are retired; would contradict the marathon).
 - **Approval:** Accepted by user, 2026-06-20 (AskUserQuestion checkpoint ② — "아직 플롯을 사용하는 프로젝트가 없어요. 그래서 폐기해도 되지 않을까요?" → discard; Option B confirmed earlier this session).
 - **Spec impact:** `ServiceNode` field-set → `problem` + `value_created` + `ref_actor_ids` / `ref_value_ids` / `ref_identity_ids` (the 9 deleted). `specs/kinds-fields.md` / `concepts/kinds.md` already describe the 5-field service. Multi-select chip picker = `inspectors/service/RefChips.tsx`. The drill rewire (service inspector-only / feature drill) is a separate step (Chunk 2.7); pick-OR-create + the AI interview-question wiring are follow-ups (ROADMAP 5.7).
@@ -691,23 +691,23 @@
 - **Approval:** Accepted by user, 2026-06-20 (AskUserQuestion — "개념을 모노레포에서 먼저"; landing path "plot/viewer/").
 - **Spec impact:** Resequences `D-2026-06-20-A`'s migration-prereq clause (the move is now post-concept, not pre-implementation). No change to the architecture itself (open-core boundary, canvas = app-exclusive) — only the *order* of realizing it. ROADMAP Track 2 ordering.
 
-### D-2026-06-20-A — Plot system architecture = open-core (open plugin engines / closed paid app); the visual canvas is app-exclusive
+### D-2026-06-20-A — Novel system architecture = open-core (open plugin engines / closed paid app); the visual canvas is app-exclusive
 
-- **What:** Plot's system architecture is pinned as **open-core**:
+- **What:** Novel's system architecture is pinned as **open-core**:
   - **Open-source plugins (MIT)** — each is a **headless MCP engine** (+ Claude Code glue: skills/agents/hooks). They produce **structured data + text/markdown artifacts** only; **no visual canvas.** (`mashbill` = the canvas/sketch engine; `solera_mcp` = the project-workflow engine; …)
-  - **Closed, paid Plot app** — an **MCP host + visual canvas + composition shell.** The **visual canvas is the app's exclusive paid value**; if a plugin shipped the canvas the app would have no differentiated value.
+  - **Closed, paid Novel app** — an **MCP host + visual canvas + composition shell.** The **visual canvas is the app's exclusive paid value**; if a plugin shipped the canvas the app would have no differentiated value.
   - **Shared open data** — `.noory/` JSON, read/written by both. The app's moat = **visual experience / UX / composition quality**, NOT data lock-in (the format is open).
   - **Dependency = one-way:** app → plugin engines (the app hosts/consumes them); the engine never imports the app (R8). Plugins run standalone (Claude Code + MCP) without the app.
   - **Value split = VISION's physical division of labour:** the AI works the *structure* (plugin), the human thinks via the *visual* (app), over the shared `.noory/` data.
   - **Composition vision (deferred):** the app may host multiple engines (mashbill + solera_mcp + …) as one product; the unified-canvas UX is unspecified for now (engines are MCP, so wiring stays open).
 - **Why:** Settling the structure before implementation (user, 2026-06-19~20). The plugin/app/engine arrangement was scattered; the load-bearing question — where the canvas lives — is answered by the value boundary: the canvas must be app-only or the paid app has no value, so the open plugin stays text/structured-only.
-- **Alternatives:** (a) the plugin ships the visual canvas — rejected (collapses the app's paid value). (b) keep the viewer in noory-ai / a web canvas — rejected (canvas = app-exclusive; the web product is dropped). (c) close the engine into the app — rejected (loses the open MCP value: any agent can drive Plot).
+- **Alternatives:** (a) the plugin ships the visual canvas — rejected (collapses the app's paid value). (b) keep the viewer in noory-ai / a web canvas — rejected (canvas = app-exclusive; the web product is dropped). (c) close the engine into the app — rejected (loses the open MCP value: any agent can drive Novel).
 - **Approval:** Accepted by user, 2026-06-20 (open-core boundary + canvas = app-exclusive + plugin = text artifacts, confirmed across the structure discussion).
 - **Spec impact:** NEW `repos-plot/docs/ARCHITECTURE.md` (system architecture SSOT) + index. Migration prereq: viewer → `plot/` (app); `viewer/types.ts` → a `schema_export.py`-generated artifact **before** the move (schema-parity guard, TECH_REVIEW step 1); `mashbill` headless. ROADMAP Track 2. Builds on the Pencil model (OVERHAUL R7) + the viewer→app overhaul direction.
 
 ### D-2026-06-19-J — Design/definition/spec docs consolidated into a single source (`repos-plot/docs/`)
 
-- **What:** Plot's scattered, mutually-conflicting concept/definition/spec docs are consolidated into **one directory `repos-plot/docs/`** as the single source: `index.md` (canonical map) + `VISION.md` (essence + 3-phase + identity) + `concepts/` (canvases / kinds / ai-collaboration — meaning) + `specs/` (canvas-behavior / kinds-fields / edges / storage-publish / domain — behavior). Old root docs absorbed + deleted (`IDENTITY.md` → VISION §identity; `FOUNDATION_CONCEPT.md` → ai-collaboration §2.1 + VISION; `AI_CHAT_PLAYBOOK.md` → ai-collaboration; `BIG_PICTURE_REVIEW.md` → open topics to ROADMAP, decision log already mirrored here; `DOC_SYNC.md`, old `README.md` → index.md). `noory-ai/plot/docs/{SPEC,CONCEPTS,DOMAIN}.md` get a redirect header pointing at the root source (code-near mechanics — CURSOR / AUTO_LAYOUT / PUBLISH / ARCHITECTURE — stay in noory-ai). `DECISIONS.md` (this log) stays in noory-ai (D-id log, hook-wired).
+- **What:** Novel's scattered, mutually-conflicting concept/definition/spec docs are consolidated into **one directory `repos-plot/docs/`** as the single source: `index.md` (canonical map) + `VISION.md` (essence + 3-phase + identity) + `concepts/` (canvases / kinds / ai-collaboration — meaning) + `specs/` (canvas-behavior / kinds-fields / edges / storage-publish / domain — behavior). Old root docs absorbed + deleted (`IDENTITY.md` → VISION §identity; `FOUNDATION_CONCEPT.md` → ai-collaboration §2.1 + VISION; `AI_CHAT_PLAYBOOK.md` → ai-collaboration; `BIG_PICTURE_REVIEW.md` → open topics to ROADMAP, decision log already mirrored here; `DOC_SYNC.md`, old `README.md` → index.md). `noory-ai/plot/docs/{SPEC,CONCEPTS,DOMAIN}.md` get a redirect header pointing at the root source (code-near mechanics — CURSOR / AUTO_LAYOUT / PUBLISH / ARCHITECTURE — stay in noory-ai). `DECISIONS.md` (this log) stays in noory-ai (D-id log, hook-wired).
 - **Why:** The AI (in-app coach + external coding agents) was referencing scattered docs whose definitions disagreed (e.g. IDENTITY "NOT a mindmap" vs PRODUCT_SPEC "mindmap-based"; 15/17 kind drift; feature concept unreconciled), producing bad context. A single coherent new-concept source is the prerequisite for resuming development.
 - **Alternatives:** (a) leave docs split, fix conflicts in place — rejected (root cause is scattering). (b) one big file — rejected (one *directory* with concepts/ + specs/ reads better). (c) move everything incl. DECISIONS/code-near out of noory-ai — rejected (breaks hooks/skills; DECISIONS is the hook-wired D-log).
 - **Approval:** Accepted by user, 2026-06-19 ("싹다 새로운 개념으로 정리... SSOT... index.md... 다해요 4개 다").
@@ -731,8 +731,8 @@
 
 ### D-2026-06-19-G — Identity SSOT consolidated to VISION; "mindmap" dropped as the user-facing word
 
-- **What:** Plot's identity statement has **one source = `VISION.md` §identity** (absorbing the old `IDENTITY.md`); other docs reference it, never restate it. The **"mindmap" framing is dropped** — both the old PRODUCT_SPEC "mindmap-based planning tool" claim and the user-facing "mindmap" word are retired. Plot is a **structured, opinionated, coach-led design tool**, the opposite of free-association brainstorming; post-marathon (interview-driven canvases) the word actively miscues.
-- **Why:** Three docs defined Plot's identity in conflicting words (IDENTITY "NOT a mindmap" / PRODUCT_SPEC "mindmap-based" / VISION's purpose sentence) — an SSOT violation flagged but never resolved (BIG_PICTURE §9-A / T1, decision slot empty). Dropping "mindmap" auto-reconciles all three (only PRODUCT_SPEC asserted it; VISION + IDENTITY already say "not a mindmap").
+- **What:** Novel's identity statement has **one source = `VISION.md` §identity** (absorbing the old `IDENTITY.md`); other docs reference it, never restate it. The **"mindmap" framing is dropped** — both the old PRODUCT_SPEC "mindmap-based planning tool" claim and the user-facing "mindmap" word are retired. Novel is a **structured, opinionated, coach-led design tool**, the opposite of free-association brainstorming; post-marathon (interview-driven canvases) the word actively miscues.
+- **Why:** Three docs defined Novel's identity in conflicting words (IDENTITY "NOT a mindmap" / PRODUCT_SPEC "mindmap-based" / VISION's purpose sentence) — an SSOT violation flagged but never resolved (BIG_PICTURE §9-A / T1, decision slot empty). Dropping "mindmap" auto-reconciles all three (only PRODUCT_SPEC asserted it; VISION + IDENTITY already say "not a mindmap").
 - **Alternatives:** (a) keep "mindmap" as the friendly user word — rejected (requires overriding IDENTITY + carries the free-association miscue post-marathon). (b) formal "strategic design tool" everywhere — rejected (too stiff for the user-facing surface).
 - **Approval:** Accepted by user, 2026-06-19 ("좋아요" on the consolidated VISION).
 - **Spec impact:** `VISION.md` §정체성 (IS/IS NOT, mindmap retired). `IDENTITY.md` deleted (absorbed). PRODUCT_SPEC §1 "mindmap" claim superseded (partial supersede of `D-2026-05-12-A`).
@@ -743,7 +743,7 @@
   over **MCP** — the R7 primary path) must receive **selection-awareness** and the
   **context envelope** (`D-2026-06-17-L`: active canvas + current selection + upstream
   summary + entity registry + per-canvas framing) **through MCP** — the same connection it
-  already uses. The agent pulls it the way it reads everything else. Internally Plot needs a
+  already uses. The agent pulls it the way it reads everything else. Internally Novel needs a
   **viewer→engine selection bridge** so the engine knows the current viewer selection and
   can report it via the MCP context tool (`get_viewer_context`).
 - **Required, not deferred.** This corrects CHAT_ARCH Layer 2's "MCP path … deferred"
@@ -759,7 +759,7 @@
   on MCP); expose selection + envelope through it.
 - **Alternatives:** (a) keep MCP selection deferred / external agent works canvas-content-only
   (user names things by hand) — rejected (the primary path must be first-class). (b) push to
-  the external agent — not possible (it is outside Plot; it pulls via MCP).
+  the external agent — not possible (it is outside Novel; it pulls via MCP).
 - **Approval:** Accepted by user, 2026-06-19 ("그렇게 바깥에도 제공해주면 됩니다").
 - **Spec impact:** CHAT_ARCH Layer 2 (un-defer MCP selection-awareness → required) + the MCP
   context tool (`get_viewer_context` returns selection + the `D-2026-06-17-L` envelope) + a
@@ -935,7 +935,7 @@
      capabilities ("이 안에서 뭘 할 수 있을까요") for the user to pick/confirm.
   4. **Promotion test (feature → service)**: when a feature becomes a *multi-actor
      value exchange*, the coach gently asks whether to promote it to its own service —
-     grounded in Plot's own definition (a service = new value via multiple-actor
+     grounded in Novel's own definition (a service = new value via multiple-actor
      interaction, PHILOSOPHY P1/P5). AI may draw the chip reference line (`D-2026-06-17-J`).
 - **Why:** AI playbook §2.3 / §3-D (ROADMAP 5.10). User directed grounding the coach in
   expert method (as with Actors). The load-bearing finding: JTBD's "ask what/how, not
@@ -1068,7 +1068,7 @@
   content / published artifacts / cross-project material must be pulled.
 - **Abstraction seam (user, 2026-06-17 — the load-bearing refinement):** delivery
   (CAG vs RAG) sits **behind a context-provider abstraction**; the **playbook depends
-  only on the abstraction** ("what the AI sees"), never on the mechanism. Plot's
+  only on the abstraction** ("what the AI sees"), never on the mechanism. Novel's
   **primary path = the user's own external agent (Pencil model)** = **any model**
   (only Opus has a 1M window; most Claude models are smaller) running against a
   **user project of any size** → a 1M-context CAG **cannot be assumed.** The seam
@@ -1081,8 +1081,8 @@
   design **references upstream canvases** ("뒤 캔버스가 앞을 참조") and the **entity
   registry** (strong dedup), so the AI must see more than today's active-canvas +
   selection (CHAT_ARCH Layer 2). **The "project" here = the USER's project built with
-  Plot, NOT Plot itself — it can be ANY size** (Plot is a general tool: some users'
-  projects are tiny, some enormous; Plot can't assume small). So **CAG cannot be
+  Novel, NOT Novel itself — it can be ANY size** (Novel is a general tool: some users'
+  projects are tiny, some enormous; Novel can't assume small). So **CAG cannot be
   assumed to fit.** When the user's skeleton fits the agent's window, a cached preload
   (CAG) is simpler / faster / avoids retrieval error; when it doesn't, **RAG is
   required** — RAG-readiness is a real requirement behind the seam, not a distant edge
@@ -1093,7 +1093,7 @@
   small-window models — lighter than committing to graph-RAG-lite, Track 5.4, up
   front). (c) keep today's active-canvas-only context — rejected (AI can't reference
   upstream / dedup). (d) assume CAG always fits — **rejected** (the user's project can
-  be any size; Plot can't assume small).
+  be any size; Novel can't assume small).
 - **Approval:** Accepted by user, 2026-06-17 ("좋아요. 좋습니다." + asked for the
   CAG/RAG judgment → CAG-first).
 - **Spec impact:** Extends **CHAT_ARCH Layer 2** — add upstream-summary +
@@ -1135,7 +1135,7 @@
 
 ### D-2026-06-17-J — Remove the "all edges are user-drawn / never auto-emit" rule; edges are governed by their definition, not authorship
 
-- **What:** Plot's blanket rule **"All edges are user-drawn / never auto-emit
+- **What:** Novel's blanket rule **"All edges are user-drawn / never auto-emit
   edges"** (`D-2026-05-04-A`, SPEC §Edges, `plot/CLAUDE.md` during-action rule #5)
   is **removed.** What governs an edge is its **definition (semantics)** — its
   `relation` (flow / injection / inheritance / …) + payload (`directed`,
@@ -1182,9 +1182,9 @@
   Entities canvas.** The user reviews / refines / confirms (D-2026-06-16-P — not
   silent), but never starts from a blank entity canvas. **Bottom-up creation** (in
   feature work) **+ top-down management** (project registry). **Altitude guard:**
-  Plot holds only **name + one-line "무엇을 담나"** (rough shape); detailed schema /
-  field types / relations / indexes = the user's AI agent's job, **outside Plot**
-  (else Plot becomes an ERD / DB-modelling tool — identity violation). Feature
+  Novel holds only **name + one-line "무엇을 담나"** (rough shape); detailed schema /
+  field types / relations / indexes = the user's AI agent's job, **outside Novel**
+  (else Novel becomes an ERD / DB-modelling tool — identity violation). Feature
   actions **reference** entities ("발행 → 글 생성").
 - **Form — conceptual entity map, NOT a physical ERD (user, 2026-06-17):** these
   are **abstract, pre-normalisation** entities ("정규화 전의 추상적 엔티티"). The
@@ -1248,13 +1248,13 @@
 ### D-2026-06-17-G — Feature canvas = a behavior flowchart, at action-altitude, inheriting the service philosophy
 
 - **What:** The feature canvas presents the feature's **concrete behaviour as a
-  flowchart** (행동 → 분기 → 결과). This is the **deepest layer only** — Plot's
+  flowchart** (행동 → 분기 → 결과). This is the **deepest layer only** — Novel's
   upper layers (service / feature value map) stay non-flowchart, so it does **not**
   break IDENTITY.md's "NOT a flowchart tool" (the flow is the floor, not the whole
   building). **Altitude guard:** the flow shows **user actions → branches →
   results** (the behaviour a human designs); it does **NOT** descend into internal
   implementation logic (storage / queries / rendering) — that is the user's AI
-  agent's job, **outside Plot**. Crossing that line would make Plot an engineering
+  agent's job, **outside Novel**. Crossing that line would make Novel an engineering
   spec tool. The flowchart **inherits the service philosophy** — it is
   **actor-anchored and value-oriented** (the flow is participants doing actions
   that create / exchange value — PHILOSOPHY P5/P6), not a dry abstract diagram.
@@ -1364,7 +1364,7 @@
   features aren't multi-actor value exchanges). (c) reuse `group` for features —
   superseded (feature = the named capability; `group` = visual fold, to be
   re-audited/retired). (d) fully recursive value-node — rejected (unbounded
-  nesting; Plot's sub-service lesson + JTBD over-granularity warning).
+  nesting; Novel's sub-service lesson + JTBD over-granularity warning).
 - **Approval:** Accepted by user, 2026-06-17 ("네 맞아요!").
 - **Spec impact:** **NEW kind `feature`** — full lock-step via plot-entity-template
   (domain class, Pydantic model, node renderer, inspector, i18n, schema-parity,
@@ -1379,7 +1379,7 @@
 
 - **What:** The Services overview has **no first-class service→service edge
   concept.** The previously-specced **"Service-to-service edges = User journey"**
-  (PRODUCT_SPEC §7) is **dropped** — Plot will not build journey / value-flow
+  (PRODUCT_SPEC §7) is **dropped** — Novel will not build journey / value-flow
   edge semantics between services. The overview is about **each service's own
   definition** (D-2026-06-17-B: 누가·왜·뭐가 좋아지나 + 작동 코어밸류/아이덴티티),
   not about wiring services together. (Generic user-drawn edges remain technically
@@ -1529,7 +1529,7 @@
   (affirms SPEC §Anchor — no content fields added). Feeds the Foundation-canvas
   visualisation topic (the composition must be legible). §1.5 remaining: **F4** only.
 
-### D-2026-06-16-P — Everything in Plot is created through discussion (AI coach + human confirm), never silent
+### D-2026-06-16-P — Everything in Novel is created through discussion (AI coach + human confirm), never silent
 
 - **What:** The universal interaction model: **every concept / node on every canvas
   is created through discussion** — the AI is an active coach that interviews /
@@ -1541,7 +1541,7 @@
   user. The human always retains direct control (can edit any line directly —
   PHILOSOPHY co-drawing) and is always the confirmer.
 - **Why:** User principle (2026-06-16): "모두 모두 토론을 통해서 만들어지는 거에요."
-  Generalises D-2026-06-16-H (per-canvas active coach) and D-2026-06-16-I (Plot = AI
+  Generalises D-2026-06-16-H (per-canvas active coach) and D-2026-06-16-I (Novel = AI
   builds context + human reviews) into one rule, and matches FOUNDATION_CONCEPT's
   "채우는 방식 = AI 대화창(인터뷰)" — now scoped to *all* canvases, not just
   Foundation. It is the through-line of today's whole Foundation discussion.
@@ -1549,9 +1549,9 @@
   VISION reframe moved away from). (b) silent AI auto-fill — rejected (violates
   human-in-the-loop, D-I).
 - **Approval:** Accepted by user, 2026-06-16 ("맞죠?" — affirmed).
-- **Spec impact:** Plot-wide principle; concretely realised by the per-canvas coach
-  guides + interview question sets (skill, ROADMAP 5.7). FOUNDATION_CONCEPT "Plot
-  작동 전제" already states it for Foundation; this lifts it to a Plot-wide rule.
+- **Spec impact:** Novel-wide principle; concretely realised by the per-canvas coach
+  guides + interview question sets (skill, ROADMAP 5.7). FOUNDATION_CONCEPT "Novel
+  작동 전제" already states it for Foundation; this lifts it to a Novel-wide rule.
 
 ### D-2026-06-16-O — identity inspector = name + action-rule list now; output-metadata deferred to the derive flow
 
@@ -1721,15 +1721,15 @@
   Likely applies to core_value / identity too — **not decided here** (separate
   per-node review).
 
-### D-2026-06-16-I — VISION essence sentence reframed to Plot's purpose (AI context + human acceleration)
+### D-2026-06-16-I — VISION essence sentence reframed to Novel's purpose (AI context + human acceleration)
 
-- **What:** The VISION first sentence (the essence) is rewritten to: **"Plot is a
+- **What:** The VISION first sentence (the essence) is rewritten to: **"Novel is a
   collaboration tool where a person and AI together structure and define a
   service's essence and concepts — so the AI works better on that shared structure,
   and the person thinks faster and deeper."** The three-phase cycle (Discovery →
   Retention → Execution) is unchanged and becomes the *how* under this purpose.
-- **Why:** Big-picture discussion (2026-06-16). The user reframed Plot's purpose:
-  Plot builds good **context for the AI to work well** and **accelerates the
+- **Why:** Big-picture discussion (2026-06-16). The user reframed Novel's purpose:
+  Novel builds good **context for the AI to work well** and **accelerates the
   human's thinking** (with human review). The canvas — structured concepts + their
   definitions / relationships — is the single artefact that delivers both. The old
   sentence cast the human as a solo essence-seeker and a typed form as the surface;
@@ -1753,17 +1753,17 @@
   higher-order concepts / methodologies the user has not considered. This
   **strengthens CHAT_ARCH Layer 3** from a passive topic-setter ("Help surface the
   essence") to an active coach. The AI remains the user's **external** agent
-  (Pencil model); Plot shapes its behaviour through the per-window guide, not by
+  (Pencil model); Novel shapes its behaviour through the per-window guide, not by
   owning the model.
-- **Why:** This session's big-picture discussion (2026-06-16) reframed Plot's
-  purpose: Plot builds good **context for the AI to work well** and **accelerates
+- **Why:** This session's big-picture discussion (2026-06-16) reframed Novel's
+  purpose: Novel builds good **context for the AI to work well** and **accelerates
   the human's thinking** (with human review). The canvas — structured concepts +
   their definitions / relationships — is the single artefact that serves both. For
   that to hold, the per-canvas AI must actively organise concepts and propose what
   the human missed, not hand over a blank form.
 - **Alternatives:** (a) one generic chat guide across all canvases — rejected; each
   canvas has a different job. (b) keep Layer 3's weak topic-setter framing —
-  rejected as too passive. (c) build the AI into Plot — rejected; contradicts the
+  rejected as too passive. (c) build the AI into Novel — rejected; contradicts the
   pinned Pencil model (AI is the user's external agent).
 - **Approval:** Accepted by user, 2026-06-16.
 - **Spec impact:** CHAT_ARCH.md Layer 3 (design intent strengthened). SPEC.md R7
@@ -1809,7 +1809,7 @@
 
 ### D-2026-06-16-E — Inspector MD editor (CodeMirror) follows the app theme
 
-- **What:** `MdTextarea`'s CodeMirror `baseTheme` now uses Plot's CSS tokens
+- **What:** `MdTextarea`'s CodeMirror `baseTheme` now uses Novel's CSS tokens
   (`rgb(var(--surface))` / `--fg` / `--line-strong` / `--accent` / caret +
   selection) instead of a hardcoded white surface + slate/indigo literals. So
   every typed-text field in the Inspector (service problem/what/…, decision,
@@ -1838,9 +1838,9 @@
   under the provider bar and used boxy full-width rows that didn't read as a
   chat. The model selector is now the top control, as asked.
 - **Alternatives:** a bold/distinctive aesthetic (per the frontend-design
-  skill) — rejected: Plot has an established design system (theme tokens,
+  skill) — rejected: Novel has an established design system (theme tokens,
   shared font), and the user wants *familiar* chat UX, so the right move is a
-  refined, conventional chat layout executed precisely within Plot's tokens,
+  refined, conventional chat layout executed precisely within Novel's tokens,
   not a new visual language. No hardcoded colours (tokens only); no new font.
 - **Approval:** Accepted by user, 2026-06-16 (requested + direction given).
 - **Spec impact:** rewrote the [`SPEC.md` → R7 chat "UI" row](./SPEC.md).
@@ -1861,7 +1861,7 @@
 - **Why:** user (2026-06-16) — "채팅에 어떤 모델을 쓰는지 보여야 하고, 지원하는
   모델을 선택할 수 있어야 합니다."
 - **Alternatives:** (a) curated dropdown of model ids per CLI — rejected for
-  codex/gemini: their model ids are vendor/version-specific and Plot would
+  codex/gemini: their model ids are vendor/version-specific and Novel would
   ship a stale, fabricated list (honesty: don't invent specs). Free-text +
   best-effort suggestions (only the `claude` CLI's own documented aliases,
   read from its `--help`) avoids that. (b) parse the model from the CLI's
@@ -2270,7 +2270,7 @@
     context as current. (The WS-hub liveness idea is dropped — also invisible
     cross-process.)
   - **Multi-viewer** = last-writer-wins (the later atomic write overwrites the
-    file), disambiguated by `updated_at`; documented (Plot is single-viewer per
+    file), disambiguated by `updated_at`; documented (Novel is single-viewer per
     project in practice; per-window tracking is YAGNI).
   - **Framing SSOT** = `build_framing_preamble` + `SCOPE_FRAMING` +
     `build_context_preamble` move to a neutral `mashbill/chat_context.py` that
@@ -2307,7 +2307,7 @@
   **In-app only** — the primary MCP path doesn't receive this framing (named
   follow-up: a viewer→engine bridge + MCP resource).
 - **Why:** user — "각 캔버스마다 있는 채팅창은 각 캔버스에 맞게 동작을 해야할 것
-  같아요"; per-canvas behaviour that matches Plot's three-phase cycle.
+  같아요"; per-canvas behaviour that matches Novel's three-phase cycle.
 - **Alternatives:** `.noory/`-editable framing (rejected as YAGNI until asked);
   no framing / rely on selection alone (rejected — the agent needs to know
   *how* to help on each canvas, not just *what* is selected).
@@ -2360,7 +2360,7 @@
   (`onSelectionChange`) → App lifts it + maps ids → `{id, kind, label}` from
   the active canvas → `ChatDock` → `useChatStream.send` → `POST /api/chat/send`
   `selection` field → engine `build_context_preamble(scope, selection)`
-  prepends a `[Plot context] Active canvas / Selected …` preamble to the CLI
+  prepends a `[Novel context] Active canvas / Selected …` preamble to the CLI
   message.
 - **Committed defaults (post red-team, CHAT_ARCH.md):** per-turn snapshot at
   send time (no live sync); `project` scope injects nothing; selection capped
@@ -2491,14 +2491,14 @@ Three edge changes (one batch):
   billing ack) and per-workspace `<ws>/.noory/plot/` overrides
   (provider/model per project). Design via plot-design-red-team before code.
 
-### D-2026-06-14-A — Bundled .app registers Plot MCP via `<binary> --mcp-stdio` (frozen-aware)
+### D-2026-06-14-A — Bundled .app registers mashbill MCP via `<binary> --mcp-stdio` (frozen-aware)
 
-- **What:** The MCP-registration entry Plot writes into each CLI config
+- **What:** The MCP-registration entry Novel writes into each CLI config
   (`~/.claude.json` / `~/.codex/config.toml` / `~/.gemini/settings.json`)
   now has two shapes:
   - **dev checkout** — unchanged: `uv run --directory <src> python -m mashbill`.
   - **frozen .app** — `command = sys.executable` (the stable bundled binary
-    path inside `Plot.app/Contents/MacOS/mashbill`), `args = ["--mcp-stdio"]`.
+    path inside `Novel.app/Contents/MacOS/mashbill`), `args = ["--mcp-stdio"]`.
   The bundled binary gains a `--mcp-stdio` mode (`mashbill.server.run_mcp_stdio`,
   stdio MCP transport only — no HTTP). Dispatch lives in the sidecar entry
   `plot/src-tauri/sidecar-build/mashbill_entry.py`.
@@ -2511,7 +2511,7 @@ Three edge changes (one batch):
   (2026-06-14): codex failed the turn (`MCP client for 'plot' failed to
   start: request timed out`); gemini ignored the failed MCP and answered
   anyway. This broke the **primary** chat path (D-2026-06-13-H: the agent
-  connects to Plot over MCP) in the actual product. The HTTP sidecar was
+  connects to Novel over MCP) in the actual product. The HTTP sidecar was
   also HTTP-only (`run_http_only`), so even a corrected path had no stdio
   MCP mode to point at — hence both halves of this fix.
 - **Alternatives:** (a) register an HTTP/SSE MCP transport at the running
@@ -2601,7 +2601,7 @@ Three edge changes (one batch):
   User(base) ← {Operator, Bana}` — where a base actor holds common
   properties the sub-actors inherit. User chose **real/computed**
   inheritance (over visual-only), but it stays a *derived view*:
-  nothing is written, each node's value remains the SSOT (Plot is a
+  nothing is written, each node's value remains the SSOT (Novel is a
   cognition tool, not a data engine).
 - **Alternatives:** persist inherited values onto children — **rejected**
   (duplication / drift; violates SSOT). Compute at render — **chosen**.
@@ -2981,12 +2981,12 @@ Three edge changes (one batch):
 
 - **What:** Create `plot/CLAUDE.md` translating the global / project
   core principles (SOLID, Clean Architecture, SRP, SSOT, AHA, YAGNI,
-  TDD, "임시 통과 금지", "추측 금지", etc.) into Plot-specific
+  TDD, "임시 통과 금지", "추측 금지", etc.) into Novel-specific
   *practical* checklists, triggers, and commands the assistant must
   follow inside the `plot/` subtree.
 - **Why:** the principles are theoretical and live two directories
   up; in-session, the assistant defaults to "do the change" without
-  consulting them. A Plot-local file with concrete triggers ("before
+  consulting them. A Novel-local file with concrete triggers ("before
   editing SketchCanvas.tsx, do X") makes the principles operational.
 - **Approval:** **Accepted** by user, 2026-05-05.
 - **Spec impact:** none — meta rule about how the assistant operates
@@ -3597,7 +3597,7 @@ in the same browser-verification round:
 
 ### D-2026-05-10-G — Auto-layout removed again — cost vs benefit
 
-- **What:** Remove auto-layout from Plot in v0.14.1. Delete
+- **What:** Remove auto-layout from Novel in v0.14.1. Delete
   `viewer/src/canvases/sketch/autoLayout.ts`,
   `viewer/src/canvases/sketch/useAutoLayout.ts`, and the unit test
   file. Drop the `<ControlButton>` invocation in `SketchCanvas.tsx`
@@ -3607,7 +3607,7 @@ in the same browser-verification round:
 - **Why (user):** *"근데 auto layout 빼야겠네 문제가 너무 많다. 넣고
   나서 커서 들에 문제 너무 많고."* User cost/benefit assessment
   after observing the feature in action: the value of auto-layout
-  at this stage of Plot does not justify the complexity / debugging
+  at this stage of Novel does not justify the complexity / debugging
   load it added across v0.13.8 → v0.14.0.
 - **Honest correction on causation:** the user attributed the cursor
   flicker problems to auto-layout temporally ("after adding it,
@@ -3623,14 +3623,14 @@ in the same browser-verification round:
   removal is a separate cost/benefit decision. Even if cursor was
   the trigger to revisit, the broader argument ("the feature added
   too much complexity for too little user value at this stage")
-  applies on its own merits. Plot has no users with complex
+  applies on its own merits. Novel has no users with complex
   multi-actor / multi-service graphs yet; the value of auto-layout
   is theoretical until then. When real users surface a clear need,
   re-introduction can be weighed afresh with concrete user
   workflows in mind.
 - **What stays:** the v0.13.10 cursor fix
   (`.react-flow__node[role="button"] { cursor: grab }` + the
-  descendant inheritance rule). Plot v0.14.1 has no cursor flicker;
+  descendant inheritance rule). Novel v0.14.1 has no cursor flicker;
   pane and node both show `grab`, transitions are clean.
 - **Re-introduction policy:** any future "let's bring back
   auto-layout" proposal must (a) open a fresh `D-YYYY-MM-DD-X` entry,
@@ -3692,7 +3692,7 @@ in the same browser-verification round:
   attribute-based selectors. The user's preference was always to
   let preflight + RF compose naturally. Four iterations of this
   mistake (v0.13.5 / v0.13.6 / v0.13.10 / v0.14.2) should have been
-  one. Heuristic for future Plot cursor work: **default to NO
+  one. Heuristic for future Novel cursor work: **default to NO
   cursor rules in `styles.css`. Only add a rule when a real,
   Playwright-probed user complaint cannot be explained by Tailwind
   + RF interaction.**
@@ -3738,7 +3738,7 @@ in the same browser-verification round:
   contract; layout belongs to `EssencePlanning`. They should not
   share files, mutation paths, or runtime state. Today they do.
 - **Trigger for next session:** When the user says **"다음"** in a
-  Plot session start, this entry's "Review scope" below becomes
+  Novel session start, this entry's "Review scope" below becomes
   the active task. The SessionStart hook surfaces this trigger
   via [`plot/docs/NEXT_SESSION.md`](./NEXT_SESSION.md) — see
   there for the full review scope and execution plan.
@@ -3807,7 +3807,7 @@ in the same browser-verification round:
     Empty abstraction violates YAGNI.
   - (b) Pre-commit gate via shell hook in `.git/hooks/` instead
     of `pre_commit_gate.py` — rejected: noory-ai CLAUDE.md
-    "Cross-Platform Compatibility" bans shell scripts; the Plot
+    "Cross-Platform Compatibility" bans shell scripts; the Novel
     hook already runs through `pre_commit_gate.py` PreToolUse.
   - (c) Add cursor as a separate bounded context in DOMAIN.md —
     rejected: DOMAIN.md line 205 already explicitly decided
@@ -3828,13 +3828,13 @@ in the same browser-verification round:
   session.
 - **Approval:** Pending — user, 2026-05-10.
 - **Spec impact:** none. Structural / process change with no
-  observable Plot behaviour difference.
+  observable Novel behaviour difference.
 
 ---
 
 ### D-2026-05-11-D — i18n infrastructure (English primary, Korean locale)
 
-- **What:** Bootstrap i18n in the Plot viewer using `react-i18next`
+- **What:** Bootstrap i18n in the Novel viewer using `react-i18next`
   + `i18next` + `i18next-browser-languagedetector`. New module
   `viewer/src/i18n/` owns the resource bundles
   (`locales/en.json` + `locales/ko.json`), the `init()` call
@@ -3891,7 +3891,7 @@ in the same browser-verification round:
 
 ### D-2026-05-11-E — Product spec pinned as PRODUCT_SPEC.md; product framing now lives above VISION
 
-- **What:** User delivered a Plot product spec mid-session
+- **What:** User delivered a Novel product spec mid-session
   (2026-05-11) covering platforms (Claude plugin → macOS app),
   business model (individual free / enterprise paid, PLG growth),
   tech stack (React Flow / JSON / Markdown / Mermaid / MCP), data
@@ -3906,7 +3906,7 @@ in the same browser-verification round:
   noory-ai CLAUDE.md "Language" rule), reorganised into AI-First
   structured sections with cross-references to existing docs.
 
-- **Why this matters:** product-level facts (who Plot is for, what
+- **Why this matters:** product-level facts (who Novel is for, what
   platforms, what's in MVP, what's deferred) were scattered across
   conversation history and partially in VISION.md. Consolidating to
   one file gives every future session a single place to read the
@@ -3957,13 +3957,13 @@ in the same browser-verification round:
 - **What:** User delivered a substantially revised product spec
   on 2026-05-12 (full text recorded in the conversation). The
   spec changes flowing into `plot/docs/PRODUCT_SPEC.md` rev 2:
-  1. **§1 — Language split.** Plot is a "mindmap" to users,
+  1. **§1 — Language split.** Novel is a "mindmap" to users,
      "graph" internally. Internal model supports cycles +
      self-loops; trees alone don't fit.
   2. **§4 — `isomorphic-git` added** to the tech stack.
   3. **§5 — "Cycles allowed"** explicit. Self-loops legal.
   4. **§6 — Source-data version control (new section).**
-     Plot's *content* (canvas JSON, user stories, tasks) is git-
+     Novel's *content* (canvas JSON, user stories, tasks) is git-
      versioned, isolated from any source-code git the user
      happens to be in. Snapshot ≡ commit. Agent proposal ≡
      branch. User approve ≡ merge. User reject ≡ branch delete.
@@ -3991,7 +3991,7 @@ in the same browser-verification round:
         *"이 부분은 나중에 다시 다듬어 봅시다."* Deferred.
       - Added: isomorphic-git integration timing.
       - Added: i18n string lifecycle skill (delete unused keys).
-      - Added: Plot repository split (move out of noory-ai
+      - Added: Novel repository split (move out of noory-ai
         monorepo).
 - **Why:** The product framing matures. Cycles + git + bottom-up
   service-detail + branch-shaped agent proposals are concrete
@@ -4174,7 +4174,7 @@ in the same browser-verification round:
     audit because (a) the static + DOM proof above is exhaustive
     given the cursor SSOT is entirely in CSS / vendor stylesheets,
     (b) Playwright adds ~300 MB browser binaries + a separate test
-    runner that no other Plot test relies on, and (c) the user-runnable
+    runner that no other Novel test relies on, and (c) the user-runnable
     DevTools recipe in `docs/CURSOR.md` §"How to verify the cursor
     state in the browser" (lines 197-215) is the appropriate
     sensory confirmation when the user wants one. If a future
@@ -4672,7 +4672,7 @@ in the same browser-verification round:
 ### D-2026-05-12-J — plot-code-red-team skill (adversarial code review)
 
 - **What:** Add ``plot/skills/plot-code-red-team/SKILL.md`` — a
-  procedure skill that runs 9 adversarial attacks against a Plot
+  procedure skill that runs 9 adversarial attacks against a Novel
   branch / commit set / PR. Triggers on Korean (리뷰 / 코드리뷰 /
   공격적으로 / 비판적으로) and English (review / red-team / check
   this) review-request phrases. Output is a structured report:
@@ -4685,7 +4685,7 @@ in the same browser-verification round:
   ``project_red_team_review_skill.md``):
   *"코드 리뷰나 설계 리뷰를 하는 스킬도 필요할 것 같구요. 이건
   레드팀 처럼 비판적 시각으로 바라 볼 수 있게 작성이 되어야해요."*
-  Plot has lived 1491-LOC god components for 8 months, six cursor
+  Novel has lived 1491-LOC god components for 8 months, six cursor
   rounds in three sessions, an anchor decoration painting outside
   the click target for two weeks. Each was reviewed in isolation
   and passed. The fix is not "review harder" — the fix is
@@ -4748,7 +4748,7 @@ in the same browser-verification round:
   adversarial attacks on the *idea*, not the code.
 
 - **Why:** code reviews catch bad code; they don't catch bad
-  ideas. Plot's v0.13.2 auto-edges were good code that the user
+  ideas. Novel's v0.13.2 auto-edges were good code that the user
   rolled back same-day — the idea was wrong. D-2026-05-10-E
   auto-layout shipped twice and was rejected twice. Catching
   these at the proposal stage is cheaper than catching them at
@@ -4812,7 +4812,7 @@ in the same browser-verification round:
 - **What:** Add ``plot/skills/plot-i18n-audit/SKILL.md`` — a
   procedure skill that runs 4 static audits on the viewer
   codebase for i18n compliance per
-  ``feedback_plot_global_service.md`` (Plot is a global service)
+  ``feedback_plot_global_service.md`` (Novel is a global service)
   + D-2026-05-11-D (English primary / Korean locale, parity
   guard already in place).
 
@@ -4898,7 +4898,7 @@ in the same browser-verification round:
   collapsed-ancestor pseudo-self-loops (cross-subtree edges that
   fold into the same parent) but lets user-drawn self-loops through.
 
-- **Why:** the canonical Plot spec re-delivered by the user
+- **Why:** the canonical Novel spec re-delivered by the user
   (2026-05-12, recorded in plan
   ``~/.claude/plans/dazzling-inventing-boole.md``) explicitly
   permits feedback loops:
@@ -4937,7 +4937,7 @@ in the same browser-verification round:
   - **External library (e.g. d3 self-loop helpers)**: rejected.
     The math fits in ~30 LOC; an extra dep would dwarf it.
 
-- **Approval:** Accepted by spec mandate. The canonical Plot spec
+- **Approval:** Accepted by spec mandate. The canonical Novel spec
   required this; the previous filter was a violation.
 
 - **Spec impact:** ``docs/SPEC.md §Edges`` gains a "Self-loops
@@ -4973,7 +4973,7 @@ in the same browser-verification round:
   *positional hint, not a constraint* — user can drag the node
   anywhere after creation.
 
-- **Why:** the canonical Plot spec re-delivered by the user
+- **Why:** the canonical Novel spec re-delivered by the user
   (plan ``~/.claude/plans/dazzling-inventing-boole.md``) says:
   > "프로젝트 노드 놓고(앵커) 그 주변에 미션, 코어밸류, 아이덴티티
   > 붙이면 되요. 뭐가 먼저고 말고는 없습니다."
@@ -5116,7 +5116,7 @@ in the same browser-verification round:
   Type ``string | null``, default ``null``. Schema parity test
   ``_EXPECTED_BASE_FIELDS`` extended.
 
-- **Why:** the canonical Plot spec re-delivered by the user
+- **Why:** the canonical Novel spec re-delivered by the user
   (plan ``~/.claude/plans/dazzling-inventing-boole.md``) §"데이터
   구조 원칙":
   > "owner 필드 포함 (멀티유저 확장 대비)."
@@ -5391,7 +5391,7 @@ in the same browser-verification round:
   ``key={activeCanvasKey}`` (App.tsx) which forces remount → new
   ``onInit`` fires.
 
-- **Why:** Plot's ``useNodesMemo`` returns a fresh ``nodes`` array
+- **Why:** Novel's ``useNodesMemo`` returns a fresh ``nodes`` array
   on every render (synthetic anchor is re-injected from the prop).
   RF v11's ``fitView`` prop re-fits whenever the ``nodes`` reference
   changes, so the user's manual zoom / pan was reset mid-session
@@ -5518,7 +5518,7 @@ in the same browser-verification round:
   anchor and all its associated visual layers"; the user's actual
   intent was "keep the anchor + make *interaction* feel like stock
   React Flow". Removing the anchor itself violated the canonical
-  Plot spec mandate ("프로젝트 노드가 가운데" — SPEC §Anchor) and
+  Novel spec mandate ("프로젝트 노드가 가운데" — SPEC §Anchor) and
   contradicted the user's mental model. NEXT_SESSION.md:22-24 already
   recorded this as over-reach before this session.
 
@@ -5604,7 +5604,7 @@ in the same browser-verification round:
   walk that names ~14 files is too long for CLAUDE.md (which is the
   triggers + gates SSOT, not implementation walkthrough). A skill
   surfaces only when the trigger fires ("new kind" etc.), keeping
-  Plot CLAUDE.md focused. Also matches the existing pattern —
+  Novel CLAUDE.md focused. Also matches the existing pattern —
   ``plot-feature-tdd`` / ``plot-frontend-bug-diagnosis`` /
   ``plot-i18n-audit`` are also procedure skills.
 
@@ -5885,19 +5885,19 @@ in the same browser-verification round:
   ``feedback_no_god_object`` auto-memory) converted to plain-text
   reference.
 
-- **Why:** Plot's plugin-skill directory ``plot/skills/`` is meant
+- **Why:** Novel's plugin-skill directory ``plot/skills/`` is meant
   for **end-user** skills — procedures that trigger in a *consumer's*
-  project after they install the Plot plugin (``plot-new-sketch``,
+  project after they install the mashbill plugin (``plot-new-sketch``,
   ``plot-read-sketch``, ``plot-help`` make sense there). The other
-  seven skills are **dev-facing**: they trigger during Plot's *own*
-  development, reference Plot's internal source (``viewer/src/``,
+  seven skills are **dev-facing**: they trigger during Novel's *own*
+  development, reference Novel's internal source (``viewer/src/``,
   ``mashbill/``, ``docs/``), and would be useless noise in a
   consumer's project. User flagged 2026-05-13:
   *"플롯 안에 스킬이 클로드 동작을 시키는 스킬인가요? 저건 플러그인이
   가진 스킬이잖아요. .claude/ 에 들어가야하는거 아닌가?"*
 
 - **Why monorepo-level (.claude/) over user-global (~/.claude/):**
-  These skills reference Plot-specific files (``Mission.ts``,
+  These skills reference Novel-specific files (``Mission.ts``,
   ``DOMAIN.md``, ``CONCEPTS.md``, ``CLAUDE.md`` Gate references).
   In another project they would mis-trigger or break links. Scoping
   them to the monorepo means they only activate when the developer
@@ -5906,7 +5906,7 @@ in the same browser-verification round:
 - **Why scope is 7, not all 10:** Three skills (``plot-help``,
   ``plot-new-sketch``, ``plot-read-sketch``) describe procedures
   a *consumer* runs on their own sketches. They reference plugin
-  commands and consumer workflows, not Plot internals. They stay
+  commands and consumer workflows, not Novel internals. They stay
   in ``plot/skills/`` where the plugin manifest exposes them.
 
 - **Honest correction:** I added ``plot-entity-template`` and
@@ -5924,7 +5924,7 @@ in the same browser-verification round:
 - **Approval:** Accepted by user, 2026-05-13 (explicit ".claude/
   에 들어가야하는거 아닌가" + "네 맞아요 고고씽").
 
-- **Spec impact:** None — internal organisation. Plot's plugin
+- **Spec impact:** None — internal organisation. Novel's plugin
   manifest still exposes ``plot/skills/`` but now only the 3
   end-user-facing skills.
 
@@ -5942,7 +5942,7 @@ in the same browser-verification round:
   ``noory-ai/evonest/skills/``, ``noory-ai/flutter-cask/``,
   ``noory-ai/pencil_m3_flutter/`` may have the same misclassification.
   Audit deferred until those plugins' next session — not blocking
-  Plot work.
+  Novel work.
 
 ---
 
@@ -6830,11 +6830,11 @@ in the same browser-verification round:
   clicking it is a "deselect everything" gesture, not a no-op.
   Anchor click now produces the same effect as clicking the empty
   pane — `setInspectorNodeId(null)`. The change is minimal and
-  matches Plot's UX principle "Clear Feedback" (every click produces
+  matches Novel's UX principle "Clear Feedback" (every click produces
   visible state change).
 
 - **Why ship as its own commit (not bundled with v0.17.0 Phase 1):**
-  Plot CLAUDE.md anti-pattern "Bundling a cross-cutting visual
+  Novel CLAUDE.md anti-pattern "Bundling a cross-cutting visual
   change with a feature change in one commit" — v0.13.10's
   cursor-patch-plus-auto-layout precedent shows what happens when
   visual fixes ride along with feature commits. Phase 1 ships pure
@@ -6979,13 +6979,13 @@ in the same browser-verification round:
   (Identity / tone / sibling services)" problem, and queue it as
   [`ROADMAP.md` §D](./ROADMAP.md).
 
-  - **Layer 1 — Data structural connection.** Free. Plot's typed
+  - **Layer 1 — Data structural connection.** Free. Novel's typed
     user-authored graph is already a GraphRAG-quality substrate;
     the usual GraphRAG entity-extraction step is zero-cost because
     the user drew the graph.
   - **Layer 2 — Input side / call enforcement.** Small.
     Addressable with a `context_envelope` MCP tool (ancestor chain
-    + Symbol resolves + N-hop neighbours), a Plot skill rule
+    + Symbol resolves + N-hop neighbours), a Novel skill rule
     forcing the agent to call it before starting node-scoped work,
     and the existing interview pattern
     ([`PRODUCT_SPEC.md` §9](../../../plot/docs/PRODUCT_SPEC.md)) surfacing the
@@ -7000,7 +7000,7 @@ in the same browser-verification round:
 
 - **Why:** earlier turns in this ideation conflated retrieval (data
   exposure) with behaviour change (the AI actually internalising
-  the forest). The 3-layer split makes it explicit that Plot is
+  the forest). The 3-layer split makes it explicit that Novel is
   **not** blocked on retrieval infrastructure — Layer 1 is
   essentially free — and that the real cost lives in Layers 2 + 3,
   of which only Layer 2 is small enough to ship before Distill /
@@ -7009,7 +7009,7 @@ in the same browser-verification round:
   Distill → Layer 3 crystallization input; Evonest → Layer 3
   verification engine.
 
-- **Concrete failure case — i18n / global-service:** Plot's i18n
+- **Concrete failure case — i18n / global-service:** Novel's i18n
   surface is the *most fully built-out* forest-anchoring mechanism
   in the project today — `useTranslation()` / `t()` plumbing,
   `viewer/src/i18n/locales/{en,ko}.json`, AND the static guard
@@ -7029,7 +7029,7 @@ in the same browser-verification round:
   independently of Phases 2 / 3.
 
 - **Alternatives:**
-  - **Import a full GraphRAG library** (rejected — Plot's typed
+  - **Import a full GraphRAG library** (rejected — Novel's typed
     user-authored graph makes most GraphRAG machinery redundant;
     entity extraction is zero-cost when the user already authored
     the relationships).
@@ -7093,7 +7093,7 @@ in the same browser-verification round:
     superseded.
   - **Idempotent / no-op-on-unchanged publish** — rejected;
     collapses audit history; the npm/cargo mental model misleads
-    because Plot publishes are *attestation* events, not registry
+    because Novel publishes are *attestation* events, not registry
     uploads. Confirm dialog text names this explicitly so users
     don't carry the wrong model in.
   - **Per-publish git tag in addition to commit** — rejected; tag
@@ -7141,7 +7141,7 @@ in the same browser-verification round:
   - ``viewer/src/canvases/inspectors/BaseInspector.tsx``: 220 → 270
     (publish button + version badge + confirm-dialog handler;
     no-growth henceforth).
-  - Plot CLAUDE.md Gate 2 LOC table updated to match.
+  - Novel CLAUDE.md Gate 2 LOC table updated to match.
 
 - **Files in this commit:** see [`plot/CHANGELOG.md`](../CHANGELOG.md)
   v0.18.0 section — 25-ish files (5 server modules + 5 viewer +
@@ -7508,14 +7508,14 @@ in the same browser-verification round:
   4. **Decoration position:** block widget placed *after* the
      closing ` ``` ` of the fence (``Decoration.widget({ side: 1,
      block: true })``). The Obsidian Live Preview pattern *hides*
-     source unless the cursor is inside the block; Plot keeps the
+     source unless the cursor is inside the block; Novel keeps the
      source visible because SSOT (D-2026-05-13-O #2) requires the
      authoritative markdown to remain editable + observable at all
      times. A source-toggle is deferred to a future v0.21.x if the
      always-visible source becomes pain.
   5. **Theme:** ``theme: "default"`` (mermaid's bundled theme).
      Matches the existing ``MDPreview.tsx`` config so the two
-     paths render identically. Plot's slate/indigo chrome lives
+     paths render identically. Novel's slate/indigo chrome lives
      outside the SVG (border + container).
   6. **Debounce:** 200 ms on doc changes via a ``ViewPlugin`` that
      debounces dispatch of the ``setMermaidDecorations``
@@ -7556,11 +7556,11 @@ in the same browser-verification round:
   KB gzip difference is mermaid moving to its own lazy chunk.
 
 - **Alternatives considered + rejected:**
-  - *Static ``import mermaid``* — Plot has no project-wide
+  - *Static ``import mermaid``* — Novel has no project-wide
     requirement that mermaid be available; users without mermaid
     blocks shouldn't pay for the library. Rejected.
   - *Obsidian's replace-on-blur pattern* — would hide the source
-    when the cursor leaves the fence. Plot's SSOT rule + lack of
+    when the cursor leaves the fence. Novel's SSOT rule + lack of
     a source-mode toggle make the always-visible source the safer
     default. Rejected for v0.21.0; reconsiderable later.
   - *Per-keystroke render (no debounce)* — would fire
@@ -8370,7 +8370,7 @@ non-ASCII folder name 2026-05-17: *"파일이름이 한글로 만들어지는게
 follow-up *"그냥 id 로 해야겠다. 그지?"*.
 
 **Decision:** Folder name = **``node.id``**, not ``slugify(label)``.
-Plot's id policy nudges users to ASCII identifiers, so the folder
+Novel's id policy nudges users to ASCII identifiers, so the folder
 path is now reliably ASCII without any transformation. Bonus: label
 rename no longer renames the folder (id is stable).
 
@@ -8436,7 +8436,7 @@ the same regardless of which version the canvas was last written by.
 ### D-2026-05-17-N — Default node size + auto-layout collision fixes (v0.24.2)
 
 **Context:** After importing the Banas workspace data into a fresh
-Plot project (Foundation + Actors via one-off script), the user
+Novel project (Foundation + Actors via one-off script), the user
 reported two adjacent UX issues:
 
 > *"정렬할 때 노드끼리 겹치면 안되는데 그리고 노드 크기가 너무 커요."*
@@ -8448,7 +8448,7 @@ Two AskUserQuestion locks 2026-05-17 narrowed the fixes:
   (200+ px wide) because the 32 px sibling-padding is too small to
   separate them cleanly; isolated nodes also stack into a single
   vertical column that grows unwieldy past 5 entries.
-- "노드 크기가 너무 크다" → option (B) — Plot's hardcoded default
+- "노드 크기가 너무 크다" → option (B) — Novel's hardcoded default
   ``180×80`` is too big for canvases that hold 5-10 nodes per view;
   the user wants a smaller default that fits more material per
   viewport without scroll.
@@ -8491,7 +8491,7 @@ Two AskUserQuestion locks 2026-05-17 narrowed the fixes:
 
 **Approval:** User-locked via two AskUserQuestion options
 2026-05-17 (Align issue: A — auto-layout button; Node size: B —
-Plot default reduction).
+Novel default reduction).
 
 **Spec impact:**
 - ``SPEC.md §Auto-layout`` mentions the padding; the value isn't
@@ -8603,7 +8603,7 @@ User 명시 동의: *"actor 캔버스에서는 4층까지... 백데이터처럼 
 → vertical). Research subject (실제 인터뷰 대상자) 는 *그 사람들이
 합쳐져서 추출되는* actor 의 `body` (Markdown) 필드 안 `## 인터뷰
 대상자` 섹션에 적음. **새 typed 필드, 새 kind, 새 캔버스 모두 만들지
-않음.** Global CLAUDE.md `design: YAGNI > others` + Plot 의 v0.13
+않음.** Global CLAUDE.md `design: YAGNI > others` + Novel 의 v0.13
 god SketchNode 교훈 (speculative 필드 추가 = 도메인 구조 망가뜨림)
 재발 방지.
 
@@ -8634,7 +8634,7 @@ JTBD / Service Design / Pragmatic) → 사용자 *"나도 C 처럼 느껴요. �
 - `[[feedback_no_god_object]]` (memory) — speculative 새 필드 추가
   금지의 SSOT.
 - `[[feedback_plot_space_vs_time]]` (memory) — research subject 도
-  공간/관계 데이터 (시간 기반 ✗) — Plot 도메인 안.
+  공간/관계 데이터 (시간 기반 ✗) — Novel 도메인 안.
 - `project_plot_research_subjects_deferred.md` (memory) — 결정 +
   trajectory 보존.
 
@@ -8644,7 +8644,7 @@ JTBD / Service Design / Pragmatic) → 사용자 *"나도 C 처럼 느껴요. �
 
 **Context:** 2026-05-19 토론 중 사용자가 *"로그인 같은 경우 어떻게
 할 거예요?"* 질문 → 익명 방문자 (Guest) → 로그인 service → Bana 또는
-Admin 으로 라우팅되는 전이가 Plot actor 모델 안 어디서 표현되는지
+Admin 으로 라우팅되는 전이가 Novel actor 모델 안 어디서 표현되는지
 드러나지 않음. 즉 PHILOSOPHY P5 *"Actor as class"* 가 *상태(state) /
 상태 전이(transition)* 차원을 명시적으로 다루지 못함.
 
@@ -8655,7 +8655,7 @@ field 가 필요한지 — *모두 미해결*. 사용자 직접 표현: *"이거
 patch 로 풀 문제 아닙니다. 모델의 기본 가정을 건드리는 질문이에요."*
 
 **Why pin if open:** 다음 세션에서 *"이걸 이미 결정했나?"* 를 다시
-묻지 않도록 — open 상태도 SSOT 가 있어야 함. Plot v0.13 god SketchNode
+묻지 않도록 — open 상태도 SSOT 가 있어야 함. Novel v0.13 god SketchNode
 saga 와 동일 교훈: 결정 안 한 항목을 *암묵* 으로 두면 다음 사람이
 ad-hoc 결정함 → 일관성 깨짐.
 
@@ -8668,10 +8668,10 @@ ad-hoc 결정함 → 일관성 깨짐.
   + revisit trigger 보존.
 
 **Trigger to revisit:**
-- 사용자가 Plot 안에서 *상태 전이 흐름* (예: 로그인, 결제, 신청 →
+- 사용자가 Novel 안에서 *상태 전이 흐름* (예: 로그인, 결제, 신청 →
   승인 → 거절) 을 그리기 시작하면서 actor 캔버스와 service flow 의
   분리가 어색해질 때.
-- 또는 Plot 모델 v1.0 commitment 시점.
+- 또는 Novel 모델 v1.0 commitment 시점.
 
 **Cross-refs:**
 - `[[project_plot_state_transitions_open.md]]` (memory) — open
@@ -8787,7 +8787,7 @@ field 폐기 선택).
 5. **Symbol 개념을 first-class 로 박음**: `docs/CONCEPTS.md ## Symbol`
    섹션 신설 — 5 candidate kinds (mission / core_value / identity /
    actor / sub-actor) 와 consumer (service / service_detail via *_ref)
-   명시. 두 plane 비대칭 흐름 ASCII 다이어그램. Plot의 2층 구조
+   명시. 두 plane 비대칭 흐름 ASCII 다이어그램. Novel의 2층 구조
    (PHILOSOPHY) 와 연결.
 
 **Implementation:**
@@ -8903,7 +8903,7 @@ field 폐기 선택).
 같은데요? ... 실제 작업할 때는 고정된 버전이 있어야하는데. 작업
 중에 중간에 변경이 이뤄지면 안되잖아요"*. 디스커션 통해 도달:
 
-- 사용자 의도 = *"Plot 의 산출물 = 설계도 (design blueprint), 그 전체
+- 사용자 의도 = *"Novel 의 산출물 = 설계도 (design blueprint), 그 전체
   의 안정된 snapshot 관리 필요"*.
 - per-canvas publish 는 D-2026-05-13-J #4 에서 거부 → per-node 로
   결정 (D-2026-05-13-O). 그러나 *"전체 설계도 단위 freeze"* 는
@@ -9442,7 +9442,7 @@ emphasises *content* + *relationships*, not chrome.
 |---|---|
 | ``viewer/src/canvases/SketchStencil.tsx`` | 9 preset shapes: ``TOP_LEVEL_CATEGORY`` / ``SERVICE_INSIDE_CATEGORY`` / metric / ``ACTOR_REF`` / ``MISSION_REF`` / ``VALUE_REF`` / ``IDENTITY_REF`` + 4 picker-driven helpers (``actorRefPresetFor`` / ``missionRefPresetFor`` / ``valueRefPresetFor`` / ``identityRefPresetFor``) — all moved to ``shape: "rectangle"``. Step was already ``rectangle``. |
 | ``mashbill/folder_io.py`` | 2 ``ActorRefNode`` auto-seeds in ``ensure_service_detail`` flipped from ``shape="ellipse"`` to ``shape="rectangle"`` for parity with the stencil. |
-| ``docs/SPEC.md`` | Optional: Plot Edges section already describes user-drawn nature; no spec change for shape (preset detail). |
+| ``docs/SPEC.md`` | Optional: Novel Edges section already describes user-drawn nature; no spec change for shape (preset detail). |
 
 **Why stencil-only (not Pydantic base)?** Two reasons:
 1. Stencil is the single funnel for *user-driven* creation; the
@@ -9773,7 +9773,7 @@ interaction graph the user authors.**
    mechanism for "interaction" semantics. UI for editing those fields
    is a follow-up — out of scope here.
 
-**Why no new kind?** The Plot philosophy line "the user controls
+**Why no new kind?** The Novel philosophy line "the user controls
 every line, every position, every colour" (PHILOSOPHY P10) and the
 "패턴 2회 이상 반복 시 추상화" rule both push against premature
 abstraction. Three different services authored without a felt need
@@ -10021,7 +10021,7 @@ hard interaction boundary"; this entry completes the arc.
 - A focus-trap library (e.g. focus-trap-react) adds a dependency
   and only handles focus, not pointer.
 - `inert` has been baseline-supported across Chrome / Safari /
-  Firefox since 2023 — Plot's target browsers all support it.
+  Firefox since 2023 — Novel's target browsers all support it.
 - The implementation is literally one conditional attribute:
   ```jsx
   <div {...(modalOpen ? { inert: "" } : {})}>
@@ -10632,7 +10632,7 @@ CLAUDE.md `methodology` rule:
 > `methodology: follow TDD(Red→Green→Refactor), BDD(Given/When/Then), 테스트 피라미드, F.I.R.S.T`
 > `constraint: 테스트 없이 구현 먼저 작성 금지`
 
-Plot's local `CLAUDE.md` had Gates -1 / 0 / 1 / 2 / 3 / 4 but no
+Novel's local `CLAUDE.md` had Gates -1 / 0 / 1 / 2 / 3 / 4 but no
 explicit *Gate 1.5 — Test before code* gate. Without that, the
 assistant interpreted the global rule as "guidance" rather than a
 hard ordering constraint and shipped code-first.
@@ -10705,7 +10705,7 @@ the moment the user confirms after seeing v0.27.8 land.
   *not* a substitute for Gate 1.5).
 - D-2026-05-12-F (the structural-guards.test.tsx contract host).
 - Global `~/.claude/CLAUDE.md` `methodology: 테스트 없이 구현 먼저
-  작성 금지` — the rule Plot's Gate 1.5 makes explicit.
+  작성 금지` — the rule Novel's Gate 1.5 makes explicit.
 
 ---
 
@@ -10956,7 +10956,7 @@ with `{ error: "Drop inside a Service container" }`; post-fix
 2. **Auto-translate the stencil labels Composition/Metric/Step
    to Korean "인터랙션"/"가치"** to match the user's mental model.
    Not done in this entry — labels stay i18n keys (`kind.metric`,
-   `kind.step`) so the same Plot install works for non-Korean
+   `kind.step`) so the same Novel install works for non-Korean
    teams. Re-labeling per-canvas is a separate UX call.
 
 **Spec impact:** `SPEC.md` ServiceDetail §Stencil now documents
@@ -11261,7 +11261,7 @@ ends up on its parent's right side.
 
 - Dagre is a DAG layout. Cycles are broken by dagre's internal
   feedback-arc-set pass — one edge per cycle is silently reversed
-  for layout. Plot's typical ServiceDetail graphs contain small
+  for layout. Novel's typical ServiceDetail graphs contain small
   actor → interaction → actor cycles (Hero → 모임 → Fan +
   Fan → 후원 → Hero). The result is still readable but the
   reversed edges may not align perfectly with their declared
@@ -11858,7 +11858,7 @@ but not yet fully eliminated.
 - **Derived, not stored:** the injection look is computed from the
   *source node kind* (like the v0.27.19 branch badge is computed from
   the outgoing-edge count) — no new edge kind, no stored flag, no
-  auto-emit. The user draws the edge (PHILOSOPHY P10); Plot only
+  auto-emit. The user draws the edge (PHILOSOPHY P10); Novel only
   styles it.
 - **`actor_ref` excluded:** the user-side `actor_ref → entry` subject
   edge is the sequence anchor, not a foundation injection — only the
@@ -12155,7 +12155,7 @@ but not yet fully eliminated.
 ### D-2026-05-31-L — Workspace discovery + dir-tree endpoints (multi-directory projects, Phase 1)
 
 - **What:** Two read-only server endpoints backing the upcoming
-  multi-directory-projects feature (a monorepo holds many Plot projects,
+  multi-directory-projects feature (a monorepo holds many Novel projects,
   each in its own subdirectory with its own `.plot/`):
   - `GET /api/workspace/projects?project_path=<root>` → recursively
     discovers every valid project anywhere under the root, each with its
@@ -12194,7 +12194,7 @@ but not yet fully eliminated.
   the **effective project path** (`root + project dir`), so projects in
   different subdirectories each read/write their own `.plot/`. The "New
   project" button is renamed **"Add a Project"** (en) / "프로젝트 추가" (ko).
-- **Why:** A monorepo holds many Plot projects, one per package/subdir. The
+- **Why:** A monorepo holds many Novel projects, one per package/subdir. The
   flat single-`.plot` model could only show one directory's projects.
 - **Key invariants:**
   - `project_path` is no longer a page-load constant — `workspaceRoot`
@@ -12489,7 +12489,7 @@ but not yet fully eliminated.
 ### D-2026-05-31-Z — `/plot-new-project` skill (create a project in a chosen dir)
 
 - **What:** new user-invocable skill `skills/plot-new-project/SKILL.md`. It
-  creates a Plot project in a directory the user picks and opens it. Steps:
+  creates a Novel project in a directory the user picks and opens it. Steps:
   resolve the workspace (monorepo) root → pick the target subdir (ask, or use
   `discover_workspace_projects` to show what already exists; never invent a
   dir) → ask a name → build a unique `project_id` → `create_project_tool` →
@@ -12564,7 +12564,7 @@ but not yet fully eliminated.
   the new rel (which flows into `create()` → project-name prompt).
 - **Why:** User: *"폴더 새로 만들어서 추가할 수는 없는건가?"* — previously the
   picker was tree-only (existing dirs only) and `resolve_plot_root` 404'd on a
-  missing dir, so a new app service's folder had to be `mkdir`'d outside Plot
+  missing dir, so a new app service's folder had to be `mkdir`'d outside Novel
   first. The monorepo flow ([[project_plot_project_creation_model]], Banas +
   Banana) needs to start a project in a folder that doesn't exist yet.
 - **Two prompts, one flow:** folder name, then project name. Kept separate
@@ -12891,7 +12891,7 @@ but not yet fully eliminated.
   fields are an enhancement layer for when AI derivation is built; they don't gate
   manual authoring. No migration needed — Pydantic / `fromJson` supply the defaults
   for pre-v0.44 nodes that lack the keys.
-- **Why:** the user named "identity = output" as Plot's core foundation differentiator
+- **Why:** the user named "identity = output" as Novel's core foundation differentiator
   (`FOUNDATION_CONCEPT.md`, 2026-06-06); defining the target output model now is
   justified even though the AI-derivation writer is staged later.
 - **Alternatives:** (a) finalize the doc only, no code (rejected — user chose to
@@ -12908,7 +12908,7 @@ but not yet fully eliminated.
 
 ### D-2026-06-07-B — step3: native project folder picker (Tauri desktop app)
 
-- **Context:** Plot.app (Tauri 2) bundles viewer + mashbill sidecar. The viewer
+- **Context:** Novel.app (Tauri 2) bundles viewer + mashbill sidecar. The viewer
   reads `?project_path=...` from the URL; without the param it shows a dead-end
   "add URL param" screen — unusable in a .app double-click launch where there's
   no URL bar.
@@ -12955,7 +12955,7 @@ but not yet fully eliminated.
   header toggle sets an explicit `localStorage["plot:theme"]` = light | dark |
   system (mirrors `plot:lang`); the resolved theme toggles `.dark` on
   `<html>`. The dead `ink`/`paper` config colours (0 usages) are removed.
-- **Why:** Plot is a global desktop product; dark mode is table-stakes UX.
+- **Why:** Novel is a global desktop product; dark mode is table-stakes UX.
   Semantic tokens give a single source of truth for colour (SSOT), keep the
   light UI pixel-identical (each token's light value = its current hex), and
   avoid `dark:`-prefix sprawl across every component.
@@ -13042,7 +13042,7 @@ but not yet fully eliminated.
 - **What:** Hide the bottom-right "React Flow" attribution badge on the canvas
   via `proOptions={{ hideAttribution: true }}` on the `<ReactFlow>` element in
   `SketchCanvas`.
-- **Why:** Plot ships as a commercial desktop app (OVERHAUL R1/R5/R6); a
+- **Why:** Novel ships as a commercial desktop app (OVERHAUL R1/R5/R6); a
   third-party watermark on the user's canvas is off-brand. User asked to remove
   it ("오른쪽 하단에 react flow 라고 나오는거 그거 없앨 수 없나요?").
 - **Licence:** `reactflow` (xyflow) is MIT. xyflow *recommends* keeping the
@@ -13070,8 +13070,8 @@ but not yet fully eliminated.
   projects. Per-project repos also caused a nested-git problem when the user
   wanted a workspace-level repo.
 - **Workspace boundary:** the repo sits at `.plot/` (the direct parent of every
-  `.plot/{project_id}`) — Plot's data root — NOT the launch folder
-  (`project_path`), so the user's non-Plot files in the launch folder are never
+  `.plot/{project_id}`) — Novel's data root — NOT the launch folder
+  (`project_path`), so the user's non-Novel files in the launch folder are never
   tracked. SPEC §"Workspace & projects" also describes multi-`.plot` roots; if
   those ever need one shared history, hoisting the repo to the launch root is a
   deferred follow-up (this change collapses per-project → per-`.plot`, the
@@ -13117,7 +13117,7 @@ but not yet fully eliminated.
   (release bundles tree-shake the probe out entirely — verified by grepping the
   built assets). **Shell:** `tauri-plugin-screenshots` becomes an optional
   Cargo dependency behind a `debug-tools` feature; the debug flavor overlay
-  `tauri.debug.conf.json` (productName "Plot Debug", identifier
+  `tauri.debug.conf.json` (productName "Novel Debug", identifier
   `me.noory.plot.debug`, frontendDist `dist-debug`, inline `screenshots:default`
   capability) + `-- --features debug-tools` selects it, and the shell spawns the
   sidecar with `PLOT_DEBUG=1` only under that feature.
@@ -13366,7 +13366,7 @@ but not yet fully eliminated.
 
 - **What:** The **workspace is the user's opened folder**, and that folder
   IS the git repo. `.noory/plot/` lives *inside* the workspace repo (alongside
-  the user's own source / docs / `.env` / whatever they keep there); Plot
+  the user's own source / docs / `.env` / whatever they keep there); Novel
   does NOT create its own `.git` under `.noory/plot/`. `ensure_repo` /
   `tag_snapshot` / `publish_snapshot` / blueprint-publish all target the
   workspace root (the path passed as `?project_path=…`), not its
@@ -13374,13 +13374,13 @@ but not yet fully eliminated.
 - **Why (user):** "git은 프로젝트가 아니라 워크스페이스 당 1개에요. .plot/
   에 두는게 아니라 워크스페이스 자체가 깃 레포여야한다." (2026-06-11). The
   v0.53.0 → v0.59.x design that scoped the repo to `.noory/plot/` reasoned
-  from "protect non-Plot files in the launch folder"; the user's revised
+  from "protect non-Novel files in the launch folder"; the user's revised
   position is that workspace = git repo by definition, and tracking
-  decisions (`.gitignore`) belong to the user, not to Plot.
+  decisions (`.gitignore`) belong to the user, not to Novel.
 - **Supersedes:** D-2026-06-09-C (repo at `.noory/plot/`) — partially. The
   "one repo per workspace, not per project" half stays correct; the "repo
   inside `.noory/plot/`" half flips to "repo at the workspace root."
-- **Consequence — gitignore is the user's call:** Plot does NOT auto-add an
+- **Consequence — gitignore is the user's call:** Novel does NOT auto-add an
   ignore entry for its own data. If the user wants `.noory/plot/` tracked,
   it just is; if not, they add `.noory/plot/` to their workspace
   `.gitignore`. (Sibling plugin migrations — evonest v1.1.1, solera v5.2.0 —
@@ -13399,12 +13399,12 @@ but not yet fully eliminated.
 - **Approval:** Accepted by user, 2026-06-11. Spec pinned at SPEC.md
   §Workspace & projects → "Workspace = git repo (D-2026-06-11-C)".
 
-### D-2026-06-11-D — Git init requires explicit user consent (Plot never auto-creates `.git`)
+### D-2026-06-11-D — Git init requires explicit user consent (Novel never auto-creates `.git`)
 
-- **What:** When the workspace folder already contains a `.git/`, Plot uses
+- **What:** When the workspace folder already contains a `.git/`, Novel uses
   that repo as-is — never touches `user.name`/`user.email`, never writes
   `.gitignore` or `.gitattributes`, never silently runs `git init`. When the
-  workspace folder does NOT contain a `.git/`, Plot also does NOT silently
+  workspace folder does NOT contain a `.git/`, Novel also does NOT silently
   init one. Instead, the first tag/publish call that needs git replies with
   a structured error (`{error: "git not initialized in workspace",
   needs_git_init: true, workspace_root: "..."}`) and the viewer surfaces a
@@ -13414,24 +13414,24 @@ but not yet fully eliminated.
 - **Why (user):** "근데 원래 깃일 경우도 있구요. 깃 레포가 아니면
   깃레포여야하는데 추가할거냐고 물어봐야합니다." (2026-06-11). Two
   invariants pulled from one sentence:
-  1. **Existing git wins.** If the user already has a repo there, Plot must
+  1. **Existing git wins.** If the user already has a repo there, Novel must
      stay out of it. No `git config` writes, no `.gitignore` injection.
-  2. **No surprise repos.** If there's no repo, Plot proposing tag/publish
+  2. **No surprise repos.** If there's no repo, Novel proposing tag/publish
      is fine, but creating the actual `.git/` requires the user clicking
      Yes — `git init` on a directory the user opened is a *visible* change
      that needs consent like any other destructive-ish action.
-- **Identity (`user.name`/`user.email`) for Plot-authored commits:** instead
-  of writing repo-level config, every Plot commit/tag passes its identity
-  inline (`git -c user.name=Plot -c user.email=plot@noory-ai.local commit
-  …`). That way Plot commits are identifiable in `git log --author`, but the
+- **Identity (`user.name`/`user.email`) for Novel-authored commits:** instead
+  of writing repo-level config, every Novel commit/tag passes its identity
+  inline (`git -c user.name=Novel -c user.email=plot@noory-ai.local commit
+  …`). That way Novel commits are identifiable in `git log --author`, but the
   user's repo-level `user.name` stays whatever they had before, even on a
-  freshly-init-by-Plot repo (so their next non-Plot commit is authored as
-  themselves, not as "Plot").
-- **Path-scoped staging:** Plot's tag/publish commits stage only
+  freshly-init-by-Novel repo (so their next non-Novel commit is authored as
+  themselves, not as "Novel").
+- **Path-scoped staging:** Novel's tag/publish commits stage only
   `.noory/plot/` (i.e. `git add -A -- .noory/plot/`), never the whole
   workspace. The user's working tree changes outside `.noory/plot/` are
-  never folded into a Plot commit by accident. (The user can always
-  `git add` other paths themselves and Plot's next `git add` won't touch
+  never folded into a Novel commit by accident. (The user can always
+  `git add` other paths themselves and Novel's next `git add` won't touch
   them.)
 - **Migration on first open of a workspace that has the prior `.noory/plot/.git`:**
   - if the workspace also already has its own `.git/` → leave both alone,
@@ -13454,28 +13454,28 @@ but not yet fully eliminated.
 ### D-2026-06-11-E — R7 in-app chat = native panel (with external-CLI subprocess)
 
 - **What:** R7's in-app chat surface ships as a **native panel** inside
-  Plot (not a thin "open Claude Code" launcher). The panel renders the
+  Novel (not a thin "open Claude Code" launcher). The panel renders the
   conversation, the input box, the message history, the per-message
-  status — all in Plot's own UI. The underlying *brain* is still the
-  user's external CLI (Claude Code / Codex / Gemini), which Plot drives
-  as a subprocess: Plot writes the user's message to the CLI's stdin,
+  status — all in Novel's own UI. The underlying *brain* is still the
+  user's external CLI (Claude Code / Codex / Gemini), which Novel drives
+  as a subprocess: Novel writes the user's message to the CLI's stdin,
   parses streamed output back, and shows it in the panel. The CLI owns
-  API keys, model selection, billing — Plot owns the canvas + the chat
+  API keys, model selection, billing — Novel owns the canvas + the chat
   shell.
 - **Why (user choice, 2026-06-11):** Option A out of three (A = native
   panel, B = thin launcher, C = ship B first then add A). The user
   picked A directly. Native panel keeps the canvas-and-conversation
   context together (no context switching to a terminal) while staying
-  inside the pinned Pencil model — Plot still doesn't host an AI, it
+  inside the pinned Pencil model — Novel still doesn't host an AI, it
   just gives the user's own agent a unified surface to work through.
 - **Pencil model invariants preserved:**
-  - Plot never holds API keys or credentials. Auth is the CLI's job
-    (`claude login`, `codex login`, etc.); Plot spawns an
+  - Novel never holds API keys or credentials. Auth is the CLI's job
+    (`claude login`, `codex login`, etc.); Novel spawns an
     already-authenticated CLI.
-  - Plot never bills the user. Token usage shows up on the user's
+  - Novel never bills the user. Token usage shows up on the user's
     Anthropic / OpenAI / Google account.
-  - Plot doesn't expose model selection. The CLI uses whichever model
-    is configured (its own settings file). Plot may surface a read-only
+  - Novel doesn't expose model selection. The CLI uses whichever model
+    is configured (its own settings file). Novel may surface a read-only
     "current model" indicator in the panel chrome.
 - **Multi-provider abstraction:** one Provider interface (start
   subprocess, write message, read streamed output, kill on close) with
@@ -13487,16 +13487,16 @@ but not yet fully eliminated.
 - **Implementation outline (separate session):**
   - Track 2.5 R7 MCP registration ships first (per-CLI MCP config
     edits — `~/.claude.json` / `~/.codex/config.toml` / `~/.gemini/
-    settings.json`) so the CLI knows how to call Plot's MCP server.
+    settings.json`) so the CLI knows how to call Novel's MCP server.
     *Then* the native panel can be wired up, since the canvas ↔ chat
-    feedback loop relies on the CLI calling Plot's MCP tools.
+    feedback loop relies on the CLI calling Novel's MCP tools.
   - Provider interface + ClaudeCodeProvider first (most mature MCP
     support), then CodexProvider + GeminiProvider as their MCP stories
     settle. Streamed-output parsing per provider.
   - Panel UI as a right-side dock that the user can collapse; uses
     the existing `dialog`/`shell` chrome conventions.
-  - Path-scoped: Plot subprocesses the CLI inside the workspace folder
-    so the CLI sees the same `?project_path=` Plot is opened on.
+  - Path-scoped: Novel subprocesses the CLI inside the workspace folder
+    so the CLI sees the same `?project_path=` Novel is opened on.
 - **Approval:** Accepted by user, 2026-06-11. Spec pinned at SPEC.md
   §R7 chat (D-2026-06-11-E).
 
@@ -13508,7 +13508,7 @@ but not yet fully eliminated.
   > "모노레포를 생각해봐요. 거기에 앱이 두 개 있어요. 서로다른 서비스죠.
   > 그래서 워크스페이스는 모노레포인거고 프로젝트는 서로다른 서비스인거에요."
   Two apps in `apps/web/` and `apps/mobile/` (or `services/api/` and
-  `services/billing/`) are two **separate projects** in Plot — each with
+  `services/billing/`) are two **separate projects** in Novel — each with
   its own Foundation / Actors / Services / Service-Detail canvases —
   but they sit inside ONE workspace (= the monorepo) that shares ONE
   git repo (D-2026-06-11-C/D), ONE `.noory/` dotfolder (R9), and ONE
@@ -13533,7 +13533,7 @@ but not yet fully eliminated.
   workspace", "the workspace path") refer to the monorepo. Sidebar
   list = "projects in this workspace" = services in this monorepo.
 - **Disk layout (unchanged):**
-  - `<monorepo>/.noory/plot/{project_id}/` — one Plot project's data
+  - `<monorepo>/.noory/plot/{project_id}/` — one Novel project's data
     (canvases, published MD, etc.). The `{project_id}` is opaque
     (UUID-ish); the user-facing name is `ProjectDoc.name`.
   - Recursive discovery picks up nested `.noory/plot/` roots too, so
@@ -13624,7 +13624,7 @@ but not yet fully eliminated.
 - **What:** The CLI subprocess that drives the R7 chat panel
   (`claude` / `codex` / `gemini`) is spawned, fed, and reaped by the
   **mashbill engine** (Python). The viewer reaches it through the same
-  HTTP/WS transport it already uses for every other Plot operation
+  HTTP/WS transport it already uses for every other Novel operation
   (`POST /api/chat/send`, `WS /ws/chat?project_path=…`). The Tauri shell
   does *not* spawn or stream the chat CLI; its only role stays "host the
   engine sidecar".
@@ -13691,12 +13691,12 @@ but not yet fully eliminated.
   spawning a default CLI the user didn't choose.
 - **Per-provider quirks pinned here (so they're not buried in code
   comments — gates 1 + spec triumph over comments):**
-  - **Claude Code:** Plot mints the ``--session-id`` (uuid4) on the
-    first turn, then ``--resume <id>``. Plot is the only party that
+  - **Claude Code:** Novel mints the ``--session-id`` (uuid4) on the
+    first turn, then ``--resume <id>``. Novel is the only party that
     knows the id from the very first call. (Unchanged from v0.64.0.)
   - **Codex:** the CLI emits ``thread.started`` with ``thread_id`` on
     the first turn — we capture it and pass it to
-    ``codex exec resume <thread_id>`` on later turns. Plot does NOT
+    ``codex exec resume <thread_id>`` on later turns. Novel does NOT
     mint a UUID up-front (Codex doesn't accept one). If the first
     turn never emits ``thread.started`` (CLI crash, parse skip), the
     next turn falls back to a fresh ``codex exec`` so we never call
@@ -13705,7 +13705,7 @@ but not yet fully eliminated.
     git-init consent kicks in.
   - **Gemini:** the CLI emits ``init`` with ``session_id`` on the
     first turn — we capture it and pass ``--resume <session_id>`` on
-    later turns. ``-y`` (YOLO mode) is always on because Plot is the
+    later turns. ``-y`` (YOLO mode) is always on because Novel is the
     canvas surface that owns user trust; the inner tool calls don't
     need a second confirmation layer (matches how IDE plugins like
     Cursor / Zed embed agentic CLIs).
@@ -13719,7 +13719,7 @@ but not yet fully eliminated.
 - **No-selection → 400 (not auto-default):** v0.64.0 silently fell
   back to ClaudeCodeProvider whenever the workspace had no persisted
   selection. That contradicts D-2026-06-11-E's Pencil-model
-  invariants — Plot is supposed to host the canvas, not pick a default
+  invariants — Novel is supposed to host the canvas, not pick a default
   AI for the user. The 400 surfaces a clean error to the dock which is
   already showing the "Pick a chat CLI above to start" empty state.
 - **Module-size discipline:** v0.64.0 shipped one ~370-LOC
@@ -13740,7 +13740,7 @@ but not yet fully eliminated.
 
 ### D-2026-06-12-F — Engine auth seam (Track 3.5, TABLET_ARCH §"지금 만들 것")
 
-- **What:** Plot ships an env-gated auth seam at every engine entry
+- **What:** Novel ships an env-gated auth seam at every engine entry
   point. ``PLOT_AUTH_TOKEN`` unset → every request passes through
   (today's dev parity). ``PLOT_AUTH_TOKEN`` set → ``/api/*`` requires
   ``Authorization: Bearer <token>`` and the ``/ws`` handshake requires
@@ -13869,7 +13869,7 @@ but not yet fully eliminated.
   exposes `placePresetAt(preset, clientX, clientY)` + registers the pane;
   `SketchStencil` items use `onPointerDown`. A ghost chip follows the
   pointer for feedback.
-- **Why:** WKWebView (the bundled Tauri `.app` — Plot's only product
+- **Why:** WKWebView (the bundled Tauri `.app` — Novel's only product
   surface) does **not** fire HTML5 `dragstart` / `drop`. Confirmed in-app
   via the debug channel: a top-level drop never changed `nodeCount`. So
   stencil drops created no node on ANY canvas in the desktop app, while
@@ -13951,9 +13951,9 @@ but not yet fully eliminated.
 ### D-2026-06-13-H — Chat is MCP-first; in-app chat is a Codex/Gemini-only convenience (design pinned, impl follow-up)
 
 - **What (two coexisting paths):**
-  - **Primary — MCP-only.** Plot is an MCP server; the user connects their
+  - **Primary — MCP-only.** Novel is an MCP server; the user connects their
     OWN interactive agent (Claude Code / Codex / Gemini, already running on
-    their account/subscription, as in an IDE) to it. Plot does NOT host or
+    their account/subscription, as in an IDE) to it. Novel does NOT host or
     drive the AI. The R7 MCP registration (v0.62) is the keeper.
   - **Secondary — in-app chat for Codex + Gemini ONLY.** The in-app panel
     (engine spawns the CLI) stays for users who configured Codex/Gemini.
@@ -13966,18 +13966,18 @@ but not yet fully eliminated.
     the MCP context handed to the agent.
 - **Why:** the CLI agents ARE interactive chats — running `claude`
   (no `-p`) IS a chat session, on the account subscription, like the
-  VSCode Claude Code extension. Plot's in-app chat uses `claude -p`
+  VSCode Claude Code extension. Novel's in-app chat uses `claude -p`
   (headless), which Anthropic bills SEPARATELY from the Claude
   subscription → a Claude user **pays twice** (subscription + `-p`). The
-  user already runs their agent; Plot embedding/driving it via `-p` is
-  redundant + costly. So Plot should be the MCP surface their existing
+  user already runs their agent; Novel embedding/driving it via `-p` is
+  redundant + costly. So Novel should be the MCP surface their existing
   agent connects to, not a chat host. Codex/Gemini in-app stays as a
   convenience for users who set those up (user: "둘 다 할거라고").
 - **Alternatives:** (a) drive the *interactive* (subscription) CLI via a
   PTY to dodge `-p` billing — rejected for now: fragile (parsing a
   human-facing TUI the CLIs deliberately don't expose for automation) and
   billing/ToS-uncertain. Verify before ever revisiting. (b) in-app API key
-  / Plot-hosted AI — both violate the pinned Pencil model + double-charge.
+  / Novel-hosted AI — both violate the pinned Pencil model + double-charge.
 - **Revises:** D-2026-06-11-E ("R7 in-app chat = native panel + external
   CLI subprocess") — the subprocess in-app chat is **demoted** to a
   Codex/Gemini-only secondary; MCP-only is primary. Reframes the

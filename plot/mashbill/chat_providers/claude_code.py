@@ -1,6 +1,6 @@
 """Claude Code CLI driver (``claude --print``).
 
-The first turn passes ``--session-id <uuid>`` so Plot mints the
+The first turn passes ``--session-id <uuid>`` so Novel mints the
 conversation id; every later turn passes ``--resume <uuid>`` so the CLI
 loads its persisted transcript and the conversation continues naturally.
 ``--include-partial-messages`` flips the JSONL stream into incremental
@@ -42,7 +42,7 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             cli_path=cli_path,
             subprocess_factory=subprocess_factory,
         )
-        # Claude is the only CLI where Plot mints the session id; the others
+        # Claude is the only CLI where Novel mints the session id; the others
         # report theirs through the first event of the first turn.
         self._session_id = session_id or str(uuid4())
 
@@ -54,7 +54,7 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             "stream-json",
             "--include-partial-messages",
             "--verbose",  # stream-json requires verbose mode
-            # D-2026-06-21-C — auto-allow the user's own Plot MCP tools. Headless
+            # D-2026-06-21-C — auto-allow the user's own mashbill MCP tools. Headless
             # ``-p`` can't show a permission prompt, so without this the agent
             # dead-ends ("press Allow" with nothing to press). Scoped to
             # ``mcp__plot__*`` ONLY — Bash / Write / filesystem keep default
@@ -63,13 +63,13 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
             # surfaced on the canvas per build-through-discussion).
             "--allowedTools",
             "mcp__plot__*",
-            # D-2026-06-26-E — attach THIS engine's own Plot MCP server directly,
+            # D-2026-06-26-E — attach THIS engine's own mashbill MCP server directly,
             # and use ONLY it. The in-app coach used to inherit ``plot`` from the
             # user's global ``~/.claude.json``; that pointer drifts (a deleted /
             # older app build) and silently leaves the coach with no canvas tools
             # — the "in-app chat can't write to the canvas" failure. ``--mcp-config``
             # injects the running build's stdio server; ``--strict-mcp-config``
-            # ignores every other MCP source, so the coach carries exactly Plot's
+            # ignores every other MCP source, so the coach carries exactly Novel's
             # tools (and none of the user's unrelated servers), never depending on
             # the global registration.
             "--mcp-config",
@@ -107,9 +107,9 @@ class ClaudeCodeProvider(_SubprocessChatProvider):
         return cmd
 
     def _mcp_config_path(self) -> str:
-        """Write the in-app Plot MCP config to a temp file and return its path
+        """Write the in-app mashbill MCP config to a temp file and return its path
         (D-2026-06-26-E). Passed to claude via ``--mcp-config`` so the coach
-        always carries this build's Plot tools.
+        always carries this build's Novel tools.
 
         Content is stable per install (the engine's own stdio command), so the
         file is content-addressed under the OS temp dir — idempotent across turns

@@ -1,4 +1,4 @@
-"""Combined MCP (stdio) + HTTP (localhost) server for Plot."""
+"""Combined MCP (stdio) + HTTP (localhost) server for Novel."""
 
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ async def _serve() -> None:
         tasks.append(asyncio.create_task(http_server.serve(), name="http"))
     else:
         _log.warning(
-            "HTTP port %d in use; another Plot instance may already serve the browser. "
+            "HTTP port %d in use; another Novel instance may already serve the browser. "
             "MCP stdio transport remains available.",
             port,
         )

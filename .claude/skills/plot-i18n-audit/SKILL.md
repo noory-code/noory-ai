@@ -1,6 +1,6 @@
 ---
 name: plot-i18n-audit
-description: Static audit of viewer i18n compliance per feedback_plot_global_service (Plot is a global service). Scans viewer/src/**/*.{ts,tsx} for hardcoded user-facing strings, undefined t() keys, stale locale keys, and untranslated values. Triggers on i18n / 다국어 / 국제화 / "translation audit" / "locale check" / "i18n 검사" plus a Plot context.
+description: Static audit of viewer i18n compliance per feedback_plot_global_service (Novel is a global service). Scans viewer/src/**/*.{ts,tsx} for hardcoded user-facing strings, undefined t() keys, stale locale keys, and untranslated values. Triggers on i18n / 다국어 / 국제화 / "translation audit" / "locale check" / "i18n 검사" plus a Novel context.
 metadata:
   version: "1.0.0"
   category: review
@@ -12,7 +12,7 @@ metadata:
 
 # plot-i18n-audit — i18n compliance static audit
 
-> **Why this skill exists.** Plot is a global service (user direction
+> **Why this skill exists.** Novel is a global service (user direction
 > 2026-05-10: *"이건 글로벌 서비스가 될거거든요"*, D-2026-05-11-D,
 > ``memory/feedback_plot_global_service.md``). Hardcoded English /
 > Korean strings in `.tsx` files bypass the i18n resource bundle and
@@ -41,8 +41,8 @@ Activate when the user says:
 - "hardcoded string 있나" / "is anything hardcoded"
 - Or pastes a `.tsx` file path and asks "i18n OK?"
 
-**Do not** activate this skill for non-Plot codebases — the rules
-below cite Plot's i18n infrastructure and decision log directly.
+**Do not** activate this skill for non-Novel codebases — the rules
+below cite Novel's i18n infrastructure and decision log directly.
 
 If the user runs the skill with no scope hint, default to **all of
 ``viewer/src/**/*.{ts,tsx}``** (minus the exclusions below). If they

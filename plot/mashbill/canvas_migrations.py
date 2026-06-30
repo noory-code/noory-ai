@@ -83,7 +83,7 @@ def _migrate_published_flat_to_kind_slug(canvas_dir: Path) -> None:
 
 # v0.24.3 (D-2026-05-18-A) — published slug-folder → id-folder migration.
 # Pre-v0.24.3 layout used ``slugify(label)`` as the folder name, which
-# could be Korean / CJK. v0.24.3 switches to node id (ASCII per Plot's
+# could be Korean / CJK. v0.24.3 switches to node id (ASCII per Novel's
 # id policy) for clean, rename-stable folder names. Idempotent —
 # once renamed, the slug folder no longer exists so subsequent reads
 # are no-ops.

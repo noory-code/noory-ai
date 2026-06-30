@@ -1,4 +1,4 @@
-# PUBLISH — Plot per-node publish reference
+# PUBLISH — Novel per-node publish reference
 
 > Companion to [`SPEC.md` §Publish](./SPEC.md#publish-v0180) and
 > [`D-2026-05-16-E`](./DECISIONS.md). This document is the
@@ -11,7 +11,7 @@
 ## What publish writes
 
 Each click of the **📤** button in the Inspector header (after the
-confirm dialog), Plot atomically performs:
+confirm dialog), Novel atomically performs:
 
 1. Bumps the node's ``version`` MAJOR component (``v1.0 → v2.0``;
    MINOR resets to ``0``). Phase 4 will introduce MINOR

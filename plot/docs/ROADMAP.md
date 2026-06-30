@@ -1,4 +1,4 @@
-# Plot Roadmap
+# Novel Roadmap
 
 The implementation order for the major release lines. Each step is
 an independent, ship-ready commit (Python green, viewer green, plugin
@@ -32,7 +32,7 @@ mode; each Major / Critical finding below needs an answer in
 
 ### A) isomorphic-git source-data version control  `[ ]`
 
-**Spec mandate (canonical Plot spec §"원천 데이터 버전 관리 (git)"):**
+**Spec mandate (canonical Novel spec §"원천 데이터 버전 관리 (git)"):**
 > "캔버스 변경 시 자동 커밋 / 스냅샷 = 커밋 / 에이전트 변경 제안
 > = 브랜치 생성 / 사람 승인 = 머지 / 사람 거절 = 브랜치 삭제 /
 > 사용자는 git 을 몰라도 되고, 내부적으로 이력이 쌓임 / 나중에
@@ -61,7 +61,7 @@ resolution in ``DECISIONS.md`` before any code:
 3. **Major (A2) — agent commit identity.** Agent commits via
    ``committer=agent@plot``? Or ``committer=<user>`` with
    ``Co-authored-by: agent`` trailer? Determines how ``git log``
-   reads from outside Plot if GitHub sync ever lands.
+   reads from outside Novel if GitHub sync ever lands.
 
 4. **Major (A3) — conflict resolution UX.** User edits Mission;
    agent simultaneously proposes Mission edit. Both diverge from
@@ -107,7 +107,7 @@ commit must keep viewer 383+ + server 274+ green.
 
 ### B) Work-item layer (userstory + task)  `[ ]`
 
-**Spec mandate (canonical Plot spec §"일감 레이어 (시간적)"):**
+**Spec mandate (canonical Novel spec §"일감 레이어 (시간적)"):**
 > "서비스 인터뷰 → 유저스토리 초안 동시 생성 / 유저스토리 → 태스크로
 > 파생 / 태스크는 출처 메타데이터 보유 / 스냅샷 = git 커밋, 작업
 > 시작 시점 기준으로 에이전트에 컨텍스트 주입"
@@ -158,7 +158,7 @@ plan → execution.
    ``story_text`` (markdown), ``origin``, ``status`` (free string,
    not enum, until usage patterns clarify), ``owner`` (re-uses
    ``BaseNodeFields.owner`` shape from D-2026-05-12-P). The MVP draft
-   is **not silently emitted** — like every concept in Plot it is
+   is **not silently emitted** — like every concept in Novel it is
    built through discussion (AI proposes from the interview, user
    confirms) per ``D-2026-06-16-P``; ``create_userstory_draft`` seeds
    the proposal, the user refines/confirms before it persists.
@@ -182,7 +182,7 @@ Minor findings:
 
 ---
 
-### C) Plot repository split  `[ ]`
+### C) Novel repository split  `[ ]`
 
 **Spec mandate:** none directly. Filed in
 ``memory/project_plot_next_session.md`` as "AI recommends; user
@@ -192,11 +192,11 @@ decision pending."
 question is **product**, not technical.
 
 The decision the user owns:
-- **Split (Plot moves to ``github.com/noory-code/plot``):** cleaner
-  contributor surface; Plot has its own issues / PRs / release cadence;
+- **Split (Novel moves to ``github.com/noory-code/plot``):** cleaner
+  contributor surface; Novel has its own issues / PRs / release cadence;
   easier to license and distribute independently; users install via
   plugin marketplace with a stable repo URL.
-- **Stay (Plot remains in ``noory-ai`` monorepo):** shared CI infra,
+- **Stay (Novel remains in ``noory-ai`` monorepo):** shared CI infra,
   shared marketplace listing logic; no migration cost; the other 4
   plugins benefit from monorepo synergy.
 
@@ -218,7 +218,7 @@ session (see [D-2026-05-16-D](./DECISIONS.md)). Frames the
 faithfully but misses the surrounding Identity / tone / sibling-
 service coherence that the canvas already captures.
 
-**Why it matters:** Plot's essence ([`VISION.md`](../../../docs/VISION.md))
+**Why it matters:** Novel's essence ([`VISION.md`](../../../docs/VISION.md))
 hinges on AI work staying anchored to the discovered essence.
 Without explicit forest-injection mechanics, Retention (Phase 2) and
 Execution (Phase 3) drift apart — the canvas captures intent the
@@ -228,13 +228,13 @@ agent does not actually use.
 
 | Layer | Question | Cost |
 |---|---|---|
-| Data structural connection | Is the forest representable as a graph? | **Free** — Plot's typed user-authored graph already is one; the GraphRAG entity-extraction step is zero |
+| Data structural connection | Is the forest representable as a graph? | **Free** — Novel's typed user-authored graph already is one; the GraphRAG entity-extraction step is zero |
 | Input side / call enforcement | Does the AI pull forest data when starting work? | **Small** — `context_envelope` MCP tool + skill rule + interview-pattern strengthening |
 | Output side / verification | Did the AI's output actually reflect the forest? | **Large** — needs a verification loop (human PR review today; automated later via Evonest port) |
 
 **Phase plan:**
 
-- **Phase 1 (near-term, Plot-internal only)** — the AI-chat context
+- **Phase 1 (near-term, Novel-internal only)** — the AI-chat context
   envelope, now pinned by [D-2026-06-17-L](./DECISIONS.md): per-turn
   the AI sees (1) the **active canvas** (full), (2) **current
   selection**, (3) an **upstream-canvas summary** (essence + key nodes
@@ -277,7 +277,7 @@ minimum:
 **Dependency direction:** Phase 1 has **no hard dependency** on
 items A / B / C. Phases 2 / 3 depend on the future Distill /
 Evonest ports (currently sibling packages in the monorepo, not
-Plot features).
+Novel features).
 
 **Expected sizing:** Phase 1 = days; Phases 2 / 3 are downstream of
 Distill / Evonest porting and not standalone-sized here.
@@ -485,7 +485,7 @@ The composition kinds that already exist gain richer typed fields.
 - The "edge utilisation strategy" — keep the existing `action_verb` /
   `value_form` edge metadata as-is; revisit only after the kind
   redefinition is shipped.
-- The future task / time-axis layer — Plot keeps room for it (the
+- The future task / time-axis layer — Novel keeps room for it (the
   service model doesn't preclude a `delivery_status` typed field
   later) but no work in v0.10.
 - Renaming `core_value` to a shorter name — kept as `core_value` per

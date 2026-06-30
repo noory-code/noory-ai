@@ -1,7 +1,7 @@
 """Server entrypoints — D-2026-06-14-A.
 
 ``run_mcp_stdio`` is the entry the bundled .app binary uses when an external
-CLI launches Plot as a registered MCP server. It must drive ONLY the stdio
+CLI launches Novel as a registered MCP server. It must drive ONLY the stdio
 MCP transport — starting another HTTP server would collide with the already
 running sidecar on :5190 and is pointless for a stdio client.
 

@@ -1,6 +1,6 @@
 ---
 name: plot-domain-design
-description: Procedure for placing a new domain concept into Plot's bounded-context map *before* writing code. Forces a decision tree — is this a new entity (own id, own kind) or a value-object (embedded in another)? Which bounded context owns it (Discovery / Retention / Planning / Execution / AICollaboration)? Does the existing 15-kind palette already cover it? Triggers on "design", "도메인 설계", "어디다 둘까", "where does this go", "bounded context", "DDD", "entity vs value", "domain layer", "도메인 레이어". Prevents the v0.13.3-v0.13.10 cursor saga's root cause (no domain map → every fix picks an ad-hoc location → next bug surfaces elsewhere).
+description: Procedure for placing a new domain concept into Novel's bounded-context map *before* writing code. Forces a decision tree — is this a new entity (own id, own kind) or a value-object (embedded in another)? Which bounded context owns it (Discovery / Retention / Planning / Execution / AICollaboration)? Does the existing 15-kind palette already cover it? Triggers on "design", "도메인 설계", "어디다 둘까", "where does this go", "bounded context", "DDD", "entity vs value", "domain layer", "도메인 레이어". Prevents the v0.13.3-v0.13.10 cursor saga's root cause (no domain map → every fix picks an ad-hoc location → next bug surfaces elsewhere).
 metadata:
   version: "1.0.0"
   category: dev-process
@@ -23,7 +23,7 @@ metadata:
 
 # plot-domain-design — placing a new concept before writing code
 
-> **Why this skill exists.** Plot's v0.13.3 → v0.13.10 cursor saga
+> **Why this skill exists.** Novel's v0.13.3 → v0.13.10 cursor saga
 > (six rounds, see [D-2026-05-10-C](../../plot/docs/DECISIONS.md),
 > [D-2026-05-10-F](../../plot/docs/DECISIONS.md)) was caused by no domain
 > map: every fix picked "where does this rule live?" without a
@@ -42,7 +42,7 @@ metadata:
 Run this skill **before** [`plot-entity-template`](../plot-entity-template/SKILL.md)
 or [`plot-feature-tdd`](../plot-feature-tdd/SKILL.md) when:
 
-- The user proposes a *new* concept Plot doesn't yet model.
+- The user proposes a *new* concept Novel doesn't yet model.
   Examples: *"budget"*, *"decision log"*, *"risk"*, *"timeline"*.
 - The user proposes a rule whose location isn't obvious. Examples:
   *"selection should follow drag direction"*, *"the badge should mean
@@ -70,7 +70,7 @@ home, skip this skill — go directly to the implementation pipeline.
 For *things* only. Both end up as classes in `viewer/src/domain/`; the
 distinction is whether the user can address it directly.
 
-| Type | Has its own id? | Can be a node on a canvas? | Example in Plot |
+| Type | Has its own id? | Can be a node on a canvas? | Example in Novel |
 |---|:---:|:---:|---|
 | **Entity** | Yes | Yes (rendered as a `BaseNode`) | `Mission`, `Service`, `Actor` |
 | **Value-object** | No | No (embedded inside an entity) | `BaseFields` (shared shape), the `MissionJson["why"]` typed text |

@@ -41,7 +41,7 @@ def workspace(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def client() -> TestClient:
-    """A NO-git client — Plot never auto-inits, so the publish git boundary
+    """A NO-git client — Novel never auto-inits, so the publish git boundary
     fires unless a test seeds a repo itself."""
     return TestClient(create_http_app(hub=BroadcastHub(enable_watchers=False)))
 

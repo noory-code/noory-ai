@@ -18,7 +18,7 @@ from mashbill.http_app import create_http_app
 
 @pytest.fixture
 def app_client(tmp_path: Path) -> tuple[TestClient, str]:
-    # D-2026-06-11-D — Plot never auto-inits, but tests that exercise
+    # D-2026-06-11-D — Novel never auto-inits, but tests that exercise
     # tag/publish need a real repo, so the test seeds one. Endpoint tests
     # that exercise the needs_git_init path use a fresh tmp_path manually.
     from mashbill.git_store import init_workspace_repo

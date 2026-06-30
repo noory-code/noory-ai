@@ -1,4 +1,4 @@
-"""CanvasDoc + per-canvas-kind validators for Plot v0.2 multi-canvas split.
+"""CanvasDoc + per-canvas-kind validators for Novel v0.2 multi-canvas split.
 
 Each canvas enforces its own allowed ``NodeKind`` set and structural rules.
 See the ``Target Data Model`` section of the v0.2 plan.

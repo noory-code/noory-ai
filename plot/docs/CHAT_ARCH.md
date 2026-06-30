@@ -1,4 +1,4 @@
-# Plot — in-app chat architecture → moved
+# Novel — in-app chat architecture → moved
 
 > **정본 = [`repos-plot/docs/concepts/ai-collaboration.md`](../../../docs/concepts/ai-collaboration.md).**
 > 채팅 구조(스레드·컨텍스트 봉투·캔버스별 프레이밍)와 캔버스별 코치 인터뷰는 그 파일이

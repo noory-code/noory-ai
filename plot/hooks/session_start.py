@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""SessionStart hook for Plot — surface VISION + recent DECISIONS.
+"""SessionStart hook for Novel — surface VISION + recent DECISIONS.
 
 Prints the project essence (VISION.md first sentence) and the last 5
-DECISIONS.md entries to additionalContext so every Plot session begins
+DECISIONS.md entries to additionalContext so every Novel session begins
 with the user's anchor in the assistant's working set.
 
 Doc homes (2026-06-19 consolidation, D-2026-06-19-J):
@@ -106,7 +106,7 @@ def main() -> int:
     plugin_root = find_plugin_root()
     vision_path = find_vision()
     if plugin_root is None and vision_path is None:
-        # Silently no-op outside a Plot context
+        # Silently no-op outside a Novel context
         print(json.dumps({"continue": True}))
         return 0
 
@@ -115,9 +115,9 @@ def main() -> int:
     queue = read_next_session_queue(plugin_root)
 
     additional_context_lines = [
-        "# Plot session anchor",
+        "# Novel session anchor",
         "",
-        "**Plot's essence (read this first, every session):**",
+        "**Novel's essence (read this first, every session):**",
         "",
         f"> {essence}",
         "",

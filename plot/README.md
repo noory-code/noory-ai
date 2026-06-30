@@ -1,4 +1,4 @@
-# Plot
+# Novel
 
 **The mindmap editor with every React Flow feature built in — plus an AI that reads the map with you.**
 

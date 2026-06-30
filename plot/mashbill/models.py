@@ -1,4 +1,4 @@
-"""Pydantic models for Plot sketches — facade (D-2026-06-11-B).
+"""Pydantic models for Novel sketches — facade (D-2026-06-11-B).
 
 The 993-line god module was split along its own section headers into
 focused modules; this file re-exports every public name so no import

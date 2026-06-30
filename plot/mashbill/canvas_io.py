@@ -315,7 +315,7 @@ def update_node(
 
     Within this read-modify-write only the target node's content changes; every
     other node and all edges are written back unchanged. It is **not** a
-    transactional lock, though — like every Plot write it is last-write-wins, so a
+    transactional lock, though — like every Novel write it is last-write-wins, so a
     user edit to a *different* node landing between this read and its write is not
     merged (the window is one synchronous tool call; fine at human pace).
 
@@ -416,7 +416,7 @@ def create_node(
     via the reference pick-or-create flow (:func:`mashbill.masters.create_master`,
     which now delegates here), not by calling this on the wrong canvas.
 
-    Like every Plot write this is **last-write-wins** at human pace (same as
+    Like every Novel write this is **last-write-wins** at human pace (same as
     ``update_node``): a concurrent edit to another node on the same canvas, or two
     concurrent same-kind creates, may collide / be lost. The write also reaches
     the viewer via the file watcher, which clears the undo stack (same limit as

@@ -55,7 +55,7 @@ async def projects_list_endpoint(request: Request) -> JSONResponse:
 
 
 async def workspace_discover_endpoint(request: Request) -> JSONResponse:
-    """Recursively discover every Plot project anywhere under the workspace
+    """Recursively discover every Novel project anywhere under the workspace
     root, each with its directory relative to the root (v0.32.0)."""
     try:
         root = _require_workspace_root(request)

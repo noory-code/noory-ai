@@ -1,6 +1,6 @@
 # ARCHITECTURE — current shape + split plan
 
-> **Purpose:** make the structural state of the Plot viewer explicit
+> **Purpose:** make the structural state of the Novel viewer explicit
 > so the next architectural change isn't a guess. Pairs with
 > [`SPEC.md`](./SPEC.md) (behaviour) and
 > [`DECISIONS.md`](./DECISIONS.md) (history).

@@ -1,4 +1,4 @@
-"""Track 2.5 / D-2026-06-11-E — Plot MCP registration in external CLI configs.
+"""Track 2.5 / D-2026-06-11-E — mashbill MCP registration in external CLI configs.
 
 Each supported external CLI (Claude Code / Codex / Gemini) keeps its MCP
 server list in a known location with a known schema. This module reads /
@@ -8,9 +8,9 @@ writes a `plot` entry in each, leaving every sibling entry alone:
   Codex       → ``~/.codex/config.toml`` (TOML)   ``[mcp_servers.plot]``
   Gemini      → ``~/.gemini/settings.json``       ``mcpServers.plot``
 
-The Plot entry points the CLI at a freshly-spawned ``mashbill`` instance
+The Novel entry points the CLI at a freshly-spawned ``mashbill`` instance
 via ``uv run`` so the user gets a stdio MCP server they can call from the
-CLI's own tool surface. The Plot desktop app's own running sidecar is
+CLI's own tool surface. The Novel desktop app's own running sidecar is
 independent — that's an HTTP server inside the app, not the stdio one the
 CLI talks to.
 
@@ -50,7 +50,7 @@ class _ProviderSpec:
     config_relative: tuple[str, ...]
     config_format: Literal["json", "toml"]
     servers_path: tuple[str, ...]
-    # Extra keys to attach on the Plot entry (Claude Code wants `"type": "stdio"`).
+    # Extra keys to attach on the Novel entry (Claude Code wants `"type": "stdio"`).
     extra_entry_keys: dict[str, Any]
 
 
@@ -101,7 +101,7 @@ def _config_path(spec: _ProviderSpec) -> Path:
 
 
 def _plot_entry(plugin_root: Path, spec: _ProviderSpec) -> dict[str, Any]:
-    """Build the Plot mcp-server entry for one provider.
+    """Build the Novel mcp-server entry for one provider.
 
     Two shapes (D-2026-06-14-A):
 
@@ -188,7 +188,7 @@ def _servers_dict(data: dict[str, Any], spec: _ProviderSpec) -> dict[str, Any]:
 
 
 def detect_providers() -> dict[ProviderName, ProviderStatus]:
-    """Inspect every provider: is the CLI on PATH? is Plot already registered?
+    """Inspect every provider: is the CLI on PATH? is Novel already registered?
 
     The result is keyed by provider name so the viewer can render one row
     per provider regardless of install state.
@@ -221,7 +221,7 @@ def is_plot_registered(provider: ProviderName) -> bool:
 
 
 def register_plot(provider: ProviderName, plugin_root: Path) -> None:
-    """Add (or update) the Plot MCP server entry in ``provider``'s config.
+    """Add (or update) the mashbill MCP server entry in ``provider``'s config.
 
     Idempotent: a second call with the same ``plugin_root`` is a byte-for-byte
     no-op write. Sibling MCP server entries (e.g. ``pencil``) and unrelated
@@ -235,7 +235,7 @@ def register_plot(provider: ProviderName, plugin_root: Path) -> None:
 
 
 def mashbill_config(plugin_root: Path | None = None) -> dict[str, Any]:
-    """``--mcp-config`` payload that attaches the Plot stdio MCP server directly
+    """``--mcp-config`` payload that attaches the Novel stdio MCP server directly
     to an in-app CLI turn (D-2026-06-26-E).
 
     The in-app coach used to inherit the ``plot`` server from the user's GLOBAL
@@ -243,7 +243,7 @@ def mashbill_config(plugin_root: Path | None = None) -> dict[str, Any]:
     deleted / older app build, silently leaving the coach with no canvas tools
     (the "in-app chat can't write to the canvas" failure). Passing this payload
     via ``--mcp-config`` + ``--strict-mcp-config`` makes the coach always carry
-    *this* engine's own Plot tools, regardless of (and ignoring) the global
+    *this* engine's own Novel tools, regardless of (and ignoring) the global
     registration. Reuses the same frozen/dev command resolution as
     :func:`register_plot`, so the spawned stdio server is the running build.
     """
@@ -252,7 +252,7 @@ def mashbill_config(plugin_root: Path | None = None) -> dict[str, Any]:
 
 
 def unregister_plot(provider: ProviderName) -> None:
-    """Remove the Plot MCP server entry from ``provider``'s config.
+    """Remove the mashbill MCP server entry from ``provider``'s config.
 
     No-op when the entry (or the whole config) is absent. Sibling entries
     are preserved; the surrounding container is left in place even if it

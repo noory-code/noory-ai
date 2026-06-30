@@ -1,4 +1,4 @@
-"""Folder-based project IO for Plot v0.8 (wrapper-less canvas-grouped layout).
+"""Folder-based project IO for Novel v0.8 (wrapper-less canvas-grouped layout).
 
 Layout
 ------
@@ -40,7 +40,7 @@ from mashbill.workspace import resolve_plot_root
 
 @pytest.fixture
 def plot_root(tmp_path: Path) -> Path:
-    # D-2026-06-11-C/D: workspace = tmp_path IS the git repo. Plot never
+    # D-2026-06-11-C/D: workspace = tmp_path IS the git repo. Novel never
     # auto-inits, but publish tests need a real repo, so we init here.
     from mashbill.git_store import init_workspace_repo
 
@@ -331,7 +331,7 @@ def test_delete_missing_project_raises(plot_root: Path) -> None:
 
 
 def test_create_project_does_not_init_git_at_plot_root(plot_root: Path) -> None:
-    """D-2026-06-11-D — Plot never auto-inits. The workspace fixture initialised
+    """D-2026-06-11-D — Novel never auto-inits. The workspace fixture initialised
     the repo at the workspace root (`tmp_path`, not `plot_root`); create_project
     must not synthesise a nested `.git/` under `.noory/plot/`."""
     create_project(plot_root, "alpha", "Alpha")

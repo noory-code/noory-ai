@@ -1,7 +1,7 @@
 ---
 name: plot-help
 user-invocable: true
-description: Explain what Plot is, how to open the canvas, and the available skills.
+description: Explain what Novel is, how to open the canvas, and the available skills.
 metadata:
   version: "0.1.0"
   category: meta
@@ -11,13 +11,13 @@ metadata:
   uses: []
 ---
 
-# Plot Help (v0.1)
+# Novel Help (v0.1)
 
 > A full-featured mindmap editor built on React Flow, with an AI collaborator that reads the same map.
 
-## What Plot is
+## What Novel is
 
-Plot stores sketches as plain JSON under `{project}/.plot/sketches/{id}.json`. Each sketch is a graph of nodes and edges — no schema, no required fields, draw what makes sense for the problem at hand. The viewer ships with every React Flow free feature wired:
+Novel stores sketches as plain JSON under `{project}/.plot/sketches/{id}.json`. Each sketch is a graph of nodes and edges — no schema, no required fields, draw what makes sense for the problem at hand. The viewer ships with every React Flow free feature wired:
 
 - **Editing**: double-click canvas to add a node, click a label to rename, drag handles to connect nodes, double-click a node for the full editor (body / color / size).
 - **Selection**: Shift-click or drag-rectangle to multi-select, Cmd/Ctrl+A to select everything.

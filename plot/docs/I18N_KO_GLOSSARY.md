@@ -1,7 +1,7 @@
-# Plot — i18n Korean Glossary
+# Novel — i18n Korean Glossary
 
 > **Audience:** Claude (or any contributor) writing or reviewing
-> Korean strings for the Plot viewer.
+> Korean strings for the Novel viewer.
 >
 > **Purpose:** keep Korean translations natural, consistent, and
 > aligned with the user-provided canonical vocabulary. Avoid the
@@ -9,16 +9,16 @@
 > long hint sentence reads as direct English-to-Korean syntax.
 >
 > **Pairs with:**
-> - [`../CLAUDE.md`](../CLAUDE.md) i18n anti-pattern row — the rule "Plot is a
+> - [`../CLAUDE.md`](../CLAUDE.md) i18n anti-pattern row — the rule "Novel is a
 >   global service, i18n is non-negotiable" (originally a user-direction memory note).
 > - [`PRODUCT_SPEC.md`](../../../plot/docs/PRODUCT_SPEC.md) — the canonical vocabulary
->   for Plot kinds.
+>   for Novel kinds.
 
 ---
 
 ## 1. Canonical vocabulary
 
-The Korean spelling for Plot's domain terms is fixed. Do not vary
+The Korean spelling for Novel's domain terms is fixed. Do not vary
 spelling between locales, files, or commits.
 
 | English | Korean | Notes |
@@ -112,7 +112,7 @@ commits.
 
 ## 5. When this file changes
 
-- New canonical term (a Plot kind, surface, mechanic) → §1.
+- New canonical term (a Novel kind, surface, mechanic) → §1.
 - New UI label translation → §2.
 - A user-driven correction → §4 + the underlying §1 / §2 / locale
   file update. Add the correction date and source so future

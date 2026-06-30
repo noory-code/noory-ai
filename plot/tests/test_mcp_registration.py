@@ -1,9 +1,9 @@
-"""Track 2.5 / D-2026-06-11-E — Plot MCP registration in external CLI configs.
+"""Track 2.5 / D-2026-06-11-E — mashbill MCP registration in external CLI configs.
 
 Pins the contract for each provider (Claude Code / Codex / Gemini):
-  - detect: which CLIs are on $PATH + which already have Plot registered
-  - register: idempotent add of a Plot mcp server entry
-  - unregister: drop the Plot entry, leave sibling entries alone
+  - detect: which CLIs are on $PATH + which already have Novel registered
+  - register: idempotent add of a Novel mcp server entry
+  - unregister: drop the Novel entry, leave sibling entries alone
 
 The test isolates ``$HOME`` via monkeypatch so the real user config files
 are never touched.
@@ -266,7 +266,7 @@ def test_plot_entry_uses_bundled_binary_when_frozen(
 
     from mashbill.mcp_registration import _plot_entry, _spec_for
 
-    exe = "/Applications/Plot.app/Contents/MacOS/mashbill"
+    exe = "/Applications/Novel.app/Contents/MacOS/mashbill"
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     monkeypatch.setattr(sys, "executable", exe, raising=False)
 
@@ -283,7 +283,7 @@ def test_register_codex_when_frozen_writes_stable_command(
 ) -> None:
     import sys
 
-    exe = "/Applications/Plot.app/Contents/MacOS/mashbill"
+    exe = "/Applications/Novel.app/Contents/MacOS/mashbill"
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     monkeypatch.setattr(sys, "executable", exe, raising=False)
 

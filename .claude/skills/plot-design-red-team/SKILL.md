@@ -1,6 +1,6 @@
 ---
 name: plot-design-red-team
-description: Adversarial design review for a Plot proposal BEFORE implementation. Reads a SPEC change / DECISIONS entry draft / plan file / verbal proposal with red-team eyes — unstated invariants, failure modes, reversibility, VISION alignment, hidden tradeoffs, premature abstraction vs YAGNI. Triggers on design / 설계 / "review the plan" / "before I implement" / "look at this proposal" / "okay to build?" plus a Plot context. Use BEFORE code is written (use plot-code-red-team after).
+description: Adversarial design review for a Novel proposal BEFORE implementation. Reads a SPEC change / DECISIONS entry draft / plan file / verbal proposal with red-team eyes — unstated invariants, failure modes, reversibility, VISION alignment, hidden tradeoffs, premature abstraction vs YAGNI. Triggers on design / 설계 / "review the plan" / "before I implement" / "look at this proposal" / "okay to build?" plus a Novel context. Use BEFORE code is written (use plot-code-red-team after).
 metadata:
   version: "1.0.0"
   category: review
@@ -13,7 +13,7 @@ metadata:
 # plot-design-red-team — adversarial design review
 
 > **Why this skill exists.** Code reviews catch bad code; they don't
-> catch *bad ideas*. Plot's v0.13.2 auto-edges were good code that
+> catch *bad ideas*. Novel's v0.13.2 auto-edges were good code that
 > the user rolled back same-day — the *idea* was wrong. The v0.10
 > kinds review (D-2026-05-10-E auto-layout) shipped twice and was
 > rejected twice. Catching these at the *proposal* stage is
@@ -58,7 +58,7 @@ State it back. Map the proposal to one of the three phases
 
 - The proposal doesn't fit any phase → **off-essence finding**.
   Either redirect to the right artifact (e.g. an Obsidian feature
-  belongs in Plot's vault layer, not the React Flow canvas) or
+  belongs in Novel's vault layer, not the React Flow canvas) or
   push back: "this serves a different product."
 - The proposal *partially* fits a phase but blurs the boundary
   with another (e.g. adds Execution behaviour to a Discovery
@@ -101,7 +101,7 @@ If the proposal has no answer for at least one of these, it's a
 
 ### Attack 4 — Reversibility
 
-Every Plot change must answer: **if the user regrets this, how
+Every Novel change must answer: **if the user regrets this, how
 do they undo it?**
 
 - Does the change write to disk (a `.plot/` file) without a
@@ -117,7 +117,7 @@ do they undo it?**
 
 ### Attack 5 — VISION / PRODUCT_SPEC alignment
 
-Plot's PRODUCT_SPEC.md is the framing every behaviour sits inside.
+Novel's PRODUCT_SPEC.md is the framing every behaviour sits inside.
 Re-read the most relevant section before the proposal:
 
 - Adds a new canvas → check PRODUCT_SPEC §canvas inventory.
@@ -125,7 +125,7 @@ Re-read the most relevant section before the proposal:
   (kinds parked are explicitly out-of-scope; reviving them needs
   a decision).
 - Adds a new business surface → check PRODUCT_SPEC §business
-  model (Plot is a global service per D-2026-05-11-D; any
+  model (Novel is a global service per D-2026-05-11-D; any
   feature that locks to one language / market needs a counter-
   argument).
 
@@ -177,7 +177,7 @@ the implicit additions:
   default and why?" (defaults are SPEC). Flags multiply user
   states the codebase must support; YAGNI applies.
 - Mentions "future" use cases as justification → strike them.
-  Plot specs only what ships now.
+  Novel specs only what ships now.
 
 ---
 
@@ -245,7 +245,7 @@ After the review fires, watch what the user does:
 - User edits the proposal per the findings → next review trusts
   your bar.
 - User pushes back on a finding ("that's not what this means") →
-  update your model. The user knows Plot better than the skill
+  update your model. The user knows Novel better than the skill
   does; ask for the SPEC / DECISIONS clarification you missed.
 
 Per the user's 2026-05-12 direction

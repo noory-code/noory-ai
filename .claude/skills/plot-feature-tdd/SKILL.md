@@ -1,6 +1,6 @@
 ---
 name: plot-feature-tdd
-description: Implement a Plot feature (UI, MCP tool, schema, layout rule, etc.) end-to-end through the essence-aware TDD pipeline. Anchors every step back to VISION.md's three-phase cycle (Discovery / Retention / Execution) and DOMAIN.md's bounded contexts. Triggers on feature / 기능 추가 / 만들어줘 / add button / implement / 새 / 새로운 / build keywords plus a Plot context.
+description: Implement a Novel feature (UI, MCP tool, schema, layout rule, etc.) end-to-end through the essence-aware TDD pipeline. Anchors every step back to VISION.md's three-phase cycle (Discovery / Retention / Execution) and DOMAIN.md's bounded contexts. Triggers on feature / 기능 추가 / 만들어줘 / add button / implement / 새 / 새로운 / build keywords plus a Novel context.
 metadata:
   version: "1.0.0"
   category: dev-process
@@ -12,7 +12,7 @@ metadata:
 
 # plot-feature-tdd — essence-anchored test-first implementation
 
-> **Why this skill exists.** Plot's volatility (six rounds on cursor;
+> **Why this skill exists.** Novel's volatility (six rounds on cursor;
 > auto-layout misattributed for weeks) traces to features being placed
 > wherever was convenient at the moment. This skill enforces a
 > deterministic pipeline: VISION → phase → bounded context → entity
@@ -24,7 +24,7 @@ metadata:
 ## Trigger
 
 Activate when the user asks for a new behaviour, refactor, or
-restructure on Plot. Distinguish from bug-fix requests (those use
+restructure on Novel. Distinguish from bug-fix requests (those use
 [`plot-frontend-bug-diagnosis`](../plot-frontend-bug-diagnosis/SKILL.md)
 when the bug is UI; otherwise straight implementation per this skill).
 
@@ -150,7 +150,7 @@ mirrors the CHANGELOG section. Co-author trailer included. Push to
 | **No SPEC drift.** Confirmed behaviour goes into SPEC.md *in the same commit cycle* — never deferred. | Drift is the cause of "we keep re-asking the same questions" pain. |
 | **Browser-verify all UI changes.** | TypeScript and JSDOM don't observe cursors, layouts, or animation timing. |
 | **Never grow SketchCanvas / SketchInspector / App / SketchStencil.** | Per [Gate 2](../../plot/CLAUDE.md). New behaviour → new file in the matching context's directory. |
-| **Never auto-emit user-visible state.** | Per [Plot CLAUDE.md rule 7](../../plot/CLAUDE.md). All edges, layouts, labels are user-authored unless explicitly approved. |
+| **Never auto-emit user-visible state.** | Per [Novel CLAUDE.md rule 7](../../plot/CLAUDE.md). All edges, layouts, labels are user-authored unless explicitly approved. |
 
 ---
 

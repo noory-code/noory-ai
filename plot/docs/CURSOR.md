@@ -98,7 +98,7 @@ button, [role="button"] { cursor: pointer; }
 :disabled { cursor: default; }
 ```
 
-Three places in the Plot canvas match these selectors:
+Three places in the Novel canvas match these selectors:
 
 - **`.react-flow__node` itself** — RF v11 sets `role="button"` on
   every node for accessibility. Preflight wins over RF's

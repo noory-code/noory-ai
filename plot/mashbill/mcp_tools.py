@@ -1,6 +1,6 @@
-"""FastMCP tool surface for Plot (v0.4).
+"""FastMCP tool surface for Novel (v0.4).
 
-Claude Code uses these tools to read and mutate a Plot project. The surface
+Claude Code uses these tools to read and mutate a Novel project. The surface
 overlaps the HTTP API for project / canvas CRUD so a session can move between
 both; it is not one-to-one — some tools are MCP-only (``search_project_nodes``,
 ``update_node``) and some HTTP routes have no tool (entity usage, masters,
@@ -56,7 +56,7 @@ from mashbill.workspace import (
 mcp = FastMCP(
     "plot",
     instructions=(
-        "Plot stores projects as folders of per-canvas JSON files under "
+        "Novel stores projects as folders of per-canvas JSON files under "
         "``.noory/plot/{project}/``. Use ``list_projects`` / ``get_project`` "
         "to discover state, ``get_canvas`` / ``update_canvas`` to read or write "
         "a single canvas (``foundation`` / ``actors`` / ``services`` / "
@@ -82,7 +82,7 @@ def list_projects(project_path: str) -> list[dict[str, Any]]:
 
 @mcp.tool()
 def discover_workspace_projects(project_path: str) -> list[dict[str, Any]]:
-    """Discover every Plot project anywhere under the workspace root, each with
+    """Discover every Novel project anywhere under the workspace root, each with
     its directory relative to the root (``"."`` for a root-level project).
 
     Mirrors ``GET /api/workspace/projects`` (v0.32.0)."""
@@ -336,7 +336,7 @@ def migrate_v01_sketches(project_path: str) -> list[str]:
 
 @mcp.tool()
 def get_viewer_context(project_path: str) -> dict[str, Any]:
-    """Read what the Plot viewer is currently showing (D-2026-06-15-D).
+    """Read what the Novel viewer is currently showing (D-2026-06-15-D).
 
     Returns the user's live canvas context so you can resolve "this" / "fix it"
     against what they have on screen, the same way the in-app chat does::
@@ -363,7 +363,7 @@ def get_viewer_context(project_path: str) -> dict[str, Any]:
 
 @mcp.tool()
 def open_canvas(project_path: str, project_id: str | None = None) -> str:
-    """Open the Plot viewer in the default browser."""
+    """Open the Novel viewer in the default browser."""
     resolve_plot_root(project_path)  # raises if path is unusable
     port = resolved_port()
     url = f"http://127.0.0.1:{port}/?project_path={project_path}"

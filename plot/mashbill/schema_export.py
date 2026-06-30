@@ -1,6 +1,6 @@
 """v0.13 Phase 2 + v0.15 Phase 1.3 — auto-export per-kind schemas + MD templates.
 
-Plot's data has two surfaces per node:
+Novel's data has two surfaces per node:
 
 1. **canvas.json entry** — graph data + per-kind typed fields. The shape
    is governed by a Pydantic class per kind (``BaseNodeFields`` + 15
@@ -131,7 +131,7 @@ def _render_md_template(kind: str, label_placeholder: str = "{label}") -> str:
         lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append("<!-- free prose below the rule — Plot does not parse this -->")
+    lines.append("<!-- free prose below the rule — Novel does not parse this -->")
     lines.append("")
     return "\n".join(lines)
 

@@ -488,7 +488,7 @@ def test_publish_service_with_dangling_ref_is_rejected(plot_root: Path) -> None:
 
 
 def test_manifest_contract_shape_is_pinned(plot_root: Path) -> None:
-    """Cross-repo contract guard (INT-1c, write side): the manifests Plot emits
+    """Cross-repo contract guard (INT-1c, write side): the manifests Novel emits
     carry exactly the keys Solera's reader expects. Pinned here so a producer
     change that drops a field fails before it reaches Solera. The version is
     pinned in lock-step with ``intake.SUPPORTED_FORMAT_F_VERSION``."""

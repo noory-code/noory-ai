@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""PreToolUse hook for Plot — gate ``git commit`` on type-check + tests.
+"""PreToolUse hook for Novel — gate ``git commit`` on type-check + tests.
 
 When the assistant attempts to run ``git commit`` (or ``git push``) and
-Plot's viewer or MCP source has staged changes, this hook runs the
+Novel's viewer or MCP source has staged changes, this hook runs the
 relevant checks first:
 
 - ``viewer/`` staged changes ⇒ ``cd plot/viewer && npx tsc --noEmit``
@@ -14,7 +14,7 @@ of ``deny`` and the failure output is returned so the assistant can
 fix and retry.
 
 Cross-platform via Python stdlib + subprocess. Skips itself when the
-staged paths are outside Plot or when no relevant files are staged.
+staged paths are outside Novel or when no relevant files are staged.
 """
 
 from __future__ import annotations
@@ -273,7 +273,7 @@ def main() -> int:
 
     plot_root = find_plot_root()
     if plot_root is None:
-        # Outside a Plot working tree
+        # Outside a Novel working tree
         print(json.dumps({"continue": True}))
         return 0
 
@@ -315,7 +315,7 @@ def main() -> int:
 
     if failures:
         message = (
-            "**Plot pre-commit gate blocked the commit.**\n\n"
+            "**Novel pre-commit gate blocked the commit.**\n\n"
             "Fix the failures below, re-stage, then retry the commit. The gate is "
             "registered in `plot/hooks/hooks.json` (PreToolUse on Bash, matcher = "
             "`git commit|push`).\n\n"

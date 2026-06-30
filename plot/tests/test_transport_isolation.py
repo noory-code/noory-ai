@@ -13,7 +13,7 @@ without anything failing. These guards close that gap:
      (``http_app`` / ``broadcast`` / ``watcher`` / ``api_endpoints``) — an
      MCP-only consumer must not drag in the viewer realtime stack. (It *does*
      pull starlette transitively via ``fastmcp``; that is the library's own
-     dependency, not a Plot leak, so this guard is scoped to Plot modules.)
+     dependency, not a Novel leak, so this guard is scoped to Novel modules.)
   3. The HTTP app builds with NO viewer dist present — the engine runs headless
      after the viewer leaves the repo (Phase C depends on this).
 """

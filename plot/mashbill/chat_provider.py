@@ -1,6 +1,6 @@
 """Workspace-scoped chat provider selection (D-2026-06-11-E, Phase B step B3).
 
-When more than one external CLI is installed and Plot-registered, the user
+When more than one external CLI is installed and Novel-registered, the user
 picks which one drives the R7 chat panel. That pick lives at
 ``<workspace>/.noory/plot/chat-provider`` (JSON,
 ``{"provider": "claude-code" | "codex" | "gemini" | null}``) so it survives

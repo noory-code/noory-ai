@@ -10,7 +10,7 @@ v0.13's split:
 - canvas.json holds graph data (id, kind, label, x/y/w/h, color, shape,
   parent_id, refs, ``details_path``).
 - ``{node-slug}.md`` holds typed text as Markdown sections, separated
-  from a ``---`` rule below which the user can write free prose. Plot
+  from a ``---`` rule below which the user can write free prose. Novel
   parses the sections back into the kind subclass's typed fields when
   it loads the canvas.
 
@@ -29,14 +29,14 @@ Format (example for a core_value node):
 
     ---
 
-    (free prose — Plot does not parse this)
+    (free prose — Novel does not parse this)
 
 Read is **lenient**: missing sections become empty strings, unknown
 sections are preserved in warnings (so the user knows we couldn't map
 them). The free-prose body (everything below the ``---`` rule) is
 preserved verbatim and round-tripped on write.
 
-Write is **strict**: Plot emits exactly the kind's known headings in
+Write is **strict**: Novel emits exactly the kind's known headings in
 the documented order, then ``---``, then the preserved free prose.
 """
 

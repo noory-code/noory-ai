@@ -213,7 +213,7 @@ def create_project(plot_root: Path, project_id: str, name: str) -> ProjectDoc:
     # exists). The one-per-dir guard above subsumes the old nested dup-id check.
     folder = _project_dir(plot_root, project_id)
     folder.mkdir(parents=True, exist_ok=True)
-    # D-2026-06-11-D: Plot never silently runs ``git init``. The first
+    # D-2026-06-11-D: Novel never silently runs ``git init``. The first
     # tag/publish on a workspace without a repo replies needs_git_init=true;
     # the user accepts via POST /api/workspace/git-init. Project creation
     # leaves git untouched.

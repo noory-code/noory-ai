@@ -272,7 +272,7 @@ def test_turn_preamble_composes_map_registry_and_detail(tmp_path: Path) -> None:
     out = build_turn_preamble(plot_root, "services", sel)
     # registry (services scope) appears; for a feature/services scope the
     # actor registry is present, and the canvas map header leads.
-    assert "[Canvas: services]" in out or "[Plot context]" in out
+    assert "[Canvas: services]" in out or "[Novel context]" in out
     assert "Existing actors" in out  # registry composed in
 
 

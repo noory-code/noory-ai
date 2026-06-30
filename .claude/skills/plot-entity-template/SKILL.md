@@ -1,6 +1,6 @@
 ---
 name: plot-entity-template
-description: Procedure for adding a new domain entity (a new ``kind``) to Plot. Walks through every file that must land in lock-step (viewer domain class, server Pydantic model, per-kind node renderer, per-kind inspector, i18n keys, registry updates, tests, schema-parity, structural guards). Triggers on phrases like "add a new kind", "엔티티 추가", "새 종류", "new entity", "kind 추가", "domain entity", "fromJson", "discriminated union extend". Prevents the v0.13 god ``SketchNode`` regression — every new kind must land as a class with ``fromJson`` boundary + per-kind UI files, never as a new field appended to the god union.
+description: Procedure for adding a new domain entity (a new ``kind``) to Novel. Walks through every file that must land in lock-step (viewer domain class, server Pydantic model, per-kind node renderer, per-kind inspector, i18n keys, registry updates, tests, schema-parity, structural guards). Triggers on phrases like "add a new kind", "엔티티 추가", "새 종류", "new entity", "kind 추가", "domain entity", "fromJson", "discriminated union extend". Prevents the v0.13 god ``SketchNode`` regression — every new kind must land as a class with ``fromJson`` boundary + per-kind UI files, never as a new field appended to the god union.
 metadata:
   version: "1.0.0"
   category: dev-process
@@ -20,7 +20,7 @@ metadata:
 
 # plot-entity-template — adding a new ``kind`` end-to-end
 
-> **Why this skill exists.** Plot has 15 entity kinds; each lives as a
+> **Why this skill exists.** Novel has 15 entity kinds; each lives as a
 > domain class (``viewer/src/domain/{Kind}.ts``) with ``fromJson`` /
 > ``toJson`` invariants, a Pydantic server model
 > (``plot_mcp/models/``), a per-kind node renderer, a per-kind
@@ -212,7 +212,7 @@ cd plot/viewer && npx vitest run -t "inspector registry includes {kind}"
 
 Every user-facing string for the new kind must land in **both**
 locales. The `i18n-keys-parity.test.tsx` static guard fails the build
-on drift. Per [D-2026-05-11-D](../../plot/docs/DECISIONS.md) — Plot is a
+on drift. Per [D-2026-05-11-D](../../plot/docs/DECISIONS.md) — Novel is a
 global service; no hardcoded strings.
 
 Required keys (minimum):

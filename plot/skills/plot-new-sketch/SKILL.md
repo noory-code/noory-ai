@@ -1,7 +1,7 @@
 ---
 name: plot-new-sketch
 user-invocable: true
-description: Create a new empty Plot sketch in the current project and open it in the browser.
+description: Create a new empty Novel sketch in the current project and open it in the browser.
 metadata:
   version: "0.1.0"
   category: action
@@ -13,7 +13,7 @@ metadata:
 
 # /plot-new-sketch
 
-Create a fresh, empty Plot sketch under `{project}/.plot/sketches/` and open the viewer focused on it.
+Create a fresh, empty Novel sketch under `{project}/.plot/sketches/` and open the viewer focused on it.
 
 ## When to run
 
