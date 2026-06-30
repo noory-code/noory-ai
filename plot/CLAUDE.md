@@ -16,7 +16,7 @@
 > **Pairs with (read in this order on session start):**
 >
 > ⚠ **정본 거처 (2026-06-28, `D-2026-06-28-B` — `D-19-J` 실현):** 두 제품(오픈 엔진·상용
-> 앱)이 공유하는 Novel 개념·동작 규칙의 단일 출처 = `repos-plot/docs/`(맵 `index.md` · 의미
+> 앱)이 공유하는 Novel 개념·동작 규칙의 단일 출처 = `noory-workspace/docs/`(맵 `index.md` · 의미
 > `concepts/` · 동작 규칙 `specs/`). 아래 3·7 (DOMAIN/CONCEPTS)은 root를 가리키는 **포인터**
 > + 엔진 코드-near(코드 거처·스키마)만 남고, 4 (SPEC)는 **상세 구현·메커니즘**을 보유하되
 > *동작 규칙*은 root `specs/` 가 정본(충돌 시 root 우선).

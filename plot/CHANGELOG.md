@@ -485,7 +485,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
   fails before it reaches Solera). The 2-layer publish decision (vP project
   snapshot + vS service release, slug-referenced, per-node coexists/retires
   later) is pinned in `DECISIONS.md` D-2026-06-22-D; the contract spec lives in
-  `repos-plot/docs/specs/format-f.md` and `storage-publish.md` gains a format F
+  `noory-workspace/docs/specs/format-f.md` and `storage-publish.md` gains a format F
   section.
 
 ## [0.103.0] — 2026-06-22
@@ -494,7 +494,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 
 - **format F export engine — mashbill "write" half of the mashbill↔Solera contract**
   (Phase P / INT-2, walking-skeleton scope). New `mashbill/format_f.py` writes
-  the 2-layer published bundle defined in `repos-plot/docs/specs/format-f.md`:
+  the 2-layer published bundle defined in `noory-workspace/docs/specs/format-f.md`:
   - `publish_project_snapshot` → `published/_project/vP{N}/` freezes the shared
     structure (本質 / Actors / Entities).
   - `publish_service` → `published/{slug}/vS{N}/` freezes one service (5칸 +
@@ -1099,7 +1099,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 
 ### Changed
 
-- **Design/definition/spec docs consolidated to `repos-plot/docs/`** (single
+- **Design/definition/spec docs consolidated to `noory-workspace/docs/`** (single
   SSOT — D-2026-06-19-J / D-2026-06-20-A). `SPEC.md` / `CONCEPTS.md` /
   `DOMAIN.md` / `CHAT_ARCH.md` / `node-format/` now carry a redirect header
   pointing at the root canonical source (definitions live there; these stay for

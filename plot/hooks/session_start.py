@@ -6,7 +6,7 @@ DECISIONS.md entries to additionalContext so every Novel session begins
 with the user's anchor in the assistant's working set.
 
 Doc homes (2026-06-19 consolidation, D-2026-06-19-J):
-  - VISION.md          → the cross-repo root docs/ (repos-plot/docs/VISION.md)
+  - VISION.md          → the cross-repo root docs/ (noory-workspace/docs/VISION.md)
   - DECISIONS.md       → the plugin docs/ (noory-ai/plot/docs/DECISIONS.md)
   - NEXT_SESSION.md    → the plugin docs/ (noory-ai/plot/docs/NEXT_SESSION.md)
 These two roots differ, so the hook resolves them separately.
@@ -39,7 +39,7 @@ def find_plugin_root() -> Path | None:
 
 
 def find_vision() -> Path | None:
-    """VISION.md lives in the cross-repo root docs/ (repos-plot/docs/).
+    """VISION.md lives in the cross-repo root docs/ (noory-workspace/docs/).
 
     Walk up from this file until a docs/VISION.md is found.
     """
@@ -121,7 +121,7 @@ def main() -> int:
         "",
         f"> {essence}",
         "",
-        "Source of truth: `repos-plot/docs/` (map: `index.md`; essence: `VISION.md`; "
+        "Source of truth: `noory-workspace/docs/` (map: `index.md`; essence: `VISION.md`; "
         "meaning: `concepts/`; behavior: `specs/`). Three phases: Discovery (Foundation) "
         "→ Retention (anchor) → Execution (Actors / Services / Feature) with "
         "AICollaboration cross-cutting.",

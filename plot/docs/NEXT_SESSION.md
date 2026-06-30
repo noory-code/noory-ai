@@ -5,7 +5,7 @@
 > When the user invokes a queued item by its trigger keyword, that
 > item becomes the active task for the session.
 >
-> **일감 SSOT = [`repos-plot/todo/`](../../../todo/index.md)** (성격별
+> **일감 SSOT = [`noory-workspace/todo/`](../../../todo/index.md)** (성격별
 > active/verify/discuss/strategy/backlog/shipping). 이 파일은 트리거 키워드로
 > 호출되는 *세션 진입점*만 남긴다 — 세부 일감 목록은 `todo/`에서 관리한다.
 > 완료된 항목은 줄을 지운다(취소선으로 쌓지 않음 — 이력은 git·DECISIONS).
@@ -260,5 +260,5 @@ and the session re-enters plan mode against the ROADMAP entry's findings as the 
 - The assistant then watches for the user's next message. If it contains a trigger
   keyword, the assistant executes the matching item.
 - **완료 항목은 줄을 지운다** (취소선·아카이브로 쌓지 않음 — 이력은 git·CHANGELOG·DECISIONS).
-- 세부 일감은 [`repos-plot/todo/`](../../../todo/index.md)가 SSOT. 이 파일은 트리거
+- 세부 일감은 [`noory-workspace/todo/`](../../../todo/index.md)가 SSOT. 이 파일은 트리거
   진입점만 유지한다.
