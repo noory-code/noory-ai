@@ -1,4 +1,4 @@
-"""Tests for ``plot_mcp.schema_export`` — JSON Schema + MD template export.
+"""Tests for ``mashbill.schema_export`` — JSON Schema + MD template export.
 
 v0.15.3 — extended from Foundation-only to all 15 kinds. The test surface
 covers:
@@ -17,8 +17,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from plot_mcp.models import FOUNDATION_TYPED_TEXT_FIELDS
-from plot_mcp.schema_export import (
+from mashbill.models import FOUNDATION_TYPED_TEXT_FIELDS
+from mashbill.schema_export import (
     _ALL_KIND_CLASSES,
     PLOT_VERSION,
     SCHEMA_VERSION,

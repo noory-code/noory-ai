@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.file_io import (
+from mashbill.file_io import (
     ExtensionNotAllowedError,
     UnsafePathError,
     ensure_folder,

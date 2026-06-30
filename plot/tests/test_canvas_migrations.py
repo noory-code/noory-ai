@@ -1,4 +1,4 @@
-"""Unit tests for ``plot_mcp.canvas_migrations`` — the read-path healing
+"""Unit tests for ``mashbill.canvas_migrations`` — the read-path healing
 helpers (lazy migrations, foundation MD absorb, legacy anchor eviction).
 
 These exercise the migration helpers *directly* (rather than only through
@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.canvas_migrations import (
+from mashbill.canvas_migrations import (
     _absorb_md_typed_text_into_json,
     _drop_disallowed_services_kinds,
     _evict_legacy_project_anchor,
@@ -29,13 +29,13 @@ from plot_mcp.canvas_migrations import (
     _migrate_published_slug_to_id,
     collect_foundation_md_warnings,
 )
-from plot_mcp.folder_io import _canvas_file, _project_dir, create_project, read_project
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.folder_io import _canvas_file, _project_dir, create_project, read_project
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture
 def plot_root(tmp_path: Path) -> Path:
-    from plot_mcp.git_store import init_workspace_repo
+    from mashbill.git_store import init_workspace_repo
 
     init_workspace_repo(tmp_path)
     return resolve_plot_root(str(tmp_path))
@@ -622,7 +622,7 @@ def test_evict_legacy_anchor_noop_when_no_legacy_and_edges_clean(plot_root: Path
 def test_collect_foundation_md_warnings_is_empty_stub(plot_root: Path) -> None:
     """v0.17 Phase 1: JSON is the sole SSOT for typed text, so the MD-warning
     callable is a stable empty-dict stub (backward-compatible response shape)."""
-    from plot_mcp.folder_io import read_canvas
+    from mashbill.folder_io import read_canvas
 
     create_project(plot_root, "alpha", "Alpha")
     canvas = read_canvas(plot_root, "alpha", "foundation")

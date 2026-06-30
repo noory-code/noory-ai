@@ -90,7 +90,7 @@ Minor findings (non-blocking but pin if decided):
   §"일감 레이어") needs flat history list as Phase 1 dep.
 
 **Architecture sketch (after the 6 majors land in DECISIONS):**
-- New ``plot/plot_mcp/git_store/`` module wrapping isomorphic-git's
+- New ``plot/mashbill/git_store/`` module wrapping isomorphic-git's
   Python equivalent OR (preferred) running isomorphic-git
   *client-side* and treating the MCP server as a passthrough.
 - New 3-4 MCP tools: ``snapshot_create`` / ``branch_open`` /
@@ -172,7 +172,7 @@ Minor findings:
 **Architecture sketch:**
 - New ``viewer/src/domain/workitem/`` directory mirroring the
   ``viewer/src/domain/`` per-kind structure but for work-items.
-  Pydantic equivalent under ``plot_mcp/workitem_models.py``.
+  Pydantic equivalent under ``mashbill/workitem_models.py``.
 - New MCP tools: ``create_userstory_draft`` (from service
   interview), ``derive_tasks`` (from userstory), ``snapshot_attach``
   (tie a task to a commit).

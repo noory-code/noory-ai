@@ -1,6 +1,6 @@
 """Project + workspace-discovery HTTP endpoint tests (D-2026-06-11-B).
 
-Pins the request→response contract of ``plot_mcp.endpoints_projects`` — the
+Pins the request→response contract of ``mashbill.endpoints_projects`` — the
 Starlette handlers behind ``/api/projects*`` and ``/api/workspace/*``. The
 data-layer behaviour (``project_io`` / ``workspace`` / ``git_store``) is tested
 elsewhere; here we cover the HTTP shell: status codes, error envelopes, and the
@@ -19,10 +19,10 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.http_app import create_http_app
-from plot_mcp.project_io import create_project
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.broadcast import BroadcastHub
+from mashbill.http_app import create_http_app
+from mashbill.project_io import create_project
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture

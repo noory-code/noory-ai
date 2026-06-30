@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from plot_mcp.md_template import parse_md_template, render_md_template
+from mashbill.md_template import parse_md_template, render_md_template
 
 
 class TestRenderRoundTrip:

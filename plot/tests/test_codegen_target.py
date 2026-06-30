@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from plot_mcp import schema_export, ts_codegen
+from mashbill import schema_export, ts_codegen
 
 
 def test_wire_ts_target_is_none_when_env_unset(monkeypatch) -> None:

@@ -1,6 +1,6 @@
 """Engine-side codegen guard — ``generate_wire_ts`` covers every kind.
 
-Migration Phase A (D-2026-06-20-A). ``plot_mcp/ts_codegen.py`` generates the
+Migration Phase A (D-2026-06-20-A). ``mashbill/ts_codegen.py`` generates the
 viewer's ``XxxJson`` wire interfaces from the Pydantic models. After the
 open-core cut (D-2026-06-20-L / -M) the *committed* ``wire.gen.ts`` lives in
 the proprietary app repo, so the byte-for-byte freshness check is re-homed in
@@ -12,8 +12,8 @@ and a kind added without codegen support fails loudly on this side too.
 
 from __future__ import annotations
 
-from plot_mcp.schema_export import _ALL_KIND_CLASSES
-from plot_mcp.ts_codegen import generate_wire_ts
+from mashbill.schema_export import _ALL_KIND_CLASSES
+from mashbill.ts_codegen import generate_wire_ts
 
 
 def _to_interface_name(kind: str) -> str:
@@ -33,5 +33,5 @@ def test_generator_emits_base_and_every_kind_interface() -> None:
         name = _to_interface_name(kind)
         assert f"interface {name}" in out, (
             f"{name} missing from wire.gen.ts — a kind without codegen support. "
-            "Run: PLOT_VIEWER_ROOT=<app>/viewer uv run python -m plot_mcp.ts_codegen"
+            "Run: PLOT_VIEWER_ROOT=<app>/viewer uv run python -m mashbill.ts_codegen"
         )

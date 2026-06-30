@@ -16,10 +16,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from plot_mcp.broadcast import _describe_change
-from plot_mcp.folder_io import create_project, write_canvas
-from plot_mcp.models import CanvasDoc, IdentityNode, MissionNode
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.broadcast import _describe_change
+from mashbill.folder_io import create_project, write_canvas
+from mashbill.models import CanvasDoc, IdentityNode, MissionNode
+from mashbill.workspace import resolve_plot_root
 
 
 def _setup(tmp_path: Path, project_id: str = "alpha") -> Path:

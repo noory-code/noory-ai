@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 
-from plot_mcp.chat_providers.claude_code import _parse_claude_line
+from mashbill.chat_providers.claude_code import _parse_claude_line
 
 
 def _partial(text: str) -> bytes:

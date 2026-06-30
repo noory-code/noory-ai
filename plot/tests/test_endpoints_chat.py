@@ -17,21 +17,21 @@ from typing import Any
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.chat_session import (
+from mashbill.broadcast import BroadcastHub
+from mashbill.chat_session import (
     ChatProvider,
     ChatSessionRegistry,
     ChatStreamEvent,
 )
-from plot_mcp.chat_store import append_user, read_conversation
-from plot_mcp.endpoints_chat import (
+from mashbill.chat_store import append_user, read_conversation
+from mashbill.endpoints_chat import (
     build_context_preamble,
     build_framing_preamble,
     stream_chat_turn,
 )
-from plot_mcp.http_app import create_http_app
-from plot_mcp.project_io import create_project
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.http_app import create_http_app
+from mashbill.project_io import create_project
+from mashbill.workspace import resolve_plot_root
 
 # ---------------------------------------------------------------------------
 # Fakes
@@ -437,9 +437,9 @@ def test_chat_send_injects_selected_node_content(
 ) -> None:
     """Lever 1a — the selected node's actual text (read engine-side) rides in
     the user message, not just its label."""
-    from plot_mcp.folder_io import create_project, write_canvas
-    from plot_mcp.models import CanvasDoc, IdentityNode, MissionNode, SketchNode
-    from plot_mcp.workspace import resolve_plot_root
+    from mashbill.folder_io import create_project, write_canvas
+    from mashbill.models import CanvasDoc, IdentityNode, MissionNode, SketchNode
+    from mashbill.workspace import resolve_plot_root
 
     plot_root = resolve_plot_root(str(workspace))
     create_project(plot_root, "alpha", "Alpha")
@@ -469,9 +469,9 @@ def test_chat_send_injects_actor_registry_on_feature_scope(
 ) -> None:
     """Phase 2b — on a feature scope the message lists existing actors so the
     agent references them instead of reinventing."""
-    from plot_mcp.folder_io import create_project, write_canvas
-    from plot_mcp.models import ActorNode, CanvasDoc, SketchNode
-    from plot_mcp.workspace import resolve_plot_root
+    from mashbill.folder_io import create_project, write_canvas
+    from mashbill.models import ActorNode, CanvasDoc, SketchNode
+    from mashbill.workspace import resolve_plot_root
 
     plot_root = resolve_plot_root(str(workspace))
     create_project(plot_root, "alpha", "Alpha")
@@ -675,7 +675,7 @@ async def test_broadcast_notify_event_uses_supplied_event_name(
     tmp_path: Path,
 ) -> None:
     """A real ``BroadcastHub`` (no watchers) keeps event_name fidelity end-to-end."""
-    from plot_mcp.broadcast import BroadcastHub
+    from mashbill.broadcast import BroadcastHub
 
     ws_path = tmp_path / "ws"
     ws_path.mkdir()

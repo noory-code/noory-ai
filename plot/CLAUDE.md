@@ -146,7 +146,7 @@ anchor handles, which the user never agreed to.
 
 Per global CLAUDE.md `methodology: TDD(Red→Green→Refactor), BDD(Given/When/Then) ... 테스트 없이 구현 먼저 작성 금지`.
 This Gate is non-negotiable. It applies to **every** code change in
-`viewer/` or `plot_mcp/`, no matter how small — bug fix, refactor,
+`viewer/` or `mashbill/`, no matter how small — bug fix, refactor,
 guard, feature.
 
 **Trigger:** the moment Gate 1 hands you a green light, before you
@@ -279,7 +279,7 @@ The legacy "manual" path below is kept as a fallback for sessions
 where the Playwright MCP is offline:
 
 ```bash
-cd plot && uv run plot-mcp-http &              # MCP HTTP on 5190
+cd plot && uv run mashbill-http &              # MCP HTTP on 5190
 cd plot/viewer && npm run dev                  # Vite on 5193
 open "http://localhost:5193/?project_path=$ABSOLUTE_PATH"
 ```
@@ -451,7 +451,7 @@ Per `noory-ai/CLAUDE.md` plugin rule:
 
 ```bash
 # Run viewer + MCP for manual verification
-cd plot && uv run plot-mcp-http &
+cd plot && uv run mashbill-http &
 cd plot/viewer && npm run dev
 
 # Type-check viewer
@@ -466,11 +466,11 @@ cd plot/viewer && npx vitest run
 cd plot && uv run pytest
 
 # Type-check MCP
-cd plot && uv run mypy plot_mcp/
+cd plot && uv run mypy mashbill/
 
 # Lint
-cd plot && uv run ruff check plot_mcp/ tests/
-cd plot && uv run ruff format plot_mcp/ tests/
+cd plot && uv run ruff check mashbill/ tests/
+cd plot && uv run ruff format mashbill/ tests/
 ```
 
 ---

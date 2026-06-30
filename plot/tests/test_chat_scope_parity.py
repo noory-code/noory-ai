@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import get_args
 
-from plot_mcp.chat_providers.base import ChatScope, is_valid_scope
+from mashbill.chat_providers.base import ChatScope, is_valid_scope
 
 _EXPECTED_SCOPES = {
     "project",

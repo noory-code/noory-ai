@@ -9,15 +9,15 @@ from __future__ import annotations
 
 import pytest
 
-from plot_mcp.chat_store import (
+from mashbill.chat_store import (
     append_assistant,
     append_user,
     list_conversations,
     read_conversation,
     read_recent_transcript,
 )
-from plot_mcp.project_io import create_project
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.project_io import create_project
+from mashbill.workspace import resolve_plot_root
 
 
 def _project(tmp_path):

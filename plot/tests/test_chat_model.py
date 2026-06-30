@@ -11,13 +11,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from plot_mcp.chat_provider import (
+from mashbill.chat_provider import (
     ChatProviderSelection,
     read_selection,
     write_selection,
 )
-from plot_mcp.chat_providers.claude_code import ClaudeCodeProvider
-from plot_mcp.chat_providers.codex import CodexProvider
+from mashbill.chat_providers.claude_code import ClaudeCodeProvider
+from mashbill.chat_providers.codex import CodexProvider
 
 
 def test_selection_roundtrips_model(tmp_path: Path) -> None:

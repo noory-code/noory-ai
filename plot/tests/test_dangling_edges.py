@@ -19,12 +19,12 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.canvas_io import _drop_dangling_edges, read_canvas
-from plot_mcp.folder_io import create_project
-from plot_mcp.git_store import init_workspace_repo
-from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
-from plot_mcp.storage import _canvas_file, _read_json, _write_json
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.canvas_io import _drop_dangling_edges, read_canvas
+from mashbill.folder_io import create_project
+from mashbill.git_store import init_workspace_repo
+from mashbill.models_foundation import PROJECT_ANCHOR_ID
+from mashbill.storage import _canvas_file, _read_json, _write_json
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture

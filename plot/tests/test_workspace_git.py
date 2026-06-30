@@ -26,8 +26,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from plot_mcp.folder_io import create_project
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.folder_io import create_project
+from mashbill.workspace import resolve_plot_root
 
 
 def _workspace_root(plot_root: Path) -> Path:
@@ -50,8 +50,8 @@ def test_tag_endpoint_returns_needs_git_init_when_no_repo(tmp_path: Path) -> Non
     It returns a structured 409 the viewer can turn into a modal."""
     from starlette.testclient import TestClient
 
-    from plot_mcp.broadcast import BroadcastHub
-    from plot_mcp.http_app import create_http_app
+    from mashbill.broadcast import BroadcastHub
+    from mashbill.http_app import create_http_app
 
     client = TestClient(create_http_app(hub=BroadcastHub(enable_watchers=False)))
     plot_root = resolve_plot_root(str(tmp_path))
@@ -77,8 +77,8 @@ def test_git_init_endpoint_creates_workspace_repo(tmp_path: Path) -> None:
     plot data root. Idempotent — second call is a 200 no-op."""
     from starlette.testclient import TestClient
 
-    from plot_mcp.broadcast import BroadcastHub
-    from plot_mcp.http_app import create_http_app
+    from mashbill.broadcast import BroadcastHub
+    from mashbill.http_app import create_http_app
 
     client = TestClient(create_http_app(hub=BroadcastHub(enable_watchers=False)))
 
@@ -104,8 +104,8 @@ def test_tag_after_consent_lands_in_workspace_repo(tmp_path: Path) -> None:
     `<workspace>/.git`. Files inside the repo sit at `.noory/plot/{id}/…`."""
     from starlette.testclient import TestClient
 
-    from plot_mcp.broadcast import BroadcastHub
-    from plot_mcp.http_app import create_http_app
+    from mashbill.broadcast import BroadcastHub
+    from mashbill.http_app import create_http_app
 
     client = TestClient(create_http_app(hub=BroadcastHub(enable_watchers=False)))
     plot_root = resolve_plot_root(str(tmp_path))
@@ -141,8 +141,8 @@ def test_plot_does_not_touch_existing_user_git(tmp_path: Path) -> None:
     `.gitignore` / `.gitattributes`."""
     from starlette.testclient import TestClient
 
-    from plot_mcp.broadcast import BroadcastHub
-    from plot_mcp.http_app import create_http_app
+    from mashbill.broadcast import BroadcastHub
+    from mashbill.http_app import create_http_app
 
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(
@@ -196,8 +196,8 @@ def test_plot_commit_author_is_plot_even_on_users_repo(tmp_path: Path) -> None:
     points at the user."""
     from starlette.testclient import TestClient
 
-    from plot_mcp.broadcast import BroadcastHub
-    from plot_mcp.http_app import create_http_app
+    from mashbill.broadcast import BroadcastHub
+    from mashbill.http_app import create_http_app
 
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(
@@ -232,8 +232,8 @@ def test_tag_only_stages_plot_data_paths(tmp_path: Path) -> None:
     edited outside that path stays uncommitted across a Plot tag."""
     from starlette.testclient import TestClient
 
-    from plot_mcp.broadcast import BroadcastHub
-    from plot_mcp.http_app import create_http_app
+    from mashbill.broadcast import BroadcastHub
+    from mashbill.http_app import create_http_app
 
     client = TestClient(create_http_app(hub=BroadcastHub(enable_watchers=False)))
     plot_root = resolve_plot_root(str(tmp_path))
@@ -279,7 +279,7 @@ def test_legacy_dotnoory_plot_git_migrates_up_to_workspace(tmp_path: Path) -> No
     )
 
     # Open the workspace (triggers migration).
-    from plot_mcp.workspace import migrate_legacy_git_to_workspace
+    from mashbill.workspace import migrate_legacy_git_to_workspace
 
     moved = migrate_legacy_git_to_workspace(tmp_path)
     assert moved is True
@@ -304,7 +304,7 @@ def test_legacy_migration_skipped_when_workspace_already_has_git(tmp_path: Path)
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(["git", "init", "-q"], cwd=plot_root, check=True)
 
-    from plot_mcp.workspace import migrate_legacy_git_to_workspace
+    from mashbill.workspace import migrate_legacy_git_to_workspace
 
     moved = migrate_legacy_git_to_workspace(tmp_path)
     assert moved is False

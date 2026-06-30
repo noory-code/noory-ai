@@ -4,6 +4,17 @@ All notable changes to Plot are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.122.0] — 2026-06-30
+
+### Changed
+
+- **Renamed the engine package `plot_mcp` → `mashbill`** (project-wide naming
+  overhaul: consumer app → "novel", open engine → "mashbill" = the whisky grain
+  recipe, the open formula everything distils from). Import package
+  `plot_mcp`→`mashbill`, distribution + console scripts `plot-mcp`/`plot-mcp-http`
+  → `mashbill`/`mashbill-http`, sidecar binary `plot-mcp-*` → `mashbill-*`.
+  Wire artifacts regenerated. `PLOT_*` env vars unchanged (brand layer, later).
+
 ## [0.121.0] — 2026-06-28
 
 ### Added
@@ -64,7 +75,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   The coach is now spawned with the running build's own Plot server attached
   directly (`--mcp-config` + `--strict-mcp-config`), so it always has the canvas
   tools regardless of the global registration, and no longer sees the user's
-  unrelated MCP servers. Guard: `test_claude_attaches_own_plot_mcp_strictly`.
+  unrelated MCP servers. Guard: `test_claude_attaches_own_mashbill_strictly`.
 
 ## [0.120.0] — 2026-06-26
 
@@ -171,7 +182,7 @@ shipped in the `plot` repo. See **D-2026-06-24-G** follow-up.
   so the agent can jump to "the comment feature" even when it's on another
   canvas. The hallucination guard now names the tool. A plain label index, not
   vector search (the data is already a graph). Engine 648 green.
-  `plot_mcp/node_search.py` + `tests/test_node_search.py` (6).
+  `mashbill/node_search.py` + `tests/test_node_search.py` (6).
 
 ## [0.116.1] — 2026-06-24
 
@@ -197,7 +208,7 @@ the upstream canvas first.
   core_value / identity) — creates a **lightweight master** (name only, deepened
   later by its home-canvas coach) on its home canvas (actor → Actors, core_value
   / identity → Foundation), positioned so fresh ones don't stack, and returns its
-  id. The engine owns the home-canvas + positioning (`plot_mcp/masters.py`) so
+  id. The engine owns the home-canvas + positioning (`mashbill/masters.py`) so
   the viewer never writes across the canvas boundary. `tests/test_masters.py` (8).
 
 ### Notes
@@ -268,7 +279,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
   now reads the selected nodes' actual typed text (mission statement / body,
   core_value definition, …) and injects a `[Selected node details]` block into
   the chat message, so "polish this mission" reaches the agent **with the mission
-  text** instead of inventing one. Read engine-side (`plot_mcp/chat_selection.py`)
+  text** instead of inventing one. Read engine-side (`mashbill/chat_selection.py`)
   via `read_canvas`, keyed off the single project under the data root; the
   renderer is generic (non-empty, non-structural text fields) so new kinds need
   no per-kind branch. Fails safe — no project / missing canvas / absent id all
@@ -482,7 +493,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 ### Added
 
 - **format F export engine — Plot "write" half of the Plot↔Solera contract**
-  (Phase P / INT-2, walking-skeleton scope). New `plot_mcp/format_f.py` writes
+  (Phase P / INT-2, walking-skeleton scope). New `mashbill/format_f.py` writes
   the 2-layer published bundle defined in `repos-plot/docs/specs/format-f.md`:
   - `publish_project_snapshot` → `published/_project/vP{N}/` freezes the shared
     structure (本質 / Actors / Entities).
@@ -511,7 +522,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
   (**D-2026-06-22-B**, reverses D-2026-06-16-C, which went stale on arrival).
   New `GET /api/chat/models?provider=`: codex → `~/.codex/models_cache.json`,
   gemini → `agy models`, claude → its static aliases. Fail-soft to an empty
-  list (selector still offers default + Custom…). `plot_mcp/chat_models.py`.
+  list (selector still offers default + Custom…). `mashbill/chat_models.py`.
 - **Codex reasoning effort as combined model×effort entries**
   (**D-2026-06-22-C**). The codex catalogue expands each model per
   `supported_reasoning_levels` (id `<slug>:<effort>`, e.g. `gpt-5.5:high`);
@@ -704,7 +715,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 - **Engine version is now a single source** (Phase D part a, **D-2026-06-20-N**).
   The four stale copies (`pyproject` `0.1.0`, `__init__` `0.1.0`,
   `schema_export.PLOT_VERSION` `0.14.18`, `plugin.json`) collapse to
-  `plot_mcp/__init__.py::__version__`. `pyproject` derives it via hatchling
+  `mashbill/__init__.py::__version__`. `pyproject` derives it via hatchling
   (`dynamic = ["version"]`); `PLOT_VERSION` re-exports it; `plugin.json` is
   pinned equal by `tests/test_version_parity.py`. Gate 4 bumps `__init__` +
   `plugin.json` together going forward. `_meta.json plot_version` now reflects
@@ -723,8 +734,8 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 ### Changed
 
 - The generated `wire.gen.ts` header now documents the **cross-repo** regen
-  command (`PLOT_VIEWER_ROOT=<app>/viewer uv run python -m plot_mcp.ts_codegen`)
-  — the bare `uv run python -m plot_mcp.ts_codegen` is a no-op post-cut
+  command (`PLOT_VIEWER_ROOT=<app>/viewer uv run python -m mashbill.ts_codegen`)
+  — the bare `uv run python -m mashbill.ts_codegen` is a no-op post-cut
   (D-2026-06-20-M). Paired regen of the committed app artifact verified
   idempotent; the app's vitest stays green (929) against the new header.
 
@@ -745,8 +756,8 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
   they resolve the viewer target only from `PLOT_VIEWER_ROOT` (new
   `ts_codegen.wire_ts_path()` / `schema_export.viewer_contract_path()`, `None`
   when unset). Unset → no-op for the viewer artifact; the engine still always
-  writes its own `plot_mcp/wire_contract.json` self-copy. Dev cross-repo regen:
-  `PLOT_VIEWER_ROOT=/abs/path/to/plot/viewer uv run python -m plot_mcp.ts_codegen`
+  writes its own `mashbill/wire_contract.json` self-copy. Dev cross-repo regen:
+  `PLOT_VIEWER_ROOT=/abs/path/to/plot/viewer uv run python -m mashbill.ts_codegen`
   (+ `… schema_export --wire`) — verified idempotent against the committed
   `plot/viewer` artifacts.
 - **Four viewer-reading parity tests re-homed** (they die once the viewer
@@ -893,7 +904,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 ### Changed
 
 - Codegen artifacts regenerated to the 13-kind contract: `wire.gen.ts`,
-  `plot_mcp/wire_contract.json`, and the viewer snapshot copy.
+  `mashbill/wire_contract.json`, and the viewer snapshot copy.
 - Test kind-list / count fixtures reconciled to 13 across `structural-guards`,
   `styles-cursor-baseline`, `cursor-sweep`, `no-god-import`, `entity-roundtrip`,
   `wire-contract`, `nodes/registry`, the two `inspectors.*`, and the
@@ -1034,7 +1045,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 ### Changed
 
 - **Viewer wire types are now GENERATED from the engine schema** (migration
-  Phase A, D-2026-06-20-A, TECH_REVIEW step 1). New `plot_mcp/ts_codegen.py`
+  Phase A, D-2026-06-20-A, TECH_REVIEW step 1). New `mashbill/ts_codegen.py`
   emits `viewer/src/domain/wire.gen.ts` (`BaseFieldsJson` + one `{Kind}Json`
   per kind) from the Pydantic models; every per-kind domain class now imports
   its wire interface from `./wire.gen` instead of hand-declaring it inline. The
@@ -1049,7 +1060,7 @@ in-app `-p` agent hallucinates because it is context-starved, not because of the
 
 - `tests/test_ts_codegen.py` — pins committed `wire.gen.ts` byte-for-byte
   against fresh generation (a model change without `uv run python -m
-  plot_mcp.ts_codegen` fails here).
+  mashbill.ts_codegen` fails here).
 
 ### Removed
 
@@ -1358,7 +1369,7 @@ connected agent (D-2026-06-15-F).
 
 Minor. Chat MCP path — the external agent gets the viewer's live context
 (D-2026-06-15-D). The CHAT_ARCH.md "Scope honesty" follow-up to Layers 1–3:
-the *primary* path (the user's own CLI via the `plot_mcp` sidecar) now sees the
+the *primary* path (the user's own CLI via the `mashbill` sidecar) now sees the
 same active canvas + selection + framing the in-app chat got.
 
 ### Added
@@ -1373,12 +1384,12 @@ same active canvas + selection + framing the in-app chat got.
 - **`useViewerContextBridge`** (viewer) — one mount in `ChatDock` over the
   active canvas + selection; debounced on-change post + ~30s heartbeat so an
   idle-but-open viewer stays "live".
-- `plot_mcp/viewer_context.py` (filesystem rendezvous store) +
-  `plot_mcp/endpoints_viewer.py`.
+- `mashbill/viewer_context.py` (filesystem rendezvous store) +
+  `mashbill/endpoints_viewer.py`.
 
 ### Changed
 
-- **Shared `plot_mcp/chat_context.py`** — `build_framing_preamble` +
+- **Shared `mashbill/chat_context.py`** — `build_framing_preamble` +
   `SCOPE_FRAMING` + `build_context_preamble` moved out of the HTTP endpoint
   module so the MCP path shares them without importing the HTTP layer (SSOT;
   no MCP→HTTP dependency). `endpoints_chat.py` re-exports for back-compat.
@@ -1578,11 +1589,11 @@ and answered anyway. (D-2026-06-14-A.)
 
 ### Added
 
-- **`plot_mcp.server.run_mcp_stdio()`** — stdio MCP transport only (no HTTP),
+- **`mashbill.server.run_mcp_stdio()`** — stdio MCP transport only (no HTTP),
   the mode the bundled binary runs when an external CLI launches it as a
   registered MCP server.
 - **`--mcp-stdio` dispatch** in the sidecar entry
-  (`plot/src-tauri/sidecar-build/plot_mcp_entry.py`): default = HTTP sidecar,
+  (`plot/src-tauri/sidecar-build/mashbill_entry.py`): default = HTTP sidecar,
   `--mcp-stdio` = stdio MCP server.
 - Root [`ARCHITECTURE.md`](../../ARCHITECTURE.md) documenting how the `.app`,
   Plot MCP, and the user's VSCode-hosted agent mesh.
@@ -1597,7 +1608,7 @@ TDD across the engine + viewer, six lock-step steps.
 
 - **`ChatScope` wire enum** (`project` / `foundation` / `actors` /
   `services` / `service_detail`) defined on both sides — Python
-  `plot_mcp/chat_providers/base.py`, TS `viewer/src/types.ts` — and
+  `mashbill/chat_providers/base.py`, TS `viewer/src/types.ts` — and
   parity-guarded by `tests/test_chat_scope_parity.py`.
 - **Per-canvas chat scope.** Engine sessions are keyed on
   `(workspace, provider, scope)`; `ChatStreamEvent` carries `scope`;
@@ -1754,7 +1765,7 @@ SPEC.md §Engine auth.
 
 ### Added
 
-- `plot_mcp/auth.py` — env reader (`configured_token`,
+- `mashbill/auth.py` — env reader (`configured_token`,
   `PLOT_AUTH_TOKEN`), `AuthMiddleware` (Starlette
   `BaseHTTPMiddleware` over `/api/*` only), `check_ws_token` (helper
   the WS endpoint calls — middleware can't ride `WebSocketRoute`),
@@ -1793,7 +1804,7 @@ SPEC.md §Engine auth.
 
 ### Changed
 
-- `plot_mcp/http_app.py::create_http_app` mounts `AuthMiddleware`
+- `mashbill/http_app.py::create_http_app` mounts `AuthMiddleware`
   in front of `CORSMiddleware` when `PLOT_AUTH_TOKEN` is set; when
   unset, the middleware is NOT mounted (zero latency cost on dev).
   `ws_endpoint` checks the `?auth=` param via `check_ws_token`
@@ -1821,7 +1832,7 @@ B3) instead of always running Claude. Architecture pin lives at
 
 ### Added
 
-- `plot_mcp/chat_providers/` subpackage — split out from the
+- `mashbill/chat_providers/` subpackage — split out from the
   v0.64.0 `chat_session.py` so each per-CLI file owns one provider's
   quirks (command shape, JSONL event names, session-id capture,
   resume semantics). Members: `base.py` (ChatStreamEvent +
@@ -1847,7 +1858,7 @@ B3) instead of always running Claude. Architecture pin lives at
   one provider's session (or every provider's session for the
   workspace if `provider_name` is `None`). The endpoint's
   `/api/chat/reset` keeps the wipe-all semantics.
-- `plot_mcp/endpoints_chat.py::chat_send_endpoint` reads
+- `mashbill/endpoints_chat.py::chat_send_endpoint` reads
   `<workspace>/.noory/plot/chat-provider` to pick the provider. No
   selection → 400 (was: silent Claude default in v0.64.0). Plot
   doesn't pick a default AI for the user; the dock's "Pick a chat
@@ -1897,13 +1908,13 @@ lands. The user picks a chat CLI, types a message, and Plot drives the
 external `claude` (Codex / Gemini next) via `--print --output-format
 stream-json`, fanning the streamed assistant text back to the dock over
 the workspace WS. Per the new pin [D-2026-06-12-D](docs/DECISIONS.md):
-the CLI subprocess lives in the **plot_mcp engine** (not the Tauri
+the CLI subprocess lives in the **mashbill engine** (not the Tauri
 shell), so dev mode (browser at `:5193`) and the bundled `.app` take the
 same code path.
 
 ### Added
 
-- `plot_mcp/chat_session.py` — `ChatProvider` ABC +
+- `mashbill/chat_session.py` — `ChatProvider` ABC +
   `ClaudeCodeProvider` (one subprocess per turn, conversation
   continuity via `--session-id` then `--resume`) + permissive
   stream-json parser that emits `ChatStreamEvent`s
@@ -1911,13 +1922,13 @@ same code path.
   `ChatSessionRegistry` (one provider per resolved workspace path,
   drop on `reset`). Subprocess invocation is injected so tests stay
   hermetic — real CLI calls live in the end-to-end smoke.
-- `plot_mcp/endpoints_chat.py` — `POST /api/chat/send` (validate
+- `mashbill/endpoints_chat.py` — `POST /api/chat/send` (validate
   body, schedule streaming task, 202) + `POST /api/chat/reset`
   (drop cached provider). The streaming bridge `stream_chat_turn`
   is exported so unit tests exercise it without going through
   HTTP. Provider crashes are caught + broadcast as an `error`
   event so the viewer always surfaces them.
-- `plot_mcp/broadcast.py::notify_event` — generalises `notify` to
+- `mashbill/broadcast.py::notify_event` — generalises `notify` to
   take an event name. The workspace WS room is now shared between
   `project_changed` and `chat_stream_event`; the viewer
   demultiplexes on `event`.
@@ -1971,7 +1982,7 @@ same code path.
 
 ### Changed
 
-- `plot_mcp/http_app.py::create_http_app` accepts an optional
+- `mashbill/http_app.py::create_http_app` accepts an optional
   `chat_registry_instance` so tests can inject a registry whose
   factory returns a fake `ChatProvider`. Production paths pass
   `None` and the module-level singleton is used. The hub +
@@ -2000,7 +2011,7 @@ same code path.
 
 ### Decisions
 
-- [D-2026-06-12-D](docs/DECISIONS.md#d-2026-06-12-d--r7-chat-subprocess-lives-in-plot_mcp-not-tauri)
+- [D-2026-06-12-D](docs/DECISIONS.md#d-2026-06-12-d--r7-chat-subprocess-lives-in-mashbill-not-tauri)
   — Subprocess host is the engine, not Tauri. Three forces
   (dev parity, transport SSOT, existing WS plumbing) all point
   the same direction; the alternative (Tauri spawn) lost on
@@ -2020,14 +2031,14 @@ reach. Phase C (subprocess streaming) follows.
 
 ### Added
 
-- `plot_mcp/chat_provider.py` — pydantic `ChatProviderSelection`
+- `mashbill/chat_provider.py` — pydantic `ChatProviderSelection`
   (`provider: ProviderName | None`) + `read_selection` /
   `write_selection`. Missing or unreadable file → null selection (a
   corrupt file is never surfaced as a panel error; the next PUT
   overwrites cleanly). `mcp_registration.ProviderName` is the same
   literal union the rest of R7 uses, so unknown provider strings are
   rejected at the boundary.
-- `plot_mcp/endpoints_mcp.py::chat_provider_get_endpoint` +
+- `mashbill/endpoints_mcp.py::chat_provider_get_endpoint` +
   `chat_provider_put_endpoint` — `GET /api/chat/provider` + `PUT
   /api/chat/provider` (workspace-scoped via `project_path`). Pydantic
   ValidationError → 422; missing `project_path` → 400. Routed in
@@ -2255,7 +2266,7 @@ will plug into these endpoints in a separate session.
 
 ### Added
 
-- `plot_mcp/mcp_registration.py` — provider-neutral register / unregister /
+- `mashbill/mcp_registration.py` — provider-neutral register / unregister /
   detect API:
   - Claude Code → `~/.claude.json` (JSON), `mcpServers.plot`,
     `{type: "stdio"}` extra key.
@@ -2264,9 +2275,9 @@ will plug into these endpoints in a separate session.
   - Every write preserves sibling MCP server entries (e.g. `pencil`) and
     unrelated top-level keys.
   - Plot entry points at `uv run --directory <plugin_root> python -m
-    plot_mcp` so each CLI gets its own stdio instance (independent of the
+    mashbill` so each CLI gets its own stdio instance (independent of the
     desktop app's HTTP sidecar).
-- `plot_mcp/endpoints_mcp.py` — three HTTP endpoints:
+- `mashbill/endpoints_mcp.py` — three HTTP endpoints:
   - `GET /api/mcp/providers` → list of `{name, installed, registered,
     config_path}` for all three providers.
   - `POST /api/mcp/providers/{name}/register` (201 / idempotent).
@@ -2361,7 +2372,7 @@ modal first.
 
 ## [0.60.0] — 2026-06-11
 
-Minor. Splits the three remaining god modules in `plot_mcp/` so every
+Minor. Splits the three remaining god modules in `mashbill/` so every
 engine module sits under the 500-line monorepo SoC rule. The grandfather
 ratchet in `tests/test_module_size.py` is now empty.
 
@@ -2388,7 +2399,7 @@ ratchet in `tests/test_module_size.py` is now empty.
   `migrate_v01.py` (top-level v0.1 → v0.2 loop),
   `migrate_foundation.py` (inline Foundation upgrade).
 - Pre-commit gate (`hooks/pre_commit_gate.py`) — the SketchNode union check
-  now scans every `plot_mcp/*.py` instead of `models.py` only (the union
+  now scans every `mashbill/*.py` instead of `models.py` only (the union
   body lives in `models_union.py` after the split).
 
 ### Notes
@@ -2466,7 +2477,7 @@ ratchet in `tests/test_module_size.py` is now empty.
 
 - `schema_export.wire_contract()` + `--wire` CLI export the server↔viewer wire
   contract (base fields + all 15 kind field sets, Pydantic = SSOT) into two
-  committed snapshots: `plot_mcp/wire_contract.json` and
+  committed snapshots: `mashbill/wire_contract.json` and
   `viewer/src/schema/wire-contract.json`. Engine and viewer each verify their
   own sources against their own copy (`test_wire_contract.py` /
   `wire-contract.test.ts`), so the parity guard no longer depends on both
@@ -2555,7 +2566,7 @@ ratchet in `tests/test_module_size.py` is now empty.
 ### Fixed
 
 - Sorted imports in `tests/test_sync.py` (ruff I001) — pre-existing lint, no
-  behaviour change. Restores a clean `ruff check` across `plot_mcp/` + `tests/`.
+  behaviour change. Restores a clean `ruff check` across `mashbill/` + `tests/`.
 
 ## [0.53.0] — 2026-06-09
 
@@ -2805,7 +2816,7 @@ ratchet in `tests/test_module_size.py` is now empty.
 
 ### Changed — engine allows cross-origin local calls
 
-- `plot_mcp/http_app.py` mounts `CORSMiddleware` (`allow_origins=["*"]`) so a
+- `mashbill/http_app.py` mounts `CORSMiddleware` (`allow_origins=["*"]`) so a
   separately-bundled desktop frontend can call the `127.0.0.1` engine
   cross-origin. The engine binds loopback only; auth/token hardening is a
   separate follow-up.
@@ -3599,7 +3610,7 @@ prompt. viewer 714/714 green; tsc clean.
   styling, Phase 2b) and the server `propagation.py` (publish
   MINOR-bump, Phase 2c). D-2026-05-31-C.
 - `classifyEdge(canvas, source-kind)` default-assigner, mirrored in
-  `viewer/src/flow/edgeSemantics.ts` and `plot_mcp/edge_semantics.py`
+  `viewer/src/flow/edgeSemantics.ts` and `mashbill/edge_semantics.py`
   with a TS↔Python parity guard (`tests/test_edge_semantics.py`):
   actors-canvas → `inheritance`; essence source (`mission`/`core_value`/
   `identity` + their `*_ref`, not `actor_ref`) → `injection`; else `flow`.
@@ -3705,7 +3716,7 @@ Sub-flow grouping — the last deferred ServiceDetail 고도화 item. A new
   hides collapsed members + folds the group on `member_ids`;
   `useContextMenus` adds the Group / Ungroup items (threaded
   `selectedNodeIds`).
-- `plot_mcp/models.py`: `GroupNode` + `NodeKind` +
+- `mashbill/models.py`: `GroupNode` + `NodeKind` +
   `_COMPOSITION_KINDS` + both unions + `service_detail` allowed-kinds.
 - i18n: `kind.group` + `inspector.group.memberCount` in en + ko.
 
@@ -3875,7 +3886,7 @@ failure paths, not just the happy path. [D-2026-05-30-E](./docs/DECISIONS.md).
 - `viewer/src/canvases/sketch/polarityTint.ts` (new pure helper);
   `useNodesMemo` applies it to `step` nodes (beside the orphan /
   `target_side` tints). `StepInspector` gains a polarity selector.
-- `Step` domain class + `plot_mcp/models.py::StepNode` gain `polarity`.
+- `Step` domain class + `mashbill/models.py::StepNode` gain `polarity`.
 - i18n: `inspector.field.polarity` + `fieldHint.polarity` +
   `inspector.polarity.{neutral,positive,negative}` in en + ko.
 
@@ -3965,7 +3976,7 @@ ServiceDetail flow. The 16th kind, added via the full
 - `BaseNode.effectiveShape` forces diamond for `decision`.
 - `SketchStencil.tsx` Decision composition preset + free-form drop
   rule; `SketchIcons.ts` adds `git-fork`.
-- `plot_mcp/models.py`: `DecisionNode` Pydantic model, `NodeKind`,
+- `mashbill/models.py`: `DecisionNode` Pydantic model, `NodeKind`,
   `_COMPOSITION_KINDS`, both discriminated unions, `service_detail`
   allowed-kinds set.
 - i18n: `kind.decision`, `inspector.decision.branchHint` in en + ko.
@@ -5060,7 +5071,7 @@ flagged where the running build had drifted from it.
   for consumers that need parent-child queries (Inspector child
   count, App.tsx drill context, useDragAndDrop sibling lookup,
   …).
-- **Propagation walk** (`plot_mcp/propagation.py`) now follows
+- **Propagation walk** (`mashbill/propagation.py`) now follows
   incoming directed edges instead of ``parent_id``; multi-parent
   is resolved by picking the lexicographically smallest source id.
 
@@ -5177,7 +5188,7 @@ flagged where the running build had drifted from it.
   default suits Services / ServiceDetail hub-spoke layouts without
   overflow. Existing nodes keep their stored width / height in
   `canvas.json`; only new stencil-drop / pane-double-click / paste
-  creates an 80×36 node. SSOT trio updated: `plot_mcp/models.py`,
+  creates an 80×36 node. SSOT trio updated: `mashbill/models.py`,
   `viewer/src/canvases/sketch/constants.ts`,
   `viewer/src/domain/BaseFields.ts`. Auto-layout padding stays at 64
   (set by D-2026-05-17-N) — now ~1.8× the longer node dimension, so
@@ -5343,7 +5354,7 @@ User direct quotes locking the change: *"모든 액터는 다른 캔버스에
   master is the publish entry point. Phase 5 referent flow will
   layer cross-canvas referent updates on top of this direct
   path; no migration needed.
-- Lockstep updates: `plot_mcp/md_publish.py::can_publish` +
+- Lockstep updates: `mashbill/md_publish.py::can_publish` +
   `viewer/src/domain/publishEligibility.ts::canPublish` +
   publish docstrings + `docs/SPEC.md §Publish eligibility` table.
 
@@ -5388,7 +5399,7 @@ User direct quotes locking the change: *"모든 액터는 다른 캔버스에
   test slipped through because of an `as SketchNode` cast in
   `makeNode`. Replaced with `side: "operator"` (matches Hero's
   provider role). Test continues to pass (7/7). Root cause = not
-  cross-checking `plot_mcp/models.py::ActorNode` before writing
+  cross-checking `mashbill/models.py::ActorNode` before writing
   the test — global CLAUDE.md `honesty: 추측 금지` violation.
 
 ## [0.24.7] — 2026-05-19
@@ -5890,17 +5901,17 @@ The 5 open spec questions filed in NEXT_SESSION.md are locked:
 
 ### Added
 
-- ``plot_mcp/propagation.py`` (new) — pure ``walk_ancestors()``
+- ``mashbill/propagation.py`` (new) — pure ``walk_ancestors()``
   module + ``LogicalAncestor`` dataclass. Walks ``parent_id`` and
   same-id mirrors only; ignores all ``*_ref`` fields. Returns
   ancestors with the list of canvas keys each appears in so the
   caller can mirror-sync every file.
-- ``plot_mcp/md_publish.py::bump_minor`` — ``v<MAJOR>.<MINOR>`` →
+- ``mashbill/md_publish.py::bump_minor`` — ``v<MAJOR>.<MINOR>`` →
   ``v<MAJOR>.<MINOR+1>``. Mirror of existing ``bump_major``.
-- ``plot_mcp/folder_io.py::_load_all_canvases`` —
+- ``mashbill/folder_io.py::_load_all_canvases`` —
   enumerates foundation / actors / services + every
   ``service_detail:<sid>`` into one dict for the propagation walk.
-- ``plot_mcp/folder_io.py::_bump_node_version_in_canvas`` — pure
+- ``mashbill/folder_io.py::_bump_node_version_in_canvas`` — pure
   helper, returns a CanvasDoc copy with one node's version
   replaced.
 - ``viewer/src/api.ts::PublishPropagatedAncestor`` interface +
@@ -5918,22 +5929,22 @@ The 5 open spec questions filed in NEXT_SESSION.md are locked:
 
 ### Changed
 
-- ``plot_mcp/folder_io.py::publish_node`` — now MAJOR-bumps the
+- ``mashbill/folder_io.py::publish_node`` — now MAJOR-bumps the
   target in **every** canvas it appears in (mirror sync; e.g. a
   service node lives in both Services and ServiceDetail), walks
   ancestors, MINOR-bumps each in every canvas it appears in, and
   persists every touched canvas in one pass. Returns a
   ``propagated`` array in the response dict so the client can
   refresh ancestor badges without a separate request.
-- ``plot_mcp/git_store.py::publish_snapshot`` — new optional
+- ``mashbill/git_store.py::publish_snapshot`` — new optional
   ``propagated: list[tuple[str, str, str]] | None = None``
   parameter; appends one ``Publish-Propagated-Ancestor: <id>
   <from>→<to>`` trailer per ancestor after the 5 existing base
   trailers. Five-trailer commit shape (D-2026-05-16-E)
   preserved for back-compat.
-- ``plot_mcp/api_endpoints.py::node_publish_endpoint`` docstring
+- ``mashbill/api_endpoints.py::node_publish_endpoint`` docstring
   updated; response JSON gained the ``propagated`` key.
-- ``plot_mcp/mcp_tools.py::publish_node_tool`` docstring updated;
+- ``mashbill/mcp_tools.py::publish_node_tool`` docstring updated;
   return value gained ``propagated`` key.
 
 ### Removed
@@ -6050,7 +6061,7 @@ section reference in [`docs/PUBLISH.md`](./docs/PUBLISH.md).
 
 ### Added
 
-- ``plot_mcp/models.py`` — ``body: str = ""`` on 7 kind classes
+- ``mashbill/models.py`` — ``body: str = ""`` on 7 kind classes
   (ActorNode / ServiceNode / CategoryNode / MetricNode / StepNode
   / RuleNode / ContentNode). ref 4 + ProjectNode unchanged.
 - ``viewer/src/domain/{Actor,Service,Category,Metric,Step,Rule,
@@ -6156,27 +6167,27 @@ docs fix into the feature commit (Plot CLAUDE.md anti-pattern).
 
 ### Added
 
-- ``plot_mcp/md_publish.py`` — **new module**. ``render_node_md``
+- ``mashbill/md_publish.py`` — **new module**. ``render_node_md``
   emits the uniform "YAML frontmatter (7 keys) + per-typed-field H2
   sections" MD template across all 15 kinds. ``can_publish`` is the
   eligibility helper; ``bump_major`` is the version-string
   arithmetic.
-- ``plot_mcp/folder_io.py::publish_node`` — reads the canvas,
+- ``mashbill/folder_io.py::publish_node`` — reads the canvas,
   bumps the node's ``version``, writes the published MD, writes the
   bumped canvas, and creates the git commit via
   ``publish_snapshot``. Raises ``PublishNotEligibleError`` (409) on
   ineligible kinds; ``KeyError`` (404) on missing node.
-- ``plot_mcp/git_store.py::publish_snapshot`` — parallel to
+- ``mashbill/git_store.py::publish_snapshot`` — parallel to
   ``tag_snapshot``. ``git add -A`` + ``git commit`` (no
   ``--allow-empty``, no tag). Subject is human-readable; 5 trailers
   encode the machine contract: ``Publish-Node-Id`` /
   ``Publish-Kind`` / ``Publish-Canvas`` / ``Publish-Version-From``
   / ``Publish-Version-To``.
-- ``plot_mcp/api_endpoints.py::node_publish_endpoint`` →
+- ``mashbill/api_endpoints.py::node_publish_endpoint`` →
   ``POST /api/projects/{id}/canvases/{kind}/nodes/{node_id}/publish``
   (optional ``service_id`` query param). Returns 201
   ``{node_id, from_version, to_version, md_path, sha}``.
-- ``plot_mcp/mcp_tools.py::publish_node_tool`` — MCP wrapper.
+- ``mashbill/mcp_tools.py::publish_node_tool`` — MCP wrapper.
 - ``viewer/src/api.ts::publishNode`` — viewer client function.
 - ``viewer/src/domain/publishEligibility.ts`` — **new helper**.
   Server-mirroring ``canPublish(node)`` predicate; drives both the
@@ -6301,7 +6312,7 @@ serialises the new key.
 
 ### Added
 
-- ``plot_mcp/models.py::BaseNodeFields.version`` — ``str = "v1.0"``
+- ``mashbill/models.py::BaseNodeFields.version`` — ``str = "v1.0"``
   default + ``_version_is_valid`` model validator enforcing
   ``^v\d+\.\d+$``. Inherited by all 15 per-kind classes via the
   discriminated union.
@@ -6372,15 +6383,15 @@ Phase 3.
 
 ### Added
 
-- ``plot_mcp/folder_io.py::_absorb_md_typed_text_into_json`` — one-shot
+- ``mashbill/folder_io.py::_absorb_md_typed_text_into_json`` — one-shot
   read-side migrator with 4-scenario conflict policy + ``_legacy/``
   quarantine + collision-suffix fallback.
-- ``plot_mcp/folder_io.py::_legacy_md_dir`` — canonical
+- ``mashbill/folder_io.py::_legacy_md_dir`` — canonical
   ``foundation/_legacy/`` resolver.
-- ``plot_mcp/models.py::FOUNDATION_MD_FIELDS`` — all-MD-syntax-fields
+- ``mashbill/models.py::FOUNDATION_MD_FIELDS`` — all-MD-syntax-fields
   map per kind (typed + body); SSOT for the viewer and Phase 3
   publish.
-- ``plot_mcp/models.py::MissionNode/CoreValueNode/IdentityNode``
+- ``mashbill/models.py::MissionNode/CoreValueNode/IdentityNode``
   ``body: str = ""`` field — JSON SSOT home for the legacy MD's
   post-``---`` free prose.
 - ``viewer/src/canvases/inspectors/shared/BodyField.tsx`` — shared
@@ -6398,13 +6409,13 @@ Phase 3.
 
 ### Changed
 
-- ``plot_mcp/folder_io.py::read_canvas`` — Foundation branch swaps
+- ``mashbill/folder_io.py::read_canvas`` — Foundation branch swaps
   the old 2-call eviction chain for the single
   ``_absorb_md_typed_text_into_json``.
-- ``plot_mcp/folder_io.py::write_canvas`` — Foundation branch drops
+- ``mashbill/folder_io.py::write_canvas`` — Foundation branch drops
   the ``_split_foundation_typed_text_to_md`` call; Pydantic now
   serialises every typed + body field directly to JSON.
-- ``plot_mcp/folder_io.py::collect_foundation_md_warnings`` —
+- ``mashbill/folder_io.py::collect_foundation_md_warnings`` —
   returns ``{}`` unconditionally (no canonical MD files survive
   absorption); kept as a stable callable for backward API
   compatibility.
@@ -6433,7 +6444,7 @@ Phase 3.
 
 ### Removed
 
-- ``plot_mcp/folder_io.py::_evict_typed_text_to_md``,
+- ``mashbill/folder_io.py::_evict_typed_text_to_md``,
   ``_merge_md_typed_text_into_nodes``,
   ``_split_foundation_typed_text_to_md`` — the v0.13
   eviction-and-rehydration trio. Replaced by the single read-side
@@ -6515,7 +6526,7 @@ agent: *"two layers of defence broken in the same place"*).
 
 ### Fixed
 
-- ``plot/plot_mcp/folder_io.py::_evict_legacy_project_anchor``
+- ``plot/mashbill/folder_io.py::_evict_legacy_project_anchor``
   defensive orphan-edge cleanup — ``node_ids`` set now includes
   ``PROJECT_ANCHOR_ID``, so anchor edges survive the cleanup
   instead of being silently rewritten on every read.
@@ -6533,9 +6544,9 @@ agent: *"two layers of defence broken in the same place"*).
 
 ### Verification
 
-- plot_mcp pytest — 283 / 283 (281 → 283, +2 regression).
-- plot_mcp mypy — clean.
-- plot_mcp ruff — clean (after I001 import-sort fix).
+- mashbill pytest — 283 / 283 (281 → 283, +2 regression).
+- mashbill mypy — clean.
+- mashbill ruff — clean (after I001 import-sort fix).
 - viewer vitest — 486 / 486 (no regression).
 - kill-switch — 11 / 11.
 
@@ -6575,7 +6586,7 @@ None→None services orphan edge remains separately tracked.)
 
 ### Fixed
 
-- ``plot/plot_mcp/models.py::CanvasDoc._edges_reference_nodes`` —
+- ``plot/mashbill/models.py::CanvasDoc._edges_reference_nodes`` —
   whitelist the new module-level ``PROJECT_ANCHOR_ID`` constant
   (mirrors the viewer's ``constants.ts``) so user-drawn anchor
   edges validate cleanly.
@@ -6587,7 +6598,7 @@ None→None services orphan edge remains separately tracked.)
 
 ### Added
 
-- ``plot/plot_mcp/models.py`` — ``PROJECT_ANCHOR_ID`` module-level
+- ``plot/mashbill/models.py`` — ``PROJECT_ANCHOR_ID`` module-level
   constant (mirrors ``viewer/src/canvases/sketch/constants.ts``).
 - ``plot/tests/test_canvas_doc.py`` — 5 regression tests:
   - anchor → user-node edge accepted (both directions).
@@ -6598,9 +6609,9 @@ None→None services orphan edge remains separately tracked.)
 
 ### Verification
 
-- plot_mcp pytest — 281 / 281 (276 → 281, +5 regression).
-- plot_mcp mypy — clean.
-- plot_mcp ruff — clean.
+- mashbill pytest — 281 / 281 (276 → 281, +5 regression).
+- mashbill mypy — clean.
+- mashbill ruff — clean.
 - viewer vitest — 486 / 486 (no regression; schema-parity unaffected).
 - kill-switch — 11 / 11.
 
@@ -6684,7 +6695,7 @@ shows the one-shot UX is too aggressive.
 - viewer vitest — 486 / 486 (461 → 486, +25 new tests).
 - viewer tsc — clean.
 - structural-guards — SketchCanvas 419 / 420 ceiling.
-- plot_mcp pre-commit gate (kill-switch) — 11 / 11.
+- mashbill pre-commit gate (kill-switch) — 11 / 11.
 
 ### Hands-on (Gate 3 — pending user verification)
 
@@ -6739,7 +6750,7 @@ synthesis behaviour, preserving backward compatibility.
 
 ### Fixed
 
-- ``plot/plot_mcp/migrate.py:upgrade_foundation_canvas_if_needed``
+- ``plot/mashbill/migrate.py:upgrade_foundation_canvas_if_needed``
   step 4 — added ``_project_doc_has_anchor`` guard so the legacy
   pre-v0.13 anchor synthesis no-ops when v0.13 Phase 0 has already
   migrated the anchor to ``ProjectDoc.anchors``.
@@ -6755,9 +6766,9 @@ synthesis behaviour, preserving backward compatibility.
 
 ### Verification
 
-- plot_mcp pytest — 276 / 276 (274 → 276, +2 new tests).
-- plot_mcp mypy — clean.
-- plot_mcp ruff — clean.
+- mashbill pytest — 276 / 276 (274 → 276, +2 new tests).
+- mashbill mypy — clean.
+- mashbill ruff — clean.
 - viewer tsc — clean.
 - kill-switch (pre_commit_gate) — 11 / 11.
 
@@ -7328,7 +7339,7 @@ ships. Canonical Plot spec §"데이터 구조 원칙":
 > "owner 필드 포함 (멀티유저 확장 대비)."
 (D-2026-05-12-P)
 
-### Changed — plot_mcp/models.py
+### Changed — mashbill/models.py
 
 - ``BaseNodeFields.owner: str | None = None`` after ``details_path``.
 
@@ -7361,7 +7372,7 @@ fromJson change needed.)
 - ``npx vitest run`` — 383 / 383 passed.
 - ``uv run pytest`` — 274 / 274 (schema parity now asserts the
   14-field BaseFields canonical set on both sides).
-- ``uv run mypy plot_mcp/`` — clean.
+- ``uv run mypy mashbill/`` — clean.
 - ``uv run ruff check`` — clean.
 - ``test_pre_commit_gate.py`` — 11 / 11 (kill-switch happy).
 
@@ -7720,8 +7731,8 @@ time with the offending kind named. (D-2026-05-12-I)
 ### Verification
 
 - ``uv run pytest`` — 274 / 274 passed (256 prior + 18 new).
-- ``uv run mypy plot_mcp/`` — clean.
-- ``uv run ruff check plot_mcp/ tests/`` — clean.
+- ``uv run mypy mashbill/`` — clean.
+- ``uv run ruff check mashbill/ tests/`` — clean.
 
 Plugin patch bump 0.16.5 → 0.16.6.
 
@@ -7948,7 +7959,7 @@ A single-boolean kill-switch that fires on every commit touching
 viewer or server code. Verifies four structural invariants the
 existing acceptance-gate suite cannot detect:
 
-1. ``plot_mcp/models.py`` exposes ``SketchNode`` as a 15-way
+1. ``mashbill/models.py`` exposes ``SketchNode`` as a 15-way
    discriminated union (not a god class).
 2. ``viewer/src/canvases/SketchInspector.tsx`` stays absent from disk.
 3. ``viewer/src/canvases/SketchNode.tsx`` stays absent from disk.
@@ -7988,8 +7999,8 @@ Docs-only / non-viewer / non-server commits skip the check entirely.
 - ``npx vitest run`` — 361 / 361 passed.
 - ``uv run pytest`` — 256 / 256 passed (245 prior + 11 new from
   ``test_pre_commit_gate.py``).
-- ``uv run mypy plot_mcp/`` — clean.
-- ``uv run ruff check plot_mcp/ tests/ hooks/pre_commit_gate.py`` —
+- ``uv run mypy mashbill/`` — clean.
+- ``uv run ruff check mashbill/ tests/ hooks/pre_commit_gate.py`` —
   clean.
 - ``reset_complete_check`` returns ``None`` (= reset COMPLETE)
   against the current tree.
@@ -8101,8 +8112,8 @@ name. (D-2026-05-12-E)
 - ``npx tsc --noEmit`` — clean.
 - ``npx vitest run`` — 317 / 317 passed (242 prior + 75 new).
 - ``uv run pytest`` — 245 / 245 passed (214 prior + 31 new).
-- ``uv run mypy plot_mcp/`` — clean.
-- ``uv run ruff check plot_mcp/ tests/`` — clean.
+- ``uv run mypy mashbill/`` — clean.
+- ``uv run ruff check mashbill/ tests/`` — clean.
 
 Phase 5.1 leaves the hand-written per-kind tests in place (they
 cover kind-specific edge cases the structural sweep can't
@@ -8891,7 +8902,7 @@ implementation). No user-visible behaviour change. (D-2026-05-12-B)
 - `BaseFields.ts` — `BaseFieldsJson` (wire shape) + `BaseFields`
   (in-memory shape with defaults filled) + `parseBaseFields(raw)`
   validator that throws `DomainParseError` on any invariant
-  violation. Mirrors `plot_mcp/models.py::BaseNodeFields` 1:1.
+  violation. Mirrors `mashbill/models.py::BaseNodeFields` 1:1.
 - `parseEntity.ts` — discriminator dispatch on `raw.kind`. Each
   per-kind class registers its parser via `registerKindParser`
   during module load; `parseEntity` looks up at runtime. Throws
@@ -8968,11 +8979,11 @@ MD templates for the full discriminated union introduced in v0.14.17
 
 ### Added
 
-- `plot_mcp/schema_export.py` — `_ALL_KIND_CLASSES` map covering all
+- `mashbill/schema_export.py` — `_ALL_KIND_CLASSES` map covering all
   15 per-kind Pydantic classes (replaces Foundation-only
   `_FOUNDATION_KIND_CLASSES`). `SCHEMA_VERSION` bumped 1 → 2 to flag
   the expansion to downstream consumers.
-- `plot_mcp/schema_export.py` — `export_all_schemas(project_root,
+- `mashbill/schema_export.py` — `export_all_schemas(project_root,
   project_id)` (renamed from `export_foundation_schemas`). Emits 15
   `{kind}.json` JSON Schema files + 3 `{kind}.md.template` heading
   templates (Foundation typed-text kinds only). Idempotent — files
@@ -8990,7 +9001,7 @@ MD templates for the full discriminated union introduced in v0.14.17
 
 ### Changed
 
-- `plot_mcp/folder_io.py:724` — `create_project` now calls
+- `mashbill/folder_io.py:724` — `create_project` now calls
   `export_all_schemas` instead of `export_foundation_schemas`.
 
 ### Why
@@ -9004,8 +9015,8 @@ TS↔Pydantic field-name parity test introduced when
 ### Verification
 
 - `uv run pytest` — 214 / 214 passed (207 prior + 7 new).
-- `uv run mypy plot_mcp/` — Success: no issues found in 17 files.
-- `uv run ruff check plot_mcp/ tests/` — All checks passed.
+- `uv run mypy mashbill/` — Success: no issues found in 17 files.
+- `uv run ruff check mashbill/ tests/` — All checks passed.
 
 ## [0.14.17] — 2026-05-12
 
@@ -9018,29 +9029,29 @@ behaviour change; round-trip and migration paths preserved
 
 ### Added
 
-- `plot_mcp/models.py` — four composition Pydantic classes:
+- `mashbill/models.py` — four composition Pydantic classes:
   - `MetricNode` (target / measurement)
   - `StepNode` (order: int | None / outcome)
   - `RuleNode` (policy / enforcement / actor_permissions)
   - `ContentNode` (format / producer_actor_id / consumer_actor_id)
-- `plot_mcp/models.py` — `SketchNode` is now
+- `mashbill/models.py` — `SketchNode` is now
   `Annotated[Union[15 per-kind classes], Field(discriminator="kind")]`.
   Pydantic dispatches construction / validation on the `kind` literal;
   `CanvasDoc.nodes: list[SketchNode]` automatically narrows.
-- `plot_mcp/models.py` — `SketchNodeAdapter: TypeAdapter[SketchNode]`
+- `mashbill/models.py` — `SketchNodeAdapter: TypeAdapter[SketchNode]`
   exposed for raw-dict validation outside a `CanvasDoc` wrapper
   (e.g. WebSocket payloads in v0.15 Phase 2).
-- `plot_mcp/models.py` — `BaseNodeFields._details_path_is_safe`
+- `mashbill/models.py` — `BaseNodeFields._details_path_is_safe`
   validator (hoisted from the retired god class) so every per-kind
   class enforces the path-traversal check at construction time.
-- `plot_mcp/models.py` — `ActorRefNode.side` field. Mirrors the
+- `mashbill/models.py` — `ActorRefNode.side` field. Mirrors the
   referenced actor's side so canvases can colour-code without
   dereferencing the master each render.
-- `plot_mcp/migrate.py` — `_V01SketchNode` legacy class. Permissive
+- `mashbill/migrate.py` — `_V01SketchNode` legacy class. Permissive
   superset that accepts v0.1 raw JSON (including the legacy
   `mission` / `core_values` / `identity` god string fields). Owned by
   the migration module; `models.py` stays clean of legacy concerns.
-- `plot_mcp/migrate.py` — `_v01_to_service` / `_v01_to_composition`
+- `mashbill/migrate.py` — `_v01_to_service` / `_v01_to_composition`
   converters. Translate `_V01SketchNode` instances into current
   per-kind classes at the canvas-build boundary.
 - `plot/tests/test_node_models.py` — 10 new tests:
@@ -9052,10 +9063,10 @@ behaviour change; round-trip and migration paths preserved
 
 ### Removed
 
-- `plot_mcp/models.py` — god `SketchNode` class (203 LOC, lines
+- `mashbill/models.py` — god `SketchNode` class (203 LOC, lines
   102-305 in v0.14.16). Every kind's typed-text fields no longer
   pool together as defaults on a single class.
-- `plot_mcp/models.py` — `_REF_KIND_TO_ID_FIELD` map and the god
+- `mashbill/models.py` — `_REF_KIND_TO_ID_FIELD` map and the god
   `_ref_kind_requires_ref_id` validator. Each ref kind class now
   owns its own validator (added in v0.14.16).
 - Tests — `test_typed_fields_default_to_empty` (god polymorphism
@@ -9065,12 +9076,12 @@ behaviour change; round-trip and migration paths preserved
 
 ### Changed
 
-- 134 call sites across `plot_mcp/migrate.py`, `plot_mcp/folder_io.py`,
+- 134 call sites across `mashbill/migrate.py`, `mashbill/folder_io.py`,
   `tests/test_canvas_doc.py`, `tests/test_folder_io.py`, and
   `tests/test_sync.py` migrated from `SketchNode(id=..., kind="X", ...)`
   to the per-kind constructor `XNode(id=..., ...)`. One-shot codemod
   written + applied + deleted (no committed migration scaffolding).
-- `plot_mcp/migrate.py` — `_build_actors_canvas`, `_split_services`,
+- `mashbill/migrate.py` — `_build_actors_canvas`, `_split_services`,
   `_backfill_actor_sides`, `_ensure_minimum_actors` now consume
   `_V01SketchNode` (legacy) and emit per-kind class instances
   (current). Conversion happens at the function boundary; downstream
@@ -9099,7 +9110,7 @@ backing `CanvasDoc.nodes` until v0.14.17 promotes the union.
 
 ### Added
 
-- `plot_mcp/models.py` — seven per-kind Pydantic classes extending
+- `mashbill/models.py` — seven per-kind Pydantic classes extending
   `BaseNodeFields`:
   - `ActorNode` (motivation / pain / side)
   - `ActorRefNode` (ref_actor_id required + gives / receives)
@@ -9132,30 +9143,30 @@ debt cleared to zero so subsequent phases land on a green baseline
 
 ### Fixed — `ruff check` → 0 errors
 
-- `plot_mcp/http_app.py` — import block sorted.
-- `plot_mcp/md_template.py` — extracted `tail` local variable to fit
+- `mashbill/http_app.py` — import block sorted.
+- `mashbill/md_template.py` — extracted `tail` local variable to fit
   the typed-area / free-prose split under the 100-char line limit.
-- `plot_mcp/models.py` — `FoundationNode` discriminated union now
+- `mashbill/models.py` — `FoundationNode` discriminated union now
   uses the PEP 604 `X | Y` form instead of `typing.Union[...]`;
   unused `Union` import removed. `_foundation_canvas_rules` error
   message split across two lines.
 
-### Fixed — `mypy plot_mcp/` → 0 errors
+### Fixed — `mypy mashbill/` → 0 errors
 
 Root causes addressed (not suppressed):
 
-- `plot_mcp/schema_export.py` — `_FOUNDATION_KIND_CLASSES` now
+- `mashbill/schema_export.py` — `_FOUNDATION_KIND_CLASSES` now
   declares `dict[str, type[BaseNodeFields]]` so `cls.model_json_schema()`
   resolves against the Pydantic `BaseModel` API instead of the bare
   `ModelMetaclass`. `_node_canvas_schema` return value gets an
   explicit `dict[str, Any]` annotation.
-- `plot_mcp/folder_io.py` — three Foundation-MD helpers
+- `mashbill/folder_io.py` — three Foundation-MD helpers
   (`_evict_typed_text_to_md`, `_merge_md_typed_text_into_nodes`,
   `_split_foundation_typed_text_to_md`) narrow `kind = n.get("kind")`
   with an `isinstance(kind, str)` guard before passing to
   `_foundation_md_path` / `parse_md_template` / `render_md_template`
   (which all require `str`, not `Any | None`).
-- `plot_mcp/folder_io.py` — removed an unused
+- `mashbill/folder_io.py` — removed an unused
   `# type: ignore[arg-type]` on the legacy project-anchor `shape`
   read; renamed the second `edges` local in
   `_evict_legacy_project_anchor` to `all_edges` to satisfy the
@@ -9163,7 +9174,7 @@ Root causes addressed (not suppressed):
 
 ### Fixed — formatting
 
-`ruff format` applied across `plot_mcp/` + `tests/`. 10 files
+`ruff format` applied across `mashbill/` + `tests/`. 10 files
 reformatted; no semantic changes.
 
 ### Why
@@ -9214,7 +9225,7 @@ plan:
 - **Phase A — Domain entity classes** (`viewer/src/domain/` with
   15 per-kind classes + fromJson/toJson + invariants +
   discriminated union).
-- **Phase B — Server alignment** with `plot_mcp/models.py`.
+- **Phase B — Server alignment** with `mashbill/models.py`.
 - **Phase C — Inspector kind fan-out** (per-kind files).
 - **Phase D — Canvas componentisation** (FoundationCanvas /
   ActorsCanvas / ServicesCanvas / ServiceDetailCanvas).
@@ -9894,7 +9905,7 @@ work merely surfaced it during browser verification.
 - `plot/hooks/pre_commit_gate.py` — new
   `cross_cutting_bundle_check()` denies commits that stage
   `viewer/src/styles.css` (cross-cutting visual SSOT) alongside
-  feature code under `viewer/` or `plot_mcp/`. Tests excluded from
+  feature code under `viewer/` or `mashbill/`. Tests excluded from
   the "feature" category.
 - `plot/viewer/tests/styles-cursor-baseline.test.tsx` — static
   Vitest guard asserting `styles.css` contains zero cursor
@@ -10173,7 +10184,7 @@ Fires on PreToolUse when the assistant runs `git commit` or `git
 push`. Reads the staged file list:
 
 - If `plot/viewer/` changed → run `npx tsc --noEmit` + `npx vitest run`.
-- If `plot/plot_mcp/` changed → run `uv run pytest`.
+- If `plot/mashbill/` changed → run `uv run pytest`.
 
 Failures return `permissionDecision: deny` with the failure output,
 so the assistant must fix and retry. No more "tests broke after
@@ -11888,9 +11899,9 @@ remaining kinds where the domain has clearly distinct facets.
   are migrated transparently on open: the `core/` directory is renamed to
   `foundation/` and the `canvas_kind` field is rewritten. Legacy alias
   `migrate.upgrade_core_canvas_if_needed` still works.
-  ([`plot_mcp/folder_io.py`](plot_mcp/folder_io.py),
-   [`plot_mcp/migrate.py`](plot_mcp/migrate.py),
-   [`plot_mcp/models.py`](plot_mcp/models.py))
+  ([`mashbill/folder_io.py`](mashbill/folder_io.py),
+   [`mashbill/migrate.py`](mashbill/migrate.py),
+   [`mashbill/models.py`](mashbill/models.py))
 - Viewer tab label is now **Foundation** (not Core); `CanvasKind` /
   `CanvasKey` types match. Default folder slug is `foundation/…`.
   ([`viewer/src/types.ts`](viewer/src/types.ts),
@@ -11903,7 +11914,7 @@ remaining kinds where the domain has clearly distinct facets.
   in `canvas.json` — Plot is the sole editor. Long-form prose still lives in
   `details.md`. Other kinds also carry the fields as empty strings; only the
   Inspector for `kind === "mission"` exposes a typed form.
-  ([`plot_mcp/models.py`](plot_mcp/models.py),
+  ([`mashbill/models.py`](mashbill/models.py),
    [`viewer/src/types.ts`](viewer/src/types.ts),
    [`viewer/src/canvases/SketchInspector.tsx`](viewer/src/canvases/SketchInspector.tsx))
 
@@ -11934,16 +11945,16 @@ remaining kinds where the domain has clearly distinct facets.
 ## [0.9.0] — 2026-04-26
 
 ### Changed — **typed JSON fields + per-node `details.md`** (no more sync conflicts)
-- **JSON and MD now hold different data.** Typed short fields live on the node in `canvas.json` and are written/read only by Plot; long prose lives in a per-node `details.md` and Plot reads/writes that file just like any other editor (Obsidian, VS Code) can. Same content is never duplicated, so the sync question that haunted v0.7 / v0.8 disappears entirely. ([`plot_mcp/models.py`](plot_mcp/models.py))
+- **JSON and MD now hold different data.** Typed short fields live on the node in `canvas.json` and are written/read only by Plot; long prose lives in a per-node `details.md` and Plot reads/writes that file just like any other editor (Obsidian, VS Code) can. Same content is never duplicated, so the sync question that haunted v0.7 / v0.8 disappears entirely. ([`mashbill/models.py`](mashbill/models.py))
 - **`SketchNode` typed fields**: `tagline`, `audience`, `method`, `goal`, `summary`, `criteria`. All optional; Inspector renders kind-specific subsets (Mission → Tagline/Audience/Method/Goal, CoreValue → Summary/Criteria, Identity / Project → Summary).
 - **`SketchNode.body` is gone.** Its preview-cache role is moot (typed fields are direct), and its long-form-edit role moves to `details.md`. v0.1 migration drops legacy `mission` text into `tagline`, `identity` text into `summary`.
 - **`SketchNode.folder_path` → `SketchNode.details_path`.** Same path-traversal validator, clearer name (it points at the node's `details.md`, not a generic folder).
 - **Inspector**: dropped the H3-section `KindTemplate` and the `ConnectToFolderButton` flow. Replaced with `TypedFieldsForm` (binds directly to typed fields) + `DetailsSection` (opens `MDFileEditor` if `details_path` is set, otherwise shows "Create details"). ([`viewer/src/canvases/SketchInspector.tsx`](viewer/src/canvases/SketchInspector.tsx))
-- **External MD editing is now safe.** The watcher tracks `details.md` files too — edits in Obsidian, VS Code, or any other editor raise a `project_changed` event and the open viewer reloads. There's nothing to drift because the JSON has no mirror of the MD content. ([`plot_mcp/watcher.py`](plot_mcp/watcher.py), [`plot_mcp/broadcast.py`](plot_mcp/broadcast.py))
+- **External MD editing is now safe.** The watcher tracks `details.md` files too — edits in Obsidian, VS Code, or any other editor raise a `project_changed` event and the open viewer reloads. There's nothing to drift because the JSON has no mirror of the MD content. ([`mashbill/watcher.py`](mashbill/watcher.py), [`mashbill/broadcast.py`](mashbill/broadcast.py))
 - **On-canvas node preview** now picks from typed fields directly: Mission shows `tagline` (falling back to `summary`); everything else shows `summary`. No more H3 parsing on the client.
 
 ### Removed
-- `plot_mcp/body_sections.py`, `viewer/src/lib/bodySections.ts`, `tests/test_body_sections_py.py` — no callers.
+- `mashbill/body_sections.py`, `viewer/src/lib/bodySections.ts`, `tests/test_body_sections_py.py` — no callers.
 - `_sync_node_body_cache_on_md_write` and the `preview` field on `PUT /api/files` — typed fields are direct, no cache to sync.
 - `ConnectToFolderButton`, `KindTemplate`, `REFERENCES_FIELD`, `TEMPLATES` (Inspector).
 - `body` field on `SketchNode` (Python and TypeScript).
@@ -11977,7 +11988,7 @@ remaining kinds where the domain has clearly distinct facets.
   - `services-detail/{sid}.json` → `services/{sid}/detail.json` (co-located with the service's `index.md`).
 - **`CanvasKind` literal `services_overview` → `services`.** Tab label is already "Services" — the canvas key now matches.
 - **`/api/files`, `/api/folders` are project-scoped.** `project_id` is required; `path` is relative to `.plot/{project_id}/`. Client can no longer accidentally address another project's tree via `..`.
-- **`folderSlug` drops the `workspace/` prefix.** Returns `{canvas}/{kind}-{label}` on both server (`plot_mcp/slug.py`) and client (`viewer/src/lib/slug.ts`).
+- **`folderSlug` drops the `workspace/` prefix.** Returns `{canvas}/{kind}-{label}` on both server (`mashbill/slug.py`) and client (`viewer/src/lib/slug.ts`).
 - **`sync_details_with_overview`** archives a service's whole folder (including `index.md`) to `services/_archive/{sid}/` when it disappears from the top-view — the previous `.json`-only archive would have orphaned any long-form notes.
 
 ### Removed
@@ -11999,11 +12010,11 @@ remaining kinds where the domain has clearly distinct facets.
 
 ### Added
 - **Folder-backed node content — Inspector becomes an MD editor.** Click a node with a `folder_path`, the right panel turns into a full Markdown editor for that folder's `index.md`. Free-form text, structured ### H3 sections, wiki links — all round-trip to disk via a 600 ms debounced save. Mirrors the Claude-skill pattern the user asked for ("each node = folder, each folder has an `index.md`"). ([`viewer/src/edit/MDFileEditor.tsx`](viewer/src/edit/MDFileEditor.tsx))
-- **`SketchNode.folder_path` field.** Optional relative path (under `project_path`) that binds a node to a folder on disk. When set, `body` holds only a short summary cache for the canvas preview; the long-form lives in the MD file. Validator rejects absolute paths, `..` segments, and blanks. ([`plot_mcp/models.py`](plot_mcp/models.py))
-- **`/api/files` and `/api/folders` endpoints.** `GET /api/files`, `PUT /api/files`, `POST /api/folders`. Path-traversal, absolute paths, and symlink-escapes are all rejected; writes go through a tmp-rename so readers never see half a file. Folder POST uniquifies on collision (`-2`, `-3`, …). ([`plot_mcp/file_io.py`](plot_mcp/file_io.py), [`plot_mcp/api_endpoints.py`](plot_mcp/api_endpoints.py))
+- **`SketchNode.folder_path` field.** Optional relative path (under `project_path`) that binds a node to a folder on disk. When set, `body` holds only a short summary cache for the canvas preview; the long-form lives in the MD file. Validator rejects absolute paths, `..` segments, and blanks. ([`mashbill/models.py`](mashbill/models.py))
+- **`/api/files` and `/api/folders` endpoints.** `GET /api/files`, `PUT /api/files`, `POST /api/folders`. Path-traversal, absolute paths, and symlink-escapes are all rejected; writes go through a tmp-rename so readers never see half a file. Folder POST uniquifies on collision (`-2`, `-3`, …). ([`mashbill/file_io.py`](mashbill/file_io.py), [`mashbill/api_endpoints.py`](mashbill/api_endpoints.py))
 - **Server-side preview cache sync.** `PUT /api/files` with `project_id` + `node_id` query hints parses the saved `index.md`, picks the `### Tagline` (Mission) or `### Summary` (everything else), and mirrors it into the node's `body`. The on-canvas preview stays current without a separate fetch per node.
 - **"Connect to folder" button in Inspector.** Legacy body-backed nodes (BANAS and everything shipped before 0.7) can opt into the folder model one click at a time: the button asks the server for a fresh folder based on `kind + label`, seeds `index.md` with whatever `body` already had, and attaches `folder_path`. No big-bang migration. ([`viewer/src/canvases/SketchInspector.tsx`](viewer/src/canvases/SketchInspector.tsx))
-- **Shared slug convention.** `plot_mcp/slug.py` + `viewer/src/lib/slug.ts` compute the same default folder path — `workspace/{canvas}/{kind}-{label-slug}/` — so the client doesn't need a round-trip just to guess a name. Korean and CJK characters are preserved; server uniquifies on collision.
+- **Shared slug convention.** `mashbill/slug.py` + `viewer/src/lib/slug.ts` compute the same default folder path — `workspace/{canvas}/{kind}-{label-slug}/` — so the client doesn't need a round-trip just to guess a name. Korean and CJK characters are preserved; server uniquifies on collision.
 
 ### Notes
 - BANAS (and any pre-0.7 project) keeps working exactly as before until the user presses "Connect to folder" on a node. Migration is opt-in, not automatic.
@@ -12018,7 +12029,7 @@ remaining kinds where the domain has clearly distinct facets.
 ## [0.5.1] — 2026-04-22
 
 ### Fixed
-- **Legacy Core children no longer trap inside the Project anchor.** Pre-v0.5 projects (like BANAS) stored Mission / Identity nested under a `core`-kind octagon. The v0.5 upgrade now un-parents every node whose `parent_id` pointed at a legacy core anchor, so after opening the pillars land as peers around the small circular Project — not inside it. ([`plot_mcp/migrate.py`](plot_mcp/migrate.py))
+- **Legacy Core children no longer trap inside the Project anchor.** Pre-v0.5 projects (like BANAS) stored Mission / Identity nested under a `core`-kind octagon. The v0.5 upgrade now un-parents every node whose `parent_id` pointed at a legacy core anchor, so after opening the pillars land as peers around the small circular Project — not inside it. ([`mashbill/migrate.py`](mashbill/migrate.py))
 
 ### Changed
 - **Top-left kind tag on Core nodes.** Mission / Core Value / Identity / Project nodes carry a small uppercase "MISSION" / "CORE VALUE" / … label in the top-left so the kind is legible at a glance, before opening the Inspector. ([`viewer/src/canvases/SketchNode.tsx`](viewer/src/canvases/SketchNode.tsx))
@@ -12028,15 +12039,15 @@ remaining kinds where the domain has clearly distinct facets.
 ## [0.5.0] — 2026-04-22
 
 ### Added
-- **Project anchor on the Core canvas.** Every project now carries a central, circular **Project** node — auto-seeded on create / on the first open of a legacy project, protected from deletion (keyboard Delete, right-click Delete, Inspector Delete all refuse to touch it), and label-synced with `ProjectDoc.name` in both directions. Rename from the sidebar updates the node; editing the node label renames the project (the server reconciles on `PUT /canvases/core`). ([`plot_mcp/folder_io.py`](plot_mcp/folder_io.py), [`plot_mcp/migrate.py`](plot_mcp/migrate.py), [`viewer/src/canvases/SketchCanvas.tsx`](viewer/src/canvases/SketchCanvas.tsx))
-- **Multi-Mission and multi-Identity on the Core canvas.** Mission is now 1..N (was exactly 1); Identity is now 1..N peers (was 1 + N Facet children). Each Identity node represents one aspect (Voice / Energy / Speech style / Visual tone / …) — drag the preset for every aspect you need. ([`plot_mcp/models.py`](plot_mcp/models.py))
+- **Project anchor on the Core canvas.** Every project now carries a central, circular **Project** node — auto-seeded on create / on the first open of a legacy project, protected from deletion (keyboard Delete, right-click Delete, Inspector Delete all refuse to touch it), and label-synced with `ProjectDoc.name` in both directions. Rename from the sidebar updates the node; editing the node label renames the project (the server reconciles on `PUT /canvases/core`). ([`mashbill/folder_io.py`](mashbill/folder_io.py), [`mashbill/migrate.py`](mashbill/migrate.py), [`viewer/src/canvases/SketchCanvas.tsx`](viewer/src/canvases/SketchCanvas.tsx))
+- **Multi-Mission and multi-Identity on the Core canvas.** Mission is now 1..N (was exactly 1); Identity is now 1..N peers (was 1 + N Facet children). Each Identity node represents one aspect (Voice / Energy / Speech style / Visual tone / …) — drag the preset for every aspect you need. ([`mashbill/models.py`](mashbill/models.py))
 - **Kind-aware Inspector templates.** Selecting a Mission / Core Value / Identity / Project node now surfaces the right fields instead of a bare Description textarea:
   - Mission → Tagline, Audience, Method, Goal, Story
   - Core Value → Summary, Decision criteria
   - Identity → Summary, Details
   - Project → Summary
   Fields persist as `### H3` Markdown sections inside `SketchNode.body` — no schema change, unknown sections and free-form notes round-trip untouched. ([`viewer/src/canvases/SketchInspector.tsx`](viewer/src/canvases/SketchInspector.tsx), [`viewer/src/lib/bodySections.ts`](viewer/src/lib/bodySections.ts))
-- **Automatic v0.4 → v0.5 Core-canvas migration.** Opening a project with legacy `core`-kind octagons or `identity_facet` children heals itself lazily — the `read_canvas` path calls `upgrade_core_canvas_if_needed`, which rewrites kinds in-place and persists the result. No manual step. ([`plot_mcp/migrate.py`](plot_mcp/migrate.py))
+- **Automatic v0.4 → v0.5 Core-canvas migration.** Opening a project with legacy `core`-kind octagons or `identity_facet` children heals itself lazily — the `read_canvas` path calls `upgrade_core_canvas_if_needed`, which rewrites kinds in-place and persists the result. No manual step. ([`mashbill/migrate.py`](mashbill/migrate.py))
 
 ### Changed
 - **`NodeKind` shrinks.** Removed `core` (was the legacy octagon anchor) and `identity_facet` (absorbed into `identity`). Added `project`. Disk files carrying the retired kinds are rewritten on open.
@@ -12062,8 +12073,8 @@ remaining kinds where the domain has clearly distinct facets.
 ## [0.4.0] — 2026-04-21
 
 ### Added
-- **Full viewer / HTTP cutover to the v0.2 folder layout.** New REST surface: `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/{id}`, `GET/PUT /api/projects/{id}/canvases/{kind}[?service_id=]`. The viewer now loads one canvas at a time — no more in-memory tab-filtering. ([`plot_mcp/api_endpoints.py`](plot_mcp/api_endpoints.py), [`plot/viewer/src/api.ts`](viewer/src/api.ts))
-- **Per-project git repo for session bookmarks.** Each project folder gets its own `.git/` at creation time, but editing never auto-commits. The user plants named tags at meaningful moments via the new **Mark session…** button or the `tag_project` MCP tool. `GET/POST /api/projects/{id}/tags` + `DELETE .../tags/{name}` expose the tag surface. ([`plot_mcp/git_store.py`](plot_mcp/git_store.py))
+- **Full viewer / HTTP cutover to the v0.2 folder layout.** New REST surface: `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/{id}`, `GET/PUT /api/projects/{id}/canvases/{kind}[?service_id=]`. The viewer now loads one canvas at a time — no more in-memory tab-filtering. ([`mashbill/api_endpoints.py`](mashbill/api_endpoints.py), [`plot/viewer/src/api.ts`](viewer/src/api.ts))
+- **Per-project git repo for session bookmarks.** Each project folder gets its own `.git/` at creation time, but editing never auto-commits. The user plants named tags at meaningful moments via the new **Mark session…** button or the `tag_project` MCP tool. `GET/POST /api/projects/{id}/tags` + `DELETE .../tags/{name}` expose the tag surface. ([`mashbill/git_store.py`](mashbill/git_store.py))
 - **Project-level unified undo/redo.** New `useProjectHistory` hook holds one in-memory stack per loaded project with `{canvasKey, prev, next}` entries — `Ctrl+Z`/`Ctrl+Z+Shift`/`Ctrl+Y` rewinds any canvas's last edit and auto-switches tabs to where the change landed. 50-entry cap, cleared on project switch or external WebSocket write. ([`viewer/src/canvases/useProjectHistory.ts`](viewer/src/canvases/useProjectHistory.ts))
 - WebSocket event shape: `sketch_changed` → **`project_changed`** with `{project_id, canvas_kind?, service_id?}` so the viewer only reloads the affected canvas.
 - Sidebar has a **Session tags** collapsible panel listing the project's `git tag` entries with a hover × to delete (commit stays reachable via reflog).
@@ -12073,7 +12084,7 @@ remaining kinds where the domain has clearly distinct facets.
 ### Changed
 - Sidebar "Sketches" → "Projects", "+ New sketch" → "+ New project". Summary's `node_count`/`edge_count` columns are dropped (canvases are loaded lazily now).
 - `create_project` (Python + MCP) calls `git_store.ensure_repo` on the new folder.
-- `plot_mcp/sketches.py` is now an internal module; only `migrate.py` imports it.
+- `mashbill/sketches.py` is now an internal module; only `migrate.py` imports it.
 
 ### Removed (breaking)
 - `/api/sketches/*` REST endpoints — any external script that hit them needs to move to `/api/projects/*`.
@@ -12088,8 +12099,8 @@ remaining kinds where the domain has clearly distinct facets.
 ## [0.3.0] — 2026-04-21
 
 ### Added
-- **Folder-per-project storage** — `.plot/sketches/{id}/` with one JSON file per canvas (`core.json`, `actors.json`, `services-overview.json`, `services-detail/{service_id}.json`). Writing one canvas no longer touches any other. ([`plot_mcp/folder_io.py`](plot_mcp/folder_io.py))
-- **v0.1 → v0.2 migration** — `plot_mcp.migrate.migrate_v01_to_v02` (also exposed as the `migrate_v01_sketches` MCP tool). Idempotent; promotes `mission` / `core_values` / `identity` text fields on the core-root into their own nodes; multi-line core-values split into one node per line. Originals rename to `{id}.json.v01.bak`.
+- **Folder-per-project storage** — `.plot/sketches/{id}/` with one JSON file per canvas (`core.json`, `actors.json`, `services-overview.json`, `services-detail/{service_id}.json`). Writing one canvas no longer touches any other. ([`mashbill/folder_io.py`](mashbill/folder_io.py))
+- **v0.1 → v0.2 migration** — `mashbill.migrate.migrate_v01_to_v02` (also exposed as the `migrate_v01_sketches` MCP tool). Idempotent; promotes `mission` / `core_values` / `identity` text fields on the core-root into their own nodes; multi-line core-values split into one node per line. Originals rename to `{id}.json.v01.bak`.
 - **Canvas-level MCP tools** — `list_projects`, `get_project`, `create_project_tool`, `delete_project_tool`, `rename_project`, `get_canvas`, `update_canvas`, `list_detail_canvases`, `migrate_v01_sketches`. The legacy sketch tools stay available during the transition.
 - **Overview ↔ Detail auto-sync** — writing the `services_overview` via `update_canvas` auto-creates a Detail canvas for any new service and archives (does not delete) the Detail of a removed service.
 - **Actor_ref picker UI** — dragging "Actor ref" onto the Services canvas opens a modal listing every actor from the Actor canvas; picking one creates a reference node with `ref_actor_id` and a "→ {label}" prefix.
@@ -12108,7 +12119,7 @@ remaining kinds where the domain has clearly distinct facets.
 - **Core canvas** — drops for Mission, Core Value, Identity, and Identity Facet promote what used to be Inspector text fields into structural child nodes of the Core octagon.
 - **Services drill-down** — double-click any non-root service in the Overview to enter its Detail view; a breadcrumb at the top navigates back. `?canvas=services&detail=<id>` makes the view deep-linkable.
 - **Canvas-aware stencil** — each tab surfaces only the presets it can accept, and `resolveDropTarget` knows the new core-child / identity-facet parenting rules.
-- `CanvasDoc` + `CanvasKind` in `plot_mcp/models.py` with per-canvas-kind validators (core: 1 mission + 1 identity; actors: actor-only; services-overview: top-level only; service-detail: requires service_ref matching canvas_id).
+- `CanvasDoc` + `CanvasKind` in `mashbill/models.py` with per-canvas-kind validators (core: 1 mission + 1 identity; actors: actor-only; services-overview: top-level only; service-detail: requires service_ref matching canvas_id).
 - Expanded `NodeKind`: `mission`, `core_value`, `identity`, `identity_facet`, `actor_ref`. `SketchNode.ref_actor_id` carries the pointer for Actor→Service references.
 - 26 new tests in `tests/test_canvas_doc.py`.
 

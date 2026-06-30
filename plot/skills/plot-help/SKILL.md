@@ -31,7 +31,7 @@ AI reads and writes the same sketches via the MCP server — if you need help or
 
 ## Opening the canvas
 
-1. Run the server against your project: `uv run python -m plot_mcp` (inside `plot/`), or let the plugin's MCP wrapper start it automatically.
+1. Run the server against your project: `uv run python -m mashbill` (inside `plot/`), or let the plugin's MCP wrapper start it automatically.
 2. Open `http://127.0.0.1:5190/?project_path=/absolute/path/to/project` in a browser.
 3. First visit in an empty project shows "No sketches yet" — press **New sketch** to create one.
 

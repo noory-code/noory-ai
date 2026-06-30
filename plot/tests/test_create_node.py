@@ -14,14 +14,14 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.folder_io import (
+from mashbill.folder_io import (
     create_node,
     create_project,
     read_canvas,
     write_canvas,
 )
-from plot_mcp.masters import create_master
-from plot_mcp.models import (
+from mashbill.masters import create_master
+from mashbill.models import (
     ActorNode,
     ActorRefNode,
     CanvasDoc,
@@ -31,7 +31,7 @@ from plot_mcp.models import (
     SketchEdge,
     StepNode,
 )
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.workspace import resolve_plot_root
 
 
 def _setup(tmp_path: Path) -> Path:
@@ -233,7 +233,7 @@ def test_create_master_still_rejects_non_master_kind(tmp_path: Path) -> None:
 def test_create_node_is_a_registered_mcp_tool() -> None:
     import asyncio
 
-    from plot_mcp.mcp_tools import mcp
+    from mashbill.mcp_tools import mcp
 
     tool = asyncio.run(mcp.get_tool("create_node"))
     assert tool is not None

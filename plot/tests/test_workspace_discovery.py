@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from plot_mcp.models import ProjectDoc
-from plot_mcp.workspace import MAX_DISCOVERY_DEPTH, discover_projects
+from mashbill.models import ProjectDoc
+from mashbill.workspace import MAX_DISCOVERY_DEPTH, discover_projects
 
 
 def _make_project(

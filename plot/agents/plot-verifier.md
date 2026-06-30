@@ -38,7 +38,7 @@ If either is not 200/404 (404 is OK — MCP HTTP doesn't have a /
 endpoint but is listening), start them:
 
 ```bash
-cd plot && uv run plot-mcp-http &
+cd plot && uv run mashbill-http &
 cd plot/viewer && npm run dev &
 # Wait briefly for them to bind
 ```

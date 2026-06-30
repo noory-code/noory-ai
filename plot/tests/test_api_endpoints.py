@@ -12,8 +12,8 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.http_app import create_http_app
+from mashbill.broadcast import BroadcastHub
+from mashbill.http_app import create_http_app
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def app_client(tmp_path: Path) -> tuple[TestClient, str]:
     # D-2026-06-11-D — Plot never auto-inits, but tests that exercise
     # tag/publish need a real repo, so the test seeds one. Endpoint tests
     # that exercise the needs_git_init path use a fresh tmp_path manually.
-    from plot_mcp.git_store import init_workspace_repo
+    from mashbill.git_store import init_workspace_repo
 
     init_workspace_repo(tmp_path)
     hub = BroadcastHub(enable_watchers=False)
@@ -47,8 +47,8 @@ def test_health_exposes_compat_versions(app_client: tuple[TestClient, str]) -> N
     """The runtime compat banner (D-2026-06-20-N Phase D part c) reads the
     engine's wire ``schema_version`` + ``engine_version`` from /api/health and
     compares schema_version against the viewer's committed wire-contract."""
-    from plot_mcp import __version__
-    from plot_mcp.schema_export import SCHEMA_VERSION
+    from mashbill import __version__
+    from mashbill.schema_export import SCHEMA_VERSION
 
     client, _ = app_client
     body = client.get("/api/health").json()
@@ -798,9 +798,9 @@ def test_list_migrates_v01_sketches_silently(
 def _add_service_via_store(project_path: str, service_id: str) -> None:
     """Drop a bare service node onto the services canvas through the store
     (the viewer would do this via PUT; the endpoint test only needs the node)."""
-    from plot_mcp.folder_io import read_canvas, write_canvas
-    from plot_mcp.models import ServiceNode
-    from plot_mcp.workspace import resolve_plot_root
+    from mashbill.folder_io import read_canvas, write_canvas
+    from mashbill.models import ServiceNode
+    from mashbill.workspace import resolve_plot_root
 
     plot_root = resolve_plot_root(project_path)
     services = read_canvas(plot_root, "alpha", "services")

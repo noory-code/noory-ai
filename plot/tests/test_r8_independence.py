@@ -6,7 +6,7 @@ viewer, the Tauri shell, the app repo, or sibling plugins. The licence
 boundary (MIT plugin / proprietary app) is defended by THIS build guard,
 not by file layout (TECH_REVIEW C4).
 
-AST-parses every `plot_mcp/*.py` import; anything rooted at a banned name
+AST-parses every `mashbill/*.py` import; anything rooted at a banned name
 fails. Also bans `src-tauri` path literals (a runtime reach into the shell).
 NOTE: `workspace.find_viewer_dist()` locating a *built* viewer dist to serve
 is allowed — that is optional asset discovery with an API-only fallback,
@@ -18,7 +18,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-PKG = Path(__file__).resolve().parent.parent / "plot_mcp"
+PKG = Path(__file__).resolve().parent.parent / "mashbill"
 
 # Code roots the plugin may NEVER import: the viewer, the app/shell, and
 # sibling plugins (each is independent — R2/R8).

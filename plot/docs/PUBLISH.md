@@ -131,7 +131,7 @@ content that actually changed, never the headings.
 ### Slug derivation
 
 The ``{slug}`` portion of the filename comes from the node's
-``label`` via ``plot_mcp.slug.slugify``. Korean / CJK characters are
+``label`` via ``mashbill.slug.slugify``. Korean / CJK characters are
 preserved verbatim; ASCII letters/digits are lowercased; everything
 else collapses to a single dash. Empty labels fall back to
 ``untitled``.

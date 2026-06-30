@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.folder_io import (
+from mashbill.folder_io import (
     create_project,
     delete_project,
     list_feature_details,
@@ -29,20 +29,20 @@ from plot_mcp.folder_io import (
     write_canvas,
     write_project,
 )
-from plot_mcp.models import (
+from mashbill.models import (
     ActorNode,
     ActorRefNode,
     CanvasDoc,
     FeatureNode,
 )
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture
 def plot_root(tmp_path: Path) -> Path:
     # D-2026-06-11-C/D: workspace = tmp_path IS the git repo. Plot never
     # auto-inits, but publish tests need a real repo, so we init here.
-    from plot_mcp.git_store import init_workspace_repo
+    from mashbill.git_store import init_workspace_repo
 
     init_workspace_repo(tmp_path)
     return resolve_plot_root(str(tmp_path))
@@ -96,7 +96,7 @@ def test_create_project_foundation_layout_and_anchor_edges(plot_root: Path) -> N
     """D-2026-06-21-H — initial Foundation layout = Mission on top, Core Value
     on the left, Identity on the right, with an edge from the project anchor to
     each (around the centre anchor at 0,0)."""
-    from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
+    from mashbill.models_foundation import PROJECT_ANCHOR_ID
 
     create_project(plot_root, "alpha", "Alpha")
     f = read_canvas(plot_root, "alpha", "foundation")
@@ -403,8 +403,8 @@ def test_read_canvas_preserves_anchor_edges_across_repeated_reads(
     it three times, assert canvas.json's edges array is unchanged and
     the file's mtime does not advance between reads (write would
     advance mtime — the storm trigger)."""
-    from plot_mcp.folder_io import _canvas_file
-    from plot_mcp.models import (
+    from mashbill.folder_io import _canvas_file
+    from mashbill.models import (
         PROJECT_ANCHOR_ID,
         CoreValueNode,
         IdentityNode,
@@ -464,8 +464,8 @@ def test_orphan_non_anchor_edges_still_stripped(plot_root: Path) -> None:
     anchor) should still be stripped on read."""
     import json
 
-    from plot_mcp.folder_io import _canvas_file
-    from plot_mcp.models import CoreValueNode, IdentityNode, MissionNode
+    from mashbill.folder_io import _canvas_file
+    from mashbill.models import CoreValueNode, IdentityNode, MissionNode
 
     create_project(plot_root, "alpha", "Alpha")
     canvas_path = _canvas_file(plot_root, "alpha", "foundation")
@@ -525,8 +525,8 @@ def _seed_foundation_with_md(
     that MD section; set json_* to pre-populate JSON values."""
     import json as _json
 
-    from plot_mcp.folder_io import _canvas_file, _foundation_md_path
-    from plot_mcp.models import CoreValueNode, IdentityNode, MissionNode
+    from mashbill.folder_io import _canvas_file, _foundation_md_path
+    from mashbill.models import CoreValueNode, IdentityNode, MissionNode
 
     create_project(plot_root, project_id, project_id.capitalize())
     canvas_path = _canvas_file(plot_root, project_id, "foundation")
@@ -563,7 +563,7 @@ def test_absorb_md_typed_text_into_json_basic(plot_root: Path) -> None:
     """JSON empty + MD populated → typed fields + body filled (MD-syntax
     strings preserved verbatim), MD moved to ``foundation/_legacy/``,
     details_path cleared to None."""
-    from plot_mcp.folder_io import _legacy_md_dir
+    from mashbill.folder_io import _legacy_md_dir
 
     canvas_path, md_path = _seed_foundation_with_md(plot_root, "alpha")
 
@@ -583,7 +583,7 @@ def test_absorb_md_typed_text_into_json_basic(plot_root: Path) -> None:
 def test_absorb_md_typed_text_into_json_both_populated_json_wins(plot_root: Path) -> None:
     """JSON populated + MD populated → JSON values retained; MD still
     quarantined."""
-    from plot_mcp.folder_io import _legacy_md_dir
+    from mashbill.folder_io import _legacy_md_dir
 
     canvas_path, md_path = _seed_foundation_with_md(
         plot_root,
@@ -606,8 +606,8 @@ def test_absorb_md_typed_text_into_json_no_md_file(plot_root: Path) -> None:
     if it pointed at the canonical (absent) MD path."""
     import json as _json
 
-    from plot_mcp.folder_io import _canvas_file, _foundation_md_path
-    from plot_mcp.models import CoreValueNode, IdentityNode, MissionNode
+    from mashbill.folder_io import _canvas_file, _foundation_md_path
+    from mashbill.models import CoreValueNode, IdentityNode, MissionNode
 
     create_project(plot_root, "alpha", "Alpha")
     canonical_rel = str(
@@ -641,7 +641,7 @@ def test_absorb_md_typed_text_into_json_no_md_file(plot_root: Path) -> None:
 def test_absorb_md_typed_text_into_json_idempotent(plot_root: Path) -> None:
     """Calling read_canvas three times moves the MD exactly once; the
     _legacy/ directory carries one entry; mtime is stable on repeat."""
-    from plot_mcp.folder_io import _legacy_md_dir
+    from mashbill.folder_io import _legacy_md_dir
 
     canvas_path, md_path = _seed_foundation_with_md(plot_root, "alpha")
     read_canvas(plot_root, "alpha", "foundation")
@@ -701,8 +701,8 @@ def test_absorb_md_typed_text_into_json_duplicate_slug_collision(plot_root: Path
     keeps both files."""
     import json as _json
 
-    from plot_mcp.folder_io import _canvas_file, _foundation_md_path, _legacy_md_dir
-    from plot_mcp.models import CoreValueNode, IdentityNode, MissionNode
+    from mashbill.folder_io import _canvas_file, _foundation_md_path, _legacy_md_dir
+    from mashbill.models import CoreValueNode, IdentityNode, MissionNode
 
     create_project(plot_root, "alpha", "Alpha")
     canvas_path = _canvas_file(plot_root, "alpha", "foundation")
@@ -752,7 +752,7 @@ def test_migrate_assign_edge_relation_on_read(plot_root: Path) -> None:
     source-node kind). Idempotent: a second read does not rewrite."""
     import json
 
-    from plot_mcp.folder_io import _canvas_file
+    from mashbill.folder_io import _canvas_file
 
     create_project(plot_root, "alpha", "Alpha")
     # Write a raw foundation canvas.json whose edges lack ``relation``
@@ -791,7 +791,7 @@ def test_migrate_assign_edge_relation_actors_inheritance(plot_root: Path) -> Non
     ``inheritance`` regardless of source kind (single edge type)."""
     import json
 
-    from plot_mcp.folder_io import _canvas_file
+    from mashbill.folder_io import _canvas_file
 
     create_project(plot_root, "alpha", "Alpha")
     path = _canvas_file(plot_root, "alpha", "actors")

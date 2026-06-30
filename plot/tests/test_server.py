@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-import plot_mcp.server as server
+import mashbill.server as server
 
 
 def test_run_mcp_stdio_drives_only_the_stdio_transport(

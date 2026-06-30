@@ -8,7 +8,7 @@ direction fold into body. No content lost.
 
 from __future__ import annotations
 
-from plot_mcp.models import (
+from mashbill.models import (
     FOUNDATION_MD_FIELDS,
     FOUNDATION_TYPED_TEXT_FIELDS,
     MissionNode,

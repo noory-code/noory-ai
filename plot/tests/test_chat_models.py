@@ -13,7 +13,7 @@ instead of a hardcoded list (reverses D-2026-06-16-C for codex):
 
 from __future__ import annotations
 
-from plot_mcp.chat_models import (
+from mashbill.chat_models import (
     CLAUDE_MODELS,
     ModelOption,
     list_models,

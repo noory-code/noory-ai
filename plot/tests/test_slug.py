@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from plot_mcp.slug import folder_slug, slugify
+from mashbill.slug import folder_slug, slugify
 
 
 def test_mission_label_mission() -> None:

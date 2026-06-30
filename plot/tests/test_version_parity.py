@@ -1,11 +1,11 @@
 """Engine version is a single source of truth (Phase D, D-2026-06-20-N).
 
 Before this, the engine version was scattered across four stale copies:
-``pyproject.toml`` (0.1.0), ``plot_mcp/__init__.py`` (0.1.0),
+``pyproject.toml`` (0.1.0), ``mashbill/__init__.py`` (0.1.0),
 ``schema_export.PLOT_VERSION`` (0.14.18), and ``.claude-plugin/plugin.json``
 (the only one that actually moved). This pins the unification:
 
-  - ``plot_mcp/__init__.py::__version__`` is THE source. ``pyproject`` derives
+  - ``mashbill/__init__.py::__version__`` is THE source. ``pyproject`` derives
     it dynamically (hatchling), and ``PLOT_VERSION`` re-exports it.
   - the Claude Code plugin manifest is a separate artifact but must match —
     Gate 4 bumps both ``__init__`` + ``plugin.json`` in lock-step.
@@ -21,8 +21,8 @@ import json
 import tomllib
 from pathlib import Path
 
-from plot_mcp import __version__
-from plot_mcp.schema_export import PLOT_VERSION, SCHEMA_VERSION
+from mashbill import __version__
+from mashbill.schema_export import PLOT_VERSION, SCHEMA_VERSION
 
 _PLOT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -34,7 +34,7 @@ def test_plot_version_re_exports_package_version() -> None:
 def test_plugin_manifest_matches_package_version() -> None:
     manifest = json.loads((_PLOT_ROOT / ".claude-plugin" / "plugin.json").read_text("utf-8"))
     assert manifest["version"] == __version__, (
-        "plugin.json version drifted from plot_mcp.__version__ — Gate 4 must "
+        "plugin.json version drifted from mashbill.__version__ — Gate 4 must "
         "bump both in lock-step."
     )
 
@@ -44,7 +44,7 @@ def test_pyproject_derives_version_dynamically_from_init() -> None:
     pp = tomllib.loads((_PLOT_ROOT / "pyproject.toml").read_text("utf-8"))
     assert "version" not in pp["project"], "pyproject must not pin a static version"
     assert "version" in pp["project"].get("dynamic", [])
-    assert pp["tool"]["hatch"]["version"]["path"] == "plot_mcp/__init__.py"
+    assert pp["tool"]["hatch"]["version"]["path"] == "mashbill/__init__.py"
 
 
 def test_schema_version_is_separate_from_package_version() -> None:

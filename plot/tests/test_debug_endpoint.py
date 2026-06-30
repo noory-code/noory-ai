@@ -11,9 +11,9 @@ from __future__ import annotations
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.debug_endpoints import reset_debug_store
-from plot_mcp.http_app import create_http_app
+from mashbill.broadcast import BroadcastHub
+from mashbill.debug_endpoints import reset_debug_store
+from mashbill.http_app import create_http_app
 
 
 @pytest.fixture(autouse=True)

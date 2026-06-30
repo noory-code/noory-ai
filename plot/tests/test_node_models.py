@@ -22,7 +22,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from plot_mcp.models import (
+from mashbill.models import (
     ActorNode,
     ActorRefNode,
     CategoryNode,
@@ -228,7 +228,7 @@ def test_adapter_rejects_missing_kind() -> None:
 
 # Use the schema-export map as the SSOT (was a hand-maintained copy that
 # drifted; D-2026-06-20-G removed the foundation refs so it must follow).
-from plot_mcp.schema_export import _ALL_KIND_CLASSES  # noqa: E402
+from mashbill.schema_export import _ALL_KIND_CLASSES  # noqa: E402
 
 
 def _make_minimal(kind: str):

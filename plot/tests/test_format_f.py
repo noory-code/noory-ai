@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.folder_io import create_project, read_canvas
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.folder_io import create_project, read_canvas
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def plot_root(tmp_path: Path) -> Path:
 
 
 def test_publish_project_snapshot_writes_vp1(plot_root: Path) -> None:
-    from plot_mcp.format_f import publish_project_snapshot
+    from mashbill.format_f import publish_project_snapshot
 
     create_project(plot_root, "alpha", "Alpha")
     m = publish_project_snapshot(plot_root, "alpha")
@@ -47,8 +47,8 @@ def test_foundation_design_renders_primary_statements(plot_root: Path) -> None:
     """The vP foundation rendering must carry each node's *primary* typed field
     (mission.statement / core_value.definition / identity.description), not only
     ``body`` — that field is the actual essence the external agent reads."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.format_f import publish_project_snapshot
+    from mashbill.folder_io import write_canvas
+    from mashbill.format_f import publish_project_snapshot
 
     create_project(plot_root, "alpha", "Alpha")
     foundation = read_canvas(plot_root, "alpha", "foundation")
@@ -76,8 +76,8 @@ def test_foundation_design_renders_primary_statements(plot_root: Path) -> None:
 def test_foundation_hash_tracks_primary_statement(plot_root: Path) -> None:
     """Changing a mission statement must move its element hash (else the ID-diff
     misses an essence change)."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.format_f import publish_project_snapshot
+    from mashbill.folder_io import write_canvas
+    from mashbill.format_f import publish_project_snapshot
 
     create_project(plot_root, "alpha", "Alpha")
     m1 = publish_project_snapshot(plot_root, "alpha")
@@ -97,9 +97,9 @@ def test_foundation_hash_tracks_primary_statement(plot_root: Path) -> None:
 def test_entity_design_renders_summary(plot_root: Path) -> None:
     """Entity rendering reads ``summary`` (the '무엇을 담나' line) — the old code
     read a non-existent ``body``, leaving entity files empty."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.format_f import publish_project_snapshot
-    from plot_mcp.models import EntityNode
+    from mashbill.folder_io import write_canvas
+    from mashbill.format_f import publish_project_snapshot
+    from mashbill.models import EntityNode
 
     create_project(plot_root, "alpha", "Alpha")
     entities = read_canvas(plot_root, "alpha", "entities")
@@ -132,9 +132,9 @@ def test_entity_design_renders_summary(plot_root: Path) -> None:
 def test_actors_design_renders_relationships(plot_root: Path) -> None:
     """actors.md must render the give/receive relationships (spec §3 '주고받음'),
     not just the role list."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.format_f import publish_project_snapshot
-    from plot_mcp.models import SketchEdge
+    from mashbill.folder_io import write_canvas
+    from mashbill.format_f import publish_project_snapshot
+    from mashbill.models import SketchEdge
 
     create_project(plot_root, "alpha", "Alpha")
     actors = read_canvas(plot_root, "alpha", "actors")
@@ -167,7 +167,7 @@ def test_actors_design_renders_relationships(plot_root: Path) -> None:
 def test_service_design_surfaces_refs(plot_root: Path) -> None:
     """service.md must surface what the service stands on in its vP (participating
     actors / protected values / identity tone), so the file reads standalone."""
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
+    from mashbill.format_f import publish_project_snapshot, publish_service
 
     create_project(plot_root, "alpha", "Alpha")
     _add_service_referencing_seeds(plot_root)
@@ -185,7 +185,7 @@ def test_service_refs_anchor_to_project_mission(plot_root: Path) -> None:
     """Every service stands on the project's single mission — the essence (VISION).
     The vS refs must anchor to it so a mission change propagates to the services
     that realize it; refs is the propagation surface (format-f.md §5)."""
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
+    from mashbill.format_f import publish_project_snapshot, publish_service
 
     create_project(plot_root, "alpha", "Alpha")
     _add_service_referencing_seeds(plot_root)
@@ -196,7 +196,7 @@ def test_service_refs_anchor_to_project_mission(plot_root: Path) -> None:
 
 
 def test_snapshot_release_bumps(plot_root: Path) -> None:
-    from plot_mcp.format_f import publish_project_snapshot
+    from mashbill.format_f import publish_project_snapshot
 
     create_project(plot_root, "alpha", "Alpha")
     assert publish_project_snapshot(plot_root, "alpha")["release"] == "vP1"
@@ -206,8 +206,8 @@ def test_snapshot_release_bumps(plot_root: Path) -> None:
 def _add_service_referencing_seeds(plot_root: Path) -> str:
     """Add a service that references the seeded actor + core_value + identity,
     returning the service node id."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.models import ServiceNode
+    from mashbill.folder_io import write_canvas
+    from mashbill.models import ServiceNode
 
     foundation = read_canvas(plot_root, "alpha", "foundation")
     actors = read_canvas(plot_root, "alpha", "actors")
@@ -232,8 +232,8 @@ def _add_service_with_features(plot_root: Path) -> str:
     """Add a service with two features nested via directed edges, each with a
     detail canvas carrying a small UX flow (step → decision → branches).
     Returns the service node id. Builds on the seeds the service refs."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.models import (
+    from mashbill.folder_io import write_canvas
+    from mashbill.models import (
         ActorRefNode,
         CanvasDoc,
         DecisionNode,
@@ -305,7 +305,7 @@ def _add_service_with_features(plot_root: Path) -> str:
 
 
 def test_publish_service_includes_feature_elements(plot_root: Path) -> None:
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
+    from mashbill.format_f import publish_project_snapshot, publish_service
 
     create_project(plot_root, "alpha", "Alpha")
     _add_service_with_features(plot_root)
@@ -324,7 +324,7 @@ def test_publish_service_includes_feature_elements(plot_root: Path) -> None:
 
 
 def test_feature_design_renders_capability_and_flow(plot_root: Path) -> None:
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
+    from mashbill.format_f import publish_project_snapshot, publish_service
 
     create_project(plot_root, "alpha", "Alpha")
     _add_service_with_features(plot_root)
@@ -360,8 +360,8 @@ def test_feature_design_renders_capability_and_flow(plot_root: Path) -> None:
 def test_feature_element_hash_tracks_flow_change(plot_root: Path) -> None:
     """The feature element hash is the ID-diff input — it must move when the
     UX flow changes so a republish surfaces the feature as ``changed``."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
+    from mashbill.folder_io import write_canvas
+    from mashbill.format_f import publish_project_snapshot, publish_service
 
     create_project(plot_root, "alpha", "Alpha")
     _add_service_with_features(plot_root)
@@ -384,9 +384,9 @@ def test_service_entity_refs_collected_from_steps(plot_root: Path) -> None:
     """A feature's steps name the entities they act on (StepNode.ref_entity_ids);
     those roll up into the service release's ``refs.entities`` (resolved to vP
     slugs, not copied)."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
-    from plot_mcp.models import EntityNode
+    from mashbill.folder_io import write_canvas
+    from mashbill.format_f import publish_project_snapshot, publish_service
+    from mashbill.models import EntityNode
 
     create_project(plot_root, "alpha", "Alpha")
     entities = read_canvas(plot_root, "alpha", "entities")
@@ -415,8 +415,8 @@ def test_service_entity_refs_collected_from_steps(plot_root: Path) -> None:
 def test_publish_service_with_dangling_entity_ref_is_rejected(plot_root: Path) -> None:
     """refs-integrity (§1.4) covers entity refs too: a step naming an entity
     absent from the based_on vP refuses the publish at the write boundary."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
+    from mashbill.folder_io import write_canvas
+    from mashbill.format_f import publish_project_snapshot, publish_service
 
     create_project(plot_root, "alpha", "Alpha")
     _add_service_with_features(plot_root)
@@ -433,7 +433,7 @@ def test_publish_service_with_dangling_entity_ref_is_rejected(plot_root: Path) -
 
 
 def test_publish_service_release_refs_into_vp(plot_root: Path) -> None:
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
+    from mashbill.format_f import publish_project_snapshot, publish_service
 
     create_project(plot_root, "alpha", "Alpha")
     _add_service_referencing_seeds(plot_root)
@@ -457,7 +457,7 @@ def test_publish_service_release_refs_into_vp(plot_root: Path) -> None:
 
 def test_publish_service_without_vp_is_rejected(plot_root: Path) -> None:
     """Bootstrap invariant: a service release needs a project snapshot first."""
-    from plot_mcp.format_f import publish_service
+    from mashbill.format_f import publish_service
 
     create_project(plot_root, "alpha", "Alpha")
     _add_service_referencing_seeds(plot_root)
@@ -468,9 +468,9 @@ def test_publish_service_without_vp_is_rejected(plot_root: Path) -> None:
 def test_publish_service_with_dangling_ref_is_rejected(plot_root: Path) -> None:
     """refs-integrity gate: a ref that does not resolve in the based_on vP is
     refused at the write boundary."""
-    from plot_mcp.folder_io import write_canvas
-    from plot_mcp.format_f import publish_project_snapshot, publish_service
-    from plot_mcp.models import ServiceNode
+    from mashbill.folder_io import write_canvas
+    from mashbill.format_f import publish_project_snapshot, publish_service
+    from mashbill.models import ServiceNode
 
     create_project(plot_root, "alpha", "Alpha")
     publish_project_snapshot(plot_root, "alpha")  # vP1 has the seeded actors only
@@ -492,7 +492,7 @@ def test_manifest_contract_shape_is_pinned(plot_root: Path) -> None:
     carry exactly the keys Solera's reader expects. Pinned here so a producer
     change that drops a field fails before it reaches Solera. The version is
     pinned in lock-step with ``intake.SUPPORTED_FORMAT_F_VERSION``."""
-    from plot_mcp.format_f import (
+    from mashbill.format_f import (
         FORMAT_F_VERSION,
         publish_project_snapshot,
         publish_service,
@@ -524,7 +524,7 @@ def test_publish_reachable_via_mcp_surface(tmp_path: Path) -> None:
     """format F is reachable on the MCP surface — the primary integration path
     per VISION ('주경로 = 사용자 에이전트가 MCP로 붙음'). The tools take a
     workspace path (not a plot_root)."""
-    from plot_mcp.mcp_tools import (
+    from mashbill.mcp_tools import (
         create_project_tool,
         publish_project_snapshot_tool,
         publish_service_tool,
@@ -540,7 +540,7 @@ def test_publish_reachable_via_mcp_surface(tmp_path: Path) -> None:
 def test_minted_slug_is_stable_across_label_change(plot_root: Path) -> None:
     """Explicit-slug invariant: once minted (keyed on node id), the slug does
     not move when the label changes — that is what makes it a stable contract."""
-    from plot_mcp.format_f import mint_slug
+    from mashbill.format_f import mint_slug
 
     create_project(plot_root, "alpha", "Alpha")
     foundation = read_canvas(plot_root, "alpha", "foundation")

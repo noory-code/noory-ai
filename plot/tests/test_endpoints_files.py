@@ -18,11 +18,11 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.file_io import MAX_FILE_BYTES
-from plot_mcp.http_app import create_http_app
-from plot_mcp.project_io import create_project
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.broadcast import BroadcastHub
+from mashbill.file_io import MAX_FILE_BYTES
+from mashbill.http_app import create_http_app
+from mashbill.project_io import create_project
+from mashbill.workspace import resolve_plot_root
 
 PROJECT_ID = "alpha"
 

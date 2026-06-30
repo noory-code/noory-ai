@@ -82,11 +82,11 @@
 
 ### D-2026-06-26-E — in-app coach attaches its OWN Plot MCP server (`--mcp-config` + `--strict-mcp-config`)
 
-- **What:** The in-app chat provider now spawns `claude` with `--mcp-config <file>` naming THIS engine's own Plot stdio server (built via the existing frozen/dev resolution, now exposed as `mcp_registration.plot_mcp_config`) plus `--strict-mcp-config`, so claude uses ONLY that server and ignores every other MCP source. Previously the coach inherited the `plot` server from the user's global `~/.claude.json` registration.
+- **What:** The in-app chat provider now spawns `claude` with `--mcp-config <file>` naming THIS engine's own Plot stdio server (built via the existing frozen/dev resolution, now exposed as `mcp_registration.mashbill_config`) plus `--strict-mcp-config`, so claude uses ONLY that server and ignores every other MCP source. Previously the coach inherited the `plot` server from the user's global `~/.claude.json` registration.
 - **Why:** First real dogfood of `D-2026-06-26-D` (2026-06-26): the coach reported it had no canvas tools at all. Root cause — the global `plot` registration pointed at a **deleted older app build**, so the spawned coach loaded a missing binary and silently got zero Plot tools. That is the literal "in-app chat can't write to the canvas" failure: even with `update_node` shipped, the coach could never call it because the tool was never attached. Binding the coach to the *running build's own* server removes the dependency on a drift-prone global pointer; `--strict-mcp-config` also means the in-app coach no longer sees the user's unrelated servers (Gmail / Notion / Supabase …), tightening the workspace grounding from `D-2026-06-21-I`.
 - **Alternatives:** (a) keep relying on the global registration + re-register on app launch — rejected: still drifts, and re-registration silently rewrites the user's global config (the safety layer also blocks an agent from touching it). (b) inline JSON for `--mcp-config` — deferred: a content-addressed temp file under the OS temp dir (cross-platform, idempotent) is unambiguously supported.
 - **Approval:** Accepted by user, 2026-06-26 (approach delegated: "문제 해결을 어떻게 해야 할지는 너의 몫").
-- **Spec impact:** `SPEC.md` §R7 chat (MCP wiring) — the in-app coach carries the running build's Plot tools via `--mcp-config` + `--strict-mcp-config`, not the global registration. Guard: `tests/test_chat_system_prompt.py::test_claude_attaches_own_plot_mcp_strictly`.
+- **Spec impact:** `SPEC.md` §R7 chat (MCP wiring) — the in-app coach carries the running build's Plot tools via `--mcp-config` + `--strict-mcp-config`, not the global registration. Guard: `tests/test_chat_system_prompt.py::test_claude_attaches_own_mashbill_strictly`.
 
 ### D-2026-06-26-D — in-app coach writes a confirmed value into the selected node (`update_node`)
 
@@ -124,7 +124,7 @@
 
 ### D-2026-06-24-J — coach output hygiene: keep the read/ask machinery silent + warmth light
 
-- **What:** Two guideline principles added to the coaching system prompt (`HALLUCINATION_GUARD` + `COACH_TONE` in `plot_mcp/chat_context.py`): (1) keep the read/ask machinery out of sight — never narrate tools, a read that didn't land, or "what I'm certain of"; speak as if you simply know the project or simply need to hear it; an empty canvas is a fresh start to invite, not a gap to announce. (2) warmth is light — lead with the one question, don't stack reassurance on reassurance. Guideline form (principles the coach reasons from), not scripts or sentence-count mechanics.
+- **What:** Two guideline principles added to the coaching system prompt (`HALLUCINATION_GUARD` + `COACH_TONE` in `mashbill/chat_context.py`): (1) keep the read/ask machinery out of sight — never narrate tools, a read that didn't land, or "what I'm certain of"; speak as if you simply know the project or simply need to hear it; an empty canvas is a fresh start to invite, not a gap to announce. (2) warmth is light — lead with the one question, don't stack reassurance on reassurance. Guideline form (principles the coach reasons from), not scripts or sentence-count mechanics.
 - **Why:** First Gate-3 dogfood of the chat-quality work (Phases 1–3) on an empty project: the coach did NOT invent a mission (the core anti-hallucination goal held), but it (a) leaked its plumbing — "the tool call was cancelled, I couldn't read the body, here's what I'm certain of" — and (b) stacked reassurances into a verbose wall. Both were unconstrained: no rule told it to operate silently or to keep it brief.
 - **Alternatives:** (a) Hardcode the user's example phrasing / a canned opener — rejected: scripts make the coach brittle and off-context; a principle the model reasons from generalises (user direction, 2026-06-24: pin a guideline, not the dialogue). (b) A rigid length cap ("2–3 sentences") — softened to a principle (lead with the question, don't stack caveats) so mechanical curtness doesn't undercut the gentle-coach purpose.
 - **Approval:** Accepted by user, 2026-06-24 (previewed via a live `claude -p` run before landing; "그대로 진행하세요").
@@ -147,7 +147,7 @@
 
 ### D-2026-06-24-G — pick-OR-create reference masters wired (engine endpoint + service-inspector affordance)
 
-- **What:** Implements the manual side of D-2026-06-19-C. A new engine endpoint `POST /api/projects/{id}/masters` `{kind, label}` (kind ∈ actor / core_value / identity) creates a **lightweight master** (name only) on its **home canvas** — actor → Actors, core_value / identity → Foundation — positioned so fresh ones don't stack, and returns its id (`plot_mcp/masters.py`). The Services inspector's reference chips (`RefChips`) gain an inline "create" input; on submit the viewer calls the endpoint, appends the new id to the field, and refreshes the master's home canvas so the chip resolves. The home-canvas + positioning logic lives **only in the engine** so the viewer never writes across the canvas boundary.
+- **What:** Implements the manual side of D-2026-06-19-C. A new engine endpoint `POST /api/projects/{id}/masters` `{kind, label}` (kind ∈ actor / core_value / identity) creates a **lightweight master** (name only) on its **home canvas** — actor → Actors, core_value / identity → Foundation — positioned so fresh ones don't stack, and returns its id (`mashbill/masters.py`). The Services inspector's reference chips (`RefChips`) gain an inline "create" input; on submit the viewer calls the endpoint, appends the new id to the field, and refreshes the master's home canvas so the chip resolves. The home-canvas + positioning logic lives **only in the engine** so the viewer never writes across the canvas boundary.
 - **Why:** D-2026-06-17-B made references pick-only; D-2026-06-19-C said they must be pick-OR-create (reference a needed-but-missing concept without leaving the flow), but only the chat-coach side shipped (Phase 3 playbook). This adds the **direct-edit** path so a user editing the inspector manually isn't forced to "go create it on the Foundation canvas first". The created master is name-only + incomplete (deepened later by its home-canvas coach), so the current flow isn't derailed (D-2026-06-19-C step 6).
 - **Alternatives:** (a) viewer reads the upstream canvas, adds the node, writes it back — rejected: cross-canvas write juggling in the viewer, two SSOTs for "where a master lives". The engine endpoint encapsulates it + is fully unit-tested. (b) free-type the reference — rejected (D-2026-06-17-B ban; create a real master instead). (c) run the full master interview inline — rejected (derails the flow; lightweight stub + later deepening).
 - **Approval:** Builds on D-2026-06-19-C (Provisional, user 2026-06-19 "그래요 일단 해봅시다"); implemented in the 2026-06-24 viewer-UI push ("뷰어 UI 해야죠?"). Full click-loop verification in the debug `.app` is the user's hands (Gate 3).
@@ -188,7 +188,7 @@
 
 ### D-2026-06-24-A — in-app chat framing delivered as an authoritative system prompt + hallucination guard (chat-quality Lever 2)
 
-- **What:** The per-canvas Layer-3 framing moves out of the user message into a real **system prompt**, and a constant **hallucination guard** is prepended to it on every scope. `plot_mcp/chat_context.build_system_prompt(scope)` composes `HALLUCINATION_GUARD` + the scope's framing; `ChatProvider.set_system_prompt` carries it; claude maps it to `--append-system-prompt`, codex (no system-prompt flag) prepends it to the message. The user message is now `context → selection detail → user text` (framing removed from it).
+- **What:** The per-canvas Layer-3 framing moves out of the user message into a real **system prompt**, and a constant **hallucination guard** is prepended to it on every scope. `mashbill/chat_context.build_system_prompt(scope)` composes `HALLUCINATION_GUARD` + the scope's framing; `ChatProvider.set_system_prompt` carries it; claude maps it to `--append-system-prompt`, codex (no system-prompt flag) prepends it to the message. The user message is now `context → selection detail → user text` (framing removed from it).
 - **Why:** the in-app `-p` agent hallucinates because it is **context-starved**, not because of the `-p` mode (`docs/idea/chat/00-problem.md`). The framing sat inside the user message, where the model treats it as conversation, not a binding instruction — and nothing told the agent to *read* the canvas rather than invent. A system-prompt-delivered guard ("ground every claim in the given context; read the canvas with your Plot MCP tools or ask; never invent mission text / values / actors / entities; resolve 'this' to the selected node") is the single cheapest, highest-leverage anti-hallucination lever (`docs/idea/chat/01-levers.md`, Lever 2).
 - **Alternatives:** (a) keep framing in the user message — rejected, weak authority, the status quo that drifts. (b) force a `get_viewer_context` call every turn instead of a guard — deferred (extra round-trip; `-p` adherence unverified; can combine later). (c) a claude-only flag with no codex path — rejected, both providers must carry the framing, so codex falls back to message-prepend.
 - **Approval:** Accepted by user, 2026-06-24 (chat-quality work, "설계미결 해결하고 채팅 품질 잡읍시다"; plan SSOT `docs/idea/chat/`).
@@ -196,7 +196,7 @@
 
 ### D-2026-06-24-B — inject the selected node's actual content into the in-app chat context (chat-quality Lever 1a)
 
-- **What:** The engine now reads the selected nodes' **typed text** (mission statement / body, core_value definition, …) and injects a `[Selected node details]` block into the user message, in addition to the existing kind/label/id header. Read engine-side via `read_canvas` in the new `plot_mcp/chat_selection.py`, keyed off the single project under the data root; the renderer is generic (dumps non-empty, non-structural text fields).
+- **What:** The engine now reads the selected nodes' **typed text** (mission statement / body, core_value definition, …) and injects a `[Selected node details]` block into the user message, in addition to the existing kind/label/id header. Read engine-side via `read_canvas` in the new `mashbill/chat_selection.py`, keyed off the single project under the data root; the renderer is generic (dumps non-empty, non-structural text fields).
 - **Why:** the selection header named the node but never carried its content, so "polish this mission" reached the agent without the mission text and it invented one — the concrete face of context starvation (`docs/idea/chat/00-problem.md`, Lever 1a).
 - **Alternatives:** (a) have the viewer send node bodies in the `selection` payload — rejected: bloats the wire, the viewer doesn't hold every typed field, and it wouldn't serve the MCP path. Engine-side read keeps the canvas the SSOT (D-2026-06-15-D) and fails safe. (b) per-kind content renderers — rejected as premature; a generic field dump (drop structural / visual / server keys) is MECE and auto-covers new kinds. (c) inject the whole active canvas now — deferred to the Phase-2 context envelope; Lever 1a is the cheap, bounded first cut (selected nodes only).
 - **Approval:** Accepted by user, 2026-06-24 (same chat-quality push).
@@ -297,7 +297,7 @@
 
 - **What:** The Plot→Solera publish contract is a **2-layer frozen bundle** (= "format F", design SSOT `repos-plot/docs/plans/phase-p-format-f.md`, spec `repos-plot/docs/specs/format-f.md`). **`vP` (project snapshot)** freezes the *shared structure* — 본질(Foundation) + Actors + Entities — under `published/_project/vP{N}/`. **`vS` (service release)** freezes one service (5칸 + features + category) under `published/{slug}/vS{N}/`, pins `based_on: vP`, and references shared elements **by stable slug, not by copy** (so re-publishing one service can't fork the shared entities — the v1 single-layer draft's fatal flaw, caught by plot-design-red-team). Stable ids are **slugs** minted into a per-project `_slugs.json` registry, keyed on node id so a slug survives a label change (P-4 = explicit slug). Versioning collapses the old 3 axes to **2 semantic axes (vP, vS) + git tag (the freeze mechanism) + content-hash ID-diff (changed/removed/added, derived)** — per-node `version` numbers are not used by format F. Two write-boundary gates: **bootstrap** (a `vS` requires a `vP`) and **refs-integrity** (every ref must resolve in the based_on `vP`). The reverse channel (feedback / retro) uses the same slug vocabulary; Plot reflection stays human-in-the-loop (no code auto-import — R8).
 - **§7 sub-decisions (user, 2026-06-22):** A single vP (shared structure moves as one); B service-granular publish with feature-standalone as an exception; C release-dirty + publish-eligibility + refs-integrity gate; D clean migration cut (no live per-node published data).
-- **Scope shipped (INT-1a/2/3/4):** `plot_mcp/format_f.py` (write half: `publish_project_snapshot` / `publish_service` / `mint_slug`, v0.103.0) + `noory-ai/solera/solera/intake.py` (read half: `import_release` / `diff_releases` + `format_f_version` guard, solera v7.3.0). Walking-skeleton e2e proven: Plot publish → Solera import → plan → run → gate PASS, with neither package importing the other. Built **alongside** the existing per-node publish (`node_publish.py` + `project_publish` blueprint_version) — **not yet a replacement.**
+- **Scope shipped (INT-1a/2/3/4):** `mashbill/format_f.py` (write half: `publish_project_snapshot` / `publish_service` / `mint_slug`, v0.103.0) + `noory-ai/solera/solera/intake.py` (read half: `import_release` / `diff_releases` + `format_f_version` guard, solera v7.3.0). Walking-skeleton e2e proven: Plot publish → Solera import → plan → run → gate PASS, with neither package importing the other. Built **alongside** the existing per-node publish (`node_publish.py` + `project_publish` blueprint_version) — **not yet a replacement.**
 - **Not yet done (follow-on):** retire per-node publish (`node_publish.py`, per-node `version` field, the old `published/{kind}/{node}/v*.md` layout) + wire a `realizes` field through the Solera CLI. Tracked in `workspace/solera-redesign.md` (INT follow-on).
 - **Why:** anchored to VISION — the canvas IS the deliverable the external agent reads, a *service* is the Execution handoff unit, and 본질·개념(Foundation·Actors·Entities) are project-shared. So the publish shape *is* 2-layer; forcing it to one layer forks shared structure. Foundation built first-principles + adversarially verified (2× red-team) over a YAGNI-minimal patch, per user direction.
 - **Alternatives:** single-layer per-service bundle (v1 draft) — rejected (entity/actor fork). Keep 3 versioning axes — rejected (vP=blueprint_version reinterpreted; per-node retired). label-slugify or node.id slugs — rejected for explicit slug (stability vs readability).
@@ -314,11 +314,11 @@
 
 ### D-2026-06-22-B — chat model selector is populated from each CLI's live catalogue (reverses D-2026-06-16-C)
 
-- **What:** The in-app chat model dropdown is no longer a hardcoded per-CLI list. It is fetched from a new engine endpoint `GET /api/chat/models?provider=<name>` (`plot_mcp/chat_models.py`): **codex** → `~/.codex/models_cache.json` (slug + display_name of every `visibility == "list"` + `supported_in_api` model); **gemini** → `agy models` (plain-text labels, used **verbatim** as `--model`, with effort baked into the label); **claude** → its static documented aliases (`fable`/`opus`/`sonnet` — claude publishes stable aliases). The viewer (`ChatModelSelector`) renders one `<option>` per returned `{id, label}` (`id` → `--model`, `label` shown), keeps the current model as an option even when absent from the list, and keeps the **Custom…** free-text fallback. **Fail-soft:** any source error (agy missing / cache unreadable) → empty list → the selector still offers default + Custom…. `ChatModelOption` is hand-mirrored Python↔TS (chat types aren't codegen'd, per D-2026-06-21-Z), so no wire-artifact regen.
+- **What:** The in-app chat model dropdown is no longer a hardcoded per-CLI list. It is fetched from a new engine endpoint `GET /api/chat/models?provider=<name>` (`mashbill/chat_models.py`): **codex** → `~/.codex/models_cache.json` (slug + display_name of every `visibility == "list"` + `supported_in_api` model); **gemini** → `agy models` (plain-text labels, used **verbatim** as `--model`, with effort baked into the label); **claude** → its static documented aliases (`fable`/`opus`/`sonnet` — claude publishes stable aliases). The viewer (`ChatModelSelector`) renders one `<option>` per returned `{id, label}` (`id` → `--model`, `label` shown), keeps the current model as an option even when absent from the list, and keeps the **Custom…** free-text fallback. **Fail-soft:** any source error (agy missing / cache unreadable) → empty list → the selector still offers default + Custom…. `ChatModelOption` is hand-mirrored Python↔TS (chat types aren't codegen'd, per D-2026-06-21-Z), so no wire-artifact regen.
 - **Why:** The hardcoded approach (D-2026-06-16-C: claude aliases only; codex/gemini blank) showed the user an empty `default / Custom…` — read as "no models" — and was stale on arrival: within this window the live gemini list had already moved 2.5 → 3.1/3.5 + gemma-4, codex to gpt-5.5/5.4. Each CLI already curates its own short, fresh model list; reading that is both more honest and lower-maintenance than a list Plot must chase.
 - **Alternatives:** (a) keep hardcoding (D-16-C) — rejected: stale + opaque (the user demonstrated the staleness live). (b) query the vendor API (`/v1/models` / Google ListModels) — rejected: needs keys + auth, and returns a messy full catalogue vs the CLI's curated short list. (c) codex via its private cache is a coupling risk — accepted with fail-soft fallback (a format change yields `[]`, never a crash).
 - **Approval:** Accepted by user, 2026-06-22 ("0123 다 해야한다 … 고고"; chose dynamic after seeing the hardcoded list go stale live).
-- **Spec impact:** SPEC §R7 "Model selection" row (was D-2026-06-16-C). Engine `plot_mcp/chat_models.py` + `endpoints_chat.chat_models_endpoint` + `/api/chat/models` route. App viewer `api.ts` (`fetchChatModels` + `ChatModelOption`), `app/mcp.ts` seam, `ChatDock` (fetch + `models` prop; `MODEL_SUGGESTIONS` removed). Pinned by `tests/test_chat_models.py`, `tests/test_endpoints_chat.py` (models endpoint), `viewer/tests/chat-model-catalogue.test.tsx`. Engine 687 green, viewer 1006 green. **Requires sidecar rebuild.**
+- **Spec impact:** SPEC §R7 "Model selection" row (was D-2026-06-16-C). Engine `mashbill/chat_models.py` + `endpoints_chat.chat_models_endpoint` + `/api/chat/models` route. App viewer `api.ts` (`fetchChatModels` + `ChatModelOption`), `app/mcp.ts` seam, `ChatDock` (fetch + `models` prop; `MODEL_SUGGESTIONS` removed). Pinned by `tests/test_chat_models.py`, `tests/test_endpoints_chat.py` (models endpoint), `viewer/tests/chat-model-catalogue.test.tsx`. Engine 687 green, viewer 1006 green. **Requires sidecar rebuild.**
 
 ### D-2026-06-22-A — in-app gemini chat transport: `gemini` CLI → `agy` (Antigravity); stateless per-turn
 
@@ -342,7 +342,7 @@
 - **Why:** Stacking multiple `project_id` folders under one `.noory/plot` (e.g. `Banas/.noory/plot/{banas, proj-mqmtt316}`) was confusing and let stray/orphaned projects accumulate invisibly. Pinning "one project per dir" makes each project's home unambiguous (its own directory) while leaving the monorepo-of-services model intact via sibling dirs. The user fixed this at a moment with no live data at risk ("지금 아니면 못 하는, 사용자 없을 때 깨는 변경").
 - **Alternatives:** (a) keep allowing N projects per root (status quo) — rejected: the stacking confusion is the problem being solved. (b) Also flatten the `{project_id}/` folder layer now so a root holds the canvases directly (S2) — deferred: a large migration touching every storage path + schema export; the handoff recommends weighing cost separately. The 409 guard stands on its own regardless of internal layout. (c) Enforce on `enumerate_projects`/discovery too — rejected: would break reading legacy multi-project roots and recursive sibling discovery; the write-path guard is sufficient and non-destructive.
 - **Approval:** Accepted by user, 2026-06-21 (handoff `docs/plans/one-project-per-dir-handoff.md` §사용자 결정; this session implements it). Narrows **D-2026-06-12-A**.
-- **Spec impact:** Engine `plot_mcp/project_io.py::create_project` (guard). Root `docs/specs/storage-publish.md` §저장 레이아웃 + this repo's `SPEC.md` §Workspace & projects gain the one-per-dir line. Pinned by `tests/test_folder_io.py::test_create_second_project_in_same_root_rejected` / `::test_create_in_sibling_dirs_is_allowed` and `tests/test_noory_migration.py::test_discovery_sees_sibling_dir_projects`. Engine 669 green, mypy + ruff clean. **Requires sidecar rebuild** (S7) for the `.app`.
+- **Spec impact:** Engine `mashbill/project_io.py::create_project` (guard). Root `docs/specs/storage-publish.md` §저장 레이아웃 + this repo's `SPEC.md` §Workspace & projects gain the one-per-dir line. Pinned by `tests/test_folder_io.py::test_create_second_project_in_same_root_rejected` / `::test_create_in_sibling_dirs_is_allowed` and `tests/test_noory_migration.py::test_discovery_sees_sibling_dir_projects`. Engine 669 green, mypy + ruff clean. **Requires sidecar rebuild** (S7) for the `.app`.
 
 ### D-2026-06-21-Z — chat shows the CLI's actual default model when it reports one (claude-code only)
 
@@ -366,16 +366,16 @@
 - **Why:** D-2026-06-21-R fixed the in-memory (PUT) case but explicitly left on-disk resilience as a follow-up: a `canvas.json` already corrupted with a dangling edge (a node removed without its incident edges) made the engine 400 every GET, so the canvas could never open. Healing on read fixes the canvas regardless of how it was corrupted, and is the engine analogue of the viewer's persist-boundary prune.
 - **Alternatives:** (a) heal only when validation actually fails (try/except around `model_validate`, re-strip, retry) — rejected: opaque, and the explicit pre-pass matches the existing read-path migration chain. (b) make the *write* path also lenient — rejected: a PUT carrying a dangling edge is a real viewer bug (the prune guard should have run), so the engine should keep rejecting it to surface regressions.
 - **Approval:** Accepted by user, 2026-06-21 (standing follow-up named in D-2026-06-21-R; session plan item).
-- **Spec impact:** Engine `noory-ai/plot/plot_mcp/canvas_io.py` (`_drop_dangling_edges` + one call in `read_canvas`). Pinned by `tests/test_dangling_edges.py` (unit: strips missing-node edge / keeps anchor edge / no-op when clean; integration: a corrupted canvas.json opens via `read_canvas`). Full engine suite green (665). **Requires sidecar rebuild** for the standalone `.app`.
+- **Spec impact:** Engine `noory-ai/plot/mashbill/canvas_io.py` (`_drop_dangling_edges` + one call in `read_canvas`). Pinned by `tests/test_dangling_edges.py` (unit: strips missing-node edge / keeps anchor edge / no-op when clean; integration: a corrupted canvas.json opens via `read_canvas`). Full engine suite green (665). **Requires sidecar rebuild** for the standalone `.app`.
 
 ### D-2026-06-21-W — fix: `.noory/plot/.noory/plot/{id}` double-nesting (resolve_plot_root guard) + workspace cleanup
 
-- **What:** `resolve_plot_root(project_path)` now **guards against double-nesting**: if `project_path` already points AT a `.noory/plot` data root (`base.name == "plot" and base.parent.name == ".noory"`), it returns that path directly instead of appending another `.noory/plot`. Engine change in `plot_mcp/workspace.py`.
+- **What:** `resolve_plot_root(project_path)` now **guards against double-nesting**: if `project_path` already points AT a `.noory/plot` data root (`base.name == "plot" and base.parent.name == ".noory"`), it returns that path directly instead of appending another `.noory/plot`. Engine change in `mashbill/workspace.py`.
 - **Why:** A project (`id="banas"`) was found orphaned at `playground/Banas/.noory/plot/.noory/plot/banas/` — one `.noory/plot` too deep, invisible to discovery (which scans `{ws}/.noory/plot/*` and prunes `.noory`). Cause: `resolve_plot_root` blindly did `base / ".noory" / "plot"` with no guard, and an **MCP caller** passed a `project_path` already pointing into `.noory/plot` (the viewer can't trigger it — the dir picker prunes `.noory`). The id was a human "banas" (not `proj-{ts}`), confirming the MCP/agent path, not the viewer.
 - **Cleanup performed (data, with user OK "싹다 깔끔하게"):** moved the orphaned `…/.noory/plot/.noory/plot/banas` → `…/.noory/plot/banas` (real canvases — foundation 7 nodes — preserved, NOT deleted); `rmdir`'d the now-empty `.noory/plot/.noory` wrappers under `Banas/` and `playground/` (empty-only removal). Banas workspace now has two correctly-placed projects (`banas` + `proj-mqmtt316`); the user dedupes in-app (no project with user nodes deleted without explicit per-project confirmation).
 - **Alternatives:** delete the orphaned banas as a presumed dup — rejected (it had distinct user work, 7 foundation nodes vs proj-mqmtt316's 3; can't verify redundancy → never blind-delete user data). Fix only the caller — insufficient (the engine guard is the durable invariant for any caller).
 - **Approval:** Accepted by user, 2026-06-21 ("둘다 해주세요. 정리 싹다 … 깔끔하게").
-- **Spec impact:** Engine (`plot_mcp/workspace.py::resolve_plot_root`). Pinned by `test_noory_migration` (`…_guards_against_double_nesting`, `…_double_nest_then_create_lands_correctly`). Engine suite green (661). **Requires sidecar rebuild** for the bundled .app + the agent's MCP binary to pick up the guard.
+- **Spec impact:** Engine (`mashbill/workspace.py::resolve_plot_root`). Pinned by `test_noory_migration` (`…_guards_against_double_nesting`, `…_double_nest_then_create_lands_correctly`). Engine suite green (661). **Requires sidecar rebuild** for the bundled .app + the agent's MCP binary to pick up the guard.
 
 ### D-2026-06-21-V — every workspace panel gets a hard pixel minimum width (chat 280 · canvas 480 · tools 280)
 
@@ -509,12 +509,12 @@
 - **Approval:** Accepted by user, 2026-06-21 (AskUserQuestion → "VS Code식 — 입력박스 아래 별도 줄").
 - **Spec impact:** App-repo viewer only (`ChatDock.tsx`). Behaviour preserved (provider connect / model select / scope / send / stream all unchanged) — pure layout. Pinned by `chat-dock` test (the messages `role="log"` now precedes the scope tablist + input in DOM order). **Follow-up (SoC):** `ChatDock.tsx` is 546 LOC (>500); extract a `ChatComposer` component (the composer + control row) — tracked, not blocking.
 
-### D-2026-06-21-F — engine sidecar tag convention = `plot-mcp-v{version}` on `noory-ai`, pushed at build
+### D-2026-06-21-F — engine sidecar tag convention = `mashbill-v{version}` on `noory-ai`, pushed at build
 
-- **What:** The git-tag that pins a built sidecar (the Phase-D-b reproducible build, `D-2026-06-20-Q` / `build_sidecar.py --engine-tag`) is named **`plot-mcp-v{__version__}`** on the **`noory-ai`** repo (the engine's home). Tags are **pushed to `origin`** (outward-facing — they're public on `github.com/noory-code/noory-ai`). First pushed: `plot-mcp-v0.98.6`, `plot-mcp-v0.98.8` (2026-06-21).
-- **Why:** `noory-ai` is a monorepo (evonest / distill / solera / plot / …), so an engine release tag needs a **package prefix** to disambiguate — hence `plot-mcp-` (the package name) + `v{semver}`. The version is the single-source engine version (`plot_mcp/__init__.__version__`, `D-2026-06-20-N`). The build script verifies HEAD is exactly the tag before building, so the bundled binary corresponds 1:1 to a public, reproducible commit.
-- **Approval:** Accepted by user, 2026-06-21 ("푸시 하세요" — confirmed pushing the held tags + the `plot-mcp-v{version}` convention).
-- **Spec impact:** Release process — each sidecar build tags `noory-ai` `plot-mcp-v{version}` and pushes it. `repos-plot/CLAUDE.md` §빌드 파이프라인 already references `--engine-tag plot-mcp-v<ver>`; the "⚠ 태그 push 는 사용자 확인 후" note now has a standing yes for this convention (the *act* of pushing a specific release can still be a judgement call, but the naming + push-to-origin policy is settled).
+- **What:** The git-tag that pins a built sidecar (the Phase-D-b reproducible build, `D-2026-06-20-Q` / `build_sidecar.py --engine-tag`) is named **`mashbill-v{__version__}`** on the **`noory-ai`** repo (the engine's home). Tags are **pushed to `origin`** (outward-facing — they're public on `github.com/noory-code/noory-ai`). First pushed: `mashbill-v0.98.6`, `mashbill-v0.98.8` (2026-06-21).
+- **Why:** `noory-ai` is a monorepo (evonest / distill / solera / plot / …), so an engine release tag needs a **package prefix** to disambiguate — hence `mashbill-` (the package name) + `v{semver}`. The version is the single-source engine version (`mashbill/__init__.__version__`, `D-2026-06-20-N`). The build script verifies HEAD is exactly the tag before building, so the bundled binary corresponds 1:1 to a public, reproducible commit.
+- **Approval:** Accepted by user, 2026-06-21 ("푸시 하세요" — confirmed pushing the held tags + the `mashbill-v{version}` convention).
+- **Spec impact:** Release process — each sidecar build tags `noory-ai` `mashbill-v{version}` and pushes it. `repos-plot/CLAUDE.md` §빌드 파이프라인 already references `--engine-tag mashbill-v<ver>`; the "⚠ 태그 push 는 사용자 확인 후" note now has a standing yes for this convention (the *act* of pushing a specific release can still be a judgement call, but the naming + push-to-origin policy is settled).
 
 ### D-2026-06-21-E — default canvas focus = Foundation; a returning project resumes its last-worked canvas
 
@@ -583,9 +583,9 @@
 - **Approval:** Executes the user-approved Phase D part (c) ("런타임 schema_version compat 배너", 2026-06-20 autonomous directive).
 - **Spec impact:** New behaviour — `/api/health` carries `schema_version` + `engine_version`; the app shows a wire-compat banner on boot mismatch. Engine **648 green** (+`test_health_exposes_compat_versions`); viewer **939 green** (+`compat` / `compat-banner`, i18n `shell.compat.*` en+ko). `specs/` (engine health / app boot) — code-near behaviour, logged here. Phase D part (b) sidecar git-tag pin + `engine_version` build stamp remains.
 
-### D-2026-06-20-N — engine version single-source (`plot_mcp/__init__.py`); `SCHEMA_VERSION` stays separate (Phase D part a)
+### D-2026-06-20-N — engine version single-source (`mashbill/__init__.py`); `SCHEMA_VERSION` stays separate (Phase D part a)
 
-- **What:** Collapses the four stale copies of the engine version (`pyproject.toml` `0.1.0` / `plot_mcp/__init__.py` `0.1.0` / `schema_export.PLOT_VERSION` `0.14.18` / `.claude-plugin/plugin.json` — the only one that moved) to a **single source = `plot_mcp/__init__.py::__version__`**. `pyproject.toml` derives it dynamically via hatchling (`dynamic = ["version"]` + `[tool.hatch.version] path = "plot_mcp/__init__.py"`); `schema_export.PLOT_VERSION` re-exports `__version__` (it only feeds the informational `_meta.json plot_version`, no viewer consumer); the Claude Code `plugin.json` manifest is a **separate artifact** pinned **equal** by `tests/test_version_parity.py`. Gate 4 now bumps `__init__.__version__` **+** `plugin.json` in lock-step (two files; pyproject auto-follows). The current true version `0.98.x` is adopted. **`SCHEMA_VERSION` (wire-contract schema version, `2`) is intentionally NOT unified** with the package version — it is a different concept (the thing the Phase-D runtime compat banner gates on, parts b/c) and is pinned decoupled by the same test.
+- **What:** Collapses the four stale copies of the engine version (`pyproject.toml` `0.1.0` / `mashbill/__init__.py` `0.1.0` / `schema_export.PLOT_VERSION` `0.14.18` / `.claude-plugin/plugin.json` — the only one that moved) to a **single source = `mashbill/__init__.py::__version__`**. `pyproject.toml` derives it dynamically via hatchling (`dynamic = ["version"]` + `[tool.hatch.version] path = "mashbill/__init__.py"`); `schema_export.PLOT_VERSION` re-exports `__version__` (it only feeds the informational `_meta.json plot_version`, no viewer consumer); the Claude Code `plugin.json` manifest is a **separate artifact** pinned **equal** by `tests/test_version_parity.py`. Gate 4 now bumps `__init__.__version__` **+** `plugin.json` in lock-step (two files; pyproject auto-follows). The current true version `0.98.x` is adopted. **`SCHEMA_VERSION` (wire-contract schema version, `2`) is intentionally NOT unified** with the package version — it is a different concept (the thing the Phase-D runtime compat banner gates on, parts b/c) and is pinned decoupled by the same test.
 - **Why:** Four drifting copies meant `_meta.json` stamped `0.14.18` while the plugin shipped `0.98.x` — a silent lie about what engine is running, and a blocker for the Phase-D sidecar `engine_version` stamp + runtime compat. One source removes the drift; deriving (hatchling dynamic + `PLOT_VERSION` re-export) means future bumps touch one real line. `SCHEMA_VERSION` must stay separate: the wire schema changes on its own cadence (a kind-field change bumps it; a package patch does not), and conflating them would force a schema-version bump on every release.
 - **Alternatives:** (a) `pyproject` static version as SSOT + `importlib.metadata` at runtime — rejected (an editable checkout that forgot to re-sync returns a stale installed version; a literal in `__init__` is unambiguous and import-only). (b) `plugin.json` as SSOT — rejected (it is a Claude-Code-specific manifest, not the Python package's identity; the package owns its version, the manifest mirrors it). (c) merge `SCHEMA_VERSION` into the package version — rejected (different cadence; MECE violation).
 - **Approval:** Executes the user-approved Phase D ("#3 엔진 버전화", 2026-06-20 autonomous directive). SSOT-file choice is the implementation mechanic.
@@ -593,7 +593,7 @@
 
 ### D-2026-06-20-M — the irreversible cut: `noory-ai/plot/viewer` removed; codegen viewer-write is env-only (`PLOT_VIEWER_ROOT`)
 
-- **What:** Executes the irreversible half of `D-2026-06-20-L` (the Phase-C cut). The 295 tracked `noory-ai/plot/viewer` files are **removed** (`git rm -r`) — the viewer now lives only in the proprietary app repo `plot/`. The engine codegen no longer hardcodes the app's path: both `ts_codegen.write_wire_ts` and `schema_export._write_wire_snapshots` resolve the viewer write-target **only** from the `PLOT_VIEWER_ROOT` env var (new `ts_codegen.wire_ts_path()` / `schema_export.viewer_contract_path()`, each returning `None` when unset). Unset → the viewer artifact is not this repo's concern and the write is a clean no-op; the engine still always writes its own `plot_mcp/wire_contract.json` self-copy. The dev cross-repo regen is `PLOT_VIEWER_ROOT=/abs/path/to/plot/viewer uv run python -m plot_mcp.ts_codegen` (+ `... schema_export --wire`) — verified idempotent against the committed `plot/viewer` artifacts. The four **viewer-reading parity tests** that silently die once the viewer leaves the repo are re-homed: `test_ts_codegen` (committed-file freshness → app vitest; engine keeps a deterministic per-kind interface guard), `test_wire_contract::test_monorepo_copies_are_identical` (retired; engine keeps its self-copy guard), `test_chat_scope_parity::test_chat_scope_parity` (→ app vitest; engine keeps the explicit member-set pin), `test_edge_semantics::test_relation_value_set_matches_viewer` (→ app vitest; engine keeps an explicit `{flow, injection, inheritance}` pin). `find_viewer_dist()` already returns `None` gracefully (headless mode, `test_transport_isolation`) — no change needed.
+- **What:** Executes the irreversible half of `D-2026-06-20-L` (the Phase-C cut). The 295 tracked `noory-ai/plot/viewer` files are **removed** (`git rm -r`) — the viewer now lives only in the proprietary app repo `plot/`. The engine codegen no longer hardcodes the app's path: both `ts_codegen.write_wire_ts` and `schema_export._write_wire_snapshots` resolve the viewer write-target **only** from the `PLOT_VIEWER_ROOT` env var (new `ts_codegen.wire_ts_path()` / `schema_export.viewer_contract_path()`, each returning `None` when unset). Unset → the viewer artifact is not this repo's concern and the write is a clean no-op; the engine still always writes its own `mashbill/wire_contract.json` self-copy. The dev cross-repo regen is `PLOT_VIEWER_ROOT=/abs/path/to/plot/viewer uv run python -m mashbill.ts_codegen` (+ `... schema_export --wire`) — verified idempotent against the committed `plot/viewer` artifacts. The four **viewer-reading parity tests** that silently die once the viewer leaves the repo are re-homed: `test_ts_codegen` (committed-file freshness → app vitest; engine keeps a deterministic per-kind interface guard), `test_wire_contract::test_monorepo_copies_are_identical` (retired; engine keeps its self-copy guard), `test_chat_scope_parity::test_chat_scope_parity` (→ app vitest; engine keeps the explicit member-set pin), `test_edge_semantics::test_relation_value_set_matches_viewer` (→ app vitest; engine keeps an explicit `{flow, injection, inheritance}` pin). `find_viewer_dist()` already returns `None` gracefully (headless mode, `test_transport_isolation`) — no change needed.
 - **Why:** `D-2026-06-20-L` open-core (`D-2026-06-20-A`): the visual canvas = paid app value (proprietary `plot/`), the engine = MIT headless (`noory-ai`). A MIT engine must not hardcode the proprietary app's filesystem path — env-only keeps the engine standalone (an engine-alone checkout regenerates only its self-copy) while the cross-repo awareness lives in the documented dev command, not in engine source. The four parity tests read viewer TS from disk, so they die the moment the viewer leaves — each is replaced by an engine-side pin (the app's vitest owns the viewer half against the committed artifacts).
 - **Alternatives:** (a) sibling-default path resolution (`../../plot/viewer`) in the engine module — rejected (names the proprietary app inside MIT engine source; env-only is cleaner and an engine-alone checkout stays a no-op). (b) repoint the parity tests cross-repo to `plot/viewer` — rejected (assumes the sibling layout in a noory-ai-alone CI; the viewer half belongs in the app's CI per `D-L`). (c) delete `find_viewer_dist` viewer-serving — deferred (already returns `None` headless; removing it is a separate cleanup, not part of the cut).
 - **Approval:** Executes the user-approved `D-2026-06-20-L` (the cut + Phase-D were named there as the immediate follow-up) under the user's autonomous "#2 컷 우선" directive (2026-06-20).
@@ -601,7 +601,7 @@
 
 ### D-2026-06-20-L — viewer physical migration `noory-ai/plot/viewer` → `plot/viewer` (open-core; codegen = committed artifacts; engine pin = git-tag)
 
-- **What:** The viewer moves out of the open-source `noory-ai` monorepo into the proprietary app repo `plot/` — implementing the open-core boundary (`D-2026-06-20-A`: visual canvas = app-exclusive / engine = MIT headless). Prereqs done earlier this overhaul: types.ts → `schema_export` codegen (Phase A — so schema parity survives the repo split, TECH_REVIEW step 1) and `plot_mcp` headless dual-mode (Phase B). **Approach (user-gated 2026-06-20):** (1) **codegen = committed artifacts** — `wire.gen.ts` + both `wire_contract.json` are checked into the `plot` repo; a dev regen script (aware of both repo paths) refreshes them when the engine schema changes, and the drift guard runs in `plot`'s CI against the committed artifact (vs. the prior monorepo regex parity, which dies the moment viewer leaves `noory-ai`). (2) **engine pin = git-tag** — the sidecar PyInstaller build installs `plot_mcp` from an explicit git-tag ref (simplest at the monorepo-adjacent stage; the build manifest stamps `engine_version`); published-wheel rejected as overkill now.
+- **What:** The viewer moves out of the open-source `noory-ai` monorepo into the proprietary app repo `plot/` — implementing the open-core boundary (`D-2026-06-20-A`: visual canvas = app-exclusive / engine = MIT headless). Prereqs done earlier this overhaul: types.ts → `schema_export` codegen (Phase A — so schema parity survives the repo split, TECH_REVIEW step 1) and `mashbill` headless dual-mode (Phase B). **Approach (user-gated 2026-06-20):** (1) **codegen = committed artifacts** — `wire.gen.ts` + both `wire_contract.json` are checked into the `plot` repo; a dev regen script (aware of both repo paths) refreshes them when the engine schema changes, and the drift guard runs in `plot`'s CI against the committed artifact (vs. the prior monorepo regex parity, which dies the moment viewer leaves `noory-ai`). (2) **engine pin = git-tag** — the sidecar PyInstaller build installs `mashbill` from an explicit git-tag ref (simplest at the monorepo-adjacent stage; the build manifest stamps `engine_version`); published-wheel rejected as overkill now.
 - **Staged execution (to avoid a broken cross-repo state):** **Phase C-additive (this step):** the 295 tracked viewer files are copied into `plot/viewer`, `plot/src-tauri/tauri.conf.json` + `tauri.debug.conf.json` `frontendDist` repointed `../../noory-ai/plot/viewer/dist` → `../viewer/dist`, `plot/.gitignore` + a proprietary `LICENSE` placeholder added — verified `npm ci` + `tsc` + **928 vitest green** in the new home. `noory-ai/plot/viewer` is still present and green, so nothing is broken. **Remaining (the irreversible cut + Phase D):** remove `noory-ai/plot/viewer`; repoint `ts_codegen.py` / `schema_export.py --wire` output to the committed `plot/viewer` artifacts; adjust the now-cross-repo drift guards; R8 import guard in `plot`; align engine versions (`pyproject` `0.1.0` / `PLOT_VERSION` `0.14.18` stale / `plugin.json` `0.97.0`) to one source; sidecar git-tag pin + runtime `schema_version` compat banner.
 - **Why:** `D-2026-06-20-A` open-core. The viewer is the visual canvas (paid app value); the engine is the MIT headless plugin. They must live in separate repos with the wire contract surviving the split via committed codegen artifacts.
 - **Alternatives:** (a) configurable codegen output path invoked by the app build — rejected (needs engine source at app-build time; committed artifacts are simpler + keep the drift guard in the app repo). (b) published-wheel engine pin — rejected (PyPI/internal-index overhead; git-tag suffices at this stage). (c) rename the on-disk `services/` storage folder — N/A (separate concern; not part of the move).
@@ -694,16 +694,16 @@
 ### D-2026-06-20-A — Plot system architecture = open-core (open plugin engines / closed paid app); the visual canvas is app-exclusive
 
 - **What:** Plot's system architecture is pinned as **open-core**:
-  - **Open-source plugins (MIT)** — each is a **headless MCP engine** (+ Claude Code glue: skills/agents/hooks). They produce **structured data + text/markdown artifacts** only; **no visual canvas.** (`plot_mcp` = the canvas/sketch engine; `solera_mcp` = the project-workflow engine; …)
+  - **Open-source plugins (MIT)** — each is a **headless MCP engine** (+ Claude Code glue: skills/agents/hooks). They produce **structured data + text/markdown artifacts** only; **no visual canvas.** (`mashbill` = the canvas/sketch engine; `solera_mcp` = the project-workflow engine; …)
   - **Closed, paid Plot app** — an **MCP host + visual canvas + composition shell.** The **visual canvas is the app's exclusive paid value**; if a plugin shipped the canvas the app would have no differentiated value.
   - **Shared open data** — `.noory/` JSON, read/written by both. The app's moat = **visual experience / UX / composition quality**, NOT data lock-in (the format is open).
   - **Dependency = one-way:** app → plugin engines (the app hosts/consumes them); the engine never imports the app (R8). Plugins run standalone (Claude Code + MCP) without the app.
   - **Value split = VISION's physical division of labour:** the AI works the *structure* (plugin), the human thinks via the *visual* (app), over the shared `.noory/` data.
-  - **Composition vision (deferred):** the app may host multiple engines (plot_mcp + solera_mcp + …) as one product; the unified-canvas UX is unspecified for now (engines are MCP, so wiring stays open).
+  - **Composition vision (deferred):** the app may host multiple engines (mashbill + solera_mcp + …) as one product; the unified-canvas UX is unspecified for now (engines are MCP, so wiring stays open).
 - **Why:** Settling the structure before implementation (user, 2026-06-19~20). The plugin/app/engine arrangement was scattered; the load-bearing question — where the canvas lives — is answered by the value boundary: the canvas must be app-only or the paid app has no value, so the open plugin stays text/structured-only.
 - **Alternatives:** (a) the plugin ships the visual canvas — rejected (collapses the app's paid value). (b) keep the viewer in noory-ai / a web canvas — rejected (canvas = app-exclusive; the web product is dropped). (c) close the engine into the app — rejected (loses the open MCP value: any agent can drive Plot).
 - **Approval:** Accepted by user, 2026-06-20 (open-core boundary + canvas = app-exclusive + plugin = text artifacts, confirmed across the structure discussion).
-- **Spec impact:** NEW `repos-plot/docs/ARCHITECTURE.md` (system architecture SSOT) + index. Migration prereq: viewer → `plot/` (app); `viewer/types.ts` → a `schema_export.py`-generated artifact **before** the move (schema-parity guard, TECH_REVIEW step 1); `plot_mcp` headless. ROADMAP Track 2. Builds on the Pencil model (OVERHAUL R7) + the viewer→app overhaul direction.
+- **Spec impact:** NEW `repos-plot/docs/ARCHITECTURE.md` (system architecture SSOT) + index. Migration prereq: viewer → `plot/` (app); `viewer/types.ts` → a `schema_export.py`-generated artifact **before** the move (schema-parity guard, TECH_REVIEW step 1); `mashbill` headless. ROADMAP Track 2. Builds on the Pencil model (OVERHAUL R7) + the viewer→app overhaul direction.
 
 ### D-2026-06-19-J — Design/definition/spec docs consolidated into a single source (`repos-plot/docs/`)
 
@@ -2234,7 +2234,7 @@
 ### D-2026-06-15-D — Chat MCP path: viewer context (selection + framing) for the external agent
 
 - **What:** The PRIMARY chat path — the user's own agent connected via the
-  `plot_mcp` sidecar — gains the same canvas context the in-app chat already
+  `mashbill` sidecar — gains the same canvas context the in-app chat already
   has (CHAT_ARCH.md "Scope honesty" follow-up to Layers 1–3). A new read-only
   MCP tool `get_viewer_context(project_path)` returns
   `{active_canvas, selection, framing, updated_at, stale, has_viewer}`. It is
@@ -2273,7 +2273,7 @@
     file), disambiguated by `updated_at`; documented (Plot is single-viewer per
     project in practice; per-window tracking is YAGNI).
   - **Framing SSOT** = `build_framing_preamble` + `SCOPE_FRAMING` +
-    `build_context_preamble` move to a neutral `plot_mcp/chat_context.py` that
+    `build_context_preamble` move to a neutral `mashbill/chat_context.py` that
     BOTH `endpoints_chat.py` and `mcp_tools.py` import (no MCP→HTTP dependency).
   - **Reverse engine→agent push** (real-time nav) = CUT (YAGNI; pull-on-demand
     via the tool is enough).
@@ -2496,12 +2496,12 @@ Three edge changes (one batch):
 - **What:** The MCP-registration entry Plot writes into each CLI config
   (`~/.claude.json` / `~/.codex/config.toml` / `~/.gemini/settings.json`)
   now has two shapes:
-  - **dev checkout** — unchanged: `uv run --directory <src> python -m plot_mcp`.
+  - **dev checkout** — unchanged: `uv run --directory <src> python -m mashbill`.
   - **frozen .app** — `command = sys.executable` (the stable bundled binary
-    path inside `Plot.app/Contents/MacOS/plot-mcp`), `args = ["--mcp-stdio"]`.
-  The bundled binary gains a `--mcp-stdio` mode (`plot_mcp.server.run_mcp_stdio`,
+    path inside `Plot.app/Contents/MacOS/mashbill`), `args = ["--mcp-stdio"]`.
+  The bundled binary gains a `--mcp-stdio` mode (`mashbill.server.run_mcp_stdio`,
   stdio MCP transport only — no HTTP). Dispatch lives in the sidecar entry
-  `plot/src-tauri/sidecar-build/plot_mcp_entry.py`.
+  `plot/src-tauri/sidecar-build/mashbill_entry.py`.
 - **Why (the bug):** `_plot_entry` built the command from
   `plot_plugin_root()` = `Path(__file__).parent.parent`. Inside the
   PyInstaller-frozen `.app`, `__file__` resolves to the ephemeral `_MEIxxxx`
@@ -3779,7 +3779,7 @@ in the same browser-verification round:
   1. `plot/hooks/pre_commit_gate.py::cross_cutting_bundle_check`
      denies any commit that stages `viewer/src/styles.css`
      (cross-cutting visual SSOT) alongside feature code under
-     `viewer/` or `plot_mcp/`. Tests are excluded from the
+     `viewer/` or `mashbill/`. Tests are excluded from the
      "feature" category so test-with-target shipping stays normal.
   2. `viewer/tests/styles-cursor-baseline.test.tsx` asserts
      `styles.css` has zero cursor declarations outside comments.
@@ -4075,7 +4075,7 @@ in the same browser-verification round:
     `domain/SketchNode.ts` = discriminated union. `domain/CanvasDoc.ts`
     = `Canvas` class.
   - **Phase B — Server alignment** with
-    `plot_mcp/models.py` Pydantic.
+    `mashbill/models.py` Pydantic.
   - **Phase C — Inspector kind fan-out.** Split
     `SketchInspector.tsx` into per-kind inspectors.
   - **Phase D — Canvas componentisation.** `FoundationCanvas`,
@@ -4456,7 +4456,7 @@ in the same browser-verification round:
 
 - **The single boolean (AND of four):**
 
-  1. ``plot_mcp/models.py`` exposes
+  1. ``mashbill/models.py`` exposes
      ``SketchNode = Annotated[Union[...], Field(discriminator="kind")]``
      (the 15-way discriminated union — both ``Union[...]`` and
      ``X | Y | ...`` syntaxes accepted; the gate matches either).
@@ -5164,7 +5164,7 @@ in the same browser-verification round:
   that is a separate doc-only commit.
 
 - **Files in this commit:**
-  - ``plot/plot_mcp/models.py`` — ``BaseNodeFields`` adds
+  - ``plot/mashbill/models.py`` — ``BaseNodeFields`` adds
     ``owner: str | None = None`` after ``details_path``.
   - ``plot/viewer/src/domain/BaseFields.ts`` —
     ``BaseFieldsJson`` + ``BaseFields`` interfaces add ``owner:
@@ -5891,7 +5891,7 @@ in the same browser-verification round:
   ``plot-read-sketch``, ``plot-help`` make sense there). The other
   seven skills are **dev-facing**: they trigger during Plot's *own*
   development, reference Plot's internal source (``viewer/src/``,
-  ``plot_mcp/``, ``docs/``), and would be useless noise in a
+  ``mashbill/``, ``docs/``), and would be useless noise in a
   consumer's project. User flagged 2026-05-13:
   *"플롯 안에 스킬이 클로드 동작을 시키는 스킬인가요? 저건 플러그인이
   가진 스킬이잖아요. .claude/ 에 들어가야하는거 아닌가?"*
@@ -6405,7 +6405,7 @@ in the same browser-verification round:
     the server validator now honours it.
 
 - **Files in this commit:**
-  - ``plot/plot_mcp/models.py`` — ``PROJECT_ANCHOR_ID`` constant +
+  - ``plot/mashbill/models.py`` — ``PROJECT_ANCHOR_ID`` constant +
     validator (anchor whitelist + error message fix).
   - ``plot/tests/test_canvas_doc.py`` — 5 regression tests
     (anchor edge both directions accepted, error message reports
@@ -6478,7 +6478,7 @@ in the same browser-verification round:
 
 - **Why this was missed in v0.16.37:** The Phase 1 agent's grep on
   ``__project_anchor__`` correctly found zero matches in
-  ``plot_mcp/``, but the *risk surface* was wider than the grep
+  ``mashbill/``, but the *risk surface* was wider than the grep
   hit count: any function with a literal ``{n.id for n in nodes}``
   *set difference against edge endpoints* needed the same fix.
   Lesson encoded for plot-design-red-team Attack 5 (Implicit
@@ -6490,7 +6490,7 @@ in the same browser-verification round:
 
   ```python
   if not legacy_anchors:
-      from plot_mcp.models import PROJECT_ANCHOR_ID
+      from mashbill.models import PROJECT_ANCHOR_ID
       node_ids = {n.get("id") for n in nodes} | {PROJECT_ANCHOR_ID}
       ...
   ```
@@ -6512,7 +6512,7 @@ in the same browser-verification round:
   second function that needed the same whitelist.
 
 - **Files in this commit:**
-  - ``plot/plot_mcp/folder_io.py::_evict_legacy_project_anchor`` —
+  - ``plot/mashbill/folder_io.py::_evict_legacy_project_anchor`` —
     defensive cleanup whitelist.
   - ``plot/tests/test_folder_io.py`` — 2 regression tests:
     - ``test_read_canvas_preserves_anchor_edges_across_repeated_reads``
@@ -6611,7 +6611,7 @@ in the same browser-verification round:
   User decides at Phase 5; not this session.
 
 - **isomorphic-git integration (out of scope for all 6 phases):**
-  Existing ``plot_mcp/git_store.py`` (subprocess-native) is
+  Existing ``mashbill/git_store.py`` (subprocess-native) is
   sufficient through Phase 6. isomorphic-git is a separate v0.20+
   lane (ROADMAP §"v0.17+" already lists it with 6 Major findings
   from ``plot-design-red-team``). Conflating it with publish would
@@ -6664,7 +6664,7 @@ in the same browser-verification round:
   of bug recurs, consider pinning the invariant explicitly.
 
 - **Files in this commit:**
-  - ``plot/plot_mcp/migrate.py`` — step 4 guard +
+  - ``plot/mashbill/migrate.py`` — step 4 guard +
     ``_project_doc_has_anchor`` helper.
   - ``plot/tests/test_migrate.py`` — 2 new regression tests.
   - ``plot/CHANGELOG.md`` — v0.16.34 Fixed section.
@@ -6782,7 +6782,7 @@ in the same browser-verification round:
     inside §Storage updated to reflect JSON-SSOT.
 
 - **Files in this commit:**
-  - Server: ``plot_mcp/models.py``, ``plot_mcp/folder_io.py``.
+  - Server: ``mashbill/models.py``, ``mashbill/folder_io.py``.
   - Server tests: ``tests/test_folder_io.py``,
     ``tests/test_api_endpoints.py``.
   - Viewer domain: ``viewer/src/domain/{Mission,CoreValue,Identity}.ts``.
@@ -6875,7 +6875,7 @@ in the same browser-verification round:
 ### D-2026-05-16-C — Phase 2 per-node `version` field in BaseFields
 
 - **What:** Add a per-node ``version: str = "v1.0"`` field to
-  ``plot_mcp/models.py::BaseNodeFields`` (server) and to both
+  ``mashbill/models.py::BaseNodeFields`` (server) and to both
   ``BaseFieldsJson`` (wire) and ``BaseFields`` (in-memory) interfaces
   in ``viewer/src/domain/BaseFields.ts``, plus a single
   ``version: this.version,`` line and a ``readonly version!:
@@ -6937,7 +6937,7 @@ in the same browser-verification round:
   ``test_schema_parity.py``.
 
 - **Files in this commit:**
-  - ``plot_mcp/models.py`` — ``version`` field + ``_version_is_valid``
+  - ``mashbill/models.py`` — ``version`` field + ``_version_is_valid``
     validator on ``BaseNodeFields``; ``import re`` added.
   - ``tests/test_schema_parity.py`` — ``_EXPECTED_BASE_FIELDS``
     grows from 14 to 15 (``"version"`` appended).
@@ -8314,7 +8314,7 @@ identity_ref  notes_in_context     ← new
 ```
 
 **Implementation:**
-- ``plot_mcp/models.py`` — added ``notes_in_context: str = ""`` to
+- ``mashbill/models.py`` — added ``notes_in_context: str = ""`` to
   ``MissionRefNode`` / ``ValueRefNode`` / ``IdentityRefNode``.
 - ``viewer/src/domain/{MissionRef, ValueRef, IdentityRef}.ts`` —
   added field to interface + class + ``fromJson`` (with
@@ -8376,12 +8376,12 @@ rename no longer renames the folder (id is stable).
 
 **Implementation:**
 
-- ``plot_mcp/md_publish.py::published_md_path`` signature changed
+- ``mashbill/md_publish.py::published_md_path`` signature changed
   from ``(canvas_dir, *, kind, label, version)`` to
   ``(canvas_dir, *, kind, node_id, version)``. Drops the
   ``slugify`` call; uses ``node_id`` verbatim.
-- ``plot_mcp/folder_io.py::publish_node`` updated caller.
-- ``plot_mcp/folder_io.py`` new
+- ``mashbill/folder_io.py::publish_node`` updated caller.
+- ``mashbill/folder_io.py`` new
   ``_migrate_published_slug_to_id(canvas_dir, raw_canvas)``: walks
   the raw canvas nodes, computes the old slug for each ``(id,
   label)`` pair, and renames ``published/<kind>/<slug>/`` →
@@ -8390,7 +8390,7 @@ rename no longer renames the folder (id is stable).
   (id folder already exists) leave the slug folder in place for
   audit — we never overwrite. Hooked into ``read_canvas`` alongside
   the existing v0.23.0 flat-to-kind-slug migration.
-- ``plot_mcp/api_endpoints.py::node_published_list_endpoint``
+- ``mashbill/api_endpoints.py::node_published_list_endpoint``
   switched from ``slug_dir = published/<kind>/<slug>`` to
   ``node_dir = published/<kind>/<node.id>``.
 
@@ -8477,7 +8477,7 @@ Two AskUserQuestion locks 2026-05-17 narrowed the fixes:
 
 | File | Change |
 |---|---|
-| ``plot/plot_mcp/models.py`` | ``BaseNodeFields.width: float = 140.0``, ``height: float = 60.0``. |
+| ``plot/mashbill/models.py`` | ``BaseNodeFields.width: float = 140.0``, ``height: float = 60.0``. |
 | ``plot/viewer/src/canvases/sketch/constants.ts`` | ``DEFAULT_WIDTH = 140``, ``DEFAULT_HEIGHT = 60``. |
 | ``plot/viewer/src/domain/BaseFields.ts`` | ``parseBaseFields`` defaults updated to match. |
 | ``plot/viewer/src/canvases/sketch/autoLayout.ts`` | ``DEFAULT_PADDING = 64``; isolated-nodes block rewritten as a grid. |
@@ -8713,9 +8713,9 @@ commit).
 
 | File | 변화 |
 |---|---|
-| `plot_mcp/md_publish.py::can_publish` | `if node.is_root: return False` → `if node.is_root and node.kind == "service": return False` |
+| `mashbill/md_publish.py::can_publish` | `if node.is_root: return False` → `if node.is_root and node.kind == "service": return False` |
 | `viewer/src/domain/publishEligibility.ts::canPublish` | 동일하게 좁힘 + JSDoc 갱신 (mirror SSOT 유지) |
-| `plot_mcp/mcp_tools.py` (publish_node docstring) | eligibility 설명 갱신 |
+| `mashbill/mcp_tools.py` (publish_node docstring) | eligibility 설명 갱신 |
 | `tests/test_md_publish.py` | `test_can_publish_rejects_is_root` → `test_can_publish_rejects_is_root_service` + 새 `test_can_publish_accepts_is_root_actor` |
 | `tests/test_folder_io.py` | `test_publish_node_rejects_root_actor` → `test_publish_node_accepts_root_actor` (성공 path 검증, v1.0→v2.0) |
 | `tests/test_api_endpoints.py` | `test_publish_endpoint_ineligible_root_is_409` → `test_publish_endpoint_actor_root_succeeds` (200/201, to_version=v2.0) |
@@ -8795,7 +8795,7 @@ field 폐기 선택).
 - `viewer/src/canvases/inspectors/BaseInspector.tsx` (toggle 삭제,
   badge 분기 삭제)
 - `viewer/src/canvases/inspectors/actor/index.tsx` (placeholder 삭제)
-- `plot_mcp/folder_io.py` (`_migrate_actor_isroot_to_false`, actors
+- `mashbill/folder_io.py` (`_migrate_actor_isroot_to_false`, actors
   canvas read hook)
 - `viewer/tests/inspectors/inspectors.smoke.test.tsx` (placeholder
   관련 2 tests 삭제)
@@ -8845,7 +8845,7 @@ field 폐기 선택).
    타이핑 → 무반응 → "안 됨" 결론.
 3. **부수 발견: PUT 응답 `_dirty` 누락** — `canvas_put_endpoint` 가
    bare canvas 만 반환. GET 엔드포인트에만 `_dirty` 박힘
-   ([api_endpoints.py:296](../plot_mcp/api_endpoints.py)). 결과:
+   ([api_endpoints.py:296](../mashbill/api_endpoints.py)). 결과:
    사용자가 편집해도 publish 버튼이 reload 전까지 stale (이전 GET 시점
    `_dirty=false`). v0.22.0 의 dirty-tracking UX 가 실제로 페이지
    reload 까지 작동 안 함.
@@ -8869,7 +8869,7 @@ field 폐기 선택).
 
 | File | 변화 |
 |---|---|
-| `plot_mcp/api_endpoints.py::canvas_put_endpoint` | response body 에 GET 과 동일한 `_dirty` decoration 추가 (~10 lines, lazy import 패턴 GET 과 동일) |
+| `mashbill/api_endpoints.py::canvas_put_endpoint` | response body 에 GET 과 동일한 `_dirty` decoration 추가 (~10 lines, lazy import 패턴 GET 과 동일) |
 | `viewer/src/hooks/useCanvasPersist.ts` | `.then((res) => {...})` 안에서 `res.canvas.nodes` 의 `_dirty` 를 cache 의 해당 node 에 머지 |
 | `viewer/src/shell/Header.tsx` | `SaveIndicator` 컴포넌트 신설, `saveState` prop 받음 |
 | `viewer/src/App.tsx` | `useCanvasPersist` 에서 `saveState` 받아 `<Header saveState={...}>` 로 흘림 |
@@ -8934,9 +8934,9 @@ field 폐기 선택).
 
 | File | 변화 |
 |---|---|
-| `plot_mcp/models.py::ProjectDoc` | `blueprint_version: str = "v0.1.0"` 필드 추가 |
-| `plot_mcp/api_endpoints.py` | `_bump_blueprint_version()` 헬퍼 + `project_publish_endpoint()` |
-| `plot_mcp/http_app.py` | `POST /api/projects/{project_id}/publish` route 등록 |
+| `mashbill/models.py::ProjectDoc` | `blueprint_version: str = "v0.1.0"` 필드 추가 |
+| `mashbill/api_endpoints.py` | `_bump_blueprint_version()` 헬퍼 + `project_publish_endpoint()` |
+| `mashbill/http_app.py` | `POST /api/projects/{project_id}/publish` route 등록 |
 | `viewer/src/api.ts` | `publishProject()` + `PublishProjectResponse` + `BlueprintBump` |
 | `viewer/src/types.ts::ProjectDoc` | `blueprint_version?: string` |
 | `viewer/src/shell/BlueprintPublishButton.tsx` | 신규 — 버튼 + 드롭다운 + confirm |
@@ -8991,9 +8991,9 @@ cache 로 swap. 편집 비활성. 헤더에 amber 배너 + "✕ 나가기" 버�
 
 | File | 변화 |
 |---|---|
-| `plot_mcp/git_store.py::read_file_at_tag()` | `git show <tag>:<path>` 래퍼. working tree 안 건드림. |
-| `plot_mcp/api_endpoints.py::project_at_tag_endpoint()` | `GET /api/projects/{id}/at-tag/{tag}` — project + 모든 canvases 묶음 반환 |
-| `plot_mcp/http_app.py` | route 등록 |
+| `mashbill/git_store.py::read_file_at_tag()` | `git show <tag>:<path>` 래퍼. working tree 안 건드림. |
+| `mashbill/api_endpoints.py::project_at_tag_endpoint()` | `GET /api/projects/{id}/at-tag/{tag}` — project + 모든 canvases 묶음 반환 |
+| `mashbill/http_app.py` | route 등록 |
 | `viewer/src/api.ts::getProjectAtTag()` | 클라이언트 |
 | `viewer/src/hooks/useSnapshotView.ts` | 신규 hook — viewingTag + snapshotCache + enter/exit actions |
 | `viewer/src/App.tsx` | hook 사용 + cache swap + applyEdit 가드 (`viewingTag ? noop : liveApplyEdit`) |
@@ -9042,7 +9042,7 @@ Actors, and 140×60 still wasted vertical space on hub-spoke layouts.
 
 1. **Default node size 140×60 → 80×36** in three places (same SSOT
    trio as D-2026-05-17-N):
-   - `plot_mcp/models.py::BaseNodeFields.width / height` (Pydantic).
+   - `mashbill/models.py::BaseNodeFields.width / height` (Pydantic).
    - `viewer/src/canvases/sketch/constants.ts::DEFAULT_WIDTH / HEIGHT`.
    - `viewer/src/domain/BaseFields.ts::parseBaseFields` fallback.
 2. **Auto-layout padding stays at 64** (set by D-2026-05-17-N). Padding
@@ -9063,7 +9063,7 @@ persisted (D-2026-05-17-N principle preserved).
 
 | File | Change |
 |---|---|
-| `plot_mcp/models.py` | width / height defaults 140 / 60 → 80 / 36; comment block updated to reference D-2026-05-24-A |
+| `mashbill/models.py` | width / height defaults 140 / 60 → 80 / 36; comment block updated to reference D-2026-05-24-A |
 | `viewer/src/canvases/sketch/constants.ts` | `DEFAULT_WIDTH = 80`, `DEFAULT_HEIGHT = 36`; comment updated |
 | `viewer/src/domain/BaseFields.ts` | `parseBaseFields` fallback 140 / 60 → 80 / 36 |
 | `viewer/tests/domain/base-fields.test.ts` | assertion 140 / 60 → 80 / 36 |
@@ -9317,7 +9317,7 @@ User then chose the **maximal-cleanup** path via AskUserQuestion:
      so consumers (Inspector, drag-and-drop, App.tsx drill context,
      etc.) express parent-child queries without reaching into Maps.
 10. **Propagation walk** (server):
-    - ``plot_mcp/propagation.py::walk_ancestors`` rewritten. Now
+    - ``mashbill/propagation.py::walk_ancestors`` rewritten. Now
       walks incoming directed edges (``edge.target == current_id``)
       across all canvases; picks the lexicographically smallest
       source id for multi-parent determinism.
@@ -9341,10 +9341,10 @@ User then chose the **maximal-cleanup** path via AskUserQuestion:
 
 | Layer | Files (one-line summary) |
 |---|---|
-| Server schema | ``plot_mcp/models.py``: SketchEdge gains ``directed``; BaseNodeFields drops ``parent_id``; 4 validators removed |
-| Server migration | ``plot_mcp/folder_io.py``: new ``_migrate_parent_id_to_directed_edges``; legacy ``_wrap_legacy_services_in_default_category`` removed |
-| Server propagation | ``plot_mcp/propagation.py``: rewritten for directed-edge ancestor walk |
-| Server md_publish | ``plot_mcp/md_publish.py``: ``parent_id`` removed from frontmatter |
+| Server schema | ``mashbill/models.py``: SketchEdge gains ``directed``; BaseNodeFields drops ``parent_id``; 4 validators removed |
+| Server migration | ``mashbill/folder_io.py``: new ``_migrate_parent_id_to_directed_edges``; legacy ``_wrap_legacy_services_in_default_category`` removed |
+| Server propagation | ``mashbill/propagation.py``: rewritten for directed-edge ancestor walk |
+| Server md_publish | ``mashbill/md_publish.py``: ``parent_id`` removed from frontmatter |
 | Server migrate.py (v0.1→v0.2) | drops parent_id arg from ``_v01_to_actor`` / ``_v01_to_service`` / ``_v01_to_composition`` |
 | Client schema | ``viewer/src/types.ts``: SketchEdge gains ``directed``; ``viewer/src/domain/BaseFields.ts``: parent_id removed; 15 entity classes cleaned |
 | Client domain helper | new ``viewer/src/domain/createBlankNode.ts`` drops parent_id from BlankNodeBase |
@@ -9441,7 +9441,7 @@ emphasises *content* + *relationships*, not chrome.
 | File | Change |
 |---|---|
 | ``viewer/src/canvases/SketchStencil.tsx`` | 9 preset shapes: ``TOP_LEVEL_CATEGORY`` / ``SERVICE_INSIDE_CATEGORY`` / metric / ``ACTOR_REF`` / ``MISSION_REF`` / ``VALUE_REF`` / ``IDENTITY_REF`` + 4 picker-driven helpers (``actorRefPresetFor`` / ``missionRefPresetFor`` / ``valueRefPresetFor`` / ``identityRefPresetFor``) — all moved to ``shape: "rectangle"``. Step was already ``rectangle``. |
-| ``plot_mcp/folder_io.py`` | 2 ``ActorRefNode`` auto-seeds in ``ensure_service_detail`` flipped from ``shape="ellipse"`` to ``shape="rectangle"`` for parity with the stencil. |
+| ``mashbill/folder_io.py`` | 2 ``ActorRefNode`` auto-seeds in ``ensure_service_detail`` flipped from ``shape="ellipse"`` to ``shape="rectangle"`` for parity with the stencil. |
 | ``docs/SPEC.md`` | Optional: Plot Edges section already describes user-drawn nature; no spec change for shape (preset detail). |
 
 **Why stencil-only (not Pydantic base)?** Two reasons:
@@ -11316,7 +11316,7 @@ GET /api/projects/banas-imported/canvases/service_detail/nodes/demo_inter_publis
 Backend trace: `node_published_list_endpoint` calls
 `read_canvas(plot_root, project_id, "service_detail", service_id)`;
 when `service_id` is `None`, `read_canvas`
-(`plot_mcp/folder_io.py:98`) raises
+(`mashbill/folder_io.py:98`) raises
 `ValueError("service_detail requires service_id")` —
 uncaught by the endpoint, so Starlette returns 500.
 
@@ -11587,7 +11587,7 @@ invariant glue.
 
 **Decision:**
 
-`CanvasDoc._service_detail_actor_refs_minimum` in `plot_mcp/models.py`
+`CanvasDoc._service_detail_actor_refs_minimum` in `mashbill/models.py`
 loosens to `≥ 1`. The error message changes to point at the new SPEC
 section rather than `IDENTITY.md`:
 
@@ -12908,7 +12908,7 @@ but not yet fully eliminated.
 
 ### D-2026-06-07-B — step3: native project folder picker (Tauri desktop app)
 
-- **Context:** Plot.app (Tauri 2) bundles viewer + plot-mcp sidecar. The viewer
+- **Context:** Plot.app (Tauri 2) bundles viewer + mashbill sidecar. The viewer
   reads `?project_path=...` from the URL; without the param it shows a dead-end
   "add URL param" screen — unusable in a .app double-click launch where there's
   no URL bar.
@@ -13213,12 +13213,12 @@ but not yet fully eliminated.
 
 - **What:** The server↔viewer wire contract (base fields + full field set of
   each of the 15 kinds, Pydantic = SSOT) is exported as a diffable JSON
-  snapshot, committed TWICE: `plot_mcp/wire_contract.json` (engine) and
+  snapshot, committed TWICE: `mashbill/wire_contract.json` (engine) and
   `viewer/src/schema/wire-contract.json` (viewer). Each side verifies its own
   sources against its own copy — engine: `tests/test_wire_contract.py`
   (generated == committed); viewer: `tests/wire-contract.test.ts` (TS `XxxJson`
   interfaces == committed, regex parser ported from the Python test, plus a
-  drift self-check). Regenerate: `uv run python -m plot_mcp.schema_export
+  drift self-check). Regenerate: `uv run python -m mashbill.schema_export
   --wire`. A monorepo-only test pins the two copies byte-identical; at repo
   split it moves to the release pipeline.
 - **Why:** TECH_REVIEW separation-sequence step 1 — `test_schema_parity.py`
@@ -13237,7 +13237,7 @@ but not yet fully eliminated.
 ### D-2026-06-10-F — R8 build guard + commercial licence audit
 
 - **What (R8 guard):** `tests/test_r8_independence.py` AST-parses every
-  `plot_mcp/*.py` import and fails on any root in {viewer, app, src_tauri,
+  `mashbill/*.py` import and fails on any root in {viewer, app, src_tauri,
   tauri, evonest, distill, solera, solera_mcp}; also bans `src-tauri` path
   literals. The one forbidden dependency direction (plugin → app, OVERHAUL R8)
   is now machine-enforced on the engine side, mirroring the viewer's
@@ -13328,7 +13328,7 @@ but not yet fully eliminated.
 
 ### D-2026-06-11-B — God-module split (models.py + api_endpoints.py + migrate.py)
 
-- **What:** The three remaining `plot_mcp/` god modules (993 + 965 + 916
+- **What:** The three remaining `mashbill/` god modules (993 + 965 + 916
   LOC = 2874 lines) split along their own section headers into focused
   modules + a thin facade that re-exports every public name. Every engine
   module now sits under the 500-line monorepo SoC rule. The grandfather
@@ -13347,9 +13347,9 @@ but not yet fully eliminated.
     `_foundation.py` (4 modules: legacy schema, builders, top-level loop,
     inline Foundation upgrade).
 - **Pre-commit gate update:** `hooks/pre_commit_gate.py` previously
-  searched `plot_mcp/models.py` for the SketchNode union body. After the
+  searched `mashbill/models.py` for the SketchNode union body. After the
   split that body lives in `models_union.py`; the gate now scans every
-  `plot_mcp/*.py` so the v0.15 structural reset stays enforced.
+  `mashbill/*.py` so the v0.15 structural reset stays enforced.
 - **Why:** Folder_io's v0.56.0 split (D-2026-06-10-D) installed
   `tests/test_module_size.py` as a permanent guard but grandfathered
   these three at their then-size. ROADMAP Track 1.4 listed them as next
@@ -13619,17 +13619,17 @@ but not yet fully eliminated.
 - **Approval:** Executed under user-approved Track 1.4 plan ("테마 타입
   SSOT"), 2026-06-12. ROADMAP Track 1.4 fully closed with this.
 
-### D-2026-06-12-D — R7 chat subprocess lives in plot_mcp, not Tauri
+### D-2026-06-12-D — R7 chat subprocess lives in mashbill, not Tauri
 
 - **What:** The CLI subprocess that drives the R7 chat panel
   (`claude` / `codex` / `gemini`) is spawned, fed, and reaped by the
-  **plot_mcp engine** (Python). The viewer reaches it through the same
+  **mashbill engine** (Python). The viewer reaches it through the same
   HTTP/WS transport it already uses for every other Plot operation
   (`POST /api/chat/send`, `WS /ws/chat?project_path=…`). The Tauri shell
   does *not* spawn or stream the chat CLI; its only role stays "host the
   engine sidecar".
 - **Why:** Three forces, all pointing the same direction:
-  1. **Dev parity.** The dev workflow is `cd plot && uv run plot-mcp-http`
+  1. **Dev parity.** The dev workflow is `cd plot && uv run mashbill-http`
      + `cd plot/viewer && npm run dev` opened in a regular browser at
      `:5193`. A browser tab has no `__TAURI__` context, so a Tauri-side
      subprocess would silently disable chat in dev. Keeping the CLI
@@ -13639,7 +13639,7 @@ but not yet fully eliminated.
      server call (D-2026-05-10's `EngineClient` seam preparation). Adding
      a Tauri-only IPC channel would split the transport into two paths
      and pre-empt the still-unbuilt EngineClient interface.
-  3. **Existing WS plumbing.** `plot_mcp/broadcast.py` + the `/ws`
+  3. **Existing WS plumbing.** `mashbill/broadcast.py` + the `/ws`
      endpoint already fan messages out per workspace. The chat stream
      reuses the same pattern — one new room key, no new framework.
 - **What this does NOT decide:** the **PATH inheritance** problem for
@@ -13650,14 +13650,14 @@ but not yet fully eliminated.
   `src-tauri/src/lib.rs`) is the only Tauri-side change Phase C needs,
   and it sits below this decision rather than overturning it.
 - **Implementation outline:**
-  - `plot_mcp/chat_session.py` — `ChatProvider` ABC + `ClaudeCodeProvider`
+  - `mashbill/chat_session.py` — `ChatProvider` ABC + `ClaudeCodeProvider`
     concrete. One session per workspace root, keyed by absolute path.
     Each user turn invokes `claude --print --output-format stream-json
     --include-partial-messages --session-id <uuid>` so the CLI emits
     chunked JSON events to stdout; the session reuses a single
     `--session-id` across turns to keep the conversation persistent in
     the CLI's own session store.
-  - `plot_mcp/endpoints_chat.py` — `POST /api/chat/send` (workspace_root,
+  - `mashbill/endpoints_chat.py` — `POST /api/chat/send` (workspace_root,
     message text) writes the user turn + spawns the subprocess; the
     streamed stdout flows out through `WS /ws/chat?project_path=…`
     using the same Broadcaster pattern as `/ws`. `POST /api/chat/reset`
@@ -13726,7 +13726,7 @@ but not yet fully eliminated.
   ``chat_session.py``. Three providers + the base + the registry was
   going to push past the engine's 500-LOC rule (test_module_size). To
   stay legible AND under the rule, the per-CLI quirks moved into
-  ``plot_mcp/chat_providers/{base,claude_code,codex,gemini}.py``
+  ``mashbill/chat_providers/{base,claude_code,codex,gemini}.py``
   and ``chat_session.py`` became a thin facade (~130 LOC) that
   re-exports the public names. Old imports keep linking.
 - **Approval:** Executed under D-2026-06-11-E + D-2026-06-12-D
@@ -13760,7 +13760,7 @@ but not yet fully eliminated.
   coordinated client + server release with breakage on every old
   client in between.
 - **Why env-gated (not always-on):** the dev loop runs the engine
-  in a terminal (``uv run plot-mcp-http``) and the viewer in a
+  in a terminal (``uv run mashbill-http``) and the viewer in a
   browser (``npm run dev``); forcing a token there means every
   contributor juggles env vars + restarts. The pin in TABLET_ARCH is
   *"오늘은 no-op/loopback"* — env-gated keeps it no-op for dev and
@@ -13785,7 +13785,7 @@ but not yet fully eliminated.
   TABLET_ARCH §"지금 만들 것" names. Those land as follow-up D
   entries; v0.65.0 is just the auth seam.
 - **Implementation outline:**
-  - Engine: ``plot_mcp/auth.py`` — env reader + ``AuthMiddleware``
+  - Engine: ``mashbill/auth.py`` — env reader + ``AuthMiddleware``
     (Starlette ``BaseHTTPMiddleware`` over ``/api/*`` only) +
     ``check_ws_token`` (called from ``ws_endpoint`` inside
     ``http_app.py`` because middleware can't ride ``WebSocketRoute``).

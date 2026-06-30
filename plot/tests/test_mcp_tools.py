@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp import mcp_tools
-from plot_mcp.git_store import init_workspace_repo
+from mashbill import mcp_tools
+from mashbill.git_store import init_workspace_repo
 
 # Core verbs the agent (and the in-app coach) rely on. Removing/renaming any of
 # these is a breaking change to the tool contract — this set makes it loud.

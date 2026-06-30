@@ -15,15 +15,15 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.canvas_io import _WRITABLE_CONTENT_FIELDS
-from plot_mcp.folder_io import (
+from mashbill.canvas_io import _WRITABLE_CONTENT_FIELDS
+from mashbill.folder_io import (
     create_project,
     read_canvas,
     update_node,
     writable_node_fields,
     write_canvas,
 )
-from plot_mcp.models import (
+from mashbill.models import (
     ActorRefNode,
     CanvasDoc,
     EntityNode,
@@ -35,8 +35,8 @@ from plot_mcp.models import (
     SketchNode,
     StepNode,
 )
-from plot_mcp.models_foundation import PROJECT_ANCHOR_ID
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.models_foundation import PROJECT_ANCHOR_ID
+from mashbill.workspace import resolve_plot_root
 
 
 def _mission_canvas() -> CanvasDoc:
@@ -99,7 +99,7 @@ def test_writable_map_covers_every_union_kind() -> None:
     of silently leaking every new field as writable."""
     import typing
 
-    from plot_mcp.models_union import SketchNode as _Union
+    from mashbill.models_union import SketchNode as _Union
 
     members = typing.get_args(typing.get_args(_Union)[0])
     kinds = {cls.model_fields["kind"].default for cls in members}
@@ -349,7 +349,7 @@ def test_update_node_is_a_registered_mcp_tool() -> None:
     right call contract, else the write path is unreachable / mis-shaped."""
     import asyncio
 
-    from plot_mcp.mcp_tools import mcp
+    from mashbill.mcp_tools import mcp
 
     tool = asyncio.run(mcp.get_tool("update_node"))
     assert tool is not None

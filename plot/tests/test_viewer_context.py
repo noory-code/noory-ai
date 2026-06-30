@@ -14,14 +14,14 @@ from pathlib import Path
 
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.http_app import create_http_app
-from plot_mcp.viewer_context import (
+from mashbill.broadcast import BroadcastHub
+from mashbill.http_app import create_http_app
+from mashbill.viewer_context import (
     TTL_SECONDS,
     read_viewer_context,
     write_viewer_context,
 )
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.workspace import resolve_plot_root
 
 _SEL = [{"id": "n1", "kind": "core_value", "label": "Trust"}]
 
@@ -185,7 +185,7 @@ def test_post_sanitizes_malformed_selection(tmp_path: Path) -> None:
 
 
 def test_mcp_tool_reads_what_the_viewer_posted(tmp_path: Path) -> None:
-    from plot_mcp.mcp_tools import get_viewer_context
+    from mashbill.mcp_tools import get_viewer_context
 
     _client().post(
         "/api/viewer/context",
@@ -203,7 +203,7 @@ def test_mcp_tool_reads_what_the_viewer_posted(tmp_path: Path) -> None:
 
 
 def test_mcp_tool_empty_when_no_viewer(tmp_path: Path) -> None:
-    from plot_mcp.mcp_tools import get_viewer_context
+    from mashbill.mcp_tools import get_viewer_context
 
     # A fresh project nobody has reported on → no live context.
     ctx = get_viewer_context(str(tmp_path))

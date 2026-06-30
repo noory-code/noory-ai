@@ -1,6 +1,6 @@
 [project]
-name = "plot-mcp"
-dynamic = ["version"]  # single source = plot_mcp/__init__.py::__version__ (D-2026-06-20-N)
+name = "mashbill"
+dynamic = ["version"]  # single source = mashbill/__init__.py::__version__ (D-2026-06-20-N)
 description = "Plot — freeform mindmap canvas + MCP server. AI-assisted visual thinking workspace that stores sketches as JSON under .plot/ and exposes them to Claude Code."
 readme = "README.md"
 license = "MIT"
@@ -19,18 +19,18 @@ dependencies = [
 ]
 
 [project.scripts]
-plot-mcp = "plot_mcp.__main__:main"
-plot-mcp-http = "plot_mcp.__main__:http_only"
+mashbill = "mashbill.__main__:main"
+mashbill-http = "mashbill.__main__:http_only"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "plot_mcp/__init__.py"
+path = "mashbill/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["plot_mcp"]
+packages = ["mashbill"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

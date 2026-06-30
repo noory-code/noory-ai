@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.folder_io import create_project
-from plot_mcp.http_app import create_http_app
+from mashbill.folder_io import create_project
+from mashbill.http_app import create_http_app
 
 
 @pytest.fixture()
@@ -16,8 +16,8 @@ def plot_root(tmp_path: Path) -> Path:
     # D-2026-06-11-C/D: workspace is the user's opened folder and IS the
     # git repo; .noory/plot/ lives inside it. Plot never auto-inits — but
     # tests that exercise publish/tag need a real repo, so we init here.
-    from plot_mcp.git_store import init_workspace_repo
-    from plot_mcp.workspace import resolve_plot_root
+    from mashbill.git_store import init_workspace_repo
+    from mashbill.workspace import resolve_plot_root
     init_workspace_repo(tmp_path)
     return resolve_plot_root(str(tmp_path))
 

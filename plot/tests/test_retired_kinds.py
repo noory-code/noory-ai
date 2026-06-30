@@ -15,9 +15,9 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.canvas_io import RETIRED_KINDS, _drop_retired_kinds
-from plot_mcp.git_store import init_workspace_repo
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.canvas_io import RETIRED_KINDS, _drop_retired_kinds
+from mashbill.git_store import init_workspace_repo
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture

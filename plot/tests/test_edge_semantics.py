@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import pytest
 
-from plot_mcp.edge_semantics import classify_edge, fold_endpoints
-from plot_mcp.models import SketchEdge
+from mashbill.edge_semantics import classify_edge, fold_endpoints
+from mashbill.models import SketchEdge
 
 # (canvas_kind, source_kind) -> expected relation. Mirror of the TS
 # vitest cases exactly.
@@ -65,7 +65,7 @@ def test_relation_value_set_is_the_pinned_three() -> None:
     agreed three relations."""
     import typing
 
-    from plot_mcp.models import SketchEdge
+    from mashbill.models import SketchEdge
 
     py_values = set(typing.get_args(SketchEdge.model_fields["relation"].annotation))
     assert py_values == {"flow", "injection", "inheritance"}

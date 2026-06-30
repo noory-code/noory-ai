@@ -1,7 +1,7 @@
 """Shared chat-context builders — canonical home (D-2026-06-15-D).
 
 ``build_framing_preamble`` + ``build_context_preamble`` moved out of the HTTP
-endpoint module into ``plot_mcp.chat_context`` so the MCP path can share them
+endpoint module into ``mashbill.chat_context`` so the MCP path can share them
 without importing the HTTP layer. These tests pin the SSOT at its new home;
 ``test_endpoints_chat.py`` continues to cover the in-app wiring through the
 re-export.
@@ -9,7 +9,7 @@ re-export.
 
 from __future__ import annotations
 
-from plot_mcp.chat_context import (
+from mashbill.chat_context import (
     SCOPE_FRAMING,
     SELECTION_DETAIL_CAP,
     build_context_preamble,

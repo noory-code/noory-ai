@@ -24,8 +24,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-import plot_mcp.http_app as http_app_mod
-from plot_mcp.http_app import create_http_app
+import mashbill.http_app as http_app_mod
+from mashbill.http_app import create_http_app
 
 _MCP_TOOLS = Path(http_app_mod.__file__).resolve().parent / "mcp_tools.py"
 
@@ -58,7 +58,7 @@ def test_pure_domain_modules_dont_leak_transport() -> None:
     any transport library into ``sys.modules`` (incl. transitively). A future
     ``import starlette`` in ``folder_io`` would break the headless boundary —
     this catches it."""
-    imports = "; ".join(f"import plot_mcp.{m}" for m in _PURE_DOMAIN_MODULES)
+    imports = "; ".join(f"import mashbill.{m}" for m in _PURE_DOMAIN_MODULES)
     code = (
         "import sys; "
         f"{imports}; "
@@ -86,8 +86,8 @@ def test_mcp_adapter_does_not_import_http_for_viewer_stack() -> None:
     offenders = [
         mod
         for mod in _HTTP_FOR_VIEWER
-        if f"from plot_mcp.{mod} import" in src
-        or f"import plot_mcp.{mod}" in src
+        if f"from mashbill.{mod} import" in src
+        or f"import mashbill.{mod}" in src
     ]
     assert not offenders, (
         f"mcp_tools.py imports the HTTP-for-viewer stack {offenders} — "

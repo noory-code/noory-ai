@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from plot_mcp.project_io import create_project
-from plot_mcp.workspace import discover_projects, resolve_plot_root
+from mashbill.project_io import create_project
+from mashbill.workspace import discover_projects, resolve_plot_root
 
 
 def test_plot_root_lives_under_noory(tmp_path: Path) -> None:

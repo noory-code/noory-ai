@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-PKG = Path(__file__).resolve().parent.parent / "plot_mcp"
+PKG = Path(__file__).resolve().parent.parent / "mashbill"
 
 # The monorepo SoC rule: review/split at 500 lines.
 CEILING = 500

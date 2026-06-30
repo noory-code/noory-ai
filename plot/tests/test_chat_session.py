@@ -1,6 +1,6 @@
 """R7 chat — subprocess driver tests (D-2026-06-12-D, Phase C step C1).
 
-Pins three responsibilities of ``plot_mcp.chat_session``:
+Pins three responsibilities of ``mashbill.chat_session``:
 
   1. ``_parse_stream_line`` decodes Claude Code's ``stream-json`` output into
      ``ChatStreamEvent`` instances, dropping system / tool_use frames and
@@ -24,7 +24,7 @@ from typing import Any
 
 import pytest
 
-from plot_mcp.chat_session import (
+from mashbill.chat_session import (
     ChatSessionRegistry,
     ChatStreamEvent,
     ClaudeCodeProvider,
@@ -582,7 +582,7 @@ def test_default_registry_factory_builds_claude_provider(tmp_path: Path) -> None
 
 
 def test_default_registry_factory_builds_codex_provider(tmp_path: Path) -> None:
-    from plot_mcp.chat_session import CodexProvider
+    from mashbill.chat_session import CodexProvider
 
     registry = ChatSessionRegistry()
     ws = tmp_path / "ws"

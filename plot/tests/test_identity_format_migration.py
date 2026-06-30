@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from plot_mcp.models import (
+from mashbill.models import (
     FOUNDATION_MD_FIELDS,
     FOUNDATION_TYPED_TEXT_FIELDS,
     IdentityNode,

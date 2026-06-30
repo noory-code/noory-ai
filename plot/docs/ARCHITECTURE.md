@@ -6,7 +6,7 @@
 > [`DECISIONS.md`](./DECISIONS.md) (history).
 >
 > **Scope today:** viewer (`plot/viewer/src/`). The MCP server
-> (`plot/plot_mcp/`) already follows the noory-ai monorepo's Tool/Core
+> (`plot/mashbill/`) already follows the noory-ai monorepo's Tool/Core
 > separation and is not the bottleneck.
 
 ---
@@ -139,7 +139,7 @@ entry.
 > total.
 
 1. **Server:** new `XNode(BaseNodeFields)` in
-   `plot_mcp/models.py`, add to `SketchNode = Annotated[Union[...]]`,
+   `mashbill/models.py`, add to `SketchNode = Annotated[Union[...]]`,
    add to `_ALL_KIND_CLASSES` in `schema_export.py`.
 2. **Viewer domain:** new `domain/X.ts` (class + JSON type + fromJson
    + toJson), add to `parseEntity.ts` dispatch, add to

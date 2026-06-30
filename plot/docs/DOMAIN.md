@@ -17,11 +17,11 @@
 
 | 컨텍스트 | 코드 거처 (current) |
 |---|---|
-| **EssenceDiscovery** | `plot_mcp/foundation/` · `plot_mcp/templates/foundation/` · (뷰어) Foundation 인스펙터 섹션 |
-| **EssenceRetention** | `plot_mcp/projects/anchors.py` · (뷰어) `sketch/useNodesMemo.ts`(앵커 주입) · `sketch/applyAnchorChange.ts` |
-| **EssencePlanning** | `plot_mcp/canvases/actors/` · `plot_mcp/canvases/services/` · (뷰어) `sketch/autoLayout.ts` · `sketch/useEdgesMemo.ts` |
-| **EssenceExecution** | `plot_mcp/canvases/service_detail/` · `plot_mcp/server.py`(MCP 도구 등록) · (뷰어) `sketch/SketchModals.tsx`(드릴 모달) |
-| **AICollaboration** | `plot/skills/` · `plot/agents/` · `plot/hooks/` · `plot/.claude-plugin/plugin.json` · `plot_mcp/server.py`(도구 표면) |
+| **EssenceDiscovery** | `mashbill/foundation/` · `mashbill/templates/foundation/` · (뷰어) Foundation 인스펙터 섹션 |
+| **EssenceRetention** | `mashbill/projects/anchors.py` · (뷰어) `sketch/useNodesMemo.ts`(앵커 주입) · `sketch/applyAnchorChange.ts` |
+| **EssencePlanning** | `mashbill/canvases/actors/` · `mashbill/canvases/services/` · (뷰어) `sketch/autoLayout.ts` · `sketch/useEdgesMemo.ts` |
+| **EssenceExecution** | `mashbill/canvases/service_detail/` · `mashbill/server.py`(MCP 도구 등록) · (뷰어) `sketch/SketchModals.tsx`(드릴 모달) |
+| **AICollaboration** | `plot/skills/` · `plot/agents/` · `plot/hooks/` · `plot/.claude-plugin/plugin.json` · `mashbill/server.py`(도구 표면) |
 
 > 뷰어 코드(`viewer/src/…`)는 컷(D-2026-06-20-M) 후 상용 앱 레포 `plot/viewer/`에 산다 —
 > 여기 경로는 *어느 컨텍스트의 표면인지*를 가리키는 표기일 뿐, 엔진 레포 안 링크가 아니다.
@@ -47,7 +47,7 @@ root의 공유 용어를 엔진 코드 타입에 맺는 구분. (개념 정의�
 | 앵커 렌더 | EssenceRetention | `sketch/useNodesMemo.ts`(일반 노드 변환과 섞임) | EssenceRetention(자체 모듈) | 중 — 동작은 함; 분리하면 명료 |
 | 오토레이아웃 알고리즘 | EssencePlanning | `sketch/autoLayout.ts` | EssencePlanning ✓ | 없음 — 이미 맞음 |
 | 커서 SSOT | 가로지름(시각 계약) | `styles.css` + `CURSOR.md` | 그대로 OK — 시각 계약엔 자연스런 도메인 거처 없음 | 없음 |
-| MCP 도구 등록 | Execution + AICollaboration | `plot_mcp/server.py` | OK — 도구 표면이 곧 경계 | 없음 |
+| MCP 도구 등록 | Execution + AICollaboration | `mashbill/server.py` | OK — 도구 표면이 곧 경계 | 없음 |
 | Service-Detail 모달 | EssenceExecution | `sketch/SketchModals.tsx` | EssenceExecution ✓ | 낮음 |
 
 ## 이 파일이 바뀔 때

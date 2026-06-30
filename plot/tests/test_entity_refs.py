@@ -13,10 +13,10 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.entity_refs import entity_usage
-from plot_mcp.folder_io import create_project, read_canvas, sync_details_with_overview, write_canvas
-from plot_mcp.models import CanvasDoc, CategoryNode, FeatureNode, ServiceNode, SketchNode, StepNode
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.entity_refs import entity_usage
+from mashbill.folder_io import create_project, read_canvas, sync_details_with_overview, write_canvas
+from mashbill.models import CanvasDoc, CategoryNode, FeatureNode, ServiceNode, SketchNode, StepNode
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture
@@ -93,9 +93,9 @@ def test_usage_collects_multiple_steps_in_one_feature(plot_root: Path) -> None:
 def test_usage_endpoint_returns_envelope(tmp_path: Path) -> None:
     from starlette.testclient import TestClient
 
-    from plot_mcp.broadcast import BroadcastHub
-    from plot_mcp.git_store import init_workspace_repo
-    from plot_mcp.http_app import create_http_app
+    from mashbill.broadcast import BroadcastHub
+    from mashbill.git_store import init_workspace_repo
+    from mashbill.http_app import create_http_app
 
     init_workspace_repo(tmp_path)
     plot_root = resolve_plot_root(str(tmp_path))

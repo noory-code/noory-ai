@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.git_store import (
+from mashbill.git_store import (
     GitNotInitializedError,
     TagAlreadyExistsError,
     delete_tag,

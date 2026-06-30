@@ -23,13 +23,13 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.endpoints_publish import _bump_blueprint_version
-from plot_mcp.folder_io import _project_dir
-from plot_mcp.git_store import init_workspace_repo, list_tags, tag_snapshot
-from plot_mcp.http_app import create_http_app
-from plot_mcp.project_io import create_project
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.broadcast import BroadcastHub
+from mashbill.endpoints_publish import _bump_blueprint_version
+from mashbill.folder_io import _project_dir
+from mashbill.git_store import init_workspace_repo, list_tags, tag_snapshot
+from mashbill.http_app import create_http_app
+from mashbill.project_io import create_project
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture

@@ -3,7 +3,7 @@
 Post-codegen (migration Phase A, D-2026-06-20-A) the cross-side regex parity
 that used to live here — ``test_per_kind_field_parity``, which read the viewer
 ``{Kind}.ts`` inline interfaces — is retired. The viewer wire types are now
-GENERATED from these same Pydantic models (``plot_mcp/ts_codegen.py``), and
+GENERATED from these same Pydantic models (``mashbill/ts_codegen.py``), and
 ``tests/test_ts_codegen.py`` pins the committed ``wire.gen.ts`` against fresh
 generation: a strictly stronger guard (it checks types, not just names) that
 survives the repo split (the old regex read both sides and died on split).
@@ -20,9 +20,9 @@ from __future__ import annotations
 
 import typing
 
-from plot_mcp.models import BaseNodeFields
-from plot_mcp.models_union import SketchNode
-from plot_mcp.schema_export import _ALL_KIND_CLASSES
+from mashbill.models import BaseNodeFields
+from mashbill.models_union import SketchNode
+from mashbill.schema_export import _ALL_KIND_CLASSES
 
 # Canonical base-field set declared by ``BaseNodeFields`` (Pydantic). The
 # viewer mirror (``BaseFieldsJson``) is generated from this same model and

@@ -19,7 +19,7 @@ from watchdog.events import (
     FileMovedEvent,
 )
 
-from plot_mcp.watcher import WorkspaceWatcher, _Handler, _is_watched_file
+from mashbill.watcher import WorkspaceWatcher, _Handler, _is_watched_file
 
 # --- _is_watched_file: the propagation filter --------------------------------
 

@@ -21,8 +21,8 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.http_app import create_http_app
+from mashbill.broadcast import BroadcastHub
+from mashbill.http_app import create_http_app
 
 
 @pytest.fixture

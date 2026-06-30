@@ -15,15 +15,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from plot_mcp.chat_context import (
+from mashbill.chat_context import (
     COACH_TONE,
     HALLUCINATION_GUARD,
     WRITE_PLAYBOOK,
     build_framing_preamble,
     build_system_prompt,
 )
-from plot_mcp.chat_providers.claude_code import ClaudeCodeProvider
-from plot_mcp.chat_providers.codex import CodexProvider
+from mashbill.chat_providers.claude_code import ClaudeCodeProvider
+from mashbill.chat_providers.codex import CodexProvider
 
 # --- per-canvas coaching playbooks (Phase 3, sourced from ----------------
 # --- docs/concepts/ai-collaboration.md §2) -------------------------------
@@ -170,7 +170,7 @@ def test_claude_command_omits_system_prompt_flag_when_unset(tmp_path: Path) -> N
     assert "--append-system-prompt" not in p._build_command("hi")
 
 
-def test_claude_attaches_own_plot_mcp_strictly(tmp_path: Path) -> None:
+def test_claude_attaches_own_mashbill_strictly(tmp_path: Path) -> None:
     # D-2026-06-26-E: the coach must carry THIS build's Plot tools directly, not
     # inherit a drift-prone global registration. So the command injects an
     # --mcp-config naming the plot server AND --strict-mcp-config to ignore all

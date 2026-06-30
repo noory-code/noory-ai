@@ -13,7 +13,7 @@ Three senses of the name — **plot the graph**, **plot the story**, **plot the 
 uv sync
 
 # Run the combined MCP + HTTP server for a project
-uv run python -m plot_mcp --project /path/to/project
+uv run python -m mashbill --project /path/to/project
 
 # Open the canvas
 open http://127.0.0.1:5190/?project_path=/path/to/project
@@ -33,7 +33,7 @@ cd viewer && npm install && npm run dev
 
 ## Architecture
 
-- `plot_mcp/` — Python MCP server + Starlette HTTP + watchdog watcher
+- `mashbill/` — Python MCP server + Starlette HTTP + watchdog watcher
 - `viewer/` — React 18 + Vite 5 + React Flow 11 canvas
 - `.claude-plugin/plugin.json` — Claude Code plugin manifest
 

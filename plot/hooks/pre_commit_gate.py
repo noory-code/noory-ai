@@ -7,7 +7,7 @@ relevant checks first:
 
 - ``viewer/`` staged changes ⇒ ``cd plot/viewer && npx tsc --noEmit``
   and ``npx vitest run``.
-- ``plot_mcp/`` staged changes ⇒ ``cd plot && uv run pytest``.
+- ``mashbill/`` staged changes ⇒ ``cd plot && uv run pytest``.
 
 If any check fails, the commit is blocked with a permissionDecision
 of ``deny`` and the failure output is returned so the assistant can
@@ -47,11 +47,11 @@ def find_plot_root() -> Path | None:
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
     if plugin_root:
         candidate = Path(plugin_root)
-        if (candidate / "viewer").exists() and (candidate / "plot_mcp").exists():
+        if (candidate / "viewer").exists() and (candidate / "mashbill").exists():
             return candidate
     here = Path(__file__).resolve()
     for parent in [here.parent.parent, here.parent.parent.parent]:
-        if (parent / "viewer").exists() and (parent / "plot_mcp").exists():
+        if (parent / "viewer").exists() and (parent / "mashbill").exists():
             return parent
     return None
 
@@ -78,7 +78,7 @@ def viewer_changes_staged(staged: list[str], plot_root: Path) -> bool:
 
 
 def mcp_changes_staged(staged: list[str], plot_root: Path) -> bool:
-    rel = plot_root.name + "/plot_mcp/"
+    rel = plot_root.name + "/mashbill/"
     return any(p.startswith(rel) for p in staged)
 
 
@@ -93,7 +93,7 @@ def reset_complete_check(
 
     The invariants (single boolean = AND of all four):
 
-      1. ``plot_mcp/models.py`` defines ``SketchNode`` as an
+      1. ``mashbill/models.py`` defines ``SketchNode`` as an
          ``Annotated[Union[...], Field(discriminator="kind")]`` — i.e.
          the 15-way discriminated union, not a god class.
       2. ``viewer/src/canvases/SketchInspector.tsx`` absent from disk
@@ -113,7 +113,7 @@ def reset_complete_check(
     failures: list[str] = []
 
     # 1) Server: SketchNode is the 15-way discriminated union. The union body
-    # may live in any module under ``plot_mcp/`` — models.py is a facade since
+    # may live in any module under ``mashbill/`` — models.py is a facade since
     # the v0.59.3 split (D-2026-06-11-B).
     # Match both forms the codebase + tests use:
     #   SketchNode = Annotated[Union[...], Field(discriminator="kind")]
@@ -123,18 +123,18 @@ def reset_complete_check(
         r"SketchNode\s*=\s*Annotated\[.*?\bField\s*\(\s*discriminator\s*=\s*[\"']kind[\"']",
         re.DOTALL,
     )
-    plot_mcp_dir = plot_root / "plot_mcp"
+    mashbill_dir = plot_root / "mashbill"
     union_defined_somewhere = False
     try:
-        for py in plot_mcp_dir.glob("*.py"):
+        for py in mashbill_dir.glob("*.py"):
             if union_re.search(py.read_text(encoding="utf-8")):
                 union_defined_somewhere = True
                 break
     except OSError as exc:  # pragma: no cover — repo guarantees presence
-        return f"reset_complete_check: cannot scan {plot_mcp_dir}: {exc}"
+        return f"reset_complete_check: cannot scan {mashbill_dir}: {exc}"
     if not union_defined_somewhere:
         failures.append(
-            "1) No module under ``plot_mcp/`` exposes ``SketchNode = "
+            "1) No module under ``mashbill/`` exposes ``SketchNode = "
             "Annotated[Union[...]]`` (the 15-way discriminated union). "
             "Reverting to a god ``SketchNode`` class violates "
             "D-2026-05-12-B Phase 1."
@@ -205,7 +205,7 @@ def cross_cutting_bundle_check(
 
     Cross-cutting visual code = CROSS_CUTTING_VISUAL_CODE (currently
     just ``viewer/src/styles.css``). Feature code = any other file
-    under ``viewer/`` or ``plot_mcp/`` (tests excluded — they ship
+    under ``viewer/`` or ``mashbill/`` (tests excluded — they ship
     with their target). Docs-only commits are never blocked.
     """
     prefix = plot_root.name + "/"
@@ -214,7 +214,7 @@ def cross_cutting_bundle_check(
     feature = [
         p
         for p in rel
-        if (p.startswith("viewer/") or p.startswith("plot_mcp/"))
+        if (p.startswith("viewer/") or p.startswith("mashbill/"))
         and p not in CROSS_CUTTING_VISUAL_CODE
         and not p.startswith("viewer/tests/")
     ]
@@ -302,7 +302,7 @@ def main() -> int:
         ok, out = run_check(["uv", "run", "pytest"], cwd=plot_root)
         if not ok:
             failures.append(
-                f"### plot_mcp pytest failed\n\n```\n{out.strip()[-2000:]}\n```"
+                f"### mashbill pytest failed\n\n```\n{out.strip()[-2000:]}\n```"
             )
 
     bundle_msg = cross_cutting_bundle_check(staged, plot_root)

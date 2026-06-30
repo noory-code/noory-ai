@@ -8,9 +8,9 @@ from typing import Any
 
 import pytest
 
-from plot_mcp.folder_io import list_feature_details, read_canvas, read_project
-from plot_mcp.migrate import migrate_v01_to_v02
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.folder_io import list_feature_details, read_canvas, read_project
+from mashbill.migrate import migrate_v01_to_v02
+from mashbill.workspace import resolve_plot_root
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def plot_root(tmp_path: Path) -> Path:
 
 # ---------------------------------------------------------------------------
 # helpers — write a v0.1 sketch JSON without depending on the deleted
-# ``plot_mcp.sketches`` module. Keeps the legacy format visible in the
+# ``mashbill.sketches`` module. Keeps the legacy format visible in the
 # tests rather than hiding it behind a fixture builder.
 # ---------------------------------------------------------------------------
 
@@ -219,8 +219,8 @@ def test_v10_upgrade_renames_core_dir_and_unparents_children(plot_root: Path) ->
     5. Children of the legacy core anchor get ``parent_id=None`` so the
        small anchor doesn't visually trap them.
     """
-    from plot_mcp.migrate import upgrade_foundation_canvas_if_needed
-    from plot_mcp.models import ProjectDoc
+    from mashbill.migrate import upgrade_foundation_canvas_if_needed
+    from mashbill.models import ProjectDoc
 
     # S2 flat layout: the project's files sit directly under plot_root.
     folder = plot_root
@@ -516,8 +516,8 @@ def test_upgrade_foundation_is_idempotent_when_anchor_in_project_doc(
     twice on a v0.13-shaped project must not modify canvas.json on the
     second call.
     """
-    from plot_mcp.folder_io import _canvas_file, _project_file, _write_json
-    from plot_mcp.migrate import upgrade_foundation_canvas_if_needed
+    from mashbill.folder_io import _canvas_file, _project_file, _write_json
+    from mashbill.migrate import upgrade_foundation_canvas_if_needed
 
     project_id = "pj"
     project_dir = plot_root / project_id
@@ -603,8 +603,8 @@ def test_upgrade_foundation_still_synthesises_anchor_for_pre_v013_project(
     """The guard added in v0.16.34 must not regress the original
     pre-v0.13 use case: a project.json without an anchor entry should
     still get its anchor synthesised on first read."""
-    from plot_mcp.folder_io import _canvas_file, _project_file, _write_json
-    from plot_mcp.migrate import upgrade_foundation_canvas_if_needed
+    from mashbill.folder_io import _canvas_file, _project_file, _write_json
+    from mashbill.migrate import upgrade_foundation_canvas_if_needed
 
     project_id = "pj"
     project_dir = plot_root / project_id

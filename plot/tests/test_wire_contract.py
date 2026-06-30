@@ -4,7 +4,7 @@
 it silently dies the moment viewer/ leaves this repo (TECH_REVIEW step 1).
 The replacement contract is a generated JSON snapshot committed TWICE:
 
-    plot_mcp/wire_contract.json            (engine copy — this side)
+    mashbill/wire_contract.json            (engine copy — this side)
     <app repo>/viewer/src/schema/wire-contract.json  (viewer copy — vitest)
 
 Each side verifies its own sources against its own committed copy, so both
@@ -17,7 +17,7 @@ cross-repo regen writing both from one payload.
 Regenerate after a deliberate schema change (engine copy only; add
 ``PLOT_VIEWER_ROOT=/abs/path/to/plot/viewer`` to also refresh the app copy):
 
-    uv run python -m plot_mcp.schema_export --wire
+    uv run python -m mashbill.schema_export --wire
 """
 
 from __future__ import annotations
@@ -25,22 +25,22 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from plot_mcp.schema_export import wire_contract
+from mashbill.schema_export import wire_contract
 
 _PLOT_ROOT = Path(__file__).resolve().parent.parent
-_ENGINE_COPY = _PLOT_ROOT / "plot_mcp" / "wire_contract.json"
+_ENGINE_COPY = _PLOT_ROOT / "mashbill" / "wire_contract.json"
 
 
 def test_engine_snapshot_matches_generated_contract() -> None:
     """The committed engine copy must equal what the models generate NOW.
     Drift = someone changed a Pydantic model without regenerating."""
     assert _ENGINE_COPY.is_file(), (
-        f"missing {_ENGINE_COPY} — run: uv run python -m plot_mcp.schema_export --wire"
+        f"missing {_ENGINE_COPY} — run: uv run python -m mashbill.schema_export --wire"
     )
     committed = json.loads(_ENGINE_COPY.read_text(encoding="utf-8"))
     assert committed == wire_contract(), (
         "wire_contract.json is stale — a model changed without regenerating. "
-        "Run: uv run python -m plot_mcp.schema_export --wire"
+        "Run: uv run python -m mashbill.schema_export --wire"
     )
 
 

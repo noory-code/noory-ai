@@ -69,7 +69,7 @@
 >    만 허용(422 gate). grouping kind 허용 vs 새 foundation-group kind 결정 후 채우기.
 >
 > **Live env:** sim project at `/Users/woogis/Workspace/banas-sim/banas` (project id `banas`).
-> Launch: `cd plot && uv run plot-mcp-http` (:5190) + `cd plot/viewer && npm run dev` (:5193),
+> Launch: `cd plot && uv run mashbill-http` (:5190) + `cd plot/viewer && npm run dev` (:5193),
 > open `http://localhost:5193/?project_path=/Users/woogis/Workspace/banas-sim/banas&project=banas`.
 > **Gotcha:** restart the MCP server after pulling server-side changes.
 

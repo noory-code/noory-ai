@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from plot_mcp.file_io import resolve_safe_path
-from plot_mcp.models import DirTreeNode
-from plot_mcp.workspace import MAX_TREE_DEPTH, build_dir_tree
+from mashbill.file_io import resolve_safe_path
+from mashbill.models import DirTreeNode
+from mashbill.workspace import MAX_TREE_DEPTH, build_dir_tree
 
 
 def _flatten(node: DirTreeNode) -> list[DirTreeNode]:
@@ -31,7 +31,7 @@ def test_tree_has_plot_requires_a_real_project(tmp_path: Path) -> None:
     # (e.g. one a stray read created) must read False, otherwise the picker
     # labels it "열기" and clicking it lands in create() with nothing to
     # open → a phantom new project.
-    from plot_mcp.folder_io import create_project
+    from mashbill.folder_io import create_project
 
     create_project(tmp_path / "a" / ".plot", "proj-real", "A")  # real project
     (tmp_path / "b" / ".plot").mkdir(parents=True)  # empty .plot

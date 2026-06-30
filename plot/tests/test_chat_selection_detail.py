@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from plot_mcp.chat_selection import (
+from mashbill.chat_selection import (
     build_turn_preamble,
     render_canvas_map,
     render_cross_canvas_registry,
@@ -22,8 +22,8 @@ from plot_mcp.chat_selection import (
     render_selection_detail,
     render_write_target,
 )
-from plot_mcp.folder_io import create_project, write_canvas
-from plot_mcp.models import (
+from mashbill.folder_io import create_project, write_canvas
+from mashbill.models import (
     ActorNode,
     CanvasDoc,
     CoreValueNode,
@@ -33,7 +33,7 @@ from plot_mcp.models import (
     ServiceNode,
     SketchNode,
 )
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.workspace import resolve_plot_root
 
 # --- pure renderer ---------------------------------------------------------
 

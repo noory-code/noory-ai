@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from plot_mcp.mcp_registration import (
+from mashbill.mcp_registration import (
     ProviderName,
     detect_providers,
     is_plot_registered,
@@ -243,7 +243,7 @@ def test_unknown_provider_raises(fake_home: Path, plugin_root: Path) -> None:
 # ---------------------------------------------------------------------------
 #
 # In a dev checkout the MCP entry is ``uv run --directory <src> python -m
-# plot_mcp``. Inside the PyInstaller-frozen .app that command is broken: the
+# mashbill``. Inside the PyInstaller-frozen .app that command is broken: the
 # plugin root resolves to the ephemeral ``_MEIxxxx`` extraction dir (gone once
 # the app exits, and not a uv project even while alive). When frozen we must
 # register a STABLE command instead — the bundled binary itself in stdio-MCP
@@ -251,7 +251,7 @@ def test_unknown_provider_raises(fake_home: Path, plugin_root: Path) -> None:
 
 
 def test_plot_entry_uses_uv_when_not_frozen(plugin_root: Path) -> None:
-    from plot_mcp.mcp_registration import _plot_entry, _spec_for
+    from mashbill.mcp_registration import _plot_entry, _spec_for
 
     entry = _plot_entry(plugin_root, _spec_for("codex"))
     assert entry["command"] == "uv"
@@ -264,9 +264,9 @@ def test_plot_entry_uses_bundled_binary_when_frozen(
 ) -> None:
     import sys
 
-    from plot_mcp.mcp_registration import _plot_entry, _spec_for
+    from mashbill.mcp_registration import _plot_entry, _spec_for
 
-    exe = "/Applications/Plot.app/Contents/MacOS/plot-mcp"
+    exe = "/Applications/Plot.app/Contents/MacOS/mashbill"
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     monkeypatch.setattr(sys, "executable", exe, raising=False)
 
@@ -283,7 +283,7 @@ def test_register_codex_when_frozen_writes_stable_command(
 ) -> None:
     import sys
 
-    exe = "/Applications/Plot.app/Contents/MacOS/plot-mcp"
+    exe = "/Applications/Plot.app/Contents/MacOS/mashbill"
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     monkeypatch.setattr(sys, "executable", exe, raising=False)
 

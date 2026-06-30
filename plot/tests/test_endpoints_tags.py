@@ -1,13 +1,13 @@
 """Tag (git session bookmark) + read-only "view at tag" endpoint tests.
 
-Covers the four handlers in ``plot_mcp/endpoints_tags.py``:
+Covers the four handlers in ``mashbill/endpoints_tags.py``:
 
   - ``GET    /api/projects/{project_id}/tags``            (tags_list_endpoint)
   - ``POST   /api/projects/{project_id}/tags``            (tag_post_endpoint)
   - ``DELETE /api/projects/{project_id}/tags/{tag_name}`` (tag_delete_endpoint)
   - ``GET    /api/projects/{project_id}/at-tag/{tag}``     (project_at_tag_endpoint)
 
-These are thin Starlette shells over ``plot_mcp.git_store``. The tests drive
+These are thin Starlette shells over ``mashbill.git_store``. The tests drive
 the real HTTP layer through Starlette's ``TestClient`` against a real on-disk
 temp workspace + git repo, asserting status codes, error bodies, and disk
 side effects (created / deleted git tags, the frozen snapshot body) so each
@@ -22,11 +22,11 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.git_store import init_workspace_repo, list_tags
-from plot_mcp.http_app import create_http_app
-from plot_mcp.project_io import create_project
-from plot_mcp.workspace import resolve_plot_root
+from mashbill.broadcast import BroadcastHub
+from mashbill.git_store import init_workspace_repo, list_tags
+from mashbill.http_app import create_http_app
+from mashbill.project_io import create_project
+from mashbill.workspace import resolve_plot_root
 
 # ---------------------------------------------------------------------------
 # fixtures

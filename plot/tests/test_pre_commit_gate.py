@@ -4,7 +4,7 @@
 The check enforces four invariants on every commit that touches
 viewer or server code:
 
-  1. ``plot_mcp/models.py`` defines ``SketchNode`` as a discriminated
+  1. ``mashbill/models.py`` defines ``SketchNode`` as a discriminated
      union (not a god class).
   2. ``viewer/src/canvases/SketchInspector.tsx`` is absent.
   3. ``viewer/src/canvases/SketchNode.tsx`` is absent.
@@ -73,15 +73,15 @@ def test_reset_complete_skips_docs_only_commit() -> None:
 def _make_minimal_plot_tree(tmp_path: Path) -> Path:
     """Build the minimal directory layout the gate inspects: a
     ``plot/`` root with ``viewer/src/canvases/sketch/``,
-    ``viewer/src/`` and a ``plot_mcp/models.py``. All invariants pass
+    ``viewer/src/`` and a ``mashbill/models.py``. All invariants pass
     in the baseline; each test mutates one piece to trigger one failure."""
     root = tmp_path / "plot"
     (root / "viewer" / "src" / "canvases" / "sketch").mkdir(parents=True)
     (root / "viewer" / "src" / "canvases" / "nodes").mkdir()
     (root / "viewer" / "src" / "canvases" / "inspectors").mkdir()
-    (root / "plot_mcp").mkdir()
+    (root / "mashbill").mkdir()
     # Server-side: union body.
-    (root / "plot_mcp" / "models.py").write_text(
+    (root / "mashbill" / "models.py").write_text(
         "from typing import Annotated, Union\nfrom pydantic import Field\n"
         "SketchNode = Annotated[Union[int, str], Field(discriminator='kind')]\n",
         encoding="utf-8",
@@ -106,7 +106,7 @@ def test_reset_baseline_tmp_tree_passes(tmp_path: Path) -> None:
 
 def test_reset_fails_when_sketchnode_class_returns(tmp_path: Path) -> None:
     root = _make_minimal_plot_tree(tmp_path)
-    (root / "plot_mcp" / "models.py").write_text(
+    (root / "mashbill" / "models.py").write_text(
         "class SketchNode:\n    pass\n",  # god class shape, no union
         encoding="utf-8",
     )

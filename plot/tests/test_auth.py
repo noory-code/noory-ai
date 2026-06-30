@@ -22,15 +22,15 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from plot_mcp.auth import (
+from mashbill.auth import (
     ENV_VAR,
     check_ws_token,
     configured_token,
     extract_bearer,
     is_authorized,
 )
-from plot_mcp.broadcast import BroadcastHub
-from plot_mcp.http_app import create_http_app
+from mashbill.broadcast import BroadcastHub
+from mashbill.http_app import create_http_app
 
 # ---------------------------------------------------------------------------
 # Env fixture — clears PLOT_AUTH_TOKEN between tests so a leaked value

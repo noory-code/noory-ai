@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from plot_mcp.models import (
+from mashbill.models import (
     ActorNode,
     ActorRefNode,
     CanvasDoc,
@@ -819,7 +819,7 @@ def test_edge_from_synthetic_anchor_to_user_node_accepted() -> None:
     validator must whitelist its id so anchor edges don't 422 reject.
     Regression for D-2026-05-13-M (user complaint
     *"새로 고침하면 연결선이 사라지죠"*)."""
-    from plot_mcp.models import PROJECT_ANCHOR_ID
+    from mashbill.models import PROJECT_ANCHOR_ID
 
     doc = CanvasDoc(
         canvas_id="actors",
@@ -843,7 +843,7 @@ def test_edge_from_synthetic_anchor_to_user_node_accepted() -> None:
 def test_edge_from_user_node_to_synthetic_anchor_accepted() -> None:
     """Direction-symmetric companion of the above — D-2026-05-04-B's
     *"from / to the anchor"* covers both directions."""
-    from plot_mcp.models import PROJECT_ANCHOR_ID
+    from mashbill.models import PROJECT_ANCHOR_ID
 
     doc = CanvasDoc(
         canvas_id="actors",
@@ -913,7 +913,7 @@ def test_dangling_edge_reports_multiple_missing_endpoints_sorted() -> None:
 def test_edge_with_one_anchor_one_ghost_endpoint_reports_only_ghost() -> None:
     """Anchor id is whitelisted; if only the *other* endpoint is
     missing, only that endpoint must appear in the error message."""
-    from plot_mcp.models import PROJECT_ANCHOR_ID
+    from mashbill.models import PROJECT_ANCHOR_ID
 
     with pytest.raises(ValueError, match="unknown nodes") as exc:
         CanvasDoc(
