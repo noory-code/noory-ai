@@ -63,6 +63,6 @@ solera/viewer/node_modules/
 # the Vite / Vitest cache directories that get accidentally created
 # at the repo root when a tool runs from the wrong cwd. Each viewer
 # subpackage already lists its own ``node_modules/`` rule above
-# (solera/) or in its own ``.gitignore`` (plot/, plot/viewer/); this
+# (solera/) or in its own ``.gitignore`` (mashbill/, plot/viewer/); this
 # catch-all is just the safety net.
 node_modules/

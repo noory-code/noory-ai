@@ -15,8 +15,8 @@ noory-ai/
 │   ├── solera_mcp/        — Python MCP server (reads .solera/)
 │   ├── viewer/            — React canvas (Actors / Plan / Build / Live)
 │   └── vscode-extension/  — VSCode wrapper (bundles MCP + viewer)
-├── plot/               — open-core engine (mashbill) + Claude Code plugin
-│   ├── mashbill/          — Python MCP + HTTP server (reads .noory/plot/)
+├── mashbill/           — open-core engine (mashbill) + Claude Code plugin
+│   ├── mashbill/          — Python MCP + HTTP server (reads .noory/novel/)
 │   └── .claude-plugin/    — Claude Code plugin manifest + skills
 │   # viewer/ cut to the proprietary app repo (open-core cut, D-2026-06-20-M)
 ├── flutter-cask/       — Flutter package guide skills
