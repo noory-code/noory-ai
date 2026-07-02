@@ -66,3 +66,6 @@ solera/viewer/node_modules/
 # (solera/) or in its own ``.gitignore`` (mashbill/, plot/viewer/); this
 # catch-all is just the safety net.
 node_modules/
+
+# Novel runtime data (engine mkdirs .noory/ in browsed dirs — see B-4 side-effect note)
+.noory/
