@@ -28,6 +28,16 @@
       "name": "pencil-m3-flutter",
       "source": "./pencil_m3_flutter",
       "description": "Flutter Material Design 3 design system automation — init, design, seed color, logo via Pencil MCP"
+    },
+    {
+      "name": "rag",
+      "source": "./rag",
+      "description": "Project-scoped GraphRAG — local sentence-transformers embeddings + sqlite-vec + Kuzu graph, no external API keys"
+    },
+    {
+      "name": "flow",
+      "source": "./flow",
+      "description": "Initiative/Epic/Story/Action flow planner — AI working-style playbooks + retrospective-driven self-improvement"
     }
   ]
 }
