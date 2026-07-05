@@ -41,7 +41,7 @@ Run the **verification command (playbook-supplied)** the project provides. The p
 
 > 🚨 **No missing verification-target paths**: if you check only the implementation code and drop the test-code paths, compile/type errors on the test side are missed and discovered after commit. The playbook's verification command must include both the implementation and test paths.
 
-> **Quality-gate adapter (optional)**: if the project has declared checks via `commands` (test/lint/analyze/required_checks) in `.flow/settings.json`, run `uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/hooks/quality_gate_cli.py" run` at the verification step to invoke/record the declared checks (`hook_audit.jsonl` → aggregated by audit_report) and **block on a required failure** (minimal failure behavior — non-zero exit). If `commands` is undeclared, no-op (pass). This is a thin adapter that standardizes the "playbook verification command" above via a settings declaration — it is a calling convention at the verification step, not a hook deny.
+> **Quality-gate adapter (optional)**: if the project has declared checks via `checks` (free-form names + `required`; legacy `commands` accepted) in `.flow/settings.json`, run `uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/hooks/quality_gate_cli.py" run` at the verification step to invoke/record the declared checks (`hook_audit.jsonl` → aggregated by audit_report) and **block on a required failure** (minimal failure behavior — non-zero exit). If `checks` is undeclared, no-op (pass). This is a thin adapter that standardizes the "playbook verification command" above via a settings declaration — it is a calling convention at the verification step, not a hook deny.
 
 **Judgment**:
 - 0 errors → proceed to Step 2

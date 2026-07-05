@@ -88,6 +88,15 @@ Interpret the apply JSON (`applied`/`deleted`/`registered`/`protected`/`backups`
 > ✅ Synced {applied count} rules + deleted {deleted count} (orphan) (plugin v{version}). Preserved (authored) {protected count}. Backup: `.flow/.runtime/rules-backup/`.
 > ⚠ New rules are loaded **after a session restart** (the `.claude/rules/` auto-load timing).
 
+## Settings migrations (one-time renames)
+
+After a plugin upgrade, check `.flow/settings.json` for legacy field names and offer the one-time migration below. Legacy names keep working (the reader accepts both), so this is a tidy-up, not a blocker — apply only on user confirmation, changing names only (values untouched):
+
+| if settings contains | then rename to |
+|---|---|
+| top-level `commands` (and no `checks`) | `checks` |
+| `required_checks` inside it | `required` |
+
 ## Upgrade propagation boundary (always applies)
 
 | Asset type | Propagation path | This command |

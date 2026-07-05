@@ -29,7 +29,7 @@ flowchart TD
 | Asset | Role |
 |------|------|
 | **skills** (32) | Planning·execution·retrospective procedures — the `flow` orchestrator `Read`s the per-phase `flow-*` skills |
-| **hooks** (4 events + CLI) | Quality gates — enforce code edits·commits·merges at the system level (cannot be bypassed). The quality-gate adapter (`quality_gate_cli.py`) additionally calls, records, and minimally blocks on the project-declared checks (test/lint/analyze) at the verification stage |
+| **hooks** (4 events + CLI) | Quality gates — enforce code edits·commits·merges at the system level (cannot be bypassed). The quality-gate adapter (`quality_gate_cli.py`) additionally calls, records, and minimally blocks on the project-declared checks (settings `checks` — free-form names) at the verification stage |
 | **rules** (11) | Always-applied text rules — synced to `.claude/rules/` (`/flow-upgrade` is the sync SSOT, config delegates the call). `flow-rules.md` covers the 12 hook-enforced rule kinds plus the text rules |
 | **playbooks** (12) | Ways of working per task type (feature/refactor/bug/docs/research/qa/security/deploy/usecase-extraction/retro-processing/plugin-dev/general) — pick 1 per task. RT (Red Team) runs default-on at the review gate |
 | **commands** (8) | `/flow-config` · `/flow-config-retro` · `/flow-status` · `/flow-help` · `/flow-upgrade` (rule propagation) · `/skill-stats` · `/skill-stats-clear` · `/team-skill-stats` |

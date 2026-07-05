@@ -1,6 +1,8 @@
-"""read_quality_commands fail-safe regression (TS-003 A-001 — reading settings commands[], stdlib unittest).
+"""read_quality_commands fail-safe regression (quality-gate settings reader, stdlib unittest).
 
-Target: _flow_state.read_quality_commands — absent / parse failure / key absent / normal / validity.
+Target: _flow_state.read_quality_commands — absent / parse failure / key absent / normal /
+validity / arbitrary check names / new `checks`+`required` shape with legacy
+`commands`+`required_checks` compatibility.
 Run: cd flow/hooks && python3 -m unittest tests.test_quality_commands
 """
 from __future__ import annotations
@@ -25,10 +27,10 @@ def _write_settings(ws: str, content: str) -> None:
         f.write(content)
 
 
-EMPTY = {"test": None, "lint": None, "analyze": None, "required_checks": []}
+EMPTY = {"checks": {}, "required_checks": []}
 
 
-class TestReadQualityCommands(unittest.TestCase):
+class TestReadQualityChecksFailsafe(unittest.TestCase):
     def test_file_absent_failsafe(self):
         with tempfile.TemporaryDirectory() as ws:
             self.assertEqual(w.read_quality_commands(ws), EMPTY)
@@ -38,47 +40,73 @@ class TestReadQualityCommands(unittest.TestCase):
             _write_settings(ws, "{broken")
             self.assertEqual(w.read_quality_commands(ws), EMPTY)
 
-    def test_commands_key_absent_failsafe(self):
+    def test_field_absent_failsafe(self):
         with tempfile.TemporaryDirectory() as ws:
             _write_settings(ws, json.dumps({"playbooks": ["feature"]}))
             self.assertEqual(w.read_quality_commands(ws), EMPTY)
 
-    def test_commands_not_dict_failsafe(self):
+    def test_field_not_dict_failsafe(self):
         with tempfile.TemporaryDirectory() as ws:
-            _write_settings(ws, json.dumps({"commands": ["test"]}))
+            _write_settings(ws, json.dumps({"checks": ["test"]}))
             self.assertEqual(w.read_quality_commands(ws), EMPTY)
 
-    def test_normal_read(self):
+    def test_required_not_list_failsafe(self):
+        with tempfile.TemporaryDirectory() as ws:
+            _write_settings(ws, json.dumps({"checks": {"test": "t", "required": "test"}}))
+            self.assertEqual(w.read_quality_commands(ws)["required_checks"], [])
+
+
+class TestReadQualityChecksShapes(unittest.TestCase):
+    def test_new_shape_arbitrary_names(self):
+        # The user-facing canonical shape: `checks` + `required`, names are free-form.
+        with tempfile.TemporaryDirectory() as ws:
+            _write_settings(ws, json.dumps({"checks": {
+                "test-engine": ["uv", "run", "pytest", "-q"],
+                "typecheck-viewer": "npm run typecheck",
+                "required": ["test-engine", "typecheck-viewer"],
+            }}))
+            r = w.read_quality_commands(ws)
+            self.assertEqual(r["checks"]["test-engine"], ["uv", "run", "pytest", "-q"])
+            self.assertEqual(r["checks"]["typecheck-viewer"], "npm run typecheck")
+            self.assertEqual(r["required_checks"], ["test-engine", "typecheck-viewer"])
+
+    def test_legacy_shape_still_read(self):
+        # Pre-rename settings (`commands` + `required_checks`) keep working.
         with tempfile.TemporaryDirectory() as ws:
             _write_settings(ws, json.dumps({"commands": {
-                "test": "uv run pytest", "lint": "ruff check", "analyze": "mypy .",
+                "test": "uv run pytest", "lint": "ruff check",
                 "required_checks": ["test", "lint"],
             }}))
             r = w.read_quality_commands(ws)
-            self.assertEqual(r["test"], "uv run pytest")
-            self.assertEqual(r["lint"], "ruff check")
-            self.assertEqual(r["analyze"], "mypy .")
+            self.assertEqual(r["checks"]["test"], "uv run pytest")
+            self.assertEqual(r["checks"]["lint"], "ruff check")
             self.assertEqual(r["required_checks"], ["test", "lint"])
+
+    def test_new_shape_wins_over_legacy(self):
+        with tempfile.TemporaryDirectory() as ws:
+            _write_settings(ws, json.dumps({
+                "checks": {"new-check": "new", "required": ["new-check"]},
+                "commands": {"old-check": "old", "required_checks": ["old-check"]},
+            }))
+            r = w.read_quality_commands(ws)
+            self.assertIn("new-check", r["checks"])
+            self.assertNotIn("old-check", r["checks"])
+            self.assertEqual(r["required_checks"], ["new-check"])
 
     def test_empty_string_command_ignored(self):
         with tempfile.TemporaryDirectory() as ws:
-            _write_settings(ws, json.dumps({"commands": {"test": "  ", "lint": ""}}))
-            r = w.read_quality_commands(ws)
-            self.assertIsNone(r["test"])
-            self.assertIsNone(r["lint"])
+            _write_settings(ws, json.dumps({"checks": {"test": "  ", "lint": ""}}))
+            self.assertEqual(w.read_quality_commands(ws)["checks"], {})
 
-    def test_required_checks_filters_unknown_keys(self):
+    def test_required_kept_verbatim_for_config_error(self):
+        # A required name with no declared command is NOT silently dropped — the
+        # adapter CLI must see it and fail loudly as a config error (Fail Fast;
+        # silently dropping a typo would silently weaken the gate).
         with tempfile.TemporaryDirectory() as ws:
-            _write_settings(ws, json.dumps({"commands": {
-                "test": "t", "required_checks": ["test", "bogus", "lint"],
+            _write_settings(ws, json.dumps({"checks": {
+                "test": "t", "required": ["test", "bogus"],
             }}))
-            # undefined / typo keys (bogus) are filtered out — declared keys only
-            self.assertEqual(w.read_quality_commands(ws)["required_checks"], ["test", "lint"])
-
-    def test_required_checks_not_list_failsafe(self):
-        with tempfile.TemporaryDirectory() as ws:
-            _write_settings(ws, json.dumps({"commands": {"test": "t", "required_checks": "test"}}))
-            self.assertEqual(w.read_quality_commands(ws)["required_checks"], [])
+            self.assertEqual(w.read_quality_commands(ws)["required_checks"], ["test", "bogus"])
 
 
 if __name__ == "__main__":

@@ -59,9 +59,9 @@ Example:
 ```json
 {
   "playbooks": ["feature", "bug"],
-  "commands": {
+  "checks": {
     "test": ["uv", "run", "pytest"],
-    "required_checks": ["test"]
+    "required": ["test"]
   },
   "upstream_board": {
     "type": "github-project",
@@ -75,7 +75,7 @@ Example:
 
 - `playbooks[]`: list of active playbooks. There is no fixed default.
 - There is NO `agents` field. Role templates live in the standard `.claude/agents/` and are discovered natively by the tool — a settings index would be a dead duplicate (SSOT). Do not ask the user about team composition; a project without templates works fully (dynamic teams / parallel subagents need no pre-registered roster).
-- `commands`: quality-gate adapter input. No-op if absent.
+- `checks`: quality-gate adapter input — free-form check names (e.g. `test-engine`), each a str or argv list, plus `required` (the names whose failure blocks). No-op if absent. Legacy `commands`/`required_checks` still read.
 - `upstream_board`: board binding for publishing/processing the retrospective backlog (plugin-core/upstream items) as tickets. **Default = the internal default board baked into the plugin (`upstream_board` in `config-defaults.json`)** — because this is an internal-only tool (private↔private install), baking board coordinates has no security impact. On config, put this default straight into settings; a project using a different board can just change the value. The publish/process skills read board coordinates **only from this settings field** (`retro-processing` backlog routing SSOT). The per-`type` coordinate fields are defined by the publish skill (e.g., `github-project` uses `owner`+`number`). Publishing/querying a GitHub Project requires the `project` scope on the `gh` token — without it, hold the publish + guide.
   - **config default fill**: if settings has no `upstream_board`, present/inject the value from `${CLAUDE_PLUGIN_ROOT}/config-defaults.json` as the default (user can override). If it already exists, preserve the user value.
 - `skill_usage`: turn skill-usage stats collection on/off. **Default = on** (`config-defaults.json`). On config, put this item into settings **explicitly** so the user can see it is "collecting" and turn it off — even without the item the default is on, but then it is invisible in the settings file and the user would not think to turn it off, so we state it explicitly for discoverability. To turn it off, `"enabled": false`. The recording hook reads this value and skips only on `false`. (Same seed path as `upstream_board` — inject the default if absent, preserve the user value if present.)

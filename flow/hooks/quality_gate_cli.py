@@ -1,14 +1,15 @@
 """Quality gate adapter CLI (TS-003) — invoke project-declared checks, record, minimal failure action.
 
-Reads settings.json ``commands`` (test/lint/analyze/required_checks) via ``read_quality_commands``,
-runs the declared checks via subprocess (``shell=False`` — security + Windows differences), and records
-the result as a first-class ``check`` record in ``hook_audit.jsonl`` (aggregated by audit_report — AC-4).
-If any of ``required_checks`` fails, it blocks and stops with the **minimal failure action**
+Reads settings.json ``checks`` (free-form check names + ``required``; legacy ``commands`` /
+``required_checks`` accepted) via ``read_quality_commands``, runs the declared checks via
+subprocess (``shell=False`` — security + Windows differences), and records the result as a
+first-class ``check`` record in ``hook_audit.jsonl`` (aggregated by audit_report — AC-4).
+If any required check fails, it blocks and stops with the **minimal failure action**
 (non-zero exit + stderr report). A full failure decision policy (retry, partial pass, bypass) is a
 non-goal — minimal action only here.
 
   run    → run and record declared checks. 1+ required failures → exit 1 + report / otherwise exit 0.
-           0 declared checks (commands unset) → no-op pass (exit 0) — quality gate disabled (fail-safe).
+           0 declared checks (checks unset) → no-op pass (exit 0) — quality gate disabled (fail-safe).
 
 Workspace root = CLAUDE_PROJECT_DIR (cwd if unset) — resolve_workspace_root SSOT.
 No shebang (CLAUDE.md) — ``uv run --no-project python quality_gate_cli.py run``.
@@ -24,7 +25,6 @@ import sys
 from datetime import datetime, timezone
 
 from _flow_state import (
-    QUALITY_CHECK_KEYS,
     active_unit_id,
     append_audit,
     read_quality_commands,
@@ -56,9 +56,9 @@ def _run_check(name: str, cmd: "str | list", workspace_root: str) -> "tuple[bool
 
 def cmd_run(workspace_root: str) -> int:
     cmds = read_quality_commands(workspace_root)
-    declared = [(k, cmds[k]) for k in QUALITY_CHECK_KEYS if cmds[k]]
+    declared = list(cmds["checks"].items())  # free-form names, declaration order preserved
     if not declared:
-        print("[quality-gate] No declared checks (settings.commands unset) — pass (no-op).")
+        print("[quality-gate] No declared checks (settings.checks unset) — pass (no-op).")
         return 0
 
     unit = active_unit_id(workspace_root)

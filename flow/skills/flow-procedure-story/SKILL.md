@@ -321,7 +321,7 @@ Story-finish triggers the following PreToolUse hooks in a chain — rather than 
 
 Run the **project verification commands** (code generation / static analysis / tests, etc.). The verification command set is supplied by the project playbook (e.g. code generation → static analysis → tests order).
 
-> **Quality-gate adapter**: If the project declared checks via `commands` (test/lint/analyze/required_checks) in `.flow/settings.json`, in this full verification call the declared checks and record them via `uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/hooks/quality_gate_cli.py" run`, and block on a required failure (minimal-failure behavior). If undeclared, no-op. (A verification-stage call convention, not a hook deny — consistent with `flow-verify-commit` Step 1.)
+> **Quality-gate adapter**: If the project declared checks via `checks` (free-form names + `required`; legacy `commands` accepted) in `.flow/settings.json`, in this full verification call the declared checks and record them via `uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/hooks/quality_gate_cli.py" run`, and block on a required failure (minimal-failure behavior). If undeclared, no-op. (A verification-stage call convention, not a hook deny — consistent with `flow-verify-commit` Step 1.)
 
 #### 7-2. Output review/evaluation (Hard Gate)
 

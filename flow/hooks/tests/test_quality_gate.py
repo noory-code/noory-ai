@@ -119,6 +119,47 @@ class TestWindowsSafeParsing(unittest.TestCase):
             self.assertTrue([r for r in _audit_records(ws) if r.get("check") == "test"][0]["passed"])
 
 
+class TestArbitraryCheckNames(unittest.TestCase):
+    """Custom check names (the real-world shape: test-engine / typecheck-viewer …) run and gate."""
+
+    def _settings_new(self, ws: str, checks: dict) -> None:
+        d = os.path.join(ws, ".flow")
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "settings.json"), "w", encoding="utf-8") as f:
+            json.dump({"checks": checks}, f)
+
+    def test_custom_names_run_and_block(self):
+        with tempfile.TemporaryDirectory() as ws:
+            self._settings_new(ws, {
+                "test-engine": PASS,
+                "test-viewer": FAIL,
+                "required": ["test-engine", "test-viewer"],
+            })
+            self.assertEqual(qg.cmd_run(ws), 1)  # viewer fails → block
+            recs = {r["check"]: r for r in _audit_records(ws) if r.get("check")}
+            self.assertTrue(recs["test-engine"]["passed"])
+            self.assertFalse(recs["test-viewer"]["passed"])
+
+    def test_custom_names_all_pass(self):
+        with tempfile.TemporaryDirectory() as ws:
+            self._settings_new(ws, {
+                "test-engine": PASS, "typecheck-viewer": PASS,
+                "required": ["test-engine", "typecheck-viewer"],
+            })
+            self.assertEqual(qg.cmd_run(ws), 0)
+
+    def test_required_typo_is_config_error(self):
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as ws:
+            self._settings_new(ws, {"test-engine": PASS, "required": ["test-enigne"]})  # typo
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = qg.cmd_run(ws)
+            self.assertEqual(rc, 1)
+            self.assertIn("config error", err.getvalue())
+
+
 class TestMisconfiguredRequired(unittest.TestCase):
     """M-2 — required but command undeclared = config error (distinct from check failure)."""
 

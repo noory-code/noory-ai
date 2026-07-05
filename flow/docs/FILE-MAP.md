@@ -98,7 +98,7 @@
 | `hooks/inject_flow_context.py` | SessionStart — inject active work-item state + previous-session summary | SessionStart |
 | `hooks/session_relay.py` | Stop — leave in-progress work as a session summary | Stop |
 | `hooks/audit_report.py` | Per-work-item audit aggregation CLI (`hook_audit.jsonl` → measured counts, no embellishment) | retrospective metrics |
-| `hooks/quality_gate_cli.py` | Quality-gate adapter CLI — run project-declared checks (test/lint/analyze), record, minimal failure action | verify stage (`flow-verify-commit` Step 1) |
+| `hooks/quality_gate_cli.py` | Quality-gate adapter CLI — run project-declared checks (settings `checks`, free-form names), record, minimal failure action | verify stage (`flow-verify-commit` Step 1) |
 | `hooks/tests/test_flow_state.py` | `_flow_state` completion-marker decision test | `python -m unittest` |
 | `hooks/tests/test_pre_tool_rules.py` | Pure-function rule tests for shared branch·no-verify, etc. | regression |
 | `hooks/tests/test_no_node_without_purpose.py` | Rule 9 (ultimate-purpose enforcement) test | regression |

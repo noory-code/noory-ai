@@ -1219,42 +1219,52 @@ def seed_settings_defaults(workspace_root: str) -> dict:
 # ===== Quality-gate adapter (TS-003 — wiring up project check commands[]) =====
 # The generic adapter stays thin (a calling convention); the actual checks are per-project. Adapter=quality_gate_cli.py.
 
-# Check keys the adapter recognizes (declared by the project in settings.json `commands`).
-QUALITY_CHECK_KEYS = ("test", "lint", "analyze")
+# Reserved keys inside the checks dict (everything else is a check name — names are free-form).
+_CHECKS_RESERVED_KEYS = ("required", "required_checks")
 
 
 def read_quality_commands(workspace_root: str) -> dict:
-    """Return ``.flow/settings.json``'s ``commands`` fail-safe (TS-003 adapter input).
+    """Return ``.flow/settings.json``'s quality checks fail-safe (adapter input).
 
-    Return shape: ``{"test": str|None, "lint": str|None, "analyze": str|None, "required_checks": [str]}``.
-    ``required_checks`` = the list of check keys for which, on failure, the adapter triggers
-    its **minimal failure action** (block · report · abort).
+    Canonical field: ``checks`` — ``{"<name>": str|argv, ..., "required": ["<name>", ...]}``.
+    Check names are FREE-FORM (test-engine / typecheck-viewer / …). Legacy field name
+    ``commands`` and legacy inner key ``required_checks`` are still accepted (pre-rename
+    installs); ``checks`` wins when both are present.
+
+    Return shape: ``{"checks": {name: str|argv, ...}, "required_checks": [str]}``.
+    ``required_checks`` = the checks whose failure triggers the adapter's **minimal
+    failure action** (block · report · abort).
 
     **fail-safe** (throws zero exceptions — consistent with the `read_retrospective_settings` pattern):
-    1. file absent / 2. JSON parse failure / 3. ``commands`` key absent or not a dict
-       → all yield an empty config (``required_checks: []`` → adapter no-op pass).
-    Value validity: a check command is a **non-empty str or non-empty argv list** (M-1 — OS-independent);
-    ``required_checks`` accepts only declared check keys (QUALITY_CHECK_KEYS). (Handling the config-error of a key that is required but has no declared command is the adapter CLI's job — M-2.)
+    1. file absent / 2. JSON parse failure / 3. field absent or not a dict
+       → all yield an empty config (0 checks → adapter no-op pass).
+    Value validity: a check command is a **non-empty str or non-empty argv list** (M-1 — OS-independent).
+    ``required_checks`` is kept VERBATIM (not filtered to declared names): a required name
+    with no declared command must reach the adapter CLI and fail loudly as a config error
+    (M-2 · Fail Fast) — silently dropping a typo would silently weaken the gate.
     """
-    result: dict = {k: None for k in QUALITY_CHECK_KEYS}
-    result["required_checks"] = []
+    result: dict = {"checks": {}, "required_checks": []}
     settings_path = os.path.join(workspace_root, ".flow", "settings.json")
     try:
         with open(settings_path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except (OSError, json.JSONDecodeError):
         return result  # ①·② absent/parse-failure
-    commands = data.get("commands")
-    if not isinstance(commands, dict):
-        return result  # ③ key absent or malformed
-    for key in QUALITY_CHECK_KEYS:
-        value = commands.get(key)
+    source = data.get("checks")
+    if not isinstance(source, dict):
+        source = data.get("commands")  # legacy field name (pre-rename installs)
+    if not isinstance(source, dict):
+        return result  # ③ field absent or malformed
+    for key, value in source.items():
+        if key in _CHECKS_RESERVED_KEYS:
+            continue
         if isinstance(value, str) and value.strip():
-            result[key] = value
+            result["checks"][key] = value
         elif isinstance(value, list) and value:  # M-1: allow argv list (OS-independent — Windows-path safe)
-            result[key] = [str(x) for x in value]
-    required = commands.get("required_checks")
+            result["checks"][key] = [str(x) for x in value]
+    required = source.get("required")
+    if not isinstance(required, list):
+        required = source.get("required_checks")  # legacy inner key
     if isinstance(required, list):
-        # only declared check keys (typos/undefined keys ignored — fail-safe)
-        result["required_checks"] = [c for c in required if c in QUALITY_CHECK_KEYS]
+        result["required_checks"] = [str(c) for c in required]
     return result
