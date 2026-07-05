@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "rag": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${CLAUDE_PLUGIN_ROOT}/server",
+        "run",
+        "python",
+        "-m",
+        "rag_mcp"
+      ],
+      "env": {
+        "RAG_PROJECT_ROOT": "${CLAUDE_PROJECT_DIR}"
+      }
+    }
+  }
+}

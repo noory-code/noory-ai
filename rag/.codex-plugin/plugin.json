@@ -1,0 +1,57 @@
+{
+  "name": "rag",
+  "version": "0.2.1",
+  "description": "Project-scoped GraphRAG - local embeddings, sqlite-vec vectors, and Kuzu graph search with no external API keys.",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/rag",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "keywords": [
+    "rag",
+    "graphrag",
+    "vector-search",
+    "knowledge-graph",
+    "mcp",
+    "local-first",
+    "evaluation",
+    "probes"
+  ],
+  "skills": "./skills/",
+  "mcpServers": {
+    "rag": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${PLUGIN_ROOT}/server",
+        "run",
+        "python",
+        "-m",
+        "rag_mcp"
+      ],
+      "env": {
+        "RAG_PROJECT_ROOT": "${CODEX_PROJECT_DIR}"
+      }
+    }
+  },
+  "interface": {
+    "displayName": "RAG",
+    "shortDescription": "Local project GraphRAG search and evaluation",
+    "longDescription": "RAG stores project material under .noory/rag, computes local embeddings, builds vector and graph indexes, and exposes MCP tools for search, indexing, probes, feedback, import, and export.",
+    "developerName": "noory-code",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/noory-code/noory-ai/tree/main/rag",
+    "defaultPrompt": [
+      "Initialize rag for this project",
+      "Search the project RAG index",
+      "Evaluate rag probes"
+    ],
+    "brandColor": "#059669"
+  }
+}

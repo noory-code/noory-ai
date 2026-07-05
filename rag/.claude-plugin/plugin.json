@@ -1,0 +1,23 @@
+{
+  "name": "rag",
+  "description": "Project-scoped GraphRAG plugin — local sentence-transformers embeddings + sqlite-vec vectors + Kuzu graph. No external API keys required; all data is self-contained under .noory/rag/. Chunking, entity extraction, and summarization are performed by the current Claude session.",
+  "version": "0.2.1",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/rag",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "keywords": [
+    "rag",
+    "graphrag",
+    "vector-search",
+    "knowledge-graph",
+    "mcp",
+    "local-first",
+    "evaluation",
+    "probes"
+  ],
+  "skills": "./skills"
+}

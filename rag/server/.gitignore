@@ -1,0 +1,8 @@
+# Python / uv runtime artifacts — never commit these.
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.pytest_cache/
+*.egg-info/
+.coverage
