@@ -1,0 +1,17 @@
+{
+  "_comment": "playbook catalog (bundled with the plugin — task-type based, project-agnostic). 1 playbook = 1 task type. Methodology (tdd/bdd/prototype/spec/contract, etc.) is a variant within a task type. A project activates a subset of the bundle via playbooks[] in .flow/settings.json + can derive from it via .flow/playbooks/ overrides. agents/personas are filled in by the project in settings.json (the plugin is project-agnostic). general (the universal fallback) is used by flow-playbook-selection as the fallback when a task matches no task type (replacing a fixed default).",
+  "playbooks": {
+    "feature": "Feature development — design→test(Red)→implement(Green)→PR (methodology variants: BDD/prototype/spec-first/contract-first)",
+    "refactor": "Refactoring — pin behavior with characterization tests, then change incrementally (behavior-preserving)",
+    "bug": "Bug fix — reproduce→failing test→fix→regression (reproduction and regression required regardless of scale)",
+    "docs": "Documentation/spec authoring — gather sources (material)→structure→write→review (includes the requirement/planning spec variant)",
+    "retro-processing": "Retrospective processing — collect retrospectives→recurring patterns→improvements→review→apply (no auto-apply)",
+    "research": "Investigation/research — gather sources→cross-verify (≥2 independent sources)→structure→index/handoff (unlike docs, gathering and verification are the gate)",
+    "usecase-extraction": "Reverse documentation — analyze code/spec→extract use cases→verify two-way code↔doc consistency (direction: code→doc)",
+    "qa": "Quality verification — risk-based allocation of verification→exploratory test charter→defect logging→pass/fail decision",
+    "security": "Security — threat modeling→mitigations (as ACs)→implement→security check→merge (no implementation without a threat model; no merge until the check passes)",
+    "deploy": "Deploy/infra — write runbook and rollback first→plan→review→incremental apply→observe→expand/rollback",
+    "plugin-dev": "Plugin self-development — rule/skill/hook/command changes + full-regression obligation + propagation obligation (rule sync / version bump) + dogfood (a single flow for meta work)",
+    "general": "Universal fallback — when the task type matches no playbook"
+  }
+}

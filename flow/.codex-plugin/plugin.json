@@ -1,0 +1,39 @@
+{
+  "name": "flow",
+  "version": "0.1.0",
+  "description": "Initiative/Epic/Story/Action flow planner - AI working-style playbooks plus retrospective-driven self-improvement.",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/flow",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "keywords": [
+    "flow",
+    "planner",
+    "initiative-epic-story-action",
+    "playbook",
+    "retrospective",
+    "self-improvement"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Flow",
+    "shortDescription": "Plan and execute work through Initiative/Epic/Story/Action flows",
+    "longDescription": "Flow packages planning, execution, verification, retrospective, and self-improvement practices for software projects. It includes skills and hook-backed guardrails for Action documents, playbook selection, verification, and archive discipline.",
+    "developerName": "noory-code",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/noory-code/noory-ai/tree/main/flow",
+    "defaultPrompt": [
+      "Use flow to plan this feature",
+      "Check the current flow status",
+      "Run a flow retrospective"
+    ],
+    "brandColor": "#2563EB"
+  }
+}
