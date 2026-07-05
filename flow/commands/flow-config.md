@@ -15,7 +15,7 @@ This command is an explicit-invocation entrypoint. Load the detailed onboarding 
 1. `Read flow/commands/references/flow-config-procedure.md`
 2. Ground-truth inspect the project and build a playbook/settings recommendation.
 3. Present the recommendation to the user and obtain explicit confirmation.
-4. After confirmation, delta-patch `.flow/settings.json` and the required `.flow/` assets (scan `.claude/agents/*.md` and fill `agents[]` as a union — preserve existing values).
+4. After confirmation, delta-patch `.flow/settings.json` and the required `.flow/` assets. (There is no `agents` settings field — role templates in `.claude/agents/` are discovered natively by the tool.)
 5. Run the 4-axis installation verification.
 
 ## Core principles

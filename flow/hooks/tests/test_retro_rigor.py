@@ -109,7 +109,7 @@ class ReaderFailSafeTests(unittest.TestCase):
 
     def test_retrospective_key_absent_returns_default(self):
         """③ retrospective key absent → default."""
-        self.w.write_settings({"playbooks": ["feature"], "agents": []})
+        self.w.write_settings({"playbooks": ["feature"]})
         result = ws.read_retrospective_settings(str(self.w.root))
         self.assertEqual(result, ws.RIGOR_DEFAULT)
 

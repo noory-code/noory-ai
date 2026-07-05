@@ -15,7 +15,7 @@ The project root `.flow/` is the single location for flow assets:
 
 Core: **`workspace` (in progress) / `archives` (completed)**. Claude Code does not auto-inject `.flow/` — the orchestrator does an explicit Read (especially the `playbooks/` override).
 
-> Teammate (specialist) definitions live in the standard `.claude/agents/`, not under `.flow/`. `settings.json` `agents[]` is only a roster index into it (`flow-config` fills it from `.claude/agents/`).
+> Teammate (specialist) definitions live in the standard `.claude/agents/`, not under `.flow/` — the tool discovers them natively; there is no settings index for them.
 
 ### git track/ignore (SSOT)
 

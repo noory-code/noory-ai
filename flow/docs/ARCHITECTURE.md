@@ -9,7 +9,7 @@
 **General-purpose flow planner (task-type based).** A system where AI plans work as Initiative / Epic / Story / Action, executes it autonomously, and evolves to work ever better through retrospectives.
 
 - **It only knows "how to plan"** — the procedures, gates, and retrospective mechanisms are provided by the plugin.
-- **It does not know "what to build"** — the language, framework, and implementation are supplied by the project context (the playbooks and agents in `.flow/settings.json`).
+- **It does not know "what to build"** — the language, framework, and implementation are supplied by the project context (the playbooks in `.flow/settings.json` + optional role templates in `.claude/agents/`).
 - **North star**: a system where AI understands the purpose and checks for itself whether that purpose has been reached.
 
 Thanks to this separation, the same plugin works identically whether the target is a mobile app, a backend, or a document repository.

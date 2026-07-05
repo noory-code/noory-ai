@@ -1,6 +1,6 @@
 {
   "name": "flow",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Initiative/Epic/Story/Action flow planner — a library of AI working-style playbooks plus a self-improvement system. Recommends running planned work in parallel across multiple agents (via Claude Code Agent Teams when available), with retrospective-driven context evolution. (Initiative: flow-as-planner)",
   "homepage": "https://github.com/noory-code/noory-ai/tree/main/flow",
   "repository": "https://github.com/noory-code/noory-ai",

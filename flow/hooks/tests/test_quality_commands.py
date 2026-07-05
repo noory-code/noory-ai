@@ -40,7 +40,7 @@ class TestReadQualityCommands(unittest.TestCase):
 
     def test_commands_key_absent_failsafe(self):
         with tempfile.TemporaryDirectory() as ws:
-            _write_settings(ws, json.dumps({"playbooks": ["feature"], "agents": []}))
+            _write_settings(ws, json.dumps({"playbooks": ["feature"]}))
             self.assertEqual(w.read_quality_commands(ws), EMPTY)
 
     def test_commands_not_dict_failsafe(self):

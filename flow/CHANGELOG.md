@@ -2,6 +2,12 @@
 
 All notable changes to this plugin are documented here.
 
+## [0.1.2]
+
+### Removed
+
+- The `agents` field in `.flow/settings.json` — no code ever read it, making it a dead derived index (SSOT violation). Role templates live in `.claude/agents/` and are discovered natively by the tool; docs, the flow-config procedure, and test fixtures no longer reference a settings-side roster.
+
 ## [0.1.1]
 
 ### Fixed
