@@ -4,7 +4,7 @@ Stage 3 reference for `commands/flow-config.md`. The command file stays as the e
 
 ## Purpose
 
-Configure the flow plugin to fit the project. It is not a form-filling wizard but an onboarding where the AI does ground-truth inspection of the project and, through conversation with a person, finalizes the playbook, team, and settings injections.
+Configure the flow plugin to fit the project. It is not a form-filling wizard but an onboarding where the AI does ground-truth inspection of the project and, through conversation with a person, finalizes the playbook and settings injections. (`agents[]` is NOT a conversation topic — it is scan-filled silently from `.claude/agents/`; do not ask the user about team composition or agents.)
 
 ## Core principles
 
@@ -78,7 +78,7 @@ Example:
 - `agents`: list of specialist teammates the project supplies. **Definition SSOT = `.claude/agents/`** (one `.md` per teammate); `settings.json` `agents[]` is an index derived from there.
   - **Scan-fill**: Glob `.claude/agents/*.md` → extract each file's frontmatter `name` (or the filename stem if absent) as the teammate name → fill `agents[]`.
   - **Non-destructive / idempotent (union)**: preserve existing `agents[]` entries and team customizations. Merge the scan result with existing values as a union but drop duplicates — do not overwrite existing values. Re-running must produce the same result.
-  - If `.claude/agents/` is missing or empty, leave `agents: []`.
+  - If `.claude/agents/` is missing or empty, leave `agents: []`. **Never ask the user** to define or pick teammates here — role templates are optional; a project without them works fully (dynamic teams / parallel subagents need no pre-registered roster). At most, report the scan result in one line.
 - `commands`: quality-gate adapter input. No-op if absent.
 - `upstream_board`: board binding for publishing/processing the retrospective backlog (plugin-core/upstream items) as tickets. **Default = the internal default board baked into the plugin (`upstream_board` in `config-defaults.json`)** — because this is an internal-only tool (private↔private install), baking board coordinates has no security impact. On config, put this default straight into settings; a project using a different board can just change the value. The publish/process skills read board coordinates **only from this settings field** (`retro-processing` backlog routing SSOT). The per-`type` coordinate fields are defined by the publish skill (e.g., `github-project` uses `owner`+`number`). Publishing/querying a GitHub Project requires the `project` scope on the `gh` token — without it, hold the publish + guide.
   - **config default fill**: if settings has no `upstream_board`, present/inject the value from `${CLAUDE_PLUGIN_ROOT}/config-defaults.json` as the default (user can override). If it already exists, preserve the user value.
@@ -104,11 +104,11 @@ If it is a git repo, idempotently add the following to `.gitignore`.
 .flow/workspace/
 ```
 
-## Phase 7: Rule sync and Agent Teams guidance
+## Phase 7: Rule sync and restart guidance
 
 1. Sync plugin rules to `.claude/rules` via `/flow-upgrade` or the same helper.
-2. Guide the Agent Teams env setup.
-3. Guide which assets need a session restart.
+2. Guide which assets need a session restart.
+3. In the FINAL report only, include one optional line: parallel execution is richest with the Agent Teams env on Claude Code (`README.md` §env setup) — do not turn this into a question or a setup conversation.
 
 ## Phase 8: Installation verification, 4 axes
 
