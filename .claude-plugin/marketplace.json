@@ -35,11 +35,6 @@
       "description": "Project-scoped GraphRAG — local sentence-transformers embeddings + sqlite-vec + Kuzu graph, no external API keys"
     },
     {
-      "name": "flow",
-      "source": "./flow",
-      "description": "Initiative/Epic/Story/Action flow planner — AI working-style playbooks + retrospective-driven self-improvement"
-    },
-    {
       "name": "stage",
       "source": "./stage",
       "description": "Durable execution harness — artifact time axes, decision gates, verification, and retrospectives for LLM-led long-running projects"
