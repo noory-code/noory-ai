@@ -4,25 +4,37 @@ This directory owns the hooks that apply Stage principles at execution time.
 
 ## Hooks
 
-- `SessionStart`: injects the `.stage/` state and completion gates into the session context.
+- `SessionStart`: injects the `.stage/` state and completion gates into the session context (including the most recent session handoff), and prunes stale question-ack markers.
 - `PreToolUse`: blocks `.stage` deletion, unregistered governed-file modification, and official artifact modification without a promotion intent.
-- `Stop`: writes `.stage/.runtime/session-summary.md`.
+- `Stop`: writes `.stage/.runtime/sessions/<session_id>.md`.
 
 ## Blocking criteria
 
 - Deleting `.stage` entirely is forbidden.
-- `.stage/past/` modification is allowed only when `.stage/.runtime/promote-intent.json` points at the target paths and a completed work item, and the target paths are declared in that item's `promotes` (or, for archive intents, match the item's own ID and `retrospective_ref`).
+- `.stage/past/` modification is allowed only when a pending intent in `.stage/.runtime/intents/<work-item>.json` points at the target paths and a completed work item, and the target paths are declared in that item's `promotes` (or, for archive intents, match the item's own ID and `retrospective_ref`).
 - Governed-file modification is allowed only when an active work item in `present/work/items/` has a matching scope. Governance is broad by default — nearly all workspace files except `.stage/`, `.git/`, and `.discuss/` — and is adjusted per project via `.stage/settings.json` exclusions.
 - Work item hierarchy is enforced at write time: unknown parents, self-parents, and opening a child under a finalized parent are denied.
 - The question tool (`AskUserQuestion` on Claude, `request_user_input` on Codex) gets a once-per-question reminder to derive the answer from the work purpose and canon principles first; re-asking passes.
 - Intermediate commits are allowed. The commit gate checks that staged files, same-command `git add` targets, and `git commit -a` targets are registered to work items.
 - OS-specific executable scripts are not allowed inside `.stage`.
 
+## Runtime concurrency
+
+`.stage/.runtime/` is multi-session by construction — several Claude/Codex sessions can share one `.stage` without clobbering each other:
+
+- `intents/<work-item>--<basename>-<digest>.json` — one pending intent per (work item, canonical workspace-relative path), so consuming an authorization is an atomic `unlink` (no shared-file rewrite, hence no lost-update race between concurrent sessions). The filename embeds the target basename plus a 10-hex digest of the full path (bounded length, deterministic replant). The promotion gate requires every targeted path to be covered by exactly one pending intent — zero coverage or more than one candidate per path denies (fail closed on ambiguity) — and validates all involved intents before consuming any. Legacy single-slot and multi-path intent files are split into this layout on first read (originals kept unless every replacement persisted); `session-summary.md` migrates to `sessions/legacy.md`.
+- `sessions/<session_id>.md` — one Stop handoff per session; SessionStart injects the most recent one, and Stop prunes to the newest 5. The just-written summary is pinned, and files younger than a day are never pruned (under cross-host clock skew the cap is soft for at most a day rather than losing a live session's handoff).
+- `question-ack/<session_id>` — the question-gate reminder marker is per session; SessionStart removes markers older than a day (abandoned sessions).
+
+The session dimension comes from the `session_id` field both hosts send in hook stdin; a payload without it falls back to a shared `default` slot.
+
 ## Limits
 
 Shell write detection is best-effort. The default detection targets are redirects, `cp`, `mv`, `tee`, and `sed -i`. File writes inside inline interpreters are outside the detection range.
 
 Write-target extraction reads `path`/`file`-keyed input fields plus `apply_patch` file headers. A hypothetical host alias that carries its write target under a different key (e.g. `target`, `uri`) would pass the gates unexamined — no documented Claude/Codex tool does this (Codex round-10 review, Low).
+
+A pending intent is a path-scoped capability: once planted, any session may perform the matching `past` write, and the hook cannot attribute the write to a specific work item (hook stdin carries no work-item context). This is unchanged from the single-slot design; the binding (completed item + declared `promotes`/archive filename) plus the ambiguity deny above are the enforced surface.
 
 Governance settings are fail-closed: when `.stage/settings.json` exists but is unreadable or malformed, writes outside `.stage/` are denied until the file is repaired (repairing `.stage/settings.json` itself stays allowed).
 

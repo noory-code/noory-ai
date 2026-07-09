@@ -18,7 +18,7 @@
 | 진입 스킬 | 구현됨 | `skills/stage-init`, `skills/stage-audit`, `skills/stage-decision`, `skills/stage-retrospective` |
 | Claude 훅 | 구현됨 | `hooks/hooks.json`, `hooks/stage_guard.py` |
 | 삭제 게이트 | 구현됨 | `.stage` 전체 삭제 차단 |
-| 승격 게이트 | 구현됨 | `.stage/.runtime/promote-intent.json` + 완료된 작업 항목 확인 |
+| 승격 게이트 | 구현됨 | `.stage/.runtime/intents/<work-item>.json` + 완료된 작업 항목 확인 |
 | Archive 게이트 | 구현됨 | `type: archive` intent + completed/rejected 작업 항목 확인 |
 | 등재 게이트 | 구현됨 | 소스 수정 전 `present/work/items/` active 작업 항목 확인 |
 | 커밋 게이트 | 구현됨 | staged 소스, 같은 명령의 `git add` 대상, `git commit -a` 대상의 작업 항목 등재와 completed blocker 확인 |
@@ -36,6 +36,7 @@
 | 산출물 카탈로그 | 구현됨(확정) | `operations/artifacts.md` §Artifact catalog + FAMILY001(형태 발명 warning) + SessionStart 압축 맵 주입 |
 | 언어 규칙 | 구현됨 | 실행 자산 전부 영어(CLAUDE.md §Language), `docs/`·`.discuss/`만 한국어(사용자 승인 예외) |
 | Codex 훅 호환 | 구현됨(확정) | 동일 `hooks/hooks.json`을 Codex가 자동 발견 + 출력·도구명 계약 정렬 + 신뢰 승인 후 e2e(deny→등재→허용→Stop) 확인 — `hooks/README.md` §Host contract |
+| 다중 세션 `.runtime/` | 구현됨 | intent·세션 요약·질문 마커의 세션/항목 차원 분리 — `hooks/README.md` §Runtime concurrency |
 
 ## Phase A: Discovery
 
@@ -60,7 +61,7 @@
 | P17 | ✅ Closed | ~~canon 단일 문서와 index 라우팅 표의 책임 경계가 불완전하다.~~ | canon 상위 `*.md`가 상세 본문 소유처럼 보였고, operations 라우팅 일부가 index에 없었다. | SSOT와 MECE 감사 기준이 흐려질 수 있었다. | canon 상위 문서를 색인/요약으로 명명하고 operations 라우팅을 보강함. |
 | P18 | ✅ Closed | ~~승격 intent의 work_item이 대상 paths와 바인딩되지 않는다.~~ | 완료된 임의 작업 항목 하나가 past 전체 수정의 만능 열쇠가 될 수 있었다. | 승격 게이트가 공식 산출물 보호 장치로 기능하지 못한다. | 일반 승격은 work item `promotes` 경로와 일치해야 하고, archive는 대상 파일명과 work_item ID가 일치해야 한다. |
 | P19 | ✅ Closed | ~~의사결정 통제 축의 실체가 아직 약하다.~~ | `stage-decision`은 8게이트를 정의하지만 결정 기록 스키마와 검사 지점이 없었다. | Stage의 두 축 중 의사결정 통제가 산문에 머물렀다. | `present/work/decisions/` 패밀리(`DE-*`, `work_item` 역링크, status enum)와 감사 WORK014/015/016으로 보정함. 훅 수준 강제(예: 결정 없는 completed 차단)는 과차단 위험이 있어 감사 검사로 한정 — 확장 여부는 토론. |
-| P20 | 🟡 Gap | 다중 호스트/다중 세션 런타임 동시성 설계가 없다. | `.runtime/promote-intent.json`과 `session-summary.md`가 단일 슬롯이다. | Codex와 Claude가 같은 `.stage`를 공유할 때 마지막 쓰기가 이전 상태를 덮을 수 있다. | host/session 차원을 런타임 파일명 또는 frontmatter에 추가할지 설계한다. |
+| P20 | ✅ Closed | ~~다중 호스트/다중 세션 런타임 동시성 설계가 없다.~~ | 단일 슬롯 3종을 다중화(Codex 라운드 11, Finding 13건 반영 후 클린): intent = **(작업 항목, 정규화 경로)당 1파일**(`intents/<item>--<basename>-<digest>.json`, CLI로만 생성) + 소비 = **rename 원자 예약**(경합 패자 deny), 경로별 후보 2개↑는 모호성 deny, 레거시 lazy migration. 세션 요약 = `sessions/<session_id>.md`(keep 5 + 방금 쓴 파일 고정 + 24h 신선 보존 — 시계 스큐 하 soft cap), SessionStart는 최신 1개 주입. 질문 마커 = `question-ack/<session_id>`(1일 경과분 정리). 세션 차원 = 양 호스트 훅 stdin의 `session_id`(부재 시 `default`). | — | 계약 = `hooks/README.md` §Runtime concurrency. |
 | P21 | ✅ Closed | ~~회고 완료가 회고 산출물과 연결되지 않는다.~~ | `retrospective: completed`는 R 파일 존재와 연결을 요구하지 않았다. | 회고 필수가 자기 인증으로 퇴화할 수 있었다. | `retrospective_ref`와 회고 파일 `work_item` 역링크를 감사 CLI가 검증함. |
 | P22 | ✅ Closed | ~~언어 전략이 결정되지 않았다.~~ | 템플릿·스킬·훅 메시지·스크립트가 한국어였고 규칙 SSOT(noory-ai/CLAUDE.md §Language)와 어긋났다. | 배포 형식과 산출물 언어가 불일치했다. | 실행 자산 전부 영어로 전환함. 예외(사용자 승인): `docs/` 3종과 `.discuss/`는 한국어 — `.discuss/stage-language-decision-2026-07-09.md`. |
 | P23 | ✅ Closed | ~~archived 작업의 회고가 present에 영구 체류한다.~~ | 회고 ref 해석이 항상 `present/work/retrospectives/`를 향해 archive 항목의 R 파일이 present에 남아야 했다. | "present = 작업 중" 의미가 회고 차원에서 침식됐다. | `past/work/archive/retrospectives/` 추가, ref를 항목 위치 기준으로 해석, archive intent가 R 파일 동반 이동을 허용(파일명 = `retrospective_ref` 바인딩). |
@@ -105,7 +106,6 @@
 
 ## 다음 구현 단위
 
-1. 다중 호스트/다중 세션 `.runtime/` 설계(P20) — intent·session-summary·question-ack 마커의 세션 차원.
-2. SessionStart 컨텍스트 예산 잔여(P26) — 열린 질문·selected 백로그 우선순위 주입.
-3. 감사 CLI에 정본 중복, 책임 경계 충돌, 라우팅 누락 검사 추가(P4).
-4. 소비측 컨텍스트 활용 + 수정 요청 루프(P27) — 사용자 지정: 마지막 작업.
+1. SessionStart 컨텍스트 예산 잔여(P26) — 열린 질문·selected 백로그 우선순위 주입.
+2. 감사 CLI에 정본 중복, 책임 경계 충돌, 라우팅 누락 검사 추가(P4).
+3. 소비측 컨텍스트 활용 + 수정 요청 루프(P27) — 사용자 지정: 마지막 작업.

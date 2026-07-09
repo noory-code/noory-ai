@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -77,14 +78,14 @@ class StageGuardTest(unittest.TestCase):
         work_item: str = "W-0001",
         paths: list[str] | None = None,
         intent_type: str | None = None,
-    ) -> None:
+    ) -> Path:
         target_paths = paths or [".stage/past/canon/principles.md"]
         payload = {"work_item": work_item, "paths": target_paths}
         if intent_type is not None:
             payload["type"] = intent_type
-        self.write_stage_file(
+        return self.write_stage_file(
             root,
-            ".runtime/promote-intent.json",
+            f".runtime/intents/{work_item}.json",
             json.dumps(payload, ensure_ascii=False),
         )
 
@@ -197,7 +198,7 @@ class StageGuardTest(unittest.TestCase):
             }
 
             result = stage_guard.handle_event("pre-tool-use", payload)
-            intent = root / ".stage" / ".runtime" / "promote-intent.json"
+            intent = root / ".stage" / ".runtime" / "intents" / "W-0001.json"
 
         self.assertEqual(decision(result), "allow")
         self.assertFalse(intent.exists())
@@ -232,14 +233,18 @@ class StageGuardTest(unittest.TestCase):
             }
 
             first_result = stage_guard.handle_event("pre-tool-use", first)
-            intent = root / ".stage" / ".runtime" / "promote-intent.json"
-            remaining = json.loads(intent.read_text(encoding="utf-8"))
+            intents_dir = root / ".stage" / ".runtime" / "intents"
+            # The multi-path intent is normalized into per-path slots; the
+            # first write consumes only the principles slot (atomic unlink).
+            remaining_after_first = sorted(path.name for path in intents_dir.glob("*.json"))
             second_result = stage_guard.handle_event("pre-tool-use", second)
+            remaining_after_second = sorted(path.name for path in intents_dir.glob("*.json"))
 
         self.assertEqual(decision(first_result), "allow")
-        self.assertEqual(remaining["paths"], [".stage/past/canon/vocabulary.md"])
+        self.assertEqual(len(remaining_after_first), 1)
+        self.assertIn("vocabulary", remaining_after_first[0])
         self.assertEqual(decision(second_result), "allow")
-        self.assertFalse(intent.exists())
+        self.assertEqual(remaining_after_second, [])
 
     def test_blocks_promotion_when_work_item_does_not_promote_target_path(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -606,8 +611,8 @@ class StageGuardTest(unittest.TestCase):
             root = Path(tmp)
             self.write_work_item(root, status="active")
 
-            result = stage_guard.handle_event("stop", {"cwd": str(root)})
-            summary = root / ".stage" / ".runtime" / "session-summary.md"
+            result = stage_guard.handle_event("stop", {"cwd": str(root), "session_id": "sess-a"})
+            summary = root / ".stage" / ".runtime" / "sessions" / "sess-a.md"
 
             # Stop output carries only systemMessage: Codex accepts `decision`
             # only as the literal "block", so approve/continue keys are omitted.
@@ -1009,6 +1014,317 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
+
+    def test_concurrent_intents_consume_only_the_matching_one(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(
+                root,
+                item_id="W-0001",
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                promotion="approved",
+                promotes=".stage/past/canon/principles.md",
+            )
+            self.write_work_item(
+                root,
+                item_id="W-0002",
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                promotion="approved",
+                promotes=".stage/past/canon/vocabulary.md",
+            )
+            self.write_promotion_intent(root, work_item="W-0001")
+            other = self.write_promotion_intent(
+                root, work_item="W-0002", paths=[".stage/past/canon/vocabulary.md"]
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/past/canon/principles.md",
+                    "content": "# Principles\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+            consumed = root / ".stage" / ".runtime" / "intents" / "W-0001.json"
+
+            self.assertEqual(decision(result), "allow")
+            self.assertFalse(consumed.exists())
+            self.assertTrue(other.exists())
+
+    def test_question_gate_is_session_scoped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            ask_a = {"tool_name": "AskUserQuestion", "cwd": str(root), "session_id": "sess-a", "tool_input": {}}
+            ask_b = {"tool_name": "AskUserQuestion", "cwd": str(root), "session_id": "sess-b", "tool_input": {}}
+
+            first_a = stage_guard.handle_event("pre-tool-use", ask_a)
+            first_b = stage_guard.handle_event("pre-tool-use", ask_b)
+            second_a = stage_guard.handle_event("pre-tool-use", ask_a)
+            second_b = stage_guard.handle_event("pre-tool-use", ask_b)
+
+        # Each session gets its own reminder; another session's pending question
+        # must not consume it.
+        self.assertEqual(decision(first_a), "deny")
+        self.assertEqual(decision(first_b), "deny")
+        self.assertEqual(decision(second_a), "allow")
+        self.assertEqual(decision(second_b), "allow")
+
+    def test_stop_prunes_session_summaries_to_keep_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            sessions = root / ".stage" / ".runtime" / "sessions"
+            sessions.mkdir(parents=True)
+            for index in range(6):
+                path = sessions / f"old-{index}.md"
+                path.write_text(f"# old {index}\n", encoding="utf-8")
+                stamp = 1_000_000 + index
+                os.utime(path, (stamp, stamp))
+
+            stage_guard.handle_event("stop", {"cwd": str(root), "session_id": "sess-new"})
+
+            remaining = sorted(path.name for path in sessions.glob("*.md"))
+            self.assertEqual(len(remaining), stage_guard.SESSION_SUMMARY_KEEP)
+            self.assertIn("sess-new.md", remaining)
+            self.assertNotIn("old-0.md", remaining)
+            self.assertNotIn("old-1.md", remaining)
+
+    def test_session_start_injects_most_recent_session_summary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            older = self.write_stage_file(root, ".runtime/sessions/sess-old.md", "# Old handoff\n")
+            os.utime(older, (1_000_000, 1_000_000))
+            self.write_stage_file(root, ".runtime/sessions/sess-new.md", "# New handoff\n")
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("New handoff", context)
+        self.assertNotIn("Old handoff", context)
+
+    def test_session_start_prunes_stale_question_ack_markers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            stale = self.write_stage_file(root, ".runtime/question-ack/sess-dead", "t\n")
+            os.utime(stale, (1_000_000, 1_000_000))
+            fresh = self.write_stage_file(root, ".runtime/question-ack/sess-live", "t\n")
+
+            stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+            self.assertFalse(stale.exists())
+            self.assertTrue(fresh.exists())
+
+    def test_overlapping_intents_covering_same_path_are_denied(self):
+        # Fail closed on ambiguity: an arbitrary consume could let one work
+        # item's write ride another item's authorization.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(
+                root,
+                item_id="W-0001",
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                promotion="approved",
+                promotes=".stage/past/canon/principles.md",
+            )
+            self.write_work_item(root, item_id="W-0002", status="active")
+            self.write_promotion_intent(root, work_item="W-0001")
+            self.write_promotion_intent(root, work_item="W-0002")
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/past/canon/principles.md",
+                    "content": "# Principles\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("multiple pending intents", reason(result))
+
+    def test_stop_prune_never_deletes_the_summary_it_just_wrote(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            sessions = root / ".stage" / ".runtime" / "sessions"
+            sessions.mkdir(parents=True)
+            stamp = 1_000_000
+            for index in range(stage_guard.SESSION_SUMMARY_KEEP):
+                path = sessions / f"old-{index}.md"
+                path.write_text(f"# old {index}\n", encoding="utf-8")
+                os.utime(path, (stamp, stamp))
+
+            stage_guard.handle_event("stop", {"cwd": str(root), "session_id": "sess-tied"})
+            written = sessions / "sess-tied.md"
+            # Force the pathological tie and prune again directly.
+            os.utime(written, (stamp, stamp))
+            stage_guard.prune_session_summaries(root / ".stage", keep_path=written)
+
+            self.assertTrue(written.exists())
+
+    def test_prune_spares_fresh_summaries_beyond_cap(self):
+        # Under clock skew a live session's just-written handoff can sort below
+        # older files; anything younger than a day must survive pruning.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            sessions = root / ".stage" / ".runtime" / "sessions"
+            sessions.mkdir(parents=True)
+            import time as _time
+            ahead = _time.time() + 3600
+            for index in range(stage_guard.SESSION_SUMMARY_KEEP):
+                path = sessions / f"ahead-{index}.md"
+                path.write_text(f"# ahead {index}\n", encoding="utf-8")
+                os.utime(path, (ahead, ahead))
+            fresh_behind = sessions / "sess-fresh.md"
+            fresh_behind.write_text("# fresh but sorted last\n", encoding="utf-8")
+            behind = _time.time() - 600
+            os.utime(fresh_behind, (behind, behind))
+
+            stage_guard.prune_session_summaries(root / ".stage")
+
+            self.assertTrue(fresh_behind.exists())
+
+    def test_prune_holds_cap_when_pinned_summary_is_oldest(self):
+        # Another host's clock running ahead can leave the just-written summary
+        # older than five existing files; the cap must still hold with the
+        # pinned file retained.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            sessions = root / ".stage" / ".runtime" / "sessions"
+            sessions.mkdir(parents=True)
+            for index in range(stage_guard.SESSION_SUMMARY_KEEP + 1):
+                path = sessions / f"future-{index}.md"
+                path.write_text(f"# future {index}\n", encoding="utf-8")
+                os.utime(path, (2_000_000, 2_000_000))
+            pinned = sessions / "sess-behind.md"
+            pinned.write_text("# behind\n", encoding="utf-8")
+            os.utime(pinned, (1_000_000, 1_000_000))
+
+            stage_guard.prune_session_summaries(root / ".stage", keep_path=pinned)
+
+            remaining = list(sessions.glob("*.md"))
+            self.assertEqual(len(remaining), stage_guard.SESSION_SUMMARY_KEEP)
+            self.assertTrue(pinned.exists())
+
+    def test_consume_race_denies_the_losing_session(self):
+        # The rename is the atomic reservation: if another session consumed the
+        # intent between validation and acquisition, the losing write is denied
+        # instead of riding the same one-shot authorization.
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                promotion="approved",
+                promotes=".stage/past/canon/principles.md",
+            )
+            self.write_promotion_intent(root)
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/past/canon/principles.md",
+                    "content": "# Principles\n",
+                },
+            }
+
+            with mock.patch.object(
+                stage_guard.Path, "rename", side_effect=FileNotFoundError
+            ):
+                result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("consumed by another session", reason(result))
+
+    def test_replanting_absolute_and_relative_path_is_one_slot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".stage").mkdir()
+            intent = {"work_item": "W-0001", "type": "promotion"}
+            first = stage_guard.write_intent_file(root / ".stage", intent, ".stage/past/canon/principles.md")
+            second = stage_guard.write_intent_file(
+                root / ".stage", intent, str(root / ".stage/past/canon/principles.md")
+            )
+
+            files = list((root / ".stage/.runtime/intents").glob("*.json"))
+
+        self.assertEqual(first, second)
+        self.assertEqual(len(files), 1)
+
+    def test_intent_filename_is_bounded_for_deep_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".stage").mkdir()
+            deep = ".stage/past/canon/" + "/".join(["sub"] * 40) + "/" + ("x" * 120) + ".md"
+            intent = {"work_item": "W-0001", "type": "promotion"}
+
+            target = stage_guard.write_intent_file(root / ".stage", intent, deep)
+
+        self.assertIsNotNone(target)
+        self.assertLess(len(target.name), 120)
+
+    def test_legacy_single_slot_intent_is_migrated_and_honored(self):
+        # 0.1.0 wrote .runtime/promote-intent.json; upgrading must not deny a
+        # promotion that was legitimately prepared under the old layout.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                promotion="approved",
+                promotes=".stage/past/canon/principles.md",
+            )
+            legacy = self.write_stage_file(
+                root,
+                ".runtime/promote-intent.json",
+                json.dumps({"work_item": "W-0001", "paths": [".stage/past/canon/principles.md"]}),
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/past/canon/principles.md",
+                    "content": "# Principles\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+            self.assertEqual(decision(result), "allow")
+            self.assertFalse(legacy.exists())
+            self.assertFalse((root / ".stage" / ".runtime" / "intents" / "W-0001.json").exists())
+
+    def test_legacy_session_summary_is_migrated_into_sessions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            legacy = self.write_stage_file(root, ".runtime/session-summary.md", "# Legacy handoff\n")
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+            context = result["hookSpecificOutput"]["additionalContext"]
+            self.assertIn("Legacy handoff", context)
+            self.assertFalse(legacy.exists())
+            self.assertTrue((root / ".stage" / ".runtime" / "sessions" / "legacy.md").exists())
 
     def test_question_gate_covers_codex_request_user_input(self):
         with tempfile.TemporaryDirectory() as tmp:

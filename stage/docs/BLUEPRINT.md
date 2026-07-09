@@ -477,7 +477,7 @@ flowchart TB
 
   Audit["Audit CLI\n템플릿 / enum / 색인 / archive / 계층 /\n계보 / 결정 원칙 인용 / 거버넌스 검사"]
 
-  Stop --> Summary["세션 요약 기록\n.stage/.runtime/session-summary.md"]
+  Stop --> Summary["세션 요약 기록\n.stage/.runtime/sessions/세션별.md"]
 
   Inject --> Execution["일관된 수행"]
   DeleteGate --> Execution

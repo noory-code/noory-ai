@@ -68,5 +68,5 @@ Return the following.
 
 Modifying `.stage/past/` counts as official promotion. For an intentional promotion, finish
 verification and the retrospective, declare the target paths in the work item's `promotes`,
-then create `.stage/.runtime/promote-intent.json`. Never put promotion markers in official
+then create the intent with `scripts/promote_intent.py` (one `.stage/.runtime/intents/` file per work item and path — never hand-write the filename). Never put promotion markers in official
 artifact bodies.

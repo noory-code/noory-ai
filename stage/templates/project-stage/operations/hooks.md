@@ -12,7 +12,7 @@ This document owns the Stage hook rules.
 ## Blocked actions
 
 - Deleting `.stage` entirely.
-- Modifying `.stage/past/` without `.stage/.runtime/promote-intent.json`.
+- Modifying `.stage/past/` without a pending intent in `.stage/.runtime/intents/`.
 - Modifying source files not registered in `present/work/items/`.
 - OS-specific executable scripts inside `.stage`.
 
@@ -32,7 +32,7 @@ Shell write detection is best-effort. The default detection targets are redirect
 
 ## Promotion intent
 
-Official artifact modification uses no body markers. The promotion intent lives in `.stage/.runtime/promote-intent.json`.
+Official artifact modification uses no body markers. Each pending intent lives in `.stage/.runtime/intents/<work-item>--<basename>-<digest>.json` — one file per (work item, path), created with `scripts/promote_intent.py` (never hand-write the filename), so concurrent sessions do not clobber each other and consumption is an atomic reservation.
 
 ```json
 {
