@@ -1,0 +1,654 @@
+#!/usr/bin/env python3
+"""Audit a project-local .stage harness."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+
+PLUGIN_ROOT = Path(__file__).resolve().parents[1]
+TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
+HOOK_ROOT = PLUGIN_ROOT / "hooks"
+if str(HOOK_ROOT) not in sys.path:
+    sys.path.insert(0, str(HOOK_ROOT))
+
+import stage_guard  # noqa: E402
+
+
+STATUS_VALUES = stage_guard.WORK_OPEN_STATUSES | stage_guard.WORK_FINAL_STATUSES
+VERIFICATION_VALUES = stage_guard.VERIFICATION_DONE | {"pending"}
+RETROSPECTIVE_VALUES = stage_guard.RETROSPECTIVE_DONE | {"pending"}
+PROMOTION_VALUES = stage_guard.PROMOTION_FINAL | {"pending"}
+DECISION_STATUS_VALUES = {"open", "decided", "promoted"}
+BACKLOG_STATUS_VALUES = {"captured", "triaged", "ready", "selected", "deferred", "rejected"}
+REQUIRED_WORK_FIELDS = (
+    "id",
+    "title",
+    "status",
+    "verification",
+    "retrospective",
+    "promotion",
+    "scope",
+)
+ACTIVE_VIEW_STATUSES = {"active", "blocked"}
+REVIEW_VIEW_STATUSES = {"review", "completed", "rejected"}
+ITEM_LINK_RE = re.compile(r"\((?:\./)?items/([A-Za-z][A-Za-z0-9]*-\d{3,})\.md(?:#[^)]+)?\)")
+
+
+@dataclass(frozen=True)
+class Finding:
+    severity: str
+    code: str
+    message: str
+    path: str = ""
+
+    def to_dict(self) -> dict[str, str]:
+        data = {"severity": self.severity, "code": self.code, "message": self.message}
+        if self.path:
+            data["path"] = self.path
+        return data
+
+
+@dataclass(frozen=True)
+class AuditedItem:
+    item: stage_guard.WorkItem
+    fields: dict[str, str]
+    location: str
+
+
+class Audit:
+    def __init__(self, project_root: Path) -> None:
+        self.project_root = project_root
+        self.stage_root = project_root / ".stage"
+        self.findings: list[Finding] = []
+
+    def error(self, code: str, message: str, path: Path | str = "") -> None:
+        self.findings.append(Finding("error", code, message, self.display_path(path)))
+
+    def warning(self, code: str, message: str, path: Path | str = "") -> None:
+        self.findings.append(Finding("warning", code, message, self.display_path(path)))
+
+    def display_path(self, path: Path | str) -> str:
+        if not path:
+            return ""
+        candidate = Path(path)
+        try:
+            if candidate.is_absolute():
+                return str(candidate.relative_to(self.project_root))
+        except ValueError:
+            pass
+        return str(path).replace("\\", "/")
+
+    def run(self) -> list[Finding]:
+        if not self.stage_root.exists():
+            self.error("STAGE001", "Stage root not found.", self.stage_root)
+            return self.findings
+        if not self.stage_root.is_dir():
+            self.error("STAGE002", "Stage root is not a directory.", self.stage_root)
+            return self.findings
+
+        self.audit_template_files()
+        items = self.audit_work_items()
+        work_ids = {entry.item.item_id for entry in items}
+        self.audit_hierarchy(items)
+        self.audit_work_indexes(items)
+        backlog_ids = self.audit_backlog_items(work_ids)
+        self.audit_lineage(items, backlog_ids)
+        self.audit_state_links(work_ids)
+        self.audit_family_shapes()
+        self.audit_canon()
+        self.audit_governance()
+        return self.findings
+
+    def audit_template_files(self) -> None:
+        if not TEMPLATE_ROOT.exists():
+            self.error("TEMPLATE001", "Stage template root not found.", TEMPLATE_ROOT)
+            return
+
+        for template_path in sorted(TEMPLATE_ROOT.rglob("*")):
+            if template_path.is_dir():
+                continue
+            relative = template_path.relative_to(TEMPLATE_ROOT)
+            target = self.stage_root / relative
+            if not target.exists():
+                self.warning(
+                    "TEMPLATE002",
+                    "Stage template artifact file is missing. Re-run stage-init to repair.",
+                    target,
+                )
+
+    def audit_work_items(self) -> list[AuditedItem]:
+        roots = [
+            ("present", self.stage_root / "present" / "work" / "items"),
+            ("archive", self.stage_root / "past" / "work" / "archive" / "items"),
+        ]
+        audited: list[AuditedItem] = []
+        seen_ids: dict[str, Path] = {}
+
+        for location, root in roots:
+            for path in sorted(root.glob("*.md")):
+                if path.name in {"README.md", "_template.md"}:
+                    continue
+                fields = stage_guard.parse_frontmatter(path)
+                item = self.item_from_fields(path, fields)
+                audited_item = AuditedItem(item=item, fields=fields, location=location)
+                audited.append(audited_item)
+                self.audit_work_item_fields(audited_item)
+
+                previous = seen_ids.get(item.item_id)
+                if previous is not None:
+                    self.error("WORK007", f"Duplicate work item id: {item.item_id}", path)
+                    self.error("WORK007", f"Duplicate work item id: {item.item_id}", previous)
+                else:
+                    seen_ids[item.item_id] = path
+
+        return audited
+
+    def item_from_fields(self, path: Path, fields: dict[str, str]) -> stage_guard.WorkItem:
+        item_id = fields.get("id") or path.stem
+        return stage_guard.WorkItem(
+            path=path,
+            item_id=item_id,
+            title=fields.get("title") or path.stem,
+            status=(fields.get("status") or "").lower(),
+            verification=(fields.get("verification") or "").lower(),
+            retrospective=(fields.get("retrospective") or "").lower(),
+            promotion=(fields.get("promotion") or "").lower(),
+            scope=stage_guard.split_scope(fields.get("scope", "")),
+            promotes=stage_guard.split_scope(fields.get("promotes", "")),
+            retrospective_ref=(fields.get("retrospective_ref") or "").strip(),
+            kind=(fields.get("kind") or "").strip().lower(),
+            parent=(fields.get("parent") or "").strip(),
+        )
+
+    def audit_work_item_fields(self, audited_item: AuditedItem) -> None:
+        item = audited_item.item
+        path = item.path
+
+        for field in REQUIRED_WORK_FIELDS:
+            if field not in audited_item.fields:
+                self.error("WORK001", f"Work item frontmatter field is missing: {field}", path)
+
+        if item.item_id != path.stem:
+            self.error("WORK002", f"Work item id differs from filename: {item.item_id}", path)
+        if item.status not in STATUS_VALUES:
+            self.error("WORK003", f"Unknown status value: {item.status}", path)
+        if item.verification not in VERIFICATION_VALUES:
+            self.error("WORK004", f"Unknown verification value: {item.verification}", path)
+        if item.retrospective not in RETROSPECTIVE_VALUES:
+            self.error("WORK005", f"Unknown retrospective value: {item.retrospective}", path)
+        if item.promotion not in PROMOTION_VALUES:
+            self.error("WORK006", f"Unknown promotion value: {item.promotion}", path)
+        if item.kind and item.kind not in self.known_kinds():
+            self.warning(
+                "KIND001",
+                f"Work kind `{item.kind}` has no `passed` criterion in operations/verification.md.",
+                path,
+            )
+
+        for blocker in stage_guard.item_completion_blockers(item):
+            self.error("WORK008", f"Completion gate is not closed: {blocker}", path)
+
+        if item.retrospective == "completed":
+            self.audit_retrospective_ref(audited_item)
+
+        self.audit_decision_refs(audited_item)
+
+        if audited_item.location == "present" and item.status == "archived":
+            self.error(
+                "WORK009",
+                "An archived work item must move to past/work/archive/items/.",
+                path,
+            )
+        if audited_item.location == "archive" and item.status != "archived":
+            self.error(
+                "WORK010",
+                "Work items in past/work/archive/items/ must have status archived.",
+                path,
+            )
+
+    def audit_retrospective_ref(self, audited_item: AuditedItem) -> None:
+        item = audited_item.item
+        raw_ref = audited_item.fields.get("retrospective_ref", "").strip()
+        if not raw_ref:
+            self.error(
+                "WORK011",
+                f"A retrospective-completed item has no retrospective_ref: {item.item_id}",
+                item.path,
+            )
+            return
+
+        retro_path = self.resolve_retrospective_ref(raw_ref, audited_item.location)
+        if not retro_path.exists():
+            self.error("WORK012", f"retrospective_ref file not found: {raw_ref}", item.path)
+            return
+
+        retro_fields = stage_guard.parse_frontmatter(retro_path)
+        linked_item = retro_fields.get("work_item", "").strip()
+        if linked_item != item.item_id:
+            self.error(
+                "WORK013",
+                f"Retrospective work_item does not match the work item: {linked_item or 'missing'}",
+                retro_path,
+            )
+
+    def resolve_retrospective_ref(self, raw_ref: str, location: str = "present") -> Path:
+        ref = stage_guard.normalize_path_text(raw_ref)
+        if ref.startswith(".stage/"):
+            return self.project_root / ref
+        if ref.startswith("present/work/retrospectives/") or ref.startswith("past/work/archive/retrospectives/"):
+            return self.stage_root / ref
+        local_root = (
+            self.stage_root / "past" / "work" / "archive"
+            if location == "archive"
+            else self.stage_root / "present" / "work"
+        )
+        if ref.startswith("retrospectives/"):
+            return local_root / ref
+        if "/" in ref:
+            return self.stage_root / ref
+        filename = ref if ref.endswith(".md") else f"{ref}.md"
+        return local_root / "retrospectives" / filename
+
+    def audit_decision_refs(self, audited_item: AuditedItem) -> None:
+        item = audited_item.item
+        raw_refs = audited_item.fields.get("decision_refs", "").strip()
+        if not raw_refs:
+            return
+
+        for raw_ref in stage_guard.split_scope(raw_refs):
+            decision_path = self.resolve_decision_ref(raw_ref)
+            if not decision_path.exists():
+                self.error("WORK014", f"decision_refs file not found: {raw_ref}", item.path)
+                continue
+            decision_fields = stage_guard.parse_frontmatter(decision_path)
+            linked_item = decision_fields.get("work_item", "").strip()
+            if linked_item != item.item_id:
+                self.error(
+                    "WORK015",
+                    f"Decision record work_item does not match the work item: {linked_item or 'missing'}",
+                    decision_path,
+                )
+            decision_status = (decision_fields.get("status") or "").strip().lower()
+            if decision_status not in DECISION_STATUS_VALUES:
+                self.error(
+                    "WORK016",
+                    f"Unknown decision record status: {decision_status or 'missing'}",
+                    decision_path,
+                )
+            self.audit_decision_principles(decision_path)
+
+    def audit_decision_principles(self, decision_path: Path) -> None:
+        try:
+            text = decision_path.read_text(encoding="utf-8")
+        except OSError:
+            return
+        match = re.search(r"^## Principles applied\s*$(.*?)(?=^## |\Z)", text, re.MULTILINE | re.DOTALL)
+        section = (match.group(1).strip() if match else "")
+        if not section:
+            self.error(
+                "WORK021",
+                "Decision record has an empty `Principles applied` section — decisions must cite their governing principles.",
+                decision_path,
+            )
+            return
+        known = self.known_principles()
+        if known and not any(name in section for name in known):
+            self.error(
+                "WORK022",
+                "Decision record cites no principle from past/canon/principles.md.",
+                decision_path,
+            )
+
+    def resolve_decision_ref(self, raw_ref: str) -> Path:
+        ref = stage_guard.normalize_path_text(raw_ref)
+        if ref.startswith(".stage/"):
+            return self.project_root / ref
+        if ref.startswith("present/work/decisions/"):
+            return self.stage_root / ref
+        if ref.startswith("decisions/"):
+            return self.stage_root / "present" / "work" / ref
+        if "/" in ref:
+            return self.stage_root / ref
+        filename = ref if ref.endswith(".md") else f"{ref}.md"
+        return self.stage_root / "present" / "work" / "decisions" / filename
+
+    def audit_hierarchy(self, audited_items: list[AuditedItem]) -> None:
+        by_id = {entry.item.item_id: entry for entry in audited_items}
+
+        for entry in audited_items:
+            parent_id = entry.item.parent
+            if not parent_id:
+                continue
+            parent = by_id.get(parent_id)
+            if parent is None:
+                self.error(
+                    "WORK017",
+                    f"Parent work item not found: {parent_id}",
+                    entry.item.path,
+                )
+                continue
+            if stage_guard.item_is_open(entry.item) and parent.item.status in stage_guard.WORK_FINAL_STATUSES:
+                self.error(
+                    "WORK019",
+                    f"Open work item has a finalized parent ({parent.item.status}): "
+                    f"{entry.item.item_id} -> {parent_id}",
+                    entry.item.path,
+                )
+
+        for entry in audited_items:
+            seen: list[str] = []
+            cursor = entry.item.item_id
+            while cursor:
+                if cursor in seen:
+                    self.error(
+                        "WORK018",
+                        "Parent chain forms a cycle: " + " -> ".join(seen + [cursor]),
+                        entry.item.path,
+                    )
+                    break
+                seen.append(cursor)
+                parent_entry = by_id.get(cursor)
+                cursor = parent_entry.item.parent if parent_entry else ""
+
+    def audit_work_indexes(self, audited_items: list[AuditedItem]) -> None:
+        present_items = [entry.item for entry in audited_items if entry.location == "present"]
+        known_ids = {item.item_id for item in present_items}
+        active_ids, active_unknown = self.mentioned_item_ids(
+            self.stage_root / "present" / "work" / "active.md", known_ids
+        )
+        review_ids, review_unknown = self.mentioned_item_ids(
+            self.stage_root / "present" / "work" / "review.md", known_ids
+        )
+
+        for unknown_id in sorted(active_unknown):
+            self.error(
+                "INDEX001",
+                f"active.md references a work item that does not exist: {unknown_id}",
+                "present/work/active.md",
+            )
+        for unknown_id in sorted(review_unknown):
+            self.error(
+                "INDEX002",
+                f"review.md references a work item that does not exist: {unknown_id}",
+                "present/work/review.md",
+            )
+
+        by_id = {item.item_id: item for item in present_items}
+        for item in present_items:
+            if item.status in ACTIVE_VIEW_STATUSES and item.item_id not in active_ids:
+                self.error(
+                    "INDEX003",
+                    f"An active work item is missing from the active.md index: {item.item_id}",
+                    item.path,
+                )
+            if item.status in REVIEW_VIEW_STATUSES and item.item_id not in review_ids:
+                self.error(
+                    "INDEX004",
+                    f"A review/completed/rejected work item is missing from the review.md index: {item.item_id}",
+                    item.path,
+                )
+
+        for item_id in sorted(active_ids):
+            item = by_id.get(item_id)
+            if item and item.status not in ACTIVE_VIEW_STATUSES:
+                self.error(
+                    "INDEX005",
+                    f"An active.md entry does not have status active/blocked: {item_id}",
+                    item.path,
+                )
+        for item_id in sorted(review_ids):
+            item = by_id.get(item_id)
+            if item and item.status not in REVIEW_VIEW_STATUSES:
+                self.error(
+                    "INDEX006",
+                    f"A review.md entry does not have status review/completed/rejected: {item_id}",
+                    item.path,
+                )
+
+    def mentioned_item_ids(self, path: Path, known_ids: set[str]) -> tuple[set[str], set[str]]:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            self.error("INDEX000", "Work index file cannot be read.", path)
+            return set(), set()
+
+        linked_ids = set(ITEM_LINK_RE.findall(text))
+        return linked_ids & known_ids, linked_ids - known_ids
+
+    def audit_backlog_items(self, work_ids: set[str]) -> set[str]:
+        backlog_root = self.stage_root / "future" / "backlog" / "items"
+        if not backlog_root.exists():
+            return set()
+
+        entries: dict[str, dict[str, str]] = {}
+        paths: dict[str, Path] = {}
+        for path in sorted(backlog_root.glob("*.md")):
+            if path.name in {"README.md", "_template.md"}:
+                continue
+            fields = stage_guard.parse_frontmatter(path)
+            if not fields:
+                # Legacy body-only backlog items are not audited.
+                continue
+            item_id = (fields.get("id") or "").strip() or path.stem
+            entries[item_id] = fields
+            paths[item_id] = path
+
+            status = (fields.get("status") or "").strip().lower()
+            if status not in BACKLOG_STATUS_VALUES:
+                self.error("BACKLOG001", f"Unknown backlog status: {status or 'missing'}", path)
+            if not (path.stem == item_id or path.stem.startswith(item_id + "-")):
+                self.error(
+                    "BACKLOG003",
+                    f"Backlog filename does not start with its id: {item_id}",
+                    path,
+                )
+
+            realized_by = (fields.get("realized_by") or "").strip()
+            if status == "selected" and not realized_by:
+                self.warning(
+                    "BACKLOG004",
+                    f"Selected backlog item has no realized_by work item: {item_id}",
+                    path,
+                )
+            if realized_by and realized_by not in work_ids:
+                self.error(
+                    "BACKLOG005",
+                    f"realized_by work item not found: {realized_by}",
+                    path,
+                )
+
+        for item_id, fields in entries.items():
+            parent_id = (fields.get("parent") or "").strip()
+            if parent_id and parent_id not in entries:
+                self.error(
+                    "BACKLOG002",
+                    f"Parent backlog item not found: {parent_id}",
+                    paths[item_id],
+                )
+        return set(entries)
+
+    def audit_lineage(self, audited_items: list[AuditedItem], backlog_ids: set[str]) -> None:
+        for entry in audited_items:
+            source = (entry.fields.get("source") or "").strip()
+            if source and source not in backlog_ids:
+                self.error(
+                    "WORK020",
+                    f"source backlog item not found: {source}",
+                    entry.item.path,
+                )
+
+    def audit_state_links(self, work_ids: set[str]) -> None:
+        state_root = self.stage_root / "present" / "state"
+        for family in ("observations", "questions", "assumptions", "risks"):
+            family_root = state_root / family
+            if not family_root.exists():
+                continue
+            for path in sorted(family_root.glob("*.md")):
+                if path.name in {"README.md", "_template.md"}:
+                    continue
+                fields = stage_guard.parse_frontmatter(path)
+                if not fields:
+                    continue
+                for ref in stage_guard.split_scope(fields.get("work_items", "")):
+                    if ref not in work_ids:
+                        self.error(
+                            "STATE001",
+                            f"work_items references a missing work item: {ref}",
+                            path,
+                        )
+
+    def audit_family_shapes(self) -> None:
+        required = {
+            self.stage_root / "present" / "work" / "retrospectives": ("id", "work_item"),
+            self.stage_root / "past" / "work" / "archive" / "retrospectives": ("id", "work_item"),
+            self.stage_root / "present" / "work" / "decisions": ("id", "work_item", "status"),
+        }
+        for family_root, keys in required.items():
+            if not family_root.exists():
+                continue
+            for path in sorted(family_root.glob("*.md")):
+                if path.name in {"README.md", "_template.md"}:
+                    continue
+                fields = stage_guard.parse_frontmatter(path)
+                missing = [key for key in keys if key not in fields]
+                if missing:
+                    self.warning(
+                        "FAMILY001",
+                        "Record does not follow its family frontmatter shape; missing: " + ", ".join(missing),
+                        path,
+                    )
+
+    def audit_canon(self) -> None:
+        principles_path = self.stage_root / "past" / "canon" / "principles.md"
+        try:
+            text = principles_path.read_text(encoding="utf-8")
+        except OSError:
+            self.error("CANON001", "past/canon/principles.md is missing — the harness core principles are gone.", principles_path)
+            return
+        markers = ("SSOT", "MECE", "Fail Fast", "AHA", "## Completion principle", "## Behavior principles")
+        missing = [marker for marker in markers if marker not in text]
+        if missing:
+            self.error(
+                "CANON001",
+                "Core principles are missing from past/canon/principles.md: " + ", ".join(missing),
+                principles_path,
+            )
+
+    def audit_governance(self) -> None:
+        settings_path = self.stage_root / "settings.json"
+        if not settings_path.exists():
+            return
+        if stage_guard.governance_broken(self.stage_root):
+            self.error("GOV000", "settings.json is unreadable or malformed (hooks fail closed until repaired).", settings_path)
+            return
+        governance = stage_guard.load_governance(self.stage_root)
+        legacy_keys = [key for key in ("extensions", "paths") if isinstance(governance.get(key), list) and governance.get(key)]
+        if legacy_keys:
+            self.warning(
+                "GOV001",
+                "Governance uses an allowlist (" + ", ".join(legacy_keys) + ") — narrower than the broad default.",
+                settings_path,
+            )
+        narrowing = []
+        for key in ("exclude_paths", "exclude_extensions"):
+            values = governance.get(key)
+            if isinstance(values, list) and values:
+                narrowing.extend(str(value) for value in values)
+        if narrowing:
+            self.warning(
+                "GOV002",
+                "Governance excludes paths/extensions from the broad default: " + ", ".join(narrowing[:8]),
+                settings_path,
+            )
+
+    def known_kinds(self) -> set[str]:
+        if not hasattr(self, "_known_kinds"):
+            self._known_kinds = self.parse_table_first_cells(
+                self.stage_root / "operations" / "verification.md"
+            )
+        return self._known_kinds
+
+    def known_principles(self) -> set[str]:
+        if not hasattr(self, "_known_principles"):
+            cells = self.parse_table_first_cells(self.stage_root / "past" / "canon" / "principles.md")
+            self._known_principles = {cell.split(" (")[0].strip() for cell in cells if cell}
+        return self._known_principles
+
+    def parse_table_first_cells(self, path: Path) -> set[str]:
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            return set()
+        cells: set[str] = set()
+        for line in lines:
+            stripped = line.strip()
+            if not stripped.startswith("|"):
+                continue
+            first = stripped.strip("|").split("|")[0].strip().strip("`")
+            if first and not re.fullmatch(r":?-{2,}:?", first) and first.lower() not in {"kind", "principle", "field", "prefix", "status"}:
+                cells.add(first.lower() if path.name == "verification.md" else first)
+        return cells
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Audit the .stage artifact structure and work status.")
+    parser.add_argument("--project-root", default=".", help="Project root. Defaults to the current directory.")
+    parser.add_argument("--format", choices=("text", "json"), default="text", help="Output format.")
+    parser.add_argument("--strict", action="store_true", help="Treat warnings as failures.")
+    return parser.parse_args()
+
+
+def render_text(project_root: Path, findings: list[Finding]) -> str:
+    errors = sum(1 for finding in findings if finding.severity == "error")
+    warnings = sum(1 for finding in findings if finding.severity == "warning")
+    lines = [f"Stage audit: {project_root / '.stage'}"]
+    if not findings:
+        lines.append("OK: no findings")
+    for finding in findings:
+        location = f" [{finding.path}]" if finding.path else ""
+        lines.append(f"{finding.severity.upper()} {finding.code}{location}: {finding.message}")
+    lines.append(f"Summary: errors={errors}, warnings={warnings}")
+    return "\n".join(lines)
+
+
+def render_json(project_root: Path, findings: list[Finding]) -> str:
+    payload: dict[str, Any] = {
+        "stage_root": str(project_root / ".stage"),
+        "summary": {
+            "errors": sum(1 for finding in findings if finding.severity == "error"),
+            "warnings": sum(1 for finding in findings if finding.severity == "warning"),
+        },
+        "findings": [finding.to_dict() for finding in findings],
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
+    args = parse_args()
+    project_root = Path(args.project_root).expanduser().resolve()
+    audit = Audit(project_root)
+    findings = audit.run()
+
+    if args.format == "json":
+        print(render_json(project_root, findings))
+    else:
+        print(render_text(project_root, findings))
+
+    has_errors = any(finding.severity == "error" for finding in findings)
+    has_warnings = any(finding.severity == "warning" for finding in findings)
+    if has_errors or (args.strict and has_warnings):
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

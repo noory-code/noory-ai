@@ -1,0 +1,39 @@
+{
+  "name": "stage",
+  "version": "0.1.0",
+  "description": "Durable execution harness for LLM-led long-running projects.",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/stage",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "keywords": [
+    "stage",
+    "llm",
+    "context",
+    "decision-gates",
+    "retrospective",
+    "cross-platform"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Stage",
+    "shortDescription": "Durable context and decision gates for long-running work",
+    "longDescription": "Stage creates a portable .stage project harness that separates artifact status, work lifecycle, context ownership, decision gates, verification, and retrospectives for LLM-led work across Codex, Claude, Windows, Linux, and macOS.",
+    "developerName": "noory-code",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/noory-code/noory-ai/tree/main/stage",
+    "defaultPrompt": [
+      "Initialize stage for this project",
+      "Use stage to decide the next step",
+      "Run a stage retrospective"
+    ],
+    "brandColor": "#7C3AED"
+  }
+}

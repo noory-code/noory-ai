@@ -42,6 +42,9 @@ secrets*
 # Session handoff (local only)
 HANDOFF.md
 
+# Stage local discussion notes (review scratch — not committed)
+stage/.discuss/
+
 # Playwright MCP scratch (session traces, screenshots saved to root)
 .playwright-mcp/
 

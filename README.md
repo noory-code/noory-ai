@@ -62,6 +62,20 @@ Curated reference skills for Flutter development. Each skill gives Claude instan
 /plugin install flutter-cask
 ```
 
+### [Stage](stage/) — Durable Execution Harness
+
+Portable `.stage/` harness for LLM-led long-running projects. Stage separates artifact status, context ownership, decision gates, verification, and retrospectives.
+
+- Global artifact time: `past` / `present` / `future`
+- Local work lifecycle: `before` / `during` / `after` / `retrospective`
+- Plain Markdown templates for Codex, Claude, Windows, Linux, and macOS
+
+**Install:**
+```
+/plugin marketplace add noory-code/noory-ai
+/plugin install stage
+```
+
 ## Development
 
 Each package is independent. Work inside the relevant subdirectory:

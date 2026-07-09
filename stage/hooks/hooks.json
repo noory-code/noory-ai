@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|MultiEdit|NotebookEdit|Write|AskUserQuestion|apply_patch|create_file|editFiles|edit_files|edit_notebook_file|multi_replace_string_in_file|replace_string_in_file|request_user_input|run_in_terminal",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" pre-tool-use",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" session-start",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
