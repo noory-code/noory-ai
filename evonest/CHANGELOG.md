@@ -2,6 +2,13 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.1.3] — 2026-07-10
+
+### Fixed
+
+- Updated the built-in Distill target routing from the removed top-level
+  `distill/` path to the `novel-ai/distill/` submodule path.
+
 ## [1.1.2] — 2026-06-15
 
 ### Added
