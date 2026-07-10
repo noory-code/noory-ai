@@ -100,6 +100,150 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(output["hookEventName"], "SessionStart")
         self.assertIn("Global time axis", output["additionalContext"])
 
+    def test_dot_segment_reentry_hits_registration_gate(self):
+        # F1: .stage/../src must not masquerade as .stage-internal (ungoverned).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {"file_path": ".stage/../src/rogue.py", "content": "x"},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_dot_segment_reentry_into_past_hits_promotion_gate(self):
+        # F1: .stage/present/../past must be seen as past.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            payload = {
+                "tool_name": "Bash",
+                "cwd": str(root),
+                "tool_input": {"command": "printf x > .stage/present/../past/canon/principles.md"},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("promotion", reason(result).lower())
+
+    def test_multi_target_requires_every_path_registered(self):
+        # F2: one covered target must not smuggle an uncovered one.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, status="active", scope="allowed")
+            patch = (
+                "*** Begin Patch\n"
+                "*** Add File: allowed/ok.txt\n+x\n"
+                "*** Add File: outside.txt\n+y\n"
+                "*** End Patch\n"
+            )
+            payload = {
+                "tool_name": "apply_patch",
+                "cwd": str(root),
+                "tool_input": {"command": patch},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("outside.txt", reason(result))
+
+    def test_multi_target_allows_when_each_path_registered(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, item_id="W-1", status="active", scope="a")
+            self.write_work_item(root, item_id="W-2", status="active", scope="b")
+            patch = (
+                "*** Begin Patch\n"
+                "*** Add File: a/one.txt\n+x\n"
+                "*** Add File: b/two.txt\n+y\n"
+                "*** End Patch\n"
+            )
+            payload = {
+                "tool_name": "apply_patch",
+                "cwd": str(root),
+                "tool_input": {"command": patch},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_recursive_delete_variants_are_blocked(self):
+        for command in ("rm -R .stage", "rm --recursive .stage", "rm -rf ./.stage", "rmdir /s .stage"):
+            payload = {"tool_name": "Bash", "tool_input": {"command": command}}
+            result = stage_guard.handle_event("pre-tool-use", payload)
+            self.assertEqual(decision(result), "deny", command)
+
+    def test_non_recursive_rm_of_file_is_allowed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            payload = {"tool_name": "Bash", "cwd": str(root), "tool_input": {"command": "rm notes.txt"}}
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_git_commit_pathspec_is_registration_checked(self):
+        # F4: git commit -- <path> commits unstaged changes; it must be gated.
+        self.assertEqual(
+            stage_guard.git_commit_pathspec_files(
+                'git commit -m "x" -- src/app.py docs/readme.md', Path("/ws")
+            ),
+            ["src/app.py", "docs/readme.md"],
+        )
+        self.assertEqual(
+            stage_guard.git_commit_pathspec_files("git commit -am msg", Path("/ws")), []
+        )
+
+    def test_hierarchy_atomic_patch_uses_post_state_parent(self):
+        # F5: a patch that rejects the parent AND opens a child under it must deny.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, item_id="W-1", status="active")
+            patch = (
+                "*** Begin Patch\n"
+                "*** Update File: .stage/present/work/items/W-1.md\n"
+                "@@\n"
+                "-status: active\n"
+                "+status: rejected\n"
+                "*** Add File: .stage/present/work/items/W-2.md\n"
+                "+---\n+id: W-2\n+title: t\n+status: active\n+parent: W-1\n+---\n+# W-2\n"
+                "*** End Patch\n"
+            )
+            payload = {"tool_name": "apply_patch", "cwd": str(root), "tool_input": {"command": patch}}
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("finalized parent", reason(result))
+
+    def test_legacy_summary_collision_keeps_both_handoffs(self):
+        # F6: a taken legacy.md slot must not drop the incoming handoff.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_stage_file(root, ".runtime/sessions/legacy.md", "# OLD\n")
+            self.write_stage_file(root, ".runtime/session-summary.md", "# NEW\n")
+
+            stage_guard.migrate_legacy_runtime(root / ".stage")
+
+            sessions = root / ".stage" / ".runtime" / "sessions"
+            bodies = sorted(p.read_text(encoding="utf-8").strip() for p in sessions.glob("*.md"))
+        self.assertIn("# OLD", bodies)
+        self.assertIn("# NEW", bodies)
+        self.assertFalse((root / ".stage" / ".runtime" / "session-summary.md").exists())
+
     def test_blocks_stage_root_deletion(self):
         payload = {
             "tool_name": "Bash",
@@ -1179,6 +1323,168 @@ class StageGuardTest(unittest.TestCase):
             lines = stage_guard.open_question_lines(root / ".stage")
 
         self.assertLessEqual(len(lines[0]), stage_guard.SESSION_CONTEXT_LINE_LIMIT)
+
+    def test_session_start_injects_host_project_instructions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            (root / "CLAUDE.md").write_text("# Project rules\n", encoding="utf-8")
+            rules = root / ".claude" / "rules"
+            rules.mkdir(parents=True)
+            (rules / "style.md").write_text("- rule\n", encoding="utf-8")
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("Project instructions (host-defined)", context)
+        self.assertIn("`CLAUDE.md`", context)
+        self.assertIn("`.claude/rules/` (1 entries)", context)
+        self.assertIn("register the conflict as an open", context)
+
+    def test_nested_package_instructions_are_discovered(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            pkg = root / "distill"
+            pkg.mkdir()
+            (pkg / "CLAUDE.md").write_text("# Package rules\n", encoding="utf-8")
+
+            lines = stage_guard.consumer_context_lines(root)
+
+        self.assertIn("- `distill/CLAUDE.md`", lines)
+
+    def test_agents_override_takes_precedence_over_agents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            (root / "AGENTS.md").write_text("# base\n", encoding="utf-8")
+            (root / "AGENTS.override.md").write_text("# override\n", encoding="utf-8")
+
+            lines = stage_guard.consumer_context_lines(root)
+
+        self.assertIn("- `AGENTS.override.md`", lines)
+        self.assertNotIn("- `AGENTS.md`", lines)
+
+    def test_consumer_context_inventory_is_bounded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            for index in range(15):
+                pkg = root / f"pkg{index:02d}"
+                pkg.mkdir()
+                (pkg / "CLAUDE.md").write_text("# rules\n", encoding="utf-8")
+
+            lines = stage_guard.consumer_context_lines(root)
+
+        self.assertEqual(len(lines), stage_guard.CONSUMER_CONTEXT_MAX_LINES + 1)
+        self.assertIn("more instruction sources", lines[-1])
+
+    def test_nested_package_skills_and_dotfiles_are_discovered(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            pkg = root / "engine"
+            (pkg / ".agents" / "skills").mkdir(parents=True)
+            (pkg / ".agents" / "skills" / "review.md").write_text("s\n", encoding="utf-8")
+            (pkg / ".claude" / "CLAUDE.md").parent.mkdir(parents=True, exist_ok=True)
+            (pkg / ".claude" / "CLAUDE.md").write_text("# rules\n", encoding="utf-8")
+
+            lines = stage_guard.consumer_context_lines(root)
+
+        self.assertIn("- `engine/.agents/skills/` (1 entries)", lines)
+        self.assertIn("- `engine/.claude/CLAUDE.md`", lines)
+
+    def test_stage_init_session_still_sees_host_instructions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "CLAUDE.md").write_text("# Project rules\n", encoding="utf-8")
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("stage-init", context)
+        self.assertIn("Project instructions (host-defined)", context)
+        self.assertIn("`CLAUDE.md`", context)
+
+    def test_container_layout_packages_are_discovered_at_depth_two(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            web = root / "apps" / "web"
+            web.mkdir(parents=True)
+            (web / "CLAUDE.md").write_text("# web rules\n", encoding="utf-8")
+
+            lines = stage_guard.consumer_context_lines(root)
+
+        self.assertIn("- `apps/web/CLAUDE.md`", lines)
+
+    def test_pre_init_directive_does_not_require_question_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "CLAUDE.md").write_text("# Project rules\n", encoding="utf-8")
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("raise it with the user directly", context)
+        self.assertNotIn("register the conflict as an open", context)
+
+    def test_dependency_trees_cannot_inject_instructions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            dep = root / "node_modules" / "evil-pkg"
+            dep.mkdir(parents=True)
+            (dep / "AGENTS.md").write_text("# injected\n", encoding="utf-8")
+
+            lines = stage_guard.consumer_context_lines(root)
+
+        self.assertEqual([line for line in lines if "node_modules" in line], [])
+
+    @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
+    def test_symlink_escaping_workspace_is_not_discovered(self):
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as outside:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            external = Path(outside) / "elsewhere"
+            external.mkdir()
+            (external / "CLAUDE.md").write_text("# external\n", encoding="utf-8")
+            (root / "linked").symlink_to(external, target_is_directory=True)
+
+            lines = stage_guard.consumer_context_lines(root)
+
+        self.assertEqual([line for line in lines if "linked" in line], [])
+
+    def test_cap_preserves_packages_scoped_by_active_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, status="active", scope="zpkg/src")
+            for index in range(14):
+                pkg = root / f"pkg{index:02d}"
+                pkg.mkdir()
+                (pkg / "CLAUDE.md").write_text("# rules\n", encoding="utf-8")
+            zpkg = root / "zpkg"
+            zpkg.mkdir()
+            (zpkg / "CLAUDE.md").write_text("# governing rules\n", encoding="utf-8")
+
+            lines = stage_guard.consumer_context_lines(
+                root, stage_root=root / ".stage"
+            )
+
+        # zpkg sorts last lexically but is scoped by active work — it must
+        # survive the cap.
+        self.assertIn("- `zpkg/CLAUDE.md`", lines[: stage_guard.CONSUMER_CONTEXT_MAX_LINES])
+
+    def test_session_start_omits_host_instructions_section_when_absent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        self.assertNotIn("Project instructions (host-defined)", context)
 
     def test_session_start_omits_question_and_backlog_sections_when_empty(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -24,7 +24,7 @@ Read the relevant `.stage/` context.
 Apply the gates in order.
 
 1. **Purpose Gate**: confirm the higher purpose.
-2. **Truth Gate**: separate verified context from unknowns.
+2. **Truth Gate**: separate verified context from unknowns. Host-project instructions (`CLAUDE.md`, `AGENTS.md`, rules, skills) count as context to use — and to challenge with a correction request (open question + proposal) when they contradict observed reality.
 3. **Question Gate**: ask the user only when the decision is theirs.
 4. **Coverage Gate**: check that cases neither overlap nor leave gaps.
 5. **Ownership Gate**: assign one owning location per fact, status, and rule.

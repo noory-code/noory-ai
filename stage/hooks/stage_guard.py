@@ -71,15 +71,7 @@ RETROSPECTIVE_DONE = {"completed"}
 PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "rejected"}
 REDIRECT_RE = re.compile(r"(?:^|[\s])(?:>>|[0-9]?>)\s*(?P<path>[^&|;\s]+)")
 PATCH_FILE_RE = re.compile(r"^\*{3} (?:Add|Update|Delete) File: (?P<path>.+)$|^\*{3} Move to: (?P<move>.+)$", re.MULTILINE)
-STAGE_DELETE_RE = re.compile(
-    r"("
-    r"\brm\s+(?:-[A-Za-z]*[rf][A-Za-z]*|-[A-Za-z]*[fr][A-Za-z]*)\s+[^;&|]*\.stage\b"
-    r"|"
-    r"\bRemove-Item\b[^;&|]*\.stage\b[^;&|]*(?:-Recurse|-Force)"
-    r"|"
-    r"\brmdir\s+(?:/s|/S)\s+[^;&|]*\.stage\b"
-    r")"
-)
+SHELL_SEPARATORS = {"&&", "||", ";", "|", "\n"}
 
 
 @dataclass(frozen=True)
@@ -166,9 +158,39 @@ def iter_strings(value: Any) -> list[str]:
 def normalize_path_text(path: str) -> str:
     value = path.strip().strip("'\"`")
     value = value.replace("\\", "/")
-    while value.startswith("./"):
-        value = value[2:]
-    return value
+    return collapse_dot_segments(value)
+
+
+def collapse_dot_segments(value: str) -> str:
+    """Lexically resolve `.`/`..` so `.stage/../src` cannot masquerade as a
+    `.stage`-internal path (and vice versa). Purely textual — no filesystem
+    access, so it is safe for not-yet-existing targets and identical on every
+    host. Leading `..` that escapes the anchor is preserved (it still reads as
+    outside the workspace to every gate)."""
+    if not value:
+        return value
+    absolute_prefix = ""
+    rest = value
+    drive = re.match(r"^([A-Za-z]:)(.*)$", rest)
+    if drive:
+        absolute_prefix = drive.group(1)
+        rest = drive.group(2)
+    if rest.startswith("/"):
+        absolute_prefix += "/"
+        rest = rest.lstrip("/")
+    stack: list[str] = []
+    for segment in rest.split("/"):
+        if segment in ("", "."):
+            continue
+        if segment == "..":
+            if stack and stack[-1] != "..":
+                stack.pop()
+            elif not absolute_prefix:
+                stack.append("..")
+            # An absolute path cannot escape its own root: drop the `..`.
+            continue
+        stack.append(segment)
+    return absolute_prefix + "/".join(stack)
 
 
 def collect_explicit_paths(payload: dict[str, Any]) -> list[str]:
@@ -270,8 +292,9 @@ def is_source_path(path: str, workspace_root: Path) -> bool:
     relative = relative_to_workspace(path, workspace_root)
     if not relative:
         return False
-    if relative.startswith("/") or re.match(r"^[A-Za-z]:", relative):
-        # Absolute path outside the workspace — not governed by this project.
+    if relative.startswith("/") or re.match(r"^[A-Za-z]:", relative) or relative.startswith("../") or relative == "..":
+        # Path outside the workspace (absolute or `..`-escaping) — not this
+        # project's governance scope.
         return False
     if any(path_has_prefix(relative, prefix) for prefix in DEFAULT_EXCLUDED_PREFIXES):
         return False
@@ -321,6 +344,55 @@ def shell_tokens(command: str) -> list[str]:
         return shlex.split(command, posix=os.name != "nt")
     except ValueError:
         return []
+
+
+def _targets_stage_root(arg: str) -> bool:
+    normalized = normalize_path_text(arg)
+    return normalized == ".stage" or normalized.endswith("/.stage")
+
+
+def command_deletes_stage(command: str) -> bool:
+    """Whether a shell command recursively removes the whole `.stage` tree.
+
+    Tokenized (not a free-text regex) so recursive flags in any spelling are
+    caught: `rm -r/-R/-rf/--recursive`, PowerShell `Remove-Item -Recurse`,
+    Windows `rmdir /s`. Non-recursive `rm .stage` cannot remove a directory,
+    so it is not blocked here.
+    """
+    tokens = shell_tokens(command)
+    simple: list[str] = []
+    groups: list[list[str]] = []
+    for token in tokens + ["\n"]:
+        if token in SHELL_SEPARATORS:
+            if simple:
+                groups.append(simple)
+            simple = []
+        else:
+            simple.append(token)
+    for group in groups:
+        if not group:
+            continue
+        name = Path(group[0]).name.lower()
+        flags = [tok for tok in group[1:] if tok.startswith("-") or tok.startswith("/")]
+        args = [tok for tok in group[1:] if not tok.startswith("-") and not tok.startswith("/")]
+        if name == "rm":
+            recursive = any(
+                tok == "--recursive" or (tok.startswith("-") and not tok.startswith("--") and "r" in tok.lower())
+                for tok in flags
+            )
+            if recursive and any(_targets_stage_root(arg) for arg in args):
+                return True
+        elif name == "rmdir":
+            if any(flag.lower() in {"/s", "-s", "--recursive"} for flag in flags) and any(
+                _targets_stage_root(arg) for arg in args
+            ):
+                return True
+        elif name in {"remove-item", "ri", "rd", "del", "erase"}:
+            recursive = any(flag.lower() in {"-recurse", "-r", "/s"} for flag in flags)
+            force = any(flag.lower() in {"-force", "-f"} for flag in flags)
+            if (recursive or force) and any(_targets_stage_root(arg) for arg in group[1:]):
+                return True
+    return False
 
 
 def shell_write_paths(command: str) -> list[str]:
@@ -445,6 +517,49 @@ def git_add_paths_from_command(command: str, workspace_root: Path) -> list[str]:
             if normalized not in paths:
                 paths.append(normalized)
     return paths
+
+
+GIT_COMMIT_VALUE_LONG_FLAGS = {"--message", "--file", "--author", "--date", "--reuse-message", "--reedit-message", "--fixup", "--squash", "--gpg-sign"}
+GIT_COMMIT_VALUE_SHORT_LETTERS = set("mFCcS")
+
+
+def git_commit_pathspec_files(command: str, workspace_root: Path) -> list[str]:
+    """Files a `git commit` names directly as pathspec — `git commit -- a b`,
+    `git commit --only path`, or trailing paths — which commit unstaged tracked
+    changes without ever being `git add`-ed, bypassing the staged-files check.
+    """
+    paths: list[str] = []
+    for subcommand, args in iter_git_commands(command):
+        if subcommand != "commit":
+            continue
+        after_ddash = False
+        index = 0
+        while index < len(args):
+            arg = args[index]
+            if after_ddash:
+                paths.append(arg)
+            elif arg == "--":
+                after_ddash = True
+            elif arg.startswith("--"):
+                name = arg.split("=", 1)[0]
+                if name in GIT_COMMIT_VALUE_LONG_FLAGS and "=" not in arg:
+                    index += 1  # value is the next token
+            elif arg.startswith("-"):
+                # Short cluster like -m, -am, -F: a value-taking letter as the
+                # LAST char consumes the next token (unless attached, -mMSG).
+                cluster = arg[1:]
+                if cluster and cluster[-1] in GIT_COMMIT_VALUE_SHORT_LETTERS:
+                    index += 1
+            else:
+                # A bare non-flag arg to commit is a pathspec (commit-only-these).
+                paths.append(arg)
+            index += 1
+    normalized: list[str] = []
+    for path in paths:
+        value = normalize_path_text(path)
+        if value and value not in {".", ":"} and value not in normalized:
+            normalized.append(value)
+    return normalized
 
 
 def git_commit_all_requested(command: str) -> bool:
@@ -739,12 +854,20 @@ def source_registration_blocker(workspace_root: Path, paths: list[str]) -> str:
     source_paths = [path for path in paths if is_source_path(path, workspace_root)]
     if not source_paths:
         return ""
-    if open_items_for_paths(workspace_root, source_paths):
+    open_items = [item for item in load_work_items(workspace_root / ".stage") if item_is_open(item)]
+    # Every governed target must be covered — otherwise one legitimate target
+    # would smuggle arbitrary unregistered targets through in the same call.
+    uncovered = [
+        path
+        for path in source_paths
+        if not any(item_matches_path(item, path, workspace_root) for item in open_items)
+    ]
+    if not uncovered:
         return ""
     return (
         "Stage registration gate violation: before modifying governed files, register an active "
         "work item with a matching scope in `.stage/present/work/items/`. "
-        "Targets: " + ", ".join(source_paths[:5])
+        "Unregistered targets: " + ", ".join(uncovered[:5])
     )
 
 
@@ -830,13 +953,18 @@ def migrate_legacy_runtime(stage_root: Path) -> None:
         pass
     legacy_summary = runtime / "session-summary.md"
     if legacy_summary.exists():
-        target = sessions_root(stage_root) / "legacy.md"
+        sessions = sessions_root(stage_root)
         try:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            if target.exists():
-                legacy_summary.unlink()
-            else:
-                legacy_summary.replace(target)
+            sessions.mkdir(parents=True, exist_ok=True)
+            # Never overwrite or drop an existing handoff: a taken `legacy.md`
+            # slot means a prior migration or a live session already owns it, so
+            # claim a fresh numbered slot instead of unlinking the incoming one.
+            target = sessions / "legacy.md"
+            index = 1
+            while target.exists():
+                target = sessions / f"legacy-{index}.md"
+                index += 1
+            legacy_summary.replace(target)
         except OSError:
             pass
 
@@ -906,7 +1034,8 @@ def read_intent_files(stage_root: Path) -> list[tuple[Path, dict[str, Any]]]:
 
 def load_promotion_intents(stage_root: Path) -> list[tuple[Path, dict[str, Any]]]:
     """All pending intents — one file per (work item, path) so authorizing a
-    write consumes state by atomic unlink, never by rewriting a shared file."""
+    write consumes state by an atomic rename reservation, never by rewriting a
+    shared file."""
     migrate_legacy_runtime(stage_root)
     intents = read_intent_files(stage_root)
     split_any = False
@@ -937,12 +1066,13 @@ def intent_paths(intent: dict[str, Any]) -> list[str]:
 
 
 def promotion_blocker(workspace_root: Path, target_paths: list[str]) -> str:
-    """Per-path intents make consumption an atomic unlink.
+    """Per-path intents make consumption an atomic rename reservation.
 
     Each pending intent covers exactly one path (the loader normalizes
     multi-path files), so authorizing a write never rewrites another intent's
     state — the read-modify-write race that could resurrect an already
-    consumed authorization cannot occur.
+    consumed authorization cannot occur. Acquisition is the rename to a claim
+    file; the losing concurrent session is denied.
     """
     stage_root = workspace_root / ".stage"
     intents = load_promotion_intents(stage_root)
@@ -1259,24 +1389,40 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
     stage_root = workspace_root / ".stage"
     items = load_work_items(stage_root) + load_archive_work_items(stage_root)
 
+    # Post-state status per work-item ID: disk first, then this call's projected
+    # edits overlaid — so a patch that finalizes a parent AND opens a child under
+    # it in the same call is judged against the parent's FINAL status, not its
+    # stale on-disk status.
+    status_by_id: dict[str, str] = {}
+    for item in items:
+        status_by_id.setdefault(item.item_id, item.status)
+    projected_id_by_stem: dict[str, str] = {}
+    for relative, projected in targets:
+        projected_id = frontmatter_field_from_text(projected, "id") or Path(relative).stem
+        projected_id_by_stem[Path(relative).stem] = projected_id
+        status_by_id[projected_id] = (
+            frontmatter_field_from_text(projected, "status") or "active"
+        ).lower()
+
     for relative, projected in targets:
         parent_id = frontmatter_field_from_text(projected, "parent")
         if not parent_id:
             continue
 
         target_stem = Path(relative).stem
-        if parent_id == target_stem:
+        self_id = projected_id_by_stem.get(target_stem, target_stem)
+        if parent_id in {target_stem, self_id}:
             return f"Stage hierarchy gate violation: a work item cannot be its own parent: {parent_id}"
 
-        matched = [item for item in items if item.item_id == parent_id and item.path.stem != target_stem]
-        if not matched:
+        parent_status = status_by_id.get(parent_id)
+        if parent_status is None:
             return f"Stage hierarchy gate violation: parent work item not found: {parent_id}"
 
         child_status = (frontmatter_field_from_text(projected, "status") or "active").lower()
-        if matched[0].status in WORK_FINAL_STATUSES and child_status in WORK_OPEN_STATUSES:
+        if parent_status in WORK_FINAL_STATUSES and child_status in WORK_OPEN_STATUSES:
             return (
                 "Stage hierarchy gate violation: cannot open a child under a finalized parent "
-                f"({matched[0].status}): {parent_id}"
+                f"({parent_status}): {parent_id}"
             )
     return ""
 
@@ -1310,7 +1456,7 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
     workspace_root = resolve_workspace_root(payload)
     stage_root = workspace_root / ".stage"
 
-    if command and STAGE_DELETE_RE.search(command):
+    if command and command_deletes_stage(command):
         return deny(
             "Stage rule violation: deleting `.stage` entirely is blocked. "
             "Modify only the specific files you need so official artifacts, current work status, "
@@ -1360,6 +1506,7 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
     if stage_root.exists() and name in SHELL_TOOLS and command and command_has_git_commit(command):
         files = staged_files(workspace_root)
         files.extend(path for path in git_add_paths_from_command(command, workspace_root) if path not in files)
+        files.extend(path for path in git_commit_pathspec_files(command, workspace_root) if path not in files)
         if git_commit_all_requested(command):
             files.extend(path for path in changed_files(workspace_root) if path not in files)
         blocker = commit_blocker(workspace_root, files)
@@ -1384,10 +1531,12 @@ def read_if_exists(path: Path, limit: int = 1400) -> str:
 def session_context(workspace_root: Path) -> str:
     stage_root = workspace_root / ".stage"
     if not stage_root.exists():
+        # The stage-init session itself must still see host instructions.
         return (
             "## Stage\n"
             "This project has no `.stage/`. If the Stage harness applies to this project, "
             "create the artifact structure first with `stage-init`."
+            + consumer_context_section(workspace_root, pre_init=True)
         )
 
     parts = [
@@ -1419,6 +1568,10 @@ def session_context(workspace_root: Path) -> str:
         if body:
             parts.append(f"\n### {title}\n{body}")
 
+    consumer_section = consumer_context_section(workspace_root)
+    if consumer_section:
+        parts.append(consumer_section)
+
     questions = open_question_lines(stage_root)
     if questions:
         parts.append("\n### Open questions\n" + "\n".join(questions))
@@ -1432,6 +1585,178 @@ def session_context(workspace_root: Path) -> str:
         parts.append(f"\n### Most recent session\n{recent_body}")
 
     return "\n".join(parts)
+
+
+# Host-project instruction sources, relative to the workspace root. Stage
+# works without any of them; when present they are project norms the session
+# must actively use (and challenge when wrong) rather than ignore.
+CONSUMER_CONTEXT_FILES: tuple[str, ...] = (
+    "CLAUDE.md",
+    ".claude/CLAUDE.md",
+    ".cursorrules",
+    ".github/copilot-instructions.md",
+)
+CONSUMER_CONTEXT_DIRS: tuple[str, ...] = (
+    ".claude/rules",
+    ".claude/skills",
+    ".agents/skills",
+)
+CONSUMER_CONTEXT_MAX_LINES = 10
+
+
+def agents_instruction_file(directory: Path) -> str | None:
+    """Codex reads AGENTS.override.md INSTEAD of AGENTS.md when both exist —
+    listing both would mark an intentional override as a contradiction."""
+    for name in ("AGENTS.override.md", "AGENTS.md"):
+        if (directory / name).is_file():
+            return name
+    return None
+
+
+def directory_instruction_lines(directory: Path, prefix: str = "") -> list[str]:
+    """Instruction sources of one directory — the same list applies to the
+    workspace root and to each monorepo package one level down."""
+    lines: list[str] = []
+    for relative in CONSUMER_CONTEXT_FILES:
+        if (directory / relative).is_file():
+            lines.append(f"- `{prefix}{relative}`")
+    agents_name = agents_instruction_file(directory)
+    if agents_name:
+        lines.append(f"- `{prefix}{agents_name}`")
+    for relative in CONSUMER_CONTEXT_DIRS:
+        candidate = directory / relative
+        try:
+            count = sum(1 for entry in candidate.iterdir() if not entry.name.startswith("."))
+        except OSError:
+            continue
+        if count:
+            lines.append(f"- `{prefix}{relative}/` ({count} entries)")
+    return lines
+
+
+# Dependency/build trees are not project-owned: a third-party package must not
+# be able to inject "host instructions" into the session.
+UNOWNED_DIR_NAMES = {
+    "node_modules",
+    "vendor",
+    "third_party",
+    "external",
+    "dist",
+    "build",
+    "target",
+    "venv",
+}
+
+
+def child_directories(directory: Path, workspace_root: Path) -> list[Path]:
+    try:
+        resolved_root = workspace_root.resolve()
+    except OSError:
+        resolved_root = workspace_root
+    children: list[Path] = []
+    try:
+        entries = sorted(directory.iterdir())
+    except OSError:
+        return []
+    for entry in entries:
+        if entry.name.startswith(".") or entry.name in UNOWNED_DIR_NAMES:
+            continue
+        try:
+            if not entry.is_dir():
+                continue
+            # A symlink escaping the workspace is not project-owned either.
+            if not entry.resolve().is_relative_to(resolved_root):
+                continue
+        except OSError:
+            continue
+        children.append(entry)
+    return children
+
+
+def active_scope_first_segments(stage_root: Path) -> set[str]:
+    """First path segments of open work items' scopes — the packages the
+    current work actually touches."""
+    segments: set[str] = set()
+    try:
+        items = load_work_items(stage_root)
+    except OSError:
+        return segments
+    for item in items:
+        if item.status not in WORK_OPEN_STATUSES:
+            continue
+        for scope in item.scope:
+            head = normalize_path_text(scope).split("/", 1)[0].strip()
+            if head and head != "*":
+                segments.add(head)
+    return segments
+
+
+def consumer_context_lines(
+    workspace_root: Path,
+    limit: int = CONSUMER_CONTEXT_MAX_LINES,
+    stage_root: Path | None = None,
+) -> list[str]:
+    lines = directory_instruction_lines(workspace_root)
+
+    # Monorepo packages carry their own subtree-scoped instructions; container
+    # layouts (packages/foo, apps/web) put them two levels down. Discovery is
+    # bounded to depth 2 and the total line cap below. Packages that active
+    # work items actually scope come first so the cap never drops the sources
+    # governing the work at hand.
+    priority_segments = active_scope_first_segments(stage_root) if stage_root else set()
+    children = child_directories(workspace_root, workspace_root)
+    children.sort(key=lambda child: (child.name not in priority_segments, child.name))
+    for child in children:
+        lines.extend(directory_instruction_lines(child, prefix=f"{child.name}/"))
+        for grandchild in child_directories(child, workspace_root):
+            lines.extend(
+                directory_instruction_lines(
+                    grandchild, prefix=f"{child.name}/{grandchild.name}/"
+                )
+            )
+
+    if len(lines) > limit:
+        overflow = len(lines) - limit
+        lines = lines[:limit] + [f"- …and {overflow} more instruction sources"]
+    return lines
+
+
+CONSUMER_CONTEXT_DIRECTIVE = (
+    "- Consult these when planning and executing — they are project norms, "
+    "not optional reading. Root-level sources bind everywhere; a source inside "
+    "a package directory binds work under that subtree only; within a source, "
+    "honor its own applicability (a path-scoped rule or a trigger-scoped skill "
+    "applies only per its own declaration). If an applicable "
+    "instruction contradicts observed reality or Stage truth, do not silently "
+    "deviate or silently obey: register the conflict as an open question "
+    "(`present/state/questions/`) with your proposed correction and ask the "
+    "user to fix the instruction."
+)
+
+# Before stage-init there is no question family to write into.
+CONSUMER_CONTEXT_DIRECTIVE_PRE_INIT = (
+    "- Consult these when planning and executing — they are project norms, "
+    "not optional reading. Root-level sources bind everywhere; a source inside "
+    "a package directory binds work under that subtree only; within a source, "
+    "honor its own applicability (a path-scoped rule or a trigger-scoped skill "
+    "applies only per its own declaration). If an applicable "
+    "instruction contradicts observed reality, raise it with the user directly "
+    "(Stage question records become available after `stage-init`)."
+)
+
+
+def consumer_context_section(workspace_root: Path, pre_init: bool = False) -> str:
+    stage_root = None if pre_init else workspace_root / ".stage"
+    consumer = consumer_context_lines(workspace_root, stage_root=stage_root)
+    if not consumer:
+        return ""
+    directive = CONSUMER_CONTEXT_DIRECTIVE_PRE_INIT if pre_init else CONSUMER_CONTEXT_DIRECTIVE
+    return (
+        "\n### Project instructions (host-defined)\n"
+        + "\n".join(consumer)
+        + "\n"
+        + directive
+    )
 
 
 SESSION_CONTEXT_RECORD_LIMIT = 3
@@ -1580,7 +1905,9 @@ def summaries_by_recency(stage_root: Path) -> list[Path]:
             stamped.append((path.stat().st_mtime, path))
         except OSError:
             continue
-    stamped.sort(key=lambda entry: entry[0], reverse=True)
+    # Filename is a deterministic tiebreaker so coarse-resolution mtime ties
+    # give a stable order instead of an arbitrary one.
+    stamped.sort(key=lambda entry: (entry[0], entry[1].name), reverse=True)
     return [path for _, path in stamped]
 
 

@@ -123,10 +123,15 @@ class Audit:
         self.audit_template_files()
         items = self.audit_work_items()
         work_ids = {entry.item.item_id for entry in items}
+        self.work_source_by_id = {
+            entry.item.item_id: (entry.fields.get("source") or "").strip() for entry in items
+        }
         self.audit_hierarchy(items)
         self.audit_work_indexes(items)
         backlog_ids = self.audit_backlog_items(work_ids)
         self.audit_lineage(items, backlog_ids)
+        self.audit_bidirectional_lineage(items)
+        self.audit_orphan_records(work_ids)
         self.audit_state_links(work_ids)
         self.audit_family_shapes()
         self.audit_record_ownership()
@@ -149,6 +154,14 @@ class Audit:
                 self.warning(
                     "TEMPLATE002",
                     "Stage template artifact file is missing. Re-run stage-init to repair.",
+                    target,
+                )
+            elif not target.is_file():
+                # A directory (or other non-file) squatting a required file's
+                # name reads as "present" to a plain existence check.
+                self.error(
+                    "TEMPLATE003",
+                    "Stage template artifact exists but is not a regular file.",
                     target,
                 )
 
@@ -304,14 +317,8 @@ class Audit:
                     f"Decision record work_item does not match the work item: {linked_item or 'missing'}",
                     decision_path,
                 )
-            decision_status = (decision_fields.get("status") or "").strip().lower()
-            if decision_status not in DECISION_STATUS_VALUES:
-                self.error(
-                    "WORK016",
-                    f"Unknown decision record status: {decision_status or 'missing'}",
-                    decision_path,
-                )
-            self.audit_decision_principles(decision_path)
+            # Status and principle-citation checks run once over all decision
+            # records in audit_orphan_records, so they are not repeated here.
 
     def audit_decision_principles(self, decision_path: Path) -> None:
         try:
@@ -501,7 +508,90 @@ class Audit:
                     f"Parent backlog item not found: {parent_id}",
                     paths[item_id],
                 )
+        self.backlog_entries = entries
+        self.backlog_paths = paths
         return set(entries)
+
+    def audit_bidirectional_lineage(self, audited_items: list[AuditedItem]) -> None:
+        """B↔W must point at EACH OTHER, not merely both exist — a one-sided
+        link means the lineage graph silently disagrees with itself."""
+        entries = getattr(self, "backlog_entries", {})
+        paths = getattr(self, "backlog_paths", {})
+        source_by_id = getattr(self, "work_source_by_id", {})
+        for entry in audited_items:
+            source = (entry.fields.get("source") or "").strip()
+            if not source or source not in entries:
+                continue
+            back = (entries[source].get("realized_by") or "").strip()
+            if back != entry.item.item_id:
+                self.error(
+                    "WORK023",
+                    f"Lineage is one-sided: work item declares source {source}, but that backlog "
+                    f"item's realized_by is {back or 'empty'}.",
+                    entry.item.path,
+                )
+        for backlog_id, fields in entries.items():
+            realized_by = (fields.get("realized_by") or "").strip()
+            if not realized_by or realized_by not in source_by_id:
+                continue
+            if source_by_id.get(realized_by) != backlog_id:
+                self.error(
+                    "BACKLOG006",
+                    f"Lineage is one-sided: backlog item declares realized_by {realized_by}, but "
+                    f"that work item's source is {source_by_id.get(realized_by) or 'empty'}.",
+                    paths.get(backlog_id, self.stage_root),
+                )
+
+    def audit_orphan_records(self, work_ids: set[str]) -> None:
+        """Every decision and retrospective record is validated on its own —
+        not only when a work item happens to reference it — so an orphan with a
+        missing `work_item`, bad status, or no principle citation is caught."""
+        decision_dirs = (self.stage_root / "present" / "work" / "decisions",)
+        for family_root in decision_dirs:
+            if not family_root.exists():
+                continue
+            for path in sorted(family_root.glob("*.md")):
+                if path.name in {"README.md", "_template.md"}:
+                    continue
+                fields = stage_guard.parse_frontmatter(path)
+                if not fields:
+                    continue
+                work_item = (fields.get("work_item") or "").strip()
+                if not work_item or work_item not in work_ids:
+                    self.error(
+                        "DECISION001",
+                        f"Decision record work_item references a missing work item: {work_item or 'empty'}",
+                        path,
+                    )
+                status = (fields.get("status") or "").strip().lower()
+                if status not in DECISION_STATUS_VALUES:
+                    self.error(
+                        "WORK016",
+                        f"Unknown decision record status: {status or 'missing'}",
+                        path,
+                    )
+                self.audit_decision_principles(path)
+
+        retro_dirs = (
+            self.stage_root / "present" / "work" / "retrospectives",
+            self.stage_root / "past" / "work" / "archive" / "retrospectives",
+        )
+        for family_root in retro_dirs:
+            if not family_root.exists():
+                continue
+            for path in sorted(family_root.glob("*.md")):
+                if path.name in {"README.md", "_template.md"}:
+                    continue
+                fields = stage_guard.parse_frontmatter(path)
+                if not fields:
+                    continue
+                work_item = (fields.get("work_item") or "").strip()
+                if not work_item or work_item not in work_ids:
+                    self.error(
+                        "RETRO001",
+                        f"Retrospective work_item references a missing work item: {work_item or 'empty'}",
+                        path,
+                    )
 
     def audit_lineage(self, audited_items: list[AuditedItem], backlog_ids: set[str]) -> None:
         for entry in audited_items:
@@ -616,11 +706,17 @@ class Audit:
         except OSError:
             return  # TEMPLATE002 already reports the missing index.
 
+        # Match exact routed cells, not any substring: a longer path in another
+        # row (`future/proposals/index.md`) must NOT satisfy the route for
+        # `future/proposals/`. Each backtick-quoted token in the index is a
+        # routed target; compare against the whole token.
+        routed_cells = {token.strip().rstrip("/") for token in re.findall(r"`([^`]+)`", index_text)}
+
         routed_locations = [
             location for locations in RECORD_LOCATIONS.values() for location in locations
         ] + list(ROUTING_ONLY_LOCATIONS)
         for location in routed_locations:
-            if (self.stage_root / location).is_dir() and f"{location}/" not in index_text:
+            if (self.stage_root / location).is_dir() and location not in routed_cells:
                 self.warning(
                     "ROUTE001",
                     f"Existing artifact location `{location}/` is not routed in index.md.",
@@ -632,7 +728,7 @@ class Audit:
             for path in sorted(operations_root.glob("*.md")):
                 if path.name == "README.md":
                     continue
-                if f"operations/{path.name}" not in index_text:
+                if f"operations/{path.name}" not in routed_cells:
                     self.warning(
                         "ROUTE002",
                         f"Operations document `operations/{path.name}` is not routed in index.md.",

@@ -8,7 +8,8 @@ Before starting work:
 
 1. Confirm the purpose.
 2. Read the relevant `past/` truth.
-3. Check the relevant `present/` uncertainty.
-4. Treat `future/` only as plans or proposals.
-5. Define the success criteria.
-6. Judge whether a user decision is needed.
+3. Read the host project's own instructions (for example `CLAUDE.md`, `AGENTS.md`, `.claude/rules/`, project skills) and treat them as binding norms for the plan; if one contradicts observed reality or `past/` truth, register the conflict as an open question with a proposed correction instead of silently obeying it.
+4. Check the relevant `present/` uncertainty.
+5. Treat `future/` only as plans or proposals.
+6. Define the success criteria.
+7. Judge whether a user decision is needed.

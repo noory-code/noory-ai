@@ -38,6 +38,7 @@
 | Codex 훅 호환 | 구현됨(확정) | 동일 `hooks/hooks.json`을 Codex가 자동 발견 + 출력·도구명 계약 정렬 + 신뢰 승인 후 e2e(deny→등재→허용→Stop) 확인 — `hooks/README.md` §Host contract |
 | 다중 세션 `.runtime/` | 구현됨 | intent·세션 요약·질문 마커의 세션/항목 차원 분리 — `hooks/README.md` §Runtime concurrency |
 | 의미 기반 감사 | 구현됨 | 정본 중복(SSOT001)·소유 경계(OWN001)·라우팅 누락(ROUTE001/002) — 카탈로그 lock-step 선언 포함 |
+| 소비측 컨텍스트 활용 | 구현됨 | SessionStart 호스트 지시 인벤토리 + use-and-challenge 지시문 + before/during 게이트·Truth Gate 규칙 |
 
 ## Phase A: Discovery
 
@@ -69,7 +70,8 @@
 | P24 | ✅ Closed | ~~BLUEPRINT·DISCUSSION이 신규 구조를 반영하지 못했다.~~ | 결정 기록 패밀리, archive retrospectives, settings 거버넌스, 계층/계보가 다이어그램·논의에 없었다. | 설계도 대비 감사 기준이 lag 상태였다. | §4에 decisions·archive retrospectives·settings 노드, §15에 거버넌스·계층·질문 게이트를 반영하고 DISCUSSION에 보편성·계층·원칙 배선 절을 추가함. |
 | P25 | ✅ Closed | ~~보편성·계층·원칙 배선의 확정 범위가 토론 대상이다.~~ | 초안이 토론 없이 굳을 수 있었다. | 사용자 의도와 다른 고착 위험이 있었다. | `.discuss/stage-universality-hierarchy-2026-07-09.md`에서 논점 13건 전부 확정(사용자 결정 9건 + 원칙 도출 4건) 후 구현 배치 2로 반영함 — 광역 거버넌스 기본, 계층 훅 차단, B↔W 계보, kind 검증 선언, 코어 원칙 고정, DE 원칙 인용 강제, 코어 원칙 주입, 질문 게이트, 8자리 ID. |
 | P26 | ✅ Closed | ~~SessionStart 컨텍스트 예산의 나머지 절반이 남았다.~~ | SessionStart가 열린 질문 최신 3건(`present/state/questions/` — 디렉터리 존재 자체가 열림의 정의) + `status: selected` 백로그 3건을 frontmatter 한 줄씩(초과분은 개수 포인터)으로 주입. 본문 스니펫은 기존 1400자 한도 유지 — 예산 = 항목당 1줄 × K=3. | — | P3 잔여 해소. |
-| P27 | 🟡 Gap | 소비측 컨텍스트(스킬·룰·인스트럭션) 활용 배선이 없다. | 사용자 지시(2026-07-10): 계획·실행 시 플러그인을 설치한 프로젝트에 정의된 스킬·룰·기타 인스트럭션을 적극 활용해야 하고(없어도 동작이 목표), 그 컨텍스트가 잘못됐다고 판단되면 적극 수정 요청해야 한다. 현재 스킬·훅은 `.stage/`만 읽는다. | 호스트 프로젝트의 기존 규범과 Stage 판단이 병렬로 놀아 일관성이 갈라질 수 있다. | 소비측 컨텍스트 발견·활용 규칙 + 오류 판단 시 수정 요청 루프를 설계한다. 사용자 지정: 큐의 마지막 작업. |
+| P27 | ✅ Closed | ~~소비측 컨텍스트(스킬·룰·인스트럭션) 활용 배선이 없다.~~ | SessionStart가 호스트 지시 소스(`CLAUDE.md`·`AGENTS.md`·`.cursorrules`·copilot-instructions·`.claude/rules|skills`) 인벤토리 + use-and-challenge 지시문(활용 의무 + 현실과 충돌 시 조용한 이탈/복종 금지 — Q 레코드로 수정 제안 등재 후 사용자에게 요청)을 주입. `operations/before.md`(계획 게이트 3번)·`during.md`(실행 게이트 2번)·stage-decision Truth Gate에 동일 규칙 명문화. 없으면 절 생략(없어도 동작). | — | 수정 요청 루프의 거처 = 기존 Q 패밀리(신규 형태 발명 없음 — FAMILY 규칙 준수). |
+| F1–F10 | ✅ Closed | ~~전면 적대적 감사에서 강제 레이어 P1 3건 재현.~~ | `codex review`(diff) 사각을 전면 감사가 포착 — `..` 미정규화 우회, any-not-all 등재, `rm -R` 삭제 누락 등 10건. lexical 경로 정규화·전량 커버리지·토큰화 삭제 감지·commit pathspec·원자적 계층·무손실 인계·양방향 감사로 전부 반영. | v0.6.0. | 상세·재현 = `.discuss/stage-full-review-2026-07-10.md`. 테스트 156건. |
 
 ## 바로 보정한 항목
 
@@ -105,6 +107,15 @@
 | 빈 `parent:` 프론트매터 false deny (Codex e2e) | `frontmatter_field_from_text`의 `\s*`가 줄바꿈을 넘어 다음 줄을 값으로 캡처 → `[ \t]*`로 교정 |
 | 패치 본문 셸 해석·본문 경로 과추출 (Codex e2e) | 셸 의미론을 SHELL_TOOLS로 한정, 게이트 입력을 실제 쓰기 대상으로 축소(본문 문자열 스캔 제거) — 본문 언급만으로 등재/삭제 게이트가 발화하던 과차단 제거 |
 
-## 다음 구현 단위
+## 다음 구현 단위 (전면 감사 설계 제안 — 차기 사이클)
 
-1. 소비측 컨텍스트 활용 + 수정 요청 루프(P27) — 사용자 지정: 마지막 작업.
+전면 감사(`.discuss/stage-full-review-2026-07-10.md`)가 재현 결함 10건과 별개로 낸 구조 개선 후보. 결함은 v0.6.0에서 종결했고 아래는 리팩터·강건화라 사용자 우선순위 대기.
+
+1. **P28** 모든 게이트 공유 canonical target 모델 — 현재는 `normalize_path_text` 중앙화로 `..`는 막았으나, 입력→정규화→enum(내부/past/archive/밖) 단일 함수로 통합해 게이트별 재판정을 없앤다.
+2. **P29** 명령 의미론 완전화 — commit `--only`/`--include`/`git -C` repository context, 삭제 규칙 표 고정.
+3. **P30** 한 tool call의 post-state 트랜잭션 확장(계층 외 등재/승격에도), 동일 mtime handoff 전량 주입.
+4. **P31** record graph 기반 audit(현재는 개별 검사 병렬 — 그래프로 대칭·orphan 일괄).
+5. **P32** artifact catalog 실행 가능 SSOT — `operations/artifacts.md` 표를 audit가 파싱해 `RECORD_LOCATIONS` 불일치를 error로.
+6. **P33** SoC — `stage_guard.py`(1.8k행)를 path policy·work graph·runtime store·context 모듈로 분리(단일 훅 entrypoint 유지).
+7. **P34** AI-first 임계값 구조화(`Trivially reversible`, `where applicable` 등 → if/then·수치).
+8. **P35** P27 인벤토리 관련성 우선순위 — (이미 부분 반영: active work scope 우선) 잔여 정교화.

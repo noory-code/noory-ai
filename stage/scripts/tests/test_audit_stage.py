@@ -801,5 +801,71 @@ class StageAuditTest(unittest.TestCase):
         self.assertIn("future/roadmap/themes", route[0].message)
 
 
+    def test_one_sided_lineage_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, item_id="W-1")
+            (root / ".stage/present/work/items/W-1.md").write_text(
+                "---\nid: W-1\ntitle: t\nstatus: active\nverification: pending\n"
+                "retrospective: pending\npromotion: pending\nscope:\nsource: B-1\n---\n# W-1\n",
+                encoding="utf-8",
+            )
+            self.write_record(root, "future/backlog/items/B-1.md", "B-1",
+                              "status: selected\nrealized_by: W-2\n")
+            self.write_work_item(root, item_id="W-2")
+
+            codes = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertIn("WORK023", codes)
+        self.assertIn("BACKLOG006", codes)
+
+    def test_orphan_decision_and_retrospective_are_validated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_record(root, "present/work/retrospectives/R-9.md", "R-9", "work_item: W-999\n")
+            (root / ".stage/present/work/decisions/DE-9.md").write_text(
+                "---\nid: DE-9\nwork_item: W-999\nstatus: impossible\n---\n"
+                "# DE-9\n\n## Principles applied\n\n",
+                encoding="utf-8",
+            )
+
+            codes = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertIn("RETRO001", codes)
+        self.assertIn("DECISION001", codes)
+        self.assertIn("WORK016", codes)
+        self.assertIn("WORK021", codes)
+
+    def test_directory_squatting_a_required_file_is_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            target = root / ".stage" / "operations" / "output.md"
+            target.unlink()
+            target.mkdir()
+
+            codes = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertIn("TEMPLATE003", codes)
+
+    def test_routing_requires_exact_row_not_substring(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            index_path = root / ".stage" / "index.md"
+            text = index_path.read_text(encoding="utf-8")
+            index_path.write_text(
+                "\n".join(line for line in text.splitlines() if "Proposal bodies" not in line) + "\n",
+                encoding="utf-8",
+            )
+
+            route = [f for f in audit_stage.Audit(root).run() if f.code == "ROUTE001"]
+
+        # future/proposals/ body route removed even though future/proposals/index.md remains.
+        self.assertTrue(any("future/proposals" in f.message for f in route))
+
+
 if __name__ == "__main__":
     unittest.main()
