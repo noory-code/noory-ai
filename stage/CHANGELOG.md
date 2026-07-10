@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0 — 2026-07-11
+
+- External-review gate (`operations/review.md`, routed in `index.md`): findings
+  from an external review (codex, another agent, a human) are not accepted
+  uncritically. The gate anchors on the work's purpose and `past/canon` truth,
+  rebuts findings that do not serve the goal, sends the rebuttal back for a
+  counter-review, and processes only the survivors — recording what was
+  accepted and rebutted. Rebuttal is goal-alignment verification, not
+  contrarian nitpicking; when rounds stop converging the remaining edges are
+  documented best-effort rather than chased. Injected into every project Stage
+  creates.
+
 ## 0.7.0 — 2026-07-10
 
 - Hardening from the full-audit design proposals (P28-P35):
