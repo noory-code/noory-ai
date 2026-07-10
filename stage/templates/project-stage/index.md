@@ -20,6 +20,9 @@ This document routes project context to the correct Stage location.
 | Invariant index and summary | `past/canon/invariants.md` |
 | Individual invariants | `past/canon/invariants/` |
 | System structure | `past/model/` |
+| Model components | `past/model/components/` |
+| Model boundaries | `past/model/boundaries/` |
+| Model interfaces | `past/model/interfaces/` |
 | Approved decisions | `past/decisions/index.md` |
 | Decision records | `past/decisions/records/` |
 | Archived work index | `past/work/archive/index.md` |

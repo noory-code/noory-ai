@@ -39,6 +39,33 @@ REQUIRED_WORK_FIELDS = (
 ACTIVE_VIEW_STATUSES = {"active", "blocked"}
 REVIEW_VIEW_STATUSES = {"review", "completed", "rejected"}
 ITEM_LINK_RE = re.compile(r"\((?:\./)?items/([A-Za-z][A-Za-z0-9]*-\d{3,})\.md(?:#[^)]+)?\)")
+# Prefix → owning locations. SSOT for the mapping = operations/artifacts.md
+# §Artifact catalog; keep the two in lock-step.
+RECORD_LOCATIONS: dict[str, tuple[str, ...]] = {
+    "W": ("present/work/items", "past/work/archive/items"),
+    "R": ("present/work/retrospectives", "past/work/archive/retrospectives"),
+    "DE": ("present/work/decisions",),
+    "D": ("past/decisions/records",),
+    "O": ("present/state/observations",),
+    "Q": ("present/state/questions",),
+    "A": ("present/state/assumptions",),
+    "K": ("present/state/risks",),
+    "B": ("future/backlog/items",),
+    "P": ("future/proposals",),
+    "M": ("future/roadmap/milestones",),
+}
+RECORD_ID_RE = re.compile(r"^(?P<prefix>DE|[WRDOQAKBPM])-\d{3,}$")
+HEADING_ID_RE = re.compile(r"^#\s+(?P<record_id>(?:DE|[WRDOQAKBPM])-\d{3,})\b", re.MULTILINE)
+# Locations without an ID prefix still need index.md routing coverage.
+ROUTING_ONLY_LOCATIONS: tuple[str, ...] = (
+    "past/canon/principles",
+    "past/canon/vocabulary",
+    "past/canon/invariants",
+    "past/model/components",
+    "past/model/boundaries",
+    "past/model/interfaces",
+    "future/roadmap/themes",
+)
 
 
 @dataclass(frozen=True)
@@ -102,6 +129,8 @@ class Audit:
         self.audit_lineage(items, backlog_ids)
         self.audit_state_links(work_ids)
         self.audit_family_shapes()
+        self.audit_record_ownership()
+        self.audit_routing()
         self.audit_canon()
         self.audit_governance()
         return self.findings
@@ -522,6 +551,91 @@ class Audit:
                     self.warning(
                         "FAMILY001",
                         "Record does not follow its family frontmatter shape; missing: " + ", ".join(missing),
+                        path,
+                    )
+
+    def audit_record_ownership(self) -> None:
+        """SSOT + responsibility boundaries over every ID-bearing record file.
+
+        The prefix → location catalog mirrors `operations/artifacts.md`
+        §Artifact catalog (that document is the SSOT for the mapping).
+        """
+        work_item_dirs = set(RECORD_LOCATIONS["W"])
+        by_id: dict[str, list[Path]] = {}
+        for path in sorted(self.stage_root.rglob("*.md")):
+            relative_parent = path.parent.relative_to(self.stage_root).as_posix()
+            if relative_parent.startswith(".runtime"):
+                continue
+            if path.name in {"README.md", "_template.md"}:
+                continue
+            fields = stage_guard.parse_frontmatter(path)
+            record_id = fields.get("id") or ""
+            if not record_id:
+                # Proposal / milestone / approved-decision templates are
+                # body-only: the ID lives in the first heading.
+                try:
+                    heading = HEADING_ID_RE.search(path.read_text(encoding="utf-8"))
+                except OSError:
+                    heading = None
+                if heading:
+                    record_id = heading.group("record_id")
+            match = RECORD_ID_RE.match(record_id)
+            if not match:
+                continue
+            by_id.setdefault(record_id, []).append(path)
+
+            prefix = match.group("prefix")
+            allowed = RECORD_LOCATIONS.get(prefix)
+            if allowed is not None and relative_parent not in allowed:
+                self.error(
+                    "OWN001",
+                    f"Record {record_id} lives outside its owning location "
+                    f"({' or '.join(allowed)}). See operations/artifacts.md §Artifact catalog.",
+                    path,
+                )
+
+        for record_id, paths in sorted(by_id.items()):
+            if len(paths) < 2:
+                continue
+            parents = {path.parent.relative_to(self.stage_root).as_posix() for path in paths}
+            if parents <= work_item_dirs:
+                continue  # WORK007 owns duplicates within the work-item dirs.
+            for path in paths:
+                self.error(
+                    "SSOT001",
+                    f"Duplicate record id {record_id}: one durable fact must have exactly "
+                    "one owning file.",
+                    path,
+                )
+
+    def audit_routing(self) -> None:
+        """Every existing artifact location must be reachable from `index.md` routing."""
+        index_path = self.stage_root / "index.md"
+        try:
+            index_text = index_path.read_text(encoding="utf-8")
+        except OSError:
+            return  # TEMPLATE002 already reports the missing index.
+
+        routed_locations = [
+            location for locations in RECORD_LOCATIONS.values() for location in locations
+        ] + list(ROUTING_ONLY_LOCATIONS)
+        for location in routed_locations:
+            if (self.stage_root / location).is_dir() and f"{location}/" not in index_text:
+                self.warning(
+                    "ROUTE001",
+                    f"Existing artifact location `{location}/` is not routed in index.md.",
+                    self.stage_root / location,
+                )
+
+        operations_root = self.stage_root / "operations"
+        if operations_root.is_dir():
+            for path in sorted(operations_root.glob("*.md")):
+                if path.name == "README.md":
+                    continue
+                if f"operations/{path.name}" not in index_text:
+                    self.warning(
+                        "ROUTE002",
+                        f"Operations document `operations/{path.name}` is not routed in index.md.",
                         path,
                     )
 

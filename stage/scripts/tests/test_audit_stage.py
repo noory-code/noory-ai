@@ -686,5 +686,120 @@ class StageAuditTest(unittest.TestCase):
         self.assertEqual(["warning"], [finding.severity for finding in findings if finding.code == "TEMPLATE002"])
 
 
+    def write_record(self, root: Path, relative: str, record_id: str, extra: str = "") -> Path:
+        path = root / ".stage" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"---\nid: {record_id}\ntitle: T\n{extra}---\n", encoding="utf-8")
+        return path
+
+    def test_record_outside_owning_location_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_record(root, "future/backlog/items/Q-00000001.md", "Q-00000001")
+
+            findings = audit_stage.Audit(root).run()
+
+        own = [finding for finding in findings if finding.code == "OWN001"]
+        self.assertEqual(len(own), 1)
+        self.assertEqual(own[0].severity, "error")
+        self.assertIn("present/state/questions", own[0].message)
+
+    def test_duplicate_record_id_across_files_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_record(root, "future/backlog/items/B-00000001.md", "B-00000001", "status: captured\n")
+            self.write_record(root, "future/backlog/items/B-00000001-copy.md", "B-00000001", "status: captured\n")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual(
+            len([finding for finding in findings if finding.code == "SSOT001"]), 2
+        )
+
+    def test_work_item_duplicates_stay_with_work007(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root)
+            source = root / ".stage" / "present" / "work" / "items" / "W-0001.md"
+            copy = root / ".stage" / "present" / "work" / "items" / "W-0001-copy.md"
+            copy.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+            self.append_active_index(root, "W-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        codes = finding_codes(findings)
+        self.assertIn("WORK007", codes)
+        self.assertNotIn("SSOT001", codes)
+
+    def test_unrouted_record_location_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            index_path = root / ".stage" / "index.md"
+            text = index_path.read_text(encoding="utf-8")
+            index_path.write_text(
+                "\n".join(
+                    line for line in text.splitlines() if "future/backlog/items/" not in line
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        route = [finding for finding in findings if finding.code == "ROUTE001"]
+        self.assertEqual(len(route), 1)
+        self.assertEqual(route[0].severity, "warning")
+        self.assertIn("future/backlog/items", route[0].message)
+
+    def test_unrouted_operations_document_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            extra = root / ".stage" / "operations" / "custom.md"
+            extra.write_text("# Custom rules\n", encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("ROUTE002", finding_codes(findings))
+
+
+    def test_body_only_record_id_is_audited_via_heading(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            path = root / ".stage" / "future" / "backlog" / "items" / "P-00000001.md"
+            path.write_text("# P-00000001 Misplaced proposal\n\n## Proposal\n", encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        own = [finding for finding in findings if finding.code == "OWN001"]
+        self.assertEqual(len(own), 1)
+        self.assertIn("future/proposals", own[0].message)
+
+    def test_unrouted_non_prefixed_family_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            index_path = root / ".stage" / "index.md"
+            text = index_path.read_text(encoding="utf-8")
+            index_path.write_text(
+                "\n".join(
+                    line for line in text.splitlines() if "future/roadmap/themes/" not in line
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        route = [finding for finding in findings if finding.code == "ROUTE001"]
+        self.assertEqual(len(route), 1)
+        self.assertIn("future/roadmap/themes", route[0].message)
+
+
 if __name__ == "__main__":
     unittest.main()

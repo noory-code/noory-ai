@@ -475,7 +475,7 @@ flowchart TB
   PreToolUse --> PortabilityGate["이식성 게이트\nOS 전용 스크립트 차단"]
   PreToolUse --> QuestionReminder["질문 게이트\n질문 전 목적·원칙 상기\n질문당 1회 리마인드"]
 
-  Audit["Audit CLI\n템플릿 / enum / 색인 / archive / 계층 /\n계보 / 결정 원칙 인용 / 거버넌스 검사"]
+  Audit["Audit CLI\n템플릿 / enum / 색인 / archive / 계층 / 계보 /\n결정 원칙 인용 / 거버넌스 / 정본 중복 /\n소유 경계 / 라우팅 검사"]
 
   Stop --> Summary["세션 요약 기록\n.stage/.runtime/sessions/세션별.md"]
 
