@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Structure
 
-Python monorepo with two independent MCP (Model Context Protocol) servers. Each package under its own directory with its own `pyproject.toml`, `uv.lock`, and `tests/`.
+Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects.
 
 ```
 noory-ai/
@@ -19,11 +19,16 @@ noory-ai/
 │   ├── mashbill/          — Python MCP + HTTP server (reads .noory/novel/)
 │   └── .claude-plugin/    — Claude Code plugin manifest + skills
 │   # viewer/ cut to the proprietary app repo (open-core cut, D-2026-06-20-M)
+├── rag/                — Project-scoped GraphRAG plugin (uv project in server/)
+├── proof/              — Publishing/verification CLI plugin
+├── stage/              — Durable execution harness (plain stdlib — no uv; hooks run on any host python3 ≥3.9)
 ├── flutter-cask/       — Flutter package guide skills
 └── pencil_m3_flutter/  — Flutter M3 design system automation
 ```
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
+
+**Stage only:** test with `python3 -m unittest discover -s stage/hooks/tests -q` and `python3 -m unittest discover -s stage/scripts/tests -q` (no uv/mypy/ruff targets).
 
 ## Commands
 
@@ -91,8 +96,8 @@ uv run python -m distill  # run MCP server
 
 ### Plugin Changes
 
-- When any file inside a plugin directory (`pencil_m3_flutter/`, `evonest/`, `distill/`, `solera/`, `flutter-cask/`) is modified:
-  1. Bump `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for features/refactors)
+- When any file inside a plugin directory (`evonest/`, `distill/`, `solera/`, `mashbill/`, `rag/`, `proof/`, `stage/`, `flutter-cask/`, `pencil_m3_flutter/`) is modified:
+  1. Bump `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for features/refactors) — `stage/` also carries `.codex-plugin/plugin.json`; bump both
   2. Add entry to `CHANGELOG.md`
   3. Commit + push in one step
 
