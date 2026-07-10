@@ -136,6 +136,7 @@ class Audit:
         self.audit_family_shapes()
         self.audit_record_ownership()
         self.audit_routing()
+        self.audit_catalog_sync()
         self.audit_canon()
         self.audit_governance()
         return self.findings
@@ -734,6 +735,61 @@ class Audit:
                         f"Operations document `operations/{path.name}` is not routed in index.md.",
                         path,
                     )
+
+    def audit_catalog_sync(self) -> None:
+        """The artifact catalog is the SSOT for prefix→location; the audit's
+        RECORD_LOCATIONS must not silently drift from it (P32). Parse the
+        catalog table and compare each prefix's primary location to the code.
+        """
+        catalog_path = self.stage_root / "operations" / "artifacts.md"
+        try:
+            text = catalog_path.read_text(encoding="utf-8")
+        except OSError:
+            return  # TEMPLATE002 already reports a missing catalog.
+
+        catalog: dict[str, str] = {}
+        row_re = re.compile(r"^\|\s*`([A-Z]+)-`\s*\|[^|]*\|\s*`([^`]+?)/?`\s*\|", re.MULTILINE)
+        for prefix, location in row_re.findall(text):
+            location = location.rstrip("/")
+            if prefix in catalog and catalog[prefix] != location:
+                self.error(
+                    "CATALOG001",
+                    f"Artifact catalog has conflicting rows for prefix `{prefix}-` "
+                    f"(`{catalog[prefix]}/` and `{location}/`); one prefix must have one location.",
+                    catalog_path,
+                )
+            catalog[prefix] = location
+
+        for prefix, locations in RECORD_LOCATIONS.items():
+            primary = locations[0]
+            catalog_location = catalog.get(prefix)
+            if catalog_location is None:
+                self.error(
+                    "CATALOG001",
+                    f"Artifact catalog has no row for prefix `{prefix}-`, but the audit maps it to "
+                    f"`{primary}/`. Keep operations/artifacts.md and RECORD_LOCATIONS in lock-step.",
+                    catalog_path,
+                )
+            elif catalog_location != primary:
+                self.error(
+                    "CATALOG001",
+                    f"Artifact catalog routes `{prefix}-` to `{catalog_location}/` but the audit "
+                    f"maps it to `{primary}/`. Keep operations/artifacts.md and RECORD_LOCATIONS in "
+                    "lock-step.",
+                    catalog_path,
+                )
+
+        # The catalog is the SSOT: a prefix it adds but the audit does not map
+        # would be silently unsupported by ownership/routing checks.
+        for prefix, catalog_location in catalog.items():
+            if prefix not in RECORD_LOCATIONS:
+                self.error(
+                    "CATALOG001",
+                    f"Artifact catalog declares prefix `{prefix}-` (`{catalog_location}/`) that the "
+                    "audit does not map in RECORD_LOCATIONS; ownership and routing checks would skip "
+                    "it. Keep the two in lock-step.",
+                    catalog_path,
+                )
 
     def audit_canon(self) -> None:
         principles_path = self.stage_root / "past" / "canon" / "principles.md"

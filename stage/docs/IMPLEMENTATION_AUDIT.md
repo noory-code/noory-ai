@@ -107,15 +107,17 @@
 | 빈 `parent:` 프론트매터 false deny (Codex e2e) | `frontmatter_field_from_text`의 `\s*`가 줄바꿈을 넘어 다음 줄을 값으로 캡처 → `[ \t]*`로 교정 |
 | 패치 본문 셸 해석·본문 경로 과추출 (Codex e2e) | 셸 의미론을 SHELL_TOOLS로 한정, 게이트 입력을 실제 쓰기 대상으로 축소(본문 문자열 스캔 제거) — 본문 언급만으로 등재/삭제 게이트가 발화하던 과차단 제거 |
 
-## 다음 구현 단위 (전면 감사 설계 제안 — 차기 사이클)
+## 전면 감사 설계 제안 P28–P35 (v0.7.0 처리)
 
-전면 감사(`.discuss/stage-full-review-2026-07-10.md`)가 재현 결함 10건과 별개로 낸 구조 개선 후보. 결함은 v0.6.0에서 종결했고 아래는 리팩터·강건화라 사용자 우선순위 대기.
+전면 감사가 재현 결함 10건과 별개로 낸 구조 개선 후보. 결함은 v0.6.0에서, 아래 강건화는 v0.7.0에서 처리.
 
-1. **P28** 모든 게이트 공유 canonical target 모델 — 현재는 `normalize_path_text` 중앙화로 `..`는 막았으나, 입력→정규화→enum(내부/past/archive/밖) 단일 함수로 통합해 게이트별 재판정을 없앤다.
-2. **P29** 명령 의미론 완전화 — commit `--only`/`--include`/`git -C` repository context, 삭제 규칙 표 고정.
-3. **P30** 한 tool call의 post-state 트랜잭션 확장(계층 외 등재/승격에도), 동일 mtime handoff 전량 주입.
-4. **P31** record graph 기반 audit(현재는 개별 검사 병렬 — 그래프로 대칭·orphan 일괄).
-5. **P32** artifact catalog 실행 가능 SSOT — `operations/artifacts.md` 표를 audit가 파싱해 `RECORD_LOCATIONS` 불일치를 error로.
-6. **P33** SoC — `stage_guard.py`(1.8k행)를 path policy·work graph·runtime store·context 모듈로 분리(단일 훅 entrypoint 유지).
-7. **P34** AI-first 임계값 구조화(`Trivially reversible`, `where applicable` 등 → if/then·수치).
-8. **P35** P27 인벤토리 관련성 우선순위 — (이미 부분 반영: active work scope 우선) 잔여 정교화.
+| # | 상태 | 내용 |
+|---|---|---|
+| P28 | ✅ Closed (0.7.0) | canonical target 모델 — `relative_to_workspace`가 기존 심링크 부모 + `..`를 `.resolve()`로 정규화, 게이트 경계에서 canonical form 사용. **심링크(`link→.stage`) + scope된 작업 항목으로 past 승격 게이트를 우회하던 실 구멍 차단**(재현→deny). 라운드12 정련: 정확-경로 게이트(promotes·intent·archive 파일명)는 **entry-canonical**(부모 resolve + leaf 이름 유지)로 비교 — 같은 대상을 가리키는 형제 심링크가 한 승인을 공유하지 못함. 탐지 게이트는 (resolved·entry·lexical) 3형태 합집합. |
+| P29 | ✅ Closed (0.7.0) | 삭제 규칙 완전화 — 토큰화 감지에 `find .stage -delete`/`-exec rm` 추가. commit `--only`/pathspec은 F4에서 처리. `git -C <subrepo>` repository context는 하위레포 커밋(드묾)이라 best-effort 한계로 문서화. |
+| P30 | ✅ Closed (0.7.0) | 동률 mtime handoff — SessionStart가 최신 mtime을 공유하는 인계 전량 주입("Most recent sessions (concurrent)"). 계층 post-state는 F5에서 처리. |
+| P32 | ✅ Closed (0.7.0) | catalog 실행 가능 SSOT — 감사가 `operations/artifacts.md` 표를 파싱해 `RECORD_LOCATIONS` 1차 거처와 불일치 시 CATALOG001 error. F10 유형 수동 드리프트를 감사가 잡음. |
+| P34 | ✅ Closed (0.7.0) | AI-first 임계값 구조화 — `Trivially reversible`→결정 기록 4조건, `where applicable`→"선언된 린터/포매터가 있으면", `no longer referenced`→parent·work_items 무참조 2조건, `Keep short`→결론 우선 1문단. |
+| P35 | ✅ Closed (0.7.0) | 인벤토리 관련성 — (v0.5.0 active work scope 우선에 더해) 선택 백로그의 실제 scope 신호 = `realized_by` 작업 항목 scope로 이미 커버됨을 확인·명문화(백로그 레코드는 scope 필드 없음). |
+| P31 | 🅿 Deferred | record-graph 감사 재작성. **연기 근거:** 정확성 이득(양방향 WORK023/BACKLOG006 + orphan DECISION001/RETRO001)은 F7에서 이미 확보. 통과 중인 개별 검사를 그래프로 재작성하는 것은 필요 전 추상화(AHA)·고위험 churn이라 가치 대비 위험이 큼. 감사 검사가 더 늘면 그때 그래프로. |
+| P33 | 🅿 Deferred | SoC — `stage_guard.py`(~2k행) 모듈 분리(500줄 규칙). **연기 근거:** 단일 훅 entrypoint(`python3 stage_guard.py` 실행 + audit `import stage_guard`)라 패키지 분리는 심볼 누락 회귀 위험이 크고, 보안 게이트 10건 차단 직후 같은 배치에 섞으면 안 됨. 규칙은 유효 — **전용 리뷰 대상 change로 분리**하여 별도 진행. |

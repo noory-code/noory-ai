@@ -52,8 +52,12 @@ A decision that shapes the work is recorded, not just made.
   question, options, principles applied, and chosen direction.
 - Set the record's `work_item` to the current work item and add the record to the work item's
   `decision_refs`.
-- Trivially reversible how-decisions do not need a record; anything that would surprise the next
-  session does.
+- Record a decision when ANY of these holds; otherwise skip the record:
+  - it changes a file under `past/` (official truth), or
+  - it selects between two or more viable options where the alternatives were plausible, or
+  - reversing it later would require editing more than one file, or
+  - it sets a value another work item depends on (a name, path, schema, or interface).
+  A pure how-detail that touches one file and is reverted by undoing that file needs no record.
 
 ## Output
 

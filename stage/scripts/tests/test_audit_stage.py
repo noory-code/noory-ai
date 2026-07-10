@@ -867,5 +867,58 @@ class StageAuditTest(unittest.TestCase):
         self.assertTrue(any("future/proposals" in f.message for f in route))
 
 
+    def test_catalog_duplicate_prefix_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            catalog = root / ".stage" / "operations" / "artifacts.md"
+            text = catalog.read_text(encoding="utf-8")
+            catalog.write_text(
+                text.replace(
+                    "| `Q-` | Question | `present/state/questions/`",
+                    "| `Q-` | Question | `present/state/wrong/` | Stale. |\n"
+                    "| `Q-` | Question | `present/state/questions/`",
+                ),
+                encoding="utf-8",
+            )
+
+            codes = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertIn("CATALOG001", codes)
+
+    def test_catalog_extra_prefix_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            catalog = root / ".stage" / "operations" / "artifacts.md"
+            text = catalog.read_text(encoding="utf-8")
+            catalog.write_text(
+                text.replace(
+                    "| `M-` | Milestone |",
+                    "| `Z-` | Zeta | `future/zeta/` | New family. |\n| `M-` | Milestone |",
+                ),
+                encoding="utf-8",
+            )
+
+            codes = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertIn("CATALOG001", codes)
+
+    def test_catalog_location_drift_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            catalog = root / ".stage" / "operations" / "artifacts.md"
+            text = catalog.read_text(encoding="utf-8")
+            catalog.write_text(
+                text.replace("`present/state/questions/`", "`present/state/wrong/`"),
+                encoding="utf-8",
+            )
+
+            codes = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertIn("CATALOG001", codes)
+
+
 if __name__ == "__main__":
     unittest.main()
