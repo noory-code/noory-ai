@@ -26,6 +26,9 @@ repository. This repository keeps that project at [`novel-ai/`](novel-ai/) as a
 submodule for coordinated development; plugin installation uses Novel AI's own
 marketplace so it never depends on recursive submodule checkout.
 
+Public architecture, concepts, specifications, and migration guidance are maintained in
+[`novel-ai/docs/`](novel-ai/docs/). Start with [`novel-ai/docs/index.md`](novel-ai/docs/index.md).
+
 | Plugin | Responsibility |
 |---|---|
 | Mashbill | Visual thinking canvas and Novel artifact publisher |
@@ -73,10 +76,10 @@ Portable `.stage/` harness for LLM-led long-running projects. Stage separates ar
 
 ## Development
 
-Initialize the submodule after cloning this repository:
+Initialize the nested public repository after cloning this repository:
 
 ```bash
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 Each package is independent. Work inside the relevant subdirectory:

@@ -22,9 +22,13 @@ noory-ai/
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
 
-After cloning, initialize Novel AI with `git submodule update --init`. Changes
+After cloning, initialize Novel AI with `git submodule update --init --recursive`. Changes
 inside `novel-ai/` are committed and pushed in that repository first; then
 commit the updated submodule gitlink in this repository.
+
+Novel AI's canonical public design documents live in `novel-ai/docs/`; begin with
+`novel-ai/docs/VISION.md` and route through `novel-ai/docs/index.md`. Do not recreate private
+workspace mirrors of those public contracts.
 
 **Stage only:** test with `python3 -m unittest discover -s stage/hooks/tests -q` and `python3 -m unittest discover -s stage/scripts/tests -q` (no uv/mypy/ruff targets).
 
