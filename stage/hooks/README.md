@@ -4,7 +4,7 @@ This directory owns the hooks that apply Stage principles at execution time.
 
 ## Hooks
 
-- `SessionStart`: injects the `.stage/` state and completion gates into the session context (including the most recent session handoff), and prunes stale question-ack markers.
+- `SessionStart`: injects the `.stage/` state and completion gates into the session context — current state, active work, review candidates, the newest 3 open questions (`present/state/questions/`), backlog records with `status: selected`, and the most recent session handoff — and prunes stale question-ack markers.
 - `PreToolUse`: blocks `.stage` deletion, unregistered governed-file modification, and official artifact modification without a promotion intent.
 - `Stop`: writes `.stage/.runtime/sessions/<session_id>.md`.
 

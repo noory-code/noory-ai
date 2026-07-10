@@ -1413,14 +1413,107 @@ def session_context(workspace_root: Path) -> str:
         ("Current state", stage_root / "present" / "state" / "current.md"),
         ("Active work", stage_root / "present" / "work" / "active.md"),
         ("Review candidates", stage_root / "present" / "work" / "review.md"),
-        ("Most recent session", latest_session_summary(stage_root)),
     ]
     for title, path in snippets:
         body = read_if_exists(path) if path is not None else ""
         if body:
             parts.append(f"\n### {title}\n{body}")
 
+    questions = open_question_lines(stage_root)
+    if questions:
+        parts.append("\n### Open questions\n" + "\n".join(questions))
+    backlog = selected_backlog_lines(stage_root)
+    if backlog:
+        parts.append("\n### Selected backlog\n" + "\n".join(backlog))
+
+    recent = latest_session_summary(stage_root)
+    recent_body = read_if_exists(recent) if recent is not None else ""
+    if recent_body:
+        parts.append(f"\n### Most recent session\n{recent_body}")
+
     return "\n".join(parts)
+
+
+SESSION_CONTEXT_RECORD_LIMIT = 3
+SESSION_CONTEXT_LINE_LIMIT = 160
+
+
+def id_sort_key(item_id: str) -> tuple[int, str]:
+    """Numeric ID portion first: lexical order misranks variable-width IDs
+    (Q-999 would outrank Q-1000)."""
+    match = re.search(r"(\d+)", item_id)
+    return (int(match.group(1)) if match else -1, item_id)
+
+
+def bounded_record_line(
+    item_id: str, title: str, suffix: str, limit: int = SESSION_CONTEXT_LINE_LIMIT
+) -> str:
+    """One bounded line per injected record — the budget caps size, not just
+    count. Overlength truncates the TITLE while reserving the suffix: the
+    `(blocks: ...)` / `(priority: ...)` linkage is the actionable part."""
+    prefix = f"- {item_id} ".rstrip() + (" " if title or suffix else "")
+    title = " ".join(title.split())
+    room = max(8, limit - len(prefix) - len(suffix))
+    if len(title) > room:
+        title = title[: room - 1] + "…"
+    return (prefix + title + suffix).rstrip()
+
+
+def record_files(directory: Path) -> list[Path]:
+    """Individual record files of an artifact family (skips index/template files)."""
+    try:
+        files = sorted(directory.glob("*.md"))
+    except OSError:
+        return []
+    return [
+        path
+        for path in files
+        if not path.name.startswith("_") and path.name.lower() != "readme.md"
+    ]
+
+
+def open_question_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD_LIMIT) -> list[str]:
+    """Every record under `present/state/questions/` is open by definition —
+    answered questions are promoted out of the directory. Newest first."""
+    records: list[tuple[str, str, str]] = []
+    for path in record_files(stage_root / "present" / "state" / "questions"):
+        fields = parse_frontmatter(path)
+        records.append(
+            (
+                fields.get("id") or path.stem,
+                fields.get("title") or "",
+                fields.get("work_items") or "",
+            )
+        )
+    # Sort by the frontmatter ID (filenames may diverge from it), numerically.
+    records.sort(key=lambda entry: id_sort_key(entry[0]), reverse=True)
+    lines: list[str] = []
+    for item_id, title, blocked in records[:limit]:
+        suffix = f" (blocks: {blocked})" if blocked else ""
+        lines.append(bounded_record_line(item_id, title, suffix))
+    if len(records) > limit:
+        lines.append(f"- …and {len(records) - limit} more in `present/state/questions/`")
+    return lines
+
+
+def selected_backlog_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD_LIMIT) -> list[str]:
+    """Backlog records with `status: selected` — the queue the session should
+    pick up next. Ordered by ID for determinism."""
+    lines: list[str] = []
+    selected: list[tuple[str, str, str]] = []
+    for path in record_files(stage_root / "future" / "backlog" / "items"):
+        fields = parse_frontmatter(path)
+        if (fields.get("status") or "").lower() != "selected":
+            continue
+        item_id = fields.get("id") or path.stem
+        selected.append((item_id, fields.get("title") or "", fields.get("priority") or ""))
+    selected.sort(key=lambda entry: id_sort_key(entry[0]))
+    for item_id, title, priority in selected[:limit]:
+        suffix = f" (priority: {priority})" if priority else ""
+        lines.append(bounded_record_line(item_id, title, suffix))
+    if len(selected) > limit:
+        lines.append(f"- …and {len(selected) - limit} more in `future/backlog/items/`")
+    return lines
 
 
 QUESTION_ACK_MAX_AGE_SECONDS = 24 * 60 * 60

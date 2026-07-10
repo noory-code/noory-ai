@@ -1109,6 +1109,88 @@ class StageGuardTest(unittest.TestCase):
         self.assertIn("New handoff", context)
         self.assertNotIn("Old handoff", context)
 
+    def test_session_start_injects_open_questions_and_selected_backlog(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            for index in range(1, 6):
+                self.write_stage_file(
+                    root,
+                    f"present/state/questions/Q-0000000{index}.md",
+                    (
+                        "---\n"
+                        f"id: Q-0000000{index}\n"
+                        f"title: Question {index}\n"
+                        "work_items: W-00000001\n"
+                        "---\n"
+                    ),
+                )
+            self.write_stage_file(
+                root,
+                "future/backlog/items/B-00000001.md",
+                "---\nid: B-00000001\ntitle: Selected thing\nstatus: selected\npriority: high\n---\n",
+            )
+            self.write_stage_file(
+                root,
+                "future/backlog/items/B-00000002.md",
+                "---\nid: B-00000002\ntitle: Captured thing\nstatus: captured\n---\n",
+            )
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        # Newest 3 questions + overflow pointer; selected-only backlog.
+        self.assertIn("Q-00000005 Question 5 (blocks: W-00000001)", context)
+        self.assertIn("Q-00000003", context)
+        self.assertNotIn("Q-00000001 Question 1", context)
+        self.assertIn("…and 2 more in `present/state/questions/`", context)
+        self.assertIn("B-00000001 Selected thing (priority: high)", context)
+        self.assertNotIn("Captured thing", context)
+
+    def test_question_recency_is_numeric_not_lexical(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            for number in (998, 999, 1000, 1001):
+                self.write_stage_file(
+                    root,
+                    f"present/state/questions/Q-{number}.md",
+                    f"---\nid: Q-{number}\ntitle: Question {number}\nwork_items:\n---\n",
+                )
+
+            lines = stage_guard.open_question_lines(root / ".stage")
+
+        joined = "\n".join(lines)
+        self.assertIn("Q-1001", joined)
+        self.assertIn("Q-1000", joined)
+        self.assertIn("Q-999", joined)
+        self.assertNotIn("Q-998 ", joined)
+
+    def test_injected_record_lines_are_length_bounded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_stage_file(
+                root,
+                "present/state/questions/Q-00000001.md",
+                f"---\nid: Q-00000001\ntitle: {'t' * 500}\nwork_items:\n---\n",
+            )
+
+            lines = stage_guard.open_question_lines(root / ".stage")
+
+        self.assertLessEqual(len(lines[0]), stage_guard.SESSION_CONTEXT_LINE_LIMIT)
+
+    def test_session_start_omits_question_and_backlog_sections_when_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        self.assertNotIn("Open questions", context)
+        self.assertNotIn("Selected backlog", context)
+
     def test_session_start_prunes_stale_question_ack_markers(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
