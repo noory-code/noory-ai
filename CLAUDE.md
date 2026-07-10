@@ -4,23 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Structure
 
-Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects.
+Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects. Novel's open plugin stack lives in the `novel-ai/` submodule.
 
 ```
 noory-ai/
 ├── evonest/            — Autonomous code evolution engine
-├── distill/            — Knowledge distillation from Claude conversations
-├── solera/             — AI project workflow + mindmap canvas
-│   ├── skills/            — markdown skills (Claude Code plugin)
-│   ├── solera_mcp/        — Python MCP server (reads .solera/)
-│   ├── viewer/            — React canvas (Actors / Plan / Build / Live)
-│   └── vscode-extension/  — VSCode wrapper (bundles MCP + viewer)
-├── mashbill/           — open-core engine (mashbill) + Claude Code plugin
-│   ├── mashbill/          — Python MCP + HTTP server (reads .noory/novel/)
-│   └── .claude-plugin/    — Claude Code plugin manifest + skills
-│   # viewer/ cut to the proprietary app repo (open-core cut, D-2026-06-20-M)
+├── novel-ai/           — Git submodule: https://github.com/noory-code/novel-ai
+│   ├── mashbill/          — Novel canvas + MCP/HTTP server
+│   ├── solera/            — deterministic work planning and execution harness
+│   ├── proof/             — append-only decision log
+│   └── distill/           — durable knowledge extraction and recall
 ├── rag/                — Project-scoped GraphRAG plugin (uv project in server/)
-├── proof/              — Publishing/verification CLI plugin
 ├── stage/              — Durable execution harness (plain stdlib — no uv; hooks run on any host python3 ≥3.9)
 ├── flutter-cask/       — Flutter package guide skills
 └── pencil_m3_flutter/  — Flutter M3 design system automation
@@ -28,11 +22,19 @@ noory-ai/
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
 
+After cloning, initialize Novel AI with `git submodule update --init --recursive`. Changes
+inside `novel-ai/` are committed and pushed in that repository first; then
+commit the updated submodule gitlink in this repository.
+
+Novel AI's canonical public design documents live in `novel-ai/docs/`; begin with
+`novel-ai/docs/VISION.md` and route through `novel-ai/docs/index.md`. Do not recreate private
+workspace mirrors of those public contracts.
+
 **Stage only:** test with `python3 -m unittest discover -s stage/hooks/tests -q` and `python3 -m unittest discover -s stage/scripts/tests -q` (no uv/mypy/ruff targets).
 
 ## Commands
 
-All commands run from inside the package directory (`cd evonest` or `cd distill`).
+All commands run from inside the package directory (`cd evonest` or `cd novel-ai/distill`).
 
 ```bash
 uv sync                         # install deps
@@ -96,7 +98,7 @@ uv run python -m distill  # run MCP server
 
 ### Plugin Changes
 
-- When any file inside a plugin directory (`evonest/`, `distill/`, `solera/`, `mashbill/`, `rag/`, `proof/`, `stage/`, `flutter-cask/`, `pencil_m3_flutter/`) is modified:
+- When any file inside a plugin directory (`evonest/`, `rag/`, `stage/`, `flutter-cask/`, `pencil_m3_flutter/`) is modified:
   1. Bump `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for features/refactors) — `stage/` also carries `.codex-plugin/plugin.json`; bump both
   2. Add entry to `CHANGELOG.md`
   3. Commit + push in one step
@@ -167,16 +169,8 @@ Runtime-generated personas/adversarials go to `.evonest/dynamic-*.json` in the t
 
 3-tier config: engine defaults < `.evonest/config.json` < runtime args.
 
-### Distill
+### Novel AI
 
-**Tool/Store/Extractor separation**: `tools/` are thin wrappers; persistence in `store/`; extraction pipeline in `extractor/`.
-
-Key files:
-- `store/metadata.py` — SQLite CRUD + FTS5 full-text search
-- `store/vector.py` — fastembed + sqlite-vec embeddings
-- `store/scope.py` — 3-tier scope: `~/.distill/` (global) → `<git-root>/.distill/` (workspace) → `.distill/` (project)
-- `extractor/extractor.py` — MCP Sampling call (primary) with Anthropic API fallback
-- `extractor/crystallize.py` — consolidates chunks into `distill-*.md` rule files
-- `shared/prompts.md` — extraction prompt SSOT; must stay in sync with `extractor/prompts.py`
-
-Config priority: project > workspace > global > defaults (all optional).
+Mashbill, Solera, Proof, and Distill are maintained in the `novel-ai/`
+submodule. Read `novel-ai/CLAUDE.md` for their architecture, independence
+contracts, version SSOTs, tests, and release rules.

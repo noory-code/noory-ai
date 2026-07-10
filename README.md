@@ -19,33 +19,31 @@ Runs 20 specialist personas against your codebase (security auditor, chaos engin
 /plugin install evonest
 ```
 
-### [Distill](distill/) — Knowledge Distillation
+### [Novel AI](https://github.com/noory-code/novel-ai) — Novel's Open Plugin Stack
 
-Extracts reusable patterns, decisions, and lessons from Claude Code conversations — so Claude remembers what matters across sessions. No API key required (uses MCP Sampling).
+Mashbill, Solera, Proof, and Distill live in the public `noory-code/novel-ai`
+repository. This repository keeps that project at [`novel-ai/`](novel-ai/) as a
+submodule for coordinated development; plugin installation uses Novel AI's own
+marketplace so it never depends on recursive submodule checkout.
 
-- Automatic extraction at session end via hooks
-- 3-tier scope: global (`~/.distill/`) → workspace → project (`.distill/`)
-- FTS5 full-text + semantic vector search
-- Crystallizes chunks into `distill-*.md` rule files
+Public architecture, concepts, specifications, and migration guidance are maintained in
+[`novel-ai/docs/`](novel-ai/docs/). Start with [`novel-ai/docs/index.md`](novel-ai/docs/index.md).
 
-**Install:**
-```
-/plugin marketplace add noory-code/noory-ai
-/plugin install distill
-```
-
-### [Solera](solera/) — Layered Workflow Execution
-
-Structured project execution framework — Phase → Goal → Epic → Story → Action Item. Like the solera aging method, where layers of work blend and deepen over time into something complete.
-
-- 5-level hierarchy: Phase (quarterly) → Goal → Epic → Feature → commit
-- Auto-updates HANDOFF.md on session end via Stop hook
-- PR creation workflow when Epic is complete
+| Plugin | Responsibility |
+|---|---|
+| Mashbill | Visual thinking canvas and Novel artifact publisher |
+| Solera | Work planning, deterministic gates, and execution order |
+| Proof | Append-only decisions referenced by stable ID |
+| Distill | Durable knowledge extraction and recall |
 
 **Install:**
-```
-/plugin marketplace add noory-code/noory-ai
-/plugin install solera
+
+```text
+/plugin marketplace add noory-code/novel-ai
+/plugin install mashbill@novel-ai
+/plugin install solera@novel-ai
+/plugin install proof@novel-ai
+/plugin install distill@novel-ai
 ```
 
 ### [Flutter Cask](flutter-cask/) — Flutter Package Guide Skills
@@ -78,10 +76,16 @@ Portable `.stage/` harness for LLM-led long-running projects. Stage separates ar
 
 ## Development
 
+Initialize the nested public repository after cloning this repository:
+
+```bash
+git submodule update --init --recursive
+```
+
 Each package is independent. Work inside the relevant subdirectory:
 
 ```bash
-cd evonest   # or: cd distill
+cd evonest   # or: cd novel-ai/distill
 uv sync
 uv run pytest
 uv run mypy src/

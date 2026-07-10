@@ -3,21 +3,12 @@
   "owner": {
     "name": "noory-code"
   },
+  "description": "Claude Code plugins and MCP servers maintained by noory-code.",
   "plugins": [
     {
       "name": "evonest",
       "source": "./evonest",
       "description": "Autonomous code evolution engine — observe, plan, execute, verify"
-    },
-    {
-      "name": "distill",
-      "source": "./distill",
-      "description": "Extract and recall reusable knowledge from Claude Code conversations"
-    },
-    {
-      "name": "solera",
-      "source": "./solera",
-      "description": "Layered workflow execution — Phase → Goal → Epic → Story → Action Item"
     },
     {
       "name": "flutter-cask",

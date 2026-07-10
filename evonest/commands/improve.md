@@ -10,7 +10,8 @@ The tool is **synchronous** — it blocks until the full cycle (Execute → Veri
 Determine the project path:
 - If the user specifies a path, use that.
 - If the user says "evonest" or no path given and cwd is inside the noory-ai monorepo, use the absolute path of the `evonest/` package directory.
-- If the user says "distill", use the absolute path of the `distill/` package directory.
+- If the user says "distill", use the absolute path of the
+  `novel-ai/distill/` package directory.
 - Never use the monorepo root as the project path.
 
 Call `evonest_improve` with:
