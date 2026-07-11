@@ -12,8 +12,8 @@ user prompt. It never uses `Stop` or another post-answer continuation hook.
 | `guided` | Plain-language, step-by-step explanations |
 | `professional` | Concise, precise, neutral workplace language |
 
-Ask the AI to show, select, or reset styles. The `plainly-configure` skill applies the change at
-user scope by default; say "this project only" to use project scope.
+Ask the AI to show, select, or reset styles via the `plainly-configure` skill. Scope selection
+rules live in [`skills/plainly-configure/SKILL.md`](skills/plainly-configure/SKILL.md).
 
 ## Resolution order
 
@@ -44,14 +44,13 @@ permission, and higher-priority instructions found there. Project settings also 
 file that resolves outside the project root. These controls reduce accidental scope leakage but do
 not make an untrusted repository safe.
 
-Manual configuration is also available:
+Manual configuration is also available. Run `scripts/configure.py` with `python3` from the
+`plainly/` package directory; see
+[`skills/plainly-configure/SKILL.md`](skills/plainly-configure/SKILL.md) for the full command
+reference:
 
 ```text
 python3 scripts/configure.py list
-python3 scripts/configure.py show --project-root <workspace>
-python3 scripts/configure.py set-profile brief --scope user --project-root <workspace>
-python3 scripts/configure.py set-file <style.md> --scope project --project-root <workspace>
-python3 scripts/configure.py reset --scope project --project-root <workspace>
 ```
 
 Changes take effect on the next user prompt because the hook resolves the style for every turn.
@@ -78,6 +77,8 @@ Both hosts invoke `python3`; Windows environments without that command need a co
 launcher or command adapter.
 
 ## Development
+
+Run from the `plainly/` package directory:
 
 ```text
 python3 -m unittest discover -s tests -q

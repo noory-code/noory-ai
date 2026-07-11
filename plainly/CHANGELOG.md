@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — 2026-07-12
+
+- Remove the duplicated `configure.py` command list and scope-selection rule from README.md; both
+  now point to `skills/plainly-configure/SKILL.md` as the single canonical reference.
+- Clarify the working directory assumed by README.md's manual-configuration and test-suite command
+  examples.
+
 ## 0.1.0 — 2026-07-11
 
 - Add Claude Code and Codex plugin manifests with one shared hook definition.
