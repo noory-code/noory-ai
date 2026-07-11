@@ -56,6 +56,7 @@ from stage_git import (  # noqa: E402  (after sys.path bootstrap)
     iter_git_commands,
 )
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
+    AUDIT_FIELD_DEFAULTS,
     PROMOTION_FINAL,
     RETROSPECTIVE_DONE,
     VERIFICATION_DONE,
@@ -69,6 +70,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     frontmatter_field_from_text,
     git_add_paths_from_command,
     item_completion_blockers,
+    item_from_fields,
     item_is_completed,
     item_is_open,
     item_promotes_path,

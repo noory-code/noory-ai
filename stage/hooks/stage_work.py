@@ -93,6 +93,42 @@ def load_archive_work_items(stage_root: Path) -> list[WorkItem]:
     return load_items_from(stage_root / "past" / "work" / "archive" / "items")
 
 
+# The one frontmatter->WorkItem constructor, with the missing-field policy an
+# explicit argument: enforcement reads absent lifecycle fields as safe
+# progress (a sparse item must not crash or over-deny a gate), while the
+# audit keeps them empty so its enum checks fire. Both policies are pinned
+# (hooks: WorkItemDefaultsTest; scripts: audit-defaults test).
+GATE_FIELD_DEFAULTS = {
+    "status": "active",
+    "verification": "pending",
+    "retrospective": "pending",
+    "promotion": "pending",
+}
+AUDIT_FIELD_DEFAULTS = {
+    "status": "",
+    "verification": "",
+    "retrospective": "",
+    "promotion": "",
+}
+
+
+def item_from_fields(path: Path, fields: dict[str, str], defaults: dict[str, str]) -> WorkItem:
+    return WorkItem(
+        path=path,
+        item_id=fields.get("id") or path.stem,
+        title=fields.get("title") or path.stem,
+        status=(fields.get("status") or defaults["status"]).lower(),
+        verification=(fields.get("verification") or defaults["verification"]).lower(),
+        retrospective=(fields.get("retrospective") or defaults["retrospective"]).lower(),
+        promotion=(fields.get("promotion") or defaults["promotion"]).lower(),
+        scope=split_scope(fields.get("scope", "")),
+        promotes=split_scope(fields.get("promotes", "")),
+        retrospective_ref=(fields.get("retrospective_ref") or "").strip(),
+        kind=(fields.get("kind") or "").strip().lower(),
+        parent=(fields.get("parent") or "").strip(),
+    )
+
+
 def load_items_from(items_root: Path) -> list[WorkItem]:
     if not items_root.exists():
         return []
@@ -101,24 +137,7 @@ def load_items_from(items_root: Path) -> list[WorkItem]:
     for path in sorted(items_root.glob("*.md")):
         if path.name in {"README.md", "_template.md"}:
             continue
-        fields = parse_frontmatter(path)
-        item_id = fields.get("id") or path.stem
-        items.append(
-            WorkItem(
-                path=path,
-                item_id=item_id,
-                title=fields.get("title") or path.stem,
-                status=(fields.get("status") or "active").lower(),
-                verification=(fields.get("verification") or "pending").lower(),
-                retrospective=(fields.get("retrospective") or "pending").lower(),
-                promotion=(fields.get("promotion") or "pending").lower(),
-                scope=split_scope(fields.get("scope", "")),
-                promotes=split_scope(fields.get("promotes", "")),
-                retrospective_ref=(fields.get("retrospective_ref") or "").strip(),
-                kind=(fields.get("kind") or "").strip().lower(),
-                parent=(fields.get("parent") or "").strip(),
-            )
-        )
+        items.append(item_from_fields(path, parse_frontmatter(path), GATE_FIELD_DEFAULTS))
     return items
 
 

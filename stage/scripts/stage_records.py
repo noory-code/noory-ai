@@ -68,24 +68,6 @@ class Edge:
     ref: str
 
 
-def item_from_fields(path: Path, fields: dict[str, str]) -> stage_guard.WorkItem:
-    item_id = fields.get("id") or path.stem
-    return stage_guard.WorkItem(
-        path=path,
-        item_id=item_id,
-        title=fields.get("title") or path.stem,
-        status=(fields.get("status") or "").lower(),
-        verification=(fields.get("verification") or "").lower(),
-        retrospective=(fields.get("retrospective") or "").lower(),
-        promotion=(fields.get("promotion") or "").lower(),
-        scope=stage_guard.split_scope(fields.get("scope", "")),
-        promotes=stage_guard.split_scope(fields.get("promotes", "")),
-        retrospective_ref=(fields.get("retrospective_ref") or "").strip(),
-        kind=(fields.get("kind") or "").strip().lower(),
-        parent=(fields.get("parent") or "").strip(),
-    )
-
-
 def _scan_nodes(roots: tuple[Path, ...]) -> list[RecordNode]:
     """Frontmattered records in scan order (roots in the given order, sorted
     filenames within each). Body-only legacy files carry no frontmatter and
@@ -144,7 +126,13 @@ class RecordGraph:
                     continue
                 fields = stage_guard.parse_frontmatter(path)
                 self.work.append(
-                    AuditedItem(item=item_from_fields(path, fields), fields=fields, location=location)
+                    AuditedItem(
+                        item=stage_guard.item_from_fields(
+                            path, fields, stage_guard.AUDIT_FIELD_DEFAULTS
+                        ),
+                        fields=fields,
+                        location=location,
+                    )
                 )
 
         self.backlog: list[RecordNode] = _scan_nodes(

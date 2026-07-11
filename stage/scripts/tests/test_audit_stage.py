@@ -647,6 +647,25 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("WORK012", finding_codes(findings))
 
+    def test_audit_defaults_keep_missing_fields_empty(self):
+        # Audit-side constructor policy: missing lifecycle fields stay empty
+        # so every enum check fires (the gate-side policy is pinned in the
+        # hooks suite).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            items = root / ".stage" / "present" / "work" / "items"
+            (items / "W-0001.md").write_text(
+                "---\nid: W-0001\ntitle: Sparse\nscope: src\n---\n# W-0001\n",
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        codes = finding_codes(findings)
+        for code in ("WORK003", "WORK004", "WORK005", "WORK006"):
+            self.assertIn(code, codes)
+
     def test_settings_without_schema_version_is_flagged(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

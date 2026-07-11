@@ -3916,6 +3916,32 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "allow")
 
 
+class WorkItemDefaultsTest(unittest.TestCase):
+    """The gate-side constructor policy: a work item missing its lifecycle
+    fields reads as safe progress (enforcement must not crash or over-deny on
+    a sparse item), while the audit-side policy keeps them empty so the enum
+    checks fire — pinned in the audit suite."""
+
+    def test_gate_defaults_read_missing_fields_as_safe_progress(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            items = root / ".stage" / "present" / "work" / "items"
+            items.mkdir(parents=True)
+            (items / "W-0001.md").write_text(
+                "---\nid: W-0001\ntitle: Sparse\nscope: src\n---\n# W-0001\n",
+                encoding="utf-8",
+            )
+
+            loaded = stage_guard.load_work_items(root / ".stage")
+
+        self.assertEqual(1, len(loaded))
+        item = loaded[0]
+        self.assertEqual("active", item.status)
+        self.assertEqual("pending", item.verification)
+        self.assertEqual("pending", item.retrospective)
+        self.assertEqual("pending", item.promotion)
+
+
 class IntentPreservationTest(unittest.TestCase):
     write_stage_file = StageGuardTest.write_stage_file
     write_work_item = StageGuardTest.write_work_item
