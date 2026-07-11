@@ -62,7 +62,7 @@ Key dependencies:
 
 ## Boundaries (DO NOT touch)
 <!-- Files, directories, or patterns Evonest must never modify. -->
-- .evonest/
+- .noory/evonest/
 [Add any generated files, migration dirs, config/secrets found in .gitignore or README]
 ```
 

@@ -7,7 +7,7 @@ from evonest.server import mcp
 
 @mcp.tool()
 async def evonest_init(path: str, level: str = "standard") -> str:
-    """Initialize .evonest/ in a project directory.
+    """Initialize the project's data root (.noory/evonest/) in a project directory.
 
     Creates config, identity, progress, and backlog templates.
 

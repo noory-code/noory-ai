@@ -2,6 +2,31 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.1.6] — 2026-07-12
+
+### Fixed
+
+Second documentation-accuracy pass, following up on [1.1.5]:
+
+- Repo-wide data-root path correction: `.evonest/` references that describe the
+  *current* data location were corrected to `.noory/evonest/` (the location Evonest
+  has used since `[1.1.0]`) across `README.md`, `PRIVACY.md`, `CONTRIBUTING.md`,
+  `ROADMAP.md`, `docs/architecture.md`, `docs/configuration.md`,
+  `docs/self-evolution.md`, `commands/*.md`, `skills/*/SKILL.md`, the root
+  monorepo `CLAUDE.md` and this package's own `CLAUDE.md`, and source docstrings/
+  comments in `core/paths.py`, `core/state.py`, `core/repositories.py`,
+  `core/history.py`, `core/meta_observe.py`, `core/initializer.py`, `core/phases.py`,
+  `tools/init.py`, `templates/identity.md`, `prompts/identity_draft.md`,
+  `prompts/observe.md`/`observe_deep.md`, and stale test docstrings. Mentions of
+  `.evonest/` describing the *legacy* pre-migration location (`core/data_root.py`,
+  `cli.py`, migration tests, this CHANGELOG's own `[1.1.0]`/`[1.1.1]` entries) were
+  left untouched — those are correct as historical/legacy references.
+- `ROADMAP.md`: removed the "Analysis depth levels" item from `## Next` — it was
+  already shipped. Retroactively documented under `[0.3.0]`, the release that
+  introduced the `analyze`/`improve`/`evolve` tool files the `level` parameter has
+  lived in ever since (confirmed via `git log -S`; the original `[0.3.0]` entry
+  omitted it).
+
 ## [1.1.5] — 2026-07-12
 
 ### Fixed
@@ -341,6 +366,11 @@ full-suite load; they pass in isolation — pre-existing contention flake)
 - **`evonest evolve`** — Full autonomous cycle: Observe → Plan → Execute → Verify → commit/PR
 - `--dry-run` deprecated (redirects to `analyze`)
 - `--cautious` flag: pause after Plan phase for human review before executing
+- **Analysis depth levels** — `active_level` config (`quick` / `standard` / `deep`, each setting
+  `model` + `observe_mode` + `max_turns`), selectable at `evonest init` and overridable per-run
+  with `--level` on `analyze`/`evolve`. Missed from this entry when it was first written; added
+  retroactively — the `level` parameter has been present on `init`/`analyze`/`evolve` since these
+  tool files were introduced in this same release.
 
 ### Observe Efficiency
 - `_gather_static_context()`: git log, file tree, test inventory collected once and shared across all personas — eliminates redundant LLM tool calls

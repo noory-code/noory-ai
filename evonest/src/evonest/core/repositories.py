@@ -1,4 +1,4 @@
-"""Domain repositories — each owns one concern in .evonest/.
+"""Domain repositories — each owns one concern in .noory/evonest/.
 
 Every repository receives an EvonestPaths instance and handles
 its own file I/O using pathlib directly (no shared I/O helpers).

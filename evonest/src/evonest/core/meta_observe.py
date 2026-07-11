@@ -2,7 +2,7 @@
 
 Analyzes evolution performance to generate project-specific personas
 and adversarial challenges. Dynamic mutations are stored in
-.evonest/dynamic-*.json with expiration cycles (TTL).
+.noory/evonest/dynamic-*.json with expiration cycles (TTL).
 """
 
 from __future__ import annotations

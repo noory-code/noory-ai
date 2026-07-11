@@ -1,13 +1,13 @@
 # Evonest Configuration Reference
 
-Config lives at `.evonest/config.json` in your project. All fields are optional — defaults are listed below.
+Config lives at `.noory/evonest/config.json` in your project. All fields are optional — defaults are listed below.
 
 The file supports **JSONC** syntax: you can add `//` line comments anywhere.
 
 ## 3-Tier Resolution
 
 1. **Engine defaults** — Built into `EvonestConfig` dataclass
-2. **Project config** — `.evonest/config.json`
+2. **Project config** — `.noory/evonest/config.json`
 3. **Runtime parameters** — CLI flags (`--level`, `--cycles`, etc.) or MCP tool args
 
 Each tier overrides the previous. Runtime parameters always win.

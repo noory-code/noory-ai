@@ -8,7 +8,8 @@ Evonest does **not** collect, transmit, or store any data on external servers. T
 
 ## How Data Is Stored
 
-All Evonest data is stored locally in the `.evonest/` directory within your project:
+All Evonest data is stored locally in the `.noory/evonest/` directory within your project
+(a legacy `.evonest/` directory is migrated automatically on first access):
 
 | File | Purpose |
 |------|---------|
@@ -18,7 +19,7 @@ All Evonest data is stored locally in the `.evonest/` directory within your proj
 | `dynamic-personas.json` | Runtime-generated personas |
 | `dynamic-adversarials.json` | Runtime-generated challenges |
 
-You have full control: delete `.evonest/` to remove all Evonest data from a project.
+You have full control: delete `.noory/evonest/` to remove all Evonest data from a project.
 
 ## Code Execution Safety
 

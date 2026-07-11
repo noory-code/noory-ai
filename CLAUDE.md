@@ -155,15 +155,15 @@ Hook commands in `hooks.json` must use `python3` (not `bash`). `${CLAUDE_PLUGIN_
 Key files:
 - `core/orchestrator.py` — main evolution loop
 - `core/phases.py` — Observe → Plan → Execute → Verify phases
-- `core/state.py` — all `.evonest/` directory access goes through here (single entry point)
+- `core/state.py` — all `.noory/evonest/` directory access goes through here (single entry point)
 - `core/mutations.py` — persona & adversarial challenge selection
 - `core/claude_runner.py` — all `claude -p` subprocess calls (turn limits, error handling)
 - `mutations/personas.json` — 20 built-in personas (read-only at runtime)
 - `mutations/adversarial.json` — 8 adversarial challenges
 
-Runtime-generated personas/adversarials go to `.evonest/dynamic-*.json` in the target project, never to `mutations/`.
+Runtime-generated personas/adversarials go to `.noory/evonest/dynamic-*.json` in the target project, never to `mutations/`.
 
-3-tier config: engine defaults < `.evonest/config.json` < runtime args.
+3-tier config: engine defaults < `.noory/evonest/config.json` < runtime args.
 
 ### Novel AI
 

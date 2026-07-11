@@ -3,7 +3,7 @@ description: Refresh evonest identity.md — have Claude re-read the project and
 argument-hint: "[project path]"
 ---
 
-Re-draft the project's `.evonest/identity.md` using the `evonest_identity_refresh` MCP tool.
+Re-draft the project's `.noory/evonest/identity.md` using the `evonest_identity_refresh` MCP tool.
 
 Steps:
 1. Call `evonest_identity_refresh` with `project` set to the target project path (use the `evonest/` package directory if inside the noory-ai monorepo; never use the monorepo root).

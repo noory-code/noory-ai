@@ -25,15 +25,15 @@ Each tool takes `project` (absolute path) as its first argument.
 
 | Tool | When to use |
 |------|-------------|
-| `evonest_init` | First-time setup — creates `.evonest/` in the target project |
+| `evonest_init` | First-time setup — creates `.noory/evonest/` in the target project |
 | `evonest_analyze` | Scan and save ALL improvements as proposals (no code changes) |
 | `evonest_improve` | Execute one proposal (`proposal_id=...`) or all (`all=True`) |
 | `evonest_evolve` | Full cycle: Observe → Plan → Execute → Verify → commit/PR |
 | `evonest_status` | Show project status summary |
 | `evonest_proposals` | List pending proposals |
 | `evonest_history` | Show cycle history |
-| `evonest_config` | Read or update `.evonest/config.json` |
-| `evonest_identity` | Read or write `.evonest/identity.md` |
+| `evonest_config` | Read or update `.noory/evonest/config.json` |
+| `evonest_identity` | Read or write `.noory/evonest/identity.md` |
 | `evonest_identity_refresh` | Re-draft identity.md by having Claude explore the project |
 | `evonest_backlog` | Manage the improvement backlog |
 | `evonest_stimuli` | Add a stimulus (external input for the next observe cycle) |
@@ -49,7 +49,7 @@ Each tool takes `project` (absolute path) as its first argument.
 
 > Initialize evonest for this project, then analyze it for improvements.
 
-Evonest will run `evonest_init`, set up `.evonest/`, then `evonest_analyze` to generate the first batch of proposals.
+Evonest will run `evonest_init`, set up `.noory/evonest/`, then `evonest_analyze` to generate the first batch of proposals.
 
 **Review and apply proposals:**
 

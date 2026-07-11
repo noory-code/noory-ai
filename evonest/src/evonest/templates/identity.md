@@ -65,10 +65,10 @@
 ## Boundaries (DO NOT touch)
 <!-- Files, directories, or patterns Evonest must never modify.
      Examples:
-     - ".evonest/"
+     - ".noory/evonest/"
      - "migrations/"
      - "config/production.json"
      - "*.generated.ts"
 -->
-- .evonest/
+- .noory/evonest/
 -

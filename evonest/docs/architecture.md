@@ -40,7 +40,7 @@ src/evonest/
 │   └── update_docs.py     # evonest_update_docs → core.doc_updater.run_update_docs
 │
 ├── core/                  # Engine logic (MCP-agnostic)
-│   ├── state.py           # ProjectState — all .evonest/ paths + file I/O
+│   ├── state.py           # ProjectState — all .noory/evonest/ paths + file I/O
 │   ├── data_root.py       # evonest_data_root() — resolves .noory/evonest/, migrates legacy .evonest/
 │   ├── paths.py           # EvonestPaths — pure path calculations, no I/O
 │   ├── repositories.py    # Per-concern repositories (Identity, Proposal, Stimulus, ...) — file I/O
@@ -88,8 +88,8 @@ they are not copied from a file under `templates/`.
 ```
 evonest evolve
   │
-  ├─ Load EvonestConfig (3-tier: defaults < .evonest/config.json < runtime args)
-  ├─ Create ProjectState (validates .evonest/ exists)
+  ├─ Load EvonestConfig (3-tier: defaults < .noory/evonest/config.json < runtime args)
+  ├─ Create ProjectState (validates .noory/evonest/ exists)
   ├─ Acquire EvonestLock (prevents concurrent runs)
   │
   └─ For each cycle (1..N):
@@ -99,34 +99,34 @@ evonest evolve
       │   ├─ Run claude -p with meta_observe.md
       │   ├─ Expire old dynamic mutations (TTL check)
       │   ├─ Apply results (new personas, adversarials, auto-stimuli)
-      │   └─ Save strategic advice → .evonest/advice.json
+      │   └─ Save strategic advice → .noory/evonest/advice.json
       │
       ├─ Scout check (every scout_cycle_interval cycles, if scout_enabled and not --no-scout)
       │   ├─ Extract keywords from identity.md
       │   ├─ Run claude -p with scout.md (tools: Read, WebFetch, Bash)
       │   ├─ Score findings 1–10 against project identity/values
       │   ├─ Inject findings ≥ scout_min_relevance_score as stimuli
-      │   └─ Cache all findings → .evonest/scout.json (dedup)
+      │   └─ Cache all findings → .noory/evonest/scout.json (dedup)
       │
       ├─ Select mutation (weighted random)
       │   ├─ Pick persona (built-in + dynamic, weighted by success rate)
       │   ├─ Maybe pick adversarial (20% chance, weighted)
-      │   ├─ Consume stimuli (.evonest/stimuli/*.md → .processed/)
-      │   └─ Consume decisions (.evonest/decisions/*.md → delete)
+      │   ├─ Consume stimuli (.noory/evonest/stimuli/*.md → .processed/)
+      │   └─ Consume decisions (.noory/evonest/decisions/*.md → delete)
       │
       ├─ Phase 1: OBSERVE
       │   ├─ Assemble prompt (observe.md + identity + history + convergence
       │   │   + advisor guidance + environment cache
       │   │   + persona + adversarial + stimuli + decisions)
       │   ├─ Run claude -p (tools: Read, Glob, Grep, Bash)
-      │   ├─ Save output to .evonest/observe.txt
-      │   ├─ Extract improvements → .evonest/backlog.json
-      │   └─ Cache ecosystem items → .evonest/environment.json
+      │   ├─ Save output to .noory/evonest/observe.txt
+      │   ├─ Extract improvements → .noory/evonest/backlog.json
+      │   └─ Cache ecosystem items → .noory/evonest/environment.json
       │
       ├─ Phase 2: PLAN
       │   ├─ Assemble prompt (plan.md + identity + observe.txt + backlog context)
       │   ├─ Run claude -p (tools: Read, Glob, Grep, Bash)
-      │   ├─ Save output to .evonest/plan.txt
+      │   ├─ Save output to .noory/evonest/plan.txt
       │   └─ Check for "no improvements" → stop loop
       │
       ├─ [cautious mode: pause here, await confirmation]
@@ -135,8 +135,8 @@ evonest evolve
       │   ├─ Git stash checkpoint
       │   ├─ Assemble prompt (execute.md + identity + plan.txt + decisions)
       │   ├─ Run claude -p (tools: Read, Glob, Grep, Edit, Write, Bash)
-      │   ├─ Proposal items → .evonest/proposals/proposal-{cycle}-{ts}.md (no commit)
-      │   └─ Code items → .evonest/execute.txt
+      │   ├─ Proposal items → .noory/evonest/proposals/proposal-{cycle}-{ts}.md (no commit)
+      │   └─ Code items → .noory/evonest/execute.txt
       │
       ├─ Phase 4: VERIFY
       │   ├─ Run build command (if configured)
@@ -152,23 +152,23 @@ evonest evolve
           ├─ update_progress (persona stats, area touches, convergence)
           ├─ recalculate_weights (all personas + adversarials)
           ├─ prune backlog (remove old completed/stale)
-          └─ save cycle history (.evonest/history/cycle-NNNN.json)
+          └─ save cycle history (.noory/evonest/history/cycle-NNNN.json)
 ```
 
 ## Key Design Decisions
 
 ### ProjectState as single access point
-All `.evonest/` file I/O goes through `core/state.py:ProjectState`. No other module constructs `.evonest/` paths. This makes testing easy (mock the state) and prevents path bugs.
+All `.noory/evonest/` file I/O goes through `core/state.py:ProjectState`. No other module constructs `.noory/evonest/` paths. This makes testing easy (mock the state) and prevents path bugs.
 
 ### Static/Dynamic mutation separation
-Built-in mutations live in the `mutations/` package directory (read-only). Dynamic mutations from meta-observe go to `.evonest/dynamic-{personas,adversarials}.json`. They merge at runtime via `load_personas()` / `load_adversarials()`.
+Built-in mutations live in the `mutations/` package directory (read-only). Dynamic mutations from meta-observe go to `.noory/evonest/dynamic-{personas,adversarials}.json`. They merge at runtime via `load_personas()` / `load_adversarials()`.
 
 ### Tool/Core separation
 `tools/` modules are thin wrappers that import `core/` functions. All business logic lives in `core/`. This means CLI and MCP server share the same logic.
 
 ### 3-tier config resolution
 1. Engine defaults (EvonestConfig dataclass field defaults)
-2. Project config (`.evonest/config.json`)
+2. Project config (`.noory/evonest/config.json`)
 3. Runtime parameters (MCP tool args / CLI flags)
 
 Each tier overrides the previous. Supports dot-notation for nested keys (`verify.build`, `max_turns.observe`).
@@ -202,8 +202,8 @@ completed/stale → pruned (after 20 cycles)
 | Phase | Claude? | Tools | Max Turns | Output |
 |-------|---------|-------|-----------|--------|
 | Meta-Observe | Yes | Read, Glob, Grep, Bash | 10 | Dynamic mutations + auto-stimuli + advice |
-| Scout | Yes | Read, WebFetch, Bash | 15 | `.evonest/scout.txt` (raw output) + `.evonest/scout.json` (dedup cache) + stimuli |
-| Observe | Yes | Read, Glob, Grep, Bash | 25 | `.evonest/observe.txt` + backlog |
-| Plan | Yes | Read, Glob, Grep, Bash | 15 | `.evonest/plan.txt` |
-| Execute | Yes | Read, Glob, Grep, Edit, Write, Bash | 25 | `.evonest/execute.txt` + proposals |
+| Scout | Yes | Read, WebFetch, Bash | 15 | `.noory/evonest/scout.txt` (raw output) + `.noory/evonest/scout.json` (dedup cache) + stimuli |
+| Observe | Yes | Read, Glob, Grep, Bash | 25 | `.noory/evonest/observe.txt` + backlog |
+| Plan | Yes | Read, Glob, Grep, Bash | 15 | `.noory/evonest/plan.txt` |
+| Execute | Yes | Read, Glob, Grep, Edit, Write, Bash | 25 | `.noory/evonest/execute.txt` + proposals |
 | Verify | No | subprocess (build/test), git | — | commit / PR / revert |

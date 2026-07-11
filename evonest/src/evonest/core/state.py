@@ -1,7 +1,7 @@
 """ProjectState — container for EvonestPaths and domain repositories.
 
 Every module accesses project files through this class.
-Never construct .evonest/ paths manually elsewhere.
+Never construct .noory/evonest/ paths manually elsewhere.
 """
 
 from __future__ import annotations

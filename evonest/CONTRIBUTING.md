@@ -46,7 +46,7 @@ test(orchestrator): add convergence detection tests
 
 - `tools/` — thin MCP wrappers (no business logic)
 - `core/` — all logic lives here
-- `core/state.py` — single entry point for `.evonest/` directory access
+- `core/state.py` — single entry point for `.noory/evonest/` directory access
 - `core/claude_runner.py` — all `claude -p` subprocess calls
 
 See [docs/architecture.md](docs/architecture.md) for the full picture.

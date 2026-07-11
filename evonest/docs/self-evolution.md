@@ -1,15 +1,15 @@
 # Self-Evolution — Running Evonest on Evonest
 
-Evonest runs on itself. This repo has its own `.evonest/` and evolves through the same cycle every other project does. Dogfooding is a first-class use case.
+Evonest runs on itself. This repo has its own `.noory/evonest/` and evolves through the same cycle every other project does. Dogfooding is a first-class use case.
 
 ## Setup
 
-The `.evonest/identity.md` in this repo already describes the project. No additional init needed.
+The `.noory/evonest/identity.md` in this repo already describes the project. No additional init needed.
 
 Key boundaries already set:
 ```markdown
 ## Boundaries (DO NOT touch)
-- .evonest/
+- .noory/evonest/
 - mutations/
 - .claude/
 - .mcp.plugin.json

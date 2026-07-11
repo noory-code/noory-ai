@@ -27,7 +27,7 @@ Evonest evolves its own codebase through the same cycle. Real findings from 164 
 | `subprocess.run(shell=True)` with user config values — shell injection | security-auditor | Fixed: `shlex.split()` + `shell=False` |
 | `TimeoutExpired` handler missing `process.kill()` — zombie processes | chaos-engineer | Fixed: `process.kill()` + `process.wait()` in timeout handler |
 | Bare `except Exception: pass` in 19 locations — silent failures | observability-advocate | Fixed: module-level logger with `exc_info=True` throughout |
-| Path slugification allows `../../../etc/passwd` traversal | security-auditor | Fixed: validate resolved path stays within `.evonest/` |
+| Path slugification allows `../../../etc/passwd` traversal | security-auditor | Fixed: validate resolved path stays within the data root |
 
 0 regressions — auto-revert caught everything.
 
@@ -67,7 +67,7 @@ See [docs/mcp-tools.md](docs/mcp-tools.md) for the full MCP tool reference.
 
 ```
 1. evonest_init(project="/path/to/project")
-   → creates .evonest/ (identity.md, config.json, proposals/, history/, ...)
+   → creates .noory/evonest/ (identity.md, config.json, proposals/, history/, ...)
    → edit identity.md: mission, values, boundaries
 
 2. evonest_analyze(project="...")
@@ -81,10 +81,10 @@ See [docs/mcp-tools.md](docs/mcp-tools.md) for the full MCP tool reference.
 
 **First time? Start with `analyze`.** No code is changed — you review proposals before anything executes.
 
-### .evonest/ layout
+### .noory/evonest/ layout
 
 ```
-.evonest/
+.noory/evonest/
 ├── identity.md        ← describe your project (edit this!)
 ├── config.json        ← verify commands, model, turn limits
 ├── progress.json      ← persona weights and area touch counts
@@ -105,7 +105,7 @@ See [docs/mcp-tools.md](docs/mcp-tools.md) for the full MCP tool reference.
 - **Turn limits** — every Claude subprocess has a hard cap on API calls
 - **Cautious mode** — `--cautious` shows the plan and waits for approval before executing
 
-Configure verify commands in `.evonest/config.json`:
+Configure verify commands in `.noory/evonest/config.json`:
 
 ```json
 {
@@ -165,7 +165,7 @@ Every cycle, Evonest picks a **persona** and optionally pairs it with an **adver
 | **biz** (8) | product-thinker, product-strategist, spec-reviewer, growth-hacker, monetization-analyst, ux-critic, competitor-analyst, cto-reviewer |
 | **quality** (4) | security-auditor, chaos-engineer, refactoring-expert, observability-advocate |
 
-Selection is weighted by past success. You can enable/disable any persona or group in `.evonest/config.json`.
+Selection is weighted by past success. You can enable/disable any persona or group in `.noory/evonest/config.json`.
 
 ### Adversarial Challenges (8 built-in)
 
@@ -176,7 +176,7 @@ Set `adversarial_probability: 0.0` to disable, or force one with `adversarial_id
 
 ### Dynamic Mutations
 
-Evonest generates project-specific personas and adversarials via meta-observe — stored in `.evonest/dynamic-personas.json` and `.evonest/dynamic-adversarials.json`, pruned automatically by effectiveness.
+Evonest generates project-specific personas and adversarials via meta-observe — stored in `.noory/evonest/dynamic-personas.json` and `.noory/evonest/dynamic-adversarials.json`, pruned automatically by effectiveness.
 
 ## Adaptive Intelligence
 
@@ -188,7 +188,7 @@ See [docs/architecture.md](docs/architecture.md) for weight formula and converge
 
 ## identity.md
 
-The most important file. Lives at `.evonest/identity.md` — created by `evonest_init`.
+The most important file. Lives at `.noory/evonest/identity.md` — created by `evonest_init`.
 
 Describe your project's mission, core values, current phase, quality standards, and boundaries (files Evonest must not touch). Evonest reads this at the start of every cycle — the richer it is, the better the proposals.
 
@@ -196,7 +196,7 @@ Run `evonest_identity_refresh` to have Claude re-draft the identity by exploring
 
 ## Configuration
 
-Settings in `.evonest/config.json`. Engine defaults < project config < runtime args.
+Settings in `.noory/evonest/config.json`. Engine defaults < project config < runtime args.
 
 See [docs/configuration.md](docs/configuration.md) for all options.
 
@@ -206,7 +206,7 @@ Set `code_output: "pr"` to have Evonest open pull requests instead of direct com
 
 ## Self-Evolution
 
-This repo has its own `.evonest/` and evolves through the same cycle. See [docs/self-evolution.md](docs/self-evolution.md).
+This repo has its own `.noory/evonest/` and evolves through the same cycle. See [docs/self-evolution.md](docs/self-evolution.md).
 
 ## License
 

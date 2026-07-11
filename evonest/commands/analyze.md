@@ -21,5 +21,5 @@ Call `evonest_analyze` with:
 
 After the tool returns, summarize the result:
 - How many proposals were saved
-- Where to find them (`.evonest/proposals/`)
+- Where to find them (`.noory/evonest/proposals/`)
 - Suggest running `/evonest:improve` to execute a proposal

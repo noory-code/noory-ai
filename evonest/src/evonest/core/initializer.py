@@ -1,4 +1,4 @@
-"""Project initialization — create .evonest/ with templates."""
+"""Project initialization — create .noory/evonest/ with templates."""
 
 from __future__ import annotations
 
@@ -62,10 +62,10 @@ def _draft_identity_via_claude(project: Path) -> str | None:
 
 
 def init_project(path: str | Path, level: str = "standard") -> str:
-    """Initialize .evonest/ in a project directory.
+    """Initialize the project's data root (.noory/evonest/) in a project directory.
 
     Creates config, identity, progress, backlog templates and required subdirectories.
-    Adds .evonest/ to the project's .gitignore if not already present.
+    Adds .noory/evonest/ to the project's .gitignore if not already present.
 
     Args:
         path: Path to the target project directory.

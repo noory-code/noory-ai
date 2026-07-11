@@ -10,7 +10,7 @@ import pytest
 
 @pytest.fixture
 def tmp_project(tmp_path: Path) -> Path:
-    """Create a minimal .evonest/ project for testing."""
+    """Create a minimal .noory/evonest/ project for testing."""
     evonest_dir = tmp_path / ".noory" / "evonest"
     evonest_dir.mkdir(parents=True)
 

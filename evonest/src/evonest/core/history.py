@@ -1,6 +1,6 @@
 """Cycle history and convergence detection.
 
-History files are stored as cycle-NNNN.json in .evonest/history/.
+History files are stored as cycle-NNNN.json in .noory/evonest/history/.
 Each file contains the full cycle result including persona, adversarial,
 success status, changes, and timing.
 """

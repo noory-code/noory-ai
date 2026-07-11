@@ -61,7 +61,7 @@ evonest_import(
 )
 ```
 - Download persona/adversarial JSON directly from GitHub raw URLs
-- Auto-merge into `.evonest/dynamic-personas.json` or `.evonest/dynamic-adversarials.json`
+- Auto-merge into `.noory/evonest/dynamic-personas.json` or `.noory/evonest/dynamic-adversarials.json`
 - Duplicate detection and version management
 
 #### 2. Initial Persona Packs Release
@@ -105,7 +105,6 @@ noory-code/evonest-personas
 
 ## Next
 
-- **Analysis depth levels** — `quick / standard / deep` presets; selectable at `evonest init`, overridable with `--level`
 - Parallel analysis (run multiple personas concurrently)
 - Proposals list UX improvements (filter, sort, search)
 

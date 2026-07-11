@@ -29,15 +29,15 @@ All tools take `project` (absolute path) as their first argument.
 
 | Tool | When to use |
 |------|-------------|
-| `evonest_init` | First time setup — creates `.evonest/` in the target project |
+| `evonest_init` | First time setup — creates `.noory/evonest/` in the target project |
 | `evonest_analyze` | Scan and save ALL improvements as proposals (no code changes) |
 | `evonest_improve` | Execute one proposal (blocks until complete; use `all=True` for batch) |
 | `evonest_evolve` | Full cycle: Observe → Plan → Execute → Verify → commit/PR |
 | `evonest_status` | Show project status summary |
 | `evonest_proposals` | List pending proposals |
 | `evonest_history` | Show cycle history |
-| `evonest_config` | Read or update `.evonest/config.json` |
-| `evonest_identity` | Read or write `.evonest/identity.md` |
+| `evonest_config` | Read or update `.noory/evonest/config.json` |
+| `evonest_identity` | Read or write `.noory/evonest/identity.md` |
 | `evonest_identity_refresh` | Re-draft identity.md by having Claude explore the project (returns current + draft for review) |
 | `evonest_backlog` | Manage the improvement backlog |
 | `evonest_stimuli` | Add a stimulus (external input for the next observe cycle) |
@@ -50,7 +50,7 @@ All tools take `project` (absolute path) as their first argument.
 ## Typical Workflows
 
 ### First time on a new project
-1. `evonest_init(project)` — initialize `.evonest/`
+1. `evonest_init(project)` — initialize `.noory/evonest/`
 2. `evonest_identity(project)` — show the identity template, ask the user to fill it in
 3. `evonest_analyze(project)` — run first analysis
 
@@ -79,7 +79,7 @@ All tools take `project` (absolute path) as their first argument.
 
 ## Key Notes
 
-- **`analyze` does NOT modify code** — it only saves proposals to `.evonest/proposals/`
+- **`analyze` does NOT modify code** — it only saves proposals to `.noory/evonest/proposals/`
 - **`improve` requires existing proposals** — run `analyze` first if none exist
 - **`improve` is synchronous** — it blocks until the full cycle (Execute → Verify → commit) completes
 - **`improve(all=True)` processes every pending proposal** — runs sequentially until the queue is empty

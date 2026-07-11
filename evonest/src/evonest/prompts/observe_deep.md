@@ -36,7 +36,7 @@ Examine the current state of the codebase and identify concrete, actionable impr
    - Your analysis produces proposals — design-level recommendations for human review, NOT code changes
    - Report findings as improvements with category `"proposal"`
    - Each proposal must stay anchored to the stated Product Direction; do not suggest directions that contradict it
-   - Proposals will be saved to `.evonest/proposals/` for the team to review and act on
+   - Proposals will be saved to `.noory/evonest/proposals/` for the team to review and act on
    - Skip this task if you are not a business-logic persona
 
 7. **Environment check** (only if Project Identity has an Ecosystem section):

@@ -39,7 +39,7 @@ def test_cli_main_no_command() -> None:
 
 
 def test_cli_init(tmp_path: Path) -> None:
-    """evonest init should create .evonest/ directory."""
+    """evonest init should create .noory/evonest/ directory."""
     result = _run_cli("init", str(tmp_path))
     assert result.returncode == 0
     assert "Initialized" in result.stdout
@@ -201,7 +201,7 @@ def test_resolve_project_env_var(tmp_project: Path) -> None:
 
 
 def test_resolve_project_cwd_walk(tmp_project: Path) -> None:
-    """_resolve_project walks up from cwd to find .evonest/."""
+    """_resolve_project walks up from cwd to find the data root."""
     from unittest.mock import patch
 
     from evonest.cli import _resolve_project
@@ -221,14 +221,14 @@ def test_resolve_project_cwd_walk(tmp_project: Path) -> None:
 
 
 def test_resolve_project_not_found(tmp_path: Path) -> None:
-    """_resolve_project raises FileNotFoundError when no .evonest/ found."""
+    """_resolve_project raises FileNotFoundError when no data root found."""
     from unittest.mock import patch
 
     from evonest.cli import _resolve_project
 
     with patch("evonest.cli.Path") as mock_path_cls:
         mock_path_cls.cwd.return_value = tmp_path
-        # No .evonest/ in tmp_path → should raise
+        # No data root in tmp_path → should raise
         import pytest
 
         with pytest.raises(FileNotFoundError, match=".evonest"):

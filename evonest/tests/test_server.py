@@ -45,7 +45,7 @@ def test_all_tools_registered() -> None:
 
 @pytest.mark.asyncio
 async def test_tool_init(tmp_path: Path) -> None:
-    """evonest_init should create .evonest/ directory."""
+    """evonest_init should create .noory/evonest/ directory."""
     from evonest.tools.init import evonest_init
 
     result = await evonest_init(str(tmp_path))

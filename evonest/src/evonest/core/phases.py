@@ -3,7 +3,7 @@
 Each phase function:
 1. Assembles a prompt from template + context
 2. Calls claude_runner.run()
-3. Saves output to .evonest/
+3. Saves output to .noory/evonest/
 4. Returns a PhaseResult
 """
 
@@ -284,7 +284,7 @@ def _save_observations_from_output(
 ) -> None:
     """Extract improvements JSON from observe output and save to backlog.
 
-    - "proposal" category items → saved to .evonest/proposals/ (not backlog)
+    - "proposal" category items → saved to .noory/evonest/proposals/ (not backlog)
     - "ecosystem" category items → cached in environment.json (also in backlog)
     - All other items → saved to backlog as usual
     """
@@ -308,7 +308,7 @@ def _save_observations_from_output(
         if regular:
             save_observations(state, regular, persona_id, cycle)
 
-        # Save proposals to .evonest/proposals/ (human review required)
+        # Save proposals to .noory/evonest/proposals/ (human review required)
         language = config.language if config else "english"
         for proposal in proposals:
             _save_proposal(state, proposal, persona_id, cycle, language=language)
@@ -404,7 +404,7 @@ def _save_proposal(
     *,
     language: str = "english",
 ) -> None:
-    """Save a business-logic proposal to .evonest/proposals/."""
+    """Save a business-logic proposal to .noory/evonest/proposals/."""
     lbl = _PROPOSAL_LABELS.get(language.lower(), _PROPOSAL_LABELS["english"])
 
     title = proposal.get("title", "Untitled Proposal")

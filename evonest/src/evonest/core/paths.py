@@ -1,4 +1,4 @@
-"""EvonestPaths — all .evonest/ path calculations in one place.
+"""EvonestPaths — all .noory/evonest/ path calculations in one place.
 
 Pure path properties, no I/O. Accepts any validated project root.
 """
@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 class EvonestPaths:
-    """Computes paths for every file/directory inside a .evonest/ root."""
+    """Computes paths for every file/directory inside a .noory/evonest/ root."""
 
     def __init__(self, project: Path, root: Path) -> None:
         self.project = project

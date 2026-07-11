@@ -20,14 +20,14 @@
 - `src/evonest/tools/` — MCP tool definitions (thin wrappers over core/)
 - `src/evonest/core/` — Engine logic (MCP-agnostic, all business logic here)
 - `src/evonest/prompts/` — Phase prompt templates (observe, plan, execute, verify, meta)
-- `src/evonest/templates/` — Init templates copied to .evonest/
+- `src/evonest/templates/` — Init templates copied to the project's data root (`.noory/evonest/`)
 - `mutations/` — Built-in personas and adversarial challenges (read-only at runtime)
 
 ## Key Patterns
 
-- **ProjectState**: All file access goes through `core/state.py`. Never construct `.evonest/` paths manually.
-- **Static/Dynamic separation**: `mutations/` is read-only. Dynamic mutations go to `.evonest/dynamic-*.json`.
-- **Config 3-tier**: Engine defaults < `.evonest/config.json` < runtime parameters.
+- **ProjectState**: All file access goes through `core/state.py`. Never construct `.noory/evonest/` paths manually.
+- **Static/Dynamic separation**: `mutations/` is read-only. Dynamic mutations go to `.noory/evonest/dynamic-*.json`.
+- **Config 3-tier**: Engine defaults < `.noory/evonest/config.json` < runtime parameters.
 - **Tool/Core separation**: `tools/` are thin wrappers. Logic lives in `core/`.
 - **ClaudeRunner**: All `claude -p` subprocess calls go through `core/claude_runner.py`.
 
@@ -71,5 +71,5 @@ Do NOT manually edit `~/.claude/plugins/` cache directories — Claude Code rege
 
 ## Boundaries (DO NOT modify)
 
-- `.evonest/` in target projects — user data, never auto-delete
+- `.noory/evonest/` in target projects — user data, never auto-delete (legacy `.evonest/` migrates automatically)
 - `mutations/` — built-in data, never modified at runtime
