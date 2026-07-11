@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 — 2026-07-11
+
+- P31 record-graph audit: `scripts/stage_records.py` scans every frontmattered
+  W/R/DE/B/state record once into typed nodes and reference edges (topology
+  documented in one table), and every audit link check reads that graph —
+  per-check globbing/re-parsing and cross-method side channels are gone. The
+  finding surface (codes, messages, paths, order) is unchanged, held by an
+  ordered kitchen-sink pin test plus the per-code suite.
+
 ## 0.9.0 — 2026-07-11
 
 - P33 module split: `hooks/stage_guard.py` (3,010 lines) is now a thin
