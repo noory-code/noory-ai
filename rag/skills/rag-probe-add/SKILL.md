@@ -5,10 +5,12 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.1.2"
+  plugin_version: "0.3.0"
 ---
 
 # rag-probe-add — register an evaluation question
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## What
 
@@ -22,7 +24,7 @@ Register a question the user frequently gets (or will get) in `.noory/rag/probes
    - If the result is empty, proceed as-is.
    - If there are already N, show them in a table and enter add mode.
 
-2. **Take user input**: take the following 3 fields via AskUserQuestion or natural-language conversation.
+2. **Take user input**: take the following 3 fields via the host question tool or natural-language conversation.
    - `query` (required): the actual question sentence (e.g., "What is the project's authentication flow?")
    - `id` (optional): if left blank, Claude auto-generates a kebab-case slug from the query (e.g., "auth-flow"). If duplicate, a suffix like `-2`.
    - `note` (optional): a one-line memo (e.g., "frequently asked during new-hire onboarding")

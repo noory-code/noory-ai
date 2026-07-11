@@ -1,4 +1,4 @@
-"""doc_updater — sync skills/commands/agents/rules/CLAUDE.md with source code."""
+"""Sync Claude Code and Codex instruction artifacts with source code."""
 
 from __future__ import annotations
 
@@ -16,11 +16,11 @@ DocAction = Literal["update", "create"]
 
 # Glob patterns for each target category
 _TARGET_GLOBS: dict[str, list[str]] = {
-    "skills": ["skills/**/*.md", ".claude/skills/**/*.md"],
+    "skills": ["skills/**/*.md", ".claude/skills/**/*.md", ".agents/skills/**/*.md"],
     "commands": ["commands/*.md", ".claude/commands/*.md"],
     "agents": [".claude/agents/*.md"],
     "rules": [".claude/rules/*.md"],
-    "claude_md": ["CLAUDE.md"],
+    "claude_md": ["CLAUDE.md", "AGENTS.md"],
 }
 
 
@@ -128,7 +128,7 @@ def run_update_docs(
     )
 
     if not result.success:
-        logger.warning("update_docs: claude run failed: %s", result.stderr[:200])
+        logger.warning("update_docs: agent run failed: %s", result.stderr[:200])
         return []
 
     return _parse_llm_output(result.output)

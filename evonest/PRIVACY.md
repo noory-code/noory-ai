@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Evonest** is a Claude Code plugin that operates entirely on your local machine.
+**Evonest** is a Claude Code and Codex plugin that operates entirely on your local machine.
 
 ## Data Collection
 
@@ -31,7 +31,7 @@ Evonest modifies code in your local repository only. Safety mechanisms:
 
 ## Third-Party Services
 
-Evonest does not integrate with or send data to any third-party services. It uses `claude -p` subprocess calls which route through your existing Claude subscription.
+Evonest does not add a separate telemetry or data service. It launches `claude -p` or `codex exec`, selected by the active plugin host, so model traffic follows the account and provider configuration of that installed CLI.
 
 ## Changes to This Policy
 

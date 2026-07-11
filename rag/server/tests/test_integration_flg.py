@@ -103,10 +103,10 @@ def test_indexing_produces_meaningful_corpus(flg_state) -> None:
 @pytest.mark.parametrize(
     "query,expected_token",
     [
-        ("riverpod provider pattern state management", "guide-lib-riverpod"),
-        ("freezed data class code generation", "guide-lib-freezed"),
-        ("widget test writing", "guide-lib-widget-test"),
-        ("go_router screen transition routing", "guide-lib-go-router"),
+        ("riverpod provider pattern state management", "flutter-riverpod"),
+        ("freezed data class code generation", "flutter-freezed"),
+        ("widget test writing", "flutter-test-widget"),
+        ("go_router screen transition routing", "flutter-go-router"),
     ],
 )
 def test_search_returns_topic_relevant_chunks(flg_state, query, expected_token) -> None:
@@ -124,9 +124,8 @@ def test_graph_neighbors_around_riverpod(flg_state) -> None:
 
 def test_list_entities_by_substring(flg_state) -> None:
     entities = flg_state["graph"].list_entities(q="test")
-    names = {e.name.lower() for e in entities}
-    # Expect at least one of the test-related libraries.
-    assert any(n in names for n in {"widget-test", "integration-test", "patrol"})
+    assert entities
+    assert all("test" in entity.name.lower() for entity in entities)
 
 
 def test_reindex_detects_single_file_change(flg_state) -> None:
@@ -135,7 +134,7 @@ def test_reindex_detects_single_file_change(flg_state) -> None:
     indexer = flg_state["indexer"]
     spec = flg_state["spec"]
 
-    target = paths.project_root / "docs" / "guide-lib-riverpod" / "SKILL.md"
+    target = paths.project_root / "docs" / "flutter-riverpod" / "SKILL.md"
     if not target.exists():
         candidates = list((paths.project_root / "docs").rglob("SKILL.md"))
         assert candidates, "no SKILL.md files under docs/"

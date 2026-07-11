@@ -5,14 +5,16 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.1.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-import — snapshot restore
 
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
+
 ## Steps
 
-1. **Input path**: extract the tarball path from the user's utterance. If absent, AskUserQuestion. Confirm it exists.
+1. **Input path**: extract the tarball path from the user's utterance. If absent, the host question tool. Confirm it exists.
 
 2. **Pre-backup notice**: if the current `.noory/rag/` is not empty, confirm "The existing index will be backed up to `.noory/rag.bak-<ts>/` then replaced. Proceed?".
 

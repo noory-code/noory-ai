@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,6 +19,7 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
         text=True,
         timeout=30,
         cwd=str(Path(__file__).parent.parent),
+        env={**os.environ, "EVONEST_SKIP_IDENTITY_DRAFT": "1"},
     )
 
 

@@ -1,0 +1,80 @@
+{
+  "name": "noory-ai",
+  "interface": {
+    "displayName": "noory-ai"
+  },
+  "plugins": [
+    {
+      "name": "evonest",
+      "source": {
+        "source": "local",
+        "path": "./evonest"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "flutter-cask",
+      "source": {
+        "source": "local",
+        "path": "./flutter-cask"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "pencil-m3-flutter",
+      "source": {
+        "source": "local",
+        "path": "./pencil_m3_flutter"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "rag",
+      "source": {
+        "source": "local",
+        "path": "./rag"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "stage",
+      "source": {
+        "source": "local",
+        "path": "./stage"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "plainly",
+      "source": {
+        "source": "local",
+        "path": "./plainly"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

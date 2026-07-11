@@ -1,0 +1,52 @@
+{
+  "name": "evonest",
+  "version": "1.2.0",
+  "description": "AI-assisted code evolution with 20 specialist personas, proposal review, verification, and automatic recovery.",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/evonest",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "code-evolution",
+    "autonomous",
+    "refactoring",
+    "ai-agent"
+  ],
+  "skills": "./skills/",
+  "mcpServers": {
+    "evonest": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${PLUGIN_ROOT}",
+        "evonest"
+      ],
+      "env": {
+        "EVONEST_AGENT_BACKEND": "codex"
+      }
+    }
+  },
+  "interface": {
+    "displayName": "Evonest",
+    "shortDescription": "Autonomous code evolution with specialist personas",
+    "longDescription": "Evonest observes a codebase, proposes improvements, executes approved work, verifies the result, and automatically recovers from failed changes.",
+    "developerName": "noory-code",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/noory-code/noory-ai/tree/main/evonest",
+    "defaultPrompt": [
+      "Analyze this project with Evonest",
+      "Show pending Evonest proposals",
+      "Run an Evonest evolution cycle"
+    ],
+    "brandColor": "#D97706"
+  }
+}

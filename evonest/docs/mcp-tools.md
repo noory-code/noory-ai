@@ -2,7 +2,7 @@
 
 ## Registration
 
-Add to `~/.claude/mcp.json`:
+For manual Claude Code installation, add to `~/.claude/mcp.json`:
 
 ```json
 {
@@ -14,6 +14,9 @@ Add to `~/.claude/mcp.json`:
   }
 }
 ```
+
+For manual Codex installation, configure the same stdio command and set
+`EVONEST_AGENT_BACKEND=codex`. The packaged Codex plugin does this automatically.
 
 Evonest data lives under `.noory/evonest/` in the target project (a legacy
 `.evonest/` directory is migrated automatically on first access).
@@ -282,7 +285,7 @@ Scout complete:
 
 #### evonest_update_docs
 
-Sync Claude Code files (skills, commands, agents, rules, CLAUDE.md) with the project's current MCP tool definitions and docstrings.
+Sync Claude Code and Codex instruction files (skills, commands, agents, rules, CLAUDE.md, AGENTS.md) with the project's current MCP tool definitions and docstrings.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|

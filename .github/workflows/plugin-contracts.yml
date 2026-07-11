@@ -1,0 +1,43 @@
+name: plugin-contracts
+
+on:
+  push:
+    paths:
+      - ".agents/**"
+      - ".claude-plugin/**"
+      - "evonest/**"
+      - "flutter-cask/**"
+      - "pencil_m3_flutter/**"
+      - "plainly/**"
+      - "rag/**"
+      - "stage/**"
+      - "tests/test_plugin_contracts.py"
+      - ".github/workflows/plugin-contracts.yml"
+  pull_request:
+    paths:
+      - ".agents/**"
+      - ".claude-plugin/**"
+      - "evonest/**"
+      - "flutter-cask/**"
+      - "pencil_m3_flutter/**"
+      - "plainly/**"
+      - "rag/**"
+      - "stage/**"
+      - "tests/test_plugin_contracts.py"
+      - ".github/workflows/plugin-contracts.yml"
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Validate plugin contracts
+        run: python -m unittest discover -s tests -q

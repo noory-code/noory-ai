@@ -7,5 +7,6 @@ This file guides Codex when working in this repository.
 ## Codex-specific notes
 
 - References to Claude inside CLAUDE.md are factual product references, not host-specific phrasing — e.g. Distill parses Claude Code conversation transcripts and Evonest's `core/claude_runner.py` invokes `claude -p`. Never mechanically rewrite them to Codex.
-- `stage/` and `plainly/` ship two plugin manifests; releases bump both host manifests in each
-  plugin.
+- Every local plugin ships Claude Code and Codex manifests; releases bump both host manifests.
+- When working under `evonest/`, also read and follow `evonest/CLAUDE.md`; Codex does not discover
+  that filename automatically.

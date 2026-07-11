@@ -5,14 +5,16 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.1.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-rebalance — index quality cleanup
 
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
+
 ## What
 
-Indexing is incremental, so over time ① the same concept gets duplicated under different IDs, ② the community (cluster) composition goes stale, or ③ community summaries end up empty. This skill has **MCP find the candidates, Claude (the current session) produce the decisions/summaries, and then commit the result**.
+Indexing is incremental, so over time ① the same concept gets duplicated under different IDs, ② the community (cluster) composition goes stale, or ③ community summaries end up empty. This skill has **MCP find the candidates, the active AI session produce the decisions/summaries, and then commit the result**.
 
 ## Steps
 
@@ -23,13 +25,13 @@ Indexing is incremental, so over time ① the same concept gets duplicated under
    - `alias_candidates`: `[{ keep_id, drop_id, name }, ...]`
    - `communities`: `[{ community_id, member_ids, needs_summary }, ...]`
 
-3. **Alias decision (Claude itself)**: for each alias candidate
+3. **Alias decision (the active AI session)**: for each alias candidate
    - Look at both entities' context (if needed, check the surroundings with `rag_search_graph(<name>, depth=1)`); if they are really the same concept, decide to merge.
    - If they mean something different, refuse the merge.
    - Collect the results into a `merges: [{ keep_id, drop_id }, ...]` array.
    For a large number of candidates (20+), ask the user once which way to go — auto merge / user confirmation.
 
-4. **Community summary (Claude itself)**: for each community with `needs_summary=true`
+4. **Community summary (the active AI session)**: for each community with `needs_summary=true`
    - Look at the member entity names and write a short 1-line topic label (e.g. "Flutter state management tools").
    - Collect them into a `summaries: [{ community_id, summary }, ...]` array.
 

@@ -1,8 +1,8 @@
 # pencil-m3-flutter
 
-Claude Code 플러그인 — Flutter Material Design 3 디자인 시스템 자동화.
+Claude Code 및 Codex 플러그인 — Flutter Material Design 3 디자인 시스템 자동화.
 
-[Pencil](https://pencil.ai) 앱과 Claude Code를 연동해 앱별 M3 디자인 라이브러리를 초기화하고,
+[Pencil](https://pencil.ai) 앱과 Claude Code 또는 Codex를 연동해 앱별 M3 디자인 라이브러리를 초기화하고,
 시드 컬러 기반 Flutter 테마 코드를 자동 생성하며, 화면 디자인 프롬프트를 만든다.
 
 ---
@@ -69,7 +69,19 @@ pencil_m3_flutter/pencil/md3calc/
 
 ### 1. 플러그인 설치
 
-이 `pencil_m3_flutter` 디렉토리를 프로젝트에 포함하거나 경로를 Claude Code에 등록한다.
+Claude Code:
+
+```text
+/plugin marketplace add noory-code/noory-ai
+/plugin install pencil-m3-flutter@noory-ai
+```
+
+Codex:
+
+```text
+codex plugin marketplace add noory-code/noory-ai
+codex plugin add pencil-m3-flutter@noory-ai
+```
 
 ### 2. 앱 초기화
 
@@ -105,7 +117,7 @@ Claude가 순서대로 안내한다:
    - Pencil: Color Scheme 변수 전체 업데이트 (light/dark)
    - Flutter: `gen_dart.py`로 Dart 파일 4개 자동 생성
 3. 로고 설정
-4. 프로젝트 전용 `design` 스킬 생성 (`.claude-plugin/skills/design/SKILL.md`)
+4. 프로젝트 전용 `design` 스킬 생성 (`.claude/skills/design/SKILL.md` + `.agents/skills/design/SKILL.md`)
 
 ### `design-guide` — M3 화면 디자인 베이스
 
@@ -130,7 +142,8 @@ AI 생성 / 이미지 파일 / 텍스트 이니셜 중 선택.
 
 ## 프로젝트 design 스킬
 
-`init` 실행 시 프로젝트에 자동 생성되는 스킬 (`.claude-plugin/skills/design/SKILL.md`).
+`init` 실행 시 Claude Code와 Codex 경로에 동일하게 생성되는 프로젝트 스킬
+(`.claude/skills/design/SKILL.md` + `.agents/skills/design/SKILL.md`).
 
 - `pencil-m3-flutter:design-guide`의 M3 규칙을 베이스로 상속
 - 프로젝트 고유 컴포넌트, 화면 패턴 추가 정의

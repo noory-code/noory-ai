@@ -1,3 +1,16 @@
+## 1.1.0 — 2026-07-12
+
+### Added
+- Codex plugin manifest and Codex marketplace installation instructions
+- Shared host contract for question, shell, file, and Pencil MCP capability mapping
+- Dual project-skill generation under `.claude/skills/` and `.agents/skills/`
+
+### Changed
+- Resolve bundled scripts from the active skill path instead of assuming
+  `CLAUDE_PLUGIN_ROOT` exists in the agent shell
+
+---
+
 ## 1.0.2 — 2026-03-20
 
 ### Fixed

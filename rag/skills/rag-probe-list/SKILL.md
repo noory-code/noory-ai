@@ -5,10 +5,12 @@ user-invocable: true
 metadata:
   type: read
   version: v1.0.0
-  plugin_version: "0.1.2"
+  plugin_version: "0.3.0"
 ---
 
 # rag-probe-list — view registered probes
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## What
 

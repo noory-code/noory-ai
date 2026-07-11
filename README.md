@@ -4,6 +4,13 @@ Plugin collection for Claude Code and Codex — MCP servers, lifecycle hooks, an
 
 ## Packages
 
+Add the marketplace once per host:
+
+| Host | Marketplace command |
+|---|---|
+| Claude Code | `/plugin marketplace add noory-code/noory-ai` |
+| Codex | `codex plugin marketplace add noory-code/noory-ai` |
+
 ### [Evonest](evonest/) — Autonomous Code Evolution
 
 Runs 20 specialist personas against your codebase (security auditor, chaos engineer, performance analyst, etc.) and lets adaptive selection determine which approaches work best for your project.
@@ -13,11 +20,7 @@ Runs 20 specialist personas against your codebase (security auditor, chaos engin
 - Adaptive persona weights — successful personas run more often over time
 - Direct commit or PR mode (`code_output: "pr"`)
 
-**Install:**
-```
-/plugin marketplace add noory-code/noory-ai
-/plugin install evonest
-```
+**Install:** Claude Code: `/plugin install evonest@noory-ai` · Codex: `codex plugin add evonest@noory-ai`
 
 ### [Novel AI](https://github.com/noory-code/novel-ai) — Novel's Open Plugin Stack
 
@@ -49,17 +52,13 @@ Public architecture, concepts, specifications, and migration guidance are mainta
 
 ### [Flutter Cask](flutter-cask/) — Flutter Package Guide Skills
 
-Curated reference skills for Flutter development. Each skill gives Claude instant access to usage patterns, best practices, and code examples for the most common Flutter packages.
+Curated reference skills for Flutter development. Each skill gives Claude Code or Codex immediate access to usage patterns, best practices, and code examples for the most common Flutter packages.
 
 - 32 skills across state management, routing, Firebase, UI, testing, and more
 - No Python dependencies — pure skill pack
 - Covers riverpod, go-router, freezed, hive, admob, and 27 more
 
-**Install:**
-```
-/plugin marketplace add noory-code/noory-ai
-/plugin install flutter-cask
-```
+**Install:** Claude Code: `/plugin install flutter-cask@noory-ai` · Codex: `codex plugin add flutter-cask@noory-ai`
 
 ### [Plainly](plainly/) — Clear Response Styles
 
@@ -67,19 +66,7 @@ Injects a selected communication style immediately before Claude Code or Codex p
 prompt. Includes four built-in profiles, external style files, and user/project configuration with
 no post-answer retry loop.
 
-**Claude Code:**
-
-```text
-/plugin marketplace add noory-code/noory-ai
-/plugin install plainly
-```
-
-**Codex:**
-
-```text
-codex plugin marketplace add noory-code/noory-ai
-codex plugin add plainly@noory-ai
-```
+**Install:** Claude Code: `/plugin install plainly@noory-ai` · Codex: `codex plugin add plainly@noory-ai`
 
 ### [RAG](rag/) — Local GraphRAG Plugin
 
@@ -89,25 +76,17 @@ Per-project vector + graph (GraphRAG) hybrid search. Runs fully locally with no 
 - Chunks and extracts entities from files placed under `.noory/rag/raw/`
 - Built-in evaluation flow via user-registered probe questions
 
-**Install:**
-```
-/plugin marketplace add noory-code/noory-ai
-/plugin install rag
-```
+**Install:** Claude Code: `/plugin install rag@noory-ai` · Codex: `codex plugin add rag@noory-ai`
 
 ### [Pencil M3 Flutter](pencil_m3_flutter/) — Flutter Material Design 3 Automation
 
-Connects the Pencil app with Claude Code to initialize a per-app Material Design 3 library, generate seed-color-based Flutter theme code, and produce screen design prompts.
+Connects the Pencil app with Claude Code or Codex to initialize a per-app Material Design 3 library, generate seed-color-based Flutter theme code, and produce screen design prompts.
 
 - `pmf-init` — scaffold the app's design guide, seed color, logo, and project design skill
 - `pmf-change-seed-color` / `pmf-change-logo` — update theme or logo in place
 - Requires the Pencil MCP server
 
-**Install:**
-```
-/plugin marketplace add noory-code/noory-ai
-/plugin install pencil-m3-flutter
-```
+**Install:** Claude Code: `/plugin install pencil-m3-flutter@noory-ai` · Codex: `codex plugin add pencil-m3-flutter@noory-ai`
 
 ### [Stage](stage/) — Durable Execution Harness
 
@@ -117,11 +96,7 @@ Portable `.stage/` harness for LLM-led long-running projects. Stage separates ar
 - Local work lifecycle: `before` / `during` / `after` / `retrospective`
 - Plain Markdown templates for Codex, Claude, Windows, Linux, and macOS
 
-**Install:**
-```
-/plugin marketplace add noory-code/noory-ai
-/plugin install stage
-```
+**Install:** Claude Code: `/plugin install stage@noory-ai` · Codex: `codex plugin add stage@noory-ai`
 
 ## Development
 
@@ -132,9 +107,9 @@ git clone https://github.com/noory-code/noory-ai.git
 git clone https://github.com/noory-code/novel-ai.git
 ```
 
-Each package is independent — work inside the relevant subdirectory. See [CLAUDE.md](CLAUDE.md)
-for the full command reference and architecture notes.
+Each package is independent — work inside the relevant subdirectory. Claude Code reads
+[CLAUDE.md](CLAUDE.md); Codex starts from [AGENTS.md](AGENTS.md), which routes to the same SSOT.
 
 ## License
 
-Each package is MIT licensed. See individual `pyproject.toml` or `.claude-plugin/plugin.json` for details.
+Each package is MIT licensed. See individual `pyproject.toml` or host plugin manifest for details.

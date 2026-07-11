@@ -1,0 +1,38 @@
+{
+  "name": "flutter-cask",
+  "version": "1.3.0",
+  "description": "Flutter package guide skills for 32 common mobile-development packages.",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/flutter-cask",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "keywords": [
+    "flutter",
+    "dart",
+    "mobile",
+    "packages",
+    "skills"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Flutter Cask",
+    "shortDescription": "Curated Flutter package patterns and examples",
+    "longDescription": "Flutter Cask provides focused reference skills for state management, routing, Firebase, storage, UI, testing, and other common Flutter packages.",
+    "developerName": "noory-code",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/noory-code/noory-ai/tree/main/flutter-cask",
+    "defaultPrompt": [
+      "Show the Flutter Cask package guides",
+      "Use Riverpod patterns from Flutter Cask",
+      "Help me choose a Flutter package"
+    ],
+    "brandColor": "#0EA5E9"
+  }
+}

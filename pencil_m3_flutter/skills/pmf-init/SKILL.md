@@ -6,7 +6,7 @@ description: >
   or set up a new app's design system in Pencil.
 user-invocable: true
 metadata:
-  version: "1.0.2"
+  version: "1.1.0"
   category: design
   type: composite
   style: procedural
@@ -15,6 +15,8 @@ metadata:
 ---
 
 # Init — App Design Guide
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 Creates a per-app design guide `.lib.pen` file.
 The `.lib.pen` extension is required so Pencil can import it as a library in other `.pen` files.
@@ -49,14 +51,17 @@ python3 -c "import materialyoucolor; print('ok')"
 
 #### A-3. Verify Python Script Files Exist
 
+Resolve `<plugin-root>` from the shared host contract, then run:
+
 ```bash
-python3 -c "import pathlib; root=pathlib.Path('${CLAUDE_PLUGIN_ROOT}'); [exit(1) for p in ['pencil/md3calc/hct_palette.py','pencil/md3calc/gen_dart.py'] if not (root/p).exists()]"
+python3 -c "import pathlib; root=pathlib.Path('<plugin-root>'); [exit(1) for p in ['pencil/md3calc/hct_palette.py','pencil/md3calc/gen_dart.py'] if not (root/p).exists()]"
 ```
 
 - Both files exist → **Group A passed**
 - Missing → **stop**:
   > "Plugin files not found. Please verify that the pencil-m3-flutter plugin is installed.
-  > `/plugin install pencil-m3-flutter@noory-ai`"
+  > Claude Code: `/plugin install pencil-m3-flutter@noory-ai`
+  > Codex: `codex plugin add pencil-m3-flutter@noory-ai`"
 
 When Group A passes: output `✓ Environment check complete. Starting setup.` and proceed to Step 1.
 
@@ -95,7 +100,7 @@ Creating an empty file would lack M3 components/variables, so the copy method mu
 ### 2-1. Copy File (Pencil not required)
 
 ```bash
-cp ${CLAUDE_PLUGIN_ROOT}/pencil/material-design-guide.lib.pen "<save_path>/<appname>-design-guide.lib.pen"
+cp <plugin-root>/pencil/material-design-guide.lib.pen "<save_path>/<appname>-design-guide.lib.pen"
 ```
 
 > Using the copy method ensures all 166 M3 components and Color Scheme variables from material-design-guide.lib.pen are included.
@@ -115,7 +120,7 @@ mcp__pencil__get_editor_state()
   > "Cannot connect to Pencil MCP. Please check the following:
   > 1. Verify that the Pencil app is running
   > 2. Check server status in Pencil → Settings → MCP Server
-  > 3. Restart Claude Code or reconnect with the `/mcp` command
+  > 3. Reconnect the Pencil MCP server with the active host's MCP management surface
   > Please run this skill again after connecting."
 
 ### 2-3. Open File in Pencil
@@ -174,7 +179,10 @@ python3 -c "import pathlib; print('workspace project' if 'workspace:' in pathlib
 Create a project-specific `design` skill file based on `pencil-m3-flutter:design-guide`.
 This skill's role: **user request → output prompt text to paste into the Pencil AI chat**.
 
-Save path: `<project root>/.claude-plugin/skills/design/SKILL.md`
+Generate the file content once, then write the same content to both host discovery paths:
+
+- Claude Code: `<project root>/.claude/skills/design/SKILL.md`
+- Codex: `<project root>/.agents/skills/design/SKILL.md`
 
 File contents:
 ```markdown
@@ -196,7 +204,7 @@ When the user requests a screen design:
 1. Apply M3 rules from `pencil-m3-flutter:design-guide` + project-specific rules below
 2. **Output prompt text to paste into the Pencil AI chat**
 
-> Claude Code does not directly manipulate Pencil.
+> This project skill produces a prompt rather than manipulating Pencil directly.
 > Copy the output prompt and paste it into the Pencil AI chat.
 
 ## Project Information
@@ -250,11 +258,12 @@ After completion, report to the user:
 - Primary (dark):  <primary/80>
 - Flutter theme code: <flutter_lib_path>/
 - Logo: applied
-- Project design skill: .claude-plugin/skills/design/SKILL.md
+- Claude Code project skill: .claude/skills/design/SKILL.md
+- Codex project skill: .agents/skills/design/SKILL.md
 
 Next steps:
   1. Fill in the "Project-Specific Rules" section in SKILL.md for your app
   2. Create a new .pen file in Pencil (e.g., <appname>-screens.pen)
   3. Add an import for <appname>-design-guide.lib.pen to that file
-  4. Start designing screens with /<appname>:design
+  4. Invoke the design skill with the active host's skill picker or natural-language trigger
 ```

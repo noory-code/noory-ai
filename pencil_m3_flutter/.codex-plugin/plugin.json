@@ -1,0 +1,38 @@
+{
+  "name": "pencil-m3-flutter",
+  "version": "1.1.0",
+  "description": "Flutter Material Design 3 automation for Pencil projects, seed colors, logos, and screen design prompts.",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/pencil_m3_flutter",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "keywords": [
+    "pencil",
+    "flutter",
+    "material-design-3",
+    "design-system",
+    "m3"
+  ],
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Pencil M3 Flutter",
+    "shortDescription": "Flutter Material 3 design automation with Pencil",
+    "longDescription": "Pencil M3 Flutter initializes app-specific design libraries, generates seed-color Flutter themes, updates logos, and creates reusable screen-design workflows.",
+    "developerName": "noory-code",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/noory-code/noory-ai/tree/main/pencil_m3_flutter",
+    "defaultPrompt": [
+      "Initialize a Pencil M3 Flutter design system",
+      "Change this app's Material 3 seed color",
+      "Update the app logo in Pencil"
+    ],
+    "brandColor": "#6750A4"
+  }
+}

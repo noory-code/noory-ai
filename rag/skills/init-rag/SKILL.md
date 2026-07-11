@@ -5,16 +5,18 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.2.0"
+  plugin_version: "0.3.0"
 ---
 
 # init-rag — rag initial setup
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## What
 
 Creates a RAG index workspace (`.noory/rag/`) at the root of the project you are currently working on, and writes the default folder where the user will place material (`.noory/rag/raw/`) and the indexing policy (`settings.json`). If it is already set up, it says so and exits.
 
-> The project root is resolved relative to `${CLAUDE_PROJECT_DIR}` (auto-injected by Claude Code). Identical behavior on macOS · Windows.
+> The MCP server resolves the project root through the shared host contract. Behavior is identical on macOS, Linux, and Windows.
 
 ## Steps
 
@@ -24,7 +26,7 @@ Creates a RAG index workspace (`.noory/rag/`) at the root of the project you are
 
 2. **Source-candidate scan**: from the project root, glob for the following candidates and present only the ones that exist to the user.
    - `docs/`, `documentation/`, `notes/`, `wiki/`, `README.md`, `CHANGELOG.md`, `ARCHITECTURE.md`
-   - If any are found, use AskUserQuestion to choose among `[candidates to add (multiSelect), use only .noory/rag/raw/]`.
+   - If any are found, use the host question tool to choose among `[candidates to add (multiSelect), use only .noory/rag/raw/]`.
 
 3. **Write settings**: call `rag_set_settings`. Default payload:
    ```json
@@ -48,7 +50,7 @@ Creates a RAG index workspace (`.noory/rag/`) at the root of the project you are
    - "💡 RAG is only as strong as the quality of the indexed material. Adding your company wiki · service specs · architecture docs · API references together greatly improves search quality."
    - "ℹ️ For usage, `/rag:rag-help`; for sharing, `/rag:rag-share-guide`."
 
-6. **First-indexing offer**: via AskUserQuestion, "Run the first `rag-reindex` now?" — on Yes, invoke the `/rag:rag-reindex` flow as-is.
+6. **First-indexing offer**: via the host question tool, "Run the first `rag-reindex` now?" — on Yes, invoke the `/rag:rag-reindex` flow as-is.
 
 ## Output format
 
@@ -67,7 +69,7 @@ Next steps:
 ## Error handling
 
 - `rag_set_settings` returns schema invalid → show the user exactly which field is the problem and stop.
-- `rag_set_settings` returns a `RAG_PROJECT_ROOT not set`-type error → guide to restart Claude Code or `/plugin update rag@noory-ai`.
+- `rag_set_settings` reports an unresolved project root → restart the active host. If it persists, reinstall `rag@noory-ai` with that host's plugin command from the shared contract.
 - If the MCP server itself does not come up because `uv` is not installed, give per-OS install guidance:
   - macOS: `brew install uv`
   - Windows (PowerShell): `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"` or `winget install --id=astral-sh.uv -e`

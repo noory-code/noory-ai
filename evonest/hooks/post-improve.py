@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""PostToolUse hook: auto-chain evonest improve when proposals remain.
+"""Cross-host PostToolUse hook: report remaining Evonest proposals.
 
-Reads JSON from stdin (Claude Code hook protocol), extracts the `project`
-argument from the tool_input, checks for pending proposals, and instructs
-Claude to run the next improve if any exist.
+Reads the shared Claude Code/Codex hook JSON from stdin, extracts the `project`
+argument from ``tool_input``, and reports pending proposals.
 
 Cross-platform replacement for post-improve.sh.
 """
@@ -25,7 +24,7 @@ def main() -> None:
     if not project:
         return
 
-    proposals_dir = Path(project) / ".evonest" / "proposals"
+    proposals_dir = Path(project) / ".noory" / "evonest" / "proposals"
     if not proposals_dir.is_dir():
         return
 
@@ -34,7 +33,7 @@ def main() -> None:
         msg = {
             "systemMessage": (
                 f"evonest improve completed. There are still {pending} pending proposals. "
-                "Run /evonest:improve again to process the next one."
+                "Invoke the Evonest improve workflow again to process the next one."
             )
         }
         print(json.dumps(msg))

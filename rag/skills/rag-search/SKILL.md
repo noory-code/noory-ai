@@ -5,25 +5,27 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.2.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-search — hybrid search
 
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
+
 ## What
 
-Takes a natural-language query, gets vector top-k + graph-expansion results via `rag_search`, and Claude (the current session) synthesizes those results into an answer tailored to the user's query.
+Takes a natural-language query, gets vector top-k + graph-expansion results via `rag_search`, and the active AI session synthesizes those results into an answer tailored to the user's query.
 
 ## Steps
 
-1. **Extract the user query**: if a slash argument is present, use it; otherwise take it via AskUserQuestion.
+1. **Extract the user query**: if a slash argument is present, use it; otherwise take it via the host question tool.
 
 2. **Search call**: call `rag_search(query=<query>, k=8)`.
    - `chunks`: top K by ascending distance
    - `entities`: entities linked to the chunks
    - `subgraph`: N-hop expansion around the entities
 
-3. **Re-ranking · refinement (Claude itself)**:
+3. **Re-ranking · refinement (the active AI session)**:
    - Beyond distance, quickly judge whether the chunk body semantically matches the query and adjust the priority
    - Exclude duplicate/noise chunks (e.g. short headings)
    - Narrow to within 5 chunks to cite in the answer

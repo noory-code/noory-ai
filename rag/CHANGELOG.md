@@ -2,6 +2,17 @@
 
 All notable changes to this plugin are documented here.
 
+## [0.3.0] — 2026-07-12
+
+- Added complete Codex marketplace and installation support.
+- Replaced the nonexistent `CODEX_PROJECT_DIR` assumption with an explicit Codex workspace-cwd
+  contract. `uv run --project` preserves cwd while selecting the bundled Python project.
+- Added a shared Claude Code/Codex host contract to every RAG skill and made question/tool
+  capability names host-neutral.
+- Updated troubleshooting and usage documentation for both hosts.
+- Updated the Flutter Cask integration fixture from legacy `guide-lib-*` paths to the current
+  `flutter-*` skill layout.
+
 ## [0.2.1]
 
 Review fixes (no schema or wire changes).

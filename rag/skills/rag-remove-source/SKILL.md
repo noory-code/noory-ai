@@ -5,10 +5,12 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.1.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-remove-source — remove a source
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## Steps
 
@@ -20,7 +22,7 @@ metadata:
 
 3. **Assess the impact scope**:
    - Confirm the currently matched file list via `rag_diff_files(source_path=<the one>)` (or prefix-match from the manifest).
-   - Confirm with AskUserQuestion: "N files are indexed from this source. Delete them all?"
+   - Confirm with the host question tool: "N files are indexed from this source. Delete them all?"
 
 4. **Delete loop**: call `rag_delete_file(path)` for each matched file.
 

@@ -1,6 +1,6 @@
 [project]
 name = "rag-mcp"
-version = "0.2.1"
+version = "0.3.0"
 description = "Local GraphRAG MCP server for the noory-ai `rag` plugin (no API keys required)"
 requires-python = ">=3.11"
 dependencies = [

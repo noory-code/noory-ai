@@ -5,16 +5,18 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.1.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-explore — graph exploration
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## Steps
 
 1. **Prerequisite check**: `rag_get_settings`.
 
-2. **Seed extraction**: capture the entity name (or id) from the user's utterance. If absent, get it via AskUserQuestion.
+2. **Seed extraction**: capture the entity name (or id) from the user's utterance. If absent, get it via the host question tool.
 
 3. **Graph call**: `rag_search_graph(entity=<seed>, depth=2)`.
    - If the result is empty, search candidates with `rag_list_entities(q=<seed>)`. Let the user pick among the candidates.

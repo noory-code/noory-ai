@@ -17,7 +17,7 @@ metadata:
 
 ## Overview
 
-flutter-cask gives Claude instant access to usage patterns, best practices, and code examples for the most common Flutter packages. Each skill is a curated reference — just mention the package name or use case and Claude will apply the right patterns.
+flutter-cask gives the active Claude Code or Codex session immediate access to usage patterns, best practices, and code examples for common Flutter packages. Each skill is a curated reference — mention the package name or use case and the active agent will apply the right patterns.
 
 ## Skills by Category
 

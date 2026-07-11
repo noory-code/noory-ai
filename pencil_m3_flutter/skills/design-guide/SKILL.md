@@ -5,7 +5,7 @@ description: >
   Used as the base layer for project-specific design skills; not directly invocable.
 user-invocable: false
 metadata:
-  version: "1.0.2"
+  version: "1.1.0"
   category: design
   type: unit
   style: guide
@@ -15,9 +15,11 @@ metadata:
 
 # Design Guide — M3 Expressive (Base)
 
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
+
 This skill serves two purposes:
 
-1. **Direct use**: Claude Code assembles screens directly via Pencil MCP
+1. **Direct use**: the active Claude Code or Codex host assembles screens via Pencil MCP
 2. **Base layer**: Project-specific `design` skills inherit these rules to generate Pencil AI prompts
 
 ---
@@ -156,9 +158,9 @@ Add a <screen name> screen to <filename>.pen.
 
 ---
 
-## Claude Code → Pencil MCP Direct Execution (Optional)
+## Active Host → Pencil MCP Direct Execution (Optional)
 
-Used when Claude Code needs to assemble screens directly via Pencil MCP.
+Used when the active Claude Code or Codex host needs to assemble screens directly via Pencil MCP.
 
 ### Step 1 — Prepare Working File
 

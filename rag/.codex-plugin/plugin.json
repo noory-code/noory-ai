@@ -1,6 +1,6 @@
 {
   "name": "rag",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Project-scoped GraphRAG - local embeddings, sqlite-vec vectors, and Kuzu graph search with no external API keys.",
   "homepage": "https://github.com/noory-code/noory-ai/tree/main/rag",
   "repository": "https://github.com/noory-code/noory-ai",
@@ -24,15 +24,15 @@
     "rag": {
       "command": "uv",
       "args": [
-        "--directory",
-        "${PLUGIN_ROOT}/server",
         "run",
+        "--project",
+        "${PLUGIN_ROOT}/server",
         "python",
         "-m",
         "rag_mcp"
       ],
       "env": {
-        "RAG_PROJECT_ROOT": "${CODEX_PROJECT_DIR}"
+        "RAG_PROJECT_ROOT_FROM_CWD": "1"
       }
     }
   },

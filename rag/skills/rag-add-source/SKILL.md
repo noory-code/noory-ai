@@ -5,10 +5,12 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.2.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-add-source — add a source
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## Steps
 
@@ -21,7 +23,7 @@ metadata:
 
 3. **include/exclude**: default is `["**/*.md", "**/*.mdx", "**/*.txt", "**/*.pdf", "**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.gif", "**/*.webp"]`.
    If the user gives a hint like "code too", "ts/js", "py", expand accordingly.
-   Confirm once with AskUserQuestion:
+   Confirm once with the host question tool:
    - Markdown·text·PDF·image (default)
    - Include code too (`**/*.py`, `**/*.ts`, …)
    - User-specified

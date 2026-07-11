@@ -1,16 +1,16 @@
-# rag — Local GraphRAG plugin for Claude Code
+# rag — Local GraphRAG plugin for Claude Code and Codex
 
 Per-project RAG. Runs **vector + graph (GraphRAG) hybrid** search locally with no external API key. First-class support on **both macOS · Windows**.
 
 ## One-line concept
 
-Claude chunks and extracts entities from PDFs/notes/documents placed in `.noory/rag/raw/` → the MCP server computes local embeddings and stores everything in sqlite-vec + Kuzu → it provides semantic search only when explicitly invoked. **A built-in evaluation flow lets you register the questions users frequently ask (probes) to measure and tune index quality.**
+The active Claude Code or Codex session chunks and extracts entities from PDFs, notes, and documents placed in `.noory/rag/raw/` → the MCP server computes local embeddings and stores everything in sqlite-vec + Kuzu → it provides semantic search only when explicitly invoked. **A built-in evaluation flow lets you register the questions users frequently ask (probes) to measure and tune index quality.**
 
 ```mermaid
 flowchart LR
   raw[.noory/rag/raw material] --> skill[rag-reindex skill]
-  skill --> claude[Claude session<br/>chunk · entity extraction]
-  claude --> mcp[rag MCP server]
+  skill --> agent[Active AI session<br/>chunk · entity extraction]
+  agent --> mcp[rag MCP server]
   mcp --> vec[(sqlite-vec<br/>vec.db)]
   mcp --> graph[(Kuzu<br/>graph/)]
   query[rag-search / rag-evaluate] --> mcp
@@ -28,10 +28,19 @@ flowchart LR
 
 ## Install
 
+### Claude Code
+
 ```text
 /plugin marketplace add noory-code/noory-ai
 /plugin marketplace update noory-ai
 /plugin install rag@noory-ai
+```
+
+### Codex
+
+```text
+codex plugin marketplace add noory-code/noory-ai
+codex plugin add rag@noory-ai
 ```
 
 ### Prerequisite: `uv` (Python package manager)
@@ -110,7 +119,7 @@ Detailed usage: `/rag:rag-help`. Team sharing: `/rag:rag-share-guide`.
 ```
 rag/
 ├── .claude-plugin/plugin.json   # Claude Code manifest
-├── .codex-plugin/plugin.json    # Codex manifest (wires RAG_PROJECT_ROOT from ${CODEX_PROJECT_DIR})
+├── .codex-plugin/plugin.json    # Codex manifest (preserves workspace cwd for the MCP server)
 ├── .mcp.json                # MCP server registration (uv run)
 ├── server/
 │   ├── pyproject.toml
@@ -150,7 +159,7 @@ The header (`snapshot.json`) of the tarball produced by `/rag:rag-export`:
   "format_version": 1,
   "created_at": "YYYY-MM-DDTHH:MM:SSZ",
   "embedding": { "model": "intfloat/multilingual-e5-small", "dim": 384 },
-  "plugin_version": "0.2.1",
+  "plugin_version": "0.3.0",
   "stats": { "files": N, "chunks": N, "entities": N, "relations": N, "communities": N }
 }
 ```
@@ -159,13 +168,13 @@ On `rag-import`, it is rejected if any one of these mismatches: `format_version`
 
 ## External API key policy
 
-**Zero.** Every LLM task (semantic chunking, entity/relation extraction, community summarization, alias adjudication, query re-ranking, **evaluation-result diagnosis**) is **performed directly by the current Claude session when the user invokes a skill**. The MCP server handles only deterministic, local work: file walk · hashing, local embedding computation, sqlite-vec / Kuzu storage, Leiden community detection, probe batch search.
+**Zero.** Every LLM task (semantic chunking, entity/relation extraction, community summarization, alias adjudication, query re-ranking, **evaluation-result diagnosis**) is **performed directly by the active Claude Code or Codex session when the user invokes a skill**. The MCP server handles only deterministic, local work: file walk · hashing, local embedding computation, sqlite-vec / Kuzu storage, Leiden community detection, probe batch search.
 
 ## OS compatibility
 
 - Operates on **both macOS · Windows** via the same code path (Linux is effectively compatible too).
 - Paths/env vars use only `pathlib` + `os.environ`, with 0 platform branching.
-- The project root is passed explicitly via the `RAG_PROJECT_ROOT` env — `.mcp.json` wires it from `${CLAUDE_PROJECT_DIR}` on Claude Code, and `.codex-plugin/plugin.json` wires it from `${CODEX_PROJECT_DIR}` on Codex. There is no dependence on `os.getcwd()` (`uv --directory` changes the cwd on every platform, so the server fails fast instead of falling back to it).
+- Claude Code passes the project root explicitly via `RAG_PROJECT_ROOT`. Codex launches with `uv run --project`, which selects the plugin environment without changing the workspace cwd, and explicitly enables the cwd contract with `RAG_PROJECT_ROOT_FROM_CWD=1`.
 - For long MCP operations, the Claude settings `env` `MCP_TIMEOUT=60000`, `MCP_TOOL_TIMEOUT=120000` settings are recommended. These are separate from the `RAG_*` server env in `.mcp.json`.
 - Every native dependency (sqlite-vec, kuzu, igraph, leidenalg, numpy) provides a win_amd64 wheel.
 

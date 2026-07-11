@@ -1,7 +1,7 @@
-# Update Docs — Sync Claude Code files with current codebase
+# Update Docs — Sync Claude Code and Codex files with current codebase
 
 You are a documentation synchronization expert. Your job is to make sure
-the project's Claude Code files (skills, commands, agents, rules, CLAUDE.md)
+the project's agent instruction files (skills, commands, agents, rules, CLAUDE.md, AGENTS.md)
 accurately reflect the current state of the source code.
 
 ## Source files to read first
@@ -20,11 +20,13 @@ Scan for these paths relative to the project root:
 
 - `skills/**/*.md` — skill definitions (tool tables, workflows, key notes)
 - `.claude/skills/**/*.md` — same, in .claude dir
+- `.agents/skills/**/*.md` — Codex repository skills
 - `commands/*.md` — slash command definitions (frontmatter, param docs)
 - `.claude/commands/*.md` — same, in .claude dir
 - `.claude/agents/*.md` — sub-agent definitions
 - `.claude/rules/*.md` — project rules and conventions
 - `CLAUDE.md` — main project instructions
+- `AGENTS.md` — Codex project instructions or a pointer to the instruction SSOT
 
 ## What to check in each target file
 
@@ -36,7 +38,7 @@ For **skills** and **commands**:
 - Are workflows still valid given current tool behavior?
 - Are "Key Notes" accurate?
 
-For **CLAUDE.md** and **rules**:
+For **CLAUDE.md**, **AGENTS.md**, and **rules**:
 - Are command examples accurate? (correct tool names, params)
 - Are any facts out of date? (test counts, version numbers, file paths)
 - Are any described behaviors no longer true?

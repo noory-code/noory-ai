@@ -5,14 +5,16 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.2.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-fetch-external — fetch external documents and index them
 
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
+
 ## What
 
-rag **does not hold** external service keys/connectors (zero-external-key identity). Instead, the current Claude session uses the **official connectors** the user installed (e.g. Atlassian/Confluence, Google Drive, Notion MCP connectors) to scrape documents, saves them as markdown under `.noory/rag/raw/external/<source>/`, then runs them through the existing indexing pipeline (`rag-reindex`). It **separates fetching (the connector's job) from search (rag's job)**.
+rag **does not hold** external service keys/connectors (zero-external-key identity). Instead, the active AI session uses the **official connectors** the user installed (e.g. Atlassian/Confluence, Google Drive, Notion MCP connectors) to scrape documents, saves them as markdown under `.noory/rag/raw/external/<source>/`, then runs them through the existing indexing pipeline (`rag-reindex`). It **separates fetching (the connector's job) from search (rag's job)**.
 
 ## Prerequisite: confirm the official connector is installed
 
