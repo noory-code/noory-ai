@@ -1,0 +1,44 @@
+name: stage
+
+on:
+  push:
+    paths:
+      - "stage/**"
+      - ".github/workflows/stage.yml"
+  pull_request:
+    paths:
+      - "stage/**"
+      - ".github/workflows/stage.yml"
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.9", "3.12"]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: stage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Hook suite
+        run: python -m unittest discover -s hooks/tests -q
+      - name: Scripts suite
+        run: python -m unittest discover -s scripts/tests -q
+      - name: init -> audit smoke
+        shell: bash
+        run: |
+          mkdir -p "${RUNNER_TEMP}/stage-smoke"
+          python scripts/init_stage.py --project-root "${RUNNER_TEMP}/stage-smoke"
+          python scripts/audit_stage.py --project-root "${RUNNER_TEMP}/stage-smoke" --strict
+      - name: Hook entrypoint smoke
+        shell: bash
+        run: |
+          printf '{"hook_event_name":"SessionStart","cwd":"."}' \
+            | python hooks/stage_guard.py SessionStart \
+            | grep -q "Stage"
