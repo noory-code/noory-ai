@@ -2,6 +2,14 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.1.4] — 2026-07-11
+
+### Fixed
+
+- Updated built-in Distill target routing after Novel AI became a separate
+  sibling repository. Evonest now uses `../novel-ai/plugins/distill/` only
+  when that checkout exists and otherwise asks for an explicit path.
+
 ## [1.1.3] — 2026-07-10
 
 ### Fixed
