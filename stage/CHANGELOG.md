@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.9.0 — 2026-07-11
+
+- P33 module split: `hooks/stage_guard.py` (3,010 lines) is now a thin
+  entrypoint — payload plumbing, tool-gate orchestration, event handlers, and
+  facade re-exports (597 lines) — over six sibling modules: `stage_paths`
+  (path canonicalization + governance), `stage_shell` (shell tokenization,
+  cwd tracking, the `.stage` delete gate, write-path extraction), `stage_git`
+  (git invocation parsing), `stage_work` (work-item graph + edit projections),
+  `stage_runtime` (`.runtime/` intent slots, session summaries, ack pruning),
+  and `stage_context` (SessionStart context assembly). Every module
+  self-bootstraps `sys.path`, and `stage_guard` re-exports all
+  consumer-referenced symbols, so direct execution (`hooks.json`),
+  `import stage_guard`, and file-path loading are unchanged. Behavior is
+  identical: both test suites pass on python 3.9 and current, guarded by the
+  facade coverage pin (`hooks/tests/test_facade.py`).
+- Dead code dropped (no caller anywhere): `_contains_stage`, `git_subcommand`,
+  `open_items_for_paths`, `latest_session_summary`.
+- Codex hosts: the plugin's hook script set changed — re-approve hook trust
+  (TUI `/hooks`) after upgrading.
+
 ## 0.8.0 — 2026-07-11
 
 - External-review gate (`operations/review.md`, routed in `index.md`): findings
