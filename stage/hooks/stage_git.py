@@ -2,6 +2,7 @@
 # module keeps the same annotation-laziness contract as stage_guard.py.
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -60,6 +61,16 @@ def command_has_git_commit(command: str) -> bool:
 GIT_COMMIT_VALUE_LONG_FLAGS = {"--message", "--file", "--author", "--date", "--reuse-message", "--reedit-message", "--fixup", "--squash", "--gpg-sign"}
 GIT_COMMIT_VALUE_SHORT_LETTERS = set("mFCcS")
 
+# A shell redirection token (`>`, `>>`, `2>`, `2>&1`, `&>`, `>&2`, `<`, `<<`).
+# `>`/`<` are not in SHELL_OPERATOR_CHARS, so a token like `2>&1` survives whole
+# and would otherwise be read as a commit pathspec — a redirection ends the git
+# command's arguments, so arg scanning stops at the first one.
+_REDIRECTION_RE = re.compile(r"^([0-9]*(>>?|<<?)|[0-9]*[<>]&[0-9-]*|&>>?)")
+
+
+def _is_shell_redirection(token: str) -> bool:
+    return bool(_REDIRECTION_RE.match(_restore_sentinels(token)))
+
 
 def git_commit_pathspec_files(command: str, workspace_root: Path) -> list[str]:
     """Files a `git commit` names directly as pathspec — `git commit -- a b`,
@@ -74,6 +85,8 @@ def git_commit_pathspec_files(command: str, workspace_root: Path) -> list[str]:
         index = 0
         while index < len(args):
             arg = args[index]
+            if _is_shell_redirection(arg):
+                break  # redirection + everything after is not a git argument
             if after_ddash:
                 paths.append(arg)
             elif arg == "--":

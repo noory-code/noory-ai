@@ -21,6 +21,10 @@ re-derived from hook source each session:
   each item self-carrying, and point the human at the window with open work.
 - `stage-retrospective` now delegates archiving to `stage-archive` (SSOT) instead
   of carrying its own archive-intent block.
+- Fix: a shell redirection after `git commit` (`2>&1`, `> out`, a piped `| tail`)
+  was read as a commit pathspec and produced false registration-gate denials on
+  ordinary commit invocations. `git_commit_pathspec_files` now stops argument
+  scanning at the first redirection; real `-- path` pathspecs are still caught.
 
 ## 0.13.0 — 2026-07-12
 
