@@ -90,6 +90,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
 )
 from stage_runtime import (  # noqa: E402  (after sys.path bootstrap)
     SESSION_SUMMARY_KEEP,
+    consume_claims_for,
     migrate_legacy_runtime,
     promotion_blocker,
     prune_question_ack_markers,
@@ -413,31 +414,22 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
     return ""
 
 
-def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
-    name = tool_name(payload)
-    workspace_root = resolve_workspace_root(payload)
-    if name in QUESTION_TOOLS:
-        return question_purpose_reminder(workspace_root, payload)
-    stage_root = workspace_root / ".stage"
-    # A project registers host/MCP file-writing tools the built-in allowlist
-    # does not know (`extra_write_tools`); they are classified BEFORE the
-    # unknown-name early allow, or the seam would never see them.
-    write_tools = WRITE_TOOLS | configured_write_tools(stage_root)
-    if name and name not in SHELL_TOOLS and name not in write_tools:
-        return pre_tool_allow()
+def mutation_targets(
+    payload: dict[str, Any], name: str, workspace_root: Path
+) -> tuple[str, list[str], list[str]]:
+    """(command, explicit paths, shell write+delete targets) for one call.
 
-    # Shell semantics apply only to shell tools: on Codex, apply_patch carries
-    # its PATCH BODY under tool_input.command, and parsing that as a shell
-    # command extracted junk targets (diff lines, markdown links) and could
-    # trip the delete/commit gates on mere content (live false deny, 2026-07-10).
+    Shell semantics apply only to shell tools: on Codex, apply_patch carries
+    its PATCH BODY under tool_input.command, and parsing that as a shell
+    command extracted junk targets (diff lines, markdown links) and could
+    trip the delete/commit gates on mere content (live false deny,
+    2026-07-10). Deleting a governed file is a governed modification, so
+    rm/del/Remove-Item operands join the write-target stream."""
     command = command_text(payload) if name in SHELL_TOOLS else ""
     explicit_paths = collect_explicit_paths(payload)
     shell_write_targets: list[str] = []
     if command:
         shell_write_targets = shell_write_paths(command, workspace_root)
-        # Deleting a governed file is a governed modification: rm/del/
-        # Remove-Item operands join the write-target stream and pass the same
-        # registration/promotion/governance gates.
         shell_write_targets.extend(
             path
             for path in shell_delete_paths(command, workspace_root)
@@ -453,6 +445,70 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
                 cleaned = clean_path_text(match.group("path") or match.group("move") or "")
                 if cleaned and cleaned not in explicit_paths:
                     explicit_paths.append(cleaned)
+    return command, explicit_paths, shell_write_targets
+
+
+def claim_owner_id(payload: dict[str, Any]) -> str:
+    """Correlates a reservation with the post that completes it: the host's
+    tool_use_id when present (Codex sends it on both events), else the
+    session slot — a mismatch is safe, the claim just ages into restore."""
+    return str(payload.get("tool_use_id") or "") or session_slot(payload)
+
+
+def handle_post_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Complete two-phase intent reservations after the tool ran.
+
+    The pre gate reserved by renaming the intent to a claim; the arrival of
+    PostToolUse confirms the tool executed, so the matching claims are
+    consumed. This handler never blocks — the write already happened. A run
+    whose post never arrives (crash, rejected permission, a host without the
+    event) leaves its claim to the age-based restore instead."""
+    name = tool_name(payload)
+    workspace_root = resolve_workspace_root(payload)
+    stage_root = workspace_root / ".stage"
+    if not stage_root.exists():
+        return {}
+    write_tools = WRITE_TOOLS | configured_write_tools(stage_root)
+    if name not in SHELL_TOOLS and name not in write_tools:
+        return {}
+    _command, explicit_paths, shell_write_targets = mutation_targets(
+        payload, name, workspace_root
+    )
+
+    def targets_past(raw: str) -> bool:
+        return any(
+            path_targets_stage_past(form) for form in stage_relative_forms(raw, workspace_root)
+        )
+
+    past_gate_raw = explicit_paths if name in write_tools else shell_write_targets
+    target_past_paths = [
+        entry_relative_to_workspace(raw, workspace_root)
+        for raw in past_gate_raw
+        if targets_past(raw)
+    ]
+    if target_past_paths:
+        consume_claims_for(
+            stage_root, workspace_root, target_past_paths, claim_owner_id(payload)
+        )
+    return {}
+
+
+def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    name = tool_name(payload)
+    workspace_root = resolve_workspace_root(payload)
+    if name in QUESTION_TOOLS:
+        return question_purpose_reminder(workspace_root, payload)
+    stage_root = workspace_root / ".stage"
+    # A project registers host/MCP file-writing tools the built-in allowlist
+    # does not know (`extra_write_tools`); they are classified BEFORE the
+    # unknown-name early allow, or the seam would never see them.
+    write_tools = WRITE_TOOLS | configured_write_tools(stage_root)
+    if name and name not in SHELL_TOOLS and name not in write_tools:
+        return pre_tool_allow()
+
+    command, explicit_paths, shell_write_targets = mutation_targets(
+        payload, name, workspace_root
+    )
 
     # An explicit `.stage` delete is always blocked; a strict-ancestor delete
     # (`rm -rf .`) is filtered inside command_deletes_stage to fire only when a
@@ -550,7 +606,9 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         if targets_past(raw)
     ]
     if target_past_paths:
-        blocker = promotion_blocker(workspace_root, target_past_paths)
+        blocker = promotion_blocker(
+            workspace_root, target_past_paths, claim_owner_id(payload)
+        )
         if blocker:
             return deny(blocker)
 
@@ -599,6 +657,8 @@ def handle_event(event: str, payload: dict[str, Any]) -> dict[str, Any]:
         return handle_session_start(payload)
     if normalized in {"pre-tool-use", "pretooluse"}:
         return validate_pre_tool(payload)
+    if normalized in {"post-tool-use", "posttooluse"}:
+        return handle_post_tool(payload)
     if normalized == "stop":
         return handle_stop(payload)
     return continue_output()

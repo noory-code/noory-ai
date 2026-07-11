@@ -68,19 +68,7 @@ def migrate_legacy_runtime(stage_root: Path) -> None:
                     legacy_intent.unlink()
                 except OSError:
                     pass
-    # A crashed session can leave `*.json.claim-*` reservation files behind;
-    # the reservation itself already consumed the intent, so finishing the
-    # deletion after a day is safe.
-    now = datetime.now(timezone.utc).timestamp()
-    try:
-        for claim in intents_root(stage_root).glob("*.json.claim-*"):
-            try:
-                if now - claim.stat().st_mtime > 24 * 60 * 60:
-                    claim.unlink()
-            except OSError:
-                pass
-    except OSError:
-        pass
+    restore_stale_claims(stage_root)
     legacy_summary = runtime / "session-summary.md"
     if legacy_summary.exists():
         sessions = sessions_root(stage_root)
@@ -97,6 +85,79 @@ def migrate_legacy_runtime(stage_root: Path) -> None:
             legacy_summary.replace(target)
         except OSError:
             pass
+
+
+# A claim older than this belongs to a run whose PostToolUse never arrived
+# (crash, rejected permission, a host without the event) — restore it for
+# retry. Younger claims may belong to a tool still executing; restoring those
+# early would double-spend the authorization.
+CLAIM_RESTORE_AGE_SECONDS = 10 * 60
+
+
+def restore_stale_claims(stage_root: Path) -> None:
+    """Rename aged `*.json.claim-*` reservations back to pending intents. A
+    re-planted intent under the original name is authoritative — the stale
+    claim is dropped instead, so one authorization never becomes two."""
+    now = datetime.now(timezone.utc).timestamp()
+    try:
+        claims = list(intents_root(stage_root).glob("*.json.claim-*"))
+    except OSError:
+        return
+    for claim in claims:
+        try:
+            if now - claim.stat().st_mtime <= CLAIM_RESTORE_AGE_SECONDS:
+                continue
+            original = claim.with_name(claim.name.rsplit(".claim-", 1)[0])
+            if original.exists():
+                claim.unlink()
+                continue
+            try:
+                data = json.loads(claim.read_text(encoding="utf-8"))
+                if isinstance(data, dict) and data.pop("claimed_by", None) is not None:
+                    claim.write_text(
+                        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
+            except (OSError, json.JSONDecodeError):
+                pass
+            claim.rename(original)
+        except OSError:
+            pass
+
+
+def consume_claims_for(
+    stage_root: Path, workspace_root: Path, target_paths: list[str], owner: str = ""
+) -> None:
+    """Complete the reservations whose declared paths were just written:
+    PostToolUse confirms the tool ran, so the matching claims are consumed.
+
+    Only claims stamped by the SAME owner (the reserving call's tool_use_id,
+    or its session slot when the host sends none) are consumed — a re-planted
+    intent claimed by a concurrent run keeps its own reservation, and its
+    fate is decided by its own post or the age-based restore."""
+    requested = {entry_relative_to_workspace(path, workspace_root) for path in target_paths}
+    try:
+        claims = list(intents_root(stage_root).glob("*.json.claim-*"))
+    except OSError:
+        return
+    for claim in claims:
+        try:
+            data = json.loads(claim.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        claimed_by = str(data.get("claimed_by") or "")
+        if claimed_by and owner and claimed_by != owner:
+            continue
+        declared = {
+            entry_relative_to_workspace(path, workspace_root) for path in intent_paths(data)
+        }
+        if declared & requested:
+            try:
+                claim.unlink()
+            except OSError:
+                pass
 
 
 def write_intent_file(stage_root: Path, intent: dict[str, Any], path_value: str) -> Path | None:
@@ -198,7 +259,9 @@ def intent_paths(intent: dict[str, Any]) -> list[str]:
     return []
 
 
-def promotion_blocker(workspace_root: Path, target_paths: list[str]) -> str:
+def promotion_blocker(
+    workspace_root: Path, target_paths: list[str], claim_owner: str = ""
+) -> str:
     """Per-path intents make consumption an atomic rename reservation.
 
     Each pending intent covers exactly one path (the loader normalizes
@@ -282,11 +345,26 @@ def promotion_blocker(workspace_root: Path, target_paths: list[str]) -> str:
                 "consumed by another session. Re-plant the intent if this write is still intended."
             )
         claimed.append((intent_file, claim))
-    for _, claim in claimed:
         try:
-            claim.unlink()
-        except OSError:
+            # Rename preserves the intent's old mtime; the restore age must
+            # measure from RESERVATION, or a long-planted intent's claim would
+            # read as stale while its tool is still running (double-spend).
+            claim.touch()
+            if claim_owner:
+                # Stamp who reserved it, so the completing post consumes only
+                # its own claim (we own the file past the rename — no race).
+                data = json.loads(claim.read_text(encoding="utf-8"))
+                if isinstance(data, dict):
+                    data["claimed_by"] = claim_owner
+                    claim.write_text(
+                        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
+        except (OSError, json.JSONDecodeError):
             pass
+    # The claims are KEPT through tool execution: PostToolUse completes them
+    # (consume_claims_for), and a claim whose post never arrives is restored
+    # for retry after CLAIM_RESTORE_AGE_SECONDS (restore_stale_claims).
     return ""
 
 

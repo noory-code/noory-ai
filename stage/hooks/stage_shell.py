@@ -75,7 +75,13 @@ def _parse_heredoc_delimiter(command: str, pos: int) -> tuple[str, bool, int] | 
 # are private-use code points that cannot occur in a real command; the path and
 # name extractors restore them via _restore_sentinels before use.
 _SENTINELS = {";": "", "&": "", "|": "", "<": "", ">": ""}
+# Double-quoted `<`/`>` mask differently: text in double quotes can still
+# EXECUTE via command substitution, so the substitution scan restores these
+# (soft) while single-quoted/escaped ones (hard, above) stay data.
+_SENTINELS_DQ = {";": "", "&": "", "|": "", "<": "", ">": ""}
+_SOFT_REDIRECT_REVERSE = {0xE005: "<", 0xE006: ">"}
 _SENTINEL_REVERSE = {ord(v): k for k, v in _SENTINELS.items()}
+_SENTINEL_REVERSE.update({ord(v): k for k, v in _SENTINELS_DQ.items()})
 
 
 def _restore_sentinels(text: str) -> str:
@@ -103,7 +109,8 @@ def normalize_shell_control(command: str) -> str:
     while index < length:
         char = command[index]
         if quote:
-            out.append(_SENTINELS.get(char, char) if char in _SENTINELS else char)
+            quote_map = _SENTINELS_DQ if quote == '"' else _SENTINELS
+            out.append(quote_map.get(char, char) if char in quote_map else char)
             if char == "\\" and quote == '"' and index + 1 < length:
                 nxt = command[index + 1]
                 out.append(_SENTINELS.get(nxt, nxt))
@@ -829,8 +836,10 @@ def _output_redirect_targets(raw_group: list[str]) -> list[str]:
         if match:
             add(match.group("path"))
         if "$(" in token or "`" in token:
-            for inner in SUBSTITUTION_REDIRECT_RE.finditer(_restore_sentinels(token)):
-                candidate = inner.group("path")
+            for inner in SUBSTITUTION_REDIRECT_RE.finditer(
+                token.translate(_SOFT_REDIRECT_REVERSE)
+            ):
+                candidate = _restore_sentinels(inner.group("path"))
                 if not candidate.startswith("&"):
                     targets.append(candidate)
     return targets

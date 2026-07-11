@@ -4081,6 +4081,181 @@ class ShellDeleteGateTest(unittest.TestCase):
         self.assertEqual(decision(result), "allow")
 
 
+class TwoPhaseIntentTest(unittest.TestCase):
+    """Intent consumption is two-phase: the pre gate reserves (rename to a
+    claim, kept through execution), PostToolUse completes it, and a stale
+    claim — a run whose post never arrived (crash, rejected permission) — is
+    restored for retry instead of burning the authorization."""
+
+    write_stage_file = StageGuardTest.write_stage_file
+    write_work_item = StageGuardTest.write_work_item
+    write_promotion_intent = StageGuardTest.write_promotion_intent
+
+    def promoted_item(self, root: Path) -> None:
+        self.write_work_item(
+            root,
+            status="completed",
+            verification="passed",
+            retrospective="completed",
+            retrospective_ref="R-0001",
+            promotion="approved",
+            promotes=".stage/past/canon/principles.md",
+        )
+
+    def payload(self, root: Path) -> dict:
+        return {
+            "tool_name": "Write",
+            "cwd": str(root),
+            "tool_input": {"file_path": ".stage/past/canon/principles.md", "content": "x"},
+        }
+
+    def intents_dir(self, root: Path) -> Path:
+        return root / ".stage" / ".runtime" / "intents"
+
+    def test_allowed_past_write_keeps_the_claim_until_post(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.promoted_item(root)
+            self.write_promotion_intent(root)
+
+            allowed = stage_guard.handle_event("pre-tool-use", self.payload(root))
+            intents = list(self.intents_dir(root).glob("*.json"))
+            claims = list(self.intents_dir(root).glob("*.json.claim-*"))
+
+        self.assertEqual(decision(allowed), "allow")
+        self.assertEqual(0, len(intents))
+        self.assertEqual(1, len(claims))
+
+    def test_post_tool_use_completes_the_claim(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.promoted_item(root)
+            self.write_promotion_intent(root)
+
+            stage_guard.handle_event("pre-tool-use", self.payload(root))
+            stage_guard.handle_event("post-tool-use", self.payload(root))
+            leftover = list(self.intents_dir(root).glob("*"))
+
+        self.assertEqual([], leftover)
+
+    def test_stale_claim_is_restored_for_retry(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.promoted_item(root)
+            intent_path = self.write_promotion_intent(root)
+            claim = intent_path.with_name(intent_path.name + ".claim-deadbeef")
+            intent_path.rename(claim)
+            old = 1_000_000_000
+            os.utime(claim, (old, old))
+
+            # Any pre-gate evaluation sweeps stale claims back to intents.
+            allowed = stage_guard.handle_event("pre-tool-use", self.payload(root))
+            claims = list(self.intents_dir(root).glob("*.json.claim-*"))
+
+        self.assertEqual(decision(allowed), "allow")
+        self.assertEqual(1, len(claims))  # restored, then re-claimed by this allow
+
+    def test_fresh_claim_is_not_restored(self):
+        # A claim younger than the restore age belongs to a run still in
+        # flight — restoring it early would double-spend the authorization.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.promoted_item(root)
+            intent_path = self.write_promotion_intent(root)
+            claim = intent_path.with_name(intent_path.name + ".claim-deadbeef")
+            intent_path.rename(claim)
+
+            denied = stage_guard.handle_event("pre-tool-use", self.payload(root))
+            claims = list(self.intents_dir(root).glob("*.json.claim-*"))
+
+        self.assertEqual(decision(denied), "deny")
+        self.assertEqual(1, len(claims))
+
+    def test_restored_claim_yields_to_a_replanted_intent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.promoted_item(root)
+            intent_path = self.write_promotion_intent(root)
+            claim = intent_path.with_name(intent_path.name + ".claim-deadbeef")
+            import shutil
+
+            shutil.copy(intent_path, claim)  # re-planted while a stale claim exists
+            old = 1_000_000_000
+            os.utime(claim, (old, old))
+
+            stage_guard.handle_event("pre-tool-use", self.payload(root))
+            claims = [
+                path
+                for path in self.intents_dir(root).glob("*.json.claim-*")
+                if path.name.endswith("claim-deadbeef")
+            ]
+
+        self.assertEqual([], claims)
+
+    def test_claim_age_measures_from_reservation_not_intent_planting(self):
+        # rename() preserves the intent's old mtime — the claim must be
+        # stamped at reservation time, or a long-planted intent's claim would
+        # read as stale while its tool is still running and a concurrent
+        # evaluation could restore it into a second authorization
+        # (codex review, P1).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.promoted_item(root)
+            intent_path = self.write_promotion_intent(root)
+            old = 1_000_000_000
+            os.utime(intent_path, (old, old))
+
+            allowed = stage_guard.handle_event("pre-tool-use", self.payload(root))
+            retry = stage_guard.handle_event("pre-tool-use", self.payload(root))
+            claims = list(self.intents_dir(root).glob("*.json.claim-*"))
+
+        self.assertEqual(decision(allowed), "allow")
+        self.assertEqual(decision(retry), "deny")  # fresh claim not restorable
+        self.assertEqual(1, len(claims))
+
+    def test_post_consumes_only_its_own_claim(self):
+        # A re-planted intent claimed by a concurrent run must survive the
+        # FIRST run's post — path matching alone would burn both
+        # authorizations (codex confirmation round, P1).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.promoted_item(root)
+            self.write_promotion_intent(root)
+
+            first = dict(self.payload(root), tool_use_id="use-first")
+            stage_guard.handle_event("pre-tool-use", first)
+            self.write_promotion_intent(root)  # re-planted while first runs
+            second = dict(self.payload(root), tool_use_id="use-second")
+            stage_guard.handle_event("pre-tool-use", second)
+            self.assertEqual(2, len(list(self.intents_dir(root).glob("*.json.claim-*"))))
+
+            stage_guard.handle_event("post-tool-use", first)
+            remaining = list(self.intents_dir(root).glob("*.json.claim-*"))
+            surviving = remaining[0].read_text(encoding="utf-8") if remaining else ""
+
+        self.assertEqual(1, len(remaining))
+        self.assertIn("use-second", surviving)
+
+    def test_post_without_past_targets_is_a_noop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.promoted_item(root)
+            self.write_promotion_intent(root)
+
+            result = stage_guard.handle_event(
+                "post-tool-use",
+                {
+                    "tool_name": "Write",
+                    "cwd": str(root),
+                    "tool_input": {"file_path": "src/app.py", "content": "x"},
+                },
+            )
+            intents = list(self.intents_dir(root).glob("*.json"))
+
+        self.assertEqual({}, result)
+        self.assertEqual(1, len(intents))
+
+
 class ShellWriteAnchorTest(unittest.TestCase):
     """Write-target extraction is cwd-anchored like delete extraction: a
     preceding cd rebases redirect/cp/mv/tee/sed targets, and quoted operator
@@ -4151,6 +4326,18 @@ class ShellWriteAnchorTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "deny")
         self.assertIn("registration", reason(result).lower())
+
+    def test_single_quoted_substitution_literal_is_not_a_write(self):
+        # `echo '$(printf x > rogue.py)'` passes LITERAL text — single quotes
+        # suppress the substitution, unlike the double-quoted form above
+        # (codex confirmation round, P2).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, "echo '$(printf x > rogue.py)'")
+
+        self.assertEqual(decision(result), "allow")
 
     def test_quoted_or_escaped_redirect_argument_is_not_a_write(self):
         # `echo "> src/app.py"` and `echo \>src/app.py` pass an ordinary
