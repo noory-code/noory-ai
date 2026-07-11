@@ -55,3 +55,5 @@ node_modules/
 
 # Novel runtime data (engine mkdirs .noory/ in browsed dirs — see B-4 side-effect note)
 .noory/
+
+.stage/.runtime/
