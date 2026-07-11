@@ -131,6 +131,7 @@ class Audit:
         self.audit_orphan_records(graph)
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
+        self.audit_future_indexes(graph)
         self.audit_family_shapes()
         self.audit_record_ownership()
         self.audit_routing()
@@ -571,6 +572,56 @@ class Audit:
                 self.error(
                     "ARCHIVE004",
                     f"Archive index row references a missing archived item: {row_id}",
+                    index_path,
+                )
+
+    def audit_future_indexes(self, graph: RecordGraph) -> None:
+        """Each future family's index owns the current index of its records
+        (backlog, roadmap milestones, proposals): every record has a row, and
+        every ID-bearing row has a record. Roadmap theme rows carry no record
+        ID and are not checked."""
+        families = (
+            (
+                "future/backlog/index.md",
+                [(node.record_id, node.path) for node in graph.backlog],
+                "B",
+                ("BACKLOG008", "BACKLOG009"),
+            ),
+            (
+                "future/roadmap/index.md",
+                [(node.record_id, node.path) for node in graph.milestones],
+                "M",
+                ("ROADMAP001", "ROADMAP002"),
+            ),
+            (
+                "future/proposals/index.md",
+                [(node.record_id, node.path) for node in graph.proposals],
+                "P",
+                ("PROPOSAL001", "PROPOSAL002"),
+            ),
+        )
+        for index_relative, records, prefix, (missing_code, dangling_code) in families:
+            index_path = self.stage_root / index_relative
+            row_ids: set[str] = set()
+            for cells in stage_guard.parse_index_rows(index_path):
+                if not cells:
+                    continue
+                candidate = cells[0].strip()
+                match = RECORD_ID_RE.match(candidate)
+                if match and match.group("prefix") == prefix:
+                    row_ids.add(candidate)
+            record_ids = {record_id for record_id, _ in records}
+            for record_id, path in records:
+                if record_id not in row_ids:
+                    self.error(
+                        missing_code,
+                        f"Record has no row in `{index_relative}`: {record_id}",
+                        path,
+                    )
+            for row_id in sorted(row_ids - record_ids):
+                self.error(
+                    dangling_code,
+                    f"`{index_relative}` row references a missing record: {row_id}",
                     index_path,
                 )
 

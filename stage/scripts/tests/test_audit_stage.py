@@ -534,6 +534,99 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("ARCHIVE004", finding_codes(findings))
 
+    def append_index_row(self, root: Path, relative: str, first_cell: str) -> None:
+        path = root / ".stage" / relative
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(f"| {first_cell} | x | x | x | x |\n")
+
+    def write_heading_record(self, root: Path, relative: str, record_id: str) -> Path:
+        path = root / ".stage" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"# {record_id} Title\n\n## Purpose\n\nx\n", encoding="utf-8")
+        return path
+
+    def test_backlog_item_missing_from_backlog_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_backlog_item(root)
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("BACKLOG008", finding_codes(findings))
+
+    def test_indexed_backlog_item_has_no_index_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_backlog_item(root)
+            self.append_index_row(root, "future/backlog/index.md", "B-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertNotIn("BACKLOG008", finding_codes(findings))
+        self.assertNotIn("BACKLOG009", finding_codes(findings))
+
+    def test_backlog_index_row_requires_existing_item(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.append_index_row(root, "future/backlog/index.md", "B-9999")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("BACKLOG009", finding_codes(findings))
+
+    def test_milestone_missing_from_roadmap_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_heading_record(root, "future/roadmap/milestones/M-0001.md", "M-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("ROADMAP001", finding_codes(findings))
+
+    def test_roadmap_index_row_requires_existing_milestone(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.append_index_row(root, "future/roadmap/index.md", "M-9999")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("ROADMAP002", finding_codes(findings))
+
+    def test_roadmap_theme_rows_are_ignored(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.append_index_row(root, "future/roadmap/index.md", "Foundations")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertNotIn("ROADMAP002", finding_codes(findings))
+
+    def test_proposal_missing_from_proposal_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_heading_record(root, "future/proposals/P-0001.md", "P-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("PROPOSAL001", finding_codes(findings))
+
+    def test_proposal_index_row_requires_existing_proposal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.append_index_row(root, "future/proposals/index.md", "P-9999")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("PROPOSAL002", finding_codes(findings))
+
     def test_archived_item_retrospective_left_in_present_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -180,6 +180,14 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "WORK022",
                 "RETRO001",
                 "STATE001",
+                # Family-index membership (X4): every backlog record in the
+                # fixture is deliberately unindexed.
+                "BACKLOG008",
+                "BACKLOG008",
+                "BACKLOG008",
+                "BACKLOG008",
+                "BACKLOG008",
+                "BACKLOG008",
             ],
             [finding.code for finding in findings],
         )

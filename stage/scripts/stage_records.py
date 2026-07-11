@@ -27,6 +27,7 @@ serves the uniform dangling-reference sweeps.
 # this module keeps the same annotation-laziness contract as audit_stage.py.
 from __future__ import annotations
 
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -40,6 +41,9 @@ import stage_guard  # noqa: E402
 
 
 SKIP_NAMES = {"README.md", "_template.md"}
+# Proposal / milestone / approved-decision records are body-only: the ID
+# lives in the first heading instead of frontmatter.
+HEADING_ID_RE = re.compile(r"^#\s+(?P<record_id>(?:DE|[WRDOQAKBPM])-\d{3,})\b", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -101,6 +105,28 @@ def _scan_nodes(roots: tuple[Path, ...]) -> list[RecordNode]:
     return nodes
 
 
+def _scan_heading_nodes(roots: tuple[Path, ...]) -> list[RecordNode]:
+    """Body-only records in scan order, identified by their first-heading ID.
+    Files without a heading ID (and index/README/template files) are not part
+    of the record graph."""
+    nodes: list[RecordNode] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in sorted(root.glob("*.md")):
+            if path.name in SKIP_NAMES or path.name == "index.md":
+                continue
+            try:
+                match = HEADING_ID_RE.search(path.read_text(encoding="utf-8"))
+            except OSError:
+                continue
+            if match:
+                nodes.append(
+                    RecordNode(record_id=match.group("record_id"), path=path, fields={})
+                )
+    return nodes
+
+
 class RecordGraph:
     def __init__(self, stage_root: Path) -> None:
         # Work items keep every file — one with no frontmatter still becomes a
@@ -138,6 +164,12 @@ class RecordGraph:
                 stage_root / "present" / "state" / family
                 for family in ("observations", "questions", "assumptions", "risks")
             )
+        )
+        self.milestones: list[RecordNode] = _scan_heading_nodes(
+            (stage_root / "future" / "roadmap" / "milestones",)
+        )
+        self.proposals: list[RecordNode] = _scan_heading_nodes(
+            (stage_root / "future" / "proposals",)
         )
 
         self.work_ids: set[str] = {entry.item.item_id for entry in self.work}
