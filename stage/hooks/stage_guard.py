@@ -7,9 +7,7 @@ scripts. It accepts Claude hook JSON on stdin and writes hook JSON on stdout.
 
 from __future__ import annotations
 
-import hashlib
 import json
-import uuid
 import os
 import re
 import sys
@@ -83,6 +81,17 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     stage_completion_blockers,
     staged_files,
     work_item_relative,
+)
+from stage_runtime import (  # noqa: E402  (after sys.path bootstrap)
+    SESSION_SUMMARY_KEEP,
+    latest_session_summaries,
+    migrate_legacy_runtime,
+    promotion_blocker,
+    prune_question_ack_markers,
+    prune_session_summaries,
+    runtime_slot_name,
+    sessions_root,
+    write_intent_file,
 )
 
 
@@ -273,328 +282,11 @@ def continue_output(message: str | None = None) -> dict[str, Any]:
     return {}
 
 
-def runtime_slot_name(value: str) -> str:
-    """Filesystem-safe slot name for per-session/per-item runtime files."""
-    cleaned = re.sub(r"[^A-Za-z0-9._-]", "_", value.strip())
-    return cleaned or "default"
 
 
 def session_slot(payload: dict[str, Any]) -> str:
     """Concurrency dimension for `.runtime/`: both hosts send `session_id` in hook stdin."""
     return runtime_slot_name(str(payload.get("session_id") or "default"))
-
-
-def intents_root(stage_root: Path) -> Path:
-    return stage_root / ".runtime" / "intents"
-
-
-def migrate_legacy_runtime(stage_root: Path) -> None:
-    """Move 0.1.0 single-slot runtime files into the per-item/per-session layout.
-
-    Projects initialized by the 0.1.0 release may hold a pending
-    `promote-intent.json` or a `session-summary.md`; ignoring them would deny a
-    legitimately prepared promotion or drop the last handoff.
-    """
-    runtime = stage_root / ".runtime"
-    legacy_intent = runtime / "promote-intent.json"
-    if legacy_intent.exists():
-        try:
-            data = json.loads(legacy_intent.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            data = None
-        if isinstance(data, dict):
-            declared = intent_paths(data)
-            written = [write_intent_file(stage_root, data, one) for one in declared]
-            if all(target is not None for target in written):
-                try:
-                    legacy_intent.unlink()
-                except OSError:
-                    pass
-    # A crashed session can leave `*.json.claim-*` reservation files behind;
-    # the reservation itself already consumed the intent, so finishing the
-    # deletion after a day is safe.
-    now = datetime.now(timezone.utc).timestamp()
-    try:
-        for claim in intents_root(stage_root).glob("*.json.claim-*"):
-            try:
-                if now - claim.stat().st_mtime > 24 * 60 * 60:
-                    claim.unlink()
-            except OSError:
-                pass
-    except OSError:
-        pass
-    legacy_summary = runtime / "session-summary.md"
-    if legacy_summary.exists():
-        sessions = sessions_root(stage_root)
-        try:
-            sessions.mkdir(parents=True, exist_ok=True)
-            # Never overwrite or drop an existing handoff: a taken `legacy.md`
-            # slot means a prior migration or a live session already owns it, so
-            # claim a fresh numbered slot instead of unlinking the incoming one.
-            target = sessions / "legacy.md"
-            index = 1
-            while target.exists():
-                target = sessions / f"legacy-{index}.md"
-                index += 1
-            legacy_summary.replace(target)
-        except OSError:
-            pass
-
-
-def write_intent_file(stage_root: Path, intent: dict[str, Any], path_value: str) -> Path | None:
-    """Persist a single-path intent; the slot is (work item, canonical path).
-
-    The path is canonicalized to the ENTRY-relative workspace form (parents
-    resolved, leaf kept as named) before slotting and storage, so replanting
-    the same target as absolute vs relative stays idempotent while two aliased
-    leaves stay distinct slots. The filename embeds the basename plus a digest
-    of the full path — bounded regardless of target depth. A slot collision
-    with a DIFFERENT logical (item, path) pair falls through to a numbered
-    suffix instead of overwriting someone else's pending authorization.
-    """
-    root = intents_root(stage_root)
-    try:
-        workspace_root = stage_root.parent.resolve()
-    except OSError:
-        workspace_root = stage_root.parent
-    normalized = entry_relative_to_workspace(path_value, workspace_root)
-    record = {**intent, "paths": [normalized]}
-    item = str(intent.get("work_item") or "intent")
-    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:10]
-    basename = runtime_slot_name(Path(normalized).name)[:40]
-    base = f"{runtime_slot_name(item)}--{basename}-{digest}"
-    try:
-        root.mkdir(parents=True, exist_ok=True)
-        for index in range(20):
-            target = root / (base + ("" if index == 0 else f"-{index}") + ".json")
-            if target.exists():
-                try:
-                    existing = json.loads(target.read_text(encoding="utf-8"))
-                except (OSError, json.JSONDecodeError):
-                    existing = None
-                same_slot = (
-                    isinstance(existing, dict)
-                    and str(existing.get("work_item") or "") == item
-                    and [entry_relative_to_workspace(p, workspace_root) for p in intent_paths(existing)]
-                    == [normalized]
-                )
-                if not same_slot:
-                    continue
-            target.write_text(
-                json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-            )
-            return target
-    except OSError:
-        pass
-    return None
-
-
-def read_intent_files(stage_root: Path) -> list[tuple[Path, dict[str, Any]]]:
-    try:
-        files = sorted(intents_root(stage_root).glob("*.json"))
-    except OSError:
-        return []
-    intents: list[tuple[Path, dict[str, Any]]] = []
-    for path in files:
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        if isinstance(data, dict):
-            intents.append((path, data))
-    return intents
-
-
-def load_promotion_intents(stage_root: Path) -> list[tuple[Path, dict[str, Any]]]:
-    """All pending intents — one file per (work item, path) so authorizing a
-    write consumes state by an atomic rename reservation, never by rewriting a
-    shared file."""
-    migrate_legacy_runtime(stage_root)
-    intents = read_intent_files(stage_root)
-    split_any = False
-    for path, data in intents:
-        declared = intent_paths(data)
-        if len(declared) <= 1:
-            continue
-        # Normalize a multi-path file (pre-split layout) into per-path slots.
-        if all(write_intent_file(stage_root, data, one) is not None for one in declared):
-            split_any = True
-            try:
-                path.unlink()
-            except OSError:
-                pass
-    if split_any:
-        return read_intent_files(stage_root)
-    return intents
-
-
-def intent_paths(intent: dict[str, Any]) -> list[str]:
-    # Cleaned, NOT dot-collapsed (see split_scope): a legacy intent spelled
-    # with `..` must reach entry canonicalization intact.
-    raw = intent.get("paths")
-    if isinstance(raw, list):
-        return [clean_path_text(str(item)) for item in raw if str(item).strip()]
-    raw_path = intent.get("path")
-    if isinstance(raw_path, str) and raw_path.strip():
-        return [clean_path_text(raw_path)]
-    return []
-
-
-def promotion_blocker(workspace_root: Path, target_paths: list[str]) -> str:
-    """Per-path intents make consumption an atomic rename reservation.
-
-    Each pending intent covers exactly one path (the loader normalizes
-    multi-path files), so authorizing a write never rewrites another intent's
-    state — the read-modify-write race that could resurrect an already
-    consumed authorization cannot occur. Acquisition is the rename to a claim
-    file; the losing concurrent session is denied.
-    """
-    stage_root = workspace_root / ".stage"
-    intents = load_promotion_intents(stage_root)
-    if not intents:
-        return (
-            "Stage promotion gate violation: modifying `.stage/past/` requires an out-of-band "
-            "promotion intent. Run `stage-retrospective`, then create one with "
-            "`scripts/promote_intent.py` (writes `.stage/.runtime/intents/<work-item>--<path>.json`)."
-        )
-
-    # Entry-canonical matching: an intent authorizes the exact entry it names,
-    # never a sibling alias of the same resolved target.
-    requested = {entry_relative_to_workspace(path, workspace_root) for path in target_paths}
-    by_path: dict[str, list[tuple[Path, dict[str, Any]]]] = {}
-    for intent_file, intent in intents:
-        for declared in intent_paths(intent):
-            by_path.setdefault(entry_relative_to_workspace(declared, workspace_root), []).append(
-                (intent_file, intent)
-            )
-
-    selected: dict[Path, dict[str, Any]] = {}
-    covered_paths: dict[Path, list[str]] = {}
-    for path in sorted(requested):
-        matching = by_path.get(path, [])
-        if not matching:
-            return (
-                "Stage promotion gate violation: no pending intent's paths match the "
-                f"modification targets ({path})."
-            )
-        if len(matching) > 1:
-            # Fail closed on ambiguity: consuming an arbitrary intent could let
-            # one work item's write ride another item's authorization.
-            names = ", ".join(sorted(intent_file.name for intent_file, _ in matching))
-            return (
-                "Stage promotion gate violation: multiple pending intents cover the modification "
-                f"targets ({names}). Remove or narrow the intents so exactly one matches."
-            )
-        intent_file, intent = matching[0]
-        selected[intent_file] = intent
-        covered_paths.setdefault(intent_file, []).append(path)
-
-    # Validate every involved intent before consuming any (no partial consume
-    # on a failing multi-target write).
-    for intent_file, intent in selected.items():
-        error = intent_validation_blocker(
-            stage_root,
-            workspace_root,
-            intent_file,
-            intent,
-            covered_paths[intent_file],
-            set(covered_paths[intent_file]),
-        )
-        if error:
-            return error
-
-    # Atomic reservation: rename is the acquisition point. If another session
-    # already consumed an intent between validation and here, acquisition
-    # fails and this write is denied instead of riding the same one-shot
-    # authorization. Deterministic (name) order keeps partial overlaps
-    # fail-fast; acquired claims are rolled back on failure.
-    claimed: list[tuple[Path, Path]] = []
-    for intent_file in sorted(selected, key=lambda path: path.name):
-        claim = intent_file.with_name(f"{intent_file.name}.claim-{uuid.uuid4().hex[:8]}")
-        try:
-            intent_file.rename(claim)
-        except OSError:
-            for original, taken in claimed:
-                try:
-                    taken.rename(original)
-                except OSError:
-                    pass
-            return (
-                "Stage promotion gate violation: a pending intent for these targets was just "
-                "consumed by another session. Re-plant the intent if this write is still intended."
-            )
-        claimed.append((intent_file, claim))
-    for _, claim in claimed:
-        try:
-            claim.unlink()
-        except OSError:
-            pass
-    return ""
-
-
-def intent_validation_blocker(
-    stage_root: Path,
-    workspace_root: Path,
-    intent_file: Path,
-    intent: dict[str, Any],
-    target_paths: list[str],
-    requested: set[str],
-) -> str:
-    """Validate one path-matching intent; consumes it and returns "" on success."""
-    work_item_id = str(intent.get("work_item") or "").strip()
-    if not work_item_id:
-        return "Stage promotion gate violation: the promotion intent has no work_item."
-
-    items = load_work_items(stage_root) + load_archive_work_items(stage_root)
-    matched = [item for item in items if item.item_id == work_item_id or item.path.stem == work_item_id]
-    if not matched:
-        return f"Stage promotion gate violation: work_item `{work_item_id}` was not found."
-
-    item = matched[0]
-    intent_type = str(intent.get("type") or "promotion").strip().lower()
-    if intent_type == "archive":
-        if not all(path_targets_stage_archive(path) for path in target_paths):
-            return "Stage archive gate violation: an archive intent may only target `.stage/past/work/archive/`."
-        item_targets = [path for path in target_paths if archive_target_item_id(path, workspace_root)]
-        retro_targets = [path for path in target_paths if archive_target_retro_id(path, workspace_root)]
-        if len(item_targets) + len(retro_targets) != len(target_paths):
-            return (
-                "Stage archive gate violation: archive targets must be "
-                "`items/<id>.md` or `retrospectives/<id>.md`."
-            )
-        item_ids = {archive_target_item_id(path, workspace_root) for path in item_targets}
-        if item_targets and item_ids != {item.item_id}:
-            return "Stage archive gate violation: the items/ target filename must match the work_item ID."
-        ref_id = retrospective_ref_id(item)
-        for path in retro_targets:
-            if not ref_id or archive_target_retro_id(path, workspace_root) != ref_id:
-                return (
-                    "Stage archive gate violation: the retrospectives/ target filename must match "
-                    "the work item's retrospective_ref."
-                )
-        if item.status not in {"completed", "rejected", "archived"}:
-            return (
-                f"Stage archive gate violation: work_item `{work_item_id}` status must be "
-                f"completed/rejected. status `{item.status}`"
-            )
-        blockers = item_completion_blockers(item) if item_is_completed(item) else []
-        if blockers:
-            return (
-                "Stage archive gate violation: close the completed item's verification, retrospective, "
-                "and promotion decision first. " + " / ".join(blockers)
-            )
-        return ""
-
-    blockers = item_completion_blockers(item)
-    if blockers or not item_is_completed(item) or item.promotion not in {"approved", "promoted"}:
-        detail = " / ".join(blockers) if blockers else f"{work_item_id}: status `{item.status}`"
-        if item.promotion not in {"approved", "promoted"}:
-            detail = f"{work_item_id}: promotion `{item.promotion}`"
-        return "Stage promotion gate violation: the linked work item is not in a completed state. " + detail
-    if not all(item_promotes_path(item, path, workspace_root) for path in target_paths):
-        return "Stage promotion gate violation: the target paths do not match the work item's promotes list."
-
-    return ""
 
 
 # AskUserQuestion = Claude Code; request_user_input = Codex (core tool name).
@@ -1200,25 +892,6 @@ def selected_backlog_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD
     return lines
 
 
-QUESTION_ACK_MAX_AGE_SECONDS = 24 * 60 * 60
-
-
-def prune_question_ack_markers(stage_root: Path) -> None:
-    """Ack markers live seconds (deny → re-ask); anything older is an abandoned session's."""
-    root = stage_root / ".runtime" / "question-ack"
-    now = datetime.now(timezone.utc).timestamp()
-    try:
-        markers = list(root.iterdir())
-    except OSError:
-        return
-    for marker in markers:
-        try:
-            if now - marker.stat().st_mtime > QUESTION_ACK_MAX_AGE_SECONDS:
-                marker.unlink()
-        except OSError:
-            pass
-
-
 def handle_session_start(payload: dict[str, Any]) -> dict[str, Any]:
     workspace_root = resolve_workspace_root(payload)
     prune_question_ack_markers(workspace_root / ".stage")
@@ -1243,92 +916,6 @@ def summarize_stage(stage_root: Path) -> str:
         f"- Completion blockers: {blocker_text}\n"
         "- Handoff condition: open work items carry current status and next actions\n"
     )
-
-
-SESSION_SUMMARY_KEEP = 5
-
-
-def sessions_root(stage_root: Path) -> Path:
-    return stage_root / ".runtime" / "sessions"
-
-
-def summaries_by_recency(stage_root: Path) -> list[Path]:
-    """Session summaries newest-first; per-file stat so a concurrently pruned file is skipped."""
-    stamped: list[tuple[float, Path]] = []
-    try:
-        candidates = list(sessions_root(stage_root).glob("*.md"))
-    except OSError:
-        return []
-    for path in candidates:
-        try:
-            stamped.append((path.stat().st_mtime, path))
-        except OSError:
-            continue
-    # Filename is a deterministic tiebreaker so coarse-resolution mtime ties
-    # give a stable order instead of an arbitrary one.
-    stamped.sort(key=lambda entry: (entry[0], entry[1].name), reverse=True)
-    return [path for _, path in stamped]
-
-
-def latest_session_summary(stage_root: Path) -> Path | None:
-    migrate_legacy_runtime(stage_root)
-    files = summaries_by_recency(stage_root)
-    return files[0] if files else None
-
-
-def latest_session_summaries(stage_root: Path) -> list[Path]:
-    """The newest handoff plus any others sharing its mtime — on a coarse-
-    resolution filesystem two sessions can Stop in the same tick, and injecting
-    only one would silently drop a concurrent session's handoff (P30)."""
-    migrate_legacy_runtime(stage_root)
-    files = summaries_by_recency(stage_root)
-    if not files:
-        return []
-    try:
-        newest_mtime = files[0].stat().st_mtime
-    except OSError:
-        return files[:1]
-    tied: list[Path] = []
-    for path in files:
-        try:
-            if path.stat().st_mtime == newest_mtime:
-                tied.append(path)
-            else:
-                break
-        except OSError:
-            continue
-    return tied or files[:1]
-
-
-SUMMARY_MIN_PRUNE_AGE_SECONDS = 24 * 60 * 60
-
-
-def prune_session_summaries(
-    stage_root: Path, keep: int = SESSION_SUMMARY_KEEP, keep_path: Path | None = None
-) -> None:
-    # keep_path pins the summary this Stop just wrote — mtime ties and
-    # another host's clock running ahead must neither delete it nor let the
-    # retained set exceed the cap, so the retained set is derived first and
-    # keep_path swapped in for the oldest retained entry when necessary.
-    # Additionally, a file younger than a day (by this host's clock) is never
-    # pruned: under clock skew another session's just-written handoff can sort
-    # below older files, and deleting it would lose a live session's handoff.
-    # The cap is therefore soft for at most a day under skew.
-    files = summaries_by_recency(stage_root)
-    retained = files[:keep]
-    if keep_path is not None and keep_path in files and keep_path not in retained:
-        retained = retained[: keep - 1] + [keep_path]
-    retained_set = set(retained)
-    now = datetime.now(timezone.utc).timestamp()
-    for stale in files:
-        if stale in retained_set:
-            continue
-        try:
-            if now - stale.stat().st_mtime < SUMMARY_MIN_PRUNE_AGE_SECONDS:
-                continue
-            stale.unlink()
-        except OSError:
-            pass
 
 
 def handle_stop(payload: dict[str, Any]) -> dict[str, Any]:
