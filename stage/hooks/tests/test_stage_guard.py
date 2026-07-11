@@ -3911,6 +3911,49 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "allow")
 
 
+class IntentPreservationTest(unittest.TestCase):
+    write_stage_file = StageGuardTest.write_stage_file
+    write_work_item = StageGuardTest.write_work_item
+    write_promotion_intent = StageGuardTest.write_promotion_intent
+
+    def test_denied_write_does_not_consume_promotion_intent(self):
+        # A single call that hits BOTH the past gate and the registration gate
+        # must deny WITHOUT consuming the pending intent: the promotion gate
+        # reserves intents by rename, so it validates after every other gate.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="approved",
+                promotes=".stage/past/canon/principles.md",
+            )
+            self.write_promotion_intent(root)
+            patch = (
+                "*** Begin Patch\n"
+                "*** Add File: .stage/past/canon/principles.md\n"
+                "+x\n"
+                "*** Add File: src/rogue.py\n"
+                "+x\n"
+                "*** End Patch\n"
+            )
+            payload = {
+                "tool_name": "apply_patch",
+                "cwd": str(root),
+                "tool_input": {"command": patch},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+            remaining = list((root / ".stage" / ".runtime" / "intents").glob("*.json"))
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+        self.assertEqual(1, len(remaining))
+
+
 class ConfiguredWriteToolTest(unittest.TestCase):
     """settings.json `extra_write_tools` — the registration seam for host/MCP
     file-writing tools whose names are not in the built-in allowlist."""

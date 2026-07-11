@@ -483,19 +483,6 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
                 "stays identical on Codex, Claude, Windows, Linux, and macOS."
             )
 
-    past_gate_raw = explicit_paths if name in write_tools else shell_write_targets
-    # The promotion gate consumes exact-entry authorizations, so hand it the
-    # entry-canonical form (parents resolved, leaf kept as named).
-    target_past_paths = [
-        entry_relative_to_workspace(raw, workspace_root)
-        for raw in past_gate_raw
-        if targets_past(raw)
-    ]
-    if target_past_paths:
-        blocker = promotion_blocker(workspace_root, target_past_paths)
-        if blocker:
-            return deny(blocker)
-
     if stage_root.exists() and governance_broken(stage_root):
         write_targets = explicit_paths if name in write_tools else shell_write_targets
         external_targets = [
@@ -532,6 +519,22 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         if git_commit_all_requested(command):
             files.extend(path for path in changed_files(workspace_root) if path not in files)
         blocker = commit_blocker(workspace_root, files)
+        if blocker:
+            return deny(blocker)
+
+    # The promotion gate runs LAST: it consumes a pending intent by an atomic
+    # rename reservation, so every deny-capable gate above must have passed —
+    # otherwise a call denied later would burn the honest actor's one-shot
+    # authorization. It takes the entry-canonical form (parents resolved,
+    # leaf kept as named), the shape exact-entry authorizations compare.
+    past_gate_raw = explicit_paths if name in write_tools else shell_write_targets
+    target_past_paths = [
+        entry_relative_to_workspace(raw, workspace_root)
+        for raw in past_gate_raw
+        if targets_past(raw)
+    ]
+    if target_past_paths:
+        blocker = promotion_blocker(workspace_root, target_past_paths)
         if blocker:
             return deny(blocker)
 
