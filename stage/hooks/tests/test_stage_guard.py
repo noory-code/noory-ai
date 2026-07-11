@@ -3792,5 +3792,105 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "allow")
 
 
+class ConfiguredWriteToolTest(unittest.TestCase):
+    """settings.json `extra_write_tools` — the registration seam for host/MCP
+    file-writing tools whose names are not in the built-in allowlist."""
+
+    def write_stage_file(self, root: Path, relative: str, content: str) -> Path:
+        path = root / ".stage" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return path
+
+    def write_work_item(self, root: Path, *, scope: str) -> Path:
+        return self.write_stage_file(
+            root,
+            "present/work/items/W-0001.md",
+            (
+                "---\nid: W-0001\ntitle: Test work\nstatus: active\nverification: pending\n"
+                f"retrospective: pending\nretrospective_ref:\npromotion: pending\nscope: {scope}\n"
+                "promotes:\n---\n# W-0001 Test work\n"
+            ),
+        )
+
+    def write_settings(self, root: Path, data: dict) -> Path:
+        return self.write_stage_file(root, "settings.json", json.dumps(data))
+
+    def payload(self, root: Path, target: str) -> dict:
+        return {
+            "tool_name": "mcp__filesystem__write_file",
+            "cwd": str(root),
+            "tool_input": {"path": target, "content": "x"},
+        }
+
+    def test_unregistered_tool_name_bypasses_gates_by_default(self):
+        # Documented limit: a tool name the harness does not know is not gated.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = stage_guard.handle_event("pre-tool-use", self.payload(root, "src/app.py"))
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_configured_write_tool_hits_registration_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_settings(root, {"extra_write_tools": ["mcp__filesystem__write_file"]})
+
+            result = stage_guard.handle_event("pre-tool-use", self.payload(root, "src/app.py"))
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_configured_write_tool_with_matching_scope_is_allowed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_settings(root, {"extra_write_tools": ["mcp__filesystem__write_file"]})
+            self.write_work_item(root, scope="src")
+
+            result = stage_guard.handle_event("pre-tool-use", self.payload(root, "src/app.py"))
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_configured_write_tool_hits_promotion_gate_for_past(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_settings(root, {"extra_write_tools": ["mcp__filesystem__write_file"]})
+
+            result = stage_guard.handle_event(
+                "pre-tool-use", self.payload(root, ".stage/past/canon/principles.md")
+            )
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("promotion", reason(result).lower())
+
+    def test_malformed_settings_drops_extra_tools_but_keeps_builtin_gates(self):
+        # Registration read from broken settings yields no extra tools — the
+        # unknown name falls back to the documented ungated default, while
+        # built-in tools stay behind the governance fail-closed deny.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_stage_file(root, "settings.json", "{not json")
+
+            unknown = stage_guard.handle_event("pre-tool-use", self.payload(root, "src/app.py"))
+            builtin = stage_guard.handle_event(
+                "pre-tool-use",
+                {
+                    "tool_name": "Write",
+                    "cwd": str(root),
+                    "tool_input": {"file_path": "src/app.py", "content": "x"},
+                },
+            )
+
+        self.assertEqual(decision(unknown), "allow")
+        self.assertEqual(decision(builtin), "deny")
+        self.assertIn("governance", reason(builtin).lower())
+
+
 if __name__ == "__main__":
     unittest.main()

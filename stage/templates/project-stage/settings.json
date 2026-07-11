@@ -2,5 +2,6 @@
   "governance": {
     "exclude_paths": [],
     "exclude_extensions": []
-  }
+  },
+  "extra_write_tools": []
 }

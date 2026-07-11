@@ -25,6 +25,7 @@ if _HOOKS_DIR not in sys.path:
 from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     DEFAULT_EXCLUDED_PREFIXES,
     clean_path_text,
+    configured_write_tools,
     entry_relative_to_workspace,
     governance_broken,
     is_outside_workspace,
@@ -117,7 +118,6 @@ WRITE_TOOLS = {
     "replace_string_in_file",
 }
 
-STAGE_MUTATION_TOOLS = SHELL_TOOLS | WRITE_TOOLS
 OS_SCRIPT_SUFFIXES = (".sh", ".bash", ".zsh", ".fish", ".ps1", ".cmd", ".bat")
 SOURCE_EXTENSIONS = {
     ".c",
@@ -410,9 +410,15 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
 
 def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
     name = tool_name(payload)
+    workspace_root = resolve_workspace_root(payload)
     if name in QUESTION_TOOLS:
-        return question_purpose_reminder(resolve_workspace_root(payload), payload)
-    if name and name not in STAGE_MUTATION_TOOLS:
+        return question_purpose_reminder(workspace_root, payload)
+    stage_root = workspace_root / ".stage"
+    # A project registers host/MCP file-writing tools the built-in allowlist
+    # does not know (`extra_write_tools`); they are classified BEFORE the
+    # unknown-name early allow, or the seam would never see them.
+    write_tools = WRITE_TOOLS | configured_write_tools(stage_root)
+    if name and name not in SHELL_TOOLS and name not in write_tools:
         return pre_tool_allow()
 
     # Shell semantics apply only to shell tools: on Codex, apply_patch carries
@@ -434,8 +440,6 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
                 cleaned = clean_path_text(match.group("path") or match.group("move") or "")
                 if cleaned and cleaned not in explicit_paths:
                     explicit_paths.append(cleaned)
-    workspace_root = resolve_workspace_root(payload)
-    stage_root = workspace_root / ".stage"
 
     # An explicit `.stage` delete is always blocked; a strict-ancestor delete
     # (`rm -rf .`) is filtered inside command_deletes_stage to fire only when a
@@ -478,7 +482,7 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
                 "stays identical on Codex, Claude, Windows, Linux, and macOS."
             )
 
-    past_gate_raw = explicit_paths if name in WRITE_TOOLS else shell_write_targets
+    past_gate_raw = explicit_paths if name in write_tools else shell_write_targets
     # The promotion gate consumes exact-entry authorizations, so hand it the
     # entry-canonical form (parents resolved, leaf kept as named).
     target_past_paths = [
@@ -492,7 +496,7 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
             return deny(blocker)
 
     if stage_root.exists() and governance_broken(stage_root):
-        write_targets = explicit_paths if name in WRITE_TOOLS else shell_write_targets
+        write_targets = explicit_paths if name in write_tools else shell_write_targets
         external_targets = [
             path for path in write_targets if not is_stage_internal_path(path, workspace_root)
         ]
@@ -503,7 +507,7 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
                 "before modifying other files."
             )
 
-    if stage_root.exists() and name in WRITE_TOOLS:
+    if stage_root.exists() and name in write_tools:
         blocker = hierarchy_blocker(workspace_root, payload, name)
         if blocker:
             return deny(blocker)

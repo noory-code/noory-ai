@@ -205,6 +205,28 @@ def load_governance(stage_root: Path) -> dict[str, Any]:
     return governance if isinstance(governance, dict) else {}
 
 
+def configured_write_tools(stage_root: Path) -> set[str]:
+    """Tool names settings.json registers as additional write tools.
+
+    A host or MCP tool that writes files under a name outside the built-in
+    allowlist bypasses every gate (see hooks/README.md §Limits); a project
+    registers such names in `extra_write_tools` so the write gates classify
+    them. Broken settings yield the empty set: the registered names cannot be
+    read back, so those tools fall back to the documented ungated default
+    while built-in tools stay behind the governance fail-closed deny."""
+    settings_path = stage_root / "settings.json"
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return set()
+    if not isinstance(data, dict):
+        return set()
+    names = data.get("extra_write_tools")
+    if not isinstance(names, list):
+        return set()
+    return {str(name).strip() for name in names if str(name).strip()}
+
+
 def governance_broken(stage_root: Path) -> bool:
     """True when settings.json exists but cannot be trusted (fail-closed signal)."""
     settings_path = stage_root / "settings.json"
