@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.13.0 — 2026-07-12
+
+Work-item routing for multi-agent projects:
+
+- New optional `venue` frontmatter field on work items names the execution
+  surface that should carry out the work — the routing hint a human reads to
+  open the right window when more than one agent or session works a project.
+  Added to `templates/project-stage/present/work/items/_template.md` and
+  surfaced as a `Venue` column in `present/work/active.md`.
+- Field is advisory: no hook gates on `venue`, and the frontmatter parser
+  already ignores/defaults unknown or absent keys — existing work items and
+  `.stage/` instances stay valid with no migration.
+- Values are project-defined, like `kind`. `operations/artifacts.md` documents
+  the field; `past/canon/vocabulary.md` gains a `Venue` term plus a
+  clearly-marked two-surface example `kind -> venue` routing table the project
+  replaces. The harness fixes no venue names.
+
 ## 0.12.1 — 2026-07-12
 
 Documentation-accuracy pass (no runtime behavior change):

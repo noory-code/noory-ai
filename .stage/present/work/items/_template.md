@@ -2,6 +2,7 @@
 id: W-00000000
 title: Title
 kind:
+venue:
 parent:
 source:
 status: active
