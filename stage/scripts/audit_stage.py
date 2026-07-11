@@ -469,7 +469,13 @@ class Audit:
     def audit_orphan_records(self, graph: RecordGraph) -> None:
         """Every decision and retrospective record is validated on its own —
         not only when a work item happens to reference it — so an orphan with a
-        missing `work_item`, bad status, or no principle citation is caught."""
+        missing `work_item`, bad status, or no principle citation is caught,
+        and a record whose work item does not point BACK at it (a one-sided
+        reverse link) is a contradiction, not an indexing nicety."""
+        item_by_id: dict[str, AuditedItem] = {}
+        for entry in graph.work:
+            item_by_id.setdefault(entry.item.item_id, entry)
+
         for node in graph.decisions:
             work_item = (node.fields.get("work_item") or "").strip()
             if not work_item or work_item not in graph.work_ids:
@@ -486,13 +492,51 @@ class Audit:
                     node.path,
                 )
             self.audit_decision_principles(node.path)
+            entry = item_by_id.get(work_item)
+            if entry is not None:
+                declared = {
+                    str(
+                        stage_records.resolve_decision_ref(
+                            self.project_root, self.stage_root, raw_ref
+                        )
+                    )
+                    for raw_ref in stage_guard.split_scope(
+                        entry.fields.get("decision_refs", "")
+                    )
+                }
+                if str(node.path) not in declared:
+                    self.error(
+                        "DECISION002",
+                        f"Decision record is not listed in {work_item}'s decision_refs — "
+                        "a recorded decision must link back.",
+                        node.path,
+                    )
 
-        for edge in graph.edges("retrospective", "work_item"):
-            if not edge.ref or edge.ref not in graph.work_ids:
+        for node in graph.retrospectives:
+            work_item = (node.fields.get("work_item") or "").strip()
+            if not work_item or work_item not in graph.work_ids:
                 self.error(
                     "RETRO001",
-                    f"Retrospective work_item references a missing work item: {edge.ref or 'empty'}",
-                    edge.src_path,
+                    f"Retrospective work_item references a missing work item: {work_item or 'empty'}",
+                    node.path,
+                )
+                continue
+            entry = item_by_id.get(work_item)
+            if entry is None or entry.item.retrospective not in stage_guard.RETROSPECTIVE_DONE:
+                continue  # an R drafted before completion is a normal state
+            bound = stage_records.resolve_retrospective_ref(
+                self.project_root,
+                self.stage_root,
+                entry.item.retrospective_ref,
+                entry.location,
+            )
+            if str(bound) != str(node.path):
+                self.error(
+                    "RETRO002",
+                    f"Work item {work_item} binds retrospective_ref "
+                    f"`{entry.item.retrospective_ref or 'empty'}`, not this record — one "
+                    "completed item has one binding retrospective.",
+                    node.path,
                 )
 
     def audit_lineage(self, graph: RecordGraph) -> None:

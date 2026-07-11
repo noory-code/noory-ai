@@ -646,6 +646,68 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("WORK012", finding_codes(findings))
 
+    def test_decision_not_linked_back_is_reported(self):
+        # decisions/README.md: `decision_refs` is optional, but a recorded
+        # decision must link back.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, status="active")
+            self.append_active_index(root, "W-0001")
+            self.write_decision(root, decision_id="DE-0001", work_item="W-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("DECISION002", finding_codes(findings))
+
+    def test_decision_linked_back_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, status="active", decision_refs="DE-0001")
+            self.append_active_index(root, "W-0001")
+            self.write_decision(root, decision_id="DE-0001", work_item="W-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertNotIn("DECISION002", finding_codes(findings))
+
+    def test_second_retrospective_claiming_completed_item_is_reported(self):
+        # A completed item's retrospective_ref is THE binding: another R
+        # claiming the same item is a silent contradiction.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="approved",
+            )
+            self.append_review_index(root, "W-0001", "completed")
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.write_retrospective(root, retro_id="R-0002", work_item="W-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("RETRO002", finding_codes(findings))
+
+    def test_retrospective_for_in_progress_item_is_allowed(self):
+        # An R drafted before the item completes is a normal intermediate
+        # state, not a contradiction.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, status="active")
+            self.append_active_index(root, "W-0001")
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertNotIn("RETRO002", finding_codes(findings))
+
     def test_backlog_status_must_be_known(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -98,8 +98,14 @@ class LinkFindingOrderPinTest(unittest.TestCase):
             root = Path(tmp)
             init_stage.copy_templates(root, False)
 
-            # Per-item field/ref findings, in filename scan order.
-            self.write_item(root, "W-0001", retrospective="completed")  # WORK011
+            # Per-item field/ref findings, in filename scan order. W-0001
+            # links back every decision that names it (DECISION002 otherwise).
+            self.write_item(
+                root,
+                "W-0001",
+                retrospective="completed",  # WORK011
+                decision_refs="DE-0005, DE-0008, DE-0009, DE-0010",
+            )
             self.write_item(root, "W-0002", retrospective="completed", retrospective_ref="R-9999")  # WORK012
             self.write_item(root, "W-0003", retrospective="completed", retrospective_ref="R-0003")  # WORK013
             self.write_item(root, "W-0004", decision_refs="DE-9999")  # WORK014
@@ -129,6 +135,8 @@ class LinkFindingOrderPinTest(unittest.TestCase):
             self.write_decision(root, "DE-0008", "W-0001", status="weird")  # WORK016
             self.write_decision(root, "DE-0009", "W-0001", principles="")  # WORK021
             self.write_decision(root, "DE-0010", "W-0001", principles="Just vibes.")  # WORK022
+            self.write_decision(root, "DE-0011", "W-0001")  # DECISION002 (not linked back)
+            self.write_retro(root, "R-0012", "W-0010")  # RETRO002 (W-0010 binds R-0010)
 
             self.write_backlog(root, "B-0001", status="selected", realized_by="W-0013")  # BACKLOG006
             self.write_backlog(root, "B-0002", status="bogus")  # BACKLOG001
@@ -178,7 +186,9 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "WORK016",
                 "WORK021",
                 "WORK022",
+                "DECISION002",
                 "RETRO001",
+                "RETRO002",
                 "STATE001",
                 # Family-index membership (X4): every backlog record in the
                 # fixture is deliberately unindexed.
