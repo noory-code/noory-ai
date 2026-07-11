@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.12.0 — 2026-07-11
+
+The two items the re-review debate deliberately split out
+(`.discuss/stage-review-debate-2026-07-11.md` §분리 항목), each through its
+own codex review rounds. **Codex hosts must re-trust the plugin's hooks
+(TUI `/hooks`) after upgrading — the hook set changed.**
+
+- Shell WRITE extraction joins delete extraction on the shared command-group
+  scaffolding: output redirects and cp/mv/tee/`sed -i` targets are anchored
+  at the tracked effective cwd (a preceding `cd` rebases them, fail closed),
+  `--` ends option parsing, and redirect classification is quote-aware —
+  quoted/escaped `<`/`>` carry sentinels through tokenization, so
+  `echo "> src/app.py"` is an argument, `cp x 'src>backup.py'` keeps its
+  full destination, a redirect inside a DOUBLE-quoted command substitution
+  (`echo "$(printf x > rogue.py)"`) is still gated, and a single-quoted
+  literal (`echo '$(...)'`) is not.
+- Intent consumption is two-phase (measured: both hosts deliver PostToolUse;
+  Codex 0.144.0 includes `tool_response`/`tool_use_id`, also for failing
+  commands): the promotion gate's rename reservation is held through tool
+  execution and PostToolUse completes it, so a tool crash or a rejected
+  permission prompt after the allow no longer burns the authorization. A
+  claim whose post never arrives is restored to a pending intent after ten
+  minutes (measured from reservation, stamped at claim time); posts consume
+  only their OWN claim (tool_use_id/session correlation), and a re-planted
+  intent wins over a stale claim — one authorization never becomes two.
+- hooks.json: new PostToolUse hook; both tool-use matchers widen to `*` so
+  the `extra_write_tools` settings seam (0.11.0) actually fires for names
+  the static matcher cannot know. Unknown tools still return the early
+  allow.
+
 ## 0.11.0 — 2026-07-11
 
 Ten agreed items from the v0.10.0 full re-review debate (Claude self-review ↔
