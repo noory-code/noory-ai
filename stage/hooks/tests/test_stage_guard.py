@@ -4026,6 +4026,22 @@ class ShellDeleteGateTest(unittest.TestCase):
         self.assertEqual(decision(result), "deny")
         self.assertIn("registration", reason(result).lower())
 
+    def test_cd_into_directory_created_in_the_same_command_is_tracked(self):
+        # `mkdir scratch && cd scratch && rm ../src/app.py` — the cd target
+        # does not exist at hook time, but the same command creates it; the
+        # tracker must include the created directory as a possible anchor.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            registration = self.run_command(root, "mkdir scratch && cd scratch && rm ../src/app.py")
+            stage_delete = self.run_command(root, "mkdir scratch && cd scratch && rm -rf ../.stage")
+
+        self.assertEqual(decision(registration), "deny")
+        self.assertIn("registration", reason(registration).lower())
+        self.assertEqual(decision(stage_delete), "deny")
+        self.assertIn("deleting", reason(stage_delete).lower())
+
     def test_deleting_outside_the_workspace_is_not_gated(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -4111,6 +4127,81 @@ class ConfiguredWriteToolTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
+
+    def test_configured_write_tool_content_is_projected_for_hierarchy(self):
+        # A registered {path, content} writer creating a child under a
+        # finalized parent must not slip past the hierarchy gate.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_settings(root, {"extra_write_tools": ["mcp__filesystem__write_file"]})
+            self.write_stage_file(
+                root,
+                "present/work/items/W-0001.md",
+                (
+                    "---\nid: W-0001\ntitle: Parent\nstatus: completed\nverification: passed\n"
+                    "retrospective: completed\nretrospective_ref: R-0001\npromotion: approved\n"
+                    "scope:\npromotes:\n---\n# W-0001\n"
+                ),
+            )
+            child = (
+                "---\nid: W-0002\ntitle: Child\nparent: W-0001\nstatus: active\n"
+                "verification: pending\nretrospective: pending\npromotion: pending\n"
+                "scope:\npromotes:\n---\n# W-0002\n"
+            )
+            payload = {
+                "tool_name": "mcp__filesystem__write_file",
+                "cwd": str(root),
+                "tool_input": {"path": ".stage/present/work/items/W-0002.md", "content": child},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("hierarchy", reason(result).lower())
+
+    @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
+    def test_configured_write_tool_content_write_follows_symlinks(self):
+        # A registered content writer dereferences a symlink like Write does:
+        # an excluded entry pointing at a governed file must still be gated.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_settings(root, {"extra_write_tools": ["mcp__filesystem__write_file"]})
+            (root / "src").mkdir()
+            (root / "src" / "app.py").write_text("x = 1\n", encoding="utf-8")
+            (root / ".git").mkdir()
+            (root / ".git" / "link.py").symlink_to(root / "src" / "app.py")
+            payload = {
+                "tool_name": "mcp__filesystem__write_file",
+                "cwd": str(root),
+                "tool_input": {"path": ".git/link.py", "content": "x = 2\n"},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_invalid_extra_write_tools_type_is_fail_closed(self):
+        # A mistyped registration (string instead of list) must not read as a
+        # healthy settings file — the governed scope cannot be trusted.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_settings(root, {"extra_write_tools": "mcp__filesystem__write_file"})
+
+            result = stage_guard.handle_event(
+                "pre-tool-use",
+                {
+                    "tool_name": "Write",
+                    "cwd": str(root),
+                    "tool_input": {"file_path": "src/app.py", "content": "x"},
+                },
+            )
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("governance", reason(result).lower())
 
     def test_malformed_settings_drops_extra_tools_but_keeps_builtin_gates(self):
         # Registration read from broken settings yields no extra tools — the

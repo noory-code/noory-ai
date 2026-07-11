@@ -437,6 +437,15 @@ def projected_file_text(existing: str, name: str, data: dict[str, Any]) -> str:
             old_value = data.get(old_key)
             replacements.append((old_value if isinstance(old_value, str) else "", new_value))
 
+    # A tool outside the built-in names that carries a whole-file `content`
+    # and no replacement pairs (a registered extra write tool) is a full
+    # write — projecting it as a no-op would hide its post-state from the
+    # hierarchy gate.
+    if not replacements:
+        content = data.get("content")
+        if isinstance(content, str):
+            return content
+
     text = existing
     for old, new in replacements:
         if old and old in text:

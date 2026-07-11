@@ -510,8 +510,12 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
             return deny(blocker)
         # Write/Edit/MultiEdit are CONTENT writes — they follow a symlink target
         # and modify the dereferenced file (not the entry). apply_patch mixes
-        # add/update/delete, so it stays entry-based (best-effort).
-        follows = name in {"Write", "Edit", "MultiEdit"}
+        # add/update/delete, so it stays entry-based (best-effort). A
+        # registered extra tool carrying a whole-file `content` is a content
+        # write too.
+        follows = name in {"Write", "Edit", "MultiEdit"} or (
+            name not in WRITE_TOOLS and isinstance(tool_input(payload).get("content"), str)
+        )
         blocker = source_registration_blocker(workspace_root, explicit_paths, follows)
         if blocker:
             return deny(blocker)

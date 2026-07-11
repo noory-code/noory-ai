@@ -238,6 +238,15 @@ def governance_broken(stage_root: Path) -> bool:
         return True
     if not isinstance(data, dict):
         return True
+    # A mistyped tool registration means the writer the project meant to gate
+    # would silently fall back to the ungated unknown-name default — treat the
+    # whole file as untrusted until repaired.
+    extra_tools = data.get("extra_write_tools")
+    if extra_tools is not None and (
+        not isinstance(extra_tools, list)
+        or any(not isinstance(name, str) for name in extra_tools)
+    ):
+        return True
     governance = data.get("governance")
     return governance is not None and not isinstance(governance, dict)
 

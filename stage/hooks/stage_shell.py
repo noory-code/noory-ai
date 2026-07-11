@@ -237,15 +237,17 @@ def _is_traversable_dir(path: Path) -> bool:
         return False
 
 
-def _walk_cd(anchor: Path, target: str) -> Path | None:
+def _walk_cd(anchor: Path, target: str, created: set[Path] | None = None) -> Path | None:
     """LOGICAL directory after `cd <target>` from `anchor`, or None when the
     real shell's cd would FAIL. Bash `cd -L` (the default) applies `..` to the
     logical path — `cd link ; cd ..` (link -> build/deep) returns to link's
     logical parent, not the physical one — so `..` pops a segment lexically and
     symlinks stay UNRESOLVED in the returned path. Each visited prefix must be a
     traversable directory (existence + execute permission), so
-    `cd build/missing/..` and a permission-denied `cd` both fail. Write
-    classification resolves this logical path later (relative_to_workspace)."""
+    `cd build/missing/..` and a permission-denied `cd` both fail. A prefix in
+    `created` (an earlier `mkdir` in the same command) counts as traversable —
+    it will exist by the time the cd runs. Write classification resolves this
+    logical path later (relative_to_workspace)."""
     text = clean_path_text(target)
     try:
         candidate = Path(text).expanduser()
@@ -261,7 +263,7 @@ def _walk_cd(anchor: Path, target: str) -> Path | None:
         if segment == ".":
             continue
         cursor = cursor.parent if segment == ".." else cursor / segment
-        if not _is_traversable_dir(cursor):
+        if not _is_traversable_dir(cursor) and (created is None or cursor not in created):
             return None
     return cursor
 
@@ -369,6 +371,9 @@ class _CwdTracker:
         self.anchors = list(anchors)
         self.oldpwd = list(anchors)  # `cd -` destination
         self.stack: list[list[Path]] = []  # pushd/popd directory stack
+        # Directories an earlier `mkdir` in the same command will create —
+        # they do not exist at hook time but a following cd into them succeeds.
+        self.created: set[Path] = set()
 
     def _home(self) -> list[Path]:
         try:
@@ -383,7 +388,7 @@ class _CwdTracker:
         dirs: list[Path] = []
         ok = False
         for anchor in self.anchors:
-            dest = _walk_cd(anchor, operand)
+            dest = _walk_cd(anchor, operand, self.created)
             dirs.append(dest if dest is not None else anchor)
             ok = ok or dest is not None
         return dirs, ok
@@ -577,6 +582,32 @@ def _command_groups(
             head += 1
         group = group[head:]
         name = POWERSHELL_CWD.get(Path(group[0]).name.lower(), Path(group[0]).name.lower())
+        if name in {"mkdir", "md"} and workspace_root is not None:
+            # A later cd may enter a directory this very command creates
+            # (`mkdir scratch && cd scratch && …`) — record every prefix the
+            # mkdir would materialize so the tracker can follow. Extra
+            # candidates only ADD possible anchors (fail closed).
+            for token in _strip_redirections(group[1:]):
+                if token == "--" or token.startswith("-"):
+                    continue
+                text = clean_path_text(token)
+                if not text:
+                    continue
+                try:
+                    base = Path(text).expanduser()
+                except RuntimeError:
+                    base = Path(text)
+                starts = (
+                    [Path(base.anchor)] if base.is_absolute() else list(tracker.anchors)
+                )
+                segments = base.parts[1:] if base.is_absolute() else base.parts
+                for start in starts:
+                    cursor = start
+                    for segment in segments:
+                        if segment == ".":
+                            continue
+                        cursor = cursor.parent if segment == ".." else cursor / segment
+                        tracker.created.add(cursor)
         if name in {"cd", "pushd", "popd"} and workspace_root is not None:
             positional = _strip_redirections(group[1:])
             if name == "cd" and _cd_has_unknown_option(positional):
