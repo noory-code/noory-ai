@@ -4,16 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Structure
 
-Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects. Novel's open plugin stack lives in the `novel-ai/` submodule.
+Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects. Novel's open plugin stack is maintained in the separate public [`noory-code/novel-ai`](https://github.com/noory-code/novel-ai) repository.
 
 ```
 noory-ai/
 ├── evonest/            — Autonomous code evolution engine
-├── novel-ai/           — Git submodule: https://github.com/noory-code/novel-ai
-│   ├── mashbill/          — Novel canvas + MCP/HTTP server
-│   ├── solera/            — deterministic work planning and execution harness
-│   ├── proof/             — append-only decision log
-│   └── distill/           — durable knowledge extraction and recall
 ├── rag/                — Project-scoped GraphRAG plugin (uv project in server/)
 ├── stage/              — Durable execution harness (plain stdlib — no uv; hooks run on any host python3 ≥3.9)
 ├── flutter-cask/       — Flutter package guide skills
@@ -22,19 +17,21 @@ noory-ai/
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
 
-After cloning, initialize Novel AI with `git submodule update --init --recursive`. Changes
-inside `novel-ai/` are committed and pushed in that repository first; then
-commit the updated submodule gitlink in this repository.
+When coordinated local work needs both repositories, clone them as siblings:
+`noory-workspace/noory-ai/` and `noory-workspace/novel-ai/`. Never recreate a
+`noory-ai/novel-ai/` nested checkout or gitlink.
 
-Novel AI's canonical public design documents live in `novel-ai/docs/`; begin with
-`novel-ai/docs/VISION.md` and route through `novel-ai/docs/index.md`. Do not recreate private
+Novel AI's canonical public design documents live at
+[`novel-ai/docs/`](https://github.com/noory-code/novel-ai/tree/main/docs); begin with
+`docs/VISION.md` and route through `docs/index.md` in that repository. Do not recreate private
 workspace mirrors of those public contracts.
 
 **Stage only:** test with `python3 -m unittest discover -s stage/hooks/tests -q` and `python3 -m unittest discover -s stage/scripts/tests -q` (no uv/mypy/ruff targets).
 
 ## Commands
 
-All commands run from inside the package directory (`cd evonest` or `cd novel-ai/distill`).
+All commands run from inside the package directory (`cd evonest` here, or
+`cd ../novel-ai/plugins/distill` in a sibling checkout).
 
 ```bash
 uv sync                         # install deps
@@ -171,6 +168,7 @@ Runtime-generated personas/adversarials go to `.evonest/dynamic-*.json` in the t
 
 ### Novel AI
 
-Mashbill, Solera, Proof, and Distill are maintained in the `novel-ai/`
-submodule. Read `novel-ai/CLAUDE.md` for their architecture, independence
-contracts, version SSOTs, tests, and release rules.
+Mashbill, Solera, Proof, and Distill are maintained in the separate public
+`noory-code/novel-ai` repository. In the standard sibling workspace layout,
+read `../novel-ai/CLAUDE.md` for their architecture, independence contracts,
+version SSOTs, tests, and release rules.

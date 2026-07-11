@@ -22,12 +22,13 @@ Runs 20 specialist personas against your codebase (security auditor, chaos engin
 ### [Novel AI](https://github.com/noory-code/novel-ai) — Novel's Open Plugin Stack
 
 Mashbill, Solera, Proof, and Distill live in the public `noory-code/novel-ai`
-repository. This repository keeps that project at [`novel-ai/`](novel-ai/) as a
-submodule for coordinated development; plugin installation uses Novel AI's own
-marketplace so it never depends on recursive submodule checkout.
+repository. It is an independent repository, not a submodule of `noory-ai`.
+For coordinated local development, clone `noory-ai` and `novel-ai` as sibling
+directories under the same workspace.
 
 Public architecture, concepts, specifications, and migration guidance are maintained in
-[`novel-ai/docs/`](novel-ai/docs/). Start with [`novel-ai/docs/index.md`](novel-ai/docs/index.md).
+[`novel-ai/docs/`](https://github.com/noory-code/novel-ai/tree/main/docs). Start with
+[`novel-ai/docs/index.md`](https://github.com/noory-code/novel-ai/blob/main/docs/index.md).
 
 | Plugin | Responsibility |
 |---|---|
@@ -76,16 +77,17 @@ Portable `.stage/` harness for LLM-led long-running projects. Stage separates ar
 
 ## Development
 
-Initialize the nested public repository after cloning this repository:
+Clone Novel AI separately when working across both repositories:
 
 ```bash
-git submodule update --init --recursive
+git clone https://github.com/noory-code/noory-ai.git
+git clone https://github.com/noory-code/novel-ai.git
 ```
 
 Each package is independent. Work inside the relevant subdirectory:
 
 ```bash
-cd evonest   # or: cd novel-ai/distill
+cd noory-ai/evonest   # or: cd novel-ai/plugins/distill
 uv sync
 uv run pytest
 uv run mypy src/
