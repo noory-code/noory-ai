@@ -3152,8 +3152,11 @@ class StageGuardTest(unittest.TestCase):
         # Companion: a quoted `;` stays inside its token (not a real separator).
         # shell_tokens carries a sentinel for the quoted operator; restoring it
         # yields the literal, and there is no standalone `;` separator token.
+        # Windows tokenizes non-posix (quotes stay on the token so backslash
+        # paths survive; clean_path_text strips them at classification time).
         tokens = stage_guard.shell_tokens('rm "a;b"')
-        self.assertEqual([stage_guard._restore_sentinels(t) for t in tokens], ["rm", "a;b"])
+        expected = ["rm", '"a;b"'] if os.name == "nt" else ["rm", "a;b"]
+        self.assertEqual([stage_guard._restore_sentinels(t) for t in tokens], expected)
         self.assertNotIn(";", tokens)
 
     def test_failed_dotted_cd_keeps_workspace_anchor(self):
