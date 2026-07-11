@@ -398,12 +398,6 @@ def summaries_by_recency(stage_root: Path) -> list[Path]:
     return [path for _, path in stamped]
 
 
-def latest_session_summary(stage_root: Path) -> Path | None:
-    migrate_legacy_runtime(stage_root)
-    files = summaries_by_recency(stage_root)
-    return files[0] if files else None
-
-
 def latest_session_summaries(stage_root: Path) -> list[Path]:
     """The newest handoff plus any others sharing its mtime — on a coarse-
     resolution filesystem two sessions can Stop in the same tick, and injecting
