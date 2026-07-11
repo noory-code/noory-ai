@@ -7,4 +7,5 @@ This file guides Codex when working in this repository.
 ## Codex-specific notes
 
 - References to Claude inside CLAUDE.md are factual product references, not host-specific phrasing — e.g. Distill parses Claude Code conversation transcripts and Evonest's `core/claude_runner.py` invokes `claude -p`. Never mechanically rewrite them to Codex.
-- `stage/` ships two plugin manifests; releases bump both `stage/.claude-plugin/plugin.json` and `stage/.codex-plugin/plugin.json`.
+- `stage/` and `plainly/` ship two plugin manifests; releases bump both host manifests in each
+  plugin.

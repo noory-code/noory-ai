@@ -1,0 +1,30 @@
+name: plainly
+
+on:
+  push:
+    paths:
+      - "plainly/**"
+      - ".github/workflows/plainly.yml"
+  pull_request:
+    paths:
+      - "plainly/**"
+      - ".github/workflows/plainly.yml"
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.9", "3.12"]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: plainly
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Test
+        run: python -m unittest discover -s tests -q
