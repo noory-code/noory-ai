@@ -763,6 +763,28 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("BACKLOG002", finding_codes(findings))
 
+    def test_backlog_parent_cycle_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_backlog_item(root, item_id="B-0001", parent="B-0002")
+            self.write_backlog_item(root, item_id="B-0002", parent="B-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("BACKLOG007", finding_codes(findings))
+
+    def test_backlog_parent_chain_without_cycle_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_backlog_item(root, item_id="B-0001", parent="")
+            self.write_backlog_item(root, item_id="B-0002", parent="B-0001")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertNotIn("BACKLOG007", finding_codes(findings))
+
     def test_backlog_filename_must_start_with_id(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

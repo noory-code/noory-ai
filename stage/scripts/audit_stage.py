@@ -440,6 +440,23 @@ class Audit:
                     node.path,
                 )
 
+        # Same contract as the work hierarchy (WORK018): a parent chain that
+        # loops is a self-contradictory plan, not an ordering.
+        for node in graph.backlog_by_id.values():
+            seen: list[str] = []
+            cursor = node.record_id
+            while cursor:
+                if cursor in seen:
+                    self.error(
+                        "BACKLOG007",
+                        "Backlog parent chain forms a cycle: " + " -> ".join(seen + [cursor]),
+                        node.path,
+                    )
+                    break
+                seen.append(cursor)
+                parent_node = graph.backlog_by_id.get(cursor)
+                cursor = (parent_node.fields.get("parent") or "").strip() if parent_node else ""
+
     def audit_bidirectional_lineage(self, graph: RecordGraph) -> None:
         """B↔W must point at EACH OTHER, not merely both exist — a one-sided
         link means the lineage graph silently disagrees with itself."""
