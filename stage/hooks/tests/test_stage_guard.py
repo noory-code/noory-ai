@@ -4081,6 +4081,131 @@ class ShellDeleteGateTest(unittest.TestCase):
         self.assertEqual(decision(result), "allow")
 
 
+class ShellWriteAnchorTest(unittest.TestCase):
+    """Write-target extraction is cwd-anchored like delete extraction: a
+    preceding cd rebases redirect/cp/mv/tee/sed targets, and quoted operator
+    characters are data, not redirects."""
+
+    write_stage_file = StageGuardTest.write_stage_file
+    write_work_item = StageGuardTest.write_work_item
+
+    def run_command(self, root: Path, command: str):
+        return stage_guard.handle_event(
+            "pre-tool-use",
+            {"tool_name": "Bash", "cwd": str(root), "tool_input": {"command": command}},
+        )
+
+    def test_redirect_target_is_anchored_at_the_tracked_cwd(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            self.write_work_item(root, scope="src")
+
+            covered = self.run_command(root, "cd src && printf x > gen.py")
+            uncovered = self.run_command(root, "cd src && printf x > ../rogue.py")
+
+        self.assertEqual(decision(covered), "allow")
+        self.assertEqual(decision(uncovered), "deny")
+        self.assertIn("registration", reason(uncovered).lower())
+
+    def test_quoted_redirect_text_is_not_a_write_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, 'echo "see > note.py"')
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_copy_and_move_destinations_are_anchored(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            self.write_work_item(root, scope="src")
+
+            covered = self.run_command(root, "cd src && cp ../README.md copy.py")
+            uncovered = self.run_command(root, "cd src && mv x.py ../out.py")
+
+        self.assertEqual(decision(covered), "allow")
+        self.assertEqual(decision(uncovered), "deny")
+        self.assertIn("registration", reason(uncovered).lower())
+
+    def test_tee_target_behind_double_dash_is_gated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, "tee -- -odd.py")
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_redirect_inside_command_substitution_is_gated(self):
+        # The substitution's inner redirect executes with it — quoting the
+        # substitution must not hide the write (codex review, P1).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, 'echo "$(printf x > rogue.py)"')
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_quoted_or_escaped_redirect_argument_is_not_a_write(self):
+        # `echo "> src/app.py"` and `echo \>src/app.py` pass an ordinary
+        # argument — quote/escape context survives into redirect
+        # classification (codex review, P2).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            quoted = self.run_command(root, 'echo "> src/app.py"')
+            escaped = self.run_command(root, "echo \\>src/app.py")
+
+        self.assertEqual(decision(quoted), "allow")
+        self.assertEqual(decision(escaped), "allow")
+
+    def test_ampersand_redirect_write_target_is_gated(self):
+        # `&>` arrives with its fd-`&` as a sentinel; the write extractor must
+        # still read it as an output redirect.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, "printf x &> gen.py")
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_quoted_operator_in_operand_is_a_filename_character(self):
+        # `cp x 'src>backup.py'` writes the top-level file `src>backup.py` —
+        # a quoted `>` must not truncate the operand to `src` and ride that
+        # scope's registration (codex review round 2, P2).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            self.write_work_item(root, scope="src")
+
+            result = self.run_command(root, "cp README.md 'src>backup.py'")
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_redirect_into_past_through_cwd_requires_intent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "sub").mkdir()
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(
+                root, "cd sub && printf x > ../.stage/past/canon/principles.md"
+            )
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("promotion", reason(result).lower())
+
+
 class ConfiguredWriteToolTest(unittest.TestCase):
     """settings.json `extra_write_tools` — the registration seam for host/MCP
     file-writing tools whose names are not in the built-in allowlist."""

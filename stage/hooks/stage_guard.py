@@ -434,7 +434,7 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
     explicit_paths = collect_explicit_paths(payload)
     shell_write_targets: list[str] = []
     if command:
-        shell_write_targets = shell_write_paths(command)
+        shell_write_targets = shell_write_paths(command, workspace_root)
         # Deleting a governed file is a governed modification: rm/del/
         # Remove-Item operands join the write-target stream and pass the same
         # registration/promotion/governance gates.

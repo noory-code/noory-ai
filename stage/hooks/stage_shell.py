@@ -28,7 +28,6 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
 # — FIND_PRE_PATH_CLUSTER_RE matches any such cluster.
 FIND_PRE_PATH_FLAGS = {"-H", "-L", "-P", "-E", "-X", "-x", "-s", "-d"}
 FIND_PRE_PATH_CLUSTER_RE = re.compile(r"-[HLPEXdsx]+")
-REDIRECT_RE = re.compile(r"(?:^|[\s])(?:>>|[0-9]?>)\s*(?P<path>[^&|;\s]+)")
 SHELL_SEPARATORS = {"&&", "||", ";", "|", "&", "\n"}
 
 
@@ -75,7 +74,7 @@ def _parse_heredoc_delimiter(command: str, pos: int) -> tuple[str, bool, int] | 
 # fd redirection, so the shlex pass never treats them as real separators. They
 # are private-use code points that cannot occur in a real command; the path and
 # name extractors restore them via _restore_sentinels before use.
-_SENTINELS = {";": "", "&": "", "|": ""}
+_SENTINELS = {";": "", "&": "", "|": "", "<": "", ">": ""}
 _SENTINEL_REVERSE = {ord(v): k for k, v in _SENTINELS.items()}
 
 
@@ -268,8 +267,12 @@ def _walk_cd(anchor: Path, target: str, created: set[Path] | None = None) -> Pat
     return cursor
 
 
-REDIRECT_OPERATOR_RE = re.compile(r"^(?:\d*(?:>>?|<)|&>>?|>&|<<<?)$")
-REDIRECT_ATTACHED_RE = re.compile(r"^(?:\d*(?:>>?|<)|&>>?)")
+REDIRECT_OPERATOR_RE = re.compile(r"^(?:\d*(?:>>?|<)|[&]>>?|>[&]|<<<?)$")
+REDIRECT_ATTACHED_RE = re.compile(r"^(?:\d*(?:>>?|<)|[&]>>?)")
+# The fd-redirect `&` (`&>`, `2>&1`) arrives as its SENTINEL (normalization
+# marks it so it is not a background separator), while a QUOTED `>`/`<` is a
+# different sentinel that stays data — so the redirect patterns accept the
+# `&` sentinel before a LITERAL `>` and nothing else.
 # Wrappers that can run the shell BUILTIN `cd` (`command cd x`, `builtin cd x`).
 # External-process wrappers (`nohup`, `nice`, `time`, `stdbuf`) cannot — they
 # would fail to find an external `cd`, leaving the shell put — so they are not
@@ -315,7 +318,7 @@ def _cd_operands(positional: list[str]) -> list[str]:
     return operands
 
 
-REDIRECT_INFIX_RE = re.compile(r"\d*(?:>>?|<)|&>>?")
+REDIRECT_INFIX_RE = re.compile(r"\d*(?:>>?|<)|[&]>>?")
 
 
 def _strip_redirections(tokens: list[str]) -> list[str]:
@@ -572,22 +575,28 @@ def _command_groups(
     for index, (separator, raw_group) in enumerate(entries):
         if not raw_group:
             continue
-        # Sentinels are restored now — past the separator decision, every token
-        # is a command name, flag, or path.
-        group = [_restore_sentinels(tok) for tok in raw_group]
-        # Peel leading builtin-capable wrappers (`command cd x`) so the real
-        # command is classified, and map PowerShell cwd verbs to POSIX.
+        # Groups carry their SENTINELS: a quoted/escaped operator must stay
+        # distinguishable from a real one until each consumer has classified
+        # redirects; consumers restore per token. Names classify on a
+        # restored copy. Peel leading builtin-capable wrappers
+        # (`command cd x`) so the real command is classified, and map
+        # PowerShell cwd verbs to POSIX.
+        group = list(raw_group)
         head = 0
-        while head < len(group) - 1 and Path(group[head]).name.lower() in COMMAND_WRAPPERS:
+        while head < len(group) - 1 and Path(_restore_sentinels(group[head])).name.lower() in COMMAND_WRAPPERS:
             head += 1
         group = group[head:]
-        name = POWERSHELL_CWD.get(Path(group[0]).name.lower(), Path(group[0]).name.lower())
+        head_name = Path(_restore_sentinels(group[0])).name.lower()
+        name = POWERSHELL_CWD.get(head_name, head_name)
+        # cwd-changing groups are consumed into the tracker but still yielded
+        # (with their PRE-change anchors): a redirect on the cd itself
+        # (`cd build > log`) writes where the shell was.
         if name in {"mkdir", "md"} and workspace_root is not None:
             # A later cd may enter a directory this very command creates
             # (`mkdir scratch && cd scratch && …`) — record every prefix the
             # mkdir would materialize so the tracker can follow. Extra
             # candidates only ADD possible anchors (fail closed).
-            for token in _strip_redirections(group[1:]):
+            for token in [_restore_sentinels(t) for t in _strip_redirections(list(group[1:]))]:
                 if token == "--" or token.startswith("-"):
                     continue
                 text = clean_path_text(token)
@@ -609,7 +618,8 @@ def _command_groups(
                         cursor = cursor.parent if segment == ".." else cursor / segment
                         tracker.created.add(cursor)
         if name in {"cd", "pushd", "popd"} and workspace_root is not None:
-            positional = _strip_redirections(group[1:])
+            groups.append((list(tracker.anchors), name, group))
+            positional = [_restore_sentinels(t) for t in _strip_redirections(list(group[1:]))]
             if name == "cd" and _cd_has_unknown_option(positional):
                 continue  # bash rejects the option → cwd unchanged
             pushd_no_cd = name == "pushd" and "-n" in positional
@@ -649,7 +659,8 @@ def command_deletes_stage(command: str, workspace_root: Path | None = None) -> b
             for anchor in anchors
         )
 
-    for anchors, name, group in _command_groups(command, workspace_root):
+    for anchors, name, raw_group in _command_groups(command, workspace_root):
+        group = [_restore_sentinels(tok) for tok in raw_group]
         flags = [tok for tok in group[1:] if tok.startswith("-") or tok.startswith("/")]
         # Path operands = anything not a `-` flag. A leading `/` is an ABSOLUTE
         # PATH on Unix (`/ws/.stage`), not a flag — Windows switches like `/s`
@@ -780,65 +791,108 @@ def _find_exec_hits_found(rest: list[str]) -> bool:
     return False
 
 
-def shell_write_paths(command: str) -> list[str]:
+OUT_REDIRECT_BARE_RE = re.compile(r"^(?:\d*>>?|[&]>>?)$")
+OUT_REDIRECT_ATTACHED_RE = re.compile(r"^(?:\d*>>?|[&]>>?)(?P<path>.+)$")
+
+
+# A redirect INSIDE a command substitution executes when the substitution
+# runs — scan a substitution-bearing token's text for output redirects.
+SUBSTITUTION_REDIRECT_RE = re.compile(r"(?:^|[\s(])(?:\d*>>?|&>>?)\s*(?P<path>[^&|;\s)]+)")
+
+
+def _output_redirect_targets(raw_group: list[str]) -> list[str]:
+    """OUTPUT-redirect targets among one command group's SENTINEL-carrying
+    tokens: a bare operator (`>`, `>>`, `2>`, `&>`) takes the following token;
+    an attached form (`>/dev/null`, `2>>log`) carries its own. A quoted or
+    escaped `>` is a sentinel here, so it is data, not a redirect; fd
+    duplications (`2>&1`) are not file writes. A token carrying a command
+    substitution is additionally text-scanned — its inner redirect executes
+    with the substitution. Returned targets are sentinel-restored."""
+    targets: list[str] = []
+
+    def add(raw: str) -> None:
+        restored = _restore_sentinels(raw)
+        if restored and not restored.startswith("&"):
+            targets.append(restored)
+
+    skip_next = False
+    for index, token in enumerate(raw_group):
+        if skip_next:
+            skip_next = False
+            continue
+        if OUT_REDIRECT_BARE_RE.match(token):
+            if index + 1 < len(raw_group):
+                add(raw_group[index + 1])
+            skip_next = True
+            continue
+        match = OUT_REDIRECT_ATTACHED_RE.match(token)
+        if match:
+            add(match.group("path"))
+        if "$(" in token or "`" in token:
+            for inner in SUBSTITUTION_REDIRECT_RE.finditer(_restore_sentinels(token)):
+                candidate = inner.group("path")
+                if not candidate.startswith("&"):
+                    targets.append(candidate)
+    return targets
+
+
+def _positional_operands(tokens: list[str]) -> list[str]:
+    """Non-flag operands with `--` ending option parsing."""
+    operands: list[str] = []
+    after_ddash = False
+    for token in tokens:
+        if after_ddash:
+            operands.append(token)
+        elif token == "--":
+            after_ddash = True
+        elif token.startswith("-"):
+            continue
+        else:
+            operands.append(token)
+    return operands
+
+
+def shell_write_paths(command: str, workspace_root: Path | None = None) -> list[str]:
+    """Write targets of a shell command — output-redirect targets plus cp/mv
+    destinations, tee targets, and sed -i files — rebased at every possible
+    effective cwd (fail closed; see _command_groups). Unexpanded globs and
+    variables pass through as literals (best-effort, README §Limits)."""
     paths: list[str] = []
 
-    def add(path: str) -> None:
+    def add(raw: str, anchors: list[Path]) -> None:
         # Keep `..` intact (see collect_explicit_paths) for symlink-safe resolve.
-        # Restore sentinels: a path is a real operand, not a separator boundary.
-        cleaned = clean_path_text(_restore_sentinels(path))
-        if cleaned and cleaned not in paths:
-            paths.append(cleaned)
+        text = clean_path_text(raw)
+        if not text:
+            return
+        try:
+            absolute = Path(text).expanduser().is_absolute()
+        except (RuntimeError, ValueError):
+            absolute = False
+        candidates = [text] if absolute or not anchors else [
+            str(anchor / text) for anchor in anchors
+        ]
+        for candidate in candidates:
+            if candidate not in paths:
+                paths.append(candidate)
 
-    for match in REDIRECT_RE.finditer(command):
-        add(match.group("path"))
-
-    tokens = shell_tokens(command)
-    index = 0
-    while index < len(tokens):
-        token = tokens[index]
-        command_name = Path(token).name
-
-        if command_name in {"cp", "mv"}:
-            args: list[str] = []
-            cursor = index + 1
-            while cursor < len(tokens) and tokens[cursor] not in SHELL_SEPARATORS:
-                current = tokens[cursor]
-                if not current.startswith("-"):
-                    args.append(current)
-                cursor += 1
-            if len(args) >= 2:
-                add(args[-1])
-            index = cursor
-            continue
-
-        if command_name == "tee":
-            cursor = index + 1
-            while cursor < len(tokens) and tokens[cursor] not in SHELL_SEPARATORS:
-                current = tokens[cursor]
-                if not current.startswith("-"):
-                    add(current)
-                cursor += 1
-            index = cursor
-            continue
-
-        if command_name == "sed":
-            cursor = index + 1
-            in_place = False
-            args: list[str] = []
-            while cursor < len(tokens) and tokens[cursor] not in SHELL_SEPARATORS:
-                current = tokens[cursor]
-                if current == "-i" or current.startswith("-i"):
-                    in_place = True
-                elif not current.startswith("-"):
-                    args.append(current)
-                cursor += 1
-            if in_place and args:
-                add(args[-1])
-            index = cursor
-            continue
-
-        index += 1
+    for anchors, name, raw_group in _command_groups(command, workspace_root):
+        for target in _output_redirect_targets(raw_group):
+            add(target, anchors)
+        positional = [_restore_sentinels(t) for t in _strip_redirections(list(raw_group[1:]))]
+        operands = _positional_operands(positional)
+        if name in {"cp", "mv"} and len(operands) >= 2:
+            add(operands[-1], anchors)
+        elif name == "tee":
+            for operand in operands:
+                add(operand, anchors)
+        elif name == "sed":
+            in_place = any(
+                token == "-i" or (token.startswith("-i") and token != "-i")
+                for token in positional
+                if token.startswith("-")
+            )
+            if in_place and operands:
+                add(operands[-1], anchors)
 
     return paths
 
@@ -856,12 +910,12 @@ def shell_delete_paths(command: str, workspace_root: Path) -> list[str]:
     unexpanded globs/variables pass through as literals (best-effort, see
     hooks/README.md §Limits)."""
     paths: list[str] = []
-    for anchors, name, group in _command_groups(command, workspace_root):
+    for anchors, name, raw_group in _command_groups(command, workspace_root):
         if name not in DELETE_COMMANDS:
             continue
         operands: list[str] = []
         after_ddash = False
-        for token in _strip_redirections(group[1:]):
+        for token in [_restore_sentinels(t) for t in _strip_redirections(list(raw_group[1:]))]:
             if after_ddash:
                 operands.append(token)
             elif token == "--":
