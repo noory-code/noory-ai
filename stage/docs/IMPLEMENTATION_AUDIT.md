@@ -4,9 +4,9 @@
 
 ## 결론
 
-현재 구현은 Stage의 첫 실행 루프를 만든 상태다. 설계도 전체가 구현 완료된 상태는 아니다.
+현재 구현은 아래 `구현된 범위` 표에 열거된 전 영역을 포함한다 — 산출물 구조, 초기화, 감사 CLI, 진입 스킬, 호스트 훅, 계층·계보, 결정 기록, 다중 세션 런타임, 의미 기반 감사, 소비측 컨텍스트 활용까지.
 
-완료된 범위는 `.stage/` 산출물 구조, 초기화 헬퍼, 진입 스킬, 감사 CLI, Claude 호환 훅, 기본 완료 게이트다.
+남은 격차는 Phase A의 P2(의사결정 통제 대부분이 훅 게이트가 아니라 문서·스킬 지침)뿐이다.
 
 ## 구현된 범위
 
@@ -46,7 +46,7 @@
 |---|:---:|---|---|---|---|
 | P1 | ✅ Closed | ~~Codex에서 런타임 훅 강제가 검증되지 않았다.~~ | Codex hooks 기능이 플러그인 `hooks/hooks.json`을 자동 발견·실행(별도 어댑터 불필요, 소스+`hooks/list` 실측). 호환 버그 3건 수정 후 사용자 TUI 신뢰 승인, e2e로 deny→등재→허용→Stop 요약 전 사이클 확인. e2e 중 라이브 버그 2건(빈 parent 정규식·패치 본문 셸 해석) 추가 수정. | — | 계약 정본 = `hooks/README.md` §Host contract. 잔여 배포 결정(마켓플레이스 등재)은 사용자 몫. |
 | P2 | 🟡 Gap | 의사결정 통제 대부분이 문서/스킬 지침이고 자동 게이트가 아니다. | 설계도는 질문, 실행, 중단, 단순화, 추상화, 승격, 회고 게이트를 정의한다. 현재 훅은 명확한 파일/명령 위반만 차단한다. | 원칙 적용이 모델 자율성에 남아 장기 프로젝트 일관성이 약해질 수 있다. | `stage-decision` 결과를 구조화된 기록으로 남기고, 필수 필드 누락을 훅 또는 CLI로 검증한다. |
-| P3 | 🟡 Gap | SessionStart 컨텍스트 주입이 얕다. | 현재 상태, 진행 작업, 검토 대기, 이전 세션만 주입한다. | `past/canon`, `past/model`, `future`, `operations`를 충분히 읽지 못해 상위 목적 판단이 약해진다. | 컨텍스트 예산 규칙을 만들고 `past` 정본과 열린 질문을 우선순위 기반으로 주입한다. |
+| P3 | ✅ Closed | ~~SessionStart 컨텍스트 주입이 얕다.~~ | P26이 열린 질문 최신 3건 + `status: selected` 백로그 3건 주입으로, P27이 호스트 지시 인벤토리 + use-and-challenge 지시문 주입으로 잔여를 해소함. | — | 주입 계약 = `hooks/README.md` §Runtime concurrency, `operations/before.md`/`during.md`, stage-decision Truth Gate. |
 | P4 | ✅ Closed | ~~SSOT/MECE 위반 검출이 아직 기본 구조 감사에 머문다.~~ | 감사 CLI에 3검사 추가 — SSOT001(전 레코드 스캔에서 중복 `id` error; W 항목 디렉터리 내 중복은 WORK007 소유), OWN001(ID 접두 → 거처 카탈로그(`operations/artifacts.md` §Artifact catalog와 lock-step) 밖에 사는 레코드 error), ROUTE001/002(존재하는 산출물 거처·operations 문서가 `index.md` 라우팅에 없으면 warning). | — | 의미 판정(내용 중복 등)은 결정적 규칙 밖 — 범위에서 제외하고 문서화. |
 | P5 | ✅ Closed | ~~회고 산출물의 단위와 저장 위치가 아직 약하다.~~ | `operations/retrospective.md`는 규칙이고, 실제 작업별 회고 파일 구조는 없었다. | “항상 회고” 원칙이 기록 양식 없이 약해질 수 있었다. | `present/work/retrospectives/` 구조로 보정함. |
 | P6 | ✅ Closed | ~~훅 판단이 Markdown 표의 상태 문자열에 의존한다.~~ | `완료`, `통과`, `보류` 같은 문자열을 정규식으로 해석했다. | 표현이 달라지면 게이트가 열리거나 닫히는 오판 가능성이 있었다. | `present/work/items/*.md` 프론트매터 enum으로 보정함. |

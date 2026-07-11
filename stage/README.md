@@ -30,17 +30,14 @@ Stage ships one hook set in `hooks/` that both Claude Code and Codex execute (Co
 
 - `SessionStart`: injects the current Stage context, core principles, and the artifact map.
 - `PreToolUse`: blocks `.stage` destruction, unregistered governed-file modification, hierarchy violations, and `past` modification without a promotion intent; reminds once per question to derive answers from purpose and principles first.
+- `PostToolUse`: completes two-phase intent reservations after the tool actually ran (never blocks).
 - `Stop`: writes a session summary the next run picks up.
 
 On Codex, hooks run only after a one-time trust approval in the interactive TUI (`/hooks`) — until then they are discovered but silently excluded, including in `codex exec`. Host contract details: `hooks/README.md`.
 
 ## Skills
 
-- `stage-init`: creates or repairs the `.stage/` harness.
-- `stage-audit`: audits the `.stage/` structure and work status.
-- `stage-decision`: applies decision gates at choice points.
-- `stage-retrospective`: closes work with a verification-linked retrospective.
-- `stage-discuss`: runs asynchronous file-based discussions between LLM sessions via `.discuss/`.
+Five entry skills: `stage-init`, `stage-audit`, `stage-decision`, `stage-retrospective`, `stage-discuss`. Descriptions: `skills/README.md`.
 
 ## CLI helpers
 

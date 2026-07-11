@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.12.1 — 2026-07-12
+
+Documentation-accuracy pass (no runtime behavior change):
+
+- PostToolUse hook coverage synced across docs: root `README.md`'s Hooks
+  section, the project-injected `templates/project-stage/operations/hooks.md`
+  (plus its delete-gate wording), and both `docs/BLUEPRINT.md` hook diagrams
+  (§10, §15) now include the `PostToolUse` hook shipped in `hooks/hooks.json`
+  since 0.12.0.
+- Evergreen violation removed from `hooks/README.md`: a past-review-round
+  citation ("Codex round-10 review, Low") is dropped from the doc body —
+  history belongs in CHANGELOG/commit records, not doc bodies.
+- `docs/IMPLEMENTATION_AUDIT.md`: P3's stale "Gap" status is closed (it
+  conflicted with P26's own claim of having resolved it), and the conclusion
+  now matches the scope actually listed in the 구현된 범위 table instead of
+  undercounting it.
+- `README.md`/`skills/README.md` skill descriptions had drifted between the
+  two files; `skills/README.md` is now the sole canonical wording and
+  `README.md` links to it instead of restating.
+
 ## 0.12.0 — 2026-07-11
 
 The two items the re-review debate deliberately split out

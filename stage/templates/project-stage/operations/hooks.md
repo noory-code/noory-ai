@@ -6,6 +6,7 @@ This document owns the Stage hook rules.
 
 - `SessionStart` injects the Stage context and completion gates.
 - `PreToolUse` blocks executions that are likely rule violations before they run.
+- `PostToolUse` completes two-phase intent reservations after the tool actually ran (never blocks).
 - `Stop` leaves a summary the next session can pick up.
 - Hooks assist the Stage core principles; they do not replace artifact promotion itself.
 
@@ -14,6 +15,7 @@ This document owns the Stage hook rules.
 - Deleting `.stage` entirely.
 - Modifying `.stage/past/` without a pending intent in `.stage/.runtime/intents/`.
 - Modifying source files not registered in `present/work/items/`.
+- Deleting a registered source file (`rm`/`del`/`erase`/`Remove-Item`/`ri`) without the same registration a write would need.
 - OS-specific executable scripts inside `.stage`.
 
 ## Registration gate scope
@@ -28,7 +30,7 @@ Writing a work item whose `parent` does not exist, points at itself, or opens a 
 
 Before `AskUserQuestion` reaches the user, the hook reminds once per question: derive the answer from the work item's Purpose and `past/canon/principles.md` first; ask only when the decision genuinely belongs to the user. Re-asking after the reminder passes.
 
-Shell write detection is best-effort. The default detection targets are redirects, `cp`, `mv`, `tee`, and `sed -i`. File writes inside inline interpreters are outside the detection range.
+Shell write detection is best-effort. The default detection targets are redirects, `cp`, `mv`, `tee`, and `sed -i`, plus delete operands of `rm`/`del`/`erase`/`Remove-Item`/`ri`. File writes inside inline interpreters are outside the detection range.
 
 ## Promotion intent
 

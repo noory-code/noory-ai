@@ -305,6 +305,7 @@ flowchart LR
   DecisionAxis --> HookLayer
   HookLayer --> SessionStart["SessionStart\nStage 문맥 주입"]
   HookLayer --> PreToolUse["PreToolUse\n규칙 위반 차단"]
+  HookLayer --> PostToolUse["PostToolUse\n승격 의도 2단계 완료"]
   HookLayer --> Stop["Stop\n세션 요약 기록"]
 
   GlobalTime --> StableExecution["지속 가능한 수행"]
@@ -462,18 +463,21 @@ flowchart TB
 
   Event --> SessionStart["SessionStart"]
   Event --> PreToolUse["PreToolUse"]
+  Event --> PostToolUse["PostToolUse"]
   Event --> Stop["Stop"]
 
   SessionStart --> Inject["Stage 문맥 주입\npast / present / future\n완료 게이트"]
 
-  PreToolUse --> DeleteGate["삭제 게이트\n.stage 전체 삭제 차단"]
+  PreToolUse --> DeleteGate["삭제 게이트\n.stage 전체 삭제 차단\n등재 파일 삭제도 쓰기와 동일 게이트"]
   PreToolUse --> RegistrationGate["등재 게이트\n거버넌스 대상 수정 전 작업 항목 필요\n광역 기본 — 거의 모든 파일"]
   PreToolUse --> GovernanceGate["거버넌스 게이트\nsettings.json 파손 시 fail-closed"]
   PreToolUse --> HierarchyGate["계층 게이트\n부모 부재 / 자기 참조 /\n닫힌 부모 아래 자식 차단"]
-  PreToolUse --> PromotionGate["승격 게이트\n대역 외 승격 의도 + promotes 바인딩"]
+  PreToolUse --> PromotionGate["승격 게이트\n대역 외 승격 의도 + promotes 바인딩\nrename 예약 (1단계)"]
   PreToolUse --> CommitGate["커밋 게이트\nstaged / git add / commit -a 대상 연결"]
   PreToolUse --> PortabilityGate["이식성 게이트\nOS 전용 스크립트 차단"]
   PreToolUse --> QuestionReminder["질문 게이트\n질문 전 목적·원칙 상기\n질문당 1회 리마인드"]
+
+  PostToolUse --> IntentComplete["승격 의도 완료 (2단계)\nrename 예약을 확정, 차단 없음"]
 
   Audit["Audit CLI\n템플릿 / enum / 색인 / archive / 계층 / 계보 /\n결정 원칙 인용 / 거버넌스 / 정본 중복 /\n소유 경계 / 라우팅 검사"]
 
@@ -488,6 +492,7 @@ flowchart TB
   CommitGate --> Execution
   PortabilityGate --> Execution
   QuestionReminder --> Execution
+  IntentComplete --> Execution
   Audit --> Execution
   Summary --> Execution
 ```
