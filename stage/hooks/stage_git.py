@@ -53,11 +53,6 @@ def iter_git_commands(command: str) -> list[tuple[str, list[str]]]:
     return commands
 
 
-def git_subcommand(command: str) -> str:
-    commands = iter_git_commands(command)
-    return commands[0][0] if commands else ""
-
-
 def command_has_git_commit(command: str) -> bool:
     return any(subcommand == "commit" for subcommand, _args in iter_git_commands(command))
 

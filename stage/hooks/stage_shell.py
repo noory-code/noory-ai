@@ -430,17 +430,6 @@ class _CwdTracker:
         self.anchors = _dedup_dirs(old + rebased if conditional else rebased)
 
 
-def _contains_stage(target: Path, stage_real: Path) -> bool:
-    """Whether recursively deleting `target` removes the Stage root — target IS
-    the Stage root or an ANCESTOR of it (`rm -rf .`, `find . -delete` from the
-    workspace traverse into `.stage` and erase it with everything else)."""
-    try:
-        stage_real.relative_to(target)
-        return True
-    except ValueError:
-        return False
-
-
 def _targets_stage_root(
     arg: str,
     workspace_root: Path | None = None,
