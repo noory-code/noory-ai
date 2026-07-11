@@ -17,8 +17,15 @@ TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
 HOOK_ROOT = PLUGIN_ROOT / "hooks"
 if str(HOOK_ROOT) not in sys.path:
     sys.path.insert(0, str(HOOK_ROOT))
+# Sibling modules load by bare name; file-path loads (tests) lack the script
+# directory on sys.path, so insert it the same way the hooks bootstrap does.
+SCRIPT_ROOT = Path(__file__).resolve().parent
+if str(SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_ROOT))
 
 import stage_guard  # noqa: E402
+import stage_records  # noqa: E402
+from stage_records import AuditedItem, RecordGraph  # noqa: E402
 
 
 STATUS_VALUES = stage_guard.WORK_OPEN_STATUSES | stage_guard.WORK_FINAL_STATUSES
@@ -82,13 +89,6 @@ class Finding:
         return data
 
 
-@dataclass(frozen=True)
-class AuditedItem:
-    item: stage_guard.WorkItem
-    fields: dict[str, str]
-    location: str
-
-
 class Audit:
     def __init__(self, project_root: Path) -> None:
         self.project_root = project_root
@@ -121,18 +121,15 @@ class Audit:
             return self.findings
 
         self.audit_template_files()
-        items = self.audit_work_items()
-        work_ids = {entry.item.item_id for entry in items}
-        self.work_source_by_id = {
-            entry.item.item_id: (entry.fields.get("source") or "").strip() for entry in items
-        }
+        graph = RecordGraph(self.stage_root)
+        items = self.audit_work_items(graph)
         self.audit_hierarchy(items)
         self.audit_work_indexes(items)
-        backlog_ids = self.audit_backlog_items(work_ids)
-        self.audit_lineage(items, backlog_ids)
-        self.audit_bidirectional_lineage(items)
-        self.audit_orphan_records(work_ids)
-        self.audit_state_links(work_ids)
+        self.audit_backlog_items(graph)
+        self.audit_lineage(graph)
+        self.audit_bidirectional_lineage(graph)
+        self.audit_orphan_records(graph)
+        self.audit_state_links(graph)
         self.audit_family_shapes()
         self.audit_record_ownership()
         self.audit_routing()
@@ -166,49 +163,21 @@ class Audit:
                     target,
                 )
 
-    def audit_work_items(self) -> list[AuditedItem]:
-        roots = [
-            ("present", self.stage_root / "present" / "work" / "items"),
-            ("archive", self.stage_root / "past" / "work" / "archive" / "items"),
-        ]
-        audited: list[AuditedItem] = []
+    def audit_work_items(self, graph: RecordGraph) -> list[AuditedItem]:
+        # Duplicate detection is scan-order policy: the first occurrence owns
+        # the id, every later one reports both paths.
         seen_ids: dict[str, Path] = {}
+        for audited_item in graph.work:
+            self.audit_work_item_fields(audited_item)
+            item = audited_item.item
+            previous = seen_ids.get(item.item_id)
+            if previous is not None:
+                self.error("WORK007", f"Duplicate work item id: {item.item_id}", item.path)
+                self.error("WORK007", f"Duplicate work item id: {item.item_id}", previous)
+            else:
+                seen_ids[item.item_id] = item.path
 
-        for location, root in roots:
-            for path in sorted(root.glob("*.md")):
-                if path.name in {"README.md", "_template.md"}:
-                    continue
-                fields = stage_guard.parse_frontmatter(path)
-                item = self.item_from_fields(path, fields)
-                audited_item = AuditedItem(item=item, fields=fields, location=location)
-                audited.append(audited_item)
-                self.audit_work_item_fields(audited_item)
-
-                previous = seen_ids.get(item.item_id)
-                if previous is not None:
-                    self.error("WORK007", f"Duplicate work item id: {item.item_id}", path)
-                    self.error("WORK007", f"Duplicate work item id: {item.item_id}", previous)
-                else:
-                    seen_ids[item.item_id] = path
-
-        return audited
-
-    def item_from_fields(self, path: Path, fields: dict[str, str]) -> stage_guard.WorkItem:
-        item_id = fields.get("id") or path.stem
-        return stage_guard.WorkItem(
-            path=path,
-            item_id=item_id,
-            title=fields.get("title") or path.stem,
-            status=(fields.get("status") or "").lower(),
-            verification=(fields.get("verification") or "").lower(),
-            retrospective=(fields.get("retrospective") or "").lower(),
-            promotion=(fields.get("promotion") or "").lower(),
-            scope=stage_guard.split_scope(fields.get("scope", "")),
-            promotes=stage_guard.split_scope(fields.get("promotes", "")),
-            retrospective_ref=(fields.get("retrospective_ref") or "").strip(),
-            kind=(fields.get("kind") or "").strip().lower(),
-            parent=(fields.get("parent") or "").strip(),
-        )
+        return graph.work
 
     def audit_work_item_fields(self, audited_item: AuditedItem) -> None:
         item = audited_item.item
@@ -267,7 +236,9 @@ class Audit:
             )
             return
 
-        retro_path = self.resolve_retrospective_ref(raw_ref, audited_item.location)
+        retro_path = stage_records.resolve_retrospective_ref(
+            self.project_root, self.stage_root, raw_ref, audited_item.location
+        )
         if not retro_path.exists():
             self.error("WORK012", f"retrospective_ref file not found: {raw_ref}", item.path)
             return
@@ -281,24 +252,6 @@ class Audit:
                 retro_path,
             )
 
-    def resolve_retrospective_ref(self, raw_ref: str, location: str = "present") -> Path:
-        ref = stage_guard.normalize_path_text(raw_ref)
-        if ref.startswith(".stage/"):
-            return self.project_root / ref
-        if ref.startswith("present/work/retrospectives/") or ref.startswith("past/work/archive/retrospectives/"):
-            return self.stage_root / ref
-        local_root = (
-            self.stage_root / "past" / "work" / "archive"
-            if location == "archive"
-            else self.stage_root / "present" / "work"
-        )
-        if ref.startswith("retrospectives/"):
-            return local_root / ref
-        if "/" in ref:
-            return self.stage_root / ref
-        filename = ref if ref.endswith(".md") else f"{ref}.md"
-        return local_root / "retrospectives" / filename
-
     def audit_decision_refs(self, audited_item: AuditedItem) -> None:
         item = audited_item.item
         raw_refs = audited_item.fields.get("decision_refs", "").strip()
@@ -306,7 +259,9 @@ class Audit:
             return
 
         for raw_ref in stage_guard.split_scope(raw_refs):
-            decision_path = self.resolve_decision_ref(raw_ref)
+            decision_path = stage_records.resolve_decision_ref(
+                self.project_root, self.stage_root, raw_ref
+            )
             if not decision_path.exists():
                 self.error("WORK014", f"decision_refs file not found: {raw_ref}", item.path)
                 continue
@@ -342,19 +297,6 @@ class Audit:
                 "Decision record cites no principle from past/canon/principles.md.",
                 decision_path,
             )
-
-    def resolve_decision_ref(self, raw_ref: str) -> Path:
-        ref = stage_guard.normalize_path_text(raw_ref)
-        if ref.startswith(".stage/"):
-            return self.project_root / ref
-        if ref.startswith("present/work/decisions/"):
-            return self.stage_root / ref
-        if ref.startswith("decisions/"):
-            return self.stage_root / "present" / "work" / ref
-        if "/" in ref:
-            return self.stage_root / ref
-        filename = ref if ref.endswith(".md") else f"{ref}.md"
-        return self.stage_root / "present" / "work" / "decisions" / filename
 
     def audit_hierarchy(self, audited_items: list[AuditedItem]) -> None:
         by_id = {entry.item.item_id: entry for entry in audited_items}
@@ -459,25 +401,11 @@ class Audit:
         linked_ids = set(ITEM_LINK_RE.findall(text))
         return linked_ids & known_ids, linked_ids - known_ids
 
-    def audit_backlog_items(self, work_ids: set[str]) -> set[str]:
-        backlog_root = self.stage_root / "future" / "backlog" / "items"
-        if not backlog_root.exists():
-            return set()
-
-        entries: dict[str, dict[str, str]] = {}
-        paths: dict[str, Path] = {}
-        for path in sorted(backlog_root.glob("*.md")):
-            if path.name in {"README.md", "_template.md"}:
-                continue
-            fields = stage_guard.parse_frontmatter(path)
-            if not fields:
-                # Legacy body-only backlog items are not audited.
-                continue
-            item_id = (fields.get("id") or "").strip() or path.stem
-            entries[item_id] = fields
-            paths[item_id] = path
-
-            status = (fields.get("status") or "").strip().lower()
+    def audit_backlog_items(self, graph: RecordGraph) -> None:
+        for node in graph.backlog:
+            path = node.path
+            item_id = node.record_id
+            status = (node.fields.get("status") or "").strip().lower()
             if status not in BACKLOG_STATUS_VALUES:
                 self.error("BACKLOG001", f"Unknown backlog status: {status or 'missing'}", path)
             if not (path.stem == item_id or path.stem.startswith(item_id + "-")):
@@ -487,142 +415,101 @@ class Audit:
                     path,
                 )
 
-            realized_by = (fields.get("realized_by") or "").strip()
+            realized_by = (node.fields.get("realized_by") or "").strip()
             if status == "selected" and not realized_by:
                 self.warning(
                     "BACKLOG004",
                     f"Selected backlog item has no realized_by work item: {item_id}",
                     path,
                 )
-            if realized_by and realized_by not in work_ids:
+            if realized_by and realized_by not in graph.work_ids:
                 self.error(
                     "BACKLOG005",
                     f"realized_by work item not found: {realized_by}",
                     path,
                 )
 
-        for item_id, fields in entries.items():
-            parent_id = (fields.get("parent") or "").strip()
-            if parent_id and parent_id not in entries:
+        for node in graph.backlog_by_id.values():
+            parent_id = (node.fields.get("parent") or "").strip()
+            if parent_id and parent_id not in graph.backlog_by_id:
                 self.error(
                     "BACKLOG002",
                     f"Parent backlog item not found: {parent_id}",
-                    paths[item_id],
+                    node.path,
                 )
-        self.backlog_entries = entries
-        self.backlog_paths = paths
-        return set(entries)
 
-    def audit_bidirectional_lineage(self, audited_items: list[AuditedItem]) -> None:
+    def audit_bidirectional_lineage(self, graph: RecordGraph) -> None:
         """B↔W must point at EACH OTHER, not merely both exist — a one-sided
         link means the lineage graph silently disagrees with itself."""
-        entries = getattr(self, "backlog_entries", {})
-        paths = getattr(self, "backlog_paths", {})
-        source_by_id = getattr(self, "work_source_by_id", {})
-        for entry in audited_items:
-            source = (entry.fields.get("source") or "").strip()
-            if not source or source not in entries:
+        for edge in graph.edges("work", "source"):
+            if not edge.ref or edge.ref not in graph.backlog_by_id:
                 continue
-            back = (entries[source].get("realized_by") or "").strip()
-            if back != entry.item.item_id:
+            back = (graph.backlog_by_id[edge.ref].fields.get("realized_by") or "").strip()
+            if back != edge.src_id:
                 self.error(
                     "WORK023",
-                    f"Lineage is one-sided: work item declares source {source}, but that backlog "
+                    f"Lineage is one-sided: work item declares source {edge.ref}, but that backlog "
                     f"item's realized_by is {back or 'empty'}.",
-                    entry.item.path,
+                    edge.src_path,
                 )
-        for backlog_id, fields in entries.items():
-            realized_by = (fields.get("realized_by") or "").strip()
-            if not realized_by or realized_by not in source_by_id:
+        for node in graph.backlog_by_id.values():
+            realized_by = (node.fields.get("realized_by") or "").strip()
+            if not realized_by or realized_by not in graph.work_source_by_id:
                 continue
-            if source_by_id.get(realized_by) != backlog_id:
+            if graph.work_source_by_id.get(realized_by) != node.record_id:
                 self.error(
                     "BACKLOG006",
                     f"Lineage is one-sided: backlog item declares realized_by {realized_by}, but "
-                    f"that work item's source is {source_by_id.get(realized_by) or 'empty'}.",
-                    paths.get(backlog_id, self.stage_root),
+                    f"that work item's source is {graph.work_source_by_id.get(realized_by) or 'empty'}.",
+                    node.path,
                 )
 
-    def audit_orphan_records(self, work_ids: set[str]) -> None:
+    def audit_orphan_records(self, graph: RecordGraph) -> None:
         """Every decision and retrospective record is validated on its own —
         not only when a work item happens to reference it — so an orphan with a
         missing `work_item`, bad status, or no principle citation is caught."""
-        decision_dirs = (self.stage_root / "present" / "work" / "decisions",)
-        for family_root in decision_dirs:
-            if not family_root.exists():
-                continue
-            for path in sorted(family_root.glob("*.md")):
-                if path.name in {"README.md", "_template.md"}:
-                    continue
-                fields = stage_guard.parse_frontmatter(path)
-                if not fields:
-                    continue
-                work_item = (fields.get("work_item") or "").strip()
-                if not work_item or work_item not in work_ids:
-                    self.error(
-                        "DECISION001",
-                        f"Decision record work_item references a missing work item: {work_item or 'empty'}",
-                        path,
-                    )
-                status = (fields.get("status") or "").strip().lower()
-                if status not in DECISION_STATUS_VALUES:
-                    self.error(
-                        "WORK016",
-                        f"Unknown decision record status: {status or 'missing'}",
-                        path,
-                    )
-                self.audit_decision_principles(path)
-
-        retro_dirs = (
-            self.stage_root / "present" / "work" / "retrospectives",
-            self.stage_root / "past" / "work" / "archive" / "retrospectives",
-        )
-        for family_root in retro_dirs:
-            if not family_root.exists():
-                continue
-            for path in sorted(family_root.glob("*.md")):
-                if path.name in {"README.md", "_template.md"}:
-                    continue
-                fields = stage_guard.parse_frontmatter(path)
-                if not fields:
-                    continue
-                work_item = (fields.get("work_item") or "").strip()
-                if not work_item or work_item not in work_ids:
-                    self.error(
-                        "RETRO001",
-                        f"Retrospective work_item references a missing work item: {work_item or 'empty'}",
-                        path,
-                    )
-
-    def audit_lineage(self, audited_items: list[AuditedItem], backlog_ids: set[str]) -> None:
-        for entry in audited_items:
-            source = (entry.fields.get("source") or "").strip()
-            if source and source not in backlog_ids:
+        for node in graph.decisions:
+            work_item = (node.fields.get("work_item") or "").strip()
+            if not work_item or work_item not in graph.work_ids:
                 self.error(
-                    "WORK020",
-                    f"source backlog item not found: {source}",
-                    entry.item.path,
+                    "DECISION001",
+                    f"Decision record work_item references a missing work item: {work_item or 'empty'}",
+                    node.path,
+                )
+            status = (node.fields.get("status") or "").strip().lower()
+            if status not in DECISION_STATUS_VALUES:
+                self.error(
+                    "WORK016",
+                    f"Unknown decision record status: {status or 'missing'}",
+                    node.path,
+                )
+            self.audit_decision_principles(node.path)
+
+        for edge in graph.edges("retrospective", "work_item"):
+            if not edge.ref or edge.ref not in graph.work_ids:
+                self.error(
+                    "RETRO001",
+                    f"Retrospective work_item references a missing work item: {edge.ref or 'empty'}",
+                    edge.src_path,
                 )
 
-    def audit_state_links(self, work_ids: set[str]) -> None:
-        state_root = self.stage_root / "present" / "state"
-        for family in ("observations", "questions", "assumptions", "risks"):
-            family_root = state_root / family
-            if not family_root.exists():
-                continue
-            for path in sorted(family_root.glob("*.md")):
-                if path.name in {"README.md", "_template.md"}:
-                    continue
-                fields = stage_guard.parse_frontmatter(path)
-                if not fields:
-                    continue
-                for ref in stage_guard.split_scope(fields.get("work_items", "")):
-                    if ref not in work_ids:
-                        self.error(
-                            "STATE001",
-                            f"work_items references a missing work item: {ref}",
-                            path,
-                        )
+    def audit_lineage(self, graph: RecordGraph) -> None:
+        for edge in graph.edges("work", "source"):
+            if edge.ref and edge.ref not in graph.backlog_ids:
+                self.error(
+                    "WORK020",
+                    f"source backlog item not found: {edge.ref}",
+                    edge.src_path,
+                )
+
+    def audit_state_links(self, graph: RecordGraph) -> None:
+        for edge in graph.edges("state", "work_items", multi=True):
+            if edge.ref not in graph.work_ids:
+                self.error(
+                    "STATE001",
+                    f"work_items references a missing work item: {edge.ref}",
+                    edge.src_path,
+                )
 
     def audit_family_shapes(self) -> None:
         required = {
