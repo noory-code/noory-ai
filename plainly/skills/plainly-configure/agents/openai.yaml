@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plainly Settings"
+  short_description: "Choose Plainly profiles and custom style files"
+  default_prompt: "Use $plainly-configure to show the available writing styles."

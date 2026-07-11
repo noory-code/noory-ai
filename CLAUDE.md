@@ -11,6 +11,7 @@ noory-ai/
 ├── evonest/            — Autonomous code evolution engine
 ├── rag/                — Project-scoped GraphRAG plugin (uv project in server/)
 ├── stage/              — Durable execution harness (plain stdlib — no uv; hooks run on any host python3 ≥3.9)
+├── plainly/            — Selectable response-style hooks (plain stdlib — no uv; Claude + Codex)
 ├── flutter-cask/       — Flutter package guide skills
 └── pencil_m3_flutter/  — Flutter M3 design system automation
 ```
@@ -27,6 +28,9 @@ Novel AI's canonical public design documents live at
 workspace mirrors of those public contracts.
 
 **Stage only:** test with `python3 -m unittest discover -s stage/hooks/tests -q` and `python3 -m unittest discover -s stage/scripts/tests -q` (no uv/mypy/ruff targets).
+
+**Plainly only:** test with `python3 -m unittest discover -s plainly/tests -q` from the repository
+root (no uv/mypy/ruff targets).
 
 ## Commands
 
@@ -95,8 +99,8 @@ uv run python -m distill  # run MCP server
 
 ### Plugin Changes
 
-- When any file inside a plugin directory (`evonest/`, `rag/`, `stage/`, `flutter-cask/`, `pencil_m3_flutter/`) is modified:
-  1. Bump `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for features/refactors) — `stage/` also carries `.codex-plugin/plugin.json`; bump both
+- When any file inside a plugin directory (`evonest/`, `rag/`, `stage/`, `plainly/`, `flutter-cask/`, `pencil_m3_flutter/`) is modified:
+  1. Bump `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for features/refactors) — `stage/` and `plainly/` also carry `.codex-plugin/plugin.json`; bump both
   2. Add entry to `CHANGELOG.md`
   3. Commit + push in one step
 

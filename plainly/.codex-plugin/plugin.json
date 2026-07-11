@@ -1,0 +1,37 @@
+{
+  "name": "plainly",
+  "version": "0.1.0",
+  "description": "Inject selectable plain-language response styles before each AI turn.",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/plainly",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "keywords": [
+    "writing-style",
+    "plain-language",
+    "concise",
+    "hooks"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Plainly",
+    "shortDescription": "Clear, selectable response styles for every turn",
+    "longDescription": "Plainly injects a selected communication style immediately before the AI processes each user prompt. It includes four built-in profiles and supports user, project, environment, and external-file configuration without post-answer retries.",
+    "developerName": "noory-code",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/noory-code/noory-ai/tree/main/plainly",
+    "defaultPrompt": [
+      "Show the available Plainly styles.",
+      "Set Plainly to the brief style.",
+      "Use this custom style file with Plainly."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
