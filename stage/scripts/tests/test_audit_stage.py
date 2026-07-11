@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -645,6 +646,40 @@ class StageAuditTest(unittest.TestCase):
             findings = audit_stage.Audit(root).run()
 
         self.assertIn("WORK012", finding_codes(findings))
+
+    def test_settings_without_schema_version_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            settings = root / ".stage" / "settings.json"
+            data = json.loads(settings.read_text(encoding="utf-8"))
+            del data["schema_version"]
+            settings.write_text(json.dumps(data), encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("SCHEMA001", finding_codes(findings))
+
+    def test_settings_with_stale_schema_version_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            settings = root / ".stage" / "settings.json"
+            data = json.loads(settings.read_text(encoding="utf-8"))
+            data["schema_version"] = 0
+            settings.write_text(json.dumps(data), encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("SCHEMA001", finding_codes(findings))
+
+    def test_template_schema_version_matches_plugin_constant(self):
+        template = json.loads(
+            (audit_stage.TEMPLATE_ROOT / "settings.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            audit_stage.stage_guard.STAGE_SCHEMA_VERSION, template.get("schema_version")
+        )
 
     def test_decision_not_linked_back_is_reported(self):
         # decisions/README.md: `decision_refs` is optional, but a recorded

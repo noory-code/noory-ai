@@ -859,6 +859,20 @@ class Audit:
         if stage_guard.governance_broken(self.stage_root):
             self.error("GOV000", "settings.json is unreadable or malformed (hooks fail closed until repaired).", settings_path)
             return
+        try:
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            settings = {}
+        schema_version = settings.get("schema_version")
+        if schema_version != stage_guard.STAGE_SCHEMA_VERSION:
+            self.warning(
+                "SCHEMA001",
+                "settings.json schema_version "
+                f"`{schema_version if schema_version is not None else 'missing'}` differs from "
+                f"the plugin's contract version `{stage_guard.STAGE_SCHEMA_VERSION}` — the "
+                "harness was initialized by a different plugin generation.",
+                settings_path,
+            )
         governance = stage_guard.load_governance(self.stage_root)
         legacy_keys = [key for key in ("extensions", "paths") if isinstance(governance.get(key), list) and governance.get(key)]
         if legacy_keys:

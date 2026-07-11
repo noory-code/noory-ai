@@ -24,6 +24,7 @@ if _HOOKS_DIR not in sys.path:
 
 from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     DEFAULT_EXCLUDED_PREFIXES,
+    STAGE_SCHEMA_VERSION,
     clean_path_text,
     configured_write_tools,
     entry_relative_to_workspace,

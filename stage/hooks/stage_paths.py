@@ -205,6 +205,15 @@ def load_governance(stage_root: Path) -> dict[str, Any]:
     return governance if isinstance(governance, dict) else {}
 
 
+# Version of the `.stage` artifact/settings contract, independent of the
+# plugin release version. stage-init stamps new harnesses via the settings
+# template; preserved older settings are never overwritten — the audit warns
+# on a missing or different value instead. Bump only when the recorded
+# contract changes shape; introduce an idempotent sequential migration when a
+# second persistent transition actually exists.
+STAGE_SCHEMA_VERSION = 1
+
+
 def configured_write_tools(stage_root: Path) -> set[str]:
     """Tool names settings.json registers as additional write tools.
 

@@ -1,4 +1,5 @@
 {
+  "schema_version": 1,
   "governance": {
     "exclude_paths": [],
     "exclude_extensions": []
