@@ -1,0 +1,25 @@
+{
+  "default": "plain",
+  "profiles": {
+    "brief": {
+      "label": "Brief",
+      "description": "Give the answer and essential details with minimal wording.",
+      "file": "brief.md"
+    },
+    "plain": {
+      "label": "Plain",
+      "description": "Use clear everyday language with enough context to understand the answer.",
+      "file": "plain.md"
+    },
+    "guided": {
+      "label": "Guided",
+      "description": "Explain unfamiliar work step by step and define necessary terms.",
+      "file": "guided.md"
+    },
+    "professional": {
+      "label": "Professional",
+      "description": "Use concise, precise, and neutral workplace language.",
+      "file": "professional.md"
+    }
+  }
+}

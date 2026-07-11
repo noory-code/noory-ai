@@ -1,6 +1,6 @@
 # noory-ai
 
-Plugin collection for Claude Code — MCP servers and skill packs.
+Plugin collection for Claude Code and Codex — MCP servers, lifecycle hooks, and skill packs.
 
 ## Packages
 
@@ -59,6 +59,26 @@ Curated reference skills for Flutter development. Each skill gives Claude instan
 ```
 /plugin marketplace add noory-code/noory-ai
 /plugin install flutter-cask
+```
+
+### [Plainly](plainly/) — Clear Response Styles
+
+Injects a selected communication style immediately before Claude Code or Codex processes each user
+prompt. Includes four built-in profiles, external style files, and user/project configuration with
+no post-answer retry loop.
+
+**Claude Code:**
+
+```text
+/plugin marketplace add noory-code/noory-ai
+/plugin install plainly
+```
+
+**Codex:**
+
+```text
+codex plugin marketplace add noory-code/noory-ai
+codex plugin add plainly@noory-ai
 ```
 
 ### [Stage](stage/) — Durable Execution Harness

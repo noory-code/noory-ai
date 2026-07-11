@@ -29,6 +29,11 @@
       "name": "stage",
       "source": "./stage",
       "description": "Durable execution harness — artifact time axes, decision gates, verification, and retrospectives for LLM-led long-running projects"
+    },
+    {
+      "name": "plainly",
+      "source": "./plainly",
+      "description": "Selectable plain-language response styles injected before each Claude Code or Codex turn"
     }
   ]
 }
