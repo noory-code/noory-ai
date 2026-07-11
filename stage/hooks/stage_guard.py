@@ -73,6 +73,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     load_archive_work_items,
     load_work_items,
     parse_frontmatter,
+    parse_index_rows,
     projected_file_text,
     projected_patch_text,
     read_existing_text,

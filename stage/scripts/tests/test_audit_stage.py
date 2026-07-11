@@ -443,24 +443,96 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertEqual([], findings)
 
+    def append_archive_index(self, root: Path, item_id: str, final: str) -> None:
+        path = root / ".stage" / "past" / "work" / "archive" / "index.md"
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(f"| {item_id} | {final} | [item](items/{item_id}.md) |\n")
+
+    def archived_item(self, root: Path, **overrides) -> None:
+        fields = dict(
+            status="archived",
+            verification="passed",
+            retrospective="completed",
+            retrospective_ref="R-0001",
+            promotion="promoted",
+            location="archive",
+        )
+        fields.update(overrides)
+        self.write_work_item(root, **fields)
+        self.write_archive_retrospective(root, retro_id="R-0001", work_item="W-0001")
+
     def test_archived_item_retrospective_resolves_in_archive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.archived_item(root)
+            self.append_archive_index(root, "W-0001", "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual([], findings)
+
+    def test_archived_item_missing_from_archive_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.archived_item(root)
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("ARCHIVE001", finding_codes(findings))
+
+    def test_archive_index_final_status_must_be_terminal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.archived_item(root)
+            self.append_archive_index(root, "W-0001", "archived")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("ARCHIVE002", finding_codes(findings))
+
+    def test_archived_completed_item_requires_closed_gates(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.archived_item(root, verification="pending")
+            self.append_archive_index(root, "W-0001", "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("ARCHIVE003", finding_codes(findings))
+
+    def test_archived_rejected_item_requires_completed_retrospective(self):
+        # Rejection reasons are learning assets: rejected items archive with a
+        # completed retrospective, like completed ones.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(
                 root,
                 status="archived",
-                verification="passed",
-                retrospective="completed",
-                retrospective_ref="R-0001",
-                promotion="promoted",
+                verification="pending",
+                retrospective="pending",
+                promotion="rejected",
                 location="archive",
             )
-            self.write_archive_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.append_archive_index(root, "W-0001", "rejected")
 
             findings = audit_stage.Audit(root).run()
 
-        self.assertEqual([], findings)
+        self.assertIn("ARCHIVE003", finding_codes(findings))
+
+    def test_archive_index_row_requires_existing_item(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.append_archive_index(root, "W-9999", "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("ARCHIVE004", finding_codes(findings))
 
     def test_archived_item_retrospective_left_in_present_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:

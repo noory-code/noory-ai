@@ -130,6 +130,7 @@ class Audit:
         self.audit_bidirectional_lineage(graph)
         self.audit_orphan_records(graph)
         self.audit_state_links(graph)
+        self.audit_archive_records(graph)
         self.audit_family_shapes()
         self.audit_record_ownership()
         self.audit_routing()
@@ -509,6 +510,68 @@ class Audit:
                     "STATE001",
                     f"work_items references a missing work item: {edge.ref}",
                     edge.src_path,
+                )
+
+    def audit_archive_records(self, graph: RecordGraph) -> None:
+        """Archived items keep their transition evidence: every archived item
+        has an archive-index row whose Final status records the terminal state
+        the `archived` overwrite erased, a completed transition keeps its
+        closed gates, and every archived item keeps a completed retrospective
+        (rejection reasons are learning assets too)."""
+        index_path = self.stage_root / "past" / "work" / "archive" / "index.md"
+        final_by_id: dict[str, str] = {}
+        for cells in stage_guard.parse_index_rows(index_path):
+            if cells and cells[0].strip():
+                final_by_id.setdefault(
+                    cells[0].strip(), cells[1].strip().lower() if len(cells) > 1 else ""
+                )
+
+        archived_ids: set[str] = set()
+        for entry in graph.work:
+            if entry.location != "archive":
+                continue
+            item = entry.item
+            archived_ids.add(item.item_id)
+            final = final_by_id.get(item.item_id)
+            if final is None:
+                self.error(
+                    "ARCHIVE001",
+                    f"Archived item has no archive index row: {item.item_id}",
+                    item.path,
+                )
+            elif final not in {"completed", "rejected"}:
+                self.error(
+                    "ARCHIVE002",
+                    f"Archive index Final status must be completed or rejected: "
+                    f"{item.item_id} `{final or 'missing'}`",
+                    index_path,
+                )
+            if final == "completed":
+                open_gates = []
+                if item.verification not in stage_guard.VERIFICATION_DONE:
+                    open_gates.append(f"verification `{item.verification}`")
+                if item.promotion not in stage_guard.PROMOTION_FINAL:
+                    open_gates.append(f"promotion `{item.promotion}`")
+                if open_gates:
+                    self.error(
+                        "ARCHIVE003",
+                        "Archived completed item has open gates: " + ", ".join(open_gates),
+                        item.path,
+                    )
+            if item.retrospective not in stage_guard.RETROSPECTIVE_DONE or not item.retrospective_ref:
+                self.error(
+                    "ARCHIVE003",
+                    "Archived item has no completed retrospective "
+                    f"(rejection reasons are learning assets too): retrospective `{item.retrospective}`",
+                    item.path,
+                )
+
+        for row_id in final_by_id:
+            if row_id not in archived_ids:
+                self.error(
+                    "ARCHIVE004",
+                    f"Archive index row references a missing archived item: {row_id}",
+                    index_path,
                 )
 
     def audit_family_shapes(self) -> None:

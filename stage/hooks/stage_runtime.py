@@ -24,6 +24,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     path_targets_stage_archive,
 )
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
+    RETROSPECTIVE_DONE,
     archive_target_item_id,
     archive_target_retro_id,
     item_completion_blockers,
@@ -314,10 +315,19 @@ def intent_validation_blocker(
             return "Stage archive gate violation: an archive intent may only target `.stage/past/work/archive/`."
         item_targets = [path for path in target_paths if archive_target_item_id(path, workspace_root)]
         retro_targets = [path for path in target_paths if archive_target_retro_id(path, workspace_root)]
-        if len(item_targets) + len(retro_targets) != len(target_paths):
+        # The archive index row carries the item's final status (the transition
+        # evidence the `archived` overwrite erases), so the same intent may
+        # update it alongside the item and retrospective moves.
+        index_targets = [
+            path
+            for path in target_paths
+            if entry_relative_to_workspace(path, workspace_root)
+            == ".stage/past/work/archive/index.md"
+        ]
+        if len(item_targets) + len(retro_targets) + len(index_targets) != len(target_paths):
             return (
                 "Stage archive gate violation: archive targets must be "
-                "`items/<id>.md` or `retrospectives/<id>.md`."
+                "`items/<id>.md`, `retrospectives/<id>.md`, or the archive `index.md`."
             )
         item_ids = {archive_target_item_id(path, workspace_root) for path in item_targets}
         if item_targets and item_ids != {item.item_id}:
@@ -329,10 +339,33 @@ def intent_validation_blocker(
                     "Stage archive gate violation: the retrospectives/ target filename must match "
                     "the work item's retrospective_ref."
                 )
-        if item.status not in {"completed", "rejected", "archived"}:
+        # Location-aware status rule: a present item archives only from a
+        # closed terminal state; `archived` names a record already living in
+        # the archive (maintenance edits), never a shortcut out of present.
+        try:
+            item.path.relative_to(stage_root / "past" / "work" / "archive" / "items")
+            in_archive = True
+        except ValueError:
+            in_archive = False
+        if in_archive:
+            if item.status != "archived":
+                return (
+                    f"Stage archive gate violation: an archive-located work item must keep "
+                    f"status archived. status `{item.status}`"
+                )
+        elif item.status not in {"completed", "rejected"}:
             return (
                 f"Stage archive gate violation: work_item `{work_item_id}` status must be "
                 f"completed/rejected. status `{item.status}`"
+            )
+        # Rejection reasons are learning assets: a rejected item records its
+        # completed retrospective before archiving, like a completed one.
+        if item.status == "rejected" and (
+            item.retrospective not in RETROSPECTIVE_DONE or not item.retrospective_ref
+        ):
+            return (
+                "Stage archive gate violation: a rejected item records its completed "
+                f"retrospective (retrospective_ref) before archiving. retrospective `{item.retrospective}`"
             )
         blockers = item_completion_blockers(item) if item_is_completed(item) else []
         if blockers:

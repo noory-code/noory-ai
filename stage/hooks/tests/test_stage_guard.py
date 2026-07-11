@@ -1039,7 +1039,38 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
 
-    def test_allows_archive_intent_for_rejected_work_item(self):
+    def test_allows_archive_intent_for_rejected_item_with_retrospective(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(
+                root,
+                status="rejected",
+                verification="pending",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="rejected",
+            )
+            self.write_promotion_intent(
+                root,
+                paths=[".stage/past/work/archive/items/W-0001.md"],
+                intent_type="archive",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/past/work/archive/items/W-0001.md",
+                    "content": "# W-0001\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_blocks_archive_intent_for_rejected_item_without_retrospective(self):
+        # Rejection reasons are learning assets: rejected items record their
+        # completed retrospective before archiving, like completed ones.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_work_item(root, status="rejected", verification="pending", retrospective="pending", promotion="rejected")
@@ -1054,6 +1085,94 @@ class StageGuardTest(unittest.TestCase):
                 "tool_input": {
                     "file_path": ".stage/past/work/archive/items/W-0001.md",
                     "content": "# W-0001\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("retrospective", reason(result).lower())
+
+    def test_blocks_archive_intent_for_present_item_marked_archived(self):
+        # `archived` in present is a shortcut out of the completion gates, not
+        # a terminal state an archive intent accepts.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(root, status="archived", verification="pending", retrospective="pending", promotion="pending")
+            self.write_promotion_intent(
+                root,
+                paths=[".stage/past/work/archive/items/W-0001.md"],
+                intent_type="archive",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/past/work/archive/items/W-0001.md",
+                    "content": "# W-0001\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("completed/rejected", reason(result))
+
+    def test_allows_archive_intent_maintenance_for_archive_located_item(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(
+                root,
+                "past/work/archive/items/W-0001.md",
+                (
+                    "---\nid: W-0001\ntitle: Old work\nstatus: archived\nverification: passed\n"
+                    "retrospective: completed\nretrospective_ref: R-0001\npromotion: promoted\n"
+                    "scope:\npromotes:\n---\n# W-0001\n"
+                ),
+            )
+            self.write_promotion_intent(
+                root,
+                paths=[".stage/past/work/archive/items/W-0001.md"],
+                intent_type="archive",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/past/work/archive/items/W-0001.md",
+                    "content": "# W-0001 corrected\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_allows_archive_intent_including_index_update(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="approved",
+            )
+            self.write_promotion_intent(
+                root,
+                paths=[
+                    ".stage/past/work/archive/items/W-0001.md",
+                    ".stage/past/work/archive/index.md",
+                ],
+                intent_type="archive",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/past/work/archive/index.md",
+                    "content": "| W-0001 | completed | [item](items/W-0001.md) |\n",
                 },
             }
 
