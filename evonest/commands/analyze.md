@@ -8,8 +8,10 @@ Run **evonest analyze** on the target project using the `evonest_analyze` MCP to
 Determine the project path:
 - If the user specifies a path, use that.
 - If the user says "evonest" or no path given and cwd is inside the noory-ai monorepo, use the absolute path of the `evonest/` package directory.
-- If the user says "distill", use the absolute path of the
-  `novel-ai/distill/` package directory.
+- If the user says "distill" and a sibling checkout exists at
+  `../novel-ai/plugins/distill/`, use its absolute path.
+- If the user says "distill" and that sibling checkout does not exist, ask for
+  the Distill project path instead of guessing another location.
 - Never use the monorepo root as the project path.
 
 Call `evonest_analyze` with:

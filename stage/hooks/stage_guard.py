@@ -64,6 +64,12 @@ SOURCE_EXTENSIONS = {
 }
 DOC_EXTENSIONS = {".md", ".mdx", ".rst", ".txt", ".adoc"}
 GIT_GLOBAL_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
+# find options legal BEFORE the start paths (GNU `-H/-L/-P/-O/-D`, BSD adds
+# `-E/-X/-x/-s/-d/-f`). Argument-consuming ones (`-D`, `-f`) are handled at the
+# scan site. BSD clusters the argument-less ones into one token (`-Lx`, `-dsx`)
+# — FIND_PRE_PATH_CLUSTER_RE matches any such cluster.
+FIND_PRE_PATH_FLAGS = {"-H", "-L", "-P", "-E", "-X", "-x", "-s", "-d"}
+FIND_PRE_PATH_CLUSTER_RE = re.compile(r"-[HLPEXdsx]+")
 WORK_OPEN_STATUSES = {"active", "review", "blocked"}
 WORK_FINAL_STATUSES = {"completed", "archived", "rejected"}
 VERIFICATION_DONE = {"passed", "not_required"}
@@ -71,7 +77,7 @@ RETROSPECTIVE_DONE = {"completed"}
 PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "rejected"}
 REDIRECT_RE = re.compile(r"(?:^|[\s])(?:>>|[0-9]?>)\s*(?P<path>[^&|;\s]+)")
 PATCH_FILE_RE = re.compile(r"^\*{3} (?:Add|Update|Delete) File: (?P<path>.+)$|^\*{3} Move to: (?P<move>.+)$", re.MULTILINE)
-SHELL_SEPARATORS = {"&&", "||", ";", "|", "\n"}
+SHELL_SEPARATORS = {"&&", "||", ";", "|", "&", "\n"}
 
 
 @dataclass(frozen=True)
@@ -155,10 +161,32 @@ def iter_strings(value: Any) -> list[str]:
     return strings
 
 
-def normalize_path_text(path: str) -> str:
+def clean_path_text(path: str) -> str:
+    """Surface cleanup only — strip quotes, unify separators, collapse repeated
+    slashes, drop leading `./`. Keeps `..` INTACT so a filesystem resolve can
+    follow symlinks before collapsing `..` (lexical collapse first would
+    mis-target a symlink parent). Preserves a Windows UNC prefix (`\\\\server`)."""
     value = path.strip().strip("'\"`")
     value = value.replace("\\", "/")
-    return collapse_dot_segments(value)
+    unc = value.startswith("//")  # UNC share root — keep the double slash
+    leading_slash = value.startswith("/")
+    core = re.sub(r"/+", "/", value).lstrip("/")  # `.//src` must not become `/src`
+    if unc:
+        value = "//" + core
+    elif leading_slash:
+        value = "/" + core
+    else:
+        value = core
+    while value.startswith("./"):
+        value = value[2:]
+    return value
+
+
+def normalize_path_text(path: str) -> str:
+    """Cleaned path with `.`/`..` collapsed lexically — for string comparisons
+    and slot keys that never hit the filesystem. For classifying a real write
+    target, go through `relative_to_workspace` (resolves symlinks first)."""
+    return collapse_dot_segments(clean_path_text(path))
 
 
 def collapse_dot_segments(value: str) -> str:
@@ -198,10 +226,13 @@ def collect_explicit_paths(payload: dict[str, Any]) -> list[str]:
     seen: set[str] = set()
 
     def add(path: str) -> None:
-        normalized = normalize_path_text(path)
-        if normalized and normalized not in seen:
-            seen.add(normalized)
-            found.append(normalized)
+        # Keep `..` (clean, not normalize): a symlink-then-`..` target must reach
+        # relative_to_workspace intact so the filesystem resolve — not a lexical
+        # pre-collapse — decides where the write truly lands.
+        cleaned = clean_path_text(path)
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            found.append(cleaned)
 
     def visit(value: Any, key: str = "") -> None:
         if isinstance(value, dict):
@@ -223,16 +254,106 @@ def collect_explicit_paths(payload: dict[str, Any]) -> list[str]:
     return found
 
 
-def relative_to_workspace(path: str | Path, workspace_root: Path) -> str:
-    candidate = Path(str(path)).expanduser()
+def stage_real_root(workspace_root: Path) -> Path | None:
+    """The real filesystem location of `<workspace>/.stage`, following a
+    symlinked `.stage` itself. Used to classify writes against the true tree.
+
+    Returns None for a degenerate root (`.stage -> .` or `-> ..`) that equals or
+    contains the workspace — otherwise every ordinary write would remap into a
+    logical `.stage/...` and be excluded from governance."""
     try:
-        if candidate.is_absolute():
-            return normalize_path_text(str(candidate.resolve().relative_to(workspace_root)))
-    except (OSError, ValueError):
-        pass
-    return normalize_path_text(str(candidate))
+        workspace_resolved = workspace_root.resolve()
+        stage = (workspace_root / ".stage").resolve()
+    except (OSError, RuntimeError):  # RuntimeError = symlink loop on Python 3.9
+        return None
+    if stage == workspace_resolved:
+        return None
+    try:
+        workspace_resolved.relative_to(stage)  # workspace lies inside stage → ancestor
+        return None
+    except ValueError:
+        return stage
 
 
+def relative_to_workspace(path: str | Path, workspace_root: Path) -> str:
+    """Canonical workspace-relative form of a write target (P28 single model).
+
+    Resolves symlink components and `..` in filesystem order (symlinks first,
+    then `..`), then re-maps a target that lands inside the REAL `.stage` tree
+    back to a logical `.stage/...` string — so `link/../past` (link ->
+    `.stage/present`), `.stage/../src`, and a symlinked `.stage -> data` all
+    classify by where the write truly lands, not how it was spelled. A path that
+    escapes the workspace keeps its lexical form so outside-workspace checks
+    still fire; unresolvable input degrades to lexical.
+    """
+    text = clean_path_text(str(path))
+    try:
+        candidate = Path(text).expanduser()
+    except RuntimeError:
+        # `~user` with no such account raises on POSIX (e.g. `~draft.py`) — it is
+        # an ordinary workspace-relative filename, not a home reference.
+        candidate = Path(text)
+    try:
+        workspace_resolved = workspace_root.resolve()
+    except (OSError, RuntimeError):
+        workspace_resolved = workspace_root
+    base = candidate if candidate.is_absolute() else (workspace_resolved / text)
+    try:
+        resolved = base.resolve()
+    except (OSError, RuntimeError):  # RuntimeError = symlink loop on Python 3.9
+        return normalize_path_text(text)
+
+    stage_real = stage_real_root(workspace_root)
+    if stage_real is not None:
+        if resolved == stage_real:
+            return ".stage"
+        try:
+            return ".stage/" + resolved.relative_to(stage_real).as_posix()
+        except ValueError:
+            pass
+    try:
+        return normalize_path_text(resolved.relative_to(workspace_resolved).as_posix())
+    except ValueError:
+        # Resolved outside the workspace (e.g. `~/…`, an escaping symlink): return
+        # the absolute path so outside-workspace checks fire — not the lexical
+        # spelling, which would read as a governed workspace path.
+        return resolved.as_posix()
+
+
+def entry_relative_to_workspace(path: str | Path, workspace_root: Path) -> str:
+    """Canonical workspace-relative form that keeps FINAL-ENTRY identity:
+    parent components are resolved (symlinks first, then `..`), the last
+    component is kept as named. Exact-entry authorizations (a work item's
+    `promotes`, pending intents, archive filenames) name entries, not targets —
+    `rm`/`mv` act on the entry a path NAMES, and two symlinked leaves aliasing
+    one target are distinct grants. A spelling with no leaf identity (trailing
+    `/` or `/.`, bare `.`/`..`) falls back to the fully resolved form."""
+    text = clean_path_text(str(path))
+    stripped = text.rstrip()
+    name = Path(text).name if text else ""
+    if name in ("", ".", "..") or stripped.endswith("/") or stripped.endswith("/."):
+        return relative_to_workspace(text, workspace_root)
+    parent = relative_to_workspace(str(Path(text).parent), workspace_root)
+    if parent in ("", "."):
+        return name
+    return parent.rstrip("/") + "/" + name
+
+
+def stage_relative_forms(path: str | Path, workspace_root: Path) -> tuple[str, str, str]:
+    """(fully-resolved, entry-canonical, lexical) forms of one write target.
+    Detection gates classify by the union of the three — fail closed: the
+    resolved form catches symlink/`..` re-entry, the entry form catches an
+    aliased parent whose LEAF is itself an outward symlink, the lexical form
+    catches a degenerate `.stage -> .` and plain spellings."""
+    return (
+        relative_to_workspace(path, workspace_root),
+        entry_relative_to_workspace(path, workspace_root),
+        normalize_path_text(str(path)),
+    )
+
+
+# Predicates below take a CANONICAL workspace-relative path (from
+# relative_to_workspace) — do not pass a raw, unresolved spelling.
 def path_targets_stage_root(path: str) -> bool:
     normalized = "/" + normalize_path_text(path).lstrip("/")
     return "/.stage/" in normalized or normalized.endswith("/.stage")
@@ -249,8 +370,13 @@ def path_targets_stage_archive(path: str) -> bool:
 
 
 def is_stage_internal_path(path: str, workspace_root: Path) -> bool:
-    relative = relative_to_workspace(path, workspace_root)
-    return relative == ".stage" or relative.startswith(".stage/")
+    # Union of forms: a symlinked `.stage/settings.json` (resolve lands outside)
+    # must stay stage-internal or the malformed-governance gate would deny the
+    # very repair it asks for.
+    return any(
+        form == ".stage" or form.startswith(".stage/")
+        for form in stage_relative_forms(path, workspace_root)
+    )
 
 
 def load_governance(stage_root: Path) -> dict[str, Any]:
@@ -288,45 +414,101 @@ def path_has_prefix(relative: str, prefix: str) -> bool:
     return bool(clean) and (relative == clean or relative.startswith(clean + "/"))
 
 
-def is_source_path(path: str, workspace_root: Path) -> bool:
-    relative = relative_to_workspace(path, workspace_root)
-    if not relative:
+def is_outside_workspace(relative: str) -> bool:
+    return (
+        not relative
+        or relative.startswith("/")
+        or bool(re.match(r"^[A-Za-z]:", relative))
+        or relative.startswith("../")
+        or relative == ".."
+        or relative == "~"
+        or relative.startswith("~/")  # home dir — but `~draft.py` is a real file
+    )
+
+
+def is_source_path(path: str, workspace_root: Path, follows_symlink: bool = False) -> bool:
+    """Whether a write target is a governed workspace source.
+
+    Operation semantics decide which forms classify. A CONTENT write
+    (`follows_symlink=True`: Write/Edit) modifies the DEREFERENCED target, so it
+    is classified by the resolved form alone — a write to `.git/link.py`
+    (-> src/app.py) governs `src/app.py`, not the `.git` entry. An UNLINK/move
+    (default) acts on the named ENTRY, so exclusions win on the entry and
+    lexical forms (deleting `src/link -> .git/config` targets the entry) while
+    inclusion holds across all forms (a symlink entry into governed space stays
+    governed when its resolve derefs outward)."""
+    resolved, entry, lexical = stage_relative_forms(path, workspace_root)
+    if follows_symlink:
+        forms = [resolved] if not is_outside_workspace(resolved) else []
+        exclude_forms = forms
+    else:
+        forms = [form for form in (resolved, entry, lexical) if not is_outside_workspace(form)]
+        exclude_forms = [form for form in (entry, lexical) if not is_outside_workspace(form)]
+    if not forms:
         return False
-    if relative.startswith("/") or re.match(r"^[A-Za-z]:", relative) or relative.startswith("../") or relative == "..":
-        # Path outside the workspace (absolute or `..`-escaping) — not this
-        # project's governance scope.
-        return False
-    if any(path_has_prefix(relative, prefix) for prefix in DEFAULT_EXCLUDED_PREFIXES):
+    if any(
+        path_has_prefix(form, prefix)
+        for form in exclude_forms
+        for prefix in DEFAULT_EXCLUDED_PREFIXES
+    ):
         return False
 
     governance = load_governance(workspace_root / ".stage")
-
-    # Legacy allowlist mode: explicit governed paths/extensions narrow the scope.
-    raw_paths = governance.get("paths")
-    if isinstance(raw_paths, list):
-        for raw_prefix in raw_paths:
-            if path_has_prefix(relative, normalize_path_text(str(raw_prefix))):
-                return True
-
-    suffix = Path(relative).suffix.lower()
-    raw_extensions = governance.get("extensions")
-    if isinstance(raw_extensions, list) and raw_extensions:
-        return suffix in {str(ext).lower() for ext in raw_extensions}
-    if isinstance(raw_paths, list) and raw_paths:
-        # Paths-only allowlist: anything outside the listed paths is ungoverned.
+    if any(_form_excluded(form, governance, workspace_root) for form in exclude_forms):
         return False
+    return any(_form_included(form, governance, workspace_root) for form in forms)
 
-    # Broad default: every workspace file is governed unless excluded.
+
+def _governance_prefix_forms(raw_prefix: str, workspace_root: Path) -> set[str]:
+    """Canonical AND lexical forms of a configured prefix. A prefix that is a
+    symlink needs both: the canonical form matches writes that reach its target
+    directory, the lexical form keeps matching spellings under the entry itself
+    when the target escapes the workspace (`generated -> /mnt/generated`)."""
+    return {
+        relative_to_workspace(raw_prefix, workspace_root),
+        normalize_path_text(raw_prefix),
+    }
+
+
+def _form_excluded(relative: str, governance: dict[str, Any], workspace_root: Path) -> bool:
+    """Configured (settings.json) exclusions only — structural `.stage`/`.git`/
+    `.discuss` prefixes are checked across all forms in is_source_path."""
     raw_exclude_paths = governance.get("exclude_paths")
     if isinstance(raw_exclude_paths, list):
         for raw_prefix in raw_exclude_paths:
-            if path_has_prefix(relative, normalize_path_text(str(raw_prefix))):
-                return False
+            if any(
+                path_has_prefix(relative, prefix)
+                for prefix in _governance_prefix_forms(str(raw_prefix), workspace_root)
+            ):
+                return True
+    suffix = Path(relative).suffix.lower()
     raw_exclude_extensions = governance.get("exclude_extensions")
     if isinstance(raw_exclude_extensions, list) and suffix in {
         str(ext).lower() for ext in raw_exclude_extensions
     }:
-        return False
+        return True
+    return False
+
+
+def _form_included(relative: str, governance: dict[str, Any], workspace_root: Path) -> bool:
+    # Configured prefixes are canonicalized the same way as the target so a
+    # symlinked `governance.paths` entry matches the resolved file.
+    raw_paths = governance.get("paths")
+    suffix = Path(relative).suffix.lower()
+    raw_extensions = governance.get("extensions")
+    ext_governed = isinstance(raw_extensions, list) and bool(raw_extensions)
+    if isinstance(raw_paths, list) and raw_paths:
+        for raw_prefix in raw_paths:
+            if any(
+                path_has_prefix(relative, prefix)
+                for prefix in _governance_prefix_forms(str(raw_prefix), workspace_root)
+            ):
+                return True
+        # Paths allowlist present: only listed paths (or listed extensions).
+        return ext_governed and suffix in {str(ext).lower() for ext in raw_extensions}
+    if ext_governed:
+        return suffix in {str(ext).lower() for ext in raw_extensions}
+    # Broad default: every non-excluded workspace file is governed.
     return True
 
 
@@ -339,59 +521,715 @@ def command_text(payload: dict[str, Any]) -> str:
     return ""
 
 
+SHELL_OPERATOR_CHARS = ";&|"
+def _parse_heredoc_delimiter(command: str, pos: int) -> tuple[str, bool, int] | None:
+    """Delimiter word after `<<`/`<<-`, with shell quote removal: `<<\\EOF`,
+    `<<'EOF'`, and `<<E"OF"` all yield `EOF`. Returns (delimiter, dash, end
+    index) — `dash` is True for `<<-` (body lines may be tab-indented) — or None
+    if no word follows."""
+    index = pos
+    length = len(command)
+    dash = index < length and command[index] == "-"
+    if dash:
+        index += 1
+    while index < length and command[index] in " \t":
+        index += 1
+    delim: list[str] = []
+    quote: str | None = None
+    while index < length:
+        char = command[index]
+        if quote:
+            if char == quote:
+                quote = None
+            else:
+                delim.append(char)
+            index += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+            index += 1
+            continue
+        if char == "\\" and index + 1 < length:
+            delim.append(command[index + 1])
+            index += 2
+            continue
+        if char in " \t\n\r;&|<>()`":
+            break
+        delim.append(char)
+        index += 1
+    if not delim:
+        return None
+    return "".join(delim), dash, index
+# Sentinels stand in for QUOTED/ESCAPED control chars and for the `&` inside an
+# fd redirection, so the shlex pass never treats them as real separators. They
+# are private-use code points that cannot occur in a real command; the path and
+# name extractors restore them via _restore_sentinels before use.
+_SENTINELS = {";": "", "&": "", "|": ""}
+_SENTINEL_REVERSE = {ord(v): k for k, v in _SENTINELS.items()}
+
+
+def _restore_sentinels(text: str) -> str:
+    return text.translate(_SENTINEL_REVERSE)
+
+
+def normalize_shell_control(command: str) -> str:
+    """Prepare a command for single-pass tokenization with a quote/escape state
+    machine — the only structure the delete/write gates need above shlex:
+
+    - splice backslash-newline line continuations,
+    - turn UNQUOTED newlines into `;` separators (multiline quotes stay intact),
+    - replace quoted/escaped `;`/`&`/`|` and fd-redirection `&` (`2>&1`, `&>`,
+      `>&`) with sentinels so they are not read as command separators,
+    - drop heredoc BODIES (`cat <<EOF … EOF`) — data, not commands — but ONLY
+      for an unquoted `<<` outside `$(( ))` arithmetic (a quoted `'<<EOF'` and
+      the shift in `$((1<<2))` are not heredocs). `<<<` never triggers this.
+    """
+    out: list[str] = []
+    quote: str | None = None
+    pending_delims: list[tuple[str, bool]] = []
+    arith_depth = 0  # `$((` nesting — a `<<` inside is a shift, not a heredoc
+    index = 0
+    length = len(command)
+    while index < length:
+        char = command[index]
+        if quote:
+            out.append(_SENTINELS.get(char, char) if char in _SENTINELS else char)
+            if char == "\\" and quote == '"' and index + 1 < length:
+                nxt = command[index + 1]
+                out.append(_SENTINELS.get(nxt, nxt))
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+            out.append(char)
+            index += 1
+            continue
+        if char in ("\\", "`") and index + 1 < length:
+            # `\` (POSIX) and PowerShell backtick both escape the next char.
+            nxt = command[index + 1]
+            if char == "\\" and nxt == "\n":  # line continuation → splice lines
+                index += 2
+                continue
+            if nxt in _SENTINELS:  # escaped operator is a literal, not a separator
+                out.append(_SENTINELS[nxt])
+                index += 2
+                continue
+            out.append(char)
+            out.append(nxt)
+            index += 2
+            continue
+        if command[index : index + 3] == "$((":
+            arith_depth += 1
+            out.append("$((")
+            index += 3
+            continue
+        # Bare arithmetic command `(( … ))` — a `<<` inside is a shift, not a
+        # heredoc. Distinct from a subshell `( ( … ) )` (a space between parens).
+        if command[index : index + 2] == "((":
+            arith_depth += 1
+            out.append("((")
+            index += 2
+            continue
+        if arith_depth and command[index : index + 2] == "))":
+            arith_depth -= 1
+            out.append("))")
+            index += 2
+            continue
+        if char == "&":  # fd redirection `&` (`2>&1`, `&>`, `>&`) is not background
+            prev = out[-1] if out else ""
+            nxt = command[index + 1 : index + 2]
+            if prev.endswith(">") or nxt == ">":
+                out.append(_SENTINELS["&"])
+                index += 1
+                continue
+        if (
+            char == "<"
+            and not arith_depth
+            and command[index + 1 : index + 2] == "<"
+            and command[index + 2 : index + 3] != "<"  # not a `<<<` here-string
+        ):
+            parsed = _parse_heredoc_delimiter(command, index + 2)
+            if parsed is not None:
+                delimiter, dash, end = parsed
+                pending_delims.append((delimiter, dash))
+                out.append(command[index:end])
+                index = end
+                continue
+        if char in "\n\r":
+            out.append(";")  # unquoted newline separates commands
+            index += 1
+            if pending_delims:
+                index = _skip_heredoc_bodies(command, index, pending_delims)
+                pending_delims = []
+            continue
+        out.append(char)
+        index += 1
+    return "".join(out)
+
+
+def _skip_heredoc_bodies(command: str, start: int, delimiters: list[tuple[str, bool]]) -> int:
+    """Advance past heredoc body lines, one delimiter at a time (a command may
+    open several: `cmd <<A <<B`). The terminator line must equal the delimiter
+    EXACTLY for `<<` (a space- or tab-indented line is still body); for `<<-`
+    only leading TABS are stripped. If a delimiter line never appears, the `<<`
+    was not really a heredoc (a misdetection) — return to `start` so the body is
+    scanned conservatively rather than swallowing the rest of the command."""
+    length = len(command)
+    cursor = start
+    for delimiter, dash in delimiters:
+        found = False
+        while cursor < length:
+            line_end = command.find("\n", cursor)
+            if line_end == -1:
+                line_end = length
+            line = command[cursor:line_end]
+            cursor = line_end + 1 if line_end < length else length
+            candidate = line.lstrip("\t") if dash else line
+            if candidate.rstrip("\r") == delimiter:
+                found = True
+                break
+        if not found:
+            return start
+    return cursor
+
+
 def shell_tokens(command: str) -> list[str]:
+    """Tokenize a command with shell control operators (`;`, `&`, `&&`, `|`,
+    `||`) as their OWN tokens even without surrounding whitespace, so the
+    delete-gate grouping is not fooled by `true;find .stage -delete`. Quoting is
+    honored (a `;` inside quotes stays in its word), line continuations are
+    spliced, heredoc bodies are dropped, and unquoted newlines become `;`
+    separators — the whole command is tokenized once so multiline quotes
+    survive."""
+    prepared = normalize_shell_control(command)
     try:
-        return shlex.split(command, posix=os.name != "nt")
+        lexer = shlex.shlex(
+            prepared, posix=os.name != "nt", punctuation_chars=SHELL_OPERATOR_CHARS
+        )
+        lexer.whitespace_split = True
+        lexer.commenters = ""  # shlex.split does not treat `#` as a comment
+        return list(lexer)
     except ValueError:
         return []
 
 
-def _targets_stage_root(arg: str) -> bool:
+def _is_traversable_dir(path: Path) -> bool:
+    """An existing directory the shell can actually cd into — `is_dir()` alone
+    is not enough, a directory without execute/traverse permission fails."""
+    try:
+        return path.is_dir() and os.access(path, os.X_OK)
+    except (OSError, RuntimeError):
+        return False
+
+
+def _walk_cd(anchor: Path, target: str) -> Path | None:
+    """LOGICAL directory after `cd <target>` from `anchor`, or None when the
+    real shell's cd would FAIL. Bash `cd -L` (the default) applies `..` to the
+    logical path — `cd link ; cd ..` (link -> build/deep) returns to link's
+    logical parent, not the physical one — so `..` pops a segment lexically and
+    symlinks stay UNRESOLVED in the returned path. Each visited prefix must be a
+    traversable directory (existence + execute permission), so
+    `cd build/missing/..` and a permission-denied `cd` both fail. Write
+    classification resolves this logical path later (relative_to_workspace)."""
+    text = clean_path_text(target)
+    try:
+        candidate = Path(text).expanduser()
+    except RuntimeError:
+        candidate = Path(text)
+    if candidate.is_absolute():
+        cursor = Path(candidate.anchor)
+        segments = candidate.parts[1:]
+    else:
+        cursor = anchor
+        segments = candidate.parts
+    for segment in segments:
+        if segment == ".":
+            continue
+        cursor = cursor.parent if segment == ".." else cursor / segment
+        if not _is_traversable_dir(cursor):
+            return None
+    return cursor
+
+
+REDIRECT_OPERATOR_RE = re.compile(r"^(?:\d*(?:>>?|<)|&>>?|>&|<<<?)$")
+REDIRECT_ATTACHED_RE = re.compile(r"^(?:\d*(?:>>?|<)|&>>?)")
+# Wrappers that can run the shell BUILTIN `cd` (`command cd x`, `builtin cd x`).
+# External-process wrappers (`nohup`, `nice`, `time`, `stdbuf`) cannot — they
+# would fail to find an external `cd`, leaving the shell put — so they are not
+# peeled: their `cd` is treated as a no-op, which keeps the caller anchor.
+COMMAND_WRAPPERS = {"command", "builtin", "exec"}
+# PowerShell cwd verbs/aliases mapped to their POSIX cwd-command equivalent.
+POWERSHELL_CWD = {
+    "set-location": "cd",
+    "sl": "cd",
+    "chdir": "cd",
+    "push-location": "pushd",
+    "pop-location": "popd",
+}
+
+
+def _cd_has_unknown_option(positional: list[str]) -> bool:
+    """A `cd` flag bash does not support (`cd -Z`) makes the real cd fail. Only
+    `-L`/`-P`/`-e`/`-@` are valid; `--` ends option parsing, `-` is OLDPWD."""
+    for token in positional:
+        if token == "--":
+            return False
+        if token in ("-", "") or not token.startswith("-"):
+            continue
+        if not set(token[1:]) <= set("LPe@"):
+            return True
+    return False
+
+
+def _cd_operands(positional: list[str]) -> list[str]:
+    """cd/pushd path operands. A `--` ends option parsing, so a dash-led path
+    after it (`cd -- -foo`) is a real operand, not a flag."""
+    operands: list[str] = []
+    after_ddash = False
+    for token in positional:
+        if after_ddash:
+            operands.append(token)
+        elif token == "--":
+            after_ddash = True
+        elif token == "-" or token.startswith("-"):
+            continue
+        else:
+            operands.append(token)
+    return operands
+
+
+REDIRECT_INFIX_RE = re.compile(r"\d*(?:>>?|<)|&>>?")
+
+
+def _strip_redirections(tokens: list[str]) -> list[str]:
+    """Drop redirection operators and their targets so `cd build >/dev/null`
+    parses as a single-operand `cd build`, not a multi-operand error. A bare
+    operator (`>`, `2>`, `<`) consumes the following target token; an attached
+    prefix (`>/dev/null`) is dropped whole; and a redirection glued to an
+    operand (`build>/dev/null`) keeps only the operand prefix."""
+    positional: list[str] = []
+    skip_next = False
+    for token in tokens:
+        if skip_next:
+            skip_next = False
+            continue
+        if REDIRECT_OPERATOR_RE.match(token):
+            skip_next = True
+            continue
+        if REDIRECT_ATTACHED_RE.match(token):
+            continue
+        match = REDIRECT_INFIX_RE.search(token)
+        if match and match.start() > 0:  # `build>/dev/null` → keep `build`
+            positional.append(token[: match.start()])
+            continue
+        positional.append(token)
+    return positional
+
+
+def _is_separator(token: str) -> bool:
+    """A command separator: a known operator, or a run of only `;` (`;;`, from a
+    `;` immediately followed by a newline that normalization turns into `;`)."""
+    return token in SHELL_SEPARATORS or (bool(token) and set(token) == {";"})
+
+
+def _dedup_dirs(paths: list[Path]) -> list[Path]:
+    out: list[Path] = []
+    for path in paths:
+        if path not in out:
+            out.append(path)
+    return out
+
+
+class _CwdTracker:
+    """Best-effort effective-cwd tracker for the delete gate.
+
+    The shell's cwd is dynamic, so this keeps a SET of POSSIBLE cwds and denies
+    if ANY of them would delete the Stage tree — fail closed. A definite change
+    (first group, or after `;`/`&`/newline) replaces the set; a change whose
+    own execution is uncertain (after `&&`/`||`/`|`, or feeding a pipeline that
+    runs it in a subshell) UNIONS the new state with the prior one. Failed cd
+    (missing directory) and unknown targets keep the prior anchors."""
+
+    def __init__(self, anchors: list[Path]):
+        self.anchors = list(anchors)
+        self.oldpwd = list(anchors)  # `cd -` destination
+        self.stack: list[list[Path]] = []  # pushd/popd directory stack
+
+    def _home(self) -> list[Path]:
+        try:
+            return [Path.home().resolve()]
+        except (OSError, RuntimeError):
+            return list(self.anchors)
+
+    def _walk_all(self, operand: str) -> tuple[list[Path], bool]:
+        # Per anchor: the rebased dir if cd succeeds there, else the anchor
+        # itself (the real shell stays put on a failed cd) — both branches kept.
+        # `ok` is True if the cd succeeded from ANY branch.
+        dirs: list[Path] = []
+        ok = False
+        for anchor in self.anchors:
+            dest = _walk_cd(anchor, operand)
+            dirs.append(dest if dest is not None else anchor)
+            ok = ok or dest is not None
+        return dirs, ok
+
+    def apply(self, name: str, operands: list[str], has_dash: bool, conditional: bool) -> None:
+        old = list(self.anchors)
+        succeeded = True  # OLDPWD/stack mutate only when the change really ran
+        pushed = False
+        if name == "cd":
+            if has_dash:  # cd - → OLDPWD
+                rebased = list(self.oldpwd)
+            elif not operands:  # bare cd → HOME
+                rebased = self._home()
+            elif len(operands) > 1:  # `cd a b` is a bash error — shell stays put
+                rebased, succeeded = old, False
+            else:
+                rebased, succeeded = self._walk_all(operands[0])
+        elif name == "pushd":
+            if operands and not has_dash:
+                # `pushd +N`/`-N` (indexed stack rotation) is best-effort: the
+                # operand is not a path, so _walk_all fails and the anchor is
+                # kept. Deliberately not modelled (see hooks/README.md §Limits).
+                rebased, succeeded = self._walk_all(operands[0])
+                if succeeded:
+                    self.stack.append(old)
+                    pushed = True
+            elif self.stack:  # bare pushd swaps cwd with stack top
+                rebased = list(self.stack[-1])
+                self.stack[-1] = old
+            else:
+                rebased, succeeded = old, False
+        elif name == "popd":
+            if self.stack:
+                rebased = list(self.stack[-1])
+                if not conditional:
+                    self.stack.pop()
+            else:  # empty stack → popd fails, shell stays put
+                rebased, succeeded = old, False
+        else:
+            rebased = old
+        # OLDPWD advances only on a successful cd/pushd that is not a phantom.
+        if succeeded and (name != "pushd" or pushed or not operands):
+            self.oldpwd = old
+        self.anchors = _dedup_dirs(old + rebased if conditional else rebased)
+
+
+def _contains_stage(target: Path, stage_real: Path) -> bool:
+    """Whether recursively deleting `target` removes the Stage root — target IS
+    the Stage root or an ANCESTOR of it (`rm -rf .`, `find . -delete` from the
+    workspace traverse into `.stage` and erase it with everything else)."""
+    try:
+        stage_real.relative_to(target)
+        return True
+    except ValueError:
+        return False
+
+
+def _targets_stage_root(
+    arg: str,
+    workspace_root: Path | None = None,
+    follow_symlinks: bool = False,
+    base_dir: Path | None = None,
+) -> bool:
+    """follow_symlinks: the caller's tool TRAVERSES a symlink operand (find
+    -H/-L/-follow) instead of acting on the link itself — classify by the fully
+    dereferenced location and drop the link-only exemption. base_dir: anchor
+    for relative operands when a preceding `cd` moved the shell off the
+    workspace root."""
+    if workspace_root is not None:
+        # `rm`/`find -delete` unlink what the operand NAMES: parent symlinks and
+        # `..` are traversed, but a final symlink operand removes only the LINK
+        # (its target survives). So resolve the parent, keep the final entry —
+        # `find link/.. -delete` (link -> .stage/present) hits `.stage`, while
+        # `rm -rf alias` (alias -> .stage) removes only `alias`.
+        try:
+            text = clean_path_text(arg)
+            # A trailing slash OR `/.` forces the OS to dereference a symlink
+            # operand (`rm -rf alias/`, `find alias/. -delete` delete the target
+            # dir), so classify by the fully resolved location in that case.
+            stripped = arg.rstrip()
+            trailing_slash = (
+                stripped.endswith("/")
+                or stripped.endswith("\\")
+                or stripped.endswith("/.")
+                or stripped.endswith("\\.")
+            )
+            base = Path(text).expanduser()
+            if not base.is_absolute():
+                anchor = base_dir if base_dir is not None else workspace_root.resolve()
+                base = anchor / text
+            stage_real = stage_real_root(workspace_root)
+            try:
+                logical_entry = workspace_root.resolve() / ".stage"
+            except (OSError, RuntimeError):
+                logical_entry = workspace_root / ".stage"
+
+            def removes_stage(candidate: Path) -> bool:
+                # The real tree, or the workspace's logical `.stage` ENTRY (an
+                # ancestor delete detaches an externally symlinked harness). A
+                # candidate that IS the `.stage` entry is always blocked; a
+                # STRICT ancestor (`rm -rf .`) is blocked only when a `.stage`
+                # actually exists, so a pre-init workspace is not over-denied.
+                for base in (stage_real, logical_entry):
+                    if base is None:
+                        continue
+                    try:
+                        rel = base.relative_to(candidate).as_posix()
+                    except ValueError:
+                        continue
+                    if rel == ".":  # candidate is the stage entry itself
+                        return True
+                    if base.exists() or base.is_symlink():  # strict ancestor
+                        return True
+                return False
+
+            # Canonical classification is authoritative: allow/deny is decided
+            # here, and the lexical fallback below serves only resolution
+            # failures or calls without a workspace root — otherwise a foreign
+            # `.stage` basename (`cd build && rm -rf .stage` = build/.stage)
+            # would be denied by spelling alone.
+            if trailing_slash:
+                return removes_stage(base.resolve())
+            name = base.name
+            parent_real = base.parent.resolve()
+            if name in ("", "."):
+                target = parent_real
+            elif name == "..":
+                target = parent_real.parent
+            else:
+                target = parent_real / name
+            if follow_symlinks and name not in ("", ".", ".."):
+                target = target.resolve()
+            if removes_stage(target):
+                # A final symlink operand deletes the link, not the tree —
+                # unless the tool follows it (find -H/-L/-follow), and never
+                # for the workspace's own `.stage` entry, whose removal
+                # detaches the harness even when only the link goes.
+                if (
+                    not follow_symlinks
+                    and name not in ("", ".", "..")
+                    and target != logical_entry
+                    and target.is_symlink()
+                ):
+                    return False
+                return True
+            return False
+        except (OSError, RuntimeError, ValueError):
+            pass
     normalized = normalize_path_text(arg)
     return normalized == ".stage" or normalized.endswith("/.stage")
 
 
-def command_deletes_stage(command: str) -> bool:
+def command_deletes_stage(command: str, workspace_root: Path | None = None) -> bool:
     """Whether a shell command recursively removes the whole `.stage` tree.
 
     Tokenized (not a free-text regex) so recursive flags in any spelling are
     caught: `rm -r/-R/-rf/--recursive`, PowerShell `Remove-Item -Recurse`,
-    Windows `rmdir /s`. Non-recursive `rm .stage` cannot remove a directory,
-    so it is not blocked here.
+    Windows `rmdir /s`, and `find <.stage> -delete`/`-exec|-execdir rm`.
+    Operands are resolved through symlinks when workspace_root is given.
+    Non-recursive `rm .stage` cannot remove a directory, so it is not blocked.
     """
+    # Relative delete operands are anchored where the shell IS: a preceding
+    # `cd` group rebases them (`cd build && find . -delete` traverses build,
+    # not the workspace). Control flow is not evaluated, so the tracker keeps a
+    # SET of possible cwds: a cd whose own execution is conditional (preceded
+    # by `&&`/`||`/`|`, e.g. `false && cd build ; rm -rf .stage`) ADDS the
+    # rebased state alongside the previous ones; a definite cd (first group or
+    # after `;`/newline) replaces them. Classification denies if ANY possible
+    # anchor removes the Stage tree — fail closed.
+    anchors: list[Path] = []
+    if workspace_root is not None:
+        try:
+            anchors = [workspace_root.resolve()]
+        except (OSError, RuntimeError):
+            anchors = [workspace_root]
+    tracker = _CwdTracker(anchors)
+
+    def hits_stage(arg: str) -> bool:
+        if not tracker.anchors:
+            return _targets_stage_root(arg, workspace_root)
+        return any(
+            _targets_stage_root(arg, workspace_root, base_dir=anchor)
+            for anchor in tracker.anchors
+        )
+
     tokens = shell_tokens(command)
     simple: list[str] = []
-    groups: list[list[str]] = []
+    entries: list[tuple[str, list[str]]] = []
+    previous_separator = ""
+    # Grouping uses the sentinel-carrying tokens: only a REAL (unquoted,
+    # unescaped) `;`/`&`/`|` is a separator. A find `-exec … \;` terminator is a
+    # sentinel, so it never splits the group and a trailing `-delete` stays in.
     for token in tokens + ["\n"]:
-        if token in SHELL_SEPARATORS:
+        if _is_separator(token):
             if simple:
-                groups.append(simple)
+                entries.append((previous_separator, simple))
             simple = []
+            previous_separator = token
         else:
             simple.append(token)
-    for group in groups:
-        if not group:
+    for index, (separator, raw_group) in enumerate(entries):
+        if not raw_group:
             continue
-        name = Path(group[0]).name.lower()
+        # Sentinels are restored now — past the separator decision, every token
+        # is a command name, flag, or path.
+        group = [_restore_sentinels(tok) for tok in raw_group]
+        # Peel leading builtin-capable wrappers (`command cd x`) so the real
+        # command is classified, and map PowerShell cwd verbs to POSIX.
+        head = 0
+        while head < len(group) - 1 and Path(group[head]).name.lower() in COMMAND_WRAPPERS:
+            head += 1
+        group = group[head:]
+        name = POWERSHELL_CWD.get(Path(group[0]).name.lower(), Path(group[0]).name.lower())
+        if name in {"cd", "pushd", "popd"} and workspace_root is not None:
+            positional = _strip_redirections(group[1:])
+            if name == "cd" and _cd_has_unknown_option(positional):
+                continue  # bash rejects the option → cwd unchanged
+            pushd_no_cd = name == "pushd" and "-n" in positional
+            operands = _cd_operands(positional)
+            has_dash = "-" in positional and not operands
+            if pushd_no_cd:  # `pushd -n DIR` edits the stack only — cwd unchanged
+                continue
+            # A cd whose own execution is conditional (after `&&`/`||`/`|`) may
+            # not have run; a cd feeding a pipeline (`cd build | …`) or backgrounded
+            # (`cd build & …`) runs in a subshell and never changes the caller's
+            # cwd. Keep both states in those cases.
+            next_separator = entries[index + 1][0] if index + 1 < len(entries) else "\n"
+            conditional = separator in {"&&", "||", "|"} or next_separator in {"|", "&"}
+            tracker.apply(name, operands, has_dash, conditional)
+            continue
         flags = [tok for tok in group[1:] if tok.startswith("-") or tok.startswith("/")]
-        args = [tok for tok in group[1:] if not tok.startswith("-") and not tok.startswith("/")]
+        # Path operands = anything not a `-` flag. A leading `/` is an ABSOLUTE
+        # PATH on Unix (`/ws/.stage`), not a flag — Windows switches like `/s`
+        # stay in `flags` but never match `_targets_stage_root`, so keeping them
+        # in `args` too is harmless and lets absolute `.stage` targets be seen.
+        args = [tok for tok in group[1:] if not tok.startswith("-")]
         if name == "rm":
             recursive = any(
                 tok == "--recursive" or (tok.startswith("-") and not tok.startswith("--") and "r" in tok.lower())
                 for tok in flags
             )
-            if recursive and any(_targets_stage_root(arg) for arg in args):
+            if recursive and any(hits_stage(arg) for arg in args):
                 return True
         elif name == "rmdir":
             if any(flag.lower() in {"/s", "-s", "--recursive"} for flag in flags) and any(
-                _targets_stage_root(arg) for arg in args
+                hits_stage(arg) for arg in args
             ):
                 return True
         elif name in {"remove-item", "ri", "rd", "del", "erase"}:
             recursive = any(flag.lower() in {"-recurse", "-r", "/s"} for flag in flags)
             force = any(flag.lower() in {"-force", "-f"} for flag in flags)
-            if (recursive or force) and any(_targets_stage_root(arg) for arg in group[1:]):
+            if (recursive or force) and any(hits_stage(arg) for arg in group[1:]):
                 return True
+        elif name == "find":
+            # find's start paths are the operands before the first expression.
+            # Pre-path traversal/debug options (`find [-H|-L|-P] [-E…] [-Olevel]
+            # [-D opts] [-f path] path…`) are skipped — stopping at them would
+            # record no roots and wave `find -L .stage -delete` through. A
+            # destructive action is `-delete`, or `-exec|-execdir` running
+            # rm/rmdir/unlink ON THE DISCOVERED entry (`{}`) — not on an
+            # unrelated file (`find .stage -exec rm /tmp/lock \\;`).
+            roots: list[str] = []
+            idx = 1
+            after_ddash = False  # every operand past `--` is a start path
+            while idx < len(group):
+                tok = group[idx]
+                if after_ddash:
+                    if tok in {"(", "!"} or (tok.startswith("-") and len(tok) > 1 and tok[1].isalpha()):
+                        break  # first expression primary ends the root list
+                    roots.append(tok)
+                    idx += 1
+                    continue
+                if tok == "--":  # end of options — start paths follow
+                    after_ddash = True
+                    idx += 1
+                    continue
+                if tok in FIND_PRE_PATH_FLAGS or FIND_PRE_PATH_CLUSTER_RE.fullmatch(tok):
+                    idx += 1
+                    continue
+                if tok.startswith("-O"):  # GNU -Olevel (attached argument)
+                    idx += 1
+                    continue
+                if tok == "-D":  # GNU debug options: consumes one argument
+                    idx += 2
+                    continue
+                if tok == "-f":  # BSD: `-f path` names a start path
+                    if idx + 1 < len(group):
+                        roots.append(group[idx + 1])
+                    idx += 2
+                    continue
+                if tok.startswith("-") or tok in {"(", "!"}:
+                    break
+                roots.append(tok)
+                idx += 1
+            deletes = False
+            for idx, tok in enumerate(group):
+                if tok == "-delete":
+                    deletes = True
+                    break
+                if tok in {"-exec", "-execdir"} and idx + 1 < len(group):
+                    if Path(group[idx + 1]).name in {"rm", "rmdir", "unlink"} and _find_exec_hits_found(group[idx + 1:]):
+                        deletes = True
+                        break
+            if not roots:
+                # GNU find roots at the effective current directory when no
+                # start path is given (`find -delete`).
+                roots.append(".")
+            # `-H`/`-L` (pre-path, possibly clustered: `-Lx`) and `-follow`
+            # (expression) make find traverse a symlink root instead of
+            # visiting the link itself. POSIX honors the LAST of -H/-L/-P, so
+            # scan in order (`find -L -P alias` runs in -P mode); a later
+            # `-follow` turns following back on. Tokens INSIDE an `-exec`/
+            # `-execdir` clause are the program's own arguments (`-exec echo -P
+            # {}`) — skip to the terminator so they cannot pose as find options.
+            follows = False
+            i = 0
+            while i < len(group):
+                tok = group[i]
+                if tok in {"-exec", "-execdir"}:
+                    i += 1
+                    while i < len(group) and group[i] not in {";", "+", "\\;"}:
+                        i += 1
+                    i += 1
+                    continue
+                if tok == "-follow":
+                    follows = True
+                elif FIND_PRE_PATH_CLUSTER_RE.fullmatch(tok):
+                    for ch in tok[1:]:
+                        if ch in "HL":
+                            follows = True
+                        elif ch == "P":
+                            follows = False
+                i += 1
+
+            def find_root_hits(arg: str) -> bool:
+                if not tracker.anchors:
+                    return _targets_stage_root(arg, workspace_root, follow_symlinks=follows)
+                return any(
+                    _targets_stage_root(
+                        arg, workspace_root, follow_symlinks=follows, base_dir=anchor
+                    )
+                    for anchor in tracker.anchors
+                )
+
+            if deletes and any(find_root_hits(arg) for arg in roots):
+                return True
+    return False
+
+
+def _find_exec_hits_found(rest: list[str]) -> bool:
+    """Whether a `find -exec CMD …` clause passes the discovered path (`{}`) to
+    the destructive command before its terminator (`;` / `+`)."""
+    for tok in rest[1:]:
+        if tok in {";", "+", "\\;"}:
+            break
+        if "{}" in tok:
+            return True
     return False
 
 
@@ -399,9 +1237,11 @@ def shell_write_paths(command: str) -> list[str]:
     paths: list[str] = []
 
     def add(path: str) -> None:
-        normalized = normalize_path_text(path)
-        if normalized and normalized not in paths:
-            paths.append(normalized)
+        # Keep `..` intact (see collect_explicit_paths) for symlink-safe resolve.
+        # Restore sentinels: a path is a real operand, not a separator boundary.
+        cleaned = clean_path_text(_restore_sentinels(path))
+        if cleaned and cleaned not in paths:
+            paths.append(cleaned)
 
     for match in REDIRECT_RE.finditer(command):
         add(match.group("path"))
@@ -415,7 +1255,7 @@ def shell_write_paths(command: str) -> list[str]:
         if command_name in {"cp", "mv"}:
             args: list[str] = []
             cursor = index + 1
-            while cursor < len(tokens) and tokens[cursor] not in {"&&", "||", ";", "|"}:
+            while cursor < len(tokens) and tokens[cursor] not in SHELL_SEPARATORS:
                 current = tokens[cursor]
                 if not current.startswith("-"):
                     args.append(current)
@@ -427,7 +1267,7 @@ def shell_write_paths(command: str) -> list[str]:
 
         if command_name == "tee":
             cursor = index + 1
-            while cursor < len(tokens) and tokens[cursor] not in {"&&", "||", ";", "|"}:
+            while cursor < len(tokens) and tokens[cursor] not in SHELL_SEPARATORS:
                 current = tokens[cursor]
                 if not current.startswith("-"):
                     add(current)
@@ -439,7 +1279,7 @@ def shell_write_paths(command: str) -> list[str]:
             cursor = index + 1
             in_place = False
             args: list[str] = []
-            while cursor < len(tokens) and tokens[cursor] not in {"&&", "||", ";", "|"}:
+            while cursor < len(tokens) and tokens[cursor] not in SHELL_SEPARATORS:
                 current = tokens[cursor]
                 if current == "-i" or current.startswith("-i"):
                     in_place = True
@@ -478,10 +1318,10 @@ def iter_git_commands(command: str) -> list[tuple[str, list[str]]]:
                 continue
             args: list[str] = []
             arg_cursor = cursor + 1
-            while arg_cursor < len(tokens) and tokens[arg_cursor] not in {"&&", "||", ";", "|"}:
-                args.append(tokens[arg_cursor])
+            while arg_cursor < len(tokens) and tokens[arg_cursor] not in SHELL_SEPARATORS:
+                args.append(_restore_sentinels(tokens[arg_cursor]))
                 arg_cursor += 1
-            commands.append((current, args))
+            commands.append((_restore_sentinels(current), args))
             break
     return commands
 
@@ -631,9 +1471,13 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
 
 
 def split_scope(value: str) -> tuple[str, ...]:
+    """Cleaned (NOT dot-collapsed) declaration entries. `..` survives so a
+    declaration spelled through a symlink (`scope: alias/../other`) reaches the
+    entry canonicalization intact — a lexical pre-collapse would mis-anchor it
+    (`other`) and reject the exact declared spelling."""
     if not value:
         return ()
-    parts = [normalize_path_text(part) for part in re.split(r"[,;]", value)]
+    parts = [clean_path_text(part) for part in re.split(r"[,;]", value)]
     clean = tuple(part for part in parts if part)
     return clean
 
@@ -697,30 +1541,66 @@ def item_completion_blockers(item: WorkItem) -> list[str]:
     return blockers
 
 
-def item_matches_path(item: WorkItem, path: str, workspace_root: Path) -> bool:
-    relative = relative_to_workspace(path, workspace_root)
+def item_matches_path(
+    item: WorkItem, path: str, workspace_root: Path, follows_symlink: bool = False
+) -> bool:
+    # A CONTENT write (`follows_symlink=True`: Write/Edit) modifies the
+    # dereferenced target, so it is matched by the RESOLVED form — a scope of
+    # `aliases` must not authorize a write to `aliases/link.py -> src/app.py`,
+    # which lands in src/. An UNLINK/move is matched by the entry-canonical form
+    # ONLY: the leaf-dereferenced form would let two leaves aliasing one target
+    # cross-authorize (`scope: src` covering a delete of `other/b.py` that
+    # points at src/shared.py); the lexical form would let a collapsed spelling
+    # smuggle authorization. The SCOPE side keeps all forms: a scope entry that
+    # is itself a symlinked directory (`scope: link`, link -> src) is the user's
+    # declared alias for that subtree.
+    if follows_symlink:
+        target = relative_to_workspace(path, workspace_root)
+        target_forms = [target] if target and not is_outside_workspace(target) else []
+    else:
+        target_entry = entry_relative_to_workspace(path, workspace_root)
+        target_forms = [target_entry] if target_entry else []
     for scope in item.scope:
-        normalized = normalize_path_text(scope)
-        if normalized == "*":
+        if normalize_path_text(scope) == "*":
             return True
-        if normalized in {"", "."}:
+        if normalize_path_text(scope) in {"", "."}:
             continue
-        if relative == normalized or relative.startswith(normalized.rstrip("/") + "/"):
-            return True
+        for normalized in _scope_match_forms(scope, workspace_root):
+            for relative in target_forms:
+                if relative == normalized or relative.startswith(normalized.rstrip("/") + "/"):
+                    return True
     return False
 
 
+def _scope_match_forms(scope: str, workspace_root: Path) -> set[str]:
+    """Canonical forms a scope authorizes. The entry and lexical forms always
+    apply. The leaf-dereferenced (resolved) form is added ONLY when the scope
+    resolves to a DIRECTORY — a scope naming a symlinked directory (`scope:
+    link`, link -> src/) is the user's alias for that subtree, but a scope
+    naming a symlinked FILE (`aliases/link.py` -> src/actual.py) names one
+    entry and must not authorize the distinct target it points at."""
+    resolved, entry, lexical = stage_relative_forms(scope, workspace_root)
+    forms = {form for form in (entry, lexical) if form}
+    try:
+        if (workspace_root / clean_path_text(scope)).is_dir() and resolved:
+            forms.add(resolved)
+    except (OSError, RuntimeError):
+        pass
+    return forms
+
+
 def item_promotes_path(item: WorkItem, path: str, workspace_root: Path) -> bool:
-    relative = relative_to_workspace(path, workspace_root)
+    # Entry-canonical on BOTH sides: a promotion grant names an exact entry, so
+    # two symlinked leaves aliasing one target must not share one grant.
+    relative = entry_relative_to_workspace(path, workspace_root)
     for promoted_path in item.promotes:
-        normalized = normalize_path_text(promoted_path)
-        if normalized == relative:
+        if entry_relative_to_workspace(promoted_path, workspace_root) == relative:
             return True
     return False
 
 
 def archive_target_item_id(path: str, workspace_root: Path) -> str:
-    relative = relative_to_workspace(path, workspace_root)
+    relative = entry_relative_to_workspace(path, workspace_root)
     prefix = ".stage/past/work/archive/items/"
     if not relative.startswith(prefix):
         return ""
@@ -731,7 +1611,7 @@ def archive_target_item_id(path: str, workspace_root: Path) -> str:
 
 
 def archive_target_retro_id(path: str, workspace_root: Path) -> str:
-    relative = relative_to_workspace(path, workspace_root)
+    relative = entry_relative_to_workspace(path, workspace_root)
     prefix = ".stage/past/work/archive/retrospectives/"
     if not relative.startswith(prefix):
         return ""
@@ -850,8 +1730,10 @@ def changed_files(workspace_root: Path, *, include_untracked: bool = False) -> l
     return paths
 
 
-def source_registration_blocker(workspace_root: Path, paths: list[str]) -> str:
-    source_paths = [path for path in paths if is_source_path(path, workspace_root)]
+def source_registration_blocker(
+    workspace_root: Path, paths: list[str], follows_symlink: bool = False
+) -> str:
+    source_paths = [path for path in paths if is_source_path(path, workspace_root, follows_symlink)]
     if not source_paths:
         return ""
     open_items = [item for item in load_work_items(workspace_root / ".stage") if item_is_open(item)]
@@ -860,7 +1742,7 @@ def source_registration_blocker(workspace_root: Path, paths: list[str]) -> str:
     uncovered = [
         path
         for path in source_paths
-        if not any(item_matches_path(item, path, workspace_root) for item in open_items)
+        if not any(item_matches_path(item, path, workspace_root, follows_symlink) for item in open_items)
     ]
     if not uncovered:
         return ""
@@ -972,19 +1854,20 @@ def migrate_legacy_runtime(stage_root: Path) -> None:
 def write_intent_file(stage_root: Path, intent: dict[str, Any], path_value: str) -> Path | None:
     """Persist a single-path intent; the slot is (work item, canonical path).
 
-    The path is canonicalized to workspace-relative before slotting and
-    storage, so replanting the same target as absolute vs relative stays
-    idempotent. The filename embeds the basename plus a digest of the full
-    path — bounded regardless of target depth. A slot collision with a
-    DIFFERENT logical (item, path) pair falls through to a numbered suffix
-    instead of overwriting someone else's pending authorization.
+    The path is canonicalized to the ENTRY-relative workspace form (parents
+    resolved, leaf kept as named) before slotting and storage, so replanting
+    the same target as absolute vs relative stays idempotent while two aliased
+    leaves stay distinct slots. The filename embeds the basename plus a digest
+    of the full path — bounded regardless of target depth. A slot collision
+    with a DIFFERENT logical (item, path) pair falls through to a numbered
+    suffix instead of overwriting someone else's pending authorization.
     """
     root = intents_root(stage_root)
     try:
         workspace_root = stage_root.parent.resolve()
     except OSError:
         workspace_root = stage_root.parent
-    normalized = relative_to_workspace(path_value, workspace_root)
+    normalized = entry_relative_to_workspace(path_value, workspace_root)
     record = {**intent, "paths": [normalized]}
     item = str(intent.get("work_item") or "intent")
     digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:10]
@@ -1002,7 +1885,7 @@ def write_intent_file(stage_root: Path, intent: dict[str, Any], path_value: str)
                 same_slot = (
                     isinstance(existing, dict)
                     and str(existing.get("work_item") or "") == item
-                    and [relative_to_workspace(p, workspace_root) for p in intent_paths(existing)]
+                    and [entry_relative_to_workspace(p, workspace_root) for p in intent_paths(existing)]
                     == [normalized]
                 )
                 if not same_slot:
@@ -1056,12 +1939,14 @@ def load_promotion_intents(stage_root: Path) -> list[tuple[Path, dict[str, Any]]
 
 
 def intent_paths(intent: dict[str, Any]) -> list[str]:
+    # Cleaned, NOT dot-collapsed (see split_scope): a legacy intent spelled
+    # with `..` must reach entry canonicalization intact.
     raw = intent.get("paths")
     if isinstance(raw, list):
-        return [normalize_path_text(str(item)) for item in raw if str(item).strip()]
+        return [clean_path_text(str(item)) for item in raw if str(item).strip()]
     raw_path = intent.get("path")
     if isinstance(raw_path, str) and raw_path.strip():
-        return [normalize_path_text(raw_path)]
+        return [clean_path_text(raw_path)]
     return []
 
 
@@ -1083,11 +1968,13 @@ def promotion_blocker(workspace_root: Path, target_paths: list[str]) -> str:
             "`scripts/promote_intent.py` (writes `.stage/.runtime/intents/<work-item>--<path>.json`)."
         )
 
-    requested = {relative_to_workspace(path, workspace_root) for path in target_paths}
+    # Entry-canonical matching: an intent authorizes the exact entry it names,
+    # never a sibling alias of the same resolved target.
+    requested = {entry_relative_to_workspace(path, workspace_root) for path in target_paths}
     by_path: dict[str, list[tuple[Path, dict[str, Any]]]] = {}
     for intent_file, intent in intents:
         for declared in intent_paths(intent):
-            by_path.setdefault(relative_to_workspace(declared, workspace_root), []).append(
+            by_path.setdefault(entry_relative_to_workspace(declared, workspace_root), []).append(
                 (intent_file, intent)
             )
 
@@ -1318,20 +2205,29 @@ def projected_patch_text(patch_text: str, target_relative: str, workspace_root: 
             matched_header = False
             for prefix in ("Add File: ", "Update File: ", "Delete File: "):
                 if header.startswith(prefix):
-                    current_source = relative_to_workspace(
-                        normalize_path_text(header[len(prefix):]), workspace_root
+                    raw_path = header[len(prefix):]
+                    # Match the way the target was SELECTED (any form): a
+                    # symlinked work-item leaf keeps its lexical `.stage/...`
+                    # form while a plain resolve derefs outside — an equality on
+                    # the resolved form alone would skip the hunks and hide a
+                    # `parent:` change from the hierarchy gate.
+                    collecting = target_relative in stage_relative_forms(raw_path, workspace_root)
+                    current_source = (
+                        target_relative
+                        if collecting
+                        else relative_to_workspace(raw_path, workspace_root)
                     )
-                    collecting = current_source == target_relative
                     if collecting:
                         base_relative = current_source
                     matched_header = True
                     break
             if not matched_header:
                 if header.startswith("Move to: "):
-                    move_target = relative_to_workspace(
-                        normalize_path_text(header[len("Move to: "):]), workspace_root
-                    )
-                    if move_target == target_relative and current_source:
+                    raw_move = header[len("Move to: "):]
+                    if (
+                        target_relative in stage_relative_forms(raw_move, workspace_root)
+                        and current_source
+                    ):
                         collecting = True
                         base_relative = current_source
                 elif header.strip() == "End Patch":
@@ -1348,18 +2244,30 @@ def projected_patch_text(patch_text: str, target_relative: str, workspace_root: 
     return "\n".join(added + kept)
 
 
+WORK_ITEMS_PREFIX = ".stage/present/work/items/"
+
+
+def work_item_relative(raw: str, workspace_root: Path) -> str:
+    """Work-item relative path if ANY form (resolved, entry, lexical) is under
+    `present/work/items/` — a work-item file that is a symlink to outside
+    (resolve derefs away) still counts, since `load_work_items` follows it."""
+    for form in stage_relative_forms(raw, workspace_root):
+        if form.startswith(WORK_ITEMS_PREFIX):
+            return form
+    return ""
+
+
 def hierarchy_item_targets(workspace_root: Path, payload: dict[str, Any], name: str) -> list[tuple[str, str]]:
     """(relative_path, projected_post_edit_text) for every targeted work item file."""
     data = tool_input(payload)
-    prefix = ".stage/present/work/items/"
     targets: list[tuple[str, str]] = []
 
     if name == "apply_patch":
         for text_value in iter_strings(data):
             for match in PATCH_FILE_RE.finditer(text_value):
                 raw = match.group("path") or match.group("move") or ""
-                relative = relative_to_workspace(normalize_path_text(raw), workspace_root)
-                if relative.startswith(prefix):
+                relative = work_item_relative(raw, workspace_root)
+                if relative:
                     targets.append(
                         (relative, projected_patch_text(text_value, relative, workspace_root))
                     )
@@ -1373,8 +2281,8 @@ def hierarchy_item_targets(workspace_root: Path, payload: dict[str, Any], name: 
             break
     if not target:
         return []
-    relative = relative_to_workspace(target, workspace_root)
-    if not relative.startswith(prefix):
+    relative = work_item_relative(target, workspace_root)
+    if not relative:
         return []
     existing = read_existing_text(workspace_root, relative)
     targets.append((relative, projected_file_text(existing, name, data)))
@@ -1444,35 +2352,67 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
     if command:
         shell_write_targets = shell_write_paths(command)
         for path in shell_write_targets:
-            normalized = normalize_path_text(path)
-            if normalized and normalized not in explicit_paths:
-                explicit_paths.append(normalized)
+            if path and path not in explicit_paths:
+                explicit_paths.append(path)
     if name == "apply_patch":
         for text_value in iter_strings(tool_input(payload)):
             for match in PATCH_FILE_RE.finditer(text_value):
-                normalized = normalize_path_text(match.group("path") or match.group("move") or "")
-                if normalized and normalized not in explicit_paths:
-                    explicit_paths.append(normalized)
+                # Keep `..` (clean, not normalize) for symlink-safe resolve.
+                cleaned = clean_path_text(match.group("path") or match.group("move") or "")
+                if cleaned and cleaned not in explicit_paths:
+                    explicit_paths.append(cleaned)
     workspace_root = resolve_workspace_root(payload)
     stage_root = workspace_root / ".stage"
 
-    if command and command_deletes_stage(command):
+    # An explicit `.stage` delete is always blocked; a strict-ancestor delete
+    # (`rm -rf .`) is filtered inside command_deletes_stage to fire only when a
+    # `.stage` exists, so a pre-init workspace is not over-denied.
+    if command and command_deletes_stage(command, workspace_root):
         return deny(
             "Stage rule violation: deleting `.stage` entirely is blocked. "
             "Modify only the specific files you need so official artifacts, current work status, "
             "and plans are not lost."
         )
 
-    for path in explicit_paths:
-        if path_targets_stage_root(path) and normalize_path_text(path).lower().endswith(OS_SCRIPT_SUFFIXES):
+    # Classify each write target by the UNION of its forms (resolved, entry,
+    # lexical — see stage_relative_forms). Union is fail-closed: the resolved
+    # form catches symlink/`..` re-entry into `.stage`, the entry form catches
+    # an aliased parent whose leaf is an outward symlink, the lexical form
+    # catches a degenerate `.stage -> .` and an unlink/move of a symlink whose
+    # leaf sits in `.stage/past` (where resolve would deref away).
+    def targets_root(raw: str) -> bool:
+        return any(
+            path_targets_stage_root(form) for form in stage_relative_forms(raw, workspace_root)
+        )
+
+    def targets_past(raw: str) -> bool:
+        return any(
+            path_targets_stage_past(form) for form in stage_relative_forms(raw, workspace_root)
+        )
+
+    for raw in explicit_paths:
+        # Per-form conjunction: the SAME form must be both stage-internal and
+        # script-suffixed — `.stage/run.sh -> outside.txt` leaves an executable
+        # `.sh` entry inside `.stage` even though its resolve ends `.txt`, while
+        # a `.md` entry pointing at an outside `.sh` leaves none.
+        if any(
+            path_targets_stage_root(form) and form.lower().endswith(OS_SCRIPT_SUFFIXES)
+            for form in stage_relative_forms(raw, workspace_root)
+        ):
             return deny(
                 "Stage portability rule violation: OS-specific executable scripts are not allowed "
                 "inside `.stage`. Use the Python standard library or Markdown artifacts so behavior "
                 "stays identical on Codex, Claude, Windows, Linux, and macOS."
             )
 
-    past_gate_paths = explicit_paths if name in WRITE_TOOLS else shell_write_targets
-    target_past_paths = [path for path in past_gate_paths if path_targets_stage_past(path)]
+    past_gate_raw = explicit_paths if name in WRITE_TOOLS else shell_write_targets
+    # The promotion gate consumes exact-entry authorizations, so hand it the
+    # entry-canonical form (parents resolved, leaf kept as named).
+    target_past_paths = [
+        entry_relative_to_workspace(raw, workspace_root)
+        for raw in past_gate_raw
+        if targets_past(raw)
+    ]
     if target_past_paths:
         blocker = promotion_blocker(workspace_root, target_past_paths)
         if blocker:
@@ -1494,7 +2434,11 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         blocker = hierarchy_blocker(workspace_root, payload, name)
         if blocker:
             return deny(blocker)
-        blocker = source_registration_blocker(workspace_root, explicit_paths)
+        # Write/Edit/MultiEdit are CONTENT writes — they follow a symlink target
+        # and modify the dereferenced file (not the entry). apply_patch mixes
+        # add/update/delete, so it stays entry-based (best-effort).
+        follows = name in {"Write", "Edit", "MultiEdit"}
+        blocker = source_registration_blocker(workspace_root, explicit_paths, follows)
         if blocker:
             return deny(blocker)
 
@@ -1579,10 +2523,14 @@ def session_context(workspace_root: Path) -> str:
     if backlog:
         parts.append("\n### Selected backlog\n" + "\n".join(backlog))
 
-    recent = latest_session_summary(stage_root)
-    recent_body = read_if_exists(recent) if recent is not None else ""
-    if recent_body:
-        parts.append(f"\n### Most recent session\n{recent_body}")
+    recent_bodies = [
+        body
+        for body in (read_if_exists(path) for path in latest_session_summaries(stage_root))
+        if body
+    ]
+    if recent_bodies:
+        heading = "Most recent session" if len(recent_bodies) == 1 else "Most recent sessions (concurrent)"
+        parts.append(f"\n### {heading}\n" + "\n\n".join(recent_bodies))
 
     return "\n".join(parts)
 
@@ -1673,22 +2621,54 @@ def child_directories(directory: Path, workspace_root: Path) -> list[Path]:
     return children
 
 
-def active_scope_first_segments(stage_root: Path) -> set[str]:
-    """First path segments of open work items' scopes — the packages the
-    current work actually touches."""
-    segments: set[str] = set()
+def active_scope_paths(stage_root: Path) -> set[str]:
+    """Full scoped subtree paths of the packages current or next work touches,
+    from open work items' `scope`. Full paths (not just the first segment) so a
+    two-level scope like `packages/zapp` prioritizes that exact subtree's
+    instructions over its 10 alphabetical siblings under `packages/` (P35). A
+    selected backlog item's relevant scope is its realizing work item's scope,
+    already open here — backlog records carry no scope of their own."""
+    scopes: set[str] = set()
     try:
         items = load_work_items(stage_root)
     except OSError:
-        return segments
+        return scopes
     for item in items:
         if item.status not in WORK_OPEN_STATUSES:
             continue
         for scope in item.scope:
-            head = normalize_path_text(scope).split("/", 1)[0].strip()
-            if head and head != "*":
-                segments.add(head)
-    return segments
+            normalized = normalize_path_text(scope).strip("/")
+            if normalized and normalized != "*":
+                scopes.add(normalized)
+    return scopes
+
+
+def _instruction_source_dir(line: str) -> str:
+    """The owning package directory of an inventory line like
+    ``- `pkg/.claude/CLAUDE.md` ``. Metadata containers (`.claude`, `.agents`,
+    `.github`) are stripped so the source attributes to the package (`pkg`),
+    which is what a work-item scope names."""
+    inner = line.split("`", 2)
+    if len(inner) < 2:
+        return ""
+    ref = inner[1].rstrip("/")
+    ref = ref.rsplit("/", 1)[0] if "/" in ref else ""
+    segments = ref.split("/") if ref else []
+    trimmed: list[str] = []
+    for segment in segments:
+        if segment in {".claude", ".agents", ".github"}:
+            break
+        trimmed.append(segment)
+    return "/".join(trimmed)
+
+
+def _scope_prioritized(source_dir: str, scopes: set[str]) -> bool:
+    """A source is prioritized if its directory and a scope path are on the same
+    branch (one is a prefix of the other)."""
+    for scope in scopes:
+        if source_dir == scope or source_dir.startswith(scope + "/") or scope.startswith(source_dir + "/"):
+            return True
+    return False
 
 
 def consumer_context_lines(
@@ -1696,24 +2676,29 @@ def consumer_context_lines(
     limit: int = CONSUMER_CONTEXT_MAX_LINES,
     stage_root: Path | None = None,
 ) -> list[str]:
-    lines = directory_instruction_lines(workspace_root)
+    root_lines = directory_instruction_lines(workspace_root)
 
     # Monorepo packages carry their own subtree-scoped instructions; container
     # layouts (packages/foo, apps/web) put them two levels down. Discovery is
-    # bounded to depth 2 and the total line cap below. Packages that active
-    # work items actually scope come first so the cap never drops the sources
-    # governing the work at hand.
-    priority_segments = active_scope_first_segments(stage_root) if stage_root else set()
-    children = child_directories(workspace_root, workspace_root)
-    children.sort(key=lambda child: (child.name not in priority_segments, child.name))
-    for child in children:
-        lines.extend(directory_instruction_lines(child, prefix=f"{child.name}/"))
+    # bounded to depth 2 and the total line cap below.
+    package_lines: list[str] = []
+    for child in child_directories(workspace_root, workspace_root):
+        package_lines.extend(directory_instruction_lines(child, prefix=f"{child.name}/"))
         for grandchild in child_directories(child, workspace_root):
-            lines.extend(
+            package_lines.extend(
                 directory_instruction_lines(
                     grandchild, prefix=f"{child.name}/{grandchild.name}/"
                 )
             )
+
+    # Sources on the branch of an active work item's scope come first so the cap
+    # never drops the guide governing the work at hand — full-path, not first
+    # segment, so `packages/zapp` beats `packages/a00…`.
+    scopes = active_scope_paths(stage_root) if stage_root else set()
+    package_lines.sort(
+        key=lambda line: (not _scope_prioritized(_instruction_source_dir(line), scopes),)
+    )
+    lines = root_lines + package_lines
 
     if len(lines) > limit:
         overflow = len(lines) - limit
@@ -1915,6 +2900,30 @@ def latest_session_summary(stage_root: Path) -> Path | None:
     migrate_legacy_runtime(stage_root)
     files = summaries_by_recency(stage_root)
     return files[0] if files else None
+
+
+def latest_session_summaries(stage_root: Path) -> list[Path]:
+    """The newest handoff plus any others sharing its mtime — on a coarse-
+    resolution filesystem two sessions can Stop in the same tick, and injecting
+    only one would silently drop a concurrent session's handoff (P30)."""
+    migrate_legacy_runtime(stage_root)
+    files = summaries_by_recency(stage_root)
+    if not files:
+        return []
+    try:
+        newest_mtime = files[0].stat().st_mtime
+    except OSError:
+        return files[:1]
+    tied: list[Path] = []
+    for path in files:
+        try:
+            if path.stat().st_mtime == newest_mtime:
+                tied.append(path)
+            else:
+                break
+        except OSError:
+            continue
+    return tied or files[:1]
 
 
 SUMMARY_MIN_PRUNE_AGE_SECONDS = 24 * 60 * 60

@@ -57,7 +57,7 @@ Lineage is bidirectional: a work item's `source` names the backlog item it reali
 | `review`, `completed`, `rejected` | `present/work/items/` + `present/work/review.md` |
 | `archived` | `past/work/archive/items/` |
 
-`completed` means verification, retrospective, and the promotion decision are all closed. When the item is no longer referenced by current work, set `status: archived` and move it to `past/work/archive/items/`.
+`completed` means verification, retrospective, and the promotion decision are all closed. Archive a `completed` or `rejected` item once BOTH hold: no active/review/blocked work item names it as `parent`, and no open question, assumption, or risk lists it in `work_items`. Then set `status: archived` and move it to `past/work/archive/items/`.
 
 Moving to `archived` is record keeping, not promotion. A `completed` or `rejected` work item can be archived with an archive intent to `past/work/archive/items/`. The item's retrospective file moves with it to `past/work/archive/retrospectives/` in the same archive intent.
 

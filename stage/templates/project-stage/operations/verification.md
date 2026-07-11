@@ -6,7 +6,7 @@ This document owns the verification rules.
 
 - Both external-perspective and internal-perspective completion are required.
 - Tests or equivalent verification must match the change.
-- Lint and formatters must pass where applicable.
+- If the project declares a linter or formatter (a config file or a documented command exists), it must pass; if none is declared, this criterion is skipped.
 - New behavior needs a verification path.
 - Work without a retrospective is not complete.
 
@@ -18,6 +18,6 @@ This document owns the verification rules.
 |---|---|
 | planning | The user (or decision owner) confirmed the plan; open questions routed to `present/state/questions/`. |
 | design | The design was reviewed and approved by its owner; decisions recorded in `present/work/decisions/`. |
-| development | Tests or equivalent executable verification pass; lint and formatters pass where applicable. |
+| development | Tests or equivalent executable verification pass; a declared linter/formatter passes (skipped only when the project declares none). |
 | qa | The test scenarios were executed and their results are recorded in the work item. |
 | ops | The change was applied and observed working in its target environment. |

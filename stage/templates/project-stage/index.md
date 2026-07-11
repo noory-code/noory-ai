@@ -50,6 +50,7 @@ This document routes project context to the correct Stage location.
 | Proposal bodies | `future/proposals/` |
 | Before-work rules | `operations/before.md` |
 | During-work rules | `operations/during.md` |
+| External-review rules | `operations/review.md` |
 | After-work rules | `operations/after.md` |
 | Retrospective rules | `operations/retrospective.md` |
 | Artifact operation rules | `operations/artifacts.md` |
