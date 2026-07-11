@@ -8,6 +8,7 @@ This document owns the verification rules.
 - Tests or equivalent verification must match the change.
 - If the project declares a linter or formatter (a config file or a documented command exists), it must pass; if none is declared, this criterion is skipped.
 - New behavior needs a verification path.
+- `verification: passed` records evidence produced in the session that sets it — the stated checks actually run, with their output observed, not the checks that were merely supposed to run.
 - Work without a retrospective is not complete.
 
 ## What `passed` means per kind
@@ -21,3 +22,7 @@ This document owns the verification rules.
 | development | Tests or equivalent executable verification pass; a declared linter/formatter passes (skipped only when the project declares none). |
 | qa | The test scenarios were executed and their results are recorded in the work item. |
 | ops | The change was applied and observed working in its target environment. |
+| feature | Tests or equivalent executable verification pass; a declared linter/formatter passes (skipped only when the project declares none). |
+| fix | A test reproduces the bug and now passes; a declared linter/formatter passes. |
+| documentation | The touched docs are accurate against the code or state they describe and their links resolve; a declared linter passes. |
+| chore | The mechanical change is applied and confirmed by observed command output; no behavior regression. |

@@ -25,6 +25,10 @@ re-derived from hook source each session:
   was read as a commit pathspec and produced false registration-gate denials on
   ordinary commit invocations. `git_commit_pathspec_files` now stops argument
   scanning at the first redirection; real `-- path` pathspecs are still caught.
+- `operations/verification.md` gains the rule that `verification: passed` records
+  evidence produced in the session that sets it — the stated checks actually run,
+  not the checks that were merely supposed to run (a recurring retrospective
+  learning made durable).
 
 ## 0.13.0 — 2026-07-12
 
