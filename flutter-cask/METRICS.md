@@ -93,14 +93,7 @@ Claude Code 플랫폼에 사용 통계 API 요청:
 - pub.dev Popularity Score > 85
 - 기존 카테고리와 시너지 또는 새 카테고리 정당성
 
-## 액션 아이템
-
-- [x] GitHub Issue Templates 생성
-- [ ] 분기별 분석 스크립트 작성
-- [ ] README에 피드백 섹션 추가
-- [ ] 첫 분기 데이터 수집 (3개월)
-- [ ] 첫 분기 리포트 및 우선순위 재조정
-- [ ] Claude Code 팀에 사용 통계 API 제안
+진행 중인 작업 항목은 이 문서가 아니라 GitHub Issues에서 추적합니다.
 
 ## 참고
 

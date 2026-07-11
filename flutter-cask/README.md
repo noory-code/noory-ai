@@ -21,7 +21,7 @@ Curated reference skills for Flutter development. Each skill gives Claude instan
 | Testing | `flutter-test-unit`, `flutter-test-widget`, `flutter-test-integration` |
 | Data | `flutter-freezed` |
 | Infra | `flutter-fvm`, `flutter-melos`, `flutter-talker` |
-| Meta | `update-flutter-skills` |
+| Meta | `help`, `update-flutter-skills` |
 
 ## Installation
 

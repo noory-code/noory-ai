@@ -33,53 +33,27 @@ skills/flutter-example/
 
 ### 3. SKILL.md 필수 섹션
 
-`SKILL.md` 파일은 다음 섹션을 포함해야 합니다:
+정확한 섹션 골격(프론트매터, Title, Installation, Quick Reference, Common Issues, References)은 [scaffold/template/SKILL.md](scaffold/template/SKILL.md)가 SSOT입니다 — `new-skill.py`가 이 템플릿으로 새 스킬을 생성합니다. 아래는 각 섹션을 채울 때 참고할 필드 설명과 가이드라인입니다.
 
-#### Frontmatter (필수)
-```yaml
----
-name: flutter-example
-description: Example package for Flutter development
-metadata:
-  version: "1.1.0"
-  category: flutter-lib
-  type: unit
-  style: guide
-  triggers: [example, sample, demo]
----
-```
+#### Frontmatter
 
 **필드 설명:**
 - `name`: 스킬 이름 (kebab-case)
 - `description`: 한 줄 설명 (50자 이내)
-- `version`: 스킬 버전 (현재 "1.1.0" 사용)
-- `category`: 카테고리 (현재 모든 스킬은 "flutter-lib")
-- `type`: 타입 (현재 "unit" 사용)
-- `style`: 스타일 (현재 "guide" 사용)
+- `version`: 스킬 버전 (예: "1.1.0")
+- `category`: 카테고리 (모든 스킬은 "flutter-lib")
+- `type`: 타입 ("unit")
+- `style`: 스타일 ("guide")
 - `triggers`: 스킬 활성화 키워드 배열
 
-#### Title (필수)
-```markdown
-# Flutter Example
-
-간단한 설명 한 줄
-```
-
-#### Installation (필수)
-```markdown
-## Installation
-
-\`\`\`bash
-flutter pub add example_package
-\`\`\`
-```
+#### Installation
 
 패키지가 dev dependency인 경우:
 ```bash
 flutter pub add dev:example_package
 ```
 
-build_runner가 필요한 경우 Code Generation 섹션 추가:
+build_runner 기반 코드 생성 패키지(예: freezed, json_serializable)는 Code Generation 섹션을 추가합니다:
 ```markdown
 ## Code Generation
 
@@ -92,19 +66,7 @@ dart run build_runner watch -d
 \`\`\`
 ```
 
-#### Quick Reference (필수)
-```markdown
-## Quick Reference
-
-\`\`\`dart
-import 'package:example_package/example_package.dart';
-
-// 기본 사용 예제
-void example() {
-  // 코드 예제
-}
-\`\`\`
-```
+#### Quick Reference
 
 **가이드라인:**
 - 가장 일반적인 사용 사례 3-5개 포함
@@ -112,27 +74,11 @@ void example() {
 - 실제 동작하는 코드 제공
 - Flutter 및 Dart 컨벤션 준수
 
-#### Common Issues (필수)
-```markdown
-## Common Issues
-
-| Issue | Fix |
-|------|------|
-| 문제 설명 | 해결 방법 |
-| 또 다른 문제 | 해결 방법 |
-```
+#### Common Issues
 
 실제 사용자가 겪는 일반적인 문제와 해결 방법을 포함하세요.
 
 #### References (선택)
-```markdown
-## References
-
-| File | Description |
-|------|------|
-| [advanced.md](references/advanced.md) | 고급 사용법 및 패턴 |
-| [examples.md](references/examples.md) | 추가 코드 예제 |
-```
 
 `references/` 디렉토리가 있는 경우에만 이 섹션을 포함하세요.
 
@@ -161,7 +107,7 @@ skills/flutter-example/references/
 - **references 필요**: riverpod (사용 사례 5+, 고급 패턴), go-router (고급 패턴, 100줄 초과)
 - **references 불필요**: package-info (사용 사례 2개, 단순), share (기본 사용법만 존재)
 
-**참고:** 35개 스킬 중 8개만 references 디렉토리를 가지고 있습니다. 대부분의 스킬은 SKILL.md만으로 충분합니다.
+**참고:** 34개 스킬(패키지 가이드 32개 + `help` + `update-flutter-skills`) 중 8개만 references 디렉토리를 가지고 있습니다. 대부분의 스킬은 SKILL.md만으로 충분합니다.
 
 ## 스킬 작성 모범 사례
 
@@ -173,7 +119,7 @@ skills/flutter-example/references/
 
 ### 2. 설명
 - 간단명료하게 작성
-- 전문 용어는 필요시에만 사용
+- 전문 용어는 Flutter/Dart 생태계의 표준 용어(예: widget, provider)로 한정해 사용 — 더 쉬운 한국어 표현이 있으면 그것을 우선
 - 한국어로 작성
 
 ### 3. 구조
@@ -191,7 +137,7 @@ skills/flutter-example/references/
 1. 해당 스킬의 `SKILL.md` 파일 수정
 2. 코드 예제가 최신 패키지 버전과 호환되는지 확인
 3. Common Issues 섹션 업데이트
-4. 필요시 references 문서 추가
+4. "References 디렉토리 사용 기준"(2개 이상 해당) 충족 시 references 문서 추가
 
 ## 테스트
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.6] — 2026-07-12
+
+### Fixed
+- `.github/workflows/check-skill-versions.yml`: script call and PR-trigger path pointed at deleted `scripts/check-skill-versions.sh`; now call `python3 scripts/check-skill-versions.py` (the CI job was broken since the 1.2.1 Python migration)
+- `CONTRIBUTING.md`: stale "35개 스킬" count corrected to 34 (32 package skills + `help` + `update-flutter-skills`)
+- `CONTRIBUTING.md`: replaced two vague "필요시" ("if needed") phrases with explicit conditions
+- `CONTRIBUTING.md`: SKILL.md structure section now links to `scaffold/template/SKILL.md` as the canonical template instead of duplicating it in prose
+- `README.md`: skills table now lists the `help` skill under Meta (previously undocumented)
+- `METRICS.md`: removed the "액션 아이템" checkbox list (status tracker embedded in doc body); action items now tracked in GitHub Issues
+
+---
+
 ## [1.2.5] — 2026-03-20
 
 ### Fixed

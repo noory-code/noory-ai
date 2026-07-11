@@ -8,7 +8,7 @@ on:
   pull_request:
     paths:
       - 'skills/*/SKILL.md'
-      - 'scripts/check-skill-versions.sh'
+      - 'scripts/check-skill-versions.py'
       - '.github/workflows/check-skill-versions.yml'
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
         id: version-check
         continue-on-error: true
         run: |
-          bash scripts/check-skill-versions.sh
+          python3 scripts/check-skill-versions.py
           echo "exit_code=$?" >> $GITHUB_OUTPUT
 
       - name: 보고서 업로드
