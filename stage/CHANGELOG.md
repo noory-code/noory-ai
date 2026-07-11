@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.14.0 — 2026-07-12
+
+Self-service lifecycle skills so mechanical Stage flows are executed, not
+re-derived from hook source each session:
+
+- New `stage-archive` skill and `stage/scripts/archive_work.py` one-shot helper.
+  Archiving a completed/rejected item is now a single validated, idempotent
+  command (`archive_work.py W-… | --all-completed`) that moves the item and its
+  retrospective into `past/work/archive/`, records the terminal status in
+  `archive/index.md`, and drops the present-flow rows.
+- Clarified the archive contract: archiving passes exactly ONE gate — a per-path
+  archive intent. `.stage/` is excluded from `is_source_path`, so the
+  registration and commit gates never fire on it and NO new work item is needed
+  to archive. New `hooks/tests/test_archive_gate.py` locks this, guarding against
+  the false "two gates" belief that once spawned a spurious archive work item.
+
 ## 0.13.0 — 2026-07-12
 
 Work-item routing for multi-agent projects:
