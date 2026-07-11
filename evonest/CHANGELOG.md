@@ -2,6 +2,42 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.1.5] — 2026-07-12
+
+### Fixed
+
+Documentation accuracy pass across README, PRIVACY, CONTRIBUTING, ROADMAP, and
+`docs/`:
+
+- `PRIVACY.md`: corrected `proposals.json` to `proposals/` (proposals are
+  stored as a directory of files, not a single JSON file); dropped the
+  hardcoded `Evonest v1.0.3` footer version, which had drifted from the
+  actual release.
+- `docs/mcp-tools.md`: regenerated to document all 18 registered MCP tools
+  (previously covered 11) — added `evonest_analyze`, `evonest_evolve`,
+  `evonest_improve`, `evonest_proposals`, `evonest_personas`,
+  `evonest_update_docs`, and `evonest_identity_refresh` — and marked
+  `evonest_run` as deprecated in favor of `evonest_evolve`, matching its own
+  docstring. Linked from `README.md`, where it was previously unreferenced.
+- `ROADMAP.md`: renamed the unshipped "Persona Community" entry from
+  `v0.4.0` to `v1.2.0` — `v0.4.0` was already used by a shipped, unrelated
+  release (stream-json logging, see the `[0.4.0]` entry below).
+- `docs/configuration.md`: removed the "Persona Community (v0.4.0+)" section
+  documenting the unshipped `evonest_import` tool, which does not exist in
+  `src/evonest/tools/`; the roadmap item remains in `ROADMAP.md` only.
+- `docs/architecture.md`: regenerated the `core/` module map to include
+  `data_root.py`, `paths.py`, `repositories.py`, `improve.py`,
+  `process_manager.py`, `doc_updater.py`, and `notify.py`, and the `tools/`
+  map to include `personas.py` and `update_docs.py`; corrected the
+  `templates/` tree — `scout.json` (and the dynamic-mutation/advice/
+  environment files) are generated directly by `initializer.py`, not copied
+  from a template file.
+- `CONTRIBUTING.md`: removed the hardcoded "411 tests currently passing"
+  count, which had drifted from the suite size recorded in later CHANGELOG
+  entries; points to this CHANGELOG's latest entry instead.
+
+**434 tests passing**
+
 ## [1.1.4] — 2026-07-11
 
 ### Fixed

@@ -61,8 +61,8 @@ See [docs/architecture.md](docs/architecture.md) for the full picture.
 ## Testing
 
 - Add tests for any new functionality in `tests/`
-- Tests must pass with `uv run pytest`
-- 411 tests currently passing — do not regress
+- Tests must pass with `uv run pytest` — do not regress the passing count
+  (see [CHANGELOG.md](CHANGELOG.md)'s latest entry for the current count)
 
 ## Reporting Issues
 

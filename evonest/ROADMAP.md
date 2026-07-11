@@ -46,7 +46,7 @@
 
 ---
 
-## v0.4.0 — Persona Community
+## v1.2.0 — Persona Community
 
 ### Goals
 Build a GitHub-based persona sharing ecosystem to achieve network effects. Surpass GitHub Copilot's Microsoft lock-in and Aider's individual customization limitations by creating a community-driven persona library that forms a competitive moat.
@@ -92,9 +92,9 @@ noory-code/evonest-personas
 - **License**: MIT (same as the Evonest core)
 
 ### Roadmap
-1. **Phase 1** (v0.4.0-alpha): Implement `evonest_import` tool + 3 domain packs (startup, security, data-science) with 3 personas each
-2. **Phase 2** (v0.4.0-beta): Publish GitHub repository + contribution guidelines documentation + CI validation
-3. **Phase 3** (v0.4.0): Community persona collection campaign + official blog/documentation promotion
+1. **Phase 1** (v1.2.0-alpha): Implement `evonest_import` tool + 3 domain packs (startup, security, data-science) with 3 personas each
+2. **Phase 2** (v1.2.0-beta): Publish GitHub repository + contribution guidelines documentation + CI validation
+3. **Phase 3** (v1.2.0): Community persona collection campaign + official blog/documentation promotion
 
 ### Competitive Advantages
 - **Copilot**: Locked into Microsoft ecosystem, no customization possible

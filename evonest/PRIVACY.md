@@ -14,7 +14,7 @@ All Evonest data is stored locally in the `.evonest/` directory within your proj
 |------|---------|
 | `config.json` | Engine configuration (turn limits, verify commands) |
 | `identity.md` | Project identity document |
-| `proposals.json` | Analysis proposals and execution history |
+| `proposals/` | Analysis proposals and execution history |
 | `dynamic-personas.json` | Runtime-generated personas |
 | `dynamic-adversarials.json` | Runtime-generated challenges |
 
@@ -42,4 +42,4 @@ For questions, open an issue at [github.com/noory-code/noory-ai](https://github.
 
 ---
 
-*Last updated: 2026-03-18 | Evonest v1.0.3*
+*Last updated: 2026-07-12*

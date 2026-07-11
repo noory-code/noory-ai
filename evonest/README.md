@@ -61,6 +61,8 @@ Add to `~/.claude/mcp.json`:
 }
 ```
 
+See [docs/mcp-tools.md](docs/mcp-tools.md) for the full MCP tool reference.
+
 ## Quick Start
 
 ```

@@ -20,53 +20,68 @@ src/evonest/
 ├── server.py             # FastMCP server (stdio transport)
 ├── cli.py                # argparse CLI (init, run, status, config, ...)
 │
-├── tools/                # MCP tool definitions (thin wrappers)
-│   ├── analyze.py        # evonest_analyze → core.orchestrator.run_analyze
-│   ├── improve.py        # evonest_improve → core.orchestrator.run_improve
-│   ├── evolve.py         # evonest_evolve → core.orchestrator.run_cycles
-│   ├── run.py            # evonest_run (deprecated → evonest_evolve)
-│   ├── init.py           # evonest_init → core.initializer.init_project
-│   ├── proposals.py      # evonest_proposals → core.state.list_proposals
-│   ├── status.py         # evonest_status → core.state.ProjectState.summary
-│   ├── history.py        # evonest_history → core.history.get_recent_history
-│   ├── config.py         # evonest_config → core.config.EvonestConfig
-│   ├── identity.py       # evonest_identity → core.state read/write identity
-│   ├── progress.py       # evonest_progress → core.progress.get_progress_report
-│   ├── backlog.py        # evonest_backlog → core.backlog.manage_backlog
-│   ├── stimuli.py        # evonest_stimuli → core.state.add_stimulus
-│   ├── decide.py         # evonest_decide → core.state.add_decision
-│   └── scout.py          # evonest_scout → core.scout
+├── tools/                 # MCP tool definitions (thin wrappers)
+│   ├── analyze.py         # evonest_analyze → core.orchestrator.run_analyze
+│   ├── improve.py         # evonest_improve → core.improve.run_improve
+│   ├── evolve.py          # evonest_evolve → core.orchestrator.run_cycles
+│   ├── run.py             # evonest_run (deprecated → evonest_evolve)
+│   ├── init.py            # evonest_init → core.initializer.init_project
+│   ├── proposals.py       # evonest_proposals → core.state.list_proposals
+│   ├── personas.py        # evonest_personas → core.mutations list/enable/disable
+│   ├── status.py          # evonest_status → core.state.ProjectState.summary
+│   ├── history.py         # evonest_history → core.history.get_recent_history
+│   ├── config.py          # evonest_config → core.config.EvonestConfig
+│   ├── identity.py        # evonest_identity(_refresh) → core.state / core.initializer
+│   ├── progress.py        # evonest_progress → core.progress.get_progress_report
+│   ├── backlog.py         # evonest_backlog → core.backlog.manage_backlog
+│   ├── stimuli.py         # evonest_stimuli → core.state.add_stimulus
+│   ├── decide.py          # evonest_decide → core.state.add_decision
+│   ├── scout.py           # evonest_scout → core.scout
+│   └── update_docs.py     # evonest_update_docs → core.doc_updater.run_update_docs
 │
-├── core/                 # Engine logic (MCP-agnostic)
-│   ├── state.py          # ProjectState — all .evonest/ paths + file I/O
-│   ├── config.py         # EvonestConfig — 3-tier resolution dataclass
-│   ├── lock.py           # EvonestLock — context manager lock file
-│   ├── initializer.py    # init_project — create .evonest/ + templates
-│   ├── orchestrator.py   # run_cycles — main cycle loop
-│   ├── phases.py         # run_observe, run_plan, run_execute, run_verify
-│   ├── claude_runner.py  # claude -p subprocess wrapper
-│   ├── mutations.py      # load + merge + weighted select
-│   ├── progress.py       # update_progress, recalculate_weights
-│   ├── backlog.py        # save_observations, update_status, prune
-│   ├── meta_observe.py   # build_meta_prompt, apply_meta_results, expire
-│   ├── scout.py          # build_scout_prompt, apply_scout_results, should_run_scout
-│   └── history.py        # build_history_summary, get_recent_history
+├── core/                  # Engine logic (MCP-agnostic)
+│   ├── state.py           # ProjectState — all .evonest/ paths + file I/O
+│   ├── data_root.py       # evonest_data_root() — resolves .noory/evonest/, migrates legacy .evonest/
+│   ├── paths.py           # EvonestPaths — pure path calculations, no I/O
+│   ├── repositories.py    # Per-concern repositories (Identity, Proposal, Stimulus, ...) — file I/O
+│   ├── config.py          # EvonestConfig — 3-tier resolution dataclass
+│   ├── lock.py            # EvonestLock — context manager lock file
+│   ├── initializer.py     # init_project — create data root + templates
+│   ├── orchestrator.py    # run_cycles — main cycle loop
+│   ├── phases.py          # run_observe, run_plan, run_execute, run_verify
+│   ├── improve.py         # run_improve — select_proposal → Execute → Verify → commit/PR
+│   ├── claude_runner.py   # claude -p subprocess wrapper
+│   ├── process_manager.py # ProcessManager — subprocess retry/timeout/stderr abstraction
+│   ├── mutations.py       # load + merge + weighted select
+│   ├── progress.py        # update_progress, recalculate_weights
+│   ├── backlog.py         # save_observations, update_status, prune
+│   ├── meta_observe.py    # build_meta_prompt, apply_meta_results, expire
+│   ├── scout.py           # build_scout_prompt, apply_scout_results, should_run_scout
+│   ├── doc_updater.py     # run_update_docs — sync skills/commands/agents/rules/CLAUDE.md
+│   ├── notify.py          # notify() — cross-platform desktop notification
+│   └── history.py         # build_history_summary, get_recent_history
 │
-├── prompts/              # Phase prompt templates (markdown)
+├── prompts/               # Phase prompt templates (markdown)
 │   ├── observe.md
+│   ├── observe_deep.md
 │   ├── plan.md
 │   ├── execute.md
 │   ├── verify.md
 │   ├── meta_observe.md
-│   └── scout.md
+│   ├── scout.md
+│   ├── identity_draft.md
+│   └── update_docs.md
 │
-└── templates/            # Copied to .evonest/ on init
+└── templates/             # Copied to the project's data root on init
     ├── config.json
     ├── identity.md
     ├── progress.json
-    ├── backlog.json
-    └── scout.json
+    └── backlog.json
 ```
+
+`scout.json`, `dynamic-personas.json`, `dynamic-adversarials.json`, `advice.json`, and
+`environment.json` are generated directly by `initializer.py` as empty JSON (`{}` or `[]`) —
+they are not copied from a file under `templates/`.
 
 ## Orchestrator Flow
 
