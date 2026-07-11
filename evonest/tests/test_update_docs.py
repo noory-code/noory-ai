@@ -33,6 +33,15 @@ def test_collect_targets_skills(tmp_path: Path) -> None:
     assert result["skills/mypkg/SKILL.md"] == "# skill content"
 
 
+def test_collect_targets_codex_skills(tmp_path: Path) -> None:
+    skill_dir = tmp_path / ".agents" / "skills" / "mypkg"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# codex skill")
+
+    result = _collect_targets(tmp_path, "skills")
+    assert result[".agents/skills/mypkg/SKILL.md"] == "# codex skill"
+
+
 def test_collect_targets_claude_commands(tmp_path: Path) -> None:
     cmd_dir = tmp_path / ".claude" / "commands"
     cmd_dir.mkdir(parents=True)
@@ -44,12 +53,14 @@ def test_collect_targets_claude_commands(tmp_path: Path) -> None:
 
 def test_collect_targets_all(tmp_path: Path) -> None:
     (tmp_path / "CLAUDE.md").write_text("# instructions")
+    (tmp_path / "AGENTS.md").write_text("# codex instructions")
     rules_dir = tmp_path / ".claude" / "rules"
     rules_dir.mkdir(parents=True)
     (rules_dir / "style.md").write_text("style rules")
 
     result = _collect_targets(tmp_path, "all")
     assert "CLAUDE.md" in result
+    assert "AGENTS.md" in result
     assert ".claude/rules/style.md" in result
 
 

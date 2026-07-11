@@ -20,7 +20,7 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(claude["name"], "plainly")
         self.assertEqual(codex["name"], "plainly")
         self.assertEqual(claude["version"], codex["version"])
-        self.assertEqual(claude["version"], "0.1.0")
+        self.assertRegex(str(claude["version"]), r"^\d+\.\d+\.\d+$")
 
     def test_hook_contract_has_no_post_answer_continuation(self) -> None:
         config = self.load_json(PLUGIN_ROOT / "hooks" / "hooks.json")

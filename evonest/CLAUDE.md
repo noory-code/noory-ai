@@ -29,7 +29,7 @@
 - **Static/Dynamic separation**: `mutations/` is read-only. Dynamic mutations go to `.noory/evonest/dynamic-*.json`.
 - **Config 3-tier**: Engine defaults < `.noory/evonest/config.json` < runtime parameters.
 - **Tool/Core separation**: `tools/` are thin wrappers. Logic lives in `core/`.
-- **ClaudeRunner**: All `claude -p` subprocess calls go through `core/claude_runner.py`.
+- **Agent runner**: All `claude -p` and `codex exec` subprocess calls go through the backwards-compatible `core/claude_runner.py` module.
 
 ## Version Management
 
@@ -40,13 +40,14 @@
 | `pyproject.toml` | **Only place to change the version** |
 | `src/evonest/__init__.py` | Reads version dynamically via `importlib.metadata` — never hardcode |
 | `.claude-plugin/plugin.json` | Must match `pyproject.toml` version — update together |
+| `.codex-plugin/plugin.json` | Must match `pyproject.toml` version — update together |
 
 When bumping version:
 1. `pyproject.toml` → update `version`
-2. `.claude-plugin/plugin.json` → update `version` to match
+2. Both host plugin manifests → update `version` to match
 3. `CHANGELOG.md` → add entry for the new version (see format below)
 4. `uv.lock` — always include in the same commit
-5. Commit all four together with `chore(evonest): bump version to X.Y.Z`
+5. Commit all five together with `chore(evonest): bump version to X.Y.Z`
 
 CHANGELOG entry format:
 ```markdown
@@ -58,7 +59,7 @@ CHANGELOG entry format:
 **N tests passing**
 ```
 
-Do NOT manually edit `~/.claude/plugins/` cache directories — Claude Code regenerates them on reload.
+Do not manually edit either host's installed plugin cache; reinstall through that host's plugin manager.
 
 ## Conventions
 

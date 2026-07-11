@@ -3,13 +3,13 @@
 ## Key Differentiators
 
 ### Multi-Persona System
-Single-AI tools (Aider, Cursor) offer only one perspective at a time. Evonest picks one persona per cycle, runs it as a fully isolated Claude process, and rotates through 20 built-in perspectives over time. security-auditor, chaos-engineer, and performance-analyst run independently with no shared context between them.
+Single-AI tools (Aider, Cursor) offer only one perspective at a time. Evonest picks one persona per cycle, runs it as a fully isolated Claude Code or Codex process, and rotates through 20 built-in perspectives over time. security-auditor, chaos-engineer, and performance-analyst run independently with no shared context between them.
 
 ### Adaptive Learning
 GitHub Copilot Workspace uses a fixed workflow. Evonest recalculates persona weights after every cycle — successful personas run more often; underperforming ones are deprioritized. After 50 cycles, the distribution reflects what actually works for your specific project.
 
 ### MCP-Native Integration
-Aider is a standalone CLI with no context sharing. Copilot Workspace is isolated in a web UI. Evonest runs inside the Claude Code session — sharing conversation history, file access, and tools natively.
+Aider is a standalone CLI with no context sharing. Copilot Workspace is isolated in a web UI. Evonest runs as a plugin in Claude Code or Codex and selects the matching CLI for its isolated phases.
 
 ## Module Map
 
@@ -50,7 +50,7 @@ src/evonest/
 │   ├── orchestrator.py    # run_cycles — main cycle loop
 │   ├── phases.py          # run_observe, run_plan, run_execute, run_verify
 │   ├── improve.py         # run_improve — select_proposal → Execute → Verify → commit/PR
-│   ├── claude_runner.py   # claude -p subprocess wrapper
+│   ├── claude_runner.py   # Claude Code / Codex subprocess wrapper
 │   ├── process_manager.py # ProcessManager — subprocess retry/timeout/stderr abstraction
 │   ├── mutations.py       # load + merge + weighted select
 │   ├── progress.py        # update_progress, recalculate_weights
@@ -96,14 +96,14 @@ evonest evolve
       │
       ├─ Meta-observe check (every N cycles, if not --no-meta)
       │   ├─ Build prompt (history + stats + personas + backlog + identity)
-      │   ├─ Run claude -p with meta_observe.md
+      │   ├─ Run selected agent backend with meta_observe.md
       │   ├─ Expire old dynamic mutations (TTL check)
       │   ├─ Apply results (new personas, adversarials, auto-stimuli)
       │   └─ Save strategic advice → .noory/evonest/advice.json
       │
       ├─ Scout check (every scout_cycle_interval cycles, if scout_enabled and not --no-scout)
       │   ├─ Extract keywords from identity.md
-      │   ├─ Run claude -p with scout.md (tools: Read, WebFetch, Bash)
+      │   ├─ Run selected agent backend with scout.md
       │   ├─ Score findings 1–10 against project identity/values
       │   ├─ Inject findings ≥ scout_min_relevance_score as stimuli
       │   └─ Cache all findings → .noory/evonest/scout.json (dedup)
@@ -118,14 +118,14 @@ evonest evolve
       │   ├─ Assemble prompt (observe.md + identity + history + convergence
       │   │   + advisor guidance + environment cache
       │   │   + persona + adversarial + stimuli + decisions)
-      │   ├─ Run claude -p (tools: Read, Glob, Grep, Bash)
+      │   ├─ Run selected agent backend in read-only mode
       │   ├─ Save output to .noory/evonest/observe.txt
       │   ├─ Extract improvements → .noory/evonest/backlog.json
       │   └─ Cache ecosystem items → .noory/evonest/environment.json
       │
       ├─ Phase 2: PLAN
       │   ├─ Assemble prompt (plan.md + identity + observe.txt + backlog context)
-      │   ├─ Run claude -p (tools: Read, Glob, Grep, Bash)
+      │   ├─ Run selected agent backend in read-only mode
       │   ├─ Save output to .noory/evonest/plan.txt
       │   └─ Check for "no improvements" → stop loop
       │
@@ -134,7 +134,7 @@ evonest evolve
       ├─ Phase 3: EXECUTE
       │   ├─ Git stash checkpoint
       │   ├─ Assemble prompt (execute.md + identity + plan.txt + decisions)
-      │   ├─ Run claude -p (tools: Read, Glob, Grep, Edit, Write, Bash)
+      │   ├─ Run selected agent backend in write-capable mode
       │   ├─ Proposal items → .noory/evonest/proposals/proposal-{cycle}-{ts}.md (no commit)
       │   └─ Code items → .noory/evonest/execute.txt
       │

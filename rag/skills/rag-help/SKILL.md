@@ -5,10 +5,12 @@ user-invocable: true
 metadata:
   type: action
   version: v1.1.0
-  plugin_version: "0.1.4"
+  plugin_version: "0.3.0"
 ---
 
 # rag-help — rag usage
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 Show the following body to the user as-is. If the project already has an index (`.noory/rag/` exists), call `rag_stats` first and prepend a one-line current status.
 
@@ -20,10 +22,19 @@ rag is a plugin that indexes the **current project's domain material** (PDFs · 
 
 ## Install
 
+Claude Code:
+
 ```text
 /plugin marketplace add noory-code/noory-ai
 /plugin marketplace update noory-ai
 /plugin install rag@noory-ai
+```
+
+Codex:
+
+```text
+codex plugin marketplace add noory-code/noory-ai
+codex plugin add rag@noory-ai
 ```
 
 ### Prerequisite: `uv` (Python package manager)
@@ -63,7 +74,7 @@ The basic 4-step flow:
 To go all the way to quality measurement · tuning, +2 steps (recommended):
 
 5. `/rag:rag-probe-add` — register 3–5 frequently asked questions (e.g. "the project's authentication flow", "the payment module's state diagram").
-6. `/rag:rag-evaluate` — batch-measure index quality with the registered questions + Claude's diagnosis (which material is lacking, whether chunking needs adjusting).
+6. `/rag:rag-evaluate` — batch-measure index quality with the registered questions + the active AI session's diagnosis (which material is lacking, whether chunking needs adjusting).
 
 ## 20 skills
 
@@ -118,7 +129,7 @@ To go all the way to quality measurement · tuning, +2 steps (recommended):
 ## FAQ
 
 **Q. It says `uv` is missing.**
-A. Install it with the per-OS command in the "Prerequisite" table above, then restart Claude Code. The MCP server auto-installs dependencies on the first call.
+A. Install it with the per-OS command in the "Prerequisite" table above, then restart Claude Code or start a new Codex session. The MCP server auto-installs dependencies on the first call.
 
 **Q. The embedding-model download takes a long time.**
 A. On the first indexing · search, it downloads about 120MB (`intfloat/multilingual-e5-small`). After that it loads instantly from the local cache (`~/.cache/huggingface`).
@@ -139,7 +150,7 @@ A. `init-rag` adds it to the project `.gitignore` automatically. By default it i
 A. Text is extracted with `pypdf`, then chunked · embedded the same as ordinary markdown/text. Scans (image-based PDFs that need OCR) are unsupported.
 
 **Q. Does it work well on Windows?**
-A. Yes. The code uses only `pathlib` + `os.environ` (0 OS-specific branches), and every native dependency (sqlite-vec, kuzu, numpy, leidenalg, etc.) provides a win_amd64 wheel. The project root is also passed explicitly via the `RAG_PROJECT_ROOT` env (wired from `${CLAUDE_PROJECT_DIR}` on Claude Code, `${CODEX_PROJECT_DIR}` on Codex), so it is unaffected by cwd differences. For long-running MCP work, setting `MCP_TIMEOUT=60000`, `MCP_TOOL_TIMEOUT=120000` in `.claude/settings.json` is recommended.
+A. Yes. The code uses only `pathlib` + `os.environ`, and every native dependency provides a win_amd64 wheel. Claude Code passes `RAG_PROJECT_ROOT` explicitly; Codex preserves the workspace cwd with `RAG_PROJECT_ROOT_FROM_CWD=1`.
 
 ## Troubleshooting
 
@@ -147,7 +158,7 @@ A. Yes. The code uses only `pathlib` + `os.environ` (0 OS-specific branches), an
 - **Search results are inaccurate?** → measure which probe is weak with `/rag:rag-evaluate` → add material or adjust chunking → reindex.
 - **DB corrupted?** → `/rag:rag-clear` then `/rag:rag-reindex` (the raw/ material is preserved as-is).
 - **The MCP server doesn't come up?** → run `uv run python -m rag_mcp --probe` directly in the plugin directory → check stderr.
-- **A "RAG_PROJECT_ROOT not set" error appears?** → Claude Code failed to inject the env. Restart Claude Code and try again. If it still happens, reinstall the plugin (`/plugin update rag@noory-ai`).
+- **The project root cannot be resolved?** → restart the active host and reinstall `rag@noory-ai` with the host-specific command above if the error persists.
 - **MCP calls time out?** → add `MCP_TIMEOUT=60000`, `MCP_TOOL_TIMEOUT=120000` to `env` in the project's `.claude/settings.json` and restart Claude Code. The `RAG_*` env in `.mcp.json` is for passing server paths, not the place to fix a timeout problem.
 - **The first call is too slow?** → the embedding-model download + Python dependency install happen at once. 1–3 minutes is normal.
 

@@ -5,10 +5,12 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.2.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-feedback-report — feedback aggregation · weak-spot report
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## What
 
@@ -18,11 +20,11 @@ Takes the feedback accumulated via `rag_get_feedback` and the net boost per sour
 
 1. **Aggregation query**: `rag_get_feedback()` → `{feedback:[…], boosts:{rel_path:net}, count}`.
    - If empty, guide "No feedback yet. After searching, leave feedback via `/rag:rag-feedback`." then finish.
-2. **Aggregation (Claude itself)**:
+2. **Aggregation (the active AI session)**:
    - **Frequently searched queries**: top query frequencies.
    - **Well-matching sources**: rel_paths with the highest positive net boost.
    - **Weak-spot sources**: rel_paths with negative net boost — sources that show up in search but the user said were wrong.
-3. **Diagnosis · proposal (Claude itself)**: infer why the weak-spot sources don't match (content stale / chunking too large / topic mismatch) + propose an action — source augmentation (`rag-add-source` · `rag-fetch-external`), reindexing (`rag-reindex`), and if contradictory, let the user judge at reindex time.
+3. **Diagnosis · proposal (the active AI session)**: infer why the weak-spot sources don't match (content stale / chunking too large / topic mismatch) + propose an action — source augmentation (`rag-add-source` · `rag-fetch-external`), reindexing (`rag-reindex`), and if contradictory, let the user judge at reindex time.
 4. **Output**:
    ```
    📊 Feedback report (N total)

@@ -1,4 +1,4 @@
-"""evonest_update_docs — sync skills/commands/agents/rules/CLAUDE.md with code."""
+"""Sync Claude Code and Codex instruction artifacts with code."""
 
 from __future__ import annotations
 
@@ -15,10 +15,10 @@ async def evonest_update_docs(
     target: str = "all",
     dry_run: bool = True,
 ) -> str:
-    """Sync Claude Code files (skills, commands, agents, rules, CLAUDE.md) with source code.
+    """Sync Claude Code and Codex instruction files with source code.
 
     Reads the project's MCP tool definitions and docstrings, then proposes updates
-    to any Claude Code documentation files that are out of sync.
+    to any supported agent instruction files that are out of sync.
 
     By default runs in dry_run mode — returns a JSON diff for review without
     writing anything. Set dry_run=False to apply changes directly.

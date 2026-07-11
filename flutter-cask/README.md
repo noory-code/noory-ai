@@ -1,8 +1,8 @@
 # flutter-cask
 
-> Flutter package guide skills for Claude Code — 32 packages, zero setup
+> Flutter package guide skills for Claude Code and Codex — 32 packages, zero setup
 
-Curated reference skills for Flutter development. Each skill gives Claude instant access to usage patterns, best practices, and code examples for the most common Flutter packages.
+Curated reference skills for Flutter development. Each skill gives the active Claude Code or Codex session immediate access to usage patterns, best practices, and code examples for common Flutter packages.
 
 ## Skills
 
@@ -25,9 +25,18 @@ Curated reference skills for Flutter development. Each skill gives Claude instan
 
 ## Installation
 
+### Claude Code
+
 ```
 /plugin marketplace add noory-code/noory-ai
 /plugin install flutter-cask
+```
+
+### Codex
+
+```text
+codex plugin marketplace add noory-code/noory-ai
+codex plugin add flutter-cask@noory-ai
 ```
 
 ## Maintenance

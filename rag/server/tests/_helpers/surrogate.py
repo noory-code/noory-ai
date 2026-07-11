@@ -1,6 +1,6 @@
 """Deterministic chunker + entity/relation extractor for integration tests.
 
-In production these jobs are performed by Claude (the calling LLM). The
+In production these jobs are performed by the active Claude Code or Codex session. The
 surrogate gives tests a realistic-shaped feed without requiring an LLM
 call, by leaning on markdown structure and simple regex heuristics.
 """

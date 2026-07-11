@@ -5,10 +5,12 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.1.2"
+  plugin_version: "0.3.0"
 ---
 
 # rag-probe-remove — remove an evaluation question
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## What
 
@@ -18,7 +20,7 @@ Remove one (or several) of the registered probes from `.noory/rag/probes.json`.
 
 1. **Grasp user intent**:
    - If the user specifies an ID ("delete the auth-flow probe"), use it as-is.
-   - If not specified, show the list via `rag_get_probes` and receive a multiSelect choice via AskUserQuestion.
+   - If not specified, show the list via `rag_get_probes` and receive a multiSelect choice via the host question tool.
 
 2. **Existence check**: confirm the given ID actually exists in the `rag_get_probes` result. If not:
    ```

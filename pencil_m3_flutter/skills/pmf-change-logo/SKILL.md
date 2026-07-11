@@ -6,7 +6,7 @@ description: >
   app icon, or brand mark in the Pencil design guide.
 user-invocable: true
 metadata:
-  version: "1.0.2"
+  version: "1.1.0"
   category: design
   type: unit
   style: procedural
@@ -15,6 +15,8 @@ metadata:
 ---
 
 # Change Logo
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 Replace the logo component in the design guide.
 

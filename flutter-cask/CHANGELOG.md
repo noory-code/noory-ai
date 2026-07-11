@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0] — 2026-07-12
+
+### Added
+- Codex plugin manifest and Codex marketplace installation instructions for all 32 package guides
+- Host-neutral help and README language shared by Claude Code and Codex
+
+---
+
 ## [1.2.6] — 2026-07-12
 
 ### Fixed

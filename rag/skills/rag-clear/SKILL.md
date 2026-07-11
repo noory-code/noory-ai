@@ -5,10 +5,12 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.1.3"
+  plugin_version: "0.3.0"
 ---
 
 # rag-clear — index reset
+
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
 
 ## ⚠️ Destructive action
 
@@ -18,7 +20,7 @@ Deletes `.noory/rag/vec.db`, `.noory/rag/graph/`, `.noory/rag/manifest.json`, `.
 
 1. **Show current state**: print the `rag_stats()` result in one line → the user knows what they are losing.
 
-2. **First confirmation**: AskUserQuestion
+2. **First confirmation**: the host question tool
    - Options:
      - Delete index only (default, preserve settings/raw) — **recommended**
      - Delete index + all raw/ material

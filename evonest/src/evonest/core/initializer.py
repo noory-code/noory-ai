@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from datetime import UTC, datetime
 from importlib import resources
@@ -38,10 +39,12 @@ def _clean_identity_draft(raw: str) -> str:
 
 
 def _draft_identity_via_claude(project: Path) -> str | None:
-    """Call claude -p to explore the project and produce an identity.md draft.
+    """Call the selected agent backend to produce an identity.md draft.
 
     Falls back to None (use blank template) if claude is unavailable or fails.
     """
+    if os.environ.get("EVONEST_SKIP_IDENTITY_DRAFT") == "1":
+        return None
     try:
         from evonest.core import claude_runner
 

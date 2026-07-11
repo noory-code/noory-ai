@@ -5,6 +5,8 @@ from __future__ import annotations
 import subprocess
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from evonest.core.claude_runner import ClaudeResult, run
 
 
@@ -133,6 +135,51 @@ def test_run_stderr_captured() -> None:
 
     assert result.stderr == "warning: something"
     assert result.success is True
+
+
+def test_run_codex_backend_uses_noninteractive_exec() -> None:
+    mock_result = MagicMock()
+    mock_result.stdout = "codex output"
+    mock_result.stderr = ""
+    mock_result.returncode = 0
+
+    with (
+        patch.dict("os.environ", {"EVONEST_AGENT_BACKEND": "codex"}, clear=False),
+        patch("subprocess.run", return_value=mock_result) as mock_run,
+    ):
+        result = run("test prompt", allowed_tools="Read,Write")
+
+    cmd = mock_run.call_args[0][0]
+    assert cmd[:2] == ["codex", "exec"]
+    assert "--ephemeral" in cmd
+    assert "--ignore-user-config" in cmd
+    assert "danger-full-access" in cmd
+    assert "sonnet" not in cmd
+    assert result.success is True
+
+
+def test_run_codex_backend_uses_read_only_for_nonwriting_phase() -> None:
+    mock_result = MagicMock()
+    mock_result.stdout = "codex output"
+    mock_result.stderr = ""
+    mock_result.returncode = 0
+
+    with (
+        patch.dict("os.environ", {"EVONEST_AGENT_BACKEND": "codex"}, clear=False),
+        patch("subprocess.run", return_value=mock_result) as mock_run,
+    ):
+        run("test prompt", allowed_tools="Read,Glob,Grep,Bash")
+
+    cmd = mock_run.call_args[0][0]
+    assert "read-only" in cmd
+
+
+def test_run_rejects_unknown_backend() -> None:
+    with (
+        patch.dict("os.environ", {"EVONEST_AGENT_BACKEND": "unknown"}, clear=False),
+        pytest.raises(ValueError, match="EVONEST_AGENT_BACKEND"),
+    ):
+        run("test prompt")
 
 
 def test_command_not_found_error_message_contains_command() -> None:

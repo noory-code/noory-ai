@@ -2,6 +2,27 @@
 
 All notable changes to Evonest are documented here.
 
+## [1.2.0] — 2026-07-12
+
+### Added
+
+- Added a Codex plugin manifest with the same MCP server and skills as the Claude Code plugin.
+- Added host-selected agent execution: Claude Code installations use `claude -p`; Codex
+  installations use non-interactive `codex exec` with phase-appropriate read/write access.
+- Codex subprocesses use `--ignore-user-config` so an Evonest phase does not recursively load user
+  plugins, MCP servers, or hooks; authentication remains available through `CODEX_HOME`.
+- Added Codex repository instruction and project-skill discovery to documentation synchronization.
+- Added `EVONEST_SKIP_IDENTITY_DRAFT=1` for deterministic automation that must initialize without
+  launching either external agent backend.
+
+### Fixed
+
+- Updated the post-improve hook to use `.noory/evonest/proposals` and host-neutral continuation
+  guidance.
+- Replaced dynamically typed `Popen` keyword dictionaries with explicit platform branches so the
+  strict mypy contract remains valid on Windows and POSIX.
+- Documented installation, privacy, architecture, and manual backend selection for both hosts.
+
 ## [1.1.6] — 2026-07-12
 
 ### Fixed

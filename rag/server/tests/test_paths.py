@@ -9,8 +9,8 @@ import pytest
 
 from rag_mcp.infrastructure.paths import (
     CLAUDE_PROJECT_DIR_ENV,
-    CODEX_PROJECT_DIR_ENV,
     PROJECT_ROOT_ENV,
+    PROJECT_ROOT_FROM_CWD_ENV,
     STATE_DIR_NAME,
     RagPaths,
     RagPathsConfigError,
@@ -76,7 +76,7 @@ def test_from_cwd_prefers_rag_project_root_env(
 
     monkeypatch.setenv(PROJECT_ROOT_ENV, str(project))
     monkeypatch.delenv(CLAUDE_PROJECT_DIR_ENV, raising=False)
-    monkeypatch.delenv(CODEX_PROJECT_DIR_ENV, raising=False)
+    monkeypatch.delenv(PROJECT_ROOT_FROM_CWD_ENV, raising=False)
     monkeypatch.chdir(elsewhere)
 
     paths = RagPaths.from_cwd()
@@ -96,17 +96,17 @@ def test_from_cwd_falls_back_to_claude_project_dir_env(
 
     monkeypatch.delenv(PROJECT_ROOT_ENV, raising=False)
     monkeypatch.setenv(CLAUDE_PROJECT_DIR_ENV, str(project))
-    monkeypatch.delenv(CODEX_PROJECT_DIR_ENV, raising=False)
+    monkeypatch.delenv(PROJECT_ROOT_FROM_CWD_ENV, raising=False)
     monkeypatch.chdir(elsewhere)
 
     paths = RagPaths.from_cwd()
     assert paths.project_root == project.resolve()
 
 
-def test_from_cwd_falls_back_to_codex_project_dir_env(
+def test_from_cwd_uses_codex_workspace_cwd_only_when_manifest_opts_in(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Without `RAG_PROJECT_ROOT` or `CLAUDE_PROJECT_DIR`, Codex project env is accepted."""
+    """Codex preserves workspace cwd and explicitly opts into using it."""
     project = tmp_path / "codex-project"
     project.mkdir()
     elsewhere = tmp_path / "elsewhere"
@@ -114,8 +114,8 @@ def test_from_cwd_falls_back_to_codex_project_dir_env(
 
     monkeypatch.delenv(PROJECT_ROOT_ENV, raising=False)
     monkeypatch.delenv(CLAUDE_PROJECT_DIR_ENV, raising=False)
-    monkeypatch.setenv(CODEX_PROJECT_DIR_ENV, str(project))
-    monkeypatch.chdir(elsewhere)
+    monkeypatch.setenv(PROJECT_ROOT_FROM_CWD_ENV, "1")
+    monkeypatch.chdir(project)
 
     paths = RagPaths.from_cwd()
     assert paths.project_root == project.resolve()
@@ -145,7 +145,7 @@ def test_from_cwd_raises_when_no_explicit_arg_or_env(
     """
     monkeypatch.delenv(PROJECT_ROOT_ENV, raising=False)
     monkeypatch.delenv(CLAUDE_PROJECT_DIR_ENV, raising=False)
-    monkeypatch.delenv(CODEX_PROJECT_DIR_ENV, raising=False)
+    monkeypatch.delenv(PROJECT_ROOT_FROM_CWD_ENV, raising=False)
     monkeypatch.chdir(tmp_path)  # cwd is set but must NOT be used
 
     with pytest.raises(RagPathsConfigError, match=PROJECT_ROOT_ENV):
@@ -163,7 +163,7 @@ def test_from_cwd_treats_blank_env_as_missing(
     """
     monkeypatch.setenv(PROJECT_ROOT_ENV, "   ")
     monkeypatch.setenv(CLAUDE_PROJECT_DIR_ENV, "")
-    monkeypatch.setenv(CODEX_PROJECT_DIR_ENV, "")
+    monkeypatch.setenv(PROJECT_ROOT_FROM_CWD_ENV, "")
     monkeypatch.chdir(tmp_path)
 
     with pytest.raises(RagPathsConfigError):

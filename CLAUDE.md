@@ -11,10 +11,14 @@ noory-ai/
 ├── evonest/            — Autonomous code evolution engine
 ├── rag/                — Project-scoped GraphRAG plugin (uv project in server/)
 ├── stage/              — Durable execution harness (plain stdlib — no uv; hooks run on any host python3 ≥3.9)
-├── plainly/            — Selectable response-style hooks (plain stdlib — no uv; Claude + Codex)
+├── plainly/            — Selectable response-style hooks (plain stdlib — no uv)
 ├── flutter-cask/       — Flutter package guide skills
 └── pencil_m3_flutter/  — Flutter M3 design system automation
 ```
+
+All six local plugins ship both `.claude-plugin/plugin.json` and
+`.codex-plugin/plugin.json`; the repository publishes matching Claude Code and Codex marketplace
+metadata.
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
 
@@ -95,7 +99,7 @@ uv run mcp dev src/evonest/server.py  # MCP inspector
 ### Plugin Changes
 
 - When any file inside a plugin directory (`evonest/`, `rag/`, `stage/`, `plainly/`, `flutter-cask/`, `pencil_m3_flutter/`) is modified:
-  1. Bump `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for features/refactors) — `stage/` and `plainly/` also carry `.codex-plugin/plugin.json`; bump both
+  1. Bump `version` in both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` (patch for fixes, minor for features/refactors)
   2. Add entry to `CHANGELOG.md`
   3. Commit + push in one step
 

@@ -1,22 +1,17 @@
 """Resolve project-scoped paths for the .noory/rag/ state directory.
 
-The MCP server is launched by `uv --directory <plugin>/server run …`, which
-sets the process cwd to the plugin's server folder — NOT the user's project
-root. So `os.getcwd()` is the wrong default on every platform (macOS /
-Linux / Windows). The project root must be supplied explicitly via an env
-variable. Claude Code wires `RAG_PROJECT_ROOT` from `${CLAUDE_PROJECT_DIR}`
-via `.mcp.json`; Codex wires it from `${CODEX_PROJECT_DIR}` via the Codex
-plugin manifest.
+Claude Code launches the MCP server with `uv --directory`, so its manifest
+supplies `RAG_PROJECT_ROOT` explicitly. Codex launches with `uv run --project`,
+which selects the plugin project without changing the workspace cwd; its
+manifest sets `RAG_PROJECT_ROOT_FROM_CWD=1` to opt into that host contract.
 
 Resolution order for the project root:
   1. Explicit `cwd` argument (used by tests).
   2. `RAG_PROJECT_ROOT` env var (production path).
   3. `CLAUDE_PROJECT_DIR` env var (defensive fallback).
-  4. `CODEX_PROJECT_DIR` env var (defensive fallback).
-  4. None of the above → raise :class:`RagPathsConfigError`. We deliberately
-     do NOT fall back to `os.getcwd()` — that path would silently anchor the
-     index in the plugin cache directory and reproduce the project-isolation
-     bug.
+  4. Process cwd only when `RAG_PROJECT_ROOT_FROM_CWD=1` is explicitly set by
+     the Codex plugin manifest.
+  5. None of the above → raise :class:`RagPathsConfigError`.
 
 All filesystem ops go through :mod:`os.environ` and :mod:`pathlib`, so the
 resolver is OS-independent and works the same way on Windows as on POSIX.
@@ -31,8 +26,8 @@ from pathlib import Path
 STATE_DIR_NAME = ".noory/rag"
 
 PROJECT_ROOT_ENV = "RAG_PROJECT_ROOT"
+PROJECT_ROOT_FROM_CWD_ENV = "RAG_PROJECT_ROOT_FROM_CWD"
 CLAUDE_PROJECT_DIR_ENV = "CLAUDE_PROJECT_DIR"
-CODEX_PROJECT_DIR_ENV = "CODEX_PROJECT_DIR"
 
 
 class RagPathsConfigError(RuntimeError):
@@ -42,15 +37,16 @@ class RagPathsConfigError(RuntimeError):
 def _resolve_project_root(cwd: Path | str | None) -> Path:
     if cwd is not None:
         return Path(cwd).resolve()
-    for var in (PROJECT_ROOT_ENV, CLAUDE_PROJECT_DIR_ENV, CODEX_PROJECT_DIR_ENV):
+    for var in (PROJECT_ROOT_ENV, CLAUDE_PROJECT_DIR_ENV):
         raw = os.environ.get(var)
         if raw and raw.strip():
             return Path(raw.strip()).expanduser().resolve()
+    if os.environ.get(PROJECT_ROOT_FROM_CWD_ENV) == "1":
+        return Path.cwd().resolve()
     raise RagPathsConfigError(
         f"project root unresolved: set ${PROJECT_ROOT_ENV} "
-        f"(plugin MCP config should wire it from the active project dir). "
-        f"This server was launched via `uv --directory`, so its cwd is the "
-        f"plugin cache — falling back to cwd would corrupt project isolation."
+        f"or opt into the verified Codex cwd contract with "
+        f"${PROJECT_ROOT_FROM_CWD_ENV}=1."
     )
 
 

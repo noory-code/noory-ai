@@ -101,7 +101,7 @@ def test_observe_stderr_contains_command_on_file_not_found(tmp_project: Path) ->
 
 
 def test_plan_stderr_contains_file_path_on_missing_observe(tmp_project: Path) -> None:
-    """On plan failure when observe.txt is missing, the error message should include the file path."""
+    """A plan failure for missing observe.txt should include the file path."""
     state = ProjectState(tmp_project)
     config = EvonestConfig()
 
@@ -695,7 +695,7 @@ def test_run_verify_test_timeout_kills_process(tmp_project: Path) -> None:
 
 
 def test_verify_build_failure_logs_stderr_with_command(tmp_project: Path) -> None:
-    """On verify build failure, stderr with the executed command and error details should be logged."""
+    """A build failure should log the command and stderr details."""
     from unittest.mock import MagicMock
 
     state = ProjectState(tmp_project)
@@ -723,7 +723,7 @@ def test_verify_build_failure_logs_stderr_with_command(tmp_project: Path) -> Non
 
 
 def test_verify_test_failure_logs_actionable_error(tmp_project: Path) -> None:
-    """On verify test failure, stderr should contain specific error details (file, line, message)."""
+    """A test failure should log actionable file, line, and message details."""
     from unittest.mock import MagicMock
 
     state = ProjectState(tmp_project)

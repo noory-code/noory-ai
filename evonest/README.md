@@ -1,7 +1,7 @@
 # Evonest
 
-**MCP-native autonomous code evolution engine for Claude Code.**
-Evonest connects directly to Claude Code's tool ecosystem — not as a standalone CLI, but as a first-class participant that shares context, tools, and conversation continuity with your existing Claude session.
+**MCP-native autonomous code evolution engine for Claude Code and Codex.**
+Evonest connects to the active host's tool ecosystem and launches isolated Claude Code or Codex agent subprocesses for each evolution phase.
 
 ## Why Evonest?
 
@@ -9,14 +9,14 @@ Most AI coding tools give you a single perspective. Evonest rotates through 20 s
 
 | | Aider / Cursor | GitHub Copilot Workspace | **Evonest** |
 |--|--|--|--|
-| Integration | Standalone CLI / editor | Web UI | **MCP-native — lives inside Claude Code** |
+| Integration | Standalone CLI / editor | Web UI | **MCP-native — lives inside Claude Code or Codex** |
 | Perspectives | Single AI | Predefined workflow | **20 rotating personas, weighted by success** |
-| Context Continuity | Session-local | Isolated web session | **Shares Claude Code conversation + tools** |
+| Context Continuity | Session-local | Isolated web session | **Uses the active host's project context + tools** |
 | Safety | Manual recovery | Manual recovery | **Auto-revert on failed build/test** |
 | Learning | None | None | **Adaptive weights — successful personas run more often** |
 | Output | Local commits | PR (web) | **Commit or PR — your choice** |
 
-Each cycle, Evonest picks **one specialist persona**, runs it as a fully independent Claude process with no shared context from prior cycles, and lets natural selection determine which perspectives deserve more weight. Aider launches a single AI per conversation; Evonest launches a fresh process per cycle.
+Each cycle, Evonest picks **one specialist persona**, runs it as a fully independent agent process with no shared context from prior cycles, and lets natural selection determine which perspectives deserve more weight. Aider launches a single AI per conversation; Evonest launches a fresh process per cycle.
 
 ## Proven on Evonest itself
 
@@ -42,6 +42,17 @@ Evonest evolves its own codebase through the same cycle. Real findings from 164 
 
 Slash commands (`/evonest:analyze`, `/evonest:improve`, `/evonest:evolve`) become available immediately.
 
+### Codex Plugin
+
+```text
+codex plugin marketplace add noory-code/noory-ai
+codex plugin add evonest@noory-ai
+```
+
+Invoke the installed `evonest` skill by name or through a natural-language request such as
+"Analyze this project with Evonest." The Codex manifest selects `codex exec` as the isolated agent
+backend automatically.
+
 ### Manual
 
 ```bash
@@ -60,6 +71,10 @@ Add to `~/.claude/mcp.json`:
   }
 }
 ```
+
+For a manual Codex MCP setup, use the same server command and set
+`EVONEST_AGENT_BACKEND=codex`. Set `EVONEST_CODEX_MODEL` only when you want to override Codex's
+configured default model.
 
 See [docs/mcp-tools.md](docs/mcp-tools.md) for the full MCP tool reference.
 
@@ -102,7 +117,7 @@ See [docs/mcp-tools.md](docs/mcp-tools.md) for the full MCP tool reference.
 - **Verify phase** — runs `verify.build` and `verify.test` after every change
 - **Auto-revert on failure** — if verification fails, changes are discarded
 - **Lock file** — prevents concurrent runs from colliding
-- **Turn limits** — every Claude subprocess has a hard cap on API calls
+- **Execution bounds** — Claude uses turn limits; Codex uses the phase timeout and Evonest cycle boundaries
 - **Cautious mode** — `--cautious` shows the plan and waits for approval before executing
 
 Configure verify commands in `.noory/evonest/config.json`:
@@ -118,7 +133,7 @@ Configure verify commands in `.noory/evonest/config.json`:
 
 ## Cost
 
-Evonest runs Claude subprocesses. Estimated cost per cycle with `claude-sonnet` (default):
+On the Claude backend, Evonest runs Claude subprocesses. Estimated cost per cycle with `claude-sonnet` (default):
 
 | Phase | Max turns | Typical cost |
 |-------|-----------|--------------|
@@ -128,6 +143,9 @@ Evonest runs Claude subprocesses. Estimated cost per cycle with `claude-sonnet` 
 | **Per cycle** | | **~$0.15–0.40** |
 
 With `max_cycles_per_run: 5` (default), one run costs roughly **$0.75–2.00**. Actual cost depends on codebase size and complexity; phases typically use 5–15 of the configured maximum turns.
+
+Codex usage follows the model and account configured in Codex; Evonest does not estimate or alter
+that pricing. Set `EVONEST_CODEX_MODEL` to opt into a specific Codex model.
 
 **To reduce cost:**
 - Switch to `haiku` — 5–7× cheaper

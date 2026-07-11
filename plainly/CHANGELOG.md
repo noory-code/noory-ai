@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 — 2026-07-12
+
+- Replace the stale hardcoded manifest-version assertion with a semantic-version contract while
+  continuing to require Claude Code/Codex version parity.
+
 ## 0.1.1 — 2026-07-12
 
 - Remove the duplicated `configure.py` command list and scope-selection rule from README.md; both

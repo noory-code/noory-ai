@@ -5,14 +5,16 @@ user-invocable: true
 metadata:
   type: action
   version: v1.0.0
-  plugin_version: "0.2.0"
+  plugin_version: "0.3.0"
 ---
 
 # rag-reindex — reindex the changes
 
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
+
 ## What
 
-After walking `sources` in `.noory/rag/settings.json`, it processes only the files changed against the manifest (added / changed / removed). **Chunking and entity/relation extraction are performed directly by the current Claude session**, and the results are passed to the MCP tool `rag_upsert_chunks`.
+After walking `sources` in `.noory/rag/settings.json`, it processes only the files changed against the manifest (added / changed / removed). **Chunking and entity/relation extraction are performed directly by the active AI session**, and the results are passed to the MCP tool `rag_upsert_chunks`.
 
 ## Steps
 
@@ -28,20 +30,20 @@ After walking `sources` in `.noory/rag/settings.json`, it processes only the fil
    a. Read the file content with the Read tool (for a PDF, the MCP extracts it). If it's too large, process it partially.
       - If it's an **image file** (png/jpg/jpeg/gif/webp): open the image with Read and **generate descriptive text of what it contains** — the composition/relations of a diagram, the items/figures of a chart, the UI/text of a screenshot, the characters of a scanned document, etc. — writing out the **searchable content** as prose. Treat this description as that file's "body" and apply b·c·d below to it just like text. Mark the generated chunks with `meta.source_type = "image"` to indicate their image origin (used by the search output). (rag has zero external keys — description generation is done directly by the current session.)
 
-   b. **Chunking (Claude itself)**: split by semantic units. Guidelines:
+   b. **Chunking (the active AI session)**: split by semantic units. Guidelines:
       - Markdown: prefer H2/H3 heading boundaries; keep code blocks and tables whole
       - Plain text/PDF: paragraph boundaries, topic-shift points
       - Target 400 tokens per chunk, 800 tokens max, 100 tokens min
       - If there is a heading, preserve it in `meta.section`
 
-   c. **Entity extraction (Claude itself)**: identify the following from the chunk text
+   c. **Entity extraction (the active AI session)**: identify the following from the chunk text
       - libraries · services · tools · systems (type: `library`)
       - core concepts · patterns · terms (type: `concept`)
       - people · teams · organizations (type: `actor`)
       - files/modules/endpoints (type: `module`)
       Each entity: `id` (kebab-case stable identifier), `name` (original notation), `type`, `chunk_indices` (array of the chunk indices where it appeared).
 
-   d. **Relation extraction (Claude itself)**: for entity pairs that co-occur in the same chunk or are explicitly connected in the body, make `{src_id, dst_id, type, weight}`. `type` examples: `USES`, `DEPENDS_ON`, `EXTENDS`, `RELATED_TO`. `weight` is the occurrence count or confidence.
+   d. **Relation extraction (the active AI session)**: for entity pairs that co-occur in the same chunk or are explicitly connected in the body, make `{src_id, dst_id, type, weight}`. `type` examples: `USES`, `DEPENDS_ON`, `EXTENDS`, `RELATED_TO`. `weight` is the occurrence count or confidence.
 
    d2. **Contradiction handling (conflict = user's judgment)**: if you find **contradicting facts** (conflicting values / definitions / states) across chunks for the same entity, **do not automatically pick one**. Present both bits of evidence to the user and ask "which is the truth", and reflect only the confirmed fact in the index (exclude the rest or mark it as 'dissent'). This is a point where human judgment intervenes — do not silently overwrite.
 

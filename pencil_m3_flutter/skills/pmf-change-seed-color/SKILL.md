@@ -6,7 +6,7 @@ description: >
   or update the color palette/scheme in material-design-guide.lib.pen.
 user-invocable: true
 metadata:
-  version: "1.0.2"
+  version: "1.1.0"
   category: design
   type: unit
   style: procedural
@@ -16,11 +16,13 @@ metadata:
 
 # Change Seed Color
 
+> Before executing this workflow, read and apply `../HOST_CONTRACT.md`.
+
 Changing the seed color causes the entire M3 palette (Semantic Colors + Material Color Scheme) to be recalculated.
 
 ## Target file
 
-- Standalone execution: `${CLAUDE_PLUGIN_ROOT}/pencil/material-design-guide.lib.pen`
+- Standalone execution: `<plugin-root>/pencil/material-design-guide.lib.pen`
 - Delegated execution from `init`: The newly created `<appname>-design-guide.lib.pen`
   (The file opened by init is already active in the editor, so use it as-is)
 
@@ -32,10 +34,10 @@ Ask the user for the new seed color hex value. Example: `#6750A4`
 
 ### Step 2 -- Calculate Palette
 
-Use `${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/hct_palette.py` to calculate the palette.
+Use `<plugin-root>/pencil/md3calc/hct_palette.py` to calculate the palette.
 
 ```bash
-cd ${CLAUDE_PLUGIN_ROOT}/pencil/md3calc
+cd <plugin-root>/pencil/md3calc
 python3 hct_palette.py <seed_hex>
 ```
 
@@ -200,7 +202,7 @@ The `.pen` file is the SSOT for colors, so Dart code must be generated based on 
 
 ```
 1. Run mcp__pencil__get_variables() -- save results to a temp file via tempfile.gettempdir()
-2. python3 ${CLAUDE_PLUGIN_ROOT}/pencil/md3calc/gen_dart.py \
+2. python3 <plugin-root>/pencil/md3calc/gen_dart.py \
      --from-json <temp_dir>/pen_vars.json \
      --out <flutter_lib_path> \
      --barrel <appname>_ui
