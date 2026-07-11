@@ -29,6 +29,10 @@ re-derived from hook source each session:
   evidence produced in the session that sets it — the stated checks actually run,
   not the checks that were merely supposed to run (a recurring retrospective
   learning made durable).
+- Clarified the SessionStart context line about `past`: it is gated only by an
+  intent naming the completed item being promoted/archived — no new work item —
+  since `.stage/` is not governed source. This is the ambiguity that once led a
+  session to create a spurious archive work item.
 
 ## 0.13.0 — 2026-07-12
 

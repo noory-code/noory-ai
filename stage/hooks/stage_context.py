@@ -60,7 +60,9 @@ def session_context(workspace_root: Path) -> str:
         "- Cite the governing principles in every decision record and retrospective.",
         "- Register an active work item in `.stage/present/work/items/` before modifying governed files "
         "(nearly all files are governed by default; see `.stage/settings.json`).",
-        "- Modifying `past` requires a pending intent (`scripts/promote_intent.py`) and a completed work item.",
+        "- Modifying `.stage/past/` is gated ONLY by a pending intent (`scripts/promote_intent.py`) that names "
+        "the completed work item being promoted or archived — no NEW work item is needed, and `.stage/` is not "
+        "governed source so the registration/commit gates never fire on it. To archive, use the `stage-archive` skill.",
         "- Artifact map — W work `present/work/items` · R retro `present/work/retrospectives` · "
         "DE decision `present/work/decisions` · D approved `past/decisions/records` · "
         "O/Q/A/K state `present/state/*` · B backlog `future/backlog/items` · P proposal · M milestone. "
