@@ -44,6 +44,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
 from stage_shell import (  # noqa: E402  (after sys.path bootstrap)
     _restore_sentinels,
     command_deletes_stage,
+    shell_delete_paths,
     shell_tokens,
     shell_write_paths,
 )
@@ -431,6 +432,14 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
     shell_write_targets: list[str] = []
     if command:
         shell_write_targets = shell_write_paths(command)
+        # Deleting a governed file is a governed modification: rm/del/
+        # Remove-Item operands join the write-target stream and pass the same
+        # registration/promotion/governance gates.
+        shell_write_targets.extend(
+            path
+            for path in shell_delete_paths(command, workspace_root)
+            if path not in shell_write_targets
+        )
         for path in shell_write_targets:
             if path and path not in explicit_paths:
                 explicit_paths.append(path)

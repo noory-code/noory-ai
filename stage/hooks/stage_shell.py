@@ -525,23 +525,20 @@ def _targets_stage_root(
     return normalized == ".stage" or normalized.endswith("/.stage")
 
 
-def command_deletes_stage(command: str, workspace_root: Path | None = None) -> bool:
-    """Whether a shell command recursively removes the whole `.stage` tree.
+def _command_groups(
+    command: str, workspace_root: Path | None = None
+) -> list[tuple[list[Path], str, list[str]]]:
+    """(possible-cwd anchors, command name, restored tokens) per simple
+    command, with cd/pushd/popd groups consumed into the anchor tracking.
 
-    Tokenized (not a free-text regex) so recursive flags in any spelling are
-    caught: `rm -r/-R/-rf/--recursive`, PowerShell `Remove-Item -Recurse`,
-    Windows `rmdir /s`, and `find <.stage> -delete`/`-exec|-execdir rm`.
-    Operands are resolved through symlinks when workspace_root is given.
-    Non-recursive `rm .stage` cannot remove a directory, so it is not blocked.
-    """
-    # Relative delete operands are anchored where the shell IS: a preceding
-    # `cd` group rebases them (`cd build && find . -delete` traverses build,
-    # not the workspace). Control flow is not evaluated, so the tracker keeps a
-    # SET of possible cwds: a cd whose own execution is conditional (preceded
-    # by `&&`/`||`/`|`, e.g. `false && cd build ; rm -rf .stage`) ADDS the
-    # rebased state alongside the previous ones; a definite cd (first group or
-    # after `;`/newline) replaces them. Classification denies if ANY possible
-    # anchor removes the Stage tree — fail closed.
+    Relative operands are anchored where the shell IS: a preceding `cd` group
+    rebases them (`cd build && find . -delete` traverses build, not the
+    workspace). Control flow is not evaluated, so the tracker keeps a SET of
+    possible cwds: a cd whose own execution is conditional (preceded by
+    `&&`/`||`/`|`, e.g. `false && cd build ; rm -rf .stage`) ADDS the rebased
+    state alongside the previous ones; a definite cd (first group or after
+    `;`/newline) replaces them. Consumers must treat a hit from ANY possible
+    anchor as a hit — fail closed."""
     anchors: list[Path] = []
     if workspace_root is not None:
         try:
@@ -549,14 +546,6 @@ def command_deletes_stage(command: str, workspace_root: Path | None = None) -> b
         except (OSError, RuntimeError):
             anchors = [workspace_root]
     tracker = _CwdTracker(anchors)
-
-    def hits_stage(arg: str) -> bool:
-        if not tracker.anchors:
-            return _targets_stage_root(arg, workspace_root)
-        return any(
-            _targets_stage_root(arg, workspace_root, base_dir=anchor)
-            for anchor in tracker.anchors
-        )
 
     tokens = shell_tokens(command)
     simple: list[str] = []
@@ -573,6 +562,8 @@ def command_deletes_stage(command: str, workspace_root: Path | None = None) -> b
             previous_separator = token
         else:
             simple.append(token)
+
+    groups: list[tuple[list[Path], str, list[str]]] = []
     for index, (separator, raw_group) in enumerate(entries):
         if not raw_group:
             continue
@@ -603,6 +594,31 @@ def command_deletes_stage(command: str, workspace_root: Path | None = None) -> b
             conditional = separator in {"&&", "||", "|"} or next_separator in {"|", "&"}
             tracker.apply(name, operands, has_dash, conditional)
             continue
+        groups.append((list(tracker.anchors), name, group))
+    return groups
+
+
+def command_deletes_stage(command: str, workspace_root: Path | None = None) -> bool:
+    """Whether a shell command recursively removes the whole `.stage` tree.
+
+    Tokenized (not a free-text regex) so recursive flags in any spelling are
+    caught: `rm -r/-R/-rf/--recursive`, PowerShell `Remove-Item -Recurse`,
+    Windows `rmdir /s`, and `find <.stage> -delete`/`-exec|-execdir rm`.
+    Operands are resolved through symlinks when workspace_root is given.
+    Non-recursive `rm .stage` cannot remove a directory, so it is not blocked.
+    Classification denies if ANY possible cwd anchor removes the Stage tree
+    (see _command_groups) — fail closed.
+    """
+
+    def hits_stage(arg: str, anchors: list[Path]) -> bool:
+        if not anchors:
+            return _targets_stage_root(arg, workspace_root)
+        return any(
+            _targets_stage_root(arg, workspace_root, base_dir=anchor)
+            for anchor in anchors
+        )
+
+    for anchors, name, group in _command_groups(command, workspace_root):
         flags = [tok for tok in group[1:] if tok.startswith("-") or tok.startswith("/")]
         # Path operands = anything not a `-` flag. A leading `/` is an ABSOLUTE
         # PATH on Unix (`/ws/.stage`), not a flag — Windows switches like `/s`
@@ -614,17 +630,17 @@ def command_deletes_stage(command: str, workspace_root: Path | None = None) -> b
                 tok == "--recursive" or (tok.startswith("-") and not tok.startswith("--") and "r" in tok.lower())
                 for tok in flags
             )
-            if recursive and any(hits_stage(arg) for arg in args):
+            if recursive and any(hits_stage(arg, anchors) for arg in args):
                 return True
         elif name == "rmdir":
             if any(flag.lower() in {"/s", "-s", "--recursive"} for flag in flags) and any(
-                hits_stage(arg) for arg in args
+                hits_stage(arg, anchors) for arg in args
             ):
                 return True
         elif name in {"remove-item", "ri", "rd", "del", "erase"}:
             recursive = any(flag.lower() in {"-recurse", "-r", "/s"} for flag in flags)
             force = any(flag.lower() in {"-force", "-f"} for flag in flags)
-            if (recursive or force) and any(hits_stage(arg) for arg in group[1:]):
+            if (recursive or force) and any(hits_stage(arg, anchors) for arg in group[1:]):
                 return True
         elif name == "find":
             # find's start paths are the operands before the first expression.
@@ -708,13 +724,13 @@ def command_deletes_stage(command: str, workspace_root: Path | None = None) -> b
                 i += 1
 
             def find_root_hits(arg: str) -> bool:
-                if not tracker.anchors:
+                if not anchors:
                     return _targets_stage_root(arg, workspace_root, follow_symlinks=follows)
                 return any(
                     _targets_stage_root(
                         arg, workspace_root, follow_symlinks=follows, base_dir=anchor
                     )
-                    for anchor in tracker.anchors
+                    for anchor in anchors
                 )
 
             if deletes and any(find_root_hits(arg) for arg in roots):
@@ -793,4 +809,48 @@ def shell_write_paths(command: str) -> list[str]:
 
         index += 1
 
+    return paths
+
+
+DELETE_COMMANDS = {"rm", "del", "erase", "remove-item", "ri"}
+
+
+def shell_delete_paths(command: str, workspace_root: Path) -> list[str]:
+    """Path operands of file-delete commands, rebased at every possible
+    effective cwd (fail closed — any anchor's classification may deny).
+
+    Deleting a governed file is a governed modification, so these operands go
+    through the same write-gate pipeline as redirect/cp/mv/tee targets. Flags
+    are skipped, `--` ends option parsing, redirections are stripped, and
+    unexpanded globs/variables pass through as literals (best-effort, see
+    hooks/README.md §Limits)."""
+    paths: list[str] = []
+    for anchors, name, group in _command_groups(command, workspace_root):
+        if name not in DELETE_COMMANDS:
+            continue
+        operands: list[str] = []
+        after_ddash = False
+        for token in _strip_redirections(group[1:]):
+            if after_ddash:
+                operands.append(token)
+            elif token == "--":
+                after_ddash = True
+            elif token.startswith("-"):
+                continue
+            else:
+                operands.append(token)
+        for operand in operands:
+            text = clean_path_text(operand)
+            if not text:
+                continue
+            try:
+                absolute = Path(text).expanduser().is_absolute()
+            except (RuntimeError, ValueError):
+                absolute = False
+            candidates = [text] if absolute or not anchors else [
+                str(anchor / text) for anchor in anchors
+            ]
+            for candidate in candidates:
+                if candidate not in paths:
+                    paths.append(candidate)
     return paths

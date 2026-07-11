@@ -204,6 +204,7 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, scope="*")  # deletes are registration-gated now
             payload = {"tool_name": "Bash", "cwd": str(root), "tool_input": {"command": "rm notes.txt"}}
 
             result = stage_guard.handle_event("pre-tool-use", payload)
@@ -551,6 +552,7 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, scope="*")  # deletes are registration-gated now
             (root / "alias").symlink_to(root / ".stage", target_is_directory=True)
             payload = {"tool_name": "Bash", "cwd": str(root), "tool_input": {"command": "rm -rf alias"}}
 
@@ -2898,6 +2900,7 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, scope="*")  # deletes are registration-gated now
             (root / "build" / ".stage").mkdir(parents=True)
             payload = {
                 "tool_name": "Bash",
@@ -3160,6 +3163,7 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, scope="*")  # deletes are registration-gated now
             (root / "build").mkdir()
             deny_payload = {
                 "tool_name": "Bash",
@@ -3546,6 +3550,7 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(root, "index.md", "# Stage\n")
+            self.write_work_item(root, scope="*")  # deletes are registration-gated now
             (root / "build").mkdir()
             allow_payload = {
                 "tool_name": "Bash",
@@ -3952,6 +3957,83 @@ class IntentPreservationTest(unittest.TestCase):
         self.assertEqual(decision(result), "deny")
         self.assertIn("registration", reason(result).lower())
         self.assertEqual(1, len(remaining))
+
+
+class ShellDeleteGateTest(unittest.TestCase):
+    """Deleting a governed file is a governed modification: rm/del/Remove-Item
+    file operands go through the same registration/promotion pipeline as
+    writes (globs and variable expansions stay best-effort, README §Limits)."""
+
+    write_stage_file = StageGuardTest.write_stage_file
+    write_work_item = StageGuardTest.write_work_item
+
+    def run_command(self, root: Path, command: str):
+        return stage_guard.handle_event(
+            "pre-tool-use",
+            {"tool_name": "Bash", "cwd": str(root), "tool_input": {"command": command}},
+        )
+
+    def test_deleting_unregistered_governed_file_is_denied(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, "rm src/app.py")
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_deleting_registered_file_is_allowed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(root, scope="src")
+
+            result = self.run_command(root, "rm src/app.py")
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_delete_operand_is_anchored_at_the_tracked_cwd(self):
+        # `cd src && rm app.py` deletes src/app.py, not workspace-root app.py.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            self.write_work_item(root, scope="src")
+
+            covered = self.run_command(root, "cd src && rm app.py")
+            uncovered = self.run_command(root, "cd src && rm ../tools/build.py")
+
+        self.assertEqual(decision(covered), "allow")
+        self.assertEqual(decision(uncovered), "deny")
+        self.assertIn("registration", reason(uncovered).lower())
+
+    def test_deleting_past_file_requires_promotion_intent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, "rm .stage/past/canon/principles.md")
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("promotion", reason(result).lower())
+
+    def test_double_dash_operand_is_still_gated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, "rm -- -odd.py")
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("registration", reason(result).lower())
+
+    def test_deleting_outside_the_workspace_is_not_gated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+
+            result = self.run_command(root, "rm /tmp/elsewhere.py")
+
+        self.assertEqual(decision(result), "allow")
 
 
 class ConfiguredWriteToolTest(unittest.TestCase):
