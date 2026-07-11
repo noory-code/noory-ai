@@ -881,7 +881,9 @@ class Audit:
         except (OSError, json.JSONDecodeError):
             settings = {}
         schema_version = settings.get("schema_version")
-        if schema_version != stage_guard.STAGE_SCHEMA_VERSION:
+        # Exact-type comparison: JSON `true` must not pass as 1 (bool is an
+        # int subclass in Python).
+        if type(schema_version) is not int or schema_version != stage_guard.STAGE_SCHEMA_VERSION:
             self.warning(
                 "SCHEMA001",
                 "settings.json schema_version "

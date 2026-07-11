@@ -692,6 +692,21 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("SCHEMA001", finding_codes(findings))
 
+    def test_boolean_schema_version_is_flagged(self):
+        # JSON `true` equals 1 in Python (bool is an int subclass) — the type
+        # itself is part of the contract.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            settings = root / ".stage" / "settings.json"
+            data = json.loads(settings.read_text(encoding="utf-8"))
+            data["schema_version"] = True
+            settings.write_text(json.dumps(data), encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("SCHEMA001", finding_codes(findings))
+
     def test_template_schema_version_matches_plugin_constant(self):
         template = json.loads(
             (audit_stage.TEMPLATE_ROOT / "settings.json").read_text(encoding="utf-8")

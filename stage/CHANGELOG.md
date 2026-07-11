@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.11.0 — 2026-07-11
+
+Ten agreed items from the v0.10.0 full re-review debate (Claude self-review ↔
+Codex, five rounds, joint sign-off — `.discuss/stage-review-debate-2026-07-11.md`
+§R5), in the agreed priority order, plus two mid-batch review rounds.
+
+Gates:
+
+- `extra_write_tools` in `.stage/settings.json`: registered host/MCP
+  file-writing tool names are classified before the unknown-name early allow,
+  putting them behind the registration/promotion/hierarchy/governance gates
+  (content payloads project into the hierarchy gate and dereference symlinks
+  like `Write`); a mistyped registration marks settings untrusted. Unregistered
+  names remain ungated — now documented in §Limits and the host contract.
+- Archive transitions keep their evidence: a present item archives only from
+  exactly `completed|rejected` (`archived` is maintenance of archive-located
+  records), a rejected item requires its completed retrospective
+  (`retrospective_ref`) — rejection reasons are learning assets — and the
+  archive-index row (Final status = the state the `archived` overwrite erases)
+  lands in the same archive intent.
+- The promotion gate validates LAST, so a call denied by any other gate no
+  longer burns the pending intent (atomic rename reservation); the remaining
+  pre-time window and the one-command re-issue are documented.
+- File deletions are gated like writes: `rm`/`del`/`erase`/`Remove-Item`/`ri`
+  operands (cwd-anchored, `--`-aware, fail closed across possible anchors) run
+  the registration/promotion pipeline. The cwd tracker also follows a cd into
+  a directory the same command creates (`mkdir s && cd s && …`) — closing a
+  pre-existing delete-gate bypass.
+
+Audit (new findings — existing projects may see new errors; run the audit
+after upgrading and close them):
+
+- ARCHIVE001–004: archived items indexed with a terminal Final status,
+  completed transitions keep closed gates, every archived item keeps a
+  completed retrospective, index rows point at real records.
+- BACKLOG008/009, ROADMAP001/002, PROPOSAL001/002: each future family's index
+  matches its records in both directions (roadmap theme rows are exempt).
+- RETRO002 / DECISION002: reverse links — a completed item's
+  `retrospective_ref` is the one binding retrospective, and a recorded
+  decision must be linked back from its work item's `decision_refs`.
+- BACKLOG007: backlog parent chains must not cycle (same contract as WORK018).
+- SCHEMA001 (warning): `.stage/settings.json` `schema_version` missing or
+  different from the plugin's contract version (`STAGE_SCHEMA_VERSION`,
+  independent of the release version; new harnesses are stamped, preserved
+  settings are never overwritten).
+
+Infrastructure:
+
+- Cross-platform CI (`.github/workflows/stage.yml`): both suites, an
+  init→audit `--strict` smoke, and the real hook entrypoint on
+  ubuntu/macos/windows × python 3.9/3.12.
+- One frontmatter→WorkItem constructor with an explicit missing-field policy
+  (gate: safe progress / audit: empty), both policies pinned.
+- stage-retrospective SKILL archives the index row in the same intent.
+
 ## 0.10.0 — 2026-07-11
 
 - P31 record-graph audit: `scripts/stage_records.py` scans every frontmattered
