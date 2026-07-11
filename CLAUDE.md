@@ -53,11 +53,6 @@ uv run evonest                        # run MCP server
 uv run mcp dev src/evonest/server.py  # MCP inspector
 ```
 
-**Distill only:**
-```bash
-uv run python -m distill  # run MCP server
-```
-
 ## Language
 
 - All documents, comments, commit messages, and code artifacts must be written in **English**
@@ -149,7 +144,7 @@ Hook commands in `hooks.json` must use `python3` (not `bash`). `${CLAUDE_PLUGIN_
 - Type hints on all functions; mypy strict mode
 - Line length: 100 chars (ruff)
 - Commit format: `type(scope): description` — types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
-- Distill uses Pydantic v2; Evonest uses dataclasses
+- Evonest uses dataclasses
 
 ## Architecture
 

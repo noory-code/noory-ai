@@ -51,9 +51,9 @@ Public architecture, concepts, specifications, and migration guidance are mainta
 
 Curated reference skills for Flutter development. Each skill gives Claude instant access to usage patterns, best practices, and code examples for the most common Flutter packages.
 
-- 33 skills across state management, routing, Firebase, UI, testing, and more
+- 32 skills across state management, routing, Firebase, UI, testing, and more
 - No Python dependencies — pure skill pack
-- Covers riverpod, go-router, freezed, hive, admob, and 28 more
+- Covers riverpod, go-router, freezed, hive, admob, and 27 more
 
 **Install:**
 ```
@@ -81,6 +81,34 @@ codex plugin marketplace add noory-code/noory-ai
 codex plugin add plainly@noory-ai
 ```
 
+### [RAG](rag/) — Local GraphRAG Plugin
+
+Per-project vector + graph (GraphRAG) hybrid search. Runs fully locally with no external API key.
+
+- Local embeddings (`intfloat/multilingual-e5-small`) + sqlite-vec + Kuzu graph store
+- Chunks and extracts entities from files placed under `.noory/rag/raw/`
+- Built-in evaluation flow via user-registered probe questions
+
+**Install:**
+```
+/plugin marketplace add noory-code/noory-ai
+/plugin install rag
+```
+
+### [Pencil M3 Flutter](pencil_m3_flutter/) — Flutter Material Design 3 Automation
+
+Connects the Pencil app with Claude Code to initialize a per-app Material Design 3 library, generate seed-color-based Flutter theme code, and produce screen design prompts.
+
+- `pmf-init` — scaffold the app's design guide, seed color, logo, and project design skill
+- `pmf-change-seed-color` / `pmf-change-logo` — update theme or logo in place
+- Requires the Pencil MCP server
+
+**Install:**
+```
+/plugin marketplace add noory-code/noory-ai
+/plugin install pencil-m3-flutter
+```
+
 ### [Stage](stage/) — Durable Execution Harness
 
 Portable `.stage/` harness for LLM-led long-running projects. Stage separates artifact status, context ownership, decision gates, verification, and retrospectives.
@@ -104,17 +132,8 @@ git clone https://github.com/noory-code/noory-ai.git
 git clone https://github.com/noory-code/novel-ai.git
 ```
 
-Each package is independent. Work inside the relevant subdirectory:
-
-```bash
-cd noory-ai/evonest   # or: cd novel-ai/plugins/distill
-uv sync
-uv run pytest
-uv run mypy src/
-uv run ruff check src/ tests/
-```
-
-See [CLAUDE.md](CLAUDE.md) for full command reference and architecture notes.
+Each package is independent — work inside the relevant subdirectory. See [CLAUDE.md](CLAUDE.md)
+for the full command reference and architecture notes.
 
 ## License
 
