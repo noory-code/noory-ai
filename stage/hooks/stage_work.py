@@ -276,14 +276,6 @@ def stage_completion_blockers(workspace_root: Path) -> list[str]:
     return blockers
 
 
-def open_items_for_paths(workspace_root: Path, paths: list[str]) -> list[WorkItem]:
-    stage_root = workspace_root / ".stage"
-    items = [item for item in load_work_items(stage_root) if item_is_open(item)]
-    if not paths:
-        return items
-    return [item for item in items if any(item_matches_path(item, path, workspace_root) for path in paths)]
-
-
 def staged_files(workspace_root: Path) -> list[str]:
     try:
         result = subprocess.run(
