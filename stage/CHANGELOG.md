@@ -15,6 +15,12 @@ re-derived from hook source each session:
   registration and commit gates never fire on it and NO new work item is needed
   to archive. New `hooks/tests/test_archive_gate.py` locks this, guarding against
   the false "two gates" belief that once spawned a spurious archive work item.
+- New `stage-work` skill: plan the work, confirm scope with the human, then
+  register the item and its `active.md` row before touching governed files.
+- New `stage-handoff` skill: route open work between LLM windows by `venue`, make
+  each item self-carrying, and point the human at the window with open work.
+- `stage-retrospective` now delegates archiving to `stage-archive` (SSOT) instead
+  of carrying its own archive-intent block.
 
 ## 0.13.0 — 2026-07-12
 

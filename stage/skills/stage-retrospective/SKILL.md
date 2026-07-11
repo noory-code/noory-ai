@@ -41,19 +41,8 @@ retrospected work item's `promotes`, then create the intent file.
 python3 stage/scripts/promote_intent.py --project-root <project-root> --work-item W-00000001 --path .stage/past/<target>.md
 ```
 
-Use an archive intent to store work records in `past/work/archive/`. Archive the item's
-retrospective and its archive-index row in the same intent: append a
-`| W-00000001 | completed | [item](items/W-00000001.md) |` row to
-`past/work/archive/index.md`, where Final status is `completed` or `rejected` — the terminal
-state the `archived` overwrite erases. A rejected item archives with a completed retrospective
-too; rejection reasons are learning assets.
-
-```bash
-python3 stage/scripts/promote_intent.py --project-root <project-root> --type archive --work-item W-00000001 \
-  --path .stage/past/work/archive/items/W-00000001.md \
-  --path .stage/past/work/archive/retrospectives/R-00000001.md \
-  --path .stage/past/work/archive/index.md
-```
+To move a closed item out of the review queue into `past/work/archive/`, use the **stage-archive**
+skill — archiving needs only an archive intent (or `archive_work.py`), never a new work item.
 
 ## Completion rule
 
