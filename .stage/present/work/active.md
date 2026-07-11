@@ -6,4 +6,3 @@ Work bodies live in `items/`. This document manages only current status and link
 
 | Work | Kind | Venue | Purpose | Status | Owner | Item |
 |---|---|---|---|---|---|---|
-| W-00000001 | documentation | | Repo-wide documentation cleanup | active | Claude | [items/W-00000001.md](items/W-00000001.md) |
