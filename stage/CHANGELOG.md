@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.24.4 — 2026-07-13
+
+Verification evidence preservation fix:
+
+- `close_work.py` now preserves the existing `## Verification` body and appends a dated
+  `Executed at close` block with the executed check evidence instead of replacing hand-recorded
+  evidence. Regression coverage verifies that both forms of evidence survive. (W-00000022)
+
 ## 0.24.3 — 2026-07-13
 
 Archive review-row cleanup fix:

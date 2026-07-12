@@ -27,6 +27,7 @@ import argparse
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 # The review resolver lives in the hook package (one owning definition, shared
@@ -52,13 +53,17 @@ def set_field(text: str, name: str, value: str) -> str:
     return re.sub(rf"^({re.escape(name)}:)[ \t]*.*$", rf"\g<1> {value}", text, count=1, flags=re.MULTILINE)
 
 
-def set_section(text: str, heading: str, body: str) -> str:
+def append_to_section(text: str, heading: str, body: str) -> str:
     # Body goes through a replacement FUNCTION, never an `rf"...\g<1>..."` template:
     # the check output is arbitrary and would otherwise be read as regex escapes
     # (`\1`, `\U…`) — a crash or silent corruption. Tail is a lookahead so the
     # section may be the last heading (\Z) without swallowing the next one.
     pattern = rf"(## {re.escape(heading)}\n)(.*?)(?=\n## |\Z)"
-    return re.sub(pattern, lambda m: f"{m.group(1)}\n{body}\n", text, count=1, flags=re.DOTALL)
+
+    def append(match: re.Match[str]) -> str:
+        return f"{match.group(1)}{match.group(2)}\n{body}\n"
+
+    return re.sub(pattern, append, text, count=1, flags=re.DOTALL)
 
 
 def clip(output: str) -> str:
@@ -203,8 +208,12 @@ def main() -> int:
             return 1
         review_passed = True
 
-    evidence = "Executed this session:\n\n```\n" + "\n\n".join(blocks) + "\n```"
-    updated = set_section(text, "Verification", evidence)
+    evidence = (
+        f"### Executed at close — {date.today().isoformat()}\n\n```\n"
+        + "\n\n".join(blocks)
+        + "\n```"
+    )
+    updated = append_to_section(text, "Verification", evidence)
     updated = set_field(updated, "verification", "passed")
     updated = set_field(updated, "promotion", promotion)
     if review_passed:

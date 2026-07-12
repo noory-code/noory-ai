@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-retrospective" / "close_work.py"
@@ -108,6 +109,29 @@ class CloseWorkTest(unittest.TestCase):
             self.assertIn("print('ok')", item)  # evidence embedded
             self.assertNotIn("W-00000001", (root / ".stage/present/work/active.md").read_text(encoding="utf-8"))
             self.assertIn("[items/W-00000001.md]", (root / ".stage/present/work/review.md").read_text(encoding="utf-8"))
+
+    def test_passing_check_preserves_existing_verification_and_appends_evidence(self):
+        tmp, root = self.make()
+        with tmp:
+            item_path = root / ".stage/present/work/items/W-00000001.md"
+            item_path.write_text(
+                item_path.read_text(encoding="utf-8").replace(
+                    "## Verification\n\n",
+                    "## Verification\n\nBrowser verification: checkout completed successfully.\n\n",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            proc = run(root, "W-00000001", "--check", "python3 -c \"print('check ok')\"")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            item = item_path.read_text(encoding="utf-8")
+
+        self.assertIn("Browser verification: checkout completed successfully.", item)
+        self.assertIn(f"### Executed at close — {date.today().isoformat()}", item)
+        self.assertIn("print('check ok')", item)
+        self.assertIn("check ok", item)
+        self.assertLess(item.index("Browser verification"), item.index("### Executed at close"))
 
     def test_failing_check_changes_nothing(self):
         tmp, root = self.make()
