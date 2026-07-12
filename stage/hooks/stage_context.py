@@ -17,6 +17,7 @@ if _HOOKS_DIR not in sys.path:
 from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     DEFAULT_LANGUAGE,
     load_language,
+    load_venue_routing,
     normalize_path_text,
 )
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
@@ -72,6 +73,18 @@ def session_context(workspace_root: Path) -> str:
         "O/Q/A/K state `present/state/*` · B backlog `future/backlog/items` · P proposal · M milestone. "
         "Full catalog: `operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
     ]
+
+    routing = load_venue_routing(stage_root)
+    if routing:
+        routing_text = ", ".join(f"{kind} -> {venue}" for kind, venue in sorted(routing.items()))
+        parts.append(
+            f"- Venue routing (declared role policy): {routing_text}. Derive `venue` from this "
+            "policy when registering work — do not ask the human during normal routing; a "
+            "contradicting venue needs a decision_refs link. Split mixed design+implementation "
+            "work into separate items with `parent` lineage instead of assigning one ambiguous "
+            "item. An implementation venue that hits an unresolved product/design decision "
+            "registers a planning-venue item carrying the evidence and the exact decision needed."
+        )
 
     language = load_language(stage_root)
     if language != DEFAULT_LANGUAGE:

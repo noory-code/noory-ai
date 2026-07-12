@@ -34,11 +34,11 @@ family/
 | `promotes` | list of `.stage/past/` paths this item may promote |
 | `decision_refs` | optional IDs or paths of linked decision records |
 | `source` | optional backlog item ID (`B-*`) this work realizes |
-| `venue` | optional execution-surface routing hint; project-defined values, advisory only |
+| `venue` | optional execution-surface routing; project-defined values, derived from `settings.json` `venue_routing` when declared |
 
 `active.md` and `review.md` are current views. Hooks judge from the frontmatter of `present/work/items/*.md`.
 
-`venue` names the execution surface that should carry out the work item — the routing hint a human reads to open the right window when more than one agent or session works the project. It is advisory: no hook gates on it. Values and the `kind -> venue` routing are project-defined in `past/canon/vocabulary.md`; the harness fixes no venue names.
+`venue` names the execution surface that should carry out the work item — the routing signal a human reads to open the right window when more than one agent or session works the project. No hook gates on it. The machine-readable `kind -> venue` role policy is project-declared in `settings.json` `venue_routing` (registration derives from it; the audit checks consistency); what each venue means belongs to the project's canon. The harness fixes no venue names.
 
 `scope` is fail-closed. An empty value or `.` owns no source path. Declare `*` only when a global scope is truly needed.
 

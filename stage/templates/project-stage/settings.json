@@ -2,6 +2,7 @@
   "schema_version": 2,
   "language": "en",
   "operations_overrides": [],
+  "venue_routing": {},
   "governance": {
     "exclude_paths": [],
     "exclude_extensions": []

@@ -30,6 +30,59 @@ class RegisterWorkTest(unittest.TestCase):
         (root / ".stage/present/work/active.md").write_text(ACTIVE, encoding="utf-8")
         return tmp, root
 
+    def declare_routing(self, root: Path) -> None:
+        (root / ".stage/settings.json").write_text(
+            '{"schema_version": 2, "venue_routing": {"design": "claude", "development": "codex"}}',
+            encoding="utf-8",
+        )
+
+    def test_venue_derived_from_declared_routing(self):
+        tmp, root = self.make()
+        with tmp:
+            self.declare_routing(root)
+            result = run(root, "--title", "T", "--kind", "design", "--scope", "src")
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("venue derived from venue_routing: design -> claude", result.stdout)
+            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            active = (root / ".stage/present/work/active.md").read_text(encoding="utf-8")
+
+        self.assertIn("venue: claude", item)
+        self.assertIn("| claude |", active)
+
+    def test_unrouted_kind_keeps_empty_venue(self):
+        tmp, root = self.make()
+        with tmp:
+            self.declare_routing(root)
+            result = run(root, "--title", "T", "--kind", "chore", "--scope", "src")
+            self.assertEqual(0, result.returncode, result.stderr)
+
+        self.assertNotIn("derived", result.stdout)
+        self.assertNotIn("policy exception", result.stdout)
+
+    def test_contradicting_venue_announces_policy_exception(self):
+        tmp, root = self.make()
+        with tmp:
+            self.declare_routing(root)
+            result = run(
+                root, "--title", "T", "--kind", "development", "--scope", "src",
+                "--venue", "claude",
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+
+        self.assertIn("policy exception", result.stdout)
+        self.assertIn("decision_refs", result.stdout)
+        self.assertIn("venue: claude", item)
+
+    def test_no_policy_keeps_current_behavior(self):
+        tmp, root = self.make()
+        with tmp:
+            result = run(root, "--title", "T", "--kind", "design", "--scope", "src")
+            self.assertEqual(0, result.returncode, result.stderr)
+
+        self.assertNotIn("derived", result.stdout)
+        self.assertNotIn("policy exception", result.stdout)
+
     def test_auto_id_and_link_row(self):
         tmp, root = self.make()
         with tmp:

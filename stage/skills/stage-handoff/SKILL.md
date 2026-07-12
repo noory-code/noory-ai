@@ -11,21 +11,32 @@ place to know which window to open next.
 
 ## Route by venue
 
-- `venue` on each work item names the surface that should carry it out. It is advisory — no hook
-  gates on it.
+- `venue` on each work item names the surface that should carry it out. No hook gates on it, but
+  when the project declares a role policy the audit checks consistency (VENUE001-VENUE004).
 - `present/work/active.md` shows every open item with its `Venue` column. This is the routing
   view: the human opens the window whose venue has open rows.
-- The project's `venue` values and any `kind -> venue` routing live in `past/canon/vocabulary.md`.
-  The harness fixes no venue names.
+- The machine-readable role policy lives in `settings.json` `venue_routing` (`kind -> venue`);
+  what each venue means belongs to the project's canon (e.g. `past/canon/vocabulary.md`). The
+  harness fixes no venue names. Registration derives the venue from the policy without asking the
+  human; a contradicting venue needs a `decision_refs` link.
 
 ## Before handing off, make each open item self-carrying
 
-For every `active`/`blocked` item you are leaving:
+For every `active`/`blocked` item you are leaving, its body must answer five things the receiving
+window cannot ask you: purpose, completed context (what is already done and verified), the
+remaining problem, the success criteria, and the explicit NEXT action.
 
-1. Update its body with current status and the explicit NEXT action — the receiving window must be
-   able to continue without you.
+1. Update the item body with those five elements in human-readable language.
 2. Set `venue` to the surface that should take it next.
 3. Confirm `active.md` reflects the item's real status and venue.
+
+## Route decisions back, not sideways
+
+An implementation venue that hits an unresolved product or design decision does not decide it and
+does not stall: register a planning-venue item that carries the implementation evidence and the
+exact decision needed, link the blocked item (`parent` or body reference), and hand off. Each
+transition names one unresolved decision or one executable next action — that is what keeps
+bidirectional handoffs from looping.
 
 ## Session summary is automatic
 

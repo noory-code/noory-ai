@@ -1352,6 +1352,151 @@ class InitLanguageTest(unittest.TestCase):
         self.assertEqual([p.replace("en/", "ko/", 1) for p in files_en], files_ko)
 
 
+class VenueRoutingAuditTest(unittest.TestCase):
+    """DE-00000004: a declared kind -> venue role policy is audited; no policy
+    means venue stays fully advisory with zero findings."""
+
+    def init_stage(self, root: Path) -> None:
+        init_stage.copy_templates(root, False)
+
+    def declare_routing(self, root: Path, routing) -> None:
+        settings_path = root / ".stage" / "settings.json"
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        data["venue_routing"] = routing
+        settings_path.write_text(json.dumps(data), encoding="utf-8")
+
+    def write_item(self, root: Path, *, kind: str, venue: str, decision_refs: str = "") -> Path:
+        path = root / ".stage" / "present" / "work" / "items" / "W-0001.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            (
+                "---\n"
+                "id: W-0001\n"
+                "title: Test\n"
+                f"kind: {kind}\n"
+                f"venue: {venue}\n"
+                "status: active\n"
+                "verification: pending\n"
+                "retrospective: pending\n"
+                "promotion: pending\n"
+                "scope: src\n"
+                f"decision_refs: {decision_refs}\n"
+                "---\n"
+                "# W-0001 Test\n"
+            ),
+            encoding="utf-8",
+        )
+        return path
+
+    def venue_codes(self, root: Path) -> set[str]:
+        return {
+            f.code for f in audit_stage.Audit(root).run() if f.code.startswith("VENUE")
+        }
+
+    ROUTING = {"design": "claude", "development": "codex"}
+
+    def test_no_policy_reports_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_item(root, kind="design", venue="")
+            self.assertEqual(set(), self.venue_codes(root))
+
+    def test_missing_venue_on_routed_kind_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, self.ROUTING)
+            self.write_item(root, kind="design", venue="")
+            self.assertIn("VENUE001", self.venue_codes(root))
+
+    def test_missing_venue_on_unrouted_kind_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, self.ROUTING)
+            self.write_item(root, kind="chore", venue="")
+            self.assertEqual(set(), self.venue_codes(root))
+
+    def test_unknown_venue_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, self.ROUTING)
+            self.write_item(root, kind="design", venue="cursor")
+            self.assertIn("VENUE002", self.venue_codes(root))
+
+    def test_policy_contradiction_without_decision_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, self.ROUTING)
+            self.write_item(root, kind="development", venue="claude")
+            self.assertIn("VENUE003", self.venue_codes(root))
+
+    def test_decision_linked_exception_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, self.ROUTING)
+            self.write_item(root, kind="development", venue="claude", decision_refs="DE-0001")
+            codes = self.venue_codes(root)
+        self.assertNotIn("VENUE003", codes)
+
+    def test_matching_venue_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, self.ROUTING)
+            self.write_item(root, kind="design", venue="claude")
+            self.assertEqual(set(), self.venue_codes(root))
+
+    def test_malformed_routing_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            for bad in (["design"], {"design": 3}, {"": "claude"}, "claude"):
+                with self.subTest(value=bad):
+                    self.declare_routing(root, bad)
+                    findings = [
+                        f for f in audit_stage.Audit(root).run() if f.code == "VENUE004"
+                    ]
+                    self.assertEqual(["error"], [f.severity for f in findings])
+
+    def test_archived_items_are_not_judged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, self.ROUTING)
+            path = root / ".stage" / "past" / "work" / "archive" / "items" / "W-0001.md"
+            path.write_text(
+                (
+                    "---\n"
+                    "id: W-0001\n"
+                    "title: Old\n"
+                    "kind: development\n"
+                    "venue: claude\n"
+                    "status: archived\n"
+                    "verification: passed\n"
+                    "retrospective: completed\n"
+                    "retrospective_ref: R-0001\n"
+                    "promotion: not_applicable\n"
+                    "scope: src\n"
+                    "---\n"
+                    "# W-0001 Old\n"
+                ),
+                encoding="utf-8",
+            )
+            (root / ".stage" / "past" / "work" / "archive" / "retrospectives").mkdir(
+                parents=True, exist_ok=True
+            )
+            (
+                root / ".stage" / "past" / "work" / "archive" / "retrospectives" / "R-0001.md"
+            ).write_text("---\nid: R-0001\nwork_item: W-0001\n---\n# R-0001\n", encoding="utf-8")
+
+            self.assertEqual(set(), self.venue_codes(root))
+
+
 class OperationsOwnershipTest(unittest.TestCase):
     """DE-00000002: common operations docs are plugin-owned; the project
     carries only its policy surface plus declared overrides."""

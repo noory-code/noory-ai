@@ -31,6 +31,7 @@ from stage_records import AuditedItem, RecordGraph  # noqa: E402
 # One owning definition in stage_work (re-exported through stage_guard), shared
 # by the audit and the PreToolUse enum gate so both accept exactly the same set.
 STATUS_VALUES = stage_guard.STATUS_VALUES
+WORK_OPEN_STATUSES = stage_guard.WORK_OPEN_STATUSES
 VERIFICATION_VALUES = stage_guard.VERIFICATION_VALUES
 RETROSPECTIVE_VALUES = stage_guard.RETROSPECTIVE_VALUES
 PROMOTION_VALUES = stage_guard.PROMOTION_VALUES
@@ -139,6 +140,7 @@ class Audit:
         self.audit_routing()
         self.audit_catalog_sync()
         self.audit_operations_ownership()
+        self.audit_venue_routing(items)
         self.audit_canon()
         self.audit_governance()
         return self.findings
@@ -934,6 +936,60 @@ class Audit:
                     f"`operations/{name}` shadows a plugin-owned common doc without a declared "
                     "override; add it to settings.json operations_overrides or remove it.",
                     path,
+                )
+
+    def audit_venue_routing(self, items: list[AuditedItem]) -> None:
+        """The declared `kind -> venue` role policy (DE-00000004). No policy →
+        venue stays fully advisory and nothing is reported. Open present items
+        only: archived history is not judged against today's policy."""
+        settings = self.load_settings()
+        settings_path = self.stage_root / "settings.json"
+        raw = settings.get("venue_routing")
+        if raw is None or raw == {}:
+            return
+        if not isinstance(raw, dict) or not all(
+            isinstance(kind, str) and isinstance(venue, str) and kind.strip() and venue.strip()
+            for kind, venue in raw.items()
+        ):
+            self.error(
+                "VENUE004",
+                "venue_routing must map work-kind strings to venue strings.",
+                settings_path,
+            )
+            return
+        routing = {kind.strip().lower(): venue.strip() for kind, venue in raw.items()}
+        declared_venues = set(routing.values())
+
+        for audited_item in items:
+            item = audited_item.item
+            if audited_item.location != "present" or item.status not in WORK_OPEN_STATUSES:
+                continue
+            venue = (audited_item.fields.get("venue") or "").strip()
+            routed = routing.get(item.kind, "")
+            if not venue:
+                if routed:
+                    self.warning(
+                        "VENUE001",
+                        f"Open work of routed kind `{item.kind}` has no venue; "
+                        f"venue_routing derives `{routed}`.",
+                        item.path,
+                    )
+                continue
+            if venue not in declared_venues:
+                self.warning(
+                    "VENUE002",
+                    f"Venue `{venue}` is not declared by venue_routing "
+                    f"(declared: {sorted(declared_venues)}).",
+                    item.path,
+                )
+            elif routed and venue != routed and not (
+                audited_item.fields.get("decision_refs") or ""
+            ).strip():
+                self.warning(
+                    "VENUE003",
+                    f"Venue `{venue}` contradicts venue_routing ({item.kind} -> {routed}) "
+                    "without a decision_refs link authorizing the exception.",
+                    item.path,
                 )
 
     def plugin_common_docs(self) -> dict[str, Path]:

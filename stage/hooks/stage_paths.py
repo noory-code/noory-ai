@@ -225,6 +225,25 @@ def load_language(stage_root: Path) -> str:
     return DEFAULT_LANGUAGE
 
 
+def load_venue_routing(stage_root: Path) -> dict[str, str]:
+    """The project's declared `kind -> venue` role policy (DE-00000004), or {}
+    when absent. Only well-formed string entries are returned — hooks and
+    registration fail open; the audit owns reporting a malformed map."""
+    settings_path = stage_root / "settings.json"
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    routing = data.get("venue_routing") if isinstance(data, dict) else None
+    if not isinstance(routing, dict):
+        return {}
+    return {
+        kind.strip().lower(): venue.strip()
+        for kind, venue in routing.items()
+        if isinstance(kind, str) and isinstance(venue, str) and kind.strip() and venue.strip()
+    }
+
+
 # Review strength is a named level the PROJECT binds to a real, verdict-emitting
 # command (in settings.json `review.strengths`). The harness fixes no command —
 # like `venue`, it ships the vocabulary and the project declares the behavior.

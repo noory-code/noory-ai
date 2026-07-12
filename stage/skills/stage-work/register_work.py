@@ -20,7 +20,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
-from stage_paths import load_review_config, resolve_review_command  # noqa: E402
+from stage_paths import (  # noqa: E402
+    load_review_config,
+    load_venue_routing,
+    resolve_review_command,
+)
 
 ID_RE = re.compile(r"^W-(\d{8})$")
 _TEMPLATE = (
@@ -118,6 +122,21 @@ def main() -> int:
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
     items_dir = stage_root / "present" / "work" / "items"
     active_path = stage_root / "present" / "work" / "active.md"
+
+    # Role policy (DE-00000004): derive an omitted venue from the declared
+    # kind -> venue routing; announce an explicit contradiction as a policy
+    # exception that must carry a decision_refs link (the audit checks it).
+    routing = load_venue_routing(stage_root)
+    routed = routing.get(args.kind.strip().lower(), "")
+    if not args.venue and routed:
+        args.venue = routed
+        print(f"venue derived from venue_routing: {args.kind} -> {routed}")
+    elif args.venue and routed and args.venue != routed:
+        print(
+            f"policy exception: venue `{args.venue}` contradicts venue_routing "
+            f"({args.kind} -> {routed}); link the authorizing decision in decision_refs"
+        )
+
     if not items_dir.exists():
         print(f"Stage present items dir not found: {items_dir}", file=sys.stderr)
         return 2

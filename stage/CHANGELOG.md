@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.21.0 — 2026-07-12
+
+Role-policy-driven venue routing and self-contained handoffs (DE-00000004):
+
+- `settings.json` gains `venue_routing`: a project-declared `kind -> venue` map (venue names
+  are project-defined strings; no AI product is hard-coded). Missing or empty → venue stays a
+  purely advisory per-item field with zero new findings.
+- `register_work.py` derives an omitted `--venue` from the policy and announces a
+  policy-contradicting explicit venue as an exception that must carry a `decision_refs` link.
+- The audit gains `VENUE001` (routed kind, no venue), `VENUE002` (venue outside the declared
+  set), `VENUE003` (policy contradiction without a decision link), and `VENUE004` (malformed
+  map) — open present items only; archived history is not judged against today's policy.
+- SessionStart injects the declared routing map with the behavior rules: derive venue without
+  asking the human, split mixed design+implementation work into separate items with `parent`
+  lineage, and route unresolved product/design decisions back to the planning venue with the
+  implementation evidence.
+- `stage-handoff` now requires each handed-off item to state purpose, completed context,
+  remaining problem, success criteria, and the explicit next action, and documents the
+  back-routing rule; the machine policy owner moves from canon prose to `settings.json`
+  (`stage-work`, `operations/artifacts.md` updated accordingly).
+
 ## 0.20.0 — 2026-07-12
 
 Human-readable Stage documents in the user's language (DE-00000003):

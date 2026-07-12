@@ -24,7 +24,12 @@ fill:
 - `id`, `title` — the outcome, not the steps.
 - `kind` — the project's work vocabulary (`feature`, `fix`, `chore`, `documentation`, …). Each
   kind's `passed` criterion lives in the project's `.stage/operations/verification.md`.
-- `venue` — the execution surface that should carry it out (advisory routing hint; see
+- `venue` — the execution surface that should carry it out. When `settings.json` declares
+  `venue_routing` (`kind -> venue`), derive the venue from it instead of asking the human;
+  `register_work.py` does this automatically when `--venue` is omitted. A venue that contradicts
+  the policy needs a `decision_refs` link (the audit reports it otherwise). Work that mixes
+  design and implementation splits into separate items — a planning/design item and an
+  implementation item with `parent` lineage — instead of one ambiguous item (see
   `stage-handoff`).
 - `scope` — the paths this work may modify. The registration gate matches writes against these,
   so list every governed subtree you will touch. `*` authorizes anything (use sparingly).

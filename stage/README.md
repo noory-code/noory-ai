@@ -26,6 +26,11 @@ Stage creates a `.stage/` directory inside the project and connects three axes.
 - Common operational rules are plugin-owned (`operations/` in this plugin) and are not copied into
   projects. `.stage/operations/` holds only project policy: the `kind -> passed` verification
   criteria plus any overrides declared in `settings.json` `operations_overrides`.
+- A project can declare a `kind -> venue` role policy (`settings.json` `venue_routing`, e.g.
+  design work to a Claude window, implementation to a Codex window). Registration derives each
+  item's venue from it, exceptions require a linked decision record, and the audit reports
+  missing, unknown, and policy-contradicting venues. No policy declared → venue stays a purely
+  advisory per-item field.
 - Human-readable `.stage/` documents follow the project's declared language (`settings.json`
   `language`, default `en`; `ko` templates are bundled, other tags fall back to English while
   still governing generated records). Machine-readable tokens — IDs, paths, frontmatter keys,

@@ -19,5 +19,13 @@
       "promotion": "off"
     }
   },
-  "operations_overrides": []
+  "operations_overrides": [],
+  "venue_routing": {
+    "planning": "claude",
+    "design": "claude",
+    "development": "codex",
+    "fix": "codex",
+    "qa": "codex",
+    "ops": "codex"
+  }
 }
