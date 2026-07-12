@@ -12,7 +12,7 @@ user prompt. It never uses `Stop` or another post-answer continuation hook.
 | `guided` | Plain-language, step-by-step explanations |
 | `professional` | Concise, precise, neutral workplace language |
 
-Ask the AI to show, select, or reset styles via the `plainly-configure` skill. Scope selection
+Ask the AI to show, select, or reset project styles via the `plainly-configure` skill. Configuration
 rules live in [`skills/plainly-configure/SKILL.md`](skills/plainly-configure/SKILL.md).
 
 ## Resolution order
@@ -21,28 +21,28 @@ Plainly reads the first valid source on every `UserPromptSubmit` event:
 
 1. `NOORY_STYLE_FILE`
 2. `NOORY_STYLE_PROFILE`
-3. `<project>/.noory/plainly/settings.json`
-4. `~/.noory/plainly/settings.json`
-5. Built-in `plain`
+3. `<project>/.plainly/settings.json`
+4. Built-in `plain`
 
 An external style must be a non-empty UTF-8 file no larger than 8,192 bytes. Relative paths in
-`NOORY_STYLE_FILE` resolve from the hook payload's working directory. Relative paths in project
-settings resolve from the project root; relative paths in user settings resolve from the user
-settings directory. The project CLI stores in-project style files as portable relative paths.
-Project settings reject absolute paths, `..` traversal, and symbolic links that resolve outside the
-project root. Environment and user settings remain user-controlled and may reference external
-files. Style text is scoped to wording, tone, structure, and detail; it cannot authorize tools or
-override higher-priority instructions.
+`NOORY_STYLE_FILE` and project settings resolve from the project root. The project CLI stores style
+files as portable project-relative paths. Project settings reject absolute paths, `..` traversal,
+and symbolic links that resolve outside the project root. Environment overrides remain
+user-controlled and may reference external files. Style text is scoped to wording, tone, structure,
+and detail; it cannot authorize tools or override higher-priority instructions.
 
 ## Trust boundary
 
 Project settings and their referenced style files become model-visible developer context on every
-prompt. Use project-scoped Plainly configuration only in repositories you trust and review changes
-to `.noory/plainly/` like other instruction files. Plainly fences style text with explicit
+prompt. Use Plainly only in repositories you trust and review committed changes to `.plainly/` like
+other instruction files. Plainly fences style text with explicit
 sentinels, neutralizes sentinel text inside the file, and tells the model to ignore task, tool,
 permission, and higher-priority instructions found there. Project settings also cannot read a style
 file that resolves outside the project root. These controls reduce accidental scope leakage but do
 not make an untrusted repository safe.
+
+The `.plainly/` directory is project-owned and can be committed so the same style follows the
+repository across computers. Plainly does not persist user-global settings.
 
 Manual configuration is also available. Run `scripts/configure.py` with `python3` from the
 `plainly/` package directory; see

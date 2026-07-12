@@ -36,17 +36,15 @@ class ConfigureCliTest(unittest.TestCase):
         for profile in ("brief", "plain", "guided", "professional"):
             self.assertIn(profile, result.stdout)
 
-    def test_set_profile_and_reset_project_settings(self) -> None:
+    def test_set_profile_and_reset_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             home = root / "home"
-            settings = root / ".noory" / "plainly" / "settings.json"
+            settings = root / ".plainly" / "settings.json"
 
             configured = self.run_cli(
                 "set-profile",
                 "guided",
-                "--scope",
-                "project",
                 "--project-root",
                 str(root),
                 home=home,
@@ -59,8 +57,6 @@ class ConfigureCliTest(unittest.TestCase):
 
             reset = self.run_cli(
                 "reset",
-                "--scope",
-                "project",
                 "--project-root",
                 str(root),
                 home=home,
@@ -68,7 +64,7 @@ class ConfigureCliTest(unittest.TestCase):
             self.assertEqual(reset.returncode, 0, reset.stderr)
             self.assertFalse(settings.exists())
 
-    def test_set_file_stores_a_valid_absolute_path(self) -> None:
+    def test_set_file_stores_a_project_relative_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             home = root / "home"
@@ -78,17 +74,15 @@ class ConfigureCliTest(unittest.TestCase):
             result = self.run_cli(
                 "set-file",
                 str(style_file),
-                "--scope",
-                "user",
                 "--project-root",
                 str(root),
                 home=home,
             )
-            settings = home / ".noory" / "plainly" / "settings.json"
+            settings = root / ".plainly" / "settings.json"
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 json.loads(settings.read_text(encoding="utf-8")),
-                {"style_file": str(style_file.resolve())},
+                {"style_file": "custom.md"},
             )
 
     def test_project_file_inside_project_is_stored_relative_to_project_root(self) -> None:
@@ -102,13 +96,11 @@ class ConfigureCliTest(unittest.TestCase):
             result = self.run_cli(
                 "set-file",
                 str(style_file),
-                "--scope",
-                "project",
                 "--project-root",
                 str(root),
                 home=home,
             )
-            settings = root / ".noory" / "plainly" / "settings.json"
+            settings = root / ".plainly" / "settings.json"
 
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
@@ -132,8 +124,6 @@ class ConfigureCliTest(unittest.TestCase):
             result = self.run_cli(
                 "set-file",
                 str(outside),
-                "--scope",
-                "project",
                 "--project-root",
                 str(root),
                 home=home,
@@ -141,7 +131,22 @@ class ConfigureCliTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 2)
             self.assertIn("project root", result.stderr)
-            self.assertFalse((root / ".noory" / "plainly" / "settings.json").exists())
+            self.assertFalse((root / ".plainly" / "settings.json").exists())
+
+    def test_scope_option_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self.run_cli(
+                "set-profile",
+                "plain",
+                "--scope",
+                "user",
+                "--project-root",
+                tmp,
+                home=Path(tmp) / "home",
+            )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unrecognized arguments", result.stderr)
 
 
 if __name__ == "__main__":

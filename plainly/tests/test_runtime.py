@@ -27,7 +27,7 @@ class RuntimeTest(unittest.TestCase):
     def test_environment_profile_overrides_saved_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            settings = root / ".noory" / "plainly" / "settings.json"
+            settings = root / ".plainly" / "settings.json"
             settings.parent.mkdir(parents=True)
             settings.write_text(json.dumps({"profile": "guided"}), encoding="utf-8")
 
@@ -57,12 +57,12 @@ class RuntimeTest(unittest.TestCase):
         self.assertEqual(second.source, f"file:{style_file.resolve()}")
         self.assertIsNone(second.profile)
 
-    def test_project_settings_override_user_settings(self) -> None:
+    def test_project_settings_are_the_only_persisted_scope(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             home = root / "home"
             user_settings = home / ".noory" / "plainly" / "settings.json"
-            project_settings = root / ".noory" / "plainly" / "settings.json"
+            project_settings = root / ".plainly" / "settings.json"
             user_settings.parent.mkdir(parents=True)
             project_settings.parent.mkdir(parents=True)
             user_settings.write_text(json.dumps({"profile": "professional"}), encoding="utf-8")
@@ -73,10 +73,54 @@ class RuntimeTest(unittest.TestCase):
         self.assertEqual(resolved.profile, "guided")
         self.assertEqual(resolved.source, f"settings:{project_settings.resolve()}")
 
+    def test_legacy_noory_settings_are_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            project_legacy = root / ".noory" / "plainly" / "settings.json"
+            user_legacy = home / ".noory" / "plainly" / "settings.json"
+            project_legacy.parent.mkdir(parents=True)
+            user_legacy.parent.mkdir(parents=True)
+            project_legacy.write_text(json.dumps({"profile": "guided"}), encoding="utf-8")
+            user_legacy.write_text(json.dumps({"profile": "professional"}), encoding="utf-8")
+
+            resolved = resolve_style(
+                PLUGIN_ROOT,
+                root,
+                environ={},
+                home=home,
+            )
+
+        self.assertEqual(resolved.profile, "plain")
+        self.assertEqual(resolved.source, "builtin:plain")
+
+    def test_project_relative_style_file_is_loaded(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            settings = root / ".plainly" / "settings.json"
+            style_file = root / ".plainly" / "style.md"
+            settings.parent.mkdir(parents=True)
+            settings.write_text(
+                json.dumps({"style_file": ".plainly/style.md"}),
+                encoding="utf-8",
+            )
+            style_file.write_text("Explain decisions in plain language.", encoding="utf-8")
+
+            resolved = resolve_style(
+                PLUGIN_ROOT,
+                root,
+                environ={},
+                home=root / "home",
+            )
+
+        self.assertEqual(resolved.text, "Explain decisions in plain language.")
+        self.assertEqual(resolved.source, f"file:{style_file.resolve()}")
+        self.assertIsNone(resolved.profile)
+
     def test_missing_custom_file_falls_back_to_profile_in_the_same_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            settings = root / ".noory" / "plainly" / "settings.json"
+            settings = root / ".plainly" / "settings.json"
             settings.parent.mkdir(parents=True)
             settings.write_text(
                 json.dumps({"style_file": "missing.md", "profile": "guided"}),
@@ -107,7 +151,7 @@ class RuntimeTest(unittest.TestCase):
     def test_malformed_project_settings_fall_back_without_blocking(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            settings = root / ".noory" / "plainly" / "settings.json"
+            settings = root / ".plainly" / "settings.json"
             settings.parent.mkdir(parents=True)
             settings.write_text("{not-json", encoding="utf-8")
 
@@ -156,7 +200,7 @@ class RuntimeTest(unittest.TestCase):
             root.mkdir()
             outside = base / "private.md"
             outside.write_text("Private local content.", encoding="utf-8")
-            settings = root / ".noory" / "plainly" / "settings.json"
+            settings = root / ".plainly" / "settings.json"
             settings.parent.mkdir(parents=True)
             settings.write_text(
                 json.dumps({"style_file": "../private.md"}),
@@ -181,7 +225,7 @@ class RuntimeTest(unittest.TestCase):
                 link.symlink_to(outside)
             except OSError as exc:
                 self.skipTest(f"Symlink creation is unavailable: {exc}")
-            settings = root / ".noory" / "plainly" / "settings.json"
+            settings = root / ".plainly" / "settings.json"
             settings.parent.mkdir(parents=True)
             settings.write_text(json.dumps({"style_file": "style.md"}), encoding="utf-8")
 

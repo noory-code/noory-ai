@@ -34,11 +34,10 @@ def write_settings(path: Path, payload: dict[str, str]) -> None:
 
 
 def target_settings(args: argparse.Namespace) -> Path:
-    return settings_path(args.scope, Path(args.project_root), Path.home())
+    return settings_path(Path(args.project_root))
 
 
-def add_scope_options(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--scope", choices=("user", "project"), default="user")
+def add_project_root(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--project-root", default=".")
 
 
@@ -50,18 +49,18 @@ def build_parser() -> argparse.ArgumentParser:
     commands.add_parser("list", help="List built-in profiles.")
 
     show = commands.add_parser("show", help="Show the effective style.")
-    show.add_argument("--project-root", default=".")
+    add_project_root(show)
 
     set_profile = commands.add_parser("set-profile", help="Select a built-in profile.")
     set_profile.add_argument("profile", choices=tuple(catalog.profiles))
-    add_scope_options(set_profile)
+    add_project_root(set_profile)
 
     set_file = commands.add_parser("set-file", help="Select an external UTF-8 style file.")
     set_file.add_argument("path")
-    add_scope_options(set_file)
+    add_project_root(set_file)
 
     reset = commands.add_parser("reset", help="Remove saved Plainly settings.")
-    add_scope_options(reset)
+    add_project_root(reset)
     return parser
 
 
@@ -84,7 +83,7 @@ def run(args: argparse.Namespace) -> int:
     path = target_settings(args)
     if args.command == "set-profile":
         write_settings(path, {"profile": args.profile})
-        print(f"Plainly profile set to {args.profile} ({args.scope}): {path}")
+        print(f"Plainly project profile set to {args.profile}: {path}")
         return 0
 
     if args.command == "set-file":
@@ -97,27 +96,25 @@ def run(args: argparse.Namespace) -> int:
         if error:
             print(error, file=sys.stderr)
             return 2
-        stored_path = str(style_path)
-        if args.scope == "project":
-            try:
-                stored_path = style_path.relative_to(project_root).as_posix()
-            except ValueError:
-                print(
-                    f"Plainly project style file must stay within project root "
-                    f"{project_root}: {style_path}",
-                    file=sys.stderr,
-                )
-                return 2
+        try:
+            stored_path = style_path.relative_to(project_root).as_posix()
+        except ValueError:
+            print(
+                f"Plainly project style file must stay within project root "
+                f"{project_root}: {style_path}",
+                file=sys.stderr,
+            )
+            return 2
         write_settings(path, {"style_file": stored_path})
-        print(f"Plainly external style set ({args.scope}): {style_path}")
+        print(f"Plainly project style set: {style_path}")
         return 0
 
     if args.command == "reset":
         if path.exists():
             path.unlink()
-            print(f"Plainly settings removed ({args.scope}): {path}")
+            print(f"Plainly project settings removed: {path}")
         else:
-            print(f"Plainly settings already use defaults ({args.scope}): {path}")
+            print(f"Plainly project settings already use defaults: {path}")
         return 0
 
     raise RuntimeError(f"Unhandled command: {args.command}")

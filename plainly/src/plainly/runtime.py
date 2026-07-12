@@ -8,7 +8,7 @@ from typing import Any, Mapping
 
 
 MAX_STYLE_BYTES = 8192
-SETTINGS_DIRECTORY = Path(".noory") / "plainly"
+SETTINGS_DIRECTORY = Path(".plainly")
 SETTINGS_FILENAME = "settings.json"
 
 
@@ -66,14 +66,8 @@ def load_catalog(plugin_root: Path) -> ProfileCatalog:
     return ProfileCatalog(default=default, profiles=profiles)
 
 
-def settings_path(scope: str, project_root: Path, home: Path | None = None) -> Path:
-    if scope == "project":
-        base = project_root
-    elif scope == "user":
-        base = home if home is not None else Path.home()
-    else:
-        raise ValueError(f"Unknown settings scope: {scope}")
-    return base.expanduser().resolve() / SETTINGS_DIRECTORY / SETTINGS_FILENAME
+def settings_path(project_root: Path) -> Path:
+    return project_root.expanduser().resolve() / SETTINGS_DIRECTORY / SETTINGS_FILENAME
 
 
 def read_style_file(path: Path) -> tuple[str | None, str | None]:
@@ -105,7 +99,6 @@ def resolve_style(
     catalog = load_catalog(plugin_root)
     environment = os.environ if environ is None else environ
     project_root = cwd.expanduser().resolve()
-    user_home = Path.home() if home is None else home.expanduser().resolve()
     diagnostics: list[str] = []
 
     env_file = environment.get("NOORY_STYLE_FILE", "").strip()
@@ -129,21 +122,12 @@ def resolve_style(
             return resolved
         diagnostics.append(f"Unknown Plainly profile from NOORY_STYLE_PROFILE: {env_profile}")
 
-    project_settings = settings_path("project", project_root, user_home)
-    user_settings = settings_path("user", project_root, user_home)
-    candidates = (
-        (project_settings, project_root, project_root),
-        (user_settings, user_settings.parent, None),
-    )
-    seen: set[Path] = set()
-    for candidate, relative_base, confined_root in candidates:
-        if candidate in seen or not candidate.exists():
-            continue
-        seen.add(candidate)
+    project_settings = settings_path(project_root)
+    if project_settings.exists():
         resolved = _style_from_settings(
-            candidate,
-            relative_base,
-            confined_root,
+            project_settings,
+            project_root,
+            project_root,
             catalog,
             diagnostics,
         )

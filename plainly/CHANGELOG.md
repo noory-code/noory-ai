@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-07-12
+
+- Move persisted Plainly configuration to project-owned `.plainly/settings.json`.
+- Remove saved user-global and `.noory/` settings; environment variables remain temporary
+  overrides and missing project settings fall back to the built-in `plain` profile.
+- Make the configuration CLI project-only and keep custom style paths portable and confined to the
+  repository.
+
 ## 0.1.2 — 2026-07-12
 
 - Replace the stale hardcoded manifest-version assertion with a semantic-version contract while
