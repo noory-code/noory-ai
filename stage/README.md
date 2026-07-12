@@ -20,7 +20,10 @@ Stage creates a `.stage/` directory inside the project and connects three axes.
 - At decision points, use principles (`past/canon/principles.md`) together with context; decision records cite their governing principles.
 - Work is not complete until verification and the retrospective are done. What `passed` means is declared per work `kind`.
 - Nearly all workspace files are governed by default — planning documents, designs, and configuration included — with exclusions managed in `.stage/settings.json`.
-- Work items form hierarchies (`parent`), carry a work `kind`, and trace their lineage to backlog items (`source`/`realized_by`), so every kind of work stays classifiable.
+- A work card is one `W-*` artifact across its whole life, moving `future/backlog` (planned) →
+  `present/work` (started via `scripts/start_work.py`) → `past/work/archive` (closed) like a
+  kanban card. Cards form hierarchies (`parent`) and carry a work `kind`, so every kind of work
+  stays classifiable.
 - The core stays Markdown, plain files, and relative paths so it works on Codex, Claude, Windows, Linux, and macOS.
 - A single document only holds an index or policy. Every durable individual artifact has its own file.
 - Common operational rules are plugin-owned (`operations/` in this plugin) and are not copied into

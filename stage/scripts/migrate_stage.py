@@ -13,12 +13,19 @@ content that differs from the current plugin copy:
   (kind -> passed table only) when its prose matches the known legacy
   template; otherwise it is kept untouched and reported;
 - `schema_version` is stamped only once no undeclared drift remains.
+
+v3 (DE-00000007): backlog entries become planned `W-` work cards and the `B-`
+family retires. A realized or rejected `B-` item is removed from the tree (its
+execution record lives in the archived work card; git history keeps the file);
+any other `B-` item converts to a planned `W-` card with a fresh id and its
+body preserved. Never deletes a body that has no surviving record.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -30,6 +37,7 @@ if str(HOOK_ROOT) not in sys.path:
     sys.path.insert(0, str(HOOK_ROOT))
 
 from stage_paths import STAGE_SCHEMA_VERSION  # noqa: E402
+from stage_work import parse_frontmatter  # noqa: E402
 
 # The project policy surface and plain directory docs are never treated as
 # shadows of plugin-owned common docs.
@@ -173,6 +181,92 @@ def stamp_schema_version(stage_root: Path, settings: dict[str, object], dry_run:
         )
 
 
+def next_work_number(stage_root: Path) -> int:
+    numbers = [0]
+    id_re = re.compile(r"^W-(\d{3,})")
+    for base in ("present/work/items", "past/work/archive/items", "future/backlog/items"):
+        for path in (stage_root / base).glob("W-*.md"):
+            match = id_re.match(path.stem)
+            if match:
+                numbers.append(int(match.group(1)))
+    return max(numbers) + 1
+
+
+def migrate_backlog(stage_root: Path, dry_run: bool) -> None:
+    """v3: convert `B-` backlog items to planned `W-` work cards (DE-00000007)."""
+    backlog_dir = stage_root / "future" / "backlog" / "items"
+    index_path = stage_root / "future" / "backlog" / "index.md"
+    if not backlog_dir.is_dir():
+        return
+    b_files = [
+        path
+        for path in sorted(backlog_dir.glob("B-*.md"))
+        if path.name not in ("README.md", "_template.md")
+    ]
+    if not b_files:
+        return
+
+    index_text = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
+    id_map: dict[str, str] = {}
+    number = next_work_number(stage_root)
+    removed: list[str] = []
+
+    for path in b_files:
+        fields = parse_frontmatter(path)
+        old_id = (fields.get("id") or path.stem).strip()
+        status = (fields.get("status") or "").strip().lower()
+        realized = bool((fields.get("realized_by") or "").strip())
+        if realized or status == "rejected":
+            if not dry_run:
+                path.unlink()
+            removed.append(old_id)
+            reason = "realized by " + fields.get("realized_by", "") if realized else "rejected"
+            print(f"  delete backlog {path.name} ({reason.strip()}; git history keeps the file)")
+            continue
+        new_id = f"W-{number:08d}"
+        number += 1
+        id_map[old_id] = new_id
+        text = path.read_text(encoding="utf-8")
+        text = re.sub(r"^id:[ \t]*.*$", f"id: {new_id}", text, count=1, flags=re.MULTILINE)
+        text = re.sub(
+            r"^realized_by:[ \t]*.*\n", "", text, count=1, flags=re.MULTILINE
+        )
+        text = text.replace(f"# {old_id}", f"# {new_id}", 1)
+        if not dry_run:
+            (backlog_dir / f"{new_id}.md").write_text(text, encoding="utf-8")
+            path.unlink()
+        print(f"  convert backlog {path.name} -> {new_id}.md (planned work card)")
+        index_text = index_text.replace(f"| {old_id} |", f"| {new_id} |").replace(
+            f"(items/{path.name})", f"(items/{new_id}.md)"
+        )
+
+    # Parent references between converted cards follow the id map.
+    for old_id, new_id in id_map.items():
+        for path in backlog_dir.glob("W-*.md"):
+            text = path.read_text(encoding="utf-8")
+            if f"parent: {old_id}" in text:
+                if not dry_run:
+                    path.write_text(
+                        text.replace(f"parent: {old_id}", f"parent: {new_id}"),
+                        encoding="utf-8",
+                    )
+
+    if index_path.exists():
+        lines = index_text.splitlines()
+        kept = [
+            line
+            for line in lines
+            if not (
+                line.lstrip().startswith("|")
+                and any(f"| {old_id} |" in line for old_id in removed)
+            )
+        ]
+        if not dry_run:
+            index_path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+        if len(kept) != len(lines):
+            print(f"  update backlog index ({len(lines) - len(kept)} closed rows removed)")
+
+
 def migrate(project_root: Path, dry_run: bool) -> int:
     stage_root = project_root / ".stage"
     if not stage_root.is_dir():
@@ -215,6 +309,8 @@ def migrate(project_root: Path, dry_run: bool) -> int:
     dropped = drop_index_rows(stage_root, deleted, dry_run)
     if dropped:
         print(f"  update index.md ({dropped} routing rows for deleted docs removed)")
+
+    migrate_backlog(stage_root, dry_run)
 
     if drift:
         print(f"Unresolved ownership drift: {len(drift)} file(s); schema_version not stamped.")

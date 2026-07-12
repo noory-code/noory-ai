@@ -16,6 +16,20 @@ leaves early commits ungated (R-00000001's learning).
 Before writing the item, locate the real purpose in the upstream SSOT (initiative / epic / plan
 doc). Do not guess. If the purpose answers an open question, the question may be unnecessary.
 
+## One card, three columns
+
+A work card is one `W-*` artifact for its whole life (DE-00000007): captured as a planned card
+in `future/backlog/items/`, moved to `present/work/items/` when work starts, archived when
+closed. Two flows create work:
+
+- **Capture for later**: `register_work.py --backlog --title "..." --kind <kind> --scope ""` —
+  a planned card (`status: captured`), indexed in `future/backlog/index.md`. No venue/split
+  checks yet.
+- **Start now**: the flow below (direct registration into present), or start an existing planned
+  card with `python3 stage/scripts/start_work.py --project-root <root> W-NNNNNNNN --scope "..."`
+  — the mover sets `active`, requires scope, derives the venue, and enforces the split/exception
+  contract at that moment. Never hand-move the file.
+
 ## Draft the item
 
 Copy `present/work/items/_template.md` to `present/work/items/W-NNNNNNNN.md` (next free number) and

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.23.0 — 2026-07-12
+
+Unified work-card lifecycle — the backlog becomes the planned column of one W-card board
+(DE-00000007):
+
+- A work card is ONE `W-*` artifact for its whole life: captured in `future/backlog/items/`
+  (planned statuses `captured`/`triaged`/`ready`/`selected`/`deferred`/`rejected`), physically
+  moved to `present/work/items/` when work starts, archived as before. The `B-` family and the
+  `source`/`realized_by` realization links retire; `parent` is the only work lineage and legacy
+  `source:` fields are inert history.
+- `register_work.py --backlog` captures a planned card (indexed in the backlog index, no
+  venue/split checks yet); new `scripts/start_work.py` performs the move: sets `active`,
+  requires the `scope` declaration, derives the venue from `venue_routing`, and enforces the
+  split/exception contract (DE-00000005) at start. Card ids are unique across all three
+  lifecycle locations (a card in two columns is an SSOT001 error).
+- The audit validates planned-card statuses and cross-column parents, keeps the backlog index in
+  lock-step with W (and legacy B) rows, and drops the retired realization checks
+  (WORK020/WORK023/BACKLOG004/005/006).
+- `STAGE_SCHEMA_VERSION` bumps to 3. `migrate_stage.py` converts unrealized `B-` items to
+  planned `W-` cards (bodies preserved, parents remapped), removes realized/rejected `B-` items
+  (their record lives in the archived work card; git history keeps the files), rewrites the
+  backlog index, and stamps the schema — idempotent, dry-runnable.
+- English and Korean backlog templates, the plugin backlog/artifacts operation docs, skills, and
+  the SessionStart artifact map describe the board model.
+
 ## 0.22.0 — 2026-07-12
 
 Routing contract completion — review fixes for the B-00000001..3 releases (DE-00000005):

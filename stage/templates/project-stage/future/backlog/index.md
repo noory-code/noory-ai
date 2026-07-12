@@ -1,8 +1,10 @@
 # Backlog Index
 
-This document owns the current index of the backlog.
+This document owns the current index of planned work cards.
 
-Backlog item bodies live in `items/`. This document manages only order, status, and links.
+Card bodies live in `items/`. This document manages only order, status, and links. A card that
+starts work moves to `present/work/items/` (`scripts/start_work.py`) and its row leaves this
+index for `present/work/active.md`.
 
 ## Current backlog
 

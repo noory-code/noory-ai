@@ -305,8 +305,11 @@ def resolve_review_command(review: dict[str, Any], stage: str) -> tuple[str | No
 # on a missing or different value instead. Bump only when the recorded
 # contract changes shape.
 # Version 2: common operations docs are plugin-owned and no longer copied
-# into `.stage/operations/`; migrate with `scripts/migrate_stage.py`.
-STAGE_SCHEMA_VERSION = 2
+# into `.stage/operations/`.
+# Version 3: backlog entries are planned W work cards (the B family retired);
+# one card moves future -> present -> past. Migrate with
+# `scripts/migrate_stage.py`.
+STAGE_SCHEMA_VERSION = 3
 
 
 def configured_write_tools(stage_root: Path) -> set[str]:

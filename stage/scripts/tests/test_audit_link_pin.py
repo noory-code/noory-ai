@@ -123,9 +123,9 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 retrospective_ref="R-0010",
                 promotion="approved",
             )
-            self.write_item(root, "W-0011", source="B-9999")  # WORK020
-            self.write_item(root, "W-0012", source="B-0001")  # WORK023 (one-sided)
-            self.write_item(root, "W-0013")  # target of B-0001.realized_by, source empty
+            self.write_item(root, "W-0011", source="B-9999")  # legacy source: inert history
+            self.write_item(root, "W-0012", source="B-0001")  # legacy source: inert history
+            self.write_item(root, "W-0013")
             self.write_item(root, "W-0014", id="W-0001")  # WORK002 + WORK007 x2
 
             self.write_retro(root, "R-0003", "W-9999")  # WORK013 above + RETRO001
@@ -138,12 +138,14 @@ class LinkFindingOrderPinTest(unittest.TestCase):
             self.write_decision(root, "DE-0011", "W-0001")  # DECISION002 (not linked back)
             self.write_retro(root, "R-0012", "W-0010")  # RETRO002 (W-0010 binds R-0010)
 
-            self.write_backlog(root, "B-0001", status="selected", realized_by="W-0013")  # BACKLOG006
+            # Planned cards (DE-00000007): realization links retired; selected
+            # cards and legacy realized_by fields produce no findings.
+            self.write_backlog(root, "B-0001", status="selected", realized_by="W-0013")
             self.write_backlog(root, "B-0002", status="bogus")  # BACKLOG001
             self.write_backlog(root, "B-0003", parent="B-9999")  # BACKLOG002
-            self.write_backlog(root, "B-0004", realized_by="W-9999")  # BACKLOG005
+            self.write_backlog(root, "B-0004", realized_by="W-9999")
             self.write_backlog(root, "B-0005", id="B-5555")  # BACKLOG003
-            self.write_backlog(root, "B-0006", status="selected")  # BACKLOG004
+            self.write_backlog(root, "B-0006", status="selected")
 
             question = root / ".stage" / "present" / "state" / "questions" / "Q-0001.md"
             question.write_text(
@@ -175,13 +177,8 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "INDEX001",
                 "INDEX002",
                 "BACKLOG001",
-                "BACKLOG005",
                 "BACKLOG003",
-                "BACKLOG004",
                 "BACKLOG002",
-                "WORK020",
-                "WORK023",
-                "BACKLOG006",
                 "DECISION001",
                 "WORK016",
                 "WORK021",

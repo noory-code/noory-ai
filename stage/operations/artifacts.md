@@ -33,7 +33,7 @@ family/
 | `promotion` | `pending`, `approved`, `promoted`, `deferred`, `not_applicable`, `rejected` |
 | `promotes` | list of `.stage/past/` paths this item may promote |
 | `decision_refs` | optional IDs or paths of linked decision records |
-| `source` | optional backlog item ID (`B-*`) this work realizes |
+| `priority` | optional, planned cards only: ordering hint shown in the backlog index |
 | `venue` | optional execution-surface routing; project-defined values, derived from `settings.json` `venue_routing` when declared |
 
 `active.md` and `review.md` are current views. Hooks judge from the frontmatter of `present/work/items/*.md`.
@@ -44,7 +44,7 @@ family/
 
 Governance is broad by default: nearly every workspace file is governed (registration required before modification), excluding `.stage/`, `.git/`, and `.discuss/`. Projects widen the exclusions via `settings.json` `governance.exclude_paths`/`exclude_extensions`; the audit warns about every narrowing so it stays visible. Legacy allowlist keys (`extensions`/`paths`) are still honored but also reported as narrower than the default.
 
-Lineage is bidirectional: a work item's `source` names the backlog item it realizes, and that backlog item's `realized_by` names the work item. A `selected` backlog item without `realized_by` is an audit warning. State records (Q/A/K/O) may link affected work through their `work_items` field.
+Hierarchy is the only work lineage: `parent` names the parent work card (e.g. an implementation item under its design item). A card keeps one identity from backlog to archive, so no realization links exist; a legacy `source:` field on an old record is inert history. State records (Q/A/K/O) may link affected work through their `work_items` field.
 
 `promotes` is also fail-closed. A regular promotion intent may only modify paths declared in the work item's `promotes`. `promotes` entries are exact file paths, not directory prefixes.
 
@@ -56,9 +56,17 @@ Lineage is bidirectional: a work item's `source` names the backlog item it reali
 
 | Status | Location |
 |---|---|
+| `captured`, `triaged`, `ready`, `selected`, `deferred` (planned) | `future/backlog/items/` + `future/backlog/index.md` |
 | `active`, `blocked` | `present/work/items/` + `present/work/active.md` |
 | `review`, `completed`, `rejected` | `present/work/items/` + `present/work/review.md` |
 | `archived` | `past/work/archive/items/` |
+
+A work card is ONE artifact across its whole life (DE-00000007): captured as a planned card in
+`future/backlog/items/`, physically moved to `present/work/items/` when work starts
+(`scripts/start_work.py` sets `active`, requires `scope`, and enforces the venue/split contract
+at that moment), and archived to `past/work/archive/items/` when closed. `rejected` may also
+appear on a planned card that was declined before any work started. Registering directly into
+`present/work/items/` remains valid for work that never sat in the backlog.
 
 `completed` means verification, retrospective, and the promotion decision are all closed. A `rejected` item also records its completed retrospective (`retrospective_ref`) before archiving — rejection reasons are learning assets. Archive a `completed` or `rejected` item once BOTH hold: no active/review/blocked work item names it as `parent`, and no open question, assumption, or risk lists it in `work_items`. Then set `status: archived` and move it to `past/work/archive/items/`.
 
@@ -70,7 +78,7 @@ One table to recognize every artifact family fast. Read this before creating any
 
 | Prefix | Artifact | Location | Use when |
 |---|---|---|---|
-| `W-` | Work item | `present/work/items/` | Any accountable unit of work starts. |
+| `W-` | Work card | `present/work/items/` | Any accountable unit of work; planned cards wait in `future/backlog/items/`, archived cards rest in `past/work/archive/items/`. |
 | `R-` | Retrospective | `present/work/retrospectives/` | A work item reaches completion candidate. |
 | `DE-` | Working decision | `present/work/decisions/` | A decision point occurs during work. |
 | `D-` | Approved decision | `past/decisions/records/` | A decision is approved and promoted. |
@@ -78,7 +86,6 @@ One table to recognize every artifact family fast. Read this before creating any
 | `Q-` | Question | `present/state/questions/` | An open question blocks or shapes work. |
 | `A-` | Assumption | `present/state/assumptions/` | Work proceeds on an unverified premise. |
 | `K-` | Risk | `present/state/risks/` | A known risk needs tracking. |
-| `B-` | Backlog item | `future/backlog/items/` | Future work is captured. |
 | `P-` | Proposal | `future/proposals/` | A direction needs a decision. |
 | `M-` | Milestone | `future/roadmap/milestones/` | Backlog items group toward a goal. |
 | — | Theme | `future/roadmap/themes/` | Milestones group toward a direction. |

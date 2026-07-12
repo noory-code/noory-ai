@@ -30,6 +30,11 @@ from stage_git import iter_git_commands  # noqa: E402  (after sys.path bootstrap
 
 WORK_OPEN_STATUSES = {"active", "review", "blocked"}
 WORK_FINAL_STATUSES = {"completed", "archived", "rejected"}
+# Planned work cards (DE-00000007) live in future/backlog/items/ and move to
+# present/work/items/ when work starts — one W card per piece of work across
+# its whole life. `rejected` may also appear on a planned card (decided not to
+# do before any work started).
+WORK_PLANNED_STATUSES = {"captured", "triaged", "ready", "selected", "deferred", "rejected"}
 VERIFICATION_DONE = {"passed", "not_required"}
 RETROSPECTIVE_DONE = {"completed"}
 PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "rejected"}

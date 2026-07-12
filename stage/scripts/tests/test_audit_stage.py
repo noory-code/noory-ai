@@ -879,7 +879,7 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("CANON001", finding_codes(findings))
 
-    def test_work_source_must_reference_existing_backlog_item(self):
+    def test_legacy_source_field_is_inert_history(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
@@ -889,28 +889,43 @@ class StageAuditTest(unittest.TestCase):
 
             findings = audit_stage.Audit(root).run()
 
-        self.assertIn("WORK020", finding_codes(findings))
+        self.assertEqual(set(), finding_codes(findings) & {"WORK020", "WORK023"})
 
-    def test_selected_backlog_without_realization_is_warning(self):
+    def test_planned_card_may_be_selected_without_links(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.write_backlog_item(root, status="selected")
+            self.write_backlog_item(root, item_id="W-0042", status="selected")
 
             findings = audit_stage.Audit(root).run()
 
-        self.assertIn("BACKLOG004", finding_codes(findings))
+        self.assertEqual(
+            set(),
+            finding_codes(findings)
+            & {"BACKLOG001", "BACKLOG004", "BACKLOG005", "WORK001"},
+        )
 
-    def test_backlog_realized_by_must_exist(self):
+    def test_open_status_in_backlog_column_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            path = self.write_backlog_item(root, status="selected")
-            path.write_text(path.read_text(encoding="utf-8").replace("realized_by:", "realized_by: W-9999") if "realized_by:" in path.read_text(encoding="utf-8") else path.read_text(encoding="utf-8").replace("priority:", "priority:\nrealized_by: W-9999"), encoding="utf-8")
+            self.write_backlog_item(root, item_id="W-0042", status="active")
 
             findings = audit_stage.Audit(root).run()
 
-        self.assertIn("BACKLOG005", finding_codes(findings))
+        self.assertIn("BACKLOG001", finding_codes(findings))
+
+    def test_same_card_in_two_columns_is_ssot_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, status="active")
+            self.append_active_index(root, "W-0001")
+            self.write_backlog_item(root, item_id="W-0001", status="selected")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("SSOT001", finding_codes(findings))
 
     def test_decision_with_empty_principles_is_error(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1119,24 +1134,27 @@ class StageAuditTest(unittest.TestCase):
         self.assertIn("future/roadmap/themes", route[0].message)
 
 
-    def test_one_sided_lineage_is_reported(self):
+    def test_planned_card_parent_may_live_in_present(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.write_work_item(root, item_id="W-1")
-            (root / ".stage/present/work/items/W-1.md").write_text(
-                "---\nid: W-1\ntitle: t\nstatus: active\nverification: pending\n"
-                "retrospective: pending\npromotion: pending\nscope:\nsource: B-1\n---\n# W-1\n",
-                encoding="utf-8",
-            )
-            self.write_record(root, "future/backlog/items/B-1.md", "B-1",
-                              "status: selected\nrealized_by: W-2\n")
-            self.write_work_item(root, item_id="W-2")
+            self.write_work_item(root, item_id="W-1", status="active")
+            self.append_active_index(root, "W-1")
+            self.write_backlog_item(root, item_id="W-2", status="captured", parent="W-1")
 
             codes = finding_codes(audit_stage.Audit(root).run())
 
-        self.assertIn("WORK023", codes)
-        self.assertIn("BACKLOG006", codes)
+        self.assertNotIn("BACKLOG002", codes)
+
+    def test_planned_card_missing_parent_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_backlog_item(root, item_id="W-2", status="captured", parent="W-9999")
+
+            codes = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertIn("BACKLOG002", codes)
 
     def test_orphan_decision_and_retrospective_are_validated(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1307,7 +1325,9 @@ class InitLanguageTest(unittest.TestCase):
             findings = audit_stage.Audit(root).run()
 
         self.assertEqual("ko", settings["language"])
-        self.assertEqual(2, settings["schema_version"])
+        self.assertEqual(
+            audit_stage.stage_guard.STAGE_SCHEMA_VERSION, settings["schema_version"]
+        )
         self.assertIn("# Stage 인덱스", index)
         self.assertIn("`past/canon/principles.md`", index)
         # kind tokens stay language-neutral in the localized criteria table.
@@ -1611,7 +1631,7 @@ class OpenDecisionCompletionTest(unittest.TestCase):
             self.init_stage(root)
             self.write_decision(root, status="open")
             self.write_completed_item(root, decision_refs="DE-0001")
-            findings = [f for f in audit_stage.Audit(root).run() if f.code == "DECISION002"]
+            findings = [f for f in audit_stage.Audit(root).run() if f.code == "DECISION003"]
         self.assertEqual(["error"], [f.severity for f in findings])
 
     def test_completed_item_with_decided_decision_passes(self):
@@ -1620,7 +1640,7 @@ class OpenDecisionCompletionTest(unittest.TestCase):
             self.init_stage(root)
             self.write_decision(root, status="decided")
             self.write_completed_item(root, decision_refs="DE-0001")
-            self.assertNotIn("DECISION002", self.codes(root))
+            self.assertNotIn("DECISION003", self.codes(root))
 
     def test_open_decision_on_open_item_is_allowed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1637,7 +1657,7 @@ class OpenDecisionCompletionTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            self.assertNotIn("DECISION002", self.codes(root))
+            self.assertNotIn("DECISION003", self.codes(root))
 
 
 class OperationsOwnershipTest(unittest.TestCase):

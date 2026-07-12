@@ -70,7 +70,9 @@ def session_context(workspace_root: Path) -> str:
         "governed source so the registration/commit gates never fire on it. To archive, use the `stage-archive` skill.",
         "- Artifact map — W work `present/work/items` · R retro `present/work/retrospectives` · "
         "DE decision `present/work/decisions` · D approved `past/decisions/records` · "
-        "O/Q/A/K state `present/state/*` · B backlog `future/backlog/items` · P proposal · M milestone. "
+        "O/Q/A/K state `present/state/*` · planned W cards `future/backlog/items` · P proposal · M milestone. "
+        "A work card is ONE artifact moving future -> present -> past; start a planned card with "
+        "`scripts/start_work.py` (never hand-move it). "
         "Full catalog: `operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
     ]
 

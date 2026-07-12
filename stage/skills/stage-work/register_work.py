@@ -50,7 +50,7 @@ def set_field(text: str, field: str, value: str) -> str:
 
 def existing_numbers(stage_root: Path) -> set[int]:
     numbers: set[int] = set()
-    for base in ("present/work/items", "past/work/archive/items"):
+    for base in ("present/work/items", "past/work/archive/items", "future/backlog/items"):
         for path in (stage_root / base).glob("W-*.md"):
             match = ID_RE.match(path.stem)
             if match:
@@ -112,6 +112,62 @@ def create_item_atomic(items_dir: Path, numbers: set[int], content_for) -> str:
     raise RuntimeError("could not allocate a free work-item id")
 
 
+_BACKLOG_TEMPLATE = (
+    Path(__file__).resolve().parents[2]
+    / "templates"
+    / "project-stage"
+    / "future"
+    / "backlog"
+    / "items"
+    / "_template.md"
+)
+
+
+def backlog_row(item_id: str, title: str, kind: str, priority: str) -> str:
+    return (
+        f"| {item_id} | {title} | {kind} | captured | {priority} |  | "
+        f"[items/{item_id}.md](items/{item_id}.md) |"
+    )
+
+
+def ensure_backlog_row(index_path: Path, item_id: str, row: str) -> None:
+    text = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
+    if re.search(rf"\(items/{re.escape(item_id)}\.md\)", text):
+        return
+    body = text.rstrip("\n")
+    index_path.write_text(f"{body}\n{row}\n", encoding="utf-8")
+
+
+def register_backlog_card(stage_root: Path, args) -> int:
+    backlog_dir = stage_root / "future" / "backlog" / "items"
+    index_path = stage_root / "future" / "backlog" / "index.md"
+    if not backlog_dir.exists():
+        print(f"Stage backlog dir not found: {backlog_dir}", file=sys.stderr)
+        return 2
+    if not _BACKLOG_TEMPLATE.exists():
+        print(f"Planned-card template not found: {_BACKLOG_TEMPLATE}", file=sys.stderr)
+        return 2
+    template = _BACKLOG_TEMPLATE.read_text(encoding="utf-8")
+
+    def content_for(item_id: str) -> str:
+        text = template.replace("W-00000000 Title", f"{item_id} {args.title}")
+        text = set_field(text, "id", item_id)
+        text = set_field(text, "title", args.title)
+        text = set_field(text, "kind", args.kind)
+        if args.priority:
+            text = set_field(text, "priority", args.priority)
+        if args.purpose:
+            text = text.replace("## Purpose\n\n", f"## Purpose\n\n{args.purpose}\n", 1)
+        return text
+
+    item_id = create_item_atomic(backlog_dir, existing_numbers(stage_root), content_for)
+    ensure_backlog_row(
+        index_path, item_id, backlog_row(item_id, args.title, args.kind, args.priority)
+    )
+    print(f"{item_id}: captured (planned card in future/backlog/items)")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Scaffold a Stage work item + active.md row.")
     parser.add_argument("--project-root", default=".")
@@ -129,11 +185,28 @@ def main() -> int:
         help="Decision record id (DE-*) authorizing a venue-policy exception "
         "(decided/promoted with `authorizes: venue_exception`); stamped into decision_refs.",
     )
+    parser.add_argument(
+        "--backlog",
+        action="store_true",
+        help="Capture a planned card in future/backlog/items (status captured) instead of "
+        "starting work in present; the venue/split contract applies later, at start_work.",
+    )
+    parser.add_argument(
+        "--priority",
+        default="",
+        help="Optional ordering hint for a planned card (shown in the backlog index).",
+    )
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
     items_dir = stage_root / "present" / "work" / "items"
     active_path = stage_root / "present" / "work" / "active.md"
+
+    # A planned card (DE-00000007) is captured, not started: it waits in
+    # future/backlog/items and the venue/split contract applies when
+    # scripts/start_work.py moves it to present.
+    if args.backlog:
+        return register_backlog_card(stage_root, args)
 
     # Role policy (DE-00000004/DE-00000005): derive an omitted venue from the
     # declared kind -> venue routing. A split-marked kind or a

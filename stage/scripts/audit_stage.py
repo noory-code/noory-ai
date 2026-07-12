@@ -36,7 +36,9 @@ VERIFICATION_VALUES = stage_guard.VERIFICATION_VALUES
 RETROSPECTIVE_VALUES = stage_guard.RETROSPECTIVE_VALUES
 PROMOTION_VALUES = stage_guard.PROMOTION_VALUES
 DECISION_STATUS_VALUES = {"open", "decided", "promoted"}
-BACKLOG_STATUS_VALUES = {"captured", "triaged", "ready", "selected", "deferred", "rejected"}
+# Planned work cards in future/backlog/items/ (DE-00000007); one owning enum
+# in stage_work, shared with the mover CLI.
+WORK_PLANNED_STATUSES = stage_guard.WORK_PLANNED_STATUSES
 REQUIRED_WORK_FIELDS = (
     "id",
     "title",
@@ -52,7 +54,7 @@ ITEM_LINK_RE = re.compile(r"\((?:\./)?items/([A-Za-z][A-Za-z0-9]*-\d{3,})\.md(?:
 # Prefix → owning locations. SSOT for the mapping = the plugin-owned
 # operations/artifacts.md §Artifact catalog; keep the two in lock-step.
 RECORD_LOCATIONS: dict[str, tuple[str, ...]] = {
-    "W": ("present/work/items", "past/work/archive/items"),
+    "W": ("present/work/items", "past/work/archive/items", "future/backlog/items"),
     "R": ("present/work/retrospectives", "past/work/archive/retrospectives"),
     "DE": ("present/work/decisions",),
     "D": ("past/decisions/records",),
@@ -60,7 +62,6 @@ RECORD_LOCATIONS: dict[str, tuple[str, ...]] = {
     "Q": ("present/state/questions",),
     "A": ("present/state/assumptions",),
     "K": ("present/state/risks",),
-    "B": ("future/backlog/items",),
     "P": ("future/proposals",),
     "M": ("future/roadmap/milestones",),
 }
@@ -129,8 +130,6 @@ class Audit:
         self.audit_hierarchy(items)
         self.audit_work_indexes(items)
         self.audit_backlog_items(graph)
-        self.audit_lineage(graph)
-        self.audit_bidirectional_lineage(graph)
         self.audit_orphan_records(graph)
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
@@ -288,7 +287,7 @@ class Audit:
                 and decision_fields.get("status", "").strip() == "open"
             ):
                 self.error(
-                    "DECISION002",
+                    "DECISION003",
                     f"Work item is {item.status} but linked decision {raw_ref} is still open; "
                     "close the decision (decided/promoted) before completing the work.",
                     item.path,
@@ -422,12 +421,21 @@ class Audit:
         return linked_ids & known_ids, linked_ids - known_ids
 
     def audit_backlog_items(self, graph: RecordGraph) -> None:
+        """Planned work cards (DE-00000007): future/backlog/items/ holds W
+        cards in a planned status; work fields and venue policy apply once the
+        card moves to present/work/items/."""
         for node in graph.backlog:
             path = node.path
             item_id = node.record_id
             status = (node.fields.get("status") or "").strip().lower()
-            if status not in BACKLOG_STATUS_VALUES:
-                self.error("BACKLOG001", f"Unknown backlog status: {status or 'missing'}", path)
+            if status not in WORK_PLANNED_STATUSES:
+                self.error(
+                    "BACKLOG001",
+                    f"Planned card status `{status or 'missing'}` is not one of "
+                    f"{sorted(WORK_PLANNED_STATUSES)}; started work moves to "
+                    "present/work/items/ (scripts/start_work.py).",
+                    path,
+                )
             if not (path.stem == item_id or path.stem.startswith(item_id + "-")):
                 self.error(
                     "BACKLOG003",
@@ -435,26 +443,12 @@ class Audit:
                     path,
                 )
 
-            realized_by = (node.fields.get("realized_by") or "").strip()
-            if status == "selected" and not realized_by:
-                self.warning(
-                    "BACKLOG004",
-                    f"Selected backlog item has no realized_by work item: {item_id}",
-                    path,
-                )
-            if realized_by and realized_by not in graph.work_ids:
-                self.error(
-                    "BACKLOG005",
-                    f"realized_by work item not found: {realized_by}",
-                    path,
-                )
-
         for node in graph.backlog_by_id.values():
             parent_id = (node.fields.get("parent") or "").strip()
-            if parent_id and parent_id not in graph.backlog_by_id:
+            if parent_id and parent_id not in graph.backlog_by_id and parent_id not in graph.work_ids:
                 self.error(
                     "BACKLOG002",
-                    f"Parent backlog item not found: {parent_id}",
+                    f"Parent work card not found: {parent_id}",
                     node.path,
                 )
 
@@ -474,32 +468,6 @@ class Audit:
                 seen.append(cursor)
                 parent_node = graph.backlog_by_id.get(cursor)
                 cursor = (parent_node.fields.get("parent") or "").strip() if parent_node else ""
-
-    def audit_bidirectional_lineage(self, graph: RecordGraph) -> None:
-        """B↔W must point at EACH OTHER, not merely both exist — a one-sided
-        link means the lineage graph silently disagrees with itself."""
-        for edge in graph.edges("work", "source"):
-            if not edge.ref or edge.ref not in graph.backlog_by_id:
-                continue
-            back = (graph.backlog_by_id[edge.ref].fields.get("realized_by") or "").strip()
-            if back != edge.src_id:
-                self.error(
-                    "WORK023",
-                    f"Lineage is one-sided: work item declares source {edge.ref}, but that backlog "
-                    f"item's realized_by is {back or 'empty'}.",
-                    edge.src_path,
-                )
-        for node in graph.backlog_by_id.values():
-            realized_by = (node.fields.get("realized_by") or "").strip()
-            if not realized_by or realized_by not in graph.work_source_by_id:
-                continue
-            if graph.work_source_by_id.get(realized_by) != node.record_id:
-                self.error(
-                    "BACKLOG006",
-                    f"Lineage is one-sided: backlog item declares realized_by {realized_by}, but "
-                    f"that work item's source is {graph.work_source_by_id.get(realized_by) or 'empty'}.",
-                    node.path,
-                )
 
     def audit_orphan_records(self, graph: RecordGraph) -> None:
         """Every decision and retrospective record is validated on its own —
@@ -572,15 +540,6 @@ class Audit:
                     f"`{entry.item.retrospective_ref or 'empty'}`, not this record — one "
                     "completed item has one binding retrospective.",
                     node.path,
-                )
-
-    def audit_lineage(self, graph: RecordGraph) -> None:
-        for edge in graph.edges("work", "source"):
-            if edge.ref and edge.ref not in graph.backlog_ids:
-                self.error(
-                    "WORK020",
-                    f"source backlog item not found: {edge.ref}",
-                    edge.src_path,
                 )
 
     def audit_state_links(self, graph: RecordGraph) -> None:
@@ -663,23 +622,25 @@ class Audit:
             (
                 "future/backlog/index.md",
                 [(node.record_id, node.path) for node in graph.backlog],
-                "B",
+                # Planned cards are W records; legacy un-migrated B rows stay
+                # recognized so pre-v3 projects keep a truthful index check.
+                ("W", "B"),
                 ("BACKLOG008", "BACKLOG009"),
             ),
             (
                 "future/roadmap/index.md",
                 [(node.record_id, node.path) for node in graph.milestones],
-                "M",
+                ("M",),
                 ("ROADMAP001", "ROADMAP002"),
             ),
             (
                 "future/proposals/index.md",
                 [(node.record_id, node.path) for node in graph.proposals],
-                "P",
+                ("P",),
                 ("PROPOSAL001", "PROPOSAL002"),
             ),
         )
-        for index_relative, records, prefix, (missing_code, dangling_code) in families:
+        for index_relative, records, prefixes, (missing_code, dangling_code) in families:
             index_path = self.stage_root / index_relative
             row_ids: set[str] = set()
             for cells in stage_guard.parse_index_rows(index_path):
@@ -687,7 +648,7 @@ class Audit:
                     continue
                 candidate = cells[0].strip()
                 match = RECORD_ID_RE.match(candidate)
-                if match and match.group("prefix") == prefix:
+                if match and match.group("prefix") in prefixes:
                     row_ids.add(candidate)
             record_ids = {record_id for record_id, _ in records}
             for record_id, path in records:
@@ -731,7 +692,10 @@ class Audit:
         The prefix → location catalog mirrors `operations/artifacts.md`
         §Artifact catalog (that document is the SSOT for the mapping).
         """
-        work_item_dirs = set(RECORD_LOCATIONS["W"])
+        # WORK007 owns duplicates only where graph.work scans (present +
+        # archive); planned cards in future/backlog keep plain SSOT001, and a
+        # W id appearing in two lifecycle columns is an SSOT001 error too.
+        work_item_dirs = {"present/work/items", "past/work/archive/items"}
         by_id: dict[str, list[Path]] = {}
         for path in sorted(self.stage_root.rglob("*.md")):
             relative_parent = path.parent.relative_to(self.stage_root).as_posix()

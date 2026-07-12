@@ -78,6 +78,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     VERIFICATION_VALUES,
     WORK_FINAL_STATUSES,
     WORK_OPEN_STATUSES,
+    WORK_PLANNED_STATUSES,
     WorkItem,
     archive_target_item_id,
     archive_target_retro_id,
