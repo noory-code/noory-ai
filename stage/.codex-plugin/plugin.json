@@ -1,6 +1,6 @@
 {
   "name": "stage",
-  "version": "0.24.1",
+  "version": "0.24.2",
   "description": "Durable execution harness for LLM-led long-running projects.",
   "homepage": "https://github.com/noory-code/noory-ai/tree/main/stage",
   "repository": "https://github.com/noory-code/noory-ai",

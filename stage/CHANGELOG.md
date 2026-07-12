@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.2 — 2026-07-13
+
+Cardless board upkeep doctrine (docs only):
+
+- `operations/before.md` declares that board upkeep (registering, moving, indexing, closing,
+  archiving cards) is performed directly through skills, scripts, and hooks and never gets its
+  own work card; cards exist only for product changes traced to an incident, a user request,
+  or a decided design. (W-00000020)
+
 ## 0.24.1 — 2026-07-13
 
 Cross-venue delegation and review contract (docs only):
