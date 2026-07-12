@@ -3,9 +3,9 @@ id: B-00000002
 title: Generate Stage documents in the user's language
 kind: feature
 parent:
-status: triaged
+status: selected
 priority:
-realized_by:
+realized_by: W-00000013
 ---
 
 # B-00000002 Generate Stage documents in the user's language
