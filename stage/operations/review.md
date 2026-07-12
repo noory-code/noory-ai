@@ -56,3 +56,25 @@ is fixed (the audit reports `REVIEW001`). This keeps `review: passed` bound to a
 executed verdict, never a hand-typed claim. Set the requirement with
 `register_work.py --review`, and close with `close_work.py` (not by editing
 frontmatter).
+
+## Cross-venue review
+
+When a project runs more than one venue (see `stage-handoff`, Delegated
+execution), the default review posture is cross-venue: the venue that executed a
+card does not review it. Same-model review shares the author's blind spots; the
+counter-venue's review is what catches them.
+
+- The executor of a card and the reviewer of that card must be different venues.
+  This holds whether the card ran in its own window or by delegation.
+- A delegated card is reviewed by the hosting window as part of closing it: the
+  host verifies the delegated output against the card's success criteria before
+  `close_work.py` runs. The host must not forward its own review back to the
+  executing venue's model.
+- A card executed by the window that will also close it binds the counter-venue
+  through the review gate above: declare `review: pending` on the card
+  (`register_work.py --review`) and bind the counter-venue's review command as
+  the `implementation` (or `design`) stage strength in `settings.json`. The gate
+  then refuses completion until the counter-venue's verdict passes.
+- The rebuttal sequence at the top of this document applies to cross-venue
+  findings unchanged: purpose first, rebut what does not serve it, process the
+  survivors.

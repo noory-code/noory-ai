@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.24.1 — 2026-07-13
+
+Cross-venue delegation and review contract (docs only):
+
+- `stage-handoff` gains the Delegated execution doctrine: `venue` names the surface that
+  EXECUTES the work, not the window that hosts it; a bridge-equipped window may carry out
+  another venue's card by delegation, monitors the run, and reviews the output before close.
+  Decision points and promotion approvals never delegate.
+- `operations/review.md` gains the Cross-venue review posture: the executor of a card and the
+  reviewer of that card must be different venues; delegated output is reviewed by the hosting
+  window at close, and self-closed cards bind the counter-venue through the existing
+  `review: pending` + settings strength gate. (W-00000020)
+
 ## 0.24.0 — 2026-07-13
 
 Schema-v4 topology registry foundation (dormant until the consumer-adoption cards):

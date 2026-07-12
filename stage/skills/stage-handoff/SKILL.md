@@ -14,13 +14,34 @@ place to know which window to open next.
 - `venue` on each work item names the surface that should carry it out. No hook gates on it, but
   when the project declares a role policy the audit checks consistency (VENUE001-VENUE005).
 - `present/work/active.md` shows every open item with its `Venue` column. This is the routing
-  view: the human opens the window whose venue has open rows.
+  view: the human opens the window whose venue has open rows, or a bridge-equipped window
+  executes them by delegation (below).
 - The machine-readable role policy lives in `settings.json` `venue_routing` (`kind -> venue`);
   what each venue means belongs to the project's canon (e.g. `past/canon/vocabulary.md`). The
   harness fixes no venue names. Registration derives the venue from the policy without asking the
   human; a contradicting venue registers only with `--decision <DE-id>` naming a decided decision
   that declares `authorizes: venue_exception`, and a kind routed to the reserved value `split`
   registers as separate design/implementation items with `parent` lineage.
+
+## Delegated execution
+
+`venue` names the surface that EXECUTES the work — the agent whose model produces the
+artifact — not the window that hosts it. A window equipped with a bridge to another venue's
+executor (e.g. a Claude window carrying a Codex plugin) may therefore carry out that venue's
+card by delegation instead of waiting for a human to switch windows:
+
+- The hosting window forwards the card's self-carrying body (purpose, completed context,
+  remaining problem, success criteria, NEXT action) to the venue's executor through the
+  bridge, and stays responsible for monitoring the run to completion.
+- The delegated executor works under the same Stage gates as a native window — registration,
+  scope, and commit gates apply to the bridged process identically.
+- The hosting window reviews the delegated output before the card closes (see
+  `operations/review.md`, Cross-venue review). Delegation transfers execution, never review:
+  the executor of a card and the reviewer of that card must be different venues.
+- Decision points do not delegate: an unresolved product or design decision still routes back
+  as a planning-venue item (below), and the human still owns promotion approvals.
+- Delegation is optional per card. When no bridge is available, the routing view's default
+  applies: the human opens the venue's window.
 
 ## Before handing off, make each open item self-carrying
 
