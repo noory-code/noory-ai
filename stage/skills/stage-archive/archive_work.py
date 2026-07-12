@@ -45,10 +45,11 @@ def table_rows(text: str) -> list[str]:
 
 
 def drop_table_row(text: str, item_id: str) -> str:
+    item_link = f"items/{item_id}.md"
     kept = [
         line
         for line in text.splitlines()
-        if not re.search(rf"\|\s*{re.escape(item_id)}\s*\|", line)
+        if not (line.strip().startswith("|") and item_link in line)
     ]
     return "\n".join(kept) + ("\n" if text.endswith("\n") else "")
 

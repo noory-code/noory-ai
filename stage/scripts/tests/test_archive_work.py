@@ -41,6 +41,14 @@ REVIEW = (
     "| {wid} | passed | completed | not_applicable | [items/{wid}.md](items/{wid}.md) |\n"
 )
 
+HAND_WRITTEN_REVIEW = (
+    "# Review Candidates\n\n"
+    "| Artifact | Verification | Retrospective | Promotion | Item |\n"
+    "|---|---|---|---|---|\n"
+    "| Fix archive cleanup | passed | completed | not_applicable | "
+    "[items/{wid}.md](items/{wid}.md) |\n"
+)
+
 INDEX = (
     "# Work Archive\n\n"
     "| Work | Final status | Item |\n"
@@ -93,6 +101,17 @@ class ArchiveWorkCliTest(unittest.TestCase):
             proc = run_cli(root, "--all-completed")
             self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
             self.assertTrue((root / ".stage/past/work/archive/items/W-00000001.md").exists())
+
+    def test_archives_item_with_hand_written_review_artifact(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            review = root / ".stage/present/work/review.md"
+            review.write_text(HAND_WRITTEN_REVIEW.format(wid="W-00000001"), encoding="utf-8")
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+            self.assertNotIn("items/W-00000001.md", review.read_text(encoding="utf-8"))
 
     def test_refuses_non_terminal_status(self):
         tmp, root = self.make_stage(status="active")

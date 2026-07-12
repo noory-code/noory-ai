@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.3 — 2026-07-13
+
+Archive review-row cleanup fix:
+
+- `stage-archive` now removes a completed card's `review.md` row by its item link, so rows
+  with hand-written artifact labels no longer survive archiving and trigger `INDEX002`.
+  The regression coverage retains the machine-generated row case and adds the hand-written
+  variant. (W-00000021)
+
 ## 0.24.2 — 2026-07-13
 
 Cardless board upkeep doctrine (docs only):
