@@ -22,3 +22,4 @@ Backlog item bodies live in `items/`. This document manages only order, status, 
 - `deferred`: on hold.
 - `rejected`: decided not to do.
 | W-00000025 | Close/archive ordering guard: refuse closure with uncommitted scope changes | development | captured | high |  | [items/W-00000025.md](items/W-00000025.md) |
+| W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [items/W-00000026.md](items/W-00000026.md) |
