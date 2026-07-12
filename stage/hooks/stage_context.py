@@ -66,7 +66,7 @@ def session_context(workspace_root: Path) -> str:
         "- Artifact map — W work `present/work/items` · R retro `present/work/retrospectives` · "
         "DE decision `present/work/decisions` · D approved `past/decisions/records` · "
         "O/Q/A/K state `present/state/*` · B backlog `future/backlog/items` · P proposal · M milestone. "
-        "Full catalog: `operations/artifacts.md`; routing: `index.md`.",
+        "Full catalog: `operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
     ]
 
     snippets: list[tuple[str, Path | None]] = [

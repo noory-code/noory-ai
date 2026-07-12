@@ -1,19 +1,11 @@
-# Verification
+# Verification kinds
 
-This document owns the verification rules.
+This document owns this project's `kind -> passed` verification criteria.
 
-## Rules
-
-- Both external-perspective and internal-perspective completion are required.
-- Tests or equivalent verification must match the change.
-- If the project declares a linter or formatter (a config file or a documented command exists), it must pass; if none is declared, this criterion is skipped.
-- New behavior needs a verification path.
-- `verification: passed` records evidence produced in the session that sets it — the stated checks actually run, with their output observed, not the checks that were merely supposed to run.
-- Work without a retrospective is not complete.
-
-## What `passed` means per kind
-
-`verification: passed` on a work item is valid only against the criterion declared for its `kind`. Projects extend this table; the audit warns when a work item uses a kind that has no row here.
+Common verification rules are plugin-owned; see `operations/verification.md` in the installed
+Stage plugin. `verification: passed` on a work item is valid only against the criterion declared
+for its `kind` below. Extend this table with the project's own kinds; the audit warns when a work
+item uses a kind that has no row here.
 
 | Kind | `passed` means |
 |---|---|

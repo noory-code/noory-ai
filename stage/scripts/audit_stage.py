@@ -48,8 +48,8 @@ REQUIRED_WORK_FIELDS = (
 ACTIVE_VIEW_STATUSES = {"active", "blocked"}
 REVIEW_VIEW_STATUSES = {"review", "completed", "rejected"}
 ITEM_LINK_RE = re.compile(r"\((?:\./)?items/([A-Za-z][A-Za-z0-9]*-\d{3,})\.md(?:#[^)]+)?\)")
-# Prefix → owning locations. SSOT for the mapping = operations/artifacts.md
-# §Artifact catalog; keep the two in lock-step.
+# Prefix → owning locations. SSOT for the mapping = the plugin-owned
+# operations/artifacts.md §Artifact catalog; keep the two in lock-step.
 RECORD_LOCATIONS: dict[str, tuple[str, ...]] = {
     "W": ("present/work/items", "past/work/archive/items"),
     "R": ("present/work/retrospectives", "past/work/archive/retrospectives"),
@@ -138,6 +138,7 @@ class Audit:
         self.audit_record_ownership()
         self.audit_routing()
         self.audit_catalog_sync()
+        self.audit_operations_ownership()
         self.audit_canon()
         self.audit_governance()
         return self.findings
@@ -807,11 +808,20 @@ class Audit:
         RECORD_LOCATIONS must not silently drift from it (P32). Parse the
         catalog table and compare each prefix's primary location to the code.
         """
+        # The catalog is plugin-owned; a project copy (declared override or
+        # not-yet-migrated v1 layout) takes precedence so its drift is visible.
         catalog_path = self.stage_root / "operations" / "artifacts.md"
+        if not catalog_path.is_file():
+            catalog_path = PLUGIN_ROOT / "operations" / "artifacts.md"
         try:
             text = catalog_path.read_text(encoding="utf-8")
         except OSError:
-            return  # TEMPLATE002 already reports a missing catalog.
+            self.error(
+                "CATALOG002",
+                "The plugin-owned artifact catalog operations/artifacts.md is missing.",
+                catalog_path,
+            )
+            return
 
         catalog: dict[str, str] = {}
         row_re = re.compile(r"^\|\s*`([A-Z]+)-`\s*\|[^|]*\|\s*`([^`]+?)/?`\s*\|", re.MULTILINE)
@@ -857,6 +867,92 @@ class Audit:
                     catalog_path,
                 )
 
+    def audit_operations_ownership(self) -> None:
+        """Common operations docs are plugin-owned (DE-00000002). A project
+        `.stage/operations/` file that shadows one is either a declared
+        override (settings.json `operations_overrides`) or ownership drift.
+        `verification.md` is the project policy surface and never drift;
+        project-only extra docs are allowed (ROUTE002 covers their routing).
+        """
+        settings = self.load_settings()
+        settings_path = self.stage_root / "settings.json"
+        common = self.plugin_common_docs()
+
+        overrides = settings.get("operations_overrides", [])
+        if not isinstance(overrides, list) or not all(
+            isinstance(name, str) for name in overrides
+        ):
+            self.error(
+                "OPS004",
+                "operations_overrides must be a list of plugin common-doc filenames.",
+                settings_path,
+            )
+            overrides = []
+        declared = set(overrides)
+        for name in sorted(declared):
+            if name not in common or name in ("README.md", "verification.md"):
+                self.error(
+                    "OPS004",
+                    f"operations_overrides declares `{name}`, which is not an overridable "
+                    f"plugin common doc (known: {sorted(set(common) - {'verification.md'})}).",
+                    settings_path,
+                )
+            elif not (self.stage_root / "operations" / name).is_file():
+                self.error(
+                    "OPS003",
+                    f"operations_overrides declares `{name}` but "
+                    f".stage/operations/{name} does not exist.",
+                    settings_path,
+                )
+
+        # Drift detection applies to the v2 layout only; a v1 project still
+        # legitimately carries full copies and SCHEMA001 already points at the
+        # generation gap.
+        if settings.get("schema_version") != stage_guard.STAGE_SCHEMA_VERSION:
+            return
+        operations_root = self.stage_root / "operations"
+        if not operations_root.is_dir():
+            return
+        for path in sorted(operations_root.glob("*.md")):
+            name = path.name
+            if name in ("README.md", "verification.md") or name not in common or name in declared:
+                continue
+            try:
+                identical = path.read_bytes() == common[name].read_bytes()
+            except OSError:
+                continue
+            if identical:
+                self.warning(
+                    "OPS001",
+                    f"`operations/{name}` duplicates the plugin-owned common doc byte-for-byte; "
+                    "delete it or run scripts/migrate_stage.py.",
+                    path,
+                )
+            else:
+                self.error(
+                    "OPS002",
+                    f"`operations/{name}` shadows a plugin-owned common doc without a declared "
+                    "override; add it to settings.json operations_overrides or remove it.",
+                    path,
+                )
+
+    def plugin_common_docs(self) -> dict[str, Path]:
+        operations_root = PLUGIN_ROOT / "operations"
+        if not operations_root.is_dir():
+            return {}
+        return {path.name: path for path in sorted(operations_root.glob("*.md"))}
+
+    def load_settings(self) -> dict[str, Any]:
+        if not hasattr(self, "_settings"):
+            try:
+                data = json.loads(
+                    (self.stage_root / "settings.json").read_text(encoding="utf-8")
+                )
+            except (OSError, json.JSONDecodeError):
+                data = {}
+            self._settings = data if isinstance(data, dict) else {}
+        return self._settings
+
     def audit_canon(self) -> None:
         principles_path = self.stage_root / "past" / "canon" / "principles.md"
         try:
@@ -880,10 +976,7 @@ class Audit:
         if stage_guard.governance_broken(self.stage_root):
             self.error("GOV000", "settings.json is unreadable or malformed (hooks fail closed until repaired).", settings_path)
             return
-        try:
-            settings = json.loads(settings_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            settings = {}
+        settings = self.load_settings()
         schema_version = settings.get("schema_version")
         # Exact-type comparison: JSON `true` must not pass as 1 (bool is an
         # int subclass in Python).

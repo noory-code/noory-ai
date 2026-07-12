@@ -1160,7 +1160,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            target = root / ".stage" / "operations" / "output.md"
+            target = root / ".stage" / "operations" / "verification.md"
             target.unlink()
             target.mkdir()
 
@@ -1189,8 +1189,12 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
+            # A project copy of the plugin-owned catalog takes precedence in
+            # the sync check, so seed one from the plugin and mutate it.
             catalog = root / ".stage" / "operations" / "artifacts.md"
-            text = catalog.read_text(encoding="utf-8")
+            text = (audit_stage.PLUGIN_ROOT / "operations" / "artifacts.md").read_text(
+                encoding="utf-8"
+            )
             catalog.write_text(
                 text.replace(
                     "| `Q-` | Question | `present/state/questions/`",
@@ -1209,7 +1213,9 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             catalog = root / ".stage" / "operations" / "artifacts.md"
-            text = catalog.read_text(encoding="utf-8")
+            text = (audit_stage.PLUGIN_ROOT / "operations" / "artifacts.md").read_text(
+                encoding="utf-8"
+            )
             catalog.write_text(
                 text.replace(
                     "| `M-` | Milestone |",
@@ -1227,7 +1233,9 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             catalog = root / ".stage" / "operations" / "artifacts.md"
-            text = catalog.read_text(encoding="utf-8")
+            text = (audit_stage.PLUGIN_ROOT / "operations" / "artifacts.md").read_text(
+                encoding="utf-8"
+            )
             catalog.write_text(
                 text.replace("`present/state/questions/`", "`present/state/wrong/`"),
                 encoding="utf-8",
@@ -1236,6 +1244,111 @@ class StageAuditTest(unittest.TestCase):
             codes = finding_codes(audit_stage.Audit(root).run())
 
         self.assertIn("CATALOG001", codes)
+
+
+class OperationsOwnershipTest(unittest.TestCase):
+    """DE-00000002: common operations docs are plugin-owned; the project
+    carries only its policy surface plus declared overrides."""
+
+    def init_stage(self, root: Path) -> None:
+        init_stage.copy_templates(root, False)
+
+    def set_settings(self, root: Path, **updates):
+        settings_path = root / ".stage" / "settings.json"
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        data.update(updates)
+        settings_path.write_text(json.dumps(data), encoding="utf-8")
+
+    def ops_codes(self, root: Path) -> set[str]:
+        return {
+            finding.code
+            for finding in audit_stage.Audit(root).run()
+            if finding.code.startswith("OPS")
+        }
+
+    def test_fresh_init_copies_no_common_docs_and_audits_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            operations = sorted(
+                path.name for path in (root / ".stage" / "operations").glob("*.md")
+            )
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual(["verification.md"], operations)
+        self.assertEqual(set(), {f.code for f in findings if f.severity == "error"})
+        self.assertEqual(set(), finding_codes(findings) & {"OPS001", "OPS002", "SCHEMA001"})
+
+    def test_identical_shadow_copy_is_stale_duplication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            plugin_doc = audit_stage.PLUGIN_ROOT / "operations" / "during.md"
+            shadow = root / ".stage" / "operations" / "during.md"
+            shadow.write_bytes(plugin_doc.read_bytes())
+
+            findings = audit_stage.Audit(root).run()
+
+        ops1 = [f for f in findings if f.code == "OPS001"]
+        self.assertEqual(["warning"], [f.severity for f in ops1])
+        self.assertNotIn("OPS002", finding_codes(findings))
+
+    def test_undeclared_differing_shadow_is_ownership_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            shadow = root / ".stage" / "operations" / "during.md"
+            shadow.write_text("# During\n\nProject-edited body.\n", encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        ops2 = [f for f in findings if f.code == "OPS002"]
+        self.assertEqual(["error"], [f.severity for f in ops2])
+
+    def test_declared_override_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            shadow = root / ".stage" / "operations" / "during.md"
+            shadow.write_text("# During\n\nProject-edited body.\n", encoding="utf-8")
+            self.set_settings(root, operations_overrides=["during.md"])
+
+            self.assertEqual(set(), self.ops_codes(root))
+
+    def test_declared_override_without_file_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.set_settings(root, operations_overrides=["during.md"])
+
+            self.assertIn("OPS003", self.ops_codes(root))
+
+    def test_malformed_and_unknown_overrides_are_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.set_settings(root, operations_overrides="during.md")
+            self.assertIn("OPS004", self.ops_codes(root))
+
+            self.set_settings(root, operations_overrides=["nonexistent.md"])
+            self.assertIn("OPS004", self.ops_codes(root))
+
+            # verification.md is the project policy surface, not an override.
+            self.set_settings(root, operations_overrides=["verification.md"])
+            self.assertIn("OPS004", self.ops_codes(root))
+
+    def test_v1_layout_gets_schema_warning_but_no_drift_errors(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            for name, path in audit_stage.Audit(root).plugin_common_docs().items():
+                (root / ".stage" / "operations" / name).write_bytes(path.read_bytes())
+            self.set_settings(root, schema_version=1)
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("SCHEMA001", finding_codes(findings))
+        self.assertEqual(set(), finding_codes(findings) & {"OPS001", "OPS002"})
 
 
 if __name__ == "__main__":

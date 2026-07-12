@@ -264,9 +264,10 @@ def resolve_review_command(review: dict[str, Any], stage: str) -> tuple[str | No
 # plugin release version. stage-init stamps new harnesses via the settings
 # template; preserved older settings are never overwritten — the audit warns
 # on a missing or different value instead. Bump only when the recorded
-# contract changes shape; introduce an idempotent sequential migration when a
-# second persistent transition actually exists.
-STAGE_SCHEMA_VERSION = 1
+# contract changes shape.
+# Version 2: common operations docs are plugin-owned and no longer copied
+# into `.stage/operations/`; migrate with `scripts/migrate_stage.py`.
+STAGE_SCHEMA_VERSION = 2
 
 
 def configured_write_tools(stage_root: Path) -> set[str]:
