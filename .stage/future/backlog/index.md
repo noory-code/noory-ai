@@ -12,6 +12,9 @@ Backlog item bodies live in `items/`. This document manages only order, status, 
 | W-00000022 | close_work replaces the Verification section | fix | triaged | harness integrity | | [W-00000022](items/W-00000022.md) |
 | W-00000023 | archive retrospective overwritten on id collision | fix | triaged | harness integrity | | [W-00000023](items/W-00000023.md) |
 | W-00000024 | no global uniqueness guard for retrospective ids | fix | triaged | harness integrity | | [W-00000024](items/W-00000024.md) |
+| W-00000025 | Close/archive ordering guard: refuse closure with uncommitted scope changes | development | captured | high |  | [items/W-00000025.md](items/W-00000025.md) |
+| W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [items/W-00000026.md](items/W-00000026.md) |
+| W-00000027 | register_work --backlog appends index rows outside the table | fix | captured | high |  | [items/W-00000027.md](items/W-00000027.md) |
 
 ## Status values
 
@@ -21,5 +24,3 @@ Backlog item bodies live in `items/`. This document manages only order, status, 
 - `selected`: selected as current or next work.
 - `deferred`: on hold.
 - `rejected`: decided not to do.
-| W-00000025 | Close/archive ordering guard: refuse closure with uncommitted scope changes | development | captured | high |  | [items/W-00000025.md](items/W-00000025.md) |
-| W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [items/W-00000026.md](items/W-00000026.md) |

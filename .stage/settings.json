@@ -9,13 +9,13 @@
     "strengths": {
       "off": null,
       "light": "",
-      "standard": "",
+      "standard": "OUT=$(node \"/Users/woogis/.claude/plugins/cache/openai-codex/codex/1.0.6/scripts/codex-companion.mjs\" review --wait --base HEAD~1 2>&1); printf '%s\\n' \"$OUT\"; case \"$OUT\" in *\"[P1]\"*) echo \"BLOCK: codex review reported a P1 blocker\"; exit 1;; esac",
       "deep": "",
-      "red-team": ""
+      "red-team": "OUT=$(node \"/Users/woogis/.claude/plugins/cache/openai-codex/codex/1.0.6/scripts/codex-companion.mjs\" adversarial-review --wait --base HEAD~1 2>&1); printf '%s\\n' \"$OUT\"; case \"$OUT\" in *\"[P1]\"*) echo \"BLOCK: codex review reported a P1 blocker\"; exit 1;; esac"
     },
     "stages": {
-      "design": "off",
-      "implementation": "off",
+      "design": "standard",
+      "implementation": "standard",
       "promotion": "off"
     }
   },
@@ -31,5 +31,5 @@
     "chore": "codex",
     "feature": "split"
   },
-  "language": "en"
+  "language": "ko"
 }
