@@ -3,9 +3,9 @@ id: B-00000001
 title: Separate Stage core operations from project policy
 kind: feature
 parent:
-status: triaged
+status: selected
 priority:
-realized_by:
+realized_by: W-00000012
 ---
 
 # B-00000001 Separate Stage core operations from project policy
