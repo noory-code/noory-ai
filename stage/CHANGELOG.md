@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.23.2 — 2026-07-12
+
+Schema v4 design amendment (design only — no behavior change):
+
+- The authorization zone renames `past/` → `official/` in the v4 design: the zone name now
+  equals the lifecycle state name (planned/current/official), since canon and model are living
+  official truth rather than history. The rename rides the same one-shot v4 migration; the
+  migration contract gains intent preflight (zero pending intents/claims) and post-relocation
+  verification that no durable field still targets legacy roots (DE-00000009 amended).
+
 ## 0.23.1 — 2026-07-12
 
 Schema v4 design freeze (design only — no behavior change):

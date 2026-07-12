@@ -1,22 +1,25 @@
-# Schema v4 — PAST-ANCHORED Topology
+# Schema v4 — Official-Zone Topology
 
 This document is the canonical design for Stage schema v4. Implementation cards C2-C9
 (W-00000018 lineage) implement against the interfaces declared here. Rulings trace to the
-2026-07-12 dual-debate verdict (Codex thread `019f5637-2372-7d51-9727-a470c4b5b533`).
+2026-07-12 dual-debate verdict (Codex thread `019f5637-2372-7d51-9727-a470c4b5b533`; the
+debates used the working moniker PAST-ANCHORED) and the post-verdict zone-rename amendment
+(owner-ruled, Codex-approved).
 
-Governing principles: SSOT, MECE, Fail Fast, AHA (see `past/canon/principles.md` in the
+Governing principles: SSOT, MECE, Fail Fast, AHA (see `official/canon/principles.md` in the
 project harness).
 
 ## Design axioms
 
-1. Past/present/future is a **semantic MECE classification of lifecycle** — every artifact is
-   always in exactly one of three states. It governs behavior through gates and vocabulary,
-   not through directory nesting.
+1. The lifecycle triad is a **semantic MECE classification** — every artifact is always in
+   exactly one of three states: planned, current, official. It governs behavior through gates
+   and vocabulary, not through directory nesting.
 2. Directories group by **responsibility** (space axis). Physical movement is retained only
    where it has operational force: execution artifacts whose location controls authorization
    or whose transition must be legible as a git move.
-3. `past/` is the sole **authorization zone**: containment under `.stage/past/` is the single
-   predicate behind the promotion-intent gate. This predicate survives v4 verbatim.
+3. `official/` is the sole **authorization zone**: containment under `.stage/official/` is the
+   single predicate behind the promotion-intent gate. The predicate mechanism survives v4
+   verbatim; only its root constant renames (v3: `past/`).
 
 ## Root topology
 
@@ -24,7 +27,7 @@ project harness).
 .stage/
 ├── index.md, settings.json     ungoverned meta (unchanged)
 ├── operations/                 project-owned operating rules (unchanged)
-├── past/                       authorization zone (unchanged, verbatim):
+├── official/                   authorization zone (was past/, contents unchanged):
 │   ├── canon/  model/          official structure and rules
 │   ├── decisions/records/      official decision records
 │   └── work/archive/           archived items/ and retrospectives/
@@ -46,9 +49,11 @@ project harness).
 └── .runtime/                   untracked machine state: intents, sessions, question-ack
 ```
 
-Removed: top-level `present/` and `future/` (wrappers with no gate semantics). Retained names:
-`past/` keeps its name (renaming to `official/` rejected: cosmetic gain, predicate and archive
-mass cost). `work/current/` is named for its residents: all five open statuses live there.
+Removed: top-level `past/`, `present/`, and `future/`. The wrappers `present/` and `future/`
+carried no gate semantics; `past/` carried the authorization semantics and renames to
+`official/` so the zone name equals the lifecycle state name — canon and model are living
+official truth, not history, and one word now serves vocabulary, gate, and folder alike.
+`work/current/` is named for its residents: all five open statuses live there.
 
 ## Lifecycle model
 
@@ -58,7 +63,7 @@ Canonical vocabulary (registry-owned; canon vocabulary gains these three terms):
 |---|---|---|
 | `planned` | intended, not yet real | `work/planned/`, `proposals/`, roadmap records without pursuit decision |
 | `current` | becoming real | `work/current/`, `decisions/pending/`, `state/*`, roadmap records with open pursuit |
-| `official` | promoted, settled truth | everything under `past/` |
+| `official` | promoted, settled truth | everything under `official/` |
 
 Rules:
 - Single-classification: every artifact maps to exactly one lifecycle state; the audit
@@ -68,8 +73,6 @@ Rules:
   the promotion-intent gate (current → official), archive flow (record-keeping within
   official). Gates and movers are the time axis; validation gates (hierarchy, enum, venue,
   commit, review) check admissibility, not lifecycle.
-- The state named `official` is deliberately not named `past`: lifecycle language names
-  semantic authority, not a storage coordinate.
 
 Pedagogy surfaces (replace time-as-directories teaching):
 - Root `index.md`: one table declaring the root MECE frame (official zone / mutable families /
@@ -101,17 +104,18 @@ Single tooling SSOT for topology. Importable by hooks and scripts (same pattern 
 - Derivation helpers: card location by status, retrospective locations, scan roots for
   records/audit/context, legacy detection.
 
-Boundary: **authorization stays in `stage_paths`** (past-containment predicate). The registry
-records the zone classification; a parity test guards drift between the two.
+Boundary: **authorization stays in `stage_paths`** (official-containment predicate; the root
+constant renames from `past/`). The registry records the zone classification; a parity test
+guards drift between the two.
 
-Conformance tests: (a) no `present/` or `future/` topology literals in production Python
-outside the registry (exempt: `past/` paths, templates, migration fixtures, historical docs);
-(b) registry-to-template parity.
+Conformance tests: (a) no `past/`, `present/`, or `future/` topology literals in production
+Python outside `stage_topology` and `stage_paths` (exempt: templates, migration fixtures,
+historical docs); (b) registry-to-template parity.
 
 ## Decision identity — Contract X
 
 - A decision record's identity is its `DE-` id, **permanent for life**. Promotion moves the
-  file from `decisions/pending/` into `past/decisions/records/` without renaming the id;
+  file from `decisions/pending/` into `official/decisions/records/` without renaming the id;
   `status` becomes `promoted`.
 - `D-` ids are legacy: existing archives stay untouched; resolvers accept both prefixes and
   route by registry policy. New records never mint `D-` ids.
@@ -167,21 +171,29 @@ capture into `work/planned/`, `start_work.py` as the only mover.
 - Marker: `schema_version` in `.stage/settings.json`. Plugin v-next supports v4 only; on a v3
   project, mutating gates deny with a banner naming the migration command; migration itself
   and read-only audit remain callable on v3.
-- One command (extends `migrate_stage.py`), driven entirely by the registry relocation map:
-  1. Preflight: refuse dirty tree (`.runtime/` exempt), symlinked `.stage` roots, and
-     case-insensitive destination collisions; mixed populated topology is a hard error with
-     manual instructions.
+- One command (extends `migrate_stage.py`), driven entirely by the registry relocation map
+  (which includes `past/` → `official/`):
+  1. Preflight: refuse dirty tree (`.runtime/` exempt), symlinked `.stage` roots,
+     case-insensitive destination collisions, and any pending promotion machinery —
+     `.runtime/intents/` must hold zero pending intent and claim files and no legacy
+     `promote-intent.json` may exist (the command reports blocking intents with instructions
+     to complete or discard them). Mixed populated topology is a hard error with manual
+     instructions.
   2. Write the maintenance marker (under `.runtime/`); v4 hooks deny writes while it exists.
      The command instructs the operator to close other agent windows first.
   3. Relocate via `git mv`, recording every relocation in a journal; content moves verbatim.
-     Only exact recognized topology references inside moved markdown are rewritten; ambiguous
-     customized sections fail the run. The project `index.md` topology section is patched only
-     when structurally recognizable; otherwise the command fails and emits a proposed merge
-     file (a competing permanent index file would violate SSOT).
+     Durable machine-readable path fields (`promotes:`, decision/retrospective references,
+     scope entries) and exact recognized topology references inside moved markdown are
+     rewritten through the relocation map; ambiguous customized sections fail the run. The
+     project `index.md` topology section is patched only when structurally recognizable;
+     otherwise the command fails and emits a proposed merge file (a competing permanent index
+     file would violate SSOT).
   4. Stage changes only — never auto-commit; the operator commits with a provided message.
      Pre-commit rollback = restore staged/working tree; post-commit rollback = revert.
-  5. Stamp `schema_version: 4` only after relocation validates; then run strict audit and fail
-     loudly (restoring the v3 marker) if not clean.
+  5. Post-relocation verification: no machine-readable field or live doc link still targets
+     `.stage/past/`, `.stage/present/`, or `.stage/future/`. Stamp `schema_version: 4` only
+     after this passes; then run strict audit and fail loudly (restoring the v3 marker) if not
+     clean.
   6. Abort mode restores migration-owned staged changes deterministically. Resume mode is
      deferred (restart-after-abort is sufficient at current migration sizes).
 - Empty legacy roadmap dirs (the common case) migrate as directory renames.
@@ -192,7 +204,7 @@ capture into `work/planned/`, `start_work.py` as the only mover.
 
 | Defense | v4 | Trigger to revisit |
 |---|---|---|
-| Legacy-root denial gate (deny writes under recreated `present/`/`future/`) | shipped | — |
+| Legacy-root denial gate (deny writes under recreated `past/`/`present/`/`future/`) | shipped | — |
 | Dogfood release sequence doc (fixtures first; migrate own `.stage` only after v4 install) | shipped | — |
 | Branch-merge guidance | shipped | — |
 | Migration journal + abort | shipped (minimal) | resume mode after first real interruption |
@@ -204,12 +216,12 @@ capture into `work/planned/`, `start_work.py` as the only mover.
 | Card | Kind | Venue | Scope | Depends on |
 |---|---|---|---|---|
 | C1 | design | claude | this document | — |
-| C2 | development | codex | `stage_topology` registry, schema marker, maps, resolvers, D-legacy compat | C1 |
+| C2 | development | codex | `stage_topology` registry, schema marker, maps, resolvers, D-legacy compat, official-zone predicate rename in `stage_paths` | C1 |
 | C3 | development | codex | v4 template tree; TH/M templates and indexes | C2 |
 | C4 | development | codex | hooks, scanners, audit, context on registry; legacy-root denial; lifecycle views | C3 |
 | C5 | development | codex | register/start/close/archive CLIs; stage-work milestone question | C4 |
 | C6 | development | codex | stage-roadmap skill, decision chains, closure snapshot/revalidation, re-attribution gate, roadmap audits, session table | C4, C5 |
-| C7 | development | codex | migration command: preflight, maintenance marker, journal/abort, link rewrite, marker-last audit | C3-C6 |
+| C7 | development | codex | migration command: preflight (incl. zero-pending-intents), maintenance marker, journal/abort, durable-field and link rewrite, post-relocation verification, marker-last audit | C3-C6 |
 | C8 | qa | codex | end-to-end fixtures: v3 migration, customized files, abort, stale roots, Contract X, closure, dogfood rehearsal | C7 |
 | C9 | documentation | claude | concept-layer rewrites (index, operations trio, skills, READMEs, BLUEPRINT), migration/branch/dogfood guidance | C8 |
 
