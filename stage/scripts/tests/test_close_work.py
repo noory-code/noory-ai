@@ -127,6 +127,52 @@ class CloseWorkTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 1)
             self.assertIn("Verification", proc.stderr)
 
+    def _write_review(self, root, review):
+        import json
+        (root / ".stage/settings.json").write_text(json.dumps({"review": review}), encoding="utf-8")
+
+    def test_configured_review_runs_and_records(self):
+        tmp, root = self.make()
+        with tmp:
+            self._write_review(root, {"strengths": {"standard": "python3 -c \"print('review ok')\""}, "stages": {"implementation": "standard"}})
+            proc = run(root, "W-00000001", "--check", "true")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("review ok", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+
+    def test_review_block_verdict_refuses(self):
+        tmp, root = self.make()
+        with tmp:
+            self._write_review(root, {"strengths": {"red-team": "python3 -c \"print('BLOCK: found a bug')\""}, "stages": {"implementation": "red-team"}})
+            proc = run(root, "W-00000001", "--check", "true")
+            self.assertEqual(proc.returncode, 1)
+            self.assertIn("status: active", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+
+    def test_review_block_survives_long_output(self):
+        # Verdict first, then >40 lines, exit 0 — BLOCK: must still be detected on
+        # the raw output, not the clipped evidence.
+        tmp, root = self.make()
+        with tmp:
+            cmd = "python3 -c \"print('BLOCK: nope'); [print(i) for i in range(60)]\""
+            self._write_review(root, {"strengths": {"red-team": cmd}, "stages": {"implementation": "red-team"}})
+            proc = run(root, "W-00000001", "--check", "true")
+            self.assertEqual(proc.returncode, 1)
+            self.assertIn("status: active", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+
+    def test_review_strength_typo_fails_closed(self):
+        tmp, root = self.make()
+        with tmp:
+            self._write_review(root, {"stages": {"implementation": "redteam"}})  # not a valid strength
+            proc = run(root, "W-00000001", "--check", "true")
+            self.assertEqual(proc.returncode, 1)
+            self.assertIn("review config", proc.stderr)
+
+    def test_review_strength_without_command_fails_closed(self):
+        tmp, root = self.make()
+        with tmp:
+            self._write_review(root, {"stages": {"implementation": "standard"}})  # no strengths.standard command
+            proc = run(root, "W-00000001", "--check", "true")
+            self.assertEqual(proc.returncode, 1)
+
     def test_promotion_arg_sets_final(self):
         tmp, root = self.make(promotion="pending")
         with tmp:

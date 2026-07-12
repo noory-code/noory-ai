@@ -4,5 +4,19 @@
     "exclude_paths": [],
     "exclude_extensions": []
   },
-  "extra_write_tools": []
+  "extra_write_tools": [],
+  "review": {
+    "strengths": {
+      "off": null,
+      "light": "",
+      "standard": "",
+      "deep": "",
+      "red-team": ""
+    },
+    "stages": {
+      "design": "off",
+      "implementation": "off",
+      "promotion": "off"
+    }
+  }
 }

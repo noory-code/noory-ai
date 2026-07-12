@@ -914,6 +914,25 @@ class Audit:
                 settings_path,
             )
 
+        # Review config: a stage whose strength is invalid or has no bound command
+        # is an ERROR (not a warning) — close_work fails closed on it, so a silent
+        # typo would block every close of that stage.
+        review = stage_guard.load_review_config(self.stage_root)
+        if review:
+            for stage in stage_guard.REVIEW_STAGES:
+                _command, review_error = stage_guard.resolve_review_command(review, stage)
+                if review_error:
+                    self.error("REVIEW001", review_error, settings_path)
+            stages = review.get("stages")
+            if isinstance(stages, dict):
+                for name in stages:
+                    if name not in stage_guard.REVIEW_STAGES:
+                        self.warning(
+                            "REVIEW002",
+                            f"review.stages has an unknown stage `{name}` (known: {list(stage_guard.REVIEW_STAGES)})",
+                            settings_path,
+                        )
+
     def known_kinds(self) -> set[str]:
         if not hasattr(self, "_known_kinds"):
             self._known_kinds = self.parse_table_first_cells(

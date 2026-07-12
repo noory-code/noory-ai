@@ -26,3 +26,26 @@ tool) reports findings, do not accept them uncritically:
 `external review → local rebuttal (against purpose) → counter-review → process
 survivors`. The rebuttal and its outcome are recorded so the decision is
 auditable, not just made.
+
+## Configuring when a review runs (`settings.json`)
+
+The `review` block of `.stage/settings.json` declares, per lifecycle stage, HOW
+STRONG a review runs — bound to a real command, never a bare label:
+
+- `strengths` maps each level (`off`, `light`, `standard`, `deep`, `red-team`) to
+  the command that level runs. The harness fixes no command; the project fills in
+  a verdict-emitting review (a reviewer that exits non-zero or prints a line
+  starting with `BLOCK:` when it finds a blocker). `off`/empty means no review.
+- `stages` picks the level for each stage: `design`, `implementation`, `promotion`.
+
+`close_work.py` runs the `implementation`-stage review at close: it executes the
+resolved command, records its output as evidence, and refuses to complete the
+item if the review fails. Fail-closed: a stage set to a strength with no bound
+command (or a typo'd strength) blocks the close until `settings.json` is fixed —
+the audit reports it as `REVIEW001`. This keeps `review: passed` bound to an
+executed verdict, never a hand-typed claim.
+
+Enforcement boundary: the review runs only through `close_work.py`. Hand-editing a
+work item to `status: completed` bypasses it, exactly as hand-typing
+`verification: passed` bypasses the `--check` gate. Close items with the script,
+not by editing frontmatter.

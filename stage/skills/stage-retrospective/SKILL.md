@@ -44,6 +44,21 @@ python3 stage/scripts/promote_intent.py --project-root <project-root> --work-ite
 To move a closed item out of the review queue into `past/work/archive/`, use the **stage-archive**
 skill — archiving needs only an archive intent (or `archive_work.py`), never a new work item.
 
+## Closing the item
+
+Use `close_work.py` (beside this skill) to complete an item, so `verification: passed` is a
+byproduct of running the checks, not a hand-typed claim:
+
+```bash
+python3 stage/skills/stage-retrospective/close_work.py --project-root <project-root> W-00000001 \
+  --check "<test command>" [--check "..."] [--promotion not_applicable]
+```
+
+It runs each `--check`, records the output as evidence, and completes the item only when they pass —
+and also requires a completed retrospective and a FINAL promotion decision. If `.stage/settings.json`
+configures an `implementation`-stage review (see `operations/review.md`), `close_work` runs that
+review command too and refuses to close on a failing or `BLOCK:` verdict.
+
 ## Completion rule
 
 Never mark work complete without a retrospective file linked through `retrospective_ref`.

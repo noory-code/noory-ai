@@ -29,6 +29,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+# The review resolver lives in the hook package (one owning definition, shared
+# with the audit). close_work is stdlib-only and stage_paths is too, so a path
+# insert is safe and side-effect-free.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
+from stage_paths import load_review_config, resolve_review_command  # noqa: E402
+
 OPEN_TO_CLOSE = {"active", "review"}
 PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "rejected"}
 _CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
@@ -82,18 +88,22 @@ def ensure_review_row(review_path: Path, item_id: str, verification: str, retros
     review_path.write_text(f"{text.rstrip(chr(10))}\n{row}\n", encoding="utf-8")
 
 
-def run_check(command: str, timeout: int, cwd: Path) -> tuple[bool, str]:
-    # cwd is the project root so a check's relative paths (`stage/hooks/tests`)
-    # resolve the same way whatever directory close_work was launched from.
+def run_check(command: str, timeout: int, cwd: Path) -> tuple[bool, str, str]:
+    # Returns (ok, evidence_block, raw_output). The RAW output is returned
+    # separately so a verdict scan (e.g. `^BLOCK:`) runs on the full text, never
+    # on the clipped evidence block — a verdict line could otherwise be clipped
+    # away and lost. cwd is the project root so a check's relative paths resolve
+    # the same way whatever directory close_work was launched from.
     try:
         proc = subprocess.run(
             command, shell=True, capture_output=True, text=True, timeout=timeout, cwd=str(cwd)
         )
     except subprocess.TimeoutExpired:
-        return False, f"$ {command}\n[TIMED OUT after {timeout}s]"
+        msg = f"$ {command}\n[TIMED OUT after {timeout}s]"
+        return False, msg, msg
     output = (proc.stdout or "") + (proc.stderr or "")
     header = f"$ {command}\n[exit {proc.returncode}]"
-    return proc.returncode == 0, f"{header}\n{clip(output)}"
+    return proc.returncode == 0, f"{header}\n{clip(output)}", output
 
 
 def main() -> int:
@@ -103,6 +113,7 @@ def main() -> int:
     parser.add_argument("--check", action="append", default=[], help="A verification command (repeatable). Runs in the platform shell.")
     parser.add_argument("--promotion", default=None, help=f"Set the promotion decision; must be one of {sorted(PROMOTION_FINAL)}.")
     parser.add_argument("--timeout", type=int, default=900, help="Per-check timeout in seconds.")
+    parser.add_argument("--review-stage", default="implementation", help="settings.json review stage whose command runs at close.")
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
@@ -151,13 +162,29 @@ def main() -> int:
     project_root = stage_root.parent
     blocks: list[str] = []
     for command in args.check:
-        ok, block = run_check(command, args.timeout, project_root)
+        ok, block, _raw = run_check(command, args.timeout, project_root)
         blocks.append(block)
         if not ok:
             print(f"{args.item}: check failed, nothing changed:\n{block}", file=sys.stderr)
             return 1
         if re.search(r"Ran 0 tests", block):
             print(f"{args.item}: WARNING a check reported 'Ran 0 tests' — it may verify nothing", file=sys.stderr)
+
+    # Configured review for this stage. Fail CLOSED: a typo'd strength or a
+    # strength with no bound command blocks the close rather than silently
+    # skipping the review. A review command fails on nonzero exit OR a `BLOCK:`
+    # verdict line (the codex stop-gate convention).
+    review_command, review_error = resolve_review_command(load_review_config(stage_root), args.review_stage)
+    if review_error:
+        print(f"{args.item}: review config unusable (fix .stage/settings.json or set the stage off):\n{review_error}", file=sys.stderr)
+        return 1
+    if review_command:
+        ok, block, raw = run_check(review_command, args.timeout, project_root)
+        blocks.append(block)
+        # Verdict scanned on RAW output so a `BLOCK:` line is never clipped away.
+        if not ok or re.search(r"(?m)^BLOCK:", raw):
+            print(f"{args.item}: review did not pass, nothing changed:\n{block}", file=sys.stderr)
+            return 1
 
     evidence = "Executed this session:\n\n```\n" + "\n\n".join(blocks) + "\n```"
     updated = set_section(text, "Verification", evidence)

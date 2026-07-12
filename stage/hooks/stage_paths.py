@@ -205,6 +205,61 @@ def load_governance(stage_root: Path) -> dict[str, Any]:
     return governance if isinstance(governance, dict) else {}
 
 
+# Review strength is a named level the PROJECT binds to a real, verdict-emitting
+# command (in settings.json `review.strengths`). The harness fixes no command —
+# like `venue`, it ships the vocabulary and the project declares the behavior.
+REVIEW_STRENGTHS = ("off", "light", "standard", "deep", "red-team")
+REVIEW_STAGES = ("design", "implementation", "promotion")
+
+
+def load_review_config(stage_root: Path) -> dict[str, Any]:
+    """The `review` block of settings.json (per-stage strength + strength→command),
+    or {} when absent. A wholly unreadable settings.json is already fail-closed by
+    governance_broken(); an absent/non-dict `review` here simply means 'no review'."""
+    settings_path = stage_root / "settings.json"
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    review = data.get("review") if isinstance(data, dict) else None
+    return review if isinstance(review, dict) else {}
+
+
+def resolve_review_command(review: dict[str, Any], stage: str) -> tuple[str | None, str]:
+    """Resolve the review COMMAND to run for a lifecycle stage.
+
+    Returns (command, error). (None, "") means no review is required (the stage is
+    `off` or unset). A non-empty error means the config REQUIRES a review here but
+    is unusable (typo'd strength, or no command bound) — the caller must FAIL CLOSED,
+    never silently skip. A non-empty command string is what to execute.
+    """
+    stages = review.get("stages", {})
+    if not isinstance(stages, dict):
+        return None, "review.stages must be an object mapping stage -> strength"
+    if stage not in stages:
+        return None, ""  # unset -> no review at this stage
+    raw = stages[stage]
+    # A present-but-non-string value (number, null, list) is malformed, NOT "off":
+    # coercing it to off would silently skip a review the project meant to require.
+    if not isinstance(raw, str):
+        return None, f"review.stages.{stage} must be a strength string, got {type(raw).__name__}"
+    strength = raw or "off"
+    if strength not in REVIEW_STRENGTHS:
+        return None, (
+            f"review.stages.{stage} strength `{strength}` is not one of {list(REVIEW_STRENGTHS)}"
+        )
+    if strength == "off":
+        return None, ""
+    strengths = review.get("strengths")
+    command = strengths.get(strength) if isinstance(strengths, dict) else None
+    if not isinstance(command, str) or not command.strip():
+        return None, (
+            f"review stage `{stage}` requires strength `{strength}`, but "
+            f"review.strengths.{strength} has no command"
+        )
+    return command, ""
+
+
 # Version of the `.stage` artifact/settings contract, independent of the
 # plugin release version. stage-init stamps new harnesses via the settings
 # template; preserved older settings are never overwritten — the audit warns

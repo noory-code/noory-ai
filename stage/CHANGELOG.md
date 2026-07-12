@@ -1,6 +1,24 @@
 # Changelog
 
-## 0.16.0 — 2026-07-12
+## 0.17.0 — 2026-07-12
+
+Configurable per-stage, per-strength review (design red-teamed before build):
+
+- `.stage/settings.json` gains a `review` block. `strengths` maps each named level
+  (`off`, `light`, `standard`, `deep`, `red-team`) to a real, verdict-emitting
+  review COMMAND — the harness fixes no command, the project declares it (like
+  `venue`). `stages` picks the level per lifecycle stage (`design`,
+  `implementation`, `promotion`). Strength is therefore bound to an executable
+  review, not a bare label the tooling can't honor.
+- `close_work.py` runs the `implementation`-stage review at close (executes the
+  command, records its output as evidence, refuses to complete on a failing exit
+  or a `BLOCK:` verdict). Fail-closed: a stage set to a strength with no bound
+  command, or a typo'd strength, blocks the close until settings are fixed.
+- The audit reports an unusable review config as `REVIEW001` (error) and an
+  unknown stage as `REVIEW002` (warning); `stage_paths.resolve_review_command`
+  is the one owning resolver shared by close_work and the audit.
+- `operations/review.md` documents the config; `stage-init`'s settings template
+  ships the block with every stage `off` (no behavior change until configured).
 
 Execution scripts and a real field-validity gate (design and code both
 red-teamed before landing):
