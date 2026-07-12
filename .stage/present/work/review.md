@@ -6,3 +6,4 @@ Review bodies and retrospective bodies live in `items/` and `retrospectives/`.
 
 | Artifact | Verification | Retrospective | Promotion | Item |
 |---|---|---|---|---|
+| W-00000007 | passed | completed | not_applicable | [items/W-00000007.md](items/W-00000007.md) |
