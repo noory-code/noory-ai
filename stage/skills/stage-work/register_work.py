@@ -19,6 +19,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
+from stage_paths import load_review_config, resolve_review_command  # noqa: E402
+
 ID_RE = re.compile(r"^W-(\d{8})$")
 _TEMPLATE = (
     Path(__file__).resolve().parents[2]
@@ -47,13 +50,15 @@ def existing_numbers(stage_root: Path) -> set[int]:
     return numbers
 
 
-def fill_item(template: str, *, item_id: str, title: str, kind: str, venue: str, scope: str, purpose: str) -> str:
+def fill_item(template: str, *, item_id: str, title: str, kind: str, venue: str, scope: str, purpose: str, review: bool) -> str:
     text = template.replace("W-00000000 Title", f"{item_id} {title}")
     text = set_field(text, "id", item_id)
     text = set_field(text, "title", title)
     text = set_field(text, "kind", kind)
     text = set_field(text, "venue", venue)
     text = set_field(text, "scope", scope)
+    if review:
+        text = set_field(text, "review", "pending")  # opt this item into a required review
     if purpose:
         text = text.replace("## Purpose\n\n", f"## Purpose\n\n{purpose}\n", 1)
     return text
@@ -107,6 +112,7 @@ def main() -> int:
     parser.add_argument("--owner", default="Claude")
     parser.add_argument("--purpose", default="")
     parser.add_argument("--id", default=None, help="Explicit W-NNNNNNNN; default allocates the next free id.")
+    parser.add_argument("--review", action="store_true", help="Require a review (review: pending) before this item can complete.")
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
@@ -129,6 +135,7 @@ def main() -> int:
             venue=args.venue,
             scope=args.scope,
             purpose=args.purpose,
+            review=args.review,
         )
 
     if args.id:
@@ -157,6 +164,15 @@ def main() -> int:
         item_id = create_item_atomic(items_dir, existing_numbers(stage_root), content_for)
 
     ensure_active_row(active_path, item_id, active_row(item_id, args.kind, args.venue, args.purpose, args.owner))
+    if args.review:
+        command, _err = resolve_review_command(load_review_config(stage_root), "implementation")
+        if not command:
+            print(
+                f"{item_id}: WARNING review: pending, but settings.json configures no implementation "
+                "review command — close_work will refuse to close this item until one is set (or the "
+                "review field is cleared).",
+                file=sys.stderr,
+            )
     print(f"{item_id}: registered ({items_dir / f'{item_id}.md'})")
     return 0
 

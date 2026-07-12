@@ -65,6 +65,8 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     PROMOTION_VALUES,
     RETROSPECTIVE_DONE,
     RETROSPECTIVE_VALUES,
+    REVIEW_DONE,
+    REVIEW_VALUES,
     STATUS_VALUES,
     VERIFICATION_DONE,
     VERIFICATION_VALUES,

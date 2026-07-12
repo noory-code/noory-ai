@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.18.0 — 2026-07-12
+
+Optional, field-driven review requirement (design refined with the user; code
+red-teamed):
+
+- Work items gain an optional `review` field (`not_required` | `pending` |
+  `passed`; absent defaults to `not_required`). Review is bypassed by default — an
+  item completes with no review unless it declares one.
+- Declaring `review: pending` opts that item in: the completion gate refuses to
+  complete it (so a commit of a hand-edited `status: completed` is blocked too)
+  until `review: passed`. `close_work.py` runs the configured review only for a
+  `pending` item, and sets `passed` when it succeeds — fail-closed if the item is
+  pending but its stage configures no command. `register_work.py --review` stamps
+  a new item as review-required.
+- The PreToolUse enum gate and the audit (`WORK013`) validate the `review` value.
+  `operations/review.md` documents the field-driven, opt-in model.
+- Behavior change from 0.17.0: the `implementation`-stage review no longer runs on
+  every close — it runs only for an item marked `review: pending`. A project that
+  wants review on a close must now opt the item in (`register_work.py --review`).
+  `register_work --review` warns when no review command is configured yet.
+
 ## 0.17.0 — 2026-07-12
 
 Configurable per-stage, per-strength review (design red-teamed before build):

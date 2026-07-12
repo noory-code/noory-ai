@@ -41,11 +41,18 @@ STATUS_VALUES = WORK_OPEN_STATUSES | WORK_FINAL_STATUSES
 VERIFICATION_VALUES = VERIFICATION_DONE | {"pending"}
 RETROSPECTIVE_VALUES = RETROSPECTIVE_DONE | {"pending"}
 PROMOTION_VALUES = PROMOTION_FINAL | {"pending"}
+# Review is OPTIONAL: an item that never asks for it (absent -> defaulted
+# not_required) completes without any review. Declaring `review: pending` opts
+# THAT item in — it then cannot complete until `review: passed`. Same shape as
+# verification, but bypassed by default.
+REVIEW_DONE = {"passed", "not_required"}
+REVIEW_VALUES = REVIEW_DONE | {"pending"}
 _WORK_ENUM_FIELDS = (
     ("status", STATUS_VALUES),
     ("verification", VERIFICATION_VALUES),
     ("retrospective", RETROSPECTIVE_VALUES),
     ("promotion", PROMOTION_VALUES),
+    ("review", REVIEW_VALUES),
 )
 WORK_ITEMS_PREFIX = ".stage/present/work/items/"
 
@@ -64,6 +71,7 @@ class WorkItem:
     retrospective_ref: str = ""
     kind: str = ""
     parent: str = ""
+    review: str = "not_required"
 
 
 def parse_frontmatter(path: Path) -> dict[str, str]:
@@ -140,6 +148,7 @@ def item_from_fields(path: Path, fields: dict[str, str], defaults: dict[str, str
         retrospective_ref=(fields.get("retrospective_ref") or "").strip(),
         kind=(fields.get("kind") or "").strip().lower(),
         parent=(fields.get("parent") or "").strip(),
+        review=(fields.get("review") or "not_required").strip().lower(),
     )
 
 
@@ -174,6 +183,8 @@ def item_completion_blockers(item: WorkItem) -> list[str]:
             blockers.append(f"{item.item_id}: retrospective `{item.retrospective}`")
         if item.promotion not in PROMOTION_FINAL:
             blockers.append(f"{item.item_id}: promotion `{item.promotion}`")
+        if item.review not in REVIEW_DONE:
+            blockers.append(f"{item.item_id}: review `{item.review}` (declared review must reach passed)")
     return blockers
 
 

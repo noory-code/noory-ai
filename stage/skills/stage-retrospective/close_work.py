@@ -170,26 +170,33 @@ def main() -> int:
         if re.search(r"Ran 0 tests", block):
             print(f"{args.item}: WARNING a check reported 'Ran 0 tests' — it may verify nothing", file=sys.stderr)
 
-    # Configured review for this stage. Fail CLOSED: a typo'd strength or a
-    # strength with no bound command blocks the close rather than silently
-    # skipping the review. A review command fails on nonzero exit OR a `BLOCK:`
-    # verdict line (the codex stop-gate convention).
-    review_command, review_error = resolve_review_command(load_review_config(stage_root), args.review_stage)
-    if review_error:
-        print(f"{args.item}: review config unusable (fix .stage/settings.json or set the stage off):\n{review_error}", file=sys.stderr)
-        return 1
-    if review_command:
+    # Review is field-driven: only an item that DECLARES `review: pending` must be
+    # reviewed. Then the stage's configured command runs and must pass; a typo'd
+    # strength or a pending review with no configured command FAILS CLOSED. A review
+    # command fails on nonzero exit OR a `BLOCK:` verdict line (codex convention),
+    # scanned on RAW output so a verdict is never clipped away.
+    review_passed = False
+    if (field(text, "review") or "not_required") == "pending":
+        review_command, review_error = resolve_review_command(load_review_config(stage_root), args.review_stage)
+        if review_error:
+            print(f"{args.item}: review config unusable (fix .stage/settings.json):\n{review_error}", file=sys.stderr)
+            return 1
+        if not review_command:
+            print(f"{args.item}: review is pending but stage `{args.review_stage}` configures no review command in settings.json", file=sys.stderr)
+            return 1
         ok, block, raw = run_check(review_command, args.timeout, project_root)
         blocks.append(block)
-        # Verdict scanned on RAW output so a `BLOCK:` line is never clipped away.
         if not ok or re.search(r"(?m)^BLOCK:", raw):
             print(f"{args.item}: review did not pass, nothing changed:\n{block}", file=sys.stderr)
             return 1
+        review_passed = True
 
     evidence = "Executed this session:\n\n```\n" + "\n\n".join(blocks) + "\n```"
     updated = set_section(text, "Verification", evidence)
     updated = set_field(updated, "verification", "passed")
     updated = set_field(updated, "promotion", promotion)
+    if review_passed:
+        updated = set_field(updated, "review", "passed")
     updated = set_field(updated, "status", "completed")
     item_path.write_text(updated, encoding="utf-8")
 

@@ -38,14 +38,21 @@ STRONG a review runs — bound to a real command, never a bare label:
   starting with `BLOCK:` when it finds a blocker). `off`/empty means no review.
 - `stages` picks the level for each stage: `design`, `implementation`, `promotion`.
 
-`close_work.py` runs the `implementation`-stage review at close: it executes the
-resolved command, records its output as evidence, and refuses to complete the
-item if the review fails. Fail-closed: a stage set to a strength with no bound
-command (or a typo'd strength) blocks the close until `settings.json` is fixed —
-the audit reports it as `REVIEW001`. This keeps `review: passed` bound to an
-executed verdict, never a hand-typed claim.
+Review is OPTIONAL and driven by the work item's own `review` field
+(`not_required` | `pending` | `passed`; absent defaults to `not_required`):
 
-Enforcement boundary: the review runs only through `close_work.py`. Hand-editing a
-work item to `status: completed` bypasses it, exactly as hand-typing
-`verification: passed` bypasses the `--check` gate. Close items with the script,
-not by editing frontmatter.
+- An item that never declares review (`not_required`/absent) completes with no
+  review — the bypass. Most work needs no gate here.
+- An item that declares `review: pending` opts THAT item in: it cannot be
+  completed until `review: passed`. The completion gate blocks it, so even
+  hand-editing `status: completed` is refused while `review: pending` — this is
+  stronger than the verification field, which has no such requirement.
+
+`close_work.py` runs the `implementation`-stage review only when the item is
+`review: pending`: it executes the resolved command, records its output as
+evidence, and on success sets `review: passed`. Fail-closed: a pending item whose
+stage has a typo'd strength or no bound command is refused until `settings.json`
+is fixed (the audit reports `REVIEW001`). This keeps `review: passed` bound to an
+executed verdict, never a hand-typed claim. Set the requirement with
+`register_work.py --review`, and close with `close_work.py` (not by editing
+frontmatter).

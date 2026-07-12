@@ -201,6 +201,8 @@ class Audit:
             self.error("WORK005", f"Unknown retrospective value: {item.retrospective}", path)
         if item.promotion not in PROMOTION_VALUES:
             self.error("WORK006", f"Unknown promotion value: {item.promotion}", path)
+        if item.review not in stage_guard.REVIEW_VALUES:
+            self.error("WORK013", f"Unknown review value: {item.review}", path)
         if item.kind and item.kind not in self.known_kinds():
             self.warning(
                 "KIND001",

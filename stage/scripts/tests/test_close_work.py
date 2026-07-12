@@ -16,6 +16,7 @@ verification: pending
 retrospective: {retro}
 retrospective_ref: {ref}
 promotion: {promotion}
+review: {review}
 ---
 
 # W-00000001 Sample
@@ -44,13 +45,13 @@ def run(root: Path, *args: str) -> subprocess.CompletedProcess:
 
 
 class CloseWorkTest(unittest.TestCase):
-    def make(self, retro="completed", ref="R-00000001", promotion="not_applicable", with_ref_file=True):
+    def make(self, retro="completed", ref="R-00000001", promotion="not_applicable", with_ref_file=True, review="not_required"):
         tmp = tempfile.TemporaryDirectory()
         root = Path(tmp.name)
         (root / ".stage/present/work/items").mkdir(parents=True)
         (root / ".stage/present/work/retrospectives").mkdir(parents=True)
         (root / ".stage/present/work/items/W-00000001.md").write_text(
-            ITEM.format(retro=retro, ref=ref, promotion=promotion), encoding="utf-8"
+            ITEM.format(retro=retro, ref=ref, promotion=promotion, review=review), encoding="utf-8"
         )
         if with_ref_file and ref:
             (root / ".stage/present/work/retrospectives" / f"{ref}.md").write_text("---\nid: R\n---\n", encoding="utf-8")
@@ -132,7 +133,7 @@ class CloseWorkTest(unittest.TestCase):
         (root / ".stage/settings.json").write_text(json.dumps({"review": review}), encoding="utf-8")
 
     def test_configured_review_runs_and_records(self):
-        tmp, root = self.make()
+        tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(root, {"strengths": {"standard": "python3 -c \"print('review ok')\""}, "stages": {"implementation": "standard"}})
             proc = run(root, "W-00000001", "--check", "true")
@@ -140,17 +141,45 @@ class CloseWorkTest(unittest.TestCase):
             self.assertIn("review ok", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
 
     def test_review_block_verdict_refuses(self):
-        tmp, root = self.make()
+        tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(root, {"strengths": {"red-team": "python3 -c \"print('BLOCK: found a bug')\""}, "stages": {"implementation": "red-team"}})
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 1)
             self.assertIn("status: active", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
 
+    def test_not_required_bypasses_review_even_if_configured(self):
+        # Field-driven: an item that does not declare review: pending completes
+        # without running the configured review command.
+        tmp, root = self.make(review="not_required")
+        with tmp:
+            self._write_review(root, {"strengths": {"standard": "python3 -c \"print('BLOCK: should not run')\""}, "stages": {"implementation": "standard"}})
+            proc = run(root, "W-00000001", "--check", "true")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            self.assertIn("status: completed", item)
+            self.assertNotIn("should not run", item)
+
+    def test_pending_review_becomes_passed(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            self._write_review(root, {"strengths": {"standard": "python3 -c \"print('review ok')\""}, "stages": {"implementation": "standard"}})
+            proc = run(root, "W-00000001", "--check", "true")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("review: passed", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+
+    def test_pending_review_without_command_fails_closed(self):
+        # review: pending but the stage has no configured command -> cannot honestly pass.
+        tmp, root = self.make(review="pending")
+        with tmp:
+            proc = run(root, "W-00000001", "--check", "true")
+            self.assertEqual(proc.returncode, 1)
+            self.assertIn("review is pending", proc.stderr)
+
     def test_review_block_survives_long_output(self):
         # Verdict first, then >40 lines, exit 0 — BLOCK: must still be detected on
         # the raw output, not the clipped evidence.
-        tmp, root = self.make()
+        tmp, root = self.make(review="pending")
         with tmp:
             cmd = "python3 -c \"print('BLOCK: nope'); [print(i) for i in range(60)]\""
             self._write_review(root, {"strengths": {"red-team": cmd}, "stages": {"implementation": "red-team"}})
@@ -159,7 +188,7 @@ class CloseWorkTest(unittest.TestCase):
             self.assertIn("status: active", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
 
     def test_review_strength_typo_fails_closed(self):
-        tmp, root = self.make()
+        tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(root, {"stages": {"implementation": "redteam"}})  # not a valid strength
             proc = run(root, "W-00000001", "--check", "true")
@@ -167,7 +196,7 @@ class CloseWorkTest(unittest.TestCase):
             self.assertIn("review config", proc.stderr)
 
     def test_review_strength_without_command_fails_closed(self):
-        tmp, root = self.make()
+        tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(root, {"stages": {"implementation": "standard"}})  # no strengths.standard command
             proc = run(root, "W-00000001", "--check", "true")
