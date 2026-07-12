@@ -6,4 +6,3 @@ Work bodies live in `items/`. This document manages only current status and link
 
 | Work | Kind | Venue | Purpose | Status | Owner | Item |
 |---|---|---|---|---|---|---|
-| W-00000019 | development | codex | Implement stage_topology.py per stage/docs/SCHEMA_V4.md: fam | active | Claude | [items/W-00000019.md](items/W-00000019.md) |

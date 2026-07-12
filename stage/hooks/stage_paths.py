@@ -7,6 +7,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+# Schema-v4 authorization-zone constants.  Existing schema-v3 consumers keep
+# using their legacy predicates until the consumer-adoption card rewires them.
+STAGE_OFFICIAL_ROOT = ".stage/official"
+STAGE_OFFICIAL_ARCHIVE_ROOT = f"{STAGE_OFFICIAL_ROOT}/work/archive"
+
 
 def clean_path_text(path: str) -> str:
     """Surface cleanup only — strip quotes, unify separators, collapse repeated
@@ -173,6 +178,24 @@ def path_targets_stage_root(path: str) -> bool:
     return "/.stage/" in normalized or normalized.endswith("/.stage")
 
 
+def _path_targets_stage_zone(path: str, zone_root: str) -> bool:
+    normalized = "/" + normalize_path_text(path).lstrip("/")
+    anchored_root = "/" + zone_root.strip("/")
+    return normalized == anchored_root or anchored_root + "/" in normalized
+
+
+def path_targets_stage_official(path: str) -> bool:
+    """Whether a canonical path targets the schema-v4 authorization zone."""
+
+    return _path_targets_stage_zone(path, STAGE_OFFICIAL_ROOT)
+
+
+def path_targets_stage_official_archive(path: str) -> bool:
+    """Whether a canonical path targets the schema-v4 work archive."""
+
+    return _path_targets_stage_zone(path, STAGE_OFFICIAL_ARCHIVE_ROOT)
+
+
 def path_targets_stage_past(path: str) -> bool:
     normalized = "/" + normalize_path_text(path).lstrip("/")
     return "/.stage/past/" in normalized or normalized.startswith("/.stage/past/")
@@ -180,7 +203,9 @@ def path_targets_stage_past(path: str) -> bool:
 
 def path_targets_stage_archive(path: str) -> bool:
     normalized = "/" + normalize_path_text(path).lstrip("/")
-    return "/.stage/past/work/archive/" in normalized or normalized.startswith("/.stage/past/work/archive/")
+    return "/.stage/past/work/archive/" in normalized or normalized.startswith(
+        "/.stage/past/work/archive/"
+    )
 
 
 def is_stage_internal_path(path: str, workspace_root: Path) -> bool:

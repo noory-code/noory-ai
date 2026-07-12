@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.24.0 — 2026-07-13
+
+Schema-v4 topology registry foundation (dormant until the consumer-adoption cards):
+
+- New `hooks/stage_topology.py` is the tooling SSOT for v4 families and zones, lifecycle and
+  status projections, family-local artifact counters, stable `DE-` plus legacy `D-` decision
+  resolution, scan roots, retrospective locations, and the bijective v3-to-v4 relocation map.
+- `stage_paths.py` exposes the v4 `official/` authorization-zone and work-archive predicates;
+  schema-v3 consumers retain their existing predicates until their scheduled rewiring.
+- Registry tests cover every public resolver, relocation and identity compatibility, and
+  parity between the registry's official root and the authorization boundary. A measured
+  conformance ratchet rejects new legacy-topology consumers and count increases while C4-C5
+  and C7 reduce the 11 existing schema-v3 consumers to zero (DE-00000010).
+
 ## 0.23.2 — 2026-07-12
 
 Schema v4 design amendment (design only — no behavior change):
