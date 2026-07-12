@@ -8,7 +8,6 @@ Backlog item bodies live in `items/`. This document manages only order, status, 
 
 | ID | Title | Kind | Status | Priority | Parent | Item |
 |---|---|---|---|---|---|---|
-| W-00000025 | Close/archive ordering guard: refuse closure with uncommitted scope changes | development | captured | high |  | [items/W-00000025.md](items/W-00000025.md) |
 | W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [items/W-00000026.md](items/W-00000026.md) |
 | W-00000027 | register_work --backlog appends index rows outside the table | fix | captured | high |  | [items/W-00000027.md](items/W-00000027.md) |
 
