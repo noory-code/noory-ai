@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.23.1 — 2026-07-12
+
+Schema v4 design freeze (design only — no behavior change):
+
+- New `docs/SCHEMA_V4.md`: the canonical PAST-ANCHORED topology design — `past/` retained
+  verbatim as the sole authorization zone; `present/`/`future/` wrappers retire in favor of
+  responsibility roots (`work/`, `decisions/`, `state/`, `proposals/`, `roadmap/`); lifecycle
+  becomes the planned/current/official vocabulary enforced by gates; topology registry,
+  Contract X decision identity, W `milestone:`/`terminal_disposition` contracts, roadmap
+  closure semantics, migration contract, and the C1-C9 implementation plan (DE-00000009,
+  W-00000018).
+
 ## 0.23.0 — 2026-07-12
 
 Unified work-card lifecycle — the backlog becomes the planned column of one W-card board
