@@ -17,7 +17,8 @@ Read the relevant `.stage/` context.
 2. `past/`: official truth.
 3. `present/`: work in progress and uncertainty.
 4. `future/`: plans and proposals.
-5. `operations/`: behavior gates.
+5. `operations/`: behavior gates — common rules are plugin-owned (the installed Stage plugin's
+   `operations/`); `.stage/operations/` holds only project policy and declared overrides.
 
 ## Decision gates
 

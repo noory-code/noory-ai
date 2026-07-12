@@ -28,7 +28,8 @@ Answer briefly.
 - Official truth goes to `past`.
 - Living uncertainty stays in `present/state`.
 - Future improvements go to `future/backlog/items/` or `future/proposals/`.
-- Behavior changes go to `operations/`.
+- Behavior changes go to project policy in `.stage/operations/` (or upstream to the plugin-owned
+  `operations/` when the rule is common to every project).
 - The retrospective artifact lives at `present/work/retrospectives/R-NNNNNNNN.md`.
 - The work item's `retrospective_ref` points to that retrospective file.
 
@@ -56,7 +57,7 @@ python3 stage/skills/stage-retrospective/close_work.py --project-root <project-r
 
 It runs each `--check`, records the output as evidence, and completes the item only when they pass —
 and also requires a completed retrospective and a FINAL promotion decision. If `.stage/settings.json`
-configures an `implementation`-stage review (see `operations/review.md`), `close_work` runs that
+configures an `implementation`-stage review (see the plugin-owned `operations/review.md`), `close_work` runs that
 review command too and refuses to close on a failing or `BLOCK:` verdict.
 
 ## Completion rule

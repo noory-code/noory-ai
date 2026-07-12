@@ -23,7 +23,7 @@ fill:
 
 - `id`, `title` — the outcome, not the steps.
 - `kind` — the project's work vocabulary (`feature`, `fix`, `chore`, `documentation`, …). Each
-  kind's `passed` criterion lives in `operations/verification.md`.
+  kind's `passed` criterion lives in the project's `.stage/operations/verification.md`.
 - `venue` — the execution surface that should carry it out (advisory routing hint; see
   `stage-handoff`).
 - `scope` — the paths this work may modify. The registration gate matches writes against these,

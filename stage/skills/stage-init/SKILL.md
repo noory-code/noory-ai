@@ -61,14 +61,22 @@ If the helper is unavailable, create the same structure as `templates/project-st
     views/
   future/proposals/
   operations/
+    verification.md
 ```
+
+`operations/` holds only project-owned policy (the `kind -> passed` verification criteria and any
+declared overrides). Common operational rules are plugin-owned and live in the installed Stage
+plugin's `operations/` directory — they are not copied into the project. A `.stage/` initialized
+by an older plugin still carries full copies; migrate it with
+`python3 stage/scripts/migrate_stage.py --project-root <project-root>`.
 
 ## Completion gate
 
 Stage initialization is complete only when all of the following hold.
 
 - `.stage/index.md` exists.
-- `operations/before.md`, `operations/during.md`, `operations/after.md`, `operations/retrospective.md`, `operations/artifacts.md`, and `operations/hooks.md` exist.
+- `operations/verification.md` exists, and `settings.json` carries the plugin's current
+  `schema_version`.
 - `past`, `present`, and `future` all exist.
 - Index documents and individual record directories are separated.
 - `python3 stage/scripts/audit_stage.py --project-root <project-root>` passes.

@@ -23,6 +23,9 @@ Stage creates a `.stage/` directory inside the project and connects three axes.
 - Work items form hierarchies (`parent`), carry a work `kind`, and trace their lineage to backlog items (`source`/`realized_by`), so every kind of work stays classifiable.
 - The core stays Markdown, plain files, and relative paths so it works on Codex, Claude, Windows, Linux, and macOS.
 - A single document only holds an index or policy. Every durable individual artifact has its own file.
+- Common operational rules are plugin-owned (`operations/` in this plugin) and are not copied into
+  projects. `.stage/operations/` holds only project policy: the `kind -> passed` verification
+  criteria plus any overrides declared in `settings.json` `operations_overrides`.
 
 ## Hooks
 
@@ -53,6 +56,13 @@ Audit the Stage structure and work status:
 
 ```bash
 python3 stage/scripts/audit_stage.py --project-root .
+```
+
+Migrate a `.stage/` initialized by an older plugin to the plugin-owned operations layout
+(idempotent; never deletes content that differs from the plugin copy):
+
+```bash
+python3 stage/scripts/migrate_stage.py --project-root .
 ```
 
 Create a promotion intent after declaring the target paths in the work item's `promotes`:
