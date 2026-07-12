@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.5 — 2026-07-13
+
+Archive retrospective collision fix:
+
+- `archive_work.py` now refuses to overwrite an archived retrospective whose `work_item`
+  belongs to a different work item, while preserving idempotent re-archive behavior for the
+  same work item. Regression coverage verifies both paths and prevents partial archive
+  mutations on conflict. (W-00000023)
+
 ## 0.24.4 — 2026-07-13
 
 Verification evidence preservation fix:

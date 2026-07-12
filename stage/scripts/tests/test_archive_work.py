@@ -123,6 +123,46 @@ class ArchiveWorkCliTest(unittest.TestCase):
             self.assertTrue((root / ".stage/present/work/items/W-00000001.md").exists())
             self.assertFalse((root / ".stage/past/work/archive/items/W-00000001.md").exists())
 
+    def test_refuses_retrospective_id_collision_with_different_work_item(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            stage = root / ".stage"
+            archive_retro = stage / "past/work/archive/retrospectives/R-00000001.md"
+            existing = RETRO.format(ref="R-00000001", wid="W-00000099")
+            archive_retro.write_text(existing, encoding="utf-8")
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 1, proc.stderr + proc.stdout)
+            self.assertIn("ERROR", proc.stdout)
+            self.assertIn("R-00000001", proc.stdout)
+            self.assertIn("W-00000001", proc.stdout)
+            self.assertIn("W-00000099", proc.stdout)
+            self.assertEqual(archive_retro.read_text(encoding="utf-8"), existing)
+            self.assertTrue((stage / "present/work/items/W-00000001.md").exists())
+            self.assertTrue(
+                (stage / "present/work/retrospectives/R-00000001.md").exists()
+            )
+            self.assertFalse((stage / "past/work/archive/items/W-00000001.md").exists())
+            self.assertNotIn(
+                "W-00000001", (stage / "past/work/archive/index.md").read_text(encoding="utf-8")
+            )
+
+    def test_allows_existing_retrospective_for_same_work_item(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            stage = root / ".stage"
+            archive_retro = stage / "past/work/archive/retrospectives/R-00000001.md"
+            archive_retro.write_text(
+                RETRO.format(ref="R-00000001", wid="W-00000001"), encoding="utf-8"
+            )
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+            self.assertTrue((stage / "past/work/archive/items/W-00000001.md").exists())
+            self.assertFalse((stage / "present/work/items/W-00000001.md").exists())
+
     def test_idempotent_rerun(self):
         tmp, root = self.make_stage()
         with tmp:

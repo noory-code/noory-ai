@@ -124,6 +124,16 @@ def archive_one(stage_root: Path, item_id: str, blocking_parents: set[str]) -> s
     index_path = stage_root / "past" / "work" / "archive" / "index.md"
     review_path = stage_root / "present" / "work" / "review.md"
 
+    if archive_retro.exists():
+        archived_work_item = frontmatter_field(
+            archive_retro.read_text(encoding="utf-8"), "work_item"
+        )
+        if archived_work_item and archived_work_item != item_id:
+            return (
+                f"{item_id}: ERROR retrospective id collision: {ref}.md already belongs "
+                f"to {archived_work_item}; refusing to overwrite it"
+            )
+
     # Move the item (status -> archived) and its retrospective (verbatim).
     archive_item.parent.mkdir(parents=True, exist_ok=True)
     archive_retro.parent.mkdir(parents=True, exist_ok=True)
