@@ -10,3 +10,5 @@ A working decision is not official truth. Once approved, it is promoted to `past
 - The frontmatter `work_item` matches the work item where the decision point occurred.
 - A record states the question, the options, the principles applied, and the chosen direction.
 - The work item's `decision_refs` lists its decision records. Not every task has a decision point — `decision_refs` is optional, but a recorded decision must link back.
+- A work item cannot complete while a linked decision is still `status: open` — decide it first.
+- A decision that authorizes a venue-policy exception declares `authorizes: venue_exception` in its frontmatter; registration and the audit accept the exception only from such a decided/promoted record.

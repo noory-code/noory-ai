@@ -1426,22 +1426,84 @@ class VenueRoutingAuditTest(unittest.TestCase):
             self.write_item(root, kind="design", venue="cursor")
             self.assertIn("VENUE002", self.venue_codes(root))
 
-    def test_policy_contradiction_without_decision_is_reported(self):
+    def write_exception_decision(
+        self, root: Path, *, decision_id: str = "DE-0001", work_item: str = "W-0001",
+        status: str = "decided", authorizes: str = "venue_exception",
+    ) -> None:
+        decisions = root / ".stage" / "present" / "work" / "decisions"
+        decisions.mkdir(parents=True, exist_ok=True)
+        lines = ["---", f"id: {decision_id}", f"work_item: {work_item}", f"status: {status}"]
+        if authorizes:
+            lines.append(f"authorizes: {authorizes}")
+        lines += [
+            "---",
+            f"# {decision_id} Exception",
+            "",
+            "## Principles applied",
+            "",
+            "- SSOT — one owner.",
+            "",
+        ]
+        (decisions / f"{decision_id}.md").write_text("\n".join(lines), encoding="utf-8")
+
+    def test_policy_contradiction_without_decision_is_an_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
             self.declare_routing(root, self.ROUTING)
             self.write_item(root, kind="development", venue="claude")
-            self.assertIn("VENUE003", self.venue_codes(root))
+            findings = [f for f in audit_stage.Audit(root).run() if f.code == "VENUE003"]
+        self.assertEqual(["error"], [f.severity for f in findings])
 
-    def test_decision_linked_exception_is_accepted(self):
+    def test_valid_exception_decision_is_accepted(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
             self.declare_routing(root, self.ROUTING)
+            self.write_exception_decision(root)
             self.write_item(root, kind="development", venue="claude", decision_refs="DE-0001")
             codes = self.venue_codes(root)
         self.assertNotIn("VENUE003", codes)
+
+    def test_open_or_non_authorizing_decision_does_not_excuse(self):
+        for kwargs in ({"status": "open"}, {"authorizes": ""}):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.init_stage(root)
+                self.declare_routing(root, self.ROUTING)
+                self.write_exception_decision(root, **kwargs)
+                self.write_item(
+                    root, kind="development", venue="claude", decision_refs="DE-0001"
+                )
+                with self.subTest(**kwargs):
+                    self.assertIn("VENUE003", self.venue_codes(root))
+
+    def test_split_kind_single_item_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, {"feature": "split", "design": "claude"})
+            self.write_item(root, kind="feature", venue="claude")
+            findings = [f for f in audit_stage.Audit(root).run() if f.code == "VENUE005"]
+        self.assertEqual(["error"], [f.severity for f in findings])
+
+    def test_split_kind_with_valid_exception_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, {"feature": "split", "design": "claude"})
+            self.write_exception_decision(root)
+            self.write_item(root, kind="feature", venue="claude", decision_refs="DE-0001")
+            codes = self.venue_codes(root)
+        self.assertNotIn("VENUE005", codes)
+
+    def test_split_token_is_not_a_declared_venue(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.declare_routing(root, {"feature": "split", "design": "claude"})
+            self.write_item(root, kind="design", venue="split")
+            self.assertIn("VENUE002", self.venue_codes(root))
 
     def test_matching_venue_passes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1495,6 +1557,87 @@ class VenueRoutingAuditTest(unittest.TestCase):
             ).write_text("---\nid: R-0001\nwork_item: W-0001\n---\n# R-0001\n", encoding="utf-8")
 
             self.assertEqual(set(), self.venue_codes(root))
+
+
+class OpenDecisionCompletionTest(unittest.TestCase):
+    """DE-00000005: finished work must not rest on undecided decisions."""
+
+    def init_stage(self, root: Path) -> None:
+        init_stage.copy_templates(root, False)
+
+    def write_completed_item(self, root: Path, *, decision_refs: str) -> None:
+        path = root / ".stage" / "present" / "work" / "items" / "W-0001.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            (
+                "---\n"
+                "id: W-0001\n"
+                "title: Done\n"
+                "kind: chore\n"
+                "status: completed\n"
+                "verification: passed\n"
+                "retrospective: completed\n"
+                "retrospective_ref: R-0001\n"
+                "promotion: not_applicable\n"
+                "scope: src\n"
+                f"decision_refs: {decision_refs}\n"
+                "---\n"
+                "# W-0001 Done\n"
+            ),
+            encoding="utf-8",
+        )
+        retro = root / ".stage" / "present" / "work" / "retrospectives" / "R-0001.md"
+        retro.parent.mkdir(parents=True, exist_ok=True)
+        retro.write_text("---\nid: R-0001\nwork_item: W-0001\n---\n# R-0001\n", encoding="utf-8")
+
+    def write_decision(self, root: Path, *, status: str) -> None:
+        path = root / ".stage" / "present" / "work" / "decisions" / "DE-0001.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            (
+                "---\nid: DE-0001\nwork_item: W-0001\n"
+                f"status: {status}\n---\n# DE-0001\n\n"
+                "## Principles applied\n\n- SSOT — one owner.\n"
+            ),
+            encoding="utf-8",
+        )
+
+    def codes(self, root: Path) -> set[str]:
+        return finding_codes(audit_stage.Audit(root).run())
+
+    def test_completed_item_with_open_decision_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_decision(root, status="open")
+            self.write_completed_item(root, decision_refs="DE-0001")
+            findings = [f for f in audit_stage.Audit(root).run() if f.code == "DECISION002"]
+        self.assertEqual(["error"], [f.severity for f in findings])
+
+    def test_completed_item_with_decided_decision_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_decision(root, status="decided")
+            self.write_completed_item(root, decision_refs="DE-0001")
+            self.assertNotIn("DECISION002", self.codes(root))
+
+    def test_open_decision_on_open_item_is_allowed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_decision(root, status="open")
+            path = root / ".stage" / "present" / "work" / "items" / "W-0001.md"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                (
+                    "---\nid: W-0001\ntitle: Working\nkind: chore\nstatus: active\n"
+                    "verification: pending\nretrospective: pending\npromotion: pending\n"
+                    "scope: src\ndecision_refs: DE-0001\n---\n# W-0001 Working\n"
+                ),
+                encoding="utf-8",
+            )
+            self.assertNotIn("DECISION002", self.codes(root))
 
 
 class OperationsOwnershipTest(unittest.TestCase):

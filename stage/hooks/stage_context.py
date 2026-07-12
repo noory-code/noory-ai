@@ -80,10 +80,12 @@ def session_context(workspace_root: Path) -> str:
         parts.append(
             f"- Venue routing (declared role policy): {routing_text}. Derive `venue` from this "
             "policy when registering work — do not ask the human during normal routing; a "
-            "contradicting venue needs a decision_refs link. Split mixed design+implementation "
-            "work into separate items with `parent` lineage instead of assigning one ambiguous "
-            "item. An implementation venue that hits an unresolved product/design decision "
-            "registers a planning-venue item carrying the evidence and the exact decision needed."
+            "contradicting venue registers only with a decided decision record declaring "
+            "`authorizes: venue_exception` (register_work --decision). A kind routed to `split` "
+            "is mixed by definition: Split mixed design+implementation work into separate items "
+            "with `parent` lineage instead of assigning one ambiguous item. An implementation "
+            "venue that hits an unresolved product/design decision registers a planning-venue "
+            "item carrying the evidence and the exact decision needed."
         )
 
     language = load_language(stage_root)

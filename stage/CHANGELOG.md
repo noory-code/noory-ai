@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.22.0 — 2026-07-12
+
+Routing contract completion — review fixes for the B-00000001..3 releases (DE-00000005):
+
+- Split contract: `venue_routing` values may be the reserved token `split`, declaring a kind
+  mixed by definition. `register_work.py` refuses to register such a kind as one item and
+  prints the resolution (separate design/implementation items with `parent` lineage); the
+  audit reports an open single item of a split kind (`VENUE005` error).
+- Validated venue exceptions, one contract for CLI and audit: a policy-contradicting venue or
+  a deliberate single split-kind item is accepted only with a linked decision record that
+  exists, is `decided`/`promoted`, declares `authorizes: venue_exception`, and names the work
+  item. `register_work.py --decision <DE-id>` validates at registration and stamps
+  `decision_refs`; message-only acceptance is removed; `VENUE003` becomes an error.
+- Completion gate on open decisions: `close_work.py` refuses to complete an item whose
+  `decision_refs` names a decision still `status: open`, and the audit reports any
+  completed/archived item referencing one (`DECISION002` error).
+- Routing SSOT guidance corrected everywhere it was stale: English and Korean templates
+  (canon vocabulary, work-item README, decisions README) now state that `settings.json`
+  `venue_routing` owns machine routing while canon owns venue meaning only, and no longer
+  call audited routing "advisory".
+- No-policy, single-venue, and custom-venue projects keep current behavior; every new check
+  activates only when a policy is declared or a decision is actually linked.
+
 ## 0.21.0 — 2026-07-12
 
 Role-policy-driven venue routing and self-contained handoffs (DE-00000004):

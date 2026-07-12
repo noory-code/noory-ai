@@ -38,6 +38,16 @@ PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "reject
 # derives the identical sets; the PreToolUse enum gate imports THESE so a write
 # the gate allows is one the audit accepts (one owning definition — SSOT).
 STATUS_VALUES = WORK_OPEN_STATUSES | WORK_FINAL_STATUSES
+# Decision records: `open` means undecided; work depending on one must not
+# complete (DE-00000005). Final decision states that can carry authority:
+DECISION_FINAL_STATUSES = {"decided", "promoted"}
+# Machine-readable authorization a decision must declare (frontmatter
+# `authorizes:`) to excuse a venue-policy exception. One contract shared by
+# the registration CLI and the audit.
+VENUE_EXCEPTION_AUTHORIZATION = "venue_exception"
+# Reserved venue_routing value marking a kind as mixed-by-definition: it must
+# split into design/implementation items instead of registering as one.
+VENUE_SPLIT_TOKEN = "split"
 VERIFICATION_VALUES = VERIFICATION_DONE | {"pending"}
 RETROSPECTIVE_VALUES = RETROSPECTIVE_DONE | {"pending"}
 PROMOTION_VALUES = PROMOTION_FINAL | {"pending"}
@@ -274,6 +284,44 @@ def retrospective_ref_id(item: WorkItem) -> str:
         return ""
     name = Path(ref).name
     return name[:-3] if name.lower().endswith(".md") else name
+
+
+def resolve_decision_record(stage_root: Path, ref: str) -> Path:
+    """Owning file for a decision reference: DE-* records live in
+    present/work/decisions, promoted D-* records in past/decisions/records."""
+    name = ref if ref.endswith(".md") else f"{ref}.md"
+    if ref.startswith("D-"):
+        return stage_root / "past" / "decisions" / "records" / name
+    return stage_root / "present" / "work" / "decisions" / name
+
+
+def decision_status(stage_root: Path, ref: str) -> str:
+    """The decision's frontmatter status, or '' when the record is unreadable."""
+    fields = parse_frontmatter(resolve_decision_record(stage_root, ref))
+    return (fields.get("status") or "").strip()
+
+
+def venue_exception_error(stage_root: Path, ref: str) -> str:
+    """'' when `ref` names a decision that validly authorizes a venue-policy
+    exception (DE-00000005): the record exists, its status is final
+    (decided/promoted), and it declares `authorizes: venue_exception`.
+    Otherwise the human-readable reason. The work_item back-link is validated
+    by the audit, which knows the allocated item id."""
+    path = resolve_decision_record(stage_root, ref)
+    fields = parse_frontmatter(path)
+    if not fields:
+        return f"decision {ref} not found or unreadable at {path.name}"
+    status = (fields.get("status") or "").strip()
+    if status not in DECISION_FINAL_STATUSES:
+        return (
+            f"decision {ref} has status `{status or 'missing'}`; a venue exception needs "
+            f"one of {sorted(DECISION_FINAL_STATUSES)}"
+        )
+    if (fields.get("authorizes") or "").strip() != VENUE_EXCEPTION_AUTHORIZATION:
+        return (
+            f"decision {ref} does not declare `authorizes: {VENUE_EXCEPTION_AUTHORIZATION}`"
+        )
+    return ""
 
 
 def fallback_index_blockers(stage_root: Path) -> list[str]:

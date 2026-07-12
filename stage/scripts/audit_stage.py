@@ -282,6 +282,17 @@ class Audit:
                     f"Decision record work_item does not match the work item: {linked_item or 'missing'}",
                     decision_path,
                 )
+            # Finished work must not rest on undecided decisions (DE-00000005).
+            if (
+                item.status in stage_guard.WORK_FINAL_STATUSES
+                and decision_fields.get("status", "").strip() == "open"
+            ):
+                self.error(
+                    "DECISION002",
+                    f"Work item is {item.status} but linked decision {raw_ref} is still open; "
+                    "close the decision (decided/promoted) before completing the work.",
+                    item.path,
+                )
             # Status and principle-citation checks run once over all decision
             # records in audit_orphan_records, so they are not repeated here.
 
@@ -958,7 +969,8 @@ class Audit:
             )
             return
         routing = {kind.strip().lower(): venue.strip() for kind, venue in raw.items()}
-        declared_venues = set(routing.values())
+        split_token = stage_guard.VENUE_SPLIT_TOKEN
+        declared_venues = {venue for venue in routing.values() if venue != split_token}
 
         for audited_item in items:
             item = audited_item.item
@@ -966,8 +978,18 @@ class Audit:
                 continue
             venue = (audited_item.fields.get("venue") or "").strip()
             routed = routing.get(item.kind, "")
+
+            if routed == split_token and not self.valid_venue_exception(audited_item):
+                self.error(
+                    "VENUE005",
+                    f"Kind `{item.kind}` is declared mixed (`{split_token}`): register separate "
+                    "design and implementation items with `parent` lineage, or link a decision "
+                    "record with `authorizes: venue_exception` for a deliberate single item.",
+                    item.path,
+                )
+
             if not venue:
-                if routed:
+                if routed and routed != split_token:
                     self.warning(
                         "VENUE001",
                         f"Open work of routed kind `{item.kind}` has no venue; "
@@ -975,22 +997,41 @@ class Audit:
                         item.path,
                     )
                 continue
-            if venue not in declared_venues:
+            if declared_venues and venue not in declared_venues:
                 self.warning(
                     "VENUE002",
                     f"Venue `{venue}` is not declared by venue_routing "
                     f"(declared: {sorted(declared_venues)}).",
                     item.path,
                 )
-            elif routed and venue != routed and not (
-                audited_item.fields.get("decision_refs") or ""
-            ).strip():
-                self.warning(
+            elif (
+                routed
+                and routed != split_token
+                and venue != routed
+                and not self.valid_venue_exception(audited_item)
+            ):
+                self.error(
                     "VENUE003",
                     f"Venue `{venue}` contradicts venue_routing ({item.kind} -> {routed}) "
-                    "without a decision_refs link authorizing the exception.",
+                    "without a valid exception decision (decided/promoted, "
+                    "`authorizes: venue_exception`, linked via decision_refs).",
                     item.path,
                 )
+
+    def valid_venue_exception(self, audited_item: AuditedItem) -> bool:
+        """CLI-shared contract (stage_work.venue_exception_error) plus the
+        work_item back-link the CLI cannot know at registration time. WORK015
+        already reports a broken back-link, so it is not re-reported here."""
+        refs = (audited_item.fields.get("decision_refs") or "").strip()
+        for ref in stage_guard.split_scope(refs):
+            if stage_guard.venue_exception_error(self.stage_root, ref):
+                continue
+            fields = stage_guard.parse_frontmatter(
+                stage_records.resolve_decision_ref(self.project_root, self.stage_root, ref)
+            )
+            if (fields.get("work_item") or "").strip() == audited_item.item.item_id:
+                return True
+        return False
 
     def plugin_common_docs(self) -> dict[str, Path]:
         operations_root = PLUGIN_ROOT / "operations"

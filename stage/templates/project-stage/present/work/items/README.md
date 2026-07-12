@@ -17,7 +17,7 @@ Work items cover every kind of work — planning, design, development, QA, opera
 The document SSOT of the work status enum is `operations/artifacts.md`.
 
 - `kind`: what kind of work this is (for example `planning`, `design`, `development`, `qa`, `ops`). The project defines its own taxonomy in `past/canon/vocabulary.md`.
-- `venue`: optional. Which execution surface should carry out this work item — the routing hint a human reads to open the right window when more than one agent or session works the project. Values are project-defined; the project declares its venues and the `kind -> venue` routing in `past/canon/vocabulary.md`. Advisory only: hooks never gate on `venue`. An empty value means unassigned.
+- `venue`: optional. Which execution surface should carry out this work item — the routing signal a human reads to open the right window when more than one agent or session works the project. Values are project-defined: the machine-readable `kind -> venue` routing lives in `settings.json` `venue_routing` (registration derives the venue from it and the audit checks consistency; exceptions need a decision record with `authorizes: venue_exception`), while `past/canon/vocabulary.md` owns what each venue means. No hook gates on `venue`; with no declared routing it is a purely advisory per-item field. An empty value means unassigned.
 - `parent`: optional ID of the parent work item. Hierarchy keeps large work classifiable — a parent is not complete while a child is open.
 - `scope`: paths this work owns. Separate multiple entries with commas. An empty value owns no path. Declare `*` only for a truly global scope.
 - `promotes`: `.stage/past/` paths this work may promote. Separate multiple entries with commas.

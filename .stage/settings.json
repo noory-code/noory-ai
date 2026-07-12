@@ -23,9 +23,13 @@
   "venue_routing": {
     "planning": "claude",
     "design": "claude",
+    "documentation": "claude",
     "development": "codex",
     "fix": "codex",
     "qa": "codex",
-    "ops": "codex"
-  }
+    "ops": "codex",
+    "chore": "codex",
+    "feature": "split"
+  },
+  "language": "en"
 }

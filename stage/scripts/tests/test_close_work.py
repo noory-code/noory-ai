@@ -59,6 +59,44 @@ class CloseWorkTest(unittest.TestCase):
         (root / ".stage/present/work/review.md").write_text(REVIEW, encoding="utf-8")
         return tmp, root
 
+    def write_decision(self, root: Path, *, status: str) -> None:
+        decisions = root / ".stage/present/work/decisions"
+        decisions.mkdir(parents=True, exist_ok=True)
+        (decisions / "DE-00000001.md").write_text(
+            f"---\nid: DE-00000001\nwork_item: W-00000001\nstatus: {status}\n---\n# DE-00000001\n",
+            encoding="utf-8",
+        )
+
+    def link_decision(self, root: Path) -> None:
+        item = root / ".stage/present/work/items/W-00000001.md"
+        text = item.read_text(encoding="utf-8").replace(
+            "kind: chore\n", "kind: chore\ndecision_refs: DE-00000001\n", 1
+        )
+        item.write_text(text, encoding="utf-8")
+
+    def test_refuses_while_linked_decision_is_open(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_decision(root, status="open")
+            self.link_decision(root)
+            proc = run(root, "W-00000001", "--check", f"{sys.executable} -c 'print(1)'")
+            body = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("DE-00000001", proc.stderr)
+        self.assertIn("status: active", body)
+
+    def test_closes_when_linked_decision_is_decided(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_decision(root, status="decided")
+            self.link_decision(root)
+            proc = run(root, "W-00000001", "--check", f"{sys.executable} -c 'print(1)'")
+            body = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("status: completed", body)
+
     def test_passing_check_closes_and_moves(self):
         tmp, root = self.make()
         with tmp:

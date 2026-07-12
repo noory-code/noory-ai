@@ -38,7 +38,7 @@ family/
 
 `active.md` and `review.md` are current views. Hooks judge from the frontmatter of `present/work/items/*.md`.
 
-`venue` names the execution surface that should carry out the work item — the routing signal a human reads to open the right window when more than one agent or session works the project. No hook gates on it. The machine-readable `kind -> venue` role policy is project-declared in `settings.json` `venue_routing` (registration derives from it; the audit checks consistency); what each venue means belongs to the project's canon. The harness fixes no venue names.
+`venue` names the execution surface that should carry out the work item — the routing signal a human reads to open the right window when more than one agent or session works the project. No hook gates on it. The machine-readable `kind -> venue` role policy is project-declared in `settings.json` `venue_routing` (registration derives from it; the audit checks consistency); what each venue means belongs to the project's canon. A policy-contradicting venue is valid only with a linked decision record that is decided/promoted and declares `authorizes: venue_exception`; the reserved routing value `split` marks a kind as mixed by definition — it registers as separate design/implementation items with `parent` lineage. The harness fixes no venue names.
 
 `scope` is fail-closed. An empty value or `.` owns no source path. Declare `*` only when a global scope is truly needed.
 

@@ -27,10 +27,12 @@ fill:
 - `venue` — the execution surface that should carry it out. When `settings.json` declares
   `venue_routing` (`kind -> venue`), derive the venue from it instead of asking the human;
   `register_work.py` does this automatically when `--venue` is omitted. A venue that contradicts
-  the policy needs a `decision_refs` link (the audit reports it otherwise). Work that mixes
-  design and implementation splits into separate items — a planning/design item and an
-  implementation item with `parent` lineage — instead of one ambiguous item (see
-  `stage-handoff`).
+  the policy is REFUSED unless `--decision <DE-id>` names a decided/promoted decision record
+  declaring `authorizes: venue_exception` (record the decision first, then register; the audit
+  enforces the same contract plus the `work_item` back-link). A kind routed to the reserved
+  value `split` is mixed by definition: register a planning/design item and an implementation
+  item with `parent` lineage instead of one ambiguous item (see `stage-handoff`); a deliberate
+  single item needs the same exception decision.
 - `scope` — the paths this work may modify. The registration gate matches writes against these,
   so list every governed subtree you will touch. `*` authorizes anything (use sparingly).
 - `## Purpose`, `## Scope`, `## Success criteria` — concrete and checkable.

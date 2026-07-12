@@ -11,20 +11,21 @@ The detailed SSOT of each term lives in `vocabulary/`.
 | Future | Planned or proposed artifact status. |
 | Decision Point | A choice point where action is decided by principles and context. |
 | Retrospective | The mandatory post-work review performed before official promotion. |
-| Venue | The execution surface a work item is routed to. This project's venues and routing are defined below. |
+| Venue | The execution surface a work item is routed to. This project's venue meanings are defined below. |
 
 ## Venues
 
 A work item's `venue` names which execution surface should carry it out — the
-routing hint a human reads to open the right window when more than one agent or
-session works this project. Define this project's venues and the `kind -> venue`
-routing here; leave it empty if the project uses a single surface.
+routing signal a human reads to open the right window when more than one agent
+or session works this project. This document owns only what each venue MEANS
+(which responsibilities it carries). The machine-readable `kind -> venue`
+routing map is owned by `settings.json` `venue_routing`: registration derives
+each item's venue from it, and the audit enforces consistency (a
+policy-contradicting venue needs a decision record with
+`authorizes: venue_exception`; a kind mapped to the reserved value `split`
+must register as separate design and implementation items with `parent`
+lineage). Leave both empty if the project uses a single surface.
 
-The table below is an example for a two-surface setup (a planning window and an
-implementation window). Replace the venue names and routing with this project's
-own.
-
-| `kind` | `venue` (example) |
-|---|---|
-| planning, design | `claude` |
-| development, qa, ops | `codex` |
+Describe this project's venues here, for example: a planning/design window
+(e.g. `claude`) and an implementation/QA window (e.g. `codex`). Replace with
+this project's own venue names — the harness fixes none.

@@ -25,6 +25,10 @@ from stage_paths import (  # noqa: E402
     load_venue_routing,
     resolve_review_command,
 )
+from stage_work import (  # noqa: E402
+    VENUE_SPLIT_TOKEN,
+    venue_exception_error,
+)
 
 ID_RE = re.compile(r"^W-(\d{8})$")
 _TEMPLATE = (
@@ -54,7 +58,7 @@ def existing_numbers(stage_root: Path) -> set[int]:
     return numbers
 
 
-def fill_item(template: str, *, item_id: str, title: str, kind: str, venue: str, scope: str, purpose: str, review: bool) -> str:
+def fill_item(template: str, *, item_id: str, title: str, kind: str, venue: str, scope: str, purpose: str, review: bool, decision: str = "") -> str:
     text = template.replace("W-00000000 Title", f"{item_id} {title}")
     text = set_field(text, "id", item_id)
     text = set_field(text, "title", title)
@@ -63,6 +67,8 @@ def fill_item(template: str, *, item_id: str, title: str, kind: str, venue: str,
     text = set_field(text, "scope", scope)
     if review:
         text = set_field(text, "review", "pending")  # opt this item into a required review
+    if decision:
+        text = set_field(text, "decision_refs", decision)
     if purpose:
         text = text.replace("## Purpose\n\n", f"## Purpose\n\n{purpose}\n", 1)
     return text
@@ -117,25 +123,54 @@ def main() -> int:
     parser.add_argument("--purpose", default="")
     parser.add_argument("--id", default=None, help="Explicit W-NNNNNNNN; default allocates the next free id.")
     parser.add_argument("--review", action="store_true", help="Require a review (review: pending) before this item can complete.")
+    parser.add_argument(
+        "--decision",
+        default="",
+        help="Decision record id (DE-*) authorizing a venue-policy exception "
+        "(decided/promoted with `authorizes: venue_exception`); stamped into decision_refs.",
+    )
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
     items_dir = stage_root / "present" / "work" / "items"
     active_path = stage_root / "present" / "work" / "active.md"
 
-    # Role policy (DE-00000004): derive an omitted venue from the declared
-    # kind -> venue routing; announce an explicit contradiction as a policy
-    # exception that must carry a decision_refs link (the audit checks it).
+    # Role policy (DE-00000004/DE-00000005): derive an omitted venue from the
+    # declared kind -> venue routing. A split-marked kind or a
+    # policy-contradicting venue registers only with a validated exception
+    # decision (--decision): existing, decided/promoted, and declaring
+    # `authorizes: venue_exception` — the same contract the audit enforces.
     routing = load_venue_routing(stage_root)
     routed = routing.get(args.kind.strip().lower(), "")
-    if not args.venue and routed:
+    exception_reason = ""
+    if routed == VENUE_SPLIT_TOKEN:
+        exception_reason = (
+            f"kind `{args.kind}` is declared mixed (`{VENUE_SPLIT_TOKEN}`): register separate "
+            "design and implementation items with `parent` lineage instead, or pass "
+            "--decision <DE-id> naming a decided decision with `authorizes: venue_exception` "
+            "for a deliberate single item"
+        )
+    elif not args.venue and routed:
         args.venue = routed
         print(f"venue derived from venue_routing: {args.kind} -> {routed}")
     elif args.venue and routed and args.venue != routed:
-        print(
-            f"policy exception: venue `{args.venue}` contradicts venue_routing "
-            f"({args.kind} -> {routed}); link the authorizing decision in decision_refs"
+        exception_reason = (
+            f"venue `{args.venue}` contradicts venue_routing ({args.kind} -> {routed}); pass "
+            "--decision <DE-id> naming a decided decision with `authorizes: venue_exception`"
         )
+
+    if args.decision:
+        error = venue_exception_error(stage_root, args.decision)
+        if error:
+            print(f"refusing: {error}", file=sys.stderr)
+            return 1
+        print(
+            f"venue exception authorized by {args.decision} "
+            "(set its work_item to the allocated item id; the audit checks the back-link)"
+        )
+    elif exception_reason:
+        print(f"refusing: {exception_reason}", file=sys.stderr)
+        return 1
 
     if not items_dir.exists():
         print(f"Stage present items dir not found: {items_dir}", file=sys.stderr)
@@ -155,6 +190,7 @@ def main() -> int:
             scope=args.scope,
             purpose=args.purpose,
             review=args.review,
+            decision=args.decision,
         )
 
     if args.id:

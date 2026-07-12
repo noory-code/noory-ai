@@ -32,9 +32,22 @@ class RegisterWorkTest(unittest.TestCase):
 
     def declare_routing(self, root: Path) -> None:
         (root / ".stage/settings.json").write_text(
-            '{"schema_version": 2, "venue_routing": {"design": "claude", "development": "codex"}}',
+            '{"schema_version": 2, "venue_routing": '
+            '{"design": "claude", "development": "codex", "feature": "split"}}',
             encoding="utf-8",
         )
+
+    def write_decision(
+        self, root: Path, *, decision_id: str = "DE-0009", status: str = "decided",
+        authorizes: str = "venue_exception",
+    ) -> None:
+        decisions = root / ".stage/present/work/decisions"
+        decisions.mkdir(parents=True, exist_ok=True)
+        lines = [f"---", f"id: {decision_id}", "work_item: W-00000001", f"status: {status}"]
+        if authorizes:
+            lines.append(f"authorizes: {authorizes}")
+        lines += ["---", f"# {decision_id} Exception", ""]
+        (decisions / f"{decision_id}.md").write_text("\n".join(lines), encoding="utf-8")
 
     def test_venue_derived_from_declared_routing(self):
         tmp, root = self.make()
@@ -59,7 +72,7 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertNotIn("derived", result.stdout)
         self.assertNotIn("policy exception", result.stdout)
 
-    def test_contradicting_venue_announces_policy_exception(self):
+    def test_contradicting_venue_without_decision_is_refused(self):
         tmp, root = self.make()
         with tmp:
             self.declare_routing(root)
@@ -67,12 +80,76 @@ class RegisterWorkTest(unittest.TestCase):
                 root, "--title", "T", "--kind", "development", "--scope", "src",
                 "--venue", "claude",
             )
+            created = (root / ".stage/present/work/items/W-00000001.md").exists()
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("--decision", result.stderr)
+        self.assertFalse(created)
+
+    def test_contradicting_venue_with_valid_decision_registers(self):
+        tmp, root = self.make()
+        with tmp:
+            self.declare_routing(root)
+            self.write_decision(root)
+            result = run(
+                root, "--title", "T", "--kind", "development", "--scope", "src",
+                "--venue", "claude", "--decision", "DE-0009",
+            )
             self.assertEqual(0, result.returncode, result.stderr)
             item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
 
-        self.assertIn("policy exception", result.stdout)
-        self.assertIn("decision_refs", result.stdout)
         self.assertIn("venue: claude", item)
+        self.assertIn("decision_refs: DE-0009", item)
+
+    def test_open_or_non_authorizing_decision_is_refused(self):
+        tmp, root = self.make()
+        with tmp:
+            self.declare_routing(root)
+            self.write_decision(root, status="open")
+            result = run(
+                root, "--title", "T", "--kind", "development", "--scope", "src",
+                "--venue", "claude", "--decision", "DE-0009",
+            )
+            self.assertEqual(1, result.returncode)
+
+            self.write_decision(root, authorizes="")
+            result = run(
+                root, "--title", "T", "--kind", "development", "--scope", "src",
+                "--venue", "claude", "--decision", "DE-0009",
+            )
+            self.assertEqual(1, result.returncode)
+
+            result = run(
+                root, "--title", "T", "--kind", "development", "--scope", "src",
+                "--venue", "claude", "--decision", "DE-9999",
+            )
+            self.assertEqual(1, result.returncode)
+
+    def test_split_kind_single_item_is_refused_with_resolution(self):
+        tmp, root = self.make()
+        with tmp:
+            self.declare_routing(root)
+            result = run(root, "--title", "T", "--kind", "feature", "--scope", "src")
+            created = (root / ".stage/present/work/items/W-00000001.md").exists()
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("split", result.stderr)
+        self.assertIn("parent", result.stderr)
+        self.assertFalse(created)
+
+    def test_split_kind_with_valid_decision_registers_single_item(self):
+        tmp, root = self.make()
+        with tmp:
+            self.declare_routing(root)
+            self.write_decision(root)
+            result = run(
+                root, "--title", "T", "--kind", "feature", "--scope", "src",
+                "--venue", "claude", "--decision", "DE-0009",
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+
+        self.assertIn("decision_refs: DE-0009", item)
 
     def test_no_policy_keeps_current_behavior(self):
         tmp, root = self.make()

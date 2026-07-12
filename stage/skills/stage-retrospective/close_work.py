@@ -34,6 +34,7 @@ from pathlib import Path
 # insert is safe and side-effect-free.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 from stage_paths import load_review_config, resolve_review_command  # noqa: E402
+from stage_work import decision_status, split_scope  # noqa: E402
 
 OPEN_TO_CLOSE = {"active", "review"}
 PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "rejected"}
@@ -145,6 +146,17 @@ def main() -> int:
     if not ref or not (stage_root / "present" / "work" / "retrospectives" / f"{ref}.md").exists():
         print(f"{args.item}: retrospective_ref `{ref or 'empty'}` has no file", file=sys.stderr)
         return 1
+
+    # Finished work must not rest on undecided decisions (DE-00000005); the
+    # audit reports the same state as DECISION002.
+    for decision_ref in split_scope(field(text, "decision_refs")):
+        if decision_status(stage_root, decision_ref) == "open":
+            print(
+                f"{args.item}: linked decision {decision_ref} is still open — close it "
+                "(decided/promoted) before completing the work",
+                file=sys.stderr,
+            )
+            return 1
 
     promotion = args.promotion if args.promotion is not None else field(text, "promotion")
     if promotion not in PROMOTION_FINAL:
