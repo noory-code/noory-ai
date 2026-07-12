@@ -7,7 +7,8 @@ This document routes project context to the correct Stage location.
 - `past/`: official artifacts and approved truth.
 - `present/`: work in progress, provisional findings, uncertainty, review candidates.
 - `future/`: plans, proposals, upcoming work.
-- `operations/`: behavior rules for using Stage.
+- `operations/`: project-owned Stage policy. Common behavior rules are plugin-owned and live in
+  the installed Stage plugin's `operations/` directory.
 
 ## Routing rules
 
@@ -48,18 +49,8 @@ This document routes project context to the correct Stage location.
 | Backlog items | `future/backlog/items/` |
 | Proposal index | `future/proposals/index.md` |
 | Proposal bodies | `future/proposals/` |
-| Before-work rules | `operations/before.md` |
-| During-work rules | `operations/during.md` |
-| External-review rules | `operations/review.md` |
-| After-work rules | `operations/after.md` |
-| Retrospective rules | `operations/retrospective.md` |
-| Artifact operation rules | `operations/artifacts.md` |
-| Backlog operation rules | `operations/backlog.md` |
-| Documentation rules | `operations/documentation.md` |
-| Hook rules | `operations/hooks.md` |
-| Output rules | `operations/output.md` |
-| Portability rules | `operations/portability.md` |
-| Verification rules | `operations/verification.md` |
+| Work-kind verification criteria | `operations/verification.md` |
+| Common operation rules | plugin-owned `operations/` in the installed Stage plugin |
 
 ## Core rule
 
