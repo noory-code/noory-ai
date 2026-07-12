@@ -151,6 +151,18 @@ def main() -> int:
     if not ref or not (stage_root / "present" / "work" / "retrospectives" / f"{ref}.md").exists():
         print(f"{args.item}: retrospective_ref `{ref or 'empty'}` has no file", file=sys.stderr)
         return 1
+    archive_retro = (
+        stage_root / "past" / "work" / "archive" / "retrospectives" / f"{ref}.md"
+    )
+    if archive_retro.exists():
+        archived_work_item = field(archive_retro.read_text(encoding="utf-8"), "work_item")
+        if archived_work_item and archived_work_item != args.item:
+            print(
+                f"{args.item}: retrospective id collision: {ref}.md already belongs to "
+                f"{archived_work_item}; refusing to close",
+                file=sys.stderr,
+            )
+            return 1
 
     # Finished work must not rest on undecided decisions (DE-00000005); the
     # audit reports the same state as DECISION002.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.24.6 — 2026-07-13
+
+Global retrospective identity validation:
+
+- The Stage audit now reports `RETRO003` when an R-id appears in both present and archived
+  retrospective locations, including conflicts where the files name different work items.
+- `close_work.py` now fails closed before running verification when the item's
+  `retrospective_ref` already belongs to a different archived work item. Regression coverage
+  pins both enforcement points. (W-00000024)
+
 ## 0.24.5 — 2026-07-13
 
 Archive retrospective collision fix:

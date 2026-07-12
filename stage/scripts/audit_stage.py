@@ -130,6 +130,7 @@ class Audit:
         self.audit_hierarchy(items)
         self.audit_work_indexes(items)
         self.audit_backlog_items(graph)
+        self.audit_retrospective_identities(graph)
         self.audit_orphan_records(graph)
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
@@ -542,6 +543,26 @@ class Audit:
                     node.path,
                 )
 
+    def audit_retrospective_identities(self, graph: RecordGraph) -> None:
+        """Each R-id has one owning location and one work-item binding."""
+        seen: dict[str, tuple[str, Path]] = {}
+        for node in graph.retrospectives:
+            work_item = (node.fields.get("work_item") or "").strip()
+            previous = seen.get(node.record_id)
+            if previous is None:
+                seen[node.record_id] = (work_item, node.path)
+                continue
+            previous_work_item, previous_path = previous
+            self.error(
+                "RETRO003",
+                f"Retrospective id {node.record_id} appears more than once: "
+                f"{previous_work_item or 'missing work_item'} at "
+                f"{self.display_path(previous_path)}; {work_item or 'missing work_item'} at "
+                f"{self.display_path(node.path)}. Each R-id must have one location and one "
+                "work_item.",
+                node.path,
+            )
+
     def audit_state_links(self, graph: RecordGraph) -> None:
         for edge in graph.edges("state", "work_items", multi=True):
             if edge.ref not in graph.work_ids:
@@ -696,6 +717,7 @@ class Audit:
         # archive); planned cards in future/backlog keep plain SSOT001, and a
         # W id appearing in two lifecycle columns is an SSOT001 error too.
         work_item_dirs = {"present/work/items", "past/work/archive/items"}
+        retrospective_dirs = set(RECORD_LOCATIONS["R"])
         by_id: dict[str, list[Path]] = {}
         for path in sorted(self.stage_root.rglob("*.md")):
             relative_parent = path.parent.relative_to(self.stage_root).as_posix()
@@ -733,8 +755,8 @@ class Audit:
             if len(paths) < 2:
                 continue
             parents = {path.parent.relative_to(self.stage_root).as_posix() for path in paths}
-            if parents <= work_item_dirs:
-                continue  # WORK007 owns duplicates within the work-item dirs.
+            if parents <= work_item_dirs or parents <= retrospective_dirs:
+                continue  # WORK007 owns W duplicates; RETRO003 owns R duplicates.
             for path in paths:
                 self.error(
                     "SSOT001",

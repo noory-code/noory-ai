@@ -763,6 +763,45 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("RETRO002", finding_codes(findings))
 
+    def test_retrospective_id_collision_across_present_and_archive_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, item_id="W-0001", status="active")
+            self.write_work_item(root, item_id="W-0002", status="active")
+            self.append_active_index(root, "W-0001")
+            self.append_active_index(root, "W-0002")
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.write_archive_retrospective(
+                root, retro_id="R-0001", work_item="W-0002"
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        collisions = [finding for finding in findings if finding.code == "RETRO003"]
+        self.assertEqual(len(collisions), 1)
+        self.assertEqual(collisions[0].severity, "error")
+        self.assertIn("R-0001", collisions[0].message)
+        self.assertIn("W-0001", collisions[0].message)
+        self.assertIn("W-0002", collisions[0].message)
+        self.assertIn("past/work/archive/retrospectives/R-0001.md", collisions[0].path)
+        self.assertNotIn("SSOT001", finding_codes(findings))
+
+    def test_retrospective_id_may_not_repeat_for_same_work_item(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, item_id="W-0001", status="active")
+            self.append_active_index(root, "W-0001")
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.write_archive_retrospective(
+                root, retro_id="R-0001", work_item="W-0001"
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("RETRO003", finding_codes(findings))
+
     def test_retrospective_for_in_progress_item_is_allowed(self):
         # An R drafted before the item completes is a normal intermediate
         # state, not a contradiction.

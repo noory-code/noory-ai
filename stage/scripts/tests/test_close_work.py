@@ -155,6 +155,36 @@ class CloseWorkTest(unittest.TestCase):
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 1)
 
+    def test_refuses_retrospective_id_archived_for_different_work_item(self):
+        tmp, root = self.make()
+        with tmp:
+            archive_retro = (
+                root / ".stage/past/work/archive/retrospectives/R-00000001.md"
+            )
+            archive_retro.parent.mkdir(parents=True)
+            archive_retro.write_text(
+                "---\nid: R-00000001\nwork_item: W-00000099\n---\n",
+                encoding="utf-8",
+            )
+            marker = root / "check-ran"
+
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                f"{sys.executable} -c \"from pathlib import Path; Path(r'{marker}').touch()\"",
+            )
+            body = (root / ".stage/present/work/items/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("R-00000001", proc.stderr)
+        self.assertIn("W-00000001", proc.stderr)
+        self.assertIn("W-00000099", proc.stderr)
+        self.assertFalse(marker.exists())
+        self.assertIn("status: active", body)
+
     def test_refuses_non_final_promotion(self):
         tmp, root = self.make(promotion="pending")
         with tmp:
