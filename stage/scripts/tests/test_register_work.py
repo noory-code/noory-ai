@@ -14,6 +14,17 @@ ACTIVE = (
     "|---|---|---|---|---|---|---|\n"
 )
 
+BACKLOG_WITH_TRAILING_SECTION = (
+    "# Backlog Index\n\n"
+    "## Current backlog\n\n"
+    "| ID | Title | Kind | Status | Priority | Parent | Item |\n"
+    "|---|---|---|---|---|---|---|\n"
+    "| W-00000001 | Existing | chore | captured | low |  | "
+    "[items/W-00000001.md](items/W-00000001.md) |\n\n"
+    "## Status values\n\n"
+    "- `captured`: captured but not yet organized.\n"
+)
+
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
@@ -190,6 +201,83 @@ class RegisterWorkTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
             active = (root / ".stage/present/work/active.md").read_text(encoding="utf-8")
             self.assertEqual(active.count("[items/W-00000001.md]"), 1)
+
+    def test_active_row_is_inserted_before_trailing_sections(self):
+        tmp, root = self.make()
+        with tmp:
+            active_path = root / ".stage/present/work/active.md"
+            active_path.write_text(
+                ACTIVE + "\n## Status values\n\n- `active`: work in progress.\n",
+                encoding="utf-8",
+            )
+
+            proc = run(root, "--title", "A", "--kind", "chore", "--scope", "x")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            active = active_path.read_text(encoding="utf-8")
+
+        self.assertLess(active.index("| W-00000001 |"), active.index("## Status values"))
+
+    def test_backlog_row_is_inserted_after_empty_table_header(self):
+        tmp, root = self.make()
+        with tmp:
+            backlog = root / ".stage/future/backlog"
+            (backlog / "items").mkdir(parents=True)
+            empty_index = BACKLOG_WITH_TRAILING_SECTION.replace(
+                "| W-00000001 | Existing | chore | captured | low |  | "
+                "[items/W-00000001.md](items/W-00000001.md) |\n",
+                "",
+            )
+            index_path = backlog / "index.md"
+            index_path.write_text(empty_index, encoding="utf-8")
+
+            proc = run(
+                root,
+                "--backlog",
+                "--title",
+                "First work",
+                "--kind",
+                "fix",
+                "--scope",
+                "",
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            index = index_path.read_text(encoding="utf-8")
+
+        separator = index.index("|---|---|---|---|---|---|---|")
+        new_row = index.index("| W-00000001 | First work |")
+        trailing_section = index.index("## Status values")
+        self.assertLess(separator, new_row)
+        self.assertLess(new_row, trailing_section)
+
+    def test_backlog_row_is_inserted_before_trailing_sections(self):
+        tmp, root = self.make()
+        with tmp:
+            backlog = root / ".stage/future/backlog"
+            (backlog / "items").mkdir(parents=True)
+            (backlog / "items/W-00000001.md").write_text(
+                "---\nid: W-00000001\n---\n", encoding="utf-8"
+            )
+            index_path = backlog / "index.md"
+            index_path.write_text(BACKLOG_WITH_TRAILING_SECTION, encoding="utf-8")
+
+            proc = run(
+                root,
+                "--backlog",
+                "--title",
+                "New work",
+                "--kind",
+                "fix",
+                "--scope",
+                "",
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            index = index_path.read_text(encoding="utf-8")
+
+        existing_row = index.index("| W-00000001 | Existing |")
+        new_row = index.index("| W-00000002 | New work |")
+        trailing_section = index.index("## Status values")
+        self.assertLess(existing_row, new_row)
+        self.assertLess(new_row, trailing_section)
 
     def test_refuses_archived_id(self):
         tmp, root = self.make()

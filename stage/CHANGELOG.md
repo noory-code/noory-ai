@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.25.1 — 2026-07-13
+
+Backlog index row placement fix:
+
+- `register_work.py --backlog` now inserts captured work rows inside the Current backlog
+  table, preserving populated tables and any sections that follow them. Direct active-work
+  registration uses the same table-aware insertion path, with regression coverage for empty,
+  populated, and trailing-section index shapes. (W-00000027)
+
 ## 0.25.0 — 2026-07-13
 
 Close/archive ordering guard:

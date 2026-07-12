@@ -80,8 +80,35 @@ def active_row(item_id: str, kind: str, venue: str, purpose: str, owner: str) ->
     return f"| {item_id} | {kind} | {venue} | {summary} | active | {owner} | [items/{item_id}.md](items/{item_id}.md) |"
 
 
+def insert_table_row(text: str, row: str) -> str:
+    """Insert a row after the final data row in the first Markdown table."""
+    lines = text.splitlines()
+    separator_index = next(
+        (
+            index
+            for index, line in enumerate(lines[1:], start=1)
+            if line.lstrip().startswith("|")
+            and lines[index - 1].lstrip().startswith("|")
+            and all(
+                re.fullmatch(r":?-{3,}:?", cell.strip())
+                for cell in line.strip().strip("|").split("|")
+            )
+        ),
+        None,
+    )
+    if separator_index is None:
+        body = text.rstrip("\n")
+        return f"{body}\n{row}\n" if body else f"{row}\n"
+
+    insertion_index = separator_index + 1
+    while insertion_index < len(lines) and lines[insertion_index].lstrip().startswith("|"):
+        insertion_index += 1
+    lines.insert(insertion_index, row)
+    return "\n".join(lines) + "\n"
+
+
 def ensure_active_row(active_path: Path, item_id: str, row: str) -> None:
-    """Append the row if the item is not already indexed. Re-run reconciles:
+    """Insert the row if the item is not already indexed. Re-run reconciles:
     it never duplicates and never rewrites an existing row.
 
     Index membership is eventually-consistent: this read-modify-write can lose a
@@ -91,8 +118,7 @@ def ensure_active_row(active_path: Path, item_id: str, row: str) -> None:
     text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
     if re.search(rf"\(items/{re.escape(item_id)}\.md\)", text):
         return
-    body = text.rstrip("\n")
-    active_path.write_text(f"{body}\n{row}\n", encoding="utf-8")
+    active_path.write_text(insert_table_row(text, row), encoding="utf-8")
 
 
 def create_item_atomic(items_dir: Path, numbers: set[int], content_for) -> str:
@@ -134,8 +160,7 @@ def ensure_backlog_row(index_path: Path, item_id: str, row: str) -> None:
     text = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
     if re.search(rf"\(items/{re.escape(item_id)}\.md\)", text):
         return
-    body = text.rstrip("\n")
-    index_path.write_text(f"{body}\n{row}\n", encoding="utf-8")
+    index_path.write_text(insert_table_row(text, row), encoding="utf-8")
 
 
 def register_backlog_card(stage_root: Path, args) -> int:
