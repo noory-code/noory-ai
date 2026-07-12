@@ -22,6 +22,11 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(
+    0, str(Path(__file__).resolve().parents[1] / "stage-retrospective")
+)
+from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
+
 TERMINAL_STATUSES = {"completed", "rejected"}
 
 
@@ -107,6 +112,16 @@ def archive_one(stage_root: Path, item_id: str, blocking_parents: set[str]) -> s
     status = frontmatter_field(text, "status")
     if status not in TERMINAL_STATUSES:
         return f"{item_id}: ERROR status `{status}` is not completed/rejected"
+
+    try:
+        dirty_paths = dirty_paths_in_scope(stage_root.parent, frontmatter_field(text, "scope"))
+    except RuntimeError as exc:
+        return f"{item_id}: ERROR cannot verify worktree state; refusing to archive: {exc}"
+    if dirty_paths:
+        return (
+            f"{item_id}: ERROR uncommitted path(s) inside scope: {', '.join(dirty_paths)}; "
+            f"required order: {ORDER_CONTRACT}"
+        )
 
     retro_completed = frontmatter_field(text, "retrospective") == "completed"
     if not retro_completed:

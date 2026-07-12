@@ -2,6 +2,9 @@
 
 This document owns the work-completion gate.
 
+Source changes are committed while their authorizing work card is still open. Closing the card
+then appends verification evidence, and archiving is the final step after closure.
+
 ## Gate
 
 After work:

@@ -23,6 +23,7 @@ def run_cli(project_root: Path, *args: str) -> subprocess.CompletedProcess:
 
 ITEM = """---
 id: {wid}
+scope: src/
 status: {status}
 retrospective: {retro}
 retrospective_ref: {ref}
@@ -75,6 +76,70 @@ class ArchiveWorkCliTest(unittest.TestCase):
         (stage / "present/work/review.md").write_text(REVIEW.format(wid=wid), encoding="utf-8")
         (stage / "past/work/archive/index.md").write_text(INDEX, encoding="utf-8")
         return tmp, root
+
+    def init_git(self, root: Path) -> None:
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+
+    def test_refuses_unstaged_dirty_path_inside_scope(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            self.init_git(root)
+            source = root / "src/app.py"
+            source.parent.mkdir(parents=True)
+            source.write_text("print('clean')\n", encoding="utf-8")
+            subprocess.run(["git", "add", "src/app.py"], cwd=root, check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "user.name=Stage Test",
+                    "-c",
+                    "user.email=stage@example.invalid",
+                    "commit",
+                    "-qm",
+                    "test baseline",
+                ],
+                cwd=root,
+                check=True,
+            )
+            source.write_text("print('dirty')\n", encoding="utf-8")
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 1, proc.stderr + proc.stdout)
+            self.assertIn("src/app.py", proc.stdout)
+            self.assertIn(
+                "commit source changes first, then close, then archive", proc.stdout
+            )
+            self.assertTrue((root / ".stage/present/work/items/W-00000001.md").exists())
+
+    def test_allows_dirty_path_outside_scope(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            self.init_git(root)
+            outside = root / "docs/note.md"
+            outside.parent.mkdir(parents=True)
+            outside.write_text("dirty\n", encoding="utf-8")
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+
+    def test_allows_stage_only_changes(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            self.init_git(root)
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+
+    def test_allows_non_git_tree(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
 
     def test_archives_completed_item(self):
         tmp, root = self.make_stage()

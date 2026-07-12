@@ -36,6 +36,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 from stage_paths import load_review_config, resolve_review_command  # noqa: E402
 from stage_work import decision_status, split_scope  # noqa: E402
+from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
 
 OPEN_TO_CLOSE = {"active", "review"}
 PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "rejected"}
@@ -142,6 +143,19 @@ def main() -> int:
         return 0
     if status not in OPEN_TO_CLOSE:
         print(f"{args.item}: status `{status}` is not active/review; refusing to close", file=sys.stderr)
+        return 1
+
+    try:
+        dirty_paths = dirty_paths_in_scope(stage_root.parent, field(text, "scope"))
+    except RuntimeError as exc:
+        print(f"{args.item}: cannot verify worktree state; refusing to close: {exc}", file=sys.stderr)
+        return 1
+    if dirty_paths:
+        print(
+            f"{args.item}: uncommitted path(s) inside scope: {', '.join(dirty_paths)}; "
+            f"required order: {ORDER_CONTRACT}",
+            file=sys.stderr,
+        )
         return 1
 
     if field(text, "retrospective") != "completed":

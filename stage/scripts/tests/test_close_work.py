@@ -12,6 +12,7 @@ CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-retrospective" / "
 ITEM = """---
 id: W-00000001
 kind: chore
+scope: src/
 status: active
 verification: pending
 retrospective: {retro}
@@ -59,6 +60,59 @@ class CloseWorkTest(unittest.TestCase):
         (root / ".stage/present/work/active.md").write_text(ACTIVE, encoding="utf-8")
         (root / ".stage/present/work/review.md").write_text(REVIEW, encoding="utf-8")
         return tmp, root
+
+    def init_git(self, root: Path) -> None:
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+
+    def test_refuses_staged_dirty_path_inside_scope(self):
+        tmp, root = self.make()
+        with tmp:
+            self.init_git(root)
+            source = root / "src/app.py"
+            source.parent.mkdir(parents=True)
+            source.write_text("print('dirty')\n", encoding="utf-8")
+            subprocess.run(["git", "add", "src/app.py"], cwd=root, check=True)
+            marker = root / "check-ran"
+
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                f"{sys.executable} -c \"from pathlib import Path; Path(r'{marker}').touch()\"",
+            )
+
+            self.assertEqual(proc.returncode, 1)
+            self.assertIn("src/app.py", proc.stderr)
+            self.assertIn("commit source changes first, then close, then archive", proc.stderr)
+            self.assertFalse(marker.exists())
+
+    def test_allows_dirty_path_outside_scope(self):
+        tmp, root = self.make()
+        with tmp:
+            self.init_git(root)
+            outside = root / "docs/note.md"
+            outside.parent.mkdir(parents=True)
+            outside.write_text("dirty\n", encoding="utf-8")
+
+            proc = run(root, "W-00000001", "--check", "true")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_allows_stage_only_changes(self):
+        tmp, root = self.make()
+        with tmp:
+            self.init_git(root)
+
+            proc = run(root, "W-00000001", "--check", "true")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_allows_non_git_tree(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(root, "W-00000001", "--check", "true")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
 
     def write_decision(self, root: Path, *, status: str) -> None:
         decisions = root / ".stage/present/work/decisions"

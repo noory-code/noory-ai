@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.25.0 — 2026-07-13
+
+Close/archive ordering guard:
+
+- `close_work.py` and `archive_work.py` now refuse to proceed when git reports staged or
+  unstaged paths inside the item's scope, excluding `.stage/` changes. Non-git projects keep
+  the existing flow, and regression coverage pins in-scope, out-of-scope, Stage-only, and
+  non-git behavior. (W-00000025)
+
 ## 0.24.6 — 2026-07-13
 
 Global retrospective identity validation:
