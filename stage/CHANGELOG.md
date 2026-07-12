@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.19.0 — 2026-07-12
+
+Plugin-owned common operations, project-owned policy (DE-00000002):
+
+- Common operational rules (`after`, `artifacts`, `backlog`, `before`, `documentation`,
+  `during`, `hooks`, `output`, `portability`, `retrospective`, `review`, and the common
+  verification rules) move to the plugin-owned `operations/` directory and are no longer
+  copied into consuming projects; initialization now creates `.stage/operations/` with only
+  the project-owned `verification.md` (`kind -> passed` criteria table).
+- `settings.json` gains `operations_overrides`: the declared list of plugin common docs a
+  project intentionally replaces with its own `.stage/operations/<name>`.
+- `STAGE_SCHEMA_VERSION` bumps to 2. Hooks stay version-agnostic (they never read
+  operations docs); version-dependent behavior lives in the audit and migration.
+- The audit gains ownership-drift checks gated to v2 layouts: `OPS001` (byte-identical
+  stale copy of a plugin doc), `OPS002` (undeclared differing shadow copy), `OPS003`
+  (declared override without a file), `OPS004` (malformed or unknown override declaration).
+  The artifact-catalog sync check now reads the plugin-owned catalog when the project
+  carries no copy (`CATALOG002` if the plugin copy itself is missing).
+- New `scripts/migrate_stage.py` migrates an existing `.stage/` idempotently: deletes
+  common-doc copies byte-identical to the plugin's, keeps and reports differing undeclared
+  copies (never deletes them), rewrites `verification.md` to the table-only form when its
+  prose matches the known legacy template (preserving every project kind row), drops dead
+  `index.md` routing rows, and stamps `schema_version: 2` only once no undeclared drift
+  remains. `--dry-run` reports without changing files.
+
 ## 0.18.0 — 2026-07-12
 
 Optional, field-driven review requirement (design refined with the user; code
