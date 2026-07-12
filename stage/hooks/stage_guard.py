@@ -32,6 +32,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     is_outside_workspace,
     is_source_path,
     is_stage_internal_path,
+    LANGUAGE_TAG_RE,
     load_governance,
     REVIEW_STAGES,
     REVIEW_STRENGTHS,

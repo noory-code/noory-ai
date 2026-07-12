@@ -26,6 +26,12 @@ Stage creates a `.stage/` directory inside the project and connects three axes.
 - Common operational rules are plugin-owned (`operations/` in this plugin) and are not copied into
   projects. `.stage/operations/` holds only project policy: the `kind -> passed` verification
   criteria plus any overrides declared in `settings.json` `operations_overrides`.
+- Human-readable `.stage/` documents follow the project's declared language (`settings.json`
+  `language`, default `en`; `ko` templates are bundled, other tags fall back to English while
+  still governing generated records). Machine-readable tokens — IDs, paths, frontmatter keys,
+  enum values, record section headings — stay language-neutral, so hooks and the audit parse
+  every language identically. The Stage setting owns `.stage/` document language; host
+  instructions own everything outside `.stage/`.
 
 ## Hooks
 

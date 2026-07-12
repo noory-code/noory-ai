@@ -18,10 +18,18 @@ Create or repair the project's `.stage/` structure.
 Prefer the cross-platform helper.
 
 ```bash
-python3 stage/scripts/init_stage.py --project-root <project-root>
+python3 stage/scripts/init_stage.py --project-root <project-root> [--language <tag>]
 ```
 
 When running from an installed plugin, resolve the script relative to the plugin root.
+
+`--language` sets the human-readable Stage document language (lowercase IETF-style tag, e.g.
+`en`, `ko`; default `en`). Bundled locale templates are used where available and other files fall
+back to English; the tag is stamped into `settings.json` `language` so records generated later
+follow it too. Machine-readable fields (IDs, paths, frontmatter keys, enum values, record section
+headings) stay language-neutral in every language. Ask the user which language their Stage
+documents should use when their conversation language and the project's instruction language
+differ.
 
 If the helper is unavailable, create the same structure as `templates/project-stage/`.
 

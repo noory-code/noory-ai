@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.20.0 — 2026-07-12
+
+Human-readable Stage documents in the user's language (DE-00000003):
+
+- `settings.json` gains `language` (lowercase IETF-style tag, e.g. `en`, `ko`; missing key
+  defaults to `en` for full backward compatibility). The audit reports a malformed value
+  (`LANG001`) and never attempts semantic language detection; hooks fall open to English.
+- `init_stage.py --language <tag>` initializes with bundled locale templates
+  (`templates/locales/<tag>/` overlays the canonical English tree file-by-file, English
+  fallback) and stamps the tag into the created `settings.json`. Korean (`ko`) is bundled:
+  40 translated prose files guarded by a structural parity test (frontmatter keys, backtick
+  machine tokens, heading counts, and token-table first cells must match the canonical
+  templates).
+- SessionStart injects a language directive for non-English projects: human-readable Stage
+  content follows the configured language while IDs, paths, frontmatter keys, enum values,
+  work kinds, and record section headings stay language-neutral. Record-creation skills need
+  no per-skill changes.
+- The Stop-hook session summary localizes its labels (`en`, `ko`; unknown tags fall back to
+  English).
+- Boundary rule: the Stage setting owns `.stage/` document language; host instructions own
+  everything outside `.stage/`. Switching the setting affects newly generated content only.
+
 ## 0.19.0 — 2026-07-12
 
 Plugin-owned common operations, project-owned policy (DE-00000002):

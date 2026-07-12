@@ -989,6 +989,17 @@ class Audit:
                 "harness was initialized by a different plugin generation.",
                 settings_path,
             )
+        language = settings.get("language")
+        if language is not None and (
+            not isinstance(language, str)
+            or not stage_guard.LANGUAGE_TAG_RE.match(language)
+        ):
+            self.warning(
+                "LANG001",
+                f"settings.json language `{language}` is not a lowercase IETF-style tag "
+                "(e.g. `en`, `ko`, `pt-br`); hooks fall back to English.",
+                settings_path,
+            )
         governance = stage_guard.load_governance(self.stage_root)
         legacy_keys = [key for key in ("extensions", "paths") if isinstance(governance.get(key), list) and governance.get(key)]
         if legacy_keys:

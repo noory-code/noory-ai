@@ -1246,6 +1246,112 @@ class StageAuditTest(unittest.TestCase):
         self.assertIn("CATALOG001", codes)
 
 
+class LanguageSettingAuditTest(unittest.TestCase):
+    def init_stage(self, root: Path) -> None:
+        init_stage.copy_templates(root, False)
+
+    def set_language(self, root: Path, value) -> None:
+        settings_path = root / ".stage" / "settings.json"
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        data["language"] = value
+        settings_path.write_text(json.dumps(data), encoding="utf-8")
+
+    def lang_findings(self, root: Path):
+        return [f for f in audit_stage.Audit(root).run() if f.code == "LANG001"]
+
+    def test_valid_and_missing_language_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.assertEqual([], self.lang_findings(root))
+            self.set_language(root, "ko")
+            self.assertEqual([], self.lang_findings(root))
+
+    def test_malformed_language_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            for bad in ("KO", "", 3, True, ["ko"]):
+                with self.subTest(value=bad):
+                    self.set_language(root, bad)
+                    findings = self.lang_findings(root)
+                    self.assertEqual(["warning"], [f.severity for f in findings])
+
+
+class InitLanguageTest(unittest.TestCase):
+    def test_default_init_is_english_with_explicit_setting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            init_stage.copy_templates(root, False)
+            settings = json.loads(
+                (root / ".stage" / "settings.json").read_text(encoding="utf-8")
+            )
+            index = (root / ".stage" / "index.md").read_text(encoding="utf-8")
+
+        self.assertEqual("en", settings["language"])
+        self.assertIn("# Stage Index", index)
+
+    def test_korean_init_localizes_prose_and_keeps_machine_tokens(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            init_stage.copy_templates(root, False, language="ko")
+            stage_root = root / ".stage"
+            settings = json.loads((stage_root / "settings.json").read_text(encoding="utf-8"))
+            index = (stage_root / "index.md").read_text(encoding="utf-8")
+            verification = (stage_root / "operations" / "verification.md").read_text(
+                encoding="utf-8"
+            )
+            template = (stage_root / "present" / "work" / "items" / "_template.md").read_text(
+                encoding="utf-8"
+            )
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual("ko", settings["language"])
+        self.assertEqual(2, settings["schema_version"])
+        self.assertIn("# Stage 인덱스", index)
+        self.assertIn("`past/canon/principles.md`", index)
+        # kind tokens stay language-neutral in the localized criteria table.
+        self.assertIn("| planning |", verification)
+        # Record skeletons are locale-invariant machine contracts.
+        self.assertIn("## Purpose", template)
+        self.assertEqual([], [f for f in findings if f.severity == "error"])
+        self.assertEqual(set(), finding_codes(findings) & {"LANG001", "SCHEMA001"})
+
+    def test_unbundled_locale_falls_back_to_english_but_keeps_setting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            init_stage.copy_templates(root, False, language="fr")
+            stage_root = root / ".stage"
+            settings = json.loads((stage_root / "settings.json").read_text(encoding="utf-8"))
+            index = (stage_root / "index.md").read_text(encoding="utf-8")
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual("fr", settings["language"])
+        self.assertIn("# Stage Index", index)
+        self.assertEqual([], [f for f in findings if f.severity == "error"])
+
+    def test_file_sets_are_identical_across_languages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root_en = Path(tmp) / "en"
+            root_ko = Path(tmp) / "ko"
+            root_en.mkdir()
+            root_ko.mkdir()
+            init_stage.copy_templates(root_en, False)
+            init_stage.copy_templates(root_ko, False, language="ko")
+            files_en = sorted(
+                p.relative_to(root_en).as_posix()
+                for p in (root_en / ".stage").rglob("*")
+                if p.is_file()
+            )
+            files_ko = sorted(
+                p.relative_to(root_ko).as_posix()
+                for p in (root_ko / ".stage").rglob("*")
+                if p.is_file()
+            )
+
+        self.assertEqual([p.replace("en/", "ko/", 1) for p in files_en], files_ko)
+
+
 class OperationsOwnershipTest(unittest.TestCase):
     """DE-00000002: common operations docs are plugin-owned; the project
     carries only its policy surface plus declared overrides."""

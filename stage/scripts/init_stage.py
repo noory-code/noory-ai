@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -11,6 +13,11 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
+LOCALE_ROOT = PLUGIN_ROOT / "templates" / "locales"
+# Same contract as stage_paths.LANGUAGE_TAG_RE; duplicated literal only because
+# this script must stay runnable standalone before any .stage exists.
+LANGUAGE_TAG_RE = re.compile(r"^[a-z]{2,8}(-[a-z0-9]{2,8})*$")
+DEFAULT_LANGUAGE = "en"
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,10 +32,30 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Replace existing .stage files with template files.",
     )
+    parser.add_argument(
+        "--language",
+        default=DEFAULT_LANGUAGE,
+        help=(
+            "Human-readable Stage document language (lowercase IETF-style tag, e.g. en, ko). "
+            "Locale template files are used when bundled; other files fall back to English. "
+            "Machine-readable fields stay language-neutral."
+        ),
+    )
     return parser.parse_args()
 
 
-def copy_templates(project_root: Path, force: bool) -> tuple[list[Path], list[Path]]:
+def template_source(relative_path: Path, language: str) -> Path:
+    """The canonical English template, or its locale overlay when bundled."""
+    if language != DEFAULT_LANGUAGE:
+        candidate = LOCALE_ROOT / language / relative_path
+        if candidate.is_file():
+            return candidate
+    return TEMPLATE_ROOT / relative_path
+
+
+def copy_templates(
+    project_root: Path, force: bool, language: str = DEFAULT_LANGUAGE
+) -> tuple[list[Path], list[Path]]:
     if not TEMPLATE_ROOT.exists():
         raise FileNotFoundError(f"Template root not found: {TEMPLATE_ROOT}")
 
@@ -48,8 +75,14 @@ def copy_templates(project_root: Path, force: bool) -> tuple[list[Path], list[Pa
             skipped.append(target_path)
             continue
 
-        shutil.copyfile(template_path, target_path)
+        shutil.copyfile(template_source(relative_path, language), target_path)
         created.append(target_path)
+
+    settings_path = stage_root / "settings.json"
+    if settings_path in created and language != DEFAULT_LANGUAGE:
+        settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        settings["language"] = language
+        settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
 
     return created, skipped
 
@@ -64,10 +97,15 @@ def main() -> None:
         raise FileNotFoundError(f"Project root not found: {project_root}")
     if not project_root.is_dir():
         raise NotADirectoryError(f"Project root is not a directory: {project_root}")
+    if not LANGUAGE_TAG_RE.match(args.language):
+        raise ValueError(
+            f"Invalid language tag: {args.language!r} (expected e.g. 'en', 'ko', 'pt-br')"
+        )
 
-    created, skipped = copy_templates(project_root, args.force)
+    created, skipped = copy_templates(project_root, args.force, args.language)
 
     print(f"Stage root: {project_root / '.stage'}")
+    print(f"Language: {args.language}")
     print(f"Created or updated files: {len(created)}")
     print(f"Preserved existing files: {len(skipped)}")
     for path in created:

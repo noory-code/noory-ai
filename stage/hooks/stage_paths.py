@@ -205,6 +205,26 @@ def load_governance(stage_root: Path) -> dict[str, Any]:
     return governance if isinstance(governance, dict) else {}
 
 
+# Human-readable Stage document language (DE-00000003). Machine tokens (IDs,
+# paths, frontmatter keys, enum values, record section headings) never follow
+# it. A missing or malformed value falls open to English so hooks keep working
+# on any settings state; only the audit reports the malformation.
+LANGUAGE_TAG_RE = re.compile(r"^[a-z]{2,8}(-[a-z0-9]{2,8})*$")
+DEFAULT_LANGUAGE = "en"
+
+
+def load_language(stage_root: Path) -> str:
+    settings_path = stage_root / "settings.json"
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return DEFAULT_LANGUAGE
+    language = data.get("language") if isinstance(data, dict) else None
+    if isinstance(language, str) and LANGUAGE_TAG_RE.match(language):
+        return language
+    return DEFAULT_LANGUAGE
+
+
 # Review strength is a named level the PROJECT binds to a real, verdict-emitting
 # command (in settings.json `review.strengths`). The harness fixes no command —
 # like `venue`, it ships the vocabulary and the project declares the behavior.

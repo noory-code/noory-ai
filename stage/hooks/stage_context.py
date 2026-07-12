@@ -14,7 +14,11 @@ _HOOKS_DIR = str(Path(__file__).resolve().parent)
 if _HOOKS_DIR not in sys.path:
     sys.path.insert(0, _HOOKS_DIR)
 
-from stage_paths import normalize_path_text  # noqa: E402  (after sys.path bootstrap)
+from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
+    DEFAULT_LANGUAGE,
+    load_language,
+    normalize_path_text,
+)
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     WORK_OPEN_STATUSES,
     item_is_open,
@@ -68,6 +72,16 @@ def session_context(workspace_root: Path) -> str:
         "O/Q/A/K state `present/state/*` · B backlog `future/backlog/items` · P proposal · M milestone. "
         "Full catalog: `operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
     ]
+
+    language = load_language(stage_root)
+    if language != DEFAULT_LANGUAGE:
+        parts.append(
+            f"- Stage document language: `{language}`. Write human-readable Stage content "
+            "(titles after the ID, prose bodies, index labels) in that language. Keep machine "
+            "tokens exactly as templates declare: IDs, paths, frontmatter keys and enum values, "
+            "work kinds, venue and principle names, and record section headings "
+            "(`## Purpose`, `## Verification`, ...)."
+        )
 
     snippets: list[tuple[str, Path | None]] = [
         ("Current state", stage_root / "present" / "state" / "current.md"),
@@ -393,16 +407,40 @@ def selected_backlog_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD
     return lines
 
 
+# Session-summary labels per language tag (DE-00000003). The values the labels
+# carry (IDs, timestamps, blocker text) stay as produced. Unknown tags fall
+# back to English.
+SUMMARY_LABELS = {
+    "en": {
+        "title": "# Stage Session Summary",
+        "end_time": "End time",
+        "open_work": "Open work",
+        "blockers": "Completion blockers",
+        "handoff": "Handoff condition: open work items carry current status and next actions",
+        "none": "none",
+    },
+    "ko": {
+        "title": "# Stage 세션 요약",
+        "end_time": "종료 시각",
+        "open_work": "진행 중 작업",
+        "blockers": "완료 차단 요소",
+        "handoff": "인계 조건: 진행 중 작업 항목이 현재 상태와 다음 행동을 담고 있음",
+        "none": "없음",
+    },
+}
+
+
 def summarize_stage(stage_root: Path) -> str:
     items = load_work_items(stage_root)
     open_items = [item.item_id for item in items if item_is_open(item)]
     blockers = stage_completion_blockers(stage_root.parent)
-    open_text = ", ".join(open_items) if open_items else "none"
-    blocker_text = " / ".join(blockers) if blockers else "none"
+    labels = SUMMARY_LABELS.get(load_language(stage_root), SUMMARY_LABELS["en"])
+    open_text = ", ".join(open_items) if open_items else labels["none"]
+    blocker_text = " / ".join(blockers) if blockers else labels["none"]
     return (
-        "# Stage Session Summary\n"
-        f"- End time: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}\n"
-        f"- Open work: {open_text}\n"
-        f"- Completion blockers: {blocker_text}\n"
-        "- Handoff condition: open work items carry current status and next actions\n"
+        f"{labels['title']}\n"
+        f"- {labels['end_time']}: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}\n"
+        f"- {labels['open_work']}: {open_text}\n"
+        f"- {labels['blockers']}: {blocker_text}\n"
+        f"- {labels['handoff']}\n"
     )
