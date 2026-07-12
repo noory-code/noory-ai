@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.16.0 — 2026-07-12
+
+Execution scripts and a real field-validity gate (design and code both
+red-teamed before landing):
+
+- New `stage/skills/stage-work/register_work.py` — scaffold a work item and its
+  `active.md` link-row after the human confirms scope. Ids are allocated with
+  `open(…, "x")` (O_EXCL) so two concurrent windows never take the same number;
+  re-runs reconcile the index instead of duplicating.
+- New `stage/skills/stage-retrospective/close_work.py` — close a work item by
+  RUNNING its `--check` commands: `verification: passed` is set only when they
+  pass, with their (bounded, fenced) output recorded as evidence — passed becomes
+  a byproduct of execution, not a hand-typed claim. Also requires a completed
+  retrospective and a FINAL promotion decision (what the commit gate and audit
+  demand), and runs checks in the project root. Honest scope: it verifies the
+  checks ran, not that they were sufficient.
+- New PreToolUse enum-validity gate: a work-item write whose projected
+  `status`/`verification`/`retrospective`/`promotion` value is invalid (e.g. the
+  `retrospective: not_required` typo) is now blocked at write time, reusing the
+  hierarchy projection. The gate and `audit_stage.py` share one owning definition
+  of the valid sets (SSOT) in `stage_work.py`.
+
 ## 0.15.0 — 2026-07-12
 
 Skill cohesion and triggering:

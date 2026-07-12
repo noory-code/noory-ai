@@ -58,8 +58,12 @@ from stage_git import (  # noqa: E402  (after sys.path bootstrap)
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     AUDIT_FIELD_DEFAULTS,
     PROMOTION_FINAL,
+    PROMOTION_VALUES,
     RETROSPECTIVE_DONE,
+    RETROSPECTIVE_VALUES,
+    STATUS_VALUES,
     VERIFICATION_DONE,
+    VERIFICATION_VALUES,
     WORK_FINAL_STATUSES,
     WORK_OPEN_STATUSES,
     WorkItem,
@@ -86,6 +90,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     split_scope,
     stage_completion_blockers,
     staged_files,
+    work_item_enum_error,
     work_item_relative,
 )
 from stage_runtime import (  # noqa: E402  (after sys.path bootstrap)
@@ -414,6 +419,19 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
     return ""
 
 
+def enum_validity_blocker(workspace_root: Path, payload: dict[str, Any], name: str) -> str:
+    """Reject a work-item write whose PROJECTED frontmatter carries an invalid
+    status/verification/retrospective/promotion value — the same enums the audit
+    checks, caught before the bad value lands instead of after. Reuses the
+    hierarchy projection (disk + this call's edits), so a patch that only touches
+    the body is judged on the merged result, not the raw fragment."""
+    for _relative, projected in hierarchy_item_targets(workspace_root, payload, name):
+        error = work_item_enum_error(projected)
+        if error:
+            return error
+    return ""
+
+
 def mutation_targets(
     payload: dict[str, Any], name: str, workspace_root: Path
 ) -> tuple[str, list[str], list[str]]:
@@ -565,6 +583,9 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
 
     if stage_root.exists() and name in write_tools:
         blocker = hierarchy_blocker(workspace_root, payload, name)
+        if blocker:
+            return deny(blocker)
+        blocker = enum_validity_blocker(workspace_root, payload, name)
         if blocker:
             return deny(blocker)
         # Write/Edit/MultiEdit are CONTENT writes — they follow a symlink target

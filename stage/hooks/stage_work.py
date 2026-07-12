@@ -33,6 +33,20 @@ WORK_FINAL_STATUSES = {"completed", "archived", "rejected"}
 VERIFICATION_DONE = {"passed", "not_required"}
 RETROSPECTIVE_DONE = {"completed"}
 PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "rejected"}
+
+# Full valid enum sets: open/final plus the single in-progress value. The audit
+# derives the identical sets; the PreToolUse enum gate imports THESE so a write
+# the gate allows is one the audit accepts (one owning definition — SSOT).
+STATUS_VALUES = WORK_OPEN_STATUSES | WORK_FINAL_STATUSES
+VERIFICATION_VALUES = VERIFICATION_DONE | {"pending"}
+RETROSPECTIVE_VALUES = RETROSPECTIVE_DONE | {"pending"}
+PROMOTION_VALUES = PROMOTION_FINAL | {"pending"}
+_WORK_ENUM_FIELDS = (
+    ("status", STATUS_VALUES),
+    ("verification", VERIFICATION_VALUES),
+    ("retrospective", RETROSPECTIVE_VALUES),
+    ("promotion", PROMOTION_VALUES),
+)
 WORK_ITEMS_PREFIX = ".stage/present/work/items/"
 
 
@@ -427,6 +441,23 @@ def frontmatter_field_from_text(text: str, field: str) -> str:
     # `source:` read back as parent="source:" — a false hierarchy deny).
     match = re.search(rf"^{re.escape(field)}:[ \t]*(.*)$", text, re.MULTILINE)
     return match.group(1).strip().strip("'\"") if match else ""
+
+
+def work_item_enum_error(text: str) -> str:
+    """A non-empty work-item enum field whose value is invalid, or '' if all valid.
+
+    Empty fields are not flagged (absence is the audit's and other gates' concern);
+    this catches a wrong VALUE — the `retrospective: not_required` / `status: done`
+    class of typo that the audit would only surface later, after the write landed.
+    """
+    for field_name, valid in _WORK_ENUM_FIELDS:
+        value = frontmatter_field_from_text(text, field_name)
+        if value and value not in valid:
+            return (
+                f"Stage enum gate violation: work item `{field_name}: {value}` is not one of "
+                f"{sorted(valid)}."
+            )
+    return ""
 
 
 def read_existing_text(workspace_root: Path, relative: str) -> str:

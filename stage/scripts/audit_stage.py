@@ -28,10 +28,12 @@ import stage_records  # noqa: E402
 from stage_records import AuditedItem, RecordGraph  # noqa: E402
 
 
-STATUS_VALUES = stage_guard.WORK_OPEN_STATUSES | stage_guard.WORK_FINAL_STATUSES
-VERIFICATION_VALUES = stage_guard.VERIFICATION_DONE | {"pending"}
-RETROSPECTIVE_VALUES = stage_guard.RETROSPECTIVE_DONE | {"pending"}
-PROMOTION_VALUES = stage_guard.PROMOTION_FINAL | {"pending"}
+# One owning definition in stage_work (re-exported through stage_guard), shared
+# by the audit and the PreToolUse enum gate so both accept exactly the same set.
+STATUS_VALUES = stage_guard.STATUS_VALUES
+VERIFICATION_VALUES = stage_guard.VERIFICATION_VALUES
+RETROSPECTIVE_VALUES = stage_guard.RETROSPECTIVE_VALUES
+PROMOTION_VALUES = stage_guard.PROMOTION_VALUES
 DECISION_STATUS_VALUES = {"open", "decided", "promoted"}
 BACKLOG_STATUS_VALUES = {"captured", "triaged", "ready", "selected", "deferred", "rejected"}
 REQUIRED_WORK_FIELDS = (
