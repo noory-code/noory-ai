@@ -3,9 +3,9 @@ id: B-00000003
 title: Make AI roles drive Stage work routing and handoffs
 kind: feature
 parent:
-status: triaged
+status: selected
 priority:
-realized_by:
+realized_by: W-00000014
 ---
 
 # B-00000003 Make AI roles drive Stage work routing and handoffs
