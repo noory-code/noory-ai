@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15.0 — 2026-07-12
+
+Skill cohesion and triggering:
+
+- `archive_work.py` now lives inside its skill at
+  `stage/skills/stage-archive/archive_work.py` — a single-owner script belongs with
+  the skill that documents it. Shared infrastructure (`audit_stage.py`,
+  `promote_intent.py`, `init_stage.py`) stays in `scripts/` because several skills
+  and the hook use it.
+- Sharpened the `stage-work`, `stage-archive`, and `stage-handoff` trigger
+  descriptions to state a concrete "when" and push against undertriggering.
+
 ## 0.14.0 — 2026-07-12
 
 Self-service lifecycle skills so mechanical Stage flows are executed, not

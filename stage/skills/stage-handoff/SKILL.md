@@ -1,6 +1,6 @@
 ---
 name: stage-handoff
-description: Hand work off between LLM windows or sessions with minimal human effort. Use when ending a session, or when a work item should be carried out on a different execution surface (e.g. planning window to implementation window). Makes the venue routing and next action explicit so the human just opens the indicated window.
+description: Hand Stage work off between LLM windows or sessions with minimal human effort. Use this when ending a session, writing a handoff, or when a work item should move to a different execution surface (e.g. a planning window handing implementation to a Codex window) — anytime work needs to pass between agents or be picked up later. Makes the venue routing and the next action explicit so the human just opens the indicated window.
 ---
 
 # Stage Handoff

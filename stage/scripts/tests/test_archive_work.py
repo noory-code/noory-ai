@@ -8,7 +8,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-CLI_PATH = Path(__file__).resolve().parents[1] / "archive_work.py"
+# archive_work.py is owned by (and lives inside) the stage-archive skill; the
+# test stays in the central suite so one `unittest discover` covers everything.
+CLI_PATH = Path(__file__).resolve().parents[2] / "skills" / "stage-archive" / "archive_work.py"
 
 
 def run_cli(project_root: Path, *args: str) -> subprocess.CompletedProcess:

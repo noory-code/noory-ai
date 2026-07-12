@@ -1,6 +1,6 @@
 ---
 name: stage-work
-description: Register a Stage work item before starting work. Use when beginning any change to governed files — plan the work, confirm scope with the human, then create the item and its active.md row. Registering first is required: governed writes are denied without an open work item whose scope covers them.
+description: Register a Stage work item before you touch governed files. Use this whenever you start a task, feature, fix, refactor, or doc change in a project that has a `.stage/` harness — plan the work, confirm scope with the human, then create the item and its `active.md` row. Registering first is not optional: the hook denies governed writes when no open work item's `scope` covers them, so reach for this at the very start of any Stage work, even if the user just says "let's build X" without mentioning Stage.
 ---
 
 # Stage Work Registration

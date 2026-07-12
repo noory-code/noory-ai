@@ -1,6 +1,6 @@
 ---
 name: stage-archive
-description: Archive completed or rejected Stage work items into past/work/archive/. Use when the review queue holds items whose verification, retrospective, and promotion decision are all closed and they should leave the current flow. Archiving needs only an archive intent (or the archive_work.py fast path) — never a new work item.
+description: Archive completed or rejected Stage work items out of the review queue into past/work/archive/. Use this whenever review.md holds items whose verification, retrospective, and promotion decision are all closed and you want to drain them — or when the user asks to clean up, tidy, or archive the Stage work queue. Archiving needs only an archive intent (the archive_work.py fast path handles it) — never a new work item, a mistake that has bitten this project before.
 ---
 
 # Stage Archive
@@ -24,10 +24,13 @@ work being archived already has one, and a second would duplicate the record (SS
 
 ## Fast path (default)
 
+The archiver lives beside this skill (`${CLAUDE_PLUGIN_ROOT}/skills/stage-archive/archive_work.py`;
+in this repo, `stage/skills/stage-archive/archive_work.py`).
+
 ```bash
-python3 stage/scripts/archive_work.py --project-root <project-root> W-00000001 [W-00000002 ...]
+python3 stage/skills/stage-archive/archive_work.py --project-root <project-root> W-00000001 [W-00000002 ...]
 # or archive every completed item currently in review.md:
-python3 stage/scripts/archive_work.py --project-root <project-root> --all-completed
+python3 stage/skills/stage-archive/archive_work.py --project-root <project-root> --all-completed
 ```
 
 The script validates each precondition, copies the item to `archive/items/<id>.md` with
