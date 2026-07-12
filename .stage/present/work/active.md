@@ -6,4 +6,3 @@ Work bodies live in `items/`. This document manages only current status and link
 
 | Work | Kind | Venue | Purpose | Status | Owner | Item |
 |---|---|---|---|---|---|---|
-| W-00000021 | fix | codex | archive_work.py review-row removal misses hand-written rows | active | codex | [items/W-00000021.md](items/W-00000021.md) |
