@@ -1,0 +1,26 @@
+{
+  "schema_version": 4,
+  "language": "en",
+  "operations_overrides": [],
+  "venue_routing": {},
+  "governance": {
+    "exclude_paths": [],
+    "exclude_extensions": []
+  },
+  "extra_write_tools": [],
+  "review": {
+    "strengths": {
+      "off": null,
+      "light": "",
+      "standard": "",
+      "deep": "",
+      "red-team": ""
+    },
+    "stages": {
+      "design": "off",
+      "implementation": "off",
+      "promotion": "off"
+    }
+  }
+}
+

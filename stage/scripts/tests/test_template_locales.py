@@ -13,6 +13,8 @@ from pathlib import Path
 PLUGIN_ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
 LOCALE_ROOT = PLUGIN_ROOT / "templates" / "locales"
+V4_TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "project-stage"
+V4_KO_ROOT = PLUGIN_ROOT / "templates" / "v4" / "locales" / "ko"
 
 # Files whose markdown-table first column is a machine token set.
 TOKEN_TABLE_FILES = {
@@ -143,6 +145,57 @@ class TemplateLocaleParityTest(unittest.TestCase):
         for relative in required:
             with self.subTest(file=str(relative)):
                 self.assertTrue((ko / relative).is_file(), f"ko overlay missing {relative}")
+
+
+class TemplateV4LocaleParityTest(unittest.TestCase):
+    def locale_files(self) -> list[Path]:
+        return [path for path in sorted(V4_KO_ROOT.rglob("*")) if path.is_file()]
+
+    def test_v4_locale_files_shadow_only_canonical_prose_files(self):
+        for path in self.locale_files():
+            relative = path.relative_to(V4_KO_ROOT)
+            with self.subTest(file=str(relative)):
+                self.assertTrue(
+                    (V4_TEMPLATE_ROOT / relative).is_file(),
+                    f"{relative} has no canonical counterpart",
+                )
+                self.assertNotEqual("_template.md", relative.name)
+                self.assertEqual(".md", relative.suffix)
+
+    def test_v4_locale_files_preserve_structure_and_machine_tokens(self):
+        token_tables = {
+            Path("operations/verification.md"),
+            Path("official/canon/principles.md"),
+        }
+        for path in self.locale_files():
+            relative = path.relative_to(V4_KO_ROOT)
+            canonical = (V4_TEMPLATE_ROOT / relative).read_text(encoding="utf-8")
+            localized = path.read_text(encoding="utf-8")
+            with self.subTest(file=str(relative)):
+                self.assertEqual(frontmatter_keys(canonical), frontmatter_keys(localized))
+                self.assertEqual(backtick_tokens(canonical), backtick_tokens(localized))
+                self.assertEqual(heading_count(canonical), heading_count(localized))
+                if relative in token_tables:
+                    self.assertEqual(table_first_cells(canonical), table_first_cells(localized))
+
+    def test_v4_locale_principles_keep_audit_markers(self):
+        text = (V4_KO_ROOT / "official/canon/principles.md").read_text(encoding="utf-8")
+        for marker in CANON_MARKERS:
+            with self.subTest(marker=marker):
+                self.assertIn(marker, text)
+
+    def test_v4_ko_locale_covers_the_reader_facing_surface(self):
+        required = [
+            path.relative_to(V4_TEMPLATE_ROOT)
+            for path in sorted(V4_TEMPLATE_ROOT.rglob("*.md"))
+            if path.name != "_template.md"
+        ]
+        for relative in required:
+            with self.subTest(file=str(relative)):
+                self.assertTrue(
+                    (V4_KO_ROOT / relative).is_file(),
+                    f"ko overlay missing {relative}",
+                )
 
 
 if __name__ == "__main__":

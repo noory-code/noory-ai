@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.26.0 — 2026-07-13
+
+Dormant v4 template tree, no behavior change:
+
+- Added the dormant v4 template tree and Korean prose overlays, including Theme and Milestone
+  templates and family indexes. This is a files-only addition with no behavior change; v3
+  initialization and consumers remain active and unchanged. (W-00000030)
+
 ## 0.25.3 — 2026-07-13
 
 Schema v4 design amendment (design only — no behavior change):
