@@ -51,6 +51,10 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     stage_relative_forms,
 )
 import stage_topology  # noqa: E402
+from stage_roadmap_gate import (  # noqa: E402
+    projected_closure_promotion_blocker,
+    reattribution_blocker,
+)
 from stage_shell import (  # noqa: E402  (after sys.path bootstrap)
     _restore_sentinels,
     command_deletes_stage,
@@ -66,7 +70,6 @@ from stage_git import (  # noqa: E402  (after sys.path bootstrap)
 )
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     AUDIT_FIELD_DEFAULTS,
-    DECISION_FINAL_STATUSES,
     VENUE_EXCEPTION_AUTHORIZATION,
     VENUE_SPLIT_TOKEN,
     decision_status,
@@ -650,6 +653,11 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         blocker = enum_validity_blocker(workspace_root, payload, name)
         if blocker:
             return deny(blocker)
+        blocker = reattribution_blocker(
+            workspace_root, payload, name, shell_write_targets
+        )
+        if blocker:
+            return deny(blocker)
         # Write/Edit/MultiEdit are CONTENT writes — they follow a symlink target
         # and modify the dereferenced file (not the entry). apply_patch mixes
         # add/update/delete, so it stays entry-based (best-effort). A
@@ -662,7 +670,26 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         if blocker:
             return deny(blocker)
 
+    if stage_root.exists():
+        projected_targets = (
+            explicit_paths if name in write_tools else shell_write_targets
+        )
+        blocker = projected_closure_promotion_blocker(
+            workspace_root,
+            payload,
+            name,
+            projected_targets,
+            shell_write_targets,
+        )
+        if blocker:
+            return deny(blocker)
+
     if stage_root.exists() and name in SHELL_TOOLS and command:
+        blocker = reattribution_blocker(
+            workspace_root, payload, name, shell_write_targets
+        )
+        if blocker:
+            return deny(blocker)
         blocker = source_registration_blocker(workspace_root, shell_write_targets)
         if blocker:
             return deny(blocker)

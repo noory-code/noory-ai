@@ -49,6 +49,24 @@ def set_frontmatter_field(text: str, field: str, value: str) -> str:
     )
 
 
+def set_or_insert_frontmatter_field(
+    text: str, field: str, value: str, *, after: str
+) -> str:
+    updated = set_frontmatter_field(text, field, value)
+    if updated != text or re.search(rf"^{re.escape(field)}:", text, re.MULTILINE):
+        return updated
+    inserted, count = re.subn(
+        rf"^({re.escape(after)}:[^\n]*\n)",
+        rf"\g<1>{field}: {value}\n",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if count != 1:
+        raise ValueError(f"work card has no `{after}:` field")
+    return inserted
+
+
 def table_rows(text: str) -> list[str]:
     return [line for line in text.splitlines() if line.strip().startswith("|")]
 
@@ -193,7 +211,16 @@ def archive_one(stage_root: Path, item_id: str, blocking_parents: set[str]) -> s
     # Move the item (status -> archived) and its retrospective (verbatim).
     archive_item.parent.mkdir(parents=True, exist_ok=True)
     archive_retro.parent.mkdir(parents=True, exist_ok=True)
-    archive_item.write_text(set_frontmatter_field(text, "status", "archived"), encoding="utf-8")
+    archived_text = set_frontmatter_field(text, "status", "archived")
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        disposition = "accepted" if status == "completed" else "rejected"
+        archived_text = set_or_insert_frontmatter_field(
+            archived_text,
+            "terminal_disposition",
+            disposition,
+            after="status",
+        )
+    archive_item.write_text(archived_text, encoding="utf-8")
     archive_retro.write_text(present_retro.read_text(encoding="utf-8"), encoding="utf-8")
 
     # Record the terminal status the `archived` overwrite erases, then drop the

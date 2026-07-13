@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create and inspect schema-v4 roadmap records and open milestone pursuit."""
+"""Create and inspect schema-v4 roadmap records and milestone transitions."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ for import_root in (HOOK_ROOT, SCRIPT_ROOT):
         sys.path.insert(0, str(import_root))
 
 import stage_roadmap  # noqa: E402
+import stage_roadmap_closure  # noqa: E402
 import stage_topology  # noqa: E402
 from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
 from stage_work import parse_frontmatter, split_scope  # noqa: E402
@@ -250,6 +251,64 @@ def _decision_content(
     return text
 
 
+def _closure_decision_content(
+    template: str,
+    decision_id: str,
+    milestone: stage_roadmap.RoadmapRecord,
+    predecessor: str,
+    entries: tuple[stage_roadmap_closure.ClosureBasisEntry, ...],
+    attestation: str,
+) -> str:
+    title = f"Close {milestone.record_id} {milestone.title}".strip()
+    text = template.replace("DE-00000000 Title", f"{decision_id} {title}")
+    text = _set_field(text, "id", decision_id)
+    text = _set_field(text, "status", "decided")
+    text, count = re.subn(
+        r"^work_item:[^\n]*$",
+        f"roadmap_item: {milestone.record_id}\n"
+        "transition: closure\n"
+        f"predecessor: {predecessor}\n"
+        "supersedes:",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if count != 1:
+        raise ValueError("decision template has no `work_item:` anchor")
+    sections = {
+        "Question": f"Has {milestone.record_id} met its completion criteria?",
+        "Options": "- Close the milestone with the frozen basis.\n- Keep pursuit active.",
+        "Principles applied": (
+            "- SSOT — each card owns its terminal_disposition.\n"
+            "- Honesty — closure records exact terminal evidence and an explicit attestation."
+        ),
+        "Chosen direction": f"Close {milestone.record_id} on the frozen basis below.",
+        "Reason": "Every linked work card is terminal at closure time.",
+        "Follow-up": (
+            "Promotion must revalidate this basis; reopening requires a decision that "
+            f"supersedes {decision_id}."
+        ),
+    }
+    for heading, value in sections.items():
+        text = _replace_section(text, heading, value)
+    basis_lines = [
+        "| Work item | terminal_disposition |",
+        "|---|---|",
+        *[
+            f"| {entry.work_item_id} | {entry.terminal_disposition} |"
+            for entry in entries
+        ],
+    ]
+    return (
+        text.rstrip()
+        + f"\n\n## {stage_roadmap_closure.FROZEN_BASIS_HEADING}\n\n"
+        + "\n".join(basis_lines)
+        + f"\n\n## {stage_roadmap_closure.ATTESTATION_HEADING}\n\n"
+        + attestation.strip()
+        + "\n"
+    )
+
+
 def _append_decision_ref(record_path: Path, decision_id: str) -> None:
     text = record_path.read_text(encoding="utf-8")
     fields = parse_frontmatter(record_path)
@@ -317,6 +376,82 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
     return 0
 
 
+def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
+    if re.fullmatch(r"M-\d{8}", args.milestone) is None:
+        print(
+            f"refusing: milestone must look like M-00000001, got {args.milestone}",
+            file=sys.stderr,
+        )
+        return 2
+    reference = stage_topology.resolve_artifact_reference(args.milestone)
+    milestone_path = stage_root / reference.candidate_paths[0]
+    if not milestone_path.is_file():
+        print(f"refusing: milestone not found: {args.milestone}", file=sys.stderr)
+        return 1
+    milestone = stage_roadmap.load_roadmap_record(milestone_path)
+    state = stage_roadmap.roadmap_record_state(stage_root, milestone_path)
+    if state.status == stage_roadmap.ROADMAP_CLOSED:
+        print(f"{args.milestone}: already closed ({state.effective_head})")
+        return 0
+    if state.status != stage_roadmap.ROADMAP_ACTIVE or state.effective_head is None:
+        detail = state.issues[0].message if state.issues else f"status is {state.status}"
+        print(
+            f"refusing: milestone must have one active pursuit head before closure: {detail}",
+            file=sys.stderr,
+        )
+        return 1
+
+    entries, blockers = stage_roadmap_closure.closure_capture(
+        stage_root, args.milestone
+    )
+    if blockers:
+        print(
+            f"refusing: {args.milestone} has non-terminal linked work:",
+            file=sys.stderr,
+        )
+        for blocker in blockers:
+            print(f"- {blocker}", file=sys.stderr)
+        return 1
+
+    pending_zone = stage_topology.get_zone("decisions", "pending")
+    pending_dir = stage_root / pending_zone.canonical_path
+    template_path = PLUGIN_ROOT / "templates" / "v4" / str(
+        pending_zone.template_source
+    )
+    decision_index = stage_root / pending_zone.index_surfaces[0]
+    if (
+        not pending_dir.is_dir()
+        or not decision_index.is_file()
+        or not template_path.is_file()
+    ):
+        raise RuntimeError("pending-decision directory, index, or bundled template is missing")
+    template = template_path.read_text(encoding="utf-8")
+    decision_id = _create_atomic(
+        pending_dir,
+        "DE",
+        _decision_existing_ids(stage_root),
+        lambda item_id: _closure_decision_content(
+            template,
+            item_id,
+            milestone,
+            state.effective_head or "",
+            entries,
+            args.attestation,
+        ),
+    )
+    _append_decision_ref(milestone_path, decision_id)
+    decision_row = (
+        f"| {decision_id} | decided | stage-roadmap | "
+        f"[pending/{decision_id}.md](pending/{decision_id}.md) |"
+    )
+    _ensure_index_row(decision_index, decision_id, decision_row)
+    print(
+        f"{args.milestone}: closed via {decision_id} "
+        f"(frozen basis: {len(entries)} work cards)"
+    )
+    return 0
+
+
 def list_roadmap(stage_root: Path, _args: argparse.Namespace) -> int:
     print("Themes")
     print("| Theme | Title | Status |")
@@ -370,6 +505,20 @@ def _parser() -> argparse.ArgumentParser:
     )
     pursuit.add_argument("milestone")
     pursuit.set_defaults(handler=open_pursuit)
+
+    closure = commands.add_parser(
+        "close-milestone",
+        help="Close a milestone with an immutable terminal-work basis.",
+    )
+    closure.add_argument("milestone")
+    closure.add_argument(
+        "--attestation",
+        "--completion-criteria-attestation",
+        dest="attestation",
+        required=True,
+        help="Exact text attesting that the milestone completion criteria were met.",
+    )
+    closure.set_defaults(handler=close_milestone)
 
     listing = commands.add_parser("list", help="List computed roadmap state.")
     listing.set_defaults(handler=list_roadmap)

@@ -19,10 +19,15 @@ if _HOOKS_DIR not in sys.path:
     sys.path.insert(0, _HOOKS_DIR)
 
 from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
+    ACTIVE_TOPOLOGY_V4,
+    active_topology,
     clean_path_text,
     entry_relative_to_workspace,
     path_targets_stage_archive,
 )
+import stage_roadmap  # noqa: E402
+import stage_roadmap_closure  # noqa: E402
+import stage_topology  # noqa: E402
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     RETROSPECTIVE_DONE,
     archive_target_item_id,
@@ -32,6 +37,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     item_promotes_path,
     load_archive_work_items,
     load_work_items,
+    parse_frontmatter,
     retrospective_ref_id,
 )
 
@@ -462,6 +468,54 @@ def intent_validation_blocker(
     if not all(item_promotes_path(item, path, workspace_root) for path in target_paths):
         return "Stage promotion gate violation: the target paths do not match the work item's promotes list."
 
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        closure_error = closure_promotion_revalidation_blocker(
+            stage_root, workspace_root, target_paths
+        )
+        if closure_error:
+            return closure_error
+
+    return ""
+
+
+def closure_promotion_revalidation_blocker(
+    stage_root: Path,
+    workspace_root: Path,
+    target_paths: list[str],
+    overlays: dict[str, str | None] | None = None,
+) -> str:
+    """Fail closed before a closure decision enters the official zone."""
+
+    pending_root = stage_topology.get_zone("decisions", "pending").canonical_path
+    official_root = stage_topology.get_zone("decisions", "official").canonical_path
+    official_prefix = f".stage/{official_root}/"
+    for target in sorted(target_paths):
+        relative = entry_relative_to_workspace(target, workspace_root)
+        if not relative.startswith(official_prefix) or not relative.endswith(".md"):
+            continue
+        decision_id = Path(relative).stem
+        if re.fullmatch(r"DE-\d{3,}", decision_id) is None:
+            continue
+        pending_path = stage_root / pending_root / f"{decision_id}.md"
+        official_path = stage_root / official_root / f"{decision_id}.md"
+        source = pending_path if pending_path.is_file() else official_path
+        if not source.is_file():
+            return (
+                "Stage closure promotion revalidation denied: decision source "
+                f"`{decision_id}` is missing, so the promotion type cannot be determined."
+            )
+        fields = parse_frontmatter(source)
+        transition = (fields.get("transition") or "").strip().lower()
+        if transition not in stage_roadmap.CLOSURE_TRANSITIONS:
+            continue
+        diffs = stage_roadmap_closure.closure_basis_diff(
+            stage_root, source, overlays
+        )
+        if diffs:
+            return (
+                f"Stage closure promotion revalidation denied for {decision_id}:\n"
+                + "\n".join(f"- {diff}" for diff in diffs)
+            )
     return ""
 
 

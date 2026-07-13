@@ -668,14 +668,17 @@ def projected_patch_text(patch_text: str, target_relative: str, workspace_root: 
 
 
 def work_item_relative(raw: str, workspace_root: Path) -> str:
-    """Work-item relative path if ANY form (resolved, entry, lexical) is under
-    `present/work/items/` — a work-item file that is a symlink to outside
-    (resolve derefs away) still counts, since `load_work_items` follows it."""
+    """Work-item relative path if any form names a governed W-card location."""
     if active_topology(workspace_root / ".stage") == ACTIVE_TOPOLOGY_V4:
-        prefix = f".stage/{stage_topology.card_location_for_status('active')}/"
+        prefixes = tuple(
+            f".stage/{Path(relative).parent.as_posix()}/"
+            for relative in stage_topology.resolve_artifact_reference(
+                "W-00000000"
+            ).candidate_paths
+        )
     else:
-        prefix = WORK_ITEMS_PREFIX
+        prefixes = (WORK_ITEMS_PREFIX,)
     for form in stage_relative_forms(raw, workspace_root):
-        if form.startswith(prefix):
+        if any(form.startswith(prefix) for prefix in prefixes):
             return form
     return ""

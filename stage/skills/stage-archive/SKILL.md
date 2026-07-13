@@ -36,7 +36,9 @@ python3 stage/skills/stage-archive/archive_work.py --project-root <project-root>
 The script validates each precondition, copies the item to `archive/items/<id>.md` with
 `status: archived`, copies its retrospective to `archive/retrospectives/<ref>.md`, appends the
 `Final status` row to `archive/index.md`, and drops the present-flow files and `review.md` row. It
-is idempotent. Then verify:
+is idempotent. On a schema-v4 project it also stamps the card-owned immutable closure evidence:
+`terminal_disposition: accepted` for a completed card and `terminal_disposition: rejected` for a
+rejected card. Schema-v3 card content remains unchanged. Then verify:
 
 ```bash
 python3 stage/scripts/audit_stage.py --project-root <project-root>   # expect errors=0

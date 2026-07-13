@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.30.0 — 2026-07-13
+
+Schema-v4 milestone closure with immutable evidence:
+
+- Added v4-only milestone closure snapshot + fail-closed promotion revalidation + preventive
+  re-attribution gate; v3 unchanged; enforced version stays 3. `close-milestone` freezes the
+  exact linked W ids, card-owned accepted/rejected terminal dispositions, and completion-criteria
+  attestation behind the Contract X predecessor chain. Promotion prints exact live-basis diffs,
+  effective snapshots prevent milestone changes unless the same change supersedes the closure,
+  and superseding reopen decisions return computed milestone status to active. (W-00000036)
+
 ## 0.29.0 — 2026-07-13
 
 Schema-v4 roadmap creation and derived state:

@@ -1,6 +1,6 @@
 ---
 name: stage-roadmap
-description: Create and inspect schema-v4 Stage themes and milestones, and open a milestone pursuit through an explicit decision chain. Use when the user asks to create a roadmap theme or milestone, begin milestone pursuit, list roadmap state, or inspect roadmap lifecycle.
+description: Create, pursue, close, reopen, and inspect schema-v4 Stage themes and milestones through explicit decision chains and immutable closure evidence. Use when the user asks to create a roadmap theme or milestone, begin or close milestone pursuit, reopen a closed milestone, list roadmap state, or inspect roadmap lifecycle.
 ---
 
 # Stage Roadmap
@@ -36,6 +36,21 @@ python3 stage/skills/stage-roadmap/manage_roadmap.py --project-root <root> \
   open-pursuit M-NNNNNNNN
 ```
 
+Close a milestone after every attributed W card is terminal:
+
+```text
+python3 stage/skills/stage-roadmap/manage_roadmap.py --project-root <root> \
+  close-milestone M-NNNNNNNN \
+  --attestation "Exact completion-criteria evidence and conclusion"
+```
+
+If closure refuses, resolve every listed card before retrying:
+
+- Archive accepted work; the v4 archiver stamps `terminal_disposition: accepted`.
+- Explicitly reject work with `terminal_disposition: rejected`, or archive the rejected card.
+- Re-link work that does not belong to this milestone.
+- Never edit the generated closure basis or its attestation after creation.
+
 List themes, milestones, and their computed status:
 
 ```text
@@ -59,8 +74,21 @@ python3 stage/skills/stage-roadmap/manage_roadmap.py --project-root <root> list
 - Every later transition declares `predecessor:`; a replacement also declares `supersedes:`.
   The audit rejects dangling references, cycles, unresolved forks, and multiple effective
   heads. Chain structure, never an ID number or timestamp, determines the effective state.
-- Closure, closure snapshots, promotion-time revalidation, and closed-snapshot attribution
-  gates are not part of this command. They belong to the later roadmap-closure implementation.
+- `close-milestone` refuses unless the milestone has one active pursuit head and every linked W
+  card is terminal. It creates a decided `transition: closure` record whose `predecessor:` is
+  that head, freezes the exact sorted W ids and card-owned `terminal_disposition` values, embeds
+  the exact `--attestation` text, and appends the decision to `decision_refs`.
+- Promoting a closure into `official/decisions/records/` re-reads all W locations through the
+  registry. Promotion fails closed with an id-by-id diff when a disposition changed, a frozen
+  card is missing or re-attributed, or a newly linked card is absent from the basis.
+- A decided closure is effective immediately. A W id in its frozen basis cannot change its
+  `milestone:` field. The same projected file-write change set may do so only when it also adds
+  a decided chain member for the same milestone, declares `transition: reopen`, names the
+  closure in both `predecessor:` and `supersedes:`, and appends that decision id to the
+  milestone's `decision_refs`.
+- Reopen only by supersession. Once the decided/promoted reopen record supersedes the closure,
+  computed milestone status returns to `active`; never delete or edit the closure record and
+  never author a status field on the milestone.
 
 After mutations, run `python3 stage/scripts/audit_stage.py --project-root <root>` and resolve
 every error at its owning record or index.
