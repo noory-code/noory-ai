@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.27.0 — 2026-07-13
+
+Dormant per-project schema-v4 consumer dispatch:
+
+- `stage_guard`, `stage_work`, `stage_context`, `stage_records`, and `audit_stage` now derive
+  schema-v4 project paths from the topology registry when that project's `settings.json`
+  declares `schema_version: 4`. Schema-v3 behavior is unchanged; consumers gain dormant v4
+  capability gated on the project's `schema_version`; the enforced contract version stays 3.
+  Regression fixtures cover both initialized v3 projects and the dormant v4 template across
+  write/commit gate decisions, record scans, audit, and session context. (W-00000032)
+
 ## 0.26.0 — 2026-07-13
 
 Dormant v4 template tree, no behavior change:

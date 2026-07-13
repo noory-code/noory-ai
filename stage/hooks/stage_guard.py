@@ -23,8 +23,10 @@ if _HOOKS_DIR not in sys.path:
     sys.path.insert(0, _HOOKS_DIR)
 
 from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
+    ACTIVE_TOPOLOGY_V4,
     DEFAULT_EXCLUDED_PREFIXES,
     STAGE_SCHEMA_VERSION,
+    active_topology,
     clean_path_text,
     configured_write_tools,
     entry_relative_to_workspace,
@@ -40,6 +42,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     normalize_path_text,
     path_has_prefix,
     path_targets_stage_archive,
+    path_targets_stage_official,
     resolve_review_command,
     path_targets_stage_past,
     path_targets_stage_root,
@@ -47,6 +50,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     stage_real_root,
     stage_relative_forms,
 )
+import stage_topology  # noqa: E402
 from stage_shell import (  # noqa: E402  (after sys.path bootstrap)
     _restore_sentinels,
     command_deletes_stage,
@@ -345,6 +349,19 @@ def question_purpose_reminder(workspace_root: Path, payload: dict[str, Any]) -> 
         marker.write_text(datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), encoding="utf-8")
     except OSError:
         return pre_tool_allow()
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        principles_path = next(
+            path
+            for path in stage_topology.get_zone("canon", "official").index_surfaces
+            if path.endswith("principles.md")
+        )
+        return deny(
+            "Stage question gate: before asking, re-read the work item's Purpose and "
+            f"`{principles_path}`. If the answer follows from the purpose or a principle, "
+            "decide and report in one line instead of asking. If the user's decision is genuinely "
+            "required (value judgment, conflicting principles, irreversible impact), ask again — "
+            "this reminder fires once per question."
+        )
     return deny(
         "Stage question gate: before asking, re-read the work item's Purpose and "
         "`past/canon/principles.md`. If the answer follows from the purpose or a principle, "
@@ -507,6 +524,11 @@ def handle_post_tool(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     def targets_past(raw: str) -> bool:
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            return any(
+                path_targets_stage_official(form)
+                for form in stage_relative_forms(raw, workspace_root)
+            )
         return any(
             path_targets_stage_past(form) for form in stage_relative_forms(raw, workspace_root)
         )
@@ -563,6 +585,11 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         )
 
     def targets_past(raw: str) -> bool:
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            return any(
+                path_targets_stage_official(form)
+                for form in stage_relative_forms(raw, workspace_root)
+            )
         return any(
             path_targets_stage_past(form) for form in stage_relative_forms(raw, workspace_root)
         )

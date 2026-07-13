@@ -38,6 +38,8 @@ if str(HOOK_ROOT) not in sys.path:
     sys.path.insert(0, str(HOOK_ROOT))
 
 import stage_guard  # noqa: E402
+import stage_topology  # noqa: E402
+from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
 
 
 SKIP_NAMES = {"README.md", "_template.md"}
@@ -115,10 +117,23 @@ class RecordGraph:
         # node (and fails the required-field checks), unlike the other
         # families, where body-only files are legacy and stay unaudited.
         self.work: list[AuditedItem] = []
-        for location, root in (
-            ("present", stage_root / "present" / "work" / "items"),
-            ("archive", stage_root / "past" / "work" / "archive" / "items"),
-        ):
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            work_roots = (
+                (
+                    "present",
+                    stage_root / stage_topology.card_location_for_status("active"),
+                ),
+                (
+                    "archive",
+                    stage_root / stage_topology.card_location_for_status("archived"),
+                ),
+            )
+        else:
+            work_roots = (
+                ("present", stage_root / "present" / "work" / "items"),
+                ("archive", stage_root / "past" / "work" / "archive" / "items"),
+            )
+        for location, root in work_roots:
             if not root.exists():
                 continue
             for path in sorted(root.glob("*.md")):
@@ -135,30 +150,71 @@ class RecordGraph:
                     )
                 )
 
-        self.backlog: list[RecordNode] = _scan_nodes(
-            (stage_root / "future" / "backlog" / "items",)
-        )
-        self.decisions: list[RecordNode] = _scan_nodes(
-            (stage_root / "present" / "work" / "decisions",)
-        )
-        self.retrospectives: list[RecordNode] = _scan_nodes(
-            (
-                stage_root / "present" / "work" / "retrospectives",
-                stage_root / "past" / "work" / "archive" / "retrospectives",
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            self.backlog = _scan_nodes(
+                (stage_root / stage_topology.card_location_for_status("captured"),)
             )
-        )
-        self.state: list[RecordNode] = _scan_nodes(
-            tuple(
-                stage_root / "present" / "state" / family
-                for family in ("observations", "questions", "assumptions", "risks")
+            decision_roots = stage_topology.resolve_artifact_reference(
+                "DE-00000000"
+            ).candidate_paths
+            self.decisions = _scan_nodes(
+                tuple(stage_root / Path(root).parent for root in decision_roots)
             )
-        )
-        self.milestones: list[RecordNode] = _scan_heading_nodes(
-            (stage_root / "future" / "roadmap" / "milestones",)
-        )
-        self.proposals: list[RecordNode] = _scan_heading_nodes(
-            (stage_root / "future" / "proposals",)
-        )
+            self.retrospectives = _scan_nodes(
+                tuple(
+                    stage_root / root
+                    for root in stage_topology.retrospective_locations()
+                )
+            )
+            self.state = _scan_nodes(
+                tuple(
+                    stage_root / root
+                    for root in stage_topology.scan_roots("records")
+                    if (resolved := stage_topology.resolve_zone(root)) is not None
+                    and resolved[0] == "state"
+                )
+            )
+            self.milestones = _scan_heading_nodes(
+                tuple(
+                    stage_root / Path(path).parent
+                    for path in stage_topology.resolve_artifact_reference(
+                        "M-00000000"
+                    ).candidate_paths
+                )
+            )
+            self.proposals = _scan_heading_nodes(
+                tuple(
+                    stage_root / Path(path).parent
+                    for path in stage_topology.resolve_artifact_reference(
+                        "P-00000000"
+                    ).candidate_paths
+                )
+            )
+        else:
+            self.backlog = _scan_nodes(
+                (stage_root / "future" / "backlog" / "items",)
+            )
+            self.decisions = _scan_nodes(
+                (stage_root / "present" / "work" / "decisions",)
+            )
+            self.retrospectives = _scan_nodes(
+                (
+                    stage_root / "present" / "work" / "retrospectives",
+                    stage_root / "past" / "work" / "archive" / "retrospectives",
+                )
+            )
+            self.state = _scan_nodes(
+                tuple(
+                    stage_root / "present" / "state" / family
+                    for family in ("observations", "questions", "assumptions", "risks")
+                )
+            )
+            self.milestones = _scan_heading_nodes(
+                (stage_root / "future" / "roadmap" / "milestones",)
+            )
+            self.proposals = _scan_heading_nodes(
+                (stage_root / "future" / "proposals",)
+            )
 
         self.work_ids: set[str] = {entry.item.item_id for entry in self.work}
         self.backlog_ids: set[str] = {node.record_id for node in self.backlog}
@@ -204,6 +260,17 @@ def resolve_retrospective_ref(
     ref = stage_guard.normalize_path_text(raw_ref)
     if ref.startswith(".stage/"):
         return project_root / ref
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        current_root, archive_root = stage_topology.retrospective_locations()
+        if ref.startswith(current_root + "/") or ref.startswith(archive_root + "/"):
+            return stage_root / ref
+        local_root = archive_root if location == "archive" else current_root
+        if ref.startswith("retrospectives/"):
+            return stage_root / Path(local_root).parent / ref
+        if "/" in ref:
+            return stage_root / ref
+        filename = ref if ref.endswith(".md") else f"{ref}.md"
+        return stage_root / local_root / filename
     if ref.startswith("present/work/retrospectives/") or ref.startswith("past/work/archive/retrospectives/"):
         return stage_root / ref
     local_root = (
@@ -223,6 +290,19 @@ def resolve_decision_ref(project_root: Path, stage_root: Path, raw_ref: str) -> 
     ref = stage_guard.normalize_path_text(raw_ref)
     if ref.startswith(".stage/"):
         return project_root / ref
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        resolved = stage_topology.resolve_zone(ref)
+        if resolved is not None and resolved[0] == "decisions":
+            return stage_root / ref
+        if "/" in ref:
+            return stage_root / ref
+        artifact_id = Path(ref).stem
+        reference = stage_topology.resolve_artifact_reference(artifact_id)
+        candidates = tuple(stage_root / path for path in reference.candidate_paths)
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return candidates[0]
     if ref.startswith("present/work/decisions/"):
         return stage_root / ref
     if ref.startswith("decisions/"):

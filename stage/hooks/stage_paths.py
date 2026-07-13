@@ -7,10 +7,35 @@ import re
 from pathlib import Path
 from typing import Any
 
+import stage_topology
+
 # Schema-v4 authorization-zone constants.  Existing schema-v3 consumers keep
 # using their legacy predicates until the consumer-adoption card rewires them.
 STAGE_OFFICIAL_ROOT = ".stage/official"
 STAGE_OFFICIAL_ARCHIVE_ROOT = f"{STAGE_OFFICIAL_ROOT}/work/archive"
+
+ACTIVE_TOPOLOGY_V3 = "v3"
+ACTIVE_TOPOLOGY_V4 = "v4"
+
+
+def active_topology(stage_root: Path) -> str:
+    """Return the topology selected by this project's settings.
+
+    Schema v4 capability is dormant unless the project explicitly carries the
+    exact integer v4 marker. Missing, unreadable, malformed, and older settings
+    retain the established schema-v3 behavior; the audit separately reports a
+    malformed or generation-mismatched marker.
+    """
+
+    settings_path = stage_root / "settings.json"
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ACTIVE_TOPOLOGY_V3
+    schema_version = data.get(stage_topology.SCHEMA_VERSION_KEY) if isinstance(data, dict) else None
+    if type(schema_version) is int and schema_version == stage_topology.SCHEMA_VERSION:
+        return ACTIVE_TOPOLOGY_V4
+    return ACTIVE_TOPOLOGY_V3
 
 
 def clean_path_text(path: str) -> str:

@@ -15,11 +15,14 @@ if _HOOKS_DIR not in sys.path:
     sys.path.insert(0, _HOOKS_DIR)
 
 from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
+    ACTIVE_TOPOLOGY_V4,
     DEFAULT_LANGUAGE,
+    active_topology,
     load_language,
     load_venue_routing,
     normalize_path_text,
 )
+import stage_topology  # noqa: E402
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     WORK_OPEN_STATUSES,
     item_is_open,
@@ -53,28 +56,77 @@ def session_context(workspace_root: Path) -> str:
             + consumer_context_section(workspace_root, pre_init=True)
         )
 
-    parts = [
-        "## Stage context",
-        "- Global time axis: `past` is official, `present` is in progress, `future` is planned.",
-        "- Space axis: `canon`, `model`, `decisions`, `work`, `state`, `operations` divide responsibility.",
-        "- Core principles (full catalog: `past/canon/principles.md`):",
-        "  SSOT — one owning location per durable fact. MECE — no overlap, no known gaps.",
-        "  Fail Fast — surface wrong premises early. AHA — no abstraction before repetition.",
-        "  Completion — external view + internal view + retrospective, all three.",
-        "  Honesty — never assert unverified facts; no partial completion, no silent substitution.",
-        "- Cite the governing principles in every decision record and retrospective.",
-        "- Register an active work item in `.stage/present/work/items/` before modifying governed files "
-        "(nearly all files are governed by default; see `.stage/settings.json`).",
-        "- Modifying `.stage/past/` is gated ONLY by a pending intent (`scripts/promote_intent.py`) that names "
-        "the completed work item being promoted or archived — no NEW work item is needed, and `.stage/` is not "
-        "governed source so the registration/commit gates never fire on it. To archive, use the `stage-archive` skill.",
-        "- Artifact map — W work `present/work/items` · R retro `present/work/retrospectives` · "
-        "DE decision `present/work/decisions` · D approved `past/decisions/records` · "
-        "O/Q/A/K state `present/state/*` · planned W cards `future/backlog/items` · P proposal · M milestone. "
-        "A work card is ONE artifact moving future -> present -> past; start a planned card with "
-        "`scripts/start_work.py` (never hand-move it). "
-        "Full catalog: `operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
-    ]
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        current_work = stage_topology.card_location_for_status("active")
+        planned_work = stage_topology.card_location_for_status("selected")
+        current_retro, _ = stage_topology.retrospective_locations()
+        decision_paths = stage_topology.resolve_artifact_reference(
+            "DE-00000000"
+        ).candidate_paths
+        state_roots = {
+            prefix: stage_topology.resolve_artifact_reference(
+                f"{prefix}-00000000"
+            ).candidate_paths[0].rsplit("/", 1)[0]
+            for prefix in ("O", "Q", "A", "K")
+        }
+        proposal_root = stage_topology.get_zone("proposals", "planned").canonical_path
+        milestone_root = stage_topology.get_zone("roadmap", "milestones").canonical_path
+        principles_path = next(
+            path
+            for path in stage_topology.get_zone("canon", "official").index_surfaces
+            if path.endswith("principles.md")
+        )
+        parts = [
+            "## Stage context",
+            "- Global lifecycle axis: `planned` is intended, `current` is in progress, "
+            "`official` is settled truth.",
+            "- Space axis: `canon`, `model`, `decisions`, `work`, `state`, `proposals`, "
+            "`roadmap`, `operations` divide responsibility.",
+            f"- Core principles (full catalog: `{principles_path}`):",
+            "  SSOT — one owning location per durable fact. MECE — no overlap, no known gaps.",
+            "  Fail Fast — surface wrong premises early. AHA — no abstraction before repetition.",
+            "  Completion — external view + internal view + retrospective, all three.",
+            "  Honesty — never assert unverified facts; no partial completion, no silent substitution.",
+            "- Cite the governing principles in every decision record and retrospective.",
+            f"- Register an active work item in `.stage/{current_work}/` before modifying governed files "
+            "(nearly all files are governed by default; see `.stage/settings.json`).",
+            f"- Modifying `.stage/{stage_topology.OFFICIAL_ROOT}/` is gated ONLY by a pending intent "
+            "(`scripts/promote_intent.py`) that names the completed work item being promoted or "
+            "archived — no NEW work item is needed, and `.stage/` is not governed source so the "
+            "registration/commit gates never fire on it. To archive, use the `stage-archive` skill.",
+            f"- Artifact map — W current work `{current_work}` · R retro `{current_retro}` · "
+            f"DE pending decision `{decision_paths[0].rsplit('/', 1)[0]}` · official decisions "
+            f"`{decision_paths[1].rsplit('/', 1)[0]}` · O state `{state_roots['O']}` · "
+            f"Q state `{state_roots['Q']}` · A state `{state_roots['A']}` · "
+            f"K state `{state_roots['K']}` · planned "
+            f"W cards `{planned_work}` · P proposal `{proposal_root}` · M milestone "
+            f"`{milestone_root}`. A work card is ONE artifact moving planned -> current -> official; "
+            "start a planned card with `scripts/start_work.py` (never hand-move it). Full catalog: "
+            "`operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
+        ]
+    else:
+        parts = [
+            "## Stage context",
+            "- Global time axis: `past` is official, `present` is in progress, `future` is planned.",
+            "- Space axis: `canon`, `model`, `decisions`, `work`, `state`, `operations` divide responsibility.",
+            "- Core principles (full catalog: `past/canon/principles.md`):",
+            "  SSOT — one owning location per durable fact. MECE — no overlap, no known gaps.",
+            "  Fail Fast — surface wrong premises early. AHA — no abstraction before repetition.",
+            "  Completion — external view + internal view + retrospective, all three.",
+            "  Honesty — never assert unverified facts; no partial completion, no silent substitution.",
+            "- Cite the governing principles in every decision record and retrospective.",
+            "- Register an active work item in `.stage/present/work/items/` before modifying governed files "
+            "(nearly all files are governed by default; see `.stage/settings.json`).",
+            "- Modifying `.stage/past/` is gated ONLY by a pending intent (`scripts/promote_intent.py`) that names "
+            "the completed work item being promoted or archived — no NEW work item is needed, and `.stage/` is not "
+            "governed source so the registration/commit gates never fire on it. To archive, use the `stage-archive` skill.",
+            "- Artifact map — W work `present/work/items` · R retro `present/work/retrospectives` · "
+            "DE decision `present/work/decisions` · D approved `past/decisions/records` · "
+            "O/Q/A/K state `present/state/*` · planned W cards `future/backlog/items` · P proposal · M milestone. "
+            "A work card is ONE artifact moving future -> present -> past; start a planned card with "
+            "`scripts/start_work.py` (never hand-move it). "
+            "Full catalog: `operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
+        ]
 
     routing = load_venue_routing(stage_root)
     if routing:
@@ -100,11 +152,26 @@ def session_context(workspace_root: Path) -> str:
             "(`## Purpose`, `## Verification`, ...)."
         )
 
-    snippets: list[tuple[str, Path | None]] = [
-        ("Current state", stage_root / "present" / "state" / "current.md"),
-        ("Active work", stage_root / "present" / "work" / "active.md"),
-        ("Review candidates", stage_root / "present" / "work" / "review.md"),
-    ]
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        state_index = next(
+            path
+            for path in stage_topology.get_zone("state", "current").index_surfaces
+            if path.endswith("current.md")
+        )
+        active_index, review_index = stage_topology.get_zone(
+            "work", "current"
+        ).index_surfaces
+        snippets: list[tuple[str, Path | None]] = [
+            ("Current state", stage_root / state_index),
+            ("Active work", stage_root / active_index),
+            ("Review candidates", stage_root / review_index),
+        ]
+    else:
+        snippets = [
+            ("Current state", stage_root / "present" / "state" / "current.md"),
+            ("Active work", stage_root / "present" / "work" / "active.md"),
+            ("Review candidates", stage_root / "present" / "work" / "review.md"),
+        ]
     for title, path in snippets:
         body = read_if_exists(path) if path is not None else ""
         if body:
@@ -333,7 +400,24 @@ def consumer_context_section(workspace_root: Path, pre_init: bool = False) -> st
     consumer = consumer_context_lines(workspace_root, stage_root=stage_root)
     if not consumer:
         return ""
-    directive = CONSUMER_CONTEXT_DIRECTIVE_PRE_INIT if pre_init else CONSUMER_CONTEXT_DIRECTIVE
+    if pre_init:
+        directive = CONSUMER_CONTEXT_DIRECTIVE_PRE_INIT
+    elif stage_root is not None and active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        question_root = stage_topology.resolve_artifact_reference(
+            "Q-00000000"
+        ).candidate_paths[0].rsplit("/", 1)[0]
+        directive = (
+            "- Consult these when planning and executing — they are project norms, "
+            "not optional reading. Root-level sources bind everywhere; a source inside "
+            "a package directory binds work under that subtree only; within a source, "
+            "honor its own applicability (a path-scoped rule or a trigger-scoped skill "
+            "applies only per its own declaration). If an applicable instruction contradicts "
+            "observed reality or Stage truth, do not silently deviate or silently obey: "
+            f"register the conflict as an open question (`{question_root}/`) with your proposed "
+            "correction and ask the user to fix the instruction."
+        )
+    else:
+        directive = CONSUMER_CONTEXT_DIRECTIVE
     return (
         "\n### Project instructions (host-defined)\n"
         + "\n".join(consumer)
@@ -384,7 +468,14 @@ def open_question_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD_LI
     """Every record under `present/state/questions/` is open by definition —
     answered questions are promoted out of the directory. Newest first."""
     records: list[tuple[str, str, str]] = []
-    for path in record_files(stage_root / "present" / "state" / "questions"):
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        question_root = stage_topology.resolve_artifact_reference(
+            "Q-00000000"
+        ).candidate_paths[0].rsplit("/", 1)[0]
+        directory = stage_root / question_root
+    else:
+        directory = stage_root / "present" / "state" / "questions"
+    for path in record_files(directory):
         fields = parse_frontmatter(path)
         records.append(
             (
@@ -400,7 +491,10 @@ def open_question_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD_LI
         suffix = f" (blocks: {blocked})" if blocked else ""
         lines.append(bounded_record_line(item_id, title, suffix))
     if len(records) > limit:
-        lines.append(f"- …and {len(records) - limit} more in `present/state/questions/`")
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            lines.append(f"- …and {len(records) - limit} more in `{question_root}/`")
+        else:
+            lines.append(f"- …and {len(records) - limit} more in `present/state/questions/`")
     return lines
 
 
@@ -409,7 +503,12 @@ def selected_backlog_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD
     pick up next. Ordered by ID for determinism."""
     lines: list[str] = []
     selected: list[tuple[str, str, str]] = []
-    for path in record_files(stage_root / "future" / "backlog" / "items"):
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        planned_root = stage_topology.card_location_for_status("selected")
+        directory = stage_root / planned_root
+    else:
+        directory = stage_root / "future" / "backlog" / "items"
+    for path in record_files(directory):
         fields = parse_frontmatter(path)
         if (fields.get("status") or "").lower() != "selected":
             continue
@@ -420,7 +519,10 @@ def selected_backlog_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD
         suffix = f" (priority: {priority})" if priority else ""
         lines.append(bounded_record_line(item_id, title, suffix))
     if len(selected) > limit:
-        lines.append(f"- …and {len(selected) - limit} more in `future/backlog/items/`")
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            lines.append(f"- …and {len(selected) - limit} more in `{planned_root}/`")
+        else:
+            lines.append(f"- …and {len(selected) - limit} more in `future/backlog/items/`")
     return lines
 
 

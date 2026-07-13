@@ -17,6 +17,8 @@ if _HOOKS_DIR not in sys.path:
     sys.path.insert(0, _HOOKS_DIR)
 
 from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
+    ACTIVE_TOPOLOGY_V4,
+    active_topology,
     clean_path_text,
     entry_relative_to_workspace,
     is_outside_workspace,
@@ -26,6 +28,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     stage_relative_forms,
 )
 from stage_git import _is_shell_redirection, iter_git_commands  # noqa: E402
+import stage_topology  # noqa: E402
 
 
 WORK_OPEN_STATUSES = {"active", "review", "blocked"}
@@ -123,10 +126,16 @@ def split_scope(value: str) -> tuple[str, ...]:
 
 
 def load_work_items(stage_root: Path) -> list[WorkItem]:
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        root = stage_topology.card_location_for_status("active")
+        return load_items_from(stage_root / root)
     return load_items_from(stage_root / "present" / "work" / "items")
 
 
 def load_archive_work_items(stage_root: Path) -> list[WorkItem]:
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        root = stage_topology.card_location_for_status("archived")
+        return load_items_from(stage_root / root)
     return load_items_from(stage_root / "past" / "work" / "archive" / "items")
 
 
@@ -263,7 +272,10 @@ def item_promotes_path(item: WorkItem, path: str, workspace_root: Path) -> bool:
 
 def archive_target_item_id(path: str, workspace_root: Path) -> str:
     relative = entry_relative_to_workspace(path, workspace_root)
-    prefix = ".stage/past/work/archive/items/"
+    if active_topology(workspace_root / ".stage") == ACTIVE_TOPOLOGY_V4:
+        prefix = f".stage/{stage_topology.card_location_for_status('archived')}/"
+    else:
+        prefix = ".stage/past/work/archive/items/"
     if not relative.startswith(prefix):
         return ""
     name = Path(relative).name
@@ -274,7 +286,11 @@ def archive_target_item_id(path: str, workspace_root: Path) -> str:
 
 def archive_target_retro_id(path: str, workspace_root: Path) -> str:
     relative = entry_relative_to_workspace(path, workspace_root)
-    prefix = ".stage/past/work/archive/retrospectives/"
+    if active_topology(workspace_root / ".stage") == ACTIVE_TOPOLOGY_V4:
+        _, archive_root = stage_topology.retrospective_locations()
+        prefix = f".stage/{archive_root}/"
+    else:
+        prefix = ".stage/past/work/archive/retrospectives/"
     if not relative.startswith(prefix):
         return ""
     name = Path(relative).name
@@ -295,6 +311,14 @@ def resolve_decision_record(stage_root: Path, ref: str) -> Path:
     """Owning file for a decision reference: DE-* records live in
     present/work/decisions, promoted D-* records in past/decisions/records."""
     name = ref if ref.endswith(".md") else f"{ref}.md"
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        artifact_id = Path(name).stem
+        reference = stage_topology.resolve_artifact_reference(artifact_id)
+        candidates = tuple(stage_root / path for path in reference.candidate_paths)
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return candidates[0]
     if ref.startswith("D-"):
         return stage_root / "past" / "decisions" / "records" / name
     return stage_root / "present" / "work" / "decisions" / name
@@ -330,8 +354,13 @@ def venue_exception_error(stage_root: Path, ref: str) -> str:
 
 
 def fallback_index_blockers(stage_root: Path) -> list[str]:
-    active = parse_index_rows(stage_root / "present" / "work" / "active.md")
-    review = parse_index_rows(stage_root / "present" / "work" / "review.md")
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        active_path, review_path = stage_topology.get_zone("work", "current").index_surfaces
+        active = parse_index_rows(stage_root / active_path)
+        review = parse_index_rows(stage_root / review_path)
+    else:
+        active = parse_index_rows(stage_root / "present" / "work" / "active.md")
+        review = parse_index_rows(stage_root / "present" / "work" / "review.md")
     blockers: list[str] = []
     if active:
         blockers.append("Work item SSOT is missing: move active.md rows into items/*.md")
@@ -438,6 +467,13 @@ def source_registration_blocker(
     ]
     if not uncovered:
         return ""
+    if active_topology(workspace_root / ".stage") == ACTIVE_TOPOLOGY_V4:
+        current_root = stage_topology.card_location_for_status("active")
+        return (
+            "Stage registration gate violation: before modifying governed files, register an active "
+            f"work item with a matching scope in `.stage/{current_root}/`. "
+            "Unregistered targets: " + ", ".join(uncovered[:5])
+        )
     return (
         "Stage registration gate violation: before modifying governed files, register an active "
         "work item with a matching scope in `.stage/present/work/items/`. "
@@ -635,7 +671,11 @@ def work_item_relative(raw: str, workspace_root: Path) -> str:
     """Work-item relative path if ANY form (resolved, entry, lexical) is under
     `present/work/items/` — a work-item file that is a symlink to outside
     (resolve derefs away) still counts, since `load_work_items` follows it."""
+    if active_topology(workspace_root / ".stage") == ACTIVE_TOPOLOGY_V4:
+        prefix = f".stage/{stage_topology.card_location_for_status('active')}/"
+    else:
+        prefix = WORK_ITEMS_PREFIX
     for form in stage_relative_forms(raw, workspace_root):
-        if form.startswith(WORK_ITEMS_PREFIX):
+        if form.startswith(prefix):
             return form
     return ""

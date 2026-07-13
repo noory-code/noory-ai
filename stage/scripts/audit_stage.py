@@ -14,6 +14,7 @@ from typing import Any
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
+V4_TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "project-stage"
 HOOK_ROOT = PLUGIN_ROOT / "hooks"
 if str(HOOK_ROOT) not in sys.path:
     sys.path.insert(0, str(HOOK_ROOT))
@@ -25,6 +26,8 @@ if str(SCRIPT_ROOT) not in sys.path:
 
 import stage_guard  # noqa: E402
 import stage_records  # noqa: E402
+import stage_topology  # noqa: E402
+from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
 from stage_records import AuditedItem, RecordGraph  # noqa: E402
 
 
@@ -79,6 +82,33 @@ ROUTING_ONLY_LOCATIONS: tuple[str, ...] = (
 )
 
 
+def v4_record_locations() -> dict[str, tuple[str, ...]]:
+    """Registry-derived v4 counterpart of the verbatim v3 location table."""
+
+    locations: dict[str, tuple[str, ...]] = {}
+    for prefix in ("W", "DE", "D", "O", "Q", "A", "K", "P", "M"):
+        reference = stage_topology.resolve_artifact_reference(f"{prefix}-00000000")
+        locations[prefix] = tuple(
+            dict.fromkeys(Path(path).parent.as_posix() for path in reference.candidate_paths)
+        )
+    locations["R"] = stage_topology.retrospective_locations()
+    return locations
+
+
+def v4_routing_only_locations() -> tuple[str, ...]:
+    """Registry-derived v4 locations that carry no audited record prefix."""
+
+    return tuple(
+        root
+        for family, zone in (
+            ("canon", "official"),
+            ("model", "official"),
+            ("roadmap", "themes"),
+        )
+        for root in stage_topology.get_zone(family, zone).record_roots
+    )
+
+
 @dataclass(frozen=True)
 class Finding:
     severity: str
@@ -98,6 +128,23 @@ class Audit:
         self.project_root = project_root
         self.stage_root = project_root / ".stage"
         self.findings: list[Finding] = []
+        self.topology = active_topology(self.stage_root)
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            self.template_root = V4_TEMPLATE_ROOT
+            self.record_locations = v4_record_locations()
+            self.routing_only_locations = v4_routing_only_locations()
+            item_directory = Path(
+                stage_topology.card_location_for_status("active")
+            ).name
+            self.item_link_re = re.compile(
+                rf"\((?:\./)?{re.escape(item_directory)}/"
+                r"([A-Za-z][A-Za-z0-9]*-\d{3,})\.md(?:#[^)]+)?\)"
+            )
+        else:
+            self.template_root = TEMPLATE_ROOT
+            self.record_locations = RECORD_LOCATIONS
+            self.routing_only_locations = ROUTING_ONLY_LOCATIONS
+            self.item_link_re = ITEM_LINK_RE
 
     def error(self, code: str, message: str, path: Path | str = "") -> None:
         self.findings.append(Finding("error", code, message, self.display_path(path)))
@@ -146,14 +193,14 @@ class Audit:
         return self.findings
 
     def audit_template_files(self) -> None:
-        if not TEMPLATE_ROOT.exists():
-            self.error("TEMPLATE001", "Stage template root not found.", TEMPLATE_ROOT)
+        if not self.template_root.exists():
+            self.error("TEMPLATE001", "Stage template root not found.", self.template_root)
             return
 
-        for template_path in sorted(TEMPLATE_ROOT.rglob("*")):
+        for template_path in sorted(self.template_root.rglob("*")):
             if template_path.is_dir():
                 continue
-            relative = template_path.relative_to(TEMPLATE_ROOT)
+            relative = template_path.relative_to(self.template_root)
             target = self.stage_root / relative
             if not target.exists():
                 self.warning(
@@ -359,24 +406,37 @@ class Audit:
     def audit_work_indexes(self, audited_items: list[AuditedItem]) -> None:
         present_items = [entry.item for entry in audited_items if entry.location == "present"]
         known_ids = {item.item_id for item in present_items}
-        active_ids, active_unknown = self.mentioned_item_ids(
-            self.stage_root / "present" / "work" / "active.md", known_ids
-        )
-        review_ids, review_unknown = self.mentioned_item_ids(
-            self.stage_root / "present" / "work" / "review.md", known_ids
-        )
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            active_relative, review_relative = stage_topology.get_zone(
+                "work", "current"
+            ).index_surfaces
+            active_ids, active_unknown = self.mentioned_item_ids(
+                self.stage_root / active_relative, known_ids
+            )
+            review_ids, review_unknown = self.mentioned_item_ids(
+                self.stage_root / review_relative, known_ids
+            )
+        else:
+            active_relative = "present/work/active.md"
+            review_relative = "present/work/review.md"
+            active_ids, active_unknown = self.mentioned_item_ids(
+                self.stage_root / "present" / "work" / "active.md", known_ids
+            )
+            review_ids, review_unknown = self.mentioned_item_ids(
+                self.stage_root / "present" / "work" / "review.md", known_ids
+            )
 
         for unknown_id in sorted(active_unknown):
             self.error(
                 "INDEX001",
                 f"active.md references a work item that does not exist: {unknown_id}",
-                "present/work/active.md",
+                active_relative,
             )
         for unknown_id in sorted(review_unknown):
             self.error(
                 "INDEX002",
                 f"review.md references a work item that does not exist: {unknown_id}",
-                "present/work/review.md",
+                review_relative,
             )
 
         by_id = {item.item_id: item for item in present_items}
@@ -418,7 +478,7 @@ class Audit:
             self.error("INDEX000", "Work index file cannot be read.", path)
             return set(), set()
 
-        linked_ids = set(ITEM_LINK_RE.findall(text))
+        linked_ids = set(self.item_link_re.findall(text))
         return linked_ids & known_ids, linked_ids - known_ids
 
     def audit_backlog_items(self, graph: RecordGraph) -> None:
@@ -578,7 +638,13 @@ class Audit:
         the `archived` overwrite erased, a completed transition keeps its
         closed gates, and every archived item keeps a completed retrospective
         (rejection reasons are learning assets too)."""
-        index_path = self.stage_root / "past" / "work" / "archive" / "index.md"
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            index_relative = stage_topology.get_zone(
+                "work", "official"
+            ).index_surfaces[0]
+            index_path = self.stage_root / index_relative
+        else:
+            index_path = self.stage_root / "past" / "work" / "archive" / "index.md"
         final_by_id: dict[str, str] = {}
         for cells in stage_guard.parse_index_rows(index_path):
             if cells and cells[0].strip():
@@ -639,28 +705,50 @@ class Audit:
         (backlog, roadmap milestones, proposals): every record has a row, and
         every ID-bearing row has a record. Roadmap theme rows carry no record
         ID and are not checked."""
-        families = (
-            (
-                "future/backlog/index.md",
-                [(node.record_id, node.path) for node in graph.backlog],
-                # Planned cards are W records; legacy un-migrated B rows stay
-                # recognized so pre-v3 projects keep a truthful index check.
-                ("W", "B"),
-                ("BACKLOG008", "BACKLOG009"),
-            ),
-            (
-                "future/roadmap/index.md",
-                [(node.record_id, node.path) for node in graph.milestones],
-                ("M",),
-                ("ROADMAP001", "ROADMAP002"),
-            ),
-            (
-                "future/proposals/index.md",
-                [(node.record_id, node.path) for node in graph.proposals],
-                ("P",),
-                ("PROPOSAL001", "PROPOSAL002"),
-            ),
-        )
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            families = (
+                (
+                    stage_topology.get_zone("work", "planned").index_surfaces[0],
+                    [(node.record_id, node.path) for node in graph.backlog],
+                    ("W", "B"),
+                    ("BACKLOG008", "BACKLOG009"),
+                ),
+                (
+                    stage_topology.get_zone("roadmap", "milestones").index_surfaces[0],
+                    [(node.record_id, node.path) for node in graph.milestones],
+                    ("M",),
+                    ("ROADMAP001", "ROADMAP002"),
+                ),
+                (
+                    stage_topology.get_zone("proposals", "planned").index_surfaces[0],
+                    [(node.record_id, node.path) for node in graph.proposals],
+                    ("P",),
+                    ("PROPOSAL001", "PROPOSAL002"),
+                ),
+            )
+        else:
+            families = (
+                (
+                    "future/backlog/index.md",
+                    [(node.record_id, node.path) for node in graph.backlog],
+                    # Planned cards are W records; legacy un-migrated B rows stay
+                    # recognized so pre-v3 projects keep a truthful index check.
+                    ("W", "B"),
+                    ("BACKLOG008", "BACKLOG009"),
+                ),
+                (
+                    "future/roadmap/index.md",
+                    [(node.record_id, node.path) for node in graph.milestones],
+                    ("M",),
+                    ("ROADMAP001", "ROADMAP002"),
+                ),
+                (
+                    "future/proposals/index.md",
+                    [(node.record_id, node.path) for node in graph.proposals],
+                    ("P",),
+                    ("PROPOSAL001", "PROPOSAL002"),
+                ),
+            )
         for index_relative, records, prefixes, (missing_code, dangling_code) in families:
             index_path = self.stage_root / index_relative
             row_ids: set[str] = set()
@@ -687,11 +775,25 @@ class Audit:
                 )
 
     def audit_family_shapes(self) -> None:
-        required = {
-            self.stage_root / "present" / "work" / "retrospectives": ("id", "work_item"),
-            self.stage_root / "past" / "work" / "archive" / "retrospectives": ("id", "work_item"),
-            self.stage_root / "present" / "work" / "decisions": ("id", "work_item", "status"),
-        }
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            current_retro, official_retro = stage_topology.retrospective_locations()
+            decision_roots = stage_topology.resolve_artifact_reference(
+                "DE-00000000"
+            ).candidate_paths
+            required = {
+                self.stage_root / current_retro: ("id", "work_item"),
+                self.stage_root / official_retro: ("id", "work_item"),
+                **{
+                    self.stage_root / Path(root).parent: ("id", "work_item", "status")
+                    for root in decision_roots
+                },
+            }
+        else:
+            required = {
+                self.stage_root / "present" / "work" / "retrospectives": ("id", "work_item"),
+                self.stage_root / "past" / "work" / "archive" / "retrospectives": ("id", "work_item"),
+                self.stage_root / "present" / "work" / "decisions": ("id", "work_item", "status"),
+            }
         for family_root, keys in required.items():
             if not family_root.exists():
                 continue
@@ -716,8 +818,14 @@ class Audit:
         # WORK007 owns duplicates only where graph.work scans (present +
         # archive); planned cards in future/backlog keep plain SSOT001, and a
         # W id appearing in two lifecycle columns is an SSOT001 error too.
-        work_item_dirs = {"present/work/items", "past/work/archive/items"}
-        retrospective_dirs = set(RECORD_LOCATIONS["R"])
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            work_item_dirs = {
+                stage_topology.card_location_for_status("active"),
+                stage_topology.card_location_for_status("archived"),
+            }
+        else:
+            work_item_dirs = {"present/work/items", "past/work/archive/items"}
+        retrospective_dirs = set(self.record_locations["R"])
         by_id: dict[str, list[Path]] = {}
         for path in sorted(self.stage_root.rglob("*.md")):
             relative_parent = path.parent.relative_to(self.stage_root).as_posix()
@@ -742,7 +850,7 @@ class Audit:
             by_id.setdefault(record_id, []).append(path)
 
             prefix = match.group("prefix")
-            allowed = RECORD_LOCATIONS.get(prefix)
+            allowed = self.record_locations.get(prefix)
             if allowed is not None and relative_parent not in allowed:
                 self.error(
                     "OWN001",
@@ -780,8 +888,10 @@ class Audit:
         routed_cells = {token.strip().rstrip("/") for token in re.findall(r"`([^`]+)`", index_text)}
 
         routed_locations = [
-            location for locations in RECORD_LOCATIONS.values() for location in locations
-        ] + list(ROUTING_ONLY_LOCATIONS)
+            location
+            for locations in self.record_locations.values()
+            for location in locations
+        ] + list(self.routing_only_locations)
         for location in routed_locations:
             if (self.stage_root / location).is_dir() and location not in routed_cells:
                 self.warning(
@@ -807,6 +917,12 @@ class Audit:
         RECORD_LOCATIONS must not silently drift from it (P32). Parse the
         catalog table and compare each prefix's primary location to the code.
         """
+        # The schema-v4 registry is the tooling SSOT for its location map. The
+        # plugin-owned prose catalog remains schema-v3 until the documentation
+        # cutover card, so comparing it to a v4 project would create false drift.
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            return
+
         # The catalog is plugin-owned; a project copy (declared override or
         # not-yet-migrated v1 layout) takes precedence so its drift is visible.
         catalog_path = self.stage_root / "operations" / "artifacts.md"
@@ -835,7 +951,7 @@ class Audit:
                 )
             catalog[prefix] = location
 
-        for prefix, locations in RECORD_LOCATIONS.items():
+        for prefix, locations in self.record_locations.items():
             primary = locations[0]
             catalog_location = catalog.get(prefix)
             if catalog_location is None:
@@ -857,7 +973,7 @@ class Audit:
         # The catalog is the SSOT: a prefix it adds but the audit does not map
         # would be silently unsupported by ownership/routing checks.
         for prefix, catalog_location in catalog.items():
-            if prefix not in RECORD_LOCATIONS:
+            if prefix not in self.record_locations:
                 self.error(
                     "CATALOG001",
                     f"Artifact catalog declares prefix `{prefix}-` (`{catalog_location}/`) that the "
@@ -907,8 +1023,12 @@ class Audit:
         # Drift detection applies to the v2 layout only; a v1 project still
         # legitimately carries full copies and SCHEMA001 already points at the
         # generation gap.
-        if settings.get("schema_version") != stage_guard.STAGE_SCHEMA_VERSION:
-            return
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            if settings.get("schema_version") != stage_topology.SCHEMA_VERSION:
+                return
+        else:
+            if settings.get("schema_version") != stage_guard.STAGE_SCHEMA_VERSION:
+                return
         operations_root = self.stage_root / "operations"
         if not operations_root.is_dir():
             return
@@ -1037,18 +1157,38 @@ class Audit:
         return self._settings
 
     def audit_canon(self) -> None:
-        principles_path = self.stage_root / "past" / "canon" / "principles.md"
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            principles_relative = next(
+                path
+                for path in stage_topology.get_zone(
+                    "canon", "official"
+                ).index_surfaces
+                if path.endswith("principles.md")
+            )
+            principles_path = self.stage_root / principles_relative
+        else:
+            principles_path = self.stage_root / "past" / "canon" / "principles.md"
         try:
             text = principles_path.read_text(encoding="utf-8")
         except OSError:
-            self.error("CANON001", "past/canon/principles.md is missing — the harness core principles are gone.", principles_path)
+            if self.topology == ACTIVE_TOPOLOGY_V4:
+                message = (
+                    f"{principles_relative} is missing — the harness core principles are gone."
+                )
+            else:
+                message = "past/canon/principles.md is missing — the harness core principles are gone."
+            self.error("CANON001", message, principles_path)
             return
         markers = ("SSOT", "MECE", "Fail Fast", "AHA", "## Completion principle", "## Behavior principles")
         missing = [marker for marker in markers if marker not in text]
         if missing:
+            if self.topology == ACTIVE_TOPOLOGY_V4:
+                catalog = principles_relative
+            else:
+                catalog = "past/canon/principles.md"
             self.error(
                 "CANON001",
-                "Core principles are missing from past/canon/principles.md: " + ", ".join(missing),
+                f"Core principles are missing from {catalog}: " + ", ".join(missing),
                 principles_path,
             )
 
@@ -1063,15 +1203,30 @@ class Audit:
         schema_version = settings.get("schema_version")
         # Exact-type comparison: JSON `true` must not pass as 1 (bool is an
         # int subclass in Python).
-        if type(schema_version) is not int or schema_version != stage_guard.STAGE_SCHEMA_VERSION:
-            self.warning(
-                "SCHEMA001",
-                "settings.json schema_version "
-                f"`{schema_version if schema_version is not None else 'missing'}` differs from "
-                f"the plugin's contract version `{stage_guard.STAGE_SCHEMA_VERSION}` — the "
-                "harness was initialized by a different plugin generation.",
-                settings_path,
-            )
+        expected_schema_version = (
+            stage_topology.SCHEMA_VERSION
+            if self.topology == ACTIVE_TOPOLOGY_V4
+            else stage_guard.STAGE_SCHEMA_VERSION
+        )
+        if type(schema_version) is not int or schema_version != expected_schema_version:
+            if self.topology == ACTIVE_TOPOLOGY_V4:
+                self.warning(
+                    "SCHEMA001",
+                    "settings.json schema_version "
+                    f"`{schema_version if schema_version is not None else 'missing'}` differs from "
+                    f"the active topology's contract version `{expected_schema_version}` — the "
+                    "harness was initialized by a different plugin generation.",
+                    settings_path,
+                )
+            else:
+                self.warning(
+                    "SCHEMA001",
+                    "settings.json schema_version "
+                    f"`{schema_version if schema_version is not None else 'missing'}` differs from "
+                    f"the plugin's contract version `{stage_guard.STAGE_SCHEMA_VERSION}` — the "
+                    "harness was initialized by a different plugin generation.",
+                    settings_path,
+                )
         language = settings.get("language")
         if language is not None and (
             not isinstance(language, str)
@@ -1131,7 +1286,18 @@ class Audit:
 
     def known_principles(self) -> set[str]:
         if not hasattr(self, "_known_principles"):
-            cells = self.parse_table_first_cells(self.stage_root / "past" / "canon" / "principles.md")
+            if self.topology == ACTIVE_TOPOLOGY_V4:
+                principles_relative = next(
+                    path
+                    for path in stage_topology.get_zone(
+                        "canon", "official"
+                    ).index_surfaces
+                    if path.endswith("principles.md")
+                )
+                principles_path = self.stage_root / principles_relative
+            else:
+                principles_path = self.stage_root / "past" / "canon" / "principles.md"
+            cells = self.parse_table_first_cells(principles_path)
             self._known_principles = {cell.split(" (")[0].strip() for cell in cells if cell}
         return self._known_principles
 
