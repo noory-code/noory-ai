@@ -39,6 +39,23 @@ def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def stage_tree(stage_root: Path) -> dict[str, tuple[str, bytes | str]]:
+    """Capture directories, links, and file bytes without following nested links."""
+
+    entries: dict[str, tuple[str, bytes | str]] = {}
+    if stage_root.is_symlink():
+        entries["."] = ("symlink", os.readlink(stage_root))
+    for path in sorted(stage_root.rglob("*")):
+        relative = path.relative_to(stage_root).as_posix()
+        if path.is_symlink():
+            entries[relative] = ("symlink", os.readlink(path))
+        elif path.is_file():
+            entries[relative] = ("file", path.read_bytes())
+        elif path.is_dir():
+            entries[relative] = ("directory", "")
+    return entries
+
+
 class V3ToV4MigrationTest(unittest.TestCase):
     def make_v3_project(self, root: Path) -> Path:
         shutil.copytree(V3_TEMPLATE_ROOT, root / ".stage")
@@ -116,16 +133,26 @@ class V3ToV4MigrationTest(unittest.TestCase):
                 code = migrate_stage.migrate(root, dry_run)
         return code, buffer.getvalue()
 
-    def assert_refusal(self, root: Path, expected: str) -> None:
-        before = git(root, "rev-parse", "HEAD").stdout.strip()
+    def assert_refusal(self, root: Path, expected: str) -> str:
+        stage_root = root / ".stage"
+        before_head = git(root, "rev-parse", "HEAD").stdout.strip()
+        before_status = git(root, "status", "--porcelain=v1", "-z").stdout
+        before_tree = stage_tree(stage_root)
         code, output = self.run_migrate(root)
         self.assertEqual(1, code)
         self.assertIn(expected, output.lower())
-        self.assertEqual(before, git(root, "rev-parse", "HEAD").stdout.strip())
-        self.assertTrue((root / ".stage/past").exists())
+        self.assertEqual(before_head, git(root, "rev-parse", "HEAD").stdout.strip())
+        self.assertEqual(before_status, git(root, "status", "--porcelain=v1", "-z").stdout)
+        self.assertEqual(before_tree, stage_tree(stage_root))
+        self.assertTrue((stage_root / "past").exists())
+        self.assertTrue((stage_root / "present").exists())
+        self.assertTrue((stage_root / "future").exists())
+        settings = json.loads((stage_root / "settings.json").read_text(encoding="utf-8"))
+        self.assertEqual(3, settings["schema_version"])
         self.assertFalse(
-            (root / ".stage/.runtime/schema-v4-maintenance.json").exists()
+            (stage_root / ".runtime/schema-v4-maintenance.json").exists()
         )
+        return output
 
     def test_full_v3_project_migrates_to_strict_clean_v4(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -189,12 +216,16 @@ class V3ToV4MigrationTest(unittest.TestCase):
             self.assertIn("--abort", output)
             self.assertIn("git revert", output)
 
-    def test_dirty_tree_is_refused(self):
+    def test_dirty_relocation_source_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.make_v3_project(root)
-            (root / "dirty.txt").write_text("dirty\n", encoding="utf-8")
-            self.assert_refusal(root, "dirty")
+            stage_root = self.make_v3_project(root)
+            source = stage_root / "past/canon/principles.md"
+            source.write_text(
+                source.read_text(encoding="utf-8") + "\nAdversarial dirt.\n",
+                encoding="utf-8",
+            )
+            self.assert_refusal(root, ".stage/past/canon/principles.md")
 
     @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
     def test_symlinked_stage_root_is_refused(self):
@@ -227,7 +258,8 @@ class V3ToV4MigrationTest(unittest.TestCase):
                 intent = root / ".stage/.runtime/intents" / name
                 intent.parent.mkdir(parents=True, exist_ok=True)
                 intent.write_text("{}\n", encoding="utf-8")
-                self.assert_refusal(root, name.lower())
+                output = self.assert_refusal(root, name.lower())
+                self.assertIn("pending promotion machinery", output.lower())
 
     def test_legacy_promotion_intent_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -236,7 +268,8 @@ class V3ToV4MigrationTest(unittest.TestCase):
             intent = root / ".stage/.runtime/promote-intent.json"
             intent.parent.mkdir(parents=True, exist_ok=True)
             intent.write_text("{}\n", encoding="utf-8")
-            self.assert_refusal(root, "promote-intent.json")
+            output = self.assert_refusal(root, "promote-intent.json")
+            self.assertIn("pending promotion machinery", output.lower())
 
     def test_mixed_populated_topology_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -265,9 +298,22 @@ class V3ToV4MigrationTest(unittest.TestCase):
             git(root, "add", "-A")
             git(root, "commit", "-qm", "customize root index")
 
-            self.assert_refusal(root, "proposed v4 index")
+            original_index = index_path.read_bytes()
+            code, output = self.run_migrate(root)
             proposal = stage_root / ".runtime/schema-v4-index.proposed.md"
 
+            self.assertEqual(1, code)
+            self.assertIn("proposed v4 index", output.lower())
+            self.assertEqual(original_index, index_path.read_bytes())
+            self.assertTrue((stage_root / "past").is_dir())
+            self.assertTrue((stage_root / "present").is_dir())
+            self.assertTrue((stage_root / "future").is_dir())
+            self.assertEqual(
+                3,
+                json.loads(
+                    (stage_root / "settings.json").read_text(encoding="utf-8")
+                )["schema_version"],
+            )
             self.assertTrue(proposal.is_file())
             self.assertFalse((stage_root / ".runtime/schema-v4-maintenance.json").exists())
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.31.1 — 2026-07-13
+
+Schema-v4 migration and external-project QA hardening:
+
+- Added adversarial v3->v4 fixtures for mutation-free preflight refusals, exact abort,
+  customized and Korean content, Contract X decision identity, milestone closure gates, and a
+  strict-audit-clean full lifecycle on a migrated project. Fixed `.stage/.runtime/` dirt being
+  misclassified as blocking git dirt and made abort remove only migration-created empty runtime
+  directories while preserving pre-existing runtime state. (W-00000038)
+
 ## 0.31.0 — 2026-07-13
 
 Schema v4 activation and one-shot project migration:

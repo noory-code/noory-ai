@@ -106,7 +106,9 @@ def _load_json(path: Path) -> dict[str, Any] | None:
 
 
 def _runtime_path(path: str) -> bool:
-    clean = path.replace("\\", "/").lstrip("./")
+    clean = path.replace("\\", "/")
+    if clean.startswith("./"):
+        clean = clean[2:]
     return clean == ".stage/.runtime" or clean.startswith(".stage/.runtime/")
 
 
@@ -377,12 +379,22 @@ def preflight(
 def begin(
     stage_root: Path, preflight_result: Preflight, original_schema_version: object
 ) -> dict[str, Any]:
+    runtime_root = stage_root / ".runtime"
+    original_runtime_directories = []
+    if runtime_root.is_dir():
+        original_runtime_directories.append(".runtime")
+        original_runtime_directories.extend(
+            path.relative_to(stage_root).as_posix()
+            for path in sorted(runtime_root.rglob("*"))
+            if path.is_dir() and not path.is_symlink()
+        )
     journal = {
         "migration": "schema-v3-to-v4",
         "status": "active",
         "started_at": utc_now(),
         "original_head": preflight_result.head,
         "original_schema_version": original_schema_version,
+        "original_runtime_directories": original_runtime_directories,
         "moves": [],
         "rewritten": [],
         "created": [],
@@ -731,7 +743,11 @@ def verify_no_legacy_references(stage_root: Path) -> list[str]:
             target = posixpath.normpath(
                 posixpath.join(posixpath.dirname(relative), path_value)
             )
-            if target != ".." and not target.startswith("../") and stage_topology.is_legacy_path(target):
+            if (
+                target != ".."
+                and not target.startswith("../")
+                and stage_topology.is_legacy_path(target)
+            ):
                 line_number = text.count("\n", 0, match.start()) + 1
                 leftovers.append(f"{relative}:{line_number}:link")
     return sorted(dict.fromkeys(leftovers))
@@ -817,6 +833,31 @@ def abort(project_root: Path, stage_root: Path) -> int:
             (stage_root / relative).unlink()
         except FileNotFoundError:
             pass
+    original_runtime_directories = journal.get("original_runtime_directories")
+    if isinstance(original_runtime_directories, list) and all(
+        isinstance(relative, str) for relative in original_runtime_directories
+    ):
+        preserved = set(original_runtime_directories)
+        runtime_root = stage_root / ".runtime"
+        if runtime_root.is_dir() and not runtime_root.is_symlink():
+            directories = sorted(
+                (
+                    path
+                    for path in runtime_root.rglob("*")
+                    if path.is_dir() and not path.is_symlink()
+                ),
+                key=lambda path: len(path.parts),
+                reverse=True,
+            )
+            directories.append(runtime_root)
+            for directory in directories:
+                relative = directory.relative_to(stage_root).as_posix()
+                if relative in preserved:
+                    continue
+                try:
+                    directory.rmdir()
+                except OSError:
+                    pass
     remaining = dirty_paths(project_root)
     if remaining:
         print(
