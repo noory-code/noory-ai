@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Migrate a project-local .stage to the v2 plugin-owned operations layout.
+"""Migrate a project-local .stage through the current Stage schema.
 
 Contract (DE-00000002): common operations docs are plugin-owned and no longer
 copied into consuming projects. This migration is idempotent and never deletes
@@ -19,6 +19,11 @@ family retires. A realized or rejected `B-` item is removed from the tree (its
 execution record lives in the archived work card; git history keeps the file);
 any other `B-` item converts to a planned `W-` card with a fresh id and its
 body preserved. Never deletes a body that has no surviving record.
+
+v4 (W-00000037): perform the fail-closed one-shot responsibility-topology
+relocation through ``stage_topology.V3_TO_V4_RELOCATIONS``. The transaction
+uses git moves, a runtime maintenance marker and journal, marker-last schema
+stamping, strict audit, and a deterministic pre-commit ``--abort`` path.
 """
 
 from __future__ import annotations
@@ -35,9 +40,13 @@ OPERATIONS_ROOT = PLUGIN_ROOT / "operations"
 HOOK_ROOT = PLUGIN_ROOT / "hooks"
 if str(HOOK_ROOT) not in sys.path:
     sys.path.insert(0, str(HOOK_ROOT))
+SCRIPT_ROOT = Path(__file__).resolve().parent
+if str(SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_ROOT))
 
 from stage_paths import STAGE_SCHEMA_VERSION  # noqa: E402
 from stage_work import parse_frontmatter  # noqa: E402
+import stage_schema_v4_migration as v4_migration  # noqa: E402
 
 # The project policy surface and plain directory docs are never treated as
 # shadows of plugin-owned common docs.
@@ -70,7 +79,7 @@ LEGACY_VERIFICATION_PROSE = frozenset(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Migrate .stage to the v2 plugin-owned operations layout."
+        description="Migrate a project-local .stage through the current schema."
     )
     parser.add_argument(
         "--project-root",
@@ -81,6 +90,14 @@ def parse_args() -> argparse.Namespace:
         "--dry-run",
         action="store_true",
         help="Report the planned actions without changing any file.",
+    )
+    parser.add_argument(
+        "--abort",
+        action="store_true",
+        help=(
+            "Restore migration-owned staged/working-tree changes before the migration "
+            "is committed. After commit, use git revert instead."
+        ),
     )
     return parser.parse_args()
 
@@ -172,8 +189,13 @@ def drop_index_rows(stage_root: Path, deleted: list[str], dry_run: bool) -> int:
     return dropped
 
 
-def stamp_schema_version(stage_root: Path, settings: dict[str, object], dry_run: bool) -> None:
-    settings["schema_version"] = STAGE_SCHEMA_VERSION
+def stamp_schema_version(
+    stage_root: Path,
+    settings: dict[str, object],
+    version: int,
+    dry_run: bool,
+) -> None:
+    settings["schema_version"] = version
     settings.setdefault("operations_overrides", [])
     if not dry_run:
         (stage_root / "settings.json").write_text(
@@ -267,16 +289,9 @@ def migrate_backlog(stage_root: Path, dry_run: bool) -> None:
             print(f"  update backlog index ({len(lines) - len(kept)} closed rows removed)")
 
 
-def migrate(project_root: Path, dry_run: bool) -> int:
-    stage_root = project_root / ".stage"
-    if not stage_root.is_dir():
-        print(f"Stage root not found: {stage_root}")
-        return 1
-    settings = load_settings(stage_root)
-    if settings is None:
-        print("settings.json is missing or unreadable; repair it first.")
-        return 1
-
+def migrate_operations(
+    stage_root: Path, settings: dict[str, object], dry_run: bool
+) -> list[str]:
     overrides = declared_overrides(settings)
     operations_root = stage_root / "operations"
     deleted: list[str] = []
@@ -310,15 +325,145 @@ def migrate(project_root: Path, dry_run: bool) -> int:
     if dropped:
         print(f"  update index.md ({dropped} routing rows for deleted docs removed)")
 
-    migrate_backlog(stage_root, dry_run)
+    return drift
 
-    if drift:
-        print(f"Unresolved ownership drift: {len(drift)} file(s); schema_version not stamped.")
+
+def strict_audit_findings(project_root: Path):
+    import audit_stage
+
+    return audit_stage.Audit(project_root).run()
+
+
+def abort(project_root: Path) -> int:
+    stage_root = project_root / ".stage"
+    if not stage_root.exists():
+        print(f"Stage root not found: {stage_root}")
         return 1
-    if settings.get("schema_version") != STAGE_SCHEMA_VERSION:
-        stamp_schema_version(stage_root, settings, dry_run)
+    return v4_migration.abort(project_root, stage_root)
+
+
+def migrate(project_root: Path, dry_run: bool) -> int:
+    stage_root = project_root / ".stage"
+    if not stage_root.exists():
+        print(f"Stage root not found: {stage_root}")
+        return 1
+    if not stage_root.is_dir():
+        print(f"Stage root is not a directory: {stage_root}")
+        return 1
+    settings = load_settings(stage_root)
+    if settings is None:
+        print("settings.json is missing or unreadable; repair it first.")
+        return 1
+    schema_version = settings.get("schema_version")
+    if type(schema_version) is int and schema_version > STAGE_SCHEMA_VERSION:
+        print(
+            f"Project schema v{schema_version} is newer than this plugin's "
+            f"v{STAGE_SCHEMA_VERSION} contract; migration is refused."
+        )
+        return 1
+    if type(schema_version) is int and schema_version == STAGE_SCHEMA_VERSION:
+        print(f"Stage project already uses schema v{STAGE_SCHEMA_VERSION}; no migration needed.")
+        return 0
+
+    try:
+        checked = v4_migration.preflight(
+            project_root, stage_root, settings, dry_run
+        )
+    except v4_migration.MigrationError as exc:
+        print(f"Migration refused: {exc}")
+        return 1
+
+    if dry_run:
+        drift = migrate_operations(stage_root, settings, True)
+        migrate_backlog(stage_root, True)
+        if drift:
+            print(
+                f"Unresolved ownership drift: {len(drift)} file(s); migration would stop."
+            )
+            return 1
+        for origin, destination in checked.moves:
+            print(f"  move   .stage/{origin} -> .stage/{destination}")
+        print("  patch  .stage/index.md (recognized topology section only)")
+        print(f"  stamp  settings.json schema_version = {STAGE_SCHEMA_VERSION} (marker-last)")
+        print("Migration plan complete (dry run); no files or git state changed.")
+        return 0
+
+    print(
+        "Preflight passed. Close every other agent/editor window before continuing; "
+        "the schema-v4 maintenance marker now denies concurrent Stage writes."
+    )
+    journal = v4_migration.begin(stage_root, checked, schema_version)
+    try:
+        drift = migrate_operations(stage_root, settings, False)
+        if drift:
+            raise v4_migration.MigrationError(
+                f"Unresolved ownership drift: {len(drift)} file(s); schema_version was not stamped."
+            )
+
+        migrate_backlog(stage_root, False)
+        # The v2->v3 compatibility pass can replace tracked backlog files before
+        # the v3 directory itself is relocated.  Record that intermediate state
+        # in the index so the following registry-driven ``git mv`` can move the
+        # directory as one unit.  Runtime transaction files remain unstaged.
+        v4_migration.stage_changes(project_root)
+        v4_migration.relocate(project_root, stage_root, checked, journal)
+        rewritten = v4_migration.rewrite_moved_markdown(stage_root)
+        journal["rewritten"] = rewritten
+        v4_migration.save_journal(stage_root, journal)
+        v4_migration.create_v4_indexes(stage_root, settings, journal)
+        # Compatibility migrations above may have narrowly edited routing rows.
+        # Rebuild the already-recognized topology patch from that current index so
+        # those edits are not overwritten by the preflight snapshot.
+        patched_index = v4_migration.prepare_index_patch(stage_root, settings, False)
+        v4_migration.patch_project_index(stage_root, patched_index, journal)
+
+        leftovers = v4_migration.verify_no_legacy_references(stage_root)
+        if leftovers:
+            raise v4_migration.MigrationError(
+                "Post-relocation verification found a legacy reference in a durable "
+                "machine-readable field or live document link: " + ", ".join(leftovers)
+            )
+
+        stamp_schema_version(
+            stage_root, settings, STAGE_SCHEMA_VERSION, False
+        )
         print(f"  stamp  settings.json schema_version = {STAGE_SCHEMA_VERSION}")
-    print("Migration " + ("plan complete (dry run)." if dry_run else "complete."))
+        v4_migration.stage_changes(project_root)
+
+        findings = strict_audit_findings(project_root)
+        if findings:
+            stamp_schema_version(stage_root, settings, 3, False)
+            v4_migration.stage_changes(project_root)
+            detail = "; ".join(
+                f"{finding.severity.upper()} {finding.code}"
+                + (f" [{finding.path}]" if finding.path else "")
+                + f": {finding.message}"
+                for finding in findings[:20]
+            )
+            raise v4_migration.MigrationError(
+                "Strict post-migration audit failed; settings.json was restored to the "
+                f"schema-v3 marker. Findings: {detail}"
+            )
+
+        v4_migration.finish(stage_root, journal)
+    except (v4_migration.MigrationError, OSError, ValueError) as exc:
+        v4_migration.fail(stage_root, journal, str(exc))
+        print(f"Migration stopped fail-closed: {exc}")
+        print(
+            "The maintenance marker remains. Before any commit, run the stage-migrate "
+            "abort path (`migrate_stage.py --abort`) to restore the clean v3 tree."
+        )
+        return 1
+
+    print("Schema-v4 migration complete and strict audit clean.")
+    print(
+        "All migration changes are staged; this command does not commit. Review them, then "
+        "commit with: git commit -m \"chore(stage): migrate project harness to schema v4\""
+    )
+    print(
+        "Before committing, `migrate_stage.py --abort` restores the staged/working tree. "
+        "After committing, rollback means `git revert <migration-commit>`."
+    )
     return 0
 
 
@@ -327,7 +472,10 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
     args = parse_args()
     project_root = Path(args.project_root).expanduser().resolve()
-    raise SystemExit(migrate(project_root, args.dry_run))
+    if args.abort and args.dry_run:
+        print("--abort and --dry-run are mutually exclusive.")
+        raise SystemExit(2)
+    raise SystemExit(abort(project_root) if args.abort else migrate(project_root, args.dry_run))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -30,6 +31,9 @@ class StageAuditTest(unittest.TestCase):
     def init_stage(self, root: Path) -> None:
         init_stage.copy_templates(root, False)
 
+    def init_v3_stage(self, root: Path) -> None:
+        shutil.copytree(audit_stage.TEMPLATE_ROOT, root / ".stage")
+
     def write_work_item(
         self,
         root: Path,
@@ -45,9 +49,9 @@ class StageAuditTest(unittest.TestCase):
         decision_refs: str = "",
     ) -> Path:
         if location == "present":
-            base = root / ".stage" / "present" / "work" / "items"
+            base = root / ".stage" / "work" / "current"
         else:
-            base = root / ".stage" / "past" / "work" / "archive" / "items"
+            base = root / ".stage" / "official" / "work" / "archive" / "items"
         base.mkdir(parents=True, exist_ok=True)
         path = base / f"{item_id}.md"
         path.write_text(
@@ -71,7 +75,7 @@ class StageAuditTest(unittest.TestCase):
         return path
 
     def write_archive_retrospective(self, root: Path, *, retro_id: str = "R-0001", work_item: str = "W-0001") -> Path:
-        path = root / ".stage" / "past" / "work" / "archive" / "retrospectives" / f"{retro_id}.md"
+        path = root / ".stage" / "official" / "work" / "archive" / "retrospectives" / f"{retro_id}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             f"---\nid: {retro_id}\nwork_item: {work_item}\n---\n# {retro_id}\n",
@@ -88,7 +92,7 @@ class StageAuditTest(unittest.TestCase):
         status: str = "decided",
         principles: str = "SSOT — one owning location for this rule.",
     ) -> Path:
-        path = root / ".stage" / "present" / "work" / "decisions" / f"{decision_id}.md"
+        path = root / ".stage" / "decisions" / "pending" / f"{decision_id}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             (
@@ -100,7 +104,7 @@ class StageAuditTest(unittest.TestCase):
         return path
 
     def write_backlog_item(self, root: Path, *, item_id: str = "B-0001", status: str = "captured", parent: str = "", frontmatter: bool = True) -> Path:
-        path = root / ".stage" / "future" / "backlog" / "items" / f"{item_id}-test.md"
+        path = root / ".stage" / "work" / "planned" / f"{item_id}-test.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         if frontmatter:
             path.write_text(
@@ -112,7 +116,7 @@ class StageAuditTest(unittest.TestCase):
         return path
 
     def write_retrospective(self, root: Path, *, retro_id: str = "R-0001", work_item: str = "W-0001") -> Path:
-        path = root / ".stage" / "present" / "work" / "retrospectives" / f"{retro_id}.md"
+        path = root / ".stage" / "work" / "retrospectives" / f"{retro_id}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             (
@@ -127,14 +131,14 @@ class StageAuditTest(unittest.TestCase):
         return path
 
     def append_active_index(self, root: Path, item_id: str) -> None:
-        path = root / ".stage" / "present" / "work" / "active.md"
+        path = root / ".stage" / "work" / "active.md"
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"| {item_id} | test | active | ai | [item](items/{item_id}.md) |\n")
+            handle.write(f"| {item_id} | test | active | ai | [item](current/{item_id}.md) |\n")
 
     def append_review_index(self, root: Path, item_id: str, status: str = "review") -> None:
-        path = root / ".stage" / "present" / "work" / "review.md"
+        path = root / ".stage" / "work" / "review.md"
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"| {item_id} | passed | completed | {status} | [item](items/{item_id}.md) |\n")
+            handle.write(f"| {item_id} | passed | completed | {status} | [item](current/{item_id}.md) |\n")
 
     def test_initialized_stage_passes_audit(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -310,11 +314,11 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="review")
-            retrospective = root / ".stage" / "present" / "work" / "retrospectives" / "R-0001.md"
+            retrospective = root / ".stage" / "work" / "retrospectives" / "R-0001.md"
             retrospective.write_text("# R-0001\n", encoding="utf-8")
-            review = root / ".stage" / "present" / "work" / "review.md"
+            review = root / ".stage" / "work" / "review.md"
             with review.open("a", encoding="utf-8") as handle:
-                handle.write("| W-0001 | pending | [R-0001](retrospectives/R-0001.md) | pending | [item](items/W-0001.md) |\n")
+                handle.write("| W-0001 | pending | [R-0001](retrospectives/R-0001.md) | pending | [item](current/W-0001.md) |\n")
 
             findings = audit_stage.Audit(root).run()
 
@@ -325,10 +329,10 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active")
-            active = root / ".stage" / "present" / "work" / "active.md"
+            active = root / ".stage" / "work" / "active.md"
             with active.open("a", encoding="utf-8") as handle:
                 handle.write("\nA SHA-256 digest is not a work item ID.\n")
-                handle.write("| W-0001 | test | active | ai | [item](items/W-0001.md) |\n")
+                handle.write("| W-0001 | test | active | ai | [item](current/W-0001.md) |\n")
 
             findings = audit_stage.Audit(root).run()
 
@@ -339,9 +343,9 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, item_id="W-0001", status="active")
-            active = root / ".stage" / "present" / "work" / "active.md"
+            active = root / ".stage" / "work" / "active.md"
             with active.open("a", encoding="utf-8") as handle:
-                handle.write("| W-00012 | test | active | ai | [item](items/W-00012.md) |\n")
+                handle.write("| W-00012 | test | active | ai | [item](current/W-00012.md) |\n")
 
             findings = audit_stage.Audit(root).run()
 
@@ -445,7 +449,7 @@ class StageAuditTest(unittest.TestCase):
         self.assertEqual([], findings)
 
     def append_archive_index(self, root: Path, item_id: str, final: str) -> None:
-        path = root / ".stage" / "past" / "work" / "archive" / "index.md"
+        path = root / ".stage" / "official" / "work" / "archive" / "index.md"
         with path.open("a", encoding="utf-8") as handle:
             handle.write(f"| {item_id} | {final} | [item](items/{item_id}.md) |\n")
 
@@ -561,7 +565,7 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_backlog_item(root)
-            self.append_index_row(root, "future/backlog/index.md", "B-0001")
+            self.append_index_row(root, "work/planned/index.md", "B-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -572,7 +576,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.append_index_row(root, "future/backlog/index.md", "B-9999")
+            self.append_index_row(root, "work/planned/index.md", "B-9999")
 
             findings = audit_stage.Audit(root).run()
 
@@ -582,7 +586,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.write_heading_record(root, "future/roadmap/milestones/M-0001.md", "M-0001")
+            self.write_heading_record(root, "roadmap/milestones/M-0001.md", "M-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -592,7 +596,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.append_index_row(root, "future/roadmap/index.md", "M-9999")
+            self.append_index_row(root, "roadmap/milestones/index.md", "M-9999")
 
             findings = audit_stage.Audit(root).run()
 
@@ -602,7 +606,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.append_index_row(root, "future/roadmap/index.md", "Foundations")
+            self.append_index_row(root, "roadmap/themes/index.md", "Foundations")
 
             findings = audit_stage.Audit(root).run()
 
@@ -612,7 +616,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.write_heading_record(root, "future/proposals/P-0001.md", "P-0001")
+            self.write_heading_record(root, "proposals/P-0001.md", "P-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -622,7 +626,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.append_index_row(root, "future/proposals/index.md", "P-9999")
+            self.append_index_row(root, "proposals/index.md", "P-9999")
 
             findings = audit_stage.Audit(root).run()
 
@@ -654,7 +658,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            items = root / ".stage" / "present" / "work" / "items"
+            items = root / ".stage" / "work" / "current"
             (items / "W-0001.md").write_text(
                 "---\nid: W-0001\ntitle: Sparse\nscope: src\n---\n# W-0001\n",
                 encoding="utf-8",
@@ -709,7 +713,7 @@ class StageAuditTest(unittest.TestCase):
 
     def test_template_schema_version_matches_plugin_constant(self):
         template = json.loads(
-            (audit_stage.TEMPLATE_ROOT / "settings.json").read_text(encoding="utf-8")
+            (audit_stage.V4_TEMPLATE_ROOT / "settings.json").read_text(encoding="utf-8")
         )
         self.assertEqual(
             audit_stage.stage_guard.STAGE_SCHEMA_VERSION, template.get("schema_version")
@@ -784,7 +788,7 @@ class StageAuditTest(unittest.TestCase):
         self.assertIn("R-0001", collisions[0].message)
         self.assertIn("W-0001", collisions[0].message)
         self.assertIn("W-0002", collisions[0].message)
-        self.assertIn("past/work/archive/retrospectives/R-0001.md", collisions[0].path)
+        self.assertIn("official/work/archive/retrospectives/R-0001.md", collisions[0].path)
         self.assertNotIn("SSOT001", finding_codes(findings))
 
     def test_retrospective_id_may_not_repeat_for_same_work_item(self):
@@ -862,7 +866,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            path = root / ".stage" / "future" / "backlog" / "items" / "misnamed-item.md"
+            path = root / ".stage" / "work" / "planned" / "misnamed-item.md"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
                 "---\nid: B-0001\ntitle: Test\nkind:\nparent:\nstatus: captured\npriority:\n---\n# B-0001\n",
@@ -911,7 +915,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            principles = root / ".stage" / "past" / "canon" / "principles.md"
+            principles = root / ".stage" / "official" / "canon" / "principles.md"
             principles.write_text("# Principles\n\nProject-only principles.\n", encoding="utf-8")
 
             findings = audit_stage.Audit(root).run()
@@ -994,7 +998,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            question = root / ".stage" / "present" / "state" / "questions" / "Q-0001.md"
+            question = root / ".stage" / "state" / "questions" / "Q-0001.md"
             question.write_text("---\nid: Q-0001\ntitle: Q\nwork_items: W-9999\n---\n# Q-0001\n", encoding="utf-8")
 
             findings = audit_stage.Audit(root).run()
@@ -1038,7 +1042,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            rogue = root / ".stage" / "present" / "work" / "retrospectives" / "notes.md"
+            rogue = root / ".stage" / "work" / "retrospectives" / "notes.md"
             rogue.write_text("# free-form notes without frontmatter\n", encoding="utf-8")
 
             findings = audit_stage.Audit(root).run()
@@ -1068,21 +1072,21 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.write_record(root, "future/backlog/items/Q-00000001.md", "Q-00000001")
+            self.write_record(root, "work/planned/Q-00000001.md", "Q-00000001")
 
             findings = audit_stage.Audit(root).run()
 
         own = [finding for finding in findings if finding.code == "OWN001"]
         self.assertEqual(len(own), 1)
         self.assertEqual(own[0].severity, "error")
-        self.assertIn("present/state/questions", own[0].message)
+        self.assertIn("state/questions", own[0].message)
 
     def test_duplicate_record_id_across_files_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.write_record(root, "future/backlog/items/B-00000001.md", "B-00000001", "status: captured\n")
-            self.write_record(root, "future/backlog/items/B-00000001-copy.md", "B-00000001", "status: captured\n")
+            self.write_record(root, "work/planned/B-00000001.md", "B-00000001", "status: captured\n")
+            self.write_record(root, "work/planned/B-00000001-copy.md", "B-00000001", "status: captured\n")
 
             findings = audit_stage.Audit(root).run()
 
@@ -1095,8 +1099,8 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root)
-            source = root / ".stage" / "present" / "work" / "items" / "W-0001.md"
-            copy = root / ".stage" / "present" / "work" / "items" / "W-0001-copy.md"
+            source = root / ".stage" / "work" / "current" / "W-0001.md"
+            copy = root / ".stage" / "work" / "current" / "W-0001-copy.md"
             copy.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
             self.append_active_index(root, "W-0001")
 
@@ -1114,7 +1118,7 @@ class StageAuditTest(unittest.TestCase):
             text = index_path.read_text(encoding="utf-8")
             index_path.write_text(
                 "\n".join(
-                    line for line in text.splitlines() if "future/backlog/items/" not in line
+                    line for line in text.splitlines() if "work/planned/" not in line
                 )
                 + "\n",
                 encoding="utf-8",
@@ -1125,7 +1129,7 @@ class StageAuditTest(unittest.TestCase):
         route = [finding for finding in findings if finding.code == "ROUTE001"]
         self.assertEqual(len(route), 1)
         self.assertEqual(route[0].severity, "warning")
-        self.assertIn("future/backlog/items", route[0].message)
+        self.assertIn("work/planned", route[0].message)
 
     def test_unrouted_operations_document_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1143,14 +1147,14 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            path = root / ".stage" / "future" / "backlog" / "items" / "P-00000001.md"
+            path = root / ".stage" / "work" / "planned" / "P-00000001.md"
             path.write_text("# P-00000001 Misplaced proposal\n\n## Proposal\n", encoding="utf-8")
 
             findings = audit_stage.Audit(root).run()
 
         own = [finding for finding in findings if finding.code == "OWN001"]
         self.assertEqual(len(own), 1)
-        self.assertIn("future/proposals", own[0].message)
+        self.assertIn("proposals", own[0].message)
 
     def test_unrouted_non_prefixed_family_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1160,7 +1164,7 @@ class StageAuditTest(unittest.TestCase):
             text = index_path.read_text(encoding="utf-8")
             index_path.write_text(
                 "\n".join(
-                    line for line in text.splitlines() if "future/roadmap/themes/" not in line
+                    line for line in text.splitlines() if "roadmap/themes/" not in line
                 )
                 + "\n",
                 encoding="utf-8",
@@ -1170,7 +1174,7 @@ class StageAuditTest(unittest.TestCase):
 
         route = [finding for finding in findings if finding.code == "ROUTE001"]
         self.assertEqual(len(route), 1)
-        self.assertIn("future/roadmap/themes", route[0].message)
+        self.assertIn("roadmap/themes", route[0].message)
 
 
     def test_planned_card_parent_may_live_in_present(self):
@@ -1199,8 +1203,8 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            self.write_record(root, "present/work/retrospectives/R-9.md", "R-9", "work_item: W-999\n")
-            (root / ".stage/present/work/decisions/DE-9.md").write_text(
+            self.write_record(root, "work/retrospectives/R-9.md", "R-9", "work_item: W-999\n")
+            (root / ".stage/decisions/pending/DE-9.md").write_text(
                 "---\nid: DE-9\nwork_item: W-999\nstatus: impossible\n---\n"
                 "# DE-9\n\n## Principles applied\n\n",
                 encoding="utf-8",
@@ -1232,20 +1236,25 @@ class StageAuditTest(unittest.TestCase):
             index_path = root / ".stage" / "index.md"
             text = index_path.read_text(encoding="utf-8")
             index_path.write_text(
-                "\n".join(line for line in text.splitlines() if "Proposal bodies" not in line) + "\n",
+                "\n".join(
+                    line.replace("`proposals/`", "proposals/")
+                    for line in text.splitlines()
+                    if "Proposal bodies" not in line
+                )
+                + "\n",
                 encoding="utf-8",
             )
 
             route = [f for f in audit_stage.Audit(root).run() if f.code == "ROUTE001"]
 
-        # future/proposals/ body route removed even though future/proposals/index.md remains.
-        self.assertTrue(any("future/proposals" in f.message for f in route))
+        # proposals/ body route removed even though proposals/index.md remains.
+        self.assertTrue(any("proposals" in f.message for f in route))
 
 
     def test_catalog_duplicate_prefix_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.init_stage(root)
+            self.init_v3_stage(root)
             # A project copy of the plugin-owned catalog takes precedence in
             # the sync check, so seed one from the plugin and mutate it.
             catalog = root / ".stage" / "operations" / "artifacts.md"
@@ -1268,7 +1277,7 @@ class StageAuditTest(unittest.TestCase):
     def test_catalog_extra_prefix_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.init_stage(root)
+            self.init_v3_stage(root)
             catalog = root / ".stage" / "operations" / "artifacts.md"
             text = (audit_stage.PLUGIN_ROOT / "operations" / "artifacts.md").read_text(
                 encoding="utf-8"
@@ -1288,7 +1297,7 @@ class StageAuditTest(unittest.TestCase):
     def test_catalog_location_drift_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.init_stage(root)
+            self.init_v3_stage(root)
             catalog = root / ".stage" / "operations" / "artifacts.md"
             text = (audit_stage.PLUGIN_ROOT / "operations" / "artifacts.md").read_text(
                 encoding="utf-8"
@@ -1358,7 +1367,7 @@ class InitLanguageTest(unittest.TestCase):
             verification = (stage_root / "operations" / "verification.md").read_text(
                 encoding="utf-8"
             )
-            template = (stage_root / "present" / "work" / "items" / "_template.md").read_text(
+            template = (stage_root / "work" / "current" / "_template.md").read_text(
                 encoding="utf-8"
             )
             findings = audit_stage.Audit(root).run()
@@ -1368,7 +1377,7 @@ class InitLanguageTest(unittest.TestCase):
             audit_stage.stage_guard.STAGE_SCHEMA_VERSION, settings["schema_version"]
         )
         self.assertIn("# Stage 인덱스", index)
-        self.assertIn("`past/canon/principles.md`", index)
+        self.assertIn("`official/canon/principles.md`", index)
         # kind tokens stay language-neutral in the localized criteria table.
         self.assertIn("| planning |", verification)
         # Record skeletons are locale-invariant machine contracts.
@@ -1425,7 +1434,7 @@ class VenueRoutingAuditTest(unittest.TestCase):
         settings_path.write_text(json.dumps(data), encoding="utf-8")
 
     def write_item(self, root: Path, *, kind: str, venue: str, decision_refs: str = "") -> Path:
-        path = root / ".stage" / "present" / "work" / "items" / "W-0001.md"
+        path = root / ".stage" / "work" / "current" / "W-0001.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             (
@@ -1489,7 +1498,7 @@ class VenueRoutingAuditTest(unittest.TestCase):
         self, root: Path, *, decision_id: str = "DE-0001", work_item: str = "W-0001",
         status: str = "decided", authorizes: str = "venue_exception",
     ) -> None:
-        decisions = root / ".stage" / "present" / "work" / "decisions"
+        decisions = root / ".stage" / "decisions" / "pending"
         decisions.mkdir(parents=True, exist_ok=True)
         lines = ["---", f"id: {decision_id}", f"work_item: {work_item}", f"status: {status}"]
         if authorizes:
@@ -1589,7 +1598,7 @@ class VenueRoutingAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.declare_routing(root, self.ROUTING)
-            path = root / ".stage" / "past" / "work" / "archive" / "items" / "W-0001.md"
+            path = root / ".stage" / "official" / "work" / "archive" / "items" / "W-0001.md"
             path.write_text(
                 (
                     "---\n"
@@ -1608,11 +1617,11 @@ class VenueRoutingAuditTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            (root / ".stage" / "past" / "work" / "archive" / "retrospectives").mkdir(
+            (root / ".stage" / "official" / "work" / "archive" / "retrospectives").mkdir(
                 parents=True, exist_ok=True
             )
             (
-                root / ".stage" / "past" / "work" / "archive" / "retrospectives" / "R-0001.md"
+                root / ".stage" / "official" / "work" / "archive" / "retrospectives" / "R-0001.md"
             ).write_text("---\nid: R-0001\nwork_item: W-0001\n---\n# R-0001\n", encoding="utf-8")
 
             self.assertEqual(set(), self.venue_codes(root))
@@ -1625,7 +1634,7 @@ class OpenDecisionCompletionTest(unittest.TestCase):
         init_stage.copy_templates(root, False)
 
     def write_completed_item(self, root: Path, *, decision_refs: str) -> None:
-        path = root / ".stage" / "present" / "work" / "items" / "W-0001.md"
+        path = root / ".stage" / "work" / "current" / "W-0001.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             (
@@ -1645,12 +1654,12 @@ class OpenDecisionCompletionTest(unittest.TestCase):
             ),
             encoding="utf-8",
         )
-        retro = root / ".stage" / "present" / "work" / "retrospectives" / "R-0001.md"
+        retro = root / ".stage" / "work" / "retrospectives" / "R-0001.md"
         retro.parent.mkdir(parents=True, exist_ok=True)
         retro.write_text("---\nid: R-0001\nwork_item: W-0001\n---\n# R-0001\n", encoding="utf-8")
 
     def write_decision(self, root: Path, *, status: str) -> None:
-        path = root / ".stage" / "present" / "work" / "decisions" / "DE-0001.md"
+        path = root / ".stage" / "decisions" / "pending" / "DE-0001.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             (
@@ -1686,7 +1695,7 @@ class OpenDecisionCompletionTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_decision(root, status="open")
-            path = root / ".stage" / "present" / "work" / "items" / "W-0001.md"
+            path = root / ".stage" / "work" / "current" / "W-0001.md"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
                 (

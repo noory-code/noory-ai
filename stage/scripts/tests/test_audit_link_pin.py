@@ -34,7 +34,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
     maxDiff = None
 
     def write_item(self, root: Path, filename: str, **fields: str) -> Path:
-        base = root / ".stage" / "present" / "work" / "items"
+        base = root / ".stage" / "work" / "current"
         base.mkdir(parents=True, exist_ok=True)
         defaults = {
             "id": filename,
@@ -52,7 +52,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         return path
 
     def write_retro(self, root: Path, retro_id: str, work_item: str) -> Path:
-        path = root / ".stage" / "present" / "work" / "retrospectives" / f"{retro_id}.md"
+        path = root / ".stage" / "work" / "retrospectives" / f"{retro_id}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             f"---\nid: {retro_id}\nwork_item: {work_item}\n---\n# {retro_id}\n", encoding="utf-8"
@@ -67,7 +67,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         status: str = "decided",
         principles: str = "SSOT — one owning location for this rule.",
     ) -> Path:
-        path = root / ".stage" / "present" / "work" / "decisions" / f"{decision_id}.md"
+        path = root / ".stage" / "decisions" / "pending" / f"{decision_id}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             (
@@ -79,7 +79,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         return path
 
     def write_backlog(self, root: Path, filename: str, **fields: str) -> Path:
-        base = root / ".stage" / "future" / "backlog" / "items"
+        base = root / ".stage" / "work" / "planned"
         base.mkdir(parents=True, exist_ok=True)
         defaults = {"id": filename, "title": "Test", "parent": "", "status": "captured"}
         defaults.update(fields)
@@ -89,9 +89,9 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         return path
 
     def append_index(self, root: Path, index_name: str, item_id: str) -> None:
-        path = root / ".stage" / "present" / "work" / index_name
+        path = root / ".stage" / "work" / index_name
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"| {item_id} | test | x | ai | [item](items/{item_id}.md) |\n")
+            handle.write(f"| {item_id} | test | x | ai | [item](current/{item_id}.md) |\n")
 
     def test_link_finding_codes_pin_exact_order(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -147,7 +147,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
             self.write_backlog(root, "B-0005", id="B-5555")  # BACKLOG003
             self.write_backlog(root, "B-0006", status="selected")
 
-            question = root / ".stage" / "present" / "state" / "questions" / "Q-0001.md"
+            question = root / ".stage" / "state" / "questions" / "Q-0001.md"
             question.write_text(
                 "---\nid: Q-0001\ntitle: Q\nwork_items: W-9999\n---\n# Q-0001\n", encoding="utf-8"
             )  # STATE001

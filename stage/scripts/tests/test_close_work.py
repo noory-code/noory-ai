@@ -35,7 +35,7 @@ See R.
 
 ACTIVE = (
     "# Active Work\n\n| Work | Kind | Venue | Purpose | Status | Owner | Item |\n|---|---|---|---|---|---|---|\n"
-    "| W-00000001 | chore | claude | x | active | Claude | [items/W-00000001.md](items/W-00000001.md) |\n"
+    "| W-00000001 | chore | claude | x | active | Claude | [current/W-00000001.md](current/W-00000001.md) |\n"
 )
 REVIEW = "# Review Candidates\n\n| Artifact | Verification | Retrospective | Promotion | Item |\n|---|---|---|---|---|\n"
 
@@ -50,15 +50,16 @@ class CloseWorkTest(unittest.TestCase):
     def make(self, retro="completed", ref="R-00000001", promotion="not_applicable", with_ref_file=True, review="not_required"):
         tmp = tempfile.TemporaryDirectory()
         root = Path(tmp.name)
-        (root / ".stage/present/work/items").mkdir(parents=True)
-        (root / ".stage/present/work/retrospectives").mkdir(parents=True)
-        (root / ".stage/present/work/items/W-00000001.md").write_text(
+        (root / ".stage/work/current").mkdir(parents=True)
+        (root / ".stage/work/retrospectives").mkdir(parents=True)
+        (root / ".stage/work/current/W-00000001.md").write_text(
             ITEM.format(retro=retro, ref=ref, promotion=promotion, review=review), encoding="utf-8"
         )
         if with_ref_file and ref:
-            (root / ".stage/present/work/retrospectives" / f"{ref}.md").write_text("---\nid: R\n---\n", encoding="utf-8")
-        (root / ".stage/present/work/active.md").write_text(ACTIVE, encoding="utf-8")
-        (root / ".stage/present/work/review.md").write_text(REVIEW, encoding="utf-8")
+            (root / ".stage/work/retrospectives" / f"{ref}.md").write_text("---\nid: R\n---\n", encoding="utf-8")
+        (root / ".stage/work/active.md").write_text(ACTIVE, encoding="utf-8")
+        (root / ".stage/work/review.md").write_text(REVIEW, encoding="utf-8")
+        (root / ".stage/settings.json").write_text('{"schema_version": 4}\n', encoding="utf-8")
         return tmp, root
 
     def init_git(self, root: Path) -> None:
@@ -115,7 +116,7 @@ class CloseWorkTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
     def write_decision(self, root: Path, *, status: str) -> None:
-        decisions = root / ".stage/present/work/decisions"
+        decisions = root / ".stage/decisions/pending"
         decisions.mkdir(parents=True, exist_ok=True)
         (decisions / "DE-00000001.md").write_text(
             f"---\nid: DE-00000001\nwork_item: W-00000001\nstatus: {status}\n---\n# DE-00000001\n",
@@ -123,7 +124,7 @@ class CloseWorkTest(unittest.TestCase):
         )
 
     def link_decision(self, root: Path) -> None:
-        item = root / ".stage/present/work/items/W-00000001.md"
+        item = root / ".stage/work/current/W-00000001.md"
         text = item.read_text(encoding="utf-8").replace(
             "kind: chore\n", "kind: chore\ndecision_refs: DE-00000001\n", 1
         )
@@ -135,7 +136,7 @@ class CloseWorkTest(unittest.TestCase):
             self.write_decision(root, status="open")
             self.link_decision(root)
             proc = run(root, "W-00000001", "--check", f"{sys.executable} -c 'print(1)'")
-            body = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            body = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
 
         self.assertEqual(1, proc.returncode)
         self.assertIn("DE-00000001", proc.stderr)
@@ -147,7 +148,7 @@ class CloseWorkTest(unittest.TestCase):
             self.write_decision(root, status="decided")
             self.link_decision(root)
             proc = run(root, "W-00000001", "--check", f"{sys.executable} -c 'print(1)'")
-            body = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            body = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("status: completed", body)
@@ -157,17 +158,17 @@ class CloseWorkTest(unittest.TestCase):
         with tmp:
             proc = run(root, "W-00000001", "--check", "python3 -c \"print('ok')\"")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
             self.assertIn("status: completed", item)
             self.assertIn("verification: passed", item)
             self.assertIn("print('ok')", item)  # evidence embedded
-            self.assertNotIn("W-00000001", (root / ".stage/present/work/active.md").read_text(encoding="utf-8"))
-            self.assertIn("[items/W-00000001.md]", (root / ".stage/present/work/review.md").read_text(encoding="utf-8"))
+            self.assertNotIn("W-00000001", (root / ".stage/work/active.md").read_text(encoding="utf-8"))
+            self.assertIn("[current/W-00000001.md]", (root / ".stage/work/review.md").read_text(encoding="utf-8"))
 
     def test_passing_check_preserves_existing_verification_and_appends_evidence(self):
         tmp, root = self.make()
         with tmp:
-            item_path = root / ".stage/present/work/items/W-00000001.md"
+            item_path = root / ".stage/work/current/W-00000001.md"
             item_path.write_text(
                 item_path.read_text(encoding="utf-8").replace(
                     "## Verification\n\n",
@@ -192,7 +193,7 @@ class CloseWorkTest(unittest.TestCase):
         with tmp:
             proc = run(root, "W-00000001", "--check", "python3 -c \"import sys; sys.exit(1)\"")
             self.assertEqual(proc.returncode, 1)
-            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
             self.assertIn("status: active", item)
             self.assertIn("verification: pending", item)
 
@@ -213,7 +214,7 @@ class CloseWorkTest(unittest.TestCase):
         tmp, root = self.make()
         with tmp:
             archive_retro = (
-                root / ".stage/past/work/archive/retrospectives/R-00000001.md"
+                root / ".stage/official/work/archive/retrospectives/R-00000001.md"
             )
             archive_retro.parent.mkdir(parents=True)
             archive_retro.write_text(
@@ -228,7 +229,7 @@ class CloseWorkTest(unittest.TestCase):
                 "--check",
                 f"{sys.executable} -c \"from pathlib import Path; Path(r'{marker}').touch()\"",
             )
-            body = (root / ".stage/present/work/items/W-00000001.md").read_text(
+            body = (root / ".stage/work/current/W-00000001.md").read_text(
                 encoding="utf-8"
             )
 
@@ -261,14 +262,14 @@ class CloseWorkTest(unittest.TestCase):
         with tmp:
             proc = run(root, "W-00000001", "--check", r"""python3 -c "print(r'C:\Users\x back \1 \d+')" """)
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
             self.assertIn("status: completed", item)
             self.assertIn(r"C:\Users\x", item)
 
     def test_refuses_item_without_verification_section(self):
         tmp, root = self.make()
         with tmp:
-            p = root / ".stage/present/work/items/W-00000001.md"
+            p = root / ".stage/work/current/W-00000001.md"
             p.write_text(p.read_text(encoding="utf-8").replace("## Verification\n", "## Notes\n"), encoding="utf-8")
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 1)
@@ -276,7 +277,9 @@ class CloseWorkTest(unittest.TestCase):
 
     def _write_review(self, root, review):
         import json
-        (root / ".stage/settings.json").write_text(json.dumps({"review": review}), encoding="utf-8")
+        (root / ".stage/settings.json").write_text(
+            json.dumps({"schema_version": 4, "review": review}), encoding="utf-8"
+        )
 
     def test_configured_review_runs_and_records(self):
         tmp, root = self.make(review="pending")
@@ -284,7 +287,7 @@ class CloseWorkTest(unittest.TestCase):
             self._write_review(root, {"strengths": {"standard": "python3 -c \"print('review ok')\""}, "stages": {"implementation": "standard"}})
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            self.assertIn("review ok", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+            self.assertIn("review ok", (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8"))
 
     def test_review_block_verdict_refuses(self):
         tmp, root = self.make(review="pending")
@@ -292,7 +295,7 @@ class CloseWorkTest(unittest.TestCase):
             self._write_review(root, {"strengths": {"red-team": "python3 -c \"print('BLOCK: found a bug')\""}, "stages": {"implementation": "red-team"}})
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 1)
-            self.assertIn("status: active", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+            self.assertIn("status: active", (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8"))
 
     def test_not_required_bypasses_review_even_if_configured(self):
         # Field-driven: an item that does not declare review: pending completes
@@ -302,7 +305,7 @@ class CloseWorkTest(unittest.TestCase):
             self._write_review(root, {"strengths": {"standard": "python3 -c \"print('BLOCK: should not run')\""}, "stages": {"implementation": "standard"}})
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
             self.assertIn("status: completed", item)
             self.assertNotIn("should not run", item)
 
@@ -312,7 +315,7 @@ class CloseWorkTest(unittest.TestCase):
             self._write_review(root, {"strengths": {"standard": "python3 -c \"print('review ok')\""}, "stages": {"implementation": "standard"}})
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            self.assertIn("review: passed", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+            self.assertIn("review: passed", (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8"))
 
     def test_pending_review_without_command_fails_closed(self):
         # review: pending but the stage has no configured command -> cannot honestly pass.
@@ -331,7 +334,7 @@ class CloseWorkTest(unittest.TestCase):
             self._write_review(root, {"strengths": {"red-team": cmd}, "stages": {"implementation": "red-team"}})
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 1)
-            self.assertIn("status: active", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+            self.assertIn("status: active", (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8"))
 
     def test_review_strength_typo_fails_closed(self):
         tmp, root = self.make(review="pending")
@@ -353,7 +356,7 @@ class CloseWorkTest(unittest.TestCase):
         with tmp:
             proc = run(root, "W-00000001", "--promotion", "not_applicable", "--check", "true")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            self.assertIn("promotion: not_applicable", (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8"))
+            self.assertIn("promotion: not_applicable", (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

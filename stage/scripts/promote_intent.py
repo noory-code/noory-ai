@@ -23,7 +23,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create Stage promotion intent files.")
     parser.add_argument("--project-root", default=".", help="Project root. Defaults to the current directory.")
     parser.add_argument("--work-item", required=True, help="Work item ID linked to the promotion.")
-    parser.add_argument("--path", action="append", required=True, help=".stage/past/ path to modify. Repeatable.")
+    parser.add_argument(
+        "--path",
+        action="append",
+        required=True,
+        help=".stage/official/ path to modify. Repeatable.",
+    )
     parser.add_argument(
         "--type",
         choices=("promotion", "archive"),
@@ -42,6 +47,10 @@ def main() -> None:
     stage_root = project_root / ".stage"
     if not stage_root.exists():
         raise FileNotFoundError(f"Stage root not found: {stage_root}")
+    schema_blocker = stage_guard.schema_migration_banner(stage_root)
+    if schema_blocker:
+        print(schema_blocker, file=sys.stderr)
+        raise SystemExit(2)
 
     # One intent file per (work item, path): consumption is an atomic unlink,
     # and concurrent sessions preparing different paths of the same item do

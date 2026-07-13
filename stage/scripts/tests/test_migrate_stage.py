@@ -1,6 +1,8 @@
 import importlib.util
 import io
 import json
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -54,7 +56,7 @@ class MigrateStageTest(unittest.TestCase):
     def make_v1_project(self, root: Path) -> Path:
         """A v2 init downgraded to the v1 layout: full common-doc copies,
         legacy verification.md, legacy index routing rows, schema_version 1."""
-        init_stage.copy_templates(root, False)
+        shutil.copytree(migrate_stage.TEMPLATE_ROOT, root / ".stage")
         stage_root = root / ".stage"
         operations = stage_root / "operations"
         for name, path in migrate_stage.plugin_common_docs().items():
@@ -73,7 +75,21 @@ class MigrateStageTest(unittest.TestCase):
         settings["schema_version"] = 1
         settings.pop("operations_overrides", None)
         settings_path.write_text(json.dumps(settings), encoding="utf-8")
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "stage-test@example.com"],
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Stage Test"], cwd=root, check=True
+        )
+        self.commit(root, "v1 fixture")
         return stage_root
+
+    def commit(self, root: Path, message: str) -> None:
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-qm", message], cwd=root, check=True)
 
     def run_migrate(self, root: Path, dry_run: bool = False) -> tuple[int, str]:
         buffer = io.StringIO()
@@ -133,6 +149,7 @@ class MigrateStageTest(unittest.TestCase):
             stage_root = self.make_v1_project(root)
             edited = stage_root / "operations" / "during.md"
             edited.write_text("# During\n\nProject-edited rule.\n", encoding="utf-8")
+            self.commit(root, "customize during")
 
             code, output = self.run_migrate(root)
             kept = edited.exists()
@@ -155,6 +172,7 @@ class MigrateStageTest(unittest.TestCase):
             settings = json.loads(settings_path.read_text(encoding="utf-8"))
             settings["operations_overrides"] = ["during.md"]
             settings_path.write_text(json.dumps(settings), encoding="utf-8")
+            self.commit(root, "declare override")
 
             code, _output = self.run_migrate(root)
             kept = edited.exists()
@@ -171,6 +189,7 @@ class MigrateStageTest(unittest.TestCase):
             verification = stage_root / "operations" / "verification.md"
             custom = LEGACY_VERIFICATION + "\nProject-specific verification note.\n"
             verification.write_text(custom, encoding="utf-8")
+            self.commit(root, "customize verification")
 
             code, output = self.run_migrate(root)
             after = verification.read_text(encoding="utf-8")
@@ -200,7 +219,7 @@ class MigrateStageTest(unittest.TestCase):
         self.assertIn("dry run", output)
         self.assertEqual(before, after)
 
-    def test_fresh_v2_init_is_a_noop(self):
+    def test_fresh_v4_init_is_a_noop(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             init_stage.copy_templates(root, False)

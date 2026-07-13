@@ -97,7 +97,7 @@ Sign as: <responder name> (<host>).
 
 1. The user decides when a discussion settles. Participating LLMs only propose settlement candidates.
 2. A settled conclusion is promoted to truth, not left in the discussion file —
-   `.stage/past/decisions/` when the project has the harness, otherwise the component's design document.
+   `.stage/official/decisions/` when the project has the harness, otherwise the component's design document.
 3. After promotion, set the file status to `settled` and link the promoted location. The user decides
    whether to delete the file.
 4. If the discussion stops without a conclusion, set status `closed` and summarize the remaining

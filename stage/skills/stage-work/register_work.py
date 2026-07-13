@@ -32,6 +32,7 @@ from stage_paths import (  # noqa: E402
     load_review_config,
     load_venue_routing,
     resolve_review_command,
+    schema_migration_banner,
 )
 from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
@@ -343,7 +344,7 @@ def main() -> int:
     parser.add_argument(
         "--backlog",
         action="store_true",
-        help="Capture a planned card in future/backlog/items (status captured) instead of "
+        help="Capture a planned card in work/planned (status captured) instead of "
         "starting work in present; the venue/split contract applies later, at start_work.",
     )
     parser.add_argument(
@@ -354,6 +355,10 @@ def main() -> int:
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
+    schema_blocker = schema_migration_banner(stage_root)
+    if schema_blocker:
+        print(schema_blocker, file=sys.stderr)
+        return 2
     if len(args.milestone) > 1:
         print("--milestone accepts at most one M-NNNNNNNN value", file=sys.stderr)
         return 2
@@ -384,7 +389,7 @@ def main() -> int:
         template_path = _TEMPLATE
 
     # A planned card (DE-00000007) is captured, not started: it waits in
-    # future/backlog/items and the venue/split contract applies when
+    # work/planned and the venue/split contract applies when
     # scripts/start_work.py moves it to present.
     if args.backlog:
         return register_backlog_card(stage_root, args)

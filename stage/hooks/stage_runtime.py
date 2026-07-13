@@ -279,8 +279,13 @@ def promotion_blocker(
     stage_root = workspace_root / ".stage"
     intents = load_promotion_intents(stage_root)
     if not intents:
+        official_root = (
+            ".stage/official/"
+            if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4
+            else ".stage/past/"
+        )
         return (
-            "Stage promotion gate violation: modifying `.stage/past/` requires an out-of-band "
+            f"Stage promotion gate violation: modifying `{official_root}` requires an out-of-band "
             "promotion intent. Run `stage-retrospective`, then create one with "
             "`scripts/promote_intent.py` (writes `.stage/.runtime/intents/<work-item>--<path>.json`)."
         )
@@ -395,8 +400,21 @@ def intent_validation_blocker(
     item = matched[0]
     intent_type = str(intent.get("type") or "promotion").strip().lower()
     if intent_type == "archive":
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            archive_zone = stage_topology.get_zone("work", "official")
+            archive_root = archive_zone.canonical_path
+            archive_items_root = stage_topology.card_location_for_status("archived")
+            archive_index = archive_zone.index_surfaces[0]
+        else:
+            archive_zone = stage_topology.get_zone("work", "official")
+            archive_root = archive_zone.v3_relocation_origin or ""
+            archive_items_root = f"{archive_root}/items"
+            archive_index = f"{archive_root}/index.md"
         if not all(path_targets_stage_archive(path) for path in target_paths):
-            return "Stage archive gate violation: an archive intent may only target `.stage/past/work/archive/`."
+            return (
+                "Stage archive gate violation: an archive intent may only target "
+                f"`.stage/{archive_root}/`."
+            )
         item_targets = [path for path in target_paths if archive_target_item_id(path, workspace_root)]
         retro_targets = [path for path in target_paths if archive_target_retro_id(path, workspace_root)]
         # The archive index row carries the item's final status (the transition
@@ -406,7 +424,7 @@ def intent_validation_blocker(
             path
             for path in target_paths
             if entry_relative_to_workspace(path, workspace_root)
-            == ".stage/past/work/archive/index.md"
+            == f".stage/{archive_index}"
         ]
         if len(item_targets) + len(retro_targets) + len(index_targets) != len(target_paths):
             return (
@@ -427,7 +445,7 @@ def intent_validation_blocker(
         # closed terminal state; `archived` names a record already living in
         # the archive (maintenance edits), never a shortcut out of present.
         try:
-            item.path.relative_to(stage_root / "past" / "work" / "archive" / "items")
+            item.path.relative_to(stage_root / archive_items_root)
             in_archive = True
         except ValueError:
             in_archive = False

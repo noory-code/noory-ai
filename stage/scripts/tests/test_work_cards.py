@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -12,6 +13,7 @@ import unittest
 from pathlib import Path
 
 SCRIPT_ROOT = Path(__file__).resolve().parents[1]
+V3_TEMPLATE_ROOT = SCRIPT_ROOT.parent / "templates" / "project-stage"
 REGISTER = SCRIPT_ROOT.parents[0] / "skills" / "stage-work" / "register_work.py"
 START = SCRIPT_ROOT / "start_work.py"
 
@@ -52,7 +54,7 @@ class WorkCardFlowTest(unittest.TestCase):
         settings_path.write_text(json.dumps(data), encoding="utf-8")
 
     def write_exception_decision(self, root: Path, decision_id: str = "DE-0001") -> None:
-        decisions = root / ".stage/present/work/decisions"
+        decisions = root / ".stage/decisions/pending"
         decisions.mkdir(parents=True, exist_ok=True)
         (decisions / f"{decision_id}.md").write_text(
             (
@@ -71,15 +73,15 @@ class WorkCardFlowTest(unittest.TestCase):
                 "--scope", "", "--priority", "high",
             )
             self.assertEqual(0, result.returncode, result.stderr)
-            card = root / ".stage/future/backlog/items/W-00000001.md"
+            card = root / ".stage/work/planned/W-00000001.md"
             body = card.read_text(encoding="utf-8")
-            index = (root / ".stage/future/backlog/index.md").read_text(encoding="utf-8")
-            active = (root / ".stage/present/work/active.md").read_text(encoding="utf-8")
+            index = (root / ".stage/work/planned/index.md").read_text(encoding="utf-8")
+            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
             findings = audit_stage.Audit(root).run()
 
         self.assertIn("status: captured", body)
         self.assertIn("priority: high", body)
-        self.assertIn("(items/W-00000001.md)", index)
+        self.assertIn("(W-00000001.md)", index)
         self.assertNotIn("W-00000001", active)
         self.assertEqual([], [f for f in findings if f.severity == "error"])
 
@@ -101,11 +103,11 @@ class WorkCardFlowTest(unittest.TestCase):
             result = run_cli(START, root, "W-00000001", "--scope", "src")
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertIn("design -> claude", result.stdout)
-            moved = root / ".stage/present/work/items/W-00000001.md"
+            moved = root / ".stage/work/current/W-00000001.md"
             body = moved.read_text(encoding="utf-8")
-            gone = (root / ".stage/future/backlog/items/W-00000001.md").exists()
-            index = (root / ".stage/future/backlog/index.md").read_text(encoding="utf-8")
-            active = (root / ".stage/present/work/active.md").read_text(encoding="utf-8")
+            gone = (root / ".stage/work/planned/W-00000001.md").exists()
+            index = (root / ".stage/work/planned/index.md").read_text(encoding="utf-8")
+            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
             findings = audit_stage.Audit(root).run()
 
         self.assertFalse(gone)
@@ -114,8 +116,8 @@ class WorkCardFlowTest(unittest.TestCase):
         self.assertIn("scope: src", body)
         self.assertIn("verification: pending", body)
         self.assertIn("## Promotion decision", body)
-        self.assertNotIn("(items/W-00000001.md)", index)
-        self.assertIn("(items/W-00000001.md)", active)
+        self.assertNotIn("(W-00000001.md)", index)
+        self.assertIn("(current/W-00000001.md)", active)
         self.assertEqual([], [f for f in findings if f.severity == "error"])
 
     def test_start_refuses_split_kind_without_decision(self):
@@ -124,7 +126,7 @@ class WorkCardFlowTest(unittest.TestCase):
             self.declare_routing(root, {"feature": "split"})
             run_cli(REGISTER, root, "--backlog", "--title", "Mixed", "--kind", "feature", "--scope", "")
             result = run_cli(START, root, "W-00000001", "--scope", "src")
-            still_planned = (root / ".stage/future/backlog/items/W-00000001.md").exists()
+            still_planned = (root / ".stage/work/planned/W-00000001.md").exists()
 
         self.assertEqual(1, result.returncode)
         self.assertIn("split", result.stderr)
@@ -140,7 +142,7 @@ class WorkCardFlowTest(unittest.TestCase):
                 START, root, "W-00000001", "--scope", "src", "--venue", "claude",
                 "--decision", "DE-0001",
             )
-            body = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            body = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("decision_refs: DE-0001", body)
@@ -160,7 +162,7 @@ class WorkCardFlowTest(unittest.TestCase):
             run_cli(REGISTER, root, "--backlog", "--title", "Planned", "--kind", "chore", "--scope", "")
             result = run_cli(REGISTER, root, "--title", "Direct", "--kind", "chore", "--scope", "src")
             self.assertEqual(0, result.returncode, result.stderr)
-            present = sorted(p.name for p in (root / ".stage/present/work/items").glob("W-*.md"))
+            present = sorted(p.name for p in (root / ".stage/work/current").glob("W-*.md"))
 
         self.assertEqual(["W-00000002.md"], present)
 
@@ -169,7 +171,7 @@ class BacklogMigrationTest(unittest.TestCase):
     def make_v2_project_with_b_items(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         tmp = tempfile.TemporaryDirectory()
         root = Path(tmp.name)
-        init_stage.copy_templates(root, False)
+        shutil.copytree(V3_TEMPLATE_ROOT, root / ".stage")
         stage_root = root / ".stage"
         settings_path = stage_root / "settings.json"
         settings = json.loads(settings_path.read_text(encoding="utf-8"))
@@ -202,6 +204,17 @@ class BacklogMigrationTest(unittest.TestCase):
             + "| B-00000003 | Child idea | chore | captured |  | B-00000002 | [items/B-00000003-child.md](items/B-00000003-child.md) |\n",
             encoding="utf-8",
         )
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "stage-test@example.com"],
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Stage Test"], cwd=root, check=True
+        )
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-qm", "v2 fixture"], cwd=root, check=True)
         return tmp, root
 
     def test_v3_migration_converts_and_removes(self):
@@ -211,14 +224,14 @@ class BacklogMigrationTest(unittest.TestCase):
             stage_root = root / ".stage"
             names = sorted(
                 p.name
-                for p in (stage_root / "future" / "backlog" / "items").glob("*.md")
-                if p.name not in ("README.md", "_template.md")
+                for p in (stage_root / "work" / "planned").glob("*.md")
+                if p.name not in ("README.md", "_template.md", "index.md")
             )
             converted = {
                 p.name: p.read_text(encoding="utf-8")
-                for p in (stage_root / "future" / "backlog" / "items").glob("W-*.md")
+                for p in (stage_root / "work" / "planned").glob("W-*.md")
             }
-            index = (stage_root / "future" / "backlog" / "index.md").read_text(encoding="utf-8")
+            index = (stage_root / "work" / "planned" / "index.md").read_text(encoding="utf-8")
             settings = json.loads(
                 (stage_root / "settings.json").read_text(encoding="utf-8")
             )
@@ -243,12 +256,12 @@ class BacklogMigrationTest(unittest.TestCase):
             stage_root = root / ".stage"
             before = {
                 p.name: p.read_bytes()
-                for p in (stage_root / "future" / "backlog" / "items").glob("*.md")
+                for p in (stage_root / "work" / "planned").glob("*.md")
             }
             code = migrate_stage.migrate(root, False)
             after = {
                 p.name: p.read_bytes()
-                for p in (stage_root / "future" / "backlog" / "items").glob("*.md")
+                for p in (stage_root / "work" / "planned").glob("*.md")
             }
 
         self.assertEqual(0, code)

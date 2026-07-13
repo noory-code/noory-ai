@@ -1,5 +1,6 @@
-"""Dormant schema-v4 template tree contract."""
+"""Active schema-v4 template tree contract."""
 
+import importlib.util
 import json
 import unittest
 from pathlib import Path
@@ -15,6 +16,13 @@ EXTRA_V4_FILES = {
     Path("roadmap/milestones/index.md"),
     Path("roadmap/themes/index.md"),
 }
+
+_INIT_SPEC = importlib.util.spec_from_file_location(
+    "template_v4_init_stage", PLUGIN_ROOT / "scripts" / "init_stage.py"
+)
+assert _INIT_SPEC is not None and _INIT_SPEC.loader is not None
+init_stage = importlib.util.module_from_spec(_INIT_SPEC)
+_INIT_SPEC.loader.exec_module(init_stage)
 
 
 def v4_path(relative: Path) -> Path:
@@ -63,22 +71,20 @@ class TemplateV4Test(unittest.TestCase):
         expected = {v4_path(path) for path in self.files_under(V3_ROOT)} | EXTRA_V4_FILES
         self.assertEqual(expected, self.files_under(V4_ROOT))
 
-    def test_v4_tree_is_dormant_and_v3_operations_are_verbatim(self):
-        from stage.scripts import init_stage
-
-        self.assertEqual(V3_ROOT, init_stage.TEMPLATE_ROOT)
-        self.assertNotEqual(V4_ROOT, init_stage.TEMPLATE_ROOT)
-        self.assertFalse(V4_ROOT.is_relative_to(init_stage.TEMPLATE_ROOT))
+    def test_v4_tree_is_active_and_v3_operations_are_verbatim(self):
+        self.assertEqual(V4_ROOT, init_stage.TEMPLATE_ROOT)
+        self.assertNotEqual(V3_ROOT, init_stage.TEMPLATE_ROOT)
         self.assertEqual(
             (V3_ROOT / "operations/verification.md").read_bytes(),
             (V4_ROOT / "operations/verification.md").read_bytes(),
         )
 
-    def test_v4_settings_marker_is_bundled_without_cutting_over_init(self):
+    def test_v4_settings_marker_is_bundled_and_init_is_cut_over(self):
         settings = json.loads((V4_ROOT / "settings.json").read_text(encoding="utf-8"))
         self.assertEqual(4, settings["schema_version"])
         v3_settings = json.loads((V3_ROOT / "settings.json").read_text(encoding="utf-8"))
         self.assertEqual(3, v3_settings["schema_version"])
+        self.assertEqual(V4_ROOT, init_stage.TEMPLATE_ROOT)
 
     def test_roadmap_templates_have_computed_status_contract(self):
         theme = V4_ROOT / "roadmap/themes/_template.md"

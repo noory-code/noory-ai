@@ -20,7 +20,7 @@ BACKLOG_WITH_TRAILING_SECTION = (
     "| ID | Title | Kind | Status | Priority | Parent | Item |\n"
     "|---|---|---|---|---|---|---|\n"
     "| W-00000001 | Existing | chore | captured | low |  | "
-    "[items/W-00000001.md](items/W-00000001.md) |\n\n"
+    "[W-00000001.md](W-00000001.md) |\n\n"
     "## Status values\n\n"
     "- `captured`: captured but not yet organized.\n"
 )
@@ -36,14 +36,18 @@ class RegisterWorkTest(unittest.TestCase):
     def make(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         tmp = tempfile.TemporaryDirectory()
         root = Path(tmp.name)
-        (root / ".stage/present/work/items").mkdir(parents=True)
-        (root / ".stage/past/work/archive/items").mkdir(parents=True)
-        (root / ".stage/present/work/active.md").write_text(ACTIVE, encoding="utf-8")
+        (root / ".stage/work/current").mkdir(parents=True)
+        (root / ".stage/work/planned").mkdir(parents=True)
+        (root / ".stage/official/work/archive/items").mkdir(parents=True)
+        (root / ".stage/work/active.md").write_text(ACTIVE, encoding="utf-8")
+        (root / ".stage/settings.json").write_text(
+            '{"schema_version": 4}\n', encoding="utf-8"
+        )
         return tmp, root
 
     def declare_routing(self, root: Path) -> None:
         (root / ".stage/settings.json").write_text(
-            '{"schema_version": 2, "venue_routing": '
+            '{"schema_version": 4, "venue_routing": '
             '{"design": "claude", "development": "codex", "feature": "split"}}',
             encoding="utf-8",
         )
@@ -52,7 +56,7 @@ class RegisterWorkTest(unittest.TestCase):
         self, root: Path, *, decision_id: str = "DE-0009", status: str = "decided",
         authorizes: str = "venue_exception",
     ) -> None:
-        decisions = root / ".stage/present/work/decisions"
+        decisions = root / ".stage/decisions/pending"
         decisions.mkdir(parents=True, exist_ok=True)
         lines = [f"---", f"id: {decision_id}", "work_item: W-00000001", f"status: {status}"]
         if authorizes:
@@ -67,8 +71,8 @@ class RegisterWorkTest(unittest.TestCase):
             result = run(root, "--title", "T", "--kind", "design", "--scope", "src")
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertIn("venue derived from venue_routing: design -> claude", result.stdout)
-            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
-            active = (root / ".stage/present/work/active.md").read_text(encoding="utf-8")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
+            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
 
         self.assertIn("venue: claude", item)
         self.assertIn("| claude |", active)
@@ -91,7 +95,7 @@ class RegisterWorkTest(unittest.TestCase):
                 root, "--title", "T", "--kind", "development", "--scope", "src",
                 "--venue", "claude",
             )
-            created = (root / ".stage/present/work/items/W-00000001.md").exists()
+            created = (root / ".stage/work/current/W-00000001.md").exists()
 
         self.assertEqual(1, result.returncode)
         self.assertIn("--decision", result.stderr)
@@ -107,7 +111,7 @@ class RegisterWorkTest(unittest.TestCase):
                 "--venue", "claude", "--decision", "DE-0009",
             )
             self.assertEqual(0, result.returncode, result.stderr)
-            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
 
         self.assertIn("venue: claude", item)
         self.assertIn("decision_refs: DE-0009", item)
@@ -141,7 +145,7 @@ class RegisterWorkTest(unittest.TestCase):
         with tmp:
             self.declare_routing(root)
             result = run(root, "--title", "T", "--kind", "feature", "--scope", "src")
-            created = (root / ".stage/present/work/items/W-00000001.md").exists()
+            created = (root / ".stage/work/current/W-00000001.md").exists()
 
         self.assertEqual(1, result.returncode)
         self.assertIn("split", result.stderr)
@@ -158,7 +162,7 @@ class RegisterWorkTest(unittest.TestCase):
                 "--venue", "claude", "--decision", "DE-0009",
             )
             self.assertEqual(0, result.returncode, result.stderr)
-            item = (root / ".stage/present/work/items/W-00000001.md").read_text(encoding="utf-8")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
 
         self.assertIn("decision_refs: DE-0009", item)
 
@@ -176,36 +180,36 @@ class RegisterWorkTest(unittest.TestCase):
         with tmp:
             proc = run(root, "--title", "Do a thing", "--kind", "feature", "--scope", "stage/x", "--venue", "claude")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            item = root / ".stage/present/work/items/W-00000001.md"
+            item = root / ".stage/work/current/W-00000001.md"
             self.assertTrue(item.exists())
             body = item.read_text(encoding="utf-8")
             self.assertIn("id: W-00000001", body)
             self.assertIn("kind: feature", body)
-            active = (root / ".stage/present/work/active.md").read_text(encoding="utf-8")
-            self.assertIn("[items/W-00000001.md](items/W-00000001.md)", active)
+            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
+            self.assertIn("[current/W-00000001.md](current/W-00000001.md)", active)
 
     def test_increments_past_max_including_archive(self):
         tmp, root = self.make()
         with tmp:
-            (root / ".stage/past/work/archive/items/W-00000005.md").write_text("---\nid: W-00000005\n---\n", encoding="utf-8")
+            (root / ".stage/official/work/archive/items/W-00000005.md").write_text("---\nid: W-00000005\n---\n", encoding="utf-8")
             run(root, "--title", "A", "--kind", "chore", "--scope", "x")
-            self.assertTrue((root / ".stage/present/work/items/W-00000006.md").exists())
+            self.assertTrue((root / ".stage/work/current/W-00000006.md").exists())
 
     def test_reruns_reconcile_index_not_duplicate(self):
         tmp, root = self.make()
         with tmp:
             run(root, "--title", "A", "--kind", "chore", "--scope", "x", "--id", "W-00000001")
             # Drop the row, then a re-run with same id must re-add exactly one.
-            (root / ".stage/present/work/active.md").write_text(ACTIVE, encoding="utf-8")
+            (root / ".stage/work/active.md").write_text(ACTIVE, encoding="utf-8")
             proc = run(root, "--title", "A", "--kind", "chore", "--scope", "x", "--id", "W-00000001")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            active = (root / ".stage/present/work/active.md").read_text(encoding="utf-8")
-            self.assertEqual(active.count("[items/W-00000001.md]"), 1)
+            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
+            self.assertEqual(active.count("[current/W-00000001.md]"), 1)
 
     def test_active_row_is_inserted_before_trailing_sections(self):
         tmp, root = self.make()
         with tmp:
-            active_path = root / ".stage/present/work/active.md"
+            active_path = root / ".stage/work/active.md"
             active_path.write_text(
                 ACTIVE + "\n## Status values\n\n- `active`: work in progress.\n",
                 encoding="utf-8",
@@ -220,11 +224,11 @@ class RegisterWorkTest(unittest.TestCase):
     def test_backlog_row_is_inserted_after_empty_table_header(self):
         tmp, root = self.make()
         with tmp:
-            backlog = root / ".stage/future/backlog"
-            (backlog / "items").mkdir(parents=True)
+            backlog = root / ".stage/work/planned"
+            backlog.mkdir(parents=True, exist_ok=True)
             empty_index = BACKLOG_WITH_TRAILING_SECTION.replace(
                 "| W-00000001 | Existing | chore | captured | low |  | "
-                "[items/W-00000001.md](items/W-00000001.md) |\n",
+                "[W-00000001.md](W-00000001.md) |\n",
                 "",
             )
             index_path = backlog / "index.md"
@@ -252,9 +256,9 @@ class RegisterWorkTest(unittest.TestCase):
     def test_backlog_row_is_inserted_before_trailing_sections(self):
         tmp, root = self.make()
         with tmp:
-            backlog = root / ".stage/future/backlog"
-            (backlog / "items").mkdir(parents=True)
-            (backlog / "items/W-00000001.md").write_text(
+            backlog = root / ".stage/work/planned"
+            backlog.mkdir(parents=True, exist_ok=True)
+            (backlog / "W-00000001.md").write_text(
                 "---\nid: W-00000001\n---\n", encoding="utf-8"
             )
             index_path = backlog / "index.md"
@@ -282,10 +286,10 @@ class RegisterWorkTest(unittest.TestCase):
     def test_refuses_archived_id(self):
         tmp, root = self.make()
         with tmp:
-            (root / ".stage/past/work/archive/items/W-00000003.md").write_text("---\nid: W-00000003\n---\n", encoding="utf-8")
+            (root / ".stage/official/work/archive/items/W-00000003.md").write_text("---\nid: W-00000003\n---\n", encoding="utf-8")
             proc = run(root, "--title", "A", "--kind", "chore", "--scope", "x", "--id", "W-00000003")
             self.assertEqual(proc.returncode, 1)
-            self.assertFalse((root / ".stage/present/work/items/W-00000003.md").exists())
+            self.assertFalse((root / ".stage/work/current/W-00000003.md").exists())
 
 
 if __name__ == "__main__":

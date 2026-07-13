@@ -2,7 +2,7 @@
 
 This module is the tooling SSOT for the v4 Stage layout.  It intentionally has no
 filesystem side effects so hooks and scripts can import it on every supported host.
-Schema-v3 consumers remain wired to their existing paths until the later adoption cards.
+Schema-v3 paths remain resolve-only inputs for audit and the one-shot migration.
 """
 
 from __future__ import annotations

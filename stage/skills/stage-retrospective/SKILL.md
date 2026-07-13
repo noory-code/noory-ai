@@ -21,28 +21,28 @@ Answer briefly.
 - Which principles governed those decisions?
 - Which context was missing, stale, or useful?
 - What must be updated in `.stage/`?
-- Can the artifact go to `past`, or must it stay in `present`?
+- Can the artifact go to `official`, or must it stay in a mutable family?
 
 ## Output routing
 
-- Official truth goes to `past`.
-- Living uncertainty stays in `present/state`.
-- Future improvements go to `future/backlog/items/` or `future/proposals/`.
+- Official truth goes to `official/`.
+- Living uncertainty stays in `state/`.
+- Future improvements go to `work/planned/` or `proposals/`.
 - Behavior changes go to project policy in `.stage/operations/` (or upstream to the plugin-owned
   `operations/` when the rule is common to every project).
-- The retrospective artifact lives at `present/work/retrospectives/R-NNNNNNNN.md`.
+- The retrospective artifact lives at `work/retrospectives/R-NNNNNNNN.md`.
 - The work item's `retrospective_ref` points to that retrospective file.
 
 ## Promotion intent
 
-Promotion to `past` uses no body markers. Declare the target paths in the verified and
+Promotion to `official/` uses no body markers. Declare the target paths in the verified and
 retrospected work item's `promotes`, then create the intent file.
 
 ```bash
-python3 stage/scripts/promote_intent.py --project-root <project-root> --work-item W-00000001 --path .stage/past/<target>.md
+python3 stage/scripts/promote_intent.py --project-root <project-root> --work-item W-00000001 --path .stage/official/<target>.md
 ```
 
-To move a closed item out of the review queue into `past/work/archive/`, use the **stage-archive**
+To move a closed item out of the review queue into `official/work/archive/`, use the **stage-archive**
 skill — archiving needs only an archive intent (or `archive_work.py`), never a new work item.
 
 ## Closing the item

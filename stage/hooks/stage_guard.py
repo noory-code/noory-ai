@@ -44,6 +44,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     path_targets_stage_archive,
     path_targets_stage_official,
     resolve_review_command,
+    schema_migration_banner,
     path_targets_stage_past,
     path_targets_stage_root,
     relative_to_workspace,
@@ -566,6 +567,20 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         payload, name, workspace_root
     )
 
+    mutation_requested = (
+        name in write_tools
+        or bool(shell_write_targets)
+        or bool(command and command_has_git_commit(command))
+    )
+    if stage_root.exists() and mutation_requested:
+        maintenance_marker = stage_root / stage_topology.MAINTENANCE_MARKER
+        if maintenance_marker.exists():
+            return deny(
+                "Stage schema-v4 maintenance is active; all Stage mutations are denied while "
+                "the migration marker exists. Close other agent windows. The migration owner "
+                "must finish or run the stage-migrate abort path."
+            )
+
     # An explicit `.stage` delete is always blocked; a strict-ancestor delete
     # (`rm -rf .`) is filtered inside command_deletes_stage to fire only when a
     # `.stage` exists, so a pre-init workspace is not over-denied.
@@ -575,6 +590,26 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
             "Modify only the specific files you need so official artifacts, current work status, "
             "and plans are not lost."
         )
+
+    if stage_root.exists() and not governance_broken(stage_root):
+        schema_blocker = schema_migration_banner(stage_root)
+        # Once a project is behind the enforced contract, every mutation gate
+        # fails closed for governed source and Stage-internal writes. Deliberately
+        # excluded paths remain outside governance. A direct invocation of
+        # stage-migrate/--abort has no shell write target and remains callable;
+        # read-only commands likewise pass through.
+        schema_targets = explicit_paths if name in write_tools else shell_write_targets
+        follows_symlinks = name in {"Write", "Edit", "MultiEdit"} or (
+            name not in WRITE_TOOLS
+            and isinstance(tool_input(payload).get("content"), str)
+        )
+        governed_mutation = bool(command and command_has_git_commit(command)) or any(
+            is_stage_internal_path(raw, workspace_root)
+            or is_source_path(raw, workspace_root, follows_symlinks)
+            for raw in schema_targets
+        )
+        if governed_mutation and schema_blocker:
+            return deny(schema_blocker)
 
     # Classify each write target by the UNION of its forms (resolved, entry,
     # lexical — see stage_relative_forms). Union is fail-closed: the resolved

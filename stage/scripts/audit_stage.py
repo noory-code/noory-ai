@@ -1062,11 +1062,16 @@ class Audit:
         # routed target; compare against the whole token.
         routed_cells = {token.strip().rstrip("/") for token in re.findall(r"`([^`]+)`", index_text)}
 
-        routed_locations = [
-            location
-            for locations in self.record_locations.values()
-            for location in locations
-        ] + list(self.routing_only_locations)
+        routed_locations = list(
+            dict.fromkeys(
+                [
+                    location
+                    for locations in self.record_locations.values()
+                    for location in locations
+                ]
+                + list(self.routing_only_locations)
+            )
+        )
         for location in routed_locations:
             if (self.stage_root / location).is_dir() and location not in routed_cells:
                 self.warning(
@@ -1399,7 +1404,8 @@ class Audit:
                     "settings.json schema_version "
                     f"`{schema_version if schema_version is not None else 'missing'}` differs from "
                     f"the plugin's contract version `{stage_guard.STAGE_SCHEMA_VERSION}` — the "
-                    "harness was initialized by a different plugin generation.",
+                    "project is behind the enforced contract; run the stage-migrate skill. "
+                    "Read-only audit remains available before migration.",
                     settings_path,
                 )
         language = settings.get("language")

@@ -79,9 +79,15 @@ class StageGuardTest(unittest.TestCase):
         promotes: str = "",
         retrospective_ref: str = "",
     ) -> Path:
+        topology = stage_guard.active_topology(root / ".stage")
+        relative = (
+            f"work/current/{item_id}.md"
+            if topology == stage_guard.ACTIVE_TOPOLOGY_V4
+            else f"present/work/items/{item_id}.md"
+        )
         return self.write_stage_file(
             root,
-            f"present/work/items/{item_id}.md",
+            relative,
             (
                 "---\n"
                 f"id: {item_id}\n"
@@ -126,6 +132,40 @@ class StageGuardTest(unittest.TestCase):
         output = result["hookSpecificOutput"]
         self.assertEqual(output["hookEventName"], "SessionStart")
         self.assertIn("Global time axis", output["additionalContext"])
+
+    def test_schema_v4_maintenance_marker_denies_v3_and_v4_mutations(self):
+        for schema_version in (3, 4):
+            with self.subTest(schema_version=schema_version), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.write_stage_file(
+                    root,
+                    "settings.json",
+                    json.dumps(
+                        {
+                            "schema_version": schema_version,
+                            "governance": {"exclude_paths": ["vendor/"]},
+                        }
+                    ),
+                )
+                self.write_stage_file(
+                    root,
+                    ".runtime/schema-v4-maintenance.json",
+                    "{}\n",
+                )
+                payload = {
+                    "tool_name": "Write",
+                    "cwd": str(root),
+                    "tool_input": {
+                        "file_path": "vendor/generated.txt",
+                        "content": "blocked\n",
+                    },
+                }
+
+                result = stage_guard.handle_event("pre-tool-use", payload)
+
+                self.assertEqual(decision(result), "deny")
+                self.assertIn("maintenance", reason(result).lower())
+                self.assertIn("stage-migrate abort", reason(result))
 
     def test_dot_segment_reentry_hits_registration_gate(self):
         # F1: .stage/../src must not masquerade as .stage-internal (ungoverned).
@@ -594,7 +634,11 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(root, "index.md", "# Stage\n")
             (root / "src").mkdir()
             (root / "link").symlink_to(root / "src", target_is_directory=True)
-            self.write_stage_file(root, "settings.json", '{"governance":{"paths":["link"]}}')
+            self.write_stage_file(
+                root,
+                "settings.json",
+                '{"schema_version":4,"governance":{"paths":["link"]}}',
+            )
             payload = {
                 "tool_name": "Write",
                 "cwd": str(root),
@@ -1209,6 +1253,39 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
 
+    def test_v4_allows_archive_intent_including_official_index_update(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "settings.json", json.dumps({"schema_version": 4}))
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="approved",
+            )
+            self.write_promotion_intent(
+                root,
+                paths=[
+                    ".stage/official/work/archive/items/W-0001.md",
+                    ".stage/official/work/archive/index.md",
+                ],
+                intent_type="archive",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/official/work/archive/index.md",
+                    "content": "| W-0001 | completed | [item](items/W-0001.md) |\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+
     def test_blocks_archive_intent_when_target_file_does_not_match_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1309,7 +1386,7 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(
                 root,
                 "settings.json",
-                json.dumps({"governance": {"paths": ["designs"]}}),
+                json.dumps({"schema_version": 4, "governance": {"paths": ["designs"]}}),
             )
             payload = {
                 "tool_name": "Write",
@@ -1328,7 +1405,7 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(
                 root,
                 "settings.json",
-                json.dumps({"governance": {"paths": ["designs"]}}),
+                json.dumps({"schema_version": 4, "governance": {"paths": ["designs"]}}),
             )
             self.write_work_item(root, status="active", scope="designs")
             payload = {
@@ -1347,7 +1424,7 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(
                 root,
                 "settings.json",
-                json.dumps({"governance": {"extensions": [".md"]}}),
+                json.dumps({"schema_version": 4, "governance": {"extensions": [".md"]}}),
             )
             payload = {
                 "tool_name": "Write",
@@ -2681,7 +2758,9 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(
-                root, "settings.json", json.dumps({"governance": {"paths": ["src"]}})
+                root,
+                "settings.json",
+                json.dumps({"schema_version": 4, "governance": {"paths": ["src"]}}),
             )
             (root / "src").mkdir()
             (root / "outside.txt").write_text("x", encoding="utf-8")
@@ -2770,7 +2849,11 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(
-                root, "settings.json", json.dumps({"governance": {"exclude_paths": ["generated"]}})
+                root,
+                "settings.json",
+                json.dumps(
+                    {"schema_version": 4, "governance": {"exclude_paths": ["generated"]}}
+                ),
             )
             (root / "generated").mkdir()
             (root / "generated" / "file").write_text("x", encoding="utf-8")
@@ -4433,7 +4516,7 @@ class ConfiguredWriteToolTest(unittest.TestCase):
     def write_work_item(self, root: Path, *, scope: str) -> Path:
         return self.write_stage_file(
             root,
-            "present/work/items/W-0001.md",
+            "work/current/W-0001.md",
             (
                 "---\nid: W-0001\ntitle: Test work\nstatus: active\nverification: pending\n"
                 f"retrospective: pending\nretrospective_ref:\npromotion: pending\nscope: {scope}\n"
@@ -4442,7 +4525,9 @@ class ConfiguredWriteToolTest(unittest.TestCase):
         )
 
     def write_settings(self, root: Path, data: dict) -> Path:
-        return self.write_stage_file(root, "settings.json", json.dumps(data))
+        return self.write_stage_file(
+            root, "settings.json", json.dumps({"schema_version": 4, **data})
+        )
 
     def payload(self, root: Path, target: str) -> dict:
         return {
@@ -4483,14 +4568,14 @@ class ConfiguredWriteToolTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
 
-    def test_configured_write_tool_hits_promotion_gate_for_past(self):
+    def test_configured_write_tool_hits_promotion_gate_for_official(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(root, "index.md", "# Stage\n")
             self.write_settings(root, {"extra_write_tools": ["mcp__filesystem__write_file"]})
 
             result = stage_guard.handle_event(
-                "pre-tool-use", self.payload(root, ".stage/past/canon/principles.md")
+                "pre-tool-use", self.payload(root, ".stage/official/canon/principles.md")
             )
 
         self.assertEqual(decision(result), "deny")
@@ -4505,7 +4590,7 @@ class ConfiguredWriteToolTest(unittest.TestCase):
             self.write_settings(root, {"extra_write_tools": ["mcp__filesystem__write_file"]})
             self.write_stage_file(
                 root,
-                "present/work/items/W-0001.md",
+                "work/current/W-0001.md",
                 (
                     "---\nid: W-0001\ntitle: Parent\nstatus: completed\nverification: passed\n"
                     "retrospective: completed\nretrospective_ref: R-0001\npromotion: approved\n"
@@ -4520,7 +4605,7 @@ class ConfiguredWriteToolTest(unittest.TestCase):
             payload = {
                 "tool_name": "mcp__filesystem__write_file",
                 "cwd": str(root),
-                "tool_input": {"path": ".stage/present/work/items/W-0002.md", "content": child},
+                "tool_input": {"path": ".stage/work/current/W-0002.md", "content": child},
             }
 
             result = stage_guard.handle_event("pre-tool-use", payload)

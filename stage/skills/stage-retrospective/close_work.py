@@ -41,6 +41,7 @@ from stage_paths import (  # noqa: E402
     active_topology,
     load_review_config,
     resolve_review_command,
+    schema_migration_banner,
 )
 from stage_work import decision_status, split_scope  # noqa: E402
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
@@ -147,6 +148,10 @@ def main() -> int:
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
+    schema_blocker = schema_migration_banner(stage_root)
+    if schema_blocker:
+        print(schema_blocker, file=sys.stderr)
+        return 2
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         current_root = paths.current_cards

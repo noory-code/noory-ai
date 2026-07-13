@@ -19,12 +19,12 @@ doc). Do not guess. If the purpose answers an open question, the question may be
 ## One card, three columns
 
 A work card is one `W-*` artifact for its whole life (DE-00000007): captured as a planned card
-in the active topology's planned-work location, moved to its current-work location when work
-starts, and archived when closed. The lifecycle CLIs read `.stage/settings.json` and select the
-schema-v3 or schema-v4 paths; never select those paths manually. Two flows create work:
+in `work/planned/`, moved to `work/current/` when work starts, and archived under
+`official/work/archive/` when closed. The lifecycle CLIs derive these paths from the schema-v4
+registry; never select them manually. Two flows create work:
 
 - **Capture for later**: `register_work.py --backlog --title "..." --kind <kind> --scope ""` —
-  a planned card (`status: captured`) in the active topology's planned index. No venue/split
+  a planned card (`status: captured`) in `work/planned/` and its index. No venue/split
   checks run during capture.
 - **Start now**: the flow below (direct current registration), or start an existing planned card
   with `python3 stage/scripts/start_work.py --project-root <root> W-NNNNNNNN --scope "..."` — the
@@ -51,7 +51,7 @@ record never triggers the question.
 
 ## Draft the item
 
-Prepare the inputs for `register_work.py`; the CLI selects the topology template, allocates the
+Prepare the inputs for `register_work.py`; the CLI selects the registry template, allocates the
 next free number, writes the card, and updates the owning index:
 
 - `id`, `title` — the outcome, not the steps.

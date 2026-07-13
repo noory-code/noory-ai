@@ -12,12 +12,13 @@ from pathlib import Path
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
-LOCALE_ROOT = PLUGIN_ROOT / "templates" / "locales"
+TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "project-stage"
+LOCALE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "locales"
 # Same contract as stage_paths.LANGUAGE_TAG_RE; duplicated literal only because
 # this script must stay runnable standalone before any .stage exists.
 LANGUAGE_TAG_RE = re.compile(r"^[a-z]{2,8}(-[a-z0-9]{2,8})*$")
 DEFAULT_LANGUAGE = "en"
+CURRENT_SCHEMA_VERSION = 4
 
 
 def parse_args() -> argparse.Namespace:
@@ -60,6 +61,27 @@ def copy_templates(
         raise FileNotFoundError(f"Template root not found: {TEMPLATE_ROOT}")
 
     stage_root = project_root / ".stage"
+    settings_path = stage_root / "settings.json"
+    if settings_path.exists():
+        try:
+            existing_settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            existing_settings = None
+        existing_version = (
+            existing_settings.get("schema_version")
+            if isinstance(existing_settings, dict)
+            else None
+        )
+        if type(existing_version) is not int or existing_version != CURRENT_SCHEMA_VERSION:
+            displayed = (
+                f"v{existing_version}"
+                if type(existing_version) is int
+                else "missing/invalid"
+            )
+            raise RuntimeError(
+                f"this project is on schema {displayed}; the plugin requires v4 — run the "
+                "stage-migrate skill before stage-init so v3 and v4 roots are never mixed"
+            )
     created: list[Path] = []
     skipped: list[Path] = []
 
@@ -78,7 +100,6 @@ def copy_templates(
         shutil.copyfile(template_source(relative_path, language), target_path)
         created.append(target_path)
 
-    settings_path = stage_root / "settings.json"
     if settings_path in created and language != DEFAULT_LANGUAGE:
         settings = json.loads(settings_path.read_text(encoding="utf-8"))
         settings["language"] = language

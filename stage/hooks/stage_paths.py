@@ -9,8 +9,8 @@ from typing import Any
 
 import stage_topology
 
-# Schema-v4 authorization-zone constants.  Existing schema-v3 consumers keep
-# using their legacy predicates until the consumer-adoption card rewires them.
+# Schema-v4 authorization-zone constants. Read-only consumers can still inspect
+# schema-v3 projects so audit and migration never strand an older harness.
 STAGE_OFFICIAL_ROOT = ".stage/official"
 STAGE_OFFICIAL_ARCHIVE_ROOT = f"{STAGE_OFFICIAL_ROOT}/work/archive"
 
@@ -21,10 +21,10 @@ ACTIVE_TOPOLOGY_V4 = "v4"
 def active_topology(stage_root: Path) -> str:
     """Return the topology selected by this project's settings.
 
-    Schema v4 capability is dormant unless the project explicitly carries the
-    exact integer v4 marker. Missing, unreadable, malformed, and older settings
-    retain the established schema-v3 behavior; the audit separately reports a
-    malformed or generation-mismatched marker.
+    Schema v4 is active only when the project carries the exact integer v4
+    marker. Missing, unreadable, malformed, and older markers keep read-only
+    consumers on the legacy resolver; mutation gates separately fail closed
+    with the stage-migrate banner.
     """
 
     settings_path = stage_root / "settings.json"
@@ -36,6 +36,38 @@ def active_topology(stage_root: Path) -> str:
     if type(schema_version) is int and schema_version == stage_topology.SCHEMA_VERSION:
         return ACTIVE_TOPOLOGY_V4
     return ACTIVE_TOPOLOGY_V3
+
+
+def load_schema_version(stage_root: Path) -> object:
+    """Return the raw schema marker, preserving missing/malformed distinctions."""
+
+    settings_path = stage_root / "settings.json"
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return data.get(stage_topology.SCHEMA_VERSION_KEY) if isinstance(data, dict) else None
+
+
+def schema_migration_banner(stage_root: Path) -> str:
+    """Actionable mutation blocker for a project behind the enforced contract.
+
+    A wholly absent settings file is left to the established partial-init/repair
+    behavior. Once settings.json exists, a missing, malformed, or older marker is
+    behind and every mutation entry point must name the user-facing migration skill.
+    """
+
+    if not (stage_root / "settings.json").exists():
+        return ""
+    schema_version = load_schema_version(stage_root)
+    if type(schema_version) is int and schema_version == STAGE_SCHEMA_VERSION:
+        return ""
+    displayed = f"v{schema_version}" if type(schema_version) is int else "missing/invalid"
+    return (
+        f"Stage schema gate: this project is on schema {displayed}; the plugin requires "
+        f"v{STAGE_SCHEMA_VERSION} — run the stage-migrate skill. Read-only stage-audit and "
+        "stage-migrate remain available."
+    )
 
 
 def clean_path_text(path: str) -> str:
@@ -228,8 +260,10 @@ def path_targets_stage_past(path: str) -> bool:
 
 def path_targets_stage_archive(path: str) -> bool:
     normalized = "/" + normalize_path_text(path).lstrip("/")
-    return "/.stage/past/work/archive/" in normalized or normalized.startswith(
-        "/.stage/past/work/archive/"
+    return (
+        "/.stage/past/work/archive/" in normalized
+        or normalized.startswith("/.stage/past/work/archive/")
+        or path_targets_stage_official_archive(path)
     )
 
 
@@ -356,10 +390,10 @@ def resolve_review_command(review: dict[str, Any], stage: str) -> tuple[str | No
 # contract changes shape.
 # Version 2: common operations docs are plugin-owned and no longer copied
 # into `.stage/operations/`.
-# Version 3: backlog entries are planned W work cards (the B family retired);
-# one card moves future -> present -> past. Migrate with
-# `scripts/migrate_stage.py`.
-STAGE_SCHEMA_VERSION = 3
+# Version 3: backlog entries are planned W work cards (the B family retired).
+# Version 4: the official authorization zone and responsibility-family roots
+# replace the time-wrapper topology. Migrate v3 projects with stage-migrate.
+STAGE_SCHEMA_VERSION = 4
 
 
 def configured_write_tools(stage_root: Path) -> set[str]:

@@ -6,7 +6,7 @@ per-path archive intent — because `.stage/` is excluded from `is_source_path`
 (`stage/hooks/stage_paths.py: DEFAULT_EXCLUDED_PREFIXES`). No new work item is
 required. This script is the sanctioned fast path: it validates each item is in
 a closed terminal state, then moves it and its retrospective into
-`past/work/archive/`, records the terminal status in `archive/index.md`, and
+`official/work/archive/`, records the terminal status in `archive/index.md`, and
 drops the present-flow rows. It re-enforces the same invariants the promotion
 gate checks, and is idempotent.
 
@@ -29,7 +29,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
-from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
+from stage_paths import (  # noqa: E402
+    ACTIVE_TOPOLOGY_V4,
+    active_topology,
+    schema_migration_banner,
+)
 
 TERMINAL_STATUSES = {"completed", "rejected"}
 
@@ -259,6 +263,10 @@ def main() -> int:
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
     if not stage_root.exists():
         print(f"Stage root not found: {stage_root}", file=sys.stderr)
+        return 2
+    schema_blocker = schema_migration_banner(stage_root)
+    if schema_blocker:
+        print(schema_blocker, file=sys.stderr)
         return 2
 
     ids = list(args.items)

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.31.0 — 2026-07-13
+
+Schema v4 activation and one-shot project migration:
+
+- schema v4 ACTIVATED — enforced contract version is now 4; stage-migrate skill performs the
+  one-shot v3->v4 migration; v3 projects fail closed with a banner naming stage-migrate
+  (no-stranding invariant); read-only audit and migration remain callable on v3. (W-00000037)
+
 ## 0.30.0 — 2026-07-13
 
 Schema-v4 milestone closure with immutable evidence:

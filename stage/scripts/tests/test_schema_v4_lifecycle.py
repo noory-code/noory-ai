@@ -72,7 +72,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
         self.assertIn("OK: no findings", result.stdout)
         self.assertIn("Summary: errors=0, warnings=0", result.stdout)
 
-    def test_v3_registration_keeps_legacy_topology_and_optional_milestone(self):
+    def test_v3_registration_fails_closed_and_names_stage_migrate(self):
         tmp, root = self.make_fixture(V3_TEMPLATE_ROOT)
         with tmp:
             without_milestone = run_cli(
@@ -98,23 +98,24 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
                 "M-00000007",
             )
 
-            self.assertEqual(0, without_milestone.returncode, without_milestone.stderr)
-            self.assertEqual(0, with_milestone.returncode, with_milestone.stderr)
+            self.assertEqual(2, without_milestone.returncode)
+            self.assertEqual(2, with_milestone.returncode)
+            self.assertIn("plugin requires v4", without_milestone.stderr)
+            self.assertIn("stage-migrate", without_milestone.stderr)
+            self.assertIn("stage-migrate", with_milestone.stderr)
             first = root / ".stage/present/work/items/W-00000001.md"
             second = root / ".stage/present/work/items/W-00000002.md"
             active = (root / ".stage/present/work/active.md").read_text(encoding="utf-8")
 
-            self.assertTrue(first.is_file())
-            self.assertTrue(second.is_file())
-            self.assertNotIn("milestone:", first.read_text(encoding="utf-8"))
-            self.assertEqual(
-                1,
-                second.read_text(encoding="utf-8").count("milestone: M-00000007"),
-            )
-            self.assertIn("(items/W-00000001.md)", active)
+            self.assertFalse(first.exists())
+            self.assertFalse(second.exists())
+            self.assertNotIn("W-00000001", active)
             self.assertFalse((root / ".stage/work/current").exists())
-            self.assertEqual(3, stage_paths.STAGE_SCHEMA_VERSION)
-            self.assert_audit_clean(root)
+            self.assertEqual(4, stage_paths.STAGE_SCHEMA_VERSION)
+            audited = run_cli(AUDIT, root)
+            self.assertEqual(0, audited.returncode)
+            self.assertIn("SCHEMA001", audited.stdout)
+            self.assertIn("stage-migrate", audited.stdout)
 
     def test_v4_direct_registration_uses_registry_current_paths(self):
         tmp, root = self.make_fixture(V4_TEMPLATE_ROOT)
@@ -144,7 +145,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             self.assert_audit_clean(root)
 
     def test_milestone_argument_enforces_zero_or_one_valid_id(self):
-        tmp, root = self.make_fixture(V3_TEMPLATE_ROOT)
+        tmp, root = self.make_fixture(V4_TEMPLATE_ROOT)
         with tmp:
             repeated = run_cli(
                 REGISTER,
@@ -179,7 +180,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             self.assertIn("M-00000001", malformed.stderr)
             self.assertEqual(
                 [],
-                list((root / ".stage/present/work/items").glob("W-*.md")),
+                list((root / ".stage/work/current").glob("W-*.md")),
             )
 
     def test_v4_direct_registration_refuses_a_planned_id(self):

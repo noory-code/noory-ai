@@ -39,35 +39,34 @@ If the helper is unavailable, create the same structure as `templates/project-st
 .stage/
   index.md
   settings.json
-  past/canon/
+  official/canon/
     principles/
     vocabulary/
     invariants/
-  past/model/
+  official/model/
     components/
     boundaries/
     interfaces/
-  past/decisions/
+  official/decisions/
     records/
-  past/work/archive/
+  official/work/archive/
     items/
     retrospectives/
-  present/work/
-    items/
+  work/
+    planned/
+    current/
     retrospectives/
-    decisions/
-  present/state/
+    views/
+  decisions/pending/
+  state/
     observations/
     questions/
     assumptions/
     risks/
-  future/roadmap/
+  roadmap/
     milestones/
     themes/
-  future/backlog/
-    items/
-    views/
-  future/proposals/
+  proposals/
   operations/
     verification.md
 ```
@@ -75,8 +74,8 @@ If the helper is unavailable, create the same structure as `templates/project-st
 `operations/` holds only project-owned policy (the `kind -> passed` verification criteria and any
 declared overrides). Common operational rules are plugin-owned and live in the installed Stage
 plugin's `operations/` directory — they are not copied into the project. A `.stage/` initialized
-by an older plugin still carries full copies; migrate it with
-`python3 stage/scripts/migrate_stage.py --project-root <project-root>`.
+by an older plugin must be migrated with the `stage-migrate` skill. Do not run stage-init over a
+v3 tree: that would mix topologies and is refused.
 
 ## Completion gate
 
@@ -85,7 +84,7 @@ Stage initialization is complete only when all of the following hold.
 - `.stage/index.md` exists.
 - `operations/verification.md` exists, and `settings.json` carries the plugin's current
   `schema_version`.
-- `past`, `present`, and `future` all exist.
+- `official`, `work`, `decisions`, `state`, `proposals`, and `roadmap` all exist.
 - Index documents and individual record directories are separated.
 - `python3 stage/scripts/audit_stage.py --project-root <project-root>` passes.
 - No user-authored file was overwritten without explicit approval.

@@ -20,7 +20,11 @@ for import_root in (HOOK_ROOT, SCRIPT_ROOT):
 import stage_roadmap  # noqa: E402
 import stage_roadmap_closure  # noqa: E402
 import stage_topology  # noqa: E402
-from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
+from stage_paths import (  # noqa: E402
+    ACTIVE_TOPOLOGY_V4,
+    active_topology,
+    schema_migration_banner,
+)
 from stage_work import parse_frontmatter, split_scope  # noqa: E402
 
 
@@ -530,7 +534,8 @@ def main() -> int:
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
     if active_topology(stage_root) != ACTIVE_TOPOLOGY_V4:
         print(
-            "stage-roadmap requires a Stage project with schema_version: 4; no files changed.",
+            schema_migration_banner(stage_root)
+            or "stage-roadmap requires a Stage project with schema_version: 4; no files changed.",
             file=sys.stderr,
         )
         return 2

@@ -13,10 +13,10 @@ Use this skill at decision points.
 
 Read the relevant `.stage/` context.
 
-1. `past/canon/principles.md`: the project's principle catalog — the criteria this decision must cite.
-2. `past/`: official truth.
-3. `present/`: work in progress and uncertainty.
-4. `future/`: plans and proposals.
+1. `official/canon/principles.md`: the project's principle catalog — the criteria this decision must cite.
+2. `official/`: official truth.
+3. `work/`, `decisions/`, and `state/`: work in progress and uncertainty.
+4. `proposals/`, `roadmap/`, and `work/planned/`: plans and proposals.
 5. `operations/`: behavior gates — common rules are plugin-owned (the installed Stage plugin's
    `operations/`); `.stage/operations/` holds only project policy and declared overrides.
 
@@ -49,12 +49,12 @@ When principles conflict, use this value order.
 
 A decision that shapes the work is recorded, not just made.
 
-- Create a decision record from `present/work/decisions/_template.md` (`DE-NNNNNNNN`), including the
+- Create a decision record from `decisions/pending/_template.md` (`DE-NNNNNNNN`), including the
   question, options, principles applied, and chosen direction.
 - Set the record's `work_item` to the current work item and add the record to the work item's
   `decision_refs`.
 - Record a decision when ANY of these holds; otherwise skip the record:
-  - it changes a file under `past/` (official truth), or
+  - it changes a file under `official/` (official truth), or
   - it selects between two or more viable options where the alternatives were plausible, or
   - reversing it later would require editing more than one file, or
   - it sets a value another work item depends on (a name, path, schema, or interface).
@@ -66,12 +66,12 @@ Return the following.
 
 - The decision.
 - The principles and context used.
-- Routing location: `past`, `present`, or `future`.
+- Routing location: `official/` or the owning mutable responsibility family.
 - The retrospective note needed after execution.
 
 ## Hook connection
 
-Modifying `.stage/past/` counts as official promotion. For an intentional promotion, finish
+Modifying `.stage/official/` counts as official promotion. For an intentional promotion, finish
 verification and the retrospective, declare the target paths in the work item's `promotes`,
 then create the intent with `scripts/promote_intent.py` (one `.stage/.runtime/intents/` file per work item and path — never hand-write the filename). Never put promotion markers in official
 artifact bodies.

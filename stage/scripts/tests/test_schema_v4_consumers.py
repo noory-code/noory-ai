@@ -13,6 +13,7 @@ STAGE_ROOT = Path(__file__).resolve().parents[2]
 HOOK_ROOT = STAGE_ROOT / "hooks"
 SCRIPT_ROOT = STAGE_ROOT / "scripts"
 V4_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "v4" / "project-stage"
+V3_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "project-stage"
 for import_root in (HOOK_ROOT, SCRIPT_ROOT):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
@@ -91,10 +92,10 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
         )
         self.assertEqual("deny", permission_decision(result))
 
-    def test_v3_fixture_keeps_existing_consumer_behavior(self):
+    def test_v3_fixture_keeps_read_only_consumers_but_fails_writes_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            init_stage.copy_templates(root, False)
+            shutil.copytree(V3_TEMPLATE_ROOT, root / ".stage")
             stage_root = root / ".stage"
             item_id = "W-00000091"
             item_path = stage_root / "present" / "work" / "items" / f"{item_id}.md"
@@ -108,13 +109,40 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                 )
 
             self.assertEqual("v3", stage_paths.active_topology(stage_root))
-            self.assert_guard_allows_registered_write(root)
+            write_result = stage_guard.validate_pre_tool(
+                {
+                    "cwd": str(root),
+                    "tool_name": "Write",
+                    "tool_input": {
+                        "file_path": str(root / "src" / "app.py"),
+                        "content": "print('blocked')\n",
+                    },
+                }
+            )
+            self.assertEqual("deny", permission_decision(write_result))
+            write_reason = write_result["hookSpecificOutput"]["permissionDecisionReason"]
+            self.assertIn("plugin requires v4", write_reason)
+            self.assertIn("stage-migrate", write_reason)
+            commit_result = stage_guard.validate_pre_tool(
+                {
+                    "cwd": str(root),
+                    "tool_name": "Bash",
+                    "tool_input": {"command": "git commit -m schema-test"},
+                }
+            )
+            self.assertEqual("deny", permission_decision(commit_result))
+            self.assertIn(
+                "stage-migrate",
+                commit_result["hookSpecificOutput"]["permissionDecisionReason"],
+            )
             self.assert_guard_blocks_unapproved_official_write(
                 root, ".stage/past/canon/principles.md"
             )
             graph = stage_records.RecordGraph(stage_root)
             self.assertEqual([item_path], [entry.item.path for entry in graph.work])
-            self.assertEqual([], audit_stage.Audit(root).run())
+            findings = audit_stage.Audit(root).run()
+            self.assertEqual(["SCHEMA001"], [finding.code for finding in findings])
+            self.assertIn("stage-migrate", findings[0].message)
             context = stage_context.session_context(root)
 
         self.assertIn("`past` is official, `present` is in progress, `future` is planned", context)
@@ -283,10 +311,10 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
 
         self.assertEqual("allow", permission_decision(current_result))
 
-    def test_v3_guard_keeps_mutable_legacy_roots_available(self):
+    def test_v3_guard_denies_mutable_legacy_roots_with_migration_banner(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            init_stage.copy_templates(root, False)
+            shutil.copytree(V3_TEMPLATE_ROOT, root / ".stage")
             for target in (
                 ".stage/present/state/current.md",
                 ".stage/future/proposals/P-00000095.md",
@@ -299,7 +327,10 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                             "tool_input": {"file_path": target, "content": "replacement\n"},
                         }
                     )
-                    self.assertEqual("allow", permission_decision(result))
+                    self.assertEqual("deny", permission_decision(result))
+                    reason = result["hookSpecificOutput"]["permissionDecisionReason"]
+                    self.assertIn("plugin requires v4", reason)
+                    self.assertIn("stage-migrate", reason)
 
     def test_v4_context_renders_registry_derived_lifecycle_view(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -342,7 +373,7 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
     def test_v3_context_does_not_render_v4_lifecycle_view(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            init_stage.copy_templates(root, False)
+            shutil.copytree(V3_TEMPLATE_ROOT, root / ".stage")
 
             context = stage_context.session_context(root)
 

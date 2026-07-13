@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Start a planned work card: move it from future/backlog/items to present/work/items.
+"""Start a planned work card: move it from work/planned to work/current.
 
 The card keeps its identity (DE-00000007); starting is a physical move plus the
 work-field upgrade. This script enforces at the move what registration enforces
@@ -26,6 +26,7 @@ from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
     load_venue_routing,
+    schema_migration_banner,
 )
 from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
@@ -67,7 +68,7 @@ RECORD_SECTIONS = ("## Progress", "## Verification", "## Retrospective", "## Pro
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Move a planned card to present and start work.")
     parser.add_argument("--project-root", default=".")
-    parser.add_argument("item", help="Planned card id (W-*) in future/backlog/items.")
+    parser.add_argument("item", help="Planned card id (W-*) in work/planned.")
     parser.add_argument(
         "--scope",
         required=True,
@@ -108,6 +109,10 @@ def main() -> int:
     args = parse_args()
     project_root = Path(args.project_root).expanduser().resolve()
     stage_root = project_root / ".stage"
+    schema_blocker = schema_migration_banner(stage_root)
+    if schema_blocker:
+        print(schema_blocker, file=sys.stderr)
+        return 2
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         planned_root = paths.planned_cards

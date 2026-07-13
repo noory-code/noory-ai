@@ -217,7 +217,8 @@ class RoadmapCliTest(RoadmapFixture):
             after = set((root / ".stage/future/roadmap").rglob("*"))
 
         self.assertEqual(2, result.returncode)
-        self.assertIn("schema_version: 4", result.stderr)
+        self.assertIn("plugin requires v4", result.stderr)
+        self.assertIn("stage-migrate", result.stderr)
         self.assertEqual(before, after)
 
 

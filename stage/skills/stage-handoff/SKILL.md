@@ -13,11 +13,11 @@ place to know which window to open next.
 
 - `venue` on each work item names the surface that should carry it out. No hook gates on it, but
   when the project declares a role policy the audit checks consistency (VENUE001-VENUE005).
-- `present/work/active.md` shows every open item with its `Venue` column. This is the routing
+- `work/active.md` shows every open item with its `Venue` column. This is the routing
   view: the human opens the window whose venue has open rows, or a bridge-equipped window
   executes them by delegation (below).
 - The machine-readable role policy lives in `settings.json` `venue_routing` (`kind -> venue`);
-  what each venue means belongs to the project's canon (e.g. `past/canon/vocabulary.md`). The
+  what each venue means belongs to the project's canon (e.g. `official/canon/vocabulary.md`). The
   harness fixes no venue names. Registration derives the venue from the policy without asking the
   human; a contradicting venue registers only with `--decision <DE-id>` naming a decided decision
   that declares `authorizes: venue_exception`, and a kind routed to the reserved value `split`
