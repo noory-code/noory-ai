@@ -23,6 +23,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     normalize_path_text,
 )
 import stage_topology  # noqa: E402
+import stage_roadmap  # noqa: E402
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     WORK_OPEN_STATUSES,
     item_is_open,
@@ -106,6 +107,27 @@ def derived_lifecycle_view(stage_root: Path) -> str:
     if roadmap:
         lines.append(
             "- roadmap (decision-derived lifecycle) — " + "; ".join(roadmap)
+        )
+    return "\n".join(lines)
+
+
+def active_milestone_table(stage_root: Path) -> str:
+    """Render the compact v4 active-milestone view from decision chains."""
+
+    lines = [
+        "### Active milestones (decision-derived)",
+        "| Milestone | Theme | Title |",
+        "|---|---|---|",
+    ]
+    milestones = stage_roadmap.active_milestones(stage_root)
+    if not milestones:
+        lines.append("| — | — | None |")
+        return "\n".join(lines)
+    for milestone in milestones:
+        link = f"roadmap/milestones/{milestone.record_id}.md"
+        title = milestone.title.replace("|", "\\|")
+        lines.append(
+            f"| [{milestone.record_id}]({link}) | {milestone.theme or '—'} | {title} |"
         )
     return "\n".join(lines)
 
@@ -219,6 +241,7 @@ def session_context(workspace_root: Path) -> str:
 
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         parts.append("\n" + derived_lifecycle_view(stage_root))
+        parts.append("\n" + active_milestone_table(stage_root))
         state_index = next(
             path
             for path in stage_topology.get_zone("state", "current").index_surfaces

@@ -45,8 +45,9 @@ python3 stage/skills/stage-work/register_work.py --project-root <root> --count-o
   `--milestone`. If the human answers no, omit `--milestone`.
 - Never pass more than one milestone id. `milestone:` cardinality is `0..1`.
 
-The C5 detector returns `0` until C6 supplies the pursuit/closure decision-chain evaluator. A
-milestone record without a proven open pursuit never triggers the question.
+The detector counts only milestones whose valid decision chain has an effective pursuit head
+and no effective closure. A planned milestone, an invalid chain, or a milestone with no decision
+record never triggers the question.
 
 ## Draft the item
 
@@ -68,7 +69,7 @@ next free number, writes the card, and updates the owning index:
 - `scope` — the paths this work may modify. The registration gate matches writes against these,
   so list every governed subtree you will touch. `*` authorizes anything (use sparingly).
 - `milestone` — include one `M-NNNNNNNN` only when the conditional question above was asked and
-  the human selected that milestone. It is inert until C6 lands roadmap semantics.
+  the human selected that active milestone.
 - `## Purpose`, `## Scope`, `## Success criteria` — concrete and checkable.
 
 ## Confirm, then register

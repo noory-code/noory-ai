@@ -279,7 +279,7 @@ FAMILIES: dict[str, FamilyRecord] = {
                 "themes",
                 "roadmap/themes",
                 None,
-                indexes=("roadmap/index.md",),
+                indexes=("roadmap/themes/index.md",),
                 template="project-stage/roadmap/themes/_template.md",
                 resolver="decision-chain",
                 origin="future/roadmap/themes",
@@ -288,7 +288,7 @@ FAMILIES: dict[str, FamilyRecord] = {
                 "milestones",
                 "roadmap/milestones",
                 None,
-                indexes=("roadmap/index.md",),
+                indexes=("roadmap/milestones/index.md",),
                 template="project-stage/roadmap/milestones/_template.md",
                 resolver="decision-chain",
                 origin="future/roadmap/milestones",
@@ -317,12 +317,12 @@ ARTIFACT_PREFIXES: dict[str, ArtifactPrefix] = {
     "D": ArtifactPrefix(
         "D", "decisions", "legacy decision", "decisions", False, True
     ),
-    "TH": ArtifactPrefix("TH", "roadmap", "theme", "roadmap"),
-    "M": ArtifactPrefix("M", "roadmap", "milestone", "roadmap"),
-    "O": ArtifactPrefix("O", "state", "observation", "state"),
-    "Q": ArtifactPrefix("Q", "state", "question", "state"),
-    "A": ArtifactPrefix("A", "state", "assumption", "state"),
-    "K": ArtifactPrefix("K", "state", "risk", "state"),
+    "TH": ArtifactPrefix("TH", "roadmap", "theme", "theme"),
+    "M": ArtifactPrefix("M", "roadmap", "milestone", "milestone"),
+    "O": ArtifactPrefix("O", "state", "observation", "observation"),
+    "Q": ArtifactPrefix("Q", "state", "question", "question"),
+    "A": ArtifactPrefix("A", "state", "assumption", "assumption"),
+    "K": ArtifactPrefix("K", "state", "risk", "risk"),
     "P": ArtifactPrefix("P", "proposals", "proposal", "proposals"),
 }
 

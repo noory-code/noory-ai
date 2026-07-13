@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.29.0 — 2026-07-13
+
+Schema-v4 roadmap creation and derived state:
+
+- Added the v4-only `stage-roadmap` skill and CLI for registry-allocated Theme/Milestone
+  creation, index synchronization, pursuit decisions, and computed roadmap listing. Decision
+  chains now reject dangling links, cycles, unresolved forks, and multiple effective heads;
+  roadmap audits validate references and family indexes; session context renders the derived
+  active-milestone table. Schema v3 is unchanged and the enforced version stays 3.
+  (W-00000035)
+
 ## 0.28.0 — 2026-07-13
 
 Dormant schema-v4 lifecycle operations and milestone attribution:

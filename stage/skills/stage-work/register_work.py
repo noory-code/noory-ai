@@ -37,6 +37,7 @@ from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
     venue_exception_error,
 )
+import stage_roadmap  # noqa: E402
 
 ID_RE = re.compile(r"^W-(\d{8})$")
 MILESTONE_RE = re.compile(r"^M-\d{8}$")
@@ -278,15 +279,10 @@ def register_backlog_card(stage_root: Path, args) -> int:
 
 
 def milestone_decision_chain_is_open(stage_root: Path, milestone_path: Path) -> bool:
-    """Conservative C5 boundary for the decision-chain evaluator delivered by C6.
+    """Return whether C6's structural chain evaluator proves open pursuit."""
 
-    C5 can discover milestone records but cannot truthfully classify pursuit or
-    closure before C6 owns those transition semantics. Returning false prevents
-    the skill from asking a milestone question on an unproved premise.
-    """
-
-    del stage_root, milestone_path
-    return False
+    state = stage_roadmap.roadmap_record_state(stage_root, milestone_path)
+    return state.status == stage_roadmap.ROADMAP_ACTIVE
 
 
 def count_open_milestones(stage_root: Path) -> int:

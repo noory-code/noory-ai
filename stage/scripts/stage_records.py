@@ -43,9 +43,12 @@ from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
 
 
 SKIP_NAMES = {"README.md", "_template.md"}
-# Proposal / milestone / approved-decision records are body-only: the ID
-# lives in the first heading instead of frontmatter.
-HEADING_ID_RE = re.compile(r"^#\s+(?P<record_id>(?:DE|[WRDOQAKBPM])-\d{3,})\b", re.MULTILINE)
+# Legacy proposal / milestone / approved-decision records may be body-only;
+# schema-v4 roadmap records carry frontmatter and retain heading fallback for
+# already-authored fixtures.
+HEADING_ID_RE = re.compile(
+    r"^#\s+(?P<record_id>(?:DE|TH|[WRDOQAKBPM])-\d{3,})\b", re.MULTILINE
+)
 
 
 @dataclass(frozen=True)
@@ -111,6 +114,16 @@ def _scan_heading_nodes(roots: tuple[Path, ...]) -> list[RecordNode]:
     return nodes
 
 
+def _scan_roadmap_nodes(roots: tuple[Path, ...]) -> list[RecordNode]:
+    """Schema-v4 roadmap records, with heading fallback for C3-era fixtures."""
+
+    frontmattered = _scan_nodes(roots)
+    by_path = {node.path: node for node in frontmattered}
+    for node in _scan_heading_nodes(roots):
+        by_path.setdefault(node.path, node)
+    return [by_path[path] for path in sorted(by_path)]
+
+
 class RecordGraph:
     def __init__(self, stage_root: Path) -> None:
         # Work items keep every file — one with no frontmatter still becomes a
@@ -174,7 +187,15 @@ class RecordGraph:
                     and resolved[0] == "state"
                 )
             )
-            self.milestones = _scan_heading_nodes(
+            self.themes = _scan_roadmap_nodes(
+                tuple(
+                    stage_root / Path(path).parent
+                    for path in stage_topology.resolve_artifact_reference(
+                        "TH-00000000"
+                    ).candidate_paths
+                )
+            )
+            self.milestones = _scan_roadmap_nodes(
                 tuple(
                     stage_root / Path(path).parent
                     for path in stage_topology.resolve_artifact_reference(
@@ -191,6 +212,7 @@ class RecordGraph:
                 )
             )
         else:
+            self.themes = []
             self.backlog = _scan_nodes(
                 (stage_root / "future" / "backlog" / "items",)
             )

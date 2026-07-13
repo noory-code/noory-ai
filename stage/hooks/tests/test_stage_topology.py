@@ -121,16 +121,18 @@ class StageTopologyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             stage_topology.scan_roots("migration")
 
-    def test_prefixes_parse_legacy_widths_and_use_family_counters(self):
+    def test_prefixes_parse_legacy_widths_and_use_per_type_counters(self):
         policy, number = stage_topology.parse_artifact_id("W-123")
         self.assertEqual("W", policy.prefix)
         self.assertEqual(123, number)
+        # Each artifact type counts its own sequence: a question ignores sibling
+        # observations, and a milestone ignores sibling themes (DE-00000012).
         self.assertEqual(
-            "Q-00000010",
+            "Q-00000004",
             stage_topology.next_artifact_id("Q", ["O-00000009", "Q-003", "W-99999999"]),
         )
         self.assertEqual(
-            "M-00000008",
+            "M-00000003",
             stage_topology.next_artifact_id("M", ["TH-00000007", "M-00000002"]),
         )
         with self.assertRaises(ValueError):

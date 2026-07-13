@@ -38,3 +38,24 @@ python3 stage/scripts/audit_stage.py --project-root <project-root> --format json
 - Decision record links (`decision_refs` ↔ `work_item`) and decision status enums.
 - Backlog frontmatter status and parent references.
 - Archived work item location violations.
+- Schema-v4 roadmap references, theme/milestone index parity, status ownership, and decision
+  chains.
+
+## Roadmap and chain finding codes
+
+These checks run only when `active_topology(.stage) == ACTIVE_TOPOLOGY_V4`.
+
+| Code | Meaning |
+|---|---|
+| `CHAIN001` | A roadmap `decision_refs`, `predecessor`, or `supersedes` reference is dangling. |
+| `CHAIN002` | Predecessor/supersession edges form a cycle. |
+| `CHAIN003` | Two or more non-superseded decisions share one predecessor. |
+| `CHAIN004` | A roadmap decision chain has multiple effective heads. |
+| `CHAIN005` | A transition decision targets a different roadmap record. |
+| `CHAIN006` | A transition decision declares an unknown transition token. |
+| `ROADMAP001/002` | A milestone record/index row lacks its matching counterpart. |
+| `ROADMAP003/004` | A theme record/index row lacks its matching counterpart. |
+| `ROADMAP005` | A work card names a missing milestone after roadmap adoption. |
+| `ROADMAP006` | A milestone names a missing theme. |
+| `ROADMAP007/008` | A milestone/theme index row disagrees with its record fields. |
+| `ROADMAP009` | A roadmap record authors status instead of deriving it from decisions. |

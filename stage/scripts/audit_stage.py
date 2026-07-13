@@ -25,6 +25,7 @@ if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
 import stage_guard  # noqa: E402
+import stage_roadmap  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
 from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
@@ -70,6 +71,9 @@ RECORD_LOCATIONS: dict[str, tuple[str, ...]] = {
 }
 RECORD_ID_RE = re.compile(r"^(?P<prefix>DE|[WRDOQAKBPM])-\d{3,}$")
 HEADING_ID_RE = re.compile(r"^#\s+(?P<record_id>(?:DE|[WRDOQAKBPM])-\d{3,})\b", re.MULTILINE)
+V4_RECORD_ID_RE = re.compile(
+    r"^(?P<prefix>DE|TH|[WRDOQAKBPM])-\d{3,}$"
+)
 # Locations without an ID prefix still need index.md routing coverage.
 ROUTING_ONLY_LOCATIONS: tuple[str, ...] = (
     "past/canon/principles",
@@ -86,7 +90,7 @@ def v4_record_locations() -> dict[str, tuple[str, ...]]:
     """Registry-derived v4 counterpart of the verbatim v3 location table."""
 
     locations: dict[str, tuple[str, ...]] = {}
-    for prefix in ("W", "DE", "D", "O", "Q", "A", "K", "P", "M"):
+    for prefix in ("W", "DE", "D", "TH", "O", "Q", "A", "K", "P", "M"):
         reference = stage_topology.resolve_artifact_reference(f"{prefix}-00000000")
         locations[prefix] = tuple(
             dict.fromkeys(Path(path).parent.as_posix() for path in reference.candidate_paths)
@@ -182,6 +186,8 @@ class Audit:
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
         self.audit_future_indexes(graph)
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            self.audit_roadmap(graph)
         self.audit_family_shapes()
         self.audit_record_ownership()
         self.audit_routing()
@@ -539,10 +545,29 @@ class Audit:
         item_by_id: dict[str, AuditedItem] = {}
         for entry in graph.work:
             item_by_id.setdefault(entry.item.item_id, entry)
+        roadmap_by_id = {
+            node.record_id: node for node in graph.themes + graph.milestones
+        }
 
         for node in graph.decisions:
             work_item = (node.fields.get("work_item") or "").strip()
-            if not work_item or work_item not in graph.work_ids:
+            roadmap_item = (node.fields.get("roadmap_item") or "").strip()
+            if roadmap_item:
+                if work_item:
+                    self.error(
+                        "DECISION001",
+                        "Decision record must link to one owner, not both work_item and "
+                        "roadmap_item.",
+                        node.path,
+                    )
+                if roadmap_item not in roadmap_by_id:
+                    self.error(
+                        "DECISION001",
+                        f"Decision record roadmap_item references a missing roadmap record: "
+                        f"{roadmap_item}",
+                        node.path,
+                    )
+            elif not work_item or work_item not in graph.work_ids:
                 self.error(
                     "DECISION001",
                     f"Decision record work_item references a missing work item: {work_item or 'empty'}",
@@ -556,7 +581,21 @@ class Audit:
                     node.path,
                 )
             self.audit_decision_principles(node.path)
-            entry = item_by_id.get(work_item)
+            roadmap_node = roadmap_by_id.get(roadmap_item)
+            if roadmap_node is not None:
+                declared = set(
+                    stage_guard.split_scope(
+                        roadmap_node.fields.get("decision_refs", "")
+                    )
+                )
+                if node.record_id not in {Path(ref).stem for ref in declared}:
+                    self.error(
+                        "DECISION002",
+                        f"Decision record is not listed in {roadmap_item}'s decision_refs — "
+                        "a roadmap transition must link back.",
+                        node.path,
+                    )
+            entry = item_by_id.get(work_item) if not roadmap_item else None
             if entry is not None:
                 declared = {
                     str(
@@ -714,12 +753,6 @@ class Audit:
                     ("BACKLOG008", "BACKLOG009"),
                 ),
                 (
-                    stage_topology.get_zone("roadmap", "milestones").index_surfaces[0],
-                    [(node.record_id, node.path) for node in graph.milestones],
-                    ("M",),
-                    ("ROADMAP001", "ROADMAP002"),
-                ),
-                (
                     stage_topology.get_zone("proposals", "planned").index_surfaces[0],
                     [(node.record_id, node.path) for node in graph.proposals],
                     ("P",),
@@ -774,6 +807,129 @@ class Audit:
                     index_path,
                 )
 
+    def audit_roadmap(self, graph: RecordGraph) -> None:
+        """Validate v4 roadmap refs, indexes, status ownership, and decision chains."""
+
+        theme_zone = stage_topology.get_zone("roadmap", "themes")
+        milestone_zone = stage_topology.get_zone("roadmap", "milestones")
+        theme_index = self.stage_root / theme_zone.index_surfaces[0]
+        milestone_index = self.stage_root / milestone_zone.index_surfaces[0]
+
+        def rows(path: Path, prefix: str) -> dict[str, list[str]]:
+            result: dict[str, list[str]] = {}
+            for cells in stage_guard.parse_index_rows(path):
+                if cells and re.fullmatch(rf"{prefix}-\d{{3,}}", cells[0].strip()):
+                    result.setdefault(cells[0].strip(), cells)
+            return result
+
+        theme_rows = rows(theme_index, "TH")
+        milestone_rows = rows(milestone_index, "M")
+        # C3 consumer fixtures wrote body-only milestone rows into the router
+        # before the family index path was wired. Keep only that inert shape
+        # readable; every frontmattered v4 record must use the owning index.
+        legacy_router_rows = rows(self.stage_root / "roadmap" / "index.md", "M")
+        theme_ids = {node.record_id for node in graph.themes}
+        milestone_ids = {node.record_id for node in graph.milestones}
+
+        for node in graph.themes:
+            record = stage_roadmap.load_roadmap_record(node.path)
+            row = theme_rows.get(node.record_id)
+            if row is None:
+                self.error(
+                    "ROADMAP003",
+                    f"Theme has no row in `{theme_zone.index_surfaces[0]}`: {node.record_id}",
+                    node.path,
+                )
+            elif (
+                len(row) < 3
+                or row[1].strip() != record.title
+                or f"({node.record_id}.md)" not in row[2]
+            ):
+                self.error(
+                    "ROADMAP008",
+                    f"Theme index row does not match its record: {node.record_id}",
+                    theme_index,
+                )
+            if "status" in node.fields:
+                self.error(
+                    "ROADMAP009",
+                    "Theme status must be computed from its decision chain, not authored.",
+                    node.path,
+                )
+            for issue in stage_roadmap.decision_chain_issues(self.stage_root, node.path):
+                self.error(issue.code, issue.message, issue.path)
+
+        for row_id in sorted(set(theme_rows) - theme_ids):
+            self.error(
+                "ROADMAP004",
+                f"`{theme_zone.index_surfaces[0]}` row references a missing theme: {row_id}",
+                theme_index,
+            )
+
+        for node in graph.milestones:
+            record = stage_roadmap.load_roadmap_record(node.path)
+            row = milestone_rows.get(node.record_id)
+            legacy_body_row = not node.fields and node.record_id in legacy_router_rows
+            if row is None and not legacy_body_row:
+                self.error(
+                    "ROADMAP001",
+                    f"Milestone has no row in `{milestone_zone.index_surfaces[0]}`: "
+                    f"{node.record_id}",
+                    node.path,
+                )
+            elif row is not None and (
+                len(row) < 5
+                or row[1].strip() != record.theme
+                or row[2].strip() != record.title
+                or row[3].strip() != record.period
+                or f"({node.record_id}.md)" not in row[4]
+            ):
+                self.error(
+                    "ROADMAP007",
+                    f"Milestone index row does not match its record: {node.record_id}",
+                    milestone_index,
+                )
+            if record.theme and record.theme not in theme_ids:
+                self.error(
+                    "ROADMAP006",
+                    f"Milestone theme references a missing theme: {record.theme}",
+                    node.path,
+                )
+            if "status" in node.fields:
+                self.error(
+                    "ROADMAP009",
+                    "Milestone status must be computed from its decision chain, not authored.",
+                    node.path,
+                )
+            for issue in stage_roadmap.decision_chain_issues(self.stage_root, node.path):
+                self.error(issue.code, issue.message, issue.path)
+
+        for row_id in sorted(set(milestone_rows) - milestone_ids):
+            self.error(
+                "ROADMAP002",
+                f"`{milestone_zone.index_surfaces[0]}` row references a missing milestone: "
+                f"{row_id}",
+                milestone_index,
+            )
+
+        # C5 allowed inert optional milestone text before C6 supplied roadmap
+        # semantics. Activate dangling-W enforcement once a real v4 roadmap
+        # record exists, preserving those pre-C6 empty-roadmap fixtures.
+        roadmap_nodes = graph.themes + graph.milestones
+        roadmap_adopted = any(node.fields for node in roadmap_nodes)
+        if roadmap_adopted:
+            work_records = [
+                (entry.fields, entry.item.path) for entry in graph.work
+            ] + [(node.fields, node.path) for node in graph.backlog]
+            for fields, path in work_records:
+                milestone = (fields.get("milestone") or "").strip()
+                if milestone and milestone not in milestone_ids:
+                    self.error(
+                        "ROADMAP005",
+                        f"Work milestone references a missing milestone: {milestone}",
+                        path,
+                    )
+
     def audit_family_shapes(self) -> None:
         if self.topology == ACTIVE_TOPOLOGY_V4:
             current_retro, official_retro = stage_topology.retrospective_locations()
@@ -783,10 +939,6 @@ class Audit:
             required = {
                 self.stage_root / current_retro: ("id", "work_item"),
                 self.stage_root / official_retro: ("id", "work_item"),
-                **{
-                    self.stage_root / Path(root).parent: ("id", "work_item", "status")
-                    for root in decision_roots
-                },
             }
         else:
             required = {
@@ -808,6 +960,24 @@ class Audit:
                         "Record does not follow its family frontmatter shape; missing: " + ", ".join(missing),
                         path,
                     )
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            for family_root in {
+                self.stage_root / Path(root).parent for root in decision_roots
+            }:
+                for path in sorted(family_root.glob("*.md")):
+                    if path.name in {"README.md", "_template.md"}:
+                        continue
+                    fields = stage_guard.parse_frontmatter(path)
+                    missing = [key for key in ("id", "status") if key not in fields]
+                    if "work_item" not in fields and "roadmap_item" not in fields:
+                        missing.append("work_item or roadmap_item")
+                    if missing:
+                        self.warning(
+                            "FAMILY001",
+                            "Record does not follow its family frontmatter shape; missing: "
+                            + ", ".join(missing),
+                            path,
+                        )
 
     def audit_record_ownership(self) -> None:
         """SSOT + responsibility boundaries over every ID-bearing record file.
@@ -844,7 +1014,12 @@ class Audit:
                     heading = None
                 if heading:
                     record_id = heading.group("record_id")
-            match = RECORD_ID_RE.match(record_id)
+            id_pattern = (
+                V4_RECORD_ID_RE
+                if self.topology == ACTIVE_TOPOLOGY_V4
+                else RECORD_ID_RE
+            )
+            match = id_pattern.match(record_id)
             if not match:
                 continue
             by_id.setdefault(record_id, []).append(path)
