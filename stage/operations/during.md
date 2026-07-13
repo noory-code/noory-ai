@@ -12,4 +12,4 @@ During work:
 4. Keep ownership as SSOT.
 5. Surface broken assumptions early.
 6. Avoid hasty abstractions.
-7. Route provisional findings to `present/`.
+7. Route provisional findings to `state/`.

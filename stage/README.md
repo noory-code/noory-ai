@@ -8,22 +8,27 @@ Stage adds no model capability. Instead it controls the conditions the LLM acts 
 
 Stage creates a `.stage/` directory inside the project and connects three axes.
 
-- Global time axis: `past`, `present`, `future`
-- Per-work time axis: `before`, `during`, `after`, `retrospective`
-- Responsibility space axis: `canon`, `model`, `decisions`, `work`, `state`, `operations`
+- Lifecycle axis (semantic): `planned`, `current`, `official` — every artifact is always in
+  exactly one, enforced by the gates rather than by any folder tense.
+- Per-work axis: `before`, `during`, `after`, `retrospective`
+- Responsibility space axis: `official` (canon, model, promoted decisions, archived work),
+  `work`, `decisions`, `state`, `proposals`, `roadmap`, `operations`
 
 ## Core rules
 
-- `past` is the official project truth.
-- `present` is in-progress or provisional artifacts.
-- `future` is plans or proposals.
-- At decision points, use principles (`past/canon/principles.md`) together with context; decision records cite their governing principles.
+- `official/` is the promoted, settled project truth (canon, model, promoted decisions, archived work).
+- `state/` holds in-progress observations, questions, assumptions, and risks; `work/current/` holds work being executed.
+- `proposals/` and planned work cards (`work/planned/`) are plans, not truth.
+- At decision points, use principles (`official/canon/principles.md`) together with context; decision records cite their governing principles.
 - Work is not complete until verification and the retrospective are done. What `passed` means is declared per work `kind`.
 - Nearly all workspace files are governed by default — planning documents, designs, and configuration included — with exclusions managed in `.stage/settings.json`.
-- A work card is one `W-*` artifact across its whole life, moving `future/backlog` (planned) →
-  `present/work` (started via `scripts/start_work.py`) → `past/work/archive` (closed) like a
-  kanban card. Cards form hierarchies (`parent`) and carry a work `kind`, so every kind of work
-  stays classifiable.
+- A work card is one `W-*` artifact across its whole life, moving `work/planned` (planned) →
+  `work/current` (started via `scripts/start_work.py`) → `official/work/archive` (closed) like a
+  kanban card. Cards form hierarchies (`parent`), may attribute to a roadmap milestone
+  (`milestone`), and carry a work `kind`, so every kind of work stays classifiable.
+- The roadmap (`roadmap/themes`, `roadmap/milestones`) groups work toward goals and directions;
+  a milestone's status is computed from its decision chain, and its closure freezes an immutable
+  basis of terminal work cards.
 - The core stays Markdown, plain files, and relative paths so it works on Codex, Claude, Windows, Linux, and macOS.
 - A single document only holds an index or policy. Every durable individual artifact has its own file.
 - Common operational rules are plugin-owned (`operations/` in this plugin) and are not copied into
@@ -46,7 +51,7 @@ Stage creates a `.stage/` directory inside the project and connects three axes.
 Stage ships one hook set in `hooks/` that both Claude Code and Codex execute (Codex auto-discovers the same `hooks/hooks.json` from the installed plugin).
 
 - `SessionStart`: injects the current Stage context, core principles, and the artifact map.
-- `PreToolUse`: blocks `.stage` destruction, unregistered governed-file modification, hierarchy violations, and `past` modification without a promotion intent; reminds once per question to derive answers from purpose and principles first.
+- `PreToolUse`: blocks `.stage` destruction, unregistered governed-file modification, hierarchy violations, and `official/` modification without a promotion intent; reminds once per question to derive answers from purpose and principles first.
 - `PostToolUse`: completes two-phase intent reservations after the tool actually ran (never blocks).
 - `Stop`: writes a session summary the next run picks up.
 
@@ -54,7 +59,7 @@ On Codex, hooks run only after a one-time trust approval in the interactive TUI 
 
 ## Skills
 
-Five entry skills: `stage-init`, `stage-audit`, `stage-decision`, `stage-retrospective`, `stage-discuss`. Descriptions: `skills/README.md`.
+Entry skills: `stage-init`, `stage-work`, `stage-audit`, `stage-decision`, `stage-retrospective`, `stage-archive`, `stage-handoff`, `stage-roadmap`, `stage-migrate`, `stage-discuss`. Descriptions: `skills/README.md`.
 
 ## CLI helpers
 
@@ -82,15 +87,15 @@ python3 stage/scripts/migrate_stage.py --project-root .
 Create a promotion intent after declaring the target paths in the work item's `promotes`:
 
 ```bash
-python3 stage/scripts/promote_intent.py --project-root . --work-item W-00000001 --path .stage/past/canon/principles.md
+python3 stage/scripts/promote_intent.py --project-root . --work-item W-00000001 --path .stage/official/canon/principles.md
 ```
 
 Create an archive intent to store work records (the retrospective moves in the same intent):
 
 ```bash
 python3 stage/scripts/promote_intent.py --project-root . --type archive --work-item W-00000001 \
-  --path .stage/past/work/archive/items/W-00000001.md \
-  --path .stage/past/work/archive/retrospectives/R-00000001.md
+  --path .stage/official/work/archive/items/W-00000001.md \
+  --path .stage/official/work/archive/retrospectives/R-00000001.md
 ```
 
 ## Design

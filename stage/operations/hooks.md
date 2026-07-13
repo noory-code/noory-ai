@@ -13,8 +13,8 @@ This document owns the Stage hook rules.
 ## Blocked actions
 
 - Deleting `.stage` entirely.
-- Modifying `.stage/past/` without a pending intent in `.stage/.runtime/intents/`.
-- Modifying source files not registered in `present/work/items/`.
+- Modifying `.stage/official/` without a pending intent in `.stage/.runtime/intents/`.
+- Modifying source files not registered in `work/current/`.
 - Deleting a registered source file (`rm`/`del`/`erase`/`Remove-Item`/`ri`) without the same registration a write would need.
 - OS-specific executable scripts inside `.stage`.
 
@@ -28,7 +28,7 @@ Writing a work item whose `parent` does not exist, points at itself, or opens a 
 
 ## Question gate
 
-Before `AskUserQuestion` reaches the user, the hook reminds once per question: derive the answer from the work item's Purpose and `past/canon/principles.md` first; ask only when the decision genuinely belongs to the user. Re-asking after the reminder passes.
+Before `AskUserQuestion` reaches the user, the hook reminds once per question: derive the answer from the work item's Purpose and `official/canon/principles.md` first; ask only when the decision genuinely belongs to the user. Re-asking after the reminder passes.
 
 Shell write detection is best-effort. The default detection targets are redirects, `cp`, `mv`, `tee`, and `sed -i`, plus delete operands of `rm`/`del`/`erase`/`Remove-Item`/`ri`. File writes inside inline interpreters are outside the detection range.
 
@@ -40,21 +40,21 @@ Official artifact modification uses no body markers. Each pending intent lives i
 {
   "type": "promotion",
   "work_item": "W-00000001",
-  "paths": [".stage/past/canon/principles.md"]
+  "paths": [".stage/official/canon/principles.md"]
 }
 ```
 
 A regular promotion may only modify paths declared in the linked work item's `promotes`.
 
-Archiving is not promotion. Use an archive intent when moving into `past/work/archive/`.
+Archiving is not promotion. Use an archive intent when moving into `official/work/archive/`.
 
 ```json
 {
   "type": "archive",
   "work_item": "W-00000001",
   "paths": [
-    ".stage/past/work/archive/items/W-00000001.md",
-    ".stage/past/work/archive/retrospectives/R-00000001.md"
+    ".stage/official/work/archive/items/W-00000001.md",
+    ".stage/official/work/archive/retrospectives/R-00000001.md"
   ]
 }
 ```

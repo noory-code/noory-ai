@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.31.2 — 2026-07-13
+
+Concept-layer docs rewritten to schema v4 (docs only):
+
+- README, the operations docs (before/during/after/artifacts/backlog/hooks/review), and
+  docs/BLUEPRINT.md now describe the v4 topology (official/work/decisions/state/proposals/
+  roadmap) and the planned/current/official lifecycle vocabulary enforced by gates, instead of
+  the retired past/present/future directories. The artifact catalog documents the roadmap
+  family (TH-/M-), per-type id counters, the milestone/terminal_disposition fields, and closure
+  semantics. Historical design records (docs/DISCUSSION.md, docs/IMPLEMENTATION_AUDIT.md) keep
+  their v3 references as history. (W-00000039)
+
 ## 0.31.1 — 2026-07-13
 
 Schema-v4 migration and external-project QA hardening:

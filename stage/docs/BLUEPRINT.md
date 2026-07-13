@@ -19,10 +19,10 @@ mindmap
       "Fail Fast"
       AHA
       KISS
-    Context
-      Past
-      Present
-      Future
+    Lifecycle
+      Official
+      Current
+      Planned
     Operations
       Before
       During
@@ -42,16 +42,16 @@ mindmap
 
 ```mermaid
 timeline
-  title Stage 산출물 지위
-  Past : 공식 산출물
-       : 신뢰 가능한 정본
-       : 승인된 결정
-  Present : 작업 중 산출물
+  title Stage 산출물 지위 (라이프사이클: 게이트가 강제)
+  Official : 공식 산출물
+           : 신뢰 가능한 정본
+           : 승격된 결정
+  Current : 작업 중 산출물
           : 임시 판단
           : 열린 질문
-  Future : 계획
-         : 제안
-         : 후보 작업
+  Planned : 계획
+          : 제안
+          : 후보 작업
 ```
 
 ## 3. 개별 시간축
@@ -72,46 +72,37 @@ flowchart LR
 flowchart TB
   Stage[".stage/"]
 
-  Stage --> Past["past\n공식 지위"]
-  Stage --> Present["present\n작업 중 지위"]
-  Stage --> Future["future\n계획 지위"]
+  Stage --> Official["official\n공식 지위 (승격된 정본)"]
+  Stage --> Work["work\n작업 카드 라이프사이클"]
+  Stage --> DecisionsF["decisions\npending 결정"]
+  Stage --> State["state\n작업 중 상태"]
+  Stage --> Proposals["proposals\n제안"]
+  Stage --> Roadmap["roadmap\n테마 / 마일스톤"]
   Stage --> Operations["operations\n행위 규칙"]
-
-  Past --> Canon["canon\n원칙 / 용어 / 불변 조건"]
-  Past --> Model["model\n구조 / 경계 / 인터페이스"]
-  Past --> Decisions["decisions\n선택 / 이유"]
-  Past --> Archive["work/archive\n보관된 작업 기록 + 회고"]
   Stage --> Settings["settings.json\n거버넌스 범위\n광역 기본 + 제외 목록"]
 
-  Canon --> CanonIndex["*.md\n핵심 색인"]
+  Official --> Canon["canon\n원칙 / 용어 / 불변 조건"]
+  Official --> Model["model\n구조 / 경계 / 인터페이스"]
+  Official --> Decisions["decisions/records\n승격된 결정"]
+  Official --> Archive["work/archive\n보관된 작업 기록 + 회고"]
+
   Canon --> CanonRecords["*/\n개별 원칙 / 용어 / 불변 조건"]
-  Model --> ModelIndex["*.md\n구조 지도"]
   Model --> ModelRecords["components / boundaries / interfaces"]
-  Decisions --> DecisionIndex["index.md\n결정 색인"]
-  Decisions --> DecisionRecords["records\n개별 결정 SSOT"]
-  Archive --> ArchiveIndex["index.md\n보관 색인"]
+  Decisions --> DecisionRecords["records\n개별 결정 SSOT (DE- id 유지)"]
   Archive --> ArchiveRecords["items / retrospectives\n보관 작업 기록과 회고"]
 
-  Present --> WorkActive["work\nactive / review"]
-  Present --> State["state\ncurrent / questions / assumptions / risks"]
+  Work --> Planned["planned\n계획 카드"]
+  Work --> Current["current\nactive / review 카드"]
+  Work --> Retros["retrospectives\n회고 기록"]
+  Work --> WorkViews["active.md / review.md / views\n현재 뷰"]
 
-  WorkActive --> WorkIndexes["active.md / review.md\n현재 뷰"]
-  WorkActive --> WorkRecords["items / retrospectives / decisions\n작업·회고·결정 기록 SSOT\n계층 parent / 계보 source"]
-  State --> StateIndexes["*.md\n상태 색인"]
+  DecisionsF --> Pending["pending\n작업 중 결정 (DE-)"]
+
   State --> StateRecords["observations / questions / assumptions / risks\nwork_items로 작업 연결"]
 
-  Future --> Roadmap["roadmap"]
-  Future --> Backlog["backlog"]
-  Future --> Proposals["proposals"]
-
-  Roadmap --> RoadmapIndex["index\n현재 색인"]
-  Roadmap --> RoadmapMilestones["milestones\n마일스톤 SSOT"]
-  Roadmap --> RoadmapThemes["themes\n장기 테마"]
-  Backlog --> BacklogIndex["index\n현재 색인"]
-  Backlog --> BacklogItems["items\n개별 항목 SSOT"]
-  Backlog --> BacklogViews["views\n파생 뷰"]
-  Proposals --> ProposalIndex["index\n제안 색인"]
-  Proposals --> ProposalRecords["개별 제안"]
+  Roadmap --> RoadmapThemes["themes\nTH- 테마 (체인에서 상태 계산)"]
+  Roadmap --> RoadmapMilestones["milestones\nM- 마일스톤 (닫기 시 기저 동결)"]
+  Proposals --> ProposalRecords["P-\n개별 제안"]
 
   Operations --> BeforeOps["before"]
   Operations --> DuringOps["during"]
@@ -130,9 +121,9 @@ flowchart TB
 ```mermaid
 flowchart TB
   subgraph Global["큰 시간축: 산출물 지위"]
-    GPast["Past\n공식"]
-    GPresent["Present\n작업 중"]
-    GFuture["Future\n계획"]
+    GOfficial["Official\n공식"]
+    GCurrent["Current\n작업 중"]
+    GPlanned["Planned\n계획"]
   end
 
   subgraph Local["개별 시간축: 작업 흐름"]
@@ -142,35 +133,35 @@ flowchart TB
   end
 
   subgraph Space["공간축: 책임 위치"]
-    SCanon["past/canon"]
-    SModel["past/model"]
-    SDecisions["past/decisions"]
-    SArchive["past/work/archive"]
-    SWork["present/work"]
-    SState["present/state"]
-    SRoadmap["future/roadmap"]
-    SBacklog["future/backlog"]
-    SProposal["future/proposals"]
+    SCanon["official/canon"]
+    SModel["official/model"]
+    SDecisions["official/decisions"]
+    SArchive["official/work/archive"]
+    SWork["work"]
+    SState["state"]
+    SRoadmap["roadmap"]
+    SPlanned["work/planned"]
+    SProposal["proposals"]
     SOps["operations"]
   end
 
-  GPast --> LBefore
-  GFuture --> LBefore
+  GOfficial --> LBefore
+  GPlanned --> LBefore
   LBefore --> LDuring
-  LDuring --> GPresent
-  GPresent --> LAfter
-  LAfter --> GPast
-  LAfter --> GFuture
+  LDuring --> GCurrent
+  GCurrent --> LAfter
+  LAfter --> GOfficial
+  LAfter --> GPlanned
 
-  GPast --> SCanon
-  GPast --> SModel
-  GPast --> SDecisions
-  GPast --> SArchive
-  GPresent --> SWork
-  GPresent --> SState
-  GFuture --> SRoadmap
-  GFuture --> SBacklog
-  GFuture --> SProposal
+  GOfficial --> SCanon
+  GOfficial --> SModel
+  GOfficial --> SDecisions
+  GOfficial --> SArchive
+  GCurrent --> SWork
+  GCurrent --> SState
+  GPlanned --> SRoadmap
+  GPlanned --> SPlanned
+  GPlanned --> SProposal
   SOps --> LBefore
   SOps --> LDuring
   SOps --> LAfter
@@ -178,7 +169,7 @@ flowchart TB
 
 ## 6. 작업 항목 상태 전이
 
-작업 항목 상태 enum의 SSOT는 `operations/artifacts.md`다. `present/work/items/README.md`는 같은 값을 참조한다.
+작업 항목 상태 enum의 SSOT는 `operations/artifacts.md`다. `work/current/README.md`는 같은 값을 참조한다.
 
 ```mermaid
 stateDiagram-v2
@@ -194,7 +185,7 @@ stateDiagram-v2
   archived --> [*]
 ```
 
-`archived` 이동은 승격과 다르다. `past/work/archive/` 대상은 archive intent로 보관하며, rejected 작업도 보관할 수 있다.
+`archived` 이동은 승격과 다르다. `official/work/archive/` 대상은 archive intent로 보관하며, rejected 작업도 보관할 수 있다.
 
 ## 7. 요청 처리 흐름
 
@@ -209,7 +200,7 @@ sequenceDiagram
   participant Artifact as Artifact
 
   User->>Stage: 요청
-  Stage->>Context: Past / Present / Future 확인
+  Stage->>Context: Official / Current / Planned 확인
   Context-->>Stage: 정본, 상태, 계획 반환
   Stage->>Stage: 질문 필요성 판단
   Stage->>Hero: 원칙과 컨텍스트 제공
@@ -226,13 +217,13 @@ sequenceDiagram
 ```mermaid
 flowchart LR
   Principles["원칙\nSSOT / MECE / Fail Fast / AHA"]
-  Context["컨텍스트\nPast / Present / Future"]
+  Context["컨텍스트\nOfficial / Current / Planned"]
   Harness["하네스\n질문 / 분기 / 실패 / 검증"]
   Product["산출물\n작업 중 결과"]
   Gate["게이트\n완료 / 승격 / 보류"]
   Retro["회고\n원칙 적용 평가\n개선점"]
-  Official["공식 산출물\nPast"]
-  Feedback["환류\nPresent 또는 Future"]
+  Official["공식 산출물\nOfficial"]
+  Feedback["환류\nCurrent 또는 Planned"]
 
   Principles --> Harness
   Context --> Harness
@@ -260,7 +251,7 @@ flowchart TB
   DecisionPoint --> RetroGate["Retrospective Gate\n다음 실행 변화 기록"]
 
   Principles["원칙\nSSOT / MECE / Fail Fast / AHA / KISS"]
-  Context["컨텍스트\nPast / Present / Future"]
+  Context["컨텍스트\nOfficial / Current / Planned"]
   Priority["우선 가치\n진실성 / 사용자 의도 / 프로젝트 본질 / 완료 안정성"]
 
   Principles --> DecisionPoint
@@ -276,9 +267,9 @@ flowchart TB
   PromotionGate --> Outcome
   RetroGate --> Outcome
 
-  Outcome --> Present["Present\n작업 중 산출물"]
-  Outcome --> Past["Past\n공식 산출물"]
-  Outcome --> Future["Future\n계획 또는 제안"]
+  Outcome --> Current["Current\n작업 중 산출물"]
+  Outcome --> Official["Official\n공식 산출물"]
+  Outcome --> Planned["Planned\n계획 또는 제안"]
 ```
 
 ## 10. Stage 하네스의 두 축
@@ -290,7 +281,7 @@ flowchart LR
   Stage --> ArtifactAxis["산출물 구조화"]
   Stage --> DecisionAxis["의사결정 통제"]
 
-  ArtifactAxis --> GlobalTime["큰 시간축\nPast / Present / Future"]
+  ArtifactAxis --> GlobalTime["큰 시간축\nOfficial / Current / Planned"]
   ArtifactAxis --> LocalTime["개별 시간축\nBefore / During / After"]
   ArtifactAxis --> SpaceAxis["공간축\ncanon / model / decisions / work / state / operations"]
 
@@ -335,8 +326,8 @@ flowchart TB
   CompleteUnit --> After["operations/after.md"]
   CompleteUnit --> Retrospective["operations/retrospective.md"]
   CompleteUnit --> Hooks["operations/hooks.md\nSessionStart / PreToolUse / Stop"]
-  CompleteUnit --> Promotion["present -> past 승격 규칙"]
-  CompleteUnit --> FutureGuard["future는 공식 진실이 아님"]
+  CompleteUnit --> Promotion["current -> official 승격 규칙"]
+  CompleteUnit --> PlannedGuard["planned/proposals는 공식 진실이 아님"]
   CompleteUnit --> CompletionGate["부분 완료 금지\n첫 단위부터 닫힌 루프"]
 
   Structure --> ClosedLoop["닫힌 루프"]
@@ -349,7 +340,7 @@ flowchart TB
   Retrospective --> ClosedLoop
   Hooks --> ClosedLoop
   Promotion --> ClosedLoop
-  FutureGuard --> ClosedLoop
+  PlannedGuard --> ClosedLoop
   CompletionGate --> ClosedLoop
 ```
 
@@ -389,10 +380,10 @@ flowchart TB
   Retrospective --> CompletionDecision
 
   CompletionDecision -->|모두 충족| Promote["공식 승격"]
-  CompletionDecision -->|하나라도 부족| Return["Present로 반환\n재작업 또는 보류"]
+  CompletionDecision -->|하나라도 부족| Return["Current로 반환\n재작업 또는 보류"]
 
-  Promote --> Past["Past\n공식 산출물"]
-  Return --> Present["Present\n작업 중 산출물"]
+  Promote --> Official["Official\n공식 산출물"]
+  Return --> Current["Current\n작업 중 산출물"]
 ```
 
 ## 13. 호스트와 플랫폼 독립성
@@ -466,7 +457,7 @@ flowchart TB
   Event --> PostToolUse["PostToolUse"]
   Event --> Stop["Stop"]
 
-  SessionStart --> Inject["Stage 문맥 주입\npast / present / future\n완료 게이트"]
+  SessionStart --> Inject["Stage 문맥 주입\nplanned / current / official\n완료 게이트"]
 
   PreToolUse --> DeleteGate["삭제 게이트\n.stage 전체 삭제 차단\n등재 파일 삭제도 쓰기와 동일 게이트"]
   PreToolUse --> RegistrationGate["등재 게이트\n거버넌스 대상 수정 전 작업 항목 필요\n광역 기본 — 거의 모든 파일"]

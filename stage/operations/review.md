@@ -7,7 +7,7 @@ This document owns the external-review gate.
 When an external review (another agent such as codex, a human reviewer, or a
 tool) reports findings, do not accept them uncritically:
 
-1. Anchor on the work's purpose and `past/canon` truth first — the review is
+1. Anchor on the work's purpose and `official/canon` truth first — the review is
    measured against the goal, not the other way around.
 2. Judge each finding against that purpose: does it protect a behavior an honest
    user relies on, or is it an edge that never arises from honest use?
