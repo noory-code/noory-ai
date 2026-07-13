@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 HOOK_PATH = Path(__file__).resolve().parents[1] / "stage_guard.py"
@@ -30,6 +31,32 @@ def decision(result):
 
 def reason(result):
     return result["hookSpecificOutput"].get("permissionDecisionReason", "")
+
+
+class GitAddPathsFromCommandTest(unittest.TestCase):
+    def test_stops_at_shell_redirections(self):
+        root = Path("workspace")
+        for redirection in ("2>/dev/null", ">out.txt", "2>&1"):
+            with self.subTest(redirection=redirection):
+                command = f"git add stage/CHANGELOG.md {redirection}"
+                self.assertEqual(
+                    stage_guard.git_add_paths_from_command(command, root),
+                    ["stage/CHANGELOG.md"],
+                )
+
+    def test_keeps_multiple_explicit_paths(self):
+        self.assertEqual(
+            stage_guard.git_add_paths_from_command("git add a b", Path("workspace")),
+            ["a", "b"],
+        )
+
+    def test_dot_expands_changed_files_without_redirection(self):
+        with patch("stage_work.changed_files", return_value=["changed.py", "new.py"]):
+            paths = stage_guard.git_add_paths_from_command(
+                "git add . 2>/dev/null", Path("workspace")
+            )
+
+        self.assertEqual(paths, ["changed.py", "new.py"])
 
 
 class StageGuardTest(unittest.TestCase):

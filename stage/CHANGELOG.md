@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.25.2 — 2026-07-13
+
+Git-add redirection leak fix:
+
+- `git_add_paths_from_command` now stops scanning at the first shell redirection, so
+  redirection tokens and everything after them are not treated as added paths. (W-00000028)
+
 ## 0.25.1 — 2026-07-13
 
 Backlog index row placement fix:

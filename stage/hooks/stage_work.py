@@ -25,7 +25,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     relative_to_workspace,
     stage_relative_forms,
 )
-from stage_git import iter_git_commands  # noqa: E402  (after sys.path bootstrap)
+from stage_git import _is_shell_redirection, iter_git_commands  # noqa: E402
 
 
 WORK_OPEN_STATUSES = {"active", "review", "blocked"}
@@ -482,6 +482,8 @@ def git_add_paths_from_command(command: str, workspace_root: Path) -> list[str]:
             continue
         explicit: list[str] = []
         for arg in args:
+            if _is_shell_redirection(arg):
+                break
             if arg in {"-A", "--all", "-u", "--update"}:
                 explicit.extend(changed_files(workspace_root, include_untracked=arg in {"-A", "--all"}))
             elif arg.startswith("-"):
