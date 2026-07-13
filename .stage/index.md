@@ -2,11 +2,16 @@
 
 This document routes project context to the correct Stage location.
 
+## Lifecycle
+
+- `planned`: intended work in `work/planned/`, `proposals/`, and roadmap records without a pursuit decision.
+- `current`: work becoming real in `work/current/`, `decisions/pending/`, `state/`, and roadmap records with open pursuit.
+- `official`: promoted, settled truth under `official/`.
+
 ## Authority
 
-- `past/`: official artifacts and approved truth.
-- `present/`: work in progress, provisional findings, uncertainty, review candidates.
-- `future/`: plans, proposals, upcoming work.
+- `official/`: the sole authorization zone for official artifacts and approved truth.
+- `work/`, `decisions/`, `state/`, `proposals/`, and `roadmap/`: mutable responsibility families.
 - `operations/`: project-owned Stage policy. Common behavior rules are plugin-owned and live in
   the installed Stage plugin's `operations/` directory.
 
@@ -14,44 +19,47 @@ This document routes project context to the correct Stage location.
 
 | Information | Location |
 |---|---|
-| Principle index and summary | `past/canon/principles.md` |
-| Individual principles | `past/canon/principles/` |
-| Vocabulary index and summary | `past/canon/vocabulary.md` |
-| Individual terms | `past/canon/vocabulary/` |
-| Invariant index and summary | `past/canon/invariants.md` |
-| Individual invariants | `past/canon/invariants/` |
-| System structure | `past/model/` |
-| Model components | `past/model/components/` |
-| Model boundaries | `past/model/boundaries/` |
-| Model interfaces | `past/model/interfaces/` |
-| Approved decisions | `past/decisions/index.md` |
-| Decision records | `past/decisions/records/` |
-| Archived work index | `past/work/archive/index.md` |
-| Archived work items | `past/work/archive/items/` |
-| Archived retrospectives | `past/work/archive/retrospectives/` |
-| Active work | `present/work/active.md` |
-| Work items | `present/work/items/` |
-| Review candidates | `present/work/review.md` |
-| Work retrospectives | `present/work/retrospectives/` |
-| Working decision records | `present/work/decisions/` |
-| Current observations | `present/state/current.md` |
-| Observation records | `present/state/observations/` |
-| Open questions | `present/state/questions.md` |
-| Question records | `present/state/questions/` |
-| Assumptions | `present/state/assumptions.md` |
-| Assumption records | `present/state/assumptions/` |
-| Risks | `present/state/risks.md` |
-| Risk records | `present/state/risks/` |
-| Roadmap index | `future/roadmap/index.md` |
-| Roadmap milestones | `future/roadmap/milestones/` |
-| Roadmap themes | `future/roadmap/themes/` |
-| Backlog index | `future/backlog/index.md` |
-| Backlog items | `future/backlog/items/` |
-| Proposal index | `future/proposals/index.md` |
-| Proposal bodies | `future/proposals/` |
+| Principle index and summary | `official/canon/principles.md` |
+| Individual principles | `official/canon/principles/` |
+| Vocabulary index and summary | `official/canon/vocabulary.md` |
+| Individual terms | `official/canon/vocabulary/` |
+| Invariant index and summary | `official/canon/invariants.md` |
+| Individual invariants | `official/canon/invariants/` |
+| System structure | `official/model/` |
+| Model components | `official/model/components/` |
+| Model boundaries | `official/model/boundaries/` |
+| Model interfaces | `official/model/interfaces/` |
+| Official decisions | `official/decisions/index.md` |
+| Official decision records | `official/decisions/records/` |
+| Archived work index | `official/work/archive/index.md` |
+| Archived work items | `official/work/archive/items/` |
+| Archived retrospectives | `official/work/archive/retrospectives/` |
+| Active work | `work/active.md` |
+| Current work cards | `work/current/` |
+| Review candidates | `work/review.md` |
+| Work retrospectives | `work/retrospectives/` |
+| Planned work index | `work/planned/index.md` |
+| Planned work cards | `work/planned/` |
+| Work views | `work/views/` |
+| Pending decision index | `decisions/index.md` |
+| Pending decision records | `decisions/pending/` |
+| Current observations | `state/current.md` |
+| Observation records | `state/observations/` |
+| Open questions | `state/questions.md` |
+| Question records | `state/questions/` |
+| Assumptions | `state/assumptions.md` |
+| Assumption records | `state/assumptions/` |
+| Risks | `state/risks.md` |
+| Risk records | `state/risks/` |
+| Proposal index | `proposals/index.md` |
+| Proposal bodies | `proposals/` |
+| Roadmap index | `roadmap/index.md` |
+| Roadmap milestones | `roadmap/milestones/` |
+| Roadmap themes | `roadmap/themes/` |
 | Work-kind verification criteria | `operations/verification.md` |
 | Common operation rules | plugin-owned `operations/` in the installed Stage plugin |
 
 ## Core rule
 
-Plans are not truth. Work in progress is not truth. Only approved artifacts are truth.
+Planned artifacts are not truth. Current artifacts are not truth. Only official artifacts are truth.
+
