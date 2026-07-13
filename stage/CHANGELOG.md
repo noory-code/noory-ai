@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.25.3 — 2026-07-13
+
+Schema v4 design amendment (design only — no behavior change):
+
+- The v3-to-v4 migration is specified as a user-facing `stage-migrate` skill (not just an
+  internal script), and a no-stranding release-ordering invariant is added: no shipped plugin
+  version enforces schema v4 unless that same version also ships the migration skill and a
+  completed migration path. C3-C6 ship dormant and v3-compatible; the C7 release activates v4
+  enforcement and carries the migration skill together (SCHEMA_V4.md, DE-00000011, W-00000029).
+
 ## 0.25.2 — 2026-07-13
 
 Git-add redirection leak fix:

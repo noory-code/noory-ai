@@ -168,11 +168,27 @@ capture into `work/planned/`, `start_work.py` as the only mover.
 
 ## Migration contract (v3 → v4)
 
-- Marker: `schema_version` in `.stage/settings.json`. Plugin v-next supports v4 only; on a v3
-  project, mutating gates deny with a banner naming the migration command; migration itself
-  and read-only audit remain callable on v3.
-- One command (extends `migrate_stage.py`), driven entirely by the registry relocation map
-  (which includes `past/` → `official/`):
+Real projects run Stage (this repo's own `.stage`, and sibling workspaces), so the migration
+is a first-class, user-facing deliverable — not an internal script an operator has to know to
+find.
+
+- **Delivered as a skill.** The migration is invoked through a `stage-migrate` skill (the CLI
+  it wraps stays `migrate_stage.py`), so an end user runs it like any other lifecycle skill
+  (`stage-work`, `stage-archive`). The fail-closed banner below names this skill, not a raw
+  script path. The skill is transitional by nature — it exists to move v3 projects to v4 and
+  carries no ongoing role after a project is on v4.
+- **No version strands a v3 user (release-ordering invariant).** No shipped plugin version may
+  enforce schema v4 — activate v4-only hook/scanner behavior, or reject a v3 project — unless
+  that same version also ships the `stage-migrate` skill and a completed migration path. The
+  consumer-adoption cards (C3–C6) therefore stay v3-compatible and dormant (the registry and
+  new templates ship inert); the v4 cutover (C4/C7) and the migration skill land in the SAME
+  release. A user who pulls any intermediate version keeps a working v3 project; the first
+  version that speaks v4 is also the first that can migrate them to it.
+- Marker: `schema_version` in `.stage/settings.json`. The v4-enforcing release supports v4
+  only; on a v3 project, mutating gates deny with a banner naming the `stage-migrate` skill;
+  the migration itself and read-only audit remain callable on v3.
+- One command (extends `migrate_stage.py`, surfaced by the `stage-migrate` skill), driven
+  entirely by the registry relocation map (which includes `past/` → `official/`):
   1. Preflight: refuse dirty tree (`.runtime/` exempt), symlinked `.stage` roots,
      case-insensitive destination collisions, and any pending promotion machinery —
      `.runtime/intents/` must hold zero pending intent and claim files and no legacy
@@ -208,6 +224,7 @@ capture into `work/planned/`, `start_work.py` as the only mover.
 | Dogfood release sequence doc (fixtures first; migrate own `.stage` only after v4 install) | shipped | — |
 | Branch-merge guidance | shipped | — |
 | Migration journal + abort | shipped (minimal) | resume mode after first real interruption |
+| `stage-migrate` user-facing skill + no-stranding release ordering | shipped (with C7) | — |
 | Bridge release (v3 hook recognizing v4 and denying) | deferred | first stale-plugin incident or multi-host support |
 | Lifecycle claims protocol (closure race) | deferred | multiple concurrent operators, or observed closure drift |
 
@@ -218,15 +235,17 @@ capture into `work/planned/`, `start_work.py` as the only mover.
 | C1 | design | claude | this document | — |
 | C2 | development | codex | `stage_topology` registry, schema marker, maps, resolvers, D-legacy compat, official-zone predicate rename in `stage_paths` | C1 |
 | C3 | development | codex | v4 template tree; TH/M templates and indexes | C2 |
-| C4 | development | codex | hooks, scanners, audit, context on registry; legacy-root denial; lifecycle views | C3 |
-| C5 | development | codex | register/start/close/archive CLIs; stage-work milestone question | C4 |
+| C4 | development | codex | hooks, scanners, audit, context on registry; legacy-root denial; lifecycle views. **Stays v3-compatible/dormant — gated on `schema_version`; does NOT enforce v4 until the C7 release.** | C3 |
+| C5 | development | codex | register/start/close/archive CLIs; stage-work milestone question (dormant until cutover) | C4 |
 | C6 | development | codex | stage-roadmap skill, decision chains, closure snapshot/revalidation, re-attribution gate, roadmap audits, session table | C4, C5 |
-| C7 | development | codex | migration command: preflight (incl. zero-pending-intents), maintenance marker, journal/abort, durable-field and link rewrite, post-relocation verification, marker-last audit | C3-C6 |
+| C7 | development | codex | migration command + **`stage-migrate` skill** (preflight incl. zero-pending-intents, maintenance marker, journal/abort, durable-field and link rewrite, post-relocation verification, marker-last audit). **This is the release that activates v4 enforcement — it and the migration skill ship together (no-stranding invariant).** | C3-C6 |
 | C8 | qa | codex | end-to-end fixtures: v3 migration, customized files, abort, stale roots, Contract X, closure, dogfood rehearsal | C7 |
 | C9 | documentation | claude | concept-layer rewrites (index, operations trio, skills, READMEs, BLUEPRINT), migration/branch/dogfood guidance | C8 |
 
 One release carries schema v4 and roadmap semantics together: they form one schema contract,
-and users migrate once.
+and users migrate once. Intermediate cards (C3–C6) may ship to main as dormant, v3-compatible
+increments, but no shipped version enforces v4 before the C7 release that carries the
+`stage-migrate` skill.
 
 ## Residual risks
 
