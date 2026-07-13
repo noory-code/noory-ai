@@ -21,7 +21,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
-from stage_paths import load_venue_routing  # noqa: E402
+from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from stage_paths import (  # noqa: E402
+    ACTIVE_TOPOLOGY_V4,
+    active_topology,
+    load_venue_routing,
+)
 from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
     WORK_PLANNED_STATUSES,
@@ -90,7 +95,10 @@ def body_after_frontmatter(text: str) -> str:
 
 def build_frontmatter(fields: dict[str, str]) -> str:
     lines = ["---"]
-    for key in FRONTMATTER_ORDER:
+    order = list(FRONTMATTER_ORDER)
+    if "milestone" in fields:
+        order.insert(order.index("parent") + 1, "milestone")
+    for key in order:
         lines.append(f"{key}: {fields.get(key, '')}".rstrip())
     lines.append("---")
     return "\n".join(lines) + "\n"
@@ -100,19 +108,29 @@ def main() -> int:
     args = parse_args()
     project_root = Path(args.project_root).expanduser().resolve()
     stage_root = project_root / ".stage"
-    source_path = stage_root / "future" / "backlog" / "items" / f"{args.item}.md"
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        paths = v4_lifecycle_paths()
+        planned_root = paths.planned_cards
+        current_root = paths.current_cards
+        index_relative = paths.planned_index
+        active_relative = paths.active_index
+    else:
+        planned_root = Path("future", "backlog", "items").as_posix()
+        current_root = Path("present", "work", "items").as_posix()
+        index_relative = Path("future", "backlog", "index.md").as_posix()
+        active_relative = Path("present", "work", "active.md").as_posix()
+
+    source_path = stage_root / planned_root / f"{args.item}.md"
     if not source_path.is_file():
-        candidates = sorted(
-            (stage_root / "future" / "backlog" / "items").glob(f"{args.item}-*.md")
-        )
+        candidates = sorted((stage_root / planned_root).glob(f"{args.item}-*.md"))
         if len(candidates) == 1:
             source_path = candidates[0]
         else:
-            print(f"{args.item}: no planned card in future/backlog/items", file=sys.stderr)
+            print(f"{args.item}: no planned card in {planned_root}", file=sys.stderr)
             return 1
-    target_path = stage_root / "present" / "work" / "items" / f"{args.item}.md"
+    target_path = stage_root / current_root / f"{args.item}.md"
     if target_path.exists():
-        print(f"{args.item}: already exists in present/work/items", file=sys.stderr)
+        print(f"{args.item}: already exists in {current_root}", file=sys.stderr)
         return 1
     if not args.scope.strip() or args.scope.strip() == ".":
         print(f"{args.item}: --scope must declare the paths this work owns", file=sys.stderr)
@@ -181,28 +199,34 @@ def main() -> int:
     target_path.write_text(build_frontmatter(fields) + "\n" + body, encoding="utf-8")
     source_path.unlink()
 
-    active_path = stage_root / "present" / "work" / "active.md"
+    active_path = stage_root / active_relative
+    active_link = relative_record_link(
+        active_relative, f"{current_root}/{args.item}.md"
+    )
     title = (fields.get("title") or "").strip()[:60]
     row = (
         f"| {args.item} | {kind} | {venue} | {title} | active | {args.owner or venue} | "
-        f"[items/{args.item}.md](items/{args.item}.md) |"
+        f"[{active_link}]({active_link}) |"
     )
     active_text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
-    if not re.search(rf"\(items/{re.escape(args.item)}\.md\)", active_text):
+    if not re.search(rf"\({re.escape(active_link)}\)", active_text):
         active_path.write_text(active_text.rstrip("\n") + "\n" + row + "\n", encoding="utf-8")
 
-    index_path = stage_root / "future" / "backlog" / "index.md"
+    index_path = stage_root / index_relative
     if index_path.exists():
+        planned_link = relative_record_link(
+            index_relative, f"{planned_root}/{source_path.name}"
+        )
         lines = index_path.read_text(encoding="utf-8").splitlines()
         kept = [
             line
             for line in lines
-            if not (line.lstrip().startswith("|") and f"(items/{source_path.name})" in line)
+            if not (line.lstrip().startswith("|") and f"({planned_link})" in line)
         ]
         if len(kept) != len(lines):
             index_path.write_text("\n".join(kept) + "\n", encoding="utf-8")
 
-    print(f"{args.item}: started (moved to present/work/items, status active)")
+    print(f"{args.item}: started (moved to {current_root}, status active)")
     return 0
 
 

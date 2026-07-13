@@ -34,7 +34,14 @@ from pathlib import Path
 # with the audit). close_work is stdlib-only and stage_paths is too, so a path
 # insert is safe and side-effect-free.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
-from stage_paths import load_review_config, resolve_review_command  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from stage_paths import (  # noqa: E402
+    ACTIVE_TOPOLOGY_V4,
+    active_topology,
+    load_review_config,
+    resolve_review_command,
+)
 from stage_work import decision_status, split_scope  # noqa: E402
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
 
@@ -78,19 +85,35 @@ def clip(output: str) -> str:
     return prefix + text
 
 
-def drop_row(text: str, item_id: str) -> str:
-    kept = [ln for ln in text.splitlines() if not re.search(rf"\(items/{re.escape(item_id)}\.md\)", ln)]
+def drop_row(text: str, item_id: str, item_link: str | None = None) -> str:
+    link = item_link or f"items/{item_id}.md"
+    kept = [
+        line
+        for line in text.splitlines()
+        if not re.search(rf"\({re.escape(link)}\)", line)
+    ]
     return "\n".join(kept) + ("\n" if text.endswith("\n") else "")
 
 
-def ensure_review_row(review_path: Path, item_id: str, verification: str, retrospective: str, promotion: str) -> None:
+def ensure_review_row(
+    review_path: Path,
+    item_id: str,
+    verification: str,
+    retrospective: str,
+    promotion: str,
+    item_link: str | None = None,
+) -> None:
     # Index membership is eventually-consistent: this read-modify-write can lose a
     # row if two windows update the index at once. The id allocation is the atomic
     # part; a dropped index row is self-detected by the audit (INDEX003) and
     # repaired by a re-run (which reconciles rather than duplicates).
-    row = f"| {item_id} | {verification} | {retrospective} | {promotion} | [items/{item_id}.md](items/{item_id}.md) |"
+    link = item_link or f"items/{item_id}.md"
+    row = (
+        f"| {item_id} | {verification} | {retrospective} | {promotion} | "
+        f"[{link}]({link}) |"
+    )
     text = review_path.read_text(encoding="utf-8") if review_path.exists() else ""
-    if re.search(rf"\(items/{re.escape(item_id)}\.md\)", text):
+    if re.search(rf"\({re.escape(link)}\)", text):
         return
     review_path.write_text(f"{text.rstrip(chr(10))}\n{row}\n", encoding="utf-8")
 
@@ -124,11 +147,35 @@ def main() -> int:
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
-    item_path = stage_root / "present" / "work" / "items" / f"{args.item}.md"
-    active_path = stage_root / "present" / "work" / "active.md"
-    review_path = stage_root / "present" / "work" / "review.md"
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        paths = v4_lifecycle_paths()
+        current_root = paths.current_cards
+        active_relative = paths.active_index
+        review_relative = paths.review_index
+        current_retro_root = paths.current_retrospectives
+        archive_retro_root = paths.archive_retrospectives
+    else:
+        current_root = Path("present", "work", "items").as_posix()
+        active_relative = Path("present", "work", "active.md").as_posix()
+        review_relative = Path("present", "work", "review.md").as_posix()
+        current_retro_root = Path("present", "work", "retrospectives").as_posix()
+        archive_retro_root = Path(
+            "past", "work", "archive", "retrospectives"
+        ).as_posix()
+    item_path = stage_root / current_root / f"{args.item}.md"
+    active_path = stage_root / active_relative
+    review_path = stage_root / review_relative
+    active_item_link = relative_record_link(
+        active_relative, f"{current_root}/{args.item}.md"
+    )
+    review_item_link = relative_record_link(
+        review_relative, f"{current_root}/{args.item}.md"
+    )
     if not item_path.exists():
-        print(f"{args.item}: no present item file at {item_path}", file=sys.stderr)
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            print(f"{args.item}: no current item file at {item_path}", file=sys.stderr)
+        else:
+            print(f"{args.item}: no present item file at {item_path}", file=sys.stderr)
         return 2
 
     text = item_path.read_text(encoding="utf-8")
@@ -137,8 +184,22 @@ def main() -> int:
     # Reconcile a re-run: an already-completed item must sit in review.md, not active.md.
     if status == "completed":
         item_path.write_text(text, encoding="utf-8")
-        active_path.write_text(drop_row(active_path.read_text(encoding="utf-8"), args.item), encoding="utf-8") if active_path.exists() else None
-        ensure_review_row(review_path, args.item, field(text, "verification"), field(text, "retrospective"), field(text, "promotion"))
+        active_path.write_text(
+            drop_row(
+                active_path.read_text(encoding="utf-8"),
+                args.item,
+                active_item_link,
+            ),
+            encoding="utf-8",
+        ) if active_path.exists() else None
+        ensure_review_row(
+            review_path,
+            args.item,
+            field(text, "verification"),
+            field(text, "retrospective"),
+            field(text, "promotion"),
+            review_item_link,
+        )
         print(f"{args.item}: already completed; index reconciled")
         return 0
     if status not in OPEN_TO_CLOSE:
@@ -162,12 +223,10 @@ def main() -> int:
         print(f"{args.item}: retrospective is not completed — write it first (Completion principle)", file=sys.stderr)
         return 1
     ref = field(text, "retrospective_ref")
-    if not ref or not (stage_root / "present" / "work" / "retrospectives" / f"{ref}.md").exists():
+    if not ref or not (stage_root / current_retro_root / f"{ref}.md").exists():
         print(f"{args.item}: retrospective_ref `{ref or 'empty'}` has no file", file=sys.stderr)
         return 1
-    archive_retro = (
-        stage_root / "past" / "work" / "archive" / "retrospectives" / f"{ref}.md"
-    )
+    archive_retro = stage_root / archive_retro_root / f"{ref}.md"
     if archive_retro.exists():
         archived_work_item = field(archive_retro.read_text(encoding="utf-8"), "work_item")
         if archived_work_item and archived_work_item != args.item:
@@ -249,8 +308,22 @@ def main() -> int:
 
     # Index last, derived from the new status, so a re-run always converges.
     if active_path.exists():
-        active_path.write_text(drop_row(active_path.read_text(encoding="utf-8"), args.item), encoding="utf-8")
-    ensure_review_row(review_path, args.item, "passed", "completed", promotion)
+        active_path.write_text(
+            drop_row(
+                active_path.read_text(encoding="utf-8"),
+                args.item,
+                active_item_link,
+            ),
+            encoding="utf-8",
+        )
+    ensure_review_row(
+        review_path,
+        args.item,
+        "passed",
+        "completed",
+        promotion,
+        review_item_link,
+    )
     print(f"{args.item}: closed (verification passed on {len(args.check)} check(s), status completed)")
     return 0
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.28.0 — 2026-07-13
+
+Dormant schema-v4 lifecycle operations and milestone attribution:
+
+- Lifecycle CLIs gain dormant v4 capability + milestone field/question; v3 unchanged; enforced
+  version stays 3. `register_work.py`, `start_work.py`, `close_work.py`, and `archive_work.py`
+  dispatch through the topology registry for schema-v4 fixtures, while registration accepts one
+  optional `milestone:` attribution and the stage-work skill asks about milestones only when its
+  open-milestone detector reports at least one. Real-CLI coverage drives a v4 card from planned
+  through current and review into the official archive with a clean audit after every step.
+  (W-00000034)
+
 ## 0.27.1 — 2026-07-13
 
 Dormant schema-v4 lifecycle visibility and stale-topology defense:

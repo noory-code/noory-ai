@@ -20,7 +20,15 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from lifecycle_paths import (  # noqa: E402
+    milestone_record_roots,
+    relative_record_link,
+    v4_lifecycle_paths,
+)
 from stage_paths import (  # noqa: E402
+    ACTIVE_TOPOLOGY_V4,
+    active_topology,
     load_review_config,
     load_venue_routing,
     resolve_review_command,
@@ -31,14 +39,10 @@ from stage_work import (  # noqa: E402
 )
 
 ID_RE = re.compile(r"^W-(\d{8})$")
-_TEMPLATE = (
-    Path(__file__).resolve().parents[2]
-    / "templates"
-    / "project-stage"
-    / "present"
-    / "work"
-    / "items"
-    / "_template.md"
+MILESTONE_RE = re.compile(r"^M-\d{8}$")
+_PLUGIN_ROOT = Path(__file__).resolve().parents[2]
+_TEMPLATE = _PLUGIN_ROOT.joinpath(
+    "templates", "project-stage", "present", "work", "items", "_template.md"
 )
 
 
@@ -48,9 +52,35 @@ def set_field(text: str, field: str, value: str) -> str:
     )
 
 
+def set_optional_field(text: str, field: str, value: str, *, after: str) -> str:
+    """Set an optional scalar field, inserting it only when a value was supplied."""
+
+    if not value:
+        return text
+    if re.search(rf"^{re.escape(field)}:", text, re.MULTILINE):
+        return set_field(text, field, value)
+    match = re.search(rf"^{re.escape(after)}:[^\n]*", text, re.MULTILINE)
+    if match is None:
+        raise ValueError(f"template has no `{after}:` anchor for `{field}:`")
+    return text[: match.end()] + f"\n{field}: {value}" + text[match.end() :]
+
+
+def _v4_template(template_source: str) -> Path:
+    return _PLUGIN_ROOT / "templates" / "v4" / template_source
+
+
 def existing_numbers(stage_root: Path) -> set[int]:
     numbers: set[int] = set()
-    for base in ("present/work/items", "past/work/archive/items", "future/backlog/items"):
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        paths = v4_lifecycle_paths()
+        bases = (paths.planned_cards, paths.current_cards, paths.archive_cards)
+    else:
+        bases = (
+            Path("present", "work", "items").as_posix(),
+            Path("past", "work", "archive", "items").as_posix(),
+            Path("future", "backlog", "items").as_posix(),
+        )
+    for base in bases:
         for path in (stage_root / base).glob("W-*.md"):
             match = ID_RE.match(path.stem)
             if match:
@@ -58,12 +88,25 @@ def existing_numbers(stage_root: Path) -> set[int]:
     return numbers
 
 
-def fill_item(template: str, *, item_id: str, title: str, kind: str, venue: str, scope: str, purpose: str, review: bool, decision: str = "") -> str:
+def fill_item(
+    template: str,
+    *,
+    item_id: str,
+    title: str,
+    kind: str,
+    venue: str,
+    scope: str,
+    purpose: str,
+    review: bool,
+    decision: str = "",
+    milestone: str = "",
+) -> str:
     text = template.replace("W-00000000 Title", f"{item_id} {title}")
     text = set_field(text, "id", item_id)
     text = set_field(text, "title", title)
     text = set_field(text, "kind", kind)
     text = set_field(text, "venue", venue)
+    text = set_optional_field(text, "milestone", milestone, after="parent")
     text = set_field(text, "scope", scope)
     if review:
         text = set_field(text, "review", "pending")  # opt this item into a required review
@@ -74,10 +117,18 @@ def fill_item(template: str, *, item_id: str, title: str, kind: str, venue: str,
     return text
 
 
-def active_row(item_id: str, kind: str, venue: str, purpose: str, owner: str) -> str:
+def active_row(
+    item_id: str,
+    kind: str,
+    venue: str,
+    purpose: str,
+    owner: str,
+    item_link: str | None = None,
+) -> str:
     # Link form is required: audit_stage matches items via the [..](items/<id>.md) link, not a bare id.
     summary = (purpose.splitlines()[0] if purpose else "").strip()[:60]
-    return f"| {item_id} | {kind} | {venue} | {summary} | active | {owner} | [items/{item_id}.md](items/{item_id}.md) |"
+    link = item_link or f"items/{item_id}.md"
+    return f"| {item_id} | {kind} | {venue} | {summary} | active | {owner} | [{link}]({link}) |"
 
 
 def insert_table_row(text: str, row: str) -> str:
@@ -107,7 +158,12 @@ def insert_table_row(text: str, row: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def ensure_active_row(active_path: Path, item_id: str, row: str) -> None:
+def ensure_active_row(
+    active_path: Path,
+    item_id: str,
+    row: str,
+    item_link: str | None = None,
+) -> None:
     """Insert the row if the item is not already indexed. Re-run reconciles:
     it never duplicates and never rewrites an existing row.
 
@@ -116,7 +172,8 @@ def ensure_active_row(active_path: Path, item_id: str, row: str) -> None:
     part; a dropped row is self-detected by the audit (INDEX003) and repaired by a
     re-run."""
     text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
-    if re.search(rf"\(items/{re.escape(item_id)}\.md\)", text):
+    link = item_link or f"items/{item_id}.md"
+    if re.search(rf"\({re.escape(link)}\)", text):
         return
     active_path.write_text(insert_table_row(text, row), encoding="utf-8")
 
@@ -139,46 +196,67 @@ def create_item_atomic(items_dir: Path, numbers: set[int], content_for) -> str:
 
 
 _BACKLOG_TEMPLATE = (
-    Path(__file__).resolve().parents[2]
-    / "templates"
-    / "project-stage"
-    / "future"
-    / "backlog"
-    / "items"
-    / "_template.md"
+    _PLUGIN_ROOT.joinpath(
+        "templates", "project-stage", "future", "backlog", "items", "_template.md"
+    )
 )
 
 
-def backlog_row(item_id: str, title: str, kind: str, priority: str) -> str:
+def backlog_row(
+    item_id: str,
+    title: str,
+    kind: str,
+    priority: str,
+    item_link: str | None = None,
+) -> str:
+    link = item_link or f"items/{item_id}.md"
     return (
         f"| {item_id} | {title} | {kind} | captured | {priority} |  | "
-        f"[items/{item_id}.md](items/{item_id}.md) |"
+        f"[{link}]({link}) |"
     )
 
 
-def ensure_backlog_row(index_path: Path, item_id: str, row: str) -> None:
+def ensure_backlog_row(
+    index_path: Path,
+    item_id: str,
+    row: str,
+    item_link: str | None = None,
+) -> None:
     text = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
-    if re.search(rf"\(items/{re.escape(item_id)}\.md\)", text):
+    link = item_link or f"items/{item_id}.md"
+    if re.search(rf"\({re.escape(link)}\)", text):
         return
     index_path.write_text(insert_table_row(text, row), encoding="utf-8")
 
 
 def register_backlog_card(stage_root: Path, args) -> int:
-    backlog_dir = stage_root / "future" / "backlog" / "items"
-    index_path = stage_root / "future" / "backlog" / "index.md"
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        paths = v4_lifecycle_paths()
+        backlog_relative = paths.planned_cards
+        index_relative = paths.planned_index
+        backlog_dir = stage_root / backlog_relative
+        index_path = stage_root / index_relative
+        template_path = _v4_template(paths.planned_template)
+    else:
+        backlog_relative = Path("future", "backlog", "items").as_posix()
+        index_relative = Path("future", "backlog", "index.md").as_posix()
+        backlog_dir = stage_root / "future" / "backlog" / "items"
+        index_path = stage_root / "future" / "backlog" / "index.md"
+        template_path = _BACKLOG_TEMPLATE
     if not backlog_dir.exists():
         print(f"Stage backlog dir not found: {backlog_dir}", file=sys.stderr)
         return 2
-    if not _BACKLOG_TEMPLATE.exists():
-        print(f"Planned-card template not found: {_BACKLOG_TEMPLATE}", file=sys.stderr)
+    if not template_path.exists():
+        print(f"Planned-card template not found: {template_path}", file=sys.stderr)
         return 2
-    template = _BACKLOG_TEMPLATE.read_text(encoding="utf-8")
+    template = template_path.read_text(encoding="utf-8")
 
     def content_for(item_id: str) -> str:
         text = template.replace("W-00000000 Title", f"{item_id} {args.title}")
         text = set_field(text, "id", item_id)
         text = set_field(text, "title", args.title)
         text = set_field(text, "kind", args.kind)
+        text = set_optional_field(text, "milestone", args.milestone, after="parent")
         if args.priority:
             text = set_field(text, "priority", args.priority)
         if args.purpose:
@@ -186,14 +264,64 @@ def register_backlog_card(stage_root: Path, args) -> int:
         return text
 
     item_id = create_item_atomic(backlog_dir, existing_numbers(stage_root), content_for)
-    ensure_backlog_row(
-        index_path, item_id, backlog_row(item_id, args.title, args.kind, args.priority)
+    item_link = relative_record_link(
+        index_relative, f"{backlog_relative}/{item_id}.md"
     )
-    print(f"{item_id}: captured (planned card in future/backlog/items)")
+    ensure_backlog_row(
+        index_path,
+        item_id,
+        backlog_row(item_id, args.title, args.kind, args.priority, item_link),
+        item_link,
+    )
+    print(f"{item_id}: captured (planned card in {backlog_relative})")
+    return 0
+
+
+def milestone_decision_chain_is_open(stage_root: Path, milestone_path: Path) -> bool:
+    """Conservative C5 boundary for the decision-chain evaluator delivered by C6.
+
+    C5 can discover milestone records but cannot truthfully classify pursuit or
+    closure before C6 owns those transition semantics. Returning false prevents
+    the skill from asking a milestone question on an unproved premise.
+    """
+
+    del stage_root, milestone_path
+    return False
+
+
+def count_open_milestones(stage_root: Path) -> int:
+    """Count milestones whose decision chain proves pursuit without closure."""
+
+    if active_topology(stage_root) != ACTIVE_TOPOLOGY_V4:
+        return 0
+    paths = (
+        path
+        for relative in milestone_record_roots()
+        for path in sorted((stage_root / relative).glob("M-*.md"))
+        if path.name not in {"README.md", "_template.md"}
+    )
+    return sum(milestone_decision_chain_is_open(stage_root, path) for path in paths)
+
+
+def _run_open_milestone_count_mode(argv: list[str]) -> int | None:
+    """Keep the established required registration arguments byte-for-byte intact."""
+
+    if "--count-open-milestones" not in argv:
+        return None
+    parser = argparse.ArgumentParser(description="Count open Stage milestones.")
+    parser.add_argument("--project-root", default=".")
+    parser.add_argument("--count-open-milestones", action="store_true", required=True)
+    args = parser.parse_args(argv)
+    stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
+    print(count_open_milestones(stage_root))
     return 0
 
 
 def main() -> int:
+    count_result = _run_open_milestone_count_mode(sys.argv[1:])
+    if count_result is not None:
+        return count_result
+
     parser = argparse.ArgumentParser(description="Scaffold a Stage work item + active.md row.")
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--title", required=True)
@@ -202,6 +330,12 @@ def main() -> int:
     parser.add_argument("--venue", default="")
     parser.add_argument("--owner", default="Claude")
     parser.add_argument("--purpose", default="")
+    parser.add_argument(
+        "--milestone",
+        action="append",
+        default=[],
+        help="Optional single milestone attribution (M-NNNNNNNN).",
+    )
     parser.add_argument("--id", default=None, help="Explicit W-NNNNNNNN; default allocates the next free id.")
     parser.add_argument("--review", action="store_true", help="Require a review (review: pending) before this item can complete.")
     parser.add_argument(
@@ -224,8 +358,34 @@ def main() -> int:
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
-    items_dir = stage_root / "present" / "work" / "items"
-    active_path = stage_root / "present" / "work" / "active.md"
+    if len(args.milestone) > 1:
+        print("--milestone accepts at most one M-NNNNNNNN value", file=sys.stderr)
+        return 2
+    args.milestone = args.milestone[0] if args.milestone else ""
+    if args.milestone and not MILESTONE_RE.fullmatch(args.milestone):
+        print(
+            f"--milestone must look like M-00000001, got {args.milestone}",
+            file=sys.stderr,
+        )
+        return 2
+
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        paths = v4_lifecycle_paths()
+        planned_relative = paths.planned_cards
+        items_relative = paths.current_cards
+        active_relative = paths.active_index
+        archive_relative = paths.archive_cards
+        items_dir = stage_root / items_relative
+        active_path = stage_root / active_relative
+        template_path = _v4_template(paths.current_template)
+    else:
+        planned_relative = ""
+        items_relative = Path("present", "work", "items").as_posix()
+        active_relative = Path("present", "work", "active.md").as_posix()
+        archive_relative = Path("past", "work", "archive", "items").as_posix()
+        items_dir = stage_root / "present" / "work" / "items"
+        active_path = stage_root / "present" / "work" / "active.md"
+        template_path = _TEMPLATE
 
     # A planned card (DE-00000007) is captured, not started: it waits in
     # future/backlog/items and the venue/split contract applies when
@@ -273,10 +433,10 @@ def main() -> int:
     if not items_dir.exists():
         print(f"Stage present items dir not found: {items_dir}", file=sys.stderr)
         return 2
-    if not _TEMPLATE.exists():
-        print(f"Work-item template not found: {_TEMPLATE}", file=sys.stderr)
+    if not template_path.exists():
+        print(f"Work-item template not found: {template_path}", file=sys.stderr)
         return 2
-    template = _TEMPLATE.read_text(encoding="utf-8")
+    template = template_path.read_text(encoding="utf-8")
 
     def content_for(item_id: str) -> str:
         return fill_item(
@@ -289,6 +449,21 @@ def main() -> int:
             purpose=args.purpose,
             review=args.review,
             decision=args.decision,
+            milestone=args.milestone,
+        )
+
+    def item_link_for(item_id: str) -> str:
+        return relative_record_link(active_relative, f"{items_relative}/{item_id}.md")
+
+    def row_for(item_id: str) -> str:
+        item_link = item_link_for(item_id)
+        return active_row(
+            item_id,
+            args.kind,
+            args.venue,
+            args.purpose,
+            args.owner,
+            item_link,
         )
 
     if args.id:
@@ -296,27 +471,39 @@ def main() -> int:
             print(f"--id must look like W-00000001, got {args.id}", file=sys.stderr)
             return 2
         item_path = items_dir / f"{args.id}.md"
-        archived = (stage_root / "past" / "work" / "archive" / "items" / f"{args.id}.md").exists()
+        if planned_relative and (
+            stage_root / planned_relative / f"{args.id}.md"
+        ).exists():
+            print(
+                f"{args.id}: refusing — id already used by a planned card",
+                file=sys.stderr,
+            )
+            return 1
+        archived = (stage_root / archive_relative / f"{args.id}.md").exists()
         if archived:
             print(f"{args.id}: refusing — id already used by an archived item", file=sys.stderr)
             return 1
         if item_path.exists():
             # Re-run reconciles the index rather than overwriting authored content.
-            ensure_active_row(active_path, args.id, active_row(args.id, args.kind, args.venue, args.purpose, args.owner))
+            ensure_active_row(
+                active_path, args.id, row_for(args.id), item_link_for(args.id)
+            )
             print(f"{args.id}: already exists; index reconciled")
             return 0
         try:
             with open(item_path, "x", encoding="utf-8") as handle:
                 handle.write(content_for(args.id))
         except FileExistsError:
-            ensure_active_row(active_path, args.id, active_row(args.id, args.kind, args.venue, args.purpose, args.owner))
+            ensure_active_row(
+                active_path, args.id, row_for(args.id), item_link_for(args.id)
+            )
             print(f"{args.id}: already exists; index reconciled")
             return 0
         item_id = args.id
     else:
         item_id = create_item_atomic(items_dir, existing_numbers(stage_root), content_for)
 
-    ensure_active_row(active_path, item_id, active_row(item_id, args.kind, args.venue, args.purpose, args.owner))
+    ensure_active_row(active_path, item_id, row_for(item_id), item_link_for(item_id))
     if args.review:
         command, _err = resolve_review_command(load_review_config(stage_root), "implementation")
         if not command:
