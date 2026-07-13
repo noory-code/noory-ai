@@ -87,14 +87,18 @@ ROUTING_ONLY_LOCATIONS: tuple[str, ...] = (
 
 
 def v4_record_locations() -> dict[str, tuple[str, ...]]:
-    """Registry-derived v4 counterpart of the verbatim v3 location table."""
+    """Return registry-derived v4 locations with the catalog home first."""
 
     locations: dict[str, tuple[str, ...]] = {}
     for prefix in ("W", "DE", "D", "TH", "O", "Q", "A", "K", "P", "M"):
         reference = stage_topology.resolve_artifact_reference(f"{prefix}-00000000")
-        locations[prefix] = tuple(
+        candidates = tuple(
             dict.fromkeys(Path(path).parent.as_posix() for path in reference.candidate_paths)
         )
+        if prefix == "W":
+            current = stage_topology.card_location_for_status("active")
+            candidates = (current, *(location for location in candidates if location != current))
+        locations[prefix] = candidates
     locations["R"] = stage_topology.retrospective_locations()
     return locations
 
@@ -1097,10 +1101,11 @@ class Audit:
         RECORD_LOCATIONS must not silently drift from it (P32). Parse the
         catalog table and compare each prefix's primary location to the code.
         """
-        # The schema-v4 registry is the tooling SSOT for its location map. The
-        # plugin-owned prose catalog remains schema-v3 until the documentation
-        # cutover card, so comparing it to a v4 project would create false drift.
-        if self.topology == ACTIVE_TOPOLOGY_V4:
+        # The plugin-owned prose catalog is now schema-v4 (the documentation
+        # cutover card, C9). It is the SSOT for the v4 prefix→location map, so it
+        # is validated on v4 projects; comparing it to a not-yet-migrated v3
+        # project would create false drift, so that case is skipped.
+        if self.topology != ACTIVE_TOPOLOGY_V4:
             return
 
         # The catalog is plugin-owned; a project copy (declared override or

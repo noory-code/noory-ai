@@ -1254,7 +1254,7 @@ class StageAuditTest(unittest.TestCase):
     def test_catalog_duplicate_prefix_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.init_v3_stage(root)
+            self.init_stage(root)
             # A project copy of the plugin-owned catalog takes precedence in
             # the sync check, so seed one from the plugin and mutate it.
             catalog = root / ".stage" / "operations" / "artifacts.md"
@@ -1263,9 +1263,9 @@ class StageAuditTest(unittest.TestCase):
             )
             catalog.write_text(
                 text.replace(
-                    "| `Q-` | Question | `present/state/questions/`",
-                    "| `Q-` | Question | `present/state/wrong/` | Stale. |\n"
-                    "| `Q-` | Question | `present/state/questions/`",
+                    "| `Q-` | Question | `state/questions/`",
+                    "| `Q-` | Question | `state/wrong/` | Stale. |\n"
+                    "| `Q-` | Question | `state/questions/`",
                 ),
                 encoding="utf-8",
             )
@@ -1277,7 +1277,7 @@ class StageAuditTest(unittest.TestCase):
     def test_catalog_extra_prefix_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.init_v3_stage(root)
+            self.init_stage(root)
             catalog = root / ".stage" / "operations" / "artifacts.md"
             text = (audit_stage.PLUGIN_ROOT / "operations" / "artifacts.md").read_text(
                 encoding="utf-8"
@@ -1285,7 +1285,7 @@ class StageAuditTest(unittest.TestCase):
             catalog.write_text(
                 text.replace(
                     "| `M-` | Milestone |",
-                    "| `Z-` | Zeta | `future/zeta/` | New family. |\n| `M-` | Milestone |",
+                    "| `Z-` | Zeta | `zeta/` | New family. |\n| `M-` | Milestone |",
                 ),
                 encoding="utf-8",
             )
@@ -1294,16 +1294,16 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("CATALOG001", codes)
 
-    def test_catalog_location_drift_is_reported(self):
+    def test_catalog_representative_location_drift_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.init_v3_stage(root)
+            self.init_stage(root)
             catalog = root / ".stage" / "operations" / "artifacts.md"
             text = (audit_stage.PLUGIN_ROOT / "operations" / "artifacts.md").read_text(
                 encoding="utf-8"
             )
             catalog.write_text(
-                text.replace("`present/state/questions/`", "`present/state/wrong/`"),
+                text.replace("`work/current/`", "`work/planned/`"),
                 encoding="utf-8",
             )
 
