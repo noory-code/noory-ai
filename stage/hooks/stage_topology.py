@@ -542,11 +542,49 @@ def resolve_artifact_reference(artifact_id: str) -> ArtifactReference:
     return ArtifactReference(artifact_id, prefix.family, paths, prefix.legacy_resolve_only)
 
 
+def legacy_root(path: str) -> str | None:
+    """Return the retired schema-v3 root containing a path, if any."""
+
+    clean = _clean_stage_path(path)
+    legacy_roots = {origin.split("/", 1)[0] for origin in V3_TO_V4_RELOCATIONS}
+    matches = [root for root in legacy_roots if _contains(root, clean)]
+    return max(matches, key=len) if matches else None
+
+
 def is_legacy_path(path: str) -> bool:
     """Return whether a path targets a schema-v3 topology root."""
 
+    return legacy_root(path) is not None
+
+
+def legacy_replacement_paths(path: str) -> tuple[str, ...]:
+    """Return registry-derived v4 replacements for one retired v3 path.
+
+    A recognized relocation resolves to one exact destination. A path under a
+    retired wrapper but outside the known v3 tree resolves to the possible v4
+    responsibility families that replaced that wrapper.
+    """
+
     clean = _clean_stage_path(path)
-    return any(_contains(origin, clean) for origin in V3_TO_V4_RELOCATIONS)
+    if not is_legacy_path(clean):
+        return ()
+    matches = [origin for origin in V3_TO_V4_RELOCATIONS if _contains(origin, clean)]
+    if matches:
+        origin = max(matches, key=len)
+        suffix = clean[len(origin) :]
+        return (V3_TO_V4_RELOCATIONS[origin] + suffix,)
+    root = legacy_root(clean)
+    if root is None:
+        return ()
+    return tuple(
+        sorted(
+            {
+                destination.split("/", 1)[0]
+                for origin, destination in V3_TO_V4_RELOCATIONS.items()
+                if origin.split("/", 1)[0] == root
+            }
+        )
+    )
 
 
 def relocate_v3_path(path: str) -> str:

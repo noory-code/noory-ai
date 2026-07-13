@@ -168,7 +168,19 @@ class StageTopologyTests(unittest.TestCase):
             ),
         )
         self.assertEqual("settings.json", stage_topology.relocate_v3_path("settings.json"))
+        for root in ("past", "present", "future"):
+            self.assertTrue(stage_topology.is_legacy_path(f".stage/{root}/recreated.md"))
         self.assertFalse(stage_topology.is_legacy_path("official/canon/principles.md"))
+        self.assertEqual(
+            ("work/current/W-00000001.md",),
+            stage_topology.legacy_replacement_paths(
+                ".stage/present/work/items/W-00000001.md"
+            ),
+        )
+        self.assertEqual(
+            ("decisions", "state", "work"),
+            stage_topology.legacy_replacement_paths(".stage/present/recreated.md"),
+        )
 
     def test_authorization_zone_matches_stage_paths(self):
         self.assertEqual(

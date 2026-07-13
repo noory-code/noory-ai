@@ -45,6 +45,71 @@ def read_if_exists(path: Path, limit: int = 1400) -> str:
     return text[:limit].rstrip() + "\n..."
 
 
+LIFECYCLE_VIEW_RECORD_LIMIT = 3
+
+
+def lifecycle_view_record_ids(
+    directory: Path, limit: int = LIFECYCLE_VIEW_RECORD_LIMIT
+) -> tuple[list[str], int]:
+    """Return a bounded artifact-ID sample and total from one registry scan root."""
+
+    records: list[str] = []
+    try:
+        paths = sorted(directory.glob("*.md"))
+    except OSError:
+        return records, 0
+    for path in paths:
+        if path.name.startswith("_") or path.name.lower() in {"index.md", "readme.md"}:
+            continue
+        fields = parse_frontmatter(path)
+        record_id = fields.get("id") or path.stem
+        if re.fullmatch(r"(?:DE|TH|[WRDOQAKMP])-\d{3,}", record_id) is None:
+            continue
+        records.append(record_id)
+    return records[:limit], len(records)
+
+
+def derived_lifecycle_view(stage_root: Path) -> str:
+    """Render a read-only v4 lifecycle summary from registry context scan roots."""
+
+    grouped: dict[str, list[str]] = {
+        lifecycle: [] for lifecycle in stage_topology.LIFECYCLE_STATES
+    }
+    roadmap: list[str] = []
+    for root in stage_topology.scan_roots("context"):
+        resolved = stage_topology.resolve_zone(root)
+        if resolved is None:
+            continue
+        _family, zone = resolved
+        if zone.resolver_policy == "derived-view":
+            continue
+        record_ids, total = lifecycle_view_record_ids(stage_root / root)
+        if not total:
+            continue
+        suffix = f" (+{total - len(record_ids)} more)" if total > len(record_ids) else ""
+        summary = f"`{root}`: {', '.join(record_ids)}{suffix}"
+        if zone.lifecycle_state in grouped:
+            grouped[zone.lifecycle_state].append(summary)
+        elif zone.resolver_policy == "decision-chain":
+            roadmap.append(summary)
+
+    lines = ["### Lifecycle view (derived, read-only)"]
+    for lifecycle in stage_topology.LIFECYCLE_STATES:
+        entries = grouped[lifecycle]
+        if entries:
+            detail = "; ".join(entries)
+        elif lifecycle == "official":
+            detail = f"none under `{stage_topology.OFFICIAL_ROOT}/`"
+        else:
+            detail = "none"
+        lines.append(f"- {lifecycle} — {detail}")
+    if roadmap:
+        lines.append(
+            "- roadmap (decision-derived lifecycle) — " + "; ".join(roadmap)
+        )
+    return "\n".join(lines)
+
+
 def session_context(workspace_root: Path) -> str:
     stage_root = workspace_root / ".stage"
     if not stage_root.exists():
@@ -153,6 +218,7 @@ def session_context(workspace_root: Path) -> str:
         )
 
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        parts.append("\n" + derived_lifecycle_view(stage_root))
         state_index = next(
             path
             for path in stage_topology.get_zone("state", "current").index_surfaces

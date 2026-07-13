@@ -594,6 +594,28 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
             path_targets_stage_past(form) for form in stage_relative_forms(raw, workspace_root)
         )
 
+    if stage_root.exists() and active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        write_targets = explicit_paths if name in write_tools else shell_write_targets
+        for raw in write_targets:
+            legacy_form = next(
+                (
+                    form
+                    for form in stage_relative_forms(raw, workspace_root)
+                    if stage_topology.is_legacy_path(form)
+                ),
+                None,
+            )
+            if legacy_form is None:
+                continue
+            replacements = stage_topology.legacy_replacement_paths(legacy_form)
+            replacement_text = ", ".join(f"`.stage/{path}`" for path in replacements)
+            retired_root = stage_topology.legacy_root(legacy_form)
+            return deny(
+                "Stage schema-v4 legacy-root violation: the write target resolves under a "
+                f"retired schema-v3 root. `.stage/{retired_root}/` is retired in v4. Use the "
+                f"registry-derived v4 replacement {replacement_text}."
+            )
+
     for raw in explicit_paths:
         # Per-form conjunction: the SAME form must be both stage-internal and
         # script-suffixed — `.stage/run.sh -> outside.txt` leaves an executable

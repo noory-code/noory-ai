@@ -236,6 +236,122 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
 
         self.assertEqual("allow", permission_decision(result))
 
+    def test_v4_guard_denies_retired_roots_and_allows_registered_current_card(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage_root = root / ".stage"
+            shutil.copytree(V4_TEMPLATE_ROOT, stage_root)
+            item_id = "W-00000095"
+            item_text = active_card(item_id)
+            current_path = stage_root / "work" / "current" / f"{item_id}.md"
+            current_path.write_text(item_text, encoding="utf-8")
+            with (stage_root / "work" / "active.md").open("a", encoding="utf-8") as handle:
+                handle.write(
+                    f"| {item_id} | development | codex | Fixture | active | test | "
+                    f"[current/{item_id}.md](current/{item_id}.md) |\n"
+                )
+
+            legacy_targets = {
+                ".stage/past/canon/principles.md": ".stage/official/canon/principles.md",
+                f".stage/present/work/items/{item_id}.md": f".stage/work/current/{item_id}.md",
+                f".stage/future/backlog/items/{item_id}.md": f".stage/work/planned/{item_id}.md",
+            }
+            for target, replacement in legacy_targets.items():
+                with self.subTest(target=target):
+                    result = stage_guard.validate_pre_tool(
+                        {
+                            "cwd": str(root),
+                            "tool_name": "Write",
+                            "tool_input": {"file_path": target, "content": "replacement\n"},
+                        }
+                    )
+                    self.assertEqual("deny", permission_decision(result))
+                    reason = result["hookSpecificOutput"]["permissionDecisionReason"]
+                    self.assertIn("retired in v4", reason)
+                    self.assertIn(replacement, reason)
+
+            current_result = stage_guard.validate_pre_tool(
+                {
+                    "cwd": str(root),
+                    "tool_name": "Write",
+                    "tool_input": {
+                        "file_path": str(current_path),
+                        "content": item_text,
+                    },
+                }
+            )
+
+        self.assertEqual("allow", permission_decision(current_result))
+
+    def test_v3_guard_keeps_mutable_legacy_roots_available(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            init_stage.copy_templates(root, False)
+            for target in (
+                ".stage/present/state/current.md",
+                ".stage/future/proposals/P-00000095.md",
+            ):
+                with self.subTest(target=target):
+                    result = stage_guard.validate_pre_tool(
+                        {
+                            "cwd": str(root),
+                            "tool_name": "Write",
+                            "tool_input": {"file_path": target, "content": "replacement\n"},
+                        }
+                    )
+                    self.assertEqual("allow", permission_decision(result))
+
+    def test_v4_context_renders_registry_derived_lifecycle_view(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage_root = root / ".stage"
+            shutil.copytree(V4_TEMPLATE_ROOT, stage_root)
+            records = {
+                "work/planned/W-00000101.md": "W-00000101",
+                "work/current/W-00000102.md": "W-00000102",
+                "decisions/pending/DE-00000103.md": "DE-00000103",
+                "official/decisions/records/DE-00000104.md": "DE-00000104",
+                "roadmap/milestones/M-00000105.md": "M-00000105",
+                "work/current/W-00000106.md": "W-00000106",
+                "work/current/W-00000107.md": "W-00000107",
+                "work/current/W-00000108.md": "W-00000108",
+                "work/current/W-00000109.md": "W-00000109",
+            }
+            for relative, record_id in records.items():
+                path = stage_root / relative
+                path.write_text(f"# {record_id} Lifecycle fixture\n", encoding="utf-8")
+
+            context = stage_context.session_context(root)
+
+        self.assertIn("### Lifecycle view (derived, read-only)", context)
+        self.assertIn("- planned — `work/planned`: W-00000101", context)
+        self.assertIn(
+            "`work/current`: W-00000102, W-00000106, W-00000107 (+2 more)", context
+        )
+        self.assertNotIn("W-00000109", context)
+        self.assertIn("`decisions/pending`: DE-00000103", context)
+        self.assertIn(
+            "- official — `official/decisions/records`: DE-00000104", context
+        )
+        self.assertIn(
+            "- roadmap (decision-derived lifecycle) — "
+            "`roadmap/milestones`: M-00000105",
+            context,
+        )
+
+    def test_v3_context_does_not_render_v4_lifecycle_view(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            init_stage.copy_templates(root, False)
+
+            context = stage_context.session_context(root)
+
+        self.assertNotIn("Lifecycle view (derived, read-only)", context)
+        self.assertIn(
+            "`past` is official, `present` is in progress, `future` is planned", context
+        )
+        self.assertNotIn("`.stage/work/current/`", context)
+
 
 class ActiveTopologyTest(unittest.TestCase):
     def test_missing_or_non_v4_schema_version_uses_v3(self):

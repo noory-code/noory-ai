@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.27.1 — 2026-07-13
+
+Dormant schema-v4 lifecycle visibility and stale-topology defense:
+
+- Added v4-only legacy-root denial and derived lifecycle views; v3 unchanged; enforced version
+  stays 3. The write gate now rejects attempts to recreate retired v3 roots and points to their
+  registry-derived v4 replacement, while session-start context summarizes planned, current,
+  official, and decision-derived roadmap records from registry scan roots. (W-00000033)
+
 ## 0.27.0 — 2026-07-13
 
 Dormant per-project schema-v4 consumer dispatch:
