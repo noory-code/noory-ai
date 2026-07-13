@@ -83,7 +83,7 @@ flowchart TB
 
   Official --> Canon["canon\n원칙 / 용어 / 불변 조건"]
   Official --> Model["model\n구조 / 경계 / 인터페이스"]
-  Official --> Decisions["decisions/records\n승격된 결정"]
+  Official --> Decisions["decisions\n승격된 결정"]
   Official --> Archive["work/archive\n보관된 작업 기록 + 회고"]
 
   Canon --> CanonRecords["*/\n개별 원칙 / 용어 / 불변 조건"]
@@ -91,10 +91,10 @@ flowchart TB
   Decisions --> DecisionRecords["records\n개별 결정 SSOT (DE- id 유지)"]
   Archive --> ArchiveRecords["items / retrospectives\n보관 작업 기록과 회고"]
 
-  Work --> Planned["planned\n계획 카드"]
+  Work --> Planned["planned\n계획 카드 + views (planned 보조 뷰)"]
   Work --> Current["current\nactive / review 카드"]
   Work --> Retros["retrospectives\n회고 기록"]
-  Work --> WorkViews["active.md / review.md / views\n현재 뷰"]
+  Work --> WorkViews["active.md / review.md\ncurrent 뷰"]
 
   DecisionsF --> Pending["pending\n작업 중 결정 (DE-)"]
 
@@ -132,16 +132,18 @@ flowchart TB
     LAfter["After\n지위 결정"]
   end
 
-  subgraph Space["공간축: 책임 위치"]
+  subgraph Space["공간축: 책임 위치 (라이프사이클은 게이트가 부여)"]
     SCanon["official/canon"]
     SModel["official/model"]
-    SDecisions["official/decisions"]
+    SDecisions["official/decisions/records"]
     SArchive["official/work/archive"]
-    SWork["work"]
+    SCurrent["work/current"]
+    SRetro["work/retrospectives"]
+    SPending["decisions/pending"]
     SState["state"]
-    SRoadmap["roadmap"]
-    SPlanned["work/planned"]
+    SPlanned["work/planned + work/views"]
     SProposal["proposals"]
+    SRoadmap["roadmap (고정; 상태는 결정 체인에서 파생)"]
     SOps["operations"]
   end
 
@@ -157,11 +159,15 @@ flowchart TB
   GOfficial --> SModel
   GOfficial --> SDecisions
   GOfficial --> SArchive
-  GCurrent --> SWork
+  GCurrent --> SCurrent
+  GCurrent --> SRetro
+  GCurrent --> SPending
   GCurrent --> SState
-  GPlanned --> SRoadmap
   GPlanned --> SPlanned
   GPlanned --> SProposal
+  GOfficial -.-> SRoadmap
+  GCurrent -.-> SRoadmap
+  GPlanned -.-> SRoadmap
   SOps --> LBefore
   SOps --> LDuring
   SOps --> LAfter
@@ -173,7 +179,12 @@ flowchart TB
 
 ```mermaid
 stateDiagram-v2
-  [*] --> active
+  [*] --> captured
+  captured --> triaged
+  triaged --> ready
+  ready --> selected
+  selected --> active: start_work.py (planned work/planned -> current work/current)
+  captured --> rejected_planned: 착수 전 폐기
   active --> blocked: 진행 차단
   blocked --> active: 차단 해소
   active --> review: 검증 요청
@@ -182,8 +193,12 @@ stateDiagram-v2
   review --> completed: 검증·회고·승격 판단 완료
   completed --> archived: 현재 작업 흐름에서 제거
   rejected --> archived: 기록 보관
+  rejected_planned --> archived: 기록 보관
   archived --> [*]
 ```
+
+계획 단계(`captured`/`triaged`/`ready`/`selected`)는 `work/planned/`에 있고, `start_work.py`가
+`work/current/`의 `active`로 이동시킨다. 착수 전 폐기(`rejected`)는 계획 카드에서도 일어난다.
 
 `archived` 이동은 승격과 다르다. `official/work/archive/` 대상은 archive intent로 보관하며, rejected 작업도 보관할 수 있다.
 

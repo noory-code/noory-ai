@@ -21,20 +21,18 @@ states are MECE: no overlap, no gap.
 
 ## Base structure
 
-```text
-family/
-  index.md
-  items/ or records/
-    README.md
-    _template.md
-  views/
-```
+Each family declares its own record roots and index surfaces in the topology registry
+(`hooks/stage_topology.py`); there is no single universal subdirectory shape. Most families keep
+individual records under a named subdirectory (e.g. `work/current/`, `official/decisions/records/`),
+while others hold records and their `_template.md` directly in the zone (e.g. `proposals/`,
+`roadmap/themes/`, `roadmap/milestones/`). What every family shares is: an `index` (view), the
+individual records as their own files, and a `_template.md` to copy.
 
 ## Work status values
 
 | Field | Values |
 |---|---|
-| `status` | `active`, `review`, `blocked`, `completed`, `archived`, `rejected` |
+| `status` | planned: `captured`, `triaged`, `ready`, `selected`, `deferred`, `rejected`; current: `active`, `blocked`, `review`, `completed`, `rejected`; official: `archived` |
 | `verification` | `pending`, `passed`, `not_required` |
 | `retrospective` | `pending`, `completed` |
 | `retrospective_ref` | ID or path of the linked retrospective file |
@@ -66,10 +64,14 @@ Hierarchy is the only work lineage: `parent` names the parent work card (e.g. an
 
 | Status | Location |
 |---|---|
-| `captured`, `triaged`, `ready`, `selected`, `deferred` (planned) | `work/planned/` + `work/planned/index.md` |
+| `captured`, `triaged`, `ready`, `selected`, `deferred`, `rejected` (planned) | `work/planned/` + `work/planned/index.md` |
 | `active`, `blocked` | `work/current/` + `work/active.md` |
 | `review`, `completed`, `rejected` | `work/current/` + `work/review.md` |
 | `archived` | `official/work/archive/items/` |
+
+`rejected` appears in two lifecycle states: a planned card declined before any work started
+stays in `work/planned/`; a card rejected during execution sits in `work/current/`. Both carry a
+completed retrospective before archiving.
 
 A work card is ONE artifact across its whole life (DE-00000007): captured as a planned card in
 `work/planned/`, physically moved to `work/current/` when work starts (`scripts/start_work.py`

@@ -77,8 +77,11 @@ Audit the Stage structure and work status:
 python3 stage/scripts/audit_stage.py --project-root .
 ```
 
-Migrate a `.stage/` initialized by an older plugin to the plugin-owned operations layout
-(idempotent; never deletes content that differs from the plugin copy):
+Migrate a `.stage/` from an older schema. The `stage-migrate` skill performs the one-shot
+schema-v3-to-v4 topology migration (past/present/future → official/work/decisions/state/
+proposals/roadmap) as a fail-closed git transaction: clean-tree preflight, registry-driven
+relocation via `git mv`, machine-field rewrite, staged (never auto-committed) with a
+deterministic abort, then a marker-last `schema_version: 4` stamp and strict audit:
 
 ```bash
 python3 stage/scripts/migrate_stage.py --project-root .
@@ -100,7 +103,7 @@ python3 stage/scripts/promote_intent.py --project-root . --type archive --work-i
 
 ## Design
 
-[docs/BLUEPRINT.md](docs/BLUEPRINT.md) is the current blueprint.
-[docs/DISCUSSION.md](docs/DISCUSSION.md) is the design discussion record.
-[docs/IMPLEMENTATION_AUDIT.md](docs/IMPLEMENTATION_AUDIT.md) audits implementation against the blueprint.
+[docs/BLUEPRINT.md](docs/BLUEPRINT.md) is the current blueprint (schema v4).
+[docs/SCHEMA_V4.md](docs/SCHEMA_V4.md) is the schema-v4 design SSOT.
+[docs/DISCUSSION.md](docs/DISCUSSION.md) and [docs/IMPLEMENTATION_AUDIT.md](docs/IMPLEMENTATION_AUDIT.md) are historical v3 design records, kept as history.
 (The three docs above are user-facing and written in Korean by owner decision; all executable assets are English.)
