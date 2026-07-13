@@ -9,7 +9,6 @@ Backlog item bodies live in `items/`. This document manages only order, status, 
 | ID | Title | Kind | Status | Priority | Parent | Item |
 |---|---|---|---|---|---|---|
 | W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [items/W-00000026.md](items/W-00000026.md) |
-| W-00000028 | Commit gate misparses quoted arguments in git commit commands | fix | captured | high |  | [items/W-00000028.md](items/W-00000028.md) |
 
 ## Status values
 

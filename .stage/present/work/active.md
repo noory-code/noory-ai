@@ -6,3 +6,4 @@ Work bodies live in `items/`. This document manages only current status and link
 
 | Work | Kind | Venue | Purpose | Status | Owner | Item |
 |---|---|---|---|---|---|---|
+| W-00000028 | fix | codex | Commit gate misparses quoted arguments in git commit command | active | codex | [items/W-00000028.md](items/W-00000028.md) |
