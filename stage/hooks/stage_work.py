@@ -545,14 +545,33 @@ def frontmatter_field_from_text(text: str, field: str) -> str:
     return match.group(1).strip().strip("'\"") if match else ""
 
 
-def work_item_enum_error(text: str) -> str:
+def _is_planned_card_path(relative: str) -> bool:
+    """True when ``relative`` (a ``.stage/...`` form) is a planned work card.
+
+    Planned cards (work/planned zone) carry the PLANNED status enum, not the
+    current-work enum — the same split the audit makes (BACKLOG001 vs WORK005).
+    """
+    if not relative:
+        return False
+    planned = stage_topology.resolve_artifact_reference("W-00000000").candidate_paths[0]
+    return relative.startswith(f".stage/{Path(planned).parent.as_posix()}/")
+
+
+def work_item_enum_error(text: str, relative: str = "") -> str:
     """A non-empty work-item enum field whose value is invalid, or '' if all valid.
 
     Empty fields are not flagged (absence is the audit's and other gates' concern);
     this catches a wrong VALUE — the `retrospective: not_required` / `status: done`
     class of typo that the audit would only surface later, after the write landed.
+
+    ``relative`` selects the status enum by zone: a planned card validates status
+    against WORK_PLANNED_STATUSES (triaged/ready/...), a current/archive card
+    against STATUS_VALUES. The other fields never appear on a planned card (absent
+    -> skipped), so one field table serves both.
     """
-    for field_name, valid in _WORK_ENUM_FIELDS:
+    status_valid = WORK_PLANNED_STATUSES if _is_planned_card_path(relative) else STATUS_VALUES
+    enum_fields = (("status", status_valid),) + _WORK_ENUM_FIELDS[1:]
+    for field_name, valid in enum_fields:
         value = frontmatter_field_from_text(text, field_name)
         if value and value not in valid:
             return (

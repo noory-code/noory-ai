@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.31.3 — 2026-07-15
+
+Bug fix (enum gate):
+
+- The PreToolUse enum gate validated a planned work card's `status` against the current-work
+  enum (`active/blocked/review/completed/archived/rejected`), rejecting the planned statuses the
+  audit accepts (`captured/triaged/ready/selected/deferred/rejected`). Writing any new
+  `work/planned/` card was denied. The gate now selects the status enum by the card's zone —
+  planned cards validate against `WORK_PLANNED_STATUSES`, current/archive cards against
+  `STATUS_VALUES` — mirroring the audit split (BACKLOG001 vs WORK005). The other work fields
+  never appear on a planned card, so one field table still serves both.
+
 ## 0.31.2 — 2026-07-13
 
 Concept-layer docs rewritten to schema v4 (docs only):

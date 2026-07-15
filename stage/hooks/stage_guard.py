@@ -459,8 +459,8 @@ def enum_validity_blocker(workspace_root: Path, payload: dict[str, Any], name: s
     checks, caught before the bad value lands instead of after. Reuses the
     hierarchy projection (disk + this call's edits), so a patch that only touches
     the body is judged on the merged result, not the raw fragment."""
-    for _relative, projected in hierarchy_item_targets(workspace_root, payload, name):
-        error = work_item_enum_error(projected)
+    for relative, projected in hierarchy_item_targets(workspace_root, payload, name):
+        error = work_item_enum_error(projected, relative)
         if error:
             return error
     return ""

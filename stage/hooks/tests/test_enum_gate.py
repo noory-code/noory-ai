@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -64,6 +65,54 @@ class EnumGateTest(unittest.TestCase):
         with tmp:
             bad = VALID.replace("status: active", "status: done")
             self.assertEqual(decision(stage_guard.validate_pre_tool(self.payload(root, bad))), "deny")
+
+
+V4_PLANNED = (
+    "---\nid: W-00000002\nkind: development\nvenue:\nparent:\n"
+    "status: triaged\npriority:\n---\n\n# W-00000002 Y\n"
+)
+
+
+class PlannedEnumGateTest(unittest.TestCase):
+    """A v4 planned card (work/planned/) carries a PLANNED status enum
+    (triaged/ready/deferred/...), not the current-work enum. The gate must
+    pick the status set by the card's zone, mirroring the audit (BACKLOG001)."""
+
+    def make(self):
+        tmp = tempfile.TemporaryDirectory()
+        root = Path(tmp.name)
+        (root / ".stage/work/planned").mkdir(parents=True)
+        (root / ".stage/settings.json").write_text(
+            json.dumps({"schema_version": 4}), encoding="utf-8"
+        )
+        return tmp, root
+
+    def payload(self, root: Path, content: str) -> dict:
+        return {
+            "cwd": str(root),
+            "tool_name": "Write",
+            "tool_input": {
+                "file_path": str(root / ".stage/work/planned/W-00000002.md"),
+                "content": content,
+            },
+        }
+
+    def test_planned_status_allowed(self):
+        tmp, root = self.make()
+        with tmp:
+            self.assertEqual(
+                decision(stage_guard.validate_pre_tool(self.payload(root, V4_PLANNED))),
+                "allow",
+            )
+
+    def test_planned_invalid_status_denied(self):
+        tmp, root = self.make()
+        with tmp:
+            bad = V4_PLANNED.replace("status: triaged", "status: bogus")
+            self.assertEqual(
+                decision(stage_guard.validate_pre_tool(self.payload(root, bad))),
+                "deny",
+            )
 
 
 if __name__ == "__main__":

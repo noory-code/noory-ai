@@ -6,3 +6,4 @@ Work bodies live in `current/`. This document manages only current status and li
 
 | Work | Kind | Venue | Purpose | Status | Owner | Item |
 |---|---|---|---|---|---|---|
+| W-00000040 | bug | | Enum gate honors planned-card status enum | active | woogis | [W-00000040](current/W-00000040.md) |
