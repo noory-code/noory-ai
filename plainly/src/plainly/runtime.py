@@ -23,7 +23,9 @@ class Profile:
 @dataclass(frozen=True)
 class ProfileCatalog:
     default: str
+    baseline: str
     profiles: Mapping[str, Profile]
+    aliases: Mapping[str, str]
 
 
 @dataclass(frozen=True)
@@ -60,10 +62,34 @@ def load_catalog(plugin_root: Path) -> ProfileCatalog:
             path=plugin_root / "styles" / file_name,
         )
 
+    baseline = raw.get("baseline")
+    if not isinstance(baseline, str) or baseline not in profiles:
+        raise RuntimeError("Plainly profile registry has an unknown baseline")
+
+    aliases_raw = raw.get("aliases", {})
+    if not isinstance(aliases_raw, dict):
+        raise RuntimeError("Plainly profile registry aliases must be an object")
+    aliases: dict[str, str] = {}
+    for alias, target in aliases_raw.items():
+        if (
+            not isinstance(alias, str)
+            or not alias
+            or alias in profiles
+            or not isinstance(target, str)
+            or target not in profiles
+        ):
+            raise RuntimeError("Plainly profile aliases must map unique names to profiles")
+        aliases[alias] = target
+
     default = raw.get("default")
     if not isinstance(default, str) or default not in profiles:
         raise RuntimeError("Plainly profile registry has an unknown default")
-    return ProfileCatalog(default=default, profiles=profiles)
+    return ProfileCatalog(
+        default=default,
+        baseline=baseline,
+        profiles=profiles,
+        aliases=aliases,
+    )
 
 
 def settings_path(project_root: Path) -> Path:
@@ -153,19 +179,33 @@ def _builtin_style(
     source: str,
     diagnostics: list[str],
 ) -> ResolvedStyle | None:
-    profile = catalog.profiles.get(name)
+    canonical_name = catalog.aliases.get(name, name)
+    profile = catalog.profiles.get(canonical_name)
     if profile is None:
         return None
-    text, error = read_style_file(profile.path)
+
+    baseline = catalog.profiles[catalog.baseline]
+    baseline_text, error = read_style_file(baseline.path)
     if error:
         diagnostics.append(error)
         return None
-    if text is None:
+    if baseline_text is None:
         return None
+
+    text = baseline_text
+    if canonical_name != catalog.baseline:
+        delta_text, error = read_style_file(profile.path)
+        if error:
+            diagnostics.append(error)
+            return None
+        if delta_text is None:
+            return None
+        text = f"{baseline_text}\n\n{delta_text}"
+
     return ResolvedStyle(
         text=text,
         source=source,
-        profile=name,
+        profile=canonical_name,
         diagnostics=tuple(diagnostics),
     )
 
@@ -216,7 +256,7 @@ def _style_from_settings(
         resolved = _builtin_style(catalog, name, f"settings:{path}", diagnostics)
         if resolved is not None:
             return resolved
-        if name not in catalog.profiles:
+        if name not in catalog.profiles and name not in catalog.aliases:
             diagnostics.append(f"Unknown Plainly profile in {path}: {name}")
 
     if not file_value and not profile_value:

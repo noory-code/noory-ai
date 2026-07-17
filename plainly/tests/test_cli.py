@@ -33,8 +33,9 @@ class ConfigureCliTest(unittest.TestCase):
             result = self.run_cli("list", home=Path(tmp) / "home")
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        for profile in ("brief", "plain", "guided", "professional"):
+        for profile in ("baseline", "brief", "guided", "professional"):
             self.assertIn(profile, result.stdout)
+        self.assertIn("plain -> baseline", result.stdout)
 
     def test_set_profile_and_reset_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -63,6 +64,111 @@ class ConfigureCliTest(unittest.TestCase):
             )
             self.assertEqual(reset.returncode, 0, reset.stderr)
             self.assertFalse(settings.exists())
+
+    def test_set_profile_normalizes_plain_compatibility_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            settings = root / ".plainly" / "settings.json"
+
+            result = self.run_cli(
+                "set-profile",
+                "plain",
+                "--project-root",
+                str(root),
+                home=root / "home",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                json.loads(settings.read_text(encoding="utf-8")),
+                {"profile": "baseline"},
+            )
+
+    def test_interview_exact_match_selects_a_preset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = self.run_cli(
+                "apply-interview",
+                "--length",
+                "standard",
+                "--structure",
+                "step-by-step",
+                "--tone",
+                "conversational",
+                "--project-root",
+                str(root),
+                home=root / "home",
+            )
+            settings = root / ".plainly" / "settings.json"
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                json.loads(settings.read_text(encoding="utf-8")),
+                {"profile": "guided"},
+            )
+            self.assertFalse((root / ".plainly" / "interview-style.md").exists())
+
+    def test_interview_conflict_writes_composed_in_root_style(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = self.run_cli(
+                "apply-interview",
+                "--length",
+                "shortest",
+                "--structure",
+                "direct",
+                "--tone",
+                "formal",
+                "--project-root",
+                str(root),
+                home=root / "home",
+            )
+            style_file = root / ".plainly" / "interview-style.md"
+            settings = root / ".plainly" / "settings.json"
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                json.loads(settings.read_text(encoding="utf-8")),
+                {"style_file": ".plainly/interview-style.md"},
+            )
+            style = style_file.read_text(encoding="utf-8")
+            self.assertIn("Do not state guesses as facts", style)
+            self.assertIn("Use as few words as the task allows", style)
+            self.assertIn("neutral workplace register", style)
+            self.assertNotIn("ordered steps", style)
+
+            shown = self.run_cli("show", "--project-root", str(root), home=root / "home")
+            self.assertEqual(shown.returncode, 0, shown.stderr)
+            self.assertIn(f"source: file:{style_file.resolve()}", shown.stdout)
+
+    def test_interview_custom_file_cannot_escape_through_plainly_symlink(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = base / "project"
+            outside = base / "outside"
+            root.mkdir()
+            outside.mkdir()
+            try:
+                (root / ".plainly").symlink_to(outside, target_is_directory=True)
+            except OSError as exc:
+                self.skipTest(f"Symlink creation is unavailable: {exc}")
+
+            result = self.run_cli(
+                "apply-interview",
+                "--length",
+                "shortest",
+                "--structure",
+                "direct",
+                "--tone",
+                "formal",
+                "--project-root",
+                str(root),
+                home=base / "home",
+            )
+
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("project root", result.stderr)
+            self.assertFalse((outside / "interview-style.md").exists())
 
     def test_set_file_stores_a_project_relative_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

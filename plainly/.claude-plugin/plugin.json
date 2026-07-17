@@ -1,6 +1,6 @@
 {
   "name": "plainly",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Inject selectable plain-language response styles before each AI turn.",
   "homepage": "https://github.com/noory-code/noory-ai/tree/main/plainly",
   "repository": "https://github.com/noory-code/noory-ai",

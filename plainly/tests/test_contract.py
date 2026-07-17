@@ -34,14 +34,36 @@ class ContractTest(unittest.TestCase):
     def test_profile_registry_is_complete(self) -> None:
         registry = self.load_json(PLUGIN_ROOT / "styles" / "profiles.json")
 
-        self.assertEqual(registry["default"], "plain")
+        self.assertEqual(registry["default"], "baseline")
+        self.assertEqual(registry["baseline"], "baseline")
+        self.assertEqual(registry["aliases"], {"plain": "baseline"})
         self.assertEqual(
             set(registry["profiles"]),
-            {"brief", "plain", "guided", "professional"},
+            {"baseline", "brief", "guided", "professional"},
         )
         for entry in registry["profiles"].values():
             style_path = PLUGIN_ROOT / "styles" / entry["file"]
             self.assertTrue(style_path.read_text(encoding="utf-8").strip())
+
+    def test_baseline_owns_shared_principles_without_delta_duplication(self) -> None:
+        styles = PLUGIN_ROOT / "styles"
+        baseline = (styles / "baseline.md").read_text(encoding="utf-8")
+        deltas = "\n".join(
+            (styles / name).read_text(encoding="utf-8")
+            for name in ("brief.md", "guided.md", "professional.md")
+        )
+
+        for principle in (
+            "Lead with the answer",
+            "plain language",
+            "short sentences",
+            "Do not state guesses as facts",
+            "Mark unverified claims as unverified",
+            "Distinguish facts from recommendations",
+        ):
+            self.assertIn(principle, baseline)
+            self.assertNotIn(principle, deltas)
+        self.assertFalse((styles / "plain.md").exists())
 
     def test_marketplace_registers_plainly(self) -> None:
         marketplace = self.load_json(REPOSITORY_ROOT / ".claude-plugin" / "marketplace.json")

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-07-18
+
+- Refactor built-in styles into one shared baseline plus focused brief, guided, and professional
+  deltas while retaining `plain` as a compatibility alias.
+- Add baseline guidance to mark unverified claims and distinguish facts from recommendations.
+- Add an example-driven onboarding interview that selects the nearest preset or writes a validated,
+  project-confined composed style when multiple preference deltas are selected.
+
 ## 0.2.0 — 2026-07-12
 
 - Move persisted Plainly configuration to project-owned `.plainly/settings.json`.

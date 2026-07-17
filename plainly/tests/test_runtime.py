@@ -15,14 +15,56 @@ from plainly.runtime import MAX_STYLE_BYTES, resolve_style  # noqa: E402
 
 
 class RuntimeTest(unittest.TestCase):
-    def test_plain_is_the_default_profile(self) -> None:
+    def test_baseline_is_the_default_profile(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             resolved = resolve_style(PLUGIN_ROOT, root, environ={}, home=root / "home")
 
-        self.assertEqual(resolved.profile, "plain")
-        self.assertEqual(resolved.source, "builtin:plain")
+        self.assertEqual(resolved.profile, "baseline")
+        self.assertEqual(resolved.source, "builtin:baseline")
         self.assertIn("plain language", resolved.text.lower())
+
+    def test_every_builtin_profile_includes_the_baseline_principles(self) -> None:
+        baseline_phrases = (
+            "Lead with the answer",
+            "plain language",
+            "short sentences",
+            "Do not state guesses as facts",
+            "Mark unverified claims as unverified",
+            "Distinguish facts from recommendations",
+        )
+        for profile in ("baseline", "brief", "guided", "professional"):
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                resolved = resolve_style(
+                    PLUGIN_ROOT,
+                    root,
+                    environ={"NOORY_STYLE_PROFILE": profile},
+                    home=root / "home",
+                )
+
+                self.assertEqual(resolved.profile, profile)
+                for phrase in baseline_phrases:
+                    self.assertIn(phrase, resolved.text)
+
+    def test_plain_alias_resolves_from_environment_and_saved_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            from_environment = resolve_style(
+                PLUGIN_ROOT,
+                root,
+                environ={"NOORY_STYLE_PROFILE": "plain"},
+                home=root / "home",
+            )
+            settings = root / ".plainly" / "settings.json"
+            settings.parent.mkdir(parents=True)
+            settings.write_text(json.dumps({"profile": "plain"}), encoding="utf-8")
+            from_settings = resolve_style(PLUGIN_ROOT, root, environ={}, home=root / "home")
+
+        self.assertEqual(from_environment.profile, "baseline")
+        self.assertEqual(from_environment.source, "env:NOORY_STYLE_PROFILE")
+        self.assertEqual(from_settings.profile, "baseline")
+        self.assertEqual(from_settings.source, f"settings:{settings.resolve()}")
 
     def test_environment_profile_overrides_saved_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -91,8 +133,8 @@ class RuntimeTest(unittest.TestCase):
                 home=home,
             )
 
-        self.assertEqual(resolved.profile, "plain")
-        self.assertEqual(resolved.source, "builtin:plain")
+        self.assertEqual(resolved.profile, "baseline")
+        self.assertEqual(resolved.source, "builtin:baseline")
 
     def test_project_relative_style_file_is_loaded(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -145,7 +187,7 @@ class RuntimeTest(unittest.TestCase):
                 home=root / "home",
             )
 
-        self.assertEqual(resolved.profile, "plain")
+        self.assertEqual(resolved.profile, "baseline")
         self.assertTrue(any("8192" in message for message in resolved.diagnostics))
 
     def test_malformed_project_settings_fall_back_without_blocking(self) -> None:
@@ -157,7 +199,7 @@ class RuntimeTest(unittest.TestCase):
 
             resolved = resolve_style(PLUGIN_ROOT, root, environ={}, home=root / "home")
 
-        self.assertEqual(resolved.profile, "plain")
+        self.assertEqual(resolved.profile, "baseline")
         self.assertTrue(any("settings" in message for message in resolved.diagnostics))
 
     def test_non_utf8_external_file_falls_back_without_blocking(self) -> None:
@@ -173,7 +215,7 @@ class RuntimeTest(unittest.TestCase):
                 home=root / "home",
             )
 
-        self.assertEqual(resolved.profile, "plain")
+        self.assertEqual(resolved.profile, "baseline")
         self.assertTrue(any("UTF-8" in message for message in resolved.diagnostics))
 
     def test_relative_environment_file_resolves_from_cwd(self) -> None:
@@ -209,7 +251,7 @@ class RuntimeTest(unittest.TestCase):
 
             resolved = resolve_style(PLUGIN_ROOT, root, environ={}, home=base / "home")
 
-        self.assertEqual(resolved.profile, "plain")
+        self.assertEqual(resolved.profile, "baseline")
         self.assertNotIn("Private local content.", resolved.text)
         self.assertTrue(any("project root" in message for message in resolved.diagnostics))
 
@@ -231,7 +273,7 @@ class RuntimeTest(unittest.TestCase):
 
             resolved = resolve_style(PLUGIN_ROOT, root, environ={}, home=base / "home")
 
-        self.assertEqual(resolved.profile, "plain")
+        self.assertEqual(resolved.profile, "baseline")
         self.assertNotIn("Private symlink content.", resolved.text)
         self.assertTrue(any("project root" in message for message in resolved.diagnostics))
 

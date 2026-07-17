@@ -5,15 +5,20 @@ user prompt. It never uses `Stop` or another post-answer continuation hook.
 
 ## Built-in profiles
 
-| Profile | Behavior |
-|---|---|
-| `brief` | Answer and essential details with minimal wording |
-| `plain` | Clear everyday language with enough context (default) |
-| `guided` | Plain-language, step-by-step explanations |
-| `professional` | Concise, precise, neutral workplace language |
+Every built-in selection includes the shared baseline. The other profiles add one focused delta.
 
-Ask the AI to show, select, or reset project styles via the `plainly-configure` skill. Configuration
-rules live in [`skills/plainly-configure/SKILL.md`](skills/plainly-configure/SKILL.md).
+| Profile | Delta from the baseline |
+|---|---|
+| `baseline` | None; clear, concise, honest communication (default) |
+| `brief` | The shortest length the task allows |
+| `guided` | Step-by-step explanations for non-experts |
+| `professional` | A formal, neutral workplace register |
+
+The legacy profile name `plain` remains a compatibility alias for `baseline`.
+
+Ask the AI to personalize, show, select, or reset project styles via the `plainly-configure` skill.
+Configuration rules live in
+[`skills/plainly-configure/SKILL.md`](skills/plainly-configure/SKILL.md).
 
 ## Resolution order
 
@@ -22,7 +27,7 @@ Plainly reads the first valid source on every `UserPromptSubmit` event:
 1. `NOORY_STYLE_FILE`
 2. `NOORY_STYLE_PROFILE`
 3. `<project>/.plainly/settings.json`
-4. Built-in `plain`
+4. Built-in `baseline`
 
 An external style must be a non-empty UTF-8 file no larger than 8,192 bytes. Relative paths in
 `NOORY_STYLE_FILE` and project settings resolve from the project root. The project CLI stores style

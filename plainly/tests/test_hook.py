@@ -84,6 +84,26 @@ class HookTest(unittest.TestCase):
         self.assertIn("Use one short paragraph.", context)
         self.assertIn("communication only", context)
 
+    def test_each_builtin_profile_injects_baseline_and_its_delta(self) -> None:
+        markers = {
+            "baseline": "Do not state guesses as facts",
+            "brief": "Use as few words as the task allows",
+            "guided": "small number of ordered steps",
+            "professional": "neutral workplace register",
+        }
+        for profile, marker in markers.items():
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                output = self.run_hook(
+                    {"hook_event_name": "UserPromptSubmit", "cwd": str(root)},
+                    home=root / "home",
+                    extra_env={"NOORY_STYLE_PROFILE": profile},
+                )
+
+                context = output["hookSpecificOutput"]["additionalContext"]
+                self.assertIn("Do not state guesses as facts", context)
+                self.assertIn(marker, context)
+
     def test_external_style_cannot_close_its_sentinel(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
