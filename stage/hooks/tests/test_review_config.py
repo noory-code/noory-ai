@@ -54,5 +54,51 @@ class ResolveReviewCommandTest(unittest.TestCase):
         self.assertEqual(stage_paths.resolve_review_command({"stages": {"design": "off"}}, "implementation"), (None, ""))
 
 
+class ResolveIndependentReviewCommandTest(unittest.TestCase):
+    def test_exactly_one_differing_venue_resolves_command(self):
+        review = {
+            "reviewers": {
+                "codex": "run-codex-review",
+                "claude": "run-claude-review",
+            }
+        }
+
+        self.assertEqual(
+            stage_paths.resolve_independent_review_command(review, "codex"),
+            ("run-claude-review", ""),
+        )
+
+    def test_no_differing_venue_fails_closed(self):
+        command, error = stage_paths.resolve_independent_review_command(
+            {"reviewers": {"codex": "run-codex-review"}}, "codex"
+        )
+
+        self.assertIsNone(command)
+        self.assertIn("different from item venue `codex`", error)
+
+    def test_multiple_differing_venues_fail_closed(self):
+        command, error = stage_paths.resolve_independent_review_command(
+            {
+                "reviewers": {
+                    "codex": "run-codex-review",
+                    "claude": "run-claude-review",
+                    "human": "run-human-review",
+                }
+            },
+            "codex",
+        )
+
+        self.assertIsNone(command)
+        self.assertIn("exactly one", error)
+
+    def test_malformed_reviewers_fail_closed(self):
+        for reviewers in (None, "claude", {"claude": ""}, {"claude": 5}):
+            command, error = stage_paths.resolve_independent_review_command(
+                {"reviewers": reviewers}, "codex"
+            )
+            self.assertIsNone(command)
+            self.assertTrue(error, f"{reviewers!r} should fail closed")
+
+
 if __name__ == "__main__":
     unittest.main()

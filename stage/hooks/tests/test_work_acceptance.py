@@ -18,6 +18,7 @@ class WorkAcceptanceTest(unittest.TestCase):
             path.write_text(
                 "---\n"
                 "id: W-00000001\n"
+                "venue: codex\n"
                 "autonomous: true\n"
                 "acceptance:\n"
                 '  - "python3 -c \\"print(1)\\""\n'
@@ -32,6 +33,7 @@ class WorkAcceptanceTest(unittest.TestCase):
             )
 
         self.assertTrue(item.autonomous)
+        self.assertEqual("codex", item.venue)
         self.assertEqual(
             (
                 'python3 -c "print(1)"',
@@ -48,6 +50,7 @@ class WorkAcceptanceTest(unittest.TestCase):
 
         self.assertFalse(item.autonomous)
         self.assertEqual((), item.acceptance)
+        self.assertEqual("", item.venue)
 
 
 if __name__ == "__main__":

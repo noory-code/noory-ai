@@ -20,7 +20,7 @@ for _n in ("stage_paths", "stage_shell", "stage_git", "stage_work"):
 stage_work = sys.modules["stage_work"]
 
 
-def item(review: str) -> object:
+def item(review: str, *, autonomous: bool = False) -> object:
     with tempfile.TemporaryDirectory() as d:
         path = Path(d) / "W-00000001.md"
         return stage_work.item_from_fields(
@@ -32,6 +32,7 @@ def item(review: str) -> object:
                 "retrospective": "completed",
                 "promotion": "not_applicable",
                 "review": review,
+                "autonomous": autonomous,
             },
             stage_work.AUDIT_FIELD_DEFAULTS,
         )
@@ -47,6 +48,18 @@ class ReviewCompletionTest(unittest.TestCase):
 
     def test_not_required_allows_completion(self):
         self.assertEqual(stage_work.item_completion_blockers(item("not_required")), [])
+
+    def test_autonomous_item_requires_passed_independent_review(self):
+        blockers = stage_work.item_completion_blockers(
+            item("not_required", autonomous=True)
+        )
+
+        self.assertTrue(any("independent review" in blocker for blocker in blockers), blockers)
+
+    def test_autonomous_item_with_passed_review_allows_completion(self):
+        self.assertEqual(
+            stage_work.item_completion_blockers(item("passed", autonomous=True)), []
+        )
 
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -12,8 +14,9 @@ CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-retrospective" / "
 ITEM = """---
 id: W-00000001
 kind: chore
+venue: {venue}
 scope: src/
-autonomous: false
+autonomous: {autonomous}
 acceptance: {acceptance}
 status: active
 verification: pending
@@ -48,6 +51,11 @@ def run(root: Path, *args: str) -> subprocess.CompletedProcess:
     )
 
 
+def python_command(code: str) -> str:
+    args = [sys.executable, "-c", code]
+    return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
+
+
 class CloseWorkTest(unittest.TestCase):
     def make(
         self,
@@ -57,6 +65,8 @@ class CloseWorkTest(unittest.TestCase):
         with_ref_file=True,
         review="not_required",
         acceptance="[]",
+        autonomous="false",
+        venue="codex",
     ):
         tmp = tempfile.TemporaryDirectory()
         root = Path(tmp.name)
@@ -69,6 +79,8 @@ class CloseWorkTest(unittest.TestCase):
                 promotion=promotion,
                 review=review,
                 acceptance=acceptance,
+                autonomous=autonomous,
+                venue=venue,
             ),
             encoding="utf-8",
         )
@@ -410,6 +422,115 @@ class CloseWorkTest(unittest.TestCase):
             self._write_review(root, {"stages": {"implementation": "standard"}})  # no strengths.standard command
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 1)
+
+    def test_autonomous_item_runs_opposite_venue_reviewer_and_blocks_on_verdict(self):
+        tmp, root = self.make(autonomous="true")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "reviewers": {
+                        "codex": python_command("print('same venue should not run')"),
+                        "claude": python_command("print('BLOCK: independent rejection')"),
+                    }
+                },
+            )
+
+            proc = run(root, "W-00000001", "--check", python_command("print(1)"))
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("independent review did not pass", proc.stderr)
+        self.assertIn("status: active", item)
+
+    def test_autonomous_item_without_opposite_venue_reviewer_fails_closed(self):
+        tmp, root = self.make(autonomous="true")
+        with tmp:
+            self._write_review(
+                root,
+                {"reviewers": {"codex": python_command("print(1)")}},
+            )
+
+            proc = run(root, "W-00000001", "--check", python_command("print(1)"))
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("independent review config unusable", proc.stderr)
+        self.assertIn("different from item venue `codex`", proc.stderr)
+        self.assertIn("status: active", item)
+
+    def test_autonomous_item_closes_when_opposite_venue_reviewer_approves(self):
+        tmp, root = self.make(autonomous="true")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "reviewers": {
+                        "codex": python_command("print('same venue should not run')"),
+                        "claude": python_command("print('independent review ok')"),
+                    }
+                },
+            )
+
+            proc = run(root, "W-00000001", "--check", python_command("print(1)"))
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("status: completed", item)
+        self.assertIn("review: passed", item)
+        self.assertIn("independent review ok", item)
+        self.assertNotIn("same venue should not run", item)
+
+    def test_autonomous_item_blocks_on_nonzero_reviewer_exit(self):
+        tmp, root = self.make(autonomous="true")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "reviewers": {
+                        "claude": python_command(
+                            "import sys; print('review failed'); sys.exit(7)"
+                        )
+                    }
+                },
+            )
+
+            proc = run(root, "W-00000001", "--check", python_command("print(1)"))
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("independent review did not pass", proc.stderr)
+        self.assertIn("[exit 7]", proc.stderr)
+        self.assertIn("status: active", item)
+
+    def test_non_autonomous_item_ignores_independent_reviewers(self):
+        tmp, root = self.make()
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "reviewers": {
+                        "claude": python_command("print('BLOCK: should not run')")
+                    }
+                },
+            )
+
+            proc = run(root, "W-00000001", "--check", python_command("print(1)"))
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("status: completed", item)
+        self.assertNotIn("should not run", item)
 
     def test_promotion_arg_sets_final(self):
         tmp, root = self.make(promotion="pending")

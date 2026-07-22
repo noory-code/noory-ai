@@ -89,6 +89,7 @@ class WorkItem:
     promotes: tuple[str, ...]
     retrospective_ref: str = ""
     kind: str = ""
+    venue: str = ""
     parent: str = ""
     review: str = "not_required"
     autonomous: bool = False
@@ -229,6 +230,7 @@ def item_from_fields(path: Path, fields: dict[str, Any], defaults: dict[str, str
         promotes=split_scope(scalar("promotes")),
         retrospective_ref=scalar("retrospective_ref").strip(),
         kind=scalar("kind").strip().lower(),
+        venue=scalar("venue").strip().lower(),
         parent=scalar("parent").strip(),
         review=(scalar("review") or "not_required").strip().lower(),
         autonomous=parse_bool_field(fields.get("autonomous")),
@@ -267,8 +269,16 @@ def item_completion_blockers(item: WorkItem) -> list[str]:
             blockers.append(f"{item.item_id}: retrospective `{item.retrospective}`")
         if item.promotion not in PROMOTION_FINAL:
             blockers.append(f"{item.item_id}: promotion `{item.promotion}`")
-        if item.review not in REVIEW_DONE:
-            blockers.append(f"{item.item_id}: review `{item.review}` (declared review must reach passed)")
+        if item.autonomous and item.review != "passed":
+            blockers.append(
+                f"{item.item_id}: independent review `{item.review}` "
+                "(autonomous work must reach passed)"
+            )
+        elif item.review not in REVIEW_DONE:
+            blockers.append(
+                f"{item.item_id}: review `{item.review}` "
+                "(declared review must reach passed)"
+            )
     return blockers
 
 

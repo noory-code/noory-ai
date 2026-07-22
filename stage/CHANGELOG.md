@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.33.0 — 2026-07-23
+
+Venue-separated independent review for autonomous items (W-00000044):
+
+- An `autonomous: true` work item must, at close, pass an independent reviewer whose venue differs
+  from the item's execution `venue` — an executor cannot grade its own work (the third control of
+  the autonomous-execution driver). `review.reviewers` in settings.json maps venue → reviewer
+  command; `close_work.py` resolves the sole differing-venue reviewer and runs it, blocking on a
+  nonzero exit or a `BLOCK:` line. No differing-venue reviewer, or an ambiguous map, fails closed —
+  the item cannot auto-complete and escalates. `WorkItem` gains a parsed `venue`; the completion
+  gate requires `review: passed` for autonomous items. Non-autonomous items keep the opt-in
+  per-stage review unchanged. (DE-00000016, DE-00000020)
+
 ## 0.32.0 — 2026-07-22
 
 Machine-checkable acceptance for autonomous work items (W-00000043):

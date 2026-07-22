@@ -383,6 +383,49 @@ def resolve_review_command(review: dict[str, Any], stage: str) -> tuple[str | No
     return command, ""
 
 
+def resolve_independent_review_command(
+    review: dict[str, Any], item_venue: str
+) -> tuple[str | None, str]:
+    """Resolve the sole reviewer command whose venue differs from the item's.
+
+    Autonomous completion requires an independent reviewer, so every unusable
+    shape returns a non-empty error that callers must fail closed on. The
+    two-venue contract deliberately rejects ambiguous N-venue configurations.
+    """
+
+    venue = item_venue.strip().lower()
+    if not venue:
+        return None, "autonomous work item venue must be a non-empty string"
+
+    reviewers = review.get("reviewers")
+    if not isinstance(reviewers, dict):
+        return None, "review.reviewers must be an object mapping venue -> command"
+
+    normalized: dict[str, str] = {}
+    for raw_name, raw_command in reviewers.items():
+        if not isinstance(raw_name, str) or not raw_name.strip():
+            return None, "review.reviewers venue names must be non-empty strings"
+        name = raw_name.strip().lower()
+        if name in normalized:
+            return None, f"review.reviewers contains duplicate venue `{name}`"
+        if not isinstance(raw_command, str) or not raw_command.strip():
+            return None, f"review.reviewers.{name} must be a non-empty command string"
+        normalized[name] = raw_command
+
+    differing = [(name, command) for name, command in normalized.items() if name != venue]
+    if not differing:
+        return None, (
+            f"review.reviewers configures no reviewer different from item venue `{venue}`"
+        )
+    if len(differing) != 1:
+        names = ", ".join(name for name, _command in differing)
+        return None, (
+            "review.reviewers must configure exactly one reviewer different from "
+            f"item venue `{venue}`; found: {names}"
+        )
+    return differing[0][1], ""
+
+
 # Version of the `.stage` artifact/settings contract, independent of the
 # plugin release version. stage-init stamps new harnesses via the settings
 # template; preserved older settings are never overwritten — the audit warns

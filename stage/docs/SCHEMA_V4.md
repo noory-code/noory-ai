@@ -138,6 +138,13 @@ W frontmatter includes these execution fields:
   `close_work.py` runs each entry through its existing check runner using the shared per-check
   `--timeout`, then runs any additional repeatable `--check` arguments. Every stored and CLI
   check must exit zero. Non-autonomous items may omit the list or leave it empty.
+- Independent review of autonomous work: an item with `autonomous: true` must, at close, pass an
+  independent reviewer whose venue differs from the item's `venue` — an executor must not grade its
+  own work. `review.reviewers` in settings.json maps each venue to a reviewer command;
+  `close_work.py` resolves the sole reviewer whose venue differs from the item's and runs it,
+  blocking on a nonzero exit or a `BLOCK:` verdict line. If no differing-venue reviewer is
+  configured, or the map is ambiguous, the autonomous item cannot close (fail closed) — the
+  escalation path. Non-autonomous items keep the opt-in per-stage `review` behavior.
 
 - `milestone:` — optional, cardinality 0..1. **Attribution**: names the single milestone that
   claims this card's completion credit. Evidence citations elsewhere are unrestricted and

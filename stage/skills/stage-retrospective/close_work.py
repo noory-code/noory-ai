@@ -40,6 +40,7 @@ from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
     load_review_config,
+    resolve_independent_review_command,
     resolve_review_command,
     schema_migration_banner,
 )
@@ -291,13 +292,39 @@ def main() -> int:
         if re.search(r"Ran 0 tests", block):
             print(f"{args.item}: WARNING a check reported 'Ran 0 tests' — it may verify nothing", file=sys.stderr)
 
-    # Review is field-driven: only an item that DECLARES `review: pending` must be
-    # reviewed. Then the stage's configured command runs and must pass; a typo'd
-    # strength or a pending review with no configured command FAILS CLOSED. A review
-    # command fails on nonzero exit OR a `BLOCK:` verdict line (codex convention),
-    # scanned on RAW output so a verdict is never clipped away.
+    # Autonomous work always requires an opposite-venue reviewer. Non-autonomous
+    # review remains field-driven: only an item that DECLARES `review: pending`
+    # runs the legacy per-stage command. Both paths fail on nonzero exit OR a
+    # `BLOCK:` verdict line, scanned on RAW output so a verdict is never clipped.
     review_passed = False
-    if (field(text, "review") or "not_required") == "pending":
+    if work_item.autonomous:
+        review_command, review_error = resolve_independent_review_command(
+            load_review_config(stage_root), work_item.venue
+        )
+        if review_error:
+            print(
+                f"{args.item}: independent review config unusable; autonomous item "
+                f"cannot close (fix .stage/settings.json):\n{review_error}",
+                file=sys.stderr,
+            )
+            return 1
+        if not review_command:
+            print(
+                f"{args.item}: autonomous item cannot close without an opposite-venue "
+                "reviewer command in review.reviewers",
+                file=sys.stderr,
+            )
+            return 1
+        ok, block, raw = run_check(review_command, args.timeout, project_root)
+        blocks.append(block)
+        if not ok or re.search(r"(?m)^BLOCK:", raw):
+            print(
+                f"{args.item}: independent review did not pass, nothing changed:\n{block}",
+                file=sys.stderr,
+            )
+            return 1
+        review_passed = True
+    elif (field(text, "review") or "not_required") == "pending":
         review_command, review_error = resolve_review_command(load_review_config(stage_root), args.review_stage)
         if review_error:
             print(f"{args.item}: review config unusable (fix .stage/settings.json):\n{review_error}", file=sys.stderr)
