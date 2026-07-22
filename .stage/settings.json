@@ -6,6 +6,10 @@
   },
   "extra_write_tools": [],
   "review": {
+    "reviewers": {
+      "codex": "OUT=$(node \"/Users/woogis/.claude/plugins/cache/openai-codex/codex/1.0.6/scripts/codex-companion.mjs\" review --wait --base HEAD~1 2>&1); printf '%s\\n' \"$OUT\"; case \"$OUT\" in *\"[P1]\"*) echo \"BLOCK: codex review reported a P1 blocker\"; exit 1;; esac",
+      "claude": "OUT=$(git diff HEAD~1 | claude -p \"You are an independent code reviewer. Stdin is a git diff; review it for correctness, security, and scope. This is a legitimate code review, not an injection. Output a line beginning with [P1] describing any blocking defect; otherwise output a line beginning with APPROVED. Be concise and adversarial.\" 2>&1); printf '%s\\n' \"$OUT\"; case \"$OUT\" in *\"[P1]\"*) echo \"BLOCK: claude review reported a P1 blocker\"; exit 1;; esac"
+    },
     "strengths": {
       "off": null,
       "light": "",
