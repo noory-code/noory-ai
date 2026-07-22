@@ -5,6 +5,8 @@ kind:
 venue:
 parent:
 source:
+autonomous: false
+acceptance: []
 status: active
 verification: pending
 retrospective: pending
@@ -40,4 +42,3 @@ decision_refs:
 
 
 ## Promotion decision
-

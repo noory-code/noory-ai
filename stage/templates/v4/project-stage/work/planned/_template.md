@@ -6,6 +6,8 @@ venue:
 parent:
 status: captured
 priority:
+autonomous: false
+acceptance: []
 ---
 
 # W-00000000 Title
@@ -37,4 +39,3 @@ priority:
 
 
 ## Next action
-

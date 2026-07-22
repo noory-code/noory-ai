@@ -188,6 +188,52 @@ class RegisterWorkTest(unittest.TestCase):
             active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
             self.assertIn("[current/W-00000001.md](current/W-00000001.md)", active)
 
+    def test_autonomous_registration_requires_acceptance(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--title",
+                "Autonomous",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--autonomous",
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("autonomous", proc.stderr)
+        self.assertIn("acceptance", proc.stderr)
+        self.assertFalse((root / ".stage/work/current/W-00000001.md").exists())
+
+    def test_registration_writes_autonomous_acceptance_sequence(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--title",
+                "Autonomous",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--autonomous",
+                "--acceptance",
+                'python3 -c "print(1)"',
+                "--acceptance",
+                "python3 stage/scripts/audit_stage.py",
+            )
+            body = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("autonomous: true", body)
+        self.assertIn("acceptance:\n", body)
+        self.assertIn('  - "python3 -c \\"print(1)\\""', body)
+        self.assertIn('  - "python3 stage/scripts/audit_stage.py"', body)
+
     def test_increments_past_max_including_archive(self):
         tmp, root = self.make()
         with tmp:

@@ -13,6 +13,8 @@ ITEM = """---
 id: W-00000001
 kind: chore
 scope: src/
+autonomous: false
+acceptance: {acceptance}
 status: active
 verification: pending
 retrospective: {retro}
@@ -47,13 +49,28 @@ def run(root: Path, *args: str) -> subprocess.CompletedProcess:
 
 
 class CloseWorkTest(unittest.TestCase):
-    def make(self, retro="completed", ref="R-00000001", promotion="not_applicable", with_ref_file=True, review="not_required"):
+    def make(
+        self,
+        retro="completed",
+        ref="R-00000001",
+        promotion="not_applicable",
+        with_ref_file=True,
+        review="not_required",
+        acceptance="[]",
+    ):
         tmp = tempfile.TemporaryDirectory()
         root = Path(tmp.name)
         (root / ".stage/work/current").mkdir(parents=True)
         (root / ".stage/work/retrospectives").mkdir(parents=True)
         (root / ".stage/work/current/W-00000001.md").write_text(
-            ITEM.format(retro=retro, ref=ref, promotion=promotion, review=review), encoding="utf-8"
+            ITEM.format(
+                retro=retro,
+                ref=ref,
+                promotion=promotion,
+                review=review,
+                acceptance=acceptance,
+            ),
+            encoding="utf-8",
         )
         if with_ref_file and ref:
             (root / ".stage/work/retrospectives" / f"{ref}.md").write_text("---\nid: R\n---\n", encoding="utf-8")
@@ -253,6 +270,49 @@ class CloseWorkTest(unittest.TestCase):
             proc = run(root, "W-00000001")
             self.assertEqual(proc.returncode, 1)
             self.assertIn("no --check", proc.stderr)
+
+    def test_item_acceptance_closes_without_check_argument(self):
+        tmp, root = self.make(acceptance='\n  - "python3 -c \\"print(123)\\""')
+        with tmp:
+            proc = run(root, "W-00000001")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("status: completed", item)
+        self.assertIn("print(123)", item)
+
+    def test_item_acceptance_and_cli_checks_are_merged(self):
+        tmp, root = self.make(acceptance='\n  - "python3 -c \\"print(123)\\""')
+        with tmp:
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                'python3 -c "print(456)"',
+            )
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("print(123)", item)
+        self.assertIn("print(456)", item)
+
+    def test_failing_item_acceptance_changes_nothing(self):
+        tmp, root = self.make(
+            acceptance='\n  - "python3 -c \\"import sys; sys.exit(1)\\""'
+        )
+        with tmp:
+            proc = run(root, "W-00000001")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("status: active", item)
+        self.assertIn("verification: pending", item)
 
     def test_check_output_with_backslashes_does_not_crash(self):
         # Regression: check output is spliced into the Verification section; it must

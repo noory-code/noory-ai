@@ -2,6 +2,7 @@
 # module keeps the same annotation-laziness contract as stage_guard.py.
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -90,9 +91,45 @@ class WorkItem:
     kind: str = ""
     parent: str = ""
     review: str = "not_required"
+    autonomous: bool = False
+    acceptance: tuple[str, ...] = ()
 
 
-def parse_frontmatter(path: Path) -> dict[str, str]:
+def parse_yaml_string(value: str) -> str:
+    """Parse the quoted scalar subset used by Stage's string-list fields."""
+
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return value[1:-1]
+        return parsed if isinstance(parsed, str) else value
+    if len(value) >= 2 and value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
+
+
+def parse_string_list(value: Any) -> tuple[str, ...]:
+    if not isinstance(value, (list, tuple)):
+        return ()
+    return tuple(entry for entry in value if isinstance(entry, str) and entry.strip())
+
+
+def parse_bool_field(value: Any) -> bool:
+    return value is True or (isinstance(value, str) and value.strip().lower() == "true")
+
+
+def format_yaml_string_list(values: tuple[str, ...] | list[str]) -> str:
+    """Serialize strings as the JSON-compatible subset of YAML."""
+
+    if not values:
+        return "[]"
+    return "\n" + "\n".join(
+        f"  - {json.dumps(value, ensure_ascii=False)}" for value in values
+    )
+
+
+def parse_frontmatter(path: Path) -> dict[str, Any]:
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
@@ -103,13 +140,30 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
     if end == -1:
         return {}
 
-    fields: dict[str, str] = {}
+    fields: dict[str, Any] = {}
+    sequence_key = ""
     for raw_line in text[4:end].splitlines():
         line = raw_line.strip()
+        if sequence_key and line.startswith("- "):
+            current = fields.get(sequence_key)
+            if not isinstance(current, list):
+                current = []
+                fields[sequence_key] = current
+            current.append(parse_yaml_string(line[2:].strip()))
+            continue
+        sequence_key = ""
         if not line or line.startswith("#") or ":" not in line:
             continue
         key, value = line.split(":", 1)
-        fields[key.strip()] = value.strip().strip("'\"")
+        key = key.strip()
+        value = value.strip()
+        if not value:
+            fields[key] = ""
+            sequence_key = key
+        elif value == "[]":
+            fields[key] = []
+        else:
+            fields[key] = parse_yaml_string(value)
     return fields
 
 
@@ -158,21 +212,27 @@ AUDIT_FIELD_DEFAULTS = {
 }
 
 
-def item_from_fields(path: Path, fields: dict[str, str], defaults: dict[str, str]) -> WorkItem:
+def item_from_fields(path: Path, fields: dict[str, Any], defaults: dict[str, str]) -> WorkItem:
+    def scalar(name: str) -> str:
+        value = fields.get(name)
+        return value if isinstance(value, str) else ""
+
     return WorkItem(
         path=path,
-        item_id=fields.get("id") or path.stem,
-        title=fields.get("title") or path.stem,
-        status=(fields.get("status") or defaults["status"]).lower(),
-        verification=(fields.get("verification") or defaults["verification"]).lower(),
-        retrospective=(fields.get("retrospective") or defaults["retrospective"]).lower(),
-        promotion=(fields.get("promotion") or defaults["promotion"]).lower(),
-        scope=split_scope(fields.get("scope", "")),
-        promotes=split_scope(fields.get("promotes", "")),
-        retrospective_ref=(fields.get("retrospective_ref") or "").strip(),
-        kind=(fields.get("kind") or "").strip().lower(),
-        parent=(fields.get("parent") or "").strip(),
-        review=(fields.get("review") or "not_required").strip().lower(),
+        item_id=scalar("id") or path.stem,
+        title=scalar("title") or path.stem,
+        status=(scalar("status") or defaults["status"]).lower(),
+        verification=(scalar("verification") or defaults["verification"]).lower(),
+        retrospective=(scalar("retrospective") or defaults["retrospective"]).lower(),
+        promotion=(scalar("promotion") or defaults["promotion"]).lower(),
+        scope=split_scope(scalar("scope")),
+        promotes=split_scope(scalar("promotes")),
+        retrospective_ref=scalar("retrospective_ref").strip(),
+        kind=scalar("kind").strip().lower(),
+        parent=scalar("parent").strip(),
+        review=(scalar("review") or "not_required").strip().lower(),
+        autonomous=parse_bool_field(fields.get("autonomous")),
+        acceptance=parse_string_list(fields.get("acceptance")),
     )
 
 

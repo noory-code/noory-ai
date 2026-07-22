@@ -120,6 +120,94 @@ class WorkCardFlowTest(unittest.TestCase):
         self.assertIn("(current/W-00000001.md)", active)
         self.assertEqual([], [f for f in findings if f.severity == "error"])
 
+    def test_start_carries_autonomous_acceptance_from_planned_card(self):
+        tmp, root = self.make()
+        with tmp:
+            result = run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--title",
+                "Run itself",
+                "--kind",
+                "chore",
+                "--scope",
+                "",
+                "--autonomous",
+                "--acceptance",
+                'python3 -c "print(1)"',
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            result = run_cli(START, root, "W-00000001", "--scope", "src")
+            body = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("autonomous: true", body)
+        self.assertIn('  - "python3 -c \\"print(1)\\""', body)
+
+    def test_start_refuses_autonomous_without_acceptance(self):
+        tmp, root = self.make()
+        with tmp:
+            run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--title",
+                "Needs check",
+                "--kind",
+                "chore",
+                "--scope",
+                "",
+            )
+            result = run_cli(
+                START,
+                root,
+                "W-00000001",
+                "--scope",
+                "src",
+                "--autonomous",
+            )
+            still_planned = (root / ".stage/work/planned/W-00000001.md").exists()
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("autonomous", result.stderr)
+        self.assertIn("acceptance", result.stderr)
+        self.assertTrue(still_planned)
+
+    def test_start_cli_can_supply_autonomous_acceptance(self):
+        tmp, root = self.make()
+        with tmp:
+            run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--title",
+                "Needs check",
+                "--kind",
+                "chore",
+                "--scope",
+                "",
+            )
+            result = run_cli(
+                START,
+                root,
+                "W-00000001",
+                "--scope",
+                "src",
+                "--autonomous",
+                "--acceptance",
+                "python3 -m unittest -q",
+            )
+            body = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("autonomous: true", body)
+        self.assertIn('  - "python3 -m unittest -q"', body)
+
     def test_start_refuses_split_kind_without_decision(self):
         tmp, root = self.make()
         with tmp:

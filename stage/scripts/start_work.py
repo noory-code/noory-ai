@@ -19,6 +19,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
@@ -31,7 +32,10 @@ from stage_paths import (  # noqa: E402
 from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
     WORK_PLANNED_STATUSES,
+    format_yaml_string_list,
+    parse_bool_field,
     parse_frontmatter,
+    parse_string_list,
     venue_exception_error,
 )
 
@@ -42,6 +46,7 @@ WORK_FIELD_DEFAULTS = (
     ("retrospective", "pending"),
     ("retrospective_ref", ""),
     ("promotion", "pending"),
+    ("autonomous", "false"),
     ("scope", ""),
     ("promotes", ""),
     ("decision_refs", ""),
@@ -53,6 +58,8 @@ FRONTMATTER_ORDER = (
     "venue",
     "parent",
     "priority",
+    "autonomous",
+    "acceptance",
     "status",
     "verification",
     "retrospective",
@@ -82,6 +89,17 @@ def parse_args() -> argparse.Namespace:
         "(decided/promoted with `authorizes: venue_exception`).",
     )
     parser.add_argument("--owner", default="", help="Owner shown in the active.md row.")
+    parser.add_argument(
+        "--autonomous",
+        action="store_true",
+        help="Mark the work item eligible for autonomous execution.",
+    )
+    parser.add_argument(
+        "--acceptance",
+        action="append",
+        default=[],
+        help="Stored verification command to add (repeatable).",
+    )
     return parser.parse_args()
 
 
@@ -94,13 +112,19 @@ def body_after_frontmatter(text: str) -> str:
     return text[end + 4 :].lstrip("\n")
 
 
-def build_frontmatter(fields: dict[str, str]) -> str:
+def build_frontmatter(fields: dict[str, Any]) -> str:
     lines = ["---"]
     order = list(FRONTMATTER_ORDER)
     if "milestone" in fields:
         order.insert(order.index("parent") + 1, "milestone")
     for key in order:
-        lines.append(f"{key}: {fields.get(key, '')}".rstrip())
+        if key == "acceptance":
+            values = parse_string_list(fields.get(key))
+            rendered = format_yaml_string_list(values)
+            separator = "" if rendered.startswith("\n") else " "
+            lines.append(f"{key}:{separator}{rendered}")
+        else:
+            lines.append(f"{key}: {fields.get(key, '')}".rstrip())
     lines.append("---")
     return "\n".join(lines) + "\n"
 
@@ -147,6 +171,18 @@ def main() -> int:
     if status not in WORK_PLANNED_STATUSES or status == "rejected":
         print(f"{args.item}: status `{status}` is not a startable planned status", file=sys.stderr)
         return 1
+
+    acceptance = list(parse_string_list(fields.get("acceptance")))
+    acceptance.extend(command for command in args.acceptance if command.strip())
+    autonomous = args.autonomous or parse_bool_field(fields.get("autonomous"))
+    if autonomous and not acceptance:
+        print(
+            f"{args.item}: autonomous work requires at least one --acceptance command",
+            file=sys.stderr,
+        )
+        return 1
+    fields["autonomous"] = "true" if autonomous else "false"
+    fields["acceptance"] = acceptance
 
     kind = (fields.get("kind") or "").strip().lower()
     venue = args.venue or (fields.get("venue") or "").strip()

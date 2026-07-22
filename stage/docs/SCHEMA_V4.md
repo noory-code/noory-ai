@@ -129,7 +129,15 @@ in the chain; ordering is chain-structural, never numeric or timestamp.
 
 ## Work family contracts
 
-W frontmatter gains two fields:
+W frontmatter includes these execution fields:
+
+- `autonomous:` — boolean eligibility signal. It defaults to `false` when absent. An item with
+  `autonomous: true` must carry at least one `acceptance` command; `register_work.py` and
+  `start_work.py` refuse the transition otherwise.
+- `acceptance:` — YAML list of shell-command strings that deterministically verify completion.
+  `close_work.py` runs each entry through its existing check runner using the shared per-check
+  `--timeout`, then runs any additional repeatable `--check` arguments. Every stored and CLI
+  check must exit zero. Non-autonomous items may omit the list or leave it empty.
 
 - `milestone:` — optional, cardinality 0..1. **Attribution**: names the single milestone that
   claims this card's completion credit. Evidence citations elsewhere are unrestricted and

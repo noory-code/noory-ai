@@ -36,6 +36,7 @@ from stage_paths import (  # noqa: E402
 )
 from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
+    format_yaml_string_list,
     venue_exception_error,
 )
 import stage_roadmap  # noqa: E402
@@ -65,6 +66,25 @@ def set_optional_field(text: str, field: str, value: str, *, after: str) -> str:
     if match is None:
         raise ValueError(f"template has no `{after}:` anchor for `{field}:`")
     return text[: match.end()] + f"\n{field}: {value}" + text[match.end() :]
+
+
+def set_list_field(text: str, field: str, values: list[str], *, after: str) -> str:
+    rendered = format_yaml_string_list(values)
+    separator = "" if rendered.startswith("\n") else " "
+    replacement = f"{field}:{separator}{rendered}"
+    pattern = rf"^{re.escape(field)}:[^\n]*(?:\n[ \t]+-[^\n]*)*"
+    if re.search(pattern, text, re.MULTILINE):
+        return re.sub(
+            pattern,
+            lambda _match: replacement,
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    match = re.search(rf"^{re.escape(after)}:[^\n]*", text, re.MULTILINE)
+    if match is None:
+        raise ValueError(f"template has no `{after}:` anchor for `{field}:`")
+    return text[: match.end()] + f"\n{replacement}" + text[match.end() :]
 
 
 def _v4_template(template_source: str) -> Path:
@@ -100,6 +120,8 @@ def fill_item(
     scope: str,
     purpose: str,
     review: bool,
+    autonomous: bool,
+    acceptance: list[str],
     decision: str = "",
     milestone: str = "",
 ) -> str:
@@ -109,6 +131,10 @@ def fill_item(
     text = set_field(text, "kind", kind)
     text = set_field(text, "venue", venue)
     text = set_optional_field(text, "milestone", milestone, after="parent")
+    text = set_optional_field(
+        text, "autonomous", "true" if autonomous else "false", after="parent"
+    )
+    text = set_list_field(text, "acceptance", acceptance, after="autonomous")
     text = set_field(text, "scope", scope)
     if review:
         text = set_field(text, "review", "pending")  # opt this item into a required review
@@ -259,6 +285,13 @@ def register_backlog_card(stage_root: Path, args) -> int:
         text = set_field(text, "title", args.title)
         text = set_field(text, "kind", args.kind)
         text = set_optional_field(text, "milestone", args.milestone, after="parent")
+        text = set_optional_field(
+            text,
+            "autonomous",
+            "true" if args.autonomous else "false",
+            after="priority",
+        )
+        text = set_list_field(text, "acceptance", args.acceptance, after="autonomous")
         if args.priority:
             text = set_field(text, "priority", args.priority)
         if args.purpose:
@@ -336,6 +369,17 @@ def main() -> int:
     parser.add_argument("--id", default=None, help="Explicit W-NNNNNNNN; default allocates the next free id.")
     parser.add_argument("--review", action="store_true", help="Require a review (review: pending) before this item can complete.")
     parser.add_argument(
+        "--autonomous",
+        action="store_true",
+        help="Mark the work item eligible for autonomous execution.",
+    )
+    parser.add_argument(
+        "--acceptance",
+        action="append",
+        default=[],
+        help="Stored verification command (repeatable).",
+    )
+    parser.add_argument(
         "--decision",
         default="",
         help="Decision record id (DE-*) authorizing a venue-policy exception "
@@ -353,6 +397,13 @@ def main() -> int:
         help="Optional ordering hint for a planned card (shown in the backlog index).",
     )
     args = parser.parse_args()
+    args.acceptance = [command for command in args.acceptance if command.strip()]
+    if args.autonomous and not args.acceptance:
+        print(
+            "refusing: autonomous work requires at least one --acceptance command",
+            file=sys.stderr,
+        )
+        return 1
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
     schema_blocker = schema_migration_banner(stage_root)
@@ -449,6 +500,8 @@ def main() -> int:
             scope=args.scope,
             purpose=args.purpose,
             review=args.review,
+            autonomous=args.autonomous,
+            acceptance=args.acceptance,
             decision=args.decision,
             milestone=args.milestone,
         )

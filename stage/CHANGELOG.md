@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.32.0 — 2026-07-22
+
+Machine-checkable acceptance for autonomous work items (W-00000043):
+
+- Work items gain two frontmatter fields: `autonomous` (boolean eligibility signal, default
+  `false`) and `acceptance` (YAML list of shell-command verification steps). `register_work.py` and
+  `start_work.py` refuse an `autonomous: true` item that carries no `acceptance` command (Fail
+  Fast). `close_work.py` runs the item's stored `acceptance` commands merged with any `--check`
+  arguments — all must exit zero — so an autonomous item verifies its own completion without a
+  human supplying the checks. The current and planned templates and `docs/SCHEMA_V4.md` document
+  the fields. This is the first control of the autonomous-execution driver contract (DE-00000014,
+  DE-00000018).
+
 ## 0.31.3 — 2026-07-15
 
 Bug fix (enum gate):

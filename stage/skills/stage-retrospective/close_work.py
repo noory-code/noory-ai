@@ -43,7 +43,13 @@ from stage_paths import (  # noqa: E402
     resolve_review_command,
     schema_migration_banner,
 )
-from stage_work import decision_status, split_scope  # noqa: E402
+from stage_work import (  # noqa: E402
+    GATE_FIELD_DEFAULTS,
+    decision_status,
+    item_from_fields,
+    parse_frontmatter,
+    split_scope,
+)
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
 
 OPEN_TO_CLOSE = {"active", "review"}
@@ -184,6 +190,9 @@ def main() -> int:
         return 2
 
     text = item_path.read_text(encoding="utf-8")
+    work_item = item_from_fields(
+        item_path, parse_frontmatter(item_path), GATE_FIELD_DEFAULTS
+    )
     status = field(text, "status")
 
     # Reconcile a re-run: an already-completed item must sit in review.md, not active.md.
@@ -258,8 +267,13 @@ def main() -> int:
         print(f"{args.item}: promotion `{promotion}` is not final {sorted(PROMOTION_FINAL)} — pass --promotion", file=sys.stderr)
         return 1
 
-    if not args.check:
-        print(f"{args.item}: no --check given; closing must run the verification checks (no silent pass)", file=sys.stderr)
+    checks = [*work_item.acceptance, *args.check]
+    if not checks:
+        print(
+            f"{args.item}: no --check or acceptance given; closing must run the "
+            "verification checks (no silent pass)",
+            file=sys.stderr,
+        )
         return 1
 
     if "## Verification\n" not in text:
@@ -268,7 +282,7 @@ def main() -> int:
 
     project_root = stage_root.parent
     blocks: list[str] = []
-    for command in args.check:
+    for command in checks:
         ok, block, _raw = run_check(command, args.timeout, project_root)
         blocks.append(block)
         if not ok:
