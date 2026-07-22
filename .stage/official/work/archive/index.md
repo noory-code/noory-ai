@@ -48,3 +48,4 @@ Work record bodies live in `items/`. Archived retrospectives live in `retrospect
 | W-00000041 | completed | [items/W-00000041.md](items/W-00000041.md) |
 | W-00000043 | completed | [items/W-00000043.md](items/W-00000043.md) |
 | W-00000044 | completed | [items/W-00000044.md](items/W-00000044.md) |
+| W-00000045 | completed | [items/W-00000045.md](items/W-00000045.md) |

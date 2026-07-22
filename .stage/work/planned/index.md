@@ -9,7 +9,6 @@ Backlog item bodies live in `./`. This document manages only order, status, and 
 | ID | Title | Kind | Status | Priority | Parent | Item |
 |---|---|---|---|---|---|---|
 | W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [items/W-00000026.md](W-00000026.md) |
-| W-00000045 | 집계 롤업 — parent 자식 전부 terminal 시 부모 양의 전진 | development | captured | 3 |  | [W-00000045.md](W-00000045.md) |
 | W-00000046 | 에스컬레이션·폭주 상한 — blocked 전환 + 시도/무진전/전역 상한 | development | captured | 4 |  | [W-00000046.md](W-00000046.md) |
 | W-00000047 | 드라이버 컴포넌트 — 선택→실행→검증→전진 루프 (게이트 밖) | development | captured | 5 |  | [W-00000047.md](W-00000047.md) |
 
