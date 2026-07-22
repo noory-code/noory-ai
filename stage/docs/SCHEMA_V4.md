@@ -154,6 +154,12 @@ W frontmatter includes these execution fields:
   each other.
 - `terminal_disposition:` — SSOT for a closed card's outcome (`accepted` / `rejected`),
   card-owned. The archive index disposition column derives from it.
+- Parent completion is derived from the `parent:` W→W relation across all work zones. A parent
+  may complete only when every direct child is terminal: `completed`, `archived`, or `rejected`.
+  Open children (`active`, `review`, `blocked`) and planned children (`captured`, `triaged`,
+  `ready`, `selected`, `deferred`) block completion. A leaf has no aggregation blocker.
+  The completion gate and `close_work.py` enforce this rule; automatically advancing an eligible
+  parent is the driver's responsibility.
 
 Registration flows are unchanged: direct registration into `work/current/`, `--backlog`
 capture into `work/planned/`, `start_work.py` as the only mover.

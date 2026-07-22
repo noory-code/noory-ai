@@ -388,6 +388,32 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("WORK019", finding_codes(findings))
 
+    def test_completed_parent_with_planned_child_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(
+                root,
+                item_id="W-0001",
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="approved",
+            )
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.append_review_index(root, "W-0001", "completed")
+            self.write_backlog_item(
+                root,
+                item_id="W-0002",
+                status="captured",
+                parent="W-0001",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("WORK024", finding_codes(findings))
+
     def test_valid_parent_hierarchy_passes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

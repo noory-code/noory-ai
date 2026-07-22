@@ -194,6 +194,23 @@ def load_archive_work_items(stage_root: Path) -> list[WorkItem]:
     return load_items_from(stage_root / "past" / "work" / "archive" / "items")
 
 
+def load_planned_work_items(stage_root: Path) -> list[WorkItem]:
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        root = stage_topology.get_zone("work", "planned").canonical_path
+        return load_items_from(stage_root / root)
+    return load_items_from(stage_root / "future" / "backlog" / "items")
+
+
+def load_all_work_items(stage_root: Path) -> list[WorkItem]:
+    """Load work cards from every lifecycle zone for hierarchy aggregation."""
+
+    return (
+        load_work_items(stage_root)
+        + load_planned_work_items(stage_root)
+        + load_archive_work_items(stage_root)
+    )
+
+
 # The one frontmatter->WorkItem constructor, with the missing-field policy an
 # explicit argument: enforcement reads absent lifecycle fields as safe
 # progress (a sparse item must not crash or over-deny a gate), while the
@@ -256,6 +273,33 @@ def item_is_open(item: WorkItem) -> bool:
 
 def item_is_completed(item: WorkItem) -> bool:
     return item.status == "completed"
+
+
+def non_terminal_children(parent_id: str, items: list[WorkItem]) -> list[WorkItem]:
+    """Return direct children whose outcome is not final, in deterministic order."""
+
+    return sorted(
+        (
+            item
+            for item in items
+            if item.parent == parent_id and item.status not in WORK_FINAL_STATUSES
+        ),
+        key=lambda item: (item.item_id, item.path.as_posix()),
+    )
+
+
+def children_are_terminal(parent_id: str, items: list[WorkItem]) -> bool:
+    """Whether every direct child is final; leaves satisfy the query vacuously."""
+
+    return not non_terminal_children(parent_id, items)
+
+
+def parent_completion_blockers(parent_id: str, items: list[WorkItem]) -> list[str]:
+    children = non_terminal_children(parent_id, items)
+    if not children:
+        return []
+    detail = ", ".join(f"{child.item_id} (`{child.status}`)" for child in children)
+    return [f"{parent_id}: non-terminal children block completion: {detail}"]
 
 
 def item_completion_blockers(item: WorkItem) -> list[str]:
@@ -462,13 +506,17 @@ def stage_completion_blockers(workspace_root: Path) -> list[str]:
     if not stage_root.exists():
         return []
 
-    items = load_work_items(stage_root)
-    if not items:
+    current_items = load_work_items(stage_root)
+    if not current_items:
         return fallback_index_blockers(stage_root)
 
+    all_items = load_all_work_items(stage_root)
+
     blockers: list[str] = []
-    for item in items:
+    for item in current_items:
         blockers.extend(item_completion_blockers(item))
+        if item_is_completed(item):
+            blockers.extend(parent_completion_blockers(item.item_id, all_items))
     return blockers
 
 

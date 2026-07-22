@@ -94,6 +94,78 @@ class CloseWorkTest(unittest.TestCase):
     def init_git(self, root: Path) -> None:
         subprocess.run(["git", "init", "-q", str(root)], check=True)
 
+    def write_child(self, root: Path, item_id: str, status: str, zone: str) -> None:
+        path = root / ".stage" / zone / f"{item_id}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            f"---\nid: {item_id}\nparent: W-00000001\nstatus: {status}\n---\n",
+            encoding="utf-8",
+        )
+
+    def test_refuses_parent_with_active_child(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_child(root, "W-00000002", "active", "work/current")
+
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                python_command("print('check should not run')"),
+            )
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("W-00000002", proc.stderr)
+        self.assertIn("active", proc.stderr)
+        self.assertIn("status: active", item)
+
+    def test_refuses_parent_with_planned_child(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_child(root, "W-00000002", "captured", "work/planned")
+
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                python_command("print('check should not run')"),
+            )
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("W-00000002", proc.stderr)
+        self.assertIn("captured", proc.stderr)
+        self.assertIn("status: active", item)
+
+    def test_parent_closes_with_archived_and_rejected_children(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_child(
+                root,
+                "W-00000002",
+                "archived",
+                "official/work/archive/items",
+            )
+            self.write_child(root, "W-00000003", "rejected", "work/current")
+
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                python_command("print('children terminal')"),
+            )
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("status: completed", item)
+
     def test_refuses_staged_dirty_path_inside_scope(self):
         tmp, root = self.make()
         with tmp:

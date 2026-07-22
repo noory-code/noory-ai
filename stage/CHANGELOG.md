@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.34.0 — 2026-07-23
+
+Parent aggregation gate for the autonomous-execution driver (W-00000045):
+
+- A parent work item may complete or close only when every direct child is terminal (status in
+  {completed, archived, rejected}); children are gathered across the current, planned, and archive
+  zones, so an unstarted (planned) or in-progress child blocks the parent. Enforced uniformly at
+  `close_work`, the completion/commit gate, `archive_work`, and the audit (WORK024) through a single
+  `non_terminal_children` definition. A rejected child counts as terminal; a leaf item with no
+  children is unaffected. Auto-advancing the parent is deliberately left to the driver (W-00000047);
+  this item builds only the query and the gate. (DE-00000015, DE-00000021)
+
 ## 0.33.0 — 2026-07-23
 
 Venue-separated independent review for autonomous items (W-00000044):

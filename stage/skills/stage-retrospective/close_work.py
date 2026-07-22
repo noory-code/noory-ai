@@ -48,6 +48,8 @@ from stage_work import (  # noqa: E402
     GATE_FIELD_DEFAULTS,
     decision_status,
     item_from_fields,
+    load_all_work_items,
+    non_terminal_children,
     parse_frontmatter,
     split_scope,
 )
@@ -219,6 +221,19 @@ def main() -> int:
         return 0
     if status not in OPEN_TO_CLOSE:
         print(f"{args.item}: status `{status}` is not active/review; refusing to close", file=sys.stderr)
+        return 1
+
+    blocking_children = non_terminal_children(
+        args.item, load_all_work_items(stage_root)
+    )
+    if blocking_children:
+        detail = ", ".join(
+            f"{child.item_id} (`{child.status}`)" for child in blocking_children
+        )
+        print(
+            f"{args.item}: non-terminal children block completion: {detail}",
+            file=sys.stderr,
+        )
         return 1
 
     try:

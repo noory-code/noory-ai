@@ -28,6 +28,7 @@ import stage_guard  # noqa: E402
 import stage_roadmap  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
+import stage_work  # noqa: E402
 from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
 from stage_records import AuditedItem, RecordGraph  # noqa: E402
 
@@ -240,6 +241,26 @@ class Audit:
                 self.error("WORK007", f"Duplicate work item id: {item.item_id}", previous)
             else:
                 seen_ids[item.item_id] = item.path
+
+        all_items = [entry.item for entry in graph.work]
+        all_items.extend(
+            stage_work.item_from_fields(
+                node.path, node.fields, stage_work.GATE_FIELD_DEFAULTS
+            )
+            for node in graph.backlog
+        )
+        for audited_item in graph.work:
+            item = audited_item.item
+            if not stage_guard.item_is_completed(item):
+                continue
+            for blocker in stage_work.parent_completion_blockers(
+                item.item_id, all_items
+            ):
+                self.error(
+                    "WORK024",
+                    f"Completion gate is not closed: {blocker}",
+                    item.path,
+                )
 
         return graph.work
 

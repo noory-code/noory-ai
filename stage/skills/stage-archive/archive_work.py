@@ -34,6 +34,7 @@ from stage_paths import (  # noqa: E402
     active_topology,
     schema_migration_banner,
 )
+from stage_work import WorkItem, load_all_work_items, non_terminal_children  # noqa: E402
 
 TERMINAL_STATUSES = {"completed", "rejected"}
 
@@ -138,23 +139,23 @@ def completed_ids_from_review(stage_root: Path) -> list[str]:
     return ids
 
 
-def open_parents(stage_root: Path) -> set[str]:
-    """Item IDs still named as `parent` by an active/review/blocked work item."""
-    parents: set[str] = set()
-    current_root, _, _, _, _, _ = _archive_paths(stage_root)
-    items_dir = stage_root / current_root
-    if not items_dir.exists():
-        return parents
-    for path in items_dir.glob("W-*.md"):
-        text = path.read_text(encoding="utf-8")
-        if frontmatter_field(text, "status") in {"active", "review", "blocked"}:
-            parent = frontmatter_field(text, "parent")
-            if parent:
-                parents.add(parent)
-    return parents
+def blocking_children_by_parent(stage_root: Path) -> dict[str, list[WorkItem]]:
+    """Non-terminal children across current, planned, and archive zones."""
+
+    items = load_all_work_items(stage_root)
+    parent_ids = {item.parent for item in items if item.parent}
+    return {
+        parent_id: children
+        for parent_id in sorted(parent_ids)
+        if (children := non_terminal_children(parent_id, items))
+    }
 
 
-def archive_one(stage_root: Path, item_id: str, blocking_parents: set[str]) -> str:
+def archive_one(
+    stage_root: Path,
+    item_id: str,
+    blocking_children: dict[str, list[WorkItem]],
+) -> str:
     (
         current_root,
         current_retro_root,
@@ -195,8 +196,12 @@ def archive_one(stage_root: Path, item_id: str, blocking_parents: set[str]) -> s
     present_retro = stage_root / current_retro_root / f"{ref}.md"
     if not present_retro.exists():
         return f"{item_id}: ERROR retrospective file {ref}.md not found"
-    if item_id in blocking_parents:
-        return f"{item_id}: ERROR an open work item still names it as parent"
+    if item_id in blocking_children:
+        detail = ", ".join(
+            f"{child.item_id} (`{child.status}`)"
+            for child in blocking_children[item_id]
+        )
+        return f"{item_id}: ERROR non-terminal children still name it as parent: {detail}"
 
     archive_retro = stage_root / archive_retro_root / f"{ref}.md"
     index_path = stage_root / index_relative
@@ -276,10 +281,10 @@ def main() -> int:
         print("No work items to archive.", file=sys.stderr)
         return 1
 
-    blocking_parents = open_parents(stage_root)
+    blocking_children = blocking_children_by_parent(stage_root)
     failed = False
     for item_id in ids:
-        result = archive_one(stage_root, item_id, blocking_parents)
+        result = archive_one(stage_root, item_id, blocking_children)
         print(result)
         if "ERROR" in result:
             failed = True

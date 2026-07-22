@@ -160,6 +160,25 @@ class ArchiveWorkCliTest(unittest.TestCase):
             self.assertFalse((stage / "present/work/retrospectives/R-00000001.md").exists())
             self.assertNotIn("W-00000001", (stage / "present/work/review.md").read_text(encoding="utf-8"))
 
+    def test_refuses_parent_with_planned_child(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            planned = root / ".stage/future/backlog/items/W-00000002.md"
+            planned.parent.mkdir(parents=True)
+            planned.write_text(
+                "---\nid: W-00000002\nparent: W-00000001\nstatus: captured\n---\n",
+                encoding="utf-8",
+            )
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 1, proc.stderr + proc.stdout)
+            self.assertIn("W-00000002", proc.stdout)
+            self.assertIn("captured", proc.stdout)
+            self.assertTrue(
+                (root / ".stage/present/work/items/W-00000001.md").exists()
+            )
+
     def test_all_completed_flag(self):
         tmp, root = self.make_stage()
         with tmp:

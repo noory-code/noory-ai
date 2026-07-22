@@ -170,6 +170,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "WORK002",
                 "WORK007",
                 "WORK007",
+                "WORK024",
                 "WORK017",
                 "WORK019",
                 "WORK018",
