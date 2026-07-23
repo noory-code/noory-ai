@@ -9,7 +9,6 @@ Backlog item bodies live in `./`. This document manages only order, status, and 
 | ID | Title | Kind | Status | Priority | Parent | Item |
 |---|---|---|---|---|---|---|
 | W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [items/W-00000026.md](W-00000026.md) |
-| W-00000049 | unattended 드라이버 — Codex 리뷰 지적 수정 (W-48 후속) | development | captured | 1 |  | [W-00000049.md](W-00000049.md) |
 
 ## Status values
 
