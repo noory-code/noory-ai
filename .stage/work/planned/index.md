@@ -9,7 +9,6 @@ Backlog item bodies live in `./`. This document manages only order, status, and 
 | ID | Title | Kind | Status | Priority | Parent | Item |
 |---|---|---|---|---|---|---|
 | W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [items/W-00000026.md](W-00000026.md) |
-| W-00000047 | 드라이버 컴포넌트 — 선택→실행→검증→전진 루프 (게이트 밖) | development | captured | 5 |  | [W-00000047.md](W-00000047.md) |
 
 ## Status values
 
