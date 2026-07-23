@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.38.0 — 2026-07-24
+
+Register Stage runtime state in git ignores during initialization (W-00000051):
+
+- `init_stage.py` now adds `.stage/.runtime/` to a git project's `.gitignore` on every
+  initialization, including worktree and submodule checkouts whose `.git` is a file. Existing
+  content is preserved byte-for-byte, equivalent uncommented entries are idempotent, and non-git
+  directories remain untouched.
+
 ## 0.37.2 — 2026-07-23
 
 Harden the unattended driver loop per a second independent-review pass (W-00000049):

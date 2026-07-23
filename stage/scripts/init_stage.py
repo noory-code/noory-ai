@@ -19,6 +19,7 @@ LOCALE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "locales"
 LANGUAGE_TAG_RE = re.compile(r"^[a-z]{2,8}(-[a-z0-9]{2,8})*$")
 DEFAULT_LANGUAGE = "en"
 CURRENT_SCHEMA_VERSION = 4
+RUNTIME_IGNORE_ENTRY = ".stage/.runtime/"
 
 
 def parse_args() -> argparse.Namespace:
@@ -108,6 +109,30 @@ def copy_templates(
     return created, skipped
 
 
+def ensure_runtime_ignore_entry(project_root: Path) -> str:
+    """Ensure a git project ignores Stage's machine-owned runtime state."""
+    git_path = project_root / ".git"
+    if not git_path.is_dir() and not git_path.is_file():
+        return "skipped (not a git repository)"
+
+    gitignore_path = project_root / ".gitignore"
+    if not gitignore_path.exists():
+        gitignore_path.write_bytes(f"{RUNTIME_IGNORE_ENTRY}\n".encode())
+        return f"created .gitignore with {RUNTIME_IGNORE_ENTRY}"
+
+    content = gitignore_path.read_bytes()
+    present_entries = {
+        RUNTIME_IGNORE_ENTRY.encode(),
+        RUNTIME_IGNORE_ENTRY.rstrip("/").encode(),
+    }
+    if any(line.strip() in present_entries for line in content.splitlines()):
+        return f"preserved existing {RUNTIME_IGNORE_ENTRY} entry"
+
+    separator = b"" if not content or content.endswith((b"\n", b"\r")) else b"\n"
+    gitignore_path.write_bytes(content + separator + f"{RUNTIME_IGNORE_ENTRY}\n".encode())
+    return f"appended {RUNTIME_IGNORE_ENTRY} to .gitignore"
+
+
 def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -124,11 +149,13 @@ def main() -> None:
         )
 
     created, skipped = copy_templates(project_root, args.force, args.language)
+    ignore_outcome = ensure_runtime_ignore_entry(project_root)
 
     print(f"Stage root: {project_root / '.stage'}")
     print(f"Language: {args.language}")
     print(f"Created or updated files: {len(created)}")
     print(f"Preserved existing files: {len(skipped)}")
+    print(f"Runtime ignore entry: {ignore_outcome}")
     for path in created:
         print(f"  write {path.relative_to(project_root)}")
     for path in skipped:
