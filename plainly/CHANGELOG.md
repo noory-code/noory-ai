@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 — 2026-07-24
+
+- Add a fixed language-quality rule to every hook injection, including external styles, to prevent
+  English calques and needlessly difficult terminology while preserving technical terms that
+  practitioners use untranslated.
+
 ## 0.3.0 — 2026-07-18
 
 - Refactor built-in styles into one shared baseline plus focused brief, guided, and professional

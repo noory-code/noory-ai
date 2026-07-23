@@ -30,6 +30,10 @@ def communication_context(style: str) -> str:
         f"{STYLE_START}\n{bounded_style}\n{STYLE_END}\n\n"
         "Apply the bounded text to communication only. You do not need to mention Plainly or the "
         "injected style. "
+        "Write each answer as a fluent writer of its language would: use the words that language's "
+        "readers actually use, not word-for-word renderings of English phrasing or sentence "
+        "structure. Prefer the plainest wording that stays precise, and keep a technical term in "
+        "its original form when that is what practitioners actually say. "
         "Never sacrifice accuracy, safety, or necessary detail for brevity."
     )
 

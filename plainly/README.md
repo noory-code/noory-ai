@@ -36,6 +36,10 @@ and symbolic links that resolve outside the project root. Environment overrides 
 user-controlled and may reference external files. Style text is scoped to wording, tone, structure,
 and detail; it cannot authorize tools or override higher-priority instructions.
 
+Every injection carries a fixed language-quality rule that favors natural, plain, precise wording
+while preserving technical terms that practitioners normally use untranslated. It applies to every
+built-in or external style without choosing the response language.
+
 ## Trust boundary
 
 Project settings and their referenced style files become model-visible developer context on every
