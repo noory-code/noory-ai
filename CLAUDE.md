@@ -60,6 +60,10 @@ uv run mcp dev src/evonest/server.py  # MCP inspector
 ## Language
 
 - All documents, comments, commit messages, and code artifacts must be written in **English**
+- Documents under `.stage/` are the exception: they are the operator's working surface, not a
+  published artifact, and follow the `language` tag in `.stage/settings.json`. Machine tokens
+  (ids, paths, frontmatter keys and enum values, work kinds, venue and principle names, record
+  section headings) stay in English regardless of that tag.
 - Conversation with the user is in **Korean**
 
 ## Core Principles
