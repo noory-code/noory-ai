@@ -311,6 +311,8 @@ def commit_item(project_root: Path, item: WorkItem) -> tuple[bool, str]:
     no-op so the caller can still close a doc-only or already-satisfied item.
     """
 
+    if not current_branch(project_root).startswith("stage/driver/"):
+        return False, "refusing item commit: HEAD is not on a stage/driver run branch"
     scope_paths = [path for path in item.scope if path]
     if scope_paths:
         ok, out = run_git(project_root, ["add", "--", *scope_paths])
@@ -505,12 +507,16 @@ def audit_check(project_root: Path) -> str:
 
 def close_ready_ancestors(
     project_root: Path, stage_root: Path, target_id: str, parent_id: str, timeout: int
-) -> list[str]:
+) -> tuple[list[str], str]:
     """Close each ancestor up to and including the target whose children are all terminal.
 
+    Returns (closed_ids, error). A non-empty error means a parent that SHOULD have
+    closed did not (retrospective or close failed) — the caller must fail closed;
+    stopping because a parent still has non-terminal children is normal, not an error.
+
     A parent has no acceptance; its verification is the audit (whole-.stage
-    consistency) plus close_work's own aggregation gate (children terminal). No
-    silent pass — both must hold.
+    consistency) plus close_work's own aggregation gate (children terminal) — its
+    children were each independently reviewed (DE-00000027). No silent pass.
     """
 
     closed: list[str] = []
@@ -525,21 +531,21 @@ def close_ready_ancestors(
             current = "" if current == target_id else parent.parent
             continue
         if non_terminal_children(current, items):
-            break
+            break  # normal: this parent waits for its other children
         if not (parent.retrospective == "completed" and parent.retrospective_ref):
             retro_id, err = write_driver_retrospective(
                 stage_root, parent, "parent aggregation: all children terminal"
             )
             if err:
-                break
+                return closed, f"{current}: {err}"
             mark_retrospective(stage_root, current, retro_id)
         checks = list(parent.acceptance) or [audit_check(project_root)]
-        ok, _out = close_via_close_work(project_root, current, checks, timeout)
+        ok, out = close_via_close_work(project_root, current, checks, timeout)
         if not ok:
-            break
+            return closed, f"{current}: parent close failed: {out.strip()[:200]}"
         closed.append(current)
         current = "" if current == target_id else parent.parent
-    return closed
+    return closed, ""
 
 
 def current_branch(project_root: Path) -> str:
@@ -560,8 +566,10 @@ def discard_worktree(project_root: Path) -> None:
 
 
 def commit_lifecycle(project_root: Path, message: str) -> tuple[bool, str]:
-    """Commit the Stage lifecycle records (.stage/) produced by close/escalate to the run branch."""
+    """Commit the Stage lifecycle records (.stage/) to the run branch — never the base branch."""
 
+    if not current_branch(project_root).startswith("stage/driver/"):
+        return False, "refusing lifecycle commit: HEAD is not on a stage/driver run branch"
     ok, out = run_git(project_root, ["add", "--", ".stage"])
     if not ok:
         return False, f"git add .stage failed: {out.strip()}"
@@ -732,8 +740,11 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         processed.append(item.item_id)
         print(f"[{item.item_id}] completed on {branch}")
 
-        close_ready_ancestors(project_root, stage_root, args.target, item.parent, cmd_timeout)
+        _closed, anc_error = close_ready_ancestors(project_root, stage_root, args.target, item.parent, cmd_timeout)
         commit_lifecycle(project_root, f"driver: {item.item_id} ancestor aggregation (lifecycle)")
+        if anc_error:
+            print_escalation(f"parent aggregation-close failed: {anc_error}; handoff on {branch}")
+            return 1
 
     print(
         f"Unattended run finished: {len(processed)} item(s) closed on isolated branch {branch}. "

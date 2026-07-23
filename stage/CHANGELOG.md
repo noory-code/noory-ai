@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.37.2 — 2026-07-23
+
+Harden the unattended driver loop per a second independent-review pass (W-00000049):
+
+- A failed parent aggregation-close now stops the run with a non-zero exit instead of being
+  silently ignored (`close_ready_ancestors` returns an error the loop checks). `commit_item` and
+  `commit_lifecycle` refuse to commit unless HEAD is on a `stage/driver/` run branch — guarding the
+  base branch on every commit, not only before the executor-output commit. New regression test.
+
 ## 0.37.1 — 2026-07-23
 
 Fix the unattended driver loop per the independent review findings (W-00000049):

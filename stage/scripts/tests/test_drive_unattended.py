@@ -294,5 +294,44 @@ class UnattendedTest(unittest.TestCase):
         self.assertIn("status: completed", committed)
 
 
+    def test_parent_close_failure_stops_run(self):
+        # Regression (re-review): a failed parent aggregation-close must stop the run
+        # with a non-zero exit, not be silently ignored.
+        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+
+        def set_status(r: str, iid: str, st: str) -> None:
+            p = Path(r) / ".stage" / "work" / "current" / f"{iid}.md"
+            p.write_text(
+                drive.set_frontmatter_field(p.read_text(encoding="utf-8"), "status", st),
+                encoding="utf-8",
+            )
+
+        def stub_close(project_root, item_id, extra_checks, timeout):
+            calls.append(("close", item_id))
+            if item_id == "W-00000001":  # the parent close fails
+                return False, "boom"
+            set_status(str(project_root), item_id, "completed")
+            return True, ""
+
+        def stub_escalate(project_root, item_id, reason, timeout=120):
+            calls.append(("escalate", item_id))
+            set_status(str(project_root), item_id, "blocked")
+            return True, ""
+
+        drive.close_via_close_work = stub_close
+        drive.escalate_via_escalate_work = stub_escalate
+
+        self.commit_all(root)
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(1, rc)  # parent close failure stops the run
+        self.assertIn(("close", "W-00000001"), calls)  # the parent close was attempted
+
+
 if __name__ == "__main__":
     unittest.main()
