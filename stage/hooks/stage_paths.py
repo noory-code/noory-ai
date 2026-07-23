@@ -348,6 +348,57 @@ def load_review_config(stage_root: Path) -> dict[str, Any]:
     return review if isinstance(review, dict) else {}
 
 
+def load_executors_config(stage_root: Path) -> object:
+    """Return the raw review-sibling ``executors`` section.
+
+    The resolver owns validation so an absent, unreadable, or malformed section
+    remains distinguishable from a valid venue-to-command map and callers can
+    fail closed.
+    """
+
+    settings_path = stage_root / "settings.json"
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return data.get("executors") if isinstance(data, dict) else None
+
+
+def resolve_executor_command(
+    executors: object, item_venue: str
+) -> tuple[str | None, str]:
+    """Resolve the executor command for an item's venue, failing closed.
+
+    Every unusable shape returns ``(None, error)``. A caller must never treat a
+    missing executor as permission to skip execution.
+    """
+
+    venue = item_venue.strip().lower()
+    if not venue:
+        return None, "work item venue must be a non-empty string"
+    if not isinstance(executors, dict):
+        return None, (
+            f"executors.{venue} has no command; executors must be an object "
+            "mapping venue -> command"
+        )
+
+    normalized: dict[str, str] = {}
+    for raw_name, raw_command in executors.items():
+        if not isinstance(raw_name, str) or not raw_name.strip():
+            return None, "executors venue names must be non-empty strings"
+        name = raw_name.strip().lower()
+        if name in normalized:
+            return None, f"executors contains duplicate venue `{name}`"
+        if not isinstance(raw_command, str) or not raw_command.strip():
+            return None, f"executors.{name} must be a non-empty command string"
+        normalized[name] = raw_command
+
+    command = normalized.get(venue)
+    if command is None:
+        return None, f"executors.{venue} has no command"
+    return command, ""
+
+
 LIMIT_KEYS = (
     "max_attempts_per_item",
     "max_iterations",

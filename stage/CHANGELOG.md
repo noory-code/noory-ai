@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.36.0 — 2026-07-23
+
+Supervised autonomous-execution driver — MVP (W-00000047):
+
+- `drive.py <parent>` plans (and, with `--execute`, runs one supervised step of) the autonomous
+  loop for a target parent's subtree, wiring the four controls together: it selects one ready leaf
+  child (non-terminal, has acceptance), resolves its executor (new `executors` venue→command
+  config), its acceptance checks, its opposite-venue independent reviewer, and the execution limits.
+  Dry-run is the default and has ZERO side effects; `--execute` runs exactly one
+  executor→acceptance→independent-review sequence, records per-item attempt state and a no-progress
+  fingerprint under untracked `.runtime/driver/`, and prints a recommended next action. It never
+  commits, closes, escalates, promotes, creates work, or advances a parent — those stay explicit
+  steps. Missing executor/reviewer or malformed limits fail closed. The full unattended loop (auto
+  commit/close/escalate/aggregate over a whole subtree) is a later ship. (DE-00000013, DE-00000023)
+
 ## 0.35.0 — 2026-07-23
 
 Escalation exit and execution-limit config for the autonomous-execution driver (W-00000046):

@@ -158,8 +158,8 @@ W frontmatter includes these execution fields:
   may complete only when every direct child is terminal: `completed`, `archived`, or `rejected`.
   Open children (`active`, `review`, `blocked`) and planned children (`captured`, `triaged`,
   `ready`, `selected`, `deferred`) block completion. A leaf has no aggregation blocker.
-  The completion gate and `close_work.py` enforce this rule; automatically advancing an eligible
-  parent is the driver's responsibility.
+  The completion gate and `close_work.py` enforce this rule. Automatic parent advancement belongs
+  to the eventual unattended driver; the supervised one-step MVP does not perform it.
 
 Registration flows are unchanged: direct registration into `work/current/`, `--backlog`
 capture into `work/planned/`, `start_work.py` as the only mover.
@@ -182,6 +182,70 @@ coupled transition:
 transition: the result is `blocked` plus a pending decision, never `completed`. Attempt counting,
 no-progress detection, global-budget enforcement, and per-item runtime state belong to the
 driver rather than this transition.
+
+### Supervised driver and executor settings
+
+`stage/scripts/drive.py <TARGET_PARENT_ID>` is the supervised driver entry point. It selects one
+existing, direct, non-terminal leaf child of the target whose `acceptance` list is non-empty.
+Selection is deterministic by work-item ID. It never creates work items or approves a
+decomposition.
+
+The review-sibling `executors` object in `.stage/settings.json` binds each item venue to its
+executor command:
+
+```json
+{
+  "executors": {
+    "codex": "run-codex-executor",
+    "claude": "run-claude-executor"
+  }
+}
+```
+
+`stage_paths.load_executors_config()` reads the raw section, and
+`stage_paths.resolve_executor_command(executors, item_venue)` returns `(command, "")` only when
+the venue has a non-empty command. An absent section, missing venue, malformed map, invalid venue
+name, or empty command returns `(None, error)`. Every caller must fail closed on that non-empty
+error. The independent reviewer still resolves through `review.reviewers` and must have a venue
+different from the selected item's venue.
+
+The default invocation is a side-effect-free dry run. It prints the selected item, executor,
+acceptance commands, independent reviewer, next per-item attempt, and next global iteration. It
+does not run commands, create `.stage/.runtime/`, or update run state.
+
+`drive.py --execute <TARGET_PARENT_ID>` runs exactly one sequence:
+
+```text
+executor -> each stored acceptance check -> independent reviewer
+```
+
+It reuses the close-work command runner, treats a reviewer nonzero exit or `BLOCK:` verdict as
+failure, then prints the outcome and recommended explicit next action. It does not commit, call
+`close_work.py`, call `escalate_work.py`, advance the parent, promote official truth, or loop over
+the subtree. Those actions remain human-supervised and are deferred to a later ship.
+
+Execute mode stores untracked state at
+`.stage/.runtime/driver/<TARGET_PARENT_ID>.json`:
+
+```json
+{
+  "target": "W-00000001",
+  "started_at_unix": 1784779200.0,
+  "iteration_count": 1,
+  "items": {
+    "W-00000002": {
+      "attempt_count": 1,
+      "last_fingerprint": "<sha256>"
+    }
+  }
+}
+```
+
+The fingerprint is SHA-256 over the current `git diff` plus acceptance output. A consecutive
+match is `NO-PROGRESS`. Missing executor, missing acceptance, unusable independent review,
+malformed limits, an exhausted limit, and no progress all fail closed with an
+`escalate_work` recommendation; the driver never claims completion or performs escalation
+itself.
 
 ### Execution limits settings
 
