@@ -1,9 +1,10 @@
-# Model Components
+# 모델 컴포넌트
 
-This directory owns the SSOT of stable structure components.
+이 디렉터리는 안정적 구조 컴포넌트의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One component has one file.
-- State responsibilities, dependencies, owner, and interfaces.
-- `overview.md` is the overall map; detailed bodies live here.
+- 컴포넌트 하나는 파일 하나를 가진다.
+- 책임, 의존성, 소유자, 인터페이스를 기술한다.
+- `overview.md`는 전체 지도이며, 상세 본문은 여기에 있다.
+

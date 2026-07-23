@@ -1,10 +1,11 @@
-# Archived Work Items
+# 아카이브된 작업 항목
 
-This directory owns the records of work items removed from the current work flow.
+이 디렉터리는 현재 작업 흐름에서 제거된 작업 항목의 레코드를 소유한다.
 
-## Rules
+## 규칙
 
-- Work items here have `status: archived`.
-- Nothing under current judgment, progress, or review lives here.
-- The archive is a home for work records; official product truth lives in `official/canon/`, `official/model/`, and `official/decisions/`.
-- The item's retrospective file is archived together into `official/work/archive/retrospectives/`.
+- 여기의 작업 항목은 `status: archived`를 가진다.
+- 현재 판단, 진행, 리뷰 중인 것은 여기에 두지 않는다.
+- 아카이브는 작업 레코드의 집이다. 공식 제품 진실은 `official/canon/`, `official/model/`, `official/decisions/`에 있다.
+- 항목의 회고 파일은 `official/work/archive/retrospectives/`로 함께 아카이브된다.
+

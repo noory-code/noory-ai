@@ -1,8 +1,8 @@
-# Review Candidates
+# 리뷰 후보
 
-This document owns the index of work waiting for verification, retrospective, and the promotion decision.
+이 문서는 검증, 회고, 승격 결정을 기다리는 작업의 인덱스를 소유한다.
 
-Review bodies and retrospective bodies live in `current/` and `retrospectives/`.
+리뷰 본문과 회고 본문은 `current/`와 `retrospectives/`에 있다.
 
-| Artifact | Verification | Retrospective | Promotion | Item |
+| 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|

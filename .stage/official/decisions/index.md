@@ -1,8 +1,9 @@
-# Decisions
+# 결정
 
-This document indexes approved decisions.
+이 문서는 승인된 결정을 인덱싱한다.
 
-Decision bodies live in `records/`.
+결정 본문은 `records/`에 있다.
 
-| Decision | Status | Owner | Link |
+| 결정 | 상태 | 소유자 | 링크 |
 |---|---|---|---|
+

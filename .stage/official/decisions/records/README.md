@@ -1,10 +1,11 @@
-# Decision Records
+# 결정 레코드
 
-This directory owns the SSOT of approved decisions.
+이 디렉터리는 승인된 결정의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One decision has one file.
-- `index.md` holds only the index of decisions.
-- Reasons, alternatives, impact, and change conditions live in individual records.
-- A working decision record in `decisions/pending/` is promoted here once approved.
+- 결정 하나는 파일 하나를 가진다.
+- `index.md`는 결정의 인덱스만 담는다.
+- 이유, 대안, 영향, 변경 조건은 개별 레코드에 있다.
+- `decisions/pending/`의 작업 중 결정 레코드는 승인되면 이곳으로 승격된다.
+

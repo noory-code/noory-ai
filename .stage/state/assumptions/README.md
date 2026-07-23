@@ -1,9 +1,10 @@
-# Assumptions
+# 가정
 
-This directory owns the SSOT of assumptions.
+이 디렉터리는 가정의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One assumption has one file.
-- An assumption has a verification path and the impact when it breaks.
-- A verified assumption is promoted to truth or discarded.
+- 가정 하나는 파일 하나를 가진다.
+- 가정은 검증 경로와 깨졌을 때의 영향을 가진다.
+- 검증된 가정은 진실로 승격되거나 폐기된다.
+

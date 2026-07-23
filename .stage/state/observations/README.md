@@ -1,9 +1,10 @@
-# Observations
+# 관측
 
-This directory owns the SSOT of current observations.
+이 디렉터리는 현재 관측의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One observation has one file.
-- A verified observation can be promoted to `official/`.
-- A stale observation changes status; it is not deleted.
+- 관측 하나는 파일 하나를 가진다.
+- 검증된 관측은 `official/`로 승격될 수 있다.
+- 오래된 관측은 상태를 바꾼다. 삭제하지 않는다.
+

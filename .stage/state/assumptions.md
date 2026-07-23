@@ -1,8 +1,9 @@
-# Assumptions
+# 가정
 
-This document owns the index of unverified assumptions.
+이 문서는 검증되지 않은 가정의 인덱스를 소유한다.
 
-Assumption bodies live in `assumptions/`.
+가정 본문은 `assumptions/`에 있다.
 
-| Assumption | Impact | Verification path | Status | Item |
+| 가정 | 영향 | 검증 경로 | 상태 | 항목 |
 |---|---|---|---|---|
+

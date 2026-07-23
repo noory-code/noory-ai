@@ -1,9 +1,10 @@
-# Current State
+# 현재 상태
 
-This document owns the index of current project observations.
+이 문서는 현재 프로젝트 관측의 인덱스를 소유한다.
 
-Observation bodies live in `observations/`.
+관측 본문은 `observations/`에 있다.
 
-## Current observations
+## 현재 관측
 
 -
+

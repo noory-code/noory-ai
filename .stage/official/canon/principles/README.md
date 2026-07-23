@@ -1,9 +1,10 @@
-# Principle Records
+# 원칙 레코드
 
-This directory owns the SSOT of individual principle records.
+이 디렉터리는 개별 원칙 레코드의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One principle has one file.
-- `principles.md` holds only the index and priority of core principles.
-- Application cases and conflict criteria live in individual records.
+- 원칙 하나는 파일 하나를 가진다.
+- `principles.md`는 핵심 원칙의 인덱스와 우선순위만 담는다.
+- 적용 사례와 충돌 기준은 개별 레코드에 있다.
+

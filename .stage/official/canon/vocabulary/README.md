@@ -1,9 +1,10 @@
-# Vocabulary Records
+# 용어 레코드
 
-This directory owns the SSOT of term records.
+이 디렉터리는 용어 레코드의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One important term has one file.
-- `vocabulary.md` holds only the index of core terms.
-- Synonyms, forbidden meanings, and boundaries live in individual records.
+- 중요한 용어 하나는 파일 하나를 가진다.
+- `vocabulary.md`는 핵심 용어의 인덱스만 담는다.
+- 동의어, 금지된 의미, 경계는 개별 레코드에 있다.
+

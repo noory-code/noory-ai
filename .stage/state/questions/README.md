@@ -1,9 +1,10 @@
-# Questions
+# 질문
 
-This directory owns the SSOT of open questions.
+이 디렉터리는 미해결 질문의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One question has one file.
-- A question has the decision it needs, the work it blocks, and the answer owner.
-- Once answered, promote it to `official/decisions/` or the relevant truth.
+- 질문 하나는 파일 하나를 가진다.
+- 질문은 필요한 결정, 막고 있는 작업, 답변 소유자를 가진다.
+- 답이 나오면 `official/decisions/` 또는 해당 진실로 승격한다.
+

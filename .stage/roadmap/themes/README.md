@@ -1,9 +1,9 @@
-# Roadmap Themes
+# 로드맵 테마
 
-This directory owns long-term directions and themes.
+이 디렉터리는 장기 방향과 테마를 소유한다.
 
-## Rules
+## 규칙
 
-- A theme is a direction that groups multiple milestones and backlog items.
-- A theme is a plan, not official truth.
-- Approved structural changes are promoted to `official/model/` or `official/decisions/`.
+- 테마는 여러 마일스톤과 계획된 작업 카드를 묶는 방향이다.
+- 추구 결정이 없는 테마는 계획된 상태이며 공식 진실이 아니다.
+- 승인된 구조 변경은 `official/model/` 또는 `official/decisions/`로 승격된다.

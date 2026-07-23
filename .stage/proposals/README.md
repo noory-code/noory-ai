@@ -1,7 +1,8 @@
-# Proposals
+# 제안
 
-This directory owns proposal documents.
+이 디렉터리는 제안 문서를 소유한다.
 
-Proposals are not official truth. The result of an approved proposal must be promoted through verification and a retrospective.
+제안은 공식 진실이 아니다. 승인된 제안의 결과는 검증과 회고를 거쳐 승격되어야 한다.
 
-`index.md` holds the current proposal list. Proposal bodies are individual files.
+`index.md`는 현재 제안 목록을 담는다. 제안 본문은 개별 파일이다.
+

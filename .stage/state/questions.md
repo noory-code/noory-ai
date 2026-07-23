@@ -1,8 +1,9 @@
-# Open Questions
+# 미해결 질문
 
-This document owns the index of unresolved questions.
+이 문서는 해결되지 않은 질문의 인덱스를 소유한다.
 
-Question bodies live in `questions/`.
+질문 본문은 `questions/`에 있다.
 
-| Question | Why needed | Owner | Status | Item |
+| 질문 | 필요한 이유 | 소유자 | 상태 | 항목 |
 |---|---|---|---|---|
+

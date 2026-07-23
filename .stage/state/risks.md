@@ -1,8 +1,9 @@
-# Risks
+# 리스크
 
-This document owns the index of known risks.
+이 문서는 알려진 리스크의 인덱스를 소유한다.
 
-Risk bodies live in `risks/`.
+리스크 본문은 `risks/`에 있다.
 
-| Risk | Impact | Response | Status | Item |
+| 리스크 | 영향 | 대응 | 상태 | 항목 |
 |---|---|---|---|---|
+

@@ -1,9 +1,10 @@
-# Risks
+# 리스크
 
-This directory owns the SSOT of risks.
+이 디렉터리는 리스크의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One risk has one file.
-- A risk has impact, likelihood, response, and an owner.
-- A closed risk changes status; it is not deleted.
+- 리스크 하나는 파일 하나를 가진다.
+- 리스크는 영향, 발생 가능성, 대응, 소유자를 가진다.
+- 종료된 리스크는 상태를 바꾼다. 삭제하지 않는다.
+

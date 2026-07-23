@@ -1,14 +1,29 @@
-# Vocabulary
+# 용어집
 
-This document owns the index and core summary of project terms.
+이 문서는 프로젝트 용어의 인덱스와 핵심 요약을 소유한다.
 
-The detailed SSOT of each term lives in `vocabulary/`.
+각 용어의 상세 SSOT는 `vocabulary/`에 있다.
 
-| Term | Meaning |
+| 용어 | 의미 |
 |---|---|
-| Past | Officially approved artifact status. |
-| Present | In-progress or provisional artifact status. |
-| Future | Planned or proposed artifact status. |
-| Decision Point | A choice point where action is decided by principles and context. |
-| Retrospective | The mandatory post-work review performed before official promotion. |
-| Venue | The execution surface that carries out a work item. This project's venues: `claude` (planning, design, documentation, decisions) and `codex` (implementation, fixes, tests, QA, operations, chores). The machine `kind -> venue` routing map is owned by `settings.json` `venue_routing` and enforced by the audit; `feature` is mixed by definition and splits into design/implementation items with `parent` lineage; exceptions require a decided decision record declaring `authorizes: venue_exception`. |
+| Official | 권한 영역 아래로 승격되어 확정된 산출물 수명주기 상태. |
+| Current | 진행 중이거나 잠정적인 산출물 수명주기 상태. |
+| Planned | 계획되었거나 제안된 산출물 수명주기 상태. |
+| Decision Point | 원칙과 컨텍스트로 행동을 결정하는 선택 지점. |
+| Retrospective | 공식 승격 전에 수행하는 필수 사후 리뷰. |
+| Venue | 작업 항목을 수행하는 실행 표면. 이 프로젝트의 venue 의미는 아래에 정의한다. |
+
+## Venue
+
+이 프로젝트는 두 실행 표면을 쓴다.
+
+| Venue | 지는 책임 |
+|---|---|
+| `claude` | 기획, 설계, 문서, 결정 |
+| `codex` | 구현, 수정, 테스트, QA, 운영, 잡무 |
+
+기계가 읽는 `kind -> venue` 라우팅 맵은 `settings.json`의 `venue_routing`이 소유한다. 등록이
+그 맵에서 각 항목의 venue를 도출하고 감사가 일관성을 강제한다. 정책과 어긋나는 venue는
+`authorizes: venue_exception`을 선언한 결정 레코드가 있어야 등록된다. 예약값 `split`으로
+매핑된 `feature`는 정의상 설계와 구현이 섞인 종류이므로, `parent` 계보를 가진 설계 항목과
+구현 항목으로 나누어 등록한다.

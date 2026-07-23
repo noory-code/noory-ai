@@ -1,9 +1,10 @@
-# Model Overview
+# 모델 개요
 
-This document owns the project's stable structural view.
+이 문서는 프로젝트의 안정적 구조 뷰를 소유한다.
 
-## Model
+## 모델
 
-Record the project structure that current and future work must follow.
+현재와 미래의 작업이 따라야 하는 프로젝트 구조를 기록한다.
 
-Component bodies live in `components/`. This document manages only the overall map and links.
+컴포넌트 본문은 `components/`에 있다. 이 문서는 전체 지도와 링크만 관리한다.
+

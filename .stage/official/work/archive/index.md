@@ -1,10 +1,10 @@
-# Work Archive
+# 작업 아카이브
 
-This document owns the index of work records that no longer belong to the current work flow.
+이 문서는 더 이상 현재 작업 흐름에 속하지 않는 작업 레코드의 인덱스를 소유한다.
 
-Work record bodies live in `items/`. Archived retrospectives live in `retrospectives/`. This document manages only links and minimal identification. Every archived item has a row here; `Final status` records the terminal state (`completed` or `rejected`) that the item's `archived` status overwrote.
+작업 레코드 본문은 `items/`에 있다. 아카이브된 회고는 `retrospectives/`에 있다. 이 문서는 링크와 최소한의 식별 정보만 관리한다. 아카이브된 모든 항목은 여기에 행을 가진다. `Final status`는 항목의 `archived` 상태가 덮어쓴 최종 상태(`completed` 또는 `rejected`)를 기록한다.
 
-| Work | Final status | Item |
+| 작업 | Final status | 항목 |
 |---|---|---|
 | W-00000001 | completed | [items/W-00000001.md](items/W-00000001.md) |
 | W-00000002 | completed | [items/W-00000002.md](items/W-00000002.md) |
@@ -57,3 +57,4 @@ Work record bodies live in `items/`. Archived retrospectives live in `retrospect
 | W-00000050 | completed | [items/W-00000050.md](items/W-00000050.md) |
 | W-00000051 | completed | [items/W-00000051.md](items/W-00000051.md) |
 | W-00000052 | completed | [items/W-00000052.md](items/W-00000052.md) |
+| W-00000053 | completed | [items/W-00000053.md](items/W-00000053.md) |

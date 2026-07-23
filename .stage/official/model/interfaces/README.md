@@ -1,9 +1,10 @@
-# Interface Records
+# 인터페이스 레코드
 
-This directory owns the SSOT of stable interface records.
+이 디렉터리는 안정적 인터페이스 레코드의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One interface has one file.
-- State the contract, inputs, outputs, failure conditions, and compatibility conditions.
-- `interfaces.md` is the overall map; detailed bodies live here.
+- 인터페이스 하나는 파일 하나를 가진다.
+- 계약, 입력, 출력, 실패 조건, 호환성 조건을 기술한다.
+- `interfaces.md`는 전체 지도이며, 상세 본문은 여기에 있다.
+

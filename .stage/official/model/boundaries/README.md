@@ -1,9 +1,10 @@
-# Boundary Records
+# 경계 레코드
 
-This directory owns the SSOT of responsibility boundary records.
+이 디렉터리는 책임 경계 레코드의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One boundary has one file.
-- A boundary has included responsibilities, excluded responsibilities, adjacent areas, and conflict-handling criteria.
-- `boundaries.md` is the overall map; detailed bodies live here.
+- 경계 하나는 파일 하나를 가진다.
+- 경계는 포함되는 책임, 제외되는 책임, 인접 영역, 충돌 처리 기준을 가진다.
+- `boundaries.md`는 전체 지도이며, 상세 본문은 여기에 있다.
+

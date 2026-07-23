@@ -1,20 +1,20 @@
-# Verification kinds
+# 검증 종류
 
-This document owns this project's `kind -> passed` verification criteria.
+이 문서는 이 프로젝트의 `kind -> passed` 검증 기준을 소유한다.
 
-Common verification rules are plugin-owned; see `operations/verification.md` in the installed
-Stage plugin. `verification: passed` on a work item is valid only against the criterion declared
-for its `kind` below. Extend this table with the project's own kinds; the audit warns when a work
-item uses a kind that has no row here.
+공통 검증 규칙은 플러그인 소유이다. 설치된 Stage 플러그인의 `operations/verification.md`를
+참조한다. 작업 항목의 `verification: passed`는 아래에서 그 `kind`에 대해 선언된 기준에
+대해서만 유효하다. 프로젝트 고유의 종류로 이 표를 확장한다. 여기에 행이 없는 종류를 작업
+항목이 사용하면 감사가 경고한다.
 
-| Kind | `passed` means |
+| Kind | `passed`의 의미 |
 |---|---|
-| planning | The user (or decision owner) confirmed the plan; open questions routed to `present/state/questions/`. |
-| design | The design was reviewed and approved by its owner; decisions recorded in `present/work/decisions/`. |
-| development | Tests or equivalent executable verification pass; a declared linter/formatter passes (skipped only when the project declares none). |
-| qa | The test scenarios were executed and their results are recorded in the work item. |
-| ops | The change was applied and observed working in its target environment. |
-| feature | Tests or equivalent executable verification pass; a declared linter/formatter passes (skipped only when the project declares none). |
-| fix | A test reproduces the bug and now passes; a declared linter/formatter passes. |
-| documentation | The touched docs are accurate against the code or state they describe and their links resolve; a declared linter passes. |
-| chore | The mechanical change is applied and confirmed by observed command output; no behavior regression. |
+| planning | 사용자(또는 결정 소유자)가 계획을 확인했다. 미해결 질문은 `state/questions/`로 라우팅되었다. |
+| design | 설계가 소유자의 리뷰와 승인을 받았다. 결정은 `decisions/pending/`에 기록되었다. |
+| development | 테스트 또는 그에 준하는 실행 가능한 검증이 통과한다. 선언된 린터/포매터가 통과한다(프로젝트가 아무것도 선언하지 않은 경우에만 생략). |
+| qa | 테스트 시나리오가 실행되었고 그 결과가 작업 항목에 기록되어 있다. |
+| ops | 변경이 적용되었고 대상 환경에서 동작하는 것이 관측되었다. |
+| feature | 테스트 또는 그에 준하는 실행 가능한 검증이 통과한다. 선언된 린터/포매터가 통과한다(프로젝트가 아무것도 선언하지 않은 경우에만 생략). |
+| fix | 버그를 재현하는 테스트가 있고 이제 통과한다. 선언된 린터/포매터가 통과한다. |
+| documentation | 수정한 문서가 그것이 서술하는 코드나 상태에 대해 정확하고 링크가 유효하다. 선언된 린터가 통과한다. |
+| chore | 기계적 변경이 적용되었고 관측된 명령 출력으로 확인되었다. 동작 회귀가 없다. |

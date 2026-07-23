@@ -1,9 +1,10 @@
-# Boundaries
+# 경계
 
-This document owns responsibility boundaries.
+이 문서는 책임 경계를 소유한다.
 
-## Boundaries
+## 경계
 
-Define which component, document, or team owns each responsibility.
+각 책임을 어떤 컴포넌트, 문서, 팀이 소유하는지 정의한다.
 
-Boundary bodies live in `boundaries/`. This document manages only the overall map and links.
+경계 본문은 `boundaries/`에 있다. 이 문서는 전체 지도와 링크만 관리한다.
+

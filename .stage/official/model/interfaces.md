@@ -1,9 +1,10 @@
-# Interfaces
+# 인터페이스
 
-This document owns stable interaction surfaces.
+이 문서는 안정적 상호작용 표면을 소유한다.
 
-## Interfaces
+## 인터페이스
 
-Define the interfaces, contracts, schemas, and external boundaries that work must follow.
+작업이 따라야 하는 인터페이스, 계약, 스키마, 외부 경계를 정의한다.
 
-Interface bodies live in `interfaces/`. This document manages only the overall map and links.
+인터페이스 본문은 `interfaces/`에 있다. 이 문서는 전체 지도와 링크만 관리한다.
+

@@ -1,10 +1,10 @@
-# Backlog Views
+# 작업 뷰
 
-This directory owns derived views of the backlog.
+이 디렉터리는 계획된 작업의 파생 뷰를 소유한다.
 
-## Rules
+## 규칙
 
-- Views are not SSOT.
-- Views link to `items/`.
-- Per-perspective orderings — priority, domain, release, risk, hierarchy — live here.
-- When a view conflicts with an item body, the item body wins.
+- 뷰는 SSOT가 아니다.
+- 뷰는 `work/planned/`로 링크한다.
+- 우선순위, 도메인, 릴리스, 리스크, 계층 등 관점별 정렬이 여기에 있다.
+- 뷰가 항목 본문과 충돌하면 항목 본문이 우선한다.

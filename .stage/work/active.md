@@ -1,8 +1,8 @@
-# Active Work
+# 진행 중 작업
 
-This document owns the index of work currently in progress.
+이 문서는 현재 진행 중인 작업의 인덱스를 소유한다.
 
-Work bodies live in `current/`. This document manages only current status and links.
+작업 본문은 `current/`에 있다. 이 문서는 현재 상태와 링크만 관리한다.
 
-| Work | Kind | Venue | Purpose | Status | Owner | Item |
+| 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|

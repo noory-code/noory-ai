@@ -1,9 +1,10 @@
-# Invariant Records
+# 불변 조건 레코드
 
-This directory owns the SSOT of invariant records.
+이 디렉터리는 불변 조건 레코드의 SSOT를 소유한다.
 
-## Rules
+## 규칙
 
-- One invariant has one file.
-- `invariants.md` holds only the index of core invariants.
-- Violation detection methods and the reason no exception exists live in individual records.
+- 불변 조건 하나는 파일 하나를 가진다.
+- `invariants.md`는 핵심 불변 조건의 인덱스만 담는다.
+- 위반 감지 방법과 예외가 존재하지 않는 이유는 개별 레코드에 있다.
+
