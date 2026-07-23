@@ -251,21 +251,33 @@ itself.
 
 `drive.py --unattended <TARGET_PARENT_ID>` runs the whole ready subtree unattended on an
 **isolated branch** (full-unattended mode, DE-00000024). It refuses to start unless a `limits`
-config is present — absent is NOT unlimited here; an unbounded autonomous loop is forbidden. It
-creates and checks out a fresh `stage/driver/<target>-<unixtime>` branch; every commit lands there
-and the base branch is never modified.
+config is present (absent is NOT unlimited — an unbounded autonomous loop is forbidden) and unless
+the working tree/index is clean (so nothing unrelated leaks into item commits). It then creates and
+checks out a fresh `stage/driver/<target>-<unixtime>` branch; every commit lands there and the base
+branch is never modified — before each commit the loop re-checks that HEAD is still on the run
+branch and aborts if not.
 
-Each iteration selects the next ready leaf (autonomous, non-terminal, `active`, non-empty
-acceptance, itself a leaf), runs its executor, commits the result to the run branch, writes a
-mechanical `driver-generated` retrospective (a human reviews it at merge), and closes the item
-through `close_work.py` — which re-runs acceptance and the mandatory independent review. When a
-parent's children all become terminal the driver closes that parent too, up to the target, using
-the audit as the parent-close check on top of `close_work`'s own aggregation gate. An
-executor/commit failure, reviewer `BLOCK`, no-progress, or a per-item attempt cap escalates the
-item (`escalate_work` → blocked + a pending decision) and skips it — never a fake completion. A
-global iteration or wall-clock ceiling stops the run with a non-zero exit and a branch handoff. The
-loop never creates work, promotes official truth, crosses a human-approval gate, or touches the
-base branch; the human reviews and merges the run branch.
+Each iteration selects the next ready leaf anywhere in the target's subtree (autonomous,
+non-terminal `active`, non-empty acceptance, itself a leaf). It runs the item's executor with a
+timeout bounded by the remaining global wall-clock budget. A FAILED executor is discarded and
+retried or escalated — never committed or closed. On success the executor output is committed, a
+NEUTRAL `driver-generated` retrospective is written (it does not claim success — the item's
+Verification, stamped by `close_work`, is the source of truth; a human reviews the retrospective at
+merge), and the item is closed through `close_work.py` (which re-runs acceptance and the mandatory
+independent review). The resulting `.stage` **lifecycle records (card status, retrospective,
+indexes) are then committed to the run branch too**, so a merge carries the Stage bookkeeping, not
+only the executor output. When a parent's children all become terminal the driver closes that
+parent up to the target; a parent has no code, so its verification is the audit (whole-`.stage`
+consistency) plus `close_work`'s aggregation gate — its children were each independently reviewed
+(DE-00000027).
+
+Any executor/commit failure, reviewer `BLOCK`, no-progress, or per-item attempt cap escalates the
+item via `escalate_work` (→ blocked + a pending decision); the escalation result is checked and the
+run stops if escalation itself fails (so a stuck item cannot loop). A global iteration or
+wall-clock ceiling stops the run with a non-zero exit and a branch handoff. The loop never creates
+work, promotes official truth, crosses a human-approval gate, or touches the base branch; the human
+reviews and merges the run branch. (Findings from the first independent review are recorded in
+W-00000049.)
 
 ### Execution limits settings
 

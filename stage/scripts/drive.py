@@ -270,7 +270,7 @@ RETRO_SECTIONS = (
 )
 
 
-def run_git(project_root: Path, args: list[str]) -> tuple[bool, str]:
+def run_git(project_root: Path, args: list[str], timeout: int = 120) -> tuple[bool, str]:
     """Run one git command; return (ok, combined output). Never raises."""
 
     try:
@@ -279,7 +279,10 @@ def run_git(project_root: Path, args: list[str]) -> tuple[bool, str]:
             cwd=str(project_root),
             capture_output=True,
             text=True,
+            timeout=timeout,
         )
+    except subprocess.TimeoutExpired:
+        return False, f"git {' '.join(args[:2])} timed out after {timeout}s"
     except OSError as exc:
         return False, str(exc)
     return proc.returncode == 0, (proc.stdout or "") + (proc.stderr or "")
@@ -354,17 +357,23 @@ def write_driver_retrospective(
 
     retro_id = next_retro_id(stage_root)
     note = "driver-generated (사람 머지 검토 대상)"
+    # Neutral wording: this is written BEFORE close_work verifies. It must not
+    # claim success — the item's Verification (stamped by close_work) is the
+    # source of truth for whether acceptance and the independent review passed.
     sections = {
         "Work": (
-            f"{note}: 무인 드라이버가 executor 실행 후 acceptance·독립 판정을 통과시켜 "
-            f"{item.item_id}을 완료했다.\n\n검증 증거:\n\n```\n{evidence[:1500]}\n```"
+            f"{note}: 무인 드라이버가 {item.item_id}의 executor를 실행하고 결과를 커밋했다. "
+            "acceptance·독립 판정의 실제 통과 여부와 최종 완료는 항목의 Verification"
+            f"(close_work가 기록)이 정본이다.\n\nexecutor 출력:\n\n```\n{evidence[:1500]}\n```"
         ),
         "Decision points": f"{note}: 기계 실행, 별도 결정 없음.",
         "Principles applied": f"{note}: Honesty, Fail Fast, No partial completion.",
         "Context that helped": f"{note}: 항목 acceptance가 종료를 결정적으로 판정.",
         "Context that was missing": f"{note}: 반성적 회고는 사람이 브랜치 머지 시 보완.",
         "Next changes": f"{note}: 사람이 격리 브랜치를 검토·머지.",
-        "Promotion decision": f"approved ({note}).",
+        "Promotion decision": (
+            f"{note}: 항목 Verification의 결과를 따른다(close_work가 acceptance·독립 판정 통과 시에만 completed로 스탬프)."
+        ),
     }
     body = f"---\nid: {retro_id}\nwork_item: {item.item_id}\n---\n\n# {retro_id} {item.item_id} 무인 드라이버 회고\n"
     for heading in RETRO_SECTIONS:
@@ -413,13 +422,19 @@ def close_via_close_work(
     for check in extra_checks:
         command += ["--check", check]
     try:
-        proc = subprocess.run(command, cwd=str(project_root), capture_output=True, text=True)
+        proc = subprocess.run(
+            command, cwd=str(project_root), capture_output=True, text=True, timeout=timeout + 60
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"close_work timed out after {timeout + 60}s"
     except OSError as exc:
         return False, str(exc)
     return proc.returncode == 0, (proc.stdout or "") + (proc.stderr or "")
 
 
-def escalate_via_escalate_work(project_root: Path, item_id: str, reason: str) -> tuple[bool, str]:
+def escalate_via_escalate_work(
+    project_root: Path, item_id: str, reason: str, timeout: int = 120
+) -> tuple[bool, str]:
     """Reuse the reviewed escalate_work.py: item -> blocked + a pending decision."""
 
     command = [
@@ -432,24 +447,51 @@ def escalate_via_escalate_work(project_root: Path, item_id: str, reason: str) ->
         reason,
     ]
     try:
-        proc = subprocess.run(command, cwd=str(project_root), capture_output=True, text=True)
+        proc = subprocess.run(
+            command, cwd=str(project_root), capture_output=True, text=True, timeout=timeout
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"escalate_work timed out after {timeout}s"
     except OSError as exc:
         return False, str(exc)
     return proc.returncode == 0, (proc.stdout or "") + (proc.stderr or "")
 
 
-def select_next_unattended_leaf(target_id: str, items: list[WorkItem]) -> WorkItem | None:
-    """A ready leaf for unattended run: AUTONOMOUS (so close_work runs the mandatory
-    independent review), non-terminal, itself a leaf, direct child of the target."""
+def is_in_subtree(item: WorkItem, target_id: str, by_id: dict[str, WorkItem]) -> bool:
+    """Whether `item` is a descendant of `target_id` (following the parent chain).
 
+    Bounded by the number of items so a malformed cycle cannot spin forever.
+    """
+
+    seen: set[str] = set()
+    parent = item.parent
+    for _ in range(len(by_id) + 1):
+        if not parent or parent in seen:
+            return False
+        if parent == target_id:
+            return True
+        seen.add(parent)
+        ancestor = by_id.get(parent)
+        if ancestor is None:
+            return False
+        parent = ancestor.parent
+    return False
+
+
+def select_next_unattended_leaf(target_id: str, items: list[WorkItem]) -> WorkItem | None:
+    """A ready leaf anywhere in the target's subtree: AUTONOMOUS (so close_work runs the
+    mandatory independent review), `active` (not terminal, not blocked — escalated items
+    are not retried), a leaf (no non-terminal children), and a descendant of the target."""
+
+    by_id = {item.item_id: item for item in items}
     candidates = (
         item
         for item in items
-        if item.parent == target_id
-        and item.status == "active"  # not terminal, and not blocked (escalated items are not retried)
+        if item.status == "active"
         and item.autonomous
         and item.acceptance
         and not non_terminal_children(item.item_id, items)
+        and is_in_subtree(item, target_id, by_id)
     )
     return next(
         iter(sorted(candidates, key=lambda item: (item.item_id, item.path.as_posix()))),
@@ -500,6 +542,56 @@ def close_ready_ancestors(
     return closed
 
 
+def current_branch(project_root: Path) -> str:
+    ok, out = run_git(project_root, ["rev-parse", "--abbrev-ref", "HEAD"])
+    return out.strip() if ok else ""
+
+
+def worktree_clean(project_root: Path) -> bool:
+    ok, out = run_git(project_root, ["status", "--porcelain"])
+    return ok and out.strip() == ""
+
+
+def discard_worktree(project_root: Path) -> None:
+    """Drop a failed attempt's uncommitted changes so the next iteration starts clean."""
+
+    run_git(project_root, ["checkout", "--", "."])
+    run_git(project_root, ["clean", "-fdq"])
+
+
+def commit_lifecycle(project_root: Path, message: str) -> tuple[bool, str]:
+    """Commit the Stage lifecycle records (.stage/) produced by close/escalate to the run branch."""
+
+    ok, out = run_git(project_root, ["add", "--", ".stage"])
+    if not ok:
+        return False, f"git add .stage failed: {out.strip()}"
+    ok, out = run_git(project_root, ["commit", "-m", message])
+    if not ok and "nothing to commit" in out:
+        return True, "nothing to commit"
+    return (True, "") if ok else (False, f"git commit failed: {out.strip()}")
+
+
+def remaining_timeout(now: float, wall_clock: int, per_command: int) -> int:
+    return max(1, min(per_command, int(wall_clock - (time.time() - now))))
+
+
+def escalate_and_commit(project_root: Path, item_id: str, reason: str, timeout: int) -> bool:
+    """Escalate an item to blocked and commit the resulting lifecycle to the run branch.
+
+    Returns False when escalation itself failed — the run must stop, because the item
+    would otherwise stay `active` and be retried without bound.
+    """
+
+    ok, out = escalate_via_escalate_work(project_root, item_id, reason, timeout)
+    if not ok:
+        print_escalation(
+            f"escalation of {item_id} FAILED ({out.strip()[:200]}); stopping run to avoid a stuck loop"
+        )
+        return False
+    commit_lifecycle(project_root, f"driver: {item_id} escalated (lifecycle)")
+    return True
+
+
 def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Path, now: float) -> int:
     limits, limits_error = load_limits_config(stage_root)
     if limits_error:
@@ -510,25 +602,26 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             "unattended mode requires a `limits` config (absent is not unlimited here); refusing to run"
         )
         return 1
+    # A dirty index/worktree would leak unrelated changes into item commits.
+    if not worktree_clean(project_root):
+        print_escalation("working tree/index is not clean; commit or stash before an unattended run")
+        return 1
 
-    ok, base_branch = run_git(project_root, ["rev-parse", "--abbrev-ref", "HEAD"])
-    base_branch = base_branch.strip() if ok else ""
+    base_branch = current_branch(project_root)
     branch, branch_error = create_run_branch(project_root, args.target, now)
     if branch_error:
         print_escalation(branch_error)
         return 1
     print(f"Unattended run on isolated branch: {branch} (base: {base_branch or 'unknown'})")
 
+    wall = limits["max_wall_clock_seconds"]
+    cap = limits["max_attempts_per_item"]
     state_path = stage_root / ".runtime" / "driver" / f"{args.target}.json"
     processed: list[str] = []
     iteration = 0
     while True:
-        elapsed = max(0.0, time.time() - now)
-        if elapsed >= limits["max_wall_clock_seconds"]:
-            print(
-                f"STOP: wall-clock limit {limits['max_wall_clock_seconds']}s reached; "
-                f"{len(processed)} closed; handoff on {branch}"
-            )
+        if time.time() - now >= wall:
+            print(f"STOP: wall-clock limit {wall}s reached; {len(processed)} closed; handoff on {branch}")
             return 1
         if iteration >= limits["max_iterations"]:
             print(
@@ -543,13 +636,21 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             break
         iteration += 1
 
+        # Safety: never leave the isolated branch (an executor could switch it).
+        if current_branch(project_root) != branch:
+            print_escalation(f"HEAD left the run branch {branch}; aborting to protect the base branch")
+            return 1
+
+        cmd_timeout = remaining_timeout(now, wall, args.timeout)
+
         executor_command, executor_error = resolve_executor_command(
             load_executors_config(stage_root), item.venue
         )
         if executor_error or not executor_command:
-            escalate_via_escalate_work(
-                project_root, item.item_id, executor_error or "executor command missing"
-            )
+            if not escalate_and_commit(
+                project_root, item.item_id, executor_error or "executor command missing", cmd_timeout
+            ):
+                return 1
             continue
 
         state, state_error = load_run_state(state_path, args.target, now)
@@ -558,18 +659,15 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             return 1
         item_state = state["items"].get(item.item_id, {"attempt_count": 0, "last_fingerprint": ""})
         attempt = item_state["attempt_count"] + 1
-        if attempt > limits["max_attempts_per_item"]:
-            escalate_via_escalate_work(
-                project_root,
-                item.item_id,
-                f"per-item attempt cap ({limits['max_attempts_per_item']}) reached",
-            )
+        if attempt > cap:
+            if not escalate_and_commit(
+                project_root, item.item_id, f"per-item attempt cap ({cap}) reached", cmd_timeout
+            ):
+                return 1
             continue
 
-        executor_ok, executor_evidence, _raw = run_check(executor_command, args.timeout, project_root)
+        executor_ok, executor_evidence, _raw = run_check(executor_command, cmd_timeout, project_root)
         current_fingerprint = fingerprint(project_root, [executor_evidence])
-        commit_ok, commit_message = commit_item(project_root, item)
-
         no_progress = (
             bool(item_state["last_fingerprint"]) and current_fingerprint == item_state["last_fingerprint"]
         )
@@ -577,31 +675,65 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         state["items"][item.item_id] = {"attempt_count": attempt, "last_fingerprint": current_fingerprint}
         write_run_state(state_path, state)
 
+        # A FAILED executor must never proceed to commit/close. Discard the failed
+        # attempt's partial output, then retry or escalate.
+        if not executor_ok:
+            discard_worktree(project_root)
+            if no_progress or attempt >= cap:
+                if not escalate_and_commit(
+                    project_root, item.item_id, "executor failed; no progress or attempt cap", cmd_timeout
+                ):
+                    return 1
+            else:
+                print(f"[{item.item_id}] executor failed; retry {attempt}/{cap}")
+            continue
+
+        if current_branch(project_root) != branch:
+            print_escalation(f"HEAD left the run branch {branch}; aborting")
+            return 1
+
+        commit_ok, commit_message = commit_item(project_root, item)
         if not commit_ok:
-            escalate_via_escalate_work(project_root, item.item_id, f"commit failed: {commit_message}")
+            discard_worktree(project_root)
+            if not escalate_and_commit(
+                project_root, item.item_id, f"commit failed: {commit_message}", cmd_timeout
+            ):
+                return 1
             continue
 
         if not (item.retrospective == "completed" and item.retrospective_ref):
             retro_id, retro_error = write_driver_retrospective(stage_root, item, executor_evidence)
             if retro_error:
-                escalate_via_escalate_work(project_root, item.item_id, retro_error)
+                if not escalate_and_commit(project_root, item.item_id, retro_error, cmd_timeout):
+                    return 1
                 continue
             mark_retrospective(stage_root, item.item_id, retro_id)
 
-        close_ok, _close_out = close_via_close_work(project_root, item.item_id, [], args.timeout)
+        close_ok, _close_out = close_via_close_work(project_root, item.item_id, [], cmd_timeout)
         if not close_ok:
             reason = "close failed (acceptance or independent review)"
-            if no_progress or attempt >= limits["max_attempts_per_item"]:
-                escalate_via_escalate_work(
-                    project_root, item.item_id, f"{reason}; no progress or attempt cap reached"
-                )
+            if no_progress or attempt >= cap:
+                if not escalate_and_commit(
+                    project_root, item.item_id, f"{reason}; no progress or attempt cap reached", cmd_timeout
+                ):
+                    return 1
             else:
-                print(f"[{item.item_id}] {reason}; retry {attempt}/{limits['max_attempts_per_item']}")
+                # Persist the retrospective/lifecycle so a retry does not recreate it.
+                commit_lifecycle(project_root, f"driver: {item.item_id} pre-close lifecycle (retry)")
+                print(f"[{item.item_id}] {reason}; retry {attempt}/{cap}")
             continue
 
+        # Commit the lifecycle records (card completed, retrospective, indexes) to the run
+        # branch, so a merge carries the Stage bookkeeping — not only the executor output.
+        lc_ok, lc_msg = commit_lifecycle(project_root, f"driver: {item.item_id} closed (lifecycle)")
+        if not lc_ok:
+            print_escalation(f"cannot commit lifecycle for {item.item_id}: {lc_msg}")
+            return 1
         processed.append(item.item_id)
         print(f"[{item.item_id}] completed on {branch}")
-        close_ready_ancestors(project_root, stage_root, args.target, item.parent, args.timeout)
+
+        close_ready_ancestors(project_root, stage_root, args.target, item.parent, cmd_timeout)
+        commit_lifecycle(project_root, f"driver: {item.item_id} ancestor aggregation (lifecycle)")
 
     print(
         f"Unattended run finished: {len(processed)} item(s) closed on isolated branch {branch}. "

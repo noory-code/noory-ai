@@ -127,13 +127,18 @@ class UnattendedTest(unittest.TestCase):
             set_status(str(project_root), item_id, "completed")
             return True, ""
 
-        def stub_escalate(project_root, item_id, reason):
+        def stub_escalate(project_root, item_id, reason, timeout=120):
             calls.append(("escalate", item_id))
             set_status(str(project_root), item_id, "blocked")
             return True, ""
 
         drive.close_via_close_work = stub_close
         drive.escalate_via_escalate_work = stub_escalate
+
+    def commit_all(self, root: Path) -> None:
+        git(root, "add", "-A")
+        subprocess.run(["git", "commit", "-q", "-m", "fixture"],
+                       cwd=str(root), capture_output=True, text=True)
 
     # --- tests -------------------------------------------------------------
 
@@ -146,6 +151,7 @@ class UnattendedTest(unittest.TestCase):
         self.install_stubs(drive, calls)
         base_before = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
 
+        self.commit_all(root)
         rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
 
         self.assertEqual(1, rc)
@@ -159,12 +165,14 @@ class UnattendedTest(unittest.TestCase):
         self.card(stage_root, "W-00000001")
         self.card(stage_root, "W-00000002", parent="W-00000001")
         self.card(stage_root, "W-00000003", parent="W-00000001")
+        self.commit_all(root)
         base = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
         base_count_before = int(git_out(root, "rev-list", "--count", base))
         drive = load_module()
         calls: list = []
         self.install_stubs(drive, calls)
 
+        self.commit_all(root)
         rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
 
         self.assertEqual(0, rc)
@@ -190,6 +198,7 @@ class UnattendedTest(unittest.TestCase):
         calls: list = []
         self.install_stubs(drive, calls)
 
+        self.commit_all(root)
         rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
 
         self.assertEqual(0, rc)  # run finishes (nothing left ready)
@@ -206,6 +215,7 @@ class UnattendedTest(unittest.TestCase):
         calls: list = []
         self.install_stubs(drive, calls)
 
+        self.commit_all(root)
         rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
 
         self.assertEqual(1, rc)  # stopped at the global iteration cap
@@ -238,10 +248,50 @@ class UnattendedTest(unittest.TestCase):
         calls: list = []
         self.install_stubs(drive, calls)
 
+        self.commit_all(root)
         rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
 
         self.assertEqual(0, rc)
         self.assertIn(("escalate", "W-00000002"), calls)
+
+
+    def test_executor_failure_with_tracked_scope_still_escalates(self):
+        # Regression (Codex P1): a failed executor must not be masked by
+        # "nothing to commit" when the scope file already exists (tracked).
+        limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits, executor=EXECUTOR_FAIL)
+        (root / "driver-work.txt").write_text("pre", encoding="utf-8")  # tracked scope
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        self.commit_all(root)
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(0, rc)
+        self.assertIn(("escalate", "W-00000002"), calls)
+        self.assertNotIn(("close", "W-00000002"), calls)
+
+    def test_lifecycle_committed_to_run_branch(self):
+        # Regression (Codex P1): the .stage lifecycle change (card -> completed) must
+        # be committed to the run branch, not left only in the working tree.
+        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        self.commit_all(root)
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(0, rc)
+        branch = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
+        committed = git_out(root, "show", f"{branch}:.stage/work/current/W-00000002.md")
+        self.assertIn("status: completed", committed)
 
 
 if __name__ == "__main__":

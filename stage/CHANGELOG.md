@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.37.1 — 2026-07-23
+
+Fix the unattended driver loop per the independent review findings (W-00000049):
+
+- Addresses the Codex review (CHANGES-REQUESTED) of `--unattended`: a failed executor now escalates
+  instead of being masked by "nothing to commit"; the `.stage` lifecycle records (card status,
+  retrospective, indexes) are committed to the run branch alongside the executor output; the loop
+  re-checks it is on the run branch before every commit and requires a clean tree to start;
+  selection covers the whole subtree, not just direct children; escalation and parent-close results
+  are checked (a failed escalation stops the run); subprocess timeouts are bounded by the remaining
+  wall-clock budget; the driver-generated retrospective no longer claims success before close
+  verifies; and a parent's aggregation-close verification (audit + aggregation gate, children
+  already reviewed) is an explicit contract (DE-00000027). New regression tests cover the failure
+  paths the first tests dodged. `--unattended` still needs a re-review before use. (DE-00000024,
+  DE-00000027)
+
 ## 0.37.0 — 2026-07-23
 
 Unattended autonomous-execution driver loop (W-00000048):
