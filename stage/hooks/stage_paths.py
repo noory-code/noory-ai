@@ -348,6 +348,52 @@ def load_review_config(stage_root: Path) -> dict[str, Any]:
     return review if isinstance(review, dict) else {}
 
 
+LIMIT_KEYS = (
+    "max_attempts_per_item",
+    "max_iterations",
+    "max_wall_clock_seconds",
+)
+
+
+def load_limits_config(stage_root: Path) -> tuple[dict[str, int] | None, str]:
+    """Load and validate the optional execution-limit contract.
+
+    Returns ``(limits, "")`` for a valid section and ``(None, "")`` when the
+    section is absent. Any unreadable settings file or malformed present
+    section returns ``(None, error)``; callers must fail closed on that error.
+    """
+
+    settings_path = stage_root / "settings.json"
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        return None, f"cannot read settings.json: {exc}"
+    except json.JSONDecodeError as exc:
+        return None, f"settings.json is not valid JSON: {exc}"
+    if not isinstance(data, dict):
+        return None, "settings.json must contain a JSON object"
+    if "limits" not in data:
+        return None, ""
+
+    raw_limits = data["limits"]
+    if not isinstance(raw_limits, dict):
+        return None, "limits must be an object"
+    unknown = sorted(key for key in raw_limits if key not in LIMIT_KEYS)
+    if unknown:
+        return None, f"limits contains unknown field(s): {', '.join(unknown)}"
+    missing = [key for key in LIMIT_KEYS if key not in raw_limits]
+    if missing:
+        return None, f"limits is missing required field(s): {', '.join(missing)}"
+
+    limits: dict[str, int] = {}
+    for key in LIMIT_KEYS:
+        value = raw_limits[key]
+        if type(value) is not int or value <= 0:
+            return None, f"limits.{key} must be a positive integer"
+        limits[key] = value
+    return limits, ""
+
+
 def resolve_review_command(review: dict[str, Any], stage: str) -> tuple[str | None, str]:
     """Resolve the review COMMAND to run for a lifecycle stage.
 

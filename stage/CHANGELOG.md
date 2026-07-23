@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.35.0 — 2026-07-23
+
+Escalation exit and execution-limit config for the autonomous-execution driver (W-00000046):
+
+- `escalate_work.py` transitions an open (active/review) work item to `blocked` and creates a
+  linked pending decision recording why the autonomous loop stopped and what human decision is
+  needed — the invariant is `blocked` + a decision, never `completed`.
+  `stage_paths.load_limits_config` reads an optional settings.json `limits` section (per-item
+  attempt cap + global iteration and wall-clock ceilings) with fail-closed validation. This is the
+  escalation EXIT and the limit thresholds; the driver (W-00000047) does the attempt counting,
+  no-progress detection, and budget enforcement that trigger the exit. (DE-00000017, DE-00000022)
+
 ## 0.34.0 — 2026-07-23
 
 Parent aggregation gate for the autonomous-execution driver (W-00000045):

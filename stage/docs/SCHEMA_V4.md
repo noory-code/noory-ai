@@ -164,6 +164,47 @@ W frontmatter includes these execution fields:
 Registration flows are unchanged: direct registration into `work/current/`, `--backlog`
 capture into `work/planned/`, `start_work.py` as the only mover.
 
+### Escalation transition
+
+`escalate_work.py --project-root <root> W-NNNNNNNN --reason <text>` is the lifecycle exit for
+work that cannot safely advance. The reason must state both why the work is blocked and what
+human decision is needed. The script accepts only `active` or `review` items and performs one
+coupled transition:
+
+- set the work item to `status: blocked`;
+- allocate the next `DE-` identity after the maximum identity in `decisions/pending/` and
+  `official/decisions/records/`;
+- create an open record from `decisions/pending/_template.md`, append its identity to the work
+  item's `decision_refs`, and add it to `decisions/index.md`;
+- keep the blocked item in `work/active.md` and remove any stale row from `work/review.md`.
+
+`blocked` remains an open work status. A limit hit or stuck execution loop must use this
+transition: the result is `blocked` plus a pending decision, never `completed`. Attempt counting,
+no-progress detection, global-budget enforcement, and per-item runtime state belong to the
+driver rather than this transition.
+
+### Execution limits settings
+
+The optional `limits` object in `.stage/settings.json` owns the driver ceilings:
+
+```json
+{
+  "limits": {
+    "max_attempts_per_item": 3,
+    "max_iterations": 100,
+    "max_wall_clock_seconds": 3600
+  }
+}
+```
+
+When `limits` is present, all three fields are required positive JSON integers and no other
+field is accepted. `max_attempts_per_item` caps attempts for one work item;
+`max_iterations` and `max_wall_clock_seconds` are global driver ceilings. An absent object means
+no limits are configured. `stage_paths.load_limits_config()` returns `(limits, "")` for a valid
+object, `(None, "")` when it is absent, or `(None, error)` for an unreadable or malformed shape.
+Every enforcement caller must fail closed on a non-empty error. The driver owns counters,
+elapsed-time measurement, and enforcement; settings own only these durable configured values.
+
 ## Roadmap family
 
 - Themes (`TH-`) and milestones (`M-`) reside in `roadmap/` for life; they span lifecycle
