@@ -247,6 +247,26 @@ malformed limits, an exhausted limit, and no progress all fail closed with an
 `escalate_work` recommendation; the driver never claims completion or performs escalation
 itself.
 
+### Unattended driver loop
+
+`drive.py --unattended <TARGET_PARENT_ID>` runs the whole ready subtree unattended on an
+**isolated branch** (full-unattended mode, DE-00000024). It refuses to start unless a `limits`
+config is present — absent is NOT unlimited here; an unbounded autonomous loop is forbidden. It
+creates and checks out a fresh `stage/driver/<target>-<unixtime>` branch; every commit lands there
+and the base branch is never modified.
+
+Each iteration selects the next ready leaf (autonomous, non-terminal, `active`, non-empty
+acceptance, itself a leaf), runs its executor, commits the result to the run branch, writes a
+mechanical `driver-generated` retrospective (a human reviews it at merge), and closes the item
+through `close_work.py` — which re-runs acceptance and the mandatory independent review. When a
+parent's children all become terminal the driver closes that parent too, up to the target, using
+the audit as the parent-close check on top of `close_work`'s own aggregation gate. An
+executor/commit failure, reviewer `BLOCK`, no-progress, or a per-item attempt cap escalates the
+item (`escalate_work` → blocked + a pending decision) and skips it — never a fake completion. A
+global iteration or wall-clock ceiling stops the run with a non-zero exit and a branch handoff. The
+loop never creates work, promotes official truth, crosses a human-approval gate, or touches the
+base branch; the human reviews and merges the run branch.
+
 ### Execution limits settings
 
 The optional `limits` object in `.stage/settings.json` owns the driver ceilings:

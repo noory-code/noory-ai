@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.37.0 — 2026-07-23
+
+Unattended autonomous-execution driver loop (W-00000048):
+
+- `drive.py --unattended <parent>` runs the whole ready subtree unattended on an ISOLATED
+  `stage/driver/<target>-<ts>` branch (full-unattended, DE-00000024) — the base branch is never
+  touched. It refuses to start without a `limits` config (no unbounded loop). Each iteration selects
+  the next ready autonomous leaf, runs its executor (the `executors` config), commits to the run
+  branch, writes a mechanical driver-generated retrospective, and closes the item via `close_work`
+  (re-running acceptance + the mandatory independent review); it closes parents up to the target as
+  their children become terminal. Any failure / reviewer BLOCK / no-progress / attempt-cap escalates
+  the item (`escalate_work` → blocked + a pending decision) rather than fake-completing; a global
+  iteration or wall-clock ceiling stops with a non-zero handoff. The loop never creates work,
+  promotes official truth, or crosses a human-approval gate. Supervised dry-run/`--execute` is
+  unchanged. Real executor commands and live runs are gated behind separate human verification.
+  (DE-00000024)
+
 ## 0.36.0 — 2026-07-23
 
 Supervised autonomous-execution driver — MVP (W-00000047):

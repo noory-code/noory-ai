@@ -1,0 +1,248 @@
+"""Tests for drive.py --unattended: the loop, isolated branch, and safety.
+
+The reviewed subprocess helpers close_work.py / escalate_work.py have their own
+tests; here they are stubbed (recording + simulating the item state change) so
+these tests focus on the loop control, real git branch isolation, required
+limits, escalation routing, and the no-touch-default-branch invariant.
+"""
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import os
+import shlex
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+from pathlib import Path
+
+
+SCRIPT = Path(__file__).resolve().parents[1] / "drive.py"
+
+
+def python_command(code: str) -> str:
+    args = [sys.executable, "-c", code]
+    return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
+
+
+EXECUTOR_WRITE = python_command("open('driver-work.txt', 'a', encoding='utf-8').write('x')")
+EXECUTOR_FAIL = python_command("raise SystemExit(1)")
+
+
+def git(root: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=str(root), check=True, capture_output=True, text=True)
+
+
+def git_out(root: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=str(root), check=True, capture_output=True, text=True
+    ).stdout.strip()
+
+
+def load_module():
+    spec = importlib.util.spec_from_file_location("stage_drive_unattended", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+class UnattendedTest(unittest.TestCase):
+    def make(self, *, limits: object, executor: str = EXECUTOR_WRITE):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        git(root, "init", "-q")
+        git(root, "config", "user.email", "t@example.com")
+        git(root, "config", "user.name", "Tester")
+        (root / "seed.txt").write_text("seed", encoding="utf-8")
+        git(root, "add", "-A")
+        git(root, "commit", "-q", "-m", "seed")
+        stage_root = root / ".stage"
+        stage_root.mkdir()
+        settings: dict[str, object] = {
+            "schema_version": 4,
+            "review": {"reviewers": {"codex": "echo SELF", "claude": "echo APPROVED"}},
+            "executors": {"codex": executor},
+        }
+        if limits is not None:
+            settings["limits"] = limits
+        (stage_root / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+        return root, stage_root
+
+    def card(
+        self,
+        stage_root: Path,
+        item_id: str,
+        *,
+        parent: str = "",
+        status: str = "active",
+        autonomous: bool = True,
+        acceptance: tuple[str, ...] = ("echo ok",),
+        scope: str = "driver-work.txt",
+    ) -> None:
+        path = stage_root / "work" / "current" / f"{item_id}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        rendered = "[]"
+        if acceptance:
+            rendered = "\n" + "\n".join(f"  - {json.dumps(c)}" for c in acceptance)
+        path.write_text(
+            "---\n"
+            f"id: {item_id}\n"
+            "kind: development\n"
+            "venue: codex\n"
+            f"parent: {parent}\n"
+            f"status: {status}\n"
+            "verification: pending\n"
+            "retrospective: pending\n"
+            "retrospective_ref:\n"
+            "promotion: pending\n"
+            f"autonomous: {'true' if autonomous else 'false'}\n"
+            f"acceptance: {rendered}\n"
+            f"scope: {scope}\n"
+            "promotes:\n"
+            "decision_refs:\n"
+            "---\n\n## Progress\n",
+            encoding="utf-8",
+        )
+
+    def args(self, root: Path, target: str) -> argparse.Namespace:
+        return argparse.Namespace(
+            project_root=str(root), target=target, timeout=30, unattended=True, execute=False
+        )
+
+    def install_stubs(self, drive, calls: list):
+        def set_status(root: str, item_id: str, status: str) -> None:
+            path = Path(root) / ".stage" / "work" / "current" / f"{item_id}.md"
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                drive.set_frontmatter_field(text, "status", status), encoding="utf-8"
+            )
+
+        def stub_close(project_root, item_id, extra_checks, timeout):
+            calls.append(("close", item_id))
+            set_status(str(project_root), item_id, "completed")
+            return True, ""
+
+        def stub_escalate(project_root, item_id, reason):
+            calls.append(("escalate", item_id))
+            set_status(str(project_root), item_id, "blocked")
+            return True, ""
+
+        drive.close_via_close_work = stub_close
+        drive.escalate_via_escalate_work = stub_escalate
+
+    # --- tests -------------------------------------------------------------
+
+    def test_refuses_without_limits(self):
+        root, stage_root = self.make(limits=None)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+        base_before = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
+
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(1, rc)
+        self.assertEqual([], calls)  # nothing ran
+        # No isolated branch was created; still on the base branch.
+        self.assertEqual(base_before, git_out(root, "rev-parse", "--abbrev-ref", "HEAD"))
+
+    def test_pass_commits_to_isolated_branch_not_base(self):
+        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        self.card(stage_root, "W-00000003", parent="W-00000001")
+        base = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
+        base_count_before = int(git_out(root, "rev-list", "--count", base))
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(0, rc)
+        closed = [c[1] for c in calls if c[0] == "close"]
+        # Both leaves and the parent were closed.
+        self.assertIn("W-00000002", closed)
+        self.assertIn("W-00000003", closed)
+        self.assertIn("W-00000001", closed)
+        self.assertEqual([], [c for c in calls if c[0] == "escalate"])
+        # The base branch was NOT modified.
+        self.assertEqual(base_count_before, int(git_out(root, "rev-list", "--count", base)))
+        # Work landed on an isolated stage/driver branch with new commits.
+        current = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
+        self.assertTrue(current.startswith("stage/driver/W-00000001-"), current)
+        self.assertGreater(int(git_out(root, "rev-list", "--count", current)), base_count_before)
+
+    def test_executor_failure_escalates_not_closes(self):
+        limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits, executor=EXECUTOR_FAIL)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(0, rc)  # run finishes (nothing left ready)
+        self.assertIn(("escalate", "W-00000002"), calls)
+        self.assertNotIn("close", [c[0] for c in calls if c[1] == "W-00000002"])
+
+    def test_iteration_cap_stops_run(self):
+        limits = {"max_attempts_per_item": 3, "max_iterations": 1, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        self.card(stage_root, "W-00000003", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(1, rc)  # stopped at the global iteration cap
+        # Exactly one leaf was processed before the cap stopped the run.
+        self.assertEqual(1, len([c for c in calls if c[0] == "close" and c[1] != "W-00000001"]))
+
+    def test_missing_executor_escalates(self):
+        limits = {"max_attempts_per_item": 2, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        git(root, "init", "-q")
+        git(root, "config", "user.email", "t@example.com")
+        git(root, "config", "user.name", "Tester")
+        (root / "seed.txt").write_text("seed", encoding="utf-8")
+        git(root, "add", "-A")
+        git(root, "commit", "-q", "-m", "seed")
+        stage_root = root / ".stage"
+        stage_root.mkdir()
+        # No `executors` section at all -> resolve fails closed.
+        settings = {
+            "schema_version": 4,
+            "review": {"reviewers": {"codex": "echo SELF", "claude": "echo APPROVED"}},
+            "limits": limits,
+        }
+        (stage_root / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(0, rc)
+        self.assertIn(("escalate", "W-00000002"), calls)
+
+
+if __name__ == "__main__":
+    unittest.main()
