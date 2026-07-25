@@ -63,6 +63,21 @@ Telling the executor to commit costs a full run: a bridged executor often cannot
 at all, and the refusal lands after the implementation is finished, when the only remaining step
 was the one it could not take. The host was going to commit anyway — it holds the review.
 
+### After a Stage version change, restart the bridge first
+
+A bridge is usually a long-running process, and it resolves this plugin's paths once when it
+starts. Bump the Stage version and that process keeps reaching for a directory that no longer
+exists: the executor then fails on its first tool call — often before it can even read the card
+it was sent — with a missing hook file under the previous version's path.
+
+Restart the bridge process for that repository before delegating, and the next call resolves the
+current version. Do this even when the bump was small; the path carries the exact version.
+
+Projects developing Stage itself hit this constantly, since every change ships a version bump.
+Observed with the Codex CLI bridge, whose per-repository broker process holds the resolved path
+for its lifetime; any bridge that caches a plugin path at startup behaves the same way. This is
+the bridge runtime's behavior, not something Stage can fix from here.
+
 ## Before handing off, make each open item self-carrying
 
 For every `active`/`blocked` item you are leaving, its body must answer five things the receiving

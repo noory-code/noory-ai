@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.42.1 — 2026-07-25
+
+- Warn that a delegation bridge must be restarted after a Stage version change. A bridge process
+  resolves this plugin's paths once at startup, so a version bump leaves it reaching for a
+  directory that no longer exists and the executor fails on its first tool call — often before it
+  can read the card it was sent. This bit two delegated runs in one session, each recovered only
+  because a human remembered. `stage-handoff` now names the symptom and the fix.
+
 ## 0.42.0 — 2026-07-25
 
 - Support comments in project settings through either `settings.json` or `settings.jsonc`.
