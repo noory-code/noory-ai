@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.43.1 — 2026-07-25
+
+- Correct four defects independent review found in the `stage-drive` skill. Command examples now
+  use `${CLAUDE_PLUGIN_ROOT}/scripts/drive.py`, the path that resolves in an installed plugin —
+  the previous `stage/scripts/drive.py` form only exists in the Stage source checkout, which is
+  now called out as the exception. The conditions that end a step in `blocked` are stated as three
+  (exhausted limit, `NO-PROGRESS`, independent reviewer `BLOCK:` verdict), not two — a reviewer
+  BLOCK escalates unconditionally and must not be answered by rerunning the step. `NO-PROGRESS` is
+  described as what the fingerprint actually watches: the tracked-file `git diff` plus acceptance
+  output, which cannot see untracked new files, so it is not proof the executor did nothing.
+  The unattended-mode status now matches the record: two independent reviews both demanded
+  changes, all eleven findings were fixed, and no pass verdict exists — the reviewer's final
+  verdict was never retrieved.
+
 ## 0.43.0 — 2026-07-25
 
 - Expose the driver as the `stage-drive` skill. Every other lifecycle flow has an entry skill, so

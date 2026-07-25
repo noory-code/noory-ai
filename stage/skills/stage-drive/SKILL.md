@@ -10,11 +10,13 @@ this runs the work. It never creates work items, approves a decomposition, promo
 or crosses a human-approval gate — it only carries out cards that already exist.
 
 ```bash
-python3 stage/scripts/drive.py --project-root <project-root> <TARGET_PARENT_ID>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/drive.py" --project-root <project-root> <TARGET_PARENT_ID>
 ```
 
-The driver ships beside this skill in the plugin (`${CLAUDE_PLUGIN_ROOT}/scripts/drive.py`; in this
-repository, `stage/scripts/drive.py`). The target is a **parent** work item — the driver works on
+The driver ships beside this skill, so `${CLAUDE_PLUGIN_ROOT}/scripts/drive.py` is the path that
+resolves wherever the plugin is installed — every command here uses it. The one exception is the
+Stage source checkout itself, where the driver is a repository file: there, and only there,
+substitute `stage/scripts/drive.py`. The target is a **parent** work item — the driver works on
 its children, never on the target itself.
 
 ## The default run is a dry run
@@ -53,7 +55,7 @@ the driver refuses rather than letting a venue grade its own work.
 ## One `--execute` step, and what it deliberately leaves undone
 
 ```bash
-python3 stage/scripts/drive.py --project-root <project-root> --execute <TARGET_PARENT_ID>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/drive.py" --project-root <project-root> --execute <TARGET_PARENT_ID>
 ```
 
 This runs exactly one sequence — executor, then each stored acceptance check, then the independent
@@ -65,15 +67,21 @@ It does **not** commit, close the card, escalate, promote official truth, advanc
 move on to the next item. Those stay with the human supervising the run, so the recommended next
 action is something a person still performs.
 
-Two conditions end a step in `blocked` instead of a retry: an exhausted limit, and `NO-PROGRESS` —
-a fingerprint of the working diff plus acceptance output identical to the previous attempt, meaning
-the executor changed nothing. Both recommend `escalate_work.py`; the driver never escalates itself
-and never claims completion.
+Three conditions end a step in `blocked` instead of a retry: an exhausted limit, a `NO-PROGRESS`
+fingerprint, and an independent reviewer `BLOCK:` verdict. A reviewer BLOCK escalates
+unconditionally — it is a judgment on the result, not a transient failure, so rerunning the step
+is never the answer to it. All three recommend `escalate_work.py`; the driver never escalates
+itself and never claims completion.
+
+`NO-PROGRESS` means the fingerprint — the tracked-file `git diff` plus the acceptance output — is
+identical to the previous attempt. Untracked files are invisible to `git diff`, so an executor
+whose only output is new files fingerprints as no progress even though it worked. Read the label
+as "nothing the fingerprint watches changed", not as proof that the executor did nothing.
 
 ## `--unattended` — read this before using it
 
 ```bash
-python3 stage/scripts/drive.py --project-root <project-root> --unattended <TARGET_PARENT_ID>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/drive.py" --project-root <project-root> --unattended <TARGET_PARENT_ID>
 ```
 
 This runs the whole ready subtree without stopping: select, execute, commit, write a neutral
@@ -87,9 +95,10 @@ it is a missing decision, and an unbounded autonomous loop is forbidden. Configu
 `max_attempts_per_item`, `max_iterations`, and `max_wall_clock_seconds` together, or the run does
 not begin.
 
-**Status: reviewed in code, never exercised on real work.** The unattended loop has passed two
-independent code reviews and has tests, but no run has yet driven actual work through it end to
-end. Treat it as unproven: do not present it as an ordinary alternative to `--execute`, and do not
+**Status: reviewed in code, never exercised on real work.** The unattended loop has been through
+two independent code reviews; both demanded changes, all eleven findings were fixed, and no pass
+verdict exists on record — the reviewer's final verdict was never retrieved. It has tests, but no
+run has yet driven actual work through it end to end. Treat it as unproven: do not present it as an ordinary alternative to `--execute`, and do not
 point it at work that matters until someone has watched it complete a real subtree. When a user
 asks for autonomy, supervised `--execute` is the default answer.
 
@@ -108,7 +117,7 @@ Do not restate the driver's rules elsewhere — they are owned by:
 A dry run against a real parent is the check that the wiring holds:
 
 ```bash
-python3 stage/scripts/drive.py --project-root <project-root> <TARGET_PARENT_ID>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/drive.py" --project-root <project-root> <TARGET_PARENT_ID>
 ```
 
 Expect a printed selection with a resolved executor, resolved acceptance commands, and a resolved
