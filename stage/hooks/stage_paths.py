@@ -18,6 +18,18 @@ ACTIVE_TOPOLOGY_V3 = "v3"
 ACTIVE_TOPOLOGY_V4 = "v4"
 
 
+def read_settings(
+    stage_root: Path,
+) -> tuple[Path, object, OSError | json.JSONDecodeError | None]:
+    """Read and parse the project settings without choosing a failure policy."""
+
+    settings_path = stage_root / "settings.json"
+    try:
+        return settings_path, json.loads(settings_path.read_text(encoding="utf-8")), None
+    except (OSError, json.JSONDecodeError) as exc:
+        return settings_path, None, exc
+
+
 def active_topology(stage_root: Path) -> str:
     """Return the topology selected by this project's settings.
 
@@ -27,10 +39,8 @@ def active_topology(stage_root: Path) -> str:
     with the stage-migrate banner.
     """
 
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return ACTIVE_TOPOLOGY_V3
     schema_version = data.get(stage_topology.SCHEMA_VERSION_KEY) if isinstance(data, dict) else None
     if type(schema_version) is int and schema_version == stage_topology.SCHEMA_VERSION:
@@ -41,10 +51,8 @@ def active_topology(stage_root: Path) -> str:
 def load_schema_version(stage_root: Path) -> object:
     """Return the raw schema marker, preserving missing/malformed distinctions."""
 
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return None
     return data.get(stage_topology.SCHEMA_VERSION_KEY) if isinstance(data, dict) else None
 
@@ -57,9 +65,14 @@ def schema_migration_banner(stage_root: Path) -> str:
     behind and every mutation entry point must name the user-facing migration skill.
     """
 
-    if not (stage_root / "settings.json").exists():
+    settings_path, data, error = read_settings(stage_root)
+    if not settings_path.exists():
         return ""
-    schema_version = load_schema_version(stage_root)
+    schema_version = (
+        data.get(stage_topology.SCHEMA_VERSION_KEY)
+        if error is None and isinstance(data, dict)
+        else None
+    )
     if type(schema_version) is int and schema_version == STAGE_SCHEMA_VERSION:
         return ""
     displayed = f"v{schema_version}" if type(schema_version) is int else "missing/invalid"
@@ -278,10 +291,8 @@ def is_stage_internal_path(path: str, workspace_root: Path) -> bool:
 
 
 def load_governance(stage_root: Path) -> dict[str, Any]:
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return {}
     if not isinstance(data, dict):
         return {}
@@ -298,10 +309,8 @@ DEFAULT_LANGUAGE = "en"
 
 
 def load_language(stage_root: Path) -> str:
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return DEFAULT_LANGUAGE
     language = data.get("language") if isinstance(data, dict) else None
     if isinstance(language, str) and LANGUAGE_TAG_RE.match(language):
@@ -313,10 +322,8 @@ def load_venue_routing(stage_root: Path) -> dict[str, str]:
     """The project's declared `kind -> venue` role policy (DE-00000004), or {}
     when absent. Only well-formed string entries are returned — hooks and
     registration fail open; the audit owns reporting a malformed map."""
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return {}
     routing = data.get("venue_routing") if isinstance(data, dict) else None
     if not isinstance(routing, dict):
@@ -339,10 +346,8 @@ def load_review_config(stage_root: Path) -> dict[str, Any]:
     """The `review` block of settings.json (per-stage strength + strength→command),
     or {} when absent. A wholly unreadable settings.json is already fail-closed by
     governance_broken(); an absent/non-dict `review` here simply means 'no review'."""
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return {}
     review = data.get("review") if isinstance(data, dict) else None
     return review if isinstance(review, dict) else {}
@@ -356,10 +361,8 @@ def load_executors_config(stage_root: Path) -> object:
     fail closed.
     """
 
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return None
     return data.get("executors") if isinstance(data, dict) else None
 
@@ -414,13 +417,11 @@ def load_limits_config(stage_root: Path) -> tuple[dict[str, int] | None, str]:
     section returns ``(None, error)``; callers must fail closed on that error.
     """
 
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except OSError as exc:
-        return None, f"cannot read settings.json: {exc}"
-    except json.JSONDecodeError as exc:
-        return None, f"settings.json is not valid JSON: {exc}"
+    _settings_path, data, error = read_settings(stage_root)
+    if isinstance(error, OSError):
+        return None, f"cannot read settings.json: {error}"
+    if isinstance(error, json.JSONDecodeError):
+        return None, f"settings.json is not valid JSON: {error}"
     if not isinstance(data, dict):
         return None, "settings.json must contain a JSON object"
     if "limits" not in data:
@@ -545,10 +546,8 @@ def configured_write_tools(stage_root: Path) -> set[str]:
     them. Broken settings yield the empty set: the registered names cannot be
     read back, so those tools fall back to the documented ungated default
     while built-in tools stay behind the governance fail-closed deny."""
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return set()
     if not isinstance(data, dict):
         return set()
@@ -560,12 +559,10 @@ def configured_write_tools(stage_root: Path) -> set[str]:
 
 def governance_broken(stage_root: Path) -> bool:
     """True when settings.json exists but cannot be trusted (fail-closed signal)."""
-    settings_path = stage_root / "settings.json"
+    settings_path, data, error = read_settings(stage_root)
     if not settings_path.exists():
         return False
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    if error is not None:
         return True
     if not isinstance(data, dict):
         return True

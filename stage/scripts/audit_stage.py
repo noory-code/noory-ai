@@ -30,7 +30,7 @@ import stage_roadmap  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
 import stage_work  # noqa: E402
-from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
+from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology, read_settings  # noqa: E402
 from stage_records import AuditedItem, RecordGraph  # noqa: E402
 
 
@@ -224,7 +224,7 @@ class Audit:
             self.error(
                 "TEMPLATE005",
                 "guidance_overrides must be a list of template-backed paths relative to .stage.",
-                self.stage_root / "settings.json",
+                self.settings_path,
             )
         else:
             overrides = set(raw_overrides)
@@ -239,7 +239,7 @@ class Audit:
                     self.error(
                         "TEMPLATE005",
                         f"guidance_overrides declares unknown guidance path `{value}`.",
-                        self.stage_root / "settings.json",
+                        self.settings_path,
                     )
 
         language = guidance_docs.project_language(self.stage_root)
@@ -1269,7 +1269,7 @@ class Audit:
         project-only extra docs are allowed (ROUTE002 covers their routing).
         """
         settings = self.load_settings()
-        settings_path = self.stage_root / "settings.json"
+        settings_path = self.settings_path
         common = self.plugin_common_docs()
 
         overrides = settings.get("operations_overrides", [])
@@ -1339,7 +1339,7 @@ class Audit:
         venue stays fully advisory and nothing is reported. Open present items
         only: archived history is not judged against today's policy."""
         settings = self.load_settings()
-        settings_path = self.stage_root / "settings.json"
+        settings_path = self.settings_path
         raw = settings.get("venue_routing")
         if raw is None or raw == {}:
             return
@@ -1426,14 +1426,18 @@ class Audit:
 
     def load_settings(self) -> dict[str, Any]:
         if not hasattr(self, "_settings"):
-            try:
-                data = json.loads(
-                    (self.stage_root / "settings.json").read_text(encoding="utf-8")
-                )
-            except (OSError, json.JSONDecodeError):
+            settings_path, data, error = read_settings(self.stage_root)
+            self._settings_path = settings_path
+            if error is not None:
                 data = {}
             self._settings = data if isinstance(data, dict) else {}
         return self._settings
+
+    @property
+    def settings_path(self) -> Path:
+        if not hasattr(self, "_settings_path"):
+            self.load_settings()
+        return self._settings_path
 
     def audit_canon(self) -> None:
         if self.topology == ACTIVE_TOPOLOGY_V4:
@@ -1472,7 +1476,7 @@ class Audit:
             )
 
     def audit_governance(self) -> None:
-        settings_path = self.stage_root / "settings.json"
+        settings_path = self.settings_path
         if not settings_path.exists():
             return
         if stage_guard.governance_broken(self.stage_root):

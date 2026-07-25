@@ -20,6 +20,11 @@ LANGUAGE_TAG_RE = re.compile(r"^[a-z]{2,8}(-[a-z0-9]{2,8})*$")
 DEFAULT_LANGUAGE = "en"
 CURRENT_SCHEMA_VERSION = 4
 RUNTIME_IGNORE_ENTRY = ".stage/.runtime/"
+HOOK_ROOT = PLUGIN_ROOT / "hooks"
+if str(HOOK_ROOT) not in sys.path:
+    sys.path.insert(0, str(HOOK_ROOT))
+
+from stage_paths import read_settings  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,11 +67,9 @@ def copy_templates(
         raise FileNotFoundError(f"Template root not found: {TEMPLATE_ROOT}")
 
     stage_root = project_root / ".stage"
-    settings_path = stage_root / "settings.json"
+    settings_path, existing_settings, settings_error = read_settings(stage_root)
     if settings_path.exists():
-        try:
-            existing_settings = json.loads(settings_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        if settings_error is not None:
             existing_settings = None
         existing_version = (
             existing_settings.get("schema_version")
@@ -102,7 +105,9 @@ def copy_templates(
         created.append(target_path)
 
     if settings_path in created and language != DEFAULT_LANGUAGE:
-        settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        settings_path, settings, settings_error = read_settings(stage_root)
+        if settings_error is not None:
+            raise settings_error
         settings["language"] = language
         settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
 

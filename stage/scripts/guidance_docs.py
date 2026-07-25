@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
 import init_stage
+from stage_paths import read_settings
 
 
 SEPARATOR_CELL_RE = re.compile(r"^:?-{3,}:?$")
@@ -179,9 +179,8 @@ def guidance_matches(template_text: str, project_text: str) -> bool:
 
 
 def load_settings(stage_root: Path) -> dict[str, object]:
-    try:
-        data = json.loads((stage_root / "settings.json").read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return {}
     return data if isinstance(data, dict) else {}
 

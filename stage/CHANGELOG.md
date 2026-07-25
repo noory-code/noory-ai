@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.41.0 — 2026-07-25
+
+- Centralize project-settings path construction, reading, and JSON parsing in
+  `stage_paths.read_settings()`. Hook and script callers keep their existing failure policies:
+  permissive readers still use their prior defaults, validation callers still report errors, and
+  the governance gate still fails closed when settings are present but untrusted.
+
 ## 0.40.3 — 2026-07-25
 
 - State what the hooks can see. `operations/hooks.md` listed the blocked actions without saying

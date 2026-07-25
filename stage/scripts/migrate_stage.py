@@ -45,7 +45,7 @@ SCRIPT_ROOT = Path(__file__).resolve().parent
 if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
-from stage_paths import STAGE_SCHEMA_VERSION  # noqa: E402
+from stage_paths import STAGE_SCHEMA_VERSION, read_settings  # noqa: E402
 from stage_work import parse_frontmatter  # noqa: E402
 import stage_schema_v4_migration as v4_migration  # noqa: E402
 
@@ -112,10 +112,8 @@ def plugin_common_docs() -> dict[str, Path]:
 
 
 def load_settings(stage_root: Path) -> dict[str, object] | None:
-    settings_path = stage_root / "settings.json"
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
         return None
     return data if isinstance(data, dict) else None
 
@@ -199,9 +197,8 @@ def stamp_schema_version(
     settings["schema_version"] = version
     settings.setdefault("operations_overrides", [])
     if not dry_run:
-        (stage_root / "settings.json").write_text(
-            json.dumps(settings, indent=2) + "\n", encoding="utf-8"
-        )
+        settings_path, _data, _error = read_settings(stage_root)
+        settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
 
 
 def next_work_number(stage_root: Path) -> int:
