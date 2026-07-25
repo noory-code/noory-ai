@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.40.3 — 2026-07-25
+
+- State what the hooks can see. `operations/hooks.md` listed the blocked actions without saying
+  that a hook only ever sees a tool call, so a program writing to `.stage/official/` passes with no
+  intent and nothing consumes one — which reads as a hole to be plugged rather than the edge of
+  what a PreToolUse gate can do. An intent is now described for what it is: a declaration of which
+  work item authorized a change, enforced on the writes the guard can see, with `audit_stage.py`
+  as the independent check afterwards.
+
 ## 0.40.2 — 2026-07-25
 
 - Remove a work item's remaining per-path promotion intents when `archive_work.py` archives it,

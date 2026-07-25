@@ -10,6 +10,25 @@ This document owns the Stage hook rules.
 - `Stop` leaves a summary the next session can pick up.
 - Hooks assist the Stage core principles; they do not replace artifact promotion itself.
 
+## What the hooks can see
+
+A hook receives a tool call and decides on it. That is the whole surface: a `Write`, an `Edit`, a
+shell command line. What a program does once it is running is not part of that surface, so a script
+that opens `.stage/official/` and writes to it passes without an intent, and the `PostToolUse` step
+that consumes an intent never fires. The same applies to any editor, git operation, or process
+outside this session.
+
+This is a boundary, not a defect to route around. Refusing inline interpreter code (below) closes
+the case where the code is invisible on the command line; closing the general case would mean the
+guard interpreting arbitrary programs, which it does not attempt.
+
+So an intent is a declaration, not a defence. It records which work item authorized a change to
+official truth, and the guard enforces it on the writes it can see. An agent that reaches around
+the gate has broken the rule the gate exists for — the record is silently wrong afterwards, and
+nothing downstream will say so. When a bulk change needs a program, run it and then verify:
+`audit_stage.py` re-derives the tree's consistency independently, and leftover intents show up as
+`WORK025`.
+
 ## Blocked actions
 
 - Deleting `.stage` entirely.
