@@ -11,3 +11,4 @@
 | W-00000070 | passed | completed | not_applicable | [current/W-00000070.md](current/W-00000070.md) |
 | W-00000069 | passed | completed | not_applicable | [current/W-00000069.md](current/W-00000069.md) |
 | W-00000074 | passed | completed | approved | [current/W-00000074.md](current/W-00000074.md) |
+| W-00000073 | passed | completed | not_applicable | [current/W-00000073.md](current/W-00000073.md) |
