@@ -10,8 +10,8 @@
   },
   "extra_write_tools": [],
   "executors": {
-    "claude": "echo 'PLACEHOLDER executor: drive.py cannot pass the item id yet (W-00000069 finding)'; exit 1",
-    "codex": "echo 'PLACEHOLDER executor: drive.py cannot pass the item id yet (W-00000069 finding)'; exit 1"
+    "claude": "claude -p --permission-mode acceptEdits \"You are executing a Stage work item. Read the card at $STAGE_WORK_ITEM_PATH and complete exactly what it specifies; the card is the whole instruction. Work in $STAGE_PROJECT_ROOT. Do not commit. Do not modify files outside the card's declared scope.\"",
+    "codex": "node \"/Users/woogis/.claude/plugins/cache/openai-codex/codex/1.0.6/scripts/codex-companion.mjs\" task \"You are executing a Stage work item. Read the card at $STAGE_WORK_ITEM_PATH and complete exactly what it specifies; the card is the whole instruction. Work in $STAGE_PROJECT_ROOT. Do not commit. Do not modify files outside the card's declared scope.\""
   },
   "review": {
     "reviewers": {
