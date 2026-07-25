@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import importlib.util
 import json
 import os
@@ -8,7 +9,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive.py"
@@ -376,6 +379,105 @@ class DriveTest(unittest.TestCase):
                 git(root, "ls-files", "--others", "--exclude-standard").stdout,
             )
 
+    def test_reviewer_index_snapshot_failure_restores_index(self):
+        executor = python_command(
+            "import subprocess; "
+            "from pathlib import Path; "
+            "Path('executor-artifact.txt').write_text('partial\\n', encoding='utf-8'); "
+            "subprocess.run(['git', 'add', 'executor-artifact.txt'], check=True)"
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            (root / "human.txt").write_text("before\n", encoding="utf-8")
+            initialize_git(root)
+            (root / "human.txt").write_text("human staged\n", encoding="utf-8")
+            git(root, "add", "human.txt")
+            index_before = git(root, "diff", "--cached", "--binary").stdout
+            drive = self.load_module()
+            real_copyfile = drive.shutil.copyfile
+
+            def fail_reviewer_snapshot(source, destination):
+                if Path(destination).name == "review-index":
+                    raise OSError("injected reviewer-index snapshot failure")
+                return real_copyfile(source, destination)
+
+            output = io.StringIO()
+            argv = [
+                str(SCRIPT),
+                "--project-root",
+                str(root),
+                "--execute",
+                "W-00000001",
+            ]
+            with (
+                mock.patch.object(sys, "argv", argv),
+                mock.patch.object(
+                    drive.shutil,
+                    "copyfile",
+                    side_effect=fail_reviewer_snapshot,
+                ),
+                redirect_stdout(output),
+            ):
+                result = drive.main()
+
+            self.assertNotEqual(0, result)
+            self.assertIn(
+                "cannot snapshot executor Git index: "
+                "injected reviewer-index snapshot failure",
+                output.getvalue(),
+            )
+            self.assertEqual(
+                index_before, git(root, "diff", "--cached", "--binary").stdout
+            )
+            self.assertNotIn(
+                "executor-artifact.txt",
+                git(root, "diff", "--cached", "--name-only").stdout,
+            )
+            self.assertIn(
+                "executor-artifact.txt",
+                git(root, "ls-files", "--others", "--exclude-standard").stdout,
+            )
+
+    def test_git_untracked_paths_reports_git_failure_without_stderr(self):
+        drive = self.load_module()
+        failed = subprocess.CompletedProcess(
+            args=["git", "ls-files"],
+            returncode=1,
+            stdout=b"",
+            stderr=b"",
+        )
+
+        with mock.patch.object(drive.subprocess, "run", return_value=failed):
+            paths, error = drive.git_untracked_paths(Path.cwd())
+
+        self.assertEqual(set(), paths)
+        self.assertEqual("git ls-files failed with exit code 1", error)
+
+    def test_fingerprint_counts_changes_with_unborn_head(self):
+        tmp, root = self.make_project()
+        with tmp:
+            (root / ".gitignore").write_text(
+                ".stage/.runtime/\n", encoding="utf-8"
+            )
+            git(root, "init", "-q")
+            git(root, "add", "-A")
+            drive = self.load_module()
+            baseline = drive.fingerprint(root, ["same acceptance"])
+
+            (root / ".stage/settings.json").write_text(
+                '{"schema_version": 4}\n', encoding="utf-8"
+            )
+            git(root, "add", ".stage/settings.json")
+            changed = drive.fingerprint(root, ["same acceptance"])
+
+        self.assertNotEqual(baseline, changed)
+
     def test_fingerprint_counts_untracked_and_staged_changes(self):
         tmp, root = self.make_project()
         with tmp:
@@ -428,6 +530,47 @@ class DriveTest(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             self.assertNotIn("NO-PROGRESS", result.stdout)
             self.assertEqual("progress\n", (root / artifact).read_text(encoding="utf-8"))
+
+    def test_acceptance_created_file_is_not_in_reviewer_diff(self):
+        executor_artifact = "executor-artifact.txt"
+        acceptance_artifact = "acceptance-artifact.txt"
+        executor = python_command(
+            "from pathlib import Path; "
+            f"Path({executor_artifact!r}).write_text("
+            "'executor output\\n', encoding='utf-8')"
+        )
+        acceptance = python_command(
+            "from pathlib import Path; "
+            f"Path({acceptance_artifact!r}).write_text("
+            "'acceptance output\\n', encoding='utf-8')"
+        )
+        reviewer = python_command(
+            "import subprocess; "
+            "executor_result = subprocess.run("
+            f"['git', 'diff', 'HEAD~1', '--', {executor_artifact!r}], "
+            "capture_output=True, text=True); "
+            "acceptance_result = subprocess.run("
+            f"['git', 'diff', 'HEAD~1', '--', {acceptance_artifact!r}], "
+            "capture_output=True, text=True); "
+            "print(executor_result.stdout); "
+            "raise SystemExit("
+            f"0 if {executor_artifact!r} in executor_result.stdout "
+            "and not acceptance_result.stdout else 1)"
+        )
+        tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(acceptance,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn(executor_artifact, result.stdout)
 
     def test_reviewer_block_recommends_escalation(self):
         tmp, root = self.make_project(

@@ -192,7 +192,10 @@ def git_untracked_paths(project_root: Path) -> tuple[set[str], str]:
     except OSError as exc:
         return set(), str(exc)
     if result.returncode != 0:
-        return set(), result.stderr.decode(errors="replace").strip()
+        return set(), (
+            result.stderr.decode(errors="replace").strip()
+            or f"git ls-files failed with exit code {result.returncode}"
+        )
     return {
         os.fsdecode(raw_path)
         for raw_path in result.stdout.split(b"\0")
@@ -212,12 +215,39 @@ def git_diff(project_root: Path) -> str:
         )
     except OSError:
         return ""
-    if result.returncode != 0:
-        return ""
+    if result.returncode == 0:
+        tracked_diff = result.stdout
+    else:
+        unborn_diffs: list[str] = []
+        for extra_args in (["--cached"], []):
+            try:
+                unborn_result = subprocess.run(
+                    [
+                        "git",
+                        "diff",
+                        "--no-ext-diff",
+                        "--binary",
+                        *extra_args,
+                    ],
+                    cwd=str(project_root),
+                    capture_output=True,
+                    text=True,
+                )
+            except OSError:
+                return ""
+            if unborn_result.returncode != 0:
+                return ""
+            unborn_diffs.append(unborn_result.stdout)
+        tracked_diff = (
+            "\0UNBORN-STAGED\0"
+            + unborn_diffs[0]
+            + "\0UNBORN-UNSTAGED\0"
+            + unborn_diffs[1]
+        )
 
     untracked_paths, untracked_error = git_untracked_paths(project_root)
     if untracked_error:
-        return result.stdout
+        return tracked_diff
     untracked: list[str] = []
     for relative in sorted(untracked_paths):
         path = project_root / relative
@@ -228,7 +258,7 @@ def git_diff(project_root: Path) -> str:
         else:
             digest = hashlib.sha256(content).hexdigest()
         untracked.append(f"{relative}\0{digest}")
-    return result.stdout + "\0UNTRACKED\0" + "\0".join(untracked)
+    return tracked_diff + "\0UNTRACKED\0" + "\0".join(untracked)
 
 
 def git_index_path(project_root: Path) -> tuple[Path | None, str]:
@@ -988,6 +1018,7 @@ def main() -> int:
     failure = ""
     reviewer_blocked = False
     acceptance_output: list[str] = []
+    executor_untracked_paths: set[str] = set()
 
     index_path, index_error = git_index_path(project_root)
     if index_error:
@@ -1022,27 +1053,45 @@ def main() -> int:
         )
 
         if index_path is not None:
+            snapshot_error = ""
             try:
                 if index_path.is_file():
                     shutil.copyfile(index_path, review_index)
                 elif index_existed:
                     shutil.copyfile(original_index, review_index)
             except OSError as exc:
-                print_escalation(f"cannot snapshot executor Git index: {exc}")
-                return 1
-            restore_error = restore_git_index(
-                index_path, original_index, index_existed
-            )
-            if restore_error:
-                print_escalation(
-                    f"cannot restore Git index after execution: {restore_error}"
+                snapshot_error = str(exc)
+            finally:
+                restore_error = restore_git_index(
+                    index_path, original_index, index_existed
                 )
+            if snapshot_error or restore_error:
+                index_failures: list[str] = []
+                if snapshot_error:
+                    index_failures.append(
+                        f"cannot snapshot executor Git index: {snapshot_error}"
+                    )
+                if restore_error:
+                    index_failures.append(
+                        f"cannot restore Git index after execution: {restore_error}"
+                    )
+                print_escalation("; ".join(index_failures))
                 return 1
 
         print(f"Executor result:\n{executor_evidence}")
         if not executor_ok:
             step_ok = False
             failure = "executor command failed"
+        elif index_path is not None:
+            untracked_after, untracked_error = git_untracked_paths(project_root)
+            if untracked_error:
+                step_ok = False
+                failure = (
+                    "cannot inspect executor-created files before review: "
+                    f"{untracked_error}"
+                )
+            else:
+                executor_untracked_paths = untracked_after - untracked_before
 
         if step_ok:
             for command in item.acceptance:
@@ -1059,23 +1108,14 @@ def main() -> int:
         if step_ok:
             reviewer_env: dict[str, str] | None = None
             if index_path is not None:
-                untracked_after, untracked_error = git_untracked_paths(
-                    project_root
-                )
-                if untracked_error:
-                    step_ok = False
-                    failure = (
-                        "cannot inspect executor-created files before review: "
-                        f"{untracked_error}"
-                    )
-                elif not review_index.is_file():
+                if not review_index.is_file():
                     step_ok = False
                     failure = "cannot prepare disposable Git index for review"
                 else:
                     reviewer_env, reviewer_index_error = prepare_reviewer_index(
                         project_root,
                         review_index,
-                        untracked_after - untracked_before,
+                        executor_untracked_paths,
                     )
                     if reviewer_index_error:
                         step_ok = False

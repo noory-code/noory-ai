@@ -246,15 +246,19 @@ executor -> each stored acceptance check -> independent reviewer
 
 Before the executor runs, the driver snapshots the real Git index and records the existing
 untracked paths. Immediately after the executor exits, the driver copies the executor's index to a
-disposable index for review and restores the real index byte-for-byte. A failed executor therefore
-cannot leave its `git add` results mixed with the human's pre-existing staged changes. The driver
-does not remove executor worktree output, so the human can still inspect it.
+disposable index for review, restores the real index byte-for-byte, and records the new untracked
+paths before acceptance commands run. Restoration is attempted even when the disposable-index
+copy fails; if both operations fail, the escalation reports both failures. A failed executor
+therefore cannot leave its `git add` results mixed with the human's pre-existing staged changes.
+The driver does not remove executor worktree output, so the human can still inspect it.
 
 For independent review, the driver marks only newly untracked paths as intent-to-add in the
 disposable index and passes that index through `GIT_INDEX_FILE` to the reviewer command. Ordinary
 review commands such as `git diff` therefore include the contents of executor-created files.
-Pre-existing untracked paths are not added, and the disposable index is deleted after review. The
-real index and commit history are never changed by this review preparation.
+Pre-existing untracked paths and files created by acceptance commands are not added, and the
+disposable index is deleted after review. The real index and commit history are never changed by
+this review preparation. Failure to enumerate untracked paths fails the step closed even when Git
+does not provide an error message.
 
 The driver reuses the close-work command runner, treats a reviewer nonzero exit or `BLOCK:` verdict
 as failure, then prints the outcome and recommended explicit next action. It does not commit, call
@@ -278,11 +282,12 @@ Execute mode stores untracked state at
 }
 ```
 
-The fingerprint is SHA-256 over staged and unstaged tracked changes (`git diff HEAD`), the path and
-content hash of each untracked non-ignored file, and acceptance output. A consecutive match is
-`NO-PROGRESS`. Missing executor, missing acceptance, unusable independent review, malformed
-limits, an exhausted limit, and no progress all fail closed with an `escalate_work`
-recommendation; the driver never claims completion or performs escalation itself.
+The fingerprint is SHA-256 over staged and unstaged tracked changes (`git diff HEAD`, or separate
+staged and unstaged diffs when `HEAD` is unborn), the path and content hash of each untracked
+non-ignored file, and acceptance output. A consecutive match is `NO-PROGRESS`. Missing executor,
+missing acceptance, unusable independent review, malformed limits, an exhausted limit, and no
+progress all fail closed with an `escalate_work` recommendation; the driver never claims
+completion or performs escalation itself.
 
 ### Unattended driver loop
 

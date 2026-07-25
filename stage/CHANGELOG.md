@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.43.4 — 2026-07-26
+
+- Harden supervised review preparation after the executor exits. Failure to copy the executor's
+  index into the disposable reviewer index can no longer bypass restoration of the human's
+  original index; if both snapshot and restoration fail, the escalation reports both failures.
+  Untracked-file discovery now fails closed even when Git returns no stderr, new untracked paths
+  are frozen before acceptance commands run so verification artifacts do not enter the reviewer
+  diff, and progress fingerprints cover staged and unstaged changes in repositories with an
+  unborn `HEAD`.
+
 ## 0.43.3 — 2026-07-26
 
 - Make supervised execution review and progress detection cover the executor's complete output.
