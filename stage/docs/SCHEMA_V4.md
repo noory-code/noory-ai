@@ -191,13 +191,25 @@ Selection is deterministic by work-item ID. It never creates work items or appro
 decomposition.
 
 The review-sibling `executors` object in `.stage/settings.json` binds each item venue to its
-executor command:
+executor command. Variable expansion syntax is shell-specific because the driver runs these
+commands through the platform shell. On macOS and Linux, use POSIX syntax:
 
 ```json
 {
   "executors": {
     "codex": "run-codex-executor --work-item \"$STAGE_WORK_ITEM\" --card \"$STAGE_WORK_ITEM_PATH\" --project-root \"$STAGE_PROJECT_ROOT\"",
     "claude": "run-claude-executor --work-item \"$STAGE_WORK_ITEM\" --card \"$STAGE_WORK_ITEM_PATH\" --project-root \"$STAGE_PROJECT_ROOT\""
+  }
+}
+```
+
+On Windows, `shell=True` uses `cmd.exe`, so use percent-delimited variable syntax:
+
+```json
+{
+  "executors": {
+    "codex": "run-codex-executor --work-item \"%STAGE_WORK_ITEM%\" --card \"%STAGE_WORK_ITEM_PATH%\" --project-root \"%STAGE_PROJECT_ROOT%\"",
+    "claude": "run-claude-executor --work-item \"%STAGE_WORK_ITEM%\" --card \"%STAGE_WORK_ITEM_PATH%\" --project-root \"%STAGE_PROJECT_ROOT%\""
   }
 }
 ```

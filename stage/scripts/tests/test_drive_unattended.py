@@ -189,6 +189,45 @@ class UnattendedTest(unittest.TestCase):
         self.assertTrue(current.startswith("stage/driver/W-00000001-"), current)
         self.assertGreater(int(git_out(root, "rev-list", "--count", current)), base_count_before)
 
+    def test_executor_receives_selected_work_item_environment(self):
+        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "executor-environment.json"
+            variable_names = (
+                "STAGE_WORK_ITEM",
+                "STAGE_WORK_ITEM_PATH",
+                "STAGE_PROJECT_ROOT",
+            )
+            executor = python_command(
+                "import json, os; "
+                "from pathlib import Path; "
+                f"names = {variable_names!r}; "
+                "Path('driver-work.txt').write_text('x', encoding='utf-8'); "
+                f"Path({str(marker)!r}).write_text("
+                "json.dumps({name: os.environ[name] for name in names}), "
+                "encoding='utf-8')"
+            )
+            root, stage_root = self.make(limits=limits, executor=executor)
+            self.card(stage_root, "W-00000001")
+            self.card(stage_root, "W-00000002", parent="W-00000001")
+            drive = load_module()
+            calls: list = []
+            self.install_stubs(drive, calls)
+
+            self.commit_all(root)
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"), root, stage_root, time.time()
+            )
+
+            self.assertEqual(0, rc)
+            environment = json.loads(marker.read_text(encoding="utf-8"))
+            self.assertEqual("W-00000002", environment["STAGE_WORK_ITEM"])
+            self.assertEqual(
+                str((stage_root / "work/current/W-00000002.md").resolve()),
+                environment["STAGE_WORK_ITEM_PATH"],
+            )
+            self.assertEqual(str(root.resolve()), environment["STAGE_PROJECT_ROOT"])
+
     def test_executor_failure_escalates_not_closes(self):
         limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}
         root, stage_root = self.make(limits=limits, executor=EXECUTOR_FAIL)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.42.3 — 2026-07-25
+
+- Document the Windows `cmd.exe` syntax for executor environment variables and cover unattended
+  executor context injection with a regression test.
+
 ## 0.42.2 — 2026-07-25
 
 - Pass the target work item context to executor processes in both supervised and unattended modes
