@@ -185,6 +185,9 @@ driver rather than this transition.
 
 ### Supervised driver and executor settings
 
+The `stage-drive` skill is the agent-facing entry point to everything in this section and the two
+that follow; this document remains the contract it links to.
+
 `stage/scripts/drive.py <TARGET_PARENT_ID>` is the supervised driver entry point. It selects one
 existing, direct, non-terminal leaf child of the target whose `acceptance` list is non-empty.
 Selection is deterministic by work-item ID. It never creates work items or approves a

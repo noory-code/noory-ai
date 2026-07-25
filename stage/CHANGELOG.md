@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.43.0 — 2026-07-25
+
+- Expose the driver as the `stage-drive` skill. Every other lifecycle flow has an entry skill, so
+  an agent that reads the plugin's skill list had no way to learn that `drive.py` exists — the
+  driver was reachable only from `docs/SCHEMA_V4.md`. The skill states when to reach for the
+  driver, that the default invocation is a side-effect-free dry run, the two settings gates that
+  fail closed (`executors`, and a reviewer whose venue differs from the item's), what a single
+  `--execute` step deliberately leaves for the human, and that `--unattended` refuses to start
+  without a `limits` config. It also records that unattended mode, though code-reviewed and
+  tested, has never been exercised on real work, so it is not offered as an ordinary alternative
+  to supervised execution.
+
 ## 0.42.3 — 2026-07-25
 
 - Document the Windows `cmd.exe` syntax for executor environment variables and cover unattended
