@@ -9,3 +9,5 @@
 | W-00000069 | qa | codex | 드라이버는 코드로는 완성돼 있지만 이 저장소에서 한 번도 돌지 않았다. 실행자 설정을 채우고 감독 모드로 한 | active | Claude | [current/W-00000069.md](current/W-00000069.md) |
 | W-00000070 | documentation | claude | 드라이버는 다른 생애주기 흐름과 달리 스킬이 없어, 플러그인을 읽는 에이전트가 존재를 알 수 없다. 진입 스 | active | Claude | [current/W-00000070.md](current/W-00000070.md) |
 | W-00000073 | fix | codex | 감독 모드는 커밋하지 않는데 리뷰 명령은 git 변경을 본다. git diff는 추적되지 않는 새 파일을 보 | active | Claude | [current/W-00000073.md](current/W-00000073.md) |
+| W-00000074 | design | claude | 스킬 문서가 같은 플러그인 안의 스크립트를 실행하라고 안내할 때 쓸 경로 표기를 정한다. 현재 관행인 CLA | active | Claude | [current/W-00000074.md](current/W-00000074.md) |
+| W-00000075 | fix | codex | 무인 드라이버가 Stage 기록을 커밋하는 네 자리 중 셋에서 실패를 확인하지 않아, 커밋이 실패해도 성공한 | active | Claude | [current/W-00000075.md](current/W-00000075.md) |
