@@ -11,6 +11,7 @@
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [W-00000026.md](W-00000026.md) |
+| W-00000056 | 마이그레이션의 안내 산문 갱신 방식 결정 (Q-00000001) | planning | captured | high |  | [W-00000056.md](W-00000056.md) |
 
 ## 상태 값
 
