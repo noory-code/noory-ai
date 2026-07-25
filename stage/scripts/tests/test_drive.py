@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
@@ -130,29 +131,48 @@ class DriveTest(unittest.TestCase):
         spec.loader.exec_module(module)
         return module
 
-    def test_audit_check_quotes_for_the_platform_shell(self):
-        # The audit string is handed to a shell, and the two shells disagree about
-        # single quotes: a POSIX shell strips them, cmd.exe passes them through. A
-        # command quoted for one is broken on the other.
+    def test_shell_command_joins_for_posix(self):
+        # A POSIX shell strips single quotes, so shlex is the joiner there and the
+        # string must split back into exactly the arguments that went in.
         drive = self.load_module()
-        spaced = drive.audit_check(Path("/tmp/a b/repo"))
-        plain = drive.audit_check(Path("/tmp/plain/repo"))
+        args = ["/usr/bin/python3", "/a b/audit.py", "--project-root", "/a b/repo"]
 
-        if os.name == "nt":
-            self.assertIn('"', spaced)
-            self.assertNotIn("'", spaced)
-            self.assertNotIn("'", plain)
-        else:
-            self.assertIn("'/tmp/a b/repo'", spaced)
-            self.assertIn("--project-root /tmp/plain/repo", plain)
+        with unittest.mock.patch.object(drive.os, "name", "posix"):
+            joined = drive.shell_command(args)
 
-        # Whatever the platform, the joined string must parse back into the four
-        # arguments the audit expects — a path that survives quoting but splits on
-        # the way out is the bug this guards.
-        parsed = (
-            drive.shlex.split(spaced) if os.name != "nt" else spaced.split('" "')
-        )
+        self.assertIn("'/a b/repo'", joined)
+        self.assertEqual(args, shlex.split(joined))
+
+    def test_shell_command_joins_for_windows(self):
+        # cmd.exe does NOT strip single quotes, so quoting the POSIX way would hand
+        # it a program name that literally starts with a quote. This branch runs on
+        # every platform on purpose — there is no Windows runner to catch it.
+        drive = self.load_module()
+        args = [
+            r"C:\Python\python.exe",
+            r"C:\p\audit.py",
+            "--project-root",
+            r"C:\a b\repo",
+        ]
+
+        with unittest.mock.patch.object(drive.os, "name", "nt"):
+            joined = drive.shell_command(args)
+
+        self.assertNotIn("'", joined)
+        # Only the argument containing a space is quoted; the rest stay bare.
+        self.assertIn(r'"C:\a b\repo"', joined)
+        self.assertTrue(joined.startswith(r"C:\Python\python.exe "))
+
+    def test_audit_check_survives_a_project_path_with_a_space(self):
+        drive = self.load_module()
+
+        with unittest.mock.patch.object(drive.os, "name", "posix"):
+            command = drive.audit_check(Path("/tmp/a b/repo"))
+
+        parsed = shlex.split(command)
         self.assertEqual(4, len(parsed))
+        self.assertEqual("--project-root", parsed[2])
+        self.assertEqual("/tmp/a b/repo", parsed[3])
 
     def test_selects_next_ready_leaf_by_id(self):
         tmp, root = self.make_project()

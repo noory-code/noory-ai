@@ -12,7 +12,8 @@
   to a shell, so a path containing a space split into several arguments and the check failed; that
   now matters on every parent close rather than only on parents without their own acceptance. POSIX
   shells strip single quotes and `cmd.exe` does not, so each gets its own joiner rather than one
-  quoting style that breaks the other.
+  quoting style that breaks the other. This covers spaces; a project path containing a `cmd.exe`
+  metacharacter (`&`, `^`, `|`, `<`, `>`) is still unhandled and tracked as W-00000077.
 - Let `close_work` merge a card's own acceptance commands. The driver had been passing a parent's
   acceptance list as extra checks, but `close_work` already merges the card's own list, so every
   parent close ran those commands twice.
