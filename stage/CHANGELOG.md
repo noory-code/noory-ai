@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.42.2 — 2026-07-25
+
+- Pass the target work item context to executor processes in both supervised and unattended modes
+  through `STAGE_WORK_ITEM`, `STAGE_WORK_ITEM_PATH`, and `STAGE_PROJECT_ROOT`. Previously, the
+  executor had no way to know which work item it was operating on.
+
 ## 0.42.1 — 2026-07-25
 
 - Warn that a delegation bridge must be restarted after a Stage version change. A bridge process

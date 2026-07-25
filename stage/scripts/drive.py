@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -195,6 +196,20 @@ def git_diff(project_root: Path) -> str:
 def fingerprint(project_root: Path, acceptance_output: list[str]) -> str:
     payload = git_diff(project_root) + "\0" + "\n".join(acceptance_output)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def executor_environment(item: WorkItem, project_root: Path) -> dict[str, str]:
+    """Return the inherited environment plus the selected work item context."""
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "STAGE_WORK_ITEM": item.item_id,
+            "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
+            "STAGE_PROJECT_ROOT": str(project_root.resolve()),
+        }
+    )
+    return env
 
 
 def cap_text(limits: dict[str, int] | None, key: str) -> str:
@@ -674,7 +689,12 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 return 1
             continue
 
-        executor_ok, executor_evidence, _raw = run_check(executor_command, cmd_timeout, project_root)
+        executor_ok, executor_evidence, _raw = run_check(
+            executor_command,
+            cmd_timeout,
+            project_root,
+            env=executor_environment(item, project_root),
+        )
         current_fingerprint = fingerprint(project_root, [executor_evidence])
         no_progress = (
             bool(item_state["last_fingerprint"]) and current_fingerprint == item_state["last_fingerprint"]
@@ -861,7 +881,10 @@ def main() -> int:
     acceptance_output: list[str] = []
 
     executor_ok, executor_evidence, _executor_raw = run_check(
-        executor_command, args.timeout, project_root
+        executor_command,
+        args.timeout,
+        project_root,
+        env=executor_environment(item, project_root),
     )
     print(f"Executor result:\n{executor_evidence}")
     if not executor_ok:

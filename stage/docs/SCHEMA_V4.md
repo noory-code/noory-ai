@@ -196,11 +196,21 @@ executor command:
 ```json
 {
   "executors": {
-    "codex": "run-codex-executor",
-    "claude": "run-claude-executor"
+    "codex": "run-codex-executor --work-item \"$STAGE_WORK_ITEM\" --card \"$STAGE_WORK_ITEM_PATH\" --project-root \"$STAGE_PROJECT_ROOT\"",
+    "claude": "run-claude-executor --work-item \"$STAGE_WORK_ITEM\" --card \"$STAGE_WORK_ITEM_PATH\" --project-root \"$STAGE_PROJECT_ROOT\""
   }
 }
 ```
+
+Before the driver launches an executor in supervised execute mode or unattended mode, it copies
+the current process environment and sets:
+
+- `STAGE_WORK_ITEM`: the selected work item ID, such as `W-00000070`;
+- `STAGE_WORK_ITEM_PATH`: the absolute path to the selected work item's card;
+- `STAGE_PROJECT_ROOT`: the absolute path to the project root.
+
+This injection applies only to executor commands. Stored acceptance verification commands and
+review commands do **not** receive these variables from the driver.
 
 `stage_paths.load_executors_config()` reads the raw section, and
 `stage_paths.resolve_executor_command(executors, item_venue)` returns `(command, "")` only when

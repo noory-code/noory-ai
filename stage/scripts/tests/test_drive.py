@@ -236,6 +236,52 @@ class DriveTest(unittest.TestCase):
             self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
             self.assertTrue(state["items"]["W-00000002"]["last_fingerprint"])
 
+    def test_execute_passes_selected_work_item_environment(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "executor-environment.json"
+            variable_names = (
+                "STAGE_WORK_ITEM",
+                "STAGE_WORK_ITEM_PATH",
+                "STAGE_PROJECT_ROOT",
+            )
+            executor = python_command(
+                "import json, os; "
+                "from pathlib import Path; "
+                f"names = {variable_names!r}; "
+                f"Path({str(marker)!r}).write_text("
+                "json.dumps({name: os.environ[name] for name in names}), "
+                "encoding='utf-8')"
+            )
+            tmp, root = self.make_project(executor=executor)
+            with tmp:
+                stage_root = root / ".stage"
+                write_card(
+                    stage_root,
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+
+                result = self.run_cli(root, "--execute")
+
+                self.assertEqual(
+                    0, result.returncode, result.stdout + result.stderr
+                )
+                environment = json.loads(marker.read_text(encoding="utf-8"))
+                self.assertEqual("W-00000002", environment["STAGE_WORK_ITEM"])
+                self.assertEqual(
+                    str(
+                        (
+                            stage_root
+                            / "work/current/W-00000002.md"
+                        ).resolve()
+                    ),
+                    environment["STAGE_WORK_ITEM_PATH"],
+                )
+                self.assertEqual(
+                    str(root.resolve()), environment["STAGE_PROJECT_ROOT"]
+                )
+
     def test_reviewer_block_recommends_escalation(self):
         tmp, root = self.make_project(
             reviewer=python_command("print('BLOCK: no'); raise SystemExit(1)")

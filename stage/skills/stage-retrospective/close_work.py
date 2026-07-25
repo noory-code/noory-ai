@@ -128,7 +128,12 @@ def ensure_review_row(
     review_path.write_text(f"{text.rstrip(chr(10))}\n{row}\n", encoding="utf-8")
 
 
-def run_check(command: str, timeout: int, cwd: Path) -> tuple[bool, str, str]:
+def run_check(
+    command: str,
+    timeout: int,
+    cwd: Path,
+    env: dict[str, str] | None = None,
+) -> tuple[bool, str, str]:
     # Returns (ok, evidence_block, raw_output). The RAW output is returned
     # separately so a verdict scan (e.g. `^BLOCK:`) runs on the full text, never
     # on the clipped evidence block — a verdict line could otherwise be clipped
@@ -136,7 +141,13 @@ def run_check(command: str, timeout: int, cwd: Path) -> tuple[bool, str, str]:
     # the same way whatever directory close_work was launched from.
     try:
         proc = subprocess.run(
-            command, shell=True, capture_output=True, text=True, timeout=timeout, cwd=str(cwd)
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=str(cwd),
+            env=env,
         )
     except subprocess.TimeoutExpired:
         msg = f"$ {command}\n[TIMED OUT after {timeout}s]"
