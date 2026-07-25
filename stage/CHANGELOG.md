@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.43.5 — 2026-07-26
+
+- Make unattended lifecycle bookkeeping fail closed. Failures to commit escalation, pre-close
+  retry, or ancestor-aggregation records now stop the run for human handoff, matching the existing
+  item-close behavior instead of continuing without durable Stage history.
+- Always include the Stage audit when closing a ready parent. Parent-declared acceptance commands
+  now run in addition to the audit rather than replacing it, preserving the aggregation
+  verification contract.
+
 ## 0.43.4 — 2026-07-26
 
 - Harden supervised review preparation after the executor exits. Failure to copy the executor's

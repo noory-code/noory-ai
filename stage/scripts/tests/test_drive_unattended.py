@@ -135,6 +135,15 @@ class UnattendedTest(unittest.TestCase):
         drive.close_via_close_work = stub_close
         drive.escalate_via_escalate_work = stub_escalate
 
+    def fail_lifecycle_commit(self, drive, fragment: str, calls: list[str]) -> None:
+        def stub_commit_lifecycle(project_root, message):
+            calls.append(message)
+            if fragment in message:
+                return False, "simulated lifecycle commit failure"
+            return True, ""
+
+        drive.commit_lifecycle = stub_commit_lifecycle
+
     def commit_all(self, root: Path) -> None:
         git(root, "add", "-A")
         subprocess.run(["git", "commit", "-q", "-m", "fixture"],
@@ -332,6 +341,126 @@ class UnattendedTest(unittest.TestCase):
         committed = git_out(root, "show", f"{branch}:.stage/work/current/W-00000002.md")
         self.assertIn("status: completed", committed)
 
+    def test_escalation_lifecycle_commit_failure_stops_run(self):
+        limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits, executor=EXECUTOR_FAIL)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        lifecycle_calls: list[str] = []
+        self.install_stubs(drive, calls)
+        self.fail_lifecycle_commit(drive, "escalated (lifecycle)", lifecycle_calls)
+
+        self.commit_all(root)
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(1, rc)
+        self.assertIn(("escalate", "W-00000002"), calls)
+        self.assertEqual(
+            ["driver: W-00000002 escalated (lifecycle)"],
+            lifecycle_calls,
+        )
+
+    def test_pre_close_lifecycle_commit_failure_stops_before_retry(self):
+        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        close_calls: list[str] = []
+        lifecycle_calls: list[str] = []
+
+        def stub_close(project_root, item_id, extra_checks, timeout):
+            close_calls.append(item_id)
+            return False, "simulated close failure"
+
+        drive.close_via_close_work = stub_close
+        self.fail_lifecycle_commit(drive, "pre-close lifecycle (retry)", lifecycle_calls)
+
+        self.commit_all(root)
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(1, rc)
+        self.assertEqual(["W-00000002"], close_calls)
+        self.assertEqual(
+            ["driver: W-00000002 pre-close lifecycle (retry)"],
+            lifecycle_calls,
+        )
+
+    def test_ancestor_lifecycle_commit_failure_stops_run(self):
+        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        lifecycle_calls: list[str] = []
+        self.install_stubs(drive, calls)
+        self.fail_lifecycle_commit(drive, "ancestor aggregation (lifecycle)", lifecycle_calls)
+
+        self.commit_all(root)
+        rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+
+        self.assertEqual(1, rc)
+        self.assertIn(("close", "W-00000001"), calls)
+        self.assertEqual(
+            [
+                "driver: W-00000002 closed (lifecycle)",
+                "driver: W-00000002 ancestor aggregation (lifecycle)",
+            ],
+            lifecycle_calls,
+        )
+
+    def test_parent_with_acceptance_runs_audit_and_declared_acceptance(self):
+        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits)
+        marker = root / "parent-checks.txt"
+        audit_command = python_command(
+            f"open({str(marker)!r}, 'a', encoding='utf-8').write('audit\\n')"
+        )
+        acceptance_command = python_command(
+            f"open({str(marker)!r}, 'a', encoding='utf-8').write('acceptance\\n')"
+        )
+        self.card(
+            stage_root,
+            "W-00000001",
+            acceptance=(acceptance_command,),
+            scope="parent-checks.txt",
+        )
+        drive = load_module()
+
+        def stub_close(project_root, item_id, extra_checks, timeout):
+            for command in extra_checks:
+                ok, _evidence, _raw = drive.run_check(command, timeout, project_root)
+                if not ok:
+                    return False, f"check failed: {command}"
+            path = stage_root / "work" / "current" / f"{item_id}.md"
+            path.write_text(
+                drive.set_frontmatter_field(
+                    path.read_text(encoding="utf-8"), "status", "completed"
+                ),
+                encoding="utf-8",
+            )
+            return True, ""
+
+        drive.audit_check = lambda project_root: audit_command
+        drive.close_via_close_work = stub_close
+
+        closed, error = drive.close_ready_ancestors(
+            root,
+            stage_root,
+            "W-00000001",
+            "W-00000001",
+            30,
+        )
+
+        self.assertEqual("", error)
+        self.assertEqual(["W-00000001"], closed)
+        self.assertEqual(
+            ["audit", "acceptance"],
+            marker.read_text(encoding="utf-8").splitlines(),
+        )
 
     def test_parent_close_failure_stops_run(self):
         # Regression (re-review): a failed parent aggregation-close must stop the run

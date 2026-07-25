@@ -693,7 +693,7 @@ def close_ready_ancestors(
             if err:
                 return closed, f"{current}: {err}"
             mark_retrospective(stage_root, current, retro_id)
-        checks = list(parent.acceptance) or [audit_check(project_root)]
+        checks = [audit_check(project_root), *parent.acceptance]
         ok, out = close_via_close_work(project_root, current, checks, timeout)
         if not ok:
             return closed, f"{current}: parent close failed: {out.strip()[:200]}"
@@ -750,7 +750,14 @@ def escalate_and_commit(project_root: Path, item_id: str, reason: str, timeout: 
             f"escalation of {item_id} FAILED ({out.strip()[:200]}); stopping run to avoid a stuck loop"
         )
         return False
-    commit_lifecycle(project_root, f"driver: {item_id} escalated (lifecycle)")
+    lifecycle_ok, lifecycle_out = commit_lifecycle(
+        project_root, f"driver: {item_id} escalated (lifecycle)"
+    )
+    if not lifecycle_ok:
+        print_escalation(
+            f"cannot commit escalation lifecycle for {item_id}: {lifecycle_out.strip()[:200]}"
+        )
+        return False
     return True
 
 
@@ -886,7 +893,15 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                     return 1
             else:
                 # Persist the retrospective/lifecycle so a retry does not recreate it.
-                commit_lifecycle(project_root, f"driver: {item.item_id} pre-close lifecycle (retry)")
+                lc_ok, lc_msg = commit_lifecycle(
+                    project_root, f"driver: {item.item_id} pre-close lifecycle (retry)"
+                )
+                if not lc_ok:
+                    print_escalation(
+                        f"cannot commit pre-close lifecycle for {item.item_id}: "
+                        f"{lc_msg.strip()[:200]}"
+                    )
+                    return 1
                 print(f"[{item.item_id}] {reason}; retry {attempt}/{cap}")
             continue
 
@@ -899,8 +914,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         processed.append(item.item_id)
         print(f"[{item.item_id}] completed on {branch}")
 
-        _closed, anc_error = close_ready_ancestors(project_root, stage_root, args.target, item.parent, cmd_timeout)
-        commit_lifecycle(project_root, f"driver: {item.item_id} ancestor aggregation (lifecycle)")
+        _closed, anc_error = close_ready_ancestors(
+            project_root, stage_root, args.target, item.parent, cmd_timeout
+        )
+        lc_ok, lc_msg = commit_lifecycle(
+            project_root, f"driver: {item.item_id} ancestor aggregation (lifecycle)"
+        )
+        if not lc_ok:
+            print_escalation(
+                f"cannot commit ancestor lifecycle for {item.item_id}: {lc_msg.strip()[:200]}"
+            )
+            return 1
         if anc_error:
             print_escalation(f"parent aggregation-close failed: {anc_error}; handoff on {branch}")
             return 1
