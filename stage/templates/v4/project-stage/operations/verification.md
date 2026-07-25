@@ -9,8 +9,8 @@ item uses a kind that has no row here.
 
 | Kind | `passed` means |
 |---|---|
-| planning | The user (or decision owner) confirmed the plan; open questions routed to `present/state/questions/`. |
-| design | The design was reviewed and approved by its owner; decisions recorded in `present/work/decisions/`. |
+| planning | The user (or decision owner) confirmed the plan; open questions are recorded as question artifacts in the state space. |
+| design | The design was reviewed and approved by its owner; decisions are recorded as decision records. |
 | development | Tests or equivalent executable verification pass; a declared linter/formatter passes (skipped only when the project declares none). |
 | qa | The test scenarios were executed and their results are recorded in the work item. |
 | ops | The change was applied and observed working in its target environment. |

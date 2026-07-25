@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.39.1 — 2026-07-25
+
+- Make the `planning` and `design` verification criteria in the project template
+  topology-neutral (W-00000055): they named schema-v3 paths (`present/state/questions/`,
+  `present/work/decisions/`), yet `operations/verification.md` is shared byte-identical across the
+  v3 and v4 template roots, so no single topology path can be correct. Describe the artifacts
+  instead of a path.
+
 ## 0.39.0 — 2026-07-25
 
 Block opaque inline interpreter access to Stage paths (W-00000054):

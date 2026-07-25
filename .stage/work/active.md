@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000055 | documentation | claude | 검증 종류 템플릿의 planning·design 행이 v3 경로(present/state/questions, | active | Claude | [current/W-00000055.md](current/W-00000055.md) |
