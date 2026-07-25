@@ -25,6 +25,7 @@ if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
 import stage_guard  # noqa: E402
+import guidance_docs  # noqa: E402
 import stage_roadmap  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
@@ -208,6 +209,39 @@ class Audit:
             self.error("TEMPLATE001", "Stage template root not found.", self.template_root)
             return
 
+        settings = self.load_settings()
+        guidance_paths = (
+            set(guidance_docs.guidance_paths())
+            if self.topology == ACTIVE_TOPOLOGY_V4
+            else set()
+        )
+        raw_overrides = settings.get("guidance_overrides", [])
+        overrides: set[str] = set()
+        if not isinstance(raw_overrides, list) or not all(
+            isinstance(value, str) for value in raw_overrides
+        ):
+            self.error(
+                "TEMPLATE005",
+                "guidance_overrides must be a list of template-backed paths relative to .stage.",
+                self.stage_root / "settings.json",
+            )
+        else:
+            overrides = set(raw_overrides)
+            valid_paths = {path.as_posix() for path in guidance_paths}
+            for value in sorted(overrides):
+                relative = Path(value)
+                if (
+                    relative.is_absolute()
+                    or ".." in relative.parts
+                    or value not in valid_paths
+                ):
+                    self.error(
+                        "TEMPLATE005",
+                        f"guidance_overrides declares unknown guidance path `{value}`.",
+                        self.stage_root / "settings.json",
+                    )
+
+        language = guidance_docs.project_language(self.stage_root)
         for template_path in sorted(self.template_root.rglob("*")):
             if template_path.is_dir():
                 continue
@@ -227,6 +261,28 @@ class Audit:
                     "Stage template artifact exists but is not a regular file.",
                     target,
                 )
+            elif (
+                relative in guidance_paths
+                and relative.as_posix() not in overrides
+            ):
+                localized = guidance_docs.localized_template(relative, language)
+                template_text = localized.read_text(encoding="utf-8")
+                try:
+                    project_text = target.read_text(encoding="utf-8")
+                except (OSError, UnicodeError):
+                    continue
+                if not guidance_docs.guidance_matches(
+                    template_text,
+                    project_text,
+                ):
+                    self.warning(
+                        "TEMPLATE004",
+                        "Stage guidance differs from the current localized template. Run "
+                        "`python3 stage/scripts/refresh_guidance.py --project-root "
+                        f"<project-root> {relative.as_posix()}` or declare the path in "
+                        "settings.json guidance_overrides.",
+                        target,
+                    )
 
     def audit_work_items(self, graph: RecordGraph) -> list[AuditedItem]:
         # Duplicate detection is scan-order policy: the first occurrence owns

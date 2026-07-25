@@ -210,7 +210,11 @@ class V3ToV4MigrationTest(unittest.TestCase):
             self.assertIn("[principles](../official/canon/principles.md)", fields)
             self.assertIn("`state/questions.md`", fields)
             self.assertEqual(4, settings["schema_version"])
-            self.assertEqual([], findings)
+            self.assertEqual(
+                [],
+                [finding for finding in findings if finding.code != "TEMPLATE004"],
+            )
+            self.assertIn("TEMPLATE004", {finding.code for finding in findings})
             self.assertIn("R100", staged)
             self.assertIn("does not commit", output.lower())
             self.assertIn("--abort", output)

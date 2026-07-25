@@ -1087,6 +1087,71 @@ class StageAuditTest(unittest.TestCase):
         self.assertIn("TEMPLATE002", finding_codes(findings))
         self.assertEqual(["warning"], [finding.severity for finding in findings if finding.code == "TEMPLATE002"])
 
+    def test_english_guidance_in_korean_project_is_reported_as_stale(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            init_stage.copy_templates(root, False, language="ko")
+            relative = Path("state/current.md")
+            target = root / ".stage" / relative
+            target.write_bytes((init_stage.TEMPLATE_ROOT / relative).read_bytes())
+
+            findings = audit_stage.Audit(root).run()
+
+        stale = [finding for finding in findings if finding.code == "TEMPLATE004"]
+        self.assertEqual(["warning"], [finding.severity for finding in stale])
+        self.assertEqual([".stage/state/current.md"], [finding.path for finding in stale])
+        self.assertIn("refresh_guidance.py", stale[0].message)
+
+    def test_guidance_override_suppresses_stale_warning(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            init_stage.copy_templates(root, False, language="ko")
+            relative = Path("state/current.md")
+            target = root / ".stage" / relative
+            target.write_bytes((init_stage.TEMPLATE_ROOT / relative).read_bytes())
+            settings_path = root / ".stage" / "settings.json"
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            settings["guidance_overrides"] = [relative.as_posix()]
+            settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertNotIn("TEMPLATE004", finding_codes(findings))
+
+    def test_project_rows_in_template_empty_table_are_not_guidance_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            target = root / ".stage" / "work" / "active.md"
+            lines = target.read_text(encoding="utf-8").splitlines()
+            separator = next(
+                index
+                for index, line in enumerate(lines)
+                if line.startswith("|---") or line.startswith("| ---")
+            )
+            lines.insert(
+                separator + 1,
+                "| W-00000001 | development | codex | Test | active | owner | [item](current/W-00000001.md) |",
+            )
+            target.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertNotIn("TEMPLATE004", finding_codes(findings))
+
+    def test_malformed_guidance_overrides_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            settings_path = root / ".stage" / "settings.json"
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            settings["guidance_overrides"] = "state/current.md"
+            settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("TEMPLATE005", finding_codes(findings))
+
 
     def write_record(self, root: Path, relative: str, record_id: str, extra: str = "") -> Path:
         path = root / ".stage" / relative

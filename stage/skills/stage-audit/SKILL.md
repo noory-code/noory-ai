@@ -21,6 +21,34 @@ For machine judgment, run with JSON output.
 python3 stage/scripts/audit_stage.py --project-root <project-root> --format json
 ```
 
+`TEMPLATE004` means a project guidance document differs from the current template selected for
+the project's `settings.json` `language`. Preview safe default refreshes with:
+
+```bash
+python3 stage/scripts/refresh_guidance.py --project-root <project-root> --dry-run
+```
+
+Run the same command without `--dry-run` to apply the plan. The command derives ownership from
+each template's table shape:
+
+- A document with no table is replaced in full.
+- A document with one empty table is replaced except that the project's table data rows are
+  preserved.
+- A document whose template has a populated table is skipped by default. Name its path relative to
+  `.stage` to authorize full replacement, for example:
+
+```bash
+python3 stage/scripts/refresh_guidance.py --project-root <project-root> index.md
+```
+
+A template with multiple empty tables is refused because the project-owned data boundary is
+ambiguous. Declare an intentionally project-owned document in `settings.json`
+`guidance_overrides` to suppress its drift warning and exclude it from the default refresh. Naming
+an override path explicitly still authorizes replacement.
+
+Do not use `stage-init --force` as a refresh path. It replaces project-owned indexes and state as
+well as guidance and can destroy project data.
+
 ## Judgment criteria
 
 - Any `error` means not complete.
@@ -30,6 +58,8 @@ python3 stage/scripts/audit_stage.py --project-root <project-root> --format json
 ## Main checks
 
 - Missing required Stage artifacts against the template.
+- Stale guidance against the current localized template, excluding declared `guidance_overrides`
+  and preserving data rows in template-empty tables.
 - Work item frontmatter enum violations.
 - Completed work with open verification, retrospective, or promotion decision.
 - Mismatches between `active.md`, `review.md`, and `items/`.

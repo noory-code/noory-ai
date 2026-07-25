@@ -23,7 +23,8 @@ body preserved. Never deletes a body that has no surviving record.
 v4 (W-00000037): perform the fail-closed one-shot responsibility-topology
 relocation through ``stage_topology.V3_TO_V4_RELOCATIONS``. The transaction
 uses git moves, a runtime maintenance marker and journal, marker-last schema
-stamping, strict audit, and a deterministic pre-commit ``--abort`` path.
+stamping, an audit that allows guidance-drift warnings to remain visible for
+the explicit refresh command, and a deterministic pre-commit ``--abort`` path.
 """
 
 from __future__ import annotations
@@ -331,7 +332,11 @@ def migrate_operations(
 def strict_audit_findings(project_root: Path):
     import audit_stage
 
-    return audit_stage.Audit(project_root).run()
+    return [
+        finding
+        for finding in audit_stage.Audit(project_root).run()
+        if finding.code != "TEMPLATE004"
+    ]
 
 
 def abort(project_root: Path) -> int:
@@ -455,7 +460,10 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         )
         return 1
 
-    print("Schema-v4 migration complete and strict audit clean.")
+    print(
+        "Schema-v4 migration complete with no blocking audit findings. Guidance drift remains "
+        "a non-blocking audit warning until the explicit refresh command is run."
+    )
     print(
         "All migration changes are staged; this command does not commit. Review them, then "
         "commit with: git commit -m \"chore(stage): migrate project harness to schema v4\""

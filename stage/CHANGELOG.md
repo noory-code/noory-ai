@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.40.0 — 2026-07-25
+
+Detect and refresh stale project guidance (W-00000057):
+
+- `audit_stage.py` now compares template-backed `.stage` Markdown guidance with the current
+  locale overlay and reports `TEMPLATE004` warnings for drift. `guidance_overrides` declares
+  intentionally project-owned paths.
+- `refresh_guidance.py` supports plan-only `--dry-run`, full replacement for prose-only
+  templates, project-row preservation for a single template-empty table, default exclusion for
+  templates with populated tables, and explicit path selection for their full replacement.
+  Ambiguous templates with multiple empty tables fail closed.
+- Schema-v3 migration keeps guidance drift visible but non-blocking so users can run the explicit
+  refresh command after structural migration.
+
 ## 0.39.1 — 2026-07-25
 
 - Make the `planning` and `design` verification criteria in the project template

@@ -131,10 +131,15 @@ def set_field(path: Path, field: str, value: str) -> None:
 
 class MigrationAdversarialFixture(unittest.TestCase):
     def assert_audit_clean(self, root: Path) -> None:
-        result = run_tool(AUDIT, root, "--strict")
+        result = run_tool(AUDIT, root, "--format", "json")
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-        self.assertIn("OK: no findings", result.stdout)
-        self.assertIn("Summary: errors=0, warnings=0", result.stdout)
+        payload = json.loads(result.stdout)
+        unexpected = [
+            finding
+            for finding in payload["findings"]
+            if finding["code"] != "TEMPLATE004"
+        ]
+        self.assertEqual([], unexpected)
 
     def migrate_successfully(self, root: Path, *, commit: bool = False) -> str:
         code, output = run_migrate(root)

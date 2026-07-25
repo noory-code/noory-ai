@@ -207,8 +207,13 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
 
             milestone_path = stage_root / "roadmap" / "milestones" / "M-00000092.md"
             milestone_path.write_text("# M-00000092 Fixture milestone\n", encoding="utf-8")
-            with (stage_root / "roadmap" / "index.md").open("a", encoding="utf-8") as handle:
-                handle.write("| M-00000092 | Fixture milestone |\n")
+            with (stage_root / "roadmap" / "milestones" / "index.md").open(
+                "a", encoding="utf-8"
+            ) as handle:
+                handle.write(
+                    "| M-00000092 | | Fixture milestone | | "
+                    "[M-00000092.md](M-00000092.md) |\n"
+                )
 
             self.assertEqual("v4", stage_paths.active_topology(stage_root))
             self.assert_guard_allows_registered_write(root)
