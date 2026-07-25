@@ -10,7 +10,8 @@
 
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [W-00000026.md](W-00000026.md) |
+| W-00000026 | 설정 파일에 주석을 달 수 있게 한다 | development | captured | medium |  | [W-00000026.md](W-00000026.md) |
+| W-00000067 | 설정 파일을 읽는 자리를 하나로 모은다 | development | captured | high |  | [W-00000067.md](W-00000067.md) |
 
 ## 상태 값
 
