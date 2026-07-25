@@ -8,7 +8,9 @@ limits, escalation routing, and the no-touch-default-branch invariant.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import shlex
@@ -425,27 +427,21 @@ class UnattendedTest(unittest.TestCase):
         self.card(
             stage_root,
             "W-00000001",
+            autonomous=False,
             acceptance=(acceptance_command,),
             scope="parent-checks.txt",
         )
+        item_path = stage_root / "work/current/W-00000001.md"
+        item_path.write_text(
+            item_path.read_text(encoding="utf-8").replace(
+                "## Progress\n",
+                "## Progress\n\n## Verification\n\n## Retrospective\n\n## Promotion decision\n",
+            ),
+            encoding="utf-8",
+        )
         drive = load_module()
 
-        def stub_close(project_root, item_id, extra_checks, timeout):
-            for command in extra_checks:
-                ok, _evidence, _raw = drive.run_check(command, timeout, project_root)
-                if not ok:
-                    return False, f"check failed: {command}"
-            path = stage_root / "work" / "current" / f"{item_id}.md"
-            path.write_text(
-                drive.set_frontmatter_field(
-                    path.read_text(encoding="utf-8"), "status", "completed"
-                ),
-                encoding="utf-8",
-            )
-            return True, ""
-
         drive.audit_check = lambda project_root: audit_command
-        drive.close_via_close_work = stub_close
 
         closed, error = drive.close_ready_ancestors(
             root,
@@ -458,9 +454,40 @@ class UnattendedTest(unittest.TestCase):
         self.assertEqual("", error)
         self.assertEqual(["W-00000001"], closed)
         self.assertEqual(
-            ["audit", "acceptance"],
+            ["acceptance", "audit"],
             marker.read_text(encoding="utf-8").splitlines(),
         )
+
+    def test_parent_and_ancestor_lifecycle_failures_are_both_reported(self):
+        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        original_close = drive.close_via_close_work
+
+        def fail_parent_close(project_root, item_id, extra_checks, timeout):
+            if item_id == "W-00000001":
+                return False, "simulated parent close failure"
+            return original_close(project_root, item_id, extra_checks, timeout)
+
+        drive.close_via_close_work = fail_parent_close
+        self.fail_lifecycle_commit(drive, "ancestor aggregation (lifecycle)", [])
+
+        self.commit_all(root)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"), root, stage_root, time.time()
+            )
+
+        self.assertEqual(1, rc)
+        self.assertIn("parent aggregation-close failed", output.getvalue())
+        self.assertIn("simulated parent close failure", output.getvalue())
+        self.assertIn("cannot commit ancestor lifecycle", output.getvalue())
 
     def test_parent_close_failure_stops_run(self):
         # Regression (re-review): a failed parent aggregation-close must stop the run

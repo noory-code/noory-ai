@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -656,7 +657,12 @@ def select_next_unattended_leaf(target_id: str, items: list[WorkItem]) -> WorkIt
 
 
 def audit_check(project_root: Path) -> str:
-    return f"{sys.executable} {AUDIT} --project-root {project_root}"
+    # Quoted because this string is handed to a shell: an interpreter, script, or
+    # project path containing a space would otherwise split into several arguments.
+    return (
+        f"{shlex.quote(sys.executable)} {shlex.quote(str(AUDIT))} "
+        f"--project-root {shlex.quote(str(project_root))}"
+    )
 
 
 def close_ready_ancestors(
@@ -668,9 +674,10 @@ def close_ready_ancestors(
     closed did not (retrospective or close failed) — the caller must fail closed;
     stopping because a parent still has non-terminal children is normal, not an error.
 
-    A parent has no acceptance; its verification is the audit (whole-.stage
-    consistency) plus close_work's own aggregation gate (children terminal) — its
-    children were each independently reviewed (DE-00000027). No silent pass.
+    Parent verification always includes the audit (whole-.stage consistency) plus
+    close_work's own aggregation gate (children terminal). close_work also loads and
+    runs any parent-declared acceptance once; the children were each independently
+    reviewed (DE-00000027). No silent pass.
     """
 
     closed: list[str] = []
@@ -693,7 +700,7 @@ def close_ready_ancestors(
             if err:
                 return closed, f"{current}: {err}"
             mark_retrospective(stage_root, current, retro_id)
-        checks = [audit_check(project_root), *parent.acceptance]
+        checks = [audit_check(project_root)]
         ok, out = close_via_close_work(project_root, current, checks, timeout)
         if not ok:
             return closed, f"{current}: parent close failed: {out.strip()[:200]}"
@@ -740,8 +747,8 @@ def remaining_timeout(now: float, wall_clock: int, per_command: int) -> int:
 def escalate_and_commit(project_root: Path, item_id: str, reason: str, timeout: int) -> bool:
     """Escalate an item to blocked and commit the resulting lifecycle to the run branch.
 
-    Returns False when escalation itself failed — the run must stop, because the item
-    would otherwise stay `active` and be retried without bound.
+    Returns False when escalation or its lifecycle commit failed — the run must stop,
+    because the item would otherwise stay `active` or its blocked state would be lost.
     """
 
     ok, out = escalate_via_escalate_work(project_root, item_id, reason, timeout)
@@ -921,8 +928,15 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             project_root, f"driver: {item.item_id} ancestor aggregation (lifecycle)"
         )
         if not lc_ok:
+            failures = []
+            if anc_error:
+                failures.append(f"parent aggregation-close failed: {anc_error}")
+            failures.append(
+                f"cannot commit ancestor lifecycle for {item.item_id}: "
+                f"{lc_msg.strip()[:200]}"
+            )
             print_escalation(
-                f"cannot commit ancestor lifecycle for {item.item_id}: {lc_msg.strip()[:200]}"
+                f"{'; '.join(failures)}; handoff on {branch}"
             )
             return 1
         if anc_error:

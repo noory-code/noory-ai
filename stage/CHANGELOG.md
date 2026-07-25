@@ -8,6 +8,9 @@
 - Always include the Stage audit when closing a ready parent. Parent-declared acceptance commands
   now run in addition to the audit rather than replacing it, preserving the aggregation
   verification contract.
+- Quote the audit command's interpreter, script, and project-root paths. The audit is handed to a
+  shell, so a path containing a space split into several arguments and the check failed; that now
+  matters on every parent close rather than only on parents without their own acceptance.
 
 ## 0.43.4 — 2026-07-26
 
