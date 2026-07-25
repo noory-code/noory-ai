@@ -1,14 +1,16 @@
 ---
-id: B-00000000
+id: W-00000000
 title: Title
 kind:
+venue:
 parent:
 status: captured
 priority:
-realized_by:
+autonomous: false
+acceptance: []
 ---
 
-# B-00000000 Title
+# W-00000000 Title
 
 ## Purpose
 
@@ -33,7 +35,7 @@ realized_by:
 ## Risks
 
 
-## Verification criteria
+## Success criteria
 
 
 ## Next action

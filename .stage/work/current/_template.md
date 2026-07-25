@@ -5,11 +5,14 @@ kind:
 venue:
 parent:
 source:
+autonomous: false
+acceptance: []
 status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
 promotion: pending
+review: not_required
 scope:
 promotes:
 decision_refs:

@@ -1,4 +1,9 @@
-# Theme Title
+---
+id: TH-00000000
+decision_refs:
+---
+
+# TH-00000000 Title
 
 ## Intent
 
@@ -11,5 +16,3 @@
 
 ## Out of scope
 
-
-## Status

@@ -1,7 +1,8 @@
-# Proposal Index
+# 제안 인덱스
 
-This document owns the current index of proposals.
+이 문서는 제안의 현재 인덱스를 소유한다.
 
-| ID | Title | Status | Decision needed by | Link |
+| ID | 제목 | 상태 | 결정 기한 | 링크 |
 |---|---|---|---|---|
 | P-00000001 | Codex 런타임의 Stage 플러그인 버전별 캐시 무효화 | 기록됨 | — | [P-00000001](P-00000001.md) |
+

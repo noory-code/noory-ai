@@ -1,5 +1,9 @@
 {
   "schema_version": 4,
+  "guidance_overrides": [
+    "official/canon/vocabulary.md",
+    "operations/verification.md"
+  ],
   "governance": {
     "exclude_paths": [],
     "exclude_extensions": []
