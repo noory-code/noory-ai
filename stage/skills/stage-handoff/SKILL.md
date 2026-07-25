@@ -43,6 +43,26 @@ card by delegation instead of waiting for a human to switch windows:
 - Delegation is optional per card. When no bridge is available, the routing view's default
   applies: the human opens the venue's window.
 
+### The delegated run, end to end
+
+Delegation splits one card between two agents, so say once who does what. The executor produces
+the change. Everything that turns a change into a record belongs to the host, because the host is
+the reviewer and a record must not be written by the agent whose work it attests to.
+
+1. The host makes the card self-carrying (below) and states the constraints the executor cannot
+   read off the card: start the card with `start_work.py` before touching governed files, write
+   tests first where the project requires it, and **do not commit**.
+2. The executor starts the card, produces the change, and reports what it changed and what it
+   ran. It leaves the working tree dirty on purpose.
+3. The host reviews that output against the card's success criteria, and re-runs the checks
+   itself rather than trusting the executor's transcript.
+4. The host commits the source while the card is still open (`operations/after.md`).
+5. The host closes the card with `close_work.py`, then archives it.
+
+Telling the executor to commit costs a full run: a bridged executor often cannot write to `.git`
+at all, and the refusal lands after the implementation is finished, when the only remaining step
+was the one it could not take. The host was going to commit anyway — it holds the review.
+
 ## Before handing off, make each open item self-carrying
 
 For every `active`/`blocked` item you are leaving, its body must answer five things the receiving

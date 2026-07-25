@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.40.1 — 2026-07-25
+
+- Say who commits when a card is delegated. `stage-handoff` described what the executing venue
+  produces and who reviews it, but never named the agent that turns the change into a record, so
+  a delegated run could be told to commit — and a bridged executor that cannot write to `.git`
+  discovers this only after the implementation is finished. The skill now walks the delegated run
+  end to end: the executor starts the card, produces the change and stops with a dirty tree; the
+  host reviews it, re-runs the checks itself, commits while the card is open, then closes and
+  archives.
+
 ## 0.40.0 — 2026-07-25
 
 Detect and refresh stale project guidance (W-00000057):
