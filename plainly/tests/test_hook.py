@@ -85,7 +85,7 @@ class HookTest(unittest.TestCase):
         self.assertIn("communication only", context)
 
     def test_language_rule_is_injected_on_every_resolution_path(self) -> None:
-        marker = "not word-for-word renderings of English phrasing"
+        marker = "Language rule: compose in the reader's language"
         cases = (
             ("default", {}, None),
             ("environment profile", {"NOORY_STYLE_PROFILE": "brief"}, None),

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1 — 2026-07-25
+
+- Make the language rule decidable and stop burying it. The 0.4.0 wording ("write as a fluent
+  writer of its language would") sat inside the trailing instructions about Plainly itself and
+  stated an aspiration rather than a test, so calques still shipped: a writer coining a compound
+  from an English term has no moment where the old rule fires. The rule is now its own labeled
+  paragraph carrying two checks a writer can run on a finished sentence — would a native speaker
+  say this phrase aloud, and does the sentence still stand in English word order — each with the
+  repair to apply.
+
 ## 0.4.0 — 2026-07-24
 
 - Add a fixed language-quality rule to every hook injection, including external styles, to prevent
