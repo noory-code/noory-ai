@@ -9,6 +9,10 @@
     "exclude_extensions": []
   },
   "extra_write_tools": [],
+  "executors": {
+    "claude": "echo 'PLACEHOLDER executor: drive.py cannot pass the item id yet (W-00000069 finding)'; exit 1",
+    "codex": "echo 'PLACEHOLDER executor: drive.py cannot pass the item id yet (W-00000069 finding)'; exit 1"
+  },
   "review": {
     "reviewers": {
       "codex": "OUT=$(node \"/Users/woogis/.claude/plugins/cache/openai-codex/codex/1.0.6/scripts/codex-companion.mjs\" review --wait --base HEAD~1 2>&1); printf '%s\\n' \"$OUT\"; case \"$OUT\" in *\"[P1]\"*) echo \"BLOCK: codex review reported a P1 blocker\"; exit 1;; esac",
