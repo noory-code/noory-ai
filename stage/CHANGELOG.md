@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.43.2 — 2026-07-25
+
+- Correct three defects a second independent review found in the `stage-drive` skill. Command
+  examples no longer use `${CLAUDE_PLUGIN_ROOT}` — that variable is injected into hook commands
+  only and expands to nothing in the shell that runs skill commands; per decision DE-00000031 the
+  skill now locates the driver relative to its own directory (`../../scripts/drive.py`) and every
+  example carries a `<driver>` placeholder for the resolved absolute path, with the Stage source
+  checkout's repository path kept as the marked exception. The unattended-mode status no longer
+  claims all review findings were fixed: the open defects — unchecked Stage bookkeeping commits in
+  three of four places, a parent close that skips the structural audit — are stated and routed to
+  W-00000075. The `NO-PROGRESS` description is narrowed to what the fingerprint actually sees:
+  unstaged edits to tracked files only, so staged changes are as invisible as untracked new files
+  (root fix tracked as W-00000073). The `<driver>` placeholder is quoted in every example, so a
+  plugin installed under a path containing spaces still runs.
+
 ## 0.43.1 — 2026-07-25
 
 - Correct four defects independent review found in the `stage-drive` skill. Command examples now
