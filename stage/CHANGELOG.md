@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.43.3 — 2026-07-26
+
+- Make supervised execution review and progress detection cover the executor's complete output.
+  The driver snapshots and restores the real Git index around the executor, then gives the
+  independent reviewer a disposable index where only executor-created untracked files are marked
+  intent-to-add. Review commands using `git diff` now see new file contents without mixing
+  executor staging into the human's index, including after executor failure. Progress fingerprints
+  now cover staged changes, unstaged tracked changes, and hashed untracked files, preventing
+  new-file-only or staged-only work from being misclassified as `NO-PROGRESS`.
+
 ## 0.43.2 — 2026-07-25
 
 - Correct three defects a second independent review found in the `stage-drive` skill. Command

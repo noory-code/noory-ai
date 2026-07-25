@@ -22,6 +22,26 @@ def python_command(code: str) -> str:
 PASS_COMMAND = python_command("raise SystemExit(0)")
 
 
+def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
+def initialize_git(root: Path) -> None:
+    (root / ".gitignore").write_text(".stage/.runtime/\n", encoding="utf-8")
+    git(root, "init", "-q")
+    git(root, "config", "user.email", "test@example.com")
+    git(root, "config", "user.name", "Stage Test")
+    git(root, "commit", "--allow-empty", "-q", "-m", "base")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "seed")
+
+
 def write_card(
     stage_root: Path,
     item_id: str,
@@ -281,6 +301,133 @@ class DriveTest(unittest.TestCase):
                 self.assertEqual(
                     str(root.resolve()), environment["STAGE_PROJECT_ROOT"]
                 )
+
+    def test_reviewer_git_diff_sees_executor_created_file_content(self):
+        artifact = "executor-artifact.txt"
+        executor = python_command(
+            "from pathlib import Path; "
+            f"Path({artifact!r}).write_text('executor artifact\\n', encoding='utf-8')"
+        )
+        reviewer = python_command(
+            "import subprocess; "
+            f"result = subprocess.run(['git', 'diff', 'HEAD~1', '--', {artifact!r}], "
+            "capture_output=True, text=True); "
+            "print(result.stdout); "
+            "raise SystemExit("
+            "0 if result.returncode == 0 and 'executor artifact' in result.stdout else 1"
+            ")"
+        )
+        tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("executor artifact", result.stdout)
+            self.assertEqual("", git(root, "diff", "--cached", "--name-only").stdout)
+            self.assertIn(
+                artifact,
+                git(root, "ls-files", "--others", "--exclude-standard").stdout,
+            )
+
+    def test_failed_executor_restores_index_and_does_not_commit(self):
+        executor = python_command(
+            "import subprocess; "
+            "from pathlib import Path; "
+            "Path('failed-artifact.txt').write_text('partial\\n', encoding='utf-8'); "
+            "subprocess.run(['git', 'add', 'failed-artifact.txt'], check=True); "
+            "raise SystemExit(1)"
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            (root / "human.txt").write_text("before\n", encoding="utf-8")
+            initialize_git(root)
+            (root / "human.txt").write_text("human staged\n", encoding="utf-8")
+            git(root, "add", "human.txt")
+            head_before = git(root, "rev-parse", "HEAD").stdout
+            index_before = git(root, "diff", "--cached", "--binary").stdout
+
+            result = self.run_cli(root, "--execute")
+
+            self.assertNotEqual(0, result.returncode)
+            self.assertEqual(head_before, git(root, "rev-parse", "HEAD").stdout)
+            self.assertEqual(
+                index_before, git(root, "diff", "--cached", "--binary").stdout
+            )
+            self.assertNotIn(
+                "failed-artifact.txt",
+                git(root, "diff", "--cached", "--name-only").stdout,
+            )
+            self.assertIn(
+                "failed-artifact.txt",
+                git(root, "ls-files", "--others", "--exclude-standard").stdout,
+            )
+
+    def test_fingerprint_counts_untracked_and_staged_changes(self):
+        tmp, root = self.make_project()
+        with tmp:
+            initialize_git(root)
+            drive = self.load_module()
+            baseline = drive.fingerprint(root, ["same acceptance"])
+
+            (root / "untracked.txt").write_text("new\n", encoding="utf-8")
+            untracked = drive.fingerprint(root, ["same acceptance"])
+            (root / "untracked.txt").unlink()
+
+            (root / ".stage/settings.json").write_text(
+                '{"schema_version": 4}\n', encoding="utf-8"
+            )
+            git(root, "add", ".stage/settings.json")
+            staged = drive.fingerprint(root, ["same acceptance"])
+
+        self.assertNotEqual(baseline, untracked)
+        self.assertNotEqual(baseline, staged)
+
+    def test_new_file_only_is_progress_with_identical_acceptance_output(self):
+        artifact = "progress.txt"
+        executor = python_command(
+            "from pathlib import Path; "
+            f"Path({artifact!r}).write_text('progress\\n', encoding='utf-8')"
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            state_path = stage_root / ".runtime/driver/W-00000001.json"
+            state_path.parent.mkdir(parents=True)
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["iteration_count"] = 1
+            state["items"]["W-00000002"] = {
+                "attempt_count": 1,
+                "last_fingerprint": drive.fingerprint(root, [""]),
+            }
+            drive.write_run_state(state_path, state)
+
+            result = self.run_cli(root, "--execute")
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertNotIn("NO-PROGRESS", result.stdout)
+            self.assertEqual("progress\n", (root / artifact).read_text(encoding="utf-8"))
 
     def test_reviewer_block_recommends_escalation(self):
         tmp, root = self.make_project(
