@@ -656,12 +656,22 @@ def select_next_unattended_leaf(target_id: str, items: list[WorkItem]) -> WorkIt
     )
 
 
+def shell_command(args: list[str]) -> str:
+    """Join arguments the way the platform's shell parses them.
+
+    The result is handed to a shell, and the two shells disagree: POSIX shells
+    strip single quotes, `cmd.exe` does not. Quoting for one breaks the other,
+    so each gets its own joiner.
+    """
+
+    if os.name == "nt":
+        return subprocess.list2cmdline(args)
+    return shlex.join(args)
+
+
 def audit_check(project_root: Path) -> str:
-    # Quoted because this string is handed to a shell: an interpreter, script, or
-    # project path containing a space would otherwise split into several arguments.
-    return (
-        f"{shlex.quote(sys.executable)} {shlex.quote(str(AUDIT))} "
-        f"--project-root {shlex.quote(str(project_root))}"
+    return shell_command(
+        [sys.executable, str(AUDIT), "--project-root", str(project_root)]
     )
 
 

@@ -8,9 +8,14 @@
 - Always include the Stage audit when closing a ready parent. Parent-declared acceptance commands
   now run in addition to the audit rather than replacing it, preserving the aggregation
   verification contract.
-- Quote the audit command's interpreter, script, and project-root paths. The audit is handed to a
-  shell, so a path containing a space split into several arguments and the check failed; that now
-  matters on every parent close rather than only on parents without their own acceptance.
+- Join the audit command the way the running platform's shell parses it. The audit string is handed
+  to a shell, so a path containing a space split into several arguments and the check failed; that
+  now matters on every parent close rather than only on parents without their own acceptance. POSIX
+  shells strip single quotes and `cmd.exe` does not, so each gets its own joiner rather than one
+  quoting style that breaks the other.
+- Let `close_work` merge a card's own acceptance commands. The driver had been passing a parent's
+  acceptance list as extra checks, but `close_work` already merges the card's own list, so every
+  parent close ran those commands twice.
 
 ## 0.43.4 — 2026-07-26
 

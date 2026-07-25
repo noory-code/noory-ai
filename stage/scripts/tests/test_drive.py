@@ -130,6 +130,30 @@ class DriveTest(unittest.TestCase):
         spec.loader.exec_module(module)
         return module
 
+    def test_audit_check_quotes_for_the_platform_shell(self):
+        # The audit string is handed to a shell, and the two shells disagree about
+        # single quotes: a POSIX shell strips them, cmd.exe passes them through. A
+        # command quoted for one is broken on the other.
+        drive = self.load_module()
+        spaced = drive.audit_check(Path("/tmp/a b/repo"))
+        plain = drive.audit_check(Path("/tmp/plain/repo"))
+
+        if os.name == "nt":
+            self.assertIn('"', spaced)
+            self.assertNotIn("'", spaced)
+            self.assertNotIn("'", plain)
+        else:
+            self.assertIn("'/tmp/a b/repo'", spaced)
+            self.assertIn("--project-root /tmp/plain/repo", plain)
+
+        # Whatever the platform, the joined string must parse back into the four
+        # arguments the audit expects — a path that survives quoting but splits on
+        # the way out is the bug this guards.
+        parsed = (
+            drive.shlex.split(spaced) if os.name != "nt" else spaced.split('" "')
+        )
+        self.assertEqual(4, len(parsed))
+
     def test_selects_next_ready_leaf_by_id(self):
         tmp, root = self.make_project()
         with tmp:
