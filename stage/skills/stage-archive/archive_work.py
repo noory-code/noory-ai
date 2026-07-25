@@ -34,6 +34,7 @@ from stage_paths import (  # noqa: E402
     active_topology,
     schema_migration_banner,
 )
+from stage_runtime import delete_pending_intents_for_work_item  # noqa: E402
 from stage_work import WorkItem, load_all_work_items, non_terminal_children  # noqa: E402
 
 TERMINAL_STATUSES = {"completed", "rejected"}
@@ -216,6 +217,11 @@ def archive_one(
                 f"{item_id}: ERROR retrospective id collision: {ref}.md already belongs "
                 f"to {archived_work_item}; refusing to overwrite it"
             )
+
+    failed_intents = delete_pending_intents_for_work_item(stage_root, item_id)
+    if failed_intents:
+        names = ", ".join(path.name for path in failed_intents)
+        return f"{item_id}: ERROR cannot delete pending intent(s): {names}"
 
     # Move the item (status -> archived) and its retrospective (verbatim).
     archive_item.parent.mkdir(parents=True, exist_ok=True)

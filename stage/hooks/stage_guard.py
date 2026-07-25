@@ -119,6 +119,7 @@ from stage_runtime import (  # noqa: E402  (after sys.path bootstrap)
     SESSION_SUMMARY_KEEP,
     consume_claims_for,
     migrate_legacy_runtime,
+    pending_intent_files_for_work_item,
     promotion_blocker,
     prune_question_ack_markers,
     prune_session_summaries,

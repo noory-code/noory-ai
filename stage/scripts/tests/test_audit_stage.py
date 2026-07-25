@@ -224,6 +224,46 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("WORK013", finding_codes(findings))
 
+    def test_archived_work_item_pending_intent_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(
+                root,
+                item_id="W-0001",
+                status="archived",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="not_applicable",
+                location="archive",
+            )
+            self.write_archive_retrospective(
+                root,
+                retro_id="R-0001",
+                work_item="W-0001",
+            )
+            intents = root / ".stage/.runtime/intents"
+            intents.mkdir(parents=True)
+            archived_intent = intents / "W-0001--index.md-1111111111.json"
+            archived_intent.write_text("{}\n", encoding="utf-8")
+            active_intent = intents / "W-0002--index.md-2222222222.json"
+            active_intent.write_text("{}\n", encoding="utf-8")
+
+            findings = [
+                finding
+                for finding in audit_stage.Audit(root).run()
+                if finding.code == "WORK025"
+            ]
+
+        self.assertEqual(1, len(findings))
+        self.assertEqual("warning", findings[0].severity)
+        self.assertIn("W-0001", findings[0].message)
+        self.assertEqual(
+            ".stage/.runtime/intents/W-0001--index.md-1111111111.json",
+            findings[0].path,
+        )
+
     def test_completed_retrospective_reference_passes_with_backlink(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

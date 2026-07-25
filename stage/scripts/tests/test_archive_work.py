@@ -160,6 +160,25 @@ class ArchiveWorkCliTest(unittest.TestCase):
             self.assertFalse((stage / "present/work/retrospectives/R-00000001.md").exists())
             self.assertNotIn("W-00000001", (stage / "present/work/review.md").read_text(encoding="utf-8"))
 
+    def test_archiving_removes_only_the_archived_items_pending_intents(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            intents = root / ".stage/.runtime/intents"
+            intents.mkdir(parents=True)
+            archived_intents = [
+                intents / "W-00000001--index.md-1111111111.json",
+                intents / "W-00000001--principles.md-2222222222.json",
+            ]
+            other_intent = intents / "W-00000002--index.md-3333333333.json"
+            for path in [*archived_intents, other_intent]:
+                path.write_text("{}\n", encoding="utf-8")
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+            self.assertFalse(any(path.exists() for path in archived_intents))
+            self.assertTrue(other_intent.exists())
+
     def test_refuses_parent_with_planned_child(self):
         tmp, root = self.make_stage()
         with tmp:

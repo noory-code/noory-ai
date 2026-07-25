@@ -184,6 +184,7 @@ class Audit:
         self.audit_template_files()
         graph = RecordGraph(self.stage_root)
         items = self.audit_work_items(graph)
+        self.audit_archived_work_intents(items)
         self.audit_hierarchy(items)
         self.audit_work_indexes(items)
         self.audit_backlog_items(graph)
@@ -319,6 +320,22 @@ class Audit:
                 )
 
         return graph.work
+
+    def audit_archived_work_intents(
+        self, audited_items: list[AuditedItem]
+    ) -> None:
+        for audited_item in audited_items:
+            if audited_item.location != "archive":
+                continue
+            item_id = audited_item.item.item_id
+            for path in stage_guard.pending_intent_files_for_work_item(
+                self.stage_root, item_id
+            ):
+                self.warning(
+                    "WORK025",
+                    f"Archived work item {item_id} still has a pending intent.",
+                    path,
+                )
 
     def audit_work_item_fields(self, audited_item: AuditedItem) -> None:
         item = audited_item.item

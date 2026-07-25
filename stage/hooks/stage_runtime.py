@@ -52,6 +52,32 @@ def intents_root(stage_root: Path) -> Path:
     return stage_root / ".runtime" / "intents"
 
 
+def pending_intent_files_for_work_item(
+    stage_root: Path, work_item: str
+) -> list[Path]:
+    """Return pending intent files owned by one work item."""
+
+    prefix = f"{runtime_slot_name(work_item)}--"
+    try:
+        return sorted(intents_root(stage_root).glob(f"{prefix}*.json"))
+    except OSError:
+        return []
+
+
+def delete_pending_intents_for_work_item(
+    stage_root: Path, work_item: str
+) -> list[Path]:
+    """Delete one work item's pending intents and return paths that failed."""
+
+    failed: list[Path] = []
+    for path in pending_intent_files_for_work_item(stage_root, work_item):
+        try:
+            path.unlink()
+        except OSError:
+            failed.append(path)
+    return failed
+
+
 def migrate_legacy_runtime(stage_root: Path) -> None:
     """Move 0.1.0 single-slot runtime files into the per-item/per-session layout.
 

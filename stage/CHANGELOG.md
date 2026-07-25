@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.40.2 — 2026-07-25
+
+- Remove a work item's remaining per-path promotion intents when `archive_work.py` archives it,
+  without touching intents owned by other work items. `audit_stage.py` now reports `WORK025`
+  warnings for pending intents left behind by already archived work.
+
 ## 0.40.1 — 2026-07-25
 
 - Say who commits when a card is delegated. `stage-handoff` described what the executing venue
