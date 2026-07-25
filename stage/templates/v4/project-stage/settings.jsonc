@@ -1,0 +1,34 @@
+{
+  // Selects the Stage responsibility topology and migration contract.
+  "schema_version": 4,
+  // Selects the language for human-readable project Stage documents.
+  "language": "en",
+  // Lists template-backed guidance files intentionally owned by this project.
+  "guidance_overrides": [],
+  // Lists project-owned operation documents that replace plugin defaults.
+  "operations_overrides": [],
+  // Maps each work kind to its required execution venue.
+  "venue_routing": {},
+  // Excludes project paths or extensions from Stage write governance.
+  "governance": {
+    "exclude_paths": [],
+    "exclude_extensions": []
+  },
+  // Registers additional host tool names that can write files.
+  "extra_write_tools": [],
+  // Configures optional review commands and per-stage review strength.
+  "review": {
+    "strengths": {
+      "off": null,
+      "light": "",
+      "standard": "",
+      "deep": "",
+      "red-team": ""
+    },
+    "stages": {
+      "design": "off",
+      "implementation": "off",
+      "promotion": "off"
+    }
+  }
+}

@@ -27,6 +27,15 @@ def finding_codes(findings):
     return {finding.code for finding in findings}
 
 
+def project_settings(root: Path) -> tuple[Path, dict]:
+    settings_path, data, error = audit_stage.read_settings(root / ".stage")
+    if error is not None:
+        raise error
+    if not isinstance(data, dict):
+        raise AssertionError("test project settings must be an object")
+    return settings_path, data
+
+
 class StageAuditTest(unittest.TestCase):
     def init_stage(self, root: Path) -> None:
         init_stage.copy_templates(root, False)
@@ -740,8 +749,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            settings = root / ".stage" / "settings.json"
-            data = json.loads(settings.read_text(encoding="utf-8"))
+            settings, data = project_settings(root)
             del data["schema_version"]
             settings.write_text(json.dumps(data), encoding="utf-8")
 
@@ -749,12 +757,30 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("SCHEMA001", finding_codes(findings))
 
+    def test_both_settings_names_are_reported_as_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            (root / ".stage" / "settings.json").write_text(
+                '{"schema_version": 4}\n', encoding="utf-8"
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        duplicate_findings = [
+            finding
+            for finding in findings
+            if finding.severity == "error"
+            and "settings.json" in finding.message
+            and "settings.jsonc" in finding.message
+        ]
+        self.assertEqual(1, len(duplicate_findings))
+
     def test_settings_with_stale_schema_version_is_flagged(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            settings = root / ".stage" / "settings.json"
-            data = json.loads(settings.read_text(encoding="utf-8"))
+            settings, data = project_settings(root)
             data["schema_version"] = 0
             settings.write_text(json.dumps(data), encoding="utf-8")
 
@@ -768,8 +794,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            settings = root / ".stage" / "settings.json"
-            data = json.loads(settings.read_text(encoding="utf-8"))
+            settings, data = project_settings(root)
             data["schema_version"] = True
             settings.write_text(json.dumps(data), encoding="utf-8")
 
@@ -778,9 +803,10 @@ class StageAuditTest(unittest.TestCase):
         self.assertIn("SCHEMA001", finding_codes(findings))
 
     def test_template_schema_version_matches_plugin_constant(self):
-        template = json.loads(
-            (audit_stage.V4_TEMPLATE_ROOT / "settings.json").read_text(encoding="utf-8")
+        _settings_path, template, error = audit_stage.read_settings(
+            audit_stage.V4_TEMPLATE_ROOT
         )
+        self.assertIsNone(error)
         self.assertEqual(
             audit_stage.stage_guard.STAGE_SCHEMA_VERSION, template.get("schema_version")
         )
@@ -1075,7 +1101,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            settings = root / ".stage" / "settings.json"
+            settings, _data = project_settings(root)
             settings.write_text('{"governance": {"extensions": [".py"]}}', encoding="utf-8")
 
             findings = audit_stage.Audit(root).run()
@@ -1086,7 +1112,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            settings = root / ".stage" / "settings.json"
+            settings, _data = project_settings(root)
             settings.write_text('{"governance": {"exclude_paths": ["notes"]}}', encoding="utf-8")
 
             findings = audit_stage.Audit(root).run()
@@ -1097,7 +1123,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            settings = root / ".stage" / "settings.json"
+            settings, _data = project_settings(root)
             settings.write_text('{"governance": {', encoding="utf-8")
 
             findings = audit_stage.Audit(root).run()
@@ -1149,8 +1175,7 @@ class StageAuditTest(unittest.TestCase):
             relative = Path("state/current.md")
             target = root / ".stage" / relative
             target.write_bytes((init_stage.TEMPLATE_ROOT / relative).read_bytes())
-            settings_path = root / ".stage" / "settings.json"
-            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            settings_path, settings = project_settings(root)
             settings["guidance_overrides"] = [relative.as_posix()]
             settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
@@ -1183,8 +1208,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            settings_path = root / ".stage" / "settings.json"
-            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            settings_path, settings = project_settings(root)
             settings["guidance_overrides"] = "state/current.md"
             settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
@@ -1448,8 +1472,7 @@ class LanguageSettingAuditTest(unittest.TestCase):
         init_stage.copy_templates(root, False)
 
     def set_language(self, root: Path, value) -> None:
-        settings_path = root / ".stage" / "settings.json"
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        settings_path, data = project_settings(root)
         data["language"] = value
         settings_path.write_text(json.dumps(data), encoding="utf-8")
 
@@ -1480,9 +1503,7 @@ class InitLanguageTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             init_stage.copy_templates(root, False)
-            settings = json.loads(
-                (root / ".stage" / "settings.json").read_text(encoding="utf-8")
-            )
+            _settings_path, settings = project_settings(root)
             index = (root / ".stage" / "index.md").read_text(encoding="utf-8")
 
         self.assertEqual("en", settings["language"])
@@ -1493,7 +1514,7 @@ class InitLanguageTest(unittest.TestCase):
             root = Path(tmp)
             init_stage.copy_templates(root, False, language="ko")
             stage_root = root / ".stage"
-            settings = json.loads((stage_root / "settings.json").read_text(encoding="utf-8"))
+            _settings_path, settings = project_settings(root)
             index = (stage_root / "index.md").read_text(encoding="utf-8")
             verification = (stage_root / "operations" / "verification.md").read_text(
                 encoding="utf-8"
@@ -1521,7 +1542,7 @@ class InitLanguageTest(unittest.TestCase):
             root = Path(tmp)
             init_stage.copy_templates(root, False, language="fr")
             stage_root = root / ".stage"
-            settings = json.loads((stage_root / "settings.json").read_text(encoding="utf-8"))
+            _settings_path, settings = project_settings(root)
             index = (stage_root / "index.md").read_text(encoding="utf-8")
             findings = audit_stage.Audit(root).run()
 
@@ -1559,8 +1580,7 @@ class VenueRoutingAuditTest(unittest.TestCase):
         init_stage.copy_templates(root, False)
 
     def declare_routing(self, root: Path, routing) -> None:
-        settings_path = root / ".stage" / "settings.json"
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        settings_path, data = project_settings(root)
         data["venue_routing"] = routing
         settings_path.write_text(json.dumps(data), encoding="utf-8")
 
@@ -1847,8 +1867,7 @@ class OperationsOwnershipTest(unittest.TestCase):
         init_stage.copy_templates(root, False)
 
     def set_settings(self, root: Path, **updates):
-        settings_path = root / ".stage" / "settings.json"
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        settings_path, data = project_settings(root)
         data.update(updates)
         settings_path.write_text(json.dumps(data), encoding="utf-8")
 

@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import shutil
 import sys
@@ -24,7 +23,7 @@ HOOK_ROOT = PLUGIN_ROOT / "hooks"
 if str(HOOK_ROOT) not in sys.path:
     sys.path.insert(0, str(HOOK_ROOT))
 
-from stage_paths import read_settings  # noqa: E402
+from stage_paths import read_settings, write_setting_preserving_comments  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -94,7 +93,11 @@ def copy_templates(
             continue
 
         relative_path = template_path.relative_to(TEMPLATE_ROOT)
-        target_path = stage_root / relative_path
+        target_path = (
+            settings_path
+            if relative_path == Path("settings.jsonc") and settings_path.exists()
+            else stage_root / relative_path
+        )
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
         if target_path.exists() and not force:
@@ -108,8 +111,7 @@ def copy_templates(
         settings_path, settings, settings_error = read_settings(stage_root)
         if settings_error is not None:
             raise settings_error
-        settings["language"] = language
-        settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+        write_setting_preserving_comments(settings_path, settings, "language", language)
 
     return created, skipped
 

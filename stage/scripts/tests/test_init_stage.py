@@ -105,6 +105,20 @@ class InitStageGitignoreTest(unittest.TestCase):
 
         self.assertEqual(original + f"{RUNTIME_IGNORE_ENTRY}\n".encode(), content)
 
+    def test_new_project_gets_commented_jsonc_settings(self):
+        tmp, root = self.make()
+        with tmp:
+            result = run(root, "--language", "ko")
+            self.assertEqual(0, result.returncode, result.stderr)
+            settings_path = root / ".stage" / "settings.jsonc"
+            settings_text = settings_path.read_text(encoding="utf-8")
+            self.assertTrue(settings_path.is_file())
+            self.assertFalse((root / ".stage" / "settings.json").exists())
+
+        self.assertTrue(settings_path.name.endswith(".jsonc"))
+        self.assertIn("//", settings_text)
+        self.assertIn('"language": "ko"', settings_text)
+
 
 if __name__ == "__main__":
     unittest.main()

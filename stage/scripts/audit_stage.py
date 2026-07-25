@@ -247,7 +247,11 @@ class Audit:
             if template_path.is_dir():
                 continue
             relative = template_path.relative_to(self.template_root)
-            target = self.stage_root / relative
+            target = (
+                self.settings_path
+                if relative == Path("settings.jsonc")
+                else self.stage_root / relative
+            )
             if not target.exists():
                 self.warning(
                     "TEMPLATE002",
@@ -1428,6 +1432,7 @@ class Audit:
         if not hasattr(self, "_settings"):
             settings_path, data, error = read_settings(self.stage_root)
             self._settings_path = settings_path
+            self._settings_error = error
             if error is not None:
                 data = {}
             self._settings = data if isinstance(data, dict) else {}
@@ -1480,7 +1485,13 @@ class Audit:
         if not settings_path.exists():
             return
         if stage_guard.governance_broken(self.stage_root):
-            self.error("GOV000", "settings.json is unreadable or malformed (hooks fail closed until repaired).", settings_path)
+            settings_error = getattr(self, "_settings_error", None)
+            message = (
+                str(settings_error)
+                if isinstance(settings_error, FileExistsError)
+                else "settings file is unreadable or malformed (hooks fail closed until repaired)."
+            )
+            self.error("GOV000", message, settings_path)
             return
         settings = self.load_settings()
         schema_version = settings.get("schema_version")

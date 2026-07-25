@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.42.0 — 2026-07-25
+
+- Support comments in project settings through either `settings.json` or `settings.jsonc`.
+  Comment removal recognizes JSON strings, so URL and path values containing `//` remain intact;
+  projects that contain both filenames fail closed instead of silently selecting one.
+- Initialize new projects with an English-commented `settings.jsonc`. Language selection and
+  schema migration update only the existing value token in commented files, preserving
+  user-authored comments instead of reserializing the whole file.
+
 ## 0.41.0 — 2026-07-25
 
 - Centralize project-settings path construction, reading, and JSON parsing in

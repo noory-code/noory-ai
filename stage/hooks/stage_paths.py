@@ -16,6 +16,143 @@ STAGE_OFFICIAL_ARCHIVE_ROOT = f"{STAGE_OFFICIAL_ROOT}/work/archive"
 
 ACTIVE_TOPOLOGY_V3 = "v3"
 ACTIVE_TOPOLOGY_V4 = "v4"
+SETTINGS_JSON_NAME = "settings.json"
+SETTINGS_JSONC_NAME = "settings.jsonc"
+
+
+def strip_json_comments(text: str) -> str:
+    """Replace JSON line and block comments with whitespace.
+
+    Keeping comment spans the same length preserves useful JSON decoder
+    positions. Comment markers inside strings remain data.
+    """
+
+    characters = list(text)
+    index = 0
+    in_string = False
+    escaped = False
+    while index < len(characters):
+        character = characters[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            index += 1
+            continue
+        if character == '"':
+            in_string = True
+            index += 1
+            continue
+        if character != "/" or index + 1 >= len(characters):
+            index += 1
+            continue
+
+        following = characters[index + 1]
+        if following == "/":
+            characters[index] = " "
+            characters[index + 1] = " "
+            index += 2
+            while index < len(characters) and characters[index] not in "\r\n":
+                characters[index] = " "
+                index += 1
+            continue
+        if following == "*":
+            comment_start = index
+            characters[index] = " "
+            characters[index + 1] = " "
+            index += 2
+            while index + 1 < len(characters):
+                if characters[index] == "*" and characters[index + 1] == "/":
+                    characters[index] = " "
+                    characters[index + 1] = " "
+                    index += 2
+                    break
+                if characters[index] not in "\r\n":
+                    characters[index] = " "
+                index += 1
+            else:
+                raise json.JSONDecodeError("Unterminated block comment", text, comment_start)
+            continue
+        index += 1
+    return "".join(characters)
+
+
+def replace_top_level_setting(text: str, key: str, value: object) -> str | None:
+    """Replace one existing top-level JSON/JSONC value without reformatting."""
+
+    clean_text = strip_json_comments(text)
+    decoder = json.JSONDecoder()
+    index = 0
+    while index < len(clean_text) and clean_text[index].isspace():
+        index += 1
+    if index >= len(clean_text) or clean_text[index] != "{":
+        return None
+    index += 1
+
+    while index < len(clean_text):
+        while index < len(clean_text) and (
+            clean_text[index].isspace() or clean_text[index] == ","
+        ):
+            index += 1
+        if index >= len(clean_text) or clean_text[index] == "}":
+            return None
+        try:
+            candidate, key_end = decoder.raw_decode(clean_text, index)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(candidate, str):
+            return None
+        index = key_end
+        while index < len(clean_text) and clean_text[index].isspace():
+            index += 1
+        if index >= len(clean_text) or clean_text[index] != ":":
+            return None
+        index += 1
+        while index < len(clean_text) and clean_text[index].isspace():
+            index += 1
+        value_start = index
+        try:
+            _current_value, value_end = decoder.raw_decode(clean_text, value_start)
+        except json.JSONDecodeError:
+            return None
+        if candidate == key:
+            return (
+                text[:value_start]
+                + json.dumps(value, ensure_ascii=False)
+                + text[value_end:]
+            )
+        index = value_end
+
+    return None
+
+
+def write_setting_preserving_comments(
+    settings_path: Path,
+    settings: dict[str, object],
+    key: str,
+    value: object,
+) -> None:
+    """Write one setting without silently erasing user-authored comments."""
+
+    source = settings_path.read_text(encoding="utf-8")
+    clean_source = strip_json_comments(source)
+    settings[key] = value
+    if clean_source != source:
+        updated = replace_top_level_setting(source, key, value)
+        if updated is None:
+            raise ValueError(
+                f"cannot safely add missing `{key}` to commented {settings_path.name}; "
+                "add the key manually and re-run"
+            )
+        settings_path.write_text(updated, encoding="utf-8")
+        return
+    settings_path.write_text(
+        json.dumps(settings, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
 
 def read_settings(
@@ -23,9 +160,17 @@ def read_settings(
 ) -> tuple[Path, object, OSError | json.JSONDecodeError | None]:
     """Read and parse the project settings without choosing a failure policy."""
 
-    settings_path = stage_root / "settings.json"
+    json_path = stage_root / SETTINGS_JSON_NAME
+    jsonc_path = stage_root / SETTINGS_JSONC_NAME
+    if json_path.exists() and jsonc_path.exists():
+        error = FileExistsError(
+            f"{SETTINGS_JSON_NAME} and {SETTINGS_JSONC_NAME} both exist; keep exactly one"
+        )
+        return jsonc_path, None, error
+    settings_path = jsonc_path if jsonc_path.exists() or not json_path.exists() else json_path
     try:
-        return settings_path, json.loads(settings_path.read_text(encoding="utf-8")), None
+        source = settings_path.read_text(encoding="utf-8")
+        return settings_path, json.loads(strip_json_comments(source)), None
     except (OSError, json.JSONDecodeError) as exc:
         return settings_path, None, exc
 

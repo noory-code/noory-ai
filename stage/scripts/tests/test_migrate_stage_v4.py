@@ -220,6 +220,32 @@ class V3ToV4MigrationTest(unittest.TestCase):
             self.assertIn("--abort", output)
             self.assertIn("git revert", output)
 
+    def test_schema_stamp_preserves_jsonc_comments_and_double_slashes_in_strings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage_root = self.make_v3_project(root)
+            settings_path = stage_root / "settings.json"
+            original = settings_path.read_text(encoding="utf-8")
+            settings_path.write_text(
+                original.replace(
+                    '  "schema_version": 3,',
+                    "  // Keep this user-authored explanation.\n"
+                    '  "schema_version": 3,\n'
+                    '  "example_url": "https://example.com/stage//settings",',
+                ),
+                encoding="utf-8",
+            )
+            git(root, "add", "-A")
+            git(root, "commit", "-qm", "add settings comments")
+
+            code, output = self.run_migrate(root)
+            migrated_text = settings_path.read_text(encoding="utf-8")
+
+        self.assertEqual(0, code, output)
+        self.assertIn("// Keep this user-authored explanation.", migrated_text)
+        self.assertIn('"schema_version": 4', migrated_text)
+        self.assertIn('"https://example.com/stage//settings"', migrated_text)
+
     def test_dirty_relocation_source_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

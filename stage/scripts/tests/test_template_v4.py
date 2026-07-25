@@ -28,6 +28,8 @@ _INIT_SPEC.loader.exec_module(init_stage)
 def v4_path(relative: Path) -> Path:
     """Map one schema-v3 template path to its schema-v4 destination."""
     value = relative.as_posix()
+    if value == "settings.json":
+        return Path("settings.jsonc")
     relocations = (
         ("past/canon", "official/canon"),
         ("past/model", "official/model"),
@@ -80,8 +82,9 @@ class TemplateV4Test(unittest.TestCase):
         )
 
     def test_v4_settings_marker_is_bundled_and_init_is_cut_over(self):
-        settings = json.loads((V4_ROOT / "settings.json").read_text(encoding="utf-8"))
-        self.assertEqual(4, settings["schema_version"])
+        settings_text = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+        self.assertIn('"schema_version": 4', settings_text)
+        self.assertIn("//", settings_text)
         v3_settings = json.loads((V3_ROOT / "settings.json").read_text(encoding="utf-8"))
         self.assertEqual(3, v3_settings["schema_version"])
         self.assertEqual(V4_ROOT, init_stage.TEMPLATE_ROOT)

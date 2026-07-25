@@ -45,7 +45,11 @@ SCRIPT_ROOT = Path(__file__).resolve().parent
 if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
-from stage_paths import STAGE_SCHEMA_VERSION, read_settings  # noqa: E402
+from stage_paths import (  # noqa: E402
+    STAGE_SCHEMA_VERSION,
+    read_settings,
+    write_setting_preserving_comments,
+)
 from stage_work import parse_frontmatter  # noqa: E402
 import stage_schema_v4_migration as v4_migration  # noqa: E402
 
@@ -197,8 +201,12 @@ def stamp_schema_version(
     settings["schema_version"] = version
     settings.setdefault("operations_overrides", [])
     if not dry_run:
-        settings_path, _data, _error = read_settings(stage_root)
-        settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+        settings_path, _data, error = read_settings(stage_root)
+        if error is not None:
+            raise error
+        write_setting_preserving_comments(
+            settings_path, settings, "schema_version", version
+        )
 
 
 def next_work_number(stage_root: Path) -> int:

@@ -48,8 +48,11 @@ class WorkCardFlowTest(unittest.TestCase):
         return tmp, root
 
     def declare_routing(self, root: Path, routing) -> None:
-        settings_path = root / ".stage/settings.json"
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        settings_path, data, error = audit_stage.read_settings(root / ".stage")
+        if error is not None:
+            raise error
+        if not isinstance(data, dict):
+            raise AssertionError("test project settings must be an object")
         data["venue_routing"] = routing
         settings_path.write_text(json.dumps(data), encoding="utf-8")
 
