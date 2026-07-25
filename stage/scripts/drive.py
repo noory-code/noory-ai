@@ -656,22 +656,27 @@ def select_next_unattended_leaf(target_id: str, items: list[WorkItem]) -> WorkIt
     )
 
 
-def shell_command(args: list[str]) -> str:
-    """Join arguments the way the platform's shell parses them.
+def shell_command(args: list[str], os_name: str | None = None) -> str:
+    """Join arguments the way the named platform's shell parses them.
 
     The result is handed to a shell, and the two shells disagree: POSIX shells
     strip single quotes, `cmd.exe` does not. Quoting for one breaks the other,
     so each gets its own joiner.
+
+    ``os_name`` defaults to the running platform. It is a parameter so a test can
+    exercise the other branch without reaching into the process-wide ``os``
+    module — there is no Windows runner here, so both branches have to be
+    reachable from any host.
     """
 
-    if os.name == "nt":
+    if (os_name or os.name) == "nt":
         return subprocess.list2cmdline(args)
     return shlex.join(args)
 
 
-def audit_check(project_root: Path) -> str:
+def audit_check(project_root: Path, os_name: str | None = None) -> str:
     return shell_command(
-        [sys.executable, str(AUDIT), "--project-root", str(project_root)]
+        [sys.executable, str(AUDIT), "--project-root", str(project_root)], os_name
     )
 
 

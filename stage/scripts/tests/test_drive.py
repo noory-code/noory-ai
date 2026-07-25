@@ -9,7 +9,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-import unittest.mock
 from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
@@ -137,8 +136,7 @@ class DriveTest(unittest.TestCase):
         drive = self.load_module()
         args = ["/usr/bin/python3", "/a b/audit.py", "--project-root", "/a b/repo"]
 
-        with unittest.mock.patch.object(drive.os, "name", "posix"):
-            joined = drive.shell_command(args)
+        joined = drive.shell_command(args, os_name="posix")
 
         self.assertIn("'/a b/repo'", joined)
         self.assertEqual(args, shlex.split(joined))
@@ -155,8 +153,7 @@ class DriveTest(unittest.TestCase):
             r"C:\a b\repo",
         ]
 
-        with unittest.mock.patch.object(drive.os, "name", "nt"):
-            joined = drive.shell_command(args)
+        joined = drive.shell_command(args, os_name="nt")
 
         self.assertNotIn("'", joined)
         # Only the argument containing a space is quoted; the rest stay bare.
@@ -164,15 +161,19 @@ class DriveTest(unittest.TestCase):
         self.assertTrue(joined.startswith(r"C:\Python\python.exe "))
 
     def test_audit_check_survives_a_project_path_with_a_space(self):
+        # The assertion compares against `str(project_root)`, not a POSIX literal:
+        # on Windows the same Path renders with backslashes, and hard-coding the
+        # slash form would fail there for a reason that has nothing to do with the
+        # quoting this guards.
         drive = self.load_module()
+        project_root = Path("/tmp/a b/repo")
 
-        with unittest.mock.patch.object(drive.os, "name", "posix"):
-            command = drive.audit_check(Path("/tmp/a b/repo"))
+        command = drive.audit_check(project_root, os_name="posix")
 
         parsed = shlex.split(command)
         self.assertEqual(4, len(parsed))
         self.assertEqual("--project-root", parsed[2])
-        self.assertEqual("/tmp/a b/repo", parsed[3])
+        self.assertEqual(str(project_root), parsed[3])
 
     def test_selects_next_ready_leaf_by_id(self):
         tmp, root = self.make_project()
