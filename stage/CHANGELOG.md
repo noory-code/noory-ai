@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.39.0 — 2026-07-25
+
+Block opaque inline interpreter access to Stage paths (W-00000054):
+
+- The PreToolUse guard now refuses shell commands that reference `.stage` while running inline
+  interpreter code through `-c`, supported `-e` options, or a heredoc. The guard cannot verify
+  writes hidden inside those interpreter bodies, so callers must use gated Write/Edit tools or a
+  named script file. Named scripts, `-m` module invocations, and inline code without `.stage`
+  remain allowed.
+
 ## 0.38.0 — 2026-07-24
 
 Register Stage runtime state in git ignores during initialization (W-00000051):

@@ -29,6 +29,26 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
 FIND_PRE_PATH_FLAGS = {"-H", "-L", "-P", "-E", "-X", "-x", "-s", "-d"}
 FIND_PRE_PATH_CLUSTER_RE = re.compile(r"-[HLPEXdsx]+")
 SHELL_SEPARATORS = {"&&", "||", ";", "|", "&", "\n"}
+INLINE_INTERPRETERS = {
+    "python",
+    "python2",
+    "python3",
+    "node",
+    "nodejs",
+    "deno",
+    "bun",
+    "ruby",
+    "perl",
+    "sh",
+    "bash",
+    "zsh",
+}
+INLINE_E_INTERPRETERS = {"node", "nodejs", "ruby", "perl"}
+INTERPRETER_VERSION_SUFFIX_RE = re.compile(r"(?:\d+(?:\.\d+)*|\.\d+(?:\.\d+)*)")
+# normalize_shell_control masks quoted `<` and leaves arithmetic shifts inside
+# `$((...))` embedded in non-command tokens. A real heredoc redirect is either
+# a redirection token (optionally fd-prefixed) or attached to a command word.
+HEREDOC_TOKEN_RE = re.compile(r"^(?:\d*|[^$()=<> \t]+)<<-?(?!<)")
 
 
 SHELL_OPERATOR_CHARS = ";&|"
@@ -644,6 +664,68 @@ def _command_groups(
             continue
         groups.append((list(tracker.anchors), name, group))
     return groups
+
+
+def _interpreter_family(command_word: str) -> str | None:
+    """Explicit interpreter family for a case-sensitive command basename.
+
+    Version suffixes are accepted so names such as `python3.11` count without
+    broad prefix matching that would misclassify unrelated commands such as
+    `python-config` or `shred`.
+    """
+    basename = Path(command_word).name
+    for name in sorted(INLINE_INTERPRETERS, key=len, reverse=True):
+        if basename == name:
+            return name
+        if basename.startswith(name) and INTERPRETER_VERSION_SUFFIX_RE.fullmatch(
+            basename[len(name) :]
+        ):
+            return name
+    return None
+
+
+def _has_inline_option(family: str, arguments: list[str]) -> bool:
+    """Whether interpreter options select inline code before a script/module."""
+    for argument in arguments:
+        if argument == "--":
+            return False
+        if argument == "-m":
+            return False
+        if argument == "-c" and family in INLINE_INTERPRETERS:
+            return True
+        if argument == "-e" and family in INLINE_E_INTERPRETERS:
+            return True
+    return False
+
+
+def interpreter_inline_stage_write(command: str) -> bool:
+    """Whether opaque inline interpreter code may act on the Stage tree.
+
+    The `.stage` check deliberately scans the unmodified command, including
+    heredoc bodies, so computed paths such as `Path('.stage') / relative` are
+    visible. Interpreter bodies remain opaque: `-c`, supported `-e`, or a
+    structural heredoc on the interpreter's own command group therefore fail
+    closed, while named scripts and `-m` module invocations remain inspectable
+    command forms.
+    """
+    if ".stage" not in command:
+        return False
+
+    for _anchors, _name, raw_group in _command_groups(command):
+        group_has_heredoc = any(HEREDOC_TOKEN_RE.match(token) for token in raw_group)
+        group = [_restore_sentinels(token) for token in raw_group]
+        if not group:
+            continue
+        command_word = group[0]
+        heredoc_match = HEREDOC_TOKEN_RE.match(command_word)
+        if heredoc_match and heredoc_match.end() < len(command_word):
+            command_word = command_word[: command_word.find("<<")]
+        family = _interpreter_family(command_word)
+        if family is None:
+            continue
+        if group_has_heredoc or _has_inline_option(family, group[1:]):
+            return True
+    return False
 
 
 def command_deletes_stage(command: str, workspace_root: Path | None = None) -> bool:

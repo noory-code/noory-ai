@@ -59,6 +59,7 @@ from stage_roadmap_gate import (  # noqa: E402
 from stage_shell import (  # noqa: E402  (after sys.path bootstrap)
     _restore_sentinels,
     command_deletes_stage,
+    interpreter_inline_stage_write,
     shell_delete_paths,
     shell_tokens,
     shell_write_paths,
@@ -720,6 +721,14 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
             return deny(blocker)
 
     if stage_root.exists() and name in SHELL_TOOLS and command:
+        if interpreter_inline_stage_write(command):
+            return deny(
+                "Stage guard cannot verify what opaque inline interpreter code writes, so a "
+                "command that runs inline code (for example, python -c, node/perl -e, or an "
+                "interpreter heredoc) and references `.stage` is refused. Use Write/Edit, which "
+                "are gated and flow through work registration/promotion, or a named script file "
+                "instead of inline interpreter code."
+            )
         blocker = reattribution_blocker(
             workspace_root, payload, name, shell_write_targets
         )

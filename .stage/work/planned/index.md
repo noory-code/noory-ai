@@ -11,7 +11,6 @@
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [W-00000026.md](W-00000026.md) |
-| W-00000054 | 승격 게이트가 셸로 실행한 스크립트의 official 쓰기를 막지 못함 | fix | captured | high |  | [W-00000054.md](W-00000054.md) |
 
 ## 상태 값
 
