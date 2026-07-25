@@ -11,7 +11,7 @@
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000026 | settings.jsonc: commented project settings with tolerant loader | development | captured |  |  | [W-00000026.md](W-00000026.md) |
-| W-00000057 | 안내 산문 드리프트 감사 + 명시적 갱신 명령 (DE-00000028) | development | captured | medium |  | [W-00000057.md](W-00000057.md) |
+| W-00000057 | 낡은 안내 문서 검사 + 갱신 명령 (DE-00000028, DE-00000029) | development | captured | medium |  | [W-00000057.md](W-00000057.md) |
 
 ## 상태 값
 
