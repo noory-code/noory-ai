@@ -7,3 +7,4 @@
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
 | W-00000071 | passed | completed | not_applicable | [current/W-00000071.md](current/W-00000071.md) |
+| W-00000072 | passed | completed | not_applicable | [current/W-00000072.md](current/W-00000072.md) |

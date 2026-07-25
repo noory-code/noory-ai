@@ -8,4 +8,3 @@
 |---|---|---|---|---|---|---|
 | W-00000069 | qa | codex | 드라이버는 코드로는 완성돼 있지만 이 저장소에서 한 번도 돌지 않았다. 실행자 설정을 채우고 감독 모드로 한 | active | Claude | [current/W-00000069.md](current/W-00000069.md) |
 | W-00000070 | documentation | claude | 드라이버는 다른 생애주기 흐름과 달리 스킬이 없어, 플러그인을 읽는 에이전트가 존재를 알 수 없다. 진입 스 | active | Claude | [current/W-00000070.md](current/W-00000070.md) |
-| W-00000072 | fix | codex | 독립 리뷰가 지적한 두 가지를 닫는다. 사양 문서의 executors 예시가 POSIX 셸 형태라 Windo | active | Claude | [current/W-00000072.md](current/W-00000072.md) |
