@@ -8,4 +8,3 @@
 |---|---|---|---|---|---|---|
 | W-00000069 | qa | codex | 드라이버는 코드로는 완성돼 있지만 이 저장소에서 한 번도 돌지 않았다. 실행자 설정을 채우고 감독 모드로 한 | active | Claude | [current/W-00000069.md](current/W-00000069.md) |
 | W-00000070 | documentation | claude | 드라이버는 다른 생애주기 흐름과 달리 스킬이 없어, 플러그인을 읽는 에이전트가 존재를 알 수 없다. 진입 스 | active | Claude | [current/W-00000070.md](current/W-00000070.md) |
-| W-00000071 | fix | codex | 드라이버가 실행자 명령을 venue로만 찾아 고정 문자열 그대로 셸에 넘기므로, 실행자는 자기가 어느 작업  | active | Claude | [current/W-00000071.md](current/W-00000071.md) |
