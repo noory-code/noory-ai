@@ -300,7 +300,9 @@ class DriveTest(unittest.TestCase):
             marker = Path(marker_tmp) / "executor-ran"
             tmp, root = self.make_project(
                 executor=python_command(
-                    f"from pathlib import Path; Path({str(marker)!r}).touch()"
+                    "from pathlib import Path; "
+                    f"Path({str(marker)!r}).touch(); "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
                 )
             )
             with tmp:
@@ -310,6 +312,7 @@ class DriveTest(unittest.TestCase):
                     parent="W-00000001",
                     acceptance=(PASS_COMMAND,),
                 )
+                initialize_git(root)
 
                 result = self.run_cli(root, "--execute")
                 state_path = (
@@ -327,8 +330,31 @@ class DriveTest(unittest.TestCase):
             self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
             self.assertTrue(state["items"]["W-00000002"]["last_fingerprint"])
 
+    def test_execute_rejects_successful_executor_that_leaves_repository_unchanged(self):
+        tmp, root = self.make_project(executor=PASS_COMMAND)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+
+            result = self.run_cli(root, "--execute")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("executor left repository state unchanged", result.stdout)
+        self.assertIn("close_work.py", result.stdout)
+        self.assertNotIn("Acceptance result:", result.stdout)
+        self.assertNotIn("Independent reviewer result:", result.stdout)
+
     def test_execute_passes_in_unborn_repository_without_an_index(self):
-        tmp, root = self.make_project()
+        tmp, root = self.make_project(
+            executor=python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+            )
+        )
         with tmp:
             write_card(
                 root / ".stage",
@@ -358,7 +384,12 @@ class DriveTest(unittest.TestCase):
             self.assertFalse(index_path.exists())
 
     def test_execute_fails_when_head_exists_but_index_is_missing(self):
-        tmp, root = self.make_project()
+        tmp, root = self.make_project(
+            executor=python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+            )
+        )
         with tmp:
             write_card(
                 root / ".stage",
@@ -405,7 +436,8 @@ class DriveTest(unittest.TestCase):
                 f"names = {variable_names!r}; "
                 f"Path({str(marker)!r}).write_text("
                 "json.dumps({name: os.environ[name] for name in names}), "
-                "encoding='utf-8')"
+                "encoding='utf-8'); "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
             )
             tmp, root = self.make_project(executor=executor)
             with tmp:
@@ -824,7 +856,12 @@ class DriveTest(unittest.TestCase):
             drive.git_diff(Path.cwd())
 
     def test_progress_fingerprint_fails_closed_on_untracked_enumeration_error(self):
-        tmp, root = self.make_project()
+        tmp, root = self.make_project(
+            executor=python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+            )
+        )
         with tmp:
             write_card(
                 root / ".stage",
@@ -845,6 +882,8 @@ class DriveTest(unittest.TestCase):
             enumerations = [
                 (set(), ""),
                 (set(), ""),
+                ({"executor-work.txt"}, ""),
+                ({"executor-work.txt"}, ""),
                 (set(), "injected progress enumeration failure"),
             ]
 
@@ -984,6 +1023,10 @@ class DriveTest(unittest.TestCase):
 
     def test_reviewer_block_recommends_escalation(self):
         tmp, root = self.make_project(
+            executor=python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+            ),
             reviewer=python_command("print('BLOCK: no'); raise SystemExit(1)")
         )
         with tmp:
@@ -993,6 +1036,7 @@ class DriveTest(unittest.TestCase):
                 parent="W-00000001",
                 acceptance=(PASS_COMMAND,),
             )
+            initialize_git(root)
 
             result = self.run_cli(root, "--execute")
 
@@ -1018,7 +1062,12 @@ class DriveTest(unittest.TestCase):
             self.assertFalse((root / ".stage/.runtime").exists())
 
     def test_identical_fingerprint_flags_no_progress(self):
-        tmp, root = self.make_project()
+        tmp, root = self.make_project(
+            executor=python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+            )
+        )
         with tmp:
             write_card(
                 root / ".stage",
@@ -1026,6 +1075,7 @@ class DriveTest(unittest.TestCase):
                 parent="W-00000001",
                 acceptance=(PASS_COMMAND,),
             )
+            initialize_git(root)
 
             first = self.run_cli(root, "--execute")
             second = self.run_cli(root, "--execute")
@@ -1066,7 +1116,13 @@ class DriveTest(unittest.TestCase):
             "max_iterations": 10,
             "max_wall_clock_seconds": 3600,
         }
-        tmp, root = self.make_project(limits=limits)
+        tmp, root = self.make_project(
+            executor=python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+            ),
+            limits=limits,
+        )
         with tmp:
             write_card(
                 root / ".stage",
@@ -1074,6 +1130,7 @@ class DriveTest(unittest.TestCase):
                 parent="W-00000001",
                 acceptance=(PASS_COMMAND,),
             )
+            initialize_git(root)
 
             first = self.run_cli(root, "--execute")
             second = self.run_cli(root, "--execute")

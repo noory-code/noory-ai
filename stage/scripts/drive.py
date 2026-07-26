@@ -66,6 +66,10 @@ RECOMMEND_RETRY = "failed, retry (attempt {attempt}/{cap})"
 RECOMMEND_ESCALATE = (
     "attempt cap reached / no progress / global limit exceeded → escalate_work"
 )
+UNCHANGED_REPOSITORY_FAILURE = (
+    "executor left repository state unchanged; if the work is already complete, "
+    "run close_work.py manually"
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -379,6 +383,12 @@ def fingerprint(project_root: Path, acceptance_output: list[str]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def repository_fingerprint(project_root: Path) -> str:
+    """Fingerprint repository state without executor testimony or verification output."""
+
+    return hashlib.sha256(git_diff(project_root).encode("utf-8")).hexdigest()
+
+
 def executor_environment(
     item: WorkItem,
     project_root: Path,
@@ -507,11 +517,7 @@ def create_run_branch(project_root: Path, target_id: str, now: float) -> tuple[s
 
 
 def commit_item(project_root: Path, item: WorkItem) -> tuple[bool, str]:
-    """Stage the item's declared scope and commit to the current (run) branch.
-
-    An executor that wrote nothing yields an empty commit — treated as a clean
-    no-op so the caller can still close a doc-only or already-satisfied item.
-    """
+    """Stage the item's declared scope and commit it to the current run branch."""
 
     if not current_branch(project_root).startswith("stage/driver/"):
         return False, "refusing item commit: HEAD is not on a stage/driver run branch"
@@ -921,6 +927,11 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 f"cannot resolve Git index before executor: {index_error}"
             )
             return 1
+        try:
+            repository_before = repository_fingerprint(project_root)
+        except RuntimeError as exc:
+            print_escalation(f"cannot inspect repository before executor: {exc}")
+            return 1
         with tempfile.TemporaryDirectory(
             prefix="stage-drive-executor-index-"
         ) as temporary:
@@ -944,10 +955,15 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 ),
             )
         try:
+            repository_after = repository_fingerprint(project_root)
             current_fingerprint = fingerprint(project_root, [executor_evidence])
         except RuntimeError as exc:
             print_escalation(f"cannot inspect changes for progress: {exc}")
             return 1
+        executor_failure = "executor failed"
+        if executor_ok and repository_after == repository_before:
+            executor_ok = False
+            executor_failure = UNCHANGED_REPOSITORY_FAILURE
         no_progress = (
             bool(item_state["last_fingerprint"]) and current_fingerprint == item_state["last_fingerprint"]
         )
@@ -961,11 +977,14 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             discard_worktree(project_root)
             if no_progress or attempt >= cap:
                 if not escalate_and_commit(
-                    project_root, item.item_id, "executor failed; no progress or attempt cap", cmd_timeout
+                    project_root,
+                    item.item_id,
+                    f"{executor_failure}; no progress or attempt cap",
+                    cmd_timeout,
                 ):
                     return 1
             else:
-                print(f"[{item.item_id}] executor failed; retry {attempt}/{cap}")
+                print(f"[{item.item_id}] {executor_failure}; retry {attempt}/{cap}")
             continue
 
         if current_branch(project_root) != branch:
@@ -1177,6 +1196,12 @@ def main() -> int:
             )
             return 1
 
+    try:
+        repository_before = repository_fingerprint(project_root)
+    except RuntimeError as exc:
+        print_escalation(f"cannot inspect repository before executor: {exc}")
+        return 1
+
     with tempfile.TemporaryDirectory(prefix="stage-drive-index-") as temporary:
         temporary_root = Path(temporary)
         executor_index = temporary_root / "executor-index"
@@ -1204,7 +1229,18 @@ def main() -> int:
         if not executor_ok:
             step_ok = False
             failure = "executor command failed"
-        elif index_path is not None:
+        else:
+            try:
+                repository_after = repository_fingerprint(project_root)
+            except RuntimeError as exc:
+                step_ok = False
+                failure = f"cannot inspect repository after executor: {exc}"
+            else:
+                if repository_after == repository_before:
+                    step_ok = False
+                    failure = UNCHANGED_REPOSITORY_FAILURE
+
+        if step_ok and index_path is not None:
             untracked_after, untracked_error = git_untracked_paths(project_root)
             if untracked_error:
                 step_ok = False

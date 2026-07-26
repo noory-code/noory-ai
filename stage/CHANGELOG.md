@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.43.10 — 2026-07-26
+
+- Reject a successful supervised or unattended executor attempt when its repository-only
+  pre/post fingerprint is identical. The failure names `close_work.py` as the explicit manual path
+  for work that was already complete, while the existing acceptance-output-based `NO-PROGRESS`
+  fingerprint remains unchanged.
+
 ## 0.43.9 — 2026-07-26
 
 - Run supervised and unattended executors with a copied disposable Git index, then carry that same

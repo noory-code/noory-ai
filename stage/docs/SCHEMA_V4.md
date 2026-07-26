@@ -272,6 +272,14 @@ provide an error message, both during review preparation and during progress
 fingerprinting. Progress fingerprinting also fails closed when a tracked-diff command cannot run or
 returns an error; a project outside a Git worktree remains an explicit supported state.
 
+Immediately before each supervised or unattended executor attempt, the driver records a
+repository-only fingerprint from the tracked diff and non-ignored untracked paths. It records the
+same fingerprint immediately after the executor exits. A successful executor that leaves this
+state identical fails the attempt before acceptance or review can run. This comparison excludes
+executor output and verification output; those remain inputs only to the separate `NO-PROGRESS`
+fingerprint. If the work was already complete before execution, the operator must run
+`close_work.py` manually so verification and review still run through an explicit path.
+
 The driver reuses the close-work command runner, treats a reviewer nonzero exit or `BLOCK:` verdict
 as failure, then prints the outcome and recommended explicit next action. It does not commit, call
 `close_work.py`, call `escalate_work.py`, advance the parent, promote official truth, or loop over
@@ -294,11 +302,11 @@ Execute mode stores untracked state at
 }
 ```
 
-The fingerprint is SHA-256 over staged and unstaged tracked changes (`git diff HEAD`, or separate
-staged and unstaged diffs when `HEAD` is unborn), the path and content hash of each untracked
-non-ignored file, and acceptance output. A consecutive match is `NO-PROGRESS`. Missing executor,
-missing acceptance, unusable independent review, malformed limits, an exhausted limit, and no
-progress all fail closed with an `escalate_work` recommendation; the driver never claims
+The `NO-PROGRESS` fingerprint is SHA-256 over staged and unstaged tracked changes (`git diff HEAD`,
+or separate staged and unstaged diffs when `HEAD` is unborn), the path and content hash of each
+untracked non-ignored file, and acceptance output. A consecutive match is `NO-PROGRESS`. Missing
+executor, missing acceptance, unusable independent review, malformed limits, an exhausted limit,
+and no progress all fail closed with an `escalate_work` recommendation; the driver never claims
 completion or performs escalation itself.
 
 ### Unattended driver loop

@@ -304,6 +304,40 @@ class UnattendedTest(unittest.TestCase):
         self.assertIn(("escalate", "W-00000002"), calls)
         self.assertNotIn("close", [c[0] for c in calls if c[1] == "W-00000002"])
 
+    def test_successful_executor_without_repository_changes_escalates_not_closes(self):
+        limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}
+        root, stage_root = self.make(limits=limits, executor=python_command("raise SystemExit(0)"))
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+        escalation_reasons: list[str] = []
+
+        def stub_escalate_and_commit(project_root, item_id, reason, timeout):
+            escalation_reasons.append(reason)
+            calls.append(("escalate", item_id))
+            path = stage_root / "work/current" / f"{item_id}.md"
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                drive.set_frontmatter_field(text, "status", "blocked"),
+                encoding="utf-8",
+            )
+            return True
+
+        drive.escalate_and_commit = stub_escalate_and_commit
+
+        self.commit_all(root)
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"), root, stage_root, time.time()
+        )
+
+        self.assertEqual(0, rc)
+        self.assertIn(("escalate", "W-00000002"), calls)
+        self.assertNotIn(("close", "W-00000002"), calls)
+        self.assertIn("executor left repository state unchanged", escalation_reasons[0])
+        self.assertIn("close_work.py", escalation_reasons[0])
+
     def test_iteration_cap_stops_run(self):
         limits = {"max_attempts_per_item": 3, "max_iterations": 1, "max_wall_clock_seconds": 300}
         root, stage_root = self.make(limits=limits)
