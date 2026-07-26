@@ -422,6 +422,27 @@ class CloseWorkTest(unittest.TestCase):
 
     def _write_review(self, root, review):
         import json
+
+        self.init_git(root)
+        source = root / "src/app.py"
+        source.parent.mkdir(parents=True)
+        source.write_text("print('committed review material')\n", encoding="utf-8")
+        subprocess.run(["git", "add", "src/app.py"], cwd=root, check=True)
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Stage Test",
+                "-c",
+                "user.email=stage-test@example.com",
+                "commit",
+                "-q",
+                "-m",
+                "test: add review material",
+            ],
+            cwd=root,
+            check=True,
+        )
         (root / ".stage/settings.json").write_text(
             json.dumps({"schema_version": 4, "review": review}), encoding="utf-8"
         )
@@ -495,6 +516,55 @@ class CloseWorkTest(unittest.TestCase):
 
                 self.assertEqual(0, proc.returncode, proc.stderr)
                 self.assertIn(str(item_path), item)
+
+    def review_committed_paths_command(self) -> str:
+        return python_command(
+            "import json, os; from pathlib import Path; "
+            "paths = json.loads(Path(os.environ['STAGE_CHANGED_PATHS_FILE'])"
+            ".read_text(encoding='utf-8')); "
+            "assert paths == ['src/app.py'], paths; "
+            "print(Path(paths[0]).read_text(encoding='utf-8'), end='')"
+        )
+
+    def test_staged_review_receives_close_owned_committed_path_list(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "strengths": {"standard": self.review_committed_paths_command()},
+                    "stages": {"implementation": "standard"},
+                },
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("committed review material", item)
+
+    def test_autonomous_review_receives_close_owned_committed_path_list(self):
+        tmp, root = self.make(autonomous="true")
+        with tmp:
+            self._write_review(
+                root,
+                {"reviewers": {"claude": self.review_committed_paths_command()}},
+            )
+
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                python_command("print(1)"),
+            )
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("committed review material", item)
 
     def test_review_block_verdict_refuses(self):
         tmp, root = self.make(review="pending")

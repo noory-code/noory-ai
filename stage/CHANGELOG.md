@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.45.1 — 2026-07-27
+
+- Give both close-time reviewer paths a close-owned JSON list of paths carried by the HEAD commit,
+  so autonomous and staged reviews receive the same explicit material contract.
+- Make configured close-time review strengths open those committed paths directly without deriving
+  review material from Git diff or index state.
+
 ## 0.45.0 — 2026-07-26
 
 - Give supervised reviewers a driver-owned JSON list of paths changed by the executor so they open

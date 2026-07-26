@@ -24,10 +24,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import date
 from pathlib import Path
 
@@ -156,6 +158,51 @@ def run_check(
     output = (proc.stdout or "") + (proc.stderr or "")
     header = f"$ {command}\n[exit {proc.returncode}]"
     return proc.returncode == 0, f"{header}\n{clip(output)}", output
+
+
+def committed_paths_in_head(project_root: Path, timeout: int) -> list[str]:
+    command = [
+        "git",
+        "show",
+        "--format=",
+        "--name-only",
+        "--no-renames",
+        "-z",
+        "HEAD",
+    ]
+    try:
+        proc = subprocess.run(
+            command,
+            capture_output=True,
+            timeout=timeout,
+            cwd=str(project_root),
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError(f"cannot list paths in HEAD commit: {exc}") from exc
+    if proc.returncode != 0:
+        detail = os.fsdecode(proc.stderr).strip() or f"git exited {proc.returncode}"
+        raise RuntimeError(f"cannot list paths in HEAD commit: {detail}")
+    return sorted({os.fsdecode(raw_path) for raw_path in proc.stdout.split(b"\0") if raw_path})
+
+
+def close_review_environment(
+    project_root: Path,
+    item_path: Path,
+    changed_paths_file: Path,
+    timeout: int,
+) -> dict[str, str]:
+    paths = committed_paths_in_head(project_root, timeout)
+    try:
+        changed_paths_file.write_text(
+            json.dumps(paths, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        raise RuntimeError(f"cannot write close-owned review path list: {exc}") from exc
+    environment = os.environ.copy()
+    environment["STAGE_WORK_ITEM_PATH"] = str(item_path.resolve())
+    environment["STAGE_CHANGED_PATHS_FILE"] = str(changed_paths_file.resolve())
+    return environment
 
 
 def main() -> int:
@@ -326,8 +373,6 @@ def main() -> int:
     review_passed = False
     review_block = ""
     review_heading = ""
-    review_environment = os.environ.copy()
-    review_environment["STAGE_WORK_ITEM_PATH"] = str(item_path.resolve())
     if work_item.autonomous:
         review_command, review_error = resolve_independent_review_command(
             load_review_config(stage_root), work_item.venue
@@ -346,12 +391,26 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
-        ok, block, raw = run_check(
-            review_command,
-            args.timeout,
-            project_root,
-            env=review_environment,
-        )
+        try:
+            with tempfile.TemporaryDirectory(prefix="stage-close-review-") as review_tmp:
+                review_environment = close_review_environment(
+                    project_root,
+                    item_path,
+                    Path(review_tmp) / "changed-paths.json",
+                    args.timeout,
+                )
+                ok, block, raw = run_check(
+                    review_command,
+                    args.timeout,
+                    project_root,
+                    env=review_environment,
+                )
+        except RuntimeError as exc:
+            print(
+                f"{args.item}: cannot prepare independent review material: {exc}",
+                file=sys.stderr,
+            )
+            return 1
         if not ok or re.search(r"(?m)^BLOCK:", raw):
             print(
                 f"{args.item}: independent review did not pass, nothing changed:\n{block}",
@@ -369,12 +428,26 @@ def main() -> int:
         if not review_command:
             print(f"{args.item}: review is pending but stage `{args.review_stage}` configures no review command in settings.json", file=sys.stderr)
             return 1
-        ok, block, raw = run_check(
-            review_command,
-            args.timeout,
-            project_root,
-            env=review_environment,
-        )
+        try:
+            with tempfile.TemporaryDirectory(prefix="stage-close-review-") as review_tmp:
+                review_environment = close_review_environment(
+                    project_root,
+                    item_path,
+                    Path(review_tmp) / "changed-paths.json",
+                    args.timeout,
+                )
+                ok, block, raw = run_check(
+                    review_command,
+                    args.timeout,
+                    project_root,
+                    env=review_environment,
+                )
+        except RuntimeError as exc:
+            print(
+                f"{args.item}: cannot prepare review material: {exc}",
+                file=sys.stderr,
+            )
+            return 1
         if not ok or re.search(r"(?m)^BLOCK:", raw):
             print(f"{args.item}: review did not pass, nothing changed:\n{block}", file=sys.stderr)
             return 1
