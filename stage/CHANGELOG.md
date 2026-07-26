@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.43.9 — 2026-07-26
+
+- Run supervised and unattended executors with a copied disposable Git index, then carry that same
+  index into independent review. Executor staging no longer touches the human's real index, and the
+  driver no longer restores an old snapshot over index updates made while a step is running.
+- Warn operators not to edit or run repository-changing Git commands in the shared checkout while
+  a driver step is active.
+
 ## 0.43.8 — 2026-07-26
 
 - Record a passing close-time review under an explicitly labeled evidence block in the card's

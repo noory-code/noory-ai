@@ -397,6 +397,7 @@ class DriveTest(unittest.TestCase):
                 "STAGE_WORK_ITEM",
                 "STAGE_WORK_ITEM_PATH",
                 "STAGE_PROJECT_ROOT",
+                "GIT_INDEX_FILE",
             )
             executor = python_command(
                 "import json, os; "
@@ -413,8 +414,15 @@ class DriveTest(unittest.TestCase):
                     stage_root,
                     "W-00000002",
                     parent="W-00000001",
-                    acceptance=(PASS_COMMAND,),
+                    acceptance=(
+                        python_command(
+                            "import os; "
+                            "raise SystemExit("
+                            "0 if 'GIT_INDEX_FILE' not in os.environ else 1)"
+                        ),
+                    ),
                 )
+                initialize_git(root)
 
                 result = self.run_cli(root, "--execute")
 
@@ -435,6 +443,112 @@ class DriveTest(unittest.TestCase):
                 self.assertEqual(
                     str(root.resolve()), environment["STAGE_PROJECT_ROOT"]
                 )
+                self.assertEqual(
+                    "executor-index",
+                    Path(environment["GIT_INDEX_FILE"]).name,
+                )
+                self.assertNotEqual(
+                    str((root / ".git/index").resolve()),
+                    environment["GIT_INDEX_FILE"],
+                )
+
+    def test_executor_staging_never_changes_the_real_index(self):
+        tmp, root = self.make_project()
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            index_path = (
+                root
+                / git(
+                    root,
+                    "rev-parse",
+                    "--git-path",
+                    "index",
+                ).stdout.strip()
+            )
+            index_before = index_path.read_bytes()
+            executor = python_command(
+                "import subprocess; "
+                "from pathlib import Path; "
+                "Path('executor-artifact.txt').write_text("
+                "'executor artifact\\n', encoding='utf-8'); "
+                "subprocess.run(['git', 'add', 'executor-artifact.txt'], check=True); "
+                f"Path('index-during-executor').write_bytes(Path({str(index_path)!r}).read_bytes())"
+            )
+            settings_path = root / ".stage/settings.json"
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            settings["executors"]["codex"] = executor
+            settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+            result = self.run_cli(root, "--execute")
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual(
+                index_before,
+                (root / "index-during-executor").read_bytes(),
+            )
+            self.assertEqual(index_before, index_path.read_bytes())
+            self.assertNotIn(
+                "executor-artifact.txt",
+                git(root, "diff", "--cached", "--name-only").stdout,
+            )
+
+    def test_human_index_update_during_executor_is_preserved(self):
+        tmp, root = self.make_project()
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            (root / "human.txt").write_text("before\n", encoding="utf-8")
+            initialize_git(root)
+            index_path = (
+                root
+                / git(
+                    root,
+                    "rev-parse",
+                    "--git-path",
+                    "index",
+                ).stdout.strip()
+            )
+            (root / "human.txt").write_text("human staged\n", encoding="utf-8")
+            executor = python_command(
+                "import os, subprocess; "
+                "from pathlib import Path; "
+                "human_env = os.environ.copy(); "
+                f"human_env['GIT_INDEX_FILE'] = {str(index_path)!r}; "
+                "subprocess.run(['git', 'add', 'human.txt'], check=True, env=human_env); "
+                "Path('executor-artifact.txt').write_text("
+                "'executor artifact\\n', encoding='utf-8'); "
+                "subprocess.run(['git', 'add', 'executor-artifact.txt'], check=True)"
+            )
+            settings_path = root / ".stage/settings.json"
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            settings["executors"]["codex"] = executor
+            settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+            result = self.run_cli(root, "--execute")
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual(
+                "human.txt\n",
+                git(root, "diff", "--cached", "--name-only").stdout,
+            )
+            self.assertEqual(
+                "human staged\n",
+                git(root, "show", ":human.txt").stdout,
+            )
+            self.assertIn(
+                "executor-artifact.txt",
+                git(root, "ls-files", "--others", "--exclude-standard").stdout,
+            )
 
     def test_reviewer_git_diff_sees_executor_created_file_content(self):
         artifact = "executor-artifact.txt"
@@ -471,7 +585,7 @@ class DriveTest(unittest.TestCase):
                 git(root, "ls-files", "--others", "--exclude-standard").stdout,
             )
 
-    def test_failed_executor_restores_index_and_does_not_commit(self):
+    def test_failed_executor_uses_disposable_index_and_does_not_commit(self):
         executor = python_command(
             "import subprocess; "
             "from pathlib import Path; "
@@ -510,7 +624,7 @@ class DriveTest(unittest.TestCase):
                 git(root, "ls-files", "--others", "--exclude-standard").stdout,
             )
 
-    def test_reviewer_index_snapshot_failure_restores_index(self):
+    def test_executor_index_copy_failure_leaves_real_index_unchanged(self):
         executor = python_command(
             "import subprocess; "
             "from pathlib import Path; "
@@ -533,9 +647,9 @@ class DriveTest(unittest.TestCase):
             drive = self.load_module()
             real_copyfile = drive.shutil.copyfile
 
-            def fail_reviewer_snapshot(source, destination):
-                if Path(destination).name == "review-index":
-                    raise OSError("injected reviewer-index snapshot failure")
+            def fail_executor_index_copy(source, destination):
+                if Path(destination).name == "executor-index":
+                    raise OSError("injected executor-index copy failure")
                 return real_copyfile(source, destination)
 
             output = io.StringIO()
@@ -551,7 +665,7 @@ class DriveTest(unittest.TestCase):
                 mock.patch.object(
                     drive.shutil,
                     "copyfile",
-                    side_effect=fail_reviewer_snapshot,
+                    side_effect=fail_executor_index_copy,
                 ),
                 redirect_stdout(output),
             ):
@@ -559,8 +673,8 @@ class DriveTest(unittest.TestCase):
 
             self.assertNotEqual(0, result)
             self.assertIn(
-                "cannot snapshot executor Git index: "
-                "injected reviewer-index snapshot failure",
+                "cannot prepare disposable Git index for executor: "
+                "injected executor-index copy failure",
                 output.getvalue(),
             )
             self.assertEqual(
@@ -570,12 +684,9 @@ class DriveTest(unittest.TestCase):
                 "executor-artifact.txt",
                 git(root, "diff", "--cached", "--name-only").stdout,
             )
-            self.assertIn(
-                "executor-artifact.txt",
-                git(root, "ls-files", "--others", "--exclude-standard").stdout,
-            )
+            self.assertFalse((root / "executor-artifact.txt").exists())
 
-    def test_executor_output_precedes_combined_index_failure(self):
+    def test_executor_output_precedes_reviewer_index_preparation_failure(self):
         executor = python_command(
             "import subprocess; "
             "from pathlib import Path; "
@@ -593,20 +704,6 @@ class DriveTest(unittest.TestCase):
             )
             initialize_git(root)
             drive = self.load_module()
-            real_copyfile = drive.shutil.copyfile
-            real_restore = drive.restore_git_index
-
-            def fail_reviewer_snapshot(source, destination):
-                if Path(destination).name == "review-index":
-                    raise OSError("injected snapshot failure")
-                return real_copyfile(source, destination)
-
-            def restore_then_report_failure(index_path, snapshot_path, existed):
-                self.assertEqual(
-                    "",
-                    real_restore(index_path, snapshot_path, existed),
-                )
-                return "injected restore failure"
 
             output = io.StringIO()
             argv = [
@@ -619,14 +716,12 @@ class DriveTest(unittest.TestCase):
             with (
                 mock.patch.object(sys, "argv", argv),
                 mock.patch.object(
-                    drive.shutil,
-                    "copyfile",
-                    side_effect=fail_reviewer_snapshot,
-                ),
-                mock.patch.object(
                     drive,
-                    "restore_git_index",
-                    side_effect=restore_then_report_failure,
+                    "prepare_reviewer_index",
+                    return_value=(
+                        None,
+                        "injected reviewer preparation failure",
+                    ),
                 ),
                 redirect_stdout(output),
             ):
@@ -638,8 +733,8 @@ class DriveTest(unittest.TestCase):
             self.assertLess(
                 rendered.index("executor testimony"),
                 rendered.index(
-                    "cannot snapshot executor Git index: injected snapshot failure; "
-                    "cannot restore Git index after execution: injected restore failure"
+                    "cannot prepare executor-created files for review: "
+                    "injected reviewer preparation failure"
                 ),
             )
 

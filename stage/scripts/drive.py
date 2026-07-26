@@ -326,25 +326,6 @@ def git_head_exists(project_root: Path) -> tuple[bool, str]:
     )
 
 
-def restore_git_index(
-    index_path: Path, snapshot_path: Path, existed: bool
-) -> str:
-    """Restore the exact pre-executor index state without touching the worktree."""
-
-    replacement = index_path.with_name(f"{index_path.name}.stage-driver-restore")
-    try:
-        if existed:
-            shutil.copyfile(snapshot_path, replacement)
-            replacement.replace(index_path)
-        else:
-            index_path.unlink(missing_ok=True)
-    except OSError as exc:
-        return str(exc)
-    finally:
-        replacement.unlink(missing_ok=True)
-    return ""
-
-
 def prepare_reviewer_index(
     project_root: Path,
     review_index_path: Path,
@@ -398,7 +379,11 @@ def fingerprint(project_root: Path, acceptance_output: list[str]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def executor_environment(item: WorkItem, project_root: Path) -> dict[str, str]:
+def executor_environment(
+    item: WorkItem,
+    project_root: Path,
+    executor_index_path: Path | None = None,
+) -> dict[str, str]:
     """Return the inherited environment plus the selected work item context."""
 
     env = os.environ.copy()
@@ -409,6 +394,8 @@ def executor_environment(item: WorkItem, project_root: Path) -> dict[str, str]:
             "STAGE_PROJECT_ROOT": str(project_root.resolve()),
         }
     )
+    if executor_index_path is not None:
+        env["GIT_INDEX_FILE"] = str(executor_index_path.resolve())
     return env
 
 
@@ -928,12 +915,34 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 return 1
             continue
 
-        executor_ok, executor_evidence, _raw = run_check(
-            executor_command,
-            cmd_timeout,
-            project_root,
-            env=executor_environment(item, project_root),
-        )
+        index_path, index_error = git_index_path(project_root)
+        if index_error:
+            print_escalation(
+                f"cannot resolve Git index before executor: {index_error}"
+            )
+            return 1
+        with tempfile.TemporaryDirectory(
+            prefix="stage-drive-executor-index-"
+        ) as temporary:
+            executor_index = Path(temporary) / "executor-index"
+            if index_path is not None and index_path.is_file():
+                try:
+                    shutil.copyfile(index_path, executor_index)
+                except OSError as exc:
+                    print_escalation(
+                        f"cannot prepare disposable Git index for executor: {exc}"
+                    )
+                    return 1
+            executor_ok, executor_evidence, _raw = run_check(
+                executor_command,
+                cmd_timeout,
+                project_root,
+                env=executor_environment(
+                    item,
+                    project_root,
+                    executor_index if index_path is not None else None,
+                ),
+            )
         try:
             current_fingerprint = fingerprint(project_root, [executor_evidence])
         except RuntimeError as exc:
@@ -1170,48 +1179,27 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="stage-drive-index-") as temporary:
         temporary_root = Path(temporary)
-        original_index = temporary_root / "original-index"
-        review_index = temporary_root / "review-index"
+        executor_index = temporary_root / "executor-index"
         if index_existed and index_path is not None:
             try:
-                shutil.copyfile(index_path, original_index)
+                shutil.copyfile(index_path, executor_index)
             except OSError as exc:
-                print_escalation(f"cannot snapshot Git index before execution: {exc}")
+                print_escalation(
+                    f"cannot prepare disposable Git index for executor: {exc}"
+                )
                 return 1
 
         executor_ok, executor_evidence, _executor_raw = run_check(
             executor_command,
             args.timeout,
             project_root,
-            env=executor_environment(item, project_root),
+            env=executor_environment(
+                item,
+                project_root,
+                executor_index if index_path is not None else None,
+            ),
         )
         print(f"Executor result:\n{executor_evidence}")
-
-        if index_path is not None:
-            snapshot_error = ""
-            try:
-                if index_path.is_file():
-                    shutil.copyfile(index_path, review_index)
-                elif index_existed:
-                    shutil.copyfile(original_index, review_index)
-            except OSError as exc:
-                snapshot_error = str(exc)
-            finally:
-                restore_error = restore_git_index(
-                    index_path, original_index, index_existed
-                )
-            if snapshot_error or restore_error:
-                index_failures: list[str] = []
-                if snapshot_error:
-                    index_failures.append(
-                        f"cannot snapshot executor Git index: {snapshot_error}"
-                    )
-                if restore_error:
-                    index_failures.append(
-                        f"cannot restore Git index after execution: {restore_error}"
-                    )
-                print_escalation("; ".join(index_failures))
-                return 1
 
         if not executor_ok:
             step_ok = False
@@ -1244,7 +1232,7 @@ def main() -> int:
             if index_path is not None:
                 reviewer_env, reviewer_index_error = prepare_reviewer_index(
                     project_root,
-                    review_index,
+                    executor_index,
                     executor_untracked_paths,
                     allow_empty_index=not index_existed and not head_existed,
                 )

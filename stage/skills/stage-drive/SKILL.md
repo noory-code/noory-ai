@@ -71,6 +71,11 @@ It does **not** commit, close the card, escalate, promote official truth, advanc
 move on to the next item. Those stay with the human supervising the run, so the recommended next
 action is something a person still performs.
 
+Do not edit files, stage or commit changes, switch branches, or run other repository-changing Git
+commands in the same checkout while a driver step is running. The executor receives a disposable
+Git index, so its `git add` cannot change the human's real index, but the working tree and `HEAD`
+remain shared process-wide state. Wait for the step to stop before changing the repository.
+
 Three conditions end a step in `blocked` instead of a retry: an exhausted limit, a `NO-PROGRESS`
 fingerprint, and an independent reviewer `BLOCK:` verdict. A reviewer BLOCK escalates
 unconditionally — it is a judgment on the result, not a transient failure, so rerunning the step

@@ -224,10 +224,13 @@ the current process environment and sets:
 
 - `STAGE_WORK_ITEM`: the selected work item ID, such as `W-00000070`;
 - `STAGE_WORK_ITEM_PATH`: the absolute path to the selected work item's card;
-- `STAGE_PROJECT_ROOT`: the absolute path to the project root.
+- `STAGE_PROJECT_ROOT`: the absolute path to the project root;
+- `GIT_INDEX_FILE`: an executor-only disposable index copied from the real Git index when it exists.
 
 This injection applies only to executor commands. Stored acceptance verification commands and
-review commands do **not** receive these variables from the driver.
+review commands do **not** receive the `STAGE_*` variables from the driver. Acceptance commands do
+not receive the driver-added `GIT_INDEX_FILE`; independent review receives the executor's disposable
+index through its own environment.
 
 `stage_paths.load_executors_config()` reads the raw section, and
 `stage_paths.resolve_executor_command(executors, item_venue)` returns `(command, "")` only when
@@ -246,27 +249,26 @@ does not run commands, create `.stage/.runtime/`, or update run state.
 executor -> each stored acceptance check -> independent reviewer
 ```
 
-Before the executor runs, the driver snapshots the real Git index and records the existing
-untracked paths. Immediately after the executor exits, the driver copies the executor's index to a
-disposable index for review, restores the real index byte-for-byte, and records the new untracked
-paths before acceptance commands run. Restoration is attempted even when the disposable-index
-copy fails; if both operations fail, the escalation reports both failures. A failed executor
-therefore cannot leave its `git add` results mixed with the human's pre-existing staged changes.
-Executor evidence is printed before any index snapshot or restoration escalation. The driver does
-not remove executor worktree output, so the human can still inspect it.
+Before the executor runs, the driver copies the real Git index to a disposable executor index,
+passes it through `GIT_INDEX_FILE`, and records the existing untracked paths. The executor and all
+of its child Git processes use that disposable index, so `git add` never changes the human's real
+index. The driver never snapshots and restores the real index; an index update made by a human
+during the step therefore remains intact. A failed executor likewise cannot mix its staged results
+with the human's index. The driver does not remove executor worktree output, so the human can still
+inspect it.
 
 For independent review, the driver marks only newly untracked paths as intent-to-add in the
-disposable index and passes that index through `GIT_INDEX_FILE` to the reviewer command. Ordinary
-review commands such as `git diff` therefore include the contents of executor-created files.
+executor's disposable index and passes that same index through `GIT_INDEX_FILE` to the reviewer
+command. Ordinary review commands such as `git diff` therefore include the contents of
+executor-created files.
 When the repository had neither a commit nor an index before execution and the executor leaves the
 index absent, the driver initializes the disposable reviewer index as empty. If `HEAD` resolves but
 the real and executor-created indexes are both absent, review preparation fails closed rather than
-showing the reviewer an empty diff. This expected unborn-repository absence is distinct from a
-snapshot or restoration failure, which also fails the step closed.
+showing the reviewer an empty diff.
 Pre-existing untracked paths and files created by acceptance commands are not added, and the
-disposable index is deleted after review. The real index and commit history are never changed by
-this review preparation. Failure to enumerate untracked paths fails the step closed even when Git
-does not provide an error message, both during review preparation and during progress
+disposable index is deleted after review. The real index is never changed by executor or review
+preparation. Failure to enumerate untracked paths fails the step closed even when Git does not
+provide an error message, both during review preparation and during progress
 fingerprinting. Progress fingerprinting also fails closed when a tracked-diff command cannot run or
 returns an error; a project outside a Git worktree remains an explicit supported state.
 
@@ -311,9 +313,11 @@ branch and aborts if not.
 
 Each iteration selects the next ready leaf anywhere in the target's subtree (autonomous,
 non-terminal `active`, non-empty acceptance, itself a leaf). It runs the item's executor with a
-timeout bounded by the remaining global wall-clock budget. A FAILED executor is discarded and
-retried or escalated — never committed or closed. On success the executor output is committed, a
-NEUTRAL `driver-generated` retrospective is written (it does not claim success — the item's
+timeout bounded by the remaining global wall-clock budget and a disposable Git index. The driver's
+later scoped `git add` and commit use the real index, so executor index isolation does not change
+unattended commits. A FAILED executor is discarded and retried or escalated — never committed or
+closed. On success the executor output is committed, a NEUTRAL `driver-generated` retrospective is
+written (it does not claim success — the item's
 Verification, stamped by `close_work`, is the source of truth; a human reviews the retrospective at
 merge), and the item is closed through `close_work.py` (which re-runs acceptance and the mandatory
 independent review). The resulting `.stage` **lifecycle records (card status, retrospective,

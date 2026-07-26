@@ -208,6 +208,7 @@ class UnattendedTest(unittest.TestCase):
                 "STAGE_WORK_ITEM",
                 "STAGE_WORK_ITEM_PATH",
                 "STAGE_PROJECT_ROOT",
+                "GIT_INDEX_FILE",
             )
             executor = python_command(
                 "import json, os; "
@@ -238,6 +239,54 @@ class UnattendedTest(unittest.TestCase):
                 environment["STAGE_WORK_ITEM_PATH"],
             )
             self.assertEqual(str(root.resolve()), environment["STAGE_PROJECT_ROOT"])
+            self.assertEqual(
+                "executor-index",
+                Path(environment["GIT_INDEX_FILE"]).name,
+            )
+            self.assertNotEqual(
+                str((root / ".git/index").resolve()),
+                environment["GIT_INDEX_FILE"],
+            )
+
+    def test_executor_staging_is_isolated_before_unattended_commit(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "index-during-executor"
+            root, stage_root = self.make(limits=limits)
+            self.card(stage_root, "W-00000001")
+            self.card(stage_root, "W-00000002", parent="W-00000001")
+            self.commit_all(root)
+            index_path = root / git_out(root, "rev-parse", "--git-path", "index")
+            settings_path = stage_root / "settings.json"
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            settings["executors"]["codex"] = python_command(
+                "import subprocess; "
+                "from pathlib import Path; "
+                "Path('driver-work.txt').write_text('x', encoding='utf-8'); "
+                "subprocess.run(['git', 'add', 'driver-work.txt'], check=True); "
+                f"Path({str(marker)!r}).write_bytes(Path({str(index_path)!r}).read_bytes())"
+            )
+            settings_path.write_text(json.dumps(settings), encoding="utf-8")
+            self.commit_all(root)
+            index_before = index_path.read_bytes()
+            drive = load_module()
+            calls: list = []
+            self.install_stubs(drive, calls)
+
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"),
+                root,
+                stage_root,
+                time.time(),
+            )
+
+            self.assertEqual(0, rc)
+            self.assertEqual(index_before, marker.read_bytes())
+            self.assertEqual("x", git_out(root, "show", "HEAD:driver-work.txt"))
 
     def test_executor_failure_escalates_not_closes(self):
         limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}
