@@ -9,4 +9,3 @@
 | W-00000081 | fix | codex | 드라이버가 실행을 시작할 때 인덱스 사본을 떠 두고 끝나면 되돌리는데, 그 사이에 사람이 커밋하면 되돌리는  | active | Claude | [current/W-00000081.md](current/W-00000081.md) |
 | W-00000082 | development | codex | 드라이버가 부모만 받아 그 자식을 고르므로, 카드 하나를 돌리려면 껍데기 부모를 만들어야 한다. 도구의 제약 | active | Claude | [current/W-00000082.md](current/W-00000082.md) |
 | W-00000083 | fix | codex | 실행하는 쪽이 카드도 못 읽고 멈췄는데 종료 코드 0으로 끝났고, 드라이버가 그것을 성공으로 받아 검증과 리 | active | Claude | [current/W-00000083.md](current/W-00000083.md) |
-| W-00000084 | design | claude | 리뷰 판정이 나오면 바로 카드가 되거나 바로 고쳐진다. 그 사이에 받을지 말지 판단하고 근거를 남기는 자리가 | active | Claude | [current/W-00000084.md](current/W-00000084.md) |
