@@ -16,3 +16,5 @@
 | W-00000076 | passed | completed | not_applicable | [current/W-00000076.md](current/W-00000076.md) |
 | W-00000080 | passed | completed | not_applicable | [current/W-00000080.md](current/W-00000080.md) |
 | W-00000077 | passed | completed | not_applicable | [current/W-00000077.md](current/W-00000077.md) |
+| W-00000078 | passed | completed | not_applicable | [current/W-00000078.md](current/W-00000078.md) |
+| W-00000079 | passed | completed | not_applicable | [current/W-00000079.md](current/W-00000079.md) |
