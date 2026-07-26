@@ -429,10 +429,27 @@ class CloseWorkTest(unittest.TestCase):
     def test_configured_review_runs_and_records(self):
         tmp, root = self.make(review="pending")
         with tmp:
-            self._write_review(root, {"strengths": {"standard": "python3 -c \"print('review ok')\""}, "stages": {"implementation": "standard"}})
+            self._write_review(
+                root,
+                {
+                    "strengths": {
+                        "standard": python_command(
+                            "print(''.join(['configured ', 'verdict retained']))"
+                        )
+                    },
+                    "stages": {"implementation": "standard"},
+                },
+            )
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            self.assertIn("review ok", (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8"))
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn(
+                f"### Review at close — {date.today().isoformat()}",
+                item,
+            )
+            self.assertIn("configured verdict retained", item)
 
     def test_review_block_verdict_refuses(self):
         tmp, root = self.make(review="pending")
