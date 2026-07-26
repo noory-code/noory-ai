@@ -39,7 +39,7 @@ for import_dir in (HOOKS_DIR, SCRIPTS_DIR, RETROSPECTIVE_DIR):
         sys.path.insert(0, str(import_dir))
 
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
-from close_work import run_check  # noqa: E402
+from close_work import clip, run_check  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -1031,9 +1031,12 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 continue
             mark_retrospective(stage_root, item.item_id, retro_id)
 
-        close_ok, _close_out = close_via_close_work(project_root, item.item_id, [], cmd_timeout)
+        close_ok, close_out = close_via_close_work(project_root, item.item_id, [], cmd_timeout)
         if not close_ok:
             reason = "close failed (acceptance or independent review)"
+            clipped_close_out = clip(close_out)
+            if clipped_close_out:
+                reason += f"; close_work output:\n{clipped_close_out}"
             if no_progress or attempt >= cap:
                 if not escalate_and_commit(
                     project_root, item.item_id, f"{reason}; no progress or attempt cap reached", cmd_timeout

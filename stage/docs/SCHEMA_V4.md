@@ -342,16 +342,20 @@ Verification, stamped by `close_work`, is the source of truth; a human reviews t
 merge), and the item is closed through `close_work.py` (which re-runs acceptance and the mandatory
 independent review). The resulting `.stage` **lifecycle records (card status, retrospective,
 indexes) are then committed to the run branch too**, so a merge carries the Stage bookkeeping, not
-only the executor output. Every lifecycle commit is checked: if escalation, pre-close retry, item
-closure, or ancestor-aggregation records cannot be committed, the run stops with a non-zero exit
-for human handoff instead of continuing without its bookkeeping. When a parent's children all
-become terminal the driver closes that parent up to the target. Parent verification always includes
-the audit (whole-`.stage` consistency) plus `close_work`'s aggregation gate; any acceptance commands
-declared by the parent run in addition to the audit, never in place of it. Its children were each
-independently reviewed (DE-00000027). The generated audit command uses platform-specific shell
-quoting: Windows project paths containing `cmd.exe` metacharacters (`&`, `^`, `|`, `<`, or `>`)
-remain one argument, as do paths containing whitespace. When the driver adds Windows quotes itself,
-it doubles trailing backslashes so they cannot escape the closing quote.
+only the executor output. If `close_work.py` fails because acceptance or the independent review did
+not pass, the escalation reason preserves its latest output using the same evidence bound as a
+passing close: the final 40 lines and 4000 bytes, with an omission marker when earlier lines were
+removed. A retry replaces the prior failure evidence, so a later escalation carries the last close
+result. Every lifecycle commit is checked: if escalation, pre-close retry, item closure, or
+ancestor-aggregation records cannot be committed, the run stops with a non-zero exit for human
+handoff instead of continuing without its bookkeeping. When a parent's children all become terminal
+the driver closes that parent up to the target. Parent verification always includes the audit
+(whole-`.stage` consistency) plus `close_work`'s aggregation gate; any acceptance commands declared
+by the parent run in addition to the audit, never in place of it. Its children were each independently
+reviewed (DE-00000027). The generated audit command uses platform-specific shell quoting: Windows
+project paths containing `cmd.exe` metacharacters (`&`, `^`, `|`, `<`, or `>`) remain one argument,
+as do paths containing whitespace. When the driver adds Windows quotes itself, it doubles trailing
+backslashes so they cannot escape the closing quote.
 
 Any executor/commit failure, reviewer `BLOCK`, no-progress, or per-item attempt cap escalates the
 item via `escalate_work` (→ blocked + a pending decision); the escalation result is checked and the

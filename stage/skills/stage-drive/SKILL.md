@@ -116,16 +116,13 @@ it is a missing decision, and an unbounded autonomous loop is forbidden. Configu
 `max_attempts_per_item`, `max_iterations`, and `max_wall_clock_seconds` together, or the run does
 not begin.
 
-**Status: reviewed in code, never exercised on real work, known defects open.** The unattended
-loop has been through two independent code reviews; both demanded changes, and no pass verdict
-exists on record — the reviewer's final verdict was never retrieved. Open defects remain, tracked
-as W-00000075 in the Stage source repository: three of the four places where the loop commits
-Stage bookkeeping do not check that the commit succeeded, and a parent whose card carries its own
-acceptance list closes without the structural audit. It has tests, but no run has yet driven
-actual work through it end to end. Treat it as unproven: do not present it as an ordinary
-alternative to `--execute`, and do not point it at work that matters until someone has watched it
-complete a real subtree. When a user asks for autonomy, supervised `--execute` is the default
-answer.
+**Status: reviewed in code and known code defects closed, but never exercised on real work.** The
+unattended loop has been through independent code review, and the defects those reviews identified
+have been fixed and archived, including W-00000075's lifecycle-commit and parent-audit failures.
+It has tests, but no run has yet driven actual work through it end to end. Treat it as unproven: do
+not present it as an ordinary alternative to `--execute`, and do not point it at work that matters
+until someone has watched it complete a real subtree. When a user asks for autonomy, supervised
+`--execute` is the default answer.
 
 ## Where the contract lives
 

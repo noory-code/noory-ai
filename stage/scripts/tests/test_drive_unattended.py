@@ -539,6 +539,100 @@ class UnattendedTest(unittest.TestCase):
             lifecycle_calls,
         )
 
+    def test_review_block_output_is_preserved_on_escalation_after_retry(self):
+        limits = {
+            "max_attempts_per_item": 2,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        latest_close_output = "\n".join(
+            [f"review detail {number}" for number in range(44)]
+            + ["x" * 5000, "CRITERIA VERDICT: FAIL [P1] review sentinel ```"]
+        )
+        close_outputs = ["obsolete first review output", latest_close_output]
+        escalation_reasons: list[str] = []
+
+        def stub_close(project_root, item_id, extra_checks, timeout):
+            return False, close_outputs.pop(0)
+
+        def stub_escalate_and_commit(project_root, item_id, reason, timeout):
+            escalation_reasons.append(reason)
+            path = stage_root / "work/current" / f"{item_id}.md"
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                drive.set_frontmatter_field(text, "status", "blocked"),
+                encoding="utf-8",
+            )
+            return True
+
+        drive.close_via_close_work = stub_close
+        drive.escalate_and_commit = stub_escalate_and_commit
+
+        self.commit_all(root)
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"), root, stage_root, time.time()
+        )
+
+        self.assertEqual(0, rc)
+        self.assertEqual(1, len(escalation_reasons))
+        reason = escalation_reasons[0]
+        self.assertIn("earlier lines omitted", reason)
+        self.assertIn("CRITERIA VERDICT: FAIL [P1] review sentinel ``\u200b`", reason)
+        self.assertNotIn("obsolete first review output", reason)
+        preserved_output = drive.clip(latest_close_output)
+        self.assertIn(f"close_work output:\n{preserved_output}", reason)
+        self.assertLessEqual(
+            len(preserved_output.split("\n", 1)[1].encode("utf-8")),
+            4000,
+        )
+
+    def test_acceptance_failure_output_is_preserved_on_escalation(self):
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        escalation_reasons: list[str] = []
+
+        drive.close_via_close_work = (
+            lambda project_root, item_id, extra_checks, timeout: (
+                False,
+                "$ python acceptance.py\n[exit 1]\nacceptance failure sentinel",
+            )
+        )
+
+        def stub_escalate_and_commit(project_root, item_id, reason, timeout):
+            escalation_reasons.append(reason)
+            path = stage_root / "work/current" / f"{item_id}.md"
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                drive.set_frontmatter_field(text, "status", "blocked"),
+                encoding="utf-8",
+            )
+            return True
+
+        drive.escalate_and_commit = stub_escalate_and_commit
+
+        self.commit_all(root)
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"), root, stage_root, time.time()
+        )
+
+        self.assertEqual(0, rc)
+        self.assertEqual(1, len(escalation_reasons))
+        self.assertIn(
+            "$ python acceptance.py\n[exit 1]\nacceptance failure sentinel",
+            escalation_reasons[0],
+        )
+
     def test_ancestor_lifecycle_commit_failure_stops_run(self):
         limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
         root, stage_root = self.make(limits=limits)

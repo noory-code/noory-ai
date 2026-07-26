@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.43.14 — 2026-07-26
+
+- Preserve the latest failed `close_work` output in unattended escalation records when acceptance
+  or the independent review blocks closure. The evidence reuses the passing-close bound of the
+  final 40 lines and 4000 bytes, including the omission marker, and a retry carries its latest
+  close result instead of the earlier failure.
+- Update the unattended-mode status to reflect that W-00000075's known code defects are closed
+  while retaining the warning that no real work has completed the loop end to end.
+
 ## 0.43.13 — 2026-07-26
 
 - Let supervised and unattended driver runs target a runnable leaf work item directly, without a
