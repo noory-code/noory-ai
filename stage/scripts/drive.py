@@ -218,6 +218,98 @@ def git_untracked_paths(project_root: Path) -> tuple[set[str], str]:
     }, ""
 
 
+def git_index_entries(project_root: Path) -> tuple[dict[str, str], str]:
+    """Return real-index metadata by path without changing the index."""
+
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "--cached", "--stage", "-z"],
+            cwd=str(project_root),
+            capture_output=True,
+        )
+    except OSError as exc:
+        return {}, str(exc)
+    if result.returncode != 0:
+        return {}, (
+            result.stderr.decode(errors="replace").strip()
+            or f"git ls-files --stage failed with exit code {result.returncode}"
+        )
+
+    entries: dict[str, str] = {}
+    for raw_entry in result.stdout.split(b"\0"):
+        if not raw_entry:
+            continue
+        metadata, separator, raw_path = raw_entry.partition(b"\t")
+        if not separator:
+            return {}, "git ls-files --stage returned an invalid entry"
+        path = os.fsdecode(raw_path)
+        rendered_metadata = metadata.decode(errors="replace")
+        existing = entries.get(path)
+        entries[path] = (
+            rendered_metadata
+            if existing is None
+            else f"{existing}\n{rendered_metadata}"
+        )
+    return entries, ""
+
+
+def worktree_path_fingerprint(path: Path) -> str:
+    """Fingerprint one working-tree path, including deletion and executable state."""
+
+    try:
+        if path.is_symlink():
+            return f"symlink\0{path.readlink()}"
+        if not path.exists():
+            return "missing"
+        if path.is_file():
+            executable_bits = path.stat().st_mode & 0o111
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            return f"file\0{executable_bits:o}\0{digest}"
+        if path.is_dir():
+            return "directory"
+        return "other"
+    except OSError as exc:
+        return f"unreadable:{type(exc).__name__}"
+
+
+def repository_path_snapshot(project_root: Path) -> dict[str, str]:
+    """Snapshot path-level repository state using the driver's real Git environment."""
+
+    index_path, index_error = git_index_path(project_root)
+    if index_error:
+        raise RuntimeError(index_error)
+    if index_path is None:
+        return {}
+
+    index_entries, entries_error = git_index_entries(project_root)
+    if entries_error:
+        raise RuntimeError(entries_error)
+    untracked_paths, untracked_error = git_untracked_paths(project_root)
+    if untracked_error:
+        raise RuntimeError(untracked_error)
+
+    snapshot: dict[str, str] = {}
+    for relative in sorted(set(index_entries) | untracked_paths):
+        snapshot[relative] = (
+            index_entries.get(relative, "untracked")
+            + "\0"
+            + worktree_path_fingerprint(project_root / relative)
+        )
+    return snapshot
+
+
+def changed_repository_paths(
+    before: dict[str, str], after: dict[str, str]
+) -> list[str]:
+    """Return deterministic paths whose repository state changed between snapshots."""
+
+    return sorted(
+        relative
+        for relative in set(before) | set(after)
+        if before.get(relative) != after.get(relative)
+    )
+
+
 def git_diff(project_root: Path) -> str:
     """Return all changes for progress detection; fail if untracked paths are unknown."""
 
@@ -338,54 +430,6 @@ def git_head_exists(project_root: Path) -> tuple[bool, str]:
         result.stderr.strip()
         or f"git rev-parse HEAD failed with exit code {result.returncode}"
     )
-
-
-def prepare_reviewer_index(
-    project_root: Path,
-    review_index_path: Path,
-    new_untracked_paths: set[str],
-    *,
-    allow_empty_index: bool,
-) -> tuple[dict[str, str] | None, str]:
-    """Expose executor-created files through a disposable, initialized Git index."""
-
-    env = os.environ.copy()
-    env["GIT_INDEX_FILE"] = str(review_index_path.resolve())
-    if not review_index_path.is_file():
-        if not allow_empty_index:
-            return None, "cannot prepare disposable Git index for review"
-        try:
-            result = subprocess.run(
-                ["git", "read-tree", "--empty"],
-                cwd=str(project_root),
-                capture_output=True,
-                text=True,
-                env=env,
-            )
-        except OSError as exc:
-            return None, str(exc)
-        if result.returncode != 0:
-            return None, result.stderr.strip() or "git read-tree --empty failed"
-    if new_untracked_paths:
-        try:
-            result = subprocess.run(
-                [
-                    "git",
-                    "add",
-                    "--intent-to-add",
-                    "--",
-                    *sorted(new_untracked_paths),
-                ],
-                cwd=str(project_root),
-                capture_output=True,
-                text=True,
-                env=env,
-            )
-        except OSError as exc:
-            return None, str(exc)
-        if result.returncode != 0:
-            return None, result.stderr.strip() or "git add --intent-to-add failed"
-    return env, ""
 
 
 def fingerprint(project_root: Path, acceptance_output: list[str]) -> str:
@@ -1195,30 +1239,17 @@ def main() -> int:
     failure = ""
     reviewer_blocked = False
     acceptance_output: list[str] = []
-    executor_untracked_paths: set[str] = set()
+    changed_paths: list[str] = []
 
     index_path, index_error = git_index_path(project_root)
     if index_error:
         print_escalation(f"cannot resolve Git index before execution: {index_error}")
         return 1
     index_existed = bool(index_path is not None and index_path.is_file())
-    head_existed = False
-    if index_path is not None and not index_existed:
-        head_existed, head_error = git_head_exists(project_root)
-        if head_error:
-            print_escalation(f"cannot resolve Git HEAD before execution: {head_error}")
-            return 1
-    untracked_before: set[str] = set()
-    if index_path is not None:
-        untracked_before, untracked_error = git_untracked_paths(project_root)
-        if untracked_error:
-            print_escalation(
-                f"cannot inspect untracked files before execution: {untracked_error}"
-            )
-            return 1
 
     try:
         repository_before = repository_fingerprint(project_root)
+        repository_paths_before = repository_path_snapshot(project_root)
     except RuntimeError as exc:
         print_escalation(f"cannot inspect repository before executor: {exc}")
         return 1
@@ -1226,6 +1257,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="stage-drive-index-") as temporary:
         temporary_root = Path(temporary)
         executor_index = temporary_root / "executor-index"
+        changed_paths_file = temporary_root / "review-changed-paths.json"
         if index_existed and index_path is not None:
             try:
                 shutil.copyfile(index_path, executor_index)
@@ -1253,6 +1285,7 @@ def main() -> int:
         else:
             try:
                 repository_after = repository_fingerprint(project_root)
+                repository_paths_after = repository_path_snapshot(project_root)
             except RuntimeError as exc:
                 step_ok = False
                 failure = f"cannot inspect repository after executor: {exc}"
@@ -1260,17 +1293,27 @@ def main() -> int:
                 if repository_after == repository_before:
                     step_ok = False
                     failure = UNCHANGED_REPOSITORY_FAILURE
+                else:
+                    changed_paths = changed_repository_paths(
+                        repository_paths_before, repository_paths_after
+                    )
+                    try:
+                        changed_paths_file.write_text(
+                            json.dumps(changed_paths, indent=2) + "\n",
+                            encoding="utf-8",
+                        )
+                    except OSError as exc:
+                        step_ok = False
+                        failure = (
+                            "cannot write driver-observed paths for review: "
+                            f"{exc}"
+                        )
 
-        if step_ok and index_path is not None:
-            untracked_after, untracked_error = git_untracked_paths(project_root)
-            if untracked_error:
-                step_ok = False
-                failure = (
-                    "cannot inspect executor-created files before review: "
-                    f"{untracked_error}"
-                )
-            else:
-                executor_untracked_paths = untracked_after - untracked_before
+        if step_ok and not changed_paths:
+            step_ok = False
+            failure = (
+                "repository changed but no changed paths were observed for review"
+            )
 
         if step_ok:
             for command in item.acceptance:
@@ -1285,40 +1328,29 @@ def main() -> int:
                     break
 
         if step_ok:
-            reviewer_env: dict[str, str] | None = None
-            if index_path is not None:
-                reviewer_env, reviewer_index_error = prepare_reviewer_index(
-                    project_root,
-                    executor_index,
-                    executor_untracked_paths,
-                    allow_empty_index=not index_existed and not head_existed,
+            reviewer_env = os.environ.copy()
+            reviewer_env.pop("GIT_INDEX_FILE", None)
+            reviewer_env.update(
+                {
+                    "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
+                    "STAGE_CHANGED_PATHS_FILE": str(changed_paths_file.resolve()),
+                }
+            )
+            reviewed, review_evidence, review_raw = run_check(
+                reviewer_command,
+                args.timeout,
+                project_root,
+                env=reviewer_env,
+            )
+            print(f"Independent reviewer result:\n{review_evidence}")
+            reviewer_blocked = bool(BLOCK_RE.search(review_raw))
+            if reviewer_blocked or not reviewed:
+                step_ok = False
+                failure = (
+                    "independent reviewer BLOCK verdict"
+                    if reviewer_blocked
+                    else "independent reviewer command failed"
                 )
-                if reviewer_index_error:
-                    step_ok = False
-                    failure = (
-                        "cannot prepare executor-created files for review: "
-                        f"{reviewer_index_error}"
-                    )
-
-            if step_ok:
-                if reviewer_env is None:
-                    reviewer_env = os.environ.copy()
-                reviewer_env["STAGE_WORK_ITEM_PATH"] = str(item.path.resolve())
-                reviewed, review_evidence, review_raw = run_check(
-                    reviewer_command,
-                    args.timeout,
-                    project_root,
-                    env=reviewer_env,
-                )
-                print(f"Independent reviewer result:\n{review_evidence}")
-                reviewer_blocked = bool(BLOCK_RE.search(review_raw))
-                if reviewer_blocked or not reviewed:
-                    step_ok = False
-                    failure = (
-                        "independent reviewer BLOCK verdict"
-                        if reviewer_blocked
-                        else "independent reviewer command failed"
-                    )
 
     try:
         current_fingerprint = fingerprint(project_root, acceptance_output)

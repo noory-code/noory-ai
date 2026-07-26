@@ -462,7 +462,7 @@ class DriveTest(unittest.TestCase):
             )
             self.assertFalse(index_path.exists())
 
-    def test_execute_fails_when_head_exists_but_index_is_missing(self):
+    def test_execute_passes_when_head_exists_but_index_is_missing(self):
         tmp, root = self.make_project(
             executor=python_command(
                 "from pathlib import Path; "
@@ -492,12 +492,11 @@ class DriveTest(unittest.TestCase):
 
             result = self.run_cli(root, "--execute")
 
-            self.assertNotEqual(0, result.returncode)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             self.assertIn(
-                "cannot prepare disposable Git index for review",
+                "verification+judge passed → ready to commit + close_work",
                 result.stdout,
             )
-            self.assertNotIn("Independent reviewer result:", result.stdout)
             self.assertFalse(index_path.exists())
 
     def test_execute_passes_selected_work_item_environment(self):
@@ -604,6 +603,49 @@ class DriveTest(unittest.TestCase):
                     environment["STAGE_WORK_ITEM_PATH"],
                 )
 
+    def test_reviewer_receives_driver_observed_paths_without_executor_index(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "reviewer-input.json"
+            reviewer = python_command(
+                "import json, os; "
+                "from pathlib import Path; "
+                "changed_paths_file = Path(os.environ['STAGE_CHANGED_PATHS_FILE']); "
+                f"Path({str(marker)!r}).write_text("
+                "json.dumps({"
+                "'changed_paths': json.loads(changed_paths_file.read_text(encoding='utf-8')), "
+                "'git_index_file': os.environ.get('GIT_INDEX_FILE')"
+                "}), encoding='utf-8')"
+            )
+            executor = python_command(
+                "import subprocess; "
+                "from pathlib import Path; "
+                "subprocess.run(['git', 'read-tree', '--empty'], check=True); "
+                "Path('tracked.txt').write_text('after\\n', encoding='utf-8'); "
+                "Path('new.txt').write_text('new\\n', encoding='utf-8')"
+            )
+            tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                (root / "tracked.txt").write_text("before\n", encoding="utf-8")
+                initialize_git(root)
+
+                result = self.run_cli(root, "--execute")
+
+                self.assertEqual(
+                    0, result.returncode, result.stdout + result.stderr
+                )
+                reviewer_input = json.loads(marker.read_text(encoding="utf-8"))
+                self.assertEqual(
+                    ["new.txt", "tracked.txt"],
+                    reviewer_input["changed_paths"],
+                )
+                self.assertIsNone(reviewer_input["git_index_file"])
+
     def test_executor_staging_never_changes_the_real_index(self):
         tmp, root = self.make_project()
         with tmp:
@@ -702,19 +744,21 @@ class DriveTest(unittest.TestCase):
                 git(root, "ls-files", "--others", "--exclude-standard").stdout,
             )
 
-    def test_reviewer_git_diff_sees_executor_created_file_content(self):
+    def test_reviewer_opens_executor_created_file_from_observed_path_list(self):
         artifact = "executor-artifact.txt"
         executor = python_command(
             "from pathlib import Path; "
             f"Path({artifact!r}).write_text('executor artifact\\n', encoding='utf-8')"
         )
         reviewer = python_command(
-            "import subprocess; "
-            f"result = subprocess.run(['git', 'diff', 'HEAD~1', '--', {artifact!r}], "
-            "capture_output=True, text=True); "
-            "print(result.stdout); "
+            "import json, os; "
+            "from pathlib import Path; "
+            "paths = json.loads("
+            "Path(os.environ['STAGE_CHANGED_PATHS_FILE']).read_text(encoding='utf-8')); "
+            f"content = Path({artifact!r}).read_text(encoding='utf-8'); "
+            "print(content); "
             "raise SystemExit("
-            "0 if result.returncode == 0 and 'executor artifact' in result.stdout else 1"
+            f"0 if paths == [{artifact!r}] and content == 'executor artifact\\n' else 1"
             ")"
         )
         tmp, root = self.make_project(executor=executor, reviewer=reviewer)
@@ -837,58 +881,6 @@ class DriveTest(unittest.TestCase):
                 git(root, "diff", "--cached", "--name-only").stdout,
             )
             self.assertFalse((root / "executor-artifact.txt").exists())
-
-    def test_executor_output_precedes_reviewer_index_preparation_failure(self):
-        executor = python_command(
-            "import subprocess; "
-            "from pathlib import Path; "
-            "print('executor testimony'); "
-            "Path('executor-artifact.txt').write_text('partial\\n', encoding='utf-8'); "
-            "subprocess.run(['git', 'add', 'executor-artifact.txt'], check=True)"
-        )
-        tmp, root = self.make_project(executor=executor)
-        with tmp:
-            write_card(
-                root / ".stage",
-                "W-00000002",
-                parent="W-00000001",
-                acceptance=(PASS_COMMAND,),
-            )
-            initialize_git(root)
-            drive = self.load_module()
-
-            output = io.StringIO()
-            argv = [
-                str(SCRIPT),
-                "--project-root",
-                str(root),
-                "--execute",
-                "W-00000001",
-            ]
-            with (
-                mock.patch.object(sys, "argv", argv),
-                mock.patch.object(
-                    drive,
-                    "prepare_reviewer_index",
-                    return_value=(
-                        None,
-                        "injected reviewer preparation failure",
-                    ),
-                ),
-                redirect_stdout(output),
-            ):
-                result = drive.main()
-
-            rendered = output.getvalue()
-            self.assertNotEqual(0, result)
-            self.assertIn("Executor result:", rendered)
-            self.assertLess(
-                rendered.index("executor testimony"),
-                rendered.index(
-                    "cannot prepare executor-created files for review: "
-                    "injected reviewer preparation failure"
-                ),
-            )
 
     def test_git_untracked_paths_reports_git_failure_without_stderr(self):
         drive = self.load_module()
@@ -1100,7 +1092,7 @@ class DriveTest(unittest.TestCase):
             self.assertNotIn("NO-PROGRESS", result.stdout)
             self.assertEqual("progress\n", (root / artifact).read_text(encoding="utf-8"))
 
-    def test_acceptance_created_file_is_not_in_reviewer_diff(self):
+    def test_acceptance_created_file_is_not_in_reviewer_path_list(self):
         executor_artifact = "executor-artifact.txt"
         acceptance_artifact = "acceptance-artifact.txt"
         executor = python_command(
@@ -1114,17 +1106,14 @@ class DriveTest(unittest.TestCase):
             "'acceptance output\\n', encoding='utf-8')"
         )
         reviewer = python_command(
-            "import subprocess; "
-            "executor_result = subprocess.run("
-            f"['git', 'diff', 'HEAD~1', '--', {executor_artifact!r}], "
-            "capture_output=True, text=True); "
-            "acceptance_result = subprocess.run("
-            f"['git', 'diff', 'HEAD~1', '--', {acceptance_artifact!r}], "
-            "capture_output=True, text=True); "
-            "print(executor_result.stdout); "
+            "import json, os; "
+            "from pathlib import Path; "
+            "paths = json.loads("
+            "Path(os.environ['STAGE_CHANGED_PATHS_FILE']).read_text(encoding='utf-8')); "
+            "print(paths); "
             "raise SystemExit("
-            f"0 if {executor_artifact!r} in executor_result.stdout "
-            "and not acceptance_result.stdout else 1)"
+            f"0 if {executor_artifact!r} in paths "
+            f"and {acceptance_artifact!r} not in paths else 1)"
         )
         tmp, root = self.make_project(executor=executor, reviewer=reviewer)
         with tmp:

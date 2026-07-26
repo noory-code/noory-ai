@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.45.0 — 2026-07-26
+
+- Give supervised reviewers a driver-owned JSON list of paths changed by the executor so they open
+  repository files directly instead of deriving review material from a disposable Git index.
+- Stop passing the executor's isolated index to supervised review while retaining executor-side
+  index isolation and support for untracked files and repositories without an index.
+
 ## 0.44.0 — 2026-07-26
 
 - Isolate executor staging in a disposable Git index shared with review, protecting the human's
