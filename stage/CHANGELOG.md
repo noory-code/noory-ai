@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.43.6 — 2026-07-26
+
+- Fail closed when progress fingerprinting cannot enumerate untracked files instead of silently
+  omitting them and potentially reporting false `NO-PROGRESS`.
+- Treat a repository with no commits and no Git index as an empty-index review case. The driver
+  initializes only the disposable reviewer index and leaves the real absent index unchanged.
+- Print executor evidence before reporting index snapshot or restoration failures, including when
+  both operations fail, so the operator retains the executor's account of the attempt.
+- Quote Windows audit-command arguments containing `cmd.exe` metacharacters as well as whitespace,
+  preserving project paths containing `&`, `^`, `|`, `<`, or `>`.
+
 ## 0.43.5 — 2026-07-26
 
 - Make unattended lifecycle bookkeeping fail closed. Failures to commit escalation, pre-close

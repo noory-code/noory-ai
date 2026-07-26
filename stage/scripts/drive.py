@@ -205,7 +205,7 @@ def git_untracked_paths(project_root: Path) -> tuple[set[str], str]:
 
 
 def git_diff(project_root: Path) -> str:
-    """Return staged, unstaged, and untracked changes for progress detection."""
+    """Return all changes for progress detection; fail if untracked paths are unknown."""
 
     try:
         result = subprocess.run(
@@ -248,7 +248,7 @@ def git_diff(project_root: Path) -> str:
 
     untracked_paths, untracked_error = git_untracked_paths(project_root)
     if untracked_error:
-        return tracked_diff
+        raise RuntimeError(untracked_error)
     untracked: list[str] = []
     for relative in sorted(untracked_paths):
         path = project_root / relative
@@ -307,10 +307,23 @@ def prepare_reviewer_index(
     review_index_path: Path,
     new_untracked_paths: set[str],
 ) -> tuple[dict[str, str] | None, str]:
-    """Expose executor-created files to Git diff through a disposable index."""
+    """Expose executor-created files through a disposable, initialized Git index."""
 
     env = os.environ.copy()
     env["GIT_INDEX_FILE"] = str(review_index_path.resolve())
+    if not review_index_path.is_file():
+        try:
+            result = subprocess.run(
+                ["git", "read-tree", "--empty"],
+                cwd=str(project_root),
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+        except OSError as exc:
+            return None, str(exc)
+        if result.returncode != 0:
+            return None, result.stderr.strip() or "git read-tree --empty failed"
     if new_untracked_paths:
         try:
             result = subprocess.run(
@@ -661,7 +674,8 @@ def shell_command(args: list[str], os_name: str | None = None) -> str:
 
     The result is handed to a shell, and the two shells disagree: POSIX shells
     strip single quotes, `cmd.exe` does not. Quoting for one breaks the other,
-    so each gets its own joiner.
+    so each gets its own joiner. Windows arguments containing shell
+    metacharacters must be quoted even when they contain no whitespace.
 
     ``os_name`` defaults to the running platform. It is a parameter so a test can
     exercise the other branch without reaching into the process-wide ``os``
@@ -670,7 +684,15 @@ def shell_command(args: list[str], os_name: str | None = None) -> str:
     """
 
     if (os_name or os.name) == "nt":
-        return subprocess.list2cmdline(args)
+        rendered_args: list[str] = []
+        for arg in args:
+            rendered = subprocess.list2cmdline([arg])
+            if any(character in arg for character in "&^|<>") and not (
+                rendered.startswith('"') and rendered.endswith('"')
+            ):
+                rendered = f'"{rendered}"'
+            rendered_args.append(rendered)
+        return " ".join(rendered_args)
     return shlex.join(args)
 
 
@@ -863,7 +885,11 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             project_root,
             env=executor_environment(item, project_root),
         )
-        current_fingerprint = fingerprint(project_root, [executor_evidence])
+        try:
+            current_fingerprint = fingerprint(project_root, [executor_evidence])
+        except RuntimeError as exc:
+            print_escalation(f"cannot inspect changes for progress: {exc}")
+            return 1
         no_progress = (
             bool(item_state["last_fingerprint"]) and current_fingerprint == item_state["last_fingerprint"]
         )
@@ -1104,6 +1130,7 @@ def main() -> int:
             project_root,
             env=executor_environment(item, project_root),
         )
+        print(f"Executor result:\n{executor_evidence}")
 
         if index_path is not None:
             snapshot_error = ""
@@ -1131,7 +1158,6 @@ def main() -> int:
                 print_escalation("; ".join(index_failures))
                 return 1
 
-        print(f"Executor result:\n{executor_evidence}")
         if not executor_ok:
             step_ok = False
             failure = "executor command failed"
@@ -1161,21 +1187,17 @@ def main() -> int:
         if step_ok:
             reviewer_env: dict[str, str] | None = None
             if index_path is not None:
-                if not review_index.is_file():
+                reviewer_env, reviewer_index_error = prepare_reviewer_index(
+                    project_root,
+                    review_index,
+                    executor_untracked_paths,
+                )
+                if reviewer_index_error:
                     step_ok = False
-                    failure = "cannot prepare disposable Git index for review"
-                else:
-                    reviewer_env, reviewer_index_error = prepare_reviewer_index(
-                        project_root,
-                        review_index,
-                        executor_untracked_paths,
+                    failure = (
+                        "cannot prepare executor-created files for review: "
+                        f"{reviewer_index_error}"
                     )
-                    if reviewer_index_error:
-                        step_ok = False
-                        failure = (
-                            "cannot prepare executor-created files for review: "
-                            f"{reviewer_index_error}"
-                        )
 
             if step_ok:
                 reviewed, review_evidence, review_raw = run_check(
@@ -1194,7 +1216,11 @@ def main() -> int:
                         else "independent reviewer command failed"
                     )
 
-    current_fingerprint = fingerprint(project_root, acceptance_output)
+    try:
+        current_fingerprint = fingerprint(project_root, acceptance_output)
+    except RuntimeError as exc:
+        print_escalation(f"cannot inspect changes for progress: {exc}")
+        return 1
     previous_fingerprint = item_state["last_fingerprint"]
     no_progress = (
         bool(previous_fingerprint)

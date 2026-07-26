@@ -160,6 +160,19 @@ class DriveTest(unittest.TestCase):
         self.assertIn(r'"C:\a b\repo"', joined)
         self.assertTrue(joined.startswith(r"C:\Python\python.exe "))
 
+    def test_windows_audit_quotes_cmd_metacharacters_in_project_path(self):
+        drive = self.load_module()
+        project_root = Path(r"C:\repo&one^two|three<four>five")
+
+        with mock.patch.object(drive.os, "name", "nt"):
+            command = drive.audit_check(project_root)
+
+        self.assertNotIn("'", command)
+        self.assertIn(
+            f'--project-root "{project_root}"',
+            command,
+        )
+
     def test_audit_check_survives_a_project_path_with_a_space(self):
         # The assertion compares against `str(project_root)`, not a POSIX literal:
         # on Windows the same Path renders with backslashes, and hard-coding the
@@ -303,6 +316,36 @@ class DriveTest(unittest.TestCase):
             self.assertEqual(1, state["iteration_count"])
             self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
             self.assertTrue(state["items"]["W-00000002"]["last_fingerprint"])
+
+    def test_execute_passes_in_unborn_repository_without_an_index(self):
+        tmp, root = self.make_project()
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            git(root, "init", "-q")
+            index_path = (
+                root
+                / git(
+                    root,
+                    "rev-parse",
+                    "--git-path",
+                    "index",
+                ).stdout.strip()
+            )
+            self.assertFalse(index_path.exists())
+
+            result = self.run_cli(root, "--execute")
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn(
+                "verification+judge passed → ready to commit + close_work",
+                result.stdout,
+            )
+            self.assertFalse(index_path.exists())
 
     def test_execute_passes_selected_work_item_environment(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
@@ -489,6 +532,74 @@ class DriveTest(unittest.TestCase):
                 git(root, "ls-files", "--others", "--exclude-standard").stdout,
             )
 
+    def test_executor_output_precedes_combined_index_failure(self):
+        executor = python_command(
+            "import subprocess; "
+            "from pathlib import Path; "
+            "print('executor testimony'); "
+            "Path('executor-artifact.txt').write_text('partial\\n', encoding='utf-8'); "
+            "subprocess.run(['git', 'add', 'executor-artifact.txt'], check=True)"
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            real_copyfile = drive.shutil.copyfile
+            real_restore = drive.restore_git_index
+
+            def fail_reviewer_snapshot(source, destination):
+                if Path(destination).name == "review-index":
+                    raise OSError("injected snapshot failure")
+                return real_copyfile(source, destination)
+
+            def restore_then_report_failure(index_path, snapshot_path, existed):
+                self.assertEqual(
+                    "",
+                    real_restore(index_path, snapshot_path, existed),
+                )
+                return "injected restore failure"
+
+            output = io.StringIO()
+            argv = [
+                str(SCRIPT),
+                "--project-root",
+                str(root),
+                "--execute",
+                "W-00000001",
+            ]
+            with (
+                mock.patch.object(sys, "argv", argv),
+                mock.patch.object(
+                    drive.shutil,
+                    "copyfile",
+                    side_effect=fail_reviewer_snapshot,
+                ),
+                mock.patch.object(
+                    drive,
+                    "restore_git_index",
+                    side_effect=restore_then_report_failure,
+                ),
+                redirect_stdout(output),
+            ):
+                result = drive.main()
+
+            rendered = output.getvalue()
+            self.assertNotEqual(0, result)
+            self.assertIn("Executor result:", rendered)
+            self.assertLess(
+                rendered.index("executor testimony"),
+                rendered.index(
+                    "cannot snapshot executor Git index: injected snapshot failure; "
+                    "cannot restore Git index after execution: injected restore failure"
+                ),
+            )
+
     def test_git_untracked_paths_reports_git_failure_without_stderr(self):
         drive = self.load_module()
         failed = subprocess.CompletedProcess(
@@ -503,6 +614,52 @@ class DriveTest(unittest.TestCase):
 
         self.assertEqual(set(), paths)
         self.assertEqual("git ls-files failed with exit code 1", error)
+
+    def test_progress_fingerprint_fails_closed_on_untracked_enumeration_error(self):
+        tmp, root = self.make_project()
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            output = io.StringIO()
+            argv = [
+                str(SCRIPT),
+                "--project-root",
+                str(root),
+                "--execute",
+                "W-00000001",
+            ]
+            enumerations = [
+                (set(), ""),
+                (set(), ""),
+                (set(), "injected progress enumeration failure"),
+            ]
+
+            with (
+                mock.patch.object(sys, "argv", argv),
+                mock.patch.object(
+                    drive,
+                    "git_untracked_paths",
+                    side_effect=enumerations,
+                ),
+                redirect_stdout(output),
+            ):
+                result = drive.main()
+
+            self.assertNotEqual(0, result)
+            self.assertIn(
+                "cannot inspect changes for progress: "
+                "injected progress enumeration failure",
+                output.getvalue(),
+            )
+            self.assertFalse(
+                (root / ".stage/.runtime/driver/W-00000001.json").exists()
+            )
 
     def test_fingerprint_counts_changes_with_unborn_head(self):
         tmp, root = self.make_project()

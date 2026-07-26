@@ -250,15 +250,20 @@ disposable index for review, restores the real index byte-for-byte, and records 
 paths before acceptance commands run. Restoration is attempted even when the disposable-index
 copy fails; if both operations fail, the escalation reports both failures. A failed executor
 therefore cannot leave its `git add` results mixed with the human's pre-existing staged changes.
-The driver does not remove executor worktree output, so the human can still inspect it.
+Executor evidence is printed before any index snapshot or restoration escalation. The driver does
+not remove executor worktree output, so the human can still inspect it.
 
 For independent review, the driver marks only newly untracked paths as intent-to-add in the
 disposable index and passes that index through `GIT_INDEX_FILE` to the reviewer command. Ordinary
 review commands such as `git diff` therefore include the contents of executor-created files.
+When the repository had no index before execution and the executor leaves it absent, the driver
+initializes the disposable reviewer index as empty; this expected absence is distinct from a
+snapshot or restoration failure, which still fails the step closed.
 Pre-existing untracked paths and files created by acceptance commands are not added, and the
 disposable index is deleted after review. The real index and commit history are never changed by
 this review preparation. Failure to enumerate untracked paths fails the step closed even when Git
-does not provide an error message.
+does not provide an error message, both during review preparation and during progress
+fingerprinting.
 
 The driver reuses the close-work command runner, treats a reviewer nonzero exit or `BLOCK:` verdict
 as failure, then prints the outcome and recommended explicit next action. It does not commit, call
@@ -314,7 +319,9 @@ for human handoff instead of continuing without its bookkeeping. When a parent's
 become terminal the driver closes that parent up to the target. Parent verification always includes
 the audit (whole-`.stage` consistency) plus `close_work`'s aggregation gate; any acceptance commands
 declared by the parent run in addition to the audit, never in place of it. Its children were each
-independently reviewed (DE-00000027).
+independently reviewed (DE-00000027). The generated audit command uses platform-specific shell
+quoting: Windows project paths containing `cmd.exe` metacharacters (`&`, `^`, `|`, `<`, or `>`)
+remain one argument, as do paths containing whitespace.
 
 Any executor/commit failure, reviewer `BLOCK`, no-progress, or per-item attempt cap escalates the
 item via `escalate_work` (→ blocked + a pending decision); the escalation result is checked and the
