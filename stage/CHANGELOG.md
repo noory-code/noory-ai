@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.44.0 — 2026-07-26
+
+- Isolate executor staging in a disposable Git index shared with review, protecting the human's
+  pending commit, and fail an executor attempt whose repository state does not change.
+- Make review judge the work card's criteria, separate out-of-criteria observations, and fail
+  closed for every review command that exits unsuccessfully or returns no verdict. Pass the work
+  card's absolute path to both supervised and close-time reviewers so each review seat applies
+  that contract to the selected work.
+- Let the driver target one runnable work card directly, and preserve the latest unattended
+  blocking output when closure escalates for human attention.
+
 ## 0.43.16 — 2026-07-26
 
 - Pass the closing work card's absolute path to both autonomous independent reviews and opt-in
