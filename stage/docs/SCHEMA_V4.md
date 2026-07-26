@@ -196,10 +196,12 @@ driver rather than this transition.
 The `stage-drive` skill is the agent-facing entry point to everything in this section and the two
 that follow; this document remains the contract it links to.
 
-`stage/scripts/drive.py <TARGET_PARENT_ID>` is the supervised driver entry point. It selects one
-existing, direct, non-terminal leaf child of the target whose `acceptance` list is non-empty.
-Selection is deterministic by work-item ID. It never creates work items or approves a
-decomposition.
+`stage/scripts/drive.py <TARGET_ID>` is the supervised driver entry point. When the target has any
+non-terminal child, it remains a parent: the driver selects one existing, direct, non-terminal
+leaf child whose `acceptance` list is non-empty, deterministically by work-item ID, and never
+selects the target directly. When no non-terminal child exists, the driver selects the target
+itself if it is non-terminal and its `acceptance` list is non-empty. Otherwise there is nothing to
+select. The driver never creates work items or approves a decomposition.
 
 The review-sibling `executors` object in `.stage/settings.json` binds each item venue to its
 executor command. Variable expansion syntax is shell-specific because the driver runs these
@@ -251,7 +253,7 @@ The default invocation is a side-effect-free dry run. It prints the selected ite
 acceptance commands, independent reviewer, next per-item attempt, and next global iteration. It
 does not run commands, create `.stage/.runtime/`, or update run state.
 
-`drive.py --execute <TARGET_PARENT_ID>` runs exactly one sequence:
+`drive.py --execute <TARGET_ID>` runs exactly one sequence:
 
 ```text
 executor -> each stored acceptance check -> independent reviewer
@@ -294,7 +296,7 @@ as failure, then prints the outcome and recommended explicit next action. It doe
 the subtree. Those actions remain human-supervised and are deferred to a later ship.
 
 Execute mode stores untracked state at
-`.stage/.runtime/driver/<TARGET_PARENT_ID>.json`:
+`.stage/.runtime/driver/<TARGET_ID>.json`:
 
 ```json
 {
@@ -319,7 +321,7 @@ completion or performs escalation itself.
 
 ### Unattended driver loop
 
-`drive.py --unattended <TARGET_PARENT_ID>` runs the whole ready subtree unattended on an
+`drive.py --unattended <TARGET_ID>` runs the whole ready subtree unattended on an
 **isolated branch** (full-unattended mode, DE-00000024). It refuses to start unless a `limits`
 config is present (absent is NOT unlimited — an unbounded autonomous loop is forbidden) and unless
 the working tree/index is clean (so nothing unrelated leaks into item commits). It then creates and
@@ -327,13 +329,15 @@ checks out a fresh `stage/driver/<target>-<unixtime>` branch; every commit lands
 branch is never modified — before each commit the loop re-checks that HEAD is still on the run
 branch and aborts if not.
 
-Each iteration selects the next ready leaf anywhere in the target's subtree (autonomous,
-non-terminal `active`, non-empty acceptance, itself a leaf). It runs the item's executor with a
-timeout bounded by the remaining global wall-clock budget and a disposable Git index. The driver's
-later scoped `git add` and commit use the real index, so executor index isolation does not change
-unattended commits. A FAILED executor is discarded and retried or escalated — never committed or
-closed. On success the executor output is committed, a NEUTRAL `driver-generated` retrospective is
-written (it does not claim success — the item's
+If the target has any non-terminal child, each iteration selects the next ready leaf anywhere in
+the target's subtree exactly as before (autonomous, `active`, non-empty acceptance, itself a leaf);
+the target is never selected directly. If the target has no non-terminal child, unattended mode
+selects only that target when it meets the same eligibility rules. It runs the item's executor with
+a timeout bounded by the remaining global wall-clock budget and a disposable Git index. The
+driver's later scoped `git add` and commit use the real index, so executor index isolation does not
+change unattended commits. A FAILED executor is discarded and retried or escalated — never
+committed or closed. On success the executor output is committed, a NEUTRAL `driver-generated`
+retrospective is written (it does not claim success — the item's
 Verification, stamped by `close_work`, is the source of truth; a human reviews the retrospective at
 merge), and the item is closed through `close_work.py` (which re-runs acceptance and the mandatory
 independent review). The resulting `.stage` **lifecycle records (card status, retrospective,

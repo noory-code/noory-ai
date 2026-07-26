@@ -1,6 +1,6 @@
 ---
 name: stage-drive
-description: Run registered Stage work through an executor instead of doing it by hand — the driver picks the next ready leaf under a parent work item, runs the venue's executor on it, re-runs its acceptance checks, and has a different venue review the result. Use when asked to drive, auto-run, or batch-execute Stage work, to preview which item the driver would take next, to set up the `executors` commands it needs, or to run a whole subtree unattended. This is execution; registering work is stage-work and passing work to a human-opened window is stage-handoff.
+description: Run registered Stage work through an executor instead of doing it by hand — the driver accepts a runnable leaf or a parent, picks the next ready item, runs the venue's executor, re-runs its acceptance checks, and has a different venue review the result. Use when asked to drive, auto-run, or batch-execute Stage work, to preview which item the driver would take next, to set up the `executors` commands it needs, or to run a whole subtree unattended. This is execution; registering work is stage-work and passing work to a human-opened window is stage-handoff.
 ---
 
 # Stage Drive
@@ -10,7 +10,7 @@ this runs the work. It never creates work items, approves a decomposition, promo
 or crosses a human-approval gate — it only carries out cards that already exist.
 
 ```bash
-python3 "<driver>" --project-root <project-root> <TARGET_PARENT_ID>
+python3 "<driver>" --project-root <project-root> <TARGET_ID>
 ```
 
 The driver lives at `../../scripts/drive.py` relative to this skill's directory. The host names
@@ -20,8 +20,8 @@ sit under a path containing spaces. No other spelling works everywhere: shell
 variables such as `${CLAUDE_PLUGIN_ROOT}` are injected into hook commands only and expand to
 nothing in the shell that runs these commands, and a repository-relative path only exists in one
 checkout. When developing inside the Stage source checkout itself, `stage/scripts/drive.py` also
-resolves — but that form is the exception, not the default. The target is a **parent** work item —
-the driver works on its children, never on the target itself.
+resolves — but that form is the exception, not the default. The target can be either a parent or a
+runnable leaf work item; no wrapper parent is required for a leaf.
 
 ## The default run is a dry run
 
@@ -34,13 +34,17 @@ side effects.
 
 ## What it will pick
 
-A candidate must be a direct, non-terminal child of the target, be a leaf (no non-terminal children
-of its own), and carry a **non-empty `acceptance` list**. Ties break deterministically by work item
-ID, so the same repository state always selects the same item.
+If the target has any non-terminal child, the driver treats it as a parent and considers only its
+direct, non-terminal leaf children with a **non-empty `acceptance` list**. It never selects that
+target directly while an unfinished child exists. Ties break deterministically by work item ID.
+
+If the target has no non-terminal child, the driver selects the target itself when it is
+non-terminal and has non-empty acceptance. Otherwise there is nothing to select.
 
 A card with no acceptance commands is invisible to the driver — there is nothing for it to verify,
-so it will not run it. Unattended mode narrows further: `active`, `autonomous: true`, and anywhere
-in the subtree rather than only a direct child.
+so it will not run it. Unattended mode narrows eligibility further to `active` and
+`autonomous: true`; for a parent target, it searches the whole subtree rather than only direct
+children, while a leaf target can select only itself.
 
 ## Two settings gates, both fail closed
 
@@ -59,7 +63,7 @@ the driver refuses rather than letting a venue grade its own work.
 ## One `--execute` step, and what it deliberately leaves undone
 
 ```bash
-python3 "<driver>" --project-root <project-root> --execute <TARGET_PARENT_ID>
+python3 "<driver>" --project-root <project-root> --execute <TARGET_ID>
 ```
 
 This runs exactly one sequence — executor, then each stored acceptance check, then the independent
@@ -98,7 +102,7 @@ review still run through an explicit path.
 ## `--unattended` — read this before using it
 
 ```bash
-python3 "<driver>" --project-root <project-root> --unattended <TARGET_PARENT_ID>
+python3 "<driver>" --project-root <project-root> --unattended <TARGET_ID>
 ```
 
 This runs the whole ready subtree without stopping: select, execute, commit, write a neutral
@@ -135,10 +139,10 @@ Do not restate the driver's rules elsewhere — they are owned by:
 
 ## Verify
 
-A dry run against a real parent is the check that the wiring holds:
+A dry run against a real parent or runnable leaf is the check that the wiring holds:
 
 ```bash
-python3 "<driver>" --project-root <project-root> <TARGET_PARENT_ID>
+python3 "<driver>" --project-root <project-root> <TARGET_ID>
 ```
 
 Expect a printed selection with a resolved executor, resolved acceptance commands, and a resolved

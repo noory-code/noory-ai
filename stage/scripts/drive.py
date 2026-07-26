@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Plan or execute one supervised Stage driver step.
 
-The driver selects one existing READY leaf child of the requested parent. Dry
-run is the default and has no side effects. ``--execute`` runs exactly one
-executor -> acceptance -> independent-review sequence and records runtime
-attempt state, but never commits, closes, escalates, promotes, creates work, or
-advances a parent.
+The driver selects a READY leaf from the requested target: an eligible target
+itself when it has no unfinished children, otherwise one of its eligible
+children. Dry run is the default and has no side effects. ``--execute`` runs
+exactly one executor -> acceptance -> independent-review sequence and records
+runtime attempt state, but never commits, closes, escalates, promotes, creates
+work, or advances a parent.
 """
 
 from __future__ import annotations
@@ -92,23 +93,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--timeout", type=int, default=900, help="Per-command timeout in seconds."
     )
-    parser.add_argument("target", help="Existing parent work item id (W-*).")
+    parser.add_argument("target", help="Existing parent or leaf work item id (W-*).")
     return parser.parse_args()
 
 
 def select_next_ready_leaf(
     target_id: str, items: list[WorkItem]
 ) -> WorkItem | None:
-    """Choose an existing direct READY leaf child in deterministic ID order."""
+    """Choose the target leaf or a direct READY leaf child in deterministic order."""
 
-    candidates = (
-        item
-        for item in items
-        if item.parent == target_id
-        and item.status not in WORK_FINAL_STATUSES
-        and item.acceptance
-        and not non_terminal_children(item.item_id, items)
-    )
+    if non_terminal_children(target_id, items):
+        candidates = (
+            item
+            for item in items
+            if item.parent == target_id
+            and item.status not in WORK_FINAL_STATUSES
+            and item.acceptance
+            and not non_terminal_children(item.item_id, items)
+        )
+    else:
+        candidates = (
+            item
+            for item in items
+            if item.item_id == target_id
+            and item.status not in WORK_FINAL_STATUSES
+            and item.acceptance
+        )
     return next(
         iter(sorted(candidates, key=lambda item: (item.item_id, item.path.as_posix()))),
         None,
@@ -140,7 +150,7 @@ def load_run_state(
     if not isinstance(state, dict):
         return None, "driver run state must be a JSON object"
     if state.get("target") != target_id:
-        return None, "driver run state target does not match the requested parent"
+        return None, "driver run state target does not match the requested work item"
     started_at = state.get("started_at_unix")
     if not isinstance(started_at, (int, float)) or isinstance(started_at, bool):
         return None, "driver run state started_at_unix must be a number"
@@ -689,20 +699,33 @@ def is_in_subtree(item: WorkItem, target_id: str, by_id: dict[str, WorkItem]) ->
 
 
 def select_next_unattended_leaf(target_id: str, items: list[WorkItem]) -> WorkItem | None:
-    """A ready leaf anywhere in the target's subtree: AUTONOMOUS (so close_work runs the
-    mandatory independent review), `active` (not terminal, not blocked — escalated items
-    are not retried), a leaf (no non-terminal children), and a descendant of the target."""
+    """Choose the target leaf or an eligible leaf in its subtree.
+
+    Eligibility remains AUTONOMOUS (so close_work runs the mandatory independent
+    review), `active` (not terminal, not blocked — escalated items are not
+    retried), non-empty acceptance, and leaf readiness.
+    """
 
     by_id = {item.item_id: item for item in items}
-    candidates = (
-        item
-        for item in items
-        if item.status == "active"
-        and item.autonomous
-        and item.acceptance
-        and not non_terminal_children(item.item_id, items)
-        and is_in_subtree(item, target_id, by_id)
-    )
+    if non_terminal_children(target_id, items):
+        candidates = (
+            item
+            for item in items
+            if item.status == "active"
+            and item.autonomous
+            and item.acceptance
+            and not non_terminal_children(item.item_id, items)
+            and is_in_subtree(item, target_id, by_id)
+        )
+    else:
+        candidates = (
+            item
+            for item in items
+            if item.item_id == target_id
+            and item.status == "active"
+            and item.autonomous
+            and item.acceptance
+        )
     return next(
         iter(sorted(candidates, key=lambda item: (item.item_id, item.path.as_posix()))),
         None,
@@ -1091,7 +1114,7 @@ def main() -> int:
     targets = [item for item in items if item.item_id == args.target]
     if len(targets) != 1:
         print_escalation(
-            f"target parent must resolve to exactly one existing work item; found {len(targets)}"
+            f"target must resolve to exactly one existing work item; found {len(targets)}"
         )
         return 1
 
@@ -1100,16 +1123,11 @@ def main() -> int:
 
     item = select_next_ready_leaf(args.target, items)
     if item is None:
-        direct_children = [
-            child
-            for child in items
-            if child.parent == args.target
-            and child.status not in WORK_FINAL_STATUSES
-        ]
+        unfinished_children = non_terminal_children(args.target, items)
         reason = (
             "no non-terminal direct child has non-empty acceptance and leaf readiness"
-            if direct_children
-            else "target has no non-terminal existing direct child"
+            if unfinished_children
+            else "target is terminal or has empty acceptance"
         )
         print_escalation(reason)
         return 1

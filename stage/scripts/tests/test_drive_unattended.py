@@ -153,6 +153,72 @@ class UnattendedTest(unittest.TestCase):
 
     # --- tests -------------------------------------------------------------
 
+    def test_selects_target_when_it_is_an_autonomous_runnable_leaf(self):
+        root, stage_root = self.make(limits=None)
+        self.card(stage_root, "W-00000001")
+        drive = load_module()
+
+        selected = drive.select_next_unattended_leaf(
+            "W-00000001", drive.load_all_work_items(stage_root)
+        )
+
+        self.assertIsNotNone(selected)
+        self.assertEqual("W-00000001", selected.item_id)
+
+    def test_unfinished_child_prevents_selecting_unattended_target_directly(self):
+        root, stage_root = self.make(limits=None)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+
+        selected = drive.select_next_unattended_leaf(
+            "W-00000001", drive.load_all_work_items(stage_root)
+        )
+
+        self.assertIsNotNone(selected)
+        self.assertEqual("W-00000002", selected.item_id)
+
+    def test_unrunnable_unfinished_child_still_hides_unattended_target(self):
+        root, stage_root = self.make(limits=None)
+        self.card(stage_root, "W-00000001")
+        self.card(
+            stage_root,
+            "W-00000002",
+            parent="W-00000001",
+            acceptance=(),
+        )
+        drive = load_module()
+
+        selected = drive.select_next_unattended_leaf(
+            "W-00000001", drive.load_all_work_items(stage_root)
+        )
+
+        self.assertIsNone(selected)
+
+    def test_pass_runs_target_leaf_without_wrapper_parent(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.commit_all(root)
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"), root, stage_root, time.time()
+        )
+
+        self.assertEqual(0, rc)
+        self.assertEqual(
+            [("close", "W-00000001")],
+            [call for call in calls if call[0] == "close"],
+        )
+        self.assertEqual([], [call for call in calls if call[0] == "escalate"])
+
     def test_refuses_without_limits(self):
         root, stage_root = self.make(limits=None)
         self.card(stage_root, "W-00000001")

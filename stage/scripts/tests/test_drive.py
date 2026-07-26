@@ -223,6 +223,85 @@ class DriveTest(unittest.TestCase):
         self.assertIsNotNone(selected)
         self.assertEqual("W-00000002", selected.item_id)
 
+    def test_selects_target_when_it_is_a_runnable_leaf(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            drive = self.load_module()
+
+            selected = drive.select_next_ready_leaf(
+                "W-00000001", drive.load_all_work_items(stage_root)
+            )
+
+        self.assertIsNotNone(selected)
+        self.assertEqual("W-00000001", selected.item_id)
+
+    def test_unfinished_child_prevents_selecting_target_directly(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            drive = self.load_module()
+
+            selected = drive.select_next_ready_leaf(
+                "W-00000001", drive.load_all_work_items(stage_root)
+            )
+
+        self.assertIsNotNone(selected)
+        self.assertEqual("W-00000002", selected.item_id)
+
+    def test_unrunnable_unfinished_child_still_hides_target(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+            )
+            drive = self.load_module()
+
+            selected = drive.select_next_ready_leaf(
+                "W-00000001", drive.load_all_work_items(stage_root)
+            )
+
+        self.assertIsNone(selected)
+
+    def test_dry_run_accepts_runnable_target_without_wrapper_parent(self):
+        tmp, root = self.make_project()
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+
+            result = self.run_cli(root)
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Mode: dry-run", result.stdout)
+        self.assertIn("Selected item: W-00000001", result.stdout)
+
     def test_skips_direct_child_with_non_terminal_child(self):
         tmp, root = self.make_project()
         with tmp:

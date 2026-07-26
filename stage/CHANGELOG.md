@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.13 — 2026-07-26
+
+- Let supervised and unattended driver runs target a runnable leaf work item directly, without a
+  wrapper parent. A target with any unfinished child remains a parent and is never selected
+  directly, preserving existing child and subtree selection.
+
 ## 0.43.12 — 2026-07-26
 
 - Document the post-review disposition step: stage-retrospective requires every review finding to
