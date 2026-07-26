@@ -82,13 +82,18 @@ unconditionally — it is a judgment on the result, not a transient failure, so 
 is never the answer to it. All three recommend `escalate_work.py`; the driver never escalates
 itself and never claims completion.
 
-`NO-PROGRESS` means the fingerprint — an argument-less `git diff` plus the acceptance output — is
-identical to the previous attempt. That diff compares the index against the working tree, so the
-only file changes that enter the fingerprint are unstaged edits to tracked files: new untracked
-files and changes the executor has already staged with `git add` are both invisible to it. An
-executor whose output is entirely new files or staged changes fingerprints as no progress even
-though it worked. Read the label as "nothing the fingerprint watches changed", not as proof that
-the executor did nothing; the root fix is tracked as W-00000073 in the Stage source repository.
+A BLOCK puts the reviewer's voice in front of the human; it does not decide for the human. After
+any verdict, disposition each finding — accept, decline, or defer — with a one-line reason in the
+card's `## Verification` (stage-retrospective checks this at close). Reviewer severity (P1/P2)
+ranks code-view impact, not this project's priorities: a P1 may be declined with a recorded
+reason. Out-of-criteria observations never block the card; they enter the same disposition step.
+
+`NO-PROGRESS` means the fingerprint — staged and unstaged tracked changes against `HEAD`, the path
+and content hash of each untracked non-ignored file, and the acceptance output — is identical to
+the previous attempt. Separately, an attempt whose repository state is identical before and after
+the executor fails immediately, even on its first run and regardless of exit code. If the work was
+already complete before the step, close the card manually with `close_work.py` so verification and
+review still run through an explicit path.
 
 ## `--unattended` — read this before using it
 

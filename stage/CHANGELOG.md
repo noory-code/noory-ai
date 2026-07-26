@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.43.12 — 2026-07-26
+
+- Document the post-review disposition step: stage-retrospective requires every review finding to
+  carry an accept/decline/defer disposition with a recorded reason (declines included, P1
+  declinable), and stage-drive explains that a BLOCK surfaces the reviewer's voice without
+  deciding for the human. Rewrite stage-drive's stale `NO-PROGRESS` description to match the
+  current fingerprint (tracked diff against `HEAD` plus untracked hashes) and the repository-state
+  no-change failure.
+
 ## 0.43.11 — 2026-07-26
 
 - Pass the selected work card's absolute path to the supervised independent reviewer through

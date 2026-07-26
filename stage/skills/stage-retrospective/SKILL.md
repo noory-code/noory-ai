@@ -11,7 +11,16 @@ Use this skill after work reaches a completion candidate.
 
 1. **External-perspective completion**: the user-visible request is satisfied.
 2. **Internal-perspective completion**: principles, verification, and structure are satisfied.
-3. **Retrospective completion**: what must change in the next work is recorded.
+3. **Review findings dispositioned**: if any review verdict was produced for this work, every
+   finding carries a disposition in the card's `## Verification` — accept, decline, or defer —
+   each with a one-line reason. Declines are recorded, not skipped: a finding that leaves no
+   trace when declined pushes everyone toward uncritical acceptance. Judge each finding with two
+   questions: does the situation it describes actually reach this project, and if accepted,
+   could the fix break a situation that does reach it? Reviewer severity (P1/P2) is a code-view
+   ranking, not a priority — a P1 may be declined with a recorded reason. Accepted findings are
+   fixed in the card or become new cards; deferred findings become planned cards or open
+   questions.
+4. **Retrospective completion**: what must change in the next work is recorded.
 
 ## Retrospective questions
 
