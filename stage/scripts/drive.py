@@ -1280,6 +1280,9 @@ def main() -> int:
                     )
 
             if step_ok:
+                if reviewer_env is None:
+                    reviewer_env = os.environ.copy()
+                reviewer_env["STAGE_WORK_ITEM_PATH"] = str(item.path.resolve())
                 reviewed, review_evidence, review_raw = run_check(
                     reviewer_command,
                     args.timeout,

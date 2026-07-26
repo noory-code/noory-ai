@@ -147,6 +147,12 @@ W frontmatter includes these execution fields:
   escalation path. A passing review's clipped command and verdict output are recorded under the
   card's `## Verification` section with explicit review provenance. Non-autonomous items keep the
   opt-in per-stage `review` behavior and receive the same evidence treatment when review runs.
+  A review verdict has two separately labeled parts:
+  - **Criteria verdict** — read the card at `STAGE_WORK_ITEM_PATH`, judge every item under its
+    `## Success criteria`, and explain each pass or failure. Only a failed success criterion may
+    produce a blocking P1 verdict.
+  - **Out-of-criteria observations** — list every other finding separately. These observations are
+    inputs to later disposition, never P1 blockers for the current card.
 
 - `milestone:` — optional, cardinality 0..1. **Attribution**: names the single milestone that
   claims this card's completion credit. Evidence citations elsewhere are unrestricted and
@@ -227,10 +233,12 @@ the current process environment and sets:
 - `STAGE_PROJECT_ROOT`: the absolute path to the project root;
 - `GIT_INDEX_FILE`: an executor-only disposable index copied from the real Git index when it exists.
 
-This injection applies only to executor commands. Stored acceptance verification commands and
-review commands do **not** receive the `STAGE_*` variables from the driver. Acceptance commands do
-not receive the driver-added `GIT_INDEX_FILE`; independent review receives the executor's disposable
-index through its own environment.
+This complete injection applies only to executor commands. Stored acceptance verification commands
+receive none of the driver-added variables. The supervised independent reviewer receives only
+`STAGE_WORK_ITEM_PATH`, with the same absolute card path passed to the executor; the review command
+and its child processes inherit that variable and decide how to read the card. It also receives the
+executor's disposable index through `GIT_INDEX_FILE` when that index exists. It does not receive
+`STAGE_WORK_ITEM` or `STAGE_PROJECT_ROOT`.
 
 `stage_paths.load_executors_config()` reads the raw section, and
 `stage_paths.resolve_executor_command(executors, item_venue)` returns `(command, "")` only when

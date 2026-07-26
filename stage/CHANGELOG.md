@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.43.11 — 2026-07-26
+
+- Pass the selected work card's absolute path to the supervised independent reviewer through
+  `STAGE_WORK_ITEM_PATH`. The review-command contract now separates criterion-by-criterion verdicts
+  from non-blocking out-of-criteria observations and permits P1 blocking only for failed card
+  success criteria.
+
 ## 0.43.10 — 2026-07-26
 
 - Reject a successful supervised or unattended executor attempt when its repository-only

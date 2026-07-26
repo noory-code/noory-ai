@@ -484,6 +484,47 @@ class DriveTest(unittest.TestCase):
                     environment["GIT_INDEX_FILE"],
                 )
 
+    def test_execute_passes_selected_work_item_path_to_reviewer(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "reviewer-environment.json"
+            reviewer = python_command(
+                "import json, os; "
+                "from pathlib import Path; "
+                f"Path({str(marker)!r}).write_text("
+                "json.dumps({'STAGE_WORK_ITEM_PATH': os.environ['STAGE_WORK_ITEM_PATH']}), "
+                "encoding='utf-8')"
+            )
+            executor = python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+            )
+            tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+            with tmp:
+                stage_root = root / ".stage"
+                write_card(
+                    stage_root,
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
+
+                result = self.run_cli(root, "--execute")
+
+                self.assertEqual(
+                    0, result.returncode, result.stdout + result.stderr
+                )
+                environment = json.loads(marker.read_text(encoding="utf-8"))
+                self.assertEqual(
+                    str(
+                        (
+                            stage_root
+                            / "work/current/W-00000002.md"
+                        ).resolve()
+                    ),
+                    environment["STAGE_WORK_ITEM_PATH"],
+                )
+
     def test_executor_staging_never_changes_the_real_index(self):
         tmp, root = self.make_project()
         with tmp:
