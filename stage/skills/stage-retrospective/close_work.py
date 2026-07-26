@@ -308,10 +308,10 @@ def main() -> int:
         return 1
 
     project_root = stage_root.parent
-    blocks: list[str] = []
+    verification_blocks: list[str] = []
     for command in checks:
         ok, block, _raw = run_check(command, args.timeout, project_root)
-        blocks.append(block)
+        verification_blocks.append(block)
         if not ok:
             print(f"{args.item}: check failed, nothing changed:\n{block}", file=sys.stderr)
             return 1
@@ -323,6 +323,8 @@ def main() -> int:
     # runs the legacy per-stage command. Both paths fail on nonzero exit OR a
     # `BLOCK:` verdict line, scanned on RAW output so a verdict is never clipped.
     review_passed = False
+    review_block = ""
+    review_heading = ""
     if work_item.autonomous:
         review_command, review_error = resolve_independent_review_command(
             load_review_config(stage_root), work_item.venue
@@ -342,7 +344,6 @@ def main() -> int:
             )
             return 1
         ok, block, raw = run_check(review_command, args.timeout, project_root)
-        blocks.append(block)
         if not ok or re.search(r"(?m)^BLOCK:", raw):
             print(
                 f"{args.item}: independent review did not pass, nothing changed:\n{block}",
@@ -350,6 +351,8 @@ def main() -> int:
             )
             return 1
         review_passed = True
+        review_block = block
+        review_heading = "Independent review at close"
     elif (field(text, "review") or "not_required") == "pending":
         review_command, review_error = resolve_review_command(load_review_config(stage_root), args.review_stage)
         if review_error:
@@ -359,17 +362,24 @@ def main() -> int:
             print(f"{args.item}: review is pending but stage `{args.review_stage}` configures no review command in settings.json", file=sys.stderr)
             return 1
         ok, block, raw = run_check(review_command, args.timeout, project_root)
-        blocks.append(block)
         if not ok or re.search(r"(?m)^BLOCK:", raw):
             print(f"{args.item}: review did not pass, nothing changed:\n{block}", file=sys.stderr)
             return 1
         review_passed = True
+        review_block = block
+        review_heading = "Review at close"
 
+    close_date = date.today().isoformat()
     evidence = (
-        f"### Executed at close — {date.today().isoformat()}\n\n```\n"
-        + "\n\n".join(blocks)
+        f"### Executed at close — {close_date}\n\n```\n"
+        + "\n\n".join(verification_blocks)
         + "\n```"
     )
+    if review_passed:
+        evidence += (
+            f"\n\n### {review_heading} — {close_date}\n\n```\n"
+            f"{review_block}\n```"
+        )
     updated = append_to_section(text, "Verification", evidence)
     updated = set_field(updated, "verification", "passed")
     updated = set_field(updated, "promotion", promotion)
@@ -396,7 +406,7 @@ def main() -> int:
         promotion,
         review_item_link,
     )
-    print(f"{args.item}: closed (verification passed on {len(args.check)} check(s), status completed)")
+    print(f"{args.item}: closed (verification passed on {len(checks)} check(s), status completed)")
     return 0
 
 

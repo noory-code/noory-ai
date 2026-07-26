@@ -144,7 +144,9 @@ W frontmatter includes these execution fields:
   `close_work.py` resolves the sole reviewer whose venue differs from the item's and runs it,
   blocking on a nonzero exit or a `BLOCK:` verdict line. If no differing-venue reviewer is
   configured, or the map is ambiguous, the autonomous item cannot close (fail closed) — the
-  escalation path. Non-autonomous items keep the opt-in per-stage `review` behavior.
+  escalation path. A passing review's clipped command and verdict output are recorded under the
+  card's `## Verification` section with explicit review provenance. Non-autonomous items keep the
+  opt-in per-stage `review` behavior and receive the same evidence treatment when review runs.
 
 - `milestone:` — optional, cardinality 0..1. **Attribution**: names the single milestone that
   claims this card's completion credit. Evidence citations elsewhere are unrestricted and

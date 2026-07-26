@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.43.8 — 2026-07-26
+
+- Record a passing close-time review under an explicitly labeled evidence block in the card's
+  `## Verification` section, preserving the review command and clipped verdict output alongside
+  verification evidence.
+- Report the number of verification commands actually executed by `close_work`, including stored
+  card acceptance commands as well as additional `--check` arguments.
+
 ## 0.43.7 — 2026-07-26
 
 - Initialize a missing disposable reviewer index as empty only when the repository has no `HEAD`.

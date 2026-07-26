@@ -366,6 +366,7 @@ class CloseWorkTest(unittest.TestCase):
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("status: completed", item)
         self.assertIn("print(123)", item)
+        self.assertIn("verification passed on 1 check(s)", proc.stdout)
 
     def test_item_acceptance_and_cli_checks_are_merged(self):
         tmp, root = self.make(acceptance='\n  - "python3 -c \\"print(123)\\""')
@@ -543,7 +544,9 @@ class CloseWorkTest(unittest.TestCase):
                 {
                     "reviewers": {
                         "codex": python_command("print('same venue should not run')"),
-                        "claude": python_command("print('independent review ok')"),
+                        "claude": python_command(
+                            "print(''.join(['independent ', 'verdict retained']))"
+                        ),
                     }
                 },
             )
@@ -556,7 +559,11 @@ class CloseWorkTest(unittest.TestCase):
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("status: completed", item)
         self.assertIn("review: passed", item)
-        self.assertIn("independent review ok", item)
+        self.assertIn(
+            f"### Independent review at close — {date.today().isoformat()}",
+            item,
+        )
+        self.assertIn("independent verdict retained", item)
         self.assertNotIn("same venue should not run", item)
 
     def test_autonomous_item_blocks_on_nonzero_reviewer_exit(self):
