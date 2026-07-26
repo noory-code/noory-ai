@@ -57,6 +57,7 @@
 | 로드맵 마일스톤 | `roadmap/milestones/` |
 | 로드맵 테마 | `roadmap/themes/` |
 | 작업 종류별 검증 기준 | `operations/verification.md` |
+| 발견 처리 규칙 | `operations/discovery.md` |
 | 공통 운영 규칙 | 설치된 Stage 플러그인의 플러그인 소유 `operations/` |
 
 ## 핵심 규칙

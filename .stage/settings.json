@@ -2,7 +2,9 @@
   "schema_version": 4,
   "guidance_overrides": [
     "official/canon/vocabulary.md",
-    "operations/verification.md"
+    "operations/verification.md",
+    "index.md",
+    "state/current.md"
   ],
   "governance": {
     "exclude_paths": [],
