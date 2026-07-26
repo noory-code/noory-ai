@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.46.1 — 2026-07-27
+
+- Fail closure without writing the card or indexes when a required lifecycle frontmatter field is
+  missing, instead of silently reporting success after a no-op substitution.
+- Give newly captured and legacy planned cards a `review` field when they start, so successful
+  autonomous independent review can persist its `passed` state.
+
 ## 0.46.0 — 2026-07-27
 
 - Give each work card one shared runtime log for executor rationale, claimed changed paths, review

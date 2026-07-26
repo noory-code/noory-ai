@@ -84,7 +84,16 @@ def field(text: str, name: str) -> str:
 
 
 def set_field(text: str, name: str, value: str) -> str:
-    return re.sub(rf"^({re.escape(name)}:)[ \t]*.*$", rf"\g<1> {value}", text, count=1, flags=re.MULTILINE)
+    updated, count = re.subn(
+        rf"^({re.escape(name)}:)[ \t]*.*$",
+        rf"\g<1> {value}",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if count != 1:
+        raise ValueError(f"missing lifecycle field `{name}`")
+    return updated
 
 
 def append_to_section(text: str, heading: str, body: str) -> str:
@@ -600,12 +609,19 @@ def main() -> int:
             f"\n\n### {review_heading} — {close_date}\n\n```\n"
             f"Criterion verdicts: {work_log_reference(work_item.item_id)}\n```"
         )
-    updated = append_to_section(text, "Verification", evidence)
-    updated = set_field(updated, "verification", "passed")
-    updated = set_field(updated, "promotion", promotion)
-    if review_passed:
-        updated = set_field(updated, "review", "passed")
-    updated = set_field(updated, "status", "completed")
+    try:
+        updated = append_to_section(text, "Verification", evidence)
+        updated = set_field(updated, "verification", "passed")
+        updated = set_field(updated, "promotion", promotion)
+        if review_passed:
+            updated = set_field(updated, "review", "passed")
+        updated = set_field(updated, "status", "completed")
+    except ValueError as exc:
+        print(
+            f"{args.item}: cannot close; {exc}; work item unchanged",
+            file=sys.stderr,
+        )
+        return 1
     item_path.write_text(updated, encoding="utf-8")
 
     # Index last, derived from the new status, so a re-run always converges.

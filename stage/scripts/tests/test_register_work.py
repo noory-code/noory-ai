@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-work" / "register_work.py"
+START_CLI = Path(__file__).resolve().parents[1] / "start_work.py"
 
 ACTIVE = (
     "# Active Work\n\n"
@@ -29,6 +30,14 @@ BACKLOG_WITH_TRAILING_SECTION = (
 def run(root: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(CLI), "--project-root", str(root), *args], capture_output=True, text=True
+    )
+
+
+def run_start(root: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(START_CLI), "--project-root", str(root), *args],
+        capture_output=True,
+        text=True,
     )
 
 
@@ -328,6 +337,38 @@ class RegisterWorkTest(unittest.TestCase):
         trailing_section = index.index("## Status values")
         self.assertLess(existing_row, new_row)
         self.assertLess(new_row, trailing_section)
+
+    def test_starting_legacy_planned_card_adds_review_field(self):
+        tmp, root = self.make()
+        with tmp:
+            planned = root / ".stage/work/planned/W-00000001.md"
+            planned.write_text(
+                """---
+id: W-00000001
+title: Planned fix
+kind: fix
+venue: codex
+parent:
+priority:
+autonomous: false
+acceptance: []
+status: captured
+---
+
+# W-00000001 Planned fix
+
+## Purpose
+""",
+                encoding="utf-8",
+            )
+
+            proc = run_start(root, "W-00000001", "--scope", "stage/x")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("review: not_required", item)
 
     def test_refuses_archived_id(self):
         tmp, root = self.make()

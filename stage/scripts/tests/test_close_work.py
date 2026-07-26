@@ -287,6 +287,24 @@ class CloseWorkTest(unittest.TestCase):
             self.assertNotIn("W-00000001", (root / ".stage/work/active.md").read_text(encoding="utf-8"))
             self.assertIn("[current/W-00000001.md]", (root / ".stage/work/review.md").read_text(encoding="utf-8"))
 
+    def test_missing_lifecycle_field_fails_without_closing(self):
+        tmp, root = self.make()
+        with tmp:
+            item_path = root / ".stage/work/current/W-00000001.md"
+            original = item_path.read_text(encoding="utf-8").replace(
+                "verification: pending\n",
+                "",
+                1,
+            )
+            item_path.write_text(original, encoding="utf-8")
+
+            proc = run(root, "W-00000001", "--check", "python3 -c \"print('ok')\"")
+            item = item_path.read_text(encoding="utf-8")
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("missing lifecycle field `verification`", proc.stderr)
+        self.assertEqual(original, item)
+
     def test_passing_check_preserves_existing_verification_and_appends_evidence(self):
         tmp, root = self.make()
         with tmp:
