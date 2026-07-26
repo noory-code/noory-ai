@@ -94,3 +94,4 @@
 | W-00000082 | completed | [items/W-00000082.md](items/W-00000082.md) |
 | W-00000088 | completed | [items/W-00000088.md](items/W-00000088.md) |
 | W-00000089 | completed | [items/W-00000089.md](items/W-00000089.md) |
+| W-00000087 | completed | [items/W-00000087.md](items/W-00000087.md) |
