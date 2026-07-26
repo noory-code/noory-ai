@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.43.15 — 2026-07-26
+
+- Make every configured review command fail closed when its reviewer exits nonzero or produces
+  neither a `[P1]` blocker nor an `APPROVED` verdict. A `[P1]` result still blocks, while
+  `APPROVED` alone passes.
+- Document that a review command unable to produce a verdict must fail with a nonzero exit code or
+  a `BLOCK:` verdict.
+
 ## 0.43.14 — 2026-07-26
 
 - Preserve the latest failed `close_work` output in unattended escalation records when acceptance
