@@ -74,3 +74,15 @@
 | W-00000067 | completed | [items/W-00000067.md](items/W-00000067.md) |
 | W-00000026 | completed | [items/W-00000026.md](items/W-00000026.md) |
 | W-00000068 | completed | [items/W-00000068.md](items/W-00000068.md) |
+| W-00000071 | completed | [items/W-00000071.md](items/W-00000071.md) |
+| W-00000072 | completed | [items/W-00000072.md](items/W-00000072.md) |
+| W-00000070 | completed | [items/W-00000070.md](items/W-00000070.md) |
+| W-00000069 | completed | [items/W-00000069.md](items/W-00000069.md) |
+| W-00000074 | completed | [items/W-00000074.md](items/W-00000074.md) |
+| W-00000073 | completed | [items/W-00000073.md](items/W-00000073.md) |
+| W-00000075 | completed | [items/W-00000075.md](items/W-00000075.md) |
+| W-00000076 | completed | [items/W-00000076.md](items/W-00000076.md) |
+| W-00000080 | completed | [items/W-00000080.md](items/W-00000080.md) |
+| W-00000077 | completed | [items/W-00000077.md](items/W-00000077.md) |
+| W-00000078 | completed | [items/W-00000078.md](items/W-00000078.md) |
+| W-00000079 | completed | [items/W-00000079.md](items/W-00000079.md) |
