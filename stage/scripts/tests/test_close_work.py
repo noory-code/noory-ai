@@ -451,6 +451,51 @@ class CloseWorkTest(unittest.TestCase):
             )
             self.assertIn("configured verdict retained", item)
 
+    def test_review_commands_receive_absolute_work_item_path(self):
+        cases = (
+            (
+                "staged review",
+                {"review": "pending"},
+                {
+                    "strengths": {
+                        "standard": python_command(
+                            "import os; print(os.environ['STAGE_WORK_ITEM_PATH'])"
+                        )
+                    },
+                    "stages": {"implementation": "standard"},
+                },
+            ),
+            (
+                "independent review",
+                {"autonomous": "true"},
+                {
+                    "reviewers": {
+                        "claude": python_command(
+                            "import os; print(os.environ['STAGE_WORK_ITEM_PATH'])"
+                        )
+                    }
+                },
+            ),
+        )
+        for label, item_fields, review_config in cases:
+            with self.subTest(label=label):
+                tmp, root = self.make(**item_fields)
+                with tmp:
+                    self._write_review(root, review_config)
+                    proc = run(
+                        root,
+                        "W-00000001",
+                        "--check",
+                        python_command("print(1)"),
+                    )
+                    item_path = (
+                        root / ".stage/work/current/W-00000001.md"
+                    ).resolve()
+                    item = item_path.read_text(encoding="utf-8")
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertIn(str(item_path), item)
+
     def test_review_block_verdict_refuses(self):
         tmp, root = self.make(review="pending")
         with tmp:

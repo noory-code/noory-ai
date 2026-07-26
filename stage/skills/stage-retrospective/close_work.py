@@ -24,6 +24,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -325,6 +326,8 @@ def main() -> int:
     review_passed = False
     review_block = ""
     review_heading = ""
+    review_environment = os.environ.copy()
+    review_environment["STAGE_WORK_ITEM_PATH"] = str(item_path.resolve())
     if work_item.autonomous:
         review_command, review_error = resolve_independent_review_command(
             load_review_config(stage_root), work_item.venue
@@ -343,7 +346,12 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
-        ok, block, raw = run_check(review_command, args.timeout, project_root)
+        ok, block, raw = run_check(
+            review_command,
+            args.timeout,
+            project_root,
+            env=review_environment,
+        )
         if not ok or re.search(r"(?m)^BLOCK:", raw):
             print(
                 f"{args.item}: independent review did not pass, nothing changed:\n{block}",
@@ -361,7 +369,12 @@ def main() -> int:
         if not review_command:
             print(f"{args.item}: review is pending but stage `{args.review_stage}` configures no review command in settings.json", file=sys.stderr)
             return 1
-        ok, block, raw = run_check(review_command, args.timeout, project_root)
+        ok, block, raw = run_check(
+            review_command,
+            args.timeout,
+            project_root,
+            env=review_environment,
+        )
         if not ok or re.search(r"(?m)^BLOCK:", raw):
             print(f"{args.item}: review did not pass, nothing changed:\n{block}", file=sys.stderr)
             return 1

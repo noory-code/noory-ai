@@ -147,8 +147,12 @@ W frontmatter includes these execution fields:
   escalation path. A review command that cannot produce a verdict must not exit successfully; it
   must fail with a nonzero exit code or a `BLOCK:` verdict. A passing review's clipped command and
   verdict output are recorded under the card's `## Verification` section with explicit review
-  provenance. Non-autonomous items keep the opt-in per-stage `review` behavior and receive the same
-  evidence treatment when review runs.
+  provenance. Before `close_work.py` runs either an autonomous independent review or an opt-in
+  non-autonomous per-stage review, it copies its process environment and sets
+  `STAGE_WORK_ITEM_PATH` to the closing card's absolute path. Acceptance and additional
+  verification commands do not receive this `close_work.py`-added variable. Non-autonomous items
+  keep the opt-in per-stage `review` behavior and receive the same evidence treatment when review
+  runs.
   A review verdict has two separately labeled parts:
   - **Criteria verdict** — read the card at `STAGE_WORK_ITEM_PATH`, judge every item under its
     `## Success criteria`, and explain each pass or failure. Only a failed success criterion may

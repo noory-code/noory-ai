@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.16 — 2026-07-26
+
+- Pass the closing work card's absolute path to both autonomous independent reviews and opt-in
+  per-stage reviews through `STAGE_WORK_ITEM_PATH`. Acceptance and additional verification
+  commands remain outside this close-time review environment contract.
+
 ## 0.43.15 — 2026-07-26
 
 - Make every configured review command fail closed when its reviewer exits nonzero or produces
