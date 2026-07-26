@@ -9,3 +9,4 @@
 | W-00000077 | fix | codex | W-00000073의 통과 리뷰가 함께 낸 비차단 지적 셋을 닫는다. 진전 판정이 추적 파일 열거 실패를 삼 | active | Claude | [current/W-00000077.md](current/W-00000077.md) |
 | W-00000078 | fix | codex | 카드를 닫을 때 독립 리뷰가 통과하면 그 판정 내용이 어디에도 남지 않아 무엇을 근거로 통과했는지 되짚을 수 | active | Claude | [current/W-00000078.md](current/W-00000078.md) |
 | W-00000079 | qa | codex | 실전 실행에서 드러난 남은 결함들을 닫는다. 드라이버의 색인 처리 실패 경로 넷과, 닫기 도구가 리뷰 판정과 | active | Claude | [current/W-00000079.md](current/W-00000079.md) |
+| W-00000081 | fix | codex | 드라이버가 실행을 시작할 때 인덱스 사본을 떠 두고 끝나면 되돌리는데, 그 사이에 사람이 커밋하면 되돌리는  | active | Claude | [current/W-00000081.md](current/W-00000081.md) |
