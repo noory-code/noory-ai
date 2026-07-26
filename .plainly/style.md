@@ -15,4 +15,11 @@ sentence order.
   실제와 어긋난 것", never "안내 산문의 드리프트".
 - Say what a thing is and why it matters before naming it. The identifier comes after the meaning,
   never instead of it.
-- Prefer the verb a person would speak over a noun phrase assembled to mirror the English.
+- English builds meaning on nouns; Korean builds it on verbs. A sentence carried across keeps the
+  English shape — the action sits in a noun and a weak verb props it up. Put the action back in
+  the verb.
+  - "커밋 실패를 삼키던 것" → "커밋이 실패해도 그냥 넘어간다"
+  - "판정 근거가 남지 않음" → "왜 통과시켰는지 안 적어 둔다"
+  - "실행자에게 대상 항목 전달" → "실행하는 쪽에 어느 작업인지 알려준다"
+- Watch for `-것`, `-함`, `-음`, `-화`, `-성` piling up. That is the English sentence still
+  standing with Korean words on it.
