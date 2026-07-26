@@ -88,3 +88,4 @@
 | W-00000079 | completed | [items/W-00000079.md](items/W-00000079.md) |
 | W-00000084 | completed | [items/W-00000084.md](items/W-00000084.md) |
 | W-00000081 | completed | [items/W-00000081.md](items/W-00000081.md) |
+| W-00000083 | completed | [items/W-00000083.md](items/W-00000083.md) |
