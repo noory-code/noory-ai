@@ -27,11 +27,27 @@ Apply the gates in order.
 1. **Purpose Gate**: confirm the higher purpose.
 2. **Truth Gate**: separate verified context from unknowns. Host-project instructions (`CLAUDE.md`, `AGENTS.md`, rules, skills) count as context to use — and to challenge with a correction request (open question + proposal) when they contradict observed reality.
 3. **Question Gate**: ask the user only when the decision is theirs.
-4. **Coverage Gate**: check that cases neither overlap nor leave gaps.
+4. **Coverage Gate**: check that cases neither overlap nor leave gaps. A decision that governs
+   behavior must name every place that behavior is invoked — see "Count where it applies" below.
 5. **Ownership Gate**: assign one owning location per fact, status, and rule.
 6. **Failure Gate**: surface broken assumptions and incomplete handling.
 7. **Promotion Gate**: promote only verified artifacts.
 8. **Retrospective Gate**: record what must change in later behavior.
+
+## Count where it applies
+
+A decision that governs behavior applies wherever that behavior is invoked — not where you
+happened to be looking. Before writing the record, find every invocation in the code and list
+them. Grep for the call, do not recall it from memory.
+
+Fill the record's `## Where this applies` with one row per site: the file and line, and which
+config or contract each site reads. Two sites that share a command string, a config key, or an
+environment variable are one change with two callers — say so, because changing what that
+command receives obliges every caller to supply it.
+
+A decision with a single site says so explicitly. An empty section means the count was never
+done, and the sites left out surface later as defects: one place gets fixed, the others keep the
+old behavior or break outright.
 
 ## Priority values
 
@@ -50,7 +66,8 @@ When principles conflict, use this value order.
 A decision that shapes the work is recorded, not just made.
 
 - Create a decision record from `decisions/pending/_template.md` (`DE-NNNNNNNN`), including the
-  question, options, principles applied, and chosen direction.
+  question, options, principles applied, chosen direction, and the counted sites under
+  `## Where this applies`.
 - Set the record's `work_item` to the current work item and add the record to the work item's
   `decision_refs`.
 - Record a decision when ANY of these holds; otherwise skip the record:

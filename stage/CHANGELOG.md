@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.45.2 — 2026-07-27
+
+- Add a `## Where this applies` section to both decision-record templates and require the
+  stage-decision skill to fill it by counting invocation sites in code, so a contract that governs
+  behavior names every caller instead of the one the author happened to be reading.
+
 ## 0.45.1 — 2026-07-27
 
 - Give both close-time reviewer paths a close-owned JSON list of paths carried by the HEAD commit,
