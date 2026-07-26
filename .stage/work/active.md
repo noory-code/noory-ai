@@ -9,3 +9,4 @@
 | W-00000094 | design | claude | 드라이버 한 바퀴를 역할 계약으로 다시 세운다 | active | claude | [current/W-00000094.md](current/W-00000094.md) |
 | W-00000095 | development | codex | 드라이버가 관찰한 파일 목록이 리뷰 입력이 된다 | active | codex | [current/W-00000095.md](current/W-00000095.md) |
 | W-00000098 | documentation | claude |  | active | Claude | [current/W-00000098.md](current/W-00000098.md) |
+| W-00000096 | development | codex | 작업 로그가 세 역할의 공용 기록이 된다 | active | codex | [current/W-00000096.md](current/W-00000096.md) |

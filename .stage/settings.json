@@ -33,6 +33,11 @@
       "promotion": "off"
     }
   },
+  "limits": {
+    "max_attempts_per_item": 3,
+    "max_iterations": 12,
+    "max_wall_clock_seconds": 5400
+  },
   "operations_overrides": [],
   "venue_routing": {
     "planning": "claude",
