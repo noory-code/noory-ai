@@ -460,6 +460,7 @@ class CloseWorkTest(unittest.TestCase):
                     },
                     "stages": {"implementation": "standard"},
                 },
+                add_verdict=False,
             )
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -470,7 +471,13 @@ class CloseWorkTest(unittest.TestCase):
                 f"### Review at close — {date.today().isoformat()}",
                 item,
             )
-            self.assertIn("configured verdict retained", item)
+            self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+            self.assertIn(
+                "configured verdict retained",
+                (
+                    root / ".stage/.runtime/driver/logs/W-00000001.md"
+                ).read_text(encoding="utf-8"),
+            )
 
     def test_review_commands_receive_absolute_work_item_path(self):
         cases = (
@@ -512,10 +519,12 @@ class CloseWorkTest(unittest.TestCase):
                     item_path = (
                         root / ".stage/work/current/W-00000001.md"
                     ).resolve()
-                    item = item_path.read_text(encoding="utf-8")
+                    log = (
+                        root / ".stage/.runtime/driver/logs/W-00000001.md"
+                    ).read_text(encoding="utf-8")
 
                 self.assertEqual(0, proc.returncode, proc.stderr)
-                self.assertIn(str(item_path), item)
+                self.assertIn(str(item_path), log)
 
     def review_committed_paths_command(self) -> str:
         return python_command(
