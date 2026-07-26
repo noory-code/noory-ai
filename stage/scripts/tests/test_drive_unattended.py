@@ -30,7 +30,25 @@ def python_command(code: str) -> str:
     return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
 
 
-EXECUTOR_WRITE = python_command("open('driver-work.txt', 'a', encoding='utf-8').write('x')")
+def reporting_python_command(code: str, changed_paths: list[str]) -> str:
+    report = (
+        "import json, os; from pathlib import Path; "
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH']); "
+        "log.write_text(log.read_text(encoding='utf-8') + "
+        "'\\n### Executor report\\n"
+        "What changed: test executor changed its declared paths\\n"
+        "Why: exercise the unattended driver contract\\n"
+        "Changed paths (JSON):\\n' + "
+        f"json.dumps({changed_paths!r}) + "
+        "'\\nReview request: review every success criterion\\n', encoding='utf-8')"
+    )
+    return python_command(f"{code}; {report}")
+
+
+EXECUTOR_WRITE = reporting_python_command(
+    "open('driver-work.txt', 'a', encoding='utf-8').write('x')",
+    ["driver-work.txt"],
+)
 EXECUTOR_FAIL = python_command("raise SystemExit(1)")
 
 
@@ -274,6 +292,7 @@ class UnattendedTest(unittest.TestCase):
                 "STAGE_WORK_ITEM",
                 "STAGE_WORK_ITEM_PATH",
                 "STAGE_PROJECT_ROOT",
+                "STAGE_WORK_LOG_PATH",
                 "GIT_INDEX_FILE",
             )
             executor = python_command(
@@ -281,6 +300,13 @@ class UnattendedTest(unittest.TestCase):
                 "from pathlib import Path; "
                 f"names = {variable_names!r}; "
                 "Path('driver-work.txt').write_text('x', encoding='utf-8'); "
+                "log = Path(os.environ['STAGE_WORK_LOG_PATH']); "
+                "log.write_text(log.read_text(encoding='utf-8') + "
+                "'\\n### Executor report\\n"
+                "What changed: wrote driver-work.txt\\n"
+                "Why: satisfy the card\\n"
+                "Changed paths (JSON):\\n[\"driver-work.txt\"]\\n"
+                "Review request: review every success criterion\\n', encoding='utf-8'); "
                 f"Path({str(marker)!r}).write_text("
                 "json.dumps({name: os.environ[name] for name in names}), "
                 "encoding='utf-8')"
@@ -306,6 +332,14 @@ class UnattendedTest(unittest.TestCase):
             )
             self.assertEqual(str(root.resolve()), environment["STAGE_PROJECT_ROOT"])
             self.assertEqual(
+                str(
+                    (
+                        stage_root / ".runtime/driver/logs/W-00000002.md"
+                    ).resolve()
+                ),
+                environment["STAGE_WORK_LOG_PATH"],
+            )
+            self.assertEqual(
                 "executor-index",
                 Path(environment["GIT_INDEX_FILE"]).name,
             )
@@ -329,12 +363,13 @@ class UnattendedTest(unittest.TestCase):
             index_path = root / git_out(root, "rev-parse", "--git-path", "index")
             settings_path = stage_root / "settings.json"
             settings = json.loads(settings_path.read_text(encoding="utf-8"))
-            settings["executors"]["codex"] = python_command(
+            settings["executors"]["codex"] = reporting_python_command(
                 "import subprocess; "
                 "from pathlib import Path; "
                 "Path('driver-work.txt').write_text('x', encoding='utf-8'); "
                 "subprocess.run(['git', 'add', 'driver-work.txt'], check=True); "
-                f"Path({str(marker)!r}).write_bytes(Path({str(index_path)!r}).read_bytes())"
+                f"Path({str(marker)!r}).write_bytes(Path({str(index_path)!r}).read_bytes())",
+                ["driver-work.txt"],
             )
             settings_path.write_text(json.dumps(settings), encoding="utf-8")
             self.commit_all(root)

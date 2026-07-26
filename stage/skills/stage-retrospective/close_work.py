@@ -63,6 +63,19 @@ PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "reject
 _CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 MAX_LINES = 40
 MAX_BYTES = 4000
+WORK_LOG_RELATIVE_DIR = Path(".stage/.runtime/driver/logs")
+WORK_LOG_PREAMBLE = """\
+# Stage 작업 로그 — {item_id}
+
+## 책임 경계
+
+이 로그는 실행 시도별 작업자의 작업 내용·이유·변경 경로 주장과 리뷰어의 성공 기준별 판정을
+소유한다. 작업 카드는 지속되는 수명 주기 상태와 `## Progress`, `## Verification`,
+`## Retrospective`, `## Promotion decision`을 소유한다. 같은 사실을 두 파일에 복제하지 않고
+서로의 소유 사실은 경로로 참조한다.
+"""
+EXECUTOR_REPORT_MARKER = "### Executor report"
+REVIEWER_REPORT_MARKER = "### Reviewer report"
 
 
 def field(text: str, name: str) -> str:
@@ -85,6 +98,113 @@ def append_to_section(text: str, heading: str, body: str) -> str:
         return f"{match.group(1)}{match.group(2)}\n{body}\n"
 
     return re.sub(pattern, append, text, count=1, flags=re.DOTALL)
+
+
+def work_log_path(stage_root: Path, item_id: str) -> Path:
+    return stage_root.parent / WORK_LOG_RELATIVE_DIR / f"{item_id}.md"
+
+
+def work_log_reference(item_id: str) -> str:
+    return (WORK_LOG_RELATIVE_DIR / f"{item_id}.md").as_posix()
+
+
+def ensure_work_log(stage_root: Path, item_id: str) -> Path:
+    path = work_log_path(stage_root, item_id)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.write_text(
+                WORK_LOG_PREAMBLE.format(item_id=item_id),
+                encoding="utf-8",
+            )
+    except OSError as exc:
+        raise RuntimeError(f"cannot create work log for {item_id}: {exc}") from exc
+    return path
+
+
+def read_work_log(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RuntimeError(f"cannot read work log {path}: {exc}") from exc
+
+
+def executor_report_error(
+    previous_log: str,
+    current_log: str,
+    observed_paths: list[str],
+) -> str:
+    if current_log == previous_log:
+        return "executor did not append a work log report"
+    if not current_log.startswith(previous_log):
+        return "executor rewrote existing work log content instead of appending"
+    addition = current_log[len(previous_log) :]
+    if addition.count(EXECUTOR_REPORT_MARKER) != 1:
+        return "executor must append exactly one `### Executor report` per attempt"
+    for label in ("What changed", "Why", "Review request"):
+        match = re.search(rf"(?m)^{re.escape(label)}:[ \t]*(.+)$", addition)
+        if not match or not match.group(1).strip():
+            return f"executor work log report is missing non-empty `{label}:`"
+    paths_match = re.search(
+        r"(?m)^Changed paths \(JSON\):[ \t]*\n([^\r\n]+)$",
+        addition,
+    )
+    if not paths_match:
+        return "executor work log report is missing one-line `Changed paths (JSON):`"
+    try:
+        claimed = json.loads(paths_match.group(1))
+    except json.JSONDecodeError as exc:
+        return f"executor changed-path claim is invalid JSON: {exc.msg}"
+    if (
+        not isinstance(claimed, list)
+        or any(not isinstance(path, str) or not path for path in claimed)
+        or len(set(claimed)) != len(claimed)
+    ):
+        return "executor changed-path claim must be a JSON array of unique non-empty strings"
+    unsafe = [
+        path
+        for path in claimed
+        if Path(path).is_absolute()
+        or path == "."
+        or ".." in Path(path).parts
+        or "\\" in path
+    ]
+    if unsafe:
+        return f"executor changed-path claim contains unsafe repository paths: {unsafe}"
+    claimed_paths = sorted(claimed)
+    expected_paths = sorted(observed_paths)
+    if claimed_paths != expected_paths:
+        return (
+            "executor claimed changed paths do not match driver observation: "
+            f"claimed={claimed_paths}, observed={expected_paths}"
+        )
+    return ""
+
+
+def reviewer_report_error(previous_log: str, current_log: str) -> str:
+    if current_log == previous_log:
+        return "reviewer did not append criterion verdicts to the work log"
+    if not current_log.startswith(previous_log):
+        return "reviewer rewrote existing work log content instead of appending"
+    addition = current_log[len(previous_log) :]
+    if addition.count(REVIEWER_REPORT_MARKER) != 1:
+        return "reviewer must append exactly one `### Reviewer report` per review"
+    criteria_label = "CRITERIA VERDICT:"
+    observations_label = "OUT-OF-CRITERIA OBSERVATIONS:"
+    criteria_start = addition.find(criteria_label)
+    observations_start = addition.find(observations_label)
+    if criteria_start < 0:
+        return "reviewer did not append criterion verdicts to the work log"
+    if observations_start < 0:
+        return "reviewer did not separate out-of-criteria observations in the work log"
+    if observations_start <= criteria_start:
+        return "reviewer work log report puts observations before criterion verdicts"
+    criteria = addition[criteria_start + len(criteria_label) : observations_start]
+    if not re.search(r"(?m)(?:^|[^A-Z])(PASS|FAIL)(?:[^A-Z]|$)", criteria):
+        return "reviewer criterion section contains no PASS or FAIL verdict"
+    if "FAIL" in criteria or "APPROVED" not in criteria:
+        return "reviewer criterion verdicts did not approve the work item"
+    return ""
 
 
 def clip(output: str) -> str:
@@ -192,6 +312,7 @@ def close_review_environment(
     timeout: int,
 ) -> dict[str, str]:
     paths = committed_paths_in_head(project_root, timeout)
+    work_log = ensure_work_log(project_root / ".stage", item_path.stem)
     try:
         changed_paths_file.write_text(
             json.dumps(paths, ensure_ascii=False) + "\n",
@@ -202,6 +323,7 @@ def close_review_environment(
     environment = os.environ.copy()
     environment["STAGE_WORK_ITEM_PATH"] = str(item_path.resolve())
     environment["STAGE_CHANGED_PATHS_FILE"] = str(changed_paths_file.resolve())
+    environment["STAGE_WORK_LOG_PATH"] = str(work_log.resolve())
     return environment
 
 
@@ -371,7 +493,6 @@ def main() -> int:
     # runs the legacy per-stage command. Both paths fail on nonzero exit OR a
     # `BLOCK:` verdict line, scanned on RAW output so a verdict is never clipped.
     review_passed = False
-    review_block = ""
     review_heading = ""
     if work_item.autonomous:
         review_command, review_error = resolve_independent_review_command(
@@ -399,26 +520,31 @@ def main() -> int:
                     Path(review_tmp) / "changed-paths.json",
                     args.timeout,
                 )
+                work_log = ensure_work_log(stage_root, work_item.item_id)
+                log_before_review = read_work_log(work_log)
                 ok, block, raw = run_check(
                     review_command,
                     args.timeout,
                     project_root,
                     env=review_environment,
                 )
+                log_after_review = read_work_log(work_log)
         except RuntimeError as exc:
             print(
                 f"{args.item}: cannot prepare independent review material: {exc}",
                 file=sys.stderr,
             )
             return 1
-        if not ok or re.search(r"(?m)^BLOCK:", raw):
+        verdict_error = reviewer_report_error(log_before_review, log_after_review)
+        if not ok or re.search(r"(?m)^BLOCK:", raw) or verdict_error:
+            detail = f"\n{verdict_error}" if verdict_error else ""
             print(
-                f"{args.item}: independent review did not pass, nothing changed:\n{block}",
+                f"{args.item}: independent review did not pass; work item unchanged:"
+                f"\n{block}{detail}",
                 file=sys.stderr,
             )
             return 1
         review_passed = True
-        review_block = block
         review_heading = "Independent review at close"
     elif (field(text, "review") or "not_required") == "pending":
         review_command, review_error = resolve_review_command(load_review_config(stage_root), args.review_stage)
@@ -436,23 +562,31 @@ def main() -> int:
                     Path(review_tmp) / "changed-paths.json",
                     args.timeout,
                 )
+                work_log = ensure_work_log(stage_root, work_item.item_id)
+                log_before_review = read_work_log(work_log)
                 ok, block, raw = run_check(
                     review_command,
                     args.timeout,
                     project_root,
                     env=review_environment,
                 )
+                log_after_review = read_work_log(work_log)
         except RuntimeError as exc:
             print(
                 f"{args.item}: cannot prepare review material: {exc}",
                 file=sys.stderr,
             )
             return 1
-        if not ok or re.search(r"(?m)^BLOCK:", raw):
-            print(f"{args.item}: review did not pass, nothing changed:\n{block}", file=sys.stderr)
+        verdict_error = reviewer_report_error(log_before_review, log_after_review)
+        if not ok or re.search(r"(?m)^BLOCK:", raw) or verdict_error:
+            detail = f"\n{verdict_error}" if verdict_error else ""
+            print(
+                f"{args.item}: review did not pass; work item unchanged:\n"
+                f"{block}{detail}",
+                file=sys.stderr,
+            )
             return 1
         review_passed = True
-        review_block = block
         review_heading = "Review at close"
 
     close_date = date.today().isoformat()
@@ -464,7 +598,7 @@ def main() -> int:
     if review_passed:
         evidence += (
             f"\n\n### {review_heading} — {close_date}\n\n```\n"
-            f"{review_block}\n```"
+            f"Criterion verdicts: {work_log_reference(work_item.item_id)}\n```"
         )
     updated = append_to_section(text, "Verification", evidence)
     updated = set_field(updated, "verification", "passed")

@@ -56,6 +56,27 @@ def python_command(code: str) -> str:
     return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
 
 
+def approving_reviewer_command(command: str) -> str:
+    return python_command(
+        "import os, subprocess, sys\n"
+        "from pathlib import Path\n"
+        f"proc = subprocess.run({command!r}, shell=True, capture_output=True, text=True)\n"
+        "sys.stdout.write(proc.stdout)\n"
+        "sys.stderr.write(proc.stderr)\n"
+        "if proc.returncode:\n"
+        "    raise SystemExit(proc.returncode)\n"
+        "verdict = ('CRITERIA VERDICT:\\n"
+        "- criterion: PASS - test reviewer inspected the inputs\\n"
+        "APPROVED\\n"
+        "OUT-OF-CRITERIA OBSERVATIONS:\\n- None')\n"
+        "report = proc.stdout + proc.stderr + verdict + '\\n'\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "with log.open('a', encoding='utf-8') as handle:\n"
+        "    handle.write('\\n### Reviewer report\\n' + report)\n"
+        "print(verdict)"
+    )
+
+
 class CloseWorkTest(unittest.TestCase):
     def make(
         self,
@@ -420,7 +441,7 @@ class CloseWorkTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 1)
             self.assertIn("Verification", proc.stderr)
 
-    def _write_review(self, root, review):
+    def _write_review(self, root, review, *, add_verdict=True):
         import json
 
         self.init_git(root)
@@ -443,8 +464,26 @@ class CloseWorkTest(unittest.TestCase):
             cwd=root,
             check=True,
         )
+        rendered_review = review
+        if add_verdict:
+            rendered_review = {
+                key: (
+                    {
+                        name: (
+                            approving_reviewer_command(command)
+                            if command
+                            else command
+                        )
+                        for name, command in value.items()
+                    }
+                    if key in {"reviewers", "strengths"}
+                    else value
+                )
+                for key, value in review.items()
+            }
         (root / ".stage/settings.json").write_text(
-            json.dumps({"schema_version": 4, "review": review}), encoding="utf-8"
+            json.dumps({"schema_version": 4, "review": rendered_review}),
+            encoding="utf-8",
         )
 
     def test_configured_review_runs_and_records(self):
@@ -470,7 +509,13 @@ class CloseWorkTest(unittest.TestCase):
                 f"### Review at close — {date.today().isoformat()}",
                 item,
             )
-            self.assertIn("configured verdict retained", item)
+            self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+            self.assertIn(
+                "configured verdict retained",
+                (
+                    root / ".stage/.runtime/driver/logs/W-00000001.md"
+                ).read_text(encoding="utf-8"),
+            )
 
     def test_review_commands_receive_absolute_work_item_path(self):
         cases = (
@@ -512,10 +557,109 @@ class CloseWorkTest(unittest.TestCase):
                     item_path = (
                         root / ".stage/work/current/W-00000001.md"
                     ).resolve()
-                    item = item_path.read_text(encoding="utf-8")
+                    log = (
+                        root / ".stage/.runtime/driver/logs/W-00000001.md"
+                    ).read_text(encoding="utf-8")
 
                 self.assertEqual(0, proc.returncode, proc.stderr)
-                self.assertIn(str(item_path), item)
+                self.assertIn(str(item_path), log)
+
+    def test_review_receives_log_path_and_appends_criterion_verdict(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            command = python_command(
+                "import os; from pathlib import Path; "
+                "log = Path(os.environ['STAGE_WORK_LOG_PATH']); "
+                "assert '## 책임 경계' in log.read_text(encoding='utf-8'); "
+                "print('CRITERIA VERDICT:\\n"
+                "- criterion: PASS - direct inspection\\n"
+                "APPROVED\\n"
+                "OUT-OF-CRITERIA OBSERVATIONS:\\n- None')"
+            )
+            self._write_review(
+                root,
+                {
+                    "strengths": {"standard": command},
+                    "stages": {"implementation": "standard"},
+                },
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("### Reviewer report", log)
+        self.assertIn("CRITERIA VERDICT:", log)
+        self.assertIn("APPROVED", log)
+        self.assertNotIn("CRITERIA VERDICT:", item)
+        self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+
+    def test_review_without_criterion_verdict_blocks_even_on_zero_exit(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "strengths": {
+                        "standard": python_command(
+                            "import os\n"
+                            "from pathlib import Path\n"
+                            "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+                            "with log.open('a', encoding='utf-8') as handle:\n"
+                            "    handle.write('\\n### Reviewer report\\nlooks fine\\n')"
+                        )
+                    },
+                    "stages": {"implementation": "standard"},
+                },
+                add_verdict=False,
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+            item = (root / ".stage/work/current/W-00000001.md").read_text(
+                encoding="utf-8"
+            )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("reviewer did not append criterion verdicts", proc.stderr)
+        self.assertIn("status: active", item)
+        self.assertIn("looks fine", log)
+
+    def test_out_of_criteria_fail_text_does_not_block_logged_approval(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            reviewer = python_command(
+                "import os; from pathlib import Path; "
+                "log = Path(os.environ['STAGE_WORK_LOG_PATH']); "
+                "report = ('\\n### Reviewer report\\n"
+                "CRITERIA VERDICT:\\n"
+                "- criterion: PASS - success criterion is satisfied\\n"
+                "APPROVED\\n"
+                "OUT-OF-CRITERIA OBSERVATIONS:\\n"
+                "- FAIL text here is non-blocking\\n'); "
+                "log.write_text(log.read_text(encoding='utf-8') + report, "
+                "encoding='utf-8'); "
+                "print('APPROVED')"
+            )
+            self._write_review(
+                root,
+                {
+                    "strengths": {"standard": reviewer},
+                    "stages": {"implementation": "standard"},
+                },
+                add_verdict=False,
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
 
     def review_committed_paths_command(self) -> str:
         return python_command(
@@ -541,9 +685,13 @@ class CloseWorkTest(unittest.TestCase):
             item = (root / ".stage/work/current/W-00000001.md").read_text(
                 encoding="utf-8"
             )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertIn("committed review material", item)
+        self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+        self.assertIn("committed review material", log)
 
     def test_autonomous_review_receives_close_owned_committed_path_list(self):
         tmp, root = self.make(autonomous="true")
@@ -562,9 +710,13 @@ class CloseWorkTest(unittest.TestCase):
             item = (root / ".stage/work/current/W-00000001.md").read_text(
                 encoding="utf-8"
             )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertIn("committed review material", item)
+        self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+        self.assertIn("committed review material", log)
 
     def test_review_block_verdict_refuses(self):
         tmp, root = self.make(review="pending")
@@ -645,6 +797,9 @@ class CloseWorkTest(unittest.TestCase):
             item = (root / ".stage/work/current/W-00000001.md").read_text(
                 encoding="utf-8"
             )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
 
         self.assertEqual(1, proc.returncode)
         self.assertIn("independent review did not pass", proc.stderr)
@@ -687,6 +842,9 @@ class CloseWorkTest(unittest.TestCase):
             item = (root / ".stage/work/current/W-00000001.md").read_text(
                 encoding="utf-8"
             )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("status: completed", item)
@@ -695,7 +853,8 @@ class CloseWorkTest(unittest.TestCase):
             f"### Independent review at close — {date.today().isoformat()}",
             item,
         )
-        self.assertIn("independent verdict retained", item)
+        self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+        self.assertIn("independent verdict retained", log)
         self.assertNotIn("same venue should not run", item)
 
     def test_autonomous_item_blocks_on_nonzero_reviewer_exit(self):

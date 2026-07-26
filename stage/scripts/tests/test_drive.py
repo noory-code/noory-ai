@@ -22,7 +22,48 @@ def python_command(code: str) -> str:
     return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
 
 
+def reporting_python_command(code: str, changed_paths: list[str]) -> str:
+    report = (
+        "import json, os; from pathlib import Path; "
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH']); "
+        "log.write_text(log.read_text(encoding='utf-8') + "
+        "'\\n### Executor report\\n"
+        "What changed: test executor changed its declared paths\\n"
+        "Why: exercise the driver contract\\n"
+        "Changed paths (JSON):\\n' + "
+        f"json.dumps({changed_paths!r}) + "
+        "'\\nReview request: review every success criterion\\n', encoding='utf-8')"
+    )
+    return python_command(f"{code}; {report}")
+
+
+def approving_reviewer_command(code: str = "") -> str:
+    setup = ""
+    if code:
+        setup = (
+            "try:\n"
+            f"    exec({code!r})\n"
+            "except SystemExit as exc:\n"
+            "    if exc.code not in (None, 0):\n"
+            "        raise\n"
+        )
+    return python_command(
+        setup
+        + "import os\n"
+        "from pathlib import Path\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "report = ('\\n### Reviewer report\\n"
+        "CRITERIA VERDICT:\\n"
+        "- criterion: PASS - test reviewer inspected the inputs\\n"
+        "APPROVED\\n"
+        "OUT-OF-CRITERIA OBSERVATIONS:\\n- None\\n')\n"
+        "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+        "print('APPROVED')"
+    )
+
+
 PASS_COMMAND = python_command("raise SystemExit(0)")
+APPROVING_REVIEWER = approving_reviewer_command()
 
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -80,7 +121,7 @@ class DriveTest(unittest.TestCase):
         self,
         *,
         executor: str | None = PASS_COMMAND,
-        reviewer: str = "echo APPROVED",
+        reviewer: str = APPROVING_REVIEWER,
         limits: object = None,
     ) -> tuple[tempfile.TemporaryDirectory, Path]:
         tmp = tempfile.TemporaryDirectory()
@@ -370,7 +411,7 @@ class DriveTest(unittest.TestCase):
         self.assertIn("Mode: dry-run", result.stdout)
         self.assertIn("Selected item: W-00000002", result.stdout)
         self.assertIn(f"Acceptance: {PASS_COMMAND}", result.stdout)
-        self.assertIn("Independent reviewer: echo APPROVED", result.stdout)
+        self.assertIn(f"Independent reviewer: {APPROVING_REVIEWER}", result.stdout)
         self.assertEqual(before, after)
         self.assertFalse(marker.exists())
 
@@ -378,10 +419,11 @@ class DriveTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker = Path(marker_tmp) / "executor-ran"
             tmp, root = self.make_project(
-                executor=python_command(
+                executor=reporting_python_command(
                     "from pathlib import Path; "
                     f"Path({str(marker)!r}).touch(); "
-                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
                 )
             )
             with tmp:
@@ -429,9 +471,10 @@ class DriveTest(unittest.TestCase):
 
     def test_execute_passes_in_unborn_repository_without_an_index(self):
         tmp, root = self.make_project(
-            executor=python_command(
+            executor=reporting_python_command(
                 "from pathlib import Path; "
-                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
             )
         )
         with tmp:
@@ -464,9 +507,10 @@ class DriveTest(unittest.TestCase):
 
     def test_execute_passes_when_head_exists_but_index_is_missing(self):
         tmp, root = self.make_project(
-            executor=python_command(
+            executor=reporting_python_command(
                 "from pathlib import Path; "
-                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
             )
         )
         with tmp:
@@ -508,14 +552,15 @@ class DriveTest(unittest.TestCase):
                 "STAGE_PROJECT_ROOT",
                 "GIT_INDEX_FILE",
             )
-            executor = python_command(
+            executor = reporting_python_command(
                 "import json, os; "
                 "from pathlib import Path; "
                 f"names = {variable_names!r}; "
                 f"Path({str(marker)!r}).write_text("
                 "json.dumps({name: os.environ[name] for name in names}), "
                 "encoding='utf-8'); "
-                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
             )
             tmp, root = self.make_project(executor=executor)
             with tmp:
@@ -565,16 +610,17 @@ class DriveTest(unittest.TestCase):
     def test_execute_passes_selected_work_item_path_to_reviewer(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker = Path(marker_tmp) / "reviewer-environment.json"
-            reviewer = python_command(
+            reviewer = approving_reviewer_command(
                 "import json, os; "
                 "from pathlib import Path; "
                 f"Path({str(marker)!r}).write_text("
                 "json.dumps({'STAGE_WORK_ITEM_PATH': os.environ['STAGE_WORK_ITEM_PATH']}), "
                 "encoding='utf-8')"
             )
-            executor = python_command(
+            executor = reporting_python_command(
                 "from pathlib import Path; "
-                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
             )
             tmp, root = self.make_project(executor=executor, reviewer=reviewer)
             with tmp:
@@ -606,7 +652,7 @@ class DriveTest(unittest.TestCase):
     def test_reviewer_receives_driver_observed_paths_without_executor_index(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker = Path(marker_tmp) / "reviewer-input.json"
-            reviewer = python_command(
+            reviewer = approving_reviewer_command(
                 "import json, os; "
                 "from pathlib import Path; "
                 "changed_paths_file = Path(os.environ['STAGE_CHANGED_PATHS_FILE']); "
@@ -616,12 +662,13 @@ class DriveTest(unittest.TestCase):
                 "'git_index_file': os.environ.get('GIT_INDEX_FILE')"
                 "}), encoding='utf-8')"
             )
-            executor = python_command(
+            executor = reporting_python_command(
                 "import subprocess; "
                 "from pathlib import Path; "
                 "subprocess.run(['git', 'read-tree', '--empty'], check=True); "
                 "Path('tracked.txt').write_text('after\\n', encoding='utf-8'); "
-                "Path('new.txt').write_text('new\\n', encoding='utf-8')"
+                "Path('new.txt').write_text('new\\n', encoding='utf-8')",
+                ["new.txt", "tracked.txt"],
             )
             tmp, root = self.make_project(executor=executor, reviewer=reviewer)
             with tmp:
@@ -666,13 +713,14 @@ class DriveTest(unittest.TestCase):
                 ).stdout.strip()
             )
             index_before = index_path.read_bytes()
-            executor = python_command(
+            executor = reporting_python_command(
                 "import subprocess; "
                 "from pathlib import Path; "
                 "Path('executor-artifact.txt').write_text("
                 "'executor artifact\\n', encoding='utf-8'); "
                 "subprocess.run(['git', 'add', 'executor-artifact.txt'], check=True); "
-                f"Path('index-during-executor').write_bytes(Path({str(index_path)!r}).read_bytes())"
+                f"Path('index-during-executor').write_bytes(Path({str(index_path)!r}).read_bytes())",
+                ["executor-artifact.txt", "index-during-executor"],
             )
             settings_path = root / ".stage/settings.json"
             settings = json.loads(settings_path.read_text(encoding="utf-8"))
@@ -713,7 +761,7 @@ class DriveTest(unittest.TestCase):
                 ).stdout.strip()
             )
             (root / "human.txt").write_text("human staged\n", encoding="utf-8")
-            executor = python_command(
+            executor = reporting_python_command(
                 "import os, subprocess; "
                 "from pathlib import Path; "
                 "human_env = os.environ.copy(); "
@@ -721,7 +769,8 @@ class DriveTest(unittest.TestCase):
                 "subprocess.run(['git', 'add', 'human.txt'], check=True, env=human_env); "
                 "Path('executor-artifact.txt').write_text("
                 "'executor artifact\\n', encoding='utf-8'); "
-                "subprocess.run(['git', 'add', 'executor-artifact.txt'], check=True)"
+                "subprocess.run(['git', 'add', 'executor-artifact.txt'], check=True)",
+                ["executor-artifact.txt", "human.txt"],
             )
             settings_path = root / ".stage/settings.json"
             settings = json.loads(settings_path.read_text(encoding="utf-8"))
@@ -746,11 +795,12 @@ class DriveTest(unittest.TestCase):
 
     def test_reviewer_opens_executor_created_file_from_observed_path_list(self):
         artifact = "executor-artifact.txt"
-        executor = python_command(
+        executor = reporting_python_command(
             "from pathlib import Path; "
-            f"Path({artifact!r}).write_text('executor artifact\\n', encoding='utf-8')"
+            f"Path({artifact!r}).write_text('executor artifact\\n', encoding='utf-8')",
+            [artifact],
         )
-        reviewer = python_command(
+        reviewer = approving_reviewer_command(
             "import json, os; "
             "from pathlib import Path; "
             "paths = json.loads("
@@ -1061,9 +1111,10 @@ class DriveTest(unittest.TestCase):
 
     def test_new_file_only_is_progress_with_identical_acceptance_output(self):
         artifact = "progress.txt"
-        executor = python_command(
+        executor = reporting_python_command(
             "from pathlib import Path; "
-            f"Path({artifact!r}).write_text('progress\\n', encoding='utf-8')"
+            f"Path({artifact!r}).write_text('progress\\n', encoding='utf-8')",
+            [artifact],
         )
         tmp, root = self.make_project(executor=executor)
         with tmp:
@@ -1095,17 +1146,18 @@ class DriveTest(unittest.TestCase):
     def test_acceptance_created_file_is_not_in_reviewer_path_list(self):
         executor_artifact = "executor-artifact.txt"
         acceptance_artifact = "acceptance-artifact.txt"
-        executor = python_command(
+        executor = reporting_python_command(
             "from pathlib import Path; "
             f"Path({executor_artifact!r}).write_text("
-            "'executor output\\n', encoding='utf-8')"
+            "'executor output\\n', encoding='utf-8')",
+            [executor_artifact],
         )
         acceptance = python_command(
             "from pathlib import Path; "
             f"Path({acceptance_artifact!r}).write_text("
             "'acceptance output\\n', encoding='utf-8')"
         )
-        reviewer = python_command(
+        reviewer = approving_reviewer_command(
             "import json, os; "
             "from pathlib import Path; "
             "paths = json.loads("
@@ -1130,11 +1182,129 @@ class DriveTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn(executor_artifact, result.stdout)
 
-    def test_reviewer_block_recommends_escalation(self):
+    def test_executor_must_append_a_work_log_report_before_acceptance(self):
+        acceptance_marker = "acceptance-ran.txt"
         tmp, root = self.make_project(
             executor=python_command(
                 "from pathlib import Path; "
                 "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+            ),
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(
+                    python_command(
+                        "from pathlib import Path; "
+                        f"Path({acceptance_marker!r}).write_text('ran', encoding='utf-8')"
+                    ),
+                ),
+            )
+            initialize_git(root)
+            result = self.run_cli(root, "--execute")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("executor did not append a work log report", result.stdout)
+        self.assertFalse((root / acceptance_marker).exists())
+        self.assertNotIn("Independent reviewer result:", result.stdout)
+
+    def test_executor_claim_must_match_driver_observed_paths_before_review(self):
+        executor = reporting_python_command(
+            "from pathlib import Path; "
+            "Path('actual.txt').write_text('done\\n', encoding='utf-8')",
+            ["claimed.txt"],
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            result = self.run_cli(root, "--execute")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            "executor claimed changed paths do not match driver observation",
+            result.stdout,
+        )
+        self.assertIn("actual.txt", result.stdout)
+        self.assertIn("claimed.txt", result.stdout)
+        self.assertNotIn("Acceptance result:", result.stdout)
+        self.assertNotIn("Independent reviewer result:", result.stdout)
+
+    def test_executor_and_reviewer_share_one_work_log(self):
+        executor = reporting_python_command(
+            "from pathlib import Path; "
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+            ["executor-work.txt"],
+        )
+        reviewer = approving_reviewer_command(
+            "import os; from pathlib import Path; "
+            "log = Path(os.environ['STAGE_WORK_LOG_PATH']); "
+            "assert 'executor-work.txt' in log.read_text(encoding='utf-8')"
+        )
+        tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            result = self.run_cli(root, "--execute")
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("### Executor report", log)
+        self.assertIn("### Reviewer report", log)
+        self.assertIn("CRITERIA VERDICT:", log)
+        self.assertIn("APPROVED", log)
+        self.assertIn("## 책임 경계", log)
+        self.assertIn("작업 카드는 지속되는 수명 주기 상태", log)
+
+    def test_reviewer_must_append_criterion_verdicts_to_work_log(self):
+        executor = reporting_python_command(
+            "from pathlib import Path; "
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+            ["executor-work.txt"],
+        )
+        reviewer = python_command(
+            "print('CRITERIA VERDICT:\\n"
+            "- criterion: PASS - stdout is not the shared record\\n"
+            "APPROVED\\n"
+            "OUT-OF-CRITERIA OBSERVATIONS:\\n- None')"
+        )
+        tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            result = self.run_cli(root, "--execute")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            "reviewer did not append criterion verdicts to the work log",
+            result.stdout,
+        )
+
+    def test_reviewer_block_recommends_escalation(self):
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
             ),
             reviewer=python_command("print('BLOCK: no'); raise SystemExit(1)")
         )
@@ -1172,9 +1342,10 @@ class DriveTest(unittest.TestCase):
 
     def test_identical_fingerprint_flags_no_progress(self):
         tmp, root = self.make_project(
-            executor=python_command(
+            executor=reporting_python_command(
                 "from pathlib import Path; "
-                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
             )
         )
         with tmp:
@@ -1226,9 +1397,10 @@ class DriveTest(unittest.TestCase):
             "max_wall_clock_seconds": 3600,
         }
         tmp, root = self.make_project(
-            executor=python_command(
+            executor=reporting_python_command(
                 "from pathlib import Path; "
-                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')"
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
             ),
             limits=limits,
         )

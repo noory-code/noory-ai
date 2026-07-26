@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.46.0 — 2026-07-27
+
+- Give each work card one shared runtime log for executor rationale, claimed changed paths, review
+  requests, and criterion-by-criterion reviewer verdicts across supervised steps and both
+  close-time review seats.
+- Fail before acceptance or review when an executor omits its report or its changed-path claim
+  differs from the driver's repository observation, and fail closure when a reviewer omits the
+  required logged verdict.
+- Keep per-attempt facts in the shared log while cards retain durable lifecycle progress and
+  verification evidence, preventing the same execution or review testimony from being duplicated.
+
 ## 0.45.2 — 2026-07-27
 
 - Add a `## Where this applies` section to both decision-record templates and require the

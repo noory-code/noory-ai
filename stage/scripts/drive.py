@@ -39,7 +39,15 @@ for import_dir in (HOOKS_DIR, SCRIPTS_DIR, RETROSPECTIVE_DIR):
         sys.path.insert(0, str(import_dir))
 
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
-from close_work import clip, run_check  # noqa: E402
+from close_work import (  # noqa: E402
+    clip,
+    ensure_work_log,
+    executor_report_error,
+    read_work_log,
+    reviewer_report_error,
+    run_check,
+    work_log_reference,
+)
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -60,6 +68,7 @@ from stage_work import (  # noqa: E402
 
 WORK_ID_RE = re.compile(r"^W-[0-9]+(?:-[A-Za-z0-9][A-Za-z0-9_-]*)?$")
 BLOCK_RE = re.compile(r"(?m)^BLOCK:")
+STAGE_RUNTIME_PREFIX = ".stage/.runtime/"
 RECOMMEND_PASS = (
     "verification+judge passed → ready to commit + close_work"
 )
@@ -215,6 +224,7 @@ def git_untracked_paths(project_root: Path) -> tuple[set[str], str]:
         os.fsdecode(raw_path)
         for raw_path in result.stdout.split(b"\0")
         if raw_path
+        and not os.fsdecode(raw_path).startswith(STAGE_RUNTIME_PREFIX)
     }, ""
 
 
@@ -446,6 +456,7 @@ def repository_fingerprint(project_root: Path) -> str:
 def executor_environment(
     item: WorkItem,
     project_root: Path,
+    work_log_path: Path,
     executor_index_path: Path | None = None,
 ) -> dict[str, str]:
     """Return the inherited environment plus the selected work item context."""
@@ -456,6 +467,7 @@ def executor_environment(
             "STAGE_WORK_ITEM": item.item_id,
             "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
             "STAGE_PROJECT_ROOT": str(project_root.resolve()),
+            "STAGE_WORK_LOG_PATH": str(work_log_path.resolve()),
         }
     )
     if executor_index_path is not None:
@@ -611,7 +623,7 @@ def set_frontmatter_field(text: str, name: str, value: str) -> str:
 
 
 def write_driver_retrospective(
-    stage_root: Path, item: WorkItem, evidence: str
+    stage_root: Path, item: WorkItem
 ) -> tuple[str, str]:
     """Write a machine-generated retrospective, flagged driver-generated.
 
@@ -628,7 +640,8 @@ def write_driver_retrospective(
         "Work": (
             f"{note}: 무인 드라이버가 {item.item_id}의 executor를 실행하고 결과를 커밋했다. "
             "acceptance·독립 판정의 실제 통과 여부와 최종 완료는 항목의 Verification"
-            f"(close_work가 기록)이 정본이다.\n\nexecutor 출력:\n\n```\n{evidence[:1500]}\n```"
+            "(close_work가 기록)이 정본이다. 실행자의 작업 내용·이유·변경 경로 주장은 "
+            f"`{work_log_reference(item.item_id)}`가 소유한다."
         ),
         "Decision points": f"{note}: 기계 실행, 별도 결정 없음.",
         "Principles applied": f"{note}: Honesty, Fail Fast, No partial completion.",
@@ -841,7 +854,7 @@ def close_ready_ancestors(
             break  # normal: this parent waits for its other children
         if not (parent.retrospective == "completed" and parent.retrospective_ref):
             retro_id, err = write_driver_retrospective(
-                stage_root, parent, "parent aggregation: all children terminal"
+                stage_root, parent
             )
             if err:
                 return closed, f"{current}: {err}"
@@ -869,7 +882,10 @@ def discard_worktree(project_root: Path) -> None:
     """Drop a failed attempt's uncommitted changes so the next iteration starts clean."""
 
     run_git(project_root, ["checkout", "--", "."])
-    run_git(project_root, ["clean", "-fdq"])
+    run_git(
+        project_root,
+        ["clean", "-fdq", "-e", f"/{STAGE_RUNTIME_PREFIX}"],
+    )
 
 
 def commit_lifecycle(project_root: Path, message: str) -> tuple[bool, str]:
@@ -877,12 +893,21 @@ def commit_lifecycle(project_root: Path, message: str) -> tuple[bool, str]:
 
     if not current_branch(project_root).startswith("stage/driver/"):
         return False, "refusing lifecycle commit: HEAD is not on a stage/driver run branch"
-    ok, out = run_git(project_root, ["add", "--", ".stage"])
+    ok, out = run_git(
+        project_root,
+        ["add", "--", ".stage", f":(exclude){STAGE_RUNTIME_PREFIX}"],
+    )
     if not ok:
         return False, f"git add .stage failed: {out.strip()}"
-    ok, out = run_git(project_root, ["commit", "-m", message])
-    if not ok and "nothing to commit" in out:
+    ok, staged_paths = run_git(
+        project_root,
+        ["diff", "--cached", "--name-only"],
+    )
+    if not ok:
+        return False, f"cannot inspect staged lifecycle paths: {staged_paths.strip()}"
+    if not staged_paths.strip():
         return True, "nothing to commit"
+    ok, out = run_git(project_root, ["commit", "-m", message])
     return (True, "") if ok else (False, f"git commit failed: {out.strip()}")
 
 
@@ -995,9 +1020,12 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             )
             return 1
         try:
+            log_path = ensure_work_log(stage_root, item.item_id)
+            log_before = read_work_log(log_path)
             repository_before = repository_fingerprint(project_root)
+            repository_paths_before = repository_path_snapshot(project_root)
         except RuntimeError as exc:
-            print_escalation(f"cannot inspect repository before executor: {exc}")
+            print_escalation(f"cannot prepare executor observation: {exc}")
             return 1
         with tempfile.TemporaryDirectory(
             prefix="stage-drive-executor-index-"
@@ -1018,11 +1046,13 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 env=executor_environment(
                     item,
                     project_root,
+                    log_path,
                     executor_index if index_path is not None else None,
                 ),
             )
         try:
             repository_after = repository_fingerprint(project_root)
+            repository_paths_after = repository_path_snapshot(project_root)
             current_fingerprint = fingerprint(project_root, [executor_evidence])
         except RuntimeError as exc:
             print_escalation(f"cannot inspect changes for progress: {exc}")
@@ -1031,6 +1061,22 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         if executor_ok and repository_after == repository_before:
             executor_ok = False
             executor_failure = UNCHANGED_REPOSITORY_FAILURE
+        elif executor_ok:
+            changed_paths = changed_repository_paths(
+                repository_paths_before,
+                repository_paths_after,
+            )
+            try:
+                report_error = executor_report_error(
+                    log_before,
+                    read_work_log(log_path),
+                    changed_paths,
+                )
+            except RuntimeError as exc:
+                report_error = str(exc)
+            if report_error:
+                executor_ok = False
+                executor_failure = report_error
         no_progress = (
             bool(item_state["last_fingerprint"]) and current_fingerprint == item_state["last_fingerprint"]
         )
@@ -1068,7 +1114,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             continue
 
         if not (item.retrospective == "completed" and item.retrospective_ref):
-            retro_id, retro_error = write_driver_retrospective(stage_root, item, executor_evidence)
+            retro_id, retro_error = write_driver_retrospective(stage_root, item)
             if retro_error:
                 if not escalate_and_commit(project_root, item.item_id, retro_error, cmd_timeout):
                     return 1
@@ -1248,10 +1294,12 @@ def main() -> int:
     index_existed = bool(index_path is not None and index_path.is_file())
 
     try:
+        log_path = ensure_work_log(stage_root, item.item_id)
+        log_before = read_work_log(log_path)
         repository_before = repository_fingerprint(project_root)
         repository_paths_before = repository_path_snapshot(project_root)
     except RuntimeError as exc:
-        print_escalation(f"cannot inspect repository before executor: {exc}")
+        print_escalation(f"cannot prepare executor observation: {exc}")
         return 1
 
     with tempfile.TemporaryDirectory(prefix="stage-drive-index-") as temporary:
@@ -1274,6 +1322,7 @@ def main() -> int:
             env=executor_environment(
                 item,
                 project_root,
+                log_path,
                 executor_index if index_path is not None else None,
             ),
         )
@@ -1308,6 +1357,18 @@ def main() -> int:
                             "cannot write driver-observed paths for review: "
                             f"{exc}"
                         )
+                    if step_ok:
+                        try:
+                            report_error = executor_report_error(
+                                log_before,
+                                read_work_log(log_path),
+                                changed_paths,
+                            )
+                        except RuntimeError as exc:
+                            report_error = str(exc)
+                        if report_error:
+                            step_ok = False
+                            failure = report_error
 
         if step_ok and not changed_paths:
             step_ok = False
@@ -1334,8 +1395,10 @@ def main() -> int:
                 {
                     "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
                     "STAGE_CHANGED_PATHS_FILE": str(changed_paths_file.resolve()),
+                    "STAGE_WORK_LOG_PATH": str(log_path.resolve()),
                 }
             )
+            log_before_review = read_work_log(log_path)
             reviewed, review_evidence, review_raw = run_check(
                 reviewer_command,
                 args.timeout,
@@ -1343,13 +1406,23 @@ def main() -> int:
                 env=reviewer_env,
             )
             print(f"Independent reviewer result:\n{review_evidence}")
+            try:
+                log_after_review = read_work_log(log_path)
+            except RuntimeError as exc:
+                step_ok = False
+                failure = str(exc)
+                log_after_review = log_before_review
+            verdict_error = reviewer_report_error(
+                log_before_review,
+                log_after_review,
+            )
             reviewer_blocked = bool(BLOCK_RE.search(review_raw))
-            if reviewer_blocked or not reviewed:
+            if step_ok and (reviewer_blocked or not reviewed or verdict_error):
                 step_ok = False
                 failure = (
                     "independent reviewer BLOCK verdict"
                     if reviewer_blocked
-                    else "independent reviewer command failed"
+                    else verdict_error or "independent reviewer command failed"
                 )
 
     try:
