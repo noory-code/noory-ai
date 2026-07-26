@@ -11,3 +11,4 @@
 | W-00000098 | documentation | claude |  | active | Claude | [current/W-00000098.md](current/W-00000098.md) |
 | W-00000099 | fix | codex |  | active | Claude | [current/W-00000099.md](current/W-00000099.md) |
 | W-00000097 | development | codex | 로그에 남은 항목이 다음 바퀴의 입력이 된다 | active | codex | [current/W-00000097.md](current/W-00000097.md) |
+| W-00000100 | fix | codex |  | active | Claude | [current/W-00000100.md](current/W-00000100.md) |
