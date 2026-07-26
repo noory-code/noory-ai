@@ -173,6 +173,16 @@ class DriveTest(unittest.TestCase):
             command,
         )
 
+    def test_windows_shell_command_doubles_trailing_backslashes_when_forcing_quotes(self):
+        drive = self.load_module()
+
+        command = drive.shell_command(
+            ["audit.exe", "C:\\repo&trailing\\"],
+            os_name="nt",
+        )
+
+        self.assertEqual('audit.exe "C:\\repo&trailing\\\\"', command)
+
     def test_audit_check_survives_a_project_path_with_a_space(self):
         # The assertion compares against `str(project_root)`, not a POSIX literal:
         # on Windows the same Path renders with backslashes, and hard-coding the
@@ -345,6 +355,39 @@ class DriveTest(unittest.TestCase):
                 "verification+judge passed → ready to commit + close_work",
                 result.stdout,
             )
+            self.assertFalse(index_path.exists())
+
+    def test_execute_fails_when_head_exists_but_index_is_missing(self):
+        tmp, root = self.make_project()
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            index_path = (
+                root
+                / git(
+                    root,
+                    "rev-parse",
+                    "--git-path",
+                    "index",
+                ).stdout.strip()
+            )
+            index_path.unlink()
+            self.assertTrue(git(root, "rev-parse", "--verify", "HEAD").stdout)
+            self.assertFalse(index_path.exists())
+
+            result = self.run_cli(root, "--execute")
+
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn(
+                "cannot prepare disposable Git index for review",
+                result.stdout,
+            )
+            self.assertNotIn("Independent reviewer result:", result.stdout)
             self.assertFalse(index_path.exists())
 
     def test_execute_passes_selected_work_item_environment(self):
@@ -614,6 +657,76 @@ class DriveTest(unittest.TestCase):
 
         self.assertEqual(set(), paths)
         self.assertEqual("git ls-files failed with exit code 1", error)
+
+    def test_git_diff_fails_closed_when_git_cannot_start(self):
+        drive = self.load_module()
+        index_path = subprocess.CompletedProcess(
+            args=["git", "rev-parse", "--git-path", "index"],
+            returncode=0,
+            stdout=".git/index\n",
+            stderr="",
+        )
+
+        with (
+            mock.patch.object(
+                drive.subprocess,
+                "run",
+                side_effect=[
+                    index_path,
+                    OSError("injected git diff launch failure"),
+                ],
+            ),
+            self.assertRaisesRegex(
+                RuntimeError,
+                "injected git diff launch failure",
+            ),
+        ):
+            drive.git_diff(Path.cwd())
+
+    def test_git_diff_fails_closed_when_unborn_diff_fails(self):
+        drive = self.load_module()
+        index_path = subprocess.CompletedProcess(
+            args=["git", "rev-parse", "--git-path", "index"],
+            returncode=0,
+            stdout=".git/index\n",
+            stderr="",
+        )
+        missing_head = subprocess.CompletedProcess(
+            args=["git", "diff", "HEAD"],
+            returncode=128,
+            stdout="",
+            stderr="fatal: bad revision 'HEAD'",
+        )
+        unborn_head = subprocess.CompletedProcess(
+            args=["git", "rev-parse", "--verify", "--quiet", "HEAD"],
+            returncode=1,
+            stdout="",
+            stderr="",
+        )
+        failed_unborn_diff = subprocess.CompletedProcess(
+            args=["git", "diff", "--cached"],
+            returncode=2,
+            stdout="",
+            stderr="injected unborn diff failure",
+        )
+
+        with (
+            mock.patch.object(
+                drive.subprocess,
+                "run",
+                side_effect=[
+                    index_path,
+                    missing_head,
+                    unborn_head,
+                    failed_unborn_diff,
+                ],
+            ),
+            self.assertRaisesRegex(
+                RuntimeError,
+                "injected unborn diff failure",
+            ),
+        ):
+            drive.git_diff(Path.cwd())
 
     def test_progress_fingerprint_fails_closed_on_untracked_enumeration_error(self):
         tmp, root = self.make_project()

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.43.7 — 2026-07-26
+
+- Initialize a missing disposable reviewer index as empty only when the repository has no `HEAD`.
+  A committed repository with no real or executor-created index now fails review preparation closed
+  instead of showing the reviewer an empty diff.
+- Fail progress fingerprinting closed when tracked-diff inspection cannot start or an unborn-branch
+  fallback diff fails. A path outside a Git worktree remains an explicit supported state rather
+  than being misreported as a Git failure.
+- Preserve trailing backslashes when Windows arguments containing `cmd.exe` metacharacters require
+  driver-added quotes, so the closing quote cannot be escaped into the argument.
+
 ## 0.43.6 — 2026-07-26
 
 - Fail closed when progress fingerprinting cannot enumerate untracked files instead of silently

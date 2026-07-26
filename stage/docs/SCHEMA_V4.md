@@ -256,14 +256,17 @@ not remove executor worktree output, so the human can still inspect it.
 For independent review, the driver marks only newly untracked paths as intent-to-add in the
 disposable index and passes that index through `GIT_INDEX_FILE` to the reviewer command. Ordinary
 review commands such as `git diff` therefore include the contents of executor-created files.
-When the repository had no index before execution and the executor leaves it absent, the driver
-initializes the disposable reviewer index as empty; this expected absence is distinct from a
-snapshot or restoration failure, which still fails the step closed.
+When the repository had neither a commit nor an index before execution and the executor leaves the
+index absent, the driver initializes the disposable reviewer index as empty. If `HEAD` resolves but
+the real and executor-created indexes are both absent, review preparation fails closed rather than
+showing the reviewer an empty diff. This expected unborn-repository absence is distinct from a
+snapshot or restoration failure, which also fails the step closed.
 Pre-existing untracked paths and files created by acceptance commands are not added, and the
 disposable index is deleted after review. The real index and commit history are never changed by
 this review preparation. Failure to enumerate untracked paths fails the step closed even when Git
 does not provide an error message, both during review preparation and during progress
-fingerprinting.
+fingerprinting. Progress fingerprinting also fails closed when a tracked-diff command cannot run or
+returns an error; a project outside a Git worktree remains an explicit supported state.
 
 The driver reuses the close-work command runner, treats a reviewer nonzero exit or `BLOCK:` verdict
 as failure, then prints the outcome and recommended explicit next action. It does not commit, call
@@ -321,7 +324,8 @@ the audit (whole-`.stage` consistency) plus `close_work`'s aggregation gate; any
 declared by the parent run in addition to the audit, never in place of it. Its children were each
 independently reviewed (DE-00000027). The generated audit command uses platform-specific shell
 quoting: Windows project paths containing `cmd.exe` metacharacters (`&`, `^`, `|`, `<`, or `>`)
-remain one argument, as do paths containing whitespace.
+remain one argument, as do paths containing whitespace. When the driver adds Windows quotes itself,
+it doubles trailing backslashes so they cannot escape the closing quote.
 
 Any executor/commit failure, reviewer `BLOCK`, no-progress, or per-item attempt cap escalates the
 item via `escalate_work` (→ blocked + a pending decision); the escalation result is checked and the

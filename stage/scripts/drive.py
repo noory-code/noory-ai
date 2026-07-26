@@ -207,6 +207,12 @@ def git_untracked_paths(project_root: Path) -> tuple[set[str], str]:
 def git_diff(project_root: Path) -> str:
     """Return all changes for progress detection; fail if untracked paths are unknown."""
 
+    index_path, index_error = git_index_path(project_root)
+    if index_error:
+        raise RuntimeError(index_error)
+    if index_path is None:
+        return "\0NO-GIT-WORKTREE\0"
+
     try:
         result = subprocess.run(
             ["git", "diff", "--no-ext-diff", "--binary", "HEAD"],
@@ -214,11 +220,19 @@ def git_diff(project_root: Path) -> str:
             capture_output=True,
             text=True,
         )
-    except OSError:
-        return ""
+    except OSError as exc:
+        raise RuntimeError(str(exc)) from exc
     if result.returncode == 0:
         tracked_diff = result.stdout
     else:
+        head_exists, head_error = git_head_exists(project_root)
+        if head_error:
+            raise RuntimeError(head_error)
+        if head_exists:
+            raise RuntimeError(
+                result.stderr.strip()
+                or f"git diff HEAD failed with exit code {result.returncode}"
+            )
         unborn_diffs: list[str] = []
         for extra_args in (["--cached"], []):
             try:
@@ -234,10 +248,17 @@ def git_diff(project_root: Path) -> str:
                     capture_output=True,
                     text=True,
                 )
-            except OSError:
-                return ""
+            except OSError as exc:
+                raise RuntimeError(str(exc)) from exc
             if unborn_result.returncode != 0:
-                return ""
+                raise RuntimeError(
+                    unborn_result.stderr.strip()
+                    or (
+                        "git diff "
+                        f"{' '.join(extra_args) or 'worktree'} failed with exit code "
+                        f"{unborn_result.returncode}"
+                    )
+                )
             unborn_diffs.append(unborn_result.stdout)
         tracked_diff = (
             "\0UNBORN-STAGED\0"
@@ -283,6 +304,28 @@ def git_index_path(project_root: Path) -> tuple[Path | None, str]:
     )
 
 
+def git_head_exists(project_root: Path) -> tuple[bool, str]:
+    """Report whether HEAD resolves, distinguishing an unborn branch from Git failure."""
+
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", "HEAD"],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+        )
+    except OSError as exc:
+        return False, str(exc)
+    if result.returncode == 0:
+        return True, ""
+    if result.returncode == 1:
+        return False, ""
+    return False, (
+        result.stderr.strip()
+        or f"git rev-parse HEAD failed with exit code {result.returncode}"
+    )
+
+
 def restore_git_index(
     index_path: Path, snapshot_path: Path, existed: bool
 ) -> str:
@@ -306,12 +349,16 @@ def prepare_reviewer_index(
     project_root: Path,
     review_index_path: Path,
     new_untracked_paths: set[str],
+    *,
+    allow_empty_index: bool,
 ) -> tuple[dict[str, str] | None, str]:
     """Expose executor-created files through a disposable, initialized Git index."""
 
     env = os.environ.copy()
     env["GIT_INDEX_FILE"] = str(review_index_path.resolve())
     if not review_index_path.is_file():
+        if not allow_empty_index:
+            return None, "cannot prepare disposable Git index for review"
         try:
             result = subprocess.run(
                 ["git", "read-tree", "--empty"],
@@ -690,6 +737,8 @@ def shell_command(args: list[str], os_name: str | None = None) -> str:
             if any(character in arg for character in "&^|<>") and not (
                 rendered.startswith('"') and rendered.endswith('"')
             ):
+                trailing_backslashes = len(rendered) - len(rendered.rstrip("\\"))
+                rendered += "\\" * trailing_backslashes
                 rendered = f'"{rendered}"'
             rendered_args.append(rendered)
         return " ".join(rendered_args)
@@ -1103,6 +1152,13 @@ def main() -> int:
     if index_error:
         print_escalation(f"cannot resolve Git index before execution: {index_error}")
         return 1
+    index_existed = bool(index_path is not None and index_path.is_file())
+    head_existed = False
+    if index_path is not None and not index_existed:
+        head_existed, head_error = git_head_exists(project_root)
+        if head_error:
+            print_escalation(f"cannot resolve Git HEAD before execution: {head_error}")
+            return 1
     untracked_before: set[str] = set()
     if index_path is not None:
         untracked_before, untracked_error = git_untracked_paths(project_root)
@@ -1116,7 +1172,6 @@ def main() -> int:
         temporary_root = Path(temporary)
         original_index = temporary_root / "original-index"
         review_index = temporary_root / "review-index"
-        index_existed = bool(index_path is not None and index_path.is_file())
         if index_existed and index_path is not None:
             try:
                 shutil.copyfile(index_path, original_index)
@@ -1191,6 +1246,7 @@ def main() -> int:
                     project_root,
                     review_index,
                     executor_untracked_paths,
+                    allow_empty_index=not index_existed and not head_existed,
                 )
                 if reviewer_index_error:
                     step_ok = False
