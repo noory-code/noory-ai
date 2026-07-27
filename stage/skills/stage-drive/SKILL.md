@@ -198,7 +198,9 @@ Do not restate the driver's rules elsewhere — they are owned by:
   settings shape and per-platform variable syntax, dry-run and execute contract, runtime state),
   `### Unattended driver loop`, `### Execution limits settings`.
 - Decision records: `DE-00000013` (the driver is a component separate from the gates),
-  `DE-00000023` (supervised MVP), `DE-00000024` (unattended mode runs on an isolated branch).
+  `DE-00000023` (supervised MVP), `DE-00000024` (unattended mode runs on an isolated branch),
+  `DE-00000034` (what the three roles hand each other, what counts as evidence, and what a failed
+  turn leaves behind).
 
 ## Verify
 

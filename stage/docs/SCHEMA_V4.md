@@ -341,8 +341,27 @@ the target is never selected directly. If the target has no non-terminal child, 
 selects only that target when it meets the same eligibility rules. It runs the item's executor with
 a timeout bounded by the remaining global wall-clock budget and a disposable Git index. The
 driver's later scoped `git add` and commit use the real index, so executor index isolation does not
-change unattended commits. A FAILED executor is discarded and retried or escalated — never
-committed or closed. On success the executor output is committed, a NEUTRAL `driver-generated`
+change unattended commits.
+
+Each turn writes to a per-card **shared work log** the driver owns (DE-00000034). The executor
+appends what it changed, why, and the paths it claims; the driver compares that claim against the
+repository state it observed itself before and after the turn, and a claim that contradicts the
+observation fails the turn before review. Whatever the turn started outside itself — a job in an
+external runtime — is reaped when the turn ends, through an optional per-venue `reapers` command; a
+venue whose tool leaves nothing behind declares `null` and stays silent, while an absent venue
+warns.
+
+A FAILED executor is discarded and retried or escalated — never committed or closed. Its output
+lands in the shared work log first, so a human can see what it said before it died; the same holds
+for a reviewer that fails or blocks. Failing to append that record is itself an error, never a
+silent skip.
+
+A reviewer's failed criteria flow into the next round rather than being reduced to a pass/block
+word: the next executor turn receives them and must record an explicit accept / decline / defer
+disposition with a one-line reason for each. Reaching the attempt cap hands the work over as
+uncommitted files rather than committing something that never passed.
+
+On success the executor output is committed, a NEUTRAL `driver-generated`
 retrospective is written (it does not claim success — the item's
 Verification, stamped by `close_work`, is the source of truth; a human reviews the retrospective at
 merge), and the item is closed through `close_work.py` (which re-runs acceptance and the mandatory

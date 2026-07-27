@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.49.2 — 2026-07-27
+
+- Align the unattended driver documentation with the five contract layers now in the code: the
+  shared work log, claim-versus-observation checking, failure records, reviewer feedback carried
+  into the next round with explicit dispositions, uncommitted handoff at the cap, and turn reaping.
+
 ## 0.49.1 — 2026-07-27
 
 - Let a venue set its `reapers` entry to `null` when its synchronous command cannot leave a job
