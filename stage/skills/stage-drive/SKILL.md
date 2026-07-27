@@ -136,11 +136,40 @@ review still run through an explicit path.
 python3 "<driver>" --project-root <project-root> --unattended <TARGET_ID>
 ```
 
-This runs the whole ready subtree without stopping: select, execute, commit, write a neutral
-retrospective, close through `close_work.py` (which re-runs acceptance and the mandatory
-independent review), then repeat, closing parents as their children go terminal. It works on a
-fresh isolated `stage/driver/<target>-<unixtime>` branch and refuses to start if the working tree
-is dirty, so the base branch is never touched; the human reviews and merges that branch.
+This runs the whole ready subtree without stopping: select, execute, verify through
+`close_work.py` (acceptance plus mandatory independent review), and repeat while any card success
+criterion still fails. Each round is represented by one cumulative checkpoint commit so
+close-time review can open every changed path; a later round replaces that checkpoint rather than
+stacking partial-result commits. Only a passing review keeps the item commit. Each close attempt
+prepares the neutral retrospective required by the closure gate; a failed attempt removes that
+temporary lifecycle material, while a passing attempt closes the card and then closes parents as
+their children go terminal. It works on a fresh isolated
+`stage/driver/<target>-<unixtime>` branch and refuses to start if the working tree is dirty, so the
+base branch is never touched; the human reviews and merges that branch.
+
+The card's `max_attempts_per_item` limit is the reviewer/executor round-trip limit. When a reviewer
+logs failed criteria, the next executor receives the same `STAGE_WORK_LOG_PATH` and must append
+exactly one disposition for every latest `CRITERIA VERDICT:` line containing `FAIL`:
+
+```text
+Review dispositions (JSON):
+[{"finding":"<exact FAIL line>","disposition":"accept","reason":"<one-line reason>"}]
+```
+
+`disposition` is exactly `accept`, `decline`, or `defer`. Findings stay in reviewer order and must
+match exactly. Every choice requires a non-empty one-line reason. A round that declines or defers
+every finding may make no repository change, but it must still append its executor report with an
+empty changed-path array. An accepted finding requires repository progress. Out-of-criteria
+observations do not enter this blocking round trip.
+
+When all criteria pass, the cumulative checkpoint becomes the item commit. When the round-trip
+cap is reached, the driver removes every item checkpoint while retaining the cumulative files in
+the working tree, then escalates for human attention; executor output is not committed. A command
+timeout, missing command, or terminated tool is infrastructure failure and does not spend a card
+attempt. Reviewer infrastructure is retried without rerunning the executor. The global iteration,
+wall-clock, and reap-failure limits still stop the run, so unavailable tools cannot create an
+unbounded loop. Session reuse belongs to the configured executor command; whether it reuses a
+session or starts fresh, the shared log is the recovery input for every round.
 
 **It refuses to start without a `limits` config.** An absent `limits` object is not "no ceiling" —
 it is a missing decision, and an unbounded autonomous loop is forbidden. Configure

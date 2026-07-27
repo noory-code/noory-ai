@@ -52,6 +52,68 @@ EXECUTOR_WRITE = reporting_python_command(
 EXECUTOR_FAIL = python_command("raise SystemExit(1)")
 
 
+def round_trip_executor_command(
+    marker: Path,
+    finding: str,
+    *,
+    disposition: str = "accept",
+    reason: str = "the reported case occurs in this project",
+) -> str:
+    second_change = (
+        "Path('driver-work.txt').write_text('second', encoding='utf-8')"
+        if disposition == "accept"
+        else "None"
+    )
+    second_paths = ["driver-work.txt"] if disposition == "accept" else []
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        "round_number = int(marker.read_text() if marker.exists() else '0') + 1\n"
+        "marker.write_text(str(round_number), encoding='utf-8')\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "existing = log.read_text(encoding='utf-8')\n"
+        "if round_number == 1:\n"
+        "    Path('driver-work.txt').write_text('first', encoding='utf-8')\n"
+        "    changed_paths = ['driver-work.txt']\n"
+        "    disposition_block = ''\n"
+        "else:\n"
+        f"    assert {finding!r} in existing\n"
+        f"    {second_change}\n"
+        f"    changed_paths = {second_paths!r}\n"
+        "    disposition_block = ('Review dispositions (JSON):\\n' + "
+        f"json.dumps([{{'finding': {finding!r}, 'disposition': {disposition!r}, "
+        f"'reason': {reason!r}}}]) + '\\n')\n"
+        "report = ('\\n### Executor report\\n"
+        "What changed: completed round ' + str(round_number) + '\\n"
+        "Why: satisfy the pending card criteria\\n"
+        "Changed paths (JSON):\\n' + json.dumps(changed_paths) + '\\n' + "
+        "disposition_block + "
+        "'Review request: review every success criterion\\n')\n"
+        "log.write_text(existing + report, encoding='utf-8')\n"
+    )
+
+
+def timeout_then_success_executor_command(marker: Path) -> str:
+    return python_command(
+        "import json, os, time\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        "round_number = int(marker.read_text() if marker.exists() else '0') + 1\n"
+        "marker.write_text(str(round_number), encoding='utf-8')\n"
+        "if round_number == 1:\n"
+        "    time.sleep(5)\n"
+        "Path('driver-work.txt').write_text('recovered', encoding='utf-8')\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "report = ('\\n### Executor report\\n"
+        "What changed: recovered after the unavailable tool\\n"
+        "Why: finish the card without spending the failed transport attempt\\n"
+        "Changed paths (JSON):\\n[\"driver-work.txt\"]\\n"
+        "Review request: review every success criterion\\n')\n"
+        "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+    )
+
+
 def git(root: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=str(root), check=True, capture_output=True, text=True)
 
@@ -355,6 +417,281 @@ class UnattendedTest(unittest.TestCase):
                 str((root / ".git/index").resolve()),
                 environment["GIT_INDEX_FILE"],
             )
+
+    def test_failed_review_flows_to_next_executor_and_success_squashes_rounds(self):
+        limits = {
+            "max_attempts_per_item": 2,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 300,
+        }
+        finding = "- regression coverage: FAIL [P1] - missing boundary case"
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "round"
+            root, stage_root = self.make(
+                limits=limits,
+                executor=round_trip_executor_command(marker, finding),
+            )
+            self.card(stage_root, "W-00000001")
+            self.commit_all(root)
+            drive = load_module()
+            close_calls: list[str] = []
+
+            def stub_close(project_root, item_id, extra_checks, timeout):
+                close_calls.append(item_id)
+                log = (
+                    stage_root / ".runtime/driver/logs" / f"{item_id}.md"
+                )
+                if len(close_calls) == 1:
+                    with log.open("a", encoding="utf-8") as handle:
+                        handle.write(
+                            "\n### Reviewer report\n"
+                            "CRITERIA VERDICT:\n"
+                            f"{finding}\n"
+                            "OUT-OF-CRITERIA OBSERVATIONS:\n- None\n"
+                        )
+                    return False, "independent review did not pass"
+                path = stage_root / "work/current" / f"{item_id}.md"
+                path.write_text(
+                    drive.set_frontmatter_field(
+                        path.read_text(encoding="utf-8"),
+                        "status",
+                        "completed",
+                    ),
+                    encoding="utf-8",
+                )
+                return True, ""
+
+            drive.close_via_close_work = stub_close
+
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"),
+                root,
+                stage_root,
+                time.time(),
+            )
+            log = (
+                stage_root / ".runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
+            subjects = git_out(root, "log", "--format=%s").splitlines()
+            marker_value = marker.read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc)
+        self.assertEqual(2, len(close_calls))
+        self.assertEqual("2", marker_value)
+        self.assertIn(f'"finding": "{finding}"', log)
+        self.assertIn('"disposition": "accept"', log)
+        self.assertEqual(
+            1,
+            subjects.count("driver: W-00000001 executor output"),
+        )
+        self.assertEqual("second", git_out(root, "show", "HEAD~1:driver-work.txt"))
+
+    def test_attempt_cap_restores_executor_output_as_uncommitted_handoff(self):
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 300,
+        }
+        finding = "- regression coverage: FAIL [P1] - still missing"
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.commit_all(root)
+        drive = load_module()
+        escalation_reasons: list[str] = []
+
+        def stub_close(project_root, item_id, extra_checks, timeout):
+            log = stage_root / ".runtime/driver/logs" / f"{item_id}.md"
+            with log.open("a", encoding="utf-8") as handle:
+                handle.write(
+                    "\n### Reviewer report\n"
+                    "CRITERIA VERDICT:\n"
+                    f"{finding}\n"
+                    "OUT-OF-CRITERIA OBSERVATIONS:\n- None\n"
+                )
+            return False, "independent review did not pass"
+
+        def stub_escalate(project_root, item_id, reason, timeout):
+            escalation_reasons.append(reason)
+            path = stage_root / "work/current" / f"{item_id}.md"
+            path.write_text(
+                drive.set_frontmatter_field(
+                    path.read_text(encoding="utf-8"),
+                    "status",
+                    "blocked",
+                ),
+                encoding="utf-8",
+            )
+            return True
+
+        drive.close_via_close_work = stub_close
+        drive.escalate_and_commit = stub_escalate
+
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"),
+            root,
+            stage_root,
+            time.time(),
+        )
+        subjects = git_out(root, "log", "--format=%s").splitlines()
+
+        self.assertEqual(0, rc)
+        self.assertEqual(1, len(escalation_reasons))
+        self.assertNotIn("driver: W-00000001 executor output", subjects)
+        self.assertEqual("x", (root / "driver-work.txt").read_text(encoding="utf-8"))
+        self.assertIn("driver-work.txt", git_out(root, "status", "--short"))
+
+    def test_reasoned_decline_can_complete_without_a_second_repository_change(self):
+        limits = {
+            "max_attempts_per_item": 2,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 300,
+        }
+        finding = "- unsupported platform: FAIL [P1] - add a fictional host"
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "round"
+            root, stage_root = self.make(
+                limits=limits,
+                executor=round_trip_executor_command(
+                    marker,
+                    finding,
+                    disposition="decline",
+                    reason="that host cannot run this project",
+                ),
+            )
+            self.card(stage_root, "W-00000001")
+            self.commit_all(root)
+            drive = load_module()
+            close_calls = 0
+
+            def stub_close(project_root, item_id, extra_checks, timeout):
+                nonlocal close_calls
+                close_calls += 1
+                log = (
+                    stage_root / ".runtime/driver/logs" / f"{item_id}.md"
+                )
+                if close_calls == 1:
+                    with log.open("a", encoding="utf-8") as handle:
+                        handle.write(
+                            "\n### Reviewer report\n"
+                            "CRITERIA VERDICT:\n"
+                            f"{finding}\n"
+                            "OUT-OF-CRITERIA OBSERVATIONS:\n- None\n"
+                        )
+                    return False, "independent review did not pass"
+                path = stage_root / "work/current" / f"{item_id}.md"
+                path.write_text(
+                    drive.set_frontmatter_field(
+                        path.read_text(encoding="utf-8"),
+                        "status",
+                        "completed",
+                    ),
+                    encoding="utf-8",
+                )
+                return True, ""
+
+            drive.close_via_close_work = stub_close
+
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"),
+                root,
+                stage_root,
+                time.time(),
+            )
+            log = (
+                stage_root / ".runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc)
+        self.assertEqual(2, close_calls)
+        self.assertIn('"disposition": "decline"', log)
+        self.assertEqual("first", git_out(root, "show", "HEAD~1:driver-work.txt"))
+
+    def test_reviewer_timeout_retries_without_rerunning_executor_or_spending_attempt(self):
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.commit_all(root)
+        drive = load_module()
+        close_calls: list[str] = []
+
+        def stub_close(project_root, item_id, extra_checks, timeout):
+            close_calls.append(item_id)
+            if len(close_calls) == 1:
+                return False, "close_work timed out after 31s"
+            path = stage_root / "work/current" / f"{item_id}.md"
+            path.write_text(
+                drive.set_frontmatter_field(
+                    path.read_text(encoding="utf-8"),
+                    "status",
+                    "completed",
+                ),
+                encoding="utf-8",
+            )
+            return True, ""
+
+        drive.close_via_close_work = stub_close
+
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"),
+            root,
+            stage_root,
+            time.time(),
+        )
+        state = json.loads(
+            (stage_root / ".runtime/driver/W-00000001.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        log = (
+            stage_root / ".runtime/driver/logs/W-00000001.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc)
+        self.assertEqual(2, len(close_calls))
+        self.assertEqual(1, log.count("### Executor report"))
+        self.assertEqual(1, state["items"]["W-00000001"]["attempt_count"])
+
+    def test_executor_timeout_does_not_spend_the_only_attempt(self):
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 30,
+        }
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "executor-round"
+            root, stage_root = self.make(
+                limits=limits,
+                executor=timeout_then_success_executor_command(marker),
+            )
+            self.card(stage_root, "W-00000001")
+            self.commit_all(root)
+            drive = load_module()
+            calls: list = []
+            self.install_stubs(drive, calls)
+            args = self.args(root, "W-00000001")
+            args.timeout = 1
+
+            rc = drive.run_unattended(
+                args,
+                root,
+                stage_root,
+                time.time(),
+            )
+            state = json.loads(
+                (stage_root / ".runtime/driver/W-00000001.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            marker_value = marker.read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc)
+        self.assertEqual("2", marker_value)
+        self.assertEqual(1, state["items"]["W-00000001"]["attempt_count"])
+        self.assertIn(("close", "W-00000001"), calls)
 
     def test_executor_staging_is_isolated_before_unattended_commit(self):
         limits = {
@@ -753,8 +1090,8 @@ class UnattendedTest(unittest.TestCase):
             lifecycle_calls,
         )
 
-    def test_pre_close_lifecycle_commit_failure_stops_before_retry(self):
-        limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
+    def test_close_failure_retries_without_pre_close_lifecycle_commit(self):
+        limits = {"max_attempts_per_item": 2, "max_iterations": 50, "max_wall_clock_seconds": 300}
         root, stage_root = self.make(limits=limits)
         self.card(stage_root, "W-00000001")
         self.card(stage_root, "W-00000002", parent="W-00000001")
@@ -766,18 +1103,28 @@ class UnattendedTest(unittest.TestCase):
             close_calls.append(item_id)
             return False, "simulated close failure"
 
+        def stub_escalate(project_root, item_id, reason, timeout):
+            path = stage_root / "work/current" / f"{item_id}.md"
+            path.write_text(
+                drive.set_frontmatter_field(
+                    path.read_text(encoding="utf-8"),
+                    "status",
+                    "blocked",
+                ),
+                encoding="utf-8",
+            )
+            return True
+
         drive.close_via_close_work = stub_close
+        drive.escalate_and_commit = stub_escalate
         self.fail_lifecycle_commit(drive, "pre-close lifecycle (retry)", lifecycle_calls)
 
         self.commit_all(root)
         rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
 
-        self.assertEqual(1, rc)
-        self.assertEqual(["W-00000002"], close_calls)
-        self.assertEqual(
-            ["driver: W-00000002 pre-close lifecycle (retry)"],
-            lifecycle_calls,
-        )
+        self.assertEqual(0, rc)
+        self.assertEqual(["W-00000002", "W-00000002"], close_calls)
+        self.assertEqual([], lifecycle_calls)
 
     def test_review_block_output_is_preserved_on_escalation_after_retry(self):
         limits = {

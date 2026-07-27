@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import importlib.util
+import json
 import shlex
 import subprocess
 import sys
@@ -75,6 +77,16 @@ def approving_reviewer_command(command: str) -> str:
         "    handle.write('\\n### Reviewer report\\n' + report)\n"
         "print(verdict)"
     )
+
+
+def load_close_module():
+    if str(CLI.parent) not in sys.path:
+        sys.path.insert(0, str(CLI.parent))
+    spec = importlib.util.spec_from_file_location("stage_close_work", CLI)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 class CloseWorkTest(unittest.TestCase):
@@ -678,6 +690,59 @@ class CloseWorkTest(unittest.TestCase):
             proc = run(root, "W-00000001", "--check", "true")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
+
+    def test_latest_review_failures_exclude_out_of_criteria_observations(self):
+        close_work = load_close_module()
+        log = (
+            "### Reviewer report\n"
+            "CRITERIA VERDICT:\n"
+            "- criterion one: PASS - complete\n"
+            "- criterion two: FAIL [P1] - missing regression\n"
+            "OUT-OF-CRITERIA OBSERVATIONS:\n"
+            "- FAIL text outside the card does not enter the round trip\n"
+        )
+
+        self.assertEqual(
+            ["- criterion two: FAIL [P1] - missing regression"],
+            close_work.latest_review_failures(log),
+        )
+
+    def test_executor_report_rejects_reasonless_review_disposition(self):
+        close_work = load_close_module()
+        finding = "- criterion two: FAIL [P1] - missing regression"
+        previous = (
+            "### Reviewer report\n"
+            "CRITERIA VERDICT:\n"
+            f"{finding}\n"
+            "OUT-OF-CRITERIA OBSERVATIONS:\n- None\n"
+        )
+        current = (
+            previous
+            + "\n### Executor report\n"
+            "What changed: declined the finding\n"
+            "Why: the reported situation does not occur\n"
+            "Changed paths (JSON):\n[]\n"
+            "Review dispositions (JSON):\n"
+            + json.dumps(
+                [
+                    {
+                        "finding": finding,
+                        "disposition": "decline",
+                        "reason": "",
+                    }
+                ]
+            )
+            + "\n"
+            "Review request: verify the disposition\n"
+        )
+
+        _dispositions, error = close_work.executor_review_dispositions(
+            previous,
+            current,
+            [finding],
+        )
+
+        self.assertIn("requires a non-empty one-line reason", error)
 
     def review_committed_paths_command(self) -> str:
         return python_command(
