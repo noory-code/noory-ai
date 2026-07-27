@@ -12,3 +12,4 @@
 | W-00000099 | fix | codex |  | active | Claude | [current/W-00000099.md](current/W-00000099.md) |
 | W-00000100 | fix | codex |  | active | Claude | [current/W-00000100.md](current/W-00000100.md) |
 | W-00000101 | fix | codex | 드라이버가 끝날 때 자기가 띄운 실행자를 거둔다 | active | codex | [current/W-00000101.md](current/W-00000101.md) |
+| W-00000102 | documentation | claude |  | active | Claude | [current/W-00000102.md](current/W-00000102.md) |
