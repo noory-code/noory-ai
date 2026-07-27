@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.47.0 — 2026-07-27
+
+- Preserve driver-observed executor, reviewer, and close failure reasons and command output in each
+  card's shared runtime work log across retries and escalation.
+- Stage tracked `.stage` updates and explicit non-ignored untracked lifecycle paths separately, so
+  ignored `.stage/.runtime` state stays outside escalation commits without requiring `git add -f`.
+
 ## 0.46.1 — 2026-07-27
 
 - Fail closure without writing the card or indexes when a required lifecycle frontmatter field is

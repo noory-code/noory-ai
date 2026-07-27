@@ -405,6 +405,37 @@ class UnattendedTest(unittest.TestCase):
         self.assertIn(("escalate", "W-00000002"), calls)
         self.assertNotIn("close", [c[0] for c in calls if c[1] == "W-00000002"])
 
+    def test_executor_failure_output_is_appended_to_shared_work_log(self):
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        executor = python_command(
+            "print('executor failure sentinel'); raise SystemExit(7)"
+        )
+        root, stage_root = self.make(limits=limits, executor=executor)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        self.commit_all(root)
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"), root, stage_root, time.time()
+        )
+        log = (
+            stage_root / ".runtime/driver/logs/W-00000002.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc)
+        self.assertIn("### Driver failure", log)
+        self.assertIn("Role: executor", log)
+        self.assertIn("Reason: executor failed", log)
+        self.assertIn("executor failure sentinel", log)
+        self.assertIn("[exit 7]", log)
+
     def test_successful_executor_without_repository_changes_escalates_not_closes(self):
         limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}
         root, stage_root = self.make(limits=limits, executor=python_command("raise SystemExit(0)"))
@@ -526,6 +557,34 @@ class UnattendedTest(unittest.TestCase):
         branch = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
         committed = git_out(root, "show", f"{branch}:.stage/work/current/W-00000002.md")
         self.assertIn("status: completed", committed)
+
+    def test_lifecycle_commit_excludes_ignored_runtime_directory(self):
+        root, stage_root = self.make(limits=None)
+        self.card(stage_root, "W-00000001")
+        (root / ".gitignore").write_text(".stage/.runtime/\n", encoding="utf-8")
+        self.commit_all(root)
+        git(root, "checkout", "-q", "-b", "stage/driver/test-runtime-exclusion")
+        runtime_file = stage_root / ".runtime/driver/state.json"
+        runtime_file.parent.mkdir(parents=True)
+        runtime_file.write_text("{}\n", encoding="utf-8")
+        card_path = stage_root / "work/current/W-00000001.md"
+        card_path.write_text(
+            card_path.read_text(encoding="utf-8").replace(
+                "status: active", "status: blocked"
+            ),
+            encoding="utf-8",
+        )
+        drive = load_module()
+
+        ok, error = drive.commit_lifecycle(root, "driver: test lifecycle")
+
+        self.assertTrue(ok, error)
+        committed_paths = git_out(
+            root, "show", "--format=", "--name-only", "HEAD"
+        ).splitlines()
+        self.assertIn(".stage/work/current/W-00000001.md", committed_paths)
+        self.assertNotIn(".stage/.runtime/driver/state.json", committed_paths)
+        self.assertTrue(runtime_file.exists())
 
     def test_escalation_lifecycle_commit_failure_stops_run(self):
         limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}

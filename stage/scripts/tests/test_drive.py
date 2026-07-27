@@ -1323,6 +1323,38 @@ class DriveTest(unittest.TestCase):
         self.assertIn("independent reviewer BLOCK", result.stdout)
         self.assertIn("→ escalate_work", result.stdout)
 
+    def test_reviewer_block_output_is_appended_to_shared_work_log(self):
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            ),
+            reviewer=python_command(
+                "print('BLOCK: reviewer failure sentinel'); raise SystemExit(9)"
+            ),
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("### Driver failure", log)
+        self.assertIn("Role: reviewer", log)
+        self.assertIn("Reason: independent reviewer BLOCK verdict", log)
+        self.assertIn("reviewer failure sentinel", log)
+        self.assertIn("[exit 9]", log)
+
     def test_missing_executor_recommends_escalation_without_state_write(self):
         tmp, root = self.make_project(executor=None)
         with tmp:

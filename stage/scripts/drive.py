@@ -484,6 +484,32 @@ def print_escalation(reason: str) -> None:
     print(f"Recommended next action: {RECOMMEND_ESCALATE}")
 
 
+def append_failure_to_work_log(
+    log_path: Path,
+    *,
+    role: str,
+    reason: str,
+    evidence: str,
+) -> None:
+    """Append one driver-observed failure without replacing role-authored reports."""
+
+    output = clip(evidence) or "(no output)"
+    entry = (
+        "\n### Driver failure\n"
+        f"Role: {role}\n"
+        f"Reason: {reason}\n"
+        "Output:\n\n"
+        "```text\n"
+        f"{output}\n"
+        "```\n"
+    )
+    try:
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(entry)
+    except OSError as exc:
+        raise RuntimeError(f"cannot append failure to work log {log_path}: {exc}") from exc
+
+
 def print_plan(
     *,
     execute: bool,
@@ -895,10 +921,25 @@ def commit_lifecycle(project_root: Path, message: str) -> tuple[bool, str]:
         return False, "refusing lifecycle commit: HEAD is not on a stage/driver run branch"
     ok, out = run_git(
         project_root,
-        ["add", "--", ".stage", f":(exclude){STAGE_RUNTIME_PREFIX}"],
+        ["add", "--update", "--", ".stage"],
     )
     if not ok:
-        return False, f"git add .stage failed: {out.strip()}"
+        return False, f"git add tracked .stage paths failed: {out.strip()}"
+    ok, out = run_git(
+        project_root,
+        ["ls-files", "--others", "--exclude-standard", "-z", "--", ".stage"],
+    )
+    if not ok:
+        return False, f"cannot list untracked lifecycle paths: {out.strip()}"
+    untracked_paths = [
+        path
+        for path in out.split("\0")
+        if path and not path.startswith(STAGE_RUNTIME_PREFIX)
+    ]
+    if untracked_paths:
+        ok, out = run_git(project_root, ["add", "--", *untracked_paths])
+        if not ok:
+            return False, f"git add untracked lifecycle paths failed: {out.strip()}"
     ok, staged_paths = run_git(
         project_root,
         ["diff", "--cached", "--name-only"],
@@ -1087,6 +1128,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         # A FAILED executor must never proceed to commit/close. Discard the failed
         # attempt's partial output, then retry or escalate.
         if not executor_ok:
+            try:
+                append_failure_to_work_log(
+                    log_path,
+                    role="executor",
+                    reason=executor_failure,
+                    evidence=executor_evidence,
+                )
+            except RuntimeError as exc:
+                discard_worktree(project_root)
+                print_escalation(str(exc))
+                return 1
             discard_worktree(project_root)
             if no_progress or attempt >= cap:
                 if not escalate_and_commit(
@@ -1123,7 +1175,18 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
 
         close_ok, close_out = close_via_close_work(project_root, item.item_id, [], cmd_timeout)
         if not close_ok:
-            reason = "close failed (acceptance or independent review)"
+            close_failure = "close failed (acceptance or independent review)"
+            try:
+                append_failure_to_work_log(
+                    log_path,
+                    role="close",
+                    reason=close_failure,
+                    evidence=close_out,
+                )
+            except RuntimeError as exc:
+                print_escalation(str(exc))
+                return 1
+            reason = close_failure
             clipped_close_out = clip(close_out)
             if clipped_close_out:
                 reason += f"; close_work output:\n{clipped_close_out}"
@@ -1376,6 +1439,17 @@ def main() -> int:
                 "repository changed but no changed paths were observed for review"
             )
 
+        if not step_ok:
+            try:
+                append_failure_to_work_log(
+                    log_path,
+                    role="executor",
+                    reason=failure,
+                    evidence=executor_evidence,
+                )
+            except RuntimeError as exc:
+                failure = f"{failure}; {exc}"
+
         if step_ok:
             for command in item.acceptance:
                 accepted, evidence, raw = run_check(
@@ -1417,13 +1491,24 @@ def main() -> int:
                 log_after_review,
             )
             reviewer_blocked = bool(BLOCK_RE.search(review_raw))
-            if step_ok and (reviewer_blocked or not reviewed or verdict_error):
-                step_ok = False
-                failure = (
+            if reviewer_blocked or not reviewed or verdict_error:
+                review_failure = (
                     "independent reviewer BLOCK verdict"
                     if reviewer_blocked
                     else verdict_error or "independent reviewer command failed"
                 )
+                if step_ok:
+                    step_ok = False
+                    failure = review_failure
+                try:
+                    append_failure_to_work_log(
+                        log_path,
+                        role="reviewer",
+                        reason=review_failure,
+                        evidence=review_evidence,
+                    )
+                except RuntimeError as exc:
+                    failure = f"{failure}; {exc}"
 
     try:
         current_fingerprint = fingerprint(project_root, acceptance_output)
