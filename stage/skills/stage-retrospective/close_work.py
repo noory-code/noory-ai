@@ -76,6 +76,7 @@ WORK_LOG_PREAMBLE = """\
 """
 EXECUTOR_REPORT_MARKER = "### Executor report"
 REVIEWER_REPORT_MARKER = "### Reviewer report"
+REVIEW_DISPOSITIONS_LABEL = "Review dispositions (JSON):"
 
 
 def field(text: str, name: str) -> str:
@@ -138,17 +139,30 @@ def read_work_log(path: Path) -> str:
         raise RuntimeError(f"cannot read work log {path}: {exc}") from exc
 
 
+def section_marker_starts(text: str, marker: str) -> list[int]:
+    """Return starts of marker heading lines, excluding marker mentions in prose."""
+
+    return [
+        match.start()
+        for match in re.finditer(
+            rf"(?m)^{re.escape(marker)}[ \t]*\r?$",
+            text,
+        )
+    ]
+
+
 def executor_report_error(
     previous_log: str,
     current_log: str,
     observed_paths: list[str],
+    review_findings: list[str] | None = None,
 ) -> str:
     if current_log == previous_log:
         return "executor did not append a work log report"
     if not current_log.startswith(previous_log):
         return "executor rewrote existing work log content instead of appending"
     addition = current_log[len(previous_log) :]
-    if addition.count(EXECUTOR_REPORT_MARKER) != 1:
+    if len(section_marker_starts(addition, EXECUTOR_REPORT_MARKER)) != 1:
         return "executor must append exactly one `### Executor report` per attempt"
     for label in ("What changed", "Why", "Review request"):
         match = re.search(rf"(?m)^{re.escape(label)}:[ \t]*(.+)$", addition)
@@ -187,7 +201,106 @@ def executor_report_error(
             "executor claimed changed paths do not match driver observation: "
             f"claimed={claimed_paths}, observed={expected_paths}"
         )
+    _dispositions, disposition_error = executor_review_dispositions(
+        previous_log,
+        current_log,
+        review_findings or [],
+    )
+    if disposition_error:
+        return disposition_error
     return ""
+
+
+def latest_review_failures(log_text: str) -> list[str]:
+    """Return the failed criterion lines from the most recent reviewer report."""
+
+    marker_starts = section_marker_starts(log_text, REVIEWER_REPORT_MARKER)
+    if not marker_starts:
+        return []
+    marker_start = marker_starts[-1]
+    report = log_text[marker_start + len(REVIEWER_REPORT_MARKER) :]
+    next_section = re.search(r"(?m)^### ", report)
+    if next_section:
+        report = report[: next_section.start()]
+    criteria_label = "CRITERIA VERDICT:"
+    observations_label = "OUT-OF-CRITERIA OBSERVATIONS:"
+    criteria_start = report.find(criteria_label)
+    observations_start = report.find(observations_label)
+    if criteria_start < 0 or observations_start <= criteria_start:
+        return []
+    criteria = report[criteria_start + len(criteria_label) : observations_start]
+    return [
+        line.strip()
+        for line in criteria.splitlines()
+        if re.search(r"(?:^|[^A-Z])FAIL(?:[^A-Z]|$)", line)
+    ]
+
+
+def executor_review_dispositions(
+    previous_log: str,
+    current_log: str,
+    review_findings: list[str],
+) -> tuple[list[dict[str, str]], str]:
+    """Validate one exact, reasoned disposition for each pending review failure."""
+
+    if not review_findings:
+        return [], ""
+    if not current_log.startswith(previous_log):
+        return [], "executor rewrote existing work log content instead of appending"
+    addition = current_log[len(previous_log) :]
+    match = re.search(
+        rf"(?m)^{re.escape(REVIEW_DISPOSITIONS_LABEL)}[ \t]*\n([^\r\n]+)$",
+        addition,
+    )
+    if not match:
+        return [], (
+            "executor work log report is missing one-line "
+            f"`{REVIEW_DISPOSITIONS_LABEL}` for pending review failures"
+        )
+    try:
+        raw_dispositions = json.loads(match.group(1))
+    except json.JSONDecodeError as exc:
+        return [], f"executor review dispositions are invalid JSON: {exc.msg}"
+    if not isinstance(raw_dispositions, list):
+        return [], "executor review dispositions must be a JSON array"
+
+    dispositions: list[dict[str, str]] = []
+    for entry in raw_dispositions:
+        if not isinstance(entry, dict) or set(entry) != {
+            "finding",
+            "disposition",
+            "reason",
+        }:
+            return [], (
+                "each executor review disposition must contain exactly "
+                "`finding`, `disposition`, and `reason`"
+            )
+        finding = entry["finding"]
+        disposition = entry["disposition"]
+        reason = entry["reason"]
+        if not all(isinstance(value, str) for value in (finding, disposition, reason)):
+            return [], "executor review disposition values must be strings"
+        if disposition not in {"accept", "decline", "defer"}:
+            return [], (
+                "executor review disposition must be `accept`, `decline`, or `defer`"
+            )
+        if not reason.strip() or "\n" in reason or "\r" in reason:
+            return [], "executor review disposition requires a non-empty one-line reason"
+        dispositions.append(
+            {
+                "finding": finding,
+                "disposition": disposition,
+                "reason": reason,
+            }
+        )
+
+    claimed_findings = [entry["finding"] for entry in dispositions]
+    if claimed_findings != review_findings:
+        return [], (
+            "executor review dispositions do not match the pending failures: "
+            f"claimed={claimed_findings}, pending={review_findings}"
+        )
+    return dispositions, ""
 
 
 def reviewer_report_error(previous_log: str, current_log: str) -> str:
@@ -196,7 +309,7 @@ def reviewer_report_error(previous_log: str, current_log: str) -> str:
     if not current_log.startswith(previous_log):
         return "reviewer rewrote existing work log content instead of appending"
     addition = current_log[len(previous_log) :]
-    if addition.count(REVIEWER_REPORT_MARKER) != 1:
+    if len(section_marker_starts(addition, REVIEWER_REPORT_MARKER)) != 1:
         return "reviewer must append exactly one `### Reviewer report` per review"
     criteria_label = "CRITERIA VERDICT:"
     observations_label = "OUT-OF-CRITERIA OBSERVATIONS:"

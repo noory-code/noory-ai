@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.49.0 — 2026-07-27
+
+- Carry each failed card criterion from the shared reviewer log into the next unattended executor
+  round and require an exact accept/decline/defer disposition with a one-line reason.
+- Keep one cumulative review checkpoint across rounds, retain it only after every criterion
+  passes, and restore capped work as uncommitted files for human handoff.
+- Retry executor and reviewer infrastructure failures without spending the per-card round-trip
+  limit while preserving the global iteration, wall-clock, and reaper stops.
+- Recognize executor and reviewer report markers only as Markdown heading lines, so ordinary prose
+  can cite those markers without breaking approval or hiding the next round's failed criteria.
+
 ## 0.48.0 — 2026-07-27
 
 - Add optional per-venue `reapers` commands and run them after supervised and unattended executor

@@ -43,6 +43,8 @@ from close_work import (  # noqa: E402
     clip,
     ensure_work_log,
     executor_report_error,
+    executor_review_dispositions,
+    latest_review_failures,
     read_work_log,
     reviewer_report_error,
     run_check,
@@ -175,6 +177,7 @@ def load_run_state(
             return None, "driver run state item entries must be objects"
         attempt_count = item_state.get("attempt_count")
         fingerprint = item_state.get("last_fingerprint")
+        base_head = item_state.get("base_head", "")
         if type(attempt_count) is not int or attempt_count < 0:
             return None, (
                 f"driver run state {item_id}.attempt_count must be a "
@@ -184,6 +187,8 @@ def load_run_state(
             return None, (
                 f"driver run state {item_id}.last_fingerprint must be a string"
             )
+        if not isinstance(base_head, str):
+            return None, f"driver run state {item_id}.base_head must be a string"
     return state, ""
 
 
@@ -759,11 +764,23 @@ def create_run_branch(project_root: Path, target_id: str, now: float) -> tuple[s
     return branch, ""
 
 
-def commit_item(project_root: Path, item: WorkItem) -> tuple[bool, str]:
-    """Stage the item's declared scope and commit it to the current run branch."""
+def commit_item(
+    project_root: Path,
+    item: WorkItem,
+    base_head: str = "",
+) -> tuple[bool, str]:
+    """Replace prior round checkpoints with one cumulative item commit."""
 
     if not current_branch(project_root).startswith("stage/driver/"):
         return False, "refusing item commit: HEAD is not on a stage/driver run branch"
+    if base_head:
+        ok, current = run_git(project_root, ["rev-parse", "HEAD"])
+        if not ok:
+            return False, f"cannot resolve item checkpoint HEAD: {current.strip()}"
+        if current.strip() != base_head:
+            ok, out = run_git(project_root, ["reset", "--soft", base_head])
+            if not ok:
+                return False, f"cannot squash prior item checkpoints: {out.strip()}"
     scope_paths = [path for path in item.scope if path]
     if scope_paths:
         ok, out = run_git(project_root, ["add", "--", *scope_paths])
@@ -776,6 +793,38 @@ def commit_item(project_root: Path, item: WorkItem) -> tuple[bool, str]:
     if not ok and "nothing to commit" in out:
         return True, "nothing to commit"
     return (True, "") if ok else (False, f"git commit failed: {out.strip()}")
+
+
+def restore_item_output(project_root: Path, base_head: str) -> tuple[bool, str]:
+    """Remove item checkpoint commits while retaining their files for human handoff."""
+
+    ok, out = run_git(project_root, ["reset", "--mixed", base_head])
+    return (True, "") if ok else (
+        False,
+        f"cannot restore uncommitted item output at attempt cap: {out.strip()}",
+    )
+
+
+def current_head(project_root: Path) -> tuple[str, str]:
+    ok, out = run_git(project_root, ["rev-parse", "HEAD"])
+    return (out.strip(), "") if ok else ("", f"cannot resolve HEAD: {out.strip()}")
+
+
+def infrastructure_failure(output: str) -> bool:
+    """Recognize a command transport/tool failure that must not spend a work round."""
+
+    lowered = output.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "timed out",
+            "command not found",
+            "[exit 126]",
+            "[exit 127]",
+            "terminated by signal",
+            "killed by signal",
+        )
+    )
 
 
 def next_retro_id(stage_root: Path) -> str:
@@ -1196,7 +1245,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         if state_error or state is None:
             print_escalation(state_error or "driver run state unavailable")
             return 1
-        item_state = state["items"].get(item.item_id, {"attempt_count": 0, "last_fingerprint": ""})
+        item_state = state["items"].get(
+            item.item_id,
+            {"attempt_count": 0, "last_fingerprint": "", "base_head": ""},
+        )
+        if not item_state.get("base_head"):
+            base_head, head_error = current_head(project_root)
+            if head_error:
+                print_escalation(head_error)
+                return 1
+            item_state["base_head"] = base_head
+        base_head = item_state["base_head"]
         attempt = item_state["attempt_count"] + 1
         if attempt > cap:
             try:
@@ -1212,6 +1271,10 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 )
             except RuntimeError as exc:
                 print(f"WARNING: cannot record attempt-cap reaping: {exc}")
+            restored, restore_error = restore_item_output(project_root, base_head)
+            if not restored:
+                print_escalation(restore_error)
+                return 1
             if not escalate_and_commit(
                 project_root, item.item_id, f"per-item attempt cap ({cap}) reached", cmd_timeout
             ):
@@ -1227,6 +1290,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         try:
             log_path = ensure_work_log(stage_root, item.item_id)
             log_before = read_work_log(log_path)
+            pending_findings = latest_review_failures(log_before)
             repository_before = repository_fingerprint(project_root)
             repository_paths_before = repository_path_snapshot(project_root)
         except RuntimeError as exc:
@@ -1278,6 +1342,31 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             print_escalation(f"cannot inspect changes for progress: {exc}")
             return 1
         executor_failure = "executor failed"
+        changed_paths = changed_repository_paths(
+            repository_paths_before,
+            repository_paths_after,
+        )
+        dispositions, disposition_error = executor_review_dispositions(
+            log_before,
+            log_after_executor,
+            pending_findings,
+        )
+        report_error = executor_report_error(
+            log_before,
+            log_after_executor,
+            changed_paths,
+            pending_findings,
+        )
+        reasoned_no_change = (
+            bool(pending_findings)
+            and not disposition_error
+            and bool(dispositions)
+            and all(
+                entry["disposition"] in {"decline", "defer"}
+                for entry in dispositions
+            )
+        )
+        infrastructure_failed = infrastructure_failure(executor_evidence)
         if executor_log_error:
             executor_ok = False
             executor_failure = executor_log_error
@@ -1288,27 +1377,26 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 else "executor failed; executor reap command failed"
             )
             executor_ok = False
-        elif executor_ok and repository_after == repository_before:
+        elif (
+            executor_ok
+            and repository_after == repository_before
+            and not reasoned_no_change
+        ):
             executor_ok = False
             executor_failure = UNCHANGED_REPOSITORY_FAILURE
-        elif executor_ok:
-            changed_paths = changed_repository_paths(
-                repository_paths_before,
-                repository_paths_after,
-            )
-            report_error = executor_report_error(
-                log_before,
-                log_after_executor,
-                changed_paths,
-            )
-            if report_error:
-                executor_ok = False
-                executor_failure = report_error
+        elif executor_ok and report_error:
+            executor_ok = False
+            executor_failure = report_error
         no_progress = (
             bool(item_state["last_fingerprint"]) and current_fingerprint == item_state["last_fingerprint"]
         )
         state["iteration_count"] = state.get("iteration_count", 0) + 1
-        state["items"][item.item_id] = {"attempt_count": attempt, "last_fingerprint": current_fingerprint}
+        counted_attempt = item_state["attempt_count"] if infrastructure_failed else attempt
+        state["items"][item.item_id] = {
+            "attempt_count": counted_attempt,
+            "last_fingerprint": current_fingerprint,
+            "base_head": base_head,
+        }
         write_run_state(state_path, state)
 
         # A FAILED executor must never proceed to commit/close. Discard the failed
@@ -1332,7 +1420,19 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                     "stopping before another turn"
                 )
                 return 1
-            if no_progress or attempt >= cap:
+            if infrastructure_failed:
+                print(
+                    f"[{item.item_id}] executor infrastructure failure; "
+                    f"retry without spending attempt {item_state['attempt_count']}/{cap}"
+                )
+            elif no_progress or attempt >= cap:
+                restored, restore_error = restore_item_output(
+                    project_root,
+                    base_head,
+                )
+                if not restored:
+                    print_escalation(restore_error)
+                    return 1
                 if not escalate_and_commit(
                     project_root,
                     item.item_id,
@@ -1348,7 +1448,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             print_escalation(f"HEAD left the run branch {branch}; aborting")
             return 1
 
-        commit_ok, commit_message = commit_item(project_root, item)
+        commit_ok, commit_message = commit_item(project_root, item, base_head)
         if not commit_ok:
             discard_worktree(project_root)
             if not escalate_and_commit(
@@ -1357,6 +1457,13 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 return 1
             continue
 
+        card_path = current_card_path(stage_root, item.item_id)
+        try:
+            card_before_retrospective = card_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            print_escalation(f"cannot snapshot work card before close: {exc}")
+            return 1
+        created_retro_path: Path | None = None
         if not (item.retrospective == "completed" and item.retrospective_ref):
             retro_id, retro_error = write_driver_retrospective(stage_root, item)
             if retro_error:
@@ -1364,23 +1471,108 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                     return 1
                 continue
             mark_retrospective(stage_root, item.item_id, retro_id)
+            created_retro_path = (
+                stage_root / "work" / "retrospectives" / f"{retro_id}.md"
+            )
 
-        close_ok, close_out = close_via_close_work(project_root, item.item_id, [], cmd_timeout)
         reviewer_venue = resolve_independent_reviewer_venue(
             load_review_config(stage_root),
             item.venue,
         )
-        reviewer_reaped = True
-        if reviewer_venue is not None:
-            reviewer_reaped = reap_turn(
-                stage_root=stage_root,
-                project_root=project_root,
-                log_path=log_path,
-                item_path=item.path,
-                venue=reviewer_venue,
-                role="reviewer",
-                timeout=cmd_timeout,
+        while True:
+            close_ok, close_out = close_via_close_work(
+                project_root,
+                item.item_id,
+                [],
+                cmd_timeout,
             )
+            try:
+                log_after_close = read_work_log(log_path)
+            except RuntimeError as exc:
+                print_escalation(str(exc))
+                return 1
+            reviewer_reaped = True
+            if reviewer_venue is not None:
+                reviewer_reaped = reap_turn(
+                    stage_root=stage_root,
+                    project_root=project_root,
+                    log_path=log_path,
+                    item_path=item.path,
+                    venue=reviewer_venue,
+                    role="reviewer",
+                    timeout=cmd_timeout,
+                )
+            close_infrastructure_failure = (
+                not close_ok
+                and infrastructure_failure(close_out)
+                and not latest_review_failures(log_after_close)
+            )
+            if not close_infrastructure_failure:
+                break
+            try:
+                append_failure_to_work_log(
+                    log_path,
+                    role="close",
+                    reason="review infrastructure failed; retrying without spending an attempt",
+                    evidence=close_out,
+                )
+            except RuntimeError as exc:
+                print_escalation(str(exc))
+                return 1
+            if not reviewer_reaped:
+                print_escalation(
+                    f"reviewer reap command failed for {item.item_id}; "
+                    "stopping before another turn"
+                )
+                return 1
+            iteration += 1
+            state["iteration_count"] = state.get("iteration_count", 0) + 1
+            state["items"][item.item_id] = {
+                "attempt_count": item_state["attempt_count"],
+                "last_fingerprint": item_state["last_fingerprint"],
+                "base_head": base_head,
+            }
+            write_run_state(state_path, state)
+            if (
+                iteration >= limits["max_iterations"]
+                or time.time() - now >= wall
+            ):
+                try:
+                    card_path.write_text(
+                        card_before_retrospective,
+                        encoding="utf-8",
+                    )
+                    if created_retro_path is not None:
+                        created_retro_path.unlink(missing_ok=True)
+                except OSError as exc:
+                    print_escalation(
+                        f"cannot restore lifecycle after review infrastructure failure: {exc}"
+                    )
+                    return 1
+                restored, restore_error = restore_item_output(
+                    project_root,
+                    base_head,
+                )
+                if not restored:
+                    print_escalation(restore_error)
+                    return 1
+                print_escalation(
+                    "global limit reached while retrying review infrastructure; "
+                    "item output left uncommitted for human handoff"
+                )
+                return 1
+            print(
+                f"[{item.item_id}] review infrastructure failure; "
+                f"retry without spending attempt {item_state['attempt_count']}/{cap}"
+            )
+
+        state["items"][item.item_id] = {
+            "attempt_count": attempt,
+            "last_fingerprint": current_fingerprint,
+            "base_head": base_head,
+        }
+        write_run_state(state_path, state)
+
         if not reviewer_reaped:
             if not close_ok:
                 try:
@@ -1412,22 +1604,37 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             clipped_close_out = clip(close_out)
             if clipped_close_out:
                 reason += f"; close_work output:\n{clipped_close_out}"
+            try:
+                card_path.write_text(
+                    card_before_retrospective,
+                    encoding="utf-8",
+                )
+                if created_retro_path is not None:
+                    created_retro_path.unlink(missing_ok=True)
+            except OSError as exc:
+                print_escalation(
+                    f"cannot restore pre-review lifecycle for retry: {exc}"
+                )
+                return 1
+            state["items"][item.item_id] = {
+                "attempt_count": attempt,
+                "last_fingerprint": current_fingerprint,
+                "base_head": base_head,
+            }
+            write_run_state(state_path, state)
             if no_progress or attempt >= cap:
+                restored, restore_error = restore_item_output(
+                    project_root,
+                    base_head,
+                )
+                if not restored:
+                    print_escalation(restore_error)
+                    return 1
                 if not escalate_and_commit(
                     project_root, item.item_id, f"{reason}; no progress or attempt cap reached", cmd_timeout
                 ):
                     return 1
             else:
-                # Persist the retrospective/lifecycle so a retry does not recreate it.
-                lc_ok, lc_msg = commit_lifecycle(
-                    project_root, f"driver: {item.item_id} pre-close lifecycle (retry)"
-                )
-                if not lc_ok:
-                    print_escalation(
-                        f"cannot commit pre-close lifecycle for {item.item_id}: "
-                        f"{lc_msg.strip()[:200]}"
-                    )
-                    return 1
                 print(f"[{item.item_id}] {reason}; retry {attempt}/{cap}")
             continue
 
