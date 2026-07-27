@@ -843,6 +843,36 @@ class UnattendedTest(unittest.TestCase):
         )
         self.assertIn("reapers.codex is not configured", log)
 
+    def test_unattended_declared_nothing_to_reap_is_silent(self):
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(
+            limits=limits,
+            executor=EXECUTOR_FAIL,
+            reapers={"codex": None},
+        )
+        self.card(stage_root, "W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+        self.commit_all(root)
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"), root, stage_root, time.time()
+            )
+        log = (
+            stage_root / ".runtime/driver/logs/W-00000001.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc)
+        self.assertNotIn("WARNING: reapers.", output.getvalue())
+        self.assertNotIn("Driver warning", log)
+
     def test_unattended_failed_reaper_stops_before_retry(self):
         limits = {
             "max_attempts_per_item": 3,

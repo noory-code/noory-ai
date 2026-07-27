@@ -493,28 +493,37 @@ def load_reapers_config(stage_root: Path) -> object:
 def resolve_reap_command(
     reapers: object,
     venue: str,
-) -> tuple[str | None, str]:
-    """Resolve one optional venue reaper without making absence an error."""
+) -> tuple[str | None, bool, str]:
+    """Resolve one venue reaper and distinguish an explicit no-op from absence."""
 
     normalized_venue = venue.strip().lower()
     if not normalized_venue:
-        return None, "turn venue must be a non-empty string"
+        return None, False, "turn venue must be a non-empty string"
     if reapers is None:
-        return None, ""
+        return None, False, ""
     if not isinstance(reapers, dict):
-        return None, "reapers must be an object mapping venue -> command"
+        return None, False, "reapers must be an object mapping venue -> command"
 
-    normalized: dict[str, str] = {}
+    normalized: dict[str, str | None] = {}
     for raw_name, raw_command in reapers.items():
         if not isinstance(raw_name, str) or not raw_name.strip():
-            return None, "reapers venue names must be non-empty strings"
+            return None, False, "reapers venue names must be non-empty strings"
         name = raw_name.strip().lower()
         if name in normalized:
-            return None, f"reapers contains duplicate venue `{name}`"
+            return None, False, f"reapers contains duplicate venue `{name}`"
+        if raw_command is None:
+            normalized[name] = None
+            continue
         if not isinstance(raw_command, str) or not raw_command.strip():
-            return None, f"reapers.{name} must be a non-empty command string"
+            return (
+                None,
+                False,
+                f"reapers.{name} must be a non-empty command string or null",
+            )
         normalized[name] = raw_command
-    return normalized.get(normalized_venue), ""
+    if normalized_venue not in normalized:
+        return None, False, ""
+    return normalized[normalized_venue], True, ""
 
 
 def resolve_independent_reviewer_venue(
@@ -610,7 +619,7 @@ def reap_turn(
     """Run an optional venue-owned cleanup command after one external turn."""
 
     normalized_venue = venue.strip().lower()
-    command, config_error = resolve_reap_command(
+    command, configured, config_error = resolve_reap_command(
         load_reapers_config(stage_root),
         normalized_venue,
     )
@@ -620,6 +629,8 @@ def reap_turn(
                 f"WARNING: reapers.{normalized_venue} is unusable after {role} "
                 f"turn ({config_error}); jobs may remain"
             )
+        elif configured:
+            return True
         else:
             warning = (
                 f"WARNING: reapers.{normalized_venue} is not configured after "

@@ -575,6 +575,33 @@ class DriveTest(unittest.TestCase):
         self.assertIn("reapers.codex is not configured", log)
         self.assertIn("reapers.claude is not configured", log)
 
+    def test_execute_declared_nothing_to_reap_is_silent(self):
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            ),
+            reapers={"codex": None, "claude": None},
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertNotIn("WARNING: reapers.", result.stdout)
+        self.assertNotIn("Driver warning", log)
+
     def test_execute_rejects_successful_executor_that_leaves_repository_unchanged(self):
         tmp, root = self.make_project(executor=PASS_COMMAND)
         with tmp:

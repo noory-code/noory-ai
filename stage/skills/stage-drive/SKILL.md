@@ -71,7 +71,8 @@ It has the same venue-to-command shape:
     "codex": "<executor command>"
   },
   "reapers": {
-    "codex": "<reap command>"
+    "codex": "<reap command>",
+    "claude": null
   }
 }
 ```
@@ -86,10 +87,15 @@ The reaper inherits `STAGE_WORK_ITEM_PATH`, `STAGE_PROJECT_ROOT`, `STAGE_WORK_LO
 `STAGE_TURN_ROLE` (`executor` or `reviewer`). Use this context to stop only jobs created for that
 card and role; a broad cleanup must not stop unrelated work in the same workspace.
 
-An absent `reapers` section or missing venue does not change the original turn result. The driver
-prints a warning and appends it to the card's shared work log because jobs may remain. A configured
-reap command that exits unsuccessfully produces the same output and log warning, and the driver
-stops before starting another external turn.
+Set `reapers.<venue>` to `null` when that venue's command runs synchronously and cannot leave an
+external job behind. The driver then runs no reap command and emits no warning. An empty string is
+not this sentinel and remains an invalid command.
+
+An absent `reapers` section or missing venue means the cleanup requirement has not been decided.
+It does not change the original turn result, but the driver prints a warning and appends it to the
+card's shared work log because jobs may remain. A configured reap command that exits unsuccessfully
+produces the same output and log warning, and the driver stops before starting another external
+turn.
 
 ## One `--execute` step, and what it deliberately leaves undone
 

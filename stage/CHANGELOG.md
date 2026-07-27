@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.49.1 — 2026-07-27
+
+- Let a venue set its `reapers` entry to `null` when its synchronous command cannot leave a job
+  behind, while continuing to warn when the venue is absent or undecided.
+
 ## 0.49.0 — 2026-07-27
 
 - Carry each failed card criterion from the shared reviewer log into the next unattended executor
