@@ -60,6 +60,37 @@ platform-specific.
 one reviewer whose venue is not the selected item's venue. Configure only the item's own venue and
 the driver refuses rather than letting a venue grade its own work.
 
+## Optional per-venue turn reaping
+
+`reapers` is an optional sibling of `executors` in `.stage/settings.json` (or `settings.jsonc`).
+It has the same venue-to-command shape:
+
+```json
+{
+  "executors": {
+    "codex": "<executor command>"
+  },
+  "reapers": {
+    "codex": "<reap command>"
+  }
+}
+```
+
+After an executor command returns, the driver runs `reapers.<executor venue>`. After a reviewer
+command returns — including a blocking reviewer — it runs `reapers.<reviewer venue>`. Unattended
+close-time review follows the same rule, and an execution request already at its per-item attempt
+cap runs the executor venue's reaper before escalation. The command owns every tool-specific
+detail needed to find and stop jobs; the driver only selects it by role venue.
+
+The reaper inherits `STAGE_WORK_ITEM_PATH`, `STAGE_PROJECT_ROOT`, `STAGE_WORK_LOG_PATH`, and
+`STAGE_TURN_ROLE` (`executor` or `reviewer`). Use this context to stop only jobs created for that
+card and role; a broad cleanup must not stop unrelated work in the same workspace.
+
+An absent `reapers` section or missing venue does not change the original turn result. The driver
+prints a warning and appends it to the card's shared work log because jobs may remain. A configured
+reap command that exits unsuccessfully produces the same output and log warning, and the driver
+stops before starting another external turn.
+
 ## One `--execute` step, and what it deliberately leaves undone
 
 ```bash

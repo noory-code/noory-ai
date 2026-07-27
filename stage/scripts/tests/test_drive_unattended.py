@@ -71,7 +71,13 @@ def load_module():
 
 
 class UnattendedTest(unittest.TestCase):
-    def make(self, *, limits: object, executor: str = EXECUTOR_WRITE):
+    def make(
+        self,
+        *,
+        limits: object,
+        executor: str = EXECUTOR_WRITE,
+        reapers: object = None,
+    ):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
@@ -90,6 +96,8 @@ class UnattendedTest(unittest.TestCase):
         }
         if limits is not None:
             settings["limits"] = limits
+        if reapers is not None:
+            settings["reapers"] = reapers
         (stage_root / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
         return root, stage_root
 
@@ -404,6 +412,144 @@ class UnattendedTest(unittest.TestCase):
         self.assertEqual(0, rc)  # run finishes (nothing left ready)
         self.assertIn(("escalate", "W-00000002"), calls)
         self.assertNotIn("close", [c[0] for c in calls if c[1] == "W-00000002"])
+
+    def test_unattended_reaps_executor_after_success_and_failure(self):
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker_root = Path(marker_tmp)
+            success_reaped = marker_root / "success-reaped"
+            failure_reaped = marker_root / "failure-reaped"
+
+            success_root, success_stage_root = self.make(
+                limits=limits,
+                reapers={
+                    "codex": python_command(
+                        "from pathlib import Path; "
+                        f"Path({str(success_reaped)!r}).touch()"
+                    )
+                },
+            )
+            self.card(success_stage_root, "W-00000001")
+            success_drive = load_module()
+            success_calls: list = []
+            self.install_stubs(success_drive, success_calls)
+            self.commit_all(success_root)
+
+            success_rc = success_drive.run_unattended(
+                self.args(success_root, "W-00000001"),
+                success_root,
+                success_stage_root,
+                time.time(),
+            )
+
+            failure_root, failure_stage_root = self.make(
+                limits=limits,
+                executor=EXECUTOR_FAIL,
+                reapers={
+                    "codex": python_command(
+                        "from pathlib import Path; "
+                        f"Path({str(failure_reaped)!r}).touch()"
+                    )
+                },
+            )
+            self.card(failure_stage_root, "W-00000001")
+            failure_drive = load_module()
+            failure_calls: list = []
+            self.install_stubs(failure_drive, failure_calls)
+            self.commit_all(failure_root)
+
+            failure_rc = failure_drive.run_unattended(
+                self.args(failure_root, "W-00000001"),
+                failure_root,
+                failure_stage_root,
+                time.time(),
+            )
+            success_reaped_exists = success_reaped.exists()
+            failure_reaped_exists = failure_reaped.exists()
+
+        self.assertEqual(0, success_rc)
+        self.assertEqual(0, failure_rc)
+        self.assertTrue(success_reaped_exists)
+        self.assertTrue(failure_reaped_exists)
+
+    def test_unattended_missing_reaper_warns_in_output_and_work_log(self):
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits, executor=EXECUTOR_FAIL)
+        self.card(stage_root, "W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+        self.commit_all(root)
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"), root, stage_root, time.time()
+            )
+        log = (
+            stage_root / ".runtime/driver/logs/W-00000001.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc)
+        self.assertIn(
+            "WARNING: reapers.codex is not configured after executor turn; "
+            "jobs may remain",
+            output.getvalue(),
+        )
+        self.assertIn("reapers.codex is not configured", log)
+
+    def test_unattended_failed_reaper_stops_before_retry(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(
+            limits=limits,
+            executor=EXECUTOR_FAIL,
+            reapers={
+                "codex": python_command(
+                    "print('reap stop sentinel'); raise SystemExit(4)"
+                )
+            },
+        )
+        self.card(stage_root, "W-00000001")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+        self.commit_all(root)
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"), root, stage_root, time.time()
+            )
+        state = json.loads(
+            (
+                stage_root / ".runtime/driver/W-00000001.json"
+            ).read_text(encoding="utf-8")
+        )
+        log = (
+            stage_root / ".runtime/driver/logs/W-00000001.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(1, rc)
+        self.assertEqual(1, state["items"]["W-00000001"]["attempt_count"])
+        self.assertEqual([], calls)
+        self.assertIn(
+            "executor reap command failed for W-00000001; "
+            "stopping before another turn",
+            output.getvalue(),
+        )
+        self.assertIn("reap stop sentinel", log)
 
     def test_executor_failure_output_is_appended_to_shared_work_log(self):
         limits = {

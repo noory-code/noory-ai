@@ -123,6 +123,7 @@ class DriveTest(unittest.TestCase):
         executor: str | None = PASS_COMMAND,
         reviewer: str = APPROVING_REVIEWER,
         limits: object = None,
+        reapers: object = None,
     ) -> tuple[tempfile.TemporaryDirectory, Path]:
         tmp = tempfile.TemporaryDirectory()
         root = Path(tmp.name)
@@ -141,6 +142,8 @@ class DriveTest(unittest.TestCase):
             settings["executors"] = {"codex": executor}
         if limits is not None:
             settings["limits"] = limits
+        if reapers is not None:
+            settings["reapers"] = reapers
         (stage_root / "settings.json").write_text(
             json.dumps(settings), encoding="utf-8"
         )
@@ -450,6 +453,127 @@ class DriveTest(unittest.TestCase):
             self.assertEqual(1, state["iteration_count"])
             self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
             self.assertTrue(state["items"]["W-00000002"]["last_fingerprint"])
+
+    def test_execute_reaps_executor_and_reviewer_turns_on_success(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker_root = Path(marker_tmp)
+            executor_reaped = marker_root / "executor-reaped"
+            reviewer_reaped = marker_root / "reviewer-reaped"
+            tmp, root = self.make_project(
+                executor=reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                reapers={
+                    "codex": python_command(
+                        "import os; from pathlib import Path; "
+                        f"Path({str(executor_reaped)!r}).write_text("
+                        "os.environ['STAGE_TURN_ROLE'] + '\\n' + "
+                        "os.environ['STAGE_WORK_ITEM_PATH'], encoding='utf-8')"
+                    ),
+                    "claude": python_command(
+                        "import os; from pathlib import Path; "
+                        f"Path({str(reviewer_reaped)!r}).write_text("
+                        "os.environ['STAGE_TURN_ROLE'] + '\\n' + "
+                        "os.environ['STAGE_WORK_ITEM_PATH'], encoding='utf-8')"
+                    ),
+                },
+            )
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
+
+                result = self.run_cli(root, "--execute")
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            expected_path = str(
+                (root / ".stage/work/current/W-00000002.md").resolve()
+            )
+            self.assertEqual(
+                f"executor\n{expected_path}",
+                executor_reaped.read_text(encoding="utf-8"),
+            )
+            self.assertEqual(
+                f"reviewer\n{expected_path}",
+                reviewer_reaped.read_text(encoding="utf-8"),
+            )
+
+    def test_execute_warns_and_logs_when_executor_reaping_fails(self):
+        tmp, root = self.make_project(
+            executor=python_command("raise SystemExit(7)"),
+            reapers={
+                "codex": python_command(
+                    "print('reap failure sentinel'); raise SystemExit(4)"
+                ),
+                "claude": PASS_COMMAND,
+            },
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            "WARNING: reapers.codex failed after executor turn; jobs may remain",
+            result.stdout,
+        )
+        self.assertIn(
+            "WARNING: reapers.codex failed after executor turn; jobs may remain",
+            log,
+        )
+        self.assertIn("reap failure sentinel", log)
+
+    def test_execute_missing_reaper_warns_without_changing_success(self):
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            ),
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn(
+            "WARNING: reapers.codex is not configured after executor turn; "
+            "jobs may remain",
+            result.stdout,
+        )
+        self.assertIn(
+            "WARNING: reapers.claude is not configured after reviewer turn; "
+            "jobs may remain",
+            result.stdout,
+        )
+        self.assertIn("reapers.codex is not configured", log)
+        self.assertIn("reapers.claude is not configured", log)
 
     def test_execute_rejects_successful_executor_that_leaves_repository_unchanged(self):
         tmp, root = self.make_project(executor=PASS_COMMAND)
@@ -1300,28 +1424,38 @@ class DriveTest(unittest.TestCase):
         )
 
     def test_reviewer_block_recommends_escalation(self):
-        tmp, root = self.make_project(
-            executor=reporting_python_command(
-                "from pathlib import Path; "
-                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
-                ["executor-work.txt"],
-            ),
-            reviewer=python_command("print('BLOCK: no'); raise SystemExit(1)")
-        )
-        with tmp:
-            write_card(
-                root / ".stage",
-                "W-00000002",
-                parent="W-00000001",
-                acceptance=(PASS_COMMAND,),
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            reviewer_reaped = Path(marker_tmp) / "reviewer-reaped"
+            tmp, root = self.make_project(
+                executor=reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                reviewer=python_command("print('BLOCK: no'); raise SystemExit(1)"),
+                reapers={
+                    "codex": PASS_COMMAND,
+                    "claude": python_command(
+                        "from pathlib import Path; "
+                        f"Path({str(reviewer_reaped)!r}).touch()"
+                    ),
+                },
             )
-            initialize_git(root)
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
 
-            result = self.run_cli(root, "--execute")
+                result = self.run_cli(root, "--execute")
 
-        self.assertNotEqual(0, result.returncode)
-        self.assertIn("independent reviewer BLOCK", result.stdout)
-        self.assertIn("→ escalate_work", result.stdout)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("independent reviewer BLOCK", result.stdout)
+            self.assertIn("→ escalate_work", result.stdout)
+            self.assertTrue(reviewer_reaped.exists())
 
     def test_reviewer_block_output_is_appended_to_shared_work_log(self):
         tmp, root = self.make_project(
@@ -1428,35 +1562,45 @@ class DriveTest(unittest.TestCase):
             "max_iterations": 10,
             "max_wall_clock_seconds": 3600,
         }
-        tmp, root = self.make_project(
-            executor=reporting_python_command(
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            reap_count = Path(marker_tmp) / "reap-count"
+            append_reap = python_command(
                 "from pathlib import Path; "
-                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
-                ["executor-work.txt"],
-            ),
-            limits=limits,
-        )
-        with tmp:
-            write_card(
-                root / ".stage",
-                "W-00000002",
-                parent="W-00000001",
-                acceptance=(PASS_COMMAND,),
+                f"path = Path({str(reap_count)!r}); "
+                "path.write_text(path.read_text(encoding='utf-8') + 'x' "
+                "if path.exists() else 'x', encoding='utf-8')"
             )
-            initialize_git(root)
+            tmp, root = self.make_project(
+                executor=reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                limits=limits,
+                reapers={"codex": append_reap, "claude": PASS_COMMAND},
+            )
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
 
-            first = self.run_cli(root, "--execute")
-            second = self.run_cli(root, "--execute")
+                first = self.run_cli(root, "--execute")
+                second = self.run_cli(root, "--execute")
+                state = json.loads(
+                    (
+                        root / ".stage/.runtime/driver/W-00000001.json"
+                    ).read_text(encoding="utf-8")
+                )
 
             self.assertEqual(0, first.returncode, first.stdout + first.stderr)
             self.assertNotEqual(0, second.returncode)
             self.assertIn("per-item attempt cap reached", second.stdout)
             self.assertIn("→ escalate_work", second.stdout)
-            state = json.loads(
-                (
-                    root / ".stage/.runtime/driver/W-00000001.json"
-                ).read_text(encoding="utf-8")
-            )
+            self.assertEqual("xx", reap_count.read_text(encoding="utf-8"))
             self.assertEqual(1, state["iteration_count"])
             self.assertEqual(
                 1, state["items"]["W-00000002"]["attempt_count"]

@@ -54,6 +54,7 @@ from stage_paths import (  # noqa: E402
     load_executors_config,
     load_limits_config,
     load_review_config,
+    read_settings,
     resolve_executor_command,
     resolve_independent_review_command,
     schema_migration_banner,
@@ -475,6 +476,62 @@ def executor_environment(
     return env
 
 
+def load_reapers_config(stage_root: Path) -> object:
+    """Return the optional venue-to-command map used to reap external turns."""
+
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
+        return None
+    return data.get("reapers") if isinstance(data, dict) else None
+
+
+def resolve_reap_command(
+    reapers: object,
+    venue: str,
+) -> tuple[str | None, str]:
+    """Resolve one optional venue reaper without making absence an error."""
+
+    normalized_venue = venue.strip().lower()
+    if not normalized_venue:
+        return None, "turn venue must be a non-empty string"
+    if reapers is None:
+        return None, ""
+    if not isinstance(reapers, dict):
+        return None, "reapers must be an object mapping venue -> command"
+
+    normalized: dict[str, str] = {}
+    for raw_name, raw_command in reapers.items():
+        if not isinstance(raw_name, str) or not raw_name.strip():
+            return None, "reapers venue names must be non-empty strings"
+        name = raw_name.strip().lower()
+        if name in normalized:
+            return None, f"reapers contains duplicate venue `{name}`"
+        if not isinstance(raw_command, str) or not raw_command.strip():
+            return None, f"reapers.{name} must be a non-empty command string"
+        normalized[name] = raw_command
+    return normalized.get(normalized_venue), ""
+
+
+def resolve_independent_reviewer_venue(
+    review: dict[str, Any],
+    item_venue: str,
+) -> str | None:
+    """Return the venue selected by the validated two-venue reviewer contract."""
+
+    venue = item_venue.strip().lower()
+    reviewers = review.get("reviewers")
+    if not isinstance(reviewers, dict):
+        return None
+    differing = [
+        raw_name.strip().lower()
+        for raw_name in reviewers
+        if isinstance(raw_name, str)
+        and raw_name.strip()
+        and raw_name.strip().lower() != venue
+    ]
+    return differing[0] if len(differing) == 1 else None
+
+
 def cap_text(limits: dict[str, int] | None, key: str) -> str:
     return str(limits[key]) if limits is not None else "unlimited"
 
@@ -508,6 +565,100 @@ def append_failure_to_work_log(
             handle.write(entry)
     except OSError as exc:
         raise RuntimeError(f"cannot append failure to work log {log_path}: {exc}") from exc
+
+
+def append_reap_warning_to_work_log(
+    log_path: Path,
+    *,
+    warning: str,
+    evidence: str = "",
+) -> None:
+    """Append cleanup uncertainty without changing the turn's original verdict."""
+
+    entry = f"\n### Driver warning\n{warning}\n"
+    if evidence:
+        entry += (
+            "Output:\n\n"
+            "```text\n"
+            f"{clip(evidence)}\n"
+            "```\n"
+        )
+    try:
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(entry)
+    except OSError as exc:
+        raise RuntimeError(
+            f"cannot append reap warning to work log {log_path}: {exc}"
+        ) from exc
+
+
+def reap_turn(
+    *,
+    stage_root: Path,
+    project_root: Path,
+    log_path: Path,
+    item_path: Path,
+    venue: str,
+    role: str,
+    timeout: int,
+) -> bool:
+    """Run an optional venue-owned cleanup command after one external turn."""
+
+    normalized_venue = venue.strip().lower()
+    command, config_error = resolve_reap_command(
+        load_reapers_config(stage_root),
+        normalized_venue,
+    )
+    if command is None:
+        if config_error:
+            warning = (
+                f"WARNING: reapers.{normalized_venue} is unusable after {role} "
+                f"turn ({config_error}); jobs may remain"
+            )
+        else:
+            warning = (
+                f"WARNING: reapers.{normalized_venue} is not configured after "
+                f"{role} turn; jobs may remain"
+            )
+        print(warning)
+        try:
+            append_reap_warning_to_work_log(log_path, warning=warning)
+        except RuntimeError as exc:
+            print(f"WARNING: {exc}")
+        return True
+
+    reap_environment = os.environ.copy()
+    reap_environment.update(
+        {
+            "STAGE_WORK_ITEM_PATH": str(item_path.resolve()),
+            "STAGE_PROJECT_ROOT": str(project_root.resolve()),
+            "STAGE_WORK_LOG_PATH": str(log_path.resolve()),
+            "STAGE_TURN_ROLE": role,
+        }
+    )
+    reaped, evidence, _raw = run_check(
+        command,
+        timeout,
+        project_root,
+        env=reap_environment,
+    )
+    if reaped:
+        return True
+
+    warning = (
+        f"WARNING: reapers.{normalized_venue} failed after {role} turn; "
+        "jobs may remain"
+    )
+    print(warning)
+    try:
+        append_reap_warning_to_work_log(
+            log_path,
+            warning=warning,
+            evidence=evidence,
+        )
+    except RuntimeError as exc:
+        print(f"WARNING: {exc}")
+    return False
 
 
 def print_plan(
@@ -1048,6 +1199,19 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         item_state = state["items"].get(item.item_id, {"attempt_count": 0, "last_fingerprint": ""})
         attempt = item_state["attempt_count"] + 1
         if attempt > cap:
+            try:
+                cap_log_path = ensure_work_log(stage_root, item.item_id)
+                reap_turn(
+                    stage_root=stage_root,
+                    project_root=project_root,
+                    log_path=cap_log_path,
+                    item_path=item.path,
+                    venue=item.venue,
+                    role="executor",
+                    timeout=cmd_timeout,
+                )
+            except RuntimeError as exc:
+                print(f"WARNING: cannot record attempt-cap reaping: {exc}")
             if not escalate_and_commit(
                 project_root, item.item_id, f"per-item attempt cap ({cap}) reached", cmd_timeout
             ):
@@ -1092,6 +1256,21 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 ),
             )
         try:
+            log_after_executor = read_work_log(log_path)
+            executor_log_error = ""
+        except RuntimeError as exc:
+            log_after_executor = log_before
+            executor_log_error = str(exc)
+        executor_reaped = reap_turn(
+            stage_root=stage_root,
+            project_root=project_root,
+            log_path=log_path,
+            item_path=item.path,
+            venue=item.venue,
+            role="executor",
+            timeout=cmd_timeout,
+        )
+        try:
             repository_after = repository_fingerprint(project_root)
             repository_paths_after = repository_path_snapshot(project_root)
             current_fingerprint = fingerprint(project_root, [executor_evidence])
@@ -1099,7 +1278,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             print_escalation(f"cannot inspect changes for progress: {exc}")
             return 1
         executor_failure = "executor failed"
-        if executor_ok and repository_after == repository_before:
+        if executor_log_error:
+            executor_ok = False
+            executor_failure = executor_log_error
+        elif not executor_reaped:
+            executor_failure = (
+                "executor reap command failed"
+                if executor_ok
+                else "executor failed; executor reap command failed"
+            )
+            executor_ok = False
+        elif executor_ok and repository_after == repository_before:
             executor_ok = False
             executor_failure = UNCHANGED_REPOSITORY_FAILURE
         elif executor_ok:
@@ -1107,14 +1296,11 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 repository_paths_before,
                 repository_paths_after,
             )
-            try:
-                report_error = executor_report_error(
-                    log_before,
-                    read_work_log(log_path),
-                    changed_paths,
-                )
-            except RuntimeError as exc:
-                report_error = str(exc)
+            report_error = executor_report_error(
+                log_before,
+                log_after_executor,
+                changed_paths,
+            )
             if report_error:
                 executor_ok = False
                 executor_failure = report_error
@@ -1140,6 +1326,12 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 print_escalation(str(exc))
                 return 1
             discard_worktree(project_root)
+            if not executor_reaped:
+                print_escalation(
+                    f"executor reap command failed for {item.item_id}; "
+                    "stopping before another turn"
+                )
+                return 1
             if no_progress or attempt >= cap:
                 if not escalate_and_commit(
                     project_root,
@@ -1174,6 +1366,36 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             mark_retrospective(stage_root, item.item_id, retro_id)
 
         close_ok, close_out = close_via_close_work(project_root, item.item_id, [], cmd_timeout)
+        reviewer_venue = resolve_independent_reviewer_venue(
+            load_review_config(stage_root),
+            item.venue,
+        )
+        reviewer_reaped = True
+        if reviewer_venue is not None:
+            reviewer_reaped = reap_turn(
+                stage_root=stage_root,
+                project_root=project_root,
+                log_path=log_path,
+                item_path=item.path,
+                venue=reviewer_venue,
+                role="reviewer",
+                timeout=cmd_timeout,
+            )
+        if not reviewer_reaped:
+            if not close_ok:
+                try:
+                    append_failure_to_work_log(
+                        log_path,
+                        role="close",
+                        reason="close failed (acceptance or independent review)",
+                        evidence=close_out,
+                    )
+                except RuntimeError as exc:
+                    print(f"WARNING: {exc}")
+            print_escalation(
+                f"reviewer reap command failed for {item.item_id}; stopping before another turn"
+            )
+            return 1
         if not close_ok:
             close_failure = "close failed (acceptance or independent review)"
             try:
@@ -1300,13 +1522,21 @@ def main() -> int:
         print_escalation(executor_error or "executor command is missing")
         return 1
 
+    review_config = load_review_config(stage_root)
     reviewer_command, reviewer_error = resolve_independent_review_command(
-        load_review_config(stage_root), item.venue
+        review_config, item.venue
     )
     if reviewer_error or not reviewer_command:
         print_escalation(
             reviewer_error or "independent reviewer command is missing"
         )
+        return 1
+    reviewer_venue = resolve_independent_reviewer_venue(
+        review_config,
+        item.venue,
+    )
+    if reviewer_venue is None:
+        print_escalation("cannot resolve independent reviewer venue")
         return 1
 
     state_path = stage_root / ".runtime" / "driver" / f"{args.target}.json"
@@ -1338,6 +1568,20 @@ def main() -> int:
         limits, attempt=attempt, iteration=iteration, elapsed=elapsed
     )
     if blocker:
+        if args.execute and blocker == "per-item attempt cap reached before execution":
+            try:
+                cap_log_path = ensure_work_log(stage_root, item.item_id)
+                reap_turn(
+                    stage_root=stage_root,
+                    project_root=project_root,
+                    log_path=cap_log_path,
+                    item_path=item.path,
+                    venue=item.venue,
+                    role="executor",
+                    timeout=args.timeout,
+                )
+            except RuntimeError as exc:
+                print(f"WARNING: cannot record attempt-cap reaping: {exc}")
         print_escalation(blocker)
         return 1
     if not args.execute:
@@ -1390,8 +1634,33 @@ def main() -> int:
             ),
         )
         print(f"Executor result:\n{executor_evidence}")
+        try:
+            log_after_executor = read_work_log(log_path)
+            executor_log_error = ""
+        except RuntimeError as exc:
+            log_after_executor = log_before
+            executor_log_error = str(exc)
+        executor_reaped = reap_turn(
+            stage_root=stage_root,
+            project_root=project_root,
+            log_path=log_path,
+            item_path=item.path,
+            venue=item.venue,
+            role="executor",
+            timeout=args.timeout,
+        )
 
-        if not executor_ok:
+        if executor_log_error:
+            step_ok = False
+            failure = executor_log_error
+        elif not executor_reaped:
+            step_ok = False
+            failure = (
+                "executor reap command failed"
+                if executor_ok
+                else "executor command and reap command failed"
+            )
+        elif not executor_ok:
             step_ok = False
             failure = "executor command failed"
         else:
@@ -1421,14 +1690,11 @@ def main() -> int:
                             f"{exc}"
                         )
                     if step_ok:
-                        try:
-                            report_error = executor_report_error(
-                                log_before,
-                                read_work_log(log_path),
-                                changed_paths,
-                            )
-                        except RuntimeError as exc:
-                            report_error = str(exc)
+                        report_error = executor_report_error(
+                            log_before,
+                            log_after_executor,
+                            changed_paths,
+                        )
                         if report_error:
                             step_ok = False
                             failure = report_error
@@ -1486,6 +1752,15 @@ def main() -> int:
                 step_ok = False
                 failure = str(exc)
                 log_after_review = log_before_review
+            reviewer_reaped = reap_turn(
+                stage_root=stage_root,
+                project_root=project_root,
+                log_path=log_path,
+                item_path=item.path,
+                venue=reviewer_venue,
+                role="reviewer",
+                timeout=args.timeout,
+            )
             verdict_error = reviewer_report_error(
                 log_before_review,
                 log_after_review,
@@ -1509,6 +1784,9 @@ def main() -> int:
                     )
                 except RuntimeError as exc:
                     failure = f"{failure}; {exc}"
+            elif not reviewer_reaped:
+                step_ok = False
+                failure = "reviewer reap command failed"
 
     try:
         current_fingerprint = fingerprint(project_root, acceptance_output)

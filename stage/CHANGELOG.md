@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.48.0 — 2026-07-27
+
+- Add optional per-venue `reapers` commands and run them after supervised and unattended executor
+  and reviewer turns, including executor failure, reviewer blocking, and attempt-cap handoff.
+- Surface missing or failed turn reaping in both driver output and the card's shared work log, and
+  stop before another external turn when a configured cleanup command fails.
+
 ## 0.47.0 — 2026-07-27
 
 - Preserve driver-observed executor, reviewer, and close failure reasons and command output in each
