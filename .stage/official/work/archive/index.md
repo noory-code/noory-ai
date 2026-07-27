@@ -100,3 +100,10 @@
 | W-00000093 | completed | [items/W-00000093.md](items/W-00000093.md) |
 | W-00000096 | completed | [items/W-00000096.md](items/W-00000096.md) |
 | W-00000097 | completed | [items/W-00000097.md](items/W-00000097.md) |
+| W-00000094 | completed | [items/W-00000094.md](items/W-00000094.md) |
+| W-00000095 | completed | [items/W-00000095.md](items/W-00000095.md) |
+| W-00000098 | completed | [items/W-00000098.md](items/W-00000098.md) |
+| W-00000099 | completed | [items/W-00000099.md](items/W-00000099.md) |
+| W-00000100 | completed | [items/W-00000100.md](items/W-00000100.md) |
+| W-00000101 | completed | [items/W-00000101.md](items/W-00000101.md) |
+| W-00000102 | completed | [items/W-00000102.md](items/W-00000102.md) |
