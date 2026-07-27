@@ -6,5 +6,3 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
-| W-00000096 | passed | completed | approved | [current/W-00000096.md](current/W-00000096.md) |
-| W-00000097 | passed | completed | approved | [current/W-00000097.md](current/W-00000097.md) |

@@ -98,3 +98,5 @@
 | W-00000091 | completed | [items/W-00000091.md](items/W-00000091.md) |
 | W-00000090 | completed | [items/W-00000090.md](items/W-00000090.md) |
 | W-00000093 | completed | [items/W-00000093.md](items/W-00000093.md) |
+| W-00000096 | completed | [items/W-00000096.md](items/W-00000096.md) |
+| W-00000097 | completed | [items/W-00000097.md](items/W-00000097.md) |
