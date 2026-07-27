@@ -139,6 +139,18 @@ def read_work_log(path: Path) -> str:
         raise RuntimeError(f"cannot read work log {path}: {exc}") from exc
 
 
+def section_marker_starts(text: str, marker: str) -> list[int]:
+    """Return starts of marker heading lines, excluding marker mentions in prose."""
+
+    return [
+        match.start()
+        for match in re.finditer(
+            rf"(?m)^{re.escape(marker)}[ \t]*\r?$",
+            text,
+        )
+    ]
+
+
 def executor_report_error(
     previous_log: str,
     current_log: str,
@@ -150,7 +162,7 @@ def executor_report_error(
     if not current_log.startswith(previous_log):
         return "executor rewrote existing work log content instead of appending"
     addition = current_log[len(previous_log) :]
-    if addition.count(EXECUTOR_REPORT_MARKER) != 1:
+    if len(section_marker_starts(addition, EXECUTOR_REPORT_MARKER)) != 1:
         return "executor must append exactly one `### Executor report` per attempt"
     for label in ("What changed", "Why", "Review request"):
         match = re.search(rf"(?m)^{re.escape(label)}:[ \t]*(.+)$", addition)
@@ -202,9 +214,10 @@ def executor_report_error(
 def latest_review_failures(log_text: str) -> list[str]:
     """Return the failed criterion lines from the most recent reviewer report."""
 
-    marker_start = log_text.rfind(REVIEWER_REPORT_MARKER)
-    if marker_start < 0:
+    marker_starts = section_marker_starts(log_text, REVIEWER_REPORT_MARKER)
+    if not marker_starts:
         return []
+    marker_start = marker_starts[-1]
     report = log_text[marker_start + len(REVIEWER_REPORT_MARKER) :]
     next_section = re.search(r"(?m)^### ", report)
     if next_section:
@@ -296,7 +309,7 @@ def reviewer_report_error(previous_log: str, current_log: str) -> str:
     if not current_log.startswith(previous_log):
         return "reviewer rewrote existing work log content instead of appending"
     addition = current_log[len(previous_log) :]
-    if addition.count(REVIEWER_REPORT_MARKER) != 1:
+    if len(section_marker_starts(addition, REVIEWER_REPORT_MARKER)) != 1:
         return "reviewer must append exactly one `### Reviewer report` per review"
     criteria_label = "CRITERIA VERDICT:"
     observations_label = "OUT-OF-CRITERIA OBSERVATIONS:"

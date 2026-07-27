@@ -707,6 +707,53 @@ class CloseWorkTest(unittest.TestCase):
             close_work.latest_review_failures(log),
         )
 
+    def test_reviewer_report_marker_mentioned_in_body_is_not_a_second_report(self):
+        close_work = load_close_module()
+        previous = "### Executor report\n"
+        current = (
+            previous
+            + "\n### Reviewer report\n"
+            "CRITERIA VERDICT:\n"
+            "- log flow: PASS - the prior `### Reviewer report` reached the executor\n"
+            "APPROVED\n"
+            "OUT-OF-CRITERIA OBSERVATIONS:\n"
+            "- None\n"
+        )
+
+        self.assertEqual("", close_work.reviewer_report_error(previous, current))
+
+    def test_latest_review_failures_ignore_reviewer_marker_mentions(self):
+        close_work = load_close_module()
+        finding = "- log flow: FAIL [P1] - executor missed the prior report"
+        log = (
+            "### Reviewer report\n"
+            "CRITERIA VERDICT:\n"
+            f"{finding}\n"
+            "- report shape: PASS - the `### Reviewer report` heading is present\n"
+            "OUT-OF-CRITERIA OBSERVATIONS:\n"
+            "- None\n"
+        )
+
+        self.assertEqual([finding], close_work.latest_review_failures(log))
+
+    def test_executor_report_marker_mentioned_in_body_is_not_a_second_report(self):
+        close_work = load_close_module()
+        previous = "work log preamble\n"
+        current = (
+            previous
+            + "\n### Executor report\n"
+            "What changed: kept exactly one `### Executor report` section\n"
+            "Why: the marker mention is ordinary report prose\n"
+            "Changed paths (JSON):\n"
+            "[]\n"
+            "Review request: verify the report shape\n"
+        )
+
+        self.assertEqual(
+            "",
+            close_work.executor_report_error(previous, current, []),
+        )
+
     def test_executor_report_rejects_reasonless_review_disposition(self):
         close_work = load_close_module()
         finding = "- criterion two: FAIL [P1] - missing regression"
