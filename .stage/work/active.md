@@ -8,4 +8,3 @@
 |---|---|---|---|---|---|---|
 | W-00000103 | design | claude |  | active | Claude | [current/W-00000103.md](current/W-00000103.md) |
 | W-00000104 | development | codex | Stage 가 일감을 규모로 관리한다 — 에픽·스토리·액션 | active | codex | [current/W-00000104.md](current/W-00000104.md) |
-| W-00000108 | design | claude | 규모가 생기면 실행 단위와 리뷰 지점이 어디인가 | active | claude | [current/W-00000108.md](current/W-00000108.md) |

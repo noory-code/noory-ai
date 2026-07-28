@@ -110,3 +110,4 @@
 | W-00000105 | completed | [items/W-00000105.md](items/W-00000105.md) |
 | W-00000106 | completed | [items/W-00000106.md](items/W-00000106.md) |
 | W-00000107 | completed | [items/W-00000107.md](items/W-00000107.md) |
+| W-00000108 | completed | [items/W-00000108.md](items/W-00000108.md) |
