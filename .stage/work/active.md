@@ -8,4 +8,3 @@
 |---|---|---|---|---|---|---|
 | W-00000103 | design | claude |  | active | Claude | [current/W-00000103.md](current/W-00000103.md) |
 | W-00000104 | development | codex | Stage 가 일감을 규모로 관리한다 — 에픽·스토리·액션 | active | codex | [current/W-00000104.md](current/W-00000104.md) |
-| W-00000107 | development | codex | 액션은 혼자 못 선다 — 등록 진입점과 게이트 | blocked | codex | [current/W-00000107.md](current/W-00000107.md) |
