@@ -24,6 +24,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
 )
 import stage_topology  # noqa: E402
 import stage_roadmap  # noqa: E402
+from stage_record_paths import record_paths  # noqa: E402
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     WORK_OPEN_STATUSES,
     item_is_open,
@@ -56,7 +57,7 @@ def lifecycle_view_record_ids(
 
     records: list[str] = []
     try:
-        paths = sorted(directory.glob("*.md"))
+        paths = record_paths(directory)
     except OSError:
         return records, 0
     for path in paths:
@@ -543,7 +544,7 @@ def bounded_record_line(
 def record_files(directory: Path) -> list[Path]:
     """Individual record files of an artifact family (skips index/template files)."""
     try:
-        files = sorted(directory.glob("*.md"))
+        files = record_paths(directory)
     except OSError:
         return []
     return [

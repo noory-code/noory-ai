@@ -17,6 +17,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from stage_record_paths import record_path, record_paths  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -81,7 +82,7 @@ def next_decision_id(stage_root: Path) -> str:
     highest = 0
     for relative in ("decisions/pending", "official/decisions/records"):
         root = stage_root / relative
-        for path in root.glob("DE-*.md") if root.exists() else ():
+        for path in record_paths(root, pattern="DE-*.md") if root.exists() else ():
             match = DECISION_ID_RE.fullmatch(path.name)
             if match:
                 highest = max(highest, int(match.group(1)))
@@ -154,7 +155,9 @@ def update_active_index(
         title = str(fields.get("title") or item_id).strip()[:60]
         kind = str(fields.get("kind") or "").strip()
         venue = str(fields.get("venue") or "").strip()
-        item_link = relative_record_link(active_relative, f"{current_root}/{item_id}.md")
+        item_link = relative_record_link(
+            active_relative, record_path(Path(current_root), item_id).as_posix()
+        )
         lines.append(
             f"| {item_id} | {kind} | {venue} | {title} | blocked | {venue} | "
             f"[{item_link}]({item_link}) |"
@@ -200,7 +203,7 @@ def main() -> int:
         return 2
 
     paths = v4_lifecycle_paths()
-    item_path = stage_root / paths.current_cards / f"{args.item}.md"
+    item_path = record_path(stage_root / paths.current_cards, args.item)
     if not item_path.is_file():
         print(f"{args.item}: no current work item at {item_path}", file=sys.stderr)
         return 2

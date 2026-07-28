@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import stage_topology
+from stage_record_paths import record_paths
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
@@ -640,7 +641,7 @@ def rewrite_markdown_text(text: str, old_relative: str, new_relative: str) -> st
 def rewrite_moved_markdown(stage_root: Path) -> list[str]:
     rewritten_paths = []
     destination_roots = _v4_roots()
-    for path in sorted(stage_root.rglob("*.md")):
+    for path in record_paths(stage_root, recursive=True):
         relative = path.relative_to(stage_root).as_posix()
         if relative.startswith(".runtime/") or not any(
             _contains(root, relative) for root in destination_roots
@@ -698,7 +699,7 @@ def _legacy_direct(value: str) -> bool:
 
 def verify_no_legacy_references(stage_root: Path) -> list[str]:
     leftovers = []
-    for path in sorted(stage_root.rglob("*.md")):
+    for path in record_paths(stage_root, recursive=True):
         relative = path.relative_to(stage_root).as_posix()
         if relative.startswith(".runtime/"):
             continue

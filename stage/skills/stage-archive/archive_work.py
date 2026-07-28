@@ -28,6 +28,7 @@ sys.path.insert(
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from stage_record_paths import record_path  # noqa: E402
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
@@ -78,7 +79,7 @@ def table_rows(text: str) -> list[str]:
 
 
 def drop_table_row(text: str, item_id: str, item_link: str | None = None) -> str:
-    link = item_link or f"items/{item_id}.md"
+    link = item_link or record_path(Path("items"), item_id).as_posix()
     kept = [
         line
         for line in text.splitlines()
@@ -93,7 +94,7 @@ def append_index_row(
     final_status: str,
     item_link: str | None = None,
 ) -> str:
-    link = item_link or f"items/{item_id}.md"
+    link = item_link or record_path(Path("items"), item_id).as_posix()
     row = f"| {item_id} | {final_status} | [{link}]({link}) |"
     if re.search(rf"\|\s*{re.escape(item_id)}\s*\|", index_text):
         return index_text  # idempotent
@@ -132,7 +133,7 @@ def completed_ids_from_review(stage_root: Path) -> list[str]:
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if not cells or not cells[0].startswith("W-"):
             continue
-        item_path = stage_root / current_root / f"{cells[0]}.md"
+        item_path = record_path(stage_root / current_root, cells[0])
         if not item_path.exists():
             continue
         if frontmatter_field(item_path.read_text(encoding="utf-8"), "status") in TERMINAL_STATUSES:
@@ -165,8 +166,8 @@ def archive_one(
         review_relative,
         index_relative,
     ) = _archive_paths(stage_root)
-    present_item = stage_root / current_root / f"{item_id}.md"
-    archive_item = stage_root / archive_root / f"{item_id}.md"
+    present_item = record_path(stage_root / current_root, item_id)
+    archive_item = record_path(stage_root / archive_root, item_id)
 
     if archive_item.exists() and not present_item.exists():
         return f"{item_id}: already archived (skipped)"
@@ -194,7 +195,7 @@ def archive_one(
     ref = frontmatter_field(text, "retrospective_ref")
     if not ref:
         return f"{item_id}: ERROR no retrospective_ref"
-    present_retro = stage_root / current_retro_root / f"{ref}.md"
+    present_retro = record_path(stage_root / current_retro_root, ref)
     if not present_retro.exists():
         return f"{item_id}: ERROR retrospective file {ref}.md not found"
     if item_id in blocking_children:
@@ -204,7 +205,7 @@ def archive_one(
         )
         return f"{item_id}: ERROR non-terminal children still name it as parent: {detail}"
 
-    archive_retro = stage_root / archive_retro_root / f"{ref}.md"
+    archive_retro = record_path(stage_root / archive_retro_root, ref)
     index_path = stage_root / index_relative
     review_path = stage_root / review_relative
 
@@ -245,13 +246,15 @@ def archive_one(
             index_path.read_text(encoding="utf-8"),
             item_id,
             status,
-            relative_record_link(index_relative, f"{archive_root}/{item_id}.md"),
+            relative_record_link(
+                index_relative, record_path(Path(archive_root), item_id).as_posix()
+            ),
         ),
         encoding="utf-8",
     )
     if review_path.exists():
         review_link = relative_record_link(
-            review_relative, f"{current_root}/{item_id}.md"
+            review_relative, record_path(Path(current_root), item_id).as_posix()
         )
         review_path.write_text(
             drop_table_row(

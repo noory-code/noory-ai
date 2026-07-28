@@ -8,6 +8,7 @@ from pathlib import Path
 
 import stage_roadmap
 import stage_topology
+from stage_record_paths import record_paths
 from stage_work import parse_frontmatter, resolve_decision_record
 
 
@@ -155,7 +156,7 @@ def work_snapshots(
     seen: set[str] = set()
     snapshots: list[WorkSnapshot] = []
     for root in sorted(roots):
-        for path in sorted((stage_root / root).glob("W-*.md")):
+        for path in record_paths(stage_root / root, pattern="W-*.md"):
             relative = path.relative_to(stage_root)
             key = relative.as_posix()
             seen.add(key)

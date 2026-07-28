@@ -39,6 +39,7 @@ for import_dir in (HOOKS_DIR, SCRIPTS_DIR, RETROSPECTIVE_DIR):
         sys.path.insert(0, str(import_dir))
 
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
+from stage_record_paths import record_path, record_paths  # noqa: E402
 from close_work import (  # noqa: E402
     clip,
     ensure_work_log,
@@ -842,7 +843,7 @@ def next_retro_id(stage_root: Path) -> str:
     highest = 0
     for relative in ("work/retrospectives", "official/work/archive/retrospectives"):
         root = stage_root / relative
-        for path in root.glob("R-*.md") if root.exists() else ():
+        for path in record_paths(root, pattern="R-*.md") if root.exists() else ():
             match = RETRO_ID_RE.fullmatch(path.name)
             if match:
                 highest = max(highest, int(match.group(1)))
@@ -892,7 +893,7 @@ def write_driver_retrospective(
     body = f"---\nid: {retro_id}\nwork_item: {item.item_id}\n---\n\n# {retro_id} {item.item_id} 무인 드라이버 회고\n"
     for heading in RETRO_SECTIONS:
         body += f"\n## {heading}\n\n{sections[heading]}\n"
-    path = stage_root / "work" / "retrospectives" / f"{retro_id}.md"
+    path = record_path(stage_root / "work" / "retrospectives", retro_id)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("x", encoding="utf-8") as handle:
@@ -906,7 +907,7 @@ AUDIT = STAGE_ROOT / "scripts" / "audit_stage.py"
 
 
 def current_card_path(stage_root: Path, item_id: str) -> Path:
-    return stage_root / v4_lifecycle_paths().current_cards / f"{item_id}.md"
+    return record_path(stage_root / v4_lifecycle_paths().current_cards, item_id)
 
 
 def mark_retrospective(stage_root: Path, item_id: str, retro_id: str) -> None:
@@ -1483,7 +1484,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 continue
             mark_retrospective(stage_root, item.item_id, retro_id)
             created_retro_path = (
-                stage_root / "work" / "retrospectives" / f"{retro_id}.md"
+                record_path(stage_root / "work" / "retrospectives", retro_id)
             )
 
         reviewer_venue = resolve_independent_reviewer_venue(

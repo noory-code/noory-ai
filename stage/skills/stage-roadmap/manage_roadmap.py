@@ -20,6 +20,7 @@ for import_root in (HOOK_ROOT, SCRIPT_ROOT):
 import stage_roadmap  # noqa: E402
 import stage_roadmap_closure  # noqa: E402
 import stage_topology  # noqa: E402
+from stage_record_paths import record_paths  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -123,7 +124,7 @@ def _decision_existing_ids(stage_root: Path) -> list[str]:
     }
     ids: list[str] = []
     for root in sorted(roots):
-        for path in sorted((stage_root / root).glob("*.md")):
+        for path in record_paths(stage_root / root):
             if path.name in {"README.md", "_template.md"}:
                 continue
             fields = parse_frontmatter(path)

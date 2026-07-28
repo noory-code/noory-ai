@@ -23,6 +23,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from stage_record_paths import record_path, record_paths  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -151,15 +152,17 @@ def main() -> int:
         index_relative = Path("future", "backlog", "index.md").as_posix()
         active_relative = Path("present", "work", "active.md").as_posix()
 
-    source_path = stage_root / planned_root / f"{args.item}.md"
+    source_path = record_path(stage_root / planned_root, args.item)
     if not source_path.is_file():
-        candidates = sorted((stage_root / planned_root).glob(f"{args.item}-*.md"))
+        candidates = record_paths(
+            stage_root / planned_root, pattern=f"{args.item}-*.md"
+        )
         if len(candidates) == 1:
             source_path = candidates[0]
         else:
             print(f"{args.item}: no planned card in {planned_root}", file=sys.stderr)
             return 1
-    target_path = stage_root / current_root / f"{args.item}.md"
+    target_path = record_path(stage_root / current_root, args.item)
     if target_path.exists():
         print(f"{args.item}: already exists in {current_root}", file=sys.stderr)
         return 1
@@ -244,7 +247,7 @@ def main() -> int:
 
     active_path = stage_root / active_relative
     active_link = relative_record_link(
-        active_relative, f"{current_root}/{args.item}.md"
+        active_relative, record_path(Path(current_root), args.item).as_posix()
     )
     title = (fields.get("title") or "").strip()[:60]
     row = (

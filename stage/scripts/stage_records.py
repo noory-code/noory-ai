@@ -39,6 +39,7 @@ if str(HOOK_ROOT) not in sys.path:
 
 import stage_guard  # noqa: E402
 import stage_topology  # noqa: E402
+from stage_record_paths import record_paths  # noqa: E402
 from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
 
 
@@ -81,7 +82,7 @@ def _scan_nodes(roots: tuple[Path, ...]) -> list[RecordNode]:
     for root in roots:
         if not root.exists():
             continue
-        for path in sorted(root.glob("*.md")):
+        for path in record_paths(root):
             if path.name in SKIP_NAMES:
                 continue
             fields = stage_guard.parse_frontmatter(path)
@@ -100,7 +101,7 @@ def _scan_heading_nodes(roots: tuple[Path, ...]) -> list[RecordNode]:
     for root in roots:
         if not root.exists():
             continue
-        for path in sorted(root.glob("*.md")):
+        for path in record_paths(root):
             if path.name in SKIP_NAMES or path.name == "index.md":
                 continue
             try:
@@ -149,7 +150,7 @@ class RecordGraph:
         for location, root in work_roots:
             if not root.exists():
                 continue
-            for path in sorted(root.glob("*.md")):
+            for path in record_paths(root):
                 if path.name in SKIP_NAMES:
                     continue
                 fields = stage_guard.parse_frontmatter(path)

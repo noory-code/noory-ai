@@ -8,8 +8,16 @@ Schema-v3 paths remain resolve-only inputs for audit and the one-shot migration.
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable
+
+_HOOKS_DIR = str(Path(__file__).resolve().parent)
+if _HOOKS_DIR not in sys.path:
+    sys.path.insert(0, _HOOKS_DIR)
+
+from stage_record_paths import record_path
 
 
 SCHEMA_VERSION = 4
@@ -452,8 +460,8 @@ def retrospective_locations(retrospective_id: str | None = None) -> tuple[str, s
     if re.fullmatch(r"R-\d{3,}", retrospective_id) is None:
         raise ValueError(f"invalid retrospective id: {retrospective_id}")
     return (
-        f"{roots[0]}/{retrospective_id}.md",
-        f"{roots[1]}/{retrospective_id}.md",
+        record_path(Path(roots[0]), retrospective_id).as_posix(),
+        record_path(Path(roots[1]), retrospective_id).as_posix(),
     )
 
 
@@ -525,7 +533,6 @@ def resolve_artifact_reference(artifact_id: str) -> ArtifactReference:
     """
 
     prefix, _ = parse_artifact_id(artifact_id)
-    filename = artifact_id + ".md"
     by_prefix = {
         "W": ("work/planned", "work/current", "official/work/archive/items"),
         "DE": ("decisions/pending", "official/decisions/records"),
@@ -538,7 +545,10 @@ def resolve_artifact_reference(artifact_id: str) -> ArtifactReference:
         "K": ("state/risks",),
         "P": ("proposals",),
     }
-    paths = tuple(f"{root}/{filename}" for root in by_prefix[prefix.prefix])
+    paths = tuple(
+        record_path(Path(root), artifact_id).as_posix()
+        for root in by_prefix[prefix.prefix]
+    )
     return ArtifactReference(artifact_id, prefix.family, paths, prefix.legacy_resolve_only)
 
 

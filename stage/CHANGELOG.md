@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.50.0 — 2026-07-28
+
+- Centralize Stage record scans and ID-to-Markdown path construction behind one filesystem
+  boundary without changing the current flat card layout.
+
 ## 0.49.2 — 2026-07-27
 
 - Align the unattended driver documentation with the five contract layers now in the code: the

@@ -30,6 +30,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
 )
 from stage_git import _is_shell_redirection, iter_git_commands  # noqa: E402
 import stage_topology  # noqa: E402
+from stage_record_paths import record_paths  # noqa: E402
 
 
 WORK_OPEN_STATUSES = {"active", "review", "blocked"}
@@ -260,7 +261,7 @@ def load_items_from(items_root: Path) -> list[WorkItem]:
         return []
 
     items: list[WorkItem] = []
-    for path in sorted(items_root.glob("*.md")):
+    for path in record_paths(items_root):
         if path.name in {"README.md", "_template.md"}:
             continue
         items.append(item_from_fields(path, parse_frontmatter(path), GATE_FIELD_DEFAULTS))

@@ -8,3 +8,4 @@
 |---|---|---|---|---|---|---|
 | W-00000103 | design | claude |  | active | Claude | [current/W-00000103.md](current/W-00000103.md) |
 | W-00000104 | development | codex | Stage 가 일감을 규모로 관리한다 — 에픽·스토리·액션 | active | codex | [current/W-00000104.md](current/W-00000104.md) |
+| W-00000105 | development | codex | 카드를 찾는 일을 한 군데가 쥔다 | active | codex | [current/W-00000105.md](current/W-00000105.md) |

@@ -50,6 +50,7 @@ from stage_paths import (  # noqa: E402
     read_settings,
     write_setting_preserving_comments,
 )
+from stage_record_paths import record_paths  # noqa: E402
 from stage_work import parse_frontmatter  # noqa: E402
 import stage_schema_v4_migration as v4_migration  # noqa: E402
 
@@ -213,7 +214,7 @@ def next_work_number(stage_root: Path) -> int:
     numbers = [0]
     id_re = re.compile(r"^W-(\d{3,})")
     for base in ("present/work/items", "past/work/archive/items", "future/backlog/items"):
-        for path in (stage_root / base).glob("W-*.md"):
+        for path in record_paths(stage_root / base, pattern="W-*.md"):
             match = id_re.match(path.stem)
             if match:
                 numbers.append(int(match.group(1)))
@@ -270,7 +271,7 @@ def migrate_backlog(stage_root: Path, dry_run: bool) -> None:
 
     # Parent references between converted cards follow the id map.
     for old_id, new_id in id_map.items():
-        for path in backlog_dir.glob("W-*.md"):
+        for path in record_paths(backlog_dir, pattern="W-*.md"):
             text = path.read_text(encoding="utf-8")
             if f"parent: {old_id}" in text:
                 if not dry_run:

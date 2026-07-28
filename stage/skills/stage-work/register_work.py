@@ -26,6 +26,7 @@ from lifecycle_paths import (  # noqa: E402
     relative_record_link,
     v4_lifecycle_paths,
 )
+from stage_record_paths import record_path, record_paths  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -103,7 +104,7 @@ def existing_numbers(stage_root: Path) -> set[int]:
             Path("future", "backlog", "items").as_posix(),
         )
     for base in bases:
-        for path in (stage_root / base).glob("W-*.md"):
+        for path in record_paths(stage_root / base, pattern="W-*.md"):
             match = ID_RE.match(path.stem)
             if match:
                 numbers.add(int(match.group(1)))
@@ -155,7 +156,7 @@ def active_row(
 ) -> str:
     # Link form is required: audit_stage matches items via the [..](items/<id>.md) link, not a bare id.
     summary = (purpose.splitlines()[0] if purpose else "").strip()[:60]
-    link = item_link or f"items/{item_id}.md"
+    link = item_link or record_path(Path("items"), item_id).as_posix()
     return f"| {item_id} | {kind} | {venue} | {summary} | active | {owner} | [{link}]({link}) |"
 
 
@@ -200,7 +201,7 @@ def ensure_active_row(
     part; a dropped row is self-detected by the audit (INDEX003) and repaired by a
     re-run."""
     text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
-    link = item_link or f"items/{item_id}.md"
+    link = item_link or record_path(Path("items"), item_id).as_posix()
     if re.search(rf"\({re.escape(link)}\)", text):
         return
     active_path.write_text(insert_table_row(text, row), encoding="utf-8")
@@ -213,7 +214,7 @@ def create_item_atomic(items_dir: Path, numbers: set[int], content_for) -> str:
     candidate = (max(numbers) + 1) if numbers else 1
     for _ in range(1000):
         item_id = f"W-{candidate:08d}"
-        path = items_dir / f"{item_id}.md"
+        path = record_path(items_dir, item_id)
         try:
             with open(path, "x", encoding="utf-8") as handle:
                 handle.write(content_for(item_id))
@@ -237,7 +238,7 @@ def backlog_row(
     priority: str,
     item_link: str | None = None,
 ) -> str:
-    link = item_link or f"items/{item_id}.md"
+    link = item_link or record_path(Path("items"), item_id).as_posix()
     return (
         f"| {item_id} | {title} | {kind} | captured | {priority} |  | "
         f"[{link}]({link}) |"
@@ -251,7 +252,7 @@ def ensure_backlog_row(
     item_link: str | None = None,
 ) -> None:
     text = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
-    link = item_link or f"items/{item_id}.md"
+    link = item_link or record_path(Path("items"), item_id).as_posix()
     if re.search(rf"\({re.escape(link)}\)", text):
         return
     index_path.write_text(insert_table_row(text, row), encoding="utf-8")
@@ -300,7 +301,7 @@ def register_backlog_card(stage_root: Path, args) -> int:
 
     item_id = create_item_atomic(backlog_dir, existing_numbers(stage_root), content_for)
     item_link = relative_record_link(
-        index_relative, f"{backlog_relative}/{item_id}.md"
+        index_relative, record_path(Path(backlog_relative), item_id).as_posix()
     )
     ensure_backlog_row(
         index_path,
@@ -327,7 +328,7 @@ def count_open_milestones(stage_root: Path) -> int:
     paths = (
         path
         for relative in milestone_record_roots()
-        for path in sorted((stage_root / relative).glob("M-*.md"))
+        for path in record_paths(stage_root / relative, pattern="M-*.md")
         if path.name not in {"README.md", "_template.md"}
     )
     return sum(milestone_decision_chain_is_open(stage_root, path) for path in paths)
@@ -507,7 +508,9 @@ def main() -> int:
         )
 
     def item_link_for(item_id: str) -> str:
-        return relative_record_link(active_relative, f"{items_relative}/{item_id}.md")
+        return relative_record_link(
+            active_relative, record_path(Path(items_relative), item_id).as_posix()
+        )
 
     def row_for(item_id: str) -> str:
         item_link = item_link_for(item_id)
@@ -524,16 +527,16 @@ def main() -> int:
         if not ID_RE.match(args.id):
             print(f"--id must look like W-00000001, got {args.id}", file=sys.stderr)
             return 2
-        item_path = items_dir / f"{args.id}.md"
+        item_path = record_path(items_dir, args.id)
         if planned_relative and (
-            stage_root / planned_relative / f"{args.id}.md"
+            record_path(stage_root / planned_relative, args.id)
         ).exists():
             print(
                 f"{args.id}: refusing — id already used by a planned card",
                 file=sys.stderr,
             )
             return 1
-        archived = (stage_root / archive_relative / f"{args.id}.md").exists()
+        archived = record_path(stage_root / archive_relative, args.id).exists()
         if archived:
             print(f"{args.id}: refusing — id already used by an archived item", file=sys.stderr)
             return 1
@@ -567,7 +570,7 @@ def main() -> int:
                 "review field is cleared).",
                 file=sys.stderr,
             )
-    print(f"{item_id}: registered ({items_dir / f'{item_id}.md'})")
+    print(f"{item_id}: registered ({record_path(items_dir, item_id)})")
     return 0
 
 

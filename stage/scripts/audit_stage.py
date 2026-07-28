@@ -30,6 +30,7 @@ import stage_roadmap  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
 import stage_work  # noqa: E402
+from stage_record_paths import record_paths  # noqa: E402
 from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology, read_settings  # noqa: E402
 from stage_records import AuditedItem, RecordGraph  # noqa: E402
 
@@ -1051,7 +1052,7 @@ class Audit:
         for family_root, keys in required.items():
             if not family_root.exists():
                 continue
-            for path in sorted(family_root.glob("*.md")):
+            for path in record_paths(family_root):
                 if path.name in {"README.md", "_template.md"}:
                     continue
                 fields = stage_guard.parse_frontmatter(path)
@@ -1066,7 +1067,7 @@ class Audit:
             for family_root in {
                 self.stage_root / Path(root).parent for root in decision_roots
             }:
-                for path in sorted(family_root.glob("*.md")):
+                for path in record_paths(family_root):
                     if path.name in {"README.md", "_template.md"}:
                         continue
                     fields = stage_guard.parse_frontmatter(path)
@@ -1099,7 +1100,7 @@ class Audit:
             work_item_dirs = {"present/work/items", "past/work/archive/items"}
         retrospective_dirs = set(self.record_locations["R"])
         by_id: dict[str, list[Path]] = {}
-        for path in sorted(self.stage_root.rglob("*.md")):
+        for path in record_paths(self.stage_root, recursive=True):
             relative_parent = path.parent.relative_to(self.stage_root).as_posix()
             if relative_parent.startswith(".runtime"):
                 continue
@@ -1184,7 +1185,7 @@ class Audit:
 
         operations_root = self.stage_root / "operations"
         if operations_root.is_dir():
-            for path in sorted(operations_root.glob("*.md")):
+            for path in record_paths(operations_root):
                 if path.name == "README.md":
                     continue
                 if f"operations/{path.name}" not in routed_cells:
@@ -1315,7 +1316,7 @@ class Audit:
         operations_root = self.stage_root / "operations"
         if not operations_root.is_dir():
             return
-        for path in sorted(operations_root.glob("*.md")):
+        for path in record_paths(operations_root):
             name = path.name
             if name in ("README.md", "verification.md") or name not in common or name in declared:
                 continue
@@ -1426,7 +1427,7 @@ class Audit:
         operations_root = PLUGIN_ROOT / "operations"
         if not operations_root.is_dir():
             return {}
-        return {path.name: path for path in sorted(operations_root.glob("*.md"))}
+        return {path.name: path for path in record_paths(operations_root)}
 
     def load_settings(self) -> dict[str, Any]:
         if not hasattr(self, "_settings"):

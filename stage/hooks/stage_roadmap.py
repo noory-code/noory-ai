@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import stage_topology
+from stage_record_paths import record_paths
 from stage_work import DECISION_FINAL_STATUSES, parse_frontmatter, split_scope
 
 
@@ -137,7 +138,7 @@ def roadmap_record_paths(stage_root: Path, zone_name: str) -> tuple[Path, ...]:
 
     zone = stage_topology.get_zone("roadmap", zone_name)
     prefix = "TH" if zone_name == "themes" else "M"
-    return tuple(sorted((stage_root / zone.canonical_path).glob(f"{prefix}-*.md")))
+    return record_paths(stage_root / zone.canonical_path, pattern=f"{prefix}-*.md")
 
 
 def roadmap_records(stage_root: Path, zone_name: str) -> tuple[RoadmapRecord, ...]:

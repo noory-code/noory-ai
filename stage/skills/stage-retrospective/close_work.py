@@ -39,6 +39,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from stage_record_paths import record_path  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -111,11 +112,11 @@ def append_to_section(text: str, heading: str, body: str) -> str:
 
 
 def work_log_path(stage_root: Path, item_id: str) -> Path:
-    return stage_root.parent / WORK_LOG_RELATIVE_DIR / f"{item_id}.md"
+    return record_path(stage_root.parent / WORK_LOG_RELATIVE_DIR, item_id)
 
 
 def work_log_reference(item_id: str) -> str:
-    return (WORK_LOG_RELATIVE_DIR / f"{item_id}.md").as_posix()
+    return record_path(WORK_LOG_RELATIVE_DIR, item_id).as_posix()
 
 
 def ensure_work_log(stage_root: Path, item_id: str) -> Path:
@@ -341,7 +342,7 @@ def clip(output: str) -> str:
 
 
 def drop_row(text: str, item_id: str, item_link: str | None = None) -> str:
-    link = item_link or f"items/{item_id}.md"
+    link = item_link or record_path(Path("items"), item_id).as_posix()
     kept = [
         line
         for line in text.splitlines()
@@ -362,7 +363,7 @@ def ensure_review_row(
     # row if two windows update the index at once. The id allocation is the atomic
     # part; a dropped index row is self-detected by the audit (INDEX003) and
     # repaired by a re-run (which reconciles rather than duplicates).
-    link = item_link or f"items/{item_id}.md"
+    link = item_link or record_path(Path("items"), item_id).as_posix()
     row = (
         f"| {item_id} | {verification} | {retrospective} | {promotion} | "
         f"[{link}]({link}) |"
@@ -479,14 +480,14 @@ def main() -> int:
         archive_retro_root = Path(
             "past", "work", "archive", "retrospectives"
         ).as_posix()
-    item_path = stage_root / current_root / f"{args.item}.md"
+    item_path = record_path(stage_root / current_root, args.item)
     active_path = stage_root / active_relative
     review_path = stage_root / review_relative
     active_item_link = relative_record_link(
-        active_relative, f"{current_root}/{args.item}.md"
+        active_relative, record_path(Path(current_root), args.item).as_posix()
     )
     review_item_link = relative_record_link(
-        review_relative, f"{current_root}/{args.item}.md"
+        review_relative, record_path(Path(current_root), args.item).as_posix()
     )
     if not item_path.exists():
         if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
@@ -556,10 +557,10 @@ def main() -> int:
         print(f"{args.item}: retrospective is not completed — write it first (Completion principle)", file=sys.stderr)
         return 1
     ref = field(text, "retrospective_ref")
-    if not ref or not (stage_root / current_retro_root / f"{ref}.md").exists():
+    if not ref or not record_path(stage_root / current_retro_root, ref).exists():
         print(f"{args.item}: retrospective_ref `{ref or 'empty'}` has no file", file=sys.stderr)
         return 1
-    archive_retro = stage_root / archive_retro_root / f"{ref}.md"
+    archive_retro = record_path(stage_root / archive_retro_root, ref)
     if archive_retro.exists():
         archived_work_item = field(archive_retro.read_text(encoding="utf-8"), "work_item")
         if archived_work_item and archived_work_item != args.item:
