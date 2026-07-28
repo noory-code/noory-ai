@@ -7,6 +7,8 @@
 - Make record recursion a filesystem-boundary policy, resolve nested records by frontmatter ID,
   and expose each top-level epic or independent story as the lifecycle move unit.
 - Remove `parent` from action templates and add localized `_epic.md` and `_story.md` templates.
+- Keep record path resolution independent of the process working directory: a relative root now
+  composes a path instead of searching the tree it happens to be standing in.
 
 ## 0.50.0 — 2026-07-28
 
