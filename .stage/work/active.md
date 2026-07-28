@@ -8,4 +8,3 @@
 |---|---|---|---|---|---|---|
 | W-00000103 | design | claude |  | active | Claude | [current/W-00000103.md](current/W-00000103.md) |
 | W-00000104 | development | codex | Stage 가 일감을 규모로 관리한다 — 에픽·스토리·액션 | active | codex | [current/W-00000104.md](current/W-00000104.md) |
-| W-00000109 | development | codex | 계층 위에서 도는 것들을 맞춘다 — 드라이버·보관·닫기·감사 | active | codex | [current/W-00000109.md](current/W-00000109.md) |
