@@ -8,4 +8,3 @@
 |---|---|---|---|---|---|---|
 | W-00000103 | design | claude |  | active | Claude | [current/W-00000103.md](current/W-00000103.md) |
 | W-00000104 | development | codex | Stage 가 일감을 규모로 관리한다 — 에픽·스토리·액션 | active | codex | [current/W-00000104.md](current/W-00000104.md) |
-| W-00000106 | development | codex | 폴더가 계층을 갖는다 — 스키마 v5 토폴로지 | active | codex | [current/W-00000106.md](current/W-00000106.md) |
