@@ -270,6 +270,29 @@ class ClosurePromotionRevalidationTest(ClosureFixture):
                 diff,
             )
 
+    def test_projected_new_nested_linked_card_is_denied_with_exact_diff(self):
+        tmp, root, decision = self.closed_fixture()
+        with tmp:
+            diff = stage_roadmap_closure.closure_basis_diff(
+                root / ".stage",
+                decision,
+                {
+                    "official/work/archive/items/W-00000002/_story.md": (
+                        "---\n"
+                        "id: W-00000002\n"
+                        "milestone: M-00000001\n"
+                        "status: archived\n"
+                        "terminal_disposition: rejected\n"
+                        "---\n"
+                    )
+                },
+            )
+
+            self.assertIn(
+                "W-00000002: expected `absent`, actual terminal_disposition `rejected`",
+                diff,
+            )
+
 
 class ReopenStateTest(ClosureFixture):
     def test_superseding_reopen_returns_computed_status_to_active(self):

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import stage_roadmap
 import stage_topology
-from stage_record_paths import record_paths
+from stage_record_paths import record_paths, work_record_scale
 from stage_work import parse_frontmatter, resolve_decision_record
 
 
@@ -173,7 +173,15 @@ def work_snapshots(
         if key in seen or text is None:
             continue
         relative = Path(key)
-        if relative.parent not in roots or not relative.name.startswith("W-"):
+        lifecycle_root = next(
+            (root for root in roots if relative.is_relative_to(root)),
+            None,
+        )
+        if lifecycle_root is None:
+            continue
+        try:
+            work_record_scale(lifecycle_root, relative)
+        except ValueError:
             continue
         snapshots.append(_snapshot(stage_root / relative, relative, text, archive_root))
     return tuple(snapshots)
