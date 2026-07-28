@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-work" / "register_work.py"
+SKILL = CLI.parent / "SKILL.md"
 START_CLI = Path(__file__).resolve().parents[1] / "start_work.py"
 
 ACTIVE = (
@@ -28,6 +29,8 @@ BACKLOG_WITH_TRAILING_SECTION = (
 
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess:
+    if "--scale" not in args and "--count-open-milestones" not in args:
+        args = ("--scale", "story", *args)
     return subprocess.run(
         [sys.executable, str(CLI), "--project-root", str(root), *args], capture_output=True, text=True
     )
@@ -39,6 +42,9 @@ def run_start(root: Path, *args: str) -> subprocess.CompletedProcess:
         capture_output=True,
         text=True,
     )
+
+def story_path(root: Path, lifecycle: str, item_id: str) -> Path:
+    return root / ".stage" / "work" / lifecycle / item_id / "_story.md"
 
 
 class RegisterWorkTest(unittest.TestCase):
@@ -80,7 +86,7 @@ class RegisterWorkTest(unittest.TestCase):
             result = run(root, "--title", "T", "--kind", "design", "--scope", "src")
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertIn("venue derived from venue_routing: design -> claude", result.stdout)
-            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
+            item = story_path(root, "current", "W-00000001").read_text(encoding="utf-8")
             active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
 
         self.assertIn("venue: claude", item)
@@ -104,7 +110,7 @@ class RegisterWorkTest(unittest.TestCase):
                 root, "--title", "T", "--kind", "development", "--scope", "src",
                 "--venue", "claude",
             )
-            created = (root / ".stage/work/current/W-00000001.md").exists()
+            created = story_path(root, "current", "W-00000001").exists()
 
         self.assertEqual(1, result.returncode)
         self.assertIn("--decision", result.stderr)
@@ -120,7 +126,7 @@ class RegisterWorkTest(unittest.TestCase):
                 "--venue", "claude", "--decision", "DE-0009",
             )
             self.assertEqual(0, result.returncode, result.stderr)
-            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
+            item = story_path(root, "current", "W-00000001").read_text(encoding="utf-8")
 
         self.assertIn("venue: claude", item)
         self.assertIn("decision_refs: DE-0009", item)
@@ -154,11 +160,11 @@ class RegisterWorkTest(unittest.TestCase):
         with tmp:
             self.declare_routing(root)
             result = run(root, "--title", "T", "--kind", "feature", "--scope", "src")
-            created = (root / ".stage/work/current/W-00000001.md").exists()
+            created = story_path(root, "current", "W-00000001").exists()
 
         self.assertEqual(1, result.returncode)
         self.assertIn("split", result.stderr)
-        self.assertIn("parent", result.stderr)
+        self.assertIn("hierarchy", result.stderr)
         self.assertFalse(created)
 
     def test_split_kind_with_valid_decision_registers_single_item(self):
@@ -171,7 +177,7 @@ class RegisterWorkTest(unittest.TestCase):
                 "--venue", "claude", "--decision", "DE-0009",
             )
             self.assertEqual(0, result.returncode, result.stderr)
-            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
+            item = story_path(root, "current", "W-00000001").read_text(encoding="utf-8")
 
         self.assertIn("decision_refs: DE-0009", item)
 
@@ -189,13 +195,140 @@ class RegisterWorkTest(unittest.TestCase):
         with tmp:
             proc = run(root, "--title", "Do a thing", "--kind", "feature", "--scope", "stage/x", "--venue", "claude")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            item = root / ".stage/work/current/W-00000001.md"
+            item = story_path(root, "current", "W-00000001")
             self.assertTrue(item.exists())
             body = item.read_text(encoding="utf-8")
             self.assertIn("id: W-00000001", body)
             self.assertIn("kind: feature", body)
             active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
-            self.assertIn("[current/W-00000001.md](current/W-00000001.md)", active)
+            self.assertIn(
+                "[current/W-00000001/_story.md](current/W-00000001/_story.md)",
+                active,
+            )
+
+    def test_top_level_action_is_refused_with_story_first_guidance(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--scale",
+                "action",
+                "--title",
+                "Do a thing",
+                "--kind",
+                "chore",
+                "--scope",
+                "stage/x",
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("story", proc.stderr.lower())
+        self.assertIn("first", proc.stderr.lower())
+        self.assertEqual([], list((root / ".stage/work/current").glob("W-*")))
+
+    def test_registration_without_scale_is_refused(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(CLI),
+                    "--project-root",
+                    str(root),
+                    "--title",
+                    "Do a thing",
+                    "--kind",
+                    "chore",
+                    "--scope",
+                    "stage/x",
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertNotEqual(0, proc.returncode)
+        self.assertIn("--scale", proc.stderr)
+        self.assertEqual([], list((root / ".stage/work/current").glob("W-*")))
+
+    def test_planned_story_can_be_registered_below_planned_epic(self):
+        tmp, root = self.make()
+        with tmp:
+            epic = run(
+                root,
+                "--backlog",
+                "--scale",
+                "epic",
+                "--title",
+                "Reliable driver",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000001",
+            )
+            story = run(
+                root,
+                "--backlog",
+                "--scale",
+                "story",
+                "--parent",
+                "W-00000001",
+                "--title",
+                "Review evidence",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000002",
+            )
+            story_path = (
+                root / ".stage/work/planned/W-00000001/W-00000002/_story.md"
+            )
+            body = story_path.read_text(encoding="utf-8")
+
+        self.assertEqual(0, epic.returncode, epic.stderr)
+        self.assertEqual(0, story.returncode, story.stderr)
+        self.assertNotIn("\nparent:", body)
+
+    def test_nested_work_cannot_claim_a_milestone(self):
+        tmp, root = self.make()
+        with tmp:
+            epic = run(
+                root,
+                "--backlog",
+                "--scale",
+                "epic",
+                "--title",
+                "Reliable driver",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000001",
+            )
+            story = run(
+                root,
+                "--backlog",
+                "--scale",
+                "story",
+                "--parent",
+                "W-00000001",
+                "--milestone",
+                "M-00000001",
+                "--title",
+                "Review evidence",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+            )
+
+        self.assertEqual(0, epic.returncode, epic.stderr)
+        self.assertEqual(1, story.returncode)
+        self.assertIn("top-level", story.stderr)
 
     def test_autonomous_registration_requires_acceptance(self):
         tmp, root = self.make()
@@ -214,7 +347,7 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertEqual(1, proc.returncode)
         self.assertIn("autonomous", proc.stderr)
         self.assertIn("acceptance", proc.stderr)
-        self.assertFalse((root / ".stage/work/current/W-00000001.md").exists())
+        self.assertFalse(story_path(root, "current", "W-00000001").exists())
 
     def test_registration_writes_autonomous_acceptance_sequence(self):
         tmp, root = self.make()
@@ -233,9 +366,7 @@ class RegisterWorkTest(unittest.TestCase):
                 "--acceptance",
                 "python3 stage/scripts/audit_stage.py",
             )
-            body = (root / ".stage/work/current/W-00000001.md").read_text(
-                encoding="utf-8"
-            )
+            body = story_path(root, "current", "W-00000001").read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("autonomous: true", body)
@@ -243,12 +374,22 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertIn('  - "python3 -c \\"print(1)\\""', body)
         self.assertIn('  - "python3 stage/scripts/audit_stage.py"', body)
 
+    def test_skill_requires_a_clean_audit_after_hierarchy_registration(self):
+        skill = SKILL.read_text(encoding="utf-8")
+
+        self.assertNotIn("Current audit boundary", skill)
+        self.assertNotIn("BACKLOG003", skill)
+        self.assertNotIn("WORK002", skill)
+        self.assertNotIn("INDEX003", skill)
+        self.assertNotIn("INDEX004", skill)
+        self.assertIn("expect errors=0", skill)
+
     def test_increments_past_max_including_archive(self):
         tmp, root = self.make()
         with tmp:
             (root / ".stage/official/work/archive/items/W-00000005.md").write_text("---\nid: W-00000005\n---\n", encoding="utf-8")
             run(root, "--title", "A", "--kind", "chore", "--scope", "x")
-            self.assertTrue((root / ".stage/work/current/W-00000006.md").exists())
+            self.assertTrue(story_path(root, "current", "W-00000006").exists())
 
     def test_reruns_reconcile_index_not_duplicate(self):
         tmp, root = self.make()
@@ -259,7 +400,7 @@ class RegisterWorkTest(unittest.TestCase):
             proc = run(root, "--title", "A", "--kind", "chore", "--scope", "x", "--id", "W-00000001")
             self.assertEqual(proc.returncode, 0, proc.stderr)
             active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
-            self.assertEqual(active.count("[current/W-00000001.md]"), 1)
+            self.assertEqual(active.count("[current/W-00000001/_story.md]"), 1)
 
     def test_active_row_is_inserted_before_trailing_sections(self):
         tmp, root = self.make()
@@ -349,6 +490,7 @@ title: Planned fix
 kind: fix
 venue: codex
 parent:
+milestone: M-00000001
 priority:
 autonomous: false
 acceptance: []
@@ -369,6 +511,41 @@ status: captured
 
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("review: not_required", item)
+        self.assertNotIn("\nparent:", item)
+        self.assertLess(item.index("venue:"), item.index("milestone:"))
+        self.assertLess(item.index("milestone:"), item.index("priority:"))
+
+    def test_starting_legacy_child_preserves_valued_parent(self):
+        tmp, root = self.make()
+        with tmp:
+            planned = root / ".stage/work/planned/W-00000002.md"
+            planned.write_text(
+                """---
+id: W-00000002
+title: Planned child
+kind: fix
+venue: codex
+parent: W-00000001
+priority:
+autonomous: false
+acceptance: []
+status: captured
+---
+
+# W-00000002 Planned child
+
+## Purpose
+""",
+                encoding="utf-8",
+            )
+
+            proc = run_start(root, "W-00000002", "--scope", "stage/x")
+            item = (root / ".stage/work/current/W-00000002.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("\nparent: W-00000001\n", item)
 
     def test_refuses_archived_id(self):
         tmp, root = self.make()
@@ -376,7 +553,7 @@ status: captured
             (root / ".stage/official/work/archive/items/W-00000003.md").write_text("---\nid: W-00000003\n---\n", encoding="utf-8")
             proc = run(root, "--title", "A", "--kind", "chore", "--scope", "x", "--id", "W-00000003")
             self.assertEqual(proc.returncode, 1)
-            self.assertFalse((root / ".stage/work/current/W-00000003.md").exists())
+            self.assertFalse(story_path(root, "current", "W-00000003").exists())
 
 
 if __name__ == "__main__":

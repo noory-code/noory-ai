@@ -80,6 +80,28 @@ class ParentCompletionTest(unittest.TestCase):
         self.assertTrue(any("W-00000002" in blocker for blocker in blockers), blockers)
         self.assertTrue(any("captured" in blocker for blocker in blockers), blockers)
 
+    def test_hierarchical_planned_child_blocks_parent_completion_without_parent_field(self):
+        tmp, _, stage_root = self.make_stage()
+        with tmp:
+            parent_dir = stage_root / "work/planned/W-00000010"
+            parent_dir.mkdir(parents=True)
+            (parent_dir / "_epic.md").write_text(
+                "---\nid: W-00000010\nstatus: selected\n---\n",
+                encoding="utf-8",
+            )
+            story_dir = stage_root / "work/planned/W-00000010/W-00000011"
+            story_dir.mkdir(parents=True)
+            (story_dir / "_story.md").write_text(
+                "---\nid: W-00000011\nstatus: captured\n---\n",
+                encoding="utf-8",
+            )
+
+            items = stage_work.load_all_work_items(stage_root)
+            blockers = stage_work.parent_completion_blockers("W-00000010", items)
+
+        self.assertTrue(any("W-00000011" in blocker for blocker in blockers), blockers)
+        self.assertTrue(any("captured" in blocker for blocker in blockers), blockers)
+
     def test_archived_and_rejected_children_are_terminal(self):
         tmp, _, stage_root = self.make_stage()
         with tmp:

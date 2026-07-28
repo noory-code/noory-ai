@@ -8,7 +8,8 @@ gate — the value is correctness, not gate-bypass.
 
 Usage:
     register_work.py --project-root . --title "..." --kind feature \
-        --scope "stage/skills, stage/scripts" [--venue claude] [--owner Claude] \
+        --scope "stage/skills, stage/scripts" --scale story \
+        [--parent W-00000007] [--venue claude] [--owner Claude] \
         [--purpose "..."] [--id W-00000008]
 """
 
@@ -26,7 +27,14 @@ from lifecycle_paths import (  # noqa: E402
     relative_record_link,
     v4_lifecycle_paths,
 )
-from stage_record_paths import record_path, record_paths  # noqa: E402
+from stage_record_paths import (  # noqa: E402
+    FRONTMATTER_ID_RE,
+    EPIC_RECORD_NAME,
+    STORY_RECORD_NAME,
+    record_path,
+    record_paths,
+    work_record_scale,
+)
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -105,10 +113,73 @@ def existing_numbers(stage_root: Path) -> set[int]:
         )
     for base in bases:
         for path in record_paths(stage_root / base, pattern="W-*.md"):
-            match = ID_RE.match(path.stem)
+            identity = FRONTMATTER_ID_RE.search(path.read_text(encoding="utf-8"))
+            match = ID_RE.match(identity.group("record_id")) if identity else None
             if match:
                 numbers.add(int(match.group(1)))
     return numbers
+
+
+def hierarchy_template(paths, lifecycle: str, scale: str) -> Path:
+    template_source = getattr(paths, f"{lifecycle}_{scale}_template")
+    return _v4_template(template_source)
+
+
+def hierarchy_item_path(
+    items_dir: Path,
+    item_id: str,
+    scale: str,
+    parent_path: Path | None,
+) -> Path:
+    if scale == "epic":
+        return items_dir / item_id / EPIC_RECORD_NAME
+    if scale == "story":
+        story_root = items_dir / item_id if parent_path is None else parent_path.parent / item_id
+        return story_root / STORY_RECORD_NAME
+    if parent_path is None:
+        raise ValueError("an action requires a story parent")
+    return parent_path.parent / f"{item_id}.md"
+
+
+def hierarchy_parent_path(
+    items_dir: Path,
+    parent_id: str,
+    *,
+    scale: str,
+) -> Path | None:
+    if not parent_id:
+        return None
+    parent_path = record_path(items_dir, parent_id)
+    if not parent_path.is_file():
+        raise ValueError(f"parent work item not found in this lifecycle: {parent_id}")
+    expected = "epic" if scale == "story" else "story"
+    actual = work_record_scale(items_dir, parent_path)
+    if actual != expected:
+        raise ValueError(
+            f"{scale} requires a {expected} parent, but {parent_id} is {actual}"
+        )
+    return parent_path
+
+
+def create_hierarchy_item_atomic(
+    items_dir: Path,
+    numbers: set[int],
+    scale: str,
+    parent_path: Path | None,
+    content_for,
+) -> tuple[str, Path]:
+    candidate = (max(numbers) + 1) if numbers else 1
+    for _ in range(1000):
+        item_id = f"W-{candidate:08d}"
+        path = hierarchy_item_path(items_dir, item_id, scale, parent_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(path, "x", encoding="utf-8") as handle:
+                handle.write(content_for(item_id))
+            return item_id, path
+        except FileExistsError:
+            candidate += 1
+    raise RuntimeError("could not allocate a free work-item id")
 
 
 def fill_item(
@@ -259,13 +330,18 @@ def ensure_backlog_row(
 
 
 def register_backlog_card(stage_root: Path, args) -> int:
+    paths = None
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         backlog_relative = paths.planned_cards
         index_relative = paths.planned_index
         backlog_dir = stage_root / backlog_relative
         index_path = stage_root / index_relative
-        template_path = _v4_template(paths.planned_template)
+        template_path = (
+            hierarchy_template(paths, "planned", args.scale)
+            if args.scale
+            else _v4_template(paths.planned_template)
+        )
     else:
         backlog_relative = Path("future", "backlog", "items").as_posix()
         index_relative = Path("future", "backlog", "index.md").as_posix()
@@ -299,9 +375,52 @@ def register_backlog_card(stage_root: Path, args) -> int:
             text = text.replace("## Purpose\n\n", f"## Purpose\n\n{args.purpose}\n", 1)
         return text
 
-    item_id = create_item_atomic(backlog_dir, existing_numbers(stage_root), content_for)
+    parent_path = None
+    if paths is not None and args.scale:
+        try:
+            parent_path = hierarchy_parent_path(
+                backlog_dir,
+                args.parent,
+                scale=args.scale,
+            )
+        except ValueError as exc:
+            print(f"refusing: {exc}", file=sys.stderr)
+            return 1
+    numbers = existing_numbers(stage_root)
+    if args.id:
+        match = ID_RE.fullmatch(args.id)
+        if match is None:
+            print(f"--id must look like W-00000001, got {args.id}", file=sys.stderr)
+            return 2
+        if int(match.group(1)) in numbers:
+            print(f"{args.id}: refusing — id is already used", file=sys.stderr)
+            return 1
+        item_id = args.id
+        item_path = (
+            hierarchy_item_path(backlog_dir, item_id, args.scale, parent_path)
+            if paths is not None and args.scale
+            else record_path(backlog_dir, item_id)
+        )
+        item_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(item_path, "x", encoding="utf-8") as handle:
+                handle.write(content_for(item_id))
+        except FileExistsError:
+            print(f"{item_id}: refusing — id is already used", file=sys.stderr)
+            return 1
+    elif paths is not None and args.scale:
+        item_id, item_path = create_hierarchy_item_atomic(
+            backlog_dir,
+            numbers,
+            args.scale,
+            parent_path,
+            content_for,
+        )
+    else:
+        item_id = create_item_atomic(backlog_dir, numbers, content_for)
+        item_path = record_path(backlog_dir, item_id)
     item_link = relative_record_link(
-        index_relative, record_path(Path(backlog_relative), item_id).as_posix()
+        index_relative, item_path.relative_to(stage_root).as_posix()
     )
     ensure_backlog_row(
         index_path,
@@ -358,6 +477,17 @@ def main() -> int:
     parser.add_argument("--title", required=True)
     parser.add_argument("--kind", required=True)
     parser.add_argument("--scope", required=True)
+    parser.add_argument(
+        "--scale",
+        choices=("epic", "story", "action"),
+        required=True,
+        help="Work scale chosen before registration: epic, story, or action.",
+    )
+    parser.add_argument(
+        "--parent",
+        default="",
+        help="Existing epic parent for a story or story parent for an action.",
+    )
     parser.add_argument("--venue", default="")
     parser.add_argument("--owner", default="Claude")
     parser.add_argument("--purpose", default="")
@@ -421,16 +551,37 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
+    if args.parent and not ID_RE.fullmatch(args.parent):
+        print(f"--parent must look like W-00000001, got {args.parent}", file=sys.stderr)
+        return 2
+    if args.scale == "epic" and args.parent:
+        print("refusing: an epic is top-level and cannot have --parent", file=sys.stderr)
+        return 1
+    if args.scale == "action" and not args.parent:
+        print(
+            "refusing: an action cannot be top-level; create a story first "
+            "and pass it with --parent",
+            file=sys.stderr,
+        )
+        return 1
+    if args.parent and args.milestone:
+        print(
+            "refusing: milestone belongs only on a top-level epic or story",
+            file=sys.stderr,
+        )
+        return 1
 
+    hierarchy_paths = None
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
+        hierarchy_paths = paths
         planned_relative = paths.planned_cards
         items_relative = paths.current_cards
         active_relative = paths.active_index
         archive_relative = paths.archive_cards
         items_dir = stage_root / items_relative
         active_path = stage_root / active_relative
-        template_path = _v4_template(paths.current_template)
+        template_path = hierarchy_template(paths, "current", args.scale)
     else:
         planned_relative = ""
         items_relative = Path("present", "work", "items").as_posix()
@@ -457,7 +608,7 @@ def main() -> int:
     if routed == VENUE_SPLIT_TOKEN:
         exception_reason = (
             f"kind `{args.kind}` is declared mixed (`{VENUE_SPLIT_TOKEN}`): register separate "
-            "design and implementation items with `parent` lineage instead, or pass "
+            "design and implementation hierarchy records instead, or pass "
             "--decision <DE-id> naming a decided decision with `authorizes: venue_exception` "
             "for a deliberate single item"
         )
@@ -490,6 +641,17 @@ def main() -> int:
         print(f"Work-item template not found: {template_path}", file=sys.stderr)
         return 2
     template = template_path.read_text(encoding="utf-8")
+    parent_path = None
+    if hierarchy_paths is not None:
+        try:
+            parent_path = hierarchy_parent_path(
+                items_dir,
+                args.parent,
+                scale=args.scale,
+            )
+        except ValueError as exc:
+            print(f"refusing: {exc}", file=sys.stderr)
+            return 1
 
     def content_for(item_id: str) -> str:
         return fill_item(
@@ -507,9 +669,15 @@ def main() -> int:
             milestone=args.milestone,
         )
 
+    def item_path_for(item_id: str) -> Path:
+        if hierarchy_paths is None:
+            return record_path(items_dir, item_id)
+        return hierarchy_item_path(items_dir, item_id, args.scale, parent_path)
+
     def item_link_for(item_id: str) -> str:
+        item_path = item_path_for(item_id)
         return relative_record_link(
-            active_relative, record_path(Path(items_relative), item_id).as_posix()
+            active_relative, item_path.relative_to(stage_root).as_posix()
         )
 
     def row_for(item_id: str) -> str:
@@ -547,8 +715,10 @@ def main() -> int:
             )
             print(f"{args.id}: already exists; index reconciled")
             return 0
+        desired_path = item_path_for(args.id)
+        desired_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with open(item_path, "x", encoding="utf-8") as handle:
+            with open(desired_path, "x", encoding="utf-8") as handle:
                 handle.write(content_for(args.id))
         except FileExistsError:
             ensure_active_row(
@@ -558,7 +728,18 @@ def main() -> int:
             return 0
         item_id = args.id
     else:
-        item_id = create_item_atomic(items_dir, existing_numbers(stage_root), content_for)
+        if hierarchy_paths is None:
+            item_id = create_item_atomic(
+                items_dir, existing_numbers(stage_root), content_for
+            )
+        else:
+            item_id, _created_path = create_hierarchy_item_atomic(
+                items_dir,
+                existing_numbers(stage_root),
+                args.scale,
+                parent_path,
+                content_for,
+            )
 
     ensure_active_row(active_path, item_id, row_for(item_id), item_link_for(item_id))
     if args.review:

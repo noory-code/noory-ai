@@ -30,7 +30,11 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
 )
 from stage_git import _is_shell_redirection, iter_git_commands  # noqa: E402
 import stage_topology  # noqa: E402
-from stage_record_paths import record_paths  # noqa: E402
+from stage_record_paths import (  # noqa: E402
+    hierarchy_parent_record_path,
+    record_paths,
+    work_record_scale,
+)
 
 
 WORK_OPEN_STATUSES = {"active", "review", "blocked"}
@@ -231,10 +235,31 @@ AUDIT_FIELD_DEFAULTS = {
 }
 
 
-def item_from_fields(path: Path, fields: dict[str, Any], defaults: dict[str, str]) -> WorkItem:
+def item_from_fields(
+    path: Path,
+    fields: dict[str, Any],
+    defaults: dict[str, str],
+    *,
+    items_root: Path | None = None,
+) -> WorkItem:
     def scalar(name: str) -> str:
         value = fields.get(name)
         return value if isinstance(value, str) else ""
+
+    parent = scalar("parent").strip()
+    if items_root is not None:
+        try:
+            scale = work_record_scale(items_root, path)
+        except ValueError:
+            scale = "legacy"
+        if scale != "legacy":
+            parent = ""
+            parent_path = hierarchy_parent_record_path(items_root, path)
+            if parent_path is not None and parent_path.is_file():
+                parent_fields = parse_frontmatter(parent_path)
+                parent_value = parent_fields.get("id")
+                if isinstance(parent_value, str):
+                    parent = parent_value.strip()
 
     return WorkItem(
         path=path,
@@ -249,7 +274,7 @@ def item_from_fields(path: Path, fields: dict[str, Any], defaults: dict[str, str
         retrospective_ref=scalar("retrospective_ref").strip(),
         kind=scalar("kind").strip().lower(),
         venue=scalar("venue").strip().lower(),
-        parent=scalar("parent").strip(),
+        parent=parent,
         review=(scalar("review") or "not_required").strip().lower(),
         autonomous=parse_bool_field(fields.get("autonomous")),
         acceptance=parse_string_list(fields.get("acceptance")),
@@ -264,7 +289,14 @@ def load_items_from(items_root: Path) -> list[WorkItem]:
     for path in record_paths(items_root):
         if path.name in {"README.md", "_template.md"}:
             continue
-        items.append(item_from_fields(path, parse_frontmatter(path), GATE_FIELD_DEFAULTS))
+        items.append(
+            item_from_fields(
+                path,
+                parse_frontmatter(path),
+                GATE_FIELD_DEFAULTS,
+                items_root=items_root,
+            )
+        )
     return items
 
 
@@ -589,13 +621,15 @@ def source_registration_blocker(
     if active_topology(workspace_root / ".stage") == ACTIVE_TOPOLOGY_V4:
         current_root = stage_topology.card_location_for_status("active")
         return (
-            "Stage registration gate violation: before modifying governed files, register an active "
-            f"work item with a matching scope in `.stage/{current_root}/`. "
+            "Stage registration gate violation: before modifying governed files, establish a story "
+            "first, then register an active work item with a matching scope in "
+            f"`.stage/{current_root}/`. "
             "Unregistered targets: " + ", ".join(uncovered[:5])
         )
     return (
-        "Stage registration gate violation: before modifying governed files, register an active "
-        "work item with a matching scope in `.stage/present/work/items/`. "
+        "Stage registration gate violation: before modifying governed files, establish a story "
+        "first, then register an active work item with a matching scope in "
+        "`.stage/present/work/items/`. "
         "Unregistered targets: " + ", ".join(uncovered[:5])
     )
 

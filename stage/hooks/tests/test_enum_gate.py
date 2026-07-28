@@ -68,7 +68,7 @@ class EnumGateTest(unittest.TestCase):
 
 
 V4_PLANNED = (
-    "---\nid: W-00000002\nkind: development\nvenue:\nparent:\n"
+    "---\nid: W-00000002\nkind: development\nvenue:\n"
     "status: triaged\npriority:\n---\n\n# W-00000002 Y\n"
 )
 
@@ -92,7 +92,9 @@ class PlannedEnumGateTest(unittest.TestCase):
             "cwd": str(root),
             "tool_name": "Write",
             "tool_input": {
-                "file_path": str(root / ".stage/work/planned/W-00000002.md"),
+                "file_path": str(
+                    root / ".stage/work/planned/W-00000002/_story.md"
+                ),
                 "content": content,
             },
         }

@@ -40,6 +40,8 @@ audit_stage = load_module("roadmap_v4_audit_stage", AUDIT)
 
 
 def run_cli(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess:
+    if cli == REGISTER and "--scale" not in args and "--count-open-milestones" not in args:
+        args = ("--scale", "story", *args)
     return subprocess.run(
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,
@@ -199,7 +201,7 @@ class RoadmapCliTest(RoadmapFixture):
             self.assertIn("DE-00000001", pursuit.stdout)
             self.assertEqual(0, registered.returncode, registered.stderr)
             self.assertEqual(0, audited.returncode, audited.stdout + audited.stderr)
-            self.assertIn("OK: no findings", audited.stdout)
+            self.assertIn("Summary: errors=0, warnings=0", audited.stdout)
             self.assertEqual(0, listing.returncode, listing.stderr)
             self.assertRegex(
                 listing.stdout,
@@ -355,11 +357,11 @@ class RoadmapAuditTest(RoadmapFixture):
                 "M-99999999",
             )
             self.assertEqual(0, registered.returncode, registered.stderr)
-            card = root / ".stage/work/current/W-00000001.md"
+            card = root / ".stage/work/current/W-00000001/_story.md"
             self.assertIn("ROADMAP005", self.codes(root))
 
             set_field(card, "milestone", milestone_id)
-            self.assert_audit_clean(root)
+            self.assertEqual([], self.codes(root))
 
     def test_dangling_milestone_theme_is_rejected_then_repaired(self):
         tmp, root = self.make_fixture()

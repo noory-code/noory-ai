@@ -30,7 +30,7 @@ import stage_roadmap  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
 import stage_work  # noqa: E402
-from stage_record_paths import record_paths  # noqa: E402
+from stage_record_paths import record_paths, work_record_scale  # noqa: E402
 from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology, read_settings  # noqa: E402
 from stage_records import AuditedItem, RecordGraph  # noqa: E402
 
@@ -149,7 +149,9 @@ class Audit:
             ).name
             self.item_link_re = re.compile(
                 rf"\((?:\./)?{re.escape(item_directory)}/"
-                r"([A-Za-z][A-Za-z0-9]*-\d{3,})\.md(?:#[^)]+)?\)"
+                r"(?:[A-Za-z][A-Za-z0-9]*-\d{3,}/)*"
+                r"([A-Za-z][A-Za-z0-9]*-\d{3,})"
+                r"(?:\.md|/(?:_epic|_story)\.md)(?:#[^)]+)?\)"
             )
         else:
             self.template_root = TEMPLATE_ROOT
@@ -307,7 +309,10 @@ class Audit:
         all_items = [entry.item for entry in graph.work]
         all_items.extend(
             stage_work.item_from_fields(
-                node.path, node.fields, stage_work.GATE_FIELD_DEFAULTS
+                node.path,
+                node.fields,
+                stage_work.GATE_FIELD_DEFAULTS,
+                items_root=graph.backlog_root,
             )
             for node in graph.backlog
         )
@@ -350,7 +355,15 @@ class Audit:
             if field not in audited_item.fields:
                 self.error("WORK001", f"Work item frontmatter field is missing: {field}", path)
 
-        if item.item_id != path.stem:
+        expected_id = path.stem
+        if self.topology == ACTIVE_TOPOLOGY_V4:
+            try:
+                scale = work_record_scale(audited_item.items_root, path)
+            except ValueError:
+                scale = "invalid"
+            if scale in {"epic", "story"}:
+                expected_id = path.parent.name
+        if item.item_id != expected_id:
             self.error("WORK002", f"Work item id differs from filename: {item.item_id}", path)
         if item.status not in STATUS_VALUES:
             self.error("WORK003", f"Unknown status value: {item.status}", path)
@@ -606,15 +619,32 @@ class Audit:
                     "present/work/items/ (scripts/start_work.py).",
                     path,
                 )
-            if not (path.stem == item_id or path.stem.startswith(item_id + "-")):
+            expected_id = path.stem
+            if self.topology == ACTIVE_TOPOLOGY_V4:
+                try:
+                    scale = work_record_scale(graph.backlog_root, path)
+                except ValueError:
+                    scale = "invalid"
+                if scale in {"epic", "story"}:
+                    expected_id = path.parent.name
+            if expected_id != item_id:
                 self.error(
                     "BACKLOG003",
-                    f"Backlog filename does not start with its id: {item_id}",
+                    f"Backlog path does not encode its id: {item_id}",
                     path,
                 )
 
+        backlog_items = {
+            node.record_id: stage_work.item_from_fields(
+                node.path,
+                node.fields,
+                stage_work.AUDIT_FIELD_DEFAULTS,
+                items_root=graph.backlog_root,
+            )
+            for node in graph.backlog_by_id.values()
+        }
         for node in graph.backlog_by_id.values():
-            parent_id = (node.fields.get("parent") or "").strip()
+            parent_id = backlog_items[node.record_id].parent
             if parent_id and parent_id not in graph.backlog_by_id and parent_id not in graph.work_ids:
                 self.error(
                     "BACKLOG002",
@@ -636,8 +666,8 @@ class Audit:
                     )
                     break
                 seen.append(cursor)
-                parent_node = graph.backlog_by_id.get(cursor)
-                cursor = (parent_node.fields.get("parent") or "").strip() if parent_node else ""
+                parent_item = backlog_items.get(cursor)
+                cursor = parent_item.parent if parent_item else ""
 
     def audit_orphan_records(self, graph: RecordGraph) -> None:
         """Every decision and retrospective record is validated on its own —

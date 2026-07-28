@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.52.0 — 2026-07-28
+
+- Make work registration start with an explicit epic, story, or action scale, reject top-level
+  actions with story-first guidance, and place nested records by folder path without `parent`
+  frontmatter.
+- Move a planned top-level epic or independent story directory as one unit when work starts.
+- Derive hierarchy and completion gates from folder placement, including planned records, and ask
+  the milestone question whenever top-level work is established even when no milestone is open.
+- Require an explicit work scale, preserve valued legacy parents and rejected descendants during
+  start, index preserved rejected descendants for review, and audit hierarchical work paths and
+  nested index links without temporary error allowances.
+
 ## 0.51.0 — 2026-07-28
 
 - Add the schema-v5 epic/story/action path and template contract while leaving schema-v4

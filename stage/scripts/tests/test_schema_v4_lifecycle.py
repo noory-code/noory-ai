@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import shlex
 import shutil
@@ -39,6 +40,8 @@ register_work = load_module("schema_v4_register_work", REGISTER)
 
 
 def run_cli(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess:
+    if cli == REGISTER and "--scale" not in args and "--count-open-milestones" not in args:
+        args = ("--scale", "story", *args)
     return subprocess.run(
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,
@@ -71,6 +74,20 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("OK: no findings", result.stdout)
         self.assertIn("Summary: errors=0, warnings=0", result.stdout)
+
+    def assert_audit_errors(
+        self,
+        root: Path,
+        expected: list[tuple[str, str]],
+    ) -> None:
+        result = run_cli(AUDIT, root, "--format", "json")
+        payload = json.loads(result.stdout)
+        actual = [
+            (finding["code"], finding["path"])
+            for finding in payload["findings"]
+            if finding["severity"] == "error"
+        ]
+        self.assertEqual(expected, actual, result.stdout + result.stderr)
 
     def test_v3_registration_fails_closed_and_names_stage_migrate(self):
         tmp, root = self.make_fixture(V3_TEMPLATE_ROOT)
@@ -136,11 +153,11 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             )
 
             self.assertEqual(0, result.returncode, result.stderr)
-            card = root / ".stage/work/current/W-00000001.md"
+            card = root / ".stage/work/current/W-00000001/_story.md"
             active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
             self.assertTrue(card.is_file())
             self.assertIn("milestone: M-00000008", card.read_text(encoding="utf-8"))
-            self.assertIn("(current/W-00000001.md)", active)
+            self.assertIn("(current/W-00000001/_story.md)", active)
             self.assertFalse((root / ".stage/present/work/items").exists())
             self.assert_audit_clean(root)
 
@@ -216,10 +233,10 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             self.assertEqual(1, duplicate.returncode)
             self.assertIn("planned card", duplicate.stderr)
             self.assertTrue(
-                (root / ".stage/work/planned/W-00000001.md").is_file()
+                (root / ".stage/work/planned/W-00000001/_story.md").is_file()
             )
             self.assertFalse(
-                (root / ".stage/work/current/W-00000001.md").exists()
+                (root / ".stage/work/current/W-00000001").exists()
             )
             self.assert_audit_clean(root)
 
@@ -271,12 +288,12 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
                 "M-00000009",
             )
             self.assertEqual(0, captured.returncode, captured.stderr)
-            planned = stage_root / "work/planned" / f"{item_id}.md"
-            current = stage_root / "work/current" / f"{item_id}.md"
+            planned = stage_root / "work/planned" / item_id / "_story.md"
+            current = stage_root / "work/current" / item_id / "_story.md"
             self.assertTrue(planned.is_file())
             self.assertFalse(current.exists())
             self.assertIn(
-                f"({item_id}.md)",
+                f"({item_id}/_story.md)",
                 (stage_root / "work/planned/index.md").read_text(encoding="utf-8"),
             )
             self.assertNotIn(
@@ -305,7 +322,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
                 (stage_root / "work/planned/index.md").read_text(encoding="utf-8"),
             )
             self.assertIn(
-                f"(current/{item_id}.md)",
+                f"(current/{item_id}/_story.md)",
                 (stage_root / "work/active.md").read_text(encoding="utf-8"),
             )
             self.assert_audit_clean(root)
@@ -347,14 +364,24 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             self.assertIn("status: completed", closed_text)
             self.assertIn("verification: passed", closed_text)
             self.assertIn("v4 lifecycle check passed", closed_text)
-            self.assertNotIn(
-                item_id, (stage_root / "work/active.md").read_text(encoding="utf-8")
+            self.assertIn(
+                f"(current/{item_id}/_story.md)",
+                (stage_root / "work/active.md").read_text(encoding="utf-8"),
             )
             self.assertIn(
                 f"(current/{item_id}.md)",
                 (stage_root / "work/review.md").read_text(encoding="utf-8"),
             )
-            self.assert_audit_clean(root)
+            # W-00000109 owns close_work's hierarchy-aware active-row removal.
+            self.assert_audit_errors(
+                root,
+                [
+                    (
+                        "INDEX005",
+                        ".stage/work/current/W-00000001/_story.md",
+                    )
+                ],
+            )
 
             archived = run_cli(ARCHIVE, root, item_id)
             self.assertEqual(0, archived.returncode, archived.stdout + archived.stderr)
@@ -375,7 +402,12 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
                     encoding="utf-8"
                 ),
             )
-            self.assert_audit_clean(root)
+            # W-00000109 also owns archive_work's hierarchy move; its stale
+            # nested active row is the only accepted post-archive finding.
+            self.assert_audit_errors(
+                root,
+                [("INDEX001", "work/active.md")],
+            )
 
 
 if __name__ == "__main__":

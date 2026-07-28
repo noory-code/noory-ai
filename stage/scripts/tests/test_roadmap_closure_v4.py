@@ -34,6 +34,8 @@ def run_cli(root: Path, *args: str) -> subprocess.CompletedProcess:
 
 
 def run_tool(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess:
+    if cli == REGISTER and "--scale" not in args:
+        args = ("--scale", "story", *args)
     return subprocess.run(
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,
@@ -333,7 +335,7 @@ class ClosureEndToEndTest(ClosureFixture):
                     "M-00000001",
                 )
                 self.assertEqual(0, registered.returncode, registered.stderr)
-                card = stage_root / "work/current" / f"{item_id}.md"
+                card = stage_root / "work/current" / item_id / "_story.md"
                 set_field(card, "status", status)
                 set_field(card, "retrospective", "completed")
                 set_field(card, "retrospective_ref", retro_id)

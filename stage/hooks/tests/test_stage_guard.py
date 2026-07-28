@@ -909,6 +909,7 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "deny")
         self.assertIn("registration gate", reason(result))
+        self.assertIn("story first", reason(result))
 
     def test_blocks_shell_redirect_source_write_without_registered_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1603,6 +1604,49 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
+
+    def test_hierarchy_gate_uses_planned_folder_parent_without_parent_field(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "settings.json", '{"schema_version": 4}\n')
+            self.write_stage_file(
+                root,
+                "work/planned/W-00000001/_epic.md",
+                "---\nid: W-00000001\nstatus: rejected\n---\n",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": (
+                        ".stage/work/planned/W-00000001/W-00000002/_story.md"
+                    ),
+                    "content": "---\nid: W-00000002\nstatus: captured\n---\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("finalized", reason(result))
+
+    def test_hierarchy_gate_blocks_action_without_story_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "settings.json", '{"schema_version": 4}\n')
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/work/planned/W-00000002.md",
+                    "content": "---\nid: W-00000002\nstatus: captured\n---\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("story", reason(result).lower())
 
     def test_hierarchy_gate_blocks_multiedit_with_unknown_parent(self):
         with tempfile.TemporaryDirectory() as tmp:

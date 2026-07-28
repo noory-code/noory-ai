@@ -8,6 +8,8 @@ from pathlib import Path
 
 
 FRONTMATTER_ID_RE = re.compile(r"^id:[ \t]*(?P<record_id>\S+)[ \t]*$", re.MULTILINE)
+EPIC_RECORD_NAME = "_epic.md"
+STORY_RECORD_NAME = "_story.md"
 
 
 def record_paths(root: Path, *, pattern: str = "*.md") -> tuple[Path, ...]:
@@ -82,3 +84,45 @@ def top_level_item_path(root: Path, record: Path) -> Path:
     if not relative.parts:
         raise ValueError("record path must be below its lifecycle root")
     return root / relative.parts[0]
+
+
+def work_record_scale(root: Path, record: Path) -> str:
+    """Return the scale encoded by one hierarchical work-record path.
+
+    A root-level Markdown file is the legacy flat shape. Callers may continue
+    reading that shape during the schema-v5 rollout, but new hierarchy-aware
+    writes can reject it explicitly.
+    """
+
+    try:
+        relative = record.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(f"record is outside its lifecycle root: {record}") from exc
+    parts = relative.parts
+    if len(parts) == 1 and record.suffix == ".md":
+        return "legacy"
+    if record.name == EPIC_RECORD_NAME and len(parts) == 2:
+        return "epic"
+    if record.name == STORY_RECORD_NAME and len(parts) in {2, 3}:
+        return "story"
+    if (
+        record.suffix == ".md"
+        and not record.name.startswith("_")
+        and len(parts) in {2, 3}
+    ):
+        return "action"
+    raise ValueError(f"work record has no valid epic/story/action location: {record}")
+
+
+def hierarchy_parent_record_path(root: Path, record: Path) -> Path | None:
+    """Return the parent record encoded by ``record``'s folder path."""
+
+    scale = work_record_scale(root, record)
+    relative = record.relative_to(root)
+    if scale in {"epic", "legacy"}:
+        return None
+    if scale == "story":
+        if len(relative.parts) == 2:
+            return None
+        return root / relative.parts[0] / EPIC_RECORD_NAME
+    return record.parent / STORY_RECORD_NAME

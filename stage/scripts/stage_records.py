@@ -57,6 +57,7 @@ class AuditedItem:
     item: stage_guard.WorkItem
     fields: dict[str, str]
     location: str
+    items_root: Path
 
 
 @dataclass(frozen=True)
@@ -157,17 +158,22 @@ class RecordGraph:
                 self.work.append(
                     AuditedItem(
                         item=stage_guard.item_from_fields(
-                            path, fields, stage_guard.AUDIT_FIELD_DEFAULTS
+                            path,
+                            fields,
+                            stage_guard.AUDIT_FIELD_DEFAULTS,
+                            items_root=root,
                         ),
                         fields=fields,
                         location=location,
+                        items_root=root,
                     )
                 )
 
         if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
-            self.backlog = _scan_nodes(
-                (stage_root / stage_topology.card_location_for_status("captured"),)
+            self.backlog_root = (
+                stage_root / stage_topology.card_location_for_status("captured")
             )
+            self.backlog = _scan_nodes((self.backlog_root,))
             decision_roots = stage_topology.resolve_artifact_reference(
                 "DE-00000000"
             ).candidate_paths
@@ -214,9 +220,8 @@ class RecordGraph:
             )
         else:
             self.themes = []
-            self.backlog = _scan_nodes(
-                (stage_root / "future" / "backlog" / "items",)
-            )
+            self.backlog_root = stage_root / "future" / "backlog" / "items"
+            self.backlog = _scan_nodes((self.backlog_root,))
             self.decisions = _scan_nodes(
                 (stage_root / "present" / "work" / "decisions",)
             )

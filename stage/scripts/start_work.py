@@ -23,7 +23,12 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
-from stage_record_paths import record_path, record_paths  # noqa: E402
+from stage_record_paths import (  # noqa: E402
+    record_path,
+    record_paths,
+    top_level_item_path,
+    work_record_scale,
+)
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -58,7 +63,6 @@ FRONTMATTER_ORDER = (
     "title",
     "kind",
     "venue",
-    "parent",
     "priority",
     "autonomous",
     "acceptance",
@@ -118,8 +122,11 @@ def body_after_frontmatter(text: str) -> str:
 def build_frontmatter(fields: dict[str, Any]) -> str:
     lines = ["---"]
     order = list(FRONTMATTER_ORDER)
+    if (fields.get("parent") or "").strip():
+        order.insert(order.index("venue") + 1, "parent")
     if "milestone" in fields:
-        order.insert(order.index("parent") + 1, "milestone")
+        anchor = "parent" if "parent" in order else "venue"
+        order.insert(order.index(anchor) + 1, "milestone")
     for key in order:
         if key == "acceptance":
             values = parse_string_list(fields.get(key))
@@ -130,6 +137,41 @@ def build_frontmatter(fields: dict[str, Any]) -> str:
             lines.append(f"{key}: {fields.get(key, '')}".rstrip())
     lines.append("---")
     return "\n".join(lines) + "\n"
+
+
+def ensure_record_sections(body: str) -> str:
+    for section in RECORD_SECTIONS:
+        if section + "\n" not in body and not body.rstrip().endswith(section):
+            body = body.rstrip() + f"\n\n{section}\n"
+    return body.rstrip() + "\n"
+
+
+def started_fields(
+    fields: dict[str, Any],
+    *,
+    scope: str,
+    decision: str,
+) -> dict[str, Any]:
+    fields = dict(fields)
+    if not (fields.get("parent") or "").strip():
+        fields.pop("parent", None)
+    original_status = (fields.get("status") or "").strip().lower()
+    for key, default in WORK_FIELD_DEFAULTS:
+        if key == "scope":
+            fields[key] = scope
+        elif key == "decision_refs":
+            existing = (fields.get(key) or "").strip()
+            if decision and decision not in existing:
+                fields[key] = f"{existing}, {decision}".strip(", ")
+            else:
+                fields[key] = existing
+        elif key == "status":
+            fields[key] = original_status if original_status == "rejected" else "active"
+        else:
+            fields.setdefault(key, default)
+            if not fields[key]:
+                fields[key] = default
+    return fields
 
 
 def main() -> int:
@@ -146,11 +188,13 @@ def main() -> int:
         current_root = paths.current_cards
         index_relative = paths.planned_index
         active_relative = paths.active_index
+        review_relative = paths.review_index
     else:
         planned_root = Path("future", "backlog", "items").as_posix()
         current_root = Path("present", "work", "items").as_posix()
         index_relative = Path("future", "backlog", "index.md").as_posix()
         active_relative = Path("present", "work", "active.md").as_posix()
+        review_relative = Path("present", "work", "review.md").as_posix()
 
     source_path = record_path(stage_root / planned_root, args.item)
     if not source_path.is_file():
@@ -162,8 +206,22 @@ def main() -> int:
         else:
             print(f"{args.item}: no planned card in {planned_root}", file=sys.stderr)
             return 1
-    target_path = record_path(stage_root / current_root, args.item)
-    if target_path.exists():
+    planned_dir = stage_root / planned_root
+    current_dir = stage_root / current_root
+    source_unit = top_level_item_path(planned_dir, source_path)
+    target_unit = current_dir / source_unit.name
+    if source_unit.is_dir():
+        scale = work_record_scale(planned_dir, source_path)
+        if scale not in {"epic", "story"} or source_path.parent != source_unit:
+            print(
+                f"{args.item}: start the top-level epic or story, not a nested item",
+                file=sys.stderr,
+            )
+            return 1
+        target_path = target_unit / source_path.relative_to(source_unit)
+    else:
+        target_path = target_unit
+    if target_unit.exists():
         print(f"{args.item}: already exists in {current_root}", file=sys.stderr)
         return 1
     if not args.scope.strip() or args.scope.strip() == ".":
@@ -197,7 +255,7 @@ def main() -> int:
     if routed == VENUE_SPLIT_TOKEN:
         exception_reason = (
             f"kind `{kind}` is declared mixed (`{VENUE_SPLIT_TOKEN}`): split this card into "
-            "design and implementation cards with `parent` lineage, or pass --decision <DE-id> "
+            "design and implementation hierarchy records, or pass --decision <DE-id> "
             "naming a decided decision with `authorizes: venue_exception`"
         )
     elif not venue and routed:
@@ -220,54 +278,105 @@ def main() -> int:
         return 1
 
     fields["venue"] = venue
-    for key, default in WORK_FIELD_DEFAULTS:
-        if key == "scope":
-            fields[key] = args.scope
-        elif key == "decision_refs":
-            existing = (fields.get(key) or "").strip()
-            if args.decision and args.decision not in existing:
-                fields[key] = f"{existing}, {args.decision}".strip(", ")
-            else:
-                fields[key] = existing
-        elif key == "status":
-            fields[key] = "active"
-        else:
-            fields.setdefault(key, default)
-            if not fields[key]:
-                fields[key] = default
+    fields = started_fields(fields, scope=args.scope, decision=args.decision)
 
     body = body_after_frontmatter(text)
-    for section in RECORD_SECTIONS:
-        if section + "\n" not in body and not body.rstrip().endswith(section):
-            body = body.rstrip() + f"\n\n{section}\n"
-    body = body.rstrip() + "\n"
+    body = ensure_record_sections(body)
 
-    target_path.write_text(build_frontmatter(fields) + "\n" + body, encoding="utf-8")
-    source_path.unlink()
+    source_records = (
+        tuple(
+            path
+            for path in record_paths(planned_dir)
+            if top_level_item_path(planned_dir, path) == source_unit
+        )
+        if source_unit.is_dir()
+        else (source_path,)
+    )
+    started_records: dict[Path, tuple[dict[str, Any], str]] = {
+        source_path.relative_to(source_unit): (
+            fields,
+            build_frontmatter(fields) + "\n" + body,
+        )
+    }
+    for child_path in source_records:
+        if child_path == source_path:
+            continue
+        child_fields = parse_frontmatter(child_path)
+        child_kind = (child_fields.get("kind") or "").strip().lower()
+        child_venue = (child_fields.get("venue") or "").strip()
+        child_routed = routing.get(child_kind, "")
+        if not child_venue and child_routed and child_routed != VENUE_SPLIT_TOKEN:
+            child_fields["venue"] = child_routed
+        child_fields = started_fields(
+            child_fields,
+            scope=args.scope,
+            decision=args.decision,
+        )
+        child_body = ensure_record_sections(
+            body_after_frontmatter(child_path.read_text(encoding="utf-8"))
+        )
+        started_records[child_path.relative_to(source_unit)] = (
+            child_fields,
+            build_frontmatter(child_fields) + "\n" + child_body,
+        )
+
+    moved_ids = {
+        item_id
+        for record_fields, _content in started_records.values()
+        if isinstance((item_id := record_fields.get("id")), str) and item_id
+    }
+    source_unit.rename(target_unit)
+    for relative, (_record_fields, content) in started_records.items():
+        (target_unit / relative).write_text(content, encoding="utf-8")
 
     active_path = stage_root / active_relative
-    active_link = relative_record_link(
-        active_relative, record_path(Path(current_root), args.item).as_posix()
-    )
-    title = (fields.get("title") or "").strip()[:60]
-    row = (
-        f"| {args.item} | {kind} | {venue} | {title} | active | {args.owner or venue} | "
-        f"[{active_link}]({active_link}) |"
-    )
     active_text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
-    if not re.search(rf"\({re.escape(active_link)}\)", active_text):
-        active_path.write_text(active_text.rstrip("\n") + "\n" + row + "\n", encoding="utf-8")
+    review_path = stage_root / review_relative
+    review_text = review_path.read_text(encoding="utf-8") if review_path.exists() else ""
+    for relative, (record_fields, _content) in started_records.items():
+        record_status = (record_fields.get("status") or "").strip().lower()
+        if record_status == "rejected":
+            record_id = (record_fields.get("id") or "").strip()
+            record_link = relative_record_link(
+                review_relative,
+                (target_unit / relative).relative_to(stage_root).as_posix(),
+            )
+            if not re.search(rf"\({re.escape(record_link)}\)", review_text):
+                row = (
+                    f"| {record_id} | {record_fields.get('verification', '')} | "
+                    f"{record_fields.get('retrospective', '')} | "
+                    f"{record_fields.get('promotion', '')} | "
+                    f"[{record_link}]({record_link}) |"
+                )
+                review_text = review_text.rstrip("\n") + "\n" + row + "\n"
+            continue
+        record_id = (record_fields.get("id") or "").strip()
+        record_kind = (record_fields.get("kind") or "").strip()
+        record_venue = (record_fields.get("venue") or "").strip()
+        record_title = (record_fields.get("title") or "").strip()[:60]
+        record_link = relative_record_link(
+            active_relative, (target_unit / relative).relative_to(stage_root).as_posix()
+        )
+        if re.search(rf"\({re.escape(record_link)}\)", active_text):
+            continue
+        row = (
+            f"| {record_id} | {record_kind} | {record_venue} | {record_title} | active | "
+            f"{args.owner or record_venue} | [{record_link}]({record_link}) |"
+        )
+        active_text = active_text.rstrip("\n") + "\n" + row + "\n"
+    active_path.write_text(active_text, encoding="utf-8")
+    review_path.write_text(review_text, encoding="utf-8")
 
     index_path = stage_root / index_relative
     if index_path.exists():
-        planned_link = relative_record_link(
-            index_relative, f"{planned_root}/{source_path.name}"
-        )
         lines = index_path.read_text(encoding="utf-8").splitlines()
         kept = [
             line
             for line in lines
-            if not (line.lstrip().startswith("|") and f"({planned_link})" in line)
+            if not (
+                line.lstrip().startswith("|")
+                and any(line.lstrip().startswith(f"| {item_id} |") for item_id in moved_ids)
+            )
         ]
         if len(kept) != len(lines):
             index_path.write_text("\n".join(kept) + "\n", encoding="utf-8")

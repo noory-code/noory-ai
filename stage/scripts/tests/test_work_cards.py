@@ -33,6 +33,8 @@ migrate_stage = load_module("migrate_stage_cards", SCRIPT_ROOT / "migrate_stage.
 
 
 def run_cli(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess:
+    if cli == REGISTER and "--scale" not in args:
+        args = ("--scale", "story", *args)
     return subprocess.run(
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,
@@ -76,7 +78,7 @@ class WorkCardFlowTest(unittest.TestCase):
                 "--scope", "", "--priority", "high",
             )
             self.assertEqual(0, result.returncode, result.stderr)
-            card = root / ".stage/work/planned/W-00000001.md"
+            card = root / ".stage/work/planned/W-00000001/_story.md"
             body = card.read_text(encoding="utf-8")
             index = (root / ".stage/work/planned/index.md").read_text(encoding="utf-8")
             active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
@@ -84,9 +86,9 @@ class WorkCardFlowTest(unittest.TestCase):
 
         self.assertIn("status: captured", body)
         self.assertIn("priority: high", body)
-        self.assertIn("(W-00000001.md)", index)
+        self.assertIn("(W-00000001/_story.md)", index)
         self.assertNotIn("W-00000001", active)
-        self.assertEqual([], [f for f in findings if f.severity == "error"])
+        self.assertEqual([], [f.code for f in findings if f.severity == "error"])
 
     def test_capture_allows_split_kind_without_decision(self):
         tmp, root = self.make()
@@ -106,9 +108,9 @@ class WorkCardFlowTest(unittest.TestCase):
             result = run_cli(START, root, "W-00000001", "--scope", "src")
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertIn("design -> claude", result.stdout)
-            moved = root / ".stage/work/current/W-00000001.md"
+            moved = root / ".stage/work/current/W-00000001/_story.md"
             body = moved.read_text(encoding="utf-8")
-            gone = (root / ".stage/work/planned/W-00000001.md").exists()
+            gone = (root / ".stage/work/planned/W-00000001").exists()
             index = (root / ".stage/work/planned/index.md").read_text(encoding="utf-8")
             active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
             findings = audit_stage.Audit(root).run()
@@ -119,9 +121,171 @@ class WorkCardFlowTest(unittest.TestCase):
         self.assertIn("scope: src", body)
         self.assertIn("verification: pending", body)
         self.assertIn("## Promotion decision", body)
-        self.assertNotIn("(W-00000001.md)", index)
-        self.assertIn("(current/W-00000001.md)", active)
-        self.assertEqual([], [f for f in findings if f.severity == "error"])
+        self.assertNotIn("(W-00000001/_story.md)", index)
+        self.assertIn("(current/W-00000001/_story.md)", active)
+        self.assertEqual([], [f.code for f in findings if f.severity == "error"])
+
+    def test_start_moves_the_whole_top_level_hierarchy(self):
+        tmp, root = self.make()
+        with tmp:
+            epic = run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--scale",
+                "epic",
+                "--title",
+                "Reliable driver",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000001",
+            )
+            story = run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--scale",
+                "story",
+                "--parent",
+                "W-00000001",
+                "--title",
+                "Review evidence",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000002",
+            )
+            action = run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--scale",
+                "action",
+                "--parent",
+                "W-00000002",
+                "--title",
+                "Driver side",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000003",
+            )
+            result = run_cli(START, root, "W-00000001", "--scope", "stage/x")
+            current = root / ".stage/work/current/W-00000001"
+            planned_exists = (root / ".stage/work/planned/W-00000001").exists()
+            epic_exists = (current / "_epic.md").is_file()
+            story_exists = (current / "W-00000002/_story.md").is_file()
+            action_exists = (
+                current / "W-00000002/W-00000003.md"
+            ).is_file()
+            bodies = [
+                record.read_text(encoding="utf-8")
+                for record in current.rglob("*.md")
+            ]
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual(0, epic.returncode, epic.stderr)
+        self.assertEqual(0, story.returncode, story.stderr)
+        self.assertEqual(0, action.returncode, action.stderr)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertFalse(planned_exists)
+        self.assertTrue(epic_exists)
+        self.assertTrue(story_exists)
+        self.assertTrue(action_exists)
+        for body in bodies:
+            self.assertNotIn("\nparent:", body)
+            self.assertIn("\nstatus: active\n", body)
+            self.assertIn("\nverification: pending\n", body)
+            self.assertIn("\nscope: stage/x\n", body)
+        self.assertEqual([], [f.code for f in findings if f.severity == "error"])
+
+    def test_start_does_not_reactivate_rejected_hierarchy_descendant(self):
+        tmp, root = self.make()
+        with tmp:
+            epic = run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--scale",
+                "epic",
+                "--title",
+                "Reliable driver",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000001",
+            )
+            story = run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--scale",
+                "story",
+                "--parent",
+                "W-00000001",
+                "--title",
+                "Review evidence",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000002",
+            )
+            action = run_cli(
+                REGISTER,
+                root,
+                "--backlog",
+                "--scale",
+                "action",
+                "--parent",
+                "W-00000002",
+                "--title",
+                "Discarded path",
+                "--kind",
+                "development",
+                "--scope",
+                "",
+                "--id",
+                "W-00000003",
+            )
+            action_path = (
+                root
+                / ".stage/work/planned/W-00000001/W-00000002/W-00000003.md"
+            )
+            action_path.write_text(
+                action_path.read_text(encoding="utf-8").replace(
+                    "status: captured", "status: rejected"
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(START, root, "W-00000001", "--scope", "stage/x")
+            moved_action = (
+                root
+                / ".stage/work/current/W-00000001/W-00000002/W-00000003.md"
+            ).read_text(encoding="utf-8")
+            review = (root / ".stage/work/review.md").read_text(encoding="utf-8")
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual(0, epic.returncode, epic.stderr)
+        self.assertEqual(0, story.returncode, story.stderr)
+        self.assertEqual(0, action.returncode, action.stderr)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("\nstatus: rejected\n", moved_action)
+        self.assertIn(
+            "(current/W-00000001/W-00000002/W-00000003.md)",
+            review,
+        )
+        self.assertEqual([], [f.code for f in findings if f.severity == "error"])
 
     def test_start_carries_autonomous_acceptance_from_planned_card(self):
         tmp, root = self.make()
@@ -142,7 +306,7 @@ class WorkCardFlowTest(unittest.TestCase):
             )
             self.assertEqual(0, result.returncode, result.stderr)
             result = run_cli(START, root, "W-00000001", "--scope", "src")
-            body = (root / ".stage/work/current/W-00000001.md").read_text(
+            body = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
 
@@ -172,7 +336,7 @@ class WorkCardFlowTest(unittest.TestCase):
                 "src",
                 "--autonomous",
             )
-            still_planned = (root / ".stage/work/planned/W-00000001.md").exists()
+            still_planned = (root / ".stage/work/planned/W-00000001").exists()
 
         self.assertEqual(1, result.returncode)
         self.assertIn("autonomous", result.stderr)
@@ -203,7 +367,7 @@ class WorkCardFlowTest(unittest.TestCase):
                 "--acceptance",
                 "python3 -m unittest -q",
             )
-            body = (root / ".stage/work/current/W-00000001.md").read_text(
+            body = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
 
@@ -217,7 +381,7 @@ class WorkCardFlowTest(unittest.TestCase):
             self.declare_routing(root, {"feature": "split"})
             run_cli(REGISTER, root, "--backlog", "--title", "Mixed", "--kind", "feature", "--scope", "")
             result = run_cli(START, root, "W-00000001", "--scope", "src")
-            still_planned = (root / ".stage/work/planned/W-00000001.md").exists()
+            still_planned = (root / ".stage/work/planned/W-00000001").exists()
 
         self.assertEqual(1, result.returncode)
         self.assertIn("split", result.stderr)
@@ -233,7 +397,9 @@ class WorkCardFlowTest(unittest.TestCase):
                 START, root, "W-00000001", "--scope", "src", "--venue", "claude",
                 "--decision", "DE-0001",
             )
-            body = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
+            body = (
+                root / ".stage/work/current/W-00000001/_story.md"
+            ).read_text(encoding="utf-8")
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("decision_refs: DE-0001", body)
@@ -253,9 +419,9 @@ class WorkCardFlowTest(unittest.TestCase):
             run_cli(REGISTER, root, "--backlog", "--title", "Planned", "--kind", "chore", "--scope", "")
             result = run_cli(REGISTER, root, "--title", "Direct", "--kind", "chore", "--scope", "src")
             self.assertEqual(0, result.returncode, result.stderr)
-            present = sorted(p.name for p in (root / ".stage/work/current").glob("W-*.md"))
+            present = sorted(p.name for p in (root / ".stage/work/current").glob("W-*"))
 
-        self.assertEqual(["W-00000002.md"], present)
+        self.assertEqual(["W-00000002"], present)
 
 
 class BacklogMigrationTest(unittest.TestCase):

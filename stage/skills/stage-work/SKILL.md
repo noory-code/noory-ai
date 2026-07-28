@@ -11,35 +11,57 @@ leaves early commits ungated (R-00000001's learning).
 
 `.stage/` itself is not governed source, so the item file and `active.md` are free to create.
 
-## Find the purpose first
+## Judge the scale first
 
-Before writing the item, locate the real purpose in the upstream SSOT (initiative / epic / plan
-doc). Do not guess. If the purpose answers an open question, the question may be unnecessary.
+Start with: **"How large is this work?"** Do not start by offering to create one card.
 
-## One card, three columns
+- `epic` — several stories must combine to deliver the outcome.
+- `story` — one coherent outcome, either top-level or inside an epic.
+- `action` — one indivisible execution step inside a story.
 
-A work card is one `W-*` artifact for its whole life (DE-00000007): captured as a planned card
-in `work/planned/`, moved to `work/current/` when work starts, and archived under
-`official/work/archive/` when closed. The lifecycle CLIs derive these paths from the schema-v4
-registry; never select them manually. Two flows create work:
+An action can never be top-level. If no story exists, establish the story first, then register the
+action beneath it. The folder path is the hierarchy SSOT; never add or maintain a `parent:` field.
 
-- **Capture for later**: `register_work.py --backlog --title "..." --kind <kind> --scope ""` —
-  a planned card (`status: captured`) in `work/planned/` and its index. No venue/split
-  checks run during capture.
+After judging scale, locate the real purpose in the upstream SSOT (initiative / epic / plan doc).
+Do not guess. If the purpose answers an open question, the question may be unnecessary.
+
+## One hierarchy, three lifecycle columns
+
+A work record is one `W-*` artifact for its whole life (DE-00000007). An epic directory or
+independent story directory is one top-level lifecycle unit: captured in `work/planned/`, moved
+whole to `work/current/` when work starts, and archived whole under `official/work/archive/` when
+closed. The lifecycle CLIs derive these paths; never select them manually. Two flows create work:
+
+- **Capture for later**: `register_work.py --backlog --scale <scale> --title "..." --kind <kind>
+  --scope "" [--parent W-NNNNNNNN]` — a planned record (`status: captured`) in
+  `work/planned/` and its index. No venue/split checks run during capture.
 - **Start now**: the flow below (direct current registration), or start an existing planned card
   with `python3 stage/scripts/start_work.py --project-root <root> W-NNNNNNNN --scope "..."` — the
-  mover sets `active`, requires scope, derives the venue, and enforces the split/exception
-  contract at that moment. Never hand-move the file.
+  mover moves the top-level directory, sets `active`, requires scope, derives the venue, and
+  enforces the split/exception contract at that moment. Never hand-move a file or directory.
 
-## Ask the milestone question conditionally
+Use `--parent` only as a placement input:
 
-Before confirming registration, run:
+- `--scale epic` has no parent.
+- A top-level `--scale story` has no parent; a story inside an epic passes the epic `W-*`.
+- `--scale action` must pass its story `W-*`.
+
+The CLI resolves that record and writes the new record inside its folder. It never writes
+`parent:` frontmatter.
+
+## Ask the milestone question for top-level work
+
+Do not ask a milestone question for a nested story or action. Before confirming a top-level epic
+or story, run:
 
 ```text
 python3 stage/skills/stage-work/register_work.py --project-root <root> --count-open-milestones
 ```
 
-- If the command prints `0`, do not ask a milestone question and omit `--milestone`.
+- If the command prints `0`, ask exactly: "there is no open milestone; create one before
+  registering this top-level item?" If the human answers yes, use `stage-roadmap` to create and
+  begin pursuit of the milestone before registration. If the human answers no, omit
+  `--milestone`.
 - If the command prints an integer greater than `0`, ask exactly: "does this belong to a
   milestone?" If the human selects one milestone, pass its single `M-NNNNNNNN` id through
   `--milestone`. If the human answers no, omit `--milestone`.
@@ -64,10 +86,12 @@ next free number, writes the card, and updates the owning index:
   declaring `authorizes: venue_exception` (record the decision first, then register; the audit
   enforces the same contract plus the `work_item` back-link). A kind routed to the reserved
   value `split` is mixed by definition: register a planning/design item and an implementation
-  item with `parent` lineage instead of one ambiguous item (see `stage-handoff`); a deliberate
-  single item needs the same exception decision.
+  item as separate hierarchy records instead of one ambiguous item (see `stage-handoff`); a
+  deliberate single item needs the same exception decision.
 - `scope` — the paths this work may modify. The registration gate matches writes against these,
   so list every governed subtree you will touch. `*` authorizes anything (use sparingly).
+- `scale` and placement — always pass `--scale`. Pass `--parent` only for a story inside an epic
+  or an action inside a story.
 - `milestone` — include one `M-NNNNNNNN` only when the conditional question above was asked and
   the human selected that active milestone.
 - `## Purpose`, `## Scope`, `## Success criteria` — concrete and checkable.

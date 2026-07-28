@@ -52,6 +52,10 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     stage_relative_forms,
 )
 import stage_topology  # noqa: E402
+from stage_record_paths import (  # noqa: E402
+    hierarchy_parent_record_path,
+    work_record_scale,
+)
 from stage_roadmap_gate import (  # noqa: E402
     projected_closure_promotion_blocker,
     reattribution_blocker,
@@ -100,7 +104,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     item_is_completed,
     item_is_open,
     item_promotes_path,
-    load_archive_work_items,
+    load_all_work_items,
     load_work_items,
     parse_frontmatter,
     parse_index_rows,
@@ -415,24 +419,83 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
         return ""
 
     stage_root = workspace_root / ".stage"
-    items = load_work_items(stage_root) + load_archive_work_items(stage_root)
+    items = load_all_work_items(stage_root)
 
     # Post-state status per work-item ID: disk first, then this call's projected
     # edits overlaid — so a patch that finalizes a parent AND opens a child under
     # it in the same call is judged against the parent's FINAL status, not its
     # stale on-disk status.
     status_by_id: dict[str, str] = {}
+    item_by_path: dict[Path, WorkItem] = {}
     for item in items:
         status_by_id.setdefault(item.item_id, item.status)
+        item_by_path[item.path] = item
     projected_id_by_stem: dict[str, str] = {}
+    projected_by_path: dict[Path, tuple[str, str]] = {}
     for relative, projected in targets:
         projected_id = frontmatter_field_from_text(projected, "id") or Path(relative).stem
         projected_id_by_stem[Path(relative).stem] = projected_id
-        status_by_id[projected_id] = (
-            frontmatter_field_from_text(projected, "status") or "active"
-        ).lower()
+        projected_status = (frontmatter_field_from_text(projected, "status") or "active").lower()
+        status_by_id[projected_id] = projected_status
+        projected_by_path[workspace_root / relative] = (projected_id, projected_status)
 
     for relative, projected in targets:
+        target_path = workspace_root / relative
+        hierarchy_root = None
+        for candidate in (
+            stage_root / stage_topology.card_location_for_status("captured"),
+            stage_root / stage_topology.card_location_for_status("active"),
+            stage_root / stage_topology.card_location_for_status("archived"),
+        ):
+            try:
+                target_path.relative_to(candidate)
+            except ValueError:
+                continue
+            hierarchy_root = candidate
+            break
+
+        if hierarchy_root is not None:
+            try:
+                scale = work_record_scale(hierarchy_root, target_path)
+            except ValueError as exc:
+                return f"Stage hierarchy gate violation: {exc}"
+            if scale == "legacy" and not target_path.exists():
+                return (
+                    "Stage hierarchy gate violation: an action cannot be top-level; "
+                    "create a story first and place the action inside its folder"
+                )
+            if scale != "legacy":
+                self_id, child_status = projected_by_path[target_path]
+                parent_path = hierarchy_parent_record_path(hierarchy_root, target_path)
+                if parent_path is None:
+                    continue
+                projected_parent = projected_by_path.get(parent_path)
+                disk_parent = item_by_path.get(parent_path)
+                if projected_parent is not None:
+                    parent_id, parent_status = projected_parent
+                elif disk_parent is not None:
+                    parent_id, parent_status = disk_parent.item_id, disk_parent.status
+                else:
+                    expected = "story" if scale == "action" else "epic"
+                    return (
+                        "Stage hierarchy gate violation: "
+                        f"{expected} record not found at folder parent: {parent_path}"
+                    )
+                if parent_id == self_id:
+                    return (
+                        "Stage hierarchy gate violation: a work item cannot be "
+                        f"its own folder parent: {parent_id}"
+                    )
+                if (
+                    parent_status in WORK_FINAL_STATUSES
+                    and child_status not in WORK_FINAL_STATUSES
+                ):
+                    return (
+                        "Stage hierarchy gate violation: cannot open a child under "
+                        f"a finalized folder parent ({parent_status}): {parent_id}"
+                    )
+                continue
+
         parent_id = frontmatter_field_from_text(projected, "parent")
         if not parent_id:
             continue
