@@ -364,28 +364,24 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             self.assertIn("status: completed", closed_text)
             self.assertIn("verification: passed", closed_text)
             self.assertIn("v4 lifecycle check passed", closed_text)
-            self.assertIn(
-                f"(current/{item_id}/_story.md)",
+            self.assertNotIn(
+                item_id,
                 (stage_root / "work/active.md").read_text(encoding="utf-8"),
             )
             self.assertIn(
-                f"(current/{item_id}.md)",
+                f"(current/{item_id}/_story.md)",
                 (stage_root / "work/review.md").read_text(encoding="utf-8"),
             )
-            # W-00000109 owns close_work's hierarchy-aware active-row removal.
-            self.assert_audit_errors(
-                root,
-                [
-                    (
-                        "INDEX005",
-                        ".stage/work/current/W-00000001/_story.md",
-                    )
-                ],
-            )
+            self.assert_audit_clean(root)
 
             archived = run_cli(ARCHIVE, root, item_id)
             self.assertEqual(0, archived.returncode, archived.stdout + archived.stderr)
-            archived_item = stage_root / "official/work/archive/items" / f"{item_id}.md"
+            archived_item = (
+                stage_root
+                / "official/work/archive/items"
+                / item_id
+                / "_story.md"
+            )
             archived_retro = (
                 stage_root / "official/work/archive/retrospectives" / f"{retro_id}.md"
             )
@@ -397,17 +393,12 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
                 item_id, (stage_root / "work/review.md").read_text(encoding="utf-8")
             )
             self.assertIn(
-                f"| {item_id} | completed | [items/{item_id}.md]",
+                f"| {item_id} | completed | [items/{item_id}/_story.md]",
                 (stage_root / "official/work/archive/index.md").read_text(
                     encoding="utf-8"
                 ),
             )
-            # W-00000109 also owns archive_work's hierarchy move; its stale
-            # nested active row is the only accepted post-archive finding.
-            self.assert_audit_errors(
-                root,
-                [("INDEX001", "work/active.md")],
-            )
+            self.assert_audit_clean(root)
 
 
 if __name__ == "__main__":

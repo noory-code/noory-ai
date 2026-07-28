@@ -364,7 +364,11 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
         self.assertIn(
             "`work/current`: W-00000102, W-00000106, W-00000107 (+2 more)", context
         )
-        self.assertNotIn("W-00000109", context)
+        lifecycle_view = context.split(
+            "### Lifecycle view (derived, read-only)\n", 1
+        )[1].split("### Current work hierarchy\n", 1)[0]
+        self.assertNotIn("W-00000109", lifecycle_view)
+        self.assertIn("- W-00000109 W-00000109 [active]", context)
         self.assertIn("`decisions/pending`: DE-00000103", context)
         self.assertIn(
             "- official — `official/decisions/records`: DE-00000104", context

@@ -63,10 +63,12 @@ well as guidance and can destroy project data.
 - Work item frontmatter enum violations.
 - Completed work with open verification, retrospective, or promotion decision.
 - Mismatches between `active.md`, `review.md`, and `items/`.
-- Work item hierarchy: unknown parents, cycles, open children under finalized parents.
+- Work item hierarchy: invalid epic/story/action placement, cycles, and open records placed under
+  finalized hierarchy locations. Placement findings name the missing/invalid location rather
+  than suggesting that operators repair a `parent` field.
 - Retrospective links (`retrospective_ref` ↔ `work_item`) resolved by item location.
 - Decision record links (`decision_refs` ↔ `work_item`) and decision status enums.
-- Backlog frontmatter status and parent references.
+- Planned hierarchy status and folder-derived placement references.
 - Archived work item location violations.
 - Schema-v4 roadmap references, theme/milestone index parity, status ownership, and decision
   chains.

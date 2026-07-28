@@ -133,6 +133,42 @@ def active_milestone_table(stage_root: Path) -> str:
     return "\n".join(lines)
 
 
+def work_hierarchy_view(stage_root: Path) -> str:
+    """Render current work as a deterministic parent/child tree."""
+
+    items = load_work_items(stage_root)
+    by_id = {item.item_id: item for item in items}
+    children: dict[str, list] = {}
+    roots = []
+    for item in items:
+        if item.parent and item.parent in by_id:
+            children.setdefault(item.parent, []).append(item)
+        else:
+            roots.append(item)
+    for siblings in children.values():
+        siblings.sort(key=lambda item: id_sort_key(item.item_id))
+    roots.sort(key=lambda item: id_sort_key(item.item_id))
+
+    lines = ["### Current work hierarchy"]
+
+    def append_item(item, depth: int, seen: set[str]) -> None:
+        indent = "  " * depth
+        title = " ".join(item.title.split())
+        label = f"{item.item_id} {title}".rstrip()
+        lines.append(f"{indent}- {label} [{item.status}]")
+        if item.item_id in seen:
+            return
+        next_seen = {*seen, item.item_id}
+        for child in children.get(item.item_id, []):
+            append_item(child, depth + 1, next_seen)
+
+    for root in roots:
+        append_item(root, 0, set())
+    if not roots:
+        lines.append("- None")
+    return "\n".join(lines)
+
+
 def session_context(workspace_root: Path) -> str:
     stage_root = workspace_root / ".stage"
     if not stage_root.exists():
@@ -243,6 +279,7 @@ def session_context(workspace_root: Path) -> str:
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         parts.append("\n" + derived_lifecycle_view(stage_root))
         parts.append("\n" + active_milestone_table(stage_root))
+        parts.append("\n" + work_hierarchy_view(stage_root))
         state_index = next(
             path
             for path in stage_topology.get_zone("state", "current").index_surfaces

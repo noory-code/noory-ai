@@ -7,6 +7,12 @@ description: Perform the mandatory post-work Stage retrospective and confirm ext
 
 Use this skill after work reaches a completion candidate.
 
+In a hierarchy, close and review each action before the next action runs. A story closes after all
+its actions are terminal; an epic closes after all its stories are terminal. Closing the
+top-level record is the final whole-outcome review point. Do not collapse action evidence into the
+top-level retrospective: each record keeps its own retrospective and the top-level retrospective
+judges the aggregated outcome.
+
 ## Required confirmations
 
 1. **External-perspective completion**: the user-visible request is satisfied.
@@ -68,6 +74,9 @@ It runs each `--check`, records the output as evidence, and completes the item o
 and also requires a completed retrospective and a FINAL promotion decision. If `.stage/settings.json`
 configures an `implementation`-stage review (see the plugin-owned `operations/review.md`), `close_work` runs that
 review command too and refuses to close on a failing or `BLOCK:` verdict.
+
+For hierarchical records, `close_work` resolves the record by frontmatter ID and writes the exact
+nested link into `work/review.md`; do not substitute a flat `<id>.md` path.
 
 ## Completion rule
 

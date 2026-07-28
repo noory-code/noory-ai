@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -28,7 +29,11 @@ sys.path.insert(
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
-from stage_record_paths import record_path  # noqa: E402
+from stage_record_paths import (  # noqa: E402
+    record_path,
+    record_paths,
+    top_level_item_path,
+)
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
@@ -102,7 +107,7 @@ def append_index_row(
     return f"{body}\n{row}\n"
 
 
-def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str]:
+def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str, str]:
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         return (
@@ -110,6 +115,7 @@ def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str]:
             paths.current_retrospectives,
             paths.archive_cards,
             paths.archive_retrospectives,
+            paths.active_index,
             paths.review_index,
             paths.archive_index,
         )
@@ -118,13 +124,14 @@ def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str]:
         Path("present", "work", "retrospectives").as_posix(),
         Path("past", "work", "archive", "items").as_posix(),
         Path("past", "work", "archive", "retrospectives").as_posix(),
+        Path("present", "work", "active.md").as_posix(),
         Path("present", "work", "review.md").as_posix(),
         Path("past", "work", "archive", "index.md").as_posix(),
     )
 
 
 def completed_ids_from_review(stage_root: Path) -> list[str]:
-    current_root, _, _, _, review_relative, _ = _archive_paths(stage_root)
+    current_root, _, _, _, _, review_relative, _ = _archive_paths(stage_root)
     review = stage_root / review_relative
     if not review.exists():
         return []
@@ -163,41 +170,70 @@ def archive_one(
         current_retro_root,
         archive_root,
         archive_retro_root,
+        active_relative,
         review_relative,
         index_relative,
     ) = _archive_paths(stage_root)
-    present_item = record_path(stage_root / current_root, item_id)
-    archive_item = record_path(stage_root / archive_root, item_id)
+    current_items_root = stage_root / current_root
+    archive_items_root = stage_root / archive_root
+    present_item = record_path(current_items_root, item_id)
+    archived_match = record_path(archive_items_root, item_id)
 
-    if archive_item.exists() and not present_item.exists():
+    if archived_match.exists() and not present_item.exists():
         return f"{item_id}: already archived (skipped)"
     if not present_item.exists():
         return f"{item_id}: ERROR no present item file"
 
-    text = present_item.read_text(encoding="utf-8")
-    status = frontmatter_field(text, "status")
-    if status not in TERMINAL_STATUSES:
-        return f"{item_id}: ERROR status `{status}` is not completed/rejected"
-
-    try:
-        dirty_paths = dirty_paths_in_scope(stage_root.parent, frontmatter_field(text, "scope"))
-    except RuntimeError as exc:
-        return f"{item_id}: ERROR cannot verify worktree state; refusing to archive: {exc}"
+    present_unit = top_level_item_path(current_items_root, present_item)
+    if present_unit.is_dir() and present_item.parent != present_unit:
+        return (
+            f"{item_id}: ERROR archive the top-level hierarchy "
+            f"{present_unit.name}, not a nested item"
+        )
+    archive_unit = archive_items_root / present_unit.name
+    if archive_unit.exists():
+        return f"{item_id}: ERROR archive move unit already exists: {archive_unit}"
+    records = (
+        (present_item, *record_paths(present_unit))
+        if present_unit.is_dir()
+        else (present_item,)
+    )
+    record_data: list[tuple[Path, str, str, str, Path]] = []
+    dirty_paths: set[str] = set()
+    for record in records:
+        text = record.read_text(encoding="utf-8")
+        record_id = frontmatter_field(text, "id") or record.stem
+        status = frontmatter_field(text, "status")
+        if status not in TERMINAL_STATUSES:
+            return (
+                f"{item_id}: ERROR hierarchy record {record_id} status `{status}` "
+                "is not completed/rejected"
+            )
+        try:
+            dirty_paths.update(
+                dirty_paths_in_scope(
+                    stage_root.parent,
+                    frontmatter_field(text, "scope"),
+                )
+            )
+        except RuntimeError as exc:
+            return (
+                f"{item_id}: ERROR cannot verify worktree state; refusing to archive: {exc}"
+            )
+        if frontmatter_field(text, "retrospective") != "completed":
+            return f"{item_id}: ERROR {record_id} retrospective is not completed"
+        ref = frontmatter_field(text, "retrospective_ref")
+        if not ref:
+            return f"{item_id}: ERROR {record_id} has no retrospective_ref"
+        present_retro = record_path(stage_root / current_retro_root, ref)
+        if not present_retro.exists():
+            return f"{item_id}: ERROR retrospective file {ref}.md not found"
+        record_data.append((record, record_id, status, ref, present_retro))
     if dirty_paths:
         return (
-            f"{item_id}: ERROR uncommitted path(s) inside scope: {', '.join(dirty_paths)}; "
-            f"required order: {ORDER_CONTRACT}"
+            f"{item_id}: ERROR uncommitted path(s) inside scope: "
+            f"{', '.join(sorted(dirty_paths))}; required order: {ORDER_CONTRACT}"
         )
-
-    retro_completed = frontmatter_field(text, "retrospective") == "completed"
-    if not retro_completed:
-        return f"{item_id}: ERROR retrospective is not completed"
-    ref = frontmatter_field(text, "retrospective_ref")
-    if not ref:
-        return f"{item_id}: ERROR no retrospective_ref"
-    present_retro = record_path(stage_root / current_retro_root, ref)
-    if not present_retro.exists():
-        return f"{item_id}: ERROR retrospective file {ref}.md not found"
     if item_id in blocking_children:
         detail = ", ".join(
             f"{child.item_id} (`{child.status}`)"
@@ -205,66 +241,102 @@ def archive_one(
         )
         return f"{item_id}: ERROR non-terminal children still name it as parent: {detail}"
 
-    archive_retro = record_path(stage_root / archive_retro_root, ref)
     index_path = stage_root / index_relative
+    active_path = stage_root / active_relative
     review_path = stage_root / review_relative
-
-    if archive_retro.exists():
-        archived_work_item = frontmatter_field(
-            archive_retro.read_text(encoding="utf-8"), "work_item"
-        )
-        if archived_work_item and archived_work_item != item_id:
-            return (
-                f"{item_id}: ERROR retrospective id collision: {ref}.md already belongs "
-                f"to {archived_work_item}; refusing to overwrite it"
+    for _record, record_id, _status, ref, _present_retro in record_data:
+        archive_retro = record_path(stage_root / archive_retro_root, ref)
+        if archive_retro.exists():
+            archived_work_item = frontmatter_field(
+                archive_retro.read_text(encoding="utf-8"), "work_item"
             )
+            if archived_work_item and archived_work_item != record_id:
+                return (
+                    f"{item_id}: ERROR retrospective id collision: {ref}.md already "
+                    f"belongs to {archived_work_item}; refusing to overwrite it"
+                )
+        failed_intents = delete_pending_intents_for_work_item(stage_root, record_id)
+        if failed_intents:
+            names = ", ".join(path.name for path in failed_intents)
+            return f"{item_id}: ERROR cannot delete pending intent(s): {names}"
 
-    failed_intents = delete_pending_intents_for_work_item(stage_root, item_id)
-    if failed_intents:
-        names = ", ".join(path.name for path in failed_intents)
-        return f"{item_id}: ERROR cannot delete pending intent(s): {names}"
-
-    # Move the item (status -> archived) and its retrospective (verbatim).
-    archive_item.parent.mkdir(parents=True, exist_ok=True)
-    archive_retro.parent.mkdir(parents=True, exist_ok=True)
-    archived_text = set_frontmatter_field(text, "status", "archived")
-    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
-        disposition = "accepted" if status == "completed" else "rejected"
-        archived_text = set_or_insert_frontmatter_field(
-            archived_text,
-            "terminal_disposition",
-            disposition,
-            after="status",
+    root_text = present_item.read_text(encoding="utf-8")
+    root_status = frontmatter_field(root_text, "status")
+    for record, _record_id, status, _ref, _present_retro in record_data:
+        relative = (
+            record.relative_to(present_unit)
+            if present_unit.is_dir()
+            else Path(record.name)
         )
-    archive_item.write_text(archived_text, encoding="utf-8")
-    archive_retro.write_text(present_retro.read_text(encoding="utf-8"), encoding="utf-8")
+        target = (
+            archive_unit / relative
+            if present_unit.is_dir()
+            else archive_unit
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        archived_text = set_frontmatter_field(
+            record.read_text(encoding="utf-8"), "status", "archived"
+        )
+        if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+            archived_text = set_or_insert_frontmatter_field(
+                archived_text,
+                "terminal_disposition",
+                "accepted" if status == "completed" else "rejected",
+                after="status",
+            )
+        target.write_text(archived_text, encoding="utf-8")
+    for _record, _record_id, _status, ref, present_retro in record_data:
+        archive_retro = record_path(stage_root / archive_retro_root, ref)
+        archive_retro.parent.mkdir(parents=True, exist_ok=True)
+        archive_retro.write_text(
+            present_retro.read_text(encoding="utf-8"), encoding="utf-8"
+        )
 
-    # Record the terminal status the `archived` overwrite erases, then drop the
-    # present-flow rows and files.
+    archived_item = record_path(archive_items_root, item_id)
+    archived_link = relative_record_link(
+        index_relative,
+        archived_item.relative_to(stage_root).as_posix(),
+    )
     index_path.write_text(
         append_index_row(
             index_path.read_text(encoding="utf-8"),
             item_id,
-            status,
-            relative_record_link(
-                index_relative, record_path(Path(archive_root), item_id).as_posix()
-            ),
+            root_status,
+            archived_link,
         ),
         encoding="utf-8",
     )
-    if review_path.exists():
+    active_text = (
+        active_path.read_text(encoding="utf-8") if active_path.exists() else ""
+    )
+    review_text = (
+        review_path.read_text(encoding="utf-8") if review_path.exists() else ""
+    )
+    for record, record_id, _status, _ref, _present_retro in record_data:
+        record_link = relative_record_link(
+            active_relative,
+            record.relative_to(stage_root).as_posix(),
+        )
+        active_text = drop_table_row(active_text, record_id, record_link)
         review_link = relative_record_link(
-            review_relative, record_path(Path(current_root), item_id).as_posix()
+            review_relative,
+            record.relative_to(stage_root).as_posix(),
         )
-        review_path.write_text(
-            drop_table_row(
-                review_path.read_text(encoding="utf-8"), item_id, review_link
-            ),
-            encoding="utf-8",
-        )
-    present_item.unlink()
-    present_retro.unlink()
-    return f"{item_id}: archived (final status {status}, {ref}.md)"
+        review_text = drop_table_row(review_text, record_id, review_link)
+    if active_path.exists():
+        active_path.write_text(active_text, encoding="utf-8")
+    if review_path.exists():
+        review_path.write_text(review_text, encoding="utf-8")
+    if present_unit.is_dir():
+        shutil.rmtree(present_unit)
+    else:
+        present_unit.unlink()
+    for _record, _record_id, _status, _ref, present_retro in record_data:
+        present_retro.unlink()
+    return (
+        f"{item_id}: archived hierarchy ({len(record_data)} record(s), "
+        f"final status {root_status})"
+    )
 
 
 def main() -> int:

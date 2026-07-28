@@ -13,9 +13,9 @@ place to know which window to open next.
 
 - `venue` on each work item names the surface that should carry it out. No hook gates on it, but
   when the project declares a role policy the audit checks consistency (VENUE001-VENUE005).
-- `work/active.md` shows every open item with its `Venue` column. This is the routing
-  view: the human opens the window whose venue has open rows, or a bridge-equipped window
-  executes them by delegation (below).
+- `work/active.md` shows every open item with its `Venue` column, while injected session context
+  draws the same records as an epic/story/action tree. Route the next runnable action with its
+  ancestor chain, not as an isolated flat row.
 - The machine-readable role policy lives in `settings.json` `venue_routing` (`kind -> venue`);
   what each venue means belongs to the project's canon (e.g. `official/canon/vocabulary.md`). The
   harness fixes no venue names. Registration derives the venue from the policy without asking the
@@ -95,6 +95,10 @@ does not stall: register a planning-venue item that carries the implementation e
 exact decision needed, link the blocked item (`parent` or body reference), and hand off. Each
 transition names one unresolved decision or one executable next action — that is what keeps
 bidirectional handoffs from looping.
+
+An action that reaches its attempt cap is a decomposition failure, not a rerun request. Handoff
+the blocked story, the failed action ID and evidence, and the pending decision that asks the human
+to split, merge, or redefine its actions. The epic's other stories remain independently routable.
 
 ## Session summary is automatic
 

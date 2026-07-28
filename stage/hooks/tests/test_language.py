@@ -112,6 +112,43 @@ class ContextDirectiveTest(unittest.TestCase):
         context = stage_context.session_context(self.make_workspace("en"))
         self.assertNotIn("Stage document language", context)
 
+    def test_v4_context_draws_current_work_as_epic_story_action_tree(self):
+        root = Path(tempfile.mkdtemp())
+        stage_root = root / ".stage"
+        (stage_root / "work/current/W-00000001/W-00000002").mkdir(parents=True)
+        (stage_root / "settings.json").write_text(
+            '{"schema_version": 4}\n', encoding="utf-8"
+        )
+        records = (
+            (
+                stage_root / "work/current/W-00000001/_epic.md",
+                "W-00000001",
+                "Epic",
+            ),
+            (
+                stage_root / "work/current/W-00000001/W-00000002/_story.md",
+                "W-00000002",
+                "Story",
+            ),
+            (
+                stage_root
+                / "work/current/W-00000001/W-00000002/W-00000003.md",
+                "W-00000003",
+                "Action",
+            ),
+        )
+        for path, item_id, title in records:
+            path.write_text(
+                f"---\nid: {item_id}\ntitle: {title}\nstatus: active\n---\n",
+                encoding="utf-8",
+            )
+
+        hierarchy = stage_context.work_hierarchy_view(stage_root)
+
+        self.assertIn("- W-00000001 Epic [active]", hierarchy)
+        self.assertIn("  - W-00000002 Story [active]", hierarchy)
+        self.assertIn("    - W-00000003 Action [active]", hierarchy)
+
 
 if __name__ == "__main__":
     unittest.main()

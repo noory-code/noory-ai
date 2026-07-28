@@ -113,25 +113,21 @@ def parse_args() -> argparse.Namespace:
 def select_next_ready_leaf(
     target_id: str, items: list[WorkItem]
 ) -> WorkItem | None:
-    """Choose the target leaf or a direct READY leaf child in deterministic order."""
+    """Choose a READY leaf anywhere below the requested hierarchy root."""
 
-    if non_terminal_children(target_id, items):
-        candidates = (
-            item
-            for item in items
-            if item.parent == target_id
-            and item.status not in WORK_FINAL_STATUSES
-            and item.acceptance
-            and not non_terminal_children(item.item_id, items)
+    by_id = {item.item_id: item for item in items}
+    candidates = (
+        item
+        for item in items
+        if item.status in {"active", "review"}
+        and item.acceptance
+        and not non_terminal_children(item.item_id, items)
+        and (
+            item.item_id == target_id
+            or is_in_subtree(item, target_id, by_id)
         )
-    else:
-        candidates = (
-            item
-            for item in items
-            if item.item_id == target_id
-            and item.status not in WORK_FINAL_STATUSES
-            and item.acceptance
-        )
+        and ancestors_are_runnable(item, target_id, by_id)
+    )
     return next(
         iter(sorted(candidates, key=lambda item: (item.item_id, item.path.as_posix()))),
         None,
@@ -465,6 +461,8 @@ def executor_environment(
     project_root: Path,
     work_log_path: Path,
     executor_index_path: Path | None = None,
+    *,
+    items: list[WorkItem] | None = None,
 ) -> dict[str, str]:
     """Return the inherited environment plus the selected work item context."""
 
@@ -475,6 +473,12 @@ def executor_environment(
             "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
             "STAGE_PROJECT_ROOT": str(project_root.resolve()),
             "STAGE_WORK_LOG_PATH": str(work_log_path.resolve()),
+            "STAGE_WORK_ITEM_ANCESTOR_PATHS": json.dumps(
+                [
+                    str(ancestor.path.resolve())
+                    for ancestor in ancestor_chain(item, items or [])
+                ]
+            ),
         }
     )
     if executor_index_path is not None:
@@ -993,6 +997,79 @@ def is_in_subtree(item: WorkItem, target_id: str, by_id: dict[str, WorkItem]) ->
     return False
 
 
+def ancestor_chain(item: WorkItem, items: list[WorkItem]) -> list[WorkItem]:
+    """Return known ancestors in root-first order."""
+
+    by_id = {candidate.item_id: candidate for candidate in items}
+    ancestors: list[WorkItem] = []
+    seen: set[str] = set()
+    parent_id = item.parent
+    while parent_id and parent_id not in seen:
+        seen.add(parent_id)
+        parent = by_id.get(parent_id)
+        if parent is None:
+            break
+        ancestors.append(parent)
+        parent_id = parent.parent
+    ancestors.reverse()
+    return ancestors
+
+
+def ancestors_are_runnable(
+    item: WorkItem,
+    target_id: str,
+    by_id: dict[str, WorkItem],
+) -> bool:
+    """Blocked/final ancestors suppress only their own descendant branch."""
+
+    current = item
+    seen: set[str] = set()
+    while current.item_id != target_id:
+        parent_id = current.parent
+        if not parent_id or parent_id in seen:
+            return False
+        seen.add(parent_id)
+        parent = by_id.get(parent_id)
+        if parent is None or parent.status not in {"active", "review"}:
+            return False
+        current = parent
+    return current.status in {"active", "review"}
+
+
+def subtree_limits(
+    configured: dict[str, int],
+    target_id: str,
+    items: list[WorkItem],
+    *,
+    per_action_seconds: int,
+) -> dict[str, int]:
+    """Scale global ceilings to the number of unfinished leaves in the subtree."""
+
+    by_id = {item.item_id: item for item in items}
+    action_count = sum(
+        1
+        for item in items
+        if item.status not in WORK_FINAL_STATUSES
+        and not non_terminal_children(item.item_id, items)
+        and (
+            item.item_id == target_id
+            or is_in_subtree(item, target_id, by_id)
+        )
+    )
+    action_count = max(1, action_count)
+    return {
+        "max_attempts_per_item": configured["max_attempts_per_item"],
+        "max_iterations": max(
+            configured["max_iterations"],
+            action_count * configured["max_attempts_per_item"],
+        ),
+        "max_wall_clock_seconds": max(
+            configured["max_wall_clock_seconds"],
+            action_count * per_action_seconds,
+        ),
+    }
+
+
 def select_next_unattended_leaf(target_id: str, items: list[WorkItem]) -> WorkItem | None:
     """Choose the target leaf or an eligible leaf in its subtree.
 
@@ -1011,6 +1088,7 @@ def select_next_unattended_leaf(target_id: str, items: list[WorkItem]) -> WorkIt
             and item.acceptance
             and not non_terminal_children(item.item_id, items)
             and is_in_subtree(item, target_id, by_id)
+            and ancestors_are_runnable(item, target_id, by_id)
         )
     else:
         candidates = (
@@ -1202,6 +1280,12 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             "unattended mode requires a `limits` config (absent is not unlimited here); refusing to run"
         )
         return 1
+    limits = subtree_limits(
+        limits,
+        args.target,
+        load_all_work_items(stage_root),
+        per_action_seconds=args.timeout,
+    )
     # A dirty index/worktree would leak unrelated changes into item commits.
     if not worktree_clean(project_root):
         print_escalation("working tree/index is not clean; commit or stash before an unattended run")
@@ -1329,6 +1413,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                     project_root,
                     log_path,
                     executor_index if index_path is not None else None,
+                    items=items,
                 ),
             )
         try:
@@ -1733,6 +1818,13 @@ def main() -> int:
     if limits_error:
         print_escalation(f"limits config unusable: {limits_error}")
         return 1
+    if limits is not None:
+        limits = subtree_limits(
+            limits,
+            args.target,
+            items,
+            per_action_seconds=args.timeout,
+        )
 
     executor_command, executor_error = resolve_executor_command(
         load_executors_config(stage_root), item.venue
@@ -1850,6 +1942,7 @@ def main() -> int:
                 project_root,
                 log_path,
                 executor_index if index_path is not None else None,
+                items=items,
             ),
         )
         print(f"Executor result:\n{executor_evidence}")

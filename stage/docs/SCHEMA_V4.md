@@ -202,12 +202,12 @@ driver rather than this transition.
 The `stage-drive` skill is the agent-facing entry point to everything in this section and the two
 that follow; this document remains the contract it links to.
 
-`stage/scripts/drive.py <TARGET_ID>` is the supervised driver entry point. When the target has any
-non-terminal child, it remains a parent: the driver selects one existing, direct, non-terminal
-leaf child whose `acceptance` list is non-empty, deterministically by work-item ID, and never
-selects the target directly. When no non-terminal child exists, the driver selects the target
-itself if it is non-terminal and its `acceptance` list is non-empty. Otherwise there is nothing to
-select. The driver never creates work items or approves a decomposition.
+`stage/scripts/drive.py <TARGET_ID>` is the supervised driver entry point. The target may be an
+epic, story, or action. The driver searches the whole target subtree and selects the first
+runnable leaf with non-empty `acceptance`, deterministically by work-item ID. A blocked story
+suppresses its remaining actions without suppressing sibling stories. When the target itself is a
+runnable leaf, the driver selects it directly. The driver never creates work items or approves a
+decomposition.
 
 The review-sibling `executors` object in `.stage/settings.json` binds each item venue to its
 executor command. Variable expansion syntax is shell-specific because the driver runs these
@@ -238,6 +238,8 @@ the current process environment and sets:
 
 - `STAGE_WORK_ITEM`: the selected work item ID, such as `W-00000070`;
 - `STAGE_WORK_ITEM_PATH`: the absolute path to the selected work item's card;
+- `STAGE_WORK_ITEM_ANCESTOR_PATHS`: a JSON array of absolute ancestor card paths in root-first
+  order; both executor venue prompts must require reading these paths with the selected card;
 - `STAGE_PROJECT_ROOT`: the absolute path to the project root;
 - `GIT_INDEX_FILE`: an executor-only disposable index copied from the real Git index when it exists.
 
@@ -406,7 +408,10 @@ The optional `limits` object in `.stage/settings.json` owns the driver ceilings:
 
 When `limits` is present, all three fields are required positive JSON integers and no other
 field is accepted. `max_attempts_per_item` caps attempts for one work item;
-`max_iterations` and `max_wall_clock_seconds` are global driver ceilings. An absent object means
+`max_iterations` and `max_wall_clock_seconds` are configured minimum global ceilings. At target
+run start, the driver raises them to at least `unfinished leaf count * max_attempts_per_item` and
+`unfinished leaf count * per-command timeout`, respectively. This ties the execution budget to
+the actual subtree without changing the per-action attempt cap. An absent object means
 no limits are configured. `stage_paths.load_limits_config()` returns `(limits, "")` for a valid
 object, `(None, "")` when it is absent, or `(None, error)` for an unreadable or malformed shape.
 Every enforcement caller must fail closed on a non-empty error. The driver owns counters,

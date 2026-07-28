@@ -354,10 +354,12 @@ class ClosureEndToEndTest(ClosureFixture):
                 )
 
             accepted = (
-                stage_root / "official/work/archive/items/W-00000001.md"
+                stage_root
+                / "official/work/archive/items/W-00000001/_story.md"
             ).read_text(encoding="utf-8")
             rejected = (
-                stage_root / "official/work/archive/items/W-00000002.md"
+                stage_root
+                / "official/work/archive/items/W-00000002/_story.md"
             ).read_text(encoding="utf-8")
             self.assertIn("terminal_disposition: accepted", accepted)
             self.assertIn("terminal_disposition: rejected", rejected)
@@ -414,7 +416,8 @@ class ClosureEndToEndTest(ClosureFixture):
                 "cwd": str(root),
                 "tool_input": {
                     "file_path": (
-                        ".stage/official/work/archive/items/W-00000001.md"
+                        ".stage/official/work/archive/items/"
+                        "W-00000001/_story.md"
                     ),
                     "old_string": "milestone: M-00000001",
                     "new_string": "milestone: M-00000077",

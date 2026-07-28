@@ -287,7 +287,7 @@ def load_items_from(items_root: Path) -> list[WorkItem]:
 
     items: list[WorkItem] = []
     for path in record_paths(items_root):
-        if path.name in {"README.md", "_template.md"}:
+        if path.name in {"README.md", "_template.md", "index.md"}:
             continue
         items.append(
             item_from_fields(

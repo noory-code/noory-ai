@@ -516,31 +516,19 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
             )
             self.assertEqual(0, closed_work.returncode, closed_work.stderr)
             self.assertIn("status: completed", card.read_text(encoding="utf-8"))
-            # W-00000109 owns close_work's hierarchy move: it still computes the
-            # flat active-index link and therefore cannot remove this exact row.
-            self.assert_audit_errors(
-                root,
-                [
-                    (
-                        "INDEX005",
-                        ".stage/work/current/W-00000001/_story.md",
-                    )
-                ],
-            )
+            self.assert_audit_clean(root)
 
             archived = run_tool(ARCHIVE, root, "W-00000001")
             self.assertEqual(0, archived.returncode, archived.stdout + archived.stderr)
-            archived_card = stage_root / "official/work/archive/items/W-00000001.md"
+            archived_card = (
+                stage_root
+                / "official/work/archive/items/W-00000001/_story.md"
+            )
             self.assertIn(
                 "terminal_disposition: accepted",
                 archived_card.read_text(encoding="utf-8"),
             )
-            # W-00000109 also owns archive_work's hierarchy move. Until then,
-            # the exact nested active row becomes dangling after archival.
-            self.assert_audit_errors(
-                root,
-                [("INDEX001", "work/active.md")],
-            )
+            self.assert_audit_clean(root)
 
             closed_milestone = run_tool(
                 ROADMAP,
@@ -556,10 +544,7 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
             self.assertIn(
                 "| W-00000001 | accepted |", pending.read_text(encoding="utf-8")
             )
-            self.assert_audit_errors(
-                root,
-                [("INDEX001", "work/active.md")],
-            )
+            self.assert_audit_clean(root)
 
             promoter = run_tool(
                 REGISTER,
@@ -584,17 +569,7 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
                 root, "W-00000002", promotion="approved"
             )
             self.assertEqual(0, closed_promoter.returncode, closed_promoter.stderr)
-            # W-00000109 removes this exact close-owned stale hierarchy row.
-            self.assert_audit_errors(
-                root,
-                [
-                    ("INDEX001", "work/active.md"),
-                    (
-                        "INDEX005",
-                        ".stage/work/current/W-00000002/_story.md",
-                    )
-                ],
-            )
+            self.assert_audit_clean(root)
 
             intent = stage_guard.write_intent_file(
                 stage_root,
@@ -638,22 +613,16 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
             pending.replace(official)
             stage_guard.handle_event("post-tool-use", promotion_payload)
             set_field(promoter_card, "promotion", "promoted")
-            self.assert_audit_errors(
-                root,
-                [
-                    ("INDEX001", "work/active.md"),
-                    (
-                        "INDEX005",
-                        ".stage/work/current/W-00000002/_story.md",
-                    )
-                ],
-            )
+            self.assert_audit_clean(root)
 
             reattribution_payload = {
                 "tool_name": "Edit",
                 "cwd": str(root),
                 "tool_input": {
-                    "file_path": ".stage/official/work/archive/items/W-00000001.md",
+                    "file_path": (
+                        ".stage/official/work/archive/items/"
+                        "W-00000001/_story.md"
+                    ),
                     "old_string": "milestone: M-00000001",
                     "new_string": "milestone: M-00000077",
                 },
@@ -670,16 +639,7 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
             )
             self.assertIn(closure_id, reattribution_reason)
             self.assertIn("re-attribution", reattribution_reason.lower())
-            self.assert_audit_errors(
-                root,
-                [
-                    ("INDEX001", "work/active.md"),
-                    (
-                        "INDEX005",
-                        ".stage/work/current/W-00000002/_story.md",
-                    )
-                ],
-            )
+            self.assert_audit_clean(root)
 
             archived_promoter = run_tool(ARCHIVE, root, "W-00000002")
             self.assertEqual(
@@ -687,13 +647,7 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
                 archived_promoter.returncode,
                 archived_promoter.stdout + archived_promoter.stderr,
             )
-            self.assert_audit_errors(
-                root,
-                [
-                    ("INDEX001", "work/active.md"),
-                    ("INDEX001", "work/active.md"),
-                ],
-            )
+            self.assert_audit_clean(root)
 
 
 if __name__ == "__main__":

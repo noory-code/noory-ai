@@ -38,8 +38,10 @@ If the target has any non-terminal child, the driver treats it as a parent and c
 direct, non-terminal leaf children with a **non-empty `acceptance` list**. It never selects that
 target directly while an unfinished child exists. Ties break deterministically by work item ID.
 
-If the target has no non-terminal child, the driver selects the target itself when it is
-non-terminal and has non-empty acceptance. Otherwise there is nothing to select.
+The target may be an epic, story, or action. The driver searches the whole target subtree and
+selects the first runnable leaf by work ID. A blocked story suppresses every remaining action in
+that story, while sibling stories under the same epic remain eligible. If the target itself is a
+runnable leaf, the driver selects it directly.
 
 A card with no acceptance commands is invisible to the driver — there is nothing for it to verify,
 so it will not run it. Unattended mode narrows eligibility further to `active` and
@@ -52,9 +54,11 @@ children, while a leaf target can select only itself.
 (or `settings.jsonc`) maps each venue to the command that carries out that venue's work. An absent
 section, a missing venue, a malformed map, or an empty command stops the driver where it stands
 with an escalation recommendation — it never falls back to running the work itself. The driver
-passes the selected card to that command through `STAGE_WORK_ITEM`, `STAGE_WORK_ITEM_PATH`, and
-`STAGE_PROJECT_ROOT`; the command text is shell-expanded, so its variable syntax is
-platform-specific.
+passes the selected card through `STAGE_WORK_ITEM` and `STAGE_WORK_ITEM_PATH`, its root-first
+ancestor card paths through the JSON array `STAGE_WORK_ITEM_ANCESTOR_PATHS`, and the project
+through `STAGE_PROJECT_ROOT`. Both configured executor venues must instruct the executor to read
+the selected action and every ancestor card before working; the command text is shell-expanded,
+so its variable syntax is platform-specific.
 
 **The reviewer's venue must differ from the item's.** `review.reviewers` must resolve to exactly
 one reviewer whose venue is not the selected item's venue. Configure only the item's own venue and
@@ -121,7 +125,9 @@ Three conditions end a step in `blocked` instead of a retry: an exhausted limit,
 fingerprint, and an independent reviewer `BLOCK:` verdict. A reviewer BLOCK escalates
 unconditionally — it is a judgment on the result, not a transient failure, so rerunning the step
 is never the answer to it. All three recommend `escalate_work.py`; the driver never escalates
-itself and never claims completion.
+itself and never claims completion. When the exhausted item is an action, escalation also blocks
+its story and creates the human decision at that story: the next instruction is to re-decompose
+the story, not to rerun the same action. Other stories in the epic continue.
 
 A BLOCK puts the reviewer's voice in front of the human; it does not decide for the human. After
 any verdict, disposition each finding — accept, decline, or defer — with a one-line reason in the
@@ -180,7 +186,10 @@ session or starts fresh, the shared log is the recovery input for every round.
 **It refuses to start without a `limits` config.** An absent `limits` object is not "no ceiling" —
 it is a missing decision, and an unbounded autonomous loop is forbidden. Configure
 `max_attempts_per_item`, `max_iterations`, and `max_wall_clock_seconds` together, or the run does
-not begin.
+not begin. `max_attempts_per_item` remains fixed per selected action. The configured iteration and
+wall-clock values are minimums; at run start the driver raises them to at least
+`unfinished leaves * attempts` and `unfinished leaves * per-command timeout`, respectively, so a
+top-level run has enough budget for its actual subtree.
 
 **Status: reviewed in code and known code defects closed, but never exercised on real work.** The
 unattended loop has been through independent code review, and the defects those reviews identified

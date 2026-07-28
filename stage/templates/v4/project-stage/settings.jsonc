@@ -16,6 +16,16 @@
   },
   // Registers additional host tool names that can write files.
   "extra_write_tools": [],
+  // Executor commands are project-specific. Configure both venue commands to read
+  // STAGE_WORK_ITEM_PATH and every ancestor card path in the JSON array
+  // STAGE_WORK_ITEM_ANCESTOR_PATHS before executing the selected action.
+  // These are per-action baselines. The driver keeps attempts fixed per action and
+  // scales the iteration and wall-clock ceilings to the target subtree's leaf count.
+  "limits": {
+    "max_attempts_per_item": 3,
+    "max_iterations": 12,
+    "max_wall_clock_seconds": 5400
+  },
   // Configures optional review commands and per-stage review strength.
   "review": {
     "strengths": {

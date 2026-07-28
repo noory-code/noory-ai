@@ -148,6 +148,17 @@ class ParentCompletionTest(unittest.TestCase):
             self.assertTrue(stage_work.children_are_terminal("W-00000001", items))
             self.assertEqual(stage_work.stage_completion_blockers(root), [])
 
+    def test_planned_index_is_not_loaded_as_a_work_item(self):
+        tmp, _, stage_root = self.make_stage()
+        with tmp:
+            index = stage_root / "work/planned/index.md"
+            index.parent.mkdir(parents=True, exist_ok=True)
+            index.write_text("# Planned work\n", encoding="utf-8")
+
+            items = stage_work.load_all_work_items(stage_root)
+
+        self.assertNotIn("index", {item.item_id for item in items})
+
 
 if __name__ == "__main__":
     unittest.main()

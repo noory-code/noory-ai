@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.53.0 — 2026-07-29
+
+- Drive epic and story targets through runnable descendant actions, pass each executor the
+  root-first ancestor-card chain, and scale global iteration and time ceilings to the unfinished
+  leaf count.
+- Block an action's story at the attempt cap, skip that story's remaining actions while continuing
+  sibling stories, and route the human response through an explicit re-decomposition decision.
+- Preserve descendant scopes and rejected branches when starting a hierarchy, refuse to erase a
+  deferred descendant, and exclude lifecycle index files from completion-gate inputs.
+- Close nested records with their exact index links, archive a top-level hierarchy and all of its
+  retrospectives as one move unit, and render current work as an epic/story/action context tree.
+- Align hierarchy audit wording, settings guidance, lifecycle documentation, and all Stage skills
+  with the execution, closure, and archive contracts.
+
 ## 0.52.0 — 2026-07-28
 
 - Make work registration start with an explicit epic, story, or action scale, reject top-level

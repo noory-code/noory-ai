@@ -242,6 +242,55 @@ class DriveTest(unittest.TestCase):
         self.assertEqual("--project-root", parsed[2])
         self.assertEqual(str(project_root), parsed[3])
 
+    def test_supervised_selection_descends_from_epic_to_action(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+            )
+            write_card(
+                stage_root,
+                "W-00000003",
+                parent="W-00000002",
+                acceptance=(PASS_COMMAND,),
+            )
+            drive = self.load_module()
+
+            selected = drive.select_next_ready_leaf(
+                "W-00000001", drive.load_all_work_items(stage_root)
+            )
+
+        self.assertIsNotNone(selected)
+        self.assertEqual("W-00000003", selected.item_id)
+
+    def test_executor_environment_lists_ancestor_cards_in_root_first_order(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(stage_root, "W-00000002", parent="W-00000001")
+            write_card(stage_root, "W-00000003", parent="W-00000002")
+            drive = self.load_module()
+            items = drive.load_all_work_items(stage_root)
+            action = next(item for item in items if item.item_id == "W-00000003")
+
+            environment = drive.executor_environment(
+                action,
+                root,
+                stage_root / ".runtime/driver/logs/W-00000003.md",
+                items=items,
+            )
+
+        self.assertEqual(
+            [
+                str((stage_root / "work/current/W-00000001.md").resolve()),
+                str((stage_root / "work/current/W-00000002.md").resolve()),
+            ],
+            json.loads(environment["STAGE_WORK_ITEM_ANCESTOR_PATHS"]),
+        )
+
     def test_selects_next_ready_leaf_by_id(self):
         tmp, root = self.make_project()
         with tmp:

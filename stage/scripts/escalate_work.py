@@ -17,7 +17,12 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
-from stage_record_paths import record_path, record_paths  # noqa: E402
+from stage_record_paths import (  # noqa: E402
+    hierarchy_parent_record_path,
+    record_path,
+    record_paths,
+    work_record_scale,
+)
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -102,7 +107,14 @@ def replace_section(text: str, heading: str, body: str) -> str:
     return updated
 
 
-def render_decision(template: str, decision_id: str, item_id: str, reason: str) -> str:
+def render_decision(
+    template: str,
+    decision_id: str,
+    item_id: str,
+    reason: str,
+    *,
+    failed_action: str = "",
+) -> str:
     rendered = set_field(template, "id", decision_id)
     rendered = set_field(rendered, "work_item", item_id)
     rendered = set_field(rendered, "status", "open")
@@ -116,18 +128,29 @@ def render_decision(template: str, decision_id: str, item_id: str, reason: str) 
     if count != 1:
         raise ValueError("decision template has no decision title")
 
+    question = reason
+    follow_up = (
+        f"After the decision is resolved, explicitly transition {item_id} before resuming work."
+    )
+    if failed_action:
+        question = (
+            f"Action {failed_action} failed within story {item_id}. {reason} "
+            "How must the story be decomposed again?"
+        )
+        follow_up = (
+            f"Read the evidence for failed action {failed_action}, then re-decompose story "
+            f"{item_id} by splitting, merging, or redefining its actions before resuming it."
+        )
     content = {
-        "Question": reason,
+        "Question": question,
         "Options": "- Decide the action required to unblock the work item.",
         "Principles applied": (
             "- Fail Fast - stop work that cannot safely advance.\n"
             "- Honesty - record the blocker instead of claiming completion."
         ),
         "Chosen direction": "Pending human decision.",
-        "Reason": reason,
-        "Follow-up": (
-            f"After the decision is resolved, explicitly transition {item_id} before resuming work."
-        ),
+        "Reason": question,
+        "Follow-up": follow_up,
     }
     for heading in SECTION_HEADINGS:
         rendered = replace_section(rendered, heading, content[heading])
@@ -140,6 +163,7 @@ def update_active_index(
     fields: dict[str, Any],
     active_relative: str,
     current_root: str,
+    record_relative: str = "",
 ) -> str:
     lines = text.splitlines()
     found = False
@@ -156,7 +180,8 @@ def update_active_index(
         kind = str(fields.get("kind") or "").strip()
         venue = str(fields.get("venue") or "").strip()
         item_link = relative_record_link(
-            active_relative, record_path(Path(current_root), item_id).as_posix()
+            active_relative,
+            record_relative or record_path(Path(current_root), item_id).as_posix(),
         )
         lines.append(
             f"| {item_id} | {kind} | {venue} | {title} | blocked | {venue} | "
@@ -219,6 +244,32 @@ def main() -> int:
         )
         return 1
 
+    current_items_root = stage_root / paths.current_cards
+    target_path = item_path
+    target_id = args.item
+    target_fields = fields
+    try:
+        scale = work_record_scale(current_items_root, item_path)
+    except ValueError:
+        scale = "legacy"
+    if scale == "action":
+        parent_path = hierarchy_parent_record_path(current_items_root, item_path)
+        if parent_path is None or not parent_path.is_file():
+            print(
+                f"{args.item}: action has no story location; refusing to escalate",
+                file=sys.stderr,
+            )
+            return 1
+        target_path = parent_path
+        target_fields = parse_frontmatter(target_path)
+        target_id = str(target_fields.get("id") or "").strip()
+        if not target_id:
+            print(
+                f"{args.item}: story record has no id; refusing to escalate",
+                file=sys.stderr,
+            )
+            return 1
+
     template_path = stage_root / "decisions/pending/_template.md"
     active_path = stage_root / paths.active_index
     review_path = stage_root / paths.review_index
@@ -233,22 +284,43 @@ def main() -> int:
     decision_path = stage_root / "decisions/pending" / f"{decision_id}.md"
     try:
         decision_text = render_decision(
-            template_path.read_text(encoding="utf-8"), decision_id, args.item, reason
+            template_path.read_text(encoding="utf-8"),
+            decision_id,
+            target_id,
+            reason,
+            failed_action=args.item if scale == "action" else "",
         )
-        refs = list(split_scope(str(fields.get("decision_refs") or "")))
-        if decision_id not in refs:
-            refs.append(decision_id)
-        updated_item = set_field(item_text, "status", "blocked")
-        updated_item = set_or_insert_field(
-            updated_item, "decision_refs", ", ".join(refs), after="promotes"
-        )
-        updated_active = update_active_index(
-            active_path.read_text(encoding="utf-8"),
-            args.item,
-            fields,
-            paths.active_index,
-            paths.current_cards,
-        )
+        records = [(item_path, fields)]
+        if target_path != item_path:
+            records.append((target_path, target_fields))
+        updated_records: list[tuple[Path, str]] = []
+        updated_active = active_path.read_text(encoding="utf-8")
+        for record, record_fields in records:
+            record_id = str(record_fields.get("id") or "").strip()
+            updated_record = set_field(
+                record.read_text(encoding="utf-8"), "status", "blocked"
+            )
+            if record == target_path:
+                refs = list(
+                    split_scope(str(record_fields.get("decision_refs") or ""))
+                )
+                if decision_id not in refs:
+                    refs.append(decision_id)
+                updated_record = set_or_insert_field(
+                    updated_record,
+                    "decision_refs",
+                    ", ".join(refs),
+                    after="promotes",
+                )
+            updated_records.append((record, updated_record))
+            updated_active = update_active_index(
+                updated_active,
+                record_id,
+                record_fields,
+                paths.active_index,
+                paths.current_cards,
+                record.relative_to(stage_root).as_posix(),
+            )
         updated_decision_index = append_decision_index(
             decision_index_path.read_text(encoding="utf-8"), decision_id
         )
@@ -260,19 +332,26 @@ def main() -> int:
     try:
         with decision_path.open("x", encoding="utf-8") as handle:
             handle.write(decision_text)
-        item_path.write_text(updated_item, encoding="utf-8")
+        for record, updated_record in updated_records:
+            record.write_text(updated_record, encoding="utf-8")
         active_path.write_text(updated_active, encoding="utf-8")
         if review_path.exists():
-            review_path.write_text(
-                drop_index_row(review_path.read_text(encoding="utf-8"), args.item),
-                encoding="utf-8",
-            )
+            review_text = review_path.read_text(encoding="utf-8")
+            for record, _updated_record in updated_records:
+                record_id = str(parse_frontmatter(record).get("id") or "").strip()
+                review_text = drop_index_row(review_text, record_id)
+            review_path.write_text(review_text, encoding="utf-8")
         decision_index_path.write_text(updated_decision_index, encoding="utf-8")
     except OSError as exc:
         print(f"{args.item}: escalation write failed: {exc}", file=sys.stderr)
         return 2
 
-    print(f"{args.item}: blocked; pending decision {decision_id} created")
+    detail = (
+        f"; story {target_id} blocked for re-decomposition"
+        if scale == "action"
+        else ""
+    )
+    print(f"{args.item}: blocked{detail}; pending decision {decision_id} created")
     return 0
 
 

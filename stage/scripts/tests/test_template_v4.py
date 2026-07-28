@@ -95,6 +95,14 @@ class TemplateV4Test(unittest.TestCase):
         self.assertEqual(3, v3_settings["schema_version"])
         self.assertEqual(V4_ROOT, init_stage.TEMPLATE_ROOT)
 
+    def test_v4_settings_documents_hierarchy_executor_and_subtree_limit_contracts(self):
+        settings_text = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+
+        self.assertIn("STAGE_WORK_ITEM_ANCESTOR_PATHS", settings_text)
+        self.assertIn('"max_attempts_per_item"', settings_text)
+        self.assertIn('"max_iterations"', settings_text)
+        self.assertIn('"max_wall_clock_seconds"', settings_text)
+
     def test_roadmap_templates_have_computed_status_contract(self):
         theme = V4_ROOT / "roadmap/themes/_template.md"
         milestone = V4_ROOT / "roadmap/milestones/_template.md"

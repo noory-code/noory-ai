@@ -136,7 +136,7 @@ def _snapshot(path: Path, relative: Path, text: str, archive_root: Path) -> Work
         terminal_disposition=_field_from_text(
             text, "terminal_disposition"
         ).lower(),
-        archived=relative.parent == archive_root,
+        archived=relative.is_relative_to(archive_root),
     )
 
 

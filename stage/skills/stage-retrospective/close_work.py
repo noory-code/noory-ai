@@ -431,11 +431,12 @@ def committed_paths_in_head(project_root: Path, timeout: int) -> list[str]:
 def close_review_environment(
     project_root: Path,
     item_path: Path,
+    item_id: str,
     changed_paths_file: Path,
     timeout: int,
 ) -> dict[str, str]:
     paths = committed_paths_in_head(project_root, timeout)
-    work_log = ensure_work_log(project_root / ".stage", item_path.stem)
+    work_log = ensure_work_log(project_root / ".stage", item_id)
     try:
         changed_paths_file.write_text(
             json.dumps(paths, ensure_ascii=False) + "\n",
@@ -483,22 +484,22 @@ def main() -> int:
     item_path = record_path(stage_root / current_root, args.item)
     active_path = stage_root / active_relative
     review_path = stage_root / review_relative
-    active_item_link = relative_record_link(
-        active_relative, record_path(Path(current_root), args.item).as_posix()
-    )
-    review_item_link = relative_record_link(
-        review_relative, record_path(Path(current_root), args.item).as_posix()
-    )
     if not item_path.exists():
         if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
             print(f"{args.item}: no current item file at {item_path}", file=sys.stderr)
         else:
             print(f"{args.item}: no present item file at {item_path}", file=sys.stderr)
         return 2
+    item_relative = item_path.relative_to(stage_root).as_posix()
+    active_item_link = relative_record_link(active_relative, item_relative)
+    review_item_link = relative_record_link(review_relative, item_relative)
 
     text = item_path.read_text(encoding="utf-8")
     work_item = item_from_fields(
-        item_path, parse_frontmatter(item_path), GATE_FIELD_DEFAULTS
+        item_path,
+        parse_frontmatter(item_path),
+        GATE_FIELD_DEFAULTS,
+        items_root=stage_root / current_root,
     )
     status = field(text, "status")
 
@@ -640,6 +641,7 @@ def main() -> int:
                 review_environment = close_review_environment(
                     project_root,
                     item_path,
+                    work_item.item_id,
                     Path(review_tmp) / "changed-paths.json",
                     args.timeout,
                 )
@@ -682,6 +684,7 @@ def main() -> int:
                 review_environment = close_review_environment(
                     project_root,
                     item_path,
+                    work_item.item_id,
                     Path(review_tmp) / "changed-paths.json",
                     args.timeout,
                 )

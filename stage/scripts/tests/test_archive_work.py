@@ -274,6 +274,90 @@ class ArchiveWorkCliTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
             self.assertIn("already archived", proc.stdout)
 
+    def test_v4_archives_one_top_level_hierarchy_as_one_move_unit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = root / ".stage"
+            current = stage / "work/current/W-00000001"
+            story = current / "W-00000002"
+            story.mkdir(parents=True)
+            (stage / "work/retrospectives").mkdir(parents=True)
+            (stage / "official/work/archive/items").mkdir(parents=True)
+            (stage / "official/work/archive/retrospectives").mkdir(parents=True)
+            (stage / "settings.json").write_text(
+                '{"schema_version": 4}\n', encoding="utf-8"
+            )
+            records = (
+                (current / "_epic.md", "W-00000001", "R-00000001"),
+                (story / "_story.md", "W-00000002", "R-00000002"),
+                (story / "W-00000003.md", "W-00000003", "R-00000003"),
+            )
+            for path, item_id, retro_id in records:
+                path.write_text(
+                    ITEM.format(
+                        wid=item_id,
+                        status="completed",
+                        retro="completed",
+                        ref=retro_id,
+                    ),
+                    encoding="utf-8",
+                )
+                (stage / "work/retrospectives" / f"{retro_id}.md").write_text(
+                    RETRO.format(ref=retro_id, wid=item_id),
+                    encoding="utf-8",
+                )
+            (stage / "work/review.md").write_text(
+                "# Review Candidates\n"
+                + "".join(
+                    f"| {item_id} | passed | completed | not_applicable | "
+                    f"[{path.relative_to(stage / 'work').as_posix()}]"
+                    f"({path.relative_to(stage / 'work').as_posix()}) |\n"
+                    for path, item_id, _retro_id in records
+                ),
+                encoding="utf-8",
+            )
+            (stage / "work/active.md").write_text(
+                "# Active Work\n"
+                + "".join(
+                    f"| {item_id} | development | codex | x | completed | codex | "
+                    f"[{path.relative_to(stage / 'work').as_posix()}]"
+                    f"({path.relative_to(stage / 'work').as_posix()}) |\n"
+                    for path, item_id, _retro_id in records
+                ),
+                encoding="utf-8",
+            )
+            (stage / "official/work/archive/index.md").write_text(
+                INDEX, encoding="utf-8"
+            )
+
+            proc = run_cli(root, "W-00000001")
+            archive_unit = stage / "official/work/archive/items/W-00000001"
+            archived_texts = [
+                (archive_unit / "_epic.md").read_text(encoding="utf-8"),
+                (
+                    archive_unit / "W-00000002/_story.md"
+                ).read_text(encoding="utf-8"),
+                (
+                    archive_unit / "W-00000002/W-00000003.md"
+                ).read_text(encoding="utf-8"),
+            ]
+            active_text = (stage / "work/active.md").read_text(encoding="utf-8")
+            review_text = (stage / "work/review.md").read_text(encoding="utf-8")
+            archive_index = (
+                stage / "official/work/archive/index.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        self.assertFalse(current.exists())
+        self.assertTrue(all("status: archived" in text for text in archived_texts))
+        self.assertTrue(
+            all("terminal_disposition: accepted" in text for text in archived_texts)
+        )
+        self.assertNotIn("W-00000001", active_text)
+        self.assertNotIn("W-00000002", active_text)
+        self.assertNotIn("W-00000003", review_text)
+        self.assertEqual(1, archive_index.count("| W-00000001 | completed |"))
+
 
 if __name__ == "__main__":
     unittest.main()

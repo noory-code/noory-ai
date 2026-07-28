@@ -547,6 +547,209 @@ status: captured
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("\nparent: W-00000001\n", item)
 
+    def test_planned_hierarchy_records_keep_their_declared_scopes_when_started(self):
+        tmp, root = self.make()
+        with tmp:
+            epic = run(
+                root,
+                "--backlog",
+                "--scale",
+                "epic",
+                "--title",
+                "Release",
+                "--kind",
+                "development",
+                "--scope",
+                "epic-owned",
+                "--id",
+                "W-00000001",
+            )
+            story = run(
+                root,
+                "--backlog",
+                "--scale",
+                "story",
+                "--parent",
+                "W-00000001",
+                "--title",
+                "Driver",
+                "--kind",
+                "development",
+                "--scope",
+                "story-owned",
+                "--id",
+                "W-00000002",
+            )
+            action = run(
+                root,
+                "--backlog",
+                "--scale",
+                "action",
+                "--parent",
+                "W-00000002",
+                "--title",
+                "Selection",
+                "--kind",
+                "development",
+                "--scope",
+                "action-owned",
+                "--id",
+                "W-00000003",
+            )
+            self.assertEqual(0, epic.returncode, epic.stderr)
+            self.assertEqual(0, story.returncode, story.stderr)
+            self.assertEqual(0, action.returncode, action.stderr)
+
+            started = run_start(
+                root,
+                "W-00000001",
+                "--scope",
+                "epic-start-scope",
+            )
+            current = root / ".stage/work/current/W-00000001"
+            epic_text = (current / "_epic.md").read_text(encoding="utf-8")
+            story_text = (
+                current / "W-00000002/_story.md"
+            ).read_text(encoding="utf-8")
+            action_text = (
+                current / "W-00000002/W-00000003.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, started.returncode, started.stderr)
+        self.assertIn("scope: epic-start-scope", epic_text)
+        self.assertIn("scope: story-owned", story_text)
+        self.assertIn("scope: action-owned", action_text)
+
+    def test_starting_hierarchy_refuses_to_silently_activate_deferred_descendant(self):
+        tmp, root = self.make()
+        with tmp:
+            run(
+                root,
+                "--backlog",
+                "--scale",
+                "epic",
+                "--title",
+                "Release",
+                "--kind",
+                "development",
+                "--scope",
+                "epic-owned",
+                "--id",
+                "W-00000001",
+            )
+            run(
+                root,
+                "--backlog",
+                "--scale",
+                "story",
+                "--parent",
+                "W-00000001",
+                "--title",
+                "Deferred story",
+                "--kind",
+                "development",
+                "--scope",
+                "story-owned",
+                "--id",
+                "W-00000002",
+            )
+            story = root / ".stage/work/planned/W-00000001/W-00000002/_story.md"
+            story.write_text(
+                story.read_text(encoding="utf-8").replace(
+                    "status: captured", "status: deferred"
+                ),
+                encoding="utf-8",
+            )
+
+            started = run_start(
+                root,
+                "W-00000001",
+                "--scope",
+                "epic-owned",
+            )
+            deferred_still_planned = (
+                root / ".stage/work/planned/W-00000001/W-00000002/_story.md"
+            ).is_file()
+            current_created = (
+                root / ".stage/work/current/W-00000001"
+            ).exists()
+
+        self.assertEqual(1, started.returncode)
+        self.assertIn("deferred", started.stderr)
+        self.assertTrue(deferred_still_planned)
+        self.assertFalse(current_created)
+
+    def test_rejected_story_keeps_its_actions_rejected_when_tree_starts(self):
+        tmp, root = self.make()
+        with tmp:
+            run(
+                root,
+                "--backlog",
+                "--scale",
+                "epic",
+                "--title",
+                "Release",
+                "--kind",
+                "development",
+                "--scope",
+                "epic-owned",
+                "--id",
+                "W-00000001",
+            )
+            run(
+                root,
+                "--backlog",
+                "--scale",
+                "story",
+                "--parent",
+                "W-00000001",
+                "--title",
+                "Rejected story",
+                "--kind",
+                "development",
+                "--scope",
+                "story-owned",
+                "--id",
+                "W-00000002",
+            )
+            run(
+                root,
+                "--backlog",
+                "--scale",
+                "action",
+                "--parent",
+                "W-00000002",
+                "--title",
+                "Old action",
+                "--kind",
+                "development",
+                "--scope",
+                "action-owned",
+                "--id",
+                "W-00000003",
+            )
+            story = root / ".stage/work/planned/W-00000001/W-00000002/_story.md"
+            story.write_text(
+                story.read_text(encoding="utf-8").replace(
+                    "status: captured", "status: rejected"
+                ),
+                encoding="utf-8",
+            )
+
+            started = run_start(
+                root,
+                "W-00000001",
+                "--scope",
+                "epic-owned",
+            )
+            current = root / ".stage/work/current/W-00000001/W-00000002"
+            story_text = (current / "_story.md").read_text(encoding="utf-8")
+            action_text = (current / "W-00000003.md").read_text(encoding="utf-8")
+
+        self.assertEqual(0, started.returncode, started.stderr)
+        self.assertIn("status: rejected", story_text)
+        self.assertIn("status: rejected", action_text)
+
     def test_refuses_archived_id(self):
         tmp, root = self.make()
         with tmp:

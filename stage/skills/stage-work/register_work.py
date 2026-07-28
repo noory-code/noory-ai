@@ -369,6 +369,7 @@ def register_backlog_card(stage_root: Path, args) -> int:
             after="priority",
         )
         text = set_list_field(text, "acceptance", args.acceptance, after="autonomous")
+        text = set_optional_field(text, "scope", args.scope, after="review")
         if args.priority:
             text = set_field(text, "priority", args.priority)
         if args.purpose:

@@ -410,6 +410,11 @@ class StageAuditTest(unittest.TestCase):
             findings = audit_stage.Audit(root).run()
 
         self.assertIn("WORK017", finding_codes(findings))
+        message = next(
+            finding.message for finding in findings if finding.code == "WORK017"
+        )
+        self.assertIn("no hierarchy location", message)
+        self.assertNotIn("not found", message)
 
     def test_parent_cycle_is_detected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -436,6 +441,10 @@ class StageAuditTest(unittest.TestCase):
             findings = audit_stage.Audit(root).run()
 
         self.assertIn("WORK019", finding_codes(findings))
+        message = next(
+            finding.message for finding in findings if finding.code == "WORK019"
+        )
+        self.assertIn("finalized hierarchy location", message)
 
     def test_completed_parent_with_planned_child_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -931,6 +940,11 @@ class StageAuditTest(unittest.TestCase):
             findings = audit_stage.Audit(root).run()
 
         self.assertIn("BACKLOG002", finding_codes(findings))
+        message = next(
+            finding.message for finding in findings if finding.code == "BACKLOG002"
+        )
+        self.assertIn("no hierarchy location", message)
+        self.assertNotIn("not found", message)
 
     def test_backlog_parent_cycle_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:

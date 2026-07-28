@@ -33,12 +33,15 @@ whole to `work/current/` when work starts, and archived whole under `official/wo
 closed. The lifecycle CLIs derive these paths; never select them manually. Two flows create work:
 
 - **Capture for later**: `register_work.py --backlog --scale <scale> --title "..." --kind <kind>
-  --scope "" [--parent W-NNNNNNNN]` — a planned record (`status: captured`) in
+  --scope "<this record's paths>" [--parent W-NNNNNNNN]` — a planned record (`status: captured`) in
   `work/planned/` and its index. No venue/split checks run during capture.
 - **Start now**: the flow below (direct current registration), or start an existing planned card
   with `python3 stage/scripts/start_work.py --project-root <root> W-NNNNNNNN --scope "..."` — the
   mover moves the top-level directory, sets `active`, requires scope, derives the venue, and
-  enforces the split/exception contract at that moment. Never hand-move a file or directory.
+  enforces the split/exception contract at that moment. Each descendant keeps the scope declared
+  at capture; the top-level `--scope` does not widen its actions. A deferred descendant blocks the
+  start instead of silently becoming active, and rejection propagates through that rejected
+  branch. Never hand-move a file or directory.
 
 Use `--parent` only as a placement input:
 
@@ -108,3 +111,8 @@ next free number, writes the card, and updates the owning index:
 
 Make small, verifiable changes within `scope`. When the work reaches a completion candidate, run
 `stage-retrospective` to close it, and `stage-archive` to drain it from the review queue.
+
+If an action exhausts its attempts, do not reactivate or rerun it. Read the pending decision and
+the failed-action evidence on its blocked story, revise the story decomposition, then register
+replacement actions through the same placement rules. Resume only after the story's decision and
+status have been explicitly resolved.

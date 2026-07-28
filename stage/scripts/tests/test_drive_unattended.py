@@ -283,6 +283,51 @@ class UnattendedTest(unittest.TestCase):
 
         self.assertIsNone(selected)
 
+    def test_blocked_story_hides_its_remaining_actions_but_not_other_stories(self):
+        root, stage_root = self.make(limits=None)
+        self.card(stage_root, "W-00000001")
+        self.card(
+            stage_root,
+            "W-00000002",
+            parent="W-00000001",
+            status="blocked",
+        )
+        self.card(stage_root, "W-00000003", parent="W-00000002")
+        self.card(stage_root, "W-00000004", parent="W-00000001")
+        self.card(stage_root, "W-00000005", parent="W-00000004")
+        drive = load_module()
+
+        selected = drive.select_next_unattended_leaf(
+            "W-00000001", drive.load_all_work_items(stage_root)
+        )
+
+        self.assertIsNotNone(selected)
+        self.assertEqual("W-00000005", selected.item_id)
+
+    def test_subtree_limits_grow_with_action_count(self):
+        root, stage_root = self.make(limits=None)
+        self.card(stage_root, "W-00000001")
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        self.card(stage_root, "W-00000003", parent="W-00000002")
+        self.card(stage_root, "W-00000004", parent="W-00000002")
+        drive = load_module()
+        configured = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 2,
+            "max_wall_clock_seconds": 10,
+        }
+
+        effective = drive.subtree_limits(
+            configured,
+            "W-00000001",
+            drive.load_all_work_items(stage_root),
+            per_action_seconds=30,
+        )
+
+        self.assertEqual(3, effective["max_attempts_per_item"])
+        self.assertEqual(6, effective["max_iterations"])
+        self.assertEqual(60, effective["max_wall_clock_seconds"])
+
     def test_pass_runs_target_leaf_without_wrapper_parent(self):
         limits = {
             "max_attempts_per_item": 3,
@@ -992,6 +1037,9 @@ class UnattendedTest(unittest.TestCase):
         drive = load_module()
         calls: list = []
         self.install_stubs(drive, calls)
+        drive.subtree_limits = (
+            lambda configured, target_id, items, *, per_action_seconds: configured
+        )
 
         self.commit_all(root)
         rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())

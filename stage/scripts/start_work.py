@@ -149,7 +149,7 @@ def ensure_record_sections(body: str) -> str:
 def started_fields(
     fields: dict[str, Any],
     *,
-    scope: str,
+    scope: str | None,
     decision: str,
 ) -> dict[str, Any]:
     fields = dict(fields)
@@ -158,7 +158,8 @@ def started_fields(
     original_status = (fields.get("status") or "").strip().lower()
     for key, default in WORK_FIELD_DEFAULTS:
         if key == "scope":
-            fields[key] = scope
+            if scope is not None:
+                fields[key] = scope
         elif key == "decision_refs":
             existing = (fields.get(key) or "").strip()
             if decision and decision not in existing:
@@ -292,6 +293,29 @@ def main() -> int:
         if source_unit.is_dir()
         else (source_path,)
     )
+    deferred = [
+        path
+        for path in source_records
+        if (parse_frontmatter(path).get("status") or "").strip().lower()
+        == "deferred"
+    ]
+    if deferred:
+        detail = ", ".join(
+            (parse_frontmatter(path).get("id") or path.stem)
+            for path in deferred
+        )
+        print(
+            f"{args.item}: deferred descendants must be resolved before the "
+            f"top-level hierarchy starts: {detail}",
+            file=sys.stderr,
+        )
+        return 1
+    rejected_containers = {
+        path.parent
+        for path in source_records
+        if (parse_frontmatter(path).get("status") or "").strip().lower()
+        == "rejected"
+    }
     started_records: dict[Path, tuple[dict[str, Any], str]] = {
         source_path.relative_to(source_unit): (
             fields,
@@ -302,6 +326,11 @@ def main() -> int:
         if child_path == source_path:
             continue
         child_fields = parse_frontmatter(child_path)
+        if any(
+            container == child_path.parent or container in child_path.parents
+            for container in rejected_containers
+        ):
+            child_fields["status"] = "rejected"
         child_kind = (child_fields.get("kind") or "").strip().lower()
         child_venue = (child_fields.get("venue") or "").strip()
         child_routed = routing.get(child_kind, "")
@@ -309,7 +338,10 @@ def main() -> int:
             child_fields["venue"] = child_routed
         child_fields = started_fields(
             child_fields,
-            scope=args.scope,
+            scope=(
+                str(child_fields.get("scope") or "").strip()
+                or args.scope
+            ),
             decision=args.decision,
         )
         child_body = ensure_record_sections(

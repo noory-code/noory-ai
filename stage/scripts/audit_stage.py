@@ -498,14 +498,15 @@ class Audit:
             if parent is None:
                 self.error(
                     "WORK017",
-                    f"Parent work item not found: {parent_id}",
+                    f"Work record has no hierarchy location for parent id: {parent_id}",
                     entry.item.path,
                 )
                 continue
             if stage_guard.item_is_open(entry.item) and parent.item.status in stage_guard.WORK_FINAL_STATUSES:
                 self.error(
                     "WORK019",
-                    f"Open work item has a finalized parent ({parent.item.status}): "
+                    f"Open work record is placed under a finalized hierarchy "
+                    f"location ({parent.item.status}): "
                     f"{entry.item.item_id} -> {parent_id}",
                     entry.item.path,
                 )
@@ -648,7 +649,7 @@ class Audit:
             if parent_id and parent_id not in graph.backlog_by_id and parent_id not in graph.work_ids:
                 self.error(
                     "BACKLOG002",
-                    f"Parent work card not found: {parent_id}",
+                    f"Planned work record has no hierarchy location for parent id: {parent_id}",
                     node.path,
                 )
 

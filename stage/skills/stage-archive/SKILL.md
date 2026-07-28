@@ -5,8 +5,9 @@ description: Archive completed or rejected Stage work items out of the review qu
 
 # Stage Archive
 
-Archiving is record keeping, not promotion. It moves a closed work item and its retrospective out
-of the current flow into `official/work/archive/`, preserving the terminal status in the archive index.
+Archiving is record keeping, not promotion. It moves one closed top-level epic or independent
+story hierarchy and all of its retrospectives out of the current flow into
+`official/work/archive/`, preserving the top-level terminal status in the archive index.
 
 ## One rule that prevents the common mistake
 
@@ -19,7 +20,8 @@ work being archived already has one, and a second would duplicate the record (SS
 
 - `status` is `completed` or `rejected`.
 - `retrospective: completed` with a `retrospective_ref` whose file exists.
-- No `active`/`review`/`blocked` work item names it as `parent`.
+- Every record inside the top-level hierarchy is `completed` or `rejected`.
+- No `active`/`review`/`blocked` work item remains inside or below that hierarchy.
 - No open question, assumption, or risk lists it in `work_items`.
 
 ## Fast path (default)
@@ -33,12 +35,12 @@ python3 stage/skills/stage-archive/archive_work.py --project-root <project-root>
 python3 stage/skills/stage-archive/archive_work.py --project-root <project-root> --all-completed
 ```
 
-The script validates each precondition, copies the item to `archive/items/<id>.md` with
-`status: archived`, copies its retrospective to `archive/retrospectives/<ref>.md`, appends the
-`Final status` row to `archive/index.md`, and drops the present-flow files and `review.md` row. It
-is idempotent. It also stamps the card-owned immutable closure evidence:
-`terminal_disposition: accepted` for a completed card and `terminal_disposition: rejected` for a
-rejected card. Then verify:
+Pass only the top-level ID. The script validates every record in that move unit, preserves the
+epic/story/action relative paths under `archive/items/<top-level-id>/`, changes every record to
+`status: archived`, moves every linked retrospective, appends one top-level `Final status` row,
+and drops every hierarchy row from the current indexes. Nested stories and actions are not moved
+independently; they stay in place relative to their top-level directory. It is idempotent and
+stamps `terminal_disposition: accepted` or `rejected` on every archived record. Then verify:
 
 ```bash
 python3 stage/scripts/audit_stage.py --project-root <project-root>   # expect errors=0
@@ -57,10 +59,10 @@ python3 stage/scripts/promote_intent.py --project-root <project-root> --type arc
   --path .stage/official/work/archive/index.md
 ```
 
-Then move the item (set `status: archived`), move the retrospective verbatim, append the index row
-`| W-00000001 | completed | [items/W-00000001.md](items/W-00000001.md) |` (Final status is the
-terminal `completed`/`rejected` the `archived` overwrite erases), delete the present copies, and
-remove the `work/current/` copies, and remove the `work/review.md` row.
+Then move the top-level directory as one unit, set each contained record to `status: archived`,
+move each retrospective verbatim, append one top-level index row (Final status is the top-level
+`completed`/`rejected` value the `archived` overwrite erases), delete the current hierarchy, and
+remove all of its `work/active.md` and `work/review.md` rows.
 
 ## Commit
 

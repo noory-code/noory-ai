@@ -155,6 +155,64 @@ class EscalateWorkTest(unittest.TestCase):
                 re.compile(r"DE-00000008"),
             )
 
+    def test_action_escalation_blocks_story_and_requests_redecomposition(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            flat = stage_root / "work/current/W-00000001.md"
+            flat.unlink()
+            story_dir = stage_root / "work/current/W-00000001"
+            story_dir.mkdir()
+            story = story_dir / "_story.md"
+            story.write_text(
+                WORK_ITEM.format(status="active").replace(
+                    "id: W-00000001", "id: W-00000001"
+                ),
+                encoding="utf-8",
+            )
+            action = story_dir / "W-00000002.md"
+            action.write_text(
+                WORK_ITEM.format(status="active")
+                .replace("id: W-00000001", "id: W-00000002")
+                .replace("# W-00000001", "# W-00000002"),
+                encoding="utf-8",
+            )
+            (stage_root / "work/active.md").write_text(
+                ACTIVE_INDEX
+                + "| W-00000002 | development | codex | Action | active | codex | "
+                "[current/W-00000001/W-00000002.md]"
+                "(current/W-00000001/W-00000002.md) |\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--project-root",
+                    str(root),
+                    "W-00000002",
+                    "--reason",
+                    "The action exhausted its attempt cap.",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            story_text = story.read_text(encoding="utf-8")
+            action_text = action.read_text(encoding="utf-8")
+            decision = (
+                stage_root / "decisions/pending/DE-00000008.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("status: blocked", story_text)
+        self.assertIn("status: blocked", action_text)
+        self.assertIn("decision_refs: DE-00000003, DE-00000008", story_text)
+        self.assertNotIn("DE-00000008", action_text)
+        self.assertIn("work_item: W-00000001", decision)
+        self.assertIn("W-00000002", decision)
+        self.assertIn("decompos", decision.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
