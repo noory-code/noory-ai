@@ -19,6 +19,9 @@ decision_refs:
 ## Outcome
 
 
+## Stories
+
+
 ## Reason for archiving
 
 

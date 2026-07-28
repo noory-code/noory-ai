@@ -641,7 +641,7 @@ def rewrite_markdown_text(text: str, old_relative: str, new_relative: str) -> st
 def rewrite_moved_markdown(stage_root: Path) -> list[str]:
     rewritten_paths = []
     destination_roots = _v4_roots()
-    for path in record_paths(stage_root, recursive=True):
+    for path in record_paths(stage_root):
         relative = path.relative_to(stage_root).as_posix()
         if relative.startswith(".runtime/") or not any(
             _contains(root, relative) for root in destination_roots
@@ -665,6 +665,12 @@ def create_v4_indexes(
         Path(stage_topology.get_zone("decisions", "pending").index_surfaces[0]),
         Path(stage_topology.get_zone("roadmap", "themes").index_surfaces[0]),
         Path(stage_topology.get_zone("roadmap", "milestones").index_surfaces[0]),
+        Path("work/planned/_epic.md"),
+        Path("work/planned/_story.md"),
+        Path("work/current/_epic.md"),
+        Path("work/current/_story.md"),
+        Path("official/work/archive/items/_epic.md"),
+        Path("official/work/archive/items/_story.md"),
     ]
     created = []
     for relative in relatives:
@@ -699,7 +705,7 @@ def _legacy_direct(value: str) -> bool:
 
 def verify_no_legacy_references(stage_root: Path) -> list[str]:
     leftovers = []
-    for path in record_paths(stage_root, recursive=True):
+    for path in record_paths(stage_root):
         relative = path.relative_to(stage_root).as_posix()
         if relative.startswith(".runtime/"):
             continue

@@ -1096,15 +1096,35 @@ class Audit:
                 stage_topology.card_location_for_status("active"),
                 stage_topology.card_location_for_status("archived"),
             }
+            work_record_dirs = work_item_dirs | {
+                stage_topology.card_location_for_status("captured"),
+            }
         else:
             work_item_dirs = {"present/work/items", "past/work/archive/items"}
+            work_record_dirs = set(self.record_locations["W"])
         retrospective_dirs = set(self.record_locations["R"])
+
+        def below(relative: str, roots: set[str] | tuple[str, ...]) -> bool:
+            return any(
+                relative == root or relative.startswith(f"{root}/")
+                for root in roots
+            )
+
         by_id: dict[str, list[Path]] = {}
-        for path in record_paths(self.stage_root, recursive=True):
+        for path in record_paths(self.stage_root):
             relative_parent = path.parent.relative_to(self.stage_root).as_posix()
             if relative_parent.startswith(".runtime"):
                 continue
             if path.name in {"README.md", "_template.md"}:
+                continue
+            if (
+                path.name
+                in {
+                    stage_topology.EPIC_RECORD_NAME,
+                    stage_topology.STORY_RECORD_NAME,
+                }
+                and relative_parent in work_record_dirs
+            ):
                 continue
             fields = stage_guard.parse_frontmatter(path)
             record_id = fields.get("id") or ""
@@ -1129,7 +1149,10 @@ class Audit:
 
             prefix = match.group("prefix")
             allowed = self.record_locations.get(prefix)
-            if allowed is not None and relative_parent not in allowed:
+            owned = allowed is None or relative_parent in allowed
+            if prefix == "W" and allowed is not None:
+                owned = below(relative_parent, allowed)
+            if not owned:
                 self.error(
                     "OWN001",
                     f"Record {record_id} lives outside its owning location "
@@ -1141,7 +1164,10 @@ class Audit:
             if len(paths) < 2:
                 continue
             parents = {path.parent.relative_to(self.stage_root).as_posix() for path in paths}
-            if parents <= work_item_dirs or parents <= retrospective_dirs:
+            if (
+                all(below(parent, work_item_dirs) for parent in parents)
+                or parents <= retrospective_dirs
+            ):
                 continue  # WORK007 owns W duplicates; RETRO003 owns R duplicates.
             for path in paths:
                 self.error(

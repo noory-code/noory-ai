@@ -1,6 +1,6 @@
 ---
 id: W-00000000
-title: Title
+title: 제목
 kind:
 milestone:
 source:
@@ -14,15 +14,18 @@ promotes:
 decision_refs:
 ---
 
-# W-00000000 Title
+# W-00000000 제목
 
-## Outcome
-
-
-## Reason for archiving
+## 결과
 
 
-## Related artifacts
+## 액션
 
 
-## Retrospective link
+## 보관 이유
+
+
+## 관련 산출물
+
+
+## 회고 링크

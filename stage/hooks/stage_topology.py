@@ -1,8 +1,9 @@
-"""Schema v4 topology registry.
+"""Stage topology registry.
 
-This module is the tooling SSOT for the v4 Stage layout.  It intentionally has no
-filesystem side effects so hooks and scripts can import it on every supported host.
-Schema-v3 paths remain resolve-only inputs for audit and the one-shot migration.
+This module is the tooling SSOT for the active schema-v4 zones and the hierarchical
+work-path contract that schema v5 will activate. It intentionally has no filesystem
+side effects so hooks and scripts can import it on every supported host. Schema-v3
+paths remain resolve-only inputs for audit and the one-shot migration.
 """
 
 from __future__ import annotations
@@ -37,6 +38,8 @@ PLANNED_WORK_STATUSES = (
 )
 CURRENT_WORK_STATUSES = ("active", "blocked", "review", "completed", "rejected")
 OFFICIAL_WORK_STATUSES = ("archived",)
+EPIC_RECORD_NAME = "_epic.md"
+STORY_RECORD_NAME = "_story.md"
 
 
 @dataclass(frozen=True)
@@ -429,11 +432,64 @@ def resolve_lifecycle(
     return zone.lifecycle_state
 
 
-def card_location_for_status(status: str, *, lifecycle: str | None = None) -> str:
-    """Return the W-card record root for a status.
+def _work_path_segment(value: str, scale: str, *, markdown: bool = False) -> str:
+    if not value or value.strip() != value or value in {".", ".."}:
+        raise ValueError(f"{scale} must be one non-empty relative path segment")
+    if "/" in value or "\\" in value:
+        raise ValueError(f"{scale} must be one relative path segment")
+    if markdown and not value.endswith(".md"):
+        raise ValueError("action must be a Markdown filename")
+    if not markdown and value.endswith(".md"):
+        raise ValueError(f"{scale} must be a directory name")
+    return value
+
+
+def _work_hierarchy_paths(
+    root: str,
+    *,
+    epic: str | None,
+    story: str | None,
+    action: str | None,
+) -> tuple[str, str]:
+    if action is not None and story is None:
+        raise ValueError("action requires a story directory")
+    if epic is not None:
+        epic = _work_path_segment(epic, "epic")
+    if story is not None:
+        story = _work_path_segment(story, "story")
+    if action is not None:
+        action = _work_path_segment(action, "action", markdown=True)
+
+    if epic is not None:
+        top_level = f"{root}/{epic}"
+        if story is None:
+            return f"{top_level}/{EPIC_RECORD_NAME}", top_level
+        story_root = f"{top_level}/{story}"
+    elif story is not None:
+        top_level = f"{root}/{story}"
+        story_root = top_level
+    else:
+        raise ValueError("a hierarchical work location requires epic or story")
+
+    if action is not None:
+        return f"{story_root}/{action}", top_level
+    return f"{story_root}/{STORY_RECORD_NAME}", top_level
+
+
+def card_location_for_status(
+    status: str,
+    *,
+    lifecycle: str | None = None,
+    epic: str | None = None,
+    story: str | None = None,
+    action: str | None = None,
+) -> str:
+    """Return the W-record root or one hierarchical record path for a status.
 
     ``rejected`` is valid before and after work starts, so its caller must also provide
-    ``lifecycle`` to preserve single classification.
+    ``lifecycle`` to preserve single classification. Omitting hierarchy segments keeps
+    the compatibility root contract; providing them makes folder placement the SSOT for
+    epic, story, or action scale.
     """
 
     matches = [
@@ -446,9 +502,36 @@ def card_location_for_status(status: str, *, lifecycle: str | None = None) -> st
         detail = " with lifecycle" if lifecycle is not None else ""
         raise ValueError(f"work status {status!r}{detail} does not resolve to exactly one zone")
     zone = matches[0]
-    if zone.name == "official":
-        return "official/work/archive/items"
-    return zone.canonical_path
+    root = "official/work/archive/items" if zone.name == "official" else zone.canonical_path
+    if epic is None and story is None and action is None:
+        return root
+    record, _top_level = _work_hierarchy_paths(
+        root,
+        epic=epic,
+        story=story,
+        action=action,
+    )
+    return record
+
+
+def top_level_card_location_for_status(
+    status: str,
+    *,
+    lifecycle: str | None = None,
+    epic: str | None = None,
+    story: str | None = None,
+    action: str | None = None,
+) -> str:
+    """Return the epic or independent-story directory moved between lifecycles."""
+
+    root = card_location_for_status(status, lifecycle=lifecycle)
+    _record, top_level = _work_hierarchy_paths(
+        root,
+        epic=epic,
+        story=story,
+        action=action,
+    )
+    return top_level
 
 
 def retrospective_locations(retrospective_id: str | None = None) -> tuple[str, str]:

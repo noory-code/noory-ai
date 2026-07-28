@@ -13,8 +13,14 @@ V4_LOCALE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "locales" / "ko"
 
 EXTRA_V4_FILES = {
     Path("decisions/index.md"),
+    Path("official/work/archive/items/_epic.md"),
+    Path("official/work/archive/items/_story.md"),
     Path("roadmap/milestones/index.md"),
     Path("roadmap/themes/index.md"),
+    Path("work/current/_epic.md"),
+    Path("work/current/_story.md"),
+    Path("work/planned/_epic.md"),
+    Path("work/planned/_story.md"),
 }
 
 _INIT_SPEC = importlib.util.spec_from_file_location(
@@ -102,9 +108,34 @@ class TemplateV4Test(unittest.TestCase):
             self.assertNotIn("## Status", text)
 
     def test_roadmap_families_and_pending_decisions_have_indexes(self):
-        for relative in EXTRA_V4_FILES:
+        for relative in {
+            Path("decisions/index.md"),
+            Path("roadmap/milestones/index.md"),
+            Path("roadmap/themes/index.md"),
+        }:
             with self.subTest(file=str(relative)):
                 self.assertTrue((V4_ROOT / relative).is_file())
+                self.assertTrue((V4_LOCALE_ROOT / relative).is_file())
+
+    def test_work_hierarchy_templates_have_no_parent_field(self):
+        work_templates = (
+            Path("work/planned/_epic.md"),
+            Path("work/planned/_story.md"),
+            Path("work/planned/_template.md"),
+            Path("work/current/_epic.md"),
+            Path("work/current/_story.md"),
+            Path("work/current/_template.md"),
+            Path("official/work/archive/items/_epic.md"),
+            Path("official/work/archive/items/_story.md"),
+            Path("official/work/archive/items/_template.md"),
+        )
+        for relative in work_templates:
+            with self.subTest(file=str(relative)):
+                self.assertNotIn("parent", frontmatter_keys(V4_ROOT / relative))
+        for relative in work_templates:
+            if relative.name == "_template.md":
+                continue
+            with self.subTest(locale="ko", file=str(relative)):
                 self.assertTrue((V4_LOCALE_ROOT / relative).is_file())
 
 

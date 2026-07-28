@@ -16,7 +16,7 @@ review: not_required
 ## Purpose
 
 
-## Source
+## Stories
 
 
 ## User value
@@ -28,9 +28,6 @@ review: not_required
 
 
 ### Excluded
-
-
-## Dependencies
 
 
 ## Risks

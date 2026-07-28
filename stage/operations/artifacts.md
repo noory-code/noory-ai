@@ -44,15 +44,20 @@ individual records as their own files, and a `_template.md` to copy.
 | `priority` | optional, planned cards only: ordering hint shown in the planned index |
 | `venue` | optional execution-surface routing; project-defined values, derived from `settings.json` `venue_routing` when declared |
 
-`work/active.md` and `work/review.md` are current views. Hooks judge from the frontmatter of `work/current/*.md`.
+`work/active.md` and `work/review.md` are current views. Hooks judge from the frontmatter of work
+records anywhere in the hierarchy below `work/current/`.
 
-`venue` names the execution surface that should carry out the work item — the routing signal a human reads to open the right window when more than one agent or session works the project. No hook gates on it. The machine-readable `kind -> venue` role policy is project-declared in `settings.json` `venue_routing` (registration derives from it; the audit checks consistency); what each venue means belongs to the project's canon. A policy-contradicting venue is valid only with a linked decision record that is decided/promoted and declares `authorizes: venue_exception`; the reserved routing value `split` marks a kind as mixed by definition — it registers as separate design/implementation items with `parent` lineage. The harness fixes no venue names.
+`venue` names the execution surface that should carry out the work item — the routing signal a human reads to open the right window when more than one agent or session works the project. No hook gates on it. The machine-readable `kind -> venue` role policy is project-declared in `settings.json` `venue_routing` (registration derives from it; the audit checks consistency); what each venue means belongs to the project's canon. A policy-contradicting venue is valid only with a linked decision record that is decided/promoted and declares `authorizes: venue_exception`; the reserved routing value `split` marks a kind as mixed by definition and places its separate design and implementation actions under one story. The harness fixes no venue names.
 
 `scope` is fail-closed. An empty value or `.` owns no source path. Declare `*` only when a global scope is truly needed.
 
 Governance is broad by default: nearly every workspace file is governed (registration required before modification), excluding `.stage/`, `.git/`, and `.discuss/`. Projects widen the exclusions via `settings.json` `governance.exclude_paths`/`exclude_extensions`; the audit warns about every narrowing so it stays visible. Legacy allowlist keys (`extensions`/`paths`) are still honored but also reported as narrower than the default.
 
-Hierarchy is the only work lineage: `parent` names the parent work card (e.g. an implementation item under its design item). `milestone` is a distinct, upward roadmap attribution (portfolio membership), never a substitute for `parent`. A card keeps one identity from planned to archive, so no realization links exist; a legacy `source:` field on an old record is inert history. State records (Q/A/K/O) may link affected work through their `work_items` field.
+Folder placement is the only work hierarchy truth. An epic directory owns `_epic.md` and story
+directories; a story directory owns `_story.md` and action cards. A story may be top-level or
+inside an epic, while an action must be inside a story. Work records have no `parent` field.
+`milestone` is a distinct, upward roadmap attribution carried only by a top-level epic or
+independent story. State records (Q/A/K/O) may link affected work through `work_items`.
 
 `promotes` is also fail-closed. A regular promotion intent may only modify paths declared in the work item's `promotes`. `promotes` entries are exact file paths, not directory prefixes.
 
@@ -64,23 +69,27 @@ Hierarchy is the only work lineage: `parent` names the parent work card (e.g. an
 
 | Status | Location |
 |---|---|
-| `captured`, `triaged`, `ready`, `selected`, `deferred`, `rejected` (planned) | `work/planned/` + `work/planned/index.md` |
-| `active`, `blocked` | `work/current/` + `work/active.md` |
-| `review`, `completed`, `rejected` | `work/current/` + `work/review.md` |
-| `archived` | `official/work/archive/items/` |
+| `captured`, `triaged`, `ready`, `selected`, `deferred`, `rejected` (planned) | hierarchy below `work/planned/` + `work/planned/index.md` |
+| `active`, `blocked` | hierarchy below `work/current/` + `work/active.md` |
+| `review`, `completed`, `rejected` | hierarchy below `work/current/` + `work/review.md` |
+| `archived` | hierarchy below `official/work/archive/items/` |
 
 `rejected` appears in two lifecycle states: a planned card declined before any work started
 stays in `work/planned/`; a card rejected during execution sits in `work/current/`. Both carry a
 completed retrospective before archiving.
 
-A work card is ONE artifact across its whole life (DE-00000007): captured as a planned card in
-`work/planned/`, physically moved to `work/current/` when work starts (`scripts/start_work.py`
-sets `active`, requires `scope`, and enforces the venue/split contract at that moment), and
-archived to `official/work/archive/items/` when closed. `rejected` may also appear on a planned
-card that was declined before any work started. Registering directly into `work/current/`
-remains valid for work that never sat in the planned column.
+A top-level work hierarchy is ONE lifecycle move unit (DE-00000007, DE-00000035): an epic or
+independent story directory is captured below `work/planned/`, physically moved with all nested
+stories and actions to `work/current/` when work starts, and archived as a whole below
+`official/work/archive/items/` when closed. Inner stories and actions stay inside that directory
+while their own status changes.
 
-`completed` means verification, retrospective, and the promotion decision are all closed. A `rejected` item also records its completed retrospective (`retrospective_ref`) before archiving — rejection reasons are learning assets. Archive a `completed` or `rejected` item once BOTH hold: no active/review/blocked work item names it as `parent`, and no open question, assumption, or risk lists it in `work_items`. Then set `status: archived` and move it to `official/work/archive/items/`.
+`completed` means verification, retrospective, and the promotion decision are all closed. A
+`rejected` item also records its completed retrospective (`retrospective_ref`) before archiving —
+rejection reasons are learning assets. Archive a top-level epic or independent story once every
+nested work record is terminal and no open question, assumption, or risk lists one of its work
+records in `work_items`. Then set the records to `archived` and move the top-level directory to
+`official/work/archive/items/`.
 
 Moving to `archived` is record keeping, not promotion. A `completed` or `rejected` work item can be archived with an archive intent to `official/work/archive/items/`. The item's retrospective file moves with it to `official/work/archive/retrospectives/`, and its `official/work/archive/index.md` row — whose `Final status` cell records `completed` or `rejected`, the transition evidence the `archived` overwrite erases — lands in the same archive intent.
 
@@ -90,7 +99,7 @@ One table to recognize every artifact family fast. Read this before creating any
 
 | Prefix | Artifact | Location | Use when |
 |---|---|---|---|
-| `W-` | Work card | `work/current/` | Any accountable unit of work; planned cards wait in `work/planned/`, archived cards rest in `official/work/archive/items/`. |
+| `W-` | Epic, story, or action work record | `work/current/` | Any accountable unit of work; records live in the hierarchy below this root, planned hierarchies wait below `work/planned/`, and archived hierarchies rest below `official/work/archive/items/`. |
 | `R-` | Retrospective | `work/retrospectives/` | A work item reaches completion candidate. |
 | `DE-` | Working decision | `decisions/pending/` | A decision point occurs during work. Its `DE-` id is permanent; promotion moves the record into `official/decisions/records/` without renaming it. |
 | `D-` | Legacy approved decision | `official/decisions/records/` | Historical promoted decisions; new promotions keep their `DE-` id. |

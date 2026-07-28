@@ -23,6 +23,9 @@ decision_refs:
 ## Purpose
 
 
+## Stories
+
+
 ## Scope
 
 

@@ -1,6 +1,8 @@
 import importlib.util
+import os
 import re
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -95,6 +97,70 @@ class StageTopologyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             stage_topology.card_location_for_status("unknown")
 
+    def test_card_location_resolver_builds_epic_story_action_hierarchy(self):
+        self.assertEqual(
+            "work/current/E-01-driver/_epic.md",
+            stage_topology.card_location_for_status("active", epic="E-01-driver"),
+        )
+        self.assertEqual(
+            "work/current/E-01-driver/S-01-review/_story.md",
+            stage_topology.card_location_for_status(
+                "active",
+                epic="E-01-driver",
+                story="S-01-review",
+            ),
+        )
+        self.assertEqual(
+            "work/current/E-01-driver/S-01-review/A-01-driver.md",
+            stage_topology.card_location_for_status(
+                "active",
+                epic="E-01-driver",
+                story="S-01-review",
+                action="A-01-driver.md",
+            ),
+        )
+        self.assertEqual(
+            "work/planned/S-05-decision/_story.md",
+            stage_topology.card_location_for_status(
+                "captured",
+                story="S-05-decision",
+            ),
+        )
+
+    def test_card_location_resolver_rejects_invalid_hierarchy(self):
+        with self.assertRaises(ValueError):
+            stage_topology.card_location_for_status("active", action="A-01.md")
+        with self.assertRaises(ValueError):
+            stage_topology.card_location_for_status(
+                "active",
+                epic="E-01",
+                action="A-01.md",
+            )
+        with self.assertRaises(ValueError):
+            stage_topology.card_location_for_status(
+                "active",
+                story="../S-01",
+            )
+
+    def test_top_level_card_location_is_the_lifecycle_move_unit(self):
+        self.assertEqual(
+            "work/current/E-01-driver",
+            stage_topology.top_level_card_location_for_status(
+                "active",
+                epic="E-01-driver",
+                story="S-01-review",
+                action="A-01-driver.md",
+            ),
+        )
+        self.assertEqual(
+            "official/work/archive/items/S-05-decision",
+            stage_topology.top_level_card_location_for_status(
+                "archived",
+                story="S-05-decision",
+                action="A-01-decision.md",
+            ),
+        )
+
     def test_retrospective_locations(self):
         self.assertEqual(
             ("work/retrospectives", "official/work/archive/retrospectives"),
@@ -109,6 +175,32 @@ class StageTopologyTests(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             stage_topology.retrospective_locations("W-00000001")
+
+    def test_reference_path_calculation_does_not_read_the_process_cwd(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cwd = Path(directory)
+            action = cwd / "work/current/E-01-epic/S-01-story/A-01-action.md"
+            retrospective = cwd / "work/retrospectives/S-01-story/_story.md"
+            action.parent.mkdir(parents=True)
+            retrospective.parent.mkdir(parents=True)
+            action.write_text("---\nid: W-00000001\n---\n", encoding="utf-8")
+            retrospective.write_text("---\nid: R-00000001\n---\n", encoding="utf-8")
+
+            original_cwd = Path.cwd()
+            os.chdir(cwd)
+            try:
+                self.assertEqual(
+                    "work/current/W-00000001.md",
+                    stage_topology.resolve_artifact_reference(
+                        "W-00000001"
+                    ).candidate_paths[1],
+                )
+                self.assertEqual(
+                    "work/retrospectives/R-00000001.md",
+                    stage_topology.retrospective_locations("R-00000001")[0],
+                )
+            finally:
+                os.chdir(original_cwd)
 
     def test_scan_roots_are_derived_by_purpose(self):
         records = stage_topology.scan_roots("records")

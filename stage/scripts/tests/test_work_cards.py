@@ -329,7 +329,10 @@ class BacklogMigrationTest(unittest.TestCase):
             findings = audit_stage.Audit(root).run()
 
         self.assertEqual(0, code)
-        self.assertEqual(["W-00000001.md", "W-00000002.md"], names)
+        self.assertEqual(
+            ["W-00000001.md", "W-00000002.md", "_epic.md", "_story.md"],
+            names,
+        )
         bodies = "\n".join(converted.values())
         self.assertIn("Keep me.", bodies)
         self.assertIn("Child.", bodies)

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.51.0 — 2026-07-28
+
+- Add the schema-v5 epic/story/action path and template contract while leaving schema-v4
+  activation unchanged until the dedicated migration moves existing work hierarchies.
+- Make record recursion a filesystem-boundary policy, resolve nested records by frontmatter ID,
+  and expose each top-level epic or independent story as the lifecycle move unit.
+- Remove `parent` from action templates and add localized `_epic.md` and `_story.md` templates.
+
 ## 0.50.0 — 2026-07-28
 
 - Centralize Stage record scans and ID-to-Markdown path construction behind one filesystem
