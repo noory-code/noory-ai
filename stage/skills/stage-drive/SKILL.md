@@ -34,14 +34,35 @@ python3 "<parallel-driver>" --project-root <project-root> W-00000001 W-00000002
 
 The command creates `<project-parent>/<project-name>-stage-worktrees/<card-id>` by default. Each
 path is a Git worktree on `stage/worktree/<card-id>`, and each worktree runs one supervised
-`drive.py --execute` step concurrently with that worktree as `--project-root`. Use
-`--worktree-root <path>` to choose a different parent directory.
+`drive.py --execute` step concurrently with that worktree as `--project-root`. At most two drivers
+run at once by default; use `--max-workers <positive-integer>` to choose another ceiling. Each
+driver has a 3600-second default timeout; use `--driver-timeout <positive-seconds>` to change it.
+Use `--worktree-root <path>` to choose a different parent directory.
 
 The command prints each driver status, worktree path, and `Merge branch:
 stage/worktree/<card-id>`. It does not commit, close, merge, or remove a successful worktree. After
 reviewing and completing the card in that worktree, the human commits the branch and merges the
 printed branch. If any worktree creation fails, every tree and branch created by that invocation
-is removed. A driver failure keeps its worktree and branch for inspection.
+is removed. A driver failure keeps its worktree and branch for inspection. The command refuses to
+create any worktree when the project checkout is dirty or a named current card does not exist, so
+every new tree has the complete requested input at `HEAD`. If a driver times out, its executor or
+reviewer may still be writing to the worktree. The command runs the work item's configured venue
+reaper when available and reports why it could not otherwise; do not use `--cleanup` until every
+external job has stopped.
+
+Remove retained worktrees and their branches after inspection with the same project root,
+worktree root, and card IDs:
+
+```bash
+python3 "<parallel-driver>" --project-root <project-root> --cleanup W-00000001 W-00000002
+```
+
+Cleanup accepts only a path registered by Git on the exact
+`stage/worktree/<card-id>` branch. It refuses an ordinary directory, a registered worktree on
+another branch, and a branch containing commits not merged into the project checkout's `HEAD`.
+Merge or otherwise preserve those commits first. An absent worktree and branch are reported as
+absent, never as removed. Cleanup leaves the shared worktree-root directory itself in place because
+the command cannot prove that it created that parent.
 
 Run only cards whose declared scopes do not overlap. Separate worktrees isolate repository
 observation; they do not make overlapping edits safe. The command rejects a duplicate ID inside

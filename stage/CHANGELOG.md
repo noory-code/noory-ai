@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Bound parallel Stage drivers by worker count and per-driver timeout, preserve and verify hook
+  project roots, reject dirty or missing-card starts, and provide cleanup that verifies Git
+  worktree ownership and preserves unmerged commits.
+- Warn that timed-out drivers may leave external jobs writing, run the work item's venue reaper
+  when configured, and refuse to describe absent or unsafe cleanup targets as removed.
 - Run independent Stage cards concurrently in card-named Git worktrees and branches, report the
   branch to merge for each supervised result, and remove every tree created by a failed setup.
 - Move plugin version selection to an explicit release command that titles the queued changelog
