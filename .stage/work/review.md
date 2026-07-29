@@ -15,3 +15,4 @@
 | W-00000130 | passed | completed | not_applicable | [current/W-00000115/W-00000130/_story.md](current/W-00000115/W-00000130/_story.md) |
 | W-00000134 | passed | completed | not_applicable | [current/W-00000115/W-00000134/_story.md](current/W-00000115/W-00000134/_story.md) |
 | W-00000131 | passed | completed | not_applicable | [current/W-00000115/W-00000119/W-00000131.md](current/W-00000115/W-00000119/W-00000131.md) |
+| W-00000132 | passed | completed | not_applicable | [current/W-00000115/W-00000119/W-00000132.md](current/W-00000115/W-00000119/W-00000132.md) |

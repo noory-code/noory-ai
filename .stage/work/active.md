@@ -8,5 +8,4 @@
 |---|---|---|---|---|---|---|
 | W-00000115 | development | codex | 드라이버가 실패 경로에서도 계약대로 움직인다 | active | codex | [current/W-00000115/_epic.md](current/W-00000115/_epic.md) |
 | W-00000119 | development | codex | 상한 되돌리기가 근거를 남기는 명령이 된다 | active | codex | [current/W-00000115/W-00000119/_story.md](current/W-00000115/W-00000119/_story.md) |
-| W-00000132 | fix | codex | --skip-preflight 로 venue 점검을 건너뛰면 경고가 화면에만 찍히고 작업 로그에는 안 남는다 | active | Claude | [current/W-00000115/W-00000119/W-00000132.md](current/W-00000115/W-00000119/W-00000132.md) |
 | W-00000133 | fix | codex | 인프라 실패(시간 초과, 도구 없음)에 무인 경로는 시도를 안 쓰는데 감독 경로는 실패 종류를 안 가리고 쓴 | active | Claude | [current/W-00000115/W-00000119/W-00000133.md](current/W-00000115/W-00000119/W-00000133.md) |
