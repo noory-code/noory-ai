@@ -40,3 +40,4 @@
 | DE-00000037 | promoted | 사용자 | [records/DE-00000037.md](records/DE-00000037.md) |
 | DE-00000038 | promoted | 사용자 | [records/DE-00000038.md](records/DE-00000038.md) |
 | DE-00000039 | promoted | 사용자 | [records/DE-00000039.md](records/DE-00000039.md) |
+| DE-00000040 | promoted | 사용자 | [records/DE-00000040.md](records/DE-00000040.md) |
