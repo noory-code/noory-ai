@@ -11,6 +11,6 @@
 | W-00000118 | development | codex | 한계값이 규모에서 나오고 venue 사전 점검이 선다 | active | codex | [current/W-00000115/W-00000118/_story.md](current/W-00000115/W-00000118/_story.md) |
 | W-00000119 | development | codex | 상한 되돌리기가 근거를 남기는 명령이 된다 | active | codex | [current/W-00000115/W-00000119/_story.md](current/W-00000115/W-00000119/_story.md) |
 | W-00000123 | development | codex | 겹치지 않는 Stage 작업이 동시에 돈다 | active | codex | [current/W-00000123/_epic.md](current/W-00000123/_epic.md) |
-| W-00000124 | development | codex | 버전을 카드가 아니라 릴리스가 정한다 | active | codex | [current/W-00000123/W-00000124/_story.md](current/W-00000123/W-00000124/_story.md) |
 | W-00000125 | development | codex | 카드마다 자기 작업 트리에서 드라이버가 돈다 | active | codex | [current/W-00000123/W-00000125/_story.md](current/W-00000123/W-00000125/_story.md) |
 | W-00000126 | development | codex | 도는 작업과 겹치는 카드는 시작을 거절한다 | active | codex | [current/W-00000123/W-00000126/_story.md](current/W-00000123/W-00000126/_story.md) |
+| W-00000127 | fix | codex | W-00000124 가 세운 릴리스 시점 버전 규칙이 지금 세 자리에서 어긋난다. 첫째가 급하다 — 루트 C | active | Claude | [current/W-00000123/W-00000127/_story.md](current/W-00000123/W-00000127/_story.md) |
