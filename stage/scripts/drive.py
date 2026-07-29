@@ -801,10 +801,25 @@ def run_preflight(
 
     normalized_venue = item.venue.strip().lower()
     if skip:
-        print(
+        warning = (
             "WARNING: preflight skipped by operator; "
             f"preflights.{normalized_venue} was not run"
         )
+        log_warning = (
+            "WARNING: preflight skipped by operator for recovery; "
+            f"preflights.{normalized_venue} was not run"
+        )
+        try:
+            append_reap_warning_to_work_log(
+                ensure_work_log(stage_root, item.item_id),
+                warning=log_warning,
+            )
+        except RuntimeError as exc:
+            print_preflight_blocker(
+                f"cannot record skipped preflight before attempt ({exc})"
+            )
+            return False
+        print(warning)
         return True
 
     command, configured, config_error = resolve_preflight_command(

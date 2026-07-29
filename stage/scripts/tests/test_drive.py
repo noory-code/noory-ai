@@ -2118,6 +2118,24 @@ class DriveTest(unittest.TestCase):
                     skip=False,
                 )
 
+            with mock.patch.object(
+                drive,
+                "load_preflights_config",
+                return_value={"codex": PASS_COMMAND},
+            ):
+                passed_ok = drive.run_preflight(
+                    stage_root=root / ".stage",
+                    project_root=root,
+                    item=item,
+                    items=[item],
+                    timeout=1,
+                    skip=False,
+                )
+
+            work_log_exists = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).exists()
+
         self.assertEqual(
             (None, False, ""),
             drive.resolve_preflight_command(None, "codex"),
@@ -2133,6 +2151,8 @@ class DriveTest(unittest.TestCase):
         )
         self.assertTrue(declared_ok)
         self.assertEqual("", declared_output.getvalue())
+        self.assertTrue(passed_ok)
+        self.assertFalse(work_log_exists)
 
     def test_skip_preflight_runs_executor_for_human_recovery(self):
         tmp, root = self.make_project(
@@ -2153,9 +2173,17 @@ class DriveTest(unittest.TestCase):
             initialize_git(root)
 
             result = self.run_cli(root, "--execute", "--skip-preflight")
+            work_log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("WARNING: preflight skipped by operator", result.stdout)
+        self.assertIn(
+            "WARNING: preflight skipped by operator for recovery; "
+            "preflights.codex was not run",
+            work_log,
+        )
 
     def test_run_state_records_the_role_before_each_external_turn(self):
         target = "W-00000001"

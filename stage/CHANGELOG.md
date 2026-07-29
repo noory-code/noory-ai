@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Record operator-recovery preflight skips in the selected leaf's shared work log while leaving
+  successful, absent, and explicitly disabled venue checks unrecorded.
 - Add a reason-required driver command to reset a corrected leaf's attempt counter,
   fingerprint, and wall-clock start, refuse resets during active executor or reviewer turns,
   and record the reason in the leaf's shared work log.
