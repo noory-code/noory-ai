@@ -567,6 +567,124 @@ class DriveTest(unittest.TestCase):
         self.assertEqual(before, after)
         self.assertFalse(marker.exists())
 
+    def test_reset_attempts_requires_reason(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            drive = self.load_module()
+            state_path = stage_root / ".runtime/driver/W-00000001.json"
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["items"]["W-00000002"] = {
+                "attempt_count": 3,
+                "last_fingerprint": "old-fingerprint",
+                "base_head": "base-head",
+                "executor_changed_paths": ["changed.txt"],
+                "running_role": None,
+            }
+            drive.write_run_state(state_path, state)
+            before = state_path.read_text(encoding="utf-8")
+
+            result = self.run_cli(root, "--reset-attempts")
+
+            self.assertEqual(before, state_path.read_text(encoding="utf-8"))
+            self.assertFalse(
+                (stage_root / ".runtime/driver/logs/W-00000002.md").exists()
+            )
+
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn("--reason is required with --reset-attempts", result.stdout)
+
+    def test_reset_attempts_refuses_a_running_item(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            drive = self.load_module()
+            state_path = stage_root / ".runtime/driver/W-00000001.json"
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["items"]["W-00000002"] = {
+                "attempt_count": 3,
+                "last_fingerprint": "old-fingerprint",
+                "base_head": "base-head",
+                "executor_changed_paths": ["changed.txt"],
+                "running_role": "executor",
+            }
+            drive.write_run_state(state_path, state)
+            before = state_path.read_text(encoding="utf-8")
+
+            result = self.run_cli(
+                root,
+                "--reset-attempts",
+                "--reason",
+                "The card was corrected.",
+            )
+
+            self.assertEqual(before, state_path.read_text(encoding="utf-8"))
+            self.assertFalse(
+                (stage_root / ".runtime/driver/logs/W-00000002.md").exists()
+            )
+
+        self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+        self.assertIn("cannot reset attempts while executor is running", result.stdout)
+
+    def test_reset_attempts_resets_limit_state_and_logs_reason(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            drive = self.load_module()
+            state_path = stage_root / ".runtime/driver/W-00000001.json"
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["iteration_count"] = 2
+            state["items"]["W-00000002"] = {
+                "attempt_count": 3,
+                "last_fingerprint": "old-fingerprint",
+                "base_head": "base-head",
+                "executor_changed_paths": ["changed.txt"],
+                "running_role": None,
+            }
+            drive.write_run_state(state_path, state)
+
+            result = self.run_cli(
+                root,
+                "--reset-attempts",
+                "--reason",
+                "The card was corrected.",
+            )
+            updated = json.loads(state_path.read_text(encoding="utf-8"))
+            item_state = updated["items"]["W-00000002"]
+            log = (
+                stage_root / ".runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Reset attempts for W-00000002", result.stdout)
+        self.assertEqual(0, item_state["attempt_count"])
+        self.assertEqual("", item_state["last_fingerprint"])
+        self.assertEqual("base-head", item_state["base_head"])
+        self.assertEqual(["changed.txt"], item_state["executor_changed_paths"])
+        self.assertIsNone(item_state["running_role"])
+        self.assertGreater(updated["started_at_unix"], 1.0)
+        self.assertEqual(2, updated["iteration_count"])
+        self.assertIn("### Attempt limit reset", log)
+        self.assertIn("Reason: The card was corrected.", log)
+
     def test_execute_runs_fakes_and_reports_pass(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker = Path(marker_tmp) / "executor-ran"

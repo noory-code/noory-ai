@@ -119,6 +119,15 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip the venue preflight command for operator recovery.",
     )
+    parser.add_argument(
+        "--reset-attempts",
+        action="store_true",
+        help="Reset the selected item's attempt limit state after human correction.",
+    )
+    parser.add_argument(
+        "--reason",
+        help="Required one-line reason for --reset-attempts.",
+    )
     parser.add_argument("target", help="Existing parent or leaf work item id (W-*).")
     return parser.parse_args()
 
@@ -237,6 +246,73 @@ def write_run_state(path: Path, state: dict[str, Any]) -> None:
             temporary.unlink()
         except FileNotFoundError:
             pass
+
+
+def reset_attempts(
+    *,
+    state_path: Path,
+    stage_root: Path,
+    target_id: str,
+    item_id: str,
+    now: float,
+    reason: str,
+) -> tuple[bool, str]:
+    """Reset one corrected item's attempt budget and record the operator reason."""
+
+    if not state_path.exists():
+        return False, f"no driver run state exists for {target_id}"
+    state, state_error = load_run_state(state_path, target_id, now)
+    if state_error or state is None:
+        return False, state_error or "driver run state is unavailable"
+    item_state = state["items"].get(item_id)
+    if item_state is None:
+        return False, f"no recorded attempts exist for {item_id}"
+    for running_item_id, running_item_state in state["items"].items():
+        running_role = running_item_state.get("running_role")
+        if running_role is not None:
+            return (
+                False,
+                f"cannot reset attempts while {running_role} is running for "
+                f"{running_item_id}",
+            )
+    if item_state["attempt_count"] == 0:
+        return False, f"no recorded attempts exist for {item_id}"
+
+    try:
+        log_path = ensure_work_log(stage_root, item_id)
+        log_stream = log_path.open("a", encoding="utf-8")
+    except (OSError, RuntimeError) as exc:
+        return False, str(exc)
+
+    previous_started_at = state["started_at_unix"]
+    previous_item_state = dict(item_state)
+    state["started_at_unix"] = now
+    state["items"][item_id] = {
+        **item_state,
+        "attempt_count": 0,
+        "last_fingerprint": "",
+    }
+    with log_stream:
+        try:
+            write_run_state(state_path, state)
+            log_stream.write(
+                "\n### Attempt limit reset\n"
+                f"Reason: {reason}\n"
+            )
+            log_stream.flush()
+        except OSError as exc:
+            state["started_at_unix"] = previous_started_at
+            state["items"][item_id] = previous_item_state
+            try:
+                write_run_state(state_path, state)
+            except OSError as restore_exc:
+                return (
+                    False,
+                    f"cannot record attempt reset: {exc}; cannot restore run state: "
+                    f"{restore_exc}",
+                )
+            return False, f"cannot record attempt reset: {exc}"
+    return True, ""
 
 
 def write_running_role(
@@ -2164,6 +2240,22 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
 
 def main() -> int:
     args = parse_args()
+    if args.reset_attempts:
+        if args.reason is None or not args.reason.strip():
+            print_escalation("--reason is required with --reset-attempts")
+            return 2
+        if "\n" in args.reason or "\r" in args.reason:
+            print_escalation("--reason must be one line")
+            return 2
+        if args.execute or args.unattended or args.skip_preflight or args.timeout is not None:
+            print_escalation(
+                "--reset-attempts cannot be combined with execution options"
+            )
+            return 2
+        args.reason = args.reason.strip()
+    elif args.reason is not None:
+        print_escalation("--reason requires --reset-attempts")
+        return 2
     if args.timeout is not None and args.timeout <= 0:
         print_escalation("--timeout must be a positive integer")
         return 2
@@ -2188,6 +2280,27 @@ def main() -> int:
             f"target must resolve to exactly one existing work item; found {len(targets)}"
         )
         return 1
+    if args.reset_attempts:
+        item = select_next_ready_leaf(args.target, items)
+        if item is None:
+            print_escalation(
+                "target has no active or review leaf with non-empty acceptance"
+            )
+            return 1
+        state_path = stage_root / ".runtime" / "driver" / f"{args.target}.json"
+        reset_ok, reset_error = reset_attempts(
+            state_path=state_path,
+            stage_root=stage_root,
+            target_id=args.target,
+            item_id=item.item_id,
+            now=time.time(),
+            reason=args.reason,
+        )
+        if not reset_ok:
+            print_escalation(reset_error)
+            return 1
+        print(f"Reset attempts for {item.item_id}. Reason: {args.reason}")
+        return 0
     requested_timeout = args.timeout
     args.timeout = subtree_command_timeout(
         args.target,

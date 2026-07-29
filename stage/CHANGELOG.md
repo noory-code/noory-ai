@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add a reason-required driver command to reset a corrected leaf's attempt counter,
+  fingerprint, and wall-clock start, refuse resets during active executor or reviewer turns,
+  and record the reason in the leaf's shared work log.
 - Bind executor, reviewer, venue preflight, and close-work subprocess project environments to the
   target `--project-root` so inherited checkout variables cannot redirect session hooks, while
   removing those host project bindings from hermetic acceptance checks so spawned-hook tests stay
