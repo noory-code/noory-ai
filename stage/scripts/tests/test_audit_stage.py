@@ -56,6 +56,7 @@ class StageAuditTest(unittest.TestCase):
         location: str = "present",
         parent: str = "",
         decision_refs: str = "",
+        terminal_disposition: str = "",
     ) -> Path:
         if location == "present":
             base = root / ".stage" / "work" / "current"
@@ -82,12 +83,18 @@ class StageAuditTest(unittest.TestCase):
         else:
             path = base / item_id / "_story.md"
         path.parent.mkdir(parents=True, exist_ok=True)
+        terminal_disposition_line = (
+            f"terminal_disposition: {terminal_disposition}\n"
+            if terminal_disposition
+            else ""
+        )
         path.write_text(
             (
                 "---\n"
                 f"id: {item_id}\n"
                 "title: Test work\n"
                 f"status: {status}\n"
+                f"{terminal_disposition_line}"
                 f"verification: {verification}\n"
                 f"retrospective: {retrospective}\n"
                 f"retrospective_ref: {retrospective_ref}\n"
@@ -629,6 +636,103 @@ class StageAuditTest(unittest.TestCase):
             findings = audit_stage.Audit(root).run()
 
         self.assertIn("ARCHIVE001", finding_codes(findings))
+
+    def test_archived_hierarchy_requires_only_top_level_archive_index_row(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            records = (
+                ("W-0001", "", "R-0001"),
+                ("W-0002", "W-0001", "R-0002"),
+                ("W-0003", "W-0002", "R-0003"),
+            )
+            for item_id, parent, retrospective_ref in records:
+                self.write_work_item(
+                    root,
+                    item_id=item_id,
+                    status="archived",
+                    verification="passed",
+                    retrospective="completed",
+                    retrospective_ref=retrospective_ref,
+                    promotion="promoted",
+                    location="archive",
+                    parent=parent,
+                    terminal_disposition="accepted",
+                )
+                self.write_archive_retrospective(
+                    root,
+                    retro_id=retrospective_ref,
+                    work_item=item_id,
+                )
+            self.append_archive_index(root, "W-0001", "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual([], findings)
+
+    def test_archive_index_allows_legacy_nested_hierarchy_row(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            records = (
+                ("W-0001", "", "R-0001"),
+                ("W-0002", "W-0001", "R-0002"),
+            )
+            for item_id, parent, retrospective_ref in records:
+                self.write_work_item(
+                    root,
+                    item_id=item_id,
+                    status="archived",
+                    verification="passed",
+                    retrospective="completed",
+                    retrospective_ref=retrospective_ref,
+                    promotion="promoted",
+                    location="archive",
+                    parent=parent,
+                    terminal_disposition="accepted",
+                )
+                self.write_archive_retrospective(
+                    root,
+                    retro_id=retrospective_ref,
+                    work_item=item_id,
+                )
+                self.append_archive_index(root, item_id, "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual([], findings)
+
+    def test_nested_archived_item_requires_terminal_disposition_without_index_row(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            records = (
+                ("W-0001", "", "R-0001", "accepted"),
+                ("W-0002", "W-0001", "R-0002", ""),
+            )
+            for item_id, parent, retrospective_ref, terminal_disposition in records:
+                self.write_work_item(
+                    root,
+                    item_id=item_id,
+                    status="archived",
+                    verification="passed",
+                    retrospective="completed",
+                    retrospective_ref=retrospective_ref,
+                    promotion="promoted",
+                    location="archive",
+                    parent=parent,
+                    terminal_disposition=terminal_disposition,
+                )
+                self.write_archive_retrospective(
+                    root,
+                    retro_id=retrospective_ref,
+                    work_item=item_id,
+                )
+            self.append_archive_index(root, "W-0001", "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("ARCHIVE002", finding_codes(findings))
 
     def test_archive_index_final_status_must_be_terminal(self):
         with tempfile.TemporaryDirectory() as tmp:

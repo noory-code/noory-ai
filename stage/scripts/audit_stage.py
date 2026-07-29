@@ -30,7 +30,11 @@ import stage_roadmap  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
 import stage_work  # noqa: E402
-from stage_record_paths import record_paths, work_record_scale  # noqa: E402
+from stage_record_paths import (  # noqa: E402
+    hierarchy_parent_record_path,
+    record_paths,
+    work_record_scale,
+)
 from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology, read_settings  # noqa: E402
 from stage_records import AuditedItem, RecordGraph  # noqa: E402
 
@@ -817,11 +821,14 @@ class Audit:
                 )
 
     def audit_archive_records(self, graph: RecordGraph) -> None:
-        """Archived items keep their transition evidence: every archived item
-        has an archive-index row whose Final status records the terminal state
-        the `archived` overwrite erased, a completed transition keeps its
-        closed gates, and every archived item keeps a completed retrospective
-        (rejection reasons are learning assets too)."""
+        """Archived move units keep one index row and every record keeps its
+        transition evidence.
+
+        In the hierarchical topology, folder placement owns nesting, so only
+        top-level epics and independent stories require archive-index rows.
+        Nested records retain their terminal state in `terminal_disposition`;
+        legacy nested rows remain valid links but are not required.
+        """
         if self.topology == ACTIVE_TOPOLOGY_V4:
             index_relative = stage_topology.get_zone(
                 "work", "official"
@@ -842,19 +849,37 @@ class Audit:
                 continue
             item = entry.item
             archived_ids.add(item.item_id)
+            indexed = True
+            if self.topology == ACTIVE_TOPOLOGY_V4:
+                try:
+                    indexed = (
+                        hierarchy_parent_record_path(entry.items_root, item.path)
+                        is None
+                    )
+                except ValueError:
+                    indexed = True
             final = final_by_id.get(item.item_id)
-            if final is None:
+            if indexed and final is None:
                 self.error(
                     "ARCHIVE001",
-                    f"Archived item has no archive index row: {item.item_id}",
+                    f"Archived move unit has no archive index row: {item.item_id}",
                     item.path,
                 )
-            elif final not in {"completed", "rejected"}:
+            final_source = "Archive index Final status"
+            final_path = index_path
+            if not indexed and final is None:
+                final_source = "Archived item terminal_disposition"
+                final_path = item.path
+                final = {
+                    "accepted": "completed",
+                    "rejected": "rejected",
+                }.get(entry.fields.get("terminal_disposition", "").strip(), "")
+            if final is not None and final not in {"completed", "rejected"}:
                 self.error(
                     "ARCHIVE002",
-                    f"Archive index Final status must be completed or rejected: "
+                    f"{final_source} must be completed or rejected: "
                     f"{item.item_id} `{final or 'missing'}`",
-                    index_path,
+                    final_path,
                 )
             if final == "completed":
                 open_gates = []
