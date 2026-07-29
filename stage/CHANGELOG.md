@@ -8,6 +8,10 @@
   preserve valid legacy nested entries, and verify that hierarchy archiving audits at zero errors.
 - Reject retired flat work cards at lifecycle roots before allowing root-level indexes, READMEs,
   and templates through the hierarchy gate.
+- Describe review approval as the reviewer-owned JSON verdict everywhere the contract is
+  explained, state that a reviewer infrastructure failure retries free only while the verdict file
+  holds no review result, and separate what a failed verdict starts in unattended mode from what it
+  hands to the human in supervised mode.
 - Derive the default per-command driver timeout from unfinished subtree leaves with a 900-second
   floor, run optional venue preflights before attempt state or executors, distinguish missing
   checks from explicit `null`, provide an operator recovery bypass, and persist the currently

@@ -141,24 +141,30 @@ W frontmatter includes these execution fields:
 - Independent review of autonomous work: an item with `autonomous: true` must, at close, pass an
   independent reviewer whose venue differs from the item's `venue` — an executor must not grade its
   own work. `review.reviewers` in settings.json maps each venue to a reviewer command;
-  `close_work.py` resolves the sole reviewer whose venue differs from the item's and runs it,
-  blocking on a nonzero exit or a `BLOCK:` verdict line. If no differing-venue reviewer is
-  configured, or the map is ambiguous, the autonomous item cannot close (fail closed) — the
-  escalation path. A review command that cannot produce a verdict must not exit successfully; it
-  must fail with a nonzero exit code or a `BLOCK:` verdict. A passing review's clipped command and
+  `close_work.py` resolves the sole reviewer whose venue differs from the item's and runs it.
+  If no differing-venue reviewer is configured, or the map is ambiguous, the autonomous item
+  cannot close (fail closed) — the escalation path. The verdict is a reviewer-owned JSON file,
+  not a line of output: `close_work.py` deletes any prior file, names a fresh one in
+  `STAGE_REVIEW_VERDICT_FILE`, and passes review only when the command exits zero **and** that
+  file holds a valid verdict with `approved: true`. A missing, malformed, or non-approving
+  verdict blocks the close even on a zero exit; an approving verdict with a zero exit passes it
+  whatever the command printed. A review command that cannot produce a verdict must not exit
+  successfully, and must not leave an approving verdict behind. `templates/v4/project-stage/settings.jsonc`
+  owns the required JSON shape and its validation rules. A passing review's clipped command and
   verdict output are recorded under the card's `## Verification` section with explicit review
   provenance. Before `close_work.py` runs either an autonomous independent review or an opt-in
-  non-autonomous per-stage review, it copies its process environment and sets
-  `STAGE_WORK_ITEM_PATH` to the closing card's absolute path. Acceptance and additional
-  verification commands do not receive this `close_work.py`-added variable. Non-autonomous items
+  non-autonomous per-stage review, it copies its process environment and adds
+  `STAGE_WORK_ITEM_PATH` (the closing card's absolute path), `STAGE_CHANGED_PATHS_FILE`,
+  `STAGE_REVIEW_VERDICT_FILE`, and `STAGE_WORK_LOG_PATH`. Acceptance and additional
+  verification commands do not receive these `close_work.py`-added variables. Non-autonomous items
   keep the opt-in per-stage `review` behavior and receive the same evidence treatment when review
   runs.
-  A review verdict has two separately labeled parts:
+  A review has two separately routed parts:
   - **Criteria verdict** — read the card at `STAGE_WORK_ITEM_PATH`, judge every item under its
-    `## Success criteria`, and explain each pass or failure. Only a failed success criterion may
-    produce a blocking P1 verdict.
-  - **Out-of-criteria observations** — list every other finding separately. These observations are
-    inputs to later disposition, never P1 blockers for the current card.
+    `## Success criteria`, and write one JSON entry per criterion with its `PASS`/`FAIL` and a
+    one-line reason. Only a failed success criterion may block the close.
+  - **Out-of-criteria observations** — every other finding belongs in prose, never in the verdict
+    file. These observations are inputs to later disposition, never blockers for the current card.
 
 - `milestone:` — optional, cardinality 0..1. **Attribution**: names the single milestone that
   claims this card's completion credit. Evidence citations elsewhere are unrestricted and
@@ -308,8 +314,10 @@ executor output and verification output; those remain inputs only to the separat
 fingerprint. If the work was already complete before execution, the operator must run
 `close_work.py` manually so verification and review still run through an explicit path.
 
-The driver reuses the close-work command runner, treats a reviewer nonzero exit or `BLOCK:` verdict
-as failure, then prints the outcome and recommended explicit next action. It does not commit, call
+The driver reuses the close-work command runner and the same reviewer-owned JSON verdict file: a
+nonzero reviewer exit, or a missing, malformed, or non-approving verdict at
+`STAGE_REVIEW_VERDICT_FILE`, is a review failure. It then prints the outcome and recommended
+explicit next action. It does not commit, call
 `close_work.py`, call `escalate_work.py`, advance the parent, promote official truth, or loop over
 the subtree. Those actions remain human-supervised and are deferred to a later ship.
 
@@ -401,9 +409,12 @@ project paths containing `cmd.exe` metacharacters (`&`, `^`, `|`, `<`, or `>`) r
 as do paths containing whitespace. When the driver adds Windows quotes itself, it doubles trailing
 backslashes so they cannot escape the closing quote.
 
-Any executor/commit failure, reviewer `BLOCK`, no-progress, or per-item attempt cap escalates the
-item via `escalate_work` (→ blocked + a pending decision); the escalation result is checked and the
-run stops if escalation itself fails (so a stuck item cannot loop). A global iteration or
+A failed item commit escalates immediately via `escalate_work` (→ blocked + a pending decision).
+An executor failure or a non-approving reviewer verdict instead retries the item: the loop restores
+the pre-review lifecycle and runs the next round, which carries the failed criteria to the next
+executor as dispositions. No-progress or the per-item attempt cap ends that round trip and
+escalates the same way. The escalation result is checked and the run stops if escalation itself
+fails (so a stuck item cannot loop). A global iteration or
 wall-clock ceiling stops the run with a non-zero exit and a branch handoff. The loop never creates
 work, promotes official truth, crosses a human-approval gate, or touches the base branch; the human
 reviews and merges the run branch. (Findings from the first independent review are recorded in
