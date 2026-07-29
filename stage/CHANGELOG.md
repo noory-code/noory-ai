@@ -6,6 +6,8 @@
   target `--project-root` so inherited checkout variables cannot redirect spawned Stage hooks.
 - Require one top-level archive-index row per hierarchy move unit without requiring nested rows,
   preserve valid legacy nested entries, and verify that hierarchy archiving audits at zero errors.
+- Reject retired flat work cards at lifecycle roots before allowing root-level indexes, READMEs,
+  and templates through the hierarchy gate.
 - Derive the default per-command driver timeout from unfinished subtree leaves with a 900-second
   floor, run optional venue preflights before attempt state or executors, distinguish missing
   checks from explicit `null`, provide an operator recovery bypass, and persist the currently

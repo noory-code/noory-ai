@@ -183,6 +183,7 @@ SOURCE_EXTENSIONS = {
 }
 DOC_EXTENSIONS = {".md", ".mdx", ".rst", ".txt", ".adoc"}
 PATCH_FILE_RE = re.compile(r"^\*{3} (?:Add|Update|Delete) File: (?P<path>.+)$|^\*{3} Move to: (?P<move>.+)$", re.MULTILINE)
+FLAT_WORK_CARD_RE = re.compile(r"^W-[0-9]+\.md$")
 
 
 def configure_stdio() -> None:
@@ -455,7 +456,11 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
             break
 
         if hierarchy_root is not None:
-            if target_path.parent == hierarchy_root and target_path.suffix == ".md":
+            if (
+                target_path.parent == hierarchy_root
+                and target_path.suffix == ".md"
+                and FLAT_WORK_CARD_RE.fullmatch(target_path.name) is None
+            ):
                 continue
             try:
                 scale = work_record_scale(hierarchy_root, target_path)
