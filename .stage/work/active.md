@@ -8,4 +8,3 @@
 |---|---|---|---|---|---|---|
 | W-00000103 | design | claude |  | active | Claude | [current/W-00000103.md](current/W-00000103/_story.md) |
 | W-00000104 | development | codex | Stage 가 일감을 규모로 관리한다 — 에픽·스토리·액션 | active | codex | [current/W-00000104.md](current/W-00000104/_epic.md) |
-| W-00000110 | development | codex | 카드 백 장을 v5 로 옮긴다 | active | codex | [current/W-00000110.md](current/W-00000104/W-00000110/_story.md) |

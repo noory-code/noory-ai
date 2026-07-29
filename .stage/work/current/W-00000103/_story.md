@@ -8,8 +8,8 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000109
 promotion: pending
 review: not_required
 scope: .stage/**
@@ -67,8 +67,29 @@ decision_refs: DE-00000035
 
 ## Verification
 
+완료 기준을 하나씩 확인한다.
+
+- DE-00000035 가 `decided` 로 있고 `work_item` 이 이 카드를 가리킨다.
+- `## Where this applies` 가 코드 38자리·설정 4키·문서 14파일·실패 경로를 파일·줄 단위로
+  열거한다. 이후 스토리 여섯이 그 표를 지시서와 리뷰 검사표로 썼다.
+- v5 전부 이동을 명시하고, 택하지 않은 길(스캐너 이중 분기)과 이유가 적혀 있다.
+- P-00000002 의 Status 가 DE-00000035 를 가리킨다.
+- 에픽과 스토리들이 등록됐고 — 지금은 실행까지 끝났다. 설계의 최종 검증은 그 설계대로 지은
+  것이 실제로 섰다는 사실이다.
+- 감사 errors=0 (최종 warnings=0).
+
+**소유자 승인.** 결정 방향("v5 로 올리고 백 장 다 옮기자")과 쪼개기("응 등록해")를 소유자가
+대화에서 직접 승인했고, 실행 전 과정을 감독했다. 설계 kind 의 완료 기준(소유자 리뷰·승인)이
+이로써 찼다.
 
 ## Retrospective
 
+[R-00000109](../retrospectives/R-00000109.md) 가 본문을 쥔다.
+
+처음으로 위에서 아래로 내려가며 만든 쪼개기였고, 여섯 장이 순서 그대로 실행돼 에픽이 닫혔다.
+쪼개기에서 하나 틀린 것 — W-00000109 를 스토리 하나 크기로 잡은 것 — 은 그 카드의 회고와 에픽
+회고가 쥔다.
 
 ## Promotion decision
+
+**official 로 안 올린다.** 계약은 DE-00000035 가 쥔다. 이 카드는 독립 스토리라 혼자 보관된다.
