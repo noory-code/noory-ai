@@ -2,15 +2,21 @@
 id: W-00000119
 title: 상한 되돌리기가 근거를 남기는 명령이 된다
 kind: development
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/scripts/drive.py, stage/scripts/escalate_work.py, stage/skills/stage-drive/SKILL.md, stage/scripts/tests/, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json
+promotes:
+decision_refs:
 ---
 
 # W-00000119 상한 되돌리기가 근거를 남기는 명령이 된다
@@ -40,3 +46,11 @@ DE-00000039 §4. 사람이 카드를 바꾼 뒤 다시 돌릴 때 시도 기록 
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

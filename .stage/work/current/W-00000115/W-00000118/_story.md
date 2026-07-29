@@ -2,15 +2,21 @@
 id: W-00000118
 title: 한계값이 규모에서 나오고 venue 사전 점검이 선다
 kind: development
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/scripts/drive.py, stage/scripts/tests/, .stage/settings.json, stage/templates/, stage/docs/, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json
+promotes:
+decision_refs:
 ---
 
 # W-00000118 한계값이 규모에서 나오고 venue 사전 점검이 선다
@@ -40,3 +46,11 @@ DE-00000039 §3. 명령당 시간 제한 900초 고정을 버리고 시작 시�
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

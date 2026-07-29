@@ -2,14 +2,20 @@
 id: W-00000115
 title: 드라이버가 실패 경로에서도 계약대로 움직인다
 kind: development
-venue:
+venue: codex
 milestone:
-status: captured
 priority: 2
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/, .stage/
+promotes:
+decision_refs:
 ---
 
 # W-00000115 드라이버가 실패 경로에서도 계약대로 움직인다
@@ -39,3 +45,11 @@ DE-00000039 가 넓힌 계약을 코드에 싣는다. 실전 세 카드에서 �
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

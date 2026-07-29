@@ -2,15 +2,21 @@
 id: W-00000117
 title: 리뷰 판정을 파일로 받는다
 kind: development
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/scripts/drive.py, stage/skills/stage-retrospective/close_work.py, stage/skills/stage-drive/SKILL.md, stage/scripts/tests/, .stage/settings.json, stage/templates/, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json
+promotes:
+decision_refs:
 ---
 
 # W-00000117 리뷰 판정을 파일로 받는다
@@ -40,3 +46,11 @@ DE-00000039 §2. 리뷰어가 드라이버가 준 경로에 기준별 판정을 
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
