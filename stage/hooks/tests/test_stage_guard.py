@@ -1651,22 +1651,42 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "deny")
         self.assertIn("finalized", reason(result))
 
-    def test_hierarchy_gate_allows_planned_index_edit(self):
+    def test_hierarchy_gate_blocks_flat_card_but_allows_root_documents(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(root, "settings.json", '{"schema_version": 5}\n')
-            payload = {
-                "tool_name": "Write",
-                "cwd": str(root),
-                "tool_input": {
-                    "file_path": ".stage/work/planned/index.md",
-                    "content": "# Planned work\n",
-                },
-            }
+            results = {}
+            for relative in (
+                "work/planned/W-00000002.md",
+                "work/current/W-00000002.md",
+                "work/planned/index.md",
+                "work/planned/README.md",
+                "work/planned/_template.md",
+            ):
+                payload = {
+                    "tool_name": "Write",
+                    "cwd": str(root),
+                    "tool_input": {
+                        "file_path": f".stage/{relative}",
+                        "content": "# Planned work\n",
+                    },
+                }
+                results[relative] = stage_guard.handle_event("pre-tool-use", payload)
 
-            result = stage_guard.handle_event("pre-tool-use", payload)
-
-        self.assertEqual(decision(result), "allow")
+        for relative in (
+            "work/planned/W-00000002.md",
+            "work/current/W-00000002.md",
+        ):
+            with self.subTest(relative=relative):
+                self.assertEqual(decision(results[relative]), "deny")
+                self.assertIn("hierarchy gate", reason(results[relative]))
+        for relative in (
+            "work/planned/index.md",
+            "work/planned/README.md",
+            "work/planned/_template.md",
+        ):
+            with self.subTest(relative=relative):
+                self.assertEqual(decision(results[relative]), "allow")
 
     def test_hierarchy_gate_blocks_action_without_story_folder(self):
         with tempfile.TemporaryDirectory() as tmp:
