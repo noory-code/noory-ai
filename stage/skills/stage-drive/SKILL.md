@@ -23,6 +23,35 @@ checkout. When developing inside the Stage source checkout itself, `stage/script
 resolves — but that form is the exception, not the default. The target can be either a parent or a
 runnable leaf work item; no wrapper parent is required for a leaf.
 
+## Run independent cards in parallel worktrees
+
+Resolve `drive_parallel.py` from `../../scripts/drive_parallel.py` relative to this skill, using
+the same absolute-path rule as `drive.py`, then pass two or more independent card IDs:
+
+```bash
+python3 "<parallel-driver>" --project-root <project-root> W-00000001 W-00000002
+```
+
+The command creates `<project-parent>/<project-name>-stage-worktrees/<card-id>` by default. Each
+path is a Git worktree on `stage/worktree/<card-id>`, and each worktree runs one supervised
+`drive.py --execute` step concurrently with that worktree as `--project-root`. Use
+`--worktree-root <path>` to choose a different parent directory.
+
+The command prints each driver status, worktree path, and `Merge branch:
+stage/worktree/<card-id>`. It does not commit, close, merge, or remove a successful worktree. After
+reviewing and completing the card in that worktree, the human commits the branch and merges the
+printed branch. If any worktree creation fails, every tree and branch created by that invocation
+is removed. A driver failure keeps its worktree and branch for inspection.
+
+Run only cards whose declared scopes do not overlap. Separate worktrees isolate repository
+observation; they do not make overlapping edits safe. The command rejects a duplicate ID inside
+one invocation, and an existing card-named path or branch makes a later invocation fail instead of
+reusing the same card. Scope-overlap rejection is a separate driver gate.
+
+Each worktree has its own ignored `.stage/.runtime/` evidence. The tracked lifecycle indexes do not
+have that isolation after merge: `.stage/work/active.md` and `.stage/work/review.md` can conflict
+even when the source scopes are independent. The human resolving the merge owns those index rows.
+
 ## The default run is a dry run
 
 Invoked with no mode flag, the driver only reports. It prints the item it would select, the

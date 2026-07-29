@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Run independent Stage cards concurrently in card-named Git worktrees and branches, report the
+  branch to merge for each supervised result, and remove every tree created by a failed setup.
 - Move plugin version selection to an explicit release command that titles the queued changelog
   section and updates both host manifests together, while card work records entries without
   changing a running plugin's version.
