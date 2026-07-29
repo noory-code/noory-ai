@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Take criterion-by-criterion review approval from a reviewer-owned JSON file, preserve prose only
+  for human review, carry failed criteria into reasoned executor dispositions in every driver
+  mode, and document the same contract in new-project templates.
 - Reap timed-out parallel turns through the active role's venue, preserve uncommitted worktrees by
   default, clean up retained branch-only failures, and compare descendant and rewrite-capable
   changelog scopes before starting parallel cards.

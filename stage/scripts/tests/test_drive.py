@@ -62,7 +62,7 @@ def cumulative_retry_executor_command(marker: Path) -> str:
 
 def retry_reviewer_command(marker: Path) -> str:
     return python_command(
-        "import os\n"
+        "import json, os\n"
         "from pathlib import Path\n"
         f"marker = Path({str(marker)!r})\n"
         "if marker.read_text(encoding='utf-8') == '1':\n"
@@ -74,6 +74,10 @@ def retry_reviewer_command(marker: Path) -> str:
         "APPROVED\\n"
         "OUT-OF-CRITERIA OBSERVATIONS:\\n- None\\n')\n"
         "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+        "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
+        "    json.dumps({'criteria': [{'criterion': 'cumulative paths', "
+        "'verdict': 'PASS', 'reason': 'both rounds were reviewed'}], "
+        "'approved': True}), encoding='utf-8')\n"
         "print('APPROVED')\n"
     )
 
@@ -90,7 +94,7 @@ def approving_reviewer_command(code: str = "") -> str:
         )
     return python_command(
         setup
-        + "import os\n"
+        + "import json, os\n"
         "from pathlib import Path\n"
         "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
         "report = ('\\n### Reviewer report\\n"
@@ -99,7 +103,24 @@ def approving_reviewer_command(code: str = "") -> str:
         "APPROVED\\n"
         "OUT-OF-CRITERIA OBSERVATIONS:\\n- None\\n')\n"
         "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+        "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
+        "    json.dumps({'criteria': [{'criterion': 'criterion', "
+        "'verdict': 'PASS', 'reason': 'test reviewer inspected the inputs'}], "
+        "'approved': True}), encoding='utf-8')\n"
         "print('APPROVED')"
+    )
+
+
+def rejecting_reviewer_command(code: str = "") -> str:
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        + (f"exec({code!r})\n" if code else "")
+        + "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
+        "    json.dumps({'criteria': [{'criterion': 'criterion', "
+        "'verdict': 'FAIL', 'reason': 'reviewer found a blocker'}], "
+        "'approved': False}), encoding='utf-8')\n"
+        "print('prose says APPROVED and CRITERIA VERDICT: PASS')"
     )
 
 
@@ -345,6 +366,7 @@ class DriveTest(unittest.TestCase):
                 action,
                 root,
                 stage_root / ".runtime/driver/logs/W-00000003.md",
+                stage_root / ".runtime/driver/verdicts/W-00000003.json",
                 items=items,
             )
             expected_ancestors = [
@@ -355,6 +377,15 @@ class DriveTest(unittest.TestCase):
         self.assertEqual(
             expected_ancestors,
             json.loads(environment["STAGE_WORK_ITEM_ANCESTOR_PATHS"]),
+        )
+        self.assertEqual(
+            str(
+                (
+                    stage_root
+                    / ".runtime/driver/verdicts/W-00000003.json"
+                ).resolve()
+            ),
+            environment["STAGE_REVIEW_VERDICT_FILE"],
         )
 
     def test_selects_next_ready_leaf_by_id(self):
@@ -1562,6 +1593,93 @@ class DriveTest(unittest.TestCase):
         self.assertNotIn("Acceptance result:", result.stdout)
         self.assertNotIn("Independent reviewer result:", result.stdout)
 
+    def test_supervised_reasoned_decline_allows_empty_changed_paths(self):
+        finding = "unsupported fictional host"
+        executor = python_command(
+            "import json, os\n"
+            "from pathlib import Path\n"
+            "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+            "report = ('\\n### Executor report\\n"
+            "What changed: declined the pending fictional-host finding\\n"
+            "Why: that host cannot run this project\\n"
+            "Changed paths (JSON):\\n[]\\n"
+            "Review dispositions (JSON):\\n' + "
+            f"json.dumps([{{'finding': {finding!r}, 'disposition': 'decline', "
+            "'reason': 'that host cannot run this project'}]) + '\\n"
+            "Review request: recheck the reasoned disposition\\n')\n"
+            "log.write_text(log.read_text(encoding='utf-8') + report, "
+            "encoding='utf-8')\n"
+        )
+        tmp, root = self.make_project(
+            executor=executor,
+            reviewer=APPROVING_REVIEWER,
+        )
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            verdict_file = (
+                stage_root
+                / ".runtime/driver/verdicts/W-00000002.json"
+            )
+            verdict_file.parent.mkdir(parents=True, exist_ok=True)
+            verdict_file.write_text(
+                json.dumps(
+                    {
+                        "criteria": [
+                            {
+                                "criterion": finding,
+                                "verdict": "FAIL",
+                                "reason": "reviewer requested a fictional host",
+                            }
+                        ],
+                        "approved": False,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = self.run_cli(root, "--execute")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("executor, acceptance, and independent reviewer passed", result.stdout)
+
+    def test_reviewer_prose_labels_do_not_override_approved_json(self):
+        misleading_prose = (
+            "import os\n"
+            "from pathlib import Path\n"
+            "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+            "with log.open('a', encoding='utf-8') as handle:\n"
+            "    handle.write('\\n### Reviewer report\\n"
+            "CRITERIA VERDICT: FAIL APPROVED `### Reviewer report`\\n')"
+        )
+        executor = reporting_python_command(
+            "from pathlib import Path; "
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+            ["executor-work.txt"],
+        )
+        tmp, root = self.make_project(
+            executor=executor,
+            reviewer=approving_reviewer_command(misleading_prose),
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
     def test_executor_and_reviewer_share_one_work_log(self):
         executor = reporting_python_command(
             "from pathlib import Path; "
@@ -1595,7 +1713,7 @@ class DriveTest(unittest.TestCase):
         self.assertIn("## 책임 경계", log)
         self.assertIn("작업 카드는 지속되는 수명 주기 상태", log)
 
-    def test_reviewer_must_append_criterion_verdicts_to_work_log(self):
+    def test_reviewer_must_write_verdict_file(self):
         executor = reporting_python_command(
             "from pathlib import Path; "
             "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
@@ -1620,11 +1738,11 @@ class DriveTest(unittest.TestCase):
 
         self.assertNotEqual(0, result.returncode)
         self.assertIn(
-            "reviewer did not append criterion verdicts to the work log",
+            "review verdict file is missing",
             result.stdout,
         )
 
-    def test_reviewer_block_recommends_escalation(self):
+    def test_failed_json_review_verdict_recommends_escalation(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
             reviewer_reaped = Path(marker_tmp) / "reviewer-reaped"
             tmp, root = self.make_project(
@@ -1633,7 +1751,7 @@ class DriveTest(unittest.TestCase):
                     "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
                     ["executor-work.txt"],
                 ),
-                reviewer=python_command("print('BLOCK: no'); raise SystemExit(1)"),
+                reviewer=rejecting_reviewer_command(),
                 reapers={
                     "codex": PASS_COMMAND,
                     "claude": python_command(
@@ -1654,11 +1772,11 @@ class DriveTest(unittest.TestCase):
                 result = self.run_cli(root, "--execute")
 
             self.assertNotEqual(0, result.returncode)
-            self.assertIn("independent reviewer BLOCK", result.stdout)
+            self.assertIn("review verdict did not approve", result.stdout)
             self.assertIn("→ escalate_work", result.stdout)
             self.assertTrue(reviewer_reaped.exists())
 
-    def test_reviewer_block_output_is_appended_to_shared_work_log(self):
+    def test_reviewer_command_failure_output_is_appended_to_shared_work_log(self):
         tmp, root = self.make_project(
             executor=reporting_python_command(
                 "from pathlib import Path; "
@@ -1686,7 +1804,7 @@ class DriveTest(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertIn("### Driver failure", log)
         self.assertIn("Role: reviewer", log)
-        self.assertIn("Reason: independent reviewer BLOCK verdict", log)
+        self.assertIn("Reason: review verdict file is missing", log)
         self.assertIn("reviewer failure sentinel", log)
         self.assertIn("[exit 9]", log)
 

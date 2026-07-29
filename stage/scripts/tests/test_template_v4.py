@@ -118,6 +118,21 @@ class TemplateV4Test(unittest.TestCase):
         self.assertIn(ancestor_instruction, template_settings)
         self.assertIn(reporting_instruction, template_settings)
 
+    def test_v4_settings_template_documents_review_verdict_file_contract(self):
+        template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+
+        self.assertIn("STAGE_REVIEW_VERDICT_FILE", template_settings)
+        self.assertIn('"criteria"', template_settings)
+        self.assertIn('"criterion"', template_settings)
+        self.assertIn('"verdict"', template_settings)
+        self.assertIn('"reason"', template_settings)
+        self.assertIn('"approved"', template_settings)
+
+    def test_driver_source_has_no_dead_base_repository_paths_field(self):
+        source = (PLUGIN_ROOT / "scripts/drive.py").read_text(encoding="utf-8")
+
+        self.assertNotIn("base_repository_paths", source)
+
     def test_roadmap_templates_have_computed_status_contract(self):
         theme = V4_ROOT / "roadmap/themes/_template.md"
         milestone = V4_ROOT / "roadmap/milestones/_template.md"

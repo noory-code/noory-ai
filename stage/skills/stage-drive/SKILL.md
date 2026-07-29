@@ -175,8 +175,10 @@ python3 "<driver>" --project-root <project-root> --execute <TARGET_ID>
 ```
 
 This runs exactly one sequence — executor, then each stored acceptance check, then the independent
-reviewer — and stops. A reviewer that exits non-zero or emits a `BLOCK:` verdict is a failure. The
-step records attempt state under `.stage/.runtime/driver/`, then prints the outcome and the
+reviewer — and stops. The reviewer writes its criterion results to
+`STAGE_REVIEW_VERDICT_FILE`; the driver reads only that JSON to decide approval. A missing,
+malformed, or non-approving verdict file fails the review, as does a nonzero reviewer command.
+The step records attempt state under `.stage/.runtime/driver/`, then prints the outcome and the
 recommended next action.
 
 It does **not** commit, close the card, escalate, promote official truth, advance the parent, or
@@ -189,18 +191,17 @@ Git index, so its `git add` cannot change the human's real index, but the workin
 remain shared process-wide state. Wait for the step to stop before changing the repository.
 
 Three conditions end a step in `blocked` instead of a retry: an exhausted limit, a `NO-PROGRESS`
-fingerprint, and an independent reviewer `BLOCK:` verdict. A reviewer BLOCK escalates
-unconditionally — it is a judgment on the result, not a transient failure, so rerunning the step
-is never the answer to it. All three recommend `escalate_work.py`; the driver never escalates
+fingerprint, and an independent reviewer JSON verdict with failed criteria. A failed verdict
+escalates unconditionally — it is a judgment on the result, not a transient failure, so rerunning
+the step is never the answer to it. All three recommend `escalate_work.py`; the driver never escalates
 itself and never claims completion. When the exhausted item is an action, escalation also blocks
 its story and creates the human decision at that story: the next instruction is to re-decompose
 the story, not to rerun the same action. Other stories in the epic continue.
 
-A BLOCK puts the reviewer's voice in front of the human; it does not decide for the human. After
-any verdict, disposition each finding — accept, decline, or defer — with a one-line reason in the
-card's `## Verification` (stage-retrospective checks this at close). Reviewer severity (P1/P2)
-ranks code-view impact, not this project's priorities: a P1 may be declined with a recorded
-reason. Out-of-criteria observations never block the card; they enter the same disposition step.
+A failed verdict puts the reviewer's voice in front of the human; it does not decide for the
+human. The next executor dispositions each failed criterion — accept, decline, or defer — with a
+one-line reason in its append-only shared-log report. Reviewer prose remains human-readable
+context, but labels in that prose never decide the machine result.
 
 `NO-PROGRESS` means the fingerprint — staged and unstaged tracked changes against `HEAD`, the path
 and content hash of each untracked non-ignored file, and the acceptance output — is identical to
@@ -226,19 +227,21 @@ their children go terminal. It works on a fresh isolated
 `stage/driver/<target>-<unixtime>` branch and refuses to start if the working tree is dirty, so the
 base branch is never touched; the human reviews and merges that branch.
 
-The card's `max_attempts_per_item` limit is the reviewer/executor round-trip limit. When a reviewer
-logs failed criteria, the next executor receives the same `STAGE_WORK_LOG_PATH` and must append
-exactly one disposition for every latest `CRITERIA VERDICT:` line containing `FAIL`:
+The card's `max_attempts_per_item` limit is the reviewer/executor round-trip limit. The reviewer
+writes `criteria` objects and `approved` to `STAGE_REVIEW_VERDICT_FILE`. The next executor receives
+that same path and must append exactly one disposition for every criteria object whose verdict is
+`FAIL`:
 
 ```text
 Review dispositions (JSON):
-[{"finding":"<exact FAIL line>","disposition":"accept","reason":"<one-line reason>"}]
+[{"finding":"<exact criterion string>","disposition":"accept","reason":"<one-line reason>"}]
 ```
 
-`disposition` is exactly `accept`, `decline`, or `defer`. Findings stay in reviewer order and must
-match exactly. Every choice requires a non-empty one-line reason. A round that declines or defers
-every finding may make no repository change, but it must still append its executor report with an
-empty changed-path array. An accepted finding requires repository progress. Out-of-criteria
+`disposition` is exactly `accept`, `decline`, or `defer`. Findings stay in JSON order and must
+match each `criterion` exactly. Every choice requires a non-empty one-line reason. A round that
+declines or defers every finding may make no repository change, but it must still append its
+executor report with an empty changed-path array. An accepted finding requires repository
+progress. Out-of-criteria
 observations do not enter this blocking round trip.
 
 When all criteria pass, the cumulative checkpoint becomes the item commit. When the round-trip

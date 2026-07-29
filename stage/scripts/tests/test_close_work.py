@@ -60,7 +60,7 @@ def python_command(code: str) -> str:
 
 def approving_reviewer_command(command: str) -> str:
     return python_command(
-        "import os, subprocess, sys\n"
+        "import json, os, subprocess, sys\n"
         "from pathlib import Path\n"
         f"proc = subprocess.run({command!r}, shell=True, capture_output=True, text=True)\n"
         "sys.stdout.write(proc.stdout)\n"
@@ -75,7 +75,30 @@ def approving_reviewer_command(command: str) -> str:
         "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
         "with log.open('a', encoding='utf-8') as handle:\n"
         "    handle.write('\\n### Reviewer report\\n' + report)\n"
+        "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
+        "    json.dumps({'criteria': [{'criterion': 'criterion', "
+        "'verdict': 'PASS', 'reason': 'test reviewer inspected the inputs'}], "
+        "'approved': True}), encoding='utf-8')\n"
         "print(verdict)"
+    )
+
+
+def rejecting_reviewer_command(command: str) -> str:
+    return python_command(
+        "import json, os, subprocess, sys\n"
+        "from pathlib import Path\n"
+        f"proc = subprocess.run({command!r}, shell=True, capture_output=True, text=True)\n"
+        "sys.stdout.write(proc.stdout)\n"
+        "sys.stderr.write(proc.stderr)\n"
+        "if proc.returncode:\n"
+        "    raise SystemExit(proc.returncode)\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "with log.open('a', encoding='utf-8') as handle:\n"
+        "    handle.write('\\n### Reviewer report\\n' + proc.stdout + proc.stderr)\n"
+        "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
+        "    json.dumps({'criteria': [{'criterion': 'criterion', "
+        "'verdict': 'FAIL', 'reason': 'test reviewer rejected the work'}], "
+        "'approved': False}), encoding='utf-8')\n"
     )
 
 
@@ -642,7 +665,7 @@ class CloseWorkTest(unittest.TestCase):
         self.assertNotIn("CRITERIA VERDICT:", item)
         self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
 
-    def test_review_without_criterion_verdict_blocks_even_on_zero_exit(self):
+    def test_review_without_verdict_file_blocks_even_on_zero_exit(self):
         tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(
@@ -671,15 +694,46 @@ class CloseWorkTest(unittest.TestCase):
             ).read_text(encoding="utf-8")
 
         self.assertEqual(1, proc.returncode)
-        self.assertIn("reviewer did not append criterion verdicts", proc.stderr)
+        self.assertIn("review verdict file is missing", proc.stderr)
         self.assertIn("status: active", item)
         self.assertIn("looks fine", log)
+
+    def test_review_with_invalid_verdict_json_blocks_with_specific_reason(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "strengths": {
+                        "standard": python_command(
+                            "import os\n"
+                            "from pathlib import Path\n"
+                            "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text("
+                            "'{broken', encoding='utf-8')\n"
+                            "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+                            "with log.open('a', encoding='utf-8') as handle:\n"
+                            "    handle.write('\\n### Reviewer report\\nlooks fine\\n')"
+                        )
+                    },
+                    "stages": {"implementation": "standard"},
+                },
+                add_verdict=False,
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("review verdict file is invalid JSON", proc.stderr)
+        self.assertIn("status: active", item)
 
     def test_out_of_criteria_fail_text_does_not_block_logged_approval(self):
         tmp, root = self.make(review="pending")
         with tmp:
             reviewer = python_command(
-                "import os; from pathlib import Path; "
+                "import json, os; from pathlib import Path; "
                 "log = Path(os.environ['STAGE_WORK_LOG_PATH']); "
                 "report = ('\\n### Reviewer report\\n"
                 "CRITERIA VERDICT:\\n"
@@ -689,6 +743,10 @@ class CloseWorkTest(unittest.TestCase):
                 "- FAIL text here is non-blocking\\n'); "
                 "log.write_text(log.read_text(encoding='utf-8') + report, "
                 "encoding='utf-8'); "
+                "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text("
+                "json.dumps({'criteria': [{'criterion': 'success criterion', "
+                "'verdict': 'PASS', 'reason': 'satisfied'}], "
+                "'approved': True}), encoding='utf-8'); "
                 "print('APPROVED')"
             )
             self._write_review(
@@ -704,50 +762,65 @@ class CloseWorkTest(unittest.TestCase):
 
         self.assertEqual(0, proc.returncode, proc.stderr)
 
-    def test_latest_review_failures_exclude_out_of_criteria_observations(self):
+    def test_review_verdict_reads_failures_from_json_without_inspecting_prose(self):
         close_work = load_close_module()
-        log = (
-            "### Reviewer report\n"
-            "CRITERIA VERDICT:\n"
-            "- criterion one: PASS - complete\n"
-            "- criterion two: FAIL [P1] - missing regression\n"
-            "OUT-OF-CRITERIA OBSERVATIONS:\n"
-            "- FAIL text outside the card does not enter the round trip\n"
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            verdict_path = Path(tmp) / "review-verdict.json"
+            verdict_path.write_text(
+                json.dumps(
+                    {
+                        "criteria": [
+                            {
+                                "criterion": "criterion one",
+                                "verdict": "PASS",
+                                "reason": "complete",
+                            },
+                            {
+                                "criterion": "criterion two",
+                                "verdict": "FAIL",
+                                "reason": "missing regression",
+                            },
+                        ],
+                        "approved": False,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            prose = (
+                "CRITERIA VERDICT: PASS APPROVED\n"
+                "The prior ### Reviewer report contained misleading FAIL labels."
+            )
 
-        self.assertEqual(
-            ["- criterion two: FAIL [P1] - missing regression"],
-            close_work.latest_review_failures(log),
-        )
+            self.assertEqual(
+                ["criterion two"],
+                close_work.review_verdict_failures(verdict_path),
+            )
+            self.assertEqual(
+                "review verdict did not approve the work item",
+                close_work.review_verdict_error(verdict_path),
+            )
+            self.assertNotIn("criterion two", prose)
 
-    def test_reviewer_report_marker_mentioned_in_body_is_not_a_second_report(self):
+    def test_missing_review_verdict_file_has_specific_error(self):
         close_work = load_close_module()
-        previous = "### Executor report\n"
-        current = (
-            previous
-            + "\n### Reviewer report\n"
-            "CRITERIA VERDICT:\n"
-            "- log flow: PASS - the prior `### Reviewer report` reached the executor\n"
-            "APPROVED\n"
-            "OUT-OF-CRITERIA OBSERVATIONS:\n"
-            "- None\n"
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            verdict_path = Path(tmp) / "review-verdict.json"
 
-        self.assertEqual("", close_work.reviewer_report_error(previous, current))
+            self.assertEqual(
+                "review verdict file is missing",
+                close_work.review_verdict_error(verdict_path),
+            )
 
-    def test_latest_review_failures_ignore_reviewer_marker_mentions(self):
+    def test_invalid_review_verdict_json_has_specific_error(self):
         close_work = load_close_module()
-        finding = "- log flow: FAIL [P1] - executor missed the prior report"
-        log = (
-            "### Reviewer report\n"
-            "CRITERIA VERDICT:\n"
-            f"{finding}\n"
-            "- report shape: PASS - the `### Reviewer report` heading is present\n"
-            "OUT-OF-CRITERIA OBSERVATIONS:\n"
-            "- None\n"
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            verdict_path = Path(tmp) / "review-verdict.json"
+            verdict_path.write_text("{broken", encoding="utf-8")
 
-        self.assertEqual([finding], close_work.latest_review_failures(log))
+            self.assertEqual(
+                "review verdict file is invalid JSON",
+                close_work.review_verdict_error(verdict_path),
+            )
 
     def test_executor_report_marker_mentioned_in_body_is_not_a_second_report(self):
         close_work = load_close_module()
@@ -886,12 +959,23 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
         self.assertIn("committed review material", log)
 
-    def test_review_block_verdict_refuses(self):
+    def test_failed_json_verdict_refuses(self):
         tmp, root = self.make(review="pending")
         with tmp:
-            self._write_review(root, {"strengths": {"red-team": "python3 -c \"print('BLOCK: found a bug')\""}, "stages": {"implementation": "red-team"}})
+            command = rejecting_reviewer_command(
+                "python3 -c \"print('BLOCK: found a bug')\""
+            )
+            self._write_review(
+                root,
+                {
+                    "strengths": {"red-team": command},
+                    "stages": {"implementation": "red-team"},
+                },
+                add_verdict=False,
+            )
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 1)
+            self.assertIn("review verdict did not approve", proc.stderr)
             self.assertIn("status: active", (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8"))
 
     def test_not_required_bypasses_review_even_if_configured(self):
@@ -922,13 +1006,20 @@ class CloseWorkTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 1)
             self.assertIn("review is pending", proc.stderr)
 
-    def test_review_block_survives_long_output(self):
-        # Verdict first, then >40 lines, exit 0 — BLOCK: must still be detected on
-        # the raw output, not the clipped evidence.
+    def test_failed_json_verdict_survives_long_prose_output(self):
         tmp, root = self.make(review="pending")
         with tmp:
-            cmd = "python3 -c \"print('BLOCK: nope'); [print(i) for i in range(60)]\""
-            self._write_review(root, {"strengths": {"red-team": cmd}, "stages": {"implementation": "red-team"}})
+            command = rejecting_reviewer_command(
+                "python3 -c \"print('BLOCK: nope'); [print(i) for i in range(60)]\""
+            )
+            self._write_review(
+                root,
+                {
+                    "strengths": {"red-team": command},
+                    "stages": {"implementation": "red-team"},
+                },
+                add_verdict=False,
+            )
             proc = run(root, "W-00000001", "--check", "true")
             self.assertEqual(proc.returncode, 1)
             self.assertIn("status: active", (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8"))
@@ -956,9 +1047,12 @@ class CloseWorkTest(unittest.TestCase):
                 {
                     "reviewers": {
                         "codex": python_command("print('same venue should not run')"),
-                        "claude": python_command("print('BLOCK: independent rejection')"),
+                        "claude": rejecting_reviewer_command(
+                            python_command("print('BLOCK: independent rejection')")
+                        ),
                     }
                 },
+                add_verdict=False,
             )
 
             proc = run(root, "W-00000001", "--check", python_command("print(1)"))

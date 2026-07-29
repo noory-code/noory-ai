@@ -65,6 +65,7 @@ _CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 MAX_LINES = 40
 MAX_BYTES = 4000
 WORK_LOG_RELATIVE_DIR = Path(".stage/.runtime/driver/logs")
+REVIEW_VERDICT_RELATIVE_DIR = Path(".stage/.runtime/driver/verdicts")
 WORK_LOG_PREAMBLE = """\
 # Stage 작업 로그 — {item_id}
 
@@ -76,7 +77,6 @@ WORK_LOG_PREAMBLE = """\
 서로의 소유 사실은 경로로 참조한다.
 """
 EXECUTOR_REPORT_MARKER = "### Executor report"
-REVIEWER_REPORT_MARKER = "### Reviewer report"
 REVIEW_DISPOSITIONS_LABEL = "Review dispositions (JSON):"
 
 
@@ -138,6 +138,117 @@ def read_work_log(path: Path) -> str:
         return path.read_text(encoding="utf-8")
     except OSError as exc:
         raise RuntimeError(f"cannot read work log {path}: {exc}") from exc
+
+
+def review_verdict_path(stage_root: Path, item_id: str) -> Path:
+    return stage_root.parent / REVIEW_VERDICT_RELATIVE_DIR / f"{item_id}.json"
+
+
+def clear_review_verdict(path: Path) -> None:
+    """Remove the prior verdict so a missing new result cannot reuse stale approval."""
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        raise RuntimeError(f"cannot prepare review verdict file {path}: {exc}") from exc
+
+
+def load_review_verdict(path: Path) -> tuple[dict[str, object] | None, str]:
+    """Load and validate the reviewer-owned JSON verdict."""
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None, "review verdict file is missing"
+    except json.JSONDecodeError:
+        return None, "review verdict file is invalid JSON"
+    except OSError as exc:
+        return None, f"cannot read review verdict file: {exc}"
+
+    if not isinstance(raw, dict) or set(raw) != {"criteria", "approved"}:
+        return None, (
+            "review verdict must contain exactly `criteria` and `approved`"
+        )
+    criteria = raw["criteria"]
+    approved = raw["approved"]
+    if not isinstance(criteria, list) or not criteria:
+        return None, "review verdict criteria must be a non-empty array"
+    if type(approved) is not bool:
+        return None, "review verdict approved must be a boolean"
+
+    normalized: list[dict[str, str]] = []
+    seen_criteria: set[str] = set()
+    for entry in criteria:
+        if not isinstance(entry, dict) or set(entry) != {
+            "criterion",
+            "verdict",
+            "reason",
+        }:
+            return None, (
+                "each review criterion must contain exactly `criterion`, "
+                "`verdict`, and `reason`"
+            )
+        criterion = entry["criterion"]
+        verdict = entry["verdict"]
+        reason = entry["reason"]
+        if not all(
+            isinstance(value, str)
+            for value in (criterion, verdict, reason)
+        ):
+            return None, "review criterion values must be strings"
+        if (
+            not criterion.strip()
+            or not reason.strip()
+            or "\n" in criterion
+            or "\r" in criterion
+            or "\n" in reason
+            or "\r" in reason
+        ):
+            return None, (
+                "review criterion and reason must be non-empty one-line strings"
+            )
+        if criterion in seen_criteria:
+            return None, "review verdict criteria must be unique"
+        if verdict not in {"PASS", "FAIL"}:
+            return None, "review criterion verdict must be `PASS` or `FAIL`"
+        seen_criteria.add(criterion)
+        normalized.append(
+            {
+                "criterion": criterion,
+                "verdict": verdict,
+                "reason": reason,
+            }
+        )
+
+    all_passed = all(entry["verdict"] == "PASS" for entry in normalized)
+    if approved != all_passed:
+        return None, (
+            "review verdict approved must be true exactly when every criterion passes"
+        )
+    return {"criteria": normalized, "approved": approved}, ""
+
+
+def review_verdict_error(path: Path) -> str:
+    verdict, error = load_review_verdict(path)
+    if error:
+        return error
+    if verdict is None or verdict["approved"] is not True:
+        return "review verdict did not approve the work item"
+    return ""
+
+
+def review_verdict_failures(path: Path) -> list[str]:
+    verdict, error = load_review_verdict(path)
+    if error or verdict is None:
+        return []
+    criteria = verdict["criteria"]
+    assert isinstance(criteria, list)
+    return [
+        entry["criterion"]
+        for entry in criteria
+        if isinstance(entry, dict) and entry.get("verdict") == "FAIL"
+    ]
 
 
 def section_marker_starts(text: str, marker: str) -> list[int]:
@@ -223,31 +334,6 @@ def executor_report_error(
     return ""
 
 
-def latest_review_failures(log_text: str) -> list[str]:
-    """Return the failed criterion lines from the most recent reviewer report."""
-
-    marker_starts = section_marker_starts(log_text, REVIEWER_REPORT_MARKER)
-    if not marker_starts:
-        return []
-    marker_start = marker_starts[-1]
-    report = log_text[marker_start + len(REVIEWER_REPORT_MARKER) :]
-    next_section = re.search(r"(?m)^### ", report)
-    if next_section:
-        report = report[: next_section.start()]
-    criteria_label = "CRITERIA VERDICT:"
-    observations_label = "OUT-OF-CRITERIA OBSERVATIONS:"
-    criteria_start = report.find(criteria_label)
-    observations_start = report.find(observations_label)
-    if criteria_start < 0 or observations_start <= criteria_start:
-        return []
-    criteria = report[criteria_start + len(criteria_label) : observations_start]
-    return [
-        line.strip()
-        for line in criteria.splitlines()
-        if re.search(r"(?:^|[^A-Z])FAIL(?:[^A-Z]|$)", line)
-    ]
-
-
 def executor_review_dispositions(
     previous_log: str,
     current_log: str,
@@ -313,32 +399,6 @@ def executor_review_dispositions(
             f"claimed={claimed_findings}, pending={review_findings}"
         )
     return dispositions, ""
-
-
-def reviewer_report_error(previous_log: str, current_log: str) -> str:
-    if current_log == previous_log:
-        return "reviewer did not append criterion verdicts to the work log"
-    if not current_log.startswith(previous_log):
-        return "reviewer rewrote existing work log content instead of appending"
-    addition = current_log[len(previous_log) :]
-    if len(section_marker_starts(addition, REVIEWER_REPORT_MARKER)) != 1:
-        return "reviewer must append exactly one `### Reviewer report` per review"
-    criteria_label = "CRITERIA VERDICT:"
-    observations_label = "OUT-OF-CRITERIA OBSERVATIONS:"
-    criteria_start = addition.find(criteria_label)
-    observations_start = addition.find(observations_label)
-    if criteria_start < 0:
-        return "reviewer did not append criterion verdicts to the work log"
-    if observations_start < 0:
-        return "reviewer did not separate out-of-criteria observations in the work log"
-    if observations_start <= criteria_start:
-        return "reviewer work log report puts observations before criterion verdicts"
-    criteria = addition[criteria_start + len(criteria_label) : observations_start]
-    if not re.search(r"(?m)(?:^|[^A-Z])(PASS|FAIL)(?:[^A-Z]|$)", criteria):
-        return "reviewer criterion section contains no PASS or FAIL verdict"
-    if "FAIL" in criteria or "APPROVED" not in criteria:
-        return "reviewer criterion verdicts did not approve the work item"
-    return ""
 
 
 def clip(output: str) -> str:
@@ -448,6 +508,8 @@ def close_review_environment(
 ) -> dict[str, str]:
     paths = committed_paths_in_head(project_root, timeout)
     work_log = ensure_work_log(project_root / ".stage", item_id)
+    verdict_file = review_verdict_path(project_root / ".stage", item_id)
+    clear_review_verdict(verdict_file)
     try:
         changed_paths_file.write_text(
             json.dumps(paths, ensure_ascii=False) + "\n",
@@ -458,6 +520,7 @@ def close_review_environment(
     environment = os.environ.copy()
     environment["STAGE_WORK_ITEM_PATH"] = str(item_path.resolve())
     environment["STAGE_CHANGED_PATHS_FILE"] = str(changed_paths_file.resolve())
+    environment["STAGE_REVIEW_VERDICT_FILE"] = str(verdict_file.resolve())
     environment["STAGE_WORK_LOG_PATH"] = str(work_log.resolve())
     return environment
 
@@ -656,23 +719,22 @@ def main() -> int:
                     Path(review_tmp) / "changed-paths.json",
                     args.timeout,
                 )
-                work_log = ensure_work_log(stage_root, work_item.item_id)
-                log_before_review = read_work_log(work_log)
-                ok, block, raw = run_check(
+                ok, block, _raw = run_check(
                     review_command,
                     args.timeout,
                     project_root,
                     env=review_environment,
                 )
-                log_after_review = read_work_log(work_log)
         except RuntimeError as exc:
             print(
                 f"{args.item}: cannot prepare independent review material: {exc}",
                 file=sys.stderr,
             )
             return 1
-        verdict_error = reviewer_report_error(log_before_review, log_after_review)
-        if not ok or re.search(r"(?m)^BLOCK:", raw) or verdict_error:
+        verdict_error = review_verdict_error(
+            Path(review_environment["STAGE_REVIEW_VERDICT_FILE"])
+        )
+        if not ok or verdict_error:
             detail = f"\n{verdict_error}" if verdict_error else ""
             print(
                 f"{args.item}: independent review did not pass; work item unchanged:"
@@ -699,23 +761,22 @@ def main() -> int:
                     Path(review_tmp) / "changed-paths.json",
                     args.timeout,
                 )
-                work_log = ensure_work_log(stage_root, work_item.item_id)
-                log_before_review = read_work_log(work_log)
-                ok, block, raw = run_check(
+                ok, block, _raw = run_check(
                     review_command,
                     args.timeout,
                     project_root,
                     env=review_environment,
                 )
-                log_after_review = read_work_log(work_log)
         except RuntimeError as exc:
             print(
                 f"{args.item}: cannot prepare review material: {exc}",
                 file=sys.stderr,
             )
             return 1
-        verdict_error = reviewer_report_error(log_before_review, log_after_review)
-        if not ok or re.search(r"(?m)^BLOCK:", raw) or verdict_error:
+        verdict_error = review_verdict_error(
+            Path(review_environment["STAGE_REVIEW_VERDICT_FILE"])
+        )
+        if not ok or verdict_error:
             detail = f"\n{verdict_error}" if verdict_error else ""
             print(
                 f"{args.item}: review did not pass; work item unchanged:\n"
@@ -735,7 +796,7 @@ def main() -> int:
     if review_passed:
         evidence += (
             f"\n\n### {review_heading} — {close_date}\n\n```\n"
-            f"Criterion verdicts: {work_log_reference(work_item.item_id)}\n```"
+            f"Review report: {work_log_reference(work_item.item_id)}\n```"
         )
     try:
         updated = append_to_section(text, "Verification", evidence)

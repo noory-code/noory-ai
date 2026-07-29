@@ -41,13 +41,15 @@ for import_dir in (HOOKS_DIR, SCRIPTS_DIR, RETROSPECTIVE_DIR):
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
 from stage_record_paths import record_path, record_paths  # noqa: E402
 from close_work import (  # noqa: E402
+    clear_review_verdict,
     clip,
     ensure_work_log,
     executor_report_error,
     executor_review_dispositions,
-    latest_review_failures,
     read_work_log,
-    reviewer_report_error,
+    review_verdict_error,
+    review_verdict_failures,
+    review_verdict_path,
     run_check,
     work_log_reference,
 )
@@ -71,7 +73,6 @@ from stage_work import (  # noqa: E402
 
 
 WORK_ID_RE = re.compile(r"^W-[0-9]+(?:-[A-Za-z0-9][A-Za-z0-9_-]*)?$")
-BLOCK_RE = re.compile(r"(?m)^BLOCK:")
 STAGE_RUNTIME_PREFIX = ".stage/.runtime/"
 RECOMMEND_PASS = (
     "verification+judge passed → ready to commit + close_work"
@@ -175,7 +176,6 @@ def load_run_state(
         attempt_count = item_state.get("attempt_count")
         fingerprint = item_state.get("last_fingerprint")
         base_head = item_state.get("base_head", "")
-        base_repository_paths = item_state.get("base_repository_paths")
         executor_changed_paths = item_state.get("executor_changed_paths", [])
         if type(attempt_count) is not int or attempt_count < 0:
             return None, (
@@ -188,17 +188,6 @@ def load_run_state(
             )
         if not isinstance(base_head, str):
             return None, f"driver run state {item_id}.base_head must be a string"
-        if base_repository_paths is not None and (
-            not isinstance(base_repository_paths, dict)
-            or any(
-                not isinstance(path, str) or not isinstance(value, str)
-                for path, value in base_repository_paths.items()
-            )
-        ):
-            return None, (
-                f"driver run state {item_id}.base_repository_paths must be "
-                "a string-to-string object"
-            )
         if (
             not isinstance(executor_changed_paths, list)
             or any(
@@ -499,6 +488,7 @@ def executor_environment(
     item: WorkItem,
     project_root: Path,
     work_log_path: Path,
+    review_verdict_file: Path,
     executor_index_path: Path | None = None,
     *,
     items: list[WorkItem] | None = None,
@@ -512,6 +502,7 @@ def executor_environment(
             "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
             "STAGE_PROJECT_ROOT": str(project_root.resolve()),
             "STAGE_WORK_LOG_PATH": str(work_log_path.resolve()),
+            "STAGE_REVIEW_VERDICT_FILE": str(review_verdict_file.resolve()),
             "STAGE_WORK_ITEM_ANCESTOR_PATHS": json.dumps(
                 [
                     str(ancestor.path.resolve())
@@ -1440,8 +1431,9 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             return 1
         try:
             log_path = ensure_work_log(stage_root, item.item_id)
+            verdict_file = review_verdict_path(stage_root, item.item_id)
             log_before = read_work_log(log_path)
-            pending_findings = latest_review_failures(log_before)
+            pending_findings = review_verdict_failures(verdict_file)
             repository_before = repository_fingerprint(project_root)
             repository_paths_before = repository_path_snapshot(project_root)
             executor_changed_paths = item_state.get(
@@ -1471,6 +1463,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                     item,
                     project_root,
                     log_path,
+                    verdict_file,
                     executor_index if index_path is not None else None,
                     items=items,
                 ),
@@ -1649,7 +1642,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 cmd_timeout,
             )
             try:
-                log_after_close = read_work_log(log_path)
+                read_work_log(log_path)
             except RuntimeError as exc:
                 print_escalation(str(exc))
                 return 1
@@ -1667,7 +1660,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             close_infrastructure_failure = (
                 not close_ok
                 and infrastructure_failure(close_out)
-                and not latest_review_failures(log_after_close)
+                and not review_verdict_failures(verdict_file)
             )
             if not close_infrastructure_failure:
                 break
@@ -1992,7 +1985,9 @@ def main() -> int:
 
     try:
         log_path = ensure_work_log(stage_root, item.item_id)
+        verdict_file = review_verdict_path(stage_root, item.item_id)
         log_before = read_work_log(log_path)
+        pending_findings = review_verdict_failures(verdict_file)
         repository_before = repository_fingerprint(project_root)
         repository_paths_before = repository_path_snapshot(project_root)
     except RuntimeError as exc:
@@ -2020,6 +2015,7 @@ def main() -> int:
                 item,
                 project_root,
                 log_path,
+                verdict_file,
                 executor_index if index_path is not None else None,
                 items=items,
             ),
@@ -2031,6 +2027,20 @@ def main() -> int:
         except RuntimeError as exc:
             log_after_executor = log_before
             executor_log_error = str(exc)
+        dispositions, disposition_error = executor_review_dispositions(
+            log_before,
+            log_after_executor,
+            pending_findings,
+        )
+        reasoned_no_change = (
+            bool(pending_findings)
+            and not disposition_error
+            and bool(dispositions)
+            and all(
+                entry["disposition"] in {"decline", "defer"}
+                for entry in dispositions
+            )
+        )
         executor_reaped = reap_turn(
             stage_root=stage_root,
             project_root=project_root,
@@ -2067,7 +2077,10 @@ def main() -> int:
             elif not executor_ok:
                 step_ok = False
                 failure = "executor command failed"
-            elif repository_after == repository_before:
+            elif (
+                repository_after == repository_before
+                and not reasoned_no_change
+            ):
                 step_ok = False
                 failure = UNCHANGED_REPOSITORY_FAILURE
             else:
@@ -2087,6 +2100,7 @@ def main() -> int:
                         log_before,
                         log_after_executor,
                         changed_paths,
+                        pending_findings,
                         ignored_paths=[
                             log_path.relative_to(project_root).as_posix()
                         ],
@@ -2095,7 +2109,7 @@ def main() -> int:
                         step_ok = False
                         failure = report_error
 
-        if step_ok and not changed_paths:
+        if step_ok and not changed_paths and not reasoned_no_change:
             step_ok = False
             failure = (
                 "repository changed but no changed paths were observed for review"
@@ -2125,17 +2139,24 @@ def main() -> int:
                     break
 
         if step_ok:
+            try:
+                clear_review_verdict(verdict_file)
+            except RuntimeError as exc:
+                step_ok = False
+                failure = str(exc)
+
+        if step_ok:
             reviewer_env = os.environ.copy()
             reviewer_env.pop("GIT_INDEX_FILE", None)
             reviewer_env.update(
                 {
                     "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
                     "STAGE_CHANGED_PATHS_FILE": str(changed_paths_file.resolve()),
+                    "STAGE_REVIEW_VERDICT_FILE": str(verdict_file.resolve()),
                     "STAGE_WORK_LOG_PATH": str(log_path.resolve()),
                 }
             )
-            log_before_review = read_work_log(log_path)
-            reviewed, review_evidence, review_raw = run_check(
+            reviewed, review_evidence, _review_raw = run_check(
                 reviewer_command,
                 args.timeout,
                 project_root,
@@ -2143,11 +2164,10 @@ def main() -> int:
             )
             print(f"Independent reviewer result:\n{review_evidence}")
             try:
-                log_after_review = read_work_log(log_path)
+                read_work_log(log_path)
             except RuntimeError as exc:
                 step_ok = False
                 failure = str(exc)
-                log_after_review = log_before_review
             reviewer_reaped = reap_turn(
                 stage_root=stage_root,
                 project_root=project_root,
@@ -2157,16 +2177,13 @@ def main() -> int:
                 role="reviewer",
                 timeout=args.timeout,
             )
-            verdict_error = reviewer_report_error(
-                log_before_review,
-                log_after_review,
+            verdict_error = review_verdict_error(verdict_file)
+            reviewer_blocked = bool(
+                review_verdict_failures(verdict_file)
             )
-            reviewer_blocked = bool(BLOCK_RE.search(review_raw))
-            if reviewer_blocked or not reviewed or verdict_error:
+            if not reviewed or verdict_error:
                 review_failure = (
-                    "independent reviewer BLOCK verdict"
-                    if reviewer_blocked
-                    else verdict_error or "independent reviewer command failed"
+                    verdict_error or "independent reviewer command failed"
                 )
                 if step_ok:
                     step_ok = False
@@ -2193,6 +2210,7 @@ def main() -> int:
     no_progress = (
         bool(previous_fingerprint)
         and current_fingerprint == previous_fingerprint
+        and not reasoned_no_change
     )
     state["iteration_count"] = iteration
     state["items"][item.item_id] = {

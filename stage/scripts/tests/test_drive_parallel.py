@@ -359,6 +359,23 @@ class DriveParallelTest(unittest.TestCase):
                     + "\\n",
                     encoding="utf-8",
                 )
+                Path(os.environ["STAGE_REVIEW_VERDICT_FILE"]).write_text(
+                    json.dumps(
+                        {
+                            "criteria": [
+                                {
+                                    "criterion": "isolated worktree root",
+                                    "verdict": "PASS",
+                                    "reason": (
+                                        f"reviewer opened {changed[0]} in {root}"
+                                    ),
+                                }
+                            ],
+                            "approved": True,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
                 print(report)
                 """
             ),

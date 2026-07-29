@@ -154,6 +154,42 @@ def git_out(root: Path, *args: str) -> str:
     ).stdout.strip()
 
 
+def write_review_verdict(
+    stage_root: Path,
+    item_id: str,
+    criterion: str,
+    *,
+    passed: bool,
+) -> None:
+    path = (
+        stage_root
+        / ".runtime"
+        / "driver"
+        / "verdicts"
+        / f"{item_id}.json"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "criteria": [
+                    {
+                        "criterion": criterion,
+                        "verdict": "PASS" if passed else "FAIL",
+                        "reason": (
+                            "criterion passed"
+                            if passed
+                            else "criterion needs another executor round"
+                        ),
+                    }
+                ],
+                "approved": passed,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def load_module():
     spec = importlib.util.spec_from_file_location("stage_drive_unattended", SCRIPT)
     module = importlib.util.module_from_spec(spec)
@@ -544,6 +580,12 @@ class UnattendedTest(unittest.TestCase):
                     stage_root / ".runtime/driver/logs" / f"{item_id}.md"
                 )
                 if len(close_calls) == 1:
+                    write_review_verdict(
+                        stage_root,
+                        item_id,
+                        finding,
+                        passed=False,
+                    )
                     with log.open("a", encoding="utf-8") as handle:
                         handle.write(
                             "\n### Reviewer report\n"
@@ -648,6 +690,12 @@ class UnattendedTest(unittest.TestCase):
                 close_calls += 1
                 log = stage_root / ".runtime/driver/logs" / f"{item_id}.md"
                 if close_calls == 1:
+                    write_review_verdict(
+                        stage_root,
+                        item_id,
+                        finding,
+                        passed=False,
+                    )
                     with log.open("a", encoding="utf-8") as handle:
                         handle.write(
                             "\n### Reviewer report\n"
@@ -711,6 +759,12 @@ class UnattendedTest(unittest.TestCase):
 
         def stub_close(project_root, item_id, extra_checks, timeout):
             log = stage_root / ".runtime/driver/logs" / f"{item_id}.md"
+            write_review_verdict(
+                stage_root,
+                item_id,
+                finding,
+                passed=False,
+            )
             with log.open("a", encoding="utf-8") as handle:
                 handle.write(
                     "\n### Reviewer report\n"
@@ -780,6 +834,12 @@ class UnattendedTest(unittest.TestCase):
                     stage_root / ".runtime/driver/logs" / f"{item_id}.md"
                 )
                 if close_calls == 1:
+                    write_review_verdict(
+                        stage_root,
+                        item_id,
+                        finding,
+                        passed=False,
+                    )
                     with log.open("a", encoding="utf-8") as handle:
                         handle.write(
                             "\n### Reviewer report\n"

@@ -18,6 +18,8 @@
   "extra_write_tools": [],
   // Executor commands are project-specific. Give both venue prompts these instructions:
   // Read the selected card at $STAGE_WORK_ITEM_PATH and every ancestor card listed in $STAGE_WORK_ITEM_ANCESTOR_PATHS before acting; together they are the whole instruction.
+  // Read failed criteria from the JSON object at $STAGE_REVIEW_VERDICT_FILE and use
+  // each exact criterion string in Review dispositions (JSON).
   // Changed paths (JSON) must contain every repository-relative path changed for this card across all attempts.
   // These are per-action baselines. The driver keeps attempts fixed per action and
   // scales the iteration and wall-clock ceilings to the target subtree's leaf count.
@@ -26,8 +28,17 @@
     "max_iterations": 12,
     "max_wall_clock_seconds": 5400
   },
-  // Configures optional review commands and per-stage review strength.
+  // Review commands receive $STAGE_REVIEW_VERDICT_FILE. Each command must write
+  // exactly {"criteria":[{"criterion":"...","verdict":"PASS|FAIL","reason":"..."}],
+  // "approved":true|false}.
+  // criteria must be non-empty with unique, non-empty one-line criterion and reason
+  // values. approved is true exactly when every criterion verdict is PASS. Review
+  // prose may still go to $STAGE_WORK_LOG_PATH, but prose never decides the result.
   "review": {
+    "reviewers": {
+      "claude": "",
+      "codex": ""
+    },
     "strengths": {
       "off": null,
       "light": "",
