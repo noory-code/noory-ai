@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Move plugin version selection to an explicit release command that titles the queued changelog
+  section and updates both host manifests together, while card work records entries without
+  changing a running plugin's version.
+
 ## 0.54.4 — 2026-07-29
 
 - Accumulate only paths observed during executor turns so human changes committed between retries

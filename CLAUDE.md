@@ -102,10 +102,17 @@ uv run mcp dev src/evonest/server.py  # MCP inspector
 
 ### Plugin Changes
 
-- When any file inside a plugin directory (`evonest/`, `rag/`, `stage/`, `plainly/`, `flutter-cask/`, `pencil_m3_flutter/`) is modified:
-  1. Bump `version` in both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` (patch for fixes, minor for features/refactors)
-  2. Add entry to `CHANGELOG.md`
-  3. Commit + push in one step
+- When any file inside a plugin directory (`evonest/`, `rag/`, `stage/`, `plainly/`,
+  `flutter-cask/`, `pencil_m3_flutter/`) is modified:
+  1. Add the card's release note under the top `## Unreleased` section in that plugin's
+     `CHANGELOG.md`; create that section directly below the changelog title when the plugin first
+     adopts this workflow.
+  2. Do not change either plugin manifest version during card work.
+  3. At release time, run `python3 stage/scripts/release_plugin.py <plugin-directory> --bump
+     <patch|minor|major>`. The command requires a non-empty `## Unreleased` section, verifies that
+     the latest changelog release matches both current manifests, titles the queued section, and
+     updates both manifest versions together.
+  4. Commit + push the release in one step.
 
 ### Diagrams
 
