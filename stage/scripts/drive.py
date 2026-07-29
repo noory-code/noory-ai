@@ -2448,6 +2448,7 @@ def main() -> int:
     step_ok = True
     failure = ""
     reviewer_blocked = False
+    infrastructure_failed = False
     acceptance_output: list[str] = []
     changed_paths: list[str] = list(
         item_state.get("executor_changed_paths", [])
@@ -2510,6 +2511,9 @@ def main() -> int:
                 executor_index if index_path is not None else None,
                 items=items,
             ),
+        )
+        infrastructure_failed = (
+            not executor_ok and infrastructure_failure(executor_evidence)
         )
         print(f"Executor result:\n{executor_evidence}")
         try:
@@ -2641,6 +2645,7 @@ def main() -> int:
                 if not accepted:
                     step_ok = False
                     failure = "acceptance check failed"
+                    infrastructure_failed = infrastructure_failure(evidence)
                     break
 
         if step_ok:
@@ -2715,6 +2720,11 @@ def main() -> int:
                 review_verdict_failures(verdict_file)
             )
             if not reviewed or verdict_error:
+                infrastructure_failed = retryable_review_infrastructure_failure(
+                    close_ok=reviewed,
+                    close_output=review_evidence,
+                    verdict_file=verdict_file,
+                )
                 review_failure = (
                     verdict_error or "independent reviewer command failed"
                 )
@@ -2745,9 +2755,14 @@ def main() -> int:
         and current_fingerprint == previous_fingerprint
         and not reasoned_no_change
     )
+    counted_attempt = (
+        item_state["attempt_count"]
+        if not step_ok and infrastructure_failed
+        else attempt
+    )
     state["iteration_count"] = iteration
     state["items"][item.item_id] = {
-        "attempt_count": attempt,
+        "attempt_count": counted_attempt,
         "last_fingerprint": current_fingerprint,
         "base_head": base_head,
         "executor_changed_paths": changed_paths,
@@ -2761,12 +2776,15 @@ def main() -> int:
 
     elapsed_after = max(0.0, time.time() - state["started_at_unix"])
     escalation_reasons: list[str] = []
-    if no_progress:
+    if no_progress and not infrastructure_failed:
         escalation_reasons.append("NO-PROGRESS fingerprint matched the previous attempt")
     if reviewer_blocked:
         escalation_reasons.append(failure)
     if limits is not None:
-        if not step_ok and attempt >= limits["max_attempts_per_item"]:
+        if (
+            not step_ok
+            and counted_attempt >= limits["max_attempts_per_item"]
+        ):
             escalation_reasons.append("per-item attempt cap reached")
         if not step_ok and iteration >= limits["max_iterations"]:
             escalation_reasons.append("global iteration limit reached")
@@ -2781,11 +2799,14 @@ def main() -> int:
         print(f"Recommended next action: {RECOMMEND_PASS}")
         return 0
 
-    print(f"Outcome: {failure}")
+    if infrastructure_failed:
+        print(f"Outcome: {failure}; infrastructure failure did not spend an attempt")
+    else:
+        print(f"Outcome: {failure}")
     print(
         "Recommended next action: "
         + RECOMMEND_RETRY.format(
-            attempt=attempt,
+            attempt=counted_attempt,
             cap=cap_text(limits, "max_attempts_per_item"),
         )
     )

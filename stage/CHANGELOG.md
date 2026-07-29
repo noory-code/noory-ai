@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Keep supervised executor, acceptance, and reviewer infrastructure failures from spending a work
+  attempt, using the same transport and tool-failure classification as unattended execution while
+  continuing to count substantive executor, acceptance, and review failures.
 - Record operator-recovery preflight skips in the selected leaf's shared work log while leaving
   successful, absent, and explicitly disabled venue checks unrecorded.
 - Add a reason-required driver command to reset a corrected leaf's attempt counter,

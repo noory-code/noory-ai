@@ -2269,6 +2269,150 @@ class DriveTest(unittest.TestCase):
             self.assertIn("→ escalate_work", result.stdout)
             self.assertFalse((root / ".stage/.runtime").exists())
 
+    def test_infrastructure_failure_recognizes_existing_markers(self):
+        drive = self.load_module()
+
+        for marker in (
+            "timed out",
+            "command not found",
+            "[exit 126]",
+            "[exit 127]",
+            "terminated by signal",
+            "killed by signal",
+        ):
+            with self.subTest(marker=marker):
+                self.assertTrue(drive.infrastructure_failure(marker))
+
+        self.assertFalse(drive.infrastructure_failure("[exit 2]\nsubstantive failure"))
+
+    def test_supervised_infrastructure_failures_do_not_spend_attempt(self):
+        cases = (
+            {
+                "name": "executor",
+                "executor": python_command(
+                    "print('command not found'); raise SystemExit(2)"
+                ),
+                "acceptance": PASS_COMMAND,
+                "reviewer": APPROVING_REVIEWER,
+            },
+            {
+                "name": "acceptance",
+                "executor": reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                "acceptance": python_command(
+                    "print('terminated by signal'); raise SystemExit(2)"
+                ),
+                "reviewer": APPROVING_REVIEWER,
+            },
+            {
+                "name": "reviewer",
+                "executor": reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                "acceptance": PASS_COMMAND,
+                "reviewer": python_command(
+                    "print('killed by signal'); raise SystemExit(2)"
+                ),
+            },
+        )
+
+        for case in cases:
+            with self.subTest(role=case["name"]):
+                tmp, root = self.make_project(
+                    executor=case["executor"],
+                    reviewer=case["reviewer"],
+                    limits={
+                        "max_attempts_per_item": 1,
+                        "max_iterations": 10,
+                        "max_wall_clock_seconds": 3600,
+                    },
+                )
+                with tmp:
+                    write_card(
+                        root / ".stage",
+                        "W-00000001",
+                        acceptance=(case["acceptance"],),
+                    )
+                    initialize_git(root)
+
+                    result = self.run_cli(root, "--execute")
+                    state = json.loads(
+                        (
+                            root / ".stage/.runtime/driver/W-00000001.json"
+                        ).read_text(encoding="utf-8")
+                    )
+
+                self.assertNotEqual(0, result.returncode)
+                self.assertNotIn("per-item attempt cap reached", result.stdout)
+                self.assertEqual(
+                    0,
+                    state["items"]["W-00000001"]["attempt_count"],
+                    result.stdout + result.stderr,
+                )
+
+    def test_supervised_substantive_failures_spend_attempt(self):
+        cases = (
+            {
+                "name": "executor",
+                "executor": python_command("raise SystemExit(2)"),
+                "acceptance": PASS_COMMAND,
+                "reviewer": APPROVING_REVIEWER,
+            },
+            {
+                "name": "acceptance",
+                "executor": reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                "acceptance": python_command("raise SystemExit(2)"),
+                "reviewer": APPROVING_REVIEWER,
+            },
+            {
+                "name": "reviewer",
+                "executor": reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                "acceptance": PASS_COMMAND,
+                "reviewer": rejecting_reviewer_command(),
+            },
+        )
+
+        for case in cases:
+            with self.subTest(role=case["name"]):
+                tmp, root = self.make_project(
+                    executor=case["executor"],
+                    reviewer=case["reviewer"],
+                )
+                with tmp:
+                    write_card(
+                        root / ".stage",
+                        "W-00000001",
+                        acceptance=(case["acceptance"],),
+                    )
+                    initialize_git(root)
+
+                    result = self.run_cli(root, "--execute")
+                    state = json.loads(
+                        (
+                            root / ".stage/.runtime/driver/W-00000001.json"
+                        ).read_text(encoding="utf-8")
+                    )
+
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual(
+                    1,
+                    state["items"]["W-00000001"]["attempt_count"],
+                    result.stdout + result.stderr,
+                )
+
     def test_attempt_cap_stops_before_another_execution(self):
         limits = {
             "max_attempts_per_item": 1,
