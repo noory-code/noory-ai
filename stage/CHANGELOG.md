@@ -5,6 +5,8 @@
 - Move plugin version selection to an explicit release command that titles the queued changelog
   section and updates both host manifests together, while card work records entries without
   changing a running plugin's version.
+- Reopen the Unreleased section after each release, preserve host-manifest formatting during the
+  version update, and scope the shared release procedure around package-specific version SSOTs.
 
 ## 0.54.4 — 2026-07-29
 

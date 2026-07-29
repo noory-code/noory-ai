@@ -85,7 +85,7 @@ class ReleasePluginCliTest(unittest.TestCase):
             check=False,
         )
 
-    def test_release_titles_unreleased_section_and_updates_both_manifests(self):
+    def test_release_reopens_unreleased_section_and_updates_both_manifests(self):
         temporary_directory, repository_root = self.make_repository()
         with temporary_directory:
             result = self.run_cli(repository_root, "minor")
@@ -101,10 +101,77 @@ class ReleasePluginCliTest(unittest.TestCase):
             )
 
         self.assertIn(f"## 0.55.0 — {date.today().isoformat()}", changelog)
-        self.assertNotIn("## Unreleased", changelog)
+        self.assertIn("## Unreleased\n\n", changelog)
         self.assertEqual("0.55.0", claude_manifest["version"])
         self.assertEqual("0.55.0", codex_manifest["version"])
         self.assertIn("Released stage 0.55.0", result.stdout)
+
+    def test_next_queued_change_can_be_released_after_the_first_release(self):
+        temporary_directory, repository_root = self.make_repository()
+        with temporary_directory:
+            first_result = self.run_cli(repository_root, "patch")
+            changelog_path = repository_root / "stage" / "CHANGELOG.md"
+            after_first = changelog_path.read_text(encoding="utf-8")
+            changelog_path.write_text(
+                after_first.replace(
+                    "## Unreleased\n\n",
+                    "## Unreleased\n\n- Ship the next queued change.\n\n",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            second_result = self.run_cli(repository_root, "patch")
+            after_second = changelog_path.read_text(encoding="utf-8")
+
+        self.assertEqual(0, first_result.returncode, first_result.stderr)
+        self.assertEqual(0, second_result.returncode, second_result.stderr)
+        self.assertIn("## Unreleased\n\n", after_second)
+        self.assertIn(
+            f"## 0.54.6 — {date.today().isoformat()}",
+            after_second,
+        )
+        self.assertIn(
+            f"## 0.54.5 — {date.today().isoformat()}",
+            after_second,
+        )
+
+    def test_release_preserves_manifest_formatting_except_for_version(self):
+        temporary_directory, repository_root = self.make_repository()
+        plugin_root = repository_root / "stage"
+        claude_path = plugin_root / ".claude-plugin/plugin.json"
+        codex_path = plugin_root / ".codex-plugin/plugin.json"
+        claude_before = (
+            "{\n"
+            '    "name": "stage",\n'
+            '    "version": "0.54.4",\n'
+            '    "description": "Claude manifest"\n'
+            "}\n"
+        )
+        codex_before = (
+            "{\n"
+            '\t"name": "stage",\n'
+            '\t"version": "0.54.4",\n'
+            '\t"description": "Codex manifest"\n'
+            "}\n"
+        )
+        claude_path.write_text(claude_before, encoding="utf-8")
+        codex_path.write_text(codex_before, encoding="utf-8")
+
+        with temporary_directory:
+            result = self.run_cli(repository_root, "patch")
+            claude_after = claude_path.read_text(encoding="utf-8")
+            codex_after = codex_path.read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(
+            claude_before.replace('"0.54.4"', '"0.54.5"', 1),
+            claude_after,
+        )
+        self.assertEqual(
+            codex_before.replace('"0.54.4"', '"0.54.5"', 1),
+            codex_after,
+        )
 
     def test_empty_unreleased_section_is_rejected_without_changes(self):
         temporary_directory, repository_root = self.make_repository(unreleased_body="")

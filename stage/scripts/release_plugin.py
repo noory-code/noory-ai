@@ -69,6 +69,36 @@ def manifest_version(data: dict[str, object], path: Path) -> str:
     return version
 
 
+def replace_manifest_version(
+    manifest: str,
+    *,
+    current_version: str,
+    released_version: str,
+    path: Path,
+) -> str:
+    version_field_re = re.compile(
+        r'(?P<prefix>"version"\s*:\s*")'
+        r'(?P<version>[^"]*)'
+        r'(?P<suffix>")'
+    )
+    matches = list(version_field_re.finditer(manifest))
+    if len(matches) != 1:
+        raise ReleaseError(
+            f"expected exactly one manifest version field: {path}; "
+            f"found {len(matches)}"
+        )
+    match = matches[0]
+    if match.group("version") != current_version:
+        raise ReleaseError(
+            f"manifest version field does not match parsed version: {path}"
+        )
+    return (
+        manifest[: match.start("version")]
+        + released_version
+        + manifest[match.end("version") :]
+    )
+
+
 def next_version(current: str, bump: str) -> str:
     match = VERSION_RE.fullmatch(current)
     if match is None:
@@ -143,6 +173,8 @@ def title_unreleased_section(
         else ""
     )
     lines[unreleased_index] = (
+        f"## Unreleased{line_ending}"
+        f"{line_ending}"
         f"## {released_version} — {release_date.isoformat()}{line_ending}"
     )
     return "".join(lines)
@@ -216,6 +248,10 @@ def release_plugin(
         relative_path: load_manifest(plugin_root / relative_path)
         for relative_path in MANIFEST_PATHS
     }
+    manifest_contents = {
+        relative_path: (plugin_root / relative_path).read_text(encoding="utf-8")
+        for relative_path in MANIFEST_PATHS
+    }
     versions = {
         relative_path: manifest_version(data, plugin_root / relative_path)
         for relative_path, data in manifests.items()
@@ -243,11 +279,12 @@ def release_plugin(
     )
 
     targets = {changelog_path: released_changelog}
-    for relative_path, data in manifests.items():
-        updated = dict(data)
-        updated["version"] = released_version
-        targets[plugin_root / relative_path] = (
-            json.dumps(updated, ensure_ascii=False, indent=2) + "\n"
+    for relative_path in MANIFEST_PATHS:
+        targets[plugin_root / relative_path] = replace_manifest_version(
+            manifest_contents[relative_path],
+            current_version=current_version,
+            released_version=released_version,
+            path=plugin_root / relative_path,
         )
     write_atomically(targets)
     return released_version

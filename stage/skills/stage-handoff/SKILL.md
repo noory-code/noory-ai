@@ -73,10 +73,11 @@ it was sent — with a missing hook file under the previous version's path.
 Restart the bridge process for that repository before delegating, and the next call resolves the
 current version. Do this even when the bump was small; the path carries the exact version.
 
-Projects developing Stage itself hit this constantly, since every change ships a version bump.
-Observed with the Codex CLI bridge, whose per-repository broker process holds the resolved path
-for its lifetime; any bridge that caches a plugin path at startup behaves the same way. This is
-the bridge runtime's behavior, not something Stage can fix from here.
+Projects developing Stage itself hit this after a release changes the installed version. Card work
+queues an Unreleased changelog entry without changing the version, so restart the bridge after the
+release, not after each card. Observed with the Codex CLI bridge, whose per-repository broker
+process holds the resolved path for its lifetime; any bridge that caches a plugin path at startup
+behaves the same way. This is the bridge runtime's behavior, not something Stage can fix from here.
 
 ## Before handing off, make each open item self-carrying
 

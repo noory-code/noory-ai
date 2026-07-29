@@ -105,14 +105,26 @@ uv run mcp dev src/evonest/server.py  # MCP inspector
 - When any file inside a plugin directory (`evonest/`, `rag/`, `stage/`, `plainly/`,
   `flutter-cask/`, `pencil_m3_flutter/`) is modified:
   1. Add the card's release note under the top `## Unreleased` section in that plugin's
-     `CHANGELOG.md`; create that section directly below the changelog title when the plugin first
-     adopts this workflow.
+     `CHANGELOG.md`. When the plugin first adopts this workflow, create that section directly after
+     the first H1 heading line, or at the start of the file when it has no H1 heading.
   2. Do not change either plugin manifest version during card work.
-  3. At release time, run `python3 stage/scripts/release_plugin.py <plugin-directory> --bump
-     <patch|minor|major>`. The command requires a non-empty `## Unreleased` section, verifies that
-     the latest changelog release matches both current manifests, titles the queued section, and
-     updates both manifest versions together.
-  4. Commit + push the release in one step.
+  3. At release time, choose the plugin's declared version path:
+     - `evonest/`: do not use the generic release command. Follow `evonest/CLAUDE.md` Version
+       Management so `pyproject.toml` remains the version SSOT and both manifests plus `uv.lock`
+       move with it; title the queued changelog section with that version.
+     - `rag/`: do not use the generic release command. Update `server/pyproject.toml`, run `uv lock`
+       inside `rag/server/`, update both host manifests to the same version, and title the queued
+       changelog section in the same release.
+     - `stage/`, `plainly/`, and `flutter-cask/`: run `python3
+       stage/scripts/release_plugin.py <plugin-directory> --bump <patch|minor|major>`.
+     - `pencil_m3_flutter/`: use the same command for a host-plugin release. Its root and example
+       `pubspec.yaml` versions belong to separate Dart package and example release streams; this
+       command does not change them.
+  4. The generic release command requires a non-empty `## Unreleased` section, verifies that the
+     latest changelog release matches both current manifests, titles the queued section, updates
+     both manifest versions without reformatting them, and opens a new empty `## Unreleased`
+     section for the next card.
+  5. Commit + push the release in one step.
 
 ### Diagrams
 
