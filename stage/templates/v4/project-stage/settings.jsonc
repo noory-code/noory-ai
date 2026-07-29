@@ -30,10 +30,10 @@
   },
   // Review commands receive $STAGE_REVIEW_VERDICT_FILE. Each command must write
   // exactly {"criteria":[{"criterion":"...","verdict":"PASS|FAIL","reason":"..."}],
-  // "approved":true|false}.
-  // criteria must be non-empty with unique, non-empty one-line criterion and reason
-  // values. approved is true exactly when every criterion verdict is PASS. Review
-  // prose may still go to $STAGE_WORK_LOG_PATH, but prose never decides the result.
+  // "approved":true|false}, with no other keys at either level. criteria must be
+  // non-empty with unique, non-empty one-line criterion and reason values. approved
+  // is true exactly when every criterion passes. Review prose may still go to
+  // $STAGE_WORK_LOG_PATH, but prose never decides the result.
   "review": {
     "reviewers": {
       "claude": "",

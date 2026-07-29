@@ -925,6 +925,50 @@ class UnattendedTest(unittest.TestCase):
         self.assertEqual(1, log.count("### Executor report"))
         self.assertEqual(1, state["items"]["W-00000001"]["attempt_count"])
 
+    def test_review_failure_with_timeout_text_is_not_an_infrastructure_retry(self):
+        drive = load_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            verdict_path = Path(tmp) / "review-verdict.json"
+            verdict_path.write_text("{broken", encoding="utf-8")
+
+            self.assertFalse(
+                drive.retryable_review_infrastructure_failure(
+                    close_ok=False,
+                    close_output="close_work timed out after 31s",
+                    verdict_file=verdict_path,
+                )
+            )
+            verdict_path.write_text(
+                json.dumps(
+                    {
+                        "criteria": [
+                            {
+                                "criterion": "criterion failed",
+                                "verdict": "FAIL",
+                                "reason": "the implementation is incomplete",
+                            }
+                        ],
+                        "approved": False,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertFalse(
+                drive.retryable_review_infrastructure_failure(
+                    close_ok=False,
+                    close_output="close_work timed out after 31s",
+                    verdict_file=verdict_path,
+                )
+            )
+            verdict_path.unlink()
+            self.assertTrue(
+                drive.retryable_review_infrastructure_failure(
+                    close_ok=False,
+                    close_output="close_work timed out after 31s",
+                    verdict_file=verdict_path,
+                )
+            )
+
     def test_executor_timeout_does_not_spend_the_only_attempt(self):
         limits = {
             "max_attempts_per_item": 1,

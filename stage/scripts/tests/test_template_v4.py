@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_SETTINGS = PLUGIN_ROOT.parent / ".stage" / "settings.json"
 V3_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
 V4_ROOT = PLUGIN_ROOT / "templates" / "v4" / "project-stage"
 V4_LOCALE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "locales" / "ko"
@@ -127,6 +128,54 @@ class TemplateV4Test(unittest.TestCase):
         self.assertIn('"verdict"', template_settings)
         self.assertIn('"reason"', template_settings)
         self.assertIn('"approved"', template_settings)
+
+    def test_project_review_prompts_share_every_verdict_validation_condition(self):
+        settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+        review = settings["review"]
+        commands = list(review["reviewers"].values()) + [
+            command
+            for command in review["strengths"].values()
+            if command is not None
+        ]
+        required_fragments = (
+            "$STAGE_REVIEW_VERDICT_FILE",
+            "exactly the keys criteria and approved",
+            "objects with exactly the keys criterion, verdict, and reason",
+            "criterion and reason are non-empty one-line strings",
+            "criterion values are unique",
+            "approved is true exactly when every criterion passes",
+        )
+
+        self.assertEqual(6, len(commands))
+        for command in commands:
+            with self.subTest(command=command):
+                for fragment in required_fragments:
+                    self.assertIn(fragment, command)
+
+    def test_project_executor_prompts_limit_empty_claim_to_all_reasoned_rejections(self):
+        settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+        executors = settings["executors"]
+        instruction = (
+            "Only when every failed criterion is declined or deferred with a reason "
+            "may Changed paths (JSON) be empty."
+        )
+
+        self.assertEqual({"claude", "codex"}, set(executors))
+        for command in executors.values():
+            with self.subTest(command=command):
+                self.assertIn(instruction, command)
+                self.assertNotIn(
+                    "A reasoned decline or defer may claim an empty Changed paths array.",
+                    command,
+                )
+
+    def test_close_work_comments_do_not_describe_removed_block_scanning(self):
+        source = (
+            PLUGIN_ROOT / "skills" / "stage-retrospective" / "close_work.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertNotIn("verdict scan", source)
+        self.assertNotIn("`BLOCK:` verdict line", source)
 
     def test_driver_source_has_no_dead_base_repository_paths_field(self):
         source = (PLUGIN_ROOT / "scripts/drive.py").read_text(encoding="utf-8")

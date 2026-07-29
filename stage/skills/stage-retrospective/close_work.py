@@ -451,11 +451,9 @@ def run_check(
     cwd: Path,
     env: dict[str, str] | None = None,
 ) -> tuple[bool, str, str]:
-    # Returns (ok, evidence_block, raw_output). The RAW output is returned
-    # separately so a verdict scan (e.g. `^BLOCK:`) runs on the full text, never
-    # on the clipped evidence block — a verdict line could otherwise be clipped
-    # away and lost. cwd is the project root so a check's relative paths resolve
-    # the same way whatever directory close_work was launched from.
+    # Returns (ok, evidence_block, raw_output). cwd is the project root so a
+    # check's relative paths resolve the same way whatever directory close_work
+    # was launched from.
     try:
         proc = subprocess.run(
             command,
@@ -688,8 +686,8 @@ def main() -> int:
 
     # Autonomous work always requires an opposite-venue reviewer. Non-autonomous
     # review remains field-driven: only an item that DECLARES `review: pending`
-    # runs the legacy per-stage command. Both paths fail on nonzero exit OR a
-    # `BLOCK:` verdict line, scanned on RAW output so a verdict is never clipped.
+    # runs the legacy per-stage command. Both paths require a zero command exit
+    # and an approving reviewer-owned JSON verdict.
     review_passed = False
     review_heading = ""
     if work_item.autonomous:

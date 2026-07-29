@@ -889,6 +889,26 @@ def infrastructure_failure(output: str) -> bool:
     )
 
 
+def retryable_review_infrastructure_failure(
+    *,
+    close_ok: bool,
+    close_output: str,
+    verdict_file: Path,
+) -> bool:
+    """Return whether close failed before the reviewer produced a usable result.
+
+    A missing verdict can be the direct consequence of a transport failure. Once
+    the reviewer writes a verdict file, malformed or rejecting content is a review
+    result and must spend the attempt even when the prose also contains an
+    infrastructure marker.
+    """
+
+    if close_ok or not infrastructure_failure(close_output):
+        return False
+    verdict_error = review_verdict_error(verdict_file)
+    return verdict_error in {"", "review verdict file is missing"}
+
+
 def next_retro_id(stage_root: Path) -> str:
     highest = 0
     for relative in ("work/retrospectives", "official/work/archive/retrospectives"):
@@ -1657,10 +1677,10 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                     role="reviewer",
                     timeout=cmd_timeout,
                 )
-            close_infrastructure_failure = (
-                not close_ok
-                and infrastructure_failure(close_out)
-                and not review_verdict_failures(verdict_file)
+            close_infrastructure_failure = retryable_review_infrastructure_failure(
+                close_ok=close_ok,
+                close_output=close_out,
+                verdict_file=verdict_file,
             )
             if not close_infrastructure_failure:
                 break
