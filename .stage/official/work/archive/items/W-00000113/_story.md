@@ -8,14 +8,15 @@ source:
 autonomous: false
 acceptance:
   - "python3 stage/scripts/audit_stage.py"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000111
+promotion: approved
 review: not_required
 scope: .stage/proposals/, .stage/decisions/, .stage/state/, .stage/work/planned/
-promotes:
+promotes: .stage/official/decisions/records/DE-00000039.md, .stage/official/decisions/index.md
 decision_refs: DE-00000039
 ---
 
@@ -56,13 +57,35 @@ DE-00000034 의 계약이 성공하는 한 바퀴만 보고 쓰여, 실전 세 �
   2벌, 템플릿 공백) 포함. DE-00000039 의 Where this applies 가 소유.
 - O-00000003 의 "시도를 쓴다"가 현행 코드와 어긋나는 것 발견 (`timed out` 은 인프라 실패로
   시도를 안 씀) — 결정문에 검증 필요로 표시.
-- DE-00000039 초안 작성, status open — 사람 확인 대기.
-
+- DE-00000039 초안 작성 → 사람 확인(2026-07-29) → decided.
+- 구현 등록: 에픽 W-00000115 + 스토리 W-00000116~119 (계획, venue codex).
+- W-00000092 흡수 판정 완료. 반려 처리는 계획 인덱스 편집을 막는 게이트 결함에 걸려
+  O-00000009 + 수정 카드 W-00000114 로 남김.
 
 ## Verification
 
 
+### Executed at close — 2026-07-29
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
 ## Retrospective
 
+[R-00000111](../../retrospectives/R-00000111.md)
 
 ## Promotion decision
+
+approved — DE-00000039 를 status promoted 로 `official/decisions/records/` 에 올리고 official
+인덱스에 행 하나를 더한다.
