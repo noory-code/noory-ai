@@ -20,6 +20,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive.py"
@@ -345,6 +346,44 @@ class UnattendedTest(unittest.TestCase):
 
         self.assertIsNotNone(selected)
         self.assertEqual("W-00000001", selected.item_id)
+
+    def test_close_work_overrides_project_environment_for_spawned_hook(self):
+        root, _stage_root = self.make(limits=None)
+        marker = root / "spawned-hook-environment.json"
+        close_work = root / "fake_close_work.py"
+        hook_probe = (
+            "import json, os; from pathlib import Path; "
+            f"Path({str(marker)!r}).write_text("
+            "json.dumps({"
+            "'CLAUDE_PROJECT_DIR': os.environ['CLAUDE_PROJECT_DIR'], "
+            "'PROJECT_ROOT': os.environ['PROJECT_ROOT']}), encoding='utf-8')"
+        )
+        close_work.write_text(
+            "import subprocess, sys\n"
+            f"subprocess.run([sys.executable, '-c', {hook_probe!r}], check=True)\n",
+            encoding="utf-8",
+        )
+        drive = load_module()
+        drive.CLOSE_WORK = close_work
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CLAUDE_PROJECT_DIR": "/wrong/main-checkout",
+                "PROJECT_ROOT": "/wrong/main-checkout",
+            },
+        ):
+            closed, output = drive.close_via_close_work(
+                root,
+                "W-00000001",
+                [],
+                30,
+            )
+
+        self.assertTrue(closed, output)
+        environment = json.loads(marker.read_text(encoding="utf-8"))
+        self.assertEqual(str(root.resolve()), environment["CLAUDE_PROJECT_DIR"])
+        self.assertEqual(str(root.resolve()), environment["PROJECT_ROOT"])
 
     def test_unfinished_child_prevents_selecting_unattended_target_directly(self):
         root, stage_root = self.make(limits=None)

@@ -541,6 +541,20 @@ def repository_fingerprint(project_root: Path) -> str:
     return hashlib.sha256(git_diff(project_root).encode("utf-8")).hexdigest()
 
 
+def project_environment(project_root: Path) -> dict[str, str]:
+    """Return the inherited environment bound to the target project."""
+
+    resolved_root = str(project_root.resolve())
+    env = os.environ.copy()
+    env.update(
+        {
+            "CLAUDE_PROJECT_DIR": resolved_root,
+            "PROJECT_ROOT": resolved_root,
+        }
+    )
+    return env
+
+
 def executor_environment(
     item: WorkItem,
     project_root: Path,
@@ -552,7 +566,7 @@ def executor_environment(
 ) -> dict[str, str]:
     """Return the inherited environment plus the selected work item context."""
 
-    env = os.environ.copy()
+    env = project_environment(project_root)
     env.update(
         {
             "STAGE_WORK_ITEM": item.item_id,
@@ -671,7 +685,7 @@ def preflight_environment(
 ) -> dict[str, str]:
     """Return read-only work context for a venue preflight command."""
 
-    env = os.environ.copy()
+    env = project_environment(project_root)
     env.pop("GIT_INDEX_FILE", None)
     env.update(
         {
@@ -1200,7 +1214,12 @@ def close_via_close_work(
         command += ["--check", check]
     try:
         proc = subprocess.run(
-            command, cwd=str(project_root), capture_output=True, text=True, timeout=timeout + 60
+            command,
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            timeout=timeout + 60,
+            env=project_environment(project_root),
         )
     except subprocess.TimeoutExpired:
         return False, f"close_work timed out after {timeout + 60}s"
@@ -2475,7 +2494,10 @@ def main() -> int:
         if step_ok:
             for command in item.acceptance:
                 accepted, evidence, raw = run_check(
-                    command, args.timeout, project_root
+                    command,
+                    args.timeout,
+                    project_root,
+                    env=project_environment(project_root),
                 )
                 acceptance_output.append(raw)
                 print(f"Acceptance result:\n{evidence}")
@@ -2492,7 +2514,7 @@ def main() -> int:
                 failure = str(exc)
 
         if step_ok:
-            reviewer_env = os.environ.copy()
+            reviewer_env = project_environment(project_root)
             reviewer_env.pop("GIT_INDEX_FILE", None)
             reviewer_env.update(
                 {

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Bind executor, reviewer, venue preflight, and acceptance subprocess project environments to the
+  target `--project-root` so inherited checkout variables cannot redirect spawned Stage hooks.
 - Derive the default per-command driver timeout from unfinished subtree leaves with a 900-second
   floor, run optional venue preflights before attempt state or executors, distinguish missing
   checks from explicit `null`, provide an operator recovery bypass, and persist the currently

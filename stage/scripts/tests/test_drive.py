@@ -902,6 +902,72 @@ class DriveTest(unittest.TestCase):
                     environment["GIT_INDEX_FILE"],
                 )
 
+    def test_child_commands_override_inherited_project_environment(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "child-environments.jsonl"
+
+            def record_environment(role: str) -> str:
+                return (
+                    "import json, os; from pathlib import Path; "
+                    f"Path({str(marker)!r}).open('a', encoding='utf-8').write("
+                    f"json.dumps({{'role': {role!r}, "
+                    "'CLAUDE_PROJECT_DIR': os.environ['CLAUDE_PROJECT_DIR'], "
+                    "'PROJECT_ROOT': os.environ['PROJECT_ROOT']}) + '\\n')"
+                )
+
+            executor = reporting_python_command(
+                record_environment("executor")
+                + "; Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            )
+            reviewer = approving_reviewer_command(record_environment("reviewer"))
+            preflight = python_command(record_environment("preflight"))
+            acceptance = python_command(record_environment("acceptance"))
+            tmp, root = self.make_project(
+                executor=executor,
+                reviewer=reviewer,
+                preflights={"codex": preflight},
+            )
+            with tmp:
+                stage_root = root / ".stage"
+                write_card(
+                    stage_root,
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(acceptance,),
+                )
+                initialize_git(root)
+
+                with mock.patch.dict(
+                    os.environ,
+                    {
+                        "CLAUDE_PROJECT_DIR": "/wrong/main-checkout",
+                        "PROJECT_ROOT": "/wrong/main-checkout",
+                    },
+                ):
+                    result = self.run_cli(root, "--execute")
+
+                self.assertEqual(
+                    0, result.returncode, result.stdout + result.stderr
+                )
+                environments = [
+                    json.loads(line)
+                    for line in marker.read_text(encoding="utf-8").splitlines()
+                ]
+                self.assertEqual(
+                    ["preflight", "executor", "acceptance", "reviewer"],
+                    [environment["role"] for environment in environments],
+                )
+                for environment in environments:
+                    self.assertEqual(
+                        str(root.resolve()),
+                        environment["CLAUDE_PROJECT_DIR"],
+                    )
+                    self.assertEqual(
+                        str(root.resolve()),
+                        environment["PROJECT_ROOT"],
+                    )
+
     def test_execute_passes_selected_work_item_path_to_reviewer(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker = Path(marker_tmp) / "reviewer-environment.json"
