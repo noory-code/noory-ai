@@ -73,7 +73,9 @@ python3 stage/skills/stage-retrospective/close_work.py --project-root <project-r
 It runs each `--check`, records the output as evidence, and completes the item only when they pass —
 and also requires a completed retrospective and a FINAL promotion decision. If `.stage/settings.json`
 configures an `implementation`-stage review (see the plugin-owned `operations/review.md`), `close_work` runs that
-review command too and refuses to close on a failing or `BLOCK:` verdict.
+review command too. The reviewer writes its verdict as JSON to `STAGE_REVIEW_VERDICT_FILE`, and
+`close_work` refuses to close unless the command exits zero and that file approves — a missing,
+malformed, or non-approving verdict blocks the close no matter what the command printed.
 
 For hierarchical records, `close_work` resolves the record by frontmatter ID and writes the exact
 nested link into `work/review.md`; do not substitute a flat `<id>.md` path.

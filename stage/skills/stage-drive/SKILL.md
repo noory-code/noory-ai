@@ -191,17 +191,30 @@ Git index, so its `git add` cannot change the human's real index, but the workin
 remain shared process-wide state. Wait for the step to stop before changing the repository.
 
 Three conditions end a step in `blocked` instead of a retry: an exhausted limit, a `NO-PROGRESS`
-fingerprint, and an independent reviewer JSON verdict with failed criteria. A failed verdict
-escalates unconditionally — it is a judgment on the result, not a transient failure, so rerunning
-the step is never the answer to it. All three recommend `escalate_work.py`; the driver never escalates
-itself and never claims completion. When the exhausted item is an action, escalation also blocks
-its story and creates the human decision at that story: the next instruction is to re-decompose
-the story, not to rerun the same action. Other stories in the epic continue.
+fingerprint, and an independent reviewer JSON verdict with failed criteria. All three recommend
+`escalate_work.py`; the driver never escalates itself and never claims completion. When the
+exhausted item is an action, escalation also blocks its story and creates the human decision at
+that story: the next instruction is to re-decompose the story, not to rerun the same action. Other
+stories in the epic continue.
 
-A failed verdict puts the reviewer's voice in front of the human; it does not decide for the
-human. The next executor dispositions each failed criterion — accept, decline, or defer — with a
-one-line reason in its append-only shared-log report. Reviewer prose remains human-readable
-context, but labels in that prose never decide the machine result.
+**A failed verdict is where supervised and unattended part.** The round trip is the same in both —
+the next executor dispositions each failed criterion as accept, decline, or defer, with a one-line
+reason in its append-only shared-log report — but who starts the next round differs:
+
+- **Unattended** runs the round trip itself, bounded by `max_attempts_per_item`. It restores the
+  pre-review lifecycle and executes again without asking.
+- **Supervised** stops and hands the decision to the human. `escalate_work.py` is the recommended
+  action, not the only legal one: the human may instead run another `--execute` step, which the
+  driver treats as the disposition round. It reads the failed criteria from the verdict file before
+  the executor starts, gives that executor the same file, and clears the verdict only when the
+  reviewer runs again. A round that declines or defers every criterion is allowed to change nothing.
+
+What is forbidden is rerunning with unchanged input. A verdict is a judgment on the result, not a
+transient failure, so the same executor over the same card and the same log will earn the same
+verdict. A recorded disposition is what makes the next round a different question.
+
+Reviewer prose remains human-readable context, but no label inside it decides the machine result —
+only the JSON verdict does.
 
 `NO-PROGRESS` means the fingerprint — staged and unstaged tracked changes against `HEAD`, the path
 and content hash of each untracked non-ignored file, and the acceptance output — is identical to
@@ -248,9 +261,13 @@ When all criteria pass, the cumulative checkpoint becomes the item commit. When 
 cap is reached, the driver removes every item checkpoint while retaining the cumulative files in
 the working tree, then escalates for human attention; executor output is not committed. A command
 timeout, missing command, or terminated tool is infrastructure failure and does not spend a card
-attempt. Reviewer infrastructure is retried without rerunning the executor. The global iteration,
-wall-clock, and reap-failure limits still stop the run, so unavailable tools cannot create an
-unbounded loop. Session reuse belongs to the configured executor command; whether it reuses a
+attempt. Reviewer infrastructure is retried without rerunning the executor — but only while the
+verdict file holds nothing that blocks. The driver reads that file after the failure: it retries
+free when the file is absent (the reviewer never got far enough to judge) or holds a valid
+approving verdict (the failure came after the judgment). A malformed or non-approving verdict is
+the reviewer's answer, so it spends the attempt even when the output also carries an
+infrastructure marker. The global iteration, wall-clock, and reap-failure limits still stop the run, so
+unavailable tools cannot create an unbounded loop. Session reuse belongs to the configured executor command; whether it reuses a
 session or starts fresh, the shared log is the recovery input for every round.
 
 **It refuses to start without a `limits` config.** An absent `limits` object is not "no ceiling" —

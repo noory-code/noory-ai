@@ -34,8 +34,10 @@ STRONG a review runs — bound to a real command, never a bare label:
 
 - `strengths` maps each level (`off`, `light`, `standard`, `deep`, `red-team`) to
   the command that level runs. The harness fixes no command; the project fills in
-  a verdict-emitting review (a reviewer that exits non-zero or prints a line
-  starting with `BLOCK:` when it finds a blocker). `off`/empty means no review.
+  a review that writes the reviewer-owned JSON verdict to the file named by
+  `STAGE_REVIEW_VERDICT_FILE` (required shape and validation rules: the `review`
+  comment in `templates/v4/project-stage/settings.jsonc`). `off`/empty means no
+  review.
 - `stages` picks the level for each stage: `design`, `implementation`, `promotion`.
 
 Review is OPTIONAL and driven by the work item's own `review` field
@@ -49,8 +51,14 @@ Review is OPTIONAL and driven by the work item's own `review` field
   stronger than the verification field, which has no such requirement.
 
 `close_work.py` runs the `implementation`-stage review only when the item is
-`review: pending`: it executes the resolved command, records its output as
-evidence, and on success sets `review: passed`. Fail-closed: a pending item whose
+`review: pending`: it deletes any prior verdict file, exports
+`STAGE_REVIEW_VERDICT_FILE`, executes the resolved command, and records its
+output as evidence. The review passes only when the command exits zero **and**
+that file holds a valid verdict with `approved: true`. A missing, malformed, or
+non-approving verdict fails the close even on a zero exit, and a zero exit with
+an approving verdict passes it whatever the command printed — reviewer prose is
+human-readable context, and no label inside it decides the machine result. On a
+pass it sets `review: passed`. Fail-closed: a pending item whose
 stage has a typo'd strength or no bound command is refused until `settings.json`
 is fixed (the audit reports `REVIEW001`). This keeps `review: passed` bound to an
 executed verdict, never a hand-typed claim. Set the requirement with
