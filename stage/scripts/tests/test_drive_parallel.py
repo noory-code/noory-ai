@@ -119,6 +119,38 @@ class DriveParallelTest(unittest.TestCase):
         git(root, "add", ".stage")
         git(root, "commit", "-q", "-m", "add current cards")
 
+    def add_current_story_with_action(
+        self,
+        root: Path,
+        story_id: str,
+        action_id: str,
+        *,
+        story_scope: str,
+        action_scope: str,
+    ) -> None:
+        story_dir = root / ".stage/work/current" / story_id
+        story_dir.mkdir(parents=True, exist_ok=True)
+        (story_dir / "_story.md").write_text(
+            (
+                "---\n"
+                f"id: {story_id}\n"
+                f"scope: {story_scope}\n"
+                "---\n\n"
+                f"# {story_id} test story\n"
+            ),
+            encoding="utf-8",
+        )
+        (story_dir / f"{action_id}.md").write_text(
+            (
+                "---\n"
+                f"id: {action_id}\n"
+                f"scope: {action_scope}\n"
+                "---\n\n"
+                f"# {action_id} test action\n"
+            ),
+            encoding="utf-8",
+        )
+
     def add_stage_probe(self, root: Path, targets: list[str]) -> None:
         shutil.copytree(HOOKS, root / "stage/hooks")
         settings = {
@@ -557,6 +589,83 @@ class DriveParallelTest(unittest.TestCase):
         self.assertEqual(0, result)
         self.assertEqual(2, create.call_count)
 
+    def test_changelog_rewrite_counts_as_overlap(self) -> None:
+        module = load_module()
+        _, root = self.make_repository()
+        targets = ["W-00000001", "W-00000002"]
+        self.add_current_cards(
+            root,
+            targets,
+            scopes={
+                targets[0]: "stage/CHANGELOG.md",
+                targets[1]: (
+                    "stage/CHANGELOG.md, stage/scripts/release_plugin.py"
+                ),
+            },
+        )
+        worktree_root = root.parent / "worktrees"
+        errors = io.StringIO()
+
+        with (
+            mock.patch.object(module, "create_worktree") as create,
+            contextlib.redirect_stderr(errors),
+        ):
+            result = module.run_parallel(
+                root,
+                targets,
+                worktree_root=worktree_root,
+                driver_path=module.DRIVER,
+            )
+
+        self.assertEqual(1, result)
+        create.assert_not_called()
+        self.assertIn(
+            f"{targets[0]} <-> {targets[1]}: stage/CHANGELOG.md",
+            errors.getvalue(),
+        )
+
+    def test_descendant_scopes_count_as_parent_target_scopes(self) -> None:
+        module = load_module()
+        _, root = self.make_repository()
+        targets = ["W-00000001", "W-00000002"]
+        shared_path = "stage/scripts/shared.py"
+        self.add_current_story_with_action(
+            root,
+            targets[0],
+            "W-00000003",
+            story_scope="stage/docs/first.md",
+            action_scope=shared_path,
+        )
+        self.add_current_story_with_action(
+            root,
+            targets[1],
+            "W-00000004",
+            story_scope="stage/docs/second.md",
+            action_scope=shared_path,
+        )
+        git(root, "add", ".stage")
+        git(root, "commit", "-q", "-m", "add current hierarchies")
+        worktree_root = root.parent / "worktrees"
+        errors = io.StringIO()
+
+        with (
+            mock.patch.object(module, "create_worktree") as create,
+            contextlib.redirect_stderr(errors),
+        ):
+            result = module.run_parallel(
+                root,
+                targets,
+                worktree_root=worktree_root,
+                driver_path=module.DRIVER,
+            )
+
+        self.assertEqual(1, result)
+        create.assert_not_called()
+        self.assertIn(
+            f"{targets[0]} <-> {targets[1]}: {shared_path}",
+            errors.getvalue(),
+        )
+
     def test_allow_overlap_runs_and_reports_the_override(self) -> None:
         module = load_module()
         _, root = self.make_repository()
@@ -697,6 +806,103 @@ class DriveParallelTest(unittest.TestCase):
             run.call_args_list[1].kwargs["env"]["STAGE_WORK_ITEM_PATH"],
         )
         self.assertEqual("executor", run.call_args_list[1].kwargs["env"]["STAGE_TURN_ROLE"])
+
+    def test_run_driver_timeout_reaps_reviewer_venue(self) -> None:
+        module = load_module()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        tree = Path(tmp.name) / "worktree"
+        card_dir = tree / ".stage/work/current/W-00000001"
+        card_dir.mkdir(parents=True)
+        (card_dir / "_story.md").write_text(
+            "---\nid: W-00000001\nvenue: codex\n---\n",
+            encoding="utf-8",
+        )
+        (tree / ".stage/settings.json").write_text(
+            json.dumps(
+                {
+                    "reapers": {
+                        "codex": "reap-executor",
+                        "claude": "reap-reviewer",
+                    },
+                    "review": {
+                        "reviewers": {
+                            "codex": "own-venue",
+                            "claude": "review-command",
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        log_dir = tree / ".stage/.runtime/driver/logs"
+        log_dir.mkdir(parents=True)
+        (log_dir / "W-00000001.md").write_text(
+            "\n### Executor report\nWhat changed: ready for review\n",
+            encoding="utf-8",
+        )
+        spec = module.WorktreeSpec(
+            "W-00000001",
+            tree,
+            "stage/worktree/W-00000001",
+        )
+
+        with mock.patch.object(
+            module.subprocess,
+            "run",
+            side_effect=[
+                subprocess.TimeoutExpired(["driver"], 7),
+                subprocess.CompletedProcess("reap-reviewer", 0, "", ""),
+            ],
+        ) as run:
+            result = module.run_driver(spec, module.DRIVER, timeout=7)
+
+        self.assertEqual(124, result.returncode)
+        self.assertIn("reapers.claude completed", result.stderr)
+        self.assertEqual("reap-reviewer", run.call_args_list[1].args[0])
+        self.assertEqual("reviewer", run.call_args_list[1].kwargs["env"]["STAGE_TURN_ROLE"])
+
+    def test_run_driver_timeout_explains_unresolved_reviewer_venue(self) -> None:
+        module = load_module()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        tree = Path(tmp.name) / "worktree"
+        card_dir = tree / ".stage/work/current/W-00000001"
+        card_dir.mkdir(parents=True)
+        (card_dir / "_story.md").write_text(
+            "---\nid: W-00000001\nvenue: codex\n---\n",
+            encoding="utf-8",
+        )
+        (tree / ".stage/settings.json").write_text(
+            json.dumps(
+                {
+                    "reapers": {"codex": "reap-executor"},
+                    "review": {"reviewers": {"codex": "own-venue"}},
+                }
+            ),
+            encoding="utf-8",
+        )
+        log_dir = tree / ".stage/.runtime/driver/logs"
+        log_dir.mkdir(parents=True)
+        (log_dir / "W-00000001.md").write_text(
+            "\n### Executor report\nWhat changed: ready for review\n",
+            encoding="utf-8",
+        )
+        spec = module.WorktreeSpec(
+            "W-00000001",
+            tree,
+            "stage/worktree/W-00000001",
+        )
+
+        with mock.patch.object(
+            module.subprocess,
+            "run",
+            side_effect=subprocess.TimeoutExpired(["driver"], 7),
+        ):
+            result = module.run_driver(spec, module.DRIVER, timeout=7)
+
+        self.assertEqual(124, result.returncode)
+        self.assertIn("cannot resolve independent reviewer venue", result.stderr)
 
     def test_run_driver_timeout_explains_when_no_reaper_is_configured(self) -> None:
         module = load_module()
@@ -870,6 +1076,90 @@ class DriveParallelTest(unittest.TestCase):
         self.assertTrue((spec.path / "committed.txt").is_file())
         self.assertIn(spec.branch, git(root, "branch", "--format=%(refname:short)"))
         self.assertIn("contains commits not merged into HEAD", errors.getvalue())
+
+    def test_cleanup_preserves_uncommitted_worktree_changes(self) -> None:
+        module = load_module()
+        tmp, root = self.make_repository()
+        target = "W-00000001"
+        worktree_root = Path(tmp.name) / "worktrees"
+        spec = module.worktree_specs(worktree_root, [target])[0]
+        worktree_root.mkdir()
+        self.assertEqual("", module.create_worktree(root, spec))
+        witness = spec.path / "uncommitted.txt"
+        witness.write_text("must survive\n", encoding="utf-8")
+        errors = io.StringIO()
+
+        with contextlib.redirect_stderr(errors):
+            result = module.cleanup_targets(
+                root,
+                [target],
+                worktree_root=worktree_root,
+            )
+
+        self.assertEqual(1, result)
+        self.assertTrue(witness.is_file())
+        self.assertIn(spec.branch, git(root, "branch", "--format=%(refname:short)"))
+        self.assertIn("contains uncommitted changes", errors.getvalue())
+        self.assertIn("--force-cleanup", errors.getvalue())
+
+    def test_force_cleanup_discards_uncommitted_worktree_changes(self) -> None:
+        module = load_module()
+        tmp, root = self.make_repository()
+        target = "W-00000001"
+        worktree_root = Path(tmp.name) / "worktrees"
+        spec = module.worktree_specs(worktree_root, [target])[0]
+        worktree_root.mkdir()
+        self.assertEqual("", module.create_worktree(root, spec))
+        (spec.path / "uncommitted.txt").write_text("discard me\n", encoding="utf-8")
+
+        result = module.cleanup_targets(
+            root,
+            [target],
+            worktree_root=worktree_root,
+            force=True,
+        )
+
+        self.assertEqual(0, result)
+        self.assertFalse(spec.path.exists())
+        self.assertNotIn(spec.branch, git(root, "branch", "--format=%(refname:short)"))
+
+    def test_cleanup_removes_retained_branch_when_worktree_is_absent(self) -> None:
+        module = load_module()
+        tmp, root = self.make_repository()
+        target = "W-00000001"
+        worktree_root = Path(tmp.name) / "worktrees"
+        spec = module.worktree_specs(worktree_root, [target])[0]
+        git(root, "branch", spec.branch, "HEAD")
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            result = module.cleanup_targets(
+                root,
+                [target],
+                worktree_root=worktree_root,
+            )
+
+        self.assertEqual(0, result)
+        self.assertNotIn(spec.branch, git(root, "branch", "--format=%(refname:short)"))
+        self.assertIn(f"Removed retained branch {spec.branch}", output.getvalue())
+        self.assertNotIn(str(spec.path), output.getvalue())
+
+    def test_force_cleanup_is_available_from_the_command_line(self) -> None:
+        module = load_module()
+
+        with mock.patch.object(
+            sys,
+            "argv",
+            [
+                str(SCRIPT),
+                "--cleanup",
+                "--force-cleanup",
+                "W-00000001",
+            ],
+        ):
+            args = module.parse_args()
+
+        self.assertTrue(args.force_cleanup)
 
     def test_cleanup_reports_absent_target_without_claiming_removal(self) -> None:
         module = load_module()

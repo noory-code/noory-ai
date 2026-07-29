@@ -21,13 +21,14 @@ for import_dir in (SCRIPTS_DIR, HOOKS_DIR):
     if str(import_dir) not in sys.path:
         sys.path.insert(0, str(import_dir))
 
-from drive import resolve_reap_command  # noqa: E402
+from drive import resolve_independent_reviewer_venue, resolve_reap_command  # noqa: E402
 from stage_paths import normalize_path_text, read_settings  # noqa: E402
-from stage_record_paths import record_path  # noqa: E402
+from stage_record_paths import record_path, record_paths  # noqa: E402
 from stage_work import parse_frontmatter, split_scope  # noqa: E402
 
 
 WORK_ID_RE = re.compile(r"W-\d{8}")
+REPORT_HEADING_RE = re.compile(r"^### (Executor|Reviewer) report[ \t]*$", re.MULTILINE)
 DEFAULT_MAX_WORKERS = 2
 DEFAULT_DRIVER_TIMEOUT = 3600
 REAPER_TIMEOUT = 120
@@ -50,6 +51,7 @@ class CleanupResult(NamedTuple):
     removed: bool
     absent: bool
     errors: tuple[str, ...]
+    branch_only: bool = False
 
 
 class ScopeOverlap(NamedTuple):
@@ -103,6 +105,11 @@ def parse_args() -> argparse.Namespace:
         "--cleanup",
         action="store_true",
         help="Remove the named parallel worktrees and branches instead of running drivers.",
+    )
+    parser.add_argument(
+        "--force-cleanup",
+        action="store_true",
+        help="With --cleanup, discard uncommitted changes in verified card worktrees.",
     )
     parser.add_argument(
         "--allow-overlap",
@@ -187,17 +194,30 @@ def is_changelog_scope(path: str) -> bool:
     return path == "CHANGELOG.md" or path.endswith("/CHANGELOG.md")
 
 
+def is_release_script_scope(path: str) -> bool:
+    return path == "release_plugin.py" or path.endswith("/scripts/release_plugin.py")
+
+
 def declared_scopes(project_root: Path, target: str) -> tuple[str, ...]:
-    card_path = record_path(project_root / ".stage/work/current", target)
-    raw_scope = parse_frontmatter(card_path).get("scope", "")
-    if not isinstance(raw_scope, str):
-        return ()
+    current_root = project_root / ".stage/work/current"
+    card_path = record_path(current_root, target)
+    card_paths = [card_path]
+    if card_path.name in {"_epic.md", "_story.md"}:
+        card_paths.extend(
+            path
+            for path in record_paths(current_root)
+            if card_path.parent in path.parents
+        )
 
     normalized: list[str] = []
-    for entry in split_scope(raw_scope):
-        path = normalize_path_text(entry).rstrip("/")
-        if path and not is_changelog_scope(path):
-            normalized.append(path)
+    for scoped_card_path in card_paths:
+        raw_scope = parse_frontmatter(scoped_card_path).get("scope", "")
+        if not isinstance(raw_scope, str):
+            continue
+        for entry in split_scope(raw_scope):
+            path = normalize_path_text(entry).rstrip("/")
+            if path and path not in normalized:
+                normalized.append(path)
     return tuple(normalized)
 
 
@@ -227,8 +247,20 @@ def find_scope_overlaps(
     seen: set[ScopeOverlap] = set()
     for first_index, first_spec in enumerate(specs):
         for second_spec in specs[first_index + 1 :]:
-            for first_scope in scopes[first_spec.target]:
-                for second_scope in scopes[second_spec.target]:
+            first_scopes = scopes[first_spec.target]
+            second_scopes = scopes[second_spec.target]
+            changelog_is_append_only = not any(
+                is_release_script_scope(path)
+                for path in (*first_scopes, *second_scopes)
+            )
+            for first_scope in first_scopes:
+                for second_scope in second_scopes:
+                    if (
+                        changelog_is_append_only
+                        and is_changelog_scope(first_scope)
+                        and is_changelog_scope(second_scope)
+                    ):
+                        continue
                     path = overlapping_path(first_scope, second_scope)
                     overlap = ScopeOverlap(
                         first_spec.target,
@@ -306,7 +338,12 @@ def registered_worktrees(project_root: Path) -> tuple[dict[Path, str], str]:
     return registrations, ""
 
 
-def cleanup_worktree(project_root: Path, spec: WorktreeSpec) -> CleanupResult:
+def cleanup_worktree(
+    project_root: Path,
+    spec: WorktreeSpec,
+    *,
+    force: bool = False,
+) -> CleanupResult:
     errors: list[str] = []
     registrations, registration_error = registered_worktrees(project_root)
     if registration_error:
@@ -327,14 +364,16 @@ def cleanup_worktree(project_root: Path, spec: WorktreeSpec) -> CleanupResult:
 
     registered_branch = registrations.get(spec.path)
     if registered_branch is None:
-        if not spec.path.exists() and not spec.path.is_symlink() and not branch_exists:
+        path_exists = spec.path.exists() or spec.path.is_symlink()
+        if not path_exists and not branch_exists:
             return CleanupResult(False, True, ())
-        return CleanupResult(
-            False,
-            False,
-            (f"refusing cleanup: {spec.path} is not a registered Git worktree",),
-        )
-    if registered_branch != spec.branch:
+        if path_exists:
+            return CleanupResult(
+                False,
+                False,
+                (f"refusing cleanup: {spec.path} is not a registered Git worktree",),
+            )
+    elif registered_branch != spec.branch:
         actual = registered_branch or "(detached HEAD)"
         return CleanupResult(
             False,
@@ -344,12 +383,34 @@ def cleanup_worktree(project_root: Path, spec: WorktreeSpec) -> CleanupResult:
                 f"{actual}; expected {spec.branch}",
             ),
         )
-    if not branch_exists:
+    if registered_branch is not None and not branch_exists:
         return CleanupResult(
             False,
             False,
             (f"refusing cleanup: registered branch does not exist: {spec.branch}",),
         )
+
+    if registered_branch is not None:
+        dirty_status, dirty_output = run_git(
+            spec.path,
+            ["status", "--porcelain", "--untracked-files=normal"],
+        )
+        if dirty_status != 0:
+            detail = dirty_output.strip() or f"git exited with status {dirty_status}"
+            return CleanupResult(
+                False,
+                False,
+                (f"cannot inspect cleanup worktree status for {spec.path}: {detail}",),
+            )
+        if dirty_output and not force:
+            return CleanupResult(
+                False,
+                False,
+                (
+                    f"refusing cleanup: {spec.path} contains uncommitted changes; "
+                    "inspect and preserve them, or pass --force-cleanup to discard them",
+                ),
+            )
 
     merged_status, merged_output = run_git(
         project_root,
@@ -372,26 +433,27 @@ def cleanup_worktree(project_root: Path, spec: WorktreeSpec) -> CleanupResult:
             (f"cannot compare {spec.branch} with HEAD: {detail}",),
         )
 
-    status, _ = run_git(
-        project_root,
-        ["worktree", "remove", "--force", str(spec.path)],
-    )
-    if status != 0:
-        if spec.path.exists() or spec.path.is_symlink():
-            try:
-                shutil.rmtree(spec.path)
-            except OSError as exc:
-                errors.append(f"cannot remove worktree {spec.path}: {exc}")
-        if not errors:
-            prune_status, prune_output = run_git(
-                project_root,
-                ["worktree", "prune", "--expire", "now"],
-            )
-            if prune_status != 0:
-                errors.append(
-                    "cannot prune failed worktree metadata: "
-                    f"{prune_output.strip() or f'git exited with status {prune_status}'}"
+    if registered_branch is not None:
+        status, _ = run_git(
+            project_root,
+            ["worktree", "remove", "--force", str(spec.path)],
+        )
+        if status != 0:
+            if spec.path.exists() or spec.path.is_symlink():
+                try:
+                    shutil.rmtree(spec.path)
+                except OSError as exc:
+                    errors.append(f"cannot remove worktree {spec.path}: {exc}")
+            if not errors:
+                prune_status, prune_output = run_git(
+                    project_root,
+                    ["worktree", "prune", "--expire", "now"],
                 )
+                if prune_status != 0:
+                    errors.append(
+                        "cannot prune failed worktree metadata: "
+                        f"{prune_output.strip() or f'git exited with status {prune_status}'}"
+                    )
 
     if not errors:
         delete_status, delete_output = run_git(
@@ -403,7 +465,12 @@ def cleanup_worktree(project_root: Path, spec: WorktreeSpec) -> CleanupResult:
                 f"cannot remove branch {spec.branch}: "
                 f"{delete_output.strip() or f'git exited with status {delete_status}'}"
             )
-    return CleanupResult(not errors, False, tuple(errors))
+    return CleanupResult(
+        not errors,
+        False,
+        tuple(errors),
+        branch_only=registered_branch is None,
+    )
 
 
 def reap_after_timeout(spec: WorktreeSpec) -> str:
@@ -422,6 +489,28 @@ def reap_after_timeout(spec: WorktreeSpec) -> str:
     settings_path, settings, settings_error = read_settings(stage_root)
     if settings_error is not None:
         return f"venue reaper was not run: cannot read {settings_path}: {settings_error}"
+    role = "executor"
+    log_path = stage_root / ".runtime/driver/logs" / f"{spec.target}.md"
+    if log_path.is_file():
+        try:
+            log_text = log_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            return f"venue reaper was not run: cannot read {log_path}: {exc}"
+        if REPORT_HEADING_RE.search(log_text):
+            role = "reviewer"
+            review = settings.get("review") if isinstance(settings, dict) else None
+            reviewer_venue = (
+                resolve_independent_reviewer_venue(review, venue)
+                if isinstance(review, dict)
+                else None
+            )
+            if reviewer_venue is None:
+                return (
+                    "venue reaper was not run: cannot resolve independent reviewer "
+                    f"venue for {spec.target}"
+                )
+            venue = reviewer_venue
+
     reapers = settings.get("reapers") if isinstance(settings, dict) else None
     command, configured, config_error = resolve_reap_command(reapers, venue)
     if config_error:
@@ -438,10 +527,8 @@ def reap_after_timeout(spec: WorktreeSpec) -> str:
             "PROJECT_ROOT": str(spec.path),
             "STAGE_WORK_ITEM_PATH": str(item_path.resolve()),
             "STAGE_PROJECT_ROOT": str(spec.path),
-            "STAGE_WORK_LOG_PATH": str(
-                stage_root / ".runtime/driver/logs" / f"{spec.target}.md"
-            ),
-            "STAGE_TURN_ROLE": "executor",
+            "STAGE_WORK_LOG_PATH": str(log_path),
+            "STAGE_TURN_ROLE": role,
         }
     )
     try:
@@ -629,6 +716,7 @@ def cleanup_targets(
     targets: list[str],
     *,
     worktree_root: Path,
+    force: bool = False,
 ) -> int:
     project_root = project_root.resolve()
     worktree_root = worktree_root.resolve()
@@ -660,13 +748,15 @@ def cleanup_targets(
 
     failed = False
     for spec in worktree_specs(worktree_root, targets):
-        cleanup = cleanup_worktree(project_root, spec)
+        cleanup = cleanup_worktree(project_root, spec, force=force)
         if cleanup.errors:
             failed = True
             for error in cleanup.errors:
                 print(f"ERROR: {error}", file=sys.stderr)
         elif cleanup.absent:
             print(f"No retained worktree or branch for {spec.target}")
+        elif cleanup.branch_only:
+            print(f"Removed retained branch {spec.branch}")
         else:
             print(f"Removed worktree and branch for {spec.target}")
     return 1 if failed else 0
@@ -674,6 +764,9 @@ def cleanup_targets(
 
 def main() -> int:
     args = parse_args()
+    if args.force_cleanup and not args.cleanup:
+        print("ERROR: --force-cleanup requires --cleanup", file=sys.stderr)
+        return 2
     project_root = Path(args.project_root).expanduser().resolve()
     worktree_root = (
         Path(args.worktree_root).expanduser().resolve()
@@ -685,6 +778,7 @@ def main() -> int:
             project_root,
             args.targets,
             worktree_root=worktree_root,
+            force=args.force_cleanup,
         )
     return run_parallel(
         project_root,

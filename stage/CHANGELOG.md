@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reap timed-out parallel turns through the active role's venue, preserve uncommitted worktrees by
+  default, clean up retained branch-only failures, and compare descendant and rewrite-capable
+  changelog scopes before starting parallel cards.
 - Reject parallel card batches with overlapping declared scopes before creating any worktree,
   report every conflicting card pair and path, exempt append-only changelog entries, and provide
   an explicit reported override.

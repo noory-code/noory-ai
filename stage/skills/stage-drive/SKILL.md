@@ -43,12 +43,15 @@ The command prints each driver status, worktree path, and `Merge branch:
 stage/worktree/<card-id>`. It does not commit, close, merge, or remove a successful worktree. After
 reviewing and completing the card in that worktree, the human commits the branch and merges the
 printed branch. If any worktree creation fails, every tree and branch created by that invocation
-is removed. A driver failure keeps its worktree and branch for inspection. The command refuses to
-create any worktree when the project checkout is dirty or a named current card does not exist, so
-every new tree has the complete requested input at `HEAD`. If a driver times out, its executor or
-reviewer may still be writing to the worktree. The command runs the work item's configured venue
-reaper when available and reports why it could not otherwise; do not use `--cleanup` until every
-external job has stopped.
+is cleaned up when Git exposes enough state to do so. If Git creates the branch but fails before
+registering the worktree, the branch can remain; the command reports that cleanup failure and a
+later `--cleanup` can remove the retained branch without requiring the absent path. A driver
+failure keeps its worktree and branch for inspection. The command refuses to create any worktree
+when the project checkout is dirty or a named current card does not exist, so every new tree has
+the complete requested input at `HEAD`. If a driver times out, its executor or reviewer may still
+be writing to the worktree. The command determines the active external role from the shared work
+log, runs the executor or independent-reviewer venue's reaper as applicable, and reports why it
+could not otherwise; do not use `--cleanup` until every external job has stopped.
 
 Remove retained worktrees and their branches after inspection with the same project root,
 worktree root, and card IDs:
@@ -60,16 +63,21 @@ python3 "<parallel-driver>" --project-root <project-root> --cleanup W-00000001 W
 Cleanup accepts only a path registered by Git on the exact
 `stage/worktree/<card-id>` branch. It refuses an ordinary directory, a registered worktree on
 another branch, and a branch containing commits not merged into the project checkout's `HEAD`.
-Merge or otherwise preserve those commits first. An absent worktree and branch are reported as
-absent, never as removed. Cleanup leaves the shared worktree-root directory itself in place because
-the command cannot prove that it created that parent.
+It also refuses a registered worktree with staged, unstaged, or untracked changes. Inspect and
+preserve those changes first, or explicitly discard them with `--cleanup --force-cleanup`. A
+retained exact branch can be removed even when its worktree path is absent. Merge or otherwise
+preserve unmerged commits first. An absent worktree and branch are reported as absent, never as
+removed. Cleanup leaves the shared worktree-root directory itself in place because the command
+cannot prove that it created that parent.
 
 Before creating the worktree root or any card worktree, the command compares every named card's
-declared `scope`. Two declarations overlap when they name the same path or one path contains the
-other. `CHANGELOG.md` declarations are excluded because card work appends independent entries to
-the Unreleased section. When an overlap remains, the command creates no worktree and prints every
-card pair and overlapping path. Narrow a card's scope, choose different cards, or run those cards
-sequentially.
+declared `scope`, including every descendant card when the named target is a story or epic. Two
+declarations overlap when they name the same path or one path contains the other. Matching
+`CHANGELOG.md` declarations are excluded when both are ordinary card work that appends independent
+entries to the Unreleased section. A scope that includes `release_plugin.py` can rewrite the
+section heading, so its matching changelog is not append-only and remains an overlap. When an
+overlap remains, the command creates no worktree and prints every card pair and overlapping path.
+Narrow a card's scope, choose different cards, or run those cards sequentially.
 
 Separate worktrees isolate repository observation; they do not make overlapping edits safe. When
 the declared directories overlap but the actual files are known to be independent, pass
