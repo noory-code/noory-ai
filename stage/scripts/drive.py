@@ -555,6 +555,15 @@ def project_environment(project_root: Path) -> dict[str, str]:
     return env
 
 
+def check_environment() -> dict[str, str]:
+    """Return the inherited environment without host project bindings."""
+
+    env = os.environ.copy()
+    env.pop("CLAUDE_PROJECT_DIR", None)
+    env.pop("PROJECT_ROOT", None)
+    return env
+
+
 def executor_environment(
     item: WorkItem,
     project_root: Path,
@@ -2497,7 +2506,7 @@ def main() -> int:
                     command,
                     args.timeout,
                     project_root,
-                    env=project_environment(project_root),
+                    env=check_environment(),
                 )
                 acceptance_output.append(raw)
                 print(f"Acceptance result:\n{evidence}")

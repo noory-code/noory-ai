@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-- Bind executor, reviewer, venue preflight, and acceptance subprocess project environments to the
-  target `--project-root` so inherited checkout variables cannot redirect spawned Stage hooks.
+- Bind executor, reviewer, venue preflight, and close-work subprocess project environments to the
+  target `--project-root` so inherited checkout variables cannot redirect session hooks, while
+  removing those host project bindings from hermetic acceptance checks so spawned-hook tests stay
+  isolated from the driver session.
 - Require one top-level archive-index row per hierarchy move unit without requiring nested rows,
   preserve valid legacy nested entries, and verify that hierarchy archiving audits at zero errors.
 - Reject retired flat work cards at lifecycle roots before allowing root-level indexes, READMEs,

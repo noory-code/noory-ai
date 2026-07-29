@@ -902,7 +902,7 @@ class DriveTest(unittest.TestCase):
                     environment["GIT_INDEX_FILE"],
                 )
 
-    def test_child_commands_override_inherited_project_environment(self):
+    def test_child_commands_split_project_environment_contract(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker = Path(marker_tmp) / "child-environments.jsonl"
 
@@ -911,8 +911,8 @@ class DriveTest(unittest.TestCase):
                     "import json, os; from pathlib import Path; "
                     f"Path({str(marker)!r}).open('a', encoding='utf-8').write("
                     f"json.dumps({{'role': {role!r}, "
-                    "'CLAUDE_PROJECT_DIR': os.environ['CLAUDE_PROJECT_DIR'], "
-                    "'PROJECT_ROOT': os.environ['PROJECT_ROOT']}) + '\\n')"
+                    "'CLAUDE_PROJECT_DIR': os.environ.get('CLAUDE_PROJECT_DIR'), "
+                    "'PROJECT_ROOT': os.environ.get('PROJECT_ROOT')}) + '\\n')"
                 )
 
             executor = reporting_python_command(
@@ -958,7 +958,12 @@ class DriveTest(unittest.TestCase):
                     ["preflight", "executor", "acceptance", "reviewer"],
                     [environment["role"] for environment in environments],
                 )
-                for environment in environments:
+                session_environments = [
+                    environment
+                    for environment in environments
+                    if environment["role"] != "acceptance"
+                ]
+                for environment in session_environments:
                     self.assertEqual(
                         str(root.resolve()),
                         environment["CLAUDE_PROJECT_DIR"],
@@ -967,6 +972,11 @@ class DriveTest(unittest.TestCase):
                         str(root.resolve()),
                         environment["PROJECT_ROOT"],
                     )
+                acceptance_environment = environments[2]
+                self.assertIsNone(
+                    acceptance_environment["CLAUDE_PROJECT_DIR"]
+                )
+                self.assertIsNone(acceptance_environment["PROJECT_ROOT"])
 
     def test_execute_passes_selected_work_item_path_to_reviewer(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
