@@ -6,11 +6,12 @@ venue: claude
 source:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000109
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: .stage/**
 promotes:
@@ -81,6 +82,16 @@ decision_refs: DE-00000035
 **소유자 승인.** 결정 방향("v5 로 올리고 백 장 다 옮기자")과 쪼개기("응 등록해")를 소유자가
 대화에서 직접 승인했고, 실행 전 과정을 감독했다. 설계 kind 의 완료 기준(소유자 리뷰·승인)이
 이로써 찼다.
+
+### Executed at close — 2026-07-29
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 

@@ -8,7 +8,7 @@ autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -q"
   - "python3 -m unittest discover -s stage/scripts/tests -q"
-status: completed
+status: archived
 terminal_disposition: accepted
 verification: passed
 retrospective: completed

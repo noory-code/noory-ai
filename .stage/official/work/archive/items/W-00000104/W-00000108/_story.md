@@ -6,7 +6,7 @@ venue: claude
 priority: 4
 autonomous: false
 acceptance: []
-status: completed
+status: archived
 terminal_disposition: accepted
 verification: passed
 retrospective: completed
