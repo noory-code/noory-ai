@@ -27,14 +27,48 @@ W-00000125 가 병렬 실행을 열었지만 멈추는 자리와 되돌리는 �
 
 ## Actions
 
+- probe 가 `CLAUDE_PROJECT_DIR`·`PROJECT_ROOT` 를 지우는 대신 **트리와 같아야 한다고
+  주장**하게 바꾼다. 훅은 그 변수가 있으면 payload 의 `cwd` 보다 먼저 쓰므로, 지우면 그
+  자리가 검증에서 빠진다. 주장으로 바꾸면 `claude` venue 로 병렬을 돌려도 트리가 지켜진다.
+- 동시에 뜨는 실행자 수에 상한을 두고 인자로 받는다. `run_driver` 에 타임아웃을 건다.
+- 시작할 때 본 체크아웃이 더러우면 멈춘다. 트리는 `HEAD` 에서 만들어지므로 커밋 안 한
+  변경은 어느 트리에도 안 들어간다 — 조용히 빠지는 것이 가장 나쁘다.
+- 남은 트리를 거두는 명령을 만든다. 사람이 `git worktree remove` + `git branch -D` 를 손으로
+  하지 않게 한다.
+- 카드 ID 의 **존재**를 트리를 만들기 전에 본다. 지금은 모양만 보고 만든 뒤에 실패한다.
+- `cleanup_worktree` 본문을 실제 트리로 도는 테스트를 넣는다. 지금은 mock 이라 본문이 한
+  번도 안 돈다.
+- `stage/skills/stage-drive/SKILL.md` 에 상한·더러운 트리 거절·되돌리기 명령을 적는다.
+- `stage/CHANGELOG.md` 미출시 절에 적는다. **매니페스트 버전은 안 건드린다.**
 
 ## Scope
 
+`stage/scripts/drive_parallel.py` 와 그 테스트, `stage/skills/stage-drive/SKILL.md`,
+`stage/CHANGELOG.md` 의 미출시 절.
+
+**안 하는 것**: scope 겹침 거절 — W-00000126 이 한다. 드라이버 본체(`drive.py`) 수정.
 
 ## Success criteria
 
+- probe 가 `CLAUDE_PROJECT_DIR`·`PROJECT_ROOT` 를 지우지 않고, 그 값이 트리와 다르면 실패로
+  판정한다. 두 변수를 딴 뿌리로 걸어 놓고 돌려도 잡히는 것을 테스트가 고정한다.
+- 동시 실행 수에 상한이 있고 인자로 바꿀 수 있다. 상한을 넘겨 걸면 나머지가 기다린다.
+  테스트가 고정한다.
+- 본 체크아웃이 더러우면 트리를 하나도 안 만들고 멈춘다. 메시지가 이유를 말한다. 테스트가
+  고정한다.
+- 없는 카드 ID 를 넣으면 트리를 **하나도 만들기 전에** 멈춘다. 테스트가 고정한다.
+- 남은 트리를 거두는 명령이 있고, 실제 트리·브랜치를 만들어 지우는 것을 확인하는 테스트가
+  있다. 그 테스트가 `cleanup_worktree` 본문을 실제로 돈다(mock 아님).
+- `stage/skills/stage-drive/SKILL.md` 가 상한, 더러운 트리 거절, 되돌리기 명령을 말한다.
+- `python3 -m unittest discover -s stage/scripts/tests -q` 가 통과한다.
+- `stage/CHANGELOG.md` 미출시 절에 항목이 있고 매니페스트 버전은 그대로다.
 
 ## Related truth
+
+- [DE-00000040](../../../official/decisions/records/DE-00000040.md) §2 — 병렬의 계약
+- [R-00000118](../../../work/retrospectives/R-00000118.md) — 이 빈틈들이 드러난 경위
+- [O-00000007](../../../state/observations/O-00000007.md) — 되돌리기가 명령이 아니면 사람이
+  손으로 상태를 맞춘다. 남은 트리 정리가 같은 모양이다
 
 
 ## Progress
