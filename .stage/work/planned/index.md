@@ -13,6 +13,10 @@
 | W-00000092 | 드라이버가 실행자의 건강을 확인한다 — 사전 점검과 생존 감시 | design | rejected |  |  | [W-00000092/_story.md](W-00000092/_story.md) |
 | W-00000111 | 계층 보관의 인덱스 계약을 한쪽으로 정한다 | fix | captured |  |  | [W-00000111/_story.md](W-00000111/_story.md) |
 | W-00000120 | 깊이 1 예외에서 카드 이름 모양을 다시 뺀다 | fix | captured | 2 |  | [W-00000120/_story.md](W-00000120/_story.md) |
+| W-00000123 | 겹치지 않는 Stage 작업이 동시에 돈다 | development | captured | 1 |  | [W-00000123/_epic.md](W-00000123/_epic.md) |
+| W-00000124 | 버전을 카드가 아니라 릴리스가 정한다 | development | captured |  |  | [W-00000123/W-00000124/_story.md](W-00000123/W-00000124/_story.md) |
+| W-00000125 | 카드마다 자기 작업 트리에서 드라이버가 돈다 | development | captured |  |  | [W-00000123/W-00000125/_story.md](W-00000123/W-00000125/_story.md) |
+| W-00000126 | 도는 작업과 겹치는 카드는 시작을 거절한다 | development | captured |  |  | [W-00000123/W-00000126/_story.md](W-00000123/W-00000126/_story.md) |
 
 ## 상태 값
 
