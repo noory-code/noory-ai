@@ -210,6 +210,7 @@ class DriveTest(unittest.TestCase):
         reviewer: str = APPROVING_REVIEWER,
         limits: object = None,
         reapers: object = None,
+        preflights: object = None,
     ) -> tuple[tempfile.TemporaryDirectory, Path]:
         tmp = tempfile.TemporaryDirectory()
         root = Path(tmp.name)
@@ -230,6 +231,8 @@ class DriveTest(unittest.TestCase):
             settings["limits"] = limits
         if reapers is not None:
             settings["reapers"] = reapers
+        if preflights is not None:
+            settings["preflights"] = preflights
         (stage_root / "settings.json").write_text(
             json.dumps(settings), encoding="utf-8"
         )
@@ -1824,6 +1827,175 @@ class DriveTest(unittest.TestCase):
             self.assertIn("executors.codex", result.stdout)
             self.assertIn("→ escalate_work", result.stdout)
             self.assertFalse((root / ".stage/.runtime").exists())
+
+    def test_preflight_failure_stops_before_executor_and_attempt_state(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "executor-ran"
+            tmp, root = self.make_project(
+                executor=python_command(
+                    "from pathlib import Path; "
+                    f"Path({str(marker)!r}).write_text('ran', encoding='utf-8')"
+                ),
+                preflights={"codex": python_command("raise SystemExit(7)")},
+            )
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
+
+                result = self.run_cli(root, "--execute")
+
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("preflights.codex failed before attempt", result.stdout)
+            self.assertIn("[exit 7]", result.stdout)
+            self.assertNotIn("escalate_work", result.stdout)
+            self.assertFalse(marker.exists())
+            self.assertFalse(
+                (root / ".stage/.runtime/driver/W-00000001.json").exists()
+            )
+
+    def test_preflight_timeout_stops_without_attempt_state(self):
+        tmp, root = self.make_project(
+            preflights={
+                "codex": python_command("import time; time.sleep(5)")
+            },
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute", "--timeout", "1")
+
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("preflights.codex failed before attempt", result.stdout)
+            self.assertIn("[TIMED OUT after 1s]", result.stdout)
+            self.assertNotIn("escalate_work", result.stdout)
+            self.assertFalse(
+                (root / ".stage/.runtime/driver/W-00000001.json").exists()
+            )
+
+    def test_missing_preflight_warns_but_explicit_null_is_silent(self):
+        drive = self.load_module()
+        tmp, root = self.make_project()
+        with tmp:
+            item = drive.load_all_work_items(root / ".stage")[0]
+            missing_output = io.StringIO()
+            with (
+                mock.patch.object(
+                    drive,
+                    "load_preflights_config",
+                    return_value=None,
+                ),
+                redirect_stdout(missing_output),
+            ):
+                missing_ok = drive.run_preflight(
+                    stage_root=root / ".stage",
+                    project_root=root,
+                    item=item,
+                    items=[item],
+                    timeout=1,
+                    skip=False,
+                )
+
+            declared_output = io.StringIO()
+            with (
+                mock.patch.object(
+                    drive,
+                    "load_preflights_config",
+                    return_value={"codex": None},
+                ),
+                redirect_stdout(declared_output),
+            ):
+                declared_ok = drive.run_preflight(
+                    stage_root=root / ".stage",
+                    project_root=root,
+                    item=item,
+                    items=[item],
+                    timeout=1,
+                    skip=False,
+                )
+
+        self.assertEqual(
+            (None, False, ""),
+            drive.resolve_preflight_command(None, "codex"),
+        )
+        self.assertEqual(
+            (None, True, ""),
+            drive.resolve_preflight_command({"codex": None}, "codex"),
+        )
+        self.assertTrue(missing_ok)
+        self.assertIn(
+            "WARNING: preflights.codex is not configured",
+            missing_output.getvalue(),
+        )
+        self.assertTrue(declared_ok)
+        self.assertEqual("", declared_output.getvalue())
+
+    def test_skip_preflight_runs_executor_for_human_recovery(self):
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            ),
+            preflights={"codex": python_command("raise SystemExit(7)")},
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute", "--skip-preflight")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("WARNING: preflight skipped by operator", result.stdout)
+
+    def test_run_state_records_the_role_before_each_external_turn(self):
+        target = "W-00000001"
+        selected = "W-00000002"
+        state_path = f".stage/.runtime/driver/{target}.json"
+        executor = reporting_python_command(
+            "import json; from pathlib import Path; "
+            f"state = json.loads(Path({state_path!r}).read_text(encoding='utf-8')); "
+            f"assert state['items'][{selected!r}]['running_role'] == 'executor'; "
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+            ["executor-work.txt"],
+        )
+        reviewer = approving_reviewer_command(
+            "import json; from pathlib import Path; "
+            f"state = json.loads(Path({state_path!r}).read_text(encoding='utf-8')); "
+            f"assert state['items'][{selected!r}]['running_role'] == 'reviewer'"
+        )
+        tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+        with tmp:
+            write_card(
+                root / ".stage",
+                selected,
+                parent=target,
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            state = json.loads(
+                (root / state_path).read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIsNone(state["items"][selected]["running_role"])
 
     def test_identical_fingerprint_flags_no_progress(self):
         tmp, root = self.make_project(

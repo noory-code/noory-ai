@@ -421,6 +421,37 @@ class UnattendedTest(unittest.TestCase):
         self.assertEqual(6, effective["max_iterations"])
         self.assertEqual(60, effective["max_wall_clock_seconds"])
 
+    def test_default_command_timeout_grows_with_subtree_and_keeps_900_second_floor(
+        self,
+    ):
+        root, stage_root = self.make(limits=None)
+        self.card(stage_root, "W-00000001")
+        drive = load_module()
+
+        one_leaf = drive.subtree_command_timeout(
+            "W-00000001",
+            drive.load_all_work_items(stage_root),
+            requested=None,
+        )
+        self.card(stage_root, "W-00000002", parent="W-00000001")
+        self.card(stage_root, "W-00000003", parent="W-00000001")
+        two_leaves = drive.subtree_command_timeout(
+            "W-00000001",
+            drive.load_all_work_items(stage_root),
+            requested=None,
+        )
+
+        self.assertEqual(900, one_leaf)
+        self.assertEqual(1800, two_leaves)
+        self.assertEqual(
+            37,
+            drive.subtree_command_timeout(
+                "W-00000001",
+                drive.load_all_work_items(stage_root),
+                requested=37,
+            ),
+        )
+
     def test_pass_runs_target_leaf_without_wrapper_parent(self):
         limits = {
             "max_attempts_per_item": 3,

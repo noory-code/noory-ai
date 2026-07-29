@@ -257,6 +257,16 @@ name, or empty command returns `(None, error)`. Every caller must fail closed on
 error. The independent reviewer still resolves through `review.reviewers` and must have a venue
 different from the selected item's venue.
 
+The optional `preflights` object maps executor venue to a command or `null`. Immediately before
+an executor attempt in supervised execute or unattended mode, the driver runs the selected
+venue's non-empty command with `STAGE_WORK_ITEM`, `STAGE_WORK_ITEM_PATH`,
+`STAGE_WORK_ITEM_ANCESTOR_PATHS`, and `STAGE_PROJECT_ROOT`; it removes `GIT_INDEX_FILE`. A nonzero
+exit, missing tool, or timeout blocks before the executor starts and before attempt state is
+written. A missing section or venue warns and continues, while an explicit `null` declares that
+the venue needs no check and stays silent. Malformed maps fail closed. `--skip-preflight` is the
+operator recovery exit when a faulty check would otherwise lock out valid work; the driver prints
+a warning whenever that bypass is used. Dry runs never execute preflights.
+
 The default invocation is a side-effect-free dry run. It prints the selected item, executor,
 acceptance commands, independent reviewer, next per-item attempt, and next global iteration. It
 does not run commands, create `.stage/.runtime/`, or update run state.
@@ -314,11 +324,17 @@ Execute mode stores untracked state at
   "items": {
     "W-00000002": {
       "attempt_count": 1,
-      "last_fingerprint": "<sha256>"
+      "last_fingerprint": "<sha256>",
+      "running_role": null
     }
   }
 }
 ```
+
+Immediately before an external executor or reviewer turn, `running_role` is written as
+`executor` or `reviewer`; it returns to `null` after that turn. A supervisor that times out the
+driver can therefore select the correct venue reaper without inferring the active role from work
+log headings.
 
 The `NO-PROGRESS` fingerprint is SHA-256 over staged and unstaged tracked changes (`git diff HEAD`,
 or separate staged and unstaged diffs when `HEAD` is unborn), the path and content hash of each
@@ -341,9 +357,10 @@ If the target has any non-terminal child, each iteration selects the next ready 
 the target's subtree exactly as before (autonomous, `active`, non-empty acceptance, itself a leaf);
 the target is never selected directly. If the target has no non-terminal child, unattended mode
 selects only that target when it meets the same eligibility rules. It runs the item's executor with
-a timeout bounded by the remaining global wall-clock budget and a disposable Git index. The
-driver's later scoped `git add` and commit use the real index, so executor index isolation does not
-change unattended commits.
+a timeout derived at run start from unfinished subtree leaves, bounded by the remaining global
+wall-clock budget, and a disposable Git index. The venue preflight runs before every selected
+executor turn and cannot spend an attempt. The driver's later scoped `git add` and commit use the
+real index, so executor index isolation does not change unattended commits.
 
 Each turn writes to a per-card **shared work log** the driver owns (DE-00000034). The executor
 appends what it changed, why, and the paths it claims; the driver compares that claim against the
@@ -409,13 +426,17 @@ The optional `limits` object in `.stage/settings.json` owns the driver ceilings:
 When `limits` is present, all three fields are required positive JSON integers and no other
 field is accepted. `max_attempts_per_item` caps attempts for one work item;
 `max_iterations` and `max_wall_clock_seconds` are configured minimum global ceilings. At target
-run start, the driver raises them to at least `unfinished leaf count * max_attempts_per_item` and
-`unfinished leaf count * per-command timeout`, respectively. This ties the execution budget to
-the actual subtree without changing the per-action attempt cap. An absent object means
-no limits are configured. `stage_paths.load_limits_config()` returns `(limits, "")` for a valid
-object, `(None, "")` when it is absent, or `(None, error)` for an unreadable or malformed shape.
-Every enforcement caller must fail closed on a non-empty error. The driver owns counters,
-elapsed-time measurement, and enforcement; settings own only these durable configured values.
+run start, the default per-command timeout is `unfinished leaf count * 900` seconds, so one leaf
+keeps the former 900-second floor and larger subtrees receive more time. `--timeout SECONDS`
+explicitly overrides that derived value. The driver raises global iteration and wall-clock
+ceilings to at least `unfinished leaf count * max_attempts_per_item` and `unfinished leaf count *
+per-action timeout baseline`, respectively. This ties each execution budget to the actual subtree
+without changing the per-action attempt cap or multiplying the wall-clock floor twice. An absent
+object means no limits are configured. `stage_paths.load_limits_config()` returns `(limits, "")`
+for a valid object, `(None, "")` when it is absent, or `(None, error)` for an unreadable or
+malformed shape. Every enforcement caller must fail closed on a non-empty error. The driver owns
+counters, elapsed-time measurement, and enforcement; settings own only these durable configured
+values.
 
 ## Roadmap family
 

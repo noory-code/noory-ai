@@ -74,6 +74,7 @@ from stage_work import (  # noqa: E402
 
 WORK_ID_RE = re.compile(r"^W-[0-9]+(?:-[A-Za-z0-9][A-Za-z0-9_-]*)?$")
 STAGE_RUNTIME_PREFIX = ".stage/.runtime/"
+MIN_COMMAND_TIMEOUT_SECONDS = 900
 RECOMMEND_PASS = (
     "verification+judge passed → ready to commit + close_work"
 )
@@ -105,7 +106,18 @@ def parse_args() -> argparse.Namespace:
         help="Run the whole ready subtree unattended on an isolated branch (requires a limits config).",
     )
     parser.add_argument(
-        "--timeout", type=int, default=900, help="Per-command timeout in seconds."
+        "--timeout",
+        type=int,
+        default=None,
+        help=(
+            "Override the subtree-derived per-command timeout in seconds "
+            f"(derived minimum: {MIN_COMMAND_TIMEOUT_SECONDS})."
+        ),
+    )
+    parser.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip the venue preflight command for operator recovery.",
     )
     parser.add_argument("target", help="Existing parent or leaf work item id (W-*).")
     return parser.parse_args()
@@ -177,6 +189,7 @@ def load_run_state(
         fingerprint = item_state.get("last_fingerprint")
         base_head = item_state.get("base_head", "")
         executor_changed_paths = item_state.get("executor_changed_paths", [])
+        running_role = item_state.get("running_role")
         if type(attempt_count) is not int or attempt_count < 0:
             return None, (
                 f"driver run state {item_id}.attempt_count must be a "
@@ -200,6 +213,11 @@ def load_run_state(
                 f"driver run state {item_id}.executor_changed_paths must be "
                 "an array of unique non-empty strings"
             )
+        if running_role not in {None, "executor", "reviewer"}:
+            return None, (
+                f"driver run state {item_id}.running_role must be "
+                "executor, reviewer, or null"
+            )
     return state, ""
 
 
@@ -219,6 +237,45 @@ def write_run_state(path: Path, state: dict[str, Any]) -> None:
             temporary.unlink()
         except FileNotFoundError:
             pass
+
+
+def write_running_role(
+    path: Path,
+    state: dict[str, Any],
+    item_id: str,
+    item_state: dict[str, Any],
+    role: str | None,
+) -> None:
+    """Persist the active external venue role before control leaves the driver."""
+
+    state["items"][item_id] = {
+        "attempt_count": item_state["attempt_count"],
+        "last_fingerprint": item_state["last_fingerprint"],
+        "base_head": item_state.get("base_head", ""),
+        "executor_changed_paths": item_state.get("executor_changed_paths", []),
+        "running_role": role,
+    }
+    write_run_state(path, state)
+
+
+def restore_state_after_turn(
+    path: Path,
+    state: dict[str, Any],
+    item_id: str,
+    previous_item_state: dict[str, Any] | None,
+    *,
+    state_existed: bool,
+) -> None:
+    """Restore the exact durable state that preceded a completed external turn."""
+
+    if previous_item_state is None:
+        state["items"].pop(item_id, None)
+    else:
+        state["items"][item_id] = previous_item_state
+    if state_existed:
+        write_run_state(path, state)
+        return
+    path.unlink(missing_ok=True)
 
 
 def git_untracked_paths(project_root: Path) -> tuple[set[str], str]:
@@ -561,6 +618,131 @@ def resolve_reap_command(
     return normalized[normalized_venue], True, ""
 
 
+def load_preflights_config(stage_root: Path) -> object:
+    """Return the optional venue-to-command map checked before executor turns."""
+
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
+        return None
+    return data.get("preflights") if isinstance(data, dict) else None
+
+
+def resolve_preflight_command(
+    preflights: object,
+    venue: str,
+) -> tuple[str | None, bool, str]:
+    """Resolve one venue preflight and distinguish an explicit no-op from absence."""
+
+    normalized_venue = venue.strip().lower()
+    if not normalized_venue:
+        return None, False, "executor venue must be a non-empty string"
+    if preflights is None:
+        return None, False, ""
+    if not isinstance(preflights, dict):
+        return None, False, "preflights must be an object mapping venue -> command"
+
+    normalized: dict[str, str | None] = {}
+    for raw_name, raw_command in preflights.items():
+        if not isinstance(raw_name, str) or not raw_name.strip():
+            return None, False, "preflights venue names must be non-empty strings"
+        name = raw_name.strip().lower()
+        if name in normalized:
+            return None, False, f"preflights contains duplicate venue `{name}`"
+        if raw_command is None:
+            normalized[name] = None
+            continue
+        if not isinstance(raw_command, str) or not raw_command.strip():
+            return (
+                None,
+                False,
+                f"preflights.{name} must be a non-empty command string or null",
+            )
+        normalized[name] = raw_command
+    if normalized_venue not in normalized:
+        return None, False, ""
+    return normalized[normalized_venue], True, ""
+
+
+def preflight_environment(
+    item: WorkItem,
+    project_root: Path,
+    *,
+    items: list[WorkItem],
+) -> dict[str, str]:
+    """Return read-only work context for a venue preflight command."""
+
+    env = os.environ.copy()
+    env.pop("GIT_INDEX_FILE", None)
+    env.update(
+        {
+            "STAGE_WORK_ITEM": item.item_id,
+            "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
+            "STAGE_PROJECT_ROOT": str(project_root.resolve()),
+            "STAGE_WORK_ITEM_ANCESTOR_PATHS": json.dumps(
+                [
+                    str(ancestor.path.resolve())
+                    for ancestor in ancestor_chain(item, items)
+                ]
+            ),
+        }
+    )
+    return env
+
+
+def run_preflight(
+    *,
+    stage_root: Path,
+    project_root: Path,
+    item: WorkItem,
+    items: list[WorkItem],
+    timeout: int,
+    skip: bool,
+) -> bool:
+    """Run an optional venue check without creating or spending an attempt."""
+
+    normalized_venue = item.venue.strip().lower()
+    if skip:
+        print(
+            "WARNING: preflight skipped by operator; "
+            f"preflights.{normalized_venue} was not run"
+        )
+        return True
+
+    command, configured, config_error = resolve_preflight_command(
+        load_preflights_config(stage_root),
+        normalized_venue,
+    )
+    if config_error:
+        print_preflight_blocker(
+            f"preflights.{normalized_venue} is unusable before attempt "
+            f"({config_error})"
+        )
+        return False
+    if command is None:
+        if configured:
+            return True
+        print(
+            f"WARNING: preflights.{normalized_venue} is not configured; "
+            "continuing without a venue health check"
+        )
+        return True
+
+    passed, evidence, _raw = run_check(
+        command,
+        timeout,
+        project_root,
+        env=preflight_environment(item, project_root, items=items),
+    )
+    print(f"Preflight result:\n{evidence}")
+    if passed:
+        return True
+    print_preflight_blocker(
+        f"preflights.{normalized_venue} failed before attempt; "
+        "executor was not started and attempt state was not written"
+    )
+    return False
+
+
 def resolve_independent_reviewer_venue(
     review: dict[str, Any],
     item_venue: str,
@@ -588,6 +770,16 @@ def cap_text(limits: dict[str, int] | None, key: str) -> str:
 def print_escalation(reason: str) -> None:
     print(f"Outcome: blocked — {reason}")
     print(f"Recommended next action: {RECOMMEND_ESCALATE}")
+
+
+def print_preflight_blocker(reason: str) -> None:
+    """Report venue infrastructure failure without blaming the selected card."""
+
+    print(f"Outcome: blocked — {reason}")
+    print(
+        "Recommended next action: repair the venue preflight, or verify the "
+        "venue manually and rerun with --skip-preflight"
+    )
 
 
 def append_failure_to_work_log(
@@ -1102,6 +1294,44 @@ def ancestors_are_runnable(
     return current.status in {"active", "review"}
 
 
+def unfinished_subtree_leaf_count(
+    target_id: str,
+    items: list[WorkItem],
+) -> int:
+    """Count unfinished leaves at or below one hierarchy target."""
+
+    by_id = {item.item_id: item for item in items}
+    return max(
+        1,
+        sum(
+            1
+            for item in items
+            if item.status not in WORK_FINAL_STATUSES
+            and not non_terminal_children(item.item_id, items)
+            and (
+                item.item_id == target_id
+                or is_in_subtree(item, target_id, by_id)
+            )
+        ),
+    )
+
+
+def subtree_command_timeout(
+    target_id: str,
+    items: list[WorkItem],
+    *,
+    requested: int | None,
+) -> int:
+    """Derive a command timeout from subtree size unless the operator overrides it."""
+
+    if requested is not None:
+        return requested
+    return (
+        unfinished_subtree_leaf_count(target_id, items)
+        * MIN_COMMAND_TIMEOUT_SECONDS
+    )
+
+
 def subtree_limits(
     configured: dict[str, int],
     target_id: str,
@@ -1111,18 +1341,7 @@ def subtree_limits(
 ) -> dict[str, int]:
     """Scale global ceilings to the number of unfinished leaves in the subtree."""
 
-    by_id = {item.item_id: item for item in items}
-    action_count = sum(
-        1
-        for item in items
-        if item.status not in WORK_FINAL_STATUSES
-        and not non_terminal_children(item.item_id, items)
-        and (
-            item.item_id == target_id
-            or is_in_subtree(item, target_id, by_id)
-        )
-    )
-    action_count = max(1, action_count)
+    action_count = unfinished_subtree_leaf_count(target_id, items)
     return {
         "max_attempts_per_item": configured["max_attempts_per_item"],
         "max_iterations": max(
@@ -1350,7 +1569,11 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         limits,
         args.target,
         load_all_work_items(stage_root),
-        per_action_seconds=args.timeout,
+        per_action_seconds=getattr(
+            args,
+            "limit_action_seconds",
+            args.timeout,
+        ),
     )
     # A dirty index/worktree would leak unrelated changes into item commits.
     if not worktree_clean(project_root):
@@ -1384,7 +1607,6 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         item = select_next_unattended_leaf(args.target, items)
         if item is None:
             break
-        iteration += 1
 
         # Safety: never leave the isolated branch (an executor could switch it).
         if current_branch(project_root) != branch:
@@ -1402,6 +1624,16 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             ):
                 return 1
             continue
+        if not run_preflight(
+            stage_root=stage_root,
+            project_root=project_root,
+            item=item,
+            items=items,
+            timeout=cmd_timeout,
+            skip=getattr(args, "skip_preflight", False),
+        ):
+            return 1
+        iteration += 1
 
         state, state_error = load_run_state(state_path, args.target, now)
         if state_error or state is None:
@@ -1463,6 +1695,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         except RuntimeError as exc:
             print_escalation(f"cannot prepare executor observation: {exc}")
             return 1
+        try:
+            write_running_role(
+                state_path,
+                state,
+                item.item_id,
+                item_state,
+                "executor",
+            )
+        except OSError as exc:
+            print_escalation(f"cannot persist executor running role: {exc}")
+            return 1
         with tempfile.TemporaryDirectory(
             prefix="stage-drive-executor-index-"
         ) as temporary:
@@ -1503,6 +1746,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             role="executor",
             timeout=cmd_timeout,
         )
+        try:
+            write_running_role(
+                state_path,
+                state,
+                item.item_id,
+                item_state,
+                None,
+            )
+        except OSError as exc:
+            print_escalation(f"cannot clear executor running role: {exc}")
+            return 1
         try:
             repository_after = repository_fingerprint(project_root)
             repository_paths_after = repository_path_snapshot(project_root)
@@ -1570,6 +1824,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             "executor_changed_paths": (
                 changed_paths if executor_ok else executor_changed_paths
             ),
+            "running_role": None,
         }
         write_run_state(state_path, state)
 
@@ -1655,6 +1910,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             item.venue,
         )
         while True:
+            try:
+                write_running_role(
+                    state_path,
+                    state,
+                    item.item_id,
+                    state["items"][item.item_id],
+                    "reviewer",
+                )
+            except OSError as exc:
+                print_escalation(f"cannot persist reviewer running role: {exc}")
+                return 1
             close_ok, close_out = close_via_close_work(
                 project_root,
                 item.item_id,
@@ -1677,6 +1943,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                     role="reviewer",
                     timeout=cmd_timeout,
                 )
+            try:
+                write_running_role(
+                    state_path,
+                    state,
+                    item.item_id,
+                    state["items"][item.item_id],
+                    None,
+                )
+            except OSError as exc:
+                print_escalation(f"cannot clear reviewer running role: {exc}")
+                return 1
             close_infrastructure_failure = retryable_review_infrastructure_failure(
                 close_ok=close_ok,
                 close_output=close_out,
@@ -1707,6 +1984,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 "last_fingerprint": item_state["last_fingerprint"],
                 "base_head": base_head,
                 "executor_changed_paths": executor_changed_paths,
+                "running_role": None,
             }
             write_run_state(state_path, state)
             if (
@@ -1747,6 +2025,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             "last_fingerprint": current_fingerprint,
             "base_head": base_head,
             "executor_changed_paths": executor_changed_paths,
+            "running_role": None,
         }
         write_run_state(state_path, state)
 
@@ -1798,6 +2077,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 "last_fingerprint": current_fingerprint,
                 "base_head": base_head,
                 "executor_changed_paths": executor_changed_paths,
+                "running_role": None,
             }
             write_run_state(state_path, state)
             if no_progress or attempt >= cap:
@@ -1856,7 +2136,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
 
 def main() -> int:
     args = parse_args()
-    if args.timeout <= 0:
+    if args.timeout is not None and args.timeout <= 0:
         print_escalation("--timeout must be a positive integer")
         return 2
     if not WORK_ID_RE.fullmatch(args.target):
@@ -1880,6 +2160,17 @@ def main() -> int:
             f"target must resolve to exactly one existing work item; found {len(targets)}"
         )
         return 1
+    requested_timeout = args.timeout
+    args.timeout = subtree_command_timeout(
+        args.target,
+        items,
+        requested=requested_timeout,
+    )
+    args.limit_action_seconds = (
+        requested_timeout
+        if requested_timeout is not None
+        else MIN_COMMAND_TIMEOUT_SECONDS
+    )
 
     if args.unattended:
         return run_unattended(args, project_root, stage_root, time.time())
@@ -1904,7 +2195,7 @@ def main() -> int:
             limits,
             args.target,
             items,
-            per_action_seconds=args.timeout,
+            per_action_seconds=args.limit_action_seconds,
         )
 
     executor_command, executor_error = resolve_executor_command(
@@ -1980,6 +2271,15 @@ def main() -> int:
     if not args.execute:
         print("Outcome: plan only — no commands ran and no run state was written")
         return 0
+    if not run_preflight(
+        stage_root=stage_root,
+        project_root=project_root,
+        item=item,
+        items=items,
+        timeout=args.timeout,
+        skip=args.skip_preflight,
+    ):
+        return 1
 
     if not item_state.get("base_head"):
         base_head, head_error = current_head_or_empty(project_root)
@@ -2012,6 +2312,21 @@ def main() -> int:
         repository_paths_before = repository_path_snapshot(project_root)
     except RuntimeError as exc:
         print_escalation(f"cannot prepare executor observation: {exc}")
+        return 1
+    state_existed_before_executor = state_path.exists()
+    previous_executor_item_state = state["items"].get(item.item_id)
+    if previous_executor_item_state is not None:
+        previous_executor_item_state = dict(previous_executor_item_state)
+    try:
+        write_running_role(
+            state_path,
+            state,
+            item.item_id,
+            item_state,
+            "executor",
+        )
+    except OSError as exc:
+        print_escalation(f"cannot persist executor running role: {exc}")
         return 1
 
     with tempfile.TemporaryDirectory(prefix="stage-drive-index-") as temporary:
@@ -2070,6 +2385,17 @@ def main() -> int:
             role="executor",
             timeout=args.timeout,
         )
+        try:
+            restore_state_after_turn(
+                state_path,
+                state,
+                item.item_id,
+                previous_executor_item_state,
+                state_existed=state_existed_before_executor,
+            )
+        except OSError as exc:
+            print_escalation(f"cannot restore state after executor turn: {exc}")
+            return 1
 
         try:
             repository_after = repository_fingerprint(project_root)
@@ -2176,6 +2502,23 @@ def main() -> int:
                     "STAGE_WORK_LOG_PATH": str(log_path.resolve()),
                 }
             )
+            state_existed_before_reviewer = state_path.exists()
+            previous_reviewer_item_state = state["items"].get(item.item_id)
+            if previous_reviewer_item_state is not None:
+                previous_reviewer_item_state = dict(
+                    previous_reviewer_item_state
+                )
+            try:
+                write_running_role(
+                    state_path,
+                    state,
+                    item.item_id,
+                    item_state,
+                    "reviewer",
+                )
+            except OSError as exc:
+                print_escalation(f"cannot persist reviewer running role: {exc}")
+                return 1
             reviewed, review_evidence, _review_raw = run_check(
                 reviewer_command,
                 args.timeout,
@@ -2197,6 +2540,17 @@ def main() -> int:
                 role="reviewer",
                 timeout=args.timeout,
             )
+            try:
+                restore_state_after_turn(
+                    state_path,
+                    state,
+                    item.item_id,
+                    previous_reviewer_item_state,
+                    state_existed=state_existed_before_reviewer,
+                )
+            except OSError as exc:
+                print_escalation(f"cannot restore state after reviewer turn: {exc}")
+                return 1
             verdict_error = review_verdict_error(verdict_file)
             reviewer_blocked = bool(
                 review_verdict_failures(verdict_file)
@@ -2238,6 +2592,7 @@ def main() -> int:
         "last_fingerprint": current_fingerprint,
         "base_head": base_head,
         "executor_changed_paths": changed_paths,
+        "running_role": None,
     }
     try:
         write_run_state(state_path, state)

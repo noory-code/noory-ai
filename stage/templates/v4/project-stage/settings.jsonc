@@ -21,8 +21,14 @@
   // Read failed criteria from the JSON object at $STAGE_REVIEW_VERDICT_FILE and use
   // each exact criterion string in Review dispositions (JSON).
   // Changed paths (JSON) must contain every repository-relative path changed for this card across all attempts.
+  // Optional venue checks run before an executor attempt. A missing venue warns; null explicitly
+  // declares that the venue needs no check. Replace null with a non-empty command to enable one.
+  "preflights": {
+    "claude": null,
+    "codex": null
+  },
   // These are per-action baselines. The driver keeps attempts fixed per action and
-  // scales the iteration and wall-clock ceilings to the target subtree's leaf count.
+  // scales command timeout, iteration, and wall-clock ceilings to the target subtree's leaf count.
   "limits": {
     "max_attempts_per_item": 3,
     "max_iterations": 12,

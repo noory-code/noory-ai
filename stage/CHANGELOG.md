@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Derive the default per-command driver timeout from unfinished subtree leaves with a 900-second
+  floor, run optional venue preflights before attempt state or executors, distinguish missing
+  checks from explicit `null`, provide an operator recovery bypass, and persist the currently
+  running executor or reviewer role for timeout cleanup.
 - Take criterion-by-criterion review approval from a reviewer-owned JSON file, preserve prose only
   for human review, carry failed criteria into reasoned executor dispositions in every driver
   mode, state every fail-closed schema condition in review prompts, count malformed verdicts as

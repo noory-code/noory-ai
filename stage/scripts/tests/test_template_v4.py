@@ -100,9 +100,16 @@ class TemplateV4Test(unittest.TestCase):
         settings_text = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
 
         self.assertIn("STAGE_WORK_ITEM_ANCESTOR_PATHS", settings_text)
+        self.assertIn('"preflights"', settings_text)
+        self.assertIn("null", settings_text)
         self.assertIn('"max_attempts_per_item"', settings_text)
         self.assertIn('"max_iterations"', settings_text)
         self.assertIn('"max_wall_clock_seconds"', settings_text)
+
+    def test_project_declares_preflight_policy_for_every_executor_venue(self):
+        settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+
+        self.assertEqual(set(settings["executors"]), set(settings["preflights"]))
 
     def test_executor_prompts_share_ancestor_and_cumulative_reporting_instructions(self):
         ancestor_instruction = (
