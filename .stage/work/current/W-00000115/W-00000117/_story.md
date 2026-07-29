@@ -8,11 +8,11 @@ priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000123
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/drive.py, stage/skills/stage-retrospective/close_work.py, stage/skills/stage-drive/SKILL.md, stage/scripts/tests/, .stage/settings.json, stage/templates/, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json
 promotes:
@@ -116,8 +116,155 @@ DE-00000039 §2. 리뷰어가 드라이버가 준 경로에 기준별 판정을 
 
 ## Progress
 
+드라이버 감독 실행 두 바퀴, 2026-07-29. 첫 바퀴는 기준을 다 통과했으나 **안 닫았다** — 새
+계약이 말 안 한 조건으로 리뷰어를 실패시키는 자리가 남았다. 기준 넷을 더하고 둘째 바퀴에서
+열넷 전부 통과, APPROVED, 드라이버 판정도 통과.
+
+**둘째 바퀴가 새 계약으로 판정된 첫 사례다** — 판정이
+`.stage/.runtime/driver/verdicts/W-00000117.json` 에서 나왔고 산문은 안 읽혔다.
+
 ## Verification
+
+인수 검사 통과 — 스크립트 461개, 훅 343개. 리뷰 판정: 기준 열넷 전부 PASS, APPROVED
+(JSON 판정 파일).
+
+### 첫 바퀴의 실패가 이 카드의 근거였다
+
+일곱 번째이자 마지막 사례다. 리뷰어가 "산문에 판정 라벨을 적어도 판정이 안 흔들린다"는 기준을
+**통과로 판정하면서**, 무슨 라벨을 심어 봤는지 설명하느라 `FAIL` 이라는 글자를 적었다. 옛
+파서가 그것을 읽고 자기가 낸 승인을 뒤집었다.
+
+### 첫 바퀴를 왜 안 닫았나
+
+리뷰가 APPROVED 를 냈는데 기준 밖 지적 둘이 이 카드가 없애려던 병과 같은 모양이었다. 리뷰
+명령 여섯 벌 중 넷이 판정 파일을 읽다 죽는 조건(기준 이름 중복, 빈 값, 키 개수)을 안 말했다 —
+그 프롬프트만 따른 리뷰어는 이유도 모른 채 시도를 쓴다. 함정을 없애면서 새 함정을 같은 자리에
+놓은 셈이다. 기준 넷을 더해 다시 돌렸다.
+
+### 리뷰 지적 처분 (둘째 바퀴, 기준 밖 넷)
+
+- **범위 밖 문서 셋이 `BLOCK:` 계약을 그대로 말한다 — 받는다, W-00000130 으로.**
+  `operations/review.md`, `docs/SCHEMA_V4.md`, `stage-retrospective/SKILL.md`. 이제 `BLOCK:`
+  을 찍고 0 으로 끝나면서 승인 판정을 쓴 명령은 카드를 닫는다. 문서가 틀린 계약을 말하면
+  다음 사람이 그것을 믿고 리뷰 명령을 만든다.
+- **`stage-drive/SKILL.md:250-251` 의 인프라 실패 서술이 좁게 거짓 — 받는다, 같은 카드로.**
+  판정 파일이 있고 깨졌으면 타임아웃 문구가 섞여도 시도를 쓴다. 그 문장은 판정 파일이 없을
+  때만 참이다.
+- **깨진 판정에서 실패 목록이 비어 다음 실행자가 무엇이 틀렸는지 못 받는다 — 안 받는다.**
+  공짜 재시도는 이번에 막았다. 남은 것은 정보 손실인데, 깨진 판정은 리뷰어 쪽 문제이고 다음
+  라운드가 판정을 다시 쓰므로 앞 라운드 목록이 없어도 진행된다. 실제로 겪으면 본다.
+- **`run_check` 의 raw 반환을 닫기 쪽 셋이 안 쓴다 — 안 받는다.** 인수 검사 경로가 쓰므로
+  죽은 값이 아니다. 반환 모양을 자리마다 다르게 만드는 값이 더 크다.
+
+### Executed at close — 2026-07-29
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (161 earlier lines omitted)
+Unattended run on isolated branch: stage/driver/W-00000001-1785330906 (base: main)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] close failed (acceptance or independent review); close_work output:
+independent review did not pass; retry 1/2
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785330906
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785330906. Human review + merge required; the base branch was not modified.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 465 tests in 65.794s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (161 earlier lines omitted)
+Unattended run on isolated branch: stage/driver/W-00000001-1785330971 (base: main)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] close failed (acceptance or independent review); close_work output:
+independent review did not pass; retry 1/2
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785330971
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785330971. Human review + merge required; the base branch was not modified.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 465 tests in 66.803s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 343 tests in 1.030s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
+[R-00000123](../../../retrospectives/R-00000123.md)
+
 ## Promotion decision
+
+not_applicable — 플러그인 소스 수정이고 `.stage/official/` 로 올릴 것이 없다.
