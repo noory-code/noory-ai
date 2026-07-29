@@ -2,15 +2,21 @@
 id: W-00000125
 title: 카드마다 자기 작업 트리에서 드라이버가 돈다
 kind: development
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/scripts/, stage/scripts/tests/, stage/skills/stage-drive/, stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000125 카드마다 자기 작업 트리에서 드라이버가 돈다
@@ -40,3 +46,11 @@ DE-00000040 §2. 드라이버는 실행자 호출 전후로 저장소를 스냅�
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

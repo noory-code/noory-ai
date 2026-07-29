@@ -2,15 +2,21 @@
 id: W-00000126
 title: 도는 작업과 겹치는 카드는 시작을 거절한다
 kind: development
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/scripts/drive.py, stage/scripts/tests/, stage/skills/stage-drive/, stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000126 도는 작업과 겹치는 카드는 시작을 거절한다
@@ -40,3 +46,11 @@ DE-00000040 §3. 카드가 선언한 scope 가 이미 도는 작업의 scope 와
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

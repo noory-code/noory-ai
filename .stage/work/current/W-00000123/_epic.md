@@ -2,14 +2,20 @@
 id: W-00000123
 title: 겹치지 않는 Stage 작업이 동시에 돈다
 kind: development
-venue:
+venue: codex
 milestone:
-status: captured
 priority: 1
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/, .stage/, CLAUDE.md
+promotes:
+decision_refs:
 ---
 
 # W-00000123 겹치지 않는 Stage 작업이 동시에 돈다
@@ -39,3 +45,11 @@ DE-00000040 을 코드에 싣는다. 스토리 셋이 순서대로: 릴리스 �
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
