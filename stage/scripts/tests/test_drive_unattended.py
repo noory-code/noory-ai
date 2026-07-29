@@ -94,6 +94,36 @@ def round_trip_executor_command(
     )
 
 
+def cumulative_round_trip_executor_command(marker: Path, finding: str) -> str:
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        "round_number = int(marker.read_text() if marker.exists() else '0') + 1\n"
+        "marker.write_text(str(round_number), encoding='utf-8')\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "existing = log.read_text(encoding='utf-8')\n"
+        "Path('rounds').mkdir(exist_ok=True)\n"
+        "if round_number == 1:\n"
+        "    Path('rounds/first.txt').write_text('first', encoding='utf-8')\n"
+        "    changed_paths = ['rounds/first.txt']\n"
+        "    disposition_block = ''\n"
+        "else:\n"
+        "    Path('rounds/second.txt').write_text('second', encoding='utf-8')\n"
+        "    changed_paths = ['rounds/first.txt', 'rounds/second.txt']\n"
+        "    disposition_block = ('Review dispositions (JSON):\\n' + "
+        f"json.dumps([{{'finding': {finding!r}, 'disposition': 'accept', "
+        "'reason': 'the cumulative retry must retain the first-round path'}]) + '\\n')\n"
+        "report = ('\\n### Executor report\\n"
+        "What changed: completed cumulative round ' + str(round_number) + '\\n"
+        "Why: retain the complete card output across attempts\\n"
+        "Changed paths (JSON):\\n' + json.dumps(changed_paths) + '\\n' + "
+        "disposition_block + "
+        "'Review request: review the cumulative card output\\n')\n"
+        "log.write_text(existing + report, encoding='utf-8')\n"
+    )
+
+
 def timeout_then_success_executor_command(marker: Path) -> str:
     return python_command(
         "import json, os, time\n"
@@ -557,6 +587,100 @@ class UnattendedTest(unittest.TestCase):
             subjects.count("driver: W-00000001 executor output"),
         )
         self.assertEqual("second", git_out(root, "show", "HEAD~1:driver-work.txt"))
+
+    def test_unattended_comparison_ignores_driver_owned_work_log_path(self):
+        limits = {
+            "max_attempts_per_item": 2,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 300,
+        }
+        work_log_path = ".stage/.runtime/driver/logs/W-00000001.md"
+        root, stage_root = self.make(
+            limits=limits,
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('driver-work.txt').write_text('done', encoding='utf-8')",
+                [work_log_path, "driver-work.txt"],
+            ),
+        )
+        self.card(stage_root, "W-00000001")
+        self.commit_all(root)
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"),
+            root,
+            stage_root,
+            time.time(),
+        )
+
+        self.assertEqual(0, rc)
+        self.assertIn(("close", "W-00000001"), calls)
+
+    def test_unattended_retry_compares_cumulative_paths_from_base_head(self):
+        limits = {
+            "max_attempts_per_item": 2,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 300,
+        }
+        finding = "- cumulative paths: FAIL [P1] - first-round output was omitted"
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "round"
+            root, stage_root = self.make(
+                limits=limits,
+                executor=cumulative_round_trip_executor_command(marker, finding),
+            )
+            self.card(
+                stage_root,
+                "W-00000001",
+                scope="rounds",
+            )
+            self.commit_all(root)
+            drive = load_module()
+            close_calls = 0
+
+            def stub_close(project_root, item_id, extra_checks, timeout):
+                nonlocal close_calls
+                close_calls += 1
+                log = stage_root / ".runtime/driver/logs" / f"{item_id}.md"
+                if close_calls == 1:
+                    with log.open("a", encoding="utf-8") as handle:
+                        handle.write(
+                            "\n### Reviewer report\n"
+                            "CRITERIA VERDICT:\n"
+                            f"{finding}\n"
+                            "OUT-OF-CRITERIA OBSERVATIONS:\n- None\n"
+                        )
+                    return False, "independent review did not pass"
+                path = self.card_path(stage_root, item_id)
+                path.write_text(
+                    drive.set_frontmatter_field(
+                        path.read_text(encoding="utf-8"),
+                        "status",
+                        "completed",
+                    ),
+                    encoding="utf-8",
+                )
+                return True, ""
+
+            drive.close_via_close_work = stub_close
+
+            rc = drive.run_unattended(
+                self.args(root, "W-00000001"),
+                root,
+                stage_root,
+                time.time(),
+            )
+            log = (
+                stage_root / ".runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc, log)
+        self.assertEqual(2, close_calls)
+        self.assertEqual("first", git_out(root, "show", "HEAD~1:rounds/first.txt"))
+        self.assertEqual("second", git_out(root, "show", "HEAD~1:rounds/second.txt"))
 
     def test_attempt_cap_restores_executor_output_as_uncommitted_handoff(self):
         limits = {

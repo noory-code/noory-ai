@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.54.3 — 2026-07-29
+
+- Compare executor path reports with cumulative card changes from the item's base commit, exclude
+  the driver-owned shared log from that comparison, and align executor prompts with ancestor-card
+  context and cumulative reporting.
+
 ## 0.54.2 — 2026-07-29
 
 - Exclude lifecycle-root Markdown surfaces such as work indexes and templates from hierarchical

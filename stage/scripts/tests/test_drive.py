@@ -37,6 +37,47 @@ def reporting_python_command(code: str, changed_paths: list[str]) -> str:
     return python_command(f"{code}; {report}")
 
 
+def cumulative_retry_executor_command(marker: Path) -> str:
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        "round_number = int(marker.read_text() if marker.exists() else '0') + 1\n"
+        "marker.write_text(str(round_number), encoding='utf-8')\n"
+        "if round_number == 1:\n"
+        "    Path('first-round.txt').write_text('first', encoding='utf-8')\n"
+        "    changed_paths = ['first-round.txt']\n"
+        "else:\n"
+        "    Path('second-round.txt').write_text('second', encoding='utf-8')\n"
+        "    changed_paths = ['first-round.txt', 'second-round.txt']\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "report = ('\\n### Executor report\\n"
+        "What changed: completed round ' + str(round_number) + '\\n"
+        "Why: exercise cumulative card reporting\\n"
+        "Changed paths (JSON):\\n' + json.dumps(changed_paths) + '\\n"
+        "Review request: review the cumulative card output\\n')\n"
+        "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+    )
+
+
+def retry_reviewer_command(marker: Path) -> str:
+    return python_command(
+        "import os\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        "if marker.read_text(encoding='utf-8') == '1':\n"
+        "    raise SystemExit(1)\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "report = ('\\n### Reviewer report\\n"
+        "CRITERIA VERDICT:\\n"
+        "- cumulative paths: PASS - both rounds were reviewed\\n"
+        "APPROVED\\n"
+        "OUT-OF-CRITERIA OBSERVATIONS:\\n- None\\n')\n"
+        "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+        "print('APPROVED')\n"
+    )
+
+
 def approving_reviewer_command(code: str = "") -> str:
     setup = ""
     if code:
@@ -907,6 +948,58 @@ class DriveTest(unittest.TestCase):
                     reviewer_input["changed_paths"],
                 )
                 self.assertIsNone(reviewer_input["git_index_file"])
+
+    def test_supervised_comparison_ignores_driver_owned_work_log_path(self):
+        work_log_path = ".stage/.runtime/driver/logs/W-00000002.md"
+        executor = reporting_python_command(
+            "from pathlib import Path; "
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+            [work_log_path, "executor-work.txt"],
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_supervised_retry_compares_cumulative_paths_from_base_head(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "round"
+            tmp, root = self.make_project(
+                executor=cumulative_retry_executor_command(marker),
+                reviewer=retry_reviewer_command(marker),
+                limits={
+                    "max_attempts_per_item": 3,
+                    "max_iterations": 10,
+                    "max_wall_clock_seconds": 300,
+                },
+            )
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
+
+                first = self.run_cli(root, "--execute")
+                second = self.run_cli(root, "--execute")
+                first_round = (root / "first-round.txt").read_text(encoding="utf-8")
+                second_round = (root / "second-round.txt").read_text(encoding="utf-8")
+
+        self.assertNotEqual(0, first.returncode)
+        self.assertEqual(0, second.returncode, second.stdout + second.stderr)
+        self.assertEqual("first", first_round)
+        self.assertEqual("second", second_round)
 
     def test_executor_staging_never_changes_the_real_index(self):
         tmp, root = self.make_project()

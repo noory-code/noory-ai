@@ -16,9 +16,9 @@
   },
   // Registers additional host tool names that can write files.
   "extra_write_tools": [],
-  // Executor commands are project-specific. Configure both venue commands to read
-  // STAGE_WORK_ITEM_PATH and every ancestor card path in the JSON array
-  // STAGE_WORK_ITEM_ANCESTOR_PATHS before executing the selected action.
+  // Executor commands are project-specific. Give both venue prompts these instructions:
+  // Read the selected card at $STAGE_WORK_ITEM_PATH and every ancestor card listed in $STAGE_WORK_ITEM_ANCESTOR_PATHS before acting; together they are the whole instruction.
+  // Changed paths (JSON) must contain every repository-relative path changed for this card across all attempts.
   // These are per-action baselines. The driver keeps attempts fixed per action and
   // scales the iteration and wall-clock ceilings to the target subtree's leaf count.
   "limits": {

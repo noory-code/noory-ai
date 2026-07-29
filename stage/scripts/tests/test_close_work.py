@@ -767,6 +767,31 @@ class CloseWorkTest(unittest.TestCase):
             close_work.executor_report_error(previous, current, []),
         )
 
+    def test_executor_report_ignores_driver_owned_work_log_path(self):
+        close_work = load_close_module()
+        work_log_path = ".stage/.runtime/driver/logs/W-00000001.md"
+        previous = "work log preamble\n"
+        current = (
+            previous
+            + "\n### Executor report\n"
+            "What changed: changed the implementation and reported the shared log\n"
+            "Why: the driver owns and already knows the shared log path\n"
+            "Changed paths (JSON):\n"
+            + json.dumps([work_log_path, "stage/scripts/drive.py"])
+            + "\n"
+            "Review request: verify the repository change\n"
+        )
+
+        self.assertEqual(
+            "",
+            close_work.executor_report_error(
+                previous,
+                current,
+                ["stage/scripts/drive.py"],
+                ignored_paths=[work_log_path],
+            ),
+        )
+
     def test_executor_report_rejects_reasonless_review_disposition(self):
         close_work = load_close_module()
         finding = "- criterion two: FAIL [P1] - missing regression"

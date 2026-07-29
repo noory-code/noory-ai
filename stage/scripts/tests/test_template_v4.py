@@ -103,6 +103,29 @@ class TemplateV4Test(unittest.TestCase):
         self.assertIn('"max_iterations"', settings_text)
         self.assertIn('"max_wall_clock_seconds"', settings_text)
 
+    def test_executor_prompts_share_ancestor_and_cumulative_reporting_instructions(self):
+        ancestor_instruction = (
+            "Read the selected card at $STAGE_WORK_ITEM_PATH and every ancestor card "
+            "listed in $STAGE_WORK_ITEM_ANCESTOR_PATHS before acting; together they "
+            "are the whole instruction."
+        )
+        reporting_instruction = (
+            "Changed paths (JSON) must contain every repository-relative path changed "
+            "for this card across all attempts."
+        )
+        project_settings = json.loads(
+            (PLUGIN_ROOT.parent / ".stage/settings.json").read_text(encoding="utf-8")
+        )
+        template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+
+        for venue in ("claude", "codex"):
+            with self.subTest(venue=venue):
+                command = project_settings["executors"][venue]
+                self.assertIn(ancestor_instruction, command)
+                self.assertIn(reporting_instruction, command)
+        self.assertIn(ancestor_instruction, template_settings)
+        self.assertIn(reporting_instruction, template_settings)
+
     def test_roadmap_templates_have_computed_status_contract(self):
         theme = V4_ROOT / "roadmap/themes/_template.md"
         milestone = V4_ROOT / "roadmap/milestones/_template.md"

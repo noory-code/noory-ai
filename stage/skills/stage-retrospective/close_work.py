@@ -157,6 +157,8 @@ def executor_report_error(
     current_log: str,
     observed_paths: list[str],
     review_findings: list[str] | None = None,
+    *,
+    ignored_paths: list[str] | None = None,
 ) -> str:
     if current_log == previous_log:
         return "executor did not append a work log report"
@@ -195,20 +197,29 @@ def executor_report_error(
     ]
     if unsafe:
         return f"executor changed-path claim contains unsafe repository paths: {unsafe}"
-    claimed_paths = sorted(claimed)
-    expected_paths = sorted(observed_paths)
-    if claimed_paths != expected_paths:
-        return (
-            "executor claimed changed paths do not match driver observation: "
-            f"claimed={claimed_paths}, observed={expected_paths}"
-        )
-    _dispositions, disposition_error = executor_review_dispositions(
+    ignored = set(ignored_paths or [])
+    claimed_paths = sorted(path for path in claimed if path not in ignored)
+    expected_paths = sorted(path for path in observed_paths if path not in ignored)
+    dispositions, disposition_error = executor_review_dispositions(
         previous_log,
         current_log,
         review_findings or [],
     )
     if disposition_error:
         return disposition_error
+    reasoned_empty_claim = (
+        not claimed_paths
+        and bool(dispositions)
+        and all(
+            entry["disposition"] in {"decline", "defer"}
+            for entry in dispositions
+        )
+    )
+    if claimed_paths != expected_paths and not reasoned_empty_claim:
+        return (
+            "executor claimed changed paths do not match driver observation: "
+            f"claimed={claimed_paths}, observed={expected_paths}"
+        )
     return ""
 
 
