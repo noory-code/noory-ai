@@ -1651,6 +1651,23 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "deny")
         self.assertIn("finalized", reason(result))
 
+    def test_hierarchy_gate_allows_planned_index_edit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "settings.json", '{"schema_version": 5}\n')
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": ".stage/work/planned/index.md",
+                    "content": "# Planned work\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+
     def test_hierarchy_gate_blocks_action_without_story_folder(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1659,7 +1676,9 @@ class StageGuardTest(unittest.TestCase):
                 "tool_name": "Write",
                 "cwd": str(root),
                 "tool_input": {
-                    "file_path": ".stage/work/planned/W-00000002.md",
+                    "file_path": (
+                        ".stage/work/planned/W-00000001/W-00000002.md"
+                    ),
                     "content": "---\nid: W-00000002\nstatus: captured\n---\n",
                 },
             }
@@ -4655,7 +4674,7 @@ class ConfiguredWriteToolTest(unittest.TestCase):
             self.write_settings(root, {"extra_write_tools": ["mcp__filesystem__write_file"]})
             self.write_stage_file(
                 root,
-                "work/current/W-0001.md",
+                "work/current/W-0001/_epic.md",
                 (
                     "---\nid: W-0001\ntitle: Parent\nstatus: completed\nverification: passed\n"
                     "retrospective: completed\nretrospective_ref: R-0001\npromotion: approved\n"
@@ -4663,14 +4682,17 @@ class ConfiguredWriteToolTest(unittest.TestCase):
                 ),
             )
             child = (
-                "---\nid: W-0002\ntitle: Child\nparent: W-0001\nstatus: active\n"
+                "---\nid: W-0002\ntitle: Child\nstatus: active\n"
                 "verification: pending\nretrospective: pending\npromotion: pending\n"
                 "scope:\npromotes:\n---\n# W-0002\n"
             )
             payload = {
                 "tool_name": "mcp__filesystem__write_file",
                 "cwd": str(root),
-                "tool_input": {"path": ".stage/work/current/W-0002.md", "content": child},
+                "tool_input": {
+                    "path": ".stage/work/current/W-0001/W-0002/_story.md",
+                    "content": child,
+                },
             }
 
             result = stage_guard.handle_event("pre-tool-use", payload)

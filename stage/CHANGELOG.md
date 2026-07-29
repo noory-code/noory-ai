@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.54.2 — 2026-07-29
+
+- Exclude lifecycle-root Markdown surfaces such as work indexes and templates from hierarchical
+  card-shape enforcement while preserving nested story and action parent gates.
+
 ## 0.54.1 — 2026-07-29
 
 - Compare post-migration audit findings with the pre-migration baseline so existing project debt

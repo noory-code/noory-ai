@@ -455,6 +455,8 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
             break
 
         if hierarchy_root is not None:
+            if target_path.parent == hierarchy_root and target_path.suffix == ".md":
+                continue
             try:
                 scale = work_record_scale(hierarchy_root, target_path)
             except ValueError as exc:
