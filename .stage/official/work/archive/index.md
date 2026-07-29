@@ -117,3 +117,4 @@
 | W-00000110 | completed | [items/W-00000104/W-00000110/_story.md](items/W-00000104/W-00000110/_story.md) |
 | W-00000112 | completed | [items/W-00000112/_story.md](items/W-00000112/_story.md) |
 | W-00000113 | completed | [items/W-00000113/_story.md](items/W-00000113/_story.md) |
+| W-00000114 | completed | [items/W-00000114/_story.md](items/W-00000114/_story.md) |

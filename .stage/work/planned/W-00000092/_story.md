@@ -3,7 +3,7 @@ id: W-00000092
 title: 드라이버가 실행자의 건강을 확인한다 — 사전 점검과 생존 감시
 kind: design
 venue:
-status: captured
+status: rejected
 priority:
 autonomous: false
 acceptance: []
@@ -68,4 +68,7 @@ DE-00000034 가 세 역할의 계약을 소유한다. 사전 점검은 그 계�
 
 ## Next action
 
-계약(DE-00000034)을 넓힐지, 새 결정을 만들지 먼저 판단한다.
+반려됨 (2026-07-29). 이 카드가 남긴 두 설계 질문의 답을
+[DE-00000039](../../../official/decisions/records/DE-00000039.md) 3 절이 쥔다 — 사전 점검은
+venue 별 선택 명령으로 받고 실패하면 시도를 안 쓰며, 생존 감시는 전체 타임아웃과 인프라 실패
+분류로 충분한지부터 확인한다. 구현은 W-00000118 이 한다.
