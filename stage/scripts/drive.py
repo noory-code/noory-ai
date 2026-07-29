@@ -176,6 +176,7 @@ def load_run_state(
         fingerprint = item_state.get("last_fingerprint")
         base_head = item_state.get("base_head", "")
         base_repository_paths = item_state.get("base_repository_paths")
+        executor_changed_paths = item_state.get("executor_changed_paths", [])
         if type(attempt_count) is not int or attempt_count < 0:
             return None, (
                 f"driver run state {item_id}.attempt_count must be a "
@@ -197,6 +198,18 @@ def load_run_state(
             return None, (
                 f"driver run state {item_id}.base_repository_paths must be "
                 "a string-to-string object"
+            )
+        if (
+            not isinstance(executor_changed_paths, list)
+            or any(
+                not isinstance(changed_path, str) or not changed_path
+                for changed_path in executor_changed_paths
+            )
+            or len(set(executor_changed_paths)) != len(executor_changed_paths)
+        ):
+            return None, (
+                f"driver run state {item_id}.executor_changed_paths must be "
+                "an array of unique non-empty strings"
             )
     return state, ""
 
@@ -324,15 +337,28 @@ def repository_path_snapshot(project_root: Path) -> dict[str, str]:
 
 
 def changed_repository_paths(
-    base: dict[str, str],
-    current: dict[str, str],
+    before: dict[str, str],
+    after: dict[str, str],
 ) -> list[str]:
-    """Return cumulative paths changed from an item's base-head repository state."""
+    """Return deterministic paths changed between two repository snapshots."""
 
     return sorted(
         relative
-        for relative in set(base) | set(current)
-        if base.get(relative) != current.get(relative)
+        for relative in set(before) | set(after)
+        if before.get(relative) != after.get(relative)
+    )
+
+
+def cumulative_executor_changed_paths(
+    previous: list[str],
+    before_executor: dict[str, str],
+    after_executor: dict[str, str],
+) -> list[str]:
+    """Accumulate only paths observed while an executor was running."""
+
+    return sorted(
+        set(previous)
+        | set(changed_repository_paths(before_executor, after_executor))
     )
 
 
@@ -1417,11 +1443,11 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             log_before = read_work_log(log_path)
             pending_findings = latest_review_failures(log_before)
             repository_before = repository_fingerprint(project_root)
-            if "base_repository_paths" not in item_state:
-                item_state["base_repository_paths"] = repository_path_snapshot(
-                    project_root
-                )
-            base_repository_paths = item_state["base_repository_paths"]
+            repository_paths_before = repository_path_snapshot(project_root)
+            executor_changed_paths = item_state.get(
+                "executor_changed_paths",
+                [],
+            )
         except RuntimeError as exc:
             print_escalation(f"cannot prepare executor observation: {exc}")
             return 1
@@ -1468,8 +1494,9 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             repository_after = repository_fingerprint(project_root)
             repository_paths_after = repository_path_snapshot(project_root)
             current_fingerprint = fingerprint(project_root, [executor_evidence])
-            changed_paths = changed_repository_paths(
-                base_repository_paths,
+            changed_paths = cumulative_executor_changed_paths(
+                executor_changed_paths,
+                repository_paths_before,
                 repository_paths_after,
             )
         except RuntimeError as exc:
@@ -1527,7 +1554,9 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             "attempt_count": counted_attempt,
             "last_fingerprint": current_fingerprint,
             "base_head": base_head,
-            "base_repository_paths": base_repository_paths,
+            "executor_changed_paths": (
+                changed_paths if executor_ok else executor_changed_paths
+            ),
         }
         write_run_state(state_path, state)
 
@@ -1576,6 +1605,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 print(f"[{item.item_id}] {executor_failure}; retry {attempt}/{cap}")
             continue
 
+        executor_changed_paths = changed_paths
         if current_branch(project_root) != branch:
             print_escalation(f"HEAD left the run branch {branch}; aborting")
             return 1
@@ -1663,7 +1693,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 "attempt_count": item_state["attempt_count"],
                 "last_fingerprint": item_state["last_fingerprint"],
                 "base_head": base_head,
-                "base_repository_paths": base_repository_paths,
+                "executor_changed_paths": executor_changed_paths,
             }
             write_run_state(state_path, state)
             if (
@@ -1703,7 +1733,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             "attempt_count": attempt,
             "last_fingerprint": current_fingerprint,
             "base_head": base_head,
-            "base_repository_paths": base_repository_paths,
+            "executor_changed_paths": executor_changed_paths,
         }
         write_run_state(state_path, state)
 
@@ -1754,7 +1784,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 "attempt_count": attempt,
                 "last_fingerprint": current_fingerprint,
                 "base_head": base_head,
-                "base_repository_paths": base_repository_paths,
+                "executor_changed_paths": executor_changed_paths,
             }
             write_run_state(state_path, state)
             if no_progress or attempt >= cap:
@@ -1950,7 +1980,9 @@ def main() -> int:
     failure = ""
     reviewer_blocked = False
     acceptance_output: list[str] = []
-    changed_paths: list[str] = []
+    changed_paths: list[str] = list(
+        item_state.get("executor_changed_paths", [])
+    )
 
     index_path, index_error = git_index_path(project_root)
     if index_error:
@@ -1962,11 +1994,7 @@ def main() -> int:
         log_path = ensure_work_log(stage_root, item.item_id)
         log_before = read_work_log(log_path)
         repository_before = repository_fingerprint(project_root)
-        if "base_repository_paths" not in item_state:
-            item_state["base_repository_paths"] = repository_path_snapshot(
-                project_root
-            )
-        base_repository_paths = item_state["base_repository_paths"]
+        repository_paths_before = repository_path_snapshot(project_root)
     except RuntimeError as exc:
         print_escalation(f"cannot prepare executor observation: {exc}")
         return 1
@@ -2013,58 +2041,59 @@ def main() -> int:
             timeout=args.timeout,
         )
 
-        if executor_log_error:
-            step_ok = False
-            failure = executor_log_error
-        elif not executor_reaped:
-            step_ok = False
-            failure = (
-                "executor reap command failed"
-                if executor_ok
-                else "executor command and reap command failed"
+        try:
+            repository_after = repository_fingerprint(project_root)
+            repository_paths_after = repository_path_snapshot(project_root)
+            changed_paths = cumulative_executor_changed_paths(
+                changed_paths,
+                repository_paths_before,
+                repository_paths_after,
             )
-        elif not executor_ok:
+        except RuntimeError as exc:
             step_ok = False
-            failure = "executor command failed"
-        else:
-            try:
-                repository_after = repository_fingerprint(project_root)
-                repository_paths_after = repository_path_snapshot(project_root)
-                changed_paths = changed_repository_paths(
-                    base_repository_paths,
-                    repository_paths_after,
-                )
-            except RuntimeError as exc:
+            failure = f"cannot inspect repository after executor: {exc}"
+
+        if step_ok:
+            if executor_log_error:
                 step_ok = False
-                failure = f"cannot inspect repository after executor: {exc}"
+                failure = executor_log_error
+            elif not executor_reaped:
+                step_ok = False
+                failure = (
+                    "executor reap command failed"
+                    if executor_ok
+                    else "executor command and reap command failed"
+                )
+            elif not executor_ok:
+                step_ok = False
+                failure = "executor command failed"
+            elif repository_after == repository_before:
+                step_ok = False
+                failure = UNCHANGED_REPOSITORY_FAILURE
             else:
-                if repository_after == repository_before:
+                try:
+                    changed_paths_file.write_text(
+                        json.dumps(changed_paths, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
+                except OSError as exc:
                     step_ok = False
-                    failure = UNCHANGED_REPOSITORY_FAILURE
-                else:
-                    try:
-                        changed_paths_file.write_text(
-                            json.dumps(changed_paths, indent=2) + "\n",
-                            encoding="utf-8",
-                        )
-                    except OSError as exc:
+                    failure = (
+                        "cannot write driver-observed paths for review: "
+                        f"{exc}"
+                    )
+                if step_ok:
+                    report_error = executor_report_error(
+                        log_before,
+                        log_after_executor,
+                        changed_paths,
+                        ignored_paths=[
+                            log_path.relative_to(project_root).as_posix()
+                        ],
+                    )
+                    if report_error:
                         step_ok = False
-                        failure = (
-                            "cannot write driver-observed paths for review: "
-                            f"{exc}"
-                        )
-                    if step_ok:
-                        report_error = executor_report_error(
-                            log_before,
-                            log_after_executor,
-                            changed_paths,
-                            ignored_paths=[
-                                log_path.relative_to(project_root).as_posix()
-                            ],
-                        )
-                        if report_error:
-                            step_ok = False
-                            failure = report_error
+                        failure = report_error
 
         if step_ok and not changed_paths:
             step_ok = False
@@ -2170,7 +2199,7 @@ def main() -> int:
         "attempt_count": attempt,
         "last_fingerprint": current_fingerprint,
         "base_head": base_head,
-        "base_repository_paths": base_repository_paths,
+        "executor_changed_paths": changed_paths,
     }
     try:
         write_run_state(state_path, state)

@@ -113,16 +113,8 @@ class TemplateV4Test(unittest.TestCase):
             "Changed paths (JSON) must contain every repository-relative path changed "
             "for this card across all attempts."
         )
-        project_settings = json.loads(
-            (PLUGIN_ROOT.parent / ".stage/settings.json").read_text(encoding="utf-8")
-        )
         template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
 
-        for venue in ("claude", "codex"):
-            with self.subTest(venue=venue):
-                command = project_settings["executors"][venue]
-                self.assertIn(ancestor_instruction, command)
-                self.assertIn(reporting_instruction, command)
         self.assertIn(ancestor_instruction, template_settings)
         self.assertIn(reporting_instruction, template_settings)
 

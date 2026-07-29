@@ -619,7 +619,9 @@ class UnattendedTest(unittest.TestCase):
         self.assertEqual(0, rc)
         self.assertIn(("close", "W-00000001"), calls)
 
-    def test_unattended_retry_compares_cumulative_paths_from_base_head(self):
+    def test_unattended_retry_keeps_executor_paths_and_excludes_intervening_human_commit(
+        self,
+    ):
         limits = {
             "max_attempts_per_item": 2,
             "max_iterations": 10,
@@ -653,6 +655,18 @@ class UnattendedTest(unittest.TestCase):
                             f"{finding}\n"
                             "OUT-OF-CRITERIA OBSERVATIONS:\n- None\n"
                         )
+                    (project_root / "human-between-attempts.txt").write_text(
+                        "human",
+                        encoding="utf-8",
+                    )
+                    git(project_root, "add", "human-between-attempts.txt")
+                    git(
+                        project_root,
+                        "commit",
+                        "-q",
+                        "-m",
+                        "human between attempts",
+                    )
                     return False, "independent review did not pass"
                 path = self.card_path(stage_root, item_id)
                 path.write_text(

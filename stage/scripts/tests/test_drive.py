@@ -970,7 +970,9 @@ class DriveTest(unittest.TestCase):
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
-    def test_supervised_retry_compares_cumulative_paths_from_base_head(self):
+    def test_supervised_retry_keeps_executor_paths_and_excludes_intervening_human_commit(
+        self,
+    ):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker = Path(marker_tmp) / "round"
             tmp, root = self.make_project(
@@ -992,6 +994,12 @@ class DriveTest(unittest.TestCase):
                 initialize_git(root)
 
                 first = self.run_cli(root, "--execute")
+                (root / "human-between-attempts.txt").write_text(
+                    "human\n",
+                    encoding="utf-8",
+                )
+                git(root, "add", "human-between-attempts.txt")
+                git(root, "commit", "-q", "-m", "human between attempts")
                 second = self.run_cli(root, "--execute")
                 first_round = (root / "first-round.txt").read_text(encoding="utf-8")
                 second_round = (root / "second-round.txt").read_text(encoding="utf-8")
@@ -1163,6 +1171,11 @@ class DriveTest(unittest.TestCase):
             index_before = git(root, "diff", "--cached", "--binary").stdout
 
             result = self.run_cli(root, "--execute")
+            state = json.loads(
+                (
+                    root / ".stage/.runtime/driver/W-00000001.json"
+                ).read_text(encoding="utf-8")
+            )
 
             self.assertNotEqual(0, result.returncode)
             self.assertEqual(head_before, git(root, "rev-parse", "HEAD").stdout)
@@ -1176,6 +1189,10 @@ class DriveTest(unittest.TestCase):
             self.assertIn(
                 "failed-artifact.txt",
                 git(root, "ls-files", "--others", "--exclude-standard").stdout,
+            )
+            self.assertEqual(
+                ["failed-artifact.txt"],
+                state["items"]["W-00000002"]["executor_changed_paths"],
             )
 
     def test_executor_index_copy_failure_leaves_real_index_unchanged(self):

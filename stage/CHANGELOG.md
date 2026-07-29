@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.54.4 — 2026-07-29
+
+- Accumulate only paths observed during executor turns so human changes committed between retries
+  do not become executor claims, while retaining earlier executor output across supervised and
+  unattended attempts.
+- Keep the bundled executor-prompt test inside the plugin tree instead of reading operator
+  settings from the plugin's parent directory.
+
 ## 0.54.3 — 2026-07-29
 
 - Compare executor path reports with cumulative card changes from the item's base commit, exclude
