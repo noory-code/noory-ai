@@ -14,7 +14,7 @@ retrospective: pending
 retrospective_ref:
 promotion: pending
 review: not_required
-scope: stage/scripts/drive.py, stage/scripts/tests/, stage/skills/stage-drive/, stage/CHANGELOG.md
+scope: stage/scripts/drive_parallel.py, stage/scripts/tests/, stage/skills/stage-drive/, stage/CHANGELOG.md
 promotes:
 decision_refs:
 ---
@@ -46,6 +46,13 @@ DE-00000040 §3. 카드가 선언한 scope 가 이미 도는 작업의 scope 와
 어렵다.
 
 ## Scope
+
+겹침 판정은 **병렬 실행 명령**(`stage/scripts/drive_parallel.py`)이 쥔다. 한 번의 실행이
+카드 여럿을 알고 있으므로 비교할 수 있는 자리가 거기다.
+
+**안 하는 것**: 따로따로 띄운 드라이버 둘이 서로를 아는 일. 그것은 실행 등록부가 필요해
+축이 다르고, 지금은 사람이 명령 하나로 여럿을 거는 흐름뿐이다. 실제로 따로 띄워 부딪히는
+것을 겪으면 그때 연다(AHA).
 
 ### Included
 
