@@ -7,11 +7,12 @@ milestone:
 priority: 2
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000133
+promotion: not_applicable
 review: not_required
 scope: stage/, .stage/
 promotes:
@@ -74,12 +75,33 @@ decision_refs:
 
 ## Next action
 
-스토리 W-00000119 가 남았다. 끝나면 다섯 관측을 실측 결과에 맞게 정리하고 에픽을 닫는다.
+없음 — 스토리 전부 종결, 관측 다섯 닫힘 정리 완료.
 
 ## Progress
 
+스토리 여섯 + 도중에 실측이 세운 둘(W-00000121·134)이 전부 끝났다(2026-07-29~30). 마지막
+스토리의 액션 셋은 사람 개입 없이 한 바퀴씩 끝났다 — 에픽이 없애려던 개입이 실제로 없어졌다.
+
 ## Verification
+
+밑의 여덟 장이 각자 인수 검사와 리뷰를 통과했다. 성공 기준 확인: O-00000003~7 전부
+닫힘으로 정리됨, 카드 잘못이 아닌 실패가 시도를 먹는 자리 없음(인프라 분류 공유 + 사전
+점검 + 판정 파일). 스크립트 483·훅 343 통과, 감사 0/0.
+
+### Executed at close — 2026-07-30
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
+[R-00000133](../../retrospectives/R-00000133.md)
+
 ## Promotion decision
+
+not_applicable — 계약은 DE-00000039 가 이미 official 로 갖고 있다.

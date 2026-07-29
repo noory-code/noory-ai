@@ -6,13 +6,5 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
-| W-00000116 | passed | completed | not_applicable | [current/W-00000115/W-00000116/_story.md](current/W-00000115/W-00000116/_story.md) |
-| W-00000121 | passed | completed | not_applicable | [current/W-00000115/W-00000121/_story.md](current/W-00000115/W-00000121/_story.md) |
-| W-00000117 | passed | completed | not_applicable | [current/W-00000115/W-00000117/_story.md](current/W-00000115/W-00000117/_story.md) |
-| W-00000118 | passed | completed | not_applicable | [current/W-00000115/W-00000118/_story.md](current/W-00000115/W-00000118/_story.md) |
 | W-00000111 | passed | completed | not_applicable | [current/W-00000111/_story.md](current/W-00000111/_story.md) |
 | W-00000120 | passed | completed | not_applicable | [current/W-00000120/_story.md](current/W-00000120/_story.md) |
-| W-00000130 | passed | completed | not_applicable | [current/W-00000115/W-00000130/_story.md](current/W-00000115/W-00000130/_story.md) |
-| W-00000134 | passed | completed | not_applicable | [current/W-00000115/W-00000134/_story.md](current/W-00000115/W-00000134/_story.md) |
-| W-00000131 | passed | completed | not_applicable | [current/W-00000115/W-00000119/W-00000131.md](current/W-00000115/W-00000119/W-00000131.md) |
-| W-00000132 | passed | completed | not_applicable | [current/W-00000115/W-00000119/W-00000132.md](current/W-00000115/W-00000119/W-00000132.md) |

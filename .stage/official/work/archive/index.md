@@ -114,3 +114,4 @@
 | W-00000114 | completed | [items/W-00000114/_story.md](items/W-00000114/_story.md) |
 | W-00000122 | completed | [items/W-00000122/_story.md](items/W-00000122/_story.md) |
 | W-00000123 | completed | [items/W-00000123/_epic.md](items/W-00000123/_epic.md) |
+| W-00000115 | completed | [items/W-00000115/_epic.md](items/W-00000115/_epic.md) |
